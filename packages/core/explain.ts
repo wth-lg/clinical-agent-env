@@ -45,6 +45,8 @@ export interface ExplainCheck {
 export interface ExplainRecord {
   task_id?: string;
   task_version: string | null;
+  // The grader_task_version it was graded at; a regrade's entry carries its own.
+  grader_task_version?: string | null;
   outcome: string;
   valid?: boolean;
   score?: number | null;
@@ -271,7 +273,7 @@ export function explainTrial(record: ExplainRecord, audit: AuditRow | null | und
     internal_errors: record.tool_errors?.INTERNAL ?? 0,
     state_hash: record.state_hash,
     manifest_hash: ctx.world_state_hash ?? null,
-    task_version: record.task_version,
+    grader_task_version: grade.grader_task_version,
     decisive: failed === null ? null : {
       id: failed.id,
       exposure: exposure === null ? null : exposure.map((e) => ({ ...e, exposable: e.first_exposed_step === null && ctx.exposable ? ctx.exposable(e.id) : null })),
@@ -368,7 +370,7 @@ export function explainTrial(record: ExplainRecord, audit: AuditRow | null | und
 
 // Why a trial blocks the run, or null. A valid failure labelled environment or grader is not
 // allowed in a committed run, so a run with one has no headline pass rate (DENOMINATOR_RULE); a
-// run-level block (B1) on its task_version blocks it too. Excluded outcomes are not covered here:
+// run-level block (B1) on its grader_task_version blocks it too. Excluded outcomes are not covered here:
 // INFRA and ENV_ERROR are rerun, and summary --require grader_error=0 blocks a GRADER_ERROR.
 // cli/audit-check.ts enforces both, and its --json names these trials as excluded with the
 // denominator without them: summary.ts sees no audit rows, matrix or world, so it cannot compute

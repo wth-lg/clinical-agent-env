@@ -1,4 +1,4 @@
-// pnpm cli matrix --task <id>|all
+// pnpm cli matrix --task <id>|all [--out <dir>]
 // pnpm cli matrix --list-tasks
 // The grader validation matrix of one task (packages/grader/matrix/matrix.ts), offline: the
 // oracle, the alternatives, the mutants and the null, spray, output-gap and status-only agents
@@ -10,6 +10,8 @@
 // --task all runs the matrix of every directory under tasks/ that has tests/, one after the
 // other, prints a summary line per task and exits 1 when any task fails (a usage error
 // included), 0 when all pass.
+// --out <dir> writes each task's verdict into <dir>/matrix.json (writeMatrixJson), under the
+// task's grader_task_version: the file audit-check reads from a run directory for M4, GR4 and B1.
 // --list-tasks prints the ids --task all runs as one line of JSON and exits 1 when there are
 // none. CI's matrix job fans out over it and runs --task <id> once per task, in parallel.
 // A case whose second run differs leaves both runs under results/replay-mismatch/<task>/ (or
@@ -36,16 +38,16 @@ import { stripTimestamps, toJsonl } from '../packages/core/trajectory.ts';
 import type { Check, Json } from '../packages/grader/check.ts';
 import type { Grade } from '../packages/grader/grade.ts';
 import type { JudgeCacheEntry } from '../packages/grader/judge.ts';
-import { declaresOf, gradeRun, runMatrix, type CaseRun, type FreshGrade, type MatrixEnv, type MatrixOptions, type ReplayDiff } from '../packages/grader/matrix/matrix.ts';
+import { declaresOf, gradeRun, runMatrix, type CaseRun, type FreshGrade, type MatrixEnv, type MatrixOptions, type CaseKind, type MatrixResult, type ReplayDiff } from '../packages/grader/matrix/matrix.ts';
 import type { Agents, Alternative, MatrixTask, Mutant, Script, WorldView } from '../packages/grader/matrix/types.ts';
 import { nodeNow } from './adapters/clock-node.ts';
-import type { TaskSource } from '../packages/core/tasks.ts';
+import { taskVersions, type TaskSource, type TaskVersions } from '../packages/core/tasks.ts';
 import { nodeTaskSource, TASKS_DIR } from './adapters/tasks-node.ts';
 
 const REPO = fileURLToPath(new URL('../', import.meta.url));
 // A task id is a directory name: no path separators, no '..'.
 export const TASK_ID = /^[A-Za-z0-9_-]+$/;
-const USAGE = 'usage: pnpm cli matrix --task <id>|all\n       pnpm cli matrix --list-tasks';
+const USAGE = 'usage: pnpm cli matrix --task <id>|all [--out <dir>]\n       pnpm cli matrix --list-tasks';
 
 // The TOML parser is packages/core's dependency (its task parser's); it is resolved from there,
 // so reading [matrix] needs no new dependency.
@@ -120,10 +122,17 @@ export async function loadMatrixTask(id: string, root: string = TASKS_DIR, tasks
 
 export async function main(args: string[], deps: Deps): Promise<number> {
   if (args.length === 1 && args[0] === '--list-tasks') return listTasks(deps);
-  if (args.length !== 2 || args[0] !== '--task') return usage(deps, args.length === 0 ? '--task is required' : `unexpected arguments ${args.join(' ')}`);
-  const id = args[1]!;
-  if (id === 'all') return all(deps);
-  const r = await one(id, deps);
+  const flags = new Map<string, string>();
+  for (let i = 0; i < args.length; i += 2) {
+    const [flag, value] = [args[i]!, args[i + 1]];
+    if ((flag !== '--task' && flag !== '--out') || value === undefined || value.startsWith('--') || flags.has(flag)) return usage(deps, args.length === 0 ? '--task is required' : `unexpected arguments ${args.join(' ')}`);
+    flags.set(flag, value);
+  }
+  const id = flags.get('--task');
+  if (id === undefined) return usage(deps, '--task is required');
+  const out = flags.get('--out');
+  if (id === 'all') return all(deps, out);
+  const r = await one(id, deps, out);
   return r.usage === undefined ? r.code : usage(deps, r.usage);
 }
 
@@ -139,11 +148,11 @@ function listTasks(deps: Deps): number {
 }
 
 // Every task's matrix in turn, then one summary line per task.
-async function all(deps: Deps): Promise<number> {
+async function all(deps: Deps, out: string | undefined): Promise<number> {
   const ids = (deps.tasks ?? matrixTaskIds)();
   const results: Array<{ id: string; pass: boolean; usage?: string }> = [];
   for (const id of ids) {
-    const r = await one(id, deps);
+    const r = await one(id, deps, out);
     if (r.usage !== undefined) deps.out(`matrix ${id}: ${r.usage}`);
     results.push({ id, pass: r.code === 0, ...(r.usage !== undefined ? { usage: r.usage } : {}) });
   }
@@ -155,7 +164,7 @@ async function all(deps: Deps): Promise<number> {
 
 // One task's matrix, its lines written to deps.out; a usage problem (not a task id, cannot be
 // loaded) is returned for the caller to print.
-async function one(id: string, deps: Deps): Promise<{ code: number; usage?: string }> {
+async function one(id: string, deps: Deps, out: string | undefined): Promise<{ code: number; usage?: string }> {
   if (!TASK_ID.test(id)) return { code: 2, usage: `--task ${JSON.stringify(id)} is not a task id (letters, digits, _ and - only)` };
   // One read of tasks/ for the whole run: the instruction and policies the cases are built from
   // and the task every trial resolves are the same files.
@@ -175,15 +184,60 @@ async function one(id: string, deps: Deps): Promise<{ code: number; usage?: stri
     ...(task.checksModule ? { fresh: freshGrader(task, task.checksModule) } : {}),
     ...deps.options,
   };
+  const env = matrixEnv(TASKS_DIR, tasks);
   let result;
   try {
-    result = await runMatrix(matrixEnv(TASKS_DIR, tasks), task, options);
+    result = await runMatrix(env, task, options);
   } catch (e) {
     deps.out(`matrix ${id}: FAIL\n  - ${(e as Error).message}`);
     return { code: 1 };
   }
   for (const line of result.lines) deps.out(line);
+  if (out !== undefined) {
+    const versions = await taskVersions(await tasks.get(id), env.worldHash);
+    writeMatrixJson(out, id, versions, task, result);
+    deps.out(`matrix.json: ${id} at grader_task_version ${versions.grader_task_version} in ${join(out, 'matrix.json')}`);
+  }
   return { code: result.pass ? 0 : 1 };
+}
+
+// One probe of the matrix as matrix.json records it: its outcome, whether that is what the
+// matrix expects of it, and the gate checks it failed.
+export interface MatrixProbe {
+  kind: CaseKind;
+  id: string;
+  outcome: string;
+  as_expected: boolean;
+  failed_checks: string[];
+}
+
+// Sets <dir>/matrix.json's entry for the task's grader_task_version, keeping every other entry:
+// {grader_task_versions: {<grader_task_version>: {task_id, env_version, task_version, pass,
+// oracle_pass, alternatives_pass, failed_checks, probes}}}. oracle_pass and alternatives_pass say
+// the oracle and every declared alternative ran and passed; failed_checks are the gate checks any
+// of them failed. Keys are sorted and the file is rewritten only when it changes, so a rerun of
+// the same matrix leaves it byte for byte.
+export function writeMatrixJson(dir: string, id: string, versions: TaskVersions, task: MatrixTask, result: MatrixResult): void {
+  const file = join(dir, 'matrix.json');
+  const prior = existsSync(file) ? (JSON.parse(readFileSync(file, 'utf8')) as { grader_task_versions?: Record<string, unknown> }) : {};
+  const probes: MatrixProbe[] = result.results.map((r) => ({ kind: r.case.kind, id: r.case.id, outcome: r.grade.outcome, as_expected: r.problems.length === 0, failed_checks: r.failed_gates }));
+  const oracle = probes.find((p) => p.kind === 'oracle');
+  const alternatives = probes.filter((p) => p.kind === 'alternative');
+  const entry = {
+    task_id: id,
+    env_version: versions.env_version,
+    task_version: versions.task_version,
+    pass: result.pass,
+    oracle_pass: oracle?.outcome === 'PASS',
+    alternatives_pass: alternatives.length === task.alternatives.length && alternatives.every((p) => p.outcome === 'PASS'),
+    failed_checks: [...new Set([oracle, ...alternatives].flatMap((p) => p?.failed_checks ?? []))].sort(),
+    probes,
+  };
+  const all = { ...prior.grader_task_versions, [versions.grader_task_version]: entry };
+  const text = `${JSON.stringify({ grader_task_versions: Object.fromEntries(Object.keys(all).sort().map((k) => [k, all[k]])) }, null, 2)}\n`;
+  if (existsSync(file) && readFileSync(file, 'utf8') === text) return;
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(file, text);
 }
 
 // Writes both runs of a case that did not replay to <root>/<task>/<case>-<n>/, n the first

@@ -59,10 +59,11 @@ export const AUDIT_LABEL: Readonly<Record<Fault, { label: AuditLabelName; subtyp
 };
 export const AUDIT_LABELS: readonly AuditLabelName[] = [...new Set(Object.values(AUDIT_LABEL).flatMap((l) => (l === null ? [] : [l.label])))];
 
-// The grader validation matrix's verdict on one task_version (pnpm cli matrix). failed_checks
-// names the gate checks the oracle or an alternative fails; absent when the matrix does not say.
+// The grader validation matrix's verdict on one grader_task_version (pnpm cli matrix --out
+// writes it to matrix.json under that key). failed_checks names the gate checks the oracle or an
+// alternative fails; absent when the matrix does not say.
 export interface MatrixResult {
-  task_version: string;
+  grader_task_version: string;
   oracle_pass: boolean;
   alternatives_pass: boolean;
   failed_checks?: readonly string[];
@@ -85,7 +86,10 @@ export interface AttributionFacts {
   internal_errors: number;
   state_hash: { initial: string | null; final: string | null; replay_final: string | null };
   manifest_hash: string | null;
-  task_version: string | null;
+  // The grader_task_version of the current grade (summary.ts currentGrade): what the matrix
+  // must have validated for its verdict to speak for this grade. null when the record or its
+  // last regrade predates the env/grader split.
+  grader_task_version: string | null;
   // The first failed gate check of the current grade and its decisive ids; exposure null when
   // nothing says what this check's ids were exposed at (a regrade failed another check and the
   // caller could not recompute it).
@@ -166,12 +170,12 @@ const M3: Criterion = {
 };
 const M4: Criterion = {
   id: 'M4',
-  text: "The task's oracle and every declared alternative pass the grader validation matrix on the trial's task_version, or none of them fails the gate check the trial failed, or the trial's outcome is not FAIL (a REFUSAL or LIMIT comes from the record status, which no grader fix changes).",
-  reads: ['record.outcome', 'record.task_version', 'record.checks (the first failed gate check)', 'matrix oracle_pass, alternatives_pass and failed_checks for that task_version'],
-  check: ({ outcome, matrix, task_version, decisive }) => {
-    if (matrix === null) return result('pending', `no grader validation matrix result for ${task_version}`);
-    if (matrix.task_version !== task_version) return result('pending', `the matrix result is for task_version ${matrix.task_version}, the trial ran ${task_version}`);
-    const verdict = `oracle ${matrix.oracle_pass ? 'passes' : 'fails'}, alternatives ${matrix.alternatives_pass ? 'all pass' : 'do not all pass'} on ${task_version}`;
+  text: "The task's oracle and every declared alternative pass the grader validation matrix on the grader_task_version of the trial's current grade, or none of them fails the gate check the trial failed, or the trial's outcome is not FAIL (a REFUSAL or LIMIT comes from the record status, which no grader fix changes).",
+  reads: ['record.outcome', 'record.grader_task_version, or its last regrade\'s', 'record.checks (the first failed gate check)', 'matrix oracle_pass, alternatives_pass and failed_checks for that grader_task_version'],
+  check: ({ outcome, matrix, grader_task_version: g, decisive }) => {
+    if (matrix === null || g === null) return result('pending', `no grader validation matrix result for grader_task_version ${g ?? 'unknown (the grade predates the env/grader split)'}`);
+    if (matrix.grader_task_version !== g) return result('pending', `the matrix result is for grader_task_version ${matrix.grader_task_version}, the current grade is at ${g}`);
+    const verdict = `oracle ${matrix.oracle_pass ? 'passes' : 'fails'}, alternatives ${matrix.alternatives_pass ? 'all pass' : 'do not all pass'} on grader_task_version ${g}`;
     if (matrix.oracle_pass && matrix.alternatives_pass) return result(true, verdict);
     if (decisive === null) return result(true, `${verdict}; the trial failed no gate check`);
     if (outcome !== 'FAIL') return result(true, `${verdict}; the outcome ${outcome} comes from the record status, not from ${decisive.id}`);
@@ -303,7 +307,7 @@ export const FAULT_DEFINITIONS: Readonly<Record<Fault, FaultDefinition>> = {
       },
       {
         id: 'GR4',
-        text: "The trial is a FAIL, and the task's oracle or a declared alternative fails, on the trial's task_version, the same gate check the trial failed, as the matrix's failed_checks names it (M4 not met).",
+        text: "The trial is a FAIL, and the task's oracle or a declared alternative fails, on the grader_task_version of the trial's current grade, the same gate check the trial failed, as the matrix's failed_checks names it (M4 not met).",
         reads: M4.reads,
         check: negation(M4.check),
       },
@@ -336,18 +340,18 @@ export const FAULT_DEFINITIONS: Readonly<Record<Fault, FaultDefinition>> = {
 export const FAULT_PRECEDENCE: readonly Fault[] = ['infra', 'grader', 'env', 'refusal', 'model'];
 export const FAULT_PRECEDENCE_RULE = 'When criteria of several faults hold, the first in the order infra, grader, environment, refusal, model decides and the others are shown as notes: a trial the infrastructure ended says nothing about the model, a grader fault on the check the trial failed means the grade itself is wrong, an environment fault means the trial was unfair to the model, and a refusal is reported both with and without refusals.';
 
-// Run-level blocks: facts about a task_version, not about one trial. One that holds is shown as a
-// note on every trial of that task_version, decides no trial's fault, and blocks the run
+// Run-level blocks: facts about a grader_task_version, not about one trial. One that holds is shown
+// as a note on every trial whose current grade is at that grader_task_version, decides no trial's fault, and blocks the run
 // (cli/audit-check.ts exits 1) until it no longer holds.
 export const RUN_BLOCKS: readonly Criterion[] = [
   {
     id: 'B1',
-    text: "The task's oracle or a declared alternative fails the grader validation matrix on the trial's task_version, which blocks the run until the task or the grader is fixed.",
-    reads: ['record.task_version', 'matrix oracle_pass and alternatives_pass for that task_version'],
-    check: ({ matrix, task_version }) => {
-      if (matrix === null || matrix.task_version !== task_version) return result('pending', `no grader validation matrix result for ${task_version}`);
+    text: "The task's oracle or a declared alternative fails the grader validation matrix on the grader_task_version of the trial's current grade, which blocks the run until the task or the grader is fixed.",
+    reads: ['record.grader_task_version, or its last regrade\'s', 'matrix oracle_pass and alternatives_pass for that grader_task_version'],
+    check: ({ matrix, grader_task_version: g }) => {
+      if (matrix === null || g === null || matrix.grader_task_version !== g) return result('pending', `no grader validation matrix result for grader_task_version ${g ?? 'unknown (the grade predates the env/grader split)'}`);
       const failed = matrix.failed_checks?.length ? `, failing ${list(matrix.failed_checks)}` : '';
-      return result(!(matrix.oracle_pass && matrix.alternatives_pass), `oracle ${matrix.oracle_pass ? 'passes' : 'fails'}, alternatives ${matrix.alternatives_pass ? 'all pass' : 'do not all pass'} on ${task_version}${failed}`);
+      return result(!(matrix.oracle_pass && matrix.alternatives_pass), `oracle ${matrix.oracle_pass ? 'passes' : 'fails'}, alternatives ${matrix.alternatives_pass ? 'all pass' : 'do not all pass'} on grader_task_version ${g}${failed}`);
     },
   },
 ];

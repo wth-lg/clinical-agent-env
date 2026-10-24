@@ -103,6 +103,7 @@ export function writeFixtureRun(dir: string, fixture: Fixture): void {
   put(dir, 'replay.json', `${JSON.stringify({ trials: replay }, null, 2)}\n`);
   put(dir, 'audit.jsonl', labels.map((l) => JSON.stringify(l)).join('\n') + '\n');
   put(dir, 'manifest.json', `${JSON.stringify({ run_id: 'final-1', model: MODEL, effort: 'high', mode, trials: 10, world_hash: 'h-initial', task_versions: Object.fromEntries(TASKS.map((t) => [t, `v-${t}`])), batches: [] }, null, 2)}\n`);
-  // The grader validation matrix of each task_version (audit-check reads it for criterion M4).
-  put(dir, 'matrix.json', `${JSON.stringify({ task_versions: Object.fromEntries(TASKS.map((t) => [`v-${t}`, { oracle_pass: true, alternatives_pass: true }])) }, null, 2)}\n`);
+  // The grader validation matrix of each grader_task_version, the run's and a regrade's (audit-check
+  // reads it for criterion M4), as `pnpm cli matrix --out` writes it.
+  put(dir, 'matrix.json', `${JSON.stringify({ grader_task_versions: Object.fromEntries(TASKS.flatMap((t) => [`g-${t}`, `g-${t}-next`].map((g) => [g, { task_id: t, oracle_pass: true, alternatives_pass: true }]))) }, null, 2)}\n`);
 }
