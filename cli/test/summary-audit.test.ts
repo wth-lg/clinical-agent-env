@@ -116,7 +116,7 @@ describe('audit-check', () => {
   it('exits 0 on the clean run', async () => {
     const r = await cli(auditCheck, [run('clean'), '--json']);
     expect(r.code, r.out + r.err).toBe(0);
-    expect(JSON.parse(r.out)).toMatchObject({ failures: 10, labelled: 10, environment: 0, grader: 0, violations: [] });
+    expect(JSON.parse(r.out)).toMatchObject({ failures: 10, labelled: 10, labelled_environment: 0, labelled_grader: 0, violations: [] });
   });
 
   it('reads the current grade: a GRADER_ERROR regraded to FAIL is a labelled failure; a FAIL regraded to PASS contradicts its FAIL label', async () => {

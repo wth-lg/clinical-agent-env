@@ -21,7 +21,7 @@ async function check(dir: string, checks?: (task: string) => Promise<ReadonlyArr
   const out: string[] = [];
   const err: string[] = [];
   const code = await auditCheck([dir, '--json'], { out: (l) => out.push(l), err: (l) => err.push(l), ...(checks ? { checks } : {}) });
-  return { code, json: JSON.parse(out.join('\n')) as { violations: string[]; environment: number; grader: number; valid: number; excluded: string[]; denominator: number }, text: err.join('\n') };
+  return { code, json: JSON.parse(out.join('\n')) as { violations: string[]; labelled_environment: number; labelled_grader: number; faults: Record<string, number>; valid: number; excluded: string[]; denominator: number } & Record<string, unknown>, text: err.join('\n') };
 }
 
 const readJson = (file: string) => JSON.parse(readFileSync(file, 'utf8')) as Record<string, unknown>;
@@ -255,7 +255,7 @@ describe('audit-check: review round 3 (pr-review P14a-2)', () => {
     writeLabels(dir, adjudicate('reasoning'));
     const r = await check(dir);
     expect(r.code, r.json.violations.join('\n')).toBe(0);
-    expect(r.json.environment).toBe(0);
+    expect(r.json.labelled_environment).toBe(0);
   });
 
   it('D3: a valid failure correctly labelled environment still blocks the run; --json names it as excluded from the denominator', async () => {
@@ -266,9 +266,20 @@ describe('audit-check: review round 3 (pr-review P14a-2)', () => {
     const v = r.json.violations.join('\n');
     expect(v).not.toMatch(/t-beta\/9: labelled/);
     expect(v).toMatch(/t-beta\/9: FAIL is the environment's fault \(E5\): not allowed in a committed run, so the run fails and has no headline pass rate until an environment fix/);
-    expect(r.json.environment).toBe(1);
+    expect(r.json.labelled_environment).toBe(1);
     expect(r.json.excluded).toEqual(['t-beta/9']);
     expect(r.json.denominator).toBe(r.json.valid - 1);
+  });
+
+  // P11f (3), verifier-phase-P14a-4 minor 1: the auditor's labels and the computed faults are
+  // different counts, so they have different keys. never-exposable as shipped labels t-beta/9
+  // model while its fault is env (E5).
+  it('--json names label counts (labelled_*) and fault counts (faults) with distinct keys', async () => {
+    const r = await check(run('never-exposable'), fixtureChecks);
+    expect(r.json).not.toHaveProperty('environment');
+    expect(r.json).not.toHaveProperty('grader');
+    expect(r.json).toMatchObject({ labelled_environment: 0, labelled_grader: 0, faults: { model: 9, refusal: 0, env: 1, grader: 0 }, excluded: ['t-beta/9'] });
+    expect((await check(run('clean'))).json).toMatchObject({ labelled_environment: 0, labelled_grader: 0, faults: { model: 10, refusal: 0, env: 0, grader: 0 } });
   });
 
   it('--json reports the valid trials, the excluded trial ids and the denominator without them (P14a-3 denominator)', async () => {

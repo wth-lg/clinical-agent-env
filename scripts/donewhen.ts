@@ -9,7 +9,7 @@
 //                                       exit 0 when the requirements hold;
 //                                       {tasks: {<id>: {passes, trials}}, initial_state_hashes: [...]}
 //   cli audit-check <run> --json        exit 0 when every failure is labelled and none is
-//                                       environment or grader; {failures, labelled, environment, grader}
+//                                       environment or grader; {failures, labelled, labelled_environment, labelled_grader}
 //   cli spend --json                    {total_usd}, printed as an INFO line
 //   cli runner-check --mock --json      exit 0 when the local runner passes every check;
 //                                       {events_equal}: its streamed events equal run-one's
@@ -198,10 +198,10 @@ function clause5(): Verdict {
 
 function clause6(): Verdict {
   const r = cli(['audit-check', FINAL_RUN, '--json']);
-  const j = r.json as { failures?: number; labelled?: number; environment?: number; grader?: number } | undefined;
+  const j = r.json as { failures?: number; labelled?: number; labelled_environment?: number; labelled_grader?: number } | undefined;
   const counts =
     j && typeof j.failures === 'number'
-      ? `; labelled ${j.labelled}/${j.failures} failures, environment ${j.environment}, grader ${j.grader}`
+      ? `; labelled ${j.labelled}/${j.failures} failures, environment ${j.labelled_environment}, grader ${j.labelled_grader}`
       : '';
   return { pass: r.exit === 0, evidence: `${describeExit('audit-check', r)}${counts}` };
 }

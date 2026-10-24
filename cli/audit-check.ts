@@ -44,7 +44,11 @@
 // a list of strings reads as not given); and, on a regraded trial whose first failed check is not the one
 // its recorded attribution names, that check's decisive ids (from the task's gate checks) with the
 // step each was first exposed at in the trajectory (packages/grader/exposure.ts firstExposed).
-// --json prints {failures, labelled, environment, grader, valid, excluded, denominator, violations}:
+// --json prints {failures, labelled, labelled_environment, labelled_grader, faults, valid, excluded,
+// denominator, violations}: labelled_environment and labelled_grader count the failures the audit
+// labels environment or grader (after adjudication); faults counts the failures by the fault
+// explainTrial computes ({model, refusal, env, grader, infra}), which the label must agree with
+// but need not (a model label on an E5 failure is a violation, counted model there and env here);
 // valid counts the settled trials whose current grade is valid, excluded names (sorted) the
 // failures excludedFromHeadline names, and denominator is valid without them, for the UI and the
 // writeup; a run with an excluded trial fails, so it has no headline pass rate. Exit 2 on a usage error.
@@ -55,7 +59,7 @@ import type { BatchRecord } from '../packages/core/batch.ts';
 import { installEgressGuard } from '../packages/core/egress.ts';
 import type { TrialEvent } from '../packages/core/events.ts';
 import { auditLabelOf, excludedFromHeadline, explainTrial, formatCriterion, type AuditRow, type ExplainContext, type ExplainRecord } from '../packages/core/explain.ts';
-import { AUDIT_LABEL, AUDIT_LABELS, FAULT, type Outcome } from '../packages/core/outcomes.ts';
+import { AUDIT_LABEL, AUDIT_LABELS, FAULT, FAULT_PRECEDENCE, type Fault, type Outcome } from '../packages/core/outcomes.ts';
 import { parseTrajectory } from '../packages/core/trajectory.ts';
 import { currentGrade } from '../packages/core/summary.ts';
 import { loadStore } from '../packages/env/fixture-source.ts';
@@ -233,10 +237,12 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
     }
     if (l.evidence_ids.length === 0) v.push(`${l.trial}: no evidence ids`);
   }
+  const faults = Object.fromEntries(FAULT_PRECEDENCE.map((f) => [f, 0])) as Record<Fault, number>;
   for (const r of failures) {
     const name = trialName(r);
     if (!byTrial.has(name)) v.push(`${name}: ${currentGrade(r).outcome}, no audit label`);
     const e = await explain(r, byTrial.get(name));
+    if (e.fault !== null) faults[e.fault]++;
     for (const c of e.criteria) {
       if ((c.id === 'M1' || c.id === 'M4') && (c.met === false || c.met === 'pending')) v.push(`${name}: ${formatCriterion(c).replace(': ', ' ')}: ${c.evidence}`);
     }
@@ -291,7 +297,7 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
   for (const line of v) say(`violation: ${line}`);
   say(`audit-check: ${labelled}/${failures.length} failures labelled, environment ${environment}, grader ${grader}; ${v.length === 0 ? 'every check holds' : `${v.length} violation(s)`}`);
   const excluded = excludedTrials.sort();
-  if (json) deps.out(JSON.stringify({ failures: failures.length, labelled, environment, grader, valid: valid.length, excluded, denominator: valid.length - excluded.length, violations: v }));
+  if (json) deps.out(JSON.stringify({ failures: failures.length, labelled, labelled_environment: environment, labelled_grader: grader, faults, valid: valid.length, excluded, denominator: valid.length - excluded.length, violations: v }));
   return v.length === 0 ? 0 : 1;
 }
 
