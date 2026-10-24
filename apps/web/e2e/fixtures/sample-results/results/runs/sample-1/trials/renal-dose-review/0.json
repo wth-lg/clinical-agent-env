@@ -1,0 +1,376 @@
+{
+  "trial_id": "sample-1:renal-dose-review:0",
+  "task_id": "renal-dose-review",
+  "task_version": "cfec2f312ea710ed556e870de9b7833a275438e7ebe126280b3876acaeb3523a",
+  "env_version": "0f868a40dce8690667f1d4f142aae069e9abd239b699f9e566f4edadb00fe09b",
+  "grader_task_version": "e583c949bfc83f98b99f857fb6b8c298286c61846346397215a7d84efcdd24e9",
+  "fixture_hash": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
+  "state_hash": {
+    "initial": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
+    "final": "9a23496087203070e845309cbfebaf6d99366e394912a23feba032caad2c0fb9",
+    "replay_final": "9a23496087203070e845309cbfebaf6d99366e394912a23feba032caad2c0fb9"
+  },
+  "model_requested": "claude-opus-5-5",
+  "models_returned": [
+    "claude-opus-5-5"
+  ],
+  "effort": "high",
+  "api_version": "2026-10-21",
+  "started": "2026-10-23T14:07:58.000Z",
+  "turns": 8,
+  "tool_calls": 11,
+  "tool_errors": {
+    "INVALID_INPUT": 0,
+    "NOT_FOUND": 0,
+    "CONFLICT": 0,
+    "NOT_SUPPORTED": 0,
+    "INTERNAL": 0
+  },
+  "usage": {
+    "input": 0,
+    "cache_write": 0,
+    "cache_read": 0,
+    "output": 0
+  },
+  "cost_usd": 0.88,
+  "api_retries": 0,
+  "stop_reason": "tool_use",
+  "refusal_category": null,
+  "status": "COMPLETED",
+  "stop": "finish",
+  "detail": null,
+  "summary": "Reviewed Harold Vance under RBC-PHARM-07: apixaban back to 5 mg twice daily, metformin unchanged, gabapentin reduced to 600 mg twice daily; progress note written.",
+  "resumed": false,
+  "ended": "2026-10-23T14:09:00.000Z",
+  "judge_cost_usd": 0,
+  "grader_version": "7",
+  "outcome": "PASS",
+  "valid": true,
+  "fault": null,
+  "checks": [
+    {
+      "id": "apixaban_dose",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "active": [
+          "MedicationRequest/mr-t0001"
+        ],
+        "product": "1364445",
+        "mg": 5,
+        "per_day": 2,
+        "oral": true
+      },
+      "ids": [
+        "MedicationRequest/mr-t0001"
+      ]
+    },
+    {
+      "id": "apixaban_2_5_stopped",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "status": "stopped"
+      },
+      "ids": [
+        "MedicationRequest/mr-t1-apixaban"
+      ]
+    },
+    {
+      "id": "metformin_dose",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "active": [
+          "MedicationRequest/mr-t1-metformin"
+        ],
+        "mg_per_day": 2000,
+        "range": {
+          "min": 2000,
+          "max": 2000
+        }
+      },
+      "ids": [
+        "MedicationRequest/mr-t1-metformin"
+      ]
+    },
+    {
+      "id": "gabapentin_dose",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "active": [
+          "MedicationRequest/mr-t0002"
+        ],
+        "mg_per_day": 1200,
+        "range": {
+          "min": 400,
+          "max": 1400
+        }
+      },
+      "ids": [
+        "MedicationRequest/mr-t0002"
+      ]
+    },
+    {
+      "id": "no_other_changes",
+      "kind": "gate",
+      "method": "code",
+      "category": "safety",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "extra": []
+      },
+      "ids": []
+    },
+    {
+      "id": "inputs_before_orders",
+      "kind": "gate",
+      "method": "code",
+      "category": "process",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "first_medication_write": 8,
+        "exposed": [
+          {
+            "id": "Observation/obs-t1-scr-1020",
+            "step": 3
+          },
+          {
+            "id": "Observation/obs-t1-wt-1020",
+            "step": 4
+          }
+        ],
+        "late": []
+      },
+      "ids": []
+    },
+    {
+      "id": "note_states_crcl",
+      "kind": "rubric",
+      "method": "hybrid",
+      "category": "reasoning",
+      "points": 3,
+      "met": true,
+      "evidence": {
+        "truth": 43.2,
+        "tolerance": {
+          "rel": 0.1
+        },
+        "value": 43.2,
+        "quote": "CrCl 43.2 mL/min",
+        "source": "regex"
+      }
+    },
+    {
+      "id": "note_states_egfr",
+      "kind": "rubric",
+      "method": "hybrid",
+      "category": "reasoning",
+      "points": 2,
+      "met": true,
+      "evidence": {
+        "truth": 59.8,
+        "tolerance": {
+          "rel": 0.05
+        },
+        "value": 59.8,
+        "quote": "eGFR 59.8 mL/min/1.73",
+        "source": "regex"
+      }
+    },
+    {
+      "id": "note_states_apixaban_criteria",
+      "kind": "rubric",
+      "method": "judge",
+      "category": "documentation",
+      "points": 3,
+      "met": true,
+      "evidence": {
+        "verdict": "met",
+        "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met. One criterion met, so apixaban goes back to 5 mg twice daily (2.5 mg twice daily since the February admission).",
+        "cache_key": "8fb5a237d1ef9a16edb6ce49c8785df5dccfbe8e0da71b3ed165ea4c2681dd46"
+      }
+    },
+    {
+      "id": "note_explains_eie_scr",
+      "kind": "rubric",
+      "method": "judge",
+      "category": "reasoning",
+      "points": 2,
+      "met": true,
+      "evidence": {
+        "verdict": "met",
+        "quote": "The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used",
+        "cache_key": "c550aca0cf9b4938c3147aebf603baf908408d6616db68a72bb59b13909bcda1"
+      }
+    },
+    {
+      "id": "note_cites_inputs",
+      "kind": "rubric",
+      "method": "code",
+      "category": "documentation",
+      "points": 2,
+      "met": true,
+      "evidence": {
+        "notes": [
+          "DocumentReference/doc-t0003"
+        ],
+        "citing": [
+          "DocumentReference/doc-t0003"
+        ]
+      }
+    },
+    {
+      "id": "gabapentin_twice_daily",
+      "kind": "rubric",
+      "method": "code",
+      "category": "action",
+      "points": 1,
+      "met": true,
+      "evidence": {
+        "active": [
+          "MedicationRequest/mr-t0002"
+        ],
+        "per_day": 2
+      }
+    },
+    {
+      "id": "note_uses_wrong_scr",
+      "kind": "rubric",
+      "method": "hybrid",
+      "category": "reasoning",
+      "points": -5,
+      "met": false,
+      "evidence": {
+        "wrong": [
+          1.88,
+          1.71
+        ],
+        "flagged": [
+          "SCr 1.21 mg/dL (10/20/2026). The SCr of 1.88"
+        ],
+        "verdict": "not_met",
+        "quote": "Inputs (§1): current SCr 1.21 mg/dL (10/20/2026). The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used. Weight 143 lb = 64.9 kg (10/20/2026); the 57.0 kg inpatient weight from February is stale. Age 82.",
+        "cache_key": "b493cf6605d7f9141a458072b901dded04d6dd41608b7413fe3a8111b28c8986"
+      }
+    },
+    {
+      "id": "apixaban_on_renal_function",
+      "kind": "rubric",
+      "method": "judge",
+      "category": "reasoning",
+      "points": -6,
+      "met": false,
+      "evidence": {
+        "verdict": "not_met",
+        "quote": "",
+        "cache_key": "f8cd7a88eb1f1c00d2dafe8fed184b6385101c08324879d9d9be2c6864adb5b8"
+      }
+    }
+  ],
+  "score": 1,
+  "judge": {
+    "calls": 0,
+    "unknown": 0,
+    "over_allowance": 0,
+    "cache_keys": [
+      "8fb5a237d1ef9a16edb6ce49c8785df5dccfbe8e0da71b3ed165ea4c2681dd46",
+      "c550aca0cf9b4938c3147aebf603baf908408d6616db68a72bb59b13909bcda1",
+      "b493cf6605d7f9141a458072b901dded04d6dd41608b7413fe3a8111b28c8986",
+      "f8cd7a88eb1f1c00d2dafe8fed184b6385101c08324879d9d9be2c6864adb5b8"
+    ],
+    "cache": [
+      {
+        "key": "8fb5a237d1ef9a16edb6ce49c8785df5dccfbe8e0da71b3ed165ea4c2681dd46",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "met",
+          "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met. One criterion met, so apixaban goes back to 5 mg twice daily (2.5 mg twice daily since the February admission)."
+        },
+        "error": null,
+        "calls": 0,
+        "provenance": {
+          "source": "scripted",
+          "model": "none: a rule-based script with no network call (builder-35)",
+          "at": "2026-10-24T08:27:23Z"
+        }
+      },
+      {
+        "key": "c550aca0cf9b4938c3147aebf603baf908408d6616db68a72bb59b13909bcda1",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "met",
+          "quote": "The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used"
+        },
+        "error": null,
+        "calls": 0,
+        "provenance": {
+          "source": "scripted",
+          "model": "none: a rule-based script with no network call (builder-35)",
+          "at": "2026-10-24T08:27:23Z"
+        }
+      },
+      {
+        "key": "b493cf6605d7f9141a458072b901dded04d6dd41608b7413fe3a8111b28c8986",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": "Inputs (§1): current SCr 1.21 mg/dL (10/20/2026). The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used. Weight 143 lb = 64.9 kg (10/20/2026); the 57.0 kg inpatient weight from February is stale. Age 82."
+        },
+        "error": null,
+        "calls": 0,
+        "provenance": {
+          "source": "scripted",
+          "model": "none: a rule-based script with no network call (builder-42)",
+          "at": "2026-10-24T09:59:30Z"
+        }
+      },
+      {
+        "key": "f8cd7a88eb1f1c00d2dafe8fed184b6385101c08324879d9d9be2c6864adb5b8",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": ""
+        },
+        "error": null,
+        "calls": 0,
+        "provenance": {
+          "source": "scripted",
+          "model": "none: a rule-based script with no network call (builder-35)",
+          "at": "2026-10-24T08:27:23Z"
+        }
+      }
+    ]
+  },
+  "attribution": null,
+  "error": null,
+  "index": 0,
+  "trajectory": "trajectories/renal-dose-review/0.jsonl"
+}

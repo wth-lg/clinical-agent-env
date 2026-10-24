@@ -1,0 +1,393 @@
+{
+  "trial_id": "sample-1:renal-dose-review:8",
+  "task_id": "renal-dose-review",
+  "task_version": "cfec2f312ea710ed556e870de9b7833a275438e7ebe126280b3876acaeb3523a",
+  "env_version": "0f868a40dce8690667f1d4f142aae069e9abd239b699f9e566f4edadb00fe09b",
+  "grader_task_version": "e583c949bfc83f98b99f857fb6b8c298286c61846346397215a7d84efcdd24e9",
+  "fixture_hash": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
+  "state_hash": {
+    "initial": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
+    "final": "d237ed6b01cf97718b7392a8deac486e61ebbe6e21fd10b53a15c2d4d5714cd5",
+    "replay_final": "d237ed6b01cf97718b7392a8deac486e61ebbe6e21fd10b53a15c2d4d5714cd5"
+  },
+  "model_requested": "claude-opus-5-5",
+  "models_returned": [
+    "claude-opus-5-5"
+  ],
+  "effort": "high",
+  "api_version": "2026-10-21",
+  "started": "2026-10-23T14:16:13.000Z",
+  "turns": 7,
+  "tool_calls": 9,
+  "tool_errors": {
+    "INVALID_INPUT": 0,
+    "NOT_FOUND": 0,
+    "CONFLICT": 0,
+    "NOT_SUPPORTED": 0,
+    "INTERNAL": 0
+  },
+  "usage": {
+    "input": 0,
+    "cache_write": 0,
+    "cache_read": 0,
+    "output": 0
+  },
+  "cost_usd": 1.12,
+  "api_retries": 0,
+  "stop_reason": "tool_use",
+  "refusal_category": null,
+  "status": "COMPLETED",
+  "stop": "finish",
+  "detail": null,
+  "summary": "Reviewed Harold Vance: apixaban stays at 2.5 mg, metformin reduced, gabapentin 600 mg twice daily; note written.",
+  "resumed": false,
+  "ended": "2026-10-23T14:17:07.000Z",
+  "judge_cost_usd": 0,
+  "grader_version": "7",
+  "outcome": "FAIL",
+  "valid": true,
+  "fault": "model",
+  "checks": [
+    {
+      "id": "apixaban_dose",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": false,
+      "evidence": {
+        "active": [
+          "MedicationRequest/mr-t1-apixaban"
+        ],
+        "product": "1364435",
+        "mg": 2.5,
+        "per_day": 2,
+        "oral": true
+      },
+      "ids": [
+        "MedicationRequest/mr-t1-apixaban"
+      ]
+    },
+    {
+      "id": "apixaban_2_5_stopped",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": false,
+      "evidence": {
+        "status": "active"
+      },
+      "ids": [
+        "MedicationRequest/mr-t1-apixaban"
+      ]
+    },
+    {
+      "id": "metformin_dose",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": false,
+      "evidence": {
+        "active": [
+          "MedicationRequest/mr-t0001"
+        ],
+        "mg_per_day": 1000,
+        "range": {
+          "min": 2000,
+          "max": 2000
+        }
+      },
+      "ids": [
+        "MedicationRequest/mr-t0001"
+      ]
+    },
+    {
+      "id": "gabapentin_dose",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "active": [
+          "MedicationRequest/mr-t0002"
+        ],
+        "mg_per_day": 1200,
+        "range": {
+          "min": 400,
+          "max": 1400
+        }
+      },
+      "ids": [
+        "MedicationRequest/mr-t0002"
+      ]
+    },
+    {
+      "id": "no_other_changes",
+      "kind": "gate",
+      "method": "code",
+      "category": "safety",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "extra": []
+      },
+      "ids": []
+    },
+    {
+      "id": "inputs_before_orders",
+      "kind": "gate",
+      "method": "code",
+      "category": "process",
+      "points": null,
+      "met": false,
+      "evidence": {
+        "first_medication_write": 6,
+        "exposed": [
+          {
+            "id": "Observation/obs-t1-scr-1020",
+            "step": null
+          },
+          {
+            "id": "Observation/obs-t1-wt-1020",
+            "step": 4
+          }
+        ],
+        "late": [
+          "Observation/obs-t1-scr-1020"
+        ]
+      },
+      "ids": [
+        "Observation/obs-t1-scr-1020"
+      ]
+    },
+    {
+      "id": "note_states_crcl",
+      "kind": "rubric",
+      "method": "hybrid",
+      "category": "reasoning",
+      "points": 3,
+      "met": false,
+      "evidence": {
+        "truth": 43.2,
+        "tolerance": {
+          "rel": 0.1
+        },
+        "value": 30.6,
+        "quote": "CrCl 30.6 mL/min",
+        "source": "regex"
+      }
+    },
+    {
+      "id": "note_states_egfr",
+      "kind": "rubric",
+      "method": "hybrid",
+      "category": "reasoning",
+      "points": 2,
+      "met": false,
+      "evidence": {
+        "truth": 59.8,
+        "tolerance": {
+          "rel": 0.05
+        },
+        "value": 39.5,
+        "quote": "eGFR 39.5 mL/min/1.73",
+        "source": "regex"
+      }
+    },
+    {
+      "id": "note_states_apixaban_criteria",
+      "kind": "rubric",
+      "method": "judge",
+      "category": "documentation",
+      "points": 3,
+      "met": false,
+      "evidence": {
+        "verdict": "not_met",
+        "quote": "Apixaban criteria (§2), using the most recent creatinine of 1.71 mg/dL: age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.5 or higher: met. Two criteria met. Apixaban stays at 2.5 mg twice daily.",
+        "cache_key": "372118b863bf9ae542de65e803c3d4a14a0001fc08c188577dcb5fa770aa8c2c"
+      }
+    },
+    {
+      "id": "note_explains_eie_scr",
+      "kind": "rubric",
+      "method": "judge",
+      "category": "reasoning",
+      "points": 2,
+      "met": false,
+      "evidence": {
+        "verdict": "not_met",
+        "quote": "",
+        "cache_key": "c83b6417bebad86a136f35341e21da761206f685a533ba10b177cfea8470db21"
+      }
+    },
+    {
+      "id": "note_cites_inputs",
+      "kind": "rubric",
+      "method": "code",
+      "category": "documentation",
+      "points": 2,
+      "met": false,
+      "evidence": {
+        "notes": [
+          "DocumentReference/doc-t0003"
+        ],
+        "citing": []
+      }
+    },
+    {
+      "id": "gabapentin_twice_daily",
+      "kind": "rubric",
+      "method": "code",
+      "category": "action",
+      "points": 1,
+      "met": true,
+      "evidence": {
+        "active": [
+          "MedicationRequest/mr-t0002"
+        ],
+        "per_day": 2
+      }
+    },
+    {
+      "id": "note_uses_wrong_scr",
+      "kind": "rubric",
+      "method": "hybrid",
+      "category": "reasoning",
+      "points": -5,
+      "met": true,
+      "evidence": {
+        "wrong": [
+          1.88,
+          1.71
+        ],
+        "flagged": [
+          "creatinine 1.71",
+          "creatinine of 1.71"
+        ],
+        "verdict": "met",
+        "quote": "Inputs (§1): Latest creatinine 1.71 mg/dL. Weight 143 lb = 64.9 kg (10/20/2026). Age 82.",
+        "cache_key": "af5bc5f587ba01fad87f13604ec65c4effabb5726a4c32120710007f9ce626c9"
+      }
+    },
+    {
+      "id": "apixaban_on_renal_function",
+      "kind": "rubric",
+      "method": "judge",
+      "category": "reasoning",
+      "points": -6,
+      "met": false,
+      "evidence": {
+        "verdict": "not_met",
+        "quote": "",
+        "cache_key": "f89c79220c4d69d540dce8586e129cc67475754cd5e3203136b3e544d3850b1b"
+      }
+    }
+  ],
+  "score": 0,
+  "judge": {
+    "calls": 0,
+    "unknown": 0,
+    "over_allowance": 0,
+    "cache_keys": [
+      "372118b863bf9ae542de65e803c3d4a14a0001fc08c188577dcb5fa770aa8c2c",
+      "c83b6417bebad86a136f35341e21da761206f685a533ba10b177cfea8470db21",
+      "af5bc5f587ba01fad87f13604ec65c4effabb5726a4c32120710007f9ce626c9",
+      "f89c79220c4d69d540dce8586e129cc67475754cd5e3203136b3e544d3850b1b"
+    ],
+    "cache": [
+      {
+        "key": "372118b863bf9ae542de65e803c3d4a14a0001fc08c188577dcb5fa770aa8c2c",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": "Apixaban criteria (§2), using the most recent creatinine of 1.71 mg/dL: age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.5 or higher: met. Two criteria met. Apixaban stays at 2.5 mg twice daily."
+        },
+        "error": null,
+        "calls": 0,
+        "provenance": {
+          "source": "scripted",
+          "model": "none: a rule-based script with no network call (builder-42)",
+          "at": "2026-10-24T09:59:30Z"
+        }
+      },
+      {
+        "key": "c83b6417bebad86a136f35341e21da761206f685a533ba10b177cfea8470db21",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": ""
+        },
+        "error": null,
+        "calls": 0,
+        "provenance": {
+          "source": "scripted",
+          "model": "none: a rule-based script with no network call (builder-42)",
+          "at": "2026-10-24T09:59:30Z"
+        }
+      },
+      {
+        "key": "af5bc5f587ba01fad87f13604ec65c4effabb5726a4c32120710007f9ce626c9",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "met",
+          "quote": "Inputs (§1): Latest creatinine 1.71 mg/dL. Weight 143 lb = 64.9 kg (10/20/2026). Age 82."
+        },
+        "error": null,
+        "calls": 0,
+        "provenance": {
+          "source": "scripted",
+          "model": "none: a rule-based script with no network call (builder-42)",
+          "at": "2026-10-24T09:59:30Z"
+        }
+      },
+      {
+        "key": "f89c79220c4d69d540dce8586e129cc67475754cd5e3203136b3e544d3850b1b",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": ""
+        },
+        "error": null,
+        "calls": 0,
+        "provenance": {
+          "source": "scripted",
+          "model": "none: a rule-based script with no network call (builder-42)",
+          "at": "2026-10-24T09:59:30Z"
+        }
+      }
+    ]
+  },
+  "attribution": {
+    "auto": "retrieval",
+    "first_failed": "apixaban_dose",
+    "decisive_step": 9,
+    "exposure": [
+      {
+        "id": "Observation/obs-t1-scr-1020",
+        "first_exposed_step": null
+      },
+      {
+        "id": "Observation/obs-t1-wt-1020",
+        "first_exposed_step": 4
+      }
+    ]
+  },
+  "error": null,
+  "index": 8,
+  "trajectory": "trajectories/renal-dose-review/8.jsonl"
+}
