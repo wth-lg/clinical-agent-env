@@ -36,6 +36,7 @@ type Obs = R & {
 };
 type Doc = R & { subject?: Ref; date?: string; content?: Array<{ attachment?: { data?: string } }> };
 type Enc = R & { status?: string; subject?: Ref; period?: { start?: string } };
+type Patient = R & { generalPractitioner?: Ref[] };
 type MR = R & MedicationRequest & { subject?: Ref; authoredOn?: string };
 
 const key = (r: R) => `${r.resourceType}/${r.id}`;
@@ -108,13 +109,15 @@ export function derive(world: WorldView): Json {
       const conflict = notes(patient).find((d) => Date.parse(d.date!) > Date.parse(request.authoredOn!) && stops.test(decode(d.content?.[0]?.attachment?.data)));
       const common = { ...base, request: key(request), drug };
       if (conflict) {
-        out[n] = { ...base, action: 'task_pcp', request: key(request), drug, conflict_note: key(conflict), pcp: OWNER };
+        // "the patient's PCP": the one the chart names.
+        const pcp = (world.get('Patient', patient.split('/')[1]!) as Patient | undefined)?.generalPractitioner?.[0]?.reference ?? null;
+        out[n] = { ...base, action: 'task_pcp', request: key(request), drug, conflict_note: key(conflict), pcp };
       } else if (ACE_INHIBITORS.includes(drug)) {
         // §1.
         const bmp = results(patient, BMP)[0];
         const potassium = bmp?.component?.find((c) => coded(c, [POTASSIUM]))?.valueQuantity?.value;
-        const visits = all<Enc>('Encounter').filter((e) => e.subject?.reference === patient && e.status === 'finished' && e.period?.start).map((e) => day(e.period!.start!)).sort();
-        const lastVisit = visits.at(-1)!;
+        const visits = all<Enc>('Encounter').filter((e) => e.subject?.reference === patient && e.status === 'finished' && e.period?.start).sort((a, b) => Date.parse(a.period!.start!) - Date.parse(b.period!.start!));
+        const lastVisit = day(visits.at(-1)!.period!.start!);
         const bmpCurrent = bmp !== undefined && day(bmp.effectiveDateTime!) >= back(12) && potassium !== undefined && potassium < 5.5;
         const visitCurrent = lastVisit >= back(15);
         const terms = bmpCurrent ? { action: 'renew', supply_days: 90, refills: 1, order_bmp: false } : visitCurrent ? { action: 'bridge', supply_days: 30, refills: 0, order_bmp: true } : { action: 'none', supply_days: 0, refills: 0, order_bmp: true };
@@ -127,6 +130,7 @@ export function derive(world: WorldView): Json {
           bmp: bmp ? key(bmp) : null,
           bmp_date: bmp ? day(bmp.effectiveDateTime!) : null,
           last_visit: lastVisit,
+          visit: key(visits.at(-1)!),
           supply_days: terms.supply_days,
           refills: terms.refills,
           order_bmp: terms.order_bmp,

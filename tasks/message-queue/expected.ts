@@ -25,6 +25,7 @@ export const expected = {
     bmp: 'Observation/obs-t6-hayes-bmp-0908',
     bmp_date: '2025-09-08',
     last_visit: '2026-03-17',
+    visit: 'Encounter/enc-t6-hayes-0317',
     supply_days: 30,
     refills: 0,
     order_bmp: true,

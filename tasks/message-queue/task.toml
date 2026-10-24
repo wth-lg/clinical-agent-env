@@ -28,7 +28,7 @@ id = "RBC-CP-11"
 title = "Antibiotic protocol: acute bacterial sinusitis in adults"
 version = "1"
 effective = "2025-01-01"
-source = "Adapted from Chow AW et al., IDSA clinical practice guideline for acute bacterial rhinosinusitis in children and adults, Clin Infect Dis 2012;54(8):e72-e112 (the current IDSA guideline; no newer edition): recommendation 4, 'Amoxicillin-clavulanate rather than amoxicillin alone is recommended as empiric antimicrobial therapy for ABRS in adults'; recommendation 11, doxycycline as an alternative for adults allergic to penicillin; recommendation 14, 'The recommended duration of therapy for uncomplicated ABRS in adults is 5-7 days' (verified, read 2026-10-24). Doses environment-local."
+source = "Adapted from Chow AW et al., IDSA clinical practice guideline for acute bacterial rhinosinusitis in children and adults, Clin Infect Dis 2012;54(8):e72-e112 (the current IDSA guideline; no newer edition): recommendation 4, 'Amoxicillin-clavulanate rather than amoxicillin alone is recommended as empiric antimicrobial therapy for ABRS in adults'; recommendation 11, doxycycline as an alternative for adults allergic to penicillin; recommendation 14, 'The recommended duration of therapy for uncomplicated ABRS in adults is 5-7 days'; doses from Table 10 (adult initial empirical therapy), 'Amoxicillin-clavulanate (500 mg/125 mg PO tid, or 875 mg/125 mg PO bid)' and 'Doxycycline (100 mg PO bid or 200 mg PO qd)' (verified, read 2026-10-24). Concordant with the newer specialty guideline, Payne SC et al., Clinical Practice Guideline: Adult Sinusitis Update, Otolaryngol Head Neck Surg 2025, doi 10.1002/ohn.1344 (KAS 5: amoxicillin with or without clavulanate first line for 5-7 days; KAS 4 also offers watchful waiting for uncomplicated ABRS, which this protocol does not adopt), per its 2025-08-04 Guideline Central summary, read 2026-10-24."
 file = "rbc-cp-11.md"
 
 [[policy]]
@@ -40,6 +40,7 @@ source = "Environment-local (design section 4, T6)."
 file = "rbc-med-04.md"
 
 # The orderables the six items can need, and the ones a wrong path reaches for.
+# rosuvastatin is a wrong path for M2 (m2_no_refill fails on any new statin order).
 [[catalog]]
 kind = "medication"
 code = "314077"
@@ -123,7 +124,7 @@ display = "CBC panel - Blood by Automated count"
 
 # Each trap needs a mutant in tests/mutants.ts. T6 has inbox items, so a status-only agent must fail.
 [matrix]
-traps = ["stale_monitoring", "bmp_order", "conflict_in_note", "red_flag", "hidden_reaction", "places_alternative", "allergy_coding", "renewal_terms", "scheduling_route", "closure", "evidence_before_writes"]
+traps = ["stale_monitoring", "bmp_order", "visit_check", "conflict_in_note", "pcp_task", "regimen_change", "red_flag", "urgent_message", "hidden_reaction", "tell_requester", "places_alternative", "allergy_coding", "renewal_terms", "scheduling_route", "closure", "evidence_before_writes", "scope"]
 status_only = true
 
 # The judge items read one message and quote it; medium as in T1, checked by the live judge pass.

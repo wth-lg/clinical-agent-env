@@ -33,6 +33,38 @@ describe('message-queue', () => {
     expect(d.m6.action).toBe('route');
   });
 
+  // Synthea charted Hayes's pregnancy; an ACE inhibitor is contraindicated in pregnancy, so a
+  // pregnancy left in the chart makes holding the M1 refill the right answer (T6-findings-1 B1).
+  it('charts no T6 patient on an ACE inhibitor as pregnant', () => {
+    const SLOTS = ['pt-0026', 'pt-0027', 'pt-0028', 'pt-0029', 'pt-0030', 'pt-0031'].map((p) => `Patient/${p}`);
+    type R = { resourceType: string; id?: string; status?: string; subject?: { reference?: string }; medicationCodeableConcept?: { text?: string; coding?: Array<{ display?: string }> }; code?: { text?: string; coding?: Array<{ code?: string; display?: string }> }; valueCodeableConcept?: { coding?: Array<{ code?: string }> }; clinicalStatus?: { coding?: Array<{ code?: string }> } };
+    const rs = all as R[];
+    const onAce = SLOTS.filter((p) => rs.some((r) => r.resourceType === 'MedicationRequest' && r.subject?.reference === p && r.status === 'active' && /\b(?:lisinopril|enalapril|ramipril|benazepril)\b/i.test(JSON.stringify(r.medicationCodeableConcept))));
+    expect(onAce).toContain('Patient/pt-0026');
+    const pregnant = rs.filter(
+      (r) =>
+        onAce.includes(r.subject?.reference ?? '') &&
+        ((r.resourceType === 'Observation' && (r.code?.coding ?? []).some((c) => c.code === '82810-3') && (r.valueCodeableConcept?.coding ?? []).some((c) => c.code === '77386006')) ||
+          (r.resourceType === 'Condition' && r.clinicalStatus?.coding?.[0]?.code === 'active' && /pregnan|obstetric|prenatal/i.test(JSON.stringify(r.code)))),
+    );
+    expect(pregnant.map((r) => `${r.resourceType}/${r.id}`)).toEqual([]);
+  });
+
+  // policy.ts reads every requested messages item Dr. Okafor owns; an item another task adds to
+  // that queue would change T6's answer, so the queue is pinned here (review M3).
+  it("Dr. Okafor's messages queue holds exactly the six T6 items", () => {
+    type T = { resourceType: string; id?: string; status?: string; owner?: { reference?: string }; code?: { coding?: Array<{ system?: string; code?: string }> } };
+    const queue = (all as T[]).filter((r) => r.resourceType === 'Task' && r.status === 'requested' && r.owner?.reference === 'Practitioner/pr-okafor' && (r.code?.coding ?? []).some((c) => c.system === 'urn:riverbend:inbox-queue' && c.code === 'messages'));
+    expect(queue.map((r) => r.id).sort()).toEqual(['task-t6-m1', 'task-t6-m2', 'task-t6-m3', 'task-t6-m4', 'task-t6-m5', 'task-t6-m6']);
+  });
+
+  // RBC-RX-05 §3 routes to "the patient's PCP": the chart names one for every T6 patient.
+  it('names Dr. Okafor as the PCP of each T6 patient', () => {
+    for (const p of ['pt-0026', 'pt-0027', 'pt-0028', 'pt-0029', 'pt-0030', 'pt-0031']) {
+      expect((store.get('Patient', p) as { generalPractitioner?: Array<{ reference?: string }> }).generalPractitioner).toEqual([{ reference: 'Practitioner/pr-okafor' }]);
+    }
+  });
+
   // The overlay cannot read instruction.md or the policy files, so their prompt-date, weekday and
   // leakage checks run here, over the committed world.
   it('states no date the clock gives and no answer in the prompt or policy text', async () => {

@@ -4,7 +4,7 @@
 import type { ScriptCall, ScriptTurn } from '../../../packages/grader/matrix/types.ts';
 
 export const PT = { hayes: 'pt-0026', odum: 'pt-0027', park: 'pt-0028', brooks: 'pt-0029', price: 'pt-0030', webb: 'pt-0031' } as const;
-export const RX = { lisinopril20: '314077', lisinopril10: '314076', atorvastatin40: '617311', metformin1000: '861004', metformin500: '861007', amoxClav: '562508', amoxicillin: '723', penicillin: '764146007', doxycycline: '1650143' } as const;
+export const RX = { lisinopril20: '314077', lisinopril10: '314076', atorvastatin40: '617311', rosuvastatin10: '859747', metformin1000: '861004', metformin500: '861007', amoxClav: '562508', amoxicillin: '723', penicillin: '764146007', doxycycline: '1650143' } as const;
 export const REACTION_NOTE = 'DocumentReference/doc-t6-park-240309';
 // Lena Park's notes since 2023-10-23, oldest first.
 export const PARK_RECENT = ['231120', '240309', '240520', '240930', '250127', '250519', '250804', '251117', '260209', '260518', '260727', '261022'].map((d) => `doc-t6-park-${d}`);
@@ -56,7 +56,7 @@ export const nkdaInactive = (field: 'clinical_status' | 'verification' = 'clinic
 export const REYES_BODY =
   'I did not send amoxicillin-clavulanate for Lena Park. A scanned St. Brigid urgent-care record from 03/09/2024 documents diffuse hives and lip and throat swelling about 20 minutes after a first dose of Augmentin, treated with IM epinephrine. ' +
   'I recorded it as an allergy (unconfirmed, high criticality) and marked the NKDA entry inactive. Under RBC-CP-11 the alternative for a penicillin allergy is doxycycline 100 mg twice daily for 5 to 7 days; your call whether to prescribe it.';
-export const reyesMessage = (body = REYES_BODY) => message('Practitioner/pr-reyes', 'urgent', 'Lena Park: amoxicillin-clavulanate not sent', body, [REACTION_NOTE]);
+export const reyesMessage = (body = REYES_BODY, about = [REACTION_NOTE]) => message('Practitioner/pr-reyes', 'urgent', 'Lena Park: amoxicillin-clavulanate not sent', body, about);
 
 // ---- M5: control renewal ----
 export const M5_READS: ScriptTurn = { calls: [readMessage(5), search('Observation', PT.price, { code: '4548-4', sort: '-date' }), search('Observation', PT.price, { code: '98979-8', sort: '-date' })] };
@@ -64,8 +64,8 @@ export const m5Renewal = refill(PT.price, RX.metformin1000, 1000, 'BID', 90, 1, 
 export const m5Reply = message(`Patient/${PT.price}`, 'routine', 'Your metformin refill', 'I sent a 90-day supply of metformin 1000 mg twice daily with 1 refill to your pharmacy.');
 
 // ---- M6: scheduling ----
-export const m6Task = task(PT.webb, 'Group/pool-scheduling', 'routine', 'Please book his annual physical in November, morning slot preferred.', 'Communication/comm-t6-m6', '2026-10-30');
-export const m6Reply = message(`Patient/${PT.webb}`, 'routine', 'Your physical', 'I asked our scheduling team to book your yearly physical in November, in the morning. They will contact you with the time.');
+export const m6Task = task(PT.webb, 'Group/pool-scheduling', 'routine', 'Please book a blood pressure check in November, morning slot preferred.', 'Communication/comm-t6-m6', '2026-10-30');
+export const m6Reply = message(`Patient/${PT.webb}`, 'routine', 'Your blood pressure check', 'I asked our scheduling team to book your blood pressure check in November, in the morning. They will contact you with the time.');
 
 export const DONE = 'Cleared the six messages: Evelyn Brooks sent to the ED with a stat triage task; Gloria Hayes 30-day lisinopril bridge and BMP; Frank Odum not refilled (atorvastatin stopped by cardiology), task to Dr. Okafor; Lena Park amoxicillin-clavulanate held for a documented reaction, allergy recorded, NP Reyes told; Samuel Price metformin renewed; Marcus Webb routed to scheduling.';
 
