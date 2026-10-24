@@ -142,6 +142,20 @@ describe('judge-calibrate', () => {
     expect(c.disagreements.find((d) => d.key === nulled!.key)!.scripted).toBeNull();
   });
 
+  it('on a 401 it exits 1, writes nothing, closes the batch and keeps the key out of its output', { timeout: SLOW }, async () => {
+    const fetch = vi.fn<Transport>(async () => new Response(JSON.stringify({ type: 'error', error: { type: 'authentication_error', message: 'invalid x-api-key' } }), { status: 401, headers: { 'content-type': 'application/json' } }));
+    const h = harness({ fetch });
+    expect(await main(['--task', '_toy'], h.deps)).toBe(1);
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(h.written).toHaveLength(0);
+    expect(h.text()).toMatch(/^judge-calibrate: .*HTTP 401/m);
+    expect(h.text()).not.toContain(fakeKey('C'));
+    const rows = h.rows();
+    const open = rows.filter((r) => r.kind === 'open');
+    expect(open).toHaveLength(1);
+    expect(rows.filter((r) => r.kind === 'close' && r.batch_id === open[0]!.batch_id)).toHaveLength(1);
+  });
+
   it('with ledger + projection one cent over PROJECTED_CAP_USD it makes 0 calls and writes nothing', { timeout: SLOW }, async () => {
     const dry = harness();
     expect(await main(['--task', '_toy', '--dry-run'], dry.deps)).toBe(0);
