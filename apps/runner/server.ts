@@ -305,9 +305,10 @@ export interface RunnerOptions {
 
 // What every trial starts from, for one set of fixture files: the world, its manifest's state
 // hash, the definitions bundle (as cli/run.ts repoWorld reads them) and each task's checks
-// (tasks/<id>/tests/grader.ts, as cli/run.ts taskChecks reads them). `key` hashes the three files'
-// hashes, so a change to any of them, a fixture build caught midway included, loads them afresh;
-// each checks module is imported under it.
+// (<tasks dir>/<id>/tests/grader.ts, as cli/run.ts taskChecks reads them). `key` hashes the three
+// files' hashes, so a change to any of them, a fixture build caught midway included, loads them
+// afresh; each checks module is imported under it and the task's graderFilesHash, so a grader edit
+// grades the next batch with the new checks (modules grader.ts imports stay as first loaded).
 interface FixtureFiles {
   manifest: Buffer;
   world: Buffer;
@@ -322,25 +323,26 @@ interface Fixtures {
   world: { read: () => Promise<Uint8Array> };
   worldHash: string;
   definitions: NonNullable<RunOptions['definitions']>;
-  checks: (task: string) => Promise<readonly Check[]>;
+  checks: (task: string, graderFilesHash: string) => Promise<readonly Check[]>;
 }
 
-function loadFixtures(files: FixtureFiles): Fixtures {
+function loadFixtures(files: FixtureFiles, tasksDir: string): Fixtures {
   const key = fixturesKey(files);
   const bytes = new Uint8Array(files.world);
   const modules = new Map<string, Promise<readonly Check[]>>();
-  const checks = (task: string) => {
-    if (!modules.has(task)) {
-      modules.set(task, (async () => {
-        const file = join(REPO, 'tasks', task, 'tests', 'grader.ts');
+  const checks = (task: string, graderFilesHash: string) => {
+    const at = `${task}\n${graderFilesHash}`;
+    if (!modules.has(at)) {
+      modules.set(at, (async () => {
+        const file = join(tasksDir, task, 'tests', 'grader.ts');
         if (!existsSync(file)) return [];
-        const { checks: list } = (await import(`${pathToFileURL(file).href}?fixtures=${key}`)) as { checks?: unknown };
+        const { checks: list } = (await import(`${pathToFileURL(file).href}?fixtures=${key}&grader=${graderFilesHash}`)) as { checks?: unknown };
         if (!Array.isArray(list)) throw new Error(`${file} does not export checks: Check[]`);
         return list as Check[];
       })());
-      modules.get(task)!.catch(() => modules.delete(task));
+      modules.get(at)!.catch(() => modules.delete(at));
     }
-    return modules.get(task)!;
+    return modules.get(at)!;
   };
   return {
     key,
@@ -470,7 +472,8 @@ export async function startRunner(opts: RunnerOptions): Promise<Runner> {
   const transport = (label: string) => upstreamTypeOnly(base(label));
   // A TaskSource reads the task directories once, so each request builds its own: a task
   // edited between two batches is graded as edited, at its new env_version.
-  const taskSourceNow = () => nodeTaskSource({ ...(opts.tasksDir === undefined ? {} : { root: opts.tasksDir }), testMode: false });
+  const tasksDir = opts.tasksDir ?? join(REPO, 'tasks');
+  const taskSourceNow = () => nodeTaskSource({ root: tasksDir, testMode: false });
   const git = gitState(REPO);
   // The fixtures on disk now: kept while the three files' hashes hold, reloaded when a fixture
   // rebuild changes any of them, so the next trial needs no restart (run.md 2026-10-25 07:40).
@@ -482,7 +485,7 @@ export async function startRunner(opts: RunnerOptions): Promise<Runner> {
       world: readFileSync(join(fixturesDir, 'world.ndjson.gz')),
       definitions: readFileSync(join(fixturesDir, 'definitions-pruned.json')),
     };
-    if (fixtures === undefined || fixtures.key !== fixturesKey(files)) fixtures = loadFixtures(files);
+    if (fixtures === undefined || fixtures.key !== fixturesKey(files)) fixtures = loadFixtures(files, tasksDir);
     return fixtures;
   };
 
@@ -692,7 +695,7 @@ export async function startRunner(opts: RunnerOptions): Promise<Runner> {
     const batch = runBatch(
       { ...spec, ceiling: ceilingAt(body.session_cap_usd), signal: controller.signal, log: (l) => say(`run ${runId}: ${l}`) },
       {
-        ledger: gated, rows: () => store.read(), sink: trackingSink(sink, byKey), tasks, checks: w.checks, world: w.world, worldHash: w.worldHash, definitions: w.definitions, now: nodeNow,
+        ledger: gated, rows: () => store.read(), sink: trackingSink(sink, byKey), tasks, checks: async (id) => w.checks(id, (await tasks.get(id)).graderFilesHash), world: w.world, worldHash: w.worldHash, definitions: w.definitions, now: nodeNow,
         client: (grant, label) => new MessagesClient({ grant, ledger, apiKey: key, fetch: transport(label), trial: label, log: (l) => say(`${label}: ${l}`), ...(opts.sleep ? { sleep: opts.sleep } : {}) }),
         // Each trial also carries its own signal, which DELETE api/trials/:id aborts.
         run: (taskId, model, o: RunOptions) => {
@@ -763,7 +766,7 @@ export async function startRunner(opts: RunnerOptions): Promise<Runner> {
         t.state = 'running';
         const { record } = await run(t.taskId, MODEL, {
           tasks, client: forcedFailClient(), judge: null, world: w.world, worldHash: w.worldHash, definitions: w.definitions, now: nodeNow, effort: body.effort,
-          trialId: `smoke:${runId}:${t.taskId}/${t.index}`, checks: await w.checks(t.taskId), signal: AbortSignal.any([controller.signal, t.controller.signal]),
+          trialId: `smoke:${runId}:${t.taskId}/${t.index}`, checks: await w.checks(t.taskId, (await tasks.get(t.taskId)).graderFilesHash), signal: AbortSignal.any([controller.signal, t.controller.signal]),
           onEvent: (e) => {
             sink.event(k, 'smoke', e);
             pushEvent(t, e);
