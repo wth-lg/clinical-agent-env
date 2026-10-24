@@ -23,11 +23,15 @@
 // A task's versions (taskVersions) split what the agent works in from what grades it:
 //   env_version          sha256(the env files + the world's state hash + TOOLS_VERSION): every
 //                        file that shapes what the agent sees or the state it starts from
-//                        (ENV_FILES: task.toml, instruction.md, policy/**, overlay.ts), the world,
-//                        and the tool code (packages/env/tools/registry.ts TOOLS_VERSION);
-//   grader_task_version  sha256(every other file of the task + GRADER_VERSION): tests/**, expected.ts,
-//                        policy.ts, solution/**, *.test.ts, which the agent never sees, and the
-//                        grader code (packages/grader/grade.ts GRADER_VERSION);
+//                        (isEnvFile: task.toml without its GRADER_TABLES, instruction.md,
+//                        policy/**, overlay.ts), the world, and the tool code
+//                        (packages/env/tools/registry.ts TOOLS_VERSION);
+//   grader_task_version  sha256(every other file of the task + GRADER_VERSION): task.toml's
+//                        GRADER_TABLES ([judge], [matrix]), tests/**, expected.ts, policy.ts,
+//                        solution/**, *.test.ts, which the agent never sees, and the grader code
+//                        (packages/grader/grade.ts GRADER_VERSION);
+// task.toml counts by its parsed tables (keys sorted), so a comment or layout change moves
+// neither version; filesHash still covers every byte.
 //   task_version         sha256 of the two: any change to the task is a new task_version.
 // replay compares env_version only (the trajectory must reach the record's state); regrade
 // records the grader_task_version it graded at; a batch resumes by env_version, so a grader fix
@@ -69,8 +73,19 @@ export interface Task {
   graderFilesHash: string;
 }
 
+// The task.toml tables only grading reads: the judge's effort and the matrix's declarations
+// (traps, status_only). A change to them is a grader change, so replay still holds.
+export const GRADER_TABLES = ['judge', 'matrix'] as const;
+
+// JSON with object keys sorted, so the hash of a parsed table does not depend on key order.
+function stableJson(v: unknown): string {
+  if (Array.isArray(v)) return `[${v.map(stableJson).join(',')}]`;
+  if (isRecord(v) && !(v instanceof Date)) return `{${Object.keys(v).sort(byPath).map((k) => `${JSON.stringify(k)}:${stableJson(v[k])}`).join(',')}}`;
+  return JSON.stringify(v);
+}
+
 // The files that shape what the agent sees or the state it starts from; every other file of a
-// task is grader-side.
+// task is grader-side. task.toml is both: its GRADER_TABLES are grader-side.
 export const isEnvFile = (path: string): boolean => path === 'task.toml' || path === 'instruction.md' || path === 'overlay.ts' || path.startsWith('policy/');
 
 export interface TaskVersions {
@@ -158,10 +173,13 @@ export async function parseTask({ id, files }: TaskFiles): Promise<Task> {
   if (!(JUDGE_EFFORTS as readonly unknown[]).includes(effort)) throw new Error(`${where}/task.toml [judge]: effort must be one of ${JUDGE_EFFORTS.join(', ')}`);
 
   const paths = Object.keys(files).sort(byPath);
-  const hashOf = (ps: string[]) => sha256Hex(JSON.stringify(ps.map((p) => [p, files[p]])));
-  const filesHash = await hashOf(paths);
-  const envFilesHash = await hashOf(paths.filter(isEnvFile));
-  const graderFilesHash = await hashOf(paths.filter((p) => !isEnvFile(p)));
+  const hashOf = (entries: Array<[string, string | undefined]>) => sha256Hex(JSON.stringify(entries));
+  const grading = Object.fromEntries(GRADER_TABLES.filter((k) => k in doc).map((k) => [k, doc[k]]));
+  const worldFacing = Object.fromEntries(Object.entries(doc).filter(([k]) => !(GRADER_TABLES as readonly string[]).includes(k)));
+  const side = (p: string, part: Record<string, unknown>): [string, string | undefined] => [p, p === 'task.toml' ? stableJson(part) : files[p]];
+  const filesHash = await hashOf(paths.map((p) => [p, files[p]]));
+  const envFilesHash = await hashOf(paths.filter(isEnvFile).map((p) => side(p, worldFacing)));
+  const graderFilesHash = await hashOf([...paths.filter((p) => !isEnvFile(p)).map((p) => side(p, {})), side('task.toml', grading)].sort((a, b) => byPath(a[0], b[0])));
   return {
     id,
     title: field(t, task, 'title', 'string', true) as string,

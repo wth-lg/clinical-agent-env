@@ -63,7 +63,8 @@ describe('TaskSource over tasks/*/task.toml', () => {
   it('env_version covers what the agent sees and the world; grader_task_version covers every other file', async () => {
     const files = { 'task.toml': toml('a'), 'instruction.md': 'Do a.\n', 'policy/p.md': 'P\n', 'overlay.ts': 'o', 'tests/grader.ts': 'g', 'expected.ts': 'e', 'policy.ts': 'd', 'solution/solve.ts': 's', 'x.test.ts': 't' };
     const base = await taskVersions(await parseTask({ id: 'a', files }), 'h1');
-    const changed = async (path: keyof typeof files, world = 'h1') => taskVersions(await parseTask({ id: 'a', files: { ...files, [path]: `${files[path]}\n` } }), world);
+    // task.toml changes by a table the agent works in (comments and layout change no version).
+    const changed = async (path: keyof typeof files, world = 'h1') => taskVersions(await parseTask({ id: 'a', files: { ...files, [path]: path === 'task.toml' ? files[path].replace('max_turns = 12', 'max_turns = 13') : `${files[path]}\n` } }), world);
     for (const p of ['task.toml', 'instruction.md', 'policy/p.md', 'overlay.ts'] as const) {
       const v = await changed(p);
       expect([p, v.env_version !== base.env_version, v.grader_task_version === base.grader_task_version, v.task_version !== base.task_version]).toEqual([p, true, true, true]);
@@ -74,6 +75,34 @@ describe('TaskSource over tasks/*/task.toml', () => {
     }
     const world = await taskVersions(await parseTask({ id: 'a', files }), 'h2');
     expect([world.env_version !== base.env_version, world.grader_task_version === base.grader_task_version]).toEqual([true, true]);
+  });
+
+  // P11f (6), verifier-phase-regrade-2 N2: [judge] and [matrix] only shape grading, so they belong
+  // to grader_task_version; every other table of task.toml is what the agent works in.
+  it('task.toml\'s [judge] and [matrix] count toward grader_task_version only; its other tables toward env_version only', async () => {
+    const graded = `${toml('a')}tools = ["get_context", "finish"]\n[[catalog]]\nkind = "lab"\ncode = "2160-0"\nsystem = "http://loinc.org"\ndisplay = "Creatinine"\n[matrix]\ntraps = ["wrong_patient"]\n[judge]\neffort = "medium"\n`;
+    const files = { 'task.toml': graded, 'instruction.md': 'Do a.\n' };
+    const at = async (text: string) => taskVersions(await parseTask({ id: 'a', files: { ...files, 'task.toml': text } }), 'h1');
+    const base = await at(graded);
+    for (const [what, text] of [
+      ['[judge] effort', graded.replace('effort = "medium"', 'effort = "high"')],
+      ['[matrix] traps', graded.replace('traps = ["wrong_patient"]', 'traps = ["wrong_patient", "wrong_dose"]')],
+      ['[matrix] status_only', graded.replace('[judge]', 'status_only = true\n[judge]')],
+    ] as const) {
+      const v = await at(text);
+      expect([what, v.env_version === base.env_version, v.grader_task_version !== base.grader_task_version]).toEqual([what, true, true]);
+    }
+    for (const [what, text] of [
+      ['[task] max_turns', graded.replace('max_turns = 12', 'max_turns = 13')],
+      ['[task] tools', graded.replace('"get_context", "finish"', '"finish"')],
+      ['[[catalog]] display', graded.replace('Creatinine', 'Creatinine, serum')],
+    ] as const) {
+      const v = await at(text);
+      expect([what, v.env_version !== base.env_version, v.grader_task_version === base.grader_task_version]).toEqual([what, true, true]);
+    }
+    // Comments and layout are neither: the parsed tables decide.
+    const comment = await at(`# a comment\n${graded.replace('[judge]', '\n[judge]')}`);
+    expect([comment.env_version, comment.grader_task_version]).toEqual([base.env_version, base.grader_task_version]);
   });
 });
 
