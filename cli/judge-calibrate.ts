@@ -23,19 +23,20 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { MessagesClient, MODEL, reserveRequest, type CallResult, type Transport } from '../packages/core/anthropic.ts';
-import { money, worstCaseUsd } from '../packages/core/cost.ts';
+import { MessagesClient, MODEL, type Transport } from '../packages/core/anthropic.ts';
+import { money } from '../packages/core/cost.ts';
 import { installEgressGuard } from '../packages/core/egress.ts';
 import { redactText } from '../packages/core/redact.ts';
 import type { Json } from '../packages/grader/check.ts';
 import type { Grade } from '../packages/grader/grade.ts';
-import { Judge, JUDGE_CALLS_PER_ITEM, JUDGE_PROMPT_VERSION, type ExtractQuestion, type Extraction, type JudgeCacheEntry, type JudgeClient, type JudgeQuestion } from '../packages/grader/judge.ts';
+import { Judge, JUDGE_CALLS_PER_ITEM, JUDGE_PROMPT_VERSION, type ExtractQuestion, type Extraction, type JudgeCacheEntry, type JudgeQuestion } from '../packages/grader/judge.ts';
 import { cases, gradeRunWith, trial, type CaseRun, type MatrixEnv } from '../packages/grader/matrix/matrix.ts';
 import type { MatrixTask } from '../packages/grader/matrix/types.ts';
 import { nodeNow } from './adapters/clock-node.ts';
 import { openNodeLedger } from './adapters/ledger-node.ts';
 import { isTestMode, nodeTaskSource } from './adapters/tasks-node.ts';
 import { loadMatrixTask, matrixEnv, TASK_ID } from './matrix.ts';
+import { recordingClient } from './oracle.ts';
 
 const USAGE = 'usage: pnpm cli judge-calibrate --task <id|all> [--dry-run]';
 const RESULTS_DIR = fileURLToPath(new URL('../results/judge-calibration/', import.meta.url));
@@ -122,18 +123,6 @@ class RecordingJudge extends Judge {
     if (typeof key !== 'string' || this.questions.has(key)) return;
     this.questions.set(key, { ...question, worst: this.#worst.length > sent ? this.#worst.at(-1)! : 0 });
   }
-}
-
-// A judge client that sends nothing: it records each request's worst case and answers
-// "unknown", which is a valid judge and extractor answer, so no question is retried.
-function recordingClient(worst: number[]): JudgeClient {
-  return {
-    async send(history, params): Promise<CallResult> {
-      worst.push(worstCaseUsd(reserveRequest(history, params)));
-      const content = [{ type: 'text', text: JSON.stringify({ verdict: 'unknown', value: null, quote: '' }) }];
-      return { status: 200, message: { id: `msg_plan_${worst.length}`, model: MODEL, role: 'assistant', content, stop_reason: 'end_turn', usage: { input_tokens: 0, output_tokens: 0 } }, refusal: null, attempts: 1 };
-    },
-  };
 }
 
 interface Plan {
