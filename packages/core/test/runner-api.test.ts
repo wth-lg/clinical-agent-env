@@ -1,7 +1,7 @@
 // The local runner's health, key, trial, run and SSE contracts: every sample the UI specs route-mock with
 // passes its validator, and a body with a field missing or mistyped is rejected. Every 409 reason
 // the runner sends has the plain text docs/requirements/ui-contract.md lists for it.
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { reserveRequest } from '../anthropic.ts';
 import { FINAL_TRIALS_PER_TASK, worstCaseUsd } from '../cost.ts';
@@ -192,6 +192,20 @@ function runnerRefusals(): { key: string[]; trials: string[] } {
   return { key: [...new Set(reasons(key))].sort(), trials: [...new Set(reasons(trials))].sort() };
 }
 
+// runnerRefusals reads only server.ts, and there only the `status: 409` shape. So no other
+// apps/runner source file may hold a 409 at all, and every 409 in server.ts code (outside
+// comments) is `status: 409` (verifier-phase-P11f-3 m3).
+function stray409s(): string[] {
+  const root = new URL('../../../apps/runner/', import.meta.url);
+  const sources = readdirSync(root, { recursive: true, encoding: 'utf8' })
+    .filter((f) => /\.[cm]?[jt]sx?$/.test(f) && !/(^|\/)(test|node_modules)\//.test(f));
+  return sources.flatMap((f) => {
+    const lines = readFileSync(new URL(f, root), 'utf8').split('\n').map((l, i) => ({ l, at: `apps/runner/${f}:${i + 1}` }));
+    if (f !== 'server.ts') return lines.filter(({ l }) => /409/.test(l)).map(({ at }) => at);
+    return lines.filter(({ l }) => !/^\s*\/\//.test(l) && /409/.test(l.replaceAll('status: 409', ''))).map(({ at }) => at);
+  });
+}
+
 // docs/requirements/ui-contract.md lists each as `- Validate, `<reason>`: `<text>`` or `- Run, ...`.
 function contractRefusals(): { key: Record<string, string>; trials: Record<string, string> } {
   const out = { key: {} as Record<string, string>, trials: {} as Record<string, string> };
@@ -208,6 +222,10 @@ describe('runner refusal text', () => {
     expect(sent.key).toEqual(expect.arrayContaining(['session_cap', 'spend_refused_ceiling']));
     expect(Object.keys(REFUSAL_TEXT.trials).sort()).toEqual(sent.trials);
     expect(Object.keys(REFUSAL_TEXT.key).sort()).toEqual(sent.key);
+  });
+
+  it('sees every 409 in apps/runner: none in another source file, none in server.ts outside `status: 409`', () => {
+    expect(stray409s()).toEqual([]);
   });
 
   it('returns the ui-contract.md strings byte for byte', () => {
