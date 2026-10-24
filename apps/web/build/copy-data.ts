@@ -1,6 +1,7 @@
 // Copies the committed results the static site serves into <outDir>/data/ and writes
 // <outDir>/data/index.json listing every copied file (paths relative to data/).
-// Sources, relative to the source root (env RESULTS_ROOT, default the repo root):
+// Sources, relative to the source root (env RESULTS_ROOT, resolved against the repo root so the
+// same value works from the repo root and from `pnpm --filter web`; default the repo root):
 //   results/official.json and, from the run directory it names ({"run": "runs/<id>"},
 //   relative to results/), trials/, trajectories/, summary.json and audit.jsonl;
 //   docs/findings.md; fixtures/world.ndjson.gz and fixtures/manifest.json.
@@ -58,7 +59,10 @@ export function copyDataPlugin(): Plugin {
       outDir = resolve(config.root, config.build.outDir);
     },
     closeBundle() {
-      copyData({ root: process.env.RESULTS_ROOT ?? repoRoot, outDir });
+      const root = resolve(repoRoot, process.env.RESULTS_ROOT ?? '.');
+      // A RESULTS_ROOT that names nothing is a typo, not a tree with no results.
+      if (!existsSync(root)) throw new Error(`RESULTS_ROOT ${process.env.RESULTS_ROOT}: no such directory (resolved to ${root})`);
+      copyData({ root, outDir });
     },
   };
 }
