@@ -60,7 +60,9 @@
 // a refused POST or a dry run never changes that cap (security review P12b-4 G3). Before any
 // batch there is no cap yet, and the first batch counts what Validate spent. A batch
 // runBatch refuses before its grant (its run is locked, batchStart refuses it) gets 409 with the
-// reason and leaves no run or trial. The run id (<session>-<n>) is taken before any await, so
+// reason and leaves no run or trial. A batch or smoke run on a fixture manifest other than that
+// of a batch still running gets 409 fixtures_changed with no call: the FHIR definitions index is
+// process-wide, so batches on two manifests never run at once. The run id (<session>-<n>) is taken before any await, so
 // two requests at once never share one.
 // What a session has committed is its ledger rows' settled and reserved spend plus, for each of
 // this runner's batches not yet done, the part of its projection its rows do not hold yet: a
@@ -369,6 +371,8 @@ interface RunEntry {
   view: RunView;
   controller: AbortController;
   done: Promise<void>;
+  // The hash of the fixture manifest its trials run on.
+  manifest: string;
 }
 
 class HttpError extends Error {
@@ -478,6 +482,11 @@ export async function startRunner(opts: RunnerOptions): Promise<Runner> {
   const say = (line: string) => opts.log?.(scrub(line));
 
   const runs: RunEntry[] = [];
+  // Whether a batch not yet done runs on another fixture manifest than `manifest`. run() indexes
+  // the FHIR definitions bundle process-wide (packages/env/validate.ts indexDefinitions), so two
+  // batches on two manifests at once would validate against each other's bundle.
+  const otherManifestRunning = (manifest: string) => runs.some((r) => !r.view.done && r.manifest !== manifest);
+  const fixturesChanged = { type: 'fixtures_changed', message: 'The environment fixtures were rebuilt while another batch is still running. Wait for it to finish, or cancel it, then start the trial again.' };
   const trials = new Map<string, TrialEntry>();
   let runCount = 0;
   let stopping = false;
@@ -617,6 +626,9 @@ export async function startRunner(opts: RunnerOptions): Promise<Runner> {
     const rows = readRows(ledgerPath);
     const projection = terms(plan.projection, rows, body.session_cap_usd);
     if (dryRun) return { status: 200, body: { dry_run: true, calls: 0, projection } };
+    // 409 fixtures_changed: the fixture manifest changed (a fixtures:build) while a batch on the
+    // earlier one is still running; this batch waits until that one is done (see otherManifestRunning).
+    if (otherManifestRunning(w.manifest)) return { status: 409, body: { error: fixturesChanged, projection } };
     // 409 no_key: no key has passed Validate in this runner process, so no client can be built.
     if (key === null) return { status: 409, body: { error: { type: 'no_key', message: 'No API key yet: paste your Anthropic API key and press Validate, then start the trial again.' }, projection: null } };
     // 409 session_cap: this batch's projection plus what the session has spent or holds open would
@@ -691,7 +703,7 @@ export async function startRunner(opts: RunnerOptions): Promise<Runner> {
       if (pending.get(runId) === term) pending.delete(runId);
       batchKeys.delete(key);
     });
-    const entry: RunEntry = { view, controller, done };
+    const entry: RunEntry = { view, controller, done, manifest: w.manifest };
     runs.push(entry);
     const ran = await Promise.race([started.then(() => true), batch.then(() => false, () => false)]);
     if (ran) {
@@ -719,6 +731,8 @@ export async function startRunner(opts: RunnerOptions): Promise<Runner> {
   async function startSmoke(body: TrialsRequest, tasks: TaskSource): Promise<{ status: number; body: unknown }> {
     if (!forcedFail) throw new HttpError(400, 'invalid_request', 'Smoke trials are turned off in this runner.');
     const w = fixturesNow();
+    // 409 fixtures_changed: as for a batch, a smoke run never runs beside a batch on another manifest.
+    if (otherManifestRunning(w.manifest)) return { status: 409, body: { error: fixturesChanged, projection: null } };
     const taken = existsSync(runsDir) ? readdirSync(runsDir).filter((d) => /^smoke-\d+$/.test(d)).map((d) => Number(d.slice(6))) : [];
     const runId = `smoke-${Math.max(0, ...taken, ...runs.map((r) => (/^smoke-(\d+)$/.exec(r.view.run_id)?.[1] ?? 0)).map(Number)) + 1}`;
     const sink = nodeResultSink(join(runsDir, runId));
@@ -757,7 +771,7 @@ export async function startRunner(opts: RunnerOptions): Promise<Runner> {
     ).finally(() => {
       view.done = true;
     });
-    runs.push({ view, controller, done });
+    runs.push({ view, controller, done, manifest: w.manifest });
     return { status: 202, body: { run_id: runId, trial_ids: view.trial_ids } };
   }
 
