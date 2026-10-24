@@ -19,16 +19,18 @@
 //   - shown: for each note, report or policy whose text the payload shows, that text with its
 //     whitespace collapsed to single spaces (case kept), the same for every shape: a search_notes
 //     row's snippet ({note, snippet}), a note or report read with fhir_read ({resource, text}) or
-//     a whole policy ({resourceType: 'Policy', id, text}). Shown text is not exposure: a snippet
-//     is an excerpt, so its note stays referenced, and exposed_ids keeps meaning "the decisive
-//     content was shown". A task grader asks whether a decisive phrase was shown with
+//     a whole policy ({resourceType: 'Policy', id, text}). Shown text is not exposure unless it
+//     is the whole text: a snippet cut at either end (SNIPPET_CUT marks the cut) is an excerpt, so
+//     its note stays referenced, while a snippet with no cut mark is the note's whole text,
+//     whitespace-collapsed, and exposes the note as fhir_read does. exposed_ids keeps meaning
+//     "the decisive content was shown". A task grader asks whether a decisive phrase was shown with
 //     grader/exposure.ts shows(), which compares both sides whitespace-collapsed and ignoring
 //     case, so a phrase split across lines in the note matches as it does in a snippet.
 // Tools follow four conventions for this to hold: a row that shows a resource's decisive
 // fields carries its resourceType and id; a row that shows a note's, report's or policy's text
 // carries it in one of the three shapes above (no other object's `text` is shown text); a row
-// that does neither (an inbox item, a policy title, a search_notes row) names ids only as
-// references ('Patient/pt-0001') and never carries a resourceType; and a resource returned with
+// that does neither (an inbox item, a policy title, a search_notes row with a cut snippet) names
+// ids only as references ('Patient/pt-0001') and never carries a resourceType; and a resource returned with
 // content left out holds an object with a `read_with` key naming the tool that returns it (a
 // note's text attachment in fhir_search, which shows only its size), which makes the resource
 // referenced, not exposed. Each read tool's header says which applies.
@@ -47,7 +49,12 @@ import { ToolError, type ErrorBody } from './errors.ts';
 
 // 2: read-tool exposure tagging as of the search-exposure change (a snippet is shown, not exposed;
 // search_patients exposes the Patient it returns).
-export const TOOLS_VERSION = '2';
+// 3: a search_notes snippet that is the note's whole text (no cut mark) exposes the note.
+export const TOOLS_VERSION = '3';
+
+// What search_notes puts at a snippet's cut end; a snippet without it at either end is the
+// note's whole text.
+export const SNIPPET_CUT = '…';
 
 export type PropertySchema =
   | { type: 'string'; description: string; enum?: readonly string[]; minLength?: number; maxLength?: number; pattern?: string }
@@ -196,10 +203,15 @@ const typeOf = (ref: string) => ref.slice(0, ref.indexOf('/'));
 // case kept.
 export const collapseWhitespace = (text: string): string => text.replace(/\s+/g, ' ').trim();
 
+const isSnippetRow = (o: Record<string, unknown>): o is { note: string; snippet: string } =>
+  typeof o.snippet === 'string' && isId(o.note) && REF.test(o.note) && TEXT_TYPES.has(typeOf(o.note));
+// A search_notes row whose snippet is not cut at either end shows the note's whole text.
+const wholeSnippet = (o: Record<string, unknown>) => isSnippetRow(o) && !o.snippet.startsWith(SNIPPET_CUT) && !o.snippet.endsWith(SNIPPET_CUT);
+
 // The note, report or policy whose text an object shows, and the text, in one of the three
 // shapes above. Any other object shows no text, whatever its keys.
 function textIn(o: Record<string, unknown>): [string, string] | undefined {
-  if (typeof o.snippet === 'string' && isId(o.note) && REF.test(o.note) && TEXT_TYPES.has(typeOf(o.note))) return [o.note, o.snippet];
+  if (isSnippetRow(o)) return [o.note, o.snippet];
   if (typeof o.text !== 'string') return undefined;
   const r = (o.resource ?? {}) as { resourceType?: unknown; id?: unknown };
   if (isId(r.resourceType) && TEXT_TYPES.has(r.resourceType) && isId(r.id)) return [`${r.resourceType}/${r.id}`, o.text];
@@ -226,6 +238,7 @@ function walk(value: unknown, tags: Tags): boolean {
   if (isId(resourceType) && isId(id)) (partial ? tags.refs : tags.exposed).add(`${resourceType}/${id}`);
   const text = textIn(value as Record<string, unknown>);
   if (text) tags.shown.set(text[0], [...(tags.shown.get(text[0]) ?? []), collapseWhitespace(text[1])]);
+  if (text && wholeSnippet(value as Record<string, unknown>)) tags.exposed.add(text[0]);
   return partial;
 }
 

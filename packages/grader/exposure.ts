@@ -3,9 +3,10 @@
 // a resource counts as seen only when a result exposed it, i.e. it is in exposed_ids, or, for
 // a note whose check declares a decisive phrase, when a step showed that phrase. The rule
 // behind the tags is in packages/env/tools/registry.ts: a result exposes a resource when it
-// shows the fields a clinician acts on. For a note or report that is its whole text, which only
-// fhir_read returns: a fhir_search row shows its size and a search_notes row an excerpt, so both
-// only reference it. Each step also carries the text it showed (Step.shown: snippets, note
+// shows the fields a clinician acts on. For a note or report that is its whole text: fhir_read
+// returns it, and so does a search_notes row whose snippet is not cut (a note that fits in one
+// snippet); a fhir_search row shows its size and a cut snippet an excerpt, so both only reference
+// it. Each step also carries the text it showed (Step.shown: snippets, note
 // texts read with fhir_read, policy texts, whitespace-collapsed), so a gate or attribution can
 // ask whether a decisive phrase was shown (shows). Errors expose and show nothing. Writes are
 // read from written_ids alone (P6), never inferred from a call's input.
@@ -18,8 +19,8 @@
 // tagged them then, while shown is derived now from the recorded content. Records made before
 // GRADER_VERSION 5 were tagged under the older rule (a search_patients row did not expose its
 // Patient), so their exposed_ids predate it while their shown text follows the current shapes;
-// a gate comparing the two on such a record compares two rules. No merged record has a note
-// exposed by a snippet: that tagging existed only on an unmerged branch.
+// a gate comparing the two on such a record compares two rules. Before TOOLS_VERSION 3 no
+// snippet exposed its note, even one showing the whole note; from 3 on an uncut snippet does.
 import type { TrialEvent } from '../core/events.ts';
 import { collapseWhitespace, shownText } from '../env/tools/registry.ts';
 import type { Step } from './check.ts';

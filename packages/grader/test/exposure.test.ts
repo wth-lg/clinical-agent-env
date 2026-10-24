@@ -2,8 +2,8 @@
 // T3's (a trajectory that learns the patient's birth date only from search_patients, then
 // writes, has the Patient exposed before the write: reports/pr-review-T3-1.md S1), T2/T4's
 // (a search_notes snippet records the text it showed: reports/pr-review-T4-1.md S1) and the
-// exposure review's (a snippet is shown text, not exposure, so a note found by a snippet that
-// misses the decisive fact is a retrieval failure; shown text is compared the same way whatever
+// exposure review's (a cut snippet is shown text, not exposure, so a note found by a snippet that
+// misses the decisive fact is a retrieval failure; a snippet that is the whole note exposes it; shown text is compared the same way whatever
 // showed it: reports/pr-review-exposure-1.md S1, S2, S4).
 import { describe, expect, it } from 'vitest';
 import { clock } from '../../env/clock.ts';
@@ -43,12 +43,12 @@ describe('exposure from the read tools', () => {
     expect(steps[0]!.shown).toEqual({});
     expect(firstExposed(steps, 'DocumentReference/doc-nurse-1')).toBeNull();
   });
-  it('a search_notes step references the note and records its snippet as shown text', () => {
+  it('a search_notes step whose snippet is the whole note exposes it and records the text', () => {
+    // The note is one short line, so the snippet is its whole text (no cut mark), as fhir_read shows it.
     const steps = stepsOf(trajectory([read('search_notes', { query: 'weight' })]));
-    expect(steps[0]!.exposed_ids).toEqual([]);
-    expect(steps[0]!.referenced_ids).toContain('DocumentReference/doc-nurse-1');
+    expect(steps[0]!.exposed_ids).toEqual(['DocumentReference/doc-nurse-1']);
     expect(steps[0]!.shown).toEqual({ 'DocumentReference/doc-nurse-1': 'Weight today 143 lb on the clinic scale.' });
-    expect(firstExposed(steps, 'doc-nurse-1')).toBeNull();
+    expect(firstExposed(steps, 'doc-nurse-1')).toBe(1);
   });
   it('a fhir_read of a note exposes it and records the decoded text', () => {
     const steps = stepsOf(trajectory([read('fhir_read', { resource_type: 'DocumentReference', id: 'doc-nurse-1' })]));

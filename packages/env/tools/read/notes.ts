@@ -1,11 +1,12 @@
 // search_notes (design section 3): keyword search over the text of notes (DocumentReference)
 // and reports (DiagnosticReport presentedForm). BM25 over literal tokens: no stemming, no
-// synonyms. A row shows part of the note's text as {note, snippet}: the snippet is recorded as
-// the text shown, but an excerpt is not the note's decisive content, so the note stays
-// referenced (the exposure rule, registry.ts); fhir_read shows the whole text and exposes it.
+// synonyms. A row shows the note's text as {note, snippet}, recorded as the text shown. A snippet
+// cut at either end (marked SNIPPET_CUT) is an excerpt, not the note's decisive content, so the
+// note stays referenced; a note short enough to fit in one snippet is shown whole and exposed, as
+// fhir_read exposes it (the exposure rule, registry.ts).
 import type { Attachment, DiagnosticReport, DocumentReference, Resource } from '@medplum/fhirtypes';
 import { ToolError } from '../errors.ts';
-import type { Tool } from '../registry.ts';
+import { SNIPPET_CUT, type Tool } from '../registry.ts';
 import type { ReadContext } from './context.ts';
 import { filterQuery } from './fhir.ts';
 import { page } from './page.ts';
@@ -124,7 +125,7 @@ function snippet(text: string, query: ReadonlySet<string>): string {
   if (start > 0 && isLow(text.charCodeAt(start))) start--;
   if (end < text.length && isLow(text.charCodeAt(end))) end++;
   const body = text.slice(start, end).replace(/\s+/g, ' ').trim();
-  return `${start > 0 ? '…' : ''}${body}${end < text.length ? '…' : ''}`;
+  return `${start > 0 ? SNIPPET_CUT : ''}${body}${end < text.length ? SNIPPET_CUT : ''}`;
 }
 
 // BM25 parameters: the usual defaults.

@@ -2,8 +2,9 @@
 // payload's shape, so it is independent of the registry's walker: a read result exposes a
 // resource exactly when it shows the fields a clinician acts on, and only references it when it
 // shows an id, a title, a pointer to read it later or an excerpt. A note's decisive content is
-// its whole text; an excerpt (a search_notes snippet) is shown text but not exposure, and its
-// title or size is neither. An inbox row is a pointer, so its summary must not carry the value
+// its whole text, wherever it is shown (fhir_read, or a search_notes snippet that is the whole
+// note); an excerpt (a cut snippet) is shown text but not exposure, and its title or size is
+// neither. An inbox row is a pointer, so its summary must not carry the value
 // of the resource it points at.
 import type { Attachment, DiagnosticReport, DocumentReference, Observation, Resource } from '@medplum/fhirtypes';
 import type { ToolResult } from '../registry.ts';

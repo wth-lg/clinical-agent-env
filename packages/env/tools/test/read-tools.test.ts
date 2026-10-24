@@ -76,6 +76,9 @@ function payloadIds(content: unknown): { exposed: string[]; referenced: string[]
       const { resourceType, id } = v as { resourceType?: unknown; id?: unknown };
       // A resource whose note text was left out (an attachment naming read_with) is referenced.
       if (typeof resourceType === 'string' && typeof id === 'string') (JSON.stringify(v).includes('"read_with":') ? refs : exposed).add(`${resourceType}/${id}`);
+      // A search_notes row whose snippet is not cut ('…') at either end shows the whole note.
+      const { note, snippet } = v as { note?: unknown; snippet?: unknown };
+      if (typeof note === 'string' && REF.test(note) && typeof snippet === 'string' && !/^…|…$/.test(snippet)) exposed.add(note);
     }
     return v;
   });
@@ -361,13 +364,27 @@ describe('search_notes', () => {
     expect(rows[0]!.snippet).toContain('iohexol');
     expectTagsMatch(r);
   });
-  it('references each note and records the snippet it shows as shown text, not exposure', () => {
+  it('exposes a note its snippet shows whole, and records the snippet as shown text', () => {
+    // Each of these notes fits in one snippet, so the row shows its whole text, as fhir_read would.
     const r = call('search_notes', { query: 'iohexol', patient: 'pt-0060' }, small);
     const rows = ok(r).entries as Array<{ note: string; snippet: string }>;
-    expect(r.exposed_ids).toEqual([]);
-    expect(r.referenced_ids).toEqual(['DocumentReference/doc-z-a', 'DocumentReference/doc-z-b', 'DocumentReference/doc-z-c', 'Patient/pt-0060', 'Practitioner/pr-reyes']);
+    expect(rows.every((x) => !/^…|…$/.test(x.snippet))).toBe(true);
+    expect(r.exposed_ids).toEqual(['DocumentReference/doc-z-a', 'DocumentReference/doc-z-b', 'DocumentReference/doc-z-c']);
+    expect(r.referenced_ids).toEqual(['Patient/pt-0060', 'Practitioner/pr-reyes']);
     expect(r.shown).toEqual(Object.fromEntries(rows.map((x) => [x.note, x.snippet])));
     expect(r.shown!['DocumentReference/doc-z-a']).toBe('iohexol reaction hives. iohexol again.');
+    expectTagsMatch(r);
+  });
+  it('only references a note whose snippet is cut, and records the excerpt as shown text', () => {
+    const text = `${'Earlier history of the visit. '.repeat(10)}Iohexol reaction with hives in 2019. ${'Later plan and follow-up details. '.repeat(10)}`;
+    const r = call('search_notes', { query: 'iohexol', patient: 'pt-0060' }, context([note('doc-z-long', text, '2019-05-03T10:00:00-04:00')]));
+    const [row] = ok(r).entries as Array<{ note: string; snippet: string }>;
+    expect(row!.note).toBe('DocumentReference/doc-z-long');
+    expect(row!.snippet).toMatch(/^….*Iohexol reaction.*…$/);
+    expect(r.exposed_ids).toEqual([]);
+    expect(r.referenced_ids).toContain('DocumentReference/doc-z-long');
+    expect(r.shown!['DocumentReference/doc-z-long']).toBe(row!.snippet);
+    expectTagsMatch(r);
   });
   it('filters by type and date', () => {
     const rows = ok(call('search_notes', { query: 'contrast', type: 'discharge-summary', date_ge: '2021-01-01' }, small)).entries as Array<{ note: string }>;
