@@ -89,8 +89,8 @@ export interface Step {
   written_ids: readonly string[];
   // The text this call's result showed, per reference ('DocumentReference/<id>'), with
   // whitespace collapsed: a search_notes snippet, a note's text read with fhir_read, a policy's
-  // text. Empty for other results and errors. Shown text is not exposure: a snippet leaves its
-  // note in referenced_ids. Derived from the recorded content (env registry shownText); query it
+  // text. Empty for other results and errors. Shown text is not exposure unless it is the whole
+  // text: a cut snippet leaves its note in referenced_ids, a snippet of a whole note exposes it. Derived from the recorded content (env registry shownText); query it
   // with exposure.ts shows().
   shown: Readonly<Record<string, string>>;
 }

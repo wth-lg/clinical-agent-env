@@ -76,6 +76,9 @@ function payloadIds(content: unknown): { exposed: string[]; referenced: string[]
       const { resourceType, id } = v as { resourceType?: unknown; id?: unknown };
       // A resource whose note text was left out (an attachment naming read_with) is referenced.
       if (typeof resourceType === 'string' && typeof id === 'string') (JSON.stringify(v).includes('"read_with":') ? refs : exposed).add(`${resourceType}/${id}`);
+      // A search_notes row whose snippet is the whole note (whole: true) exposes it.
+      const { note, snippet, whole } = v as { note?: unknown; snippet?: unknown; whole?: unknown };
+      if (typeof note === 'string' && REF.test(note) && typeof snippet === 'string' && whole === true) exposed.add(note);
     }
     return v;
   });
@@ -361,13 +364,74 @@ describe('search_notes', () => {
     expect(rows[0]!.snippet).toContain('iohexol');
     expectTagsMatch(r);
   });
-  it('references each note and records the snippet it shows as shown text, not exposure', () => {
+  it('exposes a note its snippet shows whole, and records the snippet as shown text', () => {
+    // Each of these notes fits in one snippet, so the row shows its whole text, as fhir_read would.
     const r = call('search_notes', { query: 'iohexol', patient: 'pt-0060' }, small);
     const rows = ok(r).entries as Array<{ note: string; snippet: string }>;
-    expect(r.exposed_ids).toEqual([]);
-    expect(r.referenced_ids).toEqual(['DocumentReference/doc-z-a', 'DocumentReference/doc-z-b', 'DocumentReference/doc-z-c', 'Patient/pt-0060', 'Practitioner/pr-reyes']);
+    expect(rows.every((x) => !/^…|…$/.test(x.snippet))).toBe(true);
+    expect(r.exposed_ids).toEqual(['DocumentReference/doc-z-a', 'DocumentReference/doc-z-b', 'DocumentReference/doc-z-c']);
+    expect(r.referenced_ids).toEqual(['Patient/pt-0060', 'Practitioner/pr-reyes']);
     expect(r.shown).toEqual(Object.fromEntries(rows.map((x) => [x.note, x.snippet])));
     expect(r.shown!['DocumentReference/doc-z-a']).toBe('iohexol reaction hives. iohexol again.');
+    expectTagsMatch(r);
+  });
+  it('only references a note whose snippet is cut, and records the excerpt as shown text', () => {
+    const text = `${'Earlier history of the visit. '.repeat(10)}Iohexol reaction with hives in 2019. ${'Later plan and follow-up details. '.repeat(10)}`;
+    const r = call('search_notes', { query: 'iohexol', patient: 'pt-0060' }, context([note('doc-z-long', text, '2019-05-03T10:00:00-04:00')]));
+    const [row] = ok(r).entries as Array<{ note: string; snippet: string }>;
+    expect(row!.note).toBe('DocumentReference/doc-z-long');
+    expect(row!.snippet).toMatch(/^….*Iohexol reaction.*…$/);
+    expect(r.exposed_ids).toEqual([]);
+    expect(r.referenced_ids).toContain('DocumentReference/doc-z-long');
+    expect(r.shown!['DocumentReference/doc-z-long']).toBe(row!.snippet);
+    expect((row as { whole?: unknown }).whole).toBe(false);
+    expectTagsMatch(r);
+  });
+  // verifier-phase-snippet-1 probes: whether a snippet is the whole note is data on the row
+  // (whole), never read from a '…' in the text, and whitespace past the window is no cut.
+  describe('whole-note snippets (verifier-phase-snippet-1)', () => {
+    const doc = (id: string, ...texts: string[]): DocumentReference => ({
+      ...note(id, '', '2019-05-03T10:00:00-04:00'),
+      content: texts.map((t) => ({ attachment: { contentType: 'text/plain; charset=utf-8', data: btoa(String.fromCharCode(...new TextEncoder().encode(t))) } })),
+    });
+    const search = (d: DocumentReference) => {
+      const c = context([d]);
+      const r = call('search_notes', { query: 'iohexol', patient: 'pt-0060' }, c);
+      const key = `DocumentReference/${d.id}`;
+      const row = (ok(r).entries as Array<{ note: string; snippet: string; whole: boolean }>).find((x) => x.note === key)!;
+      const stored = (k: string) => c.world.get(k.slice(0, k.indexOf('/')), k.slice(k.indexOf('/') + 1));
+      return { r, row, key, c, violations: ruleViolations(r, stored), stored };
+    };
+    const exposedWhole = (d: DocumentReference, snippet: string) => {
+      const { r, row, key, violations } = search(d);
+      expect(row.snippet).toBe(snippet);
+      expect(row.whole).toBe(true);
+      expect(r.exposed_ids).toContain(key);
+      expect(r.referenced_ids).not.toContain(key);
+      expect(violations).toEqual([]);
+      expectTagsMatch(r);
+    };
+    it.each([
+      ['C1 a short note ending in its own …', 'Patient asked whether iohexol is safe…', 'Patient asked whether iohexol is safe…'],
+      ['C2 a short note starting with its own …', '…continued: iohexol reaction, hives.', '…continued: iohexol reaction, hives.'],
+      ['C5 a short note ending in … then a newline', 'Iohexol reaction, hives…\n', 'Iohexol reaction, hives…'],
+    ])('%s is shown whole and exposed', (_label, text, snippet) => {
+      exposedWhole(doc('doc-z-c', text), snippet);
+    });
+    it.each([
+      ['D2 trailing whitespace past the window', `iohexol hives. ${'a'.repeat(140)}${' '.repeat(40)}`, `iohexol hives. ${'a'.repeat(140)}`],
+      ['D3 100 leading newlines before the match', `${'\n'.repeat(100)}iohexol hives.`, 'iohexol hives.'],
+    ])('%s: no cut, shown whole and exposed', (_label, text, snippet) => {
+      exposedWhole(doc('doc-z-d', text), snippet);
+    });
+    it('E2 a note of two text attachments, joined as search and read join them, is exposed and the oracle agrees', () => {
+      const d = doc('doc-z-e', 'Iohexol hives.', 'Second part.');
+      exposedWhole(d, 'Iohexol hives. Second part.');
+      const { c, stored } = search(d);
+      const read = call('fhir_read', { resource_type: 'DocumentReference', id: 'doc-z-e' }, c);
+      expect(read.exposed_ids).toEqual(['DocumentReference/doc-z-e']);
+      expect(ruleViolations(read, stored)).toEqual([]);
+    });
   });
   it('filters by type and date', () => {
     const rows = ok(call('search_notes', { query: 'contrast', type: 'discharge-summary', date_ge: '2021-01-01' }, small)).entries as Array<{ note: string }>;

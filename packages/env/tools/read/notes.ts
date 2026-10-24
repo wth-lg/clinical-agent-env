@@ -1,8 +1,10 @@
 // search_notes (design section 3): keyword search over the text of notes (DocumentReference)
 // and reports (DiagnosticReport presentedForm). BM25 over literal tokens: no stemming, no
-// synonyms. A row shows part of the note's text as {note, snippet}: the snippet is recorded as
-// the text shown, but an excerpt is not the note's decisive content, so the note stays
-// referenced (the exposure rule, registry.ts); fhir_read shows the whole text and exposes it.
+// synonyms. A row shows the note's text as {note, snippet, whole}, the snippet recorded as the
+// text shown. whole says, as data, whether the snippet is the note's entire text: a note short
+// enough to fit in one snippet is shown whole and exposed, as fhir_read exposes it, while a cut
+// snippet ('…' where text was left out) is an excerpt and the note stays referenced (the exposure
+// rule, registry.ts). A '…' in the note's own text is just text.
 import type { Attachment, DiagnosticReport, DocumentReference, Resource } from '@medplum/fhirtypes';
 import { ToolError } from '../errors.ts';
 import type { Tool } from '../registry.ts';
@@ -109,8 +111,9 @@ const BEFORE = 80;
 const AFTER = 160;
 const isLow = (c: number) => c >= 0xdc00 && c <= 0xdfff;
 
-// About 240 characters around the first query token in the text, whitespace collapsed.
-function snippet(text: string, query: ReadonlySet<string>): string {
+// About 240 characters around the first query token in the text, whitespace collapsed, and
+// whether that is the whole text. Only non-whitespace left out on a side is a cut.
+function snippet(text: string, query: ReadonlySet<string>): { text: string; whole: boolean } {
   let at = 0;
   for (const m of text.matchAll(TOKEN)) {
     if (query.has(m[0].toLowerCase())) {
@@ -124,7 +127,9 @@ function snippet(text: string, query: ReadonlySet<string>): string {
   if (start > 0 && isLow(text.charCodeAt(start))) start--;
   if (end < text.length && isLow(text.charCodeAt(end))) end++;
   const body = text.slice(start, end).replace(/\s+/g, ' ').trim();
-  return `${start > 0 ? '…' : ''}${body}${end < text.length ? '…' : ''}`;
+  const before = text.slice(0, start).trim() !== '';
+  const after = text.slice(end).trim() !== '';
+  return { text: `${before ? '…' : ''}${body}${after ? '…' : ''}`, whole: !before && !after };
 }
 
 // BM25 parameters: the usual defaults.
@@ -145,7 +150,8 @@ export const searchNotes: Tool<ReadContext> = {
   name: 'search_notes',
   description:
     'Keyword search over the text of clinical notes and reports. Ranked by BM25 over literal words: no stemming and no synonyms, ' +
-    'so search for the words a note would use. Returns {note, date, type, author, patient, snippet} rows, best match first, ties by id. ' +
+    'so search for the words a note would use. Returns {note, date, type, author, patient, snippet, whole} rows, best match first, ties by id; ' +
+    'whole is true when the snippet is the note\'s entire text, false when it is an excerpt (… marks text left out). ' +
     'Read a note in full with fhir_read. type filters by note type as listed in the rows (e.g. history-and-physical-note) or a LOINC code.',
   inputSchema: {
     type: 'object',
@@ -192,14 +198,18 @@ export const searchNotes: Tool<ReadContext> = {
     }
     scored.sort((a, b) => b.score - a.score || (a.ref < b.ref ? -1 : a.ref > b.ref ? 1 : 0));
 
-    const rows = scored.map(({ ref, r, ix }) => ({
-      note: ref,
-      date: noteDate(r),
-      type: noteType(r),
-      author: noteAuthor(r),
-      patient: (r as { subject?: { reference?: string } }).subject?.reference ?? null,
-      snippet: snippet(ix.text, query),
-    }));
+    const rows = scored.map(({ ref, r, ix }) => {
+      const shown = snippet(ix.text, query);
+      return {
+        note: ref,
+        date: noteDate(r),
+        type: noteType(r),
+        author: noteAuthor(r),
+        patient: (r as { subject?: { reference?: string } }).subject?.reference ?? null,
+        snippet: shown.text,
+        whole: shown.whole,
+      };
+    });
     return page(rows, input.offset ?? 0, input.count ?? 10);
   },
 };
