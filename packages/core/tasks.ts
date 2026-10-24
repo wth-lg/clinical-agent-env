@@ -31,7 +31,8 @@
 //   task_version         sha256 of the two: any change to the task is a new task_version.
 // replay compares env_version only (the trajectory must reach the record's state); regrade
 // records the grader_task_version it graded at; a batch resumes by env_version, so a grader fix
-// regrades a run instead of discarding it; cost projections and the freeze read task_version.
+// regrades a run instead of discarding it; cost projections read env_version
+// (packages/core/cost.ts) and the freeze reads task_version.
 import { parse } from 'smol-toml';
 import { CATALOG_KINDS, type CatalogEntry, type Policy } from '../env/tools/read/context.ts';
 import { TOOLS_VERSION } from '../env/tools/registry.ts';

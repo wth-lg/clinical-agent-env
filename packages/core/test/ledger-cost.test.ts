@@ -15,8 +15,10 @@ import {
   type TrialObservation,
 } from '../cost.ts';
 
-function obs(run: string, run_order: number, task_id: string, task_version: string, costs: number[]): TrialObservation[] {
-  return costs.map((cost_usd, i) => ({ run, run_order, task_id, task_version, cost_usd, started: `2026-10-2${run_order}T00:00:0${i}Z` }));
+// Observations at one env_version (the version cost is matched on); task_version is the same
+// string unless given, as in a record of a task whose grader never changed.
+function obs(run: string, run_order: number, task_id: string, env_version: string, costs: number[], task_version = env_version): TrialObservation[] {
+  return costs.map((cost_usd, i) => ({ run, run_order, task_id, env_version, task_version, cost_usd, started: `2026-10-2${run_order}T00:00:0${i}Z` }));
 }
 
 const TEN = [0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 2.0];
@@ -31,7 +33,7 @@ describe('p90', () => {
 
 describe('batch projection (case 14)', () => {
   it('with no cost data prints $6 per trial plus the judge allowance', () => {
-    const p = projectBatch([{ task_id: 'renal-dose-review', task_version: 'v1', trials: 1 }], []);
+    const p = projectBatch([{ task_id: 'renal-dose-review', env_version: 'v1', trials: 1 }], []);
     expect(p.lines[0]?.per_trial).toEqual({ usd: PER_TRIAL_CAP_USD, basis: 'cap' });
     expect(p.total).toBeCloseTo(1 * 6 * RERUN_FACTOR + JUDGE_ALLOWANCE_USD, 9);
     const text = formatProjection(p).join('\n');
@@ -40,10 +42,10 @@ describe('batch projection (case 14)', () => {
     expect(text).toContain(`total $${p.total.toFixed(2)}`);
   });
 
-  it('uses the latest p90 for the task_version from the --cost-from runs', () => {
+  it('uses the latest p90 for the env_version from the --cost-from runs', () => {
     const data = [...obs('results/pilot-0', 0, 'T1', 'v1', [9, 9, 9]), ...obs('results/pilot-1', 1, 'T1', 'v1', TEN)];
-    const p = projectBatch([{ task_id: 'T1', task_version: 'v1', trials: 3 }], data);
-    expect(p.lines[0]?.per_trial).toMatchObject({ usd: 1.3, basis: 'p90', run: 'results/pilot-1', task_version: 'v1', n: 10 });
+    const p = projectBatch([{ task_id: 'T1', env_version: 'v1', trials: 3 }], data);
+    expect(p.lines[0]?.per_trial).toMatchObject({ usd: 1.3, basis: 'p90', run: 'results/pilot-1', version: 'v1', n: 10 });
     expect(p.total).toBeCloseTo(3 * 1.3 * RERUN_FACTOR + JUDGE_ALLOWANCE_USD, 9);
     expect(formatProjection(p).join('\n')).toContain('$1.30 per trial (p90 of 10 trials of v1 in results/pilot-1)');
   });
@@ -54,13 +56,32 @@ describe('batch projection (case 14)', () => {
       ...obs('results/pilot-2', 2, 'T1', 'v2', TEN),
       ...obs('results/pilot-2', 2, 'T2', 'w1', [0.1]),
     ];
-    expect(perTrialCost('T1', 'v3', data)).toMatchObject({ usd: 1.3, basis: 'earlier-version-p90', task_version: 'v2' });
+    expect(perTrialCost('T1', 'v3', data)).toMatchObject({ usd: 1.3, basis: 'earlier-version-p90', version: 'v2' });
     expect(perTrialCost('T3', 'x1', data)).toEqual({ usd: PER_TRIAL_CAP_USD, basis: 'cap' });
   });
 
   it('ignores records without a finite cost', () => {
-    const data = [...obs('r', 0, 'T1', 'v1', [1]), { run: 'r', run_order: 0, task_id: 'T1', task_version: 'v1', cost_usd: Number.NaN }];
+    const data = [...obs('r', 0, 'T1', 'v1', [1]), { run: 'r', run_order: 0, task_id: 'T1', env_version: 'v1', task_version: 'v1', cost_usd: Number.NaN }];
     expect(perTrialCost('T1', 'v1', data)).toMatchObject({ usd: 1, n: 1 });
+  });
+
+  // P11f (5), verifier-phase-regrade-2 N1: agent cost depends on what the agent works in, so a
+  // grader-only change (a new grader_task_version, so a new task_version, at the same env_version)
+  // keeps the exact p90.
+  it('a grader-only change keeps the exact p90: cost is matched on env_version, not task_version', () => {
+    const data = obs('results/pilot-1', 1, 'T1', 'e1', TEN, 't1-grader-a');
+    expect(perTrialCost('T1', 'e1', data)).toMatchObject({ usd: 1.3, basis: 'p90', version: 'e1', n: 10 });
+    expect(formatProjection(projectBatch([{ task_id: 'T1', env_version: 'e1', trials: 1 }], data)).join('\n')).toContain('$1.30 per trial (p90 of 10 trials of e1 in results/pilot-1)');
+    // A run resumed after a grader fix holds one env_version under two task_versions: all its trials count.
+    const resumed = [...obs('results/pilot-2', 2, 'T1', 'e1', TEN.slice(0, 7), 't1-grader-a'), ...obs('results/pilot-2', 2, 'T1', 'e1', [5, 5, 5], 't1-grader-b').map((o, i) => ({ ...o, started: `2026-10-23T00:00:0${i}Z` }))];
+    expect(perTrialCost('T1', null, resumed)).toMatchObject({ basis: 'p90', version: 'e1', n: 10, usd: 5 });
+    expect(perTrialCost('T1', 'e1', resumed)).toMatchObject({ basis: 'p90', n: 10 });
+  });
+
+  it('a record from before the env/grader split (task_version only) is never an exact match, only an earlier version', () => {
+    const old: TrialObservation[] = TEN.map((cost_usd, i) => ({ run: 'results/pilot-0', run_order: 0, task_id: 'T1', env_version: null, task_version: 'tv-old', cost_usd, started: `2026-10-20T00:00:0${i}Z` }));
+    expect(perTrialCost('T1', 'e1', old)).toMatchObject({ usd: 1.3, basis: 'earlier-version-p90', version: 'tv-old', n: 10 });
+    expect(perTrialCost('T1', 'tv-old', old)).toMatchObject({ basis: 'earlier-version-p90' });
   });
 });
 
