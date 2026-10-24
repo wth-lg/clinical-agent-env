@@ -1,20 +1,37 @@
 // T4's rubric (design section 4, "T4" rubric table): what the note and the message to the PCP
 // must state, cite and avoid. Positive points total 7. used_2025_summary is hybrid: the pattern
-// flags a note that names 2025 or cites last year's summary, and the judge decides whether the
-// note uses it as a source.
+// flags a note that points at the March 2025 summary by its date, title, id or content, or cites
+// it, and the judge decides whether the note uses it as a source.
 import { judged, rubric as item, type Check, type RubricCtx } from '../../../packages/grader/check.ts';
 import { expected } from '../expected.ts';
 
 const PT = expected.patient;
 const noteText = (ctx: RubricCtx) => ctx.notes.filter((n) => n.patient === PT).map((n) => n.text).join('\n\n');
-// The text of the messages the trial sent to the PCP.
+// The text of the messages the trial sent to the PCP (Patient.generalPractitioner).
 const messageText = (ctx: RubricCtx) => {
   const mine = new Set(ctx.writes());
+  const patient = ctx.initial.get('Patient', PT.split('/')[1]!);
+  const pcp = patient?.resourceType === 'Patient' ? (patient.generalPractitioner ?? []).map((r) => r.reference) : [];
   return ctx.final.all('Communication').flatMap((c) =>
-    c.resourceType === 'Communication' && mine.has(`Communication/${c.id}`) && (c.recipient ?? []).some((r) => r.reference === 'Practitioner/pr-okafor') ? (c.payload ?? []).map((p) => p.contentString ?? '') : [],
+    c.resourceType === 'Communication' && mine.has(`Communication/${c.id}`) && (c.recipient ?? []).some((r) => pcp.includes(r.reference)) ? (c.payload ?? []).map((p) => p.contentString ?? '') : [],
   ).join('\n\n');
 };
-export const OLD_SUMMARY = /\b2025\b/;
+// The March 2025 summary by its year, its admission dates (March 2025, 3/2, 3/6, 2025-03), its id,
+// or what only it says (the new diagnosis, the echocardiogram follow-up, starting furosemide 20 mg
+// or potassium chloride).
+export const OLD_SUMMARY = new RegExp(
+  [
+    String.raw`\b2025\b`,
+    String.raw`\bmar(?:ch|\.)?\s+(?:0?[2-6]\b|of\b|admission|stay|discharge|summary)`,
+    String.raw`\b0?3[/-]0?[2-6](?:[/-](?:20)?25)?\b`,
+    String.raw`doc-t4-dc-2025`,
+    String.raw`new diagnosis`,
+    String.raw`echocardiogram`,
+    String.raw`(?:furosemide 20 mg|potassium chloride 20 meq)[^.\n]*\bstart`,
+    String.raw`\b(?:last|previous|prior|earlier) (?:year'?s? )?(?:discharge|summary|admission|stay|hospitali[sz]ation)`,
+  ].join('|'),
+  'i',
+);
 
 export const rubric: Check[] = [
   judged({

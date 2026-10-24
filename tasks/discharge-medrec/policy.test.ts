@@ -9,6 +9,8 @@ import { lintWorld } from '../../packages/env/lint/index.ts';
 import type { WorldView } from '../../packages/grader/matrix/types.ts';
 import { expected } from './expected.ts';
 import { derive } from './policy.ts';
+import { OLD_SUMMARY } from './tests/rubric.ts';
+import { noteText, ORACLE_NOTE } from './solution/steps.ts';
 
 const store = await loadStore(matrixEnv().world);
 const all = [...store.resources()];
@@ -35,5 +37,42 @@ describe('discharge-medrec', () => {
     const answers = ['25 mg daily, not 12.5', 'SCr 1.32'];
     const findings = lintWorld(all, [{ source: 'discharge-medrec', spec: { prompts: texts, leakage: { answers, texts: texts.map((text, i) => ({ source: i === 0 ? 'instruction.md' : 'RBC-TOC-02', text })) } } }]);
     expect(findings).toEqual([]);
+  });
+
+  // Rules, not text shapes: a corrected creatinine is a valid result (§2), and a brand name on a
+  // discharge line reads as the chart's drug (§4) through normalize.ts.
+  it('derives the same from a corrected creatinine and a brand name for metoprolol succinate', () => {
+    const swap = (r: (typeof all)[number]) => {
+      if (r.resourceType === 'Observation' && r.id === 'obs-t4-scr-1021') return { ...r, status: 'corrected' as const };
+      if (r.resourceType === 'DocumentReference' && r.id === 'doc-t4-dc-1019') {
+        const text = new TextDecoder().decode(Uint8Array.from(atob(r.content[0]!.attachment.data!), (c) => c.charCodeAt(0))).replace('Metoprolol XL 50 mg', 'Toprol XL 50 mg');
+        const data = btoa(String.fromCharCode(...new TextEncoder().encode(text)));
+        return { ...r, content: [{ ...r.content[0]!, attachment: { ...r.content[0]!.attachment, data } }] };
+      }
+      return r;
+    };
+    const changed = all.map(swap);
+    const view: WorldView = { get: (type, id) => changed.find((r) => r.resourceType === type && r.id === id), all: (type) => (type === undefined ? changed : changed.filter((r) => r.resourceType === type)) };
+    expect(derive(view)).toEqual(expected);
+  });
+
+  it('names a PCP, leaves the AKI unresolved and drops the Synthea leftovers the story contradicts', () => {
+    const pt = store.get('Patient', 'pt-0005');
+    expect(pt?.resourceType === 'Patient' && pt.generalPractitioner).toEqual([{ reference: 'Practitioner/pr-okafor' }]);
+    const aki = store.get('Condition', 'cond-t4-aki');
+    expect(aki?.resourceType === 'Condition' && [aki.clinicalStatus?.coding?.[0]?.code, aki.abatementDateTime]).toEqual(['active', undefined]);
+    for (const id of ['cond-00139', 'cond-00141', 'cond-00151']) expect(store.get('Condition', id)).toBeUndefined();
+  });
+
+  it('dates and justifies the orders consistently with the 2025 summary', () => {
+    const succ = store.get('MedicationRequest', 'mr-t4-metoprolol-succ');
+    expect(succ?.resourceType === 'MedicationRequest' && (succ.authoredOn ?? '') < '2025-03-02').toBe(true);
+    const lis = store.get('MedicationRequest', 'mr-t4-lisinopril');
+    expect(lis?.resourceType === 'MedicationRequest' && JSON.stringify(lis.reasonCode)).not.toMatch(/hypertension/i);
+  });
+
+  it('flags a note that uses the March 2025 summary by any name, and not the oracle note', () => {
+    for (const t of ['Per the March 2025 summary furosemide stays at 20 mg.', 'Per the 3/6 discharge summary.', "Per last year's discharge summary, KCl continues.", 'See doc-t4-dc-2025.', 'Echocardiogram in 3 months.', 'Potassium chloride 20 mEq daily: start.']) expect(OLD_SUMMARY.test(t), t).toBe(true);
+    expect(OLD_SUMMARY.test(noteText(ORACLE_NOTE))).toBe(false);
   });
 });

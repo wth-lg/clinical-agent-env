@@ -1,7 +1,7 @@
 // Near misses of T4, one trap each (task.toml [matrix] traps; design "T4" prior): each must FAIL
 // on exactly the gates it declares and lose exactly the rubric items in `loses`.
 import type { Mutant } from '../../../packages/grader/matrix/types.ts';
-import { addendum, allMeds, change, findPatient, finish, furosemideUp, kclStop, lisinoprilResume, message, MR, note, ORACLE_NOTE, order, policy, read, reads, RX, scr, spironolactone, summaries, summary } from '../solution/steps.ts';
+import { addendum, allMeds, change, findPatient, finish, furosemideUp, kclStop, lisinoprilResume, message, MR, note, ORACLE_NOTE, order, policy, read, reads, RX, scr, spironolactone, summaries, summary, writes } from '../solution/steps.ts';
 
 const changes = (drop: string, add = '') => ({ changes: ORACLE_NOTE.changes.split('. ').filter((s) => !s.toLowerCase().includes(drop)).join('. ') + add });
 
@@ -122,5 +122,13 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
       },
       { calls: [finish()] },
     ],
+  },
+  {
+    id: 'message_wrong_clinician',
+    trap: 'pcp_not_messaged',
+    why: 'Sends the duplicate beta-blocker message to Reyes NP, whom he sees most, instead of his PCP of record, Dr. Okafor.',
+    fails: ['pcp_message'],
+    loses: ['message_explains_duplicate'],
+    script: [...reads, { calls: writes }, { calls: [{ ...message(), input: { ...message().input, recipient: 'Practitioner/pr-reyes' } }] }, { calls: [note()] }, { calls: [finish()] }],
   },
 ];

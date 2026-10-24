@@ -4,9 +4,11 @@
 // heart-failure admission to St. Brigid with its discharge summary and signed addendum, a 2025
 // discharge summary, the inpatient and post-discharge creatinine and a potassium, and removes
 // what would contradict the story: Synthea's notes and note reports (they name the old patient),
-// and his four active Synthea medications (clopidogrel, simvastatin, nitroglycerin, metoprolol
+// his four active Synthea medications (clopidogrel, simvastatin, nitroglycerin, metoprolol
 // succinate 100 mg), each of which would be a home medication the discharge documents never
-// address and so an unplanned trap.
+// address and so an unplanned trap, and three active Synthea conditions the chart contradicts
+// (obesity at BMI 27.6, anemia at Hgb 17.3, full-time employment at 74 with EF 30%). Dr. Okafor
+// is his PCP (Patient.generalPractitioner), the one RBC-TOC-02 §5 has the agent message.
 //
 // Traps (design "T4"): doc-t4-dc-1019-add corrects the spironolactone dose in doc-t4-dc-1019;
 // obs-t4-scr-1021 (1.32 mg/dL) satisfies the lisinopril resume condition (SCr < 1.5), while
@@ -30,6 +32,8 @@ const RXNORM = 'http://www.nlm.nih.gov/research/umls/rxnorm';
 const GTS = 'http://terminology.hl7.org/CodeSystem/v3-GTSAbbreviation';
 
 const BASE_ACTIVE_MEDS = ['mr-00068', 'mr-00069', 'mr-00070', 'mr-00071'];
+// Synthea's 'Anemia', 'Body mass index 30+ - obesity' and 'Full-time employment'.
+const CONTRADICTED_CONDITIONS = ['cond-00139', 'cond-00141', 'cond-00151'];
 
 const ATTENDING: Resource = { resourceType: 'Practitioner', id: 'pr-t4-osei', active: true, name: [{ use: 'official', given: ['Kwame'], family: 'Osei', suffix: ['MD'] }] };
 
@@ -45,16 +49,15 @@ const encounter = (id: string, cls: 'AMB' | 'IMP', type: [string, string], start
   serviceProvider: provider,
 });
 
-const condition = (id: string, code: [string, string], onset: string, abated?: string): Resource => ({
+const condition = (id: string, code: [string, string], onset: string): Resource => ({
   resourceType: 'Condition',
   id,
-  clinicalStatus: { coding: [{ system: 'http://terminology.hl7.org/CodeSystem/condition-clinical', code: abated ? 'resolved' : 'active' }] },
+  clinicalStatus: { coding: [{ system: 'http://terminology.hl7.org/CodeSystem/condition-clinical', code: 'active' }] },
   verificationStatus: { coding: [{ system: 'http://terminology.hl7.org/CodeSystem/condition-ver-status', code: 'confirmed' }] },
   category: [{ coding: [{ system: 'http://terminology.hl7.org/CodeSystem/condition-category', code: 'problem-list-item', display: 'Problem List Item' }] }],
   code: { coding: [{ system: SNOMED, code: code[0], display: code[1] }], text: code[1] },
   subject: SUBJECT,
   onsetDateTime: onset,
-  ...(abated ? { abatementDateTime: abated } : {}),
   recordedDate: onset,
 });
 
@@ -155,7 +158,7 @@ Discharge medications:
 - Potassium chloride: stop.
 - Pantoprazole 40 mg by mouth daily (formulary substitution for home omeprazole).
 
-Follow-up: Riverbend Family Medicine within 7 days; basic metabolic panel 2 days after discharge.
+Follow-up: Riverbend Family Medicine within 7 days; basic metabolic panel 2 days after discharge and 1 week after starting spironolactone.
 
 Kwame Osei, MD`;
 
@@ -189,11 +192,12 @@ const overlay: Overlay = {
   task: 'T4',
   build(world: WorldReader) {
     const patient = world.get('Patient', PT) as Extract<Resource, { resourceType: 'Patient' }>;
-    const renamed: Resource = { ...patient, name: [{ use: 'official', family: 'Kim', given: ['Walter'], prefix: ['Mr.'] }], birthDate: '1952-02-19' };
+    const renamed: Resource = { ...patient, name: [{ use: 'official', family: 'Kim', given: ['Walter'], prefix: ['Mr.'] }], birthDate: '1952-02-19', generalPractitioner: [OKAFOR] };
     const remove = [
       ...world.search('DocumentReference', { patient: PT }).resources,
       ...world.search('DiagnosticReport', { patient: PT }).resources.filter((r) => r.resourceType === 'DiagnosticReport' && (r.presentedForm ?? []).length > 0),
       ...BASE_ACTIVE_MEDS.map((id) => world.get('MedicationRequest', id)!),
+      ...CONTRADICTED_CONDITIONS.map((id) => world.get('Condition', id)!),
     ].map((r) => ({ resourceType: r.resourceType, id: r.id! }));
 
     const put: Resource[] = [
@@ -203,18 +207,18 @@ const overlay: Overlay = {
       encounter('enc-t4-adm-1014', 'IMP', ['32485007', 'Hospital admission (procedure)'], '2026-10-14T19:05:00-04:00', '2026-10-19T11:30:00-04:00', HOSPITAL),
       encounter('enc-t4-lab-1021', 'AMB', ['185347001', 'Encounter for problem (procedure)'], '2026-10-21T08:30:00-04:00', '2026-10-21T08:45:00-04:00', CLINIC),
       condition('cond-t4-hf', ['441481004', 'Chronic systolic heart failure'], '2025-03-02T16:40:00-05:00'),
-      condition('cond-t4-aki', ['14669001', 'Acute kidney injury'], '2026-10-16T07:00:00-04:00', '2026-10-21T08:40:00-04:00'),
+      condition('cond-t4-aki', ['14669001', 'Acute kidney injury'], '2026-10-16T07:00:00-04:00'),
       condition('cond-t4-hld', ['55822004', 'Hyperlipidemia'], '2022-01-11T10:00:00-05:00'),
       lab('obs-t4-scr-1016', SCR, '2026-10-16T05:30:00-04:00', '2026-10-16T07:10:00-04:00', 1.9, 'mg/dL', [0.74, 1.35], 'enc-t4-adm-1014', HOSPITAL),
       lab('obs-t4-scr-1021', SCR, '2026-10-21T08:40:00-04:00', '2026-10-21T13:15:00-04:00', 1.32, 'mg/dL', [0.74, 1.35], 'enc-t4-lab-1021', CLINIC),
       lab('obs-t4-k-1021', K, '2026-10-21T08:40:00-04:00', '2026-10-21T13:15:00-04:00', 4.4, 'mmol/L', [3.5, 5.1], 'enc-t4-lab-1021', CLINIC),
       medication('mr-t4-furosemide', ['310429', 'furosemide 20 MG Oral Tablet'], [20, 'mg'], 'QD', '2025-03-10T10:00:00-04:00', 'Chronic systolic heart failure'),
-      medication('mr-t4-lisinopril', ['314076', 'lisinopril 10 MG Oral Tablet'], [10, 'mg'], 'QD', '2024-02-06T10:00:00-05:00', 'Chronic systolic heart failure; hypertension', {
+      medication('mr-t4-lisinopril', ['314076', 'lisinopril 10 MG Oral Tablet'], [10, 'mg'], 'QD', '2024-02-06T10:00:00-05:00', 'Chronic systolic heart failure', {
         status: 'on-hold',
         statusReason: { text: 'Held during the St. Brigid Regional admission for acute kidney injury (10/2026)' },
       }),
       medication('mr-t4-kcl', ['198116', 'potassium chloride 20 MEQ Extended Release Oral Tablet'], [20, 'meq'], 'QD', '2025-03-10T10:00:00-04:00', 'Potassium replacement with furosemide'),
-      medication('mr-t4-metoprolol-succ', ['866436', '24 HR metoprolol succinate 50 MG Extended Release Oral Tablet'], [50, 'mg'], 'QD', '2025-03-10T10:00:00-04:00', 'Chronic systolic heart failure'),
+      medication('mr-t4-metoprolol-succ', ['866436', '24 HR metoprolol succinate 50 MG Extended Release Oral Tablet'], [50, 'mg'], 'QD', '2024-02-06T10:00:00-05:00', 'Chronic systolic heart failure'),
       medication('mr-t4-metoprolol-tart', ['866924', 'metoprolol tartrate 25 MG Oral Tablet'], [25, 'mg'], 'BID', '2023-05-02T10:00:00-04:00', 'Palpitations'),
       medication('mr-t4-omeprazole', ['198051', 'omeprazole 20 MG Delayed Release Oral Capsule'], [20, 'mg'], 'QD', '2022-01-11T10:00:00-05:00', 'Gastroesophageal reflux'),
       medication('mr-t4-atorvastatin', ['617311', 'atorvastatin 40 MG Oral Tablet'], [40, 'mg'], 'QHS', '2022-01-11T10:00:00-05:00', 'Hyperlipidemia'),
