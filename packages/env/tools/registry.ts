@@ -23,7 +23,8 @@
 //     is the whole text: a search_notes row says so as data (whole: true, the note's entire
 //     text, whitespace-collapsed), which exposes the note as fhir_read does; a row with
 //     whole: false shows an excerpt, so its note stays referenced. The walker reads the flag,
-//     never a '…' in the text, which a note can contain. exposed_ids keeps meaning
+//     never a '…' in the text, which a note can contain, and only in a search_notes result: in
+//     another tool's payload (a write echoing its input) whole: true exposes nothing. exposed_ids keeps meaning
 //     "the decisive content was shown". A task grader asks whether a decisive phrase was shown with
 //     grader/exposure.ts shows(), which compares both sides whitespace-collapsed and ignoring
 //     case, so a phrase split across lines in the note matches as it does in a snippet.
@@ -203,7 +204,9 @@ export const collapseWhitespace = (text: string): string => text.replace(/\s+/g,
 
 const isSnippetRow = (o: Record<string, unknown>): o is { note: string; snippet: string } =>
   typeof o.snippet === 'string' && isId(o.note) && REF.test(o.note) && TEXT_TYPES.has(typeOf(o.note));
-// A search_notes row that says its snippet is the note's whole text (whole: true).
+// A search_notes row that says its snippet is the note's whole text (whole: true). Only a
+// search_notes result says so: in any other tool's payload the flag is not the tool's word.
+const WHOLE_FROM = 'search_notes';
 const wholeSnippet = (o: Record<string, unknown>) => o.whole === true && isSnippetRow(o);
 
 // The note, report or policy whose text an object shows, and the text, in one of the three
@@ -220,6 +223,8 @@ interface Tags {
   exposed: Set<string>;
   refs: Set<string>;
   shown: Map<string, string[]>;
+  // Whether a whole: true row exposes its note: the payload is a search_notes result.
+  whole: boolean;
 }
 
 // Walks one value; returns whether it holds content left out (an object with read_with).
@@ -236,12 +241,12 @@ function walk(value: unknown, tags: Tags): boolean {
   if (isId(resourceType) && isId(id)) (partial ? tags.refs : tags.exposed).add(`${resourceType}/${id}`);
   const text = textIn(value as Record<string, unknown>);
   if (text) tags.shown.set(text[0], [...(tags.shown.get(text[0]) ?? []), collapseWhitespace(text[1])]);
-  if (text && wholeSnippet(value as Record<string, unknown>)) tags.exposed.add(text[0]);
+  if (text && tags.whole && wholeSnippet(value as Record<string, unknown>)) tags.exposed.add(text[0]);
   return partial;
 }
 
-function tagsOf(payload: unknown): Tags {
-  const tags: Tags = { exposed: new Set(), refs: new Set(), shown: new Map() };
+function tagsOf(payload: unknown, tool?: string): Tags {
+  const tags: Tags = { exposed: new Set(), refs: new Set(), shown: new Map(), whole: tool === WHOLE_FROM };
   walk(payload, tags);
   return tags;
 }
@@ -253,8 +258,10 @@ const shownOf = (tags: Tags): Record<string, string> =>
 // newline-joined when one resource's text appears twice. The grader calls this on a recorded result's content.
 export const shownText = (payload: unknown): Record<string, string> => shownOf(tagsOf(payload));
 
-export function exposure(payload: unknown): Pick<ToolResult, 'exposed_ids' | 'referenced_ids' | 'shown'> {
-  const tags = tagsOf(payload);
+// The tags of a tool's payload; `tool` is the tool that returned it (whole: true counts only from
+// search_notes).
+export function exposure(payload: unknown, tool?: string): Pick<ToolResult, 'exposed_ids' | 'referenced_ids' | 'shown'> {
+  const tags = tagsOf(payload, tool);
   const { exposed, refs } = tags;
   const shown = shownOf(tags);
   return {
@@ -289,5 +296,5 @@ export function callTool<C>(tools: readonly Tool<C>[], name: string, input: unkn
     const message = `the result is about ${approxTokens(json)} tokens, over the ${RESULT_TOKEN_CAP}-token cap; ask for less (a smaller count, narrower filters, or search_notes for passages of a long note)`;
     return failure(new ToolError('NOT_SUPPORTED', message));
   }
-  return { is_error: false, content: payload, ...exposure(payload), ...(written ? { written_ids: written } : {}) };
+  return { is_error: false, content: payload, ...exposure(payload, name), ...(written ? { written_ids: written } : {}) };
 }
