@@ -4,8 +4,8 @@
 // and a new order replacing the held one grade the same, and a dose is mg per administration x
 // doses per day, whichever product it is written in. traces_to names the RBC-TOC-02 section
 // each one enforces.
-import { gate, type Check, type GateCtx, type Step } from '../../../packages/grader/check.ts';
-import { firstExposed } from '../../../packages/grader/exposure.ts';
+import { gate, type Check, type GateCtx } from '../../../packages/grader/check.ts';
+import { shows } from '../../../packages/grader/exposure.ts';
 import type { GateOf } from '../../../packages/grader/gate-view.ts';
 import { dailyDose, dosesPerDay, isActive, isDrug } from '../../../packages/grader/normalize.ts';
 import { expected } from '../expected.ts';
@@ -35,25 +35,6 @@ const oneAt = (ingredient: string, daily: number, perDay: number) => (ctx: GateC
 // The patient's PCP (Patient.generalPractitioner), whom RBC-TOC-02 §5 has the agent message.
 export const pcpOf = (ctx: Pick<GateCtx, 'initial'>): string[] => (ctx.initial.get('Patient', split(PT)[1])?.generalPractitioner ?? []).flatMap((r) => (r.reference ? [r.reference] : []));
 
-// What the steps before step `before` showed of `ref`, lower-cased with whitespace collapsed: a
-// search_notes snippet or a read note's text (the shown-text API: Step.shown, filled by the
-// grader from the tool payload). A step from a grader that predates Step.shown counts as
-// showing the whole resource when it exposed it.
-type Shown = Step & { shown?: Readonly<Record<string, string>> };
-const WHOLE = '\u0000whole';
-export function textShown(steps: readonly Step[], ref: string, before: number): string {
-  return (steps as readonly Shown[])
-    .filter((s) => s.n < before)
-    .map((s) => (s.shown !== undefined ? (s.shown[ref] ?? '') : firstExposed([s], ref) !== null ? WHOLE : ''))
-    .join('\n')
-    .toLowerCase()
-    .replace(/\s+/g, ' ');
-}
-const showed = (steps: readonly Step[], ref: string, phrase: string, before: number) => {
-  const text = textShown(steps, ref, before);
-  return text.includes(WHOLE) || text.includes(phrase.toLowerCase().replace(/\s+/g, ' '));
-};
-
 // The step of the first committed write to a medication of the drug, or null.
 const firstWrite = (ctx: GateCtx, ingredient: string): number | null =>
   ctx.steps.find((s) => s.written_ids.some((k) => {
@@ -74,7 +55,7 @@ const gates: Check[] = [
       return { ...v, met: v.met && old !== 'active' && old !== 'on-hold', evidence: { ...v.evidence, old_request: old } };
     },
   }),
-  gate({ id: 'spironolactone_25', category: 'action', traces_to: 'RBC-TOC-02 §1', decisive_ids: [expected.sources.addendum], fn: oneAt('spironolactone', expected.spironolactone.daily_mg, expected.spironolactone.per_day) }),
+  gate({ id: 'spironolactone_25', category: 'action', traces_to: 'RBC-TOC-02 §1', decisive_ids: [expected.sources.addendum], decisive_phrases: { [expected.sources.addendum]: expected.sources.correction }, fn: oneAt('spironolactone', expected.spironolactone.daily_mg, expected.spironolactone.per_day) }),
   gate({
     id: 'kcl_stopped',
     category: 'action',
@@ -144,13 +125,15 @@ const gates: Check[] = [
     traces_to: 'RBC-TOC-02 §1',
     decisive_ids: [expected.sources.addendum, expected.scr.id],
     // The addendum counts when its correction was shown before the spironolactone order, by a
-    // search_notes snippet or by reading it; the creatinine when a result exposed it before the
-    // lisinopril order.
+    // search_notes snippet or a fhir_read (exposure.ts shows()); the creatinine when a result
+    // exposed it before the lisinopril order. The declared phrase lets attribution tell a
+    // correction never shown (retrieval) from one shown and not acted on (reasoning).
+    decisive_phrases: { [expected.sources.addendum]: expected.sources.correction },
     fn: (ctx) => {
       const spiro = firstWrite(ctx, 'spironolactone');
       const lisinopril = firstWrite(ctx, 'lisinopril');
       const pairs = [
-        { id: expected.sources.addendum, before: spiro, seen: spiro === null || showed(ctx.steps, expected.sources.addendum, expected.sources.correction, spiro) },
+        { id: expected.sources.addendum, before: spiro, seen: spiro === null || shows(ctx.steps, expected.sources.addendum, spiro, expected.sources.correction) },
         { id: expected.scr.id, before: lisinopril, seen: lisinopril === null || (ctx.exposedAt(expected.scr.id) ?? Infinity) < lisinopril },
       ];
       const late = pairs.filter((p) => !p.seen).map((p) => p.id);

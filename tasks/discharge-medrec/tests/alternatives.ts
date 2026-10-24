@@ -3,11 +3,10 @@
 // which tablet the dose is written on, complete instead of stop for potassium, what the message
 // is about, one answer for everything, seeing the addendum only as a search snippet, a potassium
 // and creatinine recheck after starting spironolactone).
-import type { Agent } from '../../../packages/grader/matrix/types.ts';
+import type { Alternative } from '../../../packages/grader/matrix/types.ts';
 import { allMeds, change, findPatient, finish, furosemideUp, kclStop, lisinoprilResume, message, MESSAGE, modify, MR, note, order, policy, PT, reads, RX, scr, spironolactone, summaries, summary, writes } from '../solution/steps.ts';
 
-// `loses` is spelled out in the type until the matrix's Agent declares it (builder-49).
-export const alternatives: Array<Agent & { loses: readonly string[] }> = [
+export const alternatives: Alternative[] = [
   {
     id: 'stop_and_reorder',
     why: 'Stops furosemide 20 mg and orders 40 mg, and orders lisinopril 10 mg daily replacing the held order instead of resuming it.',

@@ -1,12 +1,15 @@
 // Near misses of T4, one trap each (task.toml [matrix] traps; design "T4" prior): each must FAIL
 // on exactly the gates it declares and lose exactly the rubric items in `loses`.
-import type { Mutant } from '../../../packages/grader/matrix/types.ts';
-import { addendum, allMeds, change, findPatient, finish, furosemideUp, kclStop, lisinoprilResume, message, MR, note, ORACLE_NOTE, order, policy, read, reads, RX, scr, spironolactone, summaries, summary, writes } from '../solution/steps.ts';
+import type { Mutant, ScriptCall } from '../../../packages/grader/matrix/types.ts';
+import { addendum, allMeds, change, findPatient, finish, furosemideUp, kclStop, lisinoprilResume, message, MR, note, ORACLE_NOTE, order, policy, PT, read, reads, RX, scr, spironolactone, summaries, summary, writes } from '../solution/steps.ts';
+
+// Every note of his as fhir_search rows: sizes and dates, no text, so no snippet shows the
+// addendum's correction.
+const notes: ScriptCall = { name: 'fhir_search', input: { resource_type: 'DocumentReference', patient: PT } };
 
 const changes = (drop: string, add = '') => ({ changes: ORACLE_NOTE.changes.split('. ').filter((s) => !s.toLowerCase().includes(drop)).join('. ') + add });
 
-// `loses` is spelled out in the type until the matrix's Mutant declares it (builder-49).
-export const mutants: Array<Mutant & { loses: readonly string[] }> = [
+export const mutants: Mutant[] = [
   {
     id: 'furosemide_unchanged',
     trap: 'furosemide_dose',
@@ -18,8 +21,24 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
   {
     id: 'spironolactone_12_5',
     trap: 'addendum_missed',
-    why: 'Never opens the signed addendum and starts spironolactone at the summary\'s 12.5 mg (half a 25 mg tablet).',
+    why: 'Lists his notes with fhir_search, opens only the discharge summary, never sees the signed addendum and starts spironolactone at the summary\'s 12.5 mg (half a 25 mg tablet).',
     fails: ['spironolactone_25', 'sources_before_orders'],
+    loses: ['note_lists_changes', 'note_cites_sources'],
+    script: [
+      { calls: [findPatient] },
+      { calls: [allMeds, notes, policy] },
+      { calls: [summary, scr] },
+      { calls: [furosemideUp, order(RX.spironolactone25, 12.5, 'QD', 'Discharge summary: spironolactone 12.5 mg daily'), kclStop, lisinoprilResume] },
+      { calls: [message()] },
+      { calls: [note({ sources: 'Sources: St. Brigid Regional discharge summary of 10/19/2026; creatinine 1.32 mg/dL on 10/21/2026.', changes: ORACLE_NOTE.changes.replace("Spironolactone 25 mg daily started (signed addendum, which corrects the summary's 12.5 mg)", 'Spironolactone 12.5 mg daily started (discharge summary)') }, ['DocumentReference/doc-t4-dc-1019', 'Observation/obs-t4-scr-1021'])] },
+      { calls: [finish()] },
+    ],
+  },
+  {
+    id: 'spironolactone_12_5_snippet',
+    trap: 'addendum_missed',
+    why: "Sees the addendum's correction in the search_notes snippet but goes by the summary and starts spironolactone at 12.5 mg: the correction was shown, so G8 passes and the miss is reasoning.",
+    fails: ['spironolactone_25'],
     loses: ['note_lists_changes', 'note_cites_sources'],
     script: [
       { calls: [findPatient] },
