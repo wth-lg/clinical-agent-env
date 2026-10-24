@@ -1,12 +1,12 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test, type Page, type Request, type Route } from '@playwright/test';
+import { expect, test, type Locator, type Page, type Request, type Route } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 import { mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { MODEL } from '../../../packages/core/anthropic.ts';
 import { HEALTH_PATH, KEY_PATH, REFUSAL_TEXT, SAMPLES, TOKEN_HEADER, TOKEN_META } from '../../../packages/core/runner-api.ts';
 import { admitTrial, DEFAULT_SESSION_CAP_USD } from '../src/spend/cap.ts';
-import { LOCAL_START_COMMAND } from '../src/surface/command.ts';
+import { LOCAL_PREREQUISITES, LOCAL_START_COMMAND, NODE_INSTALL_URL, PNPM_INSTALL_URL } from '../src/surface/command.ts';
 
 // The app shell against a mocked API: the runner's /api/health and /api/key are route-mocked
 // from the runner-api.ts samples, the Messages API from SSE written here. The API origin is
@@ -117,6 +117,29 @@ const keyField = (page: Page) => page.getByLabel('API key', { exact: true });
 const chip = (page: Page) => page.getByTestId('surface-chip');
 const capField = (page: Page) => page.getByLabel('Session spend cap (USD)');
 const validate = (page: Page) => page.getByRole('button', { name: 'Validate' }).click();
+
+// The start block LocalCommand renders: LOCAL_PREREQUISITES exactly, the two install links, then
+// LOCAL_START_COMMAND with its Copy button, in that order.
+async function expectStartBlock(scope: Locator) {
+  await expect(scope.getByTestId('local-prerequisites')).toHaveText(LOCAL_PREREQUISITES);
+  await expect(scope.getByRole('link', { name: 'Install Node.js' })).toHaveAttribute('href', NODE_INSTALL_URL);
+  await expect(scope.getByRole('link', { name: 'Install pnpm' })).toHaveAttribute('href', PNPM_INSTALL_URL);
+  await expect(scope.getByTestId('local-command')).toHaveText(LOCAL_START_COMMAND);
+  await expect(scope.getByRole('button', { name: 'Copy command' })).toBeVisible();
+  const text = await scope.innerText();
+  expect(text.indexOf(LOCAL_PREREQUISITES)).toBeGreaterThanOrEqual(0);
+  expect(text.indexOf(LOCAL_PREREQUISITES)).toBeLessThan(text.indexOf('git clone'));
+}
+
+// Requests that failed outright (aborted, refused, blocked); a 404 health is an answer, not a failure.
+function failedRequests(page: Page): string[] {
+  const failed: string[] = [];
+  page.on('requestfailed', (r) => failed.push(`${r.url()}: ${r.failure()?.errorText}`));
+  return failed;
+}
+
+const panel = (page: Page) => page.getByRole('region', { name: 'Run it on your computer' });
+const insideAlert = (l: Locator) => l.evaluate((el) => el.closest('[role="alert"]') !== null);
 
 test.describe('surface detection', () => {
   test('a clinenv-runner health names the local runner', async ({ page }) => {
@@ -275,8 +298,8 @@ test.describe('key gate on browser-direct', () => {
     const alert = page.getByRole('alert');
     await expect(alert).toContainText(ORG_CORS);
     await expect(alert).toContainText("This key's organization does not allow browser access.");
-    await expect(page.getByTestId('local-command')).toHaveText(LOCAL_START_COMMAND);
-    await expect(page.getByRole('button', { name: 'Copy command' })).toBeVisible();
+    await expect(alert.getByTestId('local-command')).toHaveText(LOCAL_START_COMMAND);
+    await expect(alert.getByRole('button', { name: 'Copy command' })).toBeVisible();
     await page.getByRole('button', { name: 'Browse without a key' }).click();
     await expect(page.getByTestId('key-chip')).toHaveText('No key');
   });
@@ -287,9 +310,10 @@ test.describe('key gate on browser-direct', () => {
     await page.goto('./');
     await keyField(page).fill(sentinelKey());
     await page.getByRole('button', { name: 'Validate' }).click();
-    await expect(page.getByRole('alert')).toContainText('invalid x-api-key');
-    await expect(page.getByTestId('local-command')).toHaveCount(0);
-    await expect(page.getByText(LOCAL_START_COMMAND)).toHaveCount(0);
+    const alert = page.getByRole('alert');
+    await expect(alert).toContainText('invalid x-api-key');
+    await expect(alert.getByTestId('local-command')).toHaveCount(0);
+    await expect(alert).not.toContainText(LOCAL_START_COMMAND);
   });
 
   test('the session cap refuses a call whose estimate crosses it, before any request', async ({ page }) => {
@@ -301,6 +325,86 @@ test.describe('key gate on browser-direct', () => {
     await page.getByRole('button', { name: 'Validate' }).click();
     await expect(page.getByRole('alert')).toContainText('session cap');
     expect(calls).toHaveLength(0);
+  });
+});
+
+// P12c: the prerequisites and the one command, next to each other on every start screen.
+test.describe('start block', () => {
+  test('browser-direct: the local-run panel shows on first load with no key and no failed request', async ({ page }) => {
+    const failed = failedRequests(page);
+    await mockBrowserDirect(page);
+    await page.goto('./');
+    await expect(chip(page)).toHaveText('Browser-direct');
+    await expect(keyField(page)).toHaveValue('');
+    await expect(page.getByRole('alert')).toHaveCount(0);
+    await expect(panel(page)).toBeVisible();
+    await expectStartBlock(panel(page));
+    expect(failed).toEqual([]);
+  });
+
+  test('browser-direct: the panel stays while Validate is in flight', async ({ page }) => {
+    let release!: () => void;
+    await mockBrowserDirect(page);
+    await mockApi(page, { status: 200, hold: new Promise<void>((r) => (release = r)) });
+    await page.goto('./');
+    await keyField(page).fill(sentinelKey());
+    await validate(page);
+    await expect(page.getByRole('button', { name: 'Validating…' })).toBeVisible();
+    await expectStartBlock(panel(page));
+    release();
+  });
+
+  test('browser-direct: the panel stays after a 200 Validate, in the shell', async ({ page }) => {
+    await mockBrowserDirect(page);
+    await mockApi(page, { status: 200 });
+    await page.goto('./');
+    await expect(panel(page)).toBeVisible();
+    await keyField(page).fill(sentinelKey());
+    await validate(page);
+    await expect(page.getByTestId('key-chip')).not.toHaveText('No key');
+    await expect(page.getByRole('navigation', { name: 'Views' })).toBeVisible();
+    await expectStartBlock(panel(page));
+    expect(await insideAlert(panel(page))).toBe(false);
+  });
+
+  test('browser-direct: the panel stays after a 401, outside the alert', async ({ page }) => {
+    await mockBrowserDirect(page);
+    await mockApi(page, { status: 401, type: 'authentication_error', message: 'invalid x-api-key' });
+    await page.goto('./');
+    await keyField(page).fill(sentinelKey());
+    await validate(page);
+    await expect(page.getByRole('alert')).toContainText('invalid x-api-key');
+    await expectStartBlock(panel(page));
+    expect(await insideAlert(panel(page))).toBe(false);
+    expect(await page.getByRole('alert').evaluate((a) => a.querySelector('[data-testid="local-run-panel"]'))).toBeNull();
+  });
+
+  test('browser-direct: the panel stays after an org-CORS 401, outside the alert', async ({ page }) => {
+    await mockBrowserDirect(page);
+    await mockApi(page, { status: 401, type: 'authentication_error', message: ORG_CORS });
+    await page.goto('./');
+    await keyField(page).fill(sentinelKey());
+    await validate(page);
+    await expect(page.getByRole('alert')).toContainText(ORG_CORS);
+    await expectStartBlock(panel(page));
+    expect(await insideAlert(panel(page))).toBe(false);
+  });
+
+  test('local runner: the key gate shows the start block', async ({ page }) => {
+    await mockLocalRunner(page, 'stub');
+    await page.goto('./');
+    await expect(chip(page)).toHaveText('Local runner');
+    const block = page.getByTestId('local-run-panel');
+    await expect(block).toBeVisible();
+    await expectStartBlock(block);
+  });
+
+  test('Copy writes exactly LOCAL_START_COMMAND to the clipboard', async ({ page, context, baseURL }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: new URL(baseURL!).origin });
+    await mockBrowserDirect(page);
+    await page.goto('./');
+    await panel(page).getByRole('button', { name: 'Copy command' }).click();
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(LOCAL_START_COMMAND);
   });
 });
 
@@ -412,7 +516,7 @@ test.describe('the runner\'s own page (token meta present)', () => {
     });
     await page.goto('./');
     await expect(page.getByRole('heading', { name: /runner not responding/i })).toBeVisible({ timeout: 5000 });
-    await expect(page.getByTestId('local-command')).toHaveText(LOCAL_START_COMMAND);
+    await expectStartBlock(page.locator('main'));
     await expect(chip(page)).toHaveCount(0);
     await expect(keyField(page)).toHaveCount(0);
     answer = true;
@@ -497,10 +601,10 @@ test.describe('gate details', () => {
     expect(at("This key's organization does not allow browser access.")).toBeGreaterThanOrEqual(0);
     expect(at("This key's organization does not allow browser access.")).toBeLessThan(at('git clone'));
     expect(at('git clone')).toBeLessThan(at(ORG_CORS));
-    const box = (await page.getByRole('button', { name: 'Copy command' }).boundingBox())!;
+    const box = (await alert.getByRole('button', { name: 'Copy command' }).boundingBox())!;
     expect(Math.min(box.width, box.height)).toBeGreaterThanOrEqual(24);
     // Each space- or slash-separated piece of the command sits on one line.
-    const split = await page.getByTestId('local-command').evaluate((el) => {
+    const split = await alert.getByTestId('local-command').evaluate((el) => {
       const pieces: string[] = [];
       for (const span of el.querySelectorAll('[data-piece]')) if (span.getClientRects().length > 1) pieces.push(span.textContent ?? '');
       return { pieces, wordBreak: getComputedStyle(el).wordBreak, spans: el.querySelectorAll('[data-piece]').length };

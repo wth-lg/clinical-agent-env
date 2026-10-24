@@ -4,6 +4,7 @@ import { DEFAULT_SESSION_CAP_USD, MAX_SESSION_CAP_USD, parseCap } from '../spend
 import { sessionCap, setSessionCap } from '../spend/session.ts';
 import type { Surface } from '../surface/detect.ts';
 import { LocalCommand } from '../surface/LocalCommand.tsx';
+import { LocalRunPanel } from '../surface/LocalRunPanel.tsx';
 import { SurfaceChip } from '../surface/SurfaceChip.tsx';
 import { validateDirect, type DirectResult } from './direct.ts';
 import { heldByRunner, holdInTab } from './key.ts';
@@ -26,7 +27,8 @@ const field = 'h-9 w-full rounded-sm border border-line-strong bg-surface px-3 t
 // semantics, so the residual prompt is the accepted cost.
 const NO_SAVE = { autoComplete: 'off', 'data-1p-ignore': 'true', 'data-lpignore': 'true', 'data-bwignore': 'true', 'data-form-type': 'other' } as const;
 
-// The first screen: paste a key, Validate, go. Or browse without one.
+// The first screen: paste a key, Validate, go. Or browse without one. Below the form, outside any
+// error, the local-run panel states the prerequisites and the one command.
 export function KeyGate({ surface, onDone, onBrowse, notice }: { surface: Surface; onDone: () => void; onBrowse: () => void; notice?: string | undefined }) {
   const [key, setKey] = useState('');
   const [reveal, setReveal] = useState(false);
@@ -64,7 +66,7 @@ export function KeyGate({ surface, onDone, onBrowse, notice }: { surface: Surfac
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-canvas px-4 py-10">
+    <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-canvas px-4 py-10">
       {/* noValidate: parseCap decides what submits, so the browser never blocks a value the app accepts. */}
       <form onSubmit={submit} noValidate className="w-full max-w-[440px] rounded-sm border border-line bg-surface p-6">
         <div className="flex items-center justify-between gap-3">
@@ -150,6 +152,7 @@ export function KeyGate({ surface, onDone, onBrowse, notice }: { surface: Surfac
           </button>
         </div>
       </form>
+      <LocalRunPanel surface={surface} className="w-full max-w-[440px]" />
     </main>
   );
 }
