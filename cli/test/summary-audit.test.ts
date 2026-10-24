@@ -48,6 +48,15 @@ describe('summary --require', () => {
     expect(j.initial_state_hashes).toEqual(['h-initial']);
   });
 
+  // P11f (7), regrade-2 N3: the fixture records carry the env/grader split, so summary reports it.
+  it('reports each task\'s env_versions and the grader_task_versions of the current grades', async () => {
+    const clean = JSON.parse((await cli(summary, [run('clean'), '--json'])).out);
+    expect(clean.tasks['t-alpha']).toMatchObject({ env_versions: ['e-t-alpha'], grader_task_versions: ['g-t-alpha'] });
+    expect(clean.tasks['t-beta']).toMatchObject({ env_versions: ['e-t-beta'], grader_task_versions: ['g-t-beta'] });
+    const regraded = JSON.parse((await cli(summary, [run('fail-regraded-pass'), '--json'])).out);
+    expect(regraded.tasks['t-alpha']).toMatchObject({ env_versions: ['e-t-alpha'], grader_task_versions: ['g-t-alpha', 'g-t-alpha-next'] });
+  });
+
   it.each(SUMMARY_FIXTURES)('exits 1 on %s, naming the violation', async (fixture) => {
     const r = await cli(summary, [run(fixture), '--require', REQUIRE]);
     expect(r.code, r.out + r.err).toBe(1);
