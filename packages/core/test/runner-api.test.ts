@@ -1,12 +1,14 @@
 // The local runner's health, key, trial, run and SSE contracts: every sample the UI specs route-mock with
-// passes its validator, and a body with a field missing or mistyped is rejected.
+// passes its validator, and a body with a field missing or mistyped is rejected. Every 409 reason
+// the runner sends has the plain text docs/requirements/ui-contract.md lists for it.
+import { readdirSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { reserveRequest } from '../anthropic.ts';
 import { FINAL_TRIALS_PER_TASK, worstCaseUsd } from '../cost.ts';
 import {
   ContractError, HEALTH_PATH, KEY_PATH, MAX_CONCURRENCY, MAX_TRIALS_PER_TASK, parseDryRun, parseHealth, parseKeyRequest, parseKeyState,
   parseRunnerError, parseRunsList, parseSse, parseSseEnd, parseTrialsAccepted, parseTrialsRefused, parseTrialsRequest, parseTrialView,
-  RUNNER_APP, RUNS_PATH, SAMPLES, sseFrame, SSE_END, TOKEN_HEADER, TOKEN_META, TRIALS_PATH, VALIDATE_REQUEST, validateWorstCaseUsd,
+  REFUSAL_TEXT, refusalText, RUNNER_APP, RUNS_PATH, SAMPLES, sseFrame, SSE_END, TOKEN_HEADER, TOKEN_META, TRIALS_PATH, VALIDATE_REQUEST, validateWorstCaseUsd,
 } from '../runner-api.ts';
 
 const without = (o: object, k: string) => Object.fromEntries(Object.entries(o).filter(([name]) => name !== k));
@@ -161,5 +163,132 @@ describe('the Validate call', () => {
     expect(validateWorstCaseUsd()).toBe(worstCaseUsd(reserveRequest(VALIDATE_REQUEST.history, VALIDATE_REQUEST.params)));
     expect(validateWorstCaseUsd()).toBeGreaterThan(0);
     expect(validateWorstCaseUsd()).toBeLessThan(0.1);
+  });
+});
+
+const read = (path: string) => readFileSync(new URL(`../../../${path}`, import.meta.url), 'utf8');
+
+// The 409 reasons apps/runner/server.ts sends, by endpoint: postTrials and startSmoke answer POST
+// api/trials (Run), postKey answers POST api/key (Validate). Each `status: 409` statement names its
+// reason as a literal type, as spend_refused_<cap> over SpendRefused's caps, or as a const error.
+function runnerRefusals(): { key: string[]; trials: string[] } {
+  const src = read('apps/runner/server.ts');
+  const caps = /readonly cap: ((?:'[a-z]+'(?: \| )?)+);/.exec(read('packages/core/ledger.ts'))?.[1]?.match(/[a-z]+/g) ?? [];
+  const consts = new Map([...src.matchAll(/const (\w+) = \{ type: '([a-z_]+)'/g)].map((m) => [m[1]!, m[2]!] as const));
+  const part = (from: string, to: string) => src.slice(src.indexOf(from), src.indexOf(to));
+  const reasons = (code: string) => code.split('status: 409').slice(1).flatMap((site) => {
+    const statement = site.slice(0, site.search(/;\n/));
+    const found = [
+      ...[...statement.matchAll(/type: '([a-z_]+)'/g)].map((m) => m[1]!),
+      ...(statement.includes('type: `spend_refused_${') ? caps.map((c) => `spend_refused_${c}`) : []),
+      ...[...statement.matchAll(/error: (\w+)\b/g)].flatMap((m) => consts.get(m[1]!) ?? []),
+    ];
+    if (found.length === 0) throw new Error(`a 409 in apps/runner/server.ts names no reason this test can read: ${statement.slice(0, 120)}`);
+    return found;
+  });
+  const trials = part('async function postTrials(', 'async function postKey(');
+  const key = part('async function postKey(', 'async function readJson(');
+  expect(src.split('status: 409').length - 1, 'a 409 outside postTrials, startSmoke and postKey').toBe(trials.split('status: 409').length - 1 + key.split('status: 409').length - 1);
+  return { key: [...new Set(reasons(key))].sort(), trials: [...new Set(reasons(trials))].sort() };
+}
+
+// runnerRefusals reads only server.ts, and there only the `status: 409` shape. So no other
+// apps/runner source file may hold a 409 at all, and every 409 in server.ts code (outside
+// comments) is `status: 409` (verifier-phase-P11f-3 m3).
+function stray409s(): string[] {
+  const root = new URL('../../../apps/runner/', import.meta.url);
+  const sources = readdirSync(root, { recursive: true, encoding: 'utf8' })
+    .filter((f) => /\.[cm]?[jt]sx?$/.test(f) && !/(^|\/)(test|node_modules)\//.test(f));
+  return sources.flatMap((f) => {
+    const lines = readFileSync(new URL(f, root), 'utf8').split('\n').map((l, i) => ({ l, at: `apps/runner/${f}:${i + 1}` }));
+    if (f !== 'server.ts') return lines.filter(({ l }) => /409/.test(l)).map(({ at }) => at);
+    return lines.filter(({ l }) => !/^\s*\/\//.test(l) && /409/.test(l.replaceAll('status: 409', ''))).map(({ at }) => at);
+  });
+}
+
+// docs/requirements/ui-contract.md lists each as `- Validate, `<reason>`: `<text>`` or `- Run, ...`.
+function contractRefusals(): { key: Record<string, string>; trials: Record<string, string> } {
+  const out = { key: {} as Record<string, string>, trials: {} as Record<string, string> };
+  for (const m of read('docs/requirements/ui-contract.md').matchAll(/^- (Validate|Run), `([a-z_]+)`: `([^`]+)`$/gm)) {
+    out[m[1] === 'Validate' ? 'key' : 'trials'][m[2]!] = m[3]!;
+  }
+  return out;
+}
+
+describe('runner refusal text', () => {
+  it('has a text for every 409 reason the runner sends, and for no other', () => {
+    const sent = runnerRefusals();
+    expect(sent.trials).toEqual(expect.arrayContaining(['fixtures_changed', 'no_key', 'session_cap', 'spend_refused_ceiling']));
+    expect(sent.key).toEqual(expect.arrayContaining(['session_cap', 'spend_refused_ceiling']));
+    expect(Object.keys(REFUSAL_TEXT.trials).sort()).toEqual(sent.trials);
+    expect(Object.keys(REFUSAL_TEXT.key).sort()).toEqual(sent.key);
+  });
+
+  it('sees every 409 in apps/runner: none in another source file, none in server.ts outside `status: 409`', () => {
+    expect(stray409s()).toEqual([]);
+  });
+
+  it('returns the ui-contract.md strings byte for byte', () => {
+    expect(contractRefusals()).toEqual(REFUSAL_TEXT);
+    expect(refusalText('key', 'session_cap')).toBe(REFUSAL_TEXT.key.session_cap);
+    expect(refusalText('trials', 'spend_refused_ceiling')).toBe(REFUSAL_TEXT.trials.spend_refused_ceiling);
+  });
+
+  it('has no text for a reason the runner does not send, or for an inherited name', () => {
+    expect(refusalText('key', 'authentication_error')).toBeNull();
+    expect(refusalText('key', 'no_key')).toBeNull();
+    expect(refusalText('trials', 'toString')).toBeNull();
+  });
+
+  // When no trials are running, waiting changes nothing, so each cap text also says what does
+  // (verifier-phase-P11f-3 S2). The session is the runner process's (apps/runner/server.ts
+  // startRunner: session, inSession), so a restart starts one with no spend and no cap. The project
+  // spending limit counts the whole spend ledger, which a restart does not change; `pnpm cli
+  // spend --check` lists what it holds, an open batch of a runner that died included.
+  it('says what to do when a cap refuses and no trials are running', () => {
+    const restart = 'If no trials are running, restart the runner. A restart starts a new session with no spend.';
+    const ledger = 'A runner restart does not reset this limit. Run pnpm cli spend --check to see what uses it.';
+    expect(REFUSAL_TEXT.key.session_cap).toContain(restart);
+    expect(REFUSAL_TEXT.key.spend_refused_ceiling).toContain(restart);
+    for (const text of [REFUSAL_TEXT.key.spend_refused_projected, REFUSAL_TEXT.trials.projected_cap, REFUSAL_TEXT.trials.spend_refused_projected]) {
+      expect(text).toContain(ledger);
+    }
+    expect(REFUSAL_TEXT.key.spend_refused_projected).toContain('If trials are running, wait for them to finish.');
+  });
+
+  // Two caps, two names (verifier-phase-P11f-3 m1): PROJECTED_CAP_USD, which refuses a batch or
+  // call by its estimate, is the project spending limit; ACTUAL_CAP_USD, which blocks every call
+  // once settled spend reaches it, is the hard spending stop.
+  it('names the projected cap and the hard stop differently', () => {
+    const all = [...Object.values(REFUSAL_TEXT.key), ...Object.values(REFUSAL_TEXT.trials)];
+    for (const text of all) expect(text).not.toContain('total spending limit');
+    for (const text of [REFUSAL_TEXT.key.spend_refused_projected, REFUSAL_TEXT.trials.projected_cap, REFUSAL_TEXT.trials.spend_refused_projected]) {
+      expect(text).toContain('the project spending limit');
+      expect(text).not.toContain('spending stop');
+    }
+    for (const text of [REFUSAL_TEXT.key.spend_refused_actual, REFUSAL_TEXT.trials.spend_refused_actual]) {
+      expect(text).toMatch(/^The project has reached its hard spending stop\. /);
+      expect(text).not.toContain('spending limit');
+    }
+  });
+
+  // ASD-STE 100: one instruction per sentence, and one name for the batch the user just posted
+  // (verifier-phase-P11f-3 m2). An instruction is one of the verbs these texts use.
+  it('gives one instruction per sentence and says this batch', () => {
+    const verbs = /\b(paste|press|select|set|wait|restart|run|start)\b/gi;
+    for (const [reason, text] of [...Object.entries(REFUSAL_TEXT.key), ...Object.entries(REFUSAL_TEXT.trials)]) {
+      expect(text, reason).not.toMatch(/\bthe batch\b/i);
+      for (const sentence of text.split(/(?<=\.) /)) expect(sentence.match(verbs)?.length ?? 0, `${reason}: ${sentence}`).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it('is plain: short sentences, no status codes and no reason ids', () => {
+    for (const [reason, text] of [...Object.entries(REFUSAL_TEXT.key), ...Object.entries(REFUSAL_TEXT.trials)]) {
+      expect(text, reason).not.toMatch(/\b[45][0-9]{2}\b|_|api\//);
+      for (const sentence of text.split(/(?<=\.) /)) {
+        expect(sentence, reason).toMatch(/^[A-Z].*\.$/);
+        expect(sentence.split(' ').length, `${reason}: ${sentence}`).toBeLessThanOrEqual(20);
+      }
+    }
   });
 });

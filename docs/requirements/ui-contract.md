@@ -90,6 +90,27 @@ accessible name or text node, so they share one line of the snapshot.
 - `Local runner` and `Browser-direct`: the surface chip on the local runner and on the hosted
   site.
 
+### P13, P15: runner refusals
+
+When the local runner refuses with HTTP 409, the screen shows the text for its reason first,
+then the runner's own message in small type. packages/core/runner-api.ts REFUSAL_TEXT returns
+these strings; packages/core/test/runner-api.test.ts checks them byte for byte and fails when the
+runner sends a 409 reason with no line here. The key gate (P13) shows the Validate lines; the Run
+launcher (P15) shows the Run lines.
+
+- Validate, `session_cap`: `Validate can cost more than your session spend cap has left. If trials are running, wait for them to finish. Then press Validate again. If no trials are running, restart the runner. A restart starts a new session with no spend.`
+- Validate, `spend_refused_ceiling`: `Validate can cost more than your session spend cap has left. If trials are running, wait for them to finish. Then press Validate again. If no trials are running, restart the runner. A restart starts a new session with no spend.`
+- Validate, `spend_refused_projected`: `Validate can cost more than the project spending limit has left. If trials are running, wait for them to finish. Then press Validate again. A runner restart does not reset this limit. Run pnpm cli spend --check to see what uses it.`
+- Validate, `spend_refused_actual`: `The project has reached its hard spending stop. The runner makes no more API calls, so it cannot check the key.`
+- Run, `no_key`: `The runner has no API key. Paste your Anthropic API key. Press Validate. Then start this batch again.`
+- Run, `session_cap`: `This batch can cost more than your session spend cap allows. To lower the cost, select fewer trials. To allow more spend, set a higher session cap.`
+- Run, `spend_refused_ceiling`: `This batch can cost more than your session spend cap allows. To lower the cost, select fewer trials. To allow more spend, set a higher session cap.`
+- Run, `projected_cap`: `This batch can cost more than the project spending limit allows. Select fewer tasks or fewer trials. A runner restart does not reset this limit. Run pnpm cli spend --check to see what uses it.`
+- Run, `spend_refused_projected`: `This batch can cost more than the project spending limit allows. Select fewer tasks or fewer trials. A runner restart does not reset this limit. Run pnpm cli spend --check to see what uses it.`
+- Run, `spend_refused_actual`: `The project has reached its hard spending stop. The runner makes no more API calls.`
+- Run, `fixtures_changed`: `The environment data changed while another batch was running. Wait for that batch to finish. Then start this batch again.`
+- Run, `batch_refused`: `The runner could not start this batch. The runner's reason is below.`
+
 ### P14: browse views
 
 - `6 of 6 tasks in band`: the Overview band line. It reads `<k> of 6 tasks in band`, where k is

@@ -92,6 +92,13 @@ describe('replay and regrade', () => {
     expect(bad.text).toMatch(/_toy\/0: regrade gives PASS score 1, the current grade FAIL score 0/);
   });
 
+  // Every reason a judge answer can be missing from the record's cache (P11f PR-b): each of the
+  // five inputs of the judge cache key (packages/grader/judge.ts), or an answer the cache never held.
+  const MISS_CAUSES = "the record's judge cache has no answer for this question. The judge cache key has five parts: " +
+    'the judge model, the [judge] effort, the judge prompt version, the judge question and the text the grader gives the judge. ' +
+    'One of them may have changed since this run. ' +
+    "Or the record's cache never held this answer, for example because the entry was removed.";
+
   // P11f (6), verifier-phase-regrade-2 N2: [judge] and [matrix] only shape grading, so editing them
   // leaves env_version as it was and replay does not refuse the run; a table the agent works in
   // still does. The judge effort is part of a judge cache key, so after an effort edit replay
@@ -111,11 +118,30 @@ describe('replay and regrade', () => {
     const judged = await cli(replay, [dir], edited('effort = "medium"', 'effort = "high"'));
     expect(judged.text).not.toMatch(/environment changed/);
     expect(judged.text).toMatch(/_toy\/0: judge cache miss /);
-    expect(judged.text).toContain('the judge question or the [judge] effort changed since this run, and the effort is part of the judge cache key, so its cached answers cannot grade it.');
+    expect(judged.text).toContain(MISS_CAUSES);
     expect(judged.text).toContain('Only a new run grades with the judge: pnpm cli run --task _toy --model claude-opus-5-5 --out <new run dir> (pnpm cli oracle --task _toy --live-judge refreshes only the matrix cache).');
     const turns = await cli(replay, [dir], edited('max_turns = 6', 'max_turns = 7'));
     expect(turns.code).toBe(1);
     expect(turns.text).toMatch(/_toy\/0: environment changed: run at env_version /);
+  });
+
+  // The graded text is the fifth input of the judge cache key: here the record's finish summary,
+  // which the toy's judge items read. With a changed summary and nothing else changed, replay and
+  // regrade both miss and give the same text (P11f PR-b, verifier-phase-P11f-3 S1).
+  it('after the graded text changes, replay and regrade name the judge cache miss with every cause', async () => {
+    const copy = join(tempDir('replay-graded-text'), 'replay-graded-text');
+    cpSync(dir, copy, { recursive: true });
+    const file = join(copy, 'trials', '_toy', '0.json');
+    const rec = JSON.parse(readFileSync(file, 'utf8')) as { summary: string; regrades?: unknown };
+    delete rec.regrades;
+    writeFileSync(file, JSON.stringify({ ...rec, summary: `${rec.summary} Done.` }, null, 2));
+    for (const [main, args] of [[replay, [copy]], [regrade, [copy, '--grader-version', GRADER_VERSION]]] as const) {
+      const r = await cli(main, [...args]);
+      expect(r.code, r.text).toBe(1);
+      expect(r.text).not.toMatch(/environment changed/);
+      expect(r.text).toMatch(/_toy\/0: judge cache miss [0-9a-f]+: /);
+      expect(r.text).toContain(MISS_CAUSES);
+    }
   });
 
   it('replay refuses a trial whose env_version is not the checkout\'s, naming both; regrade still runs', async () => {
@@ -149,6 +175,7 @@ describe('replay and regrade', () => {
       expect(r.text).toContain('_toy/1');
       expect(r.text).toContain(removed.key);
       expect(r.text).not.toContain(fakeKey('R'));
+      expect(r.text).toContain(MISS_CAUSES);
     }
     expect(readFileSync(recordFile(1), 'utf8')).toBe(before);
     expect(fetchSpy).not.toHaveBeenCalled();

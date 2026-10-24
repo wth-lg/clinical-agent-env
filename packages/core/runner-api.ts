@@ -19,7 +19,8 @@
 //   DELETE api/key      the same header. 200 KeyState { key_set: false }.
 // P12b adds the trial, run and SSE contracts, each behind the same header:
 //   POST   api/trials   TrialsRequest. 202 TrialsAccepted; 409 TrialsRefused, with no call made:
-//                       no_key, session_cap, projected_cap, batch_refused (the run is locked),
+//                       fixtures_changed (another batch runs on fixtures since rebuilt), no_key,
+//                       session_cap, projected_cap, batch_refused (the run is locked),
 //                       or spend_refused_<cap> from the ledger's batchStart (projected, actual,
 //                       or ceiling: the session cap, which the ledger also holds at every
 //                       reserve, so a batch that would cross it later stops with RunView.stopped
@@ -33,6 +34,7 @@
 //                       one `event: end` frame (SseEnd, no id) when the trial ends without one.
 //   DELETE api/trials/:id         cancels the trial. 200 TrialView.
 //   GET    api/runs     200 RunsList: the runs this runner process started, in start order.
+// Each 409 reason has plain text in REFUSAL_TEXT, which the UI shows above the runner's message.
 // The key travels only in the POST body. No response, error or validator message carries it.
 // No Node or DOM imports: this file is checked by the isomorphism lint.
 import { reserveRequest, type MessageParam, type MessageParams } from './anthropic.ts';
@@ -90,6 +92,39 @@ export interface KeyState {
 
 export interface RunnerError {
   error: { type: string; message: string };
+}
+
+// The plain text the UI shows first for each 409 reason, then the runner's own message under it:
+// exactly the strings docs/requirements/ui-contract.md lists ("P13, P15: runner refusals"). key
+// holds POST api/key's reasons (the key gate's Validate), trials POST api/trials's (the Run
+// launcher). runner-api.test.ts fails when apps/runner/server.ts sends a 409 reason missing here.
+const SESSION_CAP_VALIDATE = 'Validate can cost more than your session spend cap has left. If trials are running, wait for them to finish. Then press Validate again. If no trials are running, restart the runner. A restart starts a new session with no spend.';
+const SESSION_CAP_RUN = 'This batch can cost more than your session spend cap allows. To lower the cost, select fewer trials. To allow more spend, set a higher session cap.';
+const PROJECTED_CAP_RUN = 'This batch can cost more than the project spending limit allows. Select fewer tasks or fewer trials. A runner restart does not reset this limit. Run pnpm cli spend --check to see what uses it.';
+
+export const REFUSAL_TEXT = {
+  key: {
+    session_cap: SESSION_CAP_VALIDATE,
+    spend_refused_ceiling: SESSION_CAP_VALIDATE,
+    spend_refused_projected: 'Validate can cost more than the project spending limit has left. If trials are running, wait for them to finish. Then press Validate again. A runner restart does not reset this limit. Run pnpm cli spend --check to see what uses it.',
+    spend_refused_actual: 'The project has reached its hard spending stop. The runner makes no more API calls, so it cannot check the key.',
+  },
+  trials: {
+    no_key: 'The runner has no API key. Paste your Anthropic API key. Press Validate. Then start this batch again.',
+    session_cap: SESSION_CAP_RUN,
+    spend_refused_ceiling: SESSION_CAP_RUN,
+    projected_cap: PROJECTED_CAP_RUN,
+    spend_refused_projected: PROJECTED_CAP_RUN,
+    spend_refused_actual: 'The project has reached its hard spending stop. The runner makes no more API calls.',
+    fixtures_changed: 'The environment data changed while another batch was running. Wait for that batch to finish. Then start this batch again.',
+    batch_refused: "The runner could not start this batch. The runner's reason is below.",
+  },
+} as const satisfies Record<'key' | 'trials', Record<string, string>>;
+
+// The text for a 409's error.type on that endpoint, or null for a reason the runner never sends there.
+export function refusalText(endpoint: keyof typeof REFUSAL_TEXT, type: string): string | null {
+  const texts: Record<string, string> = REFUSAL_TEXT[endpoint];
+  return Object.hasOwn(texts, type) ? texts[type]! : null;
 }
 
 export class ContractError extends TypeError {

@@ -10,10 +10,11 @@
 // checkout's for the record's task (packages/core/tasks.ts: its grader-side files and
 // GRADER_VERSION). A record that already has an entry at both is skipped, so a rerun changes
 // nothing, and a fix to a task's tests/** regrades that task's records with no GRADER_VERSION
-// bump. A judge cache miss is an error: regrade names each trial and the missing cache key, exits
-// 1 and writes no record. So is a trial whose trajectory does not reach its record's state in
-// this checkout when its env_version is not the checkout's (it ran against task files, a world
-// or tools this checkout does not have): regrade names both versions and the step that failed.
+// bump. A judge cache miss is an error: regrade names each trial, the missing cache key and every
+// cause, in replay's words (cli/replay.ts judgeMissed), exits 1 and writes no record. So is a
+// trial whose trajectory does not reach its record's state in this checkout when its env_version
+// is not the checkout's (it ran against task files, a world or tools this checkout does not
+// have): regrade names both versions and the step that failed.
 // Any other GRADER_ERROR is recorded with its error.
 //
 // This is the second step of the GRADER_ERROR policy (packages/grader/grade.ts header): fix the
@@ -31,7 +32,7 @@ import type { TaskSource, TaskVersions } from '../packages/core/tasks.ts';
 import { GRADER_VERSION, type CheckResult, type GradeError } from '../packages/grader/grade.ts';
 import { settledRecords, writeJson } from './adapters/result-sink-node.ts';
 import { nodeTaskSource } from './adapters/tasks-node.ts';
-import { checkoutVersions, envChanged, regradeRun, type Regraded } from './replay.ts';
+import { checkoutVersions, envChanged, judgeMissed, regradeRun, type Regraded } from './replay.ts';
 
 export interface Deps {
   out: (line: string) => void;
@@ -118,7 +119,7 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
   const say = json ? deps.err : deps.out;
   const failed = results.filter((r) => !('grade' in r));
   if (failed.length > 0) {
-    for (const r of failed) say(`regrade: ${trialName(r.stored.record)}: ${'miss' in r ? r.miss : 'error' in r ? r.error : ''}`);
+    for (const r of failed) say(`regrade: ${trialName(r.stored.record)}: ${'miss' in r ? judgeMissed(r.miss, r.stored.record) : 'error' in r ? r.error : ''}`);
     say(`regrade: ${failed.length} of ${todo.length} trials could not be regraded; no record written`);
     if (json) deps.out(JSON.stringify({ regraded: 0, skipped: all.length - todo.length, failed: failed.map((r) => trialName(r.stored.record)) }));
     return 1;
