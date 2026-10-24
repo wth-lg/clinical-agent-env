@@ -100,14 +100,14 @@ export interface RunnerError {
 // launcher). runner-api.test.ts fails when apps/runner/server.ts sends a 409 reason missing here.
 const SESSION_CAP_VALIDATE = 'Validate can cost more than your session spend cap has left. If trials are running, wait for them to finish. Then press Validate again. If no trials are running, restart the runner. A restart starts a new session with no spend.';
 const SESSION_CAP_RUN = 'This batch can cost more than your session spend cap allows. Select fewer trials or set a higher session cap.';
-const PROJECTED_CAP_RUN = 'This batch can cost more than the total spending limit allows. Select fewer tasks or fewer trials. A runner restart does not reset this limit. Run pnpm cli spend --check to see what uses it.';
+const PROJECTED_CAP_RUN = 'This batch can cost more than the project spending limit allows. Select fewer tasks or fewer trials. A runner restart does not reset this limit. Run pnpm cli spend --check to see what uses it.';
 
 export const REFUSAL_TEXT = {
   key: {
     session_cap: SESSION_CAP_VALIDATE,
     spend_refused_ceiling: SESSION_CAP_VALIDATE,
-    spend_refused_projected: 'Validate can cost more than the total spending limit has left. If trials are running, wait for them to finish. Then press Validate again. A runner restart does not reset this limit. Run pnpm cli spend --check to see what uses it.',
-    spend_refused_actual: 'The total spending limit is used up. The runner makes no more API calls, so it cannot check the key.',
+    spend_refused_projected: 'Validate can cost more than the project spending limit has left. If trials are running, wait for them to finish. Then press Validate again. A runner restart does not reset this limit. Run pnpm cli spend --check to see what uses it.',
+    spend_refused_actual: 'The project has reached its hard spending stop. The runner makes no more API calls, so it cannot check the key.',
   },
   trials: {
     no_key: 'The runner has no API key. Paste your Anthropic API key and press Validate. Then start the batch again.',
@@ -115,7 +115,7 @@ export const REFUSAL_TEXT = {
     spend_refused_ceiling: SESSION_CAP_RUN,
     projected_cap: PROJECTED_CAP_RUN,
     spend_refused_projected: PROJECTED_CAP_RUN,
-    spend_refused_actual: 'The total spending limit is used up. The runner makes no more API calls.',
+    spend_refused_actual: 'The project has reached its hard spending stop. The runner makes no more API calls.',
     fixtures_changed: 'The environment data changed while another batch was running. Wait for that batch to finish. Then start this batch again.',
     batch_refused: "The runner could not start this batch. The runner's reason is below.",
   },

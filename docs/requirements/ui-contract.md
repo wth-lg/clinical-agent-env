@@ -100,14 +100,14 @@ launcher (P15) shows the Run lines.
 
 - Validate, `session_cap`: `Validate can cost more than your session spend cap has left. If trials are running, wait for them to finish. Then press Validate again. If no trials are running, restart the runner. A restart starts a new session with no spend.`
 - Validate, `spend_refused_ceiling`: `Validate can cost more than your session spend cap has left. If trials are running, wait for them to finish. Then press Validate again. If no trials are running, restart the runner. A restart starts a new session with no spend.`
-- Validate, `spend_refused_projected`: `Validate can cost more than the total spending limit has left. If trials are running, wait for them to finish. Then press Validate again. A runner restart does not reset this limit. Run pnpm cli spend --check to see what uses it.`
-- Validate, `spend_refused_actual`: `The total spending limit is used up. The runner makes no more API calls, so it cannot check the key.`
+- Validate, `spend_refused_projected`: `Validate can cost more than the project spending limit has left. If trials are running, wait for them to finish. Then press Validate again. A runner restart does not reset this limit. Run pnpm cli spend --check to see what uses it.`
+- Validate, `spend_refused_actual`: `The project has reached its hard spending stop. The runner makes no more API calls, so it cannot check the key.`
 - Run, `no_key`: `The runner has no API key. Paste your Anthropic API key and press Validate. Then start the batch again.`
 - Run, `session_cap`: `This batch can cost more than your session spend cap allows. Select fewer trials or set a higher session cap.`
 - Run, `spend_refused_ceiling`: `This batch can cost more than your session spend cap allows. Select fewer trials or set a higher session cap.`
-- Run, `projected_cap`: `This batch can cost more than the total spending limit allows. Select fewer tasks or fewer trials. A runner restart does not reset this limit. Run pnpm cli spend --check to see what uses it.`
-- Run, `spend_refused_projected`: `This batch can cost more than the total spending limit allows. Select fewer tasks or fewer trials. A runner restart does not reset this limit. Run pnpm cli spend --check to see what uses it.`
-- Run, `spend_refused_actual`: `The total spending limit is used up. The runner makes no more API calls.`
+- Run, `projected_cap`: `This batch can cost more than the project spending limit allows. Select fewer tasks or fewer trials. A runner restart does not reset this limit. Run pnpm cli spend --check to see what uses it.`
+- Run, `spend_refused_projected`: `This batch can cost more than the project spending limit allows. Select fewer tasks or fewer trials. A runner restart does not reset this limit. Run pnpm cli spend --check to see what uses it.`
+- Run, `spend_refused_actual`: `The project has reached its hard spending stop. The runner makes no more API calls.`
 - Run, `fixtures_changed`: `The environment data changed while another batch was running. Wait for that batch to finish. Then start this batch again.`
 - Run, `batch_refused`: `The runner could not start this batch. The runner's reason is below.`
 

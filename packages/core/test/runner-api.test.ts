@@ -238,6 +238,22 @@ describe('runner refusal text', () => {
     expect(REFUSAL_TEXT.key.spend_refused_projected).toContain('If trials are running, wait for them to finish.');
   });
 
+  // Two caps, two names (verifier-phase-P11f-3 m1): PROJECTED_CAP_USD, which refuses a batch or
+  // call by its estimate, is the project spending limit; ACTUAL_CAP_USD, which blocks every call
+  // once settled spend reaches it, is the hard spending stop.
+  it('names the projected cap and the hard stop differently', () => {
+    const all = [...Object.values(REFUSAL_TEXT.key), ...Object.values(REFUSAL_TEXT.trials)];
+    for (const text of all) expect(text).not.toContain('total spending limit');
+    for (const text of [REFUSAL_TEXT.key.spend_refused_projected, REFUSAL_TEXT.trials.projected_cap, REFUSAL_TEXT.trials.spend_refused_projected]) {
+      expect(text).toContain('the project spending limit');
+      expect(text).not.toContain('spending stop');
+    }
+    for (const text of [REFUSAL_TEXT.key.spend_refused_actual, REFUSAL_TEXT.trials.spend_refused_actual]) {
+      expect(text).toMatch(/^The project has reached its hard spending stop\. /);
+      expect(text).not.toContain('spending limit');
+    }
+  });
+
   it('is plain: short sentences, no status codes and no reason ids', () => {
     for (const [reason, text] of [...Object.entries(REFUSAL_TEXT.key), ...Object.entries(REFUSAL_TEXT.trials)]) {
       expect(text, reason).not.toMatch(/\b[45][0-9]{2}\b|_|api\//);
