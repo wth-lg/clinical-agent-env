@@ -77,6 +77,12 @@ export { trialName };
 export const envChanged = (r: Pick<BatchRecord, 'env_version' | 'task_version'>, now: string): string =>
   `environment changed: run at env_version ${r.env_version ?? `(none: recorded before env_version, task_version ${r.task_version})`}, checkout at ${now}`;
 
+// A judge cache miss on replay, said plainly: the record's cache answers only the judge questions
+// and effort it ran with (effort is part of the cache key), and no offline command asks the judge.
+const judgeMissed = (miss: string, r: Pick<BatchRecord, 'task_id' | 'model_requested'>): string =>
+  `judge cache miss ${/judge cache miss ([0-9a-f]+)/.exec(miss)?.[1] ?? miss}: the judge question or the [judge] effort changed since this run, and the effort is part of the judge cache key, so its cached answers cannot grade it. ` +
+  `Only a new run grades with the judge: pnpm cli run --task ${r.task_id} --model ${r.model_requested} --out <new run dir> (pnpm cli oracle --task ${r.task_id} --live-judge refreshes only the matrix cache).`;
+
 const metOf = (checks: ReadonlyArray<{ id: string; met: unknown }> | undefined) => JSON.stringify((checks ?? []).map((c) => [c.id, c.met]));
 
 export async function main(args: string[], deps: Deps = defaults): Promise<number> {
@@ -122,7 +128,7 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
       const was = `the ${cur.regraded ? 'current grade' : 'record'} ${cur.outcome} score ${cur.score}`;
       trials[name] = { match, outcome: g.outcome, ...base, ...(match ? {} : { error: g.error?.message ?? `regrade gives ${g.outcome} score ${g.score}, ${was}` }) };
     } else {
-      trials[name] = { match: false, outcome: null, ...base, error: 'miss' in res ? res.miss : res.error };
+      trials[name] = { match: false, outcome: null, ...base, error: 'miss' in res ? judgeMissed(res.miss, r) : res.error };
     }
   }
   writeJson(join(dir, 'replay.json'), { trials });

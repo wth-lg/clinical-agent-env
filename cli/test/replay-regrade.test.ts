@@ -95,7 +95,7 @@ describe('replay and regrade', () => {
   // P11f (6), verifier-phase-regrade-2 N2: [judge] and [matrix] only shape grading, so editing them
   // leaves env_version as it was and replay does not refuse the run; a table the agent works in
   // still does. The judge effort is part of a judge cache key, so after an effort edit replay
-  // grades and names the judge cache miss, as after any judge change (oracle --live-judge refills it).
+  // grades, names the judge cache miss and says only a new run grades with the judge (P11f C6c).
   it('replay reproduces after a [matrix] edit, grades after a [judge] effort edit, and refuses after a [task] max_turns edit', async () => {
     const edited = (from: string, to: string) => {
       const root = tempDir('replay-edited-tasks');
@@ -111,6 +111,8 @@ describe('replay and regrade', () => {
     const judged = await cli(replay, [dir], edited('effort = "medium"', 'effort = "high"'));
     expect(judged.text).not.toMatch(/environment changed/);
     expect(judged.text).toMatch(/_toy\/0: judge cache miss /);
+    expect(judged.text).toContain('the judge question or the [judge] effort changed since this run, and the effort is part of the judge cache key, so its cached answers cannot grade it.');
+    expect(judged.text).toContain('Only a new run grades with the judge: pnpm cli run --task _toy --model claude-opus-5-5 --out <new run dir> (pnpm cli oracle --task _toy --live-judge refreshes only the matrix cache).');
     const turns = await cli(replay, [dir], edited('max_turns = 6', 'max_turns = 7'));
     expect(turns.code).toBe(1);
     expect(turns.text).toMatch(/_toy\/0: environment changed: run at env_version /);
