@@ -133,6 +133,20 @@ describe('codes', () => {
     expect(drugOf('Metoprolol XL 50 mg tablet')).toMatchObject({ ingredient: 'metoprolol succinate', strength_mg: 50 });
   });
 
+  // P11f (1): brand and salt names the tasks' charts and agents write.
+  it.each([
+    ['rosuvastatin calcium 10 MG Oral Tablet', 'rosuvastatin', 10],
+    ['Rosuvastatin Calcium', 'rosuvastatin', null],
+    ['Toprol-XL 50 mg', 'metoprolol succinate', 50],
+    ['Toprol XL 50 mg', 'metoprolol succinate', 50],
+    ['Toprol-XL', 'metoprolol succinate', null],
+    ['Lasix 40 mg tablet', 'furosemide', 40],
+    ['Lasix', 'furosemide', null],
+  ] as const)('%j is %s', (name, ingredient, strength_mg) => {
+    expect(drugOf(name)).toMatchObject({ ingredient, strength_mg });
+    expect(isDrug({ text: name }, { ingredient })).toBe(true);
+  });
+
   // A multi-ingredient SCD is one drug with an ingredient set: it matches only that whole set.
   it('combination products: amoxicillin alone is not amox-clav; the full set and the brand are', () => {
     // The world fixture's SCD (rxcui 562251, 7 MedicationRequests) and the RxNorm 875/125 form.

@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 import { repoRoot, runScript, tempDir, write } from '../../../scripts/test/helpers.ts';
 import { ACTUAL_CAP_USD, assertGrant, PROJECTED_CAP_USD, SpendRefused, totals, type LedgerRow } from '../../../packages/core/ledger.ts';
 import { AUDITOR_ALLOWANCE_USD, FINAL_TRIALS_PER_TASK, PER_TRIAL_CAP_USD, PLANNED_TASKS, RERUN_FACTOR, worstCaseUsd } from '../../../packages/core/cost.ts';
-import { openNodeLedger, readRows, reserveSpend, resolveLedgerPath, settleSpend } from '../ledger-node.ts';
+import { loadTrialObservations, openNodeLedger, readRows, reserveSpend, resolveLedgerPath, settleSpend } from '../ledger-node.ts';
 
 const ADAPTER = pathToFileURL(join(repoRoot, 'cli/adapters/ledger-node.ts')).href;
 const CORE = pathToFileURL(join(repoRoot, 'packages/core/ledger.ts')).href;
@@ -266,6 +266,31 @@ describe('spend command', () => {
 });
 
 describe('spend --check --final-reserve (case 16)', () => {
+  // P11f (5), verifier-phase-regrade-2 N1: a run resumed after a grader-only fix holds one
+  // env_version under two task_versions; the reserve takes the p90 of all its trials at that
+  // env_version, not of the newest task_version's few.
+  it('after a grader-only version bump, the reserve prints the exact p90 over the env_version', () => {
+    const root = tempDir('ledger-c16-env');
+    const path = join(root, 'spend.jsonl');
+    seed(path, []);
+    write(root, 'tasks/T1/task.toml', 'id = "T1"\n');
+    for (let n = 1; n <= 10; n++) {
+      const graderFixed = n > 7;
+      write(root, `results/pilot-2/trials/T1/${n}.json`, JSON.stringify({ task_id: 'T1', env_version: 'T1-e1', grader_task_version: graderFixed ? 'T1-g2' : 'T1-g1', task_version: graderFixed ? 'T1-v2' : 'T1-v1', cost_usd: n / 10, judge_cost_usd: 0, started: `2026-10-23T00:00:${String(n).padStart(2, '0')}Z`, outcome: 'PASS' }));
+    }
+    const r = spendCli(['--check', '--projected', '1', '--final-reserve', '--cost-from', 'results/pilot-2'], envFor(join(root, 'home'), { SPEND_LEDGER: path }), root);
+    expect(r.stdout).toContain(`T1: ${FINAL_TRIALS_PER_TASK} trials x $0.90 per trial (p90 of 10 trials of T1-e1 in results/pilot-2)`);
+    expect(r.stdout).not.toMatch(/earlier version/);
+    expect(r.status, r.stdout + r.stderr).toBe(0);
+  });
+
+  it('loadTrialObservations reads env_version, and null for a record from before the split', () => {
+    const root = tempDir('ledger-obs-env');
+    write(root, 'run/trials/T1/1.json', JSON.stringify({ task_id: 'T1', env_version: 'e1', task_version: 'v1', cost_usd: 1 }));
+    write(root, 'run/trials/T1/2.json', JSON.stringify({ task_id: 'T1', task_version: 'v0', cost_usd: 2 }));
+    expect(loadTrialObservations([join(root, 'run')]).map((o) => [o.env_version, o.task_version])).toEqual([['e1', 'v1'], [null, 'v0']]);
+  });
+
   // Every final trial: FINAL_TRIALS_PER_TASK of each planned task.
   const FINAL = FINAL_TRIALS_PER_TASK * PLANNED_TASKS;
   const reserve = FINAL * PER_TRIAL_CAP_USD * RERUN_FACTOR + AUDITOR_ALLOWANCE_USD;

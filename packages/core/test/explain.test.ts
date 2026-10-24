@@ -15,12 +15,13 @@ import { MODEL } from '../anthropic.ts';
 
 const MANIFEST = 'h-manifest';
 const V = 'v-1';
+const G = 'g-1';
 const NOT_IN_WORLD = 'Observation/obs-not-in-world';
 const ctx: ExplainContext = {
   events: [],
   world_state_hash: MANIFEST,
   exposable: (id) => id !== NOT_IN_WORLD,
-  matrix: { task_version: V, oracle_pass: true, alternatives_pass: true },
+  matrix: { grader_task_version: G, oracle_pass: true, alternatives_pass: true },
   checks: [
     { id: 'G1', traces_to: 'RBC-PHARM-07 §2' },
     { id: 'note_on_patient', traces_to: 'prompt line 3' },
@@ -34,7 +35,7 @@ function record(outcome: Outcome, over: Partial<ExplainRecord> = {}): ExplainRec
   const valid = ['REFUSAL', 'LIMIT', 'FAIL', 'PASS'].includes(outcome);
   const statusOf: Record<string, string> = { FAIL: 'COMPLETED', PASS: 'COMPLETED', GRADER_ERROR: 'COMPLETED' };
   return {
-    task_id: 'renal-dose-review', task_version: V, outcome, valid, status: statusOf[outcome] ?? outcome, detail: null,
+    task_id: 'renal-dose-review', task_version: V, grader_task_version: G, outcome, valid, status: statusOf[outcome] ?? outcome, detail: null,
     turns: 12, cost_usd: 0.8, started: '2026-10-24T00:00:00.000Z', ended: '2026-10-24T00:05:00.000Z', summary: null, refusal_category: null,
     tool_errors: { INVALID_INPUT: 0, NOT_FOUND: 0, CONFLICT: 0, NOT_SUPPORTED: 0, INTERNAL: 0 },
     state_hash: { initial: MANIFEST, final: 'h-final', replay_final: 'h-final' },
@@ -97,15 +98,19 @@ describe('explainTrial: one fixture per outcome', () => {
 });
 
 describe('explainTrial: one fixture per taxonomy', () => {
-  it.each(TAXONOMY.map((t) => [t]))('%s names the decisive check with its expected and found values and the taxonomy', (auto) => {
+  it.each(TAXONOMY.map((t) => [t]))('%s names the decisive check with its expected and found values and the taxonomy (a LIMIT: its limit first)', (auto) => {
     const exposure: Exposure = auto === 'retrieval' ? [{ id: 'Observation/obs-wt-1', first_exposed_step: null }] : [{ id: 'Observation/obs-wt-1', first_exposed_step: 6 }];
     const x = explainTrial(failWith(auto, exposure), undefined, ctx);
     expect(x.taxonomy).toBe(auto);
     expect(x.fault).toBe('model');
     expect(x.decisive_check?.id).toBe('G1');
     expect(x.decisive_step).toBe(9);
-    expect(x.reason).toMatch(/^G1 failed: expected apixaban 5 mg 2\/day, found apixaban 2\.5 mg 2\/day; /);
-    expect(x.reason).toContain(auto.replace(/_/g, ' '));
+    // A LIMIT (did_not_finish) leads with its limit sentence, which says why it ended (P11f (4)).
+    if (auto === 'did_not_finish') expect(x.reason).toBe('turn limit reached: 80 turns; G1 failed: expected apixaban 5 mg 2/day, found apixaban 2.5 mg 2/day');
+    else {
+      expect(x.reason).toMatch(/^G1 failed: expected apixaban 5 mg 2\/day, found apixaban 2\.5 mg 2\/day; /);
+      expect(x.reason).toContain(auto.replace(/_/g, ' '));
+    }
     expect(words(x.reason)).toBeLessThanOrEqual(25);
   });
 });
@@ -145,12 +150,25 @@ describe('explainTrial: criteria', () => {
     expect(replay.criteria.find((c) => c.id === 'M3')!.met).toBe(false);
   });
 
-  it('M4 reads the matrix of the same task_version: an oracle or alternative failure is not met; another version is pending', () => {
+  // P11f (2), verifier-phase-regrade-3 N4: the matrix that speaks for a grade is the one of the
+  // grade's grader_task_version, not the task_version the trial ran at.
+  it('M4 and B1 read the matrix of the current grade\'s grader_task_version: after a regrade to g-2, a matrix of g-2 decides and one of g-1 is pending', () => {
+    const crit = (x: ReturnType<typeof explainTrial>, id: string) => x.criteria.find((c) => c.id === id)!;
+    const regraded = record('FAIL', { regrades: [{ outcome: 'FAIL', score: 0, valid: true, checks: [G1_FAILED], grader_task_version: 'g-2' }] });
+    const at2 = explainTrial(regraded, undefined, { ...ctx, matrix: { grader_task_version: 'g-2', oracle_pass: false, alternatives_pass: true, failed_checks: ['G9'] } });
+    expect(crit(at2, 'M4')).toMatchObject({ met: true, evidence: expect.stringMatching(/on grader_task_version g-2/) });
+    expect(at2.notes.map((n) => n.id)).toContain('B1');
+    const at1 = explainTrial(regraded, undefined, { ...ctx, matrix: { grader_task_version: G, oracle_pass: false, alternatives_pass: true, failed_checks: ['G9'] } });
+    expect(crit(at1, 'M4')).toMatchObject({ met: 'pending', evidence: expect.stringMatching(/the matrix result is for grader_task_version g-1, the current grade is at g-2/) });
+    expect(at1.notes.map((n) => n.id)).not.toContain('B1');
+  });
+
+  it('M4 reads the matrix of the same grader_task_version: an oracle or alternative failure is not met; another version is pending', () => {
     const met = explainTrial(record('FAIL'), undefined, ctx).criteria.find((c) => c.id === 'M4')!;
     expect(met.met).toBe(true);
-    const broken = explainTrial(record('FAIL'), undefined, { ...ctx, matrix: { task_version: V, oracle_pass: true, alternatives_pass: false, failed_checks: ['G1'] } }).criteria.find((c) => c.id === 'M4')!;
+    const broken = explainTrial(record('FAIL'), undefined, { ...ctx, matrix: { grader_task_version: G, oracle_pass: true, alternatives_pass: false, failed_checks: ['G1'] } }).criteria.find((c) => c.id === 'M4')!;
     expect(broken.met).toBe(false);
-    const other = explainTrial(record('FAIL'), undefined, { ...ctx, matrix: { task_version: 'v-0', oracle_pass: true, alternatives_pass: true } }).criteria.find((c) => c.id === 'M4')!;
+    const other = explainTrial(record('FAIL'), undefined, { ...ctx, matrix: { grader_task_version: 'g-0', oracle_pass: true, alternatives_pass: true } }).criteria.find((c) => c.id === 'M4')!;
     expect(other.met).toBe('pending');
   });
 
@@ -289,15 +307,15 @@ describe('explainTrial: the criteria decide the fault', () => {
     expect(x.reason).toMatch(/environment/);
   });
 
-  it('probe B: an oracle or alternative that fails the matrix on the trial\'s task_version, on the check the trial failed, makes the fault grader through GR4, with M4 not met', () => {
-    for (const matrix of [{ task_version: V, oracle_pass: false, alternatives_pass: true, failed_checks: ['G1'] }, { task_version: V, oracle_pass: true, alternatives_pass: false, failed_checks: ['G1'] }]) {
+  it('probe B: an oracle or alternative that fails the matrix on the current grade\'s grader_task_version, on the check the trial failed, makes the fault grader through GR4, with M4 not met', () => {
+    for (const matrix of [{ grader_task_version: G, oracle_pass: false, alternatives_pass: true, failed_checks: ['G1'] }, { grader_task_version: G, oracle_pass: true, alternatives_pass: false, failed_checks: ['G1'] }]) {
       const x = explainTrial(record('FAIL'), undefined, { ...ctx, matrix });
       expect(crit(x, 'M4').met).toBe(false);
       expect(x).toMatchObject({ fault: 'grader', label: 'grader', deciding: { fault: 'grader', id: 'GR4' } });
       expect(x.reason).toMatch(REASON);
     }
-    // A matrix of another task_version decides nothing: M4 pending, the label provisional.
-    const other = explainTrial(record('FAIL'), undefined, { ...ctx, matrix: { task_version: 'v-0', oracle_pass: false, alternatives_pass: false } });
+    // A matrix of another grader_task_version decides nothing: M4 pending, the label provisional.
+    const other = explainTrial(record('FAIL'), undefined, { ...ctx, matrix: { grader_task_version: 'g-0', oracle_pass: false, alternatives_pass: false } });
     expect(other).toMatchObject({ fault: 'model', confirmation: 'provisional' });
   });
 
@@ -316,7 +334,7 @@ describe('explainTrial: the criteria decide the fault', () => {
     const apiWithInternal = explainTrial(record('INFRA_API', { detail: 'overloaded', tool_errors: { INTERNAL: 2 } }), undefined, ctx);
     expect(apiWithInternal).toMatchObject({ fault: 'infra', label: null, deciding: { fault: 'infra', id: 'I3' } });
     expect(apiWithInternal.notes.map((n) => n.id)).toEqual(['E1']);
-    const brokenMatrixAndInternal = explainTrial(record('FAIL', { tool_errors: { INTERNAL: 1 } }), undefined, { ...ctx, matrix: { task_version: V, oracle_pass: false, alternatives_pass: true, failed_checks: ['G1'] } });
+    const brokenMatrixAndInternal = explainTrial(record('FAIL', { tool_errors: { INTERNAL: 1 } }), undefined, { ...ctx, matrix: { grader_task_version: G, oracle_pass: false, alternatives_pass: true, failed_checks: ['G1'] } });
     expect(brokenMatrixAndInternal).toMatchObject({ fault: 'grader', deciding: { id: 'GR4' } });
     expect(brokenMatrixAndInternal.notes.map((n) => n.id)).toEqual(['E1']);
     expect(FAULT_PRECEDENCE.indexOf('grader')).toBeLessThan(FAULT_PRECEDENCE.indexOf('env'));
@@ -329,7 +347,7 @@ describe('explainTrial: the criteria decide the fault', () => {
       { initial: MANIFEST, final: 'h-final', replay_final: 'h-other' }, { initial: null, final: 'h-final', replay_final: 'h-final' }, { initial: MANIFEST, final: null, replay_final: null },
     ];
     const exposures: Exposure[] = [[{ id: 'Observation/obs-wt-1', first_exposed_step: 6 }], [{ id: 'Observation/obs-wt-1', first_exposed_step: null }], [{ id: NOT_IN_WORLD, first_exposed_step: null }]];
-    const matrices = [ctx.matrix!, { task_version: V, oracle_pass: false, alternatives_pass: true, failed_checks: ['G1'] }, { task_version: V, oracle_pass: true, alternatives_pass: false, failed_checks: ['G1'] }];
+    const matrices = [ctx.matrix!, { grader_task_version: G, oracle_pass: false, alternatives_pass: true, failed_checks: ['G1'] }, { grader_task_version: G, oracle_pass: true, alternatives_pass: false, failed_checks: ['G1'] }];
     for (const state_hash of states) for (const exposure of exposures) for (const matrix of matrices) for (const INTERNAL of [0, 1]) {
       variants.push({ rec: { ...failWith('reasoning', exposure), state_hash, tool_errors: { INTERNAL } }, c: { ...ctx, matrix } });
     }
@@ -408,7 +426,7 @@ describe('explainTrial: edge records (verifier P14a-1)', () => {
 
 describe('explainTrial: review round 3 (pr-review P14a-2)', () => {
   const crit = (x: ReturnType<typeof explainTrial>, id: string) => x.criteria.find((c) => c.id === id)!;
-  const failsG1 = { task_version: V, oracle_pass: false, alternatives_pass: true, failed_checks: ['G1'] };
+  const failsG1 = { grader_task_version: G, oracle_pass: false, alternatives_pass: true, failed_checks: ['G1'] };
   const agreeing: AuditRow = { trial: 'renal-dose-review/3', outcome: 'FAIL', taxonomy: 'reasoning', model_fault: 'yes', decisive_step: 9, evidence_ids: ['Observation/obs-wt-1'], llm_auditor_agrees: true };
 
   it('D1: a refusal on a task whose oracle fails the matrix stays a refusal; the failing matrix is a run-level note B1', () => {
@@ -431,7 +449,7 @@ describe('explainTrial: review round 3 (pr-review P14a-2)', () => {
     expect(same).toMatchObject({ fault: 'grader', deciding: { id: 'GR4' } });
     expect(same.notes.map((n) => n.id)).toEqual([]);
     // A failing matrix that does not say which checks fail cannot decide a fault: M4 pending, B1 a note.
-    const unknown = explainTrial(record('FAIL'), undefined, { ...ctx, matrix: { task_version: V, oracle_pass: false, alternatives_pass: true } });
+    const unknown = explainTrial(record('FAIL'), undefined, { ...ctx, matrix: { grader_task_version: G, oracle_pass: false, alternatives_pass: true } });
     expect(unknown).toMatchObject({ fault: 'model', confirmation: 'provisional' });
     expect(crit(unknown, 'M4').met).toBe('pending');
     expect(unknown.notes.map((n) => n.id)).toEqual(['B1']);
@@ -520,7 +538,7 @@ describe('explainTrial: review round 4 (pr-review P14a-3)', () => {
   it.each(['REFUSAL', 'LIMIT'] as const)('F1: a real %s whose failed gate the matrix also fails is the model\'s, not the grader\'s; the matrix stays note B1', async (status) => {
     const { g, rec, failed, c } = await realGrade(status);
     expect(g.outcome).toBe(status);
-    const matrix = { task_version: V, oracle_pass: false, alternatives_pass: true, failed_checks: [failed] };
+    const matrix = { grader_task_version: G, oracle_pass: false, alternatives_pass: true, failed_checks: [failed] };
     const x = explainTrial(rec, undefined, { ...c, matrix });
     expect(x).toMatchObject(status === 'REFUSAL' ? { fault: 'refusal', label: 'model', label_subtype: 'refusal' } : { fault: 'model', label: 'model', label_subtype: null });
     expect(x.deciding?.id).not.toBe('GR4');
@@ -536,7 +554,7 @@ describe('explainTrial: review round 4 (pr-review P14a-3)', () => {
   });
 
   it('F2: excludedFromHeadline says the trial is not allowed in a committed run and leaves the run without a headline pass rate', () => {
-    const gr4 = explainTrial(record('FAIL'), undefined, { ...ctx, matrix: { task_version: V, oracle_pass: false, alternatives_pass: true, failed_checks: ['G1'] } });
+    const gr4 = explainTrial(record('FAIL'), undefined, { ...ctx, matrix: { grader_task_version: G, oracle_pass: false, alternatives_pass: true, failed_checks: ['G1'] } });
     const msg = excludedFromHeadline(gr4)!;
     expect(msg).toMatch(/^FAIL is the grader's fault \(GR4\): not allowed in a committed run/);
     expect(msg).toMatch(/no headline pass rate/);

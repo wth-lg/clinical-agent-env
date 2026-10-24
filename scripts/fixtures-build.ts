@@ -119,8 +119,9 @@ export async function build(outDir: string): Promise<{ stateHash: string; resour
 
   mkdirSync(outDir, { recursive: true });
   writeFileSync(join(outDir, 'world.ndjson.gz'), gzip(ndjson));
-  writeFileSync(join(outDir, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
   writeFileSync(join(outDir, 'definitions-pruned.json'), definitions);
+  // Last: a running local runner reloads its fixtures when manifest.json changes (apps/runner/server.ts).
+  writeFileSync(join(outDir, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
   return { stateHash: hash, resources: world.resources.length };
 }
 

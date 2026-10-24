@@ -210,13 +210,15 @@ function timingCode(c: CodeableConcept | undefined): number | null {
 
 // Brand and alias names -> the ingredient (or ingredients, joined by ' / '), lower case.
 const ALIASES: Array<[RegExp, string]> = [
-  [/\bmetoprolol (?:xl|er|succinate(?: er| xl)?)\b|\btoprol(?: xl)?\b/, 'metoprolol succinate'],
+  [/\bmetoprolol (?:xl|er|succinate(?: er| xl)?)\b|\btoprol(?:[- ]xl)?\b/, 'metoprolol succinate'],
   [/\bmetoprolol tartrate\b|\blopressor\b/, 'metoprolol tartrate'],
   [/\beliquis\b/, 'apixaban'],
   [/\bxarelto\b/, 'rivaroxaban'],
   [/\bglucophage\b/, 'metformin'],
   [/\bneurontin\b/, 'gabapentin'],
   [/\blipitor\b/, 'atorvastatin'],
+  [/\brosuvastatin calcium\b/, 'rosuvastatin'],
+  [/\blasix\b/, 'furosemide'],
   [/\baldactone\b/, 'spironolactone'],
   [/\baugmentin\b|\bamoxicillin[ -]+clavulanate\b/, 'amoxicillin / clavulanate'],
   [/\bzestoretic\b|\bprinzide\b/, 'hydrochlorothiazide / lisinopril'],

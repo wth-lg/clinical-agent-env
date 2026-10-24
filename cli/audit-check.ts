@@ -24,7 +24,8 @@
 //     (DENOMINATOR_RULE). This is where that block is enforced; summary.ts reads no audit rows,
 //     matrix or world;
 //   - no run-level block (outcomes.ts RUN_BLOCKS, B1: the oracle or an alternative fails the matrix)
-//     holds on any task_version of the run, named once per task_version;
+//     holds on the grader_task_version of any current grade of the run, named once per
+//     grader_task_version;
 //   - no attempt, re-queued ones included, had an INTERNAL tool error;
 //   - every record's replay_final equals its final hash, and replay.json, when present, says
 //     every trial reproduced;
@@ -35,12 +36,19 @@
 // It writes each label's criteria, explainTrial's M1-M5 for its trial, into audit.jsonl (only when
 // they changed, so a second run leaves the file as it was). The context it gives explainTrial
 // (explainContext): the trajectory; the run manifest's world_hash as the manifest hash; the world
-// for exposability; <run>/matrix.json, {task_versions: {<task_version>: {oracle_pass,
-// alternatives_pass, failed_checks?}}}, for M4, GR4 and B1 (failed_checks: the gate check ids the
-// oracle or an alternative fails; a value that is not a list of strings reads as not given); and, on a regraded trial whose first failed check is not the one
+// for exposability; <run>/matrix.json, {grader_task_versions: {<grader_task_version>: {oracle_pass,
+// alternatives_pass, failed_checks?, ...}}} as `pnpm cli matrix --out <run>` writes it, for M4,
+// GR4 and B1, looked up by the grader_task_version of each record's current grade, so a matrix
+// run for the fixed grader speaks for a regraded trial and one for the grader it ran under does
+// not (failed_checks: the gate check ids the oracle or an alternative fails; a value that is not
+// a list of strings reads as not given); and, on a regraded trial whose first failed check is not the one
 // its recorded attribution names, that check's decisive ids (from the task's gate checks) with the
 // step each was first exposed at in the trajectory (packages/grader/exposure.ts firstExposed).
-// --json prints {failures, labelled, environment, grader, valid, excluded, denominator, violations}:
+// --json prints {failures, labelled, labelled_environment, labelled_grader, faults, valid, excluded,
+// denominator, violations}: labelled_environment and labelled_grader count the failures the audit
+// labels environment or grader (after adjudication); faults counts the failures by the fault
+// explainTrial computes ({model, refusal, env, grader, infra}), which the label must agree with
+// but need not (a model label on an E5 failure is a violation, counted model there and env here);
 // valid counts the settled trials whose current grade is valid, excluded names (sorted) the
 // failures excludedFromHeadline names, and denominator is valid without them, for the UI and the
 // writeup; a run with an excluded trial fails, so it has no headline pass rate. Exit 2 on a usage error.
@@ -51,7 +59,7 @@ import type { BatchRecord } from '../packages/core/batch.ts';
 import { installEgressGuard } from '../packages/core/egress.ts';
 import type { TrialEvent } from '../packages/core/events.ts';
 import { auditLabelOf, excludedFromHeadline, explainTrial, formatCriterion, type AuditRow, type ExplainContext, type ExplainRecord } from '../packages/core/explain.ts';
-import { AUDIT_LABEL, AUDIT_LABELS, FAULT, type Outcome } from '../packages/core/outcomes.ts';
+import { AUDIT_LABEL, AUDIT_LABELS, FAULT, FAULT_PRECEDENCE, type Fault, type Outcome } from '../packages/core/outcomes.ts';
 import { parseTrajectory } from '../packages/core/trajectory.ts';
 import { currentGrade } from '../packages/core/summary.ts';
 import { loadStore } from '../packages/env/fixture-source.ts';
@@ -100,15 +108,15 @@ function readLabels(dir: string, violations: string[]): Array<{ raw: string; lab
 
 type Matrix = NonNullable<ExplainContext['matrix']>;
 
-// <run>/matrix.json's verdict per task_version, or an empty map when there is none.
+// <run>/matrix.json's verdict per grader_task_version, or an empty map when there is none.
 function readMatrix(dir: string): Map<string, Matrix> {
   const file = join(dir, 'matrix.json');
   if (!existsSync(file)) return new Map();
-  const { task_versions } = JSON.parse(readFileSync(file, 'utf8')) as { task_versions?: Record<string, { oracle_pass?: unknown; alternatives_pass?: unknown; failed_checks?: unknown }> };
+  const { grader_task_versions } = JSON.parse(readFileSync(file, 'utf8')) as { grader_task_versions?: Record<string, { oracle_pass?: unknown; alternatives_pass?: unknown; failed_checks?: unknown }> };
   const strings = (v: unknown): v is string[] => Array.isArray(v) && v.every((x) => typeof x === 'string');
-  return new Map(Object.entries(task_versions ?? {}).flatMap(([task_version, m]): Array<[string, Matrix]> =>
+  return new Map(Object.entries(grader_task_versions ?? {}).flatMap(([grader_task_version, m]): Array<[string, Matrix]> =>
     typeof m.oracle_pass === 'boolean' && typeof m.alternatives_pass === 'boolean'
-      ? [[task_version, { task_version, oracle_pass: m.oracle_pass, alternatives_pass: m.alternatives_pass, ...(strings(m.failed_checks) ? { failed_checks: m.failed_checks } : {}) }]]
+      ? [[grader_task_version, { grader_task_version, oracle_pass: m.oracle_pass, alternatives_pass: m.alternatives_pass, ...(strings(m.failed_checks) ? { failed_checks: m.failed_checks } : {}) }]]
       : []));
 }
 
@@ -148,7 +156,7 @@ export async function explainContext(dir: string, checks: TaskChecks = taskCheck
     const exposure = moved === null ? null : { check: moved.check, ids: moved.ids.map((id) => ({ id, first_exposed_step: firstExposed(stepsOf(trajectory), id) })) };
     const exposable = new Set<string>();
     for (const e of [...((r.attribution as Attribution | null)?.exposure ?? []), ...(exposure?.ids ?? [])]) if (e.first_exposed_step === null && (await inWorld(e.id))) exposable.add(e.id);
-    return { events: trajectory, world_state_hash, exposable: (id) => exposable.has(id), matrix: matrix.get(r.task_version ?? '') ?? null, exposure };
+    return { events: trajectory, world_state_hash, exposable: (id) => exposable.has(id), matrix: matrix.get(currentGrade(r).grader_task_version ?? '') ?? null, exposure };
   };
 }
 
@@ -229,10 +237,12 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
     }
     if (l.evidence_ids.length === 0) v.push(`${l.trial}: no evidence ids`);
   }
+  const faults = Object.fromEntries(FAULT_PRECEDENCE.map((f) => [f, 0])) as Record<Fault, number>;
   for (const r of failures) {
     const name = trialName(r);
     if (!byTrial.has(name)) v.push(`${name}: ${currentGrade(r).outcome}, no audit label`);
     const e = await explain(r, byTrial.get(name));
+    if (e.fault !== null) faults[e.fault]++;
     for (const c of e.criteria) {
       if ((c.id === 'M1' || c.id === 'M4') && (c.met === false || c.met === 'pending')) v.push(`${name}: ${formatCriterion(c).replace(': ', ' ')}: ${c.evidence}`);
     }
@@ -242,12 +252,13 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
       excludedTrials.push(name);
     }
   }
-  // A run-level block holds for its whole task_version: named once, from the first record that shows it.
+  // A run-level block holds for its whole grader_task_version: named once, from the first record that shows it.
   const blocked = new Map<string, string>();
   for (const r of records.values()) {
+    const g = `${r.task_id} at grader_task_version ${currentGrade(r).grader_task_version}`;
     for (const n of (await explain(r)).notes) {
-      const key = `${r.task_version}: ${n.id}`;
-      if (n.id === 'B1' && !blocked.has(key)) blocked.set(key, `${r.task_version}: ${n.id} holds: ${n.evidence}; it blocks the run until the task or the grader is fixed`);
+      const key = `${g}: ${n.id}`;
+      if (n.id === 'B1' && !blocked.has(key)) blocked.set(key, `${g}: ${n.id} holds: ${n.evidence}; it blocks the run until the task or the grader is fixed`);
     }
   }
   v.push(...blocked.values());
@@ -286,7 +297,7 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
   for (const line of v) say(`violation: ${line}`);
   say(`audit-check: ${labelled}/${failures.length} failures labelled, environment ${environment}, grader ${grader}; ${v.length === 0 ? 'every check holds' : `${v.length} violation(s)`}`);
   const excluded = excludedTrials.sort();
-  if (json) deps.out(JSON.stringify({ failures: failures.length, labelled, environment, grader, valid: valid.length, excluded, denominator: valid.length - excluded.length, violations: v }));
+  if (json) deps.out(JSON.stringify({ failures: failures.length, labelled, labelled_environment: environment, labelled_grader: grader, faults, valid: valid.length, excluded, denominator: valid.length - excluded.length, violations: v }));
   return v.length === 0 ? 0 : 1;
 }
 

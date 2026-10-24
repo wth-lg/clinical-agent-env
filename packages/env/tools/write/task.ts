@@ -84,7 +84,7 @@ export const updateInboxItem = writeTool({
   name: 'update_inbox_item',
   description:
     'Complete, reassign, cancel or reject an open inbox item (a Task from list_inbox). complete closes it (from requested, received, accepted, ready or in-progress); ' +
-    'linked names the resources of the same patient that close the loop (the order, task, message or existing result). ' +
+    'linked names the resources of the same patient that close the loop (the order, task or message). ' +
     'reassign hands it to new_owner (a Practitioner or Group) and leaves it open. cancel withdraws it (e.g. a duplicate); reject declines it (requested, received or ready); ' +
     'both need reason. comment is added as a note. A closed item, or an action its status does not allow, returns CONFLICT. Returns {task, status}.',
   inputSchema: {

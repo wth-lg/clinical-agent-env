@@ -190,10 +190,10 @@ describe('cli run', { timeout: 480_000 }, () => {
       writeFileSync(toml, readFileSync(toml, 'utf8').replace(/^id = "_toy"$/m, `id = "${id}"`));
     }
     const tasks = nodeTaskSource({ root: tasksRoot, testMode: false });
-    const crc = (await taskVersions(await tasks.get('crc-care-gap'), WORLD_HASH)).task_version;
+    const crc = await taskVersions(await tasks.get('crc-care-gap'), WORLD_HASH);
     const runs = tempDir('cost-runs');
     for (const [name, cost] of [['a', 1], ['b', 2]] as const) {
-      for (let i = 0; i < 10; i++) write(runs, `${name}/trials/crc-care-gap/${i}.json`, JSON.stringify({ task_id: 'crc-care-gap', task_version: crc, cost_usd: cost }));
+      for (let i = 0; i < 10; i++) write(runs, `${name}/trials/crc-care-gap/${i}.json`, JSON.stringify({ task_id: 'crc-care-gap', env_version: crc.env_version, task_version: crc.task_version, cost_usd: cost }));
     }
     const h = harness({ tasks, checks: async () => [] });
     const out = join(tempDir('dry'), 'dry');
@@ -203,7 +203,7 @@ describe('cli run', { timeout: 480_000 }, () => {
     const lines = h.out.filter((l) => / trials x /.test(l));
     expect(lines.map((l) => l.split(':')[0]).sort()).toEqual(['crc-care-gap', 'renal-dose-review']);
     expect(text).toMatch(/renal-dose-review: 10 trials x \$6\.00 per trial \(cap: no cost data\)/);
-    expect(text).toMatch(new RegExp(`crc-care-gap: 10 trials x \\$2\\.00 per trial \\(p90 of 10 trials of ${crc} in ${join(runs, 'b')}\\)`));
+    expect(text).toMatch(new RegExp(`crc-care-gap: 10 trials x \\$2\\.00 per trial \\(p90 of 10 trials of ${crc.env_version} in ${join(runs, 'b')}\\)`));
     expect(text).not.toContain('other-task');
     expect(text).toMatch(/LIVE_PROJECTION_USD=93\.000000/); // 10 x 6 x 1.15 + 10 x 2 x 1.15 + 1
     expect(existsSync(out)).toBe(false);

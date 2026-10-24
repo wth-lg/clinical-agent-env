@@ -92,19 +92,27 @@ export function worstCaseUsd(req: { bodyBytes: number; maxTokens: number; fast?:
 
 // One trial record from a --cost-from run. run_order is the run's position in the
 // --cost-from list: a later run is newer. cost_usd is the trial's loop cost plus its judge cost.
+// Cost is matched on env_version (packages/core/tasks.ts): what the agent works in sets what a
+// trial costs, so a grader-only change keeps the exact p90. env_version is null on a record from
+// before the env/grader split; its task_version then stands for its version.
 export interface TrialObservation {
   run: string;
   run_order: number;
   task_id: string;
+  env_version: string | null;
   task_version: string;
   cost_usd: number;
   started?: string;
   outcome?: string;
 }
 
+// version: the env_version of the trials the p90 is over, or the task_version of records from
+// before the split.
 export type PerTrialCost =
   | { usd: number; basis: 'cap' }
-  | { usd: number; basis: 'p90' | 'earlier-version-p90'; run: string; task_version: string; n: number };
+  | { usd: number; basis: 'p90' | 'earlier-version-p90'; run: string; version: string; n: number };
+
+const versionOf = (o: TrialObservation): string => o.env_version ?? o.task_version;
 
 // Nearest-rank 90th percentile.
 export function p90(values: readonly number[]): number {
@@ -122,21 +130,21 @@ function latestP90(group: TrialObservation[], basis: 'p90' | 'earlier-version-p9
   const order = Math.max(...group.map((o) => o.run_order));
   const run = group.filter((o) => o.run_order === order);
   const first = run[0] as TrialObservation;
-  return { usd: p90(run.map((o) => o.cost_usd)), basis, run: first.run, task_version: first.task_version, n: run.length };
+  return { usd: p90(run.map((o) => o.cost_usd)), basis, run: first.run, version: versionOf(first), n: run.length };
 }
 
-// The per-trial cost of a task: the latest p90 for task_version, else the p90 of the same
-// task's latest other (earlier) version, else the cap. A null task_version takes the
-// task's latest observed version.
-export function perTrialCost(task_id: string, task_version: string | null, observations: readonly TrialObservation[]): PerTrialCost {
+// The per-trial cost of a task: the latest p90 for env_version, else the p90 of the same
+// task's latest other (earlier) version, else the cap. A null env_version takes the task's
+// latest observed version. A record from before the split never matches an env_version.
+export function perTrialCost(task_id: string, env_version: string | null, observations: readonly TrialObservation[]): PerTrialCost {
   const mine = observations.filter((o) => o.task_id === task_id && isCount(o.cost_usd));
-  const exact = mine.filter((o) => o.task_version === task_version);
+  const exact = env_version === null ? [] : mine.filter((o) => o.env_version === env_version);
   if (exact.length > 0) return latestP90(exact, 'p90');
   if (mine.length === 0) return { usd: PER_TRIAL_CAP_USD, basis: 'cap' };
-  const latest = mine.reduce((a, b) => (newer(b, a) ? b : a));
+  const latest = versionOf(mine.reduce((a, b) => (newer(b, a) ? b : a)));
   return latestP90(
-    mine.filter((o) => o.task_version === latest.task_version),
-    task_version === null ? 'p90' : 'earlier-version-p90',
+    mine.filter((o) => versionOf(o) === latest),
+    env_version === null ? 'p90' : 'earlier-version-p90',
   );
 }
 
@@ -166,11 +174,11 @@ function sum(lines: ProjectionLine[], allowance: Projection['allowance']): Proje
 // What a batch of trials will cost: trials x per-trial cost x 1.15 per task, plus the
 // judge allowance. Every live entrypoint's --dry-run prints this.
 export function projectBatch(
-  tasks: ReadonlyArray<{ task_id: string; task_version: string; trials: number }>,
+  tasks: ReadonlyArray<{ task_id: string; env_version: string; trials: number }>,
   observations: readonly TrialObservation[],
 ): Projection {
   return sum(
-    tasks.map((t) => line(t.task_id, 1, t.trials, perTrialCost(t.task_id, t.task_version, observations))),
+    tasks.map((t) => line(t.task_id, 1, t.trials, perTrialCost(t.task_id, t.env_version, observations))),
     { name: 'judge', usd: JUDGE_ALLOWANCE_USD },
   );
 }
@@ -207,7 +215,7 @@ export function money(usd: number): string {
 
 function basisText(c: PerTrialCost): string {
   if (c.basis === 'cap') return 'cap: no cost data';
-  const what = `p90 of ${c.n} trials of ${c.task_version} in ${c.run}`;
+  const what = `p90 of ${c.n} trials of ${c.version} in ${c.run}`;
   return c.basis === 'p90' ? what : `earlier version: ${what}`;
 }
 

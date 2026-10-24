@@ -1,6 +1,7 @@
 // Run directories for the summary, audit-check and donewhen tests: a live run of two tasks of 10
 // trials, 5 PASS and 5 FAIL each, with trajectories, replay.json, audit.jsonl, matrix.json and a manifest that
-// expects both tasks, and one variant per violation the gate names. Records carry the fields summary and audit-check read, as cli run writes them.
+// expects both tasks, and one variant per violation the gate names. Records carry the fields summary and audit-check read, as cli run writes them,
+// the env/grader version split included: env_version e-<task>, grader_task_version g-<task>, and g-<task>-next on a regrade.
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { MODEL } from '../../packages/core/anthropic.ts';
@@ -35,7 +36,7 @@ function record(task_id: string, index: number, outcome: string, over: Record<st
   const fail = outcome === 'FAIL';
   const graded = outcome === 'PASS' || fail;
   return {
-    trial_id: `run:fx:${task_id}/${index}`, run_id: 'final-1', task_id, task_version: `v-${task_id}`, index, attempt: 'a-1', mode: 'live',
+    trial_id: `run:fx:${task_id}/${index}`, run_id: 'final-1', task_id, task_version: `v-${task_id}`, env_version: `e-${task_id}`, grader_task_version: `g-${task_id}`, index, attempt: 'a-1', mode: 'live',
     model_requested: MODEL, models_returned: [MODEL], effort: 'high', status: 'COMPLETED', outcome, valid: graded,
     score: graded ? (outcome === 'PASS' ? 1 : 0) : null, cost_usd: 0.4, judge_cost_usd: 0.02, turns: 2, tool_calls: 2,
     tool_errors: { INVALID_INPUT: 0, NOT_FOUND: 0, CONFLICT: 0, NOT_SUPPORTED: 0, INTERNAL: outcome === 'ENV_ERROR' ? 1 : 0 },
@@ -47,9 +48,9 @@ function record(task_id: string, index: number, outcome: string, over: Record<st
   };
 }
 
-// A cli regrade entry with its check results.
-const regrade = (outcome: 'PASS' | 'FAIL') => ({
-  grader_version: 'g-next', outcome, score: outcome === 'PASS' ? 1 : 0, valid: true, changed: true,
+// A cli regrade entry with its check results, at the task's next grader_task_version.
+const regrade = (task: string, outcome: 'PASS' | 'FAIL') => ({
+  grader_version: 'g-next', grader_task_version: `g-${task}-next`, outcome, score: outcome === 'PASS' ? 1 : 0, valid: true, changed: true,
   checks: [{ id: 'G1', kind: 'gate', met: outcome === 'PASS' }], at: '2026-10-24T00:00:00.000Z',
 });
 
@@ -69,10 +70,10 @@ export function writeFixtureRun(dir: string, fixture: Fixture): void {
         over.attribution = { auto: 'retrieval', first_failed: 'G1', decisive_step: 2, exposure: [{ id: 'Observation/never-in-world', first_exposed_step: null }] };
       }
       // fail-regraded-pass: a later grader passes t-alpha's 5 FAIL records (their labels still say FAIL).
-      if (fixture === 'fail-regraded-pass' && task === 't-alpha' && outcome === 'FAIL') over.regrades = [regrade('PASS')];
+      if (fixture === 'fail-regraded-pass' && task === 't-alpha' && outcome === 'FAIL') over.regrades = [regrade(task, 'PASS')];
       // grader-error-regraded: t-alpha/9, one of the 10 keys, was a GRADER_ERROR; a regrade with a
       // fixed grader fails it, as its label says.
-      if (fixture === 'grader-error-regraded' && task === 't-alpha' && i === 9) Object.assign(over, { outcome: 'GRADER_ERROR', valid: false, score: null, attribution: null, regrades: [regrade('FAIL')] });
+      if (fixture === 'grader-error-regraded' && task === 't-alpha' && i === 9) Object.assign(over, { outcome: 'GRADER_ERROR', valid: false, score: null, attribution: null, regrades: [regrade(task, 'FAIL')] });
       const r = record(task, i, outcome, { mode, ...over });
       put(dir, `trials/${task}/${i}.json`, `${JSON.stringify(r, null, 2)}\n`);
       put(dir, `trajectories/${task}/${i}.jsonl`, TRAJECTORY);
@@ -102,6 +103,7 @@ export function writeFixtureRun(dir: string, fixture: Fixture): void {
   put(dir, 'replay.json', `${JSON.stringify({ trials: replay }, null, 2)}\n`);
   put(dir, 'audit.jsonl', labels.map((l) => JSON.stringify(l)).join('\n') + '\n');
   put(dir, 'manifest.json', `${JSON.stringify({ run_id: 'final-1', model: MODEL, effort: 'high', mode, trials: 10, world_hash: 'h-initial', task_versions: Object.fromEntries(TASKS.map((t) => [t, `v-${t}`])), batches: [] }, null, 2)}\n`);
-  // The grader validation matrix of each task_version (audit-check reads it for criterion M4).
-  put(dir, 'matrix.json', `${JSON.stringify({ task_versions: Object.fromEntries(TASKS.map((t) => [`v-${t}`, { oracle_pass: true, alternatives_pass: true }])) }, null, 2)}\n`);
+  // The grader validation matrix of each grader_task_version, the run's and a regrade's (audit-check
+  // reads it for criterion M4), as `pnpm cli matrix --out` writes it.
+  put(dir, 'matrix.json', `${JSON.stringify({ grader_task_versions: Object.fromEntries(TASKS.flatMap((t) => [`g-${t}`, `g-${t}-next`].map((g) => [g, { task_id: t, oracle_pass: true, alternatives_pass: true }]))) }, null, 2)}\n`);
 }

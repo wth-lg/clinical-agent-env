@@ -138,19 +138,21 @@ accessible name or text node, so they share one line of the snapshot.
 
 - The reason on each non-pass row of the Runs view and in the trial header is the one sentence
   `explainTrial` returns. Every valid non-pass trial has one, in one of three forms:
-  - a trial with a failed gate check (FAIL, or LIMIT or REFUSAL with a failed check):
-    `<check id> failed: expected <value>, found <value>`, for the decisive check. A check id is
-    the gate check's id as the task's grader names it, a letter then letters, digits or
+  - a FAIL: `<check id> failed: expected <value>, found <value>`, for the decisive check. A check
+    id is the gate check's id as the task's grader names it, a letter then letters, digits or
     underscores (`G1`, `note_on_patient`). A value may hold commas.
-  - a LIMIT with no failed gate check, by the limit that stopped the loop (packages/core/events.ts
-    LIMITS): `turn limit reached: <n> turns`, `cost limit reached: $<v> of $<cap>`,
+  - a LIMIT, by the limit that stopped the loop (packages/core/events.ts LIMITS):
+    `turn limit reached: <n> turns`, `cost limit reached: $<v> of $<cap>`,
     `time limit reached: <s> s of <cap> s` or `output limit reached: <n> cut-off responses in a row`.
-  - a REFUSAL with no failed gate check: `refused: <first words>`, the first 12 words of the
-    model's refusal text.
+  - a REFUSAL: `refused: <first words>`, the first 12 words of the model's refusal text.
+  A LIMIT or REFUSAL comes from the record status, so its sentence always leads. For
+  a LIMIT or REFUSAL with a failed gate check: its limit or refusal sentence first,
+  then `; <check id> failed: expected <value>, found <value>`, the values cut to fit.
   One pattern under Patterns matches all three forms.
 - The Attribution tab's criteria table shows, for each criterion, the text `<id>: met` or
   `<id>: not met` (M1-M5), then its evidence; M5 shows `<id>: pending` on an unaudited trial, and
-  M1 shows `M1: not applicable` on a trial with no failed gate check (a LIMIT or REFUSAL).
+  M1 shows `M1: not applicable` only on a LIMIT or REFUSAL with no failed gate check; with a
+  failed check, M1 is met or not met by the exposure of that check's decisive ids.
   Criterion sentences come from FAULT_DEFINITIONS and are not copied here, because
   scripts/test/one-definition.test.ts forbids them outside packages/core/outcomes.ts.
 - `not human-audited`: the marker next to the fault label on a trial with no audit row (every
@@ -403,8 +405,8 @@ each (apps/runner does not exist yet):
   rate rows and the Runs header with N read from the run, the Runs list with no paging, and the
   W7 summary text, as this file says.
 - P14a: `explainTrial` returns a reason for every valid non-pass trial, in the three forms under
-  "P14a, P16: reasons and attribution"; a LIMIT or REFUSAL with no failed gate check gets the
-  limit or refusal sentence.
+  "P14a, P16: reasons and attribution"; every LIMIT or REFUSAL leads with its limit or refusal
+  sentence, then its failed gate check when it has one.
 - P14 or P17i: confirm that renal-dose-review's Policy tab starts with `RBC-PHARM-07`, or switch
   row U4 to a dosing-criterion string from the policy.
 - P15: serve `GET /api/runs` (the runs this runner process started) and resolve `run=session`

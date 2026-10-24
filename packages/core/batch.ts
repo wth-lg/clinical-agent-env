@@ -7,7 +7,7 @@
 //
 // planBatch resolves every task and its versions, reads the run's settled records from the
 // ResultSink and returns the keys still to run and their projection: projectBatch, the one
-// projection function (trials x latest p90 per task_version from the cost-from runs, the earlier
+// projection function (trials x latest p90 per env_version from the cost-from runs, the earlier
 // version as fallback, else the $6 cap, x 1.15, plus the judge allowance). A key whose record is
 // settled is never run again, so a killed batch resumes with exactly its unfinished trials.
 //
@@ -208,7 +208,7 @@ export async function planBatch(spec: BatchSpec, deps: Pick<BatchDeps, 'tasks' |
   );
   const remaining = keys.filter((k) => !done.has(trialKey(k)));
   const projection = projectBatch(
-    spec.taskIds.map((task_id) => ({ task_id, task_version: versions[task_id]!.task_version, trials: remaining.filter((k) => k.task_id === task_id).length })).filter((t) => t.trials > 0),
+    spec.taskIds.map((task_id) => ({ task_id, env_version: versions[task_id]!.env_version, trials: remaining.filter((k) => k.task_id === task_id).length })).filter((t) => t.trials > 0),
     spec.observations ?? [],
   );
   return { versions, keys, remaining, projection };

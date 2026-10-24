@@ -60,7 +60,9 @@
 // a refused POST or a dry run never changes that cap (security review P12b-4 G3). Before any
 // batch there is no cap yet, and the first batch counts what Validate spent. A batch
 // runBatch refuses before its grant (its run is locked, batchStart refuses it) gets 409 with the
-// reason and leaves no run or trial. The run id (<session>-<n>) is taken before any await, so
+// reason and leaves no run or trial. A batch or smoke run on fixtures other than those of a
+// batch still running gets 409 fixtures_changed with no call: the FHIR definitions index is
+// process-wide, so batches on two sets of fixtures never run at once. The run id (<session>-<n>) is taken before any await, so
 // two requests at once never share one.
 // What a session has committed is its ledger rows' settled and reserved spend plus, for each of
 // this runner's batches not yet done, the part of its projection its rows do not hold yet: a
@@ -82,12 +84,12 @@
 // a POST api/trials with smoke: true runs each trial through run() with a scripted client that
 // answers as claude-opus-5-5 and finishes at once, so the task's gates fail; run id smoke-<n>,
 // records with mock: true under CLINENV_RUNS_DIR only, no key, no ledger row.
-import { randomBytes, timingSafeEqual } from 'node:crypto';
+import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from 'node:fs';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { homedir } from 'node:os';
 import { basename, extname, join, resolve, sep } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { okResponse, scenarioTransport } from '../web/src/harness/scenarios.ts';
 import { ApiError, EgressRefusal, MessagesClient, MODEL, type Transport } from '../../packages/core/anthropic.ts';
 import { BatchRefused, planBatch, runBatch, trialKey, type BatchRecord, type BatchSpec, type ResultSink, type TrialKey } from '../../packages/core/batch.ts';
@@ -106,7 +108,8 @@ import { nodeNow } from '../../cli/adapters/clock-node.ts';
 import { loadTrialObservations, openNodeLedger, readRows, resolveLedgerPath } from '../../cli/adapters/ledger-node.ts';
 import { nodeResultSink } from '../../cli/adapters/result-sink-node.ts';
 import { nodeTaskSource } from '../../cli/adapters/tasks-node.ts';
-import { gitState, repoWorld, taskChecks } from '../../cli/run.ts';
+import type { Check } from '../../packages/grader/check.ts';
+import { gitState } from '../../cli/run.ts';
 
 export const BASE = '/clinical-agent-env/';
 export const DEFAULT_PORT = 5180;
@@ -154,39 +157,68 @@ const typeOnly = (raw: string): string => {
   }
   return JSON.stringify({ type: 'error', error: typeof type === 'string' && ERROR_TYPE.test(type) ? { type } : {} });
 };
-// A stream with each SSE error event's data reduced by typeOnly; a stream that fails mid-read
-// fails with a fixed error.
-function sseTypeOnly(body: ReadableStream<Uint8Array>): ReadableStream<Uint8Array> {
+// A stream with each SSE error event's data reduced by typeOnly, one parsed frame at a time: a
+// frame (lines up to a blank line, CRLF or LF) is held until it is whole, its data: lines are
+// joined as SSE joins them, and an error event (event: error, or data whose type is error) leaves
+// as its other lines and one data: line of its type. Every other frame passes through byte for
+// byte. A stream that fails mid-read fails with a fixed error.
+export function sseTypeOnly(body: ReadableStream<Uint8Array>): ReadableStream<Uint8Array> {
   const reader = body.getReader();
   const decoder = new TextDecoder();
   const encoder = new TextEncoder();
   let rest = '';
-  const line = (l: string) => {
-    if (!l.startsWith('data:') || !l.includes('"error"')) return l;
-    try {
-      if ((JSON.parse(l.slice(5)) as { type?: unknown }).type !== 'error') return l;
-    } catch {
-      return l;
+  const frame = (raw: string): string => {
+    const lines = raw.split(/\r\n|\r|\n/);
+    const data = lines.filter((l) => l.startsWith('data:')).map((l) => l.slice(l.startsWith('data: ') ? 6 : 5)).join('\n');
+    let error = lines.includes('event: error') || lines.includes('event:error');
+    if (!error && data.includes('"error"')) {
+      try {
+        error = (JSON.parse(data) as { type?: unknown }).type === 'error';
+      } catch {
+        error = false;
+      }
     }
-    return `data: ${typeOnly(l.slice(5))}`;
+    if (!error) return raw;
+    return [...lines.filter((l) => l !== '' && !l.startsWith('data:')), `data: ${typeOnly(data)}`].join('\n');
+  };
+  // The whole frames at the front of rest, each with its terminator; a CR at the end may be the
+  // first half of a CRLF, so it waits for the next chunk.
+  const BOUNDARY = /\r\n\r\n|\n\n|\r\r|\r\n\n|\n\r\n/;
+  const take = (): string => {
+    let out = '';
+    for (let m = BOUNDARY.exec(rest); m !== null && !(m.index + m[0].length === rest.length && rest.endsWith('\r')); m = BOUNDARY.exec(rest)) {
+      const end = m.index + m[0].length;
+      out += `${frame(rest.slice(0, m.index))}${rest.slice(m.index, end)}`;
+      rest = rest.slice(end);
+    }
+    return out;
   };
   return new ReadableStream<Uint8Array>({
     async pull(c) {
-      let r: Awaited<ReturnType<typeof reader.read>>;
-      try {
-        r = await reader.read();
-      } catch {
-        c.error(new TypeError('stream failed'));
-        return;
+      // Read until a whole frame is out or the stream ends: a pull that enqueues nothing is not
+      // called again.
+      for (;;) {
+        let r: Awaited<ReturnType<typeof reader.read>>;
+        try {
+          r = await reader.read();
+        } catch {
+          c.error(new TypeError('stream failed'));
+          return;
+        }
+        if (r.done) {
+          rest += decoder.decode();
+          const out = take() + (rest === '' ? '' : frame(rest));
+          if (out !== '') c.enqueue(encoder.encode(out));
+          c.close();
+          return;
+        }
+        rest += decoder.decode(r.value, { stream: true });
+        const out = take();
+        if (out !== '') {
+          c.enqueue(encoder.encode(out));
+          return;
+        }
       }
-      if (r.done) {
-        if (rest !== '') c.enqueue(encoder.encode(line(rest)));
-        c.close();
-        return;
-      }
-      const lines = (rest + decoder.decode(r.value, { stream: true })).split('\n');
-      rest = lines.pop() ?? '';
-      if (lines.length > 0) c.enqueue(encoder.encode(`${lines.map(line).join('\n')}\n`));
     },
     cancel: (reason) => reader.cancel(reason),
   });
@@ -267,6 +299,58 @@ export interface RunnerOptions {
   sleep?: (ms: number) => Promise<void>;
   // The task directories; default tasks/.
   tasksDir?: string;
+  // The world, its manifest and the definitions bundle; default fixtures/.
+  fixturesDir?: string;
+}
+
+// What every trial starts from, for one set of fixture files: the world, its manifest's state
+// hash, the definitions bundle (as cli/run.ts repoWorld reads them) and each task's checks
+// (<tasks dir>/<id>/tests/grader.ts, as cli/run.ts taskChecks reads them). `key` hashes the three
+// files' hashes, so a change to any of them, a fixture build caught midway included, loads them
+// afresh; each checks module is imported under it and the task's graderFilesHash, so a grader edit
+// grades the next batch with the new checks (modules grader.ts imports stay as first loaded).
+interface FixtureFiles {
+  manifest: Buffer;
+  world: Buffer;
+  definitions: Buffer;
+}
+
+const sha256 = (bytes: Uint8Array | string) => createHash('sha256').update(bytes).digest('hex');
+const fixturesKey = (f: FixtureFiles) => sha256([f.manifest, f.world, f.definitions].map(sha256).join('\n'));
+
+interface Fixtures {
+  key: string;
+  world: { read: () => Promise<Uint8Array> };
+  worldHash: string;
+  definitions: NonNullable<RunOptions['definitions']>;
+  checks: (task: string, graderFilesHash: string) => Promise<readonly Check[]>;
+}
+
+function loadFixtures(files: FixtureFiles, tasksDir: string): Fixtures {
+  const key = fixturesKey(files);
+  const bytes = new Uint8Array(files.world);
+  const modules = new Map<string, Promise<readonly Check[]>>();
+  const checks = (task: string, graderFilesHash: string) => {
+    const at = `${task}\n${graderFilesHash}`;
+    if (!modules.has(at)) {
+      modules.set(at, (async () => {
+        const file = join(tasksDir, task, 'tests', 'grader.ts');
+        if (!existsSync(file)) return [];
+        const { checks: list } = (await import(`${pathToFileURL(file).href}?fixtures=${key}&grader=${graderFilesHash}`)) as { checks?: unknown };
+        if (!Array.isArray(list)) throw new Error(`${file} does not export checks: Check[]`);
+        return list as Check[];
+      })());
+      modules.get(at)!.catch(() => modules.delete(at));
+    }
+    return modules.get(at)!;
+  };
+  return {
+    key,
+    world: { read: async () => bytes },
+    worldHash: (JSON.parse(files.manifest.toString('utf8')) as { world: { state_hash: string } }).world.state_hash,
+    definitions: JSON.parse(files.definitions.toString('utf8')) as Fixtures['definitions'],
+    checks,
+  };
 }
 
 export interface Runner {
@@ -299,6 +383,8 @@ interface RunEntry {
   view: RunView;
   controller: AbortController;
   done: Promise<void>;
+  // The key of the fixtures its trials run on (Fixtures.key).
+  fixtures: string;
 }
 
 class HttpError extends Error {
@@ -386,9 +472,22 @@ export async function startRunner(opts: RunnerOptions): Promise<Runner> {
   const transport = (label: string) => upstreamTypeOnly(base(label));
   // A TaskSource reads the task directories once, so each request builds its own: a task
   // edited between two batches is graded as edited, at its new env_version.
-  const taskSourceNow = () => nodeTaskSource({ ...(opts.tasksDir === undefined ? {} : { root: opts.tasksDir }), testMode: false });
+  const tasksDir = opts.tasksDir ?? join(REPO, 'tasks');
+  const taskSourceNow = () => nodeTaskSource({ root: tasksDir, testMode: false });
   const git = gitState(REPO);
-  let world: ReturnType<typeof repoWorld> | undefined;
+  // The fixtures on disk now: kept while the three files' hashes hold, reloaded when a fixture
+  // rebuild changes any of them, so the next trial needs no restart (run.md 2026-10-25 07:40).
+  const fixturesDir = opts.fixturesDir ?? join(REPO, 'fixtures');
+  let fixtures: Fixtures | undefined;
+  const fixturesNow = (): Fixtures => {
+    const files: FixtureFiles = {
+      manifest: readFileSync(join(fixturesDir, 'manifest.json')),
+      world: readFileSync(join(fixturesDir, 'world.ndjson.gz')),
+      definitions: readFileSync(join(fixturesDir, 'definitions-pruned.json')),
+    };
+    if (fixtures === undefined || fixtures.key !== fixturesKey(files)) fixtures = loadFixtures(files, tasksDir);
+    return fixtures;
+  };
 
   // The key typed into the UI, held only here.
   let heldKey: string | null = null;
@@ -400,6 +499,11 @@ export async function startRunner(opts: RunnerOptions): Promise<Runner> {
   const say = (line: string) => opts.log?.(scrub(line));
 
   const runs: RunEntry[] = [];
+  // Whether a batch not yet done runs on other fixtures than those of `key`. run() indexes the
+  // FHIR definitions bundle process-wide (packages/env/validate.ts indexDefinitions), so two
+  // batches on two sets of fixtures at once would validate against each other's bundle.
+  const otherFixturesRunning = (key: string) => runs.some((r) => !r.view.done && r.fixtures !== key);
+  const fixturesChanged = { type: 'fixtures_changed', message: 'The environment fixtures were rebuilt while another batch is still running. Wait for it to finish, or cancel it, then start the trial again.' };
   const trials = new Map<string, TrialEntry>();
   let runCount = 0;
   let stopping = false;
@@ -522,7 +626,7 @@ export async function startRunner(opts: RunnerOptions): Promise<Runner> {
     await knownTasks(tasks, body.tasks);
     if (body.smoke) return startSmoke(body, tasks);
     const key = opts.mock ? 'mock-key-not-sent' : (body.key ?? heldKey);
-    world ??= repoWorld();
+    const w = fixturesNow();
     // Taken before any await, so two requests in flight at once never share a run id.
     const runId = `${session}-${++runCount}`;
     const sink = nodeResultSink(join(runsDir, runId));
@@ -532,14 +636,20 @@ export async function startRunner(opts: RunnerOptions): Promise<Runner> {
     };
     let plan;
     try {
-      plan = await planBatch(spec, { tasks, sink, worldHash: world.worldHash });
+      plan = await planBatch(spec, { tasks, sink, worldHash: w.worldHash });
     } catch (e) {
       throw new HttpError(400, 'invalid_request', e instanceof BatchRefused ? e.message : `tasks: ${(e as Error).message}`);
     }
     const rows = readRows(ledgerPath);
     const projection = terms(plan.projection, rows, body.session_cap_usd);
     if (dryRun) return { status: 200, body: { dry_run: true, calls: 0, projection } };
+    // 409 fixtures_changed: the fixture files changed (a fixtures:build) while a batch on the
+    // earlier ones is still running; this batch waits until that one is done (see otherFixturesRunning).
+    if (otherFixturesRunning(w.key)) return { status: 409, body: { error: fixturesChanged, projection } };
+    // 409 no_key: no key has passed Validate in this runner process, so no client can be built.
     if (key === null) return { status: 409, body: { error: { type: 'no_key', message: 'No API key yet: paste your Anthropic API key and press Validate, then start the trial again.' }, projection: null } };
+    // 409 session_cap: this batch's projection plus what the session has spent or holds open would
+    // cross the session cap the UI sent; checked here before the ledger, which holds it too.
     if (projection.session_spent_usd + projection.total_usd > body.session_cap_usd) {
       return {
         status: 409,
@@ -547,6 +657,8 @@ export async function startRunner(opts: RunnerOptions): Promise<Runner> {
       };
     }
     const check = checkProjected(totals(rows), plan.projection.total);
+    // 409 projected_cap: the ledger's exposure plus this projection would cross PROJECTED_CAP_USD,
+    // the check `pnpm cli spend --check` makes; batchStart would refuse it as well.
     if (check.over) {
       return {
         status: 409,
@@ -580,11 +692,10 @@ export async function startRunner(opts: RunnerOptions): Promise<Runner> {
     const view: RunView = { run_id: runId, started: new Date().toISOString(), mock: opts.mock, smoke: false, tasks: body.tasks, trials: body.trials, trial_ids: entries.map((t) => t.id), done: false, stopped: null };
     const byLabel = (label: string | undefined) => entries.find((t) => label !== undefined && label.endsWith(`:${t.taskId}/${t.index}`));
     if (!opts.mock) batchKeys.add(key);
-    const w = world;
     const batch = runBatch(
       { ...spec, ceiling: ceilingAt(body.session_cap_usd), signal: controller.signal, log: (l) => say(`run ${runId}: ${l}`) },
       {
-        ledger: gated, rows: () => store.read(), sink: trackingSink(sink, byKey), tasks, checks: taskChecks, world: w.world, worldHash: w.worldHash, definitions: w.definitions, now: nodeNow,
+        ledger: gated, rows: () => store.read(), sink: trackingSink(sink, byKey), tasks, checks: async (id) => w.checks(id, (await tasks.get(id)).graderFilesHash), world: w.world, worldHash: w.worldHash, definitions: w.definitions, now: nodeNow,
         client: (grant, label) => new MessagesClient({ grant, ledger, apiKey: key, fetch: transport(label), trial: label, log: (l) => say(`${label}: ${l}`), ...(opts.sleep ? { sleep: opts.sleep } : {}) }),
         // Each trial also carries its own signal, which DELETE api/trials/:id aborts.
         run: (taskId, model, o: RunOptions) => {
@@ -609,7 +720,7 @@ export async function startRunner(opts: RunnerOptions): Promise<Runner> {
       if (pending.get(runId) === term) pending.delete(runId);
       batchKeys.delete(key);
     });
-    const entry: RunEntry = { view, controller, done };
+    const entry: RunEntry = { view, controller, done, fixtures: w.key };
     runs.push(entry);
     const ran = await Promise.race([started.then(() => true), batch.then(() => false, () => false)]);
     if (ran) {
@@ -624,15 +735,21 @@ export async function startRunner(opts: RunnerOptions): Promise<Runner> {
     for (const t of entries) if (trials.get(t.id) === t) trials.delete(t.id);
     if (outcome === null) throw new HttpError(503, 'shutting_down', 'the runner is shutting down');
     const message = scrub(outcome instanceof Error ? outcome.message : String(outcome));
+    // 409 batch_refused: runBatch refused the run before any grant: its run directory is locked
+    // by another batch, or a batch of the run is still open in the ledger.
     if (outcome instanceof BatchRefused) return { status: 409, body: { error: { type: 'batch_refused', message: `This batch could not start: ${message}` }, projection } };
+    // 409 spend_refused_<cap>: the ledger's batchStart refused the grant under the lock: projected
+    // (PROJECTED_CAP_USD, counting other open batches), actual (ACTUAL_CAP_USD) or ceiling (the
+    // session cap the ledger holds at every reserve).
     if (outcome instanceof SpendRefused) return { status: 409, body: { error: { type: `spend_refused_${outcome.cap}`, message }, projection } };
     return { status: 500, body: { error: { type: 'runner_error', message } } };
   }
 
   async function startSmoke(body: TrialsRequest, tasks: TaskSource): Promise<{ status: number; body: unknown }> {
     if (!forcedFail) throw new HttpError(400, 'invalid_request', 'Smoke trials are turned off in this runner.');
-    world ??= repoWorld();
-    const w = world;
+    const w = fixturesNow();
+    // 409 fixtures_changed: as for a batch, a smoke run never runs beside a batch on other fixtures.
+    if (otherFixturesRunning(w.key)) return { status: 409, body: { error: fixturesChanged, projection: null } };
     const taken = existsSync(runsDir) ? readdirSync(runsDir).filter((d) => /^smoke-\d+$/.test(d)).map((d) => Number(d.slice(6))) : [];
     const runId = `smoke-${Math.max(0, ...taken, ...runs.map((r) => (/^smoke-(\d+)$/.exec(r.view.run_id)?.[1] ?? 0)).map(Number)) + 1}`;
     const sink = nodeResultSink(join(runsDir, runId));
@@ -649,7 +766,7 @@ export async function startRunner(opts: RunnerOptions): Promise<Runner> {
         t.state = 'running';
         const { record } = await run(t.taskId, MODEL, {
           tasks, client: forcedFailClient(), judge: null, world: w.world, worldHash: w.worldHash, definitions: w.definitions, now: nodeNow, effort: body.effort,
-          trialId: `smoke:${runId}:${t.taskId}/${t.index}`, checks: await taskChecks(t.taskId), signal: AbortSignal.any([controller.signal, t.controller.signal]),
+          trialId: `smoke:${runId}:${t.taskId}/${t.index}`, checks: await w.checks(t.taskId, (await tasks.get(t.taskId)).graderFilesHash), signal: AbortSignal.any([controller.signal, t.controller.signal]),
           onEvent: (e) => {
             sink.event(k, 'smoke', e);
             pushEvent(t, e);
@@ -671,7 +788,7 @@ export async function startRunner(opts: RunnerOptions): Promise<Runner> {
     ).finally(() => {
       view.done = true;
     });
-    runs.push({ view, controller, done });
+    runs.push({ view, controller, done, fixtures: w.key });
     return { status: 202, body: { run_id: runId, trial_ids: view.trial_ids } };
   }
 
@@ -682,6 +799,8 @@ export async function startRunner(opts: RunnerOptions): Promise<Runner> {
     // Refused before anything changes: the held key stays as it was.
     const cap = sessionCap;
     const spent = cap === null ? 0 : committed(readRows(ledgerPath));
+    // 409 session_cap: Validate's worst case plus what the session has spent or holds open would
+    // cross the session cap of the last batch posted; the held key stays as it was.
     if (cap !== null && spent + projection > cap) {
       return {
         status: 409,
@@ -703,6 +822,8 @@ export async function startRunner(opts: RunnerOptions): Promise<Runner> {
     } catch (e) {
       // The ledger's refusal is the runner's own text; an API error answers its class's fixed
       // message (see the header).
+      // 409 spend_refused_<cap>: the ledger's batchStart refused Validate's one call (projected,
+      // actual, or ceiling: the session cap); no call was made.
       if (e instanceof SpendRefused) return { status: 409, body: { error: { type: `spend_refused_${e.cap}`, message: redactText(e.message, [key]) } } };
       if (e instanceof ApiError) {
         const status = e.status === 401 || e.status === 403 || e.status === 429 ? e.status : 502;

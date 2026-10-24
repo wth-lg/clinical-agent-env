@@ -21,7 +21,7 @@ async function check(dir: string, checks?: (task: string) => Promise<ReadonlyArr
   const out: string[] = [];
   const err: string[] = [];
   const code = await auditCheck([dir, '--json'], { out: (l) => out.push(l), err: (l) => err.push(l), ...(checks ? { checks } : {}) });
-  return { code, json: JSON.parse(out.join('\n')) as { violations: string[]; environment: number; grader: number; valid: number; excluded: string[]; denominator: number }, text: err.join('\n') };
+  return { code, json: JSON.parse(out.join('\n')) as { violations: string[]; labelled_environment: number; labelled_grader: number; faults: Record<string, number>; valid: number; excluded: string[]; denominator: number } & Record<string, unknown>, text: err.join('\n') };
 }
 
 const readJson = (file: string) => JSON.parse(readFileSync(file, 'utf8')) as Record<string, unknown>;
@@ -142,10 +142,24 @@ describe('audit-check: criteria in audit.jsonl', () => {
 });
 
 describe('audit-check: M4 from the run\'s matrix.json (review F3)', () => {
-  it('every audited row has M4 met when matrix.json covers the trial\'s task_version', async () => {
+  it('every audited row has M4 met when matrix.json covers the current grade\'s grader_task_version', async () => {
     const dir = run('clean');
     expect((await check(dir)).code).toBe(0);
     for (const l of labels(dir)) expect((l.criteria as Array<{ id: string; met: unknown }>).find((c) => c.id === 'M4')!.met, l.trial).toBe(true);
+  });
+
+  // P11f (2), verifier-phase-regrade-3 N4: a trial run at g-t-alpha and regraded to g-t-alpha-next
+  // is judged by the matrix of g-t-alpha-next; a matrix.json with only g-t-alpha has none for it.
+  it('a regraded trial finds the matrix of its current grade\'s grader_task_version, and one keyed only by the run-time version is missing', async () => {
+    const dir = run('grader-error-regraded');
+    expect((await check(dir, fixtureChecks)).code).toBe(0);
+    const m4 = (trial: string) => (labels(dir).find((l) => l.trial === trial)!.criteria as Array<{ id: string; met: unknown; evidence: string }>).find((c) => c.id === 'M4')!;
+    expect(m4('t-alpha/9')).toMatchObject({ met: true, evidence: expect.stringMatching(/on grader_task_version g-t-alpha-next/) });
+    writeJson(join(dir, 'matrix.json'), { grader_task_versions: { 'g-t-alpha': { oracle_pass: true, alternatives_pass: true }, 'g-t-beta': { oracle_pass: true, alternatives_pass: true } } });
+    const r = await check(dir, fixtureChecks);
+    expect(r.code).toBe(1);
+    expect(r.json.violations).toContain('t-alpha/9: M4 pending: no grader validation matrix result for grader_task_version g-t-alpha-next');
+    expect(r.json.violations.join('\n')).not.toMatch(/t-alpha\/[5-8]|t-beta/);
   });
 
   it('without matrix.json, M4 is pending on every failure and each is a violation', async () => {
@@ -158,7 +172,7 @@ describe('audit-check: M4 from the run\'s matrix.json (review F3)', () => {
 
   it('an oracle that fails the matrix on the check the trial failed makes M4 not met: a violation, and the fault grader', async () => {
     const dir = run('clean');
-    writeJson(join(dir, 'matrix.json'), { task_versions: { 'v-t-alpha': { oracle_pass: false, alternatives_pass: true, failed_checks: ['G1'] }, 'v-t-beta': { oracle_pass: true, alternatives_pass: true } } });
+    writeJson(join(dir, 'matrix.json'), { grader_task_versions: { 'g-t-alpha': { oracle_pass: false, alternatives_pass: true, failed_checks: ['G1'] }, 'g-t-beta': { oracle_pass: true, alternatives_pass: true } } });
     const v = (await check(dir)).json.violations.join('\n');
     expect(v).toMatch(/t-alpha\/5: M4 not met: oracle fails/);
     expect(v).toMatch(/t-alpha\/5: labelled model, and its fault grader has the label grader/);
@@ -188,7 +202,7 @@ describe('audit-check: exposure on a regraded trial (review F5)', () => {
   function movedCheck(): string {
     const dir = run('clean');
     const file = join(dir, 'trials/t-alpha/9.json');
-    writeJson(file, { ...readJson(file), regrades: [{ grader_version: 'g-next', outcome: 'FAIL', score: 0, valid: true, changed: false, checks: [{ id: 'G1', kind: 'gate', met: true }, { id: 'G2', kind: 'gate', met: false }], at: '2026-10-24T00:00:00.000Z' }] });
+    writeJson(file, { ...readJson(file), regrades: [{ grader_version: 'g-next', grader_task_version: 'g-t-alpha-next', outcome: 'FAIL', score: 0, valid: true, changed: false, checks: [{ id: 'G1', kind: 'gate', met: true }, { id: 'G2', kind: 'gate', met: false }], at: '2026-10-24T00:00:00.000Z' }] });
     return dir;
   }
 
@@ -216,18 +230,18 @@ describe('audit-check: exposure on a regraded trial (review F5)', () => {
 describe('audit-check: review round 3 (pr-review P14a-2)', () => {
   it('D1b: an oracle that fails the matrix on another check leaves the model label alone; the failing matrix blocks the run once', async () => {
     const dir = run('clean');
-    writeJson(join(dir, 'matrix.json'), { task_versions: { 'v-t-alpha': { oracle_pass: false, alternatives_pass: true, failed_checks: ['G2'] }, 'v-t-beta': { oracle_pass: true, alternatives_pass: true } } });
+    writeJson(join(dir, 'matrix.json'), { grader_task_versions: { 'g-t-alpha': { oracle_pass: false, alternatives_pass: true, failed_checks: ['G2'] }, 'g-t-beta': { oracle_pass: true, alternatives_pass: true } } });
     const r = await check(dir);
     expect(r.code).toBe(1);
     const v = r.json.violations;
     expect(v.join('\n')).not.toMatch(/labelled model, and its fault grader/);
     expect(v.join('\n')).not.toMatch(/M4 not met/);
-    expect(v.filter((l) => /B1/.test(l))).toEqual([expect.stringMatching(/^v-t-alpha: B1 holds: .*blocks the run/)]);
+    expect(v.filter((l) => /B1/.test(l))).toEqual([expect.stringMatching(/^t-alpha at grader_task_version g-t-alpha: B1 holds: .*blocks the run/)]);
   });
 
   it('D1b: a matrix.json failed_checks that is not a list of strings is a violation, not a silent pass', async () => {
     const dir = run('clean');
-    writeJson(join(dir, 'matrix.json'), { task_versions: { 'v-t-alpha': { oracle_pass: false, alternatives_pass: true, failed_checks: 'G1' }, 'v-t-beta': { oracle_pass: true, alternatives_pass: true } } });
+    writeJson(join(dir, 'matrix.json'), { grader_task_versions: { 'g-t-alpha': { oracle_pass: false, alternatives_pass: true, failed_checks: 'G1' }, 'g-t-beta': { oracle_pass: true, alternatives_pass: true } } });
     const v = (await check(dir)).json.violations.join('\n');
     expect(v).toMatch(/t-alpha\/5: M4 pending: /);
   });
@@ -241,7 +255,7 @@ describe('audit-check: review round 3 (pr-review P14a-2)', () => {
     writeLabels(dir, adjudicate('reasoning'));
     const r = await check(dir);
     expect(r.code, r.json.violations.join('\n')).toBe(0);
-    expect(r.json.environment).toBe(0);
+    expect(r.json.labelled_environment).toBe(0);
   });
 
   it('D3: a valid failure correctly labelled environment still blocks the run; --json names it as excluded from the denominator', async () => {
@@ -252,9 +266,20 @@ describe('audit-check: review round 3 (pr-review P14a-2)', () => {
     const v = r.json.violations.join('\n');
     expect(v).not.toMatch(/t-beta\/9: labelled/);
     expect(v).toMatch(/t-beta\/9: FAIL is the environment's fault \(E5\): not allowed in a committed run, so the run fails and has no headline pass rate until an environment fix/);
-    expect(r.json.environment).toBe(1);
+    expect(r.json.labelled_environment).toBe(1);
     expect(r.json.excluded).toEqual(['t-beta/9']);
     expect(r.json.denominator).toBe(r.json.valid - 1);
+  });
+
+  // P11f (3), verifier-phase-P14a-4 minor 1: the auditor's labels and the computed faults are
+  // different counts, so they have different keys. never-exposable as shipped labels t-beta/9
+  // model while its fault is env (E5).
+  it('--json names label counts (labelled_*) and fault counts (faults) with distinct keys', async () => {
+    const r = await check(run('never-exposable'), fixtureChecks);
+    expect(r.json).not.toHaveProperty('environment');
+    expect(r.json).not.toHaveProperty('grader');
+    expect(r.json).toMatchObject({ labelled_environment: 0, labelled_grader: 0, faults: { model: 9, refusal: 0, env: 1, grader: 0 }, excluded: ['t-beta/9'] });
+    expect((await check(run('clean'))).json).toMatchObject({ labelled_environment: 0, labelled_grader: 0, faults: { model: 10, refusal: 0, env: 0, grader: 0 } });
   });
 
   it('--json reports the valid trials, the excluded trial ids and the denominator without them (P14a-3 denominator)', async () => {
@@ -263,7 +288,7 @@ describe('audit-check: review round 3 (pr-review P14a-2)', () => {
     expect(ok.code).toBe(0);
     expect(ok.json).toMatchObject({ valid: 20, excluded: [], denominator: 20 });
     // The matrix fails G1 on t-alpha's task_version: every t-alpha FAIL is the grader's (GR4).
-    writeJson(join(clean, 'matrix.json'), { task_versions: { 'v-t-alpha': { oracle_pass: false, alternatives_pass: true, failed_checks: ['G1'] }, 'v-t-beta': { oracle_pass: true, alternatives_pass: true } } });
+    writeJson(join(clean, 'matrix.json'), { grader_task_versions: { 'g-t-alpha': { oracle_pass: false, alternatives_pass: true, failed_checks: ['G1'] }, 'g-t-beta': { oracle_pass: true, alternatives_pass: true } } });
     const gr4 = await check(clean);
     expect(gr4.code).toBe(1);
     const named = gr4.json.violations.flatMap((l) => /^(\S+): FAIL is the grader's fault \(GR4\)/.exec(l)?.[1] ?? []);

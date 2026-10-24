@@ -8,7 +8,9 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { scenarioTransport } from '../../apps/web/src/harness/scenarios.ts';
 import { MODEL } from '../../packages/core/anthropic.ts';
 import { GRADER_VERSION } from '../../packages/grader/grade.ts';
-import { fakeKey, tempDir } from '../../scripts/test/helpers.ts';
+import { fakeKey, repoRoot, tempDir } from '../../scripts/test/helpers.ts';
+import type { TaskSource } from '../../packages/core/tasks.ts';
+import { nodeTaskSource } from '../adapters/tasks-node.ts';
 import { main as regrade } from '../regrade.ts';
 import { main as replay } from '../replay.ts';
 import { main as run } from '../run.ts';
@@ -33,9 +35,9 @@ afterEach(() => {
   vi.unstubAllEnvs();
 });
 
-async function cli(main: (args: string[], deps: { out: (l: string) => void; err: (l: string) => void }) => Promise<number>, args: string[]) {
+async function cli(main: (args: string[], deps: { out: (l: string) => void; err: (l: string) => void; tasks?: TaskSource }) => Promise<number>, args: string[], tasks?: TaskSource) {
   const lines: string[] = [];
-  const code = await main(args, { out: (l) => lines.push(l), err: (l) => lines.push(l) });
+  const code = await main(args, { out: (l) => lines.push(l), err: (l) => lines.push(l), ...(tasks ? { tasks } : {}) });
   return { code, text: lines.join('\n') };
 }
 
@@ -88,6 +90,32 @@ describe('replay and regrade', () => {
     const bad = await cli(replay, [copy]);
     expect(bad.code).toBe(1);
     expect(bad.text).toMatch(/_toy\/0: regrade gives PASS score 1, the current grade FAIL score 0/);
+  });
+
+  // P11f (6), verifier-phase-regrade-2 N2: [judge] and [matrix] only shape grading, so editing them
+  // leaves env_version as it was and replay does not refuse the run; a table the agent works in
+  // still does. The judge effort is part of a judge cache key, so after an effort edit replay
+  // grades, names the judge cache miss and says only a new run grades with the judge (P11f C6c).
+  it('replay reproduces after a [matrix] edit, grades after a [judge] effort edit, and refuses after a [task] max_turns edit', async () => {
+    const edited = (from: string, to: string) => {
+      const root = tempDir('replay-edited-tasks');
+      cpSync(join(repoRoot, 'tasks/_toy'), join(root, '_toy'), { recursive: true });
+      const toml = join(root, '_toy/task.toml');
+      const text = readFileSync(toml, 'utf8');
+      if (!text.includes(from)) throw new Error(`tasks/_toy/task.toml has no ${from}`);
+      writeFileSync(toml, text.replace(from, to));
+      return nodeTaskSource({ root, testMode: true });
+    };
+    const traps = await cli(replay, [dir], edited('traps = ["wrong_patient", ', 'traps = ['));
+    expect(traps.code, traps.text).toBe(0);
+    const judged = await cli(replay, [dir], edited('effort = "medium"', 'effort = "high"'));
+    expect(judged.text).not.toMatch(/environment changed/);
+    expect(judged.text).toMatch(/_toy\/0: judge cache miss /);
+    expect(judged.text).toContain('the judge question or the [judge] effort changed since this run, and the effort is part of the judge cache key, so its cached answers cannot grade it.');
+    expect(judged.text).toContain('Only a new run grades with the judge: pnpm cli run --task _toy --model claude-opus-5-5 --out <new run dir> (pnpm cli oracle --task _toy --live-judge refreshes only the matrix cache).');
+    const turns = await cli(replay, [dir], edited('max_turns = 6', 'max_turns = 7'));
+    expect(turns.code).toBe(1);
+    expect(turns.text).toMatch(/_toy\/0: environment changed: run at env_version /);
   });
 
   it('replay refuses a trial whose env_version is not the checkout\'s, naming both; regrade still runs', async () => {

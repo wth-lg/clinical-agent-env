@@ -338,8 +338,9 @@ function readTrial(file: string): Record<string, unknown> {
 
 // Trial costs from the --cost-from runs, in list order (a later run is newer). A trial's cost
 // is its cost_usd plus its judge_cost_usd (0 when absent, as in records written before judge
-// calls were metered), so every p90 counts judge spend. A run with no trials/ directory is an
-// error: a mistyped path must not fall back to the cap silently.
+// calls were metered), so every p90 counts judge spend. Cost is matched on env_version (null on a
+// record from before the env/grader split; packages/core/cost.ts perTrialCost). A run with no
+// trials/ directory is an error: a mistyped path must not fall back to the cap silently.
 export function loadTrialObservations(runDirs: readonly string[]): TrialObservation[] {
   return runDirs.flatMap((run, run_order) => {
     if (!existsSync(join(run, 'trials'))) throw new Error(`--cost-from ${run}: no trials/ directory`);
@@ -348,7 +349,7 @@ export function loadTrialObservations(runDirs: readonly string[]): TrialObservat
       const judge = t.judge_cost_usd ?? 0;
       if (typeof t.task_id !== 'string' || typeof t.task_version !== 'string' || typeof t.cost_usd !== 'number' || typeof judge !== 'number') return [];
       return [{
-        run, run_order, task_id: t.task_id, task_version: t.task_version, cost_usd: t.cost_usd + judge,
+        run, run_order, task_id: t.task_id, env_version: typeof t.env_version === 'string' ? t.env_version : null, task_version: t.task_version, cost_usd: t.cost_usd + judge,
         ...(typeof t.started === 'string' ? { started: t.started } : {}),
         ...(typeof t.outcome === 'string' ? { outcome: t.outcome } : {}),
       }];

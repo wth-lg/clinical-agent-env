@@ -48,6 +48,15 @@ describe('summary --require', () => {
     expect(j.initial_state_hashes).toEqual(['h-initial']);
   });
 
+  // P11f (7), regrade-2 N3: the fixture records carry the env/grader split, so summary reports it.
+  it('reports each task\'s env_versions and the grader_task_versions of the current grades', async () => {
+    const clean = JSON.parse((await cli(summary, [run('clean'), '--json'])).out);
+    expect(clean.tasks['t-alpha']).toMatchObject({ env_versions: ['e-t-alpha'], grader_task_versions: ['g-t-alpha'] });
+    expect(clean.tasks['t-beta']).toMatchObject({ env_versions: ['e-t-beta'], grader_task_versions: ['g-t-beta'] });
+    const regraded = JSON.parse((await cli(summary, [run('fail-regraded-pass'), '--json'])).out);
+    expect(regraded.tasks['t-alpha']).toMatchObject({ env_versions: ['e-t-alpha'], grader_task_versions: ['g-t-alpha', 'g-t-alpha-next'] });
+  });
+
   it.each(SUMMARY_FIXTURES)('exits 1 on %s, naming the violation', async (fixture) => {
     const r = await cli(summary, [run(fixture), '--require', REQUIRE]);
     expect(r.code, r.out + r.err).toBe(1);
@@ -107,7 +116,7 @@ describe('audit-check', () => {
   it('exits 0 on the clean run', async () => {
     const r = await cli(auditCheck, [run('clean'), '--json']);
     expect(r.code, r.out + r.err).toBe(0);
-    expect(JSON.parse(r.out)).toMatchObject({ failures: 10, labelled: 10, environment: 0, grader: 0, violations: [] });
+    expect(JSON.parse(r.out)).toMatchObject({ failures: 10, labelled: 10, labelled_environment: 0, labelled_grader: 0, violations: [] });
   });
 
   it('reads the current grade: a GRADER_ERROR regraded to FAIL is a labelled failure; a FAIL regraded to PASS contradicts its FAIL label', async () => {

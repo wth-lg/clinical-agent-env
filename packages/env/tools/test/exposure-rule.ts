@@ -20,10 +20,11 @@ const NOTES = new Set(['DocumentReference', 'DiagnosticReport']);
 
 const decode = (a: Attachment) => new TextDecoder().decode(Uint8Array.from(atob(a.data!), (c) => c.charCodeAt(0)));
 // Each text attachment, and, for more than one, all of them joined by a blank line, as the read
-// tools join them (notes.ts noteText) for search_notes and fhir_read.
+// tools join them (notes.ts noteText) for search_notes and fhir_read. A text attachment is one
+// whose contentType starts with text/ in any case, as notes.ts isText reads it.
 function texts(r: Resource): string[] {
   const all = r.resourceType === 'DocumentReference' ? (r as DocumentReference).content.map((c) => c.attachment) : ((r as DiagnosticReport).presentedForm ?? []);
-  const each = all.filter((a) => a.data !== undefined && (a.contentType ?? '').startsWith('text/')).map(decode);
+  const each = all.filter((a) => a.data !== undefined && (a.contentType ?? '').toLowerCase().startsWith('text/')).map(decode);
   return each.length > 1 ? [...each, each.join('\n\n')] : each;
 }
 
