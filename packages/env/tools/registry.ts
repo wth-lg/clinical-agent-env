@@ -20,9 +20,10 @@
 //     whitespace collapsed to single spaces (case kept), the same for every shape: a search_notes
 //     row's snippet ({note, snippet}), a note or report read with fhir_read ({resource, text}) or
 //     a whole policy ({resourceType: 'Policy', id, text}). Shown text is not exposure unless it
-//     is the whole text: a snippet cut at either end (SNIPPET_CUT marks the cut) is an excerpt, so
-//     its note stays referenced, while a snippet with no cut mark is the note's whole text,
-//     whitespace-collapsed, and exposes the note as fhir_read does. exposed_ids keeps meaning
+//     is the whole text: a search_notes row says so as data (whole: true, the note's entire
+//     text, whitespace-collapsed), which exposes the note as fhir_read does; a row with
+//     whole: false shows an excerpt, so its note stays referenced. The walker reads the flag,
+//     never a '…' in the text, which a note can contain. exposed_ids keeps meaning
 //     "the decisive content was shown". A task grader asks whether a decisive phrase was shown with
 //     grader/exposure.ts shows(), which compares both sides whitespace-collapsed and ignoring
 //     case, so a phrase split across lines in the note matches as it does in a snippet.
@@ -49,12 +50,8 @@ import { ToolError, type ErrorBody } from './errors.ts';
 
 // 2: read-tool exposure tagging as of the search-exposure change (a snippet is shown, not exposed;
 // search_patients exposes the Patient it returns).
-// 3: a search_notes snippet that is the note's whole text (no cut mark) exposes the note.
+// 3: a search_notes row carries whole, and a snippet that is the note's whole text exposes it.
 export const TOOLS_VERSION = '3';
-
-// What search_notes puts at a snippet's cut end; a snippet without it at either end is the
-// note's whole text.
-export const SNIPPET_CUT = '…';
 
 export type PropertySchema =
   | { type: 'string'; description: string; enum?: readonly string[]; minLength?: number; maxLength?: number; pattern?: string }
@@ -205,8 +202,8 @@ export const collapseWhitespace = (text: string): string => text.replace(/\s+/g,
 
 const isSnippetRow = (o: Record<string, unknown>): o is { note: string; snippet: string } =>
   typeof o.snippet === 'string' && isId(o.note) && REF.test(o.note) && TEXT_TYPES.has(typeOf(o.note));
-// A search_notes row whose snippet is not cut at either end shows the note's whole text.
-const wholeSnippet = (o: Record<string, unknown>) => isSnippetRow(o) && !o.snippet.startsWith(SNIPPET_CUT) && !o.snippet.endsWith(SNIPPET_CUT);
+// A search_notes row that says its snippet is the note's whole text (whole: true).
+const wholeSnippet = (o: Record<string, unknown>) => o.whole === true && isSnippetRow(o);
 
 // The note, report or policy whose text an object shows, and the text, in one of the three
 // shapes above. Any other object shows no text, whatever its keys.
