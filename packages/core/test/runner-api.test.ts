@@ -222,6 +222,22 @@ describe('runner refusal text', () => {
     expect(refusalText('trials', 'toString')).toBeNull();
   });
 
+  // When no trials are running, waiting changes nothing, so each cap text also says what does
+  // (verifier-phase-P11f-3 S2). The session is the runner process's (apps/runner/server.ts
+  // startRunner: session, inSession), so a restart starts one with no spend and no cap. The project
+  // spending limit counts the whole spend ledger, which a restart does not change; `pnpm cli
+  // spend --check` lists what it holds, an open batch of a runner that died included.
+  it('says what to do when a cap refuses and no trials are running', () => {
+    const restart = 'If no trials are running, restart the runner. A restart starts a new session with no spend.';
+    const ledger = 'A runner restart does not reset this limit. Run pnpm cli spend --check to see what uses it.';
+    expect(REFUSAL_TEXT.key.session_cap).toContain(restart);
+    expect(REFUSAL_TEXT.key.spend_refused_ceiling).toContain(restart);
+    for (const text of [REFUSAL_TEXT.key.spend_refused_projected, REFUSAL_TEXT.trials.projected_cap, REFUSAL_TEXT.trials.spend_refused_projected]) {
+      expect(text).toContain(ledger);
+    }
+    expect(REFUSAL_TEXT.key.spend_refused_projected).toContain('If trials are running, wait for them to finish.');
+  });
+
   it('is plain: short sentences, no status codes and no reason ids', () => {
     for (const [reason, text] of [...Object.entries(REFUSAL_TEXT.key), ...Object.entries(REFUSAL_TEXT.trials)]) {
       expect(text, reason).not.toMatch(/\b[45][0-9]{2}\b|_|api\//);
