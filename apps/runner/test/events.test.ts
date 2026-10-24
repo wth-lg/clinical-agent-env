@@ -71,10 +71,10 @@ describe('same events as run-one (gate case 4)', () => {
       await l.http('POST', '/api/key', { body: { key: 'ping-test-key-0123456789' } });
       const a = (await l.http('POST', '/api/trials', { body: toyTrial() })).json() as { trial_ids: string[] };
       const path = `/api/trials/${a.trial_ids[0]}/events`;
-      const pending = readSse(l.port, path, { token: l.runner.token });
-      await new Promise((r) => setTimeout(r, 150));
-      release();
-      const s = await pending;
+      // The call is held until the stream has carried a ping, however long that takes.
+      const s = await readSse(l.port, path, { token: l.runner.token, onText: (text) => {
+        if (/^: ping$/m.test(text)) release();
+      } });
       expect(s.text).toMatch(/^: ping$/m);
       const late = await readSse(l.port, path, { token: l.runner.token });
       expect(late.frames.map((f) => f.data)).toEqual(s.frames.map((f) => f.data));

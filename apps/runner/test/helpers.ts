@@ -198,7 +198,8 @@ export interface SseResult {
 }
 
 // Reads a trial's event stream until the runner closes it (or timeoutMs passes, which fails).
-export function readSse(port: number, path: string, opts: { token: string; lastEventId?: string; host?: string; timeoutMs?: number }): Promise<SseResult> {
+// onText sees the text read so far after each chunk.
+export function readSse(port: number, path: string, opts: { token: string; lastEventId?: string; host?: string; timeoutMs?: number; onText?: (text: string) => void }): Promise<SseResult> {
   const host = opts.host ?? `127.0.0.1:${port}`;
   const headers: Record<string, string> = { host, accept: 'text/event-stream', [TOKEN_HEADER]: opts.token };
   if (opts.lastEventId !== undefined) headers['last-event-id'] = opts.lastEventId;
@@ -210,7 +211,10 @@ export function readSse(port: number, path: string, opts: { token: string; lastE
         reject(new Error(`SSE ${path} still open after ${opts.timeoutMs ?? 30_000} ms:\n${text.slice(-500)}`));
       }, opts.timeoutMs ?? 30_000);
       res.setEncoding('utf8');
-      res.on('data', (c: string) => (text += c));
+      res.on('data', (c: string) => {
+        text += c;
+        opts.onText?.(text);
+      });
       res.on('end', () => {
         clearTimeout(timer);
         resolve({ status: res.statusCode ?? 0, headers: res.headers, text, frames: parseSse(text).frames });

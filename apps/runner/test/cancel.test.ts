@@ -64,11 +64,17 @@ describe('cancel (gate case 6)', () => {
       await l.http('POST', '/api/key', { body: { key: 'cancel-test-key-0123456789' } });
       const a = (await l.http('POST', '/api/trials', { body: toyTrial({ trials: 2, concurrency: 2 }) })).json() as { trial_ids: string[] };
       await until('trial 0 in flight', () => l.calls.some((c) => c.label.endsWith('/0')));
-      await l.http('DELETE', `/api/trials/${a.trial_ids[0]}`);
-      const second = await readSse(l.port, `/api/trials/${a.trial_ids[1]}/events`, { token: l.runner.token });
-      const graded = JSON.parse(second.frames.at(-1)!.data) as { record: { outcome: string } };
-      expect(graded.record.outcome).toBe('PASS');
+      expect((await l.http('DELETE', `/api/trials/${a.trial_ids[0]}`)).status).toBe(200);
+      // A trial's stream closes when it reaches its end state. Nothing orders the two trials:
+      // the cancelled one still hashes and replays its final state, which can take longer than
+      // the other's whole run, so each is read to its own end.
+      const [first, second] = await Promise.all(a.trial_ids.map((id) => readSse(l.port, `/api/trials/${id}/events`, { token: l.runner.token })));
+      expect(first!.frames.map((f) => f.event)).toContain('cancelled');
+      expect((JSON.parse(first!.frames.at(-1)!.data) as { record: { outcome: string } }).record.outcome).toBe('CANCELLED');
+      expect((JSON.parse(second!.frames.at(-1)!.data) as { record: { outcome: string } }).record.outcome).toBe('PASS');
       expect(parseTrialView((await l.http('GET', `/api/trials/${a.trial_ids[0]}`)).json()).state).toBe('cancelled');
+      expect(parseTrialView((await l.http('GET', `/api/trials/${a.trial_ids[1]}`)).json()).state).toBe('graded');
+      expect(l.calls.filter((c) => c.label.endsWith('/1')).every((c) => !c.signal.aborted)).toBe(true);
     } finally {
       await l.runner.shutdown();
     }
