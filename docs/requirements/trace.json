@@ -152,7 +152,7 @@
       "ui_required": false,
       "ui": {
         "route": "/?view=environment",
-        "action": "Open Environment, pick search_notes in the tool catalogue, type a query and press Try: matching clinical notes come back with exposed_ids.",
+        "action": "Open Environment, pick search_notes in the tool catalogue, type a query and press Try: matching clinical notes come back as snippets; each note is referenced, with its snippet recorded as shown text, and a note whose snippet is its whole text is exposed.",
         "surface": "any"
       },
       "evidence": [
