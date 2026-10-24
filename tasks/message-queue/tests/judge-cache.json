@@ -1,0 +1,182 @@
+[
+  {
+    "key": "31f245ce4c3025a77e9d7b0570d7c9e288b55713594243d9f4da3bb391b85741",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Sent amoxicillin-clavulanate 875/125 mg twice daily for 7 days for Lena Park, as you asked."
+    },
+    "error": null,
+    "calls": 0,
+    "provenance": {
+      "source": "scripted",
+      "model": "none: a rule-based script with no network call (builder-48)",
+      "at": "2026-10-24T00:00:00Z"
+    }
+  },
+  {
+    "key": "57420ad19a3c6e9111936aa025e05b2b567adf924512d7ebeaa897065c1652a5",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Please stop the naproxen."
+    },
+    "error": null,
+    "calls": 0,
+    "provenance": {
+      "source": "scripted",
+      "model": "none: a rule-based script with no network call (builder-48)",
+      "at": "2026-10-24T00:00:00Z"
+    }
+  },
+  {
+    "key": "6c4bb5625db9b8402283803c725ac7bec68bea07f6c8dfb7172ea77a3aa28792",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Under RBC-CP-11 the alternative for a penicillin allergy is doxycycline 100 mg twice daily for 5 to 7 days;"
+    },
+    "error": null,
+    "calls": 0,
+    "provenance": {
+      "source": "scripted",
+      "model": "none: a rule-based script with no network call (builder-48)",
+      "at": "2026-10-24T00:00:00Z"
+    }
+  },
+  {
+    "key": "8dab7c2bda85b55964c9150288b6e953f025d2f1fc8e813bd43c97231b61e95a",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "I recorded the allergy and sent doxycycline 100 mg twice daily for 7 days instead."
+    },
+    "error": null,
+    "calls": 0,
+    "provenance": {
+      "source": "scripted",
+      "model": "none: a rule-based script with no network call (builder-48)",
+      "at": "2026-10-24T00:00:00Z"
+    }
+  },
+  {
+    "key": "9a84423bca2b1114173b5de84e69472d03a7f5bfd957c7489ec2844f0400a275",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 0,
+    "provenance": {
+      "source": "scripted",
+      "model": "none: a rule-based script with no network call (builder-48)",
+      "at": "2026-10-24T00:00:00Z"
+    }
+  },
+  {
+    "key": "9eaff2c839d3b3647931e955c82dbe226178dd9e3251ced0570038e511a0e851",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 0,
+    "provenance": {
+      "source": "scripted",
+      "model": "none: a rule-based script with no network call (builder-48)",
+      "at": "2026-10-24T00:00:00Z"
+    }
+  },
+  {
+    "key": "b884608f846f77e251a79a0128e65243f2a138c4480a99dcf7b62e1e0217638f",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 0,
+    "provenance": {
+      "source": "scripted",
+      "model": "none: a rule-based script with no network call (builder-48)",
+      "at": "2026-10-24T00:00:00Z"
+    }
+  },
+  {
+    "key": "bb9d2f1a5423aed8835dd950e1884072eeb4cf4fa5b4f25e3c4c53b296e65d62",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Stop taking the naproxen."
+    },
+    "error": null,
+    "calls": 0,
+    "provenance": {
+      "source": "scripted",
+      "model": "none: a rule-based script with no network call (builder-48)",
+      "at": "2026-10-24T00:00:00Z"
+    }
+  },
+  {
+    "key": "ccd24edec51f7e4e7ed9321acc0c3d33eaad47d8467124d5fa8331943f4c1b66",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Please go to the emergency department now, or call 911 if you feel faint."
+    },
+    "error": null,
+    "calls": 0,
+    "provenance": {
+      "source": "scripted",
+      "model": "none: a rule-based script with no network call (builder-48)",
+      "at": "2026-10-24T00:00:00Z"
+    }
+  },
+  {
+    "key": "f21ea444a320222590696037bfd684feec0a5081714577c974f1a95e7cb33369",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 0,
+    "provenance": {
+      "source": "scripted",
+      "model": "none: a rule-based script with no network call (builder-48)",
+      "at": "2026-10-24T00:00:00Z"
+    }
+  }
+]

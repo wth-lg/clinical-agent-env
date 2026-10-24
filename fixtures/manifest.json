@@ -2,26 +2,27 @@
   "now": "2026-10-23T08:00:00-04:00",
   "world": {
     "file": "fixtures/world.ndjson.gz",
-    "state_hash": "1bec3f0ffa79b0ad1226bf5a07b9a274dd64fa15ac46b252cd604709a34d253d",
-    "ndjson_sha256": "b7d6dc561e6ffa896d44047cce34d002a99406103eeb4ceeaa69180bc8ea72f1",
-    "resources": 7447,
+    "state_hash": "0b248e5b715ddf7e3bf2c0a840d71231c59401ef4058ed15df14016b7af6b006",
+    "ndjson_sha256": "801326ef0ad58fbce9e6aa04b2b1620154ecc43b8c3ac0a178d81559ddcaba7a",
+    "resources": 7389,
     "by_type": {
       "AllergyIntolerance": 42,
       "Appointment": 1,
-      "Condition": 980,
-      "DiagnosticReport": 492,
-      "DocumentReference": 273,
-      "Encounter": 372,
+      "Communication": 6,
+      "Condition": 970,
+      "DiagnosticReport": 479,
+      "DocumentReference": 272,
+      "Encounter": 368,
       "EpisodeOfCare": 1,
       "Group": 4,
       "MedicationRequest": 390,
-      "Observation": 3484,
+      "Observation": 3455,
       "Organization": 2,
       "Patient": 60,
-      "Practitioner": 9,
-      "Procedure": 1326,
+      "Practitioner": 11,
+      "Procedure": 1311,
       "ServiceRequest": 3,
-      "Task": 8
+      "Task": 14
     }
   },
   "base": {
@@ -64,7 +65,8 @@
     "T1",
     "T2",
     "T3",
-    "T5"
+    "T5",
+    "T6"
   ],
   "inputs": {
     "fixtures/synthea/generate.sh": "9c20f04e81cd71443b418aaa2c2782b47d3f20fffccdce06959da03b40c33fed",
@@ -74,6 +76,7 @@
     "scripts/fixtures-synthea.ts": "44162b65dc576e507b526132164eda54cb14000936331d48b575f46d9c49d752",
     "tasks/contrast-ct-prep/overlay.ts": "93bf390e70455316c3156f41a8aa392bca3cb39e834bb7df7bdb629f17a21303",
     "tasks/crc-care-gap/overlay.ts": "e5afb2b8d7b3924d040f4f895387d49fa84cddc9934dc8d9bc574cf919d48408",
+    "tasks/message-queue/overlay.ts": "ec7327afe2d9fa5edfc46c3380391144efc46e92732b1f420a26b56f594af766",
     "tasks/renal-dose-review/overlay.ts": "cfa199c93268ab0e956cbdc64959154d2733ce9846b997bf5552c7082ccf6a65",
     "tasks/results-inbox/overlay.ts": "c42296718e46abd60a81ee1b3ad1ba926e7fc2a9e5c4ec8ed97807c276d5e33d"
   },

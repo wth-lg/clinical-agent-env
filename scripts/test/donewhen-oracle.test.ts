@@ -8,7 +8,7 @@
 // command from a temp copy of the CLI and tasks/_toy (packages, fixtures and node_modules
 // linked), whose solution/solve.ts reads and writes on the wrong patient; the repo is never
 // changed. Each run gets a temp SPEND_LEDGER and HOME, so the spend command reads no real ledger.
-import { cpSync, readdirSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, readdirSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { repoRoot, runScript, tempDir } from './helpers.ts';
@@ -17,7 +17,8 @@ import { repoRoot, runScript, tempDir } from './helpers.ts';
 // _-prefixed ones only under DONEWHEN_INCLUDE_UNDERSCORE. Derived, so adding a task needs no edit.
 const taskDirs = readdirSync(join(repoRoot, 'tasks'), { withFileTypes: true }).filter((e) => e.isDirectory() && !e.name.startsWith('.')).map((e) => e.name);
 const withToy = taskDirs.length;
-const real = taskDirs.filter((d) => !d.startsWith('_')).length;
+// The real tasks as clause (3) counts them outside tests: tasks/*/task.toml, no _-prefixed dirs.
+const realTasks = taskDirs.filter((d) => !d.startsWith('_') && existsSync(join(repoRoot, 'tasks', d, 'task.toml'))).length;
 
 function clause3(root: string) {
   const home = tempDir('donewhen-oracle-home');
@@ -68,6 +69,12 @@ describe('done-when clause (3) with the real oracle on _toy', () => {
       cwd: repoRoot,
       env: { NODE_ENV: 'production', DONEWHEN_MIN_TASKS: '1', DONEWHEN_INCLUDE_UNDERSCORE: '1', DONEWHEN_CLI: 'false', HOME: home, SPEND_LEDGER: join(home, 'spend.jsonl') },
     });
-    expect(r.stdout).toMatch(new RegExp(`^FAIL \\(3\\) (?:.* )?${real} (?:complete )?task\\(s\\)`, 'm'));
+    // Outside tests both overrides are ignored: clause (3) counts exactly the real tasks (never
+    // _toy as well) against the shipped minimum of 5 (scripts/donewhen.ts MIN_TASKS), so PASS or
+    // FAIL follows from that count, whatever the number of tasks.
+    const line = r.stdout.split('\n').find((l) => / \(3\) /.test(l)) ?? '';
+    expect(line).toContain(`: ${realTasks} complete task(s)`);
+    expect(line).not.toContain(`: ${realTasks + 1} complete task(s)`);
+    expect(line).toMatch(realTasks >= 5 ? /^PASS \(3\)/ : /^FAIL \(3\)/);
   });
 });
