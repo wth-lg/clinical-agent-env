@@ -5,7 +5,7 @@
 // correcting its own wrong order, holding the apixaban, how NP Reyes's message is linked), so the
 // grader is shown not to depend on the oracle's exact path. One that loses rubric points says so in
 // `loses`.
-import type { Agent } from '../../../packages/grader/matrix/types.ts';
+import type { Alternative } from '../../../packages/grader/matrix/types.ts';
 import { oracle } from '../solution/solve.ts';
 import {
   bmpOrder, close, DONE, finish, inbox, M1_READS, m1Bridge, m2Task, m3Message, m3Task, m5Renewal, m6Task, message, nkdaInactive, parkAllergy, PT, readMessage, refill, REYES_BODY, RX, search, swap, call,
@@ -22,7 +22,7 @@ const reyes = (about: string[]) => message('Practitioner/pr-reyes', 'urgent', 'L
 // plus itching, which §2 does not name.
 const coded = (code: string) => parkAllergy(RX.amoxClav, 'high', [{ manifestation_code: code, severity: 'severe' }, { manifestation_code: '418290006', severity: 'moderate' }]);
 
-export const alternatives: Agent[] = [
+export const alternatives: Alternative[] = [
   {
     id: 'reassign_and_decline',
     why: 'Hands the scheduling item itself to pool-scheduling instead of creating a Task, declines (rejects) the antibiotic request instead of completing it, records the allergy to amoxicillin as anaphylaxis with angioedema, and marks the NKDA entry entered in error.',
