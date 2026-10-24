@@ -60,9 +60,9 @@
 // a refused POST or a dry run never changes that cap (security review P12b-4 G3). Before any
 // batch there is no cap yet, and the first batch counts what Validate spent. A batch
 // runBatch refuses before its grant (its run is locked, batchStart refuses it) gets 409 with the
-// reason and leaves no run or trial. A batch or smoke run on a fixture manifest other than that
-// of a batch still running gets 409 fixtures_changed with no call: the FHIR definitions index is
-// process-wide, so batches on two manifests never run at once. The run id (<session>-<n>) is taken before any await, so
+// reason and leaves no run or trial. A batch or smoke run on fixtures other than those of a
+// batch still running gets 409 fixtures_changed with no call: the FHIR definitions index is
+// process-wide, so batches on two sets of fixtures never run at once. The run id (<session>-<n>) is taken before any await, so
 // two requests at once never share one.
 // What a session has committed is its ledger rows' settled and reserved spend plus, for each of
 // this runner's batches not yet done, the part of its projection its rows do not hold yet: a
@@ -303,28 +303,38 @@ export interface RunnerOptions {
   fixturesDir?: string;
 }
 
-// What every trial starts from, for one fixture manifest: the world, its manifest hash, the
-// definitions bundle (as cli/run.ts repoWorld reads them) and each task's checks
-// (tasks/<id>/tests/grader.ts, as cli/run.ts taskChecks reads them). Each checks module is imported
-// under its manifest's hash, so a fixture rebuild loads it afresh.
+// What every trial starts from, for one set of fixture files: the world, its manifest's state
+// hash, the definitions bundle (as cli/run.ts repoWorld reads them) and each task's checks
+// (tasks/<id>/tests/grader.ts, as cli/run.ts taskChecks reads them). `key` hashes the three files'
+// hashes, so a change to any of them, a fixture build caught midway included, loads them afresh;
+// each checks module is imported under it.
+interface FixtureFiles {
+  manifest: Buffer;
+  world: Buffer;
+  definitions: Buffer;
+}
+
+const sha256 = (bytes: Uint8Array | string) => createHash('sha256').update(bytes).digest('hex');
+const fixturesKey = (f: FixtureFiles) => sha256([f.manifest, f.world, f.definitions].map(sha256).join('\n'));
+
 interface Fixtures {
-  manifest: string;
+  key: string;
   world: { read: () => Promise<Uint8Array> };
   worldHash: string;
   definitions: NonNullable<RunOptions['definitions']>;
   checks: (task: string) => Promise<readonly Check[]>;
 }
 
-function loadFixtures(dir: string, manifestText: string): Fixtures {
-  const manifest = createHash('sha256').update(manifestText).digest('hex');
-  const bytes = new Uint8Array(readFileSync(join(dir, 'world.ndjson.gz')));
+function loadFixtures(files: FixtureFiles): Fixtures {
+  const key = fixturesKey(files);
+  const bytes = new Uint8Array(files.world);
   const modules = new Map<string, Promise<readonly Check[]>>();
   const checks = (task: string) => {
     if (!modules.has(task)) {
       modules.set(task, (async () => {
         const file = join(REPO, 'tasks', task, 'tests', 'grader.ts');
         if (!existsSync(file)) return [];
-        const { checks: list } = (await import(`${pathToFileURL(file).href}?manifest=${manifest}`)) as { checks?: unknown };
+        const { checks: list } = (await import(`${pathToFileURL(file).href}?fixtures=${key}`)) as { checks?: unknown };
         if (!Array.isArray(list)) throw new Error(`${file} does not export checks: Check[]`);
         return list as Check[];
       })());
@@ -333,10 +343,10 @@ function loadFixtures(dir: string, manifestText: string): Fixtures {
     return modules.get(task)!;
   };
   return {
-    manifest,
+    key,
     world: { read: async () => bytes },
-    worldHash: (JSON.parse(manifestText) as { world: { state_hash: string } }).world.state_hash,
-    definitions: JSON.parse(readFileSync(join(dir, 'definitions-pruned.json'), 'utf8')) as Fixtures['definitions'],
+    worldHash: (JSON.parse(files.manifest.toString('utf8')) as { world: { state_hash: string } }).world.state_hash,
+    definitions: JSON.parse(files.definitions.toString('utf8')) as Fixtures['definitions'],
     checks,
   };
 }
@@ -371,8 +381,8 @@ interface RunEntry {
   view: RunView;
   controller: AbortController;
   done: Promise<void>;
-  // The hash of the fixture manifest its trials run on.
-  manifest: string;
+  // The key of the fixtures its trials run on (Fixtures.key).
+  fixtures: string;
 }
 
 class HttpError extends Error {
@@ -462,13 +472,17 @@ export async function startRunner(opts: RunnerOptions): Promise<Runner> {
   // edited between two batches is graded as edited, at its new env_version.
   const taskSourceNow = () => nodeTaskSource({ ...(opts.tasksDir === undefined ? {} : { root: opts.tasksDir }), testMode: false });
   const git = gitState(REPO);
-  // The fixtures of the manifest on disk now: kept while its hash holds, reloaded when a fixture
-  // rebuild changes it, so the next trial needs no restart (run.md 2026-10-25 07:40).
+  // The fixtures on disk now: kept while the three files' hashes hold, reloaded when a fixture
+  // rebuild changes any of them, so the next trial needs no restart (run.md 2026-10-25 07:40).
   const fixturesDir = opts.fixturesDir ?? join(REPO, 'fixtures');
   let fixtures: Fixtures | undefined;
   const fixturesNow = (): Fixtures => {
-    const text = readFileSync(join(fixturesDir, 'manifest.json'), 'utf8');
-    if (fixtures === undefined || fixtures.manifest !== createHash('sha256').update(text).digest('hex')) fixtures = loadFixtures(fixturesDir, text);
+    const files: FixtureFiles = {
+      manifest: readFileSync(join(fixturesDir, 'manifest.json')),
+      world: readFileSync(join(fixturesDir, 'world.ndjson.gz')),
+      definitions: readFileSync(join(fixturesDir, 'definitions-pruned.json')),
+    };
+    if (fixtures === undefined || fixtures.key !== fixturesKey(files)) fixtures = loadFixtures(files);
     return fixtures;
   };
 
@@ -482,10 +496,10 @@ export async function startRunner(opts: RunnerOptions): Promise<Runner> {
   const say = (line: string) => opts.log?.(scrub(line));
 
   const runs: RunEntry[] = [];
-  // Whether a batch not yet done runs on another fixture manifest than `manifest`. run() indexes
-  // the FHIR definitions bundle process-wide (packages/env/validate.ts indexDefinitions), so two
-  // batches on two manifests at once would validate against each other's bundle.
-  const otherManifestRunning = (manifest: string) => runs.some((r) => !r.view.done && r.manifest !== manifest);
+  // Whether a batch not yet done runs on other fixtures than those of `key`. run() indexes the
+  // FHIR definitions bundle process-wide (packages/env/validate.ts indexDefinitions), so two
+  // batches on two sets of fixtures at once would validate against each other's bundle.
+  const otherFixturesRunning = (key: string) => runs.some((r) => !r.view.done && r.fixtures !== key);
   const fixturesChanged = { type: 'fixtures_changed', message: 'The environment fixtures were rebuilt while another batch is still running. Wait for it to finish, or cancel it, then start the trial again.' };
   const trials = new Map<string, TrialEntry>();
   let runCount = 0;
@@ -626,9 +640,9 @@ export async function startRunner(opts: RunnerOptions): Promise<Runner> {
     const rows = readRows(ledgerPath);
     const projection = terms(plan.projection, rows, body.session_cap_usd);
     if (dryRun) return { status: 200, body: { dry_run: true, calls: 0, projection } };
-    // 409 fixtures_changed: the fixture manifest changed (a fixtures:build) while a batch on the
-    // earlier one is still running; this batch waits until that one is done (see otherManifestRunning).
-    if (otherManifestRunning(w.manifest)) return { status: 409, body: { error: fixturesChanged, projection } };
+    // 409 fixtures_changed: the fixture files changed (a fixtures:build) while a batch on the
+    // earlier ones is still running; this batch waits until that one is done (see otherFixturesRunning).
+    if (otherFixturesRunning(w.key)) return { status: 409, body: { error: fixturesChanged, projection } };
     // 409 no_key: no key has passed Validate in this runner process, so no client can be built.
     if (key === null) return { status: 409, body: { error: { type: 'no_key', message: 'No API key yet: paste your Anthropic API key and press Validate, then start the trial again.' }, projection: null } };
     // 409 session_cap: this batch's projection plus what the session has spent or holds open would
@@ -703,7 +717,7 @@ export async function startRunner(opts: RunnerOptions): Promise<Runner> {
       if (pending.get(runId) === term) pending.delete(runId);
       batchKeys.delete(key);
     });
-    const entry: RunEntry = { view, controller, done, manifest: w.manifest };
+    const entry: RunEntry = { view, controller, done, fixtures: w.key };
     runs.push(entry);
     const ran = await Promise.race([started.then(() => true), batch.then(() => false, () => false)]);
     if (ran) {
@@ -731,8 +745,8 @@ export async function startRunner(opts: RunnerOptions): Promise<Runner> {
   async function startSmoke(body: TrialsRequest, tasks: TaskSource): Promise<{ status: number; body: unknown }> {
     if (!forcedFail) throw new HttpError(400, 'invalid_request', 'Smoke trials are turned off in this runner.');
     const w = fixturesNow();
-    // 409 fixtures_changed: as for a batch, a smoke run never runs beside a batch on another manifest.
-    if (otherManifestRunning(w.manifest)) return { status: 409, body: { error: fixturesChanged, projection: null } };
+    // 409 fixtures_changed: as for a batch, a smoke run never runs beside a batch on other fixtures.
+    if (otherFixturesRunning(w.key)) return { status: 409, body: { error: fixturesChanged, projection: null } };
     const taken = existsSync(runsDir) ? readdirSync(runsDir).filter((d) => /^smoke-\d+$/.test(d)).map((d) => Number(d.slice(6))) : [];
     const runId = `smoke-${Math.max(0, ...taken, ...runs.map((r) => (/^smoke-(\d+)$/.exec(r.view.run_id)?.[1] ?? 0)).map(Number)) + 1}`;
     const sink = nodeResultSink(join(runsDir, runId));
@@ -771,7 +785,7 @@ export async function startRunner(opts: RunnerOptions): Promise<Runner> {
     ).finally(() => {
       view.done = true;
     });
-    runs.push({ view, controller, done, manifest: w.manifest });
+    runs.push({ view, controller, done, fixtures: w.key });
     return { status: 202, body: { run_id: runId, trial_ids: view.trial_ids } };
   }
 
