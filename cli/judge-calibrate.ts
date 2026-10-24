@@ -163,9 +163,10 @@ async function plan(env: MatrixEnv, task: MatrixTask): Promise<Plan> {
 
 const unknownOf = (g: Grade) => g.checks.filter((r) => r.method !== 'code' && r.met === 'unknown').length;
 
-// Judge answers agree on the verdict, extractions on the value; quotes may differ.
+// Judge answers agree on the verdict, extractions on the value; quotes may differ. A live call
+// with no answer (refused, invalid twice) never agrees, whatever the cache holds.
 function agrees(kind: JudgeCacheEntry['kind'], scripted: Answer, live: Answer): boolean {
-  if (scripted === null || live === null) return scripted === live;
+  if (scripted === null || live === null) return false;
   return kind === 'judge' ? scripted.verdict === live.verdict : scripted.value === live.value;
 }
 

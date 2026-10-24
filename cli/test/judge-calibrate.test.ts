@@ -25,8 +25,10 @@ const SLOW = 120_000;
 const seed = (cost: number) =>
   ['reserve', 'settle'].map((kind) => JSON.stringify({ ts: 't', call_id: 'seed', kind, source: 'node', run_id: null, batch_id: null, trial: null, usage: null, cost_usd: cost })).join('\n') + '\n';
 
-// A judge that answers each prompt with the cached answer of its key, or `flip(key, answer)`.
-function cacheJudge(task: MatrixTask, flip: (key: string, answer: JudgeCacheEntry['answer']) => JudgeCacheEntry['answer'] = (_k, a) => a) {
+// A judge that answers each prompt with the cached answer of its key, or `flip(key, answer)`;
+// REFUSE answers with stop_reason refusal.
+const REFUSE = Symbol('refuse');
+function cacheJudge(task: MatrixTask, flip: (key: string, answer: JudgeCacheEntry['answer']) => JudgeCacheEntry['answer'] | typeof REFUSE = (_k, a) => a) {
   const byKey = new Map(task.cache.map((e) => [e.key, e]));
   const t = Object.assign(
     async (request: Request) => {
@@ -37,7 +39,7 @@ function cacheJudge(task: MatrixTask, flip: (key: string, answer: JudgeCacheEntr
       const key = createHash('sha256').update(JSON.stringify([MODEL, task.judgeEffort, JUDGE_PROMPT_VERSION, prompt, text])).digest('hex');
       t.asked.set(key, (t.asked.get(key) ?? 0) + 1);
       const answer = flip(key, byKey.get(key)?.answer ?? { verdict: 'unknown', quote: '' });
-      return okResponse({ text: JSON.stringify(answer) }, t.calls);
+      return okResponse(answer === REFUSE ? { text: '', stop: 'refusal' } : { text: JSON.stringify(answer) }, t.calls);
     },
     { calls: 0, asked: new Map<string, number>() },
   );
@@ -124,6 +126,20 @@ describe('judge-calibrate', () => {
     ].sort((a, b) => (a.key < b.key ? -1 : 1)));
     expect(h.text()).toMatch(/^judge-calibrate _toy: 15 of 17 agree, 16 calls/m);
     expect(readFileSync(CACHE_FILE).equals(before)).toBe(true);
+  });
+
+  it('records a refused call as a disagreement with its error, even when the scripted answer is null too', { timeout: SLOW }, async () => {
+    const [nulled, refused] = TOY.cache.filter((e) => e.kind === 'judge');
+    const task = { ...TOY, cache: TOY.cache.map((e) => (e.key === nulled!.key ? { ...e, answer: null } : e)) };
+    const refuse = new Set([nulled!.key, refused!.key]);
+    const judge = cacheJudge(task, (key, a) => (refuse.has(key) ? REFUSE : a));
+    const h = harness({ task, fetch: judge });
+    expect(await main(['--task', '_toy'], h.deps)).toBe(1);
+    const c = h.written[0]!;
+    expect(c.agree).toBe(TOY.cache.length - 2);
+    expect(c.disagreements.map((d) => d.key).sort()).toEqual([...refuse].sort());
+    for (const d of c.disagreements) expect(d).toMatchObject({ live: null, live_error: 'invalid judge output', reason: 'answers differ' });
+    expect(c.disagreements.find((d) => d.key === nulled!.key)!.scripted).toBeNull();
   });
 
   it('with ledger + projection one cent over PROJECTED_CAP_USD it makes 0 calls and writes nothing', { timeout: SLOW }, async () => {
