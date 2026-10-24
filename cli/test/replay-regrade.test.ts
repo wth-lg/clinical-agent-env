@@ -126,16 +126,16 @@ describe('replay and regrade', () => {
   });
 
   // The graded text is the fifth input of the judge cache key: here the record's finish summary,
-  // which the toy's judge items read. With a changed summary and nothing else changed, replay
-  // misses and names every cause (P11f PR-b, verifier-phase-P11f-3 S1).
-  it('after the graded text changes, replay names the judge cache miss with every cause', async () => {
+  // which the toy's judge items read. With a changed summary and nothing else changed, replay and
+  // regrade both miss and give the same text (P11f PR-b, verifier-phase-P11f-3 S1).
+  it('after the graded text changes, replay and regrade name the judge cache miss with every cause', async () => {
     const copy = join(tempDir('replay-graded-text'), 'replay-graded-text');
     cpSync(dir, copy, { recursive: true });
     const file = join(copy, 'trials', '_toy', '0.json');
     const rec = JSON.parse(readFileSync(file, 'utf8')) as { summary: string; regrades?: unknown };
     delete rec.regrades;
     writeFileSync(file, JSON.stringify({ ...rec, summary: `${rec.summary} Done.` }, null, 2));
-    for (const [main, args] of [[replay, [copy]]] as const) {
+    for (const [main, args] of [[replay, [copy]], [regrade, [copy, '--grader-version', GRADER_VERSION]]] as const) {
       const r = await cli(main, [...args]);
       expect(r.code, r.text).toBe(1);
       expect(r.text).not.toMatch(/environment changed/);
@@ -175,7 +175,7 @@ describe('replay and regrade', () => {
       expect(r.text).toContain('_toy/1');
       expect(r.text).toContain(removed.key);
       expect(r.text).not.toContain(fakeKey('R'));
-      if (main === replay) expect(r.text).toContain(MISS_CAUSES);
+      expect(r.text).toContain(MISS_CAUSES);
     }
     expect(readFileSync(recordFile(1), 'utf8')).toBe(before);
     expect(fetchSpy).not.toHaveBeenCalled();

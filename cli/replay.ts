@@ -80,8 +80,9 @@ export const envChanged = (r: Pick<BatchRecord, 'env_version' | 'task_version'>,
 // A judge cache miss on replay, said plainly with every cause: the cache key holds the judge
 // model, the [judge] effort, the judge prompt version, the judge question and the graded text
 // (packages/grader/judge.ts), so a change to any of them since the run misses, as does a cache
-// that never held the answer. No offline command asks the judge.
-const judgeMissed = (miss: string, r: Pick<BatchRecord, 'task_id' | 'model_requested'>): string =>
+// that never held the answer. No offline command asks the judge. cli/regrade.ts prints the same
+// text, so the two cannot drift.
+export const judgeMissed = (miss: string, r: Pick<BatchRecord, 'task_id' | 'model_requested'>): string =>
   `judge cache miss ${/judge cache miss ([0-9a-f]+)/.exec(miss)?.[1] ?? miss}: the record's judge cache has no answer for this question. ` +
   'The judge cache key has five parts: the judge model, the [judge] effort, the judge prompt version, the judge question and the text the grader gives the judge. ' +
   'One of them may have changed since this run. ' +
