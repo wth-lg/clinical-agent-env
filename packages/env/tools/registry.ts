@@ -52,7 +52,8 @@ import { ToolError, type ErrorBody } from './errors.ts';
 // 2: read-tool exposure tagging as of the search-exposure change (a snippet is shown, not exposed;
 // search_patients exposes the Patient it returns).
 // 3: a search_notes row carries whole, and a snippet that is the note's whole text exposes it.
-// 4: update_inbox_item's linked names the order, task or message, no longer an existing result.
+// 4: update_inbox_item's linked names the order, task or message, no longer an existing result;
+// and whole: true exposes a note only in a search_notes result, not in any other tool's payload.
 export const TOOLS_VERSION = '4';
 
 export type PropertySchema =
