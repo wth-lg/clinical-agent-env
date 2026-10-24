@@ -6,6 +6,7 @@ import { spawnSync } from 'node:child_process';
 import { copyFileSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { parse } from 'yaml';
 import { LOCAL_PREREQUISITES, NODE_INSTALL_URL } from '../../apps/web/src/surface/command.ts';
 import { repoRoot, tempDir, write } from './helpers.ts';
 
@@ -72,6 +73,13 @@ describe('check-node', () => {
   it('runs first in pnpm start', () => {
     const pkg = JSON.parse(readFileSync(join(repoRoot, 'package.json'), 'utf8')) as { scripts: { start: string } };
     expect(pkg.scripts.start).toBe('node scripts/check-node.mjs && pnpm install --frozen-lockfile && pnpm build && node apps/runner/main.ts');
+  });
+
+  it('runs before any install: pnpm does not install before a script', () => {
+    // pnpm 12 defaults verify-deps-before-run to install, which would put a full install ahead of
+    // the check on an old Node; pnpm start installs itself, after the check.
+    const ws = parse(readFileSync(join(repoRoot, 'pnpm-workspace.yaml'), 'utf8')) as { verifyDepsBeforeRun?: unknown };
+    expect(ws.verifyDepsBeforeRun).toBe(false);
   });
 
   it('has no type syntax and no import beyond node:fs, so an old Node parses it', () => {
