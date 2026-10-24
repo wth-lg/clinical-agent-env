@@ -9,7 +9,7 @@ import { validateDirect, type DirectResult } from './direct.ts';
 import { heldByRunner, holdInTab } from './key.ts';
 import { postKey } from './runner.ts';
 
-type Failure = { kind: (DirectResult & { ok: false })['kind'] | 'runner'; message: string };
+type Failure = { kind: (DirectResult & { ok: false })['kind'] | 'runner'; message: string; refusal?: string };
 
 const WHERE: Record<Surface['kind'], string> = {
   'local-runner': 'The key goes to the local runner on this machine, which keeps it in memory and sends it only to the Anthropic API.',
@@ -53,7 +53,7 @@ export function KeyGate({ surface, onDone, onBrowse, notice }: { surface: Surfac
         holdInTab(k, remember);
       } else {
         const r = await postKey(k);
-        if (!r.ok) return setFailure({ kind: 'runner', message: r.message });
+        if (!r.ok) return setFailure({ kind: 'runner', message: r.message, ...(r.refusal === undefined ? {} : { refusal: r.refusal }) });
         heldByRunner();
       }
       setKey('');
@@ -155,7 +155,7 @@ export function KeyGate({ surface, onDone, onBrowse, notice }: { surface: Surfac
 }
 
 // A plain statement first, then what to do (for org-CORS and network: run it locally, with the
-// command), then the API's own line in small mono.
+// command; for a runner 409: its REFUSAL_TEXT), then the API's or runner's own line in small mono.
 function FailureNote({ id, failure }: { id: string; failure: Failure }) {
   const local = failure.kind === 'org-cors' || failure.kind === 'network';
   return (
@@ -169,6 +169,11 @@ function FailureNote({ id, failure }: { id: string; failure: Failure }) {
           <div className="mt-2">
             <LocalCommand />
           </div>
+          <p className="mt-2 break-words font-mono text-xs text-ink-muted">{failure.message}</p>
+        </>
+      ) : failure.refusal !== undefined ? (
+        <>
+          <p className="font-medium text-ink">{failure.refusal}</p>
           <p className="mt-2 break-words font-mono text-xs text-ink-muted">{failure.message}</p>
         </>
       ) : (

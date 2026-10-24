@@ -4,11 +4,12 @@
 // machine cannot set or clear the runner's key. The tab keeps no copy after a 200. Every
 // message is redacted against the key the tab holds at that moment, as MessagesClient redacts
 // browser-direct errors: the runner contract says it never echoes the key, and this keeps a
-// runner that breaks it from showing the key on screen.
+// runner that breaks it from showing the key on screen. A 409 also carries the plain text for its
+// reason (REFUSAL_TEXT.key), which the gate shows above the runner's message.
 import { redactText } from '../../../../packages/core/redact.ts';
-import { KEY_PATH, parseKeyState, parseRunnerError, TOKEN_HEADER, TOKEN_META } from '../../../../packages/core/runner-api.ts';
+import { KEY_PATH, parseKeyState, parseRunnerError, refusalText, TOKEN_HEADER, TOKEN_META } from '../../../../packages/core/runner-api.ts';
 
-export type RunnerResult = { ok: true } | { ok: false; message: string };
+export type RunnerResult = { ok: true } | { ok: false; message: string; refusal?: string };
 
 export function runnerToken(doc: Document = document): string | null {
   return doc.querySelector<HTMLMetaElement>(`meta[name="${TOKEN_META}"]`)?.content || null;
@@ -18,7 +19,7 @@ const NO_TOKEN = "This page has no runner token. Open the UI at the address the 
 
 async function call(method: 'POST' | 'DELETE', token: string | null, key?: string): Promise<RunnerResult> {
   const r = await send(method, token, key);
-  return r.ok ? r : { ok: false, message: redactText(r.message, key === undefined ? [] : [key]) };
+  return r.ok ? r : { ...r, message: redactText(r.message, key === undefined ? [] : [key]) };
 }
 
 async function send(method: 'POST' | 'DELETE', token: string | null, key?: string): Promise<RunnerResult> {
@@ -54,7 +55,9 @@ async function send(method: 'POST' | 'DELETE', token: string | null, key?: strin
     return { ok: false, message: `The local runner answered ${method} ${KEY_PATH} with an unexpected body.` };
   }
   try {
-    return { ok: false, message: parseRunnerError(parsed).error.message };
+    const { type, message } = parseRunnerError(parsed).error;
+    const refusal = res.status === 409 ? refusalText('key', type) : null;
+    return refusal === null ? { ok: false, message } : { ok: false, message, refusal };
   } catch {
     return { ok: false, message: `The local runner answered HTTP ${res.status}.` };
   }

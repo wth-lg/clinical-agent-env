@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { MODEL } from '../../../packages/core/anthropic.ts';
-import { HEALTH_PATH, KEY_PATH, SAMPLES, TOKEN_HEADER, TOKEN_META } from '../../../packages/core/runner-api.ts';
+import { HEALTH_PATH, KEY_PATH, REFUSAL_TEXT, SAMPLES, TOKEN_HEADER, TOKEN_META } from '../../../packages/core/runner-api.ts';
 import { admitTrial, DEFAULT_SESSION_CAP_USD } from '../src/spend/cap.ts';
 import { LOCAL_START_COMMAND } from '../src/surface/command.ts';
 
@@ -215,6 +215,22 @@ test.describe('key gate on the local runner', () => {
     await page.getByRole('button', { name: 'Validate' }).click();
     await expect(page.getByRole('alert')).toContainText(SAMPLES.keyError.error.message);
   });
+
+  // A Validate 409: the plain text from docs/requirements/ui-contract.md first, the runner's own
+  // message under it.
+  for (const [type, text] of Object.entries(REFUSAL_TEXT.key)) {
+    test(`a Validate 409 ${type} shows its plain text, then the runner's message`, async ({ page }) => {
+      const message = `runner detail for ${type}`;
+      await mockLocalRunner(page, 'stub');
+      await page.route((url) => isPath(url, KEY_PATH), (route) => json(route, 409, { error: { type, message } }));
+      await page.goto('./');
+      await keyField(page).fill(sentinelKey());
+      await page.getByRole('button', { name: 'Validate' }).click();
+      const alert = page.getByRole('alert');
+      await expect(alert.locator('p').first()).toHaveText(text);
+      await expect(alert.locator('p').last()).toHaveText(message);
+    });
+  }
 });
 
 test.describe('key gate on browser-direct', () => {
