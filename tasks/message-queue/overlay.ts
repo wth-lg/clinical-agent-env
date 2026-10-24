@@ -180,8 +180,8 @@ interface Item {
   body: string;
 }
 const ITEMS: Item[] = [
-  // Her order of 2025-09-08 (90 days, 3 refills) has no refills left; she does not say how many
-  // tablets she has, which the dispense arithmetic would contradict.
+  // Her order of 2025-10-20 (90 days, 3 refills, 360 days) ran out on 2026-10-15, six days before
+  // she writes, and has no refills left; she does not say how many tablets she has.
   { n: 1, who: 'hayes', from: subject('hayes'), sent: '2026-10-21T19:12:00-04:00', subject: 'Refill request', body: 'Hi, could you please refill my lisinopril 20 mg? The pharmacy says there are no refills left on it. Thank you, Gloria Hayes' },
   // His order of 2025-11-03 (90 days, 3 refills) runs out on 2026-10-29.
   { n: 2, who: 'odum', from: subject('odum'), sent: '2026-10-22T07:40:00-04:00', subject: 'Refill request', body: "I'm almost out of my cholesterol pill, the atorvastatin. Can you send a refill to my pharmacy? Thanks, Frank Odum" },
@@ -344,7 +344,7 @@ const overlay: Overlay = {
           component('2345-7', 'Glucose [Mass/volume] in Serum or Plasma', 96, 'mg/dL'),
         ],
       }),
-      medication('mr-t6-lisinopril', 'hayes', ['314077', 'lisinopril 20 MG Oral Tablet'], 20, 'QD', '2025-09-08T10:30:00-04:00', 'Essential hypertension', { days: 90, refills: 3, tablets: 90 }),
+      medication('mr-t6-lisinopril', 'hayes', ['314077', 'lisinopril 20 MG Oral Tablet'], 20, 'QD', '2025-10-20T09:15:00-04:00', 'Essential hypertension', { days: 90, refills: 3, tablets: 90 }),
       note('doc-t6-hayes-0317', 'hayes', '2026-03-17T14:20:00-04:00', 'progress', OKAFOR, CLINIC, HAYES_VISIT, 'enc-t6-hayes-0317'),
 
       // M2: atorvastatin still active here; cardiology stopped it on 2026-08-11.

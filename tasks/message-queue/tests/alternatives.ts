@@ -8,7 +8,7 @@
 import type { Alternative } from '../../../packages/grader/matrix/types.ts';
 import { oracle } from '../solution/solve.ts';
 import {
-  bmpOrder, close, DONE, finish, inbox, M1_READS, m1Bridge, m2Task, m3Message, m3Task, m5Renewal, m6Task, message, nkdaInactive, parkAllergy, PT, readMessage, refill, REYES_BODY, RX, search, swap, call,
+  bmpOrder, close, DONE, finish, inbox, M1_READS, m1Bridge, m2Task, m3Message, m3Task, m5Renewal, m6Task, message, nkdaInactive, parkAllergy, PT, readMessage, read, refill, REYES_BODY, RX, search, swap, call,
 } from '../solution/steps.ts';
 
 const original = oracle.flatMap((t) => t.calls);
@@ -16,6 +16,7 @@ const closeAll = original.filter((c) => c.name === 'update_inbox_item');
 const allergyCall = original.find((c) => c.name === 'record_allergy' && !('update_id' in c.input))!;
 const nkdaCall = original.find((c) => c.name === 'record_allergy' && 'update_id' in c.input)!;
 const reyesCall = original.find((c) => c.name === 'send_message' && c.input.recipient === 'Practitioner/pr-reyes')!;
+const visitSearch = M1_READS.calls.find((c) => c.name === 'fhir_search' && c.input.resource_type === 'Encounter')!;
 const bmpSearch = M1_READS.calls.find((c) => c.name === 'fhir_search' && c.input.resource_type === 'Observation')!;
 const reyes = (about: string[]) => message('Practitioner/pr-reyes', 'urgent', 'Lena Park: amoxicillin-clavulanate not sent', REYES_BODY, about);
 // The reaction coded with one RBC-MED-04 §2 manifestation the gate's original four codes missed,
@@ -103,6 +104,12 @@ export const alternatives: Alternative[] = [
     id: 'bmp_absence_by_date',
     why: 'Shows there is no BMP in the last 12 months with a date-bounded search (no rows) instead of reading the stale panel, then checks the visits and bridges.',
     script: swap(oracle, [bmpSearch, [search('Observation', PT.hayes, { code: '24321-2', date_ge: '2025-10-23' })]]),
+  },
+  {
+    id: 'visit_via_note',
+    why: "Establishes the 2026-03-17 visit from its progress note (search Hayes's notes, read doc-t6-hayes-0317, whose context.encounter is that visit) instead of searching her encounters, then bridges.",
+    loses: [],
+    script: swap(oracle, [visitSearch, [search('DocumentReference', PT.hayes, { sort: '-date' }), read('DocumentReference', 'doc-t6-hayes-0317')]]),
   },
   {
     id: 'apixaban_held',

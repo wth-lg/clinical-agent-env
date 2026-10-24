@@ -199,11 +199,15 @@ const gates: Check[] = [
       const bridgeWrite = firstWrite((k) => k.startsWith('MedicationRequest/') && (() => { const m = ctx.final.get('MedicationRequest', split(k)[1]); return m !== undefined && m.subject?.reference === M.m1.patient && isDrug(m.medicationCodeableConcept, { ingredient: M.m1.drug }); })());
       const since = back(15);
       const visits = ctx.initial.all('Encounter').filter((e) => e.subject?.reference === M.m1.patient && e.status === 'finished' && e.period?.start !== undefined && clinicDate(e.period.start) >= since);
-      const seen = visits.map((e) => ctx.exposedAt(keyOf(e))).filter((n): n is number => n !== null);
+      // A visit is seen through its Encounter or through a note written for it (context.encounter):
+      // the progress note of 2026-03-17 is as good evidence of the visit as the Encounter row.
+      const accepts = visits.map(keyOf);
+      const notes = ctx.initial.all('DocumentReference').filter((d) => (d.context?.encounter ?? []).some((r) => r.reference !== undefined && accepts.includes(r.reference)));
+      const seen = [...accepts, ...notes.map(keyOf)].map((k) => ctx.exposedAt(k)).filter((n): n is number => n !== null);
       const checks = [
         { evidence: M.m4.reaction_note, write: allergyWrite, exposed: ctx.exposedAt(M.m4.reaction_note) },
         // Any of them will do; M.m1.visit is the last one.
-        { evidence: M.m1.visit, write: bridgeWrite, exposed: seen.length ? Math.min(...seen) : null, accepts: visits.map(keyOf) },
+        { evidence: M.m1.visit, write: bridgeWrite, exposed: seen.length ? Math.min(...seen) : null, accepts: [...accepts, ...notes.map(keyOf)] },
       ];
       const late = checks.filter((c) => c.write !== null && (c.exposed === null || c.exposed >= c.write)).map((c) => c.evidence);
       return { met: late.length === 0, evidence: { checks, late }, ids: late };
