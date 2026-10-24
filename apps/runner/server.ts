@@ -82,12 +82,12 @@
 // a POST api/trials with smoke: true runs each trial through run() with a scripted client that
 // answers as claude-opus-5-5 and finishes at once, so the task's gates fail; run id smoke-<n>,
 // records with mock: true under CLINENV_RUNS_DIR only, no key, no ledger row.
-import { randomBytes, timingSafeEqual } from 'node:crypto';
+import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from 'node:fs';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { homedir } from 'node:os';
 import { basename, extname, join, resolve, sep } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { okResponse, scenarioTransport } from '../web/src/harness/scenarios.ts';
 import { ApiError, EgressRefusal, MessagesClient, MODEL, type Transport } from '../../packages/core/anthropic.ts';
 import { BatchRefused, planBatch, runBatch, trialKey, type BatchRecord, type BatchSpec, type ResultSink, type TrialKey } from '../../packages/core/batch.ts';
@@ -106,7 +106,8 @@ import { nodeNow } from '../../cli/adapters/clock-node.ts';
 import { loadTrialObservations, openNodeLedger, readRows, resolveLedgerPath } from '../../cli/adapters/ledger-node.ts';
 import { nodeResultSink } from '../../cli/adapters/result-sink-node.ts';
 import { nodeTaskSource } from '../../cli/adapters/tasks-node.ts';
-import { gitState, repoWorld, taskChecks } from '../../cli/run.ts';
+import type { Check } from '../../packages/grader/check.ts';
+import { gitState } from '../../cli/run.ts';
 
 export const BASE = '/clinical-agent-env/';
 export const DEFAULT_PORT = 5180;
@@ -296,6 +297,46 @@ export interface RunnerOptions {
   sleep?: (ms: number) => Promise<void>;
   // The task directories; default tasks/.
   tasksDir?: string;
+  // The world, its manifest and the definitions bundle; default fixtures/.
+  fixturesDir?: string;
+}
+
+// What every trial starts from, for one fixture manifest: the world, its manifest hash, the
+// definitions bundle (as cli/run.ts repoWorld reads them) and each task's checks
+// (tasks/<id>/tests/grader.ts, as cli/run.ts taskChecks reads them). Each checks module is imported
+// under its manifest's hash, so a fixture rebuild loads it afresh.
+interface Fixtures {
+  manifest: string;
+  world: { read: () => Promise<Uint8Array> };
+  worldHash: string;
+  definitions: NonNullable<RunOptions['definitions']>;
+  checks: (task: string) => Promise<readonly Check[]>;
+}
+
+function loadFixtures(dir: string, manifestText: string): Fixtures {
+  const manifest = createHash('sha256').update(manifestText).digest('hex');
+  const bytes = new Uint8Array(readFileSync(join(dir, 'world.ndjson.gz')));
+  const modules = new Map<string, Promise<readonly Check[]>>();
+  const checks = (task: string) => {
+    if (!modules.has(task)) {
+      modules.set(task, (async () => {
+        const file = join(REPO, 'tasks', task, 'tests', 'grader.ts');
+        if (!existsSync(file)) return [];
+        const { checks: list } = (await import(`${pathToFileURL(file).href}?manifest=${manifest}`)) as { checks?: unknown };
+        if (!Array.isArray(list)) throw new Error(`${file} does not export checks: Check[]`);
+        return list as Check[];
+      })());
+      modules.get(task)!.catch(() => modules.delete(task));
+    }
+    return modules.get(task)!;
+  };
+  return {
+    manifest,
+    world: { read: async () => bytes },
+    worldHash: (JSON.parse(manifestText) as { world: { state_hash: string } }).world.state_hash,
+    definitions: JSON.parse(readFileSync(join(dir, 'definitions-pruned.json'), 'utf8')) as Fixtures['definitions'],
+    checks,
+  };
 }
 
 export interface Runner {
@@ -417,7 +458,15 @@ export async function startRunner(opts: RunnerOptions): Promise<Runner> {
   // edited between two batches is graded as edited, at its new env_version.
   const taskSourceNow = () => nodeTaskSource({ ...(opts.tasksDir === undefined ? {} : { root: opts.tasksDir }), testMode: false });
   const git = gitState(REPO);
-  let world: ReturnType<typeof repoWorld> | undefined;
+  // The fixtures of the manifest on disk now: kept while its hash holds, reloaded when a fixture
+  // rebuild changes it, so the next trial needs no restart (run.md 2026-10-25 07:40).
+  const fixturesDir = opts.fixturesDir ?? join(REPO, 'fixtures');
+  let fixtures: Fixtures | undefined;
+  const fixturesNow = (): Fixtures => {
+    const text = readFileSync(join(fixturesDir, 'manifest.json'), 'utf8');
+    if (fixtures === undefined || fixtures.manifest !== createHash('sha256').update(text).digest('hex')) fixtures = loadFixtures(fixturesDir, text);
+    return fixtures;
+  };
 
   // The key typed into the UI, held only here.
   let heldKey: string | null = null;
@@ -551,7 +600,7 @@ export async function startRunner(opts: RunnerOptions): Promise<Runner> {
     await knownTasks(tasks, body.tasks);
     if (body.smoke) return startSmoke(body, tasks);
     const key = opts.mock ? 'mock-key-not-sent' : (body.key ?? heldKey);
-    world ??= repoWorld();
+    const w = fixturesNow();
     // Taken before any await, so two requests in flight at once never share a run id.
     const runId = `${session}-${++runCount}`;
     const sink = nodeResultSink(join(runsDir, runId));
@@ -561,7 +610,7 @@ export async function startRunner(opts: RunnerOptions): Promise<Runner> {
     };
     let plan;
     try {
-      plan = await planBatch(spec, { tasks, sink, worldHash: world.worldHash });
+      plan = await planBatch(spec, { tasks, sink, worldHash: w.worldHash });
     } catch (e) {
       throw new HttpError(400, 'invalid_request', e instanceof BatchRefused ? e.message : `tasks: ${(e as Error).message}`);
     }
@@ -614,11 +663,10 @@ export async function startRunner(opts: RunnerOptions): Promise<Runner> {
     const view: RunView = { run_id: runId, started: new Date().toISOString(), mock: opts.mock, smoke: false, tasks: body.tasks, trials: body.trials, trial_ids: entries.map((t) => t.id), done: false, stopped: null };
     const byLabel = (label: string | undefined) => entries.find((t) => label !== undefined && label.endsWith(`:${t.taskId}/${t.index}`));
     if (!opts.mock) batchKeys.add(key);
-    const w = world;
     const batch = runBatch(
       { ...spec, ceiling: ceilingAt(body.session_cap_usd), signal: controller.signal, log: (l) => say(`run ${runId}: ${l}`) },
       {
-        ledger: gated, rows: () => store.read(), sink: trackingSink(sink, byKey), tasks, checks: taskChecks, world: w.world, worldHash: w.worldHash, definitions: w.definitions, now: nodeNow,
+        ledger: gated, rows: () => store.read(), sink: trackingSink(sink, byKey), tasks, checks: w.checks, world: w.world, worldHash: w.worldHash, definitions: w.definitions, now: nodeNow,
         client: (grant, label) => new MessagesClient({ grant, ledger, apiKey: key, fetch: transport(label), trial: label, log: (l) => say(`${label}: ${l}`), ...(opts.sleep ? { sleep: opts.sleep } : {}) }),
         // Each trial also carries its own signal, which DELETE api/trials/:id aborts.
         run: (taskId, model, o: RunOptions) => {
@@ -670,8 +718,7 @@ export async function startRunner(opts: RunnerOptions): Promise<Runner> {
 
   async function startSmoke(body: TrialsRequest, tasks: TaskSource): Promise<{ status: number; body: unknown }> {
     if (!forcedFail) throw new HttpError(400, 'invalid_request', 'Smoke trials are turned off in this runner.');
-    world ??= repoWorld();
-    const w = world;
+    const w = fixturesNow();
     const taken = existsSync(runsDir) ? readdirSync(runsDir).filter((d) => /^smoke-\d+$/.test(d)).map((d) => Number(d.slice(6))) : [];
     const runId = `smoke-${Math.max(0, ...taken, ...runs.map((r) => (/^smoke-(\d+)$/.exec(r.view.run_id)?.[1] ?? 0)).map(Number)) + 1}`;
     const sink = nodeResultSink(join(runsDir, runId));
@@ -688,7 +735,7 @@ export async function startRunner(opts: RunnerOptions): Promise<Runner> {
         t.state = 'running';
         const { record } = await run(t.taskId, MODEL, {
           tasks, client: forcedFailClient(), judge: null, world: w.world, worldHash: w.worldHash, definitions: w.definitions, now: nodeNow, effort: body.effort,
-          trialId: `smoke:${runId}:${t.taskId}/${t.index}`, checks: await taskChecks(t.taskId), signal: AbortSignal.any([controller.signal, t.controller.signal]),
+          trialId: `smoke:${runId}:${t.taskId}/${t.index}`, checks: await w.checks(t.taskId), signal: AbortSignal.any([controller.signal, t.controller.signal]),
           onEvent: (e) => {
             sink.event(k, 'smoke', e);
             pushEvent(t, e);
