@@ -6,12 +6,10 @@ import { CheckCircle2, ChevronDown, ChevronRight, CircleAlert, Loader2 } from 'l
 import { useEffect, useState, type ReactNode, type Ref } from 'react';
 import type { Task } from '../../../../packages/core/tasks.ts';
 import type { Check } from '../../../../packages/grader/check.ts';
-import { browserTaskSource } from '../adapters/tasks-browser.ts';
 import { useKeyStatus } from '../keygate/key.ts';
 import { loadResults } from '../data/results.ts';
 import { Notice, Page } from '../data/ui.tsx';
 import { navigate, useParams } from '../data/url.ts';
-import { taskChecks } from './matrix-task.ts';
 import { validate, type MatrixRun, type OracleResult, type ReplayRow } from './validate-protocol.ts';
 
 type Loaded = { task: Task; checks: Check[] };
@@ -21,8 +19,9 @@ export function Tasks({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | u
   const [error, setError] = useState<string | null>(null);
   const open = useParams().get('task');
   useEffect(() => {
-    browserTaskSource({ testMode: false }).all()
-      .then((all) => Promise.all(all.map(async (task) => ({ task, checks: await taskChecks(task.id) }))))
+    // The task files are a large chunk, loaded when Tasks first opens.
+    Promise.all([import('../adapters/tasks-browser.ts'), import('./matrix-task.ts')])
+      .then(([{ browserTaskSource }, { taskChecks }]) => browserTaskSource({ testMode: false }).all().then((all) => Promise.all(all.map(async (task) => ({ task, checks: await taskChecks(task.id) })))))
       .then(setTasks, (e: unknown) => setError(e instanceof Error ? e.message : String(e)));
   }, []);
   return (

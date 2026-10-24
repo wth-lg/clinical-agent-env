@@ -1,22 +1,20 @@
 // The view the shell shows for ?view=: each rail view, and the glossary its fault labels link to.
-// Each is its own chunk, loaded when first shown.
-import { lazy, Suspense, type Ref } from 'react';
+// The published results start loading when the app starts, behind the key gate, so a view shows
+// them as soon as it opens.
+import type { Ref } from 'react';
+import { Environment } from '../environment/Environment.tsx';
+import { Findings } from '../findings/Findings.tsx';
+import { Glossary } from '../glossary/Glossary.tsx';
+import { Overview } from '../overview/Overview.tsx';
+import { Runs } from '../runs/Runs.tsx';
+import { Tasks } from '../tasks/Tasks.tsx';
+import { loadResults } from './results.ts';
 
-type Body = (p: { headingRef?: Ref<HTMLHeadingElement> | undefined }) => React.JSX.Element;
-const BODIES: Record<string, React.LazyExoticComponent<Body>> = {
-  overview: lazy(() => import('../overview/Overview.tsx').then((m) => ({ default: m.Overview }))),
-  tasks: lazy(() => import('../tasks/Tasks.tsx').then((m) => ({ default: m.Tasks }))),
-  runs: lazy(() => import('../runs/Runs.tsx').then((m) => ({ default: m.Runs }))),
-  findings: lazy(() => import('../findings/Findings.tsx').then((m) => ({ default: m.Findings }))),
-  environment: lazy(() => import('../environment/Environment.tsx').then((m) => ({ default: m.Environment }))),
-  glossary: lazy(() => import('../glossary/Glossary.tsx').then((m) => ({ default: m.Glossary }))),
-};
+void loadResults();
+
+const BODIES = { overview: Overview, tasks: Tasks, runs: Runs, findings: Findings, environment: Environment, glossary: Glossary } as const;
 
 export function ViewBody({ id, headingRef }: { id: string; headingRef?: Ref<HTMLHeadingElement> | undefined }) {
-  const Body = BODIES[id] ?? BODIES.overview!;
-  return (
-    <Suspense fallback={<p className="px-6 py-6 text-ink-muted">Loading…</p>}>
-      <Body headingRef={headingRef} />
-    </Suspense>
-  );
+  const Body = BODIES[id as keyof typeof BODIES] ?? Overview;
+  return <Body headingRef={headingRef} />;
 }
