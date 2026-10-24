@@ -92,11 +92,12 @@ describe('replay and regrade', () => {
     expect(bad.text).toMatch(/_toy\/0: regrade gives PASS score 1, the current grade FAIL score 0/);
   });
 
-  // Every reason a judge answer can be missing from the record's cache (P11f PR-b): each input of
-  // the judge cache key, or an answer the cache never held.
-  const MISS_CAUSES = "the record's judge cache has no answer for this question. Since this run, the judge question, " +
-    'the judge prompt version or the [judge] effort may have changed: each is part of the judge cache key. ' +
-    "Or the record's cache lacks this answer.";
+  // Every reason a judge answer can be missing from the record's cache (P11f PR-b): each of the
+  // five inputs of the judge cache key (packages/grader/judge.ts), or an answer the cache never held.
+  const MISS_CAUSES = "the record's judge cache has no answer for this question. The judge cache key has five parts: " +
+    'the judge model, the [judge] effort, the judge prompt version, the judge question and the text the grader gives the judge. ' +
+    'One of them may have changed since this run. ' +
+    "Or the record's cache never held this answer, for example because the entry was removed.";
 
   // P11f (6), verifier-phase-regrade-2 N2: [judge] and [matrix] only shape grading, so editing them
   // leaves env_version as it was and replay does not refuse the run; a table the agent works in
@@ -122,6 +123,25 @@ describe('replay and regrade', () => {
     const turns = await cli(replay, [dir], edited('max_turns = 6', 'max_turns = 7'));
     expect(turns.code).toBe(1);
     expect(turns.text).toMatch(/_toy\/0: environment changed: run at env_version /);
+  });
+
+  // The graded text is the fifth input of the judge cache key: here the record's finish summary,
+  // which the toy's judge items read. With a changed summary and nothing else changed, replay
+  // misses and names every cause (P11f PR-b, verifier-phase-P11f-3 S1).
+  it('after the graded text changes, replay names the judge cache miss with every cause', async () => {
+    const copy = join(tempDir('replay-graded-text'), 'replay-graded-text');
+    cpSync(dir, copy, { recursive: true });
+    const file = join(copy, 'trials', '_toy', '0.json');
+    const rec = JSON.parse(readFileSync(file, 'utf8')) as { summary: string; regrades?: unknown };
+    delete rec.regrades;
+    writeFileSync(file, JSON.stringify({ ...rec, summary: `${rec.summary} Done.` }, null, 2));
+    for (const [main, args] of [[replay, [copy]]] as const) {
+      const r = await cli(main, [...args]);
+      expect(r.code, r.text).toBe(1);
+      expect(r.text).not.toMatch(/environment changed/);
+      expect(r.text).toMatch(/_toy\/0: judge cache miss [0-9a-f]+: /);
+      expect(r.text).toContain(MISS_CAUSES);
+    }
   });
 
   it('replay refuses a trial whose env_version is not the checkout\'s, naming both; regrade still runs', async () => {
