@@ -154,39 +154,68 @@ const typeOnly = (raw: string): string => {
   }
   return JSON.stringify({ type: 'error', error: typeof type === 'string' && ERROR_TYPE.test(type) ? { type } : {} });
 };
-// A stream with each SSE error event's data reduced by typeOnly; a stream that fails mid-read
-// fails with a fixed error.
-function sseTypeOnly(body: ReadableStream<Uint8Array>): ReadableStream<Uint8Array> {
+// A stream with each SSE error event's data reduced by typeOnly, one parsed frame at a time: a
+// frame (lines up to a blank line, CRLF or LF) is held until it is whole, its data: lines are
+// joined as SSE joins them, and an error event (event: error, or data whose type is error) leaves
+// as its other lines and one data: line of its type. Every other frame passes through byte for
+// byte. A stream that fails mid-read fails with a fixed error.
+export function sseTypeOnly(body: ReadableStream<Uint8Array>): ReadableStream<Uint8Array> {
   const reader = body.getReader();
   const decoder = new TextDecoder();
   const encoder = new TextEncoder();
   let rest = '';
-  const line = (l: string) => {
-    if (!l.startsWith('data:') || !l.includes('"error"')) return l;
-    try {
-      if ((JSON.parse(l.slice(5)) as { type?: unknown }).type !== 'error') return l;
-    } catch {
-      return l;
+  const frame = (raw: string): string => {
+    const lines = raw.split(/\r\n|\r|\n/);
+    const data = lines.filter((l) => l.startsWith('data:')).map((l) => l.slice(l.startsWith('data: ') ? 6 : 5)).join('\n');
+    let error = lines.includes('event: error') || lines.includes('event:error');
+    if (!error && data.includes('"error"')) {
+      try {
+        error = (JSON.parse(data) as { type?: unknown }).type === 'error';
+      } catch {
+        error = false;
+      }
     }
-    return `data: ${typeOnly(l.slice(5))}`;
+    if (!error) return raw;
+    return [...lines.filter((l) => l !== '' && !l.startsWith('data:')), `data: ${typeOnly(data)}`].join('\n');
+  };
+  // The whole frames at the front of rest, each with its terminator; a CR at the end may be the
+  // first half of a CRLF, so it waits for the next chunk.
+  const BOUNDARY = /\r\n\r\n|\n\n|\r\r|\r\n\n|\n\r\n/;
+  const take = (): string => {
+    let out = '';
+    for (let m = BOUNDARY.exec(rest); m !== null && !(m.index + m[0].length === rest.length && rest.endsWith('\r')); m = BOUNDARY.exec(rest)) {
+      const end = m.index + m[0].length;
+      out += `${frame(rest.slice(0, m.index))}${rest.slice(m.index, end)}`;
+      rest = rest.slice(end);
+    }
+    return out;
   };
   return new ReadableStream<Uint8Array>({
     async pull(c) {
-      let r: Awaited<ReturnType<typeof reader.read>>;
-      try {
-        r = await reader.read();
-      } catch {
-        c.error(new TypeError('stream failed'));
-        return;
+      // Read until a whole frame is out or the stream ends: a pull that enqueues nothing is not
+      // called again.
+      for (;;) {
+        let r: Awaited<ReturnType<typeof reader.read>>;
+        try {
+          r = await reader.read();
+        } catch {
+          c.error(new TypeError('stream failed'));
+          return;
+        }
+        if (r.done) {
+          rest += decoder.decode();
+          const out = take() + (rest === '' ? '' : frame(rest));
+          if (out !== '') c.enqueue(encoder.encode(out));
+          c.close();
+          return;
+        }
+        rest += decoder.decode(r.value, { stream: true });
+        const out = take();
+        if (out !== '') {
+          c.enqueue(encoder.encode(out));
+          return;
+        }
       }
-      if (r.done) {
-        if (rest !== '') c.enqueue(encoder.encode(line(rest)));
-        c.close();
-        return;
-      }
-      const lines = (rest + decoder.decode(r.value, { stream: true })).split('\n');
-      rest = lines.pop() ?? '';
-      if (lines.length > 0) c.enqueue(encoder.encode(`${lines.map(line).join('\n')}\n`));
     },
     cancel: (reason) => reader.cancel(reason),
   });
