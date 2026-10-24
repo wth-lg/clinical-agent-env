@@ -254,6 +254,16 @@ describe('runner refusal text', () => {
     }
   });
 
+  // ASD-STE 100: one instruction per sentence, and one name for the batch the user just posted
+  // (verifier-phase-P11f-3 m2). An instruction is one of the verbs these texts use.
+  it('gives one instruction per sentence and says this batch', () => {
+    const verbs = /\b(paste|press|select|set|wait|restart|run|start)\b/gi;
+    for (const [reason, text] of [...Object.entries(REFUSAL_TEXT.key), ...Object.entries(REFUSAL_TEXT.trials)]) {
+      expect(text, reason).not.toMatch(/\bthe batch\b/i);
+      for (const sentence of text.split(/(?<=\.) /)) expect(sentence.match(verbs)?.length ?? 0, `${reason}: ${sentence}`).toBeLessThanOrEqual(1);
+    }
+  });
+
   it('is plain: short sentences, no status codes and no reason ids', () => {
     for (const [reason, text] of [...Object.entries(REFUSAL_TEXT.key), ...Object.entries(REFUSAL_TEXT.trials)]) {
       expect(text, reason).not.toMatch(/\b[45][0-9]{2}\b|_|api\//);
