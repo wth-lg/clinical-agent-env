@@ -13,10 +13,13 @@
 //
 // The reason is one sentence of at most REASON_WORDS words, in the forms
 // docs/requirements/ui-contract.md fixes for a valid non-pass trial:
-//   <check id> failed: expected <value>, found <value>   the first failed gate check, then the
-//                                                          taxonomy or the fault when they fit
+//   <check id> failed: expected <value>, found <value>   a FAIL's first failed gate check, then
+//                                                          the taxonomy or the fault when they fit
 //   turn limit reached: <n> turns (and the cost, time and output limit forms)
 //   refused: <the first REFUSAL_WORDS words of the refusal>
+// A LIMIT or REFUSAL comes from the record status, so its limit or refusal sentence comes first;
+// when the grader failed a gate check too, '; <check id> failed: ...' follows, its values cut to
+// fit, then the fault when it is not the model's and it fits.
 // Expected and found come from the check's evidence: its expected and found fields when it has
 // them, else a range and the value checked against it, else a list that should be empty.
 import type { TrialEvent } from './events.ts';
@@ -201,7 +204,8 @@ function checkSentence(id: string, expected: string, found: string, max: number)
   return `${id} failed: expected ${firstWords(expected, each)}, found ${firstWords(found, each)}`;
 }
 
-const TAXONOMY_CLAUSE: Record<Taxonomy, (f: AttributionFacts) => string> = {
+// did_not_finish has no clause: it is a LIMIT's taxonomy, and a LIMIT's reason leads with its limit.
+const TAXONOMY_CLAUSE: Record<Exclude<Taxonomy, 'did_not_finish'>, (f: AttributionFacts) => string> = {
   reasoning: ({ decisive }) => {
     const seen = (decisive?.exposure ?? []).filter((e) => e.first_exposed_step !== null);
     if (seen.length === 1) return `${seen[0]!.id} was read at step ${seen[0]!.first_exposed_step}, so this is reasoning`;
@@ -215,7 +219,6 @@ const TAXONOMY_CLAUSE: Record<Taxonomy, (f: AttributionFacts) => string> = {
   output_gap: () => 'stated but not done, so this is output gap',
   over_action: () => 'writes beyond what is allowed, so this is over action',
   process: () => 'inputs not consulted first, so this is process',
-  did_not_finish: () => 'stopped at a limit, so this is did not finish',
 };
 
 function limitSentence(r: ExplainRecord, events: readonly TrialEvent[] | undefined): string {
@@ -229,6 +232,11 @@ function limitSentence(r: ExplainRecord, events: readonly TrialEvent[] | undefin
   }
   if (kind === 'max_tokens') return `output limit reached: ${limit ? limit.value + limit.cap : 2} cut-off responses in a row`;
   return `turn limit reached: ${limit?.value ?? r.turns ?? '?'} turns`;
+}
+
+function refusalSentence(r: ExplainRecord, events: readonly TrialEvent[] | undefined): string {
+  const text = refusalText(r, events);
+  return text === null ? `refused: no refusal text recorded${r.refusal_category ? ` (category ${r.refusal_category})` : ''}` : `refused: ${words(text).slice(0, REFUSAL_WORDS).join(' ')}`;
 }
 
 function refusalText(r: ExplainRecord, events: readonly TrialEvent[] | undefined): string | null {
@@ -314,21 +322,22 @@ export function explainTrial(record: ExplainRecord, audit: AuditRow | null | und
 
   let reason: string;
   if (grade.valid && outcome !== 'PASS') {
+    // A REFUSAL or LIMIT comes from the record status: its sentence leads, the failed check follows.
+    const lead = outcome === 'REFUSAL' ? refusalSentence(record, ctx.events) : outcome === 'LIMIT' ? limitSentence(record, ctx.events) : null;
     if (decisive_check !== null) {
-      // The taxonomy speaks only for a model or refusal fault; an infra trial gets the check alone.
-      const modelFault = fault === 'model' || fault === 'refusal';
+      // The taxonomy speaks only for a model or refusal fault on a FAIL (a lead already says why a
+      // REFUSAL or LIMIT ended); an infra trial gets the check alone.
+      const modelFault = (fault === 'model' || fault === 'refusal') && lead === null;
       const clause = fault === 'env' ? `${deciding!.evidence}, so this is environment`
         : fault === 'grader' ? `${deciding!.id === 'GR3' ? 'an audit found a grader bug' : deciding!.evidence}, so this is grader`
-          : modelFault && taxonomy !== null ? TAXONOMY_CLAUSE[taxonomy](facts) : null;
-      const base = checkSentence(decisive_check.id, decisive_check.expected, decisive_check.found, REASON_WORDS);
+          : modelFault && taxonomy !== null && taxonomy !== 'did_not_finish' ? TAXONOMY_CLAUSE[taxonomy](facts) : null;
+      const check = checkSentence(decisive_check.id, decisive_check.expected, decisive_check.found, REASON_WORDS - (lead === null ? 0 : words(lead).length));
+      const base = lead === null ? check : `${lead}; ${check}`;
       const fits = (s: string) => words(s).length <= REASON_WORDS;
       const short = fault === 'env' ? 'environment' : fault === 'grader' ? 'grader' : modelFault ? (taxonomy?.replace(/_/g, ' ') ?? null) : null;
       reason = clause !== null && fits(`${base}; ${clause}`) ? `${base}; ${clause}` : short !== null && fits(`${base}; ${short}`) ? `${base}; ${short}` : base;
-    } else if (outcome === 'REFUSAL') {
-      const text = refusalText(record, ctx.events);
-      reason = text === null ? `refused: no refusal text recorded${record.refusal_category ? ` (category ${record.refusal_category})` : ''}` : `refused: ${words(text).slice(0, REFUSAL_WORDS).join(' ')}`;
-    } else if (outcome === 'LIMIT') {
-      reason = limitSentence(record, ctx.events);
+    } else if (lead !== null) {
+      reason = lead;
     } else {
       reason = `${outcome}: no failed gate check recorded`;
     }

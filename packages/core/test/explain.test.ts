@@ -98,15 +98,19 @@ describe('explainTrial: one fixture per outcome', () => {
 });
 
 describe('explainTrial: one fixture per taxonomy', () => {
-  it.each(TAXONOMY.map((t) => [t]))('%s names the decisive check with its expected and found values and the taxonomy', (auto) => {
+  it.each(TAXONOMY.map((t) => [t]))('%s names the decisive check with its expected and found values and the taxonomy (a LIMIT: its limit first)', (auto) => {
     const exposure: Exposure = auto === 'retrieval' ? [{ id: 'Observation/obs-wt-1', first_exposed_step: null }] : [{ id: 'Observation/obs-wt-1', first_exposed_step: 6 }];
     const x = explainTrial(failWith(auto, exposure), undefined, ctx);
     expect(x.taxonomy).toBe(auto);
     expect(x.fault).toBe('model');
     expect(x.decisive_check?.id).toBe('G1');
     expect(x.decisive_step).toBe(9);
-    expect(x.reason).toMatch(/^G1 failed: expected apixaban 5 mg 2\/day, found apixaban 2\.5 mg 2\/day; /);
-    expect(x.reason).toContain(auto.replace(/_/g, ' '));
+    // A LIMIT (did_not_finish) leads with its limit sentence, which says why it ended (P11f (4)).
+    if (auto === 'did_not_finish') expect(x.reason).toBe('turn limit reached: 80 turns; G1 failed: expected apixaban 5 mg 2/day, found apixaban 2.5 mg 2/day');
+    else {
+      expect(x.reason).toMatch(/^G1 failed: expected apixaban 5 mg 2\/day, found apixaban 2\.5 mg 2\/day; /);
+      expect(x.reason).toContain(auto.replace(/_/g, ' '));
+    }
     expect(words(x.reason)).toBeLessThanOrEqual(25);
   });
 });
