@@ -69,10 +69,14 @@ describe('discharge-medrec', () => {
     expect(succ?.resourceType === 'MedicationRequest' && (succ.authoredOn ?? '') < '2025-03-02').toBe(true);
     const lis = store.get('MedicationRequest', 'mr-t4-lisinopril');
     expect(lis?.resourceType === 'MedicationRequest' && JSON.stringify(lis.reasonCode)).not.toMatch(/hypertension/i);
+    // Both 2024 orders predate the 2025 heart-failure diagnosis, so they give his long-standing ischemic heart disease.
+    const ihd = store.get('Condition', 'cond-00142');
+    expect(ihd?.resourceType === 'Condition' && [ihd.code?.text?.startsWith('Ischemic heart disease'), ihd.clinicalStatus?.coding?.[0]?.code, (ihd.onsetDateTime ?? '') < '2024-02-06']).toEqual([true, 'active', true]);
+    for (const mr of [succ, lis]) expect(mr?.resourceType === 'MedicationRequest' && mr.reasonCode).toEqual([{ text: 'Ischemic heart disease' }]);
   });
 
   it('flags a note that uses the March 2025 summary by any name, and not the oracle note', () => {
-    for (const t of ['Per the March 2025 summary furosemide stays at 20 mg.', 'Per the 3/6 discharge summary.', "Per last year's discharge summary, KCl continues.", 'See doc-t4-dc-2025.', 'Echocardiogram in 3 months.', 'Potassium chloride 20 mEq daily: start.']) expect(OLD_SUMMARY.test(t), t).toBe(true);
+    for (const t of ['Per the March 2025 summary furosemide stays at 20 mg.', 'Per the 3/6 discharge summary.', "Per last year's discharge summary, KCl continues.", 'See doc-t4-dc-2025.', 'Echocardiogram in 3 months.', 'Potassium chloride 20 mEq daily: start.', 'Per the older St. Brigid summary.']) expect(OLD_SUMMARY.test(t), t).toBe(true);
     expect(OLD_SUMMARY.test(noteText(ORACLE_NOTE))).toBe(false);
   });
 });

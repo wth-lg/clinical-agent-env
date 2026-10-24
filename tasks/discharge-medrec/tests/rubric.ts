@@ -28,7 +28,7 @@ export const OLD_SUMMARY = new RegExp(
     String.raw`new diagnosis`,
     String.raw`echocardiogram`,
     String.raw`(?:furosemide 20 mg|potassium chloride 20 meq)[^.\n]*\bstart`,
-    String.raw`\b(?:last|previous|prior|earlier) (?:year'?s? )?(?:discharge|summary|admission|stay|hospitali[sz]ation)`,
+    String.raw`\b(?:last|previous|prior|earlier|older) (?:year'?s? |st\.? brigid(?: regional)? )?(?:discharge|summary|admission|stay|hospitali[sz]ation)`,
   ].join('|'),
   'i',
 );

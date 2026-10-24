@@ -213,12 +213,12 @@ const overlay: Overlay = {
       lab('obs-t4-scr-1021', SCR, '2026-10-21T08:40:00-04:00', '2026-10-21T13:15:00-04:00', 1.32, 'mg/dL', [0.74, 1.35], 'enc-t4-lab-1021', CLINIC),
       lab('obs-t4-k-1021', K, '2026-10-21T08:40:00-04:00', '2026-10-21T13:15:00-04:00', 4.4, 'mmol/L', [3.5, 5.1], 'enc-t4-lab-1021', CLINIC),
       medication('mr-t4-furosemide', ['310429', 'furosemide 20 MG Oral Tablet'], [20, 'mg'], 'QD', '2025-03-10T10:00:00-04:00', 'Chronic systolic heart failure'),
-      medication('mr-t4-lisinopril', ['314076', 'lisinopril 10 MG Oral Tablet'], [10, 'mg'], 'QD', '2024-02-06T10:00:00-05:00', 'Chronic systolic heart failure', {
+      medication('mr-t4-lisinopril', ['314076', 'lisinopril 10 MG Oral Tablet'], [10, 'mg'], 'QD', '2024-02-06T10:00:00-05:00', 'Ischemic heart disease', {
         status: 'on-hold',
         statusReason: { text: 'Held during the St. Brigid Regional admission for acute kidney injury (10/2026)' },
       }),
       medication('mr-t4-kcl', ['198116', 'potassium chloride 20 MEQ Extended Release Oral Tablet'], [20, 'meq'], 'QD', '2025-03-10T10:00:00-04:00', 'Potassium replacement with furosemide'),
-      medication('mr-t4-metoprolol-succ', ['866436', '24 HR metoprolol succinate 50 MG Extended Release Oral Tablet'], [50, 'mg'], 'QD', '2024-02-06T10:00:00-05:00', 'Chronic systolic heart failure'),
+      medication('mr-t4-metoprolol-succ', ['866436', '24 HR metoprolol succinate 50 MG Extended Release Oral Tablet'], [50, 'mg'], 'QD', '2024-02-06T10:00:00-05:00', 'Ischemic heart disease'),
       medication('mr-t4-metoprolol-tart', ['866924', 'metoprolol tartrate 25 MG Oral Tablet'], [25, 'mg'], 'BID', '2023-05-02T10:00:00-04:00', 'Palpitations'),
       medication('mr-t4-omeprazole', ['198051', 'omeprazole 20 MG Delayed Release Oral Capsule'], [20, 'mg'], 'QD', '2022-01-11T10:00:00-05:00', 'Gastroesophageal reflux'),
       medication('mr-t4-atorvastatin', ['617311', 'atorvastatin 40 MG Oral Tablet'], [40, 'mg'], 'QHS', '2022-01-11T10:00:00-05:00', 'Hyperlipidemia'),
