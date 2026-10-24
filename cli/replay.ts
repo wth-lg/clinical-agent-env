@@ -77,10 +77,14 @@ export { trialName };
 export const envChanged = (r: Pick<BatchRecord, 'env_version' | 'task_version'>, now: string): string =>
   `environment changed: run at env_version ${r.env_version ?? `(none: recorded before env_version, task_version ${r.task_version})`}, checkout at ${now}`;
 
-// A judge cache miss on replay, said plainly: the record's cache answers only the judge questions
-// and effort it ran with (effort is part of the cache key), and no offline command asks the judge.
+// A judge cache miss on replay, said plainly with every cause: the cache key holds the judge
+// question, the judge prompt version and the [judge] effort (packages/grader/judge.ts), so a change
+// to any of them since the run misses, as does a cache that never held the answer. No offline
+// command asks the judge.
 const judgeMissed = (miss: string, r: Pick<BatchRecord, 'task_id' | 'model_requested'>): string =>
-  `judge cache miss ${/judge cache miss ([0-9a-f]+)/.exec(miss)?.[1] ?? miss}: the judge question or the [judge] effort changed since this run, and the effort is part of the judge cache key, so its cached answers cannot grade it. ` +
+  `judge cache miss ${/judge cache miss ([0-9a-f]+)/.exec(miss)?.[1] ?? miss}: the record's judge cache has no answer for this question. ` +
+  'Since this run, the judge question, the judge prompt version or the [judge] effort may have changed: each is part of the judge cache key. ' +
+  "Or the record's cache lacks this answer. " +
   `Only a new run grades with the judge: pnpm cli run --task ${r.task_id} --model ${r.model_requested} --out <new run dir> (pnpm cli oracle --task ${r.task_id} --live-judge refreshes only the matrix cache).`;
 
 const metOf = (checks: ReadonlyArray<{ id: string; met: unknown }> | undefined) => JSON.stringify((checks ?? []).map((c) => [c.id, c.met]));

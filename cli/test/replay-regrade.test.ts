@@ -92,6 +92,12 @@ describe('replay and regrade', () => {
     expect(bad.text).toMatch(/_toy\/0: regrade gives PASS score 1, the current grade FAIL score 0/);
   });
 
+  // Every reason a judge answer can be missing from the record's cache (P11f PR-b): each input of
+  // the judge cache key, or an answer the cache never held.
+  const MISS_CAUSES = "the record's judge cache has no answer for this question. Since this run, the judge question, " +
+    'the judge prompt version or the [judge] effort may have changed: each is part of the judge cache key. ' +
+    "Or the record's cache lacks this answer.";
+
   // P11f (6), verifier-phase-regrade-2 N2: [judge] and [matrix] only shape grading, so editing them
   // leaves env_version as it was and replay does not refuse the run; a table the agent works in
   // still does. The judge effort is part of a judge cache key, so after an effort edit replay
@@ -111,7 +117,7 @@ describe('replay and regrade', () => {
     const judged = await cli(replay, [dir], edited('effort = "medium"', 'effort = "high"'));
     expect(judged.text).not.toMatch(/environment changed/);
     expect(judged.text).toMatch(/_toy\/0: judge cache miss /);
-    expect(judged.text).toContain('the judge question or the [judge] effort changed since this run, and the effort is part of the judge cache key, so its cached answers cannot grade it.');
+    expect(judged.text).toContain(MISS_CAUSES);
     expect(judged.text).toContain('Only a new run grades with the judge: pnpm cli run --task _toy --model claude-opus-5-5 --out <new run dir> (pnpm cli oracle --task _toy --live-judge refreshes only the matrix cache).');
     const turns = await cli(replay, [dir], edited('max_turns = 6', 'max_turns = 7'));
     expect(turns.code).toBe(1);
@@ -149,6 +155,7 @@ describe('replay and regrade', () => {
       expect(r.text).toContain('_toy/1');
       expect(r.text).toContain(removed.key);
       expect(r.text).not.toContain(fakeKey('R'));
+      if (main === replay) expect(r.text).toContain(MISS_CAUSES);
     }
     expect(readFileSync(recordFile(1), 'utf8')).toBe(before);
     expect(fetchSpy).not.toHaveBeenCalled();
