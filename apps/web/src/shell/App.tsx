@@ -3,7 +3,7 @@ import { KeyGate } from '../keygate/KeyGate.tsx';
 import { forget, keyStatus, useKeyStatus } from '../keygate/key.ts';
 import { deleteKey } from '../keygate/runner.ts';
 import type { Surface } from '../surface/detect.ts';
-import { EmptyView } from './EmptyView.tsx';
+import { ViewBody } from '../data/ViewBody.tsx';
 import { Rail } from './Rail.tsx';
 import { TopBar } from './TopBar.tsx';
 import { viewFromUrl, viewHref } from './views.ts';
@@ -64,7 +64,7 @@ export function App({ surface }: { surface: Surface }) {
           }}
         />
         <main className="min-w-0 flex-1 overflow-auto">
-          <EmptyView view={view} headingRef={heading} />
+          <ViewBody key={view.id} id={view.id} headingRef={heading} />
         </main>
       </div>
     </div>
