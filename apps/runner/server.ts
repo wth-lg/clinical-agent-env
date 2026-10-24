@@ -539,7 +539,10 @@ export async function startRunner(opts: RunnerOptions): Promise<Runner> {
     const rows = readRows(ledgerPath);
     const projection = terms(plan.projection, rows, body.session_cap_usd);
     if (dryRun) return { status: 200, body: { dry_run: true, calls: 0, projection } };
+    // 409 no_key: no key has passed Validate in this runner process, so no client can be built.
     if (key === null) return { status: 409, body: { error: { type: 'no_key', message: 'No API key yet: paste your Anthropic API key and press Validate, then start the trial again.' }, projection: null } };
+    // 409 session_cap: this batch's projection plus what the session has spent or holds open would
+    // cross the session cap the UI sent; checked here before the ledger, which holds it too.
     if (projection.session_spent_usd + projection.total_usd > body.session_cap_usd) {
       return {
         status: 409,
@@ -547,6 +550,8 @@ export async function startRunner(opts: RunnerOptions): Promise<Runner> {
       };
     }
     const check = checkProjected(totals(rows), plan.projection.total);
+    // 409 projected_cap: the ledger's exposure plus this projection would cross PROJECTED_CAP_USD,
+    // the check `pnpm cli spend --check` makes; batchStart would refuse it as well.
     if (check.over) {
       return {
         status: 409,
@@ -624,7 +629,12 @@ export async function startRunner(opts: RunnerOptions): Promise<Runner> {
     for (const t of entries) if (trials.get(t.id) === t) trials.delete(t.id);
     if (outcome === null) throw new HttpError(503, 'shutting_down', 'the runner is shutting down');
     const message = scrub(outcome instanceof Error ? outcome.message : String(outcome));
+    // 409 batch_refused: runBatch refused the run before any grant: its run directory is locked
+    // by another batch, or a batch of the run is still open in the ledger.
     if (outcome instanceof BatchRefused) return { status: 409, body: { error: { type: 'batch_refused', message: `This batch could not start: ${message}` }, projection } };
+    // 409 spend_refused_<cap>: the ledger's batchStart refused the grant under the lock: projected
+    // (PROJECTED_CAP_USD, counting other open batches), actual (ACTUAL_CAP_USD) or ceiling (the
+    // session cap the ledger holds at every reserve).
     if (outcome instanceof SpendRefused) return { status: 409, body: { error: { type: `spend_refused_${outcome.cap}`, message }, projection } };
     return { status: 500, body: { error: { type: 'runner_error', message } } };
   }
@@ -682,6 +692,8 @@ export async function startRunner(opts: RunnerOptions): Promise<Runner> {
     // Refused before anything changes: the held key stays as it was.
     const cap = sessionCap;
     const spent = cap === null ? 0 : committed(readRows(ledgerPath));
+    // 409 session_cap: Validate's worst case plus what the session has spent or holds open would
+    // cross the session cap of the last batch posted; the held key stays as it was.
     if (cap !== null && spent + projection > cap) {
       return {
         status: 409,
@@ -703,6 +715,8 @@ export async function startRunner(opts: RunnerOptions): Promise<Runner> {
     } catch (e) {
       // The ledger's refusal is the runner's own text; an API error answers its class's fixed
       // message (see the header).
+      // 409 spend_refused_<cap>: the ledger's batchStart refused Validate's one call (projected,
+      // actual, or ceiling: the session cap); no call was made.
       if (e instanceof SpendRefused) return { status: 409, body: { error: { type: `spend_refused_${e.cap}`, message: redactText(e.message, [key]) } } };
       if (e instanceof ApiError) {
         const status = e.status === 401 || e.status === 403 || e.status === 429 ? e.status : 502;
