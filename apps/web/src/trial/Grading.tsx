@@ -79,7 +79,7 @@ export function Grading({ t, steps, onStep }: { t: Trial; steps: readonly Step[]
     <div className="space-y-4">
       <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
         <OutcomeChip outcome={g.outcome} fault={t.explanation.fault} />
-        <span className="text-ink-muted">{g.regraded ? 'Current grade, from the last regrade.' : r.grader_version ? `Graded with grader ${r.grader_version}.` : 'Graded.'}</span>
+        {graded && <span className="text-ink-muted">{g.regraded ? 'Current grade, from the last regrade.' : r.grader_version ? `Graded with grader ${r.grader_version}.` : 'Graded.'}</span>}
       </p>
       <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
         <Metric title="Score" value={score} testId="score-card" />
@@ -95,7 +95,7 @@ export function Grading({ t, steps, onStep }: { t: Trial; steps: readonly Step[]
       )}
       {!graded && (
         <p data-testid="grading-empty" className="rounded-sm border border-dashed border-line-strong p-4 text-ink-muted">
-          Not graded. A {g.outcome} trial is excluded from the results and run again, so the grader did not check it.
+          Not graded. The trial ended {g.outcome}, so it is excluded from the results and run again; the grader did not check it.
         </p>
       )}
       {gates.length > 0 && (

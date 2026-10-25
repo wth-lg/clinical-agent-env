@@ -20,7 +20,7 @@ import type { TrialEvent } from '../../../../packages/core/events.ts';
 import { fetchEvents, fullExplanation, useResults, type RunData, type Trial } from '../data/results.ts';
 import { FaultLabel, GlossaryLink, HashText, Notice, OutcomeChip } from '../data/ui.tsx';
 import { hrefWith, navigate, onNav, useParams } from '../data/url.ts';
-import { Attribution, criterionText, LINK, StepLink } from './Attribution.tsx';
+import { Attribution, criterionPhrase, criterionText, FAULT_WORD, LINK, StepLink } from './Attribution.tsx';
 import { EnvironmentTab, Raw } from './Details.tsx';
 import { Grading } from './Grading.tsx';
 import { returnTo } from './back.ts';
@@ -162,12 +162,17 @@ function Header({ t, e, onStep }: { t: Trial; e: Explanation; onStep: (n: number
         {nonPass && <FaultLabel e={e} />}
         <span className="ml-auto text-xs text-ink-muted" title="Agent and judge cost">${(t.record.cost_usd + (t.record.judge_cost_usd ?? 0)).toFixed(2)}</span>
       </div>
-      <p data-testid="reason" className="mt-2 break-words font-medium text-ink">{e.reason}</p>
+      {!e.valid && e.deciding && (
+        <p data-testid="plain-reason" className="mt-2 break-words font-medium text-ink">
+          Not counted: {criterionPhrase(e.deciding.id)}. The {e.fault === 'infra' ? 'infrastructure' : FAULT_WORD[e.deciding.fault]} is at fault, not the model.
+        </p>
+      )}
+      <Reason reason={e.reason} muted={!e.valid} />
       <dl className="mt-3 grid grid-cols-1 gap-x-4 gap-y-1.5 sm:grid-cols-[max-content_minmax(0,1fr)] [&_dd]:min-w-0 [&_dd]:break-words [&_dt]:text-ink-muted">
         <dt>Fault</dt>
         <dd data-testid="detail-fault">
-          {e.fault === null ? 'none: the trial passed' : <GlossaryLink anchor={`fault-${e.fault}`} className={LINK}>{e.fault}</GlossaryLink>}
-          {e.deciding && <>, decided by <GlossaryLink anchor={`criterion-${e.deciding.id}`} className={LINK}>{criterionText(e.deciding.id)}</GlossaryLink> ({e.deciding.id})<span className="block text-xs text-ink-muted"><HashText text={e.deciding.evidence} /></span></>}
+          {e.fault === null ? 'none: the trial passed' : <GlossaryLink anchor={`fault-${e.fault}`} className={LINK}>{FAULT_WORD[e.fault]}</GlossaryLink>}
+          {e.deciding && <>, decided by {criterionPhrase(e.deciding.id)} (<GlossaryLink anchor={`criterion-${e.deciding.id}`} className={LINK}>{e.deciding.id}</GlossaryLink>)<span className="block text-xs text-ink-muted"><HashText text={e.deciding.evidence} /></span></>}
         </dd>
         {e.decisive_check && (
           <>
@@ -199,6 +204,17 @@ function Header({ t, e, onStep }: { t: Trial; e: Explanation; onStep: (n: number
         </dd>
       </dl>
     </section>
+  );
+}
+
+// The reason as explainTrial gives it; a model failure's '; Kind: ...' on a line of its own
+// (review-ui-P16-1 F5). The text is unchanged: the separator stays for screen readers.
+function Reason({ reason, muted }: { reason: string; muted: boolean }) {
+  const at = reason.indexOf('; Kind: ');
+  return (
+    <p data-testid="reason" className={`mt-2 break-words ${muted ? 'font-mono text-xs text-ink-muted' : 'font-medium text-ink'}`}>
+      {at < 0 ? reason : <>{reason.slice(0, at)}<span className="sr-only">; </span><span data-testid="reason-kind" className="block font-normal">{reason.slice(at + 2)}</span></>}
+    </p>
   );
 }
 

@@ -430,3 +430,26 @@ test('Attribution opens with the deciding criterion and the faults ruled out; on
     expect(links.map((l) => l[0])).toEqual(rowIds);
   }
 });
+
+test('the header and Grading say it in plain words: one word per fault, a plain line first on an excluded trial (F5)', async ({ page }) => {
+  const WORD: Record<string, string> = { model: 'model', refusal: 'model', env: 'environment', grader: 'grader', infra: 'infra' };
+  for (const name of NON_PASS) {
+    const e = await explain(name);
+    await openTrial(page, name);
+    const h = page.getByTestId('trial-header');
+    const fault = h.getByTestId('detail-fault');
+    await expect(fault.getByRole('link').first()).toHaveText(WORD[e.fault!]!);
+    await expect(fault).toContainText(/decided by [a-z]/);
+    if (!e.valid) {
+      // An excluded trial: a plain line first, then the record's reason.
+      const plain = h.getByTestId('plain-reason');
+      await expect(plain).toContainText(`The ${WORD[e.fault!] === 'infra' ? 'infrastructure' : WORD[e.fault!]} is at fault, not the model.`);
+      expect(await plain.evaluate((p) => Boolean(p.compareDocumentPosition(document.querySelector('[data-testid="trial-header"] [data-testid="reason"]')!) & Node.DOCUMENT_POSITION_FOLLOWING))).toBe(true);
+    }
+    if (e.reason.includes('; Kind: ')) await expect(h.getByTestId('reason-kind')).toHaveText(e.reason.slice(e.reason.indexOf('Kind: ')));
+  }
+  await openTrial(page, TRIALS.envError);
+  const g = panel(page, 'grading');
+  await expect(g).not.toContainText('Graded with grader');
+  await expect(g).not.toContainText(/\bA ENV_ERROR\b/);
+});

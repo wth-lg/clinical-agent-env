@@ -166,7 +166,9 @@ test('the trial detail says each criterion and the fault in words, linked to the
   const detail = page.getByTestId('trial-detail');
   await expect(detail).toHaveAttribute('data-full', 'true', { timeout: 60_000 });
   await expect(detail.getByTestId('detail-criteria').locator('li')).toHaveCount(5);
-  await expect(detail.getByTestId('detail-fault')).toContainText(FAULT_DEFINITIONS.model.criteria[0]!.text);
+  // Inside the line, the criterion's sentence starts lower-case and has no full stop (review-ui-P16-1 F5).
+  const text = FAULT_DEFINITIONS.model.criteria[0]!.text.replace(/\.$/, '');
+  await expect(detail.getByTestId('detail-fault')).toContainText(`decided by ${text.charAt(0).toLowerCase()}${text.slice(1)}`);
   await detail.getByRole('link', { name: 'model', exact: true }).click();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('How failures are attributed');
   await expect(page).toHaveURL(/#fault-model$/);
