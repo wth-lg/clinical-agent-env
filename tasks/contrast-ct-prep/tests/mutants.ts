@@ -112,6 +112,14 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
     script: [...READS, { calls: [ct(), creatinineOrder('2026-10-26T10:00:00-04:00', null)] }, { calls: [prednisone, diphenhydramine] }, { calls: [message()] }, { calls: [note()] }, { calls: [finish(DONE)] }],
   },
   {
+    id: 'creatinine_at_scan_instant',
+    trap: 'creatinine_after_scan',
+    why: 'Orders the creatinine for 09:00 Monday, the scan time itself: a draw due as the scan starts is not before it, and its result is too late to act on.',
+    fails: ['creatinine_before_scan'],
+    loses: [],
+    script: [...READS, { calls: [ct(), creatinineOrder('2026-10-26T09:00:00-04:00', null)] }, { calls: [prednisone, diphenhydramine] }, { calls: [message()] }, { calls: [note()] }, { calls: [finish(DONE)] }],
+  },
+  {
     id: 'prednisone_20_mg',
     trap: 'prednisone_dose',
     why: 'Orders prednisone 20 mg instead of 50 mg at the right three times.',

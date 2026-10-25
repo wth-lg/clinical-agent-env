@@ -88,4 +88,26 @@ export const alternatives = [
       oneAnswer: true,
     }),
   },
+  {
+    id: 'hp_snippet_only',
+    why: "Reads the way searches_then_reads does but never opens Linda Marsh's H&P: the search_notes snippet already shows 35 pack-years before the CT order, which is the history RBC-RAD-05 §2 needs.",
+    loses: [],
+    script: solve({
+      reads: [
+        { calls: [...policies, inbox] },
+        { calls: [searchNotes('smoker'), searchNotes('pack', PT.marsh)] },
+        { calls: [read(SRC.ct), read(SRC.us), read(SRC.fit), activeServiceRequests(PT.patel)] },
+        {
+          calls: [
+            { name: 'fhir_search', input: { resource_type: 'Observation', patient: PT.brennan, code: '2823-3', sort: '-date' } },
+            { name: 'fhir_search', input: { resource_type: 'Observation', patient: PT.holloway, code: '2823-3', sort: '-date' } },
+            read(SRC.xr),
+            read(SRC.tsh),
+            read(SRC.lipid),
+          ],
+        },
+      ],
+      oneAnswer: true,
+    }),
+  },
 ] satisfies Array<Agent & { loses: readonly string[] }>;
