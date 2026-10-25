@@ -190,18 +190,25 @@ const validExtract = (a: { [k: string]: Json }) => (a.value === null || (typeof 
 // folded, whitespace runs as one space, so a quote that re-types an apostrophe or re-wraps a
 // line still matches (R14-04).
 const fold = (s: string) => s.replace(/[\u2018\u2019\u201A\u201B\u2032\u02BC\uFF07]/g, "'").replace(/[\u201C\u201D\u201E\u201F\u2033]/g, '"').replace(/[\u2010\u2011\u2013\u2014\u2212]/g, '-').toLowerCase().replace(/\s+/g, ' ').trim();
-// A quote with "..." or "…" is segments that must all appear in the text, in that order.
-function quoted(quote: string, text: string): boolean {
+// A quote with "..." or "…" is segments that must all appear in the text, in that order. Each
+// segment of such a quote has at least 2 words and 8 characters, and no gap the ellipsis skips
+// holds a negation, so a gap cannot turn "not sent" into "sent" (verifier M2). The matched
+// segments, or null when the quote is not in the text.
+const NEGATION = /\b(?:not|no|never|without|denies|declined)\b|n't\b/;
+function segmentsIn(quote: string, text: string): string[] | null {
   const segments = fold(quote).split(/\.\.\.|\u2026/).map((s) => s.trim()).filter((s) => s !== '');
+  if (segments.length === 0) return null;
+  if (segments.length > 1 && segments.some((s) => s.length < 8 || s.split(' ').length < 2)) return null;
   const folded = fold(text);
   let at = 0;
   for (const s of segments) {
     const i = folded.indexOf(s, at);
-    if (i < 0) return false;
+    if (i < 0 || (at > 0 && NEGATION.test(folded.slice(at, i)))) return null;
     at = i + s.length;
   }
-  return segments.length > 0;
+  return segments;
 }
+const quoted = (quote: string, text: string) => segmentsIn(quote, text) !== null;
 
 // Every number written in the quote.
 const numbersIn = (quote: string): number[] => (quote.match(/\d[\d,]*(?:\.\d+)?|\.\d+/g) ?? []).flatMap((s) => {

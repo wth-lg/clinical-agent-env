@@ -42,7 +42,7 @@ describe('quote normalisation (R14-04)', () => {
   });
 
   it('reads "..." and "…" as gaps whose segments must all appear, in order', async () => {
-    expect(await judgeQuote("I've sent ... pharmacy", TEXT)).toMatchObject({ met: true });
+    expect(await judgeQuote("I've sent ... to the pharmacy", TEXT)).toMatchObject({ met: true });
     expect(await judgeQuote('Ms. Vance…any questions', TEXT)).toMatchObject({ met: true });
     expect(await judgeQuote("pharmacy ... I've sent", TEXT)).toMatchObject({ met: 'unknown', evidence: { reason: 'quote not in text' } });
     expect(await judgeQuote("I've sent ... refill", TEXT)).toMatchObject({ met: 'unknown', evidence: { reason: 'quote not in text' } });
@@ -83,5 +83,25 @@ describe('more dash and apostrophe forms (verifier M3)', () => {
     expect(await judgeQuote('K -0.5', 'K −0.5 change.')).toMatchObject({ met: true });
     expect(await judgeQuote('Iʼve sent', "I've sent it")).toMatchObject({ met: true });
     expect(await judgeQuote('I＇ve sent', "I've sent it")).toMatchObject({ met: true });
+  });
+});
+
+describe('gap segments are words, and a gap never hides a negation (verifier M2)', () => {
+  it('P2: a gap over a negation is not in the text', async () => {
+    expect(await judgeQuote('I ... sent your prescription', 'I have not sent your prescription yet.')).toMatchObject({ met: 'unknown', evidence: { reason: 'quote not in text' } });
+    expect(await judgeQuote('I have ... sent your prescription', 'I have not sent your prescription yet.')).toMatchObject({ met: 'unknown', evidence: { reason: 'quote not in text' } });
+    for (const neg of ['no', 'never', "didn't", 'without', 'denies', 'declined'])
+      expect(await judgeQuote('the patient ... chest pain today', `the patient ${neg} chest pain today`)).toMatchObject({ met: 'unknown' });
+  });
+
+  it('P2b: a gap segment needs at least 2 words and 8 characters', async () => {
+    expect(await judgeQuote('i ... s', 'Visit summary.')).toMatchObject({ met: 'unknown', evidence: { reason: 'quote not in text' } });
+    expect(await judgeQuote("I've sent ... pharmacy", TEXT)).toMatchObject({ met: 'unknown', evidence: { reason: 'quote not in text' } });
+    expect(await judgeQuote("I've sent ... to the pharmacy", TEXT)).toMatchObject({ met: true });
+  });
+
+  it('a quote with no gap keeps the plain substring check, however short', async () => {
+    expect(await judgeQuote('sent', TEXT)).toMatchObject({ met: true });
+    expect(await judgeQuote('I have not sent', 'I have not sent it.')).toMatchObject({ met: true });
   });
 });
