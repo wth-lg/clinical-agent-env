@@ -148,6 +148,27 @@ export const mutants: Mutant[] = [
     ],
   },
   {
+    id: 'keep_2_5_for_crcl',
+    trap: 'dose_inertia',
+    why: 'States the three criteria and still keeps apixaban at 2.5 mg because his CrCl is 43 mL/min: the decision rests on creatinine clearance, which RBC-PHARM-07 §2 rules out.',
+    fails: ['apixaban_dose', 'apixaban_2_5_stopped'],
+    loses: ['apixaban_on_renal_function'],
+    script: [
+      ...reads,
+      { calls: [gabapentinBid] },
+      {
+        calls: [
+          note({
+            apixaban:
+              'Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met. ' +
+              'With a creatinine clearance of 43 mL/min, I am keeping apixaban at 2.5 mg twice daily for his renal function.',
+          }),
+        ],
+      },
+      { calls: [finish('Reviewed Harold Vance: apixaban kept at 2.5 mg twice daily for CrCl 43, metformin unchanged, gabapentin 600 mg twice daily; note written.')] },
+    ],
+  },
+  {
     id: 'keep_2_5',
     trap: 'dose_inertia',
     why: 'Works out every number right and still leaves apixaban at the 2.5 mg it has been on since February.',

@@ -162,4 +162,21 @@ export const alternatives: Alternative[] = [
       { calls: [finish(DONE)] },
     ],
   },
+  {
+    id: 'crcl_as_bleeding_remark',
+    why: 'Decides apixaban on the three criteria and adds a bleeding-risk remark that names his CrCl of 43 mL/min: a mention beside the criteria, not the basis of the dose.',
+    script: [
+      ...reads,
+      { calls: [apixabanUp, gabapentinBid] },
+      {
+        calls: [
+          note({
+            apixaban:
+              `${ORACLE_NOTE.apixaban} His CrCl of 43 mL/min and age raise bleeding risk, so I will watch for bleeding at the follow-up visit; it does not change the dose under RBC-PHARM-07.`,
+          }),
+        ],
+      },
+      { calls: [finish(DONE)] },
+    ],
+  },
 ];
