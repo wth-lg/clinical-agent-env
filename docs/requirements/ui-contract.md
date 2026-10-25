@@ -103,6 +103,8 @@ accessible name or text node, so they share one line of the snapshot.
   command (`node -v`, `pnpm -v`) in a code box that does not wrap, and the install link.
 - `Run it on your computer`: the heading of the local-run panel on the browser-direct surface. It
   shows on the key gate in every key state, outside any error, and in the shell after Validate.
+- Key gate errors are red: the danger token (tokens.css, `--color-danger`) colours the error's
+  border, its first line and the key field while it is invalid.
 
 ### P13, P15: runner refusals
 

@@ -15,6 +15,13 @@ const indexHtml = readFileSync(new URL('../index.html', import.meta.url), 'utf8'
 const CSP = /<meta http-equiv="Content-Security-Policy" content="([^"]*)"/.exec(indexHtml)?.[1] ?? '';
 const API_ORIGIN = /connect-src 'self' (\S+);/.exec(CSP)?.[1] ?? '';
 const ORG_CORS = 'CORS requests are not allowed for this Organization because of its settings.';
+// The danger token, light and dark, as tokens.css writes it.
+const tokensCss = readFileSync(new URL('../src/styles/tokens.css', import.meta.url), 'utf8');
+const DANGER = {
+  light: /@theme\s*{[^}]*--color-danger:\s*([^;]+);/.exec(tokensCss)?.[1] ?? 'missing',
+  dark: /@media \(prefers-color-scheme: dark\)[^}]*--color-danger:\s*([^;]+);/.exec(tokensCss)?.[1] ?? 'missing',
+};
+
 
 // Built at runtime so no key-shaped literal is committed (pnpm keyscan).
 const sentinelKey = () => ['sk', 'ant', 'api03', randomUUID().replaceAll('-', ''), 'e2e'].join('-');
@@ -150,6 +157,17 @@ function failedRequests(page: Page): string[] {
 
 const panel = (page: Page) => page.getByRole('region', { name: 'Run it on your computer' });
 const insideAlert = (l: Locator) => l.evaluate((el) => el.closest('[role="alert"]') !== null);
+
+// A colour value as the browser computes it, for comparing with an element's computed style.
+const computed = (page: Page, value: string) =>
+  page.evaluate((v) => {
+    const probe = document.createElement('i');
+    probe.style.color = v;
+    document.body.append(probe);
+    const c = getComputedStyle(probe).color;
+    probe.remove();
+    return c;
+  }, value);
 
 test.describe('surface detection', () => {
   test('a clinenv-runner health names the local runner', async ({ page }) => {
@@ -650,6 +668,29 @@ test.describe('prerequisite rows', () => {
           expect(b.x + b.width).toBeLessThanOrEqual(p.x + p.width);
         }
       }
+    });
+  }
+});
+
+// UI F2: an error is red: the danger token on its border, its first line and the key field.
+test.describe('errors', () => {
+  for (const scheme of ['light', 'dark'] as const) {
+    test(`${scheme}: a 401 is red: the danger token on the alert border, its first line and the key field`, async ({ page }) => {
+      await page.emulateMedia({ colorScheme: scheme });
+      await mockBrowserDirect(page);
+      await mockApi(page, { status: 401, type: 'authentication_error', message: 'invalid x-api-key' });
+      await page.goto('./');
+      await keyField(page).fill(sentinelKey());
+      await validate(page);
+      const alert = page.getByRole('alert');
+      await expect(alert).toBeVisible();
+      const danger = await computed(page, DANGER[scheme]);
+      expect(danger).not.toBe(await computed(page, 'var(--color-ink)'));
+      expect(await computed(page, 'var(--color-danger)')).toBe(danger);
+      expect(await alert.evaluate((el) => getComputedStyle(el).borderTopColor)).toBe(danger);
+      expect(await alert.locator('p').first().evaluate((el) => getComputedStyle(el).color)).toBe(danger);
+      await expect(keyField(page)).toHaveAttribute('aria-invalid', 'true');
+      expect(await keyField(page).evaluate((el) => getComputedStyle(el).borderTopColor)).toBe(danger);
     });
   }
 });

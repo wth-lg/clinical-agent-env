@@ -93,7 +93,7 @@ export function KeyGate({ surface, onDone, onBrowse, notice }: { surface: Surfac
             placeholder="sk-ant-…"
             aria-invalid={failure !== null && failure.kind !== 'cap'}
             aria-describedby={failure ? `${ids.hint} ${ids.error}` : ids.hint}
-            className={`${field} pr-9 font-mono`}
+            className={`${field} pr-9 font-mono aria-[invalid=true]:border-danger`}
           />
           <button
             type="button"
@@ -157,15 +157,16 @@ export function KeyGate({ surface, onDone, onBrowse, notice }: { surface: Surfac
   );
 }
 
-// A plain statement first, then what to do (for org-CORS and network: run it locally, with the
-// command; for a runner 409: its REFUSAL_TEXT), then the API's or runner's own line in small mono.
+// Red: the danger token on the border and the first line. A plain statement first, then what
+// to do (for org-CORS and network: run it locally, with the command; for a runner 409: its
+// REFUSAL_TEXT), then the API's or runner's own line in small mono.
 function FailureNote({ id, failure }: { id: string; failure: Failure }) {
   const local = failure.kind === 'org-cors' || failure.kind === 'network';
   return (
-    <div id={id} role="alert" className="mt-3 rounded-sm border border-line-strong bg-canvas p-3">
+    <div id={id} role="alert" className="mt-3 rounded-sm border border-danger bg-canvas p-3">
       {local ? (
         <>
-          <p className="font-medium text-ink">
+          <p className="font-medium text-danger">
             {failure.kind === 'org-cors' ? "This key's organization does not allow browser access." : 'The browser could not reach the API from this page.'}
           </p>
           <p className="mt-1 text-ink">Run the environment locally instead. It opens this UI and keeps the key on your machine:</p>
@@ -176,11 +177,11 @@ function FailureNote({ id, failure }: { id: string; failure: Failure }) {
         </>
       ) : failure.refusal !== undefined ? (
         <>
-          <p className="font-medium text-ink">{failure.refusal}</p>
+          <p className="font-medium text-danger">{failure.refusal}</p>
           <p className="mt-2 break-words font-mono text-xs text-ink-muted">{failure.message}</p>
         </>
       ) : (
-        <p className="break-words text-ink">{failure.message}</p>
+        <p className="break-words text-danger">{failure.message}</p>
       )}
     </div>
   );

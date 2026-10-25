@@ -1,9 +1,11 @@
 // Pins decision (5): Tailwind stone neutrals plus one blue near #5C85FB, no logos, no licensed
-// fonts. Every --color-* token declared in apps/web/src is either the one accent or a stone
-// value copied from Tailwind's own theme (white too: cards are white on a stone-50 page, as in
-// the reference design); the theme resets Tailwind's palette, so only tokens make colour
-// utilities, and no source file names a raw palette class or an arbitrary colour. Text tokens
-// reach 4.5:1 and control borders and the focus ring 3:1 on both backgrounds, light and dark.
+// fonts. Every --color-* token declared in apps/web/src is the one accent, the danger colour for
+// errors (a red copied from Tailwind's red scale, the user's "the error message needs to be
+// red"), or a stone value copied from Tailwind's own theme (white too: cards are white on a
+// stone-50 page, as in the reference design); the theme resets Tailwind's palette, so only tokens
+// make colour utilities, and no source file names a raw palette class or an arbitrary colour.
+// Text tokens, danger too, reach 4.5:1 and control borders and the focus ring 3:1 on both
+// backgrounds, light and dark.
 // public/ holds only the self-hosted OFL fonts and their licence, and every font file's family
 // (read from its name table) is named in OFL.txt.
 import { readdirSync, readFileSync } from 'node:fs';
@@ -118,6 +120,8 @@ const tailwindTheme = readFileSync(join(webRoot, 'node_modules/tailwindcss/theme
 const STONE = new Set(declarations(tailwindTheme).filter((d) => /^--color-stone-\d+$/.test(d.name)).map((d) => d.value));
 const WHITE = declarations(tailwindTheme).find((d) => d.name === '--color-white')!.value;
 const NEUTRAL = new Set([...STONE, WHITE]);
+const RED = new Set(declarations(tailwindTheme).filter((d) => /^--color-red-\d+$/.test(d.name)).map((d) => d.value));
+const CHROMATIC_TOKENS = ['--color-accent', '--color-danger'];
 
 const cssFiles = files(join(webRoot, 'src')).filter((f) => f.endsWith('.css'));
 const tokens = cssFiles.flatMap((f) => declarations(readFileSync(f, 'utf8')).map((d) => ({ ...d, file: relative(webRoot, f) })));
@@ -135,16 +139,26 @@ describe('colour tokens', () => {
     for (const v of STONE) expect(parseColor(v).chroma).toBeLessThan(CHROMATIC);
   });
 
-  it('declares exactly one chromatic token, within ΔE2000 3 of #5C85FB, the same value wherever it is set', () => {
+  it('declares exactly two chromatic tokens, the accent and danger', () => {
     const chromatic = tokens.filter((t) => parseColor(t.value).chroma >= CHROMATIC);
-    expect([...new Set(chromatic.map((t) => t.name))]).toEqual(['--color-accent']);
+    expect([...new Set(chromatic.map((t) => t.name))].sort()).toEqual(CHROMATIC_TOKENS);
+  });
+
+  it('sets the accent within ΔE2000 3 of #5C85FB, the same value wherever it is set', () => {
     const accent = parseColor(ACCENT).lab;
-    for (const t of chromatic) expect(deltaE2000(parseColor(t.value).lab, accent), `${t.file} ${t.value}`).toBeLessThanOrEqual(MAX_DELTA_E);
+    for (const t of tokens.filter((x) => x.name === '--color-accent')) expect(deltaE2000(parseColor(t.value).lab, accent), `${t.file} ${t.value}`).toBeLessThanOrEqual(MAX_DELTA_E);
+  });
+
+  it('sets danger to a Tailwind red value in light and in dark', () => {
+    expect(RED.size).toBe(11);
+    const danger = tokens.filter((t) => t.name === '--color-danger');
+    expect(danger.length).toBe(2);
+    for (const t of danger) expect(RED.has(t.value), `${t.file} ${t.value}`).toBe(true);
   });
 
   it('sets every other token to a Tailwind stone value or Tailwind white', () => {
     expect(WHITE).toBe('#fff');
-    for (const t of tokens.filter((x) => x.name !== '--color-accent')) expect(NEUTRAL.has(t.value), `${t.file} ${t.name}: ${t.value}`).toBe(true);
+    for (const t of tokens.filter((x) => !CHROMATIC_TOKENS.includes(x.name))) expect(NEUTRAL.has(t.value), `${t.file} ${t.name}: ${t.value}`).toBe(true);
   });
 });
 
@@ -178,9 +192,9 @@ describe('contrast', () => {
   });
 
   for (const [name, s] of [['light', LIGHT], ['dark', DARK]] as const) {
-    it(`${name}: text 4.5:1, control borders and the focus ring 3:1, on the page and on cards`, () => {
+    it(`${name}: text and danger 4.5:1, control borders and the focus ring 3:1, on the page and on cards`, () => {
       for (const bg of ['canvas', 'surface']) {
-        for (const fg of ['ink', 'ink-muted']) expect(contrast(s[fg]!, s[bg]!), `${fg} on ${bg}`).toBeGreaterThanOrEqual(4.5);
+        for (const fg of ['ink', 'ink-muted', 'danger']) expect(contrast(s[fg]!, s[bg]!), `${fg} on ${bg}`).toBeGreaterThanOrEqual(4.5);
         for (const fg of ['line-strong', 'accent']) expect(contrast(s[fg]!, s[bg]!), `${fg} on ${bg}`).toBeGreaterThanOrEqual(3);
       }
       expect(contrast(s['on-primary']!, s.primary!), 'on-primary on primary').toBeGreaterThanOrEqual(4.5);
