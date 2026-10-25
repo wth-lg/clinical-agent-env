@@ -3,17 +3,18 @@
 // events reads the trial's SSE stream (GET api/trials/:id/events) and keeps each event in
 // IndexedDB, so after a reload it shows the kept events and reconnects with Last-Event-ID set to
 // the last one: the runner replays what came after and goes live. A dropped stream reconnects the
-// same way. cancel is DELETE api/trials/:id; runs is GET api/runs and each trial's GET. Every call
+// same way. cancel is DELETE api/trials/:id; runs is GET api/runs and each trial's GET; project is
+// the same POST with ?dry_run=1, which the runner answers with 0 calls. Every call
 // carries the X-Clinenv-Token from the page and is same-origin; the page never calls the API.
 import { parseEvent, type TrialEvent } from '../../../../../packages/core/events.ts';
 import type { ExplainRecord } from '../../../../../packages/core/explain.ts';
 import {
-  MAX_CONCURRENCY, parseRunnerError, parseRunsList, parseSse, parseSseEnd, parseTrialsAccepted, parseTrialsRefused, parseTrialView, refusalText,
+  MAX_CONCURRENCY, parseDryRun, parseRunnerError, parseRunsList, parseSse, parseSseEnd, parseTrialsAccepted, parseTrialsRefused, parseTrialView, refusalText,
   RUNS_PATH, SSE_END, TOKEN_HEADER, TRIALS_PATH, type TrialView,
 } from '../../../../../packages/core/runner-api.ts';
 import { runnerToken } from '../../keygate/runner.ts';
 import { putEvent, readEvents } from '../store.ts';
-import type { LiveRun, StartResult, TrialEnd, TrialTransport } from '../types.ts';
+import type { BatchRequest, LiveRun, StartResult, TrialEnd, TrialTransport } from '../types.ts';
 
 const RECONNECT_MS = 500;
 
@@ -37,6 +38,8 @@ const json = async (res: Response): Promise<unknown> => {
   }
 };
 
+const batchBody = ({ task, trials, sessionCap }: BatchRequest) => ({ tasks: [task], trials, concurrency: Math.min(trials, MAX_CONCURRENCY), effort: 'high', session_cap_usd: sessionCap });
+
 const trialPath = (id: string) => `${TRIALS_PATH}/${encodeURIComponent(id)}`;
 const sleep = (ms: number, signal: AbortSignal) => new Promise<void>((resolve) => {
   const t = setTimeout(resolve, ms);
@@ -47,12 +50,18 @@ export function runnerTransport(token = runnerToken()): TrialTransport {
   return {
     kind: 'local-runner',
 
-    async start({ task, trials, sessionCap }): Promise<StartResult> {
+    async project(req) {
+      if (token === null) throw new Error(NO_TOKEN.lead);
+      const res = await call(`${TRIALS_PATH}?dry_run=1`, token, { method: 'POST', body: JSON.stringify(batchBody(req)) });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return parseDryRun(await json(res)).projection.total_usd;
+    },
+
+    async start(req): Promise<StartResult> {
       if (token === null) return NO_TOKEN;
-      const body = { tasks: [task], trials, concurrency: Math.min(trials, MAX_CONCURRENCY), effort: 'high', session_cap_usd: sessionCap };
       let res: Response;
       try {
-        res = await call(TRIALS_PATH, token, { method: 'POST', body: JSON.stringify(body) });
+        res = await call(TRIALS_PATH, token, { method: 'POST', body: JSON.stringify(batchBody(req)) });
       } catch (e) {
         return { ok: false, lead: 'The local runner did not answer.', detail: (e as Error).message };
       }

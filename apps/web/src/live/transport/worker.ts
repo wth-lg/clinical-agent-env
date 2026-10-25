@@ -170,6 +170,10 @@ export function workerTransport(sessionCap: () => number): TrialTransport {
   return {
     kind: 'browser-direct',
 
+    async project({ task, trials }) {
+      return (await trialProjection(task)) * trials;
+    },
+
     async start({ task, trials }): Promise<StartResult> {
       const apiKey = tabKey();
       if (apiKey === null) return { ok: false, lead: NO_KEY, detail: null };

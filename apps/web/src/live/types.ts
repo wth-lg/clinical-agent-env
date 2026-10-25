@@ -55,6 +55,8 @@ export interface LiveRun {
 export interface TrialTransport {
   readonly kind: 'local-runner' | 'browser-direct';
   start(req: BatchRequest): Promise<StartResult>;
+  // What the batch is projected to cost, in USD, as start would check it against the caps.
+  project(req: BatchRequest): Promise<number>;
   // Every event of the trial, those kept from before a reload first, then live ones; resolves
   // when the trial ends. A reload reconnects (local runner) or resumes (browser-direct).
   events(trialId: string, onEvent: (e: TrialEvent) => void, signal: AbortSignal): Promise<TrialEnd>;

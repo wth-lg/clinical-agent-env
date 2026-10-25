@@ -1,18 +1,21 @@
 // The Live trial view (plan phase P15; design section 8, "Live trial"): the run launcher (a task,
-// then Run ×1, ×3, ×10 or ×20 as one batch under the session cap), the live trial (streaming
+// then Run ×1, ×3, ×10 or ×20 as one batch under the session cap, each size with its projected
+// cost, a size over the cap disabled with the reason, and the cap itself), the live trial (streaming
 // trajectory with summarised thinking and one-line tool rows, turn, token and cost meters, the
 // state diff, Stop) and the runs this surface started. It reads trials only through the
 // surface's TrialTransport and shows them only from TrialEvents, so the local runner and the
 // browser look the same. Without a key the launcher is disabled and says why.
 import { ChevronDown, ChevronRight, CircleAlert, Dot, Square } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState, type Ref } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type Ref } from 'react';
 import type { TrialEvent } from '../../../../packages/core/events.ts';
 import { explainTrial, type ExplainRecord, NOT_AUDITED_MARKER } from '../../../../packages/core/explain.ts';
+import { REFUSAL_TEXT } from '../../../../packages/core/runner-api.ts';
 import { useTaskList } from '../data/tasks.ts';
 import { Card, FaultLabel, OutcomeChip, Page } from '../data/ui.tsx';
 import { useKeyStatus } from '../keygate/key.ts';
 import { runnerToken } from '../keygate/runner.ts';
-import { sessionCap } from '../spend/session.ts';
+import { MAX_SESSION_CAP_USD, parseCap } from '../spend/cap.ts';
+import { sessionCap, setSessionCap, useSessionSpend } from '../spend/session.ts';
 import { fold, type Item } from './fold.ts';
 import { readEvents } from './store.ts';
 import { runnerTransport } from './transport/runner.ts';
@@ -28,6 +31,19 @@ const POLL_MS = 1500;
 const select = 'h-8 max-w-full rounded-sm border border-line-strong bg-surface px-2 text-ink';
 const button = 'h-8 rounded-sm border border-line-strong px-3 text-ink hover:bg-surface disabled:cursor-not-allowed disabled:opacity-50';
 const usd = (n: number) => `$${n.toFixed(2)}`;
+
+// The refusals a higher session cap would lift.
+const CAP_REFUSALS: readonly string[] = [REFUSAL_TEXT.trials.spend_refused_ceiling, REFUSAL_TEXT.trials.session_cap];
+
+// Why the sizes in `over` are disabled: "Run ×3, ×10 and ×20 need more than ...".
+function overCap(over: readonly number[], costs: Partial<Record<number, number>>, cap: number): string {
+  const names = over.map((n, i) => (i === 0 ? `Run ×${n}` : `×${n}`));
+  const list = names.length === 1 ? names[0] : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`;
+  const first = over[0]!;
+  return over.length === 1
+    ? `${list} needs ${usd(costs[first]!)}, more than your session cap of ${usd(cap)}. Raise the cap below to run it.`
+    : `${list} need more than your session cap of ${usd(cap)} (Run ×${first} needs ${usd(costs[first]!)}). Raise the cap below to run them.`;
+}
 
 // A browser-direct trial a reload cut off and the tab resumed from its kept events (record.resumed).
 const wasResumed = (record: ExplainRecord | null) => (record as { resumed?: boolean } | null)?.resumed === true;
@@ -50,6 +66,21 @@ export function LiveTrial({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
   }, [tasks, task]);
   const chosen = task || ids[0] || '';
   const noKey = key.kind === 'none';
+  const { cap } = useSessionSpend();
+  const [costs, setCosts] = useState<Partial<Record<number, number>>>({});
+  useEffect(() => {
+    if (chosen === '') return;
+    let current = true;
+    setCosts({});
+    for (const n of RUN_SIZES) {
+      t.project({ task: chosen, trials: n, sessionCap: sessionCap() }).then((v) => current && setCosts((c) => ({ ...c, [n]: v })), () => undefined);
+    }
+    return () => {
+      current = false;
+    };
+  }, [t, chosen]);
+  const over = RUN_SIZES.filter((n) => costs[n] !== undefined && costs[n] > cap);
+  const costId = useId();
 
   const refresh = useCallback(() => {
     t.runs().then((r) => (setRuns(r), setRunsError(null)), (e: unknown) => setRunsError((e as Error).message));
@@ -91,14 +122,20 @@ export function LiveTrial({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
             </select>
           </label>
           {RUN_SIZES.map((n) => (
-            <button key={n} type="button" className={button} disabled={noKey || busy || chosen === ''} onClick={() => void launch(n)}>
+            <button key={n} type="button" aria-label={`Run ×${n}`} aria-describedby={`${costId}-${n}`} className={button} disabled={noKey || busy || chosen === '' || over.includes(n)} onClick={() => void launch(n)}>
               Run ×{n}
+              <span id={`${costId}-${n}`} data-testid={`run-cost-${n}`} className="ml-1.5 text-xs tabular-nums text-ink-muted">{costs[n] === undefined ? '…' : usd(costs[n])}</span>
             </button>
           ))}
         </div>
         {noKey && <p data-testid="launcher-reason" className="mt-2 text-ink-muted">Add an API key to run trials. Use “Add key” in the top bar.</p>}
-        <p className="mt-2 text-xs text-ink-muted">Each batch is checked against your session spend cap ({usd(sessionCap())}) before any call.</p>
-        {refusal && <ErrorNote testId="run-refusal" lead={refusal.lead} detail={refusal.detail} />}
+        {!noKey && over.length > 0 && <p data-testid="size-reason" className="mt-2 text-ink-muted">{overCap(over, costs, cap)}</p>}
+        <CapControl local={t.kind === 'local-runner'} />
+        {refusal && (
+          <ErrorNote testId="run-refusal" lead={refusal.lead} detail={refusal.detail}>
+            {CAP_REFUSALS.includes(refusal.lead) && <p data-testid="cap-hint" className="mt-1 text-ink">Change the session cap under “Run a task” on this page.</p>}
+          </ErrorNote>
+        )}
       </Card>
       {current !== null && <Trial key={current} t={t} id={current} onEnd={refresh} />}
       <Card title="Your runs">
@@ -109,6 +146,38 @@ export function LiveTrial({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
         </div>
       </Card>
     </Page>
+  );
+}
+
+// The session cap, set here as well as in the key gate. It is kept in this tab's sessionStorage.
+function CapControl({ local }: { local: boolean }) {
+  const { cap } = useSessionSpend();
+  const [text, setText] = useState(String(cap));
+  useEffect(() => setText(String(cap)), [cap]);
+  const parsed = parseCap(text);
+  const id = useId();
+  return (
+    <form
+      noValidate
+      className="mt-3 border-t border-line pt-3"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (parsed !== null) setSessionCap(parsed);
+      }}
+    >
+      <div className="flex flex-wrap items-end gap-2">
+        <label htmlFor={id} className="flex flex-col gap-1 text-xs text-ink-muted">
+          Session cap (USD)
+          <input id={id} inputMode="decimal" autoComplete="off" className={`${select} w-28`} value={text} onChange={(e) => setText(e.target.value)} aria-invalid={parsed === null} />
+        </label>
+        <button type="submit" className={button} disabled={parsed === null || parsed === cap}>Set cap</button>
+      </div>
+      {parsed === null && <p data-testid="cap-invalid" className="mt-1 text-xs text-danger">Enter a cap from $0.01 to ${MAX_SESSION_CAP_USD}.</p>}
+      <p data-testid="cap-where" className="mt-2 text-xs text-ink-muted">
+        Each batch is checked against this cap before any call. You can also set it in the key gate. The cap is kept for this tab only, so another tab has its own
+        {local ? '; the runner counts the spend of every tab.' : ', with its own spend.'}
+      </p>
+    </form>
   );
 }
 

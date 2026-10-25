@@ -206,17 +206,56 @@ test('a 401 with another message shows the API error without the local command',
   await expect(alert.getByRole('button', { name: 'Show the steps' })).toHaveCount(0);
 });
 
+test('each Run size shows its projected cost, and a size over the session cap is disabled with the reason', async ({ page }) => {
+  await mockToy(page);
+  await page.goto('./?view=live&task=_toy');
+  await enterKey(page, sentinelKey());
+  // A toy trial projects PER_TRIAL_CAP_USD plus its judge allowance: $10.00 (live/checks.ts).
+  for (const [n, cost] of [[1, '$10.00'], [3, '$30.00'], [10, '$100.00'], [20, '$200.00']] as const) await expect(page.getByTestId(`run-cost-${n}`)).toHaveText(cost);
+  await expect(page.getByRole('button', { name: 'Run ×1', exact: true })).toBeEnabled();
+  for (const n of [3, 10, 20]) await expect(page.getByRole('button', { name: `Run ×${n}`, exact: true })).toBeDisabled();
+  await expect(page.getByTestId('size-reason')).toHaveText('Run ×3, ×10 and ×20 need more than your session cap of $20.00 (Run ×3 needs $30.00). Raise the cap below to run them.');
+  // The cap is set here too, not only in the key gate, and holds for this tab across a reload.
+  await expect(page.getByTestId('cap-where')).toContainText('this tab only');
+  await page.getByLabel('Session cap (USD)').fill('250');
+  await page.getByRole('button', { name: 'Set cap' }).click();
+  for (const n of [1, 3, 10, 20]) await expect(page.getByRole('button', { name: `Run ×${n}`, exact: true })).toBeEnabled();
+  await expect(page.getByTestId('size-reason')).toHaveCount(0);
+  await expect(page.getByTitle('Session spend against the session cap')).toContainText('of $250.00');
+  await page.reload();
+  // The key was not remembered: the key gate asks again and shows the cap set on this page.
+  await expect(page.getByLabel('Session spend cap (USD)')).toHaveValue('250');
+  await enterKey(page, sentinelKey());
+  await expect(page.getByLabel('Session cap (USD)')).toHaveValue('250');
+  await page.getByLabel('Session cap (USD)').fill('0');
+  await expect(page.getByTestId('cap-invalid')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Set cap' })).toBeDisabled();
+});
+
 test('a batch whose projection crosses the session cap is refused with no API request and no Worker', async ({ page }) => {
-  const api = await mockToy(page);
+  const api = await mockToy(page, { hold: 2 });
   const workers: string[] = [];
   page.on('worker', (w) => workers.push(w.url()));
+  const trialWorkers = () => workers.filter((u) => /\/assets\/trial-[^/]+\.js$/.test(u));
   await page.goto('./?view=live&task=_toy');
   await enterKey(page, sentinelKey(), '5');
+  // Under a $5.00 cap no size fits: every Run button is disabled, so nothing is fetched or started.
+  for (const n of [1, 3, 10, 20]) await expect(page.getByRole('button', { name: `Run ×${n}`, exact: true })).toBeDisabled();
+  await expect(page.getByTestId('size-reason')).toContainText('Run ×1 needs $10.00');
+  expect(api.trialCalls()).toHaveLength(0);
+  expect(trialWorkers()).toHaveLength(0);
+  // A size that fits the cap but not what is left of it: the tab ledger refuses it before any fetch.
+  await page.getByLabel('Session cap (USD)').fill('15');
+  await page.getByRole('button', { name: 'Set cap' }).click();
+  await run(page, 1);
+  await expect.poll(() => api.held.length, { timeout: 30_000 }).toBe(1);
+  const calls = api.trialCalls().length;
   await run(page, 1);
   const refusal = page.getByTestId('run-refusal');
   await expect(refusal.locator('p').first()).toHaveText(REFUSAL_TEXT.trials.spend_refused_ceiling);
   await expect(refusal.getByTestId('error-detail')).toContainText('session cap');
-  expect(api.trialCalls()).toHaveLength(0);
-  expect(workers.filter((u) => /\/assets\/trial-[^/]+\.js$/.test(u))).toHaveLength(0);
-  await expect(page.getByTestId('live-trial')).toHaveCount(0);
+  await expect(refusal.getByTestId('cap-hint')).toHaveText('Change the session cap under “Run a task” on this page.');
+  expect(api.trialCalls()).toHaveLength(calls);
+  expect(trialWorkers()).toHaveLength(1);
+  await expect(page.getByTestId('live-run')).toHaveCount(1);
 });

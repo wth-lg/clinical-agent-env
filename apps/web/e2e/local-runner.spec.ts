@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url';
 import { expect, test, type Page } from '@playwright/test';
 import { parseEvent, type TrialEvent } from '../../../packages/core/events.ts';
 import { explainTrial, NOT_AUDITED_MARKER, type ExplainRecord } from '../../../packages/core/explain.ts';
-import { parseSse, REFUSAL_TEXT, SAMPLES, SSE_END, TOKEN_HEADER, TOKEN_META } from '../../../packages/core/runner-api.ts';
+import { MAX_CONCURRENCY, parseSse, REFUSAL_TEXT, SAMPLES, SSE_END, TOKEN_HEADER, TOKEN_META } from '../../../packages/core/runner-api.ts';
 import { SAMPLE, summary } from './fixtures/sample-results/sample.ts';
 
 const REPO = fileURLToPath(new URL('../../../', import.meta.url));
@@ -193,7 +193,13 @@ test('a reload mid-trial reconnects with Last-Event-ID and reaches the same fina
 test('Run ×3 starts one batch of 3 trials and Run ×20 one batch of 20', async ({ page }) => {
   await open(page, runner!, '?view=live&task=_toy', { cap: '500' });
   const posts: Array<{ trials: number; tasks: string[] }> = [];
-  page.on('request', (r) => (r.method() === 'POST' && /\/api\/trials$/.test(new URL(r.url()).pathname) ? posts.push(r.postDataJSON()) : undefined));
+  page.on('request', (r) => (r.method() === 'POST' && /\/api\/trials$/.test(new URL(r.url()).pathname) && new URL(r.url()).search === '' ? posts.push(r.postDataJSON()) : undefined));
+  // Each size shows the runner's own projection for it (POST api/trials?dry_run=1).
+  const dry = (await (await fetch(new URL('api/trials?dry_run=1', runner!.url), {
+    method: 'POST', headers: { [TOKEN_HEADER]: (await token(page))!, 'content-type': 'application/json' },
+    body: JSON.stringify({ tasks: ['_toy'], trials: 3, concurrency: Math.min(3, MAX_CONCURRENCY), effort: 'high', session_cap_usd: 500 }),
+  })).json()) as { projection: { total_usd: number } };
+  await expect(page.getByTestId('run-cost-3')).toHaveText(`$${dry.projection.total_usd.toFixed(2)}`);
   await run(page, 3);
   await expect(page.locator('[data-testid="live-run"][data-trials="3"]')).toBeVisible();
   await run(page, 20);
