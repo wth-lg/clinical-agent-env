@@ -1,0 +1,41 @@
+{
+  "task": "results-inbox",
+  "model": "claude-opus-5-5",
+  "effort": "medium",
+  "prompt_version": "judge-v1",
+  "at": "2026-10-24T23:31:04.480Z",
+  "questions": 1,
+  "same_keys": 1,
+  "agree": 1,
+  "calls": 1,
+  "ledger_settles": 1,
+  "cost_usd": 0.001832,
+  "usd_per_call": 0.001832,
+  "oracle": {
+    "outcome": "PASS",
+    "score": 1,
+    "judge_unknown": 0
+  },
+  "disagreements": [],
+  "note": "Live judge answers (pnpm cli judge-calibrate) vs the task's cache. tests/judge-cache.json is not written by this command; this file is the calibration record. Ledger batch 2e0baa39-d3c8-4292-8212-97830665bb55.",
+  "live_entries": [
+    {
+      "key": "770c35b1f8cc16405d32aed29083dfbfb1636fd6183e0a69a4ae3c7ba91176eb",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "The report recommends no follow-up imaging, so no follow-up is needed"
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-24T23:31:04.480Z"
+      }
+    }
+  ]
+}

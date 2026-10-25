@@ -3,22 +3,40 @@
   "model": "claude-opus-5-5",
   "effort": "medium",
   "prompt_version": "judge-v1",
-  "at": "2026-10-24T09:47:37.638Z",
-  "questions": 48,
-  "same_keys": 48,
-  "agree": 48,
-  "calls": 48,
-  "ledger_settles": 48,
-  "cost_usd": 0.249084,
-  "usd_per_call": 0.005189,
+  "at": "2026-10-24T23:31:02.303Z",
+  "questions": 68,
+  "same_keys": 68,
+  "agree": 68,
+  "calls": 68,
+  "ledger_settles": 68,
+  "cost_usd": 0.343644,
+  "usd_per_call": 0.005054,
   "oracle": {
     "outcome": "PASS",
     "score": 1,
     "judge_unknown": 0
   },
   "disagreements": [],
-  "note": "Live judge answers (oracle --live-judge) vs the scripted cache. tests/judge-cache.json in the task stays scripted; this file is the calibration record. Live run: verifier-phase-P10-2-live on wth-lg/p10-pilot0 at 953402e, ledger batch 9dda1683-2a24-449c-945c-7ceaf88090f3; 48/48 verdicts agree. 20 scripted entries added by builder-42 for the wider note_uses_wrong_scr pattern and its two new mutants have no live answer yet (scripted, live calibration pending): 08132bb4f8806c9863ce7f269647667b2961ae7929817816f9712348cdd1c9dd, 120052ce41a06d8d16733a72d55e485fe8ba7465be878564518b8c8415acaa28, 1caab800f89f031f3d021657cbdcaa82c0dcd82e2f1afe3e42390496e25ae6ea, 24849750d787c33c3abbe1f13760fb4919c41ef8bfca8d9db7cf0c2027b84d7f, 292adbafe86c432da733137c6242fc33dcc436c27979c240b85b080c939fc3c1, 3085d01fb2bc9f52a9250d98120f84ef4cddc684d1de0496d5becb48e1d01210, 372118b863bf9ae542de65e803c3d4a14a0001fc08c188577dcb5fa770aa8c2c, 6a2c42a8f9410e3880b9b56a3303884ea0faa798ff6e10d814dd94bceedaa83a, 930a2b8f6a27cc61d3e488946cc0836f30fd99fd944f9b88cd4810e214f0af45, 966e4be96cdd0d4907c6fed55ae531cae7c0117f7908271ccdf3864d1aba992a, af5bc5f587ba01fad87f13604ec65c4effabb5726a4c32120710007f9ce626c9, af932d113f855b97e0530675df1bf6ec2688422192dce03d4c46e0dfa99f89b5, b08cd84c195328fa607e09f1a448983227f6036b4f2a65c63735325e36950a2a, b493cf6605d7f9141a458072b901dded04d6dd41608b7413fe3a8111b28c8986, c5f15719f76e11e59fafd5b6ce79b4b21780f2c6e3d25ae5596d8bf1eb9745b5, c83b6417bebad86a136f35341e21da761206f685a533ba10b177cfea8470db21, cc855d5f12c1d7c389445d9fb8d0ee7d626e70a050fda66217291c5548473b77, e71df0b04418b16665fce3822a93bec7ae31b9c1251ebe0d7fc2298ead22e963, ee2f98d18234d55c07b3e55c54179b88fe479a707f1d16b1c3f2f77c741742bb, f89c79220c4d69d540dce8586e129cc67475754cd5e3203136b3e544d3850b1b.",
+  "note": "Live judge answers (pnpm cli judge-calibrate) vs the task's cache. tests/judge-cache.json is not written by this command; this file is the calibration record. Ledger batch 84fac432-3fc3-417a-8edb-b9b35afe896f.",
   "live_entries": [
+    {
+      "key": "08132bb4f8806c9863ce7f269647667b2961ae7929817816f9712348cdd1c9dd",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.88 mg/dL, 1.5 or higher: met. Two criteria met. Apixaban stays at 2.5 mg twice daily."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-24T23:31:02.303Z"
+      }
+    },
     {
       "key": "08f6214477c29f48b7e53e44ede423f54b0cee880d513ff4115cb470a2e2c200",
       "kind": "judge",
@@ -34,7 +52,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T09:47:37.638Z"
+        "at": "2026-10-24T23:31:02.303Z"
       }
     },
     {
@@ -45,14 +63,32 @@
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "met",
-        "quote": "age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met."
+        "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met."
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T09:47:37.638Z"
+        "at": "2026-10-24T23:31:02.303Z"
+      }
+    },
+    {
+      "key": "120052ce41a06d8d16733a72d55e485fe8ba7465be878564518b8c8415acaa28",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-24T23:31:02.303Z"
       }
     },
     {
@@ -70,7 +106,43 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T09:47:37.638Z"
+        "at": "2026-10-24T23:31:02.303Z"
+      }
+    },
+    {
+      "key": "1caab800f89f031f3d021657cbdcaa82c0dcd82e2f1afe3e42390496e25ae6ea",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-24T23:31:02.303Z"
+      }
+    },
+    {
+      "key": "24849750d787c33c3abbe1f13760fb4919c41ef8bfca8d9db7cf0c2027b84d7f",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "current SCr 1.21 mg/dL (10/20/2026). The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-24T23:31:02.303Z"
       }
     },
     {
@@ -88,7 +160,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T09:47:37.638Z"
+        "at": "2026-10-24T23:31:02.303Z"
       }
     },
     {
@@ -106,7 +178,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T09:47:37.638Z"
+        "at": "2026-10-24T23:31:02.303Z"
       }
     },
     {
@@ -124,7 +196,25 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T09:47:37.638Z"
+        "at": "2026-10-24T23:31:02.303Z"
+      }
+    },
+    {
+      "key": "292adbafe86c432da733137c6242fc33dcc436c27979c240b85b080c939fc3c1",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "SCr 1.88 mg/dL, 1.5 or higher: met. Two criteria met."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-24T23:31:02.303Z"
       }
     },
     {
@@ -142,7 +232,25 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T09:47:37.638Z"
+        "at": "2026-10-24T23:31:02.303Z"
+      }
+    },
+    {
+      "key": "3085d01fb2bc9f52a9250d98120f84ef4cddc684d1de0496d5becb48e1d01210",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "Current SCr (10/21/2026): 1.88 mg/dL, so the review uses it."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-24T23:31:02.303Z"
       }
     },
     {
@@ -153,14 +261,32 @@
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "met",
-        "quote": "the 1.88 mg/dL result of 10/21/2026 was entered in error and not used."
+        "quote": "the 1.88 mg/dL result of 10/21/2026 was entered in error and not used"
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T09:47:37.638Z"
+        "at": "2026-10-24T23:31:02.303Z"
+      }
+    },
+    {
+      "key": "372118b863bf9ae542de65e803c3d4a14a0001fc08c188577dcb5fa770aa8c2c",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "SCr 1.5 or higher: met"
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-24T23:31:02.303Z"
       }
     },
     {
@@ -178,7 +304,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T09:47:37.638Z"
+        "at": "2026-10-24T23:31:02.303Z"
       }
     },
     {
@@ -196,7 +322,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T09:47:37.638Z"
+        "at": "2026-10-24T23:31:02.303Z"
       }
     },
     {
@@ -214,7 +340,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T09:47:37.638Z"
+        "at": "2026-10-24T23:31:02.303Z"
       }
     },
     {
@@ -232,7 +358,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T09:47:37.638Z"
+        "at": "2026-10-24T23:31:02.303Z"
       }
     },
     {
@@ -250,7 +376,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T09:47:37.638Z"
+        "at": "2026-10-24T23:31:02.303Z"
       }
     },
     {
@@ -268,7 +394,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T09:47:37.638Z"
+        "at": "2026-10-24T23:31:02.303Z"
       }
     },
     {
@@ -286,7 +412,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T09:47:37.638Z"
+        "at": "2026-10-24T23:31:02.303Z"
       }
     },
     {
@@ -304,7 +430,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T09:47:37.638Z"
+        "at": "2026-10-24T23:31:02.303Z"
       }
     },
     {
@@ -322,7 +448,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T09:47:37.638Z"
+        "at": "2026-10-24T23:31:02.303Z"
       }
     },
     {
@@ -340,7 +466,25 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T09:47:37.638Z"
+        "at": "2026-10-24T23:31:02.303Z"
+      }
+    },
+    {
+      "key": "6a2c42a8f9410e3880b9b56a3303884ea0faa798ff6e10d814dd94bceedaa83a",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "current SCr 1.21 mg/dL (10/20/2026). The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-24T23:31:02.303Z"
       }
     },
     {
@@ -358,7 +502,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T09:47:37.638Z"
+        "at": "2026-10-24T23:31:02.303Z"
       }
     },
     {
@@ -369,14 +513,14 @@
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "met",
-        "quote": "Inputs (§1): current SCr 1.71 mg/dL."
+        "quote": "current SCr 1.71 mg/dL"
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T09:47:37.638Z"
+        "at": "2026-10-24T23:31:02.303Z"
       }
     },
     {
@@ -394,7 +538,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T09:47:37.638Z"
+        "at": "2026-10-24T23:31:02.303Z"
       }
     },
     {
@@ -412,7 +556,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T09:47:37.638Z"
+        "at": "2026-10-24T23:31:02.303Z"
       }
     },
     {
@@ -430,7 +574,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T09:47:37.638Z"
+        "at": "2026-10-24T23:31:02.303Z"
       }
     },
     {
@@ -448,7 +592,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T09:47:37.638Z"
+        "at": "2026-10-24T23:31:02.303Z"
       }
     },
     {
@@ -459,14 +603,32 @@
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "met",
-        "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met."
+        "quote": "age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met."
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T09:47:37.638Z"
+        "at": "2026-10-24T23:31:02.303Z"
+      }
+    },
+    {
+      "key": "930a2b8f6a27cc61d3e488946cc0836f30fd99fd944f9b88cd4810e214f0af45",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-24T23:31:02.303Z"
       }
     },
     {
@@ -484,7 +646,25 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T09:47:37.638Z"
+        "at": "2026-10-24T23:31:02.303Z"
+      }
+    },
+    {
+      "key": "966e4be96cdd0d4907c6fed55ae531cae7c0117f7908271ccdf3864d1aba992a",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "current SCr 1.21 mg/dL (10/20/2026). The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-24T23:31:02.303Z"
       }
     },
     {
@@ -502,7 +682,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T09:47:37.638Z"
+        "at": "2026-10-24T23:31:02.303Z"
       }
     },
     {
@@ -520,7 +700,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T09:47:37.638Z"
+        "at": "2026-10-24T23:31:02.303Z"
       }
     },
     {
@@ -538,7 +718,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T09:47:37.638Z"
+        "at": "2026-10-24T23:31:02.303Z"
       }
     },
     {
@@ -549,14 +729,68 @@
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "met",
-        "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met."
+        "quote": "age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met."
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T09:47:37.638Z"
+        "at": "2026-10-24T23:31:02.303Z"
+      }
+    },
+    {
+      "key": "af5bc5f587ba01fad87f13604ec65c4effabb5726a4c32120710007f9ce626c9",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "using the most recent creatinine of 1.71 mg/dL"
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-24T23:31:02.303Z"
+      }
+    },
+    {
+      "key": "af932d113f855b97e0530675df1bf6ec2688422192dce03d4c46e0dfa99f89b5",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "current SCr 1.21 mg/dL (10/20/2026); the 1.88 mg/dL result of 10/21/2026 was entered in error and not used."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-24T23:31:02.303Z"
+      }
+    },
+    {
+      "key": "b08cd84c195328fa607e09f1a448983227f6036b4f2a65c63735325e36950a2a",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "current SCr 1.21 mg/dL (10/20/2026). The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-24T23:31:02.303Z"
       }
     },
     {
@@ -574,7 +808,25 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T09:47:37.638Z"
+        "at": "2026-10-24T23:31:02.303Z"
+      }
+    },
+    {
+      "key": "b493cf6605d7f9141a458072b901dded04d6dd41608b7413fe3a8111b28c8986",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "current SCr 1.21 mg/dL (10/20/2026). The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-24T23:31:02.303Z"
       }
     },
     {
@@ -592,7 +844,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T09:47:37.638Z"
+        "at": "2026-10-24T23:31:02.303Z"
       }
     },
     {
@@ -610,7 +862,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T09:47:37.638Z"
+        "at": "2026-10-24T23:31:02.303Z"
       }
     },
     {
@@ -628,7 +880,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T09:47:37.638Z"
+        "at": "2026-10-24T23:31:02.303Z"
       }
     },
     {
@@ -639,14 +891,14 @@
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "not_met",
-        "quote": "Inputs (§1): current SCr 1.88 mg/dL (10/21/2026)."
+        "quote": "current SCr 1.88 mg/dL (10/21/2026)"
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T09:47:37.638Z"
+        "at": "2026-10-24T23:31:02.303Z"
       }
     },
     {
@@ -664,7 +916,61 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T09:47:37.638Z"
+        "at": "2026-10-24T23:31:02.303Z"
+      }
+    },
+    {
+      "key": "c5f15719f76e11e59fafd5b6ce79b4b21780f2c6e3d25ae5596d8bf1eb9745b5",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "Current SCr (10/21/2026): 1.88 mg/dL, so the review uses it."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-24T23:31:02.303Z"
+      }
+    },
+    {
+      "key": "c83b6417bebad86a136f35341e21da761206f685a533ba10b177cfea8470db21",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "using the most recent creatinine of 1.71 mg/dL"
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-24T23:31:02.303Z"
+      }
+    },
+    {
+      "key": "cc855d5f12c1d7c389445d9fb8d0ee7d626e70a050fda66217291c5548473b77",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-24T23:31:02.303Z"
       }
     },
     {
@@ -682,7 +988,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T09:47:37.638Z"
+        "at": "2026-10-24T23:31:02.303Z"
       }
     },
     {
@@ -700,7 +1006,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T09:47:37.638Z"
+        "at": "2026-10-24T23:31:02.303Z"
       }
     },
     {
@@ -718,7 +1024,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T09:47:37.638Z"
+        "at": "2026-10-24T23:31:02.303Z"
       }
     },
     {
@@ -729,14 +1035,14 @@
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "not_met",
-        "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met."
+        "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met. Changed to half a 5 mg tablet twice daily."
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T09:47:37.638Z"
+        "at": "2026-10-24T23:31:02.303Z"
       }
     },
     {
@@ -754,7 +1060,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T09:47:37.638Z"
+        "at": "2026-10-24T23:31:02.303Z"
       }
     },
     {
@@ -772,7 +1078,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T09:47:37.638Z"
+        "at": "2026-10-24T23:31:02.303Z"
       }
     },
     {
@@ -783,14 +1089,14 @@
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "met",
-        "quote": "age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met."
+        "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met."
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T09:47:37.638Z"
+        "at": "2026-10-24T23:31:02.303Z"
       }
     },
     {
@@ -808,7 +1114,25 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T09:47:37.638Z"
+        "at": "2026-10-24T23:31:02.303Z"
+      }
+    },
+    {
+      "key": "e71df0b04418b16665fce3822a93bec7ae31b9c1251ebe0d7fc2298ead22e963",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-24T23:31:02.303Z"
       }
     },
     {
@@ -826,7 +1150,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T09:47:37.638Z"
+        "at": "2026-10-24T23:31:02.303Z"
       }
     },
     {
@@ -844,7 +1168,43 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T09:47:37.638Z"
+        "at": "2026-10-24T23:31:02.303Z"
+      }
+    },
+    {
+      "key": "ee2f98d18234d55c07b3e55c54179b88fe479a707f1d16b1c3f2f77c741742bb",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-24T23:31:02.303Z"
+      }
+    },
+    {
+      "key": "f89c79220c4d69d540dce8586e129cc67475754cd5e3203136b3e544d3850b1b",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "Apixaban criteria (§2), using the most recent creatinine of 1.71 mg/dL: age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.5 or higher: met. Two criteria met. Apixaban stays at 2.5 mg twice daily."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-24T23:31:02.303Z"
       }
     },
     {
@@ -862,7 +1222,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T09:47:37.638Z"
+        "at": "2026-10-24T23:31:02.303Z"
       }
     },
     {
@@ -880,7 +1240,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T09:47:37.638Z"
+        "at": "2026-10-24T23:31:02.303Z"
       }
     }
   ]

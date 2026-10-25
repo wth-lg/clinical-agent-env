@@ -1,12 +1,12 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test, type Page, type Request, type Route } from '@playwright/test';
+import { expect, test, type Locator, type Page, type Request, type Route } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 import { mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { MODEL } from '../../../packages/core/anthropic.ts';
 import { HEALTH_PATH, KEY_PATH, REFUSAL_TEXT, SAMPLES, TOKEN_HEADER, TOKEN_META } from '../../../packages/core/runner-api.ts';
 import { admitTrial, DEFAULT_SESSION_CAP_USD } from '../src/spend/cap.ts';
-import { LOCAL_START_COMMAND } from '../src/surface/command.ts';
+import { LOCAL_PREREQUISITES, LOCAL_START_COMMAND, NODE_CHECK_COMMAND, NODE_INSTALL_URL, PNPM_CHECK_COMMAND, PNPM_INSTALL_URL } from '../src/surface/command.ts';
 
 // The app shell against a mocked API: the runner's /api/health and /api/key are route-mocked
 // from the runner-api.ts samples, the Messages API from SSE written here. The API origin is
@@ -15,6 +15,12 @@ const indexHtml = readFileSync(new URL('../index.html', import.meta.url), 'utf8'
 const CSP = /<meta http-equiv="Content-Security-Policy" content="([^"]*)"/.exec(indexHtml)?.[1] ?? '';
 const API_ORIGIN = /connect-src 'self' (\S+);/.exec(CSP)?.[1] ?? '';
 const ORG_CORS = 'CORS requests are not allowed for this Organization because of its settings.';
+// The danger token, light and dark, as tokens.css writes it.
+const tokensCss = readFileSync(new URL('../src/styles/tokens.css', import.meta.url), 'utf8');
+const DANGER = {
+  light: /@theme\s*{[^}]*--color-danger:\s*([^;]+);/.exec(tokensCss)?.[1] ?? 'missing',
+  dark: /@media \(prefers-color-scheme: dark\)[^}]*--color-danger:\s*([^;]+);/.exec(tokensCss)?.[1] ?? 'missing',
+};
 
 // Built at runtime so no key-shaped literal is committed (pnpm keyscan).
 const sentinelKey = () => ['sk', 'ant', 'api03', randomUUID().replaceAll('-', ''), 'e2e'].join('-');
@@ -117,6 +123,63 @@ const keyField = (page: Page) => page.getByLabel('API key', { exact: true });
 const chip = (page: Page) => page.getByTestId('surface-chip');
 const capField = (page: Page) => page.getByLabel('Session spend cap (USD)');
 const validate = (page: Page) => page.getByRole('button', { name: 'Validate' }).click();
+
+// One row per tool: the check command and the install link.
+const TOOLS = [
+  { check: NODE_CHECK_COMMAND, link: 'Install Node.js', href: NODE_INSTALL_URL },
+  { check: PNPM_CHECK_COMMAND, link: 'Install pnpm', href: PNPM_INSTALL_URL },
+];
+
+// The start block LocalCommand renders: LOCAL_PREREQUISITES exactly, one row per tool with its
+// check command and install link, then LOCAL_START_COMMAND with its Copy button, in that order.
+async function expectStartBlock(scope: Locator) {
+  await expect(scope.getByTestId('local-prerequisites')).toHaveText(LOCAL_PREREQUISITES);
+  const rows = scope.getByTestId('prerequisite');
+  await expect(rows).toHaveCount(TOOLS.length);
+  for (const [i, tool] of TOOLS.entries()) {
+    await expect(rows.nth(i).getByTestId('check-command')).toHaveText(tool.check);
+    await expect(rows.nth(i).getByRole('link', { name: tool.link })).toHaveAttribute('href', tool.href);
+  }
+  await expect(scope.getByTestId('local-command')).toHaveText(LOCAL_START_COMMAND);
+  await expect(scope.getByRole('button', { name: 'Copy command' })).toBeVisible();
+  const text = await scope.innerText();
+  expect(text.indexOf(LOCAL_PREREQUISITES)).toBeGreaterThanOrEqual(0);
+  expect(text.indexOf(LOCAL_PREREQUISITES)).toBeLessThan(text.indexOf('git clone'));
+}
+
+// Requests that failed outright (aborted, refused, blocked); a 404 health is an answer, not a failure.
+function failedRequests(page: Page): string[] {
+  const failed: string[] = [];
+  page.on('requestfailed', (r) => failed.push(`${r.url()}: ${r.failure()?.errorText}`));
+  return failed;
+}
+
+const panel = (page: Page) => page.getByRole('region', { name: 'Run it on your computer' });
+const insideAlert = (l: Locator) => l.evaluate((el) => el.closest('[role="alert"]') !== null);
+
+// org-CORS and network: the alert names the panel and has a button that brings it into view; the
+// prerequisites and the command show once, in the panel, never in the alert.
+async function expectPointsToPanel(page: Page, alert: Locator) {
+  await expect(alert).toContainText('Run it on your computer');
+  await expect(alert.getByTestId('local-command')).toHaveCount(0);
+  await expect(alert.getByTestId('local-prerequisites')).toHaveCount(0);
+  await expect(alert.getByRole('button', { name: 'Copy command' })).toHaveCount(0);
+  await expect(page.getByTestId('local-command')).toHaveCount(1);
+  await alert.getByRole('button', { name: 'Show the steps' }).click();
+  await expect(panel(page)).toBeFocused();
+  await expect(panel(page)).toBeInViewport();
+}
+
+// A colour value as the browser computes it, for comparing with an element's computed style.
+const computed = (page: Page, value: string) =>
+  page.evaluate((v) => {
+    const probe = document.createElement('i');
+    probe.style.color = v;
+    document.body.append(probe);
+    const c = getComputedStyle(probe).color;
+    probe.remove();
+    return c;
+  }, value);
 
 test.describe('surface detection', () => {
   test('a clinenv-runner health names the local runner', async ({ page }) => {
@@ -266,7 +329,7 @@ test.describe('key gate on browser-direct', () => {
     expect((await storageDump(page)).session).not.toContain(key);
   });
 
-  test('an org-CORS 401 shows its message, the reason and the local command with a copy button', async ({ page }) => {
+  test('an org-CORS 401 shows the reason and its message, and points to the local-run panel instead of repeating the command', async ({ page }) => {
     await mockBrowserDirect(page);
     await mockApi(page, { status: 401, type: 'authentication_error', message: ORG_CORS });
     await page.goto('./');
@@ -275,10 +338,20 @@ test.describe('key gate on browser-direct', () => {
     const alert = page.getByRole('alert');
     await expect(alert).toContainText(ORG_CORS);
     await expect(alert).toContainText("This key's organization does not allow browser access.");
-    await expect(page.getByTestId('local-command')).toHaveText(LOCAL_START_COMMAND);
-    await expect(page.getByRole('button', { name: 'Copy command' })).toBeVisible();
+    await expectPointsToPanel(page, alert);
     await page.getByRole('button', { name: 'Browse without a key' }).click();
     await expect(page.getByTestId('key-chip')).toHaveText('No key');
+  });
+
+  test('a network failure points to the local-run panel instead of repeating the command', async ({ page }) => {
+    await mockBrowserDirect(page);
+    await page.route((url) => url.origin === API_ORIGIN, (route) => route.abort('failed'));
+    await page.goto('./');
+    await keyField(page).fill(sentinelKey());
+    await validate(page);
+    const alert = page.getByRole('alert');
+    await expect(alert.locator('p').first()).toHaveText('The browser could not reach the API from this page.');
+    await expectPointsToPanel(page, alert);
   });
 
   test('another 401 shows the API error without the command', async ({ page }) => {
@@ -287,9 +360,10 @@ test.describe('key gate on browser-direct', () => {
     await page.goto('./');
     await keyField(page).fill(sentinelKey());
     await page.getByRole('button', { name: 'Validate' }).click();
-    await expect(page.getByRole('alert')).toContainText('invalid x-api-key');
-    await expect(page.getByTestId('local-command')).toHaveCount(0);
-    await expect(page.getByText(LOCAL_START_COMMAND)).toHaveCount(0);
+    const alert = page.getByRole('alert');
+    await expect(alert).toContainText('invalid x-api-key');
+    await expect(alert.getByTestId('local-command')).toHaveCount(0);
+    await expect(alert).not.toContainText(LOCAL_START_COMMAND);
   });
 
   test('the session cap refuses a call whose estimate crosses it, before any request', async ({ page }) => {
@@ -301,6 +375,86 @@ test.describe('key gate on browser-direct', () => {
     await page.getByRole('button', { name: 'Validate' }).click();
     await expect(page.getByRole('alert')).toContainText('session cap');
     expect(calls).toHaveLength(0);
+  });
+});
+
+// P12c: the prerequisites and the one command, next to each other on every start screen.
+test.describe('start block', () => {
+  test('browser-direct: the local-run panel shows on first load with no key and no failed request', async ({ page }) => {
+    const failed = failedRequests(page);
+    await mockBrowserDirect(page);
+    await page.goto('./');
+    await expect(chip(page)).toHaveText('Browser-direct');
+    await expect(keyField(page)).toHaveValue('');
+    await expect(page.getByRole('alert')).toHaveCount(0);
+    await expect(panel(page)).toBeVisible();
+    await expectStartBlock(panel(page));
+    expect(failed).toEqual([]);
+  });
+
+  test('browser-direct: the panel stays while Validate is in flight', async ({ page }) => {
+    let release!: () => void;
+    await mockBrowserDirect(page);
+    await mockApi(page, { status: 200, hold: new Promise<void>((r) => (release = r)) });
+    await page.goto('./');
+    await keyField(page).fill(sentinelKey());
+    await validate(page);
+    await expect(page.getByRole('button', { name: 'Validating…' })).toBeVisible();
+    await expectStartBlock(panel(page));
+    release();
+  });
+
+  test('browser-direct: the panel stays after a 200 Validate, in the shell', async ({ page }) => {
+    await mockBrowserDirect(page);
+    await mockApi(page, { status: 200 });
+    await page.goto('./');
+    await expect(panel(page)).toBeVisible();
+    await keyField(page).fill(sentinelKey());
+    await validate(page);
+    await expect(page.getByTestId('key-chip')).not.toHaveText('No key');
+    await expect(page.getByRole('navigation', { name: 'Views' })).toBeVisible();
+    await expectStartBlock(panel(page));
+    expect(await insideAlert(panel(page))).toBe(false);
+  });
+
+  test('browser-direct: the panel stays after a 401, outside the alert', async ({ page }) => {
+    await mockBrowserDirect(page);
+    await mockApi(page, { status: 401, type: 'authentication_error', message: 'invalid x-api-key' });
+    await page.goto('./');
+    await keyField(page).fill(sentinelKey());
+    await validate(page);
+    await expect(page.getByRole('alert')).toContainText('invalid x-api-key');
+    await expectStartBlock(panel(page));
+    expect(await insideAlert(panel(page))).toBe(false);
+    expect(await page.getByRole('alert').evaluate((a) => a.querySelector('[data-testid="local-run-panel"]'))).toBeNull();
+  });
+
+  test('browser-direct: the panel stays after an org-CORS 401, outside the alert', async ({ page }) => {
+    await mockBrowserDirect(page);
+    await mockApi(page, { status: 401, type: 'authentication_error', message: ORG_CORS });
+    await page.goto('./');
+    await keyField(page).fill(sentinelKey());
+    await validate(page);
+    await expect(page.getByRole('alert')).toContainText(ORG_CORS);
+    await expectStartBlock(panel(page));
+    expect(await insideAlert(panel(page))).toBe(false);
+  });
+
+  test('local runner: the key gate shows the start block', async ({ page }) => {
+    await mockLocalRunner(page, 'stub');
+    await page.goto('./');
+    await expect(chip(page)).toHaveText('Local runner');
+    const block = page.getByTestId('local-run-panel');
+    await expect(block).toBeVisible();
+    await expectStartBlock(block);
+  });
+
+  test('Copy writes exactly LOCAL_START_COMMAND to the clipboard', async ({ page, context, baseURL }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: new URL(baseURL!).origin });
+    await mockBrowserDirect(page);
+    await page.goto('./');
+    await panel(page).getByRole('button', { name: 'Copy command' }).click();
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(LOCAL_START_COMMAND);
   });
 });
 
@@ -412,7 +566,7 @@ test.describe('the runner\'s own page (token meta present)', () => {
     });
     await page.goto('./');
     await expect(page.getByRole('heading', { name: /runner not responding/i })).toBeVisible({ timeout: 5000 });
-    await expect(page.getByTestId('local-command')).toHaveText(LOCAL_START_COMMAND);
+    await expectStartBlock(page.locator('main'));
     await expect(chip(page)).toHaveCount(0);
     await expect(keyField(page)).toHaveCount(0);
     answer = true;
@@ -484,7 +638,7 @@ test.describe('gate details', () => {
     expect(calls).toHaveLength(1);
   });
 
-  test('org-CORS: the reason first, then the command with a 24px Copy button, the raw API line last', async ({ page }) => {
+  test('org-CORS: the reason first, then the pointer to the panel, the raw API line last', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await mockBrowserDirect(page);
     await mockApi(page, { status: 401, type: 'authentication_error', message: ORG_CORS });
@@ -494,13 +648,19 @@ test.describe('gate details', () => {
     const alert = page.getByRole('alert');
     const text = await alert.innerText();
     const at = (s: string) => text.indexOf(s);
-    expect(at("This key's organization does not allow browser access.")).toBeGreaterThanOrEqual(0);
-    expect(at("This key's organization does not allow browser access.")).toBeLessThan(at('git clone'));
-    expect(at('git clone')).toBeLessThan(at(ORG_CORS));
-    const box = (await page.getByRole('button', { name: 'Copy command' }).boundingBox())!;
+    expect(at("This key's organization does not allow browser access.")).toBe(0);
+    expect(at("This key's organization does not allow browser access.")).toBeLessThan(at('Run it on your computer'));
+    expect(at('Run it on your computer')).toBeLessThan(at(ORG_CORS));
+  });
+
+  test('the panel at 390: a 24px Copy button, and no piece of the command breaks across lines', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await mockBrowserDirect(page);
+    await page.goto('./');
+    const box = (await panel(page).getByRole('button', { name: 'Copy command' }).boundingBox())!;
     expect(Math.min(box.width, box.height)).toBeGreaterThanOrEqual(24);
     // Each space- or slash-separated piece of the command sits on one line.
-    const split = await page.getByTestId('local-command').evaluate((el) => {
+    const split = await panel(page).getByTestId('local-command').evaluate((el) => {
       const pieces: string[] = [];
       for (const span of el.querySelectorAll('[data-piece]')) if (span.getClientRects().length > 1) pieces.push(span.textContent ?? '');
       return { pieces, wordBreak: getComputedStyle(el).wordBreak, spans: el.querySelectorAll('[data-piece]').length };
@@ -508,6 +668,111 @@ test.describe('gate details', () => {
     expect(split.spans).toBeGreaterThan(3);
     expect(split.pieces).toEqual([]);
     expect(split.wordBreak).not.toBe('break-all');
+  });
+});
+
+// UI F1: one row per tool, the check command in a code box that never wraps, the install link
+// on the same row as its tool; clear at 1440 and 390.
+test.describe('prerequisite rows', () => {
+  for (const width of [1440, 390]) {
+    test(`at ${width}: each check command is a one-line code box, and each row fits the panel`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await mockBrowserDirect(page);
+      await page.goto('./');
+      await page.evaluate(() => document.fonts.ready);
+      const p = (await panel(page).boundingBox())!;
+      for (const [i, tool] of TOOLS.entries()) {
+        const row = panel(page).getByTestId('prerequisite').nth(i);
+        const code = row.getByTestId('check-command');
+        const style = await code.evaluate((el) => ({ lines: el.getClientRects().length, height: el.getBoundingClientRect().height, lineHeight: parseFloat(getComputedStyle(el).lineHeight), whiteSpace: getComputedStyle(el).whiteSpace, border: getComputedStyle(el).borderTopWidth, mono: getComputedStyle(el).fontFamily }));
+        expect(style.lines, tool.check).toBe(1);
+        expect(style.height, tool.check).toBeLessThan(style.lineHeight * 2);
+        expect(style.whiteSpace).toBe('nowrap');
+        expect(style.border).not.toBe('0px');
+        expect(style.mono).toMatch(/mono/i);
+        for (const part of [row, code, row.getByRole('link', { name: tool.link })]) {
+          const b = (await part.boundingBox())!;
+          expect(b.x).toBeGreaterThanOrEqual(p.x);
+          expect(b.x + b.width).toBeLessThanOrEqual(p.x + p.width);
+        }
+      }
+    });
+  }
+});
+
+// UI F2 and F3: an error is red (the danger token on its border, its first line and the key field)
+// and starts with one plain sentence; the API's own line follows in small mono that never breaks
+// inside a word.
+test.describe('errors', () => {
+  for (const scheme of ['light', 'dark'] as const) {
+    test(`${scheme}: a 401 is red: the danger token on the alert border, its first line and the key field`, async ({ page }) => {
+      await page.emulateMedia({ colorScheme: scheme });
+      await mockBrowserDirect(page);
+      await mockApi(page, { status: 401, type: 'authentication_error', message: 'invalid x-api-key' });
+      await page.goto('./');
+      await keyField(page).fill(sentinelKey());
+      await validate(page);
+      const alert = page.getByRole('alert');
+      await expect(alert).toBeVisible();
+      const danger = await computed(page, DANGER[scheme]);
+      expect(danger).not.toBe(await computed(page, 'var(--color-ink)'));
+      expect(await computed(page, 'var(--color-danger)')).toBe(danger);
+      expect(await alert.evaluate((el) => getComputedStyle(el).borderTopColor)).toBe(danger);
+      expect(await alert.locator('p').first().evaluate((el) => getComputedStyle(el).color)).toBe(danger);
+      await expect(keyField(page)).toHaveAttribute('aria-invalid', 'true');
+      expect(await keyField(page).evaluate((el) => getComputedStyle(el).borderTopColor)).toBe(danger);
+    });
+  }
+
+  test('a browser-direct 401 starts with a plain sentence, then the API line in small mono, no word broken at 390', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await mockBrowserDirect(page);
+    await mockApi(page, { status: 401, type: 'authentication_error', message: 'invalid x-api-key' });
+    await page.goto('./');
+    await keyField(page).fill(sentinelKey());
+    await validate(page);
+    const alert = page.getByRole('alert');
+    await expect(alert.locator('p').first()).toHaveText('The API did not accept this key.');
+    const detail = alert.locator('p').last();
+    await expect(detail).toHaveText('HTTP 401 authentication_error: invalid x-api-key');
+    const lead = await alert.locator('p').first().evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+    const d = await detail.evaluate((el) => ({
+      size: parseFloat(getComputedStyle(el).fontSize),
+      mono: getComputedStyle(el).fontFamily,
+      lines: Math.round(el.getBoundingClientRect().height / parseFloat(getComputedStyle(el).lineHeight)),
+      broken: [...el.querySelectorAll('[data-word]')].filter((w) => w.getClientRects().length > 1).map((w) => w.textContent),
+      words: el.querySelectorAll('[data-word]').length,
+    }));
+    expect(d.size).toBeLessThan(lead);
+    expect(d.mono).toMatch(/mono/i);
+    expect(d.words).toBe(5);
+    // The line is wider than the alert at 390, so it wraps, but only between words.
+    expect(d.lines).toBeGreaterThan(1);
+    expect(d.broken).toEqual([]);
+  });
+
+  test('a local-runner 401 starts with the same plain sentence, then the runner line', async ({ page }) => {
+    await mockLocalRunner(page, 'stub');
+    await page.route((url) => isPath(url, KEY_PATH), (route) => json(route, 401, SAMPLES.keyError));
+    await page.goto('./');
+    await keyField(page).fill(sentinelKey());
+    await validate(page);
+    const alert = page.getByRole('alert');
+    await expect(alert.locator('p').first()).toHaveText('The API did not accept this key.');
+    await expect(alert.locator('p').last()).toHaveText(SAMPLES.keyError.error.message);
+  });
+
+  test('a session cap refusal starts with a plain sentence and says how to continue', async ({ page }) => {
+    await mockBrowserDirect(page);
+    await mockApi(page, { status: 200 });
+    await page.goto('./');
+    await keyField(page).fill(sentinelKey());
+    await capField(page).fill('0.01');
+    await validate(page);
+    const alert = page.getByRole('alert');
+    await expect(alert.locator('p').first()).toHaveText('The session spend cap does not allow this check.');
+    await expect(alert).toContainText('session spend cap');
+    await expect(alert.locator('p').last()).toContainText('session cap $0.01');
   });
 });
 

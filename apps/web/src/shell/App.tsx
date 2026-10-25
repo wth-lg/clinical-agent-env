@@ -3,6 +3,7 @@ import { KeyGate } from '../keygate/KeyGate.tsx';
 import { forget, keyStatus, useKeyStatus } from '../keygate/key.ts';
 import { deleteKey } from '../keygate/runner.ts';
 import type { Surface } from '../surface/detect.ts';
+import { LocalRunPanel } from '../surface/LocalRunPanel.tsx';
 import { ViewBody } from '../data/ViewBody.tsx';
 import { ErrorBoundary } from './ErrorBoundary.tsx';
 import { Rail } from './Rail.tsx';
@@ -68,6 +69,7 @@ export function App({ surface }: { surface: Surface }) {
           <ErrorBoundary key={view.id}>
             <ViewBody id={view.id} headingRef={heading} />
           </ErrorBoundary>
+          {surface.kind === 'browser-direct' && <LocalRunPanel surface={surface} className="mx-auto mb-6 w-[calc(100%-3rem)] max-w-[720px]" />}
         </main>
       </div>
     </div>

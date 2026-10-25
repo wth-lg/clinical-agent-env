@@ -16,8 +16,8 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, { error: E
   override render() {
     if (this.state.error === null) return this.props.children;
     return (
-      <section className="mx-auto max-w-5xl px-4 py-6 sm:px-6" data-testid="view-error">
-        <h1 className="text-base font-semibold text-ink">This view stopped with an error</h1>
+      <section className="mx-auto max-w-5xl px-4 py-6 sm:px-6" data-testid="view-error" role="alert">
+        <h1 className="text-base font-semibold text-danger">This view stopped with an error</h1>
         <p className="mt-2 break-words text-ink-muted">{this.state.error.message}</p>
         <p className="mt-2 text-ink-muted">The other views still work. Reload the page to try this one again.</p>
         <button type="button" onClick={() => location.reload()} className="mt-3 inline-flex h-8 items-center rounded-sm border border-line-strong bg-surface px-3 text-ink hover:bg-canvas">Reload</button>

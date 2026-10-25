@@ -87,8 +87,8 @@ function RunList({ run, matches, open, heading = false }: { run: RunData; matche
 
 function BadRow({ b }: { b: BadRecord }) {
   return (
-    <li data-testid="record-error" data-trial={b.name} className="px-4 py-2.5">
-      <p className="flex flex-wrap items-center gap-x-2 font-medium text-ink"><CircleAlert aria-hidden className="h-3.5 w-3.5" strokeWidth={1.75} />{b.name}: this record cannot be read</p>
+    <li data-testid="record-error" data-trial={b.name} className="border-l-2 border-l-danger px-4 py-2.5">
+      <p className="flex flex-wrap items-center gap-x-2 font-medium text-ink"><CircleAlert aria-hidden className="h-3.5 w-3.5 text-danger" strokeWidth={1.75} />{b.name}: this record cannot be read</p>
       <p className="mt-1 break-words pl-5 text-ink-muted">{b.file}: {b.errors.join('; ')}</p>
     </li>
   );

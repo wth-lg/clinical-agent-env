@@ -3,7 +3,9 @@
    Tailwind's default palette, so these tokens are the only colour utilities that exist;
    apps/web/test/tokens.test.ts pins that the accent is the only chromatic token, that every
    other value is copied from Tailwind's stone scale or white, the contrast of each text and
-   control pair, and that no source names a raw palette class. State colours for results
+   control pair, and that no source names a raw palette class. The one exception is danger, a
+   red from Tailwind's red scale for errors (the user: "the error message needs to be red"); the
+   test pins it to that scale and to 4.5:1 on the page and on cards. State colours for results
    (pass, fail, refusal) belong to the views that show them, as named tokens. */
 @theme {
   --color-*: initial;
@@ -20,9 +22,11 @@
   --color-ink-muted: oklch(55.3% 0.013 58.071); /* stone-500 */
   --color-primary: oklch(26.8% 0.007 34.298); /* stone-800 */
   --color-on-primary: oklch(98.5% 0.001 106.423); /* stone-50 */
+  /* Errors: the border and first line of an error, and an invalid key field. */
+  --color-danger: oklch(50.5% 0.213 27.518); /* red-700 */
 }
 
-/* The dark variant swaps the neutrals; the accent stays the one blue. */
+/* The dark variant swaps the neutrals and lightens danger; the accent stays the one blue. */
 @media (prefers-color-scheme: dark) {
   :root {
     --color-canvas: oklch(14.7% 0.004 49.25); /* stone-950 */
@@ -33,5 +37,6 @@
     --color-ink-muted: oklch(70.9% 0.01 56.259); /* stone-400 */
     --color-primary: oklch(92.3% 0.003 48.717); /* stone-200 */
     --color-on-primary: oklch(21.6% 0.006 56.043); /* stone-900 */
+    --color-danger: oklch(70.4% 0.191 22.216); /* red-400 */
   }
 }

@@ -1,3 +1,6 @@
 packages:
   - apps/web
   - packages/*
+# pnpm start runs scripts/check-node.mjs before anything else, and installs itself; pnpm's own
+# install before a script would otherwise run first, on any Node.
+verifyDepsBeforeRun: false

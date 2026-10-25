@@ -36,8 +36,10 @@ export function Card({ title, children, actions, id }: { title?: ReactNode; chil
   );
 }
 
+// An error (testId error-state) gets the danger border, as the key gate's errors do.
 export function Notice({ children, testId }: { children: ReactNode; testId?: string }) {
-  return <p data-testid={testId} className="rounded-sm border border-line bg-surface p-4 text-ink-muted">{children}</p>;
+  const tone = testId === 'error-state' ? 'border-danger' : 'border-line';
+  return <p data-testid={testId} className={`break-words rounded-sm border ${tone} bg-surface p-4 text-ink-muted`}>{children}</p>;
 }
 
 export const NO_RESULTS = 'No results are published yet.';

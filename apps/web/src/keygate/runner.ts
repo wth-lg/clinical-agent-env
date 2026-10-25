@@ -8,8 +8,9 @@
 // reason (REFUSAL_TEXT.key), which the gate shows above the runner's message.
 import { redactText } from '../../../../packages/core/redact.ts';
 import { KEY_PATH, parseKeyState, parseRunnerError, refusalText, TOKEN_HEADER, TOKEN_META } from '../../../../packages/core/runner-api.ts';
+import type { RunnerFailure } from './failure.ts';
 
-export type RunnerResult = { ok: true } | { ok: false; message: string; refusal?: string };
+export type RunnerResult = { ok: true } | ({ ok: false } & RunnerFailure);
 
 export function runnerToken(doc: Document = document): string | null {
   return doc.querySelector<HTMLMetaElement>(`meta[name="${TOKEN_META}"]`)?.content || null;
@@ -23,7 +24,7 @@ async function call(method: 'POST' | 'DELETE', token: string | null, key?: strin
 }
 
 async function send(method: 'POST' | 'DELETE', token: string | null, key?: string): Promise<RunnerResult> {
-  if (token === null) return { ok: false, message: NO_TOKEN };
+  if (token === null) return { ok: false, cause: 'no-token', message: NO_TOKEN };
   const body = key === undefined ? undefined : JSON.stringify({ key });
   let res: Response;
   try {
@@ -37,7 +38,7 @@ async function send(method: 'POST' | 'DELETE', token: string | null, key?: strin
       ...(body === undefined ? {} : { body }),
     });
   } catch (e) {
-    return { ok: false, message: `The local runner did not answer: ${(e as Error).message}` };
+    return { ok: false, cause: 'no-answer', message: `The local runner did not answer: ${(e as Error).message}` };
   }
   let parsed: unknown = null;
   try {
@@ -52,14 +53,15 @@ async function send(method: 'POST' | 'DELETE', token: string | null, key?: strin
     } catch {
       // falls through to the error below
     }
-    return { ok: false, message: `The local runner answered ${method} ${KEY_PATH} with an unexpected body.` };
+    return { ok: false, cause: 'bad-body', message: `The local runner answered ${method} ${KEY_PATH} with an unexpected body.` };
   }
   try {
     const { type, message } = parseRunnerError(parsed).error;
     const refusal = res.status === 409 ? refusalText('key', type) : null;
-    return refusal === null ? { ok: false, message } : { ok: false, message, refusal };
+    const failure = { ok: false, cause: 'error', status: res.status, message } as const;
+    return refusal === null ? failure : { ...failure, refusal };
   } catch {
-    return { ok: false, message: `The local runner answered HTTP ${res.status}.` };
+    return { ok: false, cause: 'error', status: res.status, message: `The local runner answered HTTP ${res.status}.` };
   }
 }
 

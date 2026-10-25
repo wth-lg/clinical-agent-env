@@ -1,9 +1,15 @@
 import { copyFileSync, existsSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { LOCAL_PREREQUISITES, NODE_INSTALL_URL, PNPM_INSTALL_URL } from '../../apps/web/src/surface/command.ts';
 import { repoRoot, runScript, tempDir, write } from './helpers.ts';
 
 const FIXTURES = join(repoRoot, 'scripts/fixtures/donewhen');
+// README-pass.md plus the prerequisites line and both install links. They are added here, not
+// written into the fixture, so the sentence's literal stays in command.ts, ui-contract.md and
+// README.md alone.
+const PREREQUISITES = `${LOCAL_PREREQUISITES} Install [Node.js](${NODE_INSTALL_URL}) and [pnpm](${PNPM_INSTALL_URL}).\n`;
+const README_PASS = readFileSync(join(FIXTURES, 'README-pass.md'), 'utf8').replace('\n## Findings', `${PREREQUISITES}\n## Findings`);
 const ALL_STUBS = { oracle: 'oracle-pass', summary: 'summary-pass', 'audit-check': 'audit-pass', spend: 'spend', 'runner-check': 'runner-check-pass' };
 
 function makeTask(root: string, id: string, omit: string[] = []) {
@@ -18,7 +24,7 @@ function makeTask(root: string, id: string, omit: string[] = []) {
 
 function completeRepo(): string {
   const root = tempDir('donewhen');
-  copyFileSync(join(FIXTURES, 'README-pass.md'), join(root, 'README.md'));
+  write(root, 'README.md', README_PASS);
   write(root, 'apps/web/index.html', '<!doctype html>\n');
   write(root, 'packages/core/run.ts', 'export function run() {}\n');
   write(root, 'cli/run.ts', "import { runBatch } from '../packages/core/batch.ts';\n");
@@ -92,10 +98,27 @@ describe('donewhen', () => {
     expect(failed).toMatch(/^FAIL/);
     expect(failed).toContain('runner-check --mock: exit 1');
     const root = completeRepo();
-    write(root, 'README.md', readFileSync(join(FIXTURES, 'README-pass.md'), 'utf8').replace(/`git clone[^`]*pnpm start`/, '`pnpm start`'));
+    write(root, 'README.md', README_PASS.replace(/`git clone[^`]*pnpm start`/, '`pnpm start`'));
     const line = donewhen(root, ALL_STUBS).clause(1);
     expect(line).toMatch(/^FAIL/);
     expect(line).toContain('LOCAL_START_COMMAND: no');
+  });
+
+  for (const [name, text] of [['LOCAL_PREREQUISITES', LOCAL_PREREQUISITES], ['NODE_INSTALL_URL', NODE_INSTALL_URL], ['PNPM_INSTALL_URL', PNPM_INSTALL_URL]] as const) {
+    it(`clause 1 fails when README.md lacks ${name}`, () => {
+      const root = completeRepo();
+      expect(README_PASS).toContain(text);
+      write(root, 'README.md', README_PASS.replaceAll(text, ''));
+      const line = donewhen(root, ALL_STUBS).clause(1);
+      expect(line).toMatch(/^FAIL/);
+      expect(line).toContain(`${name}: no`);
+    });
+  }
+
+  it('clause 1 names the prerequisites line and both install links when they pass', () => {
+    const line = donewhen(completeRepo(), ALL_STUBS).clause(1);
+    expect(line).toMatch(/^PASS/);
+    expect(line).toContain('LOCAL_PREREQUISITES: yes, NODE_INSTALL_URL: yes, PNPM_INSTALL_URL: yes');
   });
 
   it('clause 1 fails with command not built when runner-check is missing', () => {

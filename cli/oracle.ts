@@ -64,7 +64,7 @@ const writeCacheFile = (task: string, entries: JudgeCacheEntry[]) => writeFileSy
 
 // A judge client that sends nothing: it records each request's worst case and answers
 // "unknown", which is a valid judge and extractor answer, so no question is retried.
-function recordingClient(worst: number[]): JudgeClient {
+export function recordingClient(worst: number[]): JudgeClient {
   return {
     async send(history, params): Promise<CallResult> {
       worst.push(worstCaseUsd(reserveRequest(history, params)));
