@@ -121,5 +121,10 @@ export const alternatives: Array<Agent & { loses: readonly string[] }> = [
       { calls: [finish(DONE)] },
     ],
   },
+  {
+    id: 'creatinine_window_ends_at_scan',
+    why: 'Orders the creatinine for any time from 10:00 today up to 09:00 Monday, the scan time: a window that ends at the scan is drawn before it.',
+    loses: [],
+    script: [...READS, { calls: [ct(), creatinineOrder('2026-10-23T10:00:00-04:00', '2026-10-26T09:00:00-04:00')] }, { calls: [prednisone, diphenhydramine] }, { calls: [message()] }, { calls: [note()] }, { calls: [finish(DONE)] }],
+  },
 ];
-
