@@ -35,15 +35,15 @@
 //     fewer than 2 passes).
 // It writes each label's criteria, explainTrial's M1-M5 for its trial, into audit.jsonl (only when
 // they changed, so a second run leaves the file as it was). The context it gives explainTrial
-// (explainContext): the trajectory; the task's check text (tasks/<id>.check-text.ts); the run manifest's world_hash as the manifest hash; the world
-// for exposability; <run>/matrix.json, {grader_task_versions: {<grader_task_version>: {oracle_pass,
-// alternatives_pass, failed_checks?, ...}}} as `pnpm cli matrix --out <run>` writes it, for M4,
-// GR4 and B1, looked up by the grader_task_version of each record's current grade, so a matrix
-// run for the fixed grader speaks for a regraded trial and one for the grader it ran under does
-// not (failed_checks: the gate check ids the oracle or an alternative fails; a value that is not
-// a list of strings reads as not given); and, on a regraded trial whose first failed check is not the one
-// its recorded attribution names, that check's decisive ids (from the task's gate checks) with the
-// step each was first exposed at in the trajectory (packages/grader/exposure.ts firstExposed).
+// (explainContext) is packages/core/explain-context.ts over the run's files, the one builder the
+// web Runs view uses too: the trajectory; the task's check text (tasks/<id>.check-text.ts) and
+// checks; <run>/manifest.json's world_hash as the manifest hash (none without a manifest, so M3
+// is pending); the world for exposability, loaded only when M1 reads it; <run>/matrix.json, as
+// `pnpm cli matrix --out <run>` writes it, for M4, GR4 and B1, looked up by the
+// grader_task_version of each record's current grade, so a matrix run for the fixed grader speaks
+// for a regraded trial and one for the grader it ran under does not; and, on a regraded trial
+// whose first failed check is not the one its recorded attribution names, that check's decisive
+// ids with the step each was first exposed at in the trajectory.
 // --json prints {failures, labelled, labelled_environment, labelled_grader, faults, valid, excluded,
 // denominator, violations}: labelled_environment and labelled_grader count the failures the audit
 // labels environment or grader (after adjudication); faults counts the failures by the fault
@@ -58,21 +58,22 @@ import { pathToFileURL } from 'node:url';
 import type { BatchRecord } from '../packages/core/batch.ts';
 import { installEgressGuard } from '../packages/core/egress.ts';
 import type { TrialEvent } from '../packages/core/events.ts';
+import { explainContext as contextOf, needsWorld, worldLookup, type TaskCheck } from '../packages/core/explain-context.ts';
 import { auditLabelOf, excludedFromHeadline, explainTrial, formatCriterion, type AuditRow, type CheckText, type ExplainContext, type ExplainRecord } from '../packages/core/explain.ts';
 import { AUDIT_LABEL, AUDIT_LABELS, FAULT, FAULT_PRECEDENCE, type Fault, type Outcome } from '../packages/core/outcomes.ts';
 import { parseTrajectory } from '../packages/core/trajectory.ts';
 import { currentGrade } from '../packages/core/summary.ts';
 import { loadStore } from '../packages/env/fixture-source.ts';
-import { TAXONOMY, type Attribution } from '../packages/grader/attribution.ts';
-import { firstExposed, sameId, stepsOf } from '../packages/grader/exposure.ts';
+import { TAXONOMY } from '../packages/grader/attribution.ts';
+import { sameId, stepsOf } from '../packages/grader/exposure.ts';
 import { requeuedRecords, settledRecords, trajectoryOf } from './adapters/result-sink-node.ts';
 import { TASKS_DIR } from './adapters/tasks-node.ts';
 import { trialName } from './replay.ts';
 import { repoWorld, taskChecks } from './run.ts';
 import { readReplay } from './summary.ts';
 
-// A task's checks as far as audit-check reads them: a gate's decisive ids.
-export type TaskChecks = (task: string) => Promise<ReadonlyArray<{ id: string; decisive_ids?: readonly string[] }>>;
+// A task's checks as far as the context reads them (packages/core/explain-context.ts TaskCheck).
+export type TaskChecks = (task: string) => Promise<readonly TaskCheck[]>;
 
 export interface Deps {
   out: (line: string) => void;
@@ -107,19 +108,7 @@ function readLabels(dir: string, violations: string[]): Array<{ raw: string; lab
   });
 }
 
-type Matrix = NonNullable<ExplainContext['matrix']>;
-
-// <run>/matrix.json's verdict per grader_task_version, or an empty map when there is none.
-function readMatrix(dir: string): Map<string, Matrix> {
-  const file = join(dir, 'matrix.json');
-  if (!existsSync(file)) return new Map();
-  const { grader_task_versions } = JSON.parse(readFileSync(file, 'utf8')) as { grader_task_versions?: Record<string, { oracle_pass?: unknown; alternatives_pass?: unknown; failed_checks?: unknown }> };
-  const strings = (v: unknown): v is string[] => Array.isArray(v) && v.every((x) => typeof x === 'string');
-  return new Map(Object.entries(grader_task_versions ?? {}).flatMap(([grader_task_version, m]): Array<[string, Matrix]> =>
-    typeof m.oracle_pass === 'boolean' && typeof m.alternatives_pass === 'boolean'
-      ? [[grader_task_version, { grader_task_version, oracle_pass: m.oracle_pass, alternatives_pass: m.alternatives_pass, ...(strings(m.failed_checks) ? { failed_checks: m.failed_checks } : {}) }]]
-      : []));
-}
+const readJson = (file: string): unknown => (existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : null);
 
 // A task's check text (tasks/<id>.check-text.ts, what each gate check requires in words), or null
 // when it has none; the Runs view reads the same files, so both give the same reasons.
@@ -130,31 +119,15 @@ function checkTextOf(task: string): Promise<CheckText | null> {
   return checkTexts.get(task)!;
 }
 
-// What explainTrial gets for each record of the run in dir (see the header).
+// What explainTrial gets for each record of the run in dir (see the header): packages/core/
+// explain-context.ts over the run's files, as the web Runs view builds it from the same files.
 export async function explainContext(dir: string, checks: TaskChecks = taskChecks): Promise<(r: BatchRecord) => Promise<ExplainContext & { events: TrialEvent[] }>> {
-  const manifestFile = join(dir, 'manifest.json');
-  const manifest = existsSync(manifestFile) ? (JSON.parse(readFileSync(manifestFile, 'utf8')) as { world_hash?: unknown }) : null;
-  const world_state_hash = typeof manifest?.world_hash === 'string' ? manifest.world_hash : null;
-  const matrix = readMatrix(dir);
+  const manifest = readJson(join(dir, 'manifest.json'));
+  const matrix = readJson(join(dir, 'matrix.json'));
   const events = new Map<string, TrialEvent[]>();
-  let world: Promise<Set<string>> | undefined;
-  const inWorld = async (id: string) => {
-    world ??= (async () => {
-      const store = await loadStore(repoWorld().world);
-      return new Set([...store.resources()].map((r) => `${r.resourceType}/${r.id}`));
-    })();
-    const keys = await world;
-    return id.includes('/') ? keys.has(id) : [...keys].some((k) => sameId(k, id));
-  };
-  const gates = new Map<string, Promise<ReadonlyArray<{ id: string; decisive_ids?: readonly string[] }>>>();
-  // The decisive ids of the check a regrade failed first, when it is not the recorded attribution's.
-  const regradedDecisive = async (r: BatchRecord): Promise<{ check: string; ids: string[] } | null> => {
-    const failed = (currentGrade(r).checks ?? []).find((c) => (c as { kind?: string }).kind !== 'rubric' && c.met === false);
-    if (failed === undefined || (r.attribution as Attribution | null)?.first_failed === failed.id) return null;
-    if (!gates.has(r.task_id)) gates.set(r.task_id, checks(r.task_id).catch(() => []));
-    const ids = (await gates.get(r.task_id)!).find((g) => g.id === failed.id)?.decisive_ids;
-    return ids === undefined ? null : { check: failed.id, ids: [...ids] };
-  };
+  let world: Promise<(id: string) => boolean> | undefined;
+  const inWorld = () => (world ??= loadStore(repoWorld().world).then((store) => worldLookup(new Set([...store.resources()].map((r) => `${r.resourceType}/${r.id}`)))));
+  const gates = new Map<string, Promise<readonly TaskCheck[]>>();
   return async (r) => {
     const name = trialName(r);
     if (!events.has(name)) {
@@ -162,11 +135,9 @@ export async function explainContext(dir: string, checks: TaskChecks = taskCheck
       events.set(name, existsSync(file) ? parseTrajectory(readFileSync(file, 'utf8')) : []);
     }
     const trajectory = events.get(name) as TrialEvent[];
-    const moved = await regradedDecisive(r);
-    const exposure = moved === null ? null : { check: moved.check, ids: moved.ids.map((id) => ({ id, first_exposed_step: firstExposed(stepsOf(trajectory), id) })) };
-    const exposable = new Set<string>();
-    for (const e of [...((r.attribution as Attribution | null)?.exposure ?? []), ...(exposure?.ids ?? [])]) if (e.first_exposed_step === null && (await inWorld(e.id))) exposable.add(e.id);
-    return { events: trajectory, world_state_hash, exposable: (id) => exposable.has(id), matrix: matrix.get(currentGrade(r).grader_task_version ?? '') ?? null, exposure, text: await checkTextOf(r.task_id) };
+    if (!gates.has(r.task_id)) gates.set(r.task_id, checks(r.task_id).catch(() => []));
+    const input = { record: r as ExplainRecord, events: trajectory, manifest, matrix, checks: await gates.get(r.task_id)!, text: await checkTextOf(r.task_id) };
+    return { ...contextOf({ ...input, inWorld: needsWorld(input) ? await inWorld() : null }), events: trajectory };
   };
 }
 

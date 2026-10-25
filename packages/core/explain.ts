@@ -101,8 +101,7 @@ export interface ExplainContext {
   // The trial's trajectory: the limit and refusal sentences read it. Required, so a UI caller
   // cannot leave it out and get "?" where the limit event has the value.
   events: readonly TrialEvent[];
-  // The manifest's initial state hash (fixtures/manifest.json world.state_hash, or the run
-  // manifest's world_hash).
+  // The run manifest's world_hash (explain-context.ts runWorldHash); null when the run has none.
   world_state_hash?: string | null;
   // Whether a resource is in the world, so the tool would have returned it had the model asked.
   exposable?: (id: string) => boolean;
@@ -168,7 +167,8 @@ export interface Explanation {
   fault_criteria: Record<Fault, CriterionRow[]>;
 }
 
-const MET_TEXT: Record<string, string> = { true: 'met', false: 'not met', pending: 'pending', 'n/a': 'not applicable' };
+// How a criterion's met value reads, in audit-check's output and the trial detail alike.
+export const MET_TEXT: Record<string, string> = { true: 'met', false: 'not met', pending: 'pending', 'n/a': 'not applicable' };
 export const formatCriterion = (c: Pick<CriterionRow, 'id' | 'met'>): string => `${c.id}: ${MET_TEXT[String(c.met)]}`;
 
 const isLabel = (l: unknown): l is AuditLabelName => (AUDIT_LABELS as readonly unknown[]).includes(l);
@@ -331,17 +331,32 @@ function refusalText(r: ExplainRecord, events: readonly TrialEvent[] | undefined
 
 const capWords = (s: string, max = REASON_WORDS) => firstWords(s, max);
 
+// The first failed gate check of the current grade; a check with no kind (a hand-built record)
+// counts as a gate on a FAIL.
+export function firstFailedCheck(record: ExplainRecord): ExplainCheck | null {
+  const grade = currentGrade(record);
+  const checks = (grade.checks ?? []) as ReadonlyArray<ExplainCheck>;
+  return checks.find((c) => c.kind === 'gate' && c.met === false) ?? (grade.outcome === 'FAIL' ? checks.find((c) => c.kind === undefined && c.met === false) : undefined) ?? null;
+}
+
+// Whether the recorded attribution speaks for the current grade: it names the same first failed check.
+export const attributionFits = (record: ExplainRecord): boolean => record.attribution != null && record.attribution.first_failed === (firstFailedCheck(record)?.id ?? null);
+
+// The exposure of the decisive check's ids M1 reads: the recorded attribution's when it fits,
+// else the caller's recomputed one (ExplainContext.exposure) when it is for that check, else none.
+export function decisiveExposure(record: ExplainRecord, recomputed: ExplainContext['exposure']): ReadonlyArray<{ id: string; first_exposed_step: number | null }> | null {
+  const failed = firstFailedCheck(record);
+  if (attributionFits(record)) return record.attribution!.exposure;
+  return failed !== null && recomputed?.check === failed.id ? recomputed.ids : null;
+}
+
 export function explainTrial(record: ExplainRecord, audit: AuditRow | null | undefined, ctx: ExplainContext): Explanation {
   const grade = currentGrade(record);
   const outcome = grade.outcome;
-  const checks = (grade.checks ?? []) as ReadonlyArray<ExplainCheck>;
-  // The first failed gate check; a check with no kind (a hand-built record) counts as a gate.
-  const failed = checks.find((c) => c.kind === 'gate' && c.met === false) ?? (outcome === 'FAIL' ? checks.find((c) => c.kind === undefined && c.met === false) : undefined) ?? null;
+  const failed = firstFailedCheck(record);
   const att = record.attribution ?? null;
-  // The recorded attribution speaks for the current grade only when it names the same check.
-  const attFits = att !== null && att.first_failed === (failed?.id ?? null);
-  const recomputed = failed !== null && !attFits && ctx.exposure?.check === failed.id ? ctx.exposure.ids : null;
-  const exposure = attFits ? att.exposure : recomputed;
+  const attFits = att !== null && attributionFits(record);
+  const exposure = decisiveExposure(record, ctx.exposure);
   const row = audit ?? null;
   // The row's own label, before adjudication; M5 and audit_label put adjudicated_label first.
   const rowLabel = row === null ? null : auditLabelOf({ ...row, adjudicated_label: null });
@@ -422,8 +437,14 @@ export function explainTrial(record: ExplainRecord, audit: AuditRow | null | und
   } else {
     const detail = record.detail ? ` (${record.detail})` : '';
     if (fault === 'grader') {
-      const why = deciding!.id === 'GR1' ? `check ${facts.check_error!.check} threw ${firstWords(facts.check_error!.message, 6)}` : deciding!.id === 'GR3' ? 'an audit found a grader bug' : deciding!.id === 'GR4' ? deciding!.evidence : 'a regrade could not grade the record';
-      reason = `${outcome}: ${why}; the grader's fault, which blocks the run`;
+      const tail = "; the grader's fault, which blocks the run";
+      // A thrown error is whole when it fits, else cut at a word to fit REASON_WORDS.
+      const threw = () => {
+        const head = `check ${facts.check_error!.check} threw`;
+        return `${head} ${firstWords(facts.check_error!.message, REASON_WORDS - words(`${outcome}: ${head}${tail}`).length)}`;
+      };
+      const why = deciding!.id === 'GR1' ? threw() : deciding!.id === 'GR3' ? 'an audit found a grader bug' : deciding!.id === 'GR4' ? deciding!.evidence : 'a regrade could not grade the record';
+      reason = `${outcome}: ${why}${tail}`;
     } else if (fault === 'env') {
       reason = `${outcome}${detail}: ${deciding!.evidence}; the environment's fault, excluded and rerun`;
     } else if (outcome === 'CANCELLED') {

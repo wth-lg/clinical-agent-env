@@ -22,6 +22,7 @@ function resultsTree(): string {
   put(root, 'results/runs/final-1/trajectories/t1/0.jsonl', '{}\n');
   put(root, 'results/runs/final-1/trajectories/t1/1.jsonl', '{}\n');
   put(root, 'results/runs/final-1/summary.json');
+  put(root, 'results/runs/final-1/manifest.json');
   put(root, 'results/runs/final-1/audit.jsonl', '{}\n');
   put(root, 'results/runs/final-1/scratch.tmp', 'not copied\n');
   put(root, 'results/runs/pilot-1/summary.json');
@@ -33,6 +34,7 @@ const EXPECTED = [
   'docs/findings.md',
   'results/official.json',
   'results/runs/final-1/audit.jsonl',
+  'results/runs/final-1/manifest.json',
   'results/runs/final-1/summary.json',
   'results/runs/final-1/trajectories/t1/0.jsonl',
   'results/runs/final-1/trajectories/t1/1.jsonl',
