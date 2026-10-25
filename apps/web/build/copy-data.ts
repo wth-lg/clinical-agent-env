@@ -3,7 +3,7 @@
 // Sources, relative to the source root (env RESULTS_ROOT, resolved against the repo root so the
 // same value works from the repo root and from `pnpm --filter web`; default the repo root):
 //   results/official.json and, from the run directory it names ({"run": "runs/<id>"},
-//   relative to results/), trials/, trajectories/, summary.json, audit.jsonl, matrix.json and regrade/;
+//   relative to results/), trials/, trajectories/, summary.json, audit.jsonl, matrix.json and regrade/trials/;
 //   each pilot run, results/pilot-<n>/ or results/runs/pilot-<n>/ with a trials/ directory (not
 //   counted in the results; the Runs view lists them), with the same entries;
 //   docs/findings.md; fixtures/world.ndjson.gz and fixtures/manifest.json.
@@ -14,8 +14,8 @@ import { fileURLToPath } from 'node:url';
 import type { Plugin } from 'vite';
 
 // matrix.json (pnpm cli matrix --out) for the trial detail's criteria, and regrade/ (an offline
-// regrade of the run's records) for the line that says whether a later grader changes them.
-const RUN_ENTRIES = ['trials', 'trajectories', 'summary.json', 'audit.jsonl', 'matrix.json', 'regrade'];
+// regrade of the run's records, its trials only) for the line that says whether a later grader changes them.
+const RUN_ENTRIES = ['trials', 'trajectories', 'summary.json', 'audit.jsonl', 'matrix.json', 'regrade/trials'];
 const FIXED_FILES = ['results/official.json', 'docs/findings.md', 'fixtures/world.ndjson.gz', 'fixtures/manifest.json'];
 
 export const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
