@@ -6,9 +6,9 @@
 import type { Ref } from 'react';
 import { FINAL_PASS_BAND } from '../../../../packages/core/cost.ts';
 import { toolCatalog } from '../../../../packages/core/try-tool.ts';
-import { useResults, type RunData } from '../data/results.ts';
+import { pilotRates, useResults, type RunData } from '../data/results.ts';
 import { useTaskList } from '../data/tasks.ts';
-import { Card, formatInterval, IntervalRow, markLabel, MarkLegend, markOf, Notice, Page, Swatch } from '../data/ui.tsx';
+import { Card, formatInterval, Hash, IntervalRow, markLabel, MarkLegend, markOf, Notice, Page, Swatch } from '../data/ui.tsx';
 import { hrefWith, onNav } from '../data/url.ts';
 import { MANIFEST } from '../data/world.ts';
 
@@ -108,7 +108,7 @@ function EnvironmentSummary() {
       <dl className="grid grid-cols-1 gap-x-4 gap-y-1 sm:grid-cols-[max-content_1fr]" data-testid="overview-environment">
         <dt className="text-ink-muted">World</dt><dd>A synthetic FHIR R4 world: {w.resources} resources of {Object.keys(w.by_type).length} types</dd>
         <dt className="text-ink-muted">Pinned clock</dt><dd>{MANIFEST.now}</dd>
-        <dt className="text-ink-muted">State hash</dt><dd className="break-all font-mono text-xs">{w.state_hash}</dd>
+        <dt className="text-ink-muted">State hash</dt><dd><Hash value={w.state_hash} /></dd>
         <dt className="text-ink-muted">Tools</dt><dd>{TOOL_COUNT}; you can try each read tool with no key</dd>
       </dl>
     </Card>
@@ -120,11 +120,11 @@ function PilotSummary({ pilots }: { pilots: RunData[] }) {
     <Card title="Pilot runs (not counted in the results)">
       <ul className="space-y-1" data-testid="overview-pilots">
         {pilots.map((p) => {
-          const passes = p.trials.filter((x) => x.explanation.outcome === 'PASS').length;
+          const rates = pilotRates(p).map((r) => `${r.passes} of ${r.valid} PASS on ${r.task}, Wilson 95% ${formatInterval(r.interval)}`);
           return (
             <li key={p.runId} data-testid="overview-pilot" data-run={p.runId}>
               <a href={hrefWith({ view: 'runs', task: null, label: null, trial: null })} onClick={onNav({ view: 'runs', task: null, label: null, trial: null })} className={`font-medium ${link}`}>{p.runId}</a>
-              <span className="ml-2 text-ink-muted">{p.trials.length + p.bad.length} trial records, {passes} PASS, tasks {[...new Set(p.trials.map((x) => x.task))].join(', ') || 'none'}</span>
+              <span className="ml-2 text-ink-muted">{p.trials.length + p.bad.length} trial records: {rates.join('; ') || 'no valid trials'}; not counted</span>
             </li>
           );
         })}

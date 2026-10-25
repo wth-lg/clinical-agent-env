@@ -99,6 +99,39 @@ test.describe('the real results build: pilot runs, no official run', () => {
     await expect(page.getByTestId('empty-state')).toHaveText(/No results are published yet\./);
     await expect(page.getByRole('link', { name: 'How failures are attributed' })).toBeVisible();
   });
+
+  test('Findings shows the pilot summary, marked not counted, the legend and what the page will show (review-ui-P14-2 F1)', async ({ page }) => {
+    await page.goto(`${base}?view=findings`);
+    await page.getByRole('button', { name: 'Browse without a key' }).click();
+    await expect(page.getByTestId('pilot-findings')).toHaveCount(PILOTS.length);
+    await expect(page.getByText('Pilot, not counted in the results').first()).toBeVisible();
+    await expect(page.getByTestId('pilot-rate').first()).toContainText(/Wilson 95% \d/);
+    await expect(page.getByTestId('pilot-findings').first().getByTestId('legend')).toBeVisible();
+    await expect(page.getByTestId('will-show').getByRole('link')).toHaveCount(3);
+    await page.getByTestId('will-show').getByRole('link', { name: /Run them now on Tasks/ }).click();
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Tasks');
+  });
+
+  test('a task opened on Tasks is not a hidden filter on Runs (review-ui-P14-2 F2)', async ({ page }) => {
+    await page.goto(`${base}?view=tasks`);
+    await page.getByRole('button', { name: 'Browse without a key' }).click();
+    await page.locator('[data-testid="task-card"][data-task="contrast-ct-prep"]').getByRole('button').first().click();
+    await expect(page).toHaveURL(/task=contrast-ct-prep/);
+    await page.getByRole('navigation', { name: 'Views' }).getByRole('link', { name: 'Runs' }).click();
+    await expect(page).not.toHaveURL(/task=/);
+    await expect(page.getByTestId('trial-row')).toHaveCount(pilotRecords.length);
+    // A task in a typed URL that no run holds shows as the chosen filter, with Clear filters.
+    await page.goto(`${base}?view=runs&task=contrast-ct-prep`);
+    await expect(page.getByRole('combobox', { name: 'Task' })).toHaveValue('contrast-ct-prep');
+    await page.getByTestId('clear-filters').click();
+    await expect(page.getByTestId('trial-row')).toHaveCount(pilotRecords.length);
+  });
+
+  test('a pilot run says in one line how it was graded (review-ui-P14-2 F5)', async ({ page }) => {
+    await page.goto(`${base}?view=runs`);
+    await page.getByRole('button', { name: 'Browse without a key' }).click();
+    await expect(page.getByTestId('grading-line').first()).toHaveText(/^Graded with grader \d+ on an older world than today's; a regrade with grader \d+ gives the same outcomes\.$/);
+  });
 });
 
 test.describe('a build with no results/', () => {
