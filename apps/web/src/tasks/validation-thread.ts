@@ -3,19 +3,22 @@
 // matrix` runs it, without the two Node-only checks, the fresh-process isolation grade and
 // policy.ts's import graph), and replay of a published run's trials as `pnpm cli replay` does:
 // the tool log against a fresh store, graded again from the record's judge cache, with the
-// verdict from packages/core/replay.ts, the match rule the CLI uses.
+// verdict from packages/core/replay.ts, the match rule the CLI uses; and one trial's state for the
+// trial detail's State diff (packages/core/run.ts replayState, the replay gradeTrajectory runs).
 import { browserNow } from '../adapters/clock-browser.ts';
 import { browserTaskSource } from '../adapters/tasks-browser.ts';
-import { gradeTrajectory, type GradeTrajectoryOptions } from '../../../../packages/core/run.ts';
+import { gradeTrajectory, replayState, type GradeTrajectoryOptions } from '../../../../packages/core/run.ts';
 import { replayEnvVerdict, replayVerdict, type ReplayGraded } from '../../../../packages/core/replay.ts';
 import { taskVersions } from '../../../../packages/core/tasks.ts';
 import { parseTrajectory } from '../../../../packages/core/trajectory.ts';
+import { stateHash } from '../../../../packages/env/hash.ts';
 import type { Check } from '../../../../packages/grader/check.ts';
 import { JudgeCacheMiss } from '../../../../packages/grader/judge.ts';
 import { runCases, runMatrix, selectCases, type MatrixEnv } from '../../../../packages/grader/matrix/matrix.ts';
 import { MANIFEST, worldDefinitions, worldSource } from '../data/world.ts';
 import { loadMatrixTask, taskChecks } from './matrix-task.ts';
-import type { OracleResult, ReplayRow, ReplayTrial, ValidateReply, ValidateRequest } from './validate-protocol.ts';
+import { stateChanges } from '../trial/state.ts';
+import type { OracleResult, ReplayRow, ReplayTrial, StateRun, ValidateReply, ValidateRequest } from './validate-protocol.ts';
 
 let env: Promise<MatrixEnv> | undefined;
 const matrixEnv = () =>
@@ -66,9 +69,19 @@ async function regrade(id: string, t: ReplayTrial, checks: Check[], e: MatrixEnv
   }
 }
 
+async function state(id: string, trajectoryUrl: string): Promise<StateRun> {
+  const e = await matrixEnv();
+  const res = await fetch(trajectoryUrl);
+  if (!res.ok) throw new Error(`trajectory: HTTP ${res.status}`);
+  const events = parseTrajectory(await res.text());
+  const s = await replayState(id, { tasks: e.tasks, world: e.world, events, ...(e.definitions ? { definitions: e.definitions } : {}) });
+  return { final: s.final === null ? null : await stateHash(s.final), error: s.error, ...stateChanges(s.initial, s.final ?? s.initial) };
+}
+
 async function handle(req: ValidateRequest): Promise<unknown> {
   if (req.op === 'oracle') return oracle(req.task);
   if (req.op === 'matrix') return matrix(req.task);
+  if (req.op === 'state') return state(req.task, req.trajectoryUrl);
   return replay(req.task, req);
 }
 

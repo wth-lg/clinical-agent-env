@@ -101,8 +101,11 @@ export function App({ surface }: { surface: Surface }) {
         <Rail
           active={view}
           onNavigate={(id) => {
+            // popstate, as data/url.ts navigate() sends it: the shell sets the view, and every
+            // other reader of the URL (Runs, the trial detail) reads it again, even when the view
+            // stays the same (verifier-phase-P16-1 N2).
             history.pushState(null, '', viewHref(location.href, id));
-            setView(viewFromUrl(location.href));
+            dispatchEvent(new PopStateEvent('popstate'));
           }}
         />
         <main className="min-w-0 flex-1 overflow-auto">

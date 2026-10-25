@@ -21,6 +21,10 @@
 // comma list), else the manifest's task_versions; and a run that is not live is a violation
 // unless --allow-mock is given. Each task line names the env_versions its records ran at and the
 // grader_task_versions of their current grades (packages/core/tasks.ts), first 12 characters.
+// Under each task line, the metrics beside k/n (packages/core/summary.ts header), each with its
+// denominator: mean score, raw (unclipped) mean, mean fraction of gates met, pass_no_harm, LIMIT
+// counts by kind, re-queued attempts by outcome and the infra-counted rate (passes over the valid
+// trials plus the INFRA and ENV_ERROR attempts).
 // Trials are named by trialName, as replay.json names them. --json prints only the summary on stdout (the lines go to stderr). Exit 0 when every
 // requirement holds; 1 on a violation or a missing run; 2 on a usage error.
 import { existsSync, readFileSync } from 'node:fs';
@@ -49,7 +53,7 @@ const USAGE = 'usage: pnpm cli summary <run> [--require valid=N,band=a-b,env_err
 const toTrial = (r: BatchRecord & { regrades?: RegradeGrade[] }): SummaryTrial => ({
   task_id: r.task_id, task_version: r.task_version ?? null, env_version: r.env_version ?? null, grader_task_version: r.grader_task_version ?? null,
   ...(typeof r.index === 'number' ? { index: r.index } : {}), ...(r.trajectory ? { trajectory: r.trajectory } : {}), ...(r.trial_id ? { trial_id: r.trial_id } : {}),
-  outcome: r.outcome, model_requested: r.model_requested,
+  outcome: r.outcome, detail: r.detail ?? null, ...(r.checks ? { checks: r.checks } : {}), model_requested: r.model_requested,
   models_returned: r.models_returned ?? [], state_hash: r.state_hash, tool_errors: r.tool_errors ?? {}, cost_usd: r.cost_usd ?? 0,
   judge_cost_usd: r.judge_cost_usd ?? 0, score: r.score ?? null,
   ...(r.regrades ? { regrades: r.regrades } : {}),
@@ -64,6 +68,8 @@ export function readReplay(dir: string): Record<string, boolean> | null {
 }
 
 const pct = (x: number) => `${(x * 100).toFixed(1)}%`;
+const fixed = (x: number | null) => (x === null ? 'n/a' : x.toFixed(6));
+const counts = (h: Record<string, number>) => Object.entries(h).map(([k, n]) => `${k} ${n}`).join(', ');
 
 export async function main(args: string[], deps: Deps = defaults): Promise<number> {
   let dir: string | undefined;
@@ -131,6 +137,11 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
     const disclosed = t.regraded === 0 ? '' : `  regraded ${t.regraded} (recorded ${t.recorded_outcomes.PASS ?? 0}/${recorded.reduce((a, [, n]) => a + n, 0)})`;
     const short = (vs: string[]) => (vs.length === 0 ? '(none)' : vs.map((v) => v.slice(0, 12)).join(','));
     say(`${id.padEnd(width)}  ${t.passes}/${t.trials}  Wilson 95% ${w}  ENV_ERROR raw ${t.env_error_raw}  re-queued ${t.requeued}${disclosed}  env ${short(t.env_versions)}  grader ${short(t.grader_task_versions)}`);
+    const m = t.metric_trials;
+    say(
+      `${' '.repeat(width)}  mean score ${fixed(t.mean_score)} (${m.mean_score} valid)  raw mean ${fixed(t.raw_mean_score)} (${m.raw_mean_score})  gates met ${fixed(t.gate_fraction)} (${m.gate_fraction})  pass_no_harm ${t.pass_no_harm}/${t.trials}  ` +
+        `LIMIT ${counts(t.limits)}  re-queued ${Object.keys(t.requeued_outcomes).length === 0 ? 'none' : counts(t.requeued_outcomes)}  infra-counted ${t.passes}/${t.infra_counted_attempts} (${fixed(t.infra_counted_rate)})`,
+    );
   }
   say(
     `GRADER_ERROR ${s.totals.grader_error} at the current grade; history ${s.totals.grader_error_history} (GRADER_ERROR in an earlier grade, disclosed only). ` +
