@@ -11,7 +11,8 @@
 //   alternatives      at least MIN_ALTERNATIVES, each PASS with no judge item unknown and
 //                     exactly its declared `loses` rubric items lost ([] when absent)
 //   mutants           at least MIN_MUTANTS, each FAIL with exactly its declared failed gates
-//                     and exactly its declared `loses` rubric items lost ([] for none); every
+//                     and exactly its declared `loses` rubric items lost ([] for none), and,
+//                     when it declares one, its declared attribution label; every
 //                     trap task.toml declares has one, and every mutant's trap is declared
 //   loses             checked before any case runs, and nothing runs when it fails: every
 //                     mutant declares it, and each id is a nonzero rubric item of the task,
@@ -273,6 +274,7 @@ function verdict(c: Case, run: CaseRun, grade: Grade, misses: Miss[]): Pick<Case
   if (c.kind === 'oracle' && unknown > 0) problems.push(`oracle judge.unknown ${unknown}, want 0`);
   if (c.kind === 'alternative' && unknown > 0) problems.push(`judge.unknown ${unknown}, want 0`);
   if (c.mutant && !sameSet(failed_gates, c.mutant.fails)) problems.push(`failed [${failed_gates.join(', ')}], declared [${c.mutant.fails.join(', ')}]`);
+  if (c.mutant?.attribution !== undefined && grade.attribution?.auto !== c.mutant.attribution) problems.push(`attribution ${grade.attribution?.auto ?? 'none'}, declared ${c.mutant.attribution}`);
   if (c.loses && grade.valid) {
     for (const id of c.loses) if (!lost_items.includes(id)) problems.push(`declares it loses rubric item ${kept(grade, id, misses)}`);
     for (const id of lost_items) if (!c.loses.includes(id)) problems.push(`loses rubric item ${id} (${pointsOf(grade, id)}${pointsOf(grade, id).startsWith('-') ? ', a penalty that applied' : ''}), not declared`);
@@ -467,8 +469,11 @@ export async function runMatrix(env: MatrixEnv, task: MatrixTask, opts: MatrixOp
   if (task.mutants.length < MIN_MUTANTS) fail(`${task.mutants.length} mutants, need ${MIN_MUTANTS}`);
   for (const r of mutants) {
     const m = r.case.mutant!;
-    const verdict = r.grade.outcome !== 'FAIL' ? 'not FAIL' : sameSet(r.failed_gates, m.fails) && r.case.loses !== undefined && sameSet(r.lost_items, r.case.loses) ? 'ok' : 'MISMATCH';
-    lines.push(`  mutant ${m.id} [trap ${m.trap}]: ${r.grade.outcome} failed [${r.failed_gates.join(', ')}] declared [${m.fails.join(', ')}], ${lostLine(r)} ${verdict}`);
+    const label = r.grade.attribution?.auto ?? 'none';
+    const labelOk = m.attribution === undefined || m.attribution === label;
+    const verdict = r.grade.outcome !== 'FAIL' ? 'not FAIL' : sameSet(r.failed_gates, m.fails) && r.case.loses !== undefined && sameSet(r.lost_items, r.case.loses) && labelOk ? 'ok' : 'MISMATCH';
+    const attribution = `attribution ${label}${m.attribution === undefined ? '' : ` declared ${m.attribution}`}`;
+    lines.push(`  mutant ${m.id} [trap ${m.trap}]: ${r.grade.outcome} failed [${r.failed_gates.join(', ')}] declared [${m.fails.join(', ')}], ${attribution}, ${lostLine(r)} ${verdict}`);
     noteProblems(r);
   }
 

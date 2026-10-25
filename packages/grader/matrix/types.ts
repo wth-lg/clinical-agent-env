@@ -16,6 +16,7 @@
 // A script is data: the calls a scripted model makes, turn by turn, through the same tools and
 // the same run() loop as a live trial. The null agent (finish, nothing else) is built in.
 import type { Resource } from '../../env/store.ts';
+import type { Taxonomy } from '../attribution.ts';
 import type { Check, Json } from '../check.ts';
 import type { JudgeCacheEntry, JudgeEffort } from '../judge.ts';
 
@@ -53,6 +54,8 @@ export interface Mutant extends Agent {
   // The rubric items it must lose (a positive item not met, a penalty met), and no other; [] when
   // it loses none. Required: the matrix fails a mutant without it, before any case runs.
   loses: readonly string[];
+  // The attribution label its FAIL must get (attribution.ts); not checked when absent.
+  attribution?: Taxonomy;
 }
 
 export interface Agents {
