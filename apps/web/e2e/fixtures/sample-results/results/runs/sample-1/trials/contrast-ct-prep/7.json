@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:contrast-ct-prep:7",
   "task_id": "contrast-ct-prep",
-  "task_version": "6cbe137bdfbec1bf6964528fdbe9864a0c8c1557004cb3944f64a59b14c0e227",
+  "task_version": "8cfe30e519b2e1d02e0caed122503ad48bd675059b03236af648a709defeef70",
   "env_version": "1b47cd6807624e2db3e76fbb8dfa5a519eadfa93bdf47dbdcb8fee1a1c37d288",
-  "grader_task_version": "47e31abf74dd3726f4c82b9341bec61750501d60a0e6929da90eb6810d2fd5a1",
+  "grader_task_version": "9951302e791a963696583af0f6dd44372df913f3f5b4b8027cdb6f6ca10eca06",
   "fixture_hash": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
   "state_hash": {
     "initial": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
@@ -44,7 +44,7 @@
   "resumed": false,
   "ended": "2026-10-23T12:11:04.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "9",
+  "grader_version": "10",
   "outcome": "FAIL",
   "valid": true,
   "fault": "model",
