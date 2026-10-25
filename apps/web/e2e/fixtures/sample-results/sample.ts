@@ -83,13 +83,21 @@ export async function serve(outDir: string): Promise<string> {
       srv.close(() => resolve(p));
     });
   });
-  const base = `http://localhost:${port}/clinical-agent-env/`;
-  const child = spawn(join(REPO, 'apps/web/node_modules/.bin/vite'), ['preview', '--outDir', outDir, '--port', String(port), '--strictPort'], { cwd: join(REPO, 'apps/web'), stdio: 'ignore' });
+  // One explicit host for the listener and the probe: in the CI image `localhost` resolves to ::1
+  // first, so vite preview listened there while fetch tried 127.0.0.1 and was refused.
+  const base = `http://127.0.0.1:${port}/clinical-agent-env/`;
+  const child = spawn(join(REPO, 'apps/web/node_modules/.bin/vite'), ['preview', '--outDir', outDir, '--host', '127.0.0.1', '--port', String(port), '--strictPort'], { cwd: join(REPO, 'apps/web'), stdio: ['ignore', 'pipe', 'pipe'] });
+  let log = '';
+  child.stdout.on('data', (b: Buffer) => (log += b.toString()));
+  child.stderr.on('data', (b: Buffer) => (log += b.toString()));
+  let exited: string | null = null;
+  child.once('exit', (code, signal) => (exited = `exited with ${code ?? signal}`));
   process.once('exit', () => child.kill());
-  for (let i = 0; i < 200; i++) {
-    if (await fetch(base).then((r) => r.ok, () => false)) return base;
+  let last = '';
+  for (let i = 0; i < 200 && exited === null; i++) {
+    if (await fetch(base).then((r) => r.ok, (e: unknown) => ((last = String((e as { cause?: unknown }).cause ?? e)), false))) return base;
     await new Promise((r) => setTimeout(r, 100));
   }
   child.kill();
-  throw new Error(`vite preview of ${outDir} did not start`);
+  throw new Error(`vite preview of ${outDir} did not start (${exited ?? 'still running'}); last fetch of ${base}: ${last}\n${log}`);
 }
