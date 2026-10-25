@@ -2,6 +2,7 @@
 // pure handle() with a spy upstream and the production limiter. No case writes the API host:
 // requests to it are recognised by UPSTREAM_URL (lint: no-direct-anthropic).
 import { randomBytes } from 'node:crypto';
+import { format } from 'node:util';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MODEL } from '../../../packages/core/anthropic.ts';
 import { clientHeaderNames } from '../../../cli/relay-check.ts';
@@ -175,7 +176,8 @@ describe('case 4: key secrecy', () => {
   let captured: string[] = [];
   beforeEach(() => {
     captured = [];
-    for (const m of METHODS) vi.spyOn(console, m).mockImplementation((...args: unknown[]) => void captured.push(args.map((a) => (a instanceof Error ? `${a.message}\n${a.stack}` : typeof a === 'string' ? a : JSON.stringify(a))).join(' ')));
+    // format() renders arguments as console.log prints them (a Headers object shows its entries).
+    for (const m of METHODS) vi.spyOn(console, m).mockImplementation((...args: unknown[]) => void captured.push(format(...args)));
   });
   afterEach(() => vi.restoreAllMocks());
 
@@ -410,7 +412,7 @@ describe('case 10: errors', () => {
   it('an upstream fetch that rejects with the key in its message gives the fixed 502 body', async () => {
     const key = sentinels().skAnt;
     const captured: string[] = [];
-    for (const m of ['log', 'info', 'warn', 'error', 'debug'] as const) vi.spyOn(console, m).mockImplementation((...a: unknown[]) => void captured.push(String(a)));
+    for (const m of ['log', 'info', 'warn', 'error', 'debug'] as const) vi.spyOn(console, m).mockImplementation((...a: unknown[]) => void captured.push(format(...a)));
     const res = await run(post({ key }), async () => {
       throw new Error(`connect ECONNREFUSED with header x-api-key: ${key}`);
     });

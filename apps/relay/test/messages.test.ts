@@ -2,6 +2,7 @@
 // response; a throw, a rejection or a non-Error becomes the fixed 502 body with no message, and no
 // sentinel reaches the console or the response.
 import { randomBytes } from 'node:crypto';
+import { format } from 'node:util';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import fn, { ALLOWED_ORIGIN, respond } from '../api/messages.ts';
 
@@ -23,7 +24,7 @@ describe('api/messages.ts', () => {
     ['a rejection with a non-Error', () => Promise.reject({ key })],
   ])('turns %s in handle into the fixed 502 and never rethrows', async (_name, failing) => {
     const captured: string[] = [];
-    for (const m of ['log', 'info', 'warn', 'error', 'debug'] as const) vi.spyOn(console, m).mockImplementation((...a: unknown[]) => void captured.push(a.map(String).join(' ')));
+    for (const m of ['log', 'info', 'warn', 'error', 'debug'] as const) vi.spyOn(console, m).mockImplementation((...a: unknown[]) => void captured.push(format(...a)));
     const res = await respond(req(), failing as never);
     expect(res.status).toBe(502);
     const text = await res.text();
