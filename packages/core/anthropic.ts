@@ -15,7 +15,8 @@
 //                            settled at the worst case: usage is unknown, and the partial
 //                            answer is discarded, never appended to the conversation
 // Retried: 408, 409, 429, 5xx (529 included), an error event mid-stream, a dropped stream, a
-// network error; up to maxAttempts (8), waiting retry-after (at most 60 s) or an exponential
+// network error, an attempt idle for IDLE_STREAM_MS (no response headers, or no stream bytes,
+// for that long: it is cut off and settled at the worst case); up to maxAttempts (8), waiting retry-after (at most 60 s) or an exponential
 // backoff with jitter from 2 s to 60 s (design section 1, "Failure modes"). An abort is
 // never retried: send takes a per-request signal, combined with the grant's, and once either
 // has aborted the call throws the abort reason. Aborted before the reserve, nothing is
@@ -65,6 +66,10 @@ export const MAX_ATTEMPTS = 8;
 const BACKOFF_BASE_MS = 2000;
 const BACKOFF_MAX_MS = 60_000;
 const RETRY_AFTER_MAX_MS = 60_000;
+// An attempt that receives nothing (no response headers, then no stream bytes) for this long is
+// cut off and fails as retryable (R14-13): an upstream stall is the API's fault, never the
+// model's. The API streams ping events, so a live stream is never this quiet.
+export const IDLE_STREAM_MS = 180_000;
 
 // The wait before retry `attempt` + 1: the exponential step (2 s, 4 s, ... up to 60 s) times a
 // jitter factor from 0.5 to 1, never under 2 s.
@@ -310,7 +315,8 @@ async function errorStatus(res: Response): Promise<ApiError> {
 // cut off is dropped from the content when the message stops at max_tokens, so the caller
 // gets a max_tokens stop and never a tool call with half its arguments; under any other stop
 // reason it is an error.
-async function readStream(body: ReadableStream<Uint8Array>): Promise<Message> {
+// onBytes runs on every chunk; once `idle` aborts, a pending read ends as a dropped stream.
+async function readStream(body: ReadableStream<Uint8Array>, onBytes: () => void, idle: AbortSignal): Promise<Message> {
   const reader = body.getReader();
   const decoder = new TextDecoder();
   let buf = '';
@@ -375,11 +381,13 @@ async function readStream(body: ReadableStream<Uint8Array>): Promise<Message> {
   for (;;) {
     let chunk;
     try {
-      chunk = await reader.read();
+      chunk = await unlessAborted(reader.read(), idle);
     } catch (e) {
+      void reader.cancel().catch(() => {});
       throw broken(`stream dropped: ${(e as Error).message}`);
     }
     if (chunk.done) break;
+    onBytes();
     buf += decoder.decode(chunk.value, { stream: true });
     let cut;
     while ((cut = buf.search(/\r?\n\r?\n/)) >= 0) {
@@ -403,27 +411,56 @@ async function readStream(body: ReadableStream<Uint8Array>): Promise<Message> {
   throw broken('stream dropped before message_stop');
 }
 
-// One request, no ledger: an ApiError for an HTTP error or a broken stream, the fetch error
-// as thrown for a network failure. MessagesClient.send is its only caller. The transport gets
-// the registered Request and nothing else, and the registration ends when it returns.
-async function sendOnce(f: Transport, apiKey: string, body: string, signal?: AbortSignal): Promise<{ status: number; message: Message }> {
+// p, or a rejection with the signal's reason once it aborts, whichever comes first: a transport
+// or a stream that ignores the Request's signal still ends.
+const unlessAborted = <T>(p: Promise<T>, signal: AbortSignal): Promise<T> =>
+  new Promise((resolve, reject) => {
+    const onAbort = () => reject(signal.reason);
+    signal.addEventListener('abort', onAbort, { once: true });
+    p.then(
+      (v) => (signal.removeEventListener('abort', onAbort), resolve(v)),
+      (e) => (signal.removeEventListener('abort', onAbort), reject(e)),
+    );
+  });
+
+// One request, no ledger: an ApiError for an HTTP error, a broken stream or an attempt idle for
+// idleMs, the fetch error as thrown for a network failure. MessagesClient.send is its only
+// caller. The transport gets the registered Request and nothing else, and the registration ends
+// when it returns.
+async function sendOnce(f: Transport, apiKey: string, body: string, signal: AbortSignal | undefined, idleMs: number): Promise<{ status: number; message: Message }> {
+  const idle = new AbortController();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const quiet = () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => idle.abort(new DOMException(`no data for ${idleMs} ms`, 'TimeoutError')), idleMs);
+  };
   // redirect: 'error', so the host the guard checked is the only host the request reaches.
-  const request = new Request(MESSAGES_URL, { method: 'POST', headers: requestHeaders(apiKey), body, redirect: 'error', ...(signal ? { signal } : {}) });
+  const request = new Request(MESSAGES_URL, { method: 'POST', headers: requestHeaders(apiKey), body, redirect: 'error', signal: signal ? AbortSignal.any([signal, idle.signal]) : idle.signal });
   outbound.set(request, headerSig(request));
-  let res: Response;
+  quiet();
   try {
-    res = await f(request);
+    let res: Response;
+    try {
+      res = await unlessAborted(f(request), idle.signal);
+    } catch (e) {
+      // The guard refused the attempt and never let this Request out, so nothing was sent: an
+      // error that is not billed and would recur on retry.
+      if (e instanceof EgressRefusal && !sent.has(request)) throw new ApiError(e.message, { status: null, type: 'egress_refused', retryable: false, stopsBatch: true });
+      throw e;
+    } finally {
+      outbound.delete(request);
+    }
+    quiet();
+    if (res.status !== 200) throw await errorStatus(res);
+    if (!res.body) throw broken('HTTP 200 without a body');
+    return { status: res.status, message: await readStream(res.body, quiet, idle.signal) };
   } catch (e) {
-    // The guard refused the attempt and never let this Request out, so nothing was sent: an
-    // error that is not billed and would recur on retry.
-    if (e instanceof EgressRefusal && !sent.has(request)) throw new ApiError(e.message, { status: null, type: 'egress_refused', retryable: false, stopsBatch: true });
+    // Cut off for idling, not aborted by the caller: the request may have reached the API.
+    if (idle.signal.aborted && !signal?.aborted) throw new ApiError(`no data for ${idleMs} ms`, { status: null, type: 'stream_idle', retryable: true, stopsBatch: false, partial: true });
     throw e;
   } finally {
-    outbound.delete(request);
+    clearTimeout(timer);
   }
-  if (res.status !== 200) throw await errorStatus(res);
-  if (!res.body) throw broken('HTTP 200 without a body');
-  return { status: res.status, message: await readStream(res.body) };
 }
 
 // How a failed call ends a trial (design section 1, "Failure modes"; section 5, "Outcomes"),
@@ -474,6 +511,8 @@ export interface ClientOptions {
   maxAttempts?: number;
   // A number in [0, 1) for the backoff jitter; default Math.random.
   random?: () => number;
+  // The idle-stream timeout of each attempt; default IDLE_STREAM_MS.
+  idleStreamMs?: number;
 }
 
 export interface SendOptions {
@@ -483,6 +522,11 @@ export interface SendOptions {
   // the worst case when usage is unknown or cannot be priced), so a caller's cost equals the
   // ledger's, aborted and retried attempts included.
   onSettle?: (usd: number) => void;
+  // Called as each attempt starts (1-based), before its reserve.
+  onAttempt?: (attempt: number) => void;
+  // Called when an attempt failed and will be retried after a wait of waitMs: the trial loop
+  // leaves failed attempts and these waits out of its working time.
+  onRetry?: (attempt: number, waitMs: number) => void;
 }
 
 // What an aborted call throws: the signal's reason when it is an Error (a SpendRefused from the
@@ -522,6 +566,7 @@ export class MessagesClient {
   readonly #trial: string | undefined;
   readonly #maxAttempts: number;
   readonly #random: () => number;
+  readonly #idleMs: number;
 
   constructor(opts: ClientOptions) {
     assertClientGrant(opts.grant, opts.ledger);
@@ -539,6 +584,7 @@ export class MessagesClient {
     this.#trial = opts.trial;
     this.#maxAttempts = opts.maxAttempts ?? MAX_ATTEMPTS;
     this.#random = opts.random ?? Math.random;
+    this.#idleMs = opts.idleStreamMs ?? IDLE_STREAM_MS;
   }
 
   // Sends history + params and, on a complete answer that is not a refusal, appends it to
@@ -563,10 +609,11 @@ export class MessagesClient {
     };
     for (let attempt = 1; ; attempt++) {
       if (signal.aborted) throw abortReason(signal);
+      opts.onAttempt?.(attempt);
       const res = await this.#grant.reserve(req);
       let out: { status: number; message: Message };
       try {
-        out = await sendOnce(this.#fetch, this.#apiKey, body, signal);
+        out = await sendOnce(this.#fetch, this.#apiKey, body, signal, this.#idleMs);
       } catch (e) {
         // Aborted in flight: the request may have reached the API, so the worst case, and no retry.
         if (signal.aborted) {
@@ -582,7 +629,9 @@ export class MessagesClient {
         if (err.stack) err.stack = redactText(err.stack, [this.#apiKey]);
         this.#log(`attempt ${attempt}: ${err.message}`);
         if (err.stopsBatch || !err.retryable || attempt >= this.#maxAttempts) throw err;
-        await sleepUnlessAborted(this.#sleep, err.retryAfter !== null ? Math.min(err.retryAfter * 1000, RETRY_AFTER_MAX_MS) : backoffMs(attempt, this.#random()), signal);
+        const wait = err.retryAfter !== null ? Math.min(err.retryAfter * 1000, RETRY_AFTER_MAX_MS) : backoffMs(attempt, this.#random());
+        opts.onRetry?.(attempt, wait);
+        await sleepUnlessAborted(this.#sleep, wait, signal);
         continue;
       }
       await settle(res, out.message.usage);

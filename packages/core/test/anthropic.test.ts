@@ -346,7 +346,7 @@ describe('pnpm live:node refuses before any call', () => {
 // P2 fix round (findings p2-findings-1): each test below failed at 63259f5.
 describe('MessagesClient is the only way to send', () => {
   it('exports only the metered client, its error and pure helpers', () => {
-    expect(Object.keys(anthropic).sort()).toEqual(['ANTHROPIC_VERSION', 'ApiError', 'EgressRefusal', 'MAX_ATTEMPTS', 'MODEL', 'MessagesClient', 'claimOutbound', 'classifyFailure', 'isApiHost', 'requestUrl', 'reserveRequest']);
+    expect(Object.keys(anthropic).sort()).toEqual(['ANTHROPIC_VERSION', 'ApiError', 'EgressRefusal', 'IDLE_STREAM_MS', 'MAX_ATTEMPTS', 'MODEL', 'MessagesClient', 'claimOutbound', 'classifyFailure', 'isApiHost', 'requestUrl', 'reserveRequest']);
   });
 
   it('no exported function sends without a grant', async () => {
