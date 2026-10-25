@@ -55,7 +55,7 @@ function post(opts: { origin?: string | null; key?: string; body?: string | Uint
     'x-api-key': opts.key ?? 'k',
     'anthropic-version': VERSION,
     'anthropic-dangerous-direct-browser-access': 'true',
-    'x-forwarded-for': '203.0.113.7',
+    'x-vercel-forwarded-for': '203.0.113.7',
     ...opts.headers,
   };
   if (opts.origin !== null) headers.origin = opts.origin ?? PAGES;
@@ -70,7 +70,7 @@ const preflight = (origin: string | null, requestHeaders: string, url = RELAY) =
       ...(origin === null ? {} : { origin }),
       'access-control-request-method': 'POST',
       'access-control-request-headers': requestHeaders,
-      'x-forwarded-for': '203.0.113.7',
+      'x-vercel-forwarded-for': '203.0.113.7',
     },
   });
 
@@ -266,6 +266,7 @@ describe('case 4: key secrecy', () => {
         expect(names).not.toContain('anthropic-dangerous-direct-browser-access');
         expect(names).not.toContain('origin');
         expect(names).not.toContain('x-forwarded-for');
+        expect(names).not.toContain('x-vercel-forwarded-for');
         expect(call.headers['x-api-key']).toBe(key);
         for (const [n, v] of Object.entries(call.headers)) if (n !== 'x-api-key') expect(v).not.toContain(key);
         expect(new TextDecoder().decode(call.body)).not.toContain(key);

@@ -1,14 +1,18 @@
 // Test only, never deployed: the relay's handle() behind a node:http server on 127.0.0.1, with a
 // stub upstream and the allowed origin the test names. The real-browser spec
 // (apps/web/e2e/xbrowser/relay-browser.spec.ts) and cli/test/relay-check.test.ts run against it.
-// Like Vercel, it sets x-forwarded-for from the socket and aborts the Request when the client
-// goes away. It records each request (method, path, the preflight's requested headers, the
+// Like Vercel, it sets the client address headers (x-vercel-forwarded-for, x-forwarded-for,
+// x-real-ip) from the socket, replacing any the client sent, and aborts the Request when the
+// client goes away; trustClientAddress keeps the client's own values instead, a platform that
+// does not overwrite them, for relay-check's negative test. It records each request (method, path, the preflight's requested headers, the
 // answer) and each upstream call (url, headers, body); it never records a header value but the
 // stub upstream's own copy, which the test reads to check where the key went.
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { Readable } from 'node:stream';
 import { createLimiter, type Limiter } from '../src/limiter.ts';
 import { handle, type UpstreamFetch } from '../src/relay.ts';
+
+const ADDRESS_HEADERS = ['x-vercel-forwarded-for', 'x-forwarded-for', 'x-real-ip'];
 
 export interface LogEntry {
   method: string;
@@ -88,13 +92,13 @@ export function authFailUpstream(): StubUpstream {
   );
 }
 
-function toRequest(req: IncomingMessage, port: number, signal: AbortSignal): Request {
+function toRequest(req: IncomingMessage, port: number, signal: AbortSignal, trustClientAddress: boolean): Request {
   const headers = new Headers();
   for (const [k, v] of Object.entries(req.headers)) {
-    if (v === undefined || k === 'x-forwarded-for') continue;
+    if (v === undefined || (!trustClientAddress && ADDRESS_HEADERS.includes(k))) continue;
     headers.set(k, Array.isArray(v) ? v.join(', ') : v);
   }
-  headers.set('x-forwarded-for', req.socket.remoteAddress ?? 'unknown');
+  if (!trustClientAddress) for (const h of ADDRESS_HEADERS) headers.set(h, req.socket.remoteAddress ?? 'unknown');
   const method = req.method ?? 'GET';
   const hasBody = method !== 'GET' && method !== 'HEAD';
   return new Request(`http://127.0.0.1:${port}${req.url ?? '/'}`, {
@@ -121,7 +125,7 @@ async function send(res: ServerResponse, response: Response): Promise<void> {
   }
 }
 
-export async function serveLocal(opts: { allowedOrigin: string; upstream?: StubUpstream; limiter?: Limiter; port?: number }): Promise<LocalRelay> {
+export async function serveLocal(opts: { allowedOrigin: string; upstream?: StubUpstream; limiter?: Limiter; port?: number; trustClientAddress?: boolean }): Promise<LocalRelay> {
   const upstream = opts.upstream ?? sseUpstream();
   const limiter = opts.limiter ?? createLimiter();
   const log: LogEntry[] = [];
@@ -131,7 +135,7 @@ export async function serveLocal(opts: { allowedOrigin: string; upstream?: StubU
     res.on('close', () => {
       if (!res.writableFinished) ac.abort();
     });
-    const request = toRequest(req, port, ac.signal);
+    const request = toRequest(req, port, ac.signal, opts.trustClientAddress ?? false);
     void handle(request, upstream.fetch, limiter, opts.allowedOrigin).then(
       (response) => {
         log.push({

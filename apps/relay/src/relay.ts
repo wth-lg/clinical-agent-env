@@ -39,9 +39,16 @@ const SAFELISTED = new Set(['content-type']);
 
 type Headerset = Record<string, string>;
 
-// The client address Vercel sets: the first x-forwarded-for entry.
+// The header that keys the limiter: the client address Vercel sets. Vercel documents that it
+// overwrites x-forwarded-for, but a proxy in front of Vercel can rewrite that one, while
+// x-vercel-forwarded-for carries the same address and only Vercel sets it (README.md, "Rate
+// limit"). A client-sent x-forwarded-for or x-real-ip is never read. Were the platform to append
+// to a client's value rather than replace it, the last entry is the one it added. With no such
+// header (not on Vercel) every request shares the bucket 'unknown'.
+export const CLIENT_ADDRESS_HEADER = 'x-vercel-forwarded-for';
+
 export function clientIp(headers: Headers): string {
-  return headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+  return headers.get(CLIENT_ADDRESS_HEADER)?.split(',').at(-1)?.trim() || 'unknown';
 }
 
 const corsFor = (allowedOrigin: string): Headerset => ({ 'access-control-allow-origin': allowedOrigin, vary: 'Origin' });

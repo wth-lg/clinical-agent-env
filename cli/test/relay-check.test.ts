@@ -10,7 +10,7 @@ import { authFailUpstream, serveLocal, type LocalRelay } from '../../apps/relay/
 import { createLimiter } from '../../apps/relay/src/limiter.ts';
 import { repoRoot } from '../../scripts/test/helpers.ts';
 import { maxRequestBody } from '../../scripts/relay-body-max.ts';
-import { clientHeaderNames } from '../relay-check.ts';
+import { clientHeaderNames, rateLimit, SPOOFED_ADDRESS_HEADERS } from '../relay-check.ts';
 
 const PAGES = 'https://wth-lg.github.io';
 let relay: LocalRelay | undefined;
@@ -99,6 +99,21 @@ describe('relay-check', () => {
     expect(report.rate_limit.recovered).toBe(true);
     expect(relay.upstreamCalls).toHaveLength(0);
   }, 120_000);
+
+  // Security S1: the deployed check proves the platform, not the client, picks the bucket. Each
+  // request carries random spoofed client addresses; a relay whose platform passed them through
+  // (trustClientAddress) gives every request its own bucket, and the check fails.
+  it('--rate-limit rotates the spoofable address headers and fails where they pick the bucket', async () => {
+    expect(SPOOFED_ADDRESS_HEADERS).toEqual(['x-forwarded-for', 'x-real-ip', 'x-vercel-forwarded-for']);
+    relay = await serveLocal({ allowedOrigin: PAGES, upstream: authFailUpstream(), limiter: createLimiter({ limit: 20, windowMs: 2000 }) });
+    const held = await rateLimit(relay.url, { burstMs: 3000, recoverMs: 5000 });
+    expect(held.check.ok, held.check.detail).toBe(true);
+    await relay.close();
+    relay = await serveLocal({ allowedOrigin: PAGES, upstream: authFailUpstream(), limiter: createLimiter({ limit: 20, windowMs: 2000 }), trustClientAddress: true });
+    const bypassed = await rateLimit(relay.url, { burstMs: 3000, recoverMs: 5000 });
+    expect(bypassed.check.ok).toBe(false);
+    expect(bypassed.first_429_after).toBe(0);
+  }, 30_000);
 
   it('usage errors exit 2', async () => {
     expect((await relayCheck([])).status).toBe(2);

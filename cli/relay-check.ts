@@ -22,7 +22,9 @@
 // It prints which requests invoke the function (those to /v1/messages and /api/messages) and
 // which do not.
 //   --rate-limit  instead: GET /v1/messages in bursts until a 429 (within 60 s), then once a second
-//                 until a non-429 answer (within 90 s)
+//                 until a non-429 answer (within 90 s). Every request carries a new random
+//                 address in each of SPOOFED_ADDRESS_HEADERS, so a 429 proves the platform, not
+//                 the client, picks the limiter's bucket
 //   --json        one JSON report instead of lines
 // Exit 0 when every check holds; 1 otherwise; 2 on a usage error.
 import { randomBytes } from 'node:crypto';
@@ -41,6 +43,8 @@ const FOREIGN_ORIGIN = 'https://evil.example';
 const OTHER_MODEL = 'claude-sonnet-5-5';
 const LOOPBACK = new Set(['127.0.0.1', 'localhost', '[::1]']);
 const TIMEOUT_MS = 30_000;
+// The client address headers a client can send; the relay must key on the platform's value.
+export const SPOOFED_ADDRESS_HEADERS = ['x-forwarded-for', 'x-real-ip', 'x-vercel-forwarded-for'];
 // Files in apps/relay that the deploy must not serve (apps/relay/.vercelignore, public/README.md).
 export const STATIC_PATHS = ['/README.md', '/src/relay.ts', '/test/serve-local.ts', '/public/README.md', '/vercel.json'];
 
@@ -176,12 +180,21 @@ async function checks(urls: RelayUrls, key: string, bodyBytes: number, clientHea
   };
 }
 
-async function rateLimit(url: string): Promise<{ check: Check; first_429_after: number; recovered: boolean }> {
+// A random public-looking IPv4 address (the first octet avoids 0, 10, 127 and 224 and above).
+const randomAddress = () => {
+  const b = randomBytes(4);
+  return `${11 + (b[0]! % 112)}.${b[1]}.${b[2]}.${b[3]}`;
+};
+const spoofed = (): Record<string, string> => Object.fromEntries(SPOOFED_ADDRESS_HEADERS.map((h) => [h, randomAddress()]));
+
+export async function rateLimit(url: string, opts: { burstMs?: number; recoverMs?: number } = {}): Promise<{ check: Check; first_429_after: number; recovered: boolean }> {
+  const burstMs = opts.burstMs ?? 60_000;
+  const recoverMs = opts.recoverMs ?? 90_000;
   const started = Date.now();
   let sent = 0;
   let first = 0;
-  while (first === 0 && Date.now() - started < 60_000) {
-    const burst = await Promise.all(Array.from({ length: 20 }, () => call(url, { method: 'GET' })));
+  while (first === 0 && Date.now() - started < burstMs) {
+    const burst = await Promise.all(Array.from({ length: 20 }, () => call(url, { method: 'GET', headers: spoofed() })));
     for (const r of burst) {
       sent++;
       if (first === 0 && r.res?.status === 429) first = sent;
@@ -189,13 +202,13 @@ async function rateLimit(url: string): Promise<{ check: Check; first_429_after: 
   }
   let recovered = false;
   const after = Date.now();
-  while (first > 0 && !recovered && Date.now() - after < 90_000) {
+  while (first > 0 && !recovered && Date.now() - after < recoverMs) {
     await new Promise((r) => setTimeout(r, 1000));
-    const r = await call(url, { method: 'GET' });
+    const r = await call(url, { method: 'GET', headers: spoofed() });
     recovered = r.res !== null && r.res.status !== 429;
   }
-  const detail = first > 0 ? `first 429 after ${first} requests in ${after - started} ms; ${recovered ? `a non-429 answer ${Date.now() - after} ms later` : 'no non-429 answer within 90 s'}` : 'no 429 within 60 s';
-  return { check: { name: 'rate limit: 429, then a non-429 answer', ok: first > 0 && recovered, status: null, detail }, first_429_after: first, recovered };
+  const detail = first > 0 ? `first 429 after ${first} requests in ${after - started} ms; ${recovered ? `a non-429 answer ${Date.now() - after} ms later` : `no non-429 answer within ${recoverMs / 1000} s`}` : `no 429 within ${burstMs / 1000} s`;
+  return { check: { name: 'rate limit despite rotating client address headers: 429, then a non-429 answer', ok: first > 0 && recovered, status: null, detail }, first_429_after: first, recovered };
 }
 
 export default async function relayCheck(args: string[]): Promise<number> {

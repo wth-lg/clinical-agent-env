@@ -42,7 +42,7 @@ describe('api/messages.ts', () => {
   });
 
   it('the default export answers through handle with the module limiter and the Pages origin', async () => {
-    const res = await fn.fetch(new Request('https://relay.test/v1/messages', { headers: { origin: 'https://evil.example', 'x-forwarded-for': '192.0.2.1' } }));
+    const res = await fn.fetch(new Request('https://relay.test/v1/messages', { headers: { origin: 'https://evil.example', 'x-vercel-forwarded-for': '192.0.2.1' } }));
     expect(res.status).toBe(405);
     const foreign = await fn.fetch(req('https://evil.example'));
     expect(foreign.status).toBe(403);

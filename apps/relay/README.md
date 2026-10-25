@@ -28,7 +28,7 @@ In the order `handle` applies them:
 
 1. Path: exactly `/v1/messages`, else 404. A query string, even an empty one, gets 400.
 2. Rate limit: each request takes a token from its client IP's bucket, else 429 with
-   `retry-after`.
+   `retry-after`. The client IP is the one the platform sets (see Rate limit).
 3. `OPTIONS` (the CORS preflight): 204 for the origin `https://wth-lg.github.io`, with
    `Access-Control-Allow-Origin: https://wth-lg.github.io`, `Vary: Origin`,
    `Access-Control-Allow-Methods: POST, OPTIONS` and `Access-Control-Allow-Headers` set to the
@@ -71,8 +71,24 @@ because the path is not `/v1/messages`. `relay-check` requires a 404 for `/READM
 
 `src/limiter.ts` is a token bucket per client IP: 120 requests per minute by default, refilled
 continuously, so the next request is allowed 0.5 s after a bucket empties. Each request on
-`/v1/messages` takes a token, preflights and refused requests included. The key is the first
-`x-forwarded-for` address, which Vercel sets to the client's address.
+`/v1/messages` takes a token, preflights and refused requests included.
+
+The bucket key is the client address in `x-vercel-forwarded-for`, a header the platform sets. A
+client cannot choose it:
+
+- Vercel documents that it overwrites `x-forwarded-for` "to prevent IP spoofing", and that
+  `x-vercel-forwarded-for` and `x-real-ip` carry the same address. Only `x-vercel-forwarded-for`
+  is documented to survive a proxy in front of Vercel, so the relay reads that one
+  (`CLIENT_ADDRESS_HEADER` in `src/relay.ts`).
+- The relay never reads a client-sent `x-forwarded-for` or `x-real-ip`. If the platform appended
+  to a client's value instead of replacing it, the relay takes the last entry, the one the
+  platform added.
+- Without the header (not on Vercel), every request shares one bucket.
+
+The tests cannot show what Vercel does with a client's headers. The deployed check does:
+`relay-check --rate-limit` sends a new random address in each of `x-forwarded-for`, `x-real-ip`
+and `x-vercel-forwarded-for` on every request, and still requires a 429. If the platform let any
+of them pick the bucket, every request would get a fresh bucket and the check would fail.
 
 The buckets live in the function's memory, so on Vercel the limit is best effort:
 
