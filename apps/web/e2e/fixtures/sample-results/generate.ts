@@ -81,8 +81,10 @@ async function main(withMatrix: boolean) {
       const run = await trial(env, task, c);
       const facts = rewrite(run.record, as);
       const graded: CaseRun = { record: facts, events: run.events };
+      // A real GRADER_ERROR has no score, so no score bounds either (grade.ts judgeOf).
+      const errored = async () => { const g = await gradeRun(env, task, task.checks, graded); return { ...g, judge: { ...g.judge, score_penalties_met: null, score_penalties_not_met: null } }; };
       const grade = as === 'GRADER_ERROR'
-        ? { ...(await gradeRun(env, task, task.checks, graded)), outcome: 'GRADER_ERROR' as const, valid: false, fault: 'grader' as const, score: null, error: { check: task.checks.find((k) => k.kind === 'gate')!.id, message: "TypeError: Cannot read properties of undefined (reading 'status')", stops_batch: false } }
+        ? { ...(await errored()), outcome: 'GRADER_ERROR' as const, valid: false, fault: 'grader' as const, score: null, error: { check: task.checks.find((k) => k.kind === 'gate')!.id, message: "TypeError: Cannot read properties of undefined (reading 'status')", stops_batch: false } }
         : await gradeRun(env, task, task.checks, graded);
       const trajectory = `trajectories/${id}/${index}.jsonl`;
       const rec: Rec = { ...facts, ...grade, trial_id: `${RUN_ID}:${id}:${index}`, index, trajectory, cost_usd: Number((0.6 + 0.07 * t + 0.03 * index).toFixed(4)), judge_cost_usd: 0 };

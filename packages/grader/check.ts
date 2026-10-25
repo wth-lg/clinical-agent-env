@@ -150,7 +150,8 @@ export interface RubricCtx extends CtxBase {
   readonly notes: readonly Note[];
   // The summary the agent gave finish; null when it never called finish.
   readonly final_text: string | null;
-  judge(q: JudgeQuestion): Promise<Verdict>;
+  // The grader adds whether the running check is a penalty (its points < 0); a check cannot say.
+  judge(q: Omit<JudgeQuestion, 'penalty'>): Promise<Verdict>;
   extract(q: ExtractQuestion): Promise<Extraction>;
 }
 
