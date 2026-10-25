@@ -64,6 +64,7 @@ export function fakeDist(): string {
   write('api/health', '{"app":"static","surface":"browser-direct"}');
   write('probe.html', '<!doctype html><title>probe</title>');
   write('harness.html', '<!doctype html><title>harness</title>');
+  write('relay-probe.html', '<!doctype html><title>relay probe</title>');
   return dir;
 }
 

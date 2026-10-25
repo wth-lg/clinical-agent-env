@@ -1,0 +1,9 @@
+# What `vercel deploy --cwd apps/relay` uploads: the function, the sources it imports, vercel.json
+# and public/ (README.md, "Static files"). test/ and README.md stay local.
+# The CLI's upload walker tests a directory by its bare name (`api`, never `api/`) and skips an
+# ignored directory without reading it, so a rule written `!/api/` would never keep it.
+/*
+!/api
+!/src
+!/public
+!/vercel.json

@@ -4,7 +4,10 @@
 // itself, and anywhere else a string naming the API host (so any fetch to it) is an error,
 // whether written as one literal, a template or a concatenation of literals. The CSP metas in
 // apps/web/*.html list the host too; ESLint does not lint .html. One exemption: the exact design
-// CSP string, as one literal, in apps/web/e2e/smoke.spec.ts, which pins it. A host built at
+// CSP string, as one literal, in apps/web/e2e/smoke.spec.ts, which pins it. The relay (P16h)
+// forwards to the API server to server, so it names its upstream too, in exactly one module,
+// apps/relay/src/upstream.ts, and that module's test; every other relay file imports
+// UPSTREAM_URL from it. A host built at
 // runtime is past what a static rule can see; the egress guard (packages/core/egress.ts)
 // refuses it where it resolves.
 
@@ -16,6 +19,7 @@ export const files = ['**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}'];
 // Built, not written, so this file holds no literal the rule would flag.
 const HOST = ['api', 'anthropic', 'com'].join('.');
 const CLIENT = 'packages/core/anthropic.ts';
+const RELAY_UPSTREAM = new Set(['apps/relay/src/upstream.ts', 'apps/relay/test/upstream.test.ts']);
 const CSP_PIN = 'apps/web/e2e/smoke.spec.ts';
 const CSP = `default-src 'self'; connect-src 'self' https://${HOST}; script-src 'self'; worker-src 'self' blob:`;
 
@@ -36,7 +40,7 @@ function staticText(node) {
 export default {
   meta: {
     type: 'problem',
-    docs: { description: 'Only packages/core/anthropic.ts names the Anthropic API host' },
+    docs: { description: 'Only packages/core/anthropic.ts and the relay upstream module name the Anthropic API host' },
     schema: [],
     messages: {
       host: "'{{text}}' names the Anthropic API host. Send through MessagesClient from packages/core/anthropic.ts, the only metered way to call the API.",
@@ -44,7 +48,7 @@ export default {
   },
   create(context) {
     const file = posix(relative(context.cwd, context.physicalFilename));
-    if (file === CLIENT) return {};
+    if (file === CLIENT || RELAY_UPSTREAM.has(file)) return {};
     const checkText = (node, text) => {
       if (text === undefined || !text.toLowerCase().includes(HOST)) return;
       if (file === CSP_PIN && node.type === 'Literal' && node.value === CSP) return;
