@@ -62,4 +62,39 @@ describe('no-loop-outside-core', () => {
     expect(await ruleIds("import { run } from '../../../../packages/core/replay.ts';\nexport const r = run;\n", 'apps/web/src/worker/trial.ts')).toContain(RULE);
     expect(await ruleIds("import type { run } from '../../../../packages/core/run.ts';\nexport type R = typeof run;\n", 'apps/web/src/worker/trial.ts')).toContain(RULE);
   });
+
+  // The verifier's plants (verifier-phase-P15-1, D1): a second loop in a new adapters/ file, and
+  // one built from the adapter's grantClient and memoryLedger outside the Worker.
+  it('refuses the Messages client and tool dispatch in any other file under src/adapters', async () => {
+    const code = "import { MessagesClient } from '../../../../packages/core/anthropic.ts';\nimport { callTool } from '../../../../packages/env/tools/registry.ts';\nexport const C = MessagesClient;\nexport const f = callTool;\n";
+    expect(await ruleIds(code, 'apps/web/src/adapters/loop.ts')).toContain(RULE);
+  });
+
+  it('refuses grantClient and memoryLedger outside src/worker', async () => {
+    const code = "import { grantClient, memoryLedger } from '../adapters/ledger-browser.ts';\nexport const g = [grantClient, memoryLedger];\n";
+    expect(await ruleIds(code, 'apps/web/src/live/plant2.ts')).toContain(RULE);
+    for (const c of [
+      "import { memoryLedger } from '../adapters/ledger-browser.ts';\nexport const m = memoryLedger;\n",
+      "import * as L from '../adapters/ledger-browser.ts';\nexport const l = L;\n",
+      "export { grantClient } from '../adapters/ledger-browser.ts';\n",
+      "export * from '../adapters/ledger-browser.ts';\n",
+      "export const m = () => import('../adapters/ledger-browser.ts');\n",
+    ]) expect(await ruleIds(c, 'apps/web/src/live/plant2.ts'), c).toContain(RULE);
+  });
+
+  it('lets src/worker take grantClient and memoryLedger, and any file take the rest of the adapter', async () => {
+    const worker = "import { run } from '../../../../packages/core/run.ts';\nimport { grantClient, memoryLedger } from '../adapters/ledger-browser.ts';\nexport const g = [run, grantClient, memoryLedger];\n";
+    expect(await ruleIds(worker, 'apps/web/src/worker/trial.ts')).not.toContain(RULE);
+    const page = "import { tabLedger, sessionCeiling } from '../adapters/ledger-browser.ts';\nexport const t = [tabLedger, sessionCeiling];\n";
+    expect(await ruleIds(page, 'apps/web/src/live/transport/page.ts')).not.toContain(RULE);
+  });
+
+  it('lets the ledger adapter and the key gate import the Messages client, and nothing else of the loop', async () => {
+    const client = "import { MessagesClient } from '../../../../packages/core/anthropic.ts';\nexport const C = MessagesClient;\n";
+    const dispatch = "import { callTool } from '../../../../packages/env/tools/registry.ts';\nexport const f = callTool;\n";
+    expect(await ruleIds(client, 'apps/web/src/adapters/ledger-browser.ts')).not.toContain(RULE);
+    expect(await ruleIds(client, 'apps/web/src/keygate/direct.ts')).not.toContain(RULE);
+    expect(await ruleIds(dispatch, 'apps/web/src/adapters/ledger-browser.ts')).toContain(RULE);
+    expect(await ruleIds(dispatch, 'apps/web/src/keygate/direct.ts')).toContain(RULE);
+  });
 });

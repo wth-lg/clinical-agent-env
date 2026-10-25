@@ -141,9 +141,10 @@ export function memoryLedger(opts: { rows?: readonly LedgerRow[]; onAppend?: (ro
   return browserLedger(new MemoryStore(opts.rows ?? [], opts.onAppend ?? (() => {})), () => new Date().toISOString(), 'worker');
 }
 
-// The model a browser trial asks for: run() refuses any other, and apps/web/src outside the
-// adapters imports nothing from anthropic.ts (lint: no-loop-outside-core).
+// The model a browser trial asks for: run() refuses any other, and apps/web/src outside this file
+// and the key gate imports nothing from anthropic.ts (lint: no-loop-outside-core).
 export { MODEL } from '../../../../packages/core/anthropic.ts';
 
-// The Messages client of a grant this adapter's ledger minted.
+// The Messages client of a grant this adapter's ledger minted. Only the trial Worker may import
+// it or memoryLedger (lint: no-loop-outside-core).
 export const grantClient = (opts: ClientOptions): MessagesClient => new MessagesClient(opts);
