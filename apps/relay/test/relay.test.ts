@@ -359,6 +359,32 @@ describe('case 6: model', () => {
     const up = spyUpstream();
     expect((await run(post({ body: okBody(MODEL) }), up.fetch)).status).toBe(200);
   });
+
+  // Security review M3: JSON.parse keeps the last of two equal keys, and the body is forwarded
+  // byte for byte, so a parser upstream that kept the first could see another model.
+  it.each([
+    ['another model first', `{"model":"claude-haiku-4-5","model":"${MODEL}","max_tokens":1,"messages":[]}`],
+    ['the relay model twice', `{"model":"${MODEL}","max_tokens":1,"model":"${MODEL}","messages":[]}`],
+    ['an escaped second key', `{"model":"claude-haiku-4-5","\\u006dodel":"${MODEL}","max_tokens":1,"messages":[]}`],
+    ['whitespace around the keys', `{ "model" : "x" ,\n "model" : "${MODEL}" }`],
+  ])('a body with two top-level model keys (%s) gets 400 with no upstream call', async (_name, body) => {
+    expect(JSON.parse(body).model).toBe(MODEL);
+    const up = spyUpstream();
+    const res = await run(post({ body }), up.fetch);
+    expect(res.status).toBe(400);
+    expect(JSON.parse(await res.text()).error.type).toBe('invalid_request_error');
+    expect(up.calls).toHaveLength(0);
+  });
+
+  it.each([
+    ['model inside messages', JSON.stringify({ model: MODEL, max_tokens: 1, messages: [{ role: 'user', content: [{ type: 'text', text: '"model":"x"' }] }], metadata: { model: 'x' } })],
+    ['an escaped model key, once', `{"\\u006dodel":"${MODEL}","max_tokens":1,"messages":[]}`],
+    ['a key that only ends in model', `{"supermodel":"x","model":"${MODEL}","max_tokens":1,"messages":[]}`],
+  ])('one top-level model key (%s) is forwarded', async (_name, body) => {
+    const up = spyUpstream();
+    expect((await run(post({ body }), up.fetch)).status).toBe(200);
+    expect(up.calls).toHaveLength(1);
+  });
 });
 
 describe('case 7: client abort', () => {

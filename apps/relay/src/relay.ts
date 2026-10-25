@@ -10,9 +10,9 @@
 //   OPTIONS   the CORS preflight: 204 for the allowed origin, 403 for any other
 //   method    POST, else 405
 //   origin    exactly allowedOrigin, else 403
-//   body      at most MAX_BODY_BYTES (413), read within BODY_TIMEOUT_MS (408), JSON whose model
-//             is MODEL (400); forwarded byte for byte, so the ledger's byte-count reserve stays
-//             exact
+//   body      at most MAX_BODY_BYTES (413), read within BODY_TIMEOUT_MS (408), a JSON object
+//             with one top-level model key, MODEL (400); forwarded byte for byte, so the
+//             ledger's byte-count reserve stays exact
 //   forward   only FORWARD_HEADERS go upstream; the response streams back with its status and
 //             RESPONSE_HEADERS plus the CORS headers; a client abort aborts the upstream fetch
 //   errors    an upstream fetch that fails gives the fixed 502 body, never the error's message
@@ -115,12 +115,37 @@ async function readBody(request: Request, max: number, timeoutMs: number): Promi
   return body;
 }
 
+// How many times `key` is a key of the top-level object in `json`, text JSON.parse has accepted:
+// a string at depth 1 followed by a colon is a key, compared after decoding its escapes.
+function topLevelKeyCount(json: string, key: string): number {
+  let depth = 0;
+  let count = 0;
+  for (let i = 0; i < json.length; i++) {
+    const c = json[i];
+    if (c === '"') {
+      const start = i;
+      for (i++; json[i] !== '"'; i++) if (json[i] === '\\') i++;
+      if (depth !== 1) continue;
+      let j = i + 1;
+      while (json[j] === ' ' || json[j] === '\t' || json[j] === '\n' || json[j] === '\r') j++;
+      if (json[j] === ':' && JSON.parse(json.slice(start, i + 1)) === key) count++;
+    } else if (c === '{' || c === '[') depth++;
+    else if (c === '}' || c === ']') depth--;
+  }
+  return count;
+}
+
+// The model of a body that is a JSON object with exactly one top-level "model" key, else null.
+// JSON.parse keeps the last of two equal keys, and the body is forwarded byte for byte, so a
+// second "model" key could show the upstream another model than the one checked here.
 function modelOf(body: Uint8Array): string | null {
   try {
-    const parsed: unknown = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(body));
+    const text = new TextDecoder('utf-8', { fatal: true }).decode(body);
+    const parsed: unknown = JSON.parse(text);
     if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return null;
     const model = (parsed as { model?: unknown }).model;
-    return typeof model === 'string' ? model : null;
+    if (typeof model !== 'string' || topLevelKeyCount(text, 'model') !== 1) return null;
+    return model;
   } catch {
     return null;
   }
@@ -190,7 +215,7 @@ export async function handle(request: Request, upstreamFetch: UpstreamFetch, lim
   if (body === 'too_large') return refuse(413, 'request_too_large', 'request body too large', cors);
   if (body === 'timeout') return refuse(408, 'timeout_error', 'request body not received in time', cors);
   const model = modelOf(body);
-  if (model === null) return refuse(400, 'invalid_request_error', 'the body is not a JSON object with a model', cors);
+  if (model === null) return refuse(400, 'invalid_request_error', 'the body is not a JSON object with one model', cors);
   if (model !== MODEL) return refuse(400, 'invalid_request_error', `the relay serves only ${MODEL}`, cors);
 
   const headers = new Headers();
