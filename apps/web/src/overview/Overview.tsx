@@ -83,14 +83,15 @@ function TaskSummary() {
     <Card title={`Tasks${tasks ? ` (${tasks.length})` : ''}`} actions={<a href={hrefWith({ view: 'tasks', task: null })} onClick={onNav({ view: 'tasks', task: null })} className={`text-xs ${link}`}>Open Tasks</a>}>
       {error !== null && <p role="alert">The tasks cannot be read: {error}</p>}
       {tasks === null && error === null && <p className="text-ink-muted">Loading tasks…</p>}
+      {tasks !== null && <p className="text-xs text-ink-muted">Open a task to read its prompt, its checks and its reference solution, and to run its grader checks with no key.</p>}
       {tasks !== null && (
-        <ul className="divide-y divide-line" data-testid="overview-tasks">
+        <ul className="mt-1 divide-y divide-line" data-testid="overview-tasks">
           {tasks.map((t) => (
             <li key={t.id} data-testid="overview-task" data-task={t.id} className="py-2">
               <a href={hrefWith({ view: 'tasks', task: t.id })} onClick={onNav({ view: 'tasks', task: t.id })} className={`font-medium ${link}`}>{t.title}</a>
               <span className="ml-2 break-all text-xs text-ink-muted">{t.id}</span>
               <p className="mt-0.5 text-xs text-ink-muted">
-                {t.tools === null ? `all ${TOOL_COUNT} tools` : `${t.tools.length} of ${TOOL_COUNT} tools`}, {t.policies.length} {t.policies.length === 1 ? 'policy' : 'policies'}, at most {t.maxTurns} turns. Tasks shows its prompt, checks and reference solution, and runs its grader checks with no key.
+                {t.tools === null ? `all ${TOOL_COUNT} tools` : `${t.tools.length} of ${TOOL_COUNT} tools`}, {t.policies.length} {t.policies.length === 1 ? 'policy' : 'policies'}, at most {t.maxTurns} turns
               </p>
             </li>
           ))}
@@ -108,7 +109,7 @@ function EnvironmentSummary() {
         <dt className="text-ink-muted">World</dt><dd>A synthetic FHIR R4 world: {w.resources} resources of {Object.keys(w.by_type).length} types</dd>
         <dt className="text-ink-muted">Pinned clock</dt><dd>{MANIFEST.now}</dd>
         <dt className="text-ink-muted">State hash</dt><dd className="break-all font-mono text-xs">{w.state_hash}</dd>
-        <dt className="text-ink-muted">Tools</dt><dd>{TOOL_COUNT}, each with a Try panel for the read tools</dd>
+        <dt className="text-ink-muted">Tools</dt><dd>{TOOL_COUNT}; you can try each read tool with no key</dd>
       </dl>
     </Card>
   );
