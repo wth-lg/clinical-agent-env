@@ -1,29 +1,25 @@
 // pnpm cli replay <run> [--json]
 // Re-executes every settled trial's tool log against a fresh store and grades it again from the
 // record's judge cache (packages/core/run.ts gradeTrajectory), with no model call and no client:
-// a judge cache miss is an error, named with its trial and cache key. A trial matches when the
-// replay reaches the record's final state hash and the grade has the outcome, score and check
-// results of the record's current grade (packages/core/summary.ts currentGrade: its last cli
-// regrade, else its recorded grade). A last regrade entry written before regrade stored check
-// results is compared on outcome and score only, and replay says so. A trial whose record's
-// env_version is not the checkout's (what the agent sees changed since it ran: the task's env
-// files, the world or the tools, packages/core/tasks.ts) is not replayed: it does not match,
-// with the reason 'environment changed: run at env_version <record's>, checkout at <checkout's>'
-// (regrade still grades it, and refuses it when its trajectory does not reach the record's
-// state). A change to the task's grader-side files or the grader (its grader_task_version) does
-// not stop a replay: after a grader fix and a regrade (the GRADER_ERROR policy,
-// packages/grader/grade.ts), replay compares the trajectory against the regraded current grade,
-// so `summary --require replay=all` can pass on that run.
+// a judge cache miss is an error, named with its trial and cache key. Whether a trial matches is
+// packages/core/replay.ts, the rule the browser's grader validation Worker applies too: the
+// record's env_version is the checkout's and the grade has the outcome, score and check results
+// of the record's current grade (its last cli regrade, else its recorded grade). A trial run in
+// another environment is not replayed and does not match (regrade still grades it, and refuses
+// it when its trajectory does not reach the record's state). A change to the task's grader-side
+// files or the grader (its grader_task_version) does not stop a replay: after a grader fix and a
+// regrade (the GRADER_ERROR policy, packages/grader/grade.ts), replay compares the trajectory
+// against the regraded current grade, so `summary --require replay=all` can pass on that run.
 // Writes <run>/replay.json, {trials: {"<trialName>": {match, outcome,
 // recorded_outcome, current_outcome, error?}}}, which `summary --require replay=all` reads. Exit 0 when every trial
 // matches; 1 otherwise; 2 on a usage error.
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import type { BatchRecord } from '../packages/core/batch.ts';
 import { installEgressGuard } from '../packages/core/egress.ts';
 import { gradeTrajectory } from '../packages/core/run.ts';
-import { currentGrade, trialName } from '../packages/core/summary.ts';
+import { envChanged, judgeMissed, replayEnvVerdict, replayVerdict, type ReplayVerdict } from '../packages/core/replay.ts';
+import { trialName } from '../packages/core/summary.ts';
 import { taskVersions, type TaskSource, type TaskVersions } from '../packages/core/tasks.ts';
 import { parseTrajectory } from '../packages/core/trajectory.ts';
 import type { Grade } from '../packages/grader/grade.ts';
@@ -71,25 +67,8 @@ export function checkoutVersions(tasks: TaskSource): (id: string) => Promise<Tas
 
 // audit-check names trials through replay; the one definition is packages/core/summary.ts.
 export { trialName };
-
-// Why a record's trial is not this checkout's environment. A record written before env_version
-// existed has none, and never matches.
-export const envChanged = (r: Pick<BatchRecord, 'env_version' | 'task_version'>, now: string): string =>
-  `environment changed: run at env_version ${r.env_version ?? `(none: recorded before env_version, task_version ${r.task_version})`}, checkout at ${now}`;
-
-// A judge cache miss on replay, said plainly with every cause: the cache key holds the judge
-// model, the [judge] effort, the judge prompt version, the judge question and the graded text
-// (packages/grader/judge.ts), so a change to any of them since the run misses, as does a cache
-// that never held the answer. No offline command asks the judge. cli/regrade.ts prints the same
-// text, so the two cannot drift.
-export const judgeMissed = (miss: string, r: Pick<BatchRecord, 'task_id' | 'model_requested'>): string =>
-  `judge cache miss ${/judge cache miss ([0-9a-f]+)/.exec(miss)?.[1] ?? miss}: the record's judge cache has no answer for this question. ` +
-  'The judge cache key has five parts: the judge model, the [judge] effort, the judge prompt version, the judge question and the text the grader gives the judge. ' +
-  'One of them may have changed since this run. ' +
-  "Or the record's cache never held this answer, for example because the entry was removed. " +
-  `Only a new run grades with the judge: pnpm cli run --task ${r.task_id} --model ${r.model_requested} --out <new run dir> (pnpm cli oracle --task ${r.task_id} --live-judge refreshes only the matrix cache).`;
-
-const metOf = (checks: ReadonlyArray<{ id: string; met: unknown }> | undefined) => JSON.stringify((checks ?? []).map((c) => [c.id, c.met]));
+// regrade prints the same environment and judge-miss reasons; the match rule is packages/core/replay.ts.
+export { envChanged, judgeMissed };
 
 export async function main(args: string[], deps: Deps = defaults): Promise<number> {
   const json = args.includes('--json');
@@ -104,7 +83,7 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
     return 1;
   }
   const tasks = deps.tasks ?? nodeTaskSource({ testMode: false });
-  const trials: Record<string, { match: boolean; outcome: string | null; recorded_outcome: string; current_outcome: string; error?: string }> = {};
+  const trials: Record<string, ReplayVerdict> = {};
   const notes: string[] = [];
   const current = checkoutVersions(tasks);
   const same: StoredRecord[] = [];
@@ -114,28 +93,18 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
     try {
       now = await current(r.task_id);
     } catch (e) {
-      trials[trialName(r)] = { match: false, outcome: null, recorded_outcome: r.outcome, current_outcome: currentGrade(r).outcome, error: (e as Error).message };
+      trials[trialName(r)] = replayVerdict(r, { error: (e as Error).message });
       continue;
     }
-    if (r.env_version === now.env_version) same.push(stored);
-    else trials[trialName(r)] = { match: false, outcome: null, recorded_outcome: r.outcome, current_outcome: currentGrade(r).outcome, error: envChanged(r, now.env_version) };
+    const changed = replayEnvVerdict(r, now.env_version);
+    if (changed === null) same.push(stored);
+    else trials[trialName(r)] = changed;
   }
-  const results = await regradeRun(dir, tasks, same);
-  for (const res of results) {
-    const r = res.stored.record;
-    const name = trialName(r);
-    const cur = currentGrade(r);
-    const base = { recorded_outcome: r.outcome, current_outcome: cur.outcome };
-    if ('grade' in res) {
-      const g = res.grade;
-      const checksKnown = !cur.regraded || cur.checks !== null;
-      if (!checksKnown) notes.push(`replay: ${name}: its last regrade recorded no check results; compared outcome and score only`);
-      const match = g.outcome === cur.outcome && g.score === cur.score && (!checksKnown || metOf(g.checks) === metOf(cur.checks ?? undefined));
-      const was = `the ${cur.regraded ? 'current grade' : 'record'} ${cur.outcome} score ${cur.score}`;
-      trials[name] = { match, outcome: g.outcome, ...base, ...(match ? {} : { error: g.error?.message ?? `regrade gives ${g.outcome} score ${g.score}, ${was}` }) };
-    } else {
-      trials[name] = { match: false, outcome: null, ...base, error: 'miss' in res ? judgeMissed(res.miss, r) : res.error };
-    }
+  for (const res of await regradeRun(dir, tasks, same)) {
+    const name = trialName(res.stored.record);
+    const { note, ...v } = replayVerdict(res.stored.record, res);
+    if (note !== undefined) notes.push(`replay: ${name}: ${note}`);
+    trials[name] = v;
   }
   writeJson(join(dir, 'replay.json'), { trials });
   const bad = Object.entries(trials).filter(([, t]) => !t.match);

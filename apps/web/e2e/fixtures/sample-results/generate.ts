@@ -1,0 +1,153 @@
+// Writes the committed sample run the browse and Findings specs build against
+// (RESULTS_ROOT=apps/web/e2e/fixtures/sample-results, plan phase P14):
+//   results/official.json                 {"run": "runs/sample-1"}
+//   results/runs/sample-1/trials/<task>/<index>.json, trajectories/<task>/<index>.jsonl
+//   results/runs/sample-1/summary.json    packages/core/summary.ts summarize() over the records
+//   results/runs/sample-1/audit.jsonl     human audit rows for some non-pass trials
+//   results/runs/sample-1/matrix.json     written by `pnpm cli matrix --task <id> --out` (below)
+//   docs/findings.md                      a short write-up of the sample, from summary.json
+// Every trial is a real scripted run through run() (packages/grader/matrix: the oracle and the
+// alternatives pass, the mutants and the null, spray and output-gap agents fail), graded from
+// the task's canned judge cache, so its trajectory replays to the record's final hash. A few
+// records are then rewritten to the outcomes a scripted model cannot produce (REFUSAL, LIMIT,
+// ENV_ERROR, GRADER_ERROR, INFRA_API) and graded again from the rewritten record. Each task
+// has 12 valid trials; the excluded records sit at index 12, as a batch's reruns would leave
+// 12 valid ones. Costs are synthetic (scripted runs cost nothing) and fixed per index.
+// The clock is fixed, so a rerun writes the same bytes.
+//   node apps/web/e2e/fixtures/sample-results/generate.ts            records, summary, findings
+//   node apps/web/e2e/fixtures/sample-results/generate.ts --matrix   also matrix.json (slow)
+import { spawnSync } from 'node:child_process';
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { loadMatrixTask, matrixEnv, matrixTaskIds } from '../../../../../cli/matrix.ts';
+import type { AuditRow } from '../../../../../packages/core/explain.ts';
+import type { TrialRecord } from '../../../../../packages/core/run.ts';
+import { assertSummary, summarize, type SummaryTrial } from '../../../../../packages/core/summary.ts';
+import { toJsonl } from '../../../../../packages/core/trajectory.ts';
+import { cases, gradeRun, trial, type Case, type CaseRun } from '../../../../../packages/grader/matrix/matrix.ts';
+
+const HERE = dirname(fileURLToPath(import.meta.url));
+const REPO = join(HERE, '../../../../..');
+export const RUN_ID = 'sample-1';
+const RUN = join(HERE, 'results/runs', RUN_ID);
+export const TRIALS_PER_TASK = 12;
+const T0 = Date.parse('2026-10-23T12:00:00Z');
+
+// Passes per task, in task id order, so the six intervals differ.
+const PASSES = [3, 5, 7, 9, 4, 8];
+// The non-FAIL outcomes each task holds, by task position: valid ones take an index below 12,
+// excluded ones index 12.
+const SPECIAL: Record<number, Array<'REFUSAL' | 'LIMIT' | 'ENV_ERROR' | 'GRADER_ERROR' | 'INFRA_API'>> = {
+  0: ['REFUSAL'],
+  1: ['LIMIT'],
+  2: ['ENV_ERROR'],
+  3: ['GRADER_ERROR'],
+  4: ['INFRA_API', 'REFUSAL'],
+};
+
+type Rec = TrialRecord & { index: number; trajectory: string };
+
+const write = (file: string, text: string) => {
+  mkdirSync(dirname(file), { recursive: true });
+  writeFileSync(file, text);
+};
+
+let tick = 0;
+const now = () => T0 + 1000 * tick++;
+
+async function main(withMatrix: boolean) {
+  // matrix.json stays unless --matrix writes it again.
+  for (const d of ['trials', 'trajectories']) rmSync(join(RUN, d), { recursive: true, force: true });
+  if (withMatrix) rmSync(join(RUN, 'matrix.json'), { force: true });
+  const ids = matrixTaskIds().filter((id) => !id.startsWith('_'));
+  const env = { ...matrixEnv(), now };
+  const records: Rec[] = [];
+  const audit: AuditRow[] = [];
+  for (const [t, id] of ids.entries()) {
+    const task = await loadMatrixTask(id);
+    const all = cases(task);
+    const pass = all.filter((c) => c.kind === 'oracle' || c.kind === 'alternative');
+    const fail = all.filter((c) => c.kind !== 'oracle' && c.kind !== 'alternative');
+    const specials = SPECIAL[t] ?? [];
+    const validSpecials: string[] = specials.filter((s) => s === 'REFUSAL' || s === 'LIMIT');
+    const plan: Array<{ c: Case; as: string | null }> = [];
+    for (let i = 0; i < PASSES[t]!; i++) plan.push({ c: pass[i % pass.length]!, as: null });
+    for (const s of validSpecials) plan.push({ c: fail[0]!, as: s });
+    while (plan.length < TRIALS_PER_TASK) plan.push({ c: fail[(plan.length - PASSES[t]!) % fail.length]!, as: null });
+    for (const s of specials.filter((x) => !validSpecials.includes(x))) plan.push({ c: fail[1 % fail.length]!, as: s });
+
+    for (const [index, { c, as }] of plan.entries()) {
+      const run = await trial(env, task, c);
+      const facts = rewrite(run.record, as);
+      const graded: CaseRun = { record: facts, events: run.events };
+      const grade = as === 'GRADER_ERROR'
+        ? { ...(await gradeRun(env, task, task.checks, graded)), outcome: 'GRADER_ERROR' as const, valid: false, fault: 'grader' as const, score: null, error: { check: task.checks.find((k) => k.kind === 'gate')!.id, message: "TypeError: Cannot read properties of undefined (reading 'status')", stops_batch: false } }
+        : await gradeRun(env, task, task.checks, graded);
+      const trajectory = `trajectories/${id}/${index}.jsonl`;
+      const rec: Rec = { ...facts, ...grade, trial_id: `${RUN_ID}:${id}:${index}`, index, trajectory, cost_usd: Number((0.6 + 0.07 * t + 0.03 * index).toFixed(4)), judge_cost_usd: 0 };
+      records.push(rec);
+      write(join(RUN, 'trials', id, `${index}.json`), `${JSON.stringify(rec, null, 2)}\n`);
+      write(join(RUN, trajectory), toJsonl(run.events));
+      // Every FAIL but the last of each task is audited, so each task keeps one unaudited FAIL.
+      const lastFail = plan.map((p, i) => (p.as === null && !pass.includes(p.c) ? i : -1)).filter((i) => i >= 0).at(-1);
+      if (rec.outcome === 'FAIL' && index !== lastFail) {
+        audit.push({ trial: `${id}/${index}`, outcome: 'FAIL', taxonomy: rec.attribution?.auto ?? null, model_fault: 'yes', decisive_step: rec.attribution?.decisive_step ?? null, evidence_ids: rec.attribution?.exposure.map((e) => e.id).slice(0, 2) ?? [], llm_auditor_agrees: true });
+      }
+    }
+  }
+
+  const summary = summarize({ run_id: RUN_ID, trials: records as unknown as SummaryTrial[], requeued: [], replay: null, mode: 'mock-sample', expected: { tasks: ids, from: 'generate.ts' } });
+  assertSummary(summary);
+  write(join(HERE, 'results/official.json'), `${JSON.stringify({ run: `runs/${RUN_ID}` }, null, 2)}\n`);
+  write(join(RUN, 'summary.json'), `${JSON.stringify(summary, null, 2)}\n`);
+  write(join(RUN, 'audit.jsonl'), audit.map((a) => `${JSON.stringify(a)}\n`).join(''));
+  write(join(HERE, 'docs/findings.md'), findings(summary));
+  if (withMatrix) {
+    for (const id of ids) {
+      const r = spawnSync('node', ['cli/index.ts', 'matrix', '--task', id, '--out', RUN], { cwd: REPO, encoding: 'utf8' });
+      process.stdout.write(`matrix ${id}: exit ${r.status}\n`);
+      if (r.status !== 0) throw new Error(`pnpm cli matrix --task ${id} failed:\n${r.stdout}${r.stderr}`);
+    }
+  }
+}
+
+// The record as the outcome `as` would have left it; null keeps the scripted run's.
+function rewrite(r: TrialRecord, as: string | null): TrialRecord {
+  switch (as) {
+    case 'REFUSAL':
+      return { ...r, status: 'REFUSAL', stop_reason: 'refusal', summary: 'I cannot place or change orders for this patient without a clinician reviewing the chart first.' };
+    case 'LIMIT':
+      return { ...r, status: 'LIMIT', detail: 'turns' };
+    case 'ENV_ERROR':
+      return { ...r, status: 'ENV_ERROR', detail: 'INTERNAL', tool_errors: { ...r.tool_errors, INTERNAL: 1 }, state_hash: { ...r.state_hash, final: null, replay_final: null } };
+    case 'INFRA_API':
+      return { ...r, status: 'INFRA_API', detail: 'overloaded_error after 4 retries' };
+    default:
+      return r;
+  }
+}
+
+const pct = (x: number | null) => (x === null ? 'n/a' : `${Math.round(100 * x)}%`);
+
+function findings(s: ReturnType<typeof summarize>): string {
+  const rows = Object.entries(s.tasks).map(([id, t]) => `| ${id} | ${t.passes}/${t.trials} | ${pct(t.wilson95?.lo ?? null)} to ${pct(t.wilson95?.hi ?? null)} |`);
+  return [
+    '# Findings (sample run)',
+    '',
+    `This is the sample run \`${s.run_id}\` that the browse tests build against. Its trials are scripted, not model runs, so the numbers say nothing about the model.`,
+    '',
+    '## Pass rates',
+    '',
+    '| Task | Passes | Wilson 95% interval |',
+    '| --- | --- | --- |',
+    ...rows,
+    '',
+    '## Failures',
+    '',
+    'Most failures are mutants of the reference solution that fall into one trap each. One refusal and one limit stand in for the outcomes a scripted model cannot produce.',
+    '',
+  ].join('\n');
+}
+
+await main(process.argv.includes('--matrix'));

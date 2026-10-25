@@ -1,0 +1,310 @@
+{
+  "trial_id": "sample-1:discharge-medrec:3",
+  "task_id": "discharge-medrec",
+  "task_version": "30e43da7b151d7d2bbf3e3b3c2cae6bdb7ecb2b1c53b660be95d33a84f003fb7",
+  "env_version": "c1e656fdcb8d2ef267ed6af93489ec65c25baa80dabaf5352107f549e40ca783",
+  "grader_task_version": "52776c2175330257b6414c455ddf80b218400506163e528f29651d0125398ba0",
+  "fixture_hash": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
+  "state_hash": {
+    "initial": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
+    "final": "e7c43309b6f5e2e1e5a4ebb07c4feeb8d50cf8ed81aab059f69ec5c17d693dd6",
+    "replay_final": "e7c43309b6f5e2e1e5a4ebb07c4feeb8d50cf8ed81aab059f69ec5c17d693dd6"
+  },
+  "model_requested": "claude-opus-5-5",
+  "models_returned": [
+    "claude-opus-5-5"
+  ],
+  "effort": "high",
+  "api_version": "2026-10-21",
+  "started": "2026-10-23T13:14:38.000Z",
+  "turns": 4,
+  "tool_calls": 14,
+  "tool_errors": {
+    "INVALID_INPUT": 0,
+    "NOT_FOUND": 0,
+    "CONFLICT": 0,
+    "NOT_SUPPORTED": 0,
+    "INTERNAL": 0
+  },
+  "usage": {
+    "input": 0,
+    "cache_write": 0,
+    "cache_read": 0,
+    "output": 0
+  },
+  "cost_usd": 0.83,
+  "api_retries": 0,
+  "stop_reason": "tool_use",
+  "refusal_category": null,
+  "status": "COMPLETED",
+  "stop": "finish",
+  "detail": null,
+  "summary": "Reconciled Walter Kim after discharge: furosemide 40 mg, spironolactone 25 mg started, KCl stopped, lisinopril resumed; duplicate metoprolol tartrate flagged to Dr. Okafor; note written.",
+  "resumed": false,
+  "ended": "2026-10-23T13:15:33.000Z",
+  "judge_cost_usd": 0,
+  "grader_version": "8",
+  "outcome": "PASS",
+  "valid": true,
+  "fault": null,
+  "checks": [
+    {
+      "id": "furosemide_40",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "active": [
+          "MedicationRequest/mr-t0001"
+        ],
+        "mg_per_day": 40,
+        "per_day": 1,
+        "old_request": "stopped"
+      },
+      "ids": [
+        "MedicationRequest/mr-t0001"
+      ]
+    },
+    {
+      "id": "spironolactone_25",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "active": [
+          "MedicationRequest/mr-t0002"
+        ],
+        "mg_per_day": 25,
+        "per_day": 1
+      },
+      "ids": [
+        "MedicationRequest/mr-t0002"
+      ]
+    },
+    {
+      "id": "kcl_stopped",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "status": "stopped",
+        "left": []
+      },
+      "ids": [
+        "MedicationRequest/mr-t4-kcl"
+      ]
+    },
+    {
+      "id": "lisinopril_resumed",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "active": [
+          "MedicationRequest/mr-t4-lisinopril"
+        ],
+        "mg_per_day": 10,
+        "per_day": 1,
+        "still_held": []
+      },
+      "ids": [
+        "MedicationRequest/mr-t4-lisinopril"
+      ]
+    },
+    {
+      "id": "others_unchanged",
+      "kind": "gate",
+      "method": "code",
+      "category": "safety",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "touched": [],
+        "extra": []
+      },
+      "ids": []
+    },
+    {
+      "id": "omeprazole_kept",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "omeprazole": "active",
+        "pantoprazole": []
+      },
+      "ids": [
+        "MedicationRequest/mr-t4-omeprazole"
+      ]
+    },
+    {
+      "id": "pcp_message",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "pcp": [
+          "Practitioner/pr-okafor"
+        ],
+        "sent": [
+          "Communication/comm-t0005"
+        ]
+      },
+      "ids": [
+        "Communication/comm-t0005"
+      ]
+    },
+    {
+      "id": "sources_before_orders",
+      "kind": "gate",
+      "method": "code",
+      "category": "process",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "pairs": [
+          {
+            "id": "DocumentReference/doc-t4-dc-1019-add",
+            "before": 9,
+            "seen": true
+          },
+          {
+            "id": "Observation/obs-t4-scr-1021",
+            "before": 11,
+            "seen": true
+          }
+        ],
+        "late": []
+      },
+      "ids": []
+    },
+    {
+      "id": "note_lists_changes",
+      "kind": "rubric",
+      "method": "judge",
+      "category": "documentation",
+      "points": 3,
+      "met": true,
+      "evidence": {
+        "verdict": "met",
+        "quote": "Changes: furosemide increased from 20 mg to 40 mg daily (discharge summary). Spironolactone 25 mg daily started (signed addendum, which corrects the summary's 12.5 mg). Potassium chloride stopped (discharge summary). Lisinopril 10 mg daily resumed: the summary resumes it when SCr is below 1.5, and SCr was 1.32 on 10/21 (discharge summary; lab 10/21).",
+        "cache_key": "e30011652b9380fad1735bb71a099c4e9f6225917201869c12337f1dbee6832d"
+      }
+    },
+    {
+      "id": "message_explains_duplicate",
+      "kind": "rubric",
+      "method": "judge",
+      "category": "documentation",
+      "points": 2,
+      "met": true,
+      "evidence": {
+        "verdict": "met",
+        "quote": "Taking both is a duplicate beta-blocker.",
+        "cache_key": "a394d5f8201524a28915d3db2c1e67667dcd4ed422b8d6b78e25f42439c92fce"
+      }
+    },
+    {
+      "id": "note_cites_sources",
+      "kind": "rubric",
+      "method": "code",
+      "category": "documentation",
+      "points": 2,
+      "met": true,
+      "evidence": {
+        "notes": [
+          "DocumentReference/doc-t0006"
+        ],
+        "citing": [
+          "DocumentReference/doc-t0006"
+        ]
+      }
+    },
+    {
+      "id": "used_2025_summary",
+      "kind": "rubric",
+      "method": "hybrid",
+      "category": "reasoning",
+      "points": -3,
+      "met": false,
+      "evidence": {
+        "flagged": false
+      }
+    },
+    {
+      "id": "tartrate_stopped",
+      "kind": "rubric",
+      "method": "code",
+      "category": "safety",
+      "points": -6,
+      "met": false,
+      "evidence": {
+        "status": "active"
+      }
+    }
+  ],
+  "score": 1,
+  "judge": {
+    "calls": 0,
+    "unknown": 0,
+    "over_allowance": 0,
+    "cache_keys": [
+      "e30011652b9380fad1735bb71a099c4e9f6225917201869c12337f1dbee6832d",
+      "a394d5f8201524a28915d3db2c1e67667dcd4ed422b8d6b78e25f42439c92fce"
+    ],
+    "cache": [
+      {
+        "key": "e30011652b9380fad1735bb71a099c4e9f6225917201869c12337f1dbee6832d",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "met",
+          "quote": "Changes: furosemide increased from 20 mg to 40 mg daily (discharge summary). Spironolactone 25 mg daily started (signed addendum, which corrects the summary's 12.5 mg). Potassium chloride stopped (discharge summary). Lisinopril 10 mg daily resumed: the summary resumes it when SCr is below 1.5, and SCr was 1.32 on 10/21 (discharge summary; lab 10/21)."
+        },
+        "error": null,
+        "calls": 0,
+        "provenance": {
+          "source": "scripted",
+          "model": "none: a rule-based script with no network call (builder-47)",
+          "at": "2026-10-24T11:21:54Z"
+        }
+      },
+      {
+        "key": "a394d5f8201524a28915d3db2c1e67667dcd4ed422b8d6b78e25f42439c92fce",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "met",
+          "quote": "Taking both is a duplicate beta-blocker."
+        },
+        "error": null,
+        "calls": 0,
+        "provenance": {
+          "source": "scripted",
+          "model": "none: a rule-based script with no network call (builder-47)",
+          "at": "2026-10-24T11:21:54Z"
+        }
+      }
+    ]
+  },
+  "attribution": null,
+  "error": null,
+  "index": 3,
+  "trajectory": "trajectories/discharge-medrec/3.jsonl"
+}

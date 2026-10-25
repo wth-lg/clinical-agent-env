@@ -167,17 +167,36 @@ export function auditLabelOf(row: Pick<AuditRow, 'label' | 'taxonomy' | 'outcome
 const words = (s: string) => s.trim().split(/\s+/).filter((w) => w !== '');
 const firstWords = (s: string, n: number) => {
   const w = words(s);
-  return w.length <= n ? w.join(' ') : `${w.slice(0, n).join(' ')}…`;
+  return w.length <= n ? w.join(' ') : `${w.slice(0, n).join(' ').replace(/[,;:(]+$/, '')}…`;
 };
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 
-function show(v: unknown): string {
+// An ISO date-time, as a person reads it: 2026-10-25T20:00:00-04:00 is 2026-10-25 20:00.
+const ISO_TIME = /^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:\d{2})?$/;
+// List items, and fields of an object inside a value, shown before "and N more".
+const LIST_ITEMS = 2;
+const NESTED_FIELDS = 3;
+
+// A value of check evidence in words, never as JSON: a list shows its first items and how many
+// more there are, an object each field as "<name> <value>" (in parentheses when it sits inside
+// another value), a range as min-max.
+function show(v: unknown, nested = false): string {
   if (v === null || v === undefined) return 'none';
-  if (typeof v === 'string') return v.trim() === '' ? 'none' : v;
+  if (typeof v === 'string') return v.trim() === '' ? 'none' : v.replace(ISO_TIME, '$1 $2');
   if (typeof v === 'number' || typeof v === 'boolean') return String(v);
-  if (Array.isArray(v)) return v.length === 0 ? 'none' : v.map(show).join(', ');
+  if (Array.isArray(v)) {
+    if (v.length === 0) return 'none';
+    const head = v.slice(0, LIST_ITEMS).map((x) => show(x, true)).join(', ');
+    return v.length > LIST_ITEMS ? `${head} and ${v.length - LIST_ITEMS} more` : head;
+  }
   if (isObj(v) && typeof v.min === 'number' && typeof v.max === 'number') return v.min === v.max ? String(v.min) : `${v.min}-${v.max}`;
-  return JSON.stringify(v);
+  if (isObj(v)) {
+    const entries = Object.entries(v);
+    const shown = entries.slice(0, nested ? NESTED_FIELDS : entries.length).map(([k, x]) => `${k.replace(/_/g, ' ')} ${show(x, true)}`).join(', ');
+    const fields = entries.length > NESTED_FIELDS && nested ? `${shown} and ${entries.length - NESTED_FIELDS} more` : shown;
+    return fields === '' ? 'none' : nested ? `(${fields})` : fields;
+  }
+  return String(v);
 }
 
 // Evidence lists a passing check leaves empty (the writes beyond what is allowed, the writes
@@ -190,10 +209,14 @@ export function expectedFound(evidence: { [k: string]: unknown } | undefined): {
   const ev = evidence ?? {};
   if ('expected' in ev || 'found' in ev) return { expected: show(ev.expected), found: show(ev.found) };
   if (isObj(ev.range)) return { expected: show(ev.range), found: show(ev[RANGE_VALUE.find((k) => k in ev) ?? 'found']) };
-  const empty = SHOULD_BE_EMPTY.find((k) => Array.isArray(ev[k]));
+  // A list that should be empty and is not; when each is empty the check failed for another field.
+  const empty = SHOULD_BE_EMPTY.find((k) => Array.isArray(ev[k]) && ev[k].length > 0);
   if (empty !== undefined) return { expected: 'none', found: show(ev[empty]) };
-  const rest = Object.entries(ev).filter(([k]) => k !== 'active');
-  return { expected: 'the check met', found: rest.length === 0 ? 'not met' : rest.map(([k, v]) => `${k} ${show(v)}`).join(', ') };
+  // The state the check wanted, when it names it: `want` (the values), or `window` (dates).
+  const fields = (skip: string) => Object.entries(ev).filter(([k]) => k !== 'active' && k !== skip).map(([k, v]) => `${k.replace(/_/g, ' ')} ${show(v, true)}`).join(', ') || 'not met';
+  if (isObj(ev.want) || Array.isArray(ev.want)) return { expected: show(ev.want), found: fields('want') };
+  if (isObj(ev.window) && 'start' in ev.window && 'end' in ev.window) return { expected: `between ${show(ev.window.start)} and ${show(ev.window.end)}`, found: fields('window') };
+  return { expected: 'the check met', found: fields('') };
 }
 
 // "<id> failed: expected <e>, found <f>", the values cut so that it fits in `max` words.
@@ -203,6 +226,17 @@ function checkSentence(id: string, expected: string, found: string, max: number)
   const each = Math.floor((max - 4) / 2);
   return `${id} failed: expected ${firstWords(expected, each)}, found ${firstWords(found, each)}`;
 }
+
+// What each taxonomy label (packages/grader/attribution.ts) says about a failed trial, in words; the
+// glossary shows them, because a reason may end with the label alone when its clause does not fit.
+export const TAXONOMY_TEXT: Readonly<Record<Taxonomy, string>> = {
+  retrieval: 'The model did not read a record that the decision needed, so it did not have the facts.',
+  reasoning: 'The model read every record that the decision needed, and the decision was still wrong.',
+  output_gap: 'The model said that it did the action, but the action is not in the final state.',
+  over_action: 'The model wrote more changes than the task permits.',
+  process: 'The model wrote changes before it read the records that the policy tells it to read first.',
+  did_not_finish: 'The trial stopped at a limit (turns, cost, time or output) before the model finished.',
+};
 
 // did_not_finish has no clause: it is a LIMIT's taxonomy, and a LIMIT's reason leads with its limit.
 const TAXONOMY_CLAUSE: Record<Exclude<Taxonomy, 'did_not_finish'>, (f: AttributionFacts) => string> = {
