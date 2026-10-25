@@ -2,8 +2,8 @@
 // browser (promoted from the P15 verifier's probe). The served trial bundle gets a probe appended
 // that answers over a BroadcastChannel from inside the running Worker, after the egress guard:
 // the Worker's URL is a blob:, the egress guard refuses a fetch to another origin, the browser
-// refuses the prototype fetch and an import() from that origin (the CSP, under the guard), and a
-// same-origin fetch still works. A real server on 127.0.0.1 records any request that gets out.
+// refuses the prototype fetch and an import() from that origin with a securitypolicyviolation
+// event for each (the CSP, under the guard), and a same-origin fetch still works. A real server on 127.0.0.1 records any request that gets out.
 // The Messages API is route-mocked with the toy script, held on turn 2 so the Worker is alive.
 import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
@@ -39,6 +39,8 @@ async function mockToy(context: BrowserContext) {
 
 const PROBE = String.raw`
 ;(() => {
+  const violations = [];
+  self.addEventListener('securitypolicyviolation', (e) => violations.push(e.effectiveDirective + ' ' + e.blockedURI));
   const bc = new BroadcastChannel('trial-worker-probe');
   bc.onmessage = async ({ data: foreign }) => {
     const attempt = async (f) => { try { const r = await f(); return r instanceof Response ? 'answered ' + r.status : 'loaded'; } catch (e) { return 'refused: ' + (e && e.message); } };
@@ -49,6 +51,8 @@ const PROBE = String.raw`
       protoFetch: await attempt(() => protoFetch.call(globalThis, foreign + '/proto-fetch')),
       dynamicImport: await attempt(() => import(foreign + '/mod.js')),
       sameOrigin: await attempt(() => protoFetch.call(globalThis, new URL('/clinical-agent-env/data/fixtures/manifest.json', location.origin).href)),
+      // Read after the attempts, and a moment later, so each violation event has been dispatched.
+      violations: await new Promise((resolve) => setTimeout(() => resolve(violations), 200)),
     });
   };
 })();
@@ -87,6 +91,10 @@ test('the real trial Worker runs from blob: under the page CSP: other origins ar
     await api.release();
     await expect(page.getByTestId('live-trial')).toHaveAttribute('data-state', 'graded', { timeout: 90_000 });
     expect(patched).toBeGreaterThan(0);
+    // The CSP itself refused both, a positive signal: in Chromium a Worker whose script comes
+    // through route.fulfill cannot reach the network whatever the CSP, so "refused" alone does
+    // not prove the CSP (verifier-phase-P16-1 m2).
+    expect(probe.violations).toEqual(expect.arrayContaining([`connect-src ${foreign}/proto-fetch`, `script-src-elem ${foreign}/mod.js`]));
     expect(String(probe.location)).toMatch(/^blob:/);
     expect(String(probe.guardFetch)).toMatch(/^refused: .*egress guard/);
     expect(String(probe.protoFetch)).toMatch(/^refused/);
