@@ -75,3 +75,13 @@ describe('unknown penalties (R14-04)', () => {
     expect(g.score).toBe(1);
   });
 });
+
+describe('more dash and apostrophe forms (verifier M3)', () => {
+  it('folds U+2010, U+2011 and U+2212 to - and U+02BC and U+FF07 to the apostrophe', async () => {
+    expect(await judgeQuote('follow-up', 'Book a follow‑up visit.')).toMatchObject({ met: true });
+    expect(await judgeQuote('follow-up', 'Book a follow‐up visit.')).toMatchObject({ met: true });
+    expect(await judgeQuote('K -0.5', 'K −0.5 change.')).toMatchObject({ met: true });
+    expect(await judgeQuote('Iʼve sent', "I've sent it")).toMatchObject({ met: true });
+    expect(await judgeQuote('I＇ve sent', "I've sent it")).toMatchObject({ met: true });
+  });
+});

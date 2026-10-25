@@ -185,13 +185,14 @@ function parseAnswer(result: CallResult): { [k: string]: Json } | null {
 const validJudge = (a: { [k: string]: Json }) => ['met', 'not_met', 'unknown'].includes(a.verdict as string) && typeof a.quote === 'string';
 const validExtract = (a: { [k: string]: Json }) => (a.value === null || (typeof a.value === 'number' && Number.isFinite(a.value))) && typeof a.quote === 'string';
 
-// Both sides are compared folded: typographic single and double quotes as ' and ", en and em
-// dashes as -, case folded, whitespace runs as one space, so a quote that re-types an apostrophe
-// or re-wraps a line still matches (R14-04).
-const fold = (s: string) => s.replace(/[‘’‚‛′]/g, "'").replace(/[“”„‟″]/g, '"').replace(/[–—]/g, '-').toLowerCase().replace(/\s+/g, ' ').trim();
+// Both sides are compared folded: typographic single and double quotes (and the modifier and
+// fullwidth apostrophes) as ' and ", hyphens, en and em dashes and the minus sign as -, case
+// folded, whitespace runs as one space, so a quote that re-types an apostrophe or re-wraps a
+// line still matches (R14-04).
+const fold = (s: string) => s.replace(/[\u2018\u2019\u201A\u201B\u2032\u02BC\uFF07]/g, "'").replace(/[\u201C\u201D\u201E\u201F\u2033]/g, '"').replace(/[\u2010\u2011\u2013\u2014\u2212]/g, '-').toLowerCase().replace(/\s+/g, ' ').trim();
 // A quote with "..." or "…" is segments that must all appear in the text, in that order.
 function quoted(quote: string, text: string): boolean {
-  const segments = fold(quote).split(/\.\.\.|…/).map((s) => s.trim()).filter((s) => s !== '');
+  const segments = fold(quote).split(/\.\.\.|\u2026/).map((s) => s.trim()).filter((s) => s !== '');
   const folded = fold(text);
   let at = 0;
   for (const s of segments) {
