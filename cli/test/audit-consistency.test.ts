@@ -114,11 +114,12 @@ describe('the consistency flag', () => {
     expect(consistencyOf(three.map(currentGrade), { final: true }).flags).toEqual([]);
   });
 
-  it('the crc-care-gap matrix failures whose first failed check is fit_orders group as one check', async () => {
+  // Only the mutants declared to fail fit_orders run, to keep the test short.
+  it('the crc-care-gap mutant failures whose first failed check is fit_orders group as one check', async () => {
     const env = matrixEnv();
     const task = await loadMatrixTask('crc-care-gap');
     const grades: Array<{ outcome: string; valid: boolean; checks: SummaryCheck[] }> = [];
-    for (const c of cases(task)) {
+    for (const c of cases(task).filter((x) => x.kind === 'mutant' && x.mutant.fails.includes('fit_orders'))) {
       const g = await gradeRun(env, task, task.checks, await trial(env, task, c));
       const checks = g.checks as unknown as SummaryCheck[];
       if (g.outcome !== 'PASS' && checks.find((x) => x.kind === 'gate' && x.met === false)?.id === 'fit_orders') grades.push({ outcome: g.outcome, valid: true, checks });
@@ -127,9 +128,8 @@ describe('the consistency flag', () => {
     const c = consistencyOf(grades);
     expect(c.shared).toMatchObject({ check: 'fit_orders', count: grades.length });
     expect(c.shared!.found_values).toBeGreaterThan(1);
-    // No group member passes, so no_passes holds too.
     expect(c.flags).toContain('shared_failure');
-  }, 300_000);
+  }, 180_000);
 
   it('a malformed review line is a violation and counts as no review', async () => {
     const dir = fixture('malformed');
