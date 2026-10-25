@@ -6,12 +6,15 @@
 // only the API error; a batch whose projection crosses the session cap is refused with no API
 // request and no Worker. After the trials and the reload, no storage holds the sentinel key.
 import { randomUUID } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { expect, test, type Page, type Route } from '@playwright/test';
 import { REFUSAL_TEXT } from '../../../packages/core/runner-api.ts';
 import { okResponse, SCENARIOS } from '../src/harness/scenarios.ts';
 import { LOCAL_START_COMMAND } from '../src/surface/command.ts';
 
-const API_ORIGIN = 'https://api.anthropic.com';
+// The API origin the page may connect to, read from the CSP, as shell.spec.ts does (lint: no-direct-anthropic).
+const CSP = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+const API_ORIGIN = /connect-src 'self' (\S+);/.exec(CSP)?.[1] ?? '';
 const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': 'POST' };
 const ORG_CORS = 'CORS requests are not allowed for this Organization because of its settings.';
 const sentinelKey = () => ['sk', 'ant', 'api03', randomUUID().replaceAll('-', ''), 'e2e'].join('-');

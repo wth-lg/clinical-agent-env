@@ -7,7 +7,7 @@
 // CLINENV_RUNNER_TEST_TRANSPORT=stall hook). Nothing reaches the API.
 import { spawn, spawnSync, type ChildProcess } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { mkdtempSync } from 'node:fs';
+import { mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -19,6 +19,9 @@ import { SAMPLE, summary } from './fixtures/sample-results/sample.ts';
 
 const REPO = fileURLToPath(new URL('../../../', import.meta.url));
 const WEB = join(REPO, 'apps/web');
+// The API origin the page may connect to, read from the CSP, as shell.spec.ts does (lint: no-direct-anthropic).
+const CSP = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+const API_ORIGIN = /connect-src 'self' (\S+);/.exec(CSP)?.[1] ?? '';
 const sentinelKey = () => ['sk', 'ant', 'api03', randomUUID().replaceAll('-', ''), 'e2e'].join('-');
 
 interface Runner { url: string; proc: ChildProcess; tmp: string }
@@ -148,7 +151,7 @@ test('a trial streams over SSE and grades, with no request to the API and no CSP
   const id = (await trial(page).getAttribute('data-trial'))!;
   const view = (await (await api(page, runner!, `api/trials/${encodeURIComponent(id)}`)).json()) as { record: { state_hash: { final: string } } };
   await expect(trial(page).getByTestId('final-hash')).toHaveText(view.record.state_hash.final);
-  expect(seen.requests.filter((u) => new URL(u).hostname === 'api.anthropic.com')).toEqual([]);
+  expect(seen.requests.filter((u) => new URL(u).origin === API_ORIGIN)).toEqual([]);
   expect(seen.requests.some((u) => u.includes(`/api/trials/${encodeURIComponent(id)}/events`))).toBe(true);
   expect(seen.csp).toEqual([]);
 });

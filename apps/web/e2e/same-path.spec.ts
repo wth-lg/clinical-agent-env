@@ -19,6 +19,9 @@ import { okResponse, SCENARIOS } from '../src/harness/scenarios.ts';
 
 const REPO = fileURLToPath(new URL('../../../', import.meta.url));
 const MODEL = 'claude-opus-5-5';
+// The API origin the page may connect to, read from the CSP, as shell.spec.ts does (lint: no-direct-anthropic).
+const CSP = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+const API_ORIGIN = /connect-src 'self' (\S+);/.exec(CSP)?.[1] ?? '';
 const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': 'POST' };
 
 function cleanEnv(tmp: string): Record<string, string> {
@@ -70,7 +73,7 @@ async function runnerTrial(): Promise<TrialEvent[]> {
 
 async function workerTrial(page: Page): Promise<TrialEvent[]> {
   let judge = 0;
-  await page.route((url) => url.origin === 'https://api.anthropic.com', async (route) => {
+  await page.route((url) => url.origin === API_ORIGIN, async (route) => {
     const r = route.request();
     if (r.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: CORS });
     const body = r.postDataJSON() as { max_tokens: number; tools?: unknown[]; messages: Array<{ role: string }> };
