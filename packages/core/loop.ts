@@ -92,11 +92,12 @@ export interface LoopOutcome {
   usage: { input: number; cache_write: number; cache_read: number; output: number };
   cost_usd: number;
   models_returned: string[];
-  // Attempts that failed and were retried, counted as the client reports each retry, so a trial
-  // that ends in a retry storm records them too.
+  // Retries the client reported (onRetry), so a trial that ends in a retry storm records them
+  // too. It includes a retry the spend bound then refused before sending it.
   api_retries: number;
-  // Time spent in failed attempts and the backoff waits after them, up to the next attempt or
-  // the end of the trial, on the injected clock: left out of working time.
+  // Time spent in failed attempts that were retried and the backoff waits after them, up to the
+  // next attempt or the end of the trial, on the injected clock: left out of working time. A
+  // final failed attempt that the client does not retry is not counted (it ends the trial).
   retry_wait_ms: number;
   stop_reason: string | null;
   refusal_category: string | null;
