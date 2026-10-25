@@ -16,8 +16,12 @@ import { CHECK_TEXT, cliMatrix, cliReplay, explain, sampleBase, MANIFEST_HASH, r
 
 async function browse(page: Page, path = './') {
   await page.goto(new URL(path, await sampleBase(test.info().project.use.baseURL!)).href);
-  await page.getByRole('button', { name: 'Browse without a key' }).click();
-  await expect(page.getByRole('navigation', { name: 'Views' })).toBeVisible();
+  // A tab that already chose to browse goes straight to the view.
+  const gate = page.getByRole('button', { name: 'Browse without a key' });
+  const nav = page.getByRole('navigation', { name: 'Views' });
+  await expect(gate.or(nav)).toBeVisible();
+  if (await gate.isVisible()) await gate.click();
+  await expect(nav).toBeVisible();
 }
 
 test('the build serves the sample run', () => {

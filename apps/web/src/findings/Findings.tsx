@@ -73,7 +73,7 @@ function WillShow() {
     <Card title="What this page will show">
       <ul className="list-disc space-y-1 pl-5" data-testid="will-show">
         <li>The pass rate of each task over {FINAL_TRIALS_PER_TASK} trials, with its Wilson 95% interval. A trial passes only when it meets every gate check: <GlossaryLink anchor="pass">see how a pass is counted on Labels</GlossaryLink>.</li>
-        <li>The outcome of every trial, and whose fault each failure is (the model, the environment or the grader): <GlossaryLink>see how failures are attributed</GlossaryLink>.</li>
+        <li>The outcome of every trial, and whose fault each failure is (the model, the environment or the grader): <GlossaryLink anchor="fault-model">see the fault labels on Labels</GlossaryLink>.</li>
         <li>Example trials for each kind of failure, with the reason in words.</li>
         <li>Proof that the graders work: each task's reference solution passes and every validation probe gives the verdict expected. <a {...go('tasks')}>Run them now on Tasks</a>, with no key.</li>
       </ul>
