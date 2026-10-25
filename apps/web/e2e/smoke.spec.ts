@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { readFileSync } from 'node:fs';
+import { PROBE_RELAY_SOURCES } from '../src/probe/csp.ts';
 
 // The design CSP, pinned. This exact literal in this file is the one place outside
 // packages/core/anthropic.ts that lint lets name the API host (no-direct-anthropic). worker-src
@@ -7,18 +8,23 @@ import { readFileSync } from 'node:fs';
 // (src/live/transport/worker.ts).
 const CSP = "default-src 'self'; connect-src 'self' https://api.anthropic.com; script-src 'self'; worker-src 'self' blob:";
 const API_ORIGIN = /connect-src 'self' (\S+);/.exec(CSP)?.[1] ?? '';
+// probe.html, a test page, also reaches the relay of its relay mode (P16h): its connect-src adds
+// PROBE_RELAY_SOURCES to the design one.
+const PROBE_CSP = CSP.replace(`connect-src 'self' ${API_ORIGIN};`, `connect-src 'self' ${API_ORIGIN} ${PROBE_RELAY_SOURCES.join(' ')};`);
 const PAGES = ['index.html', 'harness.html', 'probe.html'];
+const pageCsp = (page: string) => (page === 'probe.html' ? PROBE_CSP : CSP);
 
 const metaCsp = (html: string) => /<meta http-equiv="Content-Security-Policy" content="([^"]*)"/.exec(html)?.[1];
 
 test('every page source carries the design CSP meta', () => {
-  for (const page of PAGES) expect(metaCsp(readFileSync(new URL(`../${page}`, import.meta.url), 'utf8')), page).toBe(CSP);
+  expect(PROBE_CSP).not.toBe(CSP);
+  for (const page of PAGES) expect(metaCsp(readFileSync(new URL(`../${page}`, import.meta.url), 'utf8')), page).toBe(pageCsp(page));
 });
 
 for (const page of PAGES) {
   test(`built ${page} is served with the design CSP meta`, async ({ page: p }) => {
     await p.goto(page === 'index.html' ? './' : `./${page}`);
-    expect(await p.locator('meta[http-equiv="Content-Security-Policy"]').getAttribute('content')).toBe(CSP);
+    expect(await p.locator('meta[http-equiv="Content-Security-Policy"]').getAttribute('content')).toBe(pageCsp(page));
   });
 }
 

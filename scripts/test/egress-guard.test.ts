@@ -408,7 +408,8 @@ describe('entry points install the guard before anything else runs', () => {
   it.each([
     ['cli/index.ts', undefined, ['installEgressGuard(globalThis);']],
     ['apps/web/src/main.tsx', undefined, ['installEgressGuard(globalThis);']],
-    ['apps/web/src/probe/main.ts', undefined, ['const send = globalThis.fetch.bind(globalThis);', 'installEgressGuard(globalThis);']],
+    // relayGuardOptions is {} unless probe.html?relay= names a relay (P16h's relay mode).
+    ['apps/web/src/probe/main.ts', undefined, ['const send = globalThis.fetch.bind(globalThis);', 'installEgressGuard(globalThis, relayGuardOptions(location));']],
     ['apps/web/src/worker/trial.ts', undefined, ['installEgressGuard(globalThis, { allowedOrigins: workerOrigins(location.origin) });']],
     ['scripts/live-node.ts', /^if \(process\.argv\[1\]/, ['installEgressGuard(globalThis);']],
   ] as const)('%s installs the guard first', (file, after, expected) => {
