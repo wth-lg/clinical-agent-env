@@ -97,15 +97,21 @@ const browserLedger = (store: LedgerStore, now: () => string, host: string): Led
   });
 };
 
-let tab: Ledger | undefined;
+let tab: { ledger: Ledger; store: TabStore } | undefined;
 
-export function tabLedger(): Ledger {
+function opened() {
   if (tab === undefined) {
     const now = () => new Date().toISOString();
-    tab = browserLedger(new TabStore(session(), now()), now, 'tab');
+    const store = new TabStore(session(), now());
+    tab = { ledger: browserLedger(store, now, 'tab'), store };
   }
   return tab;
 }
+
+export const tabLedger = (): Ledger => opened().ledger;
+
+// The tab ledger's rows: what a Worker's memoryLedger starts from.
+export const tabRows = (): Promise<LedgerRow[]> => opened().store.read();
 
 // The session cap as a ledger ceiling over every browser row, never above the core caps.
 export const sessionCeiling = (cap: number): SpendCeiling => ({ usd: Math.min(cap, PROJECTED_CAP_USD, ACTUAL_CAP_USD), scope: () => true, what: 'session cap' });
@@ -134,6 +140,10 @@ class MemoryStore implements LedgerStore {
 export function memoryLedger(opts: { rows?: readonly LedgerRow[]; onAppend?: (rows: LedgerRow[]) => void } = {}): Ledger {
   return browserLedger(new MemoryStore(opts.rows ?? [], opts.onAppend ?? (() => {})), () => new Date().toISOString(), 'worker');
 }
+
+// The model a browser trial asks for: run() refuses any other, and apps/web/src outside the
+// adapters imports nothing from anthropic.ts (lint: no-loop-outside-core).
+export { MODEL } from '../../../../packages/core/anthropic.ts';
 
 // The Messages client of a grant this adapter's ledger minted.
 export const grantClient = (opts: ClientOptions): MessagesClient => new MessagesClient(opts);
