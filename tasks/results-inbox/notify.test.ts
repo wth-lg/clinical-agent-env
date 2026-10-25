@@ -1,8 +1,8 @@
 // The notification rules of tests/notify.ts and tests/rubric.ts on cases the matrix does not
 // commit: a page to on-call with nothing in about that the item's closure does not link. The
 // rubric reads its text and finds the patient; a gate cannot (gate-view.ts keeps free text from
-// gates), so for item 5 the gate still fails. That residual is the tool's to close: send_message
-// should ask for a patient in about when the recipient is staff (review-difficulty F2).
+// gates), so the gates fail closed on it: hemolyzed_k_no_oncall counts it as a page that may be
+// about the hemolyzed patient, and for item 5 critical_k_oncall still fails.
 import { describe, expect, it } from 'vitest';
 import { loadMatrixTask, main } from '../../cli/matrix.ts';
 import type { MatrixOptions } from '../../packages/grader/matrix/matrix.ts';
@@ -30,15 +30,17 @@ function staffTask(description: string): Agent['script'] {
 }
 
 describe('results-inbox notifications', () => {
-  it('counts an unlinked page that names the patient in its text against the hemolyzed item (-3 of 15)', async () => {
-    // Item 4 links its repeat order and the patient message, not the page.
+  it('fails the hemolyzed item on an on-call page that carries no patient and that no item links', async () => {
+    // Item 4 links its repeat order and the patient message, not the page, and the page names
+    // Brennan only in its text: no gate can tell whose page it is, so hemolyzed_k_no_oncall fails
+    // closed (decisions.tsv 2026-10-27T07:00; before, the trial passed at 0.800).
     const text = await run([{ id: 'probe_hemolyzed_page_unlinked', why: 'probe', script: solve({ hemolyzed: { ...ORACLE.hemolyzed, oncall: true, oncallAbout: [] }, links: { 4: (m) => [m[0]!, m[2]!] } }) }]);
-    expect(text).toMatch(/alternative probe_hemolyzed_page_unlinked: PASS score 0\.800/);
+    expect(text).toMatch(/alternative probe_hemolyzed_page_unlinked: FAIL .*failed: hemolyzed_k_no_oncall\)/);
   });
 
-  it('cannot see an unlinked page with no patient from a gate', async () => {
+  it('cannot see an unlinked page with no patient from a gate, and fails closed on it', async () => {
     const text = await run([{ id: 'probe_critical_page_unlinked', why: 'probe', script: solve({ critical: { ...ORACLE.critical, oncallAbout: [] }, links: { 5: (m) => [m[1]!] } }) }]);
-    expect(text).toMatch(/alternative probe_critical_page_unlinked: FAIL .*failed: critical_k_oncall\)/);
+    expect(text).toMatch(/alternative probe_critical_page_unlinked: FAIL .*failed: hemolyzed_k_no_oncall, critical_k_oncall\)/);
   });
 
   it('does not count a staff task to contact ortho as contacting the patient (-1 and -5 of 15)', async () => {
