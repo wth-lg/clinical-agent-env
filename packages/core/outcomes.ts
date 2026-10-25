@@ -139,6 +139,11 @@ const list = (xs: readonly string[]) => (xs.length < 2 ? xs.join('') : `${xs.sli
 const replayOk = (h: AttributionFacts['state_hash']) => h.final !== null && h.replay_final === h.final;
 const ENV_DETAILS = ['INTERNAL', 'initial_hash_mismatch', 'replay_mismatch'];
 const result = (met: CriterionMet, evidence: string): CriterionResult => ({ met, evidence });
+// What confirms an audit's tool_rejections_correct no for E6, or null: an adjudicated_label
+// environment, or with no adjudicated_label an agreeing LLM auditor; an adjudicated label that is
+// not environment confirms nothing (decisions.tsv 2026-10-27T08:50). audit-check reads it too.
+export const e6Confirmation = (a: { adjudicated_label: string | null; llm_auditor_agrees: boolean | null }): string | null =>
+  a.adjudicated_label !== null ? (a.adjudicated_label === 'environment' ? 'adjudicated environment' : null) : a.llm_auditor_agrees === true ? 'LLM auditor agrees' : null;
 // Holds exactly when the criterion is not met; pending or n/a decide nothing.
 const negation = (c: Criterion['check']): Criterion['check'] => (f) => {
   const r = c(f);
@@ -293,15 +298,16 @@ export const FAULT_DEFINITIONS: Readonly<Record<Fault, FaultDefinition>> = {
       },
       {
         id: 'E6',
-        text: 'A human audit answers tool_rejections_correct no (after adjudication): a tool refused a valid call, at the step the audit cites as its decisive step, which the trajectory shows as a tool error that the tool\'s input schema does not reproduce on the recorded call (a call that breaks the schema was rightly refused); and the audit is confirmed, by an agreeing LLM auditor or an adjudicated label.',
-        reads: ['audit.adjudicated_tool_rejections_correct (else audit.tool_rejections_correct)', 'audit.decisive_step', 'trajectory (the cited step is_error, and its call\'s input against the tool\'s input schema)', 'audit.llm_auditor_agrees', 'audit.adjudicated_label'],
+        text: 'A human audit answers tool_rejections_correct no (after adjudication): a tool refused a valid call, at the step the audit cites as its decisive step, which the trajectory shows as a tool error that the tool\'s input schema does not reproduce on the recorded call (a call that breaks the schema was rightly refused); and the audit is confirmed, by an adjudicated label environment or, with no adjudicated label, an agreeing LLM auditor.',
+        reads: ['audit.adjudicated_tool_rejections_correct (else audit.tool_rejections_correct)', 'audit.decisive_step', 'trajectory (the cited step is_error, and its call\'s input against the tool\'s input schema)', 'audit.adjudicated_label', 'audit.llm_auditor_agrees'],
         check: ({ audit }) => {
           if (audit === null) return result(false, 'not human-audited');
           const s = audit.cited_step;
           const refused = s === null ? '' : `refused (${s.error_code ?? 'error'})${s.schema_error === null ? '' : ` for input that breaks its schema (${s.schema_error})`}`;
           const step = audit.decisive_step === null ? 'no step cited' : s === null ? `step ${audit.decisive_step} is not in the trajectory` : `step ${audit.decisive_step} ${s.tool} ${s.is_error ? refused : 'succeeded'}`;
-          const confirmed = audit.adjudicated_label !== null ? 'adjudicated' : audit.llm_auditor_agrees === true ? 'LLM auditor agrees' : null;
-          return result(audit.tool_rejections_correct === 'no' && s?.is_error === true && s.schema_error === null && confirmed !== null, `tool_rejections_correct ${audit.tool_rejections_correct ?? 'not answered'}, ${step}, ${confirmed ?? 'not confirmed'}`);
+          const confirmed = e6Confirmation(audit);
+          const unconfirmed = audit.adjudicated_label === null ? 'not confirmed' : `not confirmed (adjudicated ${audit.adjudicated_label})`;
+          return result(audit.tool_rejections_correct === 'no' && s?.is_error === true && s.schema_error === null && confirmed !== null, `tool_rejections_correct ${audit.tool_rejections_correct ?? 'not answered'}, ${step}, ${confirmed ?? unconfirmed}`);
         },
       },
     ],

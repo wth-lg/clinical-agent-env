@@ -50,8 +50,8 @@
 //     environment label, the rejected call's step as decisive_step, which the trajectory shows
 //     as a tool error that the tool's input schema does not reproduce on the recorded call (a
 //     call that breaks the schema was rightly refused; explain.ts citedStep), and confirmation,
-//     llm_auditor_agrees true or an adjudicated_label (what outcomes.ts E6 needs; decisions.tsv
-//     2026-10-27T06:00 and 08:50), because a no says the grader or a
+//     an adjudicated_label environment or, with none, llm_auditor_agrees true (what outcomes.ts
+//     E6 needs; decisions.tsv 2026-10-27T06:00 and 08:50), because a no says the grader or a
 //     tool rejected valid work; an auditor no that an adjudicated yes overrules needs an
 //     adjudicated_label and a note (decisions.tsv 2026-10-27T02:10).
 // It writes each label's criteria, explainTrial's M1-M5 for its trial, into audit.jsonl (only when
@@ -82,7 +82,7 @@ import { installEgressGuard } from '../packages/core/egress.ts';
 import type { TrialEvent } from '../packages/core/events.ts';
 import { explainContext as contextOf, needsWorld, worldLookup, type TaskCheck } from '../packages/core/explain-context.ts';
 import { AUDIT_QUESTIONS, auditAnswerOf, auditLabelOf, citedStep, excludedFromHeadline, explainTrial, formatCriterion, type AuditRow, type CheckText, type ExplainContext, type ExplainRecord } from '../packages/core/explain.ts';
-import { AUDIT_LABEL, AUDIT_LABELS, FAULT, FAULT_PRECEDENCE, type Fault, type Outcome } from '../packages/core/outcomes.ts';
+import { AUDIT_LABEL, AUDIT_LABELS, e6Confirmation, FAULT, FAULT_PRECEDENCE, type Fault, type Outcome } from '../packages/core/outcomes.ts';
 import { parseTrajectory } from '../packages/core/trajectory.ts';
 import { consistencyOf, currentGrade, describeConsistency, type ConsistencyFlag } from '../packages/core/summary.ts';
 import { loadStore } from '../packages/env/fixture-source.ts';
@@ -252,11 +252,11 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
       } else if (q === 'tool_rejections_correct') {
         const n = l.decisive_step;
         const s = citedStep((await ctxOf(r)).events, n);
-        const confirmed = l.llm_auditor_agrees === true || isLabel(l.adjudicated_label);
+        const confirmed = e6Confirmation({ adjudicated_label: isLabel(l.adjudicated_label) ? (l.adjudicated_label as string) : null, llm_auditor_agrees: l.llm_auditor_agrees ?? null }) !== null;
         if (!(environment && s?.is_error === true && s.schema_error === null && confirmed)) {
           const refused = s === null ? '' : `was refused (${s.error_code})${s.schema_error === null ? '' : ` for input that breaks its schema (${s.schema_error})`}`;
           const cited = s === null ? `step ${n} is not a step of the trajectory` : `step ${n} is ${s.tool}, which ${s.is_error ? refused : 'succeeded'}`;
-          v.push(`${l.trial}: tool_rejections_correct no (a tool rejected a valid call) needs an environment label (it is ${auditLabelOf(l) ?? 'none'}), the step of a refused call whose input its schema accepts as decisive_step (${cited}) and confirmation, llm_auditor_agrees true or an adjudicated_label (${confirmed ? 'confirmed' : 'not confirmed'}); adjudicated_tool_rejections_correct yes overrules it`);
+          v.push(`${l.trial}: tool_rejections_correct no (a tool rejected a valid call) needs an environment label (it is ${auditLabelOf(l) ?? 'none'}), the step of a refused call whose input its schema accepts as decisive_step (${cited}) and confirmation, llm_auditor_agrees true or an adjudicated_label environment (${confirmed ? 'confirmed' : 'not confirmed'}); adjudicated_tool_rejections_correct yes overrules it`);
         }
       }
     }

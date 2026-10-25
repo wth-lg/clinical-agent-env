@@ -49,7 +49,7 @@ describe('audit answers', () => {
     const fault = (over: Partial<AuditRow>) => explainTrial(record('FAIL'), row({ tool_rejections_correct: 'no', taxonomy: 'environment', model_fault: 'no', ...over }), refused(VALID, NOT_FOUND));
     const env = fault({ decisive_step: 2 });
     expect(env).toMatchObject({ fault: 'env', label: 'environment', deciding: { id: 'E6', evidence: 'tool_rejections_correct no, step 2 order_medication refused (NOT_FOUND), LLM auditor agrees' } });
-    expect(fault({ decisive_step: 2, llm_auditor_agrees: null, adjudicated_label: 'environment' }).deciding).toMatchObject({ id: 'E6', evidence: expect.stringMatching(/, adjudicated$/) });
+    expect(fault({ decisive_step: 2, llm_auditor_agrees: null, adjudicated_label: 'environment' }).deciding).toMatchObject({ id: 'E6', evidence: expect.stringMatching(/, adjudicated environment$/) });
     expect(fault({ decisive_step: 1 }).fault_criteria.env.find((c) => c.id === 'E6')).toMatchObject({ met: false, evidence: 'tool_rejections_correct no, step 1 fhir_read succeeded, LLM auditor agrees' });
     expect(fault({ decisive_step: 9 }).fault_criteria.env.find((c) => c.id === 'E6')!.evidence).toMatch(/step 9 is not in the trajectory/);
     expect(fault({ decisive_step: 2, llm_auditor_agrees: null }).fault_criteria.env.find((c) => c.id === 'E6')).toMatchObject({ met: false, evidence: expect.stringMatching(/not confirmed$/) });
@@ -66,6 +66,12 @@ describe('audit answers', () => {
     // An INVALID_INPUT the schema does not reproduce (here a catalog check inside the tool) can still be wrong.
     const semantic = refused(VALID, { code: 'INVALID_INPUT', message: 'dose_unit mg does not fit rxnorm_code 860975', field: 'dose_unit' });
     expect(explainTrial(record('FAIL'), row({ tool_rejections_correct: 'no', taxonomy: 'environment', model_fault: 'no', decisive_step: 2 }), semantic).fault).toBe('env');
+  });
+
+  it('E6: only an adjudicated_label environment or an agreeing LLM auditor confirms it; an adjudicated model label does not (decisions.tsv 2026-10-27T08:50, F11)', () => {
+    const x = explainTrial(record('FAIL'), row({ tool_rejections_correct: 'no', taxonomy: 'environment', model_fault: 'no', decisive_step: 2, llm_auditor_agrees: null, adjudicated_label: 'model' }), refused(VALID, NOT_FOUND));
+    expect(x.fault).toBe('model');
+    expect(x.fault_criteria.env.find((c) => c.id === 'E6')).toMatchObject({ met: false, evidence: expect.stringMatching(/, not confirmed \(adjudicated model\)$/) });
   });
 });
 

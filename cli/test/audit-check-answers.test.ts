@@ -4,9 +4,9 @@
 // needs GR3 (an audit outcome GRADER_BUG with evidence) or an environment label; a
 // tool_rejections_correct no needs an environment label and the rejected call's step (it makes the
 // fault environment, E6) that cites a refused call's step and is confirmed (decisions.tsv
-// 2026-10-27T06:00), whose recorded input the tool's schema accepts (decisions.tsv
-// 2026-10-27T08:50), and that is confirmed; an auditor no overruled by an adjudicated yes needs an
-// adjudicated_label and a note.
+// 2026-10-27T06:00), whose recorded input the tool's schema accepts, and that is confirmed by
+// llm_auditor_agrees true or an adjudicated_label environment (decisions.tsv 2026-10-27T08:50);
+// an auditor no overruled by an adjudicated yes needs an adjudicated_label and a note.
 import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -47,7 +47,7 @@ async function violations(dir: string): Promise<string[]> {
 const about = (vs: string[]) => vs.filter((v) => /clinically_acceptable|tool_rejections_correct/.test(v));
 const CLINICAL = "t-alpha/5: clinically_acceptable no (the recorded outcome is not clinically right) needs GR3 (an audit outcome GRADER_BUG with evidence) or an environment label; adjudicated_clinically_acceptable yes overrules it";
 const TOOL = (trial: string, label: string, cited: string, confirmed = 'confirmed') =>
-  `${trial}: tool_rejections_correct no (a tool rejected a valid call) needs an environment label (it is ${label}), the step of a refused call whose input its schema accepts as decisive_step (${cited}) and confirmation, llm_auditor_agrees true or an adjudicated_label (${confirmed}); adjudicated_tool_rejections_correct yes overrules it`;
+  `${trial}: tool_rejections_correct no (a tool rejected a valid call) needs an environment label (it is ${label}), the step of a refused call whose input its schema accepts as decisive_step (${cited}) and confirmation, llm_auditor_agrees true or an adjudicated_label environment (${confirmed}); adjudicated_tool_rejections_correct yes overrules it`;
 
 describe('audit-check: clinically_acceptable and tool_rejections_correct', () => {
   it('yes on both keeps the clean run clean', async () => {
@@ -100,6 +100,12 @@ describe('audit-check: clinically_acceptable and tool_rejections_correct', () =>
     expect(about(vs)).toEqual([TOOL('t-beta/8', 'environment', 'step 3 is order_medication, which was refused (INVALID_INPUT) for input that breaks its schema (dose_value)')]);
     expect(vs).toContain('t-beta/8: labelled environment, and its fault model has the label model');
     expect(vs.filter((v) => v.includes('(E6)'))).toEqual([]);
+  });
+
+  it('an adjudicated model label does not confirm a tool_rejections_correct no (decisions.tsv 2026-10-27T08:50, F11)', async () => {
+    const dir = run('environment-label', 't-beta/8', { tool_rejections_correct: 'no', decisive_step: 3, model_fault: 'no', llm_auditor_agrees: null, adjudicated_label: 'model' });
+    refusedStep(dir);
+    expect(about(await violations(dir))).toEqual([TOOL('t-beta/8', 'model', 'step 3 is order_medication, which was refused (NOT_FOUND)', 'not confirmed')]);
   });
 
   it('a value other than yes or no is a violation, adjudicated answers included', async () => {
