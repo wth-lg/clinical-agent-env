@@ -62,7 +62,7 @@ The buckets live in the function's memory, so on Vercel the limit is best effort
   up to 120 per minute from each.
 - A cold start resets the buckets.
 - It does not bound total use from many IPs. The account's spend management or usage alert
-  covers that (see Deploy, step 4).
+  covers that (see Deploy, step 5).
 
 An optional Vercel Firewall rate-limit rule on `/v1/messages` can be added in the dashboard as an
 extra layer. It is never the mechanism the tests check: they check `src/limiter.ts`.
@@ -84,47 +84,59 @@ call. It exits 1 if B x 1.1 is not below the body limit or the longest call is n
 ## Deploy
 
 Run every command from the repo root, logged in to the Vercel account that will own the project
-(`vercel whoami`). Every step is safe to run twice.
+(`vercel whoami`). Every step is safe to run twice. Log `vercel --version`: the notes below come
+from the Vercel CLI 64.2.0 source.
 
-1. Link the project:
+The relay is deployed from the CLI only and never has a Git connection, so no push can deploy over
+it. `vercel link --yes` on a project that does not exist yet creates the project and connects the
+repository's `origin` remote without asking. So the project is created first, and the link only
+writes `apps/relay/.vercel/`.
+
+1. Create the project. `vercel project create` sends only the name, and an existing project
+   counts as success:
+
+   ```sh
+   vercel project create clinical-agent-env-relay
+   ```
+
+2. Link `apps/relay` to it:
 
    ```sh
    vercel link --yes --project clinical-agent-env-relay --cwd apps/relay
    ```
 
-2. Check that no Git repository is connected, so no push can deploy over the relay:
+3. Check that no Git repository is connected. `vercel project inspect` does not print the Git
+   connection, so read the project's `link` field instead. The command exits 1 when a repository
+   is connected:
 
    ```sh
-   vercel project inspect clinical-agent-env-relay
-   vercel project ls
-   ```
-
-   If the inspect output shows a connected Git repository, disconnect it and inspect again:
-
-   ```sh
+   vercel api /v9/projects/clinical-agent-env-relay --raw \
+     | node -e 'const p = JSON.parse(require("node:fs").readFileSync(0, "utf8")); if (p.link) { console.error(`Git connected: ${p.link.type} ${p.link.org}/${p.link.repo}`); process.exit(1); } console.log("no Git connection (.link absent)");'
    vercel git disconnect --yes --cwd apps/relay
-   vercel project inspect clinical-agent-env-relay
    ```
 
-   `vercel.json` also sets `"git": { "deploymentEnabled": false }`.
+   With no connection, `vercel git disconnect` prints `No Git repository connected` and exits 1,
+   which is the expected result. If it exits 0, it has just removed a connection: run the
+   `vercel api` check again, which must now print `.link absent`. `vercel.json` also sets
+   `"git": { "deploymentEnabled": false }`.
 
-3. Deploy to production from the CLI:
+4. Deploy to production from the CLI:
 
    ```sh
    vercel deploy --prod --cwd apps/relay
    ```
 
-4. In the dashboard, enable spend management with a cap where the account's plan offers it, or a
+5. In the dashboard, enable spend management with a cap where the account's plan offers it, or a
    usage notification where it does not. Record the threshold, or the fact that the account offers
    neither, in the run's records.
 
-5. Confirm that the project has no environment variable:
+6. Confirm that the project has no environment variable:
 
    ```sh
    vercel env ls --cwd apps/relay
    ```
 
-6. Check the deployed relay without a key. Then check the rate limit:
+7. Check the deployed relay without a key. Then check the rate limit:
 
    ```sh
    pnpm cli relay-check --url <RELAY_URL>
