@@ -90,6 +90,26 @@ accessible name or text node, so they share one line of the snapshot.
 - `Local runner` and `Browser-direct`: the surface chip on the local runner and on the hosted
   site.
 
+### P12c: prerequisites next to the one command
+
+- `Requires Node.js 22.18 or newer and pnpm.`: LOCAL_PREREQUISITES in
+  apps/web/src/surface/command.ts, shown directly above LOCAL_START_COMMAND on the key gate (both
+  surfaces), in the hosted page's local-run panel and on the runner-down screen. U12 checks it
+  with the pattern `Requires Node\.js 22\.18 or newer and pnpm\.`, so the sentence itself is
+  written only here, in command.ts and in README.md.
+- `https://nodejs.org/en/download` and `https://pnpm.io/installation`: NODE_INSTALL_URL and
+  PNPM_INSTALL_URL, the hrefs of the `Install Node.js` and `Install pnpm` links under it. Under
+  the sentence, one row per tool (PREREQUISITE_ROWS in command.ts): the requirement, the check
+  command (`node -v`, `pnpm -v`) in a code box that does not wrap, and the install link.
+- `Run it on your computer`: the heading of the local-run panel on the browser-direct surface. It
+  shows on the key gate in every key state, outside any error, and in the shell after Validate.
+- Key gate errors are red: the danger token (tokens.css, `--color-danger`) colours the error's
+  border, its first line and the key field while it is invalid. Each error starts with one plain
+  sentence from apps/web/src/keygate/failure.ts (for example `The API did not accept this key.`),
+  then the API's or runner's own line in small mono that wraps only between words. An org-CORS
+  or network error points to `Run it on your computer` with a `Show the steps` button and does
+  not repeat the command.
+
 ### P13, P15: runner refusals
 
 When the local runner refuses with HTTP 409, the screen shows the text for its reason first,
@@ -400,7 +420,7 @@ Each row's screenshot (.png) and accessibility snapshot (.ax.txt), taken on its 
 - N10 (local): `N10-live-trial-graded.png`, `N10-live-trial-graded.ax.txt`
 - N11 (local): `N11-run-launcher-model.png`, `N11-run-launcher-model.ax.txt`
 - U1 (local): `U1-run-launcher-model.png`, `U1-run-launcher-model.ax.txt`
-- U12 (local): `U12-local-overview.png`, `U12-local-overview.ax.txt`
+- U12 (local): `U12-local-overview.png`, `U12-local-overview.ax.txt`, `U12-key-gate-prerequisites.png`, `U12-key-gate-prerequisites.ax.txt` (the key gate before a key is entered)
 - U13 (local): `U13-live-trial-runner.png`, `U13-live-trial-runner.ax.txt`
 - U14 (local): `U14-key-gate-local.png`, `U14-key-gate-local.ax.txt`
 - U17 (local): `U17-local-live-trial.png`, `U17-local-live-trial.ax.txt`

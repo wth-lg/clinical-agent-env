@@ -14,8 +14,9 @@
 //   cli runner-check --mock --json      exit 0 when the local runner passes every check;
 //                                       {events_equal}: its streamed events equal run-one's
 //
-// Clause (1) passes when `runner-check --mock` exits 0 and README.md names LOCAL_START_COMMAND
-// (apps/web/src/surface/command.ts) and the hosted URL. Clause (2) passes when cli/run-one.ts,
+// Clause (1) passes when `runner-check --mock` exits 0 and README.md names LOCAL_START_COMMAND,
+// LOCAL_PREREQUISITES, NODE_INSTALL_URL and PNPM_INSTALL_URL (apps/web/src/surface/command.ts)
+// and the hosted URL. Clause (2) passes when cli/run-one.ts,
 // cli/run.ts, apps/runner/main.ts and a Worker module under apps/web/src (a file named *worker*)
 // each reach packages/core/run.ts through their relative value imports (`import type`, `export
 // type` and imports inside comments do not count: none loads the module), and runner-check
@@ -29,7 +30,7 @@
 import { spawnSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
-import { LOCAL_START_COMMAND } from '../apps/web/src/surface/command.ts';
+import { LOCAL_PREREQUISITES, LOCAL_START_COMMAND, NODE_INSTALL_URL, PNPM_INSTALL_URL } from '../apps/web/src/surface/command.ts';
 
 const FINAL_RUN = 'results/runs/final-1';
 const MODEL = 'claude-opus-5-5';
@@ -98,10 +99,11 @@ function clause1(): Verdict {
   const readme = read('README.md');
   const url = readme.includes(HOSTED_URL);
   const command = readme.includes(LOCAL_START_COMMAND);
+  const needs = Object.entries({ LOCAL_PREREQUISITES, NODE_INSTALL_URL, PNPM_INSTALL_URL }).map(([name, text]) => [name, readme.includes(text)] as const);
   const r = cli(RUNNER_CHECK);
   return {
-    pass: url && command && r.exit === 0,
-    evidence: `README names LOCAL_START_COMMAND: ${yesNo(command)}, hosted URL: ${yesNo(url)}; ${describeExit('runner-check --mock', r)}`,
+    pass: url && command && needs.every(([, has]) => has) && r.exit === 0,
+    evidence: `README names LOCAL_START_COMMAND: ${yesNo(command)}, ${needs.map(([name, has]) => `${name}: ${yesNo(has)}`).join(', ')}, hosted URL: ${yesNo(url)}; ${describeExit('runner-check --mock', r)}`,
   };
 }
 

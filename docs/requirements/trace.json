@@ -1770,12 +1770,21 @@
       "code": [
         "apps/runner/main.ts",
         "packages/core/runner-api.ts",
-        "package.json"
+        "package.json",
+        "apps/web/src/surface/command.ts",
+        "apps/web/src/surface/LocalCommand.tsx",
+        "apps/web/src/surface/LocalRunPanel.tsx",
+        "scripts/check-node.mjs",
+        "README.md"
       ],
       "tests": [
         "apps/runner/test",
         "packages/core/test/runner-api.test.ts",
-        "cli/test/runner-check.test.ts"
+        "cli/test/runner-check.test.ts",
+        "scripts/test/check-node.test.ts",
+        "apps/web/test/command.test.ts",
+        "apps/web/e2e/shell.spec.ts",
+        "scripts/test/donewhen.test.ts"
       ],
       "ui_required": true,
       "ui": {
@@ -1785,14 +1794,24 @@
       },
       "evidence": [
         "verifier-phase-P25c-1/U12-local-overview.png",
-        "verifier-phase-P25c-1/U12-local-overview.ax.txt"
+        "verifier-phase-P25c-1/U12-local-overview.ax.txt",
+        "verifier-phase-P25c-1/U12-key-gate-prerequisites.png",
+        "verifier-phase-P25c-1/U12-key-gate-prerequisites.ax.txt"
       ],
-      "expect": {
-        "ax_text": {
-          "file": "verifier-phase-P25c-1/U12-local-overview.ax.txt",
-          "text": "Local runner"
+      "expect": [
+        {
+          "ax_text": {
+            "file": "verifier-phase-P25c-1/U12-local-overview.ax.txt",
+            "text": "Local runner"
+          }
+        },
+        {
+          "ax_match": {
+            "file": "verifier-phase-P25c-1/U12-key-gate-prerequisites.ax.txt",
+            "pattern": "Requires Node\\.js 22\\.18 or newer and pnpm\\."
+          }
         }
-      },
+      ],
       "phase": "P12b",
       "done_when": [
         1
@@ -1944,7 +1963,8 @@
       "code": [
         "apps/web/src/surface/detect.ts",
         "apps/web/src/surface/LocalCommand.tsx",
-        "apps/web/src/live/transport"
+        "apps/web/src/live/transport",
+        "apps/web/src/surface/LocalRunPanel.tsx"
       ],
       "tests": [
         "apps/web/e2e/shell.spec.ts",

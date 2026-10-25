@@ -9,6 +9,7 @@ import { SpendRefused } from '../../../../packages/core/ledger.ts';
 import { tabLedger } from '../adapters/ledger-browser.ts';
 import { admitTrial } from '../spend/cap.ts';
 import { refreshSpent } from '../spend/session.ts';
+import type { DirectFailure } from './failure.ts';
 
 const TRIAL = 'validate';
 const history = (): MessageParam[] => [{ role: 'user', content: 'Reply with the word ok.' }];
@@ -17,9 +18,7 @@ const PARAMS: MessageParams = { max_tokens: 16, output_config: { effort: 'low' }
 // The API's message when the key's organization does not allow browser (CORS) access.
 const ORG_CORS = /CORS requests are not allowed for this Organization/i;
 
-export type DirectResult =
-  | { ok: true }
-  | { ok: false; kind: 'org-cors' | 'network' | 'cap' | 'api'; message: string };
+export type DirectResult = { ok: true } | ({ ok: false } & DirectFailure);
 
 export const validateEstimate = (): number => worstCaseUsd(reserveRequest(history(), PARAMS, TRIAL));
 
@@ -52,5 +51,5 @@ function classify(e: unknown): DirectResult & { ok: false } {
   if (e instanceof ApiError && e.status === 401 && ORG_CORS.test(message)) return { ok: false, kind: 'org-cors', message };
   // No status: the browser never got a readable response, which is how a CORS block looks.
   if (e instanceof ApiError && e.status === null && e.partial) return { ok: false, kind: 'network', message };
-  return { ok: false, kind: 'api', message };
+  return { ok: false, kind: 'api', status: e instanceof ApiError ? e.status : null, message };
 }
