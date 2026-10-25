@@ -85,9 +85,13 @@ export interface BatchEntry {
   requeued: number;
   stopped: string | null;
   cancelled: boolean;
+  // The commit the batch ran on (BatchSpec.envGitSha), also in each trial record it writes; a
+  // resume adds its own entry and never rewrites an earlier one or a settled record.
+  env_git_sha: string | null;
 }
 
-// manifest.json. The caller adds its own fields (cli/run.ts: env_git_sha, env_dirty).
+// manifest.json. The caller adds its own fields (cli/run.ts: env_git_sha, env_dirty, of the
+// latest batch).
 export interface RunManifest {
   run_id: string;
   model: string;
@@ -137,6 +141,9 @@ export interface BatchSpec {
   ceiling?: SpendCeiling;
   // Extra manifest fields.
   manifest?: Record<string, unknown>;
+  // The harness commit (cli/run.ts: HEAD); null or absent where the caller cannot say (the
+  // local runner). Stored in the batch entry and in every trial record (run() envGitSha).
+  envGitSha?: string | null;
   signal?: AbortSignal;
   log?: (line: string) => void;
 }
@@ -250,7 +257,7 @@ async function lockedBatch(spec: BatchSpec, deps: BatchDeps, log: (line: string)
   result.batch_id = grant.batch_id;
   const entry: BatchEntry = {
     batch_id: grant.batch_id, started: iso(deps.now()), ended: null, projection: plan.projection.total, remaining: plan.remaining.length,
-    settled: 0, requeued: 0, stopped: null, cancelled: false,
+    settled: 0, requeued: 0, stopped: null, cancelled: false, env_git_sha: spec.envGitSha ?? null,
   };
   const prior = await deps.sink.manifest();
   const pick = (k: keyof TaskVersions) => Object.fromEntries(Object.entries(plan.versions).map(([id, v]) => [id, v[k]]));
@@ -305,7 +312,7 @@ async function lockedBatch(spec: BatchSpec, deps: BatchDeps, log: (line: string)
     try {
       ({ record } = await (deps.run ?? run)(key.task_id, spec.model, {
         tasks: deps.tasks, client, world: deps.world, worldHash: deps.worldHash, now: deps.now, effort: spec.effort, signal, trialId: label,
-        checks: await checksFor(key.task_id), onEvent: (e) => deps.sink.event(key, id, e),
+        checks: await checksFor(key.task_id), onEvent: (e) => deps.sink.event(key, id, e), envGitSha: spec.envGitSha ?? null,
         ...(deps.definitions !== undefined ? { definitions: deps.definitions } : {}),
       }));
     } catch (e) {

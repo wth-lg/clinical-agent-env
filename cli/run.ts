@@ -15,7 +15,9 @@
 // The client comes only from batchStart(projection), which refuses the batch, with no call, when
 // the projection would cross PROJECTED_CAP_USD (packages/core/ledger.ts). The manifest records env_git_sha and env_dirty: whether
 // `git status --porcelain -- tasks fixtures packages/env packages/core packages/grader` is
-// non-empty. A live batch on a dirty tree (or outside git) is refused with no call: a committed
+// non-empty. env_git_sha (HEAD, null outside git) is also stored in the batch's entry in the
+// manifest and in every trial record the batch writes, so a resume at another commit leaves
+// each settled record naming the commit it ran on (R14-39). A live batch on a dirty tree (or outside git) is refused with no call: a committed
 // run must name the code it ran. A run directory runs one batch at a time: a second is refused
 // while the first holds <out>/.lock. Ctrl-C cancels the batch through its AbortSignal. Exit 0
 // when every key of this batch is recorded and the batch was not stopped; 1 otherwise; 2 on a
@@ -186,7 +188,7 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
     const { ledger, store, mode: ledgerMode, path } = openNodeLedger({ transport: mock === undefined ? 'live' : 'offline', env, runId });
     deps.out(`ledger ${ledgerMode} ${path}`);
     const result = await runBatch(
-      { ...spec, manifest: { env_git_sha: git.sha, env_dirty: git.dirty === null ? null : git.dirty.length > 0 } },
+      { ...spec, envGitSha: git.sha, manifest: { env_git_sha: git.sha, env_dirty: git.dirty === null ? null : git.dirty.length > 0 } },
       {
         ledger, rows: () => store.read(), sink, tasks, checks: deps.checks ?? taskChecks, world, worldHash, definitions, now: nodeNow,
         client: (grant, trial) => new MessagesClient({ grant, ledger, apiKey: key, fetch: mock === undefined ? deps.fetch : deps.mock(mock, trial), trial }),
