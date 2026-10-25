@@ -449,8 +449,8 @@
     "calls": 0,
     "unknown": 0,
     "unknown_penalties": 0,
-    "score_penalties_met": 1,
-    "score_penalties_not_met": 1,
+    "score_penalties_met": null,
+    "score_penalties_not_met": null,
     "over_allowance": 0,
     "cache_keys": [
       "ccd24edec51f7e4e7ed9321acc0c3d33eaad47d8467124d5fa8331943f4c1b66",
