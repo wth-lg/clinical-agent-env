@@ -146,6 +146,34 @@ test('a reload mid-trial resumes from IndexedDB to the same final hash, and no s
   expect(await storageDump(page)).not.toContain(key);
 });
 
+test('at phone width the in-progress trial fits: written ids truncate and the trial id breaks at its dots', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const api = await mockToy(page, { hold: 3 });
+  await page.goto('./?view=live&task=_toy');
+  await enterKey(page, sentinelKey());
+  await run(page, 1);
+  await expect.poll(() => api.held.length, { timeout: 30_000 }).toBe(1);
+  const written = trial(page).locator('[data-testid="tool-row"][data-tool="write_note"] [data-testid="written"]');
+  await expect(written).toBeVisible();
+  const box = (await written.boundingBox())!;
+  const row = (await trial(page).locator('[data-testid="tool-row"][data-tool="write_note"]').boundingBox())!;
+  expect(box.x + box.width).toBeLessThanOrEqual(row.x + row.width + 0.5);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+  const id = (await trial(page).getAttribute('data-trial'))!;
+  // The heading may break after each dot, never inside the run id or the task id.
+  await expect(trial(page).locator('h2')).toHaveText(id);
+  await expect(trial(page).locator('h2')).toHaveCSS('overflow-wrap', 'break-word');
+  await expect(trial(page).locator('h2 wbr')).toHaveCount(id.split('.').length - 1);
+});
+
+test('without a key the Task select is shown disabled', async ({ page }) => {
+  await page.goto('./?view=live&task=_toy');
+  await page.getByRole('button', { name: 'Browse without a key' }).click();
+  const select = page.getByLabel('Task');
+  await expect(select).toBeDisabled();
+  expect(Number(await select.evaluate((el) => getComputedStyle(el).opacity))).toBeLessThan(1);
+});
+
 test('the trial Worker refuses fetch, XHR, WebSocket and EventSource to any origin but its own and the API', async ({ page }) => {
   // .invalid never resolves, so nothing leaves the machine; a fetch the guard let through gets this answer.
   const FOREIGN = 'https://foreign.invalid';

@@ -28,7 +28,7 @@ let transport: TrialTransport | undefined;
 const theTransport = (): TrialTransport => (transport ??= runnerToken() !== null ? runnerTransport() : workerTransport(sessionCap));
 
 const POLL_MS = 1500;
-const select = 'h-8 max-w-full rounded-sm border border-line-strong bg-surface px-2 text-ink';
+const select = 'h-8 max-w-full rounded-sm border border-line-strong bg-surface px-2 text-ink disabled:cursor-not-allowed disabled:opacity-50';
 const button = 'h-8 rounded-sm border border-line-strong px-3 text-ink hover:bg-surface disabled:cursor-not-allowed disabled:opacity-50';
 const usd = (n: number) => `$${n.toFixed(2)}`;
 
@@ -232,7 +232,7 @@ function Trial({ t, id, onEnd }: { t: TrialTransport; id: string; onEnd: () => v
   return (
     <section data-testid="live-trial" data-trial={id} data-state={running ? 'running' : end.state} className="rounded-sm border border-line bg-surface">
       <header className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-line px-4 py-3">
-        <h2 className="min-w-0 break-all font-medium text-ink">{id}</h2>
+        <h2 className="min-w-0 break-words font-medium text-ink">{breakable(id)}</h2>
         <Meter label="Turn" value={String(f.turn)} testId="meter-turn" />
         <Meter label="Tokens" value={`${f.tokens.input + f.tokens.cache_read + f.tokens.cache_write} in, ${f.tokens.output} out`} testId="meter-tokens" />
         <Meter label="Cost" value={usd(f.cost)} testId="meter-cost" />
@@ -283,6 +283,10 @@ function Trial({ t, id, onEnd }: { t: TrialTransport; id: string; onEnd: () => v
   );
 }
 
+// A trial id (run.task.index) with a line-break opportunity after each dot, so a narrow screen
+// breaks it between its parts rather than inside one.
+const breakable = (id: string) => id.split('.').flatMap((part, i, parts) => (i === parts.length - 1 ? [part] : [`${part}.`, <wbr key={i} />]));
+
 function Meter({ label, value, testId }: { label: string; value: string; testId: string }) {
   return (
     <span className="text-xs text-ink-muted">
@@ -304,7 +308,12 @@ function ItemRow({ item }: { item: Item }) {
         <code className="shrink-0 font-mono text-xs text-ink">{item.name}</code>
         <span className="min-w-0 truncate text-xs text-ink-muted">{item.target}</span>
         {item.error !== null && <CircleAlert aria-label={`error ${item.error}`} className="h-3.5 w-3.5 shrink-0 text-danger" strokeWidth={1.75} />}
-        {item.written.length > 0 && <span className="inline-flex shrink-0 items-center text-xs text-accent"><Dot aria-hidden className="h-4 w-4" />{item.written.join(', ')}</span>}
+        {item.written.length > 0 && (
+          <span className="inline-flex min-w-0 items-center text-xs text-accent">
+            <Dot aria-hidden className="h-4 w-4 shrink-0" />
+            <span data-testid="written" className="truncate">{item.written.join(', ')}</span>
+          </span>
+        )}
         {!item.executed && <span className="text-xs text-ink-muted">(not run)</span>}
       </button>
       {open && (
