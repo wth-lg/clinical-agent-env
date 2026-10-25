@@ -315,3 +315,20 @@ test('a rail link leaves no run or tab behind, so each Findings example opens it
     await expect(page.getByTestId('exemplars')).toBeVisible();
   }
 });
+
+test('Runs in the rail on a trial detail shows the list (N2, F2)', async ({ page }) => {
+  await openTrial(page, TRIALS.failAudited, '&tab=raw');
+  await rail(page, 'Runs').click();
+  await expect(page.getByTestId('trial-detail')).toHaveCount(0);
+  await expect(page.getByTestId('trial-row').first()).toBeVisible();
+  await expect(page).not.toHaveURL(/[?&](trial|tab)=/);
+  // The same after a glossary link and browser Back.
+  await openTrial(page, TRIALS.failAudited);
+  await page.getByTestId('trial-header').getByTestId('detail-fault').getByRole('link').first().click();
+  await expect(page).toHaveURL(/view=glossary/);
+  await page.goBack();
+  await expect(page.getByTestId('trial-detail')).toBeVisible();
+  await rail(page, 'Runs').click();
+  await expect(page.getByTestId('trial-detail')).toHaveCount(0);
+  await expect(page.getByTestId('trial-row').first()).toBeVisible();
+});
