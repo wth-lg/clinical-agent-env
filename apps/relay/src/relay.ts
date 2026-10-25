@@ -10,8 +10,9 @@
 //   OPTIONS   the CORS preflight: 204 for the allowed origin, 403 for any other
 //   method    POST, else 405
 //   origin    exactly allowedOrigin, else 403
-//   body      at most MAX_BODY_BYTES (413), JSON whose model is MODEL (400); forwarded byte for
-//             byte, so the ledger's byte-count reserve stays exact
+//   body      at most MAX_BODY_BYTES (413), read within BODY_TIMEOUT_MS (408), JSON whose model
+//             is MODEL (400); forwarded byte for byte, so the ledger's byte-count reserve stays
+//             exact
 //   forward   only FORWARD_HEADERS go upstream; the response streams back with its status and
 //             RESPONSE_HEADERS plus the CORS headers; a client abort aborts the upstream fetch
 //   errors    an upstream fetch that fails gives the fixed 502 body, never the error's message
@@ -26,6 +27,9 @@ export const PATH = '/v1/messages';
 export const MODEL = 'claude-opus-5-5';
 // Vercel's request body limit for a function (4.5 MB); a larger body never reaches it.
 export const MAX_BODY_BYTES = 4_500_000;
+// The time a client gets to send the whole body. A held body would otherwise keep the invocation
+// alive until maxDuration; the largest pilot body (about 100 KB) takes far less.
+export const BODY_TIMEOUT_MS = 30_000;
 export const ALLOW_METHODS = 'POST, OPTIONS';
 // The headers the hosted MessagesClient sends (requestHeaders in packages/core/anthropic.ts; the
 // relay test reads them from the client, so a header added there fails it until it is added here).
@@ -73,23 +77,34 @@ export function relayFailure(cors: Headerset | null): Response {
 export const corsIfAllowed = (request: Request, allowedOrigin: string): Headerset | null =>
   request.headers.get('origin') === allowedOrigin ? corsFor(allowedOrigin) : null;
 
-// The body, or null past `max` bytes: refused by its declared length, else read up to the limit.
-async function readBody(request: Request, max: number): Promise<Uint8Array<ArrayBuffer> | null> {
+// The body; 'too_large' past `max` bytes (by its declared length, else as read); 'timeout' when
+// it has not all arrived within `timeoutMs`. Either way the rest of the body is cancelled.
+async function readBody(request: Request, max: number, timeoutMs: number): Promise<Uint8Array<ArrayBuffer> | 'too_large' | 'timeout'> {
   const declared = request.headers.get('content-length');
-  if (declared !== null && Number(declared) > max) return null;
+  if (declared !== null && Number(declared) > max) return 'too_large';
   if (request.body === null) return new Uint8Array(0);
   const reader = request.body.getReader();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const expired = new Promise<'timeout'>((resolve) => (timer = setTimeout(() => resolve('timeout'), timeoutMs)));
   const chunks: Uint8Array[] = [];
   let size = 0;
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    size += value.byteLength;
-    if (size > max) {
-      await reader.cancel().catch(() => {});
-      return null;
+  try {
+    for (;;) {
+      const next = await Promise.race([reader.read(), expired]);
+      if (next === 'timeout') {
+        await reader.cancel().catch(() => {});
+        return 'timeout';
+      }
+      if (next.done) break;
+      size += next.value.byteLength;
+      if (size > max) {
+        await reader.cancel().catch(() => {});
+        return 'too_large';
+      }
+      chunks.push(next.value);
     }
-    chunks.push(value);
+  } finally {
+    clearTimeout(timer);
   }
   const body = new Uint8Array(size);
   let at = 0;
@@ -152,7 +167,7 @@ function responseHeaders(upstream: Headers, cors: Headerset): Headerset {
   return { ...out, ...cors, ...(exposed.length > 0 ? { 'access-control-expose-headers': exposed.join(', ') } : {}) };
 }
 
-export async function handle(request: Request, upstreamFetch: UpstreamFetch, limiter: Limiter, allowedOrigin: string): Promise<Response> {
+export async function handle(request: Request, upstreamFetch: UpstreamFetch, limiter: Limiter, allowedOrigin: string, opts: { bodyTimeoutMs?: number } = {}): Promise<Response> {
   const url = new URL(request.url);
   if (url.pathname !== PATH) return refuse(404, 'not_found_error', 'not found');
   if (url.href.includes('?')) return refuse(400, 'invalid_request_error', 'the relay takes no query string');
@@ -171,8 +186,9 @@ export async function handle(request: Request, upstreamFetch: UpstreamFetch, lim
   if (request.method !== 'POST') return refuse(405, 'invalid_request_error', 'method not allowed', { allow: ALLOW_METHODS, ...(cors ?? {}) });
   if (cors === null) return refuse(403, 'permission_error', 'origin not allowed');
 
-  const body = await readBody(request, MAX_BODY_BYTES);
-  if (body === null) return refuse(413, 'request_too_large', 'request body too large', cors);
+  const body = await readBody(request, MAX_BODY_BYTES, opts.bodyTimeoutMs ?? BODY_TIMEOUT_MS);
+  if (body === 'too_large') return refuse(413, 'request_too_large', 'request body too large', cors);
+  if (body === 'timeout') return refuse(408, 'timeout_error', 'request body not received in time', cors);
   const model = modelOf(body);
   if (model === null) return refuse(400, 'invalid_request_error', 'the body is not a JSON object with a model', cors);
   if (model !== MODEL) return refuse(400, 'invalid_request_error', `the relay serves only ${MODEL}`, cors);

@@ -38,7 +38,9 @@ In the order `handle` applies them:
 5. Origin: exactly `https://wth-lg.github.io`, else 403 and no upstream call. That excludes a
    missing Origin, `http://`, a suffix such as `https://wth-lg.github.io.evil.example` and other
    `github.io` origins. Only browsers are bound by it (see Who can use the relay).
-6. Body: at most 4,500,000 bytes (Vercel's function body limit), else 413. It must be JSON with
+6. Body: at most 4,500,000 bytes (Vercel's function body limit), else 413. It must arrive
+   within 30 s, else 408, so a client that holds its body cannot keep the function running until
+   `maxDuration`. It must be JSON with
    `"model": "claude-opus-5-5"`, else 400. The relay forwards it byte for byte, so the spend
    ledger's byte-count reserve stays exact.
 7. Forwarding: only `x-api-key`, `anthropic-version`, `content-type` and `anthropic-beta` (when

@@ -125,7 +125,7 @@ async function send(res: ServerResponse, response: Response): Promise<void> {
   }
 }
 
-export async function serveLocal(opts: { allowedOrigin: string; upstream?: StubUpstream; limiter?: Limiter; port?: number; trustClientAddress?: boolean }): Promise<LocalRelay> {
+export async function serveLocal(opts: { allowedOrigin: string; upstream?: StubUpstream; limiter?: Limiter; port?: number; trustClientAddress?: boolean; bodyTimeoutMs?: number }): Promise<LocalRelay> {
   const upstream = opts.upstream ?? sseUpstream();
   const limiter = opts.limiter ?? createLimiter();
   const log: LogEntry[] = [];
@@ -136,7 +136,7 @@ export async function serveLocal(opts: { allowedOrigin: string; upstream?: StubU
       if (!res.writableFinished) ac.abort();
     });
     const request = toRequest(req, port, ac.signal, opts.trustClientAddress ?? false);
-    void handle(request, upstream.fetch, limiter, opts.allowedOrigin).then(
+    void handle(request, upstream.fetch, limiter, opts.allowedOrigin, opts.bodyTimeoutMs === undefined ? {} : { bodyTimeoutMs: opts.bodyTimeoutMs }).then(
       (response) => {
         log.push({
           method: request.method,
