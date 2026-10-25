@@ -167,7 +167,7 @@ export function auditLabelOf(row: Pick<AuditRow, 'label' | 'taxonomy' | 'outcome
 const words = (s: string) => s.trim().split(/\s+/).filter((w) => w !== '');
 const firstWords = (s: string, n: number) => {
   const w = words(s);
-  return w.length <= n ? w.join(' ') : `${w.slice(0, n).join(' ')}…`;
+  return w.length <= n ? w.join(' ') : `${w.slice(0, n).join(' ').replace(/[,;:(]+$/, '')}…`;
 };
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 
