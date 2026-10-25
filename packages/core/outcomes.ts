@@ -96,8 +96,16 @@ export interface AttributionFacts {
   decisive: { id: string; exposure: ReadonlyArray<{ id: string; first_exposed_step: number | null; exposable: boolean | null }> | null } | null;
   matrix: MatrixResult | null;
   check_error: { check: string | null; message: string } | null;
-  audit: { outcome: string; label: AuditLabelName | null; model_fault: string | null; llm_auditor_agrees: boolean | null; adjudicated_label: AuditLabelName | null; evidence_ids: readonly string[] } | null;
+  // The audit row's answers clinically_acceptable and tool_rejections_correct (explain.ts AuditRow)
+  // are 'yes', 'no' or null when the row does not give them.
+  audit: {
+    outcome: string; label: AuditLabelName | null; model_fault: string | null; llm_auditor_agrees: boolean | null; adjudicated_label: AuditLabelName | null; evidence_ids: readonly string[];
+    clinically_acceptable: AuditAnswer | null; tool_rejections_correct: AuditAnswer | null;
+  } | null;
 }
+
+// An audit row's answer to one of its two questions (explain.ts AuditRow).
+export type AuditAnswer = 'yes' | 'no';
 
 // 'n/a': the criterion asks about something the trial does not have (M1 with no failed check).
 export type CriterionMet = boolean | 'pending' | 'n/a';

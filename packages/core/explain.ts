@@ -30,7 +30,7 @@ import type { TrialEvent } from './events.ts';
 import { MODEL } from './anthropic.ts';
 import { PER_TRIAL_CAP_USD } from './cost.ts';
 import {
-  AUDIT_LABEL, AUDIT_LABELS, CONFIRMATION_CRITERIA, FAULT_DEFINITIONS, FAULT_PRECEDENCE, RUN_BLOCKS, type AttributionFacts, type AuditLabelName, type Confirmation, type CriterionMet, type Fault,
+  AUDIT_LABEL, AUDIT_LABELS, CONFIRMATION_CRITERIA, FAULT_DEFINITIONS, FAULT_PRECEDENCE, RUN_BLOCKS, type AttributionFacts, type AuditAnswer, type AuditLabelName, type Confirmation, type CriterionMet, type Fault,
   type MatrixResult,
 } from './outcomes.ts';
 import { currentGrade, firstFailed, type RegradeGrade } from './summary.ts';
@@ -67,6 +67,8 @@ export interface ExplainRecord {
   models_returned?: readonly string[];
   turns?: number;
   cost_usd?: number;
+  // Time in failed API attempts and the waits after them (loop.ts): elapsed less this is working time.
+  retry_wait_ms?: number;
   started?: string;
   ended?: string;
   summary?: string | null;
@@ -83,7 +85,13 @@ export interface ExplainRecord {
 // optional: without them a taxonomy in TAXONOMY reads as model, environment or grader as itself,
 // and an outcome GRADER_BUG as grader. adjudicated_label settles a row whose model_fault is unclear
 // or whose LLM auditor disagrees; the reasoning goes in note. criteria is what audit-check writes
-// back: explainTrial's criteria for the trial.
+// back: explainTrial's criteria for the trial. The auditor answers two questions on a failure
+// (R14-31): clinically_acceptable, whether failing the trial is clinically right (no: its work
+// was a clinically acceptable solution the grader rejected), and tool_rejections_correct, whether
+// every tool rejection in the trajectory was right (no: a tool refused a valid call). Each is yes
+// or no, absent when the row does not answer; cli/audit-check.ts requires a "no" to come with GR3
+// (an audit outcome GRADER_BUG with evidence), an environment label or an adjudicated_label with a
+// note.
 export interface AuditRow {
   trial: string;
   outcome: string;
@@ -96,6 +104,8 @@ export interface AuditRow {
   label_subtype?: string | null;
   adjudicated_label?: AuditLabelName | null;
   note?: string;
+  clinically_acceptable?: AuditAnswer | null;
+  tool_rejections_correct?: AuditAnswer | null;
   criteria?: CriterionRow[];
 }
 
@@ -160,6 +170,8 @@ export interface Explanation {
   audited: boolean;
   // The label the audit row gives (its adjudicated_label when it has one), next to the computed one.
   audit_label: AuditLabelName | null;
+  // The audit row's two answers (AuditRow), each null when the row does not give it; null without a row.
+  audit_answers: AuditAnswers | null;
   decisive_check: { id: string; traces_to: string | null; expected: string; found: string } | null;
   decisive_step: number | null;
   taxonomy: Taxonomy | null;
@@ -169,6 +181,17 @@ export interface Explanation {
   // Every criterion of every fault, met or not.
   fault_criteria: Record<Fault, CriterionRow[]>;
 }
+
+export interface AuditAnswers {
+  clinically_acceptable: AuditAnswer | null;
+  tool_rejections_correct: AuditAnswer | null;
+}
+
+// "clinically acceptable grade: no; tool rejections correct: yes", as the trial detail and
+// audit-check show the answers.
+export const formatAuditAnswers = (a: AuditAnswers | null): string =>
+  a === null ? NOT_AUDITED_MARKER : `clinically acceptable grade: ${a.clinically_acceptable ?? 'not answered'}; tool rejections correct: ${a.tool_rejections_correct ?? 'not answered'}`;
+const answer = (v: unknown): AuditAnswer | null => (v === 'yes' || v === 'no' ? v : null);
 
 // How a criterion's met value reads, in audit-check's output and the trial detail alike.
 export const MET_TEXT: Record<string, string> = { true: 'met', false: 'not met', pending: 'pending', 'n/a': 'not applicable' };
@@ -306,12 +329,20 @@ function limitSentence(r: ExplainRecord, events: readonly TrialEvent[] | undefin
   const kind = limit?.limit ?? r.detail;
   if (kind === 'cost') return `cost limit reached: $${(limit?.value ?? r.cost_usd ?? 0).toFixed(2)} of $${(limit?.cap ?? PER_TRIAL_CAP_USD).toFixed(2)}`;
   if (kind === 'wall_clock') {
-    const elapsed = limit?.value ?? (r.started && r.ended ? Date.parse(r.ended) - Date.parse(r.started) : NaN);
+    // Working time, as MAX_WALL_MS bounds it (packages/core/run.ts): elapsed less retry_wait_ms.
+    const elapsed = limit?.value ?? (r.started && r.ended ? Date.parse(r.ended) - Date.parse(r.started) - (r.retry_wait_ms ?? 0) : NaN);
     return `time limit reached: ${Number.isFinite(elapsed) ? Math.floor(elapsed / 1000) : '?'} s of ${limit ? Math.round(limit.cap / 1000) : '?'} s`;
   }
   if (kind === 'max_tokens') return `output limit reached: ${limit ? limit.value + limit.cap : 2} cut-off responses in a row`;
   return `turn limit reached: ${limit?.value ?? r.turns ?? '?'} turns`;
 }
+
+// The bounds that end a trial as INFRA (packages/core/loop.ts), by the record's detail.
+const INFRA_BOUND: Record<string, string> = {
+  elapsed_bound: 'total elapsed time, failed attempts and retry waits included, passed its hard bound',
+  spend_bound: 'the settled cost, worst cases of dropped attempts included, would pass twice the per-trial cap',
+  unpriced_usage: "a response's usage cannot be priced, a harness defect",
+};
 
 function refusalSentence(r: ExplainRecord, events: readonly TrialEvent[] | undefined): string {
   const text = refusalText(r, events);
@@ -387,6 +418,8 @@ export function explainTrial(record: ExplainRecord, audit: AuditRow | null | und
       llm_auditor_agrees: row.llm_auditor_agrees ?? null,
       adjudicated_label: isLabel(row.adjudicated_label) ? row.adjudicated_label : null,
       evidence_ids: row.evidence_ids ?? [],
+      clinically_acceptable: answer(row.clinically_acceptable),
+      tool_rejections_correct: answer(row.tool_rejections_correct),
     },
   };
   const fault_criteria = Object.fromEntries(FAULT_PRECEDENCE.map((f) => [f, FAULT_DEFINITIONS[f].criteria.map((c) => ({ id: c.id, ...c.check(facts) }))])) as Record<Fault, CriterionRow[]>;
@@ -456,7 +489,8 @@ export function explainTrial(record: ExplainRecord, audit: AuditRow | null | und
     } else if (outcome === 'CANCELLED') {
       reason = 'CANCELLED: stopped from outside; says nothing about the model, excluded and rerun';
     } else {
-      reason = `${outcome}${detail}: the infrastructure's fault, not a trial of the model; excluded and rerun`;
+      const bound = record.detail ? INFRA_BOUND[record.detail] : undefined;
+      reason = `${outcome}${detail}: ${bound === undefined ? '' : `${bound}; `}the infrastructure's fault, not a trial of the model; excluded and rerun`;
     }
   }
 
@@ -471,6 +505,7 @@ export function explainTrial(record: ExplainRecord, audit: AuditRow | null | und
     notes,
     audited: row !== null,
     audit_label,
+    audit_answers: facts.audit === null ? null : { clinically_acceptable: facts.audit.clinically_acceptable, tool_rejections_correct: facts.audit.tool_rejections_correct },
     decisive_check,
     decisive_step: fault !== null && !modelFault ? null : attFits ? att.decisive_step : (row?.decisive_step ?? null),
     taxonomy,
