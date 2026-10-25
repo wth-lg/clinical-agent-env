@@ -2,7 +2,8 @@
 // screen for ?trial=: a header that says at once why the trial ended as it did, then two panes,
 // the trajectory on the left and five tabs on the right (Grading, Attribution, State diff,
 // Environment, Raw; ?tab=, grading by default). Below the lg breakpoint the panes stack, the tabs
-// first, so a long trajectory does not push them off the screen.
+// first (also first in the DOM, so focus order matches), so a long trajectory does not push them
+// off the screen.
 //
 // The header, visible on open with no click: the outcome, the attribution label with its
 // glossary link (and the not-audited marker when the trial has no audit row), the one-line
@@ -22,6 +23,7 @@ import { hrefWith, navigate, onNav, useParams } from '../data/url.ts';
 import { Attribution, criterionText, LINK, StepLink } from './Attribution.tsx';
 import { EnvironmentTab, Raw } from './Details.tsx';
 import { Grading } from './Grading.tsx';
+import { returnTo } from './back.ts';
 import { resolveTrial } from './resolve.ts';
 import { StateDiff } from './StateDiff.tsx';
 import { trajectoryOf } from './steps.ts';
@@ -41,7 +43,8 @@ const tabOf = (v: string | null): TabId => TABS.find((t) => t.id === v)?.id ?? '
 const BACK = { trial: null, tab: null };
 
 // from: the trial on screen. On open, the page starts at its header with focus on the heading,
-// however far down the list the trial was opened from (review-ui-P16-1 F1).
+// however far down the list the trial was opened from (review-ui-P16-1 F1); Back to Runs returns
+// to its row (F6).
 function Frame({ title, headingRef, from, children }: { title: string; headingRef?: Ref<HTMLHeadingElement> | undefined; from?: { run: string; trial: string }; children: React.ReactNode }) {
   const h1 = useRef<HTMLHeadingElement | null>(null);
   useEffect(() => {
@@ -50,9 +53,17 @@ function Frame({ title, headingRef, from, children }: { title: string; headingRe
     if (main) main.scrollTop = 0;
     h1.current?.focus({ preventScroll: true });
   }, [from?.run, from?.trial]);
+  const back = onNav(BACK);
   return (
     <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
-      <a href={hrefWith(BACK)} onClick={onNav(BACK)} className={`inline-flex items-center gap-1 text-xs ${LINK}`}>
+      <a
+        href={hrefWith(BACK)}
+        onClick={(ev) => {
+          if (from !== undefined) returnTo(from.run, from.trial);
+          back(ev);
+        }}
+        className={`inline-flex items-center gap-1 text-xs ${LINK}`}
+      >
         <ArrowLeft aria-hidden className="h-3.5 w-3.5" strokeWidth={1.75} />Back to Runs
       </a>
       <h1
@@ -122,9 +133,6 @@ function Detail({ t, run, files, tab, headingRef }: { t: Trial; run: RunData; fi
         </p>
         <Header t={t} e={e} onStep={onStep} />
         <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start">
-          <div className="order-2 min-w-0 lg:sticky lg:top-4 lg:order-1 lg:max-h-[calc(100vh-6rem)] lg:overflow-auto">
-            <Trajectory data={folded} current={current} />
-          </div>
           <Tabs tab={tab}>
             {{
               grading: <Grading t={t} steps={traj?.steps ?? null} onStep={onStep} />,
@@ -134,6 +142,10 @@ function Detail({ t, run, files, tab, headingRef }: { t: Trial; run: RunData; fi
               raw: <Raw t={t} />,
             }}
           </Tabs>
+          {/* After the tabs in the DOM, so focus order follows the stacked screen; on the left at lg. */}
+          <div className="min-w-0 lg:sticky lg:top-4 lg:order-1 lg:max-h-[calc(100vh-6rem)] lg:overflow-auto">
+            <Trajectory data={folded} current={current} />
+          </div>
         </div>
       </div>
     </Frame>
@@ -205,7 +217,7 @@ function Tabs({ tab, children }: { tab: TabId; children: Record<TabId, React.Rea
     go(TABS[to]!.id, true);
   };
   return (
-    <div className="order-1 min-w-0 rounded-sm border border-line bg-surface lg:order-2">
+    <div className="min-w-0 rounded-sm border border-line bg-surface lg:order-2">
       <div role="tablist" aria-label="Trial" onKeyDown={onKey} className="flex flex-wrap gap-x-1 border-b border-line px-2">
         {TABS.map((x) => (
           <button

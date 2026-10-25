@@ -351,3 +351,28 @@ test('a trial opened from low in the list opens at its header, with focus on its
     expect(await page.evaluate(() => document.querySelector('main')!.scrollTop)).toBe(0);
   }
 });
+
+test('Back to Runs returns to the row the trial was opened from, and focus order follows the screen at 390 (F6)', async ({ page }) => {
+  for (const size of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
+    await page.setViewportSize(size);
+    await browse(page, './?view=runs');
+    // The last row of the official run (a pilot run may hold a trial of the same name).
+    const last = page.getByTestId('trial-list').first().getByTestId('trial-row').last();
+    const name = (await last.getAttribute('data-trial'))!;
+    await last.scrollIntoViewIfNeeded();
+    await last.getByRole('button', { name, exact: true }).click();
+    await expect(page.getByTestId('trial-detail')).toHaveAttribute('data-trial', name);
+    await page.getByRole('link', { name: 'Back to Runs' }).click();
+    const button = page.getByTestId('trial-list').first().locator(`[data-testid="trial-row"][data-trial="${name}"]`).getByRole('button', { name, exact: true });
+    await expect(button).toBeInViewport();
+    await expect(button).toBeFocused();
+  }
+  // In the DOM, and so in focus order, the tabs come before the trajectory, as they show at 390.
+  await openTrial(page, TRIALS.failAudited);
+  const tabsFirst = await page.evaluate(() => {
+    const tabs = document.querySelector('[role="tablist"]')!;
+    const traj = document.querySelector('[data-testid="trajectory"]')!;
+    return Boolean(tabs.compareDocumentPosition(traj) & Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+  expect(tabsFirst).toBe(true);
+});

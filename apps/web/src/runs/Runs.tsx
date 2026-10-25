@@ -7,11 +7,12 @@
 // denominator rules. Filters (task, label) live in the URL; ?trial= opens the trial detail
 // (apps/web/src/trial/TrialPage.tsx) in place of the list, and Back to Runs returns to it.
 import { ChevronRight, CircleAlert } from 'lucide-react';
-import type { Ref } from 'react';
+import { useEffect, useRef, type Ref } from 'react';
 import { AUDIT_LABELS } from '../../../../packages/core/outcomes.ts';
 import { gradingLine, useResults, type BadRecord, type RunData, type Trial } from '../data/results.ts';
 import { Card, FaultLabel, GlossaryLink, Notice, OutcomeChip, Page, PlainRules } from '../data/ui.tsx';
 import { navigate, useParams } from '../data/url.ts';
+import { takeReturn } from '../trial/back.ts';
 import { TrialPage } from '../trial/TrialPage.tsx';
 
 // The label filter's values: every AUDIT_LABEL name, then excluded (INFRA) and pass.
@@ -76,12 +77,21 @@ export function Runs({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | un
 function RunList({ run, matches, heading = false }: { run: RunData; matches: (t: Trial) => boolean; heading?: boolean }) {
   const shown = run.trials.filter(matches);
   const graded = gradingLine(run.grading);
+  const list = useRef<HTMLUListElement>(null);
+  // Back to Runs from a trial of this run: its row in view, its button focused.
+  useEffect(() => {
+    const trial = takeReturn(run.runId);
+    if (trial === null) return;
+    const button = list.current?.querySelector<HTMLButtonElement>(`[data-testid="trial-row"][data-trial="${CSS.escape(trial)}"] button`);
+    button?.scrollIntoView({ block: 'center' });
+    button?.focus({ preventScroll: true });
+  }, [run.runId]);
   return (
     <div className="space-y-2" data-testid="run" data-run={run.runId} data-official={String(run.official)}>
       {heading && <h3 className="text-ink-muted"><span className="font-medium text-ink">{run.runId}</span>: {run.trials.length + run.bad.length} trial records</h3>}
       {graded !== null && <p className="text-xs text-ink-muted" data-testid="grading-line">{graded}</p>}
       {run.warnings.length > 0 && <Notice testId="data-warning">{run.warnings.join(' ')}</Notice>}
-      <ul className="divide-y divide-line rounded-sm border border-line bg-surface" data-testid="trial-list">
+      <ul ref={list} className="divide-y divide-line rounded-sm border border-line bg-surface" data-testid="trial-list">
         {run.bad.map((b) => <BadRow key={b.file} b={b} />)}
         {shown.map((t) => <TrialRow key={t.name} t={t} run={run} />)}
         {shown.length === 0 && run.bad.length === 0 && <li className="p-4 text-ink-muted">No trial matches these filters.</li>}
