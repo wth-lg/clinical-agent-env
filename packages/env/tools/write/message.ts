@@ -15,7 +15,7 @@ export const sendMessage = writeTool({
   name: 'send_message',
   description:
     'Send a message (a Communication, sent now) to a patient, a clinician (Practitioner) or a staff pool (Group). about lists the resources it concerns, possibly none; ' +
-    'they and a patient recipient must all be the same patient. Returns {communication}.',
+    'they and a patient recipient must all be the same patient. A message to staff about a patient lists the patient, or the result, in about. Returns {communication}.',
   inputSchema: {
     type: 'object',
     properties: {

@@ -2,8 +2,8 @@
   "grader_task_versions": {
     "27db8a721aa2981562e989cc01845f3a9218250269b4cebb1a29e09d6f605b70": {
       "task_id": "crc-care-gap",
-      "env_version": "f5f885afc6134508bf8c9caaf697d8c9df5a7f0bd7316c7e637f90c5c9abc58c",
-      "task_version": "bcfa2f5ca71ff512eec3692af33b375b1ad4a7296437b3a3b504cb8b4f7342e4",
+      "env_version": "5846d7857b161e8f1a166871b14a8010445c00283a48ab199ea5397e9fc92766",
+      "task_version": "dfa5d87fa1be8a6e3c32de49e77b10bb6fefe24008ab582a4bf9884774e2c0cb",
       "pass": true,
       "oracle_pass": true,
       "alternatives_pass": true,
@@ -252,8 +252,8 @@
     },
     "29702b99c7d6512bebda6888732f4d9c6e7edc3f6291af525b46f52a0835b65c": {
       "task_id": "discharge-medrec",
-      "env_version": "c1e656fdcb8d2ef267ed6af93489ec65c25baa80dabaf5352107f549e40ca783",
-      "task_version": "acfc1108ee8a971638a60416243ffd33ead2e216ec29b7fcd95ef8f53b5343a7",
+      "env_version": "bbe10cc5335c9148b69eace346c286be06aa3c7d76e279854de3d753e15fbd68",
+      "task_version": "b0f7cfd484c92a7a2e8e85c2c60e600f828ab20eaf4f5746e21a28071ef4503b",
       "pass": true,
       "oracle_pass": true,
       "alternatives_pass": true,
@@ -457,8 +457,8 @@
     },
     "47e31abf74dd3726f4c82b9341bec61750501d60a0e6929da90eb6810d2fd5a1": {
       "task_id": "contrast-ct-prep",
-      "env_version": "1b47cd6807624e2db3e76fbb8dfa5a519eadfa93bdf47dbdcb8fee1a1c37d288",
-      "task_version": "6cbe137bdfbec1bf6964528fdbe9864a0c8c1557004cb3944f64a59b14c0e227",
+      "env_version": "ec98c43c0ab505c6dea2e82ae38f0dd1089a01ee04a97b6c3843dde74a87b61e",
+      "task_version": "cf853ee984307232b00918dd3dca47be607adad7a7366007e986c18b9d473a63",
       "pass": true,
       "oracle_pass": true,
       "alternatives_pass": true,
@@ -697,8 +697,8 @@
     },
     "60f424a7dd483785a97201256c073b1b0e9986726c19a87f3fa2c935fd536c32": {
       "task_id": "results-inbox",
-      "env_version": "1b69d4deab5047c9be4c70ff0438628526da629a9fa0c5f1ca1d0605cec02a86",
-      "task_version": "d915c6976550c57871a3f99e1bfe51f84c10b4a1068fafe70b15c24757b44172",
+      "env_version": "02be3dae92bbee2de1a8a2d234d60ed0181a70e57d7960fee694f801ba73b328",
+      "task_version": "f8717e1a0e7b5d027be7185f64efbc63ab036e33067cfc0a4d5cd119f85bdb6f",
       "pass": true,
       "oracle_pass": true,
       "alternatives_pass": true,
@@ -992,8 +992,8 @@
     },
     "973f5cb0c5344bfe8383aaee77ebf996685c599ab3cc0fd3548445682363628a": {
       "task_id": "message-queue",
-      "env_version": "0f4ca284064318e267b43016adacd89fe793e885765e5c687d044d21f87e4e6a",
-      "task_version": "43890e008ce510b2747ebbf054133e362f027f8922765d473629995d157a98d7",
+      "env_version": "2d4df327702390a471c9203e40d8f9c5933e64d1f33270d5691a7c40432d22da",
+      "task_version": "0fa92acf6ca0e6fca68425592041694f674f50ea525eb4586b9ddf27f6b29f57",
       "pass": true,
       "oracle_pass": true,
       "alternatives_pass": true,
@@ -1342,8 +1342,8 @@
     },
     "f78e9a316e65762ec25930a792050bd7fcf09668d6b3f96d7f035fb66b9b5ab1": {
       "task_id": "renal-dose-review",
-      "env_version": "0f868a40dce8690667f1d4f142aae069e9abd239b699f9e566f4edadb00fe09b",
-      "task_version": "8259dee8e54d690850a5bc770160f2a368be72d2ee3881ee2078ffe2c5e5eb2f",
+      "env_version": "c31110559dad7b9883154cc94acb40f8ed0cef875a3fb2de0833bd8025dc4528",
+      "task_version": "bf09c388f9b5a6e574958f706e72515210888f41044a54949dc0d774db436c64",
       "pass": true,
       "oracle_pass": true,
       "alternatives_pass": true,

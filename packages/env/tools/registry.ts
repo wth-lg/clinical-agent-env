@@ -54,7 +54,11 @@ import { ToolError, type ErrorBody } from './errors.ts';
 // 3: a search_notes row carries whole, and a snippet that is the note's whole text exposes it.
 // 4: update_inbox_item's linked names the order, task or message, no longer an existing result;
 // and whole: true exposes a note only in a search_notes result, not in any other tool's payload.
-export const TOOLS_VERSION = '4';
+// 5 (P17i B2: R14-08, R14-09, R14-10, R14-11, R14-44): lookup_catalog matches tokens, not
+// substrings; record_allergy defaults a catalog medication's category; fhir_read takes Type/id;
+// fhir_search states its MedicationRequest date, and its filters per type; send_message's about
+// and search_patients' example.
+export const TOOLS_VERSION = '5';
 
 export type PropertySchema =
   | { type: 'string'; description: string; enum?: readonly string[]; minLength?: number; maxLength?: number; pattern?: string }
