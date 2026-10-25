@@ -98,10 +98,12 @@ export interface AttributionFacts {
   check_error: { check: string | null; message: string } | null;
   // The audit row's answers clinically_acceptable and tool_rejections_correct (explain.ts AuditRow),
   // each its adjudicated answer when the row has one, else the auditor's: 'yes', 'no' or null when
-  // the row gives neither. decisive_step is the step the row cites.
+  // the row gives neither. decisive_step is the step the row cites, and cited_step that step of the
+  // trajectory (null when the row cites none or the trajectory has no such step).
   audit: {
     outcome: string; label: AuditLabelName | null; model_fault: string | null; llm_auditor_agrees: boolean | null; adjudicated_label: AuditLabelName | null; evidence_ids: readonly string[];
     clinically_acceptable: AuditAnswer | null; tool_rejections_correct: AuditAnswer | null; decisive_step: number | null;
+    cited_step: { tool: string; is_error: boolean; error_code: string | null } | null;
   } | null;
 }
 
@@ -290,12 +292,14 @@ export const FAULT_DEFINITIONS: Readonly<Record<Fault, FaultDefinition>> = {
       },
       {
         id: 'E6',
-        text: 'A human audit answers tool_rejections_correct no (after adjudication): a tool refused a valid call, at the step the audit cites as its decisive step.',
-        reads: ['audit.tool_rejections_correct (else audit.adjudicated_tool_rejections_correct)', 'audit.decisive_step'],
+        text: 'A human audit answers tool_rejections_correct no (after adjudication): a tool refused a valid call, at the step the audit cites as its decisive step, which the trajectory shows as a tool error; and the audit is confirmed, by an agreeing LLM auditor or an adjudicated label.',
+        reads: ['audit.adjudicated_tool_rejections_correct (else audit.tool_rejections_correct)', 'audit.decisive_step', 'trajectory (the cited step is_error)', 'audit.llm_auditor_agrees', 'audit.adjudicated_label'],
         check: ({ audit }) => {
           if (audit === null) return result(false, 'not human-audited');
-          const cited = audit.decisive_step !== null && Number.isSafeInteger(audit.decisive_step) && audit.decisive_step >= 1;
-          return result(audit.tool_rejections_correct === 'no' && cited, `tool_rejections_correct ${audit.tool_rejections_correct ?? 'not answered'}${cited ? `, step ${audit.decisive_step}` : ', no step cited'}`);
+          const s = audit.cited_step;
+          const step = audit.decisive_step === null ? 'no step cited' : s === null ? `step ${audit.decisive_step} is not in the trajectory` : `step ${audit.decisive_step} ${s.tool} ${s.is_error ? `refused (${s.error_code ?? 'error'})` : 'succeeded'}`;
+          const confirmed = audit.adjudicated_label !== null ? 'adjudicated' : audit.llm_auditor_agrees === true ? 'LLM auditor agrees' : null;
+          return result(audit.tool_rejections_correct === 'no' && s?.is_error === true && confirmed !== null, `tool_rejections_correct ${audit.tool_rejections_correct ?? 'not answered'}, ${step}, ${confirmed ?? 'not confirmed'}`);
         },
       },
     ],

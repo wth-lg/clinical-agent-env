@@ -47,9 +47,11 @@
 //     (explain.ts AuditRow), when given, are yes or no. The answer after adjudication decides
 //     (explain.ts auditAnswerOf): a clinically_acceptable no needs GR3 (the label's outcome
 //     GRADER_BUG with an evidence id) or an environment label, and a tool_rejections_correct no an
-//     environment label and the rejected call's step as decisive_step (outcomes.ts E6), because
-//     a no says the grader or a tool rejected valid work; an auditor no that an adjudicated yes
-//     overrules needs an adjudicated_label and a note (decisions.tsv 2026-10-27T02:10).
+//     environment label, the rejected call's step as decisive_step, which the trajectory shows
+//     as a tool error, and confirmation, llm_auditor_agrees true or an adjudicated_label (what
+//     outcomes.ts E6 needs; decisions.tsv 2026-10-27T06:00), because a no says the grader or a
+//     tool rejected valid work; an auditor no that an adjudicated yes overrules needs an
+//     adjudicated_label and a note (decisions.tsv 2026-10-27T02:10).
 // It writes each label's criteria, explainTrial's M1-M5 for its trial, into audit.jsonl (only when
 // they changed, so a second run leaves the file as it was). The context it gives explainTrial
 // (explainContext) is packages/core/explain-context.ts over the run's files, the one builder the
@@ -245,16 +247,24 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
       } else if (auditAnswerOf(l, q) !== 'no') continue;
       else if (q === 'clinically_acceptable' && !((l.outcome === 'GRADER_BUG' && l.evidence_ids.length > 0) || environment)) {
         v.push(`${l.trial}: clinically_acceptable no (the recorded outcome is not clinically right) needs GR3 (an audit outcome GRADER_BUG with evidence) or an environment label; adjudicated_clinically_acceptable yes overrules it`);
-      } else if (q === 'tool_rejections_correct' && !(environment && Number.isSafeInteger(l.decisive_step) && (l.decisive_step as number) >= 1)) {
-        v.push(`${l.trial}: tool_rejections_correct no (a tool rejected a valid call) needs an environment label and the rejected call's step as decisive_step; adjudicated_tool_rejections_correct yes overrules it`);
+      } else if (q === 'tool_rejections_correct') {
+        const n = l.decisive_step;
+        const s = typeof n === 'number' && Number.isSafeInteger(n) && n >= 1 ? steps[n - 1] : undefined;
+        const confirmed = l.llm_auditor_agrees === true || isLabel(l.adjudicated_label);
+        if (!(environment && s?.is_error === true && confirmed)) {
+          const cited = s === undefined ? `step ${n} is not a step of the trajectory` : `step ${n} is ${s.tool}, which ${s.is_error ? `was refused (${s.error_code})` : 'succeeded'}`;
+          v.push(`${l.trial}: tool_rejections_correct no (a tool rejected a valid call) needs an environment label (it is ${auditLabelOf(l) ?? 'none'}), the refused call's step as decisive_step (${cited}) and confirmation, llm_auditor_agrees true or an adjudicated_label (${confirmed ? 'confirmed' : 'not confirmed'}); adjudicated_tool_rejections_correct yes overrules it`);
+        }
       }
     }
     if (outcome === 'PASS') continue;
     // The trial's fault without the audit's label, outcome or fault verdict: the label must agree
-    // with it, not define it. The row's answers to the two questions are evidence, not a label, so
-    // they stay: a tool_rejections_correct no with its step makes the fault environment (E6).
+    // with it, not define it. The row's answers to the two questions, its cited step and how it was
+    // confirmed are evidence, so they stay: a confirmed tool_rejections_correct no citing a refused
+    // call makes the fault environment (E6), the only fault criterion that reads them.
     const answers: AuditLabel = {
-      trial: l.trial, outcome, taxonomy: null, model_fault: null, decisive_step: l.decisive_step, evidence_ids: [], llm_auditor_agrees: null,
+      trial: l.trial, outcome, taxonomy: null, model_fault: null, decisive_step: l.decisive_step, evidence_ids: [], llm_auditor_agrees: l.llm_auditor_agrees ?? null,
+      ...(isLabel(l.adjudicated_label) ? { adjudicated_label: l.adjudicated_label } : {}),
       ...Object.fromEntries(AUDIT_QUESTIONS.flatMap((q) => [[q, l[q] ?? null], [`adjudicated_${q}`, l[`adjudicated_${q}`] ?? null]])),
     };
     const { fault } = await explain(r, answers);

@@ -33,12 +33,18 @@ describe('audit answers', () => {
     expect(explainTrial(record('FAIL'), row({ clinically_acceptable: 'yes', adjudicated_clinically_acceptable: 'no' }), ctx).audit_answers!.clinically_acceptable).toBe('no');
   });
 
-  it('E6: a tool_rejections_correct no with a cited step makes the fault environment; without a step, or overruled, it does not', () => {
-    const env = explainTrial(record('FAIL'), row({ tool_rejections_correct: 'no', taxonomy: 'environment', decisive_step: 2 }), ctx);
-    expect(env).toMatchObject({ fault: 'env', label: 'environment', deciding: { id: 'E6', evidence: 'tool_rejections_correct no, step 2' } });
-    expect(env.fault_criteria.env.find((c) => c.id === 'E6')!.met).toBe(true);
-    expect(explainTrial(record('FAIL'), row({ tool_rejections_correct: 'no', decisive_step: null }), ctx).fault).toBe('model');
-    expect(explainTrial(record('FAIL'), row({ tool_rejections_correct: 'no', adjudicated_tool_rejections_correct: 'yes' }), ctx).fault).toBe('model');
+  it('E6: a confirmed tool_rejections_correct no citing a refused call makes the fault environment; a successful step, no step, no confirmation or an overruled no does not', () => {
+    const result = (seq: number, name: string, is_error: boolean) => ({ v: 2, seq, ts: 't', turn: 1, type: 'tool_result', tool_use_id: `toolu_${seq}`, name, executed: true, is_error, error_code: is_error ? 'INVALID_INPUT' : null, content: {}, exposed_ids: [], referenced_ids: [] });
+    const events = { ...ctx, events: [result(1, 'fhir_read', false), result(2, 'order_medication', true)] as unknown as ExplainContext['events'] };
+    const fault = (over: Partial<AuditRow>) => explainTrial(record('FAIL'), row({ tool_rejections_correct: 'no', taxonomy: 'environment', model_fault: 'no', ...over }), events);
+    const env = fault({ decisive_step: 2 });
+    expect(env).toMatchObject({ fault: 'env', label: 'environment', deciding: { id: 'E6', evidence: 'tool_rejections_correct no, step 2 order_medication refused (INVALID_INPUT), LLM auditor agrees' } });
+    expect(fault({ decisive_step: 2, llm_auditor_agrees: null, adjudicated_label: 'environment' }).deciding).toMatchObject({ id: 'E6', evidence: expect.stringMatching(/, adjudicated$/) });
+    expect(fault({ decisive_step: 1 }).fault_criteria.env.find((c) => c.id === 'E6')).toMatchObject({ met: false, evidence: 'tool_rejections_correct no, step 1 fhir_read succeeded, LLM auditor agrees' });
+    expect(fault({ decisive_step: 9 }).fault_criteria.env.find((c) => c.id === 'E6')!.evidence).toMatch(/step 9 is not in the trajectory/);
+    expect(fault({ decisive_step: 2, llm_auditor_agrees: null }).fault_criteria.env.find((c) => c.id === 'E6')).toMatchObject({ met: false, evidence: expect.stringMatching(/not confirmed$/) });
+    expect(fault({ decisive_step: null }).fault).toBe('model');
+    expect(fault({ decisive_step: 2, adjudicated_tool_rejections_correct: 'yes' }).fault).toBe('model');
     expect(explainTrial(record('FAIL'), undefined, ctx).fault_criteria.env.find((c) => c.id === 'E6')).toMatchObject({ met: false, evidence: 'not human-audited' });
   });
 });

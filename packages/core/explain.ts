@@ -94,10 +94,12 @@ export interface ExplainRecord {
 // adjudicated_clinically_acceptable or adjudicated_tool_rejections_correct (decisions.tsv
 // 2026-10-27T02:10); the adjudicated answer, else the auditor's, is the answer every count reads,
 // so an overruled no is never counted. A tool_rejections_correct no makes the fault environment
-// (outcomes.ts E6). cli/audit-check.ts requires an answered no to come with GR3 (an audit outcome
-// GRADER_BUG with evidence) or an environment label for clinically_acceptable, and with an
-// environment label and a decisive_step for tool_rejections_correct; an overruled no needs an
-// adjudicated_label and a note.
+// (outcomes.ts E6) when its decisive_step is a tool error step of the trajectory and the audit is
+// confirmed (llm_auditor_agrees true or an adjudicated_label; decisions.tsv 2026-10-27T06:00).
+// cli/audit-check.ts requires an answered no to come with GR3 (an audit outcome GRADER_BUG with
+// evidence) or an environment label for clinically_acceptable, and for tool_rejections_correct
+// with what E6 needs and an environment label; an overruled no needs an adjudicated_label and a
+// note.
 export interface AuditRow {
   trial: string;
   outcome: string;
@@ -208,6 +210,13 @@ export const formatAuditAnswers = (a: AuditAnswers | null): string => {
   return `recorded outcome clinically right: ${say('clinically_acceptable')}; tool rejections correct: ${say('tool_rejections_correct')}`;
 };
 const answer = (v: unknown): AuditAnswer | null => (v === 'yes' || v === 'no' ? v : null);
+// The step a row cites, numbered as grader/exposure.ts stepsOf numbers them (the executed calls
+// from 1); null when it cites none or the trajectory has no such step.
+const citedStep = (events: readonly TrialEvent[], n: number | null | undefined): { tool: string; is_error: boolean; error_code: string | null } | null => {
+  if (typeof n !== 'number' || !Number.isSafeInteger(n) || n < 1) return null;
+  const e = events.filter((x) => x.type === 'tool_result' && x.executed)[n - 1];
+  return e?.type === 'tool_result' ? { tool: e.name, is_error: e.is_error, error_code: e.error_code } : null;
+};
 // A row's answer to q after adjudication.
 export const auditAnswerOf = (row: Partial<Pick<AuditRow, AuditQuestion | `adjudicated_${AuditQuestion}`>>, q: AuditQuestion): AuditAnswer | null =>
   answer(row[`adjudicated_${q}`]) ?? answer(row[q]);
@@ -440,6 +449,7 @@ export function explainTrial(record: ExplainRecord, audit: AuditRow | null | und
       clinically_acceptable: auditAnswerOf(row, 'clinically_acceptable'),
       tool_rejections_correct: auditAnswerOf(row, 'tool_rejections_correct'),
       decisive_step: typeof row.decisive_step === 'number' ? row.decisive_step : null,
+      cited_step: citedStep(ctx.events, row.decisive_step),
     },
   };
   const fault_criteria = Object.fromEntries(FAULT_PRECEDENCE.map((f) => [f, FAULT_DEFINITIONS[f].criteria.map((c) => ({ id: c.id, ...c.check(facts) }))])) as Record<Fault, CriterionRow[]>;
