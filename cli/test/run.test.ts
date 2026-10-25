@@ -1,7 +1,10 @@
 // pnpm cli run (plan phase P12): 60 mocked trials match the same batch driven through
 // packages/core/batch.ts with an in-memory sink; a SIGKILL during trial 31 resumes with exactly
 // the 30 unfinished trials; --task, --dry-run and --cost-from; the projected cap; the manifest's
-// env_git_sha and env_dirty, and the refusal of a live batch on a dirty tree.
+// env_git_sha and env_dirty, and the refusal of a live batch on a dirty tree. Trial isolation
+// (P17i C9, R14-36): each of 60 trials, of _toy through the CLI and of a real task's oracle
+// through the batch at concurrency 4, starts at the world's hash, ends at the one final hash every
+// other trial ends at, and replays to it; a planted store shared across trials breaks all three.
 import { spawn } from 'node:child_process';
 import { cpSync, existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -13,6 +16,8 @@ import { JUDGE_ALLOWANCE_USD, PER_TRIAL_CAP_USD, RERUN_FACTOR } from '../../pack
 import { admitStore, createLedger, PROJECTED_CAP_USD, type LedgerRow, type LedgerStore } from '../../packages/core/ledger.ts';
 import { taskVersions } from '../../packages/core/tasks.ts';
 import { checks as toyChecks } from '../../tasks/_toy/tests/grader.ts';
+import { scriptedClient } from '../../packages/grader/matrix/matrix.ts';
+import { loadMatrixTask } from '../matrix.ts';
 import { commitFile, fakeKey, git, repoRoot, tempDir, tempRepo, write } from '../../scripts/test/helpers.ts';
 import { readRows } from '../adapters/ledger-node.ts';
 import { nodeTaskSource } from '../adapters/tasks-node.ts';
@@ -55,6 +60,13 @@ function harness(over: Partial<Deps> = {}, env: Record<string, string | undefine
 
 const runArgs = (out: string, ...more: string[]) => ['--task', '_toy', '--model', MODEL, '--out', out, ...more];
 const trialFiles = (dir: string) => readdirSync(join(dir, 'trials'), { recursive: true }).filter((f) => String(f).endsWith('.json')).map(String).sort();
+// Every trial started at the world, all ended at one final state, and each replayed to it.
+function isolated(records: ReadonlyArray<{ state_hash: { initial: string | null; final: string | null; replay_final: string | null } }>): void {
+  expect(records.map((r) => r.state_hash.initial)).toEqual(records.map(() => WORLD_HASH));
+  expect(new Set(records.map((r) => r.state_hash.final)).size).toBe(1);
+  expect(records[0]!.state_hash.final).not.toBeNull();
+  expect(records.filter((r) => r.state_hash.replay_final !== r.state_hash.final)).toEqual([]);
+}
 const keysIn = (dir: string) =>
   trialFiles(dir).map((f) => {
     const r = JSON.parse(readFileSync(join(dir, 'trials', f), 'utf8')) as { task_version: string; model_requested: string; effort: string; index: number };
@@ -82,6 +94,7 @@ describe('cli run', { timeout: 480_000 }, () => {
     expect(code, h.out.join('\n')).toBe(0);
     const cliKeys = keysIn(dir);
     expect(new Set(cliKeys).size).toBe(60);
+    isolated(trialFiles(dir).map((f) => JSON.parse(readFileSync(join(dir, 'trials', f), 'utf8'))));
 
     const store = new MemoryStore();
     admitStore(store);
@@ -117,6 +130,29 @@ describe('cli run', { timeout: 480_000 }, () => {
     // A mocked run meters through its SPEND_LEDGER, never ~/.clinenv.
     expect(readRows(h.ledger).filter((r) => r.kind === 'close')).toHaveLength(1);
     expect(existsSync(join(h.deps.env.HOME as string, '.clinenv'))).toBe(false);
+  });
+
+  it('60 trials of a real task\'s oracle at concurrency 4 start at the world, end at one final hash and replay to it', async () => {
+    const task = await loadMatrixTask('renal-dose-review');
+    const store = new MemoryStore();
+    admitStore(store);
+    let id = 0;
+    const ledger = createLedger({ store, clock: { now: () => 't' }, newId: () => `i-${++id}`, source: 'node', runId: 'run-iso', pid: 1, host: 'h', isAlive: () => true });
+    const sink = memorySink();
+    const result = await runBatch(
+      { runId: 'run-iso', taskIds: [task.id], trials: 60, model: MODEL, effort: 'high', mode: 'mock-oracle', concurrency: 4, observations: [] },
+      {
+        ledger, rows: () => store.read(), sink, tasks: nodeTaskSource({ testMode: false }), world: { read: async () => WORLD }, worldHash: WORLD_HASH, definitions: DEFINITIONS, now: () => 0,
+        client: (_grant, trial) => scriptedClient(task.oracle!, trial),
+      },
+    );
+    expect(result.settled).toBe(60);
+    const records = await sink.settled();
+    expect(records).toHaveLength(60);
+    expect(records.every((r) => r.status === 'COMPLETED')).toBe(true);
+    isolated(records);
+    // The oracle writes, so the one final state is not the world.
+    expect(records[0]!.state_hash.final).not.toBe(WORLD_HASH);
   });
 
   it('a SIGKILL during trial 31, then a rerun: 60 unique keys, the partial call billed once, and calls only for the 30 unfinished trials', async () => {
