@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:renal-dose-review:12",
   "task_id": "renal-dose-review",
-  "task_version": "d2b62108facb3b48dbab7b196e26c3312901dc818c7b2f85dc78b51b1ab7d5f5",
-  "env_version": "0f868a40dce8690667f1d4f142aae069e9abd239b699f9e566f4edadb00fe09b",
-  "grader_task_version": "d2197f9856886dc5363b8e4fd2c5245ae12a3b08fddcd6fe612378c0c0e46509",
+  "task_version": "0e06ff9196d84e936b2653bdb9b457e97f56b6d6fed778c588de06d6535e98c4",
+  "env_version": "0dae10d1d8d15746dfd85762a4d0532e340503b7de2db604d209f8a3c5d3e408",
+  "grader_task_version": "271c8acff3147cdf01bb4a0ea08fd037798bf3bde08d589cf431987b8c217d81",
   "fixture_hash": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
   "state_hash": {
     "initial": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T14:20:18.000Z",
+  "started": "2026-10-23T14:20:15.000Z",
   "turns": 8,
   "tool_calls": 11,
   "tool_errors": {
@@ -42,7 +42,7 @@
   "detail": "overloaded_error after 4 retries",
   "summary": "Reviewed Harold Vance: apixaban stays at 2.5 mg, metformin and gabapentin reduced; note written.",
   "resumed": false,
-  "ended": "2026-10-23T14:21:20.000Z",
+  "ended": "2026-10-23T14:21:17.000Z",
   "judge_cost_usd": 0,
   "grader_version": "8",
   "outcome": "INFRA_API",

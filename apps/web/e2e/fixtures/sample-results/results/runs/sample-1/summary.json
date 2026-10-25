@@ -228,13 +228,13 @@
     },
     "renal-dose-review": {
       "task_versions": [
-        "d2b62108facb3b48dbab7b196e26c3312901dc818c7b2f85dc78b51b1ab7d5f5"
+        "0e06ff9196d84e936b2653bdb9b457e97f56b6d6fed778c588de06d6535e98c4"
       ],
       "env_versions": [
-        "0f868a40dce8690667f1d4f142aae069e9abd239b699f9e566f4edadb00fe09b"
+        "0dae10d1d8d15746dfd85762a4d0532e340503b7de2db604d209f8a3c5d3e408"
       ],
       "grader_task_versions": [
-        "d2197f9856886dc5363b8e4fd2c5245ae12a3b08fddcd6fe612378c0c0e46509"
+        "271c8acff3147cdf01bb4a0ea08fd037798bf3bde08d589cf431987b8c217d81"
       ],
       "records": 13,
       "trials": 12,
@@ -263,10 +263,10 @@
       "grader_error": 0,
       "grader_error_history": 0,
       "requeued": 0,
-      "mean_score": 0.608974358974359,
+      "mean_score": 0.5705128205128206,
       "mean_cost_usd": 1.06,
-      "raw_mean_score": 0.4935897435897436,
-      "gate_fraction": 0.6805555555555555,
+      "raw_mean_score": 0.4551282051282051,
+      "gate_fraction": 0.6666666666666666,
       "pass_no_harm": 4,
       "pass_no_harm_rate": 0.3333333333333333,
       "limits": {
