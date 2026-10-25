@@ -4,9 +4,15 @@
 // are read back on load, and a call or batch an earlier page left open is closed as spent at its
 // worst case, since that page can no longer settle it and the API may still bill it.
 // Browser-direct calls meter through it; its caps are the core's PROJECTED_CAP_USD and
-// ACTUAL_CAP_USD, and the tighter session cap is checked in spend/ before each batchStart. P15
-// extends this adapter for trials in a Worker.
-import { admitStore, createLedger, parseRow, type Ledger, type LedgerRow, type LedgerStore } from '../../../../packages/core/ledger.ts';
+// ACTUAL_CAP_USD, and the tighter session cap is checked in spend/ before each batchStart.
+// A browser-direct trial runs in a Worker, which has no sessionStorage and cannot use a grant the
+// page minted (grants are capabilities of the realm that made them). Its client comes from
+// memoryLedger: an in-memory LedgerStore in the Worker's memory (no file, gone with the Worker),
+// seeded with the tab's rows and opened with sessionCeiling, so the session cap is its projected
+// and actual ceiling. Each append is reported (onAppend), and the page ingests the reserve and
+// settle rows into the tab ledger as they happen, so a reload still counts what the Worker spent.
+import { MessagesClient, type ClientOptions } from '../../../../packages/core/anthropic.ts';
+import { ACTUAL_CAP_USD, admitStore, createLedger, parseRow, PROJECTED_CAP_USD, type Ledger, type LedgerRow, type LedgerStore, type SpendCeiling } from '../../../../packages/core/ledger.ts';
 
 export const LEDGER_KEY = 'clinenv.ledger';
 
@@ -76,24 +82,58 @@ class TabStore implements LedgerStore {
   }
 }
 
+const browserLedger = (store: LedgerStore, now: () => string, host: string): Ledger => {
+  admitStore(store);
+  return createLedger({
+    store,
+    clock: { now },
+    newId: () => crypto.randomUUID(),
+    source: 'browser',
+    runId: null,
+    pid: 0,
+    host,
+    // Only the tab's own grants close its batches.
+    isAlive: () => true,
+  });
+};
+
 let tab: Ledger | undefined;
 
 export function tabLedger(): Ledger {
   if (tab === undefined) {
     const now = () => new Date().toISOString();
-    const store = new TabStore(session(), now());
-    admitStore(store);
-    tab = createLedger({
-      store,
-      clock: { now },
-      newId: () => crypto.randomUUID(),
-      source: 'browser',
-      runId: null,
-      pid: 0,
-      host: 'tab',
-      // Only the tab's own grants close its batches.
-      isAlive: () => true,
-    });
+    tab = browserLedger(new TabStore(session(), now()), now, 'tab');
   }
   return tab;
 }
+
+// The session cap as a ledger ceiling over every browser row, never above the core caps.
+export const sessionCeiling = (cap: number): SpendCeiling => ({ usd: Math.min(cap, PROJECTED_CAP_USD, ACTUAL_CAP_USD), scope: () => true, what: 'session cap' });
+
+// Rows in this realm's memory only, starting from `rows`; onAppend sees each transaction's rows.
+class MemoryStore implements LedgerStore {
+  readonly #rows: LedgerRow[];
+  readonly #onAppend: (rows: LedgerRow[]) => void;
+  constructor(rows: readonly LedgerRow[], onAppend: (rows: LedgerRow[]) => void) {
+    this.#rows = rows.map(parseRow);
+    this.#onAppend = onAppend;
+  }
+  async transact<T>(fn: (rows: readonly LedgerRow[]) => { append: LedgerRow[]; result: T }): Promise<T> {
+    const { append, result } = fn(this.#rows);
+    if (append.length > 0) {
+      this.#rows.push(...append);
+      this.#onAppend(append);
+    }
+    return result;
+  }
+  async read(): Promise<LedgerRow[]> {
+    return [...this.#rows];
+  }
+}
+
+export function memoryLedger(opts: { rows?: readonly LedgerRow[]; onAppend?: (rows: LedgerRow[]) => void } = {}): Ledger {
+  return browserLedger(new MemoryStore(opts.rows ?? [], opts.onAppend ?? (() => {})), () => new Date().toISOString(), 'worker');
+}
+
+// The Messages client of a grant this adapter's ledger minted.
+export const grantClient = (opts: ClientOptions): MessagesClient => new MessagesClient(opts);
