@@ -103,11 +103,13 @@ export function Grading({ t, steps, onStep }: { t: Trial; steps: readonly Step[]
           <ul className="divide-y divide-line">
             {gates.map((c) => {
               const requires = checkTextOf(t.task)?.[c.id]?.requires;
-              const f = found(t.task, c);
+              // The check that threw has no verdict on the trial: the grader's error, not "not met".
+              const threw = r.error?.check === c.id && !g.regraded;
+              const f = threw ? null : found(t.task, c);
               return (
-                <li key={c.id} data-testid="gate-check" data-id={c.id} data-met={String(c.met)} className="space-y-1 py-2">
+                <li key={c.id} data-testid="gate-check" data-id={c.id} data-met={String(c.met)} data-error={String(threw)} className="space-y-1 py-2">
                   <p className="flex flex-wrap items-baseline gap-x-2">
-                    <span className={`text-xs ${c.met === true ? 'text-ink-muted' : 'font-semibold text-ink'}`}>{metText(c.met)}</span>
+                    <span data-testid="check-state" className={`text-xs ${threw ? 'font-semibold text-danger' : c.met === true ? 'text-ink-muted' : 'font-semibold text-ink'}`}>{threw ? 'error' : metText(c.met)}</span>
                     <code className="break-all font-medium text-ink">{c.id}</code>
                   </p>
                   {requires !== undefined && <p className="break-words text-ink-muted">Requires {requires}.</p>}

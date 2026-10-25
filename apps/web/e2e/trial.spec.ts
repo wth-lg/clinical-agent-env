@@ -376,3 +376,28 @@ test('Back to Runs returns to the row the trial was opened from, and focus order
   });
   expect(tabsFirst).toBe(true);
 });
+
+test('a trial whose fault is not the model\'s is never told as a model failure (F3)', async ({ page }) => {
+  for (const name of [TRIALS.graderError, TRIALS.envError, TRIALS.infra]) {
+    const e = await explain(name);
+    expect(e.fault, name).not.toBe('model');
+    expect(e).toMatchObject({ taxonomy: null, decisive_check: null, decisive_step: null });
+    await openTrial(page, name);
+    const h = page.getByTestId('trial-header');
+    await expect(h.getByTestId('decisive-check')).toHaveCount(0);
+    await expect(h.getByTestId('decisive-step-link')).toHaveCount(0);
+    await page.getByRole('tab', { name: 'Attribution' }).click();
+    const p = panel(page, 'attribution');
+    await expect(p.getByTestId('taxonomy')).toHaveText(/^does not apply: /);
+    await expect(p.getByTestId('exposure-row')).toHaveCount(0);
+    for (const kind of ['reasoning', 'retrieval', 'output gap', 'over action', 'process']) await expect(page.getByTestId('trial-detail')).not.toContainText(`Kind: ${kind}`);
+    await expect(p).not.toContainText("automatic kind");
+  }
+  // The check that threw is the grader's error in Grading, not a check the trial did not meet.
+  const r = record(TRIALS.graderError) as unknown as { error: { check: string } };
+  await openTrial(page, TRIALS.graderError);
+  const row = panel(page, 'grading').locator(`[data-testid="gate-check"][data-id="${r.error.check}"]`);
+  await expect(row).toHaveAttribute('data-error', 'true');
+  await expect(row.getByTestId('check-state')).toHaveText('error');
+  await expect(row).not.toContainText('Found ');
+});

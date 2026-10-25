@@ -5,7 +5,7 @@
 // fault in FAULT_PRECEDENCE order, each met or not with its evidence and a link to its definition,
 // the one that decided the fault marked. This is how a model fault is told apart from an
 // environment or grader fault for this trial.
-import { CONFIRMATION_DEFINITIONS, CONFIRMATION_CRITERIA, FAULT_DEFINITIONS, FAULT_PRECEDENCE, RUN_BLOCKS } from '../../../../packages/core/outcomes.ts';
+import { CONFIRMATION_DEFINITIONS, CONFIRMATION_CRITERIA, FAULT_DEFINITIONS, FAULT_PRECEDENCE, RUN_BLOCKS, type Fault } from '../../../../packages/core/outcomes.ts';
 import { MET_TEXT, TAXONOMY_TEXT, type AuditRow, type CriterionRow, type Explanation, type Holding } from '../../../../packages/core/explain.ts';
 import type { Step } from '../../../../packages/grader/check.ts';
 import type { Trial } from '../data/results.ts';
@@ -15,6 +15,8 @@ import { EvidenceId, Section } from './Grading.tsx';
 const CRITERIA = [...Object.values(FAULT_DEFINITIONS).flatMap((d) => d.criteria), ...RUN_BLOCKS, ...CONFIRMATION_CRITERIA];
 // A criterion's sentence from outcomes.ts.
 export const criterionText = (id: string): string => CRITERIA.find((c) => c.id === id)?.text ?? id;
+// One word per fault, the word the label uses (review-ui-P16-1 F5).
+export const FAULT_WORD: Readonly<Record<Fault, string>> = { model: 'model', refusal: 'model', env: 'environment', grader: 'grader', infra: 'infra' };
 export const LINK = 'text-ink underline decoration-line-strong underline-offset-2 hover:decoration-ink';
 
 type Exposure = { id: string; first_exposed_step: number | null; first_shown_step?: number | null };
@@ -44,13 +46,20 @@ export function Attribution({ t, e, steps, onStep }: { t: Trial; e: Explanation;
   const auto = (t.record as { attribution?: { auto: string; exposure: Exposure[] } | null }).attribution ?? null;
   const audit: AuditRow | null = t.audit;
   const deciding = e.deciding?.id ?? null;
+  // The kind of model failure and the exposure of the decisive ids speak only for a model fault
+  // (review-ui-P16-1 F3).
+  const modelFault = e.fault === 'model' || e.fault === 'refusal';
   return (
     <div className="space-y-5">
       <dl className="grid grid-cols-1 gap-x-4 gap-y-1.5 sm:grid-cols-[max-content_minmax(0,1fr)] [&_dd]:min-w-0 [&_dd]:break-words [&_dt]:text-ink-muted">
         <dt>Kind of failure</dt>
         <dd data-testid="taxonomy">
-          {e.taxonomy ? <><GlossaryLink anchor="taxonomy" className={LINK}>{e.taxonomy.replace(/_/g, ' ')}</GlossaryLink>: <span className="text-ink-muted">{TAXONOMY_TEXT[e.taxonomy]}</span></> : 'none'}
-          {auto && auto.auto !== e.taxonomy && <span className="block text-xs text-ink-muted">The grader's automatic kind: {auto.auto.replace(/_/g, ' ')}.</span>}
+          {!modelFault ? (e.fault === null ? 'none: the trial passed' : `does not apply: the fault is the ${FAULT_WORD[e.fault]}'s, not the model's`) : (
+            <>
+              {e.taxonomy ? <><GlossaryLink anchor="taxonomy" className={LINK}>{e.taxonomy.replace(/_/g, ' ')}</GlossaryLink>: <span className="text-ink-muted">{TAXONOMY_TEXT[e.taxonomy]}</span></> : 'none'}
+              {auto && auto.auto !== e.taxonomy && <span className="block text-xs text-ink-muted">The grader's automatic kind: {auto.auto.replace(/_/g, ' ')}.</span>}
+            </>
+          )}
         </dd>
         <dt>Confirmation</dt>
         <dd>{e.confirmation === null ? 'does not apply' : <><GlossaryLink anchor="confirmation" className={LINK}>{e.confirmation}</GlossaryLink>: <span className="text-ink-muted">{CONFIRMATION_DEFINITIONS[e.confirmation]}</span></>}</dd>
@@ -68,7 +77,7 @@ export function Attribution({ t, e, steps, onStep }: { t: Trial; e: Explanation;
         </dd>
       </dl>
 
-      {auto && auto.exposure.length > 0 && (
+      {modelFault && auto && auto.exposure.length > 0 && (
         <Section title="Exposure of the decisive ids" lead="The step at which each record the failed check needs was first returned to the model.">
           <table className="w-full table-fixed text-left [overflow-wrap:anywhere]">
             <thead className="text-xs text-ink-muted"><tr><th scope="col" className="w-1/2 pb-1 font-normal">Record</th><th scope="col" className="pb-1 font-normal">First returned</th></tr></thead>
