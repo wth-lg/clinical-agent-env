@@ -9,6 +9,7 @@ import type { Tool } from '../registry.ts';
 import type { ReadContext } from './context.ts';
 import { noteText, withoutNoteData } from './notes.ts';
 import { page } from './page.ts';
+import { RESOURCE_TYPES } from '../../world.ts';
 import { count, date, FHIR_ID, offset, patient, resourceType } from './schema.ts';
 
 // Runs a search, turning a SearchError (a query the store cannot answer) into the model's
@@ -81,6 +82,9 @@ export function filterQuery(type: string, input: Partial<Record<Filter, string |
   return query;
 }
 
+// The filters each type supports, for the description (R14-44): 'Type: f1, f2; ...'.
+const FILTER_TABLE = RESOURCE_TYPES.map((t) => `${t}: ${supported(t).join(', ') || 'none'}`).join('; ');
+
 const byId = (a: Resource, b: Resource) => (a.id! < b.id! ? -1 : a.id! > b.id! ? 1 : 0);
 // Not a subtraction: an open period start is -Infinity, and -Infinity - -Infinity is NaN.
 const cmp = (x: number, y: number) => (x < y ? -1 : x > y ? 1 : 0);
@@ -115,6 +119,8 @@ export const fhirSearch: Tool<ReadContext> = {
     'Search one FHIR R4 resource type. Filters combine with AND; a comma inside code, category or status means OR. ' +
     "code and category take 'system|code' or a bare code. Entries are full resources, ordered by date (sort=date, the default, or -date), then id; " +
     'types without a date order by id. Not every type supports every filter; an unsupported one returns NOT_SUPPORTED with the supported list. ' +
+    `Filters by type: ${FILTER_TABLE}. ` +
+    'MedicationRequest date filters and sort read dosageInstruction.timing.event, which most orders lack; find recent orders by status and their authoredOn. ' +
     'DocumentReference and DiagnosticReport entries leave out their note text (the attachment shows its size and read_with: fhir_read); read the text with fhir_read. ' +
     'Pages are capped in size: when next_offset is present, call again with offset=next_offset for the rest.',
   inputSchema: {
@@ -154,20 +160,25 @@ export const fhirRead: Tool<ReadContext> = {
   name: 'fhir_read',
   description:
     "Read one resource by type and id (for the reference 'DocumentReference/doc-00001', resource_type DocumentReference and id doc-00001). " +
+    'id may also be the whole reference, whose type must be resource_type. ' +
     'Returns {resource}; for a DocumentReference or DiagnosticReport with a text attachment it also returns the decoded note text as {text}, ' +
     'and the attachment in the resource shows its size in place of the base64 data.',
   inputSchema: {
     type: 'object',
     properties: {
       resource_type: resourceType,
-      id: { type: 'string', description: 'Resource id, e.g. obs-00001', pattern: FHIR_ID },
+      id: { type: 'string', description: "Resource id, e.g. obs-00001, or the reference, e.g. 'Observation/obs-00001'", pattern: `^([A-Za-z]{1,64}/)?${FHIR_ID.slice(1)}` },
     },
     required: ['resource_type', 'id'],
     additionalProperties: false,
   },
   run(input: { resource_type: string; id: string }, { world }) {
-    const resource = world.get(input.resource_type, input.id);
-    if (!resource) throw new ToolError('NOT_FOUND', `no ${input.resource_type} with id '${input.id}'`, 'id');
+    const slash = input.id.indexOf('/');
+    const named = slash < 0 ? input.resource_type : input.id.slice(0, slash);
+    if (named !== input.resource_type) throw new ToolError('INVALID_INPUT', `'id' names a ${named}, but resource_type is ${input.resource_type}`, 'id');
+    const id = input.id.slice(slash + 1);
+    const resource = world.get(input.resource_type, id);
+    if (!resource) throw new ToolError('NOT_FOUND', `no ${input.resource_type} with id '${id}'`, 'id');
     const text = noteText(resource);
     return text === undefined ? { resource } : { resource: withoutNoteData(resource, false), text };
   },

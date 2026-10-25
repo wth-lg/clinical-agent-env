@@ -10,6 +10,9 @@ import { TOOLS } from '../write/index.ts';
 const FINGERPRINTS: Record<string, string> = {
   // 4: update_inbox_item's linked no longer names an existing result as closing the loop (P11f (8)).
   '4': 'e46230eac94af0ebe94454a5622b86122327b2a89995922b264f27267178cc56',
+  // 5: P17i B2 (R14-08, R14-09, R14-10, R14-11, R14-44): lookup_catalog token rule, fhir_search
+  // MedicationRequest date and filters per type, fhir_read Type/id, send_message about, search_patients example.
+  '5': '29e1e4bb93a4a422575f72d0ef0147c82b8de639af0d033f745febc1224f2d28',
 };
 
 async function fingerprint(): Promise<string> {

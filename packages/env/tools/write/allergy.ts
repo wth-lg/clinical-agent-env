@@ -67,20 +67,21 @@ type AllergyInput = {
   source?: string;
 };
 
-// The substance a code names, and the category an allergy to it has had in this world: the
-// catalog first, then the world's allergies (RxNorm or SNOMED), then its medication requests.
-function substance(ctx: WriteContext, code: string): { concept: CodeableConcept; system: string; category?: Category } {
+// The substance a code names, the category an allergy to it has had in this world, and whether
+// it is a drug (a catalog medication, whatever its code system, or an RxNorm code): the catalog
+// first, then the world's allergies (RxNorm or SNOMED), then its medication requests.
+function substance(ctx: WriteContext, code: string): { concept: CodeableConcept; system: string; drug: boolean; category?: Category } {
   const entry = ctx.catalog.find((e) => e.kind === 'medication' && e.code === code);
   const allergies = ctx.world.search<AllergyIntolerance>('AllergyIntolerance', { code }).resources;
   const category = allergies.flatMap((a) => a.category ?? [])[0];
-  if (entry) return { concept: { coding: [{ system: entry.system, code, display: entry.display }], text: entry.display }, system: entry.system, ...(category ? { category } : {}) };
+  if (entry) return { concept: { coding: [{ system: entry.system, code, display: entry.display }], text: entry.display }, system: entry.system, drug: true, ...(category ? { category } : {}) };
   const coded = [...allergies.map((a) => a.code), ...ctx.world.search('MedicationRequest', { code }).resources.map((m) => (m as { medicationCodeableConcept?: CodeableConcept }).medicationCodeableConcept)]
     .flatMap((c) => c?.coding ?? [])
     .find((c) => c.code === code && (c.system === RXNORM || c.system === SNOMED));
   if (!coded) {
     throw new ToolError('INVALID_INPUT', `'substance_code': '${code}' is not a medication in the catalog or an allergen code in use; find a drug with lookup_catalog (kind medication)`, 'substance_code');
   }
-  return { concept: { coding: [{ system: coded.system!, code, display: coded.display! }], text: coded.display! }, system: coded.system!, ...(category ? { category } : {}) };
+  return { concept: { coding: [{ system: coded.system!, code, display: coded.display! }], text: coded.display! }, system: coded.system!, drug: coded.system === RXNORM, ...(category ? { category } : {}) };
 }
 
 function reaction(r: ReactionInput): AllergyIntoleranceReaction {
@@ -96,7 +97,7 @@ export const recordAllergy = writeTool({
   description:
     'Record an allergy or intolerance for a patient, or update an existing one with update_id (same patient). ' +
     'A new record needs substance_code, criticality and verification. substance_code is an RxNorm drug code (ingredient or product) from lookup_catalog, ' +
-    'or an RxNorm or SNOMED CT allergen code already used in the chart (e.g. on another AllergyIntolerance). type defaults to allergy; category defaults to medication for a drug. ' +
+    'or an RxNorm or SNOMED CT allergen code already used in the chart (e.g. on another AllergyIntolerance). type defaults to allergy; category defaults to medication for a drug (a lookup_catalog medication, RxNorm or SNOMED CT). ' +
     'An update changes only the fields given and keeps the rest, e.g. {patient, update_id, clinical_status: inactive} marks a "no known drug allergy" entry inactive. ' +
     'clinical_status defaults to active for a new record; it must be omitted when verification is entered-in-error. ' +
     'Each reaction has manifestation_code (SNOMED CT, preferred) and/or manifestation text, and an optional severity. ' +
@@ -153,7 +154,7 @@ export const recordAllergy = writeTool({
     const sub = input.substance_code === undefined ? undefined : substance(ctx, input.substance_code);
     // A new substance brings its category (the world's, or medication for a drug); otherwise the
     // record keeps its own, which R4 allows to be absent on an existing record.
-    const given = input.category ?? (sub ? (sub.category ?? (sub.system === RXNORM ? 'medication' : undefined)) : undefined);
+    const given = input.category ?? (sub ? (sub.category ?? (sub.drug ? 'medication' : undefined)) : undefined);
     const category = given ? [given] : existing?.category;
     if (category === undefined && !existing) throw new ToolError('INVALID_INPUT', `'category' is required for ${sub!.concept.text}: food, medication, environment or biologic`, 'category');
     const type = input.type ?? (existing ? existing.type : 'allergy');
