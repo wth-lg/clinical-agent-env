@@ -1,12 +1,15 @@
-// pnpm cli run --task all|<id,...> --model claude-opus-5-5 --out <run dir> [--trials 10] [--effort high]
-//              [--concurrency 4] [--cost-from <run,...>] [--mock <scenario>] [--dry-run]
+// pnpm cli run --task all|<id,...> --model claude-opus-5-5 --out <run dir> [--trials 20] [--effort high]
+//              [--concurrency 4] [--cost-from <run,...>] [--mock <scenario>] [--dry-run] [--help]
 // A batch of trials through packages/core/batch.ts runBatch, the loop a UI batch runs too: keyed
 // by (env_version, model, effort, index), so a rerun with the same arguments resumes with the
 // keys not yet recorded, and a killed batch's open ledger batch is closed first.
 //   --task         all, or a comma list of task ids; an unknown id exits 1
 //   --out          the run directory (results/runs/<run_id>); its name is the run id
+//   --trials       trials per task; default FINAL_TRIALS_PER_TASK (packages/core/cost.ts), the
+//                  final run's size
 //   --cost-from    runs whose trial costs project this batch: per task, the p90 of the latest run
-//                  holding its task_version (an earlier version as fallback), else the $6 cap
+//                  holding its env_version (an earlier version as fallback), else the $6 cap
+//   --help         prints the usage and these flags (HELP)
 //   --mock         answers from a scripted scenario (apps/web/src/harness/scenarios.ts), no key; it
 //                  meters through SPEND_LEDGER, else <out>/mock-spend.jsonl, never ~/.clinenv or the
 //                  canonical ledger. A run directory holds one mode (live or mock-<scenario>)
@@ -26,7 +29,7 @@ import { basename, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { MessagesClient, MODEL, type Transport } from '../packages/core/anthropic.ts';
 import { BatchRefused, planBatch, recordKey, runBatch, trialKey, type BatchSpec } from '../packages/core/batch.ts';
-import { formatProjection, money, type TrialObservation } from '../packages/core/cost.ts';
+import { FINAL_TRIALS_PER_TASK, formatProjection, money, type TrialObservation } from '../packages/core/cost.ts';
 import { installEgressGuard } from '../packages/core/egress.ts';
 import { SpendRefused } from '../packages/core/ledger.ts';
 import { redactText } from '../packages/core/redact.ts';
@@ -43,7 +46,18 @@ export const REPO = fileURLToPath(new URL('../', import.meta.url));
 const TASK_ID = /^[A-Za-z0-9_-]+$/;
 const DIRTY_PATHS = ['tasks', 'fixtures', 'packages/env', 'packages/core', 'packages/grader'];
 const WITH_VALUE = new Set(['--task', '--model', '--trials', '--effort', '--concurrency', '--out', '--cost-from', '--mock']);
-const USAGE = 'usage: pnpm cli run --task all|<id,...> --model claude-opus-5-5 --out <run dir> [--trials 10] [--effort high] [--concurrency 4] [--cost-from <run,...>] [--mock <scenario>] [--dry-run]';
+const USAGE = `usage: pnpm cli run --task all|<id,...> --model claude-opus-5-5 --out <run dir> [--trials ${FINAL_TRIALS_PER_TASK}] [--effort high] [--concurrency 4] [--cost-from <run,...>] [--mock <scenario>] [--dry-run] [--help]`;
+// The flags, as the header says them.
+const HELP = [
+  '  --task         all, or a comma list of task ids',
+  '  --out          the run directory (results/runs/<run_id>); its name is the run id',
+  `  --trials       trials per task; default FINAL_TRIALS_PER_TASK (${FINAL_TRIALS_PER_TASK}), the final run's size`,
+  '  --effort       low | medium | high | xhigh | max; default high',
+  '  --concurrency  trials run at once; default 4',
+  '  --cost-from    runs whose trial costs project this batch: per task, the p90 of the latest run holding its env_version (an earlier version as fallback), else the per-trial cap',
+  '  --mock         answers from a scripted scenario, no key; meters through SPEND_LEDGER, else <out>/mock-spend.jsonl',
+  '  --dry-run      prints the projection and LIVE_PROJECTION_USD=<x>, and opens nothing',
+].join('\n');
 
 export interface Deps {
   env: Record<string, string | undefined>;
@@ -98,7 +112,10 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
   for (let i = 0; i < args.length; i++) {
     const a = args[i] as string;
     if (a === '--dry-run') opts.set(a, '');
-    else if (WITH_VALUE.has(a) && args[i + 1] !== undefined) opts.set(a, args[++i] as string);
+    else if (a === '--help') {
+      deps.out(`${USAGE}\n${HELP}`);
+      return 0;
+    } else if (WITH_VALUE.has(a) && args[i + 1] !== undefined) opts.set(a, args[++i] as string);
     else return usage(deps, WITH_VALUE.has(a) ? `${a} needs a value` : `unknown argument ${a}`);
   }
   const taskArg = opts.get('--task');
@@ -110,7 +127,7 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
     const v = Number(opts.get(flag) ?? fallback);
     return Number.isSafeInteger(v) && v >= 1 ? v : null;
   };
-  const trials = whole('--trials', 10);
+  const trials = whole('--trials', FINAL_TRIALS_PER_TASK);
   if (trials === null) return usage(deps, '--trials must be a whole number >= 1');
   const concurrency = whole('--concurrency', 4);
   if (concurrency === null) return usage(deps, '--concurrency must be a whole number >= 1');
