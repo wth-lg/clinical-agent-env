@@ -35,7 +35,7 @@
 //     fewer than 2 passes).
 // It writes each label's criteria, explainTrial's M1-M5 for its trial, into audit.jsonl (only when
 // they changed, so a second run leaves the file as it was). The context it gives explainTrial
-// (explainContext): the trajectory; the run manifest's world_hash as the manifest hash; the world
+// (explainContext): the trajectory; the task's check text (tasks/<id>.check-text.ts); the run manifest's world_hash as the manifest hash; the world
 // for exposability; <run>/matrix.json, {grader_task_versions: {<grader_task_version>: {oracle_pass,
 // alternatives_pass, failed_checks?, ...}}} as `pnpm cli matrix --out <run>` writes it, for M4,
 // GR4 and B1, looked up by the grader_task_version of each record's current grade, so a matrix
@@ -58,7 +58,7 @@ import { pathToFileURL } from 'node:url';
 import type { BatchRecord } from '../packages/core/batch.ts';
 import { installEgressGuard } from '../packages/core/egress.ts';
 import type { TrialEvent } from '../packages/core/events.ts';
-import { auditLabelOf, excludedFromHeadline, explainTrial, formatCriterion, type AuditRow, type ExplainContext, type ExplainRecord } from '../packages/core/explain.ts';
+import { auditLabelOf, excludedFromHeadline, explainTrial, formatCriterion, type AuditRow, type CheckText, type ExplainContext, type ExplainRecord } from '../packages/core/explain.ts';
 import { AUDIT_LABEL, AUDIT_LABELS, FAULT, FAULT_PRECEDENCE, type Fault, type Outcome } from '../packages/core/outcomes.ts';
 import { parseTrajectory } from '../packages/core/trajectory.ts';
 import { currentGrade } from '../packages/core/summary.ts';
@@ -66,6 +66,7 @@ import { loadStore } from '../packages/env/fixture-source.ts';
 import { TAXONOMY, type Attribution } from '../packages/grader/attribution.ts';
 import { firstExposed, sameId, stepsOf } from '../packages/grader/exposure.ts';
 import { requeuedRecords, settledRecords, trajectoryOf } from './adapters/result-sink-node.ts';
+import { TASKS_DIR } from './adapters/tasks-node.ts';
 import { trialName } from './replay.ts';
 import { repoWorld, taskChecks } from './run.ts';
 import { readReplay } from './summary.ts';
@@ -120,6 +121,15 @@ function readMatrix(dir: string): Map<string, Matrix> {
       : []));
 }
 
+// A task's check text (tasks/<id>.check-text.ts, what each gate check requires in words), or null
+// when it has none; the Runs view reads the same files, so both give the same reasons.
+const checkTexts = new Map<string, Promise<CheckText | null>>();
+function checkTextOf(task: string): Promise<CheckText | null> {
+  const file = join(TASKS_DIR, `${task}.check-text.ts`);
+  if (!checkTexts.has(task)) checkTexts.set(task, existsSync(file) ? import(pathToFileURL(file).href).then((m: { checkText: CheckText }) => m.checkText) : Promise.resolve(null));
+  return checkTexts.get(task)!;
+}
+
 // What explainTrial gets for each record of the run in dir (see the header).
 export async function explainContext(dir: string, checks: TaskChecks = taskChecks): Promise<(r: BatchRecord) => Promise<ExplainContext & { events: TrialEvent[] }>> {
   const manifestFile = join(dir, 'manifest.json');
@@ -156,7 +166,7 @@ export async function explainContext(dir: string, checks: TaskChecks = taskCheck
     const exposure = moved === null ? null : { check: moved.check, ids: moved.ids.map((id) => ({ id, first_exposed_step: firstExposed(stepsOf(trajectory), id) })) };
     const exposable = new Set<string>();
     for (const e of [...((r.attribution as Attribution | null)?.exposure ?? []), ...(exposure?.ids ?? [])]) if (e.first_exposed_step === null && (await inWorld(e.id))) exposable.add(e.id);
-    return { events: trajectory, world_state_hash, exposable: (id) => exposable.has(id), matrix: matrix.get(currentGrade(r).grader_task_version ?? '') ?? null, exposure };
+    return { events: trajectory, world_state_hash, exposable: (id) => exposable.has(id), matrix: matrix.get(currentGrade(r).grader_task_version ?? '') ?? null, exposure, text: await checkTextOf(r.task_id) };
   };
 }
 

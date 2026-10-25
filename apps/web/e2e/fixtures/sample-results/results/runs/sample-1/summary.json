@@ -1,0 +1,274 @@
+{
+  "schema_version": 3,
+  "run_id": "sample-1",
+  "tasks": {
+    "contrast-ct-prep": {
+      "task_versions": [
+        "ea15cb956e6ea120a0a886adcba4b9517dad97b7f62494450e7084bae8be69e1"
+      ],
+      "env_versions": [
+        "1b47cd6807624e2db3e76fbb8dfa5a519eadfa93bdf47dbdcb8fee1a1c37d288"
+      ],
+      "grader_task_versions": [
+        "aee2714fdc7ce9658e6610dbff64dfa91b4b2bc2f823d00ea076453efc75de86"
+      ],
+      "records": 12,
+      "trials": 12,
+      "passes": 3,
+      "pass_rate": 0.25,
+      "wilson95": {
+        "lo": 0.08894166839405476,
+        "hi": 0.5323053349335656
+      },
+      "refusals": 1,
+      "refusal_excluded_rate": 0.2727272727272727,
+      "outcomes": {
+        "PASS": 3,
+        "REFUSAL": 1,
+        "FAIL": 8
+      },
+      "recorded_outcomes": {
+        "PASS": 3,
+        "REFUSAL": 1,
+        "FAIL": 8
+      },
+      "regraded": 0,
+      "env_error_raw": 0,
+      "grader_error": 0,
+      "grader_error_history": 0,
+      "requeued": 0,
+      "mean_score": 0.8229166666666666,
+      "mean_cost_usd": 0.765
+    },
+    "crc-care-gap": {
+      "task_versions": [
+        "d1dba89c13b34275df7ab9a5041f5cfe45ad631a7d733a5b05737c0532638740"
+      ],
+      "env_versions": [
+        "f5f885afc6134508bf8c9caaf697d8c9df5a7f0bd7316c7e637f90c5c9abc58c"
+      ],
+      "grader_task_versions": [
+        "eaf6b0d8b15fae30edc8b0ead45dd54994dc2a26d0e997a6fa0607d4974f8caa"
+      ],
+      "records": 12,
+      "trials": 12,
+      "passes": 5,
+      "pass_rate": 0.4166666666666667,
+      "wilson95": {
+        "lo": 0.19326031365875668,
+        "hi": 0.6804886874504503
+      },
+      "refusals": 0,
+      "refusal_excluded_rate": 0.4166666666666667,
+      "outcomes": {
+        "PASS": 5,
+        "LIMIT": 1,
+        "FAIL": 6
+      },
+      "recorded_outcomes": {
+        "PASS": 5,
+        "LIMIT": 1,
+        "FAIL": 6
+      },
+      "regraded": 0,
+      "env_error_raw": 0,
+      "grader_error": 0,
+      "grader_error_history": 0,
+      "requeued": 0,
+      "mean_score": 0.9097222222222222,
+      "mean_cost_usd": 0.8350000000000001
+    },
+    "discharge-medrec": {
+      "task_versions": [
+        "30e43da7b151d7d2bbf3e3b3c2cae6bdb7ecb2b1c53b660be95d33a84f003fb7"
+      ],
+      "env_versions": [
+        "c1e656fdcb8d2ef267ed6af93489ec65c25baa80dabaf5352107f549e40ca783"
+      ],
+      "grader_task_versions": [
+        "52776c2175330257b6414c455ddf80b218400506163e528f29651d0125398ba0"
+      ],
+      "records": 13,
+      "trials": 12,
+      "passes": 7,
+      "pass_rate": 0.5833333333333334,
+      "wilson95": {
+        "lo": 0.31951131254954973,
+        "hi": 0.8067396863412435
+      },
+      "refusals": 0,
+      "refusal_excluded_rate": 0.5833333333333334,
+      "outcomes": {
+        "PASS": 7,
+        "FAIL": 5,
+        "ENV_ERROR": 1
+      },
+      "recorded_outcomes": {
+        "PASS": 7,
+        "FAIL": 5,
+        "ENV_ERROR": 1
+      },
+      "regraded": 0,
+      "env_error_raw": 1,
+      "grader_error": 0,
+      "grader_error_history": 0,
+      "requeued": 0,
+      "mean_score": 0.7738095238095237,
+      "mean_cost_usd": 0.9199999999999999
+    },
+    "message-queue": {
+      "task_versions": [
+        "27a84b0155b8c95a03236aedbf3acff015846d2ee8722d7e40f2a7f42d153fc8"
+      ],
+      "env_versions": [
+        "0f4ca284064318e267b43016adacd89fe793e885765e5c687d044d21f87e4e6a"
+      ],
+      "grader_task_versions": [
+        "c771ed6b25561ef1e03feb6e2c01868f25a6fcfb724555b722928a5ca9af0d59"
+      ],
+      "records": 13,
+      "trials": 12,
+      "passes": 9,
+      "pass_rate": 0.75,
+      "wilson95": {
+        "lo": 0.4676946650664343,
+        "hi": 0.9110583316059452
+      },
+      "refusals": 0,
+      "refusal_excluded_rate": 0.75,
+      "outcomes": {
+        "PASS": 9,
+        "FAIL": 3,
+        "GRADER_ERROR": 1
+      },
+      "recorded_outcomes": {
+        "PASS": 9,
+        "FAIL": 3,
+        "GRADER_ERROR": 1
+      },
+      "regraded": 0,
+      "env_error_raw": 0,
+      "grader_error": 1,
+      "grader_error_history": 0,
+      "requeued": 0,
+      "mean_score": 0.9935897435897436,
+      "mean_cost_usd": 0.9900000000000001
+    },
+    "renal-dose-review": {
+      "task_versions": [
+        "d2b62108facb3b48dbab7b196e26c3312901dc818c7b2f85dc78b51b1ab7d5f5"
+      ],
+      "env_versions": [
+        "0f868a40dce8690667f1d4f142aae069e9abd239b699f9e566f4edadb00fe09b"
+      ],
+      "grader_task_versions": [
+        "d2197f9856886dc5363b8e4fd2c5245ae12a3b08fddcd6fe612378c0c0e46509"
+      ],
+      "records": 13,
+      "trials": 12,
+      "passes": 4,
+      "pass_rate": 0.3333333333333333,
+      "wilson95": {
+        "lo": 0.13812009109121315,
+        "hi": 0.6093779111272004
+      },
+      "refusals": 1,
+      "refusal_excluded_rate": 0.36363636363636365,
+      "outcomes": {
+        "PASS": 4,
+        "REFUSAL": 1,
+        "FAIL": 7,
+        "INFRA_API": 1
+      },
+      "recorded_outcomes": {
+        "PASS": 4,
+        "REFUSAL": 1,
+        "FAIL": 7,
+        "INFRA_API": 1
+      },
+      "regraded": 0,
+      "env_error_raw": 0,
+      "grader_error": 0,
+      "grader_error_history": 0,
+      "requeued": 0,
+      "mean_score": 0.608974358974359,
+      "mean_cost_usd": 1.06
+    },
+    "results-inbox": {
+      "task_versions": [
+        "9f94bc8f9902527fb324013006751f9da264985221a5a92220c6c52f72377bee"
+      ],
+      "env_versions": [
+        "1b69d4deab5047c9be4c70ff0438628526da629a9fa0c5f1ca1d0605cec02a86"
+      ],
+      "grader_task_versions": [
+        "08e829bfdd59034136f29bc4e30ea28dadcbf4ed104ea9be8b4e50451b8312a0"
+      ],
+      "records": 12,
+      "trials": 12,
+      "passes": 8,
+      "pass_rate": 0.6666666666666666,
+      "wilson95": {
+        "lo": 0.39062208887279953,
+        "hi": 0.8618799089087867
+      },
+      "refusals": 0,
+      "refusal_excluded_rate": 0.6666666666666666,
+      "outcomes": {
+        "PASS": 8,
+        "FAIL": 4
+      },
+      "recorded_outcomes": {
+        "PASS": 8,
+        "FAIL": 4
+      },
+      "regraded": 0,
+      "env_error_raw": 0,
+      "grader_error": 0,
+      "grader_error_history": 0,
+      "requeued": 0,
+      "mean_score": 0.9277777777777777,
+      "mean_cost_usd": 1.115
+    }
+  },
+  "totals": {
+    "records": 75,
+    "trials": 72,
+    "passes": 36,
+    "env_error_raw": 1,
+    "grader_error": 1,
+    "grader_error_history": 0,
+    "regraded": 0,
+    "requeued": 0,
+    "internal_errors": 1,
+    "cost_usd": 71.19
+  },
+  "mode": "mock-sample",
+  "expected_tasks": {
+    "tasks": [
+      "contrast-ct-prep",
+      "crc-care-gap",
+      "discharge-medrec",
+      "message-queue",
+      "renal-dose-review",
+      "results-inbox"
+    ],
+    "from": "generate.ts"
+  },
+  "models": [
+    "claude-opus-5-5"
+  ],
+  "initial_state_hashes": [
+    "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b"
+  ],
+  "replay": {
+    "ran": false,
+    "matched": 0,
+    "mismatched": [
+      "discharge-medrec/12"
+    ],
+    "missing": []
+  },
+  "requirements": {},
+  "violations": []
+}

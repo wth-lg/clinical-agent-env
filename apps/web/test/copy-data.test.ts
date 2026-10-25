@@ -74,6 +74,24 @@ describe('copyData', () => {
     expect(index(outDir).files).toEqual(EXPECTED);
   });
 
+  it('copies each committed pilot run with trials, beside the official run or without one', () => {
+    const root = resultsTree();
+    put(root, 'results/pilot-0/trials/t1/m/high/live/0.json');
+    put(root, 'results/pilot-0/trajectories/t1/m/high/live/0.jsonl', '{}\n');
+    put(root, 'results/pilot-0/regrade/README.md', 'not copied\n');
+    const outDir = tmp('dist');
+    copyData({ root, outDir });
+    const pilot = ['results/pilot-0/trajectories/t1/m/high/live/0.jsonl', 'results/pilot-0/trials/t1/m/high/live/0.json'];
+    expect(index(outDir).files).toEqual([...EXPECTED, ...pilot].sort());
+    // results/runs/pilot-1 holds a summary but no trials/, so it is not a run to list.
+    expect(existsSync(join(outDir, 'data/results/runs/pilot-1'))).toBe(false);
+    const alone = tmp('pilot-root');
+    put(alone, 'results/pilot-0/trials/t1/0.json');
+    const out = tmp('dist');
+    copyData({ root: alone, outDir: out });
+    expect(index(out).files).toEqual(['results/pilot-0/trials/t1/0.json']);
+  });
+
   it('rejects an official.json run path that leaves results/', () => {
     const root = tmp('evil-root');
     put(root, 'results/official.json', JSON.stringify({ run: '../../etc' }));

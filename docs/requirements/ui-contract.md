@@ -181,14 +181,21 @@ launcher (P15) shows the Run lines.
   `explainTrial` returns. Every valid non-pass trial has one, in one of three forms:
   - a FAIL: `<check id> failed: expected <value>, found <value>`, for the decisive check. A check
     id is the gate check's id as the task's grader names it, a letter then letters, digits or
-    underscores (`G1`, `note_on_patient`). A value may hold commas.
+    underscores (`G1`, `note_on_patient`). A value may hold commas. Expected is what the check
+    requires and found the first difference the trial left, both in clinical words from the
+    task's check text (`tasks/<id>.check-text.ts`), for example `prednisone_schedule failed:
+    expected prednisone 50 mg by mouth at ..., found no prednisone dose at 2026-10-26 02:00`. Only
+    the expected value is cut to fit; the found value is whole. A model failure ends with one
+    suffix form, `; Kind: <kind> (<why>)`, or `; Kind: <kind>` when the why does not fit; an
+    environment or grader fault on a valid trial ends `; Kind: environment (...)` or
+    `; Kind: grader (...)`.
   - a LIMIT, by the limit that stopped the loop (packages/core/events.ts LIMITS):
     `turn limit reached: <n> turns`, `cost limit reached: $<v> of $<cap>`,
     `time limit reached: <s> s of <cap> s` or `output limit reached: <n> cut-off responses in a row`.
   - a REFUSAL: `refused: <first words>`, the first 12 words of the model's refusal text.
   A LIMIT or REFUSAL comes from the record status, so its sentence always leads. For
   a LIMIT or REFUSAL with a failed gate check: its limit or refusal sentence first,
-  then `; <check id> failed: expected <value>, found <value>`, the values cut to fit.
+  then `; <check id> failed: expected <value>, found <value>`, the expected value cut to fit.
   One pattern under Patterns matches all three forms.
 - The Attribution tab's criteria table shows, for each criterion, the text `<id>: met` or
   `<id>: not met` (M1-M5), then its evidence; M5 shows `<id>: pending` on an unaudited trial, and

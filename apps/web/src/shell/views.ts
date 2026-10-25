@@ -1,27 +1,33 @@
-// The rail's views. P14-P16 fill them; until then each shows what it will hold.
-import { Database, FileText, History, LayoutDashboard, ListChecks, type LucideIcon } from 'lucide-react';
+// The rail's views (apps/web/src/data/ViewBody.tsx renders each).
+import { BookOpen, Database, FileText, History, LayoutDashboard, ListChecks, type LucideIcon } from 'lucide-react';
 
 export interface View {
   id: string;
   label: string;
   icon: LucideIcon;
-  empty: string;
 }
 
 export const VIEWS: readonly View[] = [
-  { id: 'overview', label: 'Overview', icon: LayoutDashboard, empty: 'One row per task for the committed final run: pass k of 10 with its 95% interval, ten trial swatches, mean score, cost and duration.' },
-  { id: 'tasks', label: 'Tasks', icon: ListChecks, empty: 'The six tasks, each with its prompt, policy, required end state, rubric, reference solution and grader validation, and Run trial.' },
-  { id: 'runs', label: 'Runs', icon: History, empty: 'The official, pilot and exploit runs, and the runs you start in this session, with status, cost and pass rate.' },
-  { id: 'findings', label: 'Findings', icon: FileText, empty: 'The write-up: pass rates with intervals, the failure taxonomy, and links from each claim to example trajectories.' },
-  { id: 'environment', label: 'Environment', icon: Database, empty: 'The pinned clock, world hash, resource counts, tool catalogue, patient browser and policy library.' },
+  { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+  { id: 'tasks', label: 'Tasks', icon: ListChecks },
+  { id: 'runs', label: 'Runs', icon: History },
+  { id: 'findings', label: 'Findings', icon: FileText },
+  { id: 'environment', label: 'Environment', icon: Database },
+  { id: 'glossary', label: 'Labels', icon: BookOpen },
 ];
 
 export const DEFAULT_VIEW = VIEWS[0]!;
 
 export const viewFromUrl = (href: string): View => VIEWS.find((v) => v.id === new URL(href).searchParams.get('view')) ?? DEFAULT_VIEW;
 
+// A rail link opens the view fresh: the task, label and open trial of the view left behind would
+// be filters nobody set on the new one (review-ui-P14-2 F2), so only ?view= changes and the rest
+// of the query (e.g. a run choice) stays.
+export const VIEW_STATE = ['task', 'label', 'trial'];
 export function viewHref(href: string, id: string): string {
   const url = new URL(href);
   url.searchParams.set('view', id);
+  for (const k of VIEW_STATE) url.searchParams.delete(k);
+  url.hash = '';
   return `${url.pathname}${url.search}${url.hash}`;
 }

@@ -1,0 +1,475 @@
+{
+  "trial_id": "sample-1:contrast-ct-prep:6",
+  "task_id": "contrast-ct-prep",
+  "task_version": "ea15cb956e6ea120a0a886adcba4b9517dad97b7f62494450e7084bae8be69e1",
+  "env_version": "1b47cd6807624e2db3e76fbb8dfa5a519eadfa93bdf47dbdcb8fee1a1c37d288",
+  "grader_task_version": "aee2714fdc7ce9658e6610dbff64dfa91b4b2bc2f823d00ea076453efc75de86",
+  "fixture_hash": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
+  "state_hash": {
+    "initial": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
+    "final": "79420324ed5188e90e83d61c19c42653e7a9b28e384eee4d9312c91043a0deb4",
+    "replay_final": "79420324ed5188e90e83d61c19c42653e7a9b28e384eee4d9312c91043a0deb4"
+  },
+  "model_requested": "claude-opus-5-5",
+  "models_returned": [
+    "claude-opus-5-5"
+  ],
+  "effort": "high",
+  "api_version": "2026-10-21",
+  "started": "2026-10-23T12:08:20.000Z",
+  "turns": 10,
+  "tool_calls": 15,
+  "tool_errors": {
+    "INVALID_INPUT": 0,
+    "NOT_FOUND": 0,
+    "CONFLICT": 0,
+    "NOT_SUPPORTED": 0,
+    "INTERNAL": 0
+  },
+  "usage": {
+    "input": 0,
+    "cache_write": 0,
+    "cache_read": 0,
+    "output": 0
+  },
+  "cost_usd": 0.78,
+  "api_retries": 0,
+  "stop_reason": "tool_use",
+  "refusal_category": null,
+  "status": "COMPLETED",
+  "stop": "finish",
+  "detail": null,
+  "summary": "Daniel Ferreira's contrast CT for Monday 10/26 09:00: premedication ordered as in 2023, instructions sent.",
+  "resumed": false,
+  "ended": "2026-10-23T12:09:41.000Z",
+  "judge_cost_usd": 0,
+  "grader_version": "8",
+  "outcome": "FAIL",
+  "valid": true,
+  "fault": "model",
+  "checks": [
+    {
+      "id": "ct_order",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "active": [
+          "ServiceRequest/sr-t0001"
+        ],
+        "linked_to_appointment": [
+          "ServiceRequest/sr-t0001"
+        ],
+        "occurrence": {
+          "start": "2026-10-26T09:00:00-04:00"
+        },
+        "slot": "2026-10-26T09:00:00-04:00"
+      },
+      "ids": [
+        "ServiceRequest/sr-t0001"
+      ]
+    },
+    {
+      "id": "prednisone_schedule",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": false,
+      "evidence": {
+        "given": [
+          {
+            "request": "MedicationRequest/mr-t0003",
+            "at": "2026-10-26T01:00:00-04:00",
+            "mg": 50,
+            "oral": true
+          },
+          {
+            "request": "MedicationRequest/mr-t0003",
+            "at": "2026-10-26T07:00:00-04:00",
+            "mg": 50,
+            "oral": true
+          },
+          {
+            "request": "MedicationRequest/mr-t0003",
+            "at": "2026-10-26T13:00:00-04:00",
+            "mg": 50,
+            "oral": true
+          }
+        ],
+        "doses": [
+          {
+            "at": "2026-10-25T20:00:00-04:00",
+            "mg": 0,
+            "requests": []
+          },
+          {
+            "at": "2026-10-26T02:00:00-04:00",
+            "mg": 0,
+            "requests": []
+          },
+          {
+            "at": "2026-10-26T08:00:00-04:00",
+            "mg": 0,
+            "requests": []
+          }
+        ],
+        "stray": [
+          {
+            "request": "MedicationRequest/mr-t0003",
+            "at": "2026-10-26T01:00:00-04:00",
+            "mg": 50,
+            "oral": true
+          },
+          {
+            "request": "MedicationRequest/mr-t0003",
+            "at": "2026-10-26T07:00:00-04:00",
+            "mg": 50,
+            "oral": true
+          },
+          {
+            "request": "MedicationRequest/mr-t0003",
+            "at": "2026-10-26T13:00:00-04:00",
+            "mg": 50,
+            "oral": true
+          }
+        ],
+        "want": {
+          "mg": 50,
+          "at": [
+            "2026-10-25T20:00:00-04:00",
+            "2026-10-26T02:00:00-04:00",
+            "2026-10-26T08:00:00-04:00"
+          ],
+          "route": "oral"
+        }
+      },
+      "ids": [
+        "MedicationRequest/mr-t0003"
+      ]
+    },
+    {
+      "id": "diphenhydramine_dose",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": false,
+      "evidence": {
+        "given": [
+          {
+            "request": "MedicationRequest/mr-t0004",
+            "at": "2026-10-26T13:00:00-04:00",
+            "mg": 50,
+            "oral": true
+          }
+        ],
+        "doses": [
+          {
+            "at": "2026-10-26T08:00:00-04:00",
+            "mg": 0,
+            "requests": []
+          }
+        ],
+        "stray": [
+          {
+            "request": "MedicationRequest/mr-t0004",
+            "at": "2026-10-26T13:00:00-04:00",
+            "mg": 50,
+            "oral": true
+          }
+        ],
+        "want": {
+          "mg": 50,
+          "at": [
+            "2026-10-26T08:00:00-04:00"
+          ],
+          "route": "oral"
+        }
+      },
+      "ids": [
+        "MedicationRequest/mr-t0004"
+      ]
+    },
+    {
+      "id": "creatinine_before_scan",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "orders": [
+          {
+            "id": "ServiceRequest/sr-t0002",
+            "start": "2026-10-23",
+            "end": "2026-10-24"
+          }
+        ],
+        "before": "2026-10-26T09:00:00-04:00"
+      },
+      "ids": [
+        "ServiceRequest/sr-t0002"
+      ]
+    },
+    {
+      "id": "no_substitution",
+      "kind": "gate",
+      "method": "code",
+      "category": "safety",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "non_contrast_ct": [],
+        "iv_steroid": [],
+        "appointment": "booked"
+      },
+      "ids": []
+    },
+    {
+      "id": "patient_instructed",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "to_patient": [
+          "Communication/comm-t0005"
+        ]
+      },
+      "ids": [
+        "Communication/comm-t0005"
+      ]
+    },
+    {
+      "id": "evidence_before_orders",
+      "kind": "gate",
+      "method": "code",
+      "category": "process",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "first_medication_write": 11,
+        "exposed": [
+          {
+            "id": "AllergyIntolerance/alg-t5-iohexol",
+            "step": 3
+          },
+          {
+            "id": "Appointment/appt-t5-1026",
+            "step": 2
+          }
+        ],
+        "late": []
+      },
+      "ids": []
+    },
+    {
+      "id": "message_dose_times",
+      "kind": "rubric",
+      "method": "hybrid",
+      "category": "documentation",
+      "points": 3,
+      "met": false,
+      "evidence": {
+        "source": "judge",
+        "times": [
+          60,
+          420,
+          780,
+          780
+        ],
+        "missing": [
+          "2026-10-25T20:00:00-04:00",
+          "2026-10-26T02:00:00-04:00",
+          "2026-10-26T08:00:00-04:00"
+        ],
+        "verdict": "not_met",
+        "quote": "",
+        "cache_key": "d3c39f53711891dd866fda413d592b8df8a9cdf7096b8ef83af8f46e7354effc"
+      }
+    },
+    {
+      "id": "message_driver",
+      "kind": "rubric",
+      "method": "judge",
+      "category": "safety",
+      "points": 1,
+      "met": true,
+      "evidence": {
+        "verdict": "met",
+        "quote": "Do not drive after diphenhydramine; bring a driver.",
+        "cache_key": "99a9299243f6b271e85b3835a1af7250abfdf97572c73e177f065b59baffe6cb"
+      }
+    },
+    {
+      "id": "note_distinguishes_allergies",
+      "kind": "rubric",
+      "method": "judge",
+      "category": "reasoning",
+      "points": 2,
+      "met": true,
+      "evidence": {
+        "verdict": "met",
+        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan.",
+        "cache_key": "fc13463f14bd180b268c9d8c64916d3a36b651da747411e09546e084219e4d27"
+      }
+    },
+    {
+      "id": "ct_cites_allergy_and_note",
+      "kind": "rubric",
+      "method": "code",
+      "category": "documentation",
+      "points": 2,
+      "met": true,
+      "evidence": {
+        "orders": [
+          "ServiceRequest/sr-t0001"
+        ],
+        "citing": [
+          "ServiceRequest/sr-t0001"
+        ],
+        "want": [
+          "AllergyIntolerance/alg-t5-iohexol",
+          "DocumentReference/doc-t5-ct-2019"
+        ]
+      }
+    },
+    {
+      "id": "iv_steroid_regimen",
+      "kind": "rubric",
+      "method": "code",
+      "category": "safety",
+      "points": -3,
+      "met": false,
+      "evidence": {
+        "iv_steroid": []
+      }
+    },
+    {
+      "id": "shellfish_as_risk_factor",
+      "kind": "rubric",
+      "method": "hybrid",
+      "category": "reasoning",
+      "points": -2,
+      "met": false,
+      "evidence": {
+        "flagged": [
+          "shellfish",
+          "povidone",
+          "iodine"
+        ],
+        "verdict": "not_met",
+        "quote": "",
+        "cache_key": "d3d72cba94867608129adf66a53be46426ab3ff55524e0dd434513b6c4e5cb98"
+      }
+    }
+  ],
+  "score": 0.625,
+  "judge": {
+    "calls": 0,
+    "unknown": 0,
+    "over_allowance": 0,
+    "cache_keys": [
+      "d3c39f53711891dd866fda413d592b8df8a9cdf7096b8ef83af8f46e7354effc",
+      "99a9299243f6b271e85b3835a1af7250abfdf97572c73e177f065b59baffe6cb",
+      "fc13463f14bd180b268c9d8c64916d3a36b651da747411e09546e084219e4d27",
+      "d3d72cba94867608129adf66a53be46426ab3ff55524e0dd434513b6c4e5cb98"
+    ],
+    "cache": [
+      {
+        "key": "d3c39f53711891dd866fda413d592b8df8a9cdf7096b8ef83af8f46e7354effc",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": ""
+        },
+        "error": null,
+        "calls": 0,
+        "provenance": {
+          "source": "scripted",
+          "model": "none: a rule-based script with no network call (builder-48)",
+          "at": "2026-10-24T00:00:00Z"
+        }
+      },
+      {
+        "key": "99a9299243f6b271e85b3835a1af7250abfdf97572c73e177f065b59baffe6cb",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "met",
+          "quote": "Do not drive after diphenhydramine; bring a driver."
+        },
+        "error": null,
+        "calls": 0,
+        "provenance": {
+          "source": "scripted",
+          "model": "none: a rule-based script with no network call (builder-48)",
+          "at": "2026-10-24T00:00:00Z"
+        }
+      },
+      {
+        "key": "fc13463f14bd180b268c9d8c64916d3a36b651da747411e09546e084219e4d27",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "met",
+          "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+        },
+        "error": null,
+        "calls": 0,
+        "provenance": {
+          "source": "scripted",
+          "model": "none: a rule-based script with no network call (builder-60)",
+          "at": "2026-10-24T00:00:00Z"
+        }
+      },
+      {
+        "key": "d3d72cba94867608129adf66a53be46426ab3ff55524e0dd434513b6c4e5cb98",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": ""
+        },
+        "error": null,
+        "calls": 0,
+        "provenance": {
+          "source": "scripted",
+          "model": "none: a rule-based script with no network call (builder-60)",
+          "at": "2026-10-24T00:00:00Z"
+        }
+      }
+    ]
+  },
+  "attribution": {
+    "auto": "reasoning",
+    "first_failed": "prednisone_schedule",
+    "decisive_step": 11,
+    "exposure": [
+      {
+        "id": "AllergyIntolerance/alg-t5-iohexol",
+        "first_exposed_step": 3
+      },
+      {
+        "id": "Appointment/appt-t5-1026",
+        "first_exposed_step": 2
+      }
+    ]
+  },
+  "error": null,
+  "index": 6,
+  "trajectory": "trajectories/contrast-ct-prep/6.jsonl"
+}
