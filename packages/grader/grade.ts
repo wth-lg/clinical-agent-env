@@ -43,7 +43,7 @@ import { FAULT, isValid, trialOutcome, type Fault, type Outcome, type TrialFacts
 // record both. 6: main's 5 (shown text, decisive_phrases) and this branch's 5 (grading past a
 // thrown check) were different graders; the merge of the two is 6. 7: normalize.ts maps
 // rosuvastatin calcium, Toprol-XL and Lasix to their ingredients.
-export const GRADER_VERSION = '7';
+export const GRADER_VERSION = '8';
 
 export interface CheckResult {
   id: string;

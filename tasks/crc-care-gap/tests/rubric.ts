@@ -36,7 +36,7 @@ const ALSO: Record<string, string> = {
 };
 
 export const criterion = (x: Member): string =>
-  `The text gives ${x.name} the status: ${STATUS[x.status]}, and the reason: ${REASON[x.reason]}. Equivalent wording counts; the exact dates need not be repeated.${ALSO[x.patient] ?? ''}`;
+  `The text gives ${x.name} (${x.patient.slice(8)}) the status: ${STATUS[x.status]}, and the reason: ${REASON[x.reason]}. Equivalent wording counts; the exact dates need not be repeated.${ALSO[x.patient] ?? ''}`;
 
 // The family name or the patient id names a member. Case, accents and apostrophes do not
 // matter: 'OKEEFE', 'O’Keefe' and 'Angela' all match; 'pt-0017' matches as a whole word.
