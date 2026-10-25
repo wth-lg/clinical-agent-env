@@ -3,7 +3,6 @@ import { Fragment, useId, useState, type FormEvent } from 'react';
 import { DEFAULT_SESSION_CAP_USD, MAX_SESSION_CAP_USD, parseCap } from '../spend/cap.ts';
 import { sessionCap, setSessionCap } from '../spend/session.ts';
 import type { Surface } from '../surface/detect.ts';
-import { LocalCommand } from '../surface/LocalCommand.tsx';
 import { LocalRunPanel } from '../surface/LocalRunPanel.tsx';
 import { SurfaceChip } from '../surface/SurfaceChip.tsx';
 import { validateDirect } from './direct.ts';
@@ -35,7 +34,7 @@ export function KeyGate({ surface, onDone, onBrowse, notice }: { surface: Surfac
   const [capText, setCapText] = useState(String(sessionCap()));
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<Failure | null>(notice ? { kind: 'notice', message: notice } : null);
-  const ids = { key: useId(), hint: useId(), cap: useId(), error: useId() };
+  const ids = { key: useId(), hint: useId(), cap: useId(), error: useId(), panel: useId() };
   const cap = parseCap(capText);
   const rounded = cap !== null && cap !== Number(capText.trim());
   const direct = surface.kind === 'browser-direct';
@@ -107,7 +106,7 @@ export function KeyGate({ surface, onDone, onBrowse, notice }: { surface: Surfac
           {WHERE[surface.kind]} Use a workspace key with a spend limit.
         </p>
 
-        {failure && <FailureNote id={ids.error} failure={failure} />}
+        {failure && <FailureNote id={ids.error} failure={failure} panelId={ids.panel} />}
 
         <div className="mt-4 flex items-end gap-4">
           <div className="w-44">
@@ -151,24 +150,29 @@ export function KeyGate({ surface, onDone, onBrowse, notice }: { surface: Surfac
           </button>
         </div>
       </form>
-      <LocalRunPanel surface={surface} className="w-full max-w-[440px]" />
+      <LocalRunPanel id={ids.panel} surface={surface} className="w-full max-w-[440px]" />
     </main>
   );
 }
 
 // Red: the danger token on the border and the first line. One plain sentence first, then what to
-// do (for org-CORS and network: run it locally, with the command), then the API's or runner's own
-// line in small mono, which wraps only between words.
-function FailureNote({ id, failure }: { id: string; failure: Failure }) {
+// do (for org-CORS and network: the local-run panel, with a button that moves focus to it, so the
+// command shows once), then the API's or runner's own line in small mono, which wraps only
+// between words.
+function FailureNote({ id, failure, panelId }: { id: string; failure: Failure; panelId: string }) {
   const { lead, next, detail, local } = describeFailure(failure);
   return (
     <div id={id} role="alert" className="mt-3 rounded-sm border border-danger bg-canvas p-3">
       <p className="font-medium text-danger">{lead}</p>
       {next !== undefined && <p className="mt-1 text-ink">{next}</p>}
       {local && (
-        <div className="mt-2">
-          <LocalCommand />
-        </div>
+        <button
+          type="button"
+          onClick={() => document.getElementById(panelId)?.focus()}
+          className="mt-2 h-7 rounded-sm border border-line-strong px-2 text-ink hover:bg-surface"
+        >
+          Show the steps
+        </button>
       )}
       {detail !== undefined && <RawLine text={detail} />}
     </div>

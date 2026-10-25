@@ -22,7 +22,6 @@ const DANGER = {
   dark: /@media \(prefers-color-scheme: dark\)[^}]*--color-danger:\s*([^;]+);/.exec(tokensCss)?.[1] ?? 'missing',
 };
 
-
 // Built at runtime so no key-shaped literal is committed (pnpm keyscan).
 const sentinelKey = () => ['sk', 'ant', 'api03', randomUUID().replaceAll('-', ''), 'e2e'].join('-');
 
@@ -157,6 +156,19 @@ function failedRequests(page: Page): string[] {
 
 const panel = (page: Page) => page.getByRole('region', { name: 'Run it on your computer' });
 const insideAlert = (l: Locator) => l.evaluate((el) => el.closest('[role="alert"]') !== null);
+
+// org-CORS and network: the alert names the panel and has a button that brings it into view; the
+// prerequisites and the command show once, in the panel, never in the alert.
+async function expectPointsToPanel(page: Page, alert: Locator) {
+  await expect(alert).toContainText('Run it on your computer');
+  await expect(alert.getByTestId('local-command')).toHaveCount(0);
+  await expect(alert.getByTestId('local-prerequisites')).toHaveCount(0);
+  await expect(alert.getByRole('button', { name: 'Copy command' })).toHaveCount(0);
+  await expect(page.getByTestId('local-command')).toHaveCount(1);
+  await alert.getByRole('button', { name: 'Show the steps' }).click();
+  await expect(panel(page)).toBeFocused();
+  await expect(panel(page)).toBeInViewport();
+}
 
 // A colour value as the browser computes it, for comparing with an element's computed style.
 const computed = (page: Page, value: string) =>
@@ -317,7 +329,7 @@ test.describe('key gate on browser-direct', () => {
     expect((await storageDump(page)).session).not.toContain(key);
   });
 
-  test('an org-CORS 401 shows its message, the reason and the local command with a copy button', async ({ page }) => {
+  test('an org-CORS 401 shows the reason and its message, and points to the local-run panel instead of repeating the command', async ({ page }) => {
     await mockBrowserDirect(page);
     await mockApi(page, { status: 401, type: 'authentication_error', message: ORG_CORS });
     await page.goto('./');
@@ -326,10 +338,20 @@ test.describe('key gate on browser-direct', () => {
     const alert = page.getByRole('alert');
     await expect(alert).toContainText(ORG_CORS);
     await expect(alert).toContainText("This key's organization does not allow browser access.");
-    await expect(alert.getByTestId('local-command')).toHaveText(LOCAL_START_COMMAND);
-    await expect(alert.getByRole('button', { name: 'Copy command' })).toBeVisible();
+    await expectPointsToPanel(page, alert);
     await page.getByRole('button', { name: 'Browse without a key' }).click();
     await expect(page.getByTestId('key-chip')).toHaveText('No key');
+  });
+
+  test('a network failure points to the local-run panel instead of repeating the command', async ({ page }) => {
+    await mockBrowserDirect(page);
+    await page.route((url) => url.origin === API_ORIGIN, (route) => route.abort('failed'));
+    await page.goto('./');
+    await keyField(page).fill(sentinelKey());
+    await validate(page);
+    const alert = page.getByRole('alert');
+    await expect(alert.locator('p').first()).toHaveText('The browser could not reach the API from this page.');
+    await expectPointsToPanel(page, alert);
   });
 
   test('another 401 shows the API error without the command', async ({ page }) => {
@@ -616,7 +638,7 @@ test.describe('gate details', () => {
     expect(calls).toHaveLength(1);
   });
 
-  test('org-CORS: the reason first, then the command with a 24px Copy button, the raw API line last', async ({ page }) => {
+  test('org-CORS: the reason first, then the pointer to the panel, the raw API line last', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await mockBrowserDirect(page);
     await mockApi(page, { status: 401, type: 'authentication_error', message: ORG_CORS });
@@ -626,13 +648,19 @@ test.describe('gate details', () => {
     const alert = page.getByRole('alert');
     const text = await alert.innerText();
     const at = (s: string) => text.indexOf(s);
-    expect(at("This key's organization does not allow browser access.")).toBeGreaterThanOrEqual(0);
-    expect(at("This key's organization does not allow browser access.")).toBeLessThan(at('git clone'));
-    expect(at('git clone')).toBeLessThan(at(ORG_CORS));
-    const box = (await alert.getByRole('button', { name: 'Copy command' }).boundingBox())!;
+    expect(at("This key's organization does not allow browser access.")).toBe(0);
+    expect(at("This key's organization does not allow browser access.")).toBeLessThan(at('Run it on your computer'));
+    expect(at('Run it on your computer')).toBeLessThan(at(ORG_CORS));
+  });
+
+  test('the panel at 390: a 24px Copy button, and no piece of the command breaks across lines', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await mockBrowserDirect(page);
+    await page.goto('./');
+    const box = (await panel(page).getByRole('button', { name: 'Copy command' }).boundingBox())!;
     expect(Math.min(box.width, box.height)).toBeGreaterThanOrEqual(24);
     // Each space- or slash-separated piece of the command sits on one line.
-    const split = await alert.getByTestId('local-command').evaluate((el) => {
+    const split = await panel(page).getByTestId('local-command').evaluate((el) => {
       const pieces: string[] = [];
       for (const span of el.querySelectorAll('[data-piece]')) if (span.getClientRects().length > 1) pieces.push(span.textContent ?? '');
       return { pieces, wordBreak: getComputedStyle(el).wordBreak, spans: el.querySelectorAll('[data-piece]').length };

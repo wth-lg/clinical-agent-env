@@ -14,12 +14,13 @@ const TEXT: Record<Surface['kind'], { title: string; body: string }> = {
 };
 
 // The prerequisites and the one command, on every key state and never inside an error: the key
-// gate shows it on both surfaces, and the shell keeps it on browser-direct.
-export function LocalRunPanel({ surface, className = '' }: { surface: Surface; className?: string }) {
+// gate shows it on both surfaces, and the shell keeps it on browser-direct. An org-CORS or network
+// error points here and moves focus here by `id`, so the panel takes programmatic focus only.
+export function LocalRunPanel({ surface, id: panelId, className = '' }: { surface: Surface; id?: string; className?: string }) {
   const id = useId();
   const { title, body } = TEXT[surface.kind];
   return (
-    <section data-testid="local-run-panel" aria-labelledby={id} className={`rounded-sm border border-line bg-surface p-4 sm:p-6 ${className}`}>
+    <section id={panelId} tabIndex={-1} data-testid="local-run-panel" aria-labelledby={id} className={`rounded-sm border border-line bg-surface p-4 sm:p-6 ${className}`}>
       <h2 id={id} className="font-semibold text-ink">
         {title}
       </h2>

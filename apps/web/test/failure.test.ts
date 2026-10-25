@@ -15,10 +15,11 @@ describe('describeFailure', () => {
     expect(describeFailure({ kind: 'runner', cause: 'error', status: 401, message })).toEqual({ lead: 'The API did not accept this key.', detail: message, local: false });
   });
 
-  it('org-CORS and network show the local command and keep the raw line', () => {
+  it('org-CORS and network point to the local-run panel and keep the raw line', () => {
     for (const kind of ['org-cors', 'network'] as const) {
       const d = describeFailure({ kind, message: 'raw' });
       expect(d.local, kind).toBe(true);
+      expect(d.next, kind).toMatch(/Run it on your computer/);
       expect(d.detail, kind).toBe('raw');
     }
     expect(describeFailure({ kind: 'org-cors', message: 'x' }).lead).toBe("This key's organization does not allow browser access.");

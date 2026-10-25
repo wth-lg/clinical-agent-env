@@ -1,7 +1,7 @@
 // What the key gate says about a failed Validate. Every failure starts with one plain sentence
 // (lead), then what to do when there is something to do (next), then the API's or runner's own
-// line (detail), which the gate shows in small mono. org-CORS and network failures show the
-// command to run the environment locally.
+// line (detail), which the gate shows in small mono. org-CORS and network failures send the user
+// to the local-run panel, which already shows the prerequisites and the command.
 // The failure types live here, not in direct.ts or runner.ts, so this file imports nothing and
 // its unit test does not pull browser code into a program without the DOM types.
 
@@ -18,11 +18,11 @@ export interface FailureText {
   lead: string;
   next?: string;
   detail?: string;
-  // True when the next step is running the environment locally.
+  // True when the next step is the local-run panel.
   local: boolean;
 }
 
-const LOCAL = 'Run the environment locally instead. It opens this UI and keeps the key on your machine:';
+const PANEL = 'Run the environment on your computer instead. The steps are in “Run it on your computer” below this form.';
 
 // The API's answer by HTTP status, the same sentence on both surfaces.
 function apiLead(status: number | null): { lead: string; next?: string } {
@@ -51,9 +51,9 @@ function runnerLead(f: RunnerFailure): { lead: string; next?: string } {
 export function describeFailure(f: Failure): FailureText {
   switch (f.kind) {
     case 'org-cors':
-      return { lead: "This key's organization does not allow browser access.", next: LOCAL, detail: f.message, local: true };
+      return { lead: "This key's organization does not allow browser access.", next: PANEL, detail: f.message, local: true };
     case 'network':
-      return { lead: 'The browser could not reach the API from this page.', next: LOCAL, detail: f.message, local: true };
+      return { lead: 'The browser could not reach the API from this page.', next: PANEL, detail: f.message, local: true };
     case 'cap':
       return { lead: 'The session spend cap does not allow this check.', next: 'To continue, set a higher session spend cap.', detail: f.message, local: false };
     case 'api': {
