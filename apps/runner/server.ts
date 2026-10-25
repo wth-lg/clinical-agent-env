@@ -804,7 +804,7 @@ export async function startRunner(opts: RunnerOptions): Promise<Runner> {
     if (cap !== null && spent + projection > cap) {
       return {
         status: 409,
-        body: { error: { type: 'session_cap', message: `Validate can cost up to $${projection.toFixed(2)}, and with $${spent.toFixed(2)} already spent or running this session that would go over your session cap of $${cap.toFixed(2)}. Wait for the running trials to finish, then press Validate again.` } },
+        body: { error: { type: 'session_cap', message: `Validate can cost up to $${projection.toFixed(2)}, and with $${spent.toFixed(2)} already spent or running this session that would go over your session cap of $${cap.toFixed(2)}. Wait for the running trials to finish, then press Validate again. If no trials are running, restart the runner for a new session with no spend, then reload this page.` } },
       };
     }
     heldKey = null;
