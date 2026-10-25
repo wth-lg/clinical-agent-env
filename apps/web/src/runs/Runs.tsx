@@ -7,10 +7,10 @@
 // denominator rules. Filters (task, label) and the open trial live in the URL.
 import { ChevronDown, ChevronRight, CircleAlert } from 'lucide-react';
 import { useEffect, useState, type Ref } from 'react';
-import { formatCriterion, TAXONOMY_TEXT, type Explanation, type Holding } from '../../../../packages/core/explain.ts';
+import { formatCriterion, MET_TEXT, TAXONOMY_TEXT, type Explanation, type Holding } from '../../../../packages/core/explain.ts';
 import { AUDIT_LABELS, CONFIRMATION_CRITERIA, CONFIRMATION_DEFINITIONS, FAULT_DEFINITIONS, RUN_BLOCKS } from '../../../../packages/core/outcomes.ts';
 import { fullExplanation, gradingLine, useResults, type BadRecord, type RunData, type Trial } from '../data/results.ts';
-import { Card, FaultLabel, GlossaryLink, Hash, Notice, OutcomeChip, Page, PlainRules } from '../data/ui.tsx';
+import { Card, FaultLabel, GlossaryLink, Hash, HashText, Notice, OutcomeChip, Page, PlainRules } from '../data/ui.tsx';
 import { navigate, useParams } from '../data/url.ts';
 
 // The label filter's values: every AUDIT_LABEL name, then excluded (INFRA) and pass.
@@ -120,19 +120,20 @@ function TrialRow({ t, run, files, open }: { t: Trial; run: RunData; files: Read
   );
 }
 
-const MET_WORDS: Record<string, string> = { true: 'met', false: 'not met', pending: 'not yet known', 'n/a': 'does not apply' };
 const CRITERIA = [...Object.values(FAULT_DEFINITIONS).flatMap((d) => d.criteria), ...RUN_BLOCKS, ...CONFIRMATION_CRITERIA];
 // A criterion's sentence from outcomes.ts, for a note or a criterion row.
 const criterionText = (id: string) => CRITERIA.find((c) => c.id === id)?.text ?? id;
 const link = 'text-ink underline decoration-line-strong underline-offset-2';
 
 function Note({ n }: { n: Holding }) {
-  return <li className="break-words"><GlossaryLink anchor={`criterion-${n.id}`} className={link}>{criterionText(n.id)}</GlossaryLink> ({n.id}): <span className="text-ink-muted">{n.evidence}</span></li>;
+  return <li className="break-words"><GlossaryLink anchor={`criterion-${n.id}`} className={link}>{criterionText(n.id)}</GlossaryLink> ({n.id}): <span className="text-ink-muted"><HashText text={n.evidence} /></span></li>;
 }
 
 // The open trial: why it failed in words, each term linked to its section of the glossary. The
 // criteria come from fullExplanation (the world, the checks and matrix.json); until it arrives,
-// and if it cannot load, the row's explanation stands.
+// and if it cannot load, the row's explanation stands. Each criterion reads as audit-check writes
+// it (MET_TEXT), with its evidence when it is not met; a hash in any evidence is shortened with
+// a copy control.
 function TrialDetail({ t, run, files }: { t: Trial; run: RunData; files: ReadonlySet<string> }) {
   const [full, setFull] = useState<Explanation | null>(null);
   const [showAll, setShowAll] = useState(false);
@@ -150,7 +151,7 @@ function TrialDetail({ t, run, files }: { t: Trial; run: RunData; files: Readonl
         <dt className="text-ink-muted">Fault</dt>
         <dd data-testid="detail-fault">
           {e.fault === null ? 'none' : <GlossaryLink anchor={`fault-${e.fault}`} className={link}>{e.fault}</GlossaryLink>}
-          {e.deciding && <>: {criterionText(e.deciding.id)} ({e.deciding.id}) <span className="block text-ink-muted">{e.deciding.evidence}</span></>}
+          {e.deciding && <>: {criterionText(e.deciding.id)} ({e.deciding.id}) <span className="block text-ink-muted"><HashText text={e.deciding.evidence} /></span></>}
         </dd>
         <dt className="text-ink-muted">Confirmation</dt>
         <dd>{e.confirmation === null ? 'does not apply' : <><GlossaryLink anchor="confirmation" className={link}>{e.confirmation}</GlossaryLink>: <span className="text-ink-muted">{CONFIRMATION_DEFINITIONS[e.confirmation]}</span></>}</dd>
@@ -160,10 +161,16 @@ function TrialDetail({ t, run, files }: { t: Trial; run: RunData; files: Readonl
         <dt className="text-ink-muted">Criteria</dt>
         <dd>
           <ul className="space-y-0.5" data-testid="detail-criteria">
-            {e.criteria.map((c) => <li key={c.id} data-id={c.id} data-met={String(c.met)}><span className="font-medium">{MET_WORDS[String(c.met)]}</span>: <GlossaryLink anchor={`criterion-${c.id}`} className={link}>{criterionText(c.id)}</GlossaryLink> ({c.id})</li>)}
+            {e.criteria.map((c) => (
+              <li key={c.id} data-id={c.id} data-met={String(c.met)} data-evidence={c.evidence}>
+                <span className="font-medium">{MET_TEXT[String(c.met)]}</span>
+                {c.met !== true && <span data-testid="criterion-evidence">: <HashText text={c.evidence} /></span>}
+                <span className="block text-ink-muted"><GlossaryLink anchor={`criterion-${c.id}`} className={link}>{criterionText(c.id)}</GlossaryLink> ({c.id})</span>
+              </li>
+            ))}
           </ul>
         </dd>
-        {e.notes.length > 0 && <><dt className="text-ink-muted">Notes</dt><dd><ul className="space-y-0.5">{e.notes.map((n) => <Note key={n.id} n={n} />)}</ul></dd></>}
+        {e.notes.length > 0 && <><dt className="text-ink-muted">Notes</dt><dd data-testid="detail-notes"><ul className="space-y-0.5">{e.notes.map((n) => <Note key={n.id} n={n} />)}</ul></dd></>}
         <dt className="text-ink-muted">Cost</dt><dd>agent ${t.record.cost_usd.toFixed(2)}, judge ${(t.record.judge_cost_usd ?? 0).toFixed(2)}</dd>
         <dt className="text-ink-muted">State hash</dt><dd className="flex flex-wrap items-center gap-x-1">start <Hash value={t.record.state_hash.initial} /> end <Hash value={t.record.state_hash.final} /></dd>
       </dl>

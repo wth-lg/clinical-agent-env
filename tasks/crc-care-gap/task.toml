@@ -5,6 +5,8 @@
 # total colectomy recorded only in a scanned outside operative note, frailty with a dementia
 # medication against frailty alone, an active FIT order already out, and outreach sent only to
 # the patients who need it.
+# What each gate check requires, in the words the UI and audit-check use: ../crc-care-gap.check-text.ts
+# (outside this directory, so editing it moves no version; a new gate check needs an entry there).
 [task]
 id = "crc-care-gap"
 title = "Colorectal cancer screening outreach for the panel group Okafor CRC 2026 under RBC-QM-02"

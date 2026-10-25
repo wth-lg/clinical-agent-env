@@ -2,6 +2,8 @@
 # (pt-0015, overlay.ts) under RBC-RAD-07. The traps are the shellfish and povidone-iodine allergies
 # beside the real contrast reaction, the overnight dose times, the 2025 creatinine, the 2023
 # premedication orders timed for another scan, and the link to the appointment.
+# What each gate check requires, in the words the UI and audit-check use: ../contrast-ct-prep.check-text.ts
+# (outside this directory, so editing it moves no version; a new gate check needs an entry there).
 [task]
 id = "contrast-ct-prep"
 title = "Contrast CT order and premedication for Daniel Ferreira under RBC-RAD-07"

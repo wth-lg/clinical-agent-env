@@ -164,7 +164,7 @@ const M3: Criterion = {
   check: ({ state_hash: h, manifest_hash }) => {
     const replay = replayOk(h) ? `replay_final equals final ${h.final}` : `replay_final ${h.replay_final} is not final ${h.final}`;
     if (!replayOk(h) || h.initial === null) return result(false, `${h.initial === null ? 'no initial hash; ' : ''}${replay}`);
-    if (manifest_hash === null) return result('pending', `no manifest hash to compare initial ${h.initial} with; ${replay}`);
+    if (manifest_hash === null) return result('pending', `run has no manifest; initial ${h.initial} not compared; ${replay}`);
     return result(h.initial === manifest_hash, `initial ${h.initial} ${h.initial === manifest_hash ? 'equals' : 'is not'} the manifest's ${manifest_hash}; ${replay}`);
   },
 };

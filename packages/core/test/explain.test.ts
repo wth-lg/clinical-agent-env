@@ -584,3 +584,19 @@ describe('explainTrial: review round 4 (pr-review P14a-3)', () => {
     expect(msg).not.toMatch(/excluded from the headline denominator/);
   });
 });
+
+describe('a GRADER_ERROR reason (verifier-phase-P14b-1 V3)', () => {
+  it('quotes the whole error when it fits, and ends on a whole word', () => {
+    const message = "TypeError: Cannot read properties of undefined (reading 'status')";
+    const x = explainTrial(record('GRADER_ERROR', { error: { check: 'm1_bridge', message, stops_batch: false } }), undefined, ctx);
+    expect(x.reason).toBe(`GRADER_ERROR: check m1_bridge threw ${message}; the grader's fault, which blocks the run`);
+    expect(x.reason).not.toContain('…');
+  });
+
+  it('cuts a long error at a word so the reason keeps to REASON_WORDS', () => {
+    const message = Array.from({ length: 60 }, (_, i) => `word${i}`).join(' ');
+    const x = explainTrial(record('GRADER_ERROR', { error: { check: 'G1', message, stops_batch: false } }), undefined, ctx);
+    expect(words(x.reason)).toBeLessThanOrEqual(REASON_WORDS);
+    expect(x.reason).toMatch(/^GRADER_ERROR: check G1 threw word0 .* word\d+…; the grader's fault, which blocks the run$/);
+  });
+});

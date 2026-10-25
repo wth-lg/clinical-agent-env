@@ -3,6 +3,8 @@
 # smoking history is only in the H&P and whose interval runs from the index study, a second
 # patient of the same name, an existing GI referral, the hemolyzed potassium beside a true
 # critical one and the urgent recommendation with no stated interval.
+# What each gate check requires, in the words the UI and audit-check use: ../results-inbox.check-text.ts
+# (outside this directory, so editing it moves no version; a new gate check needs an entry there).
 [task]
 id = "results-inbox"
 title = "Close the loop on Dr. Okafor's results inbox"
