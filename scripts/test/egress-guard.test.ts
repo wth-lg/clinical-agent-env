@@ -146,7 +146,11 @@ Object.defineProperty(globalThis.navigator, 'sendBeacon', { configurable: true, 
 let guard = 'missing';
 try {
   const { installEgressGuard } = await import(process.env.EGRESS_MODULE);
-  installEgressGuard(globalThis, process.env.ALLOWED ? { allowedOrigins: process.env.ALLOWED.split(',') } : undefined);
+  const opts = {
+    ...(process.env.ALLOWED ? { allowedOrigins: process.env.ALLOWED.split(',') } : {}),
+    ...(process.env.METERED ? { meteredOrigins: process.env.METERED.split(',') } : {}),
+  };
+  installEgressGuard(globalThis, Object.keys(opts).length > 0 ? opts : undefined);
   guard = 'installed';
 } catch (e) { guard = 'missing: ' + e.message.split('\\n')[0]; }
 const out = { guard, plants: {} };
@@ -162,7 +166,7 @@ if (process.env.CLIENT === '1') {
   const { ledger } = openNodeLedger({ transport: 'live' });
   const grant = await ledger.batchStart(0.1);
   const before = sends.length;
-  const r = await new MessagesClient({ grant, ledger, apiKey: process.env.KEY, maxAttempts: 1 }).send([{ role: 'user', content: 'hi' }], { max_tokens: 1 });
+  const r = await new MessagesClient({ grant, ledger, apiKey: process.env.KEY, maxAttempts: 1, ...(process.env.ENDPOINT ? { endpoint: process.env.ENDPOINT } : {}) }).send([{ role: 'user', content: 'hi' }], { max_tokens: 1 });
   await grant.close();
   out.client = { status: r.status, sends: sends.slice(before) };
 }
@@ -193,7 +197,44 @@ const ORIGIN_PLANTS: Record<string, string> = {
 };
 Object.assign(PLANTS, ORIGIN_PLANTS);
 
-function run(names: string[], opts: { client?: boolean; allowed?: string[] } = {}) {
+// A relay that forwards to the API (P16g): with meteredOrigins it is guarded like the API host,
+// so only MessagesClient's own Request at its endpoint reaches it, once. Each spelling below
+// resolves to the relay's origin.
+const RELAY = 'https://relay.test';
+const RELAY_URL = `${RELAY}/v1/messages`;
+const RELAY_PLANTS: Record<string, string> = {
+  'y-relay-string': `export const go = () => fetch('${RELAY_URL}', ${POST});`,
+  'y-relay-url-object': `export const go = () => fetch(new URL('/v1/messages', '${RELAY}'), ${POST});`,
+  'y-relay-request': `export const go = () => fetch(new Request('${RELAY_URL}', ${POST}));`,
+  'y-relay-upper-case': `export const go = () => fetch('https://RELAY.TEST/v1/messages', ${POST});`,
+  'y-relay-trailing-dot': `export const go = () => fetch('https://relay.test./v1/messages', ${POST});`,
+  'y-relay-percent-dot': `export const go = () => fetch('https://relay%2Etest/v1/messages', ${POST});`,
+  'y-relay-default-port': `export const go = () => fetch('https://relay.test:443/v1/messages', ${POST});`,
+  'y-relay-xhr': `export const go = () => { const x = new XMLHttpRequest(); x.open('POST', '${RELAY_URL}'); x.send('{}'); };`,
+  'y-relay-websocket': `export const go = () => new WebSocket('wss://relay.test/v1/messages');`,
+  'y-relay-eventsource': `export const go = () => new EventSource('${RELAY_URL}');`,
+  'y-relay-beacon': `export const go = () => navigator.sendBeacon('${RELAY_URL}', '{}');`,
+  'y-relay-refusal-name': `export async function go() { try { await fetch('${RELAY_URL}', ${POST}); } catch (e) { throw new TypeError(e.name + ': ' + e.message); } }`,
+  'y-relay-hook-resend': `${client}
+export async function go(apiKey) {
+  const { ledger } = openNodeLedger({ transport: 'live' });
+  const grant = await ledger.batchStart(0.1);
+  const errors = [];
+  let first;
+  const c = new MessagesClient({ grant, ledger, apiKey, maxAttempts: 1, endpoint: '${RELAY_URL}', fetch: async (req) => {
+    for (const send of [() => fetch(req), () => fetch(req), () => fetch(req.clone()), () => fetch(new Request(req))]) {
+      try { const r = await send(); first ??= r; } catch (e) { errors.push(e.message); }
+    }
+    return first;
+  } });
+  await c.send([{ role: 'user', content: 'hi' }], { max_tokens: 1 });
+  await grant.close();
+  throw new TypeError(errors.join(' | '));
+}`,
+};
+Object.assign(PLANTS, RELAY_PLANTS);
+
+function run(names: string[], opts: { client?: boolean; allowed?: string[]; metered?: string[]; endpoint?: string } = {}) {
   const dir = tempDir('egress');
   write(dir, 'package.json', '{"type":"module"}');
   write(dir, 'host.json', JSON.stringify({ url: `https://${HOST}/v1/messages` }));
@@ -205,6 +246,8 @@ function run(names: string[], opts: { client?: boolean; allowed?: string[] } = {
     EGRESS_MODULE: repo('packages/core/egress.ts'), CLIENT_MODULE: repo('packages/core/anthropic.ts'), LEDGER_MODULE: repo('cli/adapters/ledger-node.ts'),
     CLIENT: opts.client ? '1' : '0',
     ...(opts.allowed ? { ALLOWED: opts.allowed.join(',') } : {}),
+    ...(opts.metered ? { METERED: opts.metered.join(',') } : {}),
+    ...(opts.endpoint ? { ENDPOINT: opts.endpoint } : {}),
   };
   const r = spawnSync(process.execPath, ['runner.mjs'], { cwd: dir, env, encoding: 'utf8' });
   if (r.status !== 0) throw new Error(`runner exited ${r.status}: ${r.stderr}`);
@@ -216,7 +259,7 @@ function run(names: string[], opts: { client?: boolean; allowed?: string[] } = {
 }
 
 describe('the egress guard refuses every send to the API host that MessagesClient did not make', () => {
-  const names = Object.keys(PLANTS).filter((n) => !(n in ORIGIN_PLANTS));
+  const names = Object.keys(PLANTS).filter((n) => !(n in ORIGIN_PLANTS) && !(n in RELAY_PLANTS));
   const out = run(names, { client: true });
 
   it('installs', () => {
@@ -294,6 +337,62 @@ describe('with allowedOrigins, the guard refuses every send to another origin', 
     const open = run(['w-foreign-fetch', 'w-foreign-xhr']);
     expect(open.plants['w-foreign-fetch']).toEqual({ sends: [{ api: 'fetch', host: 'example.org' }], error: null });
     expect(open.plants['w-foreign-xhr']).toEqual({ sends: [{ api: 'xhr', host: 'example.org' }], error: null });
+  });
+});
+
+describe('with meteredOrigins, a relay origin is guarded like the API host', () => {
+  const names = Object.keys(RELAY_PLANTS);
+  const out = run(names, { client: true, metered: [RELAY], endpoint: RELAY_URL });
+
+  it('installs', () => {
+    expect(out.guard).toBe('installed');
+  });
+
+  it.each(names.filter((n) => n !== 'y-relay-hook-resend'))('%s: refused with EgressRefusal, 0 sends', (name) => {
+    const p = out.plants[name];
+    expect(p?.sends).toEqual([]);
+    expect(p?.error).toMatch(/egress guard/);
+  });
+
+  it('y-relay-refusal-name: the refusal is an EgressRefusal that names the relay origin', () => {
+    expect(out.plants['y-relay-refusal-name']?.error).toMatch(new RegExp(`^EgressRefusal: egress guard: fetch to ${RELAY} refused`));
+  });
+
+  it('y-relay-hook-resend: the client Request goes to the relay once; a resend, a clone and a copy are refused', () => {
+    const p = out.plants['y-relay-hook-resend'];
+    expect(p?.sends).toEqual([{ api: 'fetch', host: 'relay.test' }]);
+    expect(p?.error?.split(' | ')).toHaveLength(3);
+    for (const e of p?.error?.split(' | ') ?? []) expect(e).toMatch(/egress guard/);
+  });
+
+  it('MessagesClient\'s own call to the relay passes, once', () => {
+    expect(out.client).toEqual({ status: 200, sends: [{ api: 'fetch', host: 'relay.test' }] });
+  });
+
+  it('the API host is still guarded beside it', () => {
+    const r = run(['j-eslint-disable-line', 'c-percent-host'], { metered: [RELAY] });
+    for (const p of Object.values(r.plants)) expect(p).toMatchObject({ sends: [], error: expect.stringMatching(/egress guard/) });
+  });
+
+  it('another origin of the same host (scheme or port) is not the relay and goes out', () => {
+    const r = run(['w-foreign-port'], { metered: ['https://app.test:9443'] });
+    expect(r.plants['w-foreign-port']).toEqual({ sends: [{ api: 'fetch', host: 'app.test' }], error: null });
+  });
+
+  it('with allowedOrigins too (the trial Worker), only the client Request reaches the relay, listed or not', () => {
+    for (const allowed of [[SELF], [SELF, RELAY]]) {
+      const r = run(['y-relay-string', 'y-relay-request', 'w-self-fetch'], { client: true, allowed, metered: [RELAY], endpoint: RELAY_URL });
+      expect(r.plants['y-relay-string']).toMatchObject({ sends: [], error: expect.stringMatching(/egress guard/) });
+      expect(r.plants['y-relay-request']).toMatchObject({ sends: [], error: expect.stringMatching(/egress guard/) });
+      expect(r.plants['w-self-fetch']).toEqual({ sends: [{ api: 'fetch', host: 'app.test', redirect: 'error' }], error: null });
+      expect(r.client).toEqual({ status: 200, sends: [{ api: 'fetch', host: 'relay.test' }] });
+    }
+  });
+
+  it('without the option, a fetch to the relay is not refused', () => {
+    const open = run(['y-relay-string', 'y-relay-xhr']);
+    expect(open.plants['y-relay-string']).toEqual({ sends: [{ api: 'fetch', host: 'relay.test' }], error: null });
+    expect(open.plants['y-relay-xhr']).toEqual({ sends: [{ api: 'xhr', host: 'relay.test' }], error: null });
   });
 });
 
@@ -412,6 +511,7 @@ import { readFileSync } from 'node:fs';
 import { Writable } from 'node:stream';
 const API = ['api', 'anthropic', 'com'].join('.');
 const OTHER = 'example.test';
+const RELAY = 'relay.test';
 const KEY = process.env.KEY;
 const S1 = Symbol.for('undici.globalDispatcher.1'), S2 = Symbol.for('undici.globalDispatcher.2');
 const sse = (events) => events.map((e) => 'event: ' + e.type + '\\ndata: ' + JSON.stringify(e) + '\\n\\n').join('');
@@ -421,17 +521,18 @@ const OK = sse([
   { type: 'message_stop' },
 ]);
 const hits = [];
-const hostOf = (req) => (req.headers.host ?? '').replace(/:\\d+$/, '');
+const hostOf = (req) => (req.headers.host ?? '').replace(/:\\d+$/, '').replace(/\\.$/, '').toLowerCase();
 const server = createServer({ key: readFileSync(process.env.KEY_PEM), cert: readFileSync(process.env.CERT_PEM) }, (req, res) => {
   hits.push({ kind: 'request', host: hostOf(req) });
   req.resume();
   req.on('end', () => {
     if (req.url === '/redirect') { res.writeHead(307, { location: 'https://' + API + '/v1/messages' }); return res.end(); }
+    if (req.url === '/redirect-relay') { res.writeHead(307, { location: 'https://' + RELAY + '/v1/messages' }); return res.end(); }
     res.writeHead(200, { 'content-type': 'text/event-stream' });
     res.end(OK);
   });
 });
-server.on('secureConnection', (s) => hits.push({ kind: 'tls', host: s.servername || null }));
+server.on('secureConnection', (s) => hits.push({ kind: 'tls', host: s.servername ? s.servername.replace(/\\.$/, '').toLowerCase() : null }));
 server.on('connect', (req, socket) => { hits.push({ kind: 'connect', host: hostOf(req) }); socket.end('HTTP/1.1 200 Connection Established\\r\\n\\r\\n'); });
 server.on('upgrade', (req, socket) => { hits.push({ kind: 'upgrade', host: hostOf(req) }); socket.end('HTTP/1.1 101 Switching Protocols\\r\\nconnection: upgrade\\r\\nupgrade: websocket\\r\\n\\r\\n'); });
 await new Promise((r) => server.listen(0, '127.0.0.1', r));
@@ -449,7 +550,7 @@ const stub = new Agent({ connect: toStub });
 globalThis[S2] = stub;
 globalThis[S1] = new Legacy(stub);
 const early = globalThis.fetch;
-if (process.env.GUARD === '1') (await import(process.env.EGRESS_MODULE)).installEgressGuard(globalThis);
+if (process.env.GUARD === '1') (await import(process.env.EGRESS_MODULE)).installEgressGuard(globalThis, { meteredOrigins: ['https://' + RELAY] });
 
 const POST = { method: 'POST', headers: { 'x-api-key': KEY, 'content-type': 'application/json' }, body: '{}' };
 const apiOpts = () => ({ origin: 'https://' + API, path: '/v1/messages', ...POST });
@@ -476,6 +577,10 @@ const routes = {
   'early-fetch-other': () => early('https://' + OTHER + '/ok').then((r) => r.status),
   'fetch-other': () => fetch('https://' + OTHER + '/ok').then((r) => r.status),
   redirect: () => fetch('https://' + OTHER + '/redirect', POST).then((r) => r.status),
+  'relay-redirect': () => fetch('https://' + OTHER + '/redirect-relay', POST).then((r) => r.status),
+  'relay-early-fetch': () => early('https://' + RELAY + '/v1/messages', POST).then((r) => r.text()),
+  'relay-slot-request': () => slot('2').request({ ...apiOpts(), origin: 'https://' + RELAY }).then((r) => r.body.text()),
+  'relay-slot-legacy-request': () => slot('1').request({ ...apiOpts(), origin: 'https://RELAY.TEST.' }).then((r) => r.body.text()),
   swap: async () => {
     const fresh = new Agent({ connect: toStub });
     const errors = [];
@@ -509,13 +614,13 @@ for (const [name, call] of Object.entries(routes)) {
   const seen = hits.slice(before);
   // HTTP requests (CONNECT and Upgrade included) by Host, and TLS handshakes by SNI.
   const http = (host) => seen.filter((h) => h.kind !== 'tls' && h.host === host).length;
-  out[name] = { api: http(API), apiTls: seen.filter((h) => h.kind === 'tls' && h.host === API).length, other: http(OTHER), value: value ?? null, error };
+  out[name] = { api: http(API), apiTls: seen.filter((h) => h.kind === 'tls' && h.host === API).length, other: http(OTHER), relay: http(RELAY) + seen.filter((h) => h.kind === 'tls' && h.host === RELAY).length, value: value ?? null, error };
 }
 process.stdout.write(JSON.stringify({ routes: out, apiTotal: hits.filter((h) => h.kind !== 'tls' && h.host === API).length }));
 process.exit(0);
 `;
 
-  type Route = { api: number; apiTls: number; other: number; value: unknown; error: string | null };
+  type Route = { api: number; apiTls: number; other: number; relay: number; value: unknown; error: string | null };
   const runSlots = (guard: boolean) => {
     const dir = tempDir('egress-slots');
     write(dir, 'package.json', '{"type":"module"}');
@@ -547,6 +652,16 @@ process.exit(0);
 
   it.each(REFUSED)('control, guard off, %s: reaches the API stub', (name) => {
     expect(off.routes[name]?.api).toBeGreaterThan(0);
+  });
+
+  // The relay as a metered origin (P16g): the slots refuse it like the API host.
+  const RELAY_ROUTES = ['relay-redirect', 'relay-early-fetch', 'relay-slot-request', 'relay-slot-legacy-request'];
+  it.each(RELAY_ROUTES)('guard on with meteredOrigins, %s: refused, 0 requests or handshakes reach the relay', (name) => {
+    expect(on.routes[name]).toMatchObject({ relay: 0, error: expect.stringMatching(/egress guard/) });
+  });
+
+  it.each(RELAY_ROUTES)('control, guard off, %s: reaches the relay', (name) => {
+    expect(off.routes[name]?.relay).toBeGreaterThan(0);
   });
 
   it('a redirect from another host is refused at the hop to the API host', () => {

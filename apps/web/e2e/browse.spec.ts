@@ -166,7 +166,9 @@ test('the trial detail says each criterion and the fault in words, linked to the
   const detail = page.getByTestId('trial-detail');
   await expect(detail).toHaveAttribute('data-full', 'true', { timeout: 60_000 });
   await expect(detail.getByTestId('detail-criteria').locator('li')).toHaveCount(5);
-  await expect(detail.getByTestId('detail-fault')).toContainText(FAULT_DEFINITIONS.model.criteria[0]!.text);
+  // Inside the line, the criterion's sentence starts lower-case and has no full stop (review-ui-P16-1 F5).
+  const text = FAULT_DEFINITIONS.model.criteria[0]!.text.replace(/\.$/, '');
+  await expect(detail.getByTestId('detail-fault')).toContainText(`decided by ${text.charAt(0).toLowerCase()}${text.slice(1)}`);
   await detail.getByRole('link', { name: 'model', exact: true }).click();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('How failures are attributed');
   await expect(page).toHaveURL(/#fault-model$/);
@@ -182,9 +184,11 @@ test('every trial detail shows the criteria audit-check gives; M3 is pending bec
     const name = trialName(r);
     const row = page.locator(`[data-testid="trial-row"][data-trial="${name}"]`);
     await row.getByRole('button', { name, exact: true }).click();
-    const detail = row.getByTestId('trial-detail');
+    const detail = page.getByTestId('trial-detail');
+    await expect(detail).toHaveAttribute('data-trial', name);
     await expect(detail).toHaveAttribute('data-full', 'true', { timeout: 60_000 });
     ui[name] = (await detail.getAttribute('data-criteria'))!;
+    await page.getByRole('link', { name: 'Back to Runs' }).click();
   }
   const differ = Object.keys(cli).filter((n) => ui[n] !== cli[n]).map((n) => `${n}\n  cli ${cli[n]}\n  ui  ${ui[n]}`);
   expect(differ, `${differ.length} of ${records.length} trials differ`).toEqual([]);
@@ -211,7 +215,7 @@ test('a run manifest on another world makes M3 not met, and Notes shorten each h
   await expect(detail).toHaveAttribute('data-full', 'true', { timeout: 60_000 });
   await expect(detail.locator('[data-testid="detail-criteria"] li[data-id="M3"]')).toHaveAttribute('data-met', 'false');
   const notes = detail.getByTestId('detail-notes');
-  await expect(notes).toContainText('(E2)');
+  await expect(notes).toContainText('E2: ');
   await expect(notes.locator(`[data-hash="${other}"]`)).toHaveCount(1);
   await expect(notes.locator(`[data-hash="${pass.state_hash.initial}"]`)).toHaveCount(1);
   expect(await notes.innerText()).not.toMatch(/[0-9a-f]{64}/);
@@ -221,18 +225,26 @@ test('URL state round-trips: task, label and open trial survive a reload and his
   const failing = records.find((r) => r.outcome === 'FAIL' && explain(r).label === 'model')!;
   const name = trialName(failing);
   await browse(page, `./?view=runs&task=${failing.task_id}&label=model&trial=${encodeURIComponent(name)}`);
+  // The open trial is its own screen; Back to Runs shows the list with the filters kept.
   const check = async () => {
+    await expect(page.getByTestId('trial-detail')).toHaveAttribute('data-trial', name);
+    await page.getByRole('link', { name: 'Back to Runs' }).click();
     await expect(page.getByRole('combobox', { name: 'Task' })).toHaveValue(failing.task_id);
     await expect(page.getByRole('combobox', { name: 'Label' })).toHaveValue('model');
-    await expect(page.locator(`[data-testid="trial-row"][data-trial="${name}"]`).getByTestId('trial-detail')).toBeVisible();
+    await page.goBack();
+    await expect(page.getByTestId('trial-detail')).toHaveAttribute('data-trial', name);
   };
   await check();
   // The tab chose to browse, so a reload goes straight to the view (verifier-phase-P14-2 F8).
   await page.reload();
   await expect(page.getByRole('button', { name: 'Browse without a key' })).toHaveCount(0);
   await check();
+  // A filter cleared on the list comes back with history.
+  await page.getByRole('link', { name: 'Back to Runs' }).click();
   await page.getByRole('combobox', { name: 'Label' }).selectOption('');
   await expect(page).not.toHaveURL(/label=/);
+  await page.goBack();
+  await expect(page.getByRole('combobox', { name: 'Label' })).toHaveValue('model');
   await page.goBack();
   await check();
   await page.getByRole('navigation', { name: 'Views' }).getByRole('link', { name: 'Overview' }).click();

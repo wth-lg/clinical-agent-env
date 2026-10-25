@@ -43,13 +43,19 @@
 // hop to the API host and a fetch with no dispatcher of its own all meet it. Lint
 // (no-direct-dispatcher) is a second layer: it keeps every file but egress.ts from reaching
 // those slots, from importing or requiring undici and from calling process.getBuiltinModule.
+// A proxy reached under another name is covered when it is a metered origin: a relay the client
+// sends to through its endpoint option, which the entry point lists in the guard's
+// meteredOrigins, is guarded like the API host by every API and the undici slots, so only the
+// claimed Request reaches it, once.
 // Also out of scope, documented residuals neither the guard nor lint sees:
 //   - other realms with their own fetch: node:worker_threads, browser Workers and iframes
 //   - a fetch or dispatcher reference a module captured before its entry point ran
 //     installEgressGuard (in Node a captured fetch still meets the guarded dispatcher unless
 //     it is handed a dispatcher captured then)
-//   - a request that reaches the API under another name: an IP-literal host, a DNS alias or a
-//     proxy
+//   - a request that reaches the API under another name: an IP-literal host, a DNS alias, a
+//     proxy whose origin is not in meteredOrigins (an unlisted one, or a metered host under
+//     another scheme or port), or a redirect a browser follows from another origin to a metered
+//     one (in Node the guarded dispatcher refuses that hop)
 //   - Node's http, https, http2, net and tls modules with a host built at runtime (lint flags a
 //     literal API host passed to them)
 import { usageCostUsd, worstCaseUsd, type Usage } from './cost.ts';
@@ -77,6 +83,30 @@ const backoffMs = (attempt: number, random: number): number =>
   Math.max(BACKOFF_BASE_MS, Math.round(Math.min(BACKOFF_BASE_MS * 2 ** (attempt - 1), BACKOFF_MAX_MS) * (0.5 + random / 2)));
 
 const API_HOST = new URL(MESSAGES_URL).hostname;
+const MESSAGES_PATH = new URL(MESSAGES_URL).pathname;
+// Hosts a plain-http endpoint may name: a relay on this machine (P16h's local mode). As the
+// WHATWG parser leaves them, so 127.1 is 127.0.0.1 and localhost. is not localhost.
+const LOOPBACK = new Set(['127.0.0.1', 'localhost', '[::1]']);
+
+// The URL a client sends to: the API by default, or a relay that forwards the same Request to
+// it. An endpoint is an absolute https URL whose path is exactly the Messages path, with no
+// query, fragment or credentials; plain http only on a loopback host, so the key never crosses
+// a network in clear text. The message never echoes the endpoint, which may hold credentials.
+function messagesEndpoint(endpoint: string | undefined): string {
+  if (endpoint === undefined) return MESSAGES_URL;
+  let url: URL;
+  try {
+    url = new URL(endpoint);
+  } catch {
+    throw new TypeError('endpoint is not an absolute URL');
+  }
+  if (url.protocol !== 'https:' && !(url.protocol === 'http:' && LOOPBACK.has(url.hostname))) {
+    throw new TypeError('endpoint must be https, or plain http on 127.0.0.1, localhost or [::1]');
+  }
+  // href holds credentials, a query or a fragment, even an empty one, and origin holds none.
+  if (url.href !== `${url.origin}${MESSAGES_PATH}`) throw new TypeError(`endpoint must be exactly <origin>${MESSAGES_PATH}, with no query, fragment or credentials`);
+  return url.href;
+}
 const API_DOMAIN = API_HOST.slice(API_HOST.indexOf('.') + 1);
 
 // Whether a WHATWG-parsed hostname is the API host or any other host of its domain. Parsing
@@ -427,7 +457,7 @@ const unlessAborted = <T>(p: Promise<T>, signal: AbortSignal): Promise<T> =>
 // idleMs, the fetch error as thrown for a network failure. MessagesClient.send is its only
 // caller. The transport gets the registered Request and nothing else, and the registration ends
 // when it returns.
-async function sendOnce(f: Transport, apiKey: string, body: string, signal: AbortSignal | undefined, idleMs: number): Promise<{ status: number; message: Message }> {
+async function sendOnce(f: Transport, endpoint: string, apiKey: string, body: string, signal: AbortSignal | undefined, idleMs: number): Promise<{ status: number; message: Message }> {
   const idle = new AbortController();
   let timer: ReturnType<typeof setTimeout> | undefined;
   const quiet = () => {
@@ -435,7 +465,7 @@ async function sendOnce(f: Transport, apiKey: string, body: string, signal: Abor
     timer = setTimeout(() => idle.abort(new DOMException(`no data for ${idleMs} ms`, 'TimeoutError')), idleMs);
   };
   // redirect: 'error', so the host the guard checked is the only host the request reaches.
-  const request = new Request(MESSAGES_URL, { method: 'POST', headers: requestHeaders(apiKey), body, redirect: 'error', signal: signal ? AbortSignal.any([signal, idle.signal]) : idle.signal });
+  const request = new Request(endpoint, { method: 'POST', headers: requestHeaders(apiKey), body, redirect: 'error', signal: signal ? AbortSignal.any([signal, idle.signal]) : idle.signal });
   outbound.set(request, headerSig(request));
   quiet();
   try {
@@ -502,6 +532,10 @@ export interface ClientOptions {
   grant: BatchGrant;
   ledger: Ledger;
   apiKey: string;
+  // Where each Request goes: the API by default, or a relay that forwards it there unchanged
+  // (messagesEndpoint says which URLs are accepted). The guard meters a relay origin only when
+  // its entry point lists it in meteredOrigins (egress.ts).
+  endpoint?: string;
   fetch?: Transport;
   sleep?: (ms: number) => Promise<void>;
   // One line per attempt and outcome; never headers, never the key.
@@ -562,6 +596,7 @@ export interface CallResult {
 export class MessagesClient {
   readonly #grant: BatchGrant;
   readonly #apiKey: string;
+  readonly #endpoint: string;
   readonly #fetch: Transport;
   readonly #sleep: (ms: number) => Promise<void>;
   readonly #log: (line: string) => void;
@@ -578,6 +613,7 @@ export class MessagesClient {
     } catch {
       throw new TypeError('apiKey is not a valid header value');
     }
+    this.#endpoint = messagesEndpoint(opts.endpoint);
     this.#grant = opts.grant;
     this.#apiKey = opts.apiKey;
     this.#fetch = opts.fetch ?? ((request) => fetch(request));
@@ -617,7 +653,7 @@ export class MessagesClient {
       const res = await this.#grant.reserve(req);
       let out: { status: number; message: Message };
       try {
-        out = await sendOnce(this.#fetch, this.#apiKey, body, signal, this.#idleMs);
+        out = await sendOnce(this.#fetch, this.#endpoint, this.#apiKey, body, signal, this.#idleMs);
       } catch (e) {
         // Aborted in flight: the request may have reached the API, so the worst case, and no retry.
         if (signal.aborted) {
