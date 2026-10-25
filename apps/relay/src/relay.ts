@@ -67,7 +67,7 @@ export const corsIfAllowed = (request: Request, allowedOrigin: string): Headerse
   request.headers.get('origin') === allowedOrigin ? corsFor(allowedOrigin) : null;
 
 // The body, or null past `max` bytes: refused by its declared length, else read up to the limit.
-async function readBody(request: Request, max: number): Promise<Uint8Array | null> {
+async function readBody(request: Request, max: number): Promise<Uint8Array<ArrayBuffer> | null> {
   const declared = request.headers.get('content-length');
   if (declared !== null && Number(declared) > max) return null;
   if (request.body === null) return new Uint8Array(0);
