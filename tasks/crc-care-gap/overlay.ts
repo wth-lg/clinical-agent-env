@@ -36,11 +36,13 @@ const COLONOSCOPY = '73761001';
 
 // Birth dates the design's ages need (age today and at the end of 2026).
 const BIRTH: Record<string, string> = { [E.E4]: '1980-12-15', [E.E5]: '1950-11-20', [E.E7]: '1954-05-10', [E.E8]: '1957-10-28' };
-// Conditions dated before the moved birth date allows.
-const REMOVE_CONDITIONS = ['cond-00518', 'cond-00437'];
+// Conditions dated before the moved birth date allows, and E5's miscarriage, which the moved
+// birth date puts at age 61.
+const REMOVE_CONDITIONS = ['cond-00518', 'cond-00437', 'cond-00283'];
 // Synthea leftovers to resolve, with the date each ended: employment on E7 and E8 by their
-// frailty, E3's anemia by his normal 2025 hemoglobin (obs-01452).
-const RESOLVE_CONDITIONS: Record<string, string> = { 'cond-00231': '2025-09-16', 'cond-00452': '2026-03-04', 'cond-00425': '2025-07-06' };
+// frailty, E3's anemia by his normal 2025 hemoglobin (obs-01452), and the full-time employment
+// recorded for E5 at 75 in June 2026.
+const RESOLVE_CONDITIONS: Record<string, string> = { 'cond-00231': '2025-09-16', 'cond-00452': '2026-03-04', 'cond-00425': '2025-07-06', 'cond-00296': '2026-09-01' };
 const COMPLETE_MEDICATIONS = ['mr-00269'];
 const SCREENING_FOR_COLON_CANCER = '275978004';
 // A note that mentions the colon or a stool test would speak to a member's screening answer.
@@ -62,7 +64,8 @@ const group: Resource = {
   member: SLOTS.map((pt) => ({ entity: subject(pt), period: { start: '2026-01-02' } })),
 };
 
-const procedure = (id: string, pt: string, code: [string, string], at: string): Resource => ({
+// A screening study's outcome says it was normal, so it reads as screening, not surveillance.
+const procedure = (id: string, pt: string, code: [string, string], at: string, outcome?: string): Resource => ({
   resourceType: 'Procedure',
   id,
   status: 'completed',
@@ -70,7 +73,9 @@ const procedure = (id: string, pt: string, code: [string, string], at: string): 
   subject: subject(pt),
   performedDateTime: at,
   performer: [{ actor: HOSPITAL }],
+  ...(outcome ? { outcome: { text: outcome } } : {}),
 });
+const NORMAL = 'Normal, no polyps';
 
 const NEGATIVE = { coding: [{ system: SNOMED, code: '260385009', display: 'Negative' }], text: 'Negative' };
 const stoolTest = (id: string, pt: string, code: [string, string], at: string, issued: string): Resource => ({
@@ -166,7 +171,7 @@ const donepezil: Resource = {
   subject: subject(E.E7),
   authoredOn: '2025-06-10T10:00:00-04:00',
   requester: OKAFOR,
-  reasonCode: [{ text: 'Cognitive decline' }],
+  reasonCode: [{ text: "Alzheimer's dementia, mild (outside neurology)" }],
   dosageInstruction: [
     {
       text: '10 mg by mouth at bedtime',
@@ -253,8 +258,8 @@ const overlay: Overlay = {
       ...completed,
       SURGEON,
       group,
-      procedure('proc-t3-e1-colonoscopy', E.E1, [COLONOSCOPY, 'Colonoscopy'], '2018-05-21T09:30:00-04:00'),
-      procedure('proc-t3-e2-colonoscopy', E.E2, [COLONOSCOPY, 'Colonoscopy'], '2016-11-15T08:45:00-05:00'),
+      procedure('proc-t3-e1-colonoscopy', E.E1, [COLONOSCOPY, 'Colonoscopy'], '2018-05-21T09:30:00-04:00', NORMAL),
+      procedure('proc-t3-e2-colonoscopy', E.E2, [COLONOSCOPY, 'Colonoscopy'], '2016-11-15T08:45:00-05:00', NORMAL),
       stoolTest('obs-t3-e3-sdna', E.E3, ['77354-9', 'Noninvasive colorectal cancer DNA and occult blood screening [Presence] in Stool'], '2023-11-20T09:00:00-05:00', '2023-11-29T14:10:00-05:00'),
       opNote,
       condition('cond-t3-e7-frailty', E.E7, ['248279007', 'Frailty'], '2025-09-16T10:00:00-04:00'),
@@ -265,7 +270,7 @@ const overlay: Overlay = {
       stoolTest('obs-t3-e10-fit', E.E10, ['29771-3', 'Hemoglobin [Presence] in Stool from gastrointestinal lower by Immunoassay'], '2025-12-03T08:00:00-05:00', '2025-12-05T11:30:00-05:00'),
       stoolTest('obs-t3-e11-fobt', E.E11, ['2335-8', 'Hemoglobin [Presence] in Stool from gastrointestinal'], '2024-06-11T08:00:00-04:00', '2024-06-13T10:45:00-04:00'),
       activeFit,
-      procedure('proc-t3-e12-ctc', E.E12, ['418714002', 'Virtual CT colonoscopy'], '2022-03-08T10:00:00-05:00'),
+      procedure('proc-t3-e12-ctc', E.E12, ['418714002', 'Virtual CT colonoscopy'], '2022-03-08T10:00:00-05:00', NORMAL),
     ];
     return {
       put,
