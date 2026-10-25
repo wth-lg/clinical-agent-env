@@ -113,14 +113,14 @@ describe('a gapped hybrid quote states the value beside its label (verifier M1)'
 
   it('P1: a gap that joins the label to an unrelated number is unknown', async () => {
     expect(await extract('CrCl', 'CrCl ... 42', 'CrCl pending, not yet resulted. Patient age 42.')).toMatchObject({ value: 'unknown' });
-    expect(await extract(FIELD, 'CrCl result pending ... patient age 42', 'CrCl result pending today, patient age 42.')).toMatchObject({ value: 'unknown', reason: 'value not with its label' });
+    expect(await extract(FIELD, 'CrCl result pending ... patient age 42', 'CrCl result pending today, patient age 42.')).toMatchObject({ value: 'unknown', reason: 'value not first after its label' });
     // The units after the comma are not the label.
-    expect(await extract(FIELD, 'CrCl result pending ... age 42 mL/min', 'CrCl result pending today, patient age 42 mL/min.')).toMatchObject({ value: 'unknown', reason: 'value not with its label' });
+    expect(await extract(FIELD, 'CrCl result pending ... age 42 mL/min', 'CrCl result pending today, patient age 42 mL/min.')).toMatchObject({ value: 'unknown', reason: 'value not first after its label' });
   });
 
   it('a gapped quote whose value segment names the label, and any contiguous quote, still extract', async () => {
     expect(await extract(FIELD, 'Cockcroft-Gault used ... CrCl is 42 mL/min', 'Cockcroft-Gault used with actual weight, CrCl is 42 mL/min.')).toMatchObject({ value: 42, source: 'llm' });
-    expect(await extract(FIELD, 'is 42 mL/min', 'Clearance is 42 mL/min.')).toMatchObject({ value: 42, source: 'llm' });
+    expect(await extract(FIELD, 'Clearance is 42 mL/min', 'Clearance is 42 mL/min.')).toMatchObject({ value: 42, source: 'llm' });
   });
 });
 
@@ -186,5 +186,30 @@ describe('a gap is short, in one sentence, and holds no negation (verifier B1-2 
       ['the nurse ... the lisinopril tablets', 'The nurse held the lisinopril tablets.'],
     ];
     for (const [quote, text] of cases) expect(await judgeQuote(quote, text), quote + ' / ' + text).toMatchObject(unknown);
+  });
+});
+
+describe('an extracted value is the first number after the label (verifier B1-2 F4, rule 3)', () => {
+  const extract = (field: string, value: number, quote: string, text: string) => new Judge({ client: scriptedJudge([JSON.stringify({ value, quote })]).client }).extract({ field, text, pattern: /CrCl of (\d+)/ });
+  const CRCL = 'Cockcroft-Gault creatinine clearance (CrCl), mL/min';
+  const EGFR = 'eGFR (CKD-EPI 2021), mL/min/1.73 m2';
+  const unknown = { value: 'unknown', reason: 'value not first after its label' };
+
+  it('N5, N5b, N5c: a generic or method word beside an unrelated number is not the label', async () => {
+    expect(await extract(CRCL, 42, 'serum creatinine 1.4 mg/dl today ... weight 42 kg; creatinine clearance', 'Serum creatinine 1.4 mg/dL today, weight 42 kg; creatinine clearance to follow.')).toMatchObject({ value: 'unknown' });
+    expect(await extract(CRCL, 42, 'weight 42 kg; creatinine clearance', 'Weight 42 kg; creatinine clearance to follow.')).toMatchObject(unknown);
+    expect(await extract(EGFR, 3, 'egfr pending from lab ... ckd stage 3 noted', 'eGFR pending from lab, history of CKD stage 3 noted.')).toMatchObject({ value: 'unknown' });
+    expect(await extract(EGFR, 3, 'ckd stage 3 noted', 'History: CKD stage 3 noted.')).toMatchObject(unknown);
+  });
+
+  it('the number must be the first after the label', async () => {
+    expect(await extract(CRCL, 42, 'CrCl 30 last week, weight 42', 'CrCl 30 last week, weight 42 kg.')).toMatchObject(unknown);
+  });
+
+  it('the abbreviation or the head noun, then the value, extracts', async () => {
+    expect(await extract(CRCL, 42, 'CrCl is 42 mL/min', 'Today CrCl is 42 mL/min.')).toMatchObject({ value: 42, source: 'llm' });
+    expect(await extract(CRCL, 42, 'creatinine clearance about 42 mL/min', 'Estimated creatinine clearance about 42 mL/min.')).toMatchObject({ value: 42 });
+    expect(await extract(EGFR, 52, 'eGFR is 52 mL/min/1.73 m2', 'Latest eGFR is 52 mL/min/1.73 m2.')).toMatchObject({ value: 52 });
+    expect(await extract('CrCl in mL/min', 43.2, 'CrCl roughly 43.2', 'CrCl roughly 43.2 by Cockcroft-Gault.')).toMatchObject({ value: 43.2 });
   });
 });

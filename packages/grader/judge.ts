@@ -14,7 +14,8 @@
 // and the text only, never the gate result or the reference.
 //
 // Hybrid: a regex extracts the value first; when it finds none, the LLM extractor answers
-// {value, quote} under the same quote check, and the quote must state the value.
+// {value, quote} under the same quote check, and the quote must state the value as the first
+// number after the field's label.
 //
 // Failures: a client error (401, 403, a billing 400, retries exhausted, a substituted model, a
 // spend refusal, any error that stops the batch) is not an answer. It is thrown as
@@ -234,11 +235,24 @@ function segmentsIn(quote: string, text: string): string[] | null {
 }
 const quoted = (quote: string, text: string) => segmentsIn(quote, text) !== null;
 
-// A gapped extractor quote states the value in a segment that also names the field: one word of
-// the field's label, the field before its first comma (the units follow it), so a gap cannot join
-// "CrCl" to an unrelated number (verifier M1).
-const wordsOf = (s: string) => fold(s).match(/[\p{L}\p{N}]+/gu) ?? [];
-const labelOf = (field: string) => wordsOf(field.split(',')[0]!).filter((w) => /\p{L}/u.test(w));
+// An extractor quote states the value as the first number after the field's label, in the same
+// segment, so a gap or a nearby word cannot join the label to an unrelated number (verifier M1,
+// B1-2 F4). The label is the field's head noun, the last word before its first comma, parenthesis
+// or preposition (the units and the method follow those), and its abbreviation, a one-word
+// parenthetical without digits: 'Cockcroft-Gault creatinine clearance (CrCl), mL/min' gives
+// clearance and crcl; 'eGFR (CKD-EPI 2021), mL/min/1.73 m2' gives egfr.
+const WORDS = /[\p{L}\p{N}]+/gu;
+function labelOf(field: string): string[] {
+  const head = fold(field).split(/[,(]|\s(?:in|of|per|for|as|at|by)\s/)[0]!.match(WORDS) ?? [];
+  const paren = /\(([^)]*)\)/.exec(fold(field))?.[1]?.match(WORDS) ?? [];
+  return [...head.slice(-1), ...(paren.length === 1 && !/\p{N}/u.test(paren[0]!) ? paren : [])];
+}
+function firstAfterLabel(segment: string, labels: readonly string[], v: number): boolean {
+  for (const m of segment.matchAll(WORDS)) {
+    if (labels.includes(m[0]) && numbersIn(segment.slice(m.index + m[0].length))[0] === v) return true;
+  }
+  return false;
+}
 
 // Every number written in the quote.
 const numbersIn = (quote: string): number[] => (quote.match(/\d[\d,]*(?:\.\d+)?|\.\d+/g) ?? []).flatMap((s) => {
@@ -326,7 +340,8 @@ export class Judge {
     const segments = segmentsIn(quote, q.text);
     if (segments === null) return { value: 'unknown', ...base, reason: 'quote not in text' };
     if (!numbersIn(quote).some((n) => n === v)) return { value: 'unknown', ...base, reason: 'value not in quote' };
-    if (segments.length > 1 && !segments.some((s) => numbersIn(s).some((n) => n === v) && wordsOf(s).some((w) => labelOf(q.field).includes(w)))) return { value: 'unknown', ...base, reason: 'value not with its label' };
+    const labels = labelOf(q.field);
+    if (!segments.some((s) => firstAfterLabel(s, labels, v))) return { value: 'unknown', ...base, reason: 'value not first after its label' };
     return { value: v, ...base };
   }
 

@@ -205,11 +205,11 @@ describe('regrade from cache', () => {
   });
 
   it('a hybrid item whose regex misses asks the extractor, cached the same way', async () => {
-    const text = 'Creatinine clearance comes to forty-three point two, about 43 mL/min by Cockcroft-Gault.';
+    const text = 'CrCl comes to forty-three point two, about 43 mL/min by Cockcroft-Gault.';
     const final = finalWith(STOPPED, NEW_APIX, note('doc-t2', text, ['Observation/obs-scr-1020', 'Observation/obs-wt-1020']));
-    const j = scriptedJudge(['{"value":43,"quote":"about 43 mL/min"}', NOT_MET, NOT_MET]);
+    const j = scriptedJudge(['{"value":43,"quote":"CrCl comes to forty-three point two, about 43 mL/min"}', NOT_MET, NOT_MET]);
     const g = await grade(input([...READS, ...WRITES], final), { judge: j.client });
-    expect(g.checks.find((c) => c.id === 'R1')).toMatchObject({ met: true, evidence: { value: 43, source: 'llm', quote: 'about 43 mL/min' } });
+    expect(g.checks.find((c) => c.id === 'R1')).toMatchObject({ met: true, evidence: { value: 43, source: 'llm', quote: 'CrCl comes to forty-three point two, about 43 mL/min' } });
     const again = await grade(input([...READS, ...WRITES], final), { cache: g.judge.cache });
     expect(JSON.stringify(again)).toBe(JSON.stringify(g));
   });
