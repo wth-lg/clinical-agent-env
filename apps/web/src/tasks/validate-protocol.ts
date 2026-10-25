@@ -1,4 +1,4 @@
-// Messages between the Tasks view and the validation Worker (validate-worker.ts), and a client
+// Messages between the Tasks view and the validation Worker (validation-thread.ts), and a client
 // that sends one request and resolves with its reply. One Worker serves the tab; requests queue.
 import type { ExplainRecord } from '../../../../packages/core/explain.ts';
 import type { CaseKind } from '../../../../packages/grader/matrix/matrix.ts';
@@ -53,7 +53,7 @@ export function validate(req: { op: 'matrix'; task: string }): Promise<MatrixRun
 export function validate(req: ValidateRequest & { op: 'replay' }): Promise<ReplayRow[]>;
 export function validate(req: ValidateRequest): Promise<unknown> {
   if (worker === undefined) {
-    worker = new Worker(new URL('./validate-worker.ts', import.meta.url), { type: 'module' });
+    worker = new Worker(new URL('./validation-thread.ts', import.meta.url), { type: 'module' });
     worker.addEventListener('message', (ev: MessageEvent<ValidateReply>) => {
       const w = waiting.get(ev.data.id);
       waiting.delete(ev.data.id);
