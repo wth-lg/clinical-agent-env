@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:discharge-medrec:12",
   "task_id": "discharge-medrec",
-  "task_version": "30e43da7b151d7d2bbf3e3b3c2cae6bdb7ecb2b1c53b660be95d33a84f003fb7",
+  "task_version": "acfc1108ee8a971638a60416243ffd33ead2e216ec29b7fcd95ef8f53b5343a7",
   "env_version": "c1e656fdcb8d2ef267ed6af93489ec65c25baa80dabaf5352107f549e40ca783",
-  "grader_task_version": "52776c2175330257b6414c455ddf80b218400506163e528f29651d0125398ba0",
+  "grader_task_version": "29702b99c7d6512bebda6888732f4d9c6e7edc3f6291af525b46f52a0835b65c",
   "fixture_hash": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
   "state_hash": {
     "initial": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
@@ -43,7 +43,7 @@
   "resumed": false,
   "ended": "2026-10-23T13:25:45.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "8",
+  "grader_version": "9",
   "outcome": "ENV_ERROR",
   "valid": false,
   "fault": "env",
@@ -52,6 +52,9 @@
   "judge": {
     "calls": 0,
     "unknown": 0,
+    "unknown_penalties": 0,
+    "score_penalties_met": null,
+    "score_penalties_not_met": null,
     "over_allowance": 0,
     "cache_keys": [],
     "cache": []

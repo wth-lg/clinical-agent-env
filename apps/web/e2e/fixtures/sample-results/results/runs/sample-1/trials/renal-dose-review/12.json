@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:renal-dose-review:12",
   "task_id": "renal-dose-review",
-  "task_version": "d2b62108facb3b48dbab7b196e26c3312901dc818c7b2f85dc78b51b1ab7d5f5",
+  "task_version": "8259dee8e54d690850a5bc770160f2a368be72d2ee3881ee2078ffe2c5e5eb2f",
   "env_version": "0f868a40dce8690667f1d4f142aae069e9abd239b699f9e566f4edadb00fe09b",
-  "grader_task_version": "d2197f9856886dc5363b8e4fd2c5245ae12a3b08fddcd6fe612378c0c0e46509",
+  "grader_task_version": "f78e9a316e65762ec25930a792050bd7fcf09668d6b3f96d7f035fb66b9b5ab1",
   "fixture_hash": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
   "state_hash": {
     "initial": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
@@ -43,7 +43,7 @@
   "resumed": false,
   "ended": "2026-10-23T14:21:20.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "8",
+  "grader_version": "9",
   "outcome": "INFRA_API",
   "valid": false,
   "fault": "infra",
@@ -52,6 +52,9 @@
   "judge": {
     "calls": 0,
     "unknown": 0,
+    "unknown_penalties": 0,
+    "score_penalties_met": null,
+    "score_penalties_not_met": null,
     "over_allowance": 0,
     "cache_keys": [],
     "cache": []
