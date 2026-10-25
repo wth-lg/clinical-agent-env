@@ -12,8 +12,10 @@ export const MANIFEST = manifest as { now: string; world: { state_hash: string; 
 let bytes: Promise<Uint8Array> | undefined;
 let definitions: Promise<unknown> | undefined;
 
+// The asset URLs are paths from the site root; resolved against the origin, they also hold in the
+// validation Worker, whose base URL is a blob: (tasks/validate-protocol.ts).
 async function get(url: string): Promise<Response> {
-  const res = await fetch(url);
+  const res = await fetch(new URL(url, location.origin));
   if (!res.ok) throw new Error(`${url}: HTTP ${res.status}`);
   return res;
 }
