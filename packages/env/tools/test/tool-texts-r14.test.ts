@@ -9,7 +9,10 @@ import { loadMatrixTask, matrixEnv } from '../../../../cli/matrix.ts';
 import type { TrialEvent } from '../../../core/events.ts';
 import { trial } from '../../../grader/matrix/matrix.ts';
 import type { ScriptCall } from '../../../grader/matrix/types.ts';
-import { definitions } from '../registry.ts';
+import { clock } from '../../clock.ts';
+import { Store } from '../../store.ts';
+import { READ_TOOLS, type CatalogEntry } from '../read/index.ts';
+import { callTool, definitions } from '../registry.ts';
 import { TOOLS } from '../write/index.ts';
 
 type Result = Extract<TrialEvent, { type: 'tool_result' }>;
@@ -95,5 +98,32 @@ describe('descriptions (R14-08, R14-11, R14-44)', () => {
 
   it('search_patients has no "maya ok" example', () => {
     expect(JSON.stringify(describeTool('search_patients'))).not.toContain('maya ok');
+  });
+});
+
+describe('verifier B2-1 M1, M2', () => {
+  const RX = 'http://www.nlm.nih.gov/research/umls/rxnorm';
+  const catalog: CatalogEntry[] = [
+    { kind: 'medication', code: '1', system: RX, display: 'drugx 2.5 MG Oral Tablet', strengths: ['2.5 mg'] },
+    { kind: 'medication', code: '2', system: RX, display: 'drugx 5 MG Oral Tablet', strengths: ['5 mg'] },
+    { kind: 'medication', code: '3', system: RX, display: 'drugy Oral Solution', strengths: ['.5 mg/mL'] },
+  ];
+  const find = (query: string) => {
+    const r = callTool(READ_TOOLS, 'lookup_catalog', { query, kind: 'medication' }, { world: new Store([]), clock, policies: [], catalog });
+    return (r.content as { entries: Array<{ code: string }> }).entries.map((e) => e.code);
+  };
+
+  it('M1: a leading . before digits is part of the number; a trailing . after a decimal is dropped', () => {
+    expect(find('.5')).toEqual(['3']);
+    expect(find('drugx 2.5.')).toEqual(['1']);
+    expect(find('drugx 2.')).toEqual(['1']);
+  });
+
+  it('M2: the medication catalog holds RxNorm and SNOMED CT codes', () => {
+    for (const name of ['lookup_catalog', 'record_allergy']) {
+      const d = describeTool(name).description;
+      expect(d, name).toContain('RxNorm or SNOMED CT');
+      expect(d, name).not.toMatch(/RxNorm formulary|RxNorm drug code/);
+    }
   });
 });

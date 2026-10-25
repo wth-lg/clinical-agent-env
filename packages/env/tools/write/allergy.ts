@@ -96,7 +96,7 @@ export const recordAllergy = writeTool({
   name: 'record_allergy',
   description:
     'Record an allergy or intolerance for a patient, or update an existing one with update_id (same patient). ' +
-    'A new record needs substance_code, criticality and verification. substance_code is an RxNorm drug code (ingredient or product) from lookup_catalog, ' +
+    'A new record needs substance_code, criticality and verification. substance_code is a drug code from lookup_catalog (kind medication: RxNorm or SNOMED CT), ' +
     'or an RxNorm or SNOMED CT allergen code already used in the chart (e.g. on another AllergyIntolerance). type defaults to allergy; category defaults to medication for a drug (a lookup_catalog medication, RxNorm or SNOMED CT). ' +
     'An update changes only the fields given and keeps the rest, e.g. {patient, update_id, clinical_status: inactive} marks a "no known drug allergy" entry inactive. ' +
     'clinical_status defaults to active for a new record; it must be omitted when verification is entered-in-error. ' +

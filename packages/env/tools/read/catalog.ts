@@ -7,8 +7,9 @@ import { page } from './page.ts';
 import { count, offset } from './schema.ts';
 
 // Tokens (R14-09): lower-cased, split at every character that is not a letter or digit, except a
-// '.' between digits ("2.5"), or, in a query, a '.' right after digits at the end of a word
-// ("2."). A number token holds no letter; a word token does.
+// '.' between digits ("2.5"), a '.' that starts a number (".5"), or, in a query, a '.' right
+// after a whole number at the end of a word ("2."; after "2.5" it is dropped). A number token
+// holds no letter; a word token does.
 const LD = /[\p{L}\p{N}]/u;
 const DIGIT = /\p{N}/u;
 function tokens(s: string, query: boolean): string[] {
@@ -19,8 +20,11 @@ function tokens(s: string, query: boolean): string[] {
     const c = t[i]!;
     const next = t[i + 1] ?? '';
     if (LD.test(c)) cur += c;
-    else if (c === '.' && cur !== '' && DIGIT.test(t[i - 1]!) && (DIGIT.test(next) || (query && !LD.test(next)))) cur += c;
-    else if (cur !== '') {
+    else if (c === '.' && cur !== '' && DIGIT.test(t[i - 1]!) && (DIGIT.test(next) || (query && !LD.test(next) && !cur.includes('.')))) cur += c;
+    else if (c === '.' && DIGIT.test(next)) {
+      if (cur !== '') out.push(cur);
+      cur = c;
+    } else if (cur !== '') {
       out.push(cur);
       cur = '';
     }
@@ -41,9 +45,9 @@ const entryTokens = (e: CatalogEntry) => [e.display, e.code, ...(e.strengths ?? 
 export const lookupCatalog: Tool<ReadContext> = {
   name: 'lookup_catalog',
   description:
-    "Look up orderable codes: medication (RxNorm formulary), lab, imaging or referral. The query and each entry's display, code and strengths " +
+    "Look up orderable codes: medication (the formulary, RxNorm or SNOMED CT codes), lab, imaging or referral. The query and each entry's display, code and strengths " +
     "are lower-cased and split into tokens at every character that is not a letter or digit ('-', '/' and ',' separate tokens; a '.' between digits, " +
-    "or right after digits at the end of a query word, stays in the token). An entry matches when every query token matches one of its tokens: " +
+    "before digits, or right after a whole number at the end of a query word, stays in the token). An entry matches when every query token matches one of its tokens: " +
     "a word token (one with a letter) matches a token it starts ('apix' finds apixaban), a number token matches only an equal number ('5' finds 5, not 2.5 or 25), " +
     "and a number ending in '.' matches a number it starts ('2.' finds 2.5). Returns {code, system, display, strengths?} ordered by display.",
   inputSchema: {
