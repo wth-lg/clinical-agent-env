@@ -14,7 +14,7 @@ function stripCspInDev(): Plugin {
   };
 }
 
-// harness.html and probe.html are test pages: `pnpm build` builds them for the e2e runs, and
+// harness.html, probe.html and relay-probe.html are test pages: `pnpm build` builds them for the e2e runs, and
 // the Pages build (`--mode pages`, .github/workflows/pages.yml) leaves them out of the artifact.
 export default defineConfig(({ mode }) => ({
   base: '/clinical-agent-env/',
@@ -25,7 +25,11 @@ export default defineConfig(({ mode }) => ({
         main: resolve(import.meta.dirname, 'index.html'),
         ...(mode === 'pages'
           ? {}
-          : { harness: resolve(import.meta.dirname, 'harness.html'), probe: resolve(import.meta.dirname, 'probe.html') }),
+          : {
+              harness: resolve(import.meta.dirname, 'harness.html'),
+              probe: resolve(import.meta.dirname, 'probe.html'),
+              'relay-probe': resolve(import.meta.dirname, 'relay-probe.html'),
+            }),
       },
     },
   },

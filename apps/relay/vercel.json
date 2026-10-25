@@ -1,0 +1,8 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [{ "source": "/v1/messages", "destination": "/api/messages" }],
+  "functions": {
+    "api/messages.ts": { "maxDuration": 300, "supportsCancellation": true }
+  },
+  "git": { "deploymentEnabled": false }
+}

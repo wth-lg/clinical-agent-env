@@ -37,6 +37,25 @@ describe('no-direct-anthropic', () => {
     expect(await ruleIds(`export const API_ORIGIN = 'https://${HOST}';`, 'packages/core/anthropic.ts')).not.toContain(RULE);
   });
 
+  // P16h (planner-13, F7): the relay names its upstream in exactly one module and its test.
+  it.each(['apps/relay/src/upstream.ts', 'apps/relay/test/upstream.test.ts'])('allows the host in %s', async (path) => {
+    expect(await ruleIds(`export const UPSTREAM_URL = 'https://${HOST}/v1/messages';`, path)).not.toContain(RULE);
+  });
+
+  it.each([
+    'apps/relay/src/relay.ts',
+    'apps/relay/src/limiter.ts',
+    'apps/relay/api/messages.ts',
+    'apps/relay/test/relay.test.ts',
+    'apps/relay/test/serve-local.ts',
+    'apps/relay/src/upstream.js',
+    'apps/relay/src/sub/upstream.ts',
+    'apps/relay/test/upstream.test.tsx',
+    'cli/relay-check.ts',
+  ])('flags the host in %s: every other relay file imports UPSTREAM_URL', async (path) => {
+    expect(await ruleIds(`export const u = 'https://${HOST}/v1/messages';`, path)).toContain(RULE);
+  });
+
   it('flags a Content-Security-Policy string in a .ts file: only apps/web/*.html CSP metas name the host', async () => {
     const csp = `export const CSP = "default-src 'self'; connect-src 'self' https://${HOST}; script-src 'self'";`;
     expect(await ruleIds(csp, 'apps/web/e2e/smoke.spec.ts')).toContain(RULE);
