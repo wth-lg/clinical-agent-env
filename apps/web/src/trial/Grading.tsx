@@ -3,6 +3,7 @@
 // wrote, else first exposed, each one), and the rubric table with the points, met and judge
 // quote of each item, all from the record's current grade (summary.ts currentGrade). An excluded
 // trial was not graded; a check that threw is the grader's error, in the danger style.
+import { Check, X } from 'lucide-react';
 import type { ReactNode } from 'react';
 import type { Step } from '../../../../packages/grader/check.ts';
 import { currentGrade } from '../../../../packages/core/summary.ts';
@@ -67,11 +68,13 @@ function found(task: string, c: CheckRow): string | null {
   }
 }
 
-export function Grading({ t, steps, onStep }: { t: Trial; steps: readonly Step[] | null; onStep: (n: number) => void }) {
+// decisive: the decisive check's id (explainTrial), marked in the list.
+export function Grading({ t, steps, onStep, decisive = null }: { t: Trial; steps: readonly Step[] | null; onStep: (n: number) => void; decisive?: string | null }) {
   const r = t.record as Trial['record'] & { usage?: Usage; error?: { check: string | null; message: string } | null };
   const g = currentGrade(r);
   const checks = (g.checks ?? []) as readonly CheckRow[];
-  const gates = checks.filter((c) => c.kind !== 'rubric');
+  // Checks the trial did not meet first (review-ui-P16-1 F7); the sort is stable, so each group keeps the grader's order.
+  const gates = checks.filter((c) => c.kind !== 'rubric').sort((a, b) => Number(a.met === true) - Number(b.met === true));
   const rubric = checks.filter((c) => c.kind === 'rubric');
   const graded = checks.length > 0;
   const score = graded && typeof g.score === 'number' ? g.score.toFixed(2) : null;
@@ -107,15 +110,17 @@ export function Grading({ t, steps, onStep }: { t: Trial; steps: readonly Step[]
               const threw = r.error?.check === c.id && !g.regraded;
               const f = threw ? null : found(t.task, c);
               return (
-                <li key={c.id} data-testid="gate-check" data-id={c.id} data-met={String(c.met)} data-error={String(threw)} className="space-y-1 py-2">
-                  <p className="flex flex-wrap items-baseline gap-x-2">
-                    <span data-testid="check-state" className={`text-xs ${threw ? 'font-semibold text-danger' : c.met === true ? 'text-ink-muted' : 'font-semibold text-ink'}`}>{threw ? 'error' : metText(c.met)}</span>
+                <li key={c.id} data-testid="gate-check" data-id={c.id} data-met={String(c.met)} data-error={String(threw)} data-decisive={String(c.id === decisive)} className="space-y-1 py-2">
+                  <p className="flex flex-wrap items-center gap-x-2">
+                    {c.met === true ? <Check aria-hidden className="h-3.5 w-3.5 text-ink-muted" strokeWidth={1.75} /> : <X data-testid="check-failed-icon" aria-hidden className="h-3.5 w-3.5 text-danger" strokeWidth={2.25} />}
+                    <span data-testid="check-state" className={`text-xs ${threw || c.met !== true ? 'font-semibold text-danger' : 'text-ink-muted'}`}>{threw ? 'error' : metText(c.met)}</span>
                     <code className="break-all font-medium text-ink">{c.id}</code>
+                    {c.id === decisive && <span className="rounded-sm border border-line-strong px-1 text-xs text-ink">decisive check</span>}
                   </p>
-                  {requires !== undefined && <p className="break-words text-ink-muted">Requires {requires}.</p>}
-                  {f !== null && <p className="break-words text-ink">Found {f}.</p>}
+                  {requires !== undefined && <p className="break-words pl-5 text-ink-muted">Requires {requires}.</p>}
+                  {f !== null && <p data-testid="check-found" className="break-words pl-5 text-danger">Found {f}.</p>}
                   {(c.ids ?? []).length > 0 && (
-                    <p className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                    <p className="flex flex-wrap items-baseline gap-x-2 gap-y-1 pl-5">
                       <span className="text-xs text-ink-muted">Evidence:</span>
                       {c.ids!.map((id) => <EvidenceId key={id} id={id} steps={steps} onStep={onStep} />)}
                     </p>

@@ -453,3 +453,31 @@ test('the header and Grading say it in plain words: one word per fault, a plain 
   await expect(g).not.toContainText('Graded with grader');
   await expect(g).not.toContainText(/\bA ENV_ERROR\b/);
 });
+
+test('a failed gate check stands out: a cross, the found value in the danger colour, failed checks first, the decisive one marked (F7)', async ({ page }) => {
+  const e = await explain(TRIALS.failAudited);
+  await openTrial(page, TRIALS.failAudited);
+  const rows = panel(page, 'grading').getByTestId('gate-check');
+  const met = await rows.evaluateAll((els) => els.map((x) => x.getAttribute('data-met')));
+  // Not met first, then met.
+  expect(met).toEqual([...met].sort((a, b) => Number(a === 'true') - Number(b === 'true')));
+  const failed = panel(page, 'grading').locator('[data-testid="gate-check"][data-met="false"]');
+  expect(await failed.count()).toBeGreaterThan(0);
+  const danger = await page.evaluate(() => {
+    const probe = document.createElement('span');
+    probe.className = 'text-danger';
+    document.body.append(probe);
+    const c = getComputedStyle(probe).color;
+    probe.remove();
+    return c;
+  });
+  for (let i = 0; i < (await failed.count()); i++) {
+    const row = failed.nth(i);
+    await expect(row.getByTestId('check-failed-icon')).toHaveCount(1);
+    const found = row.getByTestId('check-found');
+    if (await found.count()) expect(await found.evaluate((x) => getComputedStyle(x).color)).toBe(danger);
+  }
+  await expect(panel(page, 'grading').locator(`[data-testid="gate-check"][data-id="${e.decisive_check!.id}"]`)).toHaveAttribute('data-decisive', 'true');
+  // The header of a non-pass trial has a rule in the danger colour.
+  expect(await page.getByTestId('trial-header').evaluate((x) => getComputedStyle(x).borderLeftColor)).toBe(danger);
+});

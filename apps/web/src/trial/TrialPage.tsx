@@ -135,7 +135,7 @@ function Detail({ t, run, files, tab, headingRef }: { t: Trial; run: RunData; fi
         <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start">
           <Tabs tab={tab}>
             {{
-              grading: <Grading t={t} steps={traj?.steps ?? null} onStep={onStep} />,
+              grading: <Grading t={t} steps={traj?.steps ?? null} onStep={onStep} decisive={e.decisive_check?.id ?? null} />,
               attribution: <Attribution t={t} e={e} steps={traj?.steps ?? null} onStep={onStep} />,
               'state-diff': <StateDiff t={t} events={events} steps={traj?.steps ?? null} written={traj?.written ?? []} onStep={onStep} />,
               environment: <EnvironmentTab t={t} />,
@@ -156,7 +156,7 @@ function Detail({ t, run, files, tab, headingRef }: { t: Trial; run: RunData; fi
 function Header({ t, e, onStep }: { t: Trial; e: Explanation; onStep: (n: number) => void }) {
   const nonPass = e.outcome !== 'PASS';
   return (
-    <section aria-label="Why this trial ended as it did" data-testid="trial-header" className={`min-w-0 rounded-sm border border-line bg-surface p-4 ${nonPass ? 'border-l-2 border-l-ink' : ''}`}>
+    <section aria-label="Why this trial ended as it did" data-testid="trial-header" className={`min-w-0 rounded-sm border border-line bg-surface p-4 ${nonPass ? 'border-l-2 border-l-danger' : ''}`}>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <OutcomeChip outcome={e.outcome} fault={e.fault} />
         {nonPass && <FaultLabel e={e} />}
