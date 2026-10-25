@@ -117,13 +117,15 @@ function readLabels(dir: string, violations: string[]): Line[] | null {
   return readFileSync(file, 'utf8').split('\n').flatMap((raw, i): Line[] => {
     if (raw.trim() === '') return [];
     try {
-      const l = JSON.parse(raw) as AuditLabel | TaskValidityReview;
-      if ('kind' in l && l.kind === 'task-validity') {
+      const parsed = JSON.parse(raw) as { kind?: unknown };
+      if (parsed.kind === 'task-validity') {
+        const r = parsed as TaskValidityReview;
         const nonEmpty = (v: unknown) => typeof v === 'string' && v.trim() !== '';
-        if (!nonEmpty(l.task) || !nonEmpty(l.reviewer) || typeof l.note !== 'string') throw new Error('a task-validity review needs task, reviewer and note');
-        if (!(TASK_VALIDITY_VERDICTS as readonly string[]).includes(l.verdict)) throw new Error(`task-validity verdict must be ${TASK_VALIDITY_VERDICTS.join(' or ')}`);
-        return [{ raw, label: null, review: l }];
+        if (!nonEmpty(r.task) || !nonEmpty(r.reviewer) || typeof r.note !== 'string') throw new Error('a task-validity review needs task, reviewer and note');
+        if (!(TASK_VALIDITY_VERDICTS as readonly string[]).includes(r.verdict)) throw new Error(`task-validity verdict must be ${TASK_VALIDITY_VERDICTS.join(' or ')}`);
+        return [{ raw, label: null, review: r }];
       }
+      const l = parsed as AuditLabel;
       if (typeof l.trial !== 'string' || !Array.isArray(l.evidence_ids)) throw new Error('needs trial and evidence_ids');
       return [{ raw, label: l }];
     } catch (e) {
