@@ -21,6 +21,11 @@
 // redirects with no way to opt out, are refused whatever the origin. This is the second layer:
 // the trial Worker starts from a blob: URL, so the page's CSP binds it and the browser refuses
 // other origins on every hop (apps/web/src/live/transport/worker.ts).
+// With meteredOrigins (a relay that forwards to the API, P16h), each listed origin is guarded
+// exactly like the API host, by every API above and by the undici slots: only the claimed
+// MessagesClient Request reaches it, once. An origin is compared after WHATWG parsing (case,
+// %2E, IDNA dots and a default port resolve) with a trailing dot dropped and ws/wss read as
+// http/https, so every spelling of the relay's origin meets the check (meteredKey).
 // The wrapped globals are made read-only, so later code cannot put the raw ones back. The entry
 // point passes its global scope in, since shared code does not touch DOM or Node globals
 // (lint: isomorphic-imports).
@@ -36,17 +41,34 @@ export interface EgressOptions {
   // The origins this context may send to besides the API host (each parsed as a URL; its origin
   // counts). Unset: any origin but the API host.
   allowedOrigins?: readonly string[];
+  // Origins guarded like the API host: a relay that forwards to it, which MessagesClient reaches
+  // through its endpoint option. Unset: the API host only.
+  meteredOrigins?: readonly string[];
 }
 
 // The allowed origins, or null for any.
 let allowed: ReadonlySet<string> | null = null;
+// The metered origins besides the API host, by meteredKey.
+let metered: ReadonlySet<string> = new Set();
+
+// An origin as the metered check compares it: the parsed scheme, host and port, with a
+// trailing dot dropped from the host (it names the same DNS host) and ws/wss read as
+// http/https (the mapping fetch applies to a WebSocket URL).
+function meteredKey(url: URL): string {
+  const scheme = url.protocol === 'wss:' ? 'https:' : url.protocol === 'ws:' ? 'http:' : url.protocol;
+  return `${scheme}//${url.hostname.replace(/\.+$/, '')}${url.port === '' ? '' : `:${url.port}`}`;
+}
+
+// Whether only the claimed MessagesClient Request may reach this URL: the API host, or a
+// metered origin.
+const isMetered = (url: URL): boolean => isApiHost(url.hostname) || metered.has(meteredKey(url));
 
 const refused = (api: string, url: URL) =>
-  new EgressRefusal(`egress guard: ${api} to ${url.origin} refused: only MessagesClient (packages/core/anthropic.ts) sends to the Anthropic API, once per registered Request`);
+  new EgressRefusal(`egress guard: ${api} to ${url.origin} refused: only MessagesClient (packages/core/anthropic.ts) sends to the Anthropic API or a metered relay, once per registered Request`);
 
-// Throws for an origin outside allowedOrigins. The API host is checked by the callers first.
+// Throws for an origin outside allowedOrigins. A metered origin is checked by the callers first.
 function admit(api: string, url: URL): void {
-  if (allowed !== null && !isApiHost(url.hostname) && !allowed.has(url.origin)) {
+  if (allowed !== null && !isMetered(url) && !allowed.has(url.origin)) {
     throw new EgressRefusal(`egress guard: ${api} to ${url.origin} refused: this context sends only to ${[...allowed].join(', ')} and the Anthropic API`);
   }
 }
@@ -92,12 +114,12 @@ function resolveUrl(s: string): URL | null {
   }
 }
 
-// The string to send: the resolved URL, after refusing an API host.
+// The string to send: the resolved URL, after refusing a metered origin.
 function checked(api: string, input: unknown): string {
   const s = String(input);
   const url = resolveUrl(s);
   if (url === null) return s; // the platform rejects it the same way
-  if (isApiHost(url.hostname)) throw refused(api, url);
+  if (isMetered(url)) throw refused(api, url);
   admit(api, url);
   return url.href;
 }
@@ -128,7 +150,7 @@ function followsRedirects(api: string): void {
   if (allowed !== null) throw new EgressRefusal(`egress guard: ${api} refused: this context sends by fetch only, which may not follow a redirect`);
 }
 
-// A dispatcher that refuses an API-host origin and hands everything else to `raw`. It extends
+// A dispatcher that refuses a metered origin and hands everything else to `raw`. It extends
 // undici's own Dispatcher class (found on raw's prototype chain), whose request(), stream(),
 // pipeline(), upgrade(), connect() and compose() all end in this.dispatch, so every method
 // meets the check; raw stays in this closure, never on the object. The origin is read once, from
@@ -144,7 +166,7 @@ function guardDispatcher(raw: Dispatcher): Dispatcher {
       if (typeof origin === 'string' || origin instanceof URL) {
         const s = String(origin);
         const url = new URL(s);
-        if (isApiHost(url.hostname)) throw refused('undici dispatcher', url);
+        if (isMetered(url)) throw refused('undici dispatcher', url);
         copy.origin = s;
       }
       return raw.dispatch(copy, handler);
@@ -175,6 +197,7 @@ export function installEgressGuard(scope: object, opts: EgressOptions = {}): voi
   if (installed) return;
   installed = true;
   if (opts.allowedOrigins !== undefined) allowed = new Set(opts.allowedOrigins.map((o) => new URL(o).origin));
+  if (opts.meteredOrigins !== undefined) metered = new Set(opts.meteredOrigins.map((o) => meteredKey(new URL(o))));
   const g = scope as Scope;
   base = g.document?.baseURI ?? g.location?.href;
   // Reading Request loads Node's undici, which sets the global dispatcher.
@@ -200,7 +223,7 @@ export function installEgressGuard(scope: object, opts: EgressOptions = {}): voi
         const href = requestUrl(input);
         if (href !== null) {
           const url = resolveUrl(href);
-          const claimed = url !== null && isApiHost(url.hostname);
+          const claimed = url !== null && isMetered(url);
           if (claimed && !claimOutbound(input, init)) throw refused('fetch', url);
           if (url !== null) admit('fetch', url);
           return raw.call(scope, input, forwardInit(init, claimed));
