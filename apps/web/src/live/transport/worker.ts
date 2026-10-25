@@ -81,11 +81,16 @@ let ingesting: Promise<unknown> = Promise.resolve();
 const endOf = (record: TrialRecord): TrialEnd => ({ state: record.outcome === 'CANCELLED' ? 'cancelled' : 'graded', record: record as unknown as ExplainRecord, message: null });
 const dataUrl = (path: string) => new URL(`data/fixtures/${path}`, document.baseURI).href;
 
-// The blob: every trial Worker starts from (see the header). Its base URL is the blob, so the
-// Worker is given absolute URLs only.
-let boot: string | undefined;
-const trialWorkerBoot = () =>
-  (boot ??= URL.createObjectURL(new Blob([`import ${JSON.stringify(new URL(trialWorkerUrl, document.baseURI).href)};\n`], { type: 'text/javascript' })));
+// The blob: a module Worker starts from (see the header), one per bundled script: the trial
+// Worker and the grader validation Worker (tasks/validate-protocol.ts). Its base URL is the blob,
+// so the Worker is given absolute URLs only.
+const boots = new Map<string, string>();
+export function blobWorkerUrl(scriptUrl: string): string {
+  const abs = new URL(scriptUrl, document.baseURI).href;
+  if (!boots.has(abs)) boots.set(abs, URL.createObjectURL(new Blob([`import ${JSON.stringify(abs)};\n`], { type: 'text/javascript' })));
+  return boots.get(abs)!;
+}
+const trialWorkerBoot = () => blobWorkerUrl(trialWorkerUrl);
 
 function runWorker(trialId: string, task: string, opts: { batchId: string; cap: number; projection: number; checkpoint: TrialEvent[]; cutOffUsd: number; apiKey: string }): Live {
   const entry: Live = { events: [...opts.checkpoint], listeners: new Set(), done: Promise.resolve({ state: 'error', record: null, message: null }), cancel: () => {} };

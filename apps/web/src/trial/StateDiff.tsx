@@ -29,7 +29,7 @@ export function StateDiff({ t, events, steps, written, onStep }: { t: Trial; eve
     if (url === null) return;
     setRun({ state: 'running' });
     try {
-      setRun({ state: 'done', value: await validate({ op: 'state', task: t.task, trajectoryUrl: new URL(url, document.baseURI).href }) });
+      setRun({ state: 'done', value: await validate({ op: 'state', task: t.task, trajectoryUrl: url }) });
     } catch (e) {
       setRun({ state: 'error', message: e instanceof Error ? e.message : String(e) });
     }

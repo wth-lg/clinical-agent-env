@@ -203,6 +203,9 @@ test('Replay in State diff runs in the tab with no key and reproduces the final 
   await expect(result).toHaveAttribute('data-match', 'true', { timeout: 90_000 });
   await expect(result).toHaveAttribute('data-final', r.state_hash.final!);
   await expect(p.getByTestId('diff-row').first()).toBeVisible();
+  // The validation Worker ran it, started from a blob: URL so the page's CSP binds it.
+  expect(page.workers().length).toBeGreaterThan(0);
+  expect(page.workers().map((w) => w.url()).filter((u) => !u.startsWith('blob:'))).toEqual([]);
   // Moving to another tab and back keeps the replay.
   await page.getByRole('tab', { name: 'Raw' }).click();
   await page.getByRole('tab', { name: 'State diff' }).click();
