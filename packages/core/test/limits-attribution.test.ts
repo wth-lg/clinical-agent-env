@@ -41,6 +41,8 @@ class MemoryStore implements LedgerStore {
 function fakeTime() {
   let t = 0;
   const timers: Array<{ at: number; c: AbortController }> = [];
+  // Abort listeners currently attached to timer signals.
+  let listening = 0;
   const fire = () => {
     for (const x of timers) if (x.at <= t && !x.c.signal.aborted) x.c.abort(new DOMException('timer', 'TimeoutError'));
   };
@@ -48,10 +50,15 @@ function fakeTime() {
     now: () => t,
     timeout: (ms: number) => {
       const c = new AbortController();
+      const add = c.signal.addEventListener.bind(c.signal);
+      const remove = c.signal.removeEventListener.bind(c.signal);
+      c.signal.addEventListener = (...a: Parameters<typeof add>) => (listening++, add(...a));
+      c.signal.removeEventListener = (...a: Parameters<typeof remove>) => (listening--, remove(...a));
       timers.push({ at: t + ms, c });
       fire();
       return c.signal;
     },
+    listening: () => listening,
     advance: (ms: number) => {
       const end = t + ms;
       for (const at of timers.map((x) => x.at).filter((a) => a > t && a <= end).sort((a, b) => a - b)) {
@@ -109,6 +116,8 @@ describe('infrastructure never ends a trial LIMIT', () => {
     expect(out.retry_wait_ms).toBe(124_000);
     expect(out.api_retries).toBe(0);
     expect(out.turns).toBe(1);
+    // Node keeps a timeout signal with a listener alive, and the trial with it, until it fires.
+    expect(time.listening()).toBe(0);
   });
 
   it('run(): the storm ends the trial record INFRA_API elapsed_bound, fault infra, with retry_wait_ms', async () => {
@@ -210,5 +219,6 @@ describe('a real limit is still LIMIT, a model fault', () => {
     expect(out.turns).toBe(3);
     expect((out.terminal as { value: number }).value).toBe(60_000);
     expect(fault(out.status)).toBe('model');
+    expect(time.listening()).toBe(0);
   });
 });

@@ -131,7 +131,19 @@ export const newOutcome = (): LoopOutcome => ({
   models_returned: [], api_retries: 0, retry_wait_ms: 0, stop_reason: null, refusal_category: null,
 });
 
+// Node keeps a timeout signal that has an abort listener alive, with everything the listener's
+// closure reaches (the trial's store), until it fires; every listener the loop adds to a
+// `timeout` signal is removed when its attempt or the trial ends, through `exits` for the trial.
 export async function runLoop(input: LoopInput): Promise<LoopOutcome> {
+  const exits: Array<() => void> = [];
+  try {
+    return await loop(input, exits);
+  } finally {
+    for (const exit of exits) exit();
+  }
+}
+
+async function loop(input: LoopInput, exits: Array<() => void>): Promise<LoopOutcome> {
   const { client, params, history, tools, ctx, caps, now, timeout, signal, emit } = input;
   const started = now();
   const out = input.out ?? newOutcome();
@@ -165,8 +177,12 @@ export async function runLoop(input: LoopInput): Promise<LoopOutcome> {
     if (boundArmed) return;
     boundArmed = true;
     const s = timeout(caps.maxElapsedMs - (t - started));
-    if (s.aborted) bound.abort(s.reason);
-    else s.addEventListener('abort', () => bound.abort(s.reason), { once: true });
+    const fire = () => bound.abort(s.reason);
+    if (s.aborted) fire();
+    else {
+      s.addEventListener('abort', fire, { once: true });
+      exits.push(() => s.removeEventListener('abort', fire));
+    }
   };
   const elapsedBound = (t: number): Terminal => ({
     type: 'error', status: 'INFRA_API', code: 'elapsed_bound',
@@ -188,17 +204,20 @@ export async function runLoop(input: LoopInput): Promise<LoopOutcome> {
     // Each attempt gets a timer at the remaining working time; it aborts the call only if it
     // fires while that attempt is in flight (not after it failed, during the wait for a retry).
     const work = new AbortController();
-    let current: AbortSignal | null = null;
+    let detach = () => {};
     const startAttempt = (at: number) => {
+      detach();
       settleWait(at);
       attemptStart = at;
       const s = timeout(caps.maxWallMs - working(at));
-      current = s;
       const fire = () => {
-        if (current === s && waitFrom === null) work.abort(s.reason);
+        if (waitFrom === null) work.abort(s.reason);
       };
       if (s.aborted) fire();
-      else s.addEventListener('abort', fire, { once: true });
+      else {
+        s.addEventListener('abort', fire, { once: true });
+        detach = () => s.removeEventListener('abort', fire);
+      }
     };
     startAttempt(t);
     const onAttempt = (n: number) => {
@@ -220,6 +239,8 @@ export async function runLoop(input: LoopInput): Promise<LoopOutcome> {
       if (!signal?.aborted && bound.signal.aborted) return end('INFRA_API', elapsedBound(at));
       const failure = clientFailure(e, signal);
       return end(failure.type === 'error' ? failure.status : 'CANCELLED', failure);
+    } finally {
+      detach();
     }
     const m = r.message;
     const priced = usageCostUsd(m.usage);
