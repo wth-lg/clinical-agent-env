@@ -49,7 +49,11 @@ export const EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max'] as const;
 export type Effort = (typeof EFFORTS)[number];
 export const DEFAULT_EFFORT: Effort = 'high';
 export const MAX_TOKENS = 32_000;
+// Working time: elapsed time less failed API attempts and the backoff waits after them.
 export const MAX_WALL_MS = 30 * 60_000;
+// The hard bound on a trial's total elapsed time, retries included: past it the trial ends
+// INFRA_API (elapsed_bound), which batch.ts re-queues, never LIMIT (R14-13).
+export const MAX_ELAPSED_MS = 2 * MAX_WALL_MS;
 
 // The system prompt every task shares (design section 4, "Shared rules").
 export const SYSTEM_PROMPT = [
@@ -77,7 +81,10 @@ export interface RunOptions {
   maxTurns?: number;
   // Clamped to PER_TRIAL_CAP_USD, whoever asks for more (a Worker start message included).
   maxCostUsd?: number;
+  // Working time; default MAX_WALL_MS.
   maxWallMs?: number;
+  // Default MAX_ELAPSED_MS, and never under the working-time cap.
+  maxElapsedMs?: number;
   signal?: AbortSignal;
   onEvent?: (e: TrialEvent) => void;
   trialId?: string;
@@ -122,6 +129,7 @@ export interface TrialRun {
   // The loop's calls; on a resumed trial, also the calls the reload cut off.
   cost_usd: number;
   api_retries: number;
+  retry_wait_ms: number;
   stop_reason: string | null;
   refusal_category: string | null;
   status: TrialStatus;
@@ -222,9 +230,10 @@ export async function run(taskId: string, model: string, opts: RunOptions): Prom
       });
     } else {
       const history: MessageParam[] = [{ role: 'user', content: task.instruction }];
+      const wall = opts.maxWallMs ?? MAX_WALL_MS;
       outcome = await runLoop({
         client: opts.client, params, history, tools, ctx, now: opts.now, timeout: opts.timeout ?? ((ms) => AbortSignal.timeout(ms)), emit,
-        caps: { maxTurns: opts.maxTurns ?? task.maxTurns, maxCostUsd: costCap(opts.maxCostUsd), maxWallMs: opts.maxWallMs ?? MAX_WALL_MS },
+        caps: { maxTurns: opts.maxTurns ?? task.maxTurns, maxCostUsd: costCap(opts.maxCostUsd), maxWallMs: wall, maxElapsedMs: Math.max(opts.maxElapsedMs ?? MAX_ELAPSED_MS, wall) },
         stateHash: () => stateHash(store.resources()),
         out: outcome,
         ...(opts.signal ? { signal: opts.signal } : {}),
@@ -271,6 +280,7 @@ export async function run(taskId: string, model: string, opts: RunOptions): Prom
     usage: outcome.usage,
     cost_usd: opts.resumed === undefined ? outcome.cost_usd : outcome.cost_usd + opts.resumed.cutOffUsd,
     api_retries: outcome.api_retries,
+    retry_wait_ms: outcome.retry_wait_ms,
     stop_reason: outcome.stop_reason,
     refusal_category: outcome.refusal_category,
     status: outcome.status,
@@ -310,7 +320,7 @@ export function internalErrorRecord(t: { trialId: string; taskId: string; worldH
     state_hash: { initial: null, final: null, replay_final: null },
     model_requested: MODEL, models_returned: [], effort: t.effort, api_version: ANTHROPIC_VERSION,
     started: iso(t.started), ended: iso(t.ended), turns: 0, tool_calls: 0, tool_errors: o.tool_errors, usage: o.usage,
-    cost_usd: 0, api_retries: 0, stop_reason: null, refusal_category: null, status: 'ENV_ERROR', stop: null, detail: 'INTERNAL',
+    cost_usd: 0, api_retries: 0, retry_wait_ms: 0, stop_reason: null, refusal_category: null, status: 'ENV_ERROR', stop: null, detail: 'INTERNAL',
     summary: null, resumed: false, judge_cost_usd: 0, ...ungraded('ENV_ERROR'),
   };
 }
