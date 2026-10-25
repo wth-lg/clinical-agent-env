@@ -52,6 +52,13 @@ describe('README deploy (B2: CLI deploy only, never a Git connection)', () => {
     expect(deploy.some((c) => c.startsWith('vercel project inspect'))).toBe(false);
   });
 
+  // Verifier N1: the upload list is checked with the installed CLI's own walker before the deploy.
+  it('checks what the deploy uploads with the CLI walker, after the link and before the deploy', () => {
+    const check = at('node scripts/relay-upload-list.ts');
+    expect(check).toBeGreaterThan(at('vercel link'));
+    expect(at('vercel deploy --prod --cwd apps/relay')).toBeGreaterThan(check);
+  });
+
   it('runs no command that connects Git', () => {
     for (const c of deploy) {
       expect(c, c).not.toMatch(/vercel (git|project) connect/);

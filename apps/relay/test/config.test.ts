@@ -3,14 +3,39 @@
 // no file as a static route; the relay source has no console call and reads no environment
 // variable; tsconfig.json type-checks it.
 import { execFileSync } from 'node:child_process';
-import { readdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { lstatSync, readdirSync, readFileSync } from 'node:fs';
+import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import ignoreModule from 'ignore';
 import { describe, expect, it } from 'vitest';
+import { UPLOAD_LIST } from '../../../scripts/relay-upload-list.ts';
 
 const ROOT = fileURLToPath(new URL('../../../', import.meta.url));
 const RELAY = join(ROOT, 'apps/relay');
 const sources = ['src', 'api'].flatMap((d) => readdirSync(join(RELAY, d)).map((f) => join(RELAY, d, f)));
+
+// The files `vercel deploy` uploads from dir, the way CLI 64.2.0's bundled @vercel/client 18.8.5
+// collects them: getVercelIgnore builds one ignore@4.0.6 matcher from its default list and
+// .vercelignore, and buildFileTree's readdir tests every entry's path relative to dir with that
+// matcher, a directory by its bare name with no trailing slash, before it descends into it. An
+// ignored directory is never read, so a rule like `!/api/` cannot bring back `api` once `/*`
+// ignores it. An empty directory that is kept is uploaded as an entry of its own. Before a deploy,
+// README step 4 runs the CLI's own walker (scripts/relay-upload-list.ts) against the same list.
+// ignore@4.0.6's types declare `export default`, but its CommonJS module.exports is the function.
+const ignore = ignoreModule as unknown as typeof ignoreModule.default;
+const DEFAULT_IGNORES = ['.hg', '.git', '.gitmodules', '.svn', 'CVS', '.cache', '.next', '.now', '.vercel', '.npmignore', '.dockerignore', '.gitignore', '.*.swp', '.DS_Store', '.wafpicke-*', '.lock-wscript', '.env.local', '.env.*.local', '.venv', '.yarn/cache', '.pnp*', 'npm-debug.log', 'config.gypi', 'node_modules', '__pycache__', 'venv'];
+function uploadList(dir: string): string[] {
+  const ig = ignore().add(`${DEFAULT_IGNORES.join('\n')}\n${readFileSync(join(dir, '.vercelignore'), 'utf8').replace(/(\n|^)\.\//g, '$1')}`);
+  const walk = (d: string): string[] =>
+    readdirSync(d).flatMap((name) => {
+      const path = join(d, name);
+      if (ig.ignores(relative(dir, path))) return [];
+      if (!lstatSync(path).isDirectory()) return [path];
+      const inner = walk(path);
+      return inner.length ? inner : [path];
+    });
+  return walk(dir).map((p) => relative(dir, p)).sort();
+}
 
 describe('relay config', () => {
   it('vercel.json rewrites /v1/messages to the function and has no other route', () => {
@@ -27,9 +52,9 @@ describe('relay config', () => {
   // as a static route, src/*.ts and test/*.ts included (CLI 64.2.0 detectBuilders). With one,
   // only public/ is static, and its one file, README.md, is a name the static builder never
   // publishes. .vercelignore keeps test/ and README.md out of the upload.
-  it('.vercelignore uploads only the function, its sources, vercel.json and public/', () => {
-    const rules = readFileSync(join(RELAY, '.vercelignore'), 'utf8').split('\n').map((l) => l.trim()).filter((l) => l && !l.startsWith('#'));
-    expect(rules).toEqual(['/*', '!/api/', '!/src/', '!/public/', '!/vercel.json']);
+  it('vercel deploy uploads only the function, its sources, vercel.json and public/', () => {
+    expect(UPLOAD_LIST).toEqual(['api/messages.ts', 'public/README.md', 'src/limiter.ts', 'src/relay.ts', 'src/upstream.ts', 'vercel.json']);
+    expect(uploadList(RELAY)).toEqual(UPLOAD_LIST);
   });
 
   it('public/, the static output directory, holds only README.md', () => {

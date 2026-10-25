@@ -68,7 +68,7 @@ three things bound that:
 
 - the per-client rate limit (see Rate limit);
 - the model lock: only `claude-opus-5-5` is forwarded;
-- the account's spend management or usage alert (Deploy, step 5), which bounds total use.
+- the account's spend management or usage alert (Deploy, step 6), which bounds total use.
 
 ## Static files
 
@@ -78,7 +78,10 @@ build command) serves every uploaded file outside `api/` as a static route when 
 things prevent that:
 
 - `.vercelignore` uploads only `api/`, `src/`, `public/` and `vercel.json`. `test/` and this
-  README stay local. `src/` must be uploaded, because the function imports it.
+  README stay local. `src/` must be uploaded, because the function imports it. Its rules name the
+  directories without a trailing slash (`!/api`): the CLI's upload walker matches a directory by
+  its bare name, and skips one that `/*` ignores without looking inside it. Deploy step 4 checks
+  the upload list with the CLI itself.
 - `public/` makes the build serve only `public/`. Its one file is `README.md`, a name Vercel's
   static builder never publishes, so no file is served at all.
 
@@ -115,7 +118,7 @@ The buckets live in the function's memory, so on Vercel the limit is best effort
   up to 120 per minute from each.
 - A cold start resets the buckets.
 - It does not bound total use from many IPs. The account's spend management or usage alert
-  covers that (see Deploy, step 5).
+  covers that (see Deploy, step 6).
 
 An optional Vercel Firewall rate-limit rule on `/v1/messages` can be added in the dashboard as an
 extra layer. It is never the mechanism the tests check: they check `src/limiter.ts`.
@@ -177,23 +180,35 @@ writes `apps/relay/.vercel/`.
    `vercel api` check again, which must now print `.link absent`. `vercel.json` also sets
    `"git": { "deploymentEnabled": false }`.
 
-4. Deploy to production from the CLI:
+4. Check what the deploy will upload, with the installed CLI's own upload walker:
+
+   ```sh
+   node scripts/relay-upload-list.ts
+   ```
+
+   It runs `buildFileTree`, from the `@vercel/client` bundled in the CLI that `vercel --version`
+   names, on `apps/relay`. It must list exactly `api/messages.ts`, `public/README.md`,
+   `src/limiter.ts`, `src/relay.ts`, `src/upstream.ts` and `vercel.json`, and exit 0. Exit 1 means
+   the upload differs: do not deploy. Exit 2 means it could not find the CLI's walker; pass the
+   installed `vercel` package directory with `--vercel <dir>`.
+
+5. Deploy to production from the CLI:
 
    ```sh
    vercel deploy --prod --cwd apps/relay
    ```
 
-5. In the dashboard, enable spend management with a cap where the account's plan offers it, or a
+6. In the dashboard, enable spend management with a cap where the account's plan offers it, or a
    usage notification where it does not. Record the threshold, or the fact that the account offers
    neither, in the run's records.
 
-6. Confirm that the project has no environment variable:
+7. Confirm that the project has no environment variable:
 
    ```sh
    vercel env ls --cwd apps/relay
    ```
 
-7. Check the deployed relay without a key. Then check the rate limit:
+8. Check the deployed relay without a key. Then check the rate limit:
 
    ```sh
    pnpm cli relay-check --url <RELAY_URL>
