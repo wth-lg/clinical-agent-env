@@ -96,11 +96,12 @@ export interface AttributionFacts {
   decisive: { id: string; exposure: ReadonlyArray<{ id: string; first_exposed_step: number | null; exposable: boolean | null }> | null } | null;
   matrix: MatrixResult | null;
   check_error: { check: string | null; message: string } | null;
-  // The audit row's answers clinically_acceptable and tool_rejections_correct (explain.ts AuditRow)
-  // are 'yes', 'no' or null when the row does not give them.
+  // The audit row's answers clinically_acceptable and tool_rejections_correct (explain.ts AuditRow),
+  // each its adjudicated answer when the row has one, else the auditor's: 'yes', 'no' or null when
+  // the row gives neither. decisive_step is the step the row cites.
   audit: {
     outcome: string; label: AuditLabelName | null; model_fault: string | null; llm_auditor_agrees: boolean | null; adjudicated_label: AuditLabelName | null; evidence_ids: readonly string[];
-    clinically_acceptable: AuditAnswer | null; tool_rejections_correct: AuditAnswer | null;
+    clinically_acceptable: AuditAnswer | null; tool_rejections_correct: AuditAnswer | null; decisive_step: number | null;
   } | null;
 }
 
@@ -250,7 +251,7 @@ export const FAULT_DEFINITIONS: Readonly<Record<Fault, FaultDefinition>> = {
     ],
   },
   env: {
-    sentence: 'The environment is at fault when a tool failed on its own, the start or final state is not correct, an environment rule broke, or a record that a check needs is not in the world.',
+    sentence: 'The environment is at fault when a tool failed on its own or refused a valid call, the start or final state is not correct, an environment rule broke, or a record that a check needs is not in the world.',
     criteria: [
       {
         id: 'E1',
@@ -286,6 +287,16 @@ export const FAULT_DEFINITIONS: Readonly<Record<Fault, FaultDefinition>> = {
         text: 'The failed gate check needs a record that the model did not see and that is not in the world, so no tool could give it to the model (M1 not met).',
         reads: M1.reads,
         check: negation(M1.check),
+      },
+      {
+        id: 'E6',
+        text: 'A human audit answers tool_rejections_correct no (after adjudication): a tool refused a valid call, at the step the audit cites as its decisive step.',
+        reads: ['audit.tool_rejections_correct (else audit.adjudicated_tool_rejections_correct)', 'audit.decisive_step'],
+        check: ({ audit }) => {
+          if (audit === null) return result(false, 'not human-audited');
+          const cited = audit.decisive_step !== null && Number.isSafeInteger(audit.decisive_step) && audit.decisive_step >= 1;
+          return result(audit.tool_rejections_correct === 'no' && cited, `tool_rejections_correct ${audit.tool_rejections_correct ?? 'not answered'}${cited ? `, step ${audit.decisive_step}` : ', no step cited'}`);
+        },
       },
     ],
   },
@@ -368,7 +379,7 @@ export const RUN_BLOCKS: readonly Criterion[] = [
 
 export type Confirmation = 'confirmed' | 'provisional' | 'contradicted';
 export const CONFIRMATION_DEFINITIONS: Readonly<Record<Confirmation, string>> = {
-  confirmed: 'Every criterion that can confirm the label is met: M1-M5 for a model or refusal label; for an environment or grader label, the record alone when E1-E4, GR1 or GR2 decided it, and a human audit with the same label when E5, GR3 or GR4 decided it; and the record alone for infra.',
+  confirmed: 'Every criterion that can confirm the label is met: M1-M5 for a model or refusal label; for an environment or grader label, the record alone when E1-E4, GR1 or GR2 decided it, and a human audit with the same label when E5, E6, GR3 or GR4 decided it; and the record alone for infra.',
   provisional: 'Nothing contradicts the label, but a confirming criterion is still pending, such as a missing audit, manifest hash or matrix result.',
   contradicted: 'A confirming criterion is not met or a human audit gives another label, so the label must be reviewed before it is used.',
 };

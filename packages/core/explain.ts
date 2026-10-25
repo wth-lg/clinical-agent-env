@@ -86,12 +86,18 @@ export interface ExplainRecord {
 // and an outcome GRADER_BUG as grader. adjudicated_label settles a row whose model_fault is unclear
 // or whose LLM auditor disagrees; the reasoning goes in note. criteria is what audit-check writes
 // back: explainTrial's criteria for the trial. The auditor answers two questions on a failure
-// (R14-31): clinically_acceptable, "is the recorded outcome clinically right?" (a no on a failure:
-// the grader rejected a clinically acceptable solution), and tool_rejections_correct, whether
-// every tool rejection in the trajectory was right (no: a tool refused a valid call). Each is yes
-// or no, absent when the row does not answer; cli/audit-check.ts requires a "no" to come with GR3
-// (an audit outcome GRADER_BUG with evidence), an environment label or an adjudicated_label with a
-// note.
+// (R14-31): clinically_acceptable, "is the recorded outcome (pass or fail) clinically right?" (a
+// no on a failure: the grader rejected a clinically acceptable solution), and
+// tool_rejections_correct, "was every tool rejection in the trajectory right?" (no: a tool refused
+// a valid call, at the row's decisive_step). Each is yes or no, absent when the row does not
+// answer. An adjudicator who overrules or keeps an answer records the final one in
+// adjudicated_clinically_acceptable or adjudicated_tool_rejections_correct (decisions.tsv
+// 2026-10-27T02:10); the adjudicated answer, else the auditor's, is the answer every count reads,
+// so an overruled no is never counted. A tool_rejections_correct no makes the fault environment
+// (outcomes.ts E6). cli/audit-check.ts requires an answered no to come with GR3 (an audit outcome
+// GRADER_BUG with evidence) or an environment label for clinically_acceptable, and with an
+// environment label and a decisive_step for tool_rejections_correct; an overruled no needs an
+// adjudicated_label and a note.
 export interface AuditRow {
   trial: string;
   outcome: string;
@@ -106,6 +112,8 @@ export interface AuditRow {
   note?: string;
   clinically_acceptable?: AuditAnswer | null;
   tool_rejections_correct?: AuditAnswer | null;
+  adjudicated_clinically_acceptable?: AuditAnswer | null;
+  adjudicated_tool_rejections_correct?: AuditAnswer | null;
   criteria?: CriterionRow[];
 }
 
@@ -182,16 +190,27 @@ export interface Explanation {
   fault_criteria: Record<Fault, CriterionRow[]>;
 }
 
+export const AUDIT_QUESTIONS = ['clinically_acceptable', 'tool_rejections_correct'] as const;
+export type AuditQuestion = (typeof AUDIT_QUESTIONS)[number];
+
+// The answers every count reads (the adjudicated one, else the auditor's), and the questions whose
+// auditor no an adjudicated yes overruled.
 export interface AuditAnswers {
   clinically_acceptable: AuditAnswer | null;
   tool_rejections_correct: AuditAnswer | null;
+  overruled: AuditQuestion[];
 }
 
-// "recorded outcome clinically right: no; tool rejections correct: yes", as the trial detail and
-// audit-check show the answers.
-export const formatAuditAnswers = (a: AuditAnswers | null): string =>
-  a === null ? NOT_AUDITED_MARKER : `recorded outcome clinically right: ${a.clinically_acceptable ?? 'not answered'}; tool rejections correct: ${a.tool_rejections_correct ?? 'not answered'}`;
+// "recorded outcome clinically right: no; tool rejections correct: yes (an auditor no, overruled)".
+export const formatAuditAnswers = (a: AuditAnswers | null): string => {
+  if (a === null) return NOT_AUDITED_MARKER;
+  const say = (q: AuditQuestion) => `${a[q] ?? 'not answered'}${a.overruled.includes(q) ? ' (an auditor no, overruled)' : ''}`;
+  return `recorded outcome clinically right: ${say('clinically_acceptable')}; tool rejections correct: ${say('tool_rejections_correct')}`;
+};
 const answer = (v: unknown): AuditAnswer | null => (v === 'yes' || v === 'no' ? v : null);
+// A row's answer to q after adjudication.
+export const auditAnswerOf = (row: Partial<Pick<AuditRow, AuditQuestion | `adjudicated_${AuditQuestion}`>>, q: AuditQuestion): AuditAnswer | null =>
+  answer(row[`adjudicated_${q}`]) ?? answer(row[q]);
 
 // How a criterion's met value reads, in audit-check's output and the trial detail alike.
 export const MET_TEXT: Record<string, string> = { true: 'met', false: 'not met', pending: 'pending', 'n/a': 'not applicable' };
@@ -418,8 +437,9 @@ export function explainTrial(record: ExplainRecord, audit: AuditRow | null | und
       llm_auditor_agrees: row.llm_auditor_agrees ?? null,
       adjudicated_label: isLabel(row.adjudicated_label) ? row.adjudicated_label : null,
       evidence_ids: row.evidence_ids ?? [],
-      clinically_acceptable: answer(row.clinically_acceptable),
-      tool_rejections_correct: answer(row.tool_rejections_correct),
+      clinically_acceptable: auditAnswerOf(row, 'clinically_acceptable'),
+      tool_rejections_correct: auditAnswerOf(row, 'tool_rejections_correct'),
+      decisive_step: typeof row.decisive_step === 'number' ? row.decisive_step : null,
     },
   };
   const fault_criteria = Object.fromEntries(FAULT_PRECEDENCE.map((f) => [f, FAULT_DEFINITIONS[f].criteria.map((c) => ({ id: c.id, ...c.check(facts) }))])) as Record<Fault, CriterionRow[]>;
@@ -505,7 +525,11 @@ export function explainTrial(record: ExplainRecord, audit: AuditRow | null | und
     notes,
     audited: row !== null,
     audit_label,
-    audit_answers: facts.audit === null ? null : { clinically_acceptable: facts.audit.clinically_acceptable, tool_rejections_correct: facts.audit.tool_rejections_correct },
+    audit_answers: facts.audit === null || row === null ? null : {
+      clinically_acceptable: facts.audit.clinically_acceptable,
+      tool_rejections_correct: facts.audit.tool_rejections_correct,
+      overruled: AUDIT_QUESTIONS.filter((q) => answer(row[q]) === 'no' && auditAnswerOf(row, q) === 'yes'),
+    },
     decisive_check,
     decisive_step: fault !== null && !modelFault ? null : attFits ? att.decisive_step : (row?.decisive_step ?? null),
     taxonomy,

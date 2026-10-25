@@ -42,11 +42,14 @@
 //     fixed and the run regraded, as for any grader bug;
 //   - with --final (P17i C6, R14-33: the final audit, never a pilot audit), every valid failure's
 //     label has an LLM auditor verdict: llm_auditor_agrees true or false, not null or missing;
-//   - a label's clinically_acceptable ("is the recorded outcome clinically right?") and
-//     tool_rejections_correct (explain.ts AuditRow), when given, are yes or no, and a "no" comes
-//     with GR3 (the label's outcome GRADER_BUG with an
-//     evidence id), an environment label, or an adjudicated_label with a note: a "no" says the
-//     grader or a tool rejected valid work, so the label must say whose fault that is.
+//   - a label's clinically_acceptable ("is the recorded outcome clinically right?"),
+//     tool_rejections_correct ("was every tool rejection right?") and their adjudicated_ answers
+//     (explain.ts AuditRow), when given, are yes or no. The answer after adjudication decides
+//     (explain.ts auditAnswerOf): a clinically_acceptable no needs GR3 (the label's outcome
+//     GRADER_BUG with an evidence id) or an environment label, and a tool_rejections_correct no an
+//     environment label and the rejected call's step as decisive_step (outcomes.ts E6), because
+//     a no says the grader or a tool rejected valid work; an auditor no that an adjudicated yes
+//     overrules needs an adjudicated_label and a note (decisions.tsv 2026-10-27T02:10).
 // It writes each label's criteria, explainTrial's M1-M5 for its trial, into audit.jsonl (only when
 // they changed, so a second run leaves the file as it was). The context it gives explainTrial
 // (explainContext) is packages/core/explain-context.ts over the run's files, the one builder the
@@ -74,7 +77,7 @@ import type { BatchRecord } from '../packages/core/batch.ts';
 import { installEgressGuard } from '../packages/core/egress.ts';
 import type { TrialEvent } from '../packages/core/events.ts';
 import { explainContext as contextOf, needsWorld, worldLookup, type TaskCheck } from '../packages/core/explain-context.ts';
-import { auditLabelOf, excludedFromHeadline, explainTrial, formatCriterion, type AuditRow, type CheckText, type ExplainContext, type ExplainRecord } from '../packages/core/explain.ts';
+import { AUDIT_QUESTIONS, auditAnswerOf, auditLabelOf, excludedFromHeadline, explainTrial, formatCriterion, type AuditRow, type CheckText, type ExplainContext, type ExplainRecord } from '../packages/core/explain.ts';
 import { AUDIT_LABEL, AUDIT_LABELS, FAULT, FAULT_PRECEDENCE, type Fault, type Outcome } from '../packages/core/outcomes.ts';
 import { parseTrajectory } from '../packages/core/trajectory.ts';
 import { consistencyOf, currentGrade, describeConsistency, type ConsistencyFlag } from '../packages/core/summary.ts';
@@ -232,17 +235,29 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
     else if ((l.model_fault === 'unclear' || l.llm_auditor_agrees === false) && !isLabel(l.adjudicated_label)) {
       v.push(`${l.trial}: ${l.model_fault === 'unclear' ? 'model_fault unclear' : 'the LLM auditor disagrees'}, and no adjudicated_label is recorded`);
     }
-    for (const field of ['clinically_acceptable', 'tool_rejections_correct'] as const) {
-      const a = l[field];
-      if (a === undefined || a === null || a === 'yes') continue;
-      if (a !== 'no') v.push(`${l.trial}: ${field} must be yes or no, not ${JSON.stringify(a)}`);
-      else if (!((l.outcome === 'GRADER_BUG' && l.evidence_ids.length > 0) || auditLabelOf(l) === 'environment' || (isLabel(l.adjudicated_label) && (l.note ?? '').trim() !== ''))) {
-        v.push(`${l.trial}: ${field} no (${field === 'clinically_acceptable' ? 'the recorded outcome is not clinically right' : 'a tool rejected a valid call'}) needs GR3 (an audit outcome GRADER_BUG with evidence), an environment label or an adjudicated_label with a note`);
+    for (const q of AUDIT_QUESTIONS) {
+      const bad = [q, `adjudicated_${q}` as const].filter((f) => ![undefined, null, 'yes', 'no'].includes(l[f]));
+      for (const f of bad) v.push(`${l.trial}: ${f} must be yes or no, not ${JSON.stringify(l[f])}`);
+      if (bad.length > 0) continue;
+      const environment = auditLabelOf(l) === 'environment';
+      if (auditAnswerOf(l, q) === 'yes') {
+        if (l[q] === 'no' && !(isLabel(l.adjudicated_label) && (l.note ?? '').trim() !== '')) v.push(`${l.trial}: ${q} no, overruled by adjudicated_${q} yes, needs an adjudicated_label and a note`);
+      } else if (auditAnswerOf(l, q) !== 'no') continue;
+      else if (q === 'clinically_acceptable' && !((l.outcome === 'GRADER_BUG' && l.evidence_ids.length > 0) || environment)) {
+        v.push(`${l.trial}: clinically_acceptable no (the recorded outcome is not clinically right) needs GR3 (an audit outcome GRADER_BUG with evidence) or an environment label; adjudicated_clinically_acceptable yes overrules it`);
+      } else if (q === 'tool_rejections_correct' && !(environment && Number.isSafeInteger(l.decisive_step) && (l.decisive_step as number) >= 1)) {
+        v.push(`${l.trial}: tool_rejections_correct no (a tool rejected a valid call) needs an environment label and the rejected call's step as decisive_step; adjudicated_tool_rejections_correct yes overrules it`);
       }
     }
     if (outcome === 'PASS') continue;
-    // The trial's fault without the audit: the label must agree with it, not define it.
-    const { fault } = await explain(r);
+    // The trial's fault without the audit's label, outcome or fault verdict: the label must agree
+    // with it, not define it. The row's answers to the two questions are evidence, not a label, so
+    // they stay: a tool_rejections_correct no with its step makes the fault environment (E6).
+    const answers: AuditLabel = {
+      trial: l.trial, outcome, taxonomy: null, model_fault: null, decisive_step: l.decisive_step, evidence_ids: [], llm_auditor_agrees: null,
+      ...Object.fromEntries(AUDIT_QUESTIONS.flatMap((q) => [[q, l[q] ?? null], [`adjudicated_${q}`, l[`adjudicated_${q}`] ?? null]])),
+    };
+    const { fault } = await explain(r, answers);
     const want = fault === null ? null : AUDIT_LABEL[fault];
     const label = auditLabelOf(l);
     if (label === 'environment') environment++;

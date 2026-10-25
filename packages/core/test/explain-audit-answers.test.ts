@@ -1,5 +1,6 @@
 // The audit row's two answers (plan phase P17i C5, R14-31): clinically_acceptable and
-// tool_rejections_correct reach AttributionFacts.audit and the explanation; and the explain.ts
+// tool_rejections_correct, after adjudication, reach AttributionFacts.audit and the explanation,
+// and a tool_rejections_correct no makes the fault environment (E6); and the explain.ts
 // sentences C1 deferred: an INFRA trial ended by a C1 bound names it, and a wall-clock LIMIT
 // with no limit event counts working time (elapsed less retry_wait_ms), as MAX_WALL_MS does.
 import { describe, expect, it } from 'vitest';
@@ -18,11 +19,27 @@ const row = (over: Partial<AuditRow> = {}): AuditRow => ({ trial: 'renal-dose-re
 describe('audit answers', () => {
   it('an audit row\'s clinically_acceptable and tool_rejections_correct are on the explanation, null when the row has none', () => {
     const x = explainTrial(record('FAIL'), row({ clinically_acceptable: 'no', tool_rejections_correct: 'yes' }), ctx);
-    expect(x.audit_answers).toEqual({ clinically_acceptable: 'no', tool_rejections_correct: 'yes' });
+    expect(x.audit_answers).toEqual({ clinically_acceptable: 'no', tool_rejections_correct: 'yes', overruled: [] });
     expect(formatAuditAnswers(x.audit_answers)).toBe('recorded outcome clinically right: no; tool rejections correct: yes');
-    expect(explainTrial(record('FAIL'), row(), ctx).audit_answers).toEqual({ clinically_acceptable: null, tool_rejections_correct: null });
+    expect(explainTrial(record('FAIL'), row(), ctx).audit_answers).toEqual({ clinically_acceptable: null, tool_rejections_correct: null, overruled: [] });
     expect(formatAuditAnswers(explainTrial(record('FAIL'), row(), ctx).audit_answers)).toBe('recorded outcome clinically right: not answered; tool rejections correct: not answered');
     expect(explainTrial(record('FAIL'), undefined, ctx).audit_answers).toBeNull();
+  });
+
+  it('an adjudicated answer is the one counted; an overruled auditor no is marked, not counted (decisions.tsv 2026-10-27T02:10)', () => {
+    const x = explainTrial(record('FAIL'), row({ clinically_acceptable: 'no', adjudicated_clinically_acceptable: 'yes', adjudicated_label: 'model' }), ctx);
+    expect(x.audit_answers).toEqual({ clinically_acceptable: 'yes', tool_rejections_correct: null, overruled: ['clinically_acceptable'] });
+    expect(formatAuditAnswers(x.audit_answers)).toBe('recorded outcome clinically right: yes (an auditor no, overruled); tool rejections correct: not answered');
+    expect(explainTrial(record('FAIL'), row({ clinically_acceptable: 'yes', adjudicated_clinically_acceptable: 'no' }), ctx).audit_answers!.clinically_acceptable).toBe('no');
+  });
+
+  it('E6: a tool_rejections_correct no with a cited step makes the fault environment; without a step, or overruled, it does not', () => {
+    const env = explainTrial(record('FAIL'), row({ tool_rejections_correct: 'no', taxonomy: 'environment', decisive_step: 2 }), ctx);
+    expect(env).toMatchObject({ fault: 'env', label: 'environment', deciding: { id: 'E6', evidence: 'tool_rejections_correct no, step 2' } });
+    expect(env.fault_criteria.env.find((c) => c.id === 'E6')!.met).toBe(true);
+    expect(explainTrial(record('FAIL'), row({ tool_rejections_correct: 'no', decisive_step: null }), ctx).fault).toBe('model');
+    expect(explainTrial(record('FAIL'), row({ tool_rejections_correct: 'no', adjudicated_tool_rejections_correct: 'yes' }), ctx).fault).toBe('model');
+    expect(explainTrial(record('FAIL'), undefined, ctx).fault_criteria.env.find((c) => c.id === 'E6')).toMatchObject({ met: false, evidence: 'not human-audited' });
   });
 });
 
