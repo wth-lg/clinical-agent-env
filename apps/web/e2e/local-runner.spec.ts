@@ -236,7 +236,8 @@ test('a non-pass live trial shows in its Runs row the outcome, label, decisive c
   if (e.decisive_check) await expect(row.getByTestId('decisive')).toHaveText(e.decisive_check.id);
   if (e.fault === 'infra') await expect(row.getByTestId('label')).toHaveAttribute('data-label', 'infra');
   else if (e.label !== null) await expect(row).toContainText(e.label);
-  await expect(row.getByTestId('audit-marker')).toHaveText(NOT_AUDITED_MARKER);
+  // The marker shows once on the row: FaultLabel's chip, or the row's own when FaultLabel has none (review-P15-1 F4).
+  await expect(row.getByText(NOT_AUDITED_MARKER, { exact: true })).toHaveCount(1);
 });
 
 test('Stop records CANCELLED', async ({ page }) => {

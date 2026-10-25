@@ -330,6 +330,10 @@ function RunRows({ run, current, onOpen }: { run: LiveRun; current: string | nul
   );
 }
 
+// FaultLabel shows its own "not human-audited" chip beside a failure label, so the row adds the
+// marker only where it has none.
+const labelled = (e: ReturnType<typeof explainTrial>) => e.outcome !== 'PASS' && e.fault !== 'infra' && e.label !== null;
+
 function LiveRow({ row, current, onOpen }: { row: LiveRun['rows'][number]; current: boolean; onOpen: (id: string) => void }) {
   const [events, setEvents] = useState<TrialEvent[]>([]);
   useEffect(() => {
@@ -345,7 +349,7 @@ function LiveRow({ row, current, onOpen }: { row: LiveRun['rows'][number]; curre
         {e ? <OutcomeChip outcome={e.outcome} fault={e.fault} /> : <span className="text-xs text-ink-muted">{row.state}</span>}
         {e && e.outcome !== 'PASS' && <FaultLabel e={e} />}
         {e?.decisive_check && <code data-testid="decisive" className="break-all rounded-sm bg-canvas px-1 text-xs text-ink">{e.decisive_check.id}</code>}
-        {e && !e.audited && <span data-testid="audit-marker" className="text-xs text-ink-muted">{NOT_AUDITED_MARKER}</span>}
+        {e && !e.audited && !labelled(e) && <span data-testid="audit-marker" className="text-xs text-ink-muted">{NOT_AUDITED_MARKER}</span>}
         {wasResumed(row.record) && <Resumed />}
       </div>
       {e && e.outcome !== 'PASS' && <p data-testid="reason" className="mt-1 break-words text-ink-muted">{e.reason}</p>}
