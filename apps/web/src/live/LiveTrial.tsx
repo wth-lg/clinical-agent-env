@@ -246,6 +246,7 @@ function Trial({ t, id, onEnd }: { t: TrialTransport; id: string; onEnd: () => v
         <ol className="min-w-0 space-y-1.5" data-testid="trajectory" aria-live="polite">
           {f.items.map((item) => <ItemRow key={item.key} item={item} />)}
           {running && <li className="text-xs text-ink-muted">{events.length === 0 ? 'Starting…' : 'Running…'}</li>}
+          {!running && f.items.length === 0 && <li className="text-xs text-ink-muted">No reply came from the model.</li>}
         </ol>
         <aside className="min-w-0 space-y-2 text-xs" data-testid="state-diff">
           <h3 className="font-medium text-ink">State</h3>
@@ -261,8 +262,9 @@ function Trial({ t, id, onEnd }: { t: TrialTransport; id: string; onEnd: () => v
           {explanation && (
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
               <OutcomeChip outcome={explanation.outcome} fault={explanation.fault} />
-              {explanation.outcome !== 'PASS' && <FaultLabel e={explanation} />}
-              {explanation.outcome !== 'PASS' && <span className="text-ink-muted">{explanation.reason}</span>}
+              {/* On an org-CORS refusal the alert below says what happened and what to do; a rerun here would fail the same way. */}
+              {explanation.outcome !== 'PASS' && f.orgCors === null && <FaultLabel e={explanation} />}
+              {explanation.outcome !== 'PASS' && f.orgCors === null && <span className="text-ink-muted">{explanation.reason}</span>}
             </div>
           )}
           {f.orgCors !== null ? (

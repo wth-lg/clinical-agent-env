@@ -188,6 +188,11 @@ test('an org-CORS 401 stops the trial and shows its message, pointing to the exa
   const alert = trial(page).getByTestId('trial-error');
   await expect(alert).toContainText(ORG_CORS, { timeout: 30_000 });
   await expect(alert).toContainText("This key's organization does not allow browser access");
+  // The alert explains it: the footer shows only the outcome chip, and the empty trajectory says why (review-P15-1 F3).
+  await expect(trial(page).getByTestId('outcome')).toHaveText('INFRA_API');
+  await expect(trial(page).getByTestId('trial-end')).not.toContainText('rerun');
+  await expect(trial(page).getByTestId('label')).toHaveCount(0);
+  await expect(trial(page).getByTestId('trajectory')).toHaveText('No reply came from the model.');
   await alert.getByRole('button', { name: 'Show the steps' }).click();
   const panel = page.getByTestId('local-run-panel');
   await expect(panel).toBeFocused();
