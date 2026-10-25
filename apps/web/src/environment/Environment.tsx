@@ -6,7 +6,7 @@ import { useState, type Ref } from 'react';
 import { loadStore } from '../../../../packages/env/fixture-source.ts';
 import { stateHash } from '../../../../packages/env/hash.ts';
 import { toolCatalog, tryReadTool, type TryResult } from '../../../../packages/core/try-tool.ts';
-import { Card, Page } from '../data/ui.tsx';
+import { Card, Hash, Page } from '../data/ui.tsx';
 import { MANIFEST, worldSource } from '../data/world.ts';
 
 const TOOLS = toolCatalog();
@@ -17,7 +17,6 @@ const EXAMPLES: Record<string, unknown> = {
   get_context: {},
 };
 const button = 'inline-flex h-8 items-center rounded-sm border border-line-strong bg-surface px-3 text-ink hover:bg-canvas disabled:cursor-not-allowed disabled:text-ink-muted';
-const short = (h: string) => `${h.slice(0, 12)}…${h.slice(-6)}`;
 
 export function Environment({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | undefined }) {
   const w = MANIFEST.world;
@@ -26,10 +25,10 @@ export function Environment({ headingRef }: { headingRef?: Ref<HTMLHeadingElemen
       <Card title="World">
         <dl className="grid grid-cols-1 gap-x-4 gap-y-1 sm:grid-cols-[max-content_1fr]">
           <dt className="text-ink-muted">Pinned clock</dt><dd data-testid="pinned-clock">{MANIFEST.now}</dd>
-          <dt className="text-ink-muted">State hash (manifest)</dt><dd data-testid="manifest-hash" className="break-all font-mono text-xs">{w.state_hash}</dd>
+          <dt className="text-ink-muted">State hash (manifest)</dt><dd><Hash testId="manifest-hash" value={w.state_hash} /></dd>
           <dt className="text-ink-muted">Resources</dt><dd data-testid="resource-total">{w.resources}</dd>
         </dl>
-        <ul className="mt-3 grid grid-cols-1 gap-x-4 gap-y-0.5 text-xs min-[360px]:grid-cols-2 sm:grid-cols-3" data-testid="resource-counts">
+        <ul className="mt-3 grid grid-cols-1 gap-x-4 gap-y-0.5 text-xs sm:grid-cols-3" data-testid="resource-counts">
           {Object.entries(w.by_type).map(([type, n]) => <li key={type} className="flex min-w-0 justify-between gap-2 border-b border-line py-0.5"><span className="min-w-0 truncate" title={type}>{type}</span><span className="tabular-nums">{n}</span></li>)}
         </ul>
         <VerifyReset />
@@ -72,7 +71,7 @@ function VerifyReset() {
       {state.kind === 'error' && <span role="alert">Verify reset did not finish: {state.message}</span>}
       {state.kind === 'done' && (
         <span className="min-w-0 break-words" data-testid="reset-result" data-hash={state.hash} data-equal={String(state.hash === MANIFEST.world.state_hash)}>
-          Fresh store hash <code className="break-all text-xs">{state.hash}</code> {state.hash === MANIFEST.world.state_hash ? 'equals' : 'does NOT equal'} the manifest's ({Math.round(state.ms)} ms).
+          Fresh store hash <Hash value={state.hash} /> {state.hash === MANIFEST.world.state_hash ? 'equals' : 'does NOT equal'} the manifest's ({Math.round(state.ms)} ms).
         </span>
       )}
     </div>
@@ -112,7 +111,7 @@ function TryPanel() {
       {state.kind === 'error' && <p className="mt-2" role="alert">{state.message}</p>}
       {state.kind === 'done' && (
         <div className="mt-3 space-y-2" data-testid="try-result" data-error={String(state.r.result.is_error)} data-hash-before={state.r.hash_before} data-hash-after={state.r.hash_after}>
-          <p className="break-words">Hash before <code className="text-xs">{short(state.r.hash_before)}</code>, after <code className="text-xs">{short(state.r.hash_after)}</code>: <span data-testid="try-unchanged">{state.r.hash_before === state.r.hash_after ? 'unchanged' : 'CHANGED'}</span>.</p>
+          <p className="break-words">Hash before <Hash value={state.r.hash_before} />, after <Hash value={state.r.hash_after} />: <span data-testid="try-unchanged">{state.r.hash_before === state.r.hash_after ? 'unchanged' : 'CHANGED'}</span>.</p>
           <p>exposed_ids ({state.r.result.exposed_ids.length}): <span data-testid="try-exposed" className="break-all text-xs">{state.r.result.exposed_ids.join(', ') || 'none'}</span></p>
           <pre data-testid="try-content" className="max-h-96 overflow-auto rounded-sm bg-canvas p-2 text-xs">{text.length > 20000 ? `${text.slice(0, 20000)}\n… (${text.length} characters in all)` : text}</pre>
         </div>
