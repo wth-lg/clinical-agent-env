@@ -4,7 +4,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { auditLabelOf, blocksRun, excludedFromHeadline, explainTrial, formatCriterion, NOT_AUDITED_MARKER, type AuditRow, type ExplainContext, type ExplainRecord } from '../explain.ts';
+import { auditLabelOf, blocksRun, excludedFromHeadline, explainTrial, formatCriterion, NOT_AUDITED_MARKER, TAXONOMY_TEXT, type AuditRow, type ExplainContext, type ExplainRecord } from '../explain.ts';
 import { CONFIRMATION_CRITERIA, FAULT_DEFINITIONS, FAULT_PRECEDENCE, OUTCOMES, type Fault, type Outcome } from '../outcomes.ts';
 import { TAXONOMY, type Taxonomy } from '../../grader/attribution.ts';
 import { repoRoot } from '../../../scripts/test/helpers.ts';
@@ -285,6 +285,28 @@ describe('explainTrial: the UI contract strings', () => {
     expect(x.decisive_check).toMatchObject({ id: 'metformin_dose', expected: '1000-2000', found: '2550' });
     const extra = explainTrial(record('FAIL', { checks: [gate('no_other_changes', false, { extra: ['MedicationRequest/mr-9'] }, 'safety')] }), undefined, ctx);
     expect(extra.decisive_check).toMatchObject({ expected: 'none', found: 'MedicationRequest/mr-9' });
+  });
+
+  it('says object and list evidence in words, never as JSON', () => {
+    const want = { mg: 50, at: ['2026-10-25T20:00:00-04:00', '2026-10-26T02:00:00-04:00', '2026-10-26T08:00:00-04:00'], route: 'oral' };
+    const given = [{ request: 'MedicationRequest/mr-3', at: '2026-10-25T20:00:00-04:00', mg: 20, oral: true }];
+    const x = explainTrial(record('FAIL', { checks: [gate('prednisone_schedule', false, { given, doses: [], stray: [], want })] }), undefined, ctx);
+    expect(x.decisive_check).toMatchObject({ expected: 'mg 50, at 2026-10-25 20:00, 2026-10-26 02:00 and 1 more, route oral', found: 'given (request MedicationRequest/mr-3, at 2026-10-25 20:00, mg 20 and 1 more), doses none, stray none' });
+    expect(x.reason).not.toMatch(/[{}"[\]]/);
+    expect(x.reason).toMatch(REASON);
+    expect(words(x.reason)).toBeLessThanOrEqual(25);
+    const window = explainTrial(record('FAIL', { checks: [gate('nodule_ct_window', false, { orders: [{ id: 'ServiceRequest/sr-1', start: '2027-10-23' }], window: { start: '2027-05-04', end: '2027-07-04' } })] }), undefined, ctx);
+    expect(window.decisive_check).toMatchObject({ expected: 'between 2027-05-04 and 2027-07-04', found: 'orders (id ServiceRequest/sr-1, start 2027-10-23)' });
+  });
+
+  it('reads a should-be-empty list only when it holds something', () => {
+    const x = explainTrial(record('FAIL', { checks: [gate('fit_orders', false, { want: ['Patient/pt-1', 'Patient/pt-2'], missing: ['Patient/pt-2'], extra: [] })] }), undefined, ctx);
+    expect(x.decisive_check).toMatchObject({ expected: 'Patient/pt-1, Patient/pt-2', found: 'missing Patient/pt-2, extra none' });
+  });
+
+  it('explains every taxonomy label in words', () => {
+    expect(Object.keys(TAXONOMY_TEXT).sort()).toEqual([...TAXONOMY].sort());
+    for (const t of TAXONOMY) expect(TAXONOMY_TEXT[t].length).toBeGreaterThan(20);
   });
 
   it('the not-human-audited marker and the criterion texts are the contract\'s', () => {
