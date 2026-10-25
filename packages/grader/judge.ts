@@ -6,14 +6,15 @@
 // parameter is sent (the client refuses one), and tool_choice is not forced (a 400 on this
 // model): the answer is JSON text, {verdict: met | not_met | unknown, quote}, retried once when
 // it does not parse. Code then checks the quote: a met verdict needs a quote, and any non-empty
-// quote must be a substring of the graded text; otherwise the item is unknown. A not_met
+// quote must be a substring of the graded text, both folded (quotes, dashes, case, whitespace);
+// only a penalty item's quote may read "..." as a gap; otherwise the item is unknown. A not_met
 // verdict may carry an empty quote, because absence cannot be quoted (coordinator decision,
 // 2026-10-23): it stays met: false and counts in the denominator. An unknown item leaves both
 // the numerator and the denominator of the score and is counted. The judge sees the criterion
 // and the text only, never the gate result or the reference.
 //
 // Hybrid: a regex extracts the value first; when it finds none, the LLM extractor answers
-// {value, quote} under the same quote check, and the quote must state the value.
+// {value, quote} under the same quote check (contiguous only), and the quote must state the value.
 //
 // Failures: a client error (401, 403, a billing 400, retries exhausted, a substituted model, a
 // spend refusal, any error that stops the batch) is not an answer. It is thrown as
@@ -63,6 +64,9 @@ export interface JudgeClient {
 export interface JudgeQuestion {
   criterion: string;
   text: string;
+  // A penalty item (negative points): a met verdict's quote may elide with "...", since a match
+  // only makes the grade stricter. A credit item's quote must be contiguous.
+  penalty?: boolean;
 }
 
 export interface ExtractQuestion {
@@ -184,9 +188,55 @@ function parseAnswer(result: CallResult): { [k: string]: Json } | null {
 const validJudge = (a: { [k: string]: Json }) => ['met', 'not_met', 'unknown'].includes(a.verdict as string) && typeof a.quote === 'string';
 const validExtract = (a: { [k: string]: Json }) => (a.value === null || (typeof a.value === 'number' && Number.isFinite(a.value))) && typeof a.quote === 'string';
 
-// Whitespace runs count as one space, so a quote that re-wraps a line still matches.
-const squash = (s: string) => s.replace(/\s+/g, ' ').trim();
-const quoted = (quote: string, text: string) => quote.trim() !== '' && squash(text).includes(squash(quote));
+// Both sides are compared folded: typographic single and double quotes (and the modifier and
+// fullwidth apostrophes) as ' and ", hyphens, en and em dashes and the minus sign as -, case
+// folded, whitespace runs as one space, so a quote that re-types an apostrophe or re-wraps a
+// line still matches (R14-04).
+const foldWith = (s: string, run: (ws: string) => string) => s.replace(/[\u2018\u2019\u201A\u201B\u2032\u02BC\uFF07]/g, "'").replace(/[\u201C\u201D\u201E\u201F\u2033]/g, '"').replace(/[\u2010\u2011\u2013\u2014\u2212]/g, '-').toLowerCase().replace(/\s+/g, run).trim();
+const fold = (s: string) => foldWith(s, () => ' ');
+// The same, a whitespace run with a line break kept as one '\n': same length, so the same offsets.
+const foldLines = (s: string) => foldWith(s, (ws) => (/[\n\r\u2028\u2029]/.test(ws) ? '\n' : ' '));
+// A quote with "..." or "\u2026" is segments that must all appear in the text, in that order. Each
+// segment of such a quote has at least 2 words and 8 characters (verifier M2). A gap, the text
+// the ellipsis skips, is at most GAP_MAX characters within one sentence (no . ! ? \u2026 or line break)
+// and holds no negation, so a gap cannot turn "not sent" into "sent" or join two sentences into
+// one the text does not say (verifier B1-2 F2, F3). Every segment, and
+// a quote found as written, starts and ends at a word edge of the text, so "I have n... sent"
+// cannot cut "not" in two (verifier B1-2 F1). Any placement of the segments that keeps these
+// rules counts, not only the first. The matched segments, or null when the quote is not in the
+// text. Only a penalty item reads a gap (`gaps`); for a credit item, and every extractor quote, a
+// quote must be found as written (verifier B1-3).
+const GAP_MAX = 80;
+const SENTENCE_END = /[.!?\n\u2026]/;
+const NEGATION = /\b(?:not|no|never|cannot|without|denies|denied|declined|refused|unable|failed|neither|nor|negative|none|stop|stopped|hold|held|(?:do|does|did|is|was|are|were|has|have|had|ca|can|could|would|should|wo|must|need)n'?t)\b|n't\b/;
+const WORD = /[\p{L}\p{N}]/u;
+// t[j] is inside a word: a letter or digit, or an apostrophe between two (I've, didn't).
+const inWord = (t: string, j: number) => WORD.test(t[j] ?? '') || (t[j] === "'" && WORD.test(t[j - 1] ?? '') && WORD.test(t[j + 1] ?? ''));
+const atEdges = (t: string, i: number, s: string) => !(WORD.test(s[0]!) && inWord(t, i - 1)) && !(WORD.test(s[s.length - 1]!) && inWord(t, i + s.length));
+// Whether segments[k..] can be placed in t from `at` on, each gap accepted by gapOk.
+function place(t: string, segments: readonly string[], k: number, at: number, gapOk: (from: number, to: number) => boolean): boolean {
+  if (k === segments.length) return true;
+  const s = segments[k]!;
+  for (let i = t.indexOf(s, at); i >= 0; i = t.indexOf(s, i + 1)) {
+    if (k > 0 && i - at > GAP_MAX) break;
+    if (k > 0 && !gapOk(at, i)) continue;
+    if (atEdges(t, i, s) && place(t, segments, k + 1, i + s.length, gapOk)) return true;
+  }
+  return false;
+}
+function quoted(quote: string, text: string, gaps: boolean): boolean {
+  const whole = fold(quote);
+  const folded = fold(text);
+  // Found as written, an ellipsis in the text included: a plain substring, as before B1.
+  if (whole !== '' && folded.includes(whole)) return true;
+  if (!gaps) return false;
+  const segments = whole.split(/\.\.\.|\u2026/).map((s) => s.trim()).filter((s) => s !== '');
+  if (segments.length === 0) return false;
+  if (segments.length > 1 && segments.some((s) => s.length < 8 || s.split(' ').length < 2)) return false;
+  const lines = foldLines(text);
+  const gapOk = (from: number, to: number) => !SENTENCE_END.test(lines.slice(from, to)) && !NEGATION.test(folded.slice(from, to));
+  return place(folded, segments, 0, 0, gapOk);
+}
 
 // Every number written in the quote.
 const numbersIn = (quote: string): number[] => (quote.match(/\d[\d,]*(?:\.\d+)?|\.\d+/g) ?? []).flatMap((s) => {
@@ -253,7 +303,7 @@ export class Judge {
     const quote = entry.answer.quote as string;
     const evidence = { verdict, quote, cache_key: entry.key };
     if (verdict === 'unknown') return { met: 'unknown', evidence: { ...evidence, reason: 'judge unknown' } };
-    if ((verdict === 'met' || quote.trim() !== '') && !quoted(quote, q.text)) return { met: 'unknown', evidence: { ...evidence, reason: 'quote not in text' } };
+    if ((verdict === 'met' || quote.trim() !== '') && !quoted(quote, q.text, q.penalty === true)) return { met: 'unknown', evidence: { ...evidence, reason: 'quote not in text' } };
     return { met: verdict === 'met', evidence };
   }
 
@@ -271,7 +321,7 @@ export class Judge {
     const quote = entry.answer.quote as string;
     const base = { quote, source: 'llm' as const, cache_key: entry.key };
     if (v === null) return { value: null, ...base };
-    if (!quoted(quote, q.text)) return { value: 'unknown', ...base, reason: 'quote not in text' };
+    if (!quoted(quote, q.text, false)) return { value: 'unknown', ...base, reason: 'quote not in text' };
     if (!numbersIn(quote).some((n) => n === v)) return { value: 'unknown', ...base, reason: 'value not in quote' };
     return { value: v, ...base };
   }

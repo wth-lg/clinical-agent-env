@@ -222,7 +222,7 @@ export function gradeRun(env: Pick<MatrixEnv, 'tasks' | 'world' | 'definitions'>
 // record's cache. oracle --live-judge passes one Judge across all of a task's cases, so each
 // distinct question is asked once, and the Judge's entries are the task's new cache.
 export function gradeRunWith(env: Pick<MatrixEnv, 'tasks' | 'world' | 'definitions'>, task: Pick<MatrixTask, 'id' | 'checks'>, run: CaseRun, judge: Judge): Promise<Grade> {
-  const checks = task.checks.map((c): Check => (c.kind !== 'rubric' ? c : { ...c, fn: (ctx: RubricCtx) => c.fn({ ...ctx, judge: (q) => judge.judge(q), extract: (q) => judge.extract(q) }) }));
+  const checks = task.checks.map((c): Check => (c.kind !== 'rubric' ? c : { ...c, fn: (ctx: RubricCtx) => c.fn({ ...ctx, judge: (q) => judge.judge({ ...q, penalty: c.points < 0 }), extract: (q) => judge.extract(q) }) }));
   return gradeTrajectory(task.id, {
     tasks: env.tasks, world: env.world, events: run.events, checks,
     record: { ...run.record, judge: { cache: [] } },

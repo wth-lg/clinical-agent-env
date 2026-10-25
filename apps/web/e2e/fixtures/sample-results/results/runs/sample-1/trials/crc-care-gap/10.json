@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:crc-care-gap:10",
   "task_id": "crc-care-gap",
-  "task_version": "58958a7eb0dff9b2d5caf31e2fb696773d6f1c59a56f90e090eb2113cc2af89f",
-  "env_version": "5846d7857b161e8f1a166871b14a8010445c00283a48ab199ea5397e9fc92766",
-  "grader_task_version": "eaf6b0d8b15fae30edc8b0ead45dd54994dc2a26d0e997a6fa0607d4974f8caa",
+  "task_version": "bcfa2f5ca71ff512eec3692af33b375b1ad4a7296437b3a3b504cb8b4f7342e4",
+  "env_version": "f5f885afc6134508bf8c9caaf697d8c9df5a7f0bd7316c7e637f90c5c9abc58c",
+  "grader_task_version": "27db8a721aa2981562e989cc01845f3a9218250269b4cebb1a29e09d6f605b70",
   "fixture_hash": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
   "state_hash": {
     "initial": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
@@ -44,7 +44,7 @@
   "resumed": false,
   "ended": "2026-10-23T13:06:43.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "8",
+  "grader_version": "9",
   "outcome": "FAIL",
   "valid": true,
   "fault": "model",
@@ -454,6 +454,9 @@
   "judge": {
     "calls": 12,
     "unknown": 0,
+    "unknown_penalties": 0,
+    "score_penalties_met": 0.9166666666666666,
+    "score_penalties_not_met": 0.9166666666666666,
     "over_allowance": 0,
     "cache_keys": [
       "56ad7c61a4c0fda4b65ade897962920523d453894900f310e72ed0bebc1867cc",

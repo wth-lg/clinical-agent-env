@@ -86,7 +86,7 @@ describe('judge', () => {
     const j = new Judge({ client: scriptedJudge(['{"value":42,"quote":"CrCl is 42, which"}']).client });
     expect(await j.extract({ field: 'CrCl', text: 'By Cockcroft-Gault the CrCl is 42, which is under 50.', pattern: /CrCl of (\d+)/ })).toMatchObject({ value: 42, source: 'llm' });
     const k = new Judge({ client: scriptedJudge(['{"value":25,"quote":"weight 25."}']).client });
-    expect(await k.extract({ field: 'w', text: 'Dose by weight 25. Next line.', pattern: /kg (\d+)/ })).toMatchObject({ value: 25 });
+    expect(await k.extract({ field: 'weight', text: 'Dose by weight 25. Next line.', pattern: /kg (\d+)/ })).toMatchObject({ value: 25 });
   });
 
   it('the call budget is two calls per judge and hybrid item', () => {
