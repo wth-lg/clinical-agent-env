@@ -503,3 +503,24 @@ test('the infra label has its help link, and State diff marks the resources the 
   const line = p.getByTestId('decisive-resources');
   for (const id of ids) await expect(line.locator(`[data-id="${id}"]`)).toHaveAttribute('data-written', String(written.some(([w]) => w === id)));
 });
+
+test('a trial from another world: Replay says its differing hash is expected, not a failure (m3)', async ({ page }) => {
+  test.setTimeout(120_000);
+  // The record as if it had run on another world: its initial and final hashes are not today's.
+  await page.route(`**/data/results/runs/${RUN_ID}/trials/${TRIALS.failAudited}.json`, async (route) => {
+    const res = await route.fetch();
+    const r = (await res.json()) as { state_hash: Record<string, string | null> };
+    await route.fulfill({ response: res, json: { ...r, state_hash: { ...r.state_hash, initial: 'a'.repeat(64), final: 'b'.repeat(64), replay_final: 'b'.repeat(64) } } });
+  });
+  await openTrial(page, TRIALS.failAudited, '&tab=state-diff');
+  const p = panel(page, 'state-diff');
+  await expect(p.getByTestId('manifest-line')).toHaveText(/^Initial state hash does not match the manifest/);
+  await expect(p.getByTestId('replay-note')).toContainText('expected to differ');
+  await p.getByRole('button', { name: 'Replay' }).click();
+  const result = p.getByTestId('replay-result');
+  await expect(result).toHaveAttribute('data-match', 'false', { timeout: 90_000 });
+  await expect(result).toHaveAttribute('data-expected', 'true');
+  const line = result.getByTestId('replay-line');
+  await expect(line).toContainText('as expected');
+  await expect(line).not.toHaveClass(/text-danger/);
+});

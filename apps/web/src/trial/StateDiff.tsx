@@ -36,6 +36,9 @@ export function StateDiff({ t, events, steps, written, onStep, decisiveIds = [] 
     }
   };
   const canReplay = url !== null;
+  // A trial from another world cannot be reproduced on today's: a differing hash is expected
+  // there, not a failure (verifier-phase-P16-1 m3).
+  const otherWorld = h.initial !== manifest;
   return (
     <div className="space-y-4">
       <p data-testid="manifest-line" className="break-words text-ink">
@@ -78,7 +81,10 @@ export function StateDiff({ t, events, steps, written, onStep, decisiveIds = [] 
           {run.state === 'running' ? <Loader2 aria-hidden className="h-3.5 w-3.5 animate-spin" strokeWidth={1.75} /> : <RotateCcw aria-hidden className="h-3.5 w-3.5" strokeWidth={1.75} />}
           Replay
         </button>
-        <p className="text-xs text-ink-muted">{canReplay ? 'Runs the tool calls again on a fresh copy of the world, in this tab. It needs no key and makes no API call.' : 'Replay needs the trajectory, which is not published for this trial.'}</p>
+        <p data-testid="replay-note" className="text-xs text-ink-muted">
+          {canReplay ? 'Runs the tool calls again on a fresh copy of the world, in this tab. It needs no key and makes no API call.' : 'Replay needs the trajectory, which is not published for this trial.'}
+          {canReplay && otherWorld && ' This trial started from another world, so the replayed final hash is expected to differ from the record.'}
+        </p>
         {run.state === 'running' && <p className="text-ink-muted">Replaying…</p>}
         {run.state === 'error' && (
           <div role="alert" data-testid="replay-error" className="rounded-sm border border-danger p-3">
@@ -86,7 +92,7 @@ export function StateDiff({ t, events, steps, written, onStep, decisiveIds = [] 
             <p className="mt-1 break-words font-mono text-xs text-ink-muted">{run.message}</p>
           </div>
         )}
-        {run.state === 'done' && <Result r={run.value} recorded={h.final} decisiveIds={decisiveIds} />}
+        {run.state === 'done' && <Result r={run.value} recorded={h.final} decisiveIds={decisiveIds} otherWorld={otherWorld} />}
       </div>
     </div>
   );
@@ -94,12 +100,13 @@ export function StateDiff({ t, events, steps, written, onStep, decisiveIds = [] 
 
 const DecisiveMark = () => <span className="rounded-sm border border-danger px-1 text-xs text-danger">named by the decisive check</span>;
 
-function Result({ r, recorded, decisiveIds }: { r: StateRun; recorded: string | null; decisiveIds: readonly string[] }) {
+function Result({ r, recorded, decisiveIds, otherWorld }: { r: StateRun; recorded: string | null; decisiveIds: readonly string[]; otherWorld: boolean }) {
   const match = r.final !== null && r.final === recorded;
+  const expected = !match && otherWorld;
   return (
-    <div data-testid="replay-result" data-match={String(match)} data-final={r.final ?? ''} className="space-y-3">
-      <p className={`break-words ${match ? 'text-ink' : 'font-medium text-danger'}`}>
-        {r.error !== null ? `A tool call failed on replay: ${r.error}` : recorded === null ? 'The record has no final hash to compare.' : match ? 'The replayed final state hash matches the record.' : 'The replayed final state hash differs from the record.'}
+    <div data-testid="replay-result" data-match={String(match)} data-expected={String(expected)} data-final={r.final ?? ''} className="space-y-3">
+      <p data-testid="replay-line" className={`break-words ${match ? 'text-ink' : expected ? 'text-ink-muted' : 'font-medium text-danger'}`}>
+        {r.error !== null ? `A tool call failed on replay: ${r.error}${expected ? ' This is expected: the trial started from another world.' : ''}` : recorded === null ? 'The record has no final hash to compare.' : match ? 'The replayed final state hash matches the record.' : expected ? 'The replayed final state hash differs from the record, as expected: the trial started from another world than today\'s.' : 'The replayed final state hash differs from the record.'}
       </p>
       <p className="flex flex-wrap items-center gap-x-1 text-ink-muted">Replayed final <Hash value={r.final} testId="hash-replayed" /></p>
       <Section title={`Created (${r.diff.created.length}), changed (${r.diff.updated.length})`}>
