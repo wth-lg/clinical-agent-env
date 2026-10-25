@@ -50,6 +50,11 @@ export function matrixDeclares(toml: string): Declares {
   return { traps, status_only };
 }
 
+// The reference solution: solution/solve.ts's oracle script, or null when the task has none.
+export async function taskOracle(id: string): Promise<Script | null> {
+  return exported<Script | null>(id, 'solution/solve.ts', 'oracle', null);
+}
+
 export async function taskChecks(id: string): Promise<Check[]> {
   return exported<Check[]>(id, 'tests/grader.ts', 'checks', []);
 }
