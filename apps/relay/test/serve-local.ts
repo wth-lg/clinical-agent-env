@@ -135,7 +135,16 @@ export async function serveLocal(opts: { allowedOrigin: string; upstream?: StubU
     res.on('close', () => {
       if (!res.writableFinished) ac.abort();
     });
-    const request = toRequest(req, port, ac.signal, opts.trustClientAddress ?? false);
+    // A request the Fetch API cannot represent (an absolute-form target, TRACE) gets 400 rather
+    // than an uncaught throw that would end the test server.
+    let request: Request;
+    try {
+      request = toRequest(req, port, ac.signal, opts.trustClientAddress ?? false);
+    } catch {
+      res.writeHead(400);
+      res.end();
+      return;
+    }
     void handle(request, upstream.fetch, limiter, opts.allowedOrigin, opts.bodyTimeoutMs === undefined ? {} : { bodyTimeoutMs: opts.bodyTimeoutMs }).then(
       (response) => {
         log.push({
