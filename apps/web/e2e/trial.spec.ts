@@ -481,3 +481,25 @@ test('a failed gate check stands out: a cross, the found value in the danger col
   // The header of a non-pass trial has a rule in the danger colour.
   expect(await page.getByTestId('trial-header').evaluate((x) => getComputedStyle(x).borderLeftColor)).toBe(danger);
 });
+
+test('the infra label has its help link, and State diff marks the resources the decisive check names (F8)', async ({ page }) => {
+  await openTrial(page, TRIALS.infra);
+  const help = page.getByTestId('trial-header').getByRole('link', { name: 'How the infra label is given' });
+  await expect(help).toHaveAttribute('href', /view=glossary.*#fault-infra$/);
+  const e = await explain(TRIALS.failAudited);
+  const ids = record(TRIALS.failAudited).checks!.find((c) => c.id === e.decisive_check!.id)!.ids ?? [];
+  expect(ids.length).toBeGreaterThan(0);
+  await openTrial(page, TRIALS.failAudited, '&tab=state-diff');
+  const p = panel(page, 'state-diff');
+  await expect(page.getByTestId('trajectory').getByTestId('step').first()).toBeVisible();
+  const written = await p.getByTestId('written').evaluateAll((els) => els.map((x) => [x.getAttribute('data-id'), x.getAttribute('data-decisive')]));
+  expect(written.length).toBeGreaterThan(0);
+  for (const [id, decisive] of written) expect(decisive, id!).toBe(String(ids.includes(id!)));
+  await p.getByRole('button', { name: 'Replay' }).click();
+  await expect(p.getByTestId('replay-result')).toBeVisible({ timeout: 90_000 });
+  const rows = await p.getByTestId('diff-row').evaluateAll((els) => els.map((x) => [x.getAttribute('data-id'), x.getAttribute('data-decisive')]));
+  for (const [id, decisive] of rows) expect(decisive, id!).toBe(String(ids.includes(id!)));
+  // A line says which resources the decisive check names and whether the trial wrote each one.
+  const line = p.getByTestId('decisive-resources');
+  for (const id of ids) await expect(line.locator(`[data-id="${id}"]`)).toHaveAttribute('data-written', String(written.some(([w]) => w === id)));
+});

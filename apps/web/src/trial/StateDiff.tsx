@@ -20,7 +20,8 @@ const show = (v: unknown) => (v === undefined ? '(absent)' : JSON.stringify(v, n
 
 type Run = { state: 'idle' } | { state: 'running' } | { state: 'error'; message: string } | { state: 'done'; value: StateRun };
 
-export function StateDiff({ t, events, steps, written, onStep }: { t: Trial; events: Loaded<TrialEvent[]> | null; steps: readonly Step[] | null; written: readonly string[]; onStep: (n: number) => void }) {
+// decisiveIds: the evidence ids of the decisive check, marked wherever they show.
+export function StateDiff({ t, events, steps, written, onStep, decisiveIds = [] }: { t: Trial; events: Loaded<TrialEvent[]> | null; steps: readonly Step[] | null; written: readonly string[]; onStep: (n: number) => void; decisiveIds?: readonly string[] }) {
   const [run, setRun] = useState<Run>({ state: 'idle' });
   const h = t.record.state_hash;
   const manifest = MANIFEST.world.state_hash;
@@ -48,9 +49,28 @@ export function StateDiff({ t, events, steps, written, onStep }: { t: Trial; eve
         <dt>Final</dt><dd><Hash value={h.final} testId="hash-final" /></dd>
         <dt>Replay at grading</dt><dd><Hash value={h.replay_final ?? null} testId="hash-replay" /></dd>
       </dl>
+      {decisiveIds.length > 0 && events?.state === 'ready' && (
+        <p data-testid="decisive-resources" className="break-words text-ink">
+          The decisive check names{' '}
+          {decisiveIds.map((id, i) => (
+            <span key={id} data-id={id} data-written={String(written.includes(id))}>
+              {i > 0 && (i === decisiveIds.length - 1 ? ' and ' : ', ')}
+              <code className="text-xs">{id}</code> ({written.includes(id) ? 'the trial wrote it' : 'the trial did not write it'})
+            </span>
+          ))}
+          .
+        </p>
+      )}
       <Section title={`Resources the trial wrote (${written.length})`}>
         {written.length === 0 ? <p className="text-ink-muted">{events?.state === 'ready' ? 'The trial wrote nothing.' : 'Shown when the trajectory is loaded.'}</p> : (
-          <ul className="flex flex-wrap gap-x-3 gap-y-1">{written.map((id) => <li key={id}><EvidenceId id={id} steps={steps} onStep={onStep} /></li>)}</ul>
+          <ul className="flex flex-wrap gap-x-3 gap-y-1">
+            {written.map((id) => (
+              <li key={id} data-testid="written" data-id={id} data-decisive={String(decisiveIds.includes(id))} className="inline-flex flex-wrap items-baseline gap-x-1.5">
+                <EvidenceId id={id} steps={steps} onStep={onStep} />
+                {decisiveIds.includes(id) && <DecisiveMark />}
+              </li>
+            ))}
+          </ul>
         )}
       </Section>
       <div className="space-y-2">
@@ -66,13 +86,15 @@ export function StateDiff({ t, events, steps, written, onStep }: { t: Trial; eve
             <p className="mt-1 break-words font-mono text-xs text-ink-muted">{run.message}</p>
           </div>
         )}
-        {run.state === 'done' && <Result r={run.value} recorded={h.final} />}
+        {run.state === 'done' && <Result r={run.value} recorded={h.final} decisiveIds={decisiveIds} />}
       </div>
     </div>
   );
 }
 
-function Result({ r, recorded }: { r: StateRun; recorded: string | null }) {
+const DecisiveMark = () => <span className="rounded-sm border border-danger px-1 text-xs text-danger">named by the decisive check</span>;
+
+function Result({ r, recorded, decisiveIds }: { r: StateRun; recorded: string | null; decisiveIds: readonly string[] }) {
   const match = r.final !== null && r.final === recorded;
   return (
     <div data-testid="replay-result" data-match={String(match)} data-final={r.final ?? ''} className="space-y-3">
@@ -84,10 +106,10 @@ function Result({ r, recorded }: { r: StateRun; recorded: string | null }) {
         {r.changes.length === 0 ? <p className="text-ink-muted">The trial left the world as it found it.</p> : (
           <ul className="divide-y divide-line rounded-sm border border-line">
             {r.changes.map((c) => (
-              <li key={c.id} data-testid="diff-row" data-id={c.id} data-kind={c.kind} className="min-w-0 px-3 py-2">
+              <li key={c.id} data-testid="diff-row" data-id={c.id} data-kind={c.kind} data-decisive={String(decisiveIds.includes(c.id))} className="min-w-0 px-3 py-2">
                 <details>
                   <summary className="cursor-pointer break-words">
-                    <code className="text-xs text-ink">{c.id}</code> <span className="text-xs text-ink-muted">{c.kind}{c.status ? `, status ${c.status.from ?? 'none'} to ${c.status.to ?? 'none'}` : ''}{c.kind === 'updated' ? `, ${c.fields.length} field${c.fields.length === 1 ? '' : 's'} changed` : ''}</span>
+                    <code className="text-xs text-ink">{c.id}</code> {decisiveIds.includes(c.id) && <DecisiveMark />} <span className="text-xs text-ink-muted">{c.kind}{c.status ? `, status ${c.status.from ?? 'none'} to ${c.status.to ?? 'none'}` : ''}{c.kind === 'updated' ? `, ${c.fields.length} field${c.fields.length === 1 ? '' : 's'} changed` : ''}</span>
                   </summary>
                   {c.kind === 'created' ? (
                     <pre className="mt-2 max-h-72 overflow-auto whitespace-pre-wrap break-words rounded-sm bg-canvas p-2 font-mono text-xs text-ink">{JSON.stringify(Object.fromEntries(c.fields.map((f) => [f.key, f.after])), null, 1)}</pre>

@@ -13,7 +13,7 @@
 // the Runs row's explanation first, then fullExplanation (results.ts) when it arrives, the one
 // context cli/audit-check.ts uses. Every tab panel stays mounted (the inactive ones hidden), so a
 // replay or an open row survives a tab change.
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, CircleHelp } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type Ref } from 'react';
 import { MET_TEXT, type Explanation } from '../../../../packages/core/explain.ts';
 import type { TrialEvent } from '../../../../packages/core/events.ts';
@@ -117,6 +117,8 @@ function Detail({ t, run, files, tab, headingRef }: { t: Trial; run: RunData; fi
   const traj = folded?.state === 'ready' ? folded.value : null;
   const onStep = (n: number) => setCurrent((c) => ({ step: n, seq: (c?.seq ?? 0) + 1 }));
   const e = full ?? t.explanation;
+  // The resources the decisive check names (its evidence ids), marked in State diff.
+  const decisiveIds = ((t.record.checks ?? []) as ReadonlyArray<{ id: string; ids?: readonly string[] }>).find((c) => c.id === e.decisive_check?.id)?.ids ?? [];
   return (
     <Frame title={t.name} headingRef={headingRef} from={{ run: run.runId, trial: t.name }}>
       <div
@@ -137,7 +139,7 @@ function Detail({ t, run, files, tab, headingRef }: { t: Trial; run: RunData; fi
             {{
               grading: <Grading t={t} steps={traj?.steps ?? null} onStep={onStep} decisive={e.decisive_check?.id ?? null} />,
               attribution: <Attribution t={t} e={e} steps={traj?.steps ?? null} onStep={onStep} />,
-              'state-diff': <StateDiff t={t} events={events} steps={traj?.steps ?? null} written={traj?.written ?? []} onStep={onStep} />,
+              'state-diff': <StateDiff t={t} events={events} steps={traj?.steps ?? null} written={traj?.written ?? []} onStep={onStep} decisiveIds={decisiveIds} />,
               environment: <EnvironmentTab t={t} />,
               raw: <Raw t={t} />,
             }}
@@ -160,6 +162,13 @@ function Header({ t, e, onStep }: { t: Trial; e: Explanation; onStep: (n: number
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <OutcomeChip outcome={e.outcome} fault={e.fault} />
         {nonPass && <FaultLabel e={e} />}
+        {/* FaultLabel gives every label but infra its help link (review-ui-P16-1 F8). */}
+        {e.fault === 'infra' && (
+          <GlossaryLink anchor="fault-infra" className="-ml-2 inline-flex h-6 w-6 items-center justify-center rounded-sm text-ink-muted hover:bg-canvas hover:text-ink">
+            <CircleHelp aria-hidden className="h-3.5 w-3.5" strokeWidth={1.75} />
+            <span className="sr-only">How the infra label is given</span>
+          </GlossaryLink>
+        )}
         <span className="ml-auto text-xs text-ink-muted" title="Agent and judge cost">${(t.record.cost_usd + (t.record.judge_cost_usd ?? 0)).toFixed(2)}</span>
       </div>
       {!e.valid && e.deciding && (
