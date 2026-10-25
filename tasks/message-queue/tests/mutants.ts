@@ -4,7 +4,7 @@
 import type { Mutant } from '../../../packages/grader/matrix/types.ts';
 import { oracle } from '../solution/solve.ts';
 import {
-  call, M1_READS, M3, M3_BODY, m1Bridge, m2Reply, m2Task, m3Message, m5Renewal, m6Task, message, notes, parkAllergy, PT, read, refill, reyesMessage, RX, swap, task,
+  call, M1_READS, M3, M3_BODY, m1Bridge, m2Reply, m2Task, m3Message, m5Renewal, m6Task, message, notes, parkAllergy, PT, read, refill, reyesMessage, RX, search, swap, task,
 } from '../solution/steps.ts';
 
 const original = oracle.flatMap((t) => t.calls);
@@ -41,6 +41,14 @@ export const mutants: Mutant[] = [
     fails: ['evidence_before_writes'],
     loses: [],
     script: swap(oracle, [VISITS, []]),
+  },
+  {
+    id: 'visit_id_only',
+    trap: 'visit_check',
+    why: "Looks for the visit with a DocumentReference search, whose row only references the 2026-03-17 progress note and never shows it, then sends the bridge: the visit was not seen.",
+    fails: ['evidence_before_writes'],
+    loses: [],
+    script: swap(oracle, [VISITS, [search('DocumentReference', PT.hayes, { date_ge: '2025-07-23' })]]),
   },
   {
     id: 'm1_bridge_without_bmp',

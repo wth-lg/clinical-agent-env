@@ -1,9 +1,9 @@
 {
   "grader_task_versions": {
-    "08e829bfdd59034136f29bc4e30ea28dadcbf4ed104ea9be8b4e50451b8312a0": {
-      "task_id": "results-inbox",
-      "env_version": "1b69d4deab5047c9be4c70ff0438628526da629a9fa0c5f1ca1d0605cec02a86",
-      "task_version": "9f94bc8f9902527fb324013006751f9da264985221a5a92220c6c52f72377bee",
+    "4929f0ecba7b68e9fb2e621a4d2c91143090b6b6afb39cf58216c56f69c6ff8b": {
+      "task_id": "message-queue",
+      "env_version": "0f4ca284064318e267b43016adacd89fe793e885765e5c687d044d21f87e4e6a",
+      "task_version": "311678ca575502d688dd5840481e25ee692bf7abe5ced77c679c0b6d394da397",
       "pass": true,
       "oracle_pass": true,
       "alternatives_pass": true,
@@ -18,217 +18,280 @@
         },
         {
           "kind": "alternative",
-          "id": "ldct_task_oncall_cmp",
+          "id": "reassign_and_decline",
           "outcome": "PASS",
           "as_expected": true,
           "failed_checks": []
         },
         {
           "kind": "alternative",
-          "id": "window_edges_datetimes",
+          "id": "tablet_counts_and_class_allergy",
           "outcome": "PASS",
           "as_expected": true,
           "failed_checks": []
         },
         {
           "kind": "alternative",
-          "id": "hold_lisinopril",
+          "id": "reads_everything_first",
           "outcome": "PASS",
           "as_expected": true,
           "failed_checks": []
         },
         {
           "kind": "alternative",
-          "id": "page_names_patient_in_text",
+          "id": "wheal_and_itching",
           "outcome": "PASS",
           "as_expected": true,
           "failed_checks": []
         },
         {
           "kind": "alternative",
-          "id": "phone_calls_and_result_links",
+          "id": "wheezing",
           "outcome": "PASS",
           "as_expected": true,
           "failed_checks": []
         },
         {
           "kind": "alternative",
-          "id": "fit_left_to_gi",
+          "id": "low_blood_pressure",
           "outcome": "PASS",
           "as_expected": true,
           "failed_checks": []
         },
         {
           "kind": "alternative",
-          "id": "searches_then_reads",
+          "id": "reyes_about_request",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "reyes_unlinked",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "self_corrects_bridge",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "bmp_absence_by_date",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "visit_via_note",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "apixaban_held",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "atorvastatin_stopped",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "visit_via_snippet",
           "outcome": "PASS",
           "as_expected": true,
           "failed_checks": []
         },
         {
           "kind": "mutant",
-          "id": "structured_smoking_only",
+          "id": "m1_full_renewal",
           "outcome": "FAIL",
           "as_expected": true,
           "failed_checks": [
-            "nodule_ct_window",
-            "items_closed_with_links"
+            "m1_bridge"
           ]
         },
         {
           "kind": "mutant",
-          "id": "ct_from_today",
+          "id": "m1_renewal_with_bmp",
           "outcome": "FAIL",
           "as_expected": true,
           "failed_checks": [
-            "nodule_ct_window"
+            "m1_bridge"
           ]
         },
         {
           "kind": "mutant",
-          "id": "ct_with_contrast",
+          "id": "m1_visit_unseen",
           "outcome": "FAIL",
           "as_expected": true,
           "failed_checks": [
-            "nodule_ct_window"
+            "evidence_before_writes"
           ]
         },
         {
           "kind": "mutant",
-          "id": "namesake_ct",
+          "id": "visit_id_only",
           "outcome": "FAIL",
           "as_expected": true,
           "failed_checks": [
-            "nodule_ct_window",
-            "namesake_untouched",
-            "items_closed_with_links"
+            "evidence_before_writes"
           ]
         },
         {
           "kind": "mutant",
-          "id": "duplicate_gi_referral",
+          "id": "m1_bridge_without_bmp",
           "outcome": "FAIL",
           "as_expected": true,
           "failed_checks": [
-            "fit_existing_referral"
+            "m1_bridge"
           ]
         },
         {
           "kind": "mutant",
-          "id": "hemolyzed_k_paged",
+          "id": "m2_refilled",
           "outcome": "FAIL",
           "as_expected": true,
           "failed_checks": [
-            "hemolyzed_k_no_oncall"
+            "m2_no_refill"
           ]
         },
         {
           "kind": "mutant",
-          "id": "hemolyzed_k_paged_no_about",
+          "id": "m2_no_pcp_task",
           "outcome": "FAIL",
           "as_expected": true,
           "failed_checks": [
-            "hemolyzed_k_no_oncall"
+            "m2_no_refill"
           ]
         },
         {
           "kind": "mutant",
-          "id": "hemolyzed_k_routine_next_week",
+          "id": "m2_rosuvastatin_ordered",
           "outcome": "FAIL",
           "as_expected": true,
           "failed_checks": [
-            "hemolyzed_k_repeat"
+            "m2_no_refill"
           ]
         },
         {
           "kind": "mutant",
-          "id": "critical_k_patient_only",
+          "id": "m3_handled_as_routine",
           "outcome": "FAIL",
           "as_expected": true,
           "failed_checks": [
-            "critical_k_oncall"
+            "m3_red_flag"
           ]
         },
         {
           "kind": "mutant",
-          "id": "critical_k_oncall_urgent",
+          "id": "m3_routine_message",
           "outcome": "FAIL",
           "as_expected": true,
           "failed_checks": [
-            "critical_k_oncall"
+            "m3_red_flag"
           ]
         },
         {
           "kind": "mutant",
-          "id": "critical_k_as_hemolyzed",
+          "id": "m4_amoxicillin_sent",
           "outcome": "FAIL",
           "as_expected": true,
           "failed_checks": [
-            "critical_k_oncall",
-            "critical_k_stat_bmp"
+            "m4_hold"
           ]
         },
         {
           "kind": "mutant",
-          "id": "bone_routine_three_months",
+          "id": "m4_requester_not_told",
           "outcome": "FAIL",
           "as_expected": true,
           "failed_checks": [
-            "bone_lesion_orders"
+            "m4_hold"
           ]
         },
         {
           "kind": "mutant",
-          "id": "bone_referral_only",
+          "id": "m4_told_on_wrong_chart",
           "outcome": "FAIL",
           "as_expected": true,
           "failed_checks": [
-            "bone_lesion_orders"
+            "m4_hold"
           ]
         },
         {
           "kind": "mutant",
-          "id": "cyst_reimaged",
+          "id": "m4_doxycycline_placed",
           "outcome": "FAIL",
           "as_expected": true,
           "failed_checks": [
-            "controls_no_orders"
+            "m4_hold"
           ]
         },
         {
           "kind": "mutant",
-          "id": "closed_without_links",
+          "id": "m4_low_criticality",
           "outcome": "FAIL",
           "as_expected": true,
           "failed_checks": [
-            "items_closed_with_links"
+            "m4_hold"
           ]
         },
         {
           "kind": "mutant",
-          "id": "critical_k_linked_result_only",
+          "id": "m5_thirty_days",
           "outcome": "FAIL",
           "as_expected": true,
           "failed_checks": [
-            "items_closed_with_links"
+            "m5_renewal"
           ]
         },
         {
           "kind": "mutant",
-          "id": "critical_k_linked_reminder",
+          "id": "m6_to_okafor",
           "outcome": "FAIL",
           "as_expected": true,
           "failed_checks": [
-            "items_closed_with_links"
+            "m6_scheduling"
           ]
         },
         {
           "kind": "mutant",
-          "id": "stat_bmp_from_summary",
+          "id": "m2_left_open",
           "outcome": "FAIL",
           "as_expected": true,
           "failed_checks": [
-            "sources_before_orders"
+            "all_cleared"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "allergy_from_snippet",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "evidence_before_writes"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "off_queue_write",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "no_other_changes"
           ]
         },
         {
@@ -237,13 +300,13 @@
           "outcome": "FAIL",
           "as_expected": true,
           "failed_checks": [
-            "nodule_ct_window",
-            "fit_existing_referral",
-            "hemolyzed_k_repeat",
-            "critical_k_oncall",
-            "critical_k_stat_bmp",
-            "bone_lesion_orders",
-            "items_closed_with_links"
+            "m1_bridge",
+            "m2_no_refill",
+            "m3_red_flag",
+            "m4_hold",
+            "m5_renewal",
+            "m6_scheduling",
+            "all_cleared"
           ]
         },
         {
@@ -252,9 +315,8 @@
           "outcome": "FAIL",
           "as_expected": true,
           "failed_checks": [
-            "fit_existing_referral",
-            "hemolyzed_k_no_oncall",
-            "controls_no_orders"
+            "m2_no_refill",
+            "m4_hold"
           ]
         },
         {
@@ -263,13 +325,13 @@
           "outcome": "FAIL",
           "as_expected": true,
           "failed_checks": [
-            "nodule_ct_window",
-            "fit_existing_referral",
-            "hemolyzed_k_repeat",
-            "critical_k_oncall",
-            "critical_k_stat_bmp",
-            "bone_lesion_orders",
-            "items_closed_with_links"
+            "m1_bridge",
+            "m2_no_refill",
+            "m3_red_flag",
+            "m4_hold",
+            "m5_renewal",
+            "m6_scheduling",
+            "all_cleared"
           ]
         },
         {
@@ -278,12 +340,12 @@
           "outcome": "FAIL",
           "as_expected": true,
           "failed_checks": [
-            "nodule_ct_window",
-            "hemolyzed_k_repeat",
-            "critical_k_oncall",
-            "critical_k_stat_bmp",
-            "bone_lesion_orders",
-            "items_closed_with_links"
+            "m1_bridge",
+            "m2_no_refill",
+            "m3_red_flag",
+            "m4_hold",
+            "m5_renewal",
+            "m6_scheduling"
           ]
         }
       ]
@@ -493,10 +555,10 @@
         }
       ]
     },
-    "aee2714fdc7ce9658e6610dbff64dfa91b4b2bc2f823d00ea076453efc75de86": {
+    "5cdf5b5b61e615d3711ac28e3b44a134ad14b0a7a4fa721e1429e3f221653d82": {
       "task_id": "contrast-ct-prep",
       "env_version": "1b47cd6807624e2db3e76fbb8dfa5a519eadfa93bdf47dbdcb8fee1a1c37d288",
-      "task_version": "ea15cb956e6ea120a0a886adcba4b9517dad97b7f62494450e7084bae8be69e1",
+      "task_version": "5b7ac243d58393b66979c011d7cbfdb96cb81eca91c47c5b985a6458c0dcdd34",
       "pass": true,
       "oracle_pass": true,
       "alternatives_pass": true,
@@ -554,6 +616,13 @@
         {
           "kind": "alternative",
           "id": "split_doses",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "creatinine_window_ends_at_scan",
           "outcome": "PASS",
           "as_expected": true,
           "failed_checks": []
@@ -621,6 +690,15 @@
         {
           "kind": "mutant",
           "id": "creatinine_after_scan",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "creatinine_before_scan"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "creatinine_at_scan_instant",
           "outcome": "FAIL",
           "as_expected": true,
           "failed_checks": [
@@ -713,340 +791,6 @@
             "prednisone_schedule",
             "diphenhydramine_dose",
             "creatinine_before_scan"
-          ]
-        }
-      ]
-    },
-    "c771ed6b25561ef1e03feb6e2c01868f25a6fcfb724555b722928a5ca9af0d59": {
-      "task_id": "message-queue",
-      "env_version": "0f4ca284064318e267b43016adacd89fe793e885765e5c687d044d21f87e4e6a",
-      "task_version": "27a84b0155b8c95a03236aedbf3acff015846d2ee8722d7e40f2a7f42d153fc8",
-      "pass": true,
-      "oracle_pass": true,
-      "alternatives_pass": true,
-      "failed_checks": [],
-      "probes": [
-        {
-          "kind": "oracle",
-          "id": "oracle",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "reassign_and_decline",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "tablet_counts_and_class_allergy",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "reads_everything_first",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "wheal_and_itching",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "wheezing",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "low_blood_pressure",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "reyes_about_request",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "reyes_unlinked",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "self_corrects_bridge",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "bmp_absence_by_date",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "visit_via_note",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "apixaban_held",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "atorvastatin_stopped",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "mutant",
-          "id": "m1_full_renewal",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "m1_bridge"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "m1_renewal_with_bmp",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "m1_bridge"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "m1_visit_unseen",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "evidence_before_writes"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "m1_bridge_without_bmp",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "m1_bridge"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "m2_refilled",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "m2_no_refill"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "m2_no_pcp_task",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "m2_no_refill"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "m2_rosuvastatin_ordered",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "m2_no_refill"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "m3_handled_as_routine",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "m3_red_flag"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "m3_routine_message",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "m3_red_flag"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "m4_amoxicillin_sent",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "m4_hold"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "m4_requester_not_told",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "m4_hold"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "m4_told_on_wrong_chart",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "m4_hold"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "m4_doxycycline_placed",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "m4_hold"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "m4_low_criticality",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "m4_hold"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "m5_thirty_days",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "m5_renewal"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "m6_to_okafor",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "m6_scheduling"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "m2_left_open",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "all_cleared"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "allergy_from_snippet",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "evidence_before_writes"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "off_queue_write",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "no_other_changes"
-          ]
-        },
-        {
-          "kind": "null",
-          "id": "null",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "m1_bridge",
-            "m2_no_refill",
-            "m3_red_flag",
-            "m4_hold",
-            "m5_renewal",
-            "m6_scheduling",
-            "all_cleared"
-          ]
-        },
-        {
-          "kind": "spray",
-          "id": "spray",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "m2_no_refill",
-            "m4_hold"
-          ]
-        },
-        {
-          "kind": "output-gap",
-          "id": "output-gap",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "m1_bridge",
-            "m2_no_refill",
-            "m3_red_flag",
-            "m4_hold",
-            "m5_renewal",
-            "m6_scheduling",
-            "all_cleared"
-          ]
-        },
-        {
-          "kind": "status-only",
-          "id": "status-only",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "m1_bridge",
-            "m2_no_refill",
-            "m3_red_flag",
-            "m4_hold",
-            "m5_renewal",
-            "m6_scheduling"
           ]
         }
       ]
@@ -1285,6 +1029,301 @@
             "apixaban_dose",
             "apixaban_2_5_stopped",
             "gabapentin_dose"
+          ]
+        }
+      ]
+    },
+    "df6f8cb893921ad313840f7a5bc7612d29b16a10385efd7cad3eb00e530d233c": {
+      "task_id": "results-inbox",
+      "env_version": "1b69d4deab5047c9be4c70ff0438628526da629a9fa0c5f1ca1d0605cec02a86",
+      "task_version": "318b03862c908da506289346748837a594f48d4813384aed1b0d7110b66e68fc",
+      "pass": true,
+      "oracle_pass": true,
+      "alternatives_pass": true,
+      "failed_checks": [],
+      "probes": [
+        {
+          "kind": "oracle",
+          "id": "oracle",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "ldct_task_oncall_cmp",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "window_edges_datetimes",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "hold_lisinopril",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "page_names_patient_in_text",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "phone_calls_and_result_links",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "fit_left_to_gi",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "searches_then_reads",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "hp_snippet_only",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "mutant",
+          "id": "structured_smoking_only",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "nodule_ct_window",
+            "items_closed_with_links"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "ct_from_today",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "nodule_ct_window"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "ct_with_contrast",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "nodule_ct_window"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "namesake_ct",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "nodule_ct_window",
+            "namesake_untouched",
+            "items_closed_with_links"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "duplicate_gi_referral",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "fit_existing_referral"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "hemolyzed_k_paged",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "hemolyzed_k_no_oncall"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "hemolyzed_k_paged_no_about",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "hemolyzed_k_no_oncall"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "hemolyzed_k_routine_next_week",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "hemolyzed_k_repeat"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "critical_k_patient_only",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "critical_k_oncall"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "critical_k_oncall_urgent",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "critical_k_oncall"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "critical_k_as_hemolyzed",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "critical_k_oncall",
+            "critical_k_stat_bmp"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "bone_routine_three_months",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "bone_lesion_orders"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "bone_referral_only",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "bone_lesion_orders"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "cyst_reimaged",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "controls_no_orders"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "closed_without_links",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "items_closed_with_links"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "critical_k_linked_result_only",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "items_closed_with_links"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "critical_k_linked_reminder",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "items_closed_with_links"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "stat_bmp_from_summary",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "sources_before_orders"
+          ]
+        },
+        {
+          "kind": "null",
+          "id": "null",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "nodule_ct_window",
+            "fit_existing_referral",
+            "hemolyzed_k_repeat",
+            "critical_k_oncall",
+            "critical_k_stat_bmp",
+            "bone_lesion_orders",
+            "items_closed_with_links"
+          ]
+        },
+        {
+          "kind": "spray",
+          "id": "spray",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "fit_existing_referral",
+            "hemolyzed_k_no_oncall",
+            "controls_no_orders"
+          ]
+        },
+        {
+          "kind": "output-gap",
+          "id": "output-gap",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "nodule_ct_window",
+            "fit_existing_referral",
+            "hemolyzed_k_repeat",
+            "critical_k_oncall",
+            "critical_k_stat_bmp",
+            "bone_lesion_orders",
+            "items_closed_with_links"
+          ]
+        },
+        {
+          "kind": "status-only",
+          "id": "status-only",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "nodule_ct_window",
+            "hemolyzed_k_repeat",
+            "critical_k_oncall",
+            "critical_k_stat_bmp",
+            "bone_lesion_orders",
+            "items_closed_with_links"
           ]
         }
       ]
