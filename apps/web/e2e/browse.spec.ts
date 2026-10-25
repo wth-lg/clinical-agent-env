@@ -12,7 +12,7 @@ import { NOT_AUDITED_MARKER } from '../../../packages/core/explain.ts';
 import { AUDIT_LABEL, DENOMINATOR_RULE, FAULT_DEFINITIONS, FAULT_PRECEDENCE, PASS_DEFINITION } from '../../../packages/core/outcomes.ts';
 import { trialName } from '../../../packages/core/summary.ts';
 import { markOf } from '../src/data/ui.tsx';
-import { cliMatrix, cliReplay, explain, sampleBase, MANIFEST_HASH, records, summary, TASK_IDS } from './fixtures/sample-results/sample.ts';
+import { CHECK_TEXT, cliMatrix, cliReplay, explain, sampleBase, MANIFEST_HASH, records, summary, TASK_IDS } from './fixtures/sample-results/sample.ts';
 
 async function browse(page: Page, path = './') {
   await page.goto(new URL(path, await sampleBase(test.info().project.use.baseURL!)).href);
@@ -105,6 +105,8 @@ test('Overview: k/N with N from the run, Wilson bounds equal summary.json, one s
 });
 
 test('Runs: every non-pass row shows outcome, label, decisive check and reason without a click', async ({ page }) => {
+  // About 400 assertions over 75 rows: the default 30 s was too tight under parallel load (review-phase-P14 F4).
+  test.setTimeout(120_000);
   await browse(page, './?view=runs');
   await expect(page.getByTestId('pass-definition')).toHaveText(PASS_DEFINITION);
   await expect(page.getByTestId('denominator-rule')).toHaveText(DENOMINATOR_RULE);
@@ -154,6 +156,18 @@ test('one click on a fault label opens the glossary, whose text equals outcomes.
   await expect(page.getByTestId('glossary-denominator')).toHaveText(DENOMINATOR_RULE);
 });
 
+test('the trial detail says each criterion and the fault in words, linked to the glossary', async ({ page }) => {
+  const failing = records.find((r) => r.outcome === 'FAIL' && explain(r).label === 'model' && !explain(r).audited)!;
+  await browse(page, `./?view=runs&trial=${encodeURIComponent(trialName(failing))}`);
+  const detail = page.getByTestId('trial-detail');
+  await expect(detail).toHaveAttribute('data-full', 'true', { timeout: 60_000 });
+  await expect(detail.getByTestId('detail-criteria').locator('li')).toHaveCount(5);
+  await expect(detail.getByTestId('detail-fault')).toContainText(FAULT_DEFINITIONS.model.criteria[0]!.text);
+  await detail.getByRole('link', { name: 'model', exact: true }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('How failures are attributed');
+  await expect(page).toHaveURL(/#fault-model$/);
+});
+
 test('URL state round-trips: task, label and open trial survive a reload and history', async ({ page }) => {
   const failing = records.find((r) => r.outcome === 'FAIL' && explain(r).label === 'model')!;
   const name = trialName(failing);
@@ -164,8 +178,9 @@ test('URL state round-trips: task, label and open trial survive a reload and his
     await expect(page.locator(`[data-testid="trial-row"][data-trial="${name}"]`).getByTestId('trial-detail')).toBeVisible();
   };
   await check();
+  // The tab chose to browse, so a reload goes straight to the view (verifier-phase-P14-2 F8).
   await page.reload();
-  await page.getByRole('button', { name: 'Browse without a key' }).click();
+  await expect(page.getByRole('button', { name: 'Browse without a key' })).toHaveCount(0);
   await check();
   await page.getByRole('combobox', { name: 'Label' }).selectOption('');
   await expect(page).not.toHaveURL(/label=/);
@@ -179,7 +194,8 @@ test('URL state round-trips: task, label and open trial survive a reload and his
 
 test('Environment: Verify reset equals the manifest hash; Try on fhir_search returns rows, exposed_ids and an unchanged hash', async ({ page }) => {
   await browse(page, './?view=environment');
-  await expect(page.getByTestId('manifest-hash')).toHaveText(MANIFEST_HASH);
+  await expect(page.getByTestId('manifest-hash')).toHaveAttribute('data-hash', MANIFEST_HASH);
+  await expect(page.getByTestId('manifest-hash')).toContainText(`${MANIFEST_HASH.slice(0, 8)}…${MANIFEST_HASH.slice(-4)}`);
   await expect(page.getByTestId('tool')).not.toHaveCount(0);
   await page.getByRole('button', { name: 'Verify reset' }).click();
   await expect(page.getByTestId('reset-result')).toHaveAttribute('data-hash', MANIFEST_HASH, { timeout: 60_000 });
@@ -212,6 +228,8 @@ test('Tasks: each check says what it requires, and the reference solution lists 
   const card = page.locator('[data-testid="task-card"][data-task="renal-dose-review"]');
   await expect(card.locator('[data-testid="task-check"][data-check="note_explains_eie_scr"]').getByTestId('check-question')).toContainText('entered in error');
   await expect(card.locator('[data-testid="task-check"][data-check="apixaban_dose"]')).toContainText('gate check: must be met to pass');
+  // Every gate check says what it requires without a click, in the words its failure reason uses.
+  for (const [id, t] of Object.entries(CHECK_TEXT['renal-dose-review']!)) await expect(card.locator(`[data-testid="task-check"][data-check="${id}"]`).getByTestId('check-requires')).toHaveText(`Requires ${t.requires}.`);
   await expect(card.getByTestId('solution-step').first()).toContainText('1.');
   expect(await card.getByTestId('solution-step').count()).toBeGreaterThan(5);
 });

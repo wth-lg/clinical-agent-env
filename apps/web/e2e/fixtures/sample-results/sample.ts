@@ -7,7 +7,13 @@ import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { explainTrial, type AuditRow, type ExplainRecord, type Explanation } from '../../../../../packages/core/explain.ts';
+import { explainTrial, type AuditRow, type CheckText, type ExplainRecord, type Explanation } from '../../../../../packages/core/explain.ts';
+import { checkText as contrast } from '../../../../../tasks/contrast-ct-prep.check-text.ts';
+import { checkText as crc } from '../../../../../tasks/crc-care-gap.check-text.ts';
+import { checkText as medrec } from '../../../../../tasks/discharge-medrec.check-text.ts';
+import { checkText as queue } from '../../../../../tasks/message-queue.check-text.ts';
+import { checkText as renal } from '../../../../../tasks/renal-dose-review.check-text.ts';
+import { checkText as inbox } from '../../../../../tasks/results-inbox.check-text.ts';
 import type { ReplayVerdict } from '../../../../../packages/core/replay.ts';
 import { trialName, type Summary } from '../../../../../packages/core/summary.ts';
 import { taskVersions } from '../../../../../packages/core/tasks.ts';
@@ -27,11 +33,16 @@ export const records: SampleRecord[] = readdirSync(join(RUN_DIR, 'trials'), { re
   .filter((e) => e.isFile() && e.name.endsWith('.json'))
   .map((e) => JSON.parse(readFileSync(join(e.parentPath, e.name), 'utf8')) as SampleRecord);
 
+// Each task's check text (tasks/<id>.check-text.ts), as the Runs view and audit-check pass it.
+export const CHECK_TEXT: Readonly<Record<string, CheckText>> = {
+  'contrast-ct-prep': contrast, 'crc-care-gap': crc, 'discharge-medrec': medrec, 'message-queue': queue, 'renal-dose-review': renal, 'results-inbox': inbox,
+};
+
 // explainTrial reads the trajectory only for a REFUSAL's or LIMIT's sentence.
 export function explain(r: SampleRecord): Explanation {
   const row = audit.find((a) => a.trial === trialName(r)) ?? null;
   const events = r.outcome === 'REFUSAL' || r.outcome === 'LIMIT' ? parseTrajectory(readFileSync(join(RUN_DIR, r.trajectory), 'utf8')) : [];
-  return explainTrial(r, row, { events, world_state_hash: MANIFEST_HASH });
+  return explainTrial(r, row, { events, world_state_hash: MANIFEST_HASH, text: CHECK_TEXT[r.task_id] ?? null });
 }
 
 export const TASK_IDS = readdirSync(join(REPO, 'tasks'), { withFileTypes: true })
