@@ -1,20 +1,21 @@
 // Grader validation in a module Worker, with no key and no network but same-origin fetches: the
 // oracle (as `pnpm cli oracle` runs it: one run, one grade), the whole matrix (as `pnpm cli
 // matrix` runs it, without the two Node-only checks, the fresh-process isolation grade and
-// policy.ts's import graph), and replay of a published run's trials (as `pnpm cli replay`
-// does: the tool log against a fresh store, the final hash and the grade compared with the
-// record's current grade).
+// policy.ts's import graph), and replay of a published run's trials as `pnpm cli replay` does:
+// the tool log against a fresh store, graded again from the record's judge cache, with the
+// verdict from packages/core/replay.ts, the match rule the CLI uses.
 import { browserNow } from '../adapters/clock-browser.ts';
 import { browserTaskSource } from '../adapters/tasks-browser.ts';
 import { gradeTrajectory, type GradeTrajectoryOptions } from '../../../../packages/core/run.ts';
-import { RERUN_OUTCOMES } from '../../../../packages/core/outcomes.ts';
-import { currentGrade } from '../../../../packages/core/summary.ts';
+import { replayEnvVerdict, replayVerdict, type ReplayGraded } from '../../../../packages/core/replay.ts';
 import { taskVersions } from '../../../../packages/core/tasks.ts';
 import { parseTrajectory } from '../../../../packages/core/trajectory.ts';
+import type { Check } from '../../../../packages/grader/check.ts';
+import { JudgeCacheMiss } from '../../../../packages/grader/judge.ts';
 import { runCases, runMatrix, selectCases, type MatrixEnv } from '../../../../packages/grader/matrix/matrix.ts';
 import { MANIFEST, worldDefinitions, worldSource } from '../data/world.ts';
 import { loadMatrixTask, taskChecks } from './matrix-task.ts';
-import type { OracleResult, ReplayRow, ValidateReply, ValidateRequest } from './validate-protocol.ts';
+import type { OracleResult, ReplayRow, ReplayTrial, ValidateReply, ValidateRequest } from './validate-protocol.ts';
 
 let env: Promise<MatrixEnv> | undefined;
 const matrixEnv = () =>
@@ -48,31 +49,21 @@ async function replay(id: string, trials: ValidateRequest & { op: 'replay' }): P
   const rows: ReplayRow[] = [];
   for (const t of trials.trials) {
     const r = t.record;
-    const base = { name: t.name, final: r.state_hash.final, recorded: currentGrade(r).outcome };
-    // An excluded outcome that is rerun (INFRA, CANCELLED, INVALID, ENV_ERROR) is not graded, so
-    // there is nothing to compare; a GRADER_ERROR is, and replays.
-    if (r.state_hash.final === null || (RERUN_OUTCOMES as readonly string[]).includes(r.outcome)) {
-      rows.push({ ...base, status: 'skipped', regraded: null, message: r.state_hash.final === null ? 'no final state to replay (the trial did not finish)' : `${r.outcome} is excluded and rerun, not graded` });
-      continue;
-    }
-    if (r.env_version && r.env_version !== env_version) {
-      rows.push({ ...base, status: 'env-changed', regraded: null, message: `environment changed: run at env_version ${r.env_version.slice(0, 12)}, this build at ${env_version.slice(0, 12)}` });
-      continue;
-    }
-    const res = await fetch(t.trajectoryUrl);
-    if (!res.ok) {
-      rows.push({ ...base, status: 'error', regraded: null, message: `trajectory: HTTP ${res.status}` });
-      continue;
-    }
-    try {
-      const g = await gradeTrajectory(id, { tasks: e.tasks, world: e.world, checks, events: parseTrajectory(await res.text()), record: r as unknown as GradeTrajectoryOptions['record'], ...(e.definitions ? { definitions: e.definitions } : {}) });
-      const hashMiss = g.outcome === 'GRADER_ERROR' && g.error?.check === null && g.error.message.startsWith('regrade:');
-      rows.push({ ...base, status: hashMiss ? 'hash-differs' : 'reproduced', regraded: g.outcome, message: hashMiss ? g.error!.message : `replayed state hash equals the record's final ${r.state_hash.final}` });
-    } catch (err) {
-      rows.push({ ...base, status: 'error', regraded: null, message: (err as Error).message });
-    }
+    rows.push({ name: t.name, final: r.state_hash.final, ...(replayEnvVerdict(r, env_version) ?? replayVerdict(r, await regrade(id, t, checks, e))) });
   }
   return rows;
+}
+
+async function regrade(id: string, t: ReplayTrial, checks: Check[], e: MatrixEnv): Promise<ReplayGraded> {
+  if (t.trajectoryUrl === null) return { error: `no trajectory is published for ${t.name}` };
+  try {
+    const res = await fetch(t.trajectoryUrl);
+    if (!res.ok) return { error: `trajectory: HTTP ${res.status}` };
+    const events = parseTrajectory(await res.text());
+    return { grade: await gradeTrajectory(id, { tasks: e.tasks, world: e.world, checks, events, record: t.record as unknown as GradeTrajectoryOptions['record'], ...(e.definitions ? { definitions: e.definitions } : {}) }) };
+  } catch (err) {
+    return err instanceof JudgeCacheMiss ? { miss: err.message } : { error: (err as Error).message };
+  }
 }
 
 async function handle(req: ValidateRequest): Promise<unknown> {

@@ -1,14 +1,20 @@
 // Messages between the Tasks view and the validation Worker (validation-thread.ts), and a client
 // that sends one request and resolves with its reply. One Worker serves the tab; requests queue.
 import type { ExplainRecord } from '../../../../packages/core/explain.ts';
+import type { ReplayRecord, ReplayVerdict } from '../../../../packages/core/replay.ts';
 import type { CaseKind } from '../../../../packages/grader/matrix/matrix.ts';
 
-export type ReplayRecord = ExplainRecord & { env_version?: string | null };
+// A published trial to replay; trajectoryUrl is null when the run has no trajectory for it.
+export interface ReplayTrial {
+  name: string;
+  record: ExplainRecord & ReplayRecord;
+  trajectoryUrl: string | null;
+}
 
 export type ValidateRequest =
   | { op: 'oracle'; task: string }
   | { op: 'matrix'; task: string }
-  | { op: 'replay'; task: string; trials: Array<{ name: string; record: ReplayRecord; trajectoryUrl: string }> };
+  | { op: 'replay'; task: string; trials: ReplayTrial[] };
 
 export type ValidateReply = { id: number; ok: true; result: unknown } | { id: number; ok: false; error: string };
 
@@ -35,13 +41,10 @@ export interface MatrixRun {
   probes: Probe[];
 }
 
-export interface ReplayRow {
+// One replayed trial: its verdict as `pnpm cli replay --json` gives it (packages/core/replay.ts).
+export interface ReplayRow extends ReplayVerdict {
   name: string;
   final: string | null;
-  recorded: string;
-  regraded: string | null;
-  status: 'reproduced' | 'hash-differs' | 'env-changed' | 'skipped' | 'error';
-  message: string;
 }
 
 let worker: Worker | undefined;

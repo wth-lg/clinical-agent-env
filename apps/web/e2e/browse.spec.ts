@@ -9,7 +9,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { NOT_AUDITED_MARKER } from '../../../packages/core/explain.ts';
 import { AUDIT_LABEL, DENOMINATOR_RULE, FAULT_DEFINITIONS, FAULT_PRECEDENCE, PASS_DEFINITION } from '../../../packages/core/outcomes.ts';
 import { trialName } from '../../../packages/core/summary.ts';
-import { cliMatrix, explain, sampleBase, MANIFEST_HASH, records, summary, TASK_IDS } from './fixtures/sample-results/sample.ts';
+import { cliMatrix, cliReplay, explain, sampleBase, MANIFEST_HASH, records, summary, TASK_IDS } from './fixtures/sample-results/sample.ts';
 
 async function browse(page: Page, path = './') {
   await page.goto(new URL(path, await sampleBase(test.info().project.use.baseURL!)).href);
@@ -41,7 +41,7 @@ test.describe('grader validation in the tab, no key', () => {
   });
 
   for (const id of TASK_IDS) {
-    test(`${id}: oracle PASS 1.0, matrix verdicts equal the CLI's, replay reproduces the published hashes`, async ({ page }) => {
+    test(`${id}: oracle PASS 1.0, matrix verdicts equal the CLI's, replay verdicts equal the CLI's`, async ({ page }) => {
       await browse(page, './?view=tasks');
       const v = page.locator(`[data-testid="validation"][data-task="${id}"]`);
       await v.getByRole('button', { name: 'Run oracle' }).click();
@@ -63,14 +63,12 @@ test.describe('grader validation in the tab, no key', () => {
       await v.getByRole('button', { name: 'Replay published trials' }).click();
       const rows = v.getByTestId('replay-row');
       await expect(rows.first()).toBeVisible({ timeout: 300_000 });
-      const mine = records.filter((r) => r.task_id === id);
-      await expect(rows).toHaveCount(mine.length);
-      for (const r of mine) {
-        const row = v.locator(`[data-testid="replay-row"][data-trial="${trialName(r)}"]`);
-        const replayable = r.state_hash.final !== null && !['INVALID', 'INFRA_HARNESS', 'INFRA_API', 'CANCELLED', 'ENV_ERROR'].includes(r.outcome);
-        await expect(row).toHaveAttribute('data-status', replayable ? 'reproduced' : 'skipped');
-        if (replayable) await expect(row).toHaveAttribute('data-final', r.state_hash.final!);
-      }
+      await expect(rows).toHaveCount(records.filter((r) => r.task_id === id).length);
+      // Each verdict equals `pnpm cli replay --json`, the excluded and GRADER_ERROR records too.
+      const browser = await rows.evaluateAll((els) => Object.fromEntries(els.map((e) => [e.getAttribute('data-trial'), { match: e.getAttribute('data-match') === 'true', outcome: e.getAttribute('data-outcome') || null }])));
+      const replayed = await cliReplay(id);
+      expect(browser).toEqual(Object.fromEntries(Object.entries(replayed).map(([name, t]) => [name, { match: t.match, outcome: t.outcome }])));
+      for (const [name, t] of Object.entries(replayed)) if (!t.match) await expect(v.locator(`[data-testid="replay-row"][data-trial="${name}"]`)).toContainText(t.error!);
     });
   }
 });

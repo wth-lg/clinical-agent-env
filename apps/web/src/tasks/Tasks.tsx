@@ -120,7 +120,7 @@ function Validation({ id }: { id: string }) {
   const replayTrials = async () => {
     const r = await loadResults();
     if (r.kind !== 'ready') return [];
-    return validate({ op: 'replay', task: id, trials: r.run.trials.filter((t) => t.task === id && t.trajectoryUrl !== null).map((t) => ({ name: t.name, record: t.record, trajectoryUrl: t.trajectoryUrl! })) });
+    return validate({ op: 'replay', task: id, trials: r.run.trials.filter((t) => t.task === id).map((t) => ({ name: t.name, record: t.record, trajectoryUrl: t.trajectoryUrl })) });
   };
   return (
     <div className="border-t border-line px-4 py-3" data-testid="validation" data-task={id}>
@@ -163,11 +163,11 @@ function Validation({ id }: { id: string }) {
         <div data-testid="replay-result">
           {rows.length === 0 ? <p className="text-ink-muted">No published trials of this task to replay.</p> : (
             <>
-              <p>Replay: {rows.filter((x) => x.status === 'reproduced').length} of {rows.filter((x) => x.status !== 'skipped').length} replayable trials reproduce their published final state hash.</p>
+              <p>Replay: {rows.filter((x) => x.match).length} of {rows.length} trials reproduced, by the rule <code className="text-xs">pnpm cli replay</code> uses: same environment, and the regrade gives the same outcome, score and check results as the published grade.</p>
               <ul className="mt-1 space-y-0.5 text-xs">
                 {rows.map((x) => (
-                  <li key={x.name} data-testid="replay-row" data-trial={x.name} data-status={x.status} data-final={x.final ?? ''}>
-                    <span className="font-medium">{x.name}</span> {x.status}: {x.message}{x.regraded !== null && x.regraded !== x.recorded ? ` (recorded ${x.recorded}, regraded ${x.regraded})` : ''}
+                  <li key={x.name} data-testid="replay-row" data-trial={x.name} data-match={String(x.match)} data-outcome={x.outcome ?? ''} data-final={x.final ?? ''} className="break-words">
+                    <span className="font-medium">{x.name}</span> {x.match ? `reproduced (${x.outcome})` : `does not match: ${x.error ?? ''}`}{x.note ? ` (${x.note})` : ''}
                   </li>
                 ))}
               </ul>

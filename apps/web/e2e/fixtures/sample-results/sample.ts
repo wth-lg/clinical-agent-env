@@ -1,13 +1,14 @@
 // The committed sample run the browse and Findings specs check the built UI against
 // (fixtures/sample-results, built with RESULTS_ROOT pointed there), read in Node: its summary,
 // records, audit rows and matrix.json, each record's explainTrial, and the six task ids.
-import { spawn, spawnSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readdirSync, readFileSync } from 'node:fs';
+import { execFile, spawn, spawnSync } from 'node:child_process';
+import { cpSync, existsSync, mkdtempSync, readdirSync, readFileSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { explainTrial, type AuditRow, type ExplainRecord, type Explanation } from '../../../../../packages/core/explain.ts';
+import type { ReplayVerdict } from '../../../../../packages/core/replay.ts';
 import { trialName, type Summary } from '../../../../../packages/core/summary.ts';
 import { taskVersions } from '../../../../../packages/core/tasks.ts';
 import { parseTrajectory } from '../../../../../packages/core/trajectory.ts';
@@ -52,6 +53,19 @@ export async function cliMatrix(id: string): Promise<MatrixEntry> {
   const entry = matrixJson.grader_task_versions[grader_task_version];
   if (entry === undefined || entry.task_id !== id) throw new Error(`matrix.json has no entry for ${id} at grader_task_version ${grader_task_version}; rerun node apps/web/e2e/fixtures/sample-results/generate.ts --matrix`);
   return entry;
+}
+
+// `pnpm cli replay --json` over one task's trials of the sample run: a copy holding only that
+// task's records and trajectories (replay writes replay.json into the run, and the whole run takes
+// minutes), so each task's spec compares the browser's verdicts with the CLI's.
+export async function cliReplay(id: string): Promise<Record<string, ReplayVerdict>> {
+  const dir = join(mkdtempSync(join(tmpdir(), 'clinenv-replay-')), 'run');
+  for (const d of ['trials', 'trajectories']) cpSync(join(RUN_DIR, d, id), join(dir, d, id), { recursive: true });
+  const stdout = await new Promise<string>((resolve, reject) =>
+    execFile(process.execPath, [join(REPO, 'cli/index.ts'), 'replay', dir, '--json'], { cwd: REPO, maxBuffer: 1 << 24 }, (err, out, errOut) =>
+      // Exit 1 means a trial does not match, which the caller compares; anything else failed.
+      err && err.code !== 1 ? reject(new Error(`cli replay ${id}: ${err.message}\n${errOut}`)) : resolve(out)));
+  return (JSON.parse(stdout) as { trials: Record<string, ReplayVerdict> }).trials;
 }
 
 // The base URL of a build of this sample. The gate builds it (RESULTS_ROOT pointed here) and the
