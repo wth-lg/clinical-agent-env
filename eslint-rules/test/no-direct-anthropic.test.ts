@@ -86,7 +86,7 @@ describe('no-direct-anthropic', () => {
   });
 
   it('allows the exact design CSP literal in apps/web/e2e/smoke.spec.ts only', async () => {
-    const csp = `export const CSP = "default-src 'self'; connect-src 'self' https://${HOST}; script-src 'self'; worker-src 'self'";`;
+    const csp = `export const CSP = "default-src 'self'; connect-src 'self' https://${HOST}; script-src 'self'; worker-src 'self' blob:";`;
     expect(await ruleIds(csp, 'apps/web/e2e/smoke.spec.ts')).not.toContain(RULE);
     expect(await ruleIds(csp, 'cli/planted.ts')).toContain(RULE);
     expect(await ruleIds(csp.replace("worker-src 'self'", "worker-src 'self' x"), 'apps/web/e2e/smoke.spec.ts')).toContain(RULE);

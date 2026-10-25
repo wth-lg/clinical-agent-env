@@ -246,7 +246,7 @@ describe('runner refusal text', () => {
   // spending limit counts the whole spend ledger, which a restart does not change; `pnpm cli
   // spend --check` lists what it holds, an open batch of a runner that died included.
   it('says what to do when a cap refuses and no trials are running', () => {
-    const restart = 'If no trials are running, restart the runner. A restart starts a new session with no spend.';
+    const restart = 'If no trials are running, restart the runner. A restart starts a new session with no spend. Then reload this page.';
     const ledger = 'A runner restart does not reset this limit. Run pnpm cli spend --check to see what uses it.';
     expect(REFUSAL_TEXT.key.session_cap).toContain(restart);
     expect(REFUSAL_TEXT.key.spend_refused_ceiling).toContain(restart);

@@ -14,6 +14,13 @@
 // WebSocket, EventSource and navigator.sendBeacon, where present, are refused for those hosts
 // outright: the client never uses them. A URL is resolved once and the resolved string is what
 // gets sent, so an object whose toString answers differently the second time sends nothing new.
+// With allowedOrigins (the browser trial Worker), a send by any of those APIs to an origin not in
+// the list is refused as well; the API host stays reachable only by the claimed MessagesClient
+// Request, listed or not. In that mode every other fetch is forwarded with redirect: 'error', so a
+// listed origin cannot redirect it elsewhere, and XMLHttpRequest and EventSource, which follow
+// redirects with no way to opt out, are refused whatever the origin. This is the second layer:
+// the trial Worker starts from a blob: URL, so the page's CSP binds it and the browser refuses
+// other origins on every hop (apps/web/src/live/transport/worker.ts).
 // The wrapped globals are made read-only, so later code cannot put the raw ones back. The entry
 // point passes its global scope in, since shared code does not touch DOM or Node globals
 // (lint: isomorphic-imports).
@@ -25,8 +32,24 @@ import { claimOutbound, EgressRefusal, isApiHost, requestUrl } from './anthropic
 
 let installed = false;
 
+export interface EgressOptions {
+  // The origins this context may send to besides the API host (each parsed as a URL; its origin
+  // counts). Unset: any origin but the API host.
+  allowedOrigins?: readonly string[];
+}
+
+// The allowed origins, or null for any.
+let allowed: ReadonlySet<string> | null = null;
+
 const refused = (api: string, url: URL) =>
   new EgressRefusal(`egress guard: ${api} to ${url.origin} refused: only MessagesClient (packages/core/anthropic.ts) sends to the Anthropic API, once per registered Request`);
+
+// Throws for an origin outside allowedOrigins. The API host is checked by the callers first.
+function admit(api: string, url: URL): void {
+  if (allowed !== null && !isApiHost(url.hostname) && !allowed.has(url.origin)) {
+    throw new EgressRefusal(`egress guard: ${api} to ${url.origin} refused: this context sends only to ${[...allowed].join(', ')} and the Anthropic API`);
+  }
+}
 
 // The globals the guard wraps, where the runtime has them.
 interface Scope {
@@ -75,6 +98,7 @@ function checked(api: string, input: unknown): string {
   const url = resolveUrl(s);
   if (url === null) return s; // the platform rejects it the same way
   if (isApiHost(url.hostname)) throw refused(api, url);
+  admit(api, url);
   return url.href;
 }
 
@@ -84,16 +108,24 @@ function checked(api: string, input: unknown): string {
 // also overrides a dispatcher set in `new Request(url, { dispatcher })` or inherited from the
 // Request it copied. An inherited init property is not copied. The claimed client Request gets
 // the raw dispatcher; anything else gets the guarded one, so a redirect to the API host is
-// refused at the hop. Without a captured dispatcher, the copy has none.
+// refused at the hop. Without a captured dispatcher, the copy has none. With allowedOrigins, an
+// unclaimed call is forwarded with redirect: 'error', which overrides a Request's own mode too.
 function forwardInit(init: RequestInit | undefined, claimed: boolean): RequestInit | undefined {
   const use = claimed ? dispatcher : guardedDispatcher;
+  const noRedirect = !claimed && allowed !== null;
   const own = typeof init === 'object' || typeof init === 'function';
   if (!own && init != null) return init; // the platform rejects it the same way
-  if (!own && use === undefined) return init;
+  if (!own && use === undefined && !noRedirect) return init;
   const copy: Record<string, unknown> = own ? { ...init } : {};
   delete copy.dispatcher;
   if (use !== undefined) copy.dispatcher = use;
+  if (noRedirect) copy.redirect = 'error';
   return copy;
+}
+
+// With allowedOrigins, XMLHttpRequest and EventSource are refused outright.
+function followsRedirects(api: string): void {
+  if (allowed !== null) throw new EgressRefusal(`egress guard: ${api} refused: this context sends by fetch only, which may not follow a redirect`);
 }
 
 // A dispatcher that refuses an API-host origin and hands everything else to `raw`. It extends
@@ -139,9 +171,10 @@ function lock(target: object, key: string | symbol, value: unknown): void {
 }
 
 
-export function installEgressGuard(scope: object): void {
+export function installEgressGuard(scope: object, opts: EgressOptions = {}): void {
   if (installed) return;
   installed = true;
+  if (opts.allowedOrigins !== undefined) allowed = new Set(opts.allowedOrigins.map((o) => new URL(o).origin));
   const g = scope as Scope;
   base = g.document?.baseURI ?? g.location?.href;
   // Reading Request loads Node's undici, which sets the global dispatcher.
@@ -169,6 +202,7 @@ export function installEgressGuard(scope: object): void {
           const url = resolveUrl(href);
           const claimed = url !== null && isApiHost(url.hostname);
           if (claimed && !claimOutbound(input, init)) throw refused('fetch', url);
+          if (url !== null) admit('fetch', url);
           return raw.call(scope, input, forwardInit(init, claimed));
         }
         return raw.call(scope, checked('fetch', input), forwardInit(init, false));
@@ -183,6 +217,7 @@ export function installEgressGuard(scope: object): void {
   const open = xhr?.prototype?.open;
   if (xhr?.prototype && typeof open === 'function') {
     lock(xhr.prototype, 'open', function (this: unknown, method: unknown, url: unknown, ...rest: unknown[]) {
+      followsRedirects('XMLHttpRequest');
       return open.call(this, method, checked('XMLHttpRequest', url), ...rest);
     });
   }
@@ -192,6 +227,7 @@ export function installEgressGuard(scope: object): void {
     if (typeof C !== 'function') continue;
     const Guarded = class extends (C as Ctor) {
       constructor(url: unknown, ...rest: unknown[]) {
+        if (name === 'EventSource') followsRedirects(name);
         super(checked(name, url), ...rest);
       }
     };

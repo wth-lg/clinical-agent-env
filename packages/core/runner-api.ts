@@ -98,7 +98,7 @@ export interface RunnerError {
 // exactly the strings docs/requirements/ui-contract.md lists ("P13, P15: runner refusals"). key
 // holds POST api/key's reasons (the key gate's Validate), trials POST api/trials's (the Run
 // launcher). runner-api.test.ts fails when apps/runner/server.ts sends a 409 reason missing here.
-const SESSION_CAP_VALIDATE = 'Validate can cost more than your session spend cap has left. If trials are running, wait for them to finish. Then press Validate again. If no trials are running, restart the runner. A restart starts a new session with no spend.';
+const SESSION_CAP_VALIDATE = 'Validate can cost more than your session spend cap has left. If trials are running, wait for them to finish. Then press Validate again. If no trials are running, restart the runner. A restart starts a new session with no spend. Then reload this page.';
 const SESSION_CAP_RUN = 'This batch can cost more than your session spend cap allows. To lower the cost, select fewer trials. To allow more spend, set a higher session cap.';
 const PROJECTED_CAP_RUN = 'This batch can cost more than the project spending limit allows. Select fewer tasks or fewer trials. A runner restart does not reset this limit. Run pnpm cli spend --check to see what uses it.';
 
