@@ -285,3 +285,33 @@ test('at 390 px the panes stack and nothing scrolls sideways', async ({ page }) 
     }
   }
 });
+
+// Navigation around the trial detail (verifier-phase-P16-1 N1, N2; review-ui-P16-1 F1, F2, F6, F8).
+const rail = (page: Page, name: string) => page.getByRole('navigation', { name: 'Views' }).getByRole('link', { name, exact: true });
+
+test('a rail link leaves no run or tab behind, so each Findings example opens its own trial (N1, F8)', async ({ page }) => {
+  await browse(page, `./?view=runs&run=pilot-pass&trial=${encodeURIComponent(TRIALS.pass)}&tab=raw`);
+  await expect(page.getByTestId('trial-detail')).toHaveAttribute('data-run', 'pilot-pass');
+  await rail(page, 'Overview').click();
+  await expect(page).not.toHaveURL(/[?&](run|tab|trial)=/);
+  await page.goBack();
+  await expect(page.getByTestId('trial-detail')).toHaveAttribute('data-run', 'pilot-pass');
+  await rail(page, 'Findings').click();
+  await expect(page).not.toHaveURL(/[?&](run|tab|trial)=/);
+  // A Findings address that still names another run and tab (shared, or from before this fix):
+  // each example names its own run and the default tab.
+  await browse(page, './?view=findings&run=pilot-pass&tab=raw');
+  const examples = page.getByTestId('exemplars').getByRole('link');
+  const n = await examples.count();
+  expect(n).toBeGreaterThan(0);
+  for (let i = 0; i < n; i++) {
+    const name = (await examples.nth(i).textContent())!;
+    await examples.nth(i).click();
+    await expect(page.getByTestId('trial-detail')).toHaveAttribute('data-trial', name);
+    await expect(page.getByTestId('trial-detail')).toHaveAttribute('data-run', RUN_ID);
+    await expect(page.getByTestId('trial-detail')).toHaveAttribute('data-tab', 'grading');
+    await expect(page.getByTestId('error-state')).toHaveCount(0);
+    await page.goBack();
+    await expect(page.getByTestId('exemplars')).toBeVisible();
+  }
+});
