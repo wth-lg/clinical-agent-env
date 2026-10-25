@@ -9,18 +9,27 @@
 //                          recorded as a tool_result with executed false and "episode finished"
 //   an answer without tool use (end_turn)
 //   a refusal              REFUSAL
-//   a cap                  LIMIT: turns (requests sent), cost (what the ledger settled so far,
-//                          worst-case settles included) and wall clock (the injected clock),
-//                          checked before each request; the wall clock also aborts a request
-//                          in flight through the injected `timeout` at the remaining budget,
-//                          and that call settles at its worst case with no retry; and a
-//                          second max_tokens stop in a row (the first is asked to continue)
+//   a cap                  LIMIT, a model fault, so only what the model used counts (R14-13,
+//                          R14-14): turns (requests sent), cost (the priced usage of the
+//                          answers so far; a worst-case settle of a dropped or aborted attempt
+//                          is in the ledger and cost_usd but not here) and working time
+//                          (elapsed time on the injected clock less retry_wait_ms: failed
+//                          attempts and the backoff waits after them), checked before each
+//                          request; working time also aborts an attempt in flight through the
+//                          injected `timeout` at the remaining budget, and that call settles at
+//                          its worst case with no retry; and a second max_tokens stop in a row
+//                          (the first is asked to continue)
+//   the hard elapsed bound INFRA_API, code elapsed_bound: total elapsed time, retries included,
+//                          reached caps.maxElapsedMs (checked before each request, and aborting
+//                          a call in flight once a retry has happened); batch.ts re-queues it
+//   an unpriced usage      INFRA_HARNESS, code unpriced_usage, on the answer that has it: a
+//                          missing price is a harness defect, not the model's spend
 //   opts.signal aborted    CANCELLED, checked before each request and passed to the client
 //   an exception from the environment: a tool (other than a ToolError) or the state hash
 //                          ENV_ERROR, code INTERNAL: the environment's fault, not the model's
 //   a client error         INFRA_API, INFRA_HARNESS or INVALID (a response from another model)
 // It reads no clock and draws no randomness (eslint-rules/determinism.js): time comes from the
-// injected `now` and `timeout`, used only for the wall-clock cap.
+// injected `now` and `timeout`, used only for the working-time cap and the elapsed bound.
 import { classifyFailure, type CallResult, type MessageParam, type MessageParams, type SendOptions } from './anthropic.ts';
 import { usageCostUsd, type Usage } from './cost.ts';
 import type { ErrorStatus, EventBody, Limit, TrialStatus } from './events.ts';
@@ -35,8 +44,12 @@ export interface TrialClient {
 
 export interface Caps {
   maxTurns: number;
+  // Against priced usage only.
   maxCostUsd: number;
+  // Working time: elapsed less retry_wait_ms.
   maxWallMs: number;
+  // Total elapsed time, retries included; at least maxWallMs.
+  maxElapsedMs: number;
 }
 
 export interface LoopInput {
@@ -77,6 +90,9 @@ export interface LoopOutcome {
   cost_usd: number;
   models_returned: string[];
   api_retries: number;
+  // Time spent in failed attempts and the backoff waits after them, up to the next attempt or
+  // the end of the trial, on the injected clock: left out of working time.
+  retry_wait_ms: number;
   stop_reason: string | null;
   refusal_category: string | null;
 }
@@ -112,7 +128,7 @@ export const newOutcome = (): LoopOutcome => ({
   status: 'COMPLETED', stop: null, terminal: null, turns: 0, tool_calls: 0,
   tool_errors: Object.fromEntries(ERROR_CODES.map((c) => [c, 0])) as Record<ErrorCode, number>,
   usage: { input: 0, cache_write: 0, cache_read: 0, output: 0 }, cost_usd: 0,
-  models_returned: [], api_retries: 0, stop_reason: null, refusal_category: null,
+  models_returned: [], api_retries: 0, retry_wait_ms: 0, stop_reason: null, refusal_category: null,
 });
 
 export async function runLoop(input: LoopInput): Promise<LoopOutcome> {
@@ -124,31 +140,86 @@ export async function runLoop(input: LoopInput): Promise<LoopOutcome> {
   // Messages already carried by a request or response event.
   let logged = 0;
   let maxTokensInARow = 0;
-  // A usage that cannot be priced: the ledger settled it at the worst case, and the trial stops.
-  let unpriced = false;
+  // What the cost cap reads: the priced usage of the answers so far.
+  let pricedUsd = 0;
   const onSettle = (usd: number) => {
     out.cost_usd += usd;
   };
   const internal = (e: unknown) => end('ENV_ERROR', { type: 'error', status: 'ENV_ERROR', code: 'INTERNAL', message: errorText(e) });
 
+  // Working time. A failed attempt's time, and the wait after it, move into retry_wait_ms when
+  // the client reports the retry (onRetry) and when the next attempt starts (onAttempt).
+  // Each takes the time `t` the caller read once, so one decision reads the clock once.
+  let attemptStart = started;
+  let waitFrom: number | null = null;
+  const working = (t: number) => t - started - out.retry_wait_ms - (waitFrom === null ? 0 : t - waitFrom);
+  const settleWait = (t: number) => {
+    if (waitFrom !== null) out.retry_wait_ms += t - waitFrom;
+    waitFrom = null;
+  };
+  // The hard elapsed bound. Without a retry, working time is elapsed time and reaches its cap
+  // first, so the bound's timer starts at the trial's first retry.
+  const bound = new AbortController();
+  let boundArmed = false;
+  const armBound = (t: number) => {
+    if (boundArmed) return;
+    boundArmed = true;
+    const s = timeout(caps.maxElapsedMs - (t - started));
+    if (s.aborted) bound.abort(s.reason);
+    else s.addEventListener('abort', () => bound.abort(s.reason), { once: true });
+  };
+  const elapsedBound = (t: number): Terminal => ({
+    type: 'error', status: 'INFRA_API', code: 'elapsed_bound',
+    message: `${t - started} ms elapsed, past the hard bound of ${caps.maxElapsedMs} ms (${out.retry_wait_ms} ms in failed attempts and retry waits)`,
+  });
+  const wallLimit = (t: number): Terminal => ({ type: 'limit', limit: 'wall_clock', cap: caps.maxWallMs, value: working(t) });
+
   for (;;) {
     if (signal?.aborted) return end('CANCELLED', { type: 'cancelled', reason: errorText(signal.reason) });
     if (out.turns >= caps.maxTurns) return end('LIMIT', { type: 'limit', limit: 'turns', cap: caps.maxTurns, value: out.turns });
-    if (unpriced || out.cost_usd >= caps.maxCostUsd) return end('LIMIT', { type: 'limit', limit: 'cost', cap: caps.maxCostUsd, value: out.cost_usd });
-    const elapsed = now() - started;
-    if (elapsed >= caps.maxWallMs) return end('LIMIT', { type: 'limit', limit: 'wall_clock', cap: caps.maxWallMs, value: elapsed });
+    if (pricedUsd >= caps.maxCostUsd) return end('LIMIT', { type: 'limit', limit: 'cost', cap: caps.maxCostUsd, value: pricedUsd });
+    const t = now();
+    if (working(t) >= caps.maxWallMs) return end('LIMIT', wallLimit(t));
+    if (t - started >= caps.maxElapsedMs) return end('INFRA_API', elapsedBound(t));
 
     const turn = out.turns + 1;
     emit({ type: 'request', turn, messages_from: logged, messages: history.slice(logged), ...(turn === 1 ? { params } : {}) });
     out.turns = turn;
-    const wall = timeout(caps.maxWallMs - elapsed);
+    // Each attempt gets a timer at the remaining working time; it aborts the call only if it
+    // fires while that attempt is in flight (not after it failed, during the wait for a retry).
+    const work = new AbortController();
+    let current: AbortSignal | null = null;
+    const startAttempt = (at: number) => {
+      settleWait(at);
+      attemptStart = at;
+      const s = timeout(caps.maxWallMs - working(at));
+      current = s;
+      const fire = () => {
+        if (current === s && waitFrom === null) work.abort(s.reason);
+      };
+      if (s.aborted) fire();
+      else s.addEventListener('abort', fire, { once: true });
+    };
+    startAttempt(t);
+    const onAttempt = (n: number) => {
+      if (n > 1) startAttempt(now());
+    };
+    const onRetry = () => {
+      const at = now();
+      out.retry_wait_ms += at - attemptStart;
+      waitFrom = at;
+      armBound(at);
+    };
     let r: CallResult;
     try {
-      r = await client.send(history, params, { signal: signal ? AbortSignal.any([signal, wall]) : wall, onSettle });
+      r = await client.send(history, params, { signal: AbortSignal.any([...(signal ? [signal] : []), work.signal, bound.signal]), onSettle, onAttempt, onRetry });
     } catch (e) {
-      if (!signal?.aborted && wall.aborted) return end('LIMIT', { type: 'limit', limit: 'wall_clock', cap: caps.maxWallMs, value: now() - started });
-      const t = clientFailure(e, signal);
-      return end(t.type === 'error' ? t.status : 'CANCELLED', t);
+      const at = now();
+      settleWait(at);
+      if (!signal?.aborted && work.signal.aborted) return end('LIMIT', wallLimit(at));
+      if (!signal?.aborted && bound.signal.aborted) return end('INFRA_API', elapsedBound(at));
+      const failure = clientFailure(e, signal);
+      return end(failure.type === 'error' ? failure.status : 'CANCELLED', failure);
     }
     const m = r.message;
     const priced = usageCostUsd(m.usage);
@@ -161,7 +232,7 @@ export async function runLoop(input: LoopInput): Promise<LoopOutcome> {
     out.usage.cache_write += u.cache_creation_input_tokens ?? 0;
     out.usage.cache_read += u.cache_read_input_tokens ?? 0;
     out.usage.output += u.output_tokens;
-    if (priced === null) unpriced = true;
+    if (priced !== null) pricedUsd += priced;
     if (r.refusal) out.refusal_category = r.refusal.category;
     emit({
       type: 'response', turn, id: m.id, model: m.model, stop_reason: m.stop_reason, stop_details: (m.stop_details ?? null) as Record<string, unknown> | null,
@@ -171,6 +242,9 @@ export async function runLoop(input: LoopInput): Promise<LoopOutcome> {
     logged = history.length;
     emit({ type: 'usage', turn, total: { ...out.usage }, cost_usd: out.cost_usd });
 
+    if (priced === null) {
+      return end('INFRA_HARNESS', { type: 'error', status: 'INFRA_HARNESS', code: 'unpriced_usage', message: `the usage of response ${m.id} cannot be priced (packages/core/cost.ts usageCostUsd): ${JSON.stringify(m.usage)}` });
+    }
     if (r.refusal) return end('REFUSAL', null);
     const uses = m.content.filter((b): b is ToolUse & typeof b => b.type === 'tool_use');
     const truncated = m.stop_reason === 'max_tokens';
