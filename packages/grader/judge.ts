@@ -6,16 +6,15 @@
 // parameter is sent (the client refuses one), and tool_choice is not forced (a 400 on this
 // model): the answer is JSON text, {verdict: met | not_met | unknown, quote}, retried once when
 // it does not parse. Code then checks the quote: a met verdict needs a quote, and any non-empty
-// quote must be a substring of the graded text, both folded (quotes, dashes, case, whitespace)
-// and with "..." read as a gap; otherwise the item is unknown. A not_met
+// quote must be a substring of the graded text, both folded (quotes, dashes, case, whitespace);
+// only a penalty item's quote may read "..." as a gap; otherwise the item is unknown. A not_met
 // verdict may carry an empty quote, because absence cannot be quoted (coordinator decision,
 // 2026-10-23): it stays met: false and counts in the denominator. An unknown item leaves both
 // the numerator and the denominator of the score and is counted. The judge sees the criterion
 // and the text only, never the gate result or the reference.
 //
 // Hybrid: a regex extracts the value first; when it finds none, the LLM extractor answers
-// {value, quote} under the same quote check, and the quote must state the value as the first
-// number after the field's label.
+// {value, quote} under the same quote check (contiguous only), and the quote must state the value.
 //
 // Failures: a client error (401, 403, a billing 400, retries exhausted, a substituted model, a
 // spend refusal, any error that stops the batch) is not an answer. It is thrown as
@@ -65,6 +64,9 @@ export interface JudgeClient {
 export interface JudgeQuestion {
   criterion: string;
   text: string;
+  // A penalty item (negative points): a met verdict's quote may elide with "...", since a match
+  // only makes the grade stricter. A credit item's quote must be contiguous.
+  penalty?: boolean;
 }
 
 export interface ExtractQuestion {
@@ -202,7 +204,8 @@ const foldLines = (s: string) => foldWith(s, (ws) => (/[\n\r]/.test(ws) ? '\n' :
 // a quote found as written, starts and ends at a word edge of the text, so "I have n... sent"
 // cannot cut "not" in two (verifier B1-2 F1). Any placement of the segments that keeps these
 // rules counts, not only the first. The matched segments, or null when the quote is not in the
-// text.
+// text. Only a penalty item reads a gap (`gaps`); for a credit item, and every extractor quote, a
+// quote must be found as written (verifier B1-3).
 const GAP_MAX = 80;
 const SENTENCE_END = /[.!?\n]/;
 const NEGATION = /\b(?:not|no|never|cannot|without|denies|denied|declined|refused|unable|failed|neither|nor|negative|none|stop|stopped|hold|held|(?:do|does|did|is|was|are|were|has|have|had|ca|can|could|would|should|wo|must|need)n'?t)\b|n't\b/;
@@ -221,37 +224,18 @@ function place(t: string, segments: readonly string[], k: number, at: number, ga
   }
   return false;
 }
-function segmentsIn(quote: string, text: string): string[] | null {
+function quoted(quote: string, text: string, gaps: boolean): boolean {
   const whole = fold(quote);
   const folded = fold(text);
-  // Found as written (an ellipsis in the text included): one segment, as before the gap reading.
-  if (whole !== '' && place(folded, [whole], 0, 0, () => true)) return [whole];
+  // Found as written, an ellipsis in the text included: a plain substring, as before B1.
+  if (whole !== '' && folded.includes(whole)) return true;
+  if (!gaps) return false;
   const segments = whole.split(/\.\.\.|\u2026/).map((s) => s.trim()).filter((s) => s !== '');
-  if (segments.length === 0) return null;
-  if (segments.length > 1 && segments.some((s) => s.length < 8 || s.split(' ').length < 2)) return null;
+  if (segments.length === 0) return false;
+  if (segments.length > 1 && segments.some((s) => s.length < 8 || s.split(' ').length < 2)) return false;
   const lines = foldLines(text);
   const gapOk = (from: number, to: number) => !SENTENCE_END.test(lines.slice(from, to)) && !NEGATION.test(folded.slice(from, to));
-  return place(folded, segments, 0, 0, gapOk) ? segments : null;
-}
-const quoted = (quote: string, text: string) => segmentsIn(quote, text) !== null;
-
-// A gapped extractor quote states the value as the first number after the field's label, in the
-// same segment, so a gap or a nearby word cannot join the label to an unrelated number (verifier M1,
-// B1-2 F4). The label is the field's head noun, the last word before its first comma, parenthesis
-// or preposition (the units and the method follow those), and its abbreviation, a one-word
-// parenthetical without digits: 'Cockcroft-Gault creatinine clearance (CrCl), mL/min' gives
-// clearance and crcl; 'eGFR (CKD-EPI 2021), mL/min/1.73 m2' gives egfr.
-const WORDS = /[\p{L}\p{N}]+/gu;
-function labelOf(field: string): string[] {
-  const head = fold(field).split(/[,(]|\s(?:in|of|per|for|as|at|by)\s/)[0]!.match(WORDS) ?? [];
-  const paren = /\(([^)]*)\)/.exec(fold(field))?.[1]?.match(WORDS) ?? [];
-  return [...head.slice(-1), ...(paren.length === 1 && !/\p{N}/u.test(paren[0]!) ? paren : [])];
-}
-function firstAfterLabel(segment: string, labels: readonly string[], v: number): boolean {
-  for (const m of segment.matchAll(WORDS)) {
-    if (labels.includes(m[0]) && numbersIn(segment.slice(m.index + m[0].length))[0] === v) return true;
-  }
-  return false;
+  return place(folded, segments, 0, 0, gapOk);
 }
 
 // Every number written in the quote.
@@ -319,7 +303,7 @@ export class Judge {
     const quote = entry.answer.quote as string;
     const evidence = { verdict, quote, cache_key: entry.key };
     if (verdict === 'unknown') return { met: 'unknown', evidence: { ...evidence, reason: 'judge unknown' } };
-    if ((verdict === 'met' || quote.trim() !== '') && !quoted(quote, q.text)) return { met: 'unknown', evidence: { ...evidence, reason: 'quote not in text' } };
+    if ((verdict === 'met' || quote.trim() !== '') && !quoted(quote, q.text, q.penalty === true)) return { met: 'unknown', evidence: { ...evidence, reason: 'quote not in text' } };
     return { met: verdict === 'met', evidence };
   }
 
@@ -337,11 +321,8 @@ export class Judge {
     const quote = entry.answer.quote as string;
     const base = { quote, source: 'llm' as const, cache_key: entry.key };
     if (v === null) return { value: null, ...base };
-    const segments = segmentsIn(quote, q.text);
-    if (segments === null) return { value: 'unknown', ...base, reason: 'quote not in text' };
+    if (!quoted(quote, q.text, false)) return { value: 'unknown', ...base, reason: 'quote not in text' };
     if (!numbersIn(quote).some((n) => n === v)) return { value: 'unknown', ...base, reason: 'value not in quote' };
-    const labels = labelOf(q.field);
-    if (segments.length > 1 && !segments.some((s) => firstAfterLabel(s, labels, v))) return { value: 'unknown', ...base, reason: 'value not first after its label' };
     return { value: v, ...base };
   }
 

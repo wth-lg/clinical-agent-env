@@ -163,9 +163,11 @@ export const rubric = (spec: Spec<RubricCheck> & { method: RubricCheck['method']
 type TextOf = (ctx: RubricCtx) => string;
 
 // A judge item: one isolated judge call on the text, met when the judge says so and quotes it.
+// A penalty item (negative points) says so, so its quote may elide (judge.ts).
 export function judged(spec: Omit<Spec<RubricCheck>, 'fn'> & { criterion: string; text: TextOf }): RubricCheck {
   const { criterion, text, ...rest } = spec;
-  return { ...rest, kind: 'rubric', method: 'judge', fn: (ctx) => ctx.judge({ criterion, text: text(ctx) }) };
+  const penalty = rest.points < 0;
+  return { ...rest, kind: 'rubric', method: 'judge', fn: (ctx) => ctx.judge({ criterion, text: text(ctx), ...(penalty ? { penalty } : {}) }) };
 }
 
 // A hybrid item: the value the text states for `field`, extracted by `pattern` (its first group)
