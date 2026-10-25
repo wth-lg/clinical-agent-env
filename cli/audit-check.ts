@@ -1,4 +1,4 @@
-// pnpm cli audit-check <run> [--json]
+// pnpm cli audit-check <run> [--final] [--json]
 // Checks a run's human audit, <run>/audit.jsonl, one label per line (design section 5, "Human
 // audit"; packages/core/explain.ts AuditRow):
 //   {trial: "<task>/<index>", outcome, taxonomy, label?, label_subtype?, model_fault: yes|no|unclear,
@@ -32,7 +32,14 @@
 //   - every label with model_fault unclear or llm_auditor_agrees false carries an adjudicated_label,
 //     one of AUDIT_LABELS;
 //   - each task has at least 2 audited PASS trials with evidence ids (all of them when it has
-//     fewer than 2 passes).
+//     fewer than 2 passes);
+//   - each task the consistency flag marks (packages/core/summary.ts consistencyOf: >= 80% of its
+//     valid failures share their first failed check and found value, counted from 5 valid
+//     failures, or at any count with --final; or 0 passes in >= 10 valid trials) has one
+//     task-validity review line in audit.jsonl, beside the per-trial rows:
+//       {task, kind: "task-validity", reviewer, verdict: "fair-trap" | "check-defect", note}
+//     A check-defect verdict meets the check and is printed as a grader finding: the check is
+//     fixed and the run regraded, as for any grader bug.
 // It writes each label's criteria, explainTrial's M1-M5 for its trial, into audit.jsonl (only when
 // they changed, so a second run leaves the file as it was). The context it gives explainTrial
 // (explainContext) is packages/core/explain-context.ts over the run's files, the one builder the
@@ -45,7 +52,8 @@
 // whose first failed check is not the one its recorded attribution names, that check's decisive
 // ids with the step each was first exposed at in the trajectory.
 // --json prints {failures, labelled, labelled_environment, labelled_grader, faults, valid, excluded,
-// denominator, violations}: labelled_environment and labelled_grader count the failures the audit
+// denominator, task_validity, violations}: task_validity maps each flagged task to its flags and
+// its review's verdict and reviewer (null without one); labelled_environment and labelled_grader count the failures the audit
 // labels environment or grader (after adjudication); faults counts the failures by the fault
 // explainTrial computes ({model, refusal, env, grader, infra}), which the label must agree with
 // but need not (a model label on an E5 failure is a violation, counted model there and env here);
@@ -62,7 +70,7 @@ import { explainContext as contextOf, needsWorld, worldLookup, type TaskCheck } 
 import { auditLabelOf, excludedFromHeadline, explainTrial, formatCriterion, type AuditRow, type CheckText, type ExplainContext, type ExplainRecord } from '../packages/core/explain.ts';
 import { AUDIT_LABEL, AUDIT_LABELS, FAULT, FAULT_PRECEDENCE, type Fault, type Outcome } from '../packages/core/outcomes.ts';
 import { parseTrajectory } from '../packages/core/trajectory.ts';
-import { currentGrade } from '../packages/core/summary.ts';
+import { consistencyOf, currentGrade, describeConsistency, type ConsistencyFlag } from '../packages/core/summary.ts';
 import { loadStore } from '../packages/env/fixture-source.ts';
 import { TAXONOMY } from '../packages/grader/attribution.ts';
 import { sameId, stepsOf } from '../packages/grader/exposure.ts';
@@ -84,21 +92,38 @@ export interface Deps {
 
 export type AuditLabel = AuditRow;
 
+// A task-validity review line of audit.jsonl (header).
+export const TASK_VALIDITY_VERDICTS = ['fair-trap', 'check-defect'] as const;
+export interface TaskValidityReview {
+  task: string;
+  kind: 'task-validity';
+  reviewer: string;
+  verdict: (typeof TASK_VALIDITY_VERDICTS)[number];
+  note: string;
+}
+type Line = { raw: string; label: AuditLabel | null; review?: TaskValidityReview };
+
 const defaults: Deps = { out: (l) => process.stdout.write(`${l}\n`), err: (l) => process.stderr.write(`${l}\n`) };
 const MIN_AUDITED_PASSES = 2;
 const isLabel = (l: string | null | undefined): boolean => (AUDIT_LABELS as readonly (string | null | undefined)[]).includes(l);
 
-// audit.jsonl's lines, each with its label when it parses.
-function readLabels(dir: string, violations: string[]): Array<{ raw: string; label: AuditLabel | null }> | null {
+// audit.jsonl's lines, each with its label, or its task-validity review, when it parses.
+function readLabels(dir: string, violations: string[]): Line[] | null {
   const file = join(dir, 'audit.jsonl');
   if (!existsSync(file)) {
     violations.push('audit.jsonl is missing');
     return null;
   }
-  return readFileSync(file, 'utf8').split('\n').flatMap((raw, i): Array<{ raw: string; label: AuditLabel | null }> => {
+  return readFileSync(file, 'utf8').split('\n').flatMap((raw, i): Line[] => {
     if (raw.trim() === '') return [];
     try {
-      const l = JSON.parse(raw) as AuditLabel;
+      const l = JSON.parse(raw) as AuditLabel | TaskValidityReview;
+      if ('kind' in l && l.kind === 'task-validity') {
+        const nonEmpty = (v: unknown) => typeof v === 'string' && v.trim() !== '';
+        if (!nonEmpty(l.task) || !nonEmpty(l.reviewer) || typeof l.note !== 'string') throw new Error('a task-validity review needs task, reviewer and note');
+        if (!(TASK_VALIDITY_VERDICTS as readonly string[]).includes(l.verdict)) throw new Error(`task-validity verdict must be ${TASK_VALIDITY_VERDICTS.join(' or ')}`);
+        return [{ raw, label: null, review: l }];
+      }
       if (typeof l.trial !== 'string' || !Array.isArray(l.evidence_ids)) throw new Error('needs trial and evidence_ids');
       return [{ raw, label: l }];
     } catch (e) {
@@ -143,9 +168,10 @@ export async function explainContext(dir: string, checks: TaskChecks = taskCheck
 
 export async function main(args: string[], deps: Deps = defaults): Promise<number> {
   const json = args.includes('--json');
-  const rest = args.filter((a) => a !== '--json');
+  const final = args.includes('--final');
+  const rest = args.filter((a) => a !== '--json' && a !== '--final');
   if (rest.length !== 1 || rest[0]!.startsWith('--')) {
-    deps.err('usage: pnpm cli audit-check <run> [--json]');
+    deps.err('usage: pnpm cli audit-check <run> [--final] [--json]');
     return 2;
   }
   const dir = rest[0] as string;
@@ -158,6 +184,12 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
   const requeued = requeuedRecords(dir).map((s) => s.record);
   const lines = readLabels(dir, v);
   const labels = (lines ?? []).flatMap((l) => (l.label === null ? [] : [l.label]));
+  const reviews = new Map<string, TaskValidityReview>();
+  for (const { review } of lines ?? []) {
+    if (review === undefined) continue;
+    if (reviews.has(review.task)) v.push(`${review.task}: more than one task-validity review`);
+    reviews.set(review.task, review);
+  }
   const byTrial = new Map<string, AuditLabel>();
   for (const l of labels) {
     if (byTrial.has(l.trial)) v.push(`${l.trial}: more than one audit label`);
@@ -260,6 +292,17 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
     const need = Math.min(MIN_AUDITED_PASSES, passes.length);
     if (audited < need) v.push(`${task}: ${audited} audited PASS with evidence ids, need ${need}`);
   }
+  const taskValidity: Record<string, { flags: ConsistencyFlag[]; verdict: string | null; reviewer: string | null }> = {};
+  const findings: string[] = [];
+  for (const task of [...new Set([...records.values()].map((r) => r.task_id))].sort()) {
+    const c = consistencyOf([...records.values()].filter((r) => r.task_id === task).map(currentGrade), { final });
+    if (c.flags.length === 0) continue;
+    const review = reviews.get(task);
+    taskValidity[task] = { flags: c.flags, verdict: review?.verdict ?? null, reviewer: review?.reviewer ?? null };
+    const why = describeConsistency(c).join('; ');
+    if (review === undefined) v.push(`${task}: ${why}; no task-validity review line in audit.jsonl ({task, kind: "task-validity", reviewer, verdict: ${TASK_VALIDITY_VERDICTS.join(' | ')}, note})`);
+    else findings.push(`${task}: task-validity review ${review.verdict} by ${review.reviewer}${review.verdict === 'check-defect' ? ': a grader finding; fix the check and regrade the run' : ''} (${why})`);
+  }
 
   // Each label's criteria, as explainTrial gives them, written back when they changed.
   if (lines !== null) {
@@ -275,10 +318,11 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
 
   const labelled = failures.filter((r) => byTrial.has(trialName(r))).length;
   const say = json ? deps.err : deps.out;
+  for (const line of findings) say(line);
   for (const line of v) say(`violation: ${line}`);
   say(`audit-check: ${labelled}/${failures.length} failures labelled, environment ${environment}, grader ${grader}; ${v.length === 0 ? 'every check holds' : `${v.length} violation(s)`}`);
   const excluded = excludedTrials.sort();
-  if (json) deps.out(JSON.stringify({ failures: failures.length, labelled, labelled_environment: environment, labelled_grader: grader, faults, valid: valid.length, excluded, denominator: valid.length - excluded.length, violations: v }));
+  if (json) deps.out(JSON.stringify({ failures: failures.length, labelled, labelled_environment: environment, labelled_grader: grader, faults, valid: valid.length, excluded, denominator: valid.length - excluded.length, task_validity: taskValidity, violations: v }));
   return v.length === 0 ? 0 : 1;
 }
 

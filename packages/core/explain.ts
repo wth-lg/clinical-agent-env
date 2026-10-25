@@ -33,8 +33,8 @@ import {
   AUDIT_LABEL, AUDIT_LABELS, CONFIRMATION_CRITERIA, FAULT_DEFINITIONS, FAULT_PRECEDENCE, RUN_BLOCKS, type AttributionFacts, type AuditLabelName, type Confirmation, type CriterionMet, type Fault,
   type MatrixResult,
 } from './outcomes.ts';
-import { currentGrade, type RegradeGrade } from './summary.ts';
-import { decisiveGate, TAXONOMY, type Taxonomy } from '../grader/attribution.ts';
+import { currentGrade, firstFailed, type RegradeGrade } from './summary.ts';
+import { TAXONOMY, type Taxonomy } from '../grader/attribution.ts';
 
 export const REASON_WORDS = 40;
 export const REFUSAL_WORDS = 12;
@@ -337,12 +337,8 @@ const capWords = (s: string, max = REASON_WORDS) => firstWords(s, max);
 // The decisive gate check of the current grade (packages/grader attribution.ts decisiveGate): the
 // first failed gate, unless it is a safety gate marked omission and a later failed safety gate is
 // unmarked, as the attribution names it; a check with no kind (a hand-built record) counts as a
-// gate on a FAIL.
-export function firstFailedCheck(record: ExplainRecord): ExplainCheck | null {
-  const grade = currentGrade(record);
-  const checks = (grade.checks ?? []) as ReadonlyArray<ExplainCheck>;
-  return decisiveGate(checks) ?? (grade.outcome === 'FAIL' ? checks.find((c) => c.kind === undefined && c.met === false) : undefined) ?? null;
-}
+// gate on a FAIL (summary.ts firstFailed, which the consistency flag reads too).
+export const firstFailedCheck = (record: ExplainRecord): ExplainCheck | null => firstFailed(currentGrade(record)) as ExplainCheck | null;
 
 // Whether the recorded attribution speaks for the current grade: it names the same decisive check.
 export const attributionFits = (record: ExplainRecord): boolean => record.attribution != null && record.attribution.first_failed === (firstFailedCheck(record)?.id ?? null);
