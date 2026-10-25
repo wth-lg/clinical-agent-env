@@ -22,6 +22,9 @@
 //   the hard elapsed bound INFRA_API, code elapsed_bound: total elapsed time, retries included,
 //                          reached caps.maxElapsedMs (checked before each request, and aborting
 //                          a call in flight once a retry has happened); batch.ts re-queues it
+//   the settled-cost bound INFRA_API, code spend_bound: an attempt whose worst case would take
+//                          cost_usd (worst-case settles included) past MAX_SETTLED_USD is not
+//                          sent, so a trial's ledger spend never passes it; batch.ts re-queues it
 //   an unpriced usage      INFRA_HARNESS, code unpriced_usage, on the answer that has it: a
 //                          missing price is a harness defect, not the model's spend
 //   opts.signal aborted    CANCELLED, checked before each request and passed to the client
@@ -31,7 +34,7 @@
 // It reads no clock and draws no randomness (eslint-rules/determinism.js): time comes from the
 // injected `now` and `timeout`, used only for the working-time cap and the elapsed bound.
 import { classifyFailure, type CallResult, type MessageParam, type MessageParams, type SendOptions } from './anthropic.ts';
-import { usageCostUsd, type Usage } from './cost.ts';
+import { PER_TRIAL_CAP_USD, usageCostUsd, type Usage } from './cost.ts';
 import type { ErrorStatus, EventBody, Limit, TrialStatus } from './events.ts';
 import { ERROR_CODES, internalError, type ErrorCode } from '../env/tools/errors.ts';
 import { callTool, type Tool, type ToolResult } from '../env/tools/registry.ts';
@@ -96,6 +99,11 @@ export interface LoopOutcome {
   stop_reason: string | null;
   refusal_category: string | null;
 }
+
+// The bound on a trial's cost_usd, worst-case settles included. The cost cap reads priced usage
+// only, so without it attempts that keep dropping (say, a proxy that cuts long streams) would
+// settle worst cases until the turn cap.
+export const MAX_SETTLED_USD = 2 * PER_TRIAL_CAP_USD;
 
 const CONTINUE = 'Your previous answer reached the output token limit. Continue from where it stopped.';
 const FINISHED = { error: { code: 'CONFLICT', message: 'episode finished' } } as const;
@@ -188,6 +196,10 @@ async function loop(input: LoopInput, exits: Array<() => void>): Promise<LoopOut
     type: 'error', status: 'INFRA_API', code: 'elapsed_bound',
     message: `${t - started} ms elapsed, past the hard bound of ${caps.maxElapsedMs} ms (${out.retry_wait_ms} ms in failed attempts and retry waits)`,
   });
+  const spendBound = (worstUsd: number): Extract<Terminal, { type: 'error' }> => ({
+    type: 'error', status: 'INFRA_API', code: 'spend_bound',
+    message: `$${out.cost_usd.toFixed(2)} settled (worst cases of failed attempts included) + this attempt's worst case $${worstUsd.toFixed(2)} would pass the bound of $${MAX_SETTLED_USD.toFixed(2)} (2 x PER_TRIAL_CAP_USD)`,
+  });
   const wallLimit = (t: number): Terminal => ({ type: 'limit', limit: 'wall_clock', cap: caps.maxWallMs, value: working(t) });
 
   for (;;) {
@@ -204,6 +216,9 @@ async function loop(input: LoopInput, exits: Array<() => void>): Promise<LoopOut
     // Each attempt gets a timer at the remaining working time; it aborts the call only if it
     // fires while that attempt is in flight (not after it failed, during the wait for a retry).
     const work = new AbortController();
+    // Aborted before an attempt's reserve when its worst case would pass MAX_SETTLED_USD.
+    const spend = new AbortController();
+    let refused: Terminal | null = null;
     let detach = () => {};
     const startAttempt = (at: number) => {
       detach();
@@ -220,7 +235,12 @@ async function loop(input: LoopInput, exits: Array<() => void>): Promise<LoopOut
       }
     };
     startAttempt(t);
-    const onAttempt = (n: number) => {
+    const onAttempt = (n: number, worstUsd: number) => {
+      if (out.cost_usd + worstUsd > MAX_SETTLED_USD) {
+        refused = spendBound(worstUsd);
+        spend.abort(new Error(refused.message));
+        return;
+      }
       if (n > 1) startAttempt(now());
     };
     const onRetry = () => {
@@ -231,10 +251,11 @@ async function loop(input: LoopInput, exits: Array<() => void>): Promise<LoopOut
     };
     let r: CallResult;
     try {
-      r = await client.send(history, params, { signal: AbortSignal.any([...(signal ? [signal] : []), work.signal, bound.signal]), onSettle, onAttempt, onRetry });
+      r = await client.send(history, params, { signal: AbortSignal.any([...(signal ? [signal] : []), work.signal, bound.signal, spend.signal]), onSettle, onAttempt, onRetry });
     } catch (e) {
       const at = now();
       settleWait(at);
+      if (!signal?.aborted && refused !== null) return end('INFRA_API', refused);
       if (!signal?.aborted && work.signal.aborted) return end('LIMIT', wallLimit(at));
       if (!signal?.aborted && bound.signal.aborted) return end('INFRA_API', elapsedBound(at));
       const failure = clientFailure(e, signal);

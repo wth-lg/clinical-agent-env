@@ -16,7 +16,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { okResponse, sse, turnEvents, type MockTurn } from '../../../apps/web/src/harness/scenarios.ts';
 import { MessagesClient, type ClientOptions, type MessageParams, type Transport } from '../anthropic.ts';
-import { worstCaseUsd } from '../cost.ts';
+import { PER_TRIAL_CAP_USD, worstCaseUsd } from '../cost.ts';
 import type { EventBody } from '../events.ts';
 import { admitStore, createLedger, type LedgerRow, type LedgerStore } from '../ledger.ts';
 import { runLoop, type Caps } from '../loop.ts';
@@ -150,6 +150,31 @@ describe('infrastructure never ends a trial LIMIT', () => {
     expect(out.cost_usd).toBeCloseTo(ledgerUsd, 9);
   });
 
+  it('dropped attempts on every turn end INFRA_API spend_bound before the settled cost passes 2 x PER_TRIAL_CAP_USD', async () => {
+    // Every turn's first attempt drops (a worst case just over $5) and its retry answers.
+    let n = 0;
+    let k = 0;
+    const fetch: Transport = async () => (++k % 2 === 1 ? dropped() : respond(toolUse(++n), n));
+    const { out, ledgerUsd, settles } = await loop(fetch, { maxCostUsd: 5, maxTurns: 20 }, { params: { max_tokens: 250_000 } });
+    expect(out.status).toBe('INFRA_API');
+    expect(out.terminal).toMatchObject({ type: 'error', status: 'INFRA_API', code: 'spend_bound' });
+    expect(fault(out.status)).toBe('infra');
+    expect(out.cost_usd).toBeLessThanOrEqual(2 * PER_TRIAL_CAP_USD);
+    expect(out.cost_usd).toBeCloseTo(ledgerUsd, 9);
+    // Two worst cases fit under the bound, a third does not: turn 2's retry is never reserved.
+    expect(settles.filter((r) => r.usage === null)).toHaveLength(2);
+    expect(out.turns).toBe(2);
+  });
+
+  it('dropped retries within one request end INFRA_API spend_bound before the settled cost passes 2 x PER_TRIAL_CAP_USD', async () => {
+    const { out, ledgerUsd, settles } = await loop(async () => dropped(), { maxCostUsd: 5 }, { params: { max_tokens: 250_000 } });
+    expect(out.terminal).toMatchObject({ type: 'error', status: 'INFRA_API', code: 'spend_bound' });
+    expect(out.cost_usd).toBeLessThanOrEqual(2 * PER_TRIAL_CAP_USD);
+    expect(out.cost_usd).toBeCloseTo(ledgerUsd, 9);
+    expect(settles).toHaveLength(2);
+    expect(out.turns).toBe(1);
+  });
+
   it('a usage the cost model cannot price ends INFRA_HARNESS, not LIMIT cost', async () => {
     const unpriced = () => {
       const events = turnEvents(toolUse(1), 1) as Array<{ type: string; message?: { usage: object } }>;
@@ -198,6 +223,21 @@ describe('a real limit is still LIMIT, a model fault', () => {
     expect(out.terminal).toMatchObject({ type: 'limit', limit: 'cost', cap: 0.02 });
     expect((out.terminal as { value: number }).value).toBeCloseTo(0.0222, 4);
     expect(out.turns).toBe(2);
+    expect(fault(out.status)).toBe('model');
+  });
+
+  it('cost, from a priced answer over the cap: LIMIT cost, not spend_bound', async () => {
+    // One answer whose priced usage alone ($7.02) is over the per-trial cap.
+    const big = () => {
+      const events = turnEvents(toolUse(1), 1) as Array<{ type: string; usage?: { output_tokens: number } }>;
+      for (const e of events) if (e.type === 'message_delta') e.usage!.output_tokens = 350_000;
+      return new Response(sse(events), { status: 200, headers: { 'content-type': 'text/event-stream' } });
+    };
+    const { out, ledgerUsd } = await loop(async () => big(), { maxCostUsd: PER_TRIAL_CAP_USD }, { params: { max_tokens: 1000 } });
+    expect(out.terminal).toMatchObject({ type: 'limit', limit: 'cost', cap: PER_TRIAL_CAP_USD });
+    expect((out.terminal as { value: number }).value).toBeGreaterThan(PER_TRIAL_CAP_USD);
+    expect(out.cost_usd).toBeCloseTo(ledgerUsd, 9);
+    expect(out.turns).toBe(1);
     expect(fault(out.status)).toBe('model');
   });
 

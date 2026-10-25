@@ -52,7 +52,7 @@
 //     proxy
 //   - Node's http, https, http2, net and tls modules with a host built at runtime (lint flags a
 //     literal API host passed to them)
-import { usageCostUsd, type Usage } from './cost.ts';
+import { usageCostUsd, worstCaseUsd, type Usage } from './cost.ts';
 import { assertClientGrant, SpendRefused, type BatchGrant, type Ledger, type Reservation, type ReserveRequest } from './ledger.ts';
 import { redactText } from './redact.ts';
 
@@ -522,8 +522,10 @@ export interface SendOptions {
   // the worst case when usage is unknown or cannot be priced), so a caller's cost equals the
   // ledger's, aborted and retried attempts included.
   onSettle?: (usd: number) => void;
-  // Called as each attempt starts (1-based), before its reserve.
-  onAttempt?: (attempt: number) => void;
+  // Called as each attempt starts (1-based), before its reserve, with the worst case the attempt
+  // would reserve; a caller that aborts the call's signal here stops it before anything is
+  // reserved or sent.
+  onAttempt?: (attempt: number, worstUsd: number) => void;
   // Called when an attempt failed and will be retried after a wait of waitMs: the trial loop
   // leaves failed attempts and these waits out of its working time.
   onRetry?: (attempt: number, waitMs: number) => void;
@@ -603,13 +605,15 @@ export class MessagesClient {
   async #send(history: MessageParam[], params: MessageParams, opts: SendOptions, signal: AbortSignal): Promise<CallResult> {
     const body = requestBody(history, params);
     const req = reserveFor(body, checkRequest(params, body), this.#trial);
+    const worst = worstCaseUsd(req);
     const settle = async (res: Reservation, usage: Usage | null) => {
       await this.#grant.settle(res, usage);
       opts.onSettle?.((usage === null ? null : usageCostUsd(usage)) ?? res.worst_usd);
     };
     for (let attempt = 1; ; attempt++) {
       if (signal.aborted) throw abortReason(signal);
-      opts.onAttempt?.(attempt);
+      opts.onAttempt?.(attempt, worst);
+      if (signal.aborted) throw abortReason(signal);
       const res = await this.#grant.reserve(req);
       let out: { status: number; message: Message };
       try {
