@@ -43,7 +43,8 @@ describe('quote normalisation (R14-04)', () => {
 
   it('reads "..." and "…" as gaps whose segments must all appear, in order', async () => {
     expect(await judgeQuote("I've sent ... to the pharmacy", TEXT)).toMatchObject({ met: true });
-    expect(await judgeQuote('Ms. Vance…any questions', TEXT)).toMatchObject({ met: true });
+    expect(await judgeQuote('Ms. Vance…any questions', TEXT)).toMatchObject({ met: 'unknown', evidence: { reason: 'quote not in text' } });
+    expect(await judgeQuote("I've sent…to the pharmacy", TEXT)).toMatchObject({ met: true });
     expect(await judgeQuote("pharmacy ... I've sent", TEXT)).toMatchObject({ met: 'unknown', evidence: { reason: 'quote not in text' } });
     expect(await judgeQuote("I've sent ... refill", TEXT)).toMatchObject({ met: 'unknown', evidence: { reason: 'quote not in text' } });
     expect(await judgeQuote('...', TEXT)).toMatchObject({ met: 'unknown', evidence: { reason: 'quote not in text' } });
@@ -112,13 +113,13 @@ describe('a gapped hybrid quote states the value beside its label (verifier M1)'
 
   it('P1: a gap that joins the label to an unrelated number is unknown', async () => {
     expect(await extract('CrCl', 'CrCl ... 42', 'CrCl pending, not yet resulted. Patient age 42.')).toMatchObject({ value: 'unknown' });
-    expect(await extract(FIELD, 'CrCl result pending ... patient age 42', 'CrCl result pending today. Patient age 42.')).toMatchObject({ value: 'unknown', reason: 'value not with its label' });
+    expect(await extract(FIELD, 'CrCl result pending ... patient age 42', 'CrCl result pending today, patient age 42.')).toMatchObject({ value: 'unknown', reason: 'value not with its label' });
     // The units after the comma are not the label.
-    expect(await extract(FIELD, 'CrCl result pending ... age 42 mL/min', 'CrCl result pending today. Patient age 42 mL/min.')).toMatchObject({ value: 'unknown', reason: 'value not with its label' });
+    expect(await extract(FIELD, 'CrCl result pending ... age 42 mL/min', 'CrCl result pending today, patient age 42 mL/min.')).toMatchObject({ value: 'unknown', reason: 'value not with its label' });
   });
 
   it('a gapped quote whose value segment names the label, and any contiguous quote, still extract', async () => {
-    expect(await extract(FIELD, 'Cockcroft-Gault used ... CrCl is 42 mL/min', 'Cockcroft-Gault used with actual weight. CrCl is 42 mL/min.')).toMatchObject({ value: 42, source: 'llm' });
+    expect(await extract(FIELD, 'Cockcroft-Gault used ... CrCl is 42 mL/min', 'Cockcroft-Gault used with actual weight, CrCl is 42 mL/min.')).toMatchObject({ value: 42, source: 'llm' });
     expect(await extract(FIELD, 'is 42 mL/min', 'Clearance is 42 mL/min.')).toMatchObject({ value: 42, source: 'llm' });
   });
 });
@@ -148,5 +149,42 @@ describe('gap segments match whole words (verifier B1-2 F1, rule 1)', () => {
 
   it('N4: a fake ellipsis over nothing is harmless', async () => {
     expect(await judgeQuote("I've sent your ... prescription to the pharmacy", "I've sent your prescription to the pharmacy.")).toMatchObject({ met: true });
+  });
+});
+
+describe('a gap is short, in one sentence, and holds no negation (verifier B1-2 F2/F3, rule 2)', () => {
+  const unknown = { met: 'unknown', evidence: { reason: 'quote not in text' } };
+  it('N1: a gap across a sentence end is not in the text', async () => {
+    expect(await judgeQuote("I've sent your ... prescription to the pharmacy", "I've sent your lab results. Your prescription to the pharmacy is on hold pending review.")).toMatchObject(unknown);
+    expect(await judgeQuote('the visit went ... the plan is set', 'The visit went well!\nToday the plan is set.')).toMatchObject(unknown);
+    expect(await judgeQuote('the visit went ... the plan is set', 'The visit went well\nand the plan is set.')).toMatchObject(unknown);
+  });
+
+  it('a gap over 80 characters is not in the text', async () => {
+    const long = `${'and then some more words '.repeat(4)}`;
+    expect(long.length).toBeGreaterThan(80);
+    expect(await judgeQuote('the visit went ... the plan is set', `The visit went ${long}the plan is set.`)).toMatchObject(unknown);
+    expect(await judgeQuote('the visit went ... the plan is set', 'The visit went well, and after review the plan is set.')).toMatchObject({ met: true });
+  });
+
+  it('N2a-j: no negation form in a gap', async () => {
+    const cases: Array<[string, string]> = [
+      ['the clinic team ... confirm the refill today', 'The clinic team cannot confirm the refill today.'],
+      ['the clinic team ... confirm the refill today', 'The clinic team didnt confirm the refill today.'],
+      ['the clinic team ... confirm the refill today', 'The clinic team didn’t confirm the refill today.'],
+      ['your prescription was ... sent to the pharmacy', 'Your prescription was not yet sent to the pharmacy.'],
+      ['the patient ... chest pain today', 'The patient denied chest pain today.'],
+      ['the patient ... the contrast scan', 'The patient refused the contrast scan.'],
+      ['the nurse was ... reach the patient by phone', 'The nurse was unable to reach the patient by phone.'],
+      ['the pharmacy ... receive the prescription', 'The pharmacy failed to receive the prescription.'],
+      ['the order was ... signed by the provider', 'The order was neither reviewed nor signed by the provider.'],
+      ['the urine culture ... e. coli growth', 'The urine culture was negative for e. coli growth.'],
+      ['the team found ... allergies on file', 'The team found none of the allergies on file.'],
+      ['the doctor will ... the apixaban dose', 'The doctor will stop the apixaban dose.'],
+      ['the doctor has ... the apixaban dose', 'The doctor has stopped the apixaban dose.'],
+      ['please ... the lisinopril tablets', 'Please hold the lisinopril tablets.'],
+      ['the nurse ... the lisinopril tablets', 'The nurse held the lisinopril tablets.'],
+    ];
+    for (const [quote, text] of cases) expect(await judgeQuote(quote, text), quote + ' / ' + text).toMatchObject(unknown);
   });
 });
