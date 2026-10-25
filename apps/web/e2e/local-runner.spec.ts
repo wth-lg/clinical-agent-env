@@ -111,6 +111,9 @@ async function open(page: Page, runner: Runner, path: string, opts: { key?: stri
   page.on('console', (m) => (/Content Security Policy/i.test(m.text()) ? csp.push(m.text()) : undefined));
   await page.addInitScript(() => document.addEventListener('securitypolicyviolation', (e) => console.error(`Content Security Policy violation: ${e.violatedDirective}`)));
   await page.goto(new URL(path, runner.url).href);
+  // A health probe that misses its timeout under load shows the runner-down screen, which retries
+  // and reloads: wait for the chip, not a fixed 5 s for the key field.
+  await expect(page.getByTestId('surface-chip')).toContainText('Local runner', { timeout: 30_000 });
   // The runner keeps a key an earlier test validated: forget it, so this test's key is the one held.
   const field = page.getByLabel('API key', { exact: true });
   await expect(field.or(page.getByTestId('key-chip')).first()).toBeVisible();
@@ -140,6 +143,16 @@ test('the chip shows the local runner and the browse views render the sample run
   await expect(page.getByTestId('surface-chip')).toContainText('Local runner');
   await expect(page.locator(`[data-testid="run"][data-run="${summary.run_id}"]`)).toBeVisible();
   await expect(page.getByTestId('trial-row').first()).toBeVisible();
+});
+
+// verifier-phase-P15-1 G1: under load the first health probe can miss HEALTH_TIMEOUT_MS; the
+// runner-down screen retries every RETRY_MS, and open() waits for the chip rather than the key field.
+test('open() waits out health probes that time out until the runner-down screen recovers', async ({ page }) => {
+  let slow = 2;
+  await page.route('**/api/health', (route) => (slow-- > 0 ? undefined : route.continue()));
+  await open(page, runner!, '?view=live&task=_toy');
+  expect(slow).toBeLessThan(0);
+  await expect(page.getByTestId('surface-chip')).toContainText('Local runner');
 });
 
 test('a trial streams over SSE and grades, with no request to the API and no CSP violation', async ({ page }) => {
