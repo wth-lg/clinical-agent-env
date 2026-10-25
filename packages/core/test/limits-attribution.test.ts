@@ -114,7 +114,8 @@ describe('infrastructure never ends a trial LIMIT', () => {
     // Attempts at 0, 31, 62 and 93 s, each failing 1 s in; the bound fires 6 s into the fourth
     // wait, and the fake sleep finishes that wait before the abort lands: 4 x 1 s + 4 x 30 s.
     expect(out.retry_wait_ms).toBe(124_000);
-    expect(out.api_retries).toBe(0);
+    // Each of the four failed attempts was retried; the last retry's wait was cut by the bound.
+    expect(out.api_retries).toBe(4);
     expect(out.turns).toBe(1);
     // Node keeps a timeout signal with a listener alive, and the trial with it, until it fires.
     expect(time.listening()).toBe(0);
@@ -131,7 +132,7 @@ describe('infrastructure never ends a trial LIMIT', () => {
       definitions: JSON.parse(readFileSync(new URL('fixtures/definitions-pruned.json', root), 'utf8')),
       now: time.now, timeout: time.timeout, maxWallMs: 50_000, maxElapsedMs: 100_000,
     });
-    expect(record).toMatchObject({ status: 'INFRA_API', detail: 'elapsed_bound', outcome: 'INFRA_API', valid: false, fault: 'infra', retry_wait_ms: 124_000, api_retries: 0 });
+    expect(record).toMatchObject({ status: 'INFRA_API', detail: 'elapsed_bound', outcome: 'INFRA_API', valid: false, fault: 'infra', retry_wait_ms: 124_000, api_retries: 4 });
   });
 
   it('a dropped attempt settled at its worst case stays in the ledger and the cost, and cannot end the trial LIMIT cost', async () => {
@@ -172,6 +173,7 @@ describe('infrastructure never ends a trial LIMIT', () => {
     expect(out.cost_usd).toBeLessThanOrEqual(2 * PER_TRIAL_CAP_USD);
     expect(out.cost_usd).toBeCloseTo(ledgerUsd, 9);
     expect(settles).toHaveLength(2);
+    expect(out.api_retries).toBe(2);
     expect(out.turns).toBe(1);
   });
 

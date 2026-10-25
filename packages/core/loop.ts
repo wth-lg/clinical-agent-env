@@ -92,6 +92,8 @@ export interface LoopOutcome {
   usage: { input: number; cache_write: number; cache_read: number; output: number };
   cost_usd: number;
   models_returned: string[];
+  // Attempts that failed and were retried, counted as the client reports each retry, so a trial
+  // that ends in a retry storm records them too.
   api_retries: number;
   // Time spent in failed attempts and the backoff waits after them, up to the next attempt or
   // the end of the trial, on the injected clock: left out of working time.
@@ -244,6 +246,7 @@ async function loop(input: LoopInput, exits: Array<() => void>): Promise<LoopOut
       if (n > 1) startAttempt(now());
     };
     const onRetry = () => {
+      out.api_retries++;
       const at = now();
       out.retry_wait_ms += at - attemptStart;
       waitFrom = at;
@@ -267,7 +270,6 @@ async function loop(input: LoopInput, exits: Array<() => void>): Promise<LoopOut
     const priced = usageCostUsd(m.usage);
     // The outcome first, then the event: an emit that throws leaves the outcome current.
     if (!out.models_returned.includes(m.model)) out.models_returned.push(m.model);
-    out.api_retries += r.attempts - 1;
     out.stop_reason = m.stop_reason;
     const u: Usage = m.usage;
     out.usage.input += u.input_tokens;
