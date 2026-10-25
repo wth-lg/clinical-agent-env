@@ -46,7 +46,7 @@ test('Findings renders the markdown, one interval per task and outcome bars equa
   const trial = await example.textContent();
   await example.click();
   await expect(page).toHaveURL(/view=runs/);
-  await expect(page.locator(`[data-testid="trial-row"][data-trial="${trial}"]`).getByTestId('trial-detail')).toBeVisible();
+  await expect(page.getByTestId('trial-detail')).toHaveAttribute('data-trial', trial!);
   await page.goBack();
   await page.getByRole('link', { name: 'How failures are attributed' }).click();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('How failures are attributed');

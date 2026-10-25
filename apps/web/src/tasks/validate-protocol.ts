@@ -2,7 +2,9 @@
 // that sends one request and resolves with its reply. One Worker serves the tab; requests queue.
 import type { ExplainRecord } from '../../../../packages/core/explain.ts';
 import type { ReplayRecord, ReplayVerdict } from '../../../../packages/core/replay.ts';
+import type { Diff } from '../../../../packages/grader/diff.ts';
 import type { CaseKind } from '../../../../packages/grader/matrix/matrix.ts';
+import type { Change } from '../trial/state.ts';
 
 // A published trial to replay; trajectoryUrl is null when the run has no trajectory for it.
 export interface ReplayTrial {
@@ -14,7 +16,9 @@ export interface ReplayTrial {
 export type ValidateRequest =
   | { op: 'oracle'; task: string }
   | { op: 'matrix'; task: string }
-  | { op: 'replay'; task: string; trials: ReplayTrial[] };
+  | { op: 'replay'; task: string; trials: ReplayTrial[] }
+  // The trial detail's State diff (P16): the trajectory at this absolute URL replayed on the world.
+  | { op: 'state'; task: string; trajectoryUrl: string };
 
 export type ValidateReply = { id: number; ok: true; result: unknown } | { id: number; ok: false; error: string };
 
@@ -47,6 +51,15 @@ export interface ReplayRow extends ReplayVerdict {
   final: string | null;
 }
 
+// A replayed trial's state: its final hash (null when a tool call threw, with the error) and
+// the diff against the world (apps/web/src/trial/state.ts).
+export interface StateRun {
+  final: string | null;
+  error: string | null;
+  diff: Diff;
+  changes: Change[];
+}
+
 let worker: Worker | undefined;
 let next = 1;
 const waiting = new Map<number, { resolve: (v: unknown) => void; reject: (e: Error) => void }>();
@@ -54,6 +67,7 @@ const waiting = new Map<number, { resolve: (v: unknown) => void; reject: (e: Err
 export function validate(req: { op: 'oracle'; task: string }): Promise<OracleResult>;
 export function validate(req: { op: 'matrix'; task: string }): Promise<MatrixRun>;
 export function validate(req: ValidateRequest & { op: 'replay' }): Promise<ReplayRow[]>;
+export function validate(req: ValidateRequest & { op: 'state' }): Promise<StateRun>;
 export function validate(req: ValidateRequest): Promise<unknown> {
   if (worker === undefined) {
     worker = new Worker(new URL('./validation-thread.ts', import.meta.url), { type: 'module' });
