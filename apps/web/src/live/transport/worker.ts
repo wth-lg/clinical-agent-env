@@ -26,6 +26,12 @@ export function clientOptions(start: { apiKey: string; trialId: string }): Omit<
   return { apiKey: start.apiKey, trial: start.trialId };
 }
 
+// The origins the trial Worker may send to besides the Anthropic API, which only its client
+// reaches (installEgressGuard allowedOrigins): its own, for the world, manifest and definitions.
+// The page's meta CSP does not reach a Worker, so this is its connect-src. P16h adds the relay's
+// origin here, beside clientOptions.
+export const workerOrigins = (self: string): string[] => [self];
+
 export interface WorkerStart {
   type: 'start';
   trialId: string;

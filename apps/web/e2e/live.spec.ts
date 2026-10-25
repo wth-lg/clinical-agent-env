@@ -146,6 +146,40 @@ test('a reload mid-trial resumes from IndexedDB to the same final hash, and no s
   expect(await storageDump(page)).not.toContain(key);
 });
 
+test('the trial Worker refuses fetch, XHR, WebSocket and EventSource to any origin but its own and the API', async ({ page }) => {
+  // .invalid never resolves, so nothing leaves the machine; a fetch the guard let through gets this answer.
+  const FOREIGN = 'https://foreign.invalid';
+  let reached = 0;
+  await page.route(`${FOREIGN}/**`, (route) => (reached++, route.fulfill({ status: 200, body: 'reached', headers: { 'access-control-allow-origin': '*' } })));
+  const api = await mockToy(page, { hold: 2 });
+  await page.goto('./?view=live&task=_toy');
+  await enterKey(page, sentinelKey());
+  const worker = page.waitForEvent('worker', (w) => /\/assets\/trial-[^/]+\.js$/.test(w.url()));
+  await run(page, 1);
+  await expect.poll(() => api.held.length, { timeout: 30_000 }).toBe(1);
+  const probe = await (await worker).evaluate(async (foreign) => {
+    const attempt = async (f: () => unknown) => {
+      try {
+        const r = await f();
+        return r instanceof Response ? `answered ${r.status}` : 'sent';
+      } catch (e) {
+        return (e as Error).message;
+      }
+    };
+    return {
+      fetch: await attempt(() => fetch(`${foreign}/collect`)),
+      request: await attempt(() => fetch(new Request(`${foreign}/collect`, { method: 'POST', body: 'x' }))),
+      xhr: await attempt(() => new XMLHttpRequest().open('GET', `${foreign}/collect`)),
+      websocket: await attempt(() => new WebSocket('wss://foreign.invalid/collect')),
+      eventsource: await attempt(() => new EventSource(`${foreign}/collect`)),
+      self: await attempt(() => fetch(new URL('../data/fixtures/manifest.json', location.href))),
+    };
+  }, FOREIGN);
+  for (const via of ['fetch', 'request', 'xhr', 'websocket', 'eventsource'] as const) expect(probe[via], via).toMatch(/egress guard/);
+  expect(probe.self).toBe('answered 200');
+  expect(reached).toBe(0);
+});
+
 test('an org-CORS 401 stops the trial and shows its message, pointing to the exact local command', async ({ page }) => {
   await mockToy(page, { trialStatus: { status: 401, message: ORG_CORS } });
   await page.goto('./?view=live&task=_toy');

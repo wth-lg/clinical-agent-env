@@ -6,7 +6,7 @@
 // the page, which keeps the tab ledger. A start with a checkpoint resumes a trial a reload cut
 // off (live/resume.ts): the kept events are checked, not posted again. A cancel message aborts the
 // trial's signal, so it ends CANCELLED. The egress guard is installed first, as in every entry
-// point that holds a client.
+// point that holds a client, limited to workerOrigins: the page's CSP does not cover a Worker.
 import { installEgressGuard } from '../../../../packages/core/egress.ts';
 import type { TrialEvent } from '../../../../packages/core/events.ts';
 import { run, type RunOptions } from '../../../../packages/core/run.ts';
@@ -15,10 +15,10 @@ import { browserNow } from '../adapters/clock-browser.ts';
 import { browserTaskSource } from '../adapters/tasks-browser.ts';
 import { taskChecks } from '../live/checks.ts';
 import { resumeOptions, sameEvent } from '../live/resume.ts';
-import { clientOptions, type WorkerIn, type WorkerOut } from '../live/transport/worker.ts';
+import { clientOptions, workerOrigins, type WorkerIn, type WorkerOut } from '../live/transport/worker.ts';
 import definitionsUrl from '../../../../fixtures/definitions-pruned.json?url';
 
-installEgressGuard(globalThis);
+installEgressGuard(globalThis, { allowedOrigins: workerOrigins(location.origin) });
 
 const scope = globalThis as unknown as { postMessage(m: WorkerOut): void; addEventListener(t: 'message', l: (e: { data: WorkerIn }) => void): void };
 const post = (m: WorkerOut) => scope.postMessage(m);
