@@ -401,3 +401,32 @@ test('a trial whose fault is not the model\'s is never told as a model failure (
   await expect(row.getByTestId('check-state')).toHaveText('error');
   await expect(row).not.toContainText('Found ');
 });
+
+test('Attribution opens with the deciding criterion and the faults ruled out; only the deciding group is open; only codes are links (F4)', async ({ page }) => {
+  for (const name of [TRIALS.limit, TRIALS.envError, TRIALS.failAudited]) {
+    const e = await explain(name);
+    await openTrial(page, name, '&tab=attribution');
+    await expect(page.getByTestId('trial-detail')).toHaveAttribute('data-full', 'true', { timeout: 60_000 });
+    const p = panel(page, 'attribution');
+    const summaryLine = p.getByTestId('criteria-summary');
+    await expect(summaryLine).toContainText(`Decided by ${e.deciding!.id}`);
+    // model and refusal are one fault word: the other is not listed as ruled out.
+    const family = (f: string) => (f === 'refusal' ? 'model' : f);
+    for (const f of FAULT_PRECEDENCE.filter((f) => family(f) !== family(e.fault!) && e.fault_criteria[f].every((c) => c.met !== true))) {
+      const ids = e.fault_criteria[f].map((c) => c.id);
+      await expect(summaryLine).toContainText(`${ids.length === 1 ? ids[0] : `${ids[0]}-${ids.at(-1)}`} not met`);
+    }
+    // The deciding fault's group is open; a group with no criterion that holds is closed.
+    for (const f of FAULT_PRECEDENCE) {
+      const group = p.locator(`[data-testid="fault-criteria"][data-fault="${f}"]`);
+      const holds = e.fault_criteria[f].some((c) => c.met === true);
+      if (f === e.fault) await expect(group).toHaveAttribute('open', '');
+      else if (!holds) await expect(group).not.toHaveAttribute('open');
+    }
+    // Each row links its code only, and its sentence is plain text.
+    const links = await p.getByTestId('criterion-row').evaluateAll((rows) => rows.map((r) => [...r.querySelectorAll('a')].map((a) => a.textContent)));
+    for (const l of links) expect(l.length).toBe(1);
+    const rowIds = await p.getByTestId('criterion-row').evaluateAll((rows) => rows.map((r) => r.getAttribute('data-id')));
+    expect(links.map((l) => l[0])).toEqual(rowIds);
+  }
+});

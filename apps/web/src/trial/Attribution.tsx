@@ -15,6 +15,11 @@ import { EvidenceId, Section } from './Grading.tsx';
 const CRITERIA = [...Object.values(FAULT_DEFINITIONS).flatMap((d) => d.criteria), ...RUN_BLOCKS, ...CONFIRMATION_CRITERIA];
 // A criterion's sentence from outcomes.ts.
 export const criterionText = (id: string): string => CRITERIA.find((c) => c.id === id)?.text ?? id;
+// The sentence inside a line ("decided by the trial stopped at ..."): lower-case first letter, no full stop.
+export const criterionPhrase = (id: string): string => {
+  const t = criterionText(id).replace(/\.$/, '');
+  return t.charAt(0).toLowerCase() + t.slice(1);
+};
 // One word per fault, the word the label uses (review-ui-P16-1 F5).
 export const FAULT_WORD: Readonly<Record<Fault, string>> = { model: 'model', refusal: 'model', env: 'environment', grader: 'grader', infra: 'infra' };
 export const LINK = 'text-ink underline decoration-line-strong underline-offset-2 hover:decoration-ink';
@@ -25,19 +30,37 @@ export function StepLink({ n, onStep, testId, children }: { n: number; onStep: (
   return <button type="button" data-testid={testId} data-step={n} onClick={() => onStep(n)} className={`${LINK} rounded-sm`}>{children ?? `step ${n}`}</button>;
 }
 
+// Only the code links to its definition; the sentence is plain text (review-ui-P16-1 F4).
 function CriterionItem({ c, group, deciding }: { c: CriterionRow; group: string; deciding: boolean }) {
   return (
     <li data-testid="criterion-row" data-fault={group} data-id={c.id} data-met={String(c.met)} data-evidence={c.evidence} data-deciding={String(deciding)} className={`break-words py-1.5 ${deciding ? 'border-l-2 border-l-accent pl-2' : ''}`}>
-      <span className="font-medium text-ink">{c.id}: {MET_TEXT[String(c.met)]}</span>
+      <span className="font-medium text-ink"><GlossaryLink anchor={`criterion-${c.id}`} className={LINK}>{c.id}</GlossaryLink>: {MET_TEXT[String(c.met)]}</span>
       {c.evidence !== '' && <span className="text-ink-muted">: <HashText text={c.evidence} /></span>}
       {deciding && <span className="ml-2 rounded-sm border border-line-strong px-1 text-xs text-ink">decided the fault</span>}
-      <span className="block text-xs text-ink-muted"><GlossaryLink anchor={`criterion-${c.id}`} className={LINK}>{criterionText(c.id)}</GlossaryLink></span>
+      <span className="block text-xs text-ink-muted">{criterionText(c.id)}</span>
     </li>
   );
 }
 
 function Note({ n }: { n: Holding }) {
-  return <li className="break-words"><GlossaryLink anchor={`criterion-${n.id}`} className={LINK}>{criterionText(n.id)}</GlossaryLink> ({n.id}): <span className="text-ink-muted"><HashText text={n.evidence} /></span></li>;
+  return <li className="break-words"><GlossaryLink anchor={`criterion-${n.id}`} className={LINK}>{n.id}</GlossaryLink>: {criterionPhrase(n.id)}. <span className="text-ink-muted"><HashText text={n.evidence} /></span></li>;
+}
+
+const range = (rows: readonly CriterionRow[]) => (rows.length === 1 ? rows[0]!.id : `${rows[0]!.id}-${rows.at(-1)!.id}`);
+
+// One line before the table: the criterion that decided, then each other fault, ruled out (none
+// of its criteria met) or also holding (review-ui-P16-1 F4).
+function CriteriaSummary({ e }: { e: Explanation }) {
+  const others = FAULT_PRECEDENCE.filter((f) => f !== e.fault && !(e.fault === 'refusal' && f === 'model') && !(e.fault === 'model' && f === 'refusal'));
+  const out = others.filter((f) => e.fault_criteria[f].every((c) => c.met !== true));
+  const holds = others.filter((f) => !out.includes(f));
+  return (
+    <p data-testid="criteria-summary" className="break-words text-ink">
+      {e.deciding ? <>Decided by <GlossaryLink anchor={`criterion-${e.deciding.id}`} className={LINK}>{e.deciding.id}</GlossaryLink>: {criterionPhrase(e.deciding.id)}.</> : 'No fault: the trial passed.'}
+      {out.length > 0 && <> Ruled out: {out.map((f) => `${FAULT_WORD[f]} (${range(e.fault_criteria[f])} not met)`).join(', ')}.</>}
+      {holds.length > 0 && <> Also holds: {holds.map((f) => `${FAULT_WORD[f]} (${e.fault_criteria[f].filter((c) => c.met === true).map((c) => c.id).join(', ')})`).join(', ')}.</>}
+    </p>
+  );
 }
 
 const yesNo = (v: boolean | null) => (v === null ? 'not asked' : v ? 'yes' : 'no');
@@ -104,21 +127,29 @@ export function Attribution({ t, e, steps, onStep }: { t: Trial; e: Explanation;
 
       <Section title="Criteria" lead={<>Each criterion is checked against this trial. The fault is the first fault, in the order of the <GlossaryLink className={LINK}>definitions</GlossaryLink>, with a criterion that holds.</>} testId="criteria-table">
         <div className="space-y-4">
+          <CriteriaSummary e={e} />
           <div>
             <h4 className="text-xs font-medium text-ink">Confirmation (M1-M5) <GlossaryLink anchor="confirmation" className={`${LINK} font-normal text-ink-muted`}>definition</GlossaryLink></h4>
             <ul data-testid="detail-criteria" className="divide-y divide-line">
               {e.criteria.map((c) => <CriterionItem key={c.id} c={c} group="confirmation" deciding={false} />)}
             </ul>
           </div>
-          {FAULT_PRECEDENCE.map((f) => (
-            <div key={f} data-testid="fault-criteria" data-fault={f}>
-              <h4 className="text-xs font-medium text-ink">Fault: {f} <GlossaryLink anchor={`fault-${f}`} className={`${LINK} font-normal text-ink-muted`}>definition</GlossaryLink></h4>
-              <p className="text-xs text-ink-muted">{FAULT_DEFINITIONS[f].sentence}</p>
-              <ul className="divide-y divide-line">
-                {e.fault_criteria[f].map((c) => <CriterionItem key={c.id} c={c} group={f} deciding={c.id === deciding} />)}
-              </ul>
-            </div>
-          ))}
+          {/* The deciding fault's group and any group with a criterion that holds are open; the
+              faults ruled out are closed, one line each. */}
+          {FAULT_PRECEDENCE.map((f) => {
+            const met = e.fault_criteria[f].filter((c) => c.met === true).length;
+            return (
+              <details key={f} data-testid="fault-criteria" data-fault={f} open={f === e.fault || met > 0} className="group">
+                <summary className="cursor-pointer text-xs font-medium text-ink">
+                  Fault: {FAULT_WORD[f]}{f === 'refusal' ? ' (refusal)' : ''} <span className="font-normal text-ink-muted">{met === 0 ? `ruled out, ${range(e.fault_criteria[f])} not met` : `${met} of ${e.fault_criteria[f].length} met`}</span>
+                </summary>
+                <p className="mt-1 text-xs text-ink-muted">{FAULT_DEFINITIONS[f].sentence} <GlossaryLink anchor={`fault-${f}`} className={LINK}>Definition</GlossaryLink></p>
+                <ul className="divide-y divide-line">
+                  {e.fault_criteria[f].map((c) => <CriterionItem key={c.id} c={c} group={f} deciding={c.id === deciding} />)}
+                </ul>
+              </details>
+            );
+          })}
         </div>
       </Section>
     </div>

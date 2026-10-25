@@ -213,7 +213,7 @@ test('a run manifest on another world makes M3 not met, and Notes shorten each h
   await expect(detail).toHaveAttribute('data-full', 'true', { timeout: 60_000 });
   await expect(detail.locator('[data-testid="detail-criteria"] li[data-id="M3"]')).toHaveAttribute('data-met', 'false');
   const notes = detail.getByTestId('detail-notes');
-  await expect(notes).toContainText('(E2)');
+  await expect(notes).toContainText('E2: ');
   await expect(notes.locator(`[data-hash="${other}"]`)).toHaveCount(1);
   await expect(notes.locator(`[data-hash="${pass.state_hash.initial}"]`)).toHaveCount(1);
   expect(await notes.innerText()).not.toMatch(/[0-9a-f]{64}/);
