@@ -36,7 +36,7 @@ async function mockToy(page: Page, opts: { hold?: number; trialStatus?: { status
     if (opts.trialStatus) {
       return route.fulfill({ status: opts.trialStatus.status, contentType: 'application/json', headers: CORS, body: JSON.stringify({ type: 'error', error: { type: 'authentication_error', message: opts.trialStatus.message } }) });
     }
-    if (body.tools === undefined) return sse(okResponse(TOY[3 + judge++]!, 4 + judge));
+    if (body.tools === undefined) return sse(okResponse(TOY[3 + judge]!, 4 + judge++));
     const turn = body.messages.filter((m) => m.role === 'assistant').length + 1;
     if (turn === opts.hold && held.length === 0) return void held.push(route);
     return sse(okResponse(TOY[turn - 1]!, turn));
