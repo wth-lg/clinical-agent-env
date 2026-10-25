@@ -14,12 +14,13 @@
 // Every trial's explanation (outcome, label, decisive check, reason) is packages/core/explain.ts
 // explainTrial over its record and audit row, with the context packages/core/explain-context.ts
 // builds from the run's files, the one builder cli/audit-check.ts uses too: the run's
-// manifest.json (none: M3 is pending, never compared with today's world), the task's check text
+// manifest.json (none: M3 is pending, never compared with today's world), its matrix.json (M4,
+// GR4 and B1, so a row's fault and label are the detail's) and the task's check text
 // (tasks/<id>.check-text.ts). explainTrial reads the trajectory only for a REFUSAL's or LIMIT's
 // sentence, so only those trajectories are fetched up front. The trial detail asks for
 // fullExplanation, which adds what the M1-M5 criteria need and the list cannot afford for every
-// row: the trajectory, the task's checks (decisive ids for a regraded trial's exposure, traces_to),
-// the world when M1 reads it and the run's matrix.json, so its criteria equal audit-check's.
+// row: the trajectory, the task's checks (decisive ids for a regraded trial's exposure, traces_to)
+// and the world when M1 reads it, so its criteria equal audit-check's.
 //
 // A run's grading: the grader versions its records were graded at, whether they started from
 // another world than today's manifest, and, when the run holds regrade/ (an offline regrade of
@@ -128,6 +129,7 @@ async function loadRun(files: readonly string[], has: ReadonlySet<string>, runDi
     warnings.push(`manifest.json cannot be read: ${message(e)}`);
     return null;
   }) : null;
+  const matrix = await matrixOf(runDir, has);
   const prefix = `${runDir}/trials/`;
   const recordFiles = files.filter((f) => f.startsWith(prefix) && f.endsWith('.json'));
   const loaded = await Promise.all(recordFiles.map(async (file): Promise<Trial | BadRecord> => {
@@ -140,7 +142,7 @@ async function loadRun(files: readonly string[], has: ReadonlySet<string>, runDi
       const trajectoryUrl = r.trajectory && has.has(`${runDir}/${r.trajectory}`) ? dataUrl(`${runDir}/${r.trajectory}`) : null;
       const audit = byTrial.get(trialName(r)) ?? null;
       const events = readsEvents(r) && trajectoryUrl !== null ? await fetchEvents(trajectoryUrl) : [];
-      return { name: trialName(r), file, task: r.task_id, record: r, audit, trajectoryUrl, explanation: explainTrial(r, audit, explainContext({ record: r, events, manifest, text: checkTextOf(r.task_id) })) };
+      return { name: trialName(r), file, task: r.task_id, record: r, audit, trajectoryUrl, explanation: explainTrial(r, audit, explainContext({ record: r, events, manifest, matrix, text: checkTextOf(r.task_id) })) };
     } catch (e) {
       return { name, file, errors: [message(e)] };
     }
@@ -216,8 +218,8 @@ export function pilotRates(run: RunData): Array<{ task: string; passes: number; 
 
 // The run's parsed matrix.json, fetched once; null when it has none or it cannot be read.
 const matrices = new Map<string, Promise<unknown>>();
-function matrixOf(run: RunData, has: ReadonlySet<string>): Promise<unknown> {
-  const file = `${run.dir}/matrix.json`;
+function matrixOf(runDir: string, has: ReadonlySet<string>): Promise<unknown> {
+  const file = `${runDir}/matrix.json`;
   if (!has.has(file)) return Promise.resolve(null);
   if (!matrices.has(file)) matrices.set(file, fetchJson<unknown>(file).catch(() => null));
   return matrices.get(file)!;
@@ -234,7 +236,7 @@ const inWorld = () => (world ??= Promise.all([import('../../../../packages/env/f
 export async function fullExplanation(t: Trial, run: RunData, has: ReadonlySet<string>): Promise<Explanation> {
   const [{ taskChecks }, matrix, events] = await Promise.all([
     import('../tasks/matrix-task.ts'),
-    matrixOf(run, has),
+    matrixOf(run.dir, has),
     t.trajectoryUrl === null ? Promise.resolve([]) : fetchEvents(t.trajectoryUrl),
   ]);
   const input = { record: t.record, events, manifest: run.manifest, matrix, checks: await taskChecks(t.task).catch(() => []), text: checkTextOf(t.task) };

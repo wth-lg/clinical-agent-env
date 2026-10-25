@@ -43,12 +43,12 @@ export const CHECK_TEXT: Readonly<Record<string, CheckText>> = {
 // The run's manifest.json; the sample run has none, so M3 is pending.
 const RUN_MANIFEST: unknown = existsSync(join(RUN_DIR, 'manifest.json')) ? JSON.parse(readFileSync(join(RUN_DIR, 'manifest.json'), 'utf8')) : null;
 
-// The list row's explanation, as the Runs view builds it (packages/core/explain-context.ts):
-// explainTrial reads the trajectory only for a REFUSAL's or LIMIT's sentence.
+// The list row's explanation, as the Runs view builds it (packages/core/explain-context.ts, with
+// the run's manifest and matrix.json): explainTrial reads the trajectory only for a REFUSAL's or LIMIT's sentence.
 export function explain(r: SampleRecord): Explanation {
   const row = audit.find((a) => a.trial === trialName(r)) ?? null;
   const events = r.outcome === 'REFUSAL' || r.outcome === 'LIMIT' ? parseTrajectory(readFileSync(join(RUN_DIR, r.trajectory), 'utf8')) : [];
-  return explainTrial(r, row, contextOf({ record: r, events, manifest: RUN_MANIFEST, text: CHECK_TEXT[r.task_id] ?? null }));
+  return explainTrial(r, row, contextOf({ record: r, events, manifest: RUN_MANIFEST, matrix: matrixJson, text: CHECK_TEXT[r.task_id] ?? null }));
 }
 
 // audit-check's M1-M5 for every record of the sample run (cli/audit-check.ts explainContext, then
