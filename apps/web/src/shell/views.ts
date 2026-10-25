@@ -1,5 +1,5 @@
 // The rail's views (apps/web/src/data/ViewBody.tsx renders each).
-import { BookOpen, Database, FileText, History, LayoutDashboard, ListChecks, type LucideIcon } from 'lucide-react';
+import { BookOpen, Database, FileText, History, LayoutDashboard, ListChecks, Play, type LucideIcon } from 'lucide-react';
 
 export interface View {
   id: string;
@@ -11,6 +11,7 @@ export const VIEWS: readonly View[] = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
   { id: 'tasks', label: 'Tasks', icon: ListChecks },
   { id: 'runs', label: 'Runs', icon: History },
+  { id: 'live', label: 'Live trial', icon: Play },
   { id: 'findings', label: 'Findings', icon: FileText },
   { id: 'environment', label: 'Environment', icon: Database },
   { id: 'glossary', label: 'Labels', icon: BookOpen },
