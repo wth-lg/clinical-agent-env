@@ -1,8 +1,9 @@
 // Every committed web fixture (apps/web/e2e/fixtures/*/results) read with the validators the
 // built UI reads it with: each summary.json with packages/core/summary.ts validateSummary and
 // equal to summarize() over its records, each trial record and audit line with
-// src/data/records.ts, each trajectory with packages/core/trajectory.ts. A schema bump that
-// leaves a fixture behind fails here, before the e2e specs that build against it.
+// src/data/records.ts, each trajectory with packages/core/trajectory.ts, and every trial record
+// starts from the world in fixtures/manifest.json. A schema bump or a world rebuild that leaves a
+// fixture behind fails here, before the e2e specs that build against it.
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -11,6 +12,7 @@ import { parseTrajectory } from '../../../packages/core/trajectory.ts';
 import { validateAuditRow, validateRecord } from '../src/data/records.ts';
 
 const FIXTURES = join(import.meta.dirname, '../e2e/fixtures');
+const WORLD_HASH = (JSON.parse(readFileSync(join(import.meta.dirname, '../../../fixtures/manifest.json'), 'utf8')) as { world: { state_hash: string } }).world.state_hash;
 const roots = readdirSync(FIXTURES, { withFileTypes: true })
   .filter((e) => e.isDirectory() && existsSync(join(FIXTURES, e.name, 'results')))
   .map((e) => e.name)
@@ -49,6 +51,10 @@ describe.each(roots)('fixture %s', (root) => {
     for (const f of records) expect(validateRecord(json(f)), at(f)).toEqual([]);
     for (const f of files(run, 'audit.jsonl')) for (const [i, row] of lines(f).entries()) expect(validateAuditRow(row), `${at(f)}:${i + 1}`).toEqual([]);
     for (const f of files(join(run, 'trajectories'), '.jsonl')) expect(() => parseTrajectory(readFileSync(f, 'utf8')), at(f)).not.toThrow();
+  });
+
+  it.each(runs.map((r) => [at(r), r]))('%s: every trial record starts from the manifest world', (_, run) => {
+    for (const f of files(join(run, 'trials'), '.json')) expect((json(f) as { state_hash: { initial: string } }).state_hash.initial, at(f)).toBe(WORLD_HASH);
   });
 
   const summaries = runs.filter((r) => existsSync(join(r, 'summary.json')));
