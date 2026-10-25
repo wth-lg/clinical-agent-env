@@ -98,7 +98,9 @@ accessible name or text node, so they share one line of the snapshot.
   with the pattern `Requires Node\.js 22\.18 or newer and pnpm\.`, so the sentence itself is
   written only here, in command.ts and in README.md.
 - `https://nodejs.org/en/download` and `https://pnpm.io/installation`: NODE_INSTALL_URL and
-  PNPM_INSTALL_URL, the hrefs of the `Install Node.js` and `Install pnpm` links under it.
+  PNPM_INSTALL_URL, the hrefs of the `Install Node.js` and `Install pnpm` links under it. Under
+  the sentence, one row per tool (PREREQUISITE_ROWS in command.ts): the requirement, the check
+  command (`node -v`, `pnpm -v`) in a code box that does not wrap, and the install link.
 - `Run it on your computer`: the heading of the local-run panel on the browser-direct surface. It
   shows on the key gate in every key state, outside any error, and in the shell after Validate.
 

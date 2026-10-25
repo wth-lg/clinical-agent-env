@@ -19,7 +19,7 @@ export function LocalRunPanel({ surface, className = '' }: { surface: Surface; c
   const id = useId();
   const { title, body } = TEXT[surface.kind];
   return (
-    <section data-testid="local-run-panel" aria-labelledby={id} className={`rounded-sm border border-line bg-surface p-6 ${className}`}>
+    <section data-testid="local-run-panel" aria-labelledby={id} className={`rounded-sm border border-line bg-surface p-4 sm:p-6 ${className}`}>
       <h2 id={id} className="font-semibold text-ink">
         {title}
       </h2>

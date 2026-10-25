@@ -11,3 +11,11 @@ export const PNPM_INSTALL_URL = 'https://pnpm.io/installation';
 // Each prints its version, to check what is installed before running the command.
 export const NODE_CHECK_COMMAND = 'node -v';
 export const PNPM_CHECK_COMMAND = 'pnpm -v';
+
+// LOCAL_PREREQUISITES as one row per tool: what it needs, the command that prints the installed
+// version, and where to install it. apps/web/test/command.test.ts pins that the sentence names
+// exactly these requirements.
+export const PREREQUISITE_ROWS = [
+  { requirement: 'Node.js 22.18 or newer', check: NODE_CHECK_COMMAND, install: NODE_INSTALL_URL, link: 'Install Node.js' },
+  { requirement: 'pnpm', check: PNPM_CHECK_COMMAND, install: PNPM_INSTALL_URL, link: 'Install pnpm' },
+] as const;

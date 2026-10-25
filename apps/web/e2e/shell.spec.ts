@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { MODEL } from '../../../packages/core/anthropic.ts';
 import { HEALTH_PATH, KEY_PATH, REFUSAL_TEXT, SAMPLES, TOKEN_HEADER, TOKEN_META } from '../../../packages/core/runner-api.ts';
 import { admitTrial, DEFAULT_SESSION_CAP_USD } from '../src/spend/cap.ts';
-import { LOCAL_PREREQUISITES, LOCAL_START_COMMAND, NODE_INSTALL_URL, PNPM_INSTALL_URL } from '../src/surface/command.ts';
+import { LOCAL_PREREQUISITES, LOCAL_START_COMMAND, NODE_CHECK_COMMAND, NODE_INSTALL_URL, PNPM_CHECK_COMMAND, PNPM_INSTALL_URL } from '../src/surface/command.ts';
 
 // The app shell against a mocked API: the runner's /api/health and /api/key are route-mocked
 // from the runner-api.ts samples, the Messages API from SSE written here. The API origin is
@@ -118,12 +118,22 @@ const chip = (page: Page) => page.getByTestId('surface-chip');
 const capField = (page: Page) => page.getByLabel('Session spend cap (USD)');
 const validate = (page: Page) => page.getByRole('button', { name: 'Validate' }).click();
 
-// The start block LocalCommand renders: LOCAL_PREREQUISITES exactly, the two install links, then
-// LOCAL_START_COMMAND with its Copy button, in that order.
+// One row per tool: the check command and the install link.
+const TOOLS = [
+  { check: NODE_CHECK_COMMAND, link: 'Install Node.js', href: NODE_INSTALL_URL },
+  { check: PNPM_CHECK_COMMAND, link: 'Install pnpm', href: PNPM_INSTALL_URL },
+];
+
+// The start block LocalCommand renders: LOCAL_PREREQUISITES exactly, one row per tool with its
+// check command and install link, then LOCAL_START_COMMAND with its Copy button, in that order.
 async function expectStartBlock(scope: Locator) {
   await expect(scope.getByTestId('local-prerequisites')).toHaveText(LOCAL_PREREQUISITES);
-  await expect(scope.getByRole('link', { name: 'Install Node.js' })).toHaveAttribute('href', NODE_INSTALL_URL);
-  await expect(scope.getByRole('link', { name: 'Install pnpm' })).toHaveAttribute('href', PNPM_INSTALL_URL);
+  const rows = scope.getByTestId('prerequisite');
+  await expect(rows).toHaveCount(TOOLS.length);
+  for (const [i, tool] of TOOLS.entries()) {
+    await expect(rows.nth(i).getByTestId('check-command')).toHaveText(tool.check);
+    await expect(rows.nth(i).getByRole('link', { name: tool.link })).toHaveAttribute('href', tool.href);
+  }
   await expect(scope.getByTestId('local-command')).toHaveText(LOCAL_START_COMMAND);
   await expect(scope.getByRole('button', { name: 'Copy command' })).toBeVisible();
   const text = await scope.innerText();
@@ -613,6 +623,35 @@ test.describe('gate details', () => {
     expect(split.pieces).toEqual([]);
     expect(split.wordBreak).not.toBe('break-all');
   });
+});
+
+// UI F1: one row per tool, the check command in a code box that never wraps, the install link
+// on the same row as its tool; clear at 1440 and 390.
+test.describe('prerequisite rows', () => {
+  for (const width of [1440, 390]) {
+    test(`at ${width}: each check command is a one-line code box, and each row fits the panel`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await mockBrowserDirect(page);
+      await page.goto('./');
+      await page.evaluate(() => document.fonts.ready);
+      const p = (await panel(page).boundingBox())!;
+      for (const [i, tool] of TOOLS.entries()) {
+        const row = panel(page).getByTestId('prerequisite').nth(i);
+        const code = row.getByTestId('check-command');
+        const style = await code.evaluate((el) => ({ lines: el.getClientRects().length, height: el.getBoundingClientRect().height, lineHeight: parseFloat(getComputedStyle(el).lineHeight), whiteSpace: getComputedStyle(el).whiteSpace, border: getComputedStyle(el).borderTopWidth, mono: getComputedStyle(el).fontFamily }));
+        expect(style.lines, tool.check).toBe(1);
+        expect(style.height, tool.check).toBeLessThan(style.lineHeight * 2);
+        expect(style.whiteSpace).toBe('nowrap');
+        expect(style.border).not.toBe('0px');
+        expect(style.mono).toMatch(/mono/i);
+        for (const part of [row, code, row.getByRole('link', { name: tool.link })]) {
+          const b = (await part.boundingBox())!;
+          expect(b.x).toBeGreaterThanOrEqual(p.x);
+          expect(b.x + b.width).toBeLessThanOrEqual(p.x + p.width);
+        }
+      }
+    });
+  }
 });
 
 // The gate (normal, org-CORS, another API error) and the shell, light and dark, at 1440x900

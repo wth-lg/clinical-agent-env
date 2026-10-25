@@ -68,7 +68,7 @@ export function KeyGate({ surface, onDone, onBrowse, notice }: { surface: Surfac
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-canvas px-4 py-10">
       {/* noValidate: parseCap decides what submits, so the browser never blocks a value the app accepts. */}
-      <form onSubmit={submit} noValidate className="w-full max-w-[440px] rounded-sm border border-line bg-surface p-6">
+      <form onSubmit={submit} noValidate className="w-full max-w-[440px] rounded-sm border border-line bg-surface p-4 sm:p-6">
         <div className="flex items-center justify-between gap-3">
           <span className="text-xs text-ink-muted">Riverbend clinical agent environment</span>
           <SurfaceChip surface={surface} />
