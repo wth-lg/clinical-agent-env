@@ -4,11 +4,14 @@
 // probe verdicts equal to what `pnpm cli matrix` wrote; Overview shows k/N, the Wilson interval
 // and one swatch per trial; Runs shows each non-pass trial's outcome, label, decisive check and
 // reason as explainTrial gives them, with PASS_DEFINITION and DENOMINATOR_RULE in its header;
-// the help icon opens the glossary; Environment verifies the reset hash and runs a read tool.
+// the help icon opens the glossary; Environment verifies the reset hash and runs a read tool. At
+// 390 px no view scrolls sideways, and a record the loader cannot read is an error row, not a
+// blank app.
 import { expect, test, type Page } from '@playwright/test';
 import { NOT_AUDITED_MARKER } from '../../../packages/core/explain.ts';
 import { AUDIT_LABEL, DENOMINATOR_RULE, FAULT_DEFINITIONS, FAULT_PRECEDENCE, PASS_DEFINITION } from '../../../packages/core/outcomes.ts';
 import { trialName } from '../../../packages/core/summary.ts';
+import { markOf } from '../src/data/ui.tsx';
 import { cliMatrix, cliReplay, explain, sampleBase, MANIFEST_HASH, records, summary, TASK_IDS } from './fixtures/sample-results/sample.ts';
 
 async function browse(page: Page, path = './') {
@@ -33,7 +36,10 @@ test.describe('grader validation in the tab, no key', () => {
     expect(await cards.evaluateAll((els) => els.map((e) => e.getAttribute('data-task')))).toEqual(TASK_IDS);
     await cards.first().getByRole('button').first().click();
     await expect(page.getByTestId('task-prompt')).toBeVisible();
-    await expect(page.getByTestId('task-checks').locator('tbody tr').first()).toBeVisible();
+    await expect(page.getByTestId('task-check').first()).toBeVisible();
+    await page.getByTestId('task-check').first().locator('summary').click();
+    await expect(page.getByTestId('check-source').first()).not.toBeEmpty();
+    await expect(page.getByTestId('solution-step').first()).toBeVisible();
     // Live controls are shown disabled with the reason.
     const run = page.getByTestId('validation').first().getByRole('button', { name: 'Run trial' });
     await expect(run).toBeDisabled();
@@ -85,9 +91,17 @@ test('Overview: k/N with N from the run, Wilson bounds equal summary.json, one s
     expect(Number(await whisker.getAttribute('data-lo'))).toBe(s.wilson95!.lo);
     expect(Number(await whisker.getAttribute('data-hi'))).toBe(s.wilson95!.hi);
     await expect(row.getByTestId('band')).toHaveCount(1);
-    await expect(row.getByTestId('swatches').getByRole('img')).toHaveCount(records.filter((r) => r.task_id === id).length);
+    const mine = records.filter((r) => r.task_id === id);
+    await expect(row.getByTestId('swatches').getByRole('img')).toHaveCount(mine.length);
+    // Each mark is the outcome and fault explainTrial gives, so environment, grader and infra differ.
+    const marks = await row.getByTestId('swatches').getByRole('img').evaluateAll((els) => els.map((e) => e.getAttribute('data-mark')).sort());
+    expect(marks).toEqual(mine.map((r) => markOf(explain(r).outcome, explain(r).fault)).sort());
   }
+  const all = new Set(records.map((r) => markOf(explain(r).outcome, explain(r).fault)));
+  for (const m of ['environment', 'grader', 'infra', 'refusal', 'limit', 'model', 'pass']) expect(all, m).toContain(m);
+  await expect(page.getByTestId('legend').locator('li')).toHaveCount(7);
   await expect(page.getByTestId('empty-state')).toHaveCount(0);
+  await expect(page.getByTestId('data-warning')).toHaveCount(0);
 });
 
 test('Runs: every non-pass row shows outcome, label, decisive check and reason without a click', async ({ page }) => {
@@ -135,6 +149,7 @@ test('one click on a fault label opens the glossary, whose text equals outcomes.
     const l = AUDIT_LABEL[f];
     await expect(page.locator(`[data-testid="audit-label-row"][data-fault="${f}"]`).getByTestId('audit-label')).toHaveText(l === null ? 'no label: excluded and rerun' : `${l.label}${l.subtype ? ` (subtype ${l.subtype})` : ''}`);
   }
+  await expect(page.getByTestId('taxonomy-row')).toHaveCount(6);
   await expect(page.getByTestId('glossary-pass')).toHaveText(PASS_DEFINITION);
   await expect(page.getByTestId('glossary-denominator')).toHaveText(DENOMINATOR_RULE);
 });
@@ -189,5 +204,44 @@ test('after Browse without a key, Overview, Tasks, Runs and Environment each ren
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(view);
     await expect(page.getByTestId(testId).first()).toBeVisible();
     await expect(page.getByTestId('empty-state')).toHaveCount(0);
+  }
+});
+
+test('Tasks: each check says what it requires, and the reference solution lists its tool calls', async ({ page }) => {
+  await browse(page, './?view=tasks&task=renal-dose-review');
+  const card = page.locator('[data-testid="task-card"][data-task="renal-dose-review"]');
+  await expect(card.locator('[data-testid="task-check"][data-check="note_explains_eie_scr"]').getByTestId('check-question')).toContainText('entered in error');
+  await expect(card.locator('[data-testid="task-check"][data-check="apixaban_dose"]')).toContainText('gate check: must be met to pass');
+  await expect(card.getByTestId('solution-step').first()).toContainText('1.');
+  expect(await card.getByTestId('solution-step').count()).toBeGreaterThan(5);
+});
+
+test('a trial record missing cost_usd is an error row in Runs; the app and the other rows stay', async ({ page }) => {
+  const bad = records.find((r) => r.task_id === 'renal-dose-review' && r.index === 3)!;
+  await page.route(`**/data/results/runs/${summary.run_id}/trials/renal-dose-review/3.json`, async (route) => {
+    const { cost_usd: _, ...rest } = bad as unknown as Record<string, unknown>;
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(rest) });
+  });
+  await browse(page, './?view=runs');
+  const row = page.locator('[data-testid="record-error"][data-trial="renal-dose-review/3"]');
+  await expect(row).toContainText('cost_usd is missing');
+  await expect(page.getByTestId('trial-row')).toHaveCount(records.length - 1);
+  await page.getByRole('navigation', { name: 'Views' }).getByRole('link', { name: 'Overview' }).click();
+  await expect(page.getByTestId('data-warning')).toContainText('1 trial record cannot be read');
+  await expect(page.getByTestId('overview-row')).toHaveCount(TASK_IDS.length);
+});
+
+test('at 390 px no view scrolls sideways, with a task and a failed trial open', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const failing = records.find((r) => r.outcome === 'FAIL' && r.task_id === 'contrast-ct-prep')!;
+  const views = ['./?view=overview', './?view=tasks&task=contrast-ct-prep', `./?view=runs&trial=${encodeURIComponent(trialName(failing))}`, './?view=findings', './?view=environment', './?view=glossary'];
+  for (const path of views) {
+    await browse(page, path);
+    await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible();
+    if (path.includes('tasks')) await expect(page.getByTestId('solution-step').first()).toBeVisible();
+    if (path.includes('runs')) await expect(page.getByTestId('trial-detail')).toBeVisible();
+    if (path.includes('overview')) await expect(page.getByTestId('overview-row').first()).toBeVisible();
+    const sizes = await page.evaluate(() => [document.querySelector('main')!, document.documentElement].map((e) => ({ sw: e.scrollWidth, cw: e.clientWidth })));
+    for (const { sw, cw } of sizes) expect(sw, path).toBeLessThanOrEqual(cw);
   }
 });

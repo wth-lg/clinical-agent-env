@@ -1,13 +1,16 @@
-// Tasks: the six tasks, each with its prompt, tools, policies and checks, and its grader
-// validation, run in this tab with no key: the oracle (reference solution) graded once, the whole
-// grader validation matrix, and a replay of the official run's trials of the task. Run trial
-// needs a key and is shown disabled with the reason. ?task= opens one task.
+// Tasks: the six tasks, each with its prompt, tools, policies, its checks with what each requires
+// (check-text.ts), the reference solution's tool calls, and its grader validation, run in this tab
+// with no key: the oracle (reference solution) graded once, the whole grader validation matrix,
+// and a replay of the official run's trials of the task. Run trial needs a key and is shown
+// disabled with the reason. ?task= opens one task.
 import { CheckCircle2, ChevronDown, ChevronRight, CircleAlert, Loader2 } from 'lucide-react';
 import { useEffect, useState, type ReactNode, type Ref } from 'react';
 import type { Task } from '../../../../packages/core/tasks.ts';
 import type { Check } from '../../../../packages/grader/check.ts';
 import { useKeyStatus } from '../keygate/key.ts';
+import type { Script } from '../../../../packages/grader/matrix/types.ts';
 import { loadResults } from '../data/results.ts';
+import { loadTaskList } from '../data/tasks.ts';
 import { Notice, Page } from '../data/ui.tsx';
 import { navigate, useParams } from '../data/url.ts';
 import { validate, type MatrixRun, type OracleResult, type ReplayRow } from './validate-protocol.ts';
@@ -20,8 +23,8 @@ export function Tasks({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | u
   const open = useParams().get('task');
   useEffect(() => {
     // The task files are a large chunk, loaded when Tasks first opens.
-    Promise.all([import('../adapters/tasks-browser.ts'), import('./matrix-task.ts')])
-      .then(([{ browserTaskSource }, { taskChecks }]) => browserTaskSource({ testMode: false }).all().then((all) => Promise.all(all.map(async (task) => ({ task, checks: await taskChecks(task.id) })))))
+    Promise.all([loadTaskList(), import('./matrix-task.ts')])
+      .then(([all, { taskChecks }]) => Promise.all(all.map(async (task) => ({ task, checks: await taskChecks(task.id) }))))
       .then(setTasks, (e: unknown) => setError(e instanceof Error ? e.message : String(e)));
   }, []);
   return (
@@ -37,6 +40,64 @@ export function Tasks({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | u
   );
 }
 
+function CheckRow({ task, check: c }: { task: Task; check: Check }) {
+  const [question, setQuestion] = useState<string | null>(null);
+  useEffect(() => {
+    let live = true;
+    void import('./check-text.ts').then(({ rubricQuestion }) => rubricQuestion(c)).then((q) => live && setQuestion(q));
+    return () => {
+      live = false;
+    };
+  }, [c]);
+  const [source, setSource] = useState<string | null>(null);
+  useEffect(() => {
+    void import('./check-text.ts').then(({ sourceText }) => setSource(sourceText(task, c.traces_to)));
+  }, [task, c]);
+  return (
+    <li data-testid="task-check" data-check={c.id} className="space-y-1 px-3 py-2">
+      <p className="flex flex-wrap items-baseline gap-x-2">
+        <code className="break-all font-medium">{c.id}</code>
+        <span className="text-xs text-ink-muted">{c.kind === 'gate' ? 'gate check: must be met to pass' : `rubric item, ${c.points > 0 ? '+' : ''}${c.points} points, ${c.method === 'judge' ? 'graded by the judge' : c.method === 'hybrid' ? 'graded by code, the judge when code cannot read it' : 'graded by code'}`}</span>
+      </p>
+      {question !== null && <p className="break-words" data-testid="check-question">{question}</p>}
+      <details className="text-xs text-ink-muted">
+        <summary className="cursor-pointer">Enforces {c.traces_to}</summary>
+        {source !== null ? <pre className="mt-1 max-h-48 overflow-auto whitespace-pre-wrap break-words rounded-sm bg-canvas p-2 font-sans text-ink" data-testid="check-source">{source}</pre> : <p className="mt-1">This reference names no text in the task.</p>}
+      </details>
+    </li>
+  );
+}
+
+function ReferenceSolution({ id }: { id: string }) {
+  const [oracle, setOracle] = useState<Script | null | undefined>(undefined);
+  const [steps, setSteps] = useState<import('./check-text.ts').SolutionStep[]>([]);
+  useEffect(() => {
+    void Promise.all([import('./matrix-task.ts'), import('./check-text.ts')]).then(async ([{ taskOracle }, { solutionSteps }]) => {
+      const o = await taskOracle(id);
+      setOracle(o);
+      setSteps(o === null ? [] : solutionSteps(o));
+    });
+  }, [id]);
+  return (
+    <section>
+      <h3 className="font-medium">Reference solution</h3>
+      <p className="mt-1 text-xs text-ink-muted">The tool calls of the oracle, tasks/{id}/solution/solve.ts, in order. Run oracle above grades it in this tab; it must PASS with score 1.0.</p>
+      {oracle === undefined && <p className="mt-1 text-ink-muted">Loading…</p>}
+      {oracle === null && <p className="mt-1 text-ink-muted">This task has no reference solution.</p>}
+      {steps.length > 0 && (
+        <ol className="mt-2 space-y-1 text-xs" data-testid="solution-steps">
+          {steps.map((s) => (
+            <li key={s.n} data-testid="solution-step" className="break-words">
+              <span className="mr-1 text-ink-muted">{s.n}.</span><code className="font-medium">{s.tool}</code> <span className="text-ink-muted">{s.input}</span>
+              {s.text && <span className="block pl-4 text-ink-muted">“{s.text.length > 200 ? `${s.text.slice(0, 197)}…` : s.text}”</span>}
+            </li>
+          ))}
+        </ol>
+      )}
+    </section>
+  );
+}
+
 function TaskCard({ t, open }: { t: Loaded; open: boolean }) {
   const { task, checks } = t;
   const Chevron = open ? ChevronDown : ChevronRight;
@@ -49,7 +110,7 @@ function TaskCard({ t, open }: { t: Loaded; open: boolean }) {
           <Chevron aria-hidden className="h-4 w-4 text-ink-muted" strokeWidth={1.75} />
           {task.title}
         </button>
-        <code className="text-xs text-ink-muted">{task.id}</code>
+        <code className="break-all text-xs text-ink-muted">{task.id}</code>
         <span className="ml-auto text-xs text-ink-muted">{gates.length} gate checks, {rubric.length} rubric items, {(task.tools ?? []).length || 'all'} tools</span>
       </div>
       <Validation id={task.id} />
@@ -57,7 +118,7 @@ function TaskCard({ t, open }: { t: Loaded; open: boolean }) {
         <div className="space-y-4 border-t border-line px-4 py-4">
           <section>
             <h3 className="font-medium">Prompt</h3>
-            <pre data-testid="task-prompt" className="mt-1 max-h-80 overflow-auto whitespace-pre-wrap rounded-sm bg-canvas p-3 font-sans text-ink">{task.instruction}</pre>
+            <pre data-testid="task-prompt" className="mt-1 max-h-80 overflow-auto whitespace-pre-wrap break-words rounded-sm bg-canvas p-3 font-sans text-ink">{task.instruction}</pre>
           </section>
           <section>
             <h3 className="font-medium">Tools</h3>
@@ -79,20 +140,13 @@ function TaskCard({ t, open }: { t: Loaded; open: boolean }) {
             </section>
           )}
           <section>
-            <h3 className="font-medium">Checks</h3>
-            <table className="mt-1 w-full text-left text-xs" data-testid="task-checks">
-              <thead className="text-ink-muted"><tr><th scope="col" className="py-1 pr-3 font-medium">Check</th><th scope="col" className="py-1 pr-3 font-medium">Kind</th><th scope="col" className="py-1 font-medium">Traces to</th></tr></thead>
-              <tbody>
-                {checks.map((c) => (
-                  <tr key={c.id} className="border-t border-line">
-                    <td className="py-1 pr-3"><code>{c.id}</code></td>
-                    <td className="py-1 pr-3">{c.kind === 'gate' ? 'gate' : `rubric ${c.points > 0 ? '+' : ''}${c.points} (${c.method})`}</td>
-                    <td className="py-1">{c.traces_to}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <h3 className="font-medium">Checks: what each one requires</h3>
+            <p className="mt-1 text-xs text-ink-muted">A trial passes when every gate check is met. Rubric items add or take away points for the score. Each check names the policy section or prompt line it enforces.</p>
+            <ul className="mt-2 divide-y divide-line rounded-sm border border-line" data-testid="task-checks">
+              {checks.map((c) => <CheckRow key={c.id} task={task} check={c} />)}
+            </ul>
           </section>
+          <ReferenceSolution id={task.id} />
         </div>
       )}
     </li>
@@ -109,7 +163,7 @@ function useRun<T>(): [Run<T>, (f: () => Promise<T>) => void] {
   }];
 }
 
-const button = 'inline-flex h-8 items-center gap-1.5 rounded-sm border border-line-strong bg-surface px-3 text-ink hover:bg-canvas disabled:cursor-not-allowed disabled:text-ink-muted';
+const button = 'inline-flex h-8 items-center gap-1.5 rounded-sm border border-line-strong bg-surface px-3 text-ink hover:bg-canvas disabled:cursor-not-allowed disabled:border-dashed disabled:border-line disabled:bg-canvas disabled:text-ink-muted';
 
 function Validation({ id }: { id: string }) {
   const key = useKeyStatus();
@@ -119,8 +173,8 @@ function Validation({ id }: { id: string }) {
   const busy = [oracle, matrix, replay].some((r) => r.state === 'running');
   const replayTrials = async () => {
     const r = await loadResults();
-    if (r.kind !== 'ready') return [];
-    return validate({ op: 'replay', task: id, trials: r.run.trials.filter((t) => t.task === id).map((t) => ({ name: t.name, record: t.record, trajectoryUrl: t.trajectoryUrl })) });
+    if (r.kind !== 'ready' || r.official === null) return [];
+    return validate({ op: 'replay', task: id, trials: r.official.trials.filter((t) => t.task === id).map((t) => ({ name: t.name, record: t.record, trajectoryUrl: t.trajectoryUrl })) });
   };
   return (
     <div className="border-t border-line px-4 py-3" data-testid="validation" data-task={id}>
@@ -142,26 +196,26 @@ function Validation({ id }: { id: string }) {
       )} />
       <Result r={matrix} what="matrix" render={(m) => (
         <div data-testid="matrix-result" data-pass={String(m.pass)}>
-          <p>Matrix: <span className="font-medium">{m.pass ? 'PASS' : 'FAIL'}</span>, {m.probes.length} probes, {m.probes.filter((p) => p.as_expected).length} as expected. Fresh-process isolation and policy imports need Node and run in CI.</p>
-          <table className="mt-1 w-full text-left text-xs">
+          <p>Grader validation <span className="font-medium">{m.pass ? 'PASS' : 'FAIL'}</span>, matrix: {m.probes.filter((p) => p.as_expected).length}/{m.probes.length} probe verdicts as expected. Fresh-process isolation and policy imports need Node and run in CI.</p>
+          <div className="mt-1 overflow-x-auto"><table className="w-full text-left text-xs">
             <thead className="text-ink-muted"><tr><th scope="col" className="py-1 pr-3 font-medium">Probe</th><th scope="col" className="py-1 pr-3 font-medium">Outcome</th><th scope="col" className="py-1 pr-3 font-medium">Verdict</th><th scope="col" className="py-1 font-medium">Failed checks</th></tr></thead>
             <tbody>
               {m.probes.map((p) => (
                 <tr key={`${p.kind}:${p.id}`} data-testid="probe" data-kind={p.kind} data-id={p.id} data-outcome={p.outcome} data-as-expected={String(p.as_expected)} data-failed={p.failed_checks.join(',')} className="border-t border-line">
                   <td className="py-1 pr-3">{p.kind === p.id ? p.kind : `${p.kind} ${p.id}`}</td>
                   <td className="py-1 pr-3">{p.outcome}</td>
-                  <td className="py-1 pr-3">{p.as_expected ? 'as expected' : 'NOT as expected'}</td>
+                  <td className="whitespace-nowrap py-1 pr-3">{p.as_expected ? 'as expected' : 'NOT as expected'}</td>
                   <td className="py-1">{p.failed_checks.join(', ') || 'none'}</td>
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
           <details className="mt-1"><summary className="cursor-pointer text-xs text-ink-muted">Matrix report</summary><pre className="mt-1 max-h-64 overflow-auto whitespace-pre-wrap text-xs">{m.lines.join('\n')}</pre></details>
         </div>
       )} />
       <Result r={replay} what="replay" render={(rows) => (
         <div data-testid="replay-result">
-          {rows.length === 0 ? <p className="text-ink-muted">No published trials of this task to replay.</p> : (
+          {rows.length === 0 ? <p className="text-ink-muted">No official run is published with trials of this task, so there is nothing to replay yet.</p> : (
             <>
               <p>Replay: {rows.filter((x) => x.match).length} of {rows.length} trials reproduced, by the rule <code className="text-xs">pnpm cli replay</code> uses: same environment, and the regrade gives the same outcome, score and check results as the published grade.</p>
               <ul className="mt-1 space-y-0.5 text-xs">

@@ -4,6 +4,7 @@ import { forget, keyStatus, useKeyStatus } from '../keygate/key.ts';
 import { deleteKey } from '../keygate/runner.ts';
 import type { Surface } from '../surface/detect.ts';
 import { ViewBody } from '../data/ViewBody.tsx';
+import { ErrorBoundary } from './ErrorBoundary.tsx';
 import { Rail } from './Rail.tsx';
 import { TopBar } from './TopBar.tsx';
 import { viewFromUrl, viewHref } from './views.ts';
@@ -64,7 +65,9 @@ export function App({ surface }: { surface: Surface }) {
           }}
         />
         <main className="min-w-0 flex-1 overflow-auto">
-          <ViewBody key={view.id} id={view.id} headingRef={heading} />
+          <ErrorBoundary key={view.id}>
+            <ViewBody id={view.id} headingRef={heading} />
+          </ErrorBoundary>
         </main>
       </div>
     </div>

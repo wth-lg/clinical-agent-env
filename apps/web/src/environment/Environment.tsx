@@ -29,8 +29,8 @@ export function Environment({ headingRef }: { headingRef?: Ref<HTMLHeadingElemen
           <dt className="text-ink-muted">State hash (manifest)</dt><dd data-testid="manifest-hash" className="break-all font-mono text-xs">{w.state_hash}</dd>
           <dt className="text-ink-muted">Resources</dt><dd data-testid="resource-total">{w.resources}</dd>
         </dl>
-        <ul className="mt-3 grid grid-cols-2 gap-x-4 gap-y-0.5 text-xs sm:grid-cols-3" data-testid="resource-counts">
-          {Object.entries(w.by_type).map(([type, n]) => <li key={type} className="flex justify-between border-b border-line py-0.5"><span>{type}</span><span>{n}</span></li>)}
+        <ul className="mt-3 grid grid-cols-1 gap-x-4 gap-y-0.5 text-xs min-[360px]:grid-cols-2 sm:grid-cols-3" data-testid="resource-counts">
+          {Object.entries(w.by_type).map(([type, n]) => <li key={type} className="flex min-w-0 justify-between gap-2 border-b border-line py-0.5"><span className="min-w-0 truncate" title={type}>{type}</span><span className="tabular-nums">{n}</span></li>)}
         </ul>
         <VerifyReset />
       </Card>
@@ -39,7 +39,7 @@ export function Environment({ headingRef }: { headingRef?: Ref<HTMLHeadingElemen
           {TOOLS.map((t) => (
             <li key={t.name} data-testid="tool" data-tool={t.name} className="py-2">
               <details>
-                <summary className="cursor-pointer"><code className="font-medium">{t.name}</code> <span className="text-xs text-ink-muted">{t.kind}</span></summary>
+                <summary className="cursor-pointer break-all"><code className="font-medium">{t.name}</code> <span className="text-xs text-ink-muted">{t.kind}</span></summary>
                 <p className="mt-1 text-ink-muted" data-testid="tool-description">{t.description}</p>
                 <pre className="mt-1 max-h-64 overflow-auto rounded-sm bg-canvas p-2 text-xs">{JSON.stringify(t.inputSchema, null, 2)}</pre>
               </details>
@@ -71,7 +71,7 @@ function VerifyReset() {
       {state.kind === 'running' && <span className="text-ink-muted" role="status">Building a fresh store in this tab…</span>}
       {state.kind === 'error' && <span role="alert">Verify reset did not finish: {state.message}</span>}
       {state.kind === 'done' && (
-        <span data-testid="reset-result" data-hash={state.hash} data-equal={String(state.hash === MANIFEST.world.state_hash)}>
+        <span className="min-w-0 break-words" data-testid="reset-result" data-hash={state.hash} data-equal={String(state.hash === MANIFEST.world.state_hash)}>
           Fresh store hash <code className="break-all text-xs">{state.hash}</code> {state.hash === MANIFEST.world.state_hash ? 'equals' : 'does NOT equal'} the manifest's ({Math.round(state.ms)} ms).
         </span>
       )}
@@ -112,7 +112,7 @@ function TryPanel() {
       {state.kind === 'error' && <p className="mt-2" role="alert">{state.message}</p>}
       {state.kind === 'done' && (
         <div className="mt-3 space-y-2" data-testid="try-result" data-error={String(state.r.result.is_error)} data-hash-before={state.r.hash_before} data-hash-after={state.r.hash_after}>
-          <p>Hash before <code className="text-xs">{short(state.r.hash_before)}</code>, after <code className="text-xs">{short(state.r.hash_after)}</code>: <span data-testid="try-unchanged">{state.r.hash_before === state.r.hash_after ? 'unchanged' : 'CHANGED'}</span>.</p>
+          <p className="break-words">Hash before <code className="text-xs">{short(state.r.hash_before)}</code>, after <code className="text-xs">{short(state.r.hash_after)}</code>: <span data-testid="try-unchanged">{state.r.hash_before === state.r.hash_after ? 'unchanged' : 'CHANGED'}</span>.</p>
           <p>exposed_ids ({state.r.result.exposed_ids.length}): <span data-testid="try-exposed" className="break-all text-xs">{state.r.result.exposed_ids.join(', ') || 'none'}</span></p>
           <pre data-testid="try-content" className="max-h-96 overflow-auto rounded-sm bg-canvas p-2 text-xs">{text.length > 20000 ? `${text.slice(0, 20000)}\n… (${text.length} characters in all)` : text}</pre>
         </div>

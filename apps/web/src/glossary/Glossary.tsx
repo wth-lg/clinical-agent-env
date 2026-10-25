@@ -3,9 +3,9 @@
 // they are written (scripts/test/one-definition.test.ts fails on a copy). Linked from Findings
 // and from the help icon beside every fault label.
 import type { Ref } from 'react';
-import { AUDIT_LABEL, CONFIRMATION_CRITERIA, CONFIRMATION_DEFINITIONS, DENOMINATOR_RULE, FAULT_DEFINITIONS, FAULT_PRECEDENCE, FAULT_PRECEDENCE_RULE, PASS_DEFINITION } from '../../../../packages/core/outcomes.ts';
+import { AUDIT_LABEL, CONFIRMATION_CRITERIA, CONFIRMATION_DEFINITIONS, FAULT_DEFINITIONS, FAULT_PRECEDENCE, FAULT_PRECEDENCE_RULE } from '../../../../packages/core/outcomes.ts';
 import { TAXONOMY_TEXT } from '../../../../packages/core/explain.ts';
-import { Card, Page } from '../data/ui.tsx';
+import { Card, Page, PlainRules } from '../data/ui.tsx';
 
 export const GLOSSARY_TITLE = 'How failures are attributed';
 
@@ -13,10 +13,7 @@ export function Glossary({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> 
   return (
     <Page title={GLOSSARY_TITLE} headingRef={headingRef} lead="Every trial gets one outcome. A non-pass trial gets the fault whose criterion holds first in the order below, and the fault gives its label.">
       <Card title="Pass and denominator">
-        <dl className="space-y-2">
-          <div><dt className="font-medium">Pass</dt><dd data-testid="glossary-pass" className="text-ink-muted">{PASS_DEFINITION}</dd></div>
-          <div><dt className="font-medium">Denominator</dt><dd data-testid="glossary-denominator" className="text-ink-muted">{DENOMINATOR_RULE}</dd></div>
-        </dl>
+        <PlainRules ids={{ pass: 'glossary-pass', denominator: 'glossary-denominator' }} />
       </Card>
       <Card title="Labels">
         <table className="w-full text-left" data-testid="audit-label-table">

@@ -1,66 +1,133 @@
-// Overview: one row per task of the official run, from its summary.json and records: pass k of
+// Overview. With an official run: one row per task from its summary.json and records: pass k of
 // N valid trials (N read from the run, never a constant), the Wilson 95% interval drawn against
-// the final run's band (FINAL_PASS_BAND), one swatch per trial, mean score and mean cost.
+// the final run's band (FINAL_PASS_BAND), one mark per trial (outcome and fault), mean score and
+// mean cost. With none yet: the six tasks, the environment every trial starts from, and the
+// committed pilot runs, which are not counted in the results. Never an empty page.
 import type { Ref } from 'react';
 import { FINAL_PASS_BAND } from '../../../../packages/core/cost.ts';
-import { useResults } from '../data/results.ts';
-import { formatInterval, IntervalRow, NO_RESULTS, Notice, Page, Swatch } from '../data/ui.tsx';
+import { toolCatalog } from '../../../../packages/core/try-tool.ts';
+import { useResults, type RunData } from '../data/results.ts';
+import { useTaskList } from '../data/tasks.ts';
+import { Card, formatInterval, IntervalRow, markLabel, MarkLegend, markOf, Notice, Page, Swatch } from '../data/ui.tsx';
 import { hrefWith, onNav } from '../data/url.ts';
+import { MANIFEST } from '../data/world.ts';
 
 const money = (x: number | null) => (x === null ? 'n/a' : `$${x.toFixed(2)}`);
+const link = 'text-ink underline decoration-line-strong underline-offset-2 hover:decoration-ink';
+const TOOL_COUNT = toolCatalog().length;
 
 export function Overview({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | undefined }) {
   const results = useResults();
-  const [lo, hi] = FINAL_PASS_BAND;
   if (results === null) return <Page title="Overview" headingRef={headingRef}><Notice>Loading the published results…</Notice></Page>;
-  if (results.kind === 'empty') return <Page title="Overview" headingRef={headingRef}><Notice testId="empty-state">{NO_RESULTS} The final run is published here when it is committed. Tasks and Environment work now, with no key.</Notice></Page>;
-  if (results.kind === 'error') return <Page title="Overview" headingRef={headingRef}><Notice testId="error-state">The published results cannot be read: {results.message}</Notice></Page>;
-  const { summary, trials, runId } = results.run;
-  const t = summary.totals;
+  if (results.kind === 'ready' && results.official !== null) return <OfficialOverview run={results.official} headingRef={headingRef} />;
+  const why = results.kind === 'error' ? `The published results cannot be read: ${results.message}` : results.officialError ?? 'No official run is published yet. Its pass rates show here when the final run is committed.';
+  return (
+    <Page title="Overview" headingRef={headingRef} lead="The tasks, the environment and the committed runs. You can read all of it, and run the grader checks, with no key.">
+      <Notice testId={results.kind === 'error' || results.officialError ? 'error-state' : 'no-official'}>{why}</Notice>
+      <TaskSummary />
+      <EnvironmentSummary />
+      {results.kind === 'ready' && results.pilots.length > 0 && <PilotSummary pilots={results.pilots} />}
+    </Page>
+  );
+}
+
+function OfficialOverview({ run, headingRef }: { run: RunData; headingRef?: Ref<HTMLHeadingElement> | undefined }) {
+  const { summary, trials, runId } = run;
+  const [lo, hi] = FINAL_PASS_BAND;
+  const t = summary!.totals;
+  const problems = run.bad.length + run.warnings.length;
   return (
     <Page
       title="Overview"
       headingRef={headingRef}
-      lead={<>Run <span className="font-medium text-ink">{runId}</span>: {t.passes} of {t.trials} valid trials pass across {Object.keys(summary.tasks).length} tasks. The shaded band is the target pass rate, {Math.round(lo * 100)}% to {Math.round(hi * 100)}%.</>}
+      lead={<>Run <span className="font-medium text-ink">{runId}</span>: {t.passes} of {t.trials} valid trials pass across {Object.keys(summary!.tasks).length} tasks. The shaded band is the target pass rate, {Math.round(lo * 100)}% to {Math.round(hi * 100)}%.</>}
     >
-      <div className="overflow-x-auto rounded-sm border border-line bg-surface">
-        <table className="w-full min-w-[640px] text-left">
-          <thead className="border-b border-line text-xs text-ink-muted">
-            <tr>
-              <th scope="col" className="px-4 py-2 font-medium">Task</th>
-              <th scope="col" className="px-2 py-2 font-medium">Pass</th>
-              <th scope="col" className="w-64 px-2 py-2 font-medium">95% interval (Wilson)</th>
-              <th scope="col" className="px-2 py-2 font-medium">Trials</th>
-              <th scope="col" className="px-2 py-2 text-right font-medium">Mean score</th>
-              <th scope="col" className="px-4 py-2 text-right font-medium">Mean cost</th>
-            </tr>
-          </thead>
-          <tbody>
-            {Object.entries(summary.tasks).map(([id, s]) => (
-              <tr key={id} data-testid="overview-row" data-task={id} className="border-b border-line last:border-0">
-                <th scope="row" className="px-4 py-2.5 font-medium">
-                  <a href={hrefWith({ view: 'runs', task: id, label: null, trial: null })} onClick={onNav({ view: 'runs', task: id, label: null, trial: null })} className="text-ink hover:underline">{id}</a>
-                </th>
-                <td className="whitespace-nowrap px-2 py-2.5" data-testid="k-of-n">{s.passes}/{s.trials}</td>
-                <td className="px-2 py-2.5">
-                  <IntervalRow rate={s.pass_rate} interval={s.wilson95} band={FINAL_PASS_BAND} label={id} />
-                  <span className="text-xs text-ink-muted" data-testid="wilson">{formatInterval(s.wilson95)}</span>
-                </td>
-                <td className="px-2 py-2.5">
-                  <span className="flex max-w-56 flex-wrap gap-1" data-testid="swatches">
-                    {trials.filter((x) => x.task === id).map((x) => <Swatch key={x.name} outcome={x.explanation.outcome} title={`${x.name}: ${x.explanation.outcome}`} />)}
-                  </span>
-                </td>
-                <td className="px-2 py-2.5 text-right">{s.mean_score === null ? 'n/a' : s.mean_score.toFixed(2)}</td>
-                <td className="px-4 py-2.5 text-right">{money(s.mean_cost_usd)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <p className="text-xs text-ink-muted">
-        Swatches: blue PASS, dark FAIL, outlined REFUSAL, grey LIMIT, dashed an excluded trial (rerun or blocked). Each task links to its trials in Runs.
-      </p>
+      {problems > 0 && (
+        <Notice testId="data-warning">
+          {run.bad.length > 0 && `${run.bad.length} trial record${run.bad.length === 1 ? '' : 's'} cannot be read; Runs shows which. `}
+          {run.warnings.join(' ')}
+        </Notice>
+      )}
+      <ul className="divide-y divide-line rounded-sm border border-line bg-surface" data-testid="overview-table">
+        <li aria-hidden className="hidden gap-x-3 px-4 py-2 text-xs text-ink-muted md:grid md:grid-cols-[minmax(9rem,1fr)_3.5rem_minmax(10rem,16rem)_minmax(7rem,14rem)_4rem_4rem]">
+          <span>Task</span><span>Pass</span><span>95% interval (Wilson)</span><span>Trials</span><span className="text-right">Mean score</span><span className="text-right">Mean cost</span>
+        </li>
+        {Object.entries(summary!.tasks).map(([id, s]) => (
+          <li key={id} data-testid="overview-row" data-task={id} className="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1.5 px-4 py-2.5 md:grid-cols-[minmax(9rem,1fr)_3.5rem_minmax(10rem,16rem)_minmax(7rem,14rem)_4rem_4rem]">
+            <a href={hrefWith({ view: 'runs', task: id, label: null, trial: null })} onClick={onNav({ view: 'runs', task: id, label: null, trial: null })} className={`min-w-0 break-words font-medium ${link}`}>{id}</a>
+            <span className="whitespace-nowrap text-right md:text-left" data-testid="k-of-n">{s.passes}/{s.trials}</span>
+            <span className="col-span-2 md:col-span-1">
+              <IntervalRow rate={s.pass_rate} interval={s.wilson95} band={FINAL_PASS_BAND} label={id} />
+              <span className="text-xs text-ink-muted" data-testid="wilson">{formatInterval(s.wilson95)}</span>
+            </span>
+            <span className="col-span-2 flex flex-wrap gap-1 md:col-span-1" data-testid="swatches">
+              {trials.filter((x) => x.task === id).map((x) => {
+                const mark = markOf(x.explanation.outcome, x.explanation.fault);
+                return <Swatch key={x.name} mark={mark} outcome={x.explanation.outcome} title={`${x.name}: ${x.explanation.outcome}, ${markLabel(mark)}`} />;
+              })}
+            </span>
+            <span className="text-xs text-ink-muted md:text-right md:text-sm md:text-ink"><span className="md:hidden">Mean score </span>{s.mean_score === null ? 'n/a' : s.mean_score.toFixed(2)}</span>
+            <span className="text-right text-xs text-ink-muted md:text-sm md:text-ink"><span className="md:hidden">Mean cost </span>{money(s.mean_cost_usd)}</span>
+          </li>
+        ))}
+      </ul>
+      <MarkLegend />
+      <p className="text-xs text-ink-muted">Each task links to its trials in Runs.</p>
     </Page>
+  );
+}
+
+function TaskSummary() {
+  const { tasks, error } = useTaskList();
+  return (
+    <Card title={`Tasks${tasks ? ` (${tasks.length})` : ''}`} actions={<a href={hrefWith({ view: 'tasks', task: null })} onClick={onNav({ view: 'tasks', task: null })} className={`text-xs ${link}`}>Open Tasks</a>}>
+      {error !== null && <p role="alert">The tasks cannot be read: {error}</p>}
+      {tasks === null && error === null && <p className="text-ink-muted">Loading tasks…</p>}
+      {tasks !== null && (
+        <ul className="divide-y divide-line" data-testid="overview-tasks">
+          {tasks.map((t) => (
+            <li key={t.id} data-testid="overview-task" data-task={t.id} className="py-2">
+              <a href={hrefWith({ view: 'tasks', task: t.id })} onClick={onNav({ view: 'tasks', task: t.id })} className={`font-medium ${link}`}>{t.title}</a>
+              <span className="ml-2 break-all text-xs text-ink-muted">{t.id}</span>
+              <p className="mt-0.5 text-xs text-ink-muted">
+                {t.tools === null ? `all ${TOOL_COUNT} tools` : `${t.tools.length} of ${TOOL_COUNT} tools`}, {t.policies.length} {t.policies.length === 1 ? 'policy' : 'policies'}, at most {t.maxTurns} turns. Tasks shows its prompt, checks and reference solution, and runs its grader checks with no key.
+              </p>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
+  );
+}
+
+function EnvironmentSummary() {
+  const w = MANIFEST.world;
+  return (
+    <Card title="Environment" actions={<a href={hrefWith({ view: 'environment' })} onClick={onNav({ view: 'environment' })} className={`text-xs ${link}`}>Open Environment</a>}>
+      <dl className="grid grid-cols-1 gap-x-4 gap-y-1 sm:grid-cols-[max-content_1fr]" data-testid="overview-environment">
+        <dt className="text-ink-muted">World</dt><dd>A synthetic FHIR R4 world: {w.resources} resources of {Object.keys(w.by_type).length} types</dd>
+        <dt className="text-ink-muted">Pinned clock</dt><dd>{MANIFEST.now}</dd>
+        <dt className="text-ink-muted">State hash</dt><dd className="break-all font-mono text-xs">{w.state_hash}</dd>
+        <dt className="text-ink-muted">Tools</dt><dd>{TOOL_COUNT}, each with a Try panel for the read tools</dd>
+      </dl>
+    </Card>
+  );
+}
+
+function PilotSummary({ pilots }: { pilots: RunData[] }) {
+  return (
+    <Card title="Pilot runs (not counted in the results)">
+      <ul className="space-y-1" data-testid="overview-pilots">
+        {pilots.map((p) => {
+          const passes = p.trials.filter((x) => x.explanation.outcome === 'PASS').length;
+          return (
+            <li key={p.runId} data-testid="overview-pilot" data-run={p.runId}>
+              <a href={hrefWith({ view: 'runs', task: null, label: null, trial: null })} onClick={onNav({ view: 'runs', task: null, label: null, trial: null })} className={`font-medium ${link}`}>{p.runId}</a>
+              <span className="ml-2 text-ink-muted">{p.trials.length + p.bad.length} trial records, {passes} PASS, tasks {[...new Set(p.trials.map((x) => x.task))].join(', ') || 'none'}</span>
+            </li>
+          );
+        })}
+      </ul>
+    </Card>
   );
 }
