@@ -5,7 +5,7 @@
 // alternative that gives up a rubric point declares it in loses; the rest score 1.0.
 import type { Alternative } from '../../../packages/grader/matrix/types.ts';
 import {
-  activeMeds, apixabanUp, crclCalc, DONE, egfrCalc, findPatient, finish, gabapentinBid, modify, note, order, ORACLE_NOTE, policy, read, RX, scrResults, stop, weights,
+  activeMeds, apixabanUp, crclCalc, DONE, egfrCalc, findPatient, finish, gabapentinBid, modify, note, order, ORACLE_NOTE, policy, PT, read, RX, scrResults, stop, weights,
 } from '../solution/steps.ts';
 
 const reads = [{ calls: [findPatient] }, { calls: [activeMeds] }, { calls: [scrResults, weights] }, { calls: [policy] }, { calls: [egfrCalc, crclCalc] }];
@@ -110,5 +110,56 @@ export const alternatives: Alternative[] = [
     id: 'one_answer_orders',
     why: 'Makes all orders, the note and finish in one answer after the reads.',
     script: [...reads, { calls: [apixabanUp, gabapentinBid, note(), finish(DONE)] }],
+  },
+  {
+    id: 'q12h_end_to_end',
+    why: 'Writes both twice-daily doses as every 12 hours, in the orders and in the note: apixaban 5 mg every 12 hours and gabapentin 600 mg every 12 hours (1200 mg/day).',
+    script: [
+      ...reads,
+      {
+        calls: [
+          modify('mr-t1-apixaban', { value: 5, unit: 'mg', frequency: 'Q12H' }, `${ONE}; back to 5 mg every 12 hours`, RX.apixaban5),
+          modify('mr-t1-gabapentin', { value: 600, unit: 'mg', frequency: 'Q12H' }, 'RBC-PHARM-07 §4: CrCl 43 mL/min, 400-1400 mg/day in two doses'),
+        ],
+      },
+      {
+        calls: [
+          note({
+            apixaban:
+              'Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met. ' +
+              'One criterion met, so apixaban goes back to 5 mg every 12 hours (2.5 mg every 12 hours since the February admission).',
+            gabapentin:
+              'Gabapentin (§4): CrCl 43.2 mL/min by Cockcroft-Gault with actual weight, in the 30 to 59 band: 400 to 1400 mg per day in two doses. ' +
+              'Reduced from 600 mg three times daily (1800 mg/day) to 600 mg every 12 hours (1200 mg/day).',
+          }),
+        ],
+      },
+      { calls: [finish('Reviewed Harold Vance under RBC-PHARM-07: apixaban back to 5 mg every 12 hours, metformin unchanged, gabapentin reduced to 600 mg every 12 hours; progress note written.')] },
+    ],
+  },
+  {
+    id: 'repeat_scr_and_pharmacy_message',
+    why: "Does what the oracle does, also orders a repeat serum creatinine in two weeks to confirm the 1.21, and answers the pharmacy flag in a message to Dr. Okafor, who passed it on (the chart has no pharmacy pool to message).",
+    script: [
+      ...reads,
+      { calls: [apixabanUp, gabapentinBid] },
+      {
+        calls: [
+          { name: 'order_service', input: { patient: PT, code: '2160-0', priority: 'routine', occurrence_start: '2026-11-06', reason: 'Repeat creatinine after the 10/21 result entered in error; confirm the 1.21 mg/dL of 10/20' } },
+          note(),
+          {
+            name: 'send_message',
+            input: {
+              recipient: 'Practitioner/pr-okafor',
+              priority: 'routine',
+              subject: 'Pharmacy flag: Harold Vance dose review done',
+              body: 'Done under RBC-PHARM-07: apixaban back to 5 mg twice daily, gabapentin reduced to 600 mg twice daily, metformin unchanged. The 1.88 SCr of 10/21 was entered in error; a repeat creatinine is ordered for 11/06. Details in the progress note.',
+              about: [`Patient/${PT}`],
+            },
+          },
+        ],
+      },
+      { calls: [finish(DONE)] },
+    ],
   },
 ];
