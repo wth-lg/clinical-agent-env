@@ -302,6 +302,7 @@ test('a rail link leaves no run or tab behind, so each Findings example opens it
   // each example names its own run and the default tab.
   await browse(page, './?view=findings&run=pilot-pass&tab=raw');
   const examples = page.getByTestId('exemplars').getByRole('link');
+  await expect(examples.first()).toBeVisible();
   const n = await examples.count();
   expect(n).toBeGreaterThan(0);
   for (let i = 0; i < n; i++) {
@@ -331,4 +332,22 @@ test('Runs in the rail on a trial detail shows the list (N2, F2)', async ({ page
   await rail(page, 'Runs').click();
   await expect(page.getByTestId('trial-detail')).toHaveCount(0);
   await expect(page.getByTestId('trial-row').first()).toBeVisible();
+});
+
+test('a trial opened from low in the list opens at its header, with focus on its heading (F1)', async ({ page }) => {
+  for (const size of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
+    await page.setViewportSize(size);
+    await browse(page, './?view=runs');
+    const rows = page.getByTestId('trial-list').first().getByTestId('trial-row');
+    await expect(rows.first()).toBeVisible();
+    const last = rows.last();
+    const name = (await last.getAttribute('data-trial'))!;
+    await last.scrollIntoViewIfNeeded();
+    expect(await page.evaluate(() => document.querySelector('main')!.scrollTop)).toBeGreaterThan(0);
+    await last.getByRole('button', { name, exact: true }).click();
+    await expect(page.getByTestId('trial-detail')).toHaveAttribute('data-trial', name);
+    await expect(page.getByTestId('trial-header')).toBeInViewport();
+    await expect(page.getByRole('heading', { level: 1 })).toBeFocused();
+    expect(await page.evaluate(() => document.querySelector('main')!.scrollTop)).toBe(0);
+  }
 });

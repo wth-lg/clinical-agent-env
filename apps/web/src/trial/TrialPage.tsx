@@ -40,13 +40,32 @@ const tabOf = (v: string | null): TabId => TABS.find((t) => t.id === v)?.id ?? '
 // Back to the list: the run's filters stay, the trial and its tab go.
 const BACK = { trial: null, tab: null };
 
-function Frame({ title, headingRef, children }: { title: string; headingRef?: Ref<HTMLHeadingElement> | undefined; children: React.ReactNode }) {
+// from: the trial on screen. On open, the page starts at its header with focus on the heading,
+// however far down the list the trial was opened from (review-ui-P16-1 F1).
+function Frame({ title, headingRef, from, children }: { title: string; headingRef?: Ref<HTMLHeadingElement> | undefined; from?: { run: string; trial: string }; children: React.ReactNode }) {
+  const h1 = useRef<HTMLHeadingElement | null>(null);
+  useEffect(() => {
+    if (from === undefined) return;
+    const main = h1.current?.closest('main');
+    if (main) main.scrollTop = 0;
+    h1.current?.focus({ preventScroll: true });
+  }, [from?.run, from?.trial]);
   return (
     <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
       <a href={hrefWith(BACK)} onClick={onNav(BACK)} className={`inline-flex items-center gap-1 text-xs ${LINK}`}>
         <ArrowLeft aria-hidden className="h-3.5 w-3.5" strokeWidth={1.75} />Back to Runs
       </a>
-      <h1 ref={headingRef} tabIndex={-1} className="mt-2 break-all text-base font-semibold text-ink focus-visible:outline-none">{title}</h1>
+      <h1
+        ref={(el) => {
+          h1.current = el;
+          if (typeof headingRef === 'function') headingRef(el);
+          else if (headingRef) (headingRef as React.MutableRefObject<HTMLHeadingElement | null>).current = el;
+        }}
+        tabIndex={-1}
+        className="mt-2 break-all text-base font-semibold text-ink focus-visible:outline-none"
+      >
+        {title}
+      </h1>
       <div className="mt-3 space-y-4">{children}</div>
     </section>
   );
@@ -88,7 +107,7 @@ function Detail({ t, run, files, tab, headingRef }: { t: Trial; run: RunData; fi
   const onStep = (n: number) => setCurrent((c) => ({ step: n, seq: (c?.seq ?? 0) + 1 }));
   const e = full ?? t.explanation;
   return (
-    <Frame title={t.name} headingRef={headingRef}>
+    <Frame title={t.name} headingRef={headingRef} from={{ run: run.runId, trial: t.name }}>
       <div
         data-testid="trial-detail"
         data-trial={t.name}
