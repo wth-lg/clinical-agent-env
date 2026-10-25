@@ -29,6 +29,10 @@ const select = 'h-8 max-w-full rounded-sm border border-line-strong bg-surface p
 const button = 'h-8 rounded-sm border border-line-strong px-3 text-ink hover:bg-surface disabled:cursor-not-allowed disabled:opacity-50';
 const usd = (n: number) => `$${n.toFixed(2)}`;
 
+// A browser-direct trial a reload cut off and the tab resumed from its kept events (record.resumed).
+const wasResumed = (record: ExplainRecord | null) => (record as { resumed?: boolean } | null)?.resumed === true;
+const Resumed = () => <span data-testid="resumed" className="text-xs text-ink-muted">resumed after reload</span>;
+
 export function LiveTrial({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | undefined }) {
   const t = theTransport();
   const key = useKeyStatus();
@@ -163,6 +167,7 @@ function Trial({ t, id, onEnd }: { t: TrialTransport; id: string; onEnd: () => v
         <Meter label="Turn" value={String(f.turn)} testId="meter-turn" />
         <Meter label="Tokens" value={`${f.tokens.input + f.tokens.cache_read + f.tokens.cache_write} in, ${f.tokens.output} out`} testId="meter-tokens" />
         <Meter label="Cost" value={usd(f.cost)} testId="meter-cost" />
+        {wasResumed(record) && <Resumed />}
         <button type="button" onClick={() => void stop()} disabled={!running || stopping} className={`${button} ml-auto inline-flex items-center gap-1.5`}>
           <Square aria-hidden className="h-3 w-3" strokeWidth={2} />
           {stopping && running ? 'Stopping…' : 'Stop'}
@@ -270,6 +275,7 @@ function LiveRow({ row, current, onOpen }: { row: LiveRun['rows'][number]; curre
         {e && e.outcome !== 'PASS' && <FaultLabel e={e} />}
         {e?.decisive_check && <code data-testid="decisive" className="break-all rounded-sm bg-canvas px-1 text-xs text-ink">{e.decisive_check.id}</code>}
         {e && !e.audited && <span data-testid="audit-marker" className="text-xs text-ink-muted">{NOT_AUDITED_MARKER}</span>}
+        {wasResumed(row.record) && <Resumed />}
       </div>
       {e && e.outcome !== 'PASS' && <p data-testid="reason" className="mt-1 break-words text-ink-muted">{e.reason}</p>}
       {!e && row.error !== null && <p className="mt-1 break-words text-ink-muted">{row.error}</p>}

@@ -86,6 +86,9 @@ export interface RunOptions {
   // The client judge and extractor calls go through; default `client`, so they are metered
   // under the trial's grant. null: judge items are unknown.
   judge?: TrialClient | null;
+  // The trial continues one a reload cut off (the browser's resume client answers its first
+  // requests from the kept events); the record says so. Default false.
+  resumed?: boolean;
 }
 
 // What a failed onEvent sink throws into the trial: the trial ends, its trajectory incomplete.
@@ -123,7 +126,7 @@ export interface TrialRun {
   // The terminal event's code or limit, for any status but COMPLETED and REFUSAL.
   detail: string | null;
   summary: string | null;
-  resumed: false;
+  resumed: boolean;
   // What the judge calls cost (in the ledger like every call); not part of cost_usd, the
   // loop's cost, which the per-trial cap applies to.
   judge_cost_usd: number;
@@ -271,7 +274,7 @@ export async function run(taskId: string, model: string, opts: RunOptions): Prom
     stop: outcome.stop,
     detail: t === null ? null : t.type === 'limit' ? t.limit : t.type === 'error' ? t.code : t.reason,
     summary: ctx?.session.summary ?? null,
-    resumed: false,
+    resumed: opts.resumed ?? false,
   };
   const checks = opts.checks ?? [];
   const judge = judgeFor(checks, { judge: withSignal(opts.judge === undefined ? opts.client : opts.judge, opts.signal), effort: task.judgeEffort });

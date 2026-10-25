@@ -78,6 +78,17 @@ async function storageDump(page: Page): Promise<string> {
   });
 }
 
+// The record IndexedDB keeps for a trial (live/store.ts).
+const storedRecord = (page: Page, trialId: string) => page.evaluate((id) => new Promise<unknown>((res, rej) => {
+  const r = indexedDB.open('clinenv-live');
+  r.onerror = () => rej(r.error);
+  r.onsuccess = () => {
+    const get = r.result.transaction('trials').objectStore('trials').get(id);
+    get.onsuccess = () => (r.result.close(), res((get.result as { record: unknown } | undefined)?.record ?? null));
+    get.onerror = () => rej(get.error);
+  };
+}), trialId);
+
 const trial = (page: Page) => page.getByTestId('live-trial');
 const run = (page: Page, n: number) => page.getByRole('button', { name: `Run ×${n}`, exact: true }).click();
 
@@ -104,6 +115,8 @@ test('a trial streams in a Worker, is graded in the browser and makes no request
   expect(api.trialCalls()).toHaveLength(5);
   expect(workers.some((u) => /\/assets\/trial-[^/]+\.js$/.test(u))).toBe(true);
   await expect(page.getByTestId('live-row')).toHaveAttribute('data-outcome', 'PASS');
+  expect(await storedRecord(page, (await trial(page).getAttribute('data-trial'))!)).toMatchObject({ resumed: false });
+  await expect(page.getByTestId('resumed')).toHaveCount(0);
 });
 
 test('a reload mid-trial resumes from IndexedDB to the same final hash, and no storage holds the key', async ({ page }) => {
@@ -124,6 +137,10 @@ test('a reload mid-trial resumes from IndexedDB to the same final hash, and no s
   await expect(trial(page)).toHaveAttribute('data-state', 'graded', { timeout: 60_000 });
   await expect(trial(page).getByTestId('final-hash')).toHaveText(uninterrupted!);
   await expect(trial(page).getByTestId('outcome')).toHaveText('PASS');
+  // The record says the trial was resumed, and the live view and its Runs row show it.
+  expect(await storedRecord(page, before!)).toMatchObject({ resumed: true });
+  await expect(trial(page).getByTestId('resumed')).toHaveText('resumed after reload');
+  await expect(page.locator(`[data-testid="live-row"][data-trial="${before}"]`).getByTestId('resumed')).toHaveText('resumed after reload');
   // The loop's first two answers came from the checkpoint: only the cut-off request was re-sent.
   expect(api.trialCalls().filter((c) => c.tools !== undefined)).toHaveLength(4);
   expect(await storageDump(page)).not.toContain(key);

@@ -3,11 +3,12 @@
 // loop's first requests without a call, so the loop rebuilds the same state through the same
 // tools, then re-sends the request that had no answer and goes on live. Every event the resumed
 // run emits inside the checkpoint must equal the kept one (timestamps aside), state hashes
-// included; the first that differs stops the trial. run() itself is unchanged: this is only a
-// TrialClient.
+// included; the first that differs stops the trial. To run() this is only a TrialClient and the
+// resumed option, so the record says the trial was resumed.
 import type { CallResult, Message } from '../../../../packages/core/anthropic.ts';
 import type { ResponseEvent, TrialEvent, UsageEvent } from '../../../../packages/core/events.ts';
 import type { TrialClient } from '../../../../packages/core/loop.ts';
+import type { RunOptions } from '../../../../packages/core/run.ts';
 
 const withoutTs = ({ ts: _ts, ...rest }: TrialEvent) => JSON.stringify(rest);
 
@@ -52,4 +53,10 @@ export function resumeClient(live: TrialClient, checkpoint: readonly TrialEvent[
       return k.result;
     },
   };
+}
+
+// The run() options of a trial from its checkpoint: the resume client and resumed: true, or the
+// live client as it is when nothing was kept.
+export function resumeOptions(live: TrialClient, checkpoint: readonly TrialEvent[]): Pick<RunOptions, 'client' | 'resumed'> {
+  return checkpoint.length > 0 ? { client: resumeClient(live, checkpoint), resumed: true } : { client: live, resumed: false };
 }

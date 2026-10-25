@@ -100,6 +100,13 @@ describe('run() grades', () => {
     expect(terminalEvent(events)).toBe(events.at(-2));
   });
 
+  it('records resumed from the run option: false by default, true for a trial resumed from a checkpoint', async () => {
+    expect((await trial()).result.record.resumed).toBe(false);
+    const { result, events } = await trial({ resumed: true });
+    expect(result.record.resumed).toBe(true);
+    expect((events.at(-1) as GradedEvent).record.resumed).toBe(true);
+  });
+
   it('a direct grader call on the trajectory gives the same grade, from the record cache', async () => {
     const { result, events } = await trial();
     const direct = await gradeTrajectory('_toy', { tasks: nodeTaskSource({ testMode: true }), world: { read: async () => WORLD }, checks: CHECKS, events, record: result.record });

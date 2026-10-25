@@ -14,7 +14,7 @@ import { grantClient, memoryLedger, sessionCeiling } from '../adapters/ledger-br
 import { browserNow } from '../adapters/clock-browser.ts';
 import { browserTaskSource } from '../adapters/tasks-browser.ts';
 import { taskChecks } from '../live/checks.ts';
-import { resumeClient, sameEvent } from '../live/resume.ts';
+import { resumeOptions, sameEvent } from '../live/resume.ts';
 import { clientOptions, type WorkerIn, type WorkerOut } from '../live/transport/worker.ts';
 import definitionsUrl from '../../../../fixtures/definitions-pruned.json?url';
 
@@ -55,7 +55,7 @@ scope.addEventListener('message', ({ data }) => {
       };
       const { record } = await run(start.task, start.model, {
         tasks: browserTaskSource({ testMode: false }),
-        client: kept.length > 0 ? resumeClient(client, kept) : client,
+        ...resumeOptions(client, kept),
         judge: client,
         world: { read: async () => world },
         worldHash: manifest.world.state_hash,
