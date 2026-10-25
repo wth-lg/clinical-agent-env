@@ -9,7 +9,7 @@ import type { Task } from '../../../../packages/core/tasks.ts';
 import type { Check } from '../../../../packages/grader/check.ts';
 import { useKeyStatus } from '../keygate/key.ts';
 import type { Script } from '../../../../packages/grader/matrix/types.ts';
-import { loadResults } from '../data/results.ts';
+import { checkTextOf, loadResults } from '../data/results.ts';
 import { loadTaskList } from '../data/tasks.ts';
 import { Notice, Page } from '../data/ui.tsx';
 import { navigate, useParams } from '../data/url.ts';
@@ -49,6 +49,8 @@ function CheckRow({ task, check: c }: { task: Task; check: Check }) {
       live = false;
     };
   }, [c]);
+  // A gate check's requirement in words (tasks/<id>.check-text.ts), the expected value of its failure reason.
+  const requires = checkTextOf(task.id)?.[c.id]?.requires;
   const [source, setSource] = useState<string | null>(null);
   useEffect(() => {
     void import('./check-text.ts').then(({ sourceText }) => setSource(sourceText(task, c.traces_to)));
@@ -59,9 +61,10 @@ function CheckRow({ task, check: c }: { task: Task; check: Check }) {
         <code className="break-all font-medium">{c.id}</code>
         <span className="text-xs text-ink-muted">{c.kind === 'gate' ? 'gate check: must be met to pass' : `rubric item, ${c.points > 0 ? '+' : ''}${c.points} points, ${c.method === 'judge' ? 'graded by the judge' : c.method === 'hybrid' ? 'graded by code, the judge when code cannot read it' : 'graded by code'}`}</span>
       </p>
+      {c.kind === 'gate' && requires !== undefined && <p className="break-words" data-testid="check-requires">Requires {requires}.</p>}
       {question !== null && <p className="break-words" data-testid="check-question">{question}</p>}
       <details className="text-xs text-ink-muted">
-        <summary className="cursor-pointer">Enforces {c.traces_to}</summary>
+        <summary className="cursor-pointer">Enforces {c.traces_to}: show the text</summary>
         {source !== null ? <pre className="mt-1 max-h-48 overflow-auto whitespace-pre-wrap break-words rounded-sm bg-canvas p-2 font-sans text-ink" data-testid="check-source">{source}</pre> : <p className="mt-1">This reference names no text in the task.</p>}
       </details>
     </li>
@@ -122,7 +125,7 @@ function TaskCard({ t, open }: { t: Loaded; open: boolean }) {
           </section>
           <section>
             <h3 className="font-medium">Tools</h3>
-            <p className="mt-1 flex flex-wrap gap-1.5">{(task.tools ?? ['all tools']).map((n) => <code key={n} className="rounded-sm border border-line px-1 text-xs">{n}</code>)}</p>
+            {task.tools == null ? <p className="mt-1 text-ink-muted" data-testid="task-tools">Every tool of the environment (see Environment).</p> : <p className="mt-1 flex flex-wrap gap-1.5" data-testid="task-tools">{task.tools.map((n) => <code key={n} className="rounded-sm border border-line px-1 text-xs">{n}</code>)}</p>}
           </section>
           {task.policies.length > 0 && (
             <section>
