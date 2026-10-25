@@ -150,7 +150,8 @@ export interface RubricCtx extends CtxBase {
   readonly notes: readonly Note[];
   // The summary the agent gave finish; null when it never called finish.
   readonly final_text: string | null;
-  judge(q: JudgeQuestion): Promise<Verdict>;
+  // The grader adds whether the running check is a penalty (its points < 0); a check cannot say.
+  judge(q: Omit<JudgeQuestion, 'penalty'>): Promise<Verdict>;
   extract(q: ExtractQuestion): Promise<Extraction>;
 }
 
@@ -163,11 +164,9 @@ export const rubric = (spec: Spec<RubricCheck> & { method: RubricCheck['method']
 type TextOf = (ctx: RubricCtx) => string;
 
 // A judge item: one isolated judge call on the text, met when the judge says so and quotes it.
-// A penalty item (negative points) says so, so its quote may elide (judge.ts).
 export function judged(spec: Omit<Spec<RubricCheck>, 'fn'> & { criterion: string; text: TextOf }): RubricCheck {
   const { criterion, text, ...rest } = spec;
-  const penalty = rest.points < 0;
-  return { ...rest, kind: 'rubric', method: 'judge', fn: (ctx) => ctx.judge({ criterion, text: text(ctx), ...(penalty ? { penalty } : {}) }) };
+  return { ...rest, kind: 'rubric', method: 'judge', fn: (ctx) => ctx.judge({ criterion, text: text(ctx) }) };
 }
 
 // A hybrid item: the value the text states for `field`, extracted by `pattern` (its first group)

@@ -4,7 +4,7 @@
 // in judge.unknown_penalties, with the score as if it were met and as if it were not.
 import type { Resource } from '../../env/store.ts';
 import { describe, expect, it } from 'vitest';
-import { gate, judged, type Check } from '../check.ts';
+import { gate, judged, rubric, type Check, type RubricCtx } from '../check.ts';
 import { grade } from '../grade.ts';
 import { Judge } from '../judge.ts';
 import { facts, INITIAL, note, scriptedJudge, trajectory } from './helpers.ts';
@@ -253,5 +253,32 @@ describe('more sentence ends in a penalty gap (verifier B1-3 F3, item c)', () =>
     expect(await penaltyQuote('the visit went ... the plan is set', 'The visit went well and the plan is set.')).toMatchObject(unknown);
     expect(await penaltyQuote('the visit went ... the plan is set', 'The visit went well… and the plan is set.')).toMatchObject(unknown);
     expect(await penaltyQuote('the visit went ... the plan is set', 'The visit went well, and the plan is set.')).toMatchObject({ met: true });
+  });
+});
+
+describe('the grader, not the caller, says what a penalty is (verifier B1-4 F1)', () => {
+  const TRUE_TEXT = 'Warfarin was held for two days because of the procedure and then continued at 5 mg daily.';
+  const FALSE_TEXT = 'Warfarin was discontinued; lisinopril continued at 5 mg.';
+  const gradeText = (text: string, checks: Check[], answers: string[]) =>
+    grade({ checks, initial: INITIAL, final: [...INITIAL, note('doc-1', text)], events, trial: facts() }, { judge: scriptedJudge(answers).client });
+  // A code item that asks the judge itself, as T1 note_uses_wrong_scr, T4 used_2025_summary and
+  // T5 shellfish_as_risk_factor do; `extra` is what its code adds to the question.
+  const direct = (id: string, points: number, extra: object = {}) =>
+    rubric({ id, points, method: 'judge', category: 'documentation', traces_to: 't', decisive_ids: [], fn: (ctx: RubricCtx) => ctx.judge({ criterion: `criterion ${id}`, text: notesText(ctx), ...extra } as Parameters<RubricCtx['judge']>[0]) });
+
+  it('a -5 code item that calls ctx.judge directly reads a true gapped quote', async () => {
+    const g = await gradeText(`x. ${TRUE_TEXT}`, [judged({ id: 'R1', points: 10, category: 'documentation', traces_to: 't', decisive_ids: [], criterion: 'criterion R1', text: notesText }), direct('P1', -5)], [met('x'), met('warfarin was held ... continued at 5 mg daily')]);
+    expect(g.checks.find((c) => c.id === 'P1')).toMatchObject({ met: true });
+    expect(g.score).toBe(0.5);
+  });
+
+  it('a +10 item that passes penalty: true still needs a contiguous quote', async () => {
+    const g = await gradeText(FALSE_TEXT, [direct('R1', 10, { penalty: true })], [met('warfarin was ... continued at 5 mg')]);
+    expect(g.checks.find((c) => c.id === 'R1')).toMatchObject({ met: 'unknown', evidence: { reason: 'quote not in text' } });
+  });
+
+  it('a -5 item that passes penalty: false still reads the gap', async () => {
+    const g = await gradeText(TRUE_TEXT, [direct('P1', -5, { penalty: false })], [met('warfarin was held ... continued at 5 mg daily')]);
+    expect(g.checks.find((c) => c.id === 'P1')).toMatchObject({ met: true });
   });
 });

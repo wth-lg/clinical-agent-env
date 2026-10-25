@@ -221,13 +221,15 @@ export async function gradeWith(input: GradeInput, judge: Judge): Promise<Grade>
   const common = { diff: d, steps, exposedAt: (id: string) => firstExposed(steps, id), writes: () => writes };
   const gateCtx: GateCtx = { initial: gateView(initial), final: gateView(final), ...common };
   const full = view(final);
-  const rubricCtx: RubricCtx = {
+  const rubricCtx: Omit<RubricCtx, 'judge'> = {
     initial: view(initial), final: full, ...common,
     notes: notesOf(full, d.created, steps),
     final_text: input.trial.summary,
-    judge: (q) => judge.judge(q),
     extract: (q) => judge.extract(q),
   };
+  // A rubric check's context: its judge questions say whether it is a penalty, from its points,
+  // whatever its code passes (judge.ts: only a penalty's quote may elide).
+  const ctxFor = (c: RubricCheck): RubricCtx => ({ ...rubricCtx, judge: (q) => judge.judge({ ...q, penalty: c.points < 0 }) });
 
   // Gates first, then rubric items; results keep the declared order.
   const gates = input.checks.filter((c): c is GateCheck => c.kind === 'gate');
@@ -240,7 +242,7 @@ export async function gradeWith(input: GradeInput, judge: Judge): Promise<Grade>
   const threw: Array<{ check: string; message: string }> = [];
   for (const c of [...gates, ...rubrics]) {
     try {
-      byCheck.set(c, result(c, c.kind === 'gate' ? c.fn(gateCtx) : await c.fn(rubricCtx)));
+      byCheck.set(c, result(c, c.kind === 'gate' ? c.fn(gateCtx) : await c.fn(ctxFor(c))));
     } catch (e) {
       if (e instanceof JudgeCacheMiss) throw e;
       if (e instanceof JudgeClientError) {
