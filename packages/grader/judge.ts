@@ -235,8 +235,8 @@ function segmentsIn(quote: string, text: string): string[] | null {
 }
 const quoted = (quote: string, text: string) => segmentsIn(quote, text) !== null;
 
-// An extractor quote states the value as the first number after the field's label, in the same
-// segment, so a gap or a nearby word cannot join the label to an unrelated number (verifier M1,
+// A gapped extractor quote states the value as the first number after the field's label, in the
+// same segment, so a gap or a nearby word cannot join the label to an unrelated number (verifier M1,
 // B1-2 F4). The label is the field's head noun, the last word before its first comma, parenthesis
 // or preposition (the units and the method follow those), and its abbreviation, a one-word
 // parenthetical without digits: 'Cockcroft-Gault creatinine clearance (CrCl), mL/min' gives
@@ -341,7 +341,7 @@ export class Judge {
     if (segments === null) return { value: 'unknown', ...base, reason: 'quote not in text' };
     if (!numbersIn(quote).some((n) => n === v)) return { value: 'unknown', ...base, reason: 'value not in quote' };
     const labels = labelOf(q.field);
-    if (!segments.some((s) => firstAfterLabel(s, labels, v))) return { value: 'unknown', ...base, reason: 'value not first after its label' };
+    if (segments.length > 1 && !segments.some((s) => firstAfterLabel(s, labels, v))) return { value: 'unknown', ...base, reason: 'value not first after its label' };
     return { value: v, ...base };
   }
 

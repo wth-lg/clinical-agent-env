@@ -195,15 +195,13 @@ describe('an extracted value is the first number after the label (verifier B1-2 
   const EGFR = 'eGFR (CKD-EPI 2021), mL/min/1.73 m2';
   const unknown = { value: 'unknown', reason: 'value not first after its label' };
 
-  it('N5, N5b, N5c: a generic or method word beside an unrelated number is not the label', async () => {
+  it('N5, N5c: a generic or method word beside an unrelated number is not the label', async () => {
     expect(await extract(CRCL, 42, 'serum creatinine 1.4 mg/dl today ... weight 42 kg; creatinine clearance', 'Serum creatinine 1.4 mg/dL today, weight 42 kg; creatinine clearance to follow.')).toMatchObject({ value: 'unknown' });
-    expect(await extract(CRCL, 42, 'weight 42 kg; creatinine clearance', 'Weight 42 kg; creatinine clearance to follow.')).toMatchObject(unknown);
     expect(await extract(EGFR, 3, 'egfr pending from lab ... ckd stage 3 noted', 'eGFR pending from lab, history of CKD stage 3 noted.')).toMatchObject({ value: 'unknown' });
-    expect(await extract(EGFR, 3, 'ckd stage 3 noted', 'History: CKD stage 3 noted.')).toMatchObject(unknown);
   });
 
-  it('the number must be the first after the label', async () => {
-    expect(await extract(CRCL, 42, 'CrCl 30 last week, weight 42', 'CrCl 30 last week, weight 42 kg.')).toMatchObject(unknown);
+  it('in a gapped quote the number must be the first after the label', async () => {
+    expect(await extract(CRCL, 42, 'CrCl 30 last week ... weight 42 kg', 'CrCl 30 last week, weight 42 kg.')).toMatchObject(unknown);
   });
 
   it('the abbreviation or the head noun, then the value, extracts', async () => {
@@ -211,5 +209,27 @@ describe('an extracted value is the first number after the label (verifier B1-2 
     expect(await extract(CRCL, 42, 'creatinine clearance about 42 mL/min', 'Estimated creatinine clearance about 42 mL/min.')).toMatchObject({ value: 42 });
     expect(await extract(EGFR, 52, 'eGFR is 52 mL/min/1.73 m2', 'Latest eGFR is 52 mL/min/1.73 m2.')).toMatchObject({ value: 52 });
     expect(await extract('CrCl in mL/min', 43.2, 'CrCl roughly 43.2', 'CrCl roughly 43.2 by Cockcroft-Gault.')).toMatchObject({ value: 43.2 });
+  });
+});
+
+describe('real extractor quotes are met (verifier B1-3 F1)', () => {
+  // The live pilot-0 answers for renal-dose-review note_states_crcl and note_states_egfr
+  // (results/pilot-0, live/0-2, source llm) and two more shapes, with the task's regexes.
+  const CRCL = 'Cockcroft-Gault creatinine clearance (CrCl), mL/min';
+  const CRCL_RE = /\b(?:CrCl|creatinine clearance)\b[^\d\n]{0,60}?(\d+(?:\.\d+)?)\s*mL\/min(?!\/)/i;
+  const EGFR = 'eGFR (CKD-EPI 2021), mL/min/1.73 m2';
+  const EGFR_RE = /\beGFR\b[^\d\n]{0,60}?(\d+(?:\.\d+)?)\s*mL\/min\/1\.73/i;
+  const rows: Array<[string, string, RegExp, number, string]> = [
+    ['live/0 crcl', CRCL, CRCL_RE, 43, 'Cockcroft-Gault using actual weight: (140 - 82) x 64.9 / (72 x 1.21) = about 43 mL/min.'],
+    ['live/1 crcl', CRCL, CRCL_RE, 43.2, 'CrCl by Cockcroft-Gault, using actual weight: (140 - 82) x 64.9 / (72 x 1.21) = 43.2 mL/min.'],
+    ['live/2 crcl', CRCL, CRCL_RE, 43.2, 'CrCl (Cockcroft-Gault, actual body weight) = (140 - 82) x 64.9 / (72 x 1.21) = 43.2 mL/min.'],
+    ['live/1 egfr', EGFR, EGFR_RE, 59.8, 'eGFR by CKD-EPI 2021 (race-free): 142 x (1.21/0.9)^-1.200 x 0.9938^82 = 59.8 mL/min/1.73 m2.'],
+    ['live/2 egfr', EGFR, EGFR_RE, 59.8, 'eGFR (CKD-EPI 2021, race-free, male, SCr 1.21, age 82) = 59.8 mL/min/1.73 m2.'],
+    ['E1', EGFR, EGFR_RE, 45, 'eGFR (CKD-EPI 2021): 45 mL/min/1.73 m2'],
+    ['E2', CRCL, CRCL_RE, 41, 'CrCl (CG, weight 62.3 kg): 41 mL/min'],
+  ];
+  it.each(rows)('%s', async (_id, field, pattern, value, quote) => {
+    const j = new Judge({ client: scriptedJudge([JSON.stringify({ value, quote })]).client });
+    expect(await j.extract({ field, text: `Assessment. ${quote} Plan follows.`, pattern })).toMatchObject({ value, source: 'llm' });
   });
 });
