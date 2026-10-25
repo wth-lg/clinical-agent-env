@@ -41,7 +41,10 @@ describe('README deploy (B2: CLI deploy only, never a Git connection)', () => {
 
   it('checks the Git connection with commands that can see it, before the deploy', () => {
     const api = at(`vercel api /v9/projects/${PROJECT}`);
-    const disconnect = at('vercel git disconnect --yes --cwd apps/relay');
+    // Verifier N2: without --project, a folder that is not linked makes disconnect create and
+    // connect a project named after the folder; with it, an unknown name exits 1 (CLI 64.2.0
+    // ensureLink with failIfNotFound).
+    const disconnect = at(`vercel git disconnect --yes --project ${PROJECT} --cwd apps/relay`);
     const deployAt = at('vercel deploy --prod --cwd apps/relay');
     expect(api).toBeGreaterThan(at('vercel link'));
     expect(deploy[api]).toMatch(/\.link\b/);
@@ -63,6 +66,7 @@ describe('README deploy (B2: CLI deploy only, never a Git connection)', () => {
     for (const c of deploy) {
       expect(c, c).not.toMatch(/vercel (git|project) connect/);
       expect(c, c).not.toMatch(/vercel link(?!.*--project)/);
+      expect(c, c).not.toMatch(/vercel git disconnect(?!.*--project)/);
     }
   });
 });
