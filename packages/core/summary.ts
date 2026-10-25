@@ -51,11 +51,13 @@
 //                      GRADER_ERROR are left out
 //
 // The consistency flag (P17i C3, R14-32): per task, at the current grade, consistencyOf counts
-// the valid failures (valid, not PASS) and groups them by their first failed check (the first
-// gate check not met; on a FAIL with no gate, the first check with no kind not met, as explain.ts
-// firstFailedCheck reads it) and its found value: the canonical JSON of the check evidence's
-// `found` field, or of the whole evidence when it has none. A failure with no failed check is in
-// no group. The task is flagged
+// the valid failures (valid, not PASS) and groups them by the id of their first failed check (the
+// first gate check not met; on a FAIL with no gate, the first check with no kind not met, as
+// explain.ts firstFailedCheck reads it). A failure with no failed check is in no group. Within the
+// largest group, the found values are information only (decisions.tsv 2026-10-27T00:30): a found
+// value is the canonical JSON of the check evidence's `found` field, or of the whole evidence when
+// it has none, and that evidence carries per-trial write ids and step numbers, so one defect
+// gives many values. The task is flagged
 //   shared_failure     when the largest group holds >= SHARED_FAILURE_SHARE of the valid failures,
 //                      counted only from SHARED_FAILURE_MIN valid failures (at any count when the
 //                      caller passes final: audit-check --final)
@@ -148,13 +150,14 @@ export interface SummaryCheck {
 
 export type ConsistencyFlag = 'shared_failure' | 'no_passes';
 
-// A task's consistency flag (header): its largest group of valid failures by first failed check
-// and found value, and the flags that hold.
+// A task's consistency flag (header): its largest group of valid failures by first failed check,
+// with the group's most common found value, how many of the group give it and how many distinct
+// found values the group gives; and the flags that hold.
 export interface Consistency {
   valid: number;
   passes: number;
   failures: number;
-  shared: { check: string; found: string; count: number } | null;
+  shared: { check: string; count: number; found: string; found_count: number; found_values: number } | null;
   flags: ConsistencyFlag[];
 }
 
@@ -324,18 +327,21 @@ export function consistencyOf(grades: ReadonlyArray<Pick<CurrentGrade, 'outcome'
   const valid = grades.filter((g) => g.valid);
   const passes = valid.filter((g) => g.outcome === 'PASS').length;
   const failures = valid.filter((g) => g.outcome !== 'PASS');
-  const groups = new Map<string, { check: string; found: string; count: number }>();
+  // Each failed check's found values, one per failure.
+  const groups = new Map<string, string[]>();
   for (const g of failures) {
     const c = firstFailed(g);
     if (c === null) continue;
-    const found = foundOf(c.evidence);
-    const key = canonical([c.id, found]);
-    const group = groups.get(key) ?? { check: c.id, found, count: 0 };
-    group.count++;
-    groups.set(key, group);
+    groups.set(c.id, [...(groups.get(c.id) ?? []), foundOf(c.evidence)]);
   }
-  // The largest group; on a tie, the first by check id, then found value.
-  const shared = [...groups.values()].sort((a, b) => b.count - a.count || a.check.localeCompare(b.check) || a.found.localeCompare(b.found))[0] ?? null;
+  // The largest group, on a tie the first by check id; its most common found value, on a tie the first.
+  const top = [...groups].sort(([a, xs], [b, ys]) => ys.length - xs.length || a.localeCompare(b))[0];
+  let shared: Consistency['shared'] = null;
+  if (top !== undefined) {
+    const [check, founds] = top;
+    const [found, found_count] = Object.entries(histogram(founds)).sort(([a, m], [b, n]) => n - m || a.localeCompare(b))[0]!;
+    shared = { check, count: founds.length, found, found_count, found_values: new Set(founds).size };
+  }
   const flags: ConsistencyFlag[] = [];
   const counted = failures.length >= SHARED_FAILURE_MIN || (opts.final === true && failures.length > 0);
   if (shared !== null && counted && shared.count >= SHARED_FAILURE_SHARE * failures.length) flags.push('shared_failure');
@@ -343,9 +349,17 @@ export function consistencyOf(grades: ReadonlyArray<Pick<CurrentGrade, 'outcome'
   return { valid: valid.length, passes, failures: failures.length, shared, flags };
 }
 
-// "4 of 5 valid failures share G1 found ..." and "0 passes in 10 valid trials", for each flag.
+// A found value cut for a message line.
+const FOUND_CHARS = 120;
+const cut = (s: string) => (s.length <= FOUND_CHARS ? s : `${s.slice(0, FOUND_CHARS)}…`);
+// "4 of 5 valid failures fail G1 first (2 distinct found values; 3 give ...)" and "0 passes in 10
+// valid trials", for each flag.
 export const describeConsistency = (c: Consistency): string[] =>
-  c.flags.map((f) => (f === 'shared_failure' ? `${c.shared!.count} of ${c.failures} valid failures share ${c.shared!.check} found ${c.shared!.found}` : `0 passes in ${c.valid} valid trials`));
+  c.flags.map((f) => {
+    if (f === 'no_passes') return `0 passes in ${c.valid} valid trials`;
+    const s = c.shared!;
+    return `${s.count} of ${c.failures} valid failures fail ${s.check} first (${s.found_values} distinct found value${s.found_values === 1 ? '' : 's'}; ${s.found_count} give ${cut(s.found)})`;
+  });
 
 export function summarize(input: SummaryInput): Summary {
   const ids = sorted([...input.trials, ...input.requeued].map((t) => t.task_id).concat(input.expected?.tasks ?? []));
@@ -558,7 +572,7 @@ export function validateSummary(x: unknown): string[] {
         infra_counted_attempts: count, infra_counted_rate: rate,
         metric_trials: (v) => isObj(v) && count(v.mean_score) && count(v.raw_mean_score) && count(v.gate_fraction),
         consistency: (v) => isObj(v) && count(v.valid) && count(v.passes) && count(v.failures)
-          && (v.shared === null || (isObj(v.shared) && typeof v.shared.check === 'string' && typeof v.shared.found === 'string' && count(v.shared.count)))
+          && (v.shared === null || (isObj(v.shared) && typeof v.shared.check === 'string' && count(v.shared.count) && typeof v.shared.found === 'string' && count(v.shared.found_count) && count(v.shared.found_values)))
           && Array.isArray(v.flags) && v.flags.every((f) => f === 'shared_failure' || f === 'no_passes'),
       });
       if (count(t.passes) && count(t.trials) && (t.passes as number) > (t.trials as number)) errors.push(`tasks.${id}.passes: more than its trials`);

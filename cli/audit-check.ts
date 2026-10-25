@@ -34,7 +34,7 @@
 //   - each task has at least 2 audited PASS trials with evidence ids (all of them when it has
 //     fewer than 2 passes);
 //   - each task the consistency flag marks (packages/core/summary.ts consistencyOf: >= 80% of its
-//     valid failures share their first failed check and found value, counted from 5 valid
+//     valid failures fail the same check first, counted from 5 valid
 //     failures, or at any count with --final; or 0 passes in >= 10 valid trials) has one
 //     task-validity review line in audit.jsonl, beside the per-trial rows:
 //       {task, kind: "task-validity", reviewer, verdict: "fair-trap" | "check-defect", note}

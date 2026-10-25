@@ -91,7 +91,7 @@ export function writeFixtureRun(dir: string, fixture: Fixture): void {
       }
     }
   }
-  // Each task's 5 FAIL share G1 and its found value, so the consistency flag marks it
+  // Each task's 5 FAIL fail G1 first, so the consistency flag marks it
   // (packages/core/summary.ts consistencyOf): the audit reviews it.
   for (const task of TASKS) labels.push({ task, kind: 'task-validity', reviewer: 'fixture-auditor', verdict: 'fair-trap', note: 'every FAIL misses the same check, as the fixture means' });
   if (fixture === 'requeued-env-error') {

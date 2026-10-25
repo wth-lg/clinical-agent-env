@@ -25,7 +25,7 @@
 // denominator: mean score, raw (unclipped) mean, mean fraction of gates met, pass_no_harm, LIMIT
 // counts by kind, re-queued attempts by outcome and the infra-counted rate (passes over the valid
 // trials plus the INFRA and ENV_ERROR attempts). A task the consistency flag marks (packages/core/
-// summary.ts header: most valid failures share their first failed check and found value, or 0
+// summary.ts header: most valid failures fail the same check first, or 0
 // passes in 10 or more valid trials) gets a third line naming it; audit-check requires a
 // task-validity review for it.
 // Trials are named by trialName, as replay.json names them. --json prints only the summary on stdout (the lines go to stderr). Exit 0 when every
