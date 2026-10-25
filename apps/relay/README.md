@@ -93,7 +93,7 @@ pnpm build && pnpm --filter web exec playwright test --project=xbrowser relay-br
 node scripts/relay-body-max.ts
 ```
 
-`relay-browser` runs the probe page (`apps/web/probe.html?relay=<url>`) against
+`relay-browser` runs the relay test page (`apps/web/relay-probe.html?relay=<url>`) against
 `test/serve-local.ts`, so the browser makes a real cross-origin preflight. `relay-body-max`
 prints B, the largest request body in the pilot-0 trajectories, and the longest single Messages
 call. It exits 1 if B x 1.1 is not below the body limit or the longest call is not below
@@ -166,7 +166,8 @@ writes `apps/relay/.vercel/`.
    file whose path it prints. Its first request is a canary (`GET /v1/messages` with
    `x-relay-canary: <nonce>`) that appears in the function logs. It also prints which of its
    requests invoke the function. For deployed mode, the relay's origin must be in
-   `apps/web/probe.html`'s `connect-src`.
+   `apps/web/relay-probe.html`'s `connect-src` (and `RELAY_PROBE_ORIGIN` in
+   `apps/web/src/probe/csp.ts`).
 
 Check these on the first deploy. The tests cannot check them without Vercel:
 

@@ -1,5 +1,5 @@
-// The probe page's relay mode (plan phase P16h), for the real-browser relay check
-// (e2e/xbrowser/relay-browser.spec.ts). probe.html?relay=<relay Messages URL> builds a
+// The relay test page (plan phase P16h), for the real-browser relay check
+// (e2e/xbrowser/relay-browser.spec.ts). relay-probe.html?relay=<relay Messages URL> builds a
 // MessagesClient in the page with P16g's endpoint option set to that URL and installs the egress
 // guard with the relay origin metered and only the page's own origin allowed besides it, so the
 // browser sends the client's real headers through a real CORS preflight, and nothing but the

@@ -5,9 +5,9 @@
 //
 // Static: apps/web/dist under BASE. / (and BASE without its slash) redirects to BASE keeping the
 // query, so the UI contract's `/?view=...` routes land on the same screen; a path with no
-// extension falls back to index.html (an app route); probe.html, harness.html in any letter case
-// and any path that resolves outside dist (`..`, encoded dots or slashes, a symlink out of dist)
-// get 404.
+// extension falls back to index.html (an app route); probe.html, relay-probe.html, harness.html
+// in any letter case and any path that resolves outside dist (`..`, encoded dots or slashes, a
+// symlink out of dist) get 404.
 // index.html is served with its built CSP meta unchanged plus a token meta holding this
 // process's 256-bit random token. The API answers at /api/* and at BASE + api/* (the UI
 // resolves api paths against its base), ahead of the static files.
@@ -130,7 +130,7 @@ const CONNECTIONS_CHECK_MS = 1_000;
 // plus the page's other requests.
 const MAX_CONNECTIONS = 256;
 // Lower case: compared with the lowercased basename, as APFS and NTFS match names in any case.
-const TEST_PAGES = new Set(['probe.html', 'harness.html']);
+const TEST_PAGES = new Set(['probe.html', 'relay-probe.html', 'harness.html']);
 const KEYISH = /key|token|secret|auth|password/i;
 // The shape keyscan looks for, held or not.
 const KEY_SHAPE = /sk-ant-[A-Za-z0-9_-]*/gi;
