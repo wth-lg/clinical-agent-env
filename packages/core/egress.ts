@@ -14,9 +14,13 @@
 // WebSocket, EventSource and navigator.sendBeacon, where present, are refused for those hosts
 // outright: the client never uses them. A URL is resolved once and the resolved string is what
 // gets sent, so an object whose toString answers differently the second time sends nothing new.
-// With allowedOrigins (the browser trial Worker, which a page's meta CSP does not cover), a send
-// by any of those APIs to an origin not in the list is refused as well; the API host stays
-// reachable only by the claimed MessagesClient Request, listed or not.
+// With allowedOrigins (the browser trial Worker), a send by any of those APIs to an origin not in
+// the list is refused as well; the API host stays reachable only by the claimed MessagesClient
+// Request, listed or not. In that mode every other fetch is forwarded with redirect: 'error', so a
+// listed origin cannot redirect it elsewhere, and XMLHttpRequest and EventSource, which follow
+// redirects with no way to opt out, are refused whatever the origin. This is the second layer:
+// the trial Worker starts from a blob: URL, so the page's CSP binds it and the browser refuses
+// other origins on every hop (apps/web/src/live/transport/worker.ts).
 // The wrapped globals are made read-only, so later code cannot put the raw ones back. The entry
 // point passes its global scope in, since shared code does not touch DOM or Node globals
 // (lint: isomorphic-imports).
@@ -104,16 +108,24 @@ function checked(api: string, input: unknown): string {
 // also overrides a dispatcher set in `new Request(url, { dispatcher })` or inherited from the
 // Request it copied. An inherited init property is not copied. The claimed client Request gets
 // the raw dispatcher; anything else gets the guarded one, so a redirect to the API host is
-// refused at the hop. Without a captured dispatcher, the copy has none.
+// refused at the hop. Without a captured dispatcher, the copy has none. With allowedOrigins, an
+// unclaimed call is forwarded with redirect: 'error', which overrides a Request's own mode too.
 function forwardInit(init: RequestInit | undefined, claimed: boolean): RequestInit | undefined {
   const use = claimed ? dispatcher : guardedDispatcher;
+  const noRedirect = !claimed && allowed !== null;
   const own = typeof init === 'object' || typeof init === 'function';
   if (!own && init != null) return init; // the platform rejects it the same way
-  if (!own && use === undefined) return init;
+  if (!own && use === undefined && !noRedirect) return init;
   const copy: Record<string, unknown> = own ? { ...init } : {};
   delete copy.dispatcher;
   if (use !== undefined) copy.dispatcher = use;
+  if (noRedirect) copy.redirect = 'error';
   return copy;
+}
+
+// With allowedOrigins, XMLHttpRequest and EventSource are refused outright.
+function followsRedirects(api: string): void {
+  if (allowed !== null) throw new EgressRefusal(`egress guard: ${api} refused: this context sends by fetch only, which may not follow a redirect`);
 }
 
 // A dispatcher that refuses an API-host origin and hands everything else to `raw`. It extends
@@ -205,6 +217,7 @@ export function installEgressGuard(scope: object, opts: EgressOptions = {}): voi
   const open = xhr?.prototype?.open;
   if (xhr?.prototype && typeof open === 'function') {
     lock(xhr.prototype, 'open', function (this: unknown, method: unknown, url: unknown, ...rest: unknown[]) {
+      followsRedirects('XMLHttpRequest');
       return open.call(this, method, checked('XMLHttpRequest', url), ...rest);
     });
   }
@@ -214,6 +227,7 @@ export function installEgressGuard(scope: object, opts: EgressOptions = {}): voi
     if (typeof C !== 'function') continue;
     const Guarded = class extends (C as Ctor) {
       constructor(url: unknown, ...rest: unknown[]) {
+        if (name === 'EventSource') followsRedirects(name);
         super(checked(name, url), ...rest);
       }
     };

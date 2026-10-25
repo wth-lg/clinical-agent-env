@@ -17,7 +17,7 @@ export const files = ['**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}'];
 const HOST = ['api', 'anthropic', 'com'].join('.');
 const CLIENT = 'packages/core/anthropic.ts';
 const CSP_PIN = 'apps/web/e2e/smoke.spec.ts';
-const CSP = `default-src 'self'; connect-src 'self' https://${HOST}; script-src 'self'; worker-src 'self'`;
+const CSP = `default-src 'self'; connect-src 'self' https://${HOST}; script-src 'self'; worker-src 'self' blob:`;
 
 const posix = (p) => p.split(sep).join('/');
 

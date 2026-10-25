@@ -7,6 +7,7 @@
 // request and no Worker. After the trials and the reload, no storage holds the sentinel key.
 import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
+import { createServer, type Server } from 'node:http';
 import { expect, test, type Page, type Route } from '@playwright/test';
 import { REFUSAL_TEXT } from '../../../packages/core/runner-api.ts';
 import { okResponse, SCENARIOS } from '../src/harness/scenarios.ts';
@@ -44,7 +45,14 @@ async function mockToy(page: Page, opts: { hold?: number; trialStatus?: { status
     if (turn === opts.hold && held.length === 0) return void held.push(route);
     return sse(okResponse(TOY[turn - 1]!, turn));
   });
-  return { calls, held, trialCalls: () => calls.filter((c) => c.max_tokens !== 16) };
+  // Answers the held request as if it had not been held.
+  const release = async () => {
+    const route = held.shift()!;
+    const body = route.request().postDataJSON() as Body;
+    const turn = body.messages.filter((m) => m.role === 'assistant').length + 1;
+    await okResponse(TOY[turn - 1]!, turn).text().then((text) => route.fulfill({ status: 200, contentType: 'text/event-stream', body: text, headers: CORS }));
+  };
+  return { calls, held, release, trialCalls: () => calls.filter((c) => c.max_tokens !== 16) };
 }
 
 async function enterKey(page: Page, key: string, cap?: string) {
@@ -90,6 +98,9 @@ const storedRecord = (page: Page, trialId: string) => page.evaluate((id) => new 
 }), trialId);
 
 const trial = (page: Page) => page.getByTestId('live-trial');
+// The trial Worker starts from a same-origin blob: that imports the bundled script, so the page's CSP binds it.
+const isTrialWorker = (w: { url(): string }) => /^blob:http:\/\/localhost:\d+\//.test(w.url());
+const TRIAL_SCRIPT = /\/assets\/trial-[^/]+\.js$/;
 const run = (page: Page, n: number) => page.getByRole('button', { name: `Run ×${n}`, exact: true }).click();
 
 // The final hash the toy trial reaches uninterrupted, from the first test; the reload test must reach it too.
@@ -100,7 +111,9 @@ test.describe.configure({ mode: 'serial' });
 test('a trial streams in a Worker, is graded in the browser and makes no request but the mocked API', async ({ page }) => {
   const api = await mockToy(page);
   const workers: string[] = [];
-  page.on('worker', (w) => workers.push(w.url()));
+  const scripts: string[] = [];
+  page.on('worker', (w) => (isTrialWorker(w) ? workers.push(w.url()) : undefined));
+  page.on('request', (r) => (TRIAL_SCRIPT.test(new URL(r.url()).pathname) ? scripts.push(r.url()) : undefined));
   await page.goto('./?view=live&task=_toy');
   await expect(page.getByTestId('surface-chip')).toContainText('Browser-direct');
   await enterKey(page, sentinelKey());
@@ -113,7 +126,8 @@ test('a trial streams in a Worker, is graded in the browser and makes no request
   uninterrupted = await trial(page).getByTestId('final-hash').textContent();
   expect(uninterrupted).toMatch(/^[0-9a-f]{64}$/);
   expect(api.trialCalls()).toHaveLength(5);
-  expect(workers.some((u) => /\/assets\/trial-[^/]+\.js$/.test(u))).toBe(true);
+  expect(workers).toHaveLength(1);
+  expect(scripts).toHaveLength(1);
   await expect(page.getByTestId('live-row')).toHaveAttribute('data-outcome', 'PASS');
   expect(await storedRecord(page, (await trial(page).getAttribute('data-trial'))!)).toMatchObject({ resumed: false });
   await expect(page.getByTestId('resumed')).toHaveCount(0);
@@ -174,7 +188,7 @@ test('without a key the Task select is shown disabled', async ({ page }) => {
   expect(Number(await select.evaluate((el) => getComputedStyle(el).opacity))).toBeLessThan(1);
 });
 
-test('the trial Worker refuses fetch, XHR, WebSocket and EventSource to any origin but its own and the API', async ({ page }) => {
+test('the trial Worker\'s guard refuses fetch and WebSocket to any origin but its own and the API, and XHR and EventSource to any', async ({ page }) => {
   // .invalid never resolves, so nothing leaves the machine; a fetch the guard let through gets this answer.
   const FOREIGN = 'https://foreign.invalid';
   let reached = 0;
@@ -182,7 +196,7 @@ test('the trial Worker refuses fetch, XHR, WebSocket and EventSource to any orig
   const api = await mockToy(page, { hold: 2 });
   await page.goto('./?view=live&task=_toy');
   await enterKey(page, sentinelKey());
-  const worker = page.waitForEvent('worker', (w) => /\/assets\/trial-[^/]+\.js$/.test(w.url()));
+  const worker = page.waitForEvent('worker', isTrialWorker);
   await run(page, 1);
   await expect.poll(() => api.held.length, { timeout: 30_000 }).toBe(1);
   const probe = await (await worker).evaluate(async (foreign) => {
@@ -200,12 +214,76 @@ test('the trial Worker refuses fetch, XHR, WebSocket and EventSource to any orig
       xhr: await attempt(() => new XMLHttpRequest().open('GET', `${foreign}/collect`)),
       websocket: await attempt(() => new WebSocket('wss://foreign.invalid/collect')),
       eventsource: await attempt(() => new EventSource(`${foreign}/collect`)),
-      self: await attempt(() => fetch(new URL('../data/fixtures/manifest.json', location.href))),
+      selfXhr: await attempt(() => new XMLHttpRequest().open('GET', `${location.origin}/clinical-agent-env/data/fixtures/manifest.json`)),
+      self: await attempt(() => fetch(`${location.origin}/clinical-agent-env/data/fixtures/manifest.json`)),
     };
   }, FOREIGN);
-  for (const via of ['fetch', 'request', 'xhr', 'websocket', 'eventsource'] as const) expect(probe[via], via).toMatch(/egress guard/);
+  for (const via of ['fetch', 'request', 'xhr', 'websocket', 'eventsource', 'selfXhr'] as const) expect(probe[via], via).toMatch(/egress guard/);
   expect(probe.self).toBe('answered 200');
   expect(reached).toBe(0);
+});
+
+// A real server on another origin (127.0.0.1, while the page is on localhost), so a request the
+// browser let leave the Worker arrives and is counted; page.route does not see redirect hops.
+async function foreignServer(): Promise<{ origin: string; hits: string[]; close: () => Promise<void> }> {
+  const hits: string[] = [];
+  const server: Server = createServer((req, res) => {
+    hits.push(req.url ?? '');
+    res.writeHead(200, { 'access-control-allow-origin': '*', 'content-type': 'text/javascript' });
+    res.end('export const reached = true;');
+  });
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const { port } = server.address() as { port: number };
+  return { origin: `http://127.0.0.1:${port}`, hits, close: () => new Promise((resolve) => server.close(() => resolve())) };
+}
+
+test('the browser refuses every foreign hop from the trial Worker: a same-origin redirect, the prototype fetch and a dynamic import', async ({ page }) => {
+  const foreign = await foreignServer();
+  try {
+    await page.route('**/clinical-agent-env/redirect-out*', (route) => route.fulfill({ status: 302, headers: { location: `${foreign.origin}/after-redirect` } }));
+    const api = await mockToy(page, { hold: 2 });
+    await page.goto('./?view=live&task=_toy');
+    await enterKey(page, sentinelKey());
+    const worker = page.waitForEvent('worker', isTrialWorker);
+    await run(page, 1);
+    await expect.poll(() => api.held.length, { timeout: 30_000 }).toBe(1);
+    const probe = await (await worker).evaluate(async (origin) => {
+      const violations: string[] = [];
+      self.addEventListener('securitypolicyviolation', (e) => violations.push(`${e.effectiveDirective} ${e.blockedURI}`));
+      const attempt = async (f: () => Promise<unknown>) => {
+        try {
+          const r = await f();
+          return r instanceof Response ? `answered ${r.status}` : 'loaded';
+        } catch (e) {
+          return `refused: ${(e as Error).message}`;
+        }
+      };
+      const wgs = (globalThis as unknown as { WorkerGlobalScope: { prototype: { fetch: typeof fetch } } }).WorkerGlobalScope.prototype.fetch;
+      const result = {
+        redirect: await attempt(() => fetch(`${location.origin}/clinical-agent-env/redirect-out`)),
+        prototypeFetch: await attempt(() => wgs.call(globalThis, `${origin}/proto`)),
+        // The same redirect past the guard: the browser refuses the hop by itself.
+        prototypeRedirect: await attempt(() => wgs.call(globalThis, `${location.origin}/clinical-agent-env/redirect-out?proto`)),
+        dynamicImport: await attempt(() => import(/* @vite-ignore */ `${origin}/mod.js`)),
+      };
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      return { ...result, violations };
+    }, foreign.origin);
+    expect.soft(probe.redirect).toMatch(/^refused/);
+    expect.soft(probe.prototypeFetch).toMatch(/^refused/);
+    expect.soft(probe.prototypeRedirect).toMatch(/^refused/);
+    expect.soft(probe.dynamicImport).toMatch(/^refused/);
+    expect.soft(foreign.hits).toEqual([]);
+    // The browser refused them, by the page's CSP, which the Worker inherits: the guard cannot see these.
+    expect.soft(probe.violations.some((v) => v.startsWith('connect-src') && v.includes('/proto'))).toBe(true);
+    expect.soft(probe.violations.some((v) => v.startsWith('script-src') && v.includes('/mod.js'))).toBe(true);
+    // The API host still answers the Worker: the held call goes through and the trial grades PASS.
+    await api.release();
+    await expect(trial(page)).toHaveAttribute('data-state', 'graded', { timeout: 60_000 });
+    await expect(trial(page).getByTestId('outcome')).toHaveText('PASS');
+  } finally {
+    await foreign.close();
+  }
 });
 
 test('an org-CORS 401 stops the trial and shows its message, pointing to the exact local command', async ({ page }) => {
@@ -268,15 +346,14 @@ test('each Run size shows its projected cost, and a size over the session cap is
 test('a batch whose projection crosses the session cap is refused with no API request and no Worker', async ({ page }) => {
   const api = await mockToy(page, { hold: 2 });
   const workers: string[] = [];
-  page.on('worker', (w) => workers.push(w.url()));
-  const trialWorkers = () => workers.filter((u) => /\/assets\/trial-[^/]+\.js$/.test(u));
+  page.on('worker', (w) => (isTrialWorker(w) ? workers.push(w.url()) : undefined));
   await page.goto('./?view=live&task=_toy');
   await enterKey(page, sentinelKey(), '5');
   // Under a $5.00 cap no size fits: every Run button is disabled, so nothing is fetched or started.
   for (const n of [1, 3, 10, 20]) await expect(page.getByRole('button', { name: `Run ×${n}`, exact: true })).toBeDisabled();
   await expect(page.getByTestId('size-reason')).toContainText('Run ×1 needs $10.00');
   expect(api.trialCalls()).toHaveLength(0);
-  expect(trialWorkers()).toHaveLength(0);
+  expect(workers).toHaveLength(0);
   // A size that fits the cap but not what is left of it: the tab ledger refuses it before any fetch.
   await page.getByLabel('Session cap (USD)').fill('15');
   await page.getByRole('button', { name: 'Set cap' }).click();
@@ -289,6 +366,6 @@ test('a batch whose projection crosses the session cap is refused with no API re
   await expect(refusal.getByTestId('error-detail')).toContainText('session cap');
   await expect(refusal.getByTestId('cap-hint')).toHaveText('Change the session cap under “Run a task” on this page.');
   expect(api.trialCalls()).toHaveLength(calls);
-  expect(trialWorkers()).toHaveLength(1);
+  expect(workers).toHaveLength(1);
   await expect(page.getByTestId('live-run')).toHaveCount(1);
 });

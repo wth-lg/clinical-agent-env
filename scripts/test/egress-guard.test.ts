@@ -131,7 +131,7 @@ const nativeUrl = Object.getOwnPropertyDescriptor(Request.prototype, 'url').get;
 // it in the slot) would pick the connection below the guard.
 const agent = globalThis[Symbol.for('undici.globalDispatcher.2')];
 const foreign = (init) => init?.dispatcher !== undefined && init.dispatcher !== agent && init.dispatcher !== globalThis[Symbol.for('undici.globalDispatcher.2')];
-const record = (api, url, init) => sends.push({ api, host: new URL(String(url)).hostname, ...(foreign(init) ? { dispatcher: true } : {}) });
+const record = (api, url, init) => sends.push({ api, host: new URL(String(url)).hostname, ...(foreign(init) ? { dispatcher: true } : {}), ...(init?.redirect !== undefined ? { redirect: init.redirect } : {}) });
 const sse = (events) => events.map((e) => 'event: ' + e.type + '\\ndata: ' + JSON.stringify(e) + '\\n\\n').join('');
 const OK = sse([
   { type: 'message_start', message: { id: 'm', model: 'claude-opus-5-5', role: 'assistant', content: [], stop_reason: null, usage: { input_tokens: 10, output_tokens: 1 } } },
@@ -170,11 +170,17 @@ process.stdout.write(JSON.stringify(out));
 `;
 
 // A context limited to its own origin (the trial Worker, verifier review-P15-1 F1): sends to any
-// other origin are refused by every API the guard wraps; its own origin still answers.
+// other origin are refused by every API the guard wraps; its own origin still answers, by fetch
+// only and with redirect: 'error', so a redirect cannot take it elsewhere (verifier-phase-P15-2
+// F1). XHR and EventSource follow redirects with no way to opt out, so they are refused outright.
 const SELF = 'https://app.test';
 const ORIGIN_PLANTS: Record<string, string> = {
   'w-self-fetch': `export const go = () => fetch('${SELF}/clinical-agent-env/data/fixtures/manifest.json');`,
   'w-self-request': `export const go = () => fetch(new Request('${SELF}/assets/x.json'));`,
+  'w-self-redirect-follow': `export const go = () => fetch('${SELF}/r', { redirect: 'follow' });`,
+  'w-self-request-follow': `export const go = () => fetch(new Request('${SELF}/r', { redirect: 'follow' }));`,
+  'w-self-xhr': `export const go = () => { const x = new XMLHttpRequest(); x.open('GET', '${SELF}/assets/x.json'); x.send(); };`,
+  'w-self-eventsource': `export const go = () => new EventSource('${SELF}/events');`,
   'w-foreign-fetch': `export const go = () => fetch('https://example.org/collect', ${POST});`,
   'w-foreign-request': `export const go = () => fetch(new Request('https://example.org/collect', ${POST}));`,
   'w-foreign-port': `export const go = () => fetch('https://app.test:8443/collect');`,
@@ -260,11 +266,11 @@ describe('with allowedOrigins, the guard refuses every send to another origin', 
     expect(out.guard).toBe('installed');
   });
 
-  it.each(['w-self-fetch', 'w-self-request'])('%s: its own origin answers', (name) => {
-    expect(out.plants[name]).toEqual({ sends: [{ api: 'fetch', host: 'app.test' }], error: null });
+  it.each(['w-self-fetch', 'w-self-request', 'w-self-redirect-follow', 'w-self-request-follow'])('%s: its own origin answers, with redirects refused', (name) => {
+    expect(out.plants[name]).toEqual({ sends: [{ api: 'fetch', host: 'app.test', redirect: 'error' }], error: null });
   });
 
-  it.each(names.filter((n) => n.startsWith('w-foreign') || n === 'w-api-unclaimed'))('%s: refused, 0 sends', (name) => {
+  it.each(names.filter((n) => n.startsWith('w-foreign') || n === 'w-api-unclaimed' || n === 'w-self-xhr' || n === 'w-self-eventsource'))('%s: refused, 0 sends', (name) => {
     const p = out.plants[name];
     expect(p?.sends).toEqual([]);
     expect(p?.error).toMatch(/egress guard/);
@@ -273,6 +279,11 @@ describe('with allowedOrigins, the guard refuses every send to another origin', 
   it('a foreign send names the origin it refused and the origins allowed', () => {
     expect(out.plants['w-foreign-fetch']?.error).toContain('https://example.org');
     expect(out.plants['w-foreign-fetch']?.error).toContain(SELF);
+  });
+
+  it('XHR and EventSource are refused whatever the origin, since they follow redirects', () => {
+    expect(out.plants['w-self-xhr']?.error).toContain('XMLHttpRequest');
+    expect(out.plants['w-self-eventsource']?.error).toContain('EventSource');
   });
 
   it('MessagesClient\'s own call to the API still passes, once', () => {

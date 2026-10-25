@@ -7,6 +7,15 @@
 // the batch's id. Events are kept in IndexedDB as they arrive. After a reload, a trial that was
 // running resumes from them (live/resume.ts) once the tab holds a key again; one that had not
 // started is cancelled. Stop aborts the Worker's signal, so the trial ends CANCELLED.
+//
+// The Worker starts from a same-origin blob: URL whose one statement imports the bundled worker
+// script. A Worker whose URL is blob: takes the page's policy container, so the page's meta CSP
+// (connect-src, script-src) binds it, and the browser refuses every other origin on every hop:
+// redirects, the prototype's fetch and import() included. A Worker started from its own URL
+// would have no CSP, since the page's meta does not reach it. The egress guard's allowedOrigins
+// (workerOrigins) stays as the second layer.
+import definitionsUrl from '../../../../../fixtures/definitions-pruned.json?url';
+import trialWorkerUrl from '../../worker/trial.ts?worker&url';
 import type { ClientOptions } from '../../../../../packages/core/anthropic.ts';
 import type { TrialEvent } from '../../../../../packages/core/events.ts';
 import type { ExplainRecord } from '../../../../../packages/core/explain.ts';
@@ -28,8 +37,8 @@ export function clientOptions(start: { apiKey: string; trialId: string }): Omit<
 
 // The origins the trial Worker may send to besides the Anthropic API, which only its client
 // reaches (installEgressGuard allowedOrigins): its own, for the world, manifest and definitions.
-// The page's meta CSP does not reach a Worker, so this is its connect-src. P16h adds the relay's
-// origin here, beside clientOptions.
+// The page's CSP binds the Worker too (see the header); P16h adds the relay's origin here, beside
+// clientOptions, and to the CSP's connect-src.
 export const workerOrigins = (self: string): string[] => [self];
 
 export interface WorkerStart {
@@ -48,6 +57,7 @@ export interface WorkerStart {
   checkpoint: TrialEvent[];
   worldUrl: string;
   manifestUrl: string;
+  definitionsUrl: string;
 }
 export type WorkerIn = WorkerStart | { type: 'cancel'; reason: string };
 export type WorkerOut = { type: 'event'; event: TrialEvent } | { type: 'ledger'; rows: LedgerRow[] } | { type: 'result'; record: TrialRecord } | { type: 'failed'; error: string };
@@ -68,10 +78,16 @@ let ingesting: Promise<unknown> = Promise.resolve();
 const endOf = (record: TrialRecord): TrialEnd => ({ state: record.outcome === 'CANCELLED' ? 'cancelled' : 'graded', record: record as unknown as ExplainRecord, message: null });
 const dataUrl = (path: string) => new URL(`data/fixtures/${path}`, document.baseURI).href;
 
+// The blob: every trial Worker starts from (see the header). Its base URL is the blob, so the
+// Worker is given absolute URLs only.
+let boot: string | undefined;
+const trialWorkerBoot = () =>
+  (boot ??= URL.createObjectURL(new Blob([`import ${JSON.stringify(new URL(trialWorkerUrl, document.baseURI).href)};\n`], { type: 'text/javascript' })));
+
 function runWorker(trialId: string, task: string, opts: { batchId: string; cap: number; projection: number; checkpoint: TrialEvent[]; apiKey: string }): Live {
   const entry: Live = { events: [...opts.checkpoint], listeners: new Set(), done: Promise.resolve({ state: 'error', record: null, message: null }), cancel: () => {} };
   live.set(trialId, entry);
-  const worker = new Worker(new URL('../../worker/trial.ts', import.meta.url), { type: 'module', name: trialId });
+  const worker = new Worker(trialWorkerBoot(), { type: 'module', name: trialId });
   entry.cancel = (reason) => worker.postMessage({ type: 'cancel', reason } satisfies WorkerIn);
   entry.done = new Promise<TrialEnd>((resolve) => {
     const finish = async (end: TrialEnd) => {
@@ -96,13 +112,13 @@ function runWorker(trialId: string, task: string, opts: { batchId: string; cap: 
         void finish({ state: 'error', record: null, message: data.error });
       }
     };
-    worker.onerror = (e) => void finish({ state: 'error', record: null, message: `The trial Worker failed: ${e.message}` });
+    worker.onerror = (e) => void finish({ state: 'error', record: null, message: `The trial Worker failed: ${e.message || 'it did not start'}` });
   });
   void (async () => {
     const seed = (await tabRows()).filter((r) => r.batch_id !== opts.batchId);
     const start: WorkerStart = {
       type: 'start', trialId, task, model: MODEL, effort: 'high', apiKey: opts.apiKey, cap: opts.cap, projection: opts.projection, seed, checkpoint: opts.checkpoint,
-      worldUrl: dataUrl('world.ndjson.gz'), manifestUrl: dataUrl('manifest.json'),
+      worldUrl: dataUrl('world.ndjson.gz'), manifestUrl: dataUrl('manifest.json'), definitionsUrl: new URL(definitionsUrl, document.baseURI).href,
     };
     worker.postMessage(start);
   })();

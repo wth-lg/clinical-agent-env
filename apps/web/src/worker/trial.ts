@@ -5,8 +5,10 @@
 // its options come from clientOptions, the one place they are set. Each ledger append goes back to
 // the page, which keeps the tab ledger. A start with a checkpoint resumes a trial a reload cut
 // off (live/resume.ts): the kept events are checked, not posted again. A cancel message aborts the
-// trial's signal, so it ends CANCELLED. The egress guard is installed first, as in every entry
-// point that holds a client, limited to workerOrigins: the page's CSP does not cover a Worker.
+// trial's signal, so it ends CANCELLED. The Worker starts from a blob: URL (live/transport/
+// worker.ts), so the page's CSP binds it, and its base URL is the blob: every URL it fetches comes
+// absolute in the start message. The egress guard is installed first, as in every entry point
+// that holds a client, limited to workerOrigins, as a second layer under the CSP.
 import { installEgressGuard } from '../../../../packages/core/egress.ts';
 import type { TrialEvent } from '../../../../packages/core/events.ts';
 import { run, type RunOptions } from '../../../../packages/core/run.ts';
@@ -16,7 +18,6 @@ import { browserTaskSource } from '../adapters/tasks-browser.ts';
 import { taskChecks } from '../live/checks.ts';
 import { resumeOptions, sameEvent } from '../live/resume.ts';
 import { clientOptions, workerOrigins, type WorkerIn, type WorkerOut } from '../live/transport/worker.ts';
-import definitionsUrl from '../../../../fixtures/definitions-pruned.json?url';
 
 installEgressGuard(globalThis, { allowedOrigins: workerOrigins(location.origin) });
 
@@ -44,7 +45,7 @@ scope.addEventListener('message', ({ data }) => {
       const [manifest, world, definitions, checks] = await Promise.all([
         json<{ world: { state_hash: string } }>(start.manifestUrl),
         fetchBytes(start.worldUrl),
-        json<NonNullable<RunOptions['definitions']>>(new URL(definitionsUrl, import.meta.url).href),
+        json<NonNullable<RunOptions['definitions']>>(start.definitionsUrl),
         taskChecks(start.task),
       ]);
       const client = grantClient({ grant, ledger, ...clientOptions(start) });
