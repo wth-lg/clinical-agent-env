@@ -253,6 +253,23 @@ test('a non-pass live trial shows in its Runs row the outcome, label, decisive c
   await expect(row.getByText(NOT_AUDITED_MARKER, { exact: true })).toHaveCount(1);
 });
 
+// verifier-phase-P15-1, folded follow-up: no repo test covered the Forget-failure notice.
+test('a Forget the runner refuses shows its own red notice with the runner message as detail; the key field is not invalid', async ({ page }) => {
+  await open(page, runner!, '?view=runs');
+  const message = 'the runner could not drop the key';
+  await page.route('**/api/key', (route) => route.request().method() === 'DELETE'
+    ? route.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify({ error: { type: 'internal', message } }) })
+    : route.continue());
+  await page.getByRole('button', { name: 'Forget key' }).click();
+  const notice = page.getByTestId('forget-notice');
+  await expect(notice).toHaveAttribute('role', 'alert');
+  await expect(notice.locator('p').first()).toHaveText('The local runner did not forget the key.');
+  await expect(notice.locator('p').nth(1)).toContainText(message);
+  const field = page.getByLabel('API key', { exact: true });
+  await expect(field).toBeVisible();
+  await expect(field).not.toHaveAttribute('aria-invalid', 'true');
+});
+
 test('Stop records CANCELLED', async ({ page }) => {
   const stall = await startRunner({ CLINENV_RUNNER_TEST_TRANSPORT: 'stall' });
   try {
