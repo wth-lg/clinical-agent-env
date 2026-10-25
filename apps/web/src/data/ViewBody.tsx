@@ -5,6 +5,7 @@ import type { Ref } from 'react';
 import { Environment } from '../environment/Environment.tsx';
 import { Findings } from '../findings/Findings.tsx';
 import { Glossary } from '../glossary/Glossary.tsx';
+import { LiveTrial } from '../live/LiveTrial.tsx';
 import { Overview } from '../overview/Overview.tsx';
 import { Runs } from '../runs/Runs.tsx';
 import { Tasks } from '../tasks/Tasks.tsx';
@@ -14,7 +15,7 @@ import { loadTaskList } from './tasks.ts';
 void loadResults();
 loadTaskList().catch(() => undefined);
 
-const BODIES = { overview: Overview, tasks: Tasks, runs: Runs, findings: Findings, environment: Environment, glossary: Glossary } as const;
+const BODIES = { overview: Overview, tasks: Tasks, runs: Runs, live: LiveTrial, findings: Findings, environment: Environment, glossary: Glossary } as const;
 
 export function ViewBody({ id, headingRef }: { id: string; headingRef?: Ref<HTMLHeadingElement> | undefined }) {
   const Body = BODIES[id as keyof typeof BODIES] ?? Overview;

@@ -56,6 +56,28 @@ describe('ledger caps and default mode (gate case 5)', () => {
     }
   });
 
+  // verifier-phase-P15-2 F2: in cents, a refusal just over the cap reads as if it were not.
+  it('words a session_cap refusal just over the cap with amounts that add up and read as over', async () => {
+    const l = await launch();
+    try {
+      await l.http('POST', '/api/key', { body: { key: KEY } });
+      const dry = parseDryRun((await l.http('POST', '/api/trials?dry_run=1', { body: toyTrial() })).json()).projection;
+      const cap = dry.total_usd + dry.session_spent_usd - 0.004;
+      const r = await l.http('POST', '/api/trials', { body: toyTrial({ session_cap_usd: cap }) });
+      expect(r.status).toBe(409);
+      const { message } = parseTrialsRefused(r.json()).error;
+      const m = /estimate of \$([\d.]+), with \$([\d.]+) already spent or running this session \(\$([\d.]+) in all\), would go over your session cap of \$([\d.]+)\./.exec(message);
+      expect(m, message).not.toBeNull();
+      const [estimate, spentUsd, total, shownCap] = m!.slice(1);
+      const d = total!.split('.')[1]!.length;
+      const units = (x: string) => Math.round(Number(x) * 10 ** d);
+      expect(units(estimate!) + units(spentUsd!), message).toBe(units(total!));
+      expect(units(total!), message).toBeGreaterThan(units(shownCap!));
+    } finally {
+      await l.runner.shutdown();
+    }
+  });
+
   it('counts a running batch against the session cap: a second batch that would cross it gets 409 with 0 calls', async () => {
     // Each trial call stalls until it is aborted, so batch A is still running when B is posted.
     const l = await launch({ answer: stallAnswer() });
