@@ -34,6 +34,8 @@ import {
   type MatrixResult,
 } from './outcomes.ts';
 import { currentGrade, firstFailed, type RegradeGrade } from './summary.ts';
+import { validateInput } from '../env/tools/registry.ts';
+import { TOOLS } from '../env/tools/write/index.ts';
 import { TAXONOMY, type Taxonomy } from '../grader/attribution.ts';
 
 export const REASON_WORDS = 40;
@@ -211,11 +213,26 @@ export const formatAuditAnswers = (a: AuditAnswers | null): string => {
 };
 const answer = (v: unknown): AuditAnswer | null => (v === 'yes' || v === 'no' ? v : null);
 // The step a row cites, numbered as grader/exposure.ts stepsOf numbers them (the executed calls
-// from 1); null when it cites none or the trajectory has no such step.
-const citedStep = (events: readonly TrialEvent[], n: number | null | undefined): { tool: string; is_error: boolean; error_code: string | null } | null => {
+// from 1); null when it cites none or the trajectory has no such step. schema_error, on a refusal,
+// is the field (else the message) at fault when the tool's input schema (registry.ts validateInput)
+// refuses the recorded call with the same code and field: the call broke the schema the model was
+// given, so the refusal was right (decisions.tsv 2026-10-27T08:50). The schema is today's TOOLS'.
+export interface CitedStep {
+  tool: string;
+  is_error: boolean;
+  error_code: string | null;
+  schema_error: string | null;
+}
+export const citedStep = (events: readonly TrialEvent[], n: number | null | undefined): CitedStep | null => {
   if (typeof n !== 'number' || !Number.isSafeInteger(n) || n < 1) return null;
   const e = events.filter((x) => x.type === 'tool_result' && x.executed)[n - 1];
-  return e?.type === 'tool_result' ? { tool: e.name, is_error: e.is_error, error_code: e.error_code } : null;
+  if (e?.type !== 'tool_result') return null;
+  const call = events.find((x) => x.type === 'tool_call' && x.tool_use_id === e.tool_use_id);
+  const tool = TOOLS.find((t) => t.name === e.name);
+  const replay = e.is_error && call?.type === 'tool_call' && tool !== undefined ? validateInput(tool.inputSchema, call.input) : undefined;
+  const field = (e.content as { error?: { field?: unknown } } | null)?.error?.field;
+  const schema_error = replay !== undefined && replay.code === e.error_code && replay.field === field ? (replay.field ?? replay.message) : null;
+  return { tool: e.name, is_error: e.is_error, error_code: e.error_code, schema_error };
 };
 // A row's answer to q after adjudication.
 export const auditAnswerOf = (row: Partial<Pick<AuditRow, AuditQuestion | `adjudicated_${AuditQuestion}`>>, q: AuditQuestion): AuditAnswer | null =>

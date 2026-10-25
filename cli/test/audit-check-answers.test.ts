@@ -4,8 +4,9 @@
 // needs GR3 (an audit outcome GRADER_BUG with evidence) or an environment label; a
 // tool_rejections_correct no needs an environment label and the rejected call's step (it makes the
 // fault environment, E6) that cites a refused call's step and is confirmed (decisions.tsv
-// 2026-10-27T06:00); an auditor no overruled by an adjudicated yes needs an adjudicated_label
-// and a note.
+// 2026-10-27T06:00), whose recorded input the tool's schema accepts (decisions.tsv
+// 2026-10-27T08:50), and that is confirmed; an auditor no overruled by an adjudicated yes needs an
+// adjudicated_label and a note.
 import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -25,10 +26,17 @@ function run(fixture: Fixture, trial: string, over: Row): string {
   return dir;
 }
 
-// Step 3 of t-beta/8's trajectory: a call the tool refused (the fixture's steps 1 and 2 succeed).
-function refusedStep(dir: string): void {
-  const e = { v: 2, seq: 3, ts: '2026-10-24T00:00:00.000Z', turn: 1, type: 'tool_result', tool_use_id: 'toolu_3', name: 'order_medication', executed: true, is_error: true, error_code: 'INVALID_INPUT', content: { error: { code: 'INVALID_INPUT', message: "'dose' is required" } }, exposed_ids: [], referenced_ids: [] };
-  appendFileSync(join(dir, 'trajectories/t-beta/8.jsonl'), `${JSON.stringify(e)}\n`);
+// order_medication input its schema accepts, and the same with no dose_value.
+const VALID = { patient: 'Patient/pt-0001', rxnorm_code: '860975', dose_value: 500, dose_unit: 'mg', route: 'oral', frequency: 'BID', reason: 'type 2 diabetes' };
+const { dose_value: _, ...NO_DOSE } = VALID;
+const NOT_FOUND = { code: 'NOT_FOUND', message: 'rxnorm_code 860975 is not in the catalog', field: 'rxnorm_code' };
+// Step 3 of t-beta/8's trajectory: an order_medication call with this input, which the tool refused
+// with this error (the fixture's steps 1 and 2 succeed).
+function refusedStep(dir: string, input: unknown = VALID, error: { code: string; message: string; field?: string } = NOT_FOUND): void {
+  const at = { v: 2, ts: '2026-10-24T00:00:00.000Z', turn: 1, tool_use_id: 'toolu_3', name: 'order_medication' };
+  const call = { ...at, seq: 3, type: 'tool_call', input };
+  const result = { ...at, seq: 4, type: 'tool_result', executed: true, is_error: true, error_code: error.code, content: { error }, exposed_ids: [], referenced_ids: [] };
+  appendFileSync(join(dir, 'trajectories/t-beta/8.jsonl'), `${JSON.stringify(call)}\n${JSON.stringify(result)}\n`);
 }
 
 async function violations(dir: string): Promise<string[]> {
@@ -39,7 +47,7 @@ async function violations(dir: string): Promise<string[]> {
 const about = (vs: string[]) => vs.filter((v) => /clinically_acceptable|tool_rejections_correct/.test(v));
 const CLINICAL = "t-alpha/5: clinically_acceptable no (the recorded outcome is not clinically right) needs GR3 (an audit outcome GRADER_BUG with evidence) or an environment label; adjudicated_clinically_acceptable yes overrules it";
 const TOOL = (trial: string, label: string, cited: string, confirmed = 'confirmed') =>
-  `${trial}: tool_rejections_correct no (a tool rejected a valid call) needs an environment label (it is ${label}), the refused call's step as decisive_step (${cited}) and confirmation, llm_auditor_agrees true or an adjudicated_label (${confirmed}); adjudicated_tool_rejections_correct yes overrules it`;
+  `${trial}: tool_rejections_correct no (a tool rejected a valid call) needs an environment label (it is ${label}), the step of a refused call whose input its schema accepts as decisive_step (${cited}) and confirmation, llm_auditor_agrees true or an adjudicated_label (${confirmed}); adjudicated_tool_rejections_correct yes overrules it`;
 
 describe('audit-check: clinically_acceptable and tool_rejections_correct', () => {
   it('yes on both keeps the clean run clean', async () => {
@@ -80,9 +88,18 @@ describe('audit-check: clinically_acceptable and tool_rejections_correct', () =>
     expect(succeeded).toContain('t-beta/8: labelled environment, and its fault model has the label model');
     const unconfirmed = run('environment-label', 't-beta/8', { tool_rejections_correct: 'no', decisive_step: 3, model_fault: 'no', llm_auditor_agrees: null });
     refusedStep(unconfirmed);
-    expect(about(await violations(unconfirmed))).toEqual([TOOL('t-beta/8', 'environment', 'step 3 is order_medication, which was refused (INVALID_INPUT)', 'not confirmed')]);
+    expect(about(await violations(unconfirmed))).toEqual([TOOL('t-beta/8', 'environment', 'step 3 is order_medication, which was refused (NOT_FOUND)', 'not confirmed')]);
     const model = await violations(run('clean', 't-alpha/5', { tool_rejections_correct: 'no' }));
     expect(about(model)).toEqual([TOOL('t-alpha/5', 'model', 'step 2 is write_note, which succeeded')]);
+  });
+
+  it('a refusal of input that breaks the tool\'s schema was right, so it does not make the fault environment (decisions.tsv 2026-10-27T08:50, F9)', async () => {
+    const dir = run('environment-label', 't-beta/8', { tool_rejections_correct: 'no', decisive_step: 3, model_fault: 'no' });
+    refusedStep(dir, NO_DOSE, { code: 'INVALID_INPUT', message: "'dose_value' is required", field: 'dose_value' });
+    const vs = await violations(dir);
+    expect(about(vs)).toEqual([TOOL('t-beta/8', 'environment', 'step 3 is order_medication, which was refused (INVALID_INPUT) for input that breaks its schema (dose_value)')]);
+    expect(vs).toContain('t-beta/8: labelled environment, and its fault model has the label model');
+    expect(vs.filter((v) => v.includes('(E6)'))).toEqual([]);
   });
 
   it('a value other than yes or no is a violation, adjudicated answers included', async () => {

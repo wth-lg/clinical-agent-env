@@ -103,7 +103,8 @@ export interface AttributionFacts {
   audit: {
     outcome: string; label: AuditLabelName | null; model_fault: string | null; llm_auditor_agrees: boolean | null; adjudicated_label: AuditLabelName | null; evidence_ids: readonly string[];
     clinically_acceptable: AuditAnswer | null; tool_rejections_correct: AuditAnswer | null; decisive_step: number | null;
-    cited_step: { tool: string; is_error: boolean; error_code: string | null } | null;
+    // schema_error: the cited refusal's input broke the tool's input schema (explain.ts citedStep).
+    cited_step: { tool: string; is_error: boolean; error_code: string | null; schema_error: string | null } | null;
   } | null;
 }
 
@@ -292,14 +293,15 @@ export const FAULT_DEFINITIONS: Readonly<Record<Fault, FaultDefinition>> = {
       },
       {
         id: 'E6',
-        text: 'A human audit answers tool_rejections_correct no (after adjudication): a tool refused a valid call, at the step the audit cites as its decisive step, which the trajectory shows as a tool error; and the audit is confirmed, by an agreeing LLM auditor or an adjudicated label.',
-        reads: ['audit.adjudicated_tool_rejections_correct (else audit.tool_rejections_correct)', 'audit.decisive_step', 'trajectory (the cited step is_error)', 'audit.llm_auditor_agrees', 'audit.adjudicated_label'],
+        text: 'A human audit answers tool_rejections_correct no (after adjudication): a tool refused a valid call, at the step the audit cites as its decisive step, which the trajectory shows as a tool error that the tool\'s input schema does not reproduce on the recorded call (a call that breaks the schema was rightly refused); and the audit is confirmed, by an agreeing LLM auditor or an adjudicated label.',
+        reads: ['audit.adjudicated_tool_rejections_correct (else audit.tool_rejections_correct)', 'audit.decisive_step', 'trajectory (the cited step is_error, and its call\'s input against the tool\'s input schema)', 'audit.llm_auditor_agrees', 'audit.adjudicated_label'],
         check: ({ audit }) => {
           if (audit === null) return result(false, 'not human-audited');
           const s = audit.cited_step;
-          const step = audit.decisive_step === null ? 'no step cited' : s === null ? `step ${audit.decisive_step} is not in the trajectory` : `step ${audit.decisive_step} ${s.tool} ${s.is_error ? `refused (${s.error_code ?? 'error'})` : 'succeeded'}`;
+          const refused = s === null ? '' : `refused (${s.error_code ?? 'error'})${s.schema_error === null ? '' : ` for input that breaks its schema (${s.schema_error})`}`;
+          const step = audit.decisive_step === null ? 'no step cited' : s === null ? `step ${audit.decisive_step} is not in the trajectory` : `step ${audit.decisive_step} ${s.tool} ${s.is_error ? refused : 'succeeded'}`;
           const confirmed = audit.adjudicated_label !== null ? 'adjudicated' : audit.llm_auditor_agrees === true ? 'LLM auditor agrees' : null;
-          return result(audit.tool_rejections_correct === 'no' && s?.is_error === true && confirmed !== null, `tool_rejections_correct ${audit.tool_rejections_correct ?? 'not answered'}, ${step}, ${confirmed ?? 'not confirmed'}`);
+          return result(audit.tool_rejections_correct === 'no' && s?.is_error === true && s.schema_error === null && confirmed !== null, `tool_rejections_correct ${audit.tool_rejections_correct ?? 'not answered'}, ${step}, ${confirmed ?? 'not confirmed'}`);
         },
       },
     ],

@@ -16,6 +16,18 @@ const record = (outcome: string, over: Partial<ExplainRecord> = {}): ExplainReco
 });
 const row = (over: Partial<AuditRow> = {}): AuditRow => ({ trial: 'renal-dose-review/5', outcome: 'FAIL', taxonomy: 'reasoning', model_fault: 'yes', decisive_step: 2, evidence_ids: ['Patient/pt-0001'], llm_auditor_agrees: true, note: 'n', ...over });
 
+// order_medication input its schema accepts, and a trajectory whose step 1 fhir_read succeeds and
+// whose step 2 order_medication call, with the recorded input, the tool refused with the error.
+const VALID = { patient: 'Patient/pt-0001', rxnorm_code: '860975', dose_value: 500, dose_unit: 'mg', route: 'oral', frequency: 'BID', reason: 'type 2 diabetes' };
+const NOT_FOUND = { code: 'NOT_FOUND', message: 'rxnorm_code 860975 is not in the catalog', field: 'rxnorm_code' };
+const refused = (input: unknown, error: { code: string; message: string; field?: string }): ExplainContext => {
+  const call = (seq: number, name: string, input: unknown) => ({ v: 2, seq, ts: 't', turn: 1, type: 'tool_call', tool_use_id: `toolu_${seq}`, name, input });
+  const result = (seq: number, name: string, err: typeof error | null) => ({
+    v: 2, seq, ts: 't', turn: 1, type: 'tool_result', tool_use_id: `toolu_${seq}`, name, executed: true, is_error: err !== null, error_code: err?.code ?? null, content: err === null ? {} : { error: err }, exposed_ids: [], referenced_ids: [],
+  });
+  return { ...ctx, events: [call(1, 'fhir_read', { reference: 'Patient/pt-0001' }), result(1, 'fhir_read', null), call(2, 'order_medication', input), result(2, 'order_medication', error)] as unknown as ExplainContext['events'] };
+};
+
 describe('audit answers', () => {
   it('an audit row\'s clinically_acceptable and tool_rejections_correct are on the explanation, null when the row has none', () => {
     const x = explainTrial(record('FAIL'), row({ clinically_acceptable: 'no', tool_rejections_correct: 'yes' }), ctx);
@@ -34,11 +46,9 @@ describe('audit answers', () => {
   });
 
   it('E6: a confirmed tool_rejections_correct no citing a refused call makes the fault environment; a successful step, no step, no confirmation or an overruled no does not', () => {
-    const result = (seq: number, name: string, is_error: boolean) => ({ v: 2, seq, ts: 't', turn: 1, type: 'tool_result', tool_use_id: `toolu_${seq}`, name, executed: true, is_error, error_code: is_error ? 'INVALID_INPUT' : null, content: {}, exposed_ids: [], referenced_ids: [] });
-    const events = { ...ctx, events: [result(1, 'fhir_read', false), result(2, 'order_medication', true)] as unknown as ExplainContext['events'] };
-    const fault = (over: Partial<AuditRow>) => explainTrial(record('FAIL'), row({ tool_rejections_correct: 'no', taxonomy: 'environment', model_fault: 'no', ...over }), events);
+    const fault = (over: Partial<AuditRow>) => explainTrial(record('FAIL'), row({ tool_rejections_correct: 'no', taxonomy: 'environment', model_fault: 'no', ...over }), refused(VALID, NOT_FOUND));
     const env = fault({ decisive_step: 2 });
-    expect(env).toMatchObject({ fault: 'env', label: 'environment', deciding: { id: 'E6', evidence: 'tool_rejections_correct no, step 2 order_medication refused (INVALID_INPUT), LLM auditor agrees' } });
+    expect(env).toMatchObject({ fault: 'env', label: 'environment', deciding: { id: 'E6', evidence: 'tool_rejections_correct no, step 2 order_medication refused (NOT_FOUND), LLM auditor agrees' } });
     expect(fault({ decisive_step: 2, llm_auditor_agrees: null, adjudicated_label: 'environment' }).deciding).toMatchObject({ id: 'E6', evidence: expect.stringMatching(/, adjudicated$/) });
     expect(fault({ decisive_step: 1 }).fault_criteria.env.find((c) => c.id === 'E6')).toMatchObject({ met: false, evidence: 'tool_rejections_correct no, step 1 fhir_read succeeded, LLM auditor agrees' });
     expect(fault({ decisive_step: 9 }).fault_criteria.env.find((c) => c.id === 'E6')!.evidence).toMatch(/step 9 is not in the trajectory/);
@@ -46,6 +56,16 @@ describe('audit answers', () => {
     expect(fault({ decisive_step: null }).fault).toBe('model');
     expect(fault({ decisive_step: 2, adjudicated_tool_rejections_correct: 'yes' }).fault).toBe('model');
     expect(explainTrial(record('FAIL'), undefined, ctx).fault_criteria.env.find((c) => c.id === 'E6')).toMatchObject({ met: false, evidence: 'not human-audited' });
+  });
+
+  it('E6: a refusal of input that breaks the tool\'s schema was right, so it does not make the fault environment (decisions.tsv 2026-10-27T08:50, F9)', () => {
+    const { dose_value: _, ...noDose } = VALID;
+    const x = explainTrial(record('FAIL'), row({ tool_rejections_correct: 'no', taxonomy: 'environment', model_fault: 'no', decisive_step: 2 }), refused(noDose, { code: 'INVALID_INPUT', message: "'dose_value' is required", field: 'dose_value' }));
+    expect(x.fault).toBe('model');
+    expect(x.fault_criteria.env.find((c) => c.id === 'E6')).toMatchObject({ met: false, evidence: 'tool_rejections_correct no, step 2 order_medication refused (INVALID_INPUT) for input that breaks its schema (dose_value), LLM auditor agrees' });
+    // An INVALID_INPUT the schema does not reproduce (here a catalog check inside the tool) can still be wrong.
+    const semantic = refused(VALID, { code: 'INVALID_INPUT', message: 'dose_unit mg does not fit rxnorm_code 860975', field: 'dose_unit' });
+    expect(explainTrial(record('FAIL'), row({ tool_rejections_correct: 'no', taxonomy: 'environment', model_fault: 'no', decisive_step: 2 }), semantic).fault).toBe('env');
   });
 });
 
