@@ -212,7 +212,15 @@ Check these on the first deploy. The tests cannot check them without Vercel:
 
 ## Teardown
 
+Run both commands at an interactive terminal:
+
 ```sh
 vercel remove <deployment URL> --yes
 vercel project rm clinical-agent-env-relay
 ```
+
+`vercel remove --yes` removes the deployment without asking. `vercel project rm` has no `--yes`:
+it always asks "Are you sure?" and removes the project and every deployment under it only after a
+yes. So the teardown cannot run unattended. A person at an interactive terminal runs it. Run again,
+`vercel project rm` prints `No such project exists` and exits 1, which means the teardown is
+complete.

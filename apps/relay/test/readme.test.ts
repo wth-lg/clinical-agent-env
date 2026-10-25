@@ -72,3 +72,16 @@ describe('README: who can use the relay', () => {
     for (const bound of ['rate limit', 'claude-opus-5-5', 'spend']) expect(text).toContain(bound);
   });
 });
+
+// Verifier M1: `vercel project rm` has no --yes and always asks "Are you sure?" (CLI 64.2.0), so
+// the teardown needs a person at a terminal, and the README says so.
+describe('README teardown', () => {
+  it('removes the deployment, then the project, and says the project removal asks for confirmation', () => {
+    const text = section('Teardown');
+    expect(commands(text)).toEqual(['vercel remove <deployment URL> --yes', `vercel project rm ${PROJECT}`]);
+    const prose = text.replace(/\s+/g, ' ');
+    expect(prose).toMatch(/no `--yes`/);
+    expect(prose).toMatch(/Are you sure\?/);
+    expect(prose).toMatch(/interactive terminal/);
+  });
+});
