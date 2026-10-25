@@ -36,6 +36,15 @@ describe('relay config', () => {
     expect(readdirSync(join(RELAY, 'public'))).toEqual(['README.md']);
   });
 
+  // Verifier M2: `vercel link --cwd apps/relay` writes apps/relay/.vercel/ and adds a `.vercel` line
+  // to apps/relay/.gitignore unless the file already has one (CLI 64.2.0 addToGitIgnore), so with
+  // both files below the link leaves `git status` clean.
+  it('git ignores the .vercel/ directory vercel link writes, and the link has no .gitignore to change', () => {
+    expect(readFileSync(join(ROOT, '.gitignore'), 'utf8').split('\n')).toContain('.vercel');
+    expect(readFileSync(join(RELAY, '.gitignore'), 'utf8').split('\n')).toContain('.vercel');
+    expect(execFileSync('git', ['check-ignore', '-v', 'apps/relay/.vercel/project.json'], { cwd: ROOT, encoding: 'utf8' })).toMatch(/\.vercel/);
+  });
+
   it('the relay source has no console call and reads no environment variable', () => {
     expect(sources.length).toBeGreaterThanOrEqual(4);
     for (const f of sources) {

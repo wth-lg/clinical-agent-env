@@ -18,6 +18,7 @@ echoes the key. The source has no `console` call.
 | `src/limiter.ts` | The per-client-IP token bucket |
 | `api/messages.ts` | The Vercel function: `handle` with the real upstream, one limiter per instance and the origin `https://wth-lg.github.io`; any throw becomes the fixed 502 |
 | `vercel.json` | Rewrites `/v1/messages` to the function; `maxDuration`; Git deployments off |
+| `.gitignore` | `.vercel`, the link `vercel link` writes (see Deploy, step 2) |
 | `.vercelignore` | Uploads only `api/`, `src/`, `public/` and `vercel.json` (see Static files) |
 | `public/README.md` | The static output directory; its one file is never published (see Static files) |
 | `test/serve-local.ts` | Test only, never deployed: `handle` behind `node:http` on 127.0.0.1 with a stub upstream |
@@ -156,6 +157,10 @@ writes `apps/relay/.vercel/`.
    ```sh
    vercel link --yes --project clinical-agent-env-relay --cwd apps/relay
    ```
+
+   The link writes `apps/relay/.vercel/`, which git ignores, and adds a `.vercel` line to
+   `apps/relay/.gitignore` only if the line is missing. The committed file already has it, so
+   `git status` stays clean.
 
 3. Check that no Git repository is connected. `vercel project inspect` does not print the Git
    connection, so read the project's `link` field instead. The command exits 1 when a repository
