@@ -2,9 +2,9 @@
   "now": "2026-10-23T08:00:00-04:00",
   "world": {
     "file": "fixtures/world.ndjson.gz",
-    "state_hash": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
-    "ndjson_sha256": "d9a9e6936abd895ddbd95e2252b6b6800abb74d9b4a604e3270ae5a0105f55e3",
-    "resources": 7395,
+    "state_hash": "a02ad8dec0903b5c9450b758783943e9a6beb9c3076b7cde71d559989a37d75b",
+    "ndjson_sha256": "3a9efb215cf196289b39778739bdac62a7ccd4438ac221661eb57f3e14f8f070",
+    "resources": 7396,
     "by_type": {
       "AllergyIntolerance": 42,
       "Appointment": 1,
@@ -15,7 +15,7 @@
       "Encounter": 371,
       "EpisodeOfCare": 1,
       "Group": 4,
-      "MedicationRequest": 393,
+      "MedicationRequest": 394,
       "Observation": 3458,
       "Organization": 2,
       "Patient": 60,
@@ -77,7 +77,7 @@
     "scripts/fixtures-synthea.ts": "44162b65dc576e507b526132164eda54cb14000936331d48b575f46d9c49d752",
     "tasks/contrast-ct-prep/overlay.ts": "93bf390e70455316c3156f41a8aa392bca3cb39e834bb7df7bdb629f17a21303",
     "tasks/crc-care-gap/overlay.ts": "e5afb2b8d7b3924d040f4f895387d49fa84cddc9934dc8d9bc574cf919d48408",
-    "tasks/discharge-medrec/overlay.ts": "bf8e3c8f4a8e0d8f6909e61b614c645c429b64793580d89802409b69426e692b",
+    "tasks/discharge-medrec/overlay.ts": "7a2a0be48f9b230beb57df24debcd4bfa3064d736c6fd3f28719dce448f8e4e4",
     "tasks/message-queue/overlay.ts": "ec7327afe2d9fa5edfc46c3380391144efc46e92732b1f420a26b56f594af766",
     "tasks/renal-dose-review/overlay.ts": "cfa199c93268ab0e956cbdc64959154d2733ce9846b997bf5552c7082ccf6a65",
     "tasks/results-inbox/overlay.ts": "c42296718e46abd60a81ee1b3ad1ba926e7fc2a9e5c4ec8ed97807c276d5e33d"
