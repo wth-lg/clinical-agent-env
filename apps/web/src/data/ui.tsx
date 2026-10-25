@@ -5,8 +5,8 @@
 // filled ink, a LIMIT filled muted, a REFUSAL an ink outline, an environment fault hatched, a
 // grader fault dotted, infrastructure a dashed outline. Every mark carries its name as text, and
 // the legend is drawn from the same marks, so it reads right in light and dark.
-import { CircleHelp } from 'lucide-react';
-import type { CSSProperties, ReactNode, Ref } from 'react';
+import { Check, CircleHelp, Copy } from 'lucide-react';
+import { useState, type CSSProperties, type ReactNode, type Ref } from 'react';
 import { NOT_AUDITED_MARKER, type Explanation } from '../../../../packages/core/explain.ts';
 import { DENOMINATOR_RULE, FAULT, isValid, OUTCOMES, PASS_DEFINITION, RERUN_OUTCOMES, VALID_OUTCOMES, type Fault, type Outcome } from '../../../../packages/core/outcomes.ts';
 import type { Interval } from '../../../../packages/core/summary.ts';
@@ -109,14 +109,50 @@ export function OutcomeChip({ outcome, fault }: { outcome: string; fault?: Fault
   );
 }
 
-export const glossaryHref = () => hrefWith({ view: 'glossary', task: null, label: null, trial: null });
+const TO_GLOSSARY = { view: 'glossary', task: null, label: null, trial: null };
+// The glossary, at a section (fault-<fault>, criterion-<id>, taxonomy, confirmation) when given.
+export const glossaryHref = (anchor?: string) => `${hrefWith(TO_GLOSSARY).replace(/#.*$/, '')}${anchor ? `#${anchor}` : ''}`;
 
-export function GlossaryLink({ children, className }: { children: ReactNode; className?: string }) {
+// One click to the glossary; with an anchor, the view scrolls to that section once it renders.
+function toGlossary(anchor: string | undefined) {
+  const go = onNav(TO_GLOSSARY);
+  return (e: Parameters<typeof go>[0]) => {
+    go(e);
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0 || anchor === undefined) return;
+    history.replaceState(null, '', glossaryHref(anchor));
+    requestAnimationFrame(() => requestAnimationFrame(() => document.getElementById(anchor)?.scrollIntoView({ block: 'start' })));
+  };
+}
+
+const LINK = 'text-ink underline decoration-line-strong underline-offset-2 hover:decoration-ink';
+
+export function GlossaryLink({ children, className, anchor }: { children: ReactNode; className?: string; anchor?: string }) {
   return (
-    <a href={glossaryHref()} onClick={onNav({ view: 'glossary', task: null, label: null, trial: null })} className={className ?? 'text-ink underline decoration-line-strong underline-offset-2 hover:decoration-ink'}>
+    <a href={glossaryHref(anchor)} onClick={toGlossary(anchor)} className={className ?? LINK}>
       {children}
     </a>
   );
+}
+
+// A 64-hex state hash, shortened to its first 8 and last 4 characters, with the full value in the
+// title and data-hash and a button that copies it.
+export function Hash({ value, testId }: { value: string | null; testId?: string }) {
+  const [copied, setCopied] = useState(false);
+  if (value === null) return <span data-testid={testId}>none</span>;
+  const copy = () => void navigator.clipboard?.writeText(value).then(() => setCopied(true), () => setCopied(false));
+  return (
+    <span data-testid={testId} data-hash={value} className="inline-flex items-center gap-1 align-middle">
+      <code className="font-mono text-xs" title={value}>{value.length > 16 ? `${value.slice(0, 8)}…${value.slice(-4)}` : value}</code>
+      <button type="button" onClick={copy} aria-label={copied ? 'Copied' : 'Copy the full hash'} title={copied ? 'Copied' : 'Copy the full hash'} className="inline-flex h-6 w-6 items-center justify-center rounded-sm text-ink-muted hover:bg-canvas hover:text-ink">
+        {copied ? <Check aria-hidden className="h-3.5 w-3.5" strokeWidth={1.75} /> : <Copy aria-hidden className="h-3.5 w-3.5" strokeWidth={1.75} />}
+      </button>
+    </span>
+  );
+}
+
+// Text with each 64-hex hash in it shortened, with its copy control (Hash).
+export function HashText({ text }: { text: string }) {
+  return <>{text.split(/\b([0-9a-f]{64})\b/).map((part, i) => (i % 2 === 1 ? <Hash key={i} value={part} /> : part))}</>;
 }
 
 // The label explainTrial gives a trial, as the Runs list shows it: an excluded INFRA trial has no
@@ -131,7 +167,7 @@ export function FaultLabel({ e }: { e: Explanation }) {
         {e.label}
         {e.label_subtype ? ` (${e.label_subtype})` : ''}
       </span>
-      <a href={glossaryHref()} onClick={onNav({ view: 'glossary', task: null, label: null, trial: null })} aria-label={`How the ${e.label} label is given`} title="How failures are attributed" className="inline-flex h-6 w-6 items-center justify-center rounded-sm text-ink-muted hover:bg-canvas hover:text-ink">
+      <a href={glossaryHref(`fault-${e.fault}`)} onClick={toGlossary(`fault-${e.fault}`)} aria-label={`How the ${e.label} label is given`} title="How failures are attributed" className="inline-flex h-6 w-6 items-center justify-center rounded-sm text-ink-muted hover:bg-canvas hover:text-ink">
         <CircleHelp aria-hidden className="h-3.5 w-3.5" strokeWidth={1.75} />
       </a>
       {!e.audited && <span data-testid="not-audited" className="rounded-sm border border-dashed border-line-strong px-1 text-xs text-ink-muted">{NOT_AUDITED_MARKER}</span>}
@@ -150,7 +186,7 @@ export function IntervalRow({ rate, interval, band, label }: { rate: number | nu
   const x = (v: number) => 4 + v * 192;
   return (
     <svg data-testid="interval" viewBox="0 0 200 16" className="block h-auto w-full min-w-24 max-w-72" role="img" aria-label={`${label}: ${rate === null ? 'no rate' : pct(rate)}, 95% interval ${formatInterval(interval)}`}>
-      <rect data-testid="band" x={x(band[0])} y={1} width={x(band[1]) - x(band[0])} height={14} className="fill-line" />
+      <rect data-testid="band" x={x(band[0])} y={1} width={x(band[1]) - x(band[0])} height={14} className="fill-line-strong" fillOpacity={0.22} />
       <line x1={x(0)} x2={x(1)} y1={8} y2={8} className="stroke-line-strong" strokeWidth={0.5} vectorEffect="non-scaling-stroke" />
       {interval !== null && (
         <>

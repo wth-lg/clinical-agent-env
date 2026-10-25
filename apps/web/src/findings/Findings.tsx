@@ -5,9 +5,9 @@
 // the build holds data/writeup.html, which the final run publishes). Read-only: new runs need a key.
 import { Marked } from 'marked';
 import { useMemo, type Ref } from 'react';
-import { FINAL_PASS_BAND } from '../../../../packages/core/cost.ts';
+import { FINAL_PASS_BAND, FINAL_TRIALS_PER_TASK } from '../../../../packages/core/cost.ts';
 import { OUTCOMES } from '../../../../packages/core/outcomes.ts';
-import { dataUrl, useResults, type RunData } from '../data/results.ts';
+import { dataUrl, gradingLine, pilotRates, useResults, type RunData } from '../data/results.ts';
 import { Card, formatInterval, GlossaryLink, IntervalRow, MarkLegend, markOf, markProps, NO_RESULTS, Notice, Page } from '../data/ui.tsx';
 import { hrefWith, onNav } from '../data/url.ts';
 
@@ -27,7 +27,9 @@ export function Findings({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> 
   if (results.official === null) {
     return (
       <Page title="Findings" headingRef={headingRef} lead={READ_ONLY}>
-        <Notice testId="empty-state">{NO_RESULTS} The findings, their charts and example trials show here when the final run is committed.{results.pilots.length > 0 ? ' Runs lists the pilot runs, which are not counted.' : ''}</Notice>
+        <p data-testid="empty-state" className="text-ink-muted">{NO_RESULTS} The findings show here when the final run is committed.</p>
+        {results.pilots.map((p) => <PilotFindings key={p.runId} run={p} />)}
+        <WillShow />
         {links}
       </Page>
     );
@@ -38,6 +40,44 @@ export function Findings({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> 
       {results.findings !== null && <Markdown text={results.findings} />}
       <Charts run={results.official} />
     </Page>
+  );
+}
+
+const link = 'text-ink underline decoration-line-strong underline-offset-2 hover:decoration-ink';
+
+function PilotFindings({ run }: { run: RunData }) {
+  const graded = gradingLine(run.grading);
+  return (
+    <Card title={<>Pilot {run.runId}: <span className="font-normal">Pilot, not counted in the results</span></>}>
+      <div data-testid="pilot-findings" data-run={run.runId} className="space-y-3">
+        <ul className="space-y-2" data-testid="pilot-interval-chart">
+          {pilotRates(run).map((r) => (
+            <li key={r.task} data-testid="pilot-rate" data-task={r.task} className="grid grid-cols-1 items-center gap-x-3 sm:grid-cols-[12rem_1fr_9rem]">
+              <span className="break-words font-medium">{r.task} <span className="font-normal text-ink-muted">{r.passes}/{r.valid}</span></span>
+              <IntervalRow rate={r.rate} interval={r.interval} band={FINAL_PASS_BAND} label={`${r.task} (pilot)`} />
+              <span className="text-xs text-ink-muted">Wilson 95% {formatInterval(r.interval)}</span>
+            </li>
+          ))}
+        </ul>
+        {graded !== null && <p className="text-xs text-ink-muted">{graded}</p>}
+        <MarkLegend marks={[...new Set(run.trials.map((t) => markOf(t.explanation.outcome, t.explanation.fault)))]} />
+        <p className="text-xs text-ink-muted">A pilot sizes the final run and tests the pipeline; its numbers never enter the results. <a href={hrefWith({ view: 'runs', task: null, label: null, trial: null })} onClick={onNav({ view: 'runs', task: null, label: null, trial: null })} className={link}>Open its trials in Runs</a>.</p>
+      </div>
+    </Card>
+  );
+}
+
+function WillShow() {
+  const go = (view: string) => ({ href: hrefWith({ view, task: null, label: null, trial: null }), onClick: onNav({ view, task: null, label: null, trial: null }), className: link });
+  return (
+    <Card title="What this page will show">
+      <ul className="list-disc space-y-1 pl-5" data-testid="will-show">
+        <li>The pass rate of each task over {FINAL_TRIALS_PER_TASK} trials, with its Wilson 95% interval. A trial passes only when it meets every gate check: <GlossaryLink anchor="pass">see how a pass is counted on Labels</GlossaryLink>.</li>
+        <li>The outcome of every trial, and whose fault each failure is (the model, the environment or the grader): <GlossaryLink anchor="fault-model">see the fault labels on Labels</GlossaryLink>.</li>
+        <li>Example trials for each kind of failure, with the reason in words.</li>
+        <li>Proof that the graders work: each task's reference solution passes and every validation probe gives the verdict expected. <a {...go('tasks')}>Run them now on Tasks</a>, with no key.</li>
+      </ul>
+    </Card>
   );
 }
 

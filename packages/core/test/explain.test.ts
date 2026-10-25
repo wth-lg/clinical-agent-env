@@ -4,7 +4,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { auditLabelOf, blocksRun, excludedFromHeadline, explainTrial, formatCriterion, NOT_AUDITED_MARKER, TAXONOMY_TEXT, type AuditRow, type ExplainContext, type ExplainRecord } from '../explain.ts';
+import { auditLabelOf, blocksRun, excludedFromHeadline, explainTrial, formatCriterion, NOT_AUDITED_MARKER, REASON_WORDS, TAXONOMY_TEXT, type AuditRow, type ExplainContext, type ExplainRecord } from '../explain.ts';
 import { CONFIRMATION_CRITERIA, FAULT_DEFINITIONS, FAULT_PRECEDENCE, OUTCOMES, type Fault, type Outcome } from '../outcomes.ts';
 import { TAXONOMY, type Taxonomy } from '../../grader/attribution.ts';
 import { repoRoot } from '../../../scripts/test/helpers.ts';
@@ -92,7 +92,7 @@ describe('explainTrial: one fixture per outcome', () => {
     expect(x.valid).toBe(valid);
     expect(x.decisive_check?.id ?? null).toBe(check);
     expect(x.reason).toMatch(reason);
-    expect(words(x.reason)).toBeLessThanOrEqual(25);
+    expect(words(x.reason)).toBeLessThanOrEqual(REASON_WORDS);
     if (check !== null) expect(x.decisive_check).toEqual({ id: 'G1', traces_to: 'RBC-PHARM-07 §2', expected: 'apixaban 5 mg 2/day', found: 'apixaban 2.5 mg 2/day' });
   });
 });
@@ -111,7 +111,7 @@ describe('explainTrial: one fixture per taxonomy', () => {
       expect(x.reason).toMatch(/^G1 failed: expected apixaban 5 mg 2\/day, found apixaban 2\.5 mg 2\/day; /);
       expect(x.reason).toContain(auto.replace(/_/g, ' '));
     }
-    expect(words(x.reason)).toBeLessThanOrEqual(25);
+    expect(words(x.reason)).toBeLessThanOrEqual(REASON_WORDS);
   });
 });
 
@@ -255,12 +255,12 @@ describe('explainTrial: the UI contract strings', () => {
     record('FAIL', { checks: [gate('note_on_patient', false, { expected: 'x, y and z', found: 'x' })] }),
   ];
 
-  it('every valid non-pass trial has a reason in one of the three contract forms, at most 25 words', () => {
+  it('every valid non-pass trial has a reason in one of the three contract forms, at most REASON_WORDS words', () => {
     for (const r of nonPass) {
       const x = explainTrial(r, undefined, ctx);
       expect(x.valid).toBe(true);
       expect(x.reason, JSON.stringify(r.checks)).toMatch(REASON);
-      expect(words(x.reason)).toBeLessThanOrEqual(25);
+      expect(words(x.reason)).toBeLessThanOrEqual(REASON_WORDS);
       if (x.decisive_check) expect(x.decisive_check.id).toMatch(CHECK_ID);
     }
   });
@@ -273,10 +273,10 @@ describe('explainTrial: the UI contract strings', () => {
     expect(at('max_tokens', limitEvent('max_tokens', 1, 1))).toBe('output limit reached: 2 cut-off responses in a row');
   });
 
-  it('caps a long check sentence at 25 words and keeps the check form', () => {
+  it('caps a long check sentence at REASON_WORDS words and keeps the check form', () => {
     const long = Array.from({ length: 40 }, (_, i) => `w${i}`).join(' ');
     const x = explainTrial(record('FAIL', { checks: [gate('G1', false, { expected: long, found: long })] }), undefined, ctx);
-    expect(words(x.reason)).toBeLessThanOrEqual(25);
+    expect(words(x.reason)).toBeLessThanOrEqual(REASON_WORDS);
     expect(x.reason).toMatch(REASON);
   });
 
@@ -294,7 +294,7 @@ describe('explainTrial: the UI contract strings', () => {
     expect(x.decisive_check).toMatchObject({ expected: 'mg 50, at 2026-10-25 20:00, 2026-10-26 02:00 and 1 more, route oral', found: 'given (request MedicationRequest/mr-3, at 2026-10-25 20:00, mg 20 and 1 more), doses none, stray none' });
     expect(x.reason).not.toMatch(/[{}"[\]]/);
     expect(x.reason).toMatch(REASON);
-    expect(words(x.reason)).toBeLessThanOrEqual(25);
+    expect(words(x.reason)).toBeLessThanOrEqual(REASON_WORDS);
     const window = explainTrial(record('FAIL', { checks: [gate('nodule_ct_window', false, { orders: [{ id: 'ServiceRequest/sr-1', start: '2027-10-23' }], window: { start: '2027-05-04', end: '2027-07-04' } })] }), undefined, ctx);
     expect(window.decisive_check).toMatchObject({ expected: 'between 2027-05-04 and 2027-07-04', found: 'orders (id ServiceRequest/sr-1, start 2027-10-23)' });
   });
@@ -582,5 +582,21 @@ describe('explainTrial: review round 4 (pr-review P14a-3)', () => {
     expect(msg).toMatch(/no headline pass rate/);
     expect(msg).toMatch(/a grader fix and a full offline regrade/);
     expect(msg).not.toMatch(/excluded from the headline denominator/);
+  });
+});
+
+describe('a GRADER_ERROR reason (verifier-phase-P14b-1 V3)', () => {
+  it('quotes the whole error when it fits, and ends on a whole word', () => {
+    const message = "TypeError: Cannot read properties of undefined (reading 'status')";
+    const x = explainTrial(record('GRADER_ERROR', { error: { check: 'm1_bridge', message, stops_batch: false } }), undefined, ctx);
+    expect(x.reason).toBe(`GRADER_ERROR: check m1_bridge threw ${message}; the grader's fault, which blocks the run`);
+    expect(x.reason).not.toContain('…');
+  });
+
+  it('cuts a long error at a word so the reason keeps to REASON_WORDS', () => {
+    const message = Array.from({ length: 60 }, (_, i) => `word${i}`).join(' ');
+    const x = explainTrial(record('GRADER_ERROR', { error: { check: 'G1', message, stops_batch: false } }), undefined, ctx);
+    expect(words(x.reason)).toBeLessThanOrEqual(REASON_WORDS);
+    expect(x.reason).toMatch(/^GRADER_ERROR: check G1 threw word0 .* word\d+…; the grader's fault, which blocks the run$/);
   });
 });

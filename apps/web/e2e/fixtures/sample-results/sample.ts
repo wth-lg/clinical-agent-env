@@ -7,7 +7,15 @@ import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { explainTrial, type AuditRow, type ExplainRecord, type Explanation } from '../../../../../packages/core/explain.ts';
+import { explainContext } from '../../../../../cli/audit-check.ts';
+import { explainContext as contextOf } from '../../../../../packages/core/explain-context.ts';
+import { explainTrial, formatCriterion, type AuditRow, type CheckText, type ExplainRecord, type Explanation } from '../../../../../packages/core/explain.ts';
+import { checkText as contrast } from '../../../../../tasks/contrast-ct-prep.check-text.ts';
+import { checkText as crc } from '../../../../../tasks/crc-care-gap.check-text.ts';
+import { checkText as medrec } from '../../../../../tasks/discharge-medrec.check-text.ts';
+import { checkText as queue } from '../../../../../tasks/message-queue.check-text.ts';
+import { checkText as renal } from '../../../../../tasks/renal-dose-review.check-text.ts';
+import { checkText as inbox } from '../../../../../tasks/results-inbox.check-text.ts';
 import type { ReplayVerdict } from '../../../../../packages/core/replay.ts';
 import { trialName, type Summary } from '../../../../../packages/core/summary.ts';
 import { taskVersions } from '../../../../../packages/core/tasks.ts';
@@ -27,11 +35,32 @@ export const records: SampleRecord[] = readdirSync(join(RUN_DIR, 'trials'), { re
   .filter((e) => e.isFile() && e.name.endsWith('.json'))
   .map((e) => JSON.parse(readFileSync(join(e.parentPath, e.name), 'utf8')) as SampleRecord);
 
-// explainTrial reads the trajectory only for a REFUSAL's or LIMIT's sentence.
+// Each task's check text (tasks/<id>.check-text.ts), as the Runs view and audit-check pass it.
+export const CHECK_TEXT: Readonly<Record<string, CheckText>> = {
+  'contrast-ct-prep': contrast, 'crc-care-gap': crc, 'discharge-medrec': medrec, 'message-queue': queue, 'renal-dose-review': renal, 'results-inbox': inbox,
+};
+
+// The run's manifest.json; the sample run has none, so M3 is pending.
+const RUN_MANIFEST: unknown = existsSync(join(RUN_DIR, 'manifest.json')) ? JSON.parse(readFileSync(join(RUN_DIR, 'manifest.json'), 'utf8')) : null;
+
+// The list row's explanation, as the Runs view builds it (packages/core/explain-context.ts, with
+// the run's manifest and matrix.json): explainTrial reads the trajectory only for a REFUSAL's or LIMIT's sentence.
 export function explain(r: SampleRecord): Explanation {
   const row = audit.find((a) => a.trial === trialName(r)) ?? null;
   const events = r.outcome === 'REFUSAL' || r.outcome === 'LIMIT' ? parseTrajectory(readFileSync(join(RUN_DIR, r.trajectory), 'utf8')) : [];
-  return explainTrial(r, row, { events, world_state_hash: MANIFEST_HASH });
+  return explainTrial(r, row, contextOf({ record: r, events, manifest: RUN_MANIFEST, matrix: matrixJson, text: CHECK_TEXT[r.task_id] ?? null }));
+}
+
+// audit-check's M1-M5 for every record of the sample run (cli/audit-check.ts explainContext, then
+// explainTrial), joined as the trial detail's data-criteria joins them.
+export async function cliCriteria(): Promise<Record<string, string>> {
+  const ctxOf = await explainContext(RUN_DIR);
+  const out: Record<string, string> = {};
+  for (const r of records) {
+    const { criteria: _criteria, ...row } = audit.find((a) => a.trial === trialName(r)) ?? ({} as AuditRow);
+    out[trialName(r)] = explainTrial(r, 'trial' in row ? row : undefined, await ctxOf(r as never)).criteria.map(formatCriterion).join(', ');
+  }
+  return out;
 }
 
 export const TASK_IDS = readdirSync(join(REPO, 'tasks'), { withFileTypes: true })

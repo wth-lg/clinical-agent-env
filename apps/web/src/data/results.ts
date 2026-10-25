@@ -12,11 +12,22 @@
 // docs/findings.md is the write-up.
 //
 // Every trial's explanation (outcome, label, decisive check, reason) is packages/core/explain.ts
-// explainTrial over its record and audit row, with the manifest's state hash; explainTrial reads
-// the trajectory only for a REFUSAL's or LIMIT's sentence, so only those trajectories are
-// fetched up front.
-import { explainTrial, type AuditRow, type ExplainRecord, type Explanation } from '../../../../packages/core/explain.ts';
-import { trialName, validateSummary, type Summary } from '../../../../packages/core/summary.ts';
+// explainTrial over its record and audit row, with the context packages/core/explain-context.ts
+// builds from the run's files, the one builder cli/audit-check.ts uses too: the run's
+// manifest.json (none: M3 is pending, never compared with today's world), its matrix.json (M4,
+// GR4 and B1, so a row's fault and label are the detail's) and the task's check text
+// (tasks/<id>.check-text.ts). explainTrial reads the trajectory only for a REFUSAL's or LIMIT's
+// sentence, so only those trajectories are fetched up front. The trial detail asks for
+// fullExplanation, which adds what the M1-M5 criteria need and the list cannot afford for every
+// row: the trajectory, the task's checks (decisive ids for a regraded trial's exposure, traces_to)
+// and the world when M1 reads it, so its criteria equal audit-check's.
+//
+// A run's grading: the grader versions its records were graded at, whether they started from
+// another world than today's manifest, and, when the run holds regrade/ (an offline regrade of
+// its records with a later grader), how many keep their outcome.
+import { explainContext, needsWorld, worldLookup } from '../../../../packages/core/explain-context.ts';
+import { explainTrial, type AuditRow, type CheckText, type ExplainRecord, type Explanation } from '../../../../packages/core/explain.ts';
+import { trialName, validateSummary, wilson, type Interval, type Summary } from '../../../../packages/core/summary.ts';
 import { parseTrajectory } from '../../../../packages/core/trajectory.ts';
 import type { TrialEvent } from '../../../../packages/core/events.ts';
 import { useEffect, useState } from 'react';
@@ -25,10 +36,16 @@ import { MANIFEST } from './world.ts';
 
 export const dataUrl = (rel: string): string => `${import.meta.env.BASE_URL}data/${rel}`;
 
-export type TrialRecord = ExplainRecord & { task_id: string; index?: number; trajectory?: string; env_version?: string | null; cost_usd: number; judge_cost_usd?: number | null; score?: number | null };
+const CHECK_TEXT = import.meta.glob<CheckText>('../../../../tasks/*.check-text.ts', { import: 'checkText', eager: true });
+// A task's check text, or null when it has none (a test task).
+export const checkTextOf = (task: string): CheckText | null => CHECK_TEXT[`../../../../tasks/${task}.check-text.ts`] ?? null;
+
+export type TrialRecord = ExplainRecord & { task_id: string; index?: number; trajectory?: string; env_version?: string | null; grader_version?: string | null; cost_usd: number; judge_cost_usd?: number | null; score?: number | null };
 
 export interface Trial {
   name: string;
+  // The record's file under data/.
+  file: string;
   task: string;
   record: TrialRecord;
   audit: AuditRow | null;
@@ -43,9 +60,24 @@ export interface BadRecord {
   errors: string[];
 }
 
+export interface Grading {
+  // The grader versions the records were graded at, sorted.
+  graders: string[];
+  // Records whose initial state hash is not today's manifest's.
+  olderWorld: number;
+  // The run's offline regrade, when it holds one: its grader version and the records whose
+  // outcome it changes.
+  regrade: { graders: string[]; records: number; changed: string[] } | null;
+}
+
 export interface RunData {
   runId: string;
+  // The run's directory under data/, e.g. results/pilot-0.
+  dir: string;
   official: boolean;
+  // The run's parsed manifest.json, or null when it has none.
+  manifest: unknown;
+  grading: Grading;
   // The official run's summary.json; null for a pilot run.
   summary: Summary | null;
   trials: Trial[];
@@ -93,6 +125,11 @@ async function loadRun(files: readonly string[], has: ReadonlySet<string>, runDi
     });
   }
   const byTrial = new Map(audits.map((a) => [a.trial, a]));
+  const manifest = has.has(`${runDir}/manifest.json`) ? await fetchJson<unknown>(`${runDir}/manifest.json`).catch((e: unknown) => {
+    warnings.push(`manifest.json cannot be read: ${message(e)}`);
+    return null;
+  }) : null;
+  const matrix = await matrixOf(runDir, has);
   const prefix = `${runDir}/trials/`;
   const recordFiles = files.filter((f) => f.startsWith(prefix) && f.endsWith('.json'));
   const loaded = await Promise.all(recordFiles.map(async (file): Promise<Trial | BadRecord> => {
@@ -105,7 +142,7 @@ async function loadRun(files: readonly string[], has: ReadonlySet<string>, runDi
       const trajectoryUrl = r.trajectory && has.has(`${runDir}/${r.trajectory}`) ? dataUrl(`${runDir}/${r.trajectory}`) : null;
       const audit = byTrial.get(trialName(r)) ?? null;
       const events = readsEvents(r) && trajectoryUrl !== null ? await fetchEvents(trajectoryUrl) : [];
-      return { name: trialName(r), task: r.task_id, record: r, audit, trajectoryUrl, explanation: explainTrial(r, audit, { events, world_state_hash: MANIFEST.world.state_hash }) };
+      return { name: trialName(r), file, task: r.task_id, record: r, audit, trajectoryUrl, explanation: explainTrial(r, audit, explainContext({ record: r, events, manifest, matrix, text: checkTextOf(r.task_id) })) };
     } catch (e) {
       return { name, file, errors: [message(e)] };
     }
@@ -128,7 +165,82 @@ async function loadRun(files: readonly string[], has: ReadonlySet<string>, runDi
     for (const id of new Set(trials.map((x) => x.task))) if (!(id in summary.tasks)) warnings.push(`${id}: the run holds records of a task that summary.json does not list`);
   }
   const runId = summary?.run_id ?? runDir.split('/').at(-1)!;
-  return { runId, official: summary !== null, summary, trials, bad, warnings };
+  return { runId, dir: runDir, official: summary !== null, manifest, grading: await gradingOf(files, runDir, trials, warnings), summary, trials, bad, warnings };
+}
+
+async function gradingOf(files: readonly string[], runDir: string, trials: Trial[], warnings: string[]): Promise<Grading> {
+  const graders = [...new Set(trials.map((t) => t.record.grader_version ?? 'unknown'))].sort();
+  const olderWorld = trials.filter((t) => t.record.state_hash.initial !== MANIFEST.world.state_hash).length;
+  const prefix = `${runDir}/regrade/trials/`;
+  const regraded = files.filter((f) => f.startsWith(prefix) && f.endsWith('.json'));
+  if (regraded.length === 0) return { graders, olderWorld, regrade: null };
+  const byFile = new Map(trials.map((t) => [t.file.slice(`${runDir}/trials/`.length), t]));
+  const rows = await Promise.all(regraded.map(async (f) => {
+    try {
+      const g = await fetchJson<{ outcome?: unknown; grader_version?: unknown }>(f);
+      return { f, g, original: byFile.get(f.slice(prefix.length)) ?? null };
+    } catch (e) {
+      warnings.push(`${f} cannot be read: ${message(e)}`);
+      return null;
+    }
+  }));
+  const ok = rows.filter((x) => x !== null);
+  return {
+    graders,
+    olderWorld,
+    regrade: {
+      graders: [...new Set(ok.map((x) => String(x.g.grader_version ?? 'unknown')))].sort(),
+      records: ok.length,
+      changed: ok.filter((x) => x.original === null || x.original.record.outcome !== x.g.outcome).map((x) => x.f.slice(prefix.length, -'.json'.length)),
+    },
+  };
+}
+
+// One plain line on how a run was graded, when it is not plainly today's grader on today's world:
+// "Graded with grader 3 on an older world; a regrade with grader 4 gives the same outcomes."
+export function gradingLine(g: Grading): string | null {
+  if (g.olderWorld === 0 && g.regrade === null) return null;
+  const graded = `Graded with grader ${g.graders.join(' and ')}${g.olderWorld > 0 ? ' on an older world than today\'s' : ''}`;
+  if (g.regrade === null) return `${graded}.`;
+  const changed = g.regrade.changed;
+  return `${graded}; a regrade with grader ${g.regrade.graders.join(' and ')} gives ${changed.length === 0 ? 'the same outcomes' : `a different outcome for ${changed.join(', ')}`}.`;
+}
+
+// A pilot run's pass rate per task over its valid trials, with the Wilson 95% interval, as
+// summary.ts computes it for an official run; never counted in the results.
+export function pilotRates(run: RunData): Array<{ task: string; passes: number; valid: number; rate: number | null; interval: Interval | null }> {
+  return [...new Set(run.trials.map((t) => t.task))].sort().map((task) => {
+    const valid = run.trials.filter((t) => t.task === task && t.explanation.valid);
+    const passes = valid.filter((t) => t.explanation.outcome === 'PASS').length;
+    return { task, passes, valid: valid.length, rate: valid.length === 0 ? null : passes / valid.length, interval: wilson(passes, valid.length) };
+  });
+}
+
+// The run's parsed matrix.json, fetched once; null when it has none or it cannot be read.
+const matrices = new Map<string, Promise<unknown>>();
+function matrixOf(runDir: string, has: ReadonlySet<string>): Promise<unknown> {
+  const file = `${runDir}/matrix.json`;
+  if (!has.has(file)) return Promise.resolve(null);
+  if (!matrices.has(file)) matrices.set(file, fetchJson<unknown>(file).catch(() => null));
+  return matrices.get(file)!;
+}
+
+// Whether an id is in today's world, loaded once and only when a criterion asks.
+let world: Promise<(id: string) => boolean> | undefined;
+const inWorld = () => (world ??= Promise.all([import('../../../../packages/env/fixture-source.ts'), import('./world.ts')]).then(async ([{ loadStore }, { worldSource }]) => {
+  const store = await loadStore(worldSource());
+  return worldLookup(new Set([...store.resources()].map((r) => `${r.resourceType}/${r.id}`)));
+}));
+
+// The trial's explanation with every part the criteria read (see the header).
+export async function fullExplanation(t: Trial, run: RunData, has: ReadonlySet<string>): Promise<Explanation> {
+  const [{ taskChecks }, matrix, events] = await Promise.all([
+    import('../tasks/matrix-task.ts'),
+    matrixOf(run.dir, has),
+    t.trajectoryUrl === null ? Promise.resolve([]) : fetchEvents(t.trajectoryUrl),
+  ]);
+  const input = { record: t.record, events, manifest: run.manifest, matrix, checks: await taskChecks(t.task).catch(() => []), text: checkTextOf(t.task) };
+  return explainTrial(t.record, t.audit, explainContext({ ...input, inWorld: needsWorld(input) ? await inWorld() : null }));
 }
 
 const PILOT_DIR = /^(results\/(?:runs\/)?pilot-[A-Za-z0-9._-]+)\/trials\//;

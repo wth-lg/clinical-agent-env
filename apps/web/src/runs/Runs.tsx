@@ -6,11 +6,11 @@
 // A record the loader cannot read is a row that says why. The header shows k/N with the pass and
 // denominator rules. Filters (task, label) and the open trial live in the URL.
 import { ChevronDown, ChevronRight, CircleAlert } from 'lucide-react';
-import { useState, type Ref } from 'react';
-import { formatCriterion } from '../../../../packages/core/explain.ts';
-import { AUDIT_LABELS } from '../../../../packages/core/outcomes.ts';
-import { useResults, type BadRecord, type RunData, type Trial } from '../data/results.ts';
-import { Card, FaultLabel, GlossaryLink, Notice, OutcomeChip, Page, PlainRules } from '../data/ui.tsx';
+import { useEffect, useState, type Ref } from 'react';
+import { formatCriterion, MET_TEXT, TAXONOMY_TEXT, type Explanation, type Holding } from '../../../../packages/core/explain.ts';
+import { AUDIT_LABELS, CONFIRMATION_CRITERIA, CONFIRMATION_DEFINITIONS, FAULT_DEFINITIONS, RUN_BLOCKS } from '../../../../packages/core/outcomes.ts';
+import { fullExplanation, gradingLine, useResults, type BadRecord, type RunData, type Trial } from '../data/results.ts';
+import { Card, FaultLabel, GlossaryLink, Hash, HashText, Notice, OutcomeChip, Page, PlainRules } from '../data/ui.tsx';
 import { navigate, useParams } from '../data/url.ts';
 
 // The label filter's values: every AUDIT_LABEL name, then excluded (INFRA) and pass.
@@ -27,7 +27,8 @@ export function Runs({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | un
   const task = params.get('task') ?? '';
   const label = params.get('label') ?? '';
   const open = params.get('trial');
-  const tasks = [...new Set([...(official ? Object.keys(official.summary!.tasks) : []), ...runs.flatMap((r) => r.trials.map((t) => t.task))])].sort();
+  // A task in the URL that no run holds still shows as the chosen option, so the filter is never hidden.
+  const tasks = [...new Set([...(official ? Object.keys(official.summary!.tasks) : []), ...runs.flatMap((r) => r.trials.map((t) => t.task)), ...(task === '' ? [] : [task])])].sort();
   const matches = (t: Trial) => (task === '' || t.task === task) && (label === '' || labelOf(t) === label);
   const total = runs.reduce((n, r) => n + r.trials.length + r.bad.length, 0);
   const shown = runs.reduce((n, r) => n + r.trials.filter(matches).length, 0);
@@ -57,12 +58,13 @@ export function Runs({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | un
           </select>
         </label>
         <span className="pb-1.5 text-xs text-ink-muted" data-testid="shown-count">{shown} of {total} trials</span>
+        {(task !== '' || label !== '') && <button type="button" data-testid="clear-filters" onClick={() => navigate({ task: null, label: null, trial: null })} className="pb-1.5 text-xs text-ink underline decoration-line-strong underline-offset-2">Clear filters</button>}
       </div>
-      {official && <RunList run={official} matches={matches} open={open} />}
+      {official && <RunList run={official} matches={matches} open={open} files={results.files} />}
       {pilots.length > 0 && (
         <section className="space-y-3" data-testid="pilot-runs">
           <h2 className="pt-2 font-medium text-ink">Pilot runs (not counted in the results)</h2>
-          {pilots.map((p) => <RunList key={p.runId} run={p} matches={matches} open={open} heading />)}
+          {pilots.map((p) => <RunList key={p.runId} run={p} matches={matches} open={open} files={results.files} heading />)}
         </section>
       )}
       {runs.length === 0 && officialError === null && <Notice testId="empty-state">No runs are committed in this build. Tasks and Environment work with no key.</Notice>}
@@ -70,15 +72,17 @@ export function Runs({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | un
   );
 }
 
-function RunList({ run, matches, open, heading = false }: { run: RunData; matches: (t: Trial) => boolean; open: string | null; heading?: boolean }) {
+function RunList({ run, matches, open, files, heading = false }: { run: RunData; matches: (t: Trial) => boolean; open: string | null; files: ReadonlySet<string>; heading?: boolean }) {
   const shown = run.trials.filter(matches);
+  const graded = gradingLine(run.grading);
   return (
     <div className="space-y-2" data-testid="run" data-run={run.runId} data-official={String(run.official)}>
       {heading && <h3 className="text-ink-muted"><span className="font-medium text-ink">{run.runId}</span>: {run.trials.length + run.bad.length} trial records</h3>}
+      {graded !== null && <p className="text-xs text-ink-muted" data-testid="grading-line">{graded}</p>}
       {run.warnings.length > 0 && <Notice testId="data-warning">{run.warnings.join(' ')}</Notice>}
       <ul className="divide-y divide-line rounded-sm border border-line bg-surface" data-testid="trial-list">
         {run.bad.map((b) => <BadRow key={b.file} b={b} />)}
-        {shown.map((t) => <TrialRow key={t.name} t={t} open={open === t.name} />)}
+        {shown.map((t) => <TrialRow key={t.name} t={t} run={run} files={files} open={open === t.name} />)}
         {shown.length === 0 && run.bad.length === 0 && <li className="p-4 text-ink-muted">No trial matches these filters.</li>}
       </ul>
     </div>
@@ -88,13 +92,13 @@ function RunList({ run, matches, open, heading = false }: { run: RunData; matche
 function BadRow({ b }: { b: BadRecord }) {
   return (
     <li data-testid="record-error" data-trial={b.name} className="border-l-2 border-l-danger px-4 py-2.5">
-      <p className="flex flex-wrap items-center gap-x-2 font-medium text-ink"><CircleAlert aria-hidden className="h-3.5 w-3.5 text-danger" strokeWidth={1.75} />{b.name}: this record cannot be read</p>
+      <p className="flex flex-wrap items-center gap-x-2 font-medium text-ink"><CircleAlert aria-hidden className="h-3.5 w-3.5 text-danger" strokeWidth={1.75} />{b.name}: this record cannot be read.</p>
       <p className="mt-1 break-words pl-5 text-ink-muted">{b.file}: {b.errors.join('; ')}</p>
     </li>
   );
 }
 
-function TrialRow({ t, open }: { t: Trial; open: boolean }) {
+function TrialRow({ t, run, files, open }: { t: Trial; run: RunData; files: ReadonlySet<string>; open: boolean }) {
   const e = t.explanation;
   const Chevron = open ? ChevronDown : ChevronRight;
   const cost = t.record.cost_usd + (t.record.judge_cost_usd ?? 0);
@@ -111,30 +115,68 @@ function TrialRow({ t, open }: { t: Trial; open: boolean }) {
         <span className="ml-auto text-xs text-ink-muted" title="Agent and judge cost">${cost.toFixed(2)}</span>
       </div>
       {e.outcome !== 'PASS' && <p data-testid="reason" className="mt-1 break-words pl-5 text-ink-muted">{e.reason}</p>}
-      {open && <TrialDetail t={t} />}
+      {open && <TrialDetail t={t} run={run} files={files} />}
     </li>
   );
 }
 
-function TrialDetail({ t }: { t: Trial }) {
-  const e = t.explanation;
+const CRITERIA = [...Object.values(FAULT_DEFINITIONS).flatMap((d) => d.criteria), ...RUN_BLOCKS, ...CONFIRMATION_CRITERIA];
+// A criterion's sentence from outcomes.ts, for a note or a criterion row.
+const criterionText = (id: string) => CRITERIA.find((c) => c.id === id)?.text ?? id;
+const link = 'text-ink underline decoration-line-strong underline-offset-2';
+
+function Note({ n }: { n: Holding }) {
+  return <li className="break-words"><GlossaryLink anchor={`criterion-${n.id}`} className={link}>{criterionText(n.id)}</GlossaryLink> ({n.id}): <span className="text-ink-muted"><HashText text={n.evidence} /></span></li>;
+}
+
+// The open trial: why it failed in words, each term linked to its section of the glossary. The
+// criteria come from fullExplanation (the world, the checks and matrix.json); until it arrives,
+// and if it cannot load, the row's explanation stands. Each criterion reads as audit-check writes
+// it (MET_TEXT), with its evidence when it is not met; a hash in any evidence is shortened with
+// a copy control.
+function TrialDetail({ t, run, files }: { t: Trial; run: RunData; files: ReadonlySet<string> }) {
+  const [full, setFull] = useState<Explanation | null>(null);
   const [showAll, setShowAll] = useState(false);
+  useEffect(() => {
+    let live = true;
+    fullExplanation(t, run, files).then((x) => live && setFull(x), () => undefined);
+    return () => {
+      live = false;
+    };
+  }, [t, run, files]);
+  const e = full ?? t.explanation;
   return (
-    <div data-testid="trial-detail" className="mt-2 min-w-0 space-y-2 border-l-2 border-line pl-4">
+    <div data-testid="trial-detail" data-full={String(full !== null)} data-criteria={e.criteria.map(formatCriterion).join(', ')} className="mt-2 min-w-0 space-y-2 border-l-2 border-line pl-4">
       <dl className="grid grid-cols-1 gap-x-3 gap-y-1 sm:grid-cols-[max-content_minmax(0,1fr)] [&_dd]:min-w-0 [&_dd]:break-words">
-        <dt className="text-ink-muted">Fault</dt><dd>{e.fault ?? 'none'}{e.deciding ? ` (${e.deciding.id}: ${e.deciding.evidence})` : ''}</dd>
-        <dt className="text-ink-muted">Confirmation</dt><dd>{e.confirmation ?? 'n/a'}</dd>
+        <dt className="text-ink-muted">Fault</dt>
+        <dd data-testid="detail-fault">
+          {e.fault === null ? 'none' : <GlossaryLink anchor={`fault-${e.fault}`} className={link}>{e.fault}</GlossaryLink>}
+          {e.deciding && <>: {criterionText(e.deciding.id)} ({e.deciding.id}) <span className="block text-ink-muted"><HashText text={e.deciding.evidence} /></span></>}
+        </dd>
+        <dt className="text-ink-muted">Confirmation</dt>
+        <dd>{e.confirmation === null ? 'does not apply' : <><GlossaryLink anchor="confirmation" className={link}>{e.confirmation}</GlossaryLink>: <span className="text-ink-muted">{CONFIRMATION_DEFINITIONS[e.confirmation]}</span></>}</dd>
         <dt className="text-ink-muted">Audit</dt><dd>{e.audited ? `audited, label ${e.audit_label ?? 'none'}` : 'not human-audited'}</dd>
-        {e.decisive_check && <><dt className="text-ink-muted">Decisive check</dt><dd>{e.decisive_check.id}: expected {e.decisive_check.expected}, found {e.decisive_check.found}</dd></>}
-        {e.taxonomy && <><dt className="text-ink-muted">Kind</dt><dd>{e.taxonomy.replace(/_/g, ' ')}</dd></>}
-        <dt className="text-ink-muted">Criteria</dt><dd>{e.criteria.map(formatCriterion).join(', ')}</dd>
-        {e.notes.length > 0 && <><dt className="text-ink-muted">Notes</dt><dd>{e.notes.map((n) => `${n.id}: ${n.evidence}`).join('; ')}</dd></>}
+        {e.decisive_check && <><dt className="text-ink-muted">Decisive check</dt><dd><code className="text-xs">{e.decisive_check.id}</code>{e.decisive_check.traces_to ? <span className="text-ink-muted"> (enforces {e.decisive_check.traces_to})</span> : null}: requires {e.decisive_check.expected}; found {e.decisive_check.found}</dd></>}
+        {e.taxonomy && <><dt className="text-ink-muted">Kind</dt><dd><GlossaryLink anchor="taxonomy" className={link}>{e.taxonomy.replace(/_/g, ' ')}</GlossaryLink>: <span className="text-ink-muted">{TAXONOMY_TEXT[e.taxonomy]}</span></dd></>}
+        <dt className="text-ink-muted">Criteria</dt>
+        <dd>
+          <ul className="space-y-0.5" data-testid="detail-criteria">
+            {e.criteria.map((c) => (
+              <li key={c.id} data-id={c.id} data-met={String(c.met)} data-evidence={c.evidence}>
+                <span className="font-medium">{MET_TEXT[String(c.met)]}</span>
+                {c.met !== true && <span data-testid="criterion-evidence">: <HashText text={c.evidence} /></span>}
+                <span className="block text-ink-muted"><GlossaryLink anchor={`criterion-${c.id}`} className={link}>{criterionText(c.id)}</GlossaryLink> ({c.id})</span>
+              </li>
+            ))}
+          </ul>
+        </dd>
+        {e.notes.length > 0 && <><dt className="text-ink-muted">Notes</dt><dd data-testid="detail-notes"><ul className="space-y-0.5">{e.notes.map((n) => <Note key={n.id} n={n} />)}</ul></dd></>}
         <dt className="text-ink-muted">Cost</dt><dd>agent ${t.record.cost_usd.toFixed(2)}, judge ${(t.record.judge_cost_usd ?? 0).toFixed(2)}</dd>
-        <dt className="text-ink-muted">State hash</dt><dd className="break-all font-mono text-xs">{t.record.state_hash.initial ?? 'none'} → {t.record.state_hash.final ?? 'none'}</dd>
+        <dt className="text-ink-muted">State hash</dt><dd className="flex flex-wrap items-center gap-x-1">start <Hash value={t.record.state_hash.initial} /> end <Hash value={t.record.state_hash.final} /></dd>
       </dl>
       <div className="flex flex-wrap gap-3">
-        {t.trajectoryUrl && <a className="text-ink underline decoration-line-strong underline-offset-2" href={t.trajectoryUrl}>Trajectory (JSONL)</a>}
-        <button type="button" className="text-ink underline decoration-line-strong underline-offset-2" onClick={() => setShowAll(!showAll)}>{showAll ? 'Hide' : 'Show'} every check</button>
+        {t.trajectoryUrl && <a className={link} href={t.trajectoryUrl}>Trajectory (JSONL)</a>}
+        <button type="button" className={link} onClick={() => setShowAll(!showAll)}>{showAll ? 'Hide' : 'Show'} every check</button>
       </div>
       {showAll && (
         <ul className="space-y-0.5 text-xs">

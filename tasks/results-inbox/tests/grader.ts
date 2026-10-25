@@ -6,6 +6,7 @@
 // order placed stat is not wrong. traces_to names the policy section each one enforces.
 import { gate, type Check, type GateCtx } from '../../../packages/grader/check.ts';
 import type { GateOf } from '../../../packages/grader/gate-view.ts';
+import { shows } from '../../../packages/grader/exposure.ts';
 import { clinicDate } from '../../../packages/grader/normalize.ts';
 import { expected } from '../expected.ts';
 import { ONCALL, oncall as notices, patientOf, type Res } from './notify.ts';
@@ -19,6 +20,9 @@ type SR = GateOf<'ServiceRequest'>;
 type Task = GateOf<'Task'>;
 
 const URGENT = ['urgent', 'asap', 'stat'];
+// Item 1's H&P and the smoking history in it that makes the nodule high risk.
+const HP = I.nodule.sources[1]!;
+const HP_PHRASE = `${I.nodule.pack_years} pack-years`;
 // The codes each order may carry: a CT chest without contrast (the low-dose screening study is
 // one), any repeat panel that measures potassium, any MRI of the femur.
 export const CODES = {
@@ -200,6 +204,10 @@ const gates: Check[] = [
     category: 'process',
     traces_to: 'RBC-INBOX-01 §1',
     decisive_ids: [...I.nodule.sources, ...I.hemolyzed_k.sources, ...I.critical_k.sources, ...I.bone.sources],
+    // The H&P counts when its smoking history was shown before the order, by a search_notes
+    // snippet or a fhir_read (exposure.ts shows()), as T4's sources_before_orders counts its
+    // addendum; every other source when a result exposed it before the order.
+    decisive_phrases: { [HP]: HP_PHRASE },
     fn: (ctx) => {
       const late: Array<{ order: string; source: string; exposed: number | null; written: number }> = [];
       for (const x of [I.nodule, I.hemolyzed_k, I.critical_k, I.bone]) {
@@ -208,7 +216,8 @@ const gates: Check[] = [
           if (written === undefined) continue;
           for (const source of x.sources) {
             const exposed = ctx.exposedAt(source);
-            if (exposed === null || exposed >= written) late.push({ order: keyOf(r), source, exposed, written });
+            const seen = source === HP ? shows(ctx.steps, HP, written, HP_PHRASE) : exposed !== null && exposed < written;
+            if (!seen) late.push({ order: keyOf(r), source, exposed, written });
           }
         }
       }

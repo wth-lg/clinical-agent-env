@@ -12,12 +12,16 @@ import { NOT_AUDITED_MARKER } from '../../../packages/core/explain.ts';
 import { AUDIT_LABEL, DENOMINATOR_RULE, FAULT_DEFINITIONS, FAULT_PRECEDENCE, PASS_DEFINITION } from '../../../packages/core/outcomes.ts';
 import { trialName } from '../../../packages/core/summary.ts';
 import { markOf } from '../src/data/ui.tsx';
-import { cliMatrix, cliReplay, explain, sampleBase, MANIFEST_HASH, records, summary, TASK_IDS } from './fixtures/sample-results/sample.ts';
+import { CHECK_TEXT, cliCriteria, cliMatrix, cliReplay, explain, sampleBase, MANIFEST_HASH, records, summary, TASK_IDS } from './fixtures/sample-results/sample.ts';
 
 async function browse(page: Page, path = './') {
   await page.goto(new URL(path, await sampleBase(test.info().project.use.baseURL!)).href);
-  await page.getByRole('button', { name: 'Browse without a key' }).click();
-  await expect(page.getByRole('navigation', { name: 'Views' })).toBeVisible();
+  // A tab that already chose to browse goes straight to the view.
+  const gate = page.getByRole('button', { name: 'Browse without a key' });
+  const nav = page.getByRole('navigation', { name: 'Views' });
+  await expect(gate.or(nav)).toBeVisible();
+  if (await gate.isVisible()) await gate.click();
+  await expect(nav).toBeVisible();
 }
 
 test('the build serves the sample run', () => {
@@ -105,6 +109,8 @@ test('Overview: k/N with N from the run, Wilson bounds equal summary.json, one s
 });
 
 test('Runs: every non-pass row shows outcome, label, decisive check and reason without a click', async ({ page }) => {
+  // About 400 assertions over 75 rows: the default 30 s was too tight under parallel load (review-phase-P14 F4).
+  test.setTimeout(120_000);
   await browse(page, './?view=runs');
   await expect(page.getByTestId('pass-definition')).toHaveText(PASS_DEFINITION);
   await expect(page.getByTestId('denominator-rule')).toHaveText(DENOMINATOR_RULE);
@@ -154,6 +160,63 @@ test('one click on a fault label opens the glossary, whose text equals outcomes.
   await expect(page.getByTestId('glossary-denominator')).toHaveText(DENOMINATOR_RULE);
 });
 
+test('the trial detail says each criterion and the fault in words, linked to the glossary', async ({ page }) => {
+  const failing = records.find((r) => r.outcome === 'FAIL' && explain(r).label === 'model' && !explain(r).audited)!;
+  await browse(page, `./?view=runs&trial=${encodeURIComponent(trialName(failing))}`);
+  const detail = page.getByTestId('trial-detail');
+  await expect(detail).toHaveAttribute('data-full', 'true', { timeout: 60_000 });
+  await expect(detail.getByTestId('detail-criteria').locator('li')).toHaveCount(5);
+  await expect(detail.getByTestId('detail-fault')).toContainText(FAULT_DEFINITIONS.model.criteria[0]!.text);
+  await detail.getByRole('link', { name: 'model', exact: true }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('How failures are attributed');
+  await expect(page).toHaveURL(/#fault-model$/);
+});
+
+test('every trial detail shows the criteria audit-check gives; M3 is pending because the run has no manifest', async ({ page }) => {
+  // 75 rows opened one by one, each waiting for its full explanation.
+  test.setTimeout(300_000);
+  const cli = await cliCriteria();
+  await browse(page, './?view=runs');
+  const ui: Record<string, string> = {};
+  for (const r of records) {
+    const name = trialName(r);
+    const row = page.locator(`[data-testid="trial-row"][data-trial="${name}"]`);
+    await row.getByRole('button', { name, exact: true }).click();
+    const detail = row.getByTestId('trial-detail');
+    await expect(detail).toHaveAttribute('data-full', 'true', { timeout: 60_000 });
+    ui[name] = (await detail.getAttribute('data-criteria'))!;
+  }
+  const differ = Object.keys(cli).filter((n) => ui[n] !== cli[n]).map((n) => `${n}\n  cli ${cli[n]}\n  ui  ${ui[n]}`);
+  expect(differ, `${differ.length} of ${records.length} trials differ`).toEqual([]);
+  const pass = records.find((r) => r.outcome === 'PASS')!;
+  await browse(page, `./?view=runs&trial=${encodeURIComponent(trialName(pass))}`);
+  const m3 = page.getByTestId('trial-detail').locator('[data-testid="detail-criteria"] li[data-id="M3"]');
+  await expect(m3).toHaveAttribute('data-met', 'pending');
+  await expect(m3).toContainText('pending: run has no manifest');
+  await expect(m3).toHaveAttribute('data-evidence', /^run has no manifest; /);
+});
+
+test('a run manifest on another world makes M3 not met, and Notes shorten each hash with a copy control', async ({ page }) => {
+  const manifest = `results/runs/${summary.run_id}/manifest.json`;
+  const other = 'f'.repeat(64);
+  await page.route('**/data/index.json', async (route) => {
+    const res = await route.fetch();
+    const { files } = (await res.json()) as { files: string[] };
+    await route.fulfill({ response: res, json: { files: [...files, manifest] } });
+  });
+  await page.route(`**/data/${manifest}`, (route) => route.fulfill({ json: { world_hash: other } }));
+  const pass = records.find((r) => r.outcome === 'PASS')!;
+  await browse(page, `./?view=runs&trial=${encodeURIComponent(trialName(pass))}`);
+  const detail = page.getByTestId('trial-detail');
+  await expect(detail).toHaveAttribute('data-full', 'true', { timeout: 60_000 });
+  await expect(detail.locator('[data-testid="detail-criteria"] li[data-id="M3"]')).toHaveAttribute('data-met', 'false');
+  const notes = detail.getByTestId('detail-notes');
+  await expect(notes).toContainText('(E2)');
+  await expect(notes.locator(`[data-hash="${other}"]`)).toHaveCount(1);
+  await expect(notes.locator(`[data-hash="${pass.state_hash.initial}"]`)).toHaveCount(1);
+  expect(await notes.innerText()).not.toMatch(/[0-9a-f]{64}/);
+});
+
 test('URL state round-trips: task, label and open trial survive a reload and history', async ({ page }) => {
   const failing = records.find((r) => r.outcome === 'FAIL' && explain(r).label === 'model')!;
   const name = trialName(failing);
@@ -164,8 +227,9 @@ test('URL state round-trips: task, label and open trial survive a reload and his
     await expect(page.locator(`[data-testid="trial-row"][data-trial="${name}"]`).getByTestId('trial-detail')).toBeVisible();
   };
   await check();
+  // The tab chose to browse, so a reload goes straight to the view (verifier-phase-P14-2 F8).
   await page.reload();
-  await page.getByRole('button', { name: 'Browse without a key' }).click();
+  await expect(page.getByRole('button', { name: 'Browse without a key' })).toHaveCount(0);
   await check();
   await page.getByRole('combobox', { name: 'Label' }).selectOption('');
   await expect(page).not.toHaveURL(/label=/);
@@ -179,7 +243,8 @@ test('URL state round-trips: task, label and open trial survive a reload and his
 
 test('Environment: Verify reset equals the manifest hash; Try on fhir_search returns rows, exposed_ids and an unchanged hash', async ({ page }) => {
   await browse(page, './?view=environment');
-  await expect(page.getByTestId('manifest-hash')).toHaveText(MANIFEST_HASH);
+  await expect(page.getByTestId('manifest-hash')).toHaveAttribute('data-hash', MANIFEST_HASH);
+  await expect(page.getByTestId('manifest-hash')).toContainText(`${MANIFEST_HASH.slice(0, 8)}…${MANIFEST_HASH.slice(-4)}`);
   await expect(page.getByTestId('tool')).not.toHaveCount(0);
   await page.getByRole('button', { name: 'Verify reset' }).click();
   await expect(page.getByTestId('reset-result')).toHaveAttribute('data-hash', MANIFEST_HASH, { timeout: 60_000 });
@@ -212,6 +277,8 @@ test('Tasks: each check says what it requires, and the reference solution lists 
   const card = page.locator('[data-testid="task-card"][data-task="renal-dose-review"]');
   await expect(card.locator('[data-testid="task-check"][data-check="note_explains_eie_scr"]').getByTestId('check-question')).toContainText('entered in error');
   await expect(card.locator('[data-testid="task-check"][data-check="apixaban_dose"]')).toContainText('gate check: must be met to pass');
+  // Every gate check says what it requires without a click, in the words its failure reason uses.
+  for (const [id, t] of Object.entries(CHECK_TEXT['renal-dose-review']!)) await expect(card.locator(`[data-testid="task-check"][data-check="${id}"]`).getByTestId('check-requires')).toHaveText(`Requires ${t.requires}.`);
   await expect(card.getByTestId('solution-step').first()).toContainText('1.');
   expect(await card.getByTestId('solution-step').count()).toBeGreaterThan(5);
 });

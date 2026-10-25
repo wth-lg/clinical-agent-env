@@ -14,14 +14,18 @@
 // The reason is one sentence of at most REASON_WORDS words, in the forms
 // docs/requirements/ui-contract.md fixes for a valid non-pass trial:
 //   <check id> failed: expected <value>, found <value>   a FAIL's first failed gate check, then
-//                                                          the taxonomy or the fault when they fit
+//                                                          '; Kind: <kind> (<why>)' when it fits
 //   turn limit reached: <n> turns (and the cost, time and output limit forms)
 //   refused: <the first REFUSAL_WORDS words of the refusal>
 // A LIMIT or REFUSAL comes from the record status, so its limit or refusal sentence comes first;
-// when the grader failed a gate check too, '; <check id> failed: ...' follows, its values cut to
-// fit, then the fault when it is not the model's and it fits.
-// Expected and found come from the check's evidence: its expected and found fields when it has
-// them, else a range and the value checked against it, else a list that should be empty.
+// when the grader failed a gate check too, '; <check id> failed: ...' follows, then the kind of
+// fault when it is not the model's and it fits.
+// Expected is what the check requires and found the first difference the trial left, both in
+// clinical words, from the task's check text (ExplainContext.text, tasks/<id>.check-text.ts). To
+// fit, only the expected part is cut: the found value is the point of the reason and stays whole.
+// A check with no text (a hand-built record) reads its evidence: its expected and found fields
+// when it has them, else a range and the value checked against it, else a list that should be
+// empty.
 import type { TrialEvent } from './events.ts';
 import { MODEL } from './anthropic.ts';
 import { PER_TRIAL_CAP_USD } from './cost.ts';
@@ -32,7 +36,7 @@ import {
 import { currentGrade, type RegradeGrade } from './summary.ts';
 import { TAXONOMY, type Taxonomy } from '../grader/attribution.ts';
 
-export const REASON_WORDS = 25;
+export const REASON_WORDS = 40;
 export const REFUSAL_WORDS = 12;
 // The marker every surface shows next to the fault of a trial with no audit row.
 export const NOT_AUDITED_MARKER = 'not human-audited';
@@ -97,8 +101,7 @@ export interface ExplainContext {
   // The trial's trajectory: the limit and refusal sentences read it. Required, so a UI caller
   // cannot leave it out and get "?" where the limit event has the value.
   events: readonly TrialEvent[];
-  // The manifest's initial state hash (fixtures/manifest.json world.state_hash, or the run
-  // manifest's world_hash).
+  // The run manifest's world_hash (explain-context.ts runWorldHash); null when the run has none.
   world_state_hash?: string | null;
   // Whether a resource is in the world, so the tool would have returned it had the model asked.
   exposable?: (id: string) => boolean;
@@ -109,7 +112,23 @@ export interface ExplainContext {
   matrix?: MatrixResult | null;
   // The task's gate checks, for traces_to.
   checks?: ReadonlyArray<{ id: string; traces_to: string }>;
+  // The task's check text (tasks/<id>.check-text.ts): what each gate check requires, and the first
+  // difference its evidence shows.
+  text?: CheckText | null;
 }
+
+export type Evidence = { readonly [k: string]: unknown };
+
+// One gate check in words: what it requires (one sentence, no full stop; the Tasks view shows it
+// and a reason uses it as the expected value) and the first difference between that and what its
+// evidence shows the trial left ("the 2026-10-26 02:00 dose is 0 mg"). found reads evidence a
+// grader wrote, possibly at an older grader version, so it may meet any shape: when it throws or
+// returns nothing, the reason falls back to the evidence itself.
+export interface CheckTextEntry {
+  requires: string;
+  found: (evidence: Evidence) => string;
+}
+export type CheckText = Readonly<Record<string, CheckTextEntry>>;
 
 export interface CriterionRow {
   id: string;
@@ -148,7 +167,8 @@ export interface Explanation {
   fault_criteria: Record<Fault, CriterionRow[]>;
 }
 
-const MET_TEXT: Record<string, string> = { true: 'met', false: 'not met', pending: 'pending', 'n/a': 'not applicable' };
+// How a criterion's met value reads, in audit-check's output and the trial detail alike.
+export const MET_TEXT: Record<string, string> = { true: 'met', false: 'not met', pending: 'pending', 'n/a': 'not applicable' };
 export const formatCriterion = (c: Pick<CriterionRow, 'id' | 'met'>): string => `${c.id}: ${MET_TEXT[String(c.met)]}`;
 
 const isLabel = (l: unknown): l is AuditLabelName => (AUDIT_LABELS as readonly unknown[]).includes(l);
@@ -180,7 +200,7 @@ const NESTED_FIELDS = 3;
 // A value of check evidence in words, never as JSON: a list shows its first items and how many
 // more there are, an object each field as "<name> <value>" (in parentheses when it sits inside
 // another value), a range as min-max.
-function show(v: unknown, nested = false): string {
+export function show(v: unknown, nested = false): string {
   if (v === null || v === undefined) return 'none';
   if (typeof v === 'string') return v.trim() === '' ? 'none' : v.replace(ISO_TIME, '$1 $2');
   if (typeof v === 'number' || typeof v === 'boolean') return String(v);
@@ -216,16 +236,40 @@ export function expectedFound(evidence: { [k: string]: unknown } | undefined): {
   const fields = (skip: string) => Object.entries(ev).filter(([k]) => k !== 'active' && k !== skip).map(([k, v]) => `${k.replace(/_/g, ' ')} ${show(v, true)}`).join(', ') || 'not met';
   if (isObj(ev.want) || Array.isArray(ev.want)) return { expected: show(ev.want), found: fields('want') };
   if (isObj(ev.window) && 'start' in ev.window && 'end' in ev.window) return { expected: `between ${show(ev.window.start)} and ${show(ev.window.end)}`, found: fields('window') };
-  return { expected: 'the check met', found: fields('') };
+  return { expected: 'every condition of the check', found: fields('') };
 }
 
-// "<id> failed: expected <e>, found <f>", the values cut so that it fits in `max` words.
+// Expected and found for a failed check: its check text when the task has one and it reads the
+// evidence, else the evidence itself.
+function describeCheck(c: ExplainCheck, text: CheckText | null | undefined): { expected: string; found: string } {
+  const t = text?.[c.id];
+  if (t !== undefined) {
+    let found = '';
+    try {
+      found = t.found(c.evidence ?? {}).trim();
+    } catch {
+      // Evidence of another shape (an older grader): the evidence speaks for itself.
+    }
+    return { expected: t.requires, found: found === '' ? expectedFound(c.evidence).found : found };
+  }
+  return expectedFound(c.evidence);
+}
+
+// "<id> failed: expected <e>, found <f>", the expected part cut so that it fits in `max` words;
+// the found part is never cut.
 function checkSentence(id: string, expected: string, found: string, max: number): string {
   const full = `${id} failed: expected ${expected}, found ${found}`;
   if (words(full).length <= max) return full;
-  const each = Math.floor((max - 4) / 2);
-  return `${id} failed: expected ${firstWords(expected, each)}, found ${firstWords(found, each)}`;
+  return `${id} failed: expected ${firstWords(expected, Math.max(3, max - 4 - words(found).length))}, found ${found}`;
 }
+
+// Evidence as a check text reads it: a list (else empty) and an object (else empty).
+export const items = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
+export const fields = (v: unknown): Record<string, unknown> => (isObj(v) ? v : {});
+// A clock time as a person reads it: 2026-10-26T02:00:00-04:00 is 2026-10-26 02:00. Check texts use it.
+export const clock = (v: unknown): string => show(v);
+// A list in words: 'a', 'a and b', 'a, b and c'; none when empty.
+export const listed = (xs: readonly unknown[]): string => (xs.length === 0 ? 'none' : xs.length === 1 ? show(xs[0]) : `${xs.slice(0, -1).map((x) => show(x)).join(', ')} and ${show(xs.at(-1))}`);
 
 // What each taxonomy label (packages/grader/attribution.ts) says about a failed trial, in words; the
 // glossary shows them, because a reason may end with the label alone when its clause does not fit.
@@ -238,21 +282,19 @@ export const TAXONOMY_TEXT: Readonly<Record<Taxonomy, string>> = {
   did_not_finish: 'The trial stopped at a limit (turns, cost, time or output) before the model finished.',
 };
 
-// did_not_finish has no clause: it is a LIMIT's taxonomy, and a LIMIT's reason leads with its limit.
-const TAXONOMY_CLAUSE: Record<Exclude<Taxonomy, 'did_not_finish'>, (f: AttributionFacts) => string> = {
+// Why a model failure is of its kind, for the reason's '; Kind: <kind> (<why>)'. did_not_finish has
+// none: it is a LIMIT's taxonomy, and a LIMIT's reason leads with its limit.
+const TAXONOMY_WHY: Record<Exclude<Taxonomy, 'did_not_finish'>, (f: AttributionFacts) => string> = {
   reasoning: ({ decisive }) => {
     const seen = (decisive?.exposure ?? []).filter((e) => e.first_exposed_step !== null);
-    if (seen.length === 1) return `${seen[0]!.id} was read at step ${seen[0]!.first_exposed_step}, so this is reasoning`;
-    if (seen.length > 1) return `every decisive id was read by step ${Math.max(...seen.map((e) => e.first_exposed_step as number))}, so this is reasoning`;
-    return 'the evidence was in view, so this is reasoning';
+    if (seen.length === 1) return `${seen[0]!.id} was read at step ${seen[0]!.first_exposed_step}`;
+    if (seen.length > 1) return `every record the decision needs was read by step ${Math.max(...seen.map((e) => e.first_exposed_step as number))}`;
+    return 'the evidence was in view';
   },
-  retrieval: ({ decisive }) => {
-    const unseen = (decisive?.exposure ?? []).find((e) => e.first_exposed_step === null);
-    return `${unseen?.id ?? 'a decisive id'} was never read, so this is retrieval`;
-  },
-  output_gap: () => 'stated but not done, so this is output gap',
-  over_action: () => 'writes beyond what is allowed, so this is over action',
-  process: () => 'inputs not consulted first, so this is process',
+  retrieval: ({ decisive }) => `${(decisive?.exposure ?? []).find((e) => e.first_exposed_step === null)?.id ?? 'a record the decision needs'} was never read`,
+  output_gap: () => 'the model said it did this, and the final state does not have it',
+  over_action: () => 'writes beyond what the task permits',
+  process: () => 'writes before the records the policy says to read first',
 };
 
 function limitSentence(r: ExplainRecord, events: readonly TrialEvent[] | undefined): string {
@@ -289,17 +331,32 @@ function refusalText(r: ExplainRecord, events: readonly TrialEvent[] | undefined
 
 const capWords = (s: string, max = REASON_WORDS) => firstWords(s, max);
 
+// The first failed gate check of the current grade; a check with no kind (a hand-built record)
+// counts as a gate on a FAIL.
+export function firstFailedCheck(record: ExplainRecord): ExplainCheck | null {
+  const grade = currentGrade(record);
+  const checks = (grade.checks ?? []) as ReadonlyArray<ExplainCheck>;
+  return checks.find((c) => c.kind === 'gate' && c.met === false) ?? (grade.outcome === 'FAIL' ? checks.find((c) => c.kind === undefined && c.met === false) : undefined) ?? null;
+}
+
+// Whether the recorded attribution speaks for the current grade: it names the same first failed check.
+export const attributionFits = (record: ExplainRecord): boolean => record.attribution != null && record.attribution.first_failed === (firstFailedCheck(record)?.id ?? null);
+
+// The exposure of the decisive check's ids M1 reads: the recorded attribution's when it fits,
+// else the caller's recomputed one (ExplainContext.exposure) when it is for that check, else none.
+export function decisiveExposure(record: ExplainRecord, recomputed: ExplainContext['exposure']): ReadonlyArray<{ id: string; first_exposed_step: number | null }> | null {
+  const failed = firstFailedCheck(record);
+  if (attributionFits(record)) return record.attribution!.exposure;
+  return failed !== null && recomputed?.check === failed.id ? recomputed.ids : null;
+}
+
 export function explainTrial(record: ExplainRecord, audit: AuditRow | null | undefined, ctx: ExplainContext): Explanation {
   const grade = currentGrade(record);
   const outcome = grade.outcome;
-  const checks = (grade.checks ?? []) as ReadonlyArray<ExplainCheck>;
-  // The first failed gate check; a check with no kind (a hand-built record) counts as a gate.
-  const failed = checks.find((c) => c.kind === 'gate' && c.met === false) ?? (outcome === 'FAIL' ? checks.find((c) => c.kind === undefined && c.met === false) : undefined) ?? null;
+  const failed = firstFailedCheck(record);
   const att = record.attribution ?? null;
-  // The recorded attribution speaks for the current grade only when it names the same check.
-  const attFits = att !== null && att.first_failed === (failed?.id ?? null);
-  const recomputed = failed !== null && !attFits && ctx.exposure?.check === failed.id ? ctx.exposure.ids : null;
-  const exposure = attFits ? att.exposure : recomputed;
+  const attFits = att !== null && attributionFits(record);
+  const exposure = decisiveExposure(record, ctx.exposure);
   const row = audit ?? null;
   // The row's own label, before adjudication; M5 and audit_label put adjudicated_label first.
   const rowLabel = row === null ? null : auditLabelOf({ ...row, adjudicated_label: null });
@@ -351,7 +408,7 @@ export function explainTrial(record: ExplainRecord, audit: AuditRow | null | und
       : fault === 'model' || fault === 'refusal' ? (criteria.some((c) => c.met === false) ? 'contradicted' : criteria.some((c) => c.met === 'pending') ? 'provisional' : 'confirmed')
         : facts.audit !== null ? (audit_label === label!.label ? 'confirmed' : 'contradicted') : recordFact ? 'confirmed' : 'provisional';
   const taxonomy = attFits && (TAXONOMY as readonly string[]).includes(att.auto) ? (att.auto as Taxonomy) : null;
-  const ef = failed === null ? null : expectedFound(failed.evidence);
+  const ef = failed === null ? null : describeCheck(failed, ctx.text);
   const decisive_check = failed === null || ef === null ? null : { id: failed.id, traces_to: ctx.checks?.find((c) => c.id === failed.id)?.traces_to ?? null, ...ef };
 
   let reason: string;
@@ -362,14 +419,14 @@ export function explainTrial(record: ExplainRecord, audit: AuditRow | null | und
       // The taxonomy speaks only for a model or refusal fault on a FAIL (a lead already says why a
       // REFUSAL or LIMIT ended); an infra trial gets the check alone.
       const modelFault = (fault === 'model' || fault === 'refusal') && lead === null;
-      const clause = fault === 'env' ? `${deciding!.evidence}, so this is environment`
-        : fault === 'grader' ? `${deciding!.id === 'GR3' ? 'an audit found a grader bug' : deciding!.evidence}, so this is grader`
-          : modelFault && taxonomy !== null && taxonomy !== 'did_not_finish' ? TAXONOMY_CLAUSE[taxonomy](facts) : null;
-      const check = checkSentence(decisive_check.id, decisive_check.expected, decisive_check.found, REASON_WORDS - (lead === null ? 0 : words(lead).length));
+      const kind = fault === 'env' ? 'environment' : fault === 'grader' ? 'grader' : modelFault && taxonomy !== null && taxonomy !== 'did_not_finish' ? taxonomy.replace(/_/g, ' ') : null;
+      const why = fault === 'env' ? deciding!.evidence
+        : fault === 'grader' ? (deciding!.id === 'GR3' ? 'an audit found a grader bug' : deciding!.evidence)
+          : kind !== null ? TAXONOMY_WHY[taxonomy as Exclude<Taxonomy, 'did_not_finish'>](facts) : null;
+      const check = checkSentence(decisive_check.id, decisive_check.expected, decisive_check.found, REASON_WORDS - (lead === null ? 0 : words(lead).length) - (kind === null ? 0 : words(kind).length + 1));
       const base = lead === null ? check : `${lead}; ${check}`;
       const fits = (s: string) => words(s).length <= REASON_WORDS;
-      const short = fault === 'env' ? 'environment' : fault === 'grader' ? 'grader' : modelFault ? (taxonomy?.replace(/_/g, ' ') ?? null) : null;
-      reason = clause !== null && fits(`${base}; ${clause}`) ? `${base}; ${clause}` : short !== null && fits(`${base}; ${short}`) ? `${base}; ${short}` : base;
+      reason = kind === null || !fits(`${base}; Kind: ${kind}`) ? base : fits(`${base}; Kind: ${kind} (${why})`) ? `${base}; Kind: ${kind} (${why})` : `${base}; Kind: ${kind}`;
     } else if (lead !== null) {
       reason = lead;
     } else {
@@ -380,8 +437,14 @@ export function explainTrial(record: ExplainRecord, audit: AuditRow | null | und
   } else {
     const detail = record.detail ? ` (${record.detail})` : '';
     if (fault === 'grader') {
-      const why = deciding!.id === 'GR1' ? `check ${facts.check_error!.check} threw ${firstWords(facts.check_error!.message, 6)}` : deciding!.id === 'GR3' ? 'an audit found a grader bug' : deciding!.id === 'GR4' ? deciding!.evidence : 'a regrade could not grade the record';
-      reason = `${outcome}: ${why}; the grader's fault, which blocks the run`;
+      const tail = "; the grader's fault, which blocks the run";
+      // A thrown error is whole when it fits, else cut at a word to fit REASON_WORDS.
+      const threw = () => {
+        const head = `check ${facts.check_error!.check} threw`;
+        return `${head} ${firstWords(facts.check_error!.message, REASON_WORDS - words(`${outcome}: ${head}${tail}`).length)}`;
+      };
+      const why = deciding!.id === 'GR1' ? threw() : deciding!.id === 'GR3' ? 'an audit found a grader bug' : deciding!.id === 'GR4' ? deciding!.evidence : 'a regrade could not grade the record';
+      reason = `${outcome}: ${why}${tail}`;
     } else if (fault === 'env') {
       reason = `${outcome}${detail}: ${deciding!.evidence}; the environment's fault, excluded and rerun`;
     } else if (outcome === 'CANCELLED') {

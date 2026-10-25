@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:contrast-ct-prep:9",
   "task_id": "contrast-ct-prep",
-  "task_version": "182e19c38a41750990ee1867aff33480436771713f4919ed63c86ad486c09277",
+  "task_version": "5b7ac243d58393b66979c011d7cbfdb96cb81eca91c47c5b985a6458c0dcdd34",
   "env_version": "1b47cd6807624e2db3e76fbb8dfa5a519eadfa93bdf47dbdcb8fee1a1c37d288",
-  "grader_task_version": "8152bd480afbf80eef06542c95a640a218dfe4514642858f4a858a34bf4f07f8",
+  "grader_task_version": "5cdf5b5b61e615d3711ac28e3b44a134ad14b0a7a4fa721e1429e3f221653d82",
   "fixture_hash": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
   "state_hash": {
     "initial": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
@@ -43,7 +43,7 @@
   "resumed": false,
   "ended": "2026-10-23T12:13:50.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "9",
+  "grader_version": "8",
   "outcome": "FAIL",
   "valid": true,
   "fault": "model",
@@ -346,9 +346,6 @@
   "judge": {
     "calls": 0,
     "unknown": 0,
-    "unknown_penalties": 0,
-    "score_penalties_met": 1,
-    "score_penalties_not_met": 1,
     "over_allowance": 0,
     "cache_keys": [
       "95038337ee36973fc8be4f4712e7a7c4d0ee3ae12b3f285537a965c5f89b66fe",
