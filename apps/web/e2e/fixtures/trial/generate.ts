@@ -53,12 +53,15 @@ function main() {
   const records = names.map((name) => {
     copy(join(SAMPLE, 'trials', `${name}.json`), join(RUN, 'trials', `${name}.json`));
     if (name !== TRIALS.noTrajectory) copy(join(SAMPLE, 'trajectories', `${name}.jsonl`), join(RUN, 'trajectories', `${name}.jsonl`));
-    return JSON.parse(readFileSync(join(SAMPLE, 'trials', `${name}.json`), 'utf8')) as SummaryTrial;
+    return JSON.parse(readFileSync(join(SAMPLE, 'trials', `${name}.json`), 'utf8')) as SummaryTrial & { index: number };
   });
   const audit = readFileSync(join(SAMPLE, 'audit.jsonl'), 'utf8').split('\n').filter((l) => l.trim() !== '').map((l) => JSON.parse(l) as AuditRow).filter((a) => (names as readonly string[]).includes(a.trial));
   write(join(RUN, 'audit.jsonl'), audit.map((a) => `${JSON.stringify(a)}\n`).join(''));
   copy(join(SAMPLE, 'matrix.json'), join(RUN, 'matrix.json'));
-  const summary = summarize({ run_id: RUN_ID, trials: records, requeued: [], replay: null, mode: 'mock-sample', expected: { tasks: [...new Set(records.map((r) => r.task_id))].sort(), from: 'generate.ts' } });
+  // By task, then index: the order apps/web/test/web-fixtures.test.ts recomputes the summary in,
+  // so the floating-point means add up the same.
+  const ordered = [...records].sort((a, b) => (a.task_id === b.task_id ? a.index - b.index : a.task_id < b.task_id ? -1 : 1));
+  const summary = summarize({ run_id: RUN_ID, trials: ordered, requeued: [], replay: null, mode: 'mock-sample', expected: { tasks: [...new Set(records.map((r) => r.task_id))].sort(), from: 'generate.ts' } });
   assertSummary(summary);
   write(join(RUN, 'summary.json'), `${JSON.stringify(summary, null, 2)}\n`);
   copy(join(SAMPLE, 'trials', `${TRIALS.pass}.json`), join(PILOT, 'trials', `${TRIALS.pass}.json`));
