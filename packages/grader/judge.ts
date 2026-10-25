@@ -6,7 +6,8 @@
 // parameter is sent (the client refuses one), and tool_choice is not forced (a 400 on this
 // model): the answer is JSON text, {verdict: met | not_met | unknown, quote}, retried once when
 // it does not parse. Code then checks the quote: a met verdict needs a quote, and any non-empty
-// quote must be a substring of the graded text; otherwise the item is unknown. A not_met
+// quote must be a substring of the graded text, both folded (quotes, dashes, case, whitespace)
+// and with "..." read as a gap; otherwise the item is unknown. A not_met
 // verdict may carry an empty quote, because absence cannot be quoted (coordinator decision,
 // 2026-10-23): it stays met: false and counts in the denominator. An unknown item leaves both
 // the numerator and the denominator of the score and is counted. The judge sees the criterion
@@ -184,9 +185,22 @@ function parseAnswer(result: CallResult): { [k: string]: Json } | null {
 const validJudge = (a: { [k: string]: Json }) => ['met', 'not_met', 'unknown'].includes(a.verdict as string) && typeof a.quote === 'string';
 const validExtract = (a: { [k: string]: Json }) => (a.value === null || (typeof a.value === 'number' && Number.isFinite(a.value))) && typeof a.quote === 'string';
 
-// Whitespace runs count as one space, so a quote that re-wraps a line still matches.
-const squash = (s: string) => s.replace(/\s+/g, ' ').trim();
-const quoted = (quote: string, text: string) => quote.trim() !== '' && squash(text).includes(squash(quote));
+// Both sides are compared folded: typographic single and double quotes as ' and ", en and em
+// dashes as -, case folded, whitespace runs as one space, so a quote that re-types an apostrophe
+// or re-wraps a line still matches (R14-04).
+const fold = (s: string) => s.replace(/[‘’‚‛′]/g, "'").replace(/[“”„‟″]/g, '"').replace(/[–—]/g, '-').toLowerCase().replace(/\s+/g, ' ').trim();
+// A quote with "..." or "…" is segments that must all appear in the text, in that order.
+function quoted(quote: string, text: string): boolean {
+  const segments = fold(quote).split(/\.\.\.|…/).map((s) => s.trim()).filter((s) => s !== '');
+  const folded = fold(text);
+  let at = 0;
+  for (const s of segments) {
+    const i = folded.indexOf(s, at);
+    if (i < 0) return false;
+    at = i + s.length;
+  }
+  return segments.length > 0;
+}
 
 // Every number written in the quote.
 const numbersIn = (quote: string): number[] => (quote.match(/\d[\d,]*(?:\.\d+)?|\.\d+/g) ?? []).flatMap((s) => {

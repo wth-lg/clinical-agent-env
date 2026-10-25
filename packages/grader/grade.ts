@@ -42,8 +42,9 @@ import { FAULT, isValid, trialOutcome, type Fault, type Outcome, type TrialFacts
 // grader_task_version (packages/core/tasks.ts), with the task's grader-side files; regrades
 // record both. 6: main's 5 (shown text, decisive_phrases) and this branch's 5 (grading past a
 // thrown check) were different graders; the merge of the two is 6. 7: normalize.ts maps
-// rosuvastatin calcium, Toprol-XL and Lasix to their ingredients.
-export const GRADER_VERSION = '8';
+// rosuvastatin calcium, Toprol-XL and Lasix to their ingredients. 9: the judge quote check folds
+// quotes, dashes, case and whitespace and reads "..." as a gap; judge.unknown_penalties (R14-04).
+export const GRADER_VERSION = '9';
 
 export interface CheckResult {
   id: string;
@@ -72,9 +73,23 @@ export interface Grade {
   fault: Fault | null;
   checks: CheckResult[];
   score: number | null;
-  judge: { calls: number; unknown: number; over_allowance: number; cache_keys: string[]; cache: JudgeCacheEntry[] };
+  judge: JudgeRecord;
   attribution: Attribution | null;
   error: GradeError | null;
+}
+
+export interface JudgeRecord {
+  calls: number;
+  unknown: number;
+  // Judge and hybrid items with a negative weight whose verdict is unknown: out of the score,
+  // so the score is an upper bound. The two scores below bound it: those penalties counted as
+  // met, and as not met (R14-04).
+  unknown_penalties: number;
+  score_penalties_met: number | null;
+  score_penalties_not_met: number | null;
+  over_allowance: number;
+  cache_keys: string[];
+  cache: JudgeCacheEntry[];
 }
 
 export interface GradeInput {
@@ -149,7 +164,7 @@ function notesOf(final: StateView, created: readonly string[], steps: readonly S
   });
 }
 
-const noJudge = (): Grade['judge'] => ({ calls: 0, unknown: 0, over_allowance: 0, cache_keys: [], cache: [] });
+const noJudge = (): JudgeRecord => ({ calls: 0, unknown: 0, unknown_penalties: 0, score_penalties_met: null, score_penalties_not_met: null, over_allowance: 0, cache_keys: [], cache: [] });
 
 // The grade of a trial that is not graded: an invalid outcome, no checks, no score. A
 // GRADER_ERROR always says which step failed and why, in `error`.
@@ -172,9 +187,23 @@ export function score(results: readonly CheckResult[]): number | null {
   return positive === 0 ? null : Math.min(1, Math.max(0, met / positive));
 }
 
-function judgeOf(judge: Judge, results: readonly CheckResult[]): Grade['judge'] {
+const unknownPenalty = (r: CheckResult) => r.kind === 'rubric' && r.method !== 'code' && r.met === 'unknown' && r.points! < 0;
+
+// `scored`: the grade has a score; one without (a grader or judge client error) has no bounds.
+function judgeOf(judge: Judge, results: readonly CheckResult[], scored: boolean): JudgeRecord {
   const cache = judge.entries();
-  return { calls: judge.calls, unknown: results.filter((r) => r.method !== 'code' && r.met === 'unknown').length, over_allowance: judge.overAllowance, cache_keys: cache.map((e) => e.key), cache };
+  const penalties = results.filter(unknownPenalty);
+  const as = (met: boolean) => (scored ? score(results.map((r) => (unknownPenalty(r) ? { ...r, met } : r))) : null);
+  return {
+    calls: judge.calls,
+    unknown: results.filter((r) => r.method !== 'code' && r.met === 'unknown').length,
+    unknown_penalties: penalties.length,
+    score_penalties_met: as(true),
+    score_penalties_not_met: as(false),
+    over_allowance: judge.overAllowance,
+    cache_keys: cache.map((e) => e.key),
+    cache,
+  };
 }
 
 // Grades with `judge`, whose cost and cache entries the caller can read afterwards.
@@ -219,7 +248,7 @@ export async function gradeWith(input: GradeInput, judge: Judge): Promise<Grade>
         const outcome: Outcome = e.failure.status;
         const checks = ordered();
         return {
-          grader_version: GRADER_VERSION, outcome, valid: false, fault: FAULT[outcome], checks, score: null, judge: judgeOf(judge, checks), attribution: null,
+          grader_version: GRADER_VERSION, outcome, valid: false, fault: FAULT[outcome], checks, score: null, judge: judgeOf(judge, checks, false), attribution: null,
           error: { check: c.id, message: e.message, stops_batch: e.failure.stopsBatch },
         };
       }
@@ -234,7 +263,7 @@ export async function gradeWith(input: GradeInput, judge: Judge): Promise<Grade>
   if (first !== undefined) {
     const also = more.length === 0 ? '' : `; also threw: ${more.map((t) => `${t.check} (${t.message})`).join(', ')}`;
     return {
-      grader_version: GRADER_VERSION, outcome: 'GRADER_ERROR', valid: false, fault: FAULT.GRADER_ERROR, checks: results, score: null, judge: judgeOf(judge, results), attribution: null,
+      grader_version: GRADER_VERSION, outcome: 'GRADER_ERROR', valid: false, fault: FAULT.GRADER_ERROR, checks: results, score: null, judge: judgeOf(judge, results, false), attribution: null,
       error: { check: first.check, message: `${first.message}${also}`, stops_batch: false },
     };
   }
@@ -247,7 +276,7 @@ export async function gradeWith(input: GradeInput, judge: Judge): Promise<Grade>
     fault: FAULT[outcome],
     checks: results,
     score: score(results),
-    judge: judgeOf(judge, results),
+    judge: judgeOf(judge, results, true),
     attribution: attribute(outcome, gates, results, steps),
     error: null,
   };
