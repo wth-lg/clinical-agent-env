@@ -1,9 +1,726 @@
 {
   "grader_task_versions": {
-    "002363b4d8ea2c8555516e86224c86dbbd0752ac43742ebc4bfe035ad5f0447c": {
+    "08e829bfdd59034136f29bc4e30ea28dadcbf4ed104ea9be8b4e50451b8312a0": {
+      "task_id": "results-inbox",
+      "env_version": "1b69d4deab5047c9be4c70ff0438628526da629a9fa0c5f1ca1d0605cec02a86",
+      "task_version": "9f94bc8f9902527fb324013006751f9da264985221a5a92220c6c52f72377bee",
+      "pass": true,
+      "oracle_pass": true,
+      "alternatives_pass": true,
+      "failed_checks": [],
+      "probes": [
+        {
+          "kind": "oracle",
+          "id": "oracle",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "ldct_task_oncall_cmp",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "window_edges_datetimes",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "hold_lisinopril",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "page_names_patient_in_text",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "phone_calls_and_result_links",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "fit_left_to_gi",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "searches_then_reads",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "mutant",
+          "id": "structured_smoking_only",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "nodule_ct_window",
+            "items_closed_with_links"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "ct_from_today",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "nodule_ct_window"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "ct_with_contrast",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "nodule_ct_window"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "namesake_ct",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "nodule_ct_window",
+            "namesake_untouched",
+            "items_closed_with_links"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "duplicate_gi_referral",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "fit_existing_referral"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "hemolyzed_k_paged",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "hemolyzed_k_no_oncall"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "hemolyzed_k_paged_no_about",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "hemolyzed_k_no_oncall"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "hemolyzed_k_routine_next_week",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "hemolyzed_k_repeat"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "critical_k_patient_only",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "critical_k_oncall"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "critical_k_oncall_urgent",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "critical_k_oncall"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "critical_k_as_hemolyzed",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "critical_k_oncall",
+            "critical_k_stat_bmp"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "bone_routine_three_months",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "bone_lesion_orders"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "bone_referral_only",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "bone_lesion_orders"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "cyst_reimaged",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "controls_no_orders"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "closed_without_links",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "items_closed_with_links"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "critical_k_linked_result_only",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "items_closed_with_links"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "critical_k_linked_reminder",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "items_closed_with_links"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "stat_bmp_from_summary",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "sources_before_orders"
+          ]
+        },
+        {
+          "kind": "null",
+          "id": "null",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "nodule_ct_window",
+            "fit_existing_referral",
+            "hemolyzed_k_repeat",
+            "critical_k_oncall",
+            "critical_k_stat_bmp",
+            "bone_lesion_orders",
+            "items_closed_with_links"
+          ]
+        },
+        {
+          "kind": "spray",
+          "id": "spray",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "fit_existing_referral",
+            "hemolyzed_k_no_oncall",
+            "controls_no_orders"
+          ]
+        },
+        {
+          "kind": "output-gap",
+          "id": "output-gap",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "nodule_ct_window",
+            "fit_existing_referral",
+            "hemolyzed_k_repeat",
+            "critical_k_oncall",
+            "critical_k_stat_bmp",
+            "bone_lesion_orders",
+            "items_closed_with_links"
+          ]
+        },
+        {
+          "kind": "status-only",
+          "id": "status-only",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "nodule_ct_window",
+            "hemolyzed_k_repeat",
+            "critical_k_oncall",
+            "critical_k_stat_bmp",
+            "bone_lesion_orders",
+            "items_closed_with_links"
+          ]
+        }
+      ]
+    },
+    "52776c2175330257b6414c455ddf80b218400506163e528f29651d0125398ba0": {
+      "task_id": "discharge-medrec",
+      "env_version": "c1e656fdcb8d2ef267ed6af93489ec65c25baa80dabaf5352107f549e40ca783",
+      "task_version": "30e43da7b151d7d2bbf3e3b3c2cae6bdb7ecb2b1c53b660be95d33a84f003fb7",
+      "pass": true,
+      "oracle_pass": true,
+      "alternatives_pass": true,
+      "failed_checks": [],
+      "probes": [
+        {
+          "kind": "oracle",
+          "id": "oracle",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "stop_and_reorder",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "two_20mg_tablets",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "one_answer",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "reads_old_summary_too",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "snippet_only_addendum",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "recheck_bmp",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "mutant",
+          "id": "furosemide_unchanged",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "furosemide_40"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "spironolactone_12_5",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "spironolactone_25",
+            "sources_before_orders"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "spironolactone_12_5_snippet",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "spironolactone_25"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "lisinopril_task",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "lisinopril_resumed"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "kcl_kept",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "kcl_stopped"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "xl_ordered",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "others_unchanged"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "tartrate_stopped",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "others_unchanged"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "pantoprazole_ordered",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "omeprazole_kept"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "no_pcp_message",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "pcp_message"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "resume_before_lab",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "sources_before_orders"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "old_summary",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "furosemide_40",
+            "kcl_stopped"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "message_wrong_clinician",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "pcp_message"
+          ]
+        },
+        {
+          "kind": "null",
+          "id": "null",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "furosemide_40",
+            "spironolactone_25",
+            "kcl_stopped",
+            "lisinopril_resumed",
+            "pcp_message"
+          ]
+        },
+        {
+          "kind": "spray",
+          "id": "spray",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "others_unchanged",
+            "omeprazole_kept"
+          ]
+        },
+        {
+          "kind": "output-gap",
+          "id": "output-gap",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "furosemide_40",
+            "spironolactone_25",
+            "kcl_stopped",
+            "lisinopril_resumed"
+          ]
+        }
+      ]
+    },
+    "aee2714fdc7ce9658e6610dbff64dfa91b4b2bc2f823d00ea076453efc75de86": {
+      "task_id": "contrast-ct-prep",
+      "env_version": "1b47cd6807624e2db3e76fbb8dfa5a519eadfa93bdf47dbdcb8fee1a1c37d288",
+      "task_version": "ea15cb956e6ea120a0a886adcba4b9517dad97b7f62494450e7084bae8be69e1",
+      "pass": true,
+      "oracle_pass": true,
+      "alternatives_pass": true,
+      "failed_checks": [],
+      "probes": [
+        {
+          "kind": "oracle",
+          "id": "oracle",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "one_request_per_dose",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "tablet_counts_and_more_reads",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "holds_metformin",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "adds_prn_antihistamine",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "one_answer_orders",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "times_in_words",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "split_doses",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "mutant",
+          "id": "iodine_allergies_avoid_contrast",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "ct_order",
+            "prednisone_schedule",
+            "diphenhydramine_dose",
+            "creatinine_before_scan",
+            "no_substitution"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "overnight_date_slip",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "prednisone_schedule"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "stale_creatinine_accepted",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "creatinine_before_scan"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "copied_2023_times",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "prednisone_schedule",
+            "diphenhydramine_dose"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "ct_not_linked",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "ct_order"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "accelerated_iv_hydrocortisone",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "prednisone_schedule",
+            "no_substitution"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "creatinine_after_scan",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "creatinine_before_scan"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "prednisone_20_mg",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "prednisone_schedule"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "antihistamine_with_first_dose",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "diphenhydramine_dose"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "ct_dated_today",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "ct_order"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "premedicates_before_review",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "evidence_before_orders"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "no_patient_message",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "patient_instructed"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "antihistamine_at_bedtime",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "diphenhydramine_dose"
+          ]
+        },
+        {
+          "kind": "null",
+          "id": "null",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "ct_order",
+            "prednisone_schedule",
+            "diphenhydramine_dose",
+            "creatinine_before_scan",
+            "patient_instructed"
+          ]
+        },
+        {
+          "kind": "spray",
+          "id": "spray",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "no_substitution"
+          ]
+        },
+        {
+          "kind": "output-gap",
+          "id": "output-gap",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "ct_order",
+            "prednisone_schedule",
+            "diphenhydramine_dose",
+            "creatinine_before_scan"
+          ]
+        }
+      ]
+    },
+    "c771ed6b25561ef1e03feb6e2c01868f25a6fcfb724555b722928a5ca9af0d59": {
       "task_id": "message-queue",
       "env_version": "0f4ca284064318e267b43016adacd89fe793e885765e5c687d044d21f87e4e6a",
-      "task_version": "9194f02916ca57a46bd311a2bfb1390c8d0bdd9ab9cf75c5795bb6aad0177eb7",
+      "task_version": "27a84b0155b8c95a03236aedbf3acff015846d2ee8722d7e40f2a7f42d153fc8",
       "pass": true,
       "oracle_pass": true,
       "alternatives_pass": true,
@@ -334,10 +1051,10 @@
         }
       ]
     },
-    "25a616e0663bd8c610eca31aac101bd66afb3795590866123609593057dff4b6": {
-      "task_id": "discharge-medrec",
-      "env_version": "c1e656fdcb8d2ef267ed6af93489ec65c25baa80dabaf5352107f549e40ca783",
-      "task_version": "5a2bbaf09487f3963d8156b5fe47c2947e3ed4d30c6e44985ccd5d4f2e79d350",
+    "d2197f9856886dc5363b8e4fd2c5245ae12a3b08fddcd6fe612378c0c0e46509": {
+      "task_id": "renal-dose-review",
+      "env_version": "0f868a40dce8690667f1d4f142aae069e9abd239b699f9e566f4edadb00fe09b",
+      "task_version": "d2b62108facb3b48dbab7b196e26c3312901dc818c7b2f85dc78b51b1ab7d5f5",
       "pass": true,
       "oracle_pass": true,
       "alternatives_pass": true,
@@ -352,154 +1069,190 @@
         },
         {
           "kind": "alternative",
-          "id": "stop_and_reorder",
+          "id": "stop_then_order",
           "outcome": "PASS",
           "as_expected": true,
           "failed_checks": []
         },
         {
           "kind": "alternative",
-          "id": "two_20mg_tablets",
+          "id": "gabapentin_200_tid",
           "outcome": "PASS",
           "as_expected": true,
           "failed_checks": []
         },
         {
           "kind": "alternative",
-          "id": "one_answer",
+          "id": "replaces_and_noop_metformin",
           "outcome": "PASS",
           "as_expected": true,
           "failed_checks": []
         },
         {
           "kind": "alternative",
-          "id": "reads_old_summary_too",
+          "id": "apixaban_two_2_5_tablets",
           "outcome": "PASS",
           "as_expected": true,
           "failed_checks": []
         },
         {
           "kind": "alternative",
-          "id": "snippet_only_addendum",
+          "id": "apixaban_2_5_tablets_counted",
           "outcome": "PASS",
           "as_expected": true,
           "failed_checks": []
         },
         {
           "kind": "alternative",
-          "id": "recheck_bmp",
+          "id": "doses_in_tablets",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "eie_value_named",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "one_answer_orders",
           "outcome": "PASS",
           "as_expected": true,
           "failed_checks": []
         },
         {
           "kind": "mutant",
-          "id": "furosemide_unchanged",
+          "id": "stale_weight",
           "outcome": "FAIL",
           "as_expected": true,
           "failed_checks": [
-            "furosemide_40"
+            "apixaban_dose",
+            "apixaban_2_5_stopped",
+            "inputs_before_orders"
           ]
         },
         {
           "kind": "mutant",
-          "id": "spironolactone_12_5",
+          "id": "entered_in_error_scr",
           "outcome": "FAIL",
           "as_expected": true,
           "failed_checks": [
-            "spironolactone_25",
-            "sources_before_orders"
+            "apixaban_dose",
+            "apixaban_2_5_stopped",
+            "metformin_dose",
+            "gabapentin_dose"
           ]
         },
         {
           "kind": "mutant",
-          "id": "spironolactone_12_5_snippet",
+          "id": "stale_scr",
           "outcome": "FAIL",
           "as_expected": true,
           "failed_checks": [
-            "spironolactone_25"
+            "apixaban_dose",
+            "apixaban_2_5_stopped",
+            "metformin_dose",
+            "inputs_before_orders"
           ]
         },
         {
           "kind": "mutant",
-          "id": "lisinopril_task",
+          "id": "eie_scr_most_recent",
           "outcome": "FAIL",
           "as_expected": true,
           "failed_checks": [
-            "lisinopril_resumed"
+            "apixaban_dose",
+            "apixaban_2_5_stopped",
+            "metformin_dose",
+            "gabapentin_dose"
           ]
         },
         {
           "kind": "mutant",
-          "id": "kcl_kept",
+          "id": "stale_scr_latest",
           "outcome": "FAIL",
           "as_expected": true,
           "failed_checks": [
-            "kcl_stopped"
+            "apixaban_dose",
+            "apixaban_2_5_stopped",
+            "metformin_dose",
+            "inputs_before_orders"
           ]
         },
         {
           "kind": "mutant",
-          "id": "xl_ordered",
+          "id": "keep_2_5",
           "outcome": "FAIL",
           "as_expected": true,
           "failed_checks": [
-            "others_unchanged"
+            "apixaban_dose",
+            "apixaban_2_5_stopped"
           ]
         },
         {
           "kind": "mutant",
-          "id": "tartrate_stopped",
+          "id": "apixaban_double_dose",
           "outcome": "FAIL",
           "as_expected": true,
           "failed_checks": [
-            "others_unchanged"
+            "apixaban_dose"
           ]
         },
         {
           "kind": "mutant",
-          "id": "pantoprazole_ordered",
+          "id": "apixaban_half_tablet",
           "outcome": "FAIL",
           "as_expected": true,
           "failed_checks": [
-            "omeprazole_kept"
+            "apixaban_dose"
           ]
         },
         {
           "kind": "mutant",
-          "id": "no_pcp_message",
+          "id": "apixaban_two_orders",
           "outcome": "FAIL",
           "as_expected": true,
           "failed_checks": [
-            "pcp_message"
+            "apixaban_dose"
           ]
         },
         {
           "kind": "mutant",
-          "id": "resume_before_lab",
+          "id": "gabapentin_under_400",
           "outcome": "FAIL",
           "as_expected": true,
           "failed_checks": [
-            "sources_before_orders"
+            "gabapentin_dose"
           ]
         },
         {
           "kind": "mutant",
-          "id": "old_summary",
+          "id": "metformin_reduced",
           "outcome": "FAIL",
           "as_expected": true,
           "failed_checks": [
-            "furosemide_40",
-            "kcl_stopped"
+            "metformin_dose"
           ]
         },
         {
           "kind": "mutant",
-          "id": "message_wrong_clinician",
+          "id": "metformin_tablets_reduced",
           "outcome": "FAIL",
           "as_expected": true,
           "failed_checks": [
-            "pcp_message"
+            "metformin_dose"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "atorvastatin_touched",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "no_other_changes"
           ]
         },
         {
@@ -508,11 +1261,9 @@
           "outcome": "FAIL",
           "as_expected": true,
           "failed_checks": [
-            "furosemide_40",
-            "spironolactone_25",
-            "kcl_stopped",
-            "lisinopril_resumed",
-            "pcp_message"
+            "apixaban_dose",
+            "apixaban_2_5_stopped",
+            "gabapentin_dose"
           ]
         },
         {
@@ -521,8 +1272,8 @@
           "outcome": "FAIL",
           "as_expected": true,
           "failed_checks": [
-            "others_unchanged",
-            "omeprazole_kept"
+            "metformin_dose",
+            "no_other_changes"
           ]
         },
         {
@@ -531,306 +1282,17 @@
           "outcome": "FAIL",
           "as_expected": true,
           "failed_checks": [
-            "furosemide_40",
-            "spironolactone_25",
-            "kcl_stopped",
-            "lisinopril_resumed"
+            "apixaban_dose",
+            "apixaban_2_5_stopped",
+            "gabapentin_dose"
           ]
         }
       ]
     },
-    "4f41aaa5e058eefa62c6859938f8ca746e799d8501b6d4fef3fbc555e855038a": {
-      "task_id": "results-inbox",
-      "env_version": "1b69d4deab5047c9be4c70ff0438628526da629a9fa0c5f1ca1d0605cec02a86",
-      "task_version": "2605c195d7b629568ecc9ba943d7444c3e548308d50ee7fd72f819ff04fbf8b6",
-      "pass": true,
-      "oracle_pass": true,
-      "alternatives_pass": true,
-      "failed_checks": [],
-      "probes": [
-        {
-          "kind": "oracle",
-          "id": "oracle",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "ldct_task_oncall_cmp",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "window_edges_datetimes",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "hold_lisinopril",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "page_names_patient_in_text",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "phone_calls_and_result_links",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "fit_left_to_gi",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "searches_then_reads",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "mutant",
-          "id": "structured_smoking_only",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "nodule_ct_window",
-            "items_closed_with_links"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "ct_from_today",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "nodule_ct_window"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "ct_with_contrast",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "nodule_ct_window"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "namesake_ct",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "nodule_ct_window",
-            "namesake_untouched",
-            "items_closed_with_links"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "duplicate_gi_referral",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "fit_existing_referral"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "hemolyzed_k_paged",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "hemolyzed_k_no_oncall"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "hemolyzed_k_paged_no_about",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "hemolyzed_k_no_oncall"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "hemolyzed_k_routine_next_week",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "hemolyzed_k_repeat"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "critical_k_patient_only",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "critical_k_oncall"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "critical_k_oncall_urgent",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "critical_k_oncall"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "critical_k_as_hemolyzed",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "critical_k_oncall",
-            "critical_k_stat_bmp"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "bone_routine_three_months",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "bone_lesion_orders"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "bone_referral_only",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "bone_lesion_orders"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "cyst_reimaged",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "controls_no_orders"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "closed_without_links",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "items_closed_with_links"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "critical_k_linked_result_only",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "items_closed_with_links"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "critical_k_linked_reminder",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "items_closed_with_links"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "stat_bmp_from_summary",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "sources_before_orders"
-          ]
-        },
-        {
-          "kind": "null",
-          "id": "null",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "nodule_ct_window",
-            "fit_existing_referral",
-            "hemolyzed_k_repeat",
-            "critical_k_oncall",
-            "critical_k_stat_bmp",
-            "bone_lesion_orders",
-            "items_closed_with_links"
-          ]
-        },
-        {
-          "kind": "spray",
-          "id": "spray",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "fit_existing_referral",
-            "hemolyzed_k_no_oncall",
-            "controls_no_orders"
-          ]
-        },
-        {
-          "kind": "output-gap",
-          "id": "output-gap",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "nodule_ct_window",
-            "fit_existing_referral",
-            "hemolyzed_k_repeat",
-            "critical_k_oncall",
-            "critical_k_stat_bmp",
-            "bone_lesion_orders",
-            "items_closed_with_links"
-          ]
-        },
-        {
-          "kind": "status-only",
-          "id": "status-only",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "nodule_ct_window",
-            "hemolyzed_k_repeat",
-            "critical_k_oncall",
-            "critical_k_stat_bmp",
-            "bone_lesion_orders",
-            "items_closed_with_links"
-          ]
-        }
-      ]
-    },
-    "6a347d132e6299c1bb1f841be014e06c657b4490ec9c45693447106e0d799140": {
+    "eaf6b0d8b15fae30edc8b0ead45dd54994dc2a26d0e997a6fa0607d4974f8caa": {
       "task_id": "crc-care-gap",
       "env_version": "f5f885afc6134508bf8c9caaf697d8c9df5a7f0bd7316c7e637f90c5c9abc58c",
-      "task_version": "ec636b247f7a32a03075d78d6c738074fd0938413f2144c9889a4d333c984ff3",
+      "task_version": "d1dba89c13b34275df7ab9a5041f5cfe45ad631a7d733a5b05737c0532638740",
       "pass": true,
       "oracle_pass": true,
       "alternatives_pass": true,
@@ -1073,468 +1535,6 @@
           "failed_checks": [
             "fit_orders",
             "outreach_messages"
-          ]
-        }
-      ]
-    },
-    "85d8a409b79e0a775fa0e214f5ff49330854e1b40414b089b08c3c0f307d89f2": {
-      "task_id": "contrast-ct-prep",
-      "env_version": "1b47cd6807624e2db3e76fbb8dfa5a519eadfa93bdf47dbdcb8fee1a1c37d288",
-      "task_version": "6ff313a49c1c1759238179e42a6bf12e814b9b8bb5305cc0a5c711b86c9541b9",
-      "pass": true,
-      "oracle_pass": true,
-      "alternatives_pass": true,
-      "failed_checks": [],
-      "probes": [
-        {
-          "kind": "oracle",
-          "id": "oracle",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "one_request_per_dose",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "tablet_counts_and_more_reads",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "holds_metformin",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "adds_prn_antihistamine",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "one_answer_orders",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "times_in_words",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "split_doses",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "mutant",
-          "id": "iodine_allergies_avoid_contrast",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "ct_order",
-            "prednisone_schedule",
-            "diphenhydramine_dose",
-            "creatinine_before_scan",
-            "no_substitution"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "overnight_date_slip",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "prednisone_schedule"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "stale_creatinine_accepted",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "creatinine_before_scan"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "copied_2023_times",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "prednisone_schedule",
-            "diphenhydramine_dose"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "ct_not_linked",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "ct_order"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "accelerated_iv_hydrocortisone",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "prednisone_schedule",
-            "no_substitution"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "creatinine_after_scan",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "creatinine_before_scan"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "prednisone_20_mg",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "prednisone_schedule"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "antihistamine_with_first_dose",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "diphenhydramine_dose"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "ct_dated_today",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "ct_order"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "premedicates_before_review",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "evidence_before_orders"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "no_patient_message",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "patient_instructed"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "antihistamine_at_bedtime",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "diphenhydramine_dose"
-          ]
-        },
-        {
-          "kind": "null",
-          "id": "null",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "ct_order",
-            "prednisone_schedule",
-            "diphenhydramine_dose",
-            "creatinine_before_scan",
-            "patient_instructed"
-          ]
-        },
-        {
-          "kind": "spray",
-          "id": "spray",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "no_substitution"
-          ]
-        },
-        {
-          "kind": "output-gap",
-          "id": "output-gap",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "ct_order",
-            "prednisone_schedule",
-            "diphenhydramine_dose",
-            "creatinine_before_scan"
-          ]
-        }
-      ]
-    },
-    "e583c949bfc83f98b99f857fb6b8c298286c61846346397215a7d84efcdd24e9": {
-      "task_id": "renal-dose-review",
-      "env_version": "0f868a40dce8690667f1d4f142aae069e9abd239b699f9e566f4edadb00fe09b",
-      "task_version": "cfec2f312ea710ed556e870de9b7833a275438e7ebe126280b3876acaeb3523a",
-      "pass": true,
-      "oracle_pass": true,
-      "alternatives_pass": true,
-      "failed_checks": [],
-      "probes": [
-        {
-          "kind": "oracle",
-          "id": "oracle",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "stop_then_order",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "gabapentin_200_tid",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "replaces_and_noop_metformin",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "apixaban_two_2_5_tablets",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "apixaban_2_5_tablets_counted",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "doses_in_tablets",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "eie_value_named",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "one_answer_orders",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "mutant",
-          "id": "stale_weight",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "apixaban_dose",
-            "apixaban_2_5_stopped",
-            "inputs_before_orders"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "entered_in_error_scr",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "apixaban_dose",
-            "apixaban_2_5_stopped",
-            "metformin_dose",
-            "gabapentin_dose"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "stale_scr",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "apixaban_dose",
-            "apixaban_2_5_stopped",
-            "metformin_dose",
-            "inputs_before_orders"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "eie_scr_most_recent",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "apixaban_dose",
-            "apixaban_2_5_stopped",
-            "metformin_dose",
-            "gabapentin_dose"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "stale_scr_latest",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "apixaban_dose",
-            "apixaban_2_5_stopped",
-            "metformin_dose",
-            "inputs_before_orders"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "keep_2_5",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "apixaban_dose",
-            "apixaban_2_5_stopped"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "apixaban_double_dose",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "apixaban_dose"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "apixaban_half_tablet",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "apixaban_dose"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "apixaban_two_orders",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "apixaban_dose"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "gabapentin_under_400",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "gabapentin_dose"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "metformin_reduced",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "metformin_dose"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "metformin_tablets_reduced",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "metformin_dose"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "atorvastatin_touched",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "no_other_changes"
-          ]
-        },
-        {
-          "kind": "null",
-          "id": "null",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "apixaban_dose",
-            "apixaban_2_5_stopped",
-            "gabapentin_dose"
-          ]
-        },
-        {
-          "kind": "spray",
-          "id": "spray",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "metformin_dose",
-            "no_other_changes"
-          ]
-        },
-        {
-          "kind": "output-gap",
-          "id": "output-gap",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "apixaban_dose",
-            "apixaban_2_5_stopped",
-            "gabapentin_dose"
           ]
         }
       ]
