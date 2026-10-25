@@ -59,3 +59,16 @@ describe('README deploy (B2: CLI deploy only, never a Git connection)', () => {
     }
   });
 });
+
+// Security M1: Origin is set by browsers only, so the Origin lock does not bound who can call the
+// relay; the README says so and why it is acceptable.
+describe('README: who can use the relay', () => {
+  it('says that any non-browser client can forge Origin, and what still bounds that use', () => {
+    const text = section('Who can use the relay').replace(/\s+/g, ' ');
+    expect(text).toMatch(/open Messages proxy/);
+    expect(text).toMatch(/forge/);
+    expect(text).toMatch(/holds no key/);
+    expect(text).toMatch(/no capability/);
+    for (const bound of ['rate limit', 'claude-opus-5-5', 'spend']) expect(text).toContain(bound);
+  });
+});

@@ -37,7 +37,7 @@ In the order `handle` applies them:
 4. Method: `POST`, else 405.
 5. Origin: exactly `https://wth-lg.github.io`, else 403 and no upstream call. That excludes a
    missing Origin, `http://`, a suffix such as `https://wth-lg.github.io.evil.example` and other
-   `github.io` origins.
+   `github.io` origins. Only browsers are bound by it (see Who can use the relay).
 6. Body: at most 4,500,000 bytes (Vercel's function body limit), else 413. It must be JSON with
    `"model": "claude-opus-5-5"`, else 400. The relay forwards it byte for byte, so the spend
    ledger's byte-count reserve stays exact.
@@ -50,6 +50,21 @@ In the order `handle` applies them:
 9. Errors: if the upstream fetch fails, the client gets
    `{"type":"error","error":{"type":"relay_error"}}` with status 502. The body never includes an
    error message.
+
+## Who can use the relay
+
+The Origin lock (rule 5) only binds browsers: a browser sets `Origin` and a page cannot change it.
+Any other client, such as `curl` or a script, can forge `Origin: https://wth-lg.github.io`. For
+anyone outside a browser who supplies their own key, the relay is therefore an open Messages proxy.
+
+That is acceptable, because the relay holds no key and adds no capability. A caller gets exactly
+what the same key gets by calling the API directly, for one model, with the caller's own key
+paying. What it can take from us is the function time and the egress of our Vercel account, and
+three things bound that:
+
+- the per-client rate limit (see Rate limit);
+- the model lock: only `claude-opus-5-5` is forwarded;
+- the account's spend management or usage alert (Deploy, step 5), which bounds total use.
 
 ## Static files
 
