@@ -61,8 +61,11 @@ export async function cliMatrix(id: string): Promise<MatrixEntry> {
 let served: Promise<string> | undefined;
 export function sampleBase(baseURL: string): Promise<string> {
   return (served ??= (async () => {
-    const official = await fetch(new URL('data/results/official.json', baseURL)).then((r) => (r.ok ? r.text() : ''), () => '');
-    if (official !== '' && (await fetch(new URL(`data/results/${(JSON.parse(official) as { run: string }).run}/summary.json`, baseURL)).then((r) => (r.ok ? r.json() : null), () => null) as { run_id?: string } | null)?.run_id === summary.run_id) return baseURL;
+    // vite preview answers a missing file with index.html, so data/index.json says what is there.
+    const json = (path: string) => fetch(new URL(path, baseURL)).then((r) => r.json() as Promise<unknown>).catch(() => null);
+    const files = ((await json('data/index.json')) as { files?: string[] } | null)?.files ?? [];
+    const run = files.includes('results/official.json') ? ((await json('data/results/official.json')) as { run: string }).run : null;
+    if (run !== null && ((await json(`data/results/${run}/summary.json`)) as { run_id?: string } | null)?.run_id === summary.run_id) return baseURL;
     const web = join(REPO, 'apps/web');
     const out = mkdtempSync(join(tmpdir(), 'clinenv-sample-build-'));
     const b = spawnSync(join(web, 'node_modules/.bin/vite'), ['build', '--outDir', out, '--emptyOutDir', '--logLevel', 'error'], { cwd: web, encoding: 'utf8', env: { ...process.env, RESULTS_ROOT: SAMPLE } });
