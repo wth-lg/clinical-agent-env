@@ -370,3 +370,24 @@ async function replay(source: FixtureSource, task: Task, tools: readonly Tool<Wr
   }
   return store;
 }
+
+// The state a trial's tool log leaves, for a caller that shows it (the trial detail's State
+// diff, plan phase P16): the world's resources, then the same tool log replayed on a fresh
+// store exactly as gradeTrajectory replays it; final null, with the error, when a call throws.
+export interface ReplayedState {
+  initial: Resource[];
+  final: Resource[] | null;
+  error: string | null;
+}
+export async function replayState(taskId: string, opts: Pick<GradeTrajectoryOptions, 'tasks' | 'world' | 'events' | 'definitions'>): Promise<ReplayedState> {
+  const task = await opts.tasks.get(taskId);
+  if (opts.definitions !== undefined && opts.definitions !== indexedBundle) {
+    indexDefinitions(opts.definitions);
+    indexedBundle = opts.definitions;
+  }
+  const bytes = await opts.world.read();
+  const source: FixtureSource = { read: async () => bytes };
+  const initial = [...(await loadStore(source)).resources()];
+  const replayed = await replay(source, task, taskTools(task), opts.events);
+  return { initial, final: replayed && [...replayed.resources()], error: replayed === null ? 'a tool call threw on replay (the INTERNAL error that ended the trial)' : null };
+}
