@@ -1,16 +1,15 @@
 import { Eye, EyeOff } from 'lucide-react';
-import { useId, useState, type FormEvent } from 'react';
+import { Fragment, useId, useState, type FormEvent } from 'react';
 import { DEFAULT_SESSION_CAP_USD, MAX_SESSION_CAP_USD, parseCap } from '../spend/cap.ts';
 import { sessionCap, setSessionCap } from '../spend/session.ts';
 import type { Surface } from '../surface/detect.ts';
 import { LocalCommand } from '../surface/LocalCommand.tsx';
 import { LocalRunPanel } from '../surface/LocalRunPanel.tsx';
 import { SurfaceChip } from '../surface/SurfaceChip.tsx';
-import { validateDirect, type DirectResult } from './direct.ts';
+import { validateDirect } from './direct.ts';
+import { describeFailure, type Failure } from './failure.ts';
 import { heldByRunner, holdInTab } from './key.ts';
 import { postKey } from './runner.ts';
-
-type Failure = { kind: (DirectResult & { ok: false })['kind'] | 'runner'; message: string; refusal?: string };
 
 const WHERE: Record<Surface['kind'], string> = {
   'local-runner': 'The key goes to the local runner on this machine, which keeps it in memory and sends it only to the Anthropic API.',
@@ -35,7 +34,7 @@ export function KeyGate({ surface, onDone, onBrowse, notice }: { surface: Surfac
   const [remember, setRemember] = useState(false);
   const [capText, setCapText] = useState(String(sessionCap()));
   const [busy, setBusy] = useState(false);
-  const [failure, setFailure] = useState<Failure | null>(notice ? { kind: 'runner', message: notice } : null);
+  const [failure, setFailure] = useState<Failure | null>(notice ? { kind: 'notice', message: notice } : null);
   const ids = { key: useId(), hint: useId(), cap: useId(), error: useId() };
   const cap = parseCap(capText);
   const rounded = cap !== null && cap !== Number(capText.trim());
@@ -55,7 +54,7 @@ export function KeyGate({ surface, onDone, onBrowse, notice }: { surface: Surfac
         holdInTab(k, remember);
       } else {
         const r = await postKey(k);
-        if (!r.ok) return setFailure({ kind: 'runner', message: r.message, ...(r.refusal === undefined ? {} : { refusal: r.refusal }) });
+        if (!r.ok) return setFailure({ ...r, kind: 'runner' });
         heldByRunner();
       }
       setKey('');
@@ -157,32 +156,38 @@ export function KeyGate({ surface, onDone, onBrowse, notice }: { surface: Surfac
   );
 }
 
-// Red: the danger token on the border and the first line. A plain statement first, then what
-// to do (for org-CORS and network: run it locally, with the command; for a runner 409: its
-// REFUSAL_TEXT), then the API's or runner's own line in small mono.
+// Red: the danger token on the border and the first line. One plain sentence first, then what to
+// do (for org-CORS and network: run it locally, with the command), then the API's or runner's own
+// line in small mono, which wraps only between words.
 function FailureNote({ id, failure }: { id: string; failure: Failure }) {
-  const local = failure.kind === 'org-cors' || failure.kind === 'network';
+  const { lead, next, detail, local } = describeFailure(failure);
   return (
     <div id={id} role="alert" className="mt-3 rounded-sm border border-danger bg-canvas p-3">
-      {local ? (
-        <>
-          <p className="font-medium text-danger">
-            {failure.kind === 'org-cors' ? "This key's organization does not allow browser access." : 'The browser could not reach the API from this page.'}
-          </p>
-          <p className="mt-1 text-ink">Run the environment locally instead. It opens this UI and keeps the key on your machine:</p>
-          <div className="mt-2">
-            <LocalCommand />
-          </div>
-          <p className="mt-2 break-words font-mono text-xs text-ink-muted">{failure.message}</p>
-        </>
-      ) : failure.refusal !== undefined ? (
-        <>
-          <p className="font-medium text-danger">{failure.refusal}</p>
-          <p className="mt-2 break-words font-mono text-xs text-ink-muted">{failure.message}</p>
-        </>
-      ) : (
-        <p className="break-words text-danger">{failure.message}</p>
+      <p className="font-medium text-danger">{lead}</p>
+      {next !== undefined && <p className="mt-1 text-ink">{next}</p>}
+      {local && (
+        <div className="mt-2">
+          <LocalCommand />
+        </div>
       )}
+      {detail !== undefined && <RawLine text={detail} />}
     </div>
+  );
+}
+
+// Each word is an inline block, so a line breaks only between words; a word longer than the whole
+// line still wraps inside itself rather than overflow. The text content stays exactly `text`.
+function RawLine({ text }: { text: string }) {
+  return (
+    <p className="mt-2 font-mono text-xs text-ink-muted">
+      {text.split(' ').map((word, i) => (
+        <Fragment key={i}>
+          {i > 0 && ' '}
+          <span data-word className="inline-block max-w-full wrap-anywhere">
+            {word}
+          </span>
+        </Fragment>
+      ))}
+    </p>
   );
 }

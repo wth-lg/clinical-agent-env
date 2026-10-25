@@ -672,7 +672,9 @@ test.describe('prerequisite rows', () => {
   }
 });
 
-// UI F2: an error is red: the danger token on its border, its first line and the key field.
+// UI F2 and F3: an error is red (the danger token on its border, its first line and the key field)
+// and starts with one plain sentence; the API's own line follows in small mono that never breaks
+// inside a word.
 test.describe('errors', () => {
   for (const scheme of ['light', 'dark'] as const) {
     test(`${scheme}: a 401 is red: the danger token on the alert border, its first line and the key field`, async ({ page }) => {
@@ -693,6 +695,57 @@ test.describe('errors', () => {
       expect(await keyField(page).evaluate((el) => getComputedStyle(el).borderTopColor)).toBe(danger);
     });
   }
+
+  test('a browser-direct 401 starts with a plain sentence, then the API line in small mono, no word broken at 390', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await mockBrowserDirect(page);
+    await mockApi(page, { status: 401, type: 'authentication_error', message: 'invalid x-api-key' });
+    await page.goto('./');
+    await keyField(page).fill(sentinelKey());
+    await validate(page);
+    const alert = page.getByRole('alert');
+    await expect(alert.locator('p').first()).toHaveText('The API did not accept this key.');
+    const detail = alert.locator('p').last();
+    await expect(detail).toHaveText('HTTP 401 authentication_error: invalid x-api-key');
+    const lead = await alert.locator('p').first().evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+    const d = await detail.evaluate((el) => ({
+      size: parseFloat(getComputedStyle(el).fontSize),
+      mono: getComputedStyle(el).fontFamily,
+      lines: Math.round(el.getBoundingClientRect().height / parseFloat(getComputedStyle(el).lineHeight)),
+      broken: [...el.querySelectorAll('[data-word]')].filter((w) => w.getClientRects().length > 1).map((w) => w.textContent),
+      words: el.querySelectorAll('[data-word]').length,
+    }));
+    expect(d.size).toBeLessThan(lead);
+    expect(d.mono).toMatch(/mono/i);
+    expect(d.words).toBe(5);
+    // The line is wider than the alert at 390, so it wraps, but only between words.
+    expect(d.lines).toBeGreaterThan(1);
+    expect(d.broken).toEqual([]);
+  });
+
+  test('a local-runner 401 starts with the same plain sentence, then the runner line', async ({ page }) => {
+    await mockLocalRunner(page, 'stub');
+    await page.route((url) => isPath(url, KEY_PATH), (route) => json(route, 401, SAMPLES.keyError));
+    await page.goto('./');
+    await keyField(page).fill(sentinelKey());
+    await validate(page);
+    const alert = page.getByRole('alert');
+    await expect(alert.locator('p').first()).toHaveText('The API did not accept this key.');
+    await expect(alert.locator('p').last()).toHaveText(SAMPLES.keyError.error.message);
+  });
+
+  test('a session cap refusal starts with a plain sentence and says how to continue', async ({ page }) => {
+    await mockBrowserDirect(page);
+    await mockApi(page, { status: 200 });
+    await page.goto('./');
+    await keyField(page).fill(sentinelKey());
+    await capField(page).fill('0.01');
+    await validate(page);
+    const alert = page.getByRole('alert');
+    await expect(alert.locator('p').first()).toHaveText('The session spend cap does not allow this check.');
+    await expect(alert).toContainText('session spend cap');
+    await expect(alert.locator('p').last()).toContainText('session cap $0.01');
+  });
 });
 
 // The gate (normal, org-CORS, another API error) and the shell, light and dark, at 1440x900

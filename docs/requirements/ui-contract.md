@@ -104,7 +104,9 @@ accessible name or text node, so they share one line of the snapshot.
 - `Run it on your computer`: the heading of the local-run panel on the browser-direct surface. It
   shows on the key gate in every key state, outside any error, and in the shell after Validate.
 - Key gate errors are red: the danger token (tokens.css, `--color-danger`) colours the error's
-  border, its first line and the key field while it is invalid.
+  border, its first line and the key field while it is invalid. Each error starts with one plain
+  sentence from apps/web/src/keygate/failure.ts (for example `The API did not accept this key.`),
+  then the API's or runner's own line in small mono that wraps only between words.
 
 ### P13, P15: runner refusals
 
