@@ -86,8 +86,8 @@ export interface ExplainRecord {
 // and an outcome GRADER_BUG as grader. adjudicated_label settles a row whose model_fault is unclear
 // or whose LLM auditor disagrees; the reasoning goes in note. criteria is what audit-check writes
 // back: explainTrial's criteria for the trial. The auditor answers two questions on a failure
-// (R14-31): clinically_acceptable, whether failing the trial is clinically right (no: its work
-// was a clinically acceptable solution the grader rejected), and tool_rejections_correct, whether
+// (R14-31): clinically_acceptable, "is the recorded outcome clinically right?" (a no on a failure:
+// the grader rejected a clinically acceptable solution), and tool_rejections_correct, whether
 // every tool rejection in the trajectory was right (no: a tool refused a valid call). Each is yes
 // or no, absent when the row does not answer; cli/audit-check.ts requires a "no" to come with GR3
 // (an audit outcome GRADER_BUG with evidence), an environment label or an adjudicated_label with a
@@ -187,10 +187,10 @@ export interface AuditAnswers {
   tool_rejections_correct: AuditAnswer | null;
 }
 
-// "clinically acceptable grade: no; tool rejections correct: yes", as the trial detail and
+// "recorded outcome clinically right: no; tool rejections correct: yes", as the trial detail and
 // audit-check show the answers.
 export const formatAuditAnswers = (a: AuditAnswers | null): string =>
-  a === null ? NOT_AUDITED_MARKER : `clinically acceptable grade: ${a.clinically_acceptable ?? 'not answered'}; tool rejections correct: ${a.tool_rejections_correct ?? 'not answered'}`;
+  a === null ? NOT_AUDITED_MARKER : `recorded outcome clinically right: ${a.clinically_acceptable ?? 'not answered'}; tool rejections correct: ${a.tool_rejections_correct ?? 'not answered'}`;
 const answer = (v: unknown): AuditAnswer | null => (v === 'yes' || v === 'no' ? v : null);
 
 // How a criterion's met value reads, in audit-check's output and the trial detail alike.

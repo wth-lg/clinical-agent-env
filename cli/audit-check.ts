@@ -42,8 +42,9 @@
 //     fixed and the run regraded, as for any grader bug;
 //   - with --final (P17i C6, R14-33: the final audit, never a pilot audit), every valid failure's
 //     label has an LLM auditor verdict: llm_auditor_agrees true or false, not null or missing;
-//   - a label's clinically_acceptable and tool_rejections_correct (explain.ts AuditRow), when
-//     given, are yes or no, and a "no" comes with GR3 (the label's outcome GRADER_BUG with an
+//   - a label's clinically_acceptable ("is the recorded outcome clinically right?") and
+//     tool_rejections_correct (explain.ts AuditRow), when given, are yes or no, and a "no" comes
+//     with GR3 (the label's outcome GRADER_BUG with an
 //     evidence id), an environment label, or an adjudicated_label with a note: a "no" says the
 //     grader or a tool rejected valid work, so the label must say whose fault that is.
 // It writes each label's criteria, explainTrial's M1-M5 for its trial, into audit.jsonl (only when
@@ -236,7 +237,7 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
       if (a === undefined || a === null || a === 'yes') continue;
       if (a !== 'no') v.push(`${l.trial}: ${field} must be yes or no, not ${JSON.stringify(a)}`);
       else if (!((l.outcome === 'GRADER_BUG' && l.evidence_ids.length > 0) || auditLabelOf(l) === 'environment' || (isLabel(l.adjudicated_label) && (l.note ?? '').trim() !== ''))) {
-        v.push(`${l.trial}: ${field} no needs GR3 (an audit outcome GRADER_BUG with evidence), an environment label or an adjudicated_label with a note`);
+        v.push(`${l.trial}: ${field} no (${field === 'clinically_acceptable' ? 'the recorded outcome is not clinically right' : 'a tool rejected a valid call'}) needs GR3 (an audit outcome GRADER_BUG with evidence), an environment label or an adjudicated_label with a note`);
       }
     }
     if (outcome === 'PASS') continue;

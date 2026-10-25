@@ -34,7 +34,7 @@ describe('audit-check: clinically_acceptable and tool_rejections_correct', () =>
 
   it.each(['clinically_acceptable', 'tool_rejections_correct'])('%s no on a model label without an adjudicated reason is a violation', async (field) => {
     const vs = await violations(run('clean', 't-alpha/5', { [field]: 'no' }));
-    expect(vs).toEqual([`t-alpha/5: ${field} no needs GR3 (an audit outcome GRADER_BUG with evidence), an environment label or an adjudicated_label with a note`]);
+    expect(vs).toEqual([`t-alpha/5: ${field} no (${field === 'clinically_acceptable' ? 'the recorded outcome is not clinically right' : 'a tool rejected a valid call'}) needs GR3 (an audit outcome GRADER_BUG with evidence), an environment label or an adjudicated_label with a note`]);
   });
 
   it('a no with an adjudicated_label and a note is met', async () => {

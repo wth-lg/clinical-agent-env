@@ -19,9 +19,9 @@ describe('audit answers', () => {
   it('an audit row\'s clinically_acceptable and tool_rejections_correct are on the explanation, null when the row has none', () => {
     const x = explainTrial(record('FAIL'), row({ clinically_acceptable: 'no', tool_rejections_correct: 'yes' }), ctx);
     expect(x.audit_answers).toEqual({ clinically_acceptable: 'no', tool_rejections_correct: 'yes' });
-    expect(formatAuditAnswers(x.audit_answers)).toBe('clinically acceptable grade: no; tool rejections correct: yes');
+    expect(formatAuditAnswers(x.audit_answers)).toBe('recorded outcome clinically right: no; tool rejections correct: yes');
     expect(explainTrial(record('FAIL'), row(), ctx).audit_answers).toEqual({ clinically_acceptable: null, tool_rejections_correct: null });
-    expect(formatAuditAnswers(explainTrial(record('FAIL'), row(), ctx).audit_answers)).toBe('clinically acceptable grade: not answered; tool rejections correct: not answered');
+    expect(formatAuditAnswers(explainTrial(record('FAIL'), row(), ctx).audit_answers)).toBe('recorded outcome clinically right: not answered; tool rejections correct: not answered');
     expect(explainTrial(record('FAIL'), undefined, ctx).audit_answers).toBeNull();
   });
 });
