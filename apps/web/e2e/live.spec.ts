@@ -156,6 +156,12 @@ test('a reload mid-trial resumes from IndexedDB to the same final hash, and no s
   await expect(page.locator(`[data-testid="live-row"][data-trial="${before}"]`).getByTestId('resumed')).toHaveText('resumed after reload');
   // The loop's first two answers came from the checkpoint: only the cut-off request was re-sent.
   expect(api.trialCalls().filter((c) => c.tools !== undefined)).toHaveLength(4);
+  // The cut-off call was paid for: the tab ledger settled it at its worst case, and the record
+  // counts it, so the record holds everything the ledger charged to the trial (verifier-phase-P15-2 D3).
+  const record = (await storedRecord(page, before!)) as { cost_usd: number; judge_cost_usd: number };
+  const charged = await page.evaluate((id) => (JSON.parse(sessionStorage.getItem('clinenv.ledger') ?? '[]') as Array<{ kind: string; trial: string | null; cost_usd: number }>)
+    .filter((r) => r.kind === 'settle' && r.trial === id).reduce((a, r) => a + r.cost_usd, 0), before!);
+  expect(record.cost_usd + record.judge_cost_usd).toBeCloseTo(charged, 6);
   expect(await storageDump(page)).not.toContain(key);
 });
 

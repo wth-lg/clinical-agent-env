@@ -26,6 +26,7 @@ import { MODEL, sessionCeiling, tabLedger, tabRows } from '../../adapters/ledger
 import { tabKey } from '../../keygate/key.ts';
 import { refreshSpent, sessionCap } from '../../spend/session.ts';
 import { trialProjection } from '../checks.ts';
+import { cutOffUsd } from '../resume.ts';
 import { getTrial, listRuns, listTrials, putEvent, putRun, putTrial, readEvents, updateTrial } from '../store.ts';
 import type { LiveRun, StartResult, TrialEnd, TrialTransport } from '../types.ts';
 
@@ -55,6 +56,8 @@ export interface WorkerStart {
   seed: LedgerRow[];
   // The events kept before a reload; empty for a new trial.
   checkpoint: TrialEvent[];
+  // What the loop calls the reload cut off cost (live/resume.ts cutOffUsd); 0 for a new trial.
+  cutOffUsd: number;
   worldUrl: string;
   manifestUrl: string;
   definitionsUrl: string;
@@ -84,7 +87,7 @@ let boot: string | undefined;
 const trialWorkerBoot = () =>
   (boot ??= URL.createObjectURL(new Blob([`import ${JSON.stringify(new URL(trialWorkerUrl, document.baseURI).href)};\n`], { type: 'text/javascript' })));
 
-function runWorker(trialId: string, task: string, opts: { batchId: string; cap: number; projection: number; checkpoint: TrialEvent[]; apiKey: string }): Live {
+function runWorker(trialId: string, task: string, opts: { batchId: string; cap: number; projection: number; checkpoint: TrialEvent[]; cutOffUsd: number; apiKey: string }): Live {
   const entry: Live = { events: [...opts.checkpoint], listeners: new Set(), done: Promise.resolve({ state: 'error', record: null, message: null }), cancel: () => {} };
   live.set(trialId, entry);
   const worker = new Worker(trialWorkerBoot(), { type: 'module', name: trialId });
@@ -117,7 +120,7 @@ function runWorker(trialId: string, task: string, opts: { batchId: string; cap: 
   void (async () => {
     const seed = (await tabRows()).filter((r) => r.batch_id !== opts.batchId);
     const start: WorkerStart = {
-      type: 'start', trialId, task, model: MODEL, effort: 'high', apiKey: opts.apiKey, cap: opts.cap, projection: opts.projection, seed, checkpoint: opts.checkpoint,
+      type: 'start', trialId, task, model: MODEL, effort: 'high', apiKey: opts.apiKey, cap: opts.cap, projection: opts.projection, seed, checkpoint: opts.checkpoint, cutOffUsd: opts.cutOffUsd,
       worldUrl: dataUrl('world.ndjson.gz'), manifestUrl: dataUrl('manifest.json'), definitionsUrl: new URL(definitionsUrl, document.baseURI).href,
     };
     worker.postMessage(start);
@@ -143,7 +146,7 @@ async function runBatch(ids: string[], task: string, opts: { batchId: string; ca
         await updateTrial(id, { state: 'cancelled', error: stopped });
         continue;
       }
-      const end = await runWorker(id, task, { ...opts, checkpoint: [] }).done;
+      const end = await runWorker(id, task, { ...opts, checkpoint: [], cutOffUsd: 0 }).done;
       if (stopsBatch(end)) stopped = `The batch stopped: trial ${id} ended ${String((end.record as { outcome?: string } | null)?.outcome)}.`;
     }
   };
@@ -178,7 +181,8 @@ async function resume(trialId: string, task: string, projection: number, apiKey:
     return;
   }
   const g = grant;
-  const entry = runWorker(trialId, task, { batchId: g.batch_id, cap, projection, checkpoint: await readEvents(trialId), apiKey });
+  const checkpoint = await readEvents(trialId);
+  const entry = runWorker(trialId, task, { batchId: g.batch_id, cap, projection, checkpoint, cutOffUsd: cutOffUsd(await tabRows(), trialId, checkpoint), apiKey });
   void entry.done.finally(() => g.close().then(refreshSpent));
 }
 

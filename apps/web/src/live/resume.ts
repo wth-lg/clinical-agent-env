@@ -4,9 +4,12 @@
 // tools, then re-sends the request that had no answer and goes on live. Every event the resumed
 // run emits inside the checkpoint must equal the kept one (timestamps aside), state hashes
 // included; the first that differs stops the trial. To run() this is only a TrialClient and the
-// resumed option, so the record says the trial was resumed.
+// resumed option, so the record says the trial was resumed. The request the reload cut off was
+// sent and is paid for: the tab ledger settles it at its worst case (closeOrphans), and the
+// resumed record's cost_usd counts that too (cutOffUsd).
 import type { CallResult, Message } from '../../../../packages/core/anthropic.ts';
 import type { ResponseEvent, TrialEvent, UsageEvent } from '../../../../packages/core/events.ts';
+import type { LedgerRow } from '../../../../packages/core/ledger.ts';
 import type { TrialClient } from '../../../../packages/core/loop.ts';
 import type { RunOptions } from '../../../../packages/core/run.ts';
 
@@ -55,8 +58,20 @@ export function resumeClient(live: TrialClient, checkpoint: readonly TrialEvent[
   };
 }
 
-// The run() options of a trial from its checkpoint: the resume client and resumed: true, or the
-// live client as it is when nothing was kept.
-export function resumeOptions(live: TrialClient, checkpoint: readonly TrialEvent[]): Pick<RunOptions, 'client' | 'resumed'> {
-  return checkpoint.length > 0 ? { client: resumeClient(live, checkpoint), resumed: true } : { client: live, resumed: false };
+const µ = (usd: number) => Math.round(usd * 1e6);
+
+// What the loop calls a reload cut off cost: the tab ledger's settles for the trial beyond the
+// loop total its kept events reach. Once the loop had ended (its final hash is kept), a call the
+// reload cut off was a judge call, which the resumed run makes again and counts as its own.
+export function cutOffUsd(rows: readonly LedgerRow[], trialId: string, checkpoint: readonly TrialEvent[]): number {
+  if (checkpoint.some((e) => e.type === 'state_hash' && e.at === 'final')) return 0;
+  const settled = rows.filter((r) => r.kind === 'settle' && r.trial === trialId).reduce((a, r) => a + µ(r.cost_usd), 0);
+  const kept = checkpoint.findLast((e): e is UsageEvent => e.type === 'usage')?.cost_usd ?? 0;
+  return Math.max(0, settled - µ(kept)) / 1e6;
+}
+
+// The run() options of a trial from its checkpoint: the resume client and the cut-off cost, or
+// the live client as it is when nothing was kept.
+export function resumeOptions(live: TrialClient, checkpoint: readonly TrialEvent[], cutOff: number): Pick<RunOptions, 'client' | 'resumed'> {
+  return checkpoint.length > 0 ? { client: resumeClient(live, checkpoint), resumed: { cutOffUsd: cutOff } } : { client: live };
 }

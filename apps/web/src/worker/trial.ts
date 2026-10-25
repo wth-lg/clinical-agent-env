@@ -56,7 +56,7 @@ scope.addEventListener('message', ({ data }) => {
       };
       const { record } = await run(start.task, start.model, {
         tasks: browserTaskSource({ testMode: false }),
-        ...resumeOptions(client, kept),
+        ...resumeOptions(client, kept, start.cutOffUsd),
         judge: client,
         world: { read: async () => world },
         worldHash: manifest.world.state_hash,

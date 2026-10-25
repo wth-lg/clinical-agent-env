@@ -87,8 +87,10 @@ export interface RunOptions {
   // under the trial's grant. null: judge items are unknown.
   judge?: TrialClient | null;
   // The trial continues one a reload cut off (the browser's resume client answers its first
-  // requests from the kept events); the record says so. Default false.
-  resumed?: boolean;
+  // requests from the kept events); the record says so. cutOffUsd: what the loop calls the
+  // reload cut off cost, as the ledger settled them; the record's cost_usd counts it. Unset: a
+  // trial that starts here.
+  resumed?: { cutOffUsd: number };
 }
 
 // What a failed onEvent sink throws into the trial: the trial ends, its trajectory incomplete.
@@ -117,6 +119,7 @@ export interface TrialRun {
   tool_calls: number;
   tool_errors: LoopOutcome['tool_errors'];
   usage: LoopOutcome['usage'];
+  // The loop's calls; on a resumed trial, also the calls the reload cut off.
   cost_usd: number;
   api_retries: number;
   stop_reason: string | null;
@@ -266,7 +269,7 @@ export async function run(taskId: string, model: string, opts: RunOptions): Prom
     tool_calls: outcome.tool_calls,
     tool_errors: outcome.tool_errors,
     usage: outcome.usage,
-    cost_usd: outcome.cost_usd,
+    cost_usd: opts.resumed === undefined ? outcome.cost_usd : outcome.cost_usd + opts.resumed.cutOffUsd,
     api_retries: outcome.api_retries,
     stop_reason: outcome.stop_reason,
     refusal_category: outcome.refusal_category,
@@ -274,7 +277,7 @@ export async function run(taskId: string, model: string, opts: RunOptions): Prom
     stop: outcome.stop,
     detail: t === null ? null : t.type === 'limit' ? t.limit : t.type === 'error' ? t.code : t.reason,
     summary: ctx?.session.summary ?? null,
-    resumed: opts.resumed ?? false,
+    resumed: opts.resumed !== undefined,
   };
   const checks = opts.checks ?? [];
   const judge = judgeFor(checks, { judge: withSignal(opts.judge === undefined ? opts.client : opts.judge, opts.signal), effort: task.judgeEffort });
