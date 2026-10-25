@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ESLint } from 'eslint';
@@ -11,11 +12,16 @@ async function ruleIds(code: string, path: string): Promise<string[]> {
   const [result] = await eslint.lintText(code, { filePath: join(root, path) });
   return (result?.messages ?? []).map((m) => m.ruleId ?? `fatal: ${m.message}`);
 }
+async function messages(code: string, path: string): Promise<string[]> {
+  const [result] = await eslint.lintText(code, { filePath: join(root, path) });
+  return (result?.messages ?? []).filter((m) => m.ruleId === RULE).map((m) => m.message);
+}
+const AGAIN = /may not be exported again/;
 
 const RULE = 'local/no-loop-outside-core';
 // The Worker fixtures: one runs its own loop instead of packages/core/run.ts, one runs each trial through it.
 const WORKER_NO_RUN = "import { runLoop } from '../../../../packages/core/loop.ts';\nexport const start = runLoop;\n";
-const WORKER_RUN = "import { run } from '../../../../packages/core/run.ts';\nexport const start = run;\n";
+const WORKER_RUN = "import { run } from '../../../../packages/core/run.ts';\nvoid run;\n";
 
 describe('no-loop-outside-core', () => {
   it('refuses packages/core/anthropic.ts in apps/web/src/live', async () => {
@@ -83,18 +89,69 @@ describe('no-loop-outside-core', () => {
   });
 
   it('lets src/worker take grantClient and memoryLedger, and any file take the rest of the adapter', async () => {
-    const worker = "import { run } from '../../../../packages/core/run.ts';\nimport { grantClient, memoryLedger } from '../adapters/ledger-browser.ts';\nexport const g = [run, grantClient, memoryLedger];\n";
+    const worker = "import { run } from '../../../../packages/core/run.ts';\nimport { grantClient, memoryLedger } from '../adapters/ledger-browser.ts';\nvoid [run, grantClient, memoryLedger];\n";
     expect(await ruleIds(worker, 'apps/web/src/worker/trial.ts')).not.toContain(RULE);
     const page = "import { tabLedger, sessionCeiling } from '../adapters/ledger-browser.ts';\nexport const t = [tabLedger, sessionCeiling];\n";
     expect(await ruleIds(page, 'apps/web/src/live/transport/page.ts')).not.toContain(RULE);
   });
 
   it('lets the ledger adapter and the key gate import the Messages client, and nothing else of the loop', async () => {
-    const client = "import { MessagesClient } from '../../../../packages/core/anthropic.ts';\nexport const C = MessagesClient;\n";
+    const client = "import { MessagesClient } from '../../../../packages/core/anthropic.ts';\nexport const make = (o: never) => new MessagesClient(o);\n";
     const dispatch = "import { callTool } from '../../../../packages/env/tools/registry.ts';\nexport const f = callTool;\n";
     expect(await ruleIds(client, 'apps/web/src/adapters/ledger-browser.ts')).not.toContain(RULE);
     expect(await ruleIds(client, 'apps/web/src/keygate/direct.ts')).not.toContain(RULE);
     expect(await ruleIds(dispatch, 'apps/web/src/adapters/ledger-browser.ts')).toContain(RULE);
     expect(await ruleIds(dispatch, 'apps/web/src/keygate/direct.ts')).toContain(RULE);
+  });
+
+  // The verifier's new plants (verifier-phase-P15-2, D1-N2 and D1-N3): grantClient and
+  // memoryLedger passed on by a Worker module, and the Messages client passed on by a file that
+  // may import it. No file exports either again; the adapter's own MODEL re-export stays.
+  const RELAY = "import { run } from '../../../../packages/core/run.ts';\nvoid run;\n";
+  it('refuses grantClient and memoryLedger exported again from a Worker module (N2)', async () => {
+    for (const c of [
+      "export { grantClient, memoryLedger } from '../adapters/ledger-browser.ts';\n",
+      "export { grantClient as g } from '../adapters/ledger-browser.ts';\n",
+      "export * from '../adapters/ledger-browser.ts';\n",
+      "export * as L from '../adapters/ledger-browser.ts';\n",
+      "import { grantClient } from '../adapters/ledger-browser.ts';\nexport { grantClient };\n",
+      "import { memoryLedger as m } from '../adapters/ledger-browser.ts';\nexport default m;\n",
+      "import { grantClient } from '../adapters/ledger-browser.ts';\nexport const g = [grantClient];\n",
+      "import * as L from '../adapters/ledger-browser.ts';\nexport const g = L.grantClient;\n",
+      "import * as L from '../adapters/ledger-browser.ts';\nexport { L };\n",
+    ]) expect(await messages(RELAY + c, 'apps/web/src/worker/relay.ts'), c).toContainEqual(expect.stringMatching(AGAIN));
+  });
+
+  it('refuses a Worker module that exports anything, since it is an entry point', async () => {
+    const wrapper = "import { grantClient } from '../adapters/ledger-browser.ts';\nexport const g = (o: never) => grantClient(o);\n";
+    expect(await ruleIds(RELAY + wrapper, 'apps/web/src/worker/relay.ts')).toContain(RULE);
+    expect(await ruleIds(`${WORKER_RUN}export const n = 1;\n`, 'apps/web/src/worker/trial.ts')).toContain(RULE);
+    expect(await ruleIds(`${WORKER_RUN}export type T = number;\n`, 'apps/web/src/worker/trial.ts')).not.toContain(RULE);
+  });
+
+  it('refuses the Messages client exported again from the two files that may import it (N3)', async () => {
+    for (const file of ['apps/web/src/adapters/ledger-browser.ts', 'apps/web/src/keygate/direct.ts']) {
+      for (const c of [
+        "export { MessagesClient as MC } from '../../../../packages/core/anthropic.ts';\n",
+        "export * from '../../../../packages/core/anthropic.ts';\n",
+        "export * as A from '../../../../packages/core/anthropic.ts';\n",
+        "import { MessagesClient } from '../../../../packages/core/anthropic.ts';\nexport { MessagesClient };\n",
+        "import { MessagesClient as M } from '../../../../packages/core/anthropic.ts';\nexport const C = M;\n",
+        "import { MessagesClient } from '../../../../packages/core/anthropic.ts';\nexport default MessagesClient;\n",
+        "import { MessagesClient } from '../../../../packages/core/anthropic.ts';\nconst C = MessagesClient;\nexport { C };\n",
+        "import * as A from '../../../../packages/core/anthropic.ts';\nexport const C = { client: A.MessagesClient };\n",
+      ]) expect(await messages(c, file), `${file}: ${c}`).toContainEqual(expect.stringMatching(AGAIN));
+    }
+  });
+
+  it('lets the ledger adapter re-export MODEL, and export types from the client', async () => {
+    expect(await ruleIds("export { MODEL } from '../../../../packages/core/anthropic.ts';\n", 'apps/web/src/adapters/ledger-browser.ts')).not.toContain(RULE);
+    expect(await ruleIds("export type { ClientOptions } from '../../../../packages/core/anthropic.ts';\n", 'apps/web/src/adapters/ledger-browser.ts')).not.toContain(RULE);
+  });
+
+  it('passes the real adapter, key gate and Worker as they are', async () => {
+    for (const file of ['apps/web/src/adapters/ledger-browser.ts', 'apps/web/src/keygate/direct.ts', 'apps/web/src/worker/trial.ts']) {
+      expect(await ruleIds(readFileSync(join(root, file), 'utf8'), file), file).not.toContain(RULE);
+    }
   });
 });
