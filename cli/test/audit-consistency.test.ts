@@ -119,7 +119,7 @@ describe('the consistency flag', () => {
     const env = matrixEnv();
     const task = await loadMatrixTask('crc-care-gap');
     const grades: Array<{ outcome: string; valid: boolean; checks: SummaryCheck[] }> = [];
-    for (const c of cases(task).filter((x) => x.kind === 'mutant' && x.mutant.fails.includes('fit_orders'))) {
+    for (const c of cases(task).filter((x) => x.mutant?.fails.includes('fit_orders') === true)) {
       const g = await gradeRun(env, task, task.checks, await trial(env, task, c));
       const checks = g.checks as unknown as SummaryCheck[];
       if (g.outcome !== 'PASS' && checks.find((x) => x.kind === 'gate' && x.met === false)?.id === 'fit_orders') grades.push({ outcome: g.outcome, valid: true, checks });
