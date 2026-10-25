@@ -171,7 +171,7 @@ const donepezil: Resource = {
   subject: subject(E.E7),
   authoredOn: '2025-06-10T10:00:00-04:00',
   requester: OKAFOR,
-  reasonCode: [{ text: "Alzheimer's dementia, mild (outside neurology)" }],
+  reasonCode: [{ text: 'Alzheimer dementia, mild (diagnosed by outside neurology)' }],
   dosageInstruction: [
     {
       text: '10 mg by mouth at bedtime',

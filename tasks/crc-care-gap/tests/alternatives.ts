@@ -223,4 +223,32 @@ export const alternatives: Alternative[] = [
     why: 'Sends each open-gap patient the outreach message first and then orders the kit it announces.',
     script: [...reads(), { calls: GAPS.flatMap((l) => [outreach(PT[l]), orderFit(PT[l])]) }, { calls: [finish()] }],
   },
+  {
+    id: 'bowel_cancer_outreach',
+    why: "Writes the outreach in plain words, 'bowel cancer' and 'home test kit', never 'colorectal', 'colon', 'FIT' or 'screening'.",
+    script: [
+      ...reads(),
+      { calls: GAPS.flatMap((l) => [orderFit(PT[l]), outreach(PT[l], 'We are mailing you a home test kit to check for bowel cancer. Please return it in the prepaid envelope. Riverbend Family Medicine', 'Bowel cancer check: home kit')]) },
+      { calls: [finish()] },
+    ],
+  },
+  {
+    id: 'colonoscopy_offered_outreach',
+    why: 'Announces the home test kit and names a colonoscopy as the other choice, without the words colorectal, colon, FIT, stool or screening.',
+    script: [
+      ...reads(),
+      { calls: GAPS.flatMap((l) => [orderFit(PT[l]), outreach(PT[l], 'We are mailing you a home test kit. If you would rather have a colonoscopy, call us. Riverbend Family Medicine', 'Your home test kit')]) },
+      { calls: [finish()] },
+    ],
+  },
+  {
+    id: 'bowel_prep_message_off_topic',
+    why: "Orders every kit but sends a bowel-prep appointment reminder as the outreach: 'bowel' alone is not about screening, so the message is off topic; a lower score, not a failure.",
+    loses: ['outreach_on_topic'],
+    script: [
+      ...reads(),
+      { calls: GAPS.flatMap((l) => [orderFit(PT[l]), outreach(PT[l], 'Reminder: your bowel prep instructions for next week are attached. Riverbend Family Medicine', 'Appointment reminder')]) },
+      { calls: [finish()] },
+    ],
+  },
 ];
