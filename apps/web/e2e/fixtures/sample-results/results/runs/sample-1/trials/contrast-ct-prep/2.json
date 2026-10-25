@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:contrast-ct-prep:2",
   "task_id": "contrast-ct-prep",
-  "task_version": "ea15cb956e6ea120a0a886adcba4b9517dad97b7f62494450e7084bae8be69e1",
+  "task_version": "5b7ac243d58393b66979c011d7cbfdb96cb81eca91c47c5b985a6458c0dcdd34",
   "env_version": "1b47cd6807624e2db3e76fbb8dfa5a519eadfa93bdf47dbdcb8fee1a1c37d288",
-  "grader_task_version": "aee2714fdc7ce9658e6610dbff64dfa91b4b2bc2f823d00ea076453efc75de86",
+  "grader_task_version": "5cdf5b5b61e615d3711ac28e3b44a134ad14b0a7a4fa721e1429e3f221653d82",
   "fixture_hash": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
   "state_hash": {
     "initial": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
