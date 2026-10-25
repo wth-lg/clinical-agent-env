@@ -100,6 +100,24 @@ describe('run() grades', () => {
     expect(terminalEvent(events)).toBe(events.at(-2));
   });
 
+  it('records resumed from the run option: false by default, true for a trial resumed from a checkpoint', async () => {
+    expect((await trial()).result.record.resumed).toBe(false);
+    const { result, events } = await trial({ resumed: { cutOffUsd: 0 } });
+    expect(result.record.resumed).toBe(true);
+    expect((events.at(-1) as GradedEvent).record.resumed).toBe(true);
+  });
+
+  // verifier-phase-P15-2 D3: the call a reload cut off was paid for (the tab ledger settles it at
+  // its worst case), so a resumed record's cost_usd counts it; the loop's events do not change.
+  it('adds the cost of the calls a reload cut off to a resumed record\'s cost_usd, and nothing else', async () => {
+    const base = await trial();
+    const resumed = await trial({ resumed: { cutOffUsd: 0.125 } });
+    expect(resumed.result.record.cost_usd).toBeCloseTo(base.result.record.cost_usd + 0.125, 9);
+    expect(resumed.result.record.judge_cost_usd).toBe(base.result.record.judge_cost_usd);
+    const loop = (events: TrialEvent[]) => stripTimestamps(toJsonl(events.filter((e) => e.type !== 'graded')));
+    expect(loop(resumed.events)).toEqual(loop(base.events));
+  });
+
   it('a direct grader call on the trajectory gives the same grade, from the record cache', async () => {
     const { result, events } = await trial();
     const direct = await gradeTrajectory('_toy', { tasks: nodeTaskSource({ testMode: true }), world: { read: async () => WORLD }, checks: CHECKS, events, record: result.record });

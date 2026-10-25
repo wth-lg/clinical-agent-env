@@ -480,6 +480,9 @@ test('admitTrial refuses a trial whose estimate crosses the session cap', () => 
   const refused = admitTrial({ cap: 20, spent: 19, estimate: 1.01 });
   expect(refused.ok).toBe(false);
   expect(refused.ok ? '' : refused.reason).toMatch(/session cap \$20\.00/);
+  // Cents would read "$0.00 + $0.01 would cross $0.01": the amounts take the decimals that read true.
+  const close = admitTrial({ cap: 0.01, spent: 0, estimate: 0.011 });
+  expect(close.ok ? '' : close.reason).toBe('Refused: spent $0.000 + this estimate $0.011 = $0.011 would cross the session cap $0.010.');
 });
 
 test.describe('session cap across a reload (browser-direct)', () => {

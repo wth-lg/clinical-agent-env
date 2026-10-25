@@ -2,8 +2,10 @@ import { expect, test } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 
 // The design CSP, pinned. This exact literal in this file is the one place outside
-// packages/core/anthropic.ts that lint lets name the API host (no-direct-anthropic).
-const CSP = "default-src 'self'; connect-src 'self' https://api.anthropic.com; script-src 'self'; worker-src 'self'";
+// packages/core/anthropic.ts that lint lets name the API host (no-direct-anthropic). worker-src
+// blob: lets the trial Worker start from a blob: URL, so this policy binds it too
+// (src/live/transport/worker.ts).
+const CSP = "default-src 'self'; connect-src 'self' https://api.anthropic.com; script-src 'self'; worker-src 'self' blob:";
 const API_ORIGIN = /connect-src 'self' (\S+);/.exec(CSP)?.[1] ?? '';
 const PAGES = ['index.html', 'harness.html', 'probe.html'];
 

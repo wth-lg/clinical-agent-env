@@ -37,6 +37,7 @@ const RUN_PANEL_VIEWS = ['overview', 'tasks'];
 export function App({ surface }: { surface: Surface }) {
   const status = useKeyStatus();
   const [gate, setGate] = useState(() => keyStatus().kind === 'none' && !browsing());
+  // A Forget the runner refused: a plain first sentence, then the runner's own message as detail.
   const [notice, setNotice] = useState<string | undefined>();
   const [busy, setBusy] = useState(false);
   const [view, setView] = useState(() => viewFromUrl(location.href));
@@ -61,7 +62,7 @@ export function App({ surface }: { surface: Surface }) {
       const r = await deleteKey();
       setBusy(false);
       if (!r.ok) {
-        setNotice(`The local runner did not forget the key: ${r.message}`);
+        setNotice(r.message);
         setGate(true);
         return;
       }
@@ -78,7 +79,20 @@ export function App({ surface }: { surface: Surface }) {
     rememberBrowsing();
     leaveGate();
   };
-  if (gate) return <KeyGate surface={surface} notice={notice} onDone={leaveGate} onBrowse={browse} />;
+  // The notice is the shell's, not a Validate failure, so the key field is not marked invalid.
+  if (gate) {
+    return (
+      <>
+        {notice !== undefined && (
+          <div role="alert" data-testid="forget-notice" className="mx-auto mt-6 w-[calc(100%-2rem)] max-w-[480px] rounded-sm border border-danger bg-canvas p-3">
+            <p className="font-medium text-danger">The local runner did not forget the key.</p>
+            <p className="mt-2 font-mono text-xs break-words text-ink-muted">{notice}</p>
+          </div>
+        )}
+        <KeyGate surface={surface} onDone={leaveGate} onBrowse={browse} />
+      </>
+    );
+  }
 
   return (
     <div className="flex h-screen flex-col bg-canvas">

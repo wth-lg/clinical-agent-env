@@ -93,6 +93,11 @@ export interface RunOptions {
   // The client judge and extractor calls go through; default `client`, so they are metered
   // under the trial's grant. null: judge items are unknown.
   judge?: TrialClient | null;
+  // The trial continues one a reload cut off (the browser's resume client answers its first
+  // requests from the kept events); the record says so. cutOffUsd: what the loop calls the
+  // reload cut off cost, as the ledger settled them; the record's cost_usd counts it. Unset: a
+  // trial that starts here.
+  resumed?: { cutOffUsd: number };
 }
 
 // What a failed onEvent sink throws into the trial: the trial ends, its trajectory incomplete.
@@ -121,6 +126,7 @@ export interface TrialRun {
   tool_calls: number;
   tool_errors: LoopOutcome['tool_errors'];
   usage: LoopOutcome['usage'];
+  // The loop's calls; on a resumed trial, also the calls the reload cut off.
   cost_usd: number;
   api_retries: number;
   retry_wait_ms: number;
@@ -131,7 +137,7 @@ export interface TrialRun {
   // The terminal event's code or limit, for any status but COMPLETED and REFUSAL.
   detail: string | null;
   summary: string | null;
-  resumed: false;
+  resumed: boolean;
   // What the judge calls cost (in the ledger like every call); not part of cost_usd, the
   // loop's cost, which the per-trial cap applies to.
   judge_cost_usd: number;
@@ -272,7 +278,7 @@ export async function run(taskId: string, model: string, opts: RunOptions): Prom
     tool_calls: outcome.tool_calls,
     tool_errors: outcome.tool_errors,
     usage: outcome.usage,
-    cost_usd: outcome.cost_usd,
+    cost_usd: opts.resumed === undefined ? outcome.cost_usd : outcome.cost_usd + opts.resumed.cutOffUsd,
     api_retries: outcome.api_retries,
     retry_wait_ms: outcome.retry_wait_ms,
     stop_reason: outcome.stop_reason,
@@ -281,7 +287,7 @@ export async function run(taskId: string, model: string, opts: RunOptions): Prom
     stop: outcome.stop,
     detail: t === null ? null : t.type === 'limit' ? t.limit : t.type === 'error' ? t.code : t.reason,
     summary: ctx?.session.summary ?? null,
-    resumed: false,
+    resumed: opts.resumed !== undefined,
   };
   const checks = opts.checks ?? [];
   const judge = judgeFor(checks, { judge: withSignal(opts.judge === undefined ? opts.client : opts.judge, opts.signal), effort: task.judgeEffort });

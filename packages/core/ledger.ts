@@ -81,6 +81,21 @@ export class SpendRefused extends Error {
 const µ = (usd: number): number => Math.round(usd * 1e6);
 const usd = (micros: number): number => micros / 1e6;
 const fmt = (micros: number): string => `$${usd(micros).toFixed(2)}`;
+
+// Amounts in USD as a refusal shows them: all with one number of decimals, the fewest from 2 up
+// that make the shown parts add up to the shown total and the total read as more than the cap.
+// Cents can read false: "$0.01 + $30.00 = $30.01 > $30.01" is "$0.011 + $30.000 = $30.011 > $30.010".
+export function capSum(parts: readonly number[], cap: number): { parts: string[]; total: string; cap: string } {
+  const micros = parts.map(µ);
+  const total = micros.reduce((a, b) => a + b, 0);
+  for (let d = 2; ; d++) {
+    const unit = 10 ** (6 - d);
+    const r = (m: number) => Math.round(m / unit);
+    if (d < 6 && (micros.reduce((a, m) => a + r(m), 0) !== r(total) || r(total) <= r(µ(cap)))) continue;
+    const show = (m: number) => `$${((r(m) * unit) / 1e6).toFixed(d)}`;
+    return { parts: micros.map(show), total: show(total), cap: show(µ(cap)) };
+  }
+}
 const PROJECTED_CAP = µ(PROJECTED_CAP_USD);
 const ACTUAL_CAP = µ(ACTUAL_CAP_USD);
 
@@ -322,6 +337,12 @@ export function createLedger(deps: LedgerDeps): Ledger {
     batch_id: null, trial: null, usage: null, cost_usd: 0, ...fields,
   });
 
+  // A refusal's sum line, from micro-dollar parts: "a + b = total > cap".
+  const sumLine = (labelled: ReadonlyArray<[string, number]>, cap: number, capText?: string) => {
+    const shown = capSum(labelled.map(([, m]) => usd(m)), usd(cap));
+    return `${labelled.map(([label], i) => label.replace('{}', shown.parts[i]!)).join(' + ')} = ${shown.total} > ${capText ?? shown.cap}`;
+  };
+
   const blockedError = (t: Tally) =>
     new SpendRefused('actual', `actual cap: settled ${fmt(t.settled)} has reached $${ACTUAL_CAP_USD}; every call is blocked`);
 
@@ -357,12 +378,15 @@ export function createLedger(deps: LedgerDeps): Ledger {
     return t.settled + t.reserved + t.openExcess;
   };
   // Throws when appending `next` would take the in-scope exposure past the ceiling and raise it.
-  const checkCeiling = (rows: readonly LedgerRow[], next: LedgerRow, c: SpendCeiling | undefined, what: string) => {
+  // `what` names what next adds, `amount` its nominal micro-dollars; when it adds less (a reserve
+  // partly within its batch's projection), `part` names the part it adds.
+  const checkCeiling = (rows: readonly LedgerRow[], next: LedgerRow, c: SpendCeiling | undefined, what: { label: string; part: string; amount: number }) => {
     if (c === undefined) return;
     const before = scoped(rows, c);
     const after = scoped([...rows, next], c);
     if (after > µ(c.usd) && after > before) {
-      throw new SpendRefused('ceiling', `${c.what}: ${fmt(before)} already committed + ${what} = ${fmt(after)} > ${fmt(µ(c.usd))}`);
+      const label = after - before === what.amount ? what.label : what.part;
+      throw new SpendRefused('ceiling', `${c.what}: ${sumLine([['{} already committed', before], [`${label} {}`, after - before]], µ(c.usd))}`);
     }
   };
 
@@ -377,10 +401,10 @@ export function createLedger(deps: LedgerDeps): Ledger {
       if (t.settled >= ACTUAL_CAP) throw blockedError(t);
       const total = t.settled + t.reserved + µ(worst);
       if (total > ACTUAL_CAP) {
-        throw new SpendRefused('actual', `actual cap: settled ${fmt(t.settled)} + reserved ${fmt(t.reserved)} + this call's worst case ${fmt(µ(worst))} = ${fmt(total)} > $${ACTUAL_CAP_USD}`);
+        throw new SpendRefused('actual', `actual cap: ${sumLine([['settled {}', t.settled], ['reserved {}', t.reserved], ["this call's worst case {}", µ(worst)]], ACTUAL_CAP, `$${ACTUAL_CAP_USD}`)}`);
       }
       const reserve = row('reserve', { call_id, batch_id, trial, cost_usd: worst });
-      checkCeiling(rows, reserve, ceiling, `this call's worst case ${fmt(µ(worst))}`);
+      checkCeiling(rows, reserve, ceiling, { label: "this call's worst case", part: "the part of this call's worst case beyond its batch's projection", amount: µ(worst) });
       return { append: [reserve], result: undefined };
     });
     return { call_id, batch_id, trial, worst_usd: worst };
@@ -400,11 +424,11 @@ export function createLedger(deps: LedgerDeps): Ledger {
         if (total > PROJECTED_CAP) {
           throw new SpendRefused(
             'projected',
-            `projected cap: settled ${fmt(t.settled)} + reserved ${fmt(t.reserved)} + open batches ${fmt(t.openExcess)} + projection ${fmt(µ(projection))} = ${fmt(total)} > $${PROJECTED_CAP_USD}`,
+            `projected cap: ${sumLine([['settled {}', t.settled], ['reserved {}', t.reserved], ['open batches {}', t.openExcess], ['projection {}', µ(projection)]], PROJECTED_CAP, `$${PROJECTED_CAP_USD}`)}`,
           );
         }
         const open = row('open', { call_id: `open:${batch_id}`, batch_id, pid: deps.pid, host: deps.host, projection });
-        checkCeiling(rows, open, ceiling, `this batch's projection ${fmt(µ(projection))}`);
+        checkCeiling(rows, open, ceiling, { label: "this batch's projection", part: "this batch's projection", amount: µ(projection) });
         return { append: [open], result: undefined };
       });
       return makeGrant(batch_id, projection, ceiling);
