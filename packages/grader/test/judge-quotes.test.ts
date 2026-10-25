@@ -245,3 +245,13 @@ describe('a gapped quote counts only for a penalty item (verifier B1-3 item a)',
     expect(h.score).toBeCloseTo(0.2, 10);
   });
 });
+
+describe('more sentence ends in a penalty gap (verifier B1-3 F3, item c)', () => {
+  const unknown = { met: 'unknown', evidence: { reason: 'quote not in text' } };
+  it('U+2028, U+2029 and an ellipsis in the text end a sentence', async () => {
+    expect(await penaltyQuote('the visit went ... the plan is set', 'The visit went well and the plan is set.')).toMatchObject(unknown);
+    expect(await penaltyQuote('the visit went ... the plan is set', 'The visit went well and the plan is set.')).toMatchObject(unknown);
+    expect(await penaltyQuote('the visit went ... the plan is set', 'The visit went well… and the plan is set.')).toMatchObject(unknown);
+    expect(await penaltyQuote('the visit went ... the plan is set', 'The visit went well, and the plan is set.')).toMatchObject({ met: true });
+  });
+});

@@ -195,10 +195,10 @@ const validExtract = (a: { [k: string]: Json }) => (a.value === null || (typeof 
 const foldWith = (s: string, run: (ws: string) => string) => s.replace(/[\u2018\u2019\u201A\u201B\u2032\u02BC\uFF07]/g, "'").replace(/[\u201C\u201D\u201E\u201F\u2033]/g, '"').replace(/[\u2010\u2011\u2013\u2014\u2212]/g, '-').toLowerCase().replace(/\s+/g, run).trim();
 const fold = (s: string) => foldWith(s, () => ' ');
 // The same, a whitespace run with a line break kept as one '\n': same length, so the same offsets.
-const foldLines = (s: string) => foldWith(s, (ws) => (/[\n\r]/.test(ws) ? '\n' : ' '));
+const foldLines = (s: string) => foldWith(s, (ws) => (/[\n\r\u2028\u2029]/.test(ws) ? '\n' : ' '));
 // A quote with "..." or "\u2026" is segments that must all appear in the text, in that order. Each
 // segment of such a quote has at least 2 words and 8 characters (verifier M2). A gap, the text
-// the ellipsis skips, is at most GAP_MAX characters within one sentence (no . ! ? or line break)
+// the ellipsis skips, is at most GAP_MAX characters within one sentence (no . ! ? \u2026 or line break)
 // and holds no negation, so a gap cannot turn "not sent" into "sent" or join two sentences into
 // one the text does not say (verifier B1-2 F2, F3). Every segment, and
 // a quote found as written, starts and ends at a word edge of the text, so "I have n... sent"
@@ -207,7 +207,7 @@ const foldLines = (s: string) => foldWith(s, (ws) => (/[\n\r]/.test(ws) ? '\n' :
 // text. Only a penalty item reads a gap (`gaps`); for a credit item, and every extractor quote, a
 // quote must be found as written (verifier B1-3).
 const GAP_MAX = 80;
-const SENTENCE_END = /[.!?\n]/;
+const SENTENCE_END = /[.!?\n\u2026]/;
 const NEGATION = /\b(?:not|no|never|cannot|without|denies|denied|declined|refused|unable|failed|neither|nor|negative|none|stop|stopped|hold|held|(?:do|does|did|is|was|are|were|has|have|had|ca|can|could|would|should|wo|must|need)n'?t)\b|n't\b/;
 const WORD = /[\p{L}\p{N}]/u;
 // t[j] is inside a word: a letter or digit, or an apostrophe between two (I've, didn't).
