@@ -4,6 +4,8 @@
 // same value works from the repo root and from `pnpm --filter web`; default the repo root):
 //   results/official.json and, from the run directory it names ({"run": "runs/<id>"},
 //   relative to results/), trials/, trajectories/, summary.json and audit.jsonl;
+//   each pilot run, results/pilot-<n>/ or results/runs/pilot-<n>/ with a trials/ directory (not
+//   counted in the results; the Runs view lists them), with the same entries;
 //   docs/findings.md; fixtures/world.ndjson.gz and fixtures/manifest.json.
 // A missing source is skipped, so a tree with no results/ yields an empty index.
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
@@ -23,14 +25,8 @@ function listFiles(root: string, rel: string): string[] {
     .filter((e) => e.isFile()).map((e) => relative(root, join(e.parentPath, e.name)).split(sep).join('/'));
 }
 
-function officialRunFiles(root: string): string[] {
-  const official = join(root, 'results/official.json');
-  if (!existsSync(official)) return [];
-  const { run } = JSON.parse(readFileSync(official, 'utf8')) as { run?: unknown };
-  if (typeof run !== 'string') throw new Error('results/official.json: expected {"run": "runs/<id>"}');
-  const results = join(root, 'results');
-  const runDir = resolve(results, run);
-  if (!runDir.startsWith(results + sep)) throw new Error(`results/official.json: run path ${run} is outside results/`);
+// The copied entries of one run directory, relative to the source root.
+function runFiles(root: string, runDir: string): string[] {
   const runRel = relative(root, runDir).split(sep).join('/');
   return RUN_ENTRIES.flatMap((entry) => {
     const rel = `${runRel}/${entry}`;
@@ -40,8 +36,31 @@ function officialRunFiles(root: string): string[] {
   });
 }
 
+function officialRunFiles(root: string): string[] {
+  const official = join(root, 'results/official.json');
+  if (!existsSync(official)) return [];
+  const { run } = JSON.parse(readFileSync(official, 'utf8')) as { run?: unknown };
+  if (typeof run !== 'string') throw new Error('results/official.json: expected {"run": "runs/<id>"}');
+  const results = join(root, 'results');
+  const runDir = resolve(results, run);
+  if (!runDir.startsWith(results + sep)) throw new Error(`results/official.json: run path ${run} is outside results/`);
+  return runFiles(root, runDir);
+}
+
+const PILOT = /^pilot-[A-Za-z0-9._-]+$/;
+
+function pilotRunFiles(root: string): string[] {
+  return ['results', 'results/runs'].flatMap((parent) => {
+    const abs = join(root, parent);
+    if (!existsSync(abs)) return [];
+    return readdirSync(abs, { withFileTypes: true })
+      .filter((d) => d.isDirectory() && PILOT.test(d.name) && existsSync(join(abs, d.name, 'trials')))
+      .flatMap((d) => runFiles(root, join(abs, d.name)));
+  });
+}
+
 export function copyData({ root, outDir }: { root: string; outDir: string }): string[] {
-  const files = [...FIXED_FILES.filter((f) => existsSync(join(root, f))), ...officialRunFiles(root)].sort();
+  const files = [...new Set([...FIXED_FILES.filter((f) => existsSync(join(root, f))), ...officialRunFiles(root), ...pilotRunFiles(root)])].sort();
   const dataDir = join(outDir, 'data');
   rmSync(dataDir, { recursive: true, force: true });
   mkdirSync(dataDir, { recursive: true });
