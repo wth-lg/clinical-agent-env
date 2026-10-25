@@ -18,6 +18,8 @@ echoes the key. The source has no `console` call.
 | `src/limiter.ts` | The per-client-IP token bucket |
 | `api/messages.ts` | The Vercel function: `handle` with the real upstream, one limiter per instance and the origin `https://wth-lg.github.io`; any throw becomes the fixed 502 |
 | `vercel.json` | Rewrites `/v1/messages` to the function; `maxDuration`; Git deployments off |
+| `.vercelignore` | Uploads only `api/`, `src/`, `public/` and `vercel.json` (see Static files) |
+| `public/README.md` | The static output directory; its one file is never published (see Static files) |
 | `test/serve-local.ts` | Test only, never deployed: `handle` behind `node:http` on 127.0.0.1 with a stub upstream |
 
 ## Rules
@@ -48,6 +50,22 @@ In the order `handle` applies them:
 9. Errors: if the upstream fetch fails, the client gets
    `{"type":"error","error":{"type":"relay_error"}}` with status 502. The body never includes an
    error message.
+
+## Static files
+
+The deployment serves the function and nothing else. Vercel's zero-config build (no framework, no
+build command) serves every uploaded file outside `api/` as a static route when the project has no
+`public/` directory, so `src/*.ts` would be served (Vercel CLI 64.2.0, `detectBuilders`). Two
+things prevent that:
+
+- `.vercelignore` uploads only `api/`, `src/`, `public/` and `vercel.json`. `test/` and this
+  README stay local. `src/` must be uploaded, because the function imports it.
+- `public/` makes the build serve only `public/`. Its one file is `README.md`, a name Vercel's
+  static builder never publishes, so no file is served at all.
+
+The function is also reachable at its own path, `/api/messages`. There `handle` answers 404,
+because the path is not `/v1/messages`. `relay-check` requires a 404 for `/README.md`,
+`/src/relay.ts`, `/test/serve-local.ts`, `/public/README.md`, `/vercel.json` and `/api/messages`.
 
 ## Rate limit
 

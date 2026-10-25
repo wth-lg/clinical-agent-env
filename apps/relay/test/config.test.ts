@@ -1,5 +1,6 @@
 // The relay's deploy config and source rules: vercel.json routes only /v1/messages to the
-// function, with a maxDuration; the relay source has no console call and reads no environment
+// function, with a maxDuration; the deploy uploads only the function and its sources and serves
+// no file as a static route; the relay source has no console call and reads no environment
 // variable; tsconfig.json type-checks it.
 import { execFileSync } from 'node:child_process';
 import { readdirSync, readFileSync } from 'node:fs';
@@ -20,6 +21,19 @@ describe('relay config', () => {
     expect(Object.keys(fns)).toEqual(['api/messages.ts']);
     expect(fns['api/messages.ts']!.maxDuration).toBeGreaterThan(0);
     expect(cfg.git).toEqual({ deploymentEnabled: false });
+  });
+
+  // Without a public/ directory, Vercel's zero-config build serves every uploaded file outside api/
+  // as a static route, src/*.ts and test/*.ts included (CLI 64.2.0 detectBuilders). With one,
+  // only public/ is static, and its one file, README.md, is a name the static builder never
+  // publishes. .vercelignore keeps test/ and README.md out of the upload.
+  it('.vercelignore uploads only the function, its sources, vercel.json and public/', () => {
+    const rules = readFileSync(join(RELAY, '.vercelignore'), 'utf8').split('\n').map((l) => l.trim()).filter((l) => l && !l.startsWith('#'));
+    expect(rules).toEqual(['/*', '!/api/', '!/src/', '!/public/', '!/vercel.json']);
+  });
+
+  it('public/, the static output directory, holds only README.md', () => {
+    expect(readdirSync(join(RELAY, 'public'))).toEqual(['README.md']);
   });
 
   it('the relay source has no console call and reads no environment variable', () => {

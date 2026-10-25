@@ -16,7 +16,11 @@
 //   body B x 1.1      POST of ceil(B x 1.1) bytes (B from scripts/relay-body-max.ts): not 413
 //   API 401           POST from the Pages origin with the sentinel key: the API's 401
 //                     authentication_error, with the allow-origin header
-// It prints which requests invoke the function (those to /v1/messages) and which do not.
+//   static paths      GET of each relay file the deploy must not serve (STATIC_PATHS: the README,
+//                     a source, a test, public/README.md, vercel.json): 404; and GET /api/messages,
+//                     the function's own path, which reaches it: 404 from handle
+// It prints which requests invoke the function (those to /v1/messages and /api/messages) and
+// which do not.
 //   --rate-limit  instead: GET /v1/messages in bursts until a 429 (within 60 s), then once a second
 //                 until a non-429 answer (within 90 s)
 //   --json        one JSON report instead of lines
@@ -37,6 +41,8 @@ const FOREIGN_ORIGIN = 'https://evil.example';
 const OTHER_MODEL = 'claude-sonnet-5-5';
 const LOOPBACK = new Set(['127.0.0.1', 'localhost', '[::1]']);
 const TIMEOUT_MS = 30_000;
+// Files in apps/relay that the deploy must not serve (apps/relay/.vercelignore, public/README.md).
+export const STATIC_PATHS = ['/README.md', '/src/relay.ts', '/test/serve-local.ts', '/public/README.md', '/vercel.json'];
 
 // The header names the hosted MessagesClient sends, read from a real client: it is built over a
 // ledger in a temp HOME (default mode, deleted afterwards) and its one Request is answered by a
@@ -83,7 +89,9 @@ function bodyOfBytes(n: number): string {
   return messagesBody(MODEL, 'x'.repeat(n - base.length));
 }
 
-function relayUrls(raw: string): { messages: string; models: string } | string {
+type RelayUrls = { origin: string; messages: string; models: string };
+
+function relayUrls(raw: string): RelayUrls | string {
   let url: URL;
   try {
     url = new URL(raw);
@@ -91,7 +99,7 @@ function relayUrls(raw: string): { messages: string; models: string } | string {
     return `--url ${raw} is not a URL`;
   }
   if (url.protocol !== 'https:' && !(url.protocol === 'http:' && LOOPBACK.has(url.hostname))) return '--url must be https, or http on 127.0.0.1, localhost or [::1]';
-  return { messages: `${url.origin}/v1/messages`, models: `${url.origin}/v1/models` };
+  return { origin: url.origin, messages: `${url.origin}/v1/messages`, models: `${url.origin}/v1/models` };
 }
 
 async function call(url: string, init: RequestInit): Promise<{ res: Response | null; text: string; error: string | null }> {
@@ -110,7 +118,7 @@ const keyHeaders = (key: string, origin: string | null): Record<string, string> 
   ...(origin === null ? {} : { origin }),
 });
 
-async function checks(urls: { messages: string; models: string }, key: string, bodyBytes: number, clientHeaders: string[]) {
+async function checks(urls: RelayUrls, key: string, bodyBytes: number, clientHeaders: string[]) {
   const out: Check[] = [];
   const push = (name: string, r: Awaited<ReturnType<typeof call>>, ok: boolean, detail = '') =>
     out.push({ name, ok: ok && r.error === null, status: r.res?.status ?? null, detail: redactText(r.error ?? detail, [key]) });
@@ -155,11 +163,16 @@ async function checks(urls: { messages: string; models: string }, key: string, b
   }
   push('Pages-origin POST gets the API 401', auth, auth.res?.status === 401 && type === 'authentication_error' && auth.res.headers.get('access-control-allow-origin') === PAGES_ORIGIN, `error type ${type}`);
 
+  for (const path of [...STATIC_PATHS, '/api/messages']) {
+    const r = await call(`${urls.origin}${path}`, { method: 'GET' });
+    push(`GET ${path} 404`, r, r.res?.status === 404);
+  }
+
   return {
     checks: out,
     canary: { nonce, x_vercel_id: canary.res?.headers.get('x-vercel-id') ?? null, ts },
-    invoking: ['GET /v1/messages (canary)', 'POST /v1/messages (foreign Origin)', 'POST /v1/messages (no Origin)', 'OPTIONS /v1/messages', 'POST /v1/messages (other model)', 'POST /v1/messages (B x 1.1)', 'POST /v1/messages (API 401)'],
-    not_invoking: ['POST /v1/models'],
+    invoking: ['GET /v1/messages (canary)', 'POST /v1/messages (foreign Origin)', 'POST /v1/messages (no Origin)', 'OPTIONS /v1/messages', 'POST /v1/messages (other model)', 'POST /v1/messages (B x 1.1)', 'POST /v1/messages (API 401)', 'GET /api/messages'],
+    not_invoking: ['POST /v1/models', ...STATIC_PATHS.map((p) => `GET ${p}`)],
   };
 }
 

@@ -1,0 +1,7 @@
+# What `vercel deploy --cwd apps/relay` uploads: the function, the sources it imports, vercel.json
+# and public/ (README.md, "Static files"). test/ and README.md stay local.
+/*
+!/api/
+!/src/
+!/public/
+!/vercel.json
