@@ -1,8 +1,8 @@
 {
   "trial_id": "sample-1:message-queue:11",
   "task_id": "message-queue",
-  "task_version": "311678ca575502d688dd5840481e25ee692bf7abe5ced77c679c0b6d394da397",
-  "env_version": "0f4ca284064318e267b43016adacd89fe793e885765e5c687d044d21f87e4e6a",
+  "task_version": "a1cec85a92670e0e42973224f773277ed3c69a706198a75f3444981850be88e3",
+  "env_version": "2d4df327702390a471c9203e40d8f9c5933e64d1f33270d5691a7c40432d22da",
   "grader_task_version": "4929f0ecba7b68e9fb2e621a4d2c91143090b6b6afb39cf58216c56f69c6ff8b",
   "fixture_hash": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
   "state_hash": {
