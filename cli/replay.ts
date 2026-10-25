@@ -38,15 +38,17 @@ const defaults: Deps = { out: (l) => process.stdout.write(`${l}\n`), err: (l) =>
 
 export type Regraded = { stored: StoredRecord; grade: Grade } | { stored: StoredRecord; miss: string } | { stored: StoredRecord; error: string };
 
-// Grades each settled record of a run again from its trajectory and judge cache.
-export async function regradeRun(dir: string, tasks: TaskSource, records = settledRecords(dir)): Promise<Regraded[]> {
+// Grades each settled record of a run again from its trajectory and judge cache. compareResults:
+// also compare each re-executed call with its recorded tool_result (replay, on records of this
+// checkout's env_version; regrade leaves it off).
+export async function regradeRun(dir: string, tasks: TaskSource, records = settledRecords(dir), compareResults = false): Promise<Regraded[]> {
   const { world, definitions } = repoWorld();
   const out: Regraded[] = [];
   for (const stored of records) {
     const r = stored.record;
     try {
       const events = parseTrajectory(readFileSync(trajectoryOf(dir, r), 'utf8'));
-      out.push({ stored, grade: await gradeTrajectory(r.task_id, { tasks, world, checks: await taskChecks(r.task_id), events, record: r, definitions }) });
+      out.push({ stored, grade: await gradeTrajectory(r.task_id, { tasks, world, checks: await taskChecks(r.task_id), events, record: r, definitions, compareResults }) });
     } catch (e) {
       if (e instanceof JudgeCacheMiss) out.push({ stored, miss: e.message });
       else out.push({ stored, error: (e as Error).message });
@@ -100,7 +102,7 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
     if (changed === null) same.push(stored);
     else trials[trialName(r)] = changed;
   }
-  for (const res of await regradeRun(dir, tasks, same)) {
+  for (const res of await regradeRun(dir, tasks, same, true)) {
     const name = trialName(res.stored.record);
     const { note, ...v } = replayVerdict(res.stored.record, res);
     if (note !== undefined) notes.push(`replay: ${name}: ${note}`);
