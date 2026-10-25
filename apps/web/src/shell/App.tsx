@@ -10,11 +10,33 @@ import { Rail } from './Rail.tsx';
 import { TopBar } from './TopBar.tsx';
 import { viewFromUrl, viewHref } from './views.ts';
 
-// The app shell: the key gate first when there is no key, then the rail, the top bar and the
-// view named in ?view=.
+// "Browse without a key", remembered for this tab, so a reload or a shared ?view= link opened in
+// it goes straight to the view (a per-tab convenience: storage may be unavailable, and then the
+// gate shows again, as it does in a new tab).
+const BROWSING = 'clinenv-browsing';
+const browsing = () => {
+  try {
+    return sessionStorage.getItem(BROWSING) === '1';
+  } catch {
+    return false;
+  }
+};
+const rememberBrowsing = () => {
+  try {
+    sessionStorage.setItem(BROWSING, '1');
+  } catch {
+    // Not remembered: the gate shows on the next load.
+  }
+};
+
+// The views that show the "Run it on your computer" card on the hosted site.
+const RUN_PANEL_VIEWS = ['overview', 'tasks'];
+
+// The app shell: the key gate first when there is no key and the tab has not chosen to browse,
+// then the rail, the top bar and the view named in ?view=.
 export function App({ surface }: { surface: Surface }) {
   const status = useKeyStatus();
-  const [gate, setGate] = useState(() => keyStatus().kind === 'none');
+  const [gate, setGate] = useState(() => keyStatus().kind === 'none' && !browsing());
   const [notice, setNotice] = useState<string | undefined>();
   const [busy, setBusy] = useState(false);
   const [view, setView] = useState(() => viewFromUrl(location.href));
@@ -52,7 +74,11 @@ export function App({ surface }: { surface: Surface }) {
     setGate(false);
     setArrived(true);
   };
-  if (gate) return <KeyGate surface={surface} notice={notice} onDone={leaveGate} onBrowse={leaveGate} />;
+  const browse = () => {
+    rememberBrowsing();
+    leaveGate();
+  };
+  if (gate) return <KeyGate surface={surface} notice={notice} onDone={leaveGate} onBrowse={browse} />;
 
   return (
     <div className="flex h-screen flex-col bg-canvas">
@@ -69,7 +95,7 @@ export function App({ surface }: { surface: Surface }) {
           <ErrorBoundary key={view.id}>
             <ViewBody id={view.id} headingRef={heading} />
           </ErrorBoundary>
-          {surface.kind === 'browser-direct' && <LocalRunPanel surface={surface} className="mx-auto mb-6 w-[calc(100%-3rem)] max-w-[720px]" />}
+          {surface.kind === 'browser-direct' && RUN_PANEL_VIEWS.includes(view.id) && <LocalRunPanel surface={surface} className="mx-auto mb-6 w-[calc(100%-3rem)] max-w-[720px]" />}
         </main>
       </div>
     </div>
