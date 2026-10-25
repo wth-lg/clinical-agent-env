@@ -50,12 +50,13 @@ const forSlot = (s: SR) => {
 };
 
 // Whether the whole occurrence lies before the scan: its last instant, or for a date its whole
-// day, is earlier than 09:00 on the scan's date. A period whose end is a dateTime may end at the
-// scan instant itself, since the draw happens within the window; a single dateTime at 09:00
-// (occurrenceDateTime, or a period with only a start) is a draw due as the scan starts, too late.
+// day, is earlier than 09:00 on the scan's date. A period that starts before the scan and whose
+// end is a dateTime may end at the scan instant itself, since the draw happens within the window;
+// a draw due at 09:00 only (occurrenceDateTime, a period with only a start, or one that starts
+// and ends at 09:00) is due as the scan starts, too late.
 const beforeScan = (s: SR) => {
   const { start, end } = occurrence(s);
-  if (end !== undefined && !isDate(end)) return Date.parse(end) <= SCAN_MS;
+  if (end !== undefined && !isDate(end)) return start !== undefined && Date.parse(start) < SCAN_MS && Date.parse(end) <= SCAN_MS;
   const last = end ?? start;
   if (last === undefined) return false;
   return isDate(last) ? last < SCAN_DATE : Date.parse(last) < SCAN_MS;

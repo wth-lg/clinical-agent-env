@@ -2,7 +2,8 @@
 // window whose start and end differ in form (packages/env/tools/write/service.ts), so a window
 // that ends at the scan instant is all-dateTime (alternative creatinine_window_ends_at_scan); a
 // date-form window ending on the scan's date covers the whole day, scan time included, and
-// still fails, as does a single dateTime at the scan instant (mutant creatinine_at_scan_instant).
+// still fails, as does a single dateTime at the scan instant (mutant creatinine_at_scan_instant)
+// or a zero-width window at it.
 import { describe, expect, it } from 'vitest';
 import { loadMatrixTask, matrixEnv } from '../../../cli/matrix.ts';
 import type { TrialEvent } from '../../../packages/core/events.ts';
@@ -48,6 +49,10 @@ describe('contrast-ct-prep creatinine window forms', () => {
     const { orders, met } = await probe('date_ends_on_scan_date', withCreatinine('2026-10-23', '2026-10-26'));
     expect(orders.every((o) => !o.is_error)).toBe(true);
     expect(met).toBe(false);
+  });
+
+  it('fails a zero-width window that starts and ends at the scan instant', async () => {
+    expect((await probe('zero_width_at_scan', withCreatinine('2026-10-26T09:00:00-04:00', '2026-10-26T09:00:00-04:00'))).met).toBe(false);
   });
 
   it('fails a creatinine due at the scan instant', async () => {
