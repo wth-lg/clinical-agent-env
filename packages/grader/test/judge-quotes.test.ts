@@ -105,3 +105,20 @@ describe('gap segments are words, and a gap never hides a negation (verifier M2)
     expect(await judgeQuote('I have not sent', 'I have not sent it.')).toMatchObject({ met: true });
   });
 });
+
+describe('a gapped hybrid quote states the value beside its label (verifier M1)', () => {
+  const extract = (field: string, quote: string, text: string) => new Judge({ client: scriptedJudge([JSON.stringify({ value: 42, quote })]).client }).extract({ field, text, pattern: /CrCl of (\d+)/ });
+  const FIELD = 'Cockcroft-Gault creatinine clearance (CrCl), mL/min';
+
+  it('P1: a gap that joins the label to an unrelated number is unknown', async () => {
+    expect(await extract('CrCl', 'CrCl ... 42', 'CrCl pending, not yet resulted. Patient age 42.')).toMatchObject({ value: 'unknown' });
+    expect(await extract(FIELD, 'CrCl result pending ... patient age 42', 'CrCl result pending today. Patient age 42.')).toMatchObject({ value: 'unknown', reason: 'value not with its label' });
+    // The units after the comma are not the label.
+    expect(await extract(FIELD, 'CrCl result pending ... age 42 mL/min', 'CrCl result pending today. Patient age 42 mL/min.')).toMatchObject({ value: 'unknown', reason: 'value not with its label' });
+  });
+
+  it('a gapped quote whose value segment names the label, and any contiguous quote, still extract', async () => {
+    expect(await extract(FIELD, 'Cockcroft-Gault used ... CrCl is 42 mL/min', 'Cockcroft-Gault used with actual weight. CrCl is 42 mL/min.')).toMatchObject({ value: 42, source: 'llm' });
+    expect(await extract(FIELD, 'is 42 mL/min', 'Clearance is 42 mL/min.')).toMatchObject({ value: 42, source: 'llm' });
+  });
+});

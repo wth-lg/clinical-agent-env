@@ -210,6 +210,12 @@ function segmentsIn(quote: string, text: string): string[] | null {
 }
 const quoted = (quote: string, text: string) => segmentsIn(quote, text) !== null;
 
+// A gapped extractor quote states the value in a segment that also names the field: one word of
+// the field's label, the field before its first comma (the units follow it), so a gap cannot join
+// "CrCl" to an unrelated number (verifier M1).
+const wordsOf = (s: string) => fold(s).match(/[\p{L}\p{N}]+/gu) ?? [];
+const labelOf = (field: string) => wordsOf(field.split(',')[0]!).filter((w) => /\p{L}/u.test(w));
+
 // Every number written in the quote.
 const numbersIn = (quote: string): number[] => (quote.match(/\d[\d,]*(?:\.\d+)?|\.\d+/g) ?? []).flatMap((s) => {
   const n = canonicalNumber(s);
@@ -293,8 +299,10 @@ export class Judge {
     const quote = entry.answer.quote as string;
     const base = { quote, source: 'llm' as const, cache_key: entry.key };
     if (v === null) return { value: null, ...base };
-    if (!quoted(quote, q.text)) return { value: 'unknown', ...base, reason: 'quote not in text' };
+    const segments = segmentsIn(quote, q.text);
+    if (segments === null) return { value: 'unknown', ...base, reason: 'quote not in text' };
     if (!numbersIn(quote).some((n) => n === v)) return { value: 'unknown', ...base, reason: 'value not in quote' };
+    if (segments.length > 1 && !segments.some((s) => numbersIn(s).some((n) => n === v) && wordsOf(s).some((w) => labelOf(q.field).includes(w)))) return { value: 'unknown', ...base, reason: 'value not with its label' };
     return { value: v, ...base };
   }
 
