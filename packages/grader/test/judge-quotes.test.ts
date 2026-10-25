@@ -122,3 +122,10 @@ describe('a gapped hybrid quote states the value beside its label (verifier M1)'
     expect(await extract(FIELD, 'is 42 mL/min', 'Clearance is 42 mL/min.')).toMatchObject({ value: 42, source: 'llm' });
   });
 });
+
+describe('a quote found as written is never read as gapped', () => {
+  it('P3d: an ellipsis that is in the text itself still matches', async () => {
+    expect(await judgeQuote('wait... then call', 'Please wait... then call us.')).toMatchObject({ met: true });
+    expect(await judgeQuote('wait… then call', 'Please wait… then call us.')).toMatchObject({ met: true });
+  });
+});

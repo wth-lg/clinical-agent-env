@@ -196,10 +196,13 @@ const fold = (s: string) => s.replace(/[\u2018\u2019\u201A\u201B\u2032\u02BC\uFF
 // segments, or null when the quote is not in the text.
 const NEGATION = /\b(?:not|no|never|without|denies|declined)\b|n't\b/;
 function segmentsIn(quote: string, text: string): string[] | null {
-  const segments = fold(quote).split(/\.\.\.|\u2026/).map((s) => s.trim()).filter((s) => s !== '');
+  const whole = fold(quote);
+  const folded = fold(text);
+  // Found as written (an ellipsis in the text included): one segment, as before the gap reading.
+  if (whole !== '' && folded.includes(whole)) return [whole];
+  const segments = whole.split(/\.\.\.|\u2026/).map((s) => s.trim()).filter((s) => s !== '');
   if (segments.length === 0) return null;
   if (segments.length > 1 && segments.some((s) => s.length < 8 || s.split(' ').length < 2)) return null;
-  const folded = fold(text);
   let at = 0;
   for (const s of segments) {
     const i = folded.indexOf(s, at);
