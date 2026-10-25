@@ -39,7 +39,7 @@ function freshBuild(): string {
 // The env a spec's runner gets: no canonical ledger marker, no key, a fresh HOME, ledger and runs dir.
 function cleanEnv(tmp: string, extra: Record<string, string> = {}): Record<string, string> {
   const env: Record<string, string> = {};
-  for (const [k, v] of Object.entries(process.env)) if (v !== undefined && !/^(CLINENV_|CHARTR_|ANTHROPIC_API_KEY$|SPEND_LEDGER$)/.test(k)) env[k] = v;
+  for (const [k, v] of Object.entries(process.env)) if (v !== undefined && !/^(CLINENV_|ANTHROPIC_API_KEY$|SPEND_LEDGER$)/.test(k)) env[k] = v;
   return { ...env, HOME: tmp, SPEND_LEDGER: join(tmp, 'spend.jsonl'), CLINENV_RUNS_DIR: join(tmp, 'runs'), ...extra };
 }
 

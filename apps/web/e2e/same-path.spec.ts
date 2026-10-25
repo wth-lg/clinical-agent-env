@@ -26,7 +26,7 @@ const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-headers
 
 function cleanEnv(tmp: string): Record<string, string> {
   const env: Record<string, string> = {};
-  for (const [k, v] of Object.entries(process.env)) if (v !== undefined && !/^(CLINENV_|CHARTR_|ANTHROPIC_API_KEY$|SPEND_LEDGER$)/.test(k)) env[k] = v;
+  for (const [k, v] of Object.entries(process.env)) if (v !== undefined && !/^(CLINENV_|ANTHROPIC_API_KEY$|SPEND_LEDGER$)/.test(k)) env[k] = v;
   return { ...env, HOME: tmp, SPEND_LEDGER: join(tmp, 'spend.jsonl'), CLINENV_RUNS_DIR: join(tmp, 'runs') };
 }
 
