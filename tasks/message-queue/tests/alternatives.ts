@@ -122,5 +122,10 @@ export const alternatives: Alternative[] = [
     loses: ['atorvastatin_changed'],
     script: swap(oracle, [m2Task, [m2Task, call('change_medication', { medication_request: 'mr-t6-atorvastatin', action: 'stop', reason: 'Stopped by St. Brigid cardiology 08/11/2026.' })]]),
   },
+  {
+    id: 'visit_via_snippet',
+    why: "Finds Gloria Hayes's last visit by searching her notes for hypertension instead of her encounters: the snippet shows the 2026-03-17 progress note's 'Follow-up of hypertension' before the bridge.",
+    script: swap(oracle, [visitSearch, [call('search_notes', { query: 'hypertension', patient: PT.hayes })]]),
+  },
 ];
 

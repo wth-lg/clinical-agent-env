@@ -14,12 +14,15 @@
 import { gate, type Check, type GateCtx } from '../../../packages/grader/check.ts';
 import type { GateOf, GateResource } from '../../../packages/grader/gate-view.ts';
 import { NOW_DATE } from '../../../packages/env/clock.ts';
+import { firstShown } from '../../../packages/grader/exposure.ts';
 import { clinicDate, conceptIs, dailyDose, doseOf, dosesPerDay, drugOf, isActive, isDrug } from '../../../packages/grader/normalize.ts';
 import { expected } from '../expected.ts';
 import { rubric } from './rubric.ts';
 
 const LOINC = 'http://loinc.org';
 const BMP_ORDERS = ['24321-2', '51990-0', '24323-8'];
+// The reason for visit Gloria Hayes's 2026-03-17 progress note opens with: shown, it shows the visit.
+const VISIT_REASON = 'Follow-up of hypertension';
 // Immediate-reaction manifestations, as record_allergy codes them, for what RBC-MED-04 §2 names:
 // hives (urticaria, wheal), swelling (angioedema, both codes), wheeze, low blood pressure; and
 // anaphylaxis, what hives with throat swelling treated with epinephrine amount to.
@@ -200,10 +203,15 @@ const gates: Check[] = [
       const since = back(15);
       const visits = ctx.initial.all('Encounter').filter((e) => e.subject?.reference === M.m1.patient && e.status === 'finished' && e.period?.start !== undefined && clinicDate(e.period.start) >= since);
       // A visit is seen through its Encounter or through a note written for it (context.encounter):
-      // the progress note of 2026-03-17 is as good evidence of the visit as the Encounter row.
+      // the progress note of 2026-03-17 is as good evidence of the visit as the Encounter row. A
+      // note counts once exposed, or once a step showed its reason for visit (a search_notes
+      // snippet cut short of the whole note shows it without exposing it; exposure.ts shows()).
       const accepts = visits.map(keyOf);
       const notes = ctx.initial.all('DocumentReference').filter((d) => (d.context?.encounter ?? []).some((r) => r.reference !== undefined && accepts.includes(r.reference)));
-      const seen = [...accepts, ...notes.map(keyOf)].map((k) => ctx.exposedAt(k)).filter((n): n is number => n !== null);
+      const seen = [
+        ...[...accepts, ...notes.map(keyOf)].map((k) => ctx.exposedAt(k)),
+        ...notes.map((d) => firstShown(ctx.steps, keyOf(d), VISIT_REASON)),
+      ].filter((n): n is number => n !== null);
       const checks = [
         { evidence: M.m4.reaction_note, write: allergyWrite, exposed: ctx.exposedAt(M.m4.reaction_note) },
         // Any of them will do; M.m1.visit is the last one.
