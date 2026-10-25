@@ -12,7 +12,7 @@ import { NOT_AUDITED_MARKER } from '../../../packages/core/explain.ts';
 import { AUDIT_LABEL, DENOMINATOR_RULE, FAULT_DEFINITIONS, FAULT_PRECEDENCE, PASS_DEFINITION } from '../../../packages/core/outcomes.ts';
 import { trialName } from '../../../packages/core/summary.ts';
 import { markOf } from '../src/data/ui.tsx';
-import { CHECK_TEXT, cliMatrix, cliReplay, explain, sampleBase, MANIFEST_HASH, records, summary, TASK_IDS } from './fixtures/sample-results/sample.ts';
+import { CHECK_TEXT, cliCriteria, cliMatrix, cliReplay, explain, sampleBase, MANIFEST_HASH, records, summary, TASK_IDS } from './fixtures/sample-results/sample.ts';
 
 async function browse(page: Page, path = './') {
   await page.goto(new URL(path, await sampleBase(test.info().project.use.baseURL!)).href);
@@ -170,6 +170,51 @@ test('the trial detail says each criterion and the fault in words, linked to the
   await detail.getByRole('link', { name: 'model', exact: true }).click();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('How failures are attributed');
   await expect(page).toHaveURL(/#fault-model$/);
+});
+
+test('every trial detail shows the criteria audit-check gives; M3 is pending because the run has no manifest', async ({ page }) => {
+  // 75 rows opened one by one, each waiting for its full explanation.
+  test.setTimeout(300_000);
+  const cli = await cliCriteria();
+  await browse(page, './?view=runs');
+  const ui: Record<string, string> = {};
+  for (const r of records) {
+    const name = trialName(r);
+    const row = page.locator(`[data-testid="trial-row"][data-trial="${name}"]`);
+    await row.getByRole('button', { name, exact: true }).click();
+    const detail = row.getByTestId('trial-detail');
+    await expect(detail).toHaveAttribute('data-full', 'true', { timeout: 60_000 });
+    ui[name] = (await detail.getAttribute('data-criteria'))!;
+  }
+  const differ = Object.keys(cli).filter((n) => ui[n] !== cli[n]).map((n) => `${n}\n  cli ${cli[n]}\n  ui  ${ui[n]}`);
+  expect(differ, `${differ.length} of ${records.length} trials differ`).toEqual([]);
+  const pass = records.find((r) => r.outcome === 'PASS')!;
+  await browse(page, `./?view=runs&trial=${encodeURIComponent(trialName(pass))}`);
+  const m3 = page.getByTestId('trial-detail').locator('[data-testid="detail-criteria"] li[data-id="M3"]');
+  await expect(m3).toHaveAttribute('data-met', 'pending');
+  await expect(m3).toContainText('pending: run has no manifest');
+  await expect(m3).toHaveAttribute('data-evidence', /^run has no manifest; /);
+});
+
+test('a run manifest on another world makes M3 not met, and Notes shorten each hash with a copy control', async ({ page }) => {
+  const manifest = `results/runs/${summary.run_id}/manifest.json`;
+  const other = 'f'.repeat(64);
+  await page.route('**/data/index.json', async (route) => {
+    const res = await route.fetch();
+    const { files } = (await res.json()) as { files: string[] };
+    await route.fulfill({ response: res, json: { files: [...files, manifest] } });
+  });
+  await page.route(`**/data/${manifest}`, (route) => route.fulfill({ json: { world_hash: other } }));
+  const pass = records.find((r) => r.outcome === 'PASS')!;
+  await browse(page, `./?view=runs&trial=${encodeURIComponent(trialName(pass))}`);
+  const detail = page.getByTestId('trial-detail');
+  await expect(detail).toHaveAttribute('data-full', 'true', { timeout: 60_000 });
+  await expect(detail.locator('[data-testid="detail-criteria"] li[data-id="M3"]')).toHaveAttribute('data-met', 'false');
+  const notes = detail.getByTestId('detail-notes');
+  await expect(notes).toContainText('(E2)');
+  await expect(notes.locator(`[data-hash="${other}"]`)).toHaveCount(1);
+  await expect(notes.locator(`[data-hash="${pass.state_hash.initial}"]`)).toHaveCount(1);
+  expect(await notes.innerText()).not.toMatch(/[0-9a-f]{64}/);
 });
 
 test('URL state round-trips: task, label and open trial survive a reload and history', async ({ page }) => {

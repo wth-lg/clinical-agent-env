@@ -150,6 +150,11 @@ export function Hash({ value, testId }: { value: string | null; testId?: string 
   );
 }
 
+// Text with each 64-hex hash in it shortened, with its copy control (Hash).
+export function HashText({ text }: { text: string }) {
+  return <>{text.split(/\b([0-9a-f]{64})\b/).map((part, i) => (i % 2 === 1 ? <Hash key={i} value={part} /> : part))}</>;
+}
+
 // The label explainTrial gives a trial, as the Runs list shows it: an excluded INFRA trial has no
 // label and says it is rerun; a refusal shows model with its subtype; a trial with no audit row
 // carries the not-audited marker. The help icon opens the glossary.
