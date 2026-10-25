@@ -145,12 +145,12 @@ describe('every figure reads the current grade: the last regrade, else the recor
 });
 
 describe('summary.json schema version', () => {
-  it('is 3; a version 2 file is rejected with a message naming the version', () => {
+  it('is 4; a version 3 file is rejected with a message naming the version', () => {
     const ts = tenOf('t-a', 5);
     const s = summarize({ run_id: 'r', trials: ts, requeued: [], replay: replayAll(ts) });
-    expect(s.schema_version).toBe(3);
-    const v2 = { ...JSON.parse(JSON.stringify(s)), schema_version: 2 };
-    expect(validateSummary(v2)).toContainEqual(expect.stringMatching(/schema_version 2.*version 3/));
-    expect(() => assertSummary(v2)).toThrow(/schema_version 2/);
+    expect(s.schema_version).toBe(4);
+    const v3 = { ...JSON.parse(JSON.stringify(s)), schema_version: 3 };
+    expect(validateSummary(v3)).toContainEqual(expect.stringMatching(/schema_version 3.*version 4/));
+    expect(() => assertSummary(v3)).toThrow(/schema_version 3/);
   });
 });

@@ -1,0 +1,64 @@
+{
+  "trial_id": "sample-1:discharge-medrec:12",
+  "task_id": "discharge-medrec",
+  "task_version": "30e43da7b151d7d2bbf3e3b3c2cae6bdb7ecb2b1c53b660be95d33a84f003fb7",
+  "env_version": "c1e656fdcb8d2ef267ed6af93489ec65c25baa80dabaf5352107f549e40ca783",
+  "grader_task_version": "52776c2175330257b6414c455ddf80b218400506163e528f29651d0125398ba0",
+  "fixture_hash": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
+  "state_hash": {
+    "initial": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
+    "final": null,
+    "replay_final": null
+  },
+  "model_requested": "claude-opus-5-5",
+  "models_returned": [
+    "claude-opus-5-5"
+  ],
+  "effort": "high",
+  "api_version": "2026-10-21",
+  "started": "2026-10-23T13:24:40.000Z",
+  "turns": 7,
+  "tool_calls": 13,
+  "tool_errors": {
+    "INVALID_INPUT": 0,
+    "NOT_FOUND": 0,
+    "CONFLICT": 0,
+    "NOT_SUPPORTED": 0,
+    "INTERNAL": 1
+  },
+  "usage": {
+    "input": 0,
+    "cache_write": 0,
+    "cache_read": 0,
+    "output": 0
+  },
+  "cost_usd": 1.1,
+  "api_retries": 0,
+  "retry_wait_ms": 0,
+  "stop_reason": "tool_use",
+  "refusal_category": null,
+  "status": "ENV_ERROR",
+  "stop": "finish",
+  "detail": "INTERNAL",
+  "summary": "Reconciled Walter Kim after discharge: furosemide 40 mg, spironolactone 25 mg started, KCl stopped, lisinopril resumed; duplicate metoprolol tartrate flagged to Dr. Okafor; note written.",
+  "resumed": false,
+  "ended": "2026-10-23T13:25:45.000Z",
+  "judge_cost_usd": 0,
+  "grader_version": "8",
+  "outcome": "ENV_ERROR",
+  "valid": false,
+  "fault": "env",
+  "checks": [],
+  "score": null,
+  "judge": {
+    "calls": 0,
+    "unknown": 0,
+    "over_allowance": 0,
+    "cache_keys": [],
+    "cache": []
+  },
+  "attribution": null,
+  "error": null,
+  "index": 12,
+  "trajectory": "trajectories/discharge-medrec/12.jsonl"
+}

@@ -96,6 +96,10 @@ function Markdown({ text }: { text: string }) {
   return <article data-testid="findings-md" className="min-w-0 space-y-3 break-words rounded-sm border border-line bg-surface p-4 [&_code]:rounded-sm [&_code]:bg-canvas [&_code]:px-1 [&_h1]:text-base [&_h1]:font-semibold [&_h2]:pt-2 [&_h2]:font-medium [&_li]:ml-5 [&_li]:list-disc [&_table]:block [&_table]:w-full [&_table]:overflow-x-auto [&_td]:border-t [&_td]:border-line [&_td]:py-1 [&_td]:pr-3 [&_th]:py-1 [&_th]:pr-3 [&_th]:text-left [&_th]:text-xs [&_th]:font-medium [&_th]:text-ink-muted" dangerouslySetInnerHTML={{ __html: html }} />;
 }
 
+// An example trial opens in its own run on the default tab, whatever run or tab the address
+// still names (verifier-phase-P16-1 N1).
+const exemplar = (run: RunData, t: RunData['trials'][number]) => ({ view: 'runs', run: run.runId, task: t.task, label: null, trial: t.name, tab: null });
+
 const withWidth = (p: ReturnType<typeof markProps>, pct: number) => ({ ...p, style: { ...p.style, width: `${pct}%` } });
 
 function Charts({ run }: { run: RunData }) {
@@ -156,7 +160,7 @@ function Charts({ run }: { run: RunData }) {
           {exemplars.map(({ o, t }) => (
             <li key={o}>
               <span className="mr-2 text-ink-muted">{o}</span>
-              <a href={hrefWith({ view: 'runs', task: t!.task, label: null, trial: t!.name })} onClick={onNav({ view: 'runs', task: t!.task, label: null, trial: t!.name })} className="text-ink underline decoration-line-strong underline-offset-2">{t!.name}</a>
+              <a href={hrefWith(exemplar(run, t!))} onClick={onNav(exemplar(run, t!))} className="text-ink underline decoration-line-strong underline-offset-2">{t!.name}</a>
               <span className="ml-2 break-words text-ink-muted">{t!.explanation.reason}</span>
             </li>
           ))}

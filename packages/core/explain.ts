@@ -407,8 +407,14 @@ export function explainTrial(record: ExplainRecord, audit: AuditRow | null | und
     : fault === 'infra' ? (audit_label === null ? 'confirmed' : 'contradicted')
       : fault === 'model' || fault === 'refusal' ? (criteria.some((c) => c.met === false) ? 'contradicted' : criteria.some((c) => c.met === 'pending') ? 'provisional' : 'confirmed')
         : facts.audit !== null ? (audit_label === label!.label ? 'confirmed' : 'contradicted') : recordFact ? 'confirmed' : 'provisional';
-  const taxonomy = attFits && (TAXONOMY as readonly string[]).includes(att.auto) ? (att.auto as Taxonomy) : null;
-  const ef = failed === null ? null : describeCheck(failed, ctx.text);
+  // A fault that is not the model's is never told as a model failure (review-ui-P16-1 F3): the
+  // kind of model failure and the model step that decided it speak only for a model or refusal
+  // fault, and an excluded trial (a check threw, the environment or the API failed) has no
+  // decisive check, because no check gave a verdict on the model. A valid trial with another
+  // fault keeps its check: its reason names it, then whose fault it is.
+  const modelFault = fault === 'model' || fault === 'refusal';
+  const taxonomy = modelFault && attFits && (TAXONOMY as readonly string[]).includes(att.auto) ? (att.auto as Taxonomy) : null;
+  const ef = failed === null || !grade.valid ? null : describeCheck(failed, ctx.text);
   const decisive_check = failed === null || ef === null ? null : { id: failed.id, traces_to: ctx.checks?.find((c) => c.id === failed.id)?.traces_to ?? null, ...ef };
 
   let reason: string;
@@ -418,8 +424,7 @@ export function explainTrial(record: ExplainRecord, audit: AuditRow | null | und
     if (decisive_check !== null) {
       // The taxonomy speaks only for a model or refusal fault on a FAIL (a lead already says why a
       // REFUSAL or LIMIT ended); an infra trial gets the check alone.
-      const modelFault = (fault === 'model' || fault === 'refusal') && lead === null;
-      const kind = fault === 'env' ? 'environment' : fault === 'grader' ? 'grader' : modelFault && taxonomy !== null && taxonomy !== 'did_not_finish' ? taxonomy.replace(/_/g, ' ') : null;
+      const kind = fault === 'env' ? 'environment' : fault === 'grader' ? 'grader' : modelFault && lead === null && taxonomy !== null && taxonomy !== 'did_not_finish' ? taxonomy.replace(/_/g, ' ') : null;
       const why = fault === 'env' ? deciding!.evidence
         : fault === 'grader' ? (deciding!.id === 'GR3' ? 'an audit found a grader bug' : deciding!.evidence)
           : kind !== null ? TAXONOMY_WHY[taxonomy as Exclude<Taxonomy, 'did_not_finish'>](facts) : null;
@@ -466,7 +471,7 @@ export function explainTrial(record: ExplainRecord, audit: AuditRow | null | und
     audited: row !== null,
     audit_label,
     decisive_check,
-    decisive_step: attFits ? att.decisive_step : (row?.decisive_step ?? null),
+    decisive_step: fault !== null && !modelFault ? null : attFits ? att.decisive_step : (row?.decisive_step ?? null),
     taxonomy,
     reason: capWords(reason),
     criteria,
