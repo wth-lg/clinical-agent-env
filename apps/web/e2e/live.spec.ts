@@ -9,7 +9,6 @@ import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { createServer, type Server } from 'node:http';
 import { expect, test, type Page, type Route } from '@playwright/test';
-import { REFUSAL_TEXT } from '../../../packages/core/runner-api.ts';
 import { okResponse, SCENARIOS } from '../src/harness/scenarios.ts';
 import { LOCAL_START_COMMAND } from '../src/surface/command.ts';
 
@@ -325,7 +324,8 @@ test('each Run size shows its projected cost, and a size over the session cap is
   for (const [n, cost] of [[1, '$10.00'], [3, '$30.00'], [10, '$100.00'], [20, '$200.00']] as const) await expect(page.getByTestId(`run-cost-${n}`)).toHaveText(cost);
   await expect(page.getByRole('button', { name: 'Run ×1', exact: true })).toBeEnabled();
   for (const n of [3, 10, 20]) await expect(page.getByRole('button', { name: `Run ×${n}`, exact: true })).toBeDisabled();
-  await expect(page.getByTestId('size-reason')).toHaveText('Run ×3, ×10 and ×20 need more than your session cap of $20.00 (Run ×3 needs $30.00). Raise the cap below to run them.');
+  // Validate settled $0.011 in the tab ledger: it counts against the cap with each size's projection.
+  await expect(page.getByTestId('size-reason')).toHaveText('Run ×3, ×10 and ×20 need more than your session cap of $20.00 (Run ×3: $30.00 + $0.01 already committed = $30.01). Raise the cap below to run them.');
   // The cap is set here too, not only in the key gate, and holds for this tab across a reload.
   await expect(page.getByTestId('cap-where')).toContainText('this tab only');
   await page.getByLabel('Session cap (USD)').fill('250');
@@ -351,21 +351,38 @@ test('a batch whose projection crosses the session cap is refused with no API re
   await enterKey(page, sentinelKey(), '5');
   // Under a $5.00 cap no size fits: every Run button is disabled, so nothing is fetched or started.
   for (const n of [1, 3, 10, 20]) await expect(page.getByRole('button', { name: `Run ×${n}`, exact: true })).toBeDisabled();
-  await expect(page.getByTestId('size-reason')).toContainText('Run ×1 needs $10.00');
+  await expect(page.getByTestId('size-reason')).toContainText('(Run ×1: $10.00 + $0.01 already committed = $10.01)');
   expect(api.trialCalls()).toHaveLength(0);
   expect(workers).toHaveLength(0);
-  // A size that fits the cap but not what is left of it: the tab ledger refuses it before any fetch.
+  // A size that fits the cap but not what is left of it once a batch runs: its $10.00 is
+  // committed, so Run ×1 is disabled too, and nothing more is fetched or started.
   await page.getByLabel('Session cap (USD)').fill('15');
   await page.getByRole('button', { name: 'Set cap' }).click();
   await run(page, 1);
   await expect.poll(() => api.held.length, { timeout: 30_000 }).toBe(1);
   const calls = api.trialCalls().length;
-  await run(page, 1);
-  const refusal = page.getByTestId('run-refusal');
-  await expect(refusal.locator('p').first()).toHaveText(REFUSAL_TEXT.trials.spend_refused_ceiling);
-  await expect(refusal.getByTestId('error-detail')).toContainText('session cap');
-  await expect(refusal.getByTestId('cap-hint')).toHaveText('Change the session cap under “Run a task” on this page.');
+  await expect(page.getByRole('button', { name: 'Run ×1', exact: true })).toBeDisabled();
+  await expect(page.getByTestId('size-reason')).toContainText('already committed');
   expect(api.trialCalls()).toHaveLength(calls);
   expect(workers).toHaveLength(1);
   await expect(page.getByTestId('live-run')).toHaveCount(1);
+});
+
+// verifier-phase-P15-2 F2: at a cap of $30.01, Run ×3 ($30.00) was enabled and then refused,
+// because Validate had committed $0.011, and the refusal read "$30.01 > $30.01".
+test('a size whose projection with the spend already committed crosses the cap is disabled, and its amounts read true', async ({ page }) => {
+  await mockToy(page);
+  await page.goto('./?view=live&task=_toy');
+  await enterKey(page, sentinelKey());
+  const x3 = page.getByRole('button', { name: 'Run ×3', exact: true });
+  await page.getByLabel('Session cap (USD)').fill('30.01');
+  await page.getByRole('button', { name: 'Set cap' }).click();
+  await expect(x3).toBeDisabled();
+  await expect(page.getByTestId('size-reason')).toHaveText('Run ×3, ×10 and ×20 need more than your session cap of $30.010 (Run ×3: $30.000 + $0.011 already committed = $30.011). Raise the cap below to run them.');
+  await page.getByLabel('Session cap (USD)').fill('30.02');
+  await page.getByRole('button', { name: 'Set cap' }).click();
+  await expect(x3).toBeEnabled();
+  await x3.click();
+  await expect(page.getByTestId('live-run')).toHaveCount(1);
+  await expect(page.getByTestId('run-refusal')).toHaveCount(0);
 });

@@ -54,7 +54,8 @@ export function runnerTransport(token = runnerToken()): TrialTransport {
       if (token === null) throw new Error(NO_TOKEN.lead);
       const res = await call(`${TRIALS_PATH}?dry_run=1`, token, { method: 'POST', body: JSON.stringify(batchBody(req)) });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return parseDryRun(await json(res)).projection.total_usd;
+      const { projection } = parseDryRun(await json(res));
+      return { usd: projection.total_usd, committed: projection.session_spent_usd };
     },
 
     async start(req): Promise<StartResult> {

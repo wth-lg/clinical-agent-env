@@ -187,7 +187,7 @@ export function workerTransport(sessionCap: () => number): TrialTransport {
     kind: 'browser-direct',
 
     async project({ task, trials }) {
-      return (await trialProjection(task)) * trials;
+      return { usd: (await trialProjection(task)) * trials, committed: (await tabLedger().totals()).exposure };
     },
 
     async start({ task, trials }): Promise<StartResult> {

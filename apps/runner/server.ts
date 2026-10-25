@@ -95,7 +95,7 @@ import { ApiError, EgressRefusal, MessagesClient, MODEL, type Transport } from '
 import { BatchRefused, planBatch, runBatch, trialKey, type BatchRecord, type BatchSpec, type ResultSink, type TrialKey } from '../../packages/core/batch.ts';
 import type { Projection, TrialObservation } from '../../packages/core/cost.ts';
 import type { TrialEvent } from '../../packages/core/events.ts';
-import { checkProjected, PROJECTED_CAP_USD, SpendRefused, totals, type Ledger, type LedgerRow, type SpendCeiling } from '../../packages/core/ledger.ts';
+import { capSum, checkProjected, PROJECTED_CAP_USD, SpendRefused, totals, type Ledger, type LedgerRow, type SpendCeiling } from '../../packages/core/ledger.ts';
 import type { TrialClient } from '../../packages/core/loop.ts';
 import { REDACTED, redactText } from '../../packages/core/redact.ts';
 import { run, type RunOptions } from '../../packages/core/run.ts';
@@ -651,18 +651,21 @@ export async function startRunner(opts: RunnerOptions): Promise<Runner> {
     // 409 session_cap: this batch's projection plus what the session has spent or holds open would
     // cross the session cap the UI sent; checked here before the ledger, which holds it too.
     if (projection.session_spent_usd + projection.total_usd > body.session_cap_usd) {
+      // Amounts to the decimals that read true (capSum): cents can show $7.90 + $0.01 over $7.91.
+      const shown = capSum([projection.total_usd, projection.session_spent_usd], body.session_cap_usd);
       return {
         status: 409,
-        body: { error: { type: 'session_cap', message: `This batch's estimate of $${projection.total_usd.toFixed(2)}, with $${projection.session_spent_usd.toFixed(2)} already spent or running this session, would go over your session cap of $${body.session_cap_usd.toFixed(2)}.` }, projection },
+        body: { error: { type: 'session_cap', message: `This batch's estimate of ${shown.parts[0]}, with ${shown.parts[1]} already spent or running this session (${shown.total} in all), would go over your session cap of ${shown.cap}.` }, projection },
       };
     }
     const check = checkProjected(totals(rows), plan.projection.total);
     // 409 projected_cap: the ledger's exposure plus this projection would cross PROJECTED_CAP_USD,
     // the check `pnpm cli spend --check` makes; batchStart would refuse it as well.
     if (check.over) {
+      const shown = capSum([projection.total_usd, projection.ledger.exposure_usd], PROJECTED_CAP_USD);
       return {
         status: 409,
-        body: { error: { type: 'projected_cap', message: `This batch's estimate of $${projection.total_usd.toFixed(2)}, with $${projection.ledger.exposure_usd.toFixed(2)} already in the spend ledger, would go over the project's $${PROJECTED_CAP_USD} spending limit.` }, projection },
+        body: { error: { type: 'projected_cap', message: `This batch's estimate of ${shown.parts[0]}, with ${shown.parts[1]} already in the spend ledger (${shown.total} in all), would go over the project's $${PROJECTED_CAP_USD} spending limit.` }, projection },
       };
     }
 
@@ -802,9 +805,10 @@ export async function startRunner(opts: RunnerOptions): Promise<Runner> {
     // 409 session_cap: Validate's worst case plus what the session has spent or holds open would
     // cross the session cap of the last batch posted; the held key stays as it was.
     if (cap !== null && spent + projection > cap) {
+      const shown = capSum([projection, spent], cap);
       return {
         status: 409,
-        body: { error: { type: 'session_cap', message: `Validate can cost up to $${projection.toFixed(2)}, and with $${spent.toFixed(2)} already spent or running this session that would go over your session cap of $${cap.toFixed(2)}. Wait for the running trials to finish, then press Validate again. If no trials are running, restart the runner for a new session with no spend, then reload this page.` } },
+        body: { error: { type: 'session_cap', message: `Validate can cost up to ${shown.parts[0]}, and with ${shown.parts[1]} already spent or running this session (${shown.total} in all) that would go over your session cap of ${shown.cap}. Wait for the running trials to finish, then press Validate again. If no trials are running, restart the runner for a new session with no spend, then reload this page.` } },
       };
     }
     heldKey = null;

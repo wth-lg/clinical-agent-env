@@ -22,6 +22,13 @@ export interface Refusal {
   detail: string | null;
 }
 
+// A batch's projection, and the session's spend so far (settled, reserved and held open by
+// running batches): the batch fits when their sum is within the session cap.
+export interface Projected {
+  usd: number;
+  committed: number;
+}
+
 export type StartResult = { ok: true; runId: string; trialIds: string[] } | ({ ok: false } & Refusal);
 
 export type TrialState = 'queued' | 'running' | 'graded' | 'cancelled' | 'error';
@@ -55,8 +62,9 @@ export interface LiveRun {
 export interface TrialTransport {
   readonly kind: 'local-runner' | 'browser-direct';
   start(req: BatchRequest): Promise<StartResult>;
-  // What the batch is projected to cost, in USD, as start would check it against the caps.
-  project(req: BatchRequest): Promise<number>;
+  // What the batch is projected to cost and what the session has already committed, in USD, as
+  // start would check them against the session cap.
+  project(req: BatchRequest): Promise<Projected>;
   // Every event of the trial, those kept from before a reload first, then live ones; resolves
   // when the trial ends. A reload reconnects (local runner) or resumes (browser-direct).
   events(trialId: string, onEvent: (e: TrialEvent) => void, signal: AbortSignal): Promise<TrialEnd>;

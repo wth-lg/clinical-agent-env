@@ -3,6 +3,7 @@ import {
   ACTUAL_CAP_USD,
   admitStore,
   assertGrant,
+  capSum,
   createLedger,
   parseRow,
   PROJECTED_CAP_USD,
@@ -574,5 +575,47 @@ describe('spend ceiling', () => {
   it('refuses a ceiling whose scope leaves out the ledger’s own run', async () => {
     const store = new MemoryStore();
     await expect(ledgerOn(store).batchStart(1, { usd: 10, scope: (r) => r === 'other', what: 'session cap' })).rejects.toThrow(TypeError);
+  });
+});
+
+// verifier-phase-P15-2 F2: a refusal rounded to cents can read false ("$0.01 already committed +
+// $30.00 = $30.01 > $30.01"). Its amounts take the fewest decimals from 2 up that make the shown
+// parts add up to the shown total and the total more than the cap.
+describe('refusal amounts read true', () => {
+  const ceiling = (usd: number) => ({ usd, scope: (r: string | null) => r === 'run-test', what: 'session cap' });
+  const seed = (store: MemoryStore, usd: number) =>
+    store.rows.push({ ts: 't', call_id: `seed-${store.rows.length}`, kind: 'settle', source: 'node', run_id: 'run-test', batch_id: null, trial: null, usage: null, cost_usd: usd });
+  const refusal = (p: Promise<unknown>) => p.then(() => 'admitted', (e: unknown) => (e as Error).message);
+
+  it('shows a ceiling refusal with enough decimals that the sum and the comparison hold', async () => {
+    const store = new MemoryStore();
+    seed(store, 0.011);
+    expect(await refusal(ledgerOn(store).batchStart(30, ceiling(30.01)))).toBe("session cap: $0.011 already committed + this batch's projection $30.000 = $30.011 > $30.010");
+  });
+
+  it('keeps cents when cents already read true', async () => {
+    const store = new MemoryStore();
+    seed(store, 3);
+    expect(await refusal(ledgerOn(store).batchStart(7.01, ceiling(10)))).toBe("session cap: $3.00 already committed + this batch's projection $7.01 = $10.01 > $10.00");
+  });
+
+  it('shows the projected cap refusal the same way', async () => {
+    const store = new MemoryStore();
+    seedSettled(store, 949);
+    expect(await refusal(ledgerOn(store).batchStart(1.004))).toBe(
+      `projected cap: settled $949.000 + reserved $0.000 + open batches $0.000 + projection $1.004 = $950.004 > $${PROJECTED_CAP_USD}`,
+    );
+  });
+
+  it('capSum: the shown parts add up to the shown total, which is more than the shown cap', () => {
+    const cents = (s: string) => Number(s.slice(1));
+    for (const [parts, cap] of [[[0.011, 30], 30.01], [[0.0049, 0.0049], 0.0097], [[949.9999, 0.0002], 950], [[1, 2, 3], 5.99], [[0.333333, 0.333333, 0.333334], 0.999999]] as const) {
+      const shown = capSum(parts, cap);
+      const d = shown.total.split('.')[1]!.length;
+      expect(shown.parts.every((p) => p.split('.')[1]!.length === d) && shown.cap.split('.')[1]!.length === d, JSON.stringify(shown)).toBe(true);
+      expect(shown.parts.reduce((a, p) => a + Math.round(cents(p) * 10 ** d), 0), JSON.stringify(shown)).toBe(Math.round(cents(shown.total) * 10 ** d));
+      expect(cents(shown.total) > cents(shown.cap), JSON.stringify(shown)).toBe(true);
+    }
+    expect(capSum([3, 7.01], 10)).toEqual({ parts: ['$3.00', '$7.01'], total: '$10.01', cap: '$10.00' });
   });
 });

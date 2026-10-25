@@ -1,6 +1,7 @@
 // The Live trial view (plan phase P15; design section 8, "Live trial"): the run launcher (a task,
 // then Run ×1, ×3, ×10 or ×20 as one batch under the session cap, each size with its projected
-// cost, a size over the cap disabled with the reason, and the cap itself), the live trial (streaming
+// cost, a size whose cost with the session's committed spend is over the cap disabled with the
+// reason, and the cap itself), the live trial (streaming
 // trajectory with summarised thinking and one-line tool rows, turn, token and cost meters, the
 // state diff, Stop) and the runs this surface started. It reads trials only through the
 // surface's TrialTransport and shows them only from TrialEvents, so the local runner and the
@@ -9,12 +10,13 @@ import { ChevronDown, ChevronRight, CircleAlert, Dot, Square } from 'lucide-reac
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type Ref } from 'react';
 import type { TrialEvent } from '../../../../packages/core/events.ts';
 import { explainTrial, type ExplainRecord, NOT_AUDITED_MARKER } from '../../../../packages/core/explain.ts';
+import { capSum } from '../../../../packages/core/ledger.ts';
 import { REFUSAL_TEXT } from '../../../../packages/core/runner-api.ts';
 import { useTaskList } from '../data/tasks.ts';
 import { Card, FaultLabel, OutcomeChip, Page } from '../data/ui.tsx';
 import { useKeyStatus } from '../keygate/key.ts';
 import { runnerToken } from '../keygate/runner.ts';
-import { MAX_SESSION_CAP_USD, parseCap } from '../spend/cap.ts';
+import { admitTrial, MAX_SESSION_CAP_USD, parseCap } from '../spend/cap.ts';
 import { sessionCap, setSessionCap, useSessionSpend } from '../spend/session.ts';
 import type { Surface } from '../surface/detect.ts';
 import { LocalRunPanel } from '../surface/LocalRunPanel.tsx';
@@ -38,14 +40,17 @@ const BROWSER_DIRECT: Surface = { kind: 'browser-direct' };
 // The refusals a higher session cap would lift.
 const CAP_REFUSALS: readonly string[] = [REFUSAL_TEXT.trials.spend_refused_ceiling, REFUSAL_TEXT.trials.session_cap];
 
-// Why the sizes in `over` are disabled: "Run ×3, ×10 and ×20 need more than ...".
-function overCap(over: readonly number[], costs: Partial<Record<number, number>>, cap: number): string {
+// Why the sizes in `over` are disabled: "Run ×3, ×10 and ×20 need more than ...", with the first
+// size's cost plus what the session has committed, shown to the decimals that read true (capSum).
+function overCap(over: readonly number[], costs: Partial<Record<number, number>>, committed: number, cap: number): string {
   const names = over.map((n, i) => (i === 0 ? `Run ×${n}` : `×${n}`));
   const list = names.length === 1 ? names[0] : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`;
   const first = over[0]!;
+  const shown = capSum([costs[first]!, committed], cap);
+  const sum = committed > 0 ? `${shown.parts[0]} + ${shown.parts[1]} already committed = ${shown.total}` : null;
   return over.length === 1
-    ? `${list} needs ${usd(costs[first]!)}, more than your session cap of ${usd(cap)}. Raise the cap below to run it.`
-    : `${list} need more than your session cap of ${usd(cap)} (Run ×${first} needs ${usd(costs[first]!)}). Raise the cap below to run them.`;
+    ? `${list} needs ${sum ?? shown.parts[0]}, more than your session cap of ${shown.cap}. Raise the cap below to run it.`
+    : `${list} need more than your session cap of ${shown.cap} (Run ×${first}${sum === null ? ` needs ${shown.parts[0]}` : `: ${sum}`}). Raise the cap below to run them.`;
 }
 
 // A browser-direct trial a reload cut off and the tab resumed from its kept events (record.resumed).
@@ -69,25 +74,34 @@ export function LiveTrial({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
   }, [tasks, task]);
   const chosen = task || ids[0] || '';
   const noKey = key.kind === 'none';
-  const { cap } = useSessionSpend();
+  const { cap, spent } = useSessionSpend();
   const [costs, setCosts] = useState<Partial<Record<number, number>>>({});
+  const [committed, setCommitted] = useState(0);
+  const refresh = useCallback(() => {
+    t.runs().then((r) => (setRuns(r), setRunsError(null)), (e: unknown) => setRunsError((e as Error).message));
+  }, [t]);
+  // Each trial's state: the runner's committed spend changes when one starts or ends.
+  const trialStates = (runs ?? []).map((r) => r.rows.map((x) => x.state).join()).join('|');
+  useEffect(() => setCosts({}), [chosen]);
+  // Projected again when the tab's spend (browser-direct) or a trial's state (either surface) changes.
   useEffect(() => {
     if (chosen === '') return;
     let current = true;
-    setCosts({});
     for (const n of RUN_SIZES) {
-      t.project({ task: chosen, trials: n, sessionCap: sessionCap() }).then((v) => current && setCosts((c) => ({ ...c, [n]: v })), () => undefined);
+      t.project({ task: chosen, trials: n, sessionCap: sessionCap() }).then((p) => {
+        if (!current) return;
+        setCosts((c) => ({ ...c, [n]: p.usd }));
+        setCommitted(p.committed);
+      }, () => undefined);
     }
     return () => {
       current = false;
     };
-  }, [t, chosen]);
-  const over = RUN_SIZES.filter((n) => costs[n] !== undefined && costs[n] > cap);
+  }, [t, chosen, spent, trialStates]);
+  // A size is over when its cost with the committed spend crosses the cap, as start checks it.
+  const over = RUN_SIZES.filter((n) => costs[n] !== undefined && !admitTrial({ cap, spent: committed, estimate: costs[n] }).ok);
   const costId = useId();
 
-  const refresh = useCallback(() => {
-    t.runs().then((r) => (setRuns(r), setRunsError(null)), (e: unknown) => setRunsError((e as Error).message));
-  }, [t]);
   useEffect(refresh, [refresh]);
   useEffect(() => {
     if (runs === null || runs.every((r) => r.done)) return;
@@ -132,7 +146,7 @@ export function LiveTrial({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
           ))}
         </div>
         {noKey && <p data-testid="launcher-reason" className="mt-2 text-ink-muted">Add an API key to run trials. Use “Add key” in the top bar.</p>}
-        {!noKey && over.length > 0 && <p data-testid="size-reason" className="mt-2 text-ink-muted">{overCap(over, costs, cap)}</p>}
+        {!noKey && over.length > 0 && <p data-testid="size-reason" className="mt-2 text-ink-muted">{overCap(over, costs, committed, cap)}</p>}
         <CapControl local={t.kind === 'local-runner'} />
         {refusal && (
           <ErrorNote testId="run-refusal" lead={refusal.lead} detail={refusal.detail}>

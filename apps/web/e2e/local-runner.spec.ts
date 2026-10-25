@@ -222,6 +222,26 @@ test('Run ×3 starts one batch of 3 trials and Run ×20 one batch of 20', async 
   expect(runs.slice(-2).map((r) => r.trial_ids.length)).toEqual([3, 20]);
 });
 
+// verifier-phase-P15-2 F2 on the local runner: the dry run's session_spent_usd (what the runner
+// session has spent or holds open) counts with each size's projection. The dry run is answered
+// here, so the amounts are fixed while the runner's own batches from earlier tests still settle.
+test('a size whose cost with the runner session\'s committed spend crosses the cap is disabled, with amounts that read true', async ({ page }) => {
+  await page.route('**/api/trials?dry_run=1', (route) => {
+    const { trials } = route.request().postDataJSON() as { trials: number };
+    const projection = { ...SAMPLES.dryRun.projection, total_usd: 10 * trials, session_spent_usd: 0.011 };
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ...SAMPLES.dryRun, projection }) });
+  });
+  await open(page, runner!, '?view=live&task=_toy');
+  const x1 = page.getByRole('button', { name: 'Run ×1', exact: true });
+  await page.getByLabel('Session cap (USD)').fill('10.01');
+  await page.getByRole('button', { name: 'Set cap' }).click();
+  await expect(x1).toBeDisabled();
+  await expect(page.getByTestId('size-reason')).toHaveText('Run ×1, ×3, ×10 and ×20 need more than your session cap of $10.010 (Run ×1: $10.000 + $0.011 already committed = $10.011). Raise the cap below to run them.');
+  await page.getByLabel('Session cap (USD)').fill('10.02');
+  await page.getByRole('button', { name: 'Set cap' }).click();
+  await expect(x1).toBeEnabled();
+});
+
 test('a runner 409 spend_refused_ceiling shows the REFUSAL_TEXT string and the runner message', async ({ page }) => {
   const message = 'ceiling: session cap $5.00 would be crossed by this batch';
   await page.route('**/api/trials', (route) => route.request().method() === 'POST'
