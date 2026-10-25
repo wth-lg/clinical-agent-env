@@ -129,3 +129,24 @@ describe('a quote found as written is never read as gapped', () => {
     expect(await judgeQuote('wait… then call', 'Please wait… then call us.')).toMatchObject({ met: true });
   });
 });
+
+describe('gap segments match whole words (verifier B1-2 F1, rule 1)', () => {
+  it('N3, N3b: a segment that ends inside a word cannot hide its negation', async () => {
+    expect(await judgeQuote('I have n... sent your prescription', 'I have not sent your prescription yet.')).toMatchObject({ met: 'unknown', evidence: { reason: 'quote not in text' } });
+    expect(await judgeQuote('we have no... sent the order to', 'We have not sent the order to radiology.')).toMatchObject({ met: 'unknown', evidence: { reason: 'quote not in text' } });
+  });
+
+  it('N7: a later placement of the segments counts when the first one fails', async () => {
+    expect(await judgeQuote('the order was ... signed by dr lee', 'The order was not signed by Dr Lee. Later the order was reviewed and signed by Dr Lee.')).toMatchObject({ met: true });
+  });
+
+  it('a leading or trailing ellipsis is one segment, still at word edges', async () => {
+    expect(await judgeQuote("I've sent your prescription...", TEXT)).toMatchObject({ met: true });
+    expect(await judgeQuote('\u2026sent your prescription', TEXT)).toMatchObject({ met: true });
+    expect(await judgeQuote('ve sent your prescription...', TEXT)).toMatchObject({ met: 'unknown' });
+  });
+
+  it('N4: a fake ellipsis over nothing is harmless', async () => {
+    expect(await judgeQuote("I've sent your ... prescription to the pharmacy", "I've sent your prescription to the pharmacy.")).toMatchObject({ met: true });
+  });
+});

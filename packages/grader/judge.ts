@@ -190,26 +190,37 @@ const validExtract = (a: { [k: string]: Json }) => (a.value === null || (typeof 
 // folded, whitespace runs as one space, so a quote that re-types an apostrophe or re-wraps a
 // line still matches (R14-04).
 const fold = (s: string) => s.replace(/[\u2018\u2019\u201A\u201B\u2032\u02BC\uFF07]/g, "'").replace(/[\u201C\u201D\u201E\u201F\u2033]/g, '"').replace(/[\u2010\u2011\u2013\u2014\u2212]/g, '-').toLowerCase().replace(/\s+/g, ' ').trim();
-// A quote with "..." or "…" is segments that must all appear in the text, in that order. Each
+// A quote with "..." or "\u2026" is segments that must all appear in the text, in that order. Each
 // segment of such a quote has at least 2 words and 8 characters, and no gap the ellipsis skips
-// holds a negation, so a gap cannot turn "not sent" into "sent" (verifier M2). The matched
-// segments, or null when the quote is not in the text.
+// holds a negation, so a gap cannot turn "not sent" into "sent" (verifier M2). Every segment, and
+// a quote found as written, starts and ends at a word edge of the text, so "I have n... sent"
+// cannot cut "not" in two (verifier B1-2 F1). Any placement of the segments that keeps these
+// rules counts, not only the first. The matched segments, or null when the quote is not in the
+// text.
 const NEGATION = /\b(?:not|no|never|without|denies|declined)\b|n't\b/;
+const WORD = /[\p{L}\p{N}]/u;
+// t[j] is inside a word: a letter or digit, or an apostrophe between two (I've, didn't).
+const inWord = (t: string, j: number) => WORD.test(t[j] ?? '') || (t[j] === "'" && WORD.test(t[j - 1] ?? '') && WORD.test(t[j + 1] ?? ''));
+const atEdges = (t: string, i: number, s: string) => !(WORD.test(s[0]!) && inWord(t, i - 1)) && !(WORD.test(s[s.length - 1]!) && inWord(t, i + s.length));
+// Whether segments[k..] can be placed in t from `at` on, each gap accepted by gapOk.
+function place(t: string, segments: readonly string[], k: number, at: number, gapOk: (gap: string) => boolean): boolean {
+  if (k === segments.length) return true;
+  const s = segments[k]!;
+  for (let i = t.indexOf(s, at); i >= 0; i = t.indexOf(s, i + 1)) {
+    if (k > 0 && !gapOk(t.slice(at, i))) continue;
+    if (atEdges(t, i, s) && place(t, segments, k + 1, i + s.length, gapOk)) return true;
+  }
+  return false;
+}
 function segmentsIn(quote: string, text: string): string[] | null {
   const whole = fold(quote);
   const folded = fold(text);
   // Found as written (an ellipsis in the text included): one segment, as before the gap reading.
-  if (whole !== '' && folded.includes(whole)) return [whole];
+  if (whole !== '' && place(folded, [whole], 0, 0, () => true)) return [whole];
   const segments = whole.split(/\.\.\.|\u2026/).map((s) => s.trim()).filter((s) => s !== '');
   if (segments.length === 0) return null;
   if (segments.length > 1 && segments.some((s) => s.length < 8 || s.split(' ').length < 2)) return null;
-  let at = 0;
-  for (const s of segments) {
-    const i = folded.indexOf(s, at);
-    if (i < 0 || (at > 0 && NEGATION.test(folded.slice(at, i)))) return null;
-    at = i + s.length;
-  }
-  return segments;
+  return place(folded, segments, 0, 0, (gap) => !NEGATION.test(gap)) ? segments : null;
 }
 const quoted = (quote: string, text: string) => segmentsIn(quote, text) !== null;
 
