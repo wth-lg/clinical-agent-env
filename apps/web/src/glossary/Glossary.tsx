@@ -4,6 +4,7 @@
 // and from the help icon beside every fault label.
 import type { Ref } from 'react';
 import { AUDIT_LABEL, CONFIRMATION_CRITERIA, CONFIRMATION_DEFINITIONS, DENOMINATOR_RULE, FAULT_DEFINITIONS, FAULT_PRECEDENCE, FAULT_PRECEDENCE_RULE, PASS_DEFINITION } from '../../../../packages/core/outcomes.ts';
+import { TAXONOMY_TEXT } from '../../../../packages/core/explain.ts';
 import { Card, Page } from '../data/ui.tsx';
 
 export const GLOSSARY_TITLE = 'How failures are attributed';
@@ -47,6 +48,12 @@ export function Glossary({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> 
           </ul>
         </Card>
       ))}
+      <Card title="Kinds of model failure" id="taxonomy">
+        <p className="text-ink-muted">A model failure also gets one of these kinds. The reason on a failed trial can end with the kind alone, for example "reasoning".</p>
+        <dl className="mt-2 space-y-1.5" data-testid="taxonomy">
+          {Object.entries(TAXONOMY_TEXT).map(([k, v]) => <div key={k} data-testid="taxonomy-row" data-taxonomy={k}><dt className="inline font-medium">{k.replace(/_/g, ' ')}: </dt><dd className="inline text-ink-muted">{v}</dd></div>)}
+        </dl>
+      </Card>
       <Card title="Confirming a label">
         <ul className="space-y-1.5">
           {CONFIRMATION_CRITERIA.map((c) => <li key={c.id} className="text-ink-muted"><span className="mr-1.5 font-medium text-ink">{c.id}</span>{c.text}</li>)}
