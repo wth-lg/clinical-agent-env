@@ -19,8 +19,10 @@ const sources = ['src', 'api'].flatMap((d) => readdirSync(join(RELAY, d)).map((f
 // .vercelignore, and buildFileTree's readdir tests every entry's path relative to dir with that
 // matcher, a directory by its bare name with no trailing slash, before it descends into it. An
 // ignored directory is never read, so a rule like `!/api/` cannot bring back `api` once `/*`
-// ignores it. An empty directory that is kept is uploaded as an entry of its own. Before a deploy,
-// README step 4 runs the CLI's own walker (scripts/relay-upload-list.ts) against the same list.
+// ignores it. An empty directory that is kept is uploaded as an entry of its own. Not copied:
+// buildFileTree also adds .vercel/routes.json when it exists, a file `vercel link` does not write
+// and git ignores, so a checkout never has it. Before a deploy, README step 4 runs the CLI's own
+// walker (scripts/relay-upload-list.ts) against the same list.
 // ignore@4.0.6's types declare `export default`, but its CommonJS module.exports is the function.
 const ignore = ignoreModule as unknown as typeof ignoreModule.default;
 const DEFAULT_IGNORES = ['.hg', '.git', '.gitmodules', '.svn', 'CVS', '.cache', '.next', '.now', '.vercel', '.npmignore', '.dockerignore', '.gitignore', '.*.swp', '.DS_Store', '.wafpicke-*', '.lock-wscript', '.env.local', '.env.*.local', '.venv', '.yarn/cache', '.pnp*', 'npm-debug.log', 'config.gypi', 'node_modules', '__pycache__', 'venv'];

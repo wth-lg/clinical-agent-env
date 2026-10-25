@@ -178,9 +178,10 @@ writes `apps/relay/.vercel/`.
    With no connection, `vercel git disconnect` prints `No Git repository connected` and exits 1,
    which is the expected result. If it exits 0, it has just removed a connection: run the
    `vercel api` check again, which must now print `.link absent`. `--project` matters: without it,
-   in a folder that step 2 has not linked, `vercel git disconnect --yes` creates a project named
-   `relay` and connects the repository to it. With it, a project name that does not exist makes
-   the command exit 1 without creating anything. `vercel.json` also sets
+   in a folder that step 2 has not linked, `vercel git disconnect --yes` links the folder to a
+   project named after it (`relay`), creating that project and connecting the repository if it
+   does not exist. With it, a project name that does not exist makes the command exit 1 without
+   creating or linking anything. `vercel.json` also sets
    `"git": { "deploymentEnabled": false }`.
 
 4. Check what the deploy will upload, with the installed CLI's own upload walker:
