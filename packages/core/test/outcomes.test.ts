@@ -133,7 +133,7 @@ describe('round 3 (pr-review P14a-2): denominator, precedence and confirmation t
   it('DENOMINATOR_RULE says what is enforced on an environment- or grader-labelled valid failure, and how each is resolved (review F3, P14a-3 F2)', () => {
     const [, second] = DENOMINATOR_RULE.split(/(?<=\.)\s+(?=[A-Z`])/);
     expect(second).toMatch(/valid failure labelled environment or grader is not allowed in a committed run: cli audit-check fails the run until/);
-    expect(second).toMatch(/a grader label is resolved by that fix and regrade, or an environment label by an environment fix and a rerun of only the affected trials, disclosed in results\/CHANGELOG\.md/);
+    expect(second).toMatch(/a grader label is resolved by that fix and regrade, or an environment label by an environment fix and a rerun of only the affected trials, disclosed in results\/changelog\.d/);
     expect(second).toMatch(/so a run with one has no headline pass rate\.$/);
     // It no longer claims a denominator that nothing reports.
     expect(DENOMINATOR_RULE).not.toMatch(/labelled environment or grader is excluded from the denominator/);
