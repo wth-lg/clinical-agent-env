@@ -9,8 +9,12 @@ export function formatClock(iso: string): string {
   const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::\d{2}(?:\.\d+)?)?(Z|[+-]\d{2}:\d{2})$/.exec(iso);
   if (m === null) return iso;
   const [, y, mo, d, hh, mm, off] = m as unknown as [string, string, string, string, string, string, string];
-  const day = DAYS[new Date(Date.UTC(Number(y), Number(mo) - 1, Number(d))).getUTCDay()];
-  const zone = off === 'Z' ? 'UTC' : `UTC${off[0] === '-' ? '−' : '+'}${Number(off.slice(1, 3))}${off.slice(4) === '00' ? '' : `:${off.slice(4)}`}`;
+  // A date or time that does not exist (month 13, 30 February, hour 24) is not read.
+  const date = new Date(Date.UTC(Number(y), Number(mo) - 1, Number(d)));
+  if (date.getUTCMonth() !== Number(mo) - 1 || date.getUTCDate() !== Number(d) || Number(hh) > 23 || Number(mm) > 59) return iso;
+  const day = DAYS[date.getUTCDay()];
+  const zero = off === 'Z' || /^[+-]00:00$/.test(off);
+  const zone = zero ? 'UTC' : `UTC${off[0] === '-' ? '−' : '+'}${Number(off.slice(1, 3))}${off.slice(4) === '00' ? '' : `:${off.slice(4)}`}`;
   return `${day} ${Number(d)} ${MONTHS[Number(mo) - 1]} ${y}, ${hh}:${mm} (${zone})`;
 }
 

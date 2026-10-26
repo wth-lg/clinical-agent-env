@@ -12,6 +12,12 @@ describe('formatClock', () => {
   });
   it('leaves a value it cannot read as it is', () => {
     expect(formatClock('soon')).toBe('soon');
+    expect(formatClock('2026-13-01T08:00:00Z')).toBe('2026-13-01T08:00:00Z');
+    expect(formatClock('2026-02-30T08:00:00Z')).toBe('2026-02-30T08:00:00Z');
+  });
+  it('says UTC for a zero offset, whatever its sign (verifier JU12a-1 F4)', () => {
+    expect(formatClock('2026-10-23T08:00:00+00:00')).toBe('Fri 23 Oct 2026, 08:00 (UTC)');
+    expect(formatClock('2026-10-23T08:00:00-00:00')).toBe('Fri 23 Oct 2026, 08:00 (UTC)');
   });
 });
 
