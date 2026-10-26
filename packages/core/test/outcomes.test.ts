@@ -160,7 +160,7 @@ describe('round 3 (pr-review P14a-2): denominator, precedence and confirmation t
 
   it('GR4 and M4 read the matrix\'s failed checks against the trial\'s failed check; B1 is the run-level block', () => {
     const gr4 = FAULT_DEFINITIONS.grader.criteria.find((c) => c.id === 'GR4')!;
-    expect(gr4.text).toMatch(/same gate check the trial failed/);
+    expect(gr4.text).toMatch(/same gate check as this FAIL trial/);
     expect(gr4.reads.join(' ')).toMatch(/failed_checks/);
     expect(RUN_BLOCKS.map((c) => c.id)).toEqual(['B1']);
     expect(RUN_BLOCKS[0]!.text).toMatch(/^[A-Z][^\n]*\.$/);
@@ -168,7 +168,7 @@ describe('round 3 (pr-review P14a-2): denominator, precedence and confirmation t
 
   it('the M5 text is the rule the code checks', () => {
     const m5 = CONFIRMATION_CRITERIA.find((c) => c.id === 'M5')!;
-    expect(m5.text).toMatch(/adjudicated_label, else its label/);
+    expect(m5.text).toMatch(/its adjudicated label, else its label/);
   });
 });
 
@@ -178,6 +178,33 @@ describe('FAULT_DEFINITIONS in plain words (review-ui-P16-1 F4, verifier-phase-P
     for (const t of texts) {
       expect(t).not.toMatch(/\b[a-z]+_[a-z_]+\b/);
       expect(t).not.toMatch(/\bMODEL\b|\boracle\b|\bexception\b|\binvariant\b|\bstop_reason\b/);
+    }
+  });
+});
+
+// verifier-ui-copy-1 m1-m3: "failed with an error" everywhere; ASD-STE 100 wording (different from,
+// no "is when", at most 25 words in I1 and GR4: shortened, not split, because each text is one
+// sentence the UI sets inside a line); and the M1-M5 texts in plain words too.
+describe('fault and confirmation texts in plain words, ASD-STE 100 (verifier-ui-copy-1 m1-m3)', () => {
+  const words = (t: string) => t.split(/(?<=[.!?])\s+/).map((s) => s.split(/\s+/).filter(Boolean).length);
+  it('M1 on a GRADER_ERROR says a check failed with an error, not that it threw', () => {
+    const m1 = CONFIRMATION_CRITERIA.find((c) => c.id === 'M1')!;
+    expect(m1.check({ outcome: 'GRADER_ERROR', decisive: null } as never)).toMatchObject({ met: 'n/a', evidence: 'a grader check failed with an error, so no gate check gave a verdict on the model' });
+  });
+  it('no fault text says "different ... than", "is when" or "tells nothing"', () => {
+    const texts = Object.values(FAULT_DEFINITIONS).flatMap((d) => [d.sentence, ...d.criteria.map((c) => c.text)]);
+    for (const t of texts) expect(t).not.toMatch(/different[^.]* than|\bis when\b|tells nothing/);
+  });
+  it('I1 and GR4 have no sentence over 25 words', () => {
+    for (const [f, id] of [['infra', 'I1'], ['grader', 'GR4']] as const) {
+      const c = FAULT_DEFINITIONS[f].criteria.find((x) => x.id === id)!;
+      expect(Math.max(...words(c.text)), c.text).toBeLessThanOrEqual(25);
+    }
+  });
+  it('no M1-M5 text uses a field name or a code word', () => {
+    for (const c of CONFIRMATION_CRITERIA) {
+      expect(c.text, c.id).not.toMatch(/\b[a-z]+_[a-z_]+\b/);
+      expect(c.text, c.id).not.toMatch(/decisive id|\bINTERNAL\b|\boracle\b|\bmodel_fault\b/);
     }
   });
 });
