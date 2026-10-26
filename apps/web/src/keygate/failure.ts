@@ -1,6 +1,6 @@
 // What the key gate says about a failed Validate. Every failure starts with one plain sentence
 // (lead), then what to do when there is something to do (next), then the API's or runner's own
-// line (detail), which the gate shows in small mono. A relay failure (P16h: the hosted site sends
+// line (detail), which the gate shows in small mono; through the relay, that line says so. A relay failure (P16h: the hosted site sends
 // through the relay) sends the user to the local-run panel, which already shows the prerequisites
 // and the command.
 // The failure types live here, not in direct.ts or runner.ts, so this file imports nothing and
@@ -77,6 +77,12 @@ export function trialRelayReason(end: { status: string; code: string; message: s
   return http === null ? null : relayReason(Number(http[1]));
 }
 
+// On browser-direct every answer comes through the relay, which could put any text in an error's
+// message (review-security-P16h-web-1 M3). A detail line taken from an answer starts with this,
+// so a compromised relay's words cannot pass for the page's own; a line the page wrote itself (no
+// answer: an unreachable relay, the egress guard, the cap) has none.
+export const RELAY_ANSWERED = 'The relay answered: ';
+
 // The API's answer by HTTP status, the same sentence on both surfaces.
 function apiLead(status: number | null): { lead: string; next?: string } {
   if (status === null) return { lead: 'The browser did not send the request to the API.' };
@@ -104,12 +110,12 @@ function runnerLead(f: RunnerFailure): { lead: string; next?: string } {
 export function describeFailure(f: Failure): FailureText {
   switch (f.kind) {
     case 'relay':
-      return { ...RELAY_FAILURE_TEXT[f.reason], detail: f.message, local: true };
+      return { ...RELAY_FAILURE_TEXT[f.reason], detail: f.reason === 'unreachable' ? f.message : RELAY_ANSWERED + f.message, local: true };
     case 'cap':
       return { lead: 'The session spend cap does not allow this check.', next: 'To continue, set a higher session spend cap.', detail: f.message, local: false };
     case 'api': {
       const { lead, next } = apiLead(f.status);
-      return { lead, ...(next === undefined ? {} : { next }), detail: f.message, local: false };
+      return { lead, ...(next === undefined ? {} : { next }), detail: f.status === null ? f.message : RELAY_ANSWERED + f.message, local: false };
     }
     case 'runner': {
       const { lead, next } = runnerLead(f);

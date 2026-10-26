@@ -106,7 +106,10 @@ accessible name or text node, so they share one line of the snapshot.
 - Key gate errors are red: the danger token (tokens.css, `--color-danger`) colours the error's
   border, its first line and the key field while it is invalid. Each error starts with one plain
   sentence from apps/web/src/keygate/failure.ts (for example `The API did not accept this key.`),
-  then the API's or runner's own line in small mono that wraps only between words. A relay
+  then the API's or runner's own line in small mono that wraps only between words. On
+  browser-direct a line taken from an answer starts with `The relay answered: `, since every
+  answer comes through the relay; a line the page wrote itself (an unreachable relay, the egress
+  guard, the session cap) has no prefix. A relay
   error (P16h, below) points to `Run it on your computer` with a `Show the steps` button and does
   not repeat the command.
 
@@ -116,7 +119,8 @@ The hosted site sends Validate and every trial call through the relay (apps/rela
 surface receives the API's org-CORS 401 and the gate has no org-CORS screen. When a Validate
 through the relay fails, the red error shows one of these pairs, from RELAY_FAILURE_TEXT in
 apps/web/src/keygate/failure.ts (apps/web/test/failure.test.ts checks them against this list),
-with the relay's or API's own line under it; the local-run panel beside it shows
+with the relay's or API's own line under it (after `The relay answered: ` when an answer came
+back); the local-run panel beside it shows
 LOCAL_PREREQUISITES and LOCAL_START_COMMAND.
 
 - Unreachable (no readable answer: the relay is down, blocked or refused the preflight):
@@ -131,7 +135,8 @@ LOCAL_PREREQUISITES and LOCAL_START_COMMAND.
 
 When the relay stops a live trial on browser-direct (the trial's error event holds a lost
 connection, a stall, or an HTTP 429 or 5xx; trialRelayReason in failure.ts), the live view shows
-the same lead in red with the trial's own line under it, then one of these sentences from
+the same lead in red with the trial's own line under it (after `The relay answered: ` when it
+leads with an HTTP status, as every browser-direct trial error line from an answer does), then one of these sentences from
 RELAY_TRIAL_TEXT, a `Show the steps` button, and the local-run panel after the error:
 
 - Unreachable: `This page works in a Chromium browser such as Chrome or Brave, or Firefox. Or run the environment on your computer instead. The steps are in “Run it on your computer” below this message.`

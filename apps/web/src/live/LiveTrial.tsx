@@ -14,7 +14,7 @@ import { capSum } from '../../../../packages/core/ledger.ts';
 import { REFUSAL_TEXT } from '../../../../packages/core/runner-api.ts';
 import { useTaskList } from '../data/tasks.ts';
 import { Card, FaultLabel, OutcomeChip, Page } from '../data/ui.tsx';
-import { RELAY_TRIAL_TEXT, trialRelayReason } from '../keygate/failure.ts';
+import { RELAY_ANSWERED, RELAY_TRIAL_TEXT, trialRelayReason } from '../keygate/failure.ts';
 import { useKeyStatus } from '../keygate/key.ts';
 import { runnerToken } from '../keygate/runner.ts';
 import { admitTrial, MAX_SESSION_CAP_USD, parseCap } from '../spend/cap.ts';
@@ -243,7 +243,11 @@ function Trial({ t, id, onEnd }: { t: TrialTransport; id: string; onEnd: () => v
   const explanation = record ? explainTrial(record, null, { events }) : null;
   // On browser-direct every call goes through the relay, so a relay failure that stopped the trial
   // gets the key gate's fallback (ruling 2026-10-28T02:00).
-  const relay = f.end?.type === 'error' && runnerToken() === null ? trialRelayReason(f.end) : null;
+  const hosted = runnerToken() === null;
+  const failed = f.end?.type === 'error' ? f.end : null;
+  const relay = failed !== null && hosted ? trialRelayReason(failed) : null;
+  // A line from the relay's answer (it leads with the HTTP status) says whose words it is.
+  const errorLine = failed === null ? null : hosted && /^HTTP \d{3}\b/.test(failed.message) ? RELAY_ANSWERED + failed.message : failed.message;
   const panelId = useId();
 
   async function stop() {
@@ -290,7 +294,7 @@ function Trial({ t, id, onEnd }: { t: TrialTransport; id: string; onEnd: () => v
           )}
           {relay !== null && f.end?.type === 'error' ? (
             <>
-              <ErrorNote testId="trial-error" lead={RELAY_TRIAL_TEXT[relay].lead} detail={f.end.message}>
+              <ErrorNote testId="trial-error" lead={RELAY_TRIAL_TEXT[relay].lead} detail={errorLine}>
                 <p className="mt-1 text-ink">{RELAY_TRIAL_TEXT[relay].next}</p>
                 <button type="button" className={`${button} mt-2 h-7`} onClick={() => document.getElementById(panelId)?.focus()}>Show the steps</button>
               </ErrorNote>
@@ -298,7 +302,7 @@ function Trial({ t, id, onEnd }: { t: TrialTransport; id: string; onEnd: () => v
               <LocalRunPanel id={panelId} surface={BROWSER_DIRECT} className="mt-3" />
             </>
           ) : f.end?.type === 'error' ? (
-            <ErrorNote testId="trial-error" lead={f.end.status === 'INFRA_API' ? 'The API stopped this trial.' : 'This trial stopped with an error.'} detail={f.end.message} />
+            <ErrorNote testId="trial-error" lead={f.end.status === 'INFRA_API' ? 'The API stopped this trial.' : 'This trial stopped with an error.'} detail={errorLine} />
           ) : end.message !== null && end.message !== 'stopped watching' && events.length === 0 ? (
             <ErrorNote testId="trial-error" lead="This trial did not run." detail={end.message} />
           ) : null}

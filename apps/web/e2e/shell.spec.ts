@@ -689,7 +689,7 @@ test.describe('errors', () => {
     });
   }
 
-  test('a browser-direct 401 starts with a plain sentence, then the API line in small mono, no word broken at 390', async ({ page }) => {
+  test('a browser-direct 401 starts with a plain sentence, then the API line as the relay answered it in small mono, no word broken at 390', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await mockBrowserDirect(page);
     await mockApi(page, { status: 401, type: 'authentication_error', message: 'invalid x-api-key' });
@@ -699,7 +699,7 @@ test.describe('errors', () => {
     const alert = page.getByRole('alert');
     await expect(alert.locator('p').first()).toHaveText('The API did not accept this key.');
     const detail = alert.locator('p').last();
-    await expect(detail).toHaveText('HTTP 401 authentication_error: invalid x-api-key');
+    await expect(detail).toHaveText('The relay answered: HTTP 401 authentication_error: invalid x-api-key');
     const lead = await alert.locator('p').first().evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
     const d = await detail.evaluate((el) => ({
       size: parseFloat(getComputedStyle(el).fontSize),
@@ -710,7 +710,7 @@ test.describe('errors', () => {
     }));
     expect(d.size).toBeLessThan(lead);
     expect(d.mono).toMatch(/mono/i);
-    expect(d.words).toBe(5);
+    expect(d.words).toBe(8);
     // The line is wider than the alert at 390, so it wraps, but only between words.
     expect(d.lines).toBeGreaterThan(1);
     expect(d.broken).toEqual([]);

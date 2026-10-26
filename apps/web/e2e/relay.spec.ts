@@ -208,6 +208,10 @@ for (const { reason, reply } of FAILURES) {
     const alert = page.getByRole('alert');
     await expect(alert.locator('p').first()).toHaveText(RELAY_FAILURE_TEXT[reason].lead);
     await expect(alert).toContainText(RELAY_FAILURE_TEXT[reason].next);
+    // The relay's own line says whose words it is (review M3); an unreachable relay sent none.
+    const detail = alert.locator('p').last();
+    if (reply === 'abort') await expect(detail).not.toContainText('The relay answered:');
+    else await expect(detail).toHaveText(new RegExp(`^The relay answered: HTTP ${reply.status}\\b`));
     await expectRed(alert);
     await expect(alert.getByTestId('local-command')).toHaveCount(0);
     await expectPanel(page);
@@ -266,6 +270,7 @@ for (const { reason, reply } of TRIAL_FAILURES) {
     const lead = alert.locator('p').first();
     await expect(lead).toHaveText(RELAY_TRIAL_TEXT[reason].lead, { timeout: 60_000 });
     await expect(alert).toContainText(RELAY_TRIAL_TEXT[reason].next);
+    await expect(alert.getByTestId('error-detail')).toHaveText(new RegExp(`^The relay answered: HTTP ${reply.status}\\b`));
     await expect(alert.getByTestId('local-command')).toHaveCount(0);
     await expectRed(alert);
     await expectPanel(page);

@@ -4,13 +4,22 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { describeFailure, RELAY_FAILURE_TEXT, RELAY_TRIAL_TEXT, relayReason, trialRelayReason, type Failure } from '../src/keygate/failure.ts';
+import { describeFailure, RELAY_ANSWERED, RELAY_FAILURE_TEXT, RELAY_TRIAL_TEXT, relayReason, trialRelayReason, type Failure } from '../src/keygate/failure.ts';
 
 const API_LINE = 'HTTP 401 authentication_error: invalid x-api-key';
 
 describe('describeFailure', () => {
-  it('a browser-direct 401: the API did not accept the key, then the raw API line', () => {
-    expect(describeFailure({ kind: 'api', status: 401, message: API_LINE })).toEqual({ lead: 'The API did not accept this key.', detail: API_LINE, local: false });
+  // Review M3 (review-security-P16h-web-1): on browser-direct every answer comes through the
+  // relay, so a line from an answer says so; a compromised relay's words cannot pass for the page's.
+  it('a browser-direct 401: the API did not accept the key, then the API line as the relay answered it', () => {
+    expect(RELAY_ANSWERED).toBe('The relay answered: ');
+    expect(describeFailure({ kind: 'api', status: 401, message: API_LINE })).toEqual({ lead: 'The API did not accept this key.', detail: `The relay answered: ${API_LINE}`, local: false });
+  });
+
+  it('a line the page wrote itself, with no answer behind it, has no attribution', () => {
+    expect(describeFailure({ kind: 'api', status: null, message: 'egress guard: fetch refused' }).detail).toBe('egress guard: fetch refused');
+    expect(describeFailure({ kind: 'relay', reason: 'unreachable', message: 'network error: Failed to fetch' }).detail).toBe('network error: Failed to fetch');
+    expect(describeFailure({ kind: 'cap', message: 'm' }).detail).toBe('m');
   });
 
   it('a local-runner 401 says the same first sentence, with the runner line as detail', () => {
@@ -27,7 +36,7 @@ describe('describeFailure', () => {
       expect(d.next, reason).toBe(RELAY_FAILURE_TEXT[reason].next);
       expect(d.next, reason).toMatch(/Run it on your computer/);
       expect(d.local, reason).toBe(true);
-      expect(d.detail, reason).toBe('raw');
+      expect(d.detail, reason).toBe(reason === 'unreachable' ? 'raw' : `The relay answered: raw`);
     }
   });
 
