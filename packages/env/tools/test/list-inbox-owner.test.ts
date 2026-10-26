@@ -9,8 +9,10 @@ import { clock } from '../../clock.ts';
 import { parseNdjson } from '../../fixture-source.ts';
 import { Store } from '../../store.ts';
 import { indexDefinitions } from '../../validate.ts';
+import { USER } from '../read/context.ts';
 import { READ_TOOLS } from '../read/index.ts';
 import { callTool, definitions, type ToolResult } from '../registry.ts';
+import { USER as WRITE_USER } from '../write/context.ts';
 import { newSession, TOOLS, type WriteContext } from '../write/index.ts';
 
 const root = new URL('../../../../', import.meta.url);
@@ -48,10 +50,27 @@ describe('list_inbox owner', () => {
     expect(t2(c, { owner: 'Practitioner/pr-lin' })).toEqual([]);
   });
 
-  it('rejects an owner that is not a Practitioner or Group reference', () => {
-    const r = callTool(READ_TOOLS, 'list_inbox', { queue: 'results', owner: 'pool-oncall' }, fresh());
+  it('takes a bare id as update_inbox_item new_owner does (verifier-phase-P17i-JT1-1 F2)', () => {
+    const c = fresh();
+    ok(callTool(TOOLS, 'update_inbox_item', { task_id: 'task-t2-inbox-4', action: 'reassign', new_owner: 'pool-oncall' }, c));
+    expect(t2(c, { owner: 'pool-oncall' }).map((r) => [r.task, r.owner])).toEqual([['Task/task-t2-inbox-4', 'Group/pool-oncall']]);
+    expect(t2(c, { owner: 'pr-okafor' })).toEqual(t2(c, {}));
+  });
+
+  it('rejects an owner that is not a Practitioner or Group, and names an owner that does not exist (F3)', () => {
+    const r = callTool(READ_TOOLS, 'list_inbox', { queue: 'results', owner: 'Patient/pt-0008' }, fresh());
     expect(r.is_error).toBe(true);
-    expect(r.content).toMatchObject({ error: { code: 'INVALID_INPUT', field: 'owner', message: expect.stringMatching(/Practitioner.*Group/) } });
+    expect(r.content).toMatchObject({ error: { code: 'INVALID_INPUT', field: 'owner', message: expect.stringMatching(/Practitioner or Group/) } });
+    for (const owner of ['Group/pool-on-call', 'pool-on-call']) {
+      const missing = callTool(READ_TOOLS, 'list_inbox', { queue: 'results', owner }, fresh());
+      expect(missing.is_error, owner).toBe(true);
+      expect(missing.content).toMatchObject({ error: { code: 'NOT_FOUND', field: 'owner' } });
+    }
+  });
+
+  it('defaults to the one signed-in user every tool uses (F4)', () => {
+    expect(USER).toBe('Practitioner/pr-okafor');
+    expect(WRITE_USER).toBe(USER);
   });
 
   it('says in its description that rows carry the owner and the default is the signed-in user', () => {

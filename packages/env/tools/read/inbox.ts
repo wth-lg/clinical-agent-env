@@ -5,14 +5,27 @@
 // default lists only the signed-in user's items, so an item reassigned away leaves the user's
 // list (P17j JT1, pre-audit S10).
 import type { Task } from '@medplum/fhirtypes';
-import { STAFF } from '../../world.ts';
+import { ToolError } from '../errors.ts';
 import type { Tool } from '../registry.ts';
-import { INBOX_QUEUE_SYSTEM, INBOX_QUEUES, type ReadContext } from './context.ts';
+import { INBOX_QUEUE_SYSTEM, INBOX_QUEUES, USER, type ReadContext } from './context.ts';
 import { page } from './page.ts';
 import { count, FHIR_ID, offset } from './schema.ts';
 
-// The signed-in user (get_context reports the same practitioner).
-const USER = `Practitioner/${STAFF[0]}`;
+// An owner as update_inbox_item's new_owner takes it: Type/id or a bare id, a Practitioner or
+// Group in the world (write/checks.ts resolve), as a Type/id reference.
+const OWNERS = ['Practitioner', 'Group'];
+function ownerRef(world: ReadContext['world'], value: string): string {
+  const slash = value.indexOf('/');
+  if (slash >= 0) {
+    const type = value.slice(0, slash);
+    if (!OWNERS.includes(type)) throw new ToolError('INVALID_INPUT', `'owner' must reference a Practitioner or Group, not ${type}`, 'owner');
+    if (!world.get(type, value.slice(slash + 1))) throw new ToolError('NOT_FOUND', `'owner': no ${value}`, 'owner');
+    return value;
+  }
+  const type = OWNERS.find((t) => world.get(t, value));
+  if (!type) throw new ToolError('NOT_FOUND', `'owner': no Practitioner or Group with id '${value}'`, 'owner');
+  return `${type}/${value}`;
+}
 
 // FHIR R4 Task.status.
 const TASK_STATUSES = [
@@ -38,8 +51,8 @@ export const listInbox: Tool<ReadContext> = {
       status: { type: 'string', description: 'Task status', enum: TASK_STATUSES },
       owner: {
         type: 'string',
-        description: "Owner reference, a Practitioner or Group, e.g. 'Group/pool-oncall' (default: the signed-in user)",
-        pattern: `^(Practitioner|Group)/${FHIR_ID.slice(1)}`,
+        description: "Owner, a Practitioner or Group: Type/id or a bare id, e.g. Group/pool-oncall (default: the signed-in user)",
+        pattern: `^([A-Za-z]+/)?${FHIR_ID.slice(1)}`,
       },
       count: count(50, 20),
       offset,
@@ -50,7 +63,7 @@ export const listInbox: Tool<ReadContext> = {
   run(input: { queue: string; status?: string; owner?: string; count?: number; offset?: number }, { world }) {
     const query: Record<string, string> = { code: `${INBOX_QUEUE_SYSTEM}|${input.queue}` };
     if (input.status !== undefined) query.status = input.status;
-    const owner = input.owner ?? USER;
+    const owner = input.owner === undefined ? USER : ownerRef(world, input.owner);
     const rows = world.search<Task>('Task', query).resources
       .filter((t) => t.owner?.reference === owner)
       .sort((a, b) => received(a) - received(b) || (a.id! < b.id! ? -1 : a.id! > b.id! ? 1 : 0))

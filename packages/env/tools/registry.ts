@@ -59,7 +59,7 @@ import { ToolError, type ErrorBody } from './errors.ts';
 // fhir_search states its MedicationRequest date, and its filters per type; send_message's about
 // and search_patients' example.
 // 6 (P17j JT1: S10): list_inbox rows carry owner; it lists the signed-in user's items by default,
-// and owner lists another owner's.
+// and owner (Type/id or a bare id, as update_inbox_item's new_owner) lists another owner's.
 export const TOOLS_VERSION = '6';
 
 export type PropertySchema =
