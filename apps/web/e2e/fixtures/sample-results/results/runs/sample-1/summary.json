@@ -1,5 +1,5 @@
 {
-  "schema_version": 5,
+  "schema_version": 6,
   "run_id": "sample-1",
   "tasks": {
     "contrast-ct-prep": {
@@ -56,6 +56,11 @@
         "mean_score": 12,
         "raw_mean_score": 12,
         "gate_fraction": 12
+      },
+      "pass_k": {
+        "1": 0.25,
+        "3": 0.004545454545454546,
+        "5": 0
       },
       "consistency": {
         "valid": 12,
@@ -125,6 +130,11 @@
         "mean_score": 12,
         "raw_mean_score": 12,
         "gate_fraction": 12
+      },
+      "pass_k": {
+        "1": 0.4166666666666667,
+        "3": 0.045454545454545456,
+        "5": 0.0012626262626262625
       },
       "consistency": {
         "valid": 12,
@@ -197,6 +207,11 @@
         "raw_mean_score": 12,
         "gate_fraction": 12
       },
+      "pass_k": {
+        "1": 0.5833333333333334,
+        "3": 0.1590909090909091,
+        "5": 0.026515151515151512
+      },
       "consistency": {
         "valid": 12,
         "passes": 7,
@@ -265,6 +280,11 @@
         "mean_score": 12,
         "raw_mean_score": 12,
         "gate_fraction": 12
+      },
+      "pass_k": {
+        "1": 0.75,
+        "3": 0.3818181818181818,
+        "5": 0.15909090909090906
       },
       "consistency": {
         "valid": 12,
@@ -337,6 +357,11 @@
         "raw_mean_score": 12,
         "gate_fraction": 12
       },
+      "pass_k": {
+        "1": 0.3333333333333333,
+        "3": 0.01818181818181818,
+        "5": 0
+      },
       "consistency": {
         "valid": 12,
         "passes": 4,
@@ -405,6 +430,11 @@
         "mean_score": 12,
         "raw_mean_score": 12,
         "gate_fraction": 12
+      },
+      "pass_k": {
+        "1": 0.6666666666666666,
+        "3": 0.2545454545454545,
+        "5": 0.0707070707070707
       },
       "consistency": {
         "valid": 12,
