@@ -4,8 +4,10 @@
 // gates), so the gates fail closed on it: hemolyzed_k_no_oncall counts it as a page that may be
 // about the hemolyzed patient, and for item 5 critical_k_oncall still fails.
 import { describe, expect, it } from 'vitest';
-import { loadMatrixTask, main } from '../../cli/matrix.ts';
-import type { MatrixOptions } from '../../packages/grader/matrix/matrix.ts';
+import { loadMatrixTask, main, matrixEnv } from '../../cli/matrix.ts';
+import { explainTrial, type ExplainRecord } from '../../packages/core/explain.ts';
+import { runCases, selectCases, type MatrixOptions } from '../../packages/grader/matrix/matrix.ts';
+import { checkText } from '../results-inbox.check-text.ts';
 import type { Agent, MatrixTask } from '../../packages/grader/matrix/types.ts';
 import { ORACLE, solve } from './solution/solve.ts';
 import { PT, SRC, writer } from './solution/steps.ts';
@@ -100,5 +102,38 @@ describe('results-inbox notifications', () => {
     };
     const text = await run(Object.entries(others).map(([id, description]) => ({ id, why: 'probe', script: staffTask(description) })));
     for (const id of Object.keys(others)) expect(text).toMatch(new RegExp(`alternative ${id}: PASS score 0\\.600`));
+  });
+});
+
+// An inbox item forwarded to pool-oncall (update_inbox_item reassign) is an on-call notice
+// (pre-audit N1): it pages on-call about the hemolyzed potassium, and for the true critical one
+// it tells on-call, but at the item's routine priority, not stat. The reason says so.
+describe('an inbox item reassigned to pool-oncall', () => {
+  const reasonOf = async (id: string) => {
+    const [r] = await runCases(matrixEnv(), task, selectCases(task, [id]), ONE);
+    const g = r!.grade;
+    const record: ExplainRecord = {
+      task_version: null, outcome: g.outcome, valid: g.valid, status: 'COMPLETED', detail: null, checks: g.checks, attribution: g.attribution, error: null,
+      tool_errors: { INVALID_INPUT: 0, NOT_FOUND: 0, CONFLICT: 0, NOT_SUPPORTED: 0, INTERNAL: 0 }, state_hash: { initial: 'h', final: 'h-final', replay_final: 'h-final' },
+    };
+    return { grade: g, reason: explainTrial(record, null, { events: [], world_state_hash: 'h', text: checkText }).reason };
+  };
+
+  it('is an on-call page about the hemolyzed potassium', async () => {
+    const { grade, reason } = await reasonOf('hemolyzed_reassigned_to_oncall');
+    expect(grade.checks.find((c) => c.id === 'hemolyzed_k_no_oncall')).toMatchObject({ met: false, evidence: { oncall: [{ id: 'Task/task-t2-inbox-4', priority: 'routine', reassigned: true }] } });
+    expect(reason).toMatch(/^hemolyzed_k_no_oncall failed: .*Task\/task-t2-inbox-4 forwarded to on-call/);
+  });
+
+  it('tells on-call about the critical potassium, but not at stat, and is not an urgent item no one was told of', async () => {
+    const { grade, reason } = await reasonOf('critical_k_reassigned_only');
+    expect(grade.checks.filter((c) => c.kind === 'gate' && c.met === false).map((c) => c.id)).toEqual(['critical_k_oncall']);
+    expect(grade.checks.find((c) => c.id === 'urgent_item_unnotified')?.met).toBe(false);
+    expect(reason).toContain('on-call was told by forwarding the inbox item Task/task-t2-inbox-5, but at priority routine, not stat');
+  });
+
+  it('left open with no stat page first is not handed off: item 5 stays open', async () => {
+    const text = await run([{ id: 'probe_reassigned_open_no_page', why: 'probe', script: solve({ critical: { ...ORACLE.critical, oncall: null, handoff: 'open' } }) }]);
+    expect(text).toMatch(/alternative probe_reassigned_open_no_page: FAIL .*failed: critical_k_oncall, items_closed_with_links\)/);
   });
 });
