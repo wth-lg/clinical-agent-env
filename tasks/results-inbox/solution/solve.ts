@@ -22,8 +22,8 @@ export interface Options {
   // Item 1: the CT order (null: none), its tracking task's due date (null: none), the message.
   nodule: { order: Order | null; due: string | null; message: boolean; link?: boolean };
   // Item 3: a new GI referral besides the existing one; whether the closure links the existing
-  // one; the patient message (RBC-INBOX-01 §4).
-  fit: { newReferral: boolean; linkExisting: boolean; message: boolean };
+  // one; the patient message (RBC-INBOX-01 §4; 'call': a task for the RN triage pool to phone him).
+  fit: { newReferral: boolean; linkExisting: boolean; message: Contact };
   // Item 4: the repeat order (null: none), a message to on-call and what it lists in about
   // (default the result), the patient message ('call': a task to Dr. Okafor to phone him), and
   // whether the item itself is reassigned to on-call before it is closed.
@@ -109,7 +109,9 @@ export function solve(over: Partial<Options> = {}): Script {
   // Item 3.
   {
     const made = o.fit.newReferral ? [order(PT.patel, { code: 'REF-GI-COLONOSCOPY', priority: 'routine', start: '2026-10-26' }, 'Positive FIT', [SRC.fit])] : [];
-    if (o.fit.message)
+    if (o.fit.message === 'call')
+      made.push(w.task(PT.patel, 'Group/pool-rn-triage', '2026-10-23', 'routine', 'Phone Raj Patel: his stool test (FIT) was positive; Dr. Lin has already referred him to gastroenterology, whose office will call him to schedule a colonoscopy.', SRC.fit));
+    if (o.fit.message === true)
       made.push(
         w.message(`Patient/${PT.patel}`, 'routine', 'Your stool test result', 'Your stool test (FIT) found blood, which needs a colonoscopy to find the cause. Dr. Lin has already referred you to gastroenterology, and their office will call you to schedule it. Please call us with any questions.', [SRC.fit]),
       );
