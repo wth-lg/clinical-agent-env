@@ -41,10 +41,10 @@ test.describe('grader validation in the tab, no key', () => {
     await cards.first().getByRole('button').first().click();
     await expect(page.getByTestId('task-prompt')).toBeVisible();
     await expect(page.getByTestId('task-tools')).toBeVisible();
-    // Live controls are shown disabled with the reason, on the prompt tab.
+    // Run trial is on the prompt tab; with no key it says that Live trial asks for one (JU5).
     const prompt = cards.first().getByTestId('task-panel-prompt');
-    await expect(prompt.getByRole('button', { name: 'Run trial' })).toBeDisabled();
-    await expect(prompt).toContainText('Needs an API key.');
+    await expect(prompt.getByRole('button', { name: 'Run trial' })).toBeEnabled();
+    await expect(prompt).toContainText('Live trial asks for an API key.');
     await cards.first().getByRole('tab', { name: 'Rubric' }).click();
     await expect(page.getByTestId('task-check').first()).toBeVisible();
     await page.getByTestId('task-check').first().locator('summary').click();
@@ -53,8 +53,8 @@ test.describe('grader validation in the tab, no key', () => {
     await expect(page.getByTestId('solution-step').first()).toBeVisible();
     // A closed card keeps its grader validation row, Run trial included.
     const closed = cards.nth(1).getByTestId('validation');
-    await expect(closed.getByRole('button', { name: 'Run trial' })).toBeDisabled();
-    await expect(closed).toContainText('Needs an API key.');
+    await expect(closed.getByRole('button', { name: 'Run trial' })).toBeEnabled();
+    await expect(closed).toContainText('Live trial asks for an API key.');
   });
 
   for (const id of TASK_IDS) {

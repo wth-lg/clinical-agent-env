@@ -2,6 +2,9 @@ import { useId } from 'react';
 import type { Surface } from './detect.ts';
 import { LocalCommand } from './LocalCommand.tsx';
 
+// The id of the panel the shell shows on browser-direct, so the Overview intro card can move focus to it.
+export const LOCAL_RUN_PANEL_ID = 'local-run';
+
 const TEXT: Record<Surface['kind'], { title: string; body: string }> = {
   'browser-direct': {
     title: 'Run it on your computer',

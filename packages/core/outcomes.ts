@@ -96,8 +96,20 @@ export interface AttributionFacts {
   decisive: { id: string; exposure: ReadonlyArray<{ id: string; first_exposed_step: number | null; exposable: boolean | null }> | null } | null;
   matrix: MatrixResult | null;
   check_error: { check: string | null; message: string } | null;
-  audit: { outcome: string; label: AuditLabelName | null; model_fault: string | null; llm_auditor_agrees: boolean | null; adjudicated_label: AuditLabelName | null; evidence_ids: readonly string[] } | null;
+  // The audit row's answers clinically_acceptable and tool_rejections_correct (explain.ts AuditRow),
+  // each its adjudicated answer when the row has one, else the auditor's: 'yes', 'no' or null when
+  // the row gives neither. decisive_step is the step the row cites, and cited_step that step of the
+  // trajectory (null when the row cites none or the trajectory has no such step).
+  audit: {
+    outcome: string; label: AuditLabelName | null; model_fault: string | null; llm_auditor_agrees: boolean | null; adjudicated_label: AuditLabelName | null; evidence_ids: readonly string[];
+    clinically_acceptable: AuditAnswer | null; tool_rejections_correct: AuditAnswer | null; decisive_step: number | null;
+    // schema_error: the cited refusal's input broke the tool's input schema, or named no tool (explain.ts citedStep).
+    cited_step: { tool: string; is_error: boolean; error_code: string | null; schema_error: string | null } | null;
+  } | null;
 }
+
+// An audit row's answer to one of its two questions (explain.ts AuditRow).
+export type AuditAnswer = 'yes' | 'no';
 
 // 'n/a': the criterion asks about something the trial does not have (M1 with no failed check).
 export type CriterionMet = boolean | 'pending' | 'n/a';
@@ -127,6 +139,11 @@ const list = (xs: readonly string[]) => (xs.length < 2 ? xs.join('') : `${xs.sli
 const replayOk = (h: AttributionFacts['state_hash']) => h.final !== null && h.replay_final === h.final;
 const ENV_DETAILS = ['INTERNAL', 'initial_hash_mismatch', 'replay_mismatch'];
 const result = (met: CriterionMet, evidence: string): CriterionResult => ({ met, evidence });
+// What confirms an audit's tool_rejections_correct no for E6, or null: an adjudicated_label
+// environment, or with no adjudicated_label an agreeing LLM auditor; an adjudicated label that is
+// not environment confirms nothing (decisions.tsv 2026-10-27T08:50). audit-check reads it too.
+export const e6Confirmation = (a: { adjudicated_label: string | null; llm_auditor_agrees: boolean | null }): string | null =>
+  a.adjudicated_label !== null ? (a.adjudicated_label === 'environment' ? 'adjudicated environment' : null) : a.llm_auditor_agrees === true ? 'LLM auditor agrees' : null;
 // Holds exactly when the criterion is not met; pending or n/a decide nothing.
 const negation = (c: Criterion['check']): Criterion['check'] => (f) => {
   const r = c(f);
@@ -242,7 +259,7 @@ export const FAULT_DEFINITIONS: Readonly<Record<Fault, FaultDefinition>> = {
     ],
   },
   env: {
-    sentence: 'The environment is at fault when a tool failed on its own, the start or final state is not correct, an environment rule broke, or a record that a check needs is not in the world.',
+    sentence: 'The environment is at fault when a tool failed on its own or refused a valid call, the start or final state is not correct, an environment rule broke, or a record that a check needs is not in the world.',
     criteria: [
       {
         id: 'E1',
@@ -278,6 +295,20 @@ export const FAULT_DEFINITIONS: Readonly<Record<Fault, FaultDefinition>> = {
         text: 'The failed gate check needs a record that the model did not see and that is not in the world, so no tool could give it to the model (M1 not met).',
         reads: M1.reads,
         check: negation(M1.check),
+      },
+      {
+        id: 'E6',
+        text: 'A human audit says, after adjudication, that a tool refusal was wrong: at the step the audit names as decisive, a tool refused a call, the trajectory shows a tool error there, and the tool\'s input schema, run on the recorded call, does not give the same refusal (a refusal the schema gives, or a refusal of a tool the environment does not have, was right); and the audit is confirmed, by an adjudicated label environment or, with no adjudicated label, an LLM auditor that agrees.',
+        reads: ['audit.adjudicated_tool_rejections_correct (else audit.tool_rejections_correct)', 'audit.decisive_step', 'trajectory (the cited step is_error, and its call\'s input against the tool\'s input schema)', 'audit.adjudicated_label', 'audit.llm_auditor_agrees'],
+        check: ({ audit }) => {
+          if (audit === null) return result(false, 'not human-audited');
+          const s = audit.cited_step;
+          const refused = s === null ? '' : `refused (${s.error_code ?? 'error'})${s.schema_error === null ? '' : ` for input that breaks its schema (${s.schema_error})`}`;
+          const step = audit.decisive_step === null ? 'no step cited' : s === null ? `step ${audit.decisive_step} is not in the trajectory` : `step ${audit.decisive_step} ${s.tool} ${s.is_error ? refused : 'succeeded'}`;
+          const confirmed = e6Confirmation(audit);
+          const unconfirmed = audit.adjudicated_label === null ? 'not confirmed' : `not confirmed (adjudicated ${audit.adjudicated_label})`;
+          return result(audit.tool_rejections_correct === 'no' && s?.is_error === true && s.schema_error === null && confirmed !== null, `tool_rejections_correct ${audit.tool_rejections_correct ?? 'not answered'}, ${step}, ${confirmed ?? unconfirmed}`);
+        },
       },
     ],
   },
@@ -360,7 +391,7 @@ export const RUN_BLOCKS: readonly Criterion[] = [
 
 export type Confirmation = 'confirmed' | 'provisional' | 'contradicted';
 export const CONFIRMATION_DEFINITIONS: Readonly<Record<Confirmation, string>> = {
-  confirmed: 'Every criterion that can confirm the label is met: M1-M5 for a model or refusal label; for an environment or grader label, the record alone when E1-E4, GR1 or GR2 decided it, and a human audit with the same label when E5, GR3 or GR4 decided it; and the record alone for infra.',
+  confirmed: 'Every criterion that can confirm the label is met: M1-M5 for a model or refusal label; for an environment or grader label, the record alone when E1-E4, GR1 or GR2 decided it, and a human audit with the same label when E5, E6, GR3 or GR4 decided it; and the record alone for infra.',
   provisional: 'Nothing contradicts the label, but a confirming criterion is still pending, such as a missing audit, manifest hash or matrix result.',
   contradicted: 'A confirming criterion is not met or a human audit gives another label, so the label must be reviewed before it is used.',
 };
