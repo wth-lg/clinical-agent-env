@@ -75,3 +75,20 @@ test('Tasks: a closed card\'s Run trial also opens Live trial with its task', as
   await expect(page).toHaveURL(/[?&]view=live(&|$)/);
   await expect(page.getByRole('combobox', { name: 'Task' })).toHaveValue('crc-care-gap');
 });
+
+test('the intro card links "gate check" to the pass rule in the glossary, and names FHIR R4 as the record format (verifier JU5-1 M1, M5)', async ({ page }) => {
+  await browse(page, './?view=overview');
+  const card = page.getByTestId('intro-card');
+  await expect(card.getByRole('heading', { level: 2, name: 'What this is' })).toBeVisible();
+  await expect(card.getByTestId('intro-text')).toContainText('in the FHIR R4 health-record format');
+  await card.getByRole('link', { name: 'gate check' }).click();
+  await expect(page).toHaveURL(/[?&]view=glossary(&|#|$)/);
+  expect(new URL(page.url()).hash).toBe('#pass');
+});
+
+test('Run trial from Tasks leaves no trial, run or label filter behind (verifier JU5-1 M4)', async ({ page }) => {
+  await browse(page, './?view=tasks&task=renal-dose-review&label=model&run=sample-1&trial=x');
+  await page.locator('[data-testid="task-card"][data-task="renal-dose-review"]').getByTestId('task-panel-prompt').getByRole('button', { name: 'Run trial' }).click();
+  await expect(page).toHaveURL(/[?&]view=live(&|$)/);
+  await expect(page).not.toHaveURL(/[?&](label|run|trial)=/);
+});
