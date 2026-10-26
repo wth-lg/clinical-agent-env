@@ -85,6 +85,9 @@ export interface AttributionFacts {
   models_returned: readonly string[];
   internal_errors: number;
   state_hash: { initial: string | null; final: string | null; replay_final: string | null };
+  // The message of the trial's ENV_ERROR event when the caller has the trajectory (run.ts: for a
+  // replay_mismatch, the call, its tool and what differs); absent or null when it does not.
+  env_error?: string | null;
   manifest_hash: string | null;
   // The grader_task_version of the current grade (summary.ts currentGrade): what the matrix
   // must have validated for its verdict to speak for this grade. null when the record or its
@@ -289,8 +292,9 @@ export const FAULT_DEFINITIONS: Readonly<Record<Fault, FaultDefinition>> = {
         id: 'E4',
         record_fact: true,
         text: 'The final state hash is missing, or a replay of the trajectory did not give the same hash.',
-        reads: ['record.state_hash.final', 'record.state_hash.replay_final', 'record.detail'],
-        check: ({ detail, state_hash: h }) => result(detail === 'replay_mismatch' || !replayOk(h), `final ${h.final ?? 'missing'}, replay_final ${h.replay_final ?? 'missing'}`),
+        reads: ['record.state_hash.final', 'record.state_hash.replay_final', 'record.detail', 'trajectory error event'],
+        // The evidence names the call that did not replay when the trajectory says which.
+        check: ({ detail, state_hash: h, env_error }) => result(detail === 'replay_mismatch' || !replayOk(h), detail === 'replay_mismatch' && env_error ? env_error : `final ${h.final ?? 'missing'}, replay_final ${h.replay_final ?? 'missing'}`),
       },
       {
         id: 'E5',
