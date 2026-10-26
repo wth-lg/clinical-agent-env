@@ -5,6 +5,7 @@
 // with no limit event counts working time (elapsed less retry_wait_ms), as MAX_WALL_MS does.
 import { describe, expect, it } from 'vitest';
 import { explainTrial, formatAuditAnswers, type AuditRow, type ExplainContext, type ExplainRecord } from '../explain.ts';
+import { FAULT_DEFINITIONS } from '../outcomes.ts';
 
 const ctx: ExplainContext = { events: [], world_state_hash: 'h-manifest', matrix: { grader_task_version: 'g-1', oracle_pass: true, alternatives_pass: true } };
 const record = (outcome: string, over: Partial<ExplainRecord> = {}): ExplainRecord => ({
@@ -66,6 +67,14 @@ describe('audit answers', () => {
     // An INVALID_INPUT the schema does not reproduce (here a catalog check inside the tool) can still be wrong.
     const semantic = refused(VALID, { code: 'INVALID_INPUT', message: 'dose_unit mg does not fit rxnorm_code 860975', field: 'dose_unit' });
     expect(explainTrial(record('FAIL'), row({ tool_rejections_correct: 'no', taxonomy: 'environment', model_fault: 'no', decisive_step: 2 }), semantic).fault).toBe('env');
+    // The rule is "the schema does not give the same refusal", not "the schema accepts the call"
+    // (verifier-phase-P17i-C5r-1 F14, probe X2): a call the schema rejects for dose_value, refused for route, can be wrong.
+    const other = refused(noDose, { code: 'INVALID_INPUT', message: 'route oral is not allowed', field: 'route' });
+    expect(explainTrial(record('FAIL'), row({ tool_rejections_correct: 'no', taxonomy: 'environment', model_fault: 'no', decisive_step: 2 }), other).fault).toBe('env');
+    const e6 = FAULT_DEFINITIONS.env.criteria.find((c) => c.id === 'E6')!.text;
+    expect(e6).toContain('run on the recorded call, does not give the same refusal');
+    expect(e6).toContain('a refusal of a tool the model was not given');
+    expect(e6).not.toContain('accepts the recorded call');
   });
 
   it('E6: a refusal of a call to a tool the model was not given was right, so it does not make the fault environment (decisions.tsv 2026-10-27T09:30, F13)', () => {

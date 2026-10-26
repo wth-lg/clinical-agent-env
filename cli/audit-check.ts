@@ -257,7 +257,7 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
         if (!(environment && s?.is_error === true && s.schema_error === null && confirmed)) {
           const refused = s === null ? '' : `was refused (${s.error_code})${s.schema_error === null ? '' : ` for input that breaks its schema (${s.schema_error})`}`;
           const cited = s === null ? `step ${n} is not a step of the trajectory` : `step ${n} is ${s.tool}, which ${s.is_error ? refused : 'succeeded'}`;
-          v.push(`${l.trial}: tool_rejections_correct no (a tool rejected a valid call) needs an environment label (it is ${auditLabelOf(l) ?? 'none'}), the step of a refused call whose input its schema accepts as decisive_step (${cited}) and confirmation, llm_auditor_agrees true or an adjudicated_label environment (${confirmed ? 'confirmed' : 'not confirmed'}); adjudicated_tool_rejections_correct yes overrules it`);
+          v.push(`${l.trial}: tool_rejections_correct no (a tool rejected a valid call) needs an environment label (it is ${auditLabelOf(l) ?? 'none'}), the step of a refused call whose refusal its schema does not give on the recorded input, of a tool the model was given, as decisive_step (${cited}) and confirmation, llm_auditor_agrees true or an adjudicated_label environment (${confirmed ? 'confirmed' : 'not confirmed'}); adjudicated_tool_rejections_correct yes overrules it`);
         }
       }
     }

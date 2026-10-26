@@ -4,7 +4,7 @@
 // needs GR3 (an audit outcome GRADER_BUG with evidence) or an environment label; a
 // tool_rejections_correct no needs an environment label and the rejected call's step (it makes the
 // fault environment, E6) that cites a refused call's step and is confirmed (decisions.tsv
-// 2026-10-27T06:00), whose recorded input the tool's schema accepts, and that is confirmed by
+// 2026-10-27T06:00), whose refusal the tool's schema, run on the recorded input, does not give, and that is confirmed by
 // llm_auditor_agrees true or an adjudicated_label environment (decisions.tsv 2026-10-27T08:50);
 // an auditor no overruled by an adjudicated yes needs an adjudicated_label and a note.
 import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
@@ -47,7 +47,7 @@ async function violations(dir: string): Promise<string[]> {
 const about = (vs: string[]) => vs.filter((v) => /clinically_acceptable|tool_rejections_correct/.test(v));
 const CLINICAL = "t-alpha/5: clinically_acceptable no (the recorded outcome is not clinically right) needs GR3 (an audit outcome GRADER_BUG with evidence) or an environment label; adjudicated_clinically_acceptable yes overrules it";
 const TOOL = (trial: string, label: string, cited: string, confirmed = 'confirmed') =>
-  `${trial}: tool_rejections_correct no (a tool rejected a valid call) needs an environment label (it is ${label}), the step of a refused call whose input its schema accepts as decisive_step (${cited}) and confirmation, llm_auditor_agrees true or an adjudicated_label environment (${confirmed}); adjudicated_tool_rejections_correct yes overrules it`;
+  `${trial}: tool_rejections_correct no (a tool rejected a valid call) needs an environment label (it is ${label}), the step of a refused call whose refusal its schema does not give on the recorded input, of a tool the model was given, as decisive_step (${cited}) and confirmation, llm_auditor_agrees true or an adjudicated_label environment (${confirmed}); adjudicated_tool_rejections_correct yes overrules it`;
 
 describe('audit-check: clinically_acceptable and tool_rejections_correct', () => {
   it('yes on both keeps the clean run clean', async () => {
