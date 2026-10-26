@@ -13,7 +13,7 @@
 //
 // The reason is one sentence of at most REASON_WORDS words, in the forms
 // docs/requirements/ui-contract.md fixes for a valid non-pass trial:
-//   <check id> failed: expected <value>, found <value>   a FAIL's first failed gate check, then
+//   <check id> failed: expected <value>, found <value>   a FAIL's decisive gate check, then
 //                                                          '; Kind: <kind> (<why>)' when it fits
 //   turn limit reached: <n> turns (and the cost, time and output limit forms)
 //   refused: <the first REFUSAL_WORDS words of the refusal>
@@ -34,7 +34,7 @@ import {
   type MatrixResult,
 } from './outcomes.ts';
 import { currentGrade, type RegradeGrade } from './summary.ts';
-import { TAXONOMY, type Taxonomy } from '../grader/attribution.ts';
+import { decisiveGate, TAXONOMY, type Taxonomy } from '../grader/attribution.ts';
 
 export const REASON_WORDS = 40;
 export const REFUSAL_WORDS = 12;
@@ -44,7 +44,10 @@ export const NOT_AUDITED_MARKER = 'not human-audited';
 export interface ExplainCheck {
   id: string;
   kind?: string;
+  category?: string;
   met: unknown;
+  // A failed gate whose failure is a missing required write (packages/grader check.ts Verdict).
+  omission?: boolean;
   evidence?: { [k: string]: unknown };
 }
 
@@ -331,15 +334,17 @@ function refusalText(r: ExplainRecord, events: readonly TrialEvent[] | undefined
 
 const capWords = (s: string, max = REASON_WORDS) => firstWords(s, max);
 
-// The first failed gate check of the current grade; a check with no kind (a hand-built record)
-// counts as a gate on a FAIL.
+// The decisive gate check of the current grade (packages/grader attribution.ts decisiveGate): the
+// first failed gate, unless it is a safety gate marked omission and a later failed safety gate is
+// unmarked, as the attribution names it; a check with no kind (a hand-built record) counts as a
+// gate on a FAIL.
 export function firstFailedCheck(record: ExplainRecord): ExplainCheck | null {
   const grade = currentGrade(record);
   const checks = (grade.checks ?? []) as ReadonlyArray<ExplainCheck>;
-  return checks.find((c) => c.kind === 'gate' && c.met === false) ?? (grade.outcome === 'FAIL' ? checks.find((c) => c.kind === undefined && c.met === false) : undefined) ?? null;
+  return decisiveGate(checks) ?? (grade.outcome === 'FAIL' ? checks.find((c) => c.kind === undefined && c.met === false) : undefined) ?? null;
 }
 
-// Whether the recorded attribution speaks for the current grade: it names the same first failed check.
+// Whether the recorded attribution speaks for the current grade: it names the same decisive check.
 export const attributionFits = (record: ExplainRecord): boolean => record.attribution != null && record.attribution.first_failed === (firstFailedCheck(record)?.id ?? null);
 
 // The exposure of the decisive check's ids M1 reads: the recorded attribution's when it fits,
