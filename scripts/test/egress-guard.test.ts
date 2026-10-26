@@ -37,6 +37,7 @@ export const go = () => { const src = readFileSync(new URL('${repo('packages/cor
   'x-eventsource': `export const go = () => new EventSource('https://${HOST}/v1/messages');`,
   'x-beacon': `export const go = () => navigator.sendBeacon('https://${HOST}/v1/messages', '{}');`,
   'x-fetch-later': `export const go = () => fetchLater('https://${HOST}/v1/messages', ${POST});`,
+  'x-webtransport': `export const go = () => new WebTransport('https://${HOST}/v1/messages');`,
   // The two hook plants (defect 2): the client's injected transport keeps what it was handed.
   'n-hook-replay': `${client}
 export async function go(apiKey) {
@@ -141,8 +142,9 @@ const OK = sse([
 ]);
 globalThis.fetch = async (input, init) => { const r = input instanceof Request ? input : new Request(input, init); record('fetch', nativeUrl.call(r), init); return new Response(OK, { status: 200 }); };
 globalThis.XMLHttpRequest = class { open(_m, u) { this.u = u; } send() { record('xhr', this.u); } };
-globalThis.WebSocket = class { constructor(u) { record('websocket', u); } };
-globalThis.EventSource = class { constructor(u) { record('eventsource', u); } };
+globalThis.WebSocket = class { static OPEN = 1; constructor(u) { record('websocket', u); } };
+globalThis.EventSource = class { static OPEN = 1; constructor(u) { record('eventsource', u); } };
+globalThis.WebTransport = class { constructor(u) { record('webtransport', u); } };
 globalThis.fetchLater = (input, init) => { record('fetchlater', input instanceof Request ? nativeUrl.call(input) : input, init); return { activated: false }; };
 Object.defineProperty(globalThis.navigator, 'sendBeacon', { configurable: true, writable: true, value: (u) => { record('beacon', u); return true; } });
 // PROTO=1: the stubs live where a browser Worker keeps them, on a prototype of the scope (fetch on
@@ -229,6 +231,22 @@ const RELAY_PLANTS: Record<string, string> = {
   'y-relay-eventsource': `export const go = () => new EventSource('${RELAY_URL}');`,
   'y-relay-beacon': `export const go = () => navigator.sendBeacon('${RELAY_URL}', '{}');`,
   'y-relay-fetch-later': `export const go = () => fetchLater('${RELAY_URL}', ${POST});`,
+  'y-relay-webtransport': `export const go = () => new WebTransport('${RELAY_URL}');`,
+  // verifier-phase-P17i-P16h-web2r2-1 S2: the raw constructor behind a guarded one, by the
+  // guarded constructor's own prototype and by its prototype object's constructor.
+  'y-relay-es-proto': `export const go = () => new (Object.getPrototypeOf(EventSource))('${RELAY_URL}');`,
+  'y-relay-es-prototype-constructor': `export const go = () => new EventSource.prototype.constructor('${RELAY_URL}');`,
+  'y-relay-ws-proto': `export const go = () => new (Object.getPrototypeOf(WebSocket))('wss://relay.test/v1/messages');`,
+  'y-relay-ws-prototype-constructor': `export const go = () => new WebSocket.prototype.constructor('wss://relay.test/v1/messages');`,
+  'y-relay-wt-proto': `export const go = () => new (Object.getPrototypeOf(WebTransport))('${RELAY_URL}');`,
+  'y-relay-wt-prototype-constructor': `export const go = () => new WebTransport.prototype.constructor('${RELAY_URL}');`,
+  'y-relay-es-prototype-proto-constructor': `export const go = () => new (Object.getPrototypeOf(EventSource.prototype).constructor)('${RELAY_URL}');`,
+  'y-ctor-shape': `export function go() {
+  const es = new EventSource('https://app.test/events');
+  throw new TypeError(JSON.stringify({ esProto: Object.getPrototypeOf(EventSource) === Function.prototype, wsProto: Object.getPrototypeOf(WebSocket) === Function.prototype, esCtor: EventSource.prototype.constructor === EventSource, wsCtor: WebSocket.prototype.constructor === WebSocket, wtCtor: WebTransport.prototype.constructor === WebTransport, instance: es instanceof EventSource, statics: [EventSource.OPEN, WebSocket.OPEN], names: [EventSource.name, WebSocket.name, WebTransport.name], call: (() => { try { EventSource('https://app.test/x'); return 'called'; } catch (e) { return e.name; } })() }));
+}`,
+  'y-relay-es-constructor-restore': `const raw = Object.getPrototypeOf(EventSource);
+export const go = () => { try { EventSource.prototype.constructor = raw; } catch {} return new EventSource.prototype.constructor('${RELAY_URL}'); };`,
   'y-relay-fetch-later-request': `export const go = () => fetchLater(new Request('${RELAY_URL}', ${POST}));`,
   'y-relay-refusal-name': `export async function go() { try { await fetch('${RELAY_URL}', ${POST}); } catch (e) { throw new TypeError(e.name + ': ' + e.message); } }`,
   'y-relay-hook-resend': `${client}
@@ -394,7 +412,26 @@ describe('with meteredOrigins, a relay origin is guarded like the API host', () 
     expect(out.guard).toBe('installed');
   });
 
-  it.each(names.filter((n) => n !== 'y-relay-hook-resend'))('%s: refused with EgressRefusal, 0 sends', (name) => {
+  // Each guarded constructor's own prototype is Function.prototype, not the raw constructor, so
+  // `new` on it throws before anything is built.
+  const PROTO_CTORS = names.filter((n) => /^y-relay-(es|ws|wt)-proto$/.test(n));
+  // The raw class sat one step up from the guarded constructor's prototype object; now that object
+  // is the raw prototype itself, so one step up is its parent's (EventTarget, or Object here).
+  it('y-relay-es-prototype-proto-constructor: one step up is not the raw EventSource, 0 sends', () => {
+    expect(out.plants['y-relay-es-prototype-proto-constructor']?.sends).toEqual([]);
+  });
+  it.each(PROTO_CTORS)('%s: the prototype is no constructor, 0 sends', (name) => {
+    const p = out.plants[name];
+    expect(p?.sends).toEqual([]);
+    expect(p?.error).toMatch(/is not a constructor/);
+  });
+
+  it('y-ctor-shape: a guarded constructor hides the raw one and keeps its statics, name and instanceof, and needs new', () => {
+    expect(JSON.parse(out.plants['y-ctor-shape']?.error ?? '{}')).toEqual({ esProto: true, wsProto: true, esCtor: true, wsCtor: true, wtCtor: true, instance: true, statics: [1, 1], names: ['EventSource', 'WebSocket', 'WebTransport'], call: 'TypeError' });
+    expect(out.plants['y-ctor-shape']?.sends).toEqual([{ api: 'eventsource', host: 'app.test' }]);
+  });
+
+  it.each(names.filter((n) => n !== 'y-relay-hook-resend' && n !== 'y-ctor-shape' && n !== 'y-relay-es-prototype-proto-constructor' && !PROTO_CTORS.includes(n)))('%s: refused with EgressRefusal, 0 sends', (name) => {
     const p = out.plants[name];
     expect(p?.sends).toEqual([]);
     expect(p?.error).toMatch(/egress guard/);

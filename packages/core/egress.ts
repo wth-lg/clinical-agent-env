@@ -11,8 +11,8 @@
 // by, a fetch with no dispatcher of its own (one captured before install, or a redirect hop)
 // is checked again, and nothing can swap the slot. Only the claimed MessagesClient Request is
 // forwarded with the raw dispatcher. A refusal is an EgressRefusal: nothing was sent. XMLHttpRequest,
-// WebSocket, EventSource, navigator.sendBeacon and fetchLater (Chromium's deferred fetch), where
-// present, are refused for those hosts outright: the client never uses them. A URL is resolved once and the resolved string is what
+// WebSocket, EventSource, WebTransport, navigator.sendBeacon and fetchLater (Chromium's deferred
+// fetch), where present, are refused for those hosts outright: the client never uses them. A URL is resolved once and the resolved string is what
 // gets sent, so an object whose toString answers differently the second time sends nothing new.
 // With allowedOrigins (the browser trial Worker), a send by any of those APIs to an origin not in
 // the list is refused as well; the API host stays reachable only by the claimed MessagesClient
@@ -32,6 +32,13 @@
 // where `Proto.fetch.call(self, ...)` would otherwise reach the raw function. The entry
 // point passes its global scope in, since shared code does not touch DOM or Node globals
 // (lint: isomorphic-imports).
+//
+// Residuals of an in-page guard (decisions.tsv 2026-10-28T09:30, verifier-phase-P17i-P16h-web2r2-1
+// S1 and S3): the guard wraps the globals of the realm it is installed in, so a new realm has raw
+// ones (a same-origin about:blank iframe, a blob: Worker or SharedWorker, a popup), and a
+// navigation or `<link rel=prefetch>` sends without any API the guard wraps. The CSP and the
+// relay's Origin check are the outer limits there. Code that can create a realm already runs in
+// the page and holds the key; the guard meters the app's own code paths and is defence in depth.
 //
 // Every entry point that can make live calls installs it as its first statement: the cli/index.ts
 // dispatcher, scripts/live-node.ts, the web app and the probe page (later: the local runner, and
@@ -81,6 +88,7 @@ interface Scope {
   fetch?: typeof fetch;
   XMLHttpRequest?: { prototype?: { open?: (...a: unknown[]) => void } };
   WebSocket?: unknown;
+  WebTransport?: unknown;
   EventSource?: unknown;
   fetchLater?: (input: unknown, init?: RequestInit) => unknown;
   navigator?: { sendBeacon?: (url: unknown, data?: unknown) => boolean };
@@ -270,16 +278,27 @@ export function installEgressGuard(scope: object, opts: EgressOptions = {}): voi
     });
   }
 
-  for (const name of ['WebSocket', 'EventSource'] as const) {
+  // Each constructor is replaced by a plain function that builds the raw one through
+  // Reflect.construct, not by `class extends C`: a subclass's own prototype is C, so
+  // Object.getPrototypeOf(Guarded) handed back the raw constructor (verifier-phase-P17i-P16h-web2r2-1
+  // S2). Guarded shares C.prototype, so instanceof holds, and C.prototype.constructor is locked to
+  // Guarded; C's statics (CONNECTING, OPEN, ...) are copied across.
+  for (const name of ['WebSocket', 'EventSource', 'WebTransport'] as const) {
     const C = g[name];
     if (typeof C !== 'function') continue;
-    const Guarded = class extends (C as Ctor) {
-      constructor(url: unknown, ...rest: unknown[]) {
-        if (name === 'EventSource') followsRedirects(name);
-        super(checked(name, url), ...rest);
-      }
+    const Guarded = function (this: unknown, url: unknown, ...rest: unknown[]): object {
+      if (new.target === undefined) throw new TypeError(`Failed to construct '${name}': Please use the 'new' operator.`);
+      if (name === 'EventSource') followsRedirects(name);
+      return Reflect.construct(C as Ctor, [checked(name, url), ...rest], new.target) as object;
     };
+    for (const key of Reflect.ownKeys(C)) {
+      if (key === 'prototype' || key === 'length' || key === 'name' || key === 'caller' || key === 'arguments') continue;
+      Object.defineProperty(Guarded, key, Object.getOwnPropertyDescriptor(C, key)!);
+    }
     Object.defineProperty(Guarded, 'name', { value: name });
+    Object.defineProperty(Guarded, 'length', { value: (C as Ctor).length });
+    Object.defineProperty(Guarded, 'prototype', { value: (C as { prototype: object }).prototype, writable: false });
+    lock((C as { prototype: object }).prototype, 'constructor', Guarded);
     lockChain(scope, name, Guarded);
   }
 

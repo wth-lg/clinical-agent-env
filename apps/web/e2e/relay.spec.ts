@@ -6,8 +6,9 @@
 // command, on Validate and (429, 5xx) during a trial; a failed Validate leaves no key in the
 // page's markup; the page and the trial Worker refuse a fetch to RELAY_URL or an API host that
 // MessagesClient did not make, also through the prototype that holds the raw function, and the
-// page refuses a fetchLater to the relay. A new blob: Worker started by code in the page gets raw
-// globals the guard never saw; packages/core/anthropic.ts lists that residual.
+// page refuses a fetchLater, a WebTransport and the raw EventSource constructor to the relay. A
+// new realm (a blob: Worker, an iframe, a popup) gets raw globals the guard never saw; the
+// residuals are listed in packages/core/egress.ts.
 import { expect, test, type Locator, type Page, type Request, type Route } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 import { isApiHost } from '../../../packages/core/anthropic.ts';
@@ -302,6 +303,27 @@ const laterPlant = (url: string) => {
     return `${(e as Error).name}: ${(e as Error).message}`;
   }
 };
+// The raw constructor behind the guarded EventSource (verifier-phase-P17i-P16h-web2r2-1 S2), by the
+// paths the verifier used, and WebTransport (S4). Each either fails to construct or is refused.
+const ctorPlants = (url: string) => {
+  const out: Record<string, string> = {};
+  const g = globalThis as unknown as Record<string, new (u: string) => unknown>;
+  const ways: Array<[string, () => new (u: string) => unknown]> = [
+    ['esProto', () => Object.getPrototypeOf(g.EventSource) as new (u: string) => unknown],
+    ['esPrototypeConstructor', () => (g.EventSource!.prototype as { constructor: new (u: string) => unknown }).constructor],
+    ['esPrototypeProtoConstructor', () => (Object.getPrototypeOf(g.EventSource!.prototype) as { constructor: new (u: string) => unknown }).constructor],
+    ['webTransport', () => g.WebTransport!],
+  ];
+  for (const [name, get] of ways) {
+    try {
+      const made = new (get())(url);
+      out[name] = typeof (made as { close?: unknown }).close === 'function' ? 'connecting' : 'built, sends nothing';
+    } catch (e) {
+      out[name] = `${(e as Error).name}: ${(e as Error).message}`;
+    }
+  }
+  return out;
+};
 const protoBeacon = (url: string) => {
   let owner: { sendBeacon: Navigator['sendBeacon'] } | null = null;
   for (let p = Object.getPrototypeOf(navigator) as object | null; p !== null && owner === null; p = Object.getPrototypeOf(p) as object | null) if (Object.hasOwn(p, 'sendBeacon')) owner = p as { sendBeacon: Navigator['sendBeacon'] };
@@ -336,6 +358,12 @@ test('the egress guard refuses a fetch to RELAY_URL or an API host planted in th
   // The page keeps sendBeacon on Navigator.prototype; the guard locks it there too (review S1).
   expect(await page.evaluate(protoBeacon, RELAY_URL)).toMatch(/^EgressRefusal: egress guard/);
   expect(await page.evaluate(laterPlant, RELAY_URL)).toMatch(/^EgressRefusal: egress guard/);
+  const ctors = await page.evaluate(ctorPlants, RELAY_URL);
+  expect(ctors.esProto).toMatch(/^TypeError: .*not a constructor/);
+  expect(ctors.esPrototypeConstructor).toMatch(/^EgressRefusal: egress guard/);
+  // One step up from EventSource.prototype is EventTarget.prototype: an EventTarget sends nothing.
+  expect(ctors.esPrototypeProtoConstructor).toBe('built, sends nothing');
+  expect(ctors.webTransport).toMatch(/^EgressRefusal: egress guard/);
   expect(relay.posts).toHaveLength(0);
   await enterKey(page, sentinelKey());
   await expect(page.getByTestId('key-chip')).toBeVisible();
