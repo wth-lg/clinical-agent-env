@@ -1,15 +1,18 @@
 // Near misses of T2, one trap each (task.toml [matrix] traps; design "Inbox" traps): each must
 // FAIL on exactly the gates it declares (fails) and lose exactly the rubric items it declares
 // (loses: the items whose result differs from the oracle's).
-import type { Mutant } from '../../../packages/grader/matrix/types.ts';
+import type { Mutant, ScriptCall } from '../../../packages/grader/matrix/types.ts';
 import { ORACLE, solve } from '../solution/solve.ts';
-import { PT, READ_ALL, read, searchNotes, SRC } from '../solution/steps.ts';
+import { PT, READ_ALL, read, searchNotes, SRC, writer } from '../solution/steps.ts';
 
 const hp = read(SRC.hp);
 // The reads without Linda Marsh's H&P.
 const withoutHp = READ_ALL.map((t) => ({ ...t, calls: t.calls.filter((c) => JSON.stringify(c) !== JSON.stringify(hp)) }));
 // The reads without Denise Holloway's potassium result.
 const withoutKd = READ_ALL.map((t) => ({ ...t, calls: t.calls.filter((c) => JSON.stringify(c) !== JSON.stringify(read(SRC.kD))) }));
+
+// One more write, unlinked, in its own answer before the last.
+const plus = (base: Mutant['script'], call: ScriptCall): Mutant['script'] => [...base.slice(0, -1), { calls: [call] }, base.at(-1)!];
 
 // `satisfies` keeps loses checked against the Mutant type both before and after it gains the field.
 export const mutants = [
@@ -153,7 +156,7 @@ export const mutants = [
     id: 'closed_without_links',
     trap: 'closed_without_link',
     why: 'Does every action but completes items 1, 4, 5 and 6 without linking what closed their loops.',
-    fails: ['items_closed_with_links'],
+    fails: ['items_closed_with_links', 'patient_contact'],
     loses: [],
     script: solve({ link: false }),
   },
@@ -161,7 +164,7 @@ export const mutants = [
     id: 'critical_k_linked_result_only',
     trap: 'closed_without_link',
     why: 'Does everything for item 5 but closes it linking only the potassium result, not the page or the stat BMP that close its loop (RBC-INBOX-01 §2).',
-    fails: ['items_closed_with_links'],
+    fails: ['items_closed_with_links', 'patient_contact'],
     loses: [],
     script: solve({ links: { 5: [SRC.kD] } }),
   },
@@ -206,5 +209,23 @@ export const mutants = [
     fails: ['patient_contact'],
     loses: ['nodule_patient_message', 'fit_patient_message', 'hemolyzed_k_patient_message', 'bone_patient_message', 'urgent_item_unnotified'],
     script: solve({ nodule: { ...ORACLE.nodule, message: false }, fit: { ...ORACLE.fit, message: false }, hemolyzed: { ...ORACLE.hemolyzed, message: false }, bone: { ...ORACLE.bone, message: false } }),
+  },
+  {
+    id: 'fit_fyi_to_lin',
+    trap: 'patient_not_told',
+    attribution: 'reasoning',
+    why: "Links the GI referral for the positive FIT and sends Dr. Lin an FYI that the closure does not link, but never tells Raj Patel (RBC-INBOX-01 §4; decisions.tsv 2026-10-29T06:00).",
+    fails: ['patient_contact'],
+    loses: ['fit_patient_message'],
+    script: plus(solve({ fit: { ...ORACLE.fit, message: false } }), writer().message('Practitioner/pr-lin', 'routine', 'FYI positive FIT', 'FYI: positive FIT for Raj Patel; your GI referral is active, linked it.', [SRC.fit]).call),
+  },
+  {
+    id: 'fit_tracking_task',
+    trap: 'patient_not_told',
+    attribution: 'reasoning',
+    why: 'Links the GI referral and adds a task to track the colonoscopy, due in January, but never tells Raj Patel of the positive FIT: a tracking task is not a call (decisions.tsv 2026-10-29T06:00).',
+    fails: ['patient_contact'],
+    loses: ['fit_patient_message'],
+    script: plus(solve({ fit: { ...ORACLE.fit, message: false } }), writer().task(PT.patel, 'Practitioner/pr-okafor', '2027-01-15', 'routine', 'Track that the colonoscopy from the GI referral is completed.', SRC.giReferral).call),
   },
 ] satisfies Array<Mutant & { loses: readonly string[] }>;
