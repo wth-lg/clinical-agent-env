@@ -88,6 +88,24 @@ test('a click selects a tab; closing the task and opening another starts on the 
   await expectSelected(page, 'prompt');
 });
 
+test('at 390 px the keyboard focus ring of a tab is inside the strip, not clipped by it (verifier JU9r2 N1)', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await open(page, '&tab=prompt');
+  await tablist(page).getByRole('tab', { selected: true }).focus();
+  await page.keyboard.press('ArrowRight');
+  const ring = await tablist(page).getByRole('tab', { selected: true }).evaluate((el) => {
+    const cs = getComputedStyle(el);
+    const offset = parseFloat(cs.outlineOffset), width = parseFloat(cs.outlineWidth);
+    const r = el.getBoundingClientRect(), s = el.parentElement!.getBoundingClientRect();
+    const out = width + offset; // how far the ring reaches past the border box
+    return { style: cs.outlineStyle, offset, top: r.top - out, bottom: r.bottom + out, stripTop: s.top, stripBottom: s.bottom };
+  });
+  expect(ring.style).not.toBe('none');
+  expect(ring.offset).toBeLessThan(0);
+  expect(ring.top).toBeGreaterThanOrEqual(ring.stripTop);
+  expect(ring.bottom).toBeLessThanOrEqual(ring.stripBottom);
+});
+
 test('a click on the selected tab, or Home on the first, adds no history entry', async ({ page }) => {
   await open(page, '&tab=prompt');
   const before = await page.evaluate(() => history.length);

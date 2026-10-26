@@ -215,7 +215,8 @@ function TaskTabs({ task, tab, children }: { task: string; tab: TaskTab; childre
   return (
     <div className="border-t border-line">
       {/* One row that scrolls inside itself on a narrow screen; the line under it is on the wrapper,
-          because the scroll box would clip a tab's -mb-px overlap. */}
+          because the scroll box would clip a tab's -mb-px overlap, and a tab's focus ring sits
+          inside the tab for the same reason. */}
       <div className="border-b border-line">
         <div role="tablist" aria-label="Task" onKeyDown={onKey} className="flex gap-x-1 overflow-x-auto px-2">
           {TASK_TABS.map((x) => (
@@ -232,7 +233,7 @@ function TaskTabs({ task, tab, children }: { task: string; tab: TaskTab; childre
               aria-controls={`task-panel-${task}-${x.id}`}
               tabIndex={x.id === tab ? 0 : -1}
               onClick={() => go(x.id)}
-              className={`shrink-0 whitespace-nowrap border-b-2 px-2 py-2 text-sm ${x.id === tab ? 'border-accent font-medium text-ink' : 'border-transparent text-ink-muted hover:text-ink'}`}
+              className={`shrink-0 whitespace-nowrap border-b-2 px-2 py-2 text-sm focus-visible:-outline-offset-2 ${x.id === tab ? 'border-accent font-medium text-ink' : 'border-transparent text-ink-muted hover:text-ink'}`}
             >
               {x.label}
             </button>
