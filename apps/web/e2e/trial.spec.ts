@@ -12,6 +12,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { MET_TEXT, NOT_AUDITED_MARKER } from '../../../packages/core/explain.ts';
+import { HEALTH_PATH, SAMPLES, TOKEN_META } from '../../../packages/core/runner-api.ts';
 import { FAULT_PRECEDENCE, isValid } from '../../../packages/core/outcomes.ts';
 import { trialName } from '../../../packages/core/summary.ts';
 import { readFileSync } from 'node:fs';
@@ -611,6 +612,31 @@ test('run=session says where the session trials are and links to the Live trial 
   await browse(page, './?view=runs&run=session&trial=first-nonpass');
   const notice = page.getByTestId('session-notice');
   await expect(notice).toContainText('No runs in this session.');
+  await notice.getByRole('link', { name: 'Open Live trial' }).click();
+  await expect(page).toHaveURL(/view=live/);
+  await expect(page).not.toHaveURL(/run=session/);
+});
+
+test('run=session has a plain heading, on the hosted site and on the local runner (verifier-ui-copy-1 m5)', async ({ page }) => {
+  await browse(page, './?view=runs&run=session&trial=first-nonpass');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Trials from this session');
+  await expect(page.getByText('first-nonpass')).toHaveCount(0);
+});
+
+test('run=session on the local runner says the runner started those trials and links to the Live trial view', async ({ page }) => {
+  // The local runner: health answers as clinenv-runner and index.html carries the runner's token.
+  await page.route((url) => url.pathname.endsWith(`/${HEALTH_PATH}`), (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(SAMPLES.health) }));
+  await page.route((url) => url.pathname.endsWith('/clinical-agent-env/') || url.pathname.endsWith('/index.html'), async (route) => {
+    const res = await route.fetch();
+    const html = (await res.text()).replace('<head>', `<head>\n    <meta name="${TOKEN_META}" content="stub" />`);
+    return route.fulfill({ response: res, body: html });
+  });
+  await browse(page, './?view=runs&run=session&trial=first-nonpass');
+  await expect(page.getByTestId('surface-chip')).toHaveText('Local runner');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Trials from this session');
+  const notice = page.getByTestId('session-notice');
+  await expect(notice).toContainText('The trials that this local runner started are under Your runs in the Live trial view.');
+  await expect(notice).not.toContainText('No runs in this session.');
   await notice.getByRole('link', { name: 'Open Live trial' }).click();
   await expect(page).toHaveURL(/view=live/);
   await expect(page).not.toHaveURL(/run=session/);
