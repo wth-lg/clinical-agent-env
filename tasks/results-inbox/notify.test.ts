@@ -67,6 +67,27 @@ describe('results-inbox notifications', () => {
     for (const id of Object.keys(asks)) expect(text).toMatch(new RegExp(`alternative ${id}: PASS score 1\\.000`));
   });
 
+  it('counts "him or her", "him/her", "him or his mother" and the other words that may follow the pronoun', async () => {
+    const asks = {
+      probe_him_or_her: 'Call him or her today about the urgent MRI femur.',
+      probe_him_slash_her: 'Contact him/her today to schedule the urgent MRI.',
+      probe_him_or_his_mother: 'Phone him or his mother today about the knee X-ray and the referral.',
+      probe_call_her_tonight: 'Call her tonight about the urgent MRI femur.',
+      probe_call_him_in_the_morning: 'Call him in the morning to book the MRI femur.',
+    };
+    const text = await run(Object.entries(asks).map(([id, description]) => ({ id, why: 'probe', script: staffTask(description) })));
+    for (const id of Object.keys(asks)) expect(text).toMatch(new RegExp(`alternative ${id}: PASS score 1\\.000`));
+  });
+
+  it('does not count "her on call resident" written with a space or an en dash (-1 and -5 of 15)', async () => {
+    const others = {
+      probe_her_on_call_space: 'Contact her on call resident about the knee X-ray and the MRI.',
+      probe_her_on_call_en_dash: 'Contact her on\u2013call resident about the knee X-ray and the MRI.',
+    };
+    const text = await run(Object.entries(others).map(([id, description]) => ({ id, why: 'probe', script: staffTask(description) })));
+    for (const id of Object.keys(others)) expect(text).toMatch(new RegExp(`alternative ${id}: PASS score 0\\.600`));
+  });
+
   it('does not count a pronoun, a possessive or PT that is not the patient or family (-1 and -5 of 15)', async () => {
     const others = {
       probe_tell_them: 'Contact ortho and tell them the MRI femur is urgent; book it by 2026-11-05.',
