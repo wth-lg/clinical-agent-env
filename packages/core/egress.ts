@@ -11,8 +11,8 @@
 // by, a fetch with no dispatcher of its own (one captured before install, or a redirect hop)
 // is checked again, and nothing can swap the slot. Only the claimed MessagesClient Request is
 // forwarded with the raw dispatcher. A refusal is an EgressRefusal: nothing was sent. XMLHttpRequest,
-// WebSocket, EventSource and navigator.sendBeacon, where present, are refused for those hosts
-// outright: the client never uses them. A URL is resolved once and the resolved string is what
+// WebSocket, EventSource, navigator.sendBeacon and fetchLater (Chromium's deferred fetch), where
+// present, are refused for those hosts outright: the client never uses them. A URL is resolved once and the resolved string is what
 // gets sent, so an object whose toString answers differently the second time sends nothing new.
 // With allowedOrigins (the browser trial Worker), a send by any of those APIs to an origin not in
 // the list is refused as well; the API host stays reachable only by the claimed MessagesClient
@@ -82,6 +82,7 @@ interface Scope {
   XMLHttpRequest?: { prototype?: { open?: (...a: unknown[]) => void } };
   WebSocket?: unknown;
   EventSource?: unknown;
+  fetchLater?: (input: unknown, init?: RequestInit) => unknown;
   navigator?: { sendBeacon?: (url: unknown, data?: unknown) => boolean };
   document?: { baseURI?: string };
   location?: { href?: string };
@@ -245,6 +246,19 @@ export function installEgressGuard(scope: object, opts: EgressOptions = {}): voi
       }
     };
     lockChain(scope, 'fetch', guarded);
+  }
+
+  // fetchLater sends later, unclaimed by MessagesClient, so a metered origin is refused outright.
+  const later = g.fetchLater;
+  if (typeof later === 'function') {
+    lockChain(scope, 'fetchLater', (input: unknown, init?: RequestInit) => {
+      const href = requestUrl(input);
+      if (href === null) return later.call(scope, checked('fetchLater', input), forwardInit(init, false));
+      const url = resolveUrl(href);
+      if (url !== null && isMetered(url)) throw refused('fetchLater', url);
+      if (url !== null) admit('fetchLater', url);
+      return later.call(scope, input, forwardInit(init, false));
+    });
   }
 
   const xhr = g.XMLHttpRequest;

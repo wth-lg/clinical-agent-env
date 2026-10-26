@@ -5,7 +5,9 @@
 // an unreachable relay each show their ui-contract.md sentence in red beside the panel and its
 // command, on Validate and (429, 5xx) during a trial; a failed Validate leaves no key in the
 // page's markup; the page and the trial Worker refuse a fetch to RELAY_URL or an API host that
-// MessagesClient did not make, also through the prototype that holds the raw function.
+// MessagesClient did not make, also through the prototype that holds the raw function, and the
+// page refuses a fetchLater to the relay. A new blob: Worker started by code in the page gets raw
+// globals the guard never saw; packages/core/anthropic.ts lists that residual.
 import { expect, test, type Locator, type Page, type Request, type Route } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 import { isApiHost } from '../../../packages/core/anthropic.ts';
@@ -290,6 +292,16 @@ const protoFetch = async (url: string) => {
   if (owner === null) return 'no prototype holds fetch';
   return owner.fetch.call(globalThis, url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' }).then(() => 'sent', (e: Error) => `${e.name}: ${e.message}`);
 };
+const laterPlant = (url: string) => {
+  const later = (globalThis as { fetchLater?: (u: string, init: RequestInit & { activateAfter: number }) => unknown }).fetchLater;
+  if (typeof later !== 'function') return 'no fetchLater';
+  try {
+    later(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}', activateAfter: 0 });
+    return 'queued';
+  } catch (e) {
+    return `${(e as Error).name}: ${(e as Error).message}`;
+  }
+};
 const protoBeacon = (url: string) => {
   let owner: { sendBeacon: Navigator['sendBeacon'] } | null = null;
   for (let p = Object.getPrototypeOf(navigator) as object | null; p !== null && owner === null; p = Object.getPrototypeOf(p) as object | null) if (Object.hasOwn(p, 'sendBeacon')) owner = p as { sendBeacon: Navigator['sendBeacon'] };
@@ -323,6 +335,7 @@ test('the egress guard refuses a fetch to RELAY_URL or an API host planted in th
   expect(await page.evaluate(plant, API_URL)).toMatch(/^EgressRefusal: egress guard/);
   // The page keeps sendBeacon on Navigator.prototype; the guard locks it there too (review S1).
   expect(await page.evaluate(protoBeacon, RELAY_URL)).toMatch(/^EgressRefusal: egress guard/);
+  expect(await page.evaluate(laterPlant, RELAY_URL)).toMatch(/^EgressRefusal: egress guard/);
   expect(relay.posts).toHaveLength(0);
   await enterKey(page, sentinelKey());
   await expect(page.getByTestId('key-chip')).toBeVisible();

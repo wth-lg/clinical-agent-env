@@ -36,6 +36,7 @@ export const go = () => { const src = readFileSync(new URL('${repo('packages/cor
   'x-websocket': `export const go = () => new WebSocket('wss://${HOST}/v1/messages');`,
   'x-eventsource': `export const go = () => new EventSource('https://${HOST}/v1/messages');`,
   'x-beacon': `export const go = () => navigator.sendBeacon('https://${HOST}/v1/messages', '{}');`,
+  'x-fetch-later': `export const go = () => fetchLater('https://${HOST}/v1/messages', ${POST});`,
   // The two hook plants (defect 2): the client's injected transport keeps what it was handed.
   'n-hook-replay': `${client}
 export async function go(apiKey) {
@@ -142,6 +143,7 @@ globalThis.fetch = async (input, init) => { const r = input instanceof Request ?
 globalThis.XMLHttpRequest = class { open(_m, u) { this.u = u; } send() { record('xhr', this.u); } };
 globalThis.WebSocket = class { constructor(u) { record('websocket', u); } };
 globalThis.EventSource = class { constructor(u) { record('eventsource', u); } };
+globalThis.fetchLater = (input, init) => { record('fetchlater', input instanceof Request ? nativeUrl.call(input) : input, init); return { activated: false }; };
 Object.defineProperty(globalThis.navigator, 'sendBeacon', { configurable: true, writable: true, value: (u) => { record('beacon', u); return true; } });
 // PROTO=1: the stubs live where a browser Worker keeps them, on a prototype of the scope (fetch on
 // WorkerGlobalScope.prototype, sendBeacon on Navigator.prototype), with no own property left.
@@ -204,6 +206,7 @@ const ORIGIN_PLANTS: Record<string, string> = {
   'w-foreign-websocket': `export const go = () => new WebSocket('wss://example.org/collect');`,
   'w-foreign-eventsource': `export const go = () => new EventSource('https://example.org/collect');`,
   'w-foreign-beacon': `export const go = () => navigator.sendBeacon('https://example.org/collect', '{}');`,
+  'w-foreign-fetch-later': `export const go = () => fetchLater('https://example.org/collect', ${POST});`,
   'w-api-unclaimed': `export const go = () => fetch('https://${HOST}/v1/messages', ${POST});`,
 };
 Object.assign(PLANTS, ORIGIN_PLANTS);
@@ -225,6 +228,8 @@ const RELAY_PLANTS: Record<string, string> = {
   'y-relay-websocket': `export const go = () => new WebSocket('wss://relay.test/v1/messages');`,
   'y-relay-eventsource': `export const go = () => new EventSource('${RELAY_URL}');`,
   'y-relay-beacon': `export const go = () => navigator.sendBeacon('${RELAY_URL}', '{}');`,
+  'y-relay-fetch-later': `export const go = () => fetchLater('${RELAY_URL}', ${POST});`,
+  'y-relay-fetch-later-request': `export const go = () => fetchLater(new Request('${RELAY_URL}', ${POST}));`,
   'y-relay-refusal-name': `export async function go() { try { await fetch('${RELAY_URL}', ${POST}); } catch (e) { throw new TypeError(e.name + ': ' + e.message); } }`,
   'y-relay-hook-resend': `${client}
 export async function go(apiKey) {
