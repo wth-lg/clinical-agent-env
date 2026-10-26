@@ -137,3 +137,21 @@ describe('an inbox item reassigned to pool-oncall', () => {
     expect(text).toMatch(/alternative probe_reassigned_open_no_page: FAIL .*failed: critical_k_oncall, items_closed_with_links\)/);
   });
 });
+
+// verifier JG4T2rc-1 F2 (decisions.tsv 2026-10-29T06:00): a routed call reads a weekday after the
+// pronoun ("call him Monday") and a title with the surname ("call Mr. Patel") as asking to
+// contact the patient.
+describe('routed-call text', () => {
+  const fitCall = (description: string): Agent['script'] => {
+    const s = solve({ fit: { ...ORACLE.fit, message: false } });
+    return [...s.slice(0, -1), { calls: [writer().task(PT.patel, 'Group/pool-rn-triage', '2026-10-26', 'routine', description, SRC.fit).call] }, s.at(-1)!];
+  };
+  it('counts "call him Monday" and "call Mr. Patel"', async () => {
+    const text = await run([
+      { id: 'probe_call_him_monday', why: 'probe', script: fitCall('Please call him Monday about the positive FIT and the GI referral.') },
+      { id: 'probe_call_mr_patel', why: 'probe', script: fitCall('Please call Mr. Patel to tell him his FIT was positive; the GI referral is active.') },
+    ]);
+    expect(text).toMatch(/alternative probe_call_him_monday: PASS score 1\.000/);
+    expect(text).toMatch(/alternative probe_call_mr_patel: PASS score 1\.000/);
+  });
+});
