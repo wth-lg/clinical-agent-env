@@ -90,9 +90,9 @@ export interface AttributionFacts {
   // must have validated for its verdict to speak for this grade. null when the record or its
   // last regrade predates the env/grader split.
   grader_task_version: string | null;
-  // The first failed gate check of the current grade and its decisive ids; exposure null when
-  // nothing says what this check's ids were exposed at (a regrade failed another check and the
-  // caller could not recompute it).
+  // The decisive gate check of the current grade (attribution.ts decisiveGate) and its decisive
+  // ids; exposure null when nothing says what this check's ids were exposed at (a regrade failed
+  // another check and the caller could not recompute it).
   decisive: { id: string; exposure: ReadonlyArray<{ id: string; first_exposed_step: number | null; exposable: boolean | null }> | null } | null;
   matrix: MatrixResult | null;
   check_error: { check: string | null; message: string } | null;

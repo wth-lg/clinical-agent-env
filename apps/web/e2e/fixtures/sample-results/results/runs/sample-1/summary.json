@@ -4,13 +4,13 @@
   "tasks": {
     "contrast-ct-prep": {
       "task_versions": [
-        "d2dbd2e95b936e4d52d776212ba29febab2b298a2165aeb4cb54d97d44f91a22"
+        "67d7fd4f5c2e52ee0ac51a69e877df3100f6cac4e9fc43898d0303a0d02ed755"
       ],
       "env_versions": [
         "ec98c43c0ab505c6dea2e82ae38f0dd1089a01ee04a97b6c3843dde74a87b61e"
       ],
       "grader_task_versions": [
-        "73106e2341dedec1c00dc3fcdc89cfbd7f7ff850cd1457fd246d65e978ec658f"
+        "9e574d725bbe66080acc8871ac68752b8a6a1b0c78cb6f0ef6bc342e4b025a33"
       ],
       "records": 12,
       "trials": 12,
@@ -62,24 +62,24 @@
         "passes": 3,
         "failures": 9,
         "shared": {
-          "check": "prednisone_schedule",
-          "count": 4,
-          "found": "{\"doses\":[{\"at\":\"2026-10-25T20:00:00-04:00\",\"mg\":0,\"requests\":[]},{\"at\":\"2026-10-26T02:00:00-04:00\",\"mg\":0,\"requests\":[]},{\"at\":\"2026-10-26T08:00:00-04:00\",\"mg\":0,\"requests\":[]}],\"given\":[],\"stray\":[],\"want\":{\"at\":[\"2026-10-25T20:00:00-04:00\",\"2026-10-26T02:00:00-04:00\",\"2026-10-26T08:00:00-04:00\"],\"mg\":50,\"route\":\"oral\"}}",
+          "check": "creatinine_before_scan",
+          "count": 3,
+          "found": "{\"before\":\"2026-10-26T09:00:00-04:00\",\"orders\":[]}",
           "found_count": 1,
-          "found_values": 4
+          "found_values": 3
         },
         "flags": []
       }
     },
     "crc-care-gap": {
       "task_versions": [
-        "f41b1cfa75d80264cb8b4381780e6f4c9529c9183bbf4ac48dff18851424c5d5"
+        "f6880bc9e00cc1b1f528fe5bd6a389b7a0b24643f6b40793568f9de0a29e9ee2"
       ],
       "env_versions": [
         "5846d7857b161e8f1a166871b14a8010445c00283a48ab199ea5397e9fc92766"
       ],
       "grader_task_versions": [
-        "5cef528de411237ff22e51a7a6df680a6954707a6a44f04885e492b572eafee5"
+        "6584e02cea15363829c1b1d7dd2b1d1736b12261a4b9f42aa7e924b622a8c5c5"
       ],
       "records": 12,
       "trials": 12,
@@ -132,25 +132,23 @@
         "failures": 7,
         "shared": {
           "check": "fit_orders",
-          "count": 7,
-          "found": "{\"extra\":[\"Patient/pt-0009\"],\"missing\":[],\"ordered\":{\"Patient/pt-0009\":[\"ServiceRequest/sr-t0011\"],\"Patient/pt-0017\":[\"ServiceRequest/sr-t0001\"],\"Patient/pt-0018\":[\"ServiceRequest/sr-t0003\"],\"Patient/pt-0019\":[\"ServiceRequest/sr-t0007\"],\"Patient/pt-0022\":[\"ServiceRequest/sr-t0009\"],\"Patient/pt-0023\":[\"ServiceRequest/sr-t0005\"]},\"want\":[\"Patient/pt-0017\",\"Patient/pt-0018\",\"Patient/pt-0019\",\"Patient/pt-0022\",\"Patient/pt-0023\"]}",
+          "count": 5,
+          "found": "{\"extra\":[],\"missing\":[\"Patient/pt-0017\"],\"ordered\":{\"Patient/pt-0018\":[\"ServiceRequest/sr-t0001\"],\"Patient/pt-0019\":[\"ServiceRequest/sr-t0005\"],\"Patient/pt-0022\":[\"ServiceRequest/sr-t0007\"],\"Patient/pt-0023\":[\"ServiceRequest/sr-t0003\"]},\"want\":[\"Patient/pt-0017\",\"Patient/pt-0018\",\"Patient/pt-0019\",\"Patient/pt-0022\",\"Patient/pt-0023\"]}",
           "found_count": 1,
-          "found_values": 7
+          "found_values": 5
         },
-        "flags": [
-          "shared_failure"
-        ]
+        "flags": []
       }
     },
     "discharge-medrec": {
       "task_versions": [
-        "0802ec56989be8e5b60f69cadd2b36e2fb27f6ec1f79b1c6621b597db609b566"
+        "eac7f9f9218cb34c6af5a8a1afcd0936e0161570d8d781705989172ac4db6f97"
       ],
       "env_versions": [
         "bbe10cc5335c9148b69eace346c286be06aa3c7d76e279854de3d753e15fbd68"
       ],
       "grader_task_versions": [
-        "540067c85c0c11c5698798f76bdebb14aff8bebd8bd8b9d7c053f128155e3ffb"
+        "e47d9129118f63b22bb0e641f592fea06415fea3a3f4413e2725a49b6bcd313c"
       ],
       "records": 13,
       "trials": 12,
@@ -213,13 +211,13 @@
     },
     "message-queue": {
       "task_versions": [
-        "ee2280f6b466e532e776dc02080e56972eccb3c26f78f03757332e696be41bc8"
+        "7d4e927e959eefb2f4267e6766b6b334eb308c42cf739ad37fe4fba05a9e4c8f"
       ],
       "env_versions": [
         "2d4df327702390a471c9203e40d8f9c5933e64d1f33270d5691a7c40432d22da"
       ],
       "grader_task_versions": [
-        "fdff777c78d058e3213cb403fc8174fd30b9d59f6c4561ca3495c8b93205d60d"
+        "2a38cdb2f0dcad764cbbe9a192a8cc3a76ae17101eb23cf30269c29f2356799e"
       ],
       "records": 13,
       "trials": 12,
@@ -282,13 +280,13 @@
     },
     "renal-dose-review": {
       "task_versions": [
-        "607cfa39e2692f4dccc9f3dd8e9e04bc63da5699f909fde066e9f0332929b203"
+        "c1aebc8b278d08229acda8f2a584c096711bd0ec19c170c60fe07c3e860f0480"
       ],
       "env_versions": [
         "c31110559dad7b9883154cc94acb40f8ed0cef875a3fb2de0833bd8025dc4528"
       ],
       "grader_task_versions": [
-        "2c5c4f59a926849a7016ac77605ece0f0a9b1242d1b5c461b0f126858230f971"
+        "6caadddb36ce0be4aa1c88258119d5c12089a416cee76252aa9942241f9eb969"
       ],
       "records": 13,
       "trials": 12,
@@ -355,13 +353,13 @@
     },
     "results-inbox": {
       "task_versions": [
-        "840bb312aa21d7641ae3c8d4fc92097796b6f9bcfdf5c6bac7422639824ea466"
+        "378a0aa00be5b9cfbd441081a515aa20d021de0c37e8e25ed8e72516a4d44a89"
       ],
       "env_versions": [
         "02be3dae92bbee2de1a8a2d234d60ed0181a70e57d7960fee694f801ba73b328"
       ],
       "grader_task_versions": [
-        "e2a595eda6b2df8a172a084467ad25cbd18f98baf24140bce6d42c3cc7242b46"
+        "9f7d7cdc067cc2a18de1e8b79f4c9022c30b94eeab3aab7d6988bc34f97532f2"
       ],
       "records": 12,
       "trials": 12,
@@ -412,9 +410,9 @@
         "failures": 4,
         "shared": {
           "check": "nodule_ct_window",
-          "count": 4,
+          "count": 3,
           "found": "{\"orders\":[],\"window\":{\"end\":\"2027-07-04\",\"start\":\"2027-05-04\"}}",
-          "found_count": 3,
+          "found_count": 2,
           "found_values": 2
         },
         "flags": []

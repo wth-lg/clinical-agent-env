@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:message-queue:12",
   "task_id": "message-queue",
-  "task_version": "ee2280f6b466e532e776dc02080e56972eccb3c26f78f03757332e696be41bc8",
+  "task_version": "7d4e927e959eefb2f4267e6766b6b334eb308c42cf739ad37fe4fba05a9e4c8f",
   "env_version": "2d4df327702390a471c9203e40d8f9c5933e64d1f33270d5691a7c40432d22da",
-  "grader_task_version": "fdff777c78d058e3213cb403fc8174fd30b9d59f6c4561ca3495c8b93205d60d",
+  "grader_task_version": "2a38cdb2f0dcad764cbbe9a192a8cc3a76ae17101eb23cf30269c29f2356799e",
   "fixture_hash": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
   "state_hash": {
     "initial": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
@@ -45,7 +45,7 @@
   "env_git_sha": null,
   "ended": "2026-10-23T14:07:56.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "10",
+  "grader_version": "11",
   "outcome": "GRADER_ERROR",
   "valid": false,
   "fault": "grader",

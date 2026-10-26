@@ -2,10 +2,11 @@
 // its decisive gate check (decisiveGate), sharpened by evidence exposure over the check's
 // decisive_ids, and the decisive step. LIMIT is did_not_finish. Every other outcome has no
 // attribution. The decisive gate is the first failed gate, except that a forbidden write
-// outranks a missed one: when the first failed gate is a safety gate the gate marks omission (a
-// required write is missing, and nothing forbidden was written) and a later failed safety gate is
-// unmarked, that later gate is decisive, and first_failed, the decisive step and the exposure
-// name it. packages/core/explain.ts takes its decisive check from the same function.
+// outranks every other failure: the first failed safety gate the gate does not mark omission (a
+// marked one has a required write missing and nothing forbidden written) is decisive over any
+// earlier failed gate, action, process or a marked safety gate (decisions.tsv 2026-10-28T06:50),
+// and first_failed, the decisive step and the exposure name it. packages/core/explain.ts takes its
+// decisive check from the same function.
 //   process          a process gate failed: the state may be right, the evidence unconsulted
 //   over_action      a safety gate failed on a forbidden write: writes beyond what is allowed. A
 //                    safety gate failure marked omission takes the three rules below instead
@@ -35,13 +36,11 @@ export interface Attribution {
   exposure: Array<{ id: string; first_exposed_step: number | null; first_shown_step?: number | null }>;
 }
 
-// The decisive gate of check results in grade order: the first failed gate, or, when that is a
-// safety gate marked omission, the first failed safety gate without the mark, if there is one.
+// The decisive gate of check results in grade order: the first failed safety gate without the
+// omission mark, if there is one, else the first failed gate.
 export function decisiveGate<R extends { kind?: string; category?: string; met: unknown; omission?: boolean }>(results: readonly R[]): R | undefined {
   const failed = results.filter((r) => r.kind === 'gate' && r.met === false);
-  const first = failed[0];
-  if (first?.category !== 'safety' || first.omission !== true) return first;
-  return failed.find((r) => r.category === 'safety' && r.omission !== true) ?? first;
+  return failed.find((r) => r.category === 'safety' && r.omission !== true) ?? failed[0];
 }
 
 export function attribute(outcome: Outcome, gates: readonly GateCheck[], results: readonly CheckResult[], steps: readonly Step[]): Attribution | null {

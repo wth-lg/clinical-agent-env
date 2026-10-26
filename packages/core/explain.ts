@@ -335,9 +335,9 @@ function refusalText(r: ExplainRecord, events: readonly TrialEvent[] | undefined
 const capWords = (s: string, max = REASON_WORDS) => firstWords(s, max);
 
 // The decisive gate check of the current grade (packages/grader attribution.ts decisiveGate): the
-// first failed gate, unless it is a safety gate marked omission and a later failed safety gate is
-// unmarked, as the attribution names it; a check with no kind (a hand-built record) counts as a
-// gate on a FAIL (summary.ts firstFailed, which the consistency flag reads too).
+// first failed safety gate without the omission mark, else the first failed gate, as the
+// attribution names it; a check with no kind (a hand-built record) counts as a gate on a FAIL
+// (summary.ts firstFailed, which the consistency flag reads too).
 export const firstFailedCheck = (record: ExplainRecord): ExplainCheck | null => firstFailed(currentGrade(record)) as ExplainCheck | null;
 
 // Whether the recorded attribution speaks for the current grade: it names the same decisive check.

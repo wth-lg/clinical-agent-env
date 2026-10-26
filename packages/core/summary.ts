@@ -305,9 +305,8 @@ const harmed = (checks: ReadonlyArray<SummaryCheck>): boolean => checks.some((c)
 const infraCounted = (o: string): boolean => o !== 'CANCELLED' && (FAULT[o as Outcome] === 'infra' || FAULT[o as Outcome] === 'env');
 
 // The first failed check of a grade, as explain.ts firstFailedCheck reads it: the decisive gate
-// (packages/grader attribution.ts decisiveGate: the first failed gate, unless it is a safety gate
-// marked omission and a later failed safety gate is unmarked), else on a FAIL the first check with
-// no kind not met.
+// (packages/grader attribution.ts decisiveGate: the first failed safety gate without the omission
+// mark, else the first failed gate), else on a FAIL the first check with no kind not met.
 export function firstFailed(grade: Pick<CurrentGrade, 'outcome' | 'checks'>): SummaryCheck | null {
   const checks = grade.checks ?? [];
   return decisiveGate(checks) ?? (grade.outcome === 'FAIL' ? checks.find((c) => c.kind === undefined && c.met === false) : undefined) ?? null;

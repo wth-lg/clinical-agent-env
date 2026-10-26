@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:discharge-medrec:11",
   "task_id": "discharge-medrec",
-  "task_version": "0802ec56989be8e5b60f69cadd2b36e2fb27f6ec1f79b1c6621b597db609b566",
+  "task_version": "eac7f9f9218cb34c6af5a8a1afcd0936e0161570d8d781705989172ac4db6f97",
   "env_version": "bbe10cc5335c9148b69eace346c286be06aa3c7d76e279854de3d753e15fbd68",
-  "grader_task_version": "540067c85c0c11c5698798f76bdebb14aff8bebd8bd8b9d7c053f128155e3ffb",
+  "grader_task_version": "e47d9129118f63b22bb0e641f592fea06415fea3a3f4413e2725a49b6bcd313c",
   "fixture_hash": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
   "state_hash": {
     "initial": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
@@ -45,7 +45,7 @@
   "env_git_sha": null,
   "ended": "2026-10-23T13:24:38.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "10",
+  "grader_version": "11",
   "outcome": "FAIL",
   "valid": true,
   "fault": "model",
