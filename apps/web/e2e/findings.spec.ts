@@ -26,7 +26,10 @@ async function browse(page: Page, path: string) {
 test('Findings renders the markdown, one interval per task and a kind-of-failure bar per task', async ({ page }) => {
   await browse(page, './?view=findings');
   await expect(page.getByTestId('findings-md').getByRole('heading', { level: 1 })).toHaveText('Findings (sample run)');
-  await expect(page.getByTestId('findings-md').locator('table tbody tr')).toHaveCount(TASK_IDS.length);
+  // One Wilson display (pre-audit U10, P17j JU12): the chart, from summary.json; the write-up
+  // points to it and repeats no interval table.
+  await expect(page.getByTestId('findings-md').locator('table')).toHaveCount(0);
+  await expect(page.getByTestId('findings-md')).not.toContainText('Wilson');
   await expect(page.getByText('These results are read-only. Running new trials needs an API key.')).toBeVisible();
   await expect(page.getByTestId('interval-chart').getByTestId('interval')).toHaveCount(TASK_IDS.length);
   await expect(page.getByTestId('interval-chart').getByTestId('whisker')).toHaveCount(TASK_IDS.length);

@@ -199,10 +199,10 @@ function rewrite(r: TrialRecord, as: string | null): TrialRecord {
   }
 }
 
-const pct = (x: number | null) => (x === null ? 'n/a' : `${Math.round(100 * x)}%`);
-
+// The sample write-up. It gives no pass-rate table: the Findings chart below it shows each task's
+// k/N and Wilson 95% interval from summary.json, the one place the page shows them (pre-audit U10).
 function findings(s: ReturnType<typeof summarize>): string {
-  const rows = Object.entries(s.tasks).map(([id, t]) => `| ${id} | ${t.passes}/${t.trials} | ${pct(t.wilson95?.lo ?? null)} to ${pct(t.wilson95?.hi ?? null)} |`);
+  const total = Object.values(s.tasks);
   return [
     '# Findings (sample run)',
     '',
@@ -210,9 +210,7 @@ function findings(s: ReturnType<typeof summarize>): string {
     '',
     '## Pass rates',
     '',
-    '| Task | Passes | Wilson 95% interval |',
-    '| --- | --- | --- |',
-    ...rows,
+    `${total.reduce((n, t) => n + t.passes, 0)} of ${total.reduce((n, t) => n + t.trials, 0)} valid trials pass across ${total.length} tasks. The chart below gives each task's pass rate with its 95% interval.`,
     '',
     '## Failures',
     '',
