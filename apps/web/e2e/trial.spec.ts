@@ -14,7 +14,9 @@ import { expect, test, type Page } from '@playwright/test';
 import { MET_TEXT, NOT_AUDITED_MARKER } from '../../../packages/core/explain.ts';
 import { FAULT_PRECEDENCE, isValid } from '../../../packages/core/outcomes.ts';
 import { trialName } from '../../../packages/core/summary.ts';
-import { explain, hasTrajectory, record, records, RUN_ID, summary, trialBase, TRIALS } from './fixtures/trial/trial.ts';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { explain, hasTrajectory, record, records, RUN_DIR, RUN_ID, summary, trialBase, TRIALS } from './fixtures/trial/trial.ts';
 
 const TABS = [
   { id: 'grading', name: 'Grading' },
@@ -523,4 +525,105 @@ test('a trial from another world: Replay says its differing hash is expected, no
   const line = result.getByTestId('replay-line');
   await expect(line).toContainText('as expected');
   await expect(line).not.toHaveClass(/text-danger/);
+});
+
+// The UI wording and consistency follow-up (run.md 2026-10-27 04:40 list; verifier-phase-P16-2
+// minors, review-ui-P16-1 F8, verifier-phase-P17i-C3-2 F2).
+
+test('an ENV_ERROR header links Where to the tool call that failed with an internal error', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  // The sample's ENV_ERROR trajectory has no INTERNAL tool result (review-ui-P16-1 F8), so the
+  // third tool call that ran is served as the one that failed, as packages/core/loop.ts records it.
+  const file = join(RUN_DIR, record(TRIALS.envError).trajectory);
+  let ran = 0;
+  const lines = readFileSync(file, 'utf8').split('\n').filter((l) => l.trim() !== '').map((l) => {
+    const e = JSON.parse(l) as { type: string; executed?: boolean; name?: string };
+    if (e.type !== 'tool_result' || !e.executed || ++ran !== 3) return l;
+    return JSON.stringify({ ...e, is_error: true, error_code: 'INTERNAL', content: { error: { code: 'INTERNAL', message: 'store write failed' } } });
+  });
+  const name = (JSON.parse(lines.find((l) => l.includes('"error_code":"INTERNAL"'))!) as { name: string }).name;
+  await page.route(`**/data/results/runs/${RUN_ID}/${record(TRIALS.envError).trajectory}`, (route) => route.fulfill({ status: 200, contentType: 'application/x-ndjson', body: `${lines.join('\n')}\n` }));
+  await openTrial(page, TRIALS.envError);
+  const link = page.getByTestId('trial-header').getByTestId('failed-call-link');
+  await expect(link).toHaveText('Step 3');
+  await expect(link.locator('xpath=..')).toContainText(`the ${name} call that failed with an internal error`);
+  await link.click();
+  const target = page.locator('#step-3');
+  await expect(target).toBeInViewport();
+  await expect(target).toHaveAttribute('aria-current', 'step');
+});
+
+test('with no internal tool error in its trajectory, an ENV_ERROR header has no Where link', async ({ page }) => {
+  await openTrial(page, TRIALS.envError);
+  await expect(page.getByTestId('trajectory').getByTestId('step').first()).toBeVisible();
+  await expect(page.getByTestId('trial-header').getByTestId('failed-call-link')).toHaveCount(0);
+});
+
+test('the infra label has its help link on its Runs row too, on the same line as the label at 390 px', async ({ page }) => {
+  await browse(page, './?view=runs');
+  const row = page.locator(`[data-testid="trial-row"][data-trial="${TRIALS.infra}"]`);
+  await expect(row.getByRole('link', { name: 'How the infra label is given' })).toHaveAttribute('href', /view=glossary.*#fault-infra$/);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openTrial(page, TRIALS.infra);
+  const h = page.getByTestId('trial-header');
+  const label = (await h.getByTestId('label').boundingBox())!;
+  const help = (await h.getByRole('link', { name: 'How the infra label is given' }).boundingBox())!;
+  expect(Math.abs((label.y + label.height / 2) - (help.y + help.height / 2))).toBeLessThan(6);
+  expect(help.x).toBeGreaterThan(label.x + label.width - 1);
+});
+
+test('at 390 px the PASS header is in the first screen', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openTrial(page, TRIALS.pass);
+  const box = (await page.getByTestId('trial-header').boundingBox())!;
+  expect(box.y + box.height).toBeLessThanOrEqual(844);
+});
+
+test('Ruled out names each fault once, refusal included, and the infrastructure in words', async ({ page }) => {
+  for (const name of [TRIALS.envError, TRIALS.graderError]) {
+    await openTrial(page, name, '&tab=attribution');
+    const line = panel(page, 'attribution').getByTestId('criteria-summary');
+    await expect(line).toContainText('a refusal (R1 not met)');
+    await expect(line).toContainText('the model (MF1-MF2 not met)');
+    await expect(line).not.toContainText(/\bmodel \(R1/);
+  }
+  await openTrial(page, TRIALS.infra, '&tab=attribution');
+  await expect(panel(page, 'attribution').getByTestId('taxonomy')).toHaveText("does not apply: the fault is the infrastructure's, not the model's");
+  await openTrial(page, TRIALS.envError, '&tab=attribution');
+  await expect(panel(page, 'attribution').getByTestId('criteria-summary')).toContainText('the infrastructure (I1-I4 not met)');
+});
+
+test('a GRADER_ERROR trial shows M1 not applicable and says plainly that it has no grade', async ({ page }) => {
+  const e = await explain(TRIALS.graderError);
+  expect(e.criteria[0]).toMatchObject({ id: 'M1', met: 'n/a' });
+  await openTrial(page, TRIALS.graderError);
+  await expect(page.getByTestId('trial-header').locator('[data-testid="header-criteria"] li[data-id="M1"]')).toHaveAttribute('data-met', 'n/a');
+  const g = panel(page, 'grading');
+  await expect(g.getByTestId('grade-line')).toHaveText('Not graded: a grader check failed with an error, so the trial has no grade.');
+  await expect(g).not.toContainText('Graded with grader');
+  await expect(g).toContainText('Gate checks, as recorded before the error');
+  await expect(g).not.toContainText(/\d+ of \d+ met/);
+  await page.getByRole('tab', { name: 'Attribution' }).click();
+  await expect(panel(page, 'attribution').locator('[data-testid="criterion-row"][data-id="M1"]')).toContainText('M1: not applicable');
+});
+
+test('run=session says where the session trials are and links to the Live trial view', async ({ page }) => {
+  await browse(page, './?view=runs&run=session&trial=first-nonpass');
+  const notice = page.getByTestId('session-notice');
+  await expect(notice).toContainText('No runs in this session.');
+  await notice.getByRole('link', { name: 'Open Live trial' }).click();
+  await expect(page).toHaveURL(/view=live/);
+  await expect(page).not.toHaveURL(/run=session/);
+});
+
+test('a task-validity review line in audit.jsonl is read, not flagged as an unreadable line', async ({ page }) => {
+  const review = { task: 'renal-dose-review', kind: 'task-validity', reviewer: 'auditor-1', verdict: 'fair-trap', note: 'the trap is fair' };
+  await page.route(`**/data/results/runs/${RUN_ID}/audit.jsonl`, async (route) => {
+    const res = await route.fetch();
+    await route.fulfill({ response: res, body: `${await res.text()}${JSON.stringify(review)}\n` });
+  });
+  await browse(page, './?view=runs');
+  await expect(page.locator(`[data-testid="trial-row"][data-trial="${TRIALS.failAudited}"]`)).toBeVisible();
+  await expect(page.locator(`[data-testid="run"][data-run="${RUN_ID}"]`).getByTestId('data-warning')).toHaveCount(0);
+  await expect(page.locator(`[data-testid="trial-row"][data-trial="${TRIALS.failUnaudited}"]`).getByTestId('not-audited')).toHaveCount(1);
 });

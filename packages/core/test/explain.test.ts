@@ -600,3 +600,18 @@ describe('a GRADER_ERROR reason (verifier-phase-P14b-1 V3)', () => {
     expect(x.reason).toMatch(/^GRADER_ERROR: check G1 threw word0 .* word\d+…; the grader's fault, which blocks the run$/);
   });
 });
+
+describe('a GRADER_ERROR trial has no gate verdict, so M1 does not apply (verifier-phase-P16-2 minor)', () => {
+  it('M1 is not applicable on a GRADER_ERROR whose thrown check is recorded not met; a FAIL keeps M1', () => {
+    const threw = explainTrial(record('GRADER_ERROR', {
+      error: { check: 'G1', message: 'TypeError: x is undefined' },
+      checks: [gate('G1', false), gate('note_on_patient', true)],
+      attribution: { auto: 'reasoning', first_failed: 'G1', decisive_step: 9, exposure: [{ id: 'Observation/obs-wt-1', first_exposed_step: 6 }] },
+    }), undefined, ctx);
+    expect(threw.criteria[0]).toMatchObject({ id: 'M1', met: 'n/a' });
+    expect(threw.criteria[0]!.evidence).toMatch(/threw/);
+    expect(threw.fault_criteria.env.find((c) => c.id === 'E5')!.met).toBe(false);
+    expect(threw.deciding?.id).toBe('GR1');
+    expect(explainTrial(failWith('reasoning'), undefined, ctx).criteria[0]!.met).toBe(true);
+  });
+});

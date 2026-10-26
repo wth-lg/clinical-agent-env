@@ -8,25 +8,27 @@
 // The header, visible on open with no click: the outcome, the attribution label with its
 // glossary link (and the not-audited marker when the trial has no audit row), the one-line
 // reason, the fault and the criterion that decided it, the decisive failing check (id, the policy
-// line it enforces, what it requires and what the trial left) with a link to the decisive step,
-// and M1-M5. All of it is packages/core/explain.ts explainTrial over the record and audit row:
-// the Runs row's explanation first, then fullExplanation (results.ts) when it arrives, the one
-// context cli/audit-check.ts uses. Every tab panel stays mounted (the inactive ones hidden), so a
-// replay or an open row survives a tab change.
-import { ArrowLeft, CircleHelp } from 'lucide-react';
+// line it enforces, what it requires and what the trial left) with a link to the decisive step
+// (on an ENV_ERROR, to the tool call that failed), and M1-M5. All of it is
+// packages/core/explain.ts explainTrial over the record and audit row: the Runs row's explanation
+// first, then fullExplanation (results.ts) when it arrives, the one context cli/audit-check.ts
+// uses. Every tab panel stays mounted (the inactive ones hidden), so a replay or an open row
+// survives a tab change.
+import { ArrowLeft } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type Ref } from 'react';
 import { MET_TEXT, type Explanation } from '../../../../packages/core/explain.ts';
 import type { TrialEvent } from '../../../../packages/core/events.ts';
 import { fetchEvents, fullExplanation, useResults, type RunData, type Trial } from '../data/results.ts';
 import { FaultLabel, GlossaryLink, HashText, Notice, OutcomeChip } from '../data/ui.tsx';
 import { hrefWith, navigate, onNav, useParams } from '../data/url.ts';
+import { runnerToken } from '../keygate/runner.ts';
 import { Attribution, criterionPhrase, criterionText, FAULT_WORD, LINK, StepLink } from './Attribution.tsx';
 import { EnvironmentTab, Raw } from './Details.tsx';
 import { Grading } from './Grading.tsx';
 import { returnTo } from './back.ts';
 import { resolveTrial } from './resolve.ts';
 import { StateDiff } from './StateDiff.tsx';
-import { trajectoryOf } from './steps.ts';
+import { internalErrorRow, trajectoryOf, type Row } from './steps.ts';
 import { Trajectory, type Loaded } from './Trajectory.tsx';
 
 export const TABS = [
@@ -55,7 +57,7 @@ function Frame({ title, headingRef, from, children }: { title: string; headingRe
   }, [from?.run, from?.trial]);
   const back = onNav(BACK);
   return (
-    <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
+    <section className="mx-auto max-w-7xl px-4 py-4 sm:px-6 sm:py-6">
       <a
         href={hrefWith(BACK)}
         onClick={(ev) => {
@@ -77,7 +79,7 @@ function Frame({ title, headingRef, from, children }: { title: string; headingRe
       >
         {title}
       </h1>
-      <div className="mt-3 space-y-4">{children}</div>
+      <div className="mt-2 space-y-4 sm:mt-3">{children}</div>
     </section>
   );
 }
@@ -89,7 +91,7 @@ export function TrialPage({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
   const runId = params.get('run');
   if (results === null) return <Frame title={trial} headingRef={headingRef}><Notice>Loading the published results…</Notice></Frame>;
   if (results.kind === 'error') return <Frame title={trial} headingRef={headingRef}><Notice testId="error-state">The published results cannot be read: {results.message}</Notice></Frame>;
-  if (runId === 'session') return <Frame title={trial} headingRef={headingRef}><Notice>The trials of this session open in the Live trial view.</Notice></Frame>;
+  if (runId === 'session') return <Frame title={trial} headingRef={headingRef}><SessionNotice /></Frame>;
   const runs = [...(results.official ? [results.official] : []), ...results.pilots];
   const r = resolveTrial(runs, runId, trial);
   if (r.kind === 'none-nonpass') return <Frame title="First non-pass trial" headingRef={headingRef}><Notice testId="empty-state">{r.message}</Notice></Frame>;
@@ -128,12 +130,12 @@ function Detail({ t, run, files, tab, headingRef }: { t: Trial; run: RunData; fi
         data-tab={tab}
         data-full={String(full !== null)}
         data-criteria={e.criteria.map((c) => `${c.id}: ${MET_TEXT[String(c.met)]}`).join(', ')}
-        className="space-y-4"
+        className="space-y-3 sm:space-y-4"
       >
         <p className="text-ink-muted">
           Run <span className="font-medium text-ink">{run.runId}</span>{run.official ? ', the official run' : ', a pilot run, not counted in the results'}. Task <span className="font-medium text-ink">{t.task}</span>.
         </p>
-        <Header t={t} e={e} onStep={onStep} />
+        <Header t={t} e={e} rows={traj?.rows ?? null} onStep={onStep} />
         <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start">
           <Tabs tab={tab}>
             {{
@@ -154,21 +156,31 @@ function Detail({ t, run, files, tab, headingRef }: { t: Trial; run: RunData; fi
   );
 }
 
-// Why the trial ended as it did, before any click (see the header comment).
-function Header({ t, e, onStep }: { t: Trial; e: Explanation; onStep: (n: number) => void }) {
+// run=session: the runs the local runner started in this process (docs/requirements/ui-contract.md).
+// The Runs view reads only published runs, so the notice says where those trials are and links
+// there; on the hosted site, with no runner, there are no session runs.
+function SessionNotice() {
+  const go = onNav({ view: 'live', run: null, trial: null, tab: null });
+  const link = <a href={hrefWith({ view: 'live', run: null, trial: null, tab: null })} onClick={go} className={LINK}>Open Live trial</a>;
+  return (
+    <Notice testId="session-notice">
+      {runnerToken() === null
+        ? <>No runs in this session. The trials that you run in this tab are under Your runs in the Live trial view. {link}</>
+        : <>The trials that this local runner started are under Your runs in the Live trial view. {link}</>}
+    </Notice>
+  );
+}
+
+// Why the trial ended as it did, before any click (see the header comment). rows: the trajectory,
+// once it loads; an ENV_ERROR's Where is the tool call that failed with an internal error.
+function Header({ t, e, rows, onStep }: { t: Trial; e: Explanation; rows: readonly Row[] | null; onStep: (n: number) => void }) {
   const nonPass = e.outcome !== 'PASS';
+  const failedCall = e.fault === 'env' && e.decisive_step === null && rows !== null ? internalErrorRow(rows) : null;
   return (
     <section aria-label="Why this trial ended as it did" data-testid="trial-header" className={`min-w-0 rounded-sm border border-line bg-surface p-4 ${nonPass ? 'border-l-2 border-l-danger' : ''}`}>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <OutcomeChip outcome={e.outcome} fault={e.fault} />
         {nonPass && <FaultLabel e={e} />}
-        {/* FaultLabel gives every label but infra its help link (review-ui-P16-1 F8). */}
-        {e.fault === 'infra' && (
-          <GlossaryLink anchor="fault-infra" className="-ml-2 inline-flex h-6 w-6 items-center justify-center rounded-sm text-ink-muted hover:bg-canvas hover:text-ink">
-            <CircleHelp aria-hidden className="h-3.5 w-3.5" strokeWidth={1.75} />
-            <span className="sr-only">How the infra label is given</span>
-          </GlossaryLink>
-        )}
         <span className="ml-auto text-xs text-ink-muted" title="Agent and judge cost">${(t.record.cost_usd + (t.record.judge_cost_usd ?? 0)).toFixed(2)}</span>
       </div>
       {!e.valid && e.deciding && (
@@ -198,6 +210,12 @@ function Header({ t, e, onStep }: { t: Trial; e: Explanation; onStep: (n: number
           <>
             <dt>Where</dt>
             <dd><StepLink n={e.decisive_step} onStep={onStep} testId="decisive-step-link">Decisive step {e.decisive_step}</StepLink></dd>
+          </>
+        )}
+        {failedCall !== null && (
+          <>
+            <dt>Where</dt>
+            <dd><StepLink n={failedCall.step} onStep={onStep} testId="failed-call-link">Step {failedCall.step}</StepLink>: the {failedCall.name} call that failed with an internal error</dd>
           </>
         )}
         <dt>Criteria</dt>

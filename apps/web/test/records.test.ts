@@ -4,7 +4,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { repoRoot } from '../../../scripts/test/helpers.ts';
-import { validateAuditRow, validateRecord } from '../src/data/records.ts';
+import { readAudit, validateAuditRow, validateRecord } from '../src/data/records.ts';
 
 const jsonFiles = (dir: string) => readdirSync(dir, { recursive: true, withFileTypes: true }).filter((e) => e.isFile() && e.name.endsWith('.json')).map((e) => join(e.parentPath, e.name));
 const SAMPLE = join(repoRoot, 'apps/web/e2e/fixtures/sample-results/results/runs/sample-1');
@@ -30,5 +30,25 @@ describe('validateAuditRow', () => {
     const lines = readFileSync(join(SAMPLE, 'audit.jsonl'), 'utf8').split('\n').filter((l) => l.trim() !== '');
     for (const l of lines) expect(validateAuditRow(JSON.parse(l))).toEqual([]);
     expect(validateAuditRow({ outcome: 'FAIL' })).toEqual(['trial is missing']);
+  });
+});
+
+// A task-validity review line (P17i C3, cli/audit-check.ts) names a task, not a trial
+// (decisions.tsv 2026-10-27T04:40, verifier-phase-P17i-C3-2 F2).
+const REVIEW = { task: 'renal-dose-review', kind: 'task-validity', reviewer: 'auditor-1', verdict: 'fair-trap', note: 'the trap is fair' };
+
+describe('a task-validity review line', () => {
+  it('is a readable audit line, and a bad one names its field', () => {
+    expect(validateAuditRow(REVIEW)).toEqual([]);
+    expect(validateAuditRow({ ...REVIEW, verdict: 'maybe' })).toEqual(['verdict is not fair-trap or check-defect']);
+    expect(validateAuditRow({ kind: 'task-validity', verdict: 'check-defect', note: '' })).toEqual(['task is missing', 'reviewer is missing']);
+  });
+
+  it('readAudit keeps the per-trial rows, sets the review lines apart and warns only on lines it cannot read', () => {
+    const row = { trial: 'renal-dose-review/5', outcome: 'FAIL', taxonomy: 'reasoning', model_fault: 'yes', decisive_step: 11, evidence_ids: [], llm_auditor_agrees: true };
+    const a = readAudit([JSON.stringify(row), JSON.stringify(REVIEW), '{not json', JSON.stringify({ outcome: 'FAIL' }), ''].join('\n'));
+    expect(a.rows.map((r) => r.trial)).toEqual(['renal-dose-review/5']);
+    expect(a.reviews).toEqual([REVIEW]);
+    expect(a.warnings).toEqual([expect.stringMatching(/^audit\.jsonl line 3 cannot be read: /), 'audit.jsonl line 4 cannot be read: trial is missing']);
   });
 });
