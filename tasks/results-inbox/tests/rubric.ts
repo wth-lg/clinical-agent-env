@@ -54,10 +54,12 @@ const oncallAbout = (ctx: RubricCtx, patient: string) => oncall(ctx as NotifyCtx
 // created for the patient, or a message about the patient (its subject, or its text naming them)
 // to a Practitioner or Group, that asks someone to contact the patient or family. The contact verb
 // must name whom to contact: the patient, the family or a parent, by role ("call the mother") or
-// by name (the patient's, or a Patient.contact's such as Ana Ruiz); "contact ortho" does not count.
-// A tracking task does not count.
-const VERB = String.raw`call|phone|telephone|contact|notify|inform|tell|reach|let|(?:speak|talk) (?:with|to)`;
-const KIN = String.raw`patient|family|parents?|mother|father|mom|mum|dad|guardian|caregiver`;
+// by name (the patient's, or a Patient.contact's such as Ana Ruiz), or as "him" or "her" (the
+// task or message is already about the patient, so the pronoun is the patient or a parent);
+// "contact ortho" and "tell them" do not count. A tracking task does not count.
+const VERB = String.raw`call|phone|telephone|contact|notify|inform|tell|reach(?: out to)?|get in touch with|let|(?:speak|talk) (?:with|to)`;
+const KIN = String.raw`patient|pt|family|parents?|mother|father|mom|mum|dad|guardian|caregiver`;
+const PRONOUN = String.raw`him|her`;
 function asksToContact(ctx: RubricCtx, patient: string): (text: string) => boolean {
   type Name = { given?: string[]; family?: string };
   const p = ctx.final.get(...split(patient)) as { name?: Name[]; contact?: Array<{ name?: Name }> } | undefined;
@@ -66,7 +68,7 @@ function asksToContact(ctx: RubricCtx, patient: string): (text: string) => boole
   const surnames = people.flatMap((n) => (n.family ? [n.family] : []));
   const alt = (xs: string[]) => xs.map((x) => escape(fold(x))).join('|');
   const by = String.raw`(?:(?:the|his|her|their|[\p{L}-]+'s${surnames.length ? `|${alt(surnames)}` : ''})\s+){0,2}(?:${KIN})`;
-  const whom = names.length ? `${by}|${alt(names)}` : by;
+  const whom = [by, PRONOUN, ...(names.length ? [alt(names)] : [])].join('|');
   const re = new RegExp(String.raw`(?<![\p{L}\p{N}])(?:${VERB})\s+(?:${whom})(?![\p{L}\p{N}])`, 'u');
   return (text) => re.test(fold(text).replace(/\u2019/g, "'"));
 }
