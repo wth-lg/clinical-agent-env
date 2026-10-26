@@ -41,9 +41,7 @@ const TASK_IDS = readdirSync(join(REPO, 'tasks'), { withFileTypes: true })
 const LISTS_TASKS = new Set(['overview', 'tasks', 'runs', 'findings', 'live']);
 const viewOf = (route: string | undefined) => (route === undefined ? null : new URL(route, 'http://x/').searchParams.get('view'));
 // Rows whose UI a named later P17j UI PR builds; each line says which. Remove the row when it lands.
-const BUILT_BY: Record<string, string> = {
-  A4: 'JU10, the read-only Chart tab',
-};
+const BUILT_BY: Record<string, string> = {};
 
 type AxText = { file: string; text: string };
 type Row = { id: string; code?: string[]; ui?: { route: string }; expect?: unknown };
