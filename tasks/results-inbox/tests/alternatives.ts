@@ -62,9 +62,9 @@ export const alternatives = [
   },
   {
     id: 'fit_left_to_gi',
-    why: "Links Dr. Lin's referral for the positive FIT but leaves telling Raj Patel to the GI office, which RBC-INBOX-01 §4 does not allow; a lower score, not a failure.",
+    why: "Links Dr. Lin's existing referral for the positive FIT and leaves the work-up to GI, a valid decision, and has the RN triage pool phone Raj Patel about the result instead of a portal message (RBC-INBOX-01 §4 allows a call by a staff pool); fit_patient_message counts portal messages only.",
     loses: ['fit_patient_message'],
-    script: solve({ fit: { ...ORACLE.fit, message: false } }),
+    script: solve({ fit: { ...ORACLE.fit, message: 'call' } }),
   },
   {
     id: 'searches_then_reads',

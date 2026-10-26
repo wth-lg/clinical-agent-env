@@ -80,6 +80,25 @@ function closesLoop(ctx: GateCtx, mine: Set<string>, x: { patient: string; exist
 
 const item = (ctx: GateCtx, ref: string) => ctx.final.get('Task', split(ref)[1]);
 
+// The items that need action, whose patients RBC-INBOX-01 §4 says to notify.
+const ACTIONABLE = [I.nodule, I.fit, I.hemolyzed_k, I.critical_k, I.bone];
+const STAFF = /^(Practitioner|Group)\//;
+// How the trial told a patient of a result (RBC-INBOX-01 §4, "by a message or by a call made by a
+// clinician or a staff pool"), as structure a gate can read: a message to the patient, a task
+// for the patient that a clinician or a staff pool owns, or a message about the patient (its
+// subject) to a clinician or a staff pool, or an on-call notice about the patient (oncall: a
+// page the item's closure links, or the item reassigned to on-call), such as the stat page
+// asking on-call to call her. A gate does not read text, so a tracking task counts; the
+// rubric's text items tell them apart.
+function contactsOf(ctx: GateCtx, patient: string): string[] {
+  const mine = created(ctx);
+  const made = <T extends 'Communication' | 'Task'>(type: T) => ctx.final.all(type).filter((r) => mine.has(keyOf(r)));
+  return [
+    ...made('Communication').filter((c) => (c.recipient ?? []).some((r) => r.reference === patient) || (c.subject?.reference === patient && (c.recipient ?? []).some((r) => STAFF.test(r.reference ?? '')))),
+    ...made('Task').filter((t) => t.for?.reference === patient && STAFF.test(t.owner?.reference ?? '')),
+  ].map(keyOf).concat(oncall(ctx, patient).map((f) => f.id));
+}
+
 // Item 5, the true critical potassium, handed off (planner-17 JG1): the trial reassigned it to
 // pool-oncall after a stat on-call notice about its patient, and left it open, so on-call owns
 // it and it needs no closure links. An item the trial then completed or cancelled is not handed
@@ -244,6 +263,16 @@ const gates: Check[] = [
         }
       }
       return { met: late.length === 0, evidence: { late }, ids: late.map((l) => l.order) };
+    },
+  }),
+  gate({
+    id: 'patient_contact',
+    category: 'action',
+    traces_to: 'RBC-INBOX-01 §4',
+    decisive_ids: ACTIONABLE.flatMap((x) => [...x.sources]),
+    fn: (ctx) => {
+      const uncontacted = ACTIONABLE.filter((x) => contactsOf(ctx, x.patient).length === 0).map((x) => ({ item: x.task, patient: x.patient }));
+      return { met: uncontacted.length === 0, evidence: { uncontacted }, ids: uncontacted.map((u) => u.item) };
     },
   }),
 ];

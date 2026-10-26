@@ -68,6 +68,10 @@ export const checkText: CheckText = {
       return open !== undefined ? `${show(open)} is not completed` : `${show(items(ev.unlinked)[0])} links nothing that closes it`;
     },
   },
+  patient_contact: {
+    requires: `each patient of the ${ACTIONABLE} items that need action told of the result, by a message or by a call task for a clinician or staff pool`,
+    found: (ev) => `${show(fields(items(ev.uncontacted)[0]).patient)} was not told of ${show(fields(items(ev.uncontacted)[0]).item)}`,
+  },
   sources_before_orders: {
     requires: 'each result read before the order it leads to',
     found: (ev) => {
