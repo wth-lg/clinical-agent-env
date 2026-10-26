@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:results-inbox:11",
   "task_id": "results-inbox",
-  "task_version": "6bdcec67ca6bb86799257c58db865436fc481326a91a62cd4f7e816124b0b9c4",
+  "task_version": "fb565a9e013362e80a98235b0d05fc04ba07d34bf8169c45990d635fdbfe5bd4",
   "env_version": "f7ed42d3c0d7920587b33d75a7815885b288336263bdab07957d0deb58c8730a",
-  "grader_task_version": "1f12334e6c6d3e3f3eeb1699ad9a3149212a21846025ced801979ddf0ec3ea41",
+  "grader_task_version": "069cc044a9ce9e25b58e917c2497a36b2b51a5fe53f8101ec60f09ad8740ac8f",
   "fixture_hash": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
   "state_hash": {
     "initial": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T14:52:10.000Z",
+  "started": "2026-10-23T14:52:13.000Z",
   "turns": 14,
   "tool_calls": 43,
   "tool_errors": {
@@ -43,7 +43,7 @@
   "summary": "Results inbox cleared: all 8 items completed with their follow-up orders, tasks, messages and notes linked.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T14:55:00.000Z",
+  "ended": "2026-10-23T14:55:03.000Z",
   "judge_cost_usd": 0,
   "grader_version": "11",
   "outcome": "FAIL",
@@ -249,6 +249,25 @@
         "late": []
       },
       "ids": []
+    },
+    {
+      "id": "patient_contact",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": false,
+      "evidence": {
+        "uncontacted": [
+          {
+            "item": "Task/task-t2-inbox-1",
+            "patient": "Patient/pt-0013"
+          }
+        ]
+      },
+      "ids": [
+        "Task/task-t2-inbox-1"
+      ]
     },
     {
       "id": "nodule_tracking_task",

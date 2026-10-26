@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:results-inbox:6",
   "task_id": "results-inbox",
-  "task_version": "6bdcec67ca6bb86799257c58db865436fc481326a91a62cd4f7e816124b0b9c4",
+  "task_version": "fb565a9e013362e80a98235b0d05fc04ba07d34bf8169c45990d635fdbfe5bd4",
   "env_version": "f7ed42d3c0d7920587b33d75a7815885b288336263bdab07957d0deb58c8730a",
-  "grader_task_version": "1f12334e6c6d3e3f3eeb1699ad9a3149212a21846025ced801979ddf0ec3ea41",
+  "grader_task_version": "069cc044a9ce9e25b58e917c2497a36b2b51a5fe53f8101ec60f09ad8740ac8f",
   "fixture_hash": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
   "state_hash": {
     "initial": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
-    "final": "47b762405a64d87b6b44862ed2c11666656305bdb0765d1b7c10064c50dcb32a",
-    "replay_final": "47b762405a64d87b6b44862ed2c11666656305bdb0765d1b7c10064c50dcb32a"
+    "final": "27569240affc87541864847e8ede396014776cd011685200897e7f5735db22ba",
+    "replay_final": "27569240affc87541864847e8ede396014776cd011685200897e7f5735db22ba"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -18,7 +18,7 @@
   "api_version": "2026-10-21",
   "started": "2026-10-23T14:38:34.000Z",
   "turns": 13,
-  "tool_calls": 43,
+  "tool_calls": 44,
   "tool_errors": {
     "INVALID_INPUT": 0,
     "NOT_FOUND": 0,
@@ -43,7 +43,7 @@
   "summary": "Results inbox cleared: all 8 items completed with their follow-up orders, tasks, messages and notes linked.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T14:41:21.000Z",
+  "ended": "2026-10-23T14:41:24.000Z",
   "judge_cost_usd": 0,
   "grader_version": "11",
   "outcome": "PASS",
@@ -95,6 +95,7 @@
       "evidence": {
         "new_gi_orders": [],
         "linked": [
+          "Task/task-t0007",
           "ServiceRequest/sr-t2-gi-1020"
         ]
       },
@@ -112,7 +113,7 @@
       "evidence": {
         "orders": [
           {
-            "id": "ServiceRequest/sr-t0009",
+            "id": "ServiceRequest/sr-t0010",
             "priority": "urgent",
             "start": "2026-10-26"
           }
@@ -120,7 +121,7 @@
         "by": "2026-10-26"
       },
       "ids": [
-        "ServiceRequest/sr-t0009"
+        "ServiceRequest/sr-t0010"
       ]
     },
     {
@@ -146,13 +147,13 @@
       "evidence": {
         "oncall": [
           {
-            "id": "Communication/comm-t0013",
+            "id": "Communication/comm-t0014",
             "priority": "stat"
           }
         ]
       },
       "ids": [
-        "Communication/comm-t0013"
+        "Communication/comm-t0014"
       ]
     },
     {
@@ -165,7 +166,7 @@
       "evidence": {
         "orders": [
           {
-            "id": "ServiceRequest/sr-t0014",
+            "id": "ServiceRequest/sr-t0015",
             "priority": "stat",
             "start": "2026-10-23"
           }
@@ -173,7 +174,7 @@
         "by": "2026-10-23"
       },
       "ids": [
-        "ServiceRequest/sr-t0014"
+        "ServiceRequest/sr-t0015"
       ]
     },
     {
@@ -185,20 +186,20 @@
       "met": true,
       "evidence": {
         "referral": [
-          "ServiceRequest/sr-t0017"
+          "ServiceRequest/sr-t0018"
         ],
         "mri": [
-          "ServiceRequest/sr-t0018"
+          "ServiceRequest/sr-t0019"
         ],
         "orders": [
           {
-            "id": "ServiceRequest/sr-t0017",
+            "id": "ServiceRequest/sr-t0018",
             "code": "REF-ORTHO-ONC",
             "priority": "urgent",
             "start": "2026-10-23"
           },
           {
-            "id": "ServiceRequest/sr-t0018",
+            "id": "ServiceRequest/sr-t0019",
             "code": "IMG-MRI-FEMUR-WWO",
             "priority": "urgent",
             "start": "2026-10-23"
@@ -207,8 +208,8 @@
         "by": "2026-11-05"
       },
       "ids": [
-        "ServiceRequest/sr-t0017",
-        "ServiceRequest/sr-t0018"
+        "ServiceRequest/sr-t0018",
+        "ServiceRequest/sr-t0019"
       ]
     },
     {
@@ -249,6 +250,18 @@
       "ids": []
     },
     {
+      "id": "patient_contact",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "uncontacted": []
+      },
+      "ids": []
+    },
+    {
       "id": "nodule_tracking_task",
       "kind": "rubric",
       "method": "code",
@@ -276,7 +289,7 @@
       "evidence": {
         "tasks": [
           {
-            "id": "Task/task-t0019",
+            "id": "Task/task-t0020",
             "due": "2026-11-05"
           }
         ],
@@ -306,7 +319,7 @@
       "met": true,
       "evidence": {
         "messages": [
-          "Communication/comm-t0010"
+          "Communication/comm-t0011"
         ]
       }
     },
@@ -319,7 +332,7 @@
       "met": true,
       "evidence": {
         "messages": [
-          "Communication/comm-t0020"
+          "Communication/comm-t0021"
         ],
         "routed": []
       }
@@ -360,10 +373,10 @@
       "met": true,
       "evidence": {
         "notes": [
-          "DocumentReference/doc-t0007"
+          "DocumentReference/doc-t0008"
         ],
         "citing": [
-          "DocumentReference/doc-t0007"
+          "DocumentReference/doc-t0008"
         ]
       }
     },
@@ -376,10 +389,10 @@
       "met": true,
       "evidence": {
         "notes": [
-          "DocumentReference/doc-t0011"
+          "DocumentReference/doc-t0012"
         ],
         "citing": [
-          "DocumentReference/doc-t0011"
+          "DocumentReference/doc-t0012"
         ]
       }
     },
@@ -392,10 +405,10 @@
       "met": true,
       "evidence": {
         "notes": [
-          "DocumentReference/doc-t0015"
+          "DocumentReference/doc-t0016"
         ],
         "citing": [
-          "DocumentReference/doc-t0015"
+          "DocumentReference/doc-t0016"
         ]
       }
     },
@@ -408,10 +421,10 @@
       "met": true,
       "evidence": {
         "notes": [
-          "DocumentReference/doc-t0021"
+          "DocumentReference/doc-t0022"
         ],
         "citing": [
-          "DocumentReference/doc-t0021"
+          "DocumentReference/doc-t0022"
         ]
       }
     },
