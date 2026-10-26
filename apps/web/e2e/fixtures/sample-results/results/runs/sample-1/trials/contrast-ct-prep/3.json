@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:contrast-ct-prep:3",
   "task_id": "contrast-ct-prep",
-  "task_version": "dde43dd4a565c0aca9984c586f747a25fb7ac3f1ba3129e68375dbdd82bea5e2",
-  "env_version": "b2977ce936babdc308cbdb335f53909cf09026fd4a347130c31f23816b528eb5",
-  "grader_task_version": "9951302e791a963696583af0f6dd44372df913f3f5b4b8027cdb6f6ca10eca06",
-  "fixture_hash": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
+  "task_version": "96e5d1cee4d25949bdf6c80ccdeff1d9ee3d54192c528a61b1d51c4789db916b",
+  "env_version": "89e4f198da1df4578e9cd27578c1cdfa9435ab7cc52795e6907b1567ee678050",
+  "grader_task_version": "f118f2d5e4c9d23ab48f2337f7a64be9af45b677476f461395cfb6720cb3012d",
+  "fixture_hash": "6a55a334f64c2dc55fe79930574504206070593a4767f40170b58f880c530bde",
   "state_hash": {
-    "initial": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
-    "final": "527c815eb3300050256efdeb1dbde35110b366f39182629a636710507e183731",
-    "replay_final": "527c815eb3300050256efdeb1dbde35110b366f39182629a636710507e183731"
+    "initial": "6a55a334f64c2dc55fe79930574504206070593a4767f40170b58f880c530bde",
+    "final": "cc242254acb5136c2642e531a2c2672f503b47a47f47221aa3cbfc53241b875a",
+    "replay_final": "cc242254acb5136c2642e531a2c2672f503b47a47f47221aa3cbfc53241b875a"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -219,7 +219,7 @@
           "2026-10-26T08:00:00-04:00"
         ],
         "verdict": "not_met",
-        "quote": "",
+        "quote": "No preparation is needed.",
         "cache_key": "3dda0bd11af22c51af6cddf13277296d29515eef85cb3206d62d655388ebbd86"
       }
     },
@@ -245,7 +245,7 @@
       "met": false,
       "evidence": {
         "verdict": "not_met",
-        "quote": "",
+        "quote": "With three iodine allergies, iodinated contrast is avoided.",
         "cache_key": "40e779417d4a1d8baa23e332244a0621ededdcee1221d3d485d4832919ee3045"
       }
     },
@@ -301,7 +301,7 @@
   ],
   "score": 0,
   "judge": {
-    "calls": 0,
+    "calls": 4,
     "unknown": 0,
     "unknown_penalties": 0,
     "score_penalties_met": 0,
@@ -322,14 +322,14 @@
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "not_met",
-          "quote": ""
+          "quote": "No preparation is needed."
         },
         "error": null,
-        "calls": 0,
+        "calls": 1,
         "provenance": {
-          "source": "scripted",
-          "model": "none: a rule-based script with no network call (builder-48)",
-          "at": "2026-10-24T00:00:00Z"
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-25T16:31:13.845Z"
         }
       },
       {
@@ -343,11 +343,11 @@
           "quote": ""
         },
         "error": null,
-        "calls": 0,
+        "calls": 1,
         "provenance": {
-          "source": "scripted",
-          "model": "none: a rule-based script with no network call (builder-48)",
-          "at": "2026-10-24T00:00:00Z"
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-25T16:31:13.845Z"
         }
       },
       {
@@ -358,14 +358,14 @@
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "not_met",
-          "quote": ""
+          "quote": "With three iodine allergies, iodinated contrast is avoided."
         },
         "error": null,
-        "calls": 0,
+        "calls": 1,
         "provenance": {
-          "source": "scripted",
-          "model": "none: a rule-based script with no network call (builder-48)",
-          "at": "2026-10-24T00:00:00Z"
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-25T16:31:13.845Z"
         }
       },
       {
@@ -379,11 +379,11 @@
           "quote": "With three iodine allergies, iodinated contrast is avoided."
         },
         "error": null,
-        "calls": 0,
+        "calls": 1,
         "provenance": {
-          "source": "scripted",
-          "model": "none: a rule-based script with no network call (builder-48)",
-          "at": "2026-10-24T00:00:00Z"
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-25T16:31:13.845Z"
         }
       }
     ]

@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:crc-care-gap:9",
   "task_id": "crc-care-gap",
-  "task_version": "12a7210f027f3deee3cc3392c29efdf2b511a00e64ee9ef1111bc9912ec1a38c",
-  "env_version": "adeb2ab84b721a43bd9a1411eb8cbafc108c09aa9eeed38e6b1300c7b379358a",
-  "grader_task_version": "5cef528de411237ff22e51a7a6df680a6954707a6a44f04885e492b572eafee5",
-  "fixture_hash": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
+  "task_version": "78296e2a85477cf5df8afba694bffc59c70138665fa21b6bc7362be419c514c6",
+  "env_version": "c59e9b3378f514ef1c9b3d4665b5ca4270e6e310ac74875e35f49b4b800dba51",
+  "grader_task_version": "1952a48403a77a84eb548dda5d5b0395ce0e20e849f59eec620e8eeb36a624ff",
+  "fixture_hash": "6a55a334f64c2dc55fe79930574504206070593a4767f40170b58f880c530bde",
   "state_hash": {
-    "initial": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
-    "final": "a34dd51ec220af3e6d2f812c5fd2006690b6bbec12ec9297f0556d03b3ff4e0e",
-    "replay_final": "a34dd51ec220af3e6d2f812c5fd2006690b6bbec12ec9297f0556d03b3ff4e0e"
+    "initial": "6a55a334f64c2dc55fe79930574504206070593a4767f40170b58f880c530bde",
+    "final": "17542a2235bf0bbc9191446552a84db8fbbfff09f9191b09665d49c736da74b6",
+    "replay_final": "17542a2235bf0bbc9191446552a84db8fbbfff09f9191b09665d49c736da74b6"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -348,7 +348,7 @@
         "status": "gap",
         "reason": "fobt_expired",
         "verdict": "met",
-        "quote": "| Tiny Koss | Open gap: FIT kit ordered, outreach sent | FIT 2025-12-03 was in 2025; a FIT counts only in the measurement period |",
+        "quote": "Tiny Koss | Open gap: FIT kit ordered, outreach sent | FIT 2025-12-03 was in 2025; a FIT counts only in the measurement period",
         "cache_key": "6dbe4d3a8fcf7026bc11cbb1717339f980bfb61e091fb3220e8ebfb1ff4ee679"
       }
     },
@@ -507,7 +507,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-24T23:56:19.276Z"
+          "at": "2026-10-25T12:01:42.238Z"
         }
       },
       {
@@ -525,7 +525,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-24T23:56:19.276Z"
+          "at": "2026-10-25T12:01:42.238Z"
         }
       },
       {
@@ -543,7 +543,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-24T23:56:19.276Z"
+          "at": "2026-10-25T12:01:42.238Z"
         }
       },
       {
@@ -561,7 +561,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-24T23:56:19.276Z"
+          "at": "2026-10-25T12:01:42.238Z"
         }
       },
       {
@@ -579,7 +579,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-24T23:56:19.276Z"
+          "at": "2026-10-25T12:01:42.238Z"
         }
       },
       {
@@ -597,7 +597,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-24T23:56:19.276Z"
+          "at": "2026-10-25T12:01:42.238Z"
         }
       },
       {
@@ -615,7 +615,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-24T23:56:19.276Z"
+          "at": "2026-10-25T12:01:42.238Z"
         }
       },
       {
@@ -633,7 +633,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-24T23:56:19.276Z"
+          "at": "2026-10-25T12:01:42.238Z"
         }
       },
       {
@@ -644,14 +644,14 @@
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "met",
-          "quote": "| Tiny Koss | Open gap: FIT kit ordered, outreach sent | FIT 2025-12-03 was in 2025; a FIT counts only in the measurement period |"
+          "quote": "Tiny Koss | Open gap: FIT kit ordered, outreach sent | FIT 2025-12-03 was in 2025; a FIT counts only in the measurement period"
         },
         "error": null,
         "calls": 1,
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-24T23:56:19.276Z"
+          "at": "2026-10-25T12:01:42.238Z"
         }
       },
       {
@@ -669,7 +669,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-24T23:56:19.276Z"
+          "at": "2026-10-25T12:01:42.238Z"
         }
       },
       {
@@ -687,7 +687,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-24T23:56:19.276Z"
+          "at": "2026-10-25T12:01:42.238Z"
         }
       },
       {
@@ -705,7 +705,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-24T23:56:19.276Z"
+          "at": "2026-10-25T12:01:42.238Z"
         }
       }
     ]
