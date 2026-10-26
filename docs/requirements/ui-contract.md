@@ -106,9 +106,28 @@ accessible name or text node, so they share one line of the snapshot.
 - Key gate errors are red: the danger token (tokens.css, `--color-danger`) colours the error's
   border, its first line and the key field while it is invalid. Each error starts with one plain
   sentence from apps/web/src/keygate/failure.ts (for example `The API did not accept this key.`),
-  then the API's or runner's own line in small mono that wraps only between words. An org-CORS
-  or network error points to `Run it on your computer` with a `Show the steps` button and does
+  then the API's or runner's own line in small mono that wraps only between words. A relay
+  error (P16h, below) points to `Run it on your computer` with a `Show the steps` button and does
   not repeat the command.
+
+### P16h: hosted relay errors
+
+The hosted site sends Validate and every trial call through the relay (apps/relay), so no
+surface receives the API's org-CORS 401 and the gate has no org-CORS screen. When a Validate
+through the relay fails, the red error shows one of these pairs, from RELAY_FAILURE_TEXT in
+apps/web/src/keygate/failure.ts (apps/web/test/failure.test.ts checks them against this list),
+with the relay's or API's own line under it; the local-run panel beside it shows
+LOCAL_PREREQUISITES and LOCAL_START_COMMAND.
+
+- Unreachable (no readable answer: the relay is down, blocked or refused the preflight):
+  `The browser could not reach the relay that forwards calls to the API.`, then
+  `This page works in a Chromium browser such as Chrome or Brave, or Firefox. Or run the environment on your computer instead. The steps are in “Run it on your computer” below this form.`
+- HTTP 429 (the relay's per-client limit, or the API's limit passed through):
+  `The relay or the API is limiting requests from this page.`, then
+  `Wait a minute, then press Validate again. Or run the environment on your computer instead. The steps are in “Run it on your computer” below this form.`
+- HTTP 5xx (the relay's fixed 502, or the API's own 5xx passed through):
+  `The relay or the API is not available at the moment.`, then
+  `Press Validate again in a few minutes. Or run the environment on your computer instead. The steps are in “Run it on your computer” below this form.`
 
 ### P13, P15: runner refusals
 
@@ -220,7 +239,7 @@ launcher (P15) shows the Run lines.
 
 - `Browser-direct`: the surface chip on the hosted site (P13 renders it).
 - `pnpm start`: part of LOCAL_START_COMMAND, which the hosted key gate shows with its copy
-  button when the key's organization blocks browser calls.
+  button in the local-run panel, in every key state and beside each relay error.
 
 ## Patterns
 

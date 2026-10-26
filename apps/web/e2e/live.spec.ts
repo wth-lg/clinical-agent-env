@@ -2,20 +2,19 @@
 // preview, the Messages API route-mocked (page.route sees a dedicated Worker's fetches in
 // Chromium). The toy task's trial streams in a Worker through packages/core/run.ts and is graded
 // in the browser; a reload mid-trial resumes it from IndexedDB to the hash an uninterrupted run
-// reaches; an org-CORS 401 shows its message and points to the local command, another 401 shows
-// only the API error; a batch whose projection crosses the session cap is refused with no API
+// reaches; a 401 shows only the API error; a batch whose projection crosses the session cap is refused with no API
 // request and no Worker. After the trials and the reload, no storage holds the sentinel key.
 import { randomUUID } from 'node:crypto';
 import { createServer, type Server } from 'node:http';
 import { expect, test, type Page, type Route } from '@playwright/test';
 import { okResponse, SCENARIOS } from '../src/harness/scenarios.ts';
 import { LOCAL_START_COMMAND } from '../src/surface/command.ts';
-import { CONNECT_ORIGIN } from '../csp.ts';
+import { RELAY_ORIGIN } from '../src/surface/relay.ts';
 
-// The API origin the page may connect to, CONNECT_ORIGIN from csp.ts (lint: no-direct-anthropic).
-const API_ORIGIN = CONNECT_ORIGIN;
+// The hosted Messages calls go to the relay (P16h), the one origin besides its own the page may
+// connect to; the mocks route it (lint: no-direct-anthropic).
+const API_ORIGIN = RELAY_ORIGIN;
 const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': 'POST' };
-const ORG_CORS = 'CORS requests are not allowed for this Organization because of its settings.';
 const sentinelKey = () => ['sk', 'ant', 'api03', randomUUID().replaceAll('-', ''), 'e2e'].join('-');
 const TOY = SCENARIOS.toy;
 
@@ -288,26 +287,6 @@ test('the browser refuses every foreign hop from the trial Worker: a same-origin
   } finally {
     await foreign.close();
   }
-});
-
-test('an org-CORS 401 stops the trial and shows its message, pointing to the exact local command', async ({ page }) => {
-  await mockToy(page, { trialStatus: { status: 401, message: ORG_CORS } });
-  await page.goto('./?view=live&task=_toy');
-  await enterKey(page, sentinelKey());
-  await run(page, 1);
-  const alert = trial(page).getByTestId('trial-error');
-  await expect(alert).toContainText(ORG_CORS, { timeout: 30_000 });
-  await expect(alert).toContainText("This key's organization does not allow browser access");
-  // The alert explains it: the footer shows only the outcome chip, and the empty trajectory says why (review-P15-1 F3).
-  await expect(trial(page).getByTestId('outcome')).toHaveText('INFRA_API');
-  await expect(trial(page).getByTestId('trial-end')).not.toContainText('rerun');
-  await expect(trial(page).getByTestId('label')).toHaveCount(0);
-  await expect(trial(page).getByTestId('trajectory')).toHaveText('No reply came from the model.');
-  await alert.getByRole('button', { name: 'Show the steps' }).click();
-  const panel = page.getByTestId('local-run-panel');
-  await expect(panel).toBeFocused();
-  await expect(panel.getByTestId('local-command')).toHaveText(LOCAL_START_COMMAND);
-  await expect(panel.getByRole('button', { name: 'Copy command' })).toBeVisible();
 });
 
 test('a 401 with another message shows the API error without the local command', async ({ page }) => {

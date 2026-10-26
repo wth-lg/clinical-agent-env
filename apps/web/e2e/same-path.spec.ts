@@ -16,12 +16,13 @@ import { parseEvent, type TrialEvent } from '../../../packages/core/events.ts';
 import { parseSse, SSE_END, TOKEN_HEADER, TOKEN_META } from '../../../packages/core/runner-api.ts';
 import { parseTrajectory, stripTimestamps, toJsonl } from '../../../packages/core/trajectory.ts';
 import { okResponse, SCENARIOS } from '../src/harness/scenarios.ts';
-import { CONNECT_ORIGIN } from '../csp.ts';
+import { RELAY_ORIGIN } from '../src/surface/relay.ts';
 
 const REPO = fileURLToPath(new URL('../../../', import.meta.url));
 const MODEL = 'claude-opus-5-5';
-// The API origin the page may connect to, CONNECT_ORIGIN from csp.ts (lint: no-direct-anthropic).
-const API_ORIGIN = CONNECT_ORIGIN;
+// The hosted Messages calls go to the relay (P16h), the one origin besides its own the page may
+// connect to (lint: no-direct-anthropic).
+const API_ORIGIN = RELAY_ORIGIN;
 const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': 'POST' };
 
 function cleanEnv(tmp: string): Record<string, string> {

@@ -7,6 +7,8 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { APP_CSP } from '../../apps/web/csp.ts';
+import { RELAY_ORIGIN } from '../../apps/web/src/surface/relay.ts';
 import { fakeKey, repoRoot, tempDir, write } from './helpers.ts';
 
 const HOST = ['api', 'anthropic', 'com'].join('.');
@@ -25,8 +27,6 @@ const PLANTS: Record<string, string> = {
   'f-concat-var-middle': `const mid = 'anthropic.'; export const go = () => fetch('https://api.' + mid + 'com/v1/messages', ${POST});`,
   'g-read-client-source': `import { readFileSync } from 'node:fs';
 export const go = () => { const src = readFileSync(new URL('${repo('packages/core/anthropic.ts')}'), 'utf8'); return fetch(/'(https:\\/\\/[^']+\\/v1\\/messages)'/.exec(src)[1], ${POST}); };`,
-  'h-read-csp': `import { APP_CSP } from '${repo('apps/web/csp.ts')}';
-export const go = () => fetch(/connect-src \\S+ (https:\\/\\/[^;" ]+)/.exec(APP_CSP)[1] + '/v1/messages', ${POST});`,
   'i-json-import': `import cfg from './host.json' with { type: 'json' }; export const go = () => fetch(cfg.url, ${POST});`,
   'j-eslint-disable-line': `export const go = () => fetch('https://${HOST}/v1/messages', ${POST});`,
   'k-url-object': `export const go = () => fetch(new URL('/v1/messages', 'https://${HOST.toUpperCase()}.'), ${POST});`,
@@ -234,6 +234,17 @@ export async function go(apiKey) {
 };
 Object.assign(PLANTS, RELAY_PLANTS);
 
+// The app's own relay (P16h PR-web-2): APP_CSP's connect-src names the relay, not the API host.
+// Plant h reads that origin from APP_CSP and fetches it; the second plant fetches RELAY_URL as
+// relay.ts exports it. The guard is installed as the app installs it, the relay metered.
+const APP_RELAY_PLANTS: Record<string, string> = {
+  'h-read-csp': `import { APP_CSP } from '${repo('apps/web/csp.ts')}';
+export const go = () => fetch(/connect-src \\S+ (https:\\/\\/[^;" ]+)/.exec(APP_CSP)[1] + '/v1/messages', ${POST});`,
+  'h-relay-url': `import { RELAY_URL } from '${repo('apps/web/src/surface/relay.ts')}';
+export async function go() { try { await fetch(RELAY_URL, ${POST}); } catch (e) { throw new TypeError(e.name + ': ' + e.message); } }`,
+};
+Object.assign(PLANTS, APP_RELAY_PLANTS);
+
 function run(names: string[], opts: { client?: boolean; allowed?: string[]; metered?: string[]; endpoint?: string } = {}) {
   const dir = tempDir('egress');
   write(dir, 'package.json', '{"type":"module"}');
@@ -259,7 +270,7 @@ function run(names: string[], opts: { client?: boolean; allowed?: string[]; mete
 }
 
 describe('the egress guard refuses every send to the API host that MessagesClient did not make', () => {
-  const names = Object.keys(PLANTS).filter((n) => !(n in ORIGIN_PLANTS) && !(n in RELAY_PLANTS));
+  const names = Object.keys(PLANTS).filter((n) => !(n in ORIGIN_PLANTS) && !(n in RELAY_PLANTS) && !(n in APP_RELAY_PLANTS));
   const out = run(names, { client: true });
 
   it('installs', () => {
@@ -396,6 +407,26 @@ describe('with meteredOrigins, a relay origin is guarded like the API host', () 
   });
 });
 
+describe('the app relay (APP_CSP, RELAY_URL) is guarded as the app installs the guard', () => {
+  const names = Object.keys(APP_RELAY_PLANTS);
+  const out = run(names, { allowed: [SELF, RELAY_ORIGIN], metered: [RELAY_ORIGIN] });
+
+  it('APP_CSP names the relay origin as its one connect-src origin, and no API host', () => {
+    expect(APP_CSP).toContain(`connect-src ${"'self'"} ${RELAY_ORIGIN};`);
+    expect(APP_CSP).not.toContain(HOST);
+  });
+
+  it.each(names)('%s: refused with EgressRefusal, 0 sends', (name) => {
+    const p = out.plants[name];
+    expect(p?.sends).toEqual([]);
+    expect(p?.error).toMatch(/egress guard/);
+  });
+
+  it('h-relay-url: the refusal is an EgressRefusal that names the relay origin', () => {
+    expect(out.plants['h-relay-url']?.error).toMatch(new RegExp(`^EgressRefusal: egress guard: fetch to ${RELAY_ORIGIN} refused`));
+  });
+});
+
 describe('entry points install the guard before anything else runs', () => {
   // The first top-level statements after the imports, by file. live-node.ts installs it as the
   // first statement of its run-as-script block, so importing it (tests do) changes no globals;
@@ -407,11 +438,12 @@ describe('entry points install the guard before anything else runs', () => {
   };
   it.each([
     ['cli/index.ts', undefined, ['installEgressGuard(globalThis);']],
-    ['apps/web/src/main.tsx', undefined, ['installEgressGuard(globalThis);']],
+    // The page and the trial Worker hold hosted clients: the relay metered, their origin and the relay allowed (P16h).
+    ['apps/web/src/main.tsx', undefined, ['installEgressGuard(globalThis, hostedGuard(location.origin));']],
     ['apps/web/src/probe/main.ts', undefined, ['const send = globalThis.fetch.bind(globalThis);', 'installEgressGuard(globalThis);']],
     // relayGuardOptions is {} unless relay-probe.html?relay= names a relay (P16h).
     ['apps/web/src/probe/relay-main.ts', undefined, ['installEgressGuard(globalThis, relayGuardOptions(location));']],
-    ['apps/web/src/worker/trial.ts', undefined, ['installEgressGuard(globalThis, { allowedOrigins: workerOrigins(location.origin) });']],
+    ['apps/web/src/worker/trial.ts', undefined, ['installEgressGuard(globalThis, hostedGuard(location.origin));']],
     ['scripts/live-node.ts', /^if \(process\.argv\[1\]/, ['installEgressGuard(globalThis);']],
   ] as const)('%s installs the guard first', (file, after, expected) => {
     expect(firstStatements(file, after).slice(0, expected.length)).toEqual(expected);

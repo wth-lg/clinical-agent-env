@@ -12,7 +12,7 @@ import { postKey } from './runner.ts';
 
 const WHERE: Record<Surface['kind'], string> = {
   'local-runner': 'The key goes to the local runner on this machine, which keeps it in memory and sends it only to the Anthropic API.',
-  'browser-direct': "The key stays in this tab's memory and is sent only to the Anthropic API.",
+  'browser-direct': "The key stays in this tab's memory and is sent only to the Anthropic API, through a relay that forwards it and keeps no copy.",
 };
 
 const field = 'h-9 w-full rounded-sm border border-line-strong bg-surface px-3 text-ink placeholder:text-ink-muted';
@@ -156,7 +156,7 @@ export function KeyGate({ surface, onDone, onBrowse, notice }: { surface: Surfac
 }
 
 // Red: the danger token on the border and the first line. One plain sentence first, then what to
-// do (for org-CORS and network: the local-run panel, with a button that moves focus to it, so the
+// do (for a relay failure: the local-run panel, with a button that moves focus to it, so the
 // command shows once), then the API's or runner's own line in small mono, which wraps only
 // between words.
 function FailureNote({ id, failure, panelId }: { id: string; failure: Failure; panelId: string }) {

@@ -6,10 +6,13 @@ import { runnerToken } from './keygate/runner.ts';
 import { App } from './shell/App.tsx';
 import { refreshSpent } from './spend/session.ts';
 import { detect } from './surface/detect.ts';
+import { hostedGuard } from './surface/relay.ts';
 import { RunnerDown } from './surface/RunnerDown.tsx';
 import './styles/app.css';
 
-installEgressGuard(globalThis);
+// The page holds the hosted Validate client: the relay is metered, so only that client's Request
+// reaches it, and the page sends nowhere but its own origin and the relay (P16h).
+installEgressGuard(globalThis, hostedGuard(location.origin));
 
 // The surface is detected once, before the first render, so the gate never shows the wrong
 // key path. A runner that already holds a key skips the gate. The tab ledger is read back

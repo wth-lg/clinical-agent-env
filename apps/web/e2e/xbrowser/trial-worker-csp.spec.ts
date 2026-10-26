@@ -9,9 +9,10 @@ import { randomUUID } from 'node:crypto';
 import { createServer } from 'node:http';
 import { expect, test, type BrowserContext, type Route } from '@playwright/test';
 import { okResponse, SCENARIOS } from '../../src/harness/scenarios.ts';
-import { CONNECT_ORIGIN } from '../../csp.ts';
+import { RELAY_ORIGIN } from '../../src/surface/relay.ts';
 
-const API_ORIGIN = CONNECT_ORIGIN;
+// The hosted Messages calls go to the relay (P16h), the page's one other connect-src origin.
+const API_ORIGIN = RELAY_ORIGIN;
 const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': 'POST' };
 const TOY = SCENARIOS.toy;
 const sentinelKey = () => ['sk', 'ant', 'api03', randomUUID().replaceAll('-', ''), 'xb'].join('-');

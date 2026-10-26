@@ -1,23 +1,30 @@
 import { expect, test } from '@playwright/test';
 import { readFileSync } from 'node:fs';
-import { APP_CSP, CONNECT_ORIGIN } from '../csp.ts';
+import { isApiHost } from '../../../packages/core/anthropic.ts';
+import { APP_CSP } from '../csp.ts';
 import { RELAY_PROBE_SOURCES } from '../src/probe/csp.ts';
+import { RELAY_ORIGIN } from '../src/surface/relay.ts';
 
-// The app's CSP is APP_CSP (csp.ts), which the build writes into index.html; the test pages
-// carry it in their own meta. relay-probe.html, the relay's test page (P16h), also reaches the
-// relay: its connect-src adds RELAY_PROBE_SOURCES to APP_CSP's.
-const API_ORIGIN = CONNECT_ORIGIN;
-const RELAY_PROBE_CSP = APP_CSP.replace(` ${API_ORIGIN};`, ` ${API_ORIGIN} ${RELAY_PROBE_SOURCES.join(' ')};`);
+// The app's CSP is APP_CSP (csp.ts), which the build writes into index.html; its connect-src
+// names the relay (P16h). The test pages carry their own meta: probe.html and harness.html name
+// the API host instead of the relay, since the probe page relays the Node-side client's calls
+// to it, and relay-probe.html adds RELAY_PROBE_SOURCES to probe.html's connect-src. The API
+// origin is read from probe.html, so this file names no API host (lint: no-direct-anthropic).
+const metaCsp = (html: string) => /<meta http-equiv="Content-Security-Policy" content="([^"]*)"/.exec(html)?.[1];
+const source = (page: string) => readFileSync(new URL(`../${page}`, import.meta.url), 'utf8');
+const PROBE_CSP = metaCsp(source('probe.html')) ?? '';
+const API_ORIGIN = /connect-src \S+ (\S+);/.exec(PROBE_CSP)?.[1] ?? '';
+const RELAY_PROBE_CSP = PROBE_CSP.replace(` ${API_ORIGIN};`, ` ${API_ORIGIN} ${RELAY_PROBE_SOURCES.join(' ')};`);
 const PAGES = ['index.html', 'harness.html', 'probe.html', 'relay-probe.html'];
 const TEST_PAGES = PAGES.filter((p) => p !== 'index.html');
-const pageCsp = (page: string) => (page === 'relay-probe.html' ? RELAY_PROBE_CSP : APP_CSP);
-
-const metaCsp = (html: string) => /<meta http-equiv="Content-Security-Policy" content="([^"]*)"/.exec(html)?.[1];
+const pageCsp = (page: string) => (page === 'index.html' ? APP_CSP : page === 'relay-probe.html' ? RELAY_PROBE_CSP : PROBE_CSP);
 
 test('each test page source carries its CSP meta; index.html gets APP_CSP from the build', () => {
-  expect(RELAY_PROBE_CSP).not.toBe(APP_CSP);
-  expect(metaCsp(readFileSync(new URL('../index.html', import.meta.url), 'utf8'))).toBeUndefined();
-  for (const page of TEST_PAGES) expect(metaCsp(readFileSync(new URL(`../${page}`, import.meta.url), 'utf8')), page).toBe(pageCsp(page));
+  expect(isApiHost(new URL(API_ORIGIN).hostname)).toBe(true);
+  expect(PROBE_CSP).toBe(APP_CSP.replace(` ${RELAY_ORIGIN};`, ` ${API_ORIGIN};`));
+  expect(RELAY_PROBE_CSP).not.toBe(PROBE_CSP);
+  expect(metaCsp(source('index.html'))).toBeUndefined();
+  for (const page of TEST_PAGES) expect(metaCsp(source(page)), page).toBe(pageCsp(page));
 });
 
 for (const page of PAGES) {

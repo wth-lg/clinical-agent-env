@@ -1,13 +1,20 @@
 // What the key gate says about a failed Validate. Every failure starts with one plain sentence
 // (lead), then what to do when there is something to do (next), then the API's or runner's own
-// line (detail), which the gate shows in small mono. org-CORS and network failures send the user
-// to the local-run panel, which already shows the prerequisites and the command.
+// line (detail), which the gate shows in small mono. A relay failure (P16h: the hosted site sends
+// through the relay) sends the user to the local-run panel, which already shows the prerequisites
+// and the command.
 // The failure types live here, not in direct.ts or runner.ts, so this file imports nothing and
 // its unit test does not pull browser code into a program without the DOM types.
 
 // An api failure keeps the HTTP status (null when no response came back), which picks the first
 // sentence.
-export type DirectFailure = { kind: 'org-cors' | 'network' | 'cap'; message: string } | { kind: 'api'; status: number | null; message: string };
+export type DirectFailure =
+  | { kind: 'cap'; message: string }
+  | { kind: 'relay'; reason: RelayReason; message: string }
+  | { kind: 'api'; status: number | null; message: string };
+// Why a call through the relay failed: no readable answer came back, it answered 429 (its own
+// limit or the API's, passed through), or it answered 5xx (its fixed 502 or the API's own).
+export type RelayReason = 'unreachable' | 'limited' | 'unavailable';
 // cause says what went wrong with a local-runner call: no token in the page, no answer, a 200
 // whose body did not parse, or an error status (with the runner's status and message).
 export type RunnerFailure = { cause: 'no-token' | 'no-answer' | 'bad-body' | 'error'; message: string; status?: number; refusal?: string };
@@ -22,7 +29,22 @@ export interface FailureText {
   local: boolean;
 }
 
-const PANEL = 'Run the environment on your computer instead. The steps are in “Run it on your computer” below this form.';
+// The relay failures' sentences, fixed in docs/requirements/ui-contract.md (P16h). Each ends by
+// pointing to the local-run panel.
+export const RELAY_FAILURE_TEXT: Record<RelayReason, { lead: string; next: string }> = {
+  unreachable: {
+    lead: 'The browser could not reach the relay that forwards calls to the API.',
+    next: 'This page works in a Chromium browser such as Chrome or Brave, or Firefox. Or run the environment on your computer instead. The steps are in “Run it on your computer” below this form.',
+  },
+  limited: {
+    lead: 'The relay or the API is limiting requests from this page.',
+    next: 'Wait a minute, then press Validate again. Or run the environment on your computer instead. The steps are in “Run it on your computer” below this form.',
+  },
+  unavailable: {
+    lead: 'The relay or the API is not available at the moment.',
+    next: 'Press Validate again in a few minutes. Or run the environment on your computer instead. The steps are in “Run it on your computer” below this form.',
+  },
+};
 
 // The API's answer by HTTP status, the same sentence on both surfaces.
 function apiLead(status: number | null): { lead: string; next?: string } {
@@ -50,10 +72,8 @@ function runnerLead(f: RunnerFailure): { lead: string; next?: string } {
 
 export function describeFailure(f: Failure): FailureText {
   switch (f.kind) {
-    case 'org-cors':
-      return { lead: "This key's organization does not allow browser access.", next: PANEL, detail: f.message, local: true };
-    case 'network':
-      return { lead: 'The browser could not reach the API from this page.', next: PANEL, detail: f.message, local: true };
+    case 'relay':
+      return { ...RELAY_FAILURE_TEXT[f.reason], detail: f.message, local: true };
     case 'cap':
       return { lead: 'The session spend cap does not allow this check.', next: 'To continue, set a higher session spend cap.', detail: f.message, local: false };
     case 'api': {

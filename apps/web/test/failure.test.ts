@@ -1,7 +1,10 @@
 // What the key gate says about a failed Validate: one plain sentence first, then what to do when
 // there is something to do, then the API's or runner's own line as detail.
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { describeFailure, type Failure } from '../src/keygate/failure.ts';
+import { describeFailure, RELAY_FAILURE_TEXT, type Failure } from '../src/keygate/failure.ts';
 
 const API_LINE = 'HTTP 401 authentication_error: invalid x-api-key';
 
@@ -15,15 +18,31 @@ describe('describeFailure', () => {
     expect(describeFailure({ kind: 'runner', cause: 'error', status: 401, message })).toEqual({ lead: 'The API did not accept this key.', detail: message, local: false });
   });
 
-  it('org-CORS and network point to the local-run panel and keep the raw line', () => {
-    for (const kind of ['org-cors', 'network'] as const) {
-      const d = describeFailure({ kind, message: 'raw' });
-      expect(d.local, kind).toBe(true);
-      expect(d.next, kind).toMatch(/Run it on your computer/);
-      expect(d.detail, kind).toBe('raw');
+  // P16h PR-web-2: hosted calls go through the relay. When it cannot be reached, limits the page
+  // or fails, the gate says so in the ui-contract.md sentence and points to the local-run panel.
+  it('each relay failure has its ui-contract.md sentence, points to the local-run panel and keeps the raw line', () => {
+    for (const reason of ['unreachable', 'limited', 'unavailable'] as const) {
+      const d = describeFailure({ kind: 'relay', reason, message: 'raw' });
+      expect(d.lead, reason).toBe(RELAY_FAILURE_TEXT[reason].lead);
+      expect(d.next, reason).toBe(RELAY_FAILURE_TEXT[reason].next);
+      expect(d.next, reason).toMatch(/Run it on your computer/);
+      expect(d.local, reason).toBe(true);
+      expect(d.detail, reason).toBe('raw');
     }
-    expect(describeFailure({ kind: 'org-cors', message: 'x' }).lead).toBe("This key's organization does not allow browser access.");
-    expect(describeFailure({ kind: 'network', message: 'x' }).lead).toBe('The browser could not reach the API from this page.');
+    expect(RELAY_FAILURE_TEXT.unreachable.next).toContain('a Chromium browser such as Chrome or Brave, or Firefox');
+  });
+
+  it('the relay strings are fixed in docs/requirements/ui-contract.md', () => {
+    const contract = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '../../../docs/requirements/ui-contract.md'), 'utf8');
+    for (const { lead, next } of Object.values(RELAY_FAILURE_TEXT)) {
+      expect(contract).toContain(`\`${lead}\``);
+      expect(contract).toContain(`\`${next}\``);
+    }
+  });
+
+  it('no failure names an organization that blocks browser access: through the relay no surface gets that 401', () => {
+    const kinds: Failure[] = [{ kind: 'relay', reason: 'unreachable', message: 'm' }, { kind: 'api', status: 401, message: 'm' }];
+    for (const f of kinds) expect(describeFailure(f).lead).not.toMatch(/organization/i);
   });
 
   it('a runner 409 leads with its refusal text', () => {
@@ -41,8 +60,9 @@ describe('describeFailure', () => {
       { kind: 'api', status: null, message: 'm' },
       { kind: 'api', status: 418, message: 'm' },
       { kind: 'cap', message: 'Refused: spent $0.00 + this estimate $0.01 would cross the session cap $0.01.' },
-      { kind: 'org-cors', message: 'm' },
-      { kind: 'network', message: 'm' },
+      { kind: 'relay', reason: 'unreachable', message: 'm' },
+      { kind: 'relay', reason: 'limited', message: 'm' },
+      { kind: 'relay', reason: 'unavailable', message: 'm' },
       { kind: 'runner', cause: 'no-token', message: 'm' },
       { kind: 'runner', cause: 'no-answer', message: 'm' },
       { kind: 'runner', cause: 'bad-body', message: 'm' },
@@ -60,7 +80,7 @@ describe('describeFailure', () => {
       leads.add(lead);
     }
     // Different causes get different sentences, not one catch-all.
-    expect(leads.size).toBeGreaterThanOrEqual(12);
+    expect(leads.size).toBeGreaterThanOrEqual(13);
   });
 
   it('the cap failure says how to continue', () => {

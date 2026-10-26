@@ -3,16 +3,18 @@
 // header or body builder, so code elsewhere that wants to reach the API has to name the host
 // itself, and anywhere else a string naming the API host (so any fetch to it) is an error,
 // whether written as one literal, a template or a concatenation of literals. The test pages'
-// CSP metas in apps/web/*.html list the host too; ESLint does not lint .html. One exemption: the
-// exact APP_CSP string, as one literal, in apps/web/csp.ts, where the app's CSP is written once. The relay (P16h)
+// CSP metas in apps/web/*.html list the host too; ESLint does not lint .html. The relay (P16h)
 // forwards to the API server to server, so it names its upstream too, in exactly one module,
 // apps/relay/src/upstream.ts, and that module's test; every other relay file imports
-// UPSTREAM_URL from it. A host built at
+// UPSTREAM_URL from it. The hosted site sends through that relay (P16h PR-web-2), and its host is
+// written once too, in apps/web/src/surface/relay.ts (and that module's test): anywhere else a
+// string naming the relay host is an error, so APP_CSP, the hosted clients and the guard all take
+// it from RELAY_ORIGIN or RELAY_URL. A host built at
 // runtime is past what a static rule can see; the egress guard (packages/core/egress.ts)
 // refuses it where it resolves.
 
 import { relative, sep } from 'node:path';
-import { APP_CSP } from '../apps/web/csp.ts';
+import { RELAY_ORIGIN } from '../apps/web/src/surface/relay.ts';
 
 // Every file ESLint parses as code: .ts, .tsx, .mts, .cts, .js, .jsx, .mjs and .cjs.
 export const files = ['**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}'];
@@ -21,7 +23,8 @@ export const files = ['**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}'];
 const HOST = ['api', 'anthropic', 'com'].join('.');
 const CLIENT = 'packages/core/anthropic.ts';
 const RELAY_UPSTREAM = new Set(['apps/relay/src/upstream.ts', 'apps/relay/test/upstream.test.ts']);
-const CSP_FILE = 'apps/web/csp.ts';
+const RELAY_HOST = new URL(RELAY_ORIGIN).hostname;
+const RELAY_FILES = new Set(['apps/web/src/surface/relay.ts', 'apps/web/test/relay.test.ts']);
 
 const posix = (p) => p.split(sep).join('/');
 
@@ -40,19 +43,23 @@ function staticText(node) {
 export default {
   meta: {
     type: 'problem',
-    docs: { description: 'Only packages/core/anthropic.ts and the relay upstream module name the Anthropic API host' },
+    docs: { description: 'Only packages/core/anthropic.ts and the relay upstream module name the Anthropic API host; only apps/web/src/surface/relay.ts names the relay host' },
     schema: [],
     messages: {
       host: "'{{text}}' names the Anthropic API host. Send through MessagesClient from packages/core/anthropic.ts, the only metered way to call the API.",
+      relay: "'{{text}}' names the hosted relay's host. Import RELAY_ORIGIN or RELAY_URL from apps/web/src/surface/relay.ts, the one file that writes it.",
     },
   },
   create(context) {
     const file = posix(relative(context.cwd, context.physicalFilename));
-    if (file === CLIENT || RELAY_UPSTREAM.has(file)) return {};
+    const apiExempt = file === CLIENT || RELAY_UPSTREAM.has(file);
+    const relayExempt = RELAY_FILES.has(file);
     const checkText = (node, text) => {
-      if (text === undefined || !text.toLowerCase().includes(HOST)) return;
-      if (file === CSP_FILE && node.type === 'Literal' && node.value === APP_CSP) return;
-      context.report({ node, messageId: 'host', data: { text: text.length > 60 ? `${text.slice(0, 57)}...` : text } });
+      if (text === undefined) return;
+      const lower = text.toLowerCase();
+      const data = { text: text.length > 60 ? `${text.slice(0, 57)}...` : text };
+      if (!apiExempt && lower.includes(HOST)) context.report({ node, messageId: 'host', data });
+      if (!relayExempt && lower.includes(RELAY_HOST)) context.report({ node, messageId: 'relay', data });
     };
     const quasis = (node) => node.quasis.map((q) => q.value.cooked ?? q.value.raw).join('');
     // Inside a + chain only the whole chain is checked, so a split host is caught once.
