@@ -13,6 +13,9 @@ import { rubric } from './rubric.ts';
 
 const PT = expected.patient;
 const SNOMED = 'http://snomed.info/sct';
+const LOINC = 'http://loinc.org';
+// LOINC Progress note, the type write_note gives a progress_note.
+const PROGRESS_NOTE = '11506-3';
 const COVERED = ['apixaban', 'metformin', 'gabapentin'] as const;
 const INPUTS = expected.cites;
 
@@ -163,14 +166,18 @@ const gates: Check[] = [
   }),
   gate({
     // RBC-PHARM-07 §5 "Document the review in a progress note", and the instruction's note: a
-    // DocumentReference the trial wrote on the patient. What the note says is the rubric's.
+    // DocumentReference the trial wrote on the patient whose type is a progress note (LOINC
+    // 11506-3, what write_note sets for progress_note; decisions.tsv 2026-10-29T02:45). What the
+    // note says is the rubric's.
     id: 'note_exists',
     category: 'action',
     traces_to: 'RBC-PHARM-07 §5',
     decisive_ids: [],
     fn: (ctx) => {
-      const notes = ctx.writes().filter((k) => k.startsWith('DocumentReference/') && !ctx.initial.has(...(k.split('/') as [string, string])) && ctx.final.get('DocumentReference', k.split('/')[1]!)?.subject?.reference === PT);
-      return { met: notes.length > 0, evidence: { notes }, ids: notes };
+      const mine = ctx.writes().filter((k) => k.startsWith('DocumentReference/') && !ctx.initial.has(...(k.split('/') as [string, string])));
+      const onPatient = mine.map((k) => ctx.final.get('DocumentReference', k.split('/')[1]!)).filter((d) => d?.subject?.reference === PT);
+      const progress = onPatient.filter((d) => (d?.type?.coding ?? []).some((c) => c.system === LOINC && c.code === PROGRESS_NOTE)).map((d) => keyOf(d!));
+      return { met: progress.length > 0, evidence: { notes: onPatient.map((d) => keyOf(d!)), progress_notes: progress }, ids: progress };
     },
   }),
 ];

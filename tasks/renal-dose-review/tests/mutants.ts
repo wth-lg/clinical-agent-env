@@ -365,4 +365,12 @@ export const mutants: Mutant[] = [
       { calls: [finish(DONE)] },
     ],
   },
+  {
+    id: 'review_as_telephone_note',
+    trap: 'review_not_documented',
+    why: 'Writes the whole review on the chart but as a telephone note: RBC-PHARM-07 §5 asks for a progress note (decisions.tsv 2026-10-29T02:45).',
+    fails: ['note_exists'],
+    loses: [],
+    script: [...reads, { calls: [apixabanUp, gabapentinBid] }, { calls: [{ ...note(), input: { ...note().input, type: 'telephone_note' } }] }, { calls: [finish(DONE)] }],
+  },
 ];
