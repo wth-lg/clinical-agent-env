@@ -8,6 +8,7 @@
 //     the trajectory pane shows its error state
 //   results/runs/trial-1/audit.jsonl         the sample's audit rows for those trials
 //   results/runs/trial-1/matrix.json         the sample's matrix.json (M4, GR4)
+//   results/runs/trial-1/manifest.json       the sample's run manifest, as run trial-1 (M1 reachability)
 //   results/runs/trial-1/summary.json        packages/core/summary.ts summarize() over the records
 //   results/pilot-pass/                      one PASS, so first-nonpass finds nothing there
 // A rerun writes the same bytes.
@@ -58,6 +59,7 @@ function main() {
   const audit = readFileSync(join(SAMPLE, 'audit.jsonl'), 'utf8').split('\n').filter((l) => l.trim() !== '').map((l) => JSON.parse(l) as AuditRow).filter((a) => (names as readonly string[]).includes(a.trial));
   write(join(RUN, 'audit.jsonl'), audit.map((a) => `${JSON.stringify(a)}\n`).join(''));
   copy(join(SAMPLE, 'matrix.json'), join(RUN, 'matrix.json'));
+  write(join(RUN, 'manifest.json'), `${JSON.stringify({ ...(JSON.parse(readFileSync(join(SAMPLE, 'manifest.json'), 'utf8')) as object), run_id: RUN_ID }, null, 2)}\n`);
   // By task, then index: the order apps/web/test/web-fixtures.test.ts recomputes the summary in,
   // so the floating-point means add up the same.
   const ordered = [...records].sort((a, b) => (a.task_id === b.task_id ? a.index - b.index : a.task_id < b.task_id ? -1 : 1));
