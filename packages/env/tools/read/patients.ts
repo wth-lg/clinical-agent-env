@@ -28,7 +28,7 @@ export const searchPatients: Tool<ReadContext> = {
   inputSchema: {
     type: 'object',
     properties: {
-      name: { type: 'string', description: 'Name words, e.g. "maya ok"', minLength: 1, maxLength: 100 },
+      name: { type: 'string', description: 'Name words, each the start of a given or family name, e.g. "jo smi" for John Smith', minLength: 1, maxLength: 100 },
       birthdate: { type: 'string', description: 'YYYY-MM-DD', pattern: '^\\d{4}-\\d{2}-\\d{2}$' },
       mrn: { type: 'string', description: 'Medical record number', minLength: 1, maxLength: 40 },
       count: count(50, 20),

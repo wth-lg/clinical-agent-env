@@ -11,6 +11,7 @@
     "tasks",
     "vitest.config.ts",
     "apps/runner",
+    "apps/relay",
     "apps/web/build",
     "apps/web/test",
     "eslint-rules/rules.test.ts",

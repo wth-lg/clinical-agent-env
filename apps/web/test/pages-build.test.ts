@@ -1,4 +1,4 @@
-// The Pages artifact holds the app only: harness.html and probe.html are test pages, built for
+// The Pages artifact holds the app only: harness.html, probe.html and relay-probe.html are test pages, built for
 // the e2e runs (pnpm build) and left out of the build pages.yml uploads. Each build goes to a
 // temp outDir, so apps/web/dist, which the e2e runs serve, is left as it is.
 import { spawnSync } from 'node:child_process';
@@ -45,6 +45,6 @@ describe('the Pages build', () => {
   });
 
   it('the default build, which the e2e runs serve, still has the test pages', () => {
-    expect(build([]).filter((f) => f.endsWith('.html')).sort()).toEqual(['harness.html', 'index.html', 'probe.html']);
+    expect(build([]).filter((f) => f.endsWith('.html')).sort()).toEqual(['harness.html', 'index.html', 'probe.html', 'relay-probe.html']);
   });
 });
