@@ -24,6 +24,7 @@ const inboxTask = (id: string, queue: string, received: string, status: Task['st
   for: { reference: `Patient/${patient}` },
   authoredOn: received,
   requester: { reference: 'Organization/org-st-brigid' },
+  owner: { reference: 'Practitioner/pr-okafor' },
   description: `item ${id}`,
 });
 const INBOX: Task[] = [
@@ -533,6 +534,7 @@ describe('list_inbox', () => {
       from: 'Organization/org-st-brigid',
       summary: 'item task-x-1',
       status: 'requested',
+      owner: 'Practitioner/pr-okafor',
     });
     expectTagsMatch(r);
     expect(inbox({ queue: 'results', status: 'requested' }).map((x) => x.task)).toEqual(['Task/task-x-1', 'Task/task-x-3']);
@@ -602,6 +604,7 @@ describe('exposure rule', () => {
     const item = (description: string): Task => ({
       resourceType: 'Task', id: 'task-ib-1', status: 'requested', intent: 'order', code: { coding: [{ system: INBOX_QUEUE_SYSTEM, code: 'results' }] },
       focus: { reference: 'Observation/obs-ib-1' }, for: { reference: 'Patient/pt-0001' }, authoredOn: '2026-10-22T09:00:00-04:00', description,
+      owner: { reference: 'Practitioner/pr-okafor' },
     });
     const run = (description: string) => {
       const c = context([obs, item(description)]);
