@@ -617,7 +617,7 @@ test('run=session says where the session trials are and links to the Live trial 
   await expect(page).not.toHaveURL(/run=session/);
 });
 
-test('run=session has a plain heading, on the hosted site and on the local runner (verifier-ui-copy-1 m5)', async ({ page }) => {
+test('run=session has a plain heading on the hosted site (verifier-ui-copy-1 m5)', async ({ page }) => {
   await browse(page, './?view=runs&run=session&trial=first-nonpass');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Trials from this session');
   await expect(page.getByText('first-nonpass')).toHaveCount(0);
