@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:renal-dose-review:1",
   "task_id": "renal-dose-review",
-  "task_version": "b5f8278968130bd5773685f5135a2c27ec10f7d86f37166caee31c009094d16d",
+  "task_version": "e46e7dc80fa4ad701f1b4b65d62970dc09b7d5fa3a4a82cfe9b740784a0dc04d",
   "env_version": "f74818df8ab2b6109bdad7b1219898a6c755f28cd3d4e505c848e8a779de79e8",
-  "grader_task_version": "35f7bf676489c2006ae5911205664dae8807638bd45094e352aca909846ba0c7",
+  "grader_task_version": "45d04e4928a64791acad35a94a56523529efbdefdab621516fbb575ce7c1808f",
   "fixture_hash": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
   "state_hash": {
     "initial": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
@@ -95,10 +95,13 @@
         "active": [
           "MedicationRequest/mr-t1-metformin"
         ],
-        "mg_per_day": 2000,
-        "range": {
-          "min": 2000,
-          "max": 2000
+        "was": {
+          "mg_per_dose": 1000,
+          "per_day": 2
+        },
+        "is": {
+          "mg_per_dose": 1000,
+          "per_day": 2
         }
       },
       "ids": [
@@ -120,7 +123,9 @@
         "range": {
           "min": 400,
           "max": 1400
-        }
+        },
+        "per_day": 2,
+        "want_per_day": 2
       },
       "ids": [
         "MedicationRequest/mr-t0003"
@@ -160,6 +165,22 @@
         "late": []
       },
       "ids": []
+    },
+    {
+      "id": "note_exists",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "notes": [
+          "DocumentReference/doc-t0004"
+        ]
+      },
+      "ids": [
+        "DocumentReference/doc-t0004"
+      ]
     },
     {
       "id": "note_states_crcl",

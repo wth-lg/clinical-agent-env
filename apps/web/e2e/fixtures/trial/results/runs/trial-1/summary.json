@@ -266,13 +266,13 @@
     },
     "renal-dose-review": {
       "task_versions": [
-        "b5f8278968130bd5773685f5135a2c27ec10f7d86f37166caee31c009094d16d"
+        "e46e7dc80fa4ad701f1b4b65d62970dc09b7d5fa3a4a82cfe9b740784a0dc04d"
       ],
       "env_versions": [
         "f74818df8ab2b6109bdad7b1219898a6c755f28cd3d4e505c848e8a779de79e8"
       ],
       "grader_task_versions": [
-        "35f7bf676489c2006ae5911205664dae8807638bd45094e352aca909846ba0c7"
+        "45d04e4928a64791acad35a94a56523529efbdefdab621516fbb575ce7c1808f"
       ],
       "records": 5,
       "trials": 4,
@@ -304,7 +304,7 @@
       "mean_score": 0.5961538461538461,
       "mean_cost_usd": 1.072,
       "raw_mean_score": 0.5,
-      "gate_fraction": 0.6666666666666666,
+      "gate_fraction": 0.7142857142857143,
       "pass_no_harm": 1,
       "pass_no_harm_rate": 0.25,
       "limits": {
