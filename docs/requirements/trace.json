@@ -100,7 +100,7 @@
         }
       },
       "phase": "P14",
-      "note": "Our variant of this shape: typed tools over an in-memory FHIR R4 store, no container needed."
+      "note": "Our variant of this shape: typed tools over an in-memory FHIR R4 store, no container needed. The tools are MCP-shaped definitions (name, description, JSON Schema input) sent as Messages API tools; no MCP server ships, and the stdio MCP adapter is a next step (plan.md Open decisions)."
     },
     {
       "id": "A4",
@@ -1389,19 +1389,28 @@
       "evidence": [
         "verifier-phase-P25c-1/H1-task-prompt.png",
         "verifier-phase-P25c-1/H1-task-prompt.ax.txt",
-        "verifier-phase-P25c-1/H1-replay-final.txt"
+        "verifier-phase-P25c-1/H1-replay-final.txt",
+        "verifier-phase-P25c-1/H1-task-files.txt"
       ],
-      "expect": {
-        "command": {
-          "cmd": "pnpm cli replay results/runs/final-1",
-          "exit": 0
+      "expect": [
+        {
+          "command": {
+            "cmd": "pnpm cli replay results/runs/final-1",
+            "exit": 0
+          }
+        },
+        {
+          "command": {
+            "cmd": "for t in tasks/[!_]*/; do for f in instruction.md tests/grader.ts tests/rubric.ts solution/solve.ts; do test -f \"$t$f\" || { echo \"missing $t$f\"; exit 1; }; done; done",
+            "exit": 0
+          }
         }
-      },
+      ],
       "phase": "P22",
       "done_when": [
         3
       ],
-      "note": "The replay command re-executes every committed trajectory to its recorded final hash, so the handed-over trajectories are complete."
+      "note": "The replay command re-executes every committed trajectory to its recorded final hash, so the handed-over trajectories are complete. The file-set command checks that each task directory (tasks/_toy excluded) holds its prompt, grader, rubric and reference solution."
     },
     {
       "id": "H2",
@@ -1684,7 +1693,8 @@
       "kind": "user",
       "status": "superseded",
       "by": [
-        "U12"
+        "U12",
+        "U35"
       ],
       "code": [
         "apps/runner/main.ts",
@@ -1705,7 +1715,7 @@
         }
       },
       "phase": "P12b",
-      "note": "Superseded by decision (6): live runs go through the local runner, not CLI-only."
+      "note": "Superseded by decision (6): live runs go through the local runner, not CLI-only; and by U35: the hosted page runs live trials through the relay."
     },
     {
       "id": "U10",
@@ -1960,6 +1970,10 @@
       "id": "U16",
       "text_sha256": "62248f6b4a30e21df265bab5b392939fb54152588bc8daf0f20429eb1379857a",
       "kind": "user",
+      "status": "superseded",
+      "by": [
+        "U35"
+      ],
       "code": [
         "apps/web/src/surface/detect.ts",
         "apps/web/src/surface/LocalCommand.tsx",
@@ -1992,12 +2006,17 @@
       "phase": "P25",
       "done_when": [
         1
-      ]
+      ],
+      "note": "Superseded by U35: the hosted page runs live trials through the relay for any key, so it no longer depends on the key's organization allowing browser access."
     },
     {
       "id": "U17",
       "text_sha256": "0d94ebde77197787a609e7cdb1c3b36d10b43b14567f7c22071ccf8ab400f9b4",
       "kind": "user",
+      "status": "superseded",
+      "by": [
+        "U35"
+      ],
       "code": [
         "apps/runner/main.ts",
         "packages/core/runner-api.ts",
@@ -2024,7 +2043,8 @@
           "text": "Local runner"
         }
       },
-      "phase": "P25"
+      "phase": "P25",
+      "note": "Superseded by U35: the Pages link also runs live trials, through the relay; the local runner stays the other live surface."
     },
     {
       "id": "U18",
@@ -2704,6 +2724,143 @@
       "done_when": [
         7
       ]
+    },
+    {
+      "id": "U35",
+      "text_sha256": "d1d5237bd02a4726ba7116963939af6b81707adc60e174a87d85511f028c08a3",
+      "kind": "user",
+      "code": [
+        "apps/relay/api/messages.ts",
+        "apps/relay/src/relay.ts",
+        "apps/relay/src/limiter.ts",
+        "apps/relay/src/upstream.ts",
+        "apps/relay/vercel.json",
+        "packages/core/anthropic.ts"
+      ],
+      "tests": [
+        "apps/relay/test",
+        "packages/core/test/anthropic-endpoint.test.ts"
+      ],
+      "ui_required": false,
+      "evidence": [
+        "verifier-phase-P25c-1/U35-relay-tests.txt"
+      ],
+      "expect": {
+        "command": {
+          "cmd": "pnpm vitest run apps/relay packages/core/test/anthropic-endpoint",
+          "exit": 0
+        }
+      },
+      "phase": "P16h",
+      "note": "The hosted page's relay screen (P16h PR-web-2) adds a ui and an ax_text to this row after it merges."
+    },
+    {
+      "id": "U36",
+      "text_sha256": "0e761f65bec7de3ed91d356a7a1a5dda5eb6819a3fac18011f8e27e2e9ef2586",
+      "kind": "user",
+      "code": [
+        "apps/web/src/surface/command.ts",
+        "apps/web/src/surface/LocalCommand.tsx",
+        "apps/web/src/surface/LocalRunPanel.tsx",
+        "scripts/check-node.mjs",
+        "README.md",
+        "apps/relay/README.md"
+      ],
+      "tests": [
+        "apps/web/test/command.test.ts",
+        "scripts/test/check-node.test.ts",
+        "apps/web/e2e/shell.spec.ts",
+        "apps/relay/test/readme.test.ts"
+      ],
+      "ui_required": true,
+      "ui": {
+        "route": "/",
+        "action": "Open the app with no key: the key gate asks only for an Anthropic API key, and next to the one start command it states the Node.js and pnpm prerequisites with their install links.",
+        "surface": "any"
+      },
+      "evidence": [
+        "verifier-phase-P25c-1/U3-key-gate.png",
+        "verifier-phase-P25c-1/U3-key-gate.ax.txt",
+        "verifier-phase-P25c-1/U36-prerequisite-tests.txt"
+      ],
+      "expect": [
+        {
+          "ax_match": {
+            "file": "verifier-phase-P25c-1/U3-key-gate.ax.txt",
+            "pattern": "Requires Node\\.js 22\\.18 or newer and pnpm\\."
+          }
+        },
+        {
+          "command": {
+            "cmd": "pnpm vitest run apps/web/test/command scripts/test/check-node apps/relay/test/readme",
+            "exit": 0
+          }
+        }
+      ],
+      "phase": "P12c",
+      "note": "The relay is deployed from this repo's apps/relay to a project we own, so the interviewer needs no account other than the Anthropic key."
+    },
+    {
+      "id": "U37",
+      "text_sha256": "f650a9aaf72d1784d4837caff4328b3c83ad1de34e81da4dcf14db4ecae15eff",
+      "kind": "user",
+      "code": [
+        "apps/web/src/overview",
+        "apps/web/src/tasks",
+        "apps/web/src/runs",
+        "apps/web/src/environment",
+        "apps/web/src/keygate/KeyGate.tsx"
+      ],
+      "tests": [
+        "apps/web/e2e/browse.spec.ts"
+      ],
+      "ui_required": true,
+      "ui": {
+        "route": "/?view=overview",
+        "action": "Press Browse without a key, then open Overview, Tasks, Runs and Environment from the rail: each view shows data and no empty page; only a live run or live grading asks for a key.",
+        "surface": "any"
+      },
+      "evidence": [
+        "verifier-phase-P25c-1/U2-overview.ax.txt",
+        "verifier-phase-P25c-1/N4-tasks-list.ax.txt",
+        "verifier-phase-P25c-1/W4-runs-official.ax.txt",
+        "verifier-phase-P25c-1/N2-environment-tool-catalogue.ax.txt",
+        "verifier-phase-P25c-1/U37-browse-keyless.txt"
+      ],
+      "expect": [
+        {
+          "ax_text": {
+            "file": "verifier-phase-P25c-1/U2-overview.ax.txt",
+            "text": "renal-dose-review"
+          }
+        },
+        {
+          "ax_text": {
+            "file": "verifier-phase-P25c-1/N4-tasks-list.ax.txt",
+            "text": "renal-dose-review"
+          }
+        },
+        {
+          "ax_text": {
+            "file": "verifier-phase-P25c-1/W4-runs-official.ax.txt",
+            "text": "renal-dose-review"
+          }
+        },
+        {
+          "ax_text": {
+            "file": "verifier-phase-P25c-1/N2-environment-tool-catalogue.ax.txt",
+            "text": "fhir_search"
+          }
+        },
+        {
+          "command": {
+            "cmd": "pnpm --filter web exec playwright test browse.spec.ts --project mocked -g \"after Browse without a key\"",
+            "exit": 0
+          }
+        }
+      ],
+      "phase": "P14",
+      "note": "P25c takes these snapshots on the hosted site after Browse without a key; Findings also shows read-only data from the committed run."
     }
   ]
 }
