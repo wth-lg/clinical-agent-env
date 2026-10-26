@@ -1,14 +1,17 @@
 // Findings: docs/findings.md, rendered, and the charts it rests on, all from the official run's
-// summary.json: pass rate with its Wilson 95% interval per task, the outcomes of every record per
-// task as a stacked bar (its totals are summary.json's), and mean cost per trial; then links to
+// summary.json: pass rate with its Wilson 95% interval per task, why each task fails (P17j JU7:
+// its valid failures by kind as a bar, its top failed checks and its fault box, findings/why.tsx),
+// and mean cost per trial; a run that is blocked says so first; then links to
 // an example trial of each non-pass outcome, the glossary and the full write-up (a link only when
 // the build holds data/writeup.html, which the final run publishes). Read-only: new runs need a key.
 import { Marked } from 'marked';
 import { useMemo, type Ref } from 'react';
 import { FINAL_PASS_BAND, FINAL_TRIALS_PER_TASK } from '../../../../packages/core/cost.ts';
 import { OUTCOMES } from '../../../../packages/core/outcomes.ts';
-import { dataUrl, gradingLine, pilotRates, useResults, type RunData } from '../data/results.ts';
-import { Card, formatInterval, GlossaryLink, IntervalRow, MarkLegend, markOf, markProps, NO_RESULTS, Notice, Page } from '../data/ui.tsx';
+import { runBlock } from '../data/failures.ts';
+import { checkTextOf, dataUrl, gradingLine, pilotRates, useResults, type RunData } from '../data/results.ts';
+import { Card, formatInterval, GlossaryLink, IntervalRow, MarkLegend, markOf, NO_RESULTS, Notice, Page } from '../data/ui.tsx';
+import { FaultBox, KindBar, RunBlocked, TopChecks } from './why.tsx';
 import { hrefWith, onNav } from '../data/url.ts';
 
 const READ_ONLY = 'These results are read-only. Running new trials needs an API key.';
@@ -36,6 +39,7 @@ export function Findings({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> 
   }
   return (
     <Page title="Findings" headingRef={headingRef} lead={READ_ONLY}>
+      <Blocked run={results.official} />
       {links}
       {results.findings !== null && <Markdown text={results.findings} />}
       <Charts run={results.official} />
@@ -100,7 +104,10 @@ function Markdown({ text }: { text: string }) {
 // still names (verifier-phase-P16-1 N1).
 const exemplar = (run: RunData, t: RunData['trials'][number]) => ({ view: 'runs', run: run.runId, task: t.task, label: null, trial: t.name, tab: null });
 
-const withWidth = (p: ReturnType<typeof markProps>, pct: number) => ({ ...p, style: { ...p.style, width: `${pct}%` } });
+function Blocked({ run }: { run: RunData }) {
+  const block = runBlock(run.trials.map((t) => t.explanation));
+  return block === null ? null : <RunBlocked block={block} />;
+}
 
 function Charts({ run }: { run: RunData }) {
   const { trials } = run;
@@ -124,24 +131,21 @@ function Charts({ run }: { run: RunData }) {
         <p aria-hidden className="mt-1 grid grid-cols-1 text-xs text-ink-muted sm:grid-cols-[12rem_1fr_9rem] sm:gap-x-3"><span className="hidden sm:block" /><span className="flex max-w-72 justify-between"><span>0%</span><span>50%</span><span>100%</span></span></p>
         <p className="mt-2 text-xs text-ink-muted">Dot: pass rate. Whisker: Wilson 95% interval. Shaded: the target band {FINAL_PASS_BAND[0] * 100}% to {FINAL_PASS_BAND[1] * 100}%.</p>
       </Card>
-      <Card title="Outcomes per task">
-        <ul className="space-y-2" data-testid="taxonomy-chart">
-          {tasks.map(([id, t]) => {
-            const total = Object.values(t.outcomes).reduce((a, b) => a + b, 0);
-            return (
-              <li key={id} className="grid grid-cols-1 items-center gap-x-3 sm:grid-cols-[12rem_1fr_3rem]">
-                <span className="font-medium">{id}</span>
-                <span data-testid="taxonomy-bar" data-task={id} data-total={total} className="flex h-4 overflow-hidden rounded-[2px] border border-line" role="img" aria-label={`${id}: ${outcomes.filter((o) => t.outcomes[o]).map((o) => `${t.outcomes[o]} ${o}`).join(', ')}`}>
-                  {outcomes.filter((o) => (t.outcomes[o] ?? 0) > 0).map((o) => (
-                    <span key={o} data-outcome={o} data-count={t.outcomes[o]} title={`${o}: ${t.outcomes[o]}`} {...withWidth(markProps(markOf(o), 'h-full'), (100 * t.outcomes[o]!) / total)} />
-                  ))}
-                </span>
-                <span className="text-right text-xs text-ink-muted">{total}</span>
-              </li>
-            );
-          })}
+      <Card title="Why tasks fail">
+        <p className="text-xs text-ink-muted">Each task's valid failures by kind of failure, the gate checks that decided them, and who is at fault by the audit. Each link opens those trials in Runs.</p>
+        <ul className="mt-3 divide-y divide-line" data-testid="why-fail">
+          {tasks.map(([id, t]) => (
+            <li key={id} data-task={id} className="grid grid-cols-1 gap-x-4 gap-y-2 py-3 lg:grid-cols-[12rem_minmax(0,1fr)_minmax(0,1fr)]">
+              <span className="break-words font-medium">{id} <span className="font-normal text-ink-muted">{t.fault_counts.failures} failures</span></span>
+              <div className="min-w-0 space-y-2">
+                <KindBar task={id} fc={t.fault_counts} />
+                <FaultBox task={id} fcs={[t.fault_counts]} explanations={trials.filter((x) => x.task === id).map((x) => x.explanation)} />
+              </div>
+              <TopChecks task={id} top={t.top_failed_checks} textOf={(c) => { const r = checkTextOf(id)?.[c]?.requires; return r ? `requires ${r}` : null; }} />
+            </li>
+          ))}
         </ul>
-        <div className="mt-3"><MarkLegend marks={outcomes.map((o) => markOf(o))} /></div>
+        <p className="mt-2 text-xs text-ink-muted"><GlossaryLink anchor="taxonomy">The kinds of model failure</GlossaryLink></p>
       </Card>
       <Card title="Cost per trial">
         <ul className="space-y-2" data-testid="cost-chart">

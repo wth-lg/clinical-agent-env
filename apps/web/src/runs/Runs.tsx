@@ -4,13 +4,17 @@
 // decides), the decisive failing check, the one-line reason and, with no audit row, the
 // not-audited marker; all of it is packages/core/explain.ts explainTrial, never re-derived here.
 // A record the loader cannot read is a row that says why. The header shows k/N with the pass and
-// denominator rules. Filters (task, label) live in the URL; ?trial= opens the trial detail
+// denominator rules. Filters (task, label; and from Findings, check: the valid failures whose
+// decisive check it is, and audit: the valid failures by audit label, P17j JU7) live in the URL; a
+// run with a trial that blocks it says so above the list; ?trial= opens the trial detail
 // (apps/web/src/trial/TrialPage.tsx) in place of the list, and Back to Runs returns to it.
 import { ChevronRight, CircleAlert } from 'lucide-react';
 import { useEffect, useRef, type Ref } from 'react';
 import { AUDIT_LABELS } from '../../../../packages/core/outcomes.ts';
 import { gradingLine, useResults, type BadRecord, type RunData, type Trial } from '../data/results.ts';
 import { harmItems, safePass } from '../data/harm.ts';
+import { auditFilterOf, failedCheckOf, isFalsePass, runBlock } from '../data/failures.ts';
+import { RunBlocked } from '../findings/why.tsx';
 import { Card, FaultLabel, GlossaryLink, HarmChip, Notice, OutcomeChip, Page, PlainRules } from '../data/ui.tsx';
 import { navigate, useParams } from '../data/url.ts';
 import { takeReturn } from '../trial/back.ts';
@@ -31,9 +35,15 @@ export function Runs({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | un
   const runs = [...(official ? [official] : []), ...pilots];
   const task = params.get('task') ?? '';
   const label = params.get('label') ?? '';
+  const check = params.get('check') ?? '';
+  const audit = params.get('audit') ?? '';
   // A task in the URL that no run holds still shows as the chosen option, so the filter is never hidden.
   const tasks = [...new Set([...(official ? Object.keys(official.summary!.tasks) : []), ...runs.flatMap((r) => r.trials.map((t) => t.task)), ...(task === '' ? [] : [task])])].sort();
-  const matches = (t: Trial) => (task === '' || t.task === task) && (label === '' || labelOf(t) === label);
+  const matches = (t: Trial) => (task === '' || t.task === task) && (label === '' || labelOf(t) === label)
+    && (check === '' || failedCheckOf(t.explanation) === check) && (audit === '' || auditFilterOf(t.explanation) === audit);
+  const filtered = task !== '' || label !== '' || check !== '' || audit !== '';
+  const block = official ? runBlock(official.trials.map((t) => t.explanation)) : null;
+  const falsePasses = official ? official.trials.filter((t) => (task === '' || t.task === task) && isFalsePass(t.explanation)).length : 0;
   const total = runs.reduce((n, r) => n + r.trials.length + r.bad.length, 0);
   const shown = runs.reduce((n, r) => n + r.trials.filter(matches).length, 0);
   const scope = official ? (task === '' ? official.summary!.totals : official.summary!.tasks[task]) : undefined;
@@ -43,7 +53,8 @@ export function Runs({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | un
   return (
     <Page title="Runs" headingRef={headingRef} lead={official ? <>Official run <span className="font-medium text-ink">{official.runId}</span>, {official.summary!.totals.records} trial records.</> : 'No official run is published yet. The committed pilot runs are below; they are not counted in the results.'}>
       {officialError !== null && <Notice testId="error-state">{officialError}</Notice>}
-      <Card title={official ? <><span data-testid="runs-k-of-n">{task === '' ? 'All tasks' : task}: {scope?.passes ?? 0}/{scope?.trials ?? 0} pass</span> <span className="font-normal text-ink-muted" data-testid="safe-pass">({safePass(safe)})</span></> : 'How a trial is counted'}>
+      {block !== null && <RunBlocked block={block} />}
+      <Card title={official ? <><span data-testid="runs-k-of-n">{task === '' ? 'All tasks' : task}: {scope?.passes ?? 0}/{scope?.trials ?? 0} pass{falsePasses > 0 ? `, ${falsePasses} false PASS` : ''}</span> <span className="font-normal text-ink-muted" data-testid="safe-pass">({safePass(safe)})</span></> : 'How a trial is counted'}>
         <PlainRules ids={{ pass: 'pass-definition', denominator: 'denominator-rule' }} />
         <p className="mt-2"><GlossaryLink>How failures are attributed</GlossaryLink></p>
       </Card>
@@ -65,8 +76,14 @@ export function Runs({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | un
           </select>
         </label>
         <span className="pb-1.5 text-xs text-ink-muted" data-testid="shown-count">{shown} of {total} trials</span>
-        {(task !== '' || label !== '') && <button type="button" data-testid="clear-filters" onClick={() => navigate({ task: null, label: null, trial: null })} className="pb-1.5 text-xs text-ink underline decoration-line-strong underline-offset-2">Clear filters</button>}
+        {filtered && <button type="button" data-testid="clear-filters" onClick={() => navigate({ task: null, label: null, check: null, audit: null, trial: null })} className="pb-1.5 text-xs text-ink underline decoration-line-strong underline-offset-2">Clear filters</button>}
       </div>
+      {(check !== '' || audit !== '') && (
+        <p data-testid="extra-filter" className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-muted">
+          {check !== '' && <span>Valid failures whose decisive check is <code className="text-ink">{check}</code> <button type="button" aria-label="Remove the check filter" className="text-ink underline decoration-line-strong underline-offset-2" onClick={() => navigate({ check: null, trial: null })}>Remove</button></span>}
+          {audit !== '' && <span>Valid failures the audit labels <span className="text-ink">{audit === 'unlabelled' ? 'nothing (not audited)' : audit}</span> <button type="button" aria-label="Remove the audit label filter" className="text-ink underline decoration-line-strong underline-offset-2" onClick={() => navigate({ audit: null, trial: null })}>Remove</button></span>}
+        </p>
+      )}
       {official && <RunList run={official} matches={matches} />}
       {pilots.length > 0 && (
         <section className="space-y-3" data-testid="pilot-runs">
