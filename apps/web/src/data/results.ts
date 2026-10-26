@@ -105,10 +105,11 @@ export async function fetchEvents(trajectoryUrl: string): Promise<TrialEvent[]> 
   return parseTrajectory(await res.text());
 }
 
-// The records whose explanation reads the trajectory: a REFUSAL's or LIMIT's sentence, and E6 when
-// the audit row answers tool_rejections_correct no after adjudication.
-export const readsEvents = (r: Pick<ExplainRecord, 'outcome'>, audit: Parameters<typeof auditAnswerOf>[0] | null): boolean =>
-  r.outcome === 'REFUSAL' || r.outcome === 'LIMIT' || (audit !== null && auditAnswerOf(audit, 'tool_rejections_correct') === 'no');
+// The records whose explanation reads the trajectory: a REFUSAL's or LIMIT's sentence, a
+// replay_mismatch's E4 (the call that did not replay), and E6 when the audit row answers
+// tool_rejections_correct no after adjudication.
+export const readsEvents = (r: Pick<ExplainRecord, 'outcome' | 'detail'>, audit: Parameters<typeof auditAnswerOf>[0] | null): boolean =>
+  r.outcome === 'REFUSAL' || r.outcome === 'LIMIT' || r.detail === 'replay_mismatch' || (audit !== null && auditAnswerOf(audit, 'tool_rejections_correct') === 'no');
 
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
