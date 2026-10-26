@@ -38,6 +38,9 @@
       "done_when": [
         5
       ],
+      "pending": [
+        "results/runs/final-1"
+      ],
       "note": "The environment, six tasks in it, and the final run of claude-opus-5-5 against them (U1)."
     },
     {
@@ -61,6 +64,10 @@
         }
       },
       "phase": "P24",
+      "pending": [
+        "docs/writeup.html",
+        "scripts/test/docs-check.test.ts"
+      ],
       "note": "The writeup states the shape we chose (an in-memory FHIR R4 store behind typed tools) and why."
     },
     {
@@ -202,7 +209,10 @@
           }
         }
       ],
-      "phase": "P24"
+      "phase": "P24",
+      "pending": [
+        "docs/findings.md"
+      ]
     },
     {
       "id": "N1",
@@ -850,7 +860,10 @@
           }
         }
       ],
-      "phase": "P22"
+      "phase": "P22",
+      "pending": [
+        "results/runs/final-1"
+      ]
     },
     {
       "id": "W2",
@@ -901,6 +914,9 @@
       "done_when": [
         5
       ],
+      "pending": [
+        "results/runs/final-1"
+      ],
       "note": "The user amended the band to 0.20-0.70 of 20 trials (U21); FINAL_PASS_BAND in packages/core/cost.ts."
     },
     {
@@ -943,6 +959,9 @@
         }
       ],
       "phase": "P22",
+      "pending": [
+        "results/runs/final-1"
+      ],
       "note": "Band 0.2-0.7 excludes 0/20 and 20/20, so the band check is the check that no task always or never passes."
     },
     {
@@ -983,7 +1002,11 @@
           }
         }
       ],
-      "phase": "P22"
+      "phase": "P22",
+      "pending": [
+        "results/runs/final-1",
+        "results/official.json"
+      ]
     },
     {
       "id": "W5",
@@ -1061,6 +1084,9 @@
         }
       ],
       "phase": "P22",
+      "pending": [
+        "results/runs/final-1"
+      ],
       "note": "The user amended ten trials to 20 per task (U21); FINAL_TRIALS_PER_TASK in packages/core/cost.ts."
     },
     {
@@ -1108,6 +1134,10 @@
       "phase": "P23",
       "done_when": [
         6
+      ],
+      "pending": [
+        "results/runs/final-1/audit.jsonl",
+        "cli/test/audit-check.test.ts"
       ]
     },
     {
@@ -1163,6 +1193,10 @@
       "phase": "P23",
       "done_when": [
         6
+      ],
+      "pending": [
+        "results/runs/final-1/audit.jsonl",
+        "cli/test/audit-check.test.ts"
       ]
     },
     {
@@ -1291,7 +1325,11 @@
           }
         }
       ],
-      "phase": "P24"
+      "phase": "P24",
+      "pending": [
+        "docs/findings.md",
+        "scripts/test/docs-check.test.ts"
+      ]
     },
     {
       "id": "W10",
@@ -1342,7 +1380,12 @@
           }
         }
       ],
-      "phase": "P24"
+      "phase": "P24",
+      "pending": [
+        "docs/findings.md",
+        "docs/writeup.html",
+        "scripts/test/docs-check.test.ts"
+      ]
     },
     {
       "id": "H1",
@@ -1410,6 +1453,9 @@
       "done_when": [
         3
       ],
+      "pending": [
+        "results/runs/final-1/trajectories"
+      ],
       "note": "The replay command re-executes every committed trajectory to its recorded final hash, so the handed-over trajectories are complete. The file-set command checks that each task directory (tasks/_toy excluded) holds its prompt, grader, rubric and reference solution."
     },
     {
@@ -1437,6 +1483,11 @@
       "phase": "P24",
       "done_when": [
         7
+      ],
+      "pending": [
+        "docs/writeup.html",
+        "scripts/test/docs-check.test.ts",
+        "scripts/test/ste-check.test.ts"
       ]
     },
     {
@@ -1598,6 +1649,10 @@
       "done_when": [
         7
       ],
+      "pending": [
+        "docs/writeup.html",
+        "scripts/test/docs-check.test.ts"
+      ],
       "note": "docs:check fails when the dated reference list (2025-2026 research, datasets, tools) is missing from docs/writeup.html."
     },
     {
@@ -1740,6 +1795,9 @@
         }
       },
       "phase": "P22",
+      "pending": [
+        "results/runs/final-1"
+      ],
       "note": "Trial keys are <task>/<model>/<effort>/<mode>/<index>; the only effort directory under final-1 is high. If P12 lays records out another way, update the command in that PR."
     },
     {
@@ -2192,6 +2250,9 @@
       "phase": "P22",
       "done_when": [
         5
+      ],
+      "pending": [
+        "results/runs/final-1"
       ]
     },
     {
@@ -2355,7 +2416,10 @@
           }
         }
       ],
-      "phase": "P22"
+      "phase": "P22",
+      "pending": [
+        "results/runs/final-1"
+      ]
     },
     {
       "id": "U27",
@@ -2395,7 +2459,10 @@
           }
         }
       ],
-      "phase": "P24"
+      "phase": "P24",
+      "pending": [
+        "docs/findings.md"
+      ]
     },
     {
       "id": "U28",
@@ -2472,7 +2539,10 @@
           }
         }
       ],
-      "phase": "P22"
+      "phase": "P22",
+      "pending": [
+        "results/runs/final-1"
+      ]
     },
     {
       "id": "U29",
@@ -2512,7 +2582,7 @@
         "packages/core/test/explain.test.ts",
         "packages/core/test/outcomes.test.ts",
         "scripts/test/one-definition.test.ts",
-        "cli/test/audit-check.test.ts",
+        "cli/test/audit-check-labels.test.ts",
         "apps/web/e2e/trial.spec.ts"
       ],
       "ui_required": true,
@@ -2723,6 +2793,12 @@
       "phase": "P24",
       "done_when": [
         7
+      ],
+      "pending": [
+        "docs/writeup.html",
+        "scripts/ste-check.ts",
+        "scripts/test/docs-check.test.ts",
+        "scripts/test/ste-check.test.ts"
       ]
     },
     {
