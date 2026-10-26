@@ -16,7 +16,7 @@
 import { copyFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { AuditRow } from '../../../../../packages/core/explain.ts';
+import { auditLabelOf, type AuditRow } from '../../../../../packages/core/explain.ts';
 import { assertSummary, summarize, trialName, type SummaryTrial } from '../../../../../packages/core/summary.ts';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -63,7 +63,7 @@ function main() {
   // By task, then index: the order apps/web/test/web-fixtures.test.ts recomputes the summary in,
   // so the floating-point means add up the same.
   const ordered = [...records].sort((a, b) => (a.task_id === b.task_id ? a.index - b.index : a.task_id < b.task_id ? -1 : 1));
-  const summary = summarize({ run_id: RUN_ID, trials: ordered, requeued: [], replay: null, mode: 'mock-sample', expected: { tasks: [...new Set(records.map((r) => r.task_id))].sort(), from: 'generate.ts' } });
+  const summary = summarize({ run_id: RUN_ID, trials: ordered, requeued: [], replay: null, mode: 'mock-sample', expected: { tasks: [...new Set(records.map((r) => r.task_id))].sort(), from: 'generate.ts' }, audit: Object.fromEntries(audit.map((a) => [a.trial, auditLabelOf(a)])) });
   assertSummary(summary);
   write(join(RUN, 'summary.json'), `${JSON.stringify(summary, null, 2)}\n`);
   copy(join(SAMPLE, 'trials', `${TRIALS.pass}.json`), join(PILOT, 'trials', `${TRIALS.pass}.json`));
