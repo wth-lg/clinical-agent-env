@@ -22,9 +22,9 @@
 // unless --allow-mock is given. Each task line names the env_versions its records ran at and the
 // grader_task_versions of their current grades (packages/core/tasks.ts), first 12 characters.
 // Under each task line, the metrics beside k/n (packages/core/summary.ts header), each with its
-// denominator: mean score, raw (unclipped) mean, mean fraction of gates met, pass_no_harm, LIMIT
-// counts by kind, re-queued attempts by outcome and the infra-counted rate (passes over the valid
-// trials plus the INFRA and ENV_ERROR attempts). A task the consistency flag marks (packages/core/
+// denominator: mean score, raw (unclipped) mean, mean fraction of gates met, pass_no_harm,
+// pass^1, pass^3 and pass^5, LIMIT counts by kind, re-queued attempts by outcome and the
+// infra-counted rate (passes over the valid trials plus the INFRA and ENV_ERROR attempts). A task the consistency flag marks (packages/core/
 // summary.ts header: most valid failures fail the same check first, or 0
 // passes in 10 or more valid trials) gets a third line naming it; audit-check requires a
 // task-validity review for it.
@@ -36,7 +36,7 @@ import { pathToFileURL } from 'node:url';
 import type { BatchRecord } from '../packages/core/batch.ts';
 import { installEgressGuard } from '../packages/core/egress.ts';
 import { isValid } from '../packages/core/outcomes.ts';
-import { assertSummary, checkRequirements, describeConsistency, parseRequire, summarize, type RegradeGrade, type Requirements, type SummaryTrial } from '../packages/core/summary.ts';
+import { assertSummary, checkRequirements, describeConsistency, parseRequire, PASS_K, summarize, type RegradeGrade, type Requirements, type SummaryTrial } from '../packages/core/summary.ts';
 import type { TaskSource } from '../packages/core/tasks.ts';
 import { readManifest, requeuedRecords, settledRecords, writeJson } from './adapters/result-sink-node.ts';
 import { nodeTaskSource } from './adapters/tasks-node.ts';
@@ -142,7 +142,7 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
     say(`${id.padEnd(width)}  ${t.passes}/${t.trials}  Wilson 95% ${w}  ENV_ERROR raw ${t.env_error_raw}  re-queued ${t.requeued}${disclosed}  env ${short(t.env_versions)}  grader ${short(t.grader_task_versions)}`);
     const m = t.metric_trials;
     say(
-      `${' '.repeat(width)}  mean score ${fixed(t.mean_score)} (${m.mean_score} valid)  raw mean ${fixed(t.raw_mean_score)} (${m.raw_mean_score})  gates met ${fixed(t.gate_fraction)} (${m.gate_fraction})  pass_no_harm ${t.pass_no_harm}/${t.trials}  ` +
+      `${' '.repeat(width)}  mean score ${fixed(t.mean_score)} (${m.mean_score} valid)  raw mean ${fixed(t.raw_mean_score)} (${m.raw_mean_score})  gates met ${fixed(t.gate_fraction)} (${m.gate_fraction})  pass_no_harm ${t.pass_no_harm}/${t.trials}  ${PASS_K.map((k) => `pass^${k} ${fixed(t.pass_k[k])}`).join(' ')}  ` +
         `LIMIT ${counts(t.limits)}  re-queued ${Object.keys(t.requeued_outcomes).length === 0 ? 'none' : counts(t.requeued_outcomes)}  infra-counted ${t.passes}/${t.infra_counted_attempts} (${fixed(t.infra_counted_rate)})`,
     );
     const flagged = describeConsistency(t.consistency);
