@@ -46,7 +46,10 @@ import { FAULT, isValid, trialOutcome, type Fault, type Outcome, type TrialFacts
 // result carries omission (a missing required write) is labelled by the retrieval, output_gap and
 // reasoning rules, not over_action (R14-12). 9: the judge quote check folds
 // quotes, dashes, case and whitespace and reads "..." as a gap; judge.unknown_penalties (R14-04).
-export const GRADER_VERSION = '10';
+// 11: the first failed safety gate without the omission mark is the decisive gate over earlier
+// failed action and process gates too, so a forbidden write reads over_action (attribution.ts
+// decisiveGate, decisions.tsv 2026-10-28T06:50).
+export const GRADER_VERSION = '11';
 
 export interface CheckResult {
   id: string;

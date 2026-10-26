@@ -10,6 +10,7 @@ import { describe, expect, it } from 'vitest';
 import { nodeTaskDirs } from '../../../cli/adapters/tasks-node.ts';
 import { explainTrial, REASON_WORDS, type CheckText, type ExplainRecord } from '../explain.ts';
 import { parseTrajectory } from '../trajectory.ts';
+import { decisiveGate } from '../../grader/attribution.ts';
 import type { Check } from '../../grader/check.ts';
 import { repoRoot } from '../../../scripts/test/helpers.ts';
 
@@ -64,7 +65,8 @@ describe('sample non-pass reasons', async () => {
   it.each(failing.map((r) => [`${r.task_id}/${(r as { index?: number }).index}`, r] as const))('%s names what the check requires and a value it found', (_n, r) => {
     const events = r.outcome === 'FAIL' ? [] : parseTrajectory(readFileSync(join(RUN, r.trajectory), 'utf8'));
     const x = explainTrial(r, null, { events, text: texts[r.task_id] ?? null });
-    const check = (r.checks ?? []).find((c) => (c as { kind?: string }).kind === 'gate' && c.met === false)!;
+    // The decisive gate (attribution.ts decisiveGate), which the reason names.
+    const check = decisiveGate(r.checks ?? [])!;
     expect(x.reason).toMatch(REASON);
     expect(x.reason).not.toMatch(/the check met/);
     expect(x.reason).toContain(`${check.id} failed: expected ${texts[r.task_id]![check.id]!.requires.split(' ')[0]}`);
