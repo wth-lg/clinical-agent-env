@@ -1,16 +1,16 @@
 {
-  "schema_version": 4,
+  "schema_version": 5,
   "run_id": "sample-1",
   "tasks": {
     "contrast-ct-prep": {
       "task_versions": [
-        "5b7ac243d58393b66979c011d7cbfdb96cb81eca91c47c5b985a6458c0dcdd34"
+        "98c88cdf25fd55c49b3ebbeeda6e51afefd22a19b43636ae6d437c1c97949223"
       ],
       "env_versions": [
-        "1b47cd6807624e2db3e76fbb8dfa5a519eadfa93bdf47dbdcb8fee1a1c37d288"
+        "280b883e5fc517d68ac042233949953cca749adc6fe7adacbc45baea3da00309"
       ],
       "grader_task_versions": [
-        "5cdf5b5b61e615d3711ac28e3b44a134ad14b0a7a4fa721e1429e3f221653d82"
+        "9951302e791a963696583af0f6dd44372df913f3f5b4b8027cdb6f6ca10eca06"
       ],
       "records": 12,
       "trials": 12,
@@ -56,17 +56,30 @@
         "mean_score": 12,
         "raw_mean_score": 12,
         "gate_fraction": 12
+      },
+      "consistency": {
+        "valid": 12,
+        "passes": 3,
+        "failures": 9,
+        "shared": {
+          "check": "prednisone_schedule",
+          "count": 4,
+          "found": "{\"doses\":[{\"at\":\"2026-10-25T20:00:00-04:00\",\"mg\":0,\"requests\":[]},{\"at\":\"2026-10-26T02:00:00-04:00\",\"mg\":0,\"requests\":[]},{\"at\":\"2026-10-26T08:00:00-04:00\",\"mg\":0,\"requests\":[]}],\"given\":[],\"stray\":[],\"want\":{\"at\":[\"2026-10-25T20:00:00-04:00\",\"2026-10-26T02:00:00-04:00\",\"2026-10-26T08:00:00-04:00\"],\"mg\":50,\"route\":\"oral\"}}",
+          "found_count": 1,
+          "found_values": 4
+        },
+        "flags": []
       }
     },
     "crc-care-gap": {
       "task_versions": [
-        "d1dba89c13b34275df7ab9a5041f5cfe45ad631a7d733a5b05737c0532638740"
+        "ea49bcadf1f09a28deb079b171b4664886a254b824a89235990aab4d2039e3dc"
       ],
       "env_versions": [
-        "f5f885afc6134508bf8c9caaf697d8c9df5a7f0bd7316c7e637f90c5c9abc58c"
+        "33bc405f9ee45f63fb612007db9d8fcae1efeaddb9766b21073172bbd912fd86"
       ],
       "grader_task_versions": [
-        "eaf6b0d8b15fae30edc8b0ead45dd54994dc2a26d0e997a6fa0607d4974f8caa"
+        "5cef528de411237ff22e51a7a6df680a6954707a6a44f04885e492b572eafee5"
       ],
       "records": 12,
       "trials": 12,
@@ -112,17 +125,32 @@
         "mean_score": 12,
         "raw_mean_score": 12,
         "gate_fraction": 12
+      },
+      "consistency": {
+        "valid": 12,
+        "passes": 5,
+        "failures": 7,
+        "shared": {
+          "check": "fit_orders",
+          "count": 7,
+          "found": "{\"extra\":[\"Patient/pt-0009\"],\"missing\":[],\"ordered\":{\"Patient/pt-0009\":[\"ServiceRequest/sr-t0011\"],\"Patient/pt-0017\":[\"ServiceRequest/sr-t0001\"],\"Patient/pt-0018\":[\"ServiceRequest/sr-t0003\"],\"Patient/pt-0019\":[\"ServiceRequest/sr-t0007\"],\"Patient/pt-0022\":[\"ServiceRequest/sr-t0009\"],\"Patient/pt-0023\":[\"ServiceRequest/sr-t0005\"]},\"want\":[\"Patient/pt-0017\",\"Patient/pt-0018\",\"Patient/pt-0019\",\"Patient/pt-0022\",\"Patient/pt-0023\"]}",
+          "found_count": 1,
+          "found_values": 7
+        },
+        "flags": [
+          "shared_failure"
+        ]
       }
     },
     "discharge-medrec": {
       "task_versions": [
-        "30e43da7b151d7d2bbf3e3b3c2cae6bdb7ecb2b1c53b660be95d33a84f003fb7"
+        "04384d8c3d300743664135ae5b804fb499087a60d87fab5f01b228753b79e542"
       ],
       "env_versions": [
-        "c1e656fdcb8d2ef267ed6af93489ec65c25baa80dabaf5352107f549e40ca783"
+        "f3507cc7a07467ddbbb35fecb999f07af42cd4b641262f53e667e68520c80e4a"
       ],
       "grader_task_versions": [
-        "52776c2175330257b6414c455ddf80b218400506163e528f29651d0125398ba0"
+        "85cb5bed7c09ecac43729bbfa483049ff1fa8402aa725e94d0989738567c6789"
       ],
       "records": 13,
       "trials": 12,
@@ -168,17 +196,30 @@
         "mean_score": 12,
         "raw_mean_score": 12,
         "gate_fraction": 12
+      },
+      "consistency": {
+        "valid": 12,
+        "passes": 7,
+        "failures": 5,
+        "shared": {
+          "check": "spironolactone_25",
+          "count": 2,
+          "found": "{\"active\":[\"MedicationRequest/mr-t0002\"],\"mg_per_day\":12.5,\"per_day\":1}",
+          "found_count": 2,
+          "found_values": 1
+        },
+        "flags": []
       }
     },
     "message-queue": {
       "task_versions": [
-        "311678ca575502d688dd5840481e25ee692bf7abe5ced77c679c0b6d394da397"
+        "2481bb2bbf7b0c4de99834b435b04156efd125131de77a34e07651297e5e0a9b"
       ],
       "env_versions": [
-        "0f4ca284064318e267b43016adacd89fe793e885765e5c687d044d21f87e4e6a"
+        "44b0232987093b07f6516db4ec0b00b87c4fa88625567baaca3c93ad96ad6be3"
       ],
       "grader_task_versions": [
-        "4929f0ecba7b68e9fb2e621a4d2c91143090b6b6afb39cf58216c56f69c6ff8b"
+        "df605b2c3bc3ef63735ad4c318b5718d82ecf3590b04cb241716445ffe5da98a"
       ],
       "records": 13,
       "trials": 12,
@@ -224,17 +265,30 @@
         "mean_score": 12,
         "raw_mean_score": 12,
         "gate_fraction": 12
+      },
+      "consistency": {
+        "valid": 12,
+        "passes": 9,
+        "failures": 3,
+        "shared": {
+          "check": "m1_bridge",
+          "count": 2,
+          "found": "{\"bmp_orders\":[\"ServiceRequest/sr-t0004\"],\"orders\":[{\"active\":true,\"id\":\"MedicationRequest/mr-t0003\",\"mg_per_day\":20,\"refills\":1,\"status\":\"active\",\"supply_days\":90}],\"want\":{\"mg_per_day\":20,\"refills\":0,\"supply_days\":30}}",
+          "found_count": 1,
+          "found_values": 2
+        },
+        "flags": []
       }
     },
     "renal-dose-review": {
       "task_versions": [
-        "0e06ff9196d84e936b2653bdb9b457e97f56b6d6fed778c588de06d6535e98c4"
+        "a789d2710d7e9022c1b8d2b11025b1022324aa94fdbac9e9a66048dcb16797a1"
       ],
       "env_versions": [
-        "0dae10d1d8d15746dfd85762a4d0532e340503b7de2db604d209f8a3c5d3e408"
+        "b17f30f6656c54d4cd77b414ce727440cdb4f79ad2b1d947c225cfcb0f185fbd"
       ],
       "grader_task_versions": [
-        "271c8acff3147cdf01bb4a0ea08fd037798bf3bde08d589cf431987b8c217d81"
+        "2c5c4f59a926849a7016ac77605ece0f0a9b1242d1b5c461b0f126858230f971"
       ],
       "records": 13,
       "trials": 12,
@@ -263,10 +317,10 @@
       "grader_error": 0,
       "grader_error_history": 0,
       "requeued": 0,
-      "mean_score": 0.5705128205128206,
+      "mean_score": 0.608974358974359,
       "mean_cost_usd": 1.06,
-      "raw_mean_score": 0.4551282051282051,
-      "gate_fraction": 0.6666666666666666,
+      "raw_mean_score": 0.4935897435897436,
+      "gate_fraction": 0.6805555555555555,
       "pass_no_harm": 4,
       "pass_no_harm_rate": 0.3333333333333333,
       "limits": {
@@ -282,17 +336,32 @@
         "mean_score": 12,
         "raw_mean_score": 12,
         "gate_fraction": 12
+      },
+      "consistency": {
+        "valid": 12,
+        "passes": 4,
+        "failures": 8,
+        "shared": {
+          "check": "apixaban_dose",
+          "count": 8,
+          "found": "{\"active\":[\"MedicationRequest/mr-t1-apixaban\"],\"mg\":2.5,\"oral\":true,\"per_day\":2,\"product\":\"1364435\"}",
+          "found_count": 6,
+          "found_values": 3
+        },
+        "flags": [
+          "shared_failure"
+        ]
       }
     },
     "results-inbox": {
       "task_versions": [
-        "318b03862c908da506289346748837a594f48d4813384aed1b0d7110b66e68fc"
+        "9380165274628e746af5b25b6299c7937e1f7e8b1a0d9e2f08409c74ac682d06"
       ],
       "env_versions": [
-        "1b69d4deab5047c9be4c70ff0438628526da629a9fa0c5f1ca1d0605cec02a86"
+        "873a026b7630321c406bcbd3a29930661ebb2b779aaebc36276b458ced108290"
       ],
       "grader_task_versions": [
-        "df6f8cb893921ad313840f7a5bc7612d29b16a10385efd7cad3eb00e530d233c"
+        "e2a595eda6b2df8a172a084467ad25cbd18f98baf24140bce6d42c3cc7242b46"
       ],
       "records": 12,
       "trials": 12,
@@ -336,6 +405,19 @@
         "mean_score": 12,
         "raw_mean_score": 12,
         "gate_fraction": 12
+      },
+      "consistency": {
+        "valid": 12,
+        "passes": 8,
+        "failures": 4,
+        "shared": {
+          "check": "nodule_ct_window",
+          "count": 4,
+          "found": "{\"orders\":[],\"window\":{\"end\":\"2027-07-04\",\"start\":\"2027-05-04\"}}",
+          "found_count": 3,
+          "found_values": 2
+        },
+        "flags": []
       }
     }
   },
@@ -367,7 +449,7 @@
     "claude-opus-5-5"
   ],
   "initial_state_hashes": [
-    "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b"
+    "a02ad8dec0903b5c9450b758783943e9a6beb9c3076b7cde71d559989a37d75b"
   ],
   "replay": {
     "ran": false,

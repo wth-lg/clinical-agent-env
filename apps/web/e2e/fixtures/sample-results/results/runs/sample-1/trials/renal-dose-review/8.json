@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:renal-dose-review:8",
   "task_id": "renal-dose-review",
-  "task_version": "0e06ff9196d84e936b2653bdb9b457e97f56b6d6fed778c588de06d6535e98c4",
-  "env_version": "0dae10d1d8d15746dfd85762a4d0532e340503b7de2db604d209f8a3c5d3e408",
-  "grader_task_version": "271c8acff3147cdf01bb4a0ea08fd037798bf3bde08d589cf431987b8c217d81",
-  "fixture_hash": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
+  "task_version": "a789d2710d7e9022c1b8d2b11025b1022324aa94fdbac9e9a66048dcb16797a1",
+  "env_version": "b17f30f6656c54d4cd77b414ce727440cdb4f79ad2b1d947c225cfcb0f185fbd",
+  "grader_task_version": "2c5c4f59a926849a7016ac77605ece0f0a9b1242d1b5c461b0f126858230f971",
+  "fixture_hash": "a02ad8dec0903b5c9450b758783943e9a6beb9c3076b7cde71d559989a37d75b",
   "state_hash": {
-    "initial": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
-    "final": "d237ed6b01cf97718b7392a8deac486e61ebbe6e21fd10b53a15c2d4d5714cd5",
-    "replay_final": "d237ed6b01cf97718b7392a8deac486e61ebbe6e21fd10b53a15c2d4d5714cd5"
+    "initial": "a02ad8dec0903b5c9450b758783943e9a6beb9c3076b7cde71d559989a37d75b",
+    "final": "0d609750388b7d02b22e564c68a630a721f2c532c7dc6af57b7136d6d5003649",
+    "replay_final": "0d609750388b7d02b22e564c68a630a721f2c532c7dc6af57b7136d6d5003649"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -42,9 +42,10 @@
   "detail": null,
   "summary": "Reviewed Harold Vance: apixaban stays at 2.5 mg, metformin reduced, gabapentin 600 mg twice daily; note written.",
   "resumed": false,
+  "env_git_sha": null,
   "ended": "2026-10-23T14:17:07.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "8",
+  "grader_version": "10",
   "outcome": "FAIL",
   "valid": true,
   "fault": "model",
@@ -207,7 +208,7 @@
       "met": false,
       "evidence": {
         "verdict": "not_met",
-        "quote": "SCr 1.5 or higher: met. Two criteria met.",
+        "quote": "Apixaban criteria (§2), using the most recent creatinine of 1.71 mg/dL: age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.5 or higher: met. Two criteria met. Apixaban stays at 2.5 mg twice daily.",
         "cache_key": "372118b863bf9ae542de65e803c3d4a14a0001fc08c188577dcb5fa770aa8c2c"
       }
     },
@@ -220,8 +221,8 @@
       "met": false,
       "evidence": {
         "verdict": "not_met",
-        "quote": "using the most recent creatinine of 1.71 mg/dL",
-        "cache_key": "d860fcf44cff6e3eab62b114342977854fb0300e51b4910035f0dfc518c3b14b"
+        "quote": "",
+        "cache_key": "c83b6417bebad86a136f35341e21da761206f685a533ba10b177cfea8470db21"
       }
     },
     {
@@ -269,7 +270,7 @@
           "creatinine of 1.71"
         ],
         "verdict": "met",
-        "quote": "using the most recent creatinine of 1.71 mg/dL",
+        "quote": "Inputs (§1): Latest creatinine 1.71 mg/dL. Weight 143 lb = 64.9 kg (10/20/2026). Age 82.",
         "cache_key": "af5bc5f587ba01fad87f13604ec65c4effabb5726a4c32120710007f9ce626c9"
       }
     },
@@ -282,21 +283,24 @@
       "met": false,
       "evidence": {
         "verdict": "not_met",
-        "quote": "Apixaban criteria (§2), using the most recent creatinine of 1.71 mg/dL: age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.5 or higher: met. Two criteria met. Apixaban stays at 2.5 mg twice daily.",
-        "cache_key": "20d3ecebed8070f66cb74be75c5443b89f2b7e135d7eed356ec2e0356f31eff5"
+        "quote": "",
+        "cache_key": "f89c79220c4d69d540dce8586e129cc67475754cd5e3203136b3e544d3850b1b"
       }
     }
   ],
   "score": 0,
   "judge": {
-    "calls": 4,
+    "calls": 0,
     "unknown": 0,
+    "unknown_penalties": 0,
+    "score_penalties_met": 0,
+    "score_penalties_not_met": 0,
     "over_allowance": 0,
     "cache_keys": [
       "372118b863bf9ae542de65e803c3d4a14a0001fc08c188577dcb5fa770aa8c2c",
-      "d860fcf44cff6e3eab62b114342977854fb0300e51b4910035f0dfc518c3b14b",
+      "c83b6417bebad86a136f35341e21da761206f685a533ba10b177cfea8470db21",
       "af5bc5f587ba01fad87f13604ec65c4effabb5726a4c32120710007f9ce626c9",
-      "20d3ecebed8070f66cb74be75c5443b89f2b7e135d7eed356ec2e0356f31eff5"
+      "f89c79220c4d69d540dce8586e129cc67475754cd5e3203136b3e544d3850b1b"
     ],
     "cache": [
       {
@@ -307,32 +311,32 @@
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "not_met",
-          "quote": "SCr 1.5 or higher: met. Two criteria met."
+          "quote": "Apixaban criteria (§2), using the most recent creatinine of 1.71 mg/dL: age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.5 or higher: met. Two criteria met. Apixaban stays at 2.5 mg twice daily."
         },
         "error": null,
-        "calls": 1,
+        "calls": 0,
         "provenance": {
-          "source": "live",
-          "model": "claude-opus-5-5",
-          "at": "2026-10-25T14:39:17.813Z"
+          "source": "scripted",
+          "model": "none: a rule-based script with no network call (builder-42)",
+          "at": "2026-10-24T09:59:30Z"
         }
       },
       {
-        "key": "d860fcf44cff6e3eab62b114342977854fb0300e51b4910035f0dfc518c3b14b",
+        "key": "c83b6417bebad86a136f35341e21da761206f685a533ba10b177cfea8470db21",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "not_met",
-          "quote": "using the most recent creatinine of 1.71 mg/dL"
+          "quote": ""
         },
         "error": null,
-        "calls": 1,
+        "calls": 0,
         "provenance": {
-          "source": "live",
-          "model": "claude-opus-5-5",
-          "at": "2026-10-25T14:39:17.813Z"
+          "source": "scripted",
+          "model": "none: a rule-based script with no network call (builder-42)",
+          "at": "2026-10-24T09:59:30Z"
         }
       },
       {
@@ -343,32 +347,32 @@
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "met",
-          "quote": "using the most recent creatinine of 1.71 mg/dL"
+          "quote": "Inputs (§1): Latest creatinine 1.71 mg/dL. Weight 143 lb = 64.9 kg (10/20/2026). Age 82."
         },
         "error": null,
-        "calls": 1,
+        "calls": 0,
         "provenance": {
-          "source": "live",
-          "model": "claude-opus-5-5",
-          "at": "2026-10-25T14:39:17.813Z"
+          "source": "scripted",
+          "model": "none: a rule-based script with no network call (builder-42)",
+          "at": "2026-10-24T09:59:30Z"
         }
       },
       {
-        "key": "20d3ecebed8070f66cb74be75c5443b89f2b7e135d7eed356ec2e0356f31eff5",
+        "key": "f89c79220c4d69d540dce8586e129cc67475754cd5e3203136b3e544d3850b1b",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "not_met",
-          "quote": "Apixaban criteria (§2), using the most recent creatinine of 1.71 mg/dL: age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.5 or higher: met. Two criteria met. Apixaban stays at 2.5 mg twice daily."
+          "quote": ""
         },
         "error": null,
-        "calls": 1,
+        "calls": 0,
         "provenance": {
-          "source": "live",
-          "model": "claude-opus-5-5",
-          "at": "2026-10-25T14:39:17.813Z"
+          "source": "scripted",
+          "model": "none: a rule-based script with no network call (builder-42)",
+          "at": "2026-10-24T09:59:30Z"
         }
       }
     ]

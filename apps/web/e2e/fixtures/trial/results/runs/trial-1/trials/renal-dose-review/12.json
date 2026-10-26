@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:renal-dose-review:12",
   "task_id": "renal-dose-review",
-  "task_version": "0e06ff9196d84e936b2653bdb9b457e97f56b6d6fed778c588de06d6535e98c4",
-  "env_version": "0dae10d1d8d15746dfd85762a4d0532e340503b7de2db604d209f8a3c5d3e408",
-  "grader_task_version": "271c8acff3147cdf01bb4a0ea08fd037798bf3bde08d589cf431987b8c217d81",
-  "fixture_hash": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
+  "task_version": "a789d2710d7e9022c1b8d2b11025b1022324aa94fdbac9e9a66048dcb16797a1",
+  "env_version": "b17f30f6656c54d4cd77b414ce727440cdb4f79ad2b1d947c225cfcb0f185fbd",
+  "grader_task_version": "2c5c4f59a926849a7016ac77605ece0f0a9b1242d1b5c461b0f126858230f971",
+  "fixture_hash": "a02ad8dec0903b5c9450b758783943e9a6beb9c3076b7cde71d559989a37d75b",
   "state_hash": {
-    "initial": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
-    "final": "32f6e62a3876a3dbd69e133557a304f05aa58bae34132bfb0368137a091671f8",
-    "replay_final": "32f6e62a3876a3dbd69e133557a304f05aa58bae34132bfb0368137a091671f8"
+    "initial": "a02ad8dec0903b5c9450b758783943e9a6beb9c3076b7cde71d559989a37d75b",
+    "final": "85857571e0a7c27b126d9a161b6c307d5f4cd15bc1f27475eef08043a3b6b035",
+    "replay_final": "85857571e0a7c27b126d9a161b6c307d5f4cd15bc1f27475eef08043a3b6b035"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T14:20:15.000Z",
+  "started": "2026-10-23T14:20:18.000Z",
   "turns": 8,
   "tool_calls": 11,
   "tool_errors": {
@@ -42,9 +42,10 @@
   "detail": "overloaded_error after 4 retries",
   "summary": "Reviewed Harold Vance: apixaban stays at 2.5 mg, metformin and gabapentin reduced; note written.",
   "resumed": false,
-  "ended": "2026-10-23T14:21:17.000Z",
+  "env_git_sha": null,
+  "ended": "2026-10-23T14:21:20.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "8",
+  "grader_version": "10",
   "outcome": "INFRA_API",
   "valid": false,
   "fault": "infra",
@@ -53,6 +54,9 @@
   "judge": {
     "calls": 0,
     "unknown": 0,
+    "unknown_penalties": 0,
+    "score_penalties_met": null,
+    "score_penalties_not_met": null,
     "over_allowance": 0,
     "cache_keys": [],
     "cache": []

@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:discharge-medrec:9",
   "task_id": "discharge-medrec",
-  "task_version": "935b24e65ea711defc37e3f6e82df351fe193ff64f0f1e31553cee665d6dbe1d",
-  "env_version": "ca1ac7946d79c11362542b219b38f308b443c500e275a30af9274a5fbd842ec2",
-  "grader_task_version": "b726774884e28279b4f62e4d00e20058da0ae229a17cee3e9d08ef0798f957df",
-  "fixture_hash": "6a55a334f64c2dc55fe79930574504206070593a4767f40170b58f880c530bde",
+  "task_version": "04384d8c3d300743664135ae5b804fb499087a60d87fab5f01b228753b79e542",
+  "env_version": "f3507cc7a07467ddbbb35fecb999f07af42cd4b641262f53e667e68520c80e4a",
+  "grader_task_version": "85cb5bed7c09ecac43729bbfa483049ff1fa8402aa725e94d0989738567c6789",
+  "fixture_hash": "a02ad8dec0903b5c9450b758783943e9a6beb9c3076b7cde71d559989a37d75b",
   "state_hash": {
-    "initial": "6a55a334f64c2dc55fe79930574504206070593a4767f40170b58f880c530bde",
-    "final": "662f053101bbe30419b2057a3463f3dc129e791e21168fc23e814c6ff3ea097a",
-    "replay_final": "662f053101bbe30419b2057a3463f3dc129e791e21168fc23e814c6ff3ea097a"
+    "initial": "a02ad8dec0903b5c9450b758783943e9a6beb9c3076b7cde71d559989a37d75b",
+    "final": "37245249942ed3d59db4ebb4bd16937081bea1eb8479d0100ff6f5ff0c4d868a",
+    "replay_final": "37245249942ed3d59db4ebb4bd16937081bea1eb8479d0100ff6f5ff0c4d868a"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -201,7 +201,7 @@
       "met": false,
       "evidence": {
         "verdict": "not_met",
-        "quote": "Changes: furosemide increased from 20 mg to 40 mg daily (discharge summary). Spironolactone 12.5 mg daily started (discharge summary). Potassium chloride stopped (discharge summary). Lisinopril 10 mg daily resumed: the summary resumes it when SCr is below 1.5, and SCr was 1.32 on 10/21 (discharge summary; lab 10/21).",
+        "quote": "Spironolactone 12.5 mg daily started (discharge summary).",
         "cache_key": "74f9d594d1430eb330c92b55336abbabec9abf01ffdf9b7df7e4877694512dad"
       }
     },
@@ -214,7 +214,7 @@
       "met": true,
       "evidence": {
         "verdict": "met",
-        "quote": "Taking both is a duplicate beta-blocker.",
+        "quote": "metoprolol succinate ER 50 mg daily, which the St. Brigid discharge documents continue as \"metoprolol XL\", and metoprolol tartrate 25 mg twice daily (since 2023), which no discharge document mentions. Taking both is a duplicate beta-blocker.",
         "cache_key": "a394d5f8201524a28915d3db2c1e67667dcd4ed422b8d6b78e25f42439c92fce"
       }
     },
@@ -257,7 +257,7 @@
   ],
   "score": 0.2857142857142857,
   "judge": {
-    "calls": 0,
+    "calls": 2,
     "unknown": 0,
     "unknown_penalties": 0,
     "score_penalties_met": 0.2857142857142857,
@@ -276,14 +276,14 @@
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "not_met",
-          "quote": "Changes: furosemide increased from 20 mg to 40 mg daily (discharge summary). Spironolactone 12.5 mg daily started (discharge summary). Potassium chloride stopped (discharge summary). Lisinopril 10 mg daily resumed: the summary resumes it when SCr is below 1.5, and SCr was 1.32 on 10/21 (discharge summary; lab 10/21)."
+          "quote": "Spironolactone 12.5 mg daily started (discharge summary)."
         },
         "error": null,
-        "calls": 0,
+        "calls": 1,
         "provenance": {
-          "source": "scripted",
-          "model": "none: a rule-based script with no network call (builder-47)",
-          "at": "2026-10-24T11:21:54Z"
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-25T13:23:26.047Z"
         }
       },
       {
@@ -294,14 +294,14 @@
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "met",
-          "quote": "Taking both is a duplicate beta-blocker."
+          "quote": "metoprolol succinate ER 50 mg daily, which the St. Brigid discharge documents continue as \"metoprolol XL\", and metoprolol tartrate 25 mg twice daily (since 2023), which no discharge document mentions. Taking both is a duplicate beta-blocker."
         },
         "error": null,
-        "calls": 0,
+        "calls": 1,
         "provenance": {
-          "source": "scripted",
-          "model": "none: a rule-based script with no network call (builder-47)",
-          "at": "2026-10-24T11:21:54Z"
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-25T13:23:26.047Z"
         }
       }
     ]

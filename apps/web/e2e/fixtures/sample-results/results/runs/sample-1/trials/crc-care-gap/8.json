@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:crc-care-gap:8",
   "task_id": "crc-care-gap",
-  "task_version": "78296e2a85477cf5df8afba694bffc59c70138665fa21b6bc7362be419c514c6",
-  "env_version": "c59e9b3378f514ef1c9b3d4665b5ca4270e6e310ac74875e35f49b4b800dba51",
-  "grader_task_version": "1952a48403a77a84eb548dda5d5b0395ce0e20e849f59eec620e8eeb36a624ff",
-  "fixture_hash": "6a55a334f64c2dc55fe79930574504206070593a4767f40170b58f880c530bde",
+  "task_version": "ea49bcadf1f09a28deb079b171b4664886a254b824a89235990aab4d2039e3dc",
+  "env_version": "33bc405f9ee45f63fb612007db9d8fcae1efeaddb9766b21073172bbd912fd86",
+  "grader_task_version": "5cef528de411237ff22e51a7a6df680a6954707a6a44f04885e492b572eafee5",
+  "fixture_hash": "a02ad8dec0903b5c9450b758783943e9a6beb9c3076b7cde71d559989a37d75b",
   "state_hash": {
-    "initial": "6a55a334f64c2dc55fe79930574504206070593a4767f40170b58f880c530bde",
-    "final": "50c5d011000f182b0703854260e12a5e10688dc8f117217dcfe78d6e34bcc518",
-    "replay_final": "50c5d011000f182b0703854260e12a5e10688dc8f117217dcfe78d6e34bcc518"
+    "initial": "a02ad8dec0903b5c9450b758783943e9a6beb9c3076b7cde71d559989a37d75b",
+    "final": "042993f832c83e431a50446704efbd7dcd30ddec77821a90a3209be07f87ff3f",
+    "replay_final": "042993f832c83e431a50446704efbd7dcd30ddec77821a90a3209be07f87ff3f"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -220,7 +220,7 @@
         "status": "excluded",
         "reason": "frailty_dementia_medication",
         "verdict": "met",
-        "quote": "Elly Trantow | Excluded | Age 72 with frailty and a dementia medication (donepezil): advanced illness",
+        "quote": "| Elly Trantow | Excluded | Age 72 with frailty and a dementia medication (donepezil): advanced illness |",
         "cache_key": "39ec72673879c1d5162380f6e30e1c01958b3adcab4a6118598969d4f4d668f7"
       }
     },
@@ -300,7 +300,7 @@
         "status": "gap",
         "reason": "no_screening",
         "verdict": "met",
-        "quote": "Harrison O'Keefe | Open gap: FIT kit ordered, outreach sent | Age 69 with frailty but no advanced illness or dementia medication, so not excluded; no screening on record",
+        "quote": "| Harrison O'Keefe | Open gap: FIT kit ordered, outreach sent | Age 69 with frailty but no advanced illness or dementia medication, so not excluded; no screening on record |",
         "cache_key": "aa012e3507059f5df6c5ae2907b1c59807cd21aaf1591c22d928ead451932001"
       }
     },
@@ -500,14 +500,14 @@
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "met",
-          "quote": "Elly Trantow | Excluded | Age 72 with frailty and a dementia medication (donepezil): advanced illness"
+          "quote": "| Elly Trantow | Excluded | Age 72 with frailty and a dementia medication (donepezil): advanced illness |"
         },
         "error": null,
         "calls": 1,
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-25T12:01:42.238Z"
+          "at": "2026-10-24T23:56:19.276Z"
         }
       },
       {
@@ -525,7 +525,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-25T12:01:42.238Z"
+          "at": "2026-10-24T23:56:19.276Z"
         }
       },
       {
@@ -543,7 +543,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-25T12:01:42.238Z"
+          "at": "2026-10-24T23:56:19.276Z"
         }
       },
       {
@@ -561,7 +561,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-25T12:01:42.238Z"
+          "at": "2026-10-24T23:56:19.276Z"
         }
       },
       {
@@ -579,7 +579,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-25T12:01:42.238Z"
+          "at": "2026-10-24T23:56:19.276Z"
         }
       },
       {
@@ -590,14 +590,14 @@
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "met",
-          "quote": "Harrison O'Keefe | Open gap: FIT kit ordered, outreach sent | Age 69 with frailty but no advanced illness or dementia medication, so not excluded; no screening on record"
+          "quote": "| Harrison O'Keefe | Open gap: FIT kit ordered, outreach sent | Age 69 with frailty but no advanced illness or dementia medication, so not excluded; no screening on record |"
         },
         "error": null,
         "calls": 1,
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-25T12:01:42.238Z"
+          "at": "2026-10-24T23:56:19.276Z"
         }
       },
       {
@@ -615,7 +615,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-25T12:01:42.238Z"
+          "at": "2026-10-24T23:56:19.276Z"
         }
       },
       {
@@ -633,7 +633,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-25T12:01:42.238Z"
+          "at": "2026-10-24T23:56:19.276Z"
         }
       },
       {
@@ -651,7 +651,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-25T12:01:42.238Z"
+          "at": "2026-10-24T23:56:19.276Z"
         }
       },
       {
@@ -669,7 +669,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-25T12:01:42.238Z"
+          "at": "2026-10-24T23:56:19.276Z"
         }
       },
       {
@@ -687,7 +687,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-25T12:01:42.238Z"
+          "at": "2026-10-24T23:56:19.276Z"
         }
       },
       {
@@ -705,7 +705,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-25T12:01:42.238Z"
+          "at": "2026-10-24T23:56:19.276Z"
         }
       }
     ]

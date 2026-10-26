@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:renal-dose-review:3",
   "task_id": "renal-dose-review",
-  "task_version": "0e06ff9196d84e936b2653bdb9b457e97f56b6d6fed778c588de06d6535e98c4",
-  "env_version": "0dae10d1d8d15746dfd85762a4d0532e340503b7de2db604d209f8a3c5d3e408",
-  "grader_task_version": "271c8acff3147cdf01bb4a0ea08fd037798bf3bde08d589cf431987b8c217d81",
-  "fixture_hash": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
+  "task_version": "a789d2710d7e9022c1b8d2b11025b1022324aa94fdbac9e9a66048dcb16797a1",
+  "env_version": "b17f30f6656c54d4cd77b414ce727440cdb4f79ad2b1d947c225cfcb0f185fbd",
+  "grader_task_version": "2c5c4f59a926849a7016ac77605ece0f0a9b1242d1b5c461b0f126858230f971",
+  "fixture_hash": "a02ad8dec0903b5c9450b758783943e9a6beb9c3076b7cde71d559989a37d75b",
   "state_hash": {
-    "initial": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
-    "final": "28493773fc6881431179a52a444b532350d17f82243a75fb30beb6aa13038fa8",
-    "replay_final": "28493773fc6881431179a52a444b532350d17f82243a75fb30beb6aa13038fa8"
+    "initial": "a02ad8dec0903b5c9450b758783943e9a6beb9c3076b7cde71d559989a37d75b",
+    "final": "e4c684e97dc03b738f71a8b05fb8f0ec0b8f6fd490c12c37fef577dbfca955d8",
+    "replay_final": "e4c684e97dc03b738f71a8b05fb8f0ec0b8f6fd490c12c37fef577dbfca955d8"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -42,9 +42,10 @@
   "detail": null,
   "summary": "Reviewed Harold Vance under RBC-PHARM-07: apixaban back to 5 mg twice daily, metformin unchanged, gabapentin 400 mg twice daily; note written.",
   "resumed": false,
+  "env_git_sha": null,
   "ended": "2026-10-23T14:12:18.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "8",
+  "grader_version": "10",
   "outcome": "PASS",
   "valid": true,
   "fault": null,
@@ -203,7 +204,7 @@
       "met": true,
       "evidence": {
         "verdict": "met",
-        "quote": "age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met.",
+        "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met. One criterion met, so apixaban goes back to 5 mg twice daily (2.5 mg twice daily since the February admission).",
         "cache_key": "cdf4aada11e7eea32f60793f2e7a0ecd3dd6276fb25c68e997b413167f361727"
       }
     },
@@ -216,8 +217,8 @@
       "met": true,
       "evidence": {
         "verdict": "met",
-        "quote": "The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used.",
-        "cache_key": "83e73c3dcca92cc21f217c90a130b349fc319c4819246713db9e71e6d287fa50"
+        "quote": "The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used",
+        "cache_key": "cd594499d62c5acd5e79344fb9dcd155fb1a3d702d1d355f54bbfb40352cf87c"
       }
     },
     {
@@ -266,7 +267,7 @@
           "SCr 1.21 mg/dL (10/20/2026). The SCr of 1.88"
         ],
         "verdict": "not_met",
-        "quote": "current SCr 1.21 mg/dL (10/20/2026). The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used.",
+        "quote": "Inputs (§1): current SCr 1.21 mg/dL (10/20/2026). The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used. Weight 143 lb = 64.9 kg (10/20/2026); the 57.0 kg inpatient weight from February is stale. Age 82.",
         "cache_key": "6a2c42a8f9410e3880b9b56a3303884ea0faa798ff6e10d814dd94bceedaa83a"
       }
     },
@@ -279,21 +280,24 @@
       "met": false,
       "evidence": {
         "verdict": "not_met",
-        "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met. One criterion met, so apixaban goes back to 5 mg twice daily",
-        "cache_key": "3eea2904f4b469a72b04c0bf777004c5c8db564e2de2d01f938d6aaa0433ff4b"
+        "quote": "",
+        "cache_key": "2596e15e62655167cf5d391f5b2c2d7828384400ab867d446c37eaeadcf9cd7f"
       }
     }
   ],
   "score": 1,
   "judge": {
-    "calls": 4,
+    "calls": 0,
     "unknown": 0,
+    "unknown_penalties": 0,
+    "score_penalties_met": 1,
+    "score_penalties_not_met": 1,
     "over_allowance": 0,
     "cache_keys": [
       "cdf4aada11e7eea32f60793f2e7a0ecd3dd6276fb25c68e997b413167f361727",
-      "83e73c3dcca92cc21f217c90a130b349fc319c4819246713db9e71e6d287fa50",
+      "cd594499d62c5acd5e79344fb9dcd155fb1a3d702d1d355f54bbfb40352cf87c",
       "6a2c42a8f9410e3880b9b56a3303884ea0faa798ff6e10d814dd94bceedaa83a",
-      "3eea2904f4b469a72b04c0bf777004c5c8db564e2de2d01f938d6aaa0433ff4b"
+      "2596e15e62655167cf5d391f5b2c2d7828384400ab867d446c37eaeadcf9cd7f"
     ],
     "cache": [
       {
@@ -304,32 +308,32 @@
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "met",
-          "quote": "age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met."
+          "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met. One criterion met, so apixaban goes back to 5 mg twice daily (2.5 mg twice daily since the February admission)."
         },
         "error": null,
-        "calls": 1,
+        "calls": 0,
         "provenance": {
-          "source": "live",
-          "model": "claude-opus-5-5",
-          "at": "2026-10-25T14:39:17.813Z"
+          "source": "scripted",
+          "model": "none: a rule-based script with no network call (builder-35)",
+          "at": "2026-10-24T08:27:23Z"
         }
       },
       {
-        "key": "83e73c3dcca92cc21f217c90a130b349fc319c4819246713db9e71e6d287fa50",
+        "key": "cd594499d62c5acd5e79344fb9dcd155fb1a3d702d1d355f54bbfb40352cf87c",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "met",
-          "quote": "The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
+          "quote": "The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used"
         },
         "error": null,
-        "calls": 1,
+        "calls": 0,
         "provenance": {
-          "source": "live",
-          "model": "claude-opus-5-5",
-          "at": "2026-10-25T14:39:17.813Z"
+          "source": "scripted",
+          "model": "none: a rule-based script with no network call (builder-35)",
+          "at": "2026-10-24T08:27:23Z"
         }
       },
       {
@@ -340,32 +344,32 @@
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "not_met",
-          "quote": "current SCr 1.21 mg/dL (10/20/2026). The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
+          "quote": "Inputs (§1): current SCr 1.21 mg/dL (10/20/2026). The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used. Weight 143 lb = 64.9 kg (10/20/2026); the 57.0 kg inpatient weight from February is stale. Age 82."
         },
         "error": null,
-        "calls": 1,
+        "calls": 0,
         "provenance": {
-          "source": "live",
-          "model": "claude-opus-5-5",
-          "at": "2026-10-25T14:39:17.813Z"
+          "source": "scripted",
+          "model": "none: a rule-based script with no network call (builder-42)",
+          "at": "2026-10-24T09:59:30Z"
         }
       },
       {
-        "key": "3eea2904f4b469a72b04c0bf777004c5c8db564e2de2d01f938d6aaa0433ff4b",
+        "key": "2596e15e62655167cf5d391f5b2c2d7828384400ab867d446c37eaeadcf9cd7f",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "not_met",
-          "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met. One criterion met, so apixaban goes back to 5 mg twice daily"
+          "quote": ""
         },
         "error": null,
-        "calls": 1,
+        "calls": 0,
         "provenance": {
-          "source": "live",
-          "model": "claude-opus-5-5",
-          "at": "2026-10-25T14:39:17.813Z"
+          "source": "scripted",
+          "model": "none: a rule-based script with no network call (builder-35)",
+          "at": "2026-10-24T08:27:23Z"
         }
       }
     ]

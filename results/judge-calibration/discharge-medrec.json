@@ -3,22 +3,40 @@
   "model": "claude-opus-5-5",
   "effort": "medium",
   "prompt_version": "judge-v1",
-  "at": "2026-10-24T23:28:06.535Z",
-  "questions": 10,
-  "same_keys": 10,
-  "agree": 10,
-  "calls": 10,
-  "ledger_settles": 10,
-  "cost_usd": 0.056008,
-  "usd_per_call": 0.005601,
+  "at": "2026-10-25T13:27:59.045Z",
+  "questions": 11,
+  "same_keys": 11,
+  "agree": 11,
+  "calls": 11,
+  "ledger_settles": 11,
+  "cost_usd": 0.059972,
+  "usd_per_call": 0.005452,
   "oracle": {
     "outcome": "PASS",
     "score": 1,
     "judge_unknown": 0
   },
   "disagreements": [],
-  "note": "Live judge answers (pnpm cli judge-calibrate) vs the task's cache. tests/judge-cache.json is not written by this command; this file is the calibration record. Ledger batch c0787fc7-0fa2-4a9e-a2fd-7fa487f5ae53.",
+  "note": "Live judge answers (pnpm cli judge-calibrate) vs the task's cache. tests/judge-cache.json is not written by this command; this file is the calibration record. Ledger batch d0e00e65-8c88-4691-811c-f0016c405cb5.",
   "live_entries": [
+    {
+      "key": "22e55326fb1821ed7226fdf0b072dcb7fd12f4b82be06edd0cd67f2b18f16f56",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "Walter Kim has two beta-blockers on his outpatient list: metoprolol succinate ER 50 mg daily, which the St. Brigid discharge documents continue as \"metoprolol XL\", and metoprolol tartrate 25 mg twice daily (since 2023), which no discharge document mentions. Taking both is a duplicate beta-blocker."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-25T13:27:59.045Z"
+      }
+    },
     {
       "key": "4bc0a8fffb68357876e902d9646c654af13260e8814141ca37242ea6b1fbe1b3",
       "kind": "judge",
@@ -34,7 +52,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T23:28:06.535Z"
+        "at": "2026-10-25T13:27:59.045Z"
       }
     },
     {
@@ -52,7 +70,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T23:28:06.535Z"
+        "at": "2026-10-25T13:27:59.045Z"
       }
     },
     {
@@ -70,7 +88,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T23:28:06.535Z"
+        "at": "2026-10-25T13:27:59.045Z"
       }
     },
     {
@@ -88,7 +106,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T23:28:06.535Z"
+        "at": "2026-10-25T13:27:59.045Z"
       }
     },
     {
@@ -106,7 +124,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T23:28:06.535Z"
+        "at": "2026-10-25T13:27:59.045Z"
       }
     },
     {
@@ -124,7 +142,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T23:28:06.535Z"
+        "at": "2026-10-25T13:27:59.045Z"
       }
     },
     {
@@ -142,7 +160,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T23:28:06.535Z"
+        "at": "2026-10-25T13:27:59.045Z"
       }
     },
     {
@@ -160,7 +178,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T23:28:06.535Z"
+        "at": "2026-10-25T13:27:59.045Z"
       }
     },
     {
@@ -178,7 +196,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T23:28:06.535Z"
+        "at": "2026-10-25T13:27:59.045Z"
       }
     },
     {
@@ -196,7 +214,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T23:28:06.535Z"
+        "at": "2026-10-25T13:27:59.045Z"
       }
     }
   ]

@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:discharge-medrec:4",
   "task_id": "discharge-medrec",
-  "task_version": "935b24e65ea711defc37e3f6e82df351fe193ff64f0f1e31553cee665d6dbe1d",
-  "env_version": "ca1ac7946d79c11362542b219b38f308b443c500e275a30af9274a5fbd842ec2",
-  "grader_task_version": "b726774884e28279b4f62e4d00e20058da0ae229a17cee3e9d08ef0798f957df",
-  "fixture_hash": "6a55a334f64c2dc55fe79930574504206070593a4767f40170b58f880c530bde",
+  "task_version": "04384d8c3d300743664135ae5b804fb499087a60d87fab5f01b228753b79e542",
+  "env_version": "f3507cc7a07467ddbbb35fecb999f07af42cd4b641262f53e667e68520c80e4a",
+  "grader_task_version": "85cb5bed7c09ecac43729bbfa483049ff1fa8402aa725e94d0989738567c6789",
+  "fixture_hash": "a02ad8dec0903b5c9450b758783943e9a6beb9c3076b7cde71d559989a37d75b",
   "state_hash": {
-    "initial": "6a55a334f64c2dc55fe79930574504206070593a4767f40170b58f880c530bde",
-    "final": "3cb2d225fefef2245b74de2c2d20c949685dbcebdff99d24cd40e571ccf467a0",
-    "replay_final": "3cb2d225fefef2245b74de2c2d20c949685dbcebdff99d24cd40e571ccf467a0"
+    "initial": "a02ad8dec0903b5c9450b758783943e9a6beb9c3076b7cde71d559989a37d75b",
+    "final": "9e3096b7a9427ed1ede9feebffcc40fbbee33a0b9b4db0fc426ab79da7a0358b",
+    "replay_final": "9e3096b7a9427ed1ede9feebffcc40fbbee33a0b9b4db0fc426ab79da7a0358b"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -214,7 +214,7 @@
       "met": true,
       "evidence": {
         "verdict": "met",
-        "quote": "Taking both is a duplicate beta-blocker.",
+        "quote": "metoprolol succinate ER 50 mg daily, which the St. Brigid discharge documents continue as \"metoprolol XL\", and metoprolol tartrate 25 mg twice daily (since 2023), which no discharge document mentions. Taking both is a duplicate beta-blocker.",
         "cache_key": "a394d5f8201524a28915d3db2c1e67667dcd4ed422b8d6b78e25f42439c92fce"
       }
     },
@@ -244,7 +244,7 @@
       "evidence": {
         "flagged": true,
         "verdict": "not_met",
-        "quote": "Sources: St. Brigid Regional discharge summary of 10/19/2026 and its signed addendum of 10/19/2026 (RBC-TOC-02 §1); creatinine 1.32 mg/dL on 10/21/2026. The March 2025 discharge summary is from an earlier stay and was not used.",
+        "quote": "The March 2025 discharge summary is from an earlier stay and was not used.",
         "cache_key": "fd77a593c03c64c75baa810c096d1ab35e0fefaac96d390df227d75425dabcdb"
       }
     },
@@ -262,7 +262,7 @@
   ],
   "score": 1,
   "judge": {
-    "calls": 0,
+    "calls": 3,
     "unknown": 0,
     "unknown_penalties": 0,
     "score_penalties_met": 1,
@@ -285,11 +285,11 @@
           "quote": "Changes: furosemide increased from 20 mg to 40 mg daily (discharge summary). Spironolactone 25 mg daily started (signed addendum, which corrects the summary's 12.5 mg). Potassium chloride stopped (discharge summary). Lisinopril 10 mg daily resumed: the summary resumes it when SCr is below 1.5, and SCr was 1.32 on 10/21 (discharge summary; lab 10/21)."
         },
         "error": null,
-        "calls": 0,
+        "calls": 1,
         "provenance": {
-          "source": "scripted",
-          "model": "none: a rule-based script with no network call (builder-47)",
-          "at": "2026-10-24T11:21:54Z"
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-25T13:23:26.047Z"
         }
       },
       {
@@ -300,14 +300,14 @@
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "met",
-          "quote": "Taking both is a duplicate beta-blocker."
+          "quote": "metoprolol succinate ER 50 mg daily, which the St. Brigid discharge documents continue as \"metoprolol XL\", and metoprolol tartrate 25 mg twice daily (since 2023), which no discharge document mentions. Taking both is a duplicate beta-blocker."
         },
         "error": null,
-        "calls": 0,
+        "calls": 1,
         "provenance": {
-          "source": "scripted",
-          "model": "none: a rule-based script with no network call (builder-47)",
-          "at": "2026-10-24T11:21:54Z"
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-25T13:23:26.047Z"
         }
       },
       {
@@ -318,14 +318,14 @@
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "not_met",
-          "quote": "Sources: St. Brigid Regional discharge summary of 10/19/2026 and its signed addendum of 10/19/2026 (RBC-TOC-02 §1); creatinine 1.32 mg/dL on 10/21/2026. The March 2025 discharge summary is from an earlier stay and was not used."
+          "quote": "The March 2025 discharge summary is from an earlier stay and was not used."
         },
         "error": null,
-        "calls": 0,
+        "calls": 1,
         "provenance": {
-          "source": "scripted",
-          "model": "none: a rule-based script with no network call (builder-47)",
-          "at": "2026-10-24T11:21:54Z"
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-25T13:23:26.047Z"
         }
       }
     ]

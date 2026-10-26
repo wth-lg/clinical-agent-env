@@ -23,7 +23,7 @@ const SUBJECT = { reference: `Patient/${PT}` };
 const OKAFOR = { reference: 'Practitioner/pr-okafor' };
 const CLINIC = { reference: 'Organization/org-riverbend' };
 const HOSPITAL = { reference: 'Organization/org-st-brigid' };
-const ATTENDING_REF = { reference: 'Practitioner/pr-t4-osei' };
+const ATTENDING_REF = { reference: 'Practitioner/pr-t4-boateng' };
 
 const LOINC = 'http://loinc.org';
 const SNOMED = 'http://snomed.info/sct';
@@ -35,7 +35,7 @@ const BASE_ACTIVE_MEDS = ['mr-00068', 'mr-00069', 'mr-00070', 'mr-00071'];
 // Synthea's 'Anemia', 'Body mass index 30+ - obesity' and 'Full-time employment'.
 const CONTRADICTED_CONDITIONS = ['cond-00139', 'cond-00141', 'cond-00151'];
 
-const ATTENDING: Resource = { resourceType: 'Practitioner', id: 'pr-t4-osei', active: true, name: [{ use: 'official', given: ['Kwame'], family: 'Osei', suffix: ['MD'] }] };
+const ATTENDING: Resource = { resourceType: 'Practitioner', id: 'pr-t4-boateng', active: true, name: [{ use: 'official', given: ['Samuel'], family: 'Boateng', suffix: ['MD'] }] };
 
 const encounter = (id: string, cls: 'AMB' | 'IMP', type: [string, string], start: string, end: string, provider: { reference: string }): Resource => ({
   resourceType: 'Encounter',
@@ -153,6 +153,7 @@ Discharge medications:
 - Furosemide 40 mg by mouth daily (increased from 20 mg).
 - Metoprolol XL 50 mg by mouth daily: continue.
 - Atorvastatin 40 mg by mouth nightly: continue.
+- Aspirin 81 mg by mouth daily: continue.
 - Lisinopril: held for AKI. Resume home 10 mg daily when SCr < 1.5 on post-discharge labs.
 - Spironolactone 12.5 mg by mouth daily: start.
 - Potassium chloride: stop.
@@ -160,7 +161,7 @@ Discharge medications:
 
 Follow-up: Riverbend Family Medicine within 7 days; basic metabolic panel 2 days after discharge and 1 week after starting spironolactone.
 
-Kwame Osei, MD`;
+Samuel Boateng, MD`;
 
 const ADDENDUM = `St. Brigid Regional - Discharge Summary Addendum (signed)
 Patient: Walter Kim   DOB 1952-02-19
@@ -168,7 +169,7 @@ Admission 2026-10-14 to 2026-10-19.
 
 Correction: spironolactone 25 mg daily, not 12.5 mg.
 
-Kwame Osei, MD`;
+Samuel Boateng, MD`;
 
 const DISCHARGE_2025 = `St. Brigid Regional - Discharge Summary
 Patient: Walter Kim   DOB 1952-02-19
@@ -182,11 +183,12 @@ Discharge medications:
 - Metoprolol succinate 50 mg by mouth daily: continue.
 - Lisinopril 10 mg by mouth daily: continue.
 - Atorvastatin 40 mg by mouth nightly: continue.
+- Aspirin 81 mg by mouth daily: continue.
 - Omeprazole 20 mg by mouth daily: continue.
 
 Follow-up: Riverbend Family Medicine within 7 days; echocardiogram in 3 months.
 
-Kwame Osei, MD`;
+Samuel Boateng, MD`;
 
 const overlay: Overlay = {
   task: 'T4',
@@ -222,6 +224,7 @@ const overlay: Overlay = {
       medication('mr-t4-metoprolol-tart', ['866924', 'metoprolol tartrate 25 MG Oral Tablet'], [25, 'mg'], 'BID', '2023-05-02T10:00:00-04:00', 'Palpitations'),
       medication('mr-t4-omeprazole', ['198051', 'omeprazole 20 MG Delayed Release Oral Capsule'], [20, 'mg'], 'QD', '2022-01-11T10:00:00-05:00', 'Gastroesophageal reflux'),
       medication('mr-t4-atorvastatin', ['617311', 'atorvastatin 40 MG Oral Tablet'], [40, 'mg'], 'QHS', '2022-01-11T10:00:00-05:00', 'Hyperlipidemia'),
+      medication('mr-t4-aspirin', ['243670', 'aspirin 81 MG Oral Tablet'], [81, 'mg'], 'QD', '2024-02-06T10:00:00-05:00', 'Ischemic heart disease'),
       note('doc-t4-dc-2025', '2025-03-06T12:10:00-05:00', 'enc-t4-adm-2025', DISCHARGE_2025),
       note('doc-t4-dc-1019', '2026-10-19T11:02:00-04:00', 'enc-t4-adm-1014', DISCHARGE),
       note('doc-t4-dc-1019-add', '2026-10-19T18:40:00-04:00', 'enc-t4-adm-1014', ADDENDUM, { relatesTo: [{ code: 'appends', target: { reference: 'DocumentReference/doc-t4-dc-1019' } }], description: 'Signed addendum' }),

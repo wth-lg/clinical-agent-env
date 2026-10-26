@@ -1,16 +1,16 @@
 {
-  "schema_version": 4,
+  "schema_version": 5,
   "run_id": "trial-1",
   "tasks": {
     "contrast-ct-prep": {
       "task_versions": [
-        "5b7ac243d58393b66979c011d7cbfdb96cb81eca91c47c5b985a6458c0dcdd34"
+        "98c88cdf25fd55c49b3ebbeeda6e51afefd22a19b43636ae6d437c1c97949223"
       ],
       "env_versions": [
-        "1b47cd6807624e2db3e76fbb8dfa5a519eadfa93bdf47dbdcb8fee1a1c37d288"
+        "280b883e5fc517d68ac042233949953cca749adc6fe7adacbc45baea3da00309"
       ],
       "grader_task_versions": [
-        "5cdf5b5b61e615d3711ac28e3b44a134ad14b0a7a4fa721e1429e3f221653d82"
+        "9951302e791a963696583af0f6dd44372df913f3f5b4b8027cdb6f6ca10eca06"
       ],
       "records": 1,
       "trials": 1,
@@ -52,17 +52,30 @@
         "mean_score": 1,
         "raw_mean_score": 1,
         "gate_fraction": 1
+      },
+      "consistency": {
+        "valid": 1,
+        "passes": 0,
+        "failures": 1,
+        "shared": {
+          "check": "ct_order",
+          "count": 1,
+          "found": "{\"active\":[\"ServiceRequest/sr-t0001\"],\"linked_to_appointment\":[],\"occurrence\":{\"start\":\"2026-10-26T09:00:00-04:00\"},\"slot\":\"2026-10-26T09:00:00-04:00\"}",
+          "found_count": 1,
+          "found_values": 1
+        },
+        "flags": []
       }
     },
     "crc-care-gap": {
       "task_versions": [
-        "d1dba89c13b34275df7ab9a5041f5cfe45ad631a7d733a5b05737c0532638740"
+        "ea49bcadf1f09a28deb079b171b4664886a254b824a89235990aab4d2039e3dc"
       ],
       "env_versions": [
-        "f5f885afc6134508bf8c9caaf697d8c9df5a7f0bd7316c7e637f90c5c9abc58c"
+        "33bc405f9ee45f63fb612007db9d8fcae1efeaddb9766b21073172bbd912fd86"
       ],
       "grader_task_versions": [
-        "eaf6b0d8b15fae30edc8b0ead45dd54994dc2a26d0e997a6fa0607d4974f8caa"
+        "5cef528de411237ff22e51a7a6df680a6954707a6a44f04885e492b572eafee5"
       ],
       "records": 1,
       "trials": 1,
@@ -104,17 +117,30 @@
         "mean_score": 1,
         "raw_mean_score": 1,
         "gate_fraction": 1
+      },
+      "consistency": {
+        "valid": 1,
+        "passes": 0,
+        "failures": 1,
+        "shared": {
+          "check": "fit_orders",
+          "count": 1,
+          "found": "{\"extra\":[],\"missing\":[\"Patient/pt-0017\"],\"ordered\":{\"Patient/pt-0018\":[\"ServiceRequest/sr-t0001\"],\"Patient/pt-0019\":[\"ServiceRequest/sr-t0005\"],\"Patient/pt-0022\":[\"ServiceRequest/sr-t0007\"],\"Patient/pt-0023\":[\"ServiceRequest/sr-t0003\"]},\"want\":[\"Patient/pt-0017\",\"Patient/pt-0018\",\"Patient/pt-0019\",\"Patient/pt-0022\",\"Patient/pt-0023\"]}",
+          "found_count": 1,
+          "found_values": 1
+        },
+        "flags": []
       }
     },
     "discharge-medrec": {
       "task_versions": [
-        "30e43da7b151d7d2bbf3e3b3c2cae6bdb7ecb2b1c53b660be95d33a84f003fb7"
+        "04384d8c3d300743664135ae5b804fb499087a60d87fab5f01b228753b79e542"
       ],
       "env_versions": [
-        "c1e656fdcb8d2ef267ed6af93489ec65c25baa80dabaf5352107f549e40ca783"
+        "f3507cc7a07467ddbbb35fecb999f07af42cd4b641262f53e667e68520c80e4a"
       ],
       "grader_task_versions": [
-        "52776c2175330257b6414c455ddf80b218400506163e528f29651d0125398ba0"
+        "85cb5bed7c09ecac43729bbfa483049ff1fa8402aa725e94d0989738567c6789"
       ],
       "records": 1,
       "trials": 0,
@@ -153,17 +179,24 @@
         "mean_score": 0,
         "raw_mean_score": 0,
         "gate_fraction": 0
+      },
+      "consistency": {
+        "valid": 0,
+        "passes": 0,
+        "failures": 0,
+        "shared": null,
+        "flags": []
       }
     },
     "message-queue": {
       "task_versions": [
-        "311678ca575502d688dd5840481e25ee692bf7abe5ced77c679c0b6d394da397"
+        "2481bb2bbf7b0c4de99834b435b04156efd125131de77a34e07651297e5e0a9b"
       ],
       "env_versions": [
-        "0f4ca284064318e267b43016adacd89fe793e885765e5c687d044d21f87e4e6a"
+        "44b0232987093b07f6516db4ec0b00b87c4fa88625567baaca3c93ad96ad6be3"
       ],
       "grader_task_versions": [
-        "4929f0ecba7b68e9fb2e621a4d2c91143090b6b6afb39cf58216c56f69c6ff8b"
+        "df605b2c3bc3ef63735ad4c318b5718d82ecf3590b04cb241716445ffe5da98a"
       ],
       "records": 1,
       "trials": 0,
@@ -202,17 +235,24 @@
         "mean_score": 0,
         "raw_mean_score": 0,
         "gate_fraction": 0
+      },
+      "consistency": {
+        "valid": 0,
+        "passes": 0,
+        "failures": 0,
+        "shared": null,
+        "flags": []
       }
     },
     "renal-dose-review": {
       "task_versions": [
-        "0e06ff9196d84e936b2653bdb9b457e97f56b6d6fed778c588de06d6535e98c4"
+        "a789d2710d7e9022c1b8d2b11025b1022324aa94fdbac9e9a66048dcb16797a1"
       ],
       "env_versions": [
-        "0dae10d1d8d15746dfd85762a4d0532e340503b7de2db604d209f8a3c5d3e408"
+        "b17f30f6656c54d4cd77b414ce727440cdb4f79ad2b1d947c225cfcb0f185fbd"
       ],
       "grader_task_versions": [
-        "271c8acff3147cdf01bb4a0ea08fd037798bf3bde08d589cf431987b8c217d81"
+        "2c5c4f59a926849a7016ac77605ece0f0a9b1242d1b5c461b0f126858230f971"
       ],
       "records": 5,
       "trials": 4,
@@ -260,6 +300,19 @@
         "mean_score": 4,
         "raw_mean_score": 4,
         "gate_fraction": 4
+      },
+      "consistency": {
+        "valid": 4,
+        "passes": 1,
+        "failures": 3,
+        "shared": {
+          "check": "apixaban_dose",
+          "count": 3,
+          "found": "{\"active\":[\"MedicationRequest/mr-t1-apixaban\"],\"mg\":2.5,\"oral\":true,\"per_day\":2,\"product\":\"1364435\"}",
+          "found_count": 2,
+          "found_values": 2
+        },
+        "flags": []
       }
     }
   },
@@ -290,7 +343,7 @@
     "claude-opus-5-5"
   ],
   "initial_state_hashes": [
-    "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b"
+    "a02ad8dec0903b5c9450b758783943e9a6beb9c3076b7cde71d559989a37d75b"
   ],
   "replay": {
     "ran": false,

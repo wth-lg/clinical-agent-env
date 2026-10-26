@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:results-inbox:5",
   "task_id": "results-inbox",
-  "task_version": "318b03862c908da506289346748837a594f48d4813384aed1b0d7110b66e68fc",
-  "env_version": "1b69d4deab5047c9be4c70ff0438628526da629a9fa0c5f1ca1d0605cec02a86",
-  "grader_task_version": "df6f8cb893921ad313840f7a5bc7612d29b16a10385efd7cad3eb00e530d233c",
-  "fixture_hash": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
+  "task_version": "9380165274628e746af5b25b6299c7937e1f7e8b1a0d9e2f08409c74ac682d06",
+  "env_version": "873a026b7630321c406bcbd3a29930661ebb2b779aaebc36276b458ced108290",
+  "grader_task_version": "e2a595eda6b2df8a172a084467ad25cbd18f98baf24140bce6d42c3cc7242b46",
+  "fixture_hash": "a02ad8dec0903b5c9450b758783943e9a6beb9c3076b7cde71d559989a37d75b",
   "state_hash": {
-    "initial": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
-    "final": "2521c61a5d30e8b9ddc25b381b7cb8976b266b2978e8df858052973cbb7dfd09",
-    "replay_final": "2521c61a5d30e8b9ddc25b381b7cb8976b266b2978e8df858052973cbb7dfd09"
+    "initial": "a02ad8dec0903b5c9450b758783943e9a6beb9c3076b7cde71d559989a37d75b",
+    "final": "fa18b1f22d72b824a9b82b84c905427cc23df2b27c4c7cc09b39eb1828e6ce63",
+    "replay_final": "fa18b1f22d72b824a9b82b84c905427cc23df2b27c4c7cc09b39eb1828e6ce63"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T14:35:42.000Z",
+  "started": "2026-10-23T14:35:45.000Z",
   "turns": 13,
   "tool_calls": 44,
   "tool_errors": {
@@ -42,9 +42,10 @@
   "detail": null,
   "summary": "Results inbox cleared: all 8 items completed with their follow-up orders, tasks, messages and notes linked.",
   "resumed": false,
-  "ended": "2026-10-23T14:38:32.000Z",
+  "env_git_sha": null,
+  "ended": "2026-10-23T14:38:35.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "8",
+  "grader_version": "10",
   "outcome": "PASS",
   "valid": true,
   "fault": null,
@@ -458,6 +459,9 @@
   "judge": {
     "calls": 0,
     "unknown": 0,
+    "unknown_penalties": 0,
+    "score_penalties_met": 0.9333333333333333,
+    "score_penalties_not_met": 0.9333333333333333,
     "over_allowance": 0,
     "cache_keys": [
       "770c35b1f8cc16405d32aed29083dfbfb1636fd6183e0a69a4ae3c7ba91176eb"
