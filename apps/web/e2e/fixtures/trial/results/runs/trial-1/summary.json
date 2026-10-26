@@ -1,16 +1,16 @@
 {
-  "schema_version": 6,
+  "schema_version": 4,
   "run_id": "trial-1",
   "tasks": {
     "contrast-ct-prep": {
       "task_versions": [
-        "96e5d1cee4d25949bdf6c80ccdeff1d9ee3d54192c528a61b1d51c4789db916b"
+        "5b7ac243d58393b66979c011d7cbfdb96cb81eca91c47c5b985a6458c0dcdd34"
       ],
       "env_versions": [
-        "89e4f198da1df4578e9cd27578c1cdfa9435ab7cc52795e6907b1567ee678050"
+        "1b47cd6807624e2db3e76fbb8dfa5a519eadfa93bdf47dbdcb8fee1a1c37d288"
       ],
       "grader_task_versions": [
-        "f118f2d5e4c9d23ab48f2337f7a64be9af45b677476f461395cfb6720cb3012d"
+        "5cdf5b5b61e615d3711ac28e3b44a134ad14b0a7a4fa721e1429e3f221653d82"
       ],
       "records": 1,
       "trials": 1,
@@ -52,35 +52,17 @@
         "mean_score": 1,
         "raw_mean_score": 1,
         "gate_fraction": 1
-      },
-      "pass_k": {
-        "1": 0,
-        "3": null,
-        "5": null
-      },
-      "consistency": {
-        "valid": 1,
-        "passes": 0,
-        "failures": 1,
-        "shared": {
-          "check": "ct_order",
-          "count": 1,
-          "found": "{\"active\":[\"ServiceRequest/sr-t0001\"],\"linked_to_appointment\":[],\"occurrence\":{\"start\":\"2026-10-26T09:00:00-04:00\"},\"slot\":\"2026-10-26T09:00:00-04:00\"}",
-          "found_count": 1,
-          "found_values": 1
-        },
-        "flags": []
       }
     },
     "crc-care-gap": {
       "task_versions": [
-        "78296e2a85477cf5df8afba694bffc59c70138665fa21b6bc7362be419c514c6"
+        "d1dba89c13b34275df7ab9a5041f5cfe45ad631a7d733a5b05737c0532638740"
       ],
       "env_versions": [
-        "c59e9b3378f514ef1c9b3d4665b5ca4270e6e310ac74875e35f49b4b800dba51"
+        "f5f885afc6134508bf8c9caaf697d8c9df5a7f0bd7316c7e637f90c5c9abc58c"
       ],
       "grader_task_versions": [
-        "1952a48403a77a84eb548dda5d5b0395ce0e20e849f59eec620e8eeb36a624ff"
+        "eaf6b0d8b15fae30edc8b0ead45dd54994dc2a26d0e997a6fa0607d4974f8caa"
       ],
       "records": 1,
       "trials": 1,
@@ -122,35 +104,17 @@
         "mean_score": 1,
         "raw_mean_score": 1,
         "gate_fraction": 1
-      },
-      "pass_k": {
-        "1": 0,
-        "3": null,
-        "5": null
-      },
-      "consistency": {
-        "valid": 1,
-        "passes": 0,
-        "failures": 1,
-        "shared": {
-          "check": "fit_orders",
-          "count": 1,
-          "found": "{\"extra\":[],\"missing\":[\"Patient/pt-0017\"],\"ordered\":{\"Patient/pt-0018\":[\"ServiceRequest/sr-t0001\"],\"Patient/pt-0019\":[\"ServiceRequest/sr-t0005\"],\"Patient/pt-0022\":[\"ServiceRequest/sr-t0007\"],\"Patient/pt-0023\":[\"ServiceRequest/sr-t0003\"]},\"want\":[\"Patient/pt-0017\",\"Patient/pt-0018\",\"Patient/pt-0019\",\"Patient/pt-0022\",\"Patient/pt-0023\"]}",
-          "found_count": 1,
-          "found_values": 1
-        },
-        "flags": []
       }
     },
     "discharge-medrec": {
       "task_versions": [
-        "935b24e65ea711defc37e3f6e82df351fe193ff64f0f1e31553cee665d6dbe1d"
+        "30e43da7b151d7d2bbf3e3b3c2cae6bdb7ecb2b1c53b660be95d33a84f003fb7"
       ],
       "env_versions": [
-        "ca1ac7946d79c11362542b219b38f308b443c500e275a30af9274a5fbd842ec2"
+        "c1e656fdcb8d2ef267ed6af93489ec65c25baa80dabaf5352107f549e40ca783"
       ],
       "grader_task_versions": [
-        "b726774884e28279b4f62e4d00e20058da0ae229a17cee3e9d08ef0798f957df"
+        "52776c2175330257b6414c455ddf80b218400506163e528f29651d0125398ba0"
       ],
       "records": 1,
       "trials": 0,
@@ -189,29 +153,17 @@
         "mean_score": 0,
         "raw_mean_score": 0,
         "gate_fraction": 0
-      },
-      "pass_k": {
-        "1": null,
-        "3": null,
-        "5": null
-      },
-      "consistency": {
-        "valid": 0,
-        "passes": 0,
-        "failures": 0,
-        "shared": null,
-        "flags": []
       }
     },
     "message-queue": {
       "task_versions": [
-        "10a7b3b440cd88b2dca76b2361e12ab84fc08de0cd2aa18c0f83f2112e69f80d"
+        "311678ca575502d688dd5840481e25ee692bf7abe5ced77c679c0b6d394da397"
       ],
       "env_versions": [
-        "6b715968319eb50602e5ac664fe2cdc61338baae30d56d2ec7bb29b9d17caa80"
+        "0f4ca284064318e267b43016adacd89fe793e885765e5c687d044d21f87e4e6a"
       ],
       "grader_task_versions": [
-        "df605b2c3bc3ef63735ad4c318b5718d82ecf3590b04cb241716445ffe5da98a"
+        "4929f0ecba7b68e9fb2e621a4d2c91143090b6b6afb39cf58216c56f69c6ff8b"
       ],
       "records": 1,
       "trials": 0,
@@ -250,29 +202,17 @@
         "mean_score": 0,
         "raw_mean_score": 0,
         "gate_fraction": 0
-      },
-      "pass_k": {
-        "1": null,
-        "3": null,
-        "5": null
-      },
-      "consistency": {
-        "valid": 0,
-        "passes": 0,
-        "failures": 0,
-        "shared": null,
-        "flags": []
       }
     },
     "renal-dose-review": {
       "task_versions": [
-        "6e8881476d7db47094307a1198549d1a9fdea5556d621990cf3594fb36e436cd"
+        "0e06ff9196d84e936b2653bdb9b457e97f56b6d6fed778c588de06d6535e98c4"
       ],
       "env_versions": [
-        "28157555f00842437fa7626df60b6e8e1b8a4686ec72dc04a5941b8095751a4a"
+        "0dae10d1d8d15746dfd85762a4d0532e340503b7de2db604d209f8a3c5d3e408"
       ],
       "grader_task_versions": [
-        "2c5c4f59a926849a7016ac77605ece0f0a9b1242d1b5c461b0f126858230f971"
+        "271c8acff3147cdf01bb4a0ea08fd037798bf3bde08d589cf431987b8c217d81"
       ],
       "records": 5,
       "trials": 4,
@@ -320,24 +260,6 @@
         "mean_score": 4,
         "raw_mean_score": 4,
         "gate_fraction": 4
-      },
-      "pass_k": {
-        "1": 0.25,
-        "3": 0,
-        "5": null
-      },
-      "consistency": {
-        "valid": 4,
-        "passes": 1,
-        "failures": 3,
-        "shared": {
-          "check": "apixaban_dose",
-          "count": 3,
-          "found": "{\"active\":[\"MedicationRequest/mr-t1-apixaban\"],\"mg\":2.5,\"oral\":true,\"per_day\":2,\"product\":\"1364435\"}",
-          "found_count": 2,
-          "found_values": 2
-        },
-        "flags": []
       }
     }
   },
@@ -368,7 +290,7 @@
     "claude-opus-5-5"
   ],
   "initial_state_hashes": [
-    "6a55a334f64c2dc55fe79930574504206070593a4767f40170b58f880c530bde"
+    "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b"
   ],
   "replay": {
     "ran": false,

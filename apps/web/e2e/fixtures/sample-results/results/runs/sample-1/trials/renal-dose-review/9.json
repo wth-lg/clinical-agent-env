@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:renal-dose-review:9",
   "task_id": "renal-dose-review",
-  "task_version": "6e8881476d7db47094307a1198549d1a9fdea5556d621990cf3594fb36e436cd",
-  "env_version": "28157555f00842437fa7626df60b6e8e1b8a4686ec72dc04a5941b8095751a4a",
-  "grader_task_version": "2c5c4f59a926849a7016ac77605ece0f0a9b1242d1b5c461b0f126858230f971",
-  "fixture_hash": "6a55a334f64c2dc55fe79930574504206070593a4767f40170b58f880c530bde",
+  "task_version": "0e06ff9196d84e936b2653bdb9b457e97f56b6d6fed778c588de06d6535e98c4",
+  "env_version": "0dae10d1d8d15746dfd85762a4d0532e340503b7de2db604d209f8a3c5d3e408",
+  "grader_task_version": "271c8acff3147cdf01bb4a0ea08fd037798bf3bde08d589cf431987b8c217d81",
+  "fixture_hash": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
   "state_hash": {
-    "initial": "6a55a334f64c2dc55fe79930574504206070593a4767f40170b58f880c530bde",
-    "final": "1d4980114325bbd0330b3a7b9da9fd1c2671242feff46c9399df3da4812bfd48",
-    "replay_final": "1d4980114325bbd0330b3a7b9da9fd1c2671242feff46c9399df3da4812bfd48"
+    "initial": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
+    "final": "41fa9913874ee02a6e9274e7c64070186ec2432f479b9ff0e46e7ef95de97975",
+    "replay_final": "41fa9913874ee02a6e9274e7c64070186ec2432f479b9ff0e46e7ef95de97975"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -40,12 +40,11 @@
   "status": "COMPLETED",
   "stop": "finish",
   "detail": null,
-  "summary": "Reviewed Harold Vance: apixaban continued at 2.5 mg twice daily, metformin unchanged, gabapentin 600 mg twice daily; note written.",
+  "summary": "Reviewed Harold Vance: apixaban kept at 2.5 mg twice daily for CrCl 43, metformin unchanged, gabapentin 600 mg twice daily; note written.",
   "resumed": false,
-  "env_git_sha": null,
   "ended": "2026-10-23T14:18:08.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "10",
+  "grader_version": "8",
   "outcome": "FAIL",
   "valid": true,
   "fault": "model",
@@ -173,8 +172,8 @@
         "tolerance": {
           "rel": 0.1
         },
-        "value": 43.2,
-        "quote": "CrCl 43.2 mL/min",
+        "value": 43,
+        "quote": "creatinine clearance of 43 mL/min",
         "source": "regex"
       }
     },
@@ -204,8 +203,8 @@
       "met": true,
       "evidence": {
         "verdict": "met",
-        "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met. Apixaban stays at 2.5 mg twice daily.",
-        "cache_key": "9009f1510ad3a842832d672d28024fbd284fbb0a112374ff623543c533b661f6"
+        "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met.",
+        "cache_key": "05c0b036452b08985e07b127f67a41fe99ccfbdccb6a99eecc1f7beb3ac73809"
       }
     },
     {
@@ -217,8 +216,8 @@
       "met": true,
       "evidence": {
         "verdict": "met",
-        "quote": "The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used",
-        "cache_key": "86d6a9763afa28557987a76b9e9d368dd324b9723234765e3203aafa0d8f17ad"
+        "quote": "The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used.",
+        "cache_key": "99254844204963313d2226589a00ee45d32eefb3b831df1d1508456b938d08fd"
       }
     },
     {
@@ -267,8 +266,8 @@
           "SCr 1.21 mg/dL (10/20/2026). The SCr of 1.88"
         ],
         "verdict": "not_met",
-        "quote": "Inputs (§1): current SCr 1.21 mg/dL (10/20/2026). The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used. Weight 143 lb = 64.9 kg (10/20/2026); the 57.0 kg inpatient weight from February is stale. Age 82.",
-        "cache_key": "930a2b8f6a27cc61d3e488946cc0836f30fd99fd944f9b88cd4810e214f0af45"
+        "quote": "current SCr 1.21 mg/dL (10/20/2026). The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used.",
+        "cache_key": "9b5b77032a738267be29842c6980065c02e66a7fcc1132155cd9b984b6b039e0"
       }
     },
     {
@@ -277,99 +276,96 @@
       "method": "judge",
       "category": "reasoning",
       "points": -6,
-      "met": false,
+      "met": true,
       "evidence": {
-        "verdict": "not_met",
-        "quote": "",
-        "cache_key": "d396286053634d95e6178dde2f173646b3ee358f9a066616feefc0c8e2c6917f"
+        "verdict": "met",
+        "quote": "With a creatinine clearance of 43 mL/min, I am keeping apixaban at 2.5 mg twice daily for his renal function.",
+        "cache_key": "f1b09c2a21a1f0d000bf25926bfabf235a93ca35072c853fbc5618c3d3a0a168"
       }
     }
   ],
-  "score": 1,
+  "score": 0.5384615384615384,
   "judge": {
-    "calls": 0,
+    "calls": 4,
     "unknown": 0,
-    "unknown_penalties": 0,
-    "score_penalties_met": 1,
-    "score_penalties_not_met": 1,
     "over_allowance": 0,
     "cache_keys": [
-      "9009f1510ad3a842832d672d28024fbd284fbb0a112374ff623543c533b661f6",
-      "86d6a9763afa28557987a76b9e9d368dd324b9723234765e3203aafa0d8f17ad",
-      "930a2b8f6a27cc61d3e488946cc0836f30fd99fd944f9b88cd4810e214f0af45",
-      "d396286053634d95e6178dde2f173646b3ee358f9a066616feefc0c8e2c6917f"
+      "05c0b036452b08985e07b127f67a41fe99ccfbdccb6a99eecc1f7beb3ac73809",
+      "99254844204963313d2226589a00ee45d32eefb3b831df1d1508456b938d08fd",
+      "9b5b77032a738267be29842c6980065c02e66a7fcc1132155cd9b984b6b039e0",
+      "f1b09c2a21a1f0d000bf25926bfabf235a93ca35072c853fbc5618c3d3a0a168"
     ],
     "cache": [
       {
-        "key": "9009f1510ad3a842832d672d28024fbd284fbb0a112374ff623543c533b661f6",
+        "key": "05c0b036452b08985e07b127f67a41fe99ccfbdccb6a99eecc1f7beb3ac73809",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "met",
-          "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met. Apixaban stays at 2.5 mg twice daily."
+          "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met."
         },
         "error": null,
-        "calls": 0,
+        "calls": 1,
         "provenance": {
-          "source": "scripted",
-          "model": "none: a rule-based script with no network call (builder-35)",
-          "at": "2026-10-24T08:27:23Z"
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-25T14:39:17.813Z"
         }
       },
       {
-        "key": "86d6a9763afa28557987a76b9e9d368dd324b9723234765e3203aafa0d8f17ad",
+        "key": "99254844204963313d2226589a00ee45d32eefb3b831df1d1508456b938d08fd",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "met",
-          "quote": "The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used"
+          "quote": "The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
         },
         "error": null,
-        "calls": 0,
+        "calls": 1,
         "provenance": {
-          "source": "scripted",
-          "model": "none: a rule-based script with no network call (builder-35)",
-          "at": "2026-10-24T08:27:23Z"
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-25T14:39:17.813Z"
         }
       },
       {
-        "key": "930a2b8f6a27cc61d3e488946cc0836f30fd99fd944f9b88cd4810e214f0af45",
+        "key": "9b5b77032a738267be29842c6980065c02e66a7fcc1132155cd9b984b6b039e0",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "not_met",
-          "quote": "Inputs (§1): current SCr 1.21 mg/dL (10/20/2026). The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used. Weight 143 lb = 64.9 kg (10/20/2026); the 57.0 kg inpatient weight from February is stale. Age 82."
+          "quote": "current SCr 1.21 mg/dL (10/20/2026). The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
         },
         "error": null,
-        "calls": 0,
+        "calls": 1,
         "provenance": {
-          "source": "scripted",
-          "model": "none: a rule-based script with no network call (builder-42)",
-          "at": "2026-10-24T09:59:30Z"
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-25T14:39:17.813Z"
         }
       },
       {
-        "key": "d396286053634d95e6178dde2f173646b3ee358f9a066616feefc0c8e2c6917f",
+        "key": "f1b09c2a21a1f0d000bf25926bfabf235a93ca35072c853fbc5618c3d3a0a168",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
         "prompt_version": "judge-v1",
         "answer": {
-          "verdict": "not_met",
-          "quote": ""
+          "verdict": "met",
+          "quote": "With a creatinine clearance of 43 mL/min, I am keeping apixaban at 2.5 mg twice daily for his renal function."
         },
         "error": null,
-        "calls": 0,
+        "calls": 1,
         "provenance": {
-          "source": "scripted",
-          "model": "none: a rule-based script with no network call (builder-35)",
-          "at": "2026-10-24T08:27:23Z"
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-25T14:39:17.813Z"
         }
       }
     ]
