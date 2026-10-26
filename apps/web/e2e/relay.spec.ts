@@ -2,9 +2,11 @@
 // vite preview with /api/health missing (browser-direct), and the relay route-mocked at
 // RELAY_ORIGIN. Validate and the toy trial's calls go only to RELAY_URL, never to an API host; the
 // local-run panel stays mounted on the key gate and in the shell (UD-1); a relay 429, a 5xx and
-// an unreachable relay each show their ui-contract.md sentence beside the panel and its command;
-// the page and the trial Worker refuse a fetch to RELAY_URL that MessagesClient did not make.
-import { expect, test, type Page, type Request, type Route } from '@playwright/test';
+// an unreachable relay each show their ui-contract.md sentence in red beside the panel and its
+// command, on Validate and (429, 5xx) during a trial; a failed Validate leaves no key in the
+// page's markup; the page and the trial Worker refuse a fetch to RELAY_URL or an API host that
+// MessagesClient did not make, also through the prototype that holds the raw function.
+import { expect, test, type Locator, type Page, type Request, type Route } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 import { isApiHost } from '../../../packages/core/anthropic.ts';
 import { HEALTH_PATH } from '../../../packages/core/runner-api.ts';
@@ -19,6 +21,8 @@ import { RELAY_ORIGIN, RELAY_URL } from '../src/surface/relay.ts';
 const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': 'POST, OPTIONS' };
 const sentinelKey = () => ['sk', 'ant', 'api03', randomUUID().replaceAll('-', ''), 'relay'].join('-');
 const TOY = SCENARIOS.toy;
+// An API host URL, joined so the lint rule no-direct-anthropic sees no literal.
+const API_URL = `https://${['api', 'anthropic', 'com'].join('.')}/v1/messages`;
 const TRIAL_SCRIPT = /\/assets\/trial-[^/]+\.js$/;
 const WORLD = /\/data\/fixtures\/world\.ndjson\.gz$/;
 
@@ -92,6 +96,25 @@ async function storageDump(page: Page): Promise<string> {
     }
     return `${dump(localStorage)}\n${dump(sessionStorage)}\n${JSON.stringify(records)}`;
   });
+}
+
+// The computed --color-danger (tokens.css), to compare with an error's computed colours.
+async function dangerColour(page: Page): Promise<string> {
+  return page.evaluate(() => {
+    const probe = document.createElement('span');
+    probe.style.color = 'var(--color-danger)';
+    document.body.append(probe);
+    const c = getComputedStyle(probe).color;
+    probe.remove();
+    return c;
+  });
+}
+
+// The error is red: its first line and its border are the danger colour.
+async function expectRed(alert: Locator) {
+  const danger = await dangerColour(alert.page());
+  expect(await alert.locator('p').first().evaluate((el) => getComputedStyle(el).color)).toBe(danger);
+  expect(await alert.evaluate((el) => getComputedStyle(el).borderTopColor)).toBe(danger);
 }
 
 const panel = (page: Page) => page.getByRole('region', { name: 'Run it on your computer' });
@@ -185,6 +208,7 @@ for (const { reason, reply } of FAILURES) {
     const alert = page.getByRole('alert');
     await expect(alert.locator('p').first()).toHaveText(RELAY_FAILURE_TEXT[reason].lead);
     await expect(alert).toContainText(RELAY_FAILURE_TEXT[reason].next);
+    await expectRed(alert);
     await expect(alert.getByTestId('local-command')).toHaveCount(0);
     await expectPanel(page);
     await alert.getByRole('button', { name: 'Show the steps' }).click();
@@ -243,16 +267,7 @@ for (const { reason, reply } of TRIAL_FAILURES) {
     await expect(lead).toHaveText(RELAY_TRIAL_TEXT[reason].lead, { timeout: 60_000 });
     await expect(alert).toContainText(RELAY_TRIAL_TEXT[reason].next);
     await expect(alert.getByTestId('local-command')).toHaveCount(0);
-    const danger = await page.evaluate(() => {
-      const probe = document.createElement('span');
-      probe.style.color = 'var(--color-danger)';
-      document.body.append(probe);
-      const c = getComputedStyle(probe).color;
-      probe.remove();
-      return c;
-    });
-    expect(await lead.evaluate((el) => getComputedStyle(el).color)).toBe(danger);
-    expect(await alert.evaluate((el) => getComputedStyle(el).borderTopColor)).toBe(danger);
+    await expectRed(alert);
     await expectPanel(page);
     await alert.getByRole('button', { name: 'Show the steps' }).click();
     await expect(panel(page)).toBeFocused();
@@ -281,7 +296,8 @@ const protoBeacon = (url: string) => {
   }
 };
 
-test('the egress guard refuses a fetch to RELAY_URL planted in the page and in the trial Worker; neither reaches the relay', async ({ page }) => {
+test('the egress guard refuses a fetch to RELAY_URL or an API host planted in the page and in the trial Worker; none reaches either', async ({ page }) => {
+  const seen = watch(page);
   await browserDirect(page);
   const relay = await mockRelay(page);
   // The world fixture is held, so the Worker has installed its guard and not yet built its client.
@@ -299,6 +315,7 @@ test('the egress guard refuses a fetch to RELAY_URL planted in the page and in t
     return fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' }).then(() => 'sent', (e: Error) => `${e.name}: ${e.message}`);
   };
   expect(await page.evaluate(plant, RELAY_URL)).toMatch(/^EgressRefusal: egress guard/);
+  expect(await page.evaluate(plant, API_URL)).toMatch(/^EgressRefusal: egress guard/);
   // The page keeps sendBeacon on Navigator.prototype; the guard locks it there too (review S1).
   expect(await page.evaluate(protoBeacon, RELAY_URL)).toMatch(/^EgressRefusal: egress guard/);
   expect(relay.posts).toHaveLength(0);
@@ -311,10 +328,12 @@ test('the egress guard refuses a fetch to RELAY_URL planted in the page and in t
   await page.getByRole('button', { name: 'Run ×1', exact: true }).click();
   const inWorker = await (await worker).evaluate(plant, RELAY_URL);
   expect(inWorker).toMatch(/^EgressRefusal: egress guard/);
+  expect(await (await worker).evaluate(plant, API_URL)).toMatch(/^EgressRefusal: egress guard/);
   // A dedicated Worker keeps fetch on WorkerGlobalScope.prototype; the guard locks it there too.
   expect(await (await worker).evaluate(protoFetch, RELAY_URL)).toMatch(/^EgressRefusal: egress guard/);
   expect(relay.posts).toHaveLength(validateOnly);
   releaseWorld();
   await expect(trial(page)).toHaveAttribute('data-state', 'graded', { timeout: 60_000 });
   expect(scripts).toHaveLength(1);
+  expect(seen.urls.filter((u) => /^https?:/.test(u) && isApiHost(new URL(u).hostname))).toEqual([]);
 });

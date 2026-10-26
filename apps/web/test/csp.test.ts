@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { isApiHost } from '../../../packages/core/anthropic.ts';
 import { APP_CSP, CONNECT_ORIGIN } from '../csp.ts';
+import { RELAY_PROBE_SOURCES } from '../src/probe/csp.ts';
 import { RELAY_ORIGIN } from '../src/surface/relay.ts';
 
 const webRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -50,7 +51,17 @@ describe('APP_CSP', () => {
     expect(metaCsp(readFileSync(join(webRoot, 'harness.html'), 'utf8'))).toBe(probe);
   });
 
-  it.each(['index.html', 'harness.html', 'probe.html'])('the built %s carries its CSP: APP_CSP for index.html, its own meta for a test page', (page) => {
+  // The lint rule no-direct-anthropic does not read .html, so this ties relay-probe.html's relay
+  // literal to RELAY_ORIGIN (review-security-P16h-web-1 M1): probe.html's CSP plus
+  // RELAY_PROBE_SOURCES, whose last entry is RELAY_ORIGIN.
+  it('relay-probe.html keeps probe.html\'s CSP with RELAY_PROBE_SOURCES added, so its relay origin is RELAY_ORIGIN', () => {
+    const probe = metaCsp(readFileSync(join(webRoot, 'probe.html'), 'utf8')) ?? '';
+    const api = /connect-src \S+ (\S+);/.exec(probe)?.[1] ?? '';
+    expect(RELAY_PROBE_SOURCES).toContain(RELAY_ORIGIN);
+    expect(metaCsp(readFileSync(join(webRoot, 'relay-probe.html'), 'utf8'))).toBe(probe.replace(` ${api};`, ` ${api} ${RELAY_PROBE_SOURCES.join(' ')};`));
+  });
+
+  it.each(['index.html', 'harness.html', 'probe.html', 'relay-probe.html'])('the built %s carries its CSP: APP_CSP for index.html, its own meta for a test page', (page) => {
     const html = built(page);
     expect(metaCsp(html)).toBe(page === 'index.html' ? APP_CSP : metaCsp(readFileSync(join(webRoot, page), 'utf8')));
     // Exactly one CSP meta, ahead of every script.
