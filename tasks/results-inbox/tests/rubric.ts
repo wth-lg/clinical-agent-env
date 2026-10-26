@@ -54,15 +54,19 @@ const oncallAbout = (ctx: RubricCtx, patient: string) => oncall(ctx as NotifyCtx
 // created for the patient, or a message about the patient (its subject, or its text naming them)
 // to a Practitioner or Group, that asks someone to contact the patient or family. The contact verb
 // must name whom to contact: the patient, the family or a parent, by role ("call the mother") or
-// by name (the patient's, or a Patient.contact's such as Ana Ruiz), as "pt", or as "him" or as an
-// object "her" (the task or message is already about the patient, so the pronoun is the patient
-// or a parent). "her" counts only when no noun follows it, so "contact her oncologist" does not;
-// "PT" in capitals is physical therapy, not the patient. "contact ortho" and "tell them" do not
-// count. Residual: "call her today" about a female clinician counts as contacting the family. A
-// tracking task does not count.
+// by name (the patient's, or a Patient.contact's such as Ana Ruiz), as "pt", or as an object "him"
+// or "her" (the task or message is already about the patient, so the pronoun is the patient or a
+// parent). The pronoun counts only when no noun follows it, so "contact her oncologist", "her
+// on-call resident" and "tell him the MRI is urgent" do not; "PT" in capitals is physical therapy,
+// not the patient. "contact ortho" and "tell them" do not count. Residuals: "call her today" about
+// a female clinician counts as contacting the family, and all-caps text ("CALL PT TODAY") reads
+// PT as physical therapy, so it does not count. A tracking task does not count.
 const VERB = String.raw`call|phone|telephone|contact|notify|inform|tell|reach(?: out to)?|get in touch with|let|(?:speak|talk) (?:with|to)`;
 const KIN = String.raw`patient|pt|family|parents?|mother|father|mom|mum|dad|guardian|caregiver`;
-const PRONOUN = String.raw`him|her(?=\s*(?:$|[.,;:!?)])|\s+(?:today|now|asap|tomorrow|back|about|re|regarding|to|that|and|with|on|at|by|soon|this|first)\b)`;
+// What may follow the pronoun: the end of the text, punctuation, a dash that does not join a word,
+// or a word that cannot start a noun phrase.
+const AFTER_PRONOUN = String.raw`today|now|asap|tomorrow|back|about|re|regarding|to|that|and|with|on(?![-\p{L}])|at|by|soon|this|first|know|of|immediately|urgently|again|directly|right away`;
+const PRONOUN = String.raw`(?:him|her)(?=\s*(?:$|[.,;:!?)\u2013\u2014]|-(?![\p{L}\p{N}]))|\s+(?:${AFTER_PRONOUN})\b)`;
 // Physical therapy, written "PT" in capitals; folded, it would read as "pt", the patient.
 const PHYSICAL_THERAPY = /(?<![\p{L}\p{N}])PT(?![\p{L}\p{N}])/gu;
 function asksToContact(ctx: RubricCtx, patient: string): (text: string) => boolean {
