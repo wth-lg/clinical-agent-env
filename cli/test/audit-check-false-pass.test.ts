@@ -48,6 +48,10 @@ describe('a false PASS (GR5)', () => {
     expect(r.code).toBe(1);
     expect(r.err).toContainEqual(expect.stringMatching(/^violation: t-alpha\/0: PASS is a false PASS \(GR5\)/));
     expect(JSON.parse(r.out.at(-1)!)).toMatchObject({ valid: 20, excluded: ['t-alpha/0'], denominator: 19 });
+    // The text line gives the failures labelled grader, then the false PASS beside it, as the page's
+    // fault box does (decisions.tsv 2026-10-29T22:20); --json's labelled_grader still counts both.
+    expect(r.err).toContainEqual(expect.stringMatching(/^audit-check: 10\/10 failures labelled, environment 0, grader 0 \(1 false PASS\); /));
+    expect(JSON.parse(r.out.at(-1)!)).toMatchObject({ labelled_grader: 1 });
   });
 
   it('a PASS labelled grader without evidence ids is a violation, not a GR5', async () => {

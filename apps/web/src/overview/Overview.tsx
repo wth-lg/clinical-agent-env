@@ -1,7 +1,8 @@
 // Overview. With an official run: one row per task from its summary.json and records: pass k of
 // N valid trials (N read from the run, never a constant), the Wilson 95% interval drawn against
 // the final run's band (FINAL_PASS_BAND), one mark per trial (outcome and fault), mean score and
-// mean cost, and the most common kind of failure (P17j JU7), with the run's fault box under the
+// mean cost, pass^3 and pass^5 with the run's model and effort (P17j JU8), and the most common
+// kind of failure (P17j JU7), with the run's fault box under the
 // table; a run with a trial that blocks it (DENOMINATOR_RULE) says so in place of the headline
 // pass rate, and names its false PASSes beside k/n. With none yet: the six tasks, the environment every trial starts from, and the
 // committed pilot runs, which are not counted in the results. Never an empty page. Both open with
@@ -17,6 +18,7 @@ import { hrefWith, onNav } from '../data/url.ts';
 import { safePass } from '../data/harm.ts';
 import { isFalsePass, kindWords, mostCommon, runBlock } from '../data/failures.ts';
 import { FaultBox, RunBlocked } from '../findings/why.tsx';
+import { ModelLine, PassK, PassKLink } from '../findings/passk.tsx';
 import { formatClock } from '../data/text.ts';
 import { MANIFEST } from '../data/world.ts';
 import { requestKey, useKeyStatus } from '../keygate/key.ts';
@@ -61,6 +63,7 @@ function OfficialOverview({ run, headingRef, localRun }: { run: RunData; heading
     >
       {block !== null && <RunBlocked block={block} runId={runId} />}
       <IntroCard localRun={localRun} />
+      <ModelLine summary={summary!} />
       {problems > 0 && (
         <Notice testId="data-warning">
           {run.bad.length > 0 && `${run.bad.length} trial record${run.bad.length === 1 ? '' : 's'} cannot be read; Runs shows which. `}
@@ -68,14 +71,14 @@ function OfficialOverview({ run, headingRef, localRun }: { run: RunData; heading
         </Notice>
       )}
       <ul className="divide-y divide-line rounded-sm border border-line bg-surface" data-testid="overview-table">
-        <li aria-hidden className="hidden gap-x-3 px-4 py-2 text-xs text-ink-muted md:grid md:grid-cols-[minmax(9rem,1fr)_3.5rem_minmax(10rem,16rem)_minmax(7rem,14rem)_minmax(6rem,9rem)_4rem_4rem]">
+        <li aria-hidden className="hidden gap-x-3 px-4 py-2 text-xs text-ink-muted md:grid md:grid-cols-[minmax(9rem,1fr)_6.5rem_minmax(10rem,16rem)_minmax(7rem,14rem)_minmax(6rem,9rem)_4rem_4rem]">
           <span>Task</span><span>Pass</span><span>95% interval (Wilson)</span><span>Trials</span><span>Most common failure</span><span className="text-right">Mean score</span><span className="text-right">Mean cost</span>
         </li>
         {Object.entries(summary!.tasks).map(([id, s]) => (
-          <li key={id} data-testid="overview-row" data-task={id} className="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1.5 px-4 py-2.5 md:grid-cols-[minmax(9rem,1fr)_3.5rem_minmax(10rem,16rem)_minmax(7rem,14rem)_minmax(6rem,9rem)_4rem_4rem]">
+          <li key={id} data-testid="overview-row" data-task={id} className="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1.5 px-4 py-2.5 md:grid-cols-[minmax(9rem,1fr)_6.5rem_minmax(10rem,16rem)_minmax(7rem,14rem)_minmax(6rem,9rem)_4rem_4rem]">
             <a href={hrefWith(toRuns(id))} onClick={onNav(toRuns(id))} className={`min-w-0 break-words font-medium ${link}`}>{id}</a>
             <span className="whitespace-nowrap text-right md:text-left">
-              {block === null ? <><span data-testid="k-of-n">{s.passes}/{s.trials}</span><span className="block text-xs text-ink-muted" data-testid="safe-pass">{safePass(s)}</span></> : <span className="text-ink-muted">blocked</span>}
+              {block === null ? <><span data-testid="k-of-n">{s.passes}/{s.trials}</span><span className="block text-xs text-ink-muted" data-testid="safe-pass">{safePass(s)}</span><PassK task={id} k={s.pass_k} /></> : <span className="text-ink-muted">blocked</span>}
               {falsePasses(id) > 0 && <span className="block whitespace-normal text-xs text-danger" data-testid="false-pass">{falsePasses(id)} false PASS</span>}
             </span>
             <span className="col-span-2 md:col-span-1">
@@ -97,7 +100,7 @@ function OfficialOverview({ run, headingRef, localRun }: { run: RunData; heading
         ))}
       </ul>
       <MarkLegend />
-      <p className="text-xs text-ink-muted">Each task links to its trials in Runs.</p>
+      <p className="text-xs text-ink-muted">Each task links to its trials in Runs. <PassKLink /></p>
       <Card title="Who is at fault, all tasks">
         <FaultBox task="all" fcs={Object.values(summary!.tasks).map((x) => x.fault_counts)} explanations={trials.map((x) => x.explanation)} />
         <p className="mt-1 text-xs text-ink-muted">Findings shows this for each task, with the checks that failed.</p>

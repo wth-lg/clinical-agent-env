@@ -12,6 +12,7 @@ import { runBlock } from '../data/failures.ts';
 import { checkTextOf, dataUrl, gradingLine, pilotRates, useResults, type RunData } from '../data/results.ts';
 import { Card, formatInterval, GlossaryLink, IntervalRow, markLabel, MarkLegend, markOf, NO_RESULTS, Notice, Page, Swatch } from '../data/ui.tsx';
 import { FaultBox, KindBar, RunBlocked, TopChecks } from './why.tsx';
+import { ModelLine, PassK, PassKLink } from './passk.tsx';
 import { hrefWith, onNav } from '../data/url.ts';
 
 const READ_ONLY = 'These results are read-only. Running new trials needs an API key.';
@@ -117,20 +118,22 @@ function Charts({ run, blocked }: { run: RunData; blocked: boolean }) {
     <>
       {blocked ? (
         <Card title="Pass rate and 95% interval (Wilson)">
-          <p data-testid="interval-held" className="text-ink-muted">This run is blocked, so it has no pass rate to show. The notice above names the trials that block it.</p>
+          <ModelLine summary={summary} />
+          <p data-testid="interval-held" className="mt-2 text-ink-muted">This run is blocked, so it has no pass rate to show. The notice above names the trials that block it.</p>
         </Card>
       ) : <Card title="Pass rate and 95% interval (Wilson)">
-        <ul className="space-y-2" data-testid="interval-chart">
+        <ModelLine summary={summary} />
+        <ul className="mt-2 space-y-2" data-testid="interval-chart">
           {tasks.map(([id, t]) => (
             <li key={id} className="grid grid-cols-1 items-center gap-x-3 sm:grid-cols-[12rem_1fr_9rem]">
               <span className="break-words font-medium">{id} <span className="font-normal text-ink-muted">{t.passes}/{t.trials}</span></span>
               <IntervalRow rate={t.pass_rate} interval={t.wilson95} band={FINAL_PASS_BAND} label={id} />
-              <span className="text-xs text-ink-muted">{formatInterval(t.wilson95)}</span>
+              <span className="text-xs text-ink-muted">{formatInterval(t.wilson95)}<PassK task={id} k={t.pass_k} /></span>
             </li>
           ))}
         </ul>
         <p aria-hidden className="mt-1 grid grid-cols-1 text-xs text-ink-muted sm:grid-cols-[12rem_1fr_9rem] sm:gap-x-3"><span className="hidden sm:block" /><span className="flex max-w-72 justify-between"><span>0%</span><span>50%</span><span>100%</span></span></p>
-        <p className="mt-2 text-xs text-ink-muted">Dot: pass rate. Whisker: Wilson 95% interval. Shaded: the target band {FINAL_PASS_BAND[0] * 100}% to {FINAL_PASS_BAND[1] * 100}%.</p>
+        <p className="mt-2 text-xs text-ink-muted">Dot: pass rate. Whisker: Wilson 95% interval. Shaded: the target band {FINAL_PASS_BAND[0] * 100}% to {FINAL_PASS_BAND[1] * 100}%. <PassKLink /></p>
       </Card>}
       <Card title="Why tasks fail">
         <p className="text-xs text-ink-muted">For each task: its failed trials by <GlossaryLink anchor="taxonomy">kind of failure</GlossaryLink>, the gate checks that decided them, and whose fault each is by the human audit. Each link opens those trials in Runs.</p>
