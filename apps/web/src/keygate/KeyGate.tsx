@@ -6,7 +6,7 @@ import type { Surface } from '../surface/detect.ts';
 import { LocalRunPanel } from '../surface/LocalRunPanel.tsx';
 import { SurfaceChip } from '../surface/SurfaceChip.tsx';
 import { validateDirect } from './direct.ts';
-import { describeFailure, type Failure } from './failure.ts';
+import { describeFailure, keyFormatProblem, type Failure } from './failure.ts';
 import { heldByRunner, holdInTab } from './key.ts';
 import { postKey } from './runner.ts';
 
@@ -48,6 +48,9 @@ export function KeyGate({ surface, onDone, onBrowse, notice }: { surface: Surfac
     e.preventDefault();
     const k = keyRef.current?.value.trim() ?? '';
     if (k === '' || cap === null || busy) return;
+    // A key of the wrong form is refused here, before any call.
+    const malformed = keyFormatProblem(k);
+    if (malformed !== null) return setFailure(malformed);
     setBusy(true);
     setFailure(null);
     setSessionCap(cap);

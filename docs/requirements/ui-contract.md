@@ -88,7 +88,7 @@ accessible name or text node, so they share one line of the snapshot.
 - `Overview`, `Tasks`, `Runs`, `Findings`, `Environment`: the rail labels. All five show on
   every screen of the shell.
 - `Add an API key`: the key gate heading, shown when no key is set and again after Forget key.
-- `Local runner` and `Browser-direct`: the surface chip on the local runner and on the hosted
+- `Local runner` and `Hosted`: the surface chip on the local runner and on the hosted
   site.
 - `through a relay that forwards it and keeps no copy`: the key gate's line on the hosted site
   saying where the key goes (P16h, KeyGate WHERE; trace U35).
@@ -236,6 +236,12 @@ launcher (P15) shows the Run lines.
   a LIMIT or REFUSAL with a failed gate check: its limit or refusal sentence first,
   then `; <check id> failed: expected <value>, found <value>`, the expected value cut to fit.
   One pattern under Patterns matches all three forms.
+- When the decisive check is not the first failed gate check (an unmarked safety gate outranks
+  it, packages/grader/attribution.ts decisiveGate), the Runs row, the trial header, the live
+  trial and the Findings example show a secondary reason under the reason:
+  `first failed check: <check id> failed: expected <value>, found <value>`, the same text
+  `explainTrial` returns as secondary_reason (decisions.tsv 2026-10-28T20:55). The reason itself
+  keeps its form.
 - The Attribution tab's criteria table shows, for each criterion, the text `<id>: met` or
   `<id>: not met` (M1-M5), then its evidence; M5 shows `<id>: pending` on an unaudited trial, and
   M1 shows `M1: not applicable` only on a LIMIT or REFUSAL with no failed gate check (and on a
@@ -258,7 +264,7 @@ launcher (P15) shows the Run lines.
 
 ### P25: hosted site
 
-- `Browser-direct`: the surface chip on the hosted site (P13 renders it).
+- `Hosted`: the surface chip on the hosted site (P13 renders it; P17j JU1 renamed it from Browser-direct).
 - `pnpm start`: part of LOCAL_START_COMMAND, which the hosted key gate shows with its copy
   button in the local-run panel, in every key state and beside each relay error.
 

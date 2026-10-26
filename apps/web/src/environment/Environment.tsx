@@ -8,6 +8,7 @@ import { stateHash } from '../../../../packages/env/hash.ts';
 import { toolCatalog, tryReadTool, type TryResult } from '../../../../packages/core/try-tool.ts';
 import { Card, Hash, Page } from '../data/ui.tsx';
 import { MANIFEST, worldSource } from '../data/world.ts';
+import { firstSentence, formatClock } from '../data/text.ts';
 
 const TOOLS = toolCatalog();
 const READ = TOOLS.filter((t) => t.kind === 'read');
@@ -24,7 +25,7 @@ export function Environment({ headingRef }: { headingRef?: Ref<HTMLHeadingElemen
     <Page title="Environment" headingRef={headingRef} lead="A synthetic FHIR R4 world, the same for every trial: each trial starts from a fresh copy and is checked against its state hash.">
       <Card title="World">
         <dl className="grid grid-cols-1 gap-x-4 gap-y-1 sm:grid-cols-[max-content_1fr]">
-          <dt className="text-ink-muted">Pinned clock</dt><dd data-testid="pinned-clock">{MANIFEST.now}</dd>
+          <dt className="text-ink-muted">Pinned clock</dt><dd data-testid="pinned-clock" title={MANIFEST.now}>{formatClock(MANIFEST.now)}</dd>
           <dt className="text-ink-muted">State hash (manifest)</dt><dd><Hash testId="manifest-hash" value={w.state_hash} /></dd>
           <dt className="text-ink-muted">Resources</dt><dd data-testid="resource-total">{w.resources}</dd>
         </dl>
@@ -33,12 +34,14 @@ export function Environment({ headingRef }: { headingRef?: Ref<HTMLHeadingElemen
         </ul>
         <VerifyReset />
       </Card>
-      <Card title={`Tools (${TOOLS.length})`}>
+      <Card title={`${TOOLS.length} tools`}>
         <ul className="divide-y divide-line" data-testid="tool-catalog">
           {TOOLS.map((t) => (
             <li key={t.name} data-testid="tool" data-tool={t.name} className="py-2">
               <details>
-                <summary className="cursor-pointer break-all"><code className="font-medium">{t.name}</code> <span className="text-xs text-ink-muted">{t.kind}</span></summary>
+                <summary className="cursor-pointer break-all"><code className="font-medium">{t.name}</code> <span className="text-xs text-ink-muted">{t.kind}</span>
+                  <span className="block break-words text-ink-muted" data-testid="tool-purpose">{firstSentence(t.description)}</span>
+                </summary>
                 <p className="mt-1 text-ink-muted" data-testid="tool-description">{t.description}</p>
                 <pre className="mt-1 max-h-64 overflow-auto rounded-sm bg-canvas p-2 text-xs">{JSON.stringify(t.inputSchema, null, 2)}</pre>
               </details>
@@ -71,7 +74,7 @@ function VerifyReset() {
       {state.kind === 'error' && <span role="alert">Verify reset did not finish: {state.message}</span>}
       {state.kind === 'done' && (
         <span className="min-w-0 break-words" data-testid="reset-result" data-hash={state.hash} data-equal={String(state.hash === MANIFEST.world.state_hash)}>
-          Fresh store hash <Hash value={state.hash} /> {state.hash === MANIFEST.world.state_hash ? 'equals' : 'does NOT equal'} the manifest's ({Math.round(state.ms)} ms).
+          Fresh store hash <Hash value={state.hash} /> {state.hash === MANIFEST.world.state_hash ? 'matches the manifest' : 'does NOT match the manifest'} ({Math.round(state.ms)} ms).
         </span>
       )}
     </div>

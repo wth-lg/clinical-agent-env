@@ -12,6 +12,7 @@ import { pilotRates, useResults, type RunData } from '../data/results.ts';
 import { useTaskList } from '../data/tasks.ts';
 import { Card, formatInterval, GlossaryLink, Hash, IntervalRow, markLabel, MarkLegend, markOf, Notice, Page, Swatch } from '../data/ui.tsx';
 import { hrefWith, onNav } from '../data/url.ts';
+import { formatClock } from '../data/text.ts';
 import { MANIFEST } from '../data/world.ts';
 import { requestKey, useKeyStatus } from '../keygate/key.ts';
 import { LOCAL_RUN_PANEL_ID } from '../surface/LocalRunPanel.tsx';
@@ -138,7 +139,7 @@ function EnvironmentSummary() {
     <Card title="Environment" actions={<a href={hrefWith({ view: 'environment' })} onClick={onNav({ view: 'environment' })} className={`text-xs ${link}`}>Open Environment</a>}>
       <dl className="grid grid-cols-1 gap-x-4 gap-y-1 sm:grid-cols-[max-content_1fr]" data-testid="overview-environment">
         <dt className="text-ink-muted">World</dt><dd>A synthetic FHIR R4 world: {w.resources} resources of {Object.keys(w.by_type).length} types</dd>
-        <dt className="text-ink-muted">Pinned clock</dt><dd>{MANIFEST.now}</dd>
+        <dt className="text-ink-muted">Pinned clock</dt><dd data-testid="pinned-clock" title={MANIFEST.now}>{formatClock(MANIFEST.now)}</dd>
         <dt className="text-ink-muted">State hash</dt><dd><Hash value={w.state_hash} /></dd>
         <dt className="text-ink-muted">Tools</dt><dd>{TOOL_COUNT}; you can try each read tool with no key</dd>
       </dl>

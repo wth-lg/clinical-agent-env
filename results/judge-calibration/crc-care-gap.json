@@ -4,6 +4,20 @@
   "effort": "medium",
   "prompt_version": "judge-v1",
   "at": "2026-10-25T12:12:45.069Z",
+  "reference": "live",
+  "reference_counts": {
+    "scripted": 0,
+    "live": 168
+  },
+  "protocol": {
+    "design": "test-retest",
+    "texts": "matrix cases: agent outputs the task authors scripted",
+    "agreement": "a judge item agrees when the two verdicts are equal and an extract item when the two values are equal; quotes are not compared",
+    "unknown": "unknown is kept as a verdict: it agrees only with unknown, and no item is dropped for it",
+    "invalid": "a live call with no answer (refused, or invalid twice) never agrees and is listed with its error",
+    "excluded": "none: a cache key no matrix case asks stays in questions and is listed as a disagreement",
+    "pooling": "one task per file: agree is pooled over the task's questions; every live answer is in live_entries and each disagreement lists both answers"
+  },
   "questions": 168,
   "same_keys": 168,
   "agree": 168,

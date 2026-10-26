@@ -147,7 +147,7 @@ test('the local-run panel shows on first load with no key and after a 200 Valida
   await browserDirect(page);
   const relay = await mockRelay(page);
   await page.goto('./');
-  await expect(page.getByTestId('surface-chip')).toHaveText('Browser-direct');
+  await expect(page.getByTestId('surface-chip')).toHaveText('Hosted');
   await expectPanel(page);
   await enterKey(page, sentinelKey());
   await expect(page.getByTestId('key-chip')).not.toHaveText('No key');

@@ -35,7 +35,8 @@ import { errorText, newOutcome, runLoop, type LoopOutcome, type TrialClient } fr
 import { taskVersions, type Task, type TaskSource, type TaskVersions } from './tasks.ts';
 import { toolLog } from './trajectory.ts';
 import type { Check } from '../grader/check.ts';
-import { grade, gradeWith, judgeFor, ungraded, type Grade } from '../grader/grade.ts';
+import { grade, gradeWith, judgeFor, ungraded, type Grade, type GradeInput } from '../grader/grade.ts';
+import type { Judge } from '../grader/judge.ts';
 import { FAULT, isValid, trialOutcome, type TrialFacts } from '../grader/outcome.ts';
 import { clock, NOW_PROMPT } from '../env/clock.ts';
 import { loadStore, type FixtureSource } from '../env/fixture-source.ts';
@@ -349,6 +350,9 @@ export interface GradeTrajectoryOptions {
   // regrade, which grades a trial from another environment when its replay reaches the
   // record's state.
   compareResults?: boolean;
+  // Answers the judge items instead of the record's cache: judge-calibrate --from-trials passes
+  // one that notes each question, to ask it again live.
+  judge?: Judge;
 }
 
 // Grades a recorded trial again from its trajectory: the initial state from the world, the
@@ -367,9 +371,10 @@ export async function gradeTrajectory(taskId: string, opts: GradeTrajectoryOptio
   const initial = [...(await loadStore(source)).resources()];
   const input = { checks: opts.checks, initial, events: opts.events, trial: opts.record };
   const gradeOpts = { cache: opts.record.judge?.cache ?? [], effort: task.judgeEffort };
+  const graded = (x: GradeInput) => (opts.judge ? gradeWith(x, opts.judge) : grade(x, gradeOpts));
   const early = trialOutcome(opts.record);
   // An invalid trial is not graded: no state to compare.
-  if (early !== null && !isValid(early)) return grade({ ...input, final: null }, gradeOpts);
+  if (early !== null && !isValid(early)) return graded({ ...input, final: null });
   const h = opts.record.state_hash;
   const initialHash = await stateHash(initial);
   if (initialHash !== h.initial) return ungraded('GRADER_ERROR', { check: null, message: `regrade: initial state hash ${initialHash} is not the record's ${h.initial}`, stops_batch: false });
@@ -377,7 +382,7 @@ export async function gradeTrajectory(taskId: string, opts: GradeTrajectoryOptio
   if (opts.compareResults === true && replayed?.mismatch) return ungraded('GRADER_ERROR', { check: null, message: `regrade: ${replayed.mismatch}`, stops_batch: false });
   const replayHash = replayed && (await stateHash(replayed.store.resources()));
   if (replayed === null || replayHash !== h.final) return ungraded('GRADER_ERROR', { check: null, message: `regrade: replayed state hash ${replayHash} is not the record's final ${h.final}`, stops_batch: false });
-  return grade({ ...input, final: [...replayed.store.resources()] }, gradeOpts);
+  return graded({ ...input, final: [...replayed.store.resources()] });
 }
 
 // Re-executes every call of the trajectory's tool log, refused ones included (a refusal recurs

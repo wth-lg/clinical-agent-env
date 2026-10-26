@@ -363,8 +363,11 @@ export class Judge {
 }
 
 // The judge calls a trial may make: two (the schema retry) per judge and hybrid item. The
-// Judge enforces it at run time, whichever item makes the calls.
-export const judgeCallBudget = (checks: readonly Check[]): number => JUDGE_CALLS_PER_ITEM * checks.filter((c) => c.kind === 'rubric' && c.method !== 'code').length;
+// Judge enforces it at run time, whichever item makes the calls. A 0-point item is not counted:
+// it scores nothing, and the ones there are (T5's message_states_*, attribution only) reuse
+// another item's question, which the Judge answers once per grading (decisions.tsv
+// 2026-10-28T10:30).
+export const judgeCallBudget = (checks: readonly Check[]): number => JUDGE_CALLS_PER_ITEM * checks.filter((c) => c.kind === 'rubric' && c.method !== 'code' && c.points !== 0).length;
 
 // The projection allowance for a trial's judge calls when their requests are not known yet (a
 // dry run): each at the per-call ceiling, JUDGE_MAX_CALL_USD.

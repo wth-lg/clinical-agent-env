@@ -62,6 +62,9 @@ export interface Agents {
   spray?: Script;
   output_gap?: Script;
   status_only?: Script;
+  // The attribution label each agent's FAIL must get, as a mutant declares it; not checked for an
+  // agent it leaves out.
+  attribution?: Partial<Record<'spray' | 'output_gap' | 'status_only', Taxonomy>>;
 }
 
 // What task.toml's [matrix] table declares.

@@ -120,7 +120,12 @@ export function App({ surface }: { surface: Surface }) {
           <ErrorBoundary key={view.id}>
             <ViewBody id={view.id} headingRef={heading} localRun={localRun} />
           </ErrorBoundary>
-          {localRun && RUN_PANEL_VIEWS.includes(view.id) && <LocalRunPanel id={LOCAL_RUN_PANEL_ID} surface={surface} className="mx-auto mb-6 w-[calc(100%-3rem)] max-w-[720px]" />}
+          {localRun && RUN_PANEL_VIEWS.includes(view.id) && (
+            // The page column's width and gutters (data/ui.tsx Page), so its edges line up with the cards above.
+            <div className="mx-auto max-w-5xl px-4 pb-6 sm:px-6">
+              <LocalRunPanel id={LOCAL_RUN_PANEL_ID} surface={surface} />
+            </div>
+          )}
         </main>
       </div>
     </div>

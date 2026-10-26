@@ -193,6 +193,7 @@ function Header({ t, e, rows, onStep }: { t: Trial; e: Explanation; rows: readon
         </p>
       )}
       <Reason reason={e.reason} muted={!e.valid} />
+      {e.secondary_reason !== null && <p data-testid="secondary-reason" className="mt-1 break-words text-sm text-ink-muted">{e.secondary_reason}</p>}
       <dl className="mt-3 grid grid-cols-1 gap-x-4 gap-y-1.5 sm:grid-cols-[max-content_minmax(0,1fr)] [&_dd]:min-w-0 [&_dd]:break-words [&_dt]:text-ink-muted">
         <dt>Fault</dt>
         <dd data-testid="detail-fault">
@@ -222,8 +223,9 @@ function Header({ t, e, rows, onStep }: { t: Trial; e: Explanation; rows: readon
             <dd><StepLink n={failedCall.step} onStep={onStep} testId="failed-call-link">Step {failedCall.step}</StepLink>: the {failedCall.name} call that failed with an internal error</dd>
           </>
         )}
-        <dt>Criteria</dt>
+        <dt>{e.outcome === 'PASS' ? 'Checks' : 'Criteria'}</dt>
         <dd>
+          {e.outcome === 'PASS' ? <Confirmation e={e} /> : (
           <ul data-testid="header-criteria" className="flex flex-wrap gap-x-3 gap-y-0.5">
             {e.criteria.map((c) => (
               <li key={c.id} data-id={c.id} data-met={String(c.met)} title={criterionText(c.id)}>
@@ -232,9 +234,48 @@ function Header({ t, e, rows, onStep }: { t: Trial; e: Explanation; rows: readon
               </li>
             ))}
           </ul>
+          )}
         </dd>
       </dl>
     </section>
+  );
+}
+
+// On a PASS the M1-M5 row is in plain words, in three states (outcomes.ts: one pending is
+// provisional, one not met is contradicted): "Confirmed" when every check holds; "This PASS is
+// contradicted: ..." in the danger colour when a check found the opposite (a human audit that says the trial did not
+// pass, an internal tool error, a state hash that does not match); else "Checks pending: this trial
+// still needs ...". The codes and their evidence are in the Attribution tab (pre-audit S9, P17j
+// JU1). A check with no phrase here says its evidence. M2 is never pending, so it has no phrase there.
+const STILL_NEEDS: Readonly<Record<string, string>> = {
+  M1: 'a record of what the model was shown',
+  M3: 'a start and end state check against the run manifest',
+  M4: 'a grader check of this task version',
+  M5: 'a human audit',
+};
+// On a PASS, M1 is not applicable (no gate check failed) and M4 holds (none failed for the
+// reference solution to fail too), so their phrases below cannot show; they stay for a PASS a
+// later definition makes them decide on, and an unknown id falls back to its evidence.
+const FOUND_OTHERWISE: Readonly<Record<string, string>> = {
+  M1: 'a record the failed check needs was never shown to the model',
+  M2: 'a tool call returned an internal error',
+  M3: 'the saved start or end state of the record does not match or is missing',
+  M4: 'the reference solution or an accepted alternative fails this check',
+  M5: 'the human audit says this trial did not pass',
+};
+const andList = (xs: readonly string[]) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs.at(-1)}`);
+function Confirmation({ e }: { e: Explanation }) {
+  const contradicted = e.criteria.filter((c) => c.met === false);
+  const pending = e.criteria.filter((c) => c.met === 'pending');
+  const toAttribution = <a href={hrefWith({ tab: 'attribution' })} onClick={onNav({ tab: 'attribution' })} className={LINK}>See Attribution</a>;
+  const state = contradicted.length > 0 ? 'contradicted' : pending.length > 0 ? 'pending' : 'confirmed';
+  return (
+    <p data-testid="header-confirmation" data-state={state} data-pending={pending.length}>
+      {contradicted.length > 0 && <span className="font-medium text-danger">This PASS is contradicted: {andList(contradicted.map((c) => FOUND_OTHERWISE[c.id] ?? c.evidence))}. </span>}
+      {pending.length > 0 && <>Checks pending: this trial still needs {andList(pending.map((c) => STILL_NEEDS[c.id] ?? c.evidence))}. </>}
+      {state === 'confirmed' && <>Confirmed. </>}
+      {toAttribution}
+    </p>
   );
 }
 
