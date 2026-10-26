@@ -14,7 +14,9 @@ import { expect, test, type Page } from '@playwright/test';
 import { MET_TEXT, NOT_AUDITED_MARKER } from '../../../packages/core/explain.ts';
 import { FAULT_PRECEDENCE, isValid } from '../../../packages/core/outcomes.ts';
 import { trialName } from '../../../packages/core/summary.ts';
-import { explain, hasTrajectory, record, records, RUN_ID, summary, trialBase, TRIALS } from './fixtures/trial/trial.ts';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { explain, hasTrajectory, record, records, RUN_DIR, RUN_ID, summary, trialBase, TRIALS } from './fixtures/trial/trial.ts';
 
 const TABS = [
   { id: 'grading', name: 'Grading' },
@@ -527,6 +529,35 @@ test('a trial from another world: Replay says its differing hash is expected, no
 
 // The UI wording and consistency follow-up (run.md 2026-10-27 04:40 list; verifier-phase-P16-2
 // minors, review-ui-P16-1 F8, verifier-phase-P17i-C3-2 F2).
+
+test('an ENV_ERROR header links Where to the tool call that failed with an internal error', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  // The sample's ENV_ERROR trajectory has no INTERNAL tool result (review-ui-P16-1 F8), so the
+  // third tool call that ran is served as the one that failed, as packages/core/loop.ts records it.
+  const file = join(RUN_DIR, record(TRIALS.envError).trajectory);
+  let ran = 0;
+  const lines = readFileSync(file, 'utf8').split('\n').filter((l) => l.trim() !== '').map((l) => {
+    const e = JSON.parse(l) as { type: string; executed?: boolean; name?: string };
+    if (e.type !== 'tool_result' || !e.executed || ++ran !== 3) return l;
+    return JSON.stringify({ ...e, is_error: true, error_code: 'INTERNAL', content: { error: { code: 'INTERNAL', message: 'store write failed' } } });
+  });
+  const name = (JSON.parse(lines.find((l) => l.includes('"error_code":"INTERNAL"'))!) as { name: string }).name;
+  await page.route(`**/data/results/runs/${RUN_ID}/${record(TRIALS.envError).trajectory}`, (route) => route.fulfill({ status: 200, contentType: 'application/x-ndjson', body: `${lines.join('\n')}\n` }));
+  await openTrial(page, TRIALS.envError);
+  const link = page.getByTestId('trial-header').getByTestId('failed-call-link');
+  await expect(link).toHaveText('Step 3');
+  await expect(link.locator('xpath=..')).toContainText(`the ${name} call that failed with an internal error`);
+  await link.click();
+  const target = page.locator('#step-3');
+  await expect(target).toBeInViewport();
+  await expect(target).toHaveAttribute('aria-current', 'step');
+});
+
+test('with no internal tool error in its trajectory, an ENV_ERROR header has no Where link', async ({ page }) => {
+  await openTrial(page, TRIALS.envError);
+  await expect(page.getByTestId('trajectory').getByTestId('step').first()).toBeVisible();
+  await expect(page.getByTestId('trial-header').getByTestId('failed-call-link')).toHaveCount(0);
+});
 
 test('the infra label has its help link on its Runs row too, on the same line as the label at 390 px', async ({ page }) => {
   await browse(page, './?view=runs');

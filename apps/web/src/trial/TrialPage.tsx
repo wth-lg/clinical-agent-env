@@ -8,11 +8,12 @@
 // The header, visible on open with no click: the outcome, the attribution label with its
 // glossary link (and the not-audited marker when the trial has no audit row), the one-line
 // reason, the fault and the criterion that decided it, the decisive failing check (id, the policy
-// line it enforces, what it requires and what the trial left) with a link to the decisive step,
-// and M1-M5. All of it is packages/core/explain.ts explainTrial over the record and audit row:
-// the Runs row's explanation first, then fullExplanation (results.ts) when it arrives, the one
-// context cli/audit-check.ts uses. Every tab panel stays mounted (the inactive ones hidden), so a
-// replay or an open row survives a tab change.
+// line it enforces, what it requires and what the trial left) with a link to the decisive step
+// (on an ENV_ERROR, to the tool call that failed), and M1-M5. All of it is
+// packages/core/explain.ts explainTrial over the record and audit row: the Runs row's explanation
+// first, then fullExplanation (results.ts) when it arrives, the one context cli/audit-check.ts
+// uses. Every tab panel stays mounted (the inactive ones hidden), so a replay or an open row
+// survives a tab change.
 import { ArrowLeft } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type Ref } from 'react';
 import { MET_TEXT, type Explanation } from '../../../../packages/core/explain.ts';
@@ -26,7 +27,7 @@ import { Grading } from './Grading.tsx';
 import { returnTo } from './back.ts';
 import { resolveTrial } from './resolve.ts';
 import { StateDiff } from './StateDiff.tsx';
-import { trajectoryOf } from './steps.ts';
+import { internalErrorRow, trajectoryOf, type Row } from './steps.ts';
 import { Trajectory, type Loaded } from './Trajectory.tsx';
 
 export const TABS = [
@@ -133,7 +134,7 @@ function Detail({ t, run, files, tab, headingRef }: { t: Trial; run: RunData; fi
         <p className="text-ink-muted">
           Run <span className="font-medium text-ink">{run.runId}</span>{run.official ? ', the official run' : ', a pilot run, not counted in the results'}. Task <span className="font-medium text-ink">{t.task}</span>.
         </p>
-        <Header t={t} e={e} onStep={onStep} />
+        <Header t={t} e={e} rows={traj?.rows ?? null} onStep={onStep} />
         <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start">
           <Tabs tab={tab}>
             {{
@@ -154,9 +155,11 @@ function Detail({ t, run, files, tab, headingRef }: { t: Trial; run: RunData; fi
   );
 }
 
-// Why the trial ended as it did, before any click (see the header comment).
-function Header({ t, e, onStep }: { t: Trial; e: Explanation; onStep: (n: number) => void }) {
+// Why the trial ended as it did, before any click (see the header comment). rows: the trajectory,
+// once it loads; an ENV_ERROR's Where is the tool call that failed with an internal error.
+function Header({ t, e, rows, onStep }: { t: Trial; e: Explanation; rows: readonly Row[] | null; onStep: (n: number) => void }) {
   const nonPass = e.outcome !== 'PASS';
+  const failedCall = e.fault === 'env' && e.decisive_step === null && rows !== null ? internalErrorRow(rows) : null;
   return (
     <section aria-label="Why this trial ended as it did" data-testid="trial-header" className={`min-w-0 rounded-sm border border-line bg-surface p-4 ${nonPass ? 'border-l-2 border-l-danger' : ''}`}>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -191,6 +194,12 @@ function Header({ t, e, onStep }: { t: Trial; e: Explanation; onStep: (n: number
           <>
             <dt>Where</dt>
             <dd><StepLink n={e.decisive_step} onStep={onStep} testId="decisive-step-link">Decisive step {e.decisive_step}</StepLink></dd>
+          </>
+        )}
+        {failedCall !== null && (
+          <>
+            <dt>Where</dt>
+            <dd><StepLink n={failedCall.step} onStep={onStep} testId="failed-call-link">Step {failedCall.step}</StepLink>: the {failedCall.name} call that failed with an internal error</dd>
           </>
         )}
         <dt>Criteria</dt>
