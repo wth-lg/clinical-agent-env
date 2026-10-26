@@ -373,4 +373,17 @@ export const mutants: Mutant[] = [
     loses: [],
     script: [...reads, { calls: [apixabanUp, gabapentinBid] }, { calls: [{ ...note(), input: { ...note().input, type: 'telephone_note' } }] }, { calls: [finish(DONE)] }],
   },
+  {
+    id: 'gabapentin_600_bid_prn',
+    trap: 'gabapentin_frequency',
+    why: 'Orders gabapentin 600 mg twice daily as needed for pain: inside the band, but RBC-PHARM-07 §4 gives the 30-59 band as a twice-daily regimen, and an as-needed order is not one (decisions.tsv 2026-10-29T02:45).',
+    fails: ['gabapentin_dose'],
+    loses: [],
+    script: [
+      ...reads,
+      { calls: [apixabanUp, { name: 'change_medication', input: { medication_request: 'mr-t1-gabapentin', action: 'modify', reason: 'CrCl 43', new_dose: { value: 600, unit: 'mg', frequency: 'BID_PRN', as_needed_reason: 'neuropathic pain' } } }] },
+      { calls: [note()] },
+      { calls: [finish(DONE)] },
+    ],
+  },
 ];
