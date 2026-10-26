@@ -18,7 +18,7 @@ import { trialName } from '../../../packages/core/summary.ts';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { explain, hasTrajectory, record, records, RUN_DIR, RUN_ID, summary, trialBase, TRIALS } from './fixtures/trial/trial.ts';
-import { rubricMetText } from '../src/trial/Grading.tsx';
+import { rubricMetText } from '../src/trial/rubric.ts';
 
 const TABS = [
   { id: 'grading', name: 'Grading' },

@@ -9,6 +9,7 @@ import type { Step } from '../../../../packages/grader/check.ts';
 import { currentGrade } from '../../../../packages/core/summary.ts';
 import { checkTextOf, type Trial } from '../data/results.ts';
 import { OutcomeChip } from '../data/ui.tsx';
+import { metText, rubricMetText, rubricTotal, scoreNote, totalText } from './rubric.ts';
 import { stepOfId } from './steps.ts';
 
 export interface CheckRow {
@@ -25,18 +26,6 @@ export interface CheckRow {
 type Usage = { input: number; cache_write: number; cache_read: number; output: number };
 const num = (n: number) => n.toLocaleString('en-US');
 const usd = (n: number) => `$${n.toFixed(2)}`;
-export const metText = (met: unknown): string => (met === true ? 'met' : met === false ? 'not met' : String(met));
-// A rubric row's met column: a penalty (negative points) that did not fire is "not triggered", so
-// "not met" never reads as a loss (pre-audit M2, P17j JU4).
-export const rubricMetText = (c: { points?: number | null; met: unknown }): string => ((c.points ?? 0) < 0 && c.met === false ? 'not triggered' : metText(c.met));
-// The rubric total: the points of every met item (penalties included) against the points of the
-// positive items, the most a trial can earn.
-export function rubricTotal(rows: ReadonlyArray<{ points?: number | null; met: unknown }>): { earned: number; possible: number } {
-  return {
-    earned: rows.filter((c) => c.met === true).reduce((n, c) => n + (c.points ?? 0), 0),
-    possible: rows.filter((c) => (c.points ?? 0) > 0).reduce((n, c) => n + (c.points ?? 0), 0),
-  };
-}
 const SCORE_TITLE = 'Rubric score (does not decide pass)';
 
 function duration(started: string | undefined, ended: string | undefined): string | null {
@@ -53,7 +42,7 @@ function Metric({ title, value, testId, note }: { title: string; value: string |
         <span className="text-xs text-ink-muted">{title}</span>
         {value !== null && <>{' '}<span className="font-medium tabular-nums text-ink">{value}</span></>}
       </p>
-      {(value === null || note !== undefined) && <p className="mt-0.5 text-xs text-ink-muted">{value === null ? '—' : note}</p>}
+      {(value === null || note !== undefined) && <p data-testid={`${testId}-note`} className="mt-0.5 text-xs text-ink-muted">{value === null ? '—' : note}</p>}
     </div>
   );
 }
@@ -94,8 +83,6 @@ export function Grading({ t, steps, onStep, decisive = null }: { t: Trial; steps
   const threwCheck = r.error && !g.regraded ? r.error.check : null;
   const unfinished = r.error != null && !g.regraded;
   const score = graded && typeof g.score === 'number' ? g.score.toFixed(2) : null;
-  // Judge items the judge could not answer: the score is then an upper bound.
-  const unknownItems = (r as { judge?: { unknown?: number } | null }).judge?.unknown ?? 0;
   const total = rubricTotal(rubric);
   return (
     <div className="space-y-4">
@@ -104,7 +91,7 @@ export function Grading({ t, steps, onStep, decisive = null }: { t: Trial; steps
         {graded && <span data-testid="grade-line" className="text-ink-muted">{unfinished ? 'Not graded: a grader check failed with an error, so the trial has no grade.' : g.regraded ? 'Current grade, from the last regrade.' : r.grader_version ? `Graded with grader ${r.grader_version}.` : 'Graded.'}</span>}
       </p>
       <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
-        <Metric title={SCORE_TITLE} value={score} testId="score-card" note={score !== null && unknownItems > 0 ? `upper bound: ${unknownItems} judge item${unknownItems === 1 ? '' : 's'} unknown` : undefined} />
+        <Metric title={SCORE_TITLE} value={score} testId="score-card" note={score !== null ? scoreNote(checks) : undefined} />
         <Metric title="Cost" value={usd(r.cost_usd + (r.judge_cost_usd ?? 0))} testId="metric-cost" note={`agent ${usd(r.cost_usd)}, judge ${usd(r.judge_cost_usd ?? 0)}`} />
         <Metric title="Tokens" value={r.usage ? `${num(r.usage.input + r.usage.cache_read + r.usage.cache_write)} in, ${num(r.usage.output)} out` : null} testId="metric-tokens" note={r.usage ? `${num(r.usage.cache_read)} read from the cache` : undefined} />
         <Metric title="Duration" value={duration(r.started, r.ended)} testId="metric-duration" note={r.turns !== undefined ? `${r.turns} turns` : undefined} />
@@ -180,7 +167,7 @@ export function Grading({ t, steps, onStep, decisive = null }: { t: Trial; steps
             <tfoot>
               <tr data-testid="rubric-total" data-earned={total.earned} data-possible={total.possible} className="border-t border-line-strong">
                 <td className="py-1.5 pr-2 font-medium">Total</td>
-                <td colSpan={3} className="py-1.5 tabular-nums">{total.earned} of {total.possible} points</td>
+                <td colSpan={3} className="py-1.5 tabular-nums">{totalText(total)}</td>
               </tr>
             </tfoot>
           </table>
