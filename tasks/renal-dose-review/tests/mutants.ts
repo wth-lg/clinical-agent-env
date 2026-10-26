@@ -352,4 +352,17 @@ export const mutants: Mutant[] = [
       { calls: [finish(DONE)] },
     ],
   },
+  {
+    id: 'metformin_er_1000_bid',
+    trap: 'metformin_regimen_changed',
+    why: 'Switches metformin to the extended-release tablet at the same 1000 mg twice daily: RBC-PHARM-07 §3 says no change at eGFR 59.8, and a product switch is a change (decisions.tsv 2026-10-29T02:45).',
+    fails: ['metformin_dose'],
+    loses: [],
+    script: [
+      ...reads,
+      { calls: [apixabanUp, gabapentinBid, modify('mr-t1-metformin', { value: 1000, unit: 'mg', frequency: 'BID' }, 'switch to ER, same dose', RX.metforminEr500)] },
+      { calls: [note()] },
+      { calls: [finish(DONE)] },
+    ],
+  },
 ];

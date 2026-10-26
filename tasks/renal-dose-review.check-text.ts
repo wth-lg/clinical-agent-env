@@ -23,11 +23,13 @@ const daily = (drug: string, r: { min: number; max: number }, times?: number) =>
 
 // The drug kept as it was: the same mg per dose and doses per day as the initial order.
 const kept = (drug: string) => ({
-  requires: `${drug} unchanged: one active order with the same mg per dose and doses per day as before`,
+  requires: `${drug} unchanged: one active order of the same product, mg per dose and doses per day as before`,
   found: (ev: Record<string, unknown>) => {
     const was = fields(ev.was);
     const is = fields(ev.is);
-    return count(drug, items(ev.active)) ?? `${drug} is ${show(is.mg_per_dose)} mg ${perDay(is.per_day)}, was ${show(was.mg_per_dose)} mg ${perDay(was.per_day)}`;
+    if (count(drug, items(ev.active)) !== null) return count(drug, items(ev.active))!;
+    const product = is.product !== was.product ? `, product ${show(is.product)} instead of ${show(was.product)}` : '';
+    return `${drug} is ${show(is.mg_per_dose)} mg ${perDay(is.per_day)}${product}, was ${show(was.mg_per_dose)} mg ${perDay(was.per_day)}`;
   },
 });
 
