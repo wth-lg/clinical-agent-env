@@ -6,12 +6,12 @@ import { readFileSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { CHART_TYPES, taskPatients, type ChartResource } from '../src/tasks/chart.ts';
+import { CHART_TYPES, patientOf, taskPatients, type FhirResource } from '../src/tasks/chart.ts';
 import { sampleBase } from './fixtures/sample-results/sample.ts';
 
 const world = gunzipSync(readFileSync(new URL('../../../fixtures/world.ndjson.gz', import.meta.url))).toString('utf8')
-  .split('\n').filter((l) => l.trim() !== '').map((l) => JSON.parse(l) as ChartResource);
-const idsOf = (patient: string, type: string) => world.filter((r) => r.resourceType === type && ((r.subject ?? r.patient)?.reference === patient)).map((r) => r.id).sort();
+  .split('\n').filter((l) => l.trim() !== '').map((l) => JSON.parse(l) as FhirResource);
+const idsOf = (patient: string, type: string) => world.filter((r) => r.resourceType === type && patientOf(r) === patient).map((r) => r.id).sort();
 
 async function openChart(page: Page, task: string) {
   await page.goto(new URL(`./?view=tasks&task=${task}&tab=chart`, await sampleBase(test.info().project.use.baseURL!)).href);
@@ -63,4 +63,11 @@ test('axe finds no serious or critical violation on the Chart tab, light and dar
     const bad = (await new AxeBuilder({ page }).analyze()).violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).slice(0, 3).join(', ')}`);
     expect(bad, scheme).toEqual([]);
   }
+});
+
+test('discharge-medrec: a note shows its text, and the discharge summary names metoprolol (verifier JU10-1 F2)', async ({ page }) => {
+  await openChart(page, 'discharge-medrec');
+  const notes = page.locator('[data-testid="chart-row"][data-type="DocumentReference"]').getByTestId('chart-note');
+  expect(await notes.count()).toBeGreaterThan(0);
+  expect((await notes.allTextContents()).join(' ').toLowerCase()).toContain('metoprolol');
 });

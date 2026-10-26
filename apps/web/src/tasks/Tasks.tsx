@@ -10,7 +10,7 @@ import type { Task } from '../../../../packages/core/tasks.ts';
 import type { Check } from '../../../../packages/grader/check.ts';
 import { MODEL } from '../adapters/ledger-browser.ts';
 import { MANIFEST } from '../data/world.ts';
-import { chartOf, CHART_TYPES, SECTION_TITLE, taskPatients, type ChartResource } from './chart.ts';
+import { chartOf, CHART_TYPES, SECTION_TITLE, taskPatients, type FhirResource } from './chart.ts';
 import { useKeyStatus } from '../keygate/key.ts';
 import type { Script } from '../../../../packages/grader/matrix/types.ts';
 import { checkTextOf, loadResults } from '../data/results.ts';
@@ -85,18 +85,24 @@ function CheckRow({ task, check: c }: { task: Task; check: Check }) {
 // allergies, labs and notes, read from the FHIR R4 store the tools act on, loaded in this tab the
 // first time the tab shows. A task with several patients (the panel task T3, the inbox and queue
 // tasks) has a patient picker.
-let chartWorld: Promise<ChartResource[]> | undefined;
+// A failed load is not kept, so Retry (or the next view) loads again.
+let chartWorld: Promise<FhirResource[]> | undefined;
 const loadChartWorld = () => (chartWorld ??= Promise.all([import('../../../../packages/env/fixture-source.ts'), import('../data/world.ts')]).then(async ([{ loadStore }, { worldSource }]) =>
-  [...(await loadStore(worldSource())).resources()] as unknown as ChartResource[]));
+  [...(await loadStore(worldSource())).resources()] as unknown as FhirResource[]).catch((e: unknown) => {
+  chartWorld = undefined;
+  throw e;
+}));
 
 function ChartTab({ task, active }: { task: string; active: boolean }) {
-  const [world, setWorld] = useState<ChartResource[] | null>(null);
+  const [world, setWorld] = useState<FhirResource[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [chosen, setChosen] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     if (!active || world !== null) return;
+    setError(null);
     loadChartWorld().then(setWorld, (e: unknown) => setError(e instanceof Error ? e.message : String(e)));
-  }, [active, world]);
+  }, [active, world, attempt]);
   const patients = world === null ? [] : taskPatients(world, task);
   const patient = chosen !== null && patients.includes(chosen) ? chosen : (patients[0] ?? null);
   const chart = world === null || patient === null ? null : chartOf(world, patient);
@@ -106,7 +112,12 @@ function ChartTab({ task, active }: { task: string; active: boolean }) {
       <p className="text-xs text-ink-muted" data-testid="chart-source">
         Source: FHIR R4 store, the world every trial starts from (state hash {MANIFEST.world.state_hash.slice(0, 8)}…). Read-only: the tools read and write these resources; this tab only shows them.
       </p>
-      {error !== null && <p role="alert">The FHIR store did not load: {error}</p>}
+      {error !== null && (
+        <p role="alert" className="flex flex-wrap items-center gap-2">
+          The FHIR store did not load: {error}
+          <button type="button" className={button} onClick={() => setAttempt((n) => n + 1)}>Retry</button>
+        </p>
+      )}
       {world === null && error === null && <p className="text-ink-muted" role="status">Loading the FHIR store in this tab…</p>}
       {world !== null && patients.length === 0 && <p className="text-ink-muted">This task names no patient in the store.</p>}
       {world !== null && patients.length > 1 && (
@@ -135,6 +146,12 @@ function ChartTab({ task, active }: { task: string; active: boolean }) {
                       {rows.map((r) => (
                         <li key={r.id} data-testid="chart-row" data-type={r.type} data-id={r.id} className="px-2 py-1">
                           <span className="block break-words text-ink">{r.text || r.id}</span>
+                          {r.body !== '' && (
+                            <details className="text-ink-muted" data-testid="chart-note">
+                              <summary className="cursor-pointer break-words">{r.body.length > 140 ? `${r.body.slice(0, 137).trimEnd()}…` : r.body.split('\n')[0]}</summary>
+                              <pre className="mt-1 max-h-64 overflow-auto whitespace-pre-wrap break-words font-sans text-ink">{r.body}</pre>
+                            </details>
+                          )}
                           <span className="block break-words text-ink-muted">
                             {[r.detail, r.status].filter((x) => x !== '').join(' · ')}
                             {r.date !== '' && <>{r.detail !== '' || r.status !== '' ? ' · ' : ''}<span className="whitespace-nowrap tabular-nums">{r.date.slice(0, 10)}</span></>}
