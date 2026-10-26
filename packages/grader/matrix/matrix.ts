@@ -47,6 +47,14 @@
 //                     one is given (cli/matrix.ts reads it from results/tasks-v1.json, which
 //                     P21's freeze writes), and a pinned hash fails when the oracle case does not
 //                     run; without one the hash is printed, not checked
+//   decisive reachability  every gate check's decisive ids were exposed or referenced to a
+//                     passing oracle or alternative (unreachedDecisive), checked when the oracle and
+//                     every alternative ran and passed: an id no correct solution reaches is not one
+//                     a model could be faulted for missing (R14-30)
+// Each case's result also holds the ids a tool result exposed or referenced to its first run
+// (reachable_ids), and the result the world it ran on (world_hash): matrix.json records both, and
+// an id a passing oracle or alternative reached is what audit-check counts as reachable (R14-30,
+// packages/core/explain-context.ts reachability).
 // MatrixOptions narrow a run for a unit test: a subset of cases, one trial, one grade. The CI
 // step runs the whole matrix with the defaults.
 import { MODEL, type CallResult, type ContentBlock, type MessageParam } from '../../core/anthropic.ts';
@@ -59,7 +67,7 @@ import { loadStore, type FixtureSource } from '../../env/fixture-source.ts';
 import { canonicalJson } from '../../env/hash.ts';
 import type { indexDefinitions } from '../../env/validate.ts';
 import type { Taxonomy } from '../attribution.ts';
-import { stepsOf } from '../exposure.ts';
+import { sameId, stepsOf } from '../exposure.ts';
 import type { Check, Json, RubricCheck, RubricCtx } from '../check.ts';
 import type { Grade } from '../grade.ts';
 import { JudgeCacheMiss, type Judge } from '../judge.ts';
@@ -266,6 +274,9 @@ export interface CaseResult {
   failed_gates: string[];
   // Rubric items lost: a positive item not met, a penalty met (an unknown item is neither).
   lost_items: string[];
+  // The ids the first run's results exposed or referenced (grader/exposure.ts stepsOf), sorted,
+  // each once: a referenced id (a list_inbox row's Task) is one the agent could act on or read.
+  reachable_ids: string[];
   // null when not checked (one grade, one trial, no fresh process).
   regrade_same: boolean | null;
   replay_same: boolean | null;
@@ -426,11 +437,17 @@ export async function runCases(env: MatrixEnv, task: MatrixTask, selected: reado
     }
     if (regrade_same === false) v.problems.push('a second grade from the same record differs');
     if (replay_same === false) v.problems.push('a second run gives a different trajectory or final hash');
-    return { case: c, record: run.record, grade, misses, regrade_same, replay_same, isolation, ...v };
+    const reachable_ids = [...new Set(stepsOf(run.events).flatMap((s) => [...s.exposed_ids, ...s.referenced_ids]))].sort();
+    return { case: c, record: run.record, grade, misses, reachable_ids, regrade_same, replay_same, isolation, ...v };
   });
 }
 
 const sameSet = (a: readonly string[], b: readonly string[]) => a.length === b.length && [...a].sort().join('\n') === [...b].sort().join('\n');
+
+// Each gate check's decisive id that none of `reached` names, as {check, id}.
+export function unreachedDecisive(checks: readonly Check[], reached: readonly string[]): Array<{ check: string; id: string }> {
+  return checks.flatMap((c) => (c.kind === 'gate' ? c.decisive_ids.filter((id) => !reached.some((k) => sameId(k, id))).map((id) => ({ check: c.id, id })) : []));
+}
 
 // Each check whose traces_to resolves to nothing, with the reason.
 export function traceability(task: MatrixTask): Array<{ check: string; reason: string }> {
@@ -464,6 +481,8 @@ export interface MatrixResult {
   pass: boolean;
   lines: string[];
   results: CaseResult[];
+  // The world every case started from (MatrixEnv.worldHash).
+  world_hash: string;
 }
 
 const score = (g: Grade) => (g.score === null ? 'n/a' : g.score.toFixed(3));
@@ -478,7 +497,7 @@ export async function runMatrix(env: MatrixEnv, task: MatrixTask, opts: MatrixOp
   const declarations = [...lossDeclarations(task), ...agentDeclarations(task)];
   if (declarations.length > 0) {
     const lines = [`matrix ${task.id}`, losses, 'cases: not run (fix the loses and attribution declarations first)', `matrix ${task.id}: FAIL`, ...declarations.map((d) => `  - ${d}`)];
-    return { pass: false, lines, results: [] };
+    return { pass: false, lines, results: [], world_hash: env.worldHash };
   }
   const results = await runCases(env, task, selected, opts);
   const failures: string[] = [];
@@ -559,6 +578,16 @@ export async function runMatrix(env: MatrixEnv, task: MatrixTask, opts: MatrixOp
   const iso = results.flatMap((r) => (r.isolation ? [r.isolation] : []));
   lines.push(iso.length ? `isolation: ${iso.reduce((s, x) => s + x.equal, 0)}/${iso.reduce((s, x) => s + x.of, 0)} grades equal a fresh process` : 'isolation: not run');
 
+  const solvers = [...byKind('oracle'), ...alternatives];
+  if (oracle === undefined || alternatives.length < task.alternatives.length || solvers.some((r) => r.problems.length > 0)) {
+    lines.push('decisive reachability: not checked (the oracle and every alternative must run and pass)');
+  } else {
+    const decisive = task.checks.reduce((n, c) => n + (c.kind === 'gate' ? c.decisive_ids.length : 0), 0);
+    const unreached = unreachedDecisive(task.checks, solvers.flatMap((r) => r.reachable_ids));
+    lines.push(`decisive reachability: ${decisive - unreached.length}/${decisive} gate decisive ids reached by a passing oracle or alternative`);
+    for (const u of unreached) fail(`decisive id ${u.id} of ${u.check}: no passing oracle or alternative reached it`);
+  }
+
   const untraced = traceability(task);
   lines.push(`traceability: ${task.checks.length - untraced.length}/${task.checks.length} checks resolve${untraced.length ? ` (unresolved: ${untraced.map((u) => u.check).join(', ')})` : ''}`);
   for (const u of untraced) fail(`traceability: ${u.check}: ${u.reason}`);
@@ -586,5 +615,5 @@ export async function runMatrix(env: MatrixEnv, task: MatrixTask, opts: MatrixOp
 
   lines.push(`matrix ${task.id}: ${failures.length === 0 ? 'PASS' : 'FAIL'}`);
   for (const f of failures) lines.push(`  - ${f}`);
-  return { pass: failures.length === 0, lines, results };
+  return { pass: failures.length === 0, lines, results, world_hash: env.worldHash };
 }
