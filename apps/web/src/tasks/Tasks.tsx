@@ -123,6 +123,9 @@ function TaskCard({ t, tab }: { t: Loaded; tab: TaskTab | null }) {
   const Chevron = open ? ChevronDown : ChevronRight;
   const gates = checks.filter((c) => c.kind === 'gate');
   const rubric = checks.filter((c) => c.kind === 'rubric');
+  // The card holds the validation runs, so a result started on the closed card, or one still
+  // running, shows in the Grader validation panel once the card opens (verifier JU9-1 F5).
+  const runs = useValidationRuns();
   return (
     <li data-testid="task-card" data-task={task.id} className="rounded-sm border border-line bg-surface">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3">
@@ -133,7 +136,7 @@ function TaskCard({ t, tab }: { t: Loaded; tab: TaskTab | null }) {
         <code className="break-all text-xs text-ink-muted">{task.id}</code>
         <span className="ml-auto text-xs text-ink-muted">{gates.length} gate checks, {rubric.length} rubric items, {(task.tools ?? []).length || 'all'} tools</span>
       </div>
-      {!open && <Validation id={task.id} runTrial />}
+      {!open && <Validation id={task.id} runs={runs} closed />}
       {open && (
         <TaskTabs task={task.id} tab={tab}>
           {{
@@ -175,7 +178,7 @@ function TaskCard({ t, tab }: { t: Loaded; tab: TaskTab | null }) {
               </section>
             ),
             'reference-solution': <ReferenceSolution id={task.id} />,
-            'grader-validation': <Validation id={task.id} />,
+            'grader-validation': <Validation id={task.id} runs={runs} />,
           }}
         </TaskTabs>
       )}
@@ -187,10 +190,22 @@ function TaskCard({ t, tab }: { t: Loaded; tab: TaskTab | null }) {
 // panel stays mounted, so a matrix result or an opened policy survives a switch of tab.
 function TaskTabs({ task, tab, children }: { task: string; tab: TaskTab; children: Record<TaskTab, ReactNode> }) {
   const refs = useRef<Partial<Record<TaskTab, HTMLButtonElement | null>>>({});
+  // Only a real change navigates, so a click on the selected tab adds no history entry.
   const go = (id: TaskTab, focus = false) => {
+    if (id === tab) return;
     navigate({ tab: id });
     if (focus) refs.current[id]?.focus();
   };
+  // The strip scrolls inside itself on a narrow screen: keep the selected tab in its view. Only
+  // the strip's scrollLeft moves, so a ?tab= link does not also scroll the page.
+  useEffect(() => {
+    const el = refs.current[tab];
+    const strip = el?.parentElement;
+    if (!el || !strip) return;
+    const [t, s] = [el.getBoundingClientRect(), strip.getBoundingClientRect()];
+    if (t.left < s.left) strip.scrollLeft -= s.left - t.left;
+    else if (t.right > s.right) strip.scrollLeft += t.right - s.right;
+  }, [tab]);
   const onKey = (ev: KeyboardEvent<HTMLDivElement>) => {
     const to = tabTarget(ev.key, TASK_TABS.findIndex((x) => x.id === tab), TASK_TABS.length);
     if (to === null) return;
@@ -199,26 +214,30 @@ function TaskTabs({ task, tab, children }: { task: string; tab: TaskTab; childre
   };
   return (
     <div className="border-t border-line">
-      <div role="tablist" aria-label="Task" onKeyDown={onKey} className="flex flex-wrap gap-x-1 border-b border-line px-2">
-        {TASK_TABS.map((x) => (
-          <button
-            key={x.id}
-            ref={(el) => {
-              refs.current[x.id] = el;
-            }}
-            type="button"
-            role="tab"
-            id={`task-tab-${task}-${x.id}`}
-            data-tab={x.id}
-            aria-selected={x.id === tab}
-            aria-controls={`task-panel-${task}-${x.id}`}
-            tabIndex={x.id === tab ? 0 : -1}
-            onClick={() => go(x.id)}
-            className={`-mb-px border-b-2 px-2 py-2 text-sm ${x.id === tab ? 'border-accent font-medium text-ink' : 'border-transparent text-ink-muted hover:text-ink'}`}
-          >
-            {x.label}
-          </button>
-        ))}
+      {/* One row that scrolls inside itself on a narrow screen; the line under it is on the wrapper,
+          because the scroll box would clip a tab's -mb-px overlap. */}
+      <div className="border-b border-line">
+        <div role="tablist" aria-label="Task" onKeyDown={onKey} className="flex gap-x-1 overflow-x-auto px-2">
+          {TASK_TABS.map((x) => (
+            <button
+              key={x.id}
+              ref={(el) => {
+                refs.current[x.id] = el;
+              }}
+              type="button"
+              role="tab"
+              id={`task-tab-${task}-${x.id}`}
+              data-tab={x.id}
+              aria-selected={x.id === tab}
+              aria-controls={`task-panel-${task}-${x.id}`}
+              tabIndex={x.id === tab ? 0 : -1}
+              onClick={() => go(x.id)}
+              className={`shrink-0 whitespace-nowrap border-b-2 px-2 py-2 text-sm ${x.id === tab ? 'border-accent font-medium text-ink' : 'border-transparent text-ink-muted hover:text-ink'}`}
+            >
+              {x.label}
+            </button>
+          ))}
+        </div>
       </div>
       {TASK_TABS.map((x) => (
         <div key={x.id} role="tabpanel" id={`task-panel-${task}-${x.id}`} data-testid={`task-panel-${x.id}`} aria-labelledby={`task-tab-${task}-${x.id}`} hidden={x.id !== tab} tabIndex={0} className="min-w-0 px-4 py-4 focus-visible:outline-2 focus-visible:outline-accent">
@@ -241,10 +260,17 @@ function useRun<T>(): [Run<T>, (f: () => Promise<T>) => void] {
 
 const button = 'inline-flex h-8 items-center gap-1.5 rounded-sm border border-line-strong bg-surface px-3 text-ink hover:bg-canvas disabled:cursor-not-allowed disabled:border-dashed disabled:border-line disabled:bg-canvas disabled:text-ink-muted';
 
-function Validation({ id, runTrial = false }: { id: string; runTrial?: boolean }) {
+function useValidationRuns() {
   const [oracle, runOracle] = useRun<OracleResult>();
   const [matrix, runMatrix] = useRun<MatrixRun>();
   const [replay, runReplay] = useRun<ReplayRow[]>();
+  return { oracle, runOracle, matrix, runMatrix, replay, runReplay };
+}
+
+// The oracle, matrix and replay buttons and their results. On a closed card the row is labelled
+// and carries Run trial; in the Grader validation panel the tab names it.
+function Validation({ id, runs, closed = false }: { id: string; runs: ReturnType<typeof useValidationRuns>; closed?: boolean }) {
+  const { oracle, runOracle, matrix, runMatrix, replay, runReplay } = runs;
   const busy = [oracle, matrix, replay].some((r) => r.state === 'running');
   const replayTrials = async () => {
     const r = await loadResults();
@@ -252,13 +278,13 @@ function Validation({ id, runTrial = false }: { id: string; runTrial?: boolean }
     return validate({ op: 'replay', task: id, trials: r.official.trials.filter((t) => t.task === id).map((t) => ({ name: t.name, record: t.record, trajectoryUrl: t.trajectoryUrl })) });
   };
   return (
-    <div className={runTrial ? 'border-t border-line px-4 py-3' : ''} data-testid="validation" data-task={id}>
+    <div className={closed ? 'border-t border-line px-4 py-3' : ''} data-testid="validation" data-task={id}>
       <div className="flex flex-wrap items-center gap-2">
-        <span className="mr-1 text-xs font-medium text-ink-muted">Grader validation</span>
+        {closed && <span className="mr-1 text-xs font-medium text-ink-muted">Grader validation</span>}
         <button type="button" className={button} disabled={busy} onClick={() => runOracle(() => validate({ op: 'oracle', task: id }))}>Run oracle</button>
         <button type="button" className={button} disabled={busy} onClick={() => runMatrix(() => validate({ op: 'matrix', task: id }))}>Run matrix</button>
         <button type="button" className={button} disabled={busy} onClick={() => runReplay(replayTrials)}>Replay published trials</button>
-        {runTrial && <RunTrial id={id} />}
+        {closed && <RunTrial id={id} />}
       </div>
       <Result r={oracle} what="oracle" render={(o) => (
         <p data-testid="oracle-result" data-outcome={o.outcome ?? 'none'} data-score={o.score ?? ''}>
