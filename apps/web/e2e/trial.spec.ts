@@ -528,6 +528,26 @@ test('a trial from another world: Replay says its differing hash is expected, no
 // The UI wording and consistency follow-up (run.md 2026-10-27 04:40 list; verifier-phase-P16-2
 // minors, review-ui-P16-1 F8, verifier-phase-P17i-C3-2 F2).
 
+test('the infra label has its help link on its Runs row too, on the same line as the label at 390 px', async ({ page }) => {
+  await browse(page, './?view=runs');
+  const row = page.locator(`[data-testid="trial-row"][data-trial="${TRIALS.infra}"]`);
+  await expect(row.getByRole('link', { name: 'How the infra label is given' })).toHaveAttribute('href', /view=glossary.*#fault-infra$/);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openTrial(page, TRIALS.infra);
+  const h = page.getByTestId('trial-header');
+  const label = (await h.getByTestId('label').boundingBox())!;
+  const help = (await h.getByRole('link', { name: 'How the infra label is given' }).boundingBox())!;
+  expect(Math.abs((label.y + label.height / 2) - (help.y + help.height / 2))).toBeLessThan(6);
+  expect(help.x).toBeGreaterThan(label.x + label.width - 1);
+});
+
+test('at 390 px the PASS header is in the first screen', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openTrial(page, TRIALS.pass);
+  const box = (await page.getByTestId('trial-header').boundingBox())!;
+  expect(box.y + box.height).toBeLessThanOrEqual(844);
+});
+
 test('Ruled out names each fault once, refusal included, and the infrastructure in words', async ({ page }) => {
   for (const name of [TRIALS.envError, TRIALS.graderError]) {
     await openTrial(page, name, '&tab=attribution');

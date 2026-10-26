@@ -13,7 +13,7 @@
 // the Runs row's explanation first, then fullExplanation (results.ts) when it arrives, the one
 // context cli/audit-check.ts uses. Every tab panel stays mounted (the inactive ones hidden), so a
 // replay or an open row survives a tab change.
-import { ArrowLeft, CircleHelp } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type Ref } from 'react';
 import { MET_TEXT, type Explanation } from '../../../../packages/core/explain.ts';
 import type { TrialEvent } from '../../../../packages/core/events.ts';
@@ -55,7 +55,7 @@ function Frame({ title, headingRef, from, children }: { title: string; headingRe
   }, [from?.run, from?.trial]);
   const back = onNav(BACK);
   return (
-    <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
+    <section className="mx-auto max-w-7xl px-4 py-4 sm:px-6 sm:py-6">
       <a
         href={hrefWith(BACK)}
         onClick={(ev) => {
@@ -77,7 +77,7 @@ function Frame({ title, headingRef, from, children }: { title: string; headingRe
       >
         {title}
       </h1>
-      <div className="mt-3 space-y-4">{children}</div>
+      <div className="mt-2 space-y-4 sm:mt-3">{children}</div>
     </section>
   );
 }
@@ -128,7 +128,7 @@ function Detail({ t, run, files, tab, headingRef }: { t: Trial; run: RunData; fi
         data-tab={tab}
         data-full={String(full !== null)}
         data-criteria={e.criteria.map((c) => `${c.id}: ${MET_TEXT[String(c.met)]}`).join(', ')}
-        className="space-y-4"
+        className="space-y-3 sm:space-y-4"
       >
         <p className="text-ink-muted">
           Run <span className="font-medium text-ink">{run.runId}</span>{run.official ? ', the official run' : ', a pilot run, not counted in the results'}. Task <span className="font-medium text-ink">{t.task}</span>.
@@ -162,13 +162,6 @@ function Header({ t, e, onStep }: { t: Trial; e: Explanation; onStep: (n: number
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <OutcomeChip outcome={e.outcome} fault={e.fault} />
         {nonPass && <FaultLabel e={e} />}
-        {/* FaultLabel gives every label but infra its help link (review-ui-P16-1 F8). */}
-        {e.fault === 'infra' && (
-          <GlossaryLink anchor="fault-infra" className="-ml-2 inline-flex h-6 w-6 items-center justify-center rounded-sm text-ink-muted hover:bg-canvas hover:text-ink">
-            <CircleHelp aria-hidden className="h-3.5 w-3.5" strokeWidth={1.75} />
-            <span className="sr-only">How the infra label is given</span>
-          </GlossaryLink>
-        )}
         <span className="ml-auto text-xs text-ink-muted" title="Agent and judge cost">${(t.record.cost_usd + (t.record.judge_cost_usd ?? 0)).toFixed(2)}</span>
       </div>
       {!e.valid && e.deciding && (
