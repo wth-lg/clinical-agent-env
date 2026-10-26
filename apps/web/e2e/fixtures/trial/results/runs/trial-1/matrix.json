@@ -2,8 +2,8 @@
   "grader_task_versions": {
     "2c5c4f59a926849a7016ac77605ece0f0a9b1242d1b5c461b0f126858230f971": {
       "task_id": "renal-dose-review",
-      "env_version": "c31110559dad7b9883154cc94acb40f8ed0cef875a3fb2de0833bd8025dc4528",
-      "task_version": "607cfa39e2692f4dccc9f3dd8e9e04bc63da5699f909fde066e9f0332929b203",
+      "env_version": "589529d84845836d86f9c61e7c2ab8f0e846058b3f39c4c624d50964821856d1",
+      "task_version": "20b547a78fd2211fd41614934b4303034a20307674ed4ffaa82378d67c793ede",
       "world_hash": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
       "pass": true,
       "oracle_pass": true,
@@ -982,8 +982,8 @@
     },
     "5cef528de411237ff22e51a7a6df680a6954707a6a44f04885e492b572eafee5": {
       "task_id": "crc-care-gap",
-      "env_version": "5846d7857b161e8f1a166871b14a8010445c00283a48ab199ea5397e9fc92766",
-      "task_version": "f41b1cfa75d80264cb8b4381780e6f4c9529c9183bbf4ac48dff18851424c5d5",
+      "env_version": "adeb2ab84b721a43bd9a1411eb8cbafc108c09aa9eeed38e6b1300c7b379358a",
+      "task_version": "12a7210f027f3deee3cc3392c29efdf2b511a00e64ee9ef1111bc9912ec1a38c",
       "world_hash": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
       "pass": true,
       "oracle_pass": true,
@@ -11718,8 +11718,8 @@
     },
     "9951302e791a963696583af0f6dd44372df913f3f5b4b8027cdb6f6ca10eca06": {
       "task_id": "contrast-ct-prep",
-      "env_version": "ec98c43c0ab505c6dea2e82ae38f0dd1089a01ee04a97b6c3843dde74a87b61e",
-      "task_version": "f8707e2bf77fce80749fe1615ca57cb9aa70e4f8defc917943ddee9a18694dbf",
+      "env_version": "b2977ce936babdc308cbdb335f53909cf09026fd4a347130c31f23816b528eb5",
+      "task_version": "dde43dd4a565c0aca9984c586f747a25fb7ac3f1ba3129e68375dbdd82bea5e2",
       "world_hash": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
       "pass": true,
       "oracle_pass": true,
@@ -12629,8 +12629,8 @@
     },
     "b726774884e28279b4f62e4d00e20058da0ae229a17cee3e9d08ef0798f957df": {
       "task_id": "discharge-medrec",
-      "env_version": "bbe10cc5335c9148b69eace346c286be06aa3c7d76e279854de3d753e15fbd68",
-      "task_version": "3188eb60ff0e24c9e6b1625fe584aa9f0381ea6a500a288446136d76cd1604a8",
+      "env_version": "63a2e03928ea16dd0996701b634a10f0bf7653a6e2128fe97a96dffeac50f136",
+      "task_version": "987ea04be8cc14576e29bae65edc4b5cfdcf5a65109119500246ebb13dc964d7",
       "world_hash": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
       "pass": true,
       "oracle_pass": true,
@@ -13428,8 +13428,8 @@
     },
     "df605b2c3bc3ef63735ad4c318b5718d82ecf3590b04cb241716445ffe5da98a": {
       "task_id": "message-queue",
-      "env_version": "2d4df327702390a471c9203e40d8f9c5933e64d1f33270d5691a7c40432d22da",
-      "task_version": "51e97c2a1749036330f131c2938d73e1bc81b672212148c261808370de73d7a6",
+      "env_version": "84dcbbc9711af62c11bb5b020385ed64083d718c282205fe65a6dca657184c73",
+      "task_version": "6b12217c87c998ba099bb35f0da28ddfef03403dac976a8239f5bc692a472589",
       "world_hash": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
       "pass": true,
       "oracle_pass": true,
@@ -16435,6 +16435,7 @@
             "Patient/pt-0029",
             "Patient/pt-0030",
             "Patient/pt-0031",
+            "Practitioner/pr-okafor",
             "Practitioner/pr-reyes",
             "Task/task-t6-m1",
             "Task/task-t6-m2",
@@ -16448,8 +16449,8 @@
     },
     "e2a595eda6b2df8a172a084467ad25cbd18f98baf24140bce6d42c3cc7242b46": {
       "task_id": "results-inbox",
-      "env_version": "02be3dae92bbee2de1a8a2d234d60ed0181a70e57d7960fee694f801ba73b328",
-      "task_version": "840bb312aa21d7641ae3c8d4fc92097796b6f9bcfdf5c6bac7422639824ea466",
+      "env_version": "7e0b532c368b6f8769bff127461e747bb9138c9de816d70d27bbb797893ffa5f",
+      "task_version": "35b5c504da3ba4f21b053556a5cadd465132be5439d49851ee7b962c20084284",
       "world_hash": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
       "pass": true,
       "oracle_pass": true,
