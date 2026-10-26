@@ -1,4 +1,4 @@
-// pnpm cli oracle --task <id|all> [--json] [--live-judge] [--dry-run]
+// pnpm cli oracle --task <id|all> [--json] [--live-judge [--misses-only]] [--dry-run]
 // Runs each task's oracle (solution/solve.ts) as a scripted model through run() and grades it.
 //   offline (default)  judge items answer only from tasks/<id>/tests/judge-cache.json; a miss
 //                      fails the task and names the item. No client, no ledger, no call.
@@ -16,6 +16,10 @@
 //                      client that sends nothing, which yields every distinct judge request at
 //                      the task's judge effort; each is priced at its worst case from its real
 //                      body and max_tokens, times two (the schema retry).
+//   --misses-only      with --live-judge: the Judge starts from tests/judge-cache.json, so only the
+//                      questions the cache lacks are asked live (and projected); every cached
+//                      answer is reused and written back with its own provenance. A PR that adds
+//                      judge items refills only its new keys.
 //   --dry-run          prints that projection (LIVE_PROJECTION_USD) and makes no call and opens
 //                      nothing
 //   --json             {tasks: [{id, outcome, score, judge_unknown, misses}]} only (scripts/donewhen.ts)
@@ -38,8 +42,8 @@ import { openNodeLedger } from './adapters/ledger-node.ts';
 import { isTestMode, nodeTaskSource, TASKS_DIR } from './adapters/tasks-node.ts';
 import { loadMatrixTask, matrixEnv, TASK_ID } from './matrix.ts';
 
-const USAGE = 'usage: pnpm cli oracle --task <id|all> [--json] [--live-judge] [--dry-run]';
-const FLAGS = new Set(['--json', '--live-judge', '--dry-run']);
+const USAGE = 'usage: pnpm cli oracle --task <id|all> [--json] [--live-judge [--misses-only]] [--dry-run]';
+const FLAGS = new Set(['--json', '--live-judge', '--misses-only', '--dry-run']);
 
 export interface Deps {
   env: Record<string, string | undefined>;
@@ -83,11 +87,12 @@ interface Plan {
 }
 
 // Runs every case once and finds the task's distinct judge requests, sending nothing.
-async function plan(env: MatrixEnv, task: MatrixTask): Promise<Plan> {
+// With missesOnly, the recording Judge answers from the task's cache, so only its misses are priced.
+async function plan(env: MatrixEnv, task: MatrixTask, missesOnly = false): Promise<Plan> {
   const runs: Plan['runs'] = [];
   for (const c of cases(task)) runs.push({ case: c, run: await trial(env, task, c) });
   const worst: number[] = [];
-  const judge = new Judge({ client: recordingClient(worst), effort: task.judgeEffort });
+  const judge = new Judge({ client: recordingClient(worst), effort: task.judgeEffort, ...(missesOnly ? { cache: [...task.cache] } : {}) });
   for (const { run } of runs) await gradeRunWith(env, task, run, judge);
   return { task, runs, worst, usd: JUDGE_CALLS_PER_ITEM * worst.reduce((s, x) => s + x, 0) };
 }
@@ -107,6 +112,8 @@ export async function main(args: string[], deps: Deps): Promise<number> {
   if (id !== 'all' && !TASK_ID.test(id)) return usage(deps, `--task ${JSON.stringify(id)} is not a task id (letters, digits, _ and - only)`);
   const live = flags.has('--live-judge');
   const json = flags.has('--json');
+  const missesOnly = flags.has('--misses-only');
+  if (missesOnly && !live) return usage(deps, '--misses-only needs --live-judge');
   let tasks: MatrixTask[];
   try {
     const ids = id === 'all' ? (await nodeTaskSource({ testMode: isTestMode(deps.env) }).all()).map((t) => t.id) : [id];
@@ -127,7 +134,7 @@ export async function main(args: string[], deps: Deps): Promise<number> {
         deps.out(`oracle dry run: ${t.id} offline, no live call`);
         continue;
       }
-      const { worst, usd, runs } = await plan(env, t);
+      const { worst, usd, runs } = await plan(env, t, missesOnly);
       p += usd;
       deps.out(`oracle dry run: --live-judge on ${t.id}: ${runs.length} cases, ${worst.length} distinct judge questions x ${JUDGE_CALLS_PER_ITEM} calls, worst case ${money(usd)}`);
     }
@@ -146,14 +153,14 @@ export async function main(args: string[], deps: Deps): Promise<number> {
     }
     try {
       const plans: Plan[] = [];
-      for (const t of tasks) plans.push(await plan(env, t));
+      for (const t of tasks) plans.push(await plan(env, t, missesOnly));
       const { ledger, mode, path } = openNodeLedger({ transport: 'live', env: deps.env });
       deps.out(`ledger ${mode} ${path}`);
       const grant = await ledger.batchStart(plans.reduce((s, x) => s + x.usd, 0));
       try {
         for (const { task, runs, worst } of plans) {
           const client = new MessagesClient({ grant, ledger, apiKey: key, fetch: deps.fetch, trial: `oracle-judge:${task.id}`, log: (l) => deps.out(l) });
-          const judge = new Judge({ client, maxCalls: JUDGE_CALLS_PER_ITEM * worst.length, effort: task.judgeEffort });
+          const judge = new Judge({ client, maxCalls: JUDGE_CALLS_PER_ITEM * worst.length, effort: task.judgeEffort, ...(missesOnly ? { cache: [...task.cache] } : {}) });
           let oracle: Grade | null = null;
           let failed = false;
           for (const { case: c, run } of runs) {
@@ -172,7 +179,9 @@ export async function main(args: string[], deps: Deps): Promise<number> {
           }
           if (failed) continue;
           const at = new Date(nodeNow()).toISOString();
-          const entries = judge.entries().map((e) => ({ ...e, provenance: { source: 'live' as const, model: e.model, at } })).sort((a, b) => (a.key < b.key ? -1 : 1));
+          // A reused cache entry keeps its provenance; an answer asked now is marked live.
+          const cached = new Set(missesOnly ? task.cache.map((e) => e.key) : []);
+          const entries = judge.entries().map((e) => (cached.has(e.key) ? e : { ...e, provenance: { source: 'live' as const, model: e.model, at } })).sort((a, b) => (a.key < b.key ? -1 : 1));
           (deps.writeCache ?? writeCacheFile)(task.id, entries);
           deps.out(`judge cache ${task.id}: ${entries.length} answers written, ${judge.calls} calls`);
         }
