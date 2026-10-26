@@ -609,7 +609,7 @@ describe('a GRADER_ERROR trial has no gate verdict, so M1 does not apply (verifi
       attribution: { auto: 'reasoning', first_failed: 'G1', decisive_step: 9, exposure: [{ id: 'Observation/obs-wt-1', first_exposed_step: 6 }] },
     }), undefined, ctx);
     expect(threw.criteria[0]).toMatchObject({ id: 'M1', met: 'n/a' });
-    expect(threw.criteria[0]!.evidence).toMatch(/threw/);
+    expect(threw.criteria[0]!.evidence).toMatch(/failed with an error/);
     expect(threw.fault_criteria.env.find((c) => c.id === 'E5')!.met).toBe(false);
     expect(threw.deciding?.id).toBe('GR1');
     expect(explainTrial(failWith('reasoning'), undefined, ctx).criteria[0]!.met).toBe(true);
