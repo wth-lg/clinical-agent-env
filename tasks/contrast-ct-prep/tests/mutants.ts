@@ -192,6 +192,15 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
     script: [...READS, { calls: orders }, { calls: [message()] }, { calls: [note()] }, { calls: [finish(DONE)] }],
   },
   {
+    id: 'probe_message_and_order_both_20mg',
+    trap: 'prednisone_dose',
+    why: 'Orders prednisone 20 mg at the right three times and tells the patient 20 mg at those times: the message and the chart agree and both are wrong, a wrong decision and not an output gap (verifier-phase-P17i-A2-1 P4, S1).',
+    fails: ['prednisone_schedule'],
+    loses: [],
+    attribution: 'reasoning',
+    script: [...READS, { calls: orders }, { calls: [medication(RX.prednisone20, 20, [AT.p13, AT.p7, AT.p1]), diphenhydramine] }, { calls: [message(ORACLE_MESSAGE.replace(/Prednisone 50 mg/g, 'Prednisone 20 mg'))] }, { calls: [note()] }, { calls: [finish(DONE)] }],
+  },
+  {
     id: 'antihistamine_at_bedtime',
     trap: 'antihistamine_timing',
     why: 'Gets the three prednisone times right but moves diphenhydramine to bedtime Sunday (22:00), in the order and in the message, instead of 1 hour before the scan.',
