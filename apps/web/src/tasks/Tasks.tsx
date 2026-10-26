@@ -11,6 +11,7 @@ import type { Check } from '../../../../packages/grader/check.ts';
 import { MODEL } from '../adapters/ledger-browser.ts';
 import { MANIFEST } from '../data/world.ts';
 import { chartOf, CHART_TYPES, SECTION_TITLE, taskPatients, type FhirResource } from './chart.ts';
+import { titleParts } from './title.ts';
 import { useKeyStatus } from '../keygate/key.ts';
 import type { Script } from '../../../../packages/grader/matrix/types.ts';
 import { checkTextOf, loadResults } from '../data/results.ts';
@@ -228,6 +229,8 @@ function TaskCard({ t, tab }: { t: Loaded; tab: TaskTab | null }) {
   const Chevron = open ? ChevronDown : ChevronRight;
   const gates = checks.filter((c) => c.kind === 'gate');
   const rubric = checks.filter((c) => c.kind === 'rubric');
+  // The title without its policy codes, which sit on the meta line (pre-audit U10).
+  const shown = titleParts(task.title, task.policies.map((p) => p.id));
   // The card holds the validation runs, so a result started on the closed card, or one still
   // running, shows in the Grader validation panel once the card opens (verifier JU9-1 F5).
   const runs = useValidationRuns();
@@ -236,9 +239,10 @@ function TaskCard({ t, tab }: { t: Loaded; tab: TaskTab | null }) {
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3">
         <button type="button" aria-expanded={open} onClick={() => navigate({ task: open ? null : task.id, tab: null })} className="inline-flex items-center gap-1.5 text-left font-medium text-ink hover:underline">
           <Chevron aria-hidden className="h-4 w-4 text-ink-muted" strokeWidth={1.75} />
-          {task.title}
+          <span data-testid="task-title">{shown.title}</span>
         </button>
         <code className="break-all text-xs text-ink-muted">{task.id}</code>
+        {shown.codes.length > 0 && <span data-testid="task-codes" className="text-xs text-ink-muted">{shown.codes.join(', ')}</span>}
         <span className="ml-auto text-xs text-ink-muted">{gates.length} gate checks, {rubric.length} rubric items, {(task.tools ?? []).length || 'all'} tools</span>
       </div>
       {!open && <Validation id={task.id} runs={runs} closed />}
