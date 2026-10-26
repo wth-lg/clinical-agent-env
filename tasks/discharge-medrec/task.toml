@@ -83,7 +83,7 @@ display = "Creatinine [Mass/volume] in Serum or Plasma"
 
 # Each trap needs a mutant in tests/mutants.ts. No status-only case: T4 has no inbox items.
 [matrix]
-traps = ["furosemide_dose", "addendum_missed", "conditional_resume", "kcl_continued", "alias_duplicated", "tartrate_stopped", "substitute_ordered", "pcp_not_messaged", "resume_before_lab", "old_summary"]
+traps = ["furosemide_dose", "addendum_missed", "conditional_resume", "kcl_continued", "alias_duplicated", "tartrate_stopped", "substitute_ordered", "pcp_not_messaged", "resume_before_lab", "old_summary", "stated_not_done"]
 
 # The judge items read one note or one message; medium as for T1.
 [judge]
