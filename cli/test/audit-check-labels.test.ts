@@ -26,8 +26,11 @@ async function check(dir: string, checks?: (task: string) => Promise<ReadonlyArr
 
 const readJson = (file: string) => JSON.parse(readFileSync(file, 'utf8')) as Record<string, unknown>;
 const writeJson = (file: string, x: unknown) => writeFileSync(file, `${JSON.stringify(x, null, 2)}\n`);
-const labels = (dir: string) => readFileSync(join(dir, 'audit.jsonl'), 'utf8').split('\n').filter((l) => l.trim() !== '').map((l) => JSON.parse(l) as AuditRow & { criteria?: unknown });
-const writeLabels = (dir: string, rows: object[]) => writeFileSync(join(dir, 'audit.jsonl'), rows.map((r) => JSON.stringify(r)).join('\n') + '\n');
+// The per-trial rows; the task-validity reviews beside them have no trial.
+const labels = (dir: string) => readFileSync(join(dir, 'audit.jsonl'), 'utf8').split('\n').filter((l) => l.trim() !== '').map((l) => JSON.parse(l) as AuditRow & { criteria?: unknown; kind?: string }).filter((l) => l.kind !== 'task-validity');
+// Writes the per-trial rows and keeps the file's task-validity reviews.
+const reviews = (dir: string) => readFileSync(join(dir, 'audit.jsonl'), 'utf8').split('\n').filter((l) => l.includes('"task-validity"'));
+const writeLabels = (dir: string, rows: object[]) => writeFileSync(join(dir, 'audit.jsonl'), [...rows.map((r) => JSON.stringify(r)), ...reviews(dir)].join('\n') + '\n');
 
 // Turns t-alpha/9 (a labelled FAIL in the clean run) into another outcome.
 function retrial(dir: string, over: Record<string, unknown>): void {
