@@ -138,7 +138,7 @@ const CYST_CRITERION =
 export const rubric: Check[] = [
   item({ id: 'nodule_tracking_task', category: 'process', points: 3, method: 'code', traces_to: 'RBC-RAD-05 §4', decisive_ids: [...I.nodule.sources], fn: trackingTask(I.nodule.patient, I.nodule.window.start, I.nodule.window.end) }),
   item({ id: 'bone_tracking_task', category: 'process', points: 2, method: 'code', traces_to: 'RBC-RAD-05 §4', decisive_ids: [...I.bone.sources], fn: trackingTask(I.bone.patient, '0000-01-01', I.bone.by) }),
-  messageItem('nodule_patient_message', I.nodule, 'RBC-INBOX-01 §4'),
+  messageItem('nodule_patient_message', I.nodule, 'RBC-INBOX-01 §4', true),
   messageItem('hemolyzed_k_patient_message', I.hemolyzed_k, 'RBC-LAB-03 §2'),
   messageItem('bone_patient_message', I.bone, 'RBC-INBOX-01 §4', true),
   messageItem('fit_patient_message', I.fit, 'RBC-INBOX-01 §4', true),

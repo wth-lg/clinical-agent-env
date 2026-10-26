@@ -20,7 +20,7 @@ interface Order {
 export interface Options {
   reads: ScriptTurn[];
   // Item 1: the CT order (null: none), its tracking task's due date (null: none), the message.
-  nodule: { order: Order | null; due: string | null; message: boolean; link?: boolean };
+  nodule: { order: Order | null; due: string | null; message: Contact; link?: boolean };
   // Item 3: a new GI referral besides the existing one; whether the closure links the existing
   // one; the patient message (RBC-INBOX-01 §4; 'call': a task for the RN triage pool to phone him).
   fit: { newReferral: boolean; linkExisting: boolean; message: Contact };
@@ -99,7 +99,9 @@ export function solve(over: Partial<Options> = {}): Script {
     const made: Write[] = [];
     if (o.nodule.order) made.push(order(PT.marsh, o.nodule.order, 'Incidental 5 mm RLL nodule, high risk: 12-month CT per RBC-RAD-05', [SRC.ct, SRC.hp]));
     if (o.nodule.due) made.push(w.task(PT.marsh, 'Practitioner/pr-okafor', o.nodule.due, 'routine', 'Track the 12-month CT chest for the RLL nodule', made[0]?.ref));
-    if (o.nodule.message)
+    if (o.nodule.message === 'call')
+      made.push(w.task(PT.marsh, 'Group/pool-rn-triage', '2026-10-23', 'routine', 'Phone Linda Marsh: her June CT showed a small lung nodule; a follow-up CT of the chest is ordered for June 2027 and scheduling will call her.', SRC.ct));
+    if (o.nodule.message === true)
       made.push(w.message(`Patient/${PT.marsh}`, 'routine', 'Follow-up CT of your lungs', 'Your June CT showed a small spot on the lung. We have ordered a follow-up CT of the chest for June 2027; scheduling will call you.', [SRC.ct]));
     const doc = o.notes ? [w.note(PT.marsh, 'Pulmonary nodule follow-up (RBC-RAD-05)', NOTES.nodule, [SRC.ct, SRC.hp], ['RBC-RAD-05'])] : [];
     items.push([...made, ...doc, ...close(1, o.nodule.link === false ? [] : made)]);
