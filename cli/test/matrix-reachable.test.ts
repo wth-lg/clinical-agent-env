@@ -23,27 +23,42 @@ const SAMPLE_MATRIX = JSON.parse(readFileSync(join(repoRoot, 'apps/web/e2e/fixtu
   grader_task_versions: Record<string, { task_id: string; probes: Array<{ kind: string; as_expected: boolean; reachable_ids: string[] }> }>;
 };
 
+// A real matrix case, graded, and explained on the run's world with the committed matrix.json.
+async function explained(task: string, id: string, check: string) {
+  const env = matrixEnv();
+  const t = await loadMatrixTask(task);
+  const run = await trial(env, t, cases(t).find((c) => c.id === id)!);
+  const grade = await gradeRun(env, t, t.checks, run);
+  expect(grade.attribution?.first_failed).toBe(check);
+  const record = { ...run.record, checks: grade.checks, outcome: grade.outcome, attribution: grade.attribution } as ExplainRecord;
+  expect(Object.keys(SAMPLE_MATRIX.grader_task_versions)).toContain(record.grader_task_version);
+  const x = explainTrial(record, undefined, explainContext({ record, events: run.events, manifest: { world_hash: env.worldHash }, matrix: SAMPLE_MATRIX, checks: t.checks }));
+  return { record, run, x };
+}
+
 describe('a decisive id a tool result only referenced is reachable (review F1)', () => {
   // The real matrix case, graded, then explained on the run's world with the committed matrix.json.
-  for (const [task, id, check] of [['results-inbox', 'closed_without_links', 'items_closed_with_links'], ['message-queue', 'm3_handled_as_routine', 'm3_red_flag']] as const) {
-    it(`${task} ${id}: ${check}'s decisive ids were referenced by list_inbox, so M1 is met, E5 is not, and the fault is the model's`, async () => {
-      const env = matrixEnv();
-      const t = await loadMatrixTask(task);
-      const run = await trial(env, t, cases(t).find((c) => c.id === id)!);
-      const grade = await gradeRun(env, t, t.checks, run);
-      expect(grade.attribution?.first_failed).toBe(check);
-      const record = { ...run.record, checks: grade.checks, outcome: grade.outcome, attribution: grade.attribution } as ExplainRecord;
-      expect(Object.keys(SAMPLE_MATRIX.grader_task_versions)).toContain(record.grader_task_version);
-      // The scenario: a decisive id never exposed, but referenced by a list_inbox step.
-      const never = grade.attribution!.exposure.filter((e) => e.first_exposed_step === null).map((e) => e.id);
-      expect(never.length).toBeGreaterThan(0);
-      expect(stepsOf(run.events).some((s) => s.tool === 'list_inbox' && never.every((n) => s.referenced_ids.some((k) => k.endsWith(`/${n.split('/').pop()}`))))).toBe(true);
-      const x = explainTrial(record, undefined, explainContext({ record, events: run.events, manifest: { world_hash: env.worldHash }, matrix: SAMPLE_MATRIX, checks: t.checks }));
-      expect(x.criteria.find((c) => c.id === 'M1')).toMatchObject({ met: true, evidence: expect.stringContaining('never exposed but exposable (the reference solution or an accepted alternative reached it in the matrix)') });
-      expect(x.fault_criteria.env.find((c) => c.id === 'E5')!.met).toBe(false);
-      expect(x.fault).toBe('model');
-    });
-  }
+  it("results-inbox closed_without_links: items_closed_with_links's decisive ids were referenced by list_inbox, so M1 is met, E5 is not, and the fault is the model's", async () => {
+    const { record, run, x } = await explained('results-inbox', 'closed_without_links', 'items_closed_with_links');
+    // The scenario: a decisive id never exposed, but referenced by a list_inbox step.
+    const never = record.attribution!.exposure.filter((e) => e.first_exposed_step === null).map((e) => e.id);
+    expect(never.length).toBeGreaterThan(0);
+    expect(stepsOf(run.events).some((s) => s.tool === 'list_inbox' && never.every((n) => s.referenced_ids.some((k) => k.endsWith(`/${n.split('/').pop()}`))))).toBe(true);
+    expect(x.criteria.find((c) => c.id === 'M1')).toMatchObject({ met: true, evidence: expect.stringContaining('never exposed but exposable (the reference solution or an accepted alternative reached it in the matrix)') });
+    expect(x.fault_criteria.env.find((c) => c.id === 'E5')!.met).toBe(false);
+    expect(x.fault).toBe('model');
+  });
+
+  // Since A2 r4 (#111) m3_red_flag's decisive id is the red-flag message, Communication/comm-t6-m3,
+  // which the model read, so this case no longer turns on a referenced id; it stays the model's.
+  it("message-queue m3_handled_as_routine: m3_red_flag's decisive id was shown to the model, so M1 is met, E5 is not, and the fault is the model's", async () => {
+    const { record, x } = await explained('message-queue', 'm3_handled_as_routine', 'm3_red_flag');
+    expect(record.attribution!.exposure.length).toBeGreaterThan(0);
+    expect(record.attribution!.exposure.every((e) => e.first_exposed_step !== null)).toBe(true);
+    expect(x.criteria.find((c) => c.id === 'M1')!.met).toBe(true);
+    expect(x.fault_criteria.env.find((c) => c.id === 'E5')!.met).toBe(false);
+    expect(x.fault).toBe('model');
+  });
 
   it('in the committed sample matrix.json, a passing oracle or alternative reached every gate decisive id of every task', async () => {
     for (const e of Object.values(SAMPLE_MATRIX.grader_task_versions)) {
