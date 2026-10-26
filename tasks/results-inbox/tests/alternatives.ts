@@ -110,4 +110,10 @@ export const alternatives = [
       oneAnswer: true,
     }),
   },
+  {
+    id: 'critical_k_paged_and_reassigned',
+    why: 'Pages on-call at stat about the true 6.2 and orders the stat BMP, then hands the inbox item itself to pool-oncall instead of closing it, so the covering clinician owns the follow-up.',
+    loses: [],
+    script: solve({ critical: { ...ORACLE.critical, handoff: 'open' } }),
+  },
 ] satisfies Array<Agent & { loses: readonly string[] }>;
