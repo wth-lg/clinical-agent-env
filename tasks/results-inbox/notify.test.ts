@@ -58,6 +58,10 @@ describe('results-inbox notifications', () => {
       probe_get_in_touch: 'Please get in touch with the family today about the knee X-ray and the referral.',
       probe_call_pt: 'Call pt today re urgent MRI result and referral.',
       probe_contact_him: 'Please contact him today to schedule the urgent MRI.',
+      probe_let_her_know: 'Let her know today that the MRI femur is urgent.',
+      probe_notify_her_of: 'Notify her of the knee X-ray result and the urgent MRI.',
+      probe_call_her_immediately: 'Call her immediately about the knee X-ray and the referral.',
+      probe_call_her_dash: 'Please call her\u2014today\u2014about the MRI.',
     };
     const text = await run(Object.entries(asks).map(([id, description]) => ({ id, why: 'probe', script: staffTask(description) })));
     for (const id of Object.keys(asks)) expect(text).toMatch(new RegExp(`alternative ${id}: PASS score 1\\.000`));
@@ -69,6 +73,8 @@ describe('results-inbox notifications', () => {
       probe_her_oncologist: 'Please contact her oncologist about the knee X-ray and the MRI.',
       probe_her_pcp: 'Notify her PCP of the knee X-ray result and the referral.',
       probe_tell_her_the: 'Tell her the MRI femur is urgent; book it by 2026-11-05.',
+      probe_her_on_call: 'Contact her on-call resident about the knee X-ray and the MRI.',
+      probe_tell_him_the: 'Call Dr. Lee in ortho-oncology and tell him the MRI femur is urgent.',
       probe_contact_physical_therapy: 'Contact PT about the knee lesion before any exercise program.',
     };
     const text = await run(Object.entries(others).map(([id, description]) => ({ id, why: 'probe', script: staffTask(description) })));
