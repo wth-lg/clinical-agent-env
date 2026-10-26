@@ -1,5 +1,344 @@
 {
   "grader_task_versions": {
+    "100339828ba28695eea3f9b5cdc61ff7d0e605eb0c676b27161785f842a7e1df": {
+      "task_id": "crc-care-gap",
+      "env_version": "3d7216da2510f1708b0fb589859ce3c332cb7f5b42c0b55842793ce60955a9db",
+      "task_version": "705110ec2ed114a373ede1a445601f0f6cff4e2e7d116f245de183064a9e4ead",
+      "pass": true,
+      "oracle_pass": true,
+      "alternatives_pass": true,
+      "failed_checks": [],
+      "probes": [
+        {
+          "kind": "oracle",
+          "id": "oracle",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "loinc_fit_code",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "patient_by_patient",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "reminder_for_active_order",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "notes_for_ordered",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "summary_then_table",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "staff_note_about_e1",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "triage_note_about_opnote",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "fit_for_e5_at_75",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "off_topic_message_to_gap_patient",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "ids_table",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "e4_birth_date_from_search_patients",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "condition_pages_by_next_offset",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "sdna_by_date_paging",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "global_searches",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "colectomy_from_snippet",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "e5_message_only",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "outreach_before_order",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "bowel_cancer_outreach",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "colonoscopy_offered_outreach",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "bowel_prep_message_off_topic",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "hospice_call_task",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "mutant",
+          "id": "colonoscopy_ten_years",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "fit_orders",
+            "outreach_messages"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "sdna_three_years",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "fit_orders",
+            "outreach_messages"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "age_45_today",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "fit_orders",
+            "outreach_messages"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "colectomy_note_unread",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "fit_orders",
+            "nothing_for_others"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "dementia_medication_ignored",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "fit_orders",
+            "nothing_for_others"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "frailty_excludes",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "fit_orders",
+            "outreach_messages"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "fit_within_a_year",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "fit_orders",
+            "outreach_messages"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "second_fit_order",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "fit_orders",
+            "nothing_for_others"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "two_kits_one_patient",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "fit_orders"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "messages_without_orders",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "fit_orders"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "reminder_to_met_patient",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "nothing_for_others"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "group_blast",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "nothing_for_others"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "order_before_birth_date",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "gap_seen_before_order"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "hospice_missed",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "fit_orders",
+            "nothing_for_others"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "sdna_unseen",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "gap_seen_before_order"
+          ]
+        },
+        {
+          "kind": "null",
+          "id": "null",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "fit_orders",
+            "outreach_messages"
+          ]
+        },
+        {
+          "kind": "spray",
+          "id": "spray",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "fit_orders",
+            "nothing_for_others"
+          ]
+        },
+        {
+          "kind": "output-gap",
+          "id": "output-gap",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "fit_orders",
+            "outreach_messages"
+          ]
+        }
+      ]
+    },
     "1741d320f3efcb864f67d900e71a4d99a84f13d2c756f50e482b9f0ce456649f": {
       "task_id": "message-queue",
       "env_version": "a902115d6b22a8ad4e4438108607f02b85be67a40fe538c32ff0a96b47d7dc89",
@@ -360,338 +699,6 @@
             "m4_hold",
             "m5_renewal",
             "m6_scheduling"
-          ]
-        }
-      ]
-    },
-    "33726f9ffec1908b47f3f077be7a81982fc5a5f6307d66c791f3b54c02826956": {
-      "task_id": "crc-care-gap",
-      "env_version": "3d7216da2510f1708b0fb589859ce3c332cb7f5b42c0b55842793ce60955a9db",
-      "task_version": "752ec66e252edabef548032b267465d6fac5aa043a2527d01326d1bcfdaa8934",
-      "pass": true,
-      "oracle_pass": true,
-      "alternatives_pass": true,
-      "failed_checks": [],
-      "probes": [
-        {
-          "kind": "oracle",
-          "id": "oracle",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "loinc_fit_code",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "patient_by_patient",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "reminder_for_active_order",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "notes_for_ordered",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "summary_then_table",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "staff_note_about_e1",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "triage_note_about_opnote",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "fit_for_e5_at_75",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "off_topic_message_to_gap_patient",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "ids_table",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "e4_birth_date_from_search_patients",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "condition_pages_by_next_offset",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "sdna_by_date_paging",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "global_searches",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "colectomy_from_snippet",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "e5_message_only",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "outreach_before_order",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "bowel_cancer_outreach",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "colonoscopy_offered_outreach",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "bowel_prep_message_off_topic",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "mutant",
-          "id": "colonoscopy_ten_years",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "fit_orders",
-            "outreach_messages"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "sdna_three_years",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "fit_orders",
-            "outreach_messages"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "age_45_today",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "fit_orders",
-            "outreach_messages"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "colectomy_note_unread",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "fit_orders",
-            "nothing_for_others"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "dementia_medication_ignored",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "fit_orders",
-            "nothing_for_others"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "frailty_excludes",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "fit_orders",
-            "outreach_messages"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "fit_within_a_year",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "fit_orders",
-            "outreach_messages"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "second_fit_order",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "fit_orders",
-            "nothing_for_others"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "two_kits_one_patient",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "fit_orders"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "messages_without_orders",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "fit_orders"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "reminder_to_met_patient",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "nothing_for_others"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "group_blast",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "nothing_for_others"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "order_before_birth_date",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "gap_seen_before_order"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "hospice_missed",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "fit_orders",
-            "nothing_for_others"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "sdna_unseen",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "gap_seen_before_order"
-          ]
-        },
-        {
-          "kind": "null",
-          "id": "null",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "fit_orders",
-            "outreach_messages"
-          ]
-        },
-        {
-          "kind": "spray",
-          "id": "spray",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "fit_orders",
-            "nothing_for_others"
-          ]
-        },
-        {
-          "kind": "output-gap",
-          "id": "output-gap",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "fit_orders",
-            "outreach_messages"
           ]
         }
       ]
