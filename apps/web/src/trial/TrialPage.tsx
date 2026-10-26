@@ -91,9 +91,10 @@ export function TrialPage({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
   const runId = params.get('run');
   // The first-nonpass token is a URL word, not a name to show (verifier-ui-copy-1 m5).
   const title = trial === FIRST_NONPASS ? 'First non-pass trial' : trial;
+  // The session notice reads no published results, so it shows while they load or fail to load.
+  if (runId === 'session') return <Frame title="Trials from this session" headingRef={headingRef}><SessionNotice /></Frame>;
   if (results === null) return <Frame title={title} headingRef={headingRef}><Notice>Loading the published results…</Notice></Frame>;
   if (results.kind === 'error') return <Frame title={title} headingRef={headingRef}><Notice testId="error-state">The published results cannot be read: {results.message}</Notice></Frame>;
-  if (runId === 'session') return <Frame title="Trials from this session" headingRef={headingRef}><SessionNotice /></Frame>;
   const runs = [...(results.official ? [results.official] : []), ...results.pilots];
   const r = resolveTrial(runs, runId, trial);
   if (r.kind === 'none-nonpass') return <Frame title="First non-pass trial" headingRef={headingRef}><Notice testId="empty-state">{r.message}</Notice></Frame>;

@@ -623,6 +623,28 @@ test('run=session has a plain heading, on the hosted site and on the local runne
   await expect(page.getByText('first-nonpass')).toHaveCount(0);
 });
 
+test('run=session keeps its heading and notice while the published results load and when they cannot be read (verifier UIm5-1 F1)', async ({ page }) => {
+  // Loading: data/index.json never answers.
+  let release = () => {};
+  const held = new Promise<void>((r) => (release = r));
+  await page.route('**/data/index.json', async (route) => {
+    await held;
+    await route.abort().catch(() => {});
+  });
+  await browse(page, './?view=runs&run=session&trial=first-nonpass');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Trials from this session');
+  await expect(page.getByTestId('session-notice')).toBeVisible();
+  await expect(page.getByText('Loading the published results')).toHaveCount(0);
+  release();
+  await page.unroute('**/data/index.json');
+  // Cannot be read: data/index.json is not JSON.
+  await page.route('**/data/index.json', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: 'not json' }));
+  await browse(page, './?view=runs&run=session&trial=first-nonpass');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Trials from this session');
+  await expect(page.getByTestId('session-notice')).toBeVisible();
+  await expect(page.getByTestId('error-state')).toHaveCount(0);
+});
+
 test('run=session on the local runner says the runner started those trials and links to the Live trial view', async ({ page }) => {
   // The local runner: health answers as clinenv-runner and index.html carries the runner's token.
   await page.route((url) => url.pathname.endsWith(`/${HEALTH_PATH}`), (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(SAMPLES.health) }));
