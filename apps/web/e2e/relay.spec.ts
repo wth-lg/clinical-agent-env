@@ -6,9 +6,9 @@
 // command, on Validate and (429, 5xx) during a trial; a failed Validate leaves no key in the
 // page's markup; the page and the trial Worker refuse a fetch to RELAY_URL or an API host that
 // MessagesClient did not make, also through the prototype that holds the raw function, and the
-// page refuses a fetchLater, a WebTransport and the raw EventSource constructor to the relay. A
-// new realm (a blob: Worker, an iframe, a popup) gets raw globals the guard never saw; the
-// residuals are listed in packages/core/egress.ts.
+// page refuses a fetchLater, a WebTransport, a WebSocketStream and the raw EventSource constructor
+// to the relay (the Worker its WebSocketStream too). A new realm (a blob: Worker, an iframe, a
+// popup) gets raw globals the guard never saw; the residuals are listed in packages/core/egress.ts.
 import { expect, test, type Locator, type Page, type Request, type Route } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 import { isApiHost } from '../../../packages/core/anthropic.ts';
@@ -324,6 +324,17 @@ const ctorPlants = (url: string) => {
   }
   return out;
 };
+// WebSocketStream (Chromium, page and Worker; web2r3-1 F1), to the relay's wss: origin.
+const streamPlant = (url: string) => {
+  const W = (globalThis as { WebSocketStream?: new (u: string) => unknown }).WebSocketStream;
+  if (typeof W !== 'function') return 'no WebSocketStream';
+  try {
+    new W(url.replace(/^https:/, 'wss:'));
+    return 'connecting';
+  } catch (e) {
+    return `${(e as Error).name}: ${(e as Error).message}`;
+  }
+};
 const protoBeacon = (url: string) => {
   let owner: { sendBeacon: Navigator['sendBeacon'] } | null = null;
   for (let p = Object.getPrototypeOf(navigator) as object | null; p !== null && owner === null; p = Object.getPrototypeOf(p) as object | null) if (Object.hasOwn(p, 'sendBeacon')) owner = p as { sendBeacon: Navigator['sendBeacon'] };
@@ -359,11 +370,13 @@ test('the egress guard refuses a fetch to RELAY_URL or an API host planted in th
   expect(await page.evaluate(protoBeacon, RELAY_URL)).toMatch(/^EgressRefusal: egress guard/);
   expect(await page.evaluate(laterPlant, RELAY_URL)).toMatch(/^EgressRefusal: egress guard/);
   const ctors = await page.evaluate(ctorPlants, RELAY_URL);
-  expect(ctors.esProto).toMatch(/^TypeError: .*not a constructor/);
+  // The guarded constructor's own prototype is EventTarget, which builds and sends nothing.
+  expect(ctors.esProto).toBe('built, sends nothing');
   expect(ctors.esPrototypeConstructor).toMatch(/^EgressRefusal: egress guard/);
   // One step up from EventSource.prototype is EventTarget.prototype: an EventTarget sends nothing.
   expect(ctors.esPrototypeProtoConstructor).toBe('built, sends nothing');
   expect(ctors.webTransport).toMatch(/^EgressRefusal: egress guard/);
+  expect(await page.evaluate(streamPlant, RELAY_URL)).toMatch(/^EgressRefusal: egress guard/);
   expect(relay.posts).toHaveLength(0);
   await enterKey(page, sentinelKey());
   await expect(page.getByTestId('key-chip')).toBeVisible();
@@ -375,6 +388,8 @@ test('the egress guard refuses a fetch to RELAY_URL or an API host planted in th
   const inWorker = await (await worker).evaluate(plant, RELAY_URL);
   expect(inWorker).toMatch(/^EgressRefusal: egress guard/);
   expect(await (await worker).evaluate(plant, API_URL)).toMatch(/^EgressRefusal: egress guard/);
+  // No CSP binds the module Worker's WebSocketStream; the guard does.
+  expect(await (await worker).evaluate(streamPlant, RELAY_URL)).toMatch(/^EgressRefusal: egress guard/);
   // A dedicated Worker keeps fetch on WorkerGlobalScope.prototype; the guard locks it there too.
   expect(await (await worker).evaluate(protoFetch, RELAY_URL)).toMatch(/^EgressRefusal: egress guard/);
   expect(relay.posts).toHaveLength(validateOnly);
