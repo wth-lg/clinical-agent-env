@@ -5,9 +5,9 @@
 // route shows; the row's code outside apps/web and docs (the loop, the CLI) draws nothing and is
 // not read. The text is found as written, or with each `${...}` or JSX `{...}` of the source
 // and each number of the text taken as a value, so "6 of 6 tasks in band" is found in
-// `{k} of {n} tasks in band`. A row whose `code` names a path that does not exist yet (a
-// committed result or document a later phase writes, such as results/runs/final-1 or
-// docs/findings.md) is pending that phase and is listed as a todo, not failed. Snapshots that are not
+// `{k} of {n} tasks in band`. A row whose trace `pending` list names paths a later phase builds
+// (a committed result or document, such as results/runs/final-1 or docs/findings.md; trace-check
+// keeps that list true) is listed as a todo, not failed. Snapshots that are not
 // accessibility trees (.txt counts, not .ax.txt) are not UI text and are skipped.
 // Limit: this is a grep by view, not by tab, and it reads the view's data files whole, so it shows
 // that the route's code or data holds the text, not that this exact screen draws it (a data file such
@@ -46,7 +46,7 @@ const BUILT_BY: Record<string, string> = {
 };
 
 type AxText = { file: string; text: string };
-type Row = { id: string; code?: string[]; ui?: { route: string }; expect?: unknown };
+type Row = { id: string; code?: string[]; pending?: string[]; ui?: { route: string }; expect?: unknown };
 
 const rows = (JSON.parse(readFileSync(join(REPO, 'docs/requirements/trace.json'), 'utf8')) as { rows?: Row[] } | Row[]);
 const all: Row[] = Array.isArray(rows) ? rows : rows.rows ?? [];
@@ -90,10 +90,11 @@ describe('ax_text strings are rendered on their routes', () => {
 
   for (const { row, a } of checked) {
     const code = row.code ?? [];
-    const missing = code.filter((p) => !existsSync(join(REPO, p)));
-    // Listed as todo, so the test output shows what a later phase still owes.
-    if (missing.length > 0 || BUILT_BY[row.id]) {
-      it.todo(`${row.id}: "${a.text}" pending ${missing.length > 0 ? missing.join(', ') : BUILT_BY[row.id]}`);
+    // The row's own pending list (trace-check fails a stale or done-phase one), listed as todo so
+    // the test output shows what a later phase still owes.
+    const pending = row.pending ?? [];
+    if (pending.length > 0 || BUILT_BY[row.id]) {
+      it.todo(`${row.id}: "${a.text}" pending ${pending.length > 0 ? pending.join(', ') : BUILT_BY[row.id]}`);
       continue;
     }
     it(`${row.id}: "${a.text}" on ${row.ui?.route ?? '(no route)'}`, () => {
