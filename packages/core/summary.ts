@@ -215,13 +215,20 @@ export interface SummaryInput {
 // The k of pass^k each task reports.
 export const PASS_K = [1, 3, 5] as const;
 
+// C(n,k) as an exact integer (every partial product is one), 0 when n < k.
+function choose(n: number, k: number): number {
+  if (n < k) return 0;
+  let r = 1;
+  for (let i = 1; i <= k; i++) r = (r * (n - k + i)) / i;
+  return r;
+}
+
 // pass^k: C(c,k) / C(n,k), the chance that k of n trials drawn without replacement all pass,
-// for c passes; null when n < k (or n is 0).
+// for c passes; null when n < k (or n is 0). One division of two integers, so 4 of 6 at k = 3
+// is 0.2 exactly.
 export function passK(c: number, n: number, k: number): number | null {
   if (n === 0 || n < k) return null;
-  let p = 1;
-  for (let i = 0; i < k; i++) p *= (c - i) / (n - i);
-  return Math.max(p, 0);
+  return choose(c, k) / choose(n, k);
 }
 
 export interface TaskSummary {
@@ -597,6 +604,14 @@ export function validateSummary(x: unknown): string[] {
           && Array.isArray(v.flags) && v.flags.every((f) => f === 'shared_failure' || f === 'no_passes'),
       });
       if (count(t.passes) && count(t.trials) && (t.passes as number) > (t.trials as number)) errors.push(`tasks.${id}.passes: more than its trials`);
+      // pass_k is a function of passes and trials: a value that is not passK of them is stale or edited.
+      else if (count(t.passes) && count(t.trials) && isObj(t.pass_k)) {
+        for (const k of PASS_K) {
+          const want = passK(t.passes as number, t.trials as number, k);
+          const got = t.pass_k[String(k)];
+          if (Object.hasOwn(t.pass_k, String(k)) && got !== want) errors.push(`tasks.${id}.pass_k.${k}: ${JSON.stringify(got)}, not pass^${k} of ${t.passes as number}/${t.trials as number} = ${want}`);
+        }
+      }
     }
   }
   return errors;
