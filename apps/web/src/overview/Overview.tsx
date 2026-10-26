@@ -10,27 +10,26 @@ import { FINAL_PASS_BAND } from '../../../../packages/core/cost.ts';
 import { toolCatalog } from '../../../../packages/core/try-tool.ts';
 import { pilotRates, useResults, type RunData } from '../data/results.ts';
 import { useTaskList } from '../data/tasks.ts';
-import { Card, formatInterval, Hash, IntervalRow, markLabel, MarkLegend, markOf, Notice, Page, Swatch } from '../data/ui.tsx';
+import { Card, formatInterval, GlossaryLink, Hash, IntervalRow, markLabel, MarkLegend, markOf, Notice, Page, Swatch } from '../data/ui.tsx';
 import { hrefWith, onNav } from '../data/url.ts';
 import { safePass } from '../data/harm.ts';
 import { formatClock } from '../data/text.ts';
 import { MANIFEST } from '../data/world.ts';
 import { requestKey, useKeyStatus } from '../keygate/key.ts';
-import { runnerToken } from '../keygate/runner.ts';
 import { LOCAL_RUN_PANEL_ID } from '../surface/LocalRunPanel.tsx';
 
 const money = (x: number | null) => (x === null ? 'n/a' : `$${x.toFixed(2)}`);
 const link = 'text-ink underline decoration-line-strong underline-offset-2 hover:decoration-ink';
 const TOOL_COUNT = toolCatalog().length;
 
-export function Overview({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | undefined }) {
+export function Overview({ headingRef, localRun = false }: { headingRef?: Ref<HTMLHeadingElement> | undefined; localRun?: boolean }) {
   const results = useResults();
   if (results === null) return <Page title="Overview" headingRef={headingRef}><Notice>Loading the published results…</Notice></Page>;
-  if (results.kind === 'ready' && results.official !== null) return <OfficialOverview run={results.official} headingRef={headingRef} />;
+  if (results.kind === 'ready' && results.official !== null) return <OfficialOverview run={results.official} headingRef={headingRef} localRun={localRun} />;
   const why = results.kind === 'error' ? `The published results cannot be read: ${results.message}` : results.officialError ?? 'No official run is published yet. Its pass rates show here when the final run is committed.';
   return (
     <Page title="Overview" headingRef={headingRef} lead="The tasks, the environment and the committed runs. You can read all of it, and run the grader checks, with no key.">
-      <IntroCard />
+      <IntroCard localRun={localRun} />
       <Notice testId={results.kind === 'error' || results.officialError ? 'error-state' : 'no-official'}>{why}</Notice>
       <TaskSummary />
       <EnvironmentSummary />
@@ -39,7 +38,7 @@ export function Overview({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> 
   );
 }
 
-function OfficialOverview({ run, headingRef }: { run: RunData; headingRef?: Ref<HTMLHeadingElement> | undefined }) {
+function OfficialOverview({ run, headingRef, localRun }: { run: RunData; headingRef?: Ref<HTMLHeadingElement> | undefined; localRun: boolean }) {
   const { summary, trials, runId } = run;
   const [lo, hi] = FINAL_PASS_BAND;
   const t = summary!.totals;
@@ -50,7 +49,7 @@ function OfficialOverview({ run, headingRef }: { run: RunData; headingRef?: Ref<
       headingRef={headingRef}
       lead={<>Run <span className="font-medium text-ink">{runId}</span>: {t.passes} of {t.trials} valid trials pass across {Object.keys(summary!.tasks).length} tasks. The shaded band is the target pass rate, {Math.round(lo * 100)}% to {Math.round(hi * 100)}%.</>}
     >
-      <IntroCard />
+      <IntroCard localRun={localRun} />
       {problems > 0 && (
         <Notice testId="data-warning">
           {run.bad.length > 0 && `${run.bad.length} trial record${run.bad.length === 1 ? '' : 's'} cannot be read; Runs shows which. `}
@@ -90,26 +89,24 @@ const action = 'inline-flex h-8 items-center rounded-sm border border-line-stron
 
 // What this is, in plain words (ASD-STE 100, each sentence 25 words or fewer), and two ways to run
 // a trial: in this tab (the key gate when there is no key, else Live trial) and on your computer
-// (the local-run panel, which the shell shows on the hosted site; on the local runner the page
-// already runs on this computer, so that action is not shown).
-function IntroCard() {
+// (the local-run panel; localRun is the shell's own test for showing that panel, so the button
+// and the panel come from one fact; on the local runner the page already runs on this computer).
+function IntroCard({ localRun }: { localRun: boolean }) {
   const key = useKeyStatus();
-  const hosted = runnerToken() === null;
   return (
-    <section data-testid="intro-card" aria-labelledby="intro-title" className="rounded-sm border border-line bg-surface p-4">
-      <h2 id="intro-title" className="font-medium text-ink">What this is</h2>
-      <p data-testid="intro-text" className="mt-1 text-ink">
-        The model {MODEL} does clinical work in a mock health record. It reads the chart and writes orders, notes and messages through tools. Each trial starts
-        from the same synthetic world of FHIR R4 patients, gives the model one task, and then grades what it changed. A trial passes when every gate
-        check of the task is met.
+    <Card title="What this is" testId="intro-card">
+      <p data-testid="intro-text" className="text-ink">
+        The model {MODEL} does clinical work in a mock health record: it reads the chart and writes orders, notes and messages through tools. Each
+        trial starts from the same synthetic patient records, in the FHIR R4 health-record format, and gives the model one task. The grader then checks
+        what the model changed. A trial passes when every <GlossaryLink anchor="pass">gate check</GlossaryLink> of the task is met.
       </p>
       <div className="mt-3 flex flex-wrap gap-2">
         {key.kind === 'none'
           ? <button type="button" className={action} onClick={requestKey}>Add a key and run in this tab</button>
           : <a className={action} href={hrefWith({ view: 'live', task: null, label: null, trial: null, run: null, tab: null })} onClick={onNav({ view: 'live', task: null, label: null, trial: null, run: null, tab: null })}>Run a trial in this tab</a>}
-        {hosted && <button type="button" className={action} onClick={() => document.getElementById(LOCAL_RUN_PANEL_ID)?.focus()}>Run on your computer</button>}
+        {localRun && <button type="button" className={action} onClick={() => document.getElementById(LOCAL_RUN_PANEL_ID)?.focus()}>Run on your computer</button>}
       </div>
-    </section>
+    </Card>
   );
 }
 

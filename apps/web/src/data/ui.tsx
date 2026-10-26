@@ -23,9 +23,9 @@ export function Page({ title, headingRef, lead, children }: { title: string; hea
   );
 }
 
-export function Card({ title, children, actions, id }: { title?: ReactNode; children: ReactNode; actions?: ReactNode; id?: string }) {
+export function Card({ title, children, actions, id, testId }: { title?: ReactNode; children: ReactNode; actions?: ReactNode; id?: string; testId?: string }) {
   return (
-    <div id={id} className="rounded-sm border border-line bg-surface">
+    <div id={id} data-testid={testId} className="rounded-sm border border-line bg-surface">
       {(title !== undefined || actions !== undefined) && (
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-2.5">
           <h2 className="min-w-0 break-words font-medium text-ink">{title}</h2>
