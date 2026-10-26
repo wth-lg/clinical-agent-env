@@ -240,23 +240,37 @@ function Header({ t, e, rows, onStep }: { t: Trial; e: Explanation; rows: readon
   );
 }
 
-// On a PASS the M1-M5 row is one word, "Confirmed", or "Checks pending" with what the pending
-// checks still need, in plain words; the codes and their evidence are in the Attribution tab
-// (pre-audit S9, P17j JU1). A check with no phrase here says its evidence.
+// On a PASS the M1-M5 row is in plain words, in three states (outcomes.ts: one pending is
+// provisional, one not met is contradicted): "Confirmed" when every check holds; "Contradicted: ..."
+// in the danger colour when a check found the opposite (a human audit that says the trial did not
+// pass, an internal tool error, a state hash that does not match); else "Checks pending: this trial
+// still needs ...". The codes and their evidence are in the Attribution tab (pre-audit S9, P17j
+// JU1). A check with no phrase here says its evidence. M2 is never pending, so it has no phrase there.
 const STILL_NEEDS: Readonly<Record<string, string>> = {
   M1: 'a record of what the model was shown',
-  M2: 'the tool results of the trial',
   M3: 'a start and end state check against the run manifest',
   M4: 'a grader check of this task version',
   M5: 'a human audit',
 };
+const FOUND_OTHERWISE: Readonly<Record<string, string>> = {
+  M1: 'a record the failed check needs was never shown to the model',
+  M2: 'a tool call returned an internal error',
+  M3: 'the start or end state hash does not match',
+  M4: 'the reference solution or an accepted alternative fails this check',
+  M5: 'the human audit says this trial did not pass',
+};
 const andList = (xs: readonly string[]) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs.at(-1)}`);
 function Confirmation({ e }: { e: Explanation }) {
-  const pending = e.criteria.filter((c) => c.met !== true && c.met !== 'n/a');
+  const contradicted = e.criteria.filter((c) => c.met === false);
+  const pending = e.criteria.filter((c) => c.met === 'pending');
   const toAttribution = <a href={hrefWith({ tab: 'attribution' })} onClick={onNav({ tab: 'attribution' })} className={LINK}>See Attribution</a>;
+  const state = contradicted.length > 0 ? 'contradicted' : pending.length > 0 ? 'pending' : 'confirmed';
   return (
-    <p data-testid="header-confirmation" data-pending={pending.length}>
-      {pending.length === 0 ? <>Confirmed. {toAttribution}</> : <>Checks pending: this trial still needs {andList(pending.map((c) => STILL_NEEDS[c.id] ?? c.evidence))}. {toAttribution}</>}
+    <p data-testid="header-confirmation" data-state={state} data-pending={pending.length}>
+      {contradicted.length > 0 && <span className="font-medium text-danger">Contradicted: {andList(contradicted.map((c) => FOUND_OTHERWISE[c.id] ?? c.evidence))}. </span>}
+      {pending.length > 0 && <>Checks pending: this trial still needs {andList(pending.map((c) => STILL_NEEDS[c.id] ?? c.evidence))}. </>}
+      {state === 'confirmed' && <>Confirmed. </>}
+      {toAttribution}
     </p>
   );
 }

@@ -9,6 +9,11 @@
 // committed result or document a later phase writes, such as results/runs/final-1 or
 // docs/findings.md) is pending that phase and is listed as a todo, not failed. Snapshots that are not
 // accessibility trees (.txt counts, not .ax.txt) are not UI text and are skipped.
+// Limit: this is a grep by view, not by tab, and it reads the view's data files whole, so it shows
+// that the route's code or data holds the text, not that this exact screen draws it (a data file such
+// as packages/core/anthropic.ts passes a model-name row on its own). e2e/labels.spec.ts asserts the
+// elements on their screens: the oracle badge on the Reference solution tab and the model line on the
+// prompt tab and the Live launcher.
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';

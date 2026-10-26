@@ -149,7 +149,7 @@ export function LiveTrial({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
           </label>
           <span className="flex flex-col gap-1 text-xs text-ink-muted" data-testid="launcher-model">
             Model
-            <span className="flex h-8 items-center text-sm text-ink">{MODEL}, effort high</span>
+            <span className="flex h-8 items-center text-sm text-ink">{MODEL} at effort high</span>
           </span>
           {/* The amount sits beside its button, not in it, so the button's name is its visible
               text (axe label-content-name-mismatch); aria-describedby still reads it out. */}

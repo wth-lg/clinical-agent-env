@@ -164,7 +164,7 @@ function TaskCard({ t, tab }: { t: Loaded; tab: TaskTab | null }) {
                   {task.tools == null ? <p className="mt-1 text-ink-muted" data-testid="task-tools">Every tool of the environment (see Environment).</p> : <p className="mt-1 flex flex-wrap gap-1.5" data-testid="task-tools">{task.tools.map((n) => <code key={n} className="rounded-sm border border-line px-1 text-xs">{n}</code>)}</p>}
                 </section>
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                  <span className="text-xs text-ink-muted" data-testid="task-model">Runs {MODEL} at effort high.</span>
+                  <span className="text-xs text-ink-muted" data-testid="task-model">Runs {MODEL} at effort high</span>
                   <RunTrial id={task.id} />
                 </div>
               </div>
