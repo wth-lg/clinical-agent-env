@@ -12,6 +12,7 @@ import { pilotRates, useResults, type RunData } from '../data/results.ts';
 import { useTaskList } from '../data/tasks.ts';
 import { Card, formatInterval, GlossaryLink, Hash, IntervalRow, markLabel, MarkLegend, markOf, Notice, Page, Swatch } from '../data/ui.tsx';
 import { hrefWith, onNav } from '../data/url.ts';
+import { safePass } from '../data/harm.ts';
 import { formatClock } from '../data/text.ts';
 import { MANIFEST } from '../data/world.ts';
 import { requestKey, useKeyStatus } from '../keygate/key.ts';
@@ -62,7 +63,7 @@ function OfficialOverview({ run, headingRef, localRun }: { run: RunData; heading
         {Object.entries(summary!.tasks).map(([id, s]) => (
           <li key={id} data-testid="overview-row" data-task={id} className="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1.5 px-4 py-2.5 md:grid-cols-[minmax(9rem,1fr)_3.5rem_minmax(10rem,16rem)_minmax(7rem,14rem)_4rem_4rem]">
             <a href={hrefWith({ view: 'runs', task: id, label: null, trial: null })} onClick={onNav({ view: 'runs', task: id, label: null, trial: null })} className={`min-w-0 break-words font-medium ${link}`}>{id}</a>
-            <span className="whitespace-nowrap text-right md:text-left" data-testid="k-of-n">{s.passes}/{s.trials}</span>
+            <span className="whitespace-nowrap text-right md:text-left"><span data-testid="k-of-n">{s.passes}/{s.trials}</span><span className="block text-xs text-ink-muted" data-testid="safe-pass">{safePass(s)}</span></span>
             <span className="col-span-2 md:col-span-1">
               <IntervalRow rate={s.pass_rate} interval={s.wilson95} band={FINAL_PASS_BAND} label={id} />
               <span className="text-xs text-ink-muted" data-testid="wilson">{formatInterval(s.wilson95)}</span>

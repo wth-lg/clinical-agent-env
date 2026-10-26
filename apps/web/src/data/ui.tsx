@@ -11,6 +11,7 @@ import { NOT_AUDITED_MARKER, type Explanation } from '../../../../packages/core/
 import { DENOMINATOR_RULE, FAULT, isValid, OUTCOMES, PASS_DEFINITION, RERUN_OUTCOMES, VALID_OUTCOMES, type Fault, type Outcome } from '../../../../packages/core/outcomes.ts';
 import type { Interval } from '../../../../packages/core/summary.ts';
 import { hrefWith, onNav } from './url.ts';
+import type { HarmItem } from './harm.ts';
 
 export function Page({ title, headingRef, lead, children }: { title: string; headingRef?: Ref<HTMLHeadingElement> | undefined; lead?: ReactNode; children: ReactNode }) {
   return (
@@ -106,6 +107,23 @@ export function OutcomeChip({ outcome, fault }: { outcome: string; fault?: Fault
       <span aria-hidden {...markProps(markOf(outcome, fault), 'inline-block h-2.5 w-2.5 rounded-[2px]')} />
       {outcome}
     </span>
+  );
+}
+
+// A PASS with harm, in the danger colour, beside its outcome chip (pre-audit B2b, P17j JU3):
+// "PASS with harm: <item> (<points>)" for a met harm item, "PASS, harm unknown: <item>" for one the
+// judge could not answer; nothing on a PASS without harm.
+// An item by its id, with its question when the page knows it (verifier JU3-1 F5).
+const named = (x: HarmItem) => (x.text ? `${x.id}, ${x.text.length > 90 ? `${x.text.slice(0, 87).trimEnd()}…` : x.text}` : x.id);
+export function HarmChip({ items }: { items: readonly HarmItem[] }) {
+  const met = items.filter((x) => !x.unknown);
+  const unknown = items.filter((x) => x.unknown);
+  const chip = 'inline-flex items-center rounded-sm border border-danger px-1.5 py-0.5 text-xs font-medium text-danger break-words';
+  return (
+    <>
+      {met.length > 0 && <span data-testid="harm-chip" data-harm="met" className={chip}>PASS with harm: {met.map((x) => `${named(x)} (${x.points})`).join(', ')}</span>}
+      {unknown.length > 0 && <span data-testid="harm-chip" data-harm="unknown" className={chip}>PASS, harm unknown: {unknown.map(named).join(', ')}</span>}
+    </>
   );
 }
 
