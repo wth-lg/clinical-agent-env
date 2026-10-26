@@ -14,8 +14,8 @@ const TEXT: Record<Surface['kind'], { title: string; body: string }> = {
 };
 
 // The prerequisites and the one command, on every key state and never inside an error: the key
-// gate shows it on both surfaces, and the shell keeps it on browser-direct. An org-CORS or network
-// error points here and moves focus here by `id`, so the panel takes programmatic focus only.
+// gate shows it on both surfaces, and the shell keeps it on browser-direct. A relay failure
+// (P16h) points here and moves focus here by `id`, so the panel takes programmatic focus only.
 export function LocalRunPanel({ surface, id: panelId, className = '' }: { surface: Surface; id?: string; className?: string }) {
   const id = useId();
   const { title, body } = TEXT[surface.kind];

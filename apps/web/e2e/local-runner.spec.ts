@@ -12,16 +12,18 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { expect, test, type Page } from '@playwright/test';
+import { isApiHost } from '../../../packages/core/anthropic.ts';
 import { parseEvent, type TrialEvent } from '../../../packages/core/events.ts';
 import { explainTrial, NOT_AUDITED_MARKER, type ExplainRecord } from '../../../packages/core/explain.ts';
 import { MAX_CONCURRENCY, parseSse, REFUSAL_TEXT, SAMPLES, SSE_END, TOKEN_HEADER, TOKEN_META } from '../../../packages/core/runner-api.ts';
 import { SAMPLE, summary } from './fixtures/sample-results/sample.ts';
-import { CONNECT_ORIGIN } from '../csp.ts';
+import { RELAY_ORIGIN } from '../src/surface/relay.ts';
 
 const REPO = fileURLToPath(new URL('../../../', import.meta.url));
 const WEB = join(REPO, 'apps/web');
-// The API origin the page may connect to, CONNECT_ORIGIN from csp.ts (lint: no-direct-anthropic).
-const API_ORIGIN = CONNECT_ORIGIN;
+// The hosted Messages calls go to the relay (P16h), the one origin besides its own the page may
+// connect to (lint: no-direct-anthropic).
+const API_ORIGIN = RELAY_ORIGIN;
 const sentinelKey = () => ['sk', 'ant', 'api03', randomUUID().replaceAll('-', ''), 'e2e'].join('-');
 
 interface Runner { url: string; proc: ChildProcess; tmp: string }
@@ -164,7 +166,8 @@ test('a trial streams over SSE and grades, with no request to the API and no CSP
   const id = (await trial(page).getAttribute('data-trial'))!;
   const view = (await (await api(page, runner!, `api/trials/${encodeURIComponent(id)}`)).json()) as { record: { state_hash: { final: string } } };
   await expect(trial(page).getByTestId('final-hash')).toHaveText(view.record.state_hash.final);
-  expect(seen.requests.filter((u) => new URL(u).origin === API_ORIGIN)).toEqual([]);
+  // Neither the relay nor the API host: on the local runner the trial runs in Node.
+  expect(seen.requests.filter((u) => new URL(u).origin === API_ORIGIN || isApiHost(new URL(u).hostname))).toEqual([]);
   expect(seen.requests.some((u) => u.includes(`/api/trials/${encodeURIComponent(id)}/events`))).toBe(true);
   expect(seen.csp).toEqual([]);
 });

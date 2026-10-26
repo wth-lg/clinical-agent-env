@@ -7,6 +7,8 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { APP_CSP } from '../../apps/web/csp.ts';
+import { RELAY_ORIGIN } from '../../apps/web/src/surface/relay.ts';
 import { fakeKey, repoRoot, tempDir, write } from './helpers.ts';
 
 const HOST = ['api', 'anthropic', 'com'].join('.');
@@ -25,8 +27,6 @@ const PLANTS: Record<string, string> = {
   'f-concat-var-middle': `const mid = 'anthropic.'; export const go = () => fetch('https://api.' + mid + 'com/v1/messages', ${POST});`,
   'g-read-client-source': `import { readFileSync } from 'node:fs';
 export const go = () => { const src = readFileSync(new URL('${repo('packages/core/anthropic.ts')}'), 'utf8'); return fetch(/'(https:\\/\\/[^']+\\/v1\\/messages)'/.exec(src)[1], ${POST}); };`,
-  'h-read-csp': `import { APP_CSP } from '${repo('apps/web/csp.ts')}';
-export const go = () => fetch(/connect-src \\S+ (https:\\/\\/[^;" ]+)/.exec(APP_CSP)[1] + '/v1/messages', ${POST});`,
   'i-json-import': `import cfg from './host.json' with { type: 'json' }; export const go = () => fetch(cfg.url, ${POST});`,
   'j-eslint-disable-line': `export const go = () => fetch('https://${HOST}/v1/messages', ${POST});`,
   'k-url-object': `export const go = () => fetch(new URL('/v1/messages', 'https://${HOST.toUpperCase()}.'), ${POST});`,
@@ -36,6 +36,9 @@ export const go = () => fetch(/connect-src \\S+ (https:\\/\\/[^;" ]+)/.exec(APP_
   'x-websocket': `export const go = () => new WebSocket('wss://${HOST}/v1/messages');`,
   'x-eventsource': `export const go = () => new EventSource('https://${HOST}/v1/messages');`,
   'x-beacon': `export const go = () => navigator.sendBeacon('https://${HOST}/v1/messages', '{}');`,
+  'x-fetch-later': `export const go = () => fetchLater('https://${HOST}/v1/messages', ${POST});`,
+  'x-webtransport': `export const go = () => new WebTransport('https://${HOST}/v1/messages');`,
+  'x-websocketstream': `export const go = () => new WebSocketStream('wss://${HOST}/v1/messages');`,
   // The two hook plants (defect 2): the client's injected transport keeps what it was handed.
   'n-hook-replay': `${client}
 export async function go(apiKey) {
@@ -140,9 +143,26 @@ const OK = sse([
 ]);
 globalThis.fetch = async (input, init) => { const r = input instanceof Request ? input : new Request(input, init); record('fetch', nativeUrl.call(r), init); return new Response(OK, { status: 200 }); };
 globalThis.XMLHttpRequest = class { open(_m, u) { this.u = u; } send() { record('xhr', this.u); } };
-globalThis.WebSocket = class { constructor(u) { record('websocket', u); } };
-globalThis.EventSource = class { constructor(u) { record('eventsource', u); } };
+// The stubs extend EventTarget, as the platform's constructors do; the raw ones stay readable to
+// the plants as RAW, which the page never has.
+globalThis.WebSocket = class extends EventTarget { static OPEN = 1; constructor(u) { super(); record('websocket', u); } };
+globalThis.EventSource = class extends EventTarget { static OPEN = 1; constructor(u) { super(); record('eventsource', u); } };
+globalThis.WebTransport = class { constructor(u) { record('webtransport', u); } };
+globalThis.WebSocketStream = class { constructor(u) { record('websocketstream', u); } };
+globalThis.RAW = { EventSource: globalThis.EventSource, WebSocket: globalThis.WebSocket };
+globalThis.fetchLater = (input, init) => { record('fetchlater', input instanceof Request ? nativeUrl.call(input) : input, init); return { activated: false }; };
 Object.defineProperty(globalThis.navigator, 'sendBeacon', { configurable: true, writable: true, value: (u) => { record('beacon', u); return true; } });
+// PROTO=1: the stubs live where a browser Worker keeps them, on a prototype of the scope (fetch on
+// WorkerGlobalScope.prototype, sendBeacon on Navigator.prototype), with no own property left.
+if (process.env.PROTO === '1') {
+  const scopeProto = Object.create(Object.getPrototypeOf(globalThis));
+  Object.defineProperty(scopeProto, 'fetch', { configurable: true, writable: true, value: globalThis.fetch });
+  delete globalThis.fetch;
+  Object.setPrototypeOf(globalThis, scopeProto);
+  Object.defineProperty(Object.getPrototypeOf(globalThis.navigator), 'sendBeacon', { configurable: true, writable: true, value: globalThis.navigator.sendBeacon });
+  delete globalThis.navigator.sendBeacon;
+  if (Object.hasOwn(globalThis, 'fetch') || Object.hasOwn(globalThis.navigator, 'sendBeacon')) throw new Error('PROTO: an own property is left');
+}
 let guard = 'missing';
 try {
   const { installEgressGuard } = await import(process.env.EGRESS_MODULE);
@@ -193,6 +213,7 @@ const ORIGIN_PLANTS: Record<string, string> = {
   'w-foreign-websocket': `export const go = () => new WebSocket('wss://example.org/collect');`,
   'w-foreign-eventsource': `export const go = () => new EventSource('https://example.org/collect');`,
   'w-foreign-beacon': `export const go = () => navigator.sendBeacon('https://example.org/collect', '{}');`,
+  'w-foreign-fetch-later': `export const go = () => fetchLater('https://example.org/collect', ${POST});`,
   'w-api-unclaimed': `export const go = () => fetch('https://${HOST}/v1/messages', ${POST});`,
 };
 Object.assign(PLANTS, ORIGIN_PLANTS);
@@ -214,6 +235,25 @@ const RELAY_PLANTS: Record<string, string> = {
   'y-relay-websocket': `export const go = () => new WebSocket('wss://relay.test/v1/messages');`,
   'y-relay-eventsource': `export const go = () => new EventSource('${RELAY_URL}');`,
   'y-relay-beacon': `export const go = () => navigator.sendBeacon('${RELAY_URL}', '{}');`,
+  'y-relay-fetch-later': `export const go = () => fetchLater('${RELAY_URL}', ${POST});`,
+  'y-relay-webtransport': `export const go = () => new WebTransport('${RELAY_URL}');`,
+  'y-relay-websocketstream': `export const go = () => new WebSocketStream('wss://relay.test/v1/messages');`,
+  // verifier-phase-P17i-P16h-web2r2-1 S2: the raw constructor behind a guarded one, by the
+  // guarded constructor's own prototype and by its prototype object's constructor.
+  'y-relay-es-proto': `export const go = () => new (Object.getPrototypeOf(EventSource))('${RELAY_URL}');`,
+  'y-relay-es-prototype-constructor': `export const go = () => new EventSource.prototype.constructor('${RELAY_URL}');`,
+  'y-relay-ws-proto': `export const go = () => new (Object.getPrototypeOf(WebSocket))('wss://relay.test/v1/messages');`,
+  'y-relay-ws-prototype-constructor': `export const go = () => new WebSocket.prototype.constructor('wss://relay.test/v1/messages');`,
+  'y-relay-wt-proto': `export const go = () => new (Object.getPrototypeOf(WebTransport))('${RELAY_URL}');`,
+  'y-relay-wt-prototype-constructor': `export const go = () => new WebTransport.prototype.constructor('${RELAY_URL}');`,
+  'y-relay-es-prototype-proto-constructor': `export const go = () => new (Object.getPrototypeOf(EventSource.prototype).constructor)('${RELAY_URL}');`,
+  'y-ctor-shape': `export function go() {
+  const es = new EventSource('https://app.test/events');
+  throw new TypeError(JSON.stringify({ esProto: Object.getPrototypeOf(EventSource) === EventTarget && EventSource !== RAW.EventSource, wsProto: Object.getPrototypeOf(WebSocket) === EventTarget && WebSocket !== RAW.WebSocket, eventTarget: es instanceof EventTarget, esCtor: EventSource.prototype.constructor === EventSource, wsCtor: WebSocket.prototype.constructor === WebSocket, wtCtor: WebTransport.prototype.constructor === WebTransport, instance: es instanceof EventSource, statics: [EventSource.OPEN, WebSocket.OPEN], names: [EventSource.name, WebSocket.name, WebTransport.name], call: (() => { try { EventSource('https://app.test/x'); return 'called'; } catch (e) { return e.name; } })() }));
+}`,
+  'y-relay-es-constructor-restore': `const raw = Object.getPrototypeOf(EventSource);
+export const go = () => { try { EventSource.prototype.constructor = raw; } catch {} return new EventSource.prototype.constructor('${RELAY_URL}'); };`,
+  'y-relay-fetch-later-request': `export const go = () => fetchLater(new Request('${RELAY_URL}', ${POST}));`,
   'y-relay-refusal-name': `export async function go() { try { await fetch('${RELAY_URL}', ${POST}); } catch (e) { throw new TypeError(e.name + ': ' + e.message); } }`,
   'y-relay-hook-resend': `${client}
 export async function go(apiKey) {
@@ -234,7 +274,36 @@ export async function go(apiKey) {
 };
 Object.assign(PLANTS, RELAY_PLANTS);
 
-function run(names: string[], opts: { client?: boolean; allowed?: string[]; metered?: string[]; endpoint?: string } = {}) {
+// The app's own relay (P16h PR-web-2): APP_CSP's connect-src names the relay, not the API host.
+// Plant h reads that origin from APP_CSP and fetches it; the second plant fetches RELAY_URL as
+// relay.ts exports it. The guard is installed as the app installs it, the relay metered.
+const APP_RELAY_PLANTS: Record<string, string> = {
+  'h-read-csp': `import { APP_CSP } from '${repo('apps/web/csp.ts')}';
+export const go = () => fetch(/connect-src \\S+ (https:\\/\\/[^;" ]+)/.exec(APP_CSP)[1] + '/v1/messages', ${POST});`,
+  'h-relay-url': `import { RELAY_URL } from '${repo('apps/web/src/surface/relay.ts')}';
+export async function go() { try { await fetch(RELAY_URL, ${POST}); } catch (e) { throw new TypeError(e.name + ': ' + e.message); } }`,
+};
+Object.assign(PLANTS, APP_RELAY_PLANTS);
+
+// The security review's S1 (review-security-P16h-web-1): fetch and sendBeacon called through the
+// prototype that holds the raw function, as a browser Worker and page expose them. The last two
+// first try to put a raw function back, which the lock refuses; they run last, so a replacement
+// that got through cannot reach the other plants.
+const PROTO_OWNER = `const owner = (o, k) => { for (let p = Object.getPrototypeOf(o); p !== null; p = Object.getPrototypeOf(p)) if (Object.hasOwn(p, k)) return p; throw new Error('no prototype holds ' + k); };
+const restore = (o, k, v) => { try { owner(o, k)[k] = v; } catch {} };`;
+const PROTO_PLANTS: Record<string, string> = {
+  'p-proto-fetch-relay': `${PROTO_OWNER}\nexport const go = () => owner(globalThis, 'fetch').fetch.call(globalThis, '${RELAY_URL}', ${POST});`,
+  'p-proto-fetch-api': `${PROTO_OWNER}\nexport const go = () => owner(globalThis, 'fetch').fetch.call(globalThis, 'https://${HOST}/v1/messages', ${POST});`,
+  'p-proto-beacon-relay': `${PROTO_OWNER}\nexport const go = () => owner(navigator, 'sendBeacon').sendBeacon.call(navigator, '${RELAY_URL}', '{}');`,
+  'p-proto-beacon-api': `${PROTO_OWNER}\nexport const go = () => owner(navigator, 'sendBeacon').sendBeacon.call(navigator, 'https://${HOST}/v1/messages', '{}');`,
+  'p-proto-foreign-fetch': `${PROTO_OWNER}\nexport const go = () => owner(globalThis, 'fetch').fetch.call(globalThis, 'https://example.org/collect', ${POST});`,
+  'p-proto-self-fetch': `${PROTO_OWNER}\nexport const go = () => owner(globalThis, 'fetch').fetch.call(globalThis, '${SELF}/assets/x.json');`,
+  'p-proto-fetch-restore': `${PROTO_OWNER}\nexport const go = () => { restore(globalThis, 'fetch', () => 'raw'); return owner(globalThis, 'fetch').fetch.call(globalThis, '${RELAY_URL}', ${POST}); };`,
+  'p-proto-beacon-restore': `${PROTO_OWNER}\nexport const go = () => { restore(navigator, 'sendBeacon', () => true); return owner(navigator, 'sendBeacon').sendBeacon.call(navigator, '${RELAY_URL}', '{}'); };`,
+};
+Object.assign(PLANTS, PROTO_PLANTS);
+
+function run(names: string[], opts: { client?: boolean; allowed?: string[]; metered?: string[]; endpoint?: string; proto?: boolean } = {}) {
   const dir = tempDir('egress');
   write(dir, 'package.json', '{"type":"module"}');
   write(dir, 'host.json', JSON.stringify({ url: `https://${HOST}/v1/messages` }));
@@ -248,6 +317,7 @@ function run(names: string[], opts: { client?: boolean; allowed?: string[]; mete
     ...(opts.allowed ? { ALLOWED: opts.allowed.join(',') } : {}),
     ...(opts.metered ? { METERED: opts.metered.join(',') } : {}),
     ...(opts.endpoint ? { ENDPOINT: opts.endpoint } : {}),
+    ...(opts.proto ? { PROTO: '1' } : {}),
   };
   const r = spawnSync(process.execPath, ['runner.mjs'], { cwd: dir, env, encoding: 'utf8' });
   if (r.status !== 0) throw new Error(`runner exited ${r.status}: ${r.stderr}`);
@@ -259,7 +329,7 @@ function run(names: string[], opts: { client?: boolean; allowed?: string[]; mete
 }
 
 describe('the egress guard refuses every send to the API host that MessagesClient did not make', () => {
-  const names = Object.keys(PLANTS).filter((n) => !(n in ORIGIN_PLANTS) && !(n in RELAY_PLANTS));
+  const names = Object.keys(PLANTS).filter((n) => !(n in ORIGIN_PLANTS) && !(n in RELAY_PLANTS) && !(n in APP_RELAY_PLANTS) && !(n in PROTO_PLANTS));
   const out = run(names, { client: true });
 
   it('installs', () => {
@@ -348,7 +418,27 @@ describe('with meteredOrigins, a relay origin is guarded like the API host', () 
     expect(out.guard).toBe('installed');
   });
 
-  it.each(names.filter((n) => n !== 'y-relay-hook-resend'))('%s: refused with EgressRefusal, 0 sends', (name) => {
+  // Each guarded constructor's own prototype is the raw one's parent (EventTarget, or
+  // Function.prototype for a base class), never the raw constructor: `new` on it builds an object
+  // that sends nothing, or throws.
+  const PROTO_CTORS = names.filter((n) => /^y-relay-(es|ws|wt)-proto$/.test(n));
+  // The raw class sat one step up from the guarded constructor's prototype object; now that object
+  // is the raw prototype itself, so one step up is its parent's (EventTarget, or Object here).
+  it('y-relay-es-prototype-proto-constructor: one step up is not the raw EventSource, 0 sends', () => {
+    expect(out.plants['y-relay-es-prototype-proto-constructor']?.sends).toEqual([]);
+  });
+  it.each(PROTO_CTORS)('%s: the prototype is not the raw constructor, 0 sends', (name) => {
+    const p = out.plants[name];
+    expect(p?.sends).toEqual([]);
+    expect(p?.error ?? 'built').toMatch(/^built$|is not a constructor/);
+  });
+
+  it('y-ctor-shape: a guarded constructor hides the raw one and keeps its statics, name and instanceof, and needs new', () => {
+    expect(JSON.parse(out.plants['y-ctor-shape']?.error ?? '{}')).toEqual({ esProto: true, wsProto: true, eventTarget: true, esCtor: true, wsCtor: true, wtCtor: true, instance: true, statics: [1, 1], names: ['EventSource', 'WebSocket', 'WebTransport'], call: 'TypeError' });
+    expect(out.plants['y-ctor-shape']?.sends).toEqual([{ api: 'eventsource', host: 'app.test' }]);
+  });
+
+  it.each(names.filter((n) => n !== 'y-relay-hook-resend' && n !== 'y-ctor-shape' && n !== 'y-relay-es-prototype-proto-constructor' && !PROTO_CTORS.includes(n)))('%s: refused with EgressRefusal, 0 sends', (name) => {
     const p = out.plants[name];
     expect(p?.sends).toEqual([]);
     expect(p?.error).toMatch(/egress guard/);
@@ -396,6 +486,80 @@ describe('with meteredOrigins, a relay origin is guarded like the API host', () 
   });
 });
 
+describe('the app relay (APP_CSP, RELAY_URL) is guarded as the app installs the guard', () => {
+  const names = Object.keys(APP_RELAY_PLANTS);
+  const out = run(names, { allowed: [SELF, RELAY_ORIGIN], metered: [RELAY_ORIGIN] });
+
+  it('APP_CSP names the relay origin as its one connect-src origin, and no API host', () => {
+    expect(APP_CSP).toContain(`connect-src ${"'self'"} ${RELAY_ORIGIN};`);
+    expect(APP_CSP).not.toContain(HOST);
+  });
+
+  it.each(names)('%s: refused with EgressRefusal, 0 sends', (name) => {
+    const p = out.plants[name];
+    expect(p?.sends).toEqual([]);
+    expect(p?.error).toMatch(/egress guard/);
+  });
+
+  it('h-relay-url: the refusal is an EgressRefusal that names the relay origin', () => {
+    expect(out.plants['h-relay-url']?.error).toMatch(new RegExp(`^EgressRefusal: egress guard: fetch to ${RELAY_ORIGIN} refused`));
+  });
+});
+
+describe('with fetch and sendBeacon on prototypes (a browser Worker and page), the guard locks them there too', () => {
+  const names = Object.keys(PROTO_PLANTS);
+  const out = run(names, { client: true, allowed: [SELF, RELAY], metered: [RELAY], endpoint: RELAY_URL, proto: true });
+
+  it('installs', () => {
+    expect(out.guard).toBe('installed');
+  });
+
+  it.each(names.filter((n) => n !== 'p-proto-self-fetch'))('%s: refused with EgressRefusal, 0 sends', (name) => {
+    const p = out.plants[name];
+    expect(p?.sends).toEqual([]);
+    expect(p?.error).toMatch(/egress guard/);
+  });
+
+  it('p-proto-self-fetch: the prototype fetch is the guarded one, so its own origin still answers with redirect: error', () => {
+    expect(out.plants['p-proto-self-fetch']).toEqual({ sends: [{ api: 'fetch', host: 'app.test', redirect: 'error' }], error: null });
+  });
+
+  it('MessagesClient\'s own call to the relay passes, once', () => {
+    expect(out.client).toEqual({ status: 200, sends: [{ api: 'fetch', host: 'relay.test' }] });
+  });
+});
+
+// verifier-phase-P17i-P16h-web2r3-1 F2: Node's own WebSocket checks its EventTarget brand through
+// the constructor's inherited statics, so the guarded constructor must keep EventTarget as its
+// prototype. A real WebSocket under the guard to a closed local port: its methods still work, and
+// one to the API host is refused.
+describe('a real Node WebSocket under the guard', () => {
+  it('keeps its EventTarget brand: addEventListener, onclose and close work; the API host is refused', () => {
+    const dir = tempDir('egress-ws');
+    write(dir, 'package.json', '{"type":"module"}');
+    write(dir, 'ws.mjs', `const raw = globalThis.WebSocket;
+const { installEgressGuard } = await import(process.env.EGRESS_MODULE);
+installEgressGuard(globalThis);
+const out = { notRaw: WebSocket !== raw && Object.getPrototypeOf(WebSocket) === Object.getPrototypeOf(raw) };
+const ws = new WebSocket('ws://127.0.0.1:9/');
+ws.addEventListener('error', () => {});
+ws.onclose = () => {};
+ws.close();
+out.instance = ws instanceof WebSocket && ws instanceof EventTarget;
+out.readyState = ws.readyState;
+try { new WebSocket('wss://${HOST}/v1/messages'); out.api = 'sent'; } catch (e) { out.api = e.name + ': ' + e.message; }
+process.stdout.write(JSON.stringify(out));
+`);
+    const r = spawnSync(process.execPath, ['ws.mjs'], { cwd: dir, env: { PATH: process.env.PATH ?? '', HOME: tempDir('egress-ws-home'), EGRESS_MODULE: repo('packages/core/egress.ts') }, encoding: 'utf8', timeout: 20_000 });
+    expect(r.stderr).toBe('');
+    expect(r.status).toBe(0);
+    const out = JSON.parse(r.stdout) as { notRaw: boolean; instance: boolean; readyState: number; api: string };
+    expect(out).toMatchObject({ notRaw: true, instance: true });
+    expect([2, 3]).toContain(out.readyState);
+    expect(out.api).toMatch(/^EgressRefusal: egress guard/);
+  });
+});
+
 describe('entry points install the guard before anything else runs', () => {
   // The first top-level statements after the imports, by file. live-node.ts installs it as the
   // first statement of its run-as-script block, so importing it (tests do) changes no globals;
@@ -407,11 +571,12 @@ describe('entry points install the guard before anything else runs', () => {
   };
   it.each([
     ['cli/index.ts', undefined, ['installEgressGuard(globalThis);']],
-    ['apps/web/src/main.tsx', undefined, ['installEgressGuard(globalThis);']],
+    // The page and the trial Worker hold hosted clients: the relay metered, their origin and the relay allowed (P16h).
+    ['apps/web/src/main.tsx', undefined, ['installEgressGuard(globalThis, hostedGuard(location.origin));']],
     ['apps/web/src/probe/main.ts', undefined, ['const send = globalThis.fetch.bind(globalThis);', 'installEgressGuard(globalThis);']],
     // relayGuardOptions is {} unless relay-probe.html?relay= names a relay (P16h).
     ['apps/web/src/probe/relay-main.ts', undefined, ['installEgressGuard(globalThis, relayGuardOptions(location));']],
-    ['apps/web/src/worker/trial.ts', undefined, ['installEgressGuard(globalThis, { allowedOrigins: workerOrigins(location.origin) });']],
+    ['apps/web/src/worker/trial.ts', undefined, ['installEgressGuard(globalThis, hostedGuard(location.origin));']],
     ['scripts/live-node.ts', /^if \(process\.argv\[1\]/, ['installEgressGuard(globalThis);']],
   ] as const)('%s installs the guard first', (file, after, expected) => {
     expect(firstStatements(file, after).slice(0, expected.length)).toEqual(expected);

@@ -12,8 +12,9 @@
 // script. A Worker whose URL is blob: takes the page's policy container, so the page's meta CSP
 // (connect-src, script-src) binds it, and the browser refuses every other origin on every hop:
 // redirects, the prototype's fetch and import() included. A Worker started from its own URL
-// would have no CSP, since the page's meta does not reach it. The egress guard's allowedOrigins
-// (workerOrigins) stays as the second layer.
+// would have no CSP, since the page's meta does not reach it. The egress guard (hostedGuard in
+// surface/relay.ts: the relay metered, the Worker's origin and the relay allowed) stays as the
+// second layer.
 import definitionsUrl from '../../../../../fixtures/definitions-pruned.json?url';
 import trialWorkerUrl from '../../worker/trial.ts?worker&url';
 import type { ClientOptions } from '../../../../../packages/core/anthropic.ts';
@@ -24,6 +25,7 @@ import { MAX_CONCURRENCY, refusalText } from '../../../../../packages/core/runne
 import type { Effort, TrialRecord } from '../../../../../packages/core/run.ts';
 import { MODEL, sessionCeiling, tabLedger, tabRows } from '../../adapters/ledger-browser.ts';
 import { tabKey } from '../../keygate/key.ts';
+import { HOSTED_CLIENT_OPTIONS } from '../../surface/relay.ts';
 import { refreshSpent, sessionCap } from '../../spend/session.ts';
 import { trialProjection } from '../checks.ts';
 import { cutOffUsd } from '../resume.ts';
@@ -31,16 +33,10 @@ import { getTrial, listRuns, listTrials, putEvent, putRun, putTrial, readEvents,
 import type { LiveRun, StartResult, TrialEnd, TrialTransport } from '../types.ts';
 
 // What the Worker's MessagesClient is built with, besides its grant and ledger: the one place
-// those options come from (planner-13), so P16h can point it at the relay without touching run.ts.
+// those options come from (planner-13). The client sends through the hosted relay (P16h).
 export function clientOptions(start: { apiKey: string; trialId: string }): Omit<ClientOptions, 'grant' | 'ledger'> {
-  return { apiKey: start.apiKey, trial: start.trialId };
+  return { apiKey: start.apiKey, trial: start.trialId, ...HOSTED_CLIENT_OPTIONS };
 }
-
-// The origins the trial Worker may send to besides the Anthropic API, which only its client
-// reaches (installEgressGuard allowedOrigins): its own, for the world, manifest and definitions.
-// The page's CSP binds the Worker too (see the header); P16h adds the relay's origin here, beside
-// clientOptions, and to the CSP's connect-src.
-export const workerOrigins = (self: string): string[] => [self];
 
 export interface WorkerStart {
   type: 'start';
@@ -139,7 +135,7 @@ function refused(e: unknown): StartResult {
   return { ok: false, lead: 'This batch could not start.', detail: (e as Error).message };
 }
 
-// A trial that stops the batch (an API 401, the org-CORS refusal included): the rest do not start.
+// A trial that stops the batch (an API 401): the rest do not start.
 const stopsBatch = (end: TrialEnd) => (end.record as { error?: { stops_batch?: boolean } | null } | null)?.error?.stops_batch === true;
 
 async function runBatch(ids: string[], task: string, opts: { batchId: string; cap: number; projection: number; apiKey: string; close: () => Promise<void> }) {

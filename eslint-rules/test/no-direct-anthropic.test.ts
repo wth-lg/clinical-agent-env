@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { ESLint } from 'eslint';
 import { describe, expect, it } from 'vitest';
 import { APP_CSP } from '../../apps/web/csp.ts';
+import { RELAY_ORIGIN, RELAY_URL } from '../../apps/web/src/surface/relay.ts';
 
 // Lints code through the real eslint.config.js as if it lived at a repo path, so these tests
 // cover the rule and its file scope together.
@@ -16,6 +17,7 @@ async function ruleIds(code: string, path: string): Promise<string[]> {
 
 const RULE = 'local/no-direct-anthropic';
 const HOST = ['api', 'anthropic', 'com'].join('.');
+const RELAY_HOST = new URL(RELAY_ORIGIN).hostname;
 
 describe('no-direct-anthropic', () => {
   it.each([
@@ -57,8 +59,8 @@ describe('no-direct-anthropic', () => {
     expect(await ruleIds(`export const u = 'https://${HOST}/v1/messages';`, path)).toContain(RULE);
   });
 
-  it('flags a Content-Security-Policy string in a .ts file other than the APP_CSP literal', async () => {
-    const csp = `export const CSP = "${APP_CSP.replace(/; worker-src [^;]*$/, '')}";`;
+  it('flags a Content-Security-Policy string naming the API host in a .ts file: only the test pages\' CSP metas name it', async () => {
+    const csp = `export const CSP = "default-src 'self'; connect-src ${"'self'"} https://${HOST}; script-src 'self'";`;
     expect(await ruleIds(csp, 'apps/web/e2e/smoke.spec.ts')).toContain(RULE);
     expect(await ruleIds(csp, 'apps/web/csp.ts')).toContain(RULE);
     expect(await ruleIds(`export const r = fetch('https://${HOST}/v1/messages?connect-src');`, 'cli/planted.ts')).toContain(RULE);
@@ -106,19 +108,35 @@ describe('no-direct-anthropic', () => {
     expect(await ruleIds(`export const go = () => fetch('https://${HOST}/v1/messages');`, 'eslint-rules/fixtures/zz-sender.ts')).toContain(RULE);
   });
 
-  // P16h PR-web-1: the CSP is written once, as APP_CSP in apps/web/csp.ts; every pin imports it.
-  it('allows the exact APP_CSP literal in apps/web/csp.ts only', async () => {
-    expect(APP_CSP).toContain(HOST);
-    const csp = `export const APP_CSP = ${JSON.stringify(APP_CSP)};`;
-    expect(await ruleIds(csp, 'apps/web/csp.ts')).not.toContain(RULE);
-    expect(await ruleIds(csp, 'apps/web/e2e/smoke.spec.ts')).toContain(RULE);
-    expect(await ruleIds(csp, 'cli/planted.ts')).toContain(RULE);
-    expect(await ruleIds(csp.replace("worker-src 'self'", "worker-src 'self' x"), 'apps/web/csp.ts')).toContain(RULE);
-    expect(await ruleIds(`${csp}\nexport const r = fetch('https://${HOST}/v1/messages');`, 'apps/web/csp.ts')).toContain(RULE);
+  // P16h PR-web-2: APP_CSP names the relay, not the API host, so apps/web/csp.ts has no exemption.
+  it('apps/web/csp.ts gets no exemption: a CSP literal naming the API host is flagged there too', async () => {
+    expect(APP_CSP).not.toContain(HOST);
+    const csp = `export const APP_CSP = "default-src 'self'; connect-src ${"'self'"} https://${HOST}; script-src 'self'; worker-src 'self' blob:";`;
+    expect(await ruleIds(csp, 'apps/web/csp.ts')).toContain(RULE);
   });
 
-  it('apps/web/csp.ts as committed lints clean', async () => {
-    const [result] = await eslint.lintFiles([join(root, 'apps/web/csp.ts')]);
+  it.each(['apps/web/csp.ts', 'apps/web/src/surface/relay.ts'])('%s as committed lints clean', async (path) => {
+    const [result] = await eslint.lintFiles([join(root, path)]);
     expect(result?.messages.map((m) => m.ruleId)).toEqual([]);
+  });
+
+  // P16h PR-web-2 (R2): the relay host is written once, in apps/web/src/surface/relay.ts.
+  it.each([
+    `export const r = fetch('${RELAY_URL}');`,
+    `export const o = '${RELAY_HOST}';`,
+    `export const r = fetch('https://' + '${RELAY_HOST.slice(0, 9)}' + '${RELAY_HOST.slice(9)}/v1/messages');`,
+    `export const r = fetch(\`${RELAY_ORIGIN.toUpperCase()}/v1/messages\`);`,
+  ])('flags the relay host outside relay.ts: %s', async (code) => {
+    for (const path of ['apps/web/src/live/planted.ts', 'apps/web/src/keygate/planted.ts', 'apps/web/src/worker/planted.ts', 'apps/web/src/probe/planted.ts', 'apps/web/e2e/planted.spec.ts', 'cli/planted.ts']) {
+      expect(await ruleIds(code, path), path).toContain(RULE);
+    }
+  });
+
+  it.each(['apps/web/src/surface/relay.ts', 'apps/web/test/relay.test.ts'])('allows the relay host in %s', async (path) => {
+    expect(await ruleIds(`export const RELAY_ORIGIN = '${RELAY_ORIGIN}';`, path)).not.toContain(RULE);
+  });
+
+  it('relay.ts may name the relay, never the API host', async () => {
+    expect(await ruleIds(`export const u = 'https://${HOST}/v1/messages';`, 'apps/web/src/surface/relay.ts')).toContain(RULE);
   });
 });
