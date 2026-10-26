@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:results-inbox:4",
   "task_id": "results-inbox",
-  "task_version": "2f80b8928ff98d7177886bafcafdba20447ccb71dd4a6a3ad21b970a7577b2b4",
+  "task_version": "97be735f786b9821be438442c2bb51e6973e5cf19b203275255392f3c3c98992",
   "env_version": "f7ed42d3c0d7920587b33d75a7815885b288336263bdab07957d0deb58c8730a",
-  "grader_task_version": "87926ed8c70e4a3812a5e42e89f907ea0abbbe1b8a19110fe482ad354835a5a6",
+  "grader_task_version": "eb98c9878e26089272c4a08654ac9c3bfe4e05575e3e841a31870adb6e094fe3",
   "fixture_hash": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
   "state_hash": {
     "initial": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
-    "final": "d954dcd6c246705a411938fb1aa04172f9419189ba941ba0f447962500f0e2c8",
-    "replay_final": "d954dcd6c246705a411938fb1aa04172f9419189ba941ba0f447962500f0e2c8"
+    "final": "f68f9e664763d6018c3022046579547834cc611c20c536c3258149c40f9aaff1",
+    "replay_final": "f68f9e664763d6018c3022046579547834cc611c20c536c3258149c40f9aaff1"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -45,7 +45,7 @@
   "env_git_sha": null,
   "ended": "2026-10-23T14:35:40.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "10",
+  "grader_version": "11",
   "outcome": "PASS",
   "valid": true,
   "fault": null,
@@ -196,13 +196,13 @@
             "id": "ServiceRequest/sr-t0018",
             "code": "REF-ORTHO-ONC",
             "priority": "urgent",
-            "start": "2026-11-02"
+            "start": "2026-10-23"
           },
           {
             "id": "ServiceRequest/sr-t0019",
             "code": "IMG-MRI-FEMUR-WWO",
             "priority": "urgent",
-            "start": "2026-11-02"
+            "start": "2026-10-23"
           }
         ],
         "by": "2026-11-05"

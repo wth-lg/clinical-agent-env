@@ -116,7 +116,7 @@ function runWorker(trialId: string, task: string, opts: { batchId: string; cap: 
         void finish({ state: 'error', record: null, message: data.error });
       }
     };
-    worker.onerror = (e) => void finish({ state: 'error', record: null, message: `The trial Worker failed: ${e.message || 'it did not start'}` });
+    worker.onerror = (e) => void finish({ state: 'error', record: null, message: `The trial stopped in this tab: ${e.message || 'it did not start'}` });
   });
   void (async () => {
     const seed = (await tabRows()).filter((r) => r.batch_id !== opts.batchId);
@@ -192,7 +192,8 @@ export function workerTransport(sessionCap: () => number): TrialTransport {
     kind: 'browser-direct',
 
     async project({ task, trials }) {
-      return { usd: (await trialProjection(task)) * trials, committed: (await tabLedger().totals()).exposure };
+      // Priced at the per-trial cap plus the judge allowance: an upper bound.
+      return { usd: (await trialProjection(task)) * trials, committed: (await tabLedger().totals()).exposure, bound: true };
     },
 
     async start({ task, trials }): Promise<StartResult> {

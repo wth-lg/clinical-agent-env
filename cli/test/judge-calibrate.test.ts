@@ -121,8 +121,8 @@ describe('judge-calibrate', () => {
     const c = h.written[0]!;
     expect(c).toMatchObject({ questions: TOY.cache.length + 1, same_keys: TOY.cache.length, agree: TOY.cache.length - 1 });
     expect(c.disagreements).toEqual([
-      { key: target.key, kind: 'judge', scripted: target.answer, live: flipped, live_error: null, reason: 'answers differ' },
-      { key: stale.key, kind: 'judge', scripted: stale.answer, live: null, live_error: null, reason: 'no matrix case asks this key' },
+      { key: target.key, kind: 'judge', reference: target.answer, live: flipped, live_error: null, reason: 'answers differ' },
+      { key: stale.key, kind: 'judge', reference: stale.answer, live: null, live_error: null, reason: 'no matrix case asks this key' },
     ].sort((a, b) => (a.key < b.key ? -1 : 1)));
     expect(h.text()).toMatch(/^judge-calibrate _toy: 15 of 17 agree, 16 calls/m);
     expect(readFileSync(CACHE_FILE).equals(before)).toBe(true);
@@ -139,7 +139,7 @@ describe('judge-calibrate', () => {
     expect(c.agree).toBe(TOY.cache.length - 2);
     expect(c.disagreements.map((d) => d.key).sort()).toEqual([...refuse].sort());
     for (const d of c.disagreements) expect(d).toMatchObject({ live: null, live_error: 'invalid judge output', reason: 'answers differ' });
-    expect(c.disagreements.find((d) => d.key === nulled!.key)!.scripted).toBeNull();
+    expect(c.disagreements.find((d) => d.key === nulled!.key)!.reference).toBeNull();
   });
 
   it('on a 401 it exits 1, writes nothing, closes the batch and keeps the key out of its output', { timeout: SLOW }, async () => {

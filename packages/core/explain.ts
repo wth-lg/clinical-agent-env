@@ -36,7 +36,7 @@ import {
 import { currentGrade, firstFailed, type RegradeGrade } from './summary.ts';
 import { validateInput } from '../env/tools/registry.ts';
 import { TOOLS } from '../env/tools/write/index.ts';
-import { TAXONOMY, type Taxonomy } from '../grader/attribution.ts';
+import { firstFailedGate, TAXONOMY, type Taxonomy } from '../grader/attribution.ts';
 
 export const REASON_WORDS = 40;
 export const REFUSAL_WORDS = 12;
@@ -133,8 +133,9 @@ export interface ExplainContext {
   world_state_hash?: string | null;
   // Whether a resource is in the world, so the tool would have returned it had the model asked.
   exposable?: (id: string) => boolean;
-  // The exposure of the current decisive check's ids, when the caller recomputed it from the
-  // trajectory (a regrade failed another check than the recorded attribution names).
+  // The exposure of the current decisive check's ids, then the first failed check's when it is
+  // another, when the caller recomputed it from the trajectory (a regrade failed another check
+  // than the recorded attribution names).
   exposure?: { check: string; ids: ReadonlyArray<{ id: string; first_exposed_step: number | null }> } | null;
   // The grader validation matrix of the task (pnpm cli matrix), with the checks it fails when it says.
   matrix?: MatrixResult | null;
@@ -188,6 +189,11 @@ export interface Explanation {
   // The audit row's two answers (AuditRow), each null when the row does not give it; null without a row.
   audit_answers: AuditAnswers | null;
   decisive_check: { id: string; traces_to: string | null; expected: string; found: string } | null;
+  // The first failed gate check when the decisive one is another (an unmarked safety gate outranked
+  // it), and the secondary reason that names it, 'first failed check: <check id> failed: expected
+  // <value>, found <value>' (decisions.tsv 2026-10-28T20:55); both null otherwise.
+  first_failed_check: { id: string; traces_to: string | null; expected: string; found: string } | null;
+  secondary_reason: string | null;
   decisive_step: number | null;
   taxonomy: Taxonomy | null;
   reason: string;
@@ -418,10 +424,18 @@ function refusalText(r: ExplainRecord, events: readonly TrialEvent[] | undefined
 const capWords = (s: string, max = REASON_WORDS) => firstWords(s, max);
 
 // The decisive gate check of the current grade (packages/grader attribution.ts decisiveGate): the
-// first failed gate, unless it is a safety gate marked omission and a later failed safety gate is
-// unmarked, as the attribution names it; a check with no kind (a hand-built record) counts as a
-// gate on a FAIL (summary.ts firstFailed, which the consistency flag reads too).
+// first failed safety gate without the omission mark, else the first failed gate, as the
+// attribution names it; a check with no kind (a hand-built record) counts as a gate on a FAIL
+// (summary.ts firstFailed, which the consistency flag reads too).
 export const firstFailedCheck = (record: ExplainRecord): ExplainCheck | null => firstFailed(currentGrade(record)) as ExplainCheck | null;
+
+// The first failed gate check of the current grade when the decisive check is another one, else null.
+export function outrankedCheck(record: ExplainRecord): ExplainCheck | null {
+  const grade = currentGrade(record);
+  const first = firstFailedGate(grade.checks ?? []) as ExplainCheck | undefined;
+  const decisive = firstFailedCheck(record);
+  return first === undefined || decisive === null || first.id === decisive.id ? null : first;
+}
 
 // Whether the recorded attribution speaks for the current grade: it names the same decisive check.
 export const attributionFits = (record: ExplainRecord): boolean => record.attribution != null && record.attribution.first_failed === (firstFailedCheck(record)?.id ?? null);
@@ -438,6 +452,7 @@ export function explainTrial(record: ExplainRecord, audit: AuditRow | null | und
   const grade = currentGrade(record);
   const outcome = grade.outcome;
   const failed = firstFailedCheck(record);
+  const outranked = outrankedCheck(record);
   const att = record.attribution ?? null;
   const attFits = att !== null && attributionFits(record);
   const exposure = decisiveExposure(record, ctx.exposure);
@@ -460,6 +475,7 @@ export function explainTrial(record: ExplainRecord, audit: AuditRow | null | und
     grader_task_version: grade.grader_task_version,
     decisive: failed === null ? null : {
       id: failed.id,
+      first_failed: outranked?.id ?? null,
       exposure: exposure === null ? null : exposure.map((e) => ({ ...e, exposable: e.first_exposed_step === null && ctx.exposable ? ctx.exposable(e.id) : null })),
     },
     matrix: ctx.matrix ?? null,
@@ -505,6 +521,10 @@ export function explainTrial(record: ExplainRecord, audit: AuditRow | null | und
   const taxonomy = modelFault && attFits && (TAXONOMY as readonly string[]).includes(att.auto) ? (att.auto as Taxonomy) : null;
   const ef = failed === null || !grade.valid ? null : describeCheck(failed, ctx.text);
   const decisive_check = failed === null || ef === null ? null : { id: failed.id, traces_to: ctx.checks?.find((c) => c.id === failed.id)?.traces_to ?? null, ...ef };
+  const first_failed_check = decisive_check === null || outranked === null ? null : { id: outranked.id, traces_to: ctx.checks?.find((c) => c.id === outranked.id)?.traces_to ?? null, ...describeCheck(outranked, ctx.text) };
+  const secondaryLead = 'first failed check:';
+  const secondary_reason = first_failed_check === null ? null
+    : capWords(`${secondaryLead} ${checkSentence(first_failed_check.id, first_failed_check.expected, first_failed_check.found, REASON_WORDS - words(secondaryLead).length)}`);
 
   let reason: string;
   if (grade.valid && outcome !== 'PASS') {
@@ -566,6 +586,8 @@ export function explainTrial(record: ExplainRecord, audit: AuditRow | null | und
       overruled: AUDIT_QUESTIONS.filter((q) => answer(row[q]) === 'no' && auditAnswerOf(row, q) === 'yes'),
     },
     decisive_check,
+    first_failed_check,
+    secondary_reason,
     decisive_step: fault !== null && !modelFault ? null : attFits ? att.decisive_step : (row?.decisive_step ?? null),
     taxonomy,
     reason: capWords(reason),

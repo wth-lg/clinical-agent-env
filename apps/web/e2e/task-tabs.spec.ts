@@ -143,7 +143,7 @@ test('an oracle result started on a closed card is still shown after the card op
   const nav = page.getByRole('navigation', { name: 'Views' });
   await expect(gate.or(nav)).toBeVisible();
   if (await gate.isVisible()) await gate.click();
-  await card(page).getByTestId('validation').getByRole('button', { name: 'Run oracle' }).click();
+  await card(page).getByTestId('validation').getByRole('button', { name: 'Run reference solution' }).click();
   await expect(card(page).getByTestId('oracle-result')).toHaveAttribute('data-outcome', 'PASS', { timeout: 120_000 });
   await card(page).getByRole('button', { expanded: false }).click();
   await tablist(page).getByRole('tab', { name: 'Grader validation' }).click();

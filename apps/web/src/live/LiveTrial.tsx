@@ -1,6 +1,7 @@
 // The Live trial view (plan phase P15; design section 8, "Live trial"): the run launcher (a task,
 // then Run ×1, ×3, ×10 or ×20 as one batch under the session cap, each size with its projected
-// cost, a size whose cost with the session's committed spend is over the cap disabled with the
+// cost as an upper bound ("at most"), the typical cost of one trial from the committed pilot
+// beside them when a pilot holds the task, a size whose cost with the session's committed spend is over the cap disabled with the
 // reason, and the cap itself), the live trial (streaming
 // trajectory with summarised thinking and one-line tool rows, turn, token and cost meters, the
 // state diff, Stop) and the runs this surface started. It reads trials only through the
@@ -12,11 +13,14 @@ import type { TrialEvent } from '../../../../packages/core/events.ts';
 import { explainTrial, type ExplainRecord, NOT_AUDITED_MARKER } from '../../../../packages/core/explain.ts';
 import { capSum } from '../../../../packages/core/ledger.ts';
 import { REFUSAL_TEXT } from '../../../../packages/core/runner-api.ts';
+import { useResults } from '../data/results.ts';
+import { MODEL } from '../adapters/ledger-browser.ts';
 import { useTaskList } from '../data/tasks.ts';
 import { Card, FaultLabel, OutcomeChip, Page } from '../data/ui.tsx';
 import { relayLine, RELAY_TRIAL_TEXT, trialRelayReason } from '../keygate/failure.ts';
-import { useKeyStatus } from '../keygate/key.ts';
+import { requestKey, useKeyStatus } from '../keygate/key.ts';
 import { runnerToken } from '../keygate/runner.ts';
+import { amountText, typicalCost } from './typical.ts';
 import { admitTrial, MAX_SESSION_CAP_USD, parseCap } from '../spend/cap.ts';
 import { sessionCap, setSessionCap, useSessionSpend } from '../spend/session.ts';
 import type { Surface } from '../surface/detect.ts';
@@ -77,6 +81,7 @@ export function LiveTrial({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
   const noKey = key.kind === 'none';
   const { cap, spent } = useSessionSpend();
   const [costs, setCosts] = useState<Partial<Record<number, number>>>({});
+  const [bound, setBound] = useState(true);
   const [committed, setCommitted] = useState(0);
   const refresh = useCallback(() => {
     t.runs().then((r) => (setRuns(r), setRunsError(null)), (e: unknown) => setRunsError((e as Error).message));
@@ -92,6 +97,7 @@ export function LiveTrial({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
       t.project({ task: chosen, trials: n, sessionCap: sessionCap() }).then((p) => {
         if (!current) return;
         setCosts((c) => ({ ...c, [n]: p.usd }));
+        setBound(p.bound);
         setCommitted(p.committed);
       }, () => undefined);
     }
@@ -102,6 +108,8 @@ export function LiveTrial({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
   // A size is over when its cost with the committed spend crosses the cap, as start checks it.
   const over = RUN_SIZES.filter((n) => costs[n] !== undefined && !admitTrial({ cap, spent: committed, estimate: costs[n] }).ok);
   const costId = useId();
+  const results = useResults();
+  const typical = results?.kind === 'ready' && chosen !== '' ? typicalCost(results.pilots, chosen) : null;
 
   useEffect(refresh, [refresh]);
   useEffect(() => {
@@ -130,7 +138,7 @@ export function LiveTrial({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
   }
 
   return (
-    <Page title="Live trial" headingRef={headingRef} lead={t.kind === 'local-runner' ? 'Trials run in the local runner on this computer and stream here.' : 'Trials run in this tab, in a Worker, and are graded here.'}>
+    <Page title="Live trial" headingRef={headingRef} lead={t.kind === 'local-runner' ? 'Trials run in the local runner on this computer and stream here.' : 'Trials run and are graded in this tab.'}>
       <Card title="Run a task">
         <div className="flex flex-wrap items-end gap-3" data-testid="launcher">
           <label className="flex min-w-0 flex-col gap-1 text-xs text-ink-muted">
@@ -139,14 +147,32 @@ export function LiveTrial({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
               {ids.map((id) => <option key={id} value={id}>{id}</option>)}
             </select>
           </label>
+          <span className="flex flex-col gap-1 text-xs text-ink-muted" data-testid="launcher-model">
+            Model
+            <span className="flex h-8 items-center text-sm text-ink">{MODEL} at effort high</span>
+          </span>
+          {/* The amount sits beside its button, not in it, so the button's name is its visible
+              text (axe label-content-name-mismatch); aria-describedby still reads it out. */}
           {RUN_SIZES.map((n) => (
-            <button key={n} type="button" aria-label={`Run ×${n}`} aria-describedby={`${costId}-${n}`} className={button} disabled={noKey || busy || chosen === '' || over.includes(n)} onClick={() => void launch(n)}>
-              Run ×{n}
-              <span id={`${costId}-${n}`} data-testid={`run-cost-${n}`} className="ml-1.5 text-xs tabular-nums text-ink-muted">{costs[n] === undefined ? '…' : usd(costs[n])}</span>
-            </button>
+            <span key={n} className="inline-flex items-center gap-1.5">
+              <button type="button" aria-describedby={`${costId}-${n}`} className={button} disabled={noKey || busy || chosen === '' || over.includes(n)} onClick={() => void launch(n)}>
+                Run ×{n}
+              </button>
+              <span id={`${costId}-${n}`} data-testid={`run-cost-${n}`} className="text-xs tabular-nums text-ink-muted">{costs[n] === undefined ? '…' : amountText(costs[n], bound)}</span>
+            </span>
           ))}
         </div>
-        {noKey && <p data-testid="launcher-reason" className="mt-2 text-ink-muted">Add an API key to run trials. Use “Add key” in the top bar.</p>}
+        {typical !== null && (
+          <p data-testid="typical-cost" className="mt-2 text-ink-muted">
+            Typical cost: {usd(typical.usd)} a trial (median of {typical.n} trial{typical.n === 1 ? '' : 's'} of this task in {typical.run}).
+          </p>
+        )}
+        {noKey && (
+          <p data-testid="launcher-reason" className="mt-2 flex flex-wrap items-center gap-2 text-ink-muted">
+            Add an API key to run trials.
+            <button type="button" className={button} onClick={requestKey}>Add key</button>
+          </p>
+        )}
         {!noKey && over.length > 0 && <p data-testid="size-reason" className="mt-2 text-ink-muted">{overCap(over, costs, committed, cap)}</p>}
         <CapControl local={t.kind === 'local-runner'} />
         {refusal && (
@@ -192,7 +218,7 @@ function CapControl({ local }: { local: boolean }) {
       </div>
       {parsed === null && <p data-testid="cap-invalid" className="mt-1 text-xs text-danger">Enter a cap from $0.01 to ${MAX_SESSION_CAP_USD}.</p>}
       <p data-testid="cap-where" className="mt-2 text-xs text-ink-muted">
-        Each batch is checked against this cap before any call. You can also set it in the key gate. The cap is kept for this tab only, so another tab has its own
+        Each batch is checked against this cap before any call; the amounts beside Run are each batch's reserve, and this cap is the hard limit on spend. You can also set it in the key gate. The cap is kept for this tab only, so another tab has its own
         {local ? '; the runner counts the spend of every tab.' : ', with its own spend.'}
       </p>
     </form>
@@ -290,6 +316,7 @@ function Trial({ t, id, onEnd }: { t: TrialTransport; id: string; onEnd: () => v
               <OutcomeChip outcome={explanation.outcome} fault={explanation.fault} />
               {explanation.outcome !== 'PASS' && <FaultLabel e={explanation} />}
               {explanation.outcome !== 'PASS' && <span className="text-ink-muted">{explanation.reason}</span>}
+              {explanation.outcome !== 'PASS' && explanation.secondary_reason !== null && <span data-testid="secondary-reason" className="basis-full text-xs text-ink-muted">{explanation.secondary_reason}</span>}
             </div>
           )}
           {relay !== null && f.end?.type === 'error' ? (
@@ -391,6 +418,7 @@ function LiveRow({ row, current, onOpen }: { row: LiveRun['rows'][number]; curre
         {wasResumed(row.record) && <Resumed />}
       </div>
       {e && e.outcome !== 'PASS' && <p data-testid="reason" className="mt-1 break-words text-ink-muted">{e.reason}</p>}
+      {e && e.outcome !== 'PASS' && e.secondary_reason !== null && <p data-testid="secondary-reason" className="break-words text-xs text-ink-muted">{e.secondary_reason}</p>}
       {!e && row.error !== null && <p className="mt-1 break-words text-ink-muted">{row.error}</p>}
     </li>
   );

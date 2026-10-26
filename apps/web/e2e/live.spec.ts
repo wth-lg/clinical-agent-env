@@ -112,7 +112,7 @@ test('a trial streams in a Worker, is graded in the browser and makes no request
   page.on('worker', (w) => (isTrialWorker(w) ? workers.push(w.url()) : undefined));
   page.on('request', (r) => (TRIAL_SCRIPT.test(new URL(r.url()).pathname) ? scripts.push(r.url()) : undefined));
   await page.goto('./?view=live&task=_toy');
-  await expect(page.getByTestId('surface-chip')).toContainText('Browser-direct');
+  await expect(page.getByTestId('surface-chip')).toContainText('Hosted');
   await enterKey(page, sentinelKey());
   await run(page, 1);
   await expect(trial(page)).toHaveAttribute('data-state', 'graded', { timeout: 60_000 });
@@ -315,7 +315,7 @@ test('each Run size shows its projected cost, and a size over the session cap is
   await page.goto('./?view=live&task=_toy');
   await enterKey(page, sentinelKey());
   // A toy trial projects PER_TRIAL_CAP_USD plus its judge allowance: $10.00 (live/checks.ts).
-  for (const [n, cost] of [[1, '$10.00'], [3, '$30.00'], [10, '$100.00'], [20, '$200.00']] as const) await expect(page.getByTestId(`run-cost-${n}`)).toHaveText(cost);
+  for (const [n, cost] of [[1, '$10.00'], [3, '$30.00'], [10, '$100.00'], [20, '$200.00']] as const) await expect(page.getByTestId(`run-cost-${n}`)).toHaveText(`at most ${cost}`);
   await expect(page.getByRole('button', { name: 'Run ×1', exact: true })).toBeEnabled();
   for (const n of [3, 10, 20]) await expect(page.getByRole('button', { name: `Run ×${n}`, exact: true })).toBeDisabled();
   // Validate settled $0.011 in the tab ledger: it counts against the cap with each size's projection.

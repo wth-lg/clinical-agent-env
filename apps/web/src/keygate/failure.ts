@@ -20,7 +20,14 @@ export type RelayReason = 'unreachable' | 'limited' | 'unavailable';
 // whose body did not parse, or an error status (with the runner's status and message).
 export type RunnerFailure = { cause: 'no-token' | 'no-answer' | 'bad-body' | 'error'; message: string; status?: number; refusal?: string };
 
-export type Failure = DirectFailure | (RunnerFailure & { kind: 'runner' }) | { kind: 'notice'; message: string };
+// format: a key that does not start with sk-ant-, stopped in the page before any call.
+export type Failure = DirectFailure | (RunnerFailure & { kind: 'runner' }) | { kind: 'notice'; message: string } | { kind: 'format'; message: string };
+
+// Every Anthropic API key starts with this; the gate checks it before Validate sends anything
+// (pre-audit U10: a malformed key went to the network and came back as a network error).
+export const KEY_PREFIX = 'sk-ant-';
+export const keyFormatProblem = (key: string): Failure | null =>
+  key.startsWith(KEY_PREFIX) ? null : { kind: 'format', message: `The key does not start with ${KEY_PREFIX}` };
 
 export interface FailureText {
   lead: string;
@@ -137,5 +144,7 @@ export function describeFailure(f: Failure): FailureText {
     }
     case 'notice':
       return { lead: f.message, local: false };
+    case 'format':
+      return { lead: `An Anthropic key starts with ${KEY_PREFIX}.`, next: 'Check the key and paste it again.', local: false };
   }
 }
