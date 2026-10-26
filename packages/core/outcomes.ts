@@ -143,7 +143,9 @@ const M1: Criterion = {
   id: 'M1',
   text: 'Every decisive id of the failed gate check was shown to the model, or is in the world so the tool would have returned it had the model asked.',
   reads: ['record.attribution.exposure (recomputed from the trajectory when a regrade failed another check)', 'world (is the id a resource of the world)'],
-  check: ({ decisive }) => {
+  check: ({ decisive, outcome }) => {
+    // A check that threw leaves no verdict on the model, though the grade records it not met.
+    if (outcome === 'GRADER_ERROR') return result('n/a', 'a grader check threw, so no gate check gave a verdict on the model');
     if (decisive === null) return result('n/a', 'no gate check failed');
     if (decisive.exposure === null) return result('pending', `the record does not say what ${decisive.id}'s decisive ids were exposed at`);
     if (decisive.exposure.length === 0) return result(true, `${decisive.id} names no decisive ids`);

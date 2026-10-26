@@ -524,3 +524,20 @@ test('a trial from another world: Replay says its differing hash is expected, no
   await expect(line).toContainText('as expected');
   await expect(line).not.toHaveClass(/text-danger/);
 });
+
+// The UI wording and consistency follow-up (run.md 2026-10-27 04:40 list; verifier-phase-P16-2
+// minors, review-ui-P16-1 F8, verifier-phase-P17i-C3-2 F2).
+
+test('a GRADER_ERROR trial shows M1 not applicable and says plainly that it has no grade', async ({ page }) => {
+  const e = await explain(TRIALS.graderError);
+  expect(e.criteria[0]).toMatchObject({ id: 'M1', met: 'n/a' });
+  await openTrial(page, TRIALS.graderError);
+  await expect(page.getByTestId('trial-header').locator('[data-testid="header-criteria"] li[data-id="M1"]')).toHaveAttribute('data-met', 'n/a');
+  const g = panel(page, 'grading');
+  await expect(g.getByTestId('grade-line')).toHaveText('Not graded: a grader check failed with an error, so the trial has no grade.');
+  await expect(g).not.toContainText('Graded with grader');
+  await expect(g).toContainText('Gate checks, as recorded before the error');
+  await expect(g).not.toContainText(/\d+ of \d+ met/);
+  await page.getByRole('tab', { name: 'Attribution' }).click();
+  await expect(panel(page, 'attribution').locator('[data-testid="criterion-row"][data-id="M1"]')).toContainText('M1: not applicable');
+});
