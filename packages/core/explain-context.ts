@@ -107,6 +107,9 @@ export function reachability(manifest: unknown, matrix: unknown, grader_task_ver
   // A solver the matrix flagged (a grade below 1.0, a judge miss, a replay that differs) gives no
   // evidence either way, as the matrix's own decisive reachability line says (not checked).
   const solvers = (probes as Array<{ kind?: unknown; as_expected?: unknown; reachable_ids: string[] }>).filter((p) => p.kind === 'oracle' || p.kind === 'alternative');
+  // writeMatrixJson always writes the oracle probe when oracle_pass is true; an entry without one
+  // (hand-edited or foreign) must not make every id unreachable (verifier-phase-P17i-C4r5-1 F1).
+  if (!solvers.some((p) => p.kind === 'oracle')) return { unchecked: `matrix.json's entry for ${grader_task_version} has no reference solution probe, so the matrix gives no evidence` };
   if (solvers.some((p) => p.as_expected !== true)) return { unchecked: `the reference solution or an accepted alternative did not run as the matrix expects for ${grader_task_version}, so the matrix gives no evidence` };
   const reached = solvers.flatMap((p) => p.reachable_ids);
   return { exposable: (id) => reached.some((k) => sameId(k, id)) };
