@@ -90,6 +90,19 @@ describe('the E4 sentence names the replay mismatch', () => {
     expect(explain(record, events).deciding?.evidence).toBe(`replay: call 1 (${read.name}, ${read.tool_use_id}) gave a different result: at toString, recorded "own key", replayed absent`);
   });
 
+  // decisions.tsv 2026-10-29T02:45 (verifier JG10-1 F3): a long value is cut by code points, so a
+  // character outside the BMP (a surrogate pair in UTF-16) is never split.
+  it('a long value is cut at 57 code points, never inside a surrogate pair', async () => {
+    const long = `${'a'.repeat(55)}😀😀tail`;
+    const { record, events } = await trial((e) => {
+      (e as { content: unknown }).content = { ...(e.content as object), extra: long };
+    });
+    const evidence = explain(record, events).deciding?.evidence ?? '';
+    const recorded = /recorded (.*), replayed absent$/.exec(evidence)?.[1] ?? '';
+    expect(recorded).toBe(`${Array.from(JSON.stringify(long)).slice(0, 57).join('')}...`);
+    expect(recorded).not.toMatch(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/);
+  });
+
   it('without the trajectory, E4 still reads the two state hashes', async () => {
     const { record } = await trial((e) => {
       (e as { is_error: boolean }).is_error = true;

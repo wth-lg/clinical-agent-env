@@ -411,11 +411,12 @@ function firstDifference(a: Found, b: Found, path = ''): { path: string; recorde
   return { path, recorded: a, replayed: b };
 }
 
-// A value as the mismatch message shows it: JSON, cut to 60 characters, or 'absent'.
+// A value as the mismatch message shows it: JSON, cut to 60 code points (so a surrogate pair is
+// never split, decisions.tsv 2026-10-29T02:45), or 'absent'.
 const shown = (x: Found) => {
   if (x === ABSENT) return 'absent';
-  const s = JSON.stringify(x);
-  return s.length > 60 ? `${s.slice(0, 57)}...` : s;
+  const s = Array.from(JSON.stringify(x));
+  return s.length > 60 ? `${s.slice(0, 57).join('')}...` : s.join('');
 };
 
 async function replay(source: FixtureSource, task: Task, tools: readonly Tool<WriteContext>[], events: readonly TrialEvent[]): Promise<{ store: Store; mismatch: string | null } | null> {
