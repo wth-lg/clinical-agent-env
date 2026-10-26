@@ -332,14 +332,14 @@ function Validation({ id, runs, closed = false }: { id: string; runs: ReturnType
   );
 }
 
-// Run trial, shown disabled with the reason: on a closed card's grader validation row and on the
-// prompt tab.
+// Run trial opens the Live trial view with this task selected, on a closed card's grader
+// validation row and on the prompt tab; with no key it says that Live trial asks for one.
 function RunTrial({ id }: { id: string }) {
   const key = useKeyStatus();
   return (
     <span className="ml-auto inline-flex items-center gap-2">
-      <button type="button" className={button} disabled aria-describedby={`run-why-${id}`}>Run trial</button>
-      <span id={`run-why-${id}`} className="text-xs text-ink-muted">{key.kind === 'none' ? 'Needs an API key.' : 'Live trials from this screen come in a later build.'}</span>
+      <button type="button" className={button} aria-describedby={key.kind === 'none' ? `run-why-${id}` : undefined} onClick={() => navigate({ view: 'live', task: id, tab: null })}>Run trial</button>
+      {key.kind === 'none' && <span id={`run-why-${id}`} className="text-xs text-ink-muted">Live trial asks for an API key.</span>}
     </span>
   );
 }

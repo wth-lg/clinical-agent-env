@@ -587,7 +587,7 @@
       ],
       "ui_required": true,
       "ui": {
-        "route": "/?view=tasks&task=renal-dose-review&tab=prompt",
+        "route": "/?view=live&task=renal-dose-review",
         "action": "On the local runner with a key, open a task and press Run trial: the trajectory streams live and ends in the graded result with its Score and rubric breakdown.",
         "surface": "local"
       },
@@ -626,7 +626,7 @@
       ],
       "ui_required": true,
       "ui": {
-        "route": "/?view=tasks&task=renal-dose-review&tab=prompt",
+        "route": "/?view=live&task=renal-dose-review",
         "action": "Open a task and press Run trial: the launcher shows the task and the model claude-opus-5-5, and hands back one graded trial record; the CLI one-liner is pnpm cli run-one --task <id> --model claude-opus-5-5.",
         "surface": "local"
       },
@@ -1445,7 +1445,7 @@
       ],
       "ui_required": true,
       "ui": {
-        "route": "/?view=tasks&task=renal-dose-review&tab=prompt",
+        "route": "/?view=live&task=renal-dose-review",
         "action": "Open a task and press Run trial: the launcher shows the model read-only as claude-opus-5-5.",
         "surface": "local"
       },
@@ -1837,7 +1837,7 @@
       ],
       "ui_required": true,
       "ui": {
-        "route": "/?view=tasks&task=renal-dose-review&tab=prompt",
+        "route": "/?view=live&task=renal-dose-review",
         "action": "On the local runner press Run trial: the trial runs in the runner through run() and its events stream back into the live view.",
         "surface": "local"
       },
@@ -1964,16 +1964,19 @@
         "apps/web/src/surface/detect.ts",
         "apps/web/src/surface/LocalCommand.tsx",
         "apps/web/src/live/transport",
-        "apps/web/src/surface/LocalRunPanel.tsx"
+        "apps/web/src/surface/LocalRunPanel.tsx",
+        "apps/web/src/surface/relay.ts",
+        "apps/web/src/keygate/failure.ts"
       ],
       "tests": [
         "apps/web/e2e/shell.spec.ts",
-        "apps/web/e2e/live.spec.ts"
+        "apps/web/e2e/live.spec.ts",
+        "apps/web/e2e/relay.spec.ts"
       ],
       "ui_required": true,
       "ui": {
         "route": "https://wth-lg.github.io/clinical-agent-env/",
-        "action": "On the hosted URL validate the key: if its organization does not allow browser access, the page says so and shows the local command (ending in pnpm start) with a copy button; browsing and replay work without a key.",
+        "action": "On the hosted URL validate the key: Validate and trials go through the relay; the local-run panel shows the local command (ending in pnpm start) with a copy button, and if the relay cannot be reached, limits or fails, a red error says so and points to it; browsing and replay work without a key.",
         "surface": "hosted"
       },
       "evidence": [
@@ -2007,7 +2010,7 @@
       ],
       "ui_required": true,
       "ui": {
-        "route": "/?view=tasks&task=renal-dose-review&tab=prompt",
+        "route": "/?view=live&task=renal-dose-review",
         "action": "Run the live demo from the local runner: the surface chip reads Local runner while the trial streams.",
         "surface": "local"
       },

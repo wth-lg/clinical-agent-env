@@ -6,7 +6,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { MODEL } from '../../packages/core/anthropic.ts';
-import { assertSummary, passK, wilson } from '../../packages/core/summary.ts';
+import { assertSummary, passK, validateSummary, wilson } from '../../packages/core/summary.ts';
 import { main as summary } from '../summary.ts';
 import { tempDir } from '../../scripts/test/helpers.ts';
 
@@ -45,6 +45,20 @@ describe('pass^k', () => {
     expect(passK(3, 5, 5)).toBe(0);
     expect(passK(2, 2, 3)).toBeNull();
     expect(passK(0, 0, 1)).toBeNull();
+    // An exact ratio of integers: 4/20, not the product form's 0.19999999999999998.
+    expect(passK(4, 6, 3)).toBe(0.2);
+  });
+
+  it('a summary whose pass_k contradicts its passes and trials does not validate', async () => {
+    const dir = tempDir('summary-passk-validate');
+    writeRun(dir);
+    const r = await cli([dir, '--json']);
+    const s = JSON.parse(r.out);
+    expect(validateSummary(s)).toEqual([]);
+    const bad = (k: string, v: number | null) => validateSummary({ ...s, tasks: { ...s.tasks, 't-alpha': { ...s.tasks['t-alpha'], pass_k: { ...s.tasks['t-alpha'].pass_k, [k]: v } } } });
+    expect(bad('1', 0.123)).toContainEqual(expect.stringMatching(/^tasks\.t-alpha\.pass_k\.1: .*0\.7/));
+    expect(bad('1', null)).toContainEqual(expect.stringMatching(/^tasks\.t-alpha\.pass_k\.1: /));
+    expect(bad('3', 0.9)).toContainEqual(expect.stringMatching(/^tasks\.t-alpha\.pass_k\.3: /));
   });
 
   it('summary writes pass^1, pass^3 and pass^5 per task, k/n and Wilson unchanged', async () => {

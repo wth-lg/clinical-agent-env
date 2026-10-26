@@ -3,9 +3,6 @@
 import type { TrialEvent } from '../../../../packages/core/events.ts';
 import type { TrialRecord } from '../../../../packages/core/run.ts';
 
-// The API's message when the key's organization does not allow browser (CORS) access.
-export const ORG_CORS = /CORS requests are not allowed for this Organization/i;
-
 export type Item =
   | { kind: 'thinking' | 'text'; key: string; text: string }
   | { kind: 'tool'; key: string; name: string; target: string; input: unknown; result: unknown; done: boolean; error: string | null; written: string[]; executed: boolean };
@@ -20,7 +17,6 @@ export interface Folded {
   // The event that ended the episode (limit, error, cancelled), and the graded record.
   end: Extract<TrialEvent, { type: 'limit' | 'error' | 'cancelled' }> | null;
   record: TrialRecord | null;
-  orgCors: string | null;
 }
 
 // The resource a call is about: its patient or id, else its first short string input.
@@ -33,7 +29,7 @@ function target(input: unknown): string {
 }
 
 export function fold(events: readonly TrialEvent[]): Folded {
-  const out: Folded = { items: [], turn: 0, tokens: { input: 0, output: 0, cache_read: 0, cache_write: 0 }, cost: 0, hashes: { initial: null, latest: null, final: null }, written: [], end: null, record: null, orgCors: null };
+  const out: Folded = { items: [], turn: 0, tokens: { input: 0, output: 0, cache_read: 0, cache_write: 0 }, cost: 0, hashes: { initial: null, latest: null, final: null }, written: [], end: null, record: null };
   const tools = new Map<string, Extract<Item, { kind: 'tool' }>>();
   for (const e of events) {
     out.turn = Math.max(out.turn, e.turn);
@@ -72,7 +68,6 @@ export function fold(events: readonly TrialEvent[]): Folded {
         break;
       case 'error':
         out.end = e;
-        if (ORG_CORS.test(e.message)) out.orgCors = e.message;
         break;
       case 'graded':
         out.record = e.record;

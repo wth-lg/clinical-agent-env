@@ -54,12 +54,12 @@ describe('relay-check', () => {
     expect(report.ok).toBe(true);
     expect(report.checks.map((c) => c.name)).toEqual([
       'canary GET /v1/messages 405', 'foreign Origin 403', 'no Origin 403', '/v1/models 404', 'preflight 204', 'other model 400', 'body of B x 1.1 bytes not 413', 'Pages-origin POST gets the API 401',
-      'GET /README.md 404', 'GET /src/relay.ts 404', 'GET /test/serve-local.ts 404', 'GET /public/README.md 404', 'GET /vercel.json 404', 'GET /api/messages 404',
+      'GET /README.md 404', 'GET /src/relay.ts 404', 'GET /test/serve-local.ts 404', 'GET /public/README.md 404', 'GET /vercel.json 404', 'GET /package.json 404', 'GET /tsconfig.json 404', 'GET /api/messages 404',
     ]);
     expect(report.canary.nonce).toMatch(/^[0-9a-f]{32}$/);
     expect(report.invoking).toHaveLength(8);
     expect(report.invoking).toContain('GET /api/messages');
-    expect(report.not_invoking).toEqual(['POST /v1/models', 'GET /README.md', 'GET /src/relay.ts', 'GET /test/serve-local.ts', 'GET /public/README.md', 'GET /vercel.json']);
+    expect(report.not_invoking).toEqual(['POST /v1/models', 'GET /README.md', 'GET /src/relay.ts', 'GET /test/serve-local.ts', 'GET /public/README.md', 'GET /vercel.json', 'GET /package.json', 'GET /tsconfig.json']);
     const key = readFileSync(report.sentinel_file, 'utf8').trim();
     expect(key.length).toBeGreaterThan(20);
     expect(statSync(report.sentinel_file).mode & 0o777).toBe(0o600);

@@ -14,6 +14,7 @@ import { capSum } from '../../../../packages/core/ledger.ts';
 import { REFUSAL_TEXT } from '../../../../packages/core/runner-api.ts';
 import { useTaskList } from '../data/tasks.ts';
 import { Card, FaultLabel, OutcomeChip, Page } from '../data/ui.tsx';
+import { relayLine, RELAY_TRIAL_TEXT, trialRelayReason } from '../keygate/failure.ts';
 import { useKeyStatus } from '../keygate/key.ts';
 import { runnerToken } from '../keygate/runner.ts';
 import { admitTrial, MAX_SESSION_CAP_USD, parseCap } from '../spend/cap.ts';
@@ -240,6 +241,14 @@ function Trial({ t, id, onEnd }: { t: TrialTransport; id: string; onEnd: () => v
   const running = end === null;
   const record = (end?.record ?? f.record) as ExplainRecord | null;
   const explanation = record ? explainTrial(record, null, { events }) : null;
+  // On browser-direct every call goes through the relay, so a relay failure that stopped the trial
+  // gets the key gate's fallback (ruling 2026-10-28T02:00).
+  const hosted = runnerToken() === null;
+  const failed = f.end?.type === 'error' ? f.end : null;
+  const relay = failed !== null && hosted ? trialRelayReason(failed) : null;
+  // A line that carries the relay's words says whose words they are.
+  const errorLine = failed === null ? null : hosted ? relayLine(failed.message) : failed.message;
+  const panelId = useId();
 
   async function stop() {
     setStopping(true);
@@ -279,21 +288,21 @@ function Trial({ t, id, onEnd }: { t: TrialTransport; id: string; onEnd: () => v
           {explanation && (
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
               <OutcomeChip outcome={explanation.outcome} fault={explanation.fault} />
-              {/* On an org-CORS refusal the alert below says what happened and what to do; a rerun here would fail the same way. */}
-              {explanation.outcome !== 'PASS' && f.orgCors === null && <FaultLabel e={explanation} />}
-              {explanation.outcome !== 'PASS' && f.orgCors === null && <span className="text-ink-muted">{explanation.reason}</span>}
+              {explanation.outcome !== 'PASS' && <FaultLabel e={explanation} />}
+              {explanation.outcome !== 'PASS' && <span className="text-ink-muted">{explanation.reason}</span>}
             </div>
           )}
-          {f.orgCors !== null ? (
-            <ErrorNote testId="trial-error" lead="This key's organization does not allow browser access, so the trial stopped." detail={f.orgCors}>
-              <p className="mt-1 text-ink">Run the environment on your computer instead. The steps and the command are in “Run it on your computer” below this message.</p>
-              <button type="button" className={`${button} mt-2 h-7`} onClick={() => document.querySelector<HTMLElement>('[data-testid="local-run-panel"]')?.focus()}>Show the steps</button>
-            </ErrorNote>
-          ) : null}
-          {/* The shell shows the panel only on Overview and Tasks; here it follows the refusal, outside the alert. */}
-          {f.orgCors !== null && <LocalRunPanel surface={BROWSER_DIRECT} className="mt-3" />}
-          {f.orgCors !== null ? null : f.end?.type === 'error' ? (
-            <ErrorNote testId="trial-error" lead={f.end.status === 'INFRA_API' ? 'The API stopped this trial.' : 'This trial stopped with an error.'} detail={f.end.message} />
+          {relay !== null && f.end?.type === 'error' ? (
+            <>
+              <ErrorNote testId="trial-error" lead={RELAY_TRIAL_TEXT[relay].lead} detail={errorLine}>
+                <p className="mt-1 text-ink">{RELAY_TRIAL_TEXT[relay].next}</p>
+                <button type="button" className={`${button} mt-2 h-7`} onClick={() => document.getElementById(panelId)?.focus()}>Show the steps</button>
+              </ErrorNote>
+              {/* The shell shows the panel only on Overview and Tasks; here it follows the error, outside the alert. */}
+              <LocalRunPanel id={panelId} surface={BROWSER_DIRECT} className="mt-3" />
+            </>
+          ) : f.end?.type === 'error' ? (
+            <ErrorNote testId="trial-error" lead={f.end.status === 'INFRA_API' ? 'The API stopped this trial.' : 'This trial stopped with an error.'} detail={errorLine} />
           ) : end.message !== null && end.message !== 'stopped watching' && events.length === 0 ? (
             <ErrorNote testId="trial-error" lead="This trial did not run." detail={end.message} />
           ) : null}

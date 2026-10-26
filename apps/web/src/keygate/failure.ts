@@ -1,13 +1,21 @@
 // What the key gate says about a failed Validate. Every failure starts with one plain sentence
 // (lead), then what to do when there is something to do (next), then the API's or runner's own
-// line (detail), which the gate shows in small mono. org-CORS and network failures send the user
-// to the local-run panel, which already shows the prerequisites and the command.
+// line (detail), which the gate shows in small mono; a line with the relay's words says so. A
+// relay failure (P16h: the hosted site sends through the relay) sends the user to the local-run
+// panel, which already shows the prerequisites and the command.
 // The failure types live here, not in direct.ts or runner.ts, so this file imports nothing and
 // its unit test does not pull browser code into a program without the DOM types.
 
 // An api failure keeps the HTTP status (null when no response came back), which picks the first
 // sentence.
-export type DirectFailure = { kind: 'org-cors' | 'network' | 'cap'; message: string } | { kind: 'api'; status: number | null; message: string };
+export type DirectFailure =
+  | { kind: 'cap'; message: string }
+  | { kind: 'relay'; reason: RelayReason; message: string }
+  | { kind: 'api'; status: number | null; message: string };
+// Why a call through the relay failed: no readable answer came back, it answered 429 (its own
+// limit or the API's, passed through), or it answered 5xx (its fixed 502 or the API's own) or
+// broke off a stream (relayReason).
+export type RelayReason = 'unreachable' | 'limited' | 'unavailable';
 // cause says what went wrong with a local-runner call: no token in the page, no answer, a 200
 // whose body did not parse, or an error status (with the runner's status and message).
 export type RunnerFailure = { cause: 'no-token' | 'no-answer' | 'bad-body' | 'error'; message: string; status?: number; refusal?: string };
@@ -22,7 +30,72 @@ export interface FailureText {
   local: boolean;
 }
 
-const PANEL = 'Run the environment on your computer instead. The steps are in “Run it on your computer” below this form.';
+// The relay failures' sentences, fixed in docs/requirements/ui-contract.md (P16h). Each names the
+// browsers the page works in, then points to the local-run panel (ruling 2026-10-28T02:00).
+const BROWSERS = 'This page works in a Chromium browser such as Chrome or Brave, or Firefox.';
+const LOCAL = 'Or run the environment on your computer instead. The steps are in “Run it on your computer” below this form.';
+export const RELAY_FAILURE_TEXT: Record<RelayReason, { lead: string; next: string }> = {
+  unreachable: {
+    lead: 'The browser could not reach the relay that forwards calls to the API.',
+    next: `${BROWSERS} ${LOCAL}`,
+  },
+  limited: {
+    lead: 'The relay or the API is limiting requests from this page.',
+    next: `Wait a minute, then press Validate again. ${BROWSERS} ${LOCAL}`,
+  },
+  unavailable: {
+    lead: 'The relay or the API is not available at the moment.',
+    next: `Press Validate again in a few minutes. ${BROWSERS} ${LOCAL}`,
+  },
+};
+
+// The same failures when the relay stops a live trial: the Validate lead, then where to go next
+// (the panel follows the error in the live view).
+const LOCAL_TRIAL = 'Or run the environment on your computer instead. The steps are in “Run it on your computer” below this message.';
+export const RELAY_TRIAL_TEXT: Record<RelayReason, { lead: string; next: string }> = {
+  unreachable: { lead: RELAY_FAILURE_TEXT.unreachable.lead, next: `${BROWSERS} ${LOCAL_TRIAL}` },
+  limited: { lead: RELAY_FAILURE_TEXT.limited.lead, next: `Wait a minute, then run the trial again. ${BROWSERS} ${LOCAL_TRIAL}` },
+  unavailable: { lead: RELAY_FAILURE_TEXT.unavailable.lead, next: `Run the trial again in a few minutes. ${BROWSERS} ${LOCAL_TRIAL}` },
+};
+
+// The relay failure that a failed call through the relay means, from the client's error
+// (packages/core/anthropic.ts ApiError): no readable answer (no status, a lost connection or a
+// stall), a 429, a 5xx, or a 200 whose stream broke off (the relay cut by its time limit, or an
+// error event in the stream; its type picks limited or unavailable). Null for any other answer,
+// the API's own: a 4xx, the model's bad tool input, a response from another model, or a call the
+// page itself refused (no status, nothing sent).
+export function relayReason(e: { status: number | null; partial: boolean; type: string | null }): RelayReason | null {
+  if (e.status === null) return e.partial ? 'unreachable' : null;
+  if (e.status === 429) return 'limited';
+  if (e.status >= 500) return 'unavailable';
+  if (e.status === 200 && e.partial && e.type !== 'invalid_tool_input') return e.type === 'rate_limit_error' ? 'limited' : 'unavailable';
+  return null;
+}
+
+// The relay failure that ended a browser-direct trial, read from its error event, which keeps the
+// client's last error as its code (the error type, network, or http_<status>) and message: a lost
+// connection or a stall (network, stream_idle), a stream that broke off (its message starts
+// "stream " or is "HTTP 200 without a body"), or an HTTP status, which the message leads with.
+// Null for any other end.
+const BROKEN_STREAM = /^(stream |HTTP 200 without a body$)/;
+export function trialRelayReason(end: { status: string; code: string; message: string }): RelayReason | null {
+  if (end.status !== 'INFRA_API') return null;
+  if (end.code === 'network' || end.code === 'stream_idle') return 'unreachable';
+  const type = end.code.startsWith('http_') ? null : end.code;
+  if (BROKEN_STREAM.test(end.message)) return relayReason({ status: 200, partial: true, type });
+  const http = /^HTTP (\d{3})\b/.exec(end.message);
+  return http === null ? null : relayReason({ status: Number(http[1]), partial: false, type });
+}
+
+// On browser-direct every answer comes through the relay, which could put any text in an error's
+// message (review-security-P16h-web-1 M3). The relay's words reach exactly these messages from
+// the client: an HTTP error's type and message from its body, a stream error event's type and
+// message, and the model a response names. relayLine starts such a line with RELAY_ANSWERED, so a
+// compromised relay's words cannot pass for the page's own; every other line is the page's own
+// words about what happened (a lost connection, a broken stream, the egress guard, the cap).
+export const RELAY_ANSWERED = 'The relay answered: ';
+const FROM_ANSWER = /^(HTTP \d{3}(?! without a body$)|stream error |response model )/;
+export const relayLine = (message: string): string => (FROM_ANSWER.test(message) ? RELAY_ANSWERED + message : message);
 
 // The API's answer by HTTP status, the same sentence on both surfaces.
 function apiLead(status: number | null): { lead: string; next?: string } {
@@ -50,15 +123,13 @@ function runnerLead(f: RunnerFailure): { lead: string; next?: string } {
 
 export function describeFailure(f: Failure): FailureText {
   switch (f.kind) {
-    case 'org-cors':
-      return { lead: "This key's organization does not allow browser access.", next: PANEL, detail: f.message, local: true };
-    case 'network':
-      return { lead: 'The browser could not reach the API from this page.', next: PANEL, detail: f.message, local: true };
+    case 'relay':
+      return { ...RELAY_FAILURE_TEXT[f.reason], detail: relayLine(f.message), local: true };
     case 'cap':
       return { lead: 'The session spend cap does not allow this check.', next: 'To continue, set a higher session spend cap.', detail: f.message, local: false };
     case 'api': {
       const { lead, next } = apiLead(f.status);
-      return { lead, ...(next === undefined ? {} : { next }), detail: f.message, local: false };
+      return { lead, ...(next === undefined ? {} : { next }), detail: relayLine(f.message), local: false };
     }
     case 'runner': {
       const { lead, next } = runnerLead(f);
