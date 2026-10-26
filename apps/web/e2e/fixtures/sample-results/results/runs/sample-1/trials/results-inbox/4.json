@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:results-inbox:4",
   "task_id": "results-inbox",
-  "task_version": "88b9bfc77b925284fddc7d23cde193662679e2bab7ad677ccacb477cba9673dd",
+  "task_version": "1e5337be2650d63e3b509527db69119700b4d762e93cfc63566ada5dbcc0f26a",
   "env_version": "f7ed42d3c0d7920587b33d75a7815885b288336263bdab07957d0deb58c8730a",
-  "grader_task_version": "63bf1fee3777395a04ae22aaee19b7dc9f3062fcb54d66b072bc09c8f4ee1acb",
+  "grader_task_version": "47e52645ed3e78e683ff4dc9d5a8a7a678ad0e170e91b98c0221044dd60b613f",
   "fixture_hash": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
   "state_hash": {
     "initial": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
@@ -307,7 +307,8 @@
       "evidence": {
         "messages": [
           "Communication/comm-t0003"
-        ]
+        ],
+        "routed": []
       }
     },
     {
@@ -347,7 +348,8 @@
       "evidence": {
         "messages": [
           "Communication/comm-t0007"
-        ]
+        ],
+        "routed": []
       }
     },
     {
