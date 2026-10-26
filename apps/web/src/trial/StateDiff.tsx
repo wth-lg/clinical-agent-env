@@ -21,7 +21,7 @@ const show = (v: unknown) => (v === undefined ? '(absent)' : JSON.stringify(v, n
 type Run = { state: 'idle' } | { state: 'running' } | { state: 'error'; message: string } | { state: 'done'; value: StateRun };
 
 // decisiveIds: the evidence ids of the decisive check, marked wherever they show.
-// official: the trial is of the official run. A pilot on an earlier world is said in a neutral tone
+// official: the trial is of the official run. A pilot on another world is said in a neutral tone
 // and offers no Replay (it cannot reproduce on today's world); an official trial on another world
 // keeps the alert, because the committed results must run on today's world (P17j JU11).
 export function StateDiff({ t, events, steps, written, onStep, decisiveIds = [], official = true }: { t: Trial; events: Loaded<TrialEvent[]> | null; steps: readonly Step[] | null; written: readonly string[]; onStep: (n: number) => void; decisiveIds?: readonly string[]; official?: boolean }) {
@@ -50,7 +50,7 @@ export function StateDiff({ t, events, steps, written, onStep, decisiveIds = [],
         <p data-testid="manifest-line" role="alert" className="break-words rounded-sm border border-danger p-3 font-medium text-danger">Initial state hash does not match the manifest: the trial started from another world than today's, so a replay here cannot reproduce it.</p>
       ) : (
         <p data-testid="manifest-line" data-tone="neutral" className="break-words text-ink-muted">
-          This pilot ran on an earlier world version ({h.initial === null ? 'not recorded' : `${h.initial.slice(0, 4)}…`}). Today's world is {manifest.slice(0, 4)}….
+          {h.initial === null ? 'This pilot\'s record has no initial state hash, so the world it ran on is not known.' : `This pilot ran on another world version (${h.initial.slice(0, 4)}…).`} Today's world is {manifest.slice(0, 4)}….
         </p>
       )}
       <dl className="grid grid-cols-1 gap-x-4 gap-y-1 sm:grid-cols-[max-content_minmax(0,1fr)] [&_dd]:min-w-0 [&_dt]:text-ink-muted">

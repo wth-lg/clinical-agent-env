@@ -31,6 +31,7 @@ import { EnvironmentTab, Raw } from './Details.tsx';
 import { Grading } from './Grading.tsx';
 import { returnTo } from './back.ts';
 import { FIRST_NONPASS, resolveTrial } from './resolve.ts';
+import { trialPlace } from './place.ts';
 import { StateDiff } from './StateDiff.tsx';
 import { internalErrorRow, trajectoryOf, type Row } from './steps.ts';
 import { Trajectory, type Loaded } from './Trajectory.tsx';
@@ -271,23 +272,19 @@ function useHarmTexts(task: string, items: HarmItem[]): HarmItem[] {
 }
 
 // The trial page heading (pre-audit M8, P17j JU11): the task's title, then "Trial i of n · <model> ·
-// effort <effort>" (i the trial's place among the run's records of the task in index order, n how
-// many there are; the record's own index is in the path); the path (the trial id) sits below in
+// effort <effort>" (place.ts: i the trial's place among the run's trials of the task, model and
+// effort, n how many there are; the record's own index is in the path); the path sits below in
 // small mono text. Words wrap whole, so no token breaks mid-word at 390 px.
 function TrialHeading({ t, run }: { t: Trial; run: RunData }) {
   const { tasks } = useTaskList();
   const title = tasks?.find((x) => x.id === t.task)?.title ?? t.task;
   const r = t.record as Trial['record'] & { index?: number; models_returned?: readonly string[]; effort?: string };
-  const indexOf = (x: Trial) => (x.record as { index?: number }).index ?? Number.MAX_SAFE_INTEGER;
-  const ofTask = run.trials.filter((x) => x.task === t.task).sort((a, b) => indexOf(a) - indexOf(b));
-  const n = ofTask.length;
-  const at = ofTask.indexOf(t);
-  const i = at < 0 ? null : at + 1;
+  const place = trialPlace(t, run.trials);
   return (
     <>
       <span data-testid="trial-title">{title}</span>
       <span data-testid="trial-sub" className="block text-sm font-normal text-ink-muted">
-        {[i !== null ? `Trial ${i} of ${n}` : null, r.models_returned?.[0] ?? MODEL, r.effort ? `effort ${r.effort}` : null].filter(Boolean).join(' · ')}
+        {[place !== null ? `Trial ${place.i} of ${place.n}` : null, r.models_returned?.[0] ?? MODEL, r.effort ? `effort ${r.effort}` : null].filter(Boolean).join(' · ')}
       </span>
     </>
   );

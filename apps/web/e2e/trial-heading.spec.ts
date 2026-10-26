@@ -1,6 +1,6 @@
 // Trial page wording (pre-audit M7, M8, P17j JU11): the heading is the task title, then "Trial i of n
 // · <model> · effort high", with the trial path in small mono text, and no word of the heading breaks
-// mid-word at 390 px. A pilot that ran on an earlier world says so in a neutral tone and offers no
+// mid-word at 390 px. A pilot that ran on another world version says so in a neutral tone and offers no
 // Replay; an official trial on another world keeps the alert.
 import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
@@ -19,11 +19,11 @@ async function open(page: Page, query: string) {
 }
 
 // The record served as if it ran on another world: its initial and final hashes are not today's.
-async function otherWorld(page: Page, path: string) {
+async function otherWorld(page: Page, path: string, initial: string | null = EARLIER) {
   await page.route(`**/data/results/${path}`, async (route) => {
     const res = await route.fetch();
     const r = (await res.json()) as { state_hash: Record<string, string | null> };
-    await route.fulfill({ response: res, json: { ...r, state_hash: { ...r.state_hash, initial: EARLIER, final: 'b'.repeat(64), replay_final: 'b'.repeat(64) } } });
+    await route.fulfill({ response: res, json: { ...r, state_hash: { ...r.state_hash, initial, final: 'b'.repeat(64), replay_final: 'b'.repeat(64) } } });
   });
 }
 
@@ -62,16 +62,25 @@ test('at 390 px no word of the heading breaks mid-word', async ({ page }) => {
   expect(split).toEqual([]);
 });
 
-test('a pilot on an earlier world says so in a neutral tone and offers no Replay', async ({ page }) => {
+// The UI cannot tell an earlier world from a different one, so it says "another" (verifier-phase-P17i-JU4JU11-1 m2).
+test('a pilot on another world says so in a neutral tone and offers no Replay', async ({ page }) => {
   await otherWorld(page, 'pilot-pass/trials/renal-dose-review/0.json');
   await open(page, `run=pilot-pass&trial=${encodeURIComponent('renal-dose-review/0')}&tab=state-diff`);
   const p = page.getByTestId('panel-state-diff');
   const line = p.getByTestId('manifest-line');
-  await expect(line).toHaveText(`This pilot ran on an earlier world version (${EARLIER.slice(0, 4)}…). Today's world is ${MANIFEST.slice(0, 4)}….`);
+  await expect(line).toHaveText(`This pilot ran on another world version (${EARLIER.slice(0, 4)}…). Today's world is ${MANIFEST.slice(0, 4)}….`);
   await expect(line).toHaveAttribute('data-tone', 'neutral');
   await expect(line).not.toHaveAttribute('role', 'alert');
   await expect(p.getByTestId('replay-block')).toHaveCount(0);
   await expect(p.getByRole('button', { name: 'Replay' })).toHaveCount(0);
+});
+
+test('a pilot with no initial hash says the world it ran on is not recorded', async ({ page }) => {
+  await otherWorld(page, 'pilot-pass/trials/renal-dose-review/0.json', null);
+  await open(page, `run=pilot-pass&trial=${encodeURIComponent('renal-dose-review/0')}&tab=state-diff`);
+  const line = page.getByTestId('panel-state-diff').getByTestId('manifest-line');
+  await expect(line).toHaveText(`This pilot's record has no initial state hash, so the world it ran on is not known. Today's world is ${MANIFEST.slice(0, 4)}….`);
+  await expect(line).toHaveAttribute('data-tone', 'neutral');
 });
 
 test('an official trial on another world keeps the alert and its Replay', async ({ page }) => {
