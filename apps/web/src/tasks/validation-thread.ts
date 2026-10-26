@@ -37,9 +37,10 @@ async function oracle(id: string): Promise<OracleResult> {
   return { outcome: r!.grade.outcome, score: r!.grade.score, unknown: r!.unknown, misses: r!.misses.map((m) => `${m.check} ${m.key}`), problems: r!.problems };
 }
 
-async function matrix(id: string) {
+// onCase posts each case's progress to the page (MatrixOptions.onCase, JU12 part 2).
+async function matrix(id: string, onCase?: (done: number, total: number) => void) {
   const task = await loadMatrixTask(id);
-  const result = await runMatrix(await matrixEnv(), task);
+  const result = await runMatrix(await matrixEnv(), task, onCase ? { onCase } : {});
   const probes = result.results.map((r) => ({ kind: r.case.kind, id: r.case.id, outcome: r.grade.outcome, as_expected: r.problems.length === 0, failed_checks: r.failed_gates }));
   return { pass: result.pass, lines: result.lines, probes };
 }
@@ -81,16 +82,16 @@ async function state(id: string, trajectoryUrl: string): Promise<StateRun> {
   return { final: s.final === null ? null : await stateHash(s.final), error: s.error, ...stateChanges(s.initial, s.final ?? s.initial) };
 }
 
-async function handle(req: ValidateRequest): Promise<unknown> {
+async function handle(req: ValidateRequest, reqId: number): Promise<unknown> {
   if (req.op === 'oracle') return oracle(req.task);
-  if (req.op === 'matrix') return matrix(req.task);
+  if (req.op === 'matrix') return matrix(req.task, (done, total) => postMessage({ id: reqId, progress: { done, total } } satisfies ValidateReply));
   if (req.op === 'state') return state(req.task, req.trajectoryUrl);
   return replay(req.task, req);
 }
 
 addEventListener('message', (ev: MessageEvent<{ id: number; req: ValidateRequest }>) => {
   const { id, req } = ev.data;
-  handle(req).then(
+  handle(req, id).then(
     (result) => postMessage({ id, ok: true, result } satisfies ValidateReply),
     (e: unknown) => postMessage({ id, ok: false, error: e instanceof Error ? e.message : String(e) } satisfies ValidateReply),
   );

@@ -11,6 +11,7 @@ import type { Check } from '../../../../packages/grader/check.ts';
 import { MODEL } from '../adapters/ledger-browser.ts';
 import { MANIFEST } from '../data/world.ts';
 import { chartOf, CHART_TYPES, SECTION_TITLE, taskPatients, type FhirResource } from './chart.ts';
+import { titleParts } from './title.ts';
 import { useKeyStatus } from '../keygate/key.ts';
 import type { Script } from '../../../../packages/grader/matrix/types.ts';
 import { checkTextOf, loadResults } from '../data/results.ts';
@@ -228,6 +229,8 @@ function TaskCard({ t, tab }: { t: Loaded; tab: TaskTab | null }) {
   const Chevron = open ? ChevronDown : ChevronRight;
   const gates = checks.filter((c) => c.kind === 'gate');
   const rubric = checks.filter((c) => c.kind === 'rubric');
+  // The title without its policy codes, which sit on the meta line (pre-audit U10).
+  const shown = titleParts(task.title, task.policies.map((p) => p.id));
   // The card holds the validation runs, so a result started on the closed card, or one still
   // running, shows in the Grader validation panel once the card opens (verifier JU9-1 F5).
   const runs = useValidationRuns();
@@ -236,9 +239,10 @@ function TaskCard({ t, tab }: { t: Loaded; tab: TaskTab | null }) {
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3">
         <button type="button" aria-expanded={open} onClick={() => navigate({ task: open ? null : task.id, tab: null })} className="inline-flex items-center gap-1.5 text-left font-medium text-ink hover:underline">
           <Chevron aria-hidden className="h-4 w-4 text-ink-muted" strokeWidth={1.75} />
-          {task.title}
+          <span data-testid="task-title">{shown.title}</span>
         </button>
         <code className="break-all text-xs text-ink-muted">{task.id}</code>
+        {shown.codes.length > 0 && <span data-testid="task-codes" className="text-xs text-ink-muted">{shown.codes.join(', ')}</span>}
         <span className="ml-auto text-xs text-ink-muted">{gates.length} gate checks, {rubric.length} rubric items, {(task.tools ?? []).length || 'all'} tools</span>
       </div>
       {!open && <Validation id={task.id} runs={runs} closed />}
@@ -372,15 +376,21 @@ const button = 'inline-flex h-8 items-center gap-1.5 rounded-sm border border-li
 
 function useValidationRuns() {
   const [oracle, runOracle] = useRun<OracleResult>();
-  const [matrix, runMatrix] = useRun<MatrixRun>();
+  const [matrix, runMatrixRaw] = useRun<MatrixRun>();
+  // The grader check's progress, "case k of N", while it runs (JU12 part 2).
+  const [matrixProgress, setMatrixProgress] = useState<{ done: number; total: number } | null>(null);
+  const runMatrix = (task: string) => {
+    setMatrixProgress(null);
+    runMatrixRaw(() => validate({ op: 'matrix', task }, (done, total) => setMatrixProgress({ done, total })));
+  };
   const [replay, runReplay] = useRun<ReplayRow[]>();
-  return { oracle, runOracle, matrix, runMatrix, replay, runReplay };
+  return { oracle, runOracle, matrix, runMatrix, matrixProgress, replay, runReplay };
 }
 
 // The oracle, matrix and replay buttons and their results. On a closed card the row is labelled
 // and carries Run trial; in the Grader validation panel the tab names it.
 function Validation({ id, runs, closed = false }: { id: string; runs: ReturnType<typeof useValidationRuns>; closed?: boolean }) {
-  const { oracle, runOracle, matrix, runMatrix, replay, runReplay } = runs;
+  const { oracle, runOracle, matrix, runMatrix, matrixProgress, replay, runReplay } = runs;
   const busy = [oracle, matrix, replay].some((r) => r.state === 'running');
   const replayTrials = async () => {
     const r = await loadResults();
@@ -392,7 +402,7 @@ function Validation({ id, runs, closed = false }: { id: string; runs: ReturnType
       <div className="flex flex-wrap items-center gap-2">
         {closed && <span className="mr-1 text-xs font-medium text-ink-muted">Grader validation</span>}
         <button type="button" className={button} disabled={busy} onClick={() => runOracle(() => validate({ op: 'oracle', task: id }))}>Run reference solution</button>
-        <button type="button" className={button} disabled={busy} onClick={() => runMatrix(() => validate({ op: 'matrix', task: id }))}>Check the grader</button>
+        <button type="button" className={button} disabled={busy} onClick={() => runMatrix(id)}>Check the grader</button>
         <button type="button" className={button} disabled={busy} onClick={() => runReplay(replayTrials)}>Replay published trials</button>
         {closed && <RunTrial id={id} />}
       </div>
@@ -402,7 +412,7 @@ function Validation({ id, runs, closed = false }: { id: string; runs: ReturnType
           {o.problems.length > 0 && <span className="block text-ink-muted">{o.problems.join('; ')}</span>}
         </p>
       )} />
-      <Result r={matrix} what="grader check" render={(m) => (
+      <Result r={matrix} what="grader check" progress={matrixProgress === null ? null : `case ${matrixProgress.done} of ${matrixProgress.total}`} render={(m) => (
         <div data-testid="matrix-result" data-pass={String(m.pass)}>
           <p>Grader validation <span className="font-medium">{m.pass ? 'PASS' : 'FAIL'}</span>, matrix: {m.probes.filter((p) => p.as_expected).length}/{m.probes.length} probe verdicts as expected. Fresh-process isolation and policy imports need Node and run in CI.</p>
           <div className="mt-1 overflow-x-auto"><table className="w-full text-left text-xs">
@@ -453,9 +463,9 @@ function RunTrial({ id }: { id: string }) {
   );
 }
 
-function Result<T>({ r, what, render }: { r: Run<T>; what: string; render: (v: T) => ReactNode }) {
+function Result<T>({ r, what, render, progress = null }: { r: Run<T>; what: string; render: (v: T) => ReactNode; progress?: string | null }) {
   if (r.state === 'idle') return null;
-  if (r.state === 'running') return <p className="mt-2 inline-flex items-center gap-1.5 text-ink-muted" role="status"><Loader2 aria-hidden className="h-3.5 w-3.5 animate-spin" />Running the {what} in this tab…</p>;
+  if (r.state === 'running') return <p className="mt-2 inline-flex items-center gap-1.5 text-ink-muted" role="status" data-testid={progress === null ? undefined : 'run-progress'}><Loader2 aria-hidden className="h-3.5 w-3.5 animate-spin" />Running the {what} in this tab…{progress === null ? '' : ` ${progress}`}</p>;
   if (r.state === 'error') return <p className="mt-2 inline-flex items-center gap-1.5" role="alert"><CircleAlert aria-hidden className="h-3.5 w-3.5" />The {what} did not finish: {r.message}</p>;
   return <div className="mt-2 flex gap-1.5"><CheckCircle2 aria-hidden className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent" />{render(r.value)}</div>;
 }
