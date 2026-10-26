@@ -73,13 +73,15 @@ const MARK_CLASS: Record<Mark, string> = {
   model: 'bg-ink',
   limit: 'bg-ink-muted',
   refusal: 'border-2 border-ink bg-surface',
-  environment: 'border border-ink bg-surface',
-  grader: 'border border-ink bg-surface',
+  // Environment and grader faults take the danger tone (pre-audit S5, P17j JU2): a trial the run
+  // cannot count; the pattern stays, so the mark does not rest on colour alone.
+  environment: 'border border-danger bg-surface',
+  grader: 'border border-danger bg-surface',
   infra: 'border border-dashed border-line-strong bg-surface',
 };
 const MARK_STYLE: Partial<Record<Mark, CSSProperties>> = {
-  environment: { backgroundImage: 'repeating-linear-gradient(135deg, var(--color-ink) 0 1.5px, transparent 1.5px 4px)' },
-  grader: { backgroundImage: 'radial-gradient(var(--color-ink) 0.9px, transparent 1.2px)', backgroundSize: '4px 4px' },
+  environment: { backgroundImage: 'repeating-linear-gradient(135deg, var(--color-danger) 0 1.5px, transparent 1.5px 4px)' },
+  grader: { backgroundImage: 'radial-gradient(var(--color-danger) 0.9px, transparent 1.2px)', backgroundSize: '4px 4px' },
 };
 export const markProps = (m: Mark, className = ''): { className: string; style?: CSSProperties } => ({ className: `${MARK_CLASS[m]} ${className}`, ...(MARK_STYLE[m] ? { style: MARK_STYLE[m] } : {}) });
 
@@ -100,16 +102,21 @@ export function MarkLegend({ marks = MARKS.map((x) => x.mark) }: { marks?: reado
   );
 }
 
+// The outcome chip; an environment or grader fault takes the danger border (JU2).
+export const BLOCKING_MARKS: readonly Mark[] = ['environment', 'grader'];
 export function OutcomeChip({ outcome, fault }: { outcome: string; fault?: Fault | null }) {
+  const mark = markOf(outcome, fault);
   return (
-    <span data-testid="outcome" className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-sm border border-line px-1.5 py-0.5 text-xs font-medium text-ink">
-      <span aria-hidden {...markProps(markOf(outcome, fault), 'inline-block h-2.5 w-2.5 rounded-[2px]')} />
+    <span data-testid="outcome" data-mark={mark} className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-sm border px-1.5 py-0.5 text-xs font-medium text-ink ${BLOCKING_MARKS.includes(mark) ? 'border-danger' : 'border-line'}`}>
+      <span aria-hidden {...markProps(mark, 'inline-block h-2.5 w-2.5 rounded-[2px]')} />
       {outcome}
     </span>
   );
 }
 
 const TO_GLOSSARY = { view: 'glossary', task: null, label: null, trial: null };
+// What an environment or grader label means for the run (packages/core/outcomes.ts DENOMINATOR_RULE).
+export const BLOCKED_NOTE = 'Not counted. The run is blocked until this is fixed.';
 // The glossary, at a section (fault-<fault>, criterion-<id>, taxonomy, confirmation) when given.
 export const glossaryHref = (anchor?: string) => `${hrefWith(TO_GLOSSARY).replace(/#.*$/, '')}${anchor ? `#${anchor}` : ''}`;
 
@@ -172,15 +179,19 @@ export function FaultLabel({ e }: { e: Explanation }) {
   if (e.fault === 'infra') {
     return <span className="inline-flex items-center gap-x-1"><span data-testid="label" data-label="infra" className="text-ink-muted">infra: rerun, not counted</span>{help}</span>;
   }
+  // An environment or grader label takes the danger tone and says what it means for the run (JU2);
+  // a model label stays neutral.
+  const blocking = e.fault === 'env' || e.fault === 'grader';
   return (
     <span className="inline-flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
       <span className="inline-flex items-center gap-x-1">
-        <span data-testid="label" data-label={e.label} className="font-medium text-ink">
+        <span data-testid="label" data-label={e.label} className={`font-medium ${blocking ? 'text-danger' : 'text-ink'}`}>
           {e.label}
           {e.label_subtype ? ` (${e.label_subtype})` : ''}
         </span>
         {help}
       </span>
+      {blocking && <span data-testid="fault-note" className="text-xs text-danger">{BLOCKED_NOTE}</span>}
       {!e.audited && <span data-testid="not-audited" className="rounded-sm border border-dashed border-line-strong px-1 text-xs text-ink-muted">{NOT_AUDITED_MARKER}</span>}
     </span>
   );
