@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:renal-dose-review:7",
   "task_id": "renal-dose-review",
-  "task_version": "20b547a78fd2211fd41614934b4303034a20307674ed4ffaa82378d67c793ede",
-  "env_version": "589529d84845836d86f9c61e7c2ab8f0e846058b3f39c4c624d50964821856d1",
-  "grader_task_version": "2c5c4f59a926849a7016ac77605ece0f0a9b1242d1b5c461b0f126858230f971",
-  "fixture_hash": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
+  "task_version": "b5f8278968130bd5773685f5135a2c27ec10f7d86f37166caee31c009094d16d",
+  "env_version": "f74818df8ab2b6109bdad7b1219898a6c755f28cd3d4e505c848e8a779de79e8",
+  "grader_task_version": "35f7bf676489c2006ae5911205664dae8807638bd45094e352aca909846ba0c7",
+  "fixture_hash": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
   "state_hash": {
-    "initial": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
-    "final": "510633e2764f119d58977f4583716b5936ba12843511f0d8b6270bc7caf87b3f",
-    "replay_final": "510633e2764f119d58977f4583716b5936ba12843511f0d8b6270bc7caf87b3f"
+    "initial": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
+    "final": "201eb64140e1e9dc8513d468470f0b93f213c3c68c841fd932007b8a8fbe7268",
+    "replay_final": "201eb64140e1e9dc8513d468470f0b93f213c3c68c841fd932007b8a8fbe7268"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -204,7 +204,7 @@
       "met": false,
       "evidence": {
         "verdict": "not_met",
-        "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.88 mg/dL, 1.5 or higher: met. Two criteria met. Apixaban stays at 2.5 mg twice daily.",
+        "quote": "SCr 1.88 mg/dL, 1.5 or higher: met",
         "cache_key": "292adbafe86c432da733137c6242fc33dcc436c27979c240b85b080c939fc3c1"
       }
     },
@@ -217,8 +217,8 @@
       "met": false,
       "evidence": {
         "verdict": "not_met",
-        "quote": "",
-        "cache_key": "3085d01fb2bc9f52a9250d98120f84ef4cddc684d1de0496d5becb48e1d01210"
+        "quote": "Current SCr (10/21/2026): 1.88 mg/dL, so the review uses it.",
+        "cache_key": "76d509822c8eb47ec01c78a9ad8387c66590e6c19d1c64a19c6e0604b21efdbf"
       }
     },
     {
@@ -267,7 +267,7 @@
           "SCr 1.88"
         ],
         "verdict": "met",
-        "quote": "Inputs (§1): Most recent SCr 1.88 mg/dL (10/21). Current SCr (10/21/2026): 1.88 mg/dL, so the review uses it. Weight 143 lb = 64.9 kg (10/20/2026). Age 82.",
+        "quote": "Current SCr (10/21/2026): 1.88 mg/dL, so the review uses it.",
         "cache_key": "c5f15719f76e11e59fafd5b6ce79b4b21780f2c6e3d25ae5596d8bf1eb9745b5"
       }
     },
@@ -280,14 +280,14 @@
       "met": false,
       "evidence": {
         "verdict": "not_met",
-        "quote": "",
-        "cache_key": "08132bb4f8806c9863ce7f269647667b2961ae7929817816f9712348cdd1c9dd"
+        "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.88 mg/dL, 1.5 or higher: met. Two criteria met. Apixaban stays at 2.5 mg twice daily.",
+        "cache_key": "7050472ff1ca29af52e5ae1802e93d9ae59b68ed39f660d618fc2f4ddd35a79a"
       }
     }
   ],
   "score": 0,
   "judge": {
-    "calls": 0,
+    "calls": 4,
     "unknown": 0,
     "unknown_penalties": 0,
     "score_penalties_met": 0,
@@ -295,9 +295,9 @@
     "over_allowance": 0,
     "cache_keys": [
       "292adbafe86c432da733137c6242fc33dcc436c27979c240b85b080c939fc3c1",
-      "3085d01fb2bc9f52a9250d98120f84ef4cddc684d1de0496d5becb48e1d01210",
+      "76d509822c8eb47ec01c78a9ad8387c66590e6c19d1c64a19c6e0604b21efdbf",
       "c5f15719f76e11e59fafd5b6ce79b4b21780f2c6e3d25ae5596d8bf1eb9745b5",
-      "08132bb4f8806c9863ce7f269647667b2961ae7929817816f9712348cdd1c9dd"
+      "7050472ff1ca29af52e5ae1802e93d9ae59b68ed39f660d618fc2f4ddd35a79a"
     ],
     "cache": [
       {
@@ -308,32 +308,32 @@
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "not_met",
-          "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.88 mg/dL, 1.5 or higher: met. Two criteria met. Apixaban stays at 2.5 mg twice daily."
+          "quote": "SCr 1.88 mg/dL, 1.5 or higher: met"
         },
         "error": null,
-        "calls": 0,
+        "calls": 1,
         "provenance": {
-          "source": "scripted",
-          "model": "none: a rule-based script with no network call (builder-42)",
-          "at": "2026-10-24T09:59:30Z"
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-25T14:39:17.813Z"
         }
       },
       {
-        "key": "3085d01fb2bc9f52a9250d98120f84ef4cddc684d1de0496d5becb48e1d01210",
+        "key": "76d509822c8eb47ec01c78a9ad8387c66590e6c19d1c64a19c6e0604b21efdbf",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "not_met",
-          "quote": ""
+          "quote": "Current SCr (10/21/2026): 1.88 mg/dL, so the review uses it."
         },
         "error": null,
-        "calls": 0,
+        "calls": 1,
         "provenance": {
-          "source": "scripted",
-          "model": "none: a rule-based script with no network call (builder-42)",
-          "at": "2026-10-24T09:59:30Z"
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-25T14:39:17.813Z"
         }
       },
       {
@@ -344,32 +344,32 @@
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "met",
-          "quote": "Inputs (§1): Most recent SCr 1.88 mg/dL (10/21). Current SCr (10/21/2026): 1.88 mg/dL, so the review uses it. Weight 143 lb = 64.9 kg (10/20/2026). Age 82."
+          "quote": "Current SCr (10/21/2026): 1.88 mg/dL, so the review uses it."
         },
         "error": null,
-        "calls": 0,
+        "calls": 1,
         "provenance": {
-          "source": "scripted",
-          "model": "none: a rule-based script with no network call (builder-42)",
-          "at": "2026-10-24T09:59:30Z"
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-25T14:39:17.813Z"
         }
       },
       {
-        "key": "08132bb4f8806c9863ce7f269647667b2961ae7929817816f9712348cdd1c9dd",
+        "key": "7050472ff1ca29af52e5ae1802e93d9ae59b68ed39f660d618fc2f4ddd35a79a",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "not_met",
-          "quote": ""
+          "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.88 mg/dL, 1.5 or higher: met. Two criteria met. Apixaban stays at 2.5 mg twice daily."
         },
         "error": null,
-        "calls": 0,
+        "calls": 1,
         "provenance": {
-          "source": "scripted",
-          "model": "none: a rule-based script with no network call (builder-42)",
-          "at": "2026-10-24T09:59:30Z"
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-25T14:39:17.813Z"
         }
       }
     ]

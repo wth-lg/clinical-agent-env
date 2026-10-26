@@ -4,7 +4,7 @@
 // shown not to depend on the oracle's exact path.
 import type { Agent } from '../../../packages/grader/matrix/types.ts';
 import {
-  actions, chart, finish, GAPS, group, groups, MEMBERS, message, OPNOTE, orderFit, outreach, policy, PT, read, reads, ROWS, search, table, type Label,
+  actions, chart, finish, GAPS, group, groups, MEMBERS, message, NOTE_SEARCH, notes, OPNOTE, orderFit, outreach, policy, PROCEDURE_CODES, PT, read, reads, ROWS, search, STOOL_CODES, table, type Label,
 } from '../solution/steps.ts';
 
 const ALL = 'CRC outreach done for Okafor CRC 2026: five FIT kits ordered, five patients messaged.';
@@ -137,5 +137,118 @@ export const alternatives: Alternative[] = [
       { calls: [finish()] },
     ],
   },
+  {
+    // The oracle's Condition searches ask for 50 rows; at the default 20, E7's frailty is on
+    // the second page (26 conditions), reached through next_offset.
+    id: 'condition_pages_by_next_offset',
+    why: "Searches each member's conditions at the default page size and follows next_offset for Elly Trantow, whose frailty is on the second page.",
+    script: [
+      ...reads().flatMap((t) =>
+        t.calls[0]?.name === 'fhir_search' && t.calls[0].input.resource_type === 'Condition'
+          ? [{ calls: MEMBERS.map((p) => search('Condition', p)) }, { calls: [search('Condition', PT.E7, { offset: 20 })] }]
+          : [t],
+      ),
+      { calls: actions() },
+      { calls: [finish()] },
+    ],
+  },
+  {
+    // Newest first, E3's 2023 sDNA-FIT is the last of his 70 observations: offset 60 shows it.
+    id: 'sdna_by_date_paging',
+    why: "Lists Lance Muller's observations newest first with no code filter and pages through them by next_offset to the 2023 sDNA-FIT before ordering.",
+    script: [
+      ...reads().flatMap((t) =>
+        t.calls[0]?.name === 'fhir_search' && t.calls[0].input.resource_type === 'Observation'
+          ? [
+              { calls: t.calls.map((c) => (c.input.patient === PT.E3 ? search('Observation', PT.E3, { sort: '-date' }) : c)) },
+              ...[20, 40, 60].map((offset) => ({ calls: [search('Observation', PT.E3, { sort: '-date', offset })] })),
+            ]
+          : [t],
+      ),
+      { calls: actions() },
+      { calls: [finish()] },
+    ],
+  },
+  {
+    id: 'global_searches',
+    why: 'Searches the whole clinic by code instead of patient by patient (screening procedures, stool tests, frailty, hospice episodes, active orders), finds the colectomy by a notes search, then reads each member and their active medications.',
+    script: [
+      { calls: [policy, groups] },
+      { calls: [group] },
+      {
+        calls: [
+          { name: 'fhir_search', input: { resource_type: 'Procedure', code: PROCEDURE_CODES, count: 50 } },
+          { name: 'fhir_search', input: { resource_type: 'Observation', code: STOOL_CODES, count: 50 } },
+          { name: 'fhir_search', input: { resource_type: 'Condition', code: '248279007' } },
+          { name: 'fhir_search', input: { resource_type: 'EpisodeOfCare' } },
+          { name: 'fhir_search', input: { resource_type: 'ServiceRequest', status: 'active' } },
+          notes('total colectomy'),
+        ],
+      },
+      { calls: MEMBERS.map((p) => read('Patient', p)) },
+      { calls: MEMBERS.map((p) => search('MedicationRequest', p, { status: 'active' })) },
+      { calls: actions() },
+      { calls: [finish()] },
+    ],
+  },
+  {
+    id: 'colectomy_from_snippet',
+    why: "Searches Ángela Vigil's notes for 'proctocolectomy' and takes the total proctocolectomy from the snippet, without opening the operative note.",
+    script: [
+      ...reads().flatMap((t) => (t.calls.includes(NOTE_SEARCH) ? [{ calls: [notes('proctocolectomy', PT.E6)] }] : t.calls.includes(OPNOTE) ? [] : [t])),
+      { calls: actions() },
+      { calls: [finish()] },
+    ],
+  },
+  {
+    id: 'e5_message_only',
+    why: 'Messages Marilu Gaona, who is 75 today and outside the measure but inside the USPSTF range, offering a FIT kit if she wants one, without ordering it.',
+    script: [
+      ...reads(),
+      {
+        calls: [
+          ...actions(),
+          outreach(
+            PT.E5,
+            'Colorectal cancer screening is still recommended at 75. If you would like a FIT kit, a simple stool test you do at home, call the clinic and we will mail one to you. Riverbend Family Medicine',
+            'Colorectal cancer screening at 75',
+          ),
+        ],
+      },
+      { calls: [finish()] },
+    ],
+  },
+  {
+    id: 'outreach_before_order',
+    why: 'Sends each open-gap patient the outreach message first and then orders the kit it announces.',
+    script: [...reads(), { calls: GAPS.flatMap((l) => [outreach(PT[l]), orderFit(PT[l])]) }, { calls: [finish()] }],
+  },
+  {
+    id: 'bowel_cancer_outreach',
+    why: "Writes the outreach in plain words, 'bowel cancer' and 'home test kit', never 'colorectal', 'colon', 'FIT' or 'screening'.",
+    script: [
+      ...reads(),
+      { calls: GAPS.flatMap((l) => [orderFit(PT[l]), outreach(PT[l], 'We are mailing you a home test kit to check for bowel cancer. Please return it in the prepaid envelope. Riverbend Family Medicine', 'Bowel cancer check: home kit')]) },
+      { calls: [finish()] },
+    ],
+  },
+  {
+    id: 'colonoscopy_offered_outreach',
+    why: 'Announces the home test kit and names a colonoscopy as the other choice, without the words colorectal, colon, FIT, stool or screening.',
+    script: [
+      ...reads(),
+      { calls: GAPS.flatMap((l) => [orderFit(PT[l]), outreach(PT[l], 'We are mailing you a home test kit. If you would rather have a colonoscopy, call us. Riverbend Family Medicine', 'Your home test kit')]) },
+      { calls: [finish()] },
+    ],
+  },
+  {
+    id: 'bowel_prep_message_off_topic',
+    why: "Orders every kit but sends a bowel-prep appointment reminder as the outreach: 'bowel' alone is not about screening, so the message is off topic; a lower score, not a failure.",
+    loses: ['outreach_on_topic'],
+    script: [
+      ...reads(),
+      { calls: GAPS.flatMap((l) => [orderFit(PT[l]), outreach(PT[l], 'Reminder: your bowel prep instructions for next week are attached. Riverbend Family Medicine', 'Appointment reminder')]) },
+      { calls: [finish()] },
+    ],
+  },
 ];
-

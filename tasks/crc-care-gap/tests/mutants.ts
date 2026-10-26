@@ -3,7 +3,7 @@
 // patient's table row, and the -3 item of a patient it contacts who needs no contact. Each why
 // says which wrong reading produces it.
 import type { Mutant } from '../../../packages/grader/matrix/types.ts';
-import { actions, chart, finish, GAPS, group, groups, message, NOTE_SEARCH, OPNOTE, OUTREACH, orderFit, outreach, policy, PT, reads, table, type Label } from '../solution/steps.ts';
+import { actions, chart, finish, GAPS, group, groups, message, NOTE_SEARCH, OPNOTE, OUTREACH, orderFit, outreach, policy, PT, reads, search, table, type Label } from '../solution/steps.ts';
 
 const without = (l: Label) => GAPS.filter((x) => x !== l);
 const missed = ['fit_orders', 'outreach_messages'];
@@ -121,6 +121,34 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
       { calls: [OPNOTE] },
       { calls: actions() },
       { calls: Object.values(PT).map((p) => chart(p)[0]!) },
+      { calls: [finish()] },
+    ],
+  },
+  {
+    id: 'hospice_missed',
+    trap: 'hospice',
+    why: "Reads Kelsie Rohan's hospice episode but treats her as an open gap, with no screening on record: orders her a FIT kit and sends her the outreach message, though hospice care excludes her.",
+    fails: extra,
+    loses: ['table_pt_0020', 'contacted_pt_0020'],
+    script: [
+      ...reads(),
+      { calls: [...actions(), orderFit(PT.E9), outreach(PT.E9)] },
+      { calls: [finish(table({ E9: '| Kelsie Rohan | Open gap: FIT kit ordered, outreach sent | No screening on record |' }))] },
+    ],
+  },
+  {
+    id: 'sdna_unseen',
+    trap: 'order_before_review',
+    why: "Lists Lance Muller's observations newest first without a code filter, reads only the first page, which does not reach the 2023 sDNA-FIT, and orders his kit anyway: the right order, but the gap was never established.",
+    fails: ['gap_seen_before_order'],
+    loses: [],
+    script: [
+      ...reads().map((t) =>
+        t.calls[0]?.name === 'fhir_search' && t.calls[0].input.resource_type === 'Observation'
+          ? { calls: t.calls.map((c) => (c.input.patient === PT.E3 ? search('Observation', PT.E3, { sort: '-date' }) : c)) }
+          : t,
+      ),
+      { calls: actions() },
       { calls: [finish()] },
     ],
   },
