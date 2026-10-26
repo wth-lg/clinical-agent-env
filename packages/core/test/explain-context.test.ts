@@ -101,6 +101,17 @@ describe('reachability (R14-30)', () => {
     const { env_version: _, ...without } = record;
     expect(m('M1', without, ctx(matrix(shown), undefined, undefined, without))).toMatchObject({ met: 'pending', evidence: expect.stringMatching(/not checked \(the record has no env_version\)$/) });
   });
+
+  it('a matrix whose reference solution or an accepted alternative failed gives no evidence either way: M1 is pending, not false, and E5 does not hold (verifier-phase-P17i-C4r2-1 M2)', () => {
+    const failed = (pass: { oracle_pass?: boolean; alternatives_pass?: boolean }, probes: object[]) => ({ grader_task_versions: { 'g-1': { ...matrix(probes).grader_task_versions['g-1'], ...pass } } });
+    const unreached = [probe('oracle', ['Patient/pt-1'], false), probe('alternative', ['Patient/pt-1'])];
+    const c = ctx(failed({ oracle_pass: false }, unreached));
+    expect(m('M1', record, c)).toMatchObject({ met: 'pending', evidence: 'Observation/obs-9 never exposed; exposability not checked (the reference solution failed in the matrix for g-1, so the matrix gives no evidence)' });
+    expect(explainTrial(record, undefined, c).fault_criteria.env.find((x) => x.id === 'E5')!.met).not.toBe(true);
+    expect(m('M1', record, ctx(failed({ alternatives_pass: false }, [probe('oracle', ['Patient/pt-1']), probe('alternative', ['Patient/pt-1'], false)])))).toMatchObject({ met: 'pending', evidence: expect.stringMatching(/not checked \(an accepted alternative failed in the matrix for g-1, so the matrix gives no evidence\)$/) });
+    // Even a reach by the passing one does not count while the other failed.
+    expect(m('M1', record, ctx(failed({ alternatives_pass: false }, [probe('oracle', ['Observation/obs-9'])]))).met).toBe('pending');
+  });
 });
 
 describe('matrixFor', () => {

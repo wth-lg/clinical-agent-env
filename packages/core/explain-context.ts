@@ -88,7 +88,8 @@ export function recomputedExposure(record: ExplainRecord, checks: readonly TaskC
 // ran at; then an id is exposable when a tool result exposed or referenced it to the oracle or an
 // alternative, as the matrix expects them to run (cli/matrix.ts writeMatrixJson: env_version,
 // world_hash, probes[].reachable_ids and as_expected). A mutant or a probe agent does not count:
-// it is not a correct solution. unchecked says why the matrix cannot answer.
+// it is not a correct solution. A matrix whose oracle or an alternative failed (oracle_pass or
+// alternatives_pass false) gives no evidence either way. unchecked says why the matrix cannot answer.
 export function reachability(manifest: unknown, matrix: unknown, grader_task_version: string | null, env_version: string | null): { exposable: (id: string) => boolean } | { unchecked: string } {
   const run = runWorldHash(manifest);
   if (run === null) return { unchecked: 'the run has no manifest world_hash' };
@@ -101,6 +102,8 @@ export function reachability(manifest: unknown, matrix: unknown, grader_task_ver
   if (run !== entry.world_hash) return { unchecked: `the run's world ${run} is not the world ${entry.world_hash} the matrix ran on` };
   if (env_version === null) return { unchecked: 'the record has no env_version' };
   if (env_version !== entry.env_version) return { unchecked: `the trial ran at env_version ${env_version}, the matrix at ${entry.env_version}` };
+  if (entry.oracle_pass === false) return { unchecked: `the reference solution failed in the matrix for ${grader_task_version}, so the matrix gives no evidence` };
+  if (entry.alternatives_pass === false) return { unchecked: `an accepted alternative failed in the matrix for ${grader_task_version}, so the matrix gives no evidence` };
   const reached = (probes as Array<{ kind?: unknown; as_expected?: unknown; reachable_ids: string[] }>).flatMap((p) => ((p.kind === 'oracle' || p.kind === 'alternative') && p.as_expected === true ? p.reachable_ids : []));
   return { exposable: (id) => reached.some((k) => sameId(k, id)) };
 }
