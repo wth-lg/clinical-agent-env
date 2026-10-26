@@ -21,6 +21,12 @@
 //                     FAIL (a model FAIL: outcome FAIL, fault model), and, for spray,
 //                     output-gap and status-only when tests/agents.ts declares one
 //                     (attribution), that attribution label
+//   unmarked safety   every failed safety gate without the omission mark names a write of the
+//                     trial in its ids: it outranks every earlier failed gate (attribution.ts
+//                     decisiveGate), so a missing write must be marked omission, not left
+//                     unmarked (decisions.tsv 2026-10-28T20:55)
+//   agent labels      checked before any case runs, like loses: tests/agents.ts declares an
+//                     attribution only for an agent the task has
 //   every case        graded validly (a GRADER_ERROR names its check), no judge cache miss,
 //                     the same grade each time from the record (regrade idempotence), and the
 //                     same trajectory and final hash when run again (replay determinism)
@@ -53,6 +59,7 @@ import { loadStore, type FixtureSource } from '../../env/fixture-source.ts';
 import { canonicalJson } from '../../env/hash.ts';
 import type { indexDefinitions } from '../../env/validate.ts';
 import type { Taxonomy } from '../attribution.ts';
+import { stepsOf } from '../exposure.ts';
 import type { Check, Json, RubricCheck, RubricCtx } from '../check.ts';
 import type { Grade } from '../grade.ts';
 import { JudgeCacheMiss, type Judge } from '../judge.ts';
@@ -295,6 +302,12 @@ function verdict(c: Case, run: CaseRun, grade: Grade, misses: Miss[]): Pick<Case
     for (const id of c.loses) if (!lost_items.includes(id)) problems.push(`declares it loses rubric item ${kept(grade, id, misses)}`);
     for (const id of lost_items) if (!c.loses.includes(id)) problems.push(`loses rubric item ${id} (${pointsOf(grade, id)}${pointsOf(grade, id).startsWith('-') ? ', a penalty that applied' : ''}), not declared`);
   }
+  const written = new Set(stepsOf(run.events).flatMap((s) => s.written_ids));
+  for (const r of grade.checks) {
+    if (r.kind === 'gate' && r.category === 'safety' && r.met === false && r.omission !== true && !(r.ids ?? []).some((id) => written.has(id))) {
+      problems.push(`${r.id} failed unmarked and names no write of the trial; mark it omission or name the forbidden write in its ids`);
+    }
+  }
   for (const m of misses) problems.push(`judge cache miss: ${m.check} (cache key ${m.key})`);
   return { unknown, failed_gates, lost_items, problems };
 }
@@ -333,6 +346,15 @@ export function lossDeclarations(task: Pick<MatrixTask, 'checks' | 'alternatives
       ...(points.get(id) === 0 ? [`${who} declares loses ${id}, a 0-point rubric item, which cannot be lost`] : []),
     ]);
   });
+}
+
+// Each problem with the attribution labels tests/agents.ts declares, which runMatrix checks before
+// any case runs with the loses: a key that is no agent kind, or an agent the task does not have.
+export const AGENT_KINDS = ['spray', 'output_gap', 'status_only'] as const;
+export function agentDeclarations(task: Pick<MatrixTask, 'agents'>): string[] {
+  return Object.keys(task.agents.attribution ?? {}).flatMap((k) =>
+    !(AGENT_KINDS as readonly string[]).includes(k) ? [`tests/agents.ts declares attribution for ${k}, which is not an agent (${AGENT_KINDS.join(', ')})`]
+      : task.agents[k as (typeof AGENT_KINDS)[number]] === undefined ? [`tests/agents.ts declares attribution for ${k}, which the task does not have`] : []);
 }
 
 // The cases `ids` names, in report order; every case when absent.
@@ -448,9 +470,9 @@ export async function runMatrix(env: MatrixEnv, task: MatrixTask, opts: MatrixOp
   const selected = selectCases(task, opts.cases);
   const declared = task.mutants.filter((m) => Array.isArray(m.loses)).length;
   const losses = `rubric losses: ${declared}/${task.mutants.length} mutants declare loses`;
-  const declarations = lossDeclarations(task);
+  const declarations = [...lossDeclarations(task), ...agentDeclarations(task)];
   if (declarations.length > 0) {
-    const lines = [`matrix ${task.id}`, losses, 'cases: not run (fix the loses declarations first)', `matrix ${task.id}: FAIL`, ...declarations.map((d) => `  - ${d}`)];
+    const lines = [`matrix ${task.id}`, losses, 'cases: not run (fix the loses and attribution declarations first)', `matrix ${task.id}: FAIL`, ...declarations.map((d) => `  - ${d}`)];
     return { pass: false, lines, results: [] };
   }
   const results = await runCases(env, task, selected, opts);

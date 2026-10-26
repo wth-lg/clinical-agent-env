@@ -90,10 +90,11 @@ export interface AttributionFacts {
   // must have validated for its verdict to speak for this grade. null when the record or its
   // last regrade predates the env/grader split.
   grader_task_version: string | null;
-  // The decisive gate check of the current grade (attribution.ts decisiveGate) and its decisive
-  // ids; exposure null when nothing says what this check's ids were exposed at (a regrade failed
-  // another check and the caller could not recompute it).
-  decisive: { id: string; exposure: ReadonlyArray<{ id: string; first_exposed_step: number | null; exposable: boolean | null }> | null } | null;
+  // The decisive gate check of the current grade (attribution.ts decisiveGate), the first failed
+  // gate check when it is another (first_failed, else null), and the decisive ids of both, the
+  // decisive check's first (decisions.tsv 2026-10-28T20:55); exposure null when nothing says what
+  // these ids were exposed at (a regrade failed another check and the caller could not recompute it).
+  decisive: { id: string; first_failed: string | null; exposure: ReadonlyArray<{ id: string; first_exposed_step: number | null; exposable: boolean | null }> | null } | null;
   matrix: MatrixResult | null;
   check_error: { check: string | null; message: string } | null;
   // The audit row's answers clinically_acceptable and tool_rejections_correct (explain.ts AuditRow),
@@ -158,14 +159,15 @@ const statusIs = (o: Outcome) => (f: AttributionFacts) => result(f.status === o 
 // a note, and decides no trial's fault.
 const M1: Criterion = {
   id: 'M1',
-  text: 'Every decisive id of the failed gate check was shown to the model, or is in the world so the tool would have returned it had the model asked.',
+  text: 'Every decisive id of the failed gate check, and of the first failed gate check when that is another, was shown to the model, or is in the world so the tool would have returned it had the model asked.',
   reads: ['record.attribution.exposure (recomputed from the trajectory when a regrade failed another check)', 'world (is the id a resource of the world)'],
   check: ({ decisive, outcome }) => {
     // A check that threw leaves no verdict on the model, though the grade records it not met.
     if (outcome === 'GRADER_ERROR') return result('n/a', 'a grader check threw, so no gate check gave a verdict on the model');
     if (decisive === null) return result('n/a', 'no gate check failed');
-    if (decisive.exposure === null) return result('pending', `the record does not say what ${decisive.id}'s decisive ids were exposed at`);
-    if (decisive.exposure.length === 0) return result(true, `${decisive.id} names no decisive ids`);
+    const checks = decisive.first_failed === null ? decisive.id : `${decisive.id} and ${decisive.first_failed}`;
+    if (decisive.exposure === null) return result('pending', `the record does not say what the decisive ids of ${checks} were exposed at`);
+    if (decisive.exposure.length === 0) return result(true, `${checks} ${decisive.first_failed === null ? 'names' : 'name'} no decisive ids`);
     const lines = decisive.exposure.map((e) =>
       e.first_exposed_step !== null ? `${e.id} exposed at step ${e.first_exposed_step}`
         : e.exposable === true ? `${e.id} never exposed but exposable (in the world)`
