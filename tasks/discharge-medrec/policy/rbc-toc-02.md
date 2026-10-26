@@ -12,10 +12,10 @@ Act on a conditional instruction when results already in the chart satisfy its c
 An inpatient formulary substitution marked as such reverts to the home drug: keep the home drug and do not order the substitute.
 
 §4 Aliases
-An alias or brand name for an existing order (for example "metoprolol XL" for metoprolol succinate ER) means no change.
+An alias or brand name for an existing order (for example a brand name, or a release-form abbreviation such as "ER", for the same drug and dose) means no change.
 
 §5 Home medications not addressed
-A home medication the discharge documentation does not address must not be changed: message the PCP with a reference to it.
+A home medication the discharge documentation does not address must not be changed: message the PCP, with the medication order in the message's about.
 
 §6 Making changes
 Change a dose by modifying the existing order (stop it and replace it); resume a held order rather than duplicating it. Document the reconciliation in a progress note: each change and the document it comes from, citing the documents and results relied on.

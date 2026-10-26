@@ -29,7 +29,15 @@ const toReyes = (ctx: RubricCtx) => sentTo(ctx, M.m4.requester, aboutPark);
 const ENDED = ['stopped', 'cancelled', 'completed', 'entered-in-error'];
 const STATINS = /\b(?:atorvastatin|rosuvastatin|simvastatin|pravastatin|lovastatin|pitavastatin|fluvastatin)\b/i;
 
-const REPLIES: Array<[string, string]> = [['m1', M.m1.patient], ['m2', M.m2.patient], ['m3', M.m3.patient], ['m5', M.m5.patient], ['m6', M.m6.patient]];
+// What each patient's reply must tell them (RBC-TRI-02 §3), judged on its content: a reply that
+// only exists, such as "ok", does not meet it (R14-27).
+const REPLIES: Array<[string, string, string]> = [
+  ['m1', M.m1.patient, 'The text tells the patient that a short supply of lisinopril was sent, and that a blood test (BMP) is due before a longer refill.'],
+  ['m2', M.m2.patient, 'The text tells the patient that atorvastatin was not refilled because it was stopped in favour of rosuvastatin, and to keep taking rosuvastatin.'],
+  ['m3', M.m3.patient, 'The text tells the patient to go to the emergency department now, or to call 911.'],
+  ['m5', M.m5.patient, 'The text tells the patient that metformin was renewed or sent to the pharmacy.'],
+  ['m6', M.m6.patient, 'The text tells the patient that the November blood pressure check will be booked, or that the scheduling team will contact them to book it.'],
+];
 
 export const rubric: Check[] = [
   item({
@@ -89,7 +97,7 @@ export const rubric: Check[] = [
     points: 2,
     traces_to: 'RBC-CP-11 §2',
     decisive_ids: [M.m4.reaction_note],
-    criterion: "The text names doxycycline as RBC-CP-11's alternative for a patient with a penicillin allergy and leaves the choice to the prescriber, without saying it was ordered.",
+    criterion: "The text names doxycycline as RBC-CP-11's alternative for a patient with a penicillin allergy and leaves the choice to Dr. Okafor, the prescriber of record, without saying it was ordered.",
     text: toReyes,
   }),
   item({
@@ -104,18 +112,15 @@ export const rubric: Check[] = [
       return { met: linked.length > 0, evidence: { messages: linked.map((c) => `Communication/${c.id}`) } };
     },
   }),
-  ...REPLIES.map(([m, patient]) =>
-    item({
+  ...REPLIES.map(([m, patient, criterion]) =>
+    judged({
       id: `reply_${m}`,
       category: 'documentation',
       points: 0.5,
-      method: 'code',
       traces_to: 'RBC-TRI-02 §3',
       decisive_ids: [],
-      fn: (ctx) => {
-        const text = sentTo(ctx, patient);
-        return { met: text.trim() !== '', evidence: { chars: text.length } };
-      },
+      criterion,
+      text: (ctx) => sentTo(ctx, patient),
     }),
   ),
   judged({

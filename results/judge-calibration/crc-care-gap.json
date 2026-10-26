@@ -3,21 +3,21 @@
   "model": "claude-opus-5-5",
   "effort": "medium",
   "prompt_version": "judge-v1",
-  "at": "2026-10-25T00:08:12.151Z",
-  "questions": 156,
-  "same_keys": 156,
-  "agree": 156,
-  "calls": 156,
-  "ledger_settles": 156,
-  "cost_usd": 0.881008,
-  "usd_per_call": 0.005647,
+  "at": "2026-10-25T12:12:45.069Z",
+  "questions": 168,
+  "same_keys": 168,
+  "agree": 168,
+  "calls": 168,
+  "ledger_settles": 168,
+  "cost_usd": 0.977948,
+  "usd_per_call": 0.005821,
   "oracle": {
     "outcome": "PASS",
     "score": 1,
     "judge_unknown": 0
   },
   "disagreements": [],
-  "note": "Live judge answers (pnpm cli judge-calibrate) vs the task's cache. tests/judge-cache.json is not written by this command; this file is the calibration record. Ledger batch 3abff20d-0420-4568-a5f7-4b2b377542d5.",
+  "note": "Live judge answers (pnpm cli judge-calibrate) vs the task's cache. tests/judge-cache.json is not written by this command; this file is the calibration record. Ledger batch ed5ff618-5921-49d2-9c6d-47e66ea66e81.",
   "live_entries": [
     {
       "key": "00233a97aa0a8f01b10df0812e9a8b09ae89ebd01a5414837a943802ab2f256b",
@@ -34,7 +34,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -52,7 +52,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -70,7 +70,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -88,7 +88,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -106,7 +106,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -124,7 +124,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -142,7 +142,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -160,7 +160,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -178,7 +178,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -196,7 +196,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -214,7 +214,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -232,7 +232,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -250,7 +250,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -268,7 +268,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -286,7 +286,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -297,14 +297,32 @@
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "met",
-        "quote": "| Harrison O'Keefe | Open gap: FIT kit ordered, outreach sent | Age 69 with frailty but no advanced illness or dementia medication, so not excluded; no screening on record |"
+        "quote": "Harrison O'Keefe | Open gap: FIT kit ordered, outreach sent | Age 69 with frailty but no advanced illness or dementia medication, so not excluded; no screening on record"
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
+      }
+    },
+    {
+      "key": "1941631d715aeac84b73fd1ebdb1d6ebdab7a3ee376b51d10619c3ab4a1f5750",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "| Santo Pagac | Screening up to date | Colonoscopy 2018-05-21, within the measurement period or the 9 years before it (2017-2026) |"
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -322,7 +340,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -340,7 +358,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -358,7 +376,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -376,7 +394,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -394,7 +412,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -412,7 +430,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -430,7 +448,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -448,7 +466,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -466,7 +484,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -484,7 +502,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -502,7 +520,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -520,7 +538,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -538,7 +556,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -556,7 +574,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -574,7 +592,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -585,14 +603,14 @@
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "met",
-        "quote": "Burma Leuschke | Open gap: FIT kit ordered, outreach sent | Born 1980-12-15: 46 at the end of 2026, in the population; no screening on record"
+        "quote": "| Burma Leuschke | Open gap: FIT kit ordered, outreach sent | Born 1980-12-15: 46 at the end of 2026, in the population; no screening on record |"
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -603,14 +621,32 @@
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "met",
-        "quote": "| Ángela Vigil | Excluded | Total proctocolectomy (outside operative note, 2015) |"
+        "quote": "Ángela Vigil | Excluded | Total proctocolectomy (outside operative note, 2015)"
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
+      }
+    },
+    {
+      "key": "2db76071d31c1540dbc30f5c3af074ffeedc5b569ce54b699ca2d0aa96a801f6",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "| Kelsie Rohan | Open gap: FIT kit ordered, outreach sent | No screening on record |"
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -628,7 +664,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -646,7 +682,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -664,7 +700,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -682,7 +718,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -693,14 +729,14 @@
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "met",
-        "quote": "Harrison O'Keefe | Open gap: FIT kit ordered, outreach sent | Age 69 with frailty but no advanced illness or dementia medication, so not excluded; no screening on record"
+        "quote": "| Harrison O'Keefe | Open gap: FIT kit ordered, outreach sent | Age 69 with frailty but no advanced illness or dementia medication, so not excluded; no screening on record |"
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -718,7 +754,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -736,7 +772,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -754,7 +790,25 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
+      }
+    },
+    {
+      "key": "39f45b17021e1406353575c2afd9b5f15ba80a3b745bd5cc4d440532515f3c52",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "| Danika Ullrich | Screening up to date | CT colonography 2022-03-08, within the measurement period or the 4 years before it (2022-2026) |"
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -772,7 +826,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -790,7 +844,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -808,7 +862,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -826,7 +880,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -844,7 +898,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -862,7 +916,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -880,7 +934,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -898,7 +952,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -916,7 +970,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -934,7 +988,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -952,7 +1006,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -970,7 +1024,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -988,7 +1042,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1006,7 +1060,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1024,7 +1078,25 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
+      }
+    },
+    {
+      "key": "4ca6db9553a06d9764b5b92d76e966e143ab391bcc8a43a59e045aaad255ade1",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "| Marilu Gaona | Not in the population | Born 1950-11-20: 76 at the end of 2026, over 75 |"
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1042,7 +1114,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1060,7 +1132,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1078,7 +1150,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1096,7 +1168,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1114,7 +1186,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1132,7 +1204,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1150,7 +1222,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1168,7 +1240,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1186,7 +1258,25 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
+      }
+    },
+    {
+      "key": "5a922ded6824660b9662f069d79dc29ad94a4c839a38013c3be1e4a2a3b2dadf",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "| Lance Muller | Open gap: FIT kit ordered, outreach sent | sDNA-FIT 2023-11-20, before the 2024-2026 window |"
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1204,7 +1294,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1222,7 +1312,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1240,7 +1330,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1258,7 +1348,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1276,7 +1366,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1294,7 +1384,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1312,7 +1402,25 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
+      }
+    },
+    {
+      "key": "685b8d59401e5d10aaea0ce7483eb0fdf6af4e0d9823ac8ac9625ae1303a6fdd",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "| Elly Trantow | Excluded | Age 72 with frailty and a dementia medication (donepezil): advanced illness |"
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1330,7 +1438,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1348,7 +1456,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1366,7 +1474,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1384,7 +1492,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1395,14 +1503,14 @@
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "met",
-        "quote": "| Tiny Koss | Open gap: FIT kit ordered, outreach sent | FIT 2025-12-03 was in 2025; a FIT counts only in the measurement period |"
+        "quote": "Tiny Koss | Open gap: FIT kit ordered, outreach sent | FIT 2025-12-03 was in 2025; a FIT counts only in the measurement period"
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1420,7 +1528,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1438,7 +1546,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1456,7 +1564,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1474,7 +1582,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1492,7 +1600,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1510,7 +1618,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1521,14 +1629,14 @@
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "met",
-        "quote": "| pt-0009 | Excluded | Age 72 with frailty and a dementia medication (donepezil): advanced illness |"
+        "quote": "pt-0009 | Excluded | Age 72 with frailty and a dementia medication (donepezil): advanced illness"
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1546,7 +1654,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1564,7 +1672,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1582,7 +1690,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1600,7 +1708,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1618,7 +1726,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1636,7 +1744,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1654,7 +1762,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1672,7 +1780,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1690,7 +1798,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1708,7 +1816,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1726,7 +1834,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1744,7 +1852,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1762,7 +1870,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1780,7 +1888,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1791,14 +1899,50 @@
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "met",
-        "quote": "| Elly Trantow | Excluded | Age 72 with frailty and a dementia medication (donepezil): advanced illness |"
+        "quote": "Elly Trantow | Excluded | Age 72 with frailty and a dementia medication (donepezil): advanced illness"
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
+      }
+    },
+    {
+      "key": "a0bcf818be6872825fa2a42162421c3b7d74584ef78e042e4fc3064726f5aff0",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "| Tiny Koss | Open gap: FIT kit ordered, outreach sent | FIT 2025-12-03 was in 2025; a FIT counts only in the measurement period |"
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-25T12:12:45.069Z"
+      }
+    },
+    {
+      "key": "a2666af9f6ada9ac120932e55df5e225770f1859070c9e210b312f714b58555a",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "| Stephan Herman | Open gap: FIT kit ordered, outreach sent | Last colonoscopy 2016-11-15, before the 2017-2026 window |"
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1816,7 +1960,25 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
+      }
+    },
+    {
+      "key": "a6c3fd1d5cdef6df8ff3a14461d73055adf645200bf05a7d185d0d228dfbbf52",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "Ángela Vigil | Excluded | Total proctocolectomy (outside operative note, 2015)"
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1834,7 +1996,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1852,7 +2014,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1870,7 +2032,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1888,7 +2050,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1906,7 +2068,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1924,7 +2086,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1942,7 +2104,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1960,7 +2122,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1978,7 +2140,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -1996,7 +2158,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -2014,7 +2176,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -2032,7 +2194,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -2050,7 +2212,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -2068,7 +2230,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -2086,7 +2248,25 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
+      }
+    },
+    {
+      "key": "bb2bf3bdc81e8fe8b8fb1c62b117d9b8f69c0ea0952aaddc4703ac8ac052f937",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "| Harrison O'Keefe | Open gap: FIT kit ordered, outreach sent | Age 69 with frailty but no advanced illness or dementia medication, so not excluded; no screening on record |"
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -2104,7 +2284,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -2122,7 +2302,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -2140,7 +2320,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -2158,7 +2338,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -2176,7 +2356,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -2194,7 +2374,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -2212,7 +2392,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -2230,7 +2410,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -2248,7 +2428,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -2266,7 +2446,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -2284,7 +2464,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -2295,14 +2475,14 @@
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "met",
-        "quote": "Tiny Koss | Open gap: FIT kit ordered, outreach sent | FIT 2025-12-03 was in 2025; a FIT counts only in the measurement period"
+        "quote": "| Tiny Koss | Open gap: FIT kit ordered, outreach sent | FIT 2025-12-03 was in 2025; a FIT counts only in the measurement period |"
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -2320,7 +2500,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -2338,7 +2518,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -2356,7 +2536,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -2374,7 +2554,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -2392,7 +2572,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -2410,7 +2590,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -2428,7 +2608,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -2446,7 +2626,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -2464,7 +2644,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -2482,7 +2662,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -2500,7 +2680,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -2518,7 +2698,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -2536,7 +2716,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -2554,7 +2734,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -2572,7 +2752,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -2583,14 +2763,14 @@
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "met",
-        "quote": "Burma Leuschke | Open gap: FIT kit ordered, outreach sent | Born 1980-12-15: 46 at the end of 2026, in the population; no screening on record"
+        "quote": "| Burma Leuschke | Open gap: FIT kit ordered, outreach sent | Born 1980-12-15: 46 at the end of 2026, in the population; no screening on record |"
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -2608,7 +2788,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -2626,7 +2806,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -2644,7 +2824,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -2662,7 +2842,25 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
+      }
+    },
+    {
+      "key": "f191ae424e5e1eab151e6ed9feb7354af88da3d564a7b46f7d6ad5e0a389aa83",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "| Burma Leuschke | Open gap: FIT kit ordered, outreach sent | Born 1980-12-15: 46 at the end of 2026, in the population; no screening on record |"
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -2680,7 +2878,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -2691,14 +2889,14 @@
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "not_met",
-        "quote": "Elly Trantow | Open gap: FIT kit ordered, outreach sent | Frailty without an advanced illness diagnosis"
+        "quote": "| Elly Trantow | Open gap: FIT kit ordered, outreach sent | Frailty without an advanced illness diagnosis |"
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -2716,7 +2914,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -2727,14 +2925,14 @@
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "met",
-        "quote": "| Burma Leuschke | Open gap: FIT kit ordered, outreach sent | Born 1980-12-15: 46 at the end of 2026, in the population; no screening on record |"
+        "quote": "Burma Leuschke | Open gap: FIT kit ordered, outreach sent | Born 1980-12-15: 46 at the end of 2026, in the population; no screening on record"
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -2752,7 +2950,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -2770,7 +2968,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -2788,7 +2986,25 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
+      }
+    },
+    {
+      "key": "fccce59ce98a31c4b85b34b491d8f1d970fa46ed0a0c5695d5db6874dd7a9222",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "| Delaine MacGyver | Open gap, no new order | FIT order already active since 2026-09-30; FOBT 2024-06-11 does not count |"
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -2806,7 +3022,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     },
     {
@@ -2824,7 +3040,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T00:08:12.151Z"
+        "at": "2026-10-25T12:12:45.069Z"
       }
     }
   ]

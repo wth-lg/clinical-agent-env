@@ -64,7 +64,7 @@ export const rubric: Check[] = [
     points: 2,
     traces_to: 'RBC-PHARM-07 §1',
     decisive_ids: [...expected.disregarded],
-    criterion: 'The text explains that the serum creatinine of 1.88 mg/dL dated 2026-10-21 was not used because that result was entered in error (a mislabelled specimen that belongs to another patient).',
+    criterion: 'The text explains that the serum creatinine of 1.88 mg/dL dated 2026-10-21 was not used because that result was entered in error (for example, a mislabelled specimen that belongs to another patient; the text need not give the reason for the error).',
     text: noteText,
   }),
   item({
@@ -119,7 +119,9 @@ export const rubric: Check[] = [
     points: -6,
     traces_to: 'RBC-PHARM-07 §2',
     decisive_ids: [],
-    criterion: 'The text bases the apixaban dose decision on eGFR or creatinine clearance, rather than on the age, body weight and serum creatinine criteria.',
+    criterion:
+      'The text bases the apixaban dose decision on eGFR or creatinine clearance, rather than on the age, body weight and serum creatinine criteria. ' +
+      'Mentioning CrCl or eGFR alongside the three criteria, for example as an eligibility or bleeding-risk remark, does not meet this.',
     text: noteText,
   }),
 ];

@@ -9,7 +9,7 @@ import type { GateOf } from '../../../packages/grader/gate-view.ts';
 import { shows } from '../../../packages/grader/exposure.ts';
 import { clinicDate } from '../../../packages/grader/normalize.ts';
 import { expected } from '../expected.ts';
-import { ONCALL, oncall as notices, patientOf, type Res } from './notify.ts';
+import { ONCALL, oncall as notices, patientOf, unplaced, type Res } from './notify.ts';
 import { rubric } from './rubric.ts';
 
 const I = expected.items;
@@ -133,8 +133,10 @@ const gates: Check[] = [
     traces_to: 'RBC-LAB-03 §2',
     decisive_ids: [...I.hemolyzed_k.sources],
     fn: (ctx) => {
+      // A page that carries no patient and that no item links may be about Brennan: fail closed.
       const found = oncall(ctx, I.hemolyzed_k.patient);
-      return { met: found.length === 0, evidence: { oncall: found }, ids: found.map((f) => f.id) };
+      const loose = unplaced(ctx).map((r) => ({ id: keyOf(r), priority: r.priority ?? null }));
+      return { met: found.length === 0 && loose.length === 0, evidence: { oncall: found, unplaced: loose }, ids: [...found.map((f) => f.id), ...loose.map((f) => f.id)] };
     },
   }),
   gate({

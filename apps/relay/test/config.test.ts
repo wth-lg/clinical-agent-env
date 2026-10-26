@@ -54,8 +54,8 @@ describe('relay config', () => {
   // as a static route, src/*.ts and test/*.ts included (CLI 64.2.0 detectBuilders). With one,
   // only public/ is static, and its one file, README.md, is a name the static builder never
   // publishes. .vercelignore keeps test/ and README.md out of the upload.
-  it('vercel deploy uploads only the function, its sources, vercel.json and public/', () => {
-    expect(UPLOAD_LIST).toEqual(['api/messages.ts', 'public/README.md', 'src/limiter.ts', 'src/relay.ts', 'src/upstream.ts', 'vercel.json']);
+  it('vercel deploy uploads only the function, its sources, its build config, vercel.json and public/', () => {
+    expect(UPLOAD_LIST).toEqual(['api/messages.ts', 'package.json', 'public/README.md', 'src/limiter.ts', 'src/relay.ts', 'src/upstream.ts', 'tsconfig.json', 'vercel.json']);
     expect(uploadList(RELAY)).toEqual(UPLOAD_LIST);
   });
 
@@ -65,11 +65,14 @@ describe('relay config', () => {
 
   // Verifier M2: `vercel link --cwd apps/relay` writes apps/relay/.vercel/ and adds a `.vercel` line
   // to apps/relay/.gitignore unless the file already has one (CLI 64.2.0 addToGitIgnore), so with
-  // both files below the link leaves `git status` clean.
-  it('git ignores the .vercel/ directory vercel link writes, and the link has no .gitignore to change', () => {
+  // both files below the link leaves `git status` clean. builder-131: CLI 64.2.0's link also
+  // writes .env.local (a VERCEL_OIDC_TOKEN) and appends `.env*` to apps/relay/.gitignore unless
+  // the file has that line, so the committed file has it too.
+  it('git ignores the .vercel/ directory and .env.local vercel link writes, and the link has no .gitignore to change', () => {
     expect(readFileSync(join(ROOT, '.gitignore'), 'utf8').split('\n')).toContain('.vercel');
-    expect(readFileSync(join(RELAY, '.gitignore'), 'utf8').split('\n')).toContain('.vercel');
+    expect(readFileSync(join(RELAY, '.gitignore'), 'utf8').split('\n')).toEqual(expect.arrayContaining(['.vercel', '.env*']));
     expect(execFileSync('git', ['check-ignore', '-v', 'apps/relay/.vercel/project.json'], { cwd: ROOT, encoding: 'utf8' })).toMatch(/\.vercel/);
+    expect(execFileSync('git', ['check-ignore', '-v', 'apps/relay/.env.local'], { cwd: ROOT, encoding: 'utf8' })).toMatch(/\.env\*/);
   });
 
   it('the relay source has no console call and reads no environment variable', () => {

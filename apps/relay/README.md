@@ -18,8 +18,10 @@ echoes the key. The source has no `console` call.
 | `src/limiter.ts` | The per-client-IP token bucket |
 | `api/messages.ts` | The Vercel function: `handle` with the real upstream, one limiter per instance and the origin `https://wth-lg.github.io`; any throw becomes the fixed 502 |
 | `vercel.json` | Rewrites `/v1/messages` to the function; `maxDuration`; Git deployments off |
-| `.gitignore` | `.vercel`, the link `vercel link` writes (see Deploy, step 2) |
-| `.vercelignore` | Uploads only `api/`, `src/`, `public/` and `vercel.json` (see Static files) |
+| `package.json` | `"type": "module"`, so the builder emits ESM (see Build) |
+| `tsconfig.json` | The builder's compiler options; turns the `.ts` import specifiers into `.js` (see Build) |
+| `.gitignore` | `.vercel` and `.env*`, the files `vercel link` writes (see Deploy, step 2) |
+| `.vercelignore` | Uploads only `api/`, `src/`, `public/`, `vercel.json`, `package.json` and `tsconfig.json` (see Static files) |
 | `public/README.md` | The static output directory; its one file is never published (see Static files) |
 | `test/serve-local.ts` | Test only, never deployed: `handle` behind `node:http` on 127.0.0.1 with a stub upstream |
 
@@ -93,17 +95,49 @@ build command) serves every uploaded file outside `api/` as a static route when 
 `public/` directory, so `src/*.ts` would be served (Vercel CLI 64.2.0, `detectBuilders`). Two
 things prevent that:
 
-- `.vercelignore` uploads only `api/`, `src/`, `public/` and `vercel.json`. `test/` and this
-  README stay local. `src/` must be uploaded, because the function imports it. Its rules name the
-  directories without a trailing slash (`!/api`): the CLI's upload walker matches a directory by
-  its bare name, and skips one that `/*` ignores without looking inside it. Deploy step 4 checks
+- `.vercelignore` uploads only `api/`, `src/`, `public/`, `vercel.json`, `package.json` and
+  `tsconfig.json`. `test/` and this README stay local. `src/` must be uploaded, because the
+  function imports it. Its rules name the directories without a trailing slash (`!/api`): the
+  CLI's upload walker matches a directory by its bare name, and skips one that `/*` ignores
+  without looking inside it. Deploy step 4 checks
   the upload list with the CLI itself.
 - `public/` makes the build serve only `public/`. Its one file is `README.md`, a name Vercel's
   static builder never publishes, so no file is served at all.
 
 The function is also reachable at its own path, `/api/messages`. There `handle` answers 404,
 because the path is not `/v1/messages`. `relay-check` requires a 404 for `/README.md`,
-`/src/relay.ts`, `/test/serve-local.ts`, `/public/README.md`, `/vercel.json` and `/api/messages`.
+`/src/relay.ts`, `/test/serve-local.ts`, `/public/README.md`, `/vercel.json`, `/package.json`,
+`/tsconfig.json` and `/api/messages`.
+
+## Build
+
+Vercel's Node builder compiles `api/messages.ts` and the `src/` files it imports to `.js`. The
+sources import each other as `'../src/limiter.ts'`, the form Node's type stripping runs in the
+tests. The builder does not rewrite those specifiers on its own, so the first deploy crashed at
+load with `Cannot find module '../src/limiter.ts'` and answered every request with 500
+`FUNCTION_INVOCATION_FAILED`. Two uploaded files fix that:
+
+- `package.json` sets `"type": "module"`, so the builder emits ES modules.
+- `tsconfig.json` sets `rewriteRelativeImportExtensions`, so the emitted imports name
+  `'../src/limiter.js'`. Without an uploaded `tsconfig.json` the builder uses its own defaults.
+
+`pnpm typecheck` still checks the relay with the root `tsconfig.json`, and the tests still import
+the `.ts` sources.
+`scripts/relay-build-check.ts` checks the build:
+
+```sh
+node scripts/relay-build-check.ts
+```
+
+It copies the upload list to a temp directory outside the repo, runs `vercel build --prod` there
+(with a stub `.vercel/project.json`, so it needs no link, token or env pull, and uses the CLI's
+built-in TypeScript, as the remote build does), and imports the built handler with Node. With
+`fetch` stubbed, the handler must answer OPTIONS from the Pages origin with 204, a foreign Origin
+with 403, another model with 400, and a valid POST with 200 through the stub. No emitted import
+may still end in `.ts`. Exit 0 means the function loads and answers. Exit 1 means the build
+failed or a probe did: do not deploy. Exit 2 means the check could not run (no `vercel` on `PATH`;
+pass `--vercel-bin <path>`). `--tsc` runs the same probes on an emit by the repo's TypeScript
+instead; `test/build.test.ts` runs that form in CI, which has no Vercel CLI.
 
 ## Rate limit
 
@@ -162,7 +196,7 @@ from the Vercel CLI 64.2.0 source.
 The relay is deployed from the CLI only and never has a Git connection, so no push can deploy over
 it. `vercel link --yes` on a project that does not exist yet creates the project and connects the
 repository's `origin` remote without asking. So the project is created first, and the link only
-writes `apps/relay/.vercel/`.
+writes local files (`apps/relay/.vercel/` and `apps/relay/.env.local`, see step 2).
 
 1. Create the project. `vercel project create` sends only the name, and an existing project
    counts as success:
@@ -177,9 +211,12 @@ writes `apps/relay/.vercel/`.
    vercel link --yes --project clinical-agent-env-relay --cwd apps/relay
    ```
 
-   The link writes `apps/relay/.vercel/`, which git ignores, and adds a `.vercel` line to
-   `apps/relay/.gitignore` only if the line is missing. The committed file already has it, so
-   `git status` stays clean.
+   The link writes `apps/relay/.vercel/` and `apps/relay/.env.local`, and adds a `.vercel` line
+   and a `.env*` line to `apps/relay/.gitignore` only if each is missing. The committed file
+   already has both, so git ignores both and `git status` stays clean. `.env.local` holds a
+   `VERCEL_OIDC_TOKEN` for the project, not an Anthropic key. It is never uploaded: `.vercelignore`
+   keeps only the files step 4 lists. Delete it after the deploy (`rm apps/relay/.env.local`);
+   nothing in these steps reads it.
 
 3. Check that no Git repository is connected. `vercel project inspect` does not print the Git
    connection, so read the project's `link` field instead. The command exits 1 when a repository
@@ -207,10 +244,18 @@ writes `apps/relay/.vercel/`.
    ```
 
    It runs `buildFileTree`, from the `@vercel/client` bundled in the CLI that `vercel --version`
-   names, on `apps/relay`. It must list exactly `api/messages.ts`, `public/README.md`,
-   `src/limiter.ts`, `src/relay.ts`, `src/upstream.ts` and `vercel.json`, and exit 0. Exit 1 means
-   the upload differs: do not deploy. Exit 2 means it could not find the CLI's walker; pass the
-   installed `vercel` package directory with `--vercel <dir>`.
+   names, on `apps/relay`. It must list exactly `api/messages.ts`, `package.json`,
+   `public/README.md`, `src/limiter.ts`, `src/relay.ts`, `src/upstream.ts`, `tsconfig.json` and
+   `vercel.json`, and exit 0. Exit 1 means the upload differs: do not deploy. Exit 2 means it
+   could not find the CLI's walker; pass the installed `vercel` package directory with
+   `--vercel <dir>`.
+
+   Then build that upload list with the CLI's builder and run the built function (see Build). It
+   must exit 0:
+
+   ```sh
+   node scripts/relay-build-check.ts
+   ```
 
 5. Deploy to production from the CLI:
 
@@ -247,7 +292,9 @@ Check these on the first deploy. The tests cannot check them without Vercel:
 
 - After the rewrite, `handle` must see the path `/v1/messages`, not `/api/messages`. If it sees
   `/api/messages`, every relay-check request answers 404.
-- Vercel's Node builder must resolve the `.ts` import specifiers in `api/messages.ts` and `src/`.
+- The deployed function must load. `relay-build-check` (step 4) runs a local build of the same
+  files, but the remote build can use another CLI version: any 500 `FUNCTION_INVOCATION_FAILED`
+  in relay-check means it did not load.
 - A client disconnect must abort the request's signal (`supportsCancellation` in `vercel.json`).
 
 ## Teardown
