@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:renal-dose-review:0",
   "task_id": "renal-dose-review",
-  "task_version": "38d32189c3868ea34e36eed2032db08a46b3d1e3acb8944996f44490c2ac3993",
+  "task_version": "5b1b393087d569ce35a61b6d4b04679b8c6c881503c3561ae93243901f45eb86",
   "env_version": "f74818df8ab2b6109bdad7b1219898a6c755f28cd3d4e505c848e8a779de79e8",
-  "grader_task_version": "be493e2b43c4fec6d93649db10c9f10fff6d13afcb7d70382a5212e5eb008592",
+  "grader_task_version": "08b1d5f4a52c3f2938dee46fe7f679a0eef71207e92edb4d4121c92e254cdf54",
   "fixture_hash": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
   "state_hash": {
     "initial": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
@@ -45,7 +45,7 @@
   "env_git_sha": null,
   "ended": "2026-10-23T14:09:00.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "11",
+  "grader_version": "10",
   "outcome": "PASS",
   "valid": true,
   "fault": null,
@@ -95,10 +95,15 @@
         "active": [
           "MedicationRequest/mr-t1-metformin"
         ],
-        "mg_per_day": 2000,
-        "range": {
-          "min": 2000,
-          "max": 2000
+        "was": {
+          "product": "http://www.nlm.nih.gov/research/umls/rxnorm|861004",
+          "mg_per_dose": 1000,
+          "per_day": 2
+        },
+        "is": {
+          "product": "http://www.nlm.nih.gov/research/umls/rxnorm|861004",
+          "mg_per_dose": 1000,
+          "per_day": 2
         }
       },
       "ids": [
@@ -120,7 +125,10 @@
         "range": {
           "min": 400,
           "max": 1400
-        }
+        },
+        "per_day": 2,
+        "want_per_day": 2,
+        "scheduled": true
       },
       "ids": [
         "MedicationRequest/mr-t0002"
@@ -160,6 +168,25 @@
         "late": []
       },
       "ids": []
+    },
+    {
+      "id": "note_exists",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "notes": [
+          "DocumentReference/doc-t0003"
+        ],
+        "progress_notes": [
+          "DocumentReference/doc-t0003"
+        ]
+      },
+      "ids": [
+        "DocumentReference/doc-t0003"
+      ]
     },
     {
       "id": "note_states_crcl",

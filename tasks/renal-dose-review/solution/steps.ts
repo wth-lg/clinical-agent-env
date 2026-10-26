@@ -8,6 +8,7 @@ export const RX = {
   apixaban2_5: '1364435',
   apixaban5: '1364445',
   metformin500: '861007',
+  metforminEr500: '860975',
   gabapentin100: '310430',
   gabapentin300: '310431',
   gabapentin400: '310432',

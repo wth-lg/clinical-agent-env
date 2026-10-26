@@ -59,10 +59,11 @@ describe('renal-dose-review mutants', () => {
     expect(text).toMatch(/mutant eie_scr_most_recent .* lost \[[^\]]*note_cites_inputs[^\]]*\] .* ok/);
     expect(code).toBe(0);
   });
-  // pr-review-loses-1 F4: an alternative that drops a rubric point says which.
-  it('alternative gabapentin_200_tid loses exactly gabapentin_twice_daily', async () => {
+  // pr-review-loses-1 F4: a case that drops a rubric point says which. gabapentin_200_tid was an
+  // alternative until P17j JG4-T1 made twice daily part of gabapentin_dose (RBC-PHARM-07 §4).
+  it('mutant gabapentin_200_tid fails gabapentin_dose and loses exactly gabapentin_twice_daily', async () => {
     const { code, text } = await matrix({}, { ...ONE, cases: ['gabapentin_200_tid'] });
-    expect(text).toMatch(/alternative gabapentin_200_tid: PASS .* lost \[gabapentin_twice_daily\] declared \[gabapentin_twice_daily\]/);
+    expect(text).toMatch(/mutant gabapentin_200_tid \[trap gabapentin_frequency\]: FAIL failed \[gabapentin_dose\] declared \[gabapentin_dose\], .*lost \[gabapentin_twice_daily\] declared \[gabapentin_twice_daily\] ok/);
     expect(code).toBe(0);
   });
 });

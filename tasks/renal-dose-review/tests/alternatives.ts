@@ -1,6 +1,6 @@
 // Other correct solutions of T1: each must PASS. They vary what a careful clinician might vary
 // (how the apixaban order is replaced, which product and unit the dose is written in, which
-// gabapentin dose in the band, extra reads, a no-op metformin modify, how the note names the
+// twice-daily gabapentin dose in the band, extra reads, a no-op metformin modify, how the note names the
 // entered-in-error result), so the grader is shown not to depend on the oracle's exact path. An
 // alternative that gives up a rubric point declares it in loses; the rest score 1.0.
 import type { Alternative } from '../../../packages/grader/matrix/types.ts';
@@ -20,17 +20,6 @@ export const alternatives: Alternative[] = [
       { calls: [stop('mr-t1-apixaban', `${ONE}; replaced by a 5 mg order`), order(RX.apixaban5, 5, 'BID', ONE), gabapentinBid] },
       { calls: [note()] },
       { calls: [finish(DONE)] },
-    ],
-  },
-  {
-    id: 'gabapentin_200_tid',
-    why: 'Keeps gabapentin three times daily at 200 mg (600 mg/day, inside the band): a valid dose that misses the twice-daily rubric point.',
-    loses: ['gabapentin_twice_daily'],
-    script: [
-      ...reads,
-      { calls: [apixabanUp, modify('mr-t1-gabapentin', { value: 200, unit: 'mg', frequency: 'TID' }, 'CrCl 43 mL/min: 400-1400 mg/day', RX.gabapentin100)] },
-      { calls: [note({ gabapentin: 'Gabapentin (§4): CrCl 43.2 mL/min by Cockcroft-Gault with actual weight, 30 to 59 band: 400 to 1400 mg per day. Reduced to 200 mg three times daily (600 mg/day).' })] },
-      { calls: [finish('Reviewed Harold Vance under RBC-PHARM-07: apixaban back to 5 mg twice daily, metformin unchanged, gabapentin 200 mg three times daily; note written.')] },
     ],
   },
   {
