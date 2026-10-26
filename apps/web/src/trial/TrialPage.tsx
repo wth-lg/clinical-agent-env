@@ -249,7 +249,9 @@ function Reason({ reason, muted }: { reason: string; muted: boolean }) {
 // The tab strip and its panels (WAI-ARIA tabs: arrow keys, Home and End move between tabs).
 function Tabs({ tab, children }: { tab: TabId; children: Record<TabId, React.ReactNode> }) {
   const refs = useRef<Record<string, HTMLButtonElement | null>>({});
+  // Only a real change navigates, so a click on the selected tab adds no history entry.
   const go = (id: TabId, focus = false) => {
+    if (id === tab) return;
     navigate({ tab: id });
     if (focus) refs.current[id]?.focus();
   };
