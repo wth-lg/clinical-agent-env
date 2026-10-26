@@ -18,7 +18,7 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
     why: 'Reads the contrast reaction together with the shellfish and povidone-iodine allergies as a reason to avoid iodine altogether: books a CT without contrast in the slot, no premedication and no creatinine.',
     fails: ['ct_order', 'prednisone_schedule', 'diphenhydramine_dose', 'creatinine_before_scan', 'no_substitution'],
     loses: ['message_dose_times', 'message_driver', 'note_distinguishes_allergies', 'ct_cites_allergy_and_note', 'shellfish_as_risk_factor'],
-    attribution: 'reasoning',
+    attribution: 'over_action',
     script: [
       ...READS,
       { calls: [service({ code: CODE.ctPlain, supporting: [APPT, ALLERGY], reason: 'Iodine allergies (contrast, shellfish, povidone-iodine): CT without contrast instead' })] },
@@ -99,7 +99,7 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
     why: 'Uses the accelerated IV regimen meant for urgent studies: hydrocortisone 200 mg IV at 04:00 and 08:00 Monday instead of the oral prednisone RBC-RAD-07 §2 sets for a scheduled scan.',
     fails: ['prednisone_schedule', 'no_substitution'],
     loses: ['iv_steroid_regimen'],
-    attribution: 'output_gap',
+    attribution: 'over_action',
     script: [
       ...READS,
       { calls: orders },
