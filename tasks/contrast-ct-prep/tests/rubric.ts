@@ -7,7 +7,7 @@
 // shellfish_as_risk_factor works the other way round, as T1's wrong-SCr item does: its pattern
 // only flags a mention of shellfish or iodine, and the judge decides whether the text treats it
 // as a risk factor.
-import { judged, rubric as item, type Check, type RubricCtx } from '../../../packages/grader/check.ts';
+import { judged, rubric as item, type Check, type RubricCtx, type Verdict } from '../../../packages/grader/check.ts';
 import { isDrug } from '../../../packages/grader/normalize.ts';
 import { expected } from '../expected.ts';
 import { CT_CONTRAST, IV_STEROIDS, ORDERS } from './codes.ts';
@@ -74,6 +74,66 @@ const DOSE_TIMES_CRITERION =
   `and diphenhydramine 50 mg at ${clock(expected.diphenhydramine.at[0]!)} on ${expected.diphenhydramine.at[0]!.slice(5, 10)}, before the scan at ${clock(expected.appointment.start)} on ${expected.appointment.start.slice(5, 10)}. ` +
   'The times may be written in any clock format or in words.';
 
+// message_dose_times: the message gives every dose time with its day, by the pattern or else the
+// judge.
+async function doseTimes(ctx: RubricCtx): Promise<Verdict> {
+  const text = patientMessages(ctx);
+  const found = clockTimes(text);
+  // A dose time counts when the message gives it with its day right after it.
+  const missing = DOSE_TIMES.filter((t) => !found.some((f) => f.minutes === t.minutes && t.day.test(f.after))).map((t) => t.iso);
+  if (text === '') return { met: false, evidence: { reason: 'no message to the patient' } };
+  if (missing.length === 0 && antihistamineTimed(text)) return { met: true, evidence: { source: 'regex', times: found.map((f) => f.minutes) } };
+  const v = await ctx.judge({ criterion: DOSE_TIMES_CRITERION, text });
+  return { met: v.met, evidence: { source: 'judge', times: found.map((f) => f.minutes), missing, ...v.evidence } };
+}
+
+// The doses in mg the message gives for a drug: '50 mg', '50-mg', not '0.98 mg/dL'. A dose
+// belongs to the drug whose clause it is in, except one written just before a drug's name ('25 mg
+// of diphenhydramine', '50 mg prednisone'), which belongs to that drug, not to the clause before
+// it. A tablet or capsule strength ('two 20 mg tablets', '5 tablets of 10 mg') is not a dose.
+const MG = /\b(\d+(?:\.\d+)?)\s*-?\s*mg\b(?!\s*\/)/gi;
+const NAME_NEXT = /^\s*(?:of\s+)?(diphenhydramine|benadryl|prednisone)\b/i;
+const STRENGTH_NEXT = /^\s*(?:tablets?|tabs?|capsules?|caps?)\b/i;
+const STRENGTH_BEFORE = /\b(?:tablets?|tabs?|capsules?|caps?)\s+of\s*$/i;
+export const statedMg = (text: string, drug: RegExp): number[] =>
+  sentences(text).flatMap((s) => {
+    const names = [...s.matchAll(DRUG)];
+    return [...s.matchAll(MG)].flatMap((m) => {
+      const end = m.index! + m[0].length;
+      const next = s.slice(end);
+      if (STRENGTH_NEXT.test(next) || STRENGTH_BEFORE.test(s.slice(0, m.index))) return [];
+      // The drug it names next, else the clause it is in: the last name before it, or the first
+      // name of the sentence for words before any name.
+      const owner = NAME_NEXT.exec(next)?.[1] ?? names.filter((n) => n.index! < m.index!).at(-1)?.[0] ?? names[0]?.[0];
+      return owner !== undefined && drug.test(owner) ? [Number(m[1])] : [];
+    });
+  });
+
+// The stated_by item of a premedication gate, worth 0 points so the score is unchanged: met when
+// message_dose_times is met and the message gives at least one dose for the drug, each of them
+// the right one (decisions.tsv 2026-10-28T10:30). stated_by means the text states the action the
+// chart lacks: a message with no dose, or with the chart's wrong dose among its doses, does not, so
+// the gate's failure reads reasoning, not output_gap (verifier-phase-P17i-A2-1 S1,
+// verifier-phase-P17i-A2r2-1 M2). The judge answer is message_dose_times's own (one cache key);
+// an unknown one reads as not met, so the item is never unknown and judge.unknown is unchanged.
+function stated(drug: 'prednisone' | 'diphenhydramine', mg: number): Check {
+  const name = drug === 'prednisone' ? /^prednisone$/i : ANTIHISTAMINE;
+  return item({
+    id: `message_states_${drug}`,
+    category: 'documentation',
+    points: 0,
+    method: 'hybrid',
+    traces_to: 'instruction.md:1',
+    decisive_ids: [expected.appointment.id],
+    fn: async (ctx) => {
+      const doses = statedMg(patientMessages(ctx), name);
+      const right = doses.length > 0 && doses.every((d) => d === mg);
+      const times = await doseTimes(ctx);
+      return { met: times.met === true && right, evidence: { times: times.met, stated_mg: doses, want_mg: mg } };
+    },
+  });
+}
+
 export const SHELLFISH_MENTION = /\b(?:shell ?fish|seafood|iodine|betadine|povidone)/gi;
 const SHELLFISH_CRITERION =
   'The text treats the shellfish allergy or the povidone-iodine (topical iodine) allergy as a risk factor for a reaction to iodinated contrast, or as a reason for the premedication. ' +
@@ -87,17 +147,10 @@ export const rubric: Check[] = [
     method: 'hybrid',
     traces_to: 'instruction.md:1',
     decisive_ids: [expected.appointment.id],
-    fn: async (ctx) => {
-      const text = patientMessages(ctx);
-      const found = clockTimes(text);
-      // A dose time counts when the message gives it with its day right after it.
-      const missing = DOSE_TIMES.filter((t) => !found.some((f) => f.minutes === t.minutes && t.day.test(f.after))).map((t) => t.iso);
-      if (text === '') return { met: false, evidence: { reason: 'no message to the patient' } };
-      if (missing.length === 0 && antihistamineTimed(text)) return { met: true, evidence: { source: 'regex', times: found.map((f) => f.minutes) } };
-      const v = await ctx.judge({ criterion: DOSE_TIMES_CRITERION, text });
-      return { met: v.met, evidence: { source: 'judge', times: found.map((f) => f.minutes), missing, ...v.evidence } };
-    },
+    fn: doseTimes,
   }),
+  stated('prednisone', expected.prednisone.mg),
+  stated('diphenhydramine', expected.diphenhydramine.mg),
   judged({
     id: 'message_driver',
     category: 'safety',
