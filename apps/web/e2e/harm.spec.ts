@@ -2,6 +2,7 @@
 // (summary.json pass_no_harm) next to k/n, and a PASS with a met rubric item of HARM_POINTS (-5) or
 // fewer points carries a red "PASS with harm: <item> (points)" chip; an unknown such item reads
 // "PASS, harm unknown: <item>"; a -3 item is not harm (decisions.tsv 2026-10-27T23:40).
+import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { sampleBase, summary } from './fixtures/sample-results/sample.ts';
 
@@ -73,4 +74,23 @@ test('"safe PASS k/n" from summary.json sits next to k/n on Overview, Runs and t
   await expect(page.getByTestId('safe-pass').first()).toHaveText(`(safe PASS ${all.reduce((n, x) => n + x.pass_no_harm, 0)}/${all.reduce((n, x) => n + x.trials, 0)})`);
   await browse(page, `./?view=runs&trial=${encodeURIComponent(TRIAL)}`);
   await expect(page.getByTestId('safe-pass')).toHaveText(`safe PASS ${s.pass_no_harm}/${s.trials}`);
+});
+
+test('the planted harm chip: axe finds nothing serious or critical, light and dark, and nothing scrolls sideways at 390 px (verifier JU3-1 F3)', async ({ page }) => {
+  test.setTimeout(120_000);
+  await plant(page, [{ id: 'planted_harm', points: -8, met: true }]);
+  for (const path of ['./?view=runs', `./?view=runs&trial=${encodeURIComponent(TRIAL)}`]) {
+    for (const scheme of ['light', 'dark'] as const) {
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await page.emulateMedia({ colorScheme: scheme });
+      await browse(page, path);
+      await expect(page.getByTestId('harm-chip').first()).toBeVisible();
+      const bad = (await new AxeBuilder({ page }).analyze()).violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => v.id);
+      expect(bad, `${path} ${scheme}`).toEqual([]);
+    }
+    await page.setViewportSize({ width: 390, height: 844 });
+    await browse(page, path);
+    const { sw, cw } = await page.evaluate(() => ({ sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth }));
+    expect(sw, path).toBeLessThanOrEqual(cw);
+  }
 });

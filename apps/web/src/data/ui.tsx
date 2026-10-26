@@ -113,14 +113,16 @@ export function OutcomeChip({ outcome, fault }: { outcome: string; fault?: Fault
 // A PASS with harm, in the danger colour, beside its outcome chip (pre-audit B2b, P17j JU3):
 // "PASS with harm: <item> (<points>)" for a met harm item, "PASS, harm unknown: <item>" for one the
 // judge could not answer; nothing on a PASS without harm.
+// An item by its id, with its question when the page knows it (verifier JU3-1 F5).
+const named = (x: HarmItem) => (x.text ? `${x.id}, ${x.text.length > 90 ? `${x.text.slice(0, 87).trimEnd()}…` : x.text}` : x.id);
 export function HarmChip({ items }: { items: readonly HarmItem[] }) {
   const met = items.filter((x) => !x.unknown);
   const unknown = items.filter((x) => x.unknown);
   const chip = 'inline-flex items-center rounded-sm border border-danger px-1.5 py-0.5 text-xs font-medium text-danger break-words';
   return (
     <>
-      {met.length > 0 && <span data-testid="harm-chip" data-harm="met" className={chip}>PASS with harm: {met.map((x) => `${x.id} (${x.points})`).join(', ')}</span>}
-      {unknown.length > 0 && <span data-testid="harm-chip" data-harm="unknown" className={chip}>PASS, harm unknown: {unknown.map((x) => x.id).join(', ')}</span>}
+      {met.length > 0 && <span data-testid="harm-chip" data-harm="met" className={chip}>PASS with harm: {met.map((x) => `${named(x)} (${x.points})`).join(', ')}</span>}
+      {unknown.length > 0 && <span data-testid="harm-chip" data-harm="unknown" className={chip}>PASS, harm unknown: {unknown.map(named).join(', ')}</span>}
     </>
   );
 }

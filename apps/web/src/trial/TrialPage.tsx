@@ -19,7 +19,7 @@ import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type Ref } fr
 import { MET_TEXT, type Explanation } from '../../../../packages/core/explain.ts';
 import type { TrialEvent } from '../../../../packages/core/events.ts';
 import { fetchEvents, fullExplanation, useResults, type RunData, type Trial } from '../data/results.ts';
-import { harmItems, safePass } from '../data/harm.ts';
+import { harmItems, safePass, type HarmItem } from '../data/harm.ts';
 import { FaultLabel, GlossaryLink, HarmChip, HashText, Notice, OutcomeChip } from '../data/ui.tsx';
 import { tabTarget } from '../data/tabs.ts';
 import { hrefWith, navigate, onNav, useParams } from '../data/url.ts';
@@ -185,7 +185,7 @@ function Header({ t, e, rows, onStep }: { t: Trial; e: Explanation; rows: readon
     <section aria-label="Why this trial ended as it did" data-testid="trial-header" className={`min-w-0 rounded-sm border border-line bg-surface p-4 ${nonPass ? 'border-l-2 border-l-danger' : ''}`}>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <OutcomeChip outcome={e.outcome} fault={e.fault} />
-        <HarmChip items={harmItems(t.record)} />
+        <HarmChip items={useHarmTexts(t.task, harmItems(t.record))} />
         {nonPass && <FaultLabel e={e} />}
         <span className="ml-auto text-xs text-ink-muted" title="Agent and judge cost">${(t.record.cost_usd + (t.record.judge_cost_usd ?? 0)).toFixed(2)}</span>
       </div>
@@ -241,6 +241,30 @@ function Header({ t, e, rows, onStep }: { t: Trial; e: Explanation; rows: readon
       </dl>
     </section>
   );
+}
+
+// The harm items with their rubric questions, once the task's checks load (verifier JU3-1 F5);
+// the ids alone until then, and for a code item, which has no question.
+function useHarmTexts(task: string, items: HarmItem[]): HarmItem[] {
+  const [texts, setTexts] = useState<Record<string, string>>({});
+  const ids = items.map((x) => x.id).join(',');
+  useEffect(() => {
+    if (ids === '') return;
+    let live = true;
+    void Promise.all([import('../tasks/matrix-task.ts'), import('../tasks/check-text.ts')]).then(async ([{ taskChecks }, { rubricQuestion }]) => {
+      const checks = await taskChecks(task).catch(() => []);
+      const found: Record<string, string> = {};
+      for (const c of checks) if (ids.split(',').includes(c.id)) {
+        const q = await rubricQuestion(c);
+        if (q) found[c.id] = q;
+      }
+      if (live) setTexts(found);
+    });
+    return () => {
+      live = false;
+    };
+  }, [task, ids]);
+  return items.map((x) => (texts[x.id] ? { ...x, text: texts[x.id]! } : x));
 }
 
 // On a PASS the M1-M5 row is in plain words, in three states (outcomes.ts: one pending is
