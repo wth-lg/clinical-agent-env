@@ -13,9 +13,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # pnpm test takes 10-17 minutes of this job on the 4 vCPU runner and grows with every PR;
+  # 20 minutes cancelled a run with every test passing.
   check:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v5
         with:
