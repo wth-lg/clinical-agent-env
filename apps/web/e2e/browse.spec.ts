@@ -61,13 +61,13 @@ test.describe('grader validation in the tab, no key', () => {
     test(`${id}: oracle PASS 1.0, matrix verdicts equal the CLI's, replay verdicts equal the CLI's`, async ({ page }) => {
       await browse(page, './?view=tasks');
       const v = page.locator(`[data-testid="validation"][data-task="${id}"]`);
-      await v.getByRole('button', { name: 'Run oracle' }).click();
+      await v.getByRole('button', { name: 'Run reference solution' }).click();
       const oracle = v.getByTestId('oracle-result');
       await expect(oracle).toHaveAttribute('data-outcome', 'PASS', { timeout: 120_000 });
       await expect(oracle).toHaveAttribute('data-score', '1');
-      await expect(oracle).toContainText('PASS score 1.0');
+      await expect(oracle).toContainText('oracle PASS 1.0');
 
-      await v.getByRole('button', { name: 'Run matrix' }).click();
+      await v.getByRole('button', { name: 'Check the grader' }).click();
       const matrix = v.getByTestId('matrix-result');
       await expect(matrix).toBeVisible({ timeout: 540_000 });
       const cli = await cliMatrix(id);

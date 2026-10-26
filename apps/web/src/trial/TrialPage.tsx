@@ -222,8 +222,9 @@ function Header({ t, e, rows, onStep }: { t: Trial; e: Explanation; rows: readon
             <dd><StepLink n={failedCall.step} onStep={onStep} testId="failed-call-link">Step {failedCall.step}</StepLink>: the {failedCall.name} call that failed with an internal error</dd>
           </>
         )}
-        <dt>Criteria</dt>
+        <dt>{e.outcome === 'PASS' ? 'Checks' : 'Criteria'}</dt>
         <dd>
+          {e.outcome === 'PASS' ? <Confirmation e={e} /> : (
           <ul data-testid="header-criteria" className="flex flex-wrap gap-x-3 gap-y-0.5">
             {e.criteria.map((c) => (
               <li key={c.id} data-id={c.id} data-met={String(c.met)} title={criterionText(c.id)}>
@@ -232,9 +233,31 @@ function Header({ t, e, rows, onStep }: { t: Trial; e: Explanation; rows: readon
               </li>
             ))}
           </ul>
+          )}
         </dd>
       </dl>
     </section>
+  );
+}
+
+// On a PASS the M1-M5 row is one word, "Confirmed", or "Checks pending" with what the pending
+// checks still need, in plain words; the codes and their evidence are in the Attribution tab
+// (pre-audit S9, P17j JU1). A check with no phrase here says its evidence.
+const STILL_NEEDS: Readonly<Record<string, string>> = {
+  M1: 'a record of what the model was shown',
+  M2: 'the tool results of the trial',
+  M3: 'a start and end state check against the run manifest',
+  M4: 'a grader check of this task version',
+  M5: 'a human audit',
+};
+const andList = (xs: readonly string[]) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs.at(-1)}`);
+function Confirmation({ e }: { e: Explanation }) {
+  const pending = e.criteria.filter((c) => c.met !== true && c.met !== 'n/a');
+  const toAttribution = <a href={hrefWith({ tab: 'attribution' })} onClick={onNav({ tab: 'attribution' })} className={LINK}>See Attribution</a>;
+  return (
+    <p data-testid="header-confirmation" data-pending={pending.length}>
+      {pending.length === 0 ? <>Confirmed. {toAttribution}</> : <>Checks pending: this trial still needs {andList(pending.map((c) => STILL_NEEDS[c.id] ?? c.evidence))}. {toAttribution}</>}
+    </p>
   );
 }
 

@@ -33,7 +33,7 @@ export function Environment({ headingRef }: { headingRef?: Ref<HTMLHeadingElemen
         </ul>
         <VerifyReset />
       </Card>
-      <Card title={`Tools (${TOOLS.length})`}>
+      <Card title={`${TOOLS.length} tools`}>
         <ul className="divide-y divide-line" data-testid="tool-catalog">
           {TOOLS.map((t) => (
             <li key={t.name} data-testid="tool" data-tool={t.name} className="py-2">
@@ -71,7 +71,7 @@ function VerifyReset() {
       {state.kind === 'error' && <span role="alert">Verify reset did not finish: {state.message}</span>}
       {state.kind === 'done' && (
         <span className="min-w-0 break-words" data-testid="reset-result" data-hash={state.hash} data-equal={String(state.hash === MANIFEST.world.state_hash)}>
-          Fresh store hash <Hash value={state.hash} /> {state.hash === MANIFEST.world.state_hash ? 'equals' : 'does NOT equal'} the manifest's ({Math.round(state.ms)} ms).
+          Fresh store hash <Hash value={state.hash} /> {state.hash === MANIFEST.world.state_hash ? 'matches the manifest' : 'does NOT match the manifest'} ({Math.round(state.ms)} ms).
         </span>
       )}
     </div>

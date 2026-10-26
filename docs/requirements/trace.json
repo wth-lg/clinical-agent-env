@@ -1701,7 +1701,7 @@
       "ui_required": true,
       "ui": {
         "route": "https://wth-lg.github.io/clinical-agent-env/",
-        "action": "Open the hosted URL: the app loads from GitHub Pages and the surface chip reads Browser-direct.",
+        "action": "Open the hosted URL: the app loads from GitHub Pages and the surface chip reads Hosted.",
         "surface": "hosted"
       },
       "evidence": [
@@ -1711,7 +1711,7 @@
       "expect": {
         "ax_text": {
           "file": "verifier-phase-P25c-1/U7-hosted-overview.ax.txt",
-          "text": "Browser-direct"
+          "text": "Hosted"
         }
       },
       "phase": "P25"

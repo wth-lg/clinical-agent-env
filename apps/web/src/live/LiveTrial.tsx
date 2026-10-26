@@ -14,6 +14,7 @@ import { explainTrial, type ExplainRecord, NOT_AUDITED_MARKER } from '../../../.
 import { capSum } from '../../../../packages/core/ledger.ts';
 import { REFUSAL_TEXT } from '../../../../packages/core/runner-api.ts';
 import { useResults } from '../data/results.ts';
+import { MODEL } from '../adapters/ledger-browser.ts';
 import { useTaskList } from '../data/tasks.ts';
 import { Card, FaultLabel, OutcomeChip, Page } from '../data/ui.tsx';
 import { relayLine, RELAY_TRIAL_TEXT, trialRelayReason } from '../keygate/failure.ts';
@@ -137,7 +138,7 @@ export function LiveTrial({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
   }
 
   return (
-    <Page title="Live trial" headingRef={headingRef} lead={t.kind === 'local-runner' ? 'Trials run in the local runner on this computer and stream here.' : 'Trials run in this tab, in a Worker, and are graded here.'}>
+    <Page title="Live trial" headingRef={headingRef} lead={t.kind === 'local-runner' ? 'Trials run in the local runner on this computer and stream here.' : 'Trials run and are graded in this tab.'}>
       <Card title="Run a task">
         <div className="flex flex-wrap items-end gap-3" data-testid="launcher">
           <label className="flex min-w-0 flex-col gap-1 text-xs text-ink-muted">
@@ -146,6 +147,10 @@ export function LiveTrial({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
               {ids.map((id) => <option key={id} value={id}>{id}</option>)}
             </select>
           </label>
+          <span className="flex flex-col gap-1 text-xs text-ink-muted" data-testid="launcher-model">
+            Model
+            <span className="flex h-8 items-center text-sm text-ink">{MODEL}, effort high</span>
+          </span>
           {/* The amount sits beside its button, not in it, so the button's name is its visible
               text (axe label-content-name-mismatch); aria-describedby still reads it out. */}
           {RUN_SIZES.map((n) => (

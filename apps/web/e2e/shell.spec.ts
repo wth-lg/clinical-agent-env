@@ -197,20 +197,20 @@ test.describe('surface detection', () => {
     const res = await health;
     expect(res.status()).toBe(200);
     expect(JSON.parse(await res.text())).toEqual(SAMPLES.staticHealth);
-    await expect(chip(page)).toHaveText('Browser-direct');
+    await expect(chip(page)).toHaveText('Hosted');
     expect(errors).toEqual([]);
   });
 
   test('a 404 health names browser-direct', async ({ page }) => {
     await mockBrowserDirect(page);
     await page.goto('./');
-    await expect(chip(page)).toHaveText('Browser-direct');
+    await expect(chip(page)).toHaveText('Hosted');
   });
 
   test('a 200 health from another app names browser-direct', async ({ page }) => {
     await page.route((url) => isPath(url, HEALTH_PATH), (route) => json(route, 200, { ...SAMPLES.health, app: 'vite' }));
     await page.goto('./');
-    await expect(chip(page)).toHaveText('Browser-direct');
+    await expect(chip(page)).toHaveText('Hosted');
   });
 
   test('a health that does not answer within 1.5 s names browser-direct', async ({ page }) => {
@@ -222,7 +222,7 @@ test.describe('surface detection', () => {
     });
     const t0 = Date.now();
     await page.goto('./');
-    await expect(chip(page)).toHaveText('Browser-direct', { timeout: 4000 });
+    await expect(chip(page)).toHaveText('Hosted', { timeout: 4000 });
     expect(Date.now() - t0).toBeLessThan(4000);
     release();
   });
@@ -303,7 +303,7 @@ test.describe('key gate on browser-direct', () => {
     const calls = await mockApi(page, { status: 200 });
     const key = sentinelKey();
     await page.goto('./');
-    await expect(chip(page)).toHaveText('Browser-direct');
+    await expect(chip(page)).toHaveText('Hosted');
     await keyField(page).fill(key);
     await page.getByRole('button', { name: 'Validate' }).click();
     await expect(page.getByTestId('key-chip')).toContainText(key.slice(-4));
@@ -372,7 +372,7 @@ test.describe('start block', () => {
     const failed = failedRequests(page);
     await mockBrowserDirect(page);
     await page.goto('./');
-    await expect(chip(page)).toHaveText('Browser-direct');
+    await expect(chip(page)).toHaveText('Hosted');
     await expect(keyField(page)).toHaveValue('');
     await expect(page.getByRole('alert')).toHaveCount(0);
     await expect(panel(page)).toBeVisible();
@@ -443,7 +443,7 @@ test.describe('shell', () => {
     const rail = page.getByRole('navigation', { name: 'Views' });
     for (const name of ['Overview', 'Tasks', 'Runs', 'Findings', 'Environment']) await expect(rail.getByRole('link', { name })).toBeVisible();
     await expect(page.getByTestId('key-chip')).toHaveText('No key');
-    await expect(chip(page)).toHaveText('Browser-direct');
+    await expect(chip(page)).toHaveText('Hosted');
     await rail.getByRole('link', { name: 'Tasks' }).click();
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Tasks');
     expect(new URL(page.url()).searchParams.get('view')).toBe('tasks');
@@ -558,7 +558,7 @@ test.describe('the runner\'s own page (token meta present)', () => {
     await page.route((url) => isPath(url, HEALTH_PATH), (route) => json(route, 200, { app: 'clinenv-runner', api_version: 1, key_set: false }));
     await page.goto('./');
     await expect(page.getByRole('heading', { name: /runner not responding/i })).toBeVisible();
-    await expect(page.getByText('Browser-direct')).toHaveCount(0);
+    await expect(page.getByText('Hosted', { exact: true })).toHaveCount(0);
   });
 
   test('POST api/key does not follow a redirect', async ({ page }) => {

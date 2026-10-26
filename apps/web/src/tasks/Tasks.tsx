@@ -8,6 +8,7 @@ import { CheckCircle2, ChevronDown, ChevronRight, CircleAlert, Loader2 } from 'l
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode, type Ref } from 'react';
 import type { Task } from '../../../../packages/core/tasks.ts';
 import type { Check } from '../../../../packages/grader/check.ts';
+import { MODEL } from '../adapters/ledger-browser.ts';
 import { useKeyStatus } from '../keygate/key.ts';
 import type { Script } from '../../../../packages/grader/matrix/types.ts';
 import { checkTextOf, loadResults } from '../data/results.ts';
@@ -75,7 +76,14 @@ function CheckRow({ task, check: c }: { task: Task; check: Check }) {
   );
 }
 
-function ReferenceSolution({ id }: { id: string }) {
+// The reference solution's steps, and its oracle badge: the first time the tab shows, the oracle
+// runs in this tab with no key (the card's run state, so Grader validation shows the same result)
+// and the badge reads "oracle PASS 1.0" (trace N8).
+function ReferenceSolution({ id, runs, active }: { id: string; runs: ReturnType<typeof useValidationRuns>; active: boolean }) {
+  const { oracle: run, runOracle } = runs;
+  useEffect(() => {
+    if (active && run.state === 'idle') runOracle(() => validate({ op: 'oracle', task: id }));
+  }, [active, run.state, runOracle, id]);
   const [oracle, setOracle] = useState<Script | null | undefined>(undefined);
   const [steps, setSteps] = useState<import('./check-text.ts').SolutionStep[]>([]);
   useEffect(() => {
@@ -88,7 +96,12 @@ function ReferenceSolution({ id }: { id: string }) {
   return (
     <section>
       <h3 className="font-medium">Reference solution</h3>
-      <p className="mt-1 text-xs text-ink-muted">The tool calls of the oracle, tasks/{id}/solution/solve.ts, in order. Run oracle on the Grader validation tab grades it in this tab; it must PASS with score 1.0.</p>
+      <p className="mt-1 text-xs text-ink-muted">The tool calls of the oracle, tasks/{id}/solution/solve.ts, in order. This tab grades it with no key; it must PASS with score 1.0.</p>
+      <p className="mt-1" data-testid="oracle-badge" data-state={run.state}>
+        {run.state === 'done' ? <span className="font-medium">oracle {run.value.outcome ?? 'none'} {run.value.score === null ? 'n/a' : run.value.score.toFixed(1)}</span>
+          : run.state === 'error' ? <span role="alert">The reference solution was not graded: {run.message}</span>
+            : <span className="text-ink-muted" role="status">Grading the reference solution in this tab…</span>}
+      </p>
       {oracle === undefined && <p className="mt-1 text-ink-muted">Loading…</p>}
       {oracle === null && <p className="mt-1 text-ink-muted">This task has no reference solution.</p>}
       {steps.length > 0 && (
@@ -150,7 +163,10 @@ function TaskCard({ t, tab }: { t: Loaded; tab: TaskTab | null }) {
                   <h3 className="font-medium">Tools</h3>
                   {task.tools == null ? <p className="mt-1 text-ink-muted" data-testid="task-tools">Every tool of the environment (see Environment).</p> : <p className="mt-1 flex flex-wrap gap-1.5" data-testid="task-tools">{task.tools.map((n) => <code key={n} className="rounded-sm border border-line px-1 text-xs">{n}</code>)}</p>}
                 </section>
-                <div className="flex"><RunTrial id={task.id} /></div>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <span className="text-xs text-ink-muted" data-testid="task-model">Runs {MODEL} at effort high.</span>
+                  <RunTrial id={task.id} />
+                </div>
               </div>
             ),
             policy: task.policies.length === 0 ? <p className="text-ink-muted" data-testid="task-policy">This task names no policy.</p> : (
@@ -177,7 +193,7 @@ function TaskCard({ t, tab }: { t: Loaded; tab: TaskTab | null }) {
                 </ul>
               </section>
             ),
-            'reference-solution': <ReferenceSolution id={task.id} />,
+            'reference-solution': <ReferenceSolution id={task.id} runs={runs} active={tab === 'reference-solution'} />,
             'grader-validation': <Validation id={task.id} runs={runs} />,
           }}
         </TaskTabs>
@@ -282,18 +298,18 @@ function Validation({ id, runs, closed = false }: { id: string; runs: ReturnType
     <div className={closed ? 'border-t border-line px-4 py-3' : ''} data-testid="validation" data-task={id}>
       <div className="flex flex-wrap items-center gap-2">
         {closed && <span className="mr-1 text-xs font-medium text-ink-muted">Grader validation</span>}
-        <button type="button" className={button} disabled={busy} onClick={() => runOracle(() => validate({ op: 'oracle', task: id }))}>Run oracle</button>
-        <button type="button" className={button} disabled={busy} onClick={() => runMatrix(() => validate({ op: 'matrix', task: id }))}>Run matrix</button>
+        <button type="button" className={button} disabled={busy} onClick={() => runOracle(() => validate({ op: 'oracle', task: id }))}>Run reference solution</button>
+        <button type="button" className={button} disabled={busy} onClick={() => runMatrix(() => validate({ op: 'matrix', task: id }))}>Check the grader</button>
         <button type="button" className={button} disabled={busy} onClick={() => runReplay(replayTrials)}>Replay published trials</button>
         {closed && <RunTrial id={id} />}
       </div>
-      <Result r={oracle} what="oracle" render={(o) => (
+      <Result r={oracle} what="reference solution" render={(o) => (
         <p data-testid="oracle-result" data-outcome={o.outcome ?? 'none'} data-score={o.score ?? ''}>
-          Oracle: <span className="font-medium">{o.outcome ?? 'none'}</span> score {o.score === null ? 'n/a' : o.score.toFixed(1)}, {o.unknown} judge items unknown{o.misses.length ? `, judge cache misses ${o.misses.join(', ')}` : ''}
+          Reference solution: <span className="font-medium">oracle {o.outcome ?? 'none'} {o.score === null ? 'n/a' : o.score.toFixed(1)}</span>, {o.unknown} judge items unknown{o.misses.length ? `, judge cache misses ${o.misses.join(', ')}` : ''}
           {o.problems.length > 0 && <span className="block text-ink-muted">{o.problems.join('; ')}</span>}
         </p>
       )} />
-      <Result r={matrix} what="matrix" render={(m) => (
+      <Result r={matrix} what="grader check" render={(m) => (
         <div data-testid="matrix-result" data-pass={String(m.pass)}>
           <p>Grader validation <span className="font-medium">{m.pass ? 'PASS' : 'FAIL'}</span>, matrix: {m.probes.filter((p) => p.as_expected).length}/{m.probes.length} probe verdicts as expected. Fresh-process isolation and policy imports need Node and run in CI.</p>
           <div className="mt-1 overflow-x-auto"><table className="w-full text-left text-xs">

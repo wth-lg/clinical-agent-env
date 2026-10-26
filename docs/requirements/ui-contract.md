@@ -88,7 +88,7 @@ accessible name or text node, so they share one line of the snapshot.
 - `Overview`, `Tasks`, `Runs`, `Findings`, `Environment`: the rail labels. All five show on
   every screen of the shell.
 - `Add an API key`: the key gate heading, shown when no key is set and again after Forget key.
-- `Local runner` and `Browser-direct`: the surface chip on the local runner and on the hosted
+- `Local runner` and `Hosted`: the surface chip on the local runner and on the hosted
   site.
 
 ### P12c: prerequisites next to the one command
@@ -256,7 +256,7 @@ launcher (P15) shows the Run lines.
 
 ### P25: hosted site
 
-- `Browser-direct`: the surface chip on the hosted site (P13 renders it).
+- `Hosted`: the surface chip on the hosted site (P13 renders it; P17j JU1 renamed it from Browser-direct).
 - `pnpm start`: part of LOCAL_START_COMMAND, which the hosted key gate shows with its copy
   button in the local-run panel, in every key state and beside each relay error.
 
