@@ -41,6 +41,7 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
     why: 'Reads only coded data, never the notes, finds no screening for E6 and orders a FIT kit for a patient with no colon.',
     fails: extra,
     loses: ['table_pt_0021', 'contacted_pt_0021'],
+    attribution: 'over_action',
     script: [...reads().slice(0, -2), { calls: [...actions(), orderFit(PT.E6), outreach(PT.E6)] }, { calls: [finish(table({ E6: '| Ángela Vigil | Open gap: FIT kit ordered, outreach sent | No screening on record |' }))] }],
   },
   {
@@ -49,6 +50,7 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
     why: 'Reads advanced illness as a diagnosis only, misses that donepezil is a dementia medication, and orders for E7.',
     fails: extra,
     loses: ['table_pt_0009', 'contacted_pt_0009'],
+    attribution: 'over_action',
     script: [...reads(), { calls: [...actions(), orderFit(PT.E7), outreach(PT.E7)] }, { calls: [finish(table({ E7: '| Elly Trantow | Open gap: FIT kit ordered, outreach sent | Frailty without an advanced illness diagnosis |' }))] }],
   },
   {
@@ -73,6 +75,7 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
     why: 'Orders a FIT kit for E11 although a FIT order has been active since 2026-09-30.',
     fails: extra,
     loses: ['table_pt_0024'],
+    attribution: 'over_action',
     script: [...reads(), { calls: [...actions(), orderFit(PT.E11), outreach(PT.E11)] }, { calls: [finish(table({ E11: '| Delaine MacGyver | Open gap: FIT kit ordered, outreach sent | FOBT 2024 does not count |' }))] }],
   },
   {

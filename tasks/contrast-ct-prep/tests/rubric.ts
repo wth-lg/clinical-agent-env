@@ -91,6 +91,12 @@ async function doseTimes(ctx: RubricCtx): Promise<Verdict> {
 // belongs to the drug whose clause it is in, except one written just before a drug's name ('25 mg
 // of diphenhydramine', '50 mg prednisone'), which belongs to that drug, not to the clause before
 // it. A tablet or capsule strength ('two 20 mg tablets', '5 tablets of 10 mg') is not a dose.
+// Known limits, accepted for this attribution-only reader (decisions.tsv 2026-10-28T16:25,
+// verifier-phase-P17i-A2r3-1 M1); each moves a label only, never a score or outcome:
+//   'milligrams' spelled out is not read, so a right message reads as giving no dose (reasoning)
+//   a strength before the drug's name ('10 mg prednisone tablets') reads as a dose of 10
+//   a total split into parts ('20 mg plus 30 mg') reads as two wrong doses
+//   two drugs with no word between ('Prednisone 20 mg Benadryl 50 mg') give the 20 to Benadryl
 const MG = /\b(\d+(?:\.\d+)?)\s*-?\s*mg\b(?!\s*\/)/gi;
 const NAME_NEXT = /^\s*(?:of\s+)?(diphenhydramine|benadryl|prednisone)\b/i;
 const STRENGTH_NEXT = /^\s*(?:tablets?|tabs?|capsules?|caps?)\b/i;
