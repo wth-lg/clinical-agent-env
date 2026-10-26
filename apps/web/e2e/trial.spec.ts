@@ -541,3 +541,15 @@ test('a GRADER_ERROR trial shows M1 not applicable and says plainly that it has 
   await page.getByRole('tab', { name: 'Attribution' }).click();
   await expect(panel(page, 'attribution').locator('[data-testid="criterion-row"][data-id="M1"]')).toContainText('M1: not applicable');
 });
+
+test('a task-validity review line in audit.jsonl is read, not flagged as an unreadable line', async ({ page }) => {
+  const review = { task: 'renal-dose-review', kind: 'task-validity', reviewer: 'auditor-1', verdict: 'fair-trap', note: 'the trap is fair' };
+  await page.route(`**/data/results/runs/${RUN_ID}/audit.jsonl`, async (route) => {
+    const res = await route.fetch();
+    await route.fulfill({ response: res, body: `${await res.text()}${JSON.stringify(review)}\n` });
+  });
+  await browse(page, './?view=runs');
+  await expect(page.locator(`[data-testid="trial-row"][data-trial="${TRIALS.failAudited}"]`)).toBeVisible();
+  await expect(page.locator(`[data-testid="run"][data-run="${RUN_ID}"]`).getByTestId('data-warning')).toHaveCount(0);
+  await expect(page.locator(`[data-testid="trial-row"][data-trial="${TRIALS.failUnaudited}"]`).getByTestId('not-audited')).toHaveCount(1);
+});
