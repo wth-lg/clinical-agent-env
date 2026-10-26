@@ -48,10 +48,13 @@ for (const scheme of ['light', 'dark'] as const) {
       const want = await rgb(page, await danger(page));
       expect(await rgb(page, await style(header.getByTestId('outcome'), 'borderTopColor'))).toEqual(want);
       const label = header.getByTestId('label');
-      if (await label.count()) {
-        expect(await rgb(page, await style(label, 'color'))).toEqual(want);
-        await expect(header.getByTestId('fault-note')).toHaveText('Not counted. The run is blocked until this is fixed.');
-      }
+      await expect(label).toHaveCount(1);
+      expect(await rgb(page, await style(label, 'color'))).toEqual(want);
+      // One "Not counted" sentence on the header: the note says only the block when the reason says it (F3).
+      await expect(header.getByTestId('fault-note')).toHaveText(/^(Not counted\. )?The run is blocked until this is fixed\.$/);
+      expect((await header.innerText()).match(/Not counted/g)?.length ?? 0).toBeLessThanOrEqual(1);
+      // The header's left accent is the danger colour for a trial that blocks the run.
+      expect(await rgb(page, await header.evaluate((el) => getComputedStyle(el).borderLeftColor))).toEqual(want);
     });
   }
 
@@ -63,6 +66,8 @@ for (const scheme of ['light', 'dark'] as const) {
     expect(await rgb(page, await style(header.getByTestId('label'), 'color'))).not.toEqual(want);
     expect(await rgb(page, await style(header.getByTestId('outcome'), 'borderTopColor'))).not.toEqual(want);
     await expect(header.getByTestId('fault-note')).toHaveCount(0);
+    // A model fault's header accent is neutral, not the danger colour (F3).
+    expect(await rgb(page, await header.evaluate((el) => getComputedStyle(el).borderLeftColor))).not.toEqual(want);
   });
 }
 

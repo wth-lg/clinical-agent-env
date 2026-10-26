@@ -7,7 +7,7 @@
 // the legend is drawn from the same marks, so it reads right in light and dark.
 import { Check, CircleHelp, Copy } from 'lucide-react';
 import { useState, type CSSProperties, type ReactNode, type Ref } from 'react';
-import { NOT_AUDITED_MARKER, type Explanation } from '../../../../packages/core/explain.ts';
+import { blocksRun, NOT_AUDITED_MARKER, type Explanation } from '../../../../packages/core/explain.ts';
 import { DENOMINATOR_RULE, FAULT, isValid, OUTCOMES, PASS_DEFINITION, RERUN_OUTCOMES, VALID_OUTCOMES, type Fault, type Outcome } from '../../../../packages/core/outcomes.ts';
 import type { Interval } from '../../../../packages/core/summary.ts';
 import { hrefWith, onNav } from './url.ts';
@@ -117,6 +117,15 @@ export function OutcomeChip({ outcome, fault }: { outcome: string; fault?: Fault
 const TO_GLOSSARY = { view: 'glossary', task: null, label: null, trial: null };
 // What an environment or grader label means for the run (packages/core/outcomes.ts DENOMINATOR_RULE).
 export const BLOCKED_NOTE = 'Not counted. The run is blocked until this is fixed.';
+// Whether a trial blocks the run (verifier JU2-1 F1): blocksRun (packages/core/explain.ts: a valid
+// failure labelled environment or grader, or a run block such as B1), or an excluded environment
+// or grader outcome (ENV_ERROR, GRADER_ERROR).
+export const blocksTheRun = (e: Explanation): boolean => blocksRun(e) !== null || (!e.valid && (e.fault === 'env' || e.fault === 'grader'));
+// The note beside the label. notCountedShown: the surrounding view already says "Not counted" (the
+// trial header's plain reason for an excluded trial), so the note gives only the block and the
+// header has one "Not counted" sentence (F3); a run block on a counted trial (B1) is not "not counted".
+const blockedNote = (e: Explanation, notCountedShown: boolean): string =>
+  notCountedShown || (e.fault !== 'env' && e.fault !== 'grader') ? 'The run is blocked until this is fixed.' : BLOCKED_NOTE;
 // The glossary, at a section (fault-<fault>, criterion-<id>, taxonomy, confirmation) when given.
 export const glossaryHref = (anchor?: string) => `${hrefWith(TO_GLOSSARY).replace(/#.*$/, '')}${anchor ? `#${anchor}` : ''}`;
 
@@ -168,7 +177,7 @@ export function HashText({ text }: { text: string }) {
 // opens the glossary at its fault.
 // The label and its help icon never wrap apart (verifier-phase-P16-2: at 390 px the infra icon
 // sat on a line of its own).
-export function FaultLabel({ e }: { e: Explanation }) {
+export function FaultLabel({ e, notCountedShown = false }: { e: Explanation; notCountedShown?: boolean }) {
   if (e.fault === null || (e.fault !== 'infra' && e.label === null)) return null;
   const name = e.fault === 'infra' ? 'infra' : e.label!;
   const help = (
@@ -182,6 +191,7 @@ export function FaultLabel({ e }: { e: Explanation }) {
   // An environment or grader label takes the danger tone and says what it means for the run (JU2);
   // a model label stays neutral.
   const blocking = e.fault === 'env' || e.fault === 'grader';
+  const note = blocksTheRun(e);
   return (
     <span className="inline-flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
       <span className="inline-flex items-center gap-x-1">
@@ -191,7 +201,7 @@ export function FaultLabel({ e }: { e: Explanation }) {
         </span>
         {help}
       </span>
-      {blocking && <span data-testid="fault-note" className="text-xs text-danger">{BLOCKED_NOTE}</span>}
+      {note && <span data-testid="fault-note" className="text-xs text-danger">{blockedNote(e, notCountedShown)}</span>}
       {!e.audited && <span data-testid="not-audited" className="rounded-sm border border-dashed border-line-strong px-1 text-xs text-ink-muted">{NOT_AUDITED_MARKER}</span>}
     </span>
   );
