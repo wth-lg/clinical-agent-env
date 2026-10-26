@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:renal-dose-review:0",
   "task_id": "renal-dose-review",
-  "task_version": "20b547a78fd2211fd41614934b4303034a20307674ed4ffaa82378d67c793ede",
-  "env_version": "589529d84845836d86f9c61e7c2ab8f0e846058b3f39c4c624d50964821856d1",
-  "grader_task_version": "2c5c4f59a926849a7016ac77605ece0f0a9b1242d1b5c461b0f126858230f971",
-  "fixture_hash": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
+  "task_version": "b5f8278968130bd5773685f5135a2c27ec10f7d86f37166caee31c009094d16d",
+  "env_version": "f74818df8ab2b6109bdad7b1219898a6c755f28cd3d4e505c848e8a779de79e8",
+  "grader_task_version": "35f7bf676489c2006ae5911205664dae8807638bd45094e352aca909846ba0c7",
+  "fixture_hash": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
   "state_hash": {
-    "initial": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
-    "final": "9a23496087203070e845309cbfebaf6d99366e394912a23feba032caad2c0fb9",
-    "replay_final": "9a23496087203070e845309cbfebaf6d99366e394912a23feba032caad2c0fb9"
+    "initial": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
+    "final": "6f7bb061809ad690b9f176676d42b1be28e22e0ff65c0555a810be7b90ac9ce4",
+    "replay_final": "6f7bb061809ad690b9f176676d42b1be28e22e0ff65c0555a810be7b90ac9ce4"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -204,7 +204,7 @@
       "met": true,
       "evidence": {
         "verdict": "met",
-        "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met. One criterion met, so apixaban goes back to 5 mg twice daily (2.5 mg twice daily since the February admission).",
+        "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met.",
         "cache_key": "8fb5a237d1ef9a16edb6ce49c8785df5dccfbe8e0da71b3ed165ea4c2681dd46"
       }
     },
@@ -217,8 +217,8 @@
       "met": true,
       "evidence": {
         "verdict": "met",
-        "quote": "The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used",
-        "cache_key": "c550aca0cf9b4938c3147aebf603baf908408d6616db68a72bb59b13909bcda1"
+        "quote": "The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used.",
+        "cache_key": "03df5745b77665e009b70f40b1bffaf7de31d53158b6d43913b6459f3778a94f"
       }
     },
     {
@@ -267,7 +267,7 @@
           "SCr 1.21 mg/dL (10/20/2026). The SCr of 1.88"
         ],
         "verdict": "not_met",
-        "quote": "Inputs (§1): current SCr 1.21 mg/dL (10/20/2026). The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used. Weight 143 lb = 64.9 kg (10/20/2026); the 57.0 kg inpatient weight from February is stale. Age 82.",
+        "quote": "current SCr 1.21 mg/dL (10/20/2026). The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used.",
         "cache_key": "b493cf6605d7f9141a458072b901dded04d6dd41608b7413fe3a8111b28c8986"
       }
     },
@@ -280,14 +280,14 @@
       "met": false,
       "evidence": {
         "verdict": "not_met",
-        "quote": "",
-        "cache_key": "f8cd7a88eb1f1c00d2dafe8fed184b6385101c08324879d9d9be2c6864adb5b8"
+        "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met. One criterion met, so apixaban goes back to 5 mg twice daily",
+        "cache_key": "b08b3880478a563370bcdcaa4683c7abafb7ebf26983ab78f6e56b4f5b9ee3fc"
       }
     }
   ],
   "score": 1,
   "judge": {
-    "calls": 0,
+    "calls": 4,
     "unknown": 0,
     "unknown_penalties": 0,
     "score_penalties_met": 1,
@@ -295,9 +295,9 @@
     "over_allowance": 0,
     "cache_keys": [
       "8fb5a237d1ef9a16edb6ce49c8785df5dccfbe8e0da71b3ed165ea4c2681dd46",
-      "c550aca0cf9b4938c3147aebf603baf908408d6616db68a72bb59b13909bcda1",
+      "03df5745b77665e009b70f40b1bffaf7de31d53158b6d43913b6459f3778a94f",
       "b493cf6605d7f9141a458072b901dded04d6dd41608b7413fe3a8111b28c8986",
-      "f8cd7a88eb1f1c00d2dafe8fed184b6385101c08324879d9d9be2c6864adb5b8"
+      "b08b3880478a563370bcdcaa4683c7abafb7ebf26983ab78f6e56b4f5b9ee3fc"
     ],
     "cache": [
       {
@@ -308,32 +308,32 @@
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "met",
-          "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met. One criterion met, so apixaban goes back to 5 mg twice daily (2.5 mg twice daily since the February admission)."
+          "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met."
         },
         "error": null,
-        "calls": 0,
+        "calls": 1,
         "provenance": {
-          "source": "scripted",
-          "model": "none: a rule-based script with no network call (builder-35)",
-          "at": "2026-10-24T08:27:23Z"
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-25T14:39:17.813Z"
         }
       },
       {
-        "key": "c550aca0cf9b4938c3147aebf603baf908408d6616db68a72bb59b13909bcda1",
+        "key": "03df5745b77665e009b70f40b1bffaf7de31d53158b6d43913b6459f3778a94f",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "met",
-          "quote": "The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used"
+          "quote": "The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
         },
         "error": null,
-        "calls": 0,
+        "calls": 1,
         "provenance": {
-          "source": "scripted",
-          "model": "none: a rule-based script with no network call (builder-35)",
-          "at": "2026-10-24T08:27:23Z"
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-25T14:39:17.813Z"
         }
       },
       {
@@ -344,32 +344,32 @@
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "not_met",
-          "quote": "Inputs (§1): current SCr 1.21 mg/dL (10/20/2026). The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used. Weight 143 lb = 64.9 kg (10/20/2026); the 57.0 kg inpatient weight from February is stale. Age 82."
+          "quote": "current SCr 1.21 mg/dL (10/20/2026). The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
         },
         "error": null,
-        "calls": 0,
+        "calls": 1,
         "provenance": {
-          "source": "scripted",
-          "model": "none: a rule-based script with no network call (builder-42)",
-          "at": "2026-10-24T09:59:30Z"
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-25T14:39:17.813Z"
         }
       },
       {
-        "key": "f8cd7a88eb1f1c00d2dafe8fed184b6385101c08324879d9d9be2c6864adb5b8",
+        "key": "b08b3880478a563370bcdcaa4683c7abafb7ebf26983ab78f6e56b4f5b9ee3fc",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "not_met",
-          "quote": ""
+          "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met. One criterion met, so apixaban goes back to 5 mg twice daily"
         },
         "error": null,
-        "calls": 0,
+        "calls": 1,
         "provenance": {
-          "source": "scripted",
-          "model": "none: a rule-based script with no network call (builder-35)",
-          "at": "2026-10-24T08:27:23Z"
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-25T14:39:17.813Z"
         }
       }
     ]

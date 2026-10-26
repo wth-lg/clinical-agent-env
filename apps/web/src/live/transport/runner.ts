@@ -15,6 +15,7 @@ import {
 import { runnerToken } from '../../keygate/runner.ts';
 import { putEvent, readEvents } from '../store.ts';
 import type { BatchRequest, LiveRun, StartResult, TrialEnd, TrialTransport } from '../types.ts';
+import { allCapped } from '../typical.ts';
 
 const RECONNECT_MS = 500;
 
@@ -55,7 +56,7 @@ export function runnerTransport(token = runnerToken()): TrialTransport {
       const res = await call(`${TRIALS_PATH}?dry_run=1`, token, { method: 'POST', body: JSON.stringify(batchBody(req)) });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const { projection } = parseDryRun(await json(res));
-      return { usd: projection.total_usd, committed: projection.session_spent_usd };
+      return { usd: projection.total_usd, committed: projection.session_spent_usd, bound: allCapped(projection.lines) };
     },
 
     async start(req): Promise<StartResult> {

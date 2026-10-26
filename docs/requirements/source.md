@@ -130,3 +130,9 @@ key"; a bracketed note under a line says where a quote replaces a name.
   - from: addendum (d)
 - **U34** final writeup = one .html instruction/writeup file + a short root README.md with only what the interviewer needs to run it, both in ASD-STE 100
   - from: addendum (e)
+- **U35** hosted (github.io) live runs: first a stateless relay (serverless, forwards only POST /v1/messages to api.anthropic.com, origin-locked to the Pages origin, never logs or stores the key, rate-limited; ledger and session cap stay in the browser)
+  - from: decision log, user, 2026-10-24T17:27:55Z; supersedes U9, U16 and U17 (the 2026-10-23 18:40 "no relay"); its fallback, the hosted page calling the local runner, is plan phase P16f
+- **U36** interviewer needs only internet + an Anthropic key: the hosted relay is deployed and owned by us (interviewer needs no Vercel or other account); the local app may assume Node 22.18+ and pnpm are installed; the start UI (key gate start screen and the hosted page's local-run panel) and README must state these prerequisites with install links next to the one command
+  - from: decision log, user, 2026-10-24T17:29:43Z (up to "account") and 2026-10-24T17:32:41Z (from "the local app"), which narrows the one-command bootstrap of 17:29:43Z to stated prerequisites
+- **U37** "Browse without key" must show everything readable: Overview, Tasks, Runs and Environment with full content (no empty page)
+  - from: run.md user-requirement-2026-10-25-browse; only live task runs and live grading need a key

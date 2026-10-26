@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:discharge-medrec:1",
   "task_id": "discharge-medrec",
-  "task_version": "987ea04be8cc14576e29bae65edc4b5cfdcf5a65109119500246ebb13dc964d7",
-  "env_version": "63a2e03928ea16dd0996701b634a10f0bf7653a6e2128fe97a96dffeac50f136",
-  "grader_task_version": "b726774884e28279b4f62e4d00e20058da0ae229a17cee3e9d08ef0798f957df",
-  "fixture_hash": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
+  "task_version": "18dd68d2db967cf38343dc362ec15d277cf984223e5cac76fb87a6e634ab08e4",
+  "env_version": "6f1110b24a8516555824e011080ad3408062876e165ae1bb6b211f80488440a7",
+  "grader_task_version": "85cb5bed7c09ecac43729bbfa483049ff1fa8402aa725e94d0989738567c6789",
+  "fixture_hash": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
   "state_hash": {
-    "initial": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
-    "final": "3cc31f0c67c9af66d03a092cae81aef97521735a0d576374204181a09abfac10",
-    "replay_final": "3cc31f0c67c9af66d03a092cae81aef97521735a0d576374204181a09abfac10"
+    "initial": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
+    "final": "4b8a9beac5996cc59f0424bf351e80fe7b190d8dfe8f0c5df6ef2e71a4797ff1",
+    "replay_final": "4b8a9beac5996cc59f0424bf351e80fe7b190d8dfe8f0c5df6ef2e71a4797ff1"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -214,7 +214,7 @@
       "met": true,
       "evidence": {
         "verdict": "met",
-        "quote": "Taking both is a duplicate beta-blocker.",
+        "quote": "metoprolol succinate ER 50 mg daily, which the St. Brigid discharge documents continue as \"metoprolol XL\", and metoprolol tartrate 25 mg twice daily (since 2023), which no discharge document mentions. Taking both is a duplicate beta-blocker.",
         "cache_key": "a394d5f8201524a28915d3db2c1e67667dcd4ed422b8d6b78e25f42439c92fce"
       }
     },
@@ -259,7 +259,7 @@
   ],
   "score": 1,
   "judge": {
-    "calls": 0,
+    "calls": 2,
     "unknown": 0,
     "unknown_penalties": 0,
     "score_penalties_met": 1,
@@ -281,11 +281,11 @@
           "quote": "Changes: furosemide increased from 20 mg to 40 mg daily (discharge summary). Spironolactone 25 mg daily started (signed addendum, which corrects the summary's 12.5 mg). Potassium chloride stopped (discharge summary). Lisinopril 10 mg daily resumed: the summary resumes it when SCr is below 1.5, and SCr was 1.32 on 10/21 (discharge summary; lab 10/21)."
         },
         "error": null,
-        "calls": 0,
+        "calls": 1,
         "provenance": {
-          "source": "scripted",
-          "model": "none: a rule-based script with no network call (builder-47)",
-          "at": "2026-10-24T11:21:54Z"
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-25T13:23:26.047Z"
         }
       },
       {
@@ -296,14 +296,14 @@
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "met",
-          "quote": "Taking both is a duplicate beta-blocker."
+          "quote": "metoprolol succinate ER 50 mg daily, which the St. Brigid discharge documents continue as \"metoprolol XL\", and metoprolol tartrate 25 mg twice daily (since 2023), which no discharge document mentions. Taking both is a duplicate beta-blocker."
         },
         "error": null,
-        "calls": 0,
+        "calls": 1,
         "provenance": {
-          "source": "scripted",
-          "model": "none: a rule-based script with no network call (builder-47)",
-          "at": "2026-10-24T11:21:54Z"
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-25T13:23:26.047Z"
         }
       }
     ]

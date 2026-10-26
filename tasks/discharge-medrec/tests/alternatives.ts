@@ -77,4 +77,66 @@ export const alternatives: Alternative[] = [
       { calls: [finish()] },
     ],
   },
+  {
+    id: 'modify_held_lisinopril',
+    why: 'Resumes lisinopril by modifying the held order at its same 10 mg daily dose, which makes a new active order, instead of the resume action.',
+    loses: [],
+    script: [
+      ...reads,
+      { calls: [furosemideUp, spironolactone, kclStop, modify(MR.lisinopril, { value: 10, unit: 'mg', frequency: 'QD' }, 'Discharge summary: resume when SCr < 1.5; SCr 1.32 on 10/21', RX.lisinopril10)] },
+      { calls: [message()] },
+      { calls: [note()] },
+      { calls: [finish()] },
+    ],
+  },
+  {
+    id: 'spironolactone_on_50mg_tablet',
+    why: 'Writes spironolactone 25 mg daily on the 50 mg tablet (half a tablet), the dose the addendum gives.',
+    loses: [],
+    script: [
+      ...reads,
+      { calls: [furosemideUp, order(RX.spironolactone50, 25, 'QD', 'Signed addendum 10/19: spironolactone 25 mg daily (half of a 50 mg tablet)'), kclStop, lisinoprilResume] },
+      { calls: [message()] },
+      { calls: [note()] },
+      { calls: [finish()] },
+    ],
+  },
+  {
+    id: 'furosemide_via_replaces',
+    why: 'Raises furosemide by ordering 40 mg daily with replaces naming the 20 mg order, which stops it, instead of modifying it.',
+    loses: [],
+    script: [
+      ...reads,
+      { calls: [order(RX.furosemide40, 40, 'QD', 'St. Brigid discharge summary 10/19: furosemide increased to 40 mg daily', MR.furosemide), spironolactone, kclStop, lisinoprilResume] },
+      { calls: [message()] },
+      { calls: [note()] },
+      { calls: [finish()] },
+    ],
+  },
+  {
+    id: 'extra_concerns_message',
+    why: 'Sends the tartrate message and a second message to Dr. Okafor with other concerns: the creatinine still above his baseline and no SGLT2 inhibitor for his reduced ejection fraction.',
+    loses: [],
+    script: [
+      ...reads,
+      { calls: writes },
+      {
+        calls: [
+          message(),
+          {
+            name: 'send_message',
+            input: {
+              recipient: 'Practitioner/pr-okafor',
+              priority: 'routine',
+              subject: 'Walter Kim: other points for the post-discharge visit',
+              body: 'His creatinine is 1.32 on 10/21, still above his baseline of about 0.94, with lisinopril resumed and spironolactone started: a basic metabolic panel within a week would be prudent. He is also on no SGLT2 inhibitor for heart failure with reduced ejection fraction; worth discussing at the visit.',
+              about: ['Observation/obs-t4-scr-1021'],
+            },
+          },
+        ],
+      },
+      { calls: [note()] },
+      { calls: [finish()] },
+    ],
+  },
 ];

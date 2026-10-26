@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { parse } from 'yaml';
@@ -25,14 +25,15 @@ const workflow = parse(readFileSync(join(repoRoot, '.github/workflows/ci.yml'), 
 const pkg = JSON.parse(readFileSync(join(repoRoot, 'apps/web/package.json'), 'utf8')) as { devDependencies: Record<string, string> };
 const { check, e2e, tasks, matrix } = workflow.jobs;
 const matrixOk = workflow.jobs['matrix-ok'];
+const e2eOk = workflow.jobs['e2e-ok'];
 const runs = (job: Job | undefined) => (job?.steps ?? []).map((s) => s.run ?? '');
 
 describe('ci workflow', () => {
-  it('runs e2e after check, each with a 20 minute timeout', () => {
-    expect(Object.keys(workflow.jobs).sort()).toEqual(['check', 'e2e', 'matrix', 'matrix-ok', 'tasks']);
+  it('runs each e2e shard after check with a 35 minute timeout', () => {
+    expect(Object.keys(workflow.jobs).sort()).toEqual(['check', 'e2e', 'e2e-ok', 'matrix', 'matrix-ok', 'tasks']);
     expect(check?.['runs-on']).toBe('ubuntu-latest');
     expect(check?.['timeout-minutes']).toBe(20);
-    expect(e2e?.['timeout-minutes']).toBe(20);
+    expect(e2e?.['timeout-minutes']).toBe(35);
     expect([e2e?.needs].flat()).toEqual(['check']);
   });
 
@@ -50,12 +51,46 @@ describe('ci workflow', () => {
     }
   });
 
-  it('runs Playwright only in e2e and uploads the report on failure', () => {
+  it('runs Playwright only in e2e and uploads each shard\'s report on failure', () => {
     expect(runs(check).filter((r) => /playwright/.test(r))).toEqual([]);
-    expect(runs(e2e)).toContain('pnpm --filter web exec playwright test --project=mocked --project=xbrowser');
     const upload = e2e?.steps.find((s) => s.uses?.startsWith('actions/upload-artifact@'));
     expect(upload?.if).toBe('failure()');
+    expect(upload?.with?.name).toBe('playwright-report-${{ matrix.shard }}');
     expect(upload?.with?.path).toBe('apps/web/playwright-report');
+  });
+
+  // Playwright shards by test count over files in order, so --shard=i/n alone puts all seven
+  // 'grader validation in the tab' tests in shard 1; six of them run a task's matrix (2-6 min
+  // each). They get three shards of their own and every other test runs in one: --grep and
+  // --grep-invert of the same title split the suite with no test left out or run twice.
+  // ci-guard wants literal Playwright arguments, so each shard has its own step, run only on its
+  // matrix entry.
+  it('splits e2e into three grader shards and one shard for the rest, each with exactly one step', () => {
+    const grader = '--grep "grader validation in the tab"';
+    const commands: Record<string, string> = {
+      'grader-1': `pnpm --filter web exec playwright test --project=mocked ${grader} --shard=1/3`,
+      'grader-2': `pnpm --filter web exec playwright test --project=mocked ${grader} --shard=2/3`,
+      'grader-3': `pnpm --filter web exec playwright test --project=mocked ${grader} --shard=3/3`,
+      rest: 'pnpm --filter web exec playwright test --project=mocked --project=xbrowser --grep-invert "grader validation in the tab"',
+    };
+    expect(e2e?.name).toBe('e2e (${{ matrix.shard }})');
+    expect(e2e?.strategy?.['fail-fast']).toBe(false);
+    expect(e2e?.strategy?.matrix).toEqual({ shard: Object.keys(commands) });
+    const playwright = (e2e?.steps ?? []).filter((s) => s.run?.includes('playwright'));
+    expect(Object.fromEntries(playwright.map((s) => [s.if, s.run]))).toEqual(
+      Object.fromEntries(Object.entries(commands).map(([shard, run]) => [`matrix.shard == '${shard}'`, run])),
+    );
+    expect(playwright).toHaveLength(Object.keys(commands).length);
+  });
+
+  // Under --shard Playwright exits 0 when no test matches, so a renamed describe would leave the
+  // grader shards green and empty and the rest shard running everything.
+  it('greps a title that names the grader validation describe in browse.spec.ts', () => {
+    const dir = join(repoRoot, 'apps/web/e2e');
+    const specs = readdirSync(dir, { recursive: true, encoding: 'utf8' }).filter((f) => f.endsWith('.spec.ts'));
+    const naming = specs.filter((f) => readFileSync(join(dir, f), 'utf8').includes('grader validation in the tab'));
+    expect(naming).toEqual(['browse.spec.ts']);
+    expect(readFileSync(join(dir, 'browse.spec.ts'), 'utf8')).toContain("test.describe('grader validation in the tab, no key', () => {");
   });
 
   // The grader validation matrix runs one job per task, in parallel with check, over the ids
@@ -82,5 +117,14 @@ describe('ci workflow', () => {
     expect(matrixOk?.if).toBe('always()');
     expect(matrixOk?.steps.at(-1)?.env).toEqual({ RESULT: '${{ needs.matrix.result }}' });
     expect(matrixOk?.steps.at(-1)?.run).toBe('test "$RESULT" = success');
+  });
+
+  // e2e-ok is to the e2e shards what matrix-ok is to the matrix.
+  it('gives the e2e shards one stable check', () => {
+    expect(e2eOk?.['timeout-minutes']).toBe(5);
+    expect([e2eOk?.needs].flat()).toEqual(['e2e']);
+    expect(e2eOk?.if).toBe('always()');
+    expect(e2eOk?.steps.at(-1)?.env).toEqual({ RESULT: '${{ needs.e2e.result }}' });
+    expect(e2eOk?.steps.at(-1)?.run).toBe('test "$RESULT" = success');
   });
 });

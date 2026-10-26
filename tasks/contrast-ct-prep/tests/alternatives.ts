@@ -127,4 +127,36 @@ export const alternatives: Array<Agent & { loses: readonly string[] }> = [
     loses: [],
     script: [...READS, { calls: [ct(), creatinineOrder('2026-10-23T10:00:00-04:00', '2026-10-26T09:00:00-04:00')] }, { calls: [prednisone, diphenhydramine] }, { calls: [message()] }, { calls: [note()] }, { calls: [finish(DONE)] }],
   },
+  {
+    id: 'ct_at_arrival_0845',
+    why: 'Sets the CT order for 08:45, the arrival time the appointment gives, within 15 minutes of the 09:00 slot.',
+    loses: [],
+    script: [...READS, { calls: [ct([APPT, ALLERGY, REACTION_NOTE], '2026-10-26T08:45:00-04:00'), creatinineOrder()] }, { calls: [prednisone, diphenhydramine] }, { calls: [message()] }, { calls: [note()] }, { calls: [finish(DONE)] }],
+  },
+  {
+    id: 'dose_times_in_utc',
+    why: 'Writes every premedication time in UTC: 00:00Z, 06:00Z and 12:00Z on 10/26 are 8:00 PM Sunday, 2:00 AM and 8:00 AM Monday in New York.',
+    loses: [],
+    script: [
+      ...READS,
+      { calls: [ct(), creatinineOrder()] },
+      { calls: [medication(RX.prednisone50, 50, ['2026-10-26T00:00:00Z', '2026-10-26T06:00:00Z', '2026-10-26T12:00:00Z']), medication(RX.diphenhydramine50, 50, ['2026-10-26T12:00:00Z'])] },
+      { calls: [message()] },
+      { calls: [note()] },
+      { calls: [finish(DONE)] },
+    ],
+  },
+  {
+    id: 'creatinine_monday_0730',
+    why: 'Orders the creatinine for 7:30 AM Monday, on arrival at the lab before the 9:00 scan, and tells him so.',
+    loses: [],
+    script: [
+      ...READS,
+      { calls: [ct(), creatinineOrder('2026-10-26T07:30:00-04:00', null)] },
+      { calls: [prednisone, diphenhydramine] },
+      { calls: [message(ORACLE_MESSAGE.replace('at the lab today or tomorrow, before the scan', 'at our lab at 7:30 AM on Monday 10/26, before the scan'))] },
+      { calls: [note({ kidney: 'Kidney function (§4): age 64 with type 2 diabetes. Last creatinine 0.98 mg/dL on 08/14/2025, more than 30 days before the scan: creatinine ordered for 7:30 AM on 10/26, before the scan.' })] },
+      { calls: [finish(DONE)] },
+    ],
+  },
 ];

@@ -63,7 +63,7 @@ export const mutants: Mutant[] = [
     trap: 'conflict_in_note',
     why: 'Refills atorvastatin from the active order without reading the August cardiology note that stopped it.',
     fails: ['m2_no_refill'],
-    loses: [],
+    loses: ['reply_m2'],
     script: swap(
       oracle,
       [m2Task, [refill(PT.odum, RX.atorvastatin40, 40, 'QHS', 90, 1, 'Refill request')]],
@@ -91,7 +91,7 @@ export const mutants: Mutant[] = [
     trap: 'red_flag',
     why: 'Takes the queue in order and answers M3 last as a routine question: a routine Task to triage and a routine message to stop naproxen and book a visit, no ED advice.',
     fails: ['m3_red_flag'],
-    loses: ['m3_triage_first', 'm3_message_ed'],
+    loses: ['m3_triage_first', 'm3_message_ed', 'reply_m3'],
     script: [
       ...swap(oracle, ...M3.flatMap((t) => t.calls).map((c): [typeof c, []] => [c, []])).slice(0, -2),
       { calls: [call('fhir_read', { resource_type: 'Communication', id: 'comm-t6-m3' })] },
@@ -177,15 +177,15 @@ export const mutants: Mutant[] = [
     script: swap(oracle, [CLOSE[1]!, []]),
   },
   {
-    id: 'allergy_from_snippet',
+    id: 'allergy_id_only',
     trap: 'evidence_before_writes',
-    why: 'Records the allergy from a search_notes snippet and opens the urgent-care note only afterwards.',
+    why: "Records the allergy after a search_notes row for 'urgent care' that only names the 2024-03-09 note (its snippet stops before the reaction), and opens the note only afterwards: the hives were never shown before the write.",
     fails: ['evidence_before_writes'],
     loses: [],
     script: (() => {
       const s = swap(oracle, ...oracle.flatMap((t) => t.calls).filter((c) => c.name === 'fhir_read' && String(c.input.id).startsWith('doc-t6-park-')).map((c): [typeof c, []] => [c, []]));
       const at = s.findIndex((t) => t.calls.includes(ALLERGY));
-      return [...s.slice(0, at), { calls: [notes('hives', PT.park)] }, s[at]!, { calls: [read('DocumentReference', 'doc-t6-park-240309')] }, ...s.slice(at + 1)];
+      return [...s.slice(0, at), { calls: [notes('urgent care', PT.park)] }, s[at]!, { calls: [read('DocumentReference', 'doc-t6-park-240309')] }, ...s.slice(at + 1)];
     })(),
   },
   {

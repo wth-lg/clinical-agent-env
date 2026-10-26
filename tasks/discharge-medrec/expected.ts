@@ -10,6 +10,7 @@
 //   lisinopril      resume 10 mg when SCr < 1.5 (§2)        obs-t4-scr-1021 1.32: resume
 //   metoprolol XL   alias of metoprolol succinate ER (§4)   no change
 //   atorvastatin    continue                                no change
+//   aspirin 81 mg   continue (RxNorm 243670)                no change
 //   pantoprazole    formulary substitution (§3)             keep omeprazole, no pantoprazole
 //   tartrate 25 BID not addressed (§5)                      unchanged; message the PCP about it
 export const expected = {
@@ -20,7 +21,7 @@ export const expected = {
   spironolactone: { request: null, action: 'start', daily_mg: 25, per_day: 1 },
   potassium_chloride: { request: 'MedicationRequest/mr-t4-kcl', action: 'stop' },
   lisinopril: { request: 'MedicationRequest/mr-t4-lisinopril', action: 'resume', daily_mg: 10, per_day: 1 },
-  unchanged: ['MedicationRequest/mr-t4-atorvastatin', 'MedicationRequest/mr-t4-metoprolol-succ', 'MedicationRequest/mr-t4-metoprolol-tart', 'MedicationRequest/mr-t4-omeprazole'],
+  unchanged: ['MedicationRequest/mr-t4-aspirin', 'MedicationRequest/mr-t4-atorvastatin', 'MedicationRequest/mr-t4-metoprolol-succ', 'MedicationRequest/mr-t4-metoprolol-tart', 'MedicationRequest/mr-t4-omeprazole'],
   not_ordered: ['pantoprazole'],
   message_about: ['MedicationRequest/mr-t4-metoprolol-tart'],
   cites: ['DocumentReference/doc-t4-dc-1019-add', 'Observation/obs-t4-scr-1021'],

@@ -24,9 +24,12 @@ export interface Refusal {
 
 // A batch's projection, and the session's spend so far (settled, reserved and held open by
 // running batches): the batch fits when their sum is within the session cap.
+// bound: the amount is an upper bound, every line priced at the per-trial cap (the browser always;
+// the runner while no pilot p90 prices a line).
 export interface Projected {
   usd: number;
   committed: number;
+  bound: boolean;
 }
 
 export type StartResult = { ok: true; runId: string; trialIds: string[] } | ({ ok: false } & Refusal);

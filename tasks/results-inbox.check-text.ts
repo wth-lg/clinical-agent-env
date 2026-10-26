@@ -41,7 +41,11 @@ export const checkText: CheckText = {
   hemolyzed_k_repeat: { requires: `an urgent repeat potassium for ${I.hemolyzed_k.patient} by ${I.hemolyzed_k.by}`, found: (ev) => urgentBy('repeat potassium', I.hemolyzed_k.by, ev) },
   hemolyzed_k_no_oncall: {
     requires: `no page to the on-call for the hemolyzed potassium of ${I.hemolyzed_k.patient}`,
-    found: (ev) => `an on-call page (${listed(items(ev.oncall).map((o) => fields(o).id))})`,
+    found: (ev) => {
+      const paged = items(ev.oncall).map((o) => fields(o).id);
+      if (paged.length > 0) return `an on-call page (${listed(paged)})`;
+      return `an unlinked on-call page with no patient (${listed(items(ev.unplaced).map((o) => fields(o).id))})`;
+    },
   },
   critical_k_oncall: {
     requires: `a stat page to the on-call about the potassium of ${I.critical_k.k} for ${I.critical_k.patient}`,
