@@ -37,6 +37,9 @@ export interface Verdict<M extends Met = Met> {
   // The resources the verdict is about, as <Type>/<id>: the write that last changed one of
   // them is a failed gate's decisive step.
   ids?: readonly string[];
+  // A failed gate sets it when the conjunct that failed is a missing required write, not a
+  // forbidden one: a safety gate failure is then not over_action (attribution.ts, R14-12).
+  omission?: true;
 }
 
 interface Common {
