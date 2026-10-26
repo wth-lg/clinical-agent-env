@@ -21,7 +21,10 @@ const show = (v: unknown) => (v === undefined ? '(absent)' : JSON.stringify(v, n
 type Run = { state: 'idle' } | { state: 'running' } | { state: 'error'; message: string } | { state: 'done'; value: StateRun };
 
 // decisiveIds: the evidence ids of the decisive check, marked wherever they show.
-export function StateDiff({ t, events, steps, written, onStep, decisiveIds = [] }: { t: Trial; events: Loaded<TrialEvent[]> | null; steps: readonly Step[] | null; written: readonly string[]; onStep: (n: number) => void; decisiveIds?: readonly string[] }) {
+// official: the trial is of the official run. A pilot on an earlier world is said in a neutral tone
+// and offers no Replay (it cannot reproduce on today's world); an official trial on another world
+// keeps the alert, because the committed results must run on today's world (P17j JU11).
+export function StateDiff({ t, events, steps, written, onStep, decisiveIds = [], official = true }: { t: Trial; events: Loaded<TrialEvent[]> | null; steps: readonly Step[] | null; written: readonly string[]; onStep: (n: number) => void; decisiveIds?: readonly string[]; official?: boolean }) {
   const [run, setRun] = useState<Run>({ state: 'idle' });
   const h = t.record.state_hash;
   const manifest = MANIFEST.world.state_hash;
@@ -41,11 +44,15 @@ export function StateDiff({ t, events, steps, written, onStep, decisiveIds = [] 
   const otherWorld = h.initial !== manifest;
   return (
     <div className="space-y-4">
-      <p data-testid="manifest-line" className="break-words text-ink">
-        {h.initial === manifest
-          ? 'Initial state hash matches the manifest: the trial started from the world every trial starts from.'
-          : 'Initial state hash does not match the manifest: the trial started from another world than today\'s, so a replay here cannot reproduce it.'}
-      </p>
+      {!otherWorld ? (
+        <p data-testid="manifest-line" className="break-words text-ink">Initial state hash matches the manifest: the trial started from the world every trial starts from.</p>
+      ) : official ? (
+        <p data-testid="manifest-line" role="alert" className="break-words rounded-sm border border-danger p-3 font-medium text-danger">Initial state hash does not match the manifest: the trial started from another world than today's, so a replay here cannot reproduce it.</p>
+      ) : (
+        <p data-testid="manifest-line" data-tone="neutral" className="break-words text-ink-muted">
+          This pilot ran on an earlier world version ({h.initial === null ? 'not recorded' : `${h.initial.slice(0, 4)}…`}). Today's world is {manifest.slice(0, 4)}….
+        </p>
+      )}
       <dl className="grid grid-cols-1 gap-x-4 gap-y-1 sm:grid-cols-[max-content_minmax(0,1fr)] [&_dd]:min-w-0 [&_dt]:text-ink-muted">
         <dt>Manifest</dt><dd><Hash value={manifest} testId="hash-manifest" /></dd>
         <dt>Initial</dt><dd><Hash value={h.initial} testId="hash-initial" /></dd>
@@ -76,7 +83,8 @@ export function StateDiff({ t, events, steps, written, onStep, decisiveIds = [] 
           </ul>
         )}
       </Section>
-      <div className="space-y-2">
+      {!(otherWorld && !official) && (
+      <div className="space-y-2" data-testid="replay-block">
         <button type="button" className={button} disabled={!canReplay || run.state === 'running'} onClick={() => void replay()}>
           {run.state === 'running' ? <Loader2 aria-hidden className="h-3.5 w-3.5 animate-spin" strokeWidth={1.75} /> : <RotateCcw aria-hidden className="h-3.5 w-3.5" strokeWidth={1.75} />}
           Replay
@@ -94,6 +102,7 @@ export function StateDiff({ t, events, steps, written, onStep, decisiveIds = [] 
         )}
         {run.state === 'done' && <Result r={run.value} recorded={h.final} decisiveIds={decisiveIds} otherWorld={otherWorld} />}
       </div>
+      )}
     </div>
   );
 }

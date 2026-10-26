@@ -248,7 +248,7 @@ test('Back to Runs restores the list with its filters, and history moves between
   const name = TRIALS.failAudited;
   await page.locator(`[data-testid="trial-row"][data-trial="${name}"]`).getByRole('button', { name, exact: true }).click();
   await expect(page.getByTestId('trial-detail')).toHaveAttribute('data-trial', name);
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText(name);
+  await expect(page.getByTestId('trial-path')).toHaveText(name);
   await page.getByRole('tab', { name: 'Attribution' }).click();
   await page.reload();
   await expect(panel(page, 'attribution')).toBeVisible();
