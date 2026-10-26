@@ -493,7 +493,7 @@ export function explainTrial(record: ExplainRecord, audit: AuditRow | null | und
 // these labels.
 export function excludedFromHeadline(e: Explanation): string | null {
   if (!e.valid || e.outcome === 'PASS' || (e.fault !== 'env' && e.fault !== 'grader')) return null;
-  const fix = e.fault === 'env' ? 'an environment fix and a rerun of the affected trials, disclosed in results/CHANGELOG.md' : 'a grader fix and a full offline regrade';
+  const fix = e.fault === 'env' ? 'an environment fix and a rerun of the affected trials, disclosed in results/changelog.d' : 'a grader fix and a full offline regrade';
   return `${e.outcome} is the ${e.fault === 'env' ? "environment's" : "grader's"} fault (${e.deciding!.id}): not allowed in a committed run, so the run fails and has no headline pass rate until ${fix}`;
 }
 

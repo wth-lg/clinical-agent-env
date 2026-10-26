@@ -18,6 +18,7 @@
     "donewhen": "node scripts/donewhen.ts",
     "keyscan": "node scripts/keyscan.ts",
     "ci:guard": "node scripts/ci-guard.ts",
+    "changelog": "node scripts/changelog.ts",
     "fixtures:build": "node scripts/fixtures-build.ts",
     "fixtures:verify": "node scripts/fixtures-verify.ts",
     "fixtures:lint": "node scripts/fixtures-lint.ts",
