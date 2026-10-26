@@ -2,8 +2,8 @@
   "grader_task_versions": {
     "2c5c4f59a926849a7016ac77605ece0f0a9b1242d1b5c461b0f126858230f971": {
       "task_id": "renal-dose-review",
-      "env_version": "c31110559dad7b9883154cc94acb40f8ed0cef875a3fb2de0833bd8025dc4528",
-      "task_version": "607cfa39e2692f4dccc9f3dd8e9e04bc63da5699f909fde066e9f0332929b203",
+      "env_version": "b17f30f6656c54d4cd77b414ce727440cdb4f79ad2b1d947c225cfcb0f185fbd",
+      "task_version": "a789d2710d7e9022c1b8d2b11025b1022324aa94fdbac9e9a66048dcb16797a1",
       "pass": true,
       "oracle_pass": true,
       "alternatives_pass": true,
@@ -240,8 +240,8 @@
     },
     "5cef528de411237ff22e51a7a6df680a6954707a6a44f04885e492b572eafee5": {
       "task_id": "crc-care-gap",
-      "env_version": "5846d7857b161e8f1a166871b14a8010445c00283a48ab199ea5397e9fc92766",
-      "task_version": "f41b1cfa75d80264cb8b4381780e6f4c9529c9183bbf4ac48dff18851424c5d5",
+      "env_version": "33bc405f9ee45f63fb612007db9d8fcae1efeaddb9766b21073172bbd912fd86",
+      "task_version": "ea49bcadf1f09a28deb079b171b4664886a254b824a89235990aab4d2039e3dc",
       "pass": true,
       "oracle_pass": true,
       "alternatives_pass": true,
@@ -488,10 +488,243 @@
         }
       ]
     },
+    "85cb5bed7c09ecac43729bbfa483049ff1fa8402aa725e94d0989738567c6789": {
+      "task_id": "discharge-medrec",
+      "env_version": "f3507cc7a07467ddbbb35fecb999f07af42cd4b641262f53e667e68520c80e4a",
+      "task_version": "04384d8c3d300743664135ae5b804fb499087a60d87fab5f01b228753b79e542",
+      "pass": true,
+      "oracle_pass": true,
+      "alternatives_pass": true,
+      "failed_checks": [],
+      "probes": [
+        {
+          "kind": "oracle",
+          "id": "oracle",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "stop_and_reorder",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "two_20mg_tablets",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "one_answer",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "reads_old_summary_too",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "snippet_only_addendum",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "recheck_bmp",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "modify_held_lisinopril",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "spironolactone_on_50mg_tablet",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "furosemide_via_replaces",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "extra_concerns_message",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "mutant",
+          "id": "furosemide_unchanged",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "furosemide_40"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "spironolactone_12_5",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "spironolactone_25",
+            "sources_before_orders"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "spironolactone_12_5_snippet",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "spironolactone_25"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "lisinopril_task",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "lisinopril_resumed"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "kcl_kept",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "kcl_stopped"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "xl_ordered",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "others_unchanged"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "tartrate_stopped",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "others_unchanged"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "pantoprazole_ordered",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "omeprazole_kept"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "no_pcp_message",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "pcp_message"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "resume_before_lab",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "sources_before_orders"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "old_summary",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "furosemide_40",
+            "kcl_stopped"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "message_wrong_clinician",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "pcp_message"
+          ]
+        },
+        {
+          "kind": "null",
+          "id": "null",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "furosemide_40",
+            "spironolactone_25",
+            "kcl_stopped",
+            "lisinopril_resumed",
+            "pcp_message"
+          ]
+        },
+        {
+          "kind": "spray",
+          "id": "spray",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "others_unchanged",
+            "omeprazole_kept"
+          ]
+        },
+        {
+          "kind": "output-gap",
+          "id": "output-gap",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "furosemide_40",
+            "spironolactone_25",
+            "kcl_stopped",
+            "lisinopril_resumed"
+          ]
+        }
+      ]
+    },
     "9951302e791a963696583af0f6dd44372df913f3f5b4b8027cdb6f6ca10eca06": {
       "task_id": "contrast-ct-prep",
-      "env_version": "ec98c43c0ab505c6dea2e82ae38f0dd1089a01ee04a97b6c3843dde74a87b61e",
-      "task_version": "f8707e2bf77fce80749fe1615ca57cb9aa70e4f8defc917943ddee9a18694dbf",
+      "env_version": "280b883e5fc517d68ac042233949953cca749adc6fe7adacbc45baea3da00309",
+      "task_version": "98c88cdf25fd55c49b3ebbeeda6e51afefd22a19b43636ae6d437c1c97949223",
       "pass": true,
       "oracle_pass": true,
       "alternatives_pass": true,
@@ -728,215 +961,10 @@
         }
       ]
     },
-    "b726774884e28279b4f62e4d00e20058da0ae229a17cee3e9d08ef0798f957df": {
-      "task_id": "discharge-medrec",
-      "env_version": "bbe10cc5335c9148b69eace346c286be06aa3c7d76e279854de3d753e15fbd68",
-      "task_version": "3188eb60ff0e24c9e6b1625fe584aa9f0381ea6a500a288446136d76cd1604a8",
-      "pass": true,
-      "oracle_pass": true,
-      "alternatives_pass": true,
-      "failed_checks": [],
-      "probes": [
-        {
-          "kind": "oracle",
-          "id": "oracle",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "stop_and_reorder",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "two_20mg_tablets",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "one_answer",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "reads_old_summary_too",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "snippet_only_addendum",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "recheck_bmp",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "mutant",
-          "id": "furosemide_unchanged",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "furosemide_40"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "spironolactone_12_5",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "spironolactone_25",
-            "sources_before_orders"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "spironolactone_12_5_snippet",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "spironolactone_25"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "lisinopril_task",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "lisinopril_resumed"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "kcl_kept",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "kcl_stopped"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "xl_ordered",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "others_unchanged"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "tartrate_stopped",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "others_unchanged"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "pantoprazole_ordered",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "omeprazole_kept"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "no_pcp_message",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "pcp_message"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "resume_before_lab",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "sources_before_orders"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "old_summary",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "furosemide_40",
-            "kcl_stopped"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "message_wrong_clinician",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "pcp_message"
-          ]
-        },
-        {
-          "kind": "null",
-          "id": "null",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "furosemide_40",
-            "spironolactone_25",
-            "kcl_stopped",
-            "lisinopril_resumed",
-            "pcp_message"
-          ]
-        },
-        {
-          "kind": "spray",
-          "id": "spray",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "others_unchanged",
-            "omeprazole_kept"
-          ]
-        },
-        {
-          "kind": "output-gap",
-          "id": "output-gap",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "furosemide_40",
-            "spironolactone_25",
-            "kcl_stopped",
-            "lisinopril_resumed"
-          ]
-        }
-      ]
-    },
     "df605b2c3bc3ef63735ad4c318b5718d82ecf3590b04cb241716445ffe5da98a": {
       "task_id": "message-queue",
-      "env_version": "2d4df327702390a471c9203e40d8f9c5933e64d1f33270d5691a7c40432d22da",
-      "task_version": "51e97c2a1749036330f131c2938d73e1bc81b672212148c261808370de73d7a6",
+      "env_version": "44b0232987093b07f6516db4ec0b00b87c4fa88625567baaca3c93ad96ad6be3",
+      "task_version": "2481bb2bbf7b0c4de99834b435b04156efd125131de77a34e07651297e5e0a9b",
       "pass": true,
       "oracle_pass": true,
       "alternatives_pass": true,
@@ -1285,8 +1313,8 @@
     },
     "e2a595eda6b2df8a172a084467ad25cbd18f98baf24140bce6d42c3cc7242b46": {
       "task_id": "results-inbox",
-      "env_version": "02be3dae92bbee2de1a8a2d234d60ed0181a70e57d7960fee694f801ba73b328",
-      "task_version": "840bb312aa21d7641ae3c8d4fc92097796b6f9bcfdf5c6bac7422639824ea466",
+      "env_version": "873a026b7630321c406bcbd3a29930661ebb2b779aaebc36276b458ced108290",
+      "task_version": "9380165274628e746af5b25b6299c7937e1f7e8b1a0d9e2f08409c74ac682d06",
       "pass": true,
       "oracle_pass": true,
       "alternatives_pass": true,
