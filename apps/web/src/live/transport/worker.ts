@@ -192,7 +192,8 @@ export function workerTransport(sessionCap: () => number): TrialTransport {
     kind: 'browser-direct',
 
     async project({ task, trials }) {
-      return { usd: (await trialProjection(task)) * trials, committed: (await tabLedger().totals()).exposure };
+      // Priced at the per-trial cap plus the judge allowance: an upper bound.
+      return { usd: (await trialProjection(task)) * trials, committed: (await tabLedger().totals()).exposure, bound: true };
     },
 
     async start({ task, trials }): Promise<StartResult> {

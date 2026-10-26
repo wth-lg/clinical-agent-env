@@ -215,7 +215,7 @@ test('Run ×3 starts one batch of 3 trials and Run ×20 one batch of 20', async 
     method: 'POST', headers: { [TOKEN_HEADER]: (await token(page))!, 'content-type': 'application/json' },
     body: JSON.stringify({ tasks: ['_toy'], trials: 3, concurrency: Math.min(3, MAX_CONCURRENCY), effort: 'high', session_cap_usd: 500 }),
   })).json()) as { projection: { total_usd: number } };
-  await expect(page.getByTestId('run-cost-3')).toHaveText(`$${dry.projection.total_usd.toFixed(2)}`);
+  await expect(page.getByTestId('run-cost-3')).toHaveText(`at most $${dry.projection.total_usd.toFixed(2)}`);
   await run(page, 3);
   await expect(page.locator('[data-testid="live-run"][data-trials="3"]')).toBeVisible();
   await run(page, 20);
