@@ -48,9 +48,6 @@ export interface ContextInput {
   // The task's checks, or null when the caller did not load them.
   checks?: readonly TaskCheck[] | null;
   text?: CheckText | null;
-  // No longer read (R14-30: exposable means reachable, from matrix.json). Kept so a caller that
-  // still passes it (apps/web/src/data/results.ts) compiles until it drops it.
-  inWorld?: ((id: string) => boolean) | null;
 }
 
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -113,16 +110,6 @@ export function reachability(manifest: unknown, matrix: unknown, grader_task_ver
   if (solvers.some((p) => p.as_expected !== true)) return { unchecked: `the reference solution or an accepted alternative did not run as the matrix expects for ${grader_task_version}, so the matrix gives no evidence` };
   const reached = solvers.flatMap((p) => p.reachable_ids);
   return { exposable: (id) => reached.some((k) => sameId(k, id)) };
-}
-
-// Whether a caller must load the world for M1: never since R14-30, which reads reachability from
-// matrix.json. Kept, always false, so apps/web/src/data/results.ts compiles until it drops it.
-export const needsWorld = (_input: Pick<ContextInput, 'record' | 'checks' | 'events'>): boolean => false;
-
-// inWorld over the world's <Type>/<id> keys; an id given bare matches any type. explainContext no
-// longer reads it (see needsWorld).
-export function worldLookup(keys: ReadonlySet<string>): (id: string) => boolean {
-  return (id) => (id.includes('/') ? keys.has(id) : [...keys].some((k) => sameId(k, id)));
 }
 
 export function explainContext(input: ContextInput): ExplainContext {

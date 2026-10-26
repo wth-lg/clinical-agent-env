@@ -6,7 +6,8 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { explainContext, matrixFor, needsWorld, runWorldHash, worldLookup, type TaskCheck } from '../explain-context.ts';
+import * as explainContextModule from '../explain-context.ts';
+import { explainContext, matrixFor, runWorldHash, type TaskCheck } from '../explain-context.ts';
 import { decisiveGate } from '../../grader/attribution.ts';
 import { explainTrial, formatCriterion, type ExplainRecord } from '../explain.ts';
 import { parseTrajectory } from '../trajectory.ts';
@@ -69,7 +70,7 @@ describe('reachability (R14-30)', () => {
   };
   const probe = (kind: string, reachable_ids: string[], as_expected = true) => ({ kind, id: kind, outcome: kind === 'mutant' ? 'FAIL' : 'PASS', as_expected, failed_checks: [], reachable_ids });
   const matrix = (probes: object[], world_hash = 'w1', env_version = 'e1') => ({ grader_task_versions: { 'g-1': { env_version, oracle_pass: true, alternatives_pass: true, world_hash, probes } } });
-  const ctx = (mx: unknown, manifest: unknown = { world_hash: 'w1' }, inWorld?: (id: string) => boolean, r: ExplainRecord = record) => explainContext({ record: r, events: [], manifest, matrix: mx, ...(inWorld ? { inWorld } : {}) });
+  const ctx = (mx: unknown, manifest: unknown = { world_hash: 'w1' }, r: ExplainRecord = record) => explainContext({ record: r, events: [], manifest, matrix: mx });
 
   it('an unexposed decisive id is exposable when a tool result gave it to a passing oracle or alternative in the matrix', () => {
     expect(m('M1', record, ctx(matrix([probe('oracle', ['Observation/obs-9'])])))).toMatchObject({ met: true, evidence: 'Observation/obs-9 never exposed but exposable (the reference solution or an accepted alternative reached it in the matrix)' });
@@ -77,7 +78,7 @@ describe('reachability (R14-30)', () => {
   });
 
   it('it is not exposable when only a mutant or another agent was shown it, even though it is in the world, so E5 holds', () => {
-    const c = ctx(matrix([probe('oracle', ['Patient/pt-1']), probe('mutant', ['Observation/obs-9']), probe('spray', ['Observation/obs-9'])]), undefined, () => true);
+    const c = ctx(matrix([probe('oracle', ['Patient/pt-1']), probe('mutant', ['Observation/obs-9']), probe('spray', ['Observation/obs-9'])]));
     expect(m('M1', record, c)).toMatchObject({ met: false, evidence: 'Observation/obs-9 was never exposed and is not exposable (neither the reference solution nor an accepted alternative reached it in the matrix)' });
     expect(explainTrial(record, undefined, c).fault_criteria.env.find((x) => x.id === 'E5')!.met).toBe(true);
   });
@@ -104,7 +105,7 @@ describe('reachability (R14-30)', () => {
     const shown = [probe('oracle', ['Observation/obs-9'])];
     expect(m('M1', record, ctx(matrix(shown, 'w1', 'e2')))).toMatchObject({ met: 'pending', evidence: "Observation/obs-9 never exposed; exposability not checked (the trial ran at env_version e1, the matrix at e2)" });
     const { env_version: _, ...without } = record;
-    expect(m('M1', without, ctx(matrix(shown), undefined, undefined, without))).toMatchObject({ met: 'pending', evidence: expect.stringMatching(/not checked \(the record has no env_version\)$/) });
+    expect(m('M1', without, ctx(matrix(shown), undefined, without))).toMatchObject({ met: 'pending', evidence: expect.stringMatching(/not checked \(the record has no env_version\)$/) });
   });
 
   it('a matrix whose reference solution or an accepted alternative failed gives no evidence either way: M1 is pending, not false, and E5 does not hold (verifier-phase-P17i-C4r2-1 M2)', () => {
@@ -143,24 +144,17 @@ describe('matrixFor', () => {
   });
 });
 
-describe('runWorldHash, worldLookup and needsWorld', () => {
+describe('runWorldHash', () => {
   it('reads world_hash only when it is a string', () => {
     expect(runWorldHash({ world_hash: 'abc' })).toBe('abc');
     expect(runWorldHash({})).toBeNull();
     expect(runWorldHash(null)).toBeNull();
     expect(runWorldHash([])).toBeNull();
   });
-  it('matches a typed id exactly and a bare id under any type', () => {
-    const inWorld = worldLookup(new Set(['Observation/obs-1', 'Patient/pt-1']));
-    expect(inWorld('Observation/obs-1')).toBe(true);
-    expect(inWorld('Patient/obs-1')).toBe(false);
-    expect(inWorld('pt-1')).toBe(true);
-    expect(inWorld('pt-2')).toBe(false);
-  });
-  it('never asks for the world, and an inWorld a caller passes decides nothing (R14-30)', () => {
-    const base = { task_version: 'v', outcome: 'FAIL', state_hash: { initial: 'h', final: 'f', replay_final: 'f' }, checks: [{ id: 'G1', kind: 'gate', met: false }] };
-    const never: ExplainRecord = { ...base, attribution: { auto: 'retrieval', first_failed: 'G1', decisive_step: 2, exposure: [{ id: 'Observation/obs-1', first_exposed_step: null }] } };
-    expect(needsWorld({ record: never, events: [] })).toBe(false);
-    expect(m('M1', never, explainContext({ record: never, events: [], inWorld: () => true })).met).toBe('pending');
+  // M1 reads reachability from matrix.json, never the world (R14-30), so the world shim is gone.
+  it('exports no world lookup for M1', () => {
+    expect(explainContextModule).not.toHaveProperty('needsWorld');
+    expect(explainContextModule).not.toHaveProperty('worldLookup');
   });
 });
+
