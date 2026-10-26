@@ -21,8 +21,10 @@
 //     backticked string
 //   - done_when names a clause outside 1..done_when_clauses, or a clause has no row
 //   - with --plan, a phase is not a `### <phase>:` heading in that plan
-//   - with --done, a code or test path does not exist and the row's phase is in the list (a path
-//     of a phase not yet done may be missing)
+//   - a code or test path does not exist and the row does not list it in pending (a path a later
+//     phase builds), or a pending path is not one of the row's code or test paths
+//   - with --done, a code or test path does not exist and the row's phase is in the list, even if
+//     the row lists it in pending
 //   - with --final, any code, test or evidence path does not exist, a route holds a placeholder
 //     ('<'), or an expect element does not hold: the ax_text is absent from the snapshot under
 //     --evidence-root, the ax_match pattern matches fewer than min_matches times (default 1), or
@@ -80,6 +82,8 @@ export interface TraceRow {
   expect: Expect | Expect[];
   phase: string;
   done_when?: number[];
+  // Code or test paths that a later phase builds; only these may be missing in the default mode.
+  pending?: string[];
   note?: string;
 }
 
@@ -324,11 +328,16 @@ export async function main(args: string[], deps: Deps = { out: (l) => process.st
     }
     for (const by of r.by ?? []) if (!sourceIds.has(by)) failures.push({ id: r.id, problem: `by names ${by}, which has no source line`, fix: 'name an existing U row' });
     if (planPhases && nonEmpty(r.phase) && !planPhases.has(r.phase)) failures.push({ id: r.id, problem: `phase ${r.phase} is not a "### ${r.phase}:" heading in ${plan}`, fix: 'use the id of the plan phase that owns the row' });
+    const named = new Set([...(stringList(r.code) ? r.code : []), ...(stringList(r.tests) ? r.tests : [])]);
+    if (r.pending !== undefined && !stringList(r.pending)) failures.push({ id: r.id, problem: 'pending is not a list of paths', fix: 'list the code or test paths a later phase builds, or remove pending' });
+    const pending = new Set(stringList(r.pending) ? r.pending : []);
+    for (const p of pending) if (!named.has(p)) failures.push({ id: r.id, problem: `pending path ${p} is not a code or test path of the row`, fix: 'list in pending only a code or test path of the row that a later phase builds' });
     for (const key of ['code', 'tests'] as const) {
       for (const p of stringList(r[key]) ? r[key] : []) {
         if (existsSync(join(root, p))) continue;
         if (finalMode) failures.push({ id: r.id, problem: `${key === 'code' ? 'code' : 'test'} path ${p} does not exist`, fix: 'build it, or update the row to the path that holds it' });
         else if (done.has(r.phase)) failures.push({ id: r.id, problem: `${key === 'code' ? 'code' : 'test'} path ${p} does not exist and phase ${r.phase} is done`, fix: 'update the row to the path the phase built' });
+        else if (!pending.has(p)) failures.push({ id: r.id, problem: `${key === 'code' ? 'code' : 'test'} path ${p} does not exist`, fix: 'restore it, update the row to the path that holds it, or list it in pending if a later phase builds it' });
       }
     }
   }
