@@ -124,7 +124,7 @@ describe('explainTrial: criteria', () => {
     expect(m1.evidence).toMatch(/exposable/);
   });
 
-  it('a decisive id that was never exposed and is not in the world leaves M1 not met', () => {
+  it('a decisive id that was never exposed and is not reachable leaves M1 not met', () => {
     const x = explainTrial(failWith('retrieval', [{ id: NOT_IN_WORLD, first_exposed_step: null }]), undefined, ctx);
     const m1 = x.criteria.find((c) => c.id === 'M1')!;
     expect(m1.met).toBe(false);
@@ -320,7 +320,7 @@ describe('explainTrial: the UI contract strings', () => {
 describe('explainTrial: the criteria decide the fault', () => {
   const crit = (x: ReturnType<typeof explainTrial>, id: string) => x.criteria.find((c) => c.id === id)!;
 
-  it('probe A: a decisive id that is not in the world makes the fault env through E5, with M1 not met', () => {
+  it('probe A: a decisive id that is not reachable makes the fault env through E5, with M1 not met', () => {
     const x = explainTrial(failWith('retrieval', [{ id: NOT_IN_WORLD, first_exposed_step: null }]), undefined, ctx);
     expect(crit(x, 'M1').met).toBe(false);
     expect(x).toMatchObject({ fault: 'env', label: 'environment', deciding: { fault: 'env', id: 'E5' } });

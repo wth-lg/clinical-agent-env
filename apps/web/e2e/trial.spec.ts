@@ -490,8 +490,19 @@ test('a failed gate check stands out: a cross, the found value in the danger col
     if (await found.count()) expect(await found.evaluate((x) => getComputedStyle(x).color)).toBe(danger);
   }
   await expect(panel(page, 'grading').locator(`[data-testid="gate-check"][data-id="${e.decisive_check!.id}"]`)).toHaveAttribute('data-decisive', 'true');
-  // The header of a non-pass trial has a rule in the danger colour.
-  expect(await page.getByTestId('trial-header').evaluate((x) => getComputedStyle(x).borderLeftColor)).toBe(danger);
+  // The header of a model-fault trial has a neutral rule (verifier JU2-1 F3: only a trial that blocks
+  // the run, an environment or grader fault, gets the danger rule; fault-tone.spec checks that one).
+  const neutral = await page.evaluate(() => {
+    const probe = document.createElement('span');
+    probe.className = 'border-l-2 border-l-line-strong';
+    document.body.append(probe);
+    const c = getComputedStyle(probe).borderLeftColor;
+    probe.remove();
+    return c;
+  });
+  const rule = await page.getByTestId('trial-header').evaluate((x) => getComputedStyle(x).borderLeftColor);
+  expect(rule).toBe(neutral);
+  expect(rule).not.toBe(danger);
 });
 
 test('the infra label has its help link, and State diff marks the resources the decisive check names (F8)', async ({ page }) => {

@@ -74,14 +74,15 @@ export interface MatrixEntry {
   probes: Array<{ kind: string; id: string; outcome: string; as_expected: boolean; failed_checks: string[] }>;
 }
 // `pnpm cli matrix --task <id> --out <run>` wrote it (generate.ts --matrix), keyed by
-// grader_task_version: the entry for the task as it is now, so a stale matrix.json fails.
+// grader_task_version: the entry for the task as it is now, so a stale matrix.json fails. Each
+// probe keeps the fields browse.spec.ts reads from the page (matrix.json also records reachable_ids).
 const matrixJson = JSON.parse(readFileSync(join(RUN_DIR, 'matrix.json'), 'utf8')) as { grader_task_versions: Record<string, MatrixEntry> };
 export async function cliMatrix(id: string): Promise<MatrixEntry> {
   const task = await nodeTaskSource({ testMode: false }).get(id);
   const { grader_task_version } = await taskVersions(task, MANIFEST_HASH);
   const entry = matrixJson.grader_task_versions[grader_task_version];
   if (entry === undefined || entry.task_id !== id) throw new Error(`matrix.json has no entry for ${id} at grader_task_version ${grader_task_version}; rerun node apps/web/e2e/fixtures/sample-results/generate.ts --matrix`);
-  return entry;
+  return { ...entry, probes: entry.probes.map(({ kind, id, outcome, as_expected, failed_checks }) => ({ kind, id, outcome, as_expected, failed_checks })) };
 }
 
 // `pnpm cli replay --json` over one task's trials of the sample run: a copy holding only that
