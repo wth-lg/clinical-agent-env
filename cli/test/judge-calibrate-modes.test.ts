@@ -163,6 +163,46 @@ describe('judge-calibrate --from-trials', () => {
     expect(h.written).toHaveLength(0);
   });
 
+  it('compares every distinct answer the trials recorded for a key: two trials that differ are listed as a disagreement, and exit 1', { timeout: SLOW }, async () => {
+    // verifier-phase-P17i-C12-1 V5: with the first trial's answer alone, a live answer equal to it agreed.
+    const [target] = TRIAL_CACHE;
+    const flipped = { verdict: (target!.answer as { verdict?: string }).verdict === 'met' ? 'not_met' : 'met', quote: '' };
+    const other = copyRun('pilot-flip', (r) => {
+      const j = r.judge as { cache: JudgeCacheEntry[] };
+      j.cache = j.cache.map((e) => (e.key === target!.key ? { ...e, answer: flipped } : e));
+    });
+    const recorded = new Map(TRIAL_CACHE.map((e) => [e.key, e.answer]));
+    const h = harness({ fetch: judgeBy(TOY.judgeEffort, (key) => recorded.get(key) ?? null) });
+    expect(await main(['--task', '_toy', '--from-trials', `${RUN},${other}`], h.deps), h.text()).toBe(1);
+    const c = h.written[0]!;
+    expect(c.agree).toBe(TRIAL_CACHE.length - 1);
+    expect(c.disagreements).toEqual([{ key: target!.key, kind: target!.kind, reference: target!.answer, recorded: [target!.answer, flipped], live: target!.answer, live_error: null, reason: 'trials recorded different answers' }]);
+    expect(h.text()).toContain(`${target!.key} ${target!.kind}: trials recorded different answers`);
+  });
+
+  it('two trials whose answers for a key differ only in the quote agree with a live answer of the same verdict', { timeout: SLOW }, async () => {
+    const [target] = TRIAL_CACHE;
+    const requoted = { ...(target!.answer as object), quote: 'another quote' };
+    const other = copyRun('pilot-requote', (r) => {
+      const j = r.judge as { cache: JudgeCacheEntry[] };
+      j.cache = j.cache.map((e) => (e.key === target!.key ? { ...e, answer: requoted } : e));
+    });
+    const recorded = new Map(TRIAL_CACHE.map((e) => [e.key, e.answer]));
+    const h = harness({ fetch: judgeBy(TOY.judgeEffort, (key) => recorded.get(key) ?? null) });
+    expect(await main(['--task', '_toy', '--from-trials', `${RUN},${other}`], h.deps), h.text()).toBe(0);
+    expect(h.written[0]!).toMatchObject({ agree: TRIAL_CACHE.length, disagreements: [] });
+  });
+
+  it('carries over the probes of the existing calibration file', { timeout: SLOW }, async () => {
+    // verifier-phase-P17i-C12-1 V1: a later --from-trials run wrote the file without its probes.
+    const existing = JSON.parse(readFileSync(RECORDED, 'utf8')) as Calibration;
+    const recorded = new Map(TRIAL_CACHE.map((e) => [e.key, e.answer]));
+    const h = harness({ fetch: judgeBy(TOY.judgeEffort, (key) => recorded.get(key) ?? null), existing });
+    expect(await main(['--task', '_toy', '--from-trials', RUN], h.deps), h.text()).toBe(0);
+    expect(h.written[0]!.probes).toEqual(existing.probes);
+    expect(h.written[0]!.trials!.used).toBe(1);
+  });
+
   it('lists a trial this checkout cannot regrade under trials.excluded, and exits 1', { timeout: SLOW }, async () => {
     // A final state this checkout's replay does not reach; the record itself stays valid.
     const bad = copyRun('pilot-bad', (r) => { Object.assign(r.state_hash as object, { final: '0'.repeat(64), replay_final: '0'.repeat(64) }); });
@@ -187,6 +227,16 @@ describe('judge-calibrate reference and protocol', () => {
     expect(c.protocol).toMatchObject({ design: 'scripted reference' });
     expect(Object.keys(c.protocol).sort()).toEqual(['agreement', 'design', 'excluded', 'invalid', 'pooling', 'texts', 'unknown']);
     expect(c.trials).toBeUndefined();
+  });
+
+  it('a live calibration carries over the probes of the existing calibration file', { timeout: SLOW }, async () => {
+    // verifier-phase-P17i-C12-1 F2: the plain live mode wrote the file without its probes.
+    const existing = JSON.parse(readFileSync(RECORDED, 'utf8')) as Calibration;
+    const byKey = new Map(TOY.cache.map((e) => [e.key, e.answer]));
+    const h = harness({ fetch: judgeBy(TOY.judgeEffort, (key) => byKey.get(key)!), existing });
+    expect(await main(['--task', '_toy'], h.deps), h.text()).toBe(0);
+    expect(h.written[0]!.probes).toEqual(existing.probes);
+    expect(h.written[0]!.questions).toBe(TOY.cache.length);
   });
 
   it('--annotate adds reference and protocol to the existing file, keeps every other field, makes no call and needs no key', async () => {

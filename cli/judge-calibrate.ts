@@ -26,8 +26,10 @@
 //   --from-trials  the live recalibration P21 runs: reads the live, valid trials of the task in
 //               each run dir (a comma-separated list), grades each again from its trajectory with
 //               a Judge that notes each question and sends nothing, then asks every question
-//               live, once, and compares with the answer the judge gave while the trial ran
-//               (reference: live, no oracle). A mock trial is not read; a trial this checkout
+//               live, once, and compares with every distinct answer the judge gave while the
+//               trials ran (reference: live, no oracle); trials that recorded different answers
+//               for one key are a disagreement whatever the live answer. A mock trial is not
+//               read; a trial this checkout
 //               cannot regrade (its replay does not reach the record's state) is listed under
 //               trials.excluded. With --dry-run it prints the projection of those questions.
 //   --probes    asks each paraphrase in PROBES of one judge item live, once, and writes the
@@ -40,7 +42,8 @@
 // probes). Exit 0 when every task's keys all agree and its oracle is PASS with score 1.0 and no
 // judge item unknown (--from-trials: no trial excluded; --probes: every probe agrees); 1
 // otherwise (the calibration file is still written), or when a call fails (nothing is written
-// for that task); 2 on a usage error.
+// for that task); 2 on a usage error. The live mode and --from-trials keep the `probes` of the
+// task's existing calibration file.
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -88,11 +91,13 @@ type Answer = JudgeCacheEntry['answer'];
 export interface Disagreement {
   key: string;
   kind: JudgeCacheEntry['kind'];
-  // The answer compared with: the task's cache, or the one a trial recorded (--from-trials).
+  // The answer compared with: the task's cache, or the first one a trial recorded (--from-trials).
   reference: Answer;
+  // --from-trials, when the trials recorded different answers for the key: each distinct one.
+  recorded?: Answer[];
   live: Answer;
   live_error: string | null;
-  reason: 'answers differ' | 'no matrix case asks this key' | 'no trial recorded an answer for this key';
+  reason: 'answers differ' | 'no matrix case asks this key' | 'no trial recorded an answer for this key' | 'trials recorded different answers';
 }
 
 export type Reference = 'scripted' | 'live' | 'mixed';
@@ -219,7 +224,7 @@ const INVALID = 'a live call with no answer (refused, or invalid twice) never ag
 const POOLING = 'one task per file: agree is pooled over the task\'s questions; every live answer is in live_entries and each disagreement lists both answers';
 const SCRIPTED_TEXTS = 'matrix cases: agent outputs the task authors scripted';
 const SCRIPTED_EXCLUDED = 'none: a cache key no matrix case asks stays in questions and is listed as a disagreement';
-const TRIALS_EXCLUDED = 'mock trials and trials with no grade are not read; a trial this checkout cannot regrade is listed in trials.excluded; a question no trial recorded an answer for stays in questions and is listed as a disagreement';
+const TRIALS_EXCLUDED = 'mock trials and trials with no grade are not read; a trial this checkout cannot regrade is listed in trials.excluded; a question no trial recorded an answer for, or that trials answered differently, stays in questions and is listed as a disagreement';
 const PROBE_PROTOCOL = 'each paraphrase is asked once, live, with the item\'s real criterion; a probe agrees when the verdict the grader takes (met needs its quote in the text) is the expected one; unknown or no answer never agrees';
 
 // A trial's cache has no provenance: the judge answered it live while the trial ran.
@@ -234,6 +239,10 @@ function provenance(reference: readonly JudgeCacheEntry[], texts: string, exclud
   const design = kind === 'scripted' ? 'scripted reference' : kind === 'mixed' ? 'mixed reference' : sameModel ? 'test-retest' : 'live reference';
   return { reference: kind, reference_counts: counts, protocol: { design, texts, agreement: AGREEMENT, unknown: UNKNOWN, invalid: INVALID, excluded, pooling: POOLING } };
 }
+
+// c with the probes of the task's existing calibration file, if it has any: --probes wrote them,
+// and a later calibration of the task's keys or trials leaves them as they are.
+const withProbesOf = (prior: Calibration | null, c: Calibration): Calibration => (prior?.probes === undefined ? c : { ...c, probes: prior.probes });
 
 // c with the provenance fields set, placed after `at` as a live calibration writes them.
 function withProvenance(c: Calibration, p: Pick<Calibration, 'reference' | 'reference_counts' | 'protocol'>): Calibration {
@@ -314,8 +323,9 @@ interface TrialPlan {
   task: MatrixTask;
   asked: Array<{ key: string } & Question>;
   usd: number;
-  // The answer each question got while a trial ran, by cache key (the first trial's).
-  recorded: Map<string, JudgeCacheEntry>;
+  // The answers each question got while the trials ran, by cache key: each distinct one (as
+  // agrees() compares them), in the order the trials were read.
+  recorded: Map<string, JudgeCacheEntry[]>;
   trials: TrialsUsed;
 }
 
@@ -324,7 +334,7 @@ async function trialPlan(task: MatrixTask, dirs: string[], tasks: TaskSource): P
   const { world, definitions } = repoWorld();
   const checks = await taskChecks(task.id);
   const judge = new RecordingJudge(task.judgeEffort);
-  const recorded = new Map<string, JudgeCacheEntry>();
+  const recorded = new Map<string, JudgeCacheEntry[]>();
   const trials: TrialsUsed = { dirs, used: 0, not_live: 0, invalid: 0, excluded: [] };
   for (const dir of dirs) {
     for (const { record: r } of settledRecords(dir)) {
@@ -357,7 +367,10 @@ async function trialPlan(task: MatrixTask, dirs: string[], tasks: TaskSource): P
         continue;
       }
       trials.used++;
-      for (const e of r.judge?.cache ?? []) if (!recorded.has(e.key)) recorded.set(e.key, e);
+      for (const e of r.judge?.cache ?? []) {
+        const seen = recorded.get(e.key) ?? [];
+        if (!seen.some((x) => sameAnswer(e.kind, x.answer, e.answer))) recorded.set(e.key, [...seen, e]);
+      }
     }
   }
   return { task, ...judge.asked(), recorded, trials };
@@ -389,14 +402,19 @@ function agrees(kind: JudgeCacheEntry['kind'], reference: Answer, live: Answer):
   return kind === 'judge' ? reference.verdict === live.verdict : reference.value === live.value;
 }
 
-// Compares each item's reference answer (undefined: none recorded) with its live answer.
-function compare(items: ReadonlyArray<{ key: string; kind: JudgeCacheEntry['kind']; reference: Answer | undefined }>, live: Map<string, JudgeCacheEntry>) {
+// Two recorded answers are one answer when they agree; two with no answer are one too.
+const sameAnswer = (kind: JudgeCacheEntry['kind'], a: Answer, b: Answer) => (a === null && b === null) || agrees(kind, a, b);
+
+// Compares each item's reference answer (undefined: none recorded) with its live answer. recorded
+// lists every distinct answer when there are several (--from-trials): those never all agree.
+function compare(items: ReadonlyArray<{ key: string; kind: JudgeCacheEntry['kind']; reference: Answer | undefined; recorded?: Answer[] | undefined }>, live: Map<string, JudgeCacheEntry>) {
   const disagreements: Disagreement[] = [];
   let agree = 0;
   for (const it of [...items].sort((a, b) => (a.key < b.key ? -1 : 1))) {
     const l = live.get(it.key);
     if (l === undefined) disagreements.push({ key: it.key, kind: it.kind, reference: it.reference ?? null, live: null, live_error: null, reason: 'no matrix case asks this key' });
     else if (it.reference === undefined) disagreements.push({ key: it.key, kind: it.kind, reference: null, live: l.answer, live_error: l.error, reason: 'no trial recorded an answer for this key' });
+    else if (it.recorded !== undefined && it.recorded.length > 1) disagreements.push({ key: it.key, kind: it.kind, reference: it.reference, recorded: it.recorded, live: l.answer, live_error: l.error, reason: 'trials recorded different answers' });
     else if (agrees(it.kind, it.reference, l.answer)) agree++;
     else disagreements.push({ key: it.key, kind: it.kind, reference: it.reference, live: l.answer, live_error: l.error, reason: 'answers differ' });
   }
@@ -487,7 +505,7 @@ export async function main(args: string[], deps: Deps): Promise<number> {
     return ok ? 0 : 1;
   }
 
-  if (fromTrials !== undefined) return fromTrialsMain(tasks, fromTrials, dry, key, deps, write);
+  if (fromTrials !== undefined) return fromTrialsMain(tasks, fromTrials, dry, key, deps, read, write);
   if (probes) return probesMain(tasks, dry, key, deps, read, write);
 
   const env = matrixEnv();
@@ -534,7 +552,7 @@ export async function main(args: string[], deps: Deps): Promise<number> {
         note: `Live judge answers (pnpm cli judge-calibrate) vs the task's cache. tests/judge-cache.json is not written by this command; this file is the calibration record. Ledger batch ${b.batch}.`,
         live_entries: [...b.entries.values()].sort((x, y) => (x.key < y.key ? -1 : 1)),
       };
-      write(task.id, c);
+      write(task.id, withProbesOf(read(task.id), c));
       const passed = c.oracle!.outcome === 'PASS' && c.oracle!.score === 1 && c.oracle!.judge_unknown === 0;
       deps.out(`judge-calibrate ${task.id}: ${agree} of ${c.questions} agree, ${c.calls} calls, ${money(c.cost_usd)}; oracle ${c.oracle!.outcome ?? 'none'} score ${c.oracle!.score ?? 'n/a'} judge.unknown ${c.oracle!.judge_unknown}`);
       printDisagreements(deps, disagreements);
@@ -548,7 +566,7 @@ export async function main(args: string[], deps: Deps): Promise<number> {
   return ok ? 0 : 1;
 }
 
-async function fromTrialsMain(tasks: MatrixTask[], dirs: string[], dry: boolean, key: string, deps: Deps, write: (task: string, c: Calibration) => void): Promise<number> {
+async function fromTrialsMain(tasks: MatrixTask[], dirs: string[], dry: boolean, key: string, deps: Deps, read: (task: string) => Calibration | null, write: (task: string, c: Calibration) => void): Promise<number> {
   const source = deps.tasks ?? nodeTaskSource({ testMode: isTestMode(deps.env) });
   const plans: TrialPlan[] = [];
   let ok = true;
@@ -576,8 +594,8 @@ async function fromTrialsMain(tasks: MatrixTask[], dirs: string[], dry: boolean,
           else await judge.extract(a.q);
         }
       });
-      const reference = asked.flatMap((a) => (recorded.has(a.key) ? [recorded.get(a.key)!] : []));
-      const { agree, disagreements } = compare(asked.map((a) => ({ key: a.key, kind: a.kind, reference: recorded.get(a.key)?.answer })), b.entries);
+      const reference = asked.flatMap((a) => (recorded.has(a.key) ? [recorded.get(a.key)![0]!] : []));
+      const { agree, disagreements } = compare(asked.map((a) => ({ key: a.key, kind: a.kind, reference: recorded.get(a.key)?.[0]!.answer, recorded: recorded.get(a.key)?.map((e) => e.answer) })), b.entries);
       const c: Calibration = {
         task: task.id,
         model: MODEL,
@@ -598,7 +616,7 @@ async function fromTrialsMain(tasks: MatrixTask[], dirs: string[], dry: boolean,
         live_entries: [...b.entries.values()].sort((x, y) => (x.key < y.key ? -1 : 1)),
         trials,
       };
-      write(task.id, c);
+      write(task.id, withProbesOf(read(task.id), c));
       deps.out(`judge-calibrate ${task.id}: ${agree} of ${c.questions} agree, ${c.calls} calls, ${money(c.cost_usd)}; ${trials.used} trials read, ${trials.excluded.length} excluded`);
       printDisagreements(deps, disagreements);
       if (disagreements.length > 0 || trials.excluded.length > 0) ok = false;
@@ -684,7 +702,7 @@ async function probesMain(tasks: MatrixTask[], dry: boolean, key: string, deps: 
 }
 
 function printDisagreements(deps: Deps, disagreements: readonly Disagreement[]) {
-  for (const d of disagreements) deps.out(`  - ${d.key} ${d.kind}: ${d.reason}: reference ${JSON.stringify(d.reference)}, live ${JSON.stringify(d.live)}${d.live_error ? ` (${d.live_error})` : ''}`);
+  for (const d of disagreements) deps.out(`  - ${d.key} ${d.kind}: ${d.reason}: ${d.recorded ? `recorded ${JSON.stringify(d.recorded)}` : `reference ${JSON.stringify(d.reference)}`}, live ${JSON.stringify(d.live)}${d.live_error ? ` (${d.live_error})` : ''}`);
 }
 
 function projection(deps: Deps, plans: ReadonlyArray<{ usd: number }>): number {
