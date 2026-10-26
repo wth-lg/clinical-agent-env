@@ -232,8 +232,9 @@ launcher (P15) shows the Run lines.
   One pattern under Patterns matches all three forms.
 - The Attribution tab's criteria table shows, for each criterion, the text `<id>: met` or
   `<id>: not met` (M1-M5), then its evidence; M5 shows `<id>: pending` on an unaudited trial, and
-  M1 shows `M1: not applicable` only on a LIMIT or REFUSAL with no failed gate check; with a
-  failed check, M1 is met or not met by the exposure of that check's decisive ids.
+  M1 shows `M1: not applicable` only on a LIMIT or REFUSAL with no failed gate check (and on a
+  GRADER_ERROR, whose thrown check gives no verdict on the model); with a failed check, M1 is met
+  or not met by the exposure of that check's decisive ids.
   Criterion sentences come from FAULT_DEFINITIONS and are not copied here, because
   scripts/test/one-definition.test.ts forbids them outside packages/core/outcomes.ts.
 - `not human-audited`: the marker next to the fault label on a trial with no audit row (every

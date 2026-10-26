@@ -77,12 +77,16 @@ export function Grading({ t, steps, onStep, decisive = null }: { t: Trial; steps
   const gates = checks.filter((c) => c.kind !== 'rubric').sort((a, b) => Number(a.met === true) - Number(b.met === true));
   const rubric = checks.filter((c) => c.kind === 'rubric');
   const graded = checks.length > 0;
+  // A check threw: the grade did not finish, so the recorded checks decide nothing
+  // (verifier-phase-P16-2 minor: it read "Graded with grader 8" and "8 of 9 met").
+  const threwCheck = r.error && !g.regraded ? r.error.check : null;
+  const unfinished = r.error != null && !g.regraded;
   const score = graded && typeof g.score === 'number' ? g.score.toFixed(2) : null;
   return (
     <div className="space-y-4">
       <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
         <OutcomeChip outcome={g.outcome} fault={t.explanation.fault} />
-        {graded && <span className="text-ink-muted">{g.regraded ? 'Current grade, from the last regrade.' : r.grader_version ? `Graded with grader ${r.grader_version}.` : 'Graded.'}</span>}
+        {graded && <span data-testid="grade-line" className="text-ink-muted">{unfinished ? 'Not graded: a grader check failed with an error, so the trial has no grade.' : g.regraded ? 'Current grade, from the last regrade.' : r.grader_version ? `Graded with grader ${r.grader_version}.` : 'Graded.'}</span>}
       </p>
       <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
         <Metric title="Score" value={score} testId="score-card" />
@@ -102,12 +106,15 @@ export function Grading({ t, steps, onStep, decisive = null }: { t: Trial; steps
         </p>
       )}
       {gates.length > 0 && (
-        <Section title={`Gate checks (${gates.filter((c) => c.met === true).length} of ${gates.length} met)`} lead="A trial passes only when every gate check is met.">
+        <Section
+          title={unfinished ? 'Gate checks, as recorded before the error' : `Gate checks (${gates.filter((c) => c.met === true).length} of ${gates.length} met)`}
+          lead={unfinished ? 'The grade did not finish, so these checks do not decide the outcome.' : 'A trial passes only when every gate check is met.'}
+        >
           <ul className="divide-y divide-line">
             {gates.map((c) => {
               const requires = checkTextOf(t.task)?.[c.id]?.requires;
               // The check that threw has no verdict on the trial: the grader's error, not "not met".
-              const threw = r.error?.check === c.id && !g.regraded;
+              const threw = threwCheck === c.id;
               const f = threw ? null : found(t.task, c);
               return (
                 <li key={c.id} data-testid="gate-check" data-id={c.id} data-met={String(c.met)} data-error={String(threw)} data-decisive={String(c.id === decisive)} className="space-y-1 py-2">

@@ -31,7 +31,7 @@ import { trialName, validateSummary, wilson, type Interval, type Summary } from 
 import { parseTrajectory } from '../../../../packages/core/trajectory.ts';
 import type { TrialEvent } from '../../../../packages/core/events.ts';
 import { useEffect, useState } from 'react';
-import { validateAuditRow, validateRecord } from './records.ts';
+import { readAudit, validateRecord } from './records.ts';
 import { MANIFEST } from './world.ts';
 
 export const dataUrl = (rel: string): string => `${import.meta.env.BASE_URL}data/${rel}`;
@@ -112,17 +112,9 @@ async function loadRun(files: readonly string[], has: ReadonlySet<string>, runDi
   const warnings: string[] = [];
   const audits: AuditRow[] = [];
   if (has.has(`${runDir}/audit.jsonl`)) {
-    (await fetchText(`${runDir}/audit.jsonl`)).split('\n').forEach((line, i) => {
-      if (line.trim() === '') return;
-      try {
-        const row = JSON.parse(line) as unknown;
-        const errors = validateAuditRow(row);
-        if (errors.length === 0) audits.push(row as AuditRow);
-        else warnings.push(`audit.jsonl line ${i + 1} cannot be read: ${errors.join('; ')}`);
-      } catch (e) {
-        warnings.push(`audit.jsonl line ${i + 1} cannot be read: ${message(e)}`);
-      }
-    });
+    const read = readAudit(await fetchText(`${runDir}/audit.jsonl`));
+    audits.push(...read.rows);
+    warnings.push(...read.warnings);
   }
   const byTrial = new Map(audits.map((a) => [a.trial, a]));
   const manifest = has.has(`${runDir}/manifest.json`) ? await fetchJson<unknown>(`${runDir}/manifest.json`).catch((e: unknown) => {

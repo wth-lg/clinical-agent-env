@@ -9,7 +9,7 @@
 //                     ({grader_task_versions: {<v>: {oracle_pass, alternatives_pass, failed_checks?}}},
 //                     as `pnpm cli matrix --out <run>` writes it; failed_checks that is not a list
 //                     of strings reads as not given)
-//   exposure          on a trial whose first failed gate check is not the one its recorded
+//   exposure          on a trial whose decisive gate check is not the one its recorded
 //                     attribution names (a regrade moved it): that check's decisive ids from the
 //                     task's checks, with the step each was first exposed at in the trajectory
 //                     (packages/grader/exposure.ts firstExposed)
@@ -60,7 +60,7 @@ export function matrixFor(matrix: unknown, grader_task_version: string | null): 
   return { grader_task_version, oracle_pass: m.oracle_pass, alternatives_pass: m.alternatives_pass, ...(strings(m.failed_checks) ? { failed_checks: m.failed_checks } : {}) };
 }
 
-// The recomputed exposure of the first failed check's decisive ids, when the recorded attribution
+// The recomputed exposure of the decisive check's decisive ids, when the recorded attribution
 // names another check and the task's checks give that check's decisive ids.
 export function recomputedExposure(record: ExplainRecord, checks: readonly TaskCheck[] | null | undefined, events: readonly TrialEvent[]): NonNullable<ExplainContext['exposure']> | null {
   const failed = firstFailedCheck(record);

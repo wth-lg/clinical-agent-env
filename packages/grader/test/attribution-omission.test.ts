@@ -35,7 +35,8 @@ describe('a safety gate failure marked omission (R14-12)', () => {
     const G2 = gate({ id: 'G2', category: 'safety', traces_to: 't', decisive_ids: [], fn: () => ({ met: false, evidence: {} }) });
     const g2 = { ...failed(false), id: 'G2' };
     const a = attribute('FAIL', [SAFETY, G2], [failed(true), g2, r1(false)], [step(1, ['Observation/obs-1'])]);
-    expect(a).toMatchObject({ auto: 'over_action', first_failed: 'G1' });
+    // The forbidden-write gate is the decisive one (decisions.tsv 2026-10-27T19:50).
+    expect(a).toMatchObject({ auto: 'over_action', first_failed: 'G2' });
     // Every failed safety gate marked omission: the first one's rules still decide.
     expect(attribute('FAIL', [SAFETY, G2], [failed(true), { ...g2, omission: true }, r1(false)], [step(1, ['Observation/obs-1'])])?.auto).toBe('reasoning');
   });

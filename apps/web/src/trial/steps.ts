@@ -39,3 +39,8 @@ export function trajectoryOf(events: readonly TrialEvent[]): Trajectory {
 export const stepOfId = (steps: readonly Step[], id: string): number | null => lastWrite(steps, [id]) ?? firstExposed(steps, id);
 
 export const stepAnchor = (n: number): string => `step-${n}`;
+
+// The first tool call that failed with an internal error, the call an ENV_ERROR (INTERNAL) points
+// at; null when the trajectory has none. The loop records it as executed, so it has a step.
+export const internalErrorRow = (rows: readonly Row[]): (Row & { kind: 'tool'; step: number }) | null =>
+  (rows.find((r) => r.kind === 'tool' && r.error === 'INTERNAL' && r.step !== null) as (Row & { kind: 'tool'; step: number }) | undefined) ?? null;
