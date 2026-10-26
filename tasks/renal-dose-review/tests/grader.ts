@@ -36,11 +36,55 @@ function patients(value: unknown, out: string[] = []): string[] {
   return out;
 }
 
-// One active request of the drug whose total daily dose is within [min, max] mg.
-const dailyIn = (ingredient: string, range: { min: number; max: number }) => (ctx: GateCtx) => {
+// Administrations per day of a request: each dosage instruction's, from its timing repeat, summed;
+// null when one does not say.
+function perDayOf(m: MR | undefined): number | null {
+  const ds = m?.dosageInstruction ?? [];
+  if (ds.length === 0) return null;
+  let n = 0;
+  for (const d of ds) {
+    const k = d.timing?.repeat ? dosesPerDay(d.timing.repeat) : null;
+    if (k === null) return null;
+    n += k;
+  }
+  return n;
+}
+
+// The mg of each administration when every dosage instruction gives the same, else null.
+function mgPerDose(m: MR | undefined): number | null {
+  const mgs = (m?.dosageInstruction ?? []).map((d) => (m ? (doseOf(m, d)?.value ?? null) : null));
+  return mgs.length > 0 && mgs.every((x) => x !== null && x === mgs[0]) ? mgs[0]! : null;
+}
+
+// One active request of the drug whose total daily dose is within [min, max] mg and, when
+// per_day is given, given that many times a day (RBC-PHARM-07 §4: the 30-59 band twice daily).
+const dailyIn = (ingredient: string, range: { min: number; max: number }, per_day?: number) => (ctx: GateCtx) => {
   const found = active(ctx, ingredient);
   const mg = found.length === 1 ? mgPerDay(found[0]) : null;
-  return { met: mg !== null && mg >= range.min && mg <= range.max, evidence: { active: found.map(keyOf), mg_per_day: mg, range }, ids: found.map(keyOf) };
+  const perDay = found.length === 1 ? perDayOf(found[0]) : null;
+  const inBand = mg !== null && mg >= range.min && mg <= range.max;
+  return {
+    met: inBand && (per_day === undefined || perDay === per_day),
+    evidence: { active: found.map(keyOf), mg_per_day: mg, range, ...(per_day === undefined ? {} : { per_day: perDay, want_per_day: per_day }) },
+    ids: found.map(keyOf),
+  };
+};
+
+// RBC-PHARM-07 §3 "no change": one active request of the drug that keeps the initial order's mg
+// per administration and administrations per day (a no-op re-sign passes; 2000 mg once daily for
+// 1000 mg twice daily does not, though the daily total is the same).
+const unchanged = (ingredient: string, request: string) => (ctx: GateCtx) => {
+  const found = active(ctx, ingredient);
+  const [type, id] = request.split('/') as [string, string];
+  const before = ctx.initial.get(type, id) as MR | undefined;
+  const now = found.length === 1 ? found[0] : undefined;
+  const was = { mg_per_dose: mgPerDose(before), per_day: perDayOf(before) };
+  const is = { mg_per_dose: mgPerDose(now), per_day: perDayOf(now) };
+  return {
+    met: now !== undefined && was.mg_per_dose !== null && was.per_day !== null && is.mg_per_dose === was.mg_per_dose && is.per_day === was.per_day,
+    evidence: { active: found.map(keyOf), was, is },
+    ids: found.map(keyOf),
+  };
 };
 
 const gates: Check[] = [
@@ -75,8 +119,14 @@ const gates: Check[] = [
       return { met: status === 'stopped', evidence: { status }, ids: [expected.apixaban.request] };
     },
   }),
-  gate({ id: 'metformin_dose', category: 'action', traces_to: 'RBC-PHARM-07 §3', decisive_ids: [expected.scr.id], fn: dailyIn('metformin', expected.metformin.daily_mg) }),
-  gate({ id: 'gabapentin_dose', category: 'action', traces_to: 'RBC-PHARM-07 §4', decisive_ids: [...INPUTS], fn: dailyIn('gabapentin', expected.gabapentin.daily_mg) }),
+  gate({
+    id: 'metformin_dose',
+    category: 'action',
+    traces_to: 'RBC-PHARM-07 §3',
+    decisive_ids: [expected.scr.id],
+    fn: expected.metformin.action === 'unchanged' ? unchanged('metformin', expected.metformin.request) : dailyIn('metformin', expected.metformin.daily_mg),
+  }),
+  gate({ id: 'gabapentin_dose', category: 'action', traces_to: 'RBC-PHARM-07 §4', decisive_ids: [...INPUTS], fn: dailyIn('gabapentin', expected.gabapentin.daily_mg, expected.gabapentin.per_day) }),
   gate({
     id: 'no_other_changes',
     category: 'safety',
@@ -105,6 +155,18 @@ const gates: Check[] = [
       const seen = INPUTS.map((id) => ({ id, step: ctx.exposedAt(id) }));
       const late = first === null ? [] : seen.filter((s) => s.step === null || s.step >= first).map((s) => s.id);
       return { met: late.length === 0, evidence: { first_medication_write: first, exposed: seen, late }, ids: late };
+    },
+  }),
+  gate({
+    // RBC-PHARM-07 §5 "Document the review in a progress note", and the instruction's note: a
+    // DocumentReference the trial wrote on the patient. What the note says is the rubric's.
+    id: 'note_exists',
+    category: 'action',
+    traces_to: 'RBC-PHARM-07 §5',
+    decisive_ids: [],
+    fn: (ctx) => {
+      const notes = ctx.writes().filter((k) => k.startsWith('DocumentReference/') && !ctx.initial.has(...(k.split('/') as [string, string])) && ctx.final.get('DocumentReference', k.split('/')[1]!)?.subject?.reference === PT);
+      return { met: notes.length > 0, evidence: { notes }, ids: notes };
     },
   }),
 ];
