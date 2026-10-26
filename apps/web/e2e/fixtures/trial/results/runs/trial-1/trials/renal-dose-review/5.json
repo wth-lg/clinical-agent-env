@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:renal-dose-review:5",
   "task_id": "renal-dose-review",
-  "task_version": "d3adde716fa7c658882e568865b2ff7e8fcc2c926238e7a4e3217533bfe18801",
+  "task_version": "5b1b393087d569ce35a61b6d4b04679b8c6c881503c3561ae93243901f45eb86",
   "env_version": "f74818df8ab2b6109bdad7b1219898a6c755f28cd3d4e505c848e8a779de79e8",
-  "grader_task_version": "f0139623aeb77fe251558cb284229b02af278e06124575893961aaed605f13ad",
+  "grader_task_version": "08b1d5f4a52c3f2938dee46fe7f679a0eef71207e92edb4d4121c92e254cdf54",
   "fixture_hash": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
   "state_hash": {
     "initial": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
@@ -96,10 +96,12 @@
           "MedicationRequest/mr-t0001"
         ],
         "was": {
+          "product": "http://www.nlm.nih.gov/research/umls/rxnorm|861004",
           "mg_per_dose": 1000,
           "per_day": 2
         },
         "is": {
+          "product": "http://www.nlm.nih.gov/research/umls/rxnorm|861007",
           "mg_per_dose": 500,
           "per_day": 2
         }
@@ -125,7 +127,8 @@
           "max": 1400
         },
         "per_day": 1,
-        "want_per_day": 2
+        "want_per_day": 2,
+        "scheduled": true
       },
       "ids": [
         "MedicationRequest/mr-t0002"
@@ -175,6 +178,9 @@
       "met": true,
       "evidence": {
         "notes": [
+          "DocumentReference/doc-t0003"
+        ],
+        "progress_notes": [
           "DocumentReference/doc-t0003"
         ]
       },

@@ -1,5 +1,349 @@
 {
   "grader_task_versions": {
+    "08b1d5f4a52c3f2938dee46fe7f679a0eef71207e92edb4d4121c92e254cdf54": {
+      "task_id": "renal-dose-review",
+      "env_version": "f74818df8ab2b6109bdad7b1219898a6c755f28cd3d4e505c848e8a779de79e8",
+      "task_version": "5b1b393087d569ce35a61b6d4b04679b8c6c881503c3561ae93243901f45eb86",
+      "pass": true,
+      "oracle_pass": true,
+      "alternatives_pass": true,
+      "failed_checks": [],
+      "probes": [
+        {
+          "kind": "oracle",
+          "id": "oracle",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "stop_then_order",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "replaces_and_noop_metformin",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "apixaban_two_2_5_tablets",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "apixaban_2_5_tablets_counted",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "doses_in_tablets",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "eie_value_named",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "one_answer_orders",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "q12h_end_to_end",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "repeat_scr_and_pharmacy_message",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "alternative",
+          "id": "crcl_as_bleeding_remark",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": []
+        },
+        {
+          "kind": "mutant",
+          "id": "stale_weight",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "apixaban_dose",
+            "apixaban_2_5_stopped",
+            "inputs_before_orders"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "entered_in_error_scr",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "apixaban_dose",
+            "apixaban_2_5_stopped",
+            "metformin_dose",
+            "gabapentin_dose"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "stale_scr",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "apixaban_dose",
+            "apixaban_2_5_stopped",
+            "metformin_dose",
+            "inputs_before_orders"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "eie_scr_most_recent",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "apixaban_dose",
+            "apixaban_2_5_stopped",
+            "metformin_dose",
+            "gabapentin_dose"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "stale_scr_latest",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "apixaban_dose",
+            "apixaban_2_5_stopped",
+            "metformin_dose",
+            "inputs_before_orders"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "keep_2_5_for_crcl",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "apixaban_dose",
+            "apixaban_2_5_stopped"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "keep_2_5",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "apixaban_dose",
+            "apixaban_2_5_stopped"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "apixaban_double_dose",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "apixaban_dose"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "apixaban_half_tablet",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "apixaban_dose"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "apixaban_two_orders",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "apixaban_dose"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "gabapentin_under_400",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "gabapentin_dose"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "metformin_reduced",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "metformin_dose"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "metformin_tablets_reduced",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "metformin_dose"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "atorvastatin_touched",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "no_other_changes"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "gabapentin_200_tid",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "gabapentin_dose"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "gabapentin_1200_once_daily",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "gabapentin_dose"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "metformin_2000_once_daily",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "metformin_dose"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "no_note",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "note_exists"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "review_as_message_to_okafor",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "note_exists"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "metformin_er_2000_once_daily",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "metformin_dose"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "metformin_er_1000_bid",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "metformin_dose"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "review_as_telephone_note",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "note_exists"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "gabapentin_600_bid_prn",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "gabapentin_dose"
+          ]
+        },
+        {
+          "kind": "null",
+          "id": "null",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "apixaban_dose",
+            "apixaban_2_5_stopped",
+            "gabapentin_dose",
+            "note_exists"
+          ]
+        },
+        {
+          "kind": "spray",
+          "id": "spray",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "metformin_dose",
+            "no_other_changes"
+          ]
+        },
+        {
+          "kind": "output-gap",
+          "id": "output-gap",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "apixaban_dose",
+            "apixaban_2_5_stopped",
+            "gabapentin_dose"
+          ]
+        }
+      ]
+    },
     "1952a48403a77a84eb548dda5d5b0395ce0e20e849f59eec620e8eeb36a624ff": {
       "task_id": "crc-care-gap",
       "env_version": "3d7216da2510f1708b0fb589859ce3c332cb7f5b42c0b55842793ce60955a9db",
@@ -1220,323 +1564,6 @@
             "critical_k_stat_bmp",
             "bone_lesion_orders",
             "items_closed_with_links"
-          ]
-        }
-      ]
-    },
-    "f0139623aeb77fe251558cb284229b02af278e06124575893961aaed605f13ad": {
-      "task_id": "renal-dose-review",
-      "env_version": "f74818df8ab2b6109bdad7b1219898a6c755f28cd3d4e505c848e8a779de79e8",
-      "task_version": "d3adde716fa7c658882e568865b2ff7e8fcc2c926238e7a4e3217533bfe18801",
-      "pass": true,
-      "oracle_pass": true,
-      "alternatives_pass": true,
-      "failed_checks": [],
-      "probes": [
-        {
-          "kind": "oracle",
-          "id": "oracle",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "stop_then_order",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "replaces_and_noop_metformin",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "apixaban_two_2_5_tablets",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "apixaban_2_5_tablets_counted",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "doses_in_tablets",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "eie_value_named",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "one_answer_orders",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "q12h_end_to_end",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "repeat_scr_and_pharmacy_message",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "alternative",
-          "id": "crcl_as_bleeding_remark",
-          "outcome": "PASS",
-          "as_expected": true,
-          "failed_checks": []
-        },
-        {
-          "kind": "mutant",
-          "id": "stale_weight",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "apixaban_dose",
-            "apixaban_2_5_stopped",
-            "inputs_before_orders"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "entered_in_error_scr",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "apixaban_dose",
-            "apixaban_2_5_stopped",
-            "metformin_dose",
-            "gabapentin_dose"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "stale_scr",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "apixaban_dose",
-            "apixaban_2_5_stopped",
-            "metformin_dose",
-            "inputs_before_orders"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "eie_scr_most_recent",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "apixaban_dose",
-            "apixaban_2_5_stopped",
-            "metformin_dose",
-            "gabapentin_dose"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "stale_scr_latest",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "apixaban_dose",
-            "apixaban_2_5_stopped",
-            "metformin_dose",
-            "inputs_before_orders"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "keep_2_5_for_crcl",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "apixaban_dose",
-            "apixaban_2_5_stopped"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "keep_2_5",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "apixaban_dose",
-            "apixaban_2_5_stopped"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "apixaban_double_dose",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "apixaban_dose"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "apixaban_half_tablet",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "apixaban_dose"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "apixaban_two_orders",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "apixaban_dose"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "gabapentin_under_400",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "gabapentin_dose"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "metformin_reduced",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "metformin_dose"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "metformin_tablets_reduced",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "metformin_dose"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "atorvastatin_touched",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "no_other_changes"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "gabapentin_200_tid",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "gabapentin_dose"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "gabapentin_1200_once_daily",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "gabapentin_dose"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "metformin_2000_once_daily",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "metformin_dose"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "no_note",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "note_exists"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "review_as_message_to_okafor",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "note_exists"
-          ]
-        },
-        {
-          "kind": "mutant",
-          "id": "metformin_er_2000_once_daily",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "metformin_dose"
-          ]
-        },
-        {
-          "kind": "null",
-          "id": "null",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "apixaban_dose",
-            "apixaban_2_5_stopped",
-            "gabapentin_dose",
-            "note_exists"
-          ]
-        },
-        {
-          "kind": "spray",
-          "id": "spray",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "metformin_dose",
-            "no_other_changes"
-          ]
-        },
-        {
-          "kind": "output-gap",
-          "id": "output-gap",
-          "outcome": "FAIL",
-          "as_expected": true,
-          "failed_checks": [
-            "apixaban_dose",
-            "apixaban_2_5_stopped",
-            "gabapentin_dose"
           ]
         }
       ]
