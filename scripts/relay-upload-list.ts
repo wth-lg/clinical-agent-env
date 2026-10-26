@@ -15,8 +15,9 @@ import { parseArgs } from 'node:util';
 const REPO = fileURLToPath(new URL('../', import.meta.url));
 const RELAY = join(REPO, 'apps/relay');
 
-// The function, the sources it imports, vercel.json and public/ (apps/relay/README.md, "Static files").
-export const UPLOAD_LIST = ['api/messages.ts', 'public/README.md', 'src/limiter.ts', 'src/relay.ts', 'src/upstream.ts', 'vercel.json'];
+// The function, the sources it imports, vercel.json, public/ (apps/relay/README.md, "Static files"),
+// and the package.json and tsconfig.json the builder compiles with (README.md, "Build").
+export const UPLOAD_LIST = ['api/messages.ts', 'package.json', 'public/README.md', 'src/limiter.ts', 'src/relay.ts', 'src/upstream.ts', 'tsconfig.json', 'vercel.json'];
 
 type BuildFileTree = (path: string, opts: { isDirectory: boolean; prebuilt: boolean }, debug: (s: string) => void) => Promise<{ fileList: string[] }>;
 

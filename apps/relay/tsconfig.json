@@ -1,0 +1,19 @@
+// For Vercel's Node builder only: the deploy uploads this file (.vercelignore), and the builder
+// compiles api/ and src/ with it. "type": "module" in package.json makes the output ESM, and
+// rewriteRelativeImportExtensions turns the '../src/*.ts' import specifiers into '.js', which
+// the builder otherwise keeps (every request got 500 FUNCTION_INVOCATION_FAILED). The repo's
+// typecheck and tests use the root tsconfig.json; scripts/relay-build-check.ts checks the build.
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "rewriteRelativeImportExtensions": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "strict": true,
+    "skipLibCheck": true
+  },
+  "include": ["api", "src"]
+}
