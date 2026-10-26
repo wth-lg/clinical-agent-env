@@ -1964,16 +1964,19 @@
         "apps/web/src/surface/detect.ts",
         "apps/web/src/surface/LocalCommand.tsx",
         "apps/web/src/live/transport",
-        "apps/web/src/surface/LocalRunPanel.tsx"
+        "apps/web/src/surface/LocalRunPanel.tsx",
+        "apps/web/src/surface/relay.ts",
+        "apps/web/src/keygate/failure.ts"
       ],
       "tests": [
         "apps/web/e2e/shell.spec.ts",
-        "apps/web/e2e/live.spec.ts"
+        "apps/web/e2e/live.spec.ts",
+        "apps/web/e2e/relay.spec.ts"
       ],
       "ui_required": true,
       "ui": {
         "route": "https://wth-lg.github.io/clinical-agent-env/",
-        "action": "On the hosted URL validate the key: if its organization does not allow browser access, the page says so and shows the local command (ending in pnpm start) with a copy button; browsing and replay work without a key.",
+        "action": "On the hosted URL validate the key: Validate and trials go through the relay; the local-run panel shows the local command (ending in pnpm start) with a copy button, and if the relay cannot be reached, limits or fails, a red error says so and points to it; browsing and replay work without a key.",
         "surface": "hosted"
       },
       "evidence": [

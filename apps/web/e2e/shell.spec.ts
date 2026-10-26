@@ -5,15 +5,17 @@ import { mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { MODEL } from '../../../packages/core/anthropic.ts';
 import { HEALTH_PATH, KEY_PATH, REFUSAL_TEXT, SAMPLES, TOKEN_HEADER, TOKEN_META } from '../../../packages/core/runner-api.ts';
-import { APP_CSP, CONNECT_ORIGIN } from '../csp.ts';
+import { APP_CSP } from '../csp.ts';
+import { RELAY_FAILURE_TEXT } from '../src/keygate/failure.ts';
 import { admitTrial, DEFAULT_SESSION_CAP_USD } from '../src/spend/cap.ts';
+import { RELAY_ORIGIN } from '../src/surface/relay.ts';
 import { LOCAL_PREREQUISITES, LOCAL_START_COMMAND, NODE_CHECK_COMMAND, NODE_INSTALL_URL, PNPM_CHECK_COMMAND, PNPM_INSTALL_URL } from '../src/surface/command.ts';
 
 // The app shell against a mocked API: the runner's /api/health and /api/key are route-mocked
-// from the runner-api.ts samples, the Messages API from SSE written here. The API origin is
-// CONNECT_ORIGIN from csp.ts, so this file names no API host (lint: no-direct-anthropic).
-const API_ORIGIN = CONNECT_ORIGIN;
-const ORG_CORS = 'CORS requests are not allowed for this Organization because of its settings.';
+// from the runner-api.ts samples, the Messages API from SSE written here. On browser-direct the
+// page sends Messages calls to the relay (P16h), RELAY_ORIGIN, the one origin besides its own in
+// APP_CSP's connect-src, so the mocks route it (lint: no-direct-anthropic).
+const API_ORIGIN = RELAY_ORIGIN;
 // The danger token, light and dark, as tokens.css writes it.
 const tokensCss = readFileSync(new URL('../src/styles/tokens.css', import.meta.url), 'utf8');
 const DANGER = {
@@ -156,7 +158,7 @@ function failedRequests(page: Page): string[] {
 const panel = (page: Page) => page.getByRole('region', { name: 'Run it on your computer' });
 const insideAlert = (l: Locator) => l.evaluate((el) => el.closest('[role="alert"]') !== null);
 
-// org-CORS and network: the alert names the panel and has a button that brings it into view; the
+// A relay failure: the alert names the panel and has a button that brings it into view; the
 // prerequisites and the command show once, in the panel, never in the alert.
 async function expectPointsToPanel(page: Page, alert: Locator) {
   await expect(alert).toContainText('Run it on your computer');
@@ -328,28 +330,15 @@ test.describe('key gate on browser-direct', () => {
     expect((await storageDump(page)).session).not.toContain(key);
   });
 
-  test('an org-CORS 401 shows the reason and its message, and points to the local-run panel instead of repeating the command', async ({ page }) => {
-    await mockBrowserDirect(page);
-    await mockApi(page, { status: 401, type: 'authentication_error', message: ORG_CORS });
-    await page.goto('./');
-    await keyField(page).fill(sentinelKey());
-    await page.getByRole('button', { name: 'Validate' }).click();
-    const alert = page.getByRole('alert');
-    await expect(alert).toContainText(ORG_CORS);
-    await expect(alert).toContainText("This key's organization does not allow browser access.");
-    await expectPointsToPanel(page, alert);
-    await page.getByRole('button', { name: 'Browse without a key' }).click();
-    await expect(page.getByTestId('key-chip')).toHaveText('No key');
-  });
-
-  test('a network failure points to the local-run panel instead of repeating the command', async ({ page }) => {
+  test('a relay that cannot be reached points to the local-run panel instead of repeating the command', async ({ page }) => {
     await mockBrowserDirect(page);
     await page.route((url) => url.origin === API_ORIGIN, (route) => route.abort('failed'));
     await page.goto('./');
     await keyField(page).fill(sentinelKey());
     await validate(page);
     const alert = page.getByRole('alert');
-    await expect(alert.locator('p').first()).toHaveText('The browser could not reach the API from this page.');
+    await expect(alert.locator('p').first()).toHaveText(RELAY_FAILURE_TEXT.unreachable.lead);
+    await expect(alert).toContainText(RELAY_FAILURE_TEXT.unreachable.next);
     await expectPointsToPanel(page, alert);
   });
 
@@ -426,17 +415,6 @@ test.describe('start block', () => {
     await expectStartBlock(panel(page));
     expect(await insideAlert(panel(page))).toBe(false);
     expect(await page.getByRole('alert').evaluate((a) => a.querySelector('[data-testid="local-run-panel"]'))).toBeNull();
-  });
-
-  test('browser-direct: the panel stays after an org-CORS 401, outside the alert', async ({ page }) => {
-    await mockBrowserDirect(page);
-    await mockApi(page, { status: 401, type: 'authentication_error', message: ORG_CORS });
-    await page.goto('./');
-    await keyField(page).fill(sentinelKey());
-    await validate(page);
-    await expect(page.getByRole('alert')).toContainText(ORG_CORS);
-    await expectStartBlock(panel(page));
-    expect(await insideAlert(panel(page))).toBe(false);
   });
 
   test('local runner: the key gate shows the start block', async ({ page }) => {
@@ -640,21 +618,6 @@ test.describe('gate details', () => {
     expect(calls).toHaveLength(1);
   });
 
-  test('org-CORS: the reason first, then the pointer to the panel, the raw API line last', async ({ page }) => {
-    await page.setViewportSize({ width: 390, height: 844 });
-    await mockBrowserDirect(page);
-    await mockApi(page, { status: 401, type: 'authentication_error', message: ORG_CORS });
-    await page.goto('./');
-    await keyField(page).fill(sentinelKey());
-    await validate(page);
-    const alert = page.getByRole('alert');
-    const text = await alert.innerText();
-    const at = (s: string) => text.indexOf(s);
-    expect(at("This key's organization does not allow browser access.")).toBe(0);
-    expect(at("This key's organization does not allow browser access.")).toBeLessThan(at('Run it on your computer'));
-    expect(at('Run it on your computer')).toBeLessThan(at(ORG_CORS));
-  });
-
   test('the panel at 390: a 24px Copy button, and no piece of the command breaks across lines', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await mockBrowserDirect(page);
@@ -726,7 +689,7 @@ test.describe('errors', () => {
     });
   }
 
-  test('a browser-direct 401 starts with a plain sentence, then the API line in small mono, no word broken at 390', async ({ page }) => {
+  test('a browser-direct 401 starts with a plain sentence, then the API line as the relay answered it in small mono, no word broken at 390', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await mockBrowserDirect(page);
     await mockApi(page, { status: 401, type: 'authentication_error', message: 'invalid x-api-key' });
@@ -736,7 +699,7 @@ test.describe('errors', () => {
     const alert = page.getByRole('alert');
     await expect(alert.locator('p').first()).toHaveText('The API did not accept this key.');
     const detail = alert.locator('p').last();
-    await expect(detail).toHaveText('HTTP 401 authentication_error: invalid x-api-key');
+    await expect(detail).toHaveText('The relay answered: HTTP 401 authentication_error: invalid x-api-key');
     const lead = await alert.locator('p').first().evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
     const d = await detail.evaluate((el) => ({
       size: parseFloat(getComputedStyle(el).fontSize),
@@ -747,7 +710,7 @@ test.describe('errors', () => {
     }));
     expect(d.size).toBeLessThan(lead);
     expect(d.mono).toMatch(/mono/i);
-    expect(d.words).toBe(5);
+    expect(d.words).toBe(8);
     // The line is wider than the alert at 390, so it wraps, but only between words.
     expect(d.lines).toBeGreaterThan(1);
     expect(d.broken).toEqual([]);
@@ -778,19 +741,19 @@ test.describe('errors', () => {
   });
 });
 
-// The gate (normal, org-CORS, another API error) and the shell, light and dark, at 1440x900
+// The gate (normal, relay down, another API error) and the shell, light and dark, at 1440x900
 // and 390x844: no horizontal scroll, the key actions on screen, and axe finds nothing serious
 // or critical. SHOTS_DIR saves a screenshot of each.
 const SIZES = [{ width: 1440, height: 900 }, { width: 390, height: 844 }];
-const STATES = ['gate', 'gate-orgcors', 'gate-error', 'shell'] as const;
+const STATES = ['gate', 'gate-relay', 'gate-error', 'shell'] as const;
 
 async function openState(page: Page, state: (typeof STATES)[number]) {
   await mockBrowserDirect(page);
-  if (state === 'gate-orgcors') await mockApi(page, { status: 401, type: 'authentication_error', message: ORG_CORS });
+  if (state === 'gate-relay') await mockApi(page, { status: 502, type: 'relay_error', message: 'relay_error' });
   if (state === 'gate-error') await mockApi(page, { status: 401, type: 'authentication_error', message: 'invalid x-api-key' });
   await page.goto('./');
   await expect(keyField(page)).toBeVisible();
-  if (state === 'gate-orgcors' || state === 'gate-error') {
+  if (state === 'gate-relay' || state === 'gate-error') {
     await keyField(page).fill(sentinelKey());
     await validate(page);
     await expect(page.getByRole('alert')).toBeVisible();
