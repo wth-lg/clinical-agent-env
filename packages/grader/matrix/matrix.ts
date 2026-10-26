@@ -18,7 +18,9 @@
 //                     mutant declares it, and each id is a nonzero rubric item of the task,
 //                     named once
 //   null, spray, output-gap, and status-only where the task declares it
-//                     FAIL (a model FAIL: outcome FAIL, fault model)
+//                     FAIL (a model FAIL: outcome FAIL, fault model), and, for spray,
+//                     output-gap and status-only when tests/agents.ts declares one
+//                     (attribution), that attribution label
 //   every case        graded validly (a GRADER_ERROR names its check), no judge cache miss,
 //                     the same grade each time from the record (regrade idempotence), and the
 //                     same trajectory and final hash when run again (replay determinism)
@@ -50,6 +52,7 @@ import { stripTimestamps, toJsonl } from '../../core/trajectory.ts';
 import { loadStore, type FixtureSource } from '../../env/fixture-source.ts';
 import { canonicalJson } from '../../env/hash.ts';
 import type { indexDefinitions } from '../../env/validate.ts';
+import type { Taxonomy } from '../attribution.ts';
 import type { Check, Json, RubricCheck, RubricCtx } from '../check.ts';
 import type { Grade } from '../grade.ts';
 import { JudgeCacheMiss, type Judge } from '../judge.ts';
@@ -79,6 +82,9 @@ export interface Case {
   // The rubric items it must lose: an alternative's (default []) or a mutant's (absent when a
   // task file leaves it out); absent for the other kinds, whose losses are not checked.
   loses?: readonly string[];
+  // The attribution label its FAIL must get: a mutant's, or a spray, output-gap or status-only
+  // agent's (tests/agents.ts attribution); absent when none is declared, and then not checked.
+  attribution?: Taxonomy;
 }
 
 // What task.toml's [matrix] table declares, from the parsed task.toml; absent, nothing is.
@@ -114,13 +120,14 @@ export function cases(task: MatrixTask): Case[] {
   return [
     ...(task.oracle === null ? [] : [{ kind: 'oracle' as const, id: 'oracle', script: task.oracle }]),
     ...task.alternatives.map((a: Alternative) => ({ kind: 'alternative' as const, id: a.id, script: a.script, loses: a.loses ?? [] })),
-    ...task.mutants.map((m) => ({ kind: 'mutant' as const, id: m.id, script: m.script, mutant: m, ...(Array.isArray(m.loses) ? { loses: m.loses } : {}) })),
+    ...task.mutants.map((m) => ({ kind: 'mutant' as const, id: m.id, script: m.script, mutant: m, ...(Array.isArray(m.loses) ? { loses: m.loses } : {}), ...declaredLabel(m.attribution) })),
     { kind: 'null' as const, id: 'null', script: NULL_AGENT },
-    ...(task.agents.spray ? [{ kind: 'spray' as const, id: 'spray', script: task.agents.spray }] : []),
-    ...(task.agents.output_gap ? [{ kind: 'output-gap' as const, id: 'output-gap', script: task.agents.output_gap }] : []),
-    ...(task.agents.status_only ? [{ kind: 'status-only' as const, id: 'status-only', script: task.agents.status_only }] : []),
+    ...(task.agents.spray ? [{ kind: 'spray' as const, id: 'spray', script: task.agents.spray, ...declaredLabel(task.agents.attribution?.spray) }] : []),
+    ...(task.agents.output_gap ? [{ kind: 'output-gap' as const, id: 'output-gap', script: task.agents.output_gap, ...declaredLabel(task.agents.attribution?.output_gap) }] : []),
+    ...(task.agents.status_only ? [{ kind: 'status-only' as const, id: 'status-only', script: task.agents.status_only, ...declaredLabel(task.agents.attribution?.status_only) }] : []),
   ];
 }
+const declaredLabel = (attribution: Taxonomy | undefined) => (attribution === undefined ? {} : { attribution });
 
 const labelOf = (c: Case) => `${c.kind}-${c.id}`.replace(/[^A-Za-z0-9_-]/g, '_');
 
@@ -283,7 +290,7 @@ function verdict(c: Case, run: CaseRun, grade: Grade, misses: Miss[]): Pick<Case
   if (c.kind === 'oracle' && unknown > 0) problems.push(`oracle judge.unknown ${unknown}, want 0`);
   if (c.kind === 'alternative' && unknown > 0) problems.push(`judge.unknown ${unknown}, want 0`);
   if (c.mutant && !sameSet(failed_gates, c.mutant.fails)) problems.push(`failed [${failed_gates.join(', ')}], declared [${c.mutant.fails.join(', ')}]`);
-  if (c.mutant?.attribution !== undefined && grade.attribution?.auto !== c.mutant.attribution) problems.push(`attribution ${grade.attribution?.auto ?? 'none'}, declared ${c.mutant.attribution}`);
+  if (c.attribution !== undefined && grade.attribution?.auto !== c.attribution) problems.push(`attribution ${grade.attribution?.auto ?? 'none'}, declared ${c.attribution}`);
   if (c.loses && grade.valid) {
     for (const id of c.loses) if (!lost_items.includes(id)) problems.push(`declares it loses rubric item ${kept(grade, id, misses)}`);
     for (const id of lost_items) if (!c.loses.includes(id)) problems.push(`loses rubric item ${id} (${pointsOf(grade, id)}${pointsOf(grade, id).startsWith('-') ? ', a penalty that applied' : ''}), not declared`);
@@ -508,7 +515,8 @@ export async function runMatrix(env: MatrixEnv, task: MatrixTask, opts: MatrixOp
       }
       continue;
     }
-    const attribution = r.grade.attribution ? ` attribution ${r.grade.attribution.auto}` : '';
+    const want = all.find((c) => c.kind === kind)?.attribution;
+    const attribution = r.grade.attribution || want !== undefined ? ` attribution ${r.grade.attribution?.auto ?? 'none'}${want === undefined ? '' : ` declared ${want}`}` : '';
     lines.push(`${kind}: ${r.grade.outcome} (want FAIL) failed [${r.failed_gates.join(', ')}]${attribution}${kind === 'status-only' && !task.declares.status_only ? ' (not declared)' : ''}`);
     noteProblems(r);
   }
