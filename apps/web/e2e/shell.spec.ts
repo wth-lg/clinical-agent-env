@@ -5,15 +5,14 @@ import { mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { MODEL } from '../../../packages/core/anthropic.ts';
 import { HEALTH_PATH, KEY_PATH, REFUSAL_TEXT, SAMPLES, TOKEN_HEADER, TOKEN_META } from '../../../packages/core/runner-api.ts';
+import { APP_CSP, CONNECT_ORIGIN } from '../csp.ts';
 import { admitTrial, DEFAULT_SESSION_CAP_USD } from '../src/spend/cap.ts';
 import { LOCAL_PREREQUISITES, LOCAL_START_COMMAND, NODE_CHECK_COMMAND, NODE_INSTALL_URL, PNPM_CHECK_COMMAND, PNPM_INSTALL_URL } from '../src/surface/command.ts';
 
 // The app shell against a mocked API: the runner's /api/health and /api/key are route-mocked
 // from the runner-api.ts samples, the Messages API from SSE written here. The API origin is
-// read from the page's CSP meta, so this file names no API host (lint: no-direct-anthropic).
-const indexHtml = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
-const CSP = /<meta http-equiv="Content-Security-Policy" content="([^"]*)"/.exec(indexHtml)?.[1] ?? '';
-const API_ORIGIN = /connect-src 'self' (\S+);/.exec(CSP)?.[1] ?? '';
+// CONNECT_ORIGIN from csp.ts, so this file names no API host (lint: no-direct-anthropic).
+const API_ORIGIN = CONNECT_ORIGIN;
 const ORG_CORS = 'CORS requests are not allowed for this Organization because of its settings.';
 // The danger token, light and dark, as tokens.css writes it.
 const tokensCss = readFileSync(new URL('../src/styles/tokens.css', import.meta.url), 'utf8');
@@ -226,11 +225,11 @@ test.describe('surface detection', () => {
     release();
   });
 
-  test('the page carries the design CSP meta', async ({ page }) => {
+  test('the page carries APP_CSP as its CSP meta', async ({ page }) => {
     await mockBrowserDirect(page);
     await page.goto('./');
-    expect(await page.locator('meta[http-equiv="Content-Security-Policy"]').getAttribute('content')).toBe(CSP);
-    expect(CSP).toContain("connect-src 'self' ");
+    expect(await page.locator('meta[http-equiv="Content-Security-Policy"]').getAttribute('content')).toBe(APP_CSP);
+    expect(APP_CSP).toContain(` ${API_ORIGIN};`);
   });
 });
 

@@ -6,13 +6,12 @@
 // event for each (the CSP, under the guard), and a same-origin fetch still works. A real server on 127.0.0.1 records any request that gets out.
 // The Messages API is route-mocked with the toy script, held on turn 2 so the Worker is alive.
 import { randomUUID } from 'node:crypto';
-import { readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { expect, test, type BrowserContext, type Route } from '@playwright/test';
 import { okResponse, SCENARIOS } from '../../src/harness/scenarios.ts';
+import { CONNECT_ORIGIN } from '../../csp.ts';
 
-const CSP = readFileSync(new URL('../../index.html', import.meta.url), 'utf8');
-const API_ORIGIN = /connect-src 'self' (\S+);/.exec(CSP)?.[1] ?? '';
+const API_ORIGIN = CONNECT_ORIGIN;
 const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': 'POST' };
 const TOY = SCENARIOS.toy;
 const sentinelKey = () => ['sk', 'ant', 'api03', randomUUID().replaceAll('-', ''), 'xb'].join('-');

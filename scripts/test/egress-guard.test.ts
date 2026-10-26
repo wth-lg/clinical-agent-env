@@ -25,8 +25,8 @@ const PLANTS: Record<string, string> = {
   'f-concat-var-middle': `const mid = 'anthropic.'; export const go = () => fetch('https://api.' + mid + 'com/v1/messages', ${POST});`,
   'g-read-client-source': `import { readFileSync } from 'node:fs';
 export const go = () => { const src = readFileSync(new URL('${repo('packages/core/anthropic.ts')}'), 'utf8'); return fetch(/'(https:\\/\\/[^']+\\/v1\\/messages)'/.exec(src)[1], ${POST}); };`,
-  'h-read-csp': `import { readFileSync } from 'node:fs';
-export const go = () => { const html = readFileSync(new URL('${repo('apps/web/index.html')}'), 'utf8'); return fetch(/connect-src 'self' (https:\\/\\/[^;" ]+)/.exec(html)[1] + '/v1/messages', ${POST}); };`,
+  'h-read-csp': `import { APP_CSP } from '${repo('apps/web/csp.ts')}';
+export const go = () => fetch(/connect-src \\S+ (https:\\/\\/[^;" ]+)/.exec(APP_CSP)[1] + '/v1/messages', ${POST});`,
   'i-json-import': `import cfg from './host.json' with { type: 'json' }; export const go = () => fetch(cfg.url, ${POST});`,
   'j-eslint-disable-line': `export const go = () => fetch('https://${HOST}/v1/messages', ${POST});`,
   'k-url-object': `export const go = () => fetch(new URL('/v1/messages', 'https://${HOST.toUpperCase()}.'), ${POST});`,
