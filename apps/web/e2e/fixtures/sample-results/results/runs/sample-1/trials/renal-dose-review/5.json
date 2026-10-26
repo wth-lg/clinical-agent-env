@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:renal-dose-review:5",
   "task_id": "renal-dose-review",
-  "task_version": "e46e7dc80fa4ad701f1b4b65d62970dc09b7d5fa3a4a82cfe9b740784a0dc04d",
+  "task_version": "d3adde716fa7c658882e568865b2ff7e8fcc2c926238e7a4e3217533bfe18801",
   "env_version": "f74818df8ab2b6109bdad7b1219898a6c755f28cd3d4e505c848e8a779de79e8",
-  "grader_task_version": "45d04e4928a64791acad35a94a56523529efbdefdab621516fbb575ce7c1808f",
+  "grader_task_version": "f0139623aeb77fe251558cb284229b02af278e06124575893961aaed605f13ad",
   "fixture_hash": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
   "state_hash": {
     "initial": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
