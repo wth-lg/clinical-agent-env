@@ -51,4 +51,20 @@ describe('results-inbox notifications', () => {
     expect(text).toMatch(/alternative probe_contact_ortho: PASS score 0\.600/);
     expect(text).toMatch(/alternative probe_call_the_mother: PASS score 1\.000/);
   });
+
+  it('counts the other ways a staff task asks to contact the patient or family (R14-28)', async () => {
+    const asks = {
+      probe_reach_out: 'Please reach out to the patient today about the urgent MRI and ortho-oncology referral.',
+      probe_get_in_touch: 'Please get in touch with the family today about the knee X-ray and the referral.',
+      probe_call_pt: 'Call pt today re urgent MRI result and referral.',
+      probe_contact_him: 'Please contact him today to schedule the urgent MRI.',
+    };
+    const text = await run(Object.entries(asks).map(([id, description]) => ({ id, why: 'probe', script: staffTask(description) })));
+    for (const id of Object.keys(asks)) expect(text).toMatch(new RegExp(`alternative ${id}: PASS score 1\\.000`));
+  });
+
+  it('does not count a pronoun that is not about the patient or family (-1 and -5 of 15)', async () => {
+    const text = await run([{ id: 'probe_tell_them', why: 'probe', script: staffTask('Contact ortho and tell them the MRI femur is urgent; book it by 2026-11-05.') }]);
+    expect(text).toMatch(/alternative probe_tell_them: PASS score 0\.600/);
+  });
 });
