@@ -11,8 +11,9 @@
 // by, a fetch with no dispatcher of its own (one captured before install, or a redirect hop)
 // is checked again, and nothing can swap the slot. Only the claimed MessagesClient Request is
 // forwarded with the raw dispatcher. A refusal is an EgressRefusal: nothing was sent. XMLHttpRequest,
-// WebSocket, EventSource and navigator.sendBeacon, where present, are refused for those hosts
-// outright: the client never uses them. A URL is resolved once and the resolved string is what
+// WebSocket, WebSocketStream, EventSource, WebTransport, navigator.sendBeacon and fetchLater
+// (Chromium's deferred fetch), where present, are refused for those hosts outright: the client
+// never uses them. A URL is resolved once and the resolved string is what
 // gets sent, so an object whose toString answers differently the second time sends nothing new.
 // With allowedOrigins (the browser trial Worker), a send by any of those APIs to an origin not in
 // the list is refused as well; the API host stays reachable only by the claimed MessagesClient
@@ -26,9 +27,19 @@
 // MessagesClient Request reaches it, once. An origin is compared after WHATWG parsing (case,
 // %2E, IDNA dots and a default port resolve) with a trailing dot dropped and ws/wss read as
 // http/https, so every spelling of the relay's origin meets the check (meteredKey).
-// The wrapped globals are made read-only, so later code cannot put the raw ones back. The entry
+// The wrapped globals are made read-only, so later code cannot put the raw ones back. Each is
+// also wrapped and locked on every prototype of its holder that defines it: a browser Worker
+// keeps fetch on WorkerGlobalScope.prototype and a page keeps sendBeacon on Navigator.prototype,
+// where `Proto.fetch.call(self, ...)` would otherwise reach the raw function. The entry
 // point passes its global scope in, since shared code does not touch DOM or Node globals
 // (lint: isomorphic-imports).
+//
+// Residuals of an in-page guard (decisions.tsv 2026-10-28T09:30, verifier-phase-P17i-P16h-web2r2-1
+// S1 and S3): the guard wraps the globals of the realm it is installed in, so a new realm has raw
+// ones (a same-origin about:blank iframe, a blob: Worker or SharedWorker, a popup), and a
+// navigation or `<link rel=prefetch>` sends without any API the guard wraps. The CSP and the
+// relay's Origin check are the outer limits there. Code that can create a realm already runs in
+// the page and holds the key; the guard meters the app's own code paths and is defence in depth.
 //
 // Every entry point that can make live calls installs it as its first statement: the cli/index.ts
 // dispatcher, scripts/live-node.ts, the web app and the probe page (later: the local runner, and
@@ -78,7 +89,10 @@ interface Scope {
   fetch?: typeof fetch;
   XMLHttpRequest?: { prototype?: { open?: (...a: unknown[]) => void } };
   WebSocket?: unknown;
+  WebTransport?: unknown;
+  WebSocketStream?: unknown;
   EventSource?: unknown;
+  fetchLater?: (input: unknown, init?: RequestInit) => unknown;
   navigator?: { sendBeacon?: (url: unknown, data?: unknown) => boolean };
   document?: { baseURI?: string };
   location?: { href?: string };
@@ -192,6 +206,14 @@ function lock(target: object, key: string | symbol, value: unknown): void {
   Object.defineProperty(target, key, { value, writable: false, configurable: false, enumerable: false });
 }
 
+// Locks value as target's own key and on every prototype of target that defines key itself.
+function lockChain(target: object, key: string, value: unknown): void {
+  lock(target, key, value);
+  for (let p = Object.getPrototypeOf(target) as object | null; p !== null; p = Object.getPrototypeOf(p) as object | null) {
+    if (Object.prototype.hasOwnProperty.call(p, key)) lock(p, key, value);
+  }
+}
+
 
 export function installEgressGuard(scope: object, opts: EgressOptions = {}): void {
   if (installed) return;
@@ -233,7 +255,20 @@ export function installEgressGuard(scope: object, opts: EgressOptions = {}): voi
         return Promise.reject(e);
       }
     };
-    lock(scope, 'fetch', guarded);
+    lockChain(scope, 'fetch', guarded);
+  }
+
+  // fetchLater sends later, unclaimed by MessagesClient, so a metered origin is refused outright.
+  const later = g.fetchLater;
+  if (typeof later === 'function') {
+    lockChain(scope, 'fetchLater', (input: unknown, init?: RequestInit) => {
+      const href = requestUrl(input);
+      if (href === null) return later.call(scope, checked('fetchLater', input), forwardInit(init, false));
+      const url = resolveUrl(href);
+      if (url !== null && isMetered(url)) throw refused('fetchLater', url);
+      if (url !== null) admit('fetchLater', url);
+      return later.call(scope, input, forwardInit(init, false));
+    });
   }
 
   const xhr = g.XMLHttpRequest;
@@ -245,22 +280,36 @@ export function installEgressGuard(scope: object, opts: EgressOptions = {}): voi
     });
   }
 
-  for (const name of ['WebSocket', 'EventSource'] as const) {
+  // Each constructor is replaced by a plain function that builds the raw one through
+  // Reflect.construct, not by `class extends C`: a subclass's own prototype is C, so
+  // Object.getPrototypeOf(Guarded) handed back the raw constructor (verifier-phase-P17i-P16h-web2r2-1
+  // S2). Guarded's prototype is C's parent (EventTarget), so it inherits the same statics as C,
+  // which Node's EventTarget brand check reads through instance.constructor (web2r3-1 F2). Guarded
+  // shares C.prototype, so instanceof holds, and C.prototype.constructor is locked to Guarded; C's
+  // own statics (CONNECTING, OPEN, ...) are copied across.
+  for (const name of ['WebSocket', 'EventSource', 'WebTransport', 'WebSocketStream'] as const) {
     const C = g[name];
     if (typeof C !== 'function') continue;
-    const Guarded = class extends (C as Ctor) {
-      constructor(url: unknown, ...rest: unknown[]) {
-        if (name === 'EventSource') followsRedirects(name);
-        super(checked(name, url), ...rest);
-      }
+    const Guarded = function (this: unknown, url: unknown, ...rest: unknown[]): object {
+      if (new.target === undefined) throw new TypeError(`Failed to construct '${name}': Please use the 'new' operator.`);
+      if (name === 'EventSource') followsRedirects(name);
+      return Reflect.construct(C as Ctor, [checked(name, url), ...rest], new.target) as object;
     };
+    for (const key of Reflect.ownKeys(C)) {
+      if (key === 'prototype' || key === 'length' || key === 'name' || key === 'caller' || key === 'arguments') continue;
+      Object.defineProperty(Guarded, key, Object.getOwnPropertyDescriptor(C, key)!);
+    }
+    Object.setPrototypeOf(Guarded, Object.getPrototypeOf(C) as object | null);
     Object.defineProperty(Guarded, 'name', { value: name });
-    lock(scope, name, Guarded);
+    Object.defineProperty(Guarded, 'length', { value: (C as Ctor).length });
+    Object.defineProperty(Guarded, 'prototype', { value: (C as { prototype: object }).prototype, writable: false });
+    lock((C as { prototype: object }).prototype, 'constructor', Guarded);
+    lockChain(scope, name, Guarded);
   }
 
   const nav = g.navigator;
   const beacon = nav?.sendBeacon;
   if (nav && typeof beacon === 'function') {
-    lock(nav, 'sendBeacon', (url: unknown, data?: unknown) => beacon.call(nav, checked('sendBeacon', url), data));
+    lockChain(nav, 'sendBeacon', (url: unknown, data?: unknown) => beacon.call(nav, checked('sendBeacon', url), data));
   }
 }

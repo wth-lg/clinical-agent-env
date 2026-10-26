@@ -8,7 +8,10 @@
 // trial's signal, so it ends CANCELLED. The Worker starts from a blob: URL (live/transport/
 // worker.ts), so the page's CSP binds it, and its base URL is the blob: every URL it fetches comes
 // absolute in the start message. The egress guard is installed first, as in every entry point
-// that holds a client, limited to workerOrigins, as a second layer under the CSP.
+// that holds a client, with the hosted guard options (surface/relay.ts): the relay metered, so
+// only the client's registered Request reaches it, and nothing but the Worker's origin and the
+// relay allowed, as a second layer under the CSP. The page's meta CSP governs this Worker only
+// because it starts from a blob: URL; the guard holds either way.
 import { installEgressGuard } from '../../../../packages/core/egress.ts';
 import type { TrialEvent } from '../../../../packages/core/events.ts';
 import { run, type RunOptions } from '../../../../packages/core/run.ts';
@@ -17,9 +20,10 @@ import { browserNow } from '../adapters/clock-browser.ts';
 import { browserTaskSource } from '../adapters/tasks-browser.ts';
 import { taskChecks } from '../live/checks.ts';
 import { resumeOptions, sameEvent } from '../live/resume.ts';
-import { clientOptions, workerOrigins, type WorkerIn, type WorkerOut } from '../live/transport/worker.ts';
+import { clientOptions, type WorkerIn, type WorkerOut } from '../live/transport/worker.ts';
+import { hostedGuard } from '../surface/relay.ts';
 
-installEgressGuard(globalThis, { allowedOrigins: workerOrigins(location.origin) });
+installEgressGuard(globalThis, hostedGuard(location.origin));
 
 const scope = globalThis as unknown as { postMessage(m: WorkerOut): void; addEventListener(t: 'message', l: (e: { data: WorkerIn }) => void): void };
 const post = (m: WorkerOut) => scope.postMessage(m);

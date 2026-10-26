@@ -70,6 +70,22 @@ three things bound that:
 - the model lock: only `claude-opus-5-5` is forwarded;
 - the account's spend management or usage alert (Deploy, step 6), which bounds total use.
 
+### What the page's egress guard does not cover
+
+The hosted page installs the egress guard (packages/core/egress.ts) in the page and in the trial
+Worker, with the relay metered: only the MessagesClient Request it registered reaches the relay,
+once, so every relay call goes through the tab's spend ledger and session cap. The guard wraps
+the globals of the realm it runs in. These residuals stay (decisions.tsv 2026-10-28T09:30):
+
+- A new realm has its own raw globals: a same-origin `about:blank` iframe, a `blob:` Worker or
+  SharedWorker, and a popup. A request from one reaches the relay with the page's Origin.
+- A navigation or `<link rel=prefetch>` to a relay URL sends without any API the guard wraps, so
+  a key put in that URL would reach the relay's request logs.
+
+The CSP (connect-src `'self'` and the relay origin) and the Origin check (rule 5) are the outer
+limits. Code that can create a realm or a link already runs in the page and holds the key, so the
+guard is a meter on the app's own code paths and defence in depth, not a sandbox.
+
 ## Static files
 
 The deployment serves the function and nothing else. Vercel's zero-config build (no framework, no

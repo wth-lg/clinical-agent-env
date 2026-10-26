@@ -1,22 +1,21 @@
 // The key gate on browser-direct: the design's one-call check from the tab. One Messages call
 // (effort low, 16 output tokens) through MessagesClient, metered by the tab ledger and admitted
-// against the session cap first; one attempt, no retry. A 200 proves CORS, the key and model
-// access at once. An org that does not allow browser access answers HTTP 401 with a message
-// the UI matches, and the gate points to the local runner instead.
+// against the session cap first; one attempt, no retry. The client sends through the hosted
+// relay (HOSTED_CLIENT_OPTIONS, P16h), which forwards it to the API server to server. A 200 proves
+// the relay, the key and model access at once. When the relay cannot be reached, limits the page
+// or fails, the gate points to the local runner instead.
 import { ApiError, MessagesClient, reserveRequest, type MessageParam, type MessageParams } from '../../../../packages/core/anthropic.ts';
 import { worstCaseUsd } from '../../../../packages/core/cost.ts';
 import { SpendRefused } from '../../../../packages/core/ledger.ts';
 import { tabLedger } from '../adapters/ledger-browser.ts';
+import { HOSTED_CLIENT_OPTIONS } from '../surface/relay.ts';
 import { admitTrial } from '../spend/cap.ts';
 import { refreshSpent } from '../spend/session.ts';
-import type { DirectFailure } from './failure.ts';
+import { relayReason, type DirectFailure } from './failure.ts';
 
 const TRIAL = 'validate';
 const history = (): MessageParam[] => [{ role: 'user', content: 'Reply with the word ok.' }];
 const PARAMS: MessageParams = { max_tokens: 16, output_config: { effort: 'low' } };
-
-// The API's message when the key's organization does not allow browser (CORS) access.
-const ORG_CORS = /CORS requests are not allowed for this Organization/i;
 
 export type DirectResult = { ok: true } | ({ ok: false } & DirectFailure);
 
@@ -34,7 +33,7 @@ export async function validateDirect(apiKey: string, cap: number): Promise<Direc
     return { ok: false, kind: 'cap', message: (e as Error).message };
   }
   try {
-    const client = new MessagesClient({ grant, ledger, apiKey, maxAttempts: 1, trial: TRIAL });
+    const client = new MessagesClient({ grant, ledger, apiKey, maxAttempts: 1, trial: TRIAL, ...HOSTED_CLIENT_OPTIONS });
     await client.send(history(), PARAMS);
     return { ok: true };
   } catch (e) {
@@ -48,8 +47,10 @@ export async function validateDirect(apiKey: string, cap: number): Promise<Direc
 function classify(e: unknown): DirectResult & { ok: false } {
   const message = (e as Error).message;
   if (e instanceof SpendRefused) return { ok: false, kind: 'cap', message };
-  if (e instanceof ApiError && e.status === 401 && ORG_CORS.test(message)) return { ok: false, kind: 'org-cors', message };
-  // No status: the browser never got a readable response, which is how a CORS block looks.
-  if (e instanceof ApiError && e.status === null && e.partial) return { ok: false, kind: 'network', message };
+  // No status: the browser never got a readable response from the relay (down, blocked, or a
+  // refused CORS preflight, which looks the same to the page). A 429 or 5xx: the relay's own limit
+  // or fixed 502, or the API's answer passed through. A 200 that broke off: the relay cut the stream.
+  const reason = e instanceof ApiError ? relayReason({ status: e.status, partial: e.partial, type: e.errorType }) : null;
+  if (reason !== null) return { ok: false, kind: 'relay', reason, message };
   return { ok: false, kind: 'api', status: e instanceof ApiError ? e.status : null, message };
 }

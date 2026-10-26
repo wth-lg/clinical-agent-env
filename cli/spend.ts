@@ -14,7 +14,10 @@
 //   --ingest <file>   appends browser reserve and settle rows (JSONL), deduped by call_id;
 //                     refuses the whole file on any other row
 //   --check --final-reserve counts the planned tasks in tasks/ under the current directory.
-//   --export <path>   writes a byte-equal copy of the ledger
+//   --export <path>   writes the committed copy of the ledger (results/spend.jsonl): a union
+//                     of <path>'s row lines and the ledger's, each line once (ledger-node.ts
+//                     exportTo), so a rerun changes nothing and a rebased branch that exports
+//                     again carries each row once
 // The final run is results/runs/final-1 under RESULTS_ROOT (default: the current directory).
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -116,8 +119,8 @@ async function run(args: string[]): Promise<number> {
 
   if (opts.has('--export')) {
     const dest = opts.get('--export') as string;
-    await store.exportTo(dest);
-    process.stdout.write(`exported ${path} to ${dest}\n`);
+    const n = await store.exportTo(dest);
+    process.stdout.write(`exported ${path} to ${dest}: ${n.kept} rows kept, ${n.added} added, ${n.dropped} repeated dropped\n`);
     return 0;
   }
 
