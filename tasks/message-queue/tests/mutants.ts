@@ -63,7 +63,7 @@ export const mutants: Mutant[] = [
     trap: 'conflict_in_note',
     why: 'Refills atorvastatin from the active order without reading the August cardiology note that stopped it.',
     fails: ['m2_no_refill'],
-    loses: [],
+    loses: ['reply_m2'],
     script: swap(
       oracle,
       [m2Task, [refill(PT.odum, RX.atorvastatin40, 40, 'QHS', 90, 1, 'Refill request')]],
@@ -91,7 +91,7 @@ export const mutants: Mutant[] = [
     trap: 'red_flag',
     why: 'Takes the queue in order and answers M3 last as a routine question: a routine Task to triage and a routine message to stop naproxen and book a visit, no ED advice.',
     fails: ['m3_red_flag'],
-    loses: ['m3_triage_first', 'm3_message_ed'],
+    loses: ['m3_triage_first', 'm3_message_ed', 'reply_m3'],
     script: [
       ...swap(oracle, ...M3.flatMap((t) => t.calls).map((c): [typeof c, []] => [c, []])).slice(0, -2),
       { calls: [call('fhir_read', { resource_type: 'Communication', id: 'comm-t6-m3' })] },
