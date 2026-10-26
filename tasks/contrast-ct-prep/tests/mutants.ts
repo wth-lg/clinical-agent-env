@@ -18,6 +18,7 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
     why: 'Reads the contrast reaction together with the shellfish and povidone-iodine allergies as a reason to avoid iodine altogether: books a CT without contrast in the slot, no premedication and no creatinine.',
     fails: ['ct_order', 'prednisone_schedule', 'diphenhydramine_dose', 'creatinine_before_scan', 'no_substitution'],
     loses: ['message_dose_times', 'message_driver', 'note_distinguishes_allergies', 'ct_cites_allergy_and_note', 'shellfish_as_risk_factor'],
+    attribution: 'reasoning',
     script: [
       ...READS,
       { calls: [service({ code: CODE.ctPlain, supporting: [APPT, ALLERGY], reason: 'Iodine allergies (contrast, shellfish, povidone-iodine): CT without contrast instead' })] },
@@ -41,6 +42,7 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
     why: 'Counts the 7-hour dose on the wrong side of midnight: 02:00 on Sunday 10/25, 18 hours before 20:00, instead of 02:00 Monday.',
     fails: ['prednisone_schedule'],
     loses: ['message_dose_times'],
+    attribution: 'reasoning',
     script: [
       ...READS,
       { calls: orders },
@@ -56,6 +58,7 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
     why: 'Takes the 0.98 mg/dL creatinine of 2025-08-14 as recent enough and orders no new one: it is more than 14 months before the scan, not within 30 days.',
     fails: ['creatinine_before_scan'],
     loses: [],
+    attribution: 'reasoning',
     script: [
       ...READS,
       { calls: [ct()] },
@@ -71,6 +74,7 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
     why: 'Copies the clock times of the completed 2023 premedication (01:00, 07:00 and 13:00, for a 14:00 scan) onto Monday: the 13:00 doses come after the 09:00 scan.',
     fails: ['prednisone_schedule', 'diphenhydramine_dose'],
     loses: ['message_dose_times'],
+    attribution: 'reasoning',
     script: [
       ...READS,
       { calls: orders },
@@ -86,6 +90,7 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
     why: 'Places the CT for 09:00 Monday but does not link it to the booked appointment (RBC-RAD-07 §5).',
     fails: ['ct_order'],
     loses: [],
+    attribution: 'reasoning',
     script: [...READS, { calls: [ct([ALLERGY, REACTION_NOTE]), creatinineOrder()] }, { calls: [prednisone, diphenhydramine] }, { calls: [message()] }, { calls: [note()] }, { calls: [finish(DONE)] }],
   },
   {
@@ -94,6 +99,7 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
     why: 'Uses the accelerated IV regimen meant for urgent studies: hydrocortisone 200 mg IV at 04:00 and 08:00 Monday instead of the oral prednisone RBC-RAD-07 §2 sets for a scheduled scan.',
     fails: ['prednisone_schedule', 'no_substitution'],
     loses: ['iv_steroid_regimen'],
+    attribution: 'output_gap',
     script: [
       ...READS,
       { calls: orders },
@@ -109,6 +115,7 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
     why: 'Orders the creatinine for 10:00 Monday, an hour after the scan: §4 asks for one drawn before it.',
     fails: ['creatinine_before_scan'],
     loses: [],
+    attribution: 'reasoning',
     script: [...READS, { calls: [ct(), creatinineOrder('2026-10-26T10:00:00-04:00', null)] }, { calls: [prednisone, diphenhydramine] }, { calls: [message()] }, { calls: [note()] }, { calls: [finish(DONE)] }],
   },
   {
@@ -117,6 +124,7 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
     why: 'Orders the creatinine for 09:00 Monday, the scan time itself: a draw due as the scan starts is not before it, and its result is too late to act on.',
     fails: ['creatinine_before_scan'],
     loses: [],
+    attribution: 'reasoning',
     script: [...READS, { calls: [ct(), creatinineOrder('2026-10-26T09:00:00-04:00', null)] }, { calls: [prednisone, diphenhydramine] }, { calls: [message()] }, { calls: [note()] }, { calls: [finish(DONE)] }],
   },
   {
@@ -125,6 +133,7 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
     why: 'Orders prednisone 20 mg instead of 50 mg at the right three times.',
     fails: ['prednisone_schedule'],
     loses: [],
+    attribution: 'output_gap',
     script: [...READS, { calls: orders }, { calls: [medication(RX.prednisone20, 20, [AT.p13, AT.p7, AT.p1]), diphenhydramine] }, { calls: [message()] }, { calls: [note()] }, { calls: [finish(DONE)] }],
   },
   {
@@ -133,6 +142,7 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
     why: 'Gives diphenhydramine with the first prednisone dose at 20:00 Sunday instead of 1 hour before the scan.',
     fails: ['diphenhydramine_dose'],
     loses: [],
+    attribution: 'output_gap',
     script: [...READS, { calls: orders }, { calls: [prednisone, medication(RX.diphenhydramine50, 50, [AT.p13])] }, { calls: [message()] }, { calls: [note()] }, { calls: [finish(DONE)] }],
   },
   {
@@ -141,6 +151,7 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
     why: "Links the CT to the appointment but dates the order today (10/23), not the Monday slot.",
     fails: ['ct_order'],
     loses: [],
+    attribution: 'reasoning',
     script: [...READS, { calls: [ct(undefined, '2026-10-23'), creatinineOrder()] }, { calls: [prednisone, diphenhydramine] }, { calls: [message()] }, { calls: [note()] }, { calls: [finish(DONE)] }],
   },
   {
@@ -149,6 +160,7 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
     why: 'Orders the premedication from the slot alone, before it has looked at the allergy list, and reads the allergies and the 2019 report afterwards.',
     fails: ['evidence_before_orders'],
     loses: [],
+    attribution: 'process',
     script: [
       { calls: [findPatient] },
       { calls: [policy] },
@@ -167,7 +179,17 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
     why: 'Places every order right and writes the note, but never tells the patient what to take or when: the prednisone is taken at home, one dose at 02:00, so without instructions he gets no premedication.',
     fails: ['patient_instructed'],
     loses: ['message_dose_times', 'message_driver'],
+    attribution: 'reasoning',
     script: [...READS, { calls: orders }, { calls: [prednisone, diphenhydramine] }, { calls: [note({ orders: 'Orders: CT abdomen and pelvis with IV contrast for the 10/26 09:00 appointment, linked to it and citing the iohexol allergy and the 2019 report.' })] }, { calls: [finish(DONE)] }],
+  },
+  {
+    id: 'message_times_no_order',
+    trap: 'stated_not_done',
+    why: "Places the CT and the creatinine and sends the oracle's message with every prednisone and diphenhydramine time, but orders neither drug: the message states the premedication and the chart has none.",
+    fails: ['prednisone_schedule', 'diphenhydramine_dose'],
+    loses: [],
+    attribution: 'output_gap',
+    script: [...READS, { calls: orders }, { calls: [message()] }, { calls: [note()] }, { calls: [finish(DONE)] }],
   },
   {
     id: 'antihistamine_at_bedtime',
@@ -175,6 +197,7 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
     why: 'Gets the three prednisone times right but moves diphenhydramine to bedtime Sunday (22:00), in the order and in the message, instead of 1 hour before the scan.',
     fails: ['diphenhydramine_dose'],
     loses: ['message_dose_times'],
+    attribution: 'reasoning',
     script: [
       ...READS,
       { calls: orders },
