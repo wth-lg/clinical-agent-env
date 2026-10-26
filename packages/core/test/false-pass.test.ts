@@ -22,7 +22,7 @@ const gr5 = FAULT_DEFINITIONS.grader.criteria.find((c) => c.id === 'GR5');
 describe('GR5 false PASS', () => {
   it('is a grader criterion that reads the outcome and the audit label and evidence', () => {
     expect(gr5).toBeDefined();
-    expect(gr5!.reads).toEqual(expect.arrayContaining(['record.outcome', 'audit.label (else implied by audit.taxonomy)', 'audit.adjudicated_label', 'audit.evidence_ids']));
+    expect(gr5!.reads).toEqual(expect.arrayContaining(['record.outcome', 'audit.outcome', 'audit.label (else implied by audit.taxonomy)', 'audit.adjudicated_label', 'audit.evidence_ids']));
     expect(gr5!.text).toMatch(/PASS/);
   });
 
@@ -48,6 +48,17 @@ describe('GR5 false PASS', () => {
     expect(explainTrial(pass, null, ctx).fault).toBeNull();
     const fail = { ...pass, outcome: 'FAIL', checks: [gate('G1', false)] };
     expect(explainTrial(fail, row({ outcome: 'FAIL' }), ctx).fault_criteria.grader.find((c) => c.id === 'GR5')!.met).toBe(false);
+  });
+});
+
+describe('GR5 needs an audit of the PASS itself (verifier-phase-P17i-JG5-1 S2)', () => {
+  it('a FAIL audited grader, then fixed and regraded to PASS, is not a false PASS', () => {
+    const regraded: ExplainRecord = { ...pass, outcome: 'FAIL', checks: [gate('G1', false)], regrades: [{ outcome: 'PASS', grader_task_version: 'g2', score: 1, valid: true, checks: [gate('G1', true)] }] };
+    const e = explainTrial(regraded, row({ outcome: 'FAIL', model_fault: 'no' }), ctx);
+    expect(e.outcome).toBe('PASS');
+    expect(e.fault_criteria.grader.find((c) => c.id === 'GR5')!.met).toBe(false);
+    expect(e.fault).toBeNull();
+    expect(blocksRun(e)).toBeNull();
   });
 });
 

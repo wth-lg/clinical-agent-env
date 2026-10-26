@@ -27,7 +27,10 @@
 //     a PASS labelled grader without evidence ids is a violation of its own): it is not counted as
 //     a pass and blocks the run as a grader-labelled failure does (P17j JG5);
 //   - every PASS whose current grade has a penalty (a rubric item with negative points) met or
-//     unknown has an audit row with evidence ids, whatever its points (P17j JG5);
+//     unknown has an audit row with evidence ids, whatever its points (P17j JG5); any such row
+//     meets the rule, and its label (grader or none) says whether the PASS is false;
+//   - a PASS row's label, when it has one, is grader: model or environment on a PASS, or a name
+//     that is not an audit label, is a violation;
 //   - no run-level block (outcomes.ts RUN_BLOCKS, B1: the oracle or an alternative fails the matrix)
 //     holds on the grader_task_version of any current grade of the run, named once per
 //     grader_task_version;
@@ -267,7 +270,12 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
       }
     }
     if (outcome === 'PASS') {
-      if (auditLabelOf(l) === 'grader' && l.evidence_ids.length === 0) v.push(`${l.trial}: a PASS labelled grader (a false PASS, GR5) needs evidence ids`);
+      // GR5 reads the label of a PASS row, so it is checked here too (JG5-1 S1): a typo must not
+      // hide a false PASS, and on a PASS the only label is grader.
+      const said = auditLabelOf(l);
+      if (said !== null && !isLabel(said)) v.push(`${l.trial}: label ${said} is not one of ${AUDIT_LABELS.join(', ')}`);
+      else if (said !== null && said !== 'grader') v.push(`${l.trial}: a PASS labelled ${said}; on a PASS the only label is grader, a false PASS (GR5)`);
+      else if (said === 'grader' && l.evidence_ids.length === 0) v.push(`${l.trial}: a PASS labelled grader (a false PASS, GR5) needs evidence ids`);
       continue;
     }
     // The trial's fault without the audit's label, outcome or fault verdict: the label must agree

@@ -357,11 +357,13 @@ export const FAULT_DEFINITIONS: Readonly<Record<Fault, FaultDefinition>> = {
         // A false PASS (P17j JG5): the only fault criterion that decides a PASS. explain.ts lets it
         // decide, and a GR5 trial is not counted as a pass and blocks the run (DENOMINATOR_RULE).
         id: 'GR5',
-        text: 'The trial is a PASS, and a human audit labels it grader with at least one evidence id: the grader passed a trial that the policy fails.',
-        reads: ['record.outcome', 'audit.label (else implied by audit.taxonomy)', 'audit.adjudicated_label', 'audit.evidence_ids'],
+        text: 'The trial is a PASS, and a human audit of that PASS labels it grader with at least one evidence id: the grader passed a trial that the policy fails.',
+        reads: ['record.outcome', 'audit.outcome', 'audit.label (else implied by audit.taxonomy)', 'audit.adjudicated_label', 'audit.evidence_ids'],
+        // The row must be about the PASS: a grader label from the audit of a FAIL that a grader fix
+        // and regrade turned into a PASS is the resolved failure, not a false PASS (JG5-1 S2).
         check: ({ outcome, audit }) => {
           const said = audit === null ? null : (audit.adjudicated_label ?? audit.label);
-          return result(outcome === 'PASS' && said === 'grader' && audit!.evidence_ids.length > 0, audit === null ? 'not human-audited' : `outcome ${outcome}, audit label ${said ?? 'none'}, ${plural(audit.evidence_ids.length, 'evidence id')}`);
+          return result(outcome === 'PASS' && audit?.outcome === 'PASS' && said === 'grader' && audit.evidence_ids.length > 0, audit === null ? 'not human-audited' : `outcome ${outcome}, audited ${audit.outcome}, audit label ${said ?? 'none'}, ${plural(audit.evidence_ids.length, 'evidence id')}`);
         },
       },
     ],

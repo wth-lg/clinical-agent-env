@@ -39,13 +39,17 @@ for (const scheme of ['light', 'dark'] as const) {
     await withFalsePass(page);
     await open(page, `&trial=${encodeURIComponent(TRIALS.pass)}`);
     const header = page.getByTestId('trial-header');
-    await expect(header.getByTestId('outcome')).toContainText('PASS');
+    // The outcome keeps its word, PASS, with the grader fault's mark and the danger border (m1).
+    const chip = header.getByTestId('outcome');
+    await expect(chip).toContainText('PASS');
+    await expect(chip).toHaveAttribute('data-mark', 'grader');
     const label = header.getByTestId('label');
     await expect(label).toHaveAttribute('data-label', 'grader');
     const want = await danger(page);
     await expect(label).toHaveCSS('color', want);
     await expect(header.getByTestId('fault-note')).toHaveText('Not counted. The run is blocked until this is fixed.');
     await expect(header).toHaveCSS('border-left-color', want);
+    await expect(chip).toHaveCSS('border-top-color', want);
     await expect(header.getByTestId('reason')).toHaveText(/^PASS: an audit found a false PASS/);
     await expect(header.getByTestId('detail-fault')).toContainText('(GR5)');
     await expect(header.locator('[data-testid="header-criteria"] li')).toHaveCount(5);

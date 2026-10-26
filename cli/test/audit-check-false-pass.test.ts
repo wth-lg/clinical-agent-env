@@ -59,6 +59,26 @@ describe('a false PASS (GR5)', () => {
   });
 });
 
+describe('the label of a PASS row (verifier-phase-P17i-JG5-1 S1)', () => {
+  it('a label that is not one of the audit labels is a violation, so a typo cannot hide a false PASS', async () => {
+    const dir = clean('label-typo');
+    writeRows(dir, rows(dir).map((r) => (r.trial === 't-alpha/0' ? { ...r, label: 'Grader' } : r)));
+    const r = await check(dir);
+    expect(r.code).toBe(1);
+    expect(r.out).toContain('violation: t-alpha/0: label Grader is not one of model, grader, environment');
+  });
+
+  it('on a PASS only grader (a false PASS) is a label; model or environment is a violation', async () => {
+    for (const label of ['model', 'environment']) {
+      const dir = clean(`label-${label}`);
+      writeRows(dir, rows(dir).map((r) => (r.trial === 't-alpha/0' ? { ...r, label } : r)));
+      const r = await check(dir);
+      expect(r.code).toBe(1);
+      expect(r.out).toContain(`violation: t-alpha/0: a PASS labelled ${label}; on a PASS the only label is grader, a false PASS (GR5)`);
+    }
+  });
+});
+
 describe('every PASS with a met or unknown penalty is audited', () => {
   for (const [points, met] of [[-8, true], [-3, true], [-6, 'unknown']] as const) {
     it(`an unaudited PASS with a ${met === true ? 'met' : 'unknown'} ${points} item fails the run, naming it`, async () => {
