@@ -76,7 +76,7 @@ test('a PASS that a human audit says did not pass shows Contradicted, in the dan
   await browse(page, new URL(`./?view=runs&run=${RUN_ID}&trial=${encodeURIComponent(TRIALS.pass)}`, base).href);
   const c = page.getByTestId('trial-header').getByTestId('header-confirmation');
   await expect(c).toHaveAttribute('data-state', 'contradicted');
-  await expect(c).toContainText('Contradicted: the human audit says this trial did not pass.');
+  await expect(c).toContainText('This PASS is contradicted: the human audit says this trial did not pass.');
   await expect(c).not.toContainText('still needs a human audit');
   await expect(c.locator('.text-danger')).toHaveCount(1);
 });
@@ -94,4 +94,18 @@ test('the prompt tab and the Live launcher name the model in one form (verifier 
   await expect(page.getByTestId('task-model')).toHaveText('Runs claude-opus-5-5 at effort high');
   await browse(page, new URL('./?view=live&task=renal-dose-review', base).href);
   await expect(page.getByTestId('launcher-model')).toContainText('claude-opus-5-5 at effort high');
+});
+
+test('a PASS whose record has an internal tool error shows that it is contradicted, not pending (coordinator: PASS + INTERNAL)', async ({ page }) => {
+  await page.route(`**/data/results/runs/${RUN_ID}/trials/${TRIALS.pass}.json`, async (route) => {
+    const res = await route.fetch();
+    const record = JSON.parse(await res.text()) as { tool_errors: Record<string, number> };
+    record.tool_errors = { ...record.tool_errors, INTERNAL: 1 };
+    await route.fulfill({ response: res, body: JSON.stringify(record) });
+  });
+  const base = await trialBase(test.info().project.use.baseURL!);
+  await browse(page, new URL(`./?view=runs&run=${RUN_ID}&trial=${encodeURIComponent(TRIALS.pass)}`, base).href);
+  const c = page.getByTestId('trial-header').getByTestId('header-confirmation');
+  await expect(c).toHaveAttribute('data-state', 'contradicted');
+  await expect(c).toContainText('This PASS is contradicted: a tool call returned an internal error.');
 });

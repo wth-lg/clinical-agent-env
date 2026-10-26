@@ -32,6 +32,13 @@ const VIEW_DATA: Record<string, string[]> = {
   findings: ['apps/web/src/findings'],
   glossary: ['apps/web/src/glossary', 'packages/core/outcomes.ts'],
 };
+// The task ids a view draws from the task list or the committed run data at runtime (Overview's
+// rows, the Tasks list, Runs, Findings, the Live launcher), not from a source file: the task
+// directories, as data, for the views that list tasks (verifier JU1r2-1 B1, trace U37).
+const TASK_IDS = readdirSync(join(REPO, 'tasks'), { withFileTypes: true })
+  .filter((e) => e.isDirectory() && !e.name.startsWith('_'))
+  .map((e) => e.name);
+const LISTS_TASKS = new Set(['overview', 'tasks', 'runs', 'findings', 'live']);
 const viewOf = (route: string | undefined) => (route === undefined ? null : new URL(route, 'http://x/').searchParams.get('view'));
 // Rows whose UI a named later P17j UI PR builds; each line says which. Remove the row when it lands.
 const BUILT_BY: Record<string, string> = {
@@ -93,7 +100,8 @@ describe('ax_text strings are rendered on their routes', () => {
       // Only the row's UI and document paths draw text; its other code (the loop, the CLI) does not.
       const ui = code.filter((p) => p.startsWith('apps/web/') || p.startsWith('docs/'));
       const paths = [...ui, ...(VIEW_DATA[viewOf(row.ui?.route) ?? ''] ?? []), ...SHELL];
-      const source = paths.flatMap(files).map((f) => readFileSync(f, 'utf8')).join('\n');
+      const data = LISTS_TASKS.has(viewOf(row.ui?.route) ?? 'overview') ? TASK_IDS : [];
+      const source = [...paths.flatMap(files).map((f) => readFileSync(f, 'utf8')), ...data].join('\n');
       expect(found(a.text, source), `"${a.text}" is not drawn by ${paths.join(', ')}`).toBe(true);
     });
   }
