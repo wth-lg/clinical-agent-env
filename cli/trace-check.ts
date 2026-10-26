@@ -23,6 +23,9 @@
 //   - with --plan, a phase is not a `### <phase>:` heading in that plan
 //   - a code or test path does not exist and the row does not list it in pending (a path a later
 //     phase builds), or a pending path is not one of the row's code or test paths
+//   - a pending path exists (stale: remove it), or a row of a done phase lists pending paths
+//   - done_phases (in trace.json: the phases already done, applied in every mode, so the CI form
+//     with no --done holds them too) is not a list of phase ids
 //   - with --done, a code or test path does not exist and the row's phase is in the list, even if
 //     the row lists it in pending
 //   - with --final, any code, test or evidence path does not exist, a route holds a placeholder
@@ -90,6 +93,8 @@ export interface TraceRow {
 export interface Trace {
   pdf_block_sha256?: string;
   done_when_clauses?: number;
+  // Phases already done: each counts as --done in every mode (verifier-phase-P17i-JD1-1 F3).
+  done_phases?: string[];
   rows: TraceRow[];
 }
 
@@ -299,6 +304,10 @@ export async function main(args: string[], deps: Deps = { out: (l) => process.st
   // A route, text or pattern is listed when ui-contract.md holds it as a backticked string.
   const listed = (s: string) => contract.includes(`\`${s}\``);
   const contractName = basename(contractPath);
+  if (trace.done_phases !== undefined) {
+    if (stringList(trace.done_phases)) for (const p of trace.done_phases) done.add(p);
+    else failures.push({ id: 'trace', problem: 'done_phases is not a list of phase ids', fix: 'list the ids of the phases already done, e.g. ["P13", "P14"], or remove done_phases' });
+  }
   const clauses = trace.done_when_clauses;
   if (clauses !== undefined && !(Number.isInteger(clauses) && clauses >= 1)) failures.push({ id: 'trace', problem: 'done_when_clauses is not a positive integer', fix: 'set it to the number of done-when clauses in run.md' });
   const covered = new Set<number>();
@@ -332,6 +341,8 @@ export async function main(args: string[], deps: Deps = { out: (l) => process.st
     if (r.pending !== undefined && !stringList(r.pending)) failures.push({ id: r.id, problem: 'pending is not a list of paths', fix: 'list the code or test paths a later phase builds, or remove pending' });
     const pending = new Set(stringList(r.pending) ? r.pending : []);
     for (const p of pending) if (!named.has(p)) failures.push({ id: r.id, problem: `pending path ${p} is not a code or test path of the row`, fix: 'list in pending only a code or test path of the row that a later phase builds' });
+    if (pending.size > 0 && done.has(r.phase)) failures.push({ id: r.id, problem: `pending lists a path, but phase ${r.phase} is done`, fix: 'a done phase built its paths: update the row to the paths it built and remove pending' });
+    for (const p of pending) if (named.has(p) && existsSync(join(root, p))) failures.push({ id: r.id, problem: `pending path ${p} exists`, fix: 'remove it from pending' });
     for (const key of ['code', 'tests'] as const) {
       for (const p of stringList(r[key]) ? r[key] : []) {
         if (existsSync(join(root, p))) continue;
