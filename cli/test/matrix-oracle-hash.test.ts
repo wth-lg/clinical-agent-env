@@ -73,6 +73,23 @@ describe('matrix oracle final hash', () => {
     }
   });
 
+  it('exits 2 naming a pinned id that is not a task, and on a file that pins no task (verifier-phase-P17i-B5-1 F1)', async () => {
+    const stray = await matrix(['--task', 'a'], tasksV1({ tasks: [{ id: 'a', oracle_final_hash: HASH }, { id: 'renamed', oracle_final_hash: HASH }] }));
+    expect(stray.code).toBe(2);
+    expect(stray.text).toMatch(/^matrix: .*tasks-v1\.json pins renamed, which is not a task \(tasks: a, b\)$/m);
+    const none = await matrix(['--task', 'all'], tasksV1({ tasks: [] }));
+    expect(none.code).toBe(2);
+    expect(none.text).toMatch(/^matrix: .*tasks-v1\.json: tasks lists no task$/m);
+  });
+
+  it('runMatrix fails naming the task when a hash is pinned but the oracle case did not run (F2)', async () => {
+    const narrowed: MatrixOptions = { ...ONE, cases: ['null'] };
+    expect((await runMatrix(matrixEnv(), TOY, narrowed)).pass).toBe(true);
+    const pinned = await runMatrix(matrixEnv(), TOY, { ...narrowed, oracleFinalHash: HASH });
+    expect(pinned.pass).toBe(false);
+    expect(pinned.lines).toContain('  - oracle final hash of task _toy is pinned, but the oracle case did not run');
+  });
+
   it('runMatrix fails naming the task on a mismatch, and passes on a match', async () => {
     const bad = await runMatrix(matrixEnv(), TOY, { ...ONE, oracleFinalHash: WRONG });
     expect(bad.pass).toBe(false);

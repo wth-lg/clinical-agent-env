@@ -37,7 +37,8 @@
 //                     found in its text)
 //   oracle final hash the oracle's final state hash equals MatrixOptions.oracleFinalHash when
 //                     one is given (cli/matrix.ts reads it from results/tasks-v1.json, which
-//                     P21's freeze writes); without one the hash is printed, not checked
+//                     P21's freeze writes), and a pinned hash fails when the oracle case does not
+//                     run; without one the hash is printed, not checked
 // MatrixOptions narrow a run for a unit test: a subset of cases, one trial, one grade. The CI
 // step runs the whole matrix with the defaults.
 import { MODEL, type CallResult, type ContentBlock, type MessageParam } from '../../core/anthropic.ts';
@@ -458,6 +459,7 @@ export async function runMatrix(env: MatrixEnv, task: MatrixTask, opts: MatrixOp
     fail('no oracle');
   } else if (oracle === undefined) {
     lines.push('oracle: not run');
+    if (opts.oracleFinalHash !== undefined) fail(`oracle final hash of task ${task.id} is pinned, but the oracle case did not run`);
   } else {
     const missed = [...new Set(oracle.misses.map((m) => m.check))];
     lines.push(missed.length ? `oracle: MISS judge cache misses ${missed.join(', ')}` : `oracle: ${oracle.grade.outcome} score ${score(oracle.grade)} judge.unknown ${oracle.unknown}`);

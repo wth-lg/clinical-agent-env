@@ -17,8 +17,10 @@
 // When results/tasks-v1.json exists (P21's freeze writes it), each task it lists is checked
 // against its pinned oracle_final_hash: the matrix fails, naming the task, when the oracle ends
 // in another state. Its shape is {tasks: [{id, oracle_final_hash, ...}]}, the hash 64 lowercase
-// hex digits and each id once; a file that does not hold that is a usage error (exit 2). Without
-// the file, or for a task it does not list, the oracle's final hash is printed, unchecked.
+// hex digits and each id once; a file that does not hold that, lists no task, or pins an id that is
+// not a task (a typo or a renamed task, which would leave a task unchecked) is a usage error
+// (exit 2). Without the file, or for a task it does not list, the oracle's final hash is printed,
+// unchecked.
 // A case whose second run differs leaves both runs under results/replay-mismatch/<task>/ (or
 // $REPLAY_MISMATCH_DIR): each trajectory, raw and stripped, each record, and the first
 // divergent line.
@@ -74,11 +76,14 @@ export interface Deps {
 
 const TASKS_V1 = join(REPO, 'results/tasks-v1.json');
 
+// A file as the matrix names it: relative to the repo when it is inside it.
+const shown = (file: string) => (relative(REPO, file).startsWith('..') ? file : relative(REPO, file));
+
 // Each task's pinned oracle final hash from a tasks-v1.json, by task id: empty when the file does
 // not exist, a problem when it does not hold {tasks: [{id, oracle_final_hash}]}.
 export function oracleFinalHashes(file: string): Map<string, string> | { problem: string } {
   if (!existsSync(file)) return new Map();
-  const name = relative(REPO, file).startsWith('..') ? file : relative(REPO, file);
+  const name = shown(file);
   let doc: unknown;
   try {
     doc = JSON.parse(readFileSync(file, 'utf8'));
@@ -87,6 +92,7 @@ export function oracleFinalHashes(file: string): Map<string, string> | { problem
   }
   const tasks = (doc as { tasks?: unknown } | null)?.tasks;
   if (!Array.isArray(tasks)) return { problem: `${name}: tasks must be a list` };
+  if (tasks.length === 0) return { problem: `${name}: tasks lists no task` };
   const hashes = new Map<string, string>();
   for (const [i, t] of tasks.entries()) {
     const { id, oracle_final_hash: hash } = (t ?? {}) as { id?: unknown; oracle_final_hash?: unknown };
@@ -166,6 +172,9 @@ export async function main(args: string[], deps: Deps): Promise<number> {
   const out = flags.get('--out');
   const pinned = oracleFinalHashes(deps.tasksV1 ?? TASKS_V1);
   if (!(pinned instanceof Map)) return usage(deps, pinned.problem);
+  const known = (deps.tasks ?? matrixTaskIds)();
+  const stray = [...pinned.keys()].filter((t) => !known.includes(t));
+  if (stray.length > 0) return usage(deps, `${shown(deps.tasksV1 ?? TASKS_V1)} pins ${stray.join(', ')}, which ${stray.length === 1 ? 'is not a task' : 'are not tasks'} (tasks: ${known.join(', ')})`);
   if (id === 'all') return all(deps, out, pinned);
   const r = await one(id, deps, out, pinned);
   return r.usage === undefined ? r.code : usage(deps, r.usage);
