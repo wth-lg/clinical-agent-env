@@ -26,6 +26,18 @@ type Usage = { input: number; cache_write: number; cache_read: number; output: n
 const num = (n: number) => n.toLocaleString('en-US');
 const usd = (n: number) => `$${n.toFixed(2)}`;
 export const metText = (met: unknown): string => (met === true ? 'met' : met === false ? 'not met' : String(met));
+// A rubric row's met column: a penalty (negative points) that did not fire is "not triggered", so
+// "not met" never reads as a loss (pre-audit M2, P17j JU4).
+export const rubricMetText = (c: { points?: number | null; met: unknown }): string => ((c.points ?? 0) < 0 && c.met === false ? 'not triggered' : metText(c.met));
+// The rubric total: the points of every met item (penalties included) against the points of the
+// positive items, the most a trial can earn.
+export function rubricTotal(rows: ReadonlyArray<{ points?: number | null; met: unknown }>): { earned: number; possible: number } {
+  return {
+    earned: rows.filter((c) => c.met === true).reduce((n, c) => n + (c.points ?? 0), 0),
+    possible: rows.filter((c) => (c.points ?? 0) > 0).reduce((n, c) => n + (c.points ?? 0), 0),
+  };
+}
+const SCORE_TITLE = 'Rubric score (does not decide pass)';
 
 function duration(started: string | undefined, ended: string | undefined): string | null {
   if (!started || !ended) return null;
@@ -82,6 +94,9 @@ export function Grading({ t, steps, onStep, decisive = null }: { t: Trial; steps
   const threwCheck = r.error && !g.regraded ? r.error.check : null;
   const unfinished = r.error != null && !g.regraded;
   const score = graded && typeof g.score === 'number' ? g.score.toFixed(2) : null;
+  // Judge items the judge could not answer: the score is then an upper bound.
+  const unknownItems = (r as { judge?: { unknown?: number } | null }).judge?.unknown ?? 0;
+  const total = rubricTotal(rubric);
   return (
     <div className="space-y-4">
       <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -89,7 +104,7 @@ export function Grading({ t, steps, onStep, decisive = null }: { t: Trial; steps
         {graded && <span data-testid="grade-line" className="text-ink-muted">{unfinished ? 'Not graded: a grader check failed with an error, so the trial has no grade.' : g.regraded ? 'Current grade, from the last regrade.' : r.grader_version ? `Graded with grader ${r.grader_version}.` : 'Graded.'}</span>}
       </p>
       <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
-        <Metric title="Score" value={score} testId="score-card" />
+        <Metric title={SCORE_TITLE} value={score} testId="score-card" note={score !== null && unknownItems > 0 ? `upper bound: ${unknownItems} judge item${unknownItems === 1 ? '' : 's'} unknown` : undefined} />
         <Metric title="Cost" value={usd(r.cost_usd + (r.judge_cost_usd ?? 0))} testId="metric-cost" note={`agent ${usd(r.cost_usd)}, judge ${usd(r.judge_cost_usd ?? 0)}`} />
         <Metric title="Tokens" value={r.usage ? `${num(r.usage.input + r.usage.cache_read + r.usage.cache_write)} in, ${num(r.usage.output)} out` : null} testId="metric-tokens" note={r.usage ? `${num(r.usage.cache_read)} read from the cache` : undefined} />
         <Metric title="Duration" value={duration(r.started, r.ended)} testId="metric-duration" note={r.turns !== undefined ? `${r.turns} turns` : undefined} />
@@ -156,12 +171,18 @@ export function Grading({ t, steps, onStep, decisive = null }: { t: Trial; steps
                   <tr key={c.id} data-testid="rubric-row" data-id={c.id} data-points={String(c.points)} data-met={String(c.met)} className="border-t border-line align-top">
                     <td className="py-1.5 pr-2"><code className="text-xs text-ink">{c.id}</code><span className="block text-xs text-ink-muted">{[c.category, c.method].filter(Boolean).join(', ')}</span></td>
                     <td data-testid="rubric-points" className="py-1.5 pr-2 tabular-nums">{`${(c.points ?? 0) > 0 ? '+' : ''}${c.points}`}</td>
-                    <td data-testid="rubric-met" className="py-1.5 pr-2">{metText(c.met)}</td>
+                    <td data-testid="rubric-met" className="py-1.5 pr-2">{rubricMetText(c)}</td>
                     <td data-testid="rubric-quote" className={`whitespace-pre-line py-1.5 text-xs ${quote === null ? 'text-ink-muted' : 'text-ink'}`}>{quote ?? '—'}</td>
                   </tr>
                 );
               })}
             </tbody>
+            <tfoot>
+              <tr data-testid="rubric-total" data-earned={total.earned} data-possible={total.possible} className="border-t border-line-strong">
+                <td className="py-1.5 pr-2 font-medium">Total</td>
+                <td colSpan={3} className="py-1.5 tabular-nums">{total.earned} of {total.possible} points</td>
+              </tr>
+            </tfoot>
           </table>
         </Section>
       )}
