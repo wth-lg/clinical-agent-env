@@ -22,12 +22,12 @@
 // where the trial detail says env. The trial detail asks for
 // fullExplanation, which adds what the M1-M5 criteria need and the list cannot afford for every
 // row: the trajectory, the task's checks (decisive ids for a regraded trial's exposure, traces_to)
-// and the world when M1 reads it, so its criteria equal audit-check's.
+// and the run's matrix.json, which M1's reachability reads, so its criteria equal audit-check's.
 //
 // A run's grading: the grader versions its records were graded at, whether they started from
 // another world than today's manifest, and, when the run holds regrade/ (an offline regrade of
 // its records with a later grader), how many keep their outcome.
-import { explainContext, needsWorld, worldLookup } from '../../../../packages/core/explain-context.ts';
+import { explainContext } from '../../../../packages/core/explain-context.ts';
 import { auditAnswerOf, explainTrial, type AuditRow, type CheckText, type ExplainRecord, type Explanation } from '../../../../packages/core/explain.ts';
 import { trialName, validateSummary, wilson, type Interval, type Summary } from '../../../../packages/core/summary.ts';
 import { parseTrajectory } from '../../../../packages/core/trajectory.ts';
@@ -222,13 +222,6 @@ function matrixOf(runDir: string, has: ReadonlySet<string>): Promise<unknown> {
   return matrices.get(file)!;
 }
 
-// Whether an id is in today's world, loaded once and only when a criterion asks.
-let world: Promise<(id: string) => boolean> | undefined;
-const inWorld = () => (world ??= Promise.all([import('../../../../packages/env/fixture-source.ts'), import('./world.ts')]).then(async ([{ loadStore }, { worldSource }]) => {
-  const store = await loadStore(worldSource());
-  return worldLookup(new Set([...store.resources()].map((r) => `${r.resourceType}/${r.id}`)));
-}));
-
 // The trial's explanation with every part the criteria read (see the header).
 export async function fullExplanation(t: Trial, run: RunData, has: ReadonlySet<string>): Promise<Explanation> {
   const [{ taskChecks }, matrix, events] = await Promise.all([
@@ -237,7 +230,7 @@ export async function fullExplanation(t: Trial, run: RunData, has: ReadonlySet<s
     t.trajectoryUrl === null ? Promise.resolve([]) : fetchEvents(t.trajectoryUrl),
   ]);
   const input = { record: t.record, events, manifest: run.manifest, matrix, checks: await taskChecks(t.task).catch(() => []), text: checkTextOf(t.task) };
-  return explainTrial(t.record, t.audit, explainContext({ ...input, inWorld: needsWorld(input) ? await inWorld() : null }));
+  return explainTrial(t.record, t.audit, explainContext(input));
 }
 
 const PILOT_DIR = /^(results\/(?:runs\/)?pilot-[A-Za-z0-9._-]+)\/trials\//;

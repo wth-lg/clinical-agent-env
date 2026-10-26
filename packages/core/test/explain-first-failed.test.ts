@@ -8,7 +8,7 @@
 // oracle or alternative in matrix.json, on the trial's world and env_version; else M1 is pending.
 import { describe, expect, it } from 'vitest';
 import { explainTrial, type ExplainCheck, type ExplainContext, type ExplainRecord } from '../explain.ts';
-import { explainContext, needsWorld } from '../explain-context.ts';
+import { explainContext } from '../explain-context.ts';
 import { CONFIRMATION_CRITERIA, FAULT_DEFINITIONS } from '../outcomes.ts';
 import { attribute } from '../../grader/attribution.ts';
 import { gate, type GateCheck, type Step } from '../../grader/check.ts';
@@ -64,7 +64,6 @@ describe('M1 and E5 read the first failed gate too (probe P2b)', () => {
     const c = explainContext({ record: stale, events: [], checks, manifest: { world_hash: 'h-manifest' }, matrix: matrix([probe('oracle', ['ServiceRequest/s1'])]) });
     expect(c.exposure).toEqual({ check: 'S1', ids: [{ id: NEVER_READ, first_exposed_step: null }] });
     // M1 reads matrix.json, never the world (R14-30).
-    expect(needsWorld({ record: stale, events: [], checks })).toBe(false);
     expect(explainTrial(stale, null, c)).toMatchObject({ fault: 'env', deciding: { id: 'E5' } });
   });
 });
