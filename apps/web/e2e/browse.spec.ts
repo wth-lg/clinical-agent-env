@@ -181,7 +181,7 @@ test('the trial detail says each criterion and the fault in words, linked to the
   await expect(page).toHaveURL(/#fault-model$/);
 });
 
-test('every trial detail shows the criteria audit-check gives; M3 is pending because the run has no manifest', async ({ page }) => {
+test('every trial detail shows the criteria audit-check gives; M3 is met because the run manifest names today\'s world', async ({ page }) => {
   // 75 rows opened one by one, each waiting for its full explanation.
   test.setTimeout(300_000);
   const cli = await cliCriteria();
@@ -202,9 +202,9 @@ test('every trial detail shows the criteria audit-check gives; M3 is pending bec
   const pass = records.find((r) => r.outcome === 'PASS')!;
   await browse(page, `./?view=runs&trial=${encodeURIComponent(trialName(pass))}`);
   const m3 = page.getByTestId('trial-detail').locator('[data-testid="detail-criteria"] li[data-id="M3"]');
-  await expect(m3).toHaveAttribute('data-met', 'pending');
-  await expect(m3).toContainText('pending: run has no manifest');
-  await expect(m3).toHaveAttribute('data-evidence', /^run has no manifest; /);
+  // The generator writes the run's manifest.json (verifier-phase-P17i-C4r5-1 F2).
+  await expect(m3).toHaveAttribute('data-met', 'true');
+  await expect(m3).toHaveAttribute('data-evidence', new RegExp(`^initial ${pass.state_hash.initial} equals the manifest's ${MANIFEST_HASH}; `));
 });
 
 test('a run manifest on another world makes M3 not met, and Notes shorten each hash with a copy control', async ({ page }) => {
@@ -213,7 +213,7 @@ test('a run manifest on another world makes M3 not met, and Notes shorten each h
   await page.route('**/data/index.json', async (route) => {
     const res = await route.fetch();
     const { files } = (await res.json()) as { files: string[] };
-    await route.fulfill({ response: res, json: { files: [...files, manifest] } });
+    await route.fulfill({ response: res, json: { files: files.includes(manifest) ? files : [...files, manifest] } });
   });
   await page.route(`**/data/${manifest}`, (route) => route.fulfill({ json: { world_hash: other } }));
   const pass = records.find((r) => r.outcome === 'PASS')!;

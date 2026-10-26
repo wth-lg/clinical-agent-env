@@ -4,6 +4,8 @@
 //   results/runs/sample-1/trials/<task>/<index>.json, trajectories/<task>/<index>.jsonl
 //   results/runs/sample-1/summary.json    packages/core/summary.ts summarize() over the records
 //   results/runs/sample-1/audit.jsonl     human audit rows for some non-pass trials
+//   results/runs/sample-1/manifest.json   the run manifest a batch writes (packages/core/batch.ts
+//                                         RunManifest, no batches), so M1 reads reachability
 //   results/runs/sample-1/matrix.json     written by `pnpm cli matrix --task <id> --out` (below)
 //   docs/findings.md                      a short write-up of the sample, from summary.json
 // Every trial is a real scripted run through run() (packages/grader/matrix: the oracle and the
@@ -21,6 +23,7 @@ import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadMatrixTask, matrixEnv, matrixTaskIds } from '../../../../../cli/matrix.ts';
+import type { RunManifest } from '../../../../../packages/core/batch.ts';
 import type { AuditRow } from '../../../../../packages/core/explain.ts';
 import type { TrialRecord } from '../../../../../packages/core/run.ts';
 import { assertSummary, summarize, type SummaryTrial } from '../../../../../packages/core/summary.ts';
@@ -104,6 +107,7 @@ async function main(withMatrix: boolean) {
   write(join(HERE, 'results/official.json'), `${JSON.stringify({ run: `runs/${RUN_ID}` }, null, 2)}\n`);
   write(join(RUN, 'summary.json'), `${JSON.stringify(summary, null, 2)}\n`);
   write(join(RUN, 'audit.jsonl'), audit.map((a) => `${JSON.stringify(a)}\n`).join(''));
+  write(join(RUN, 'manifest.json'), `${JSON.stringify(manifestOf(records, env.worldHash), null, 2)}\n`);
   write(join(HERE, 'docs/findings.md'), findings(summary));
   if (withMatrix) {
     for (const id of ids) {
@@ -112,6 +116,19 @@ async function main(withMatrix: boolean) {
       if (r.status !== 0) throw new Error(`pnpm cli matrix --task ${id} failed:\n${r.stdout}${r.stderr}`);
     }
   }
+}
+
+// The run manifest a batch of these records would have written (packages/core/batch.ts), with no
+// batch entries: the world it ran on and each task's versions, which M1's reachability compares
+// with matrix.json (verifier-phase-P17i-C4r5-1 F2).
+function manifestOf(records: readonly Rec[], worldHash: string): RunManifest {
+  const first = records[0]!;
+  const versions = (k: 'task_version' | 'env_version' | 'grader_task_version') =>
+    Object.fromEntries(records.map((r) => [r.task_id, r[k] ?? (() => { throw new Error(`${r.trial_id} has no ${k}`); })()]));
+  return {
+    run_id: RUN_ID, model: first.model_requested, effort: first.effort, mode: 'mock-sample', world_hash: worldHash, api_version: first.api_version, trials: TRIALS_PER_TASK,
+    task_versions: versions('task_version'), env_versions: versions('env_version'), grader_task_versions: versions('grader_task_version'), batches: [],
+  };
 }
 
 // The record as the outcome `as` would have left it; null keeps the scripted run's.

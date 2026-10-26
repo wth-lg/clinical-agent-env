@@ -2,11 +2,14 @@
 // built UI reads it with: each summary.json with packages/core/summary.ts validateSummary and
 // equal to summarize() over its records, each trial record and audit line with
 // src/data/records.ts, each trajectory with packages/core/trajectory.ts, and every trial record
-// starts from the world in fixtures/manifest.json. A schema bump or a world rebuild that leaves a
+// starts from the world in fixtures/manifest.json; each official run has a run manifest.json, as a
+// batch writes it, so M1 can read reachability from its matrix.json (verifier-phase-P17i-C4r5-1
+// F2: without one, every unexposed id was "not checked"). A schema bump or a world rebuild that leaves a
 // fixture behind fails here, before the e2e specs that build against it.
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { reachability } from '../../../packages/core/explain-context.ts';
 import { summarize, validateSummary, type Summary, type SummaryTrial } from '../../../packages/core/summary.ts';
 import { parseTrajectory } from '../../../packages/core/trajectory.ts';
 import { validateAuditRow, validateRecord } from '../src/data/records.ts';
@@ -58,6 +61,17 @@ describe.each(roots)('fixture %s', (root) => {
   });
 
   const summaries = runs.filter((r) => existsSync(join(r, 'summary.json')));
+  it.skipIf(summaries.length === 0).each(summaries.map((r) => [at(r), r]))('%s: manifest.json names the run, the world and each task\'s versions, so reachability answers for every record', (_, run) => {
+    const manifest = json(join(run, 'manifest.json')) as { run_id: string; world_hash: string; mode: string; task_versions: Record<string, string>; env_versions: Record<string, string>; grader_task_versions: Record<string, string> };
+    expect(manifest).toMatchObject({ run_id: (json(join(run, 'summary.json')) as Summary).run_id, world_hash: WORLD_HASH, mode: 'mock-sample' });
+    const matrix = json(join(run, 'matrix.json'));
+    for (const f of files(join(run, 'trials'), '.json')) {
+      const r = json(f) as { task_id: string; task_version: string; env_version: string; grader_task_version: string };
+      expect([manifest.task_versions[r.task_id], manifest.env_versions[r.task_id], manifest.grader_task_versions[r.task_id]], at(f)).toEqual([r.task_version, r.env_version, r.grader_task_version]);
+      expect(reachability(manifest, matrix, r.grader_task_version, r.env_version), at(f)).not.toHaveProperty('unchecked');
+    }
+  });
+
   it.skipIf(summaries.length === 0).each(summaries.map((r) => [at(r), r]))('%s: summary.json validates and equals summarize() over its records', (_, run) => {
     const summary = json(join(run, 'summary.json')) as Summary;
     expect(validateSummary(summary)).toEqual([]);
