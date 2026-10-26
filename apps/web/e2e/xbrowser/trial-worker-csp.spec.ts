@@ -1,9 +1,11 @@
 // The real trial Worker (src/worker/trial.ts), not a stand-in, is bound by the page's CSP in each
 // browser (promoted from the P15 verifier's probe). The served trial bundle gets a probe appended
 // that answers over a BroadcastChannel from inside the running Worker, after the egress guard:
-// the Worker's URL is a blob:, the egress guard refuses a fetch to another origin, the browser
-// refuses the prototype fetch and an import() from that origin with a securitypolicyviolation
-// event for each (the CSP, under the guard), and a same-origin fetch still works. A real server on 127.0.0.1 records any request that gets out.
+// the Worker's URL is a blob:, the egress guard refuses a fetch to another origin, by the global
+// and by WorkerGlobalScope.prototype.fetch (review-security-P16h-web-1 S1), the browser refuses a
+// raw fetch captured before the guard installed and an import() from that origin with a
+// securitypolicyviolation event for each (the CSP, under the guard), and a same-origin fetch
+// still works. A real server on 127.0.0.1 records any request that gets out.
 // The Messages API is route-mocked with the toy script, held on turn 2 so the Worker is alive.
 import { randomUUID } from 'node:crypto';
 import { createServer } from 'node:http';
@@ -37,6 +39,11 @@ async function mockToy(context: BrowserContext) {
   return { held, release: async () => { const h = held.shift()!; await sse(h.route, okResponse(TOY[h.turn - 1]!, h.turn)); } };
 }
 
+// Prepended to the bundle, so it runs before the Worker installs its guard: the raw fetch a caller
+// could hold only by running first. The guard cannot reach it; the CSP still binds it.
+const PRE = String.raw`self.__rawFetch = typeof WorkerGlobalScope === 'function' ? WorkerGlobalScope.prototype.fetch : undefined;
+`;
+
 const PROBE = String.raw`
 ;(() => {
   const violations = [];
@@ -44,13 +51,14 @@ const PROBE = String.raw`
   const bc = new BroadcastChannel('trial-worker-probe');
   bc.onmessage = async ({ data: foreign }) => {
     const attempt = async (f) => { try { const r = await f(); return r instanceof Response ? 'answered ' + r.status : 'loaded'; } catch (e) { return 'refused: ' + (e && e.message); } };
-    const protoFetch = WorkerGlobalScope.prototype.fetch;
+    const rawFetch = self.__rawFetch;
     bc.postMessage({
       location: location.href,
       guardFetch: await attempt(() => fetch(foreign + '/guard-fetch')),
-      protoFetch: await attempt(() => protoFetch.call(globalThis, foreign + '/proto-fetch')),
+      protoGuard: await attempt(() => WorkerGlobalScope.prototype.fetch.call(globalThis, foreign + '/proto-guard')),
+      rawFetch: await attempt(() => rawFetch.call(globalThis, foreign + '/raw-fetch')),
       dynamicImport: await attempt(() => import(foreign + '/mod.js')),
-      sameOrigin: await attempt(() => protoFetch.call(globalThis, new URL('/clinical-agent-env/data/fixtures/manifest.json', location.origin).href)),
+      sameOrigin: await attempt(() => rawFetch.call(globalThis, new URL('/clinical-agent-env/data/fixtures/manifest.json', location.origin).href)),
       // Read after the attempts, and a moment later, so each violation event has been dispatched.
       violations: await new Promise((resolve) => setTimeout(() => resolve(violations), 200)),
     });
@@ -73,7 +81,7 @@ test('the real trial Worker runs from blob: under the page CSP: other origins ar
     await context.route('**/clinical-agent-env/assets/trial-*.js', async (route) => {
       const res = await route.fetch();
       patched++;
-      await route.fulfill({ response: res, body: (await res.text()) + PROBE });
+      await route.fulfill({ response: res, body: PRE + (await res.text()) + PROBE });
     });
     const api = await mockToy(context);
     await page.goto('./?view=live&task=_toy');
@@ -94,10 +102,11 @@ test('the real trial Worker runs from blob: under the page CSP: other origins ar
     // The CSP itself refused both, a positive signal: in Chromium a Worker whose script comes
     // through route.fulfill cannot reach the network whatever the CSP, so "refused" alone does
     // not prove the CSP (verifier-phase-P16-1 m2).
-    expect(probe.violations).toEqual(expect.arrayContaining([`connect-src ${foreign}/proto-fetch`, `script-src-elem ${foreign}/mod.js`]));
+    expect(probe.violations).toEqual(expect.arrayContaining([`connect-src ${foreign}/raw-fetch`, `script-src-elem ${foreign}/mod.js`]));
     expect(String(probe.location)).toMatch(/^blob:/);
     expect(String(probe.guardFetch)).toMatch(/^refused: .*egress guard/);
-    expect(String(probe.protoFetch)).toMatch(/^refused/);
+    expect(String(probe.protoGuard)).toMatch(/^refused: .*egress guard/);
+    expect(String(probe.rawFetch)).toMatch(/^refused/);
     expect(String(probe.dynamicImport)).toMatch(/^refused/);
     expect(probe.sameOrigin).toBe('answered 200');
     expect(hits).toEqual([]);

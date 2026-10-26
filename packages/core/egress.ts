@@ -26,7 +26,10 @@
 // MessagesClient Request reaches it, once. An origin is compared after WHATWG parsing (case,
 // %2E, IDNA dots and a default port resolve) with a trailing dot dropped and ws/wss read as
 // http/https, so every spelling of the relay's origin meets the check (meteredKey).
-// The wrapped globals are made read-only, so later code cannot put the raw ones back. The entry
+// The wrapped globals are made read-only, so later code cannot put the raw ones back. Each is
+// also wrapped and locked on every prototype of its holder that defines it: a browser Worker
+// keeps fetch on WorkerGlobalScope.prototype and a page keeps sendBeacon on Navigator.prototype,
+// where `Proto.fetch.call(self, ...)` would otherwise reach the raw function. The entry
 // point passes its global scope in, since shared code does not touch DOM or Node globals
 // (lint: isomorphic-imports).
 //
@@ -192,6 +195,14 @@ function lock(target: object, key: string | symbol, value: unknown): void {
   Object.defineProperty(target, key, { value, writable: false, configurable: false, enumerable: false });
 }
 
+// Locks value as target's own key and on every prototype of target that defines key itself.
+function lockChain(target: object, key: string, value: unknown): void {
+  lock(target, key, value);
+  for (let p = Object.getPrototypeOf(target) as object | null; p !== null; p = Object.getPrototypeOf(p) as object | null) {
+    if (Object.prototype.hasOwnProperty.call(p, key)) lock(p, key, value);
+  }
+}
+
 
 export function installEgressGuard(scope: object, opts: EgressOptions = {}): void {
   if (installed) return;
@@ -233,7 +244,7 @@ export function installEgressGuard(scope: object, opts: EgressOptions = {}): voi
         return Promise.reject(e);
       }
     };
-    lock(scope, 'fetch', guarded);
+    lockChain(scope, 'fetch', guarded);
   }
 
   const xhr = g.XMLHttpRequest;
@@ -255,12 +266,12 @@ export function installEgressGuard(scope: object, opts: EgressOptions = {}): voi
       }
     };
     Object.defineProperty(Guarded, 'name', { value: name });
-    lock(scope, name, Guarded);
+    lockChain(scope, name, Guarded);
   }
 
   const nav = g.navigator;
   const beacon = nav?.sendBeacon;
   if (nav && typeof beacon === 'function') {
-    lock(nav, 'sendBeacon', (url: unknown, data?: unknown) => beacon.call(nav, checked('sendBeacon', url), data));
+    lockChain(nav, 'sendBeacon', (url: unknown, data?: unknown) => beacon.call(nav, checked('sendBeacon', url), data));
   }
 }

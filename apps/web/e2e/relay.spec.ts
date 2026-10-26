@@ -233,6 +233,27 @@ for (const { reason, reply } of TRIAL_FAILURES) {
   });
 }
 
+// The plants that reach a raw function through the prototype that holds it (security review
+// review-security-P16h-web-1 S1). Each names the prototype it found, so a scope without one fails
+// the match rather than passing vacuously. Each runs in the browser, so each walks the chain itself.
+const protoFetch = async (url: string) => {
+  for (let i = 0; i < 200 && Object.getOwnPropertyDescriptor(globalThis, 'fetch')?.writable !== false; i++) await new Promise((r) => setTimeout(r, 50));
+  let owner: { fetch: typeof fetch } | null = null;
+  for (let p = Object.getPrototypeOf(globalThis) as object | null; p !== null && owner === null; p = Object.getPrototypeOf(p) as object | null) if (Object.hasOwn(p, 'fetch')) owner = p as { fetch: typeof fetch };
+  if (owner === null) return 'no prototype holds fetch';
+  return owner.fetch.call(globalThis, url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' }).then(() => 'sent', (e: Error) => `${e.name}: ${e.message}`);
+};
+const protoBeacon = (url: string) => {
+  let owner: { sendBeacon: Navigator['sendBeacon'] } | null = null;
+  for (let p = Object.getPrototypeOf(navigator) as object | null; p !== null && owner === null; p = Object.getPrototypeOf(p) as object | null) if (Object.hasOwn(p, 'sendBeacon')) owner = p as { sendBeacon: Navigator['sendBeacon'] };
+  if (owner === null) return 'no prototype holds sendBeacon';
+  try {
+    return `sent ${owner.sendBeacon.call(navigator, url, '{}')}`;
+  } catch (e) {
+    return `${(e as Error).name}: ${(e as Error).message}`;
+  }
+};
+
 test('the egress guard refuses a fetch to RELAY_URL planted in the page and in the trial Worker; neither reaches the relay', async ({ page }) => {
   await browserDirect(page);
   const relay = await mockRelay(page);
@@ -251,6 +272,8 @@ test('the egress guard refuses a fetch to RELAY_URL planted in the page and in t
     return fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' }).then(() => 'sent', (e: Error) => `${e.name}: ${e.message}`);
   };
   expect(await page.evaluate(plant, RELAY_URL)).toMatch(/^EgressRefusal: egress guard/);
+  // The page keeps sendBeacon on Navigator.prototype; the guard locks it there too (review S1).
+  expect(await page.evaluate(protoBeacon, RELAY_URL)).toMatch(/^EgressRefusal: egress guard/);
   expect(relay.posts).toHaveLength(0);
   await enterKey(page, sentinelKey());
   await expect(page.getByTestId('key-chip')).toBeVisible();
@@ -261,6 +284,8 @@ test('the egress guard refuses a fetch to RELAY_URL planted in the page and in t
   await page.getByRole('button', { name: 'Run ×1', exact: true }).click();
   const inWorker = await (await worker).evaluate(plant, RELAY_URL);
   expect(inWorker).toMatch(/^EgressRefusal: egress guard/);
+  // A dedicated Worker keeps fetch on WorkerGlobalScope.prototype; the guard locks it there too.
+  expect(await (await worker).evaluate(protoFetch, RELAY_URL)).toMatch(/^EgressRefusal: egress guard/);
   expect(relay.posts).toHaveLength(validateOnly);
   releaseWorld();
   await expect(trial(page)).toHaveAttribute('data-state', 'graded', { timeout: 60_000 });
