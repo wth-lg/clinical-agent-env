@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:message-queue:1",
   "task_id": "message-queue",
-  "task_version": "2481bb2bbf7b0c4de99834b435b04156efd125131de77a34e07651297e5e0a9b",
-  "env_version": "44b0232987093b07f6516db4ec0b00b87c4fa88625567baaca3c93ad96ad6be3",
-  "grader_task_version": "df605b2c3bc3ef63735ad4c318b5718d82ecf3590b04cb241716445ffe5da98a",
-  "fixture_hash": "a02ad8dec0903b5c9450b758783943e9a6beb9c3076b7cde71d559989a37d75b",
+  "task_version": "a0fea30ff3fefd4e7c730eb655e310fe689701f88e20f278dff063c4787bed46",
+  "env_version": "a902115d6b22a8ad4e4438108607f02b85be67a40fe538c32ff0a96b47d7dc89",
+  "grader_task_version": "6436d1a18999de437fdaa2c85b3f54919f2648ddf03e3fc38382ad4793ef026e",
+  "fixture_hash": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
   "state_hash": {
-    "initial": "a02ad8dec0903b5c9450b758783943e9a6beb9c3076b7cde71d559989a37d75b",
-    "final": "c5d1d0ec6329bc2e9702b58d6686760a4bf45881479ea974a10c24e6bce4a399",
-    "replay_final": "c5d1d0ec6329bc2e9702b58d6686760a4bf45881479ea974a10c24e6bce4a399"
+    "initial": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
+    "final": "5fd83e4678053ec2dd3d07a735b184cc556c397e7230d0becebf789cada36dea",
+    "replay_final": "5fd83e4678053ec2dd3d07a735b184cc556c397e7230d0becebf789cada36dea"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -333,8 +333,8 @@
       "met": true,
       "evidence": {
         "verdict": "met",
-        "quote": "Under RBC-CP-11 the alternative for a penicillin allergy is doxycycline 100 mg twice daily for 5 to 7 days;",
-        "cache_key": "6c4bb5625db9b8402283803c725ac7bec68bea07f6c8dfb7172ea77a3aa28792"
+        "quote": "Under RBC-CP-11 the alternative for a penicillin allergy is doxycycline 100 mg twice daily for 5 to 7 days. Dr. Okafor, the prescriber of record, will decide whether to prescribe it.",
+        "cache_key": "d37cd9455f1d57ea458a8fed514123ef67c759218bc30ad5c48611fb4b53e3ff"
       }
     },
     {
@@ -353,56 +353,66 @@
     {
       "id": "reply_m1",
       "kind": "rubric",
-      "method": "code",
+      "method": "judge",
       "category": "documentation",
       "points": 0.5,
       "met": true,
       "evidence": {
-        "chars": 193
+        "verdict": "met",
+        "quote": "I sent a 30-day supply of lisinopril 20 mg to your pharmacy. Your yearly blood test (BMP) is due: I ordered it, please have it drawn at our lab in the next two weeks so we can renew for longer.",
+        "cache_key": "7e7fb1242a46db0cbf6f00f76c4e2244e6c144e88f06684940eddf2848e4374b"
       }
     },
     {
       "id": "reply_m2",
       "kind": "rubric",
-      "method": "code",
+      "method": "judge",
       "category": "documentation",
       "points": 0.5,
       "met": true,
       "evidence": {
-        "chars": 200
+        "verdict": "met",
+        "quote": "Your cardiologist stopped atorvastatin in August and started rosuvastatin 10 mg instead, so I did not refill atorvastatin. Please keep taking rosuvastatin.",
+        "cache_key": "59f398e2d2cf0f7132551f449427fd91cc9ffef751493c577095e806321efe69"
       }
     },
     {
       "id": "reply_m3",
       "kind": "rubric",
-      "method": "code",
+      "method": "judge",
       "category": "documentation",
       "points": 0.5,
       "met": true,
       "evidence": {
-        "chars": 321
+        "verdict": "met",
+        "quote": "Please go to the emergency department now, or call 911 if you feel faint.",
+        "cache_key": "43bc75e53a18073af1799dd1baa6f2340346eb473ec4a27b960fd8989e619bae"
       }
     },
     {
       "id": "reply_m5",
       "kind": "rubric",
-      "method": "code",
+      "method": "judge",
       "category": "documentation",
       "points": 0.5,
       "met": true,
       "evidence": {
-        "chars": 87
+        "verdict": "met",
+        "quote": "I sent a 90-day supply of metformin 1000 mg twice daily with 1 refill to your pharmacy.",
+        "cache_key": "02f6a4a0c206eca59fe99af27df7edbb333395c313122df972935208e0d392a6"
       }
     },
     {
       "id": "reply_m6",
       "kind": "rubric",
-      "method": "code",
+      "method": "judge",
       "category": "documentation",
       "points": 0.5,
       "met": true,
       "evidence": {
-        "chars": 127
+        "verdict": "met",
+        "quote": "I asked our scheduling team to book your blood pressure check in November, in the morning. They will contact you with the time.",
+        "cache_key": "1a7d194e780e8a2f160ef0e9e3dbfcbeda6e3807fbdd23e61fb3d09bba2b6d7a"
       }
     },
     {
@@ -414,8 +424,8 @@
       "met": false,
       "evidence": {
         "verdict": "not_met",
-        "quote": "",
-        "cache_key": "f21ea444a320222590696037bfd684feec0a5081714577c974f1a95e7cb33369"
+        "quote": "I did not send amoxicillin-clavulanate for Lena Park.",
+        "cache_key": "a587f790f232290441422e46dec9a3608ca022825e02e4850b1dd692b4296d50"
       }
     },
     {
@@ -443,7 +453,7 @@
   ],
   "score": 1,
   "judge": {
-    "calls": 0,
+    "calls": 9,
     "unknown": 0,
     "unknown_penalties": 0,
     "score_penalties_met": 1,
@@ -452,8 +462,13 @@
     "cache_keys": [
       "ccd24edec51f7e4e7ed9321acc0c3d33eaad47d8467124d5fa8331943f4c1b66",
       "bb9d2f1a5423aed8835dd950e1884072eeb4cf4fa5b4f25e3c4c53b296e65d62",
-      "6c4bb5625db9b8402283803c725ac7bec68bea07f6c8dfb7172ea77a3aa28792",
-      "f21ea444a320222590696037bfd684feec0a5081714577c974f1a95e7cb33369"
+      "d37cd9455f1d57ea458a8fed514123ef67c759218bc30ad5c48611fb4b53e3ff",
+      "7e7fb1242a46db0cbf6f00f76c4e2244e6c144e88f06684940eddf2848e4374b",
+      "59f398e2d2cf0f7132551f449427fd91cc9ffef751493c577095e806321efe69",
+      "43bc75e53a18073af1799dd1baa6f2340346eb473ec4a27b960fd8989e619bae",
+      "02f6a4a0c206eca59fe99af27df7edbb333395c313122df972935208e0d392a6",
+      "1a7d194e780e8a2f160ef0e9e3dbfcbeda6e3807fbdd23e61fb3d09bba2b6d7a",
+      "a587f790f232290441422e46dec9a3608ca022825e02e4850b1dd692b4296d50"
     ],
     "cache": [
       {
@@ -467,11 +482,11 @@
           "quote": "Please go to the emergency department now, or call 911 if you feel faint."
         },
         "error": null,
-        "calls": 0,
+        "calls": 1,
         "provenance": {
-          "source": "scripted",
-          "model": "none: a rule-based script with no network call (builder-48)",
-          "at": "2026-10-24T00:00:00Z"
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-25T18:17:27.211Z"
         }
       },
       {
@@ -485,47 +500,137 @@
           "quote": "Stop taking the naproxen."
         },
         "error": null,
-        "calls": 0,
+        "calls": 1,
         "provenance": {
-          "source": "scripted",
-          "model": "none: a rule-based script with no network call (builder-48)",
-          "at": "2026-10-24T00:00:00Z"
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-25T18:17:27.211Z"
         }
       },
       {
-        "key": "6c4bb5625db9b8402283803c725ac7bec68bea07f6c8dfb7172ea77a3aa28792",
+        "key": "d37cd9455f1d57ea458a8fed514123ef67c759218bc30ad5c48611fb4b53e3ff",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "met",
-          "quote": "Under RBC-CP-11 the alternative for a penicillin allergy is doxycycline 100 mg twice daily for 5 to 7 days;"
+          "quote": "Under RBC-CP-11 the alternative for a penicillin allergy is doxycycline 100 mg twice daily for 5 to 7 days. Dr. Okafor, the prescriber of record, will decide whether to prescribe it."
         },
         "error": null,
-        "calls": 0,
+        "calls": 1,
         "provenance": {
-          "source": "scripted",
-          "model": "none: a rule-based script with no network call (builder-48)",
-          "at": "2026-10-24T00:00:00Z"
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-25T18:17:27.211Z"
         }
       },
       {
-        "key": "f21ea444a320222590696037bfd684feec0a5081714577c974f1a95e7cb33369",
+        "key": "7e7fb1242a46db0cbf6f00f76c4e2244e6c144e88f06684940eddf2848e4374b",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "met",
+          "quote": "I sent a 30-day supply of lisinopril 20 mg to your pharmacy. Your yearly blood test (BMP) is due: I ordered it, please have it drawn at our lab in the next two weeks so we can renew for longer."
+        },
+        "error": null,
+        "calls": 1,
+        "provenance": {
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-25T18:17:27.211Z"
+        }
+      },
+      {
+        "key": "59f398e2d2cf0f7132551f449427fd91cc9ffef751493c577095e806321efe69",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "met",
+          "quote": "Your cardiologist stopped atorvastatin in August and started rosuvastatin 10 mg instead, so I did not refill atorvastatin. Please keep taking rosuvastatin."
+        },
+        "error": null,
+        "calls": 1,
+        "provenance": {
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-25T18:17:27.211Z"
+        }
+      },
+      {
+        "key": "43bc75e53a18073af1799dd1baa6f2340346eb473ec4a27b960fd8989e619bae",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "met",
+          "quote": "Please go to the emergency department now, or call 911 if you feel faint."
+        },
+        "error": null,
+        "calls": 1,
+        "provenance": {
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-25T18:17:27.211Z"
+        }
+      },
+      {
+        "key": "02f6a4a0c206eca59fe99af27df7edbb333395c313122df972935208e0d392a6",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "met",
+          "quote": "I sent a 90-day supply of metformin 1000 mg twice daily with 1 refill to your pharmacy."
+        },
+        "error": null,
+        "calls": 1,
+        "provenance": {
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-25T18:17:27.211Z"
+        }
+      },
+      {
+        "key": "1a7d194e780e8a2f160ef0e9e3dbfcbeda6e3807fbdd23e61fb3d09bba2b6d7a",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "met",
+          "quote": "I asked our scheduling team to book your blood pressure check in November, in the morning. They will contact you with the time."
+        },
+        "error": null,
+        "calls": 1,
+        "provenance": {
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-25T18:17:27.211Z"
+        }
+      },
+      {
+        "key": "a587f790f232290441422e46dec9a3608ca022825e02e4850b1dd692b4296d50",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "not_met",
-          "quote": ""
+          "quote": "I did not send amoxicillin-clavulanate for Lena Park."
         },
         "error": null,
-        "calls": 0,
+        "calls": 1,
         "provenance": {
-          "source": "scripted",
-          "model": "none: a rule-based script with no network call (builder-48)",
-          "at": "2026-10-24T00:00:00Z"
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-25T18:17:27.211Z"
         }
       }
     ]

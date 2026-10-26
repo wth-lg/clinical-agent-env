@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:crc-care-gap:5",
   "task_id": "crc-care-gap",
-  "task_version": "ea49bcadf1f09a28deb079b171b4664886a254b824a89235990aab4d2039e3dc",
-  "env_version": "33bc405f9ee45f63fb612007db9d8fcae1efeaddb9766b21073172bbd912fd86",
-  "grader_task_version": "5cef528de411237ff22e51a7a6df680a6954707a6a44f04885e492b572eafee5",
-  "fixture_hash": "a02ad8dec0903b5c9450b758783943e9a6beb9c3076b7cde71d559989a37d75b",
+  "task_version": "d3d0de7bcf206407a3ab72469719cfccb312c98ecbea3b7a3ce998cb5f5538a2",
+  "env_version": "3d7216da2510f1708b0fb589859ce3c332cb7f5b42c0b55842793ce60955a9db",
+  "grader_task_version": "1952a48403a77a84eb548dda5d5b0395ce0e20e849f59eec620e8eeb36a624ff",
+  "fixture_hash": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
   "state_hash": {
-    "initial": "a02ad8dec0903b5c9450b758783943e9a6beb9c3076b7cde71d559989a37d75b",
-    "final": "ddc57e4b45a0b9ad146240796aa5356280a90d3f5764abe413244362f275a973",
-    "replay_final": "ddc57e4b45a0b9ad146240796aa5356280a90d3f5764abe413244362f275a973"
+    "initial": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
+    "final": "cd1424988dd84f086da869d60c0b156409882a41e785739fad751bc1336d3c0e",
+    "replay_final": "cd1424988dd84f086da869d60c0b156409882a41e785739fad751bc1336d3c0e"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -284,7 +284,7 @@
         "status": "gap",
         "reason": "no_screening",
         "verdict": "met",
-        "quote": "| Harrison O'Keefe | Open gap: FIT kit ordered, outreach sent | Age 69 with frailty but no advanced illness or dementia medication, so not excluded; no screening on record |",
+        "quote": "Harrison O'Keefe | Open gap: FIT kit ordered, outreach sent | Age 69 with frailty but no advanced illness or dementia medication, so not excluded; no screening on record",
         "cache_key": "192b9c57dbea043f8ee68b8d200fc1c7f68902c99e714569415a52fed1391110"
       }
     },
@@ -348,7 +348,7 @@
         "status": "gap",
         "reason": "no_screening",
         "verdict": "met",
-        "quote": "Burma Leuschke | Open gap: FIT kit ordered, outreach sent | Born 1980-12-15: 46 at the end of 2026, in the population; no screening on record",
+        "quote": "| Burma Leuschke | Open gap: FIT kit ordered, outreach sent | Born 1980-12-15: 46 at the end of 2026, in the population; no screening on record |",
         "cache_key": "f7be70f3945fa74006d893c32f8c1c5a5cc96b5cc189360cb84aa676a9fe93f4"
       }
     },
@@ -489,7 +489,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-24T23:56:19.276Z"
+          "at": "2026-10-25T12:01:42.238Z"
         }
       },
       {
@@ -507,7 +507,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-24T23:56:19.276Z"
+          "at": "2026-10-25T12:01:42.238Z"
         }
       },
       {
@@ -525,7 +525,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-24T23:56:19.276Z"
+          "at": "2026-10-25T12:01:42.238Z"
         }
       },
       {
@@ -543,7 +543,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-24T23:56:19.276Z"
+          "at": "2026-10-25T12:01:42.238Z"
         }
       },
       {
@@ -561,7 +561,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-24T23:56:19.276Z"
+          "at": "2026-10-25T12:01:42.238Z"
         }
       },
       {
@@ -572,14 +572,14 @@
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "met",
-          "quote": "| Harrison O'Keefe | Open gap: FIT kit ordered, outreach sent | Age 69 with frailty but no advanced illness or dementia medication, so not excluded; no screening on record |"
+          "quote": "Harrison O'Keefe | Open gap: FIT kit ordered, outreach sent | Age 69 with frailty but no advanced illness or dementia medication, so not excluded; no screening on record"
         },
         "error": null,
         "calls": 1,
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-24T23:56:19.276Z"
+          "at": "2026-10-25T12:01:42.238Z"
         }
       },
       {
@@ -597,7 +597,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-24T23:56:19.276Z"
+          "at": "2026-10-25T12:01:42.238Z"
         }
       },
       {
@@ -615,7 +615,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-24T23:56:19.276Z"
+          "at": "2026-10-25T12:01:42.238Z"
         }
       },
       {
@@ -633,7 +633,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-24T23:56:19.276Z"
+          "at": "2026-10-25T12:01:42.238Z"
         }
       },
       {
@@ -644,14 +644,14 @@
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "met",
-          "quote": "Burma Leuschke | Open gap: FIT kit ordered, outreach sent | Born 1980-12-15: 46 at the end of 2026, in the population; no screening on record"
+          "quote": "| Burma Leuschke | Open gap: FIT kit ordered, outreach sent | Born 1980-12-15: 46 at the end of 2026, in the population; no screening on record |"
         },
         "error": null,
         "calls": 1,
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-24T23:56:19.276Z"
+          "at": "2026-10-25T12:01:42.238Z"
         }
       },
       {
@@ -669,7 +669,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-24T23:56:19.276Z"
+          "at": "2026-10-25T12:01:42.238Z"
         }
       },
       {
@@ -687,7 +687,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-24T23:56:19.276Z"
+          "at": "2026-10-25T12:01:42.238Z"
         }
       }
     ]

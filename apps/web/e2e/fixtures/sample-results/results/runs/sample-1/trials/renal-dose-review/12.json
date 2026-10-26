@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:renal-dose-review:12",
   "task_id": "renal-dose-review",
-  "task_version": "a789d2710d7e9022c1b8d2b11025b1022324aa94fdbac9e9a66048dcb16797a1",
-  "env_version": "b17f30f6656c54d4cd77b414ce727440cdb4f79ad2b1d947c225cfcb0f185fbd",
-  "grader_task_version": "2c5c4f59a926849a7016ac77605ece0f0a9b1242d1b5c461b0f126858230f971",
-  "fixture_hash": "a02ad8dec0903b5c9450b758783943e9a6beb9c3076b7cde71d559989a37d75b",
+  "task_version": "b5f8278968130bd5773685f5135a2c27ec10f7d86f37166caee31c009094d16d",
+  "env_version": "f74818df8ab2b6109bdad7b1219898a6c755f28cd3d4e505c848e8a779de79e8",
+  "grader_task_version": "35f7bf676489c2006ae5911205664dae8807638bd45094e352aca909846ba0c7",
+  "fixture_hash": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
   "state_hash": {
-    "initial": "a02ad8dec0903b5c9450b758783943e9a6beb9c3076b7cde71d559989a37d75b",
-    "final": "85857571e0a7c27b126d9a161b6c307d5f4cd15bc1f27475eef08043a3b6b035",
-    "replay_final": "85857571e0a7c27b126d9a161b6c307d5f4cd15bc1f27475eef08043a3b6b035"
+    "initial": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
+    "final": "34ffdc909183171e4e4151f17e3b6495b8cecda3dc56aecff34b94ecc3e5edcd",
+    "replay_final": "34ffdc909183171e4e4151f17e3b6495b8cecda3dc56aecff34b94ecc3e5edcd"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T14:20:18.000Z",
+  "started": "2026-10-23T14:20:15.000Z",
   "turns": 8,
   "tool_calls": 11,
   "tool_errors": {
@@ -43,7 +43,7 @@
   "summary": "Reviewed Harold Vance: apixaban stays at 2.5 mg, metformin and gabapentin reduced; note written.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T14:21:20.000Z",
+  "ended": "2026-10-23T14:21:17.000Z",
   "judge_cost_usd": 0,
   "grader_version": "10",
   "outcome": "INFRA_API",

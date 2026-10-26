@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:results-inbox:8",
   "task_id": "results-inbox",
-  "task_version": "9380165274628e746af5b25b6299c7937e1f7e8b1a0d9e2f08409c74ac682d06",
-  "env_version": "873a026b7630321c406bcbd3a29930661ebb2b779aaebc36276b458ced108290",
-  "grader_task_version": "e2a595eda6b2df8a172a084467ad25cbd18f98baf24140bce6d42c3cc7242b46",
-  "fixture_hash": "a02ad8dec0903b5c9450b758783943e9a6beb9c3076b7cde71d559989a37d75b",
+  "task_version": "2f80b8928ff98d7177886bafcafdba20447ccb71dd4a6a3ad21b970a7577b2b4",
+  "env_version": "f7ed42d3c0d7920587b33d75a7815885b288336263bdab07957d0deb58c8730a",
+  "grader_task_version": "87926ed8c70e4a3812a5e42e89f907ea0abbbe1b8a19110fe482ad354835a5a6",
+  "fixture_hash": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
   "state_hash": {
-    "initial": "a02ad8dec0903b5c9450b758783943e9a6beb9c3076b7cde71d559989a37d75b",
-    "final": "2d0f0c3f6c40e169ea00b15899e79899dbf91a7f3fcf91aa5a65e804fd944c90",
-    "replay_final": "2d0f0c3f6c40e169ea00b15899e79899dbf91a7f3fcf91aa5a65e804fd944c90"
+    "initial": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
+    "final": "1ca4c31a2371d622a42e395570792a3a2b2ef79965da29b5999dc7aad74f742a",
+    "replay_final": "1ca4c31a2371d622a42e395570792a3a2b2ef79965da29b5999dc7aad74f742a"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T14:43:48.000Z",
+  "started": "2026-10-23T14:43:45.000Z",
   "turns": 13,
   "tool_calls": 40,
   "tool_errors": {
@@ -43,7 +43,7 @@
   "summary": "Results inbox cleared: all 8 items completed with their follow-up orders, tasks, messages and notes linked.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T14:46:27.000Z",
+  "ended": "2026-10-23T14:46:24.000Z",
   "judge_cost_usd": 0,
   "grader_version": "10",
   "outcome": "FAIL",
@@ -125,7 +125,8 @@
       "points": null,
       "met": true,
       "evidence": {
-        "oncall": []
+        "oncall": [],
+        "unplaced": []
       },
       "ids": []
     },
