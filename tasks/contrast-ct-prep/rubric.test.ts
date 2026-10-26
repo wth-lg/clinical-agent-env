@@ -70,9 +70,10 @@ describe('message_dose_times', () => {
   });
 });
 
-// verifier-phase-P17i-A2-1 S1: the premedication gates' stated_by items read the dose each drug's
-// clauses state, so a message that gives the chart's wrong dose does not make the failure an
-// output gap.
+// verifier-phase-P17i-A2-1 S1, verifier-phase-P17i-A2r2-1 M2: the premedication gates' stated_by
+// items read the doses the message gives each drug, and are met only when it gives at least one and
+// every one is right, so a message with no dose or with the chart's wrong dose does not make the
+// failure an output gap.
 describe('message_states_*', () => {
   const PRED = /^prednisone$/i;
   const DIPH = /^(?:diphenhydramine|benadryl)$/i;
@@ -81,8 +82,12 @@ describe('message_states_*', () => {
     ['the oracle message', ORACLE_MESSAGE, DIPH, [50]],
     ['the 20 mg message', ORACLE_MESSAGE.replace(/Prednisone 50 mg/g, 'Prednisone 20 mg'), PRED, [20, 20, 20]],
     ['the 20 mg message', ORACLE_MESSAGE.replace(/Prednisone 50 mg/g, 'Prednisone 20 mg'), DIPH, [50]],
-    ['tablets beside the total', 'Prednisone 50 mg (5 tablets of 10 mg) by mouth at 20:00 Sunday 10/25.', PRED, [50, 10]],
-    ['a hyphenated dose', 'Take one 50-mg prednisone tablet at 8 PM Sunday.', PRED, [50]],
+    ['tablets beside the total', 'Prednisone 50 mg (5 tablets of 10 mg) by mouth at 20:00 Sunday 10/25.', PRED, [50]],
+    ['tablet strengths before the word', 'Prednisone 50 mg (two 20 mg tablets and one 10 mg tablet) at 8 PM Sunday.', PRED, [50]],
+    ['a hyphenated dose before the name', 'Take one 50-mg prednisone tablet at 8 PM Sunday.', PRED, [50]],
+    // verifier-phase-P17i-A2r2-1 PB: a dose written just before a name is that drug's.
+    ['doses before the names', '- 50 mg of prednisone and 25 mg of diphenhydramine (Benadryl) by mouth at 8:00 AM on Monday 10/26.', PRED, [50]],
+    ['doses before the names', '- 50 mg of prednisone and 25 mg of diphenhydramine (Benadryl) by mouth at 8:00 AM on Monday 10/26.', DIPH, [25]],
     ['a lab value', 'Prednisone at 8 PM Sunday. Your creatinine was 0.98 mg/dL.', PRED, []],
     ['no dose', 'Take prednisone at 8 PM Sunday.', PRED, []],
   ])('%s, %s: %j', (_name, text, drug, want) => {
@@ -93,6 +98,9 @@ describe('message_states_*', () => {
     ['oracle', true, true],
     ['prednisone_20_mg', true, true],
     ['probe_message_and_order_both_20mg', false, true],
+    ['probe_no_dose_order_20mg', false, true],
+    ['probe_diph25_dose_before_name', true, false],
+    ['probe_mixed_20_20_50', false, true],
     ['message_times_no_order', true, true],
     ['copied_2023_times', false, false],
   ])('%s: prednisone %s, diphenhydramine %s', async (id, prednisone, diphenhydramine) => {

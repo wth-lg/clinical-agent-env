@@ -87,17 +87,34 @@ async function doseTimes(ctx: RubricCtx): Promise<Verdict> {
   return { met: v.met, evidence: { source: 'judge', times: found.map((f) => f.minutes), missing, ...v.evidence } };
 }
 
-// The doses in mg each drug's clauses state: '50 mg', '25-mg', not '0.98 mg/dL'.
+// The doses in mg the message gives for a drug: '50 mg', '50-mg', not '0.98 mg/dL'. A dose
+// belongs to the drug whose clause it is in, except one written just before a drug's name ('25 mg
+// of diphenhydramine', '50 mg prednisone'), which belongs to that drug, not to the clause before
+// it. A tablet or capsule strength ('two 20 mg tablets', '5 tablets of 10 mg') is not a dose.
 const MG = /\b(\d+(?:\.\d+)?)\s*-?\s*mg\b(?!\s*\/)/gi;
+const NAME_NEXT = /^\s*(?:of\s+)?(diphenhydramine|benadryl|prednisone)\b/i;
+const STRENGTH_NEXT = /^\s*(?:tablets?|tabs?|capsules?|caps?)\b/i;
+const STRENGTH_BEFORE = /\b(?:tablets?|tabs?|capsules?|caps?)\s+of\s*$/i;
 export const statedMg = (text: string, drug: RegExp): number[] =>
-  drugClauses(text).flatMap((c) => (drug.test(c.drug) ? [...c.text.matchAll(MG)].map((m) => Number(m[1])) : []));
+  sentences(text).flatMap((s) => {
+    const names = [...s.matchAll(DRUG)];
+    return [...s.matchAll(MG)].flatMap((m) => {
+      const end = m.index! + m[0].length;
+      const next = s.slice(end);
+      if (STRENGTH_NEXT.test(next) || STRENGTH_BEFORE.test(s.slice(0, m.index))) return [];
+      // The drug it names next, else the clause it is in: the last name before it, or the first
+      // name of the sentence for words before any name.
+      const owner = NAME_NEXT.exec(next)?.[1] ?? names.filter((n) => n.index! < m.index!).at(-1)?.[0] ?? names[0]?.[0];
+      return owner !== undefined && drug.test(owner) ? [Number(m[1])] : [];
+    });
+  });
 
 // The stated_by item of a premedication gate, worth 0 points so the score is unchanged: met when
-// message_dose_times is met and the drug's clauses state its right dose, or no dose at all. A
-// message that gives the times with the wrong dose, the dose the chart also has, states the
-// chart's mistake, not the action the chart lacks, so the gate's failure reads reasoning, not
-// output_gap (verifier-phase-P17i-A2-1 S1). A dose named as tablets ('five 10 mg tablets') counts
-// when the total is stated beside it. The judge answer is message_dose_times's own (one cache key);
+// message_dose_times is met and the message gives at least one dose for the drug, each of them
+// the right one (decisions.tsv 2026-10-28T10:30). stated_by means the text states the action the
+// chart lacks: a message with no dose, or with the chart's wrong dose among its doses, does not, so
+// the gate's failure reads reasoning, not output_gap (verifier-phase-P17i-A2-1 S1,
+// verifier-phase-P17i-A2r2-1 M2). The judge answer is message_dose_times's own (one cache key);
 // an unknown one reads as not met, so the item is never unknown and judge.unknown is unchanged.
 function stated(drug: 'prednisone' | 'diphenhydramine', mg: number): Check {
   const name = drug === 'prednisone' ? /^prednisone$/i : ANTIHISTAMINE;
@@ -110,7 +127,7 @@ function stated(drug: 'prednisone' | 'diphenhydramine', mg: number): Check {
     decisive_ids: [expected.appointment.id],
     fn: async (ctx) => {
       const doses = statedMg(patientMessages(ctx), name);
-      const right = doses.length === 0 || doses.includes(mg);
+      const right = doses.length > 0 && doses.every((d) => d === mg);
       const times = await doseTimes(ctx);
       return { met: times.met === true && right, evidence: { times: times.met, stated_mg: doses, want_mg: mg } };
     },

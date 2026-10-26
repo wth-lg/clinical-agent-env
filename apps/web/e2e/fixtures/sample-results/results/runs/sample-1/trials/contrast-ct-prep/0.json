@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:contrast-ct-prep:0",
   "task_id": "contrast-ct-prep",
-  "task_version": "f8707e2bf77fce80749fe1615ca57cb9aa70e4f8defc917943ddee9a18694dbf",
+  "task_version": "d2dbd2e95b936e4d52d776212ba29febab2b298a2165aeb4cb54d97d44f91a22",
   "env_version": "ec98c43c0ab505c6dea2e82ae38f0dd1089a01ee04a97b6c3843dde74a87b61e",
-  "grader_task_version": "9951302e791a963696583af0f6dd44372df913f3f5b4b8027cdb6f6ca10eca06",
+  "grader_task_version": "73106e2341dedec1c00dc3fcdc89cfbd7f7ff850cd1457fd246d65e978ec658f",
   "fixture_hash": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
   "state_hash": {
     "initial": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
@@ -267,6 +267,38 @@
           120,
           480
         ]
+      }
+    },
+    {
+      "id": "message_states_prednisone",
+      "kind": "rubric",
+      "method": "hybrid",
+      "category": "documentation",
+      "points": 0,
+      "met": true,
+      "evidence": {
+        "times": true,
+        "stated_mg": [
+          50,
+          50,
+          50
+        ],
+        "want_mg": 50
+      }
+    },
+    {
+      "id": "message_states_diphenhydramine",
+      "kind": "rubric",
+      "method": "hybrid",
+      "category": "documentation",
+      "points": 0,
+      "met": true,
+      "evidence": {
+        "times": true,
+        "stated_mg": [
+          50
+        ],
+        "want_mg": 50
       }
     },
     {

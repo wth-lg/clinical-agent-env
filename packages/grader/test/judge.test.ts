@@ -95,6 +95,13 @@ describe('judge', () => {
     expect(judgeCallBudget([])).toBe(0);
   });
 
+  it('the call budget skips a 0-point item (decisions.tsv 2026-10-28T10:30)', () => {
+    const t = () => 'x';
+    const item = (id: string, points: number) => judged({ id, points, category: 'documentation', traces_to: 'p', decisive_ids: [], criterion: 'c', text: t });
+    expect(judgeCallBudget([item('J', 3), item('Z', 0)])).toBe(2);
+    expect(judgeAllowanceUsd([item('J', 3), item('Z', 0)])).toBe(2 * JUDGE_MAX_CALL_USD);
+  });
+
   it('the projection allowance counts each judge and hybrid item, twice for the schema retry', () => {
     const t = () => 'x';
     const checks = [
