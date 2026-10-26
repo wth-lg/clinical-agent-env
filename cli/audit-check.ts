@@ -47,10 +47,10 @@
 //     (explain.ts AuditRow), when given, are yes or no. The answer after adjudication decides
 //     (explain.ts auditAnswerOf): a clinically_acceptable no needs GR3 (the label's outcome
 //     GRADER_BUG with an evidence id) or an environment label, and a tool_rejections_correct no an
-//     environment label, the rejected call's step as decisive_step, which the trajectory shows
-//     as a tool error that the tool's input schema does not reproduce on the recorded call and
-//     that is not a refused call to a tool the model was not given (a call that breaks the
-//     schema or the tool list was rightly refused; explain.ts citedStep), and confirmation,
+//     environment label, the rejected call's step as decisive_step, where the trajectory shows a
+//     tool error and the tool's input schema, run on the recorded call, does not give the same
+//     refusal (a refusal the schema gives, or a refusal of a tool the environment does not have,
+//     was right; explain.ts citedStep), and confirmation,
 //     an adjudicated_label environment or, with none, llm_auditor_agrees true (what outcomes.ts
 //     E6 needs; decisions.tsv 2026-10-27T06:00, 08:50 and 09:30), because a no says the grader or a
 //     tool rejected valid work; an auditor no that an adjudicated yes overrules needs an
@@ -257,7 +257,7 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
         if (!(environment && s?.is_error === true && s.schema_error === null && confirmed)) {
           const refused = s === null ? '' : `was refused (${s.error_code})${s.schema_error === null ? '' : ` for input that breaks its schema (${s.schema_error})`}`;
           const cited = s === null ? `step ${n} is not a step of the trajectory` : `step ${n} is ${s.tool}, which ${s.is_error ? refused : 'succeeded'}`;
-          v.push(`${l.trial}: tool_rejections_correct no (a tool rejected a valid call) needs an environment label (it is ${auditLabelOf(l) ?? 'none'}), the step of a refused call whose refusal its schema does not give on the recorded input, of a tool the model was given, as decisive_step (${cited}) and confirmation, llm_auditor_agrees true or an adjudicated_label environment (${confirmed ? 'confirmed' : 'not confirmed'}); adjudicated_tool_rejections_correct yes overrules it`);
+          v.push(`${l.trial}: tool_rejections_correct no (a tool rejected a valid call) needs an environment label (it is ${auditLabelOf(l) ?? 'none'}), the step of a refused call whose refusal its schema does not give on the recorded input, of a tool the environment has, as decisive_step (${cited}) and confirmation, llm_auditor_agrees true or an adjudicated_label environment (${confirmed ? 'confirmed' : 'not confirmed'}); adjudicated_tool_rejections_correct yes overrules it`);
         }
       }
     }

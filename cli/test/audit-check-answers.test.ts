@@ -47,7 +47,7 @@ async function violations(dir: string): Promise<string[]> {
 const about = (vs: string[]) => vs.filter((v) => /clinically_acceptable|tool_rejections_correct/.test(v));
 const CLINICAL = "t-alpha/5: clinically_acceptable no (the recorded outcome is not clinically right) needs GR3 (an audit outcome GRADER_BUG with evidence) or an environment label; adjudicated_clinically_acceptable yes overrules it";
 const TOOL = (trial: string, label: string, cited: string, confirmed = 'confirmed') =>
-  `${trial}: tool_rejections_correct no (a tool rejected a valid call) needs an environment label (it is ${label}), the step of a refused call whose refusal its schema does not give on the recorded input, of a tool the model was given, as decisive_step (${cited}) and confirmation, llm_auditor_agrees true or an adjudicated_label environment (${confirmed}); adjudicated_tool_rejections_correct yes overrules it`;
+  `${trial}: tool_rejections_correct no (a tool rejected a valid call) needs an environment label (it is ${label}), the step of a refused call whose refusal its schema does not give on the recorded input, of a tool the environment has, as decisive_step (${cited}) and confirmation, llm_auditor_agrees true or an adjudicated_label environment (${confirmed}); adjudicated_tool_rejections_correct yes overrules it`;
 
 describe('audit-check: clinically_acceptable and tool_rejections_correct', () => {
   it('yes on both keeps the clean run clean', async () => {
@@ -102,7 +102,7 @@ describe('audit-check: clinically_acceptable and tool_rejections_correct', () =>
     expect(vs.filter((v) => v.includes('(E6)'))).toEqual([]);
   });
 
-  it('a refusal of a call to a tool the model was not given was right, so it does not make the fault environment (decisions.tsv 2026-10-27T09:30, F13)', async () => {
+  it('a refusal of a call to a tool the environment does not have was right, so it does not make the fault environment (decisions.tsv 2026-10-27T09:30, F13)', async () => {
     const dir = run('environment-label', 't-beta/8', { tool_rejections_correct: 'no', decisive_step: 3, model_fault: 'no' });
     refusedStep(dir, VALID, { code: 'NOT_SUPPORTED', message: "unknown tool 'bogus_tool'; tools: fhir_read" }, 'bogus_tool');
     const vs = await violations(dir);

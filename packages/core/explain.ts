@@ -96,8 +96,9 @@ export interface ExplainRecord {
 // adjudicated_clinically_acceptable or adjudicated_tool_rejections_correct (decisions.tsv
 // 2026-10-27T02:10); the adjudicated answer, else the auditor's, is the answer every count reads,
 // so an overruled no is never counted. A tool_rejections_correct no makes the fault environment
-// (outcomes.ts E6) when its decisive_step is a tool error step of the trajectory, the tool list the
-// model was given does not reproduce the refusal (citedStep's schema_error) and the audit is
+// (outcomes.ts E6) when its decisive_step is a tool error step of the trajectory, the tool's input
+// schema, run on the recorded call, does not give the same refusal and the environment has the
+// tool (citedStep's schema_error is null), and the audit is
 // confirmed (outcomes.ts e6Confirmation: an adjudicated_label environment or, with none,
 // llm_auditor_agrees true; decisions.tsv 2026-10-27T06:00, 08:50 and 09:30).
 // cli/audit-check.ts requires an answered no to come with GR3 (an audit outcome GRADER_BUG with
@@ -218,8 +219,9 @@ const answer = (v: unknown): AuditAnswer | null => (v === 'yes' || v === 'no' ? 
 // from 1); null when it cites none or the trajectory has no such step. schema_error, on a refusal,
 // is the field (else the message) at fault when the tool's input schema (registry.ts validateInput)
 // refuses the recorded call with the same code and field, or "name: no tool <name>" when callTool
-// refused a call to a tool not in TOOLS with NOT_SUPPORTED: the call broke the schema or the tool
-// list the model was given, so the refusal was right (decisions.tsv 2026-10-27T08:50 and 09:30).
+// refused a call to a tool not in TOOLS with NOT_SUPPORTED: the call broke the schema or named a
+// tool the environment does not have, so the refusal was right (decisions.tsv 2026-10-27T08:50,
+// 09:30 and 2026-10-28T09:10).
 // The schemas and the tool list are today's TOOLS'.
 export interface CitedStep {
   tool: string;

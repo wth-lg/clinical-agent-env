@@ -73,16 +73,16 @@ describe('audit answers', () => {
     expect(explainTrial(record('FAIL'), row({ tool_rejections_correct: 'no', taxonomy: 'environment', model_fault: 'no', decisive_step: 2 }), other).fault).toBe('env');
     const e6 = FAULT_DEFINITIONS.env.criteria.find((c) => c.id === 'E6')!.text;
     expect(e6).toContain('run on the recorded call, does not give the same refusal');
-    expect(e6).toContain('a refusal of a tool the model was not given');
+    expect(e6).toContain('a refusal of a tool the environment does not have');
     expect(e6).not.toContain('accepts the recorded call');
   });
 
-  it('E6: a refusal of a call to a tool the model was not given was right, so it does not make the fault environment (decisions.tsv 2026-10-27T09:30, F13)', () => {
+  it('E6: a refusal of a call to a tool the environment does not have was right, so it does not make the fault environment (decisions.tsv 2026-10-27T09:30, F13)', () => {
     const audit = row({ tool_rejections_correct: 'no', taxonomy: 'environment', model_fault: 'no', decisive_step: 2 });
     const x = explainTrial(record('FAIL'), audit, refused(VALID, { code: 'NOT_SUPPORTED', message: "unknown tool 'bogus_tool'; tools: fhir_read" }, 'bogus_tool'));
     expect(x.fault).toBe('model');
     expect(x.fault_criteria.env.find((c) => c.id === 'E6')).toMatchObject({ met: false, evidence: 'tool_rejections_correct no, step 2 bogus_tool refused (NOT_SUPPORTED) for input that breaks its schema (name: no tool bogus_tool), LLM auditor agrees' });
-    // A NOT_SUPPORTED from a tool the model was given, which its schema does not reproduce, can still be wrong.
+    // A NOT_SUPPORTED from a tool the environment has, which its schema does not reproduce, can still be wrong.
     expect(explainTrial(record('FAIL'), audit, refused(VALID, { code: 'NOT_SUPPORTED', message: 'oral route is not supported' })).fault).toBe('env');
   });
 
