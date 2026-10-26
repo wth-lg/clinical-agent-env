@@ -42,6 +42,7 @@
   "detail": null,
   "summary": "Reconciled Walter Kim after discharge: furosemide 40 mg, spironolactone 25 mg started, KCl stopped, lisinopril resumed; duplicate metoprolol tartrate flagged to Dr. Okafor; note written.",
   "resumed": false,
+  "env_git_sha": null,
   "ended": "2026-10-23T13:13:27.000Z",
   "judge_cost_usd": 0,
   "grader_version": "10",

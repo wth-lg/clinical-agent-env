@@ -42,6 +42,7 @@
   "detail": "overloaded_error after 4 retries",
   "summary": "Reviewed Harold Vance: apixaban stays at 2.5 mg, metformin and gabapentin reduced; note written.",
   "resumed": false,
+  "env_git_sha": null,
   "ended": "2026-10-23T14:21:20.000Z",
   "judge_cost_usd": 0,
   "grader_version": "10",
