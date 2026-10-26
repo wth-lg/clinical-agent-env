@@ -63,7 +63,10 @@ async function regrade(id: string, t: ReplayTrial, checks: Check[], e: MatrixEnv
     const res = await fetch(t.trajectoryUrl);
     if (!res.ok) return { error: `trajectory: HTTP ${res.status}` };
     const events = parseTrajectory(await res.text());
-    return { grade: await gradeTrajectory(id, { tasks: e.tasks, world: e.world, checks, events, record: t.record as unknown as GradeTrajectoryOptions['record'], ...(e.definitions ? { definitions: e.definitions } : {}) }) };
+    // compareResults, as cli replay passes it: replayEnvVerdict has already checked that the record's
+    // env_version is this build's, so each re-executed call's result must equal its recorded
+    // tool_result (P17j JU13, C7); a difference ends the replay naming the call.
+    return { grade: await gradeTrajectory(id, { tasks: e.tasks, world: e.world, checks, events, record: t.record as unknown as GradeTrajectoryOptions['record'], compareResults: true, ...(e.definitions ? { definitions: e.definitions } : {}) }) };
   } catch (err) {
     return err instanceof JudgeCacheMiss ? { miss: err.message } : { error: (err as Error).message };
   }

@@ -100,6 +100,8 @@ export function App({ surface }: { surface: Surface }) {
     );
   }
 
+  // The local-run panel shows on browser-direct only; the Overview intro card reads the same fact.
+  const localRun = surface.kind === 'browser-direct';
   return (
     <div className="flex h-screen flex-col bg-canvas">
       <TopBar surface={surface} status={status} onForget={onForget} onAdd={() => setGate(true)} busy={busy} />
@@ -116,9 +118,9 @@ export function App({ surface }: { surface: Surface }) {
         />
         <main className="min-w-0 flex-1 overflow-auto">
           <ErrorBoundary key={view.id}>
-            <ViewBody id={view.id} headingRef={heading} />
+            <ViewBody id={view.id} headingRef={heading} localRun={localRun} />
           </ErrorBoundary>
-          {surface.kind === 'browser-direct' && RUN_PANEL_VIEWS.includes(view.id) && (
+          {localRun && RUN_PANEL_VIEWS.includes(view.id) && (
             // The page column's width and gutters (data/ui.tsx Page), so its edges line up with the cards above.
             <div className="mx-auto max-w-5xl px-4 pb-6 sm:px-6">
               <LocalRunPanel id={LOCAL_RUN_PANEL_ID} surface={surface} />

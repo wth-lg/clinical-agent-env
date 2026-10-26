@@ -447,7 +447,7 @@ function RunTrial({ id }: { id: string }) {
   const key = useKeyStatus();
   return (
     <span className="ml-auto inline-flex items-center gap-2">
-      <button type="button" className={button} aria-describedby={key.kind === 'none' ? `run-why-${id}` : undefined} onClick={() => navigate({ view: 'live', task: id, tab: null })}>Run trial</button>
+      <button type="button" className={button} aria-describedby={key.kind === 'none' ? `run-why-${id}` : undefined} onClick={() => navigate({ view: 'live', task: id, tab: null, label: null, trial: null, run: null })}>Run trial</button>
       {key.kind === 'none' && <span id={`run-why-${id}`} className="text-xs text-ink-muted">Live trial asks for an API key.</span>}
     </span>
   );
