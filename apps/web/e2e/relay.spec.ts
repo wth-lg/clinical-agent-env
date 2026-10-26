@@ -10,7 +10,7 @@ import { isApiHost } from '../../../packages/core/anthropic.ts';
 import { HEALTH_PATH } from '../../../packages/core/runner-api.ts';
 import { APP_CSP } from '../csp.ts';
 import { okResponse, SCENARIOS } from '../src/harness/scenarios.ts';
-import { RELAY_FAILURE_TEXT, type RelayReason } from '../src/keygate/failure.ts';
+import { RELAY_FAILURE_TEXT, RELAY_TRIAL_TEXT, type RelayReason } from '../src/keygate/failure.ts';
 import { LOCAL_PREREQUISITES, LOCAL_START_COMMAND, NODE_INSTALL_URL, PNPM_INSTALL_URL } from '../src/surface/command.ts';
 import { RELAY_ORIGIN, RELAY_URL } from '../src/surface/relay.ts';
 
@@ -26,7 +26,9 @@ interface Body { max_tokens: number; tools?: unknown[]; messages: Array<{ role: 
 
 // The relay: an error for Validate when `validate` says so, else the toy trial as live.spec.ts
 // answers it (Validate "ok", each loop turn from the toy script, each judge request in turn).
-async function mockRelay(page: Page, opts: { validate?: { status: number; body: unknown; headers?: Record<string, string> } } = {}) {
+// `trial` answers every trial call (loop turns and judge requests) with that error instead.
+type Reply = { status: number; body: unknown; headers?: Record<string, string> };
+async function mockRelay(page: Page, opts: { validate?: Reply; trial?: Reply } = {}) {
   const posts: Request[] = [];
   let judge = 0;
   await page.context().route((url) => url.origin === RELAY_ORIGIN, async (route: Route) => {
@@ -39,6 +41,7 @@ async function mockRelay(page: Page, opts: { validate?: { status: number; body: 
       if (opts.validate) return route.fulfill({ status: opts.validate.status, contentType: 'application/json', headers: { ...CORS, ...opts.validate.headers }, body: JSON.stringify(opts.validate.body) });
       return sse(okResponse({ text: 'ok' }, 1));
     }
+    if (opts.trial) return route.fulfill({ status: opts.trial.status, contentType: 'application/json', headers: { ...CORS, ...opts.trial.headers }, body: JSON.stringify(opts.trial.body) });
     if (body.tools === undefined) return sse(okResponse(TOY[3 + judge]!, 4 + judge++));
     const turn = body.messages.filter((m) => m.role === 'assistant').length + 1;
     return sse(okResponse(TOY[turn - 1]!, turn));
@@ -186,6 +189,47 @@ for (const { reason, reply } of FAILURES) {
     await expectPanel(page);
     await alert.getByRole('button', { name: 'Show the steps' }).click();
     await expect(panel(page)).toBeFocused();
+  });
+}
+
+// A relay failure during a trial (ruling 2026-10-28T02:00): the trial stops with the red error,
+// its sentence names the browsers, and the local-run panel follows it. retry-after: 0 lets the
+// client spend its attempts at once (exposed, as apps/relay exposes it); an unreachable relay
+// backs off for minutes, so failure.test.ts covers that reason (trialRelayReason).
+const NOW = { 'retry-after': '0', 'access-control-expose-headers': 'retry-after' };
+const TRIAL_FAILURES: Array<{ reason: RelayReason; reply: Reply }> = [
+  { reason: 'limited', reply: { status: 429, body: { type: 'error', error: { type: 'rate_limit_error', message: 'relay rate limit: retry later' } }, headers: NOW } },
+  { reason: 'unavailable', reply: { status: 502, body: { type: 'error', error: { type: 'relay_error' } }, headers: NOW } },
+];
+
+for (const { reason, reply } of TRIAL_FAILURES) {
+  test(`a relay ${reply.status} during a trial shows its ui-contract.md sentence in red, then the local-run panel with LOCAL_START_COMMAND`, async ({ page }) => {
+    test.setTimeout(90_000);
+    await browserDirect(page);
+    const relay = await mockRelay(page, { trial: reply });
+    await page.goto('./?view=live&task=_toy');
+    await enterKey(page, sentinelKey());
+    await expect(page.getByTestId('key-chip')).toBeVisible();
+    await page.getByRole('button', { name: 'Run ×1', exact: true }).click();
+    const alert = trial(page).getByTestId('trial-error');
+    const lead = alert.locator('p').first();
+    await expect(lead).toHaveText(RELAY_TRIAL_TEXT[reason].lead, { timeout: 60_000 });
+    await expect(alert).toContainText(RELAY_TRIAL_TEXT[reason].next);
+    await expect(alert.getByTestId('local-command')).toHaveCount(0);
+    const danger = await page.evaluate(() => {
+      const probe = document.createElement('span');
+      probe.style.color = 'var(--color-danger)';
+      document.body.append(probe);
+      const c = getComputedStyle(probe).color;
+      probe.remove();
+      return c;
+    });
+    expect(await lead.evaluate((el) => getComputedStyle(el).color)).toBe(danger);
+    expect(await alert.evaluate((el) => getComputedStyle(el).borderTopColor)).toBe(danger);
+    await expectPanel(page);
+    await alert.getByRole('button', { name: 'Show the steps' }).click();
+    await expect(panel(page)).toBeFocused();
+    expect(relay.trialPosts().length).toBeGreaterThan(0);
   });
 }
 

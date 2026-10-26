@@ -48,6 +48,35 @@ export const RELAY_FAILURE_TEXT: Record<RelayReason, { lead: string; next: strin
   },
 };
 
+// The same failures when the relay stops a live trial: the Validate lead, then where to go next
+// (the panel follows the error in the live view).
+const LOCAL_TRIAL = 'Or run the environment on your computer instead. The steps are in “Run it on your computer” below this message.';
+export const RELAY_TRIAL_TEXT: Record<RelayReason, { lead: string; next: string }> = {
+  unreachable: { lead: RELAY_FAILURE_TEXT.unreachable.lead, next: `${BROWSERS} ${LOCAL_TRIAL}` },
+  limited: { lead: RELAY_FAILURE_TEXT.limited.lead, next: `Wait a minute, then run the trial again. ${BROWSERS} ${LOCAL_TRIAL}` },
+  unavailable: { lead: RELAY_FAILURE_TEXT.unavailable.lead, next: `Run the trial again in a few minutes. ${BROWSERS} ${LOCAL_TRIAL}` },
+};
+
+// The relay failure that an answer from a call through the relay means: no readable answer
+// (null), a 429 or a 5xx. Null for any other status, which is the API's own answer.
+export function relayReason(status: number | null): RelayReason | null {
+  if (status === null) return 'unreachable';
+  if (status === 429) return 'limited';
+  if (status >= 500) return 'unavailable';
+  return null;
+}
+
+// The relay failure that ended a browser-direct trial, read from its error event: the client's
+// last error was a lost connection or a stall (code network or stream_idle), or an HTTP status,
+// which the client's error message leads with (`HTTP <status>`, packages/core/anthropic.ts).
+// Null for any other end.
+export function trialRelayReason(end: { status: string; code: string; message: string }): RelayReason | null {
+  if (end.status !== 'INFRA_API') return null;
+  if (end.code === 'network' || end.code === 'stream_idle') return 'unreachable';
+  const http = /^HTTP (\d{3})\b/.exec(end.message);
+  return http === null ? null : relayReason(Number(http[1]));
+}
+
 // The API's answer by HTTP status, the same sentence on both surfaces.
 function apiLead(status: number | null): { lead: string; next?: string } {
   if (status === null) return { lead: 'The browser did not send the request to the API.' };

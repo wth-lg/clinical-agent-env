@@ -11,7 +11,7 @@ import { tabLedger } from '../adapters/ledger-browser.ts';
 import { HOSTED_CLIENT_OPTIONS } from '../surface/relay.ts';
 import { admitTrial } from '../spend/cap.ts';
 import { refreshSpent } from '../spend/session.ts';
-import type { DirectFailure } from './failure.ts';
+import { relayReason, type DirectFailure } from './failure.ts';
 
 const TRIAL = 'validate';
 const history = (): MessageParam[] => [{ role: 'user', content: 'Reply with the word ok.' }];
@@ -48,10 +48,9 @@ function classify(e: unknown): DirectResult & { ok: false } {
   const message = (e as Error).message;
   if (e instanceof SpendRefused) return { ok: false, kind: 'cap', message };
   // No status: the browser never got a readable response from the relay (down, blocked, or a
-  // refused CORS preflight, which looks the same to the page).
-  if (e instanceof ApiError && e.status === null && e.partial) return { ok: false, kind: 'relay', reason: 'unreachable', message };
-  // A 429 or 5xx through the relay: its own limit or fixed 502, or the API's answer passed through.
-  if (e instanceof ApiError && e.status === 429) return { ok: false, kind: 'relay', reason: 'limited', message };
-  if (e instanceof ApiError && e.status !== null && e.status >= 500) return { ok: false, kind: 'relay', reason: 'unavailable', message };
+  // refused CORS preflight, which looks the same to the page). A 429 or 5xx: the relay's own limit
+  // or fixed 502, or the API's answer passed through.
+  const reason = e instanceof ApiError && (e.status !== null || e.partial) ? relayReason(e.status) : null;
+  if (reason !== null) return { ok: false, kind: 'relay', reason, message };
   return { ok: false, kind: 'api', status: e instanceof ApiError ? e.status : null, message };
 }

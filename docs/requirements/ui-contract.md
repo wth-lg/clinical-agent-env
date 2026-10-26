@@ -129,6 +129,15 @@ LOCAL_PREREQUISITES and LOCAL_START_COMMAND.
   `The relay or the API is not available at the moment.`, then
   `Press Validate again in a few minutes. This page works in a Chromium browser such as Chrome or Brave, or Firefox. Or run the environment on your computer instead. The steps are in “Run it on your computer” below this form.`
 
+When the relay stops a live trial on browser-direct (the trial's error event holds a lost
+connection, a stall, or an HTTP 429 or 5xx; trialRelayReason in failure.ts), the live view shows
+the same lead in red with the trial's own line under it, then one of these sentences from
+RELAY_TRIAL_TEXT, a `Show the steps` button, and the local-run panel after the error:
+
+- Unreachable: `This page works in a Chromium browser such as Chrome or Brave, or Firefox. Or run the environment on your computer instead. The steps are in “Run it on your computer” below this message.`
+- HTTP 429: `Wait a minute, then run the trial again. This page works in a Chromium browser such as Chrome or Brave, or Firefox. Or run the environment on your computer instead. The steps are in “Run it on your computer” below this message.`
+- HTTP 5xx: `Run the trial again in a few minutes. This page works in a Chromium browser such as Chrome or Brave, or Firefox. Or run the environment on your computer instead. The steps are in “Run it on your computer” below this message.`
+
 ### P13, P15: runner refusals
 
 When the local runner refuses with HTTP 409, the screen shows the text for its reason first,

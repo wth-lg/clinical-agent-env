@@ -14,10 +14,13 @@ import { capSum } from '../../../../packages/core/ledger.ts';
 import { REFUSAL_TEXT } from '../../../../packages/core/runner-api.ts';
 import { useTaskList } from '../data/tasks.ts';
 import { Card, FaultLabel, OutcomeChip, Page } from '../data/ui.tsx';
+import { RELAY_TRIAL_TEXT, trialRelayReason } from '../keygate/failure.ts';
 import { useKeyStatus } from '../keygate/key.ts';
 import { runnerToken } from '../keygate/runner.ts';
 import { admitTrial, MAX_SESSION_CAP_USD, parseCap } from '../spend/cap.ts';
 import { sessionCap, setSessionCap, useSessionSpend } from '../spend/session.ts';
+import type { Surface } from '../surface/detect.ts';
+import { LocalRunPanel } from '../surface/LocalRunPanel.tsx';
 import { fold, type Item } from './fold.ts';
 import { readEvents } from './store.ts';
 import { runnerTransport } from './transport/runner.ts';
@@ -33,6 +36,7 @@ const POLL_MS = 1500;
 const select = 'h-8 max-w-full rounded-sm border border-line-strong bg-surface px-2 text-ink disabled:cursor-not-allowed disabled:opacity-50';
 const button = 'h-8 rounded-sm border border-line-strong px-3 text-ink hover:bg-surface disabled:cursor-not-allowed disabled:opacity-50';
 const usd = (n: number) => `$${n.toFixed(2)}`;
+const BROWSER_DIRECT: Surface = { kind: 'browser-direct' };
 
 // The refusals a higher session cap would lift.
 const CAP_REFUSALS: readonly string[] = [REFUSAL_TEXT.trials.spend_refused_ceiling, REFUSAL_TEXT.trials.session_cap];
@@ -237,6 +241,10 @@ function Trial({ t, id, onEnd }: { t: TrialTransport; id: string; onEnd: () => v
   const running = end === null;
   const record = (end?.record ?? f.record) as ExplainRecord | null;
   const explanation = record ? explainTrial(record, null, { events }) : null;
+  // On browser-direct every call goes through the relay, so a relay failure that stopped the trial
+  // gets the key gate's fallback (ruling 2026-10-28T02:00).
+  const relay = f.end?.type === 'error' && runnerToken() === null ? trialRelayReason(f.end) : null;
+  const panelId = useId();
 
   async function stop() {
     setStopping(true);
@@ -280,7 +288,16 @@ function Trial({ t, id, onEnd }: { t: TrialTransport; id: string; onEnd: () => v
               {explanation.outcome !== 'PASS' && <span className="text-ink-muted">{explanation.reason}</span>}
             </div>
           )}
-          {f.end?.type === 'error' ? (
+          {relay !== null && f.end?.type === 'error' ? (
+            <>
+              <ErrorNote testId="trial-error" lead={RELAY_TRIAL_TEXT[relay].lead} detail={f.end.message}>
+                <p className="mt-1 text-ink">{RELAY_TRIAL_TEXT[relay].next}</p>
+                <button type="button" className={`${button} mt-2 h-7`} onClick={() => document.getElementById(panelId)?.focus()}>Show the steps</button>
+              </ErrorNote>
+              {/* The shell shows the panel only on Overview and Tasks; here it follows the error, outside the alert. */}
+              <LocalRunPanel id={panelId} surface={BROWSER_DIRECT} className="mt-3" />
+            </>
+          ) : f.end?.type === 'error' ? (
             <ErrorNote testId="trial-error" lead={f.end.status === 'INFRA_API' ? 'The API stopped this trial.' : 'This trial stopped with an error.'} detail={f.end.message} />
           ) : end.message !== null && end.message !== 'stopped watching' && events.length === 0 ? (
             <ErrorNote testId="trial-error" lead="This trial did not run." detail={end.message} />

@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { describeFailure, RELAY_FAILURE_TEXT, type Failure } from '../src/keygate/failure.ts';
+import { describeFailure, RELAY_FAILURE_TEXT, RELAY_TRIAL_TEXT, relayReason, trialRelayReason, type Failure } from '../src/keygate/failure.ts';
 
 const API_LINE = 'HTTP 401 authentication_error: invalid x-api-key';
 
@@ -40,9 +40,42 @@ describe('describeFailure', () => {
 
   it('the relay strings are fixed in docs/requirements/ui-contract.md', () => {
     const contract = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '../../../docs/requirements/ui-contract.md'), 'utf8');
-    for (const { lead, next } of Object.values(RELAY_FAILURE_TEXT)) {
+    for (const { lead, next } of [...Object.values(RELAY_FAILURE_TEXT), ...Object.values(RELAY_TRIAL_TEXT)]) {
       expect(contract).toContain(`\`${lead}\``);
       expect(contract).toContain(`\`${next}\``);
+    }
+  });
+
+  it('relayReason: no readable answer, a 429 and a 5xx are relay failures; other statuses are not', () => {
+    expect(relayReason(null)).toBe('unreachable');
+    expect(relayReason(429)).toBe('limited');
+    for (const s of [500, 502, 529]) expect(relayReason(s)).toBe('unavailable');
+    for (const s of [200, 400, 401, 403, 404, 413]) expect(relayReason(s)).toBeNull();
+  });
+
+  // Ruling 2026-10-28T02:00 (verifier-phase-P16h-web-1 M1): a relay failure during a live trial
+  // shows the local-run fallback too. The trial's error event carries the client's last error:
+  // its code, and its message, which leads with the HTTP status when one came back.
+  it('trialRelayReason reads a relay failure from a trial error event, and nothing else', () => {
+    const infra = (code: string, message: string) => ({ status: 'INFRA_API', code, message });
+    expect(trialRelayReason(infra('network', 'network error: Failed to fetch'))).toBe('unreachable');
+    expect(trialRelayReason(infra('stream_idle', 'no data for 300000 ms'))).toBe('unreachable');
+    expect(trialRelayReason(infra('rate_limit_error', 'HTTP 429 rate_limit_error: relay rate limit'))).toBe('limited');
+    expect(trialRelayReason(infra('http_429', 'HTTP 429'))).toBe('limited');
+    expect(trialRelayReason(infra('relay_error', 'HTTP 502 relay_error'))).toBe('unavailable');
+    expect(trialRelayReason(infra('overloaded_error', 'HTTP 529 overloaded_error: Overloaded'))).toBe('unavailable');
+    expect(trialRelayReason(infra('authentication_error', 'HTTP 401 authentication_error: invalid x-api-key'))).toBeNull();
+    expect(trialRelayReason(infra('elapsed_bound', '900001 ms elapsed, past the hard bound of 900000 ms (0 ms in failed attempts and retry waits)'))).toBeNull();
+    expect(trialRelayReason({ status: 'INFRA_HARNESS', code: 'egress_refused', message: 'egress guard: fetch refused' })).toBeNull();
+    expect(trialRelayReason({ status: 'ENV_ERROR', code: 'INTERNAL', message: 'HTTP 502' })).toBeNull();
+  });
+
+  it('each trial relay failure has the Validate lead, names the browsers, says to run the trial again where that helps, and points below the message', () => {
+    for (const reason of ['unreachable', 'limited', 'unavailable'] as const) {
+      expect(RELAY_TRIAL_TEXT[reason].lead, reason).toBe(RELAY_FAILURE_TEXT[reason].lead);
+      expect(RELAY_TRIAL_TEXT[reason].next, reason).toContain('This page works in a Chromium browser such as Chrome or Brave, or Firefox.');
+      expect(RELAY_TRIAL_TEXT[reason].next, reason).toMatch(/“Run it on your computer” below this message\.$/);
+      expect(RELAY_TRIAL_TEXT[reason].next, reason).not.toMatch(/Validate/);
     }
   });
 
