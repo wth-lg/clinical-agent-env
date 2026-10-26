@@ -7,7 +7,7 @@
 // CLINENV_RUNNER_TEST_TRANSPORT=stall hook). Nothing reaches the API.
 import { spawn, spawnSync, type ChildProcess } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { mkdtempSync, readFileSync } from 'node:fs';
+import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -16,12 +16,12 @@ import { parseEvent, type TrialEvent } from '../../../packages/core/events.ts';
 import { explainTrial, NOT_AUDITED_MARKER, type ExplainRecord } from '../../../packages/core/explain.ts';
 import { MAX_CONCURRENCY, parseSse, REFUSAL_TEXT, SAMPLES, SSE_END, TOKEN_HEADER, TOKEN_META } from '../../../packages/core/runner-api.ts';
 import { SAMPLE, summary } from './fixtures/sample-results/sample.ts';
+import { CONNECT_ORIGIN } from '../csp.ts';
 
 const REPO = fileURLToPath(new URL('../../../', import.meta.url));
 const WEB = join(REPO, 'apps/web');
-// The API origin the page may connect to, read from the CSP, as shell.spec.ts does (lint: no-direct-anthropic).
-const CSP = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
-const API_ORIGIN = /connect-src 'self' (\S+);/.exec(CSP)?.[1] ?? '';
+// The API origin the page may connect to, CONNECT_ORIGIN from csp.ts (lint: no-direct-anthropic).
+const API_ORIGIN = CONNECT_ORIGIN;
 const sentinelKey = () => ['sk', 'ant', 'api03', randomUUID().replaceAll('-', ''), 'e2e'].join('-');
 
 interface Runner { url: string; proc: ChildProcess; tmp: string }

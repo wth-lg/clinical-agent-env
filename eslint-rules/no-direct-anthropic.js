@@ -2,9 +2,9 @@
 // and the request rules, and meters every call through a BatchGrant. It exports no URL,
 // header or body builder, so code elsewhere that wants to reach the API has to name the host
 // itself, and anywhere else a string naming the API host (so any fetch to it) is an error,
-// whether written as one literal, a template or a concatenation of literals. The CSP metas in
-// apps/web/*.html list the host too; ESLint does not lint .html. One exemption: the exact design
-// CSP string, as one literal, in apps/web/e2e/smoke.spec.ts, which pins it. The relay (P16h)
+// whether written as one literal, a template or a concatenation of literals. The test pages'
+// CSP metas in apps/web/*.html list the host too; ESLint does not lint .html. One exemption: the
+// exact APP_CSP string, as one literal, in apps/web/csp.ts, where the app's CSP is written once. The relay (P16h)
 // forwards to the API server to server, so it names its upstream too, in exactly one module,
 // apps/relay/src/upstream.ts, and that module's test; every other relay file imports
 // UPSTREAM_URL from it. A host built at
@@ -12,6 +12,7 @@
 // refuses it where it resolves.
 
 import { relative, sep } from 'node:path';
+import { APP_CSP } from '../apps/web/csp.ts';
 
 // Every file ESLint parses as code: .ts, .tsx, .mts, .cts, .js, .jsx, .mjs and .cjs.
 export const files = ['**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}'];
@@ -20,8 +21,7 @@ export const files = ['**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}'];
 const HOST = ['api', 'anthropic', 'com'].join('.');
 const CLIENT = 'packages/core/anthropic.ts';
 const RELAY_UPSTREAM = new Set(['apps/relay/src/upstream.ts', 'apps/relay/test/upstream.test.ts']);
-const CSP_PIN = 'apps/web/e2e/smoke.spec.ts';
-const CSP = `default-src 'self'; connect-src 'self' https://${HOST}; script-src 'self'; worker-src 'self' blob:`;
+const CSP_FILE = 'apps/web/csp.ts';
 
 const posix = (p) => p.split(sep).join('/');
 
@@ -51,7 +51,7 @@ export default {
     if (file === CLIENT || RELAY_UPSTREAM.has(file)) return {};
     const checkText = (node, text) => {
       if (text === undefined || !text.toLowerCase().includes(HOST)) return;
-      if (file === CSP_PIN && node.type === 'Literal' && node.value === CSP) return;
+      if (file === CSP_FILE && node.type === 'Literal' && node.value === APP_CSP) return;
       context.report({ node, messageId: 'host', data: { text: text.length > 60 ? `${text.slice(0, 57)}...` : text } });
     };
     const quasis = (node) => node.quasis.map((q) => q.value.cooked ?? q.value.raw).join('');

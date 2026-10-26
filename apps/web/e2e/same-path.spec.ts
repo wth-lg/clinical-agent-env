@@ -16,12 +16,12 @@ import { parseEvent, type TrialEvent } from '../../../packages/core/events.ts';
 import { parseSse, SSE_END, TOKEN_HEADER, TOKEN_META } from '../../../packages/core/runner-api.ts';
 import { parseTrajectory, stripTimestamps, toJsonl } from '../../../packages/core/trajectory.ts';
 import { okResponse, SCENARIOS } from '../src/harness/scenarios.ts';
+import { CONNECT_ORIGIN } from '../csp.ts';
 
 const REPO = fileURLToPath(new URL('../../../', import.meta.url));
 const MODEL = 'claude-opus-5-5';
-// The API origin the page may connect to, read from the CSP, as shell.spec.ts does (lint: no-direct-anthropic).
-const CSP = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
-const API_ORIGIN = /connect-src 'self' (\S+);/.exec(CSP)?.[1] ?? '';
+// The API origin the page may connect to, CONNECT_ORIGIN from csp.ts (lint: no-direct-anthropic).
+const API_ORIGIN = CONNECT_ORIGIN;
 const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': 'POST' };
 
 function cleanEnv(tmp: string): Record<string, string> {

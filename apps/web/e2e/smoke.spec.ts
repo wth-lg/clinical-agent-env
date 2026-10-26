@@ -1,28 +1,27 @@
 import { expect, test } from '@playwright/test';
 import { readFileSync } from 'node:fs';
+import { APP_CSP, CONNECT_ORIGIN } from '../csp.ts';
 import { RELAY_PROBE_SOURCES } from '../src/probe/csp.ts';
 
-// The design CSP, pinned. This exact literal in this file is the one place outside
-// packages/core/anthropic.ts that lint lets name the API host (no-direct-anthropic). worker-src
-// blob: lets the trial Worker start from a blob: URL, so this policy binds it too
-// (src/live/transport/worker.ts).
-const CSP = "default-src 'self'; connect-src 'self' https://api.anthropic.com; script-src 'self'; worker-src 'self' blob:";
-const API_ORIGIN = /connect-src 'self' (\S+);/.exec(CSP)?.[1] ?? '';
-// relay-probe.html, the relay's test page (P16h), also reaches the relay: its connect-src adds
-// RELAY_PROBE_SOURCES to the design one. Every other page carries the design CSP unchanged.
-const RELAY_PROBE_CSP = CSP.replace(`connect-src 'self' ${API_ORIGIN};`, `connect-src 'self' ${API_ORIGIN} ${RELAY_PROBE_SOURCES.join(' ')};`);
+// The app's CSP is APP_CSP (csp.ts), which the build writes into index.html; the test pages
+// carry it in their own meta. relay-probe.html, the relay's test page (P16h), also reaches the
+// relay: its connect-src adds RELAY_PROBE_SOURCES to APP_CSP's.
+const API_ORIGIN = CONNECT_ORIGIN;
+const RELAY_PROBE_CSP = APP_CSP.replace(` ${API_ORIGIN};`, ` ${API_ORIGIN} ${RELAY_PROBE_SOURCES.join(' ')};`);
 const PAGES = ['index.html', 'harness.html', 'probe.html', 'relay-probe.html'];
-const pageCsp = (page: string) => (page === 'relay-probe.html' ? RELAY_PROBE_CSP : CSP);
+const TEST_PAGES = PAGES.filter((p) => p !== 'index.html');
+const pageCsp = (page: string) => (page === 'relay-probe.html' ? RELAY_PROBE_CSP : APP_CSP);
 
 const metaCsp = (html: string) => /<meta http-equiv="Content-Security-Policy" content="([^"]*)"/.exec(html)?.[1];
 
-test('every page source carries the design CSP meta', () => {
-  expect(RELAY_PROBE_CSP).not.toBe(CSP);
-  for (const page of PAGES) expect(metaCsp(readFileSync(new URL(`../${page}`, import.meta.url), 'utf8')), page).toBe(pageCsp(page));
+test('each test page source carries its CSP meta; index.html gets APP_CSP from the build', () => {
+  expect(RELAY_PROBE_CSP).not.toBe(APP_CSP);
+  expect(metaCsp(readFileSync(new URL('../index.html', import.meta.url), 'utf8'))).toBeUndefined();
+  for (const page of TEST_PAGES) expect(metaCsp(readFileSync(new URL(`../${page}`, import.meta.url), 'utf8')), page).toBe(pageCsp(page));
 });
 
 for (const page of PAGES) {
-  test(`built ${page} is served with the design CSP meta`, async ({ page: p }) => {
+  test(`built ${page} is served with its CSP meta`, async ({ page: p }) => {
     await p.goto(page === 'index.html' ? './' : `./${page}`);
     expect(await p.locator('meta[http-equiv="Content-Security-Policy"]').getAttribute('content')).toBe(pageCsp(page));
   });

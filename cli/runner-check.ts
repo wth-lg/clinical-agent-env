@@ -3,7 +3,7 @@
 // nothing: it fails with exit 1 if apps/web/dist is missing (run `pnpm build` first). It spawns
 // `node apps/runner/main.ts --port 0` on a free port without ANTHROPIC_API_KEY in its environment,
 // then checks: GET /api/health (the runner's contract body, no key loaded); the served
-// index.html (200, its CSP meta equal to the one in apps/web/index.html, a token meta); that a
+// index.html (200, its CSP meta equal to APP_CSP from apps/web/csp.ts, a token meta); that a
 // foreign Origin and a foreign Host are refused; then posts one _toy trial to POST /api/trials
 // and reads its SSE stream to the graded event.
 //   --mock     (default) the runner runs with --mock, and the check also runs
@@ -29,6 +29,7 @@ import { request as httpRequest } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { APP_CSP } from '../apps/web/csp.ts';
 import { MODEL } from '../packages/core/anthropic.ts';
 import { installEgressGuard } from '../packages/core/egress.ts';
 import type { TrialEvent } from '../packages/core/events.ts';
@@ -65,11 +66,6 @@ export function childEnv(parent: Env, tmp: string, mode: Mode): Record<string, s
 
 const shown = (env: Record<string, string>) =>
   Object.fromEntries(SHOWN.map((k) => [k, env[k] === undefined ? null : k === 'ANTHROPIC_API_KEY' ? '[set]' : env[k]]));
-
-// The CSP meta content of apps/web/index.html: the design string.
-function designCsp(): string | null {
-  return /<meta http-equiv="Content-Security-Policy" content="([^"]*)"/.exec(readFileSync(join(REPO, 'apps/web/index.html'), 'utf8'))?.[1] ?? null;
-}
 
 interface Reply {
   status: number;
@@ -210,7 +206,7 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
     const page = await http(port, 'GET', BASE);
     const csp = /<meta http-equiv="Content-Security-Policy" content="([^"]*)"/.exec(page.text)?.[1] ?? null;
     const token = new RegExp(`<meta name="${TOKEN_META}" content="([0-9a-f]{64})"`).exec(page.text)?.[1] ?? null;
-    check('index.html', page.status === 200 && csp !== null && csp === designCsp() && token !== null, `status ${page.status}, CSP meta ${csp === designCsp() ? 'equals' : 'differs from'} apps/web/index.html, token meta ${token === null ? 'missing' : 'present'}`);
+    check('index.html', page.status === 200 && csp === APP_CSP && token !== null, `status ${page.status}, CSP meta ${csp === APP_CSP ? 'equals' : 'differs from'} APP_CSP, token meta ${token === null ? 'missing' : 'present'}`);
     if (token === null) throw new Error('no token meta: the API checks cannot run');
 
     const foreignOrigin = await http(port, 'POST', '/api/key', { origin: 'http://evil.example', token, body: { key: 'not-a-key-foreign-origin' } });

@@ -3,11 +3,12 @@
 // that can set Host and Origin, an SSE reader and a child-process launcher for main.ts.
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { request as httpRequest, type IncomingHttpHeaders } from 'node:http';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { APP_CSP } from '../../web/csp.ts';
 import { okResponse, scriptedTransport, SCENARIOS } from '../../web/src/harness/scenarios.ts';
 import type { Transport } from '../../../packages/core/anthropic.ts';
 import { parseSse, TOKEN_HEADER, type SseFrame } from '../../../packages/core/runner-api.ts';
@@ -33,12 +34,9 @@ export function sentinels(): { plain: string; skAnt: string } {
   };
 }
 
-// The CSP meta content of apps/web/index.html: the design string the built page must carry.
+// The design CSP the built page must carry: APP_CSP, which the Vite build writes into index.html.
 export function designCsp(): string {
-  const html = readFileSync(join(REPO, 'apps/web/index.html'), 'utf8');
-  const m = /<meta http-equiv="Content-Security-Policy" content="([^"]*)"/.exec(html);
-  if (!m) throw new Error('apps/web/index.html has no CSP meta');
-  return m[1] as string;
+  return APP_CSP;
 }
 
 export function cspMeta(html: string): string | null {
