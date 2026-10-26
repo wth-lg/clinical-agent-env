@@ -23,7 +23,8 @@ export const viewFromUrl = (href: string): View => VIEWS.find((v) => v.id === ne
 
 // A rail link opens the view fresh: the task, label, open trial, its run and its tab of the view
 // left behind would be filters nobody set on the new one (review-ui-P14-2 F2, verifier-phase-P16-1
-// N1); only the trial detail reads run and tab, so nothing else is lost.
+// N1); only the trial detail reads run, and only it and an open task read tab, so nothing else is
+// lost.
 export const VIEW_STATE = ['task', 'label', 'trial', 'run', 'tab'];
 export function viewHref(href: string, id: string): string {
   const url = new URL(href);

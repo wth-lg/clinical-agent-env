@@ -40,14 +40,21 @@ test.describe('grader validation in the tab, no key', () => {
     expect(await cards.evaluateAll((els) => els.map((e) => e.getAttribute('data-task')))).toEqual(TASK_IDS);
     await cards.first().getByRole('button').first().click();
     await expect(page.getByTestId('task-prompt')).toBeVisible();
+    await expect(page.getByTestId('task-tools')).toBeVisible();
+    // Live controls are shown disabled with the reason, on the prompt tab.
+    const prompt = cards.first().getByTestId('task-panel-prompt');
+    await expect(prompt.getByRole('button', { name: 'Run trial' })).toBeDisabled();
+    await expect(prompt).toContainText('Needs an API key.');
+    await cards.first().getByRole('tab', { name: 'Rubric' }).click();
     await expect(page.getByTestId('task-check').first()).toBeVisible();
     await page.getByTestId('task-check').first().locator('summary').click();
     await expect(page.getByTestId('check-source').first()).not.toBeEmpty();
+    await cards.first().getByRole('tab', { name: 'Reference solution' }).click();
     await expect(page.getByTestId('solution-step').first()).toBeVisible();
-    // Live controls are shown disabled with the reason.
-    const run = page.getByTestId('validation').first().getByRole('button', { name: 'Run trial' });
-    await expect(run).toBeDisabled();
-    await expect(page.getByTestId('validation').first()).toContainText('Needs an API key.');
+    // A closed card keeps its grader validation row, Run trial included.
+    const closed = cards.nth(1).getByTestId('validation');
+    await expect(closed.getByRole('button', { name: 'Run trial' })).toBeDisabled();
+    await expect(closed).toContainText('Needs an API key.');
   });
 
   for (const id of TASK_IDS) {
@@ -285,12 +292,14 @@ test('after Browse without a key, Overview, Tasks, Runs and Environment each ren
 });
 
 test('Tasks: each check says what it requires, and the reference solution lists its tool calls', async ({ page }) => {
-  await browse(page, './?view=tasks&task=renal-dose-review');
+  await browse(page, './?view=tasks&task=renal-dose-review&tab=rubric');
   const card = page.locator('[data-testid="task-card"][data-task="renal-dose-review"]');
   await expect(card.locator('[data-testid="task-check"][data-check="note_explains_eie_scr"]').getByTestId('check-question')).toContainText('entered in error');
   await expect(card.locator('[data-testid="task-check"][data-check="apixaban_dose"]')).toContainText('gate check: must be met to pass');
   // Every gate check says what it requires without a click, in the words its failure reason uses.
   for (const [id, t] of Object.entries(CHECK_TEXT['renal-dose-review']!)) await expect(card.locator(`[data-testid="task-check"][data-check="${id}"]`).getByTestId('check-requires')).toHaveText(`Requires ${t.requires}.`);
+  await card.getByRole('tab', { name: 'Reference solution' }).click();
+  await expect(card.getByTestId('solution-step').first()).toBeVisible();
   await expect(card.getByTestId('solution-step').first()).toContainText('1.');
   expect(await card.getByTestId('solution-step').count()).toBeGreaterThan(5);
 });
@@ -313,7 +322,7 @@ test('a trial record missing cost_usd is an error row in Runs; the app and the o
 test('at 390 px no view scrolls sideways, with a task and a failed trial open', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   const failing = records.find((r) => r.outcome === 'FAIL' && r.task_id === 'contrast-ct-prep')!;
-  const views = ['./?view=overview', './?view=tasks&task=contrast-ct-prep', `./?view=runs&trial=${encodeURIComponent(trialName(failing))}`, './?view=findings', './?view=environment', './?view=glossary'];
+  const views = ['./?view=overview', './?view=tasks&task=contrast-ct-prep&tab=reference-solution', `./?view=runs&trial=${encodeURIComponent(trialName(failing))}`, './?view=findings', './?view=environment', './?view=glossary'];
   for (const path of views) {
     await browse(page, path);
     await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible();

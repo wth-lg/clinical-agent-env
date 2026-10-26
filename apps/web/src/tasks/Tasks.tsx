@@ -2,9 +2,10 @@
 // (check-text.ts), the reference solution's tool calls, and its grader validation, run in this tab
 // with no key: the oracle (reference solution) graded once, the whole grader validation matrix,
 // and a replay of the official run's trials of the task. Run trial needs a key and is shown
-// disabled with the reason. ?task= opens one task.
+// disabled with the reason. ?task= opens one task on the tab ?tab= names (TASK_TABS, prompt by
+// default; WAI-ARIA tabs, so arrow keys, Home and End move between them).
 import { CheckCircle2, ChevronDown, ChevronRight, CircleAlert, Loader2 } from 'lucide-react';
-import { useEffect, useState, type ReactNode, type Ref } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode, type Ref } from 'react';
 import type { Task } from '../../../../packages/core/tasks.ts';
 import type { Check } from '../../../../packages/grader/check.ts';
 import { useKeyStatus } from '../keygate/key.ts';
@@ -12,6 +13,7 @@ import type { Script } from '../../../../packages/grader/matrix/types.ts';
 import { checkTextOf, loadResults } from '../data/results.ts';
 import { loadTaskList } from '../data/tasks.ts';
 import { Notice, Page } from '../data/ui.tsx';
+import { tabTarget } from '../data/tabs.ts';
 import { navigate, useParams } from '../data/url.ts';
 import { validate, type MatrixRun, type OracleResult, type ReplayRow } from './validate-protocol.ts';
 
@@ -20,7 +22,9 @@ type Loaded = { task: Task; checks: Check[] };
 export function Tasks({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | undefined }) {
   const [tasks, setTasks] = useState<Loaded[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const open = useParams().get('task');
+  const params = useParams();
+  const open = params.get('task');
+  const tab = tabOf(params.get('tab'));
   useEffect(() => {
     // The task files are a large chunk, loaded when Tasks first opens.
     Promise.all([loadTaskList(), import('./matrix-task.ts')])
@@ -33,7 +37,7 @@ export function Tasks({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | u
       {tasks === null && error === null && <Notice>Loading tasks…</Notice>}
       {tasks !== null && (
         <ul className="space-y-3" data-testid="task-list">
-          {tasks.map((t) => <TaskCard key={t.task.id} t={t} open={open === t.task.id} />)}
+          {tasks.map((t) => <TaskCard key={t.task.id} t={t} tab={open === t.task.id ? tab : null} />)}
         </ul>
       )}
     </Page>
@@ -84,7 +88,7 @@ function ReferenceSolution({ id }: { id: string }) {
   return (
     <section>
       <h3 className="font-medium">Reference solution</h3>
-      <p className="mt-1 text-xs text-ink-muted">The tool calls of the oracle, tasks/{id}/solution/solve.ts, in order. Run oracle above grades it in this tab; it must PASS with score 1.0.</p>
+      <p className="mt-1 text-xs text-ink-muted">The tool calls of the oracle, tasks/{id}/solution/solve.ts, in order. Run oracle on the Grader validation tab grades it in this tab; it must PASS with score 1.0.</p>
       {oracle === undefined && <p className="mt-1 text-ink-muted">Loading…</p>}
       {oracle === null && <p className="mt-1 text-ink-muted">This task has no reference solution.</p>}
       {steps.length > 0 && (
@@ -101,58 +105,127 @@ function ReferenceSolution({ id }: { id: string }) {
   );
 }
 
-function TaskCard({ t, open }: { t: Loaded; open: boolean }) {
+// The task tabs, in the order of docs/requirements/ui-contract.md's `tab` row.
+export const TASK_TABS = [
+  { id: 'prompt', label: 'Prompt' },
+  { id: 'policy', label: 'Policy' },
+  { id: 'rubric', label: 'Rubric' },
+  { id: 'reference-solution', label: 'Reference solution' },
+  { id: 'grader-validation', label: 'Grader validation' },
+] as const;
+type TaskTab = (typeof TASK_TABS)[number]['id'];
+const tabOf = (v: string | null): TaskTab => TASK_TABS.find((t) => t.id === v)?.id ?? 'prompt';
+
+// A task card: closed, its header and grader validation; open (tab not null), its header and tabs.
+function TaskCard({ t, tab }: { t: Loaded; tab: TaskTab | null }) {
   const { task, checks } = t;
+  const open = tab !== null;
   const Chevron = open ? ChevronDown : ChevronRight;
   const gates = checks.filter((c) => c.kind === 'gate');
   const rubric = checks.filter((c) => c.kind === 'rubric');
   return (
     <li data-testid="task-card" data-task={task.id} className="rounded-sm border border-line bg-surface">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3">
-        <button type="button" aria-expanded={open} onClick={() => navigate({ task: open ? null : task.id })} className="inline-flex items-center gap-1.5 text-left font-medium text-ink hover:underline">
+        <button type="button" aria-expanded={open} onClick={() => navigate({ task: open ? null : task.id, tab: null })} className="inline-flex items-center gap-1.5 text-left font-medium text-ink hover:underline">
           <Chevron aria-hidden className="h-4 w-4 text-ink-muted" strokeWidth={1.75} />
           {task.title}
         </button>
         <code className="break-all text-xs text-ink-muted">{task.id}</code>
         <span className="ml-auto text-xs text-ink-muted">{gates.length} gate checks, {rubric.length} rubric items, {(task.tools ?? []).length || 'all'} tools</span>
       </div>
-      <Validation id={task.id} />
+      {!open && <Validation id={task.id} runTrial />}
       {open && (
-        <div className="space-y-4 border-t border-line px-4 py-4">
-          <section>
-            <h3 className="font-medium">Prompt</h3>
-            <pre data-testid="task-prompt" className="mt-1 max-h-80 overflow-auto whitespace-pre-wrap break-words rounded-sm bg-canvas p-3 font-sans text-ink">{task.instruction}</pre>
-          </section>
-          <section>
-            <h3 className="font-medium">Tools</h3>
-            {task.tools == null ? <p className="mt-1 text-ink-muted" data-testid="task-tools">Every tool of the environment (see Environment).</p> : <p className="mt-1 flex flex-wrap gap-1.5" data-testid="task-tools">{task.tools.map((n) => <code key={n} className="rounded-sm border border-line px-1 text-xs">{n}</code>)}</p>}
-          </section>
-          {task.policies.length > 0 && (
-            <section>
-              <h3 className="font-medium">Policies</h3>
-              <ul className="mt-1 space-y-1">
-                {task.policies.map((p) => (
-                  <li key={p.id}>
-                    <details>
-                      <summary className="cursor-pointer"><span className="font-medium">{p.id}</span> {p.title} <span className="text-ink-muted">v{p.version}, effective {p.effective}</span></summary>
-                      <pre className="mt-1 max-h-64 overflow-auto whitespace-pre-wrap rounded-sm bg-canvas p-3 font-sans text-xs">{p.text}</pre>
-                    </details>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-          <section>
-            <h3 className="font-medium">Checks: what each one requires</h3>
-            <p className="mt-1 text-xs text-ink-muted">A trial passes when every gate check is met. Rubric items add or take away points for the score. Each check names the policy section or prompt line it enforces.</p>
-            <ul className="mt-2 divide-y divide-line rounded-sm border border-line" data-testid="task-checks">
-              {checks.map((c) => <CheckRow key={c.id} task={task} check={c} />)}
-            </ul>
-          </section>
-          <ReferenceSolution id={task.id} />
-        </div>
+        <TaskTabs task={task.id} tab={tab}>
+          {{
+            prompt: (
+              <div className="space-y-4">
+                <section>
+                  <h3 className="font-medium">Prompt</h3>
+                  <pre data-testid="task-prompt" className="mt-1 max-h-80 overflow-auto whitespace-pre-wrap break-words rounded-sm bg-canvas p-3 font-sans text-ink">{task.instruction}</pre>
+                </section>
+                <section>
+                  <h3 className="font-medium">Tools</h3>
+                  {task.tools == null ? <p className="mt-1 text-ink-muted" data-testid="task-tools">Every tool of the environment (see Environment).</p> : <p className="mt-1 flex flex-wrap gap-1.5" data-testid="task-tools">{task.tools.map((n) => <code key={n} className="rounded-sm border border-line px-1 text-xs">{n}</code>)}</p>}
+                </section>
+                <div className="flex"><RunTrial id={task.id} /></div>
+              </div>
+            ),
+            policy: task.policies.length === 0 ? <p className="text-ink-muted" data-testid="task-policy">This task names no policy.</p> : (
+              <section>
+                <h3 className="font-medium">Policies</h3>
+                <ul className="mt-1 space-y-1">
+                  {task.policies.map((p) => (
+                    <li key={p.id} data-testid="task-policy">
+                      <details>
+                        <summary className="cursor-pointer"><span className="font-medium">{p.id}</span> {p.title} <span className="text-ink-muted">v{p.version}, effective {p.effective}</span></summary>
+                        <pre className="mt-1 max-h-64 overflow-auto whitespace-pre-wrap rounded-sm bg-canvas p-3 font-sans text-xs">{p.text}</pre>
+                      </details>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ),
+            rubric: (
+              <section>
+                <h3 className="font-medium">Checks: what each one requires</h3>
+                <p className="mt-1 text-xs text-ink-muted">A trial passes when every gate check is met. Rubric items add or take away points for the score. Each check names the policy section or prompt line it enforces.</p>
+                <ul className="mt-2 divide-y divide-line rounded-sm border border-line" data-testid="task-checks">
+                  {checks.map((c) => <CheckRow key={c.id} task={task} check={c} />)}
+                </ul>
+              </section>
+            ),
+            'reference-solution': <ReferenceSolution id={task.id} />,
+            'grader-validation': <Validation id={task.id} />,
+          }}
+        </TaskTabs>
       )}
     </li>
+  );
+}
+
+// The tab strip and its panels (WAI-ARIA tabs: arrow keys, Home and End move between tabs). Every
+// panel stays mounted, so a matrix result or an opened policy survives a switch of tab.
+function TaskTabs({ task, tab, children }: { task: string; tab: TaskTab; children: Record<TaskTab, ReactNode> }) {
+  const refs = useRef<Partial<Record<TaskTab, HTMLButtonElement | null>>>({});
+  const go = (id: TaskTab, focus = false) => {
+    navigate({ tab: id });
+    if (focus) refs.current[id]?.focus();
+  };
+  const onKey = (ev: KeyboardEvent<HTMLDivElement>) => {
+    const to = tabTarget(ev.key, TASK_TABS.findIndex((x) => x.id === tab), TASK_TABS.length);
+    if (to === null) return;
+    ev.preventDefault();
+    go(TASK_TABS[to]!.id, true);
+  };
+  return (
+    <div className="border-t border-line">
+      <div role="tablist" aria-label="Task" onKeyDown={onKey} className="flex flex-wrap gap-x-1 border-b border-line px-2">
+        {TASK_TABS.map((x) => (
+          <button
+            key={x.id}
+            ref={(el) => {
+              refs.current[x.id] = el;
+            }}
+            type="button"
+            role="tab"
+            id={`task-tab-${task}-${x.id}`}
+            data-tab={x.id}
+            aria-selected={x.id === tab}
+            aria-controls={`task-panel-${task}-${x.id}`}
+            tabIndex={x.id === tab ? 0 : -1}
+            onClick={() => go(x.id)}
+            className={`-mb-px border-b-2 px-2 py-2 text-sm ${x.id === tab ? 'border-accent font-medium text-ink' : 'border-transparent text-ink-muted hover:text-ink'}`}
+          >
+            {x.label}
+          </button>
+        ))}
+      </div>
+      {TASK_TABS.map((x) => (
+        <div key={x.id} role="tabpanel" id={`task-panel-${task}-${x.id}`} data-testid={`task-panel-${x.id}`} aria-labelledby={`task-tab-${task}-${x.id}`} hidden={x.id !== tab} tabIndex={0} className="min-w-0 px-4 py-4 focus-visible:outline-2 focus-visible:outline-accent">
+          {children[x.id]}
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -168,8 +241,7 @@ function useRun<T>(): [Run<T>, (f: () => Promise<T>) => void] {
 
 const button = 'inline-flex h-8 items-center gap-1.5 rounded-sm border border-line-strong bg-surface px-3 text-ink hover:bg-canvas disabled:cursor-not-allowed disabled:border-dashed disabled:border-line disabled:bg-canvas disabled:text-ink-muted';
 
-function Validation({ id }: { id: string }) {
-  const key = useKeyStatus();
+function Validation({ id, runTrial = false }: { id: string; runTrial?: boolean }) {
   const [oracle, runOracle] = useRun<OracleResult>();
   const [matrix, runMatrix] = useRun<MatrixRun>();
   const [replay, runReplay] = useRun<ReplayRow[]>();
@@ -180,16 +252,13 @@ function Validation({ id }: { id: string }) {
     return validate({ op: 'replay', task: id, trials: r.official.trials.filter((t) => t.task === id).map((t) => ({ name: t.name, record: t.record, trajectoryUrl: t.trajectoryUrl })) });
   };
   return (
-    <div className="border-t border-line px-4 py-3" data-testid="validation" data-task={id}>
+    <div className={runTrial ? 'border-t border-line px-4 py-3' : ''} data-testid="validation" data-task={id}>
       <div className="flex flex-wrap items-center gap-2">
         <span className="mr-1 text-xs font-medium text-ink-muted">Grader validation</span>
         <button type="button" className={button} disabled={busy} onClick={() => runOracle(() => validate({ op: 'oracle', task: id }))}>Run oracle</button>
         <button type="button" className={button} disabled={busy} onClick={() => runMatrix(() => validate({ op: 'matrix', task: id }))}>Run matrix</button>
         <button type="button" className={button} disabled={busy} onClick={() => runReplay(replayTrials)}>Replay published trials</button>
-        <span className="ml-auto inline-flex items-center gap-2">
-          <button type="button" className={button} disabled aria-describedby={`run-why-${id}`}>Run trial</button>
-          <span id={`run-why-${id}`} className="text-xs text-ink-muted">{key.kind === 'none' ? 'Needs an API key.' : 'Live trials from this screen come in a later build.'}</span>
-        </span>
+        {runTrial && <RunTrial id={id} />}
       </div>
       <Result r={oracle} what="oracle" render={(o) => (
         <p data-testid="oracle-result" data-outcome={o.outcome ?? 'none'} data-score={o.score ?? ''}>
@@ -233,6 +302,18 @@ function Validation({ id }: { id: string }) {
         </div>
       )} />
     </div>
+  );
+}
+
+// Run trial, shown disabled with the reason: on a closed card's grader validation row and on the
+// prompt tab.
+function RunTrial({ id }: { id: string }) {
+  const key = useKeyStatus();
+  return (
+    <span className="ml-auto inline-flex items-center gap-2">
+      <button type="button" className={button} disabled aria-describedby={`run-why-${id}`}>Run trial</button>
+      <span id={`run-why-${id}`} className="text-xs text-ink-muted">{key.kind === 'none' ? 'Needs an API key.' : 'Live trials from this screen come in a later build.'}</span>
+    </span>
   );
 }
 
