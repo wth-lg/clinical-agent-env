@@ -19,6 +19,7 @@ import { INITIAL, note, PATIENT, trajectory } from './helpers.ts';
 const inboxItem: Resource = {
   resourceType: 'Task', id: 'task-1', status: 'requested', intent: 'order', code: { coding: [{ system: INBOX_QUEUE_SYSTEM, code: 'results' }] },
   focus: { reference: 'Observation/obs-scr-1020' }, for: { reference: 'Patient/pt-1' }, authoredOn: '2026-10-22T09:00:00-04:00', description: 'New creatinine',
+  owner: { reference: 'Practitioner/pr-okafor' },
 } as Resource;
 const world = new Store([...INITIAL.map((r): Resource => (r.id === PATIENT.id ? ({ ...r, birthDate: '1948-03-02', gender: 'male' } as Resource) : r)), inboxItem]);
 const ctx: ReadContext = { world, clock, policies: [], catalog: [] };
@@ -130,7 +131,7 @@ describe('exposure from the read tools', () => {
   });
   it('an inbox row naming the patient does not expose it', () => {
     const steps = stepsOf(trajectory([read('list_inbox', { queue: 'results' }), read('fhir_read', { resource_type: 'Patient', id: 'pt-1' })]));
-    expect(steps[0]!.referenced_ids).toEqual(['Observation/obs-scr-1020', 'Patient/pt-1', 'Task/task-1']);
+    expect(steps[0]!.referenced_ids).toEqual(['Observation/obs-scr-1020', 'Patient/pt-1', 'Practitioner/pr-okafor', 'Task/task-1']);
     expect(firstExposed(steps, 'Patient/pt-1')).toBe(2);
   });
 });

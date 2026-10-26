@@ -58,7 +58,9 @@ import { ToolError, type ErrorBody } from './errors.ts';
 // substrings; record_allergy defaults a catalog medication's category; fhir_read takes Type/id;
 // fhir_search states its MedicationRequest date, and its filters per type; send_message's about
 // and search_patients' example.
-export const TOOLS_VERSION = '5';
+// 6 (P17j JT1: S10): list_inbox rows carry owner; it lists the signed-in user's items by default,
+// and owner (Type/id or a bare id, as update_inbox_item's new_owner) lists another owner's.
+export const TOOLS_VERSION = '6';
 
 export type PropertySchema =
   | { type: 'string'; description: string; enum?: readonly string[]; minLength?: number; maxLength?: number; pattern?: string }

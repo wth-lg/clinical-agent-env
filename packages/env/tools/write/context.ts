@@ -2,7 +2,6 @@
 // the trial's write session. The session is per trial like the store, so a replay of the tool
 // log on a fresh store and a fresh session reproduces every id, stamp and result.
 import type { Store } from '../../store.ts';
-import { STAFF } from '../../world.ts';
 import type { ReadContext } from '../read/context.ts';
 
 export interface WriteSession {
@@ -22,5 +21,5 @@ export interface WriteContext extends ReadContext {
   session: WriteSession;
 }
 
-// The signed-in user every write is made as (get_context reports the same practitioner).
-export const USER = `Practitioner/${STAFF[0]}`;
+// The signed-in user every write is made as (read/context.ts).
+export { USER } from '../read/context.ts';

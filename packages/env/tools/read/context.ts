@@ -3,6 +3,7 @@
 // the catalog module supply them, so the tools take them as plain records.
 import type { Clock } from '../../clock.ts';
 import type { WorldReader } from '../../overlay.ts';
+import { STAFF } from '../../world.ts';
 
 // A local policy document (design section 2, "Policies").
 export interface Policy {
@@ -26,6 +27,10 @@ export interface CatalogEntry {
   display: string;
   strengths?: readonly string[];
 }
+
+// The signed-in user: get_context reports it, every write is made as it, and list_inbox lists its
+// items by default.
+export const USER = `Practitioner/${STAFF[0]}`;
 
 // Inbox items are Tasks whose code names their queue in this system.
 export const INBOX_QUEUE_SYSTEM = 'urn:riverbend:inbox-queue';
