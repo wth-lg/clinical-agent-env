@@ -4,13 +4,13 @@
   "tasks": {
     "contrast-ct-prep": {
       "task_versions": [
-        "f8707e2bf77fce80749fe1615ca57cb9aa70e4f8defc917943ddee9a18694dbf"
+        "f199cfe54b2c4e9334a21671f19bcb709b0bc2e55e5d276c841aaa65f6aab2ee"
       ],
       "env_versions": [
         "ec98c43c0ab505c6dea2e82ae38f0dd1089a01ee04a97b6c3843dde74a87b61e"
       ],
       "grader_task_versions": [
-        "9951302e791a963696583af0f6dd44372df913f3f5b4b8027cdb6f6ca10eca06"
+        "f118f2d5e4c9d23ab48f2337f7a64be9af45b677476f461395cfb6720cb3012d"
       ],
       "records": 1,
       "trials": 1,
