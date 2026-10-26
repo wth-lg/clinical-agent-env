@@ -19,7 +19,8 @@ import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type Ref } fr
 import { MET_TEXT, type Explanation } from '../../../../packages/core/explain.ts';
 import type { TrialEvent } from '../../../../packages/core/events.ts';
 import { fetchEvents, fullExplanation, useResults, type RunData, type Trial } from '../data/results.ts';
-import { FaultLabel, GlossaryLink, HashText, Notice, OutcomeChip } from '../data/ui.tsx';
+import { harmItems, safePass, type HarmItem } from '../data/harm.ts';
+import { FaultLabel, GlossaryLink, HarmChip, HashText, Notice, OutcomeChip } from '../data/ui.tsx';
 import { tabTarget } from '../data/tabs.ts';
 import { hrefWith, navigate, onNav, useParams } from '../data/url.ts';
 import { runnerToken } from '../keygate/runner.ts';
@@ -137,7 +138,7 @@ function Detail({ t, run, files, tab, headingRef }: { t: Trial; run: RunData; fi
         className="space-y-3 sm:space-y-4"
       >
         <p className="text-ink-muted">
-          Run <span className="font-medium text-ink">{run.runId}</span>{run.official ? ', the official run' : ', a pilot run, not counted in the results'}. Task <span className="font-medium text-ink">{t.task}</span>.
+          Run <span className="font-medium text-ink">{run.runId}</span>{run.official ? ', the official run' : ', a pilot run, not counted in the results'}. Task <span className="font-medium text-ink">{t.task}</span>{run.official && run.summary?.tasks[t.task] ? <>: {run.summary.tasks[t.task]!.passes}/{run.summary.tasks[t.task]!.trials} pass, <span data-testid="safe-pass">{safePass(run.summary.tasks[t.task]!)}</span></> : null}.
         </p>
         <Header t={t} e={e} rows={traj?.rows ?? null} onStep={onStep} />
         <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start">
@@ -184,6 +185,7 @@ function Header({ t, e, rows, onStep }: { t: Trial; e: Explanation; rows: readon
     <section aria-label="Why this trial ended as it did" data-testid="trial-header" className={`min-w-0 rounded-sm border border-line bg-surface p-4 ${nonPass ? 'border-l-2 border-l-danger' : ''}`}>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <OutcomeChip outcome={e.outcome} fault={e.fault} />
+        <HarmChip items={useHarmTexts(t.task, harmItems(t.record))} />
         {nonPass && <FaultLabel e={e} />}
         <span className="ml-auto text-xs text-ink-muted" title="Agent and judge cost">${(t.record.cost_usd + (t.record.judge_cost_usd ?? 0)).toFixed(2)}</span>
       </div>
@@ -223,8 +225,9 @@ function Header({ t, e, rows, onStep }: { t: Trial; e: Explanation; rows: readon
             <dd><StepLink n={failedCall.step} onStep={onStep} testId="failed-call-link">Step {failedCall.step}</StepLink>: the {failedCall.name} call that failed with an internal error</dd>
           </>
         )}
-        <dt>Criteria</dt>
+        <dt>{e.outcome === 'PASS' ? 'Checks' : 'Criteria'}</dt>
         <dd>
+          {e.outcome === 'PASS' ? <Confirmation e={e} /> : (
           <ul data-testid="header-criteria" className="flex flex-wrap gap-x-3 gap-y-0.5">
             {e.criteria.map((c) => (
               <li key={c.id} data-id={c.id} data-met={String(c.met)} title={criterionText(c.id)}>
@@ -233,9 +236,72 @@ function Header({ t, e, rows, onStep }: { t: Trial; e: Explanation; rows: readon
               </li>
             ))}
           </ul>
+          )}
         </dd>
       </dl>
     </section>
+  );
+}
+
+// The harm items with their rubric questions, once the task's checks load (verifier JU3-1 F5);
+// the ids alone until then, and for a code item, which has no question.
+function useHarmTexts(task: string, items: HarmItem[]): HarmItem[] {
+  const [texts, setTexts] = useState<Record<string, string>>({});
+  const ids = items.map((x) => x.id).join(',');
+  useEffect(() => {
+    if (ids === '') return;
+    let live = true;
+    void Promise.all([import('../tasks/matrix-task.ts'), import('../tasks/check-text.ts')]).then(async ([{ taskChecks }, { rubricQuestion }]) => {
+      const checks = await taskChecks(task).catch(() => []);
+      const found: Record<string, string> = {};
+      for (const c of checks) if (ids.split(',').includes(c.id)) {
+        const q = await rubricQuestion(c);
+        if (q) found[c.id] = q;
+      }
+      if (live) setTexts(found);
+    });
+    return () => {
+      live = false;
+    };
+  }, [task, ids]);
+  return items.map((x) => (texts[x.id] ? { ...x, text: texts[x.id]! } : x));
+}
+
+// On a PASS the M1-M5 row is in plain words, in three states (outcomes.ts: one pending is
+// provisional, one not met is contradicted): "Confirmed" when every check holds; "This PASS is
+// contradicted: ..." in the danger colour when a check found the opposite (a human audit that says the trial did not
+// pass, an internal tool error, a state hash that does not match); else "Checks pending: this trial
+// still needs ...". The codes and their evidence are in the Attribution tab (pre-audit S9, P17j
+// JU1). A check with no phrase here says its evidence. M2 is never pending, so it has no phrase there.
+const STILL_NEEDS: Readonly<Record<string, string>> = {
+  M1: 'a record of what the model was shown',
+  M3: 'a start and end state check against the run manifest',
+  M4: 'a grader check of this task version',
+  M5: 'a human audit',
+};
+// On a PASS, M1 is not applicable (no gate check failed) and M4 holds (none failed for the
+// reference solution to fail too), so their phrases below cannot show; they stay for a PASS a
+// later definition makes them decide on, and an unknown id falls back to its evidence.
+const FOUND_OTHERWISE: Readonly<Record<string, string>> = {
+  M1: 'a record the failed check needs was never shown to the model',
+  M2: 'a tool call returned an internal error',
+  M3: 'the saved start or end state of the record does not match or is missing',
+  M4: 'the reference solution or an accepted alternative fails this check',
+  M5: 'the human audit says this trial did not pass',
+};
+const andList = (xs: readonly string[]) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs.at(-1)}`);
+function Confirmation({ e }: { e: Explanation }) {
+  const contradicted = e.criteria.filter((c) => c.met === false);
+  const pending = e.criteria.filter((c) => c.met === 'pending');
+  const toAttribution = <a href={hrefWith({ tab: 'attribution' })} onClick={onNav({ tab: 'attribution' })} className={LINK}>See Attribution</a>;
+  const state = contradicted.length > 0 ? 'contradicted' : pending.length > 0 ? 'pending' : 'confirmed';
+  return (
+    <p data-testid="header-confirmation" data-state={state} data-pending={pending.length}>
+      {contradicted.length > 0 && <span className="font-medium text-danger">This PASS is contradicted: {andList(contradicted.map((c) => FOUND_OTHERWISE[c.id] ?? c.evidence))}. </span>}
+      {pending.length > 0 && <>Checks pending: this trial still needs {andList(pending.map((c) => STILL_NEEDS[c.id] ?? c.evidence))}. </>}
+      {state === 'confirmed' && <>Confirmed. </>}
+      {toAttribution}
+    </p>
   );
 }
 

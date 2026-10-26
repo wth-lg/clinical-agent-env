@@ -116,7 +116,7 @@ function runWorker(trialId: string, task: string, opts: { batchId: string; cap: 
         void finish({ state: 'error', record: null, message: data.error });
       }
     };
-    worker.onerror = (e) => void finish({ state: 'error', record: null, message: `The trial Worker failed: ${e.message || 'it did not start'}` });
+    worker.onerror = (e) => void finish({ state: 'error', record: null, message: `The trial stopped in this tab: ${e.message || 'it did not start'}` });
   });
   void (async () => {
     const seed = (await tabRows()).filter((r) => r.batch_id !== opts.batchId);

@@ -76,7 +76,7 @@ describe('replay compares each re-executed call with the recorded tool_result', 
     expect(record.state_hash.replay_final).toBeNull();
     const terminal = events.findLast((e) => e.type === 'error');
     expect(terminal).toMatchObject({ status: 'ENV_ERROR', code: 'replay_mismatch' });
-    expect((terminal as { message: string }).message).toBe(`replay: the ${read.name} call ${read.tool_use_id} gave a different result than its recorded tool_result`);
+    expect((terminal as { message: string }).message).toBe(`replay: call 1 (${read.name}, ${read.tool_use_id}) gave a different result: at extra, recorded "not what the tool returns", replayed absent`);
   });
 
   it('a call recorded as refused that succeeds on replay ends replay_mismatch on is_error', async () => {
@@ -85,7 +85,7 @@ describe('replay compares each re-executed call with the recorded tool_result', 
     });
     const read = firstRead(events);
     expect(record).toMatchObject({ status: 'ENV_ERROR', detail: 'replay_mismatch' });
-    expect((events.findLast((e) => e.type === 'error') as { message: string }).message).toBe(`replay: the ${read.name} call ${read.tool_use_id} gave is_error false, recorded true`);
+    expect((events.findLast((e) => e.type === 'error') as { message: string }).message).toBe(`replay: call 1 (${read.name}, ${read.tool_use_id}) gave is_error false, recorded true`);
   });
 
   it('gradeTrajectory compares results only with compareResults; without it the replayed state decides, as for a regrade', async () => {
@@ -95,7 +95,7 @@ describe('replay compares each re-executed call with the recorded tool_result', 
     expect((await gradeTrajectory('_toy', opts)).outcome).toBe('PASS');
     const compared = await gradeTrajectory('_toy', { ...opts, compareResults: true });
     expect(compared.outcome).toBe('GRADER_ERROR');
-    expect(compared.error!.message).toMatch(/^regrade: replay: the \w+ call \S+ gave a different result than its recorded tool_result$/);
+    expect(compared.error!.message).toMatch(/^regrade: replay: call 1 \(\w+, \S+\) gave a different result: at \S+, recorded .+, replayed .+$/);
     expect((await gradeTrajectory('_toy', { ...opts, events, compareResults: true })).outcome).toBe('PASS');
   });
 });

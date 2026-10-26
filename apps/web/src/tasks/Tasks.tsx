@@ -8,6 +8,9 @@ import { CheckCircle2, ChevronDown, ChevronRight, CircleAlert, Loader2 } from 'l
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode, type Ref } from 'react';
 import type { Task } from '../../../../packages/core/tasks.ts';
 import type { Check } from '../../../../packages/grader/check.ts';
+import { MODEL } from '../adapters/ledger-browser.ts';
+import { MANIFEST } from '../data/world.ts';
+import { chartOf, CHART_TYPES, SECTION_TITLE, taskPatients, type FhirResource } from './chart.ts';
 import { useKeyStatus } from '../keygate/key.ts';
 import type { Script } from '../../../../packages/grader/matrix/types.ts';
 import { checkTextOf, loadResults } from '../data/results.ts';
@@ -75,7 +78,103 @@ function CheckRow({ task, check: c }: { task: Task; check: Check }) {
   );
 }
 
-function ReferenceSolution({ id }: { id: string }) {
+// The reference solution's steps, and its oracle badge: the first time the tab shows, the oracle
+// runs in this tab with no key (the card's run state, so Grader validation shows the same result)
+// and the badge reads "oracle PASS 1.0" (trace N8).
+// The read-only Chart tab (pre-audit S12, P17j JU10): the task patient's problems, medications,
+// allergies, labs and notes, read from the FHIR R4 store the tools act on, loaded in this tab the
+// first time the tab shows. A task with several patients (the panel task T3, the inbox and queue
+// tasks) has a patient picker.
+// A failed load is not kept, so Retry (or the next view) loads again.
+let chartWorld: Promise<FhirResource[]> | undefined;
+const loadChartWorld = () => (chartWorld ??= Promise.all([import('../../../../packages/env/fixture-source.ts'), import('../data/world.ts')]).then(async ([{ loadStore }, { worldSource }]) =>
+  [...(await loadStore(worldSource())).resources()] as unknown as FhirResource[]).catch((e: unknown) => {
+  chartWorld = undefined;
+  throw e;
+}));
+
+function ChartTab({ task, active }: { task: string; active: boolean }) {
+  const [world, setWorld] = useState<FhirResource[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [chosen, setChosen] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
+  useEffect(() => {
+    if (!active || world !== null) return;
+    setError(null);
+    loadChartWorld().then(setWorld, (e: unknown) => setError(e instanceof Error ? e.message : String(e)));
+  }, [active, world, attempt]);
+  const patients = world === null ? [] : taskPatients(world, task);
+  const patient = chosen !== null && patients.includes(chosen) ? chosen : (patients[0] ?? null);
+  const chart = world === null || patient === null ? null : chartOf(world, patient);
+  const nameOf = (p: string) => (world === null ? p : (chartOf(world.filter((r) => r.resourceType === 'Patient'), p).patient?.name || p));
+  return (
+    <section className="space-y-3" data-testid="chart">
+      <p className="text-xs text-ink-muted" data-testid="chart-source">
+        Source: FHIR R4 store, the world every trial starts from (state hash {MANIFEST.world.state_hash.slice(0, 8)}…). Read-only: the tools read and write these resources; this tab only shows them.
+      </p>
+      {error !== null && (
+        <p role="alert" className="flex flex-wrap items-center gap-2">
+          The FHIR store did not load: {error}
+          <button type="button" className={button} onClick={() => setAttempt((n) => n + 1)}>Retry</button>
+        </p>
+      )}
+      {world === null && error === null && <p className="text-ink-muted" role="status">Loading the FHIR store in this tab…</p>}
+      {world !== null && patients.length === 0 && <p className="text-ink-muted">This task names no patient in the store.</p>}
+      {world !== null && patients.length > 1 && (
+        <label className="flex flex-wrap items-center gap-2 text-xs text-ink-muted">
+          Patient
+          <select aria-label="Patient" data-testid="chart-patient" className="h-8 max-w-full rounded-sm border border-line-strong bg-surface px-2 text-sm text-ink" value={patient ?? ''} onChange={(e) => setChosen(e.target.value)}>
+            {patients.map((p) => <option key={p} value={p}>{nameOf(p)} ({p.slice('Patient/'.length)})</option>)}
+          </select>
+          <span>{patients.length} patients in this task</span>
+        </label>
+      )}
+      {chart !== null && (
+        <>
+          <h3 className="font-medium" data-testid="chart-heading" data-patient={patient}>
+            {chart.patient?.name || patient} <span className="font-normal text-ink-muted">{patient?.slice('Patient/'.length)}{chart.patient?.birthDate ? `, born ${chart.patient.birthDate}` : ''}{chart.patient?.gender ? `, ${chart.patient.gender}` : ''}</span>
+          </h3>
+          {CHART_TYPES.map((type) => {
+            const rows = chart.rows.filter((r) => r.type === type);
+            return (
+              <div key={type} data-testid="chart-section" data-type={type}>
+                <h4 className="text-xs font-medium text-ink-muted">{SECTION_TITLE[type]} ({rows.length})</h4>
+                {rows.length === 0 ? <p className="text-xs text-ink-muted">None recorded.</p> : (
+                  // A scroll box a keyboard can reach and a screen reader names (axe scrollable-region-focusable).
+                  <div role="region" aria-label={`${SECTION_TITLE[type]} of ${chart.patient?.name || patient}`} tabIndex={0} className="mt-1 max-h-72 overflow-auto rounded-sm border border-line focus-visible:outline-2 focus-visible:outline-accent">
+                    <ul className="divide-y divide-line text-xs">
+                      {rows.map((r) => (
+                        <li key={r.id} data-testid="chart-row" data-type={r.type} data-id={r.id} className="px-2 py-1">
+                          <span className="block break-words text-ink">{r.text || r.id}</span>
+                          {r.body !== '' && (
+                            <details className="text-ink-muted" data-testid="chart-note">
+                              <summary className="cursor-pointer break-words">{r.body.length > 140 ? `${r.body.slice(0, 137).trimEnd()}…` : r.body.split('\n')[0]}</summary>
+                              <pre className="mt-1 max-h-64 overflow-auto whitespace-pre-wrap break-words font-sans text-ink">{r.body}</pre>
+                            </details>
+                          )}
+                          <span className="block break-words text-ink-muted">
+                            {[r.detail, r.status].filter((x) => x !== '').join(' · ')}
+                            {r.date !== '' && <>{r.detail !== '' || r.status !== '' ? ' · ' : ''}<span className="whitespace-nowrap tabular-nums">{r.date.slice(0, 10)}</span></>}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </>
+      )}
+    </section>
+  );
+}
+
+function ReferenceSolution({ id, runs, active }: { id: string; runs: ReturnType<typeof useValidationRuns>; active: boolean }) {
+  const { oracle: run, runOracle } = runs;
+  useEffect(() => {
+    if (active && run.state === 'idle') runOracle(() => validate({ op: 'oracle', task: id }));
+  }, [active, run.state, runOracle, id]);
   const [oracle, setOracle] = useState<Script | null | undefined>(undefined);
   const [steps, setSteps] = useState<import('./check-text.ts').SolutionStep[]>([]);
   useEffect(() => {
@@ -88,7 +187,12 @@ function ReferenceSolution({ id }: { id: string }) {
   return (
     <section>
       <h3 className="font-medium">Reference solution</h3>
-      <p className="mt-1 text-xs text-ink-muted">The tool calls of the oracle, tasks/{id}/solution/solve.ts, in order. Run oracle on the Grader validation tab grades it in this tab; it must PASS with score 1.0.</p>
+      <p className="mt-1 text-xs text-ink-muted">The tool calls of the oracle, tasks/{id}/solution/solve.ts, in order. This tab grades it with no key; it must PASS with score 1.0.</p>
+      <p className="mt-1" data-testid="oracle-badge" data-state={run.state}>
+        {run.state === 'done' ? <span className="font-medium">oracle {run.value.outcome ?? 'none'} {run.value.score === null ? 'n/a' : run.value.score.toFixed(1)}</span>
+          : run.state === 'error' ? <span role="alert">The reference solution was not graded: {run.message}</span>
+            : <span className="text-ink-muted" role="status">Grading the reference solution in this tab…</span>}
+      </p>
       {oracle === undefined && <p className="mt-1 text-ink-muted">Loading…</p>}
       {oracle === null && <p className="mt-1 text-ink-muted">This task has no reference solution.</p>}
       {steps.length > 0 && (
@@ -109,6 +213,7 @@ function ReferenceSolution({ id }: { id: string }) {
 export const TASK_TABS = [
   { id: 'prompt', label: 'Prompt' },
   { id: 'policy', label: 'Policy' },
+  { id: 'chart', label: 'Chart' },
   { id: 'rubric', label: 'Rubric' },
   { id: 'reference-solution', label: 'Reference solution' },
   { id: 'grader-validation', label: 'Grader validation' },
@@ -150,7 +255,10 @@ function TaskCard({ t, tab }: { t: Loaded; tab: TaskTab | null }) {
                   <h3 className="font-medium">Tools</h3>
                   {task.tools == null ? <p className="mt-1 text-ink-muted" data-testid="task-tools">Every tool of the environment (see Environment).</p> : <p className="mt-1 flex flex-wrap gap-1.5" data-testid="task-tools">{task.tools.map((n) => <code key={n} className="rounded-sm border border-line px-1 text-xs">{n}</code>)}</p>}
                 </section>
-                <div className="flex"><RunTrial id={task.id} /></div>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <span className="text-xs text-ink-muted" data-testid="task-model">Runs {MODEL} at effort high</span>
+                  <RunTrial id={task.id} />
+                </div>
               </div>
             ),
             policy: task.policies.length === 0 ? <p className="text-ink-muted" data-testid="task-policy">This task names no policy.</p> : (
@@ -168,6 +276,7 @@ function TaskCard({ t, tab }: { t: Loaded; tab: TaskTab | null }) {
                 </ul>
               </section>
             ),
+            chart: <ChartTab task={task.id} active={tab === 'chart'} />,
             rubric: (
               <section>
                 <h3 className="font-medium">Checks: what each one requires</h3>
@@ -177,7 +286,7 @@ function TaskCard({ t, tab }: { t: Loaded; tab: TaskTab | null }) {
                 </ul>
               </section>
             ),
-            'reference-solution': <ReferenceSolution id={task.id} />,
+            'reference-solution': <ReferenceSolution id={task.id} runs={runs} active={tab === 'reference-solution'} />,
             'grader-validation': <Validation id={task.id} runs={runs} />,
           }}
         </TaskTabs>
@@ -282,18 +391,18 @@ function Validation({ id, runs, closed = false }: { id: string; runs: ReturnType
     <div className={closed ? 'border-t border-line px-4 py-3' : ''} data-testid="validation" data-task={id}>
       <div className="flex flex-wrap items-center gap-2">
         {closed && <span className="mr-1 text-xs font-medium text-ink-muted">Grader validation</span>}
-        <button type="button" className={button} disabled={busy} onClick={() => runOracle(() => validate({ op: 'oracle', task: id }))}>Run oracle</button>
-        <button type="button" className={button} disabled={busy} onClick={() => runMatrix(() => validate({ op: 'matrix', task: id }))}>Run matrix</button>
+        <button type="button" className={button} disabled={busy} onClick={() => runOracle(() => validate({ op: 'oracle', task: id }))}>Run reference solution</button>
+        <button type="button" className={button} disabled={busy} onClick={() => runMatrix(() => validate({ op: 'matrix', task: id }))}>Check the grader</button>
         <button type="button" className={button} disabled={busy} onClick={() => runReplay(replayTrials)}>Replay published trials</button>
         {closed && <RunTrial id={id} />}
       </div>
-      <Result r={oracle} what="oracle" render={(o) => (
+      <Result r={oracle} what="reference solution" render={(o) => (
         <p data-testid="oracle-result" data-outcome={o.outcome ?? 'none'} data-score={o.score ?? ''}>
-          Oracle: <span className="font-medium">{o.outcome ?? 'none'}</span> score {o.score === null ? 'n/a' : o.score.toFixed(1)}, {o.unknown} judge items unknown{o.misses.length ? `, judge cache misses ${o.misses.join(', ')}` : ''}
+          Reference solution: <span className="font-medium">oracle {o.outcome ?? 'none'} {o.score === null ? 'n/a' : o.score.toFixed(1)}</span>, {o.unknown} judge items unknown{o.misses.length ? `, judge cache misses ${o.misses.join(', ')}` : ''}
           {o.problems.length > 0 && <span className="block text-ink-muted">{o.problems.join('; ')}</span>}
         </p>
       )} />
-      <Result r={matrix} what="matrix" render={(m) => (
+      <Result r={matrix} what="grader check" render={(m) => (
         <div data-testid="matrix-result" data-pass={String(m.pass)}>
           <p>Grader validation <span className="font-medium">{m.pass ? 'PASS' : 'FAIL'}</span>, matrix: {m.probes.filter((p) => p.as_expected).length}/{m.probes.length} probe verdicts as expected. Fresh-process isolation and policy imports need Node and run in CI.</p>
           <div className="mt-1 overflow-x-auto"><table className="w-full text-left text-xs">
@@ -338,7 +447,7 @@ function RunTrial({ id }: { id: string }) {
   const key = useKeyStatus();
   return (
     <span className="ml-auto inline-flex items-center gap-2">
-      <button type="button" className={button} aria-describedby={key.kind === 'none' ? `run-why-${id}` : undefined} onClick={() => navigate({ view: 'live', task: id, tab: null })}>Run trial</button>
+      <button type="button" className={button} aria-describedby={key.kind === 'none' ? `run-why-${id}` : undefined} onClick={() => navigate({ view: 'live', task: id, tab: null, label: null, trial: null, run: null })}>Run trial</button>
       {key.kind === 'none' && <span id={`run-why-${id}`} className="text-xs text-ink-muted">Live trial asks for an API key.</span>}
     </span>
   );

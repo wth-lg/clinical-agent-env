@@ -347,12 +347,22 @@ function describeCheck(c: ExplainCheck, text: CheckText | null | undefined): { e
   return expectedFound(c.evidence);
 }
 
-// "<id> failed: expected <e>, found <f>", the expected part cut so that it fits in `max` words;
-// the found part is never cut.
-function checkSentence(id: string, expected: string, found: string, max: number): string {
+// The first words of s that fit in n, cut after the last clause boundary inside them (a word that
+// ends in a comma or semicolon), so a cut never stops mid-clause; a plain cut when no boundary
+// leaves at least three words (verifier-phase-P17i-SAFEPRECr2-1 F1: "... and none for the…").
+const firstClauses = (s: string, n: number) => {
+  const w = words(s);
+  if (w.length <= n) return w.join(' ');
+  for (let i = n; i >= 3; i--) if (/[,;]$/.test(w[i - 1]!)) return `${w.slice(0, i).join(' ').replace(/[,;]$/, '')}…`;
+  return firstWords(s, n);
+};
+
+// "<id> failed: expected <e>, found <f>", the expected part cut at a clause boundary so that it
+// fits in `max` words; the found part is never cut.
+export function checkSentence(id: string, expected: string, found: string, max: number): string {
   const full = `${id} failed: expected ${expected}, found ${found}`;
   if (words(full).length <= max) return full;
-  return `${id} failed: expected ${firstWords(expected, Math.max(3, max - 4 - words(found).length))}, found ${found}`;
+  return `${id} failed: expected ${firstClauses(expected, Math.max(3, max - 4 - words(found).length))}, found ${found}`;
 }
 
 // Evidence as a check text reads it: a list (else empty) and an object (else empty).
@@ -478,6 +488,7 @@ export function explainTrial(record: ExplainRecord, audit: AuditRow | null | und
     models_returned: record.models_returned ?? [],
     internal_errors: record.tool_errors?.INTERNAL ?? 0,
     state_hash: record.state_hash,
+    env_error: (ctx.events.findLast((e) => e.type === 'error' && e.status === 'ENV_ERROR') as { message?: string } | undefined)?.message ?? null,
     manifest_hash: ctx.world_state_hash ?? null,
     grader_task_version: grade.grader_task_version,
     decisive: failed === null ? null : {

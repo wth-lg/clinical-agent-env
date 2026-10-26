@@ -11,11 +11,12 @@ import { expect, test, type Page } from '@playwright/test';
 import { sampleBase } from './fixtures/sample-results/sample.ts';
 
 const TASK = 'renal-dose-review';
-const TABS = ['prompt', 'policy', 'rubric', 'reference-solution', 'grader-validation'] as const;
+const TABS = ['prompt', 'policy', 'chart', 'rubric', 'reference-solution', 'grader-validation'] as const;
 // What each panel shows, so a selected tab is also the right content.
 const CONTENT: Record<(typeof TABS)[number], string> = {
   prompt: 'task-prompt',
   policy: 'task-policy',
+  chart: 'chart-source',
   rubric: 'task-check',
   'reference-solution': 'solution-step',
   'grader-validation': 'validation',
@@ -68,7 +69,7 @@ test('arrow keys, Home and End move between tabs, focus follows and the URL keep
     await expect(tablist(page).getByRole('tab', { selected: true })).toBeFocused();
   };
   await press('ArrowRight', 'policy');
-  await press('ArrowRight', 'rubric');
+  await press('ArrowRight', 'chart');
   await press('ArrowLeft', 'policy');
   await press('End', 'grader-validation');
   await press('ArrowRight', 'prompt');
@@ -143,7 +144,7 @@ test('an oracle result started on a closed card is still shown after the card op
   const nav = page.getByRole('navigation', { name: 'Views' });
   await expect(gate.or(nav)).toBeVisible();
   if (await gate.isVisible()) await gate.click();
-  await card(page).getByTestId('validation').getByRole('button', { name: 'Run oracle' }).click();
+  await card(page).getByTestId('validation').getByRole('button', { name: 'Run reference solution' }).click();
   await expect(card(page).getByTestId('oracle-result')).toHaveAttribute('data-outcome', 'PASS', { timeout: 120_000 });
   await card(page).getByRole('button', { expanded: false }).click();
   await tablist(page).getByRole('tab', { name: 'Grader validation' }).click();

@@ -39,5 +39,5 @@ export async function detect(runnerPage: boolean, base = document.baseURI): Prom
 
 export const SURFACE_LABEL: Record<Surface['kind'], string> = {
   'local-runner': 'Local runner',
-  'browser-direct': 'Browser-direct',
+  'browser-direct': 'Hosted',
 };

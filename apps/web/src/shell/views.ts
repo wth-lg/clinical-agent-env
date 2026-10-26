@@ -14,7 +14,7 @@ export const VIEWS: readonly View[] = [
   { id: 'live', label: 'Live trial', icon: Play },
   { id: 'findings', label: 'Findings', icon: FileText },
   { id: 'environment', label: 'Environment', icon: Database },
-  { id: 'glossary', label: 'Labels', icon: BookOpen },
+  { id: 'glossary', label: 'Attribution', icon: BookOpen },
 ];
 
 export const DEFAULT_VIEW = VIEWS[0]!;

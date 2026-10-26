@@ -112,7 +112,7 @@ test('a trial streams in a Worker, is graded in the browser and makes no request
   page.on('worker', (w) => (isTrialWorker(w) ? workers.push(w.url()) : undefined));
   page.on('request', (r) => (TRIAL_SCRIPT.test(new URL(r.url()).pathname) ? scripts.push(r.url()) : undefined));
   await page.goto('./?view=live&task=_toy');
-  await expect(page.getByTestId('surface-chip')).toContainText('Browser-direct');
+  await expect(page.getByTestId('surface-chip')).toContainText('Hosted');
   await enterKey(page, sentinelKey());
   await run(page, 1);
   await expect(trial(page)).toHaveAttribute('data-state', 'graded', { timeout: 60_000 });

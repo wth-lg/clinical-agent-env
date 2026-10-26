@@ -29,10 +29,12 @@ const e2eOk = workflow.jobs['e2e-ok'];
 const runs = (job: Job | undefined) => (job?.steps ?? []).map((s) => s.run ?? '');
 
 describe('ci workflow', () => {
-  it('runs each e2e shard after check with a 35 minute timeout', () => {
+  // pnpm test alone took 10-17 of check's 20 minutes on green runs and was cancelled at the
+  // limit with every test passing (run 40319335481).
+  it('gives check and each e2e shard, which runs after it, a 35 minute timeout', () => {
     expect(Object.keys(workflow.jobs).sort()).toEqual(['check', 'e2e', 'e2e-ok', 'matrix', 'matrix-ok', 'tasks']);
     expect(check?.['runs-on']).toBe('ubuntu-latest');
-    expect(check?.['timeout-minutes']).toBe(20);
+    expect(check?.['timeout-minutes']).toBe(35);
     expect(e2e?.['timeout-minutes']).toBe(35);
     expect([e2e?.needs].flat()).toEqual(['check']);
   });
