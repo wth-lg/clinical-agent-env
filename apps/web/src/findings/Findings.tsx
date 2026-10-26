@@ -162,6 +162,7 @@ function Charts({ run }: { run: RunData }) {
               <span className="mr-2 text-ink-muted">{o}</span>
               <a href={hrefWith(exemplar(run, t!))} onClick={onNav(exemplar(run, t!))} className="text-ink underline decoration-line-strong underline-offset-2">{t!.name}</a>
               <span className="ml-2 break-words text-ink-muted">{t!.explanation.reason}</span>
+              {t!.explanation.secondary_reason !== null && <span data-testid="secondary-reason" className="ml-2 block break-words text-xs text-ink-muted">{t!.explanation.secondary_reason}</span>}
             </li>
           ))}
         </ul>
