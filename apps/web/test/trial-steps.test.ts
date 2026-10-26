@@ -1,6 +1,7 @@
 // The trial detail's ENV_ERROR Where (apps/web/src/trial/steps.ts internalErrorRow): the first tool
 // call that failed with an internal error, at the step the grader numbers it, on the committed
-// ENV_ERROR trajectory with one tool call served as the one that failed.
+// ENV_ERROR trajectory (its third tool call that ran failed, verifier-ui-copy-1 m4) and on that
+// trajectory with the failure served as an ordinary result.
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -13,16 +14,15 @@ const text = readFileSync(FILE, 'utf8');
 
 describe('internalErrorRow', () => {
   it('is null when no tool call failed with an internal error', () => {
-    expect(internalErrorRow(trajectoryOf(parseTrajectory(text)).rows)).toBeNull();
+    const ok = text.split('\n').filter((l) => l.trim() !== '').map((l) => {
+      const e = JSON.parse(l) as { type: string; error_code?: string | null };
+      return e.type === 'tool_result' && e.error_code === 'INTERNAL' ? JSON.stringify({ ...e, is_error: false, error_code: null }) : l;
+    }).join('\n');
+    expect(internalErrorRow(trajectoryOf(parseTrajectory(ok)).rows)).toBeNull();
   });
 
   it('finds the first tool call that failed with an internal error, at its step', () => {
-    let ran = 0;
-    const failed = text.split('\n').filter((l) => l.trim() !== '').map((l) => {
-      const e = JSON.parse(l) as { type: string; executed?: boolean };
-      return e.type === 'tool_result' && e.executed && ++ran === 3 ? JSON.stringify({ ...e, is_error: true, error_code: 'INTERNAL' }) : l;
-    }).join('\n');
-    const row = internalErrorRow(trajectoryOf(parseTrajectory(failed)).rows);
+    const row = internalErrorRow(trajectoryOf(parseTrajectory(text)).rows);
     expect(row).toMatchObject({ kind: 'tool', step: 3, error: 'INTERNAL', name: 'fhir_search' });
   });
 });
