@@ -21,7 +21,7 @@ A patient is excluded who has any of:
 - colorectal cancer or a total colectomy, at any time;
 - hospice care or palliative care during any part of the measurement period;
 - age 66 or older at the end of the measurement period and living long term in a nursing home;
-- age 66 or older at the end of the measurement period, frailty during the measurement period, and advanced illness: an advanced illness diagnosis during the measurement period or the year before it, or a dementia medication during the measurement period or the year before it.
+- age 66 or older at the end of the measurement period, frailty (an active diagnosis) at any point during the measurement period, and advanced illness: an advanced illness diagnosis during the measurement period or the year before it, or a dementia medication during the measurement period or the year before it.
 
 §5 Outreach
 A patient in the population who is not excluded and whose screening is not up to date has an open gap.

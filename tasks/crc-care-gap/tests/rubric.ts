@@ -94,9 +94,10 @@ const contactItems: Check[] = expected.members.filter((x) => x.message === false
   }),
 );
 
-// Outreach is about colorectal screening: its subject or text names the FIT, the colon, the
-// stool test or screening.
-const ON_TOPIC = /\bFIT\b|\bcolorectal\b|\bcolon\b|\bstool\b|\bscreening\b/i;
+// Outreach is about colorectal screening: its subject or text names the FIT, the colon, a
+// colonoscopy, the stool test, screening, or bowel cancer or bowel screening. "bowel" alone does
+// not count: a bowel-prep reminder is not outreach.
+const ON_TOPIC = /\bFIT\b|\bcolorectal\b|\bcolon\b|\bcolonoscopy\b|\bstool\b|\bscreening\b|\bbowel (?:cancer|screening)\b/i;
 type Comm = { resourceType: 'Communication'; id?: string; recipient?: Array<{ reference?: string }>; topic?: { text?: string }; payload?: Array<{ contentString?: string }> };
 const onTopic = (r: Comm) => ON_TOPIC.test([r.topic?.text ?? '', ...(r.payload ?? []).map((p) => p.contentString ?? '')].join('\n'));
 
