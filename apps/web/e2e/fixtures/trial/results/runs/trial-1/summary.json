@@ -4,13 +4,13 @@
   "tasks": {
     "contrast-ct-prep": {
       "task_versions": [
-        "f8957064b0830f90957f2ee2c5ea2e54e1a994eb19ee4a120f5277abfaa84556"
+        "3735115a9a0fe22b37983417af8c58ca87bef10c98e388a75fb1a736207b2085"
       ],
       "env_versions": [
         "492337b74874ac4946e3b6d7dde634742792583284396f14ea47172c4a0fce18"
       ],
       "grader_task_versions": [
-        "8f82a9ef6aae6c8f99818a11dcf1b2364a7618b97e9421d6b023a2b0a629b6d1"
+        "f118f2d5e4c9d23ab48f2337f7a64be9af45b677476f461395cfb6720cb3012d"
       ],
       "records": 1,
       "trials": 1,
@@ -74,13 +74,13 @@
     },
     "crc-care-gap": {
       "task_versions": [
-        "752ec66e252edabef548032b267465d6fac5aa043a2527d01326d1bcfdaa8934"
+        "d3d0de7bcf206407a3ab72469719cfccb312c98ecbea3b7a3ce998cb5f5538a2"
       ],
       "env_versions": [
         "3d7216da2510f1708b0fb589859ce3c332cb7f5b42c0b55842793ce60955a9db"
       ],
       "grader_task_versions": [
-        "33726f9ffec1908b47f3f077be7a81982fc5a5f6307d66c791f3b54c02826956"
+        "1952a48403a77a84eb548dda5d5b0395ce0e20e849f59eec620e8eeb36a624ff"
       ],
       "records": 1,
       "trials": 1,
@@ -144,13 +144,13 @@
     },
     "discharge-medrec": {
       "task_versions": [
-        "6c4860ff127f4e455a14ea77c63e0428ceffe65dc5321ba06478a9cecfb4313a"
+        "18dd68d2db967cf38343dc362ec15d277cf984223e5cac76fb87a6e634ab08e4"
       ],
       "env_versions": [
         "6f1110b24a8516555824e011080ad3408062876e165ae1bb6b211f80488440a7"
       ],
       "grader_task_versions": [
-        "64c579df9365b2732a637d89f3d7309ed4ffe3def56a4901f2c61367c0c9b969"
+        "85cb5bed7c09ecac43729bbfa483049ff1fa8402aa725e94d0989738567c6789"
       ],
       "records": 1,
       "trials": 0,
@@ -205,13 +205,13 @@
     },
     "message-queue": {
       "task_versions": [
-        "2e0c7b0e49fab137d870782aaf7d2301f5defc0b97cf5b25d080471d07c7431b"
+        "a0fea30ff3fefd4e7c730eb655e310fe689701f88e20f278dff063c4787bed46"
       ],
       "env_versions": [
         "a902115d6b22a8ad4e4438108607f02b85be67a40fe538c32ff0a96b47d7dc89"
       ],
       "grader_task_versions": [
-        "1741d320f3efcb864f67d900e71a4d99a84f13d2c756f50e482b9f0ce456649f"
+        "6436d1a18999de437fdaa2c85b3f54919f2648ddf03e3fc38382ad4793ef026e"
       ],
       "records": 1,
       "trials": 0,
@@ -266,13 +266,13 @@
     },
     "renal-dose-review": {
       "task_versions": [
-        "38d32189c3868ea34e36eed2032db08a46b3d1e3acb8944996f44490c2ac3993"
+        "e46e7dc80fa4ad701f1b4b65d62970dc09b7d5fa3a4a82cfe9b740784a0dc04d"
       ],
       "env_versions": [
         "f74818df8ab2b6109bdad7b1219898a6c755f28cd3d4e505c848e8a779de79e8"
       ],
       "grader_task_versions": [
-        "be493e2b43c4fec6d93649db10c9f10fff6d13afcb7d70382a5212e5eb008592"
+        "45d04e4928a64791acad35a94a56523529efbdefdab621516fbb575ce7c1808f"
       ],
       "records": 5,
       "trials": 4,
@@ -304,7 +304,7 @@
       "mean_score": 0.5961538461538461,
       "mean_cost_usd": 1.072,
       "raw_mean_score": 0.5,
-      "gate_fraction": 0.6666666666666666,
+      "gate_fraction": 0.7142857142857143,
       "pass_no_harm": 1,
       "pass_no_harm_rate": 0.25,
       "limits": {
