@@ -59,12 +59,13 @@ route. A route that needs a run-specific trial uses a token that the UI resolves
 | `/` | App shell; key gate when no key is set | P13 |
 | `/?view=overview` | Overview: one row per task of the official run | P14 |
 | `/?view=tasks` | Tasks list | P14 |
-| `/?view=tasks&task=renal-dose-review&tab=prompt` | Task prompt and Run trial | P14, P15 (Run trial) |
+| `/?view=tasks&task=renal-dose-review&tab=prompt` | Task prompt and Run trial, which opens Live trial with the task selected | P14, P15 (Run trial), P17j JU5 |
 | `/?view=tasks&task=renal-dose-review&tab=policy` | Task policy text | P14 |
 | `/?view=tasks&task=renal-dose-review&tab=chart` | Patient chart read from the FHIR store | P14 |
 | `/?view=tasks&task=renal-dose-review&tab=rubric` | Rubric items with traces_to | P14 |
 | `/?view=tasks&task=renal-dose-review&tab=reference-solution` | Reference solution steps and the oracle badge | P14 |
 | `/?view=tasks&task=renal-dose-review&tab=grader-validation` | Matrix verdicts, the matrix count line and keyless oracle Run | P14 |
+| `/?view=live&task=renal-dose-review` | Live trial with the task selected: the launcher Run trial on Tasks opens | P15, P17j JU5 |
 | `/?view=runs&run=final-1` | Runs, official run: header (k/N, pass definition, denominator rule), one row per task with its pass rate, one row per trial with attribution columns and reason | P14, P14a (reason) |
 | `/?view=runs&run=final-1&trial=first-nonpass` | Trial detail with header (outcome, label, decisive check, reason), Grading tab | P16 |
 | `/?view=runs&run=final-1&trial=first-nonpass&tab=grading` | Trial Grading tab: verdict chip, Score card, gate checks, rubric table | P16 |

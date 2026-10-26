@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { KeyGate } from '../keygate/KeyGate.tsx';
-import { forget, keyStatus, useKeyStatus } from '../keygate/key.ts';
+import { ADD_KEY_EVENT, forget, keyStatus, useKeyStatus } from '../keygate/key.ts';
 import { deleteKey } from '../keygate/runner.ts';
 import type { Surface } from '../surface/detect.ts';
-import { LocalRunPanel } from '../surface/LocalRunPanel.tsx';
+import { LOCAL_RUN_PANEL_ID, LocalRunPanel } from '../surface/LocalRunPanel.tsx';
 import { ViewBody } from '../data/ViewBody.tsx';
 import { ErrorBoundary } from './ErrorBoundary.tsx';
 import { Rail } from './Rail.tsx';
@@ -48,6 +48,12 @@ export function App({ surface }: { surface: Surface }) {
   useEffect(() => {
     if (arrived && !gate) heading.current?.focus();
   }, [arrived, gate]);
+
+  useEffect(() => {
+    const onAdd = () => setGate(true);
+    addEventListener(ADD_KEY_EVENT, onAdd);
+    return () => removeEventListener(ADD_KEY_EVENT, onAdd);
+  }, []);
 
   useEffect(() => {
     const onPop = () => setView(viewFromUrl(location.href));
@@ -112,7 +118,7 @@ export function App({ surface }: { surface: Surface }) {
           <ErrorBoundary key={view.id}>
             <ViewBody id={view.id} headingRef={heading} />
           </ErrorBoundary>
-          {surface.kind === 'browser-direct' && RUN_PANEL_VIEWS.includes(view.id) && <LocalRunPanel surface={surface} className="mx-auto mb-6 w-[calc(100%-3rem)] max-w-[720px]" />}
+          {surface.kind === 'browser-direct' && RUN_PANEL_VIEWS.includes(view.id) && <LocalRunPanel id={LOCAL_RUN_PANEL_ID} surface={surface} className="mx-auto mb-6 w-[calc(100%-3rem)] max-w-[720px]" />}
         </main>
       </div>
     </div>

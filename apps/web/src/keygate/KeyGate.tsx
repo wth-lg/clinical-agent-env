@@ -77,6 +77,7 @@ export function KeyGate({ surface, onDone, onBrowse, notice }: { surface: Surfac
           <span className="text-xs text-ink-muted">Riverbend clinical agent environment</span>
           <SurfaceChip surface={surface} />
         </div>
+        <p data-testid="gate-intro" className="mt-1 text-xs text-ink-muted">See an AI model do clinical tasks in a mock health record, and see how the grader decides each trial.</p>
         <h1 className="mt-4 text-base font-semibold text-ink">Add an API key</h1>
         <p className="mt-1 text-ink-muted">Paste an Anthropic API key and press Validate. Browsing needs no key.</p>
 
