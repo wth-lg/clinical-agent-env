@@ -107,6 +107,8 @@ export function writeFixtureRun(dir: string, fixture: Fixture): void {
   put(dir, 'audit.jsonl', labels.map((l) => JSON.stringify(l)).join('\n') + '\n');
   put(dir, 'manifest.json', `${JSON.stringify({ run_id: 'final-1', model: MODEL, effort: 'high', mode, trials: 10, world_hash: 'h-initial', task_versions: Object.fromEntries(TASKS.map((t) => [t, `v-${t}`])), batches: [] }, null, 2)}\n`);
   // The grader validation matrix of each grader_task_version, the run's and a regrade's (audit-check
-  // reads it for criterion M4), as `pnpm cli matrix --out` writes it.
-  put(dir, 'matrix.json', `${JSON.stringify({ grader_task_versions: Object.fromEntries(TASKS.flatMap((t) => [`g-${t}`, `g-${t}-next`].map((g) => [g, { task_id: t, oracle_pass: true, alternatives_pass: true }]))) }, null, 2)}\n`);
+  // reads it for criterion M4, and for M1 the ids the oracle was shown on the run's world), as
+  // `pnpm cli matrix --out` writes it.
+  const oracle = { kind: 'oracle', id: 'oracle', outcome: 'PASS', as_expected: true, failed_checks: [], reachable_ids: [EXPOSED] };
+  put(dir, 'matrix.json', `${JSON.stringify({ grader_task_versions: Object.fromEntries(TASKS.flatMap((t) => [`g-${t}`, `g-${t}-next`].map((g) => [g, { task_id: t, env_version: `e-${t}`, oracle_pass: true, alternatives_pass: true, world_hash: 'h-initial', probes: [oracle] }]))) }, null, 2)}\n`);
 }
