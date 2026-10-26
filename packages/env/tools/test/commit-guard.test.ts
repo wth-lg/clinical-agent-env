@@ -2,15 +2,22 @@
 // puts it into the world, and the Committed it returns is the only way a tool result gets
 // written_ids (registry.ts callTool). So no other file under packages/env/tools may put into
 // the world or construct a Committed: such a file could change the store without the checks,
-// or report written_ids for resources it never put. The tests under tools/test are exempt; they
-// seed worlds directly.
+// or report written_ids for resources it never put. Test files (*.test.ts) are exempt; they seed
+// worlds directly. Every other .ts, .mts, .cts and .tsx file is read, helpers under tools/test
+// included.
 //
 // The check reads each file's syntax tree, not its text, so a comment naming world.put does not
 // count. Forbidden outside commit.ts: any `put` member, whatever the receiver (x.put, x?.put,
-// x['put'], const { put } = x), and `Committed` as a value other than its class declaration in
-// registry.ts or the right side of instanceof. A value import or re-export of Committed counts
-// too, so a renamed import (import { Committed as C }) cannot construct it either; a type-only
-// import is allowed.
+// x['put']), and put taken by destructuring (const { put } = x, ({ put } = x), a computed
+// ['put'] key), and `Committed` as a value (ns['Committed'] and extends included) other than its
+// class declaration in registry.ts, implements, or the right side of instanceof. A value import or
+// re-export of Committed counts too, so a renamed import (import { Committed as C }) cannot
+// construct it either; a type-only import is allowed.
+//
+// Known limit: a key computed at run time (a variable, a concatenation, Reflect.get, eval,
+// Object.values) is not syntax, so this check cannot see it. Making put reachable only through
+// commit (a WriteContext.world without put) would hold R14-34 by construction; this test holds it
+// by review of every literal form.
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import ts from 'typescript';
@@ -20,14 +27,35 @@ const TOOLS = join(import.meta.dirname, '..');
 const COMMIT = 'write/commit.ts';
 const FIX = `only ${COMMIT} may put into the world or construct Committed; go through commit()`;
 
+// A property or binding name as written: an identifier, a string or number literal, or a computed
+// literal (['put']); undefined when it is computed at run time.
+function keyName(n: ts.Node | undefined): string | undefined {
+  if (n === undefined) return undefined;
+  if (ts.isIdentifier(n) || ts.isStringLiteralLike(n) || ts.isNumericLiteral(n)) return n.text;
+  if (ts.isComputedPropertyName(n) && (ts.isStringLiteralLike(n.expression) || ts.isNumericLiteral(n.expression))) return n.expression.text;
+  return undefined;
+}
+
+// Whether an object literal property is part of a destructuring assignment target:
+// ({ put } = x), [{ put }] = xs, for ({ put } of xs).
+function assignedTo(prop: ts.Node): boolean {
+  let n = prop.parent;
+  while (ts.isPropertyAssignment(n.parent) || ts.isObjectLiteralExpression(n.parent) || ts.isArrayLiteralExpression(n.parent) || ts.isParenthesizedExpression(n.parent) || ts.isSpreadElement(n.parent) || ts.isSpreadAssignment(n.parent)) n = n.parent;
+  const p = n.parent;
+  if (ts.isBinaryExpression(p)) return p.operatorToken.kind === ts.SyntaxKind.EqualsToken && p.left === n;
+  return (ts.isForOfStatement(p) || ts.isForInStatement(p)) && p.initializer === n;
+}
+
 function violations(file: string, source: string): string[] {
   const sf = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true);
   const out: string[] = [];
   const report = (node: ts.Node, what: string) => out.push(`${file}:${sf.getLineAndCharacterOfPosition(node.getStart(sf)).line + 1}: ${what}; ${FIX}`);
   const visit = (node: ts.Node) => {
     if (ts.isPropertyAccessExpression(node) && node.name.text === 'put') report(node, `uses ${node.getText(sf)}`);
-    else if (ts.isElementAccessExpression(node) && ts.isStringLiteralLike(node.argumentExpression) && node.argumentExpression.text === 'put') report(node, `uses ${node.getText(sf)}`);
-    else if (ts.isBindingElement(node) && ts.isObjectBindingPattern(node.parent) && ((node.propertyName ?? node.name).getText(sf) === 'put')) report(node, 'destructures put');
+    else if (ts.isElementAccessExpression(node) && keyName(node.argumentExpression) === 'put') report(node, `uses ${node.getText(sf)}`);
+    else if (ts.isElementAccessExpression(node) && keyName(node.argumentExpression) === 'Committed') report(node, `uses Committed as a value (${node.getText(sf).slice(0, 60)})`);
+    else if (ts.isBindingElement(node) && ts.isObjectBindingPattern(node.parent) && keyName(node.propertyName ?? node.name) === 'put') report(node, 'destructures put');
+    else if ((ts.isShorthandPropertyAssignment(node) || ts.isPropertyAssignment(node)) && keyName(node.name) === 'put' && assignedTo(node)) report(node, 'destructures put');
     else if (ts.isIdentifier(node) && node.text === 'Committed' && !allowedCommitted(node)) report(node, `uses Committed as a value (${node.parent.getText(sf).slice(0, 60)})`);
     ts.forEachChild(node, visit);
   };
@@ -39,15 +67,18 @@ function allowedCommitted(id: ts.Identifier): boolean {
   const p = id.parent;
   if (ts.isImportSpecifier(p)) return p.isTypeOnly || p.parent.parent.isTypeOnly;
   if (ts.isClassDeclaration(p) && p.name === id) return true;
-  if (ts.isTypeReferenceNode(p) || ts.isExpressionWithTypeArguments(p) || ts.isTypeQueryNode(p)) return true;
+  if (ts.isTypeReferenceNode(p) || ts.isTypeQueryNode(p)) return true;
+  // implements, and an interface's extends, name a type; a class's extends runs the constructor.
+  if (ts.isExpressionWithTypeArguments(p) && ts.isHeritageClause(p.parent)) return p.parent.token === ts.SyntaxKind.ImplementsKeyword || ts.isInterfaceDeclaration(p.parent.parent);
   return ts.isBinaryExpression(p) && p.operatorToken.kind === ts.SyntaxKind.InstanceOfKeyword && p.right === id;
 }
 
-// Every .ts file under packages/env/tools except commit.ts and the tests, as tools-relative paths.
+// Every TypeScript file under packages/env/tools except commit.ts and the test files, as
+// tools-relative paths.
 function sources(): string[] {
   return readdirSync(TOOLS, { recursive: true, encoding: 'utf8' })
     .map((f) => f.split('\\').join('/'))
-    .filter((f) => f.endsWith('.ts') && !f.startsWith('test/') && f !== COMMIT)
+    .filter((f) => /\.[mc]?tsx?$/.test(f) && !/\.test\.[mc]?tsx?$/.test(f) && f !== COMMIT)
     .sort();
 }
 
@@ -56,6 +87,8 @@ describe('commit guard (R14-34)', () => {
     const files = sources();
     expect(files).toContain('registry.ts');
     expect(files).toContain('write/note.ts');
+    expect(files).toContain('test/exposure-rule.ts');
+    expect(files.some((f) => f.endsWith('.test.ts'))).toBe(false);
     expect(files.flatMap((f) => violations(relative(process.cwd(), join(TOOLS, f)), readFileSync(join(TOOLS, f), 'utf8')))).toEqual([]);
   });
 
@@ -81,6 +114,14 @@ describe('commit guard (R14-34)', () => {
       "import * as registry from '../registry.ts'; new registry.Committed(content, []);",
       "export { Committed } from '../registry.ts';",
       "const { Committed: C } = await import('../registry.ts');",
+      'class Forged extends Committed {}',
+      "import * as reg from '../registry.ts'; new reg['Committed'](content, []);",
+      '({ put } = ctx.world);',
+      '({ put: p } = ctx.world);',
+      "const { ['put']: p } = ctx.world;",
+      "({ ['put']: p } = ctx.world);",
+      '[{ put }] = [ctx.world];',
+      'for ({ put } of worlds);',
     ];
     for (const src of bad) expect(violations('x.ts', src), src).not.toEqual([]);
     const ok = [
@@ -93,6 +134,10 @@ describe('commit guard (R14-34)', () => {
       '// ctx.world.put(r) happens in commit.ts',
       "const s = 'world.put';",
       'const put = 1;',
+      'const o = { put: 1 }; x = { put };',
+      'class Echo implements Committed { content = 1; written = []; }',
+      'interface Shaped extends Committed {}',
+      "const { get } = ctx.world; const k = { ['get']: 1 };",
     ];
     for (const src of ok) expect(violations('x.ts', src), src).toEqual([]);
   });
