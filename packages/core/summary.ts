@@ -49,6 +49,9 @@
 //   infra_counted_*    passes over the valid trials plus every INFRA (INVALID, INFRA_HARNESS,
 //                      INFRA_API) and ENV_ERROR attempt, settled or re-queued; CANCELLED and
 //                      GRADER_ERROR are left out
+//   pass_k             pass^k for k in PASS_K (P17j JG6): the chance that k trials drawn without
+//                      replacement from the n valid trials all pass, C(c,k) / C(n,k) for c
+//                      passes; null when n < k
 //
 // The consistency flag (P17i C3, R14-32): per task, at the current grade, consistencyOf counts
 // the valid failures (valid, not PASS) and groups them by the id of their first failed check
@@ -74,7 +77,8 @@ import { decisiveGate } from '../grader/attribution.ts';
 // 4: raw_mean_score, gate_fraction, pass_no_harm, limits, requeued_outcomes and the infra-counted
 //    rate added per task.
 // 5: consistency added per task.
-export const SUMMARY_SCHEMA_VERSION = 5;
+// 6: pass_k added per task.
+export const SUMMARY_SCHEMA_VERSION = 6;
 // A met or unknown rubric item worth this many points or fewer is a harm: such a PASS is not
 // pass_no_harm.
 export const HARM_POINTS = -5;
@@ -208,6 +212,18 @@ export interface SummaryInput {
   expected?: { tasks: readonly string[]; from: string };
 }
 
+// The k of pass^k each task reports.
+export const PASS_K = [1, 3, 5] as const;
+
+// pass^k: C(c,k) / C(n,k), the chance that k of n trials drawn without replacement all pass,
+// for c passes; null when n < k (or n is 0).
+export function passK(c: number, n: number, k: number): number | null {
+  if (n === 0 || n < k) return null;
+  let p = 1;
+  for (let i = 0; i < k; i++) p *= (c - i) / (n - i);
+  return Math.max(p, 0);
+}
+
 export interface TaskSummary {
   task_versions: string[];
   // The env_versions the records ran at, and the grader_task_versions of their current grades.
@@ -242,6 +258,8 @@ export interface TaskSummary {
   infra_counted_rate: number | null;
   // How many trials each mean is over.
   metric_trials: { mean_score: number; raw_mean_score: number; gate_fraction: number };
+  // pass^k for each k of PASS_K, by k.
+  pass_k: Record<`${(typeof PASS_K)[number]}`, number | null>;
   consistency: Consistency;
 }
 
@@ -407,6 +425,7 @@ export function summarize(input: SummaryInput): Summary {
       infra_counted_attempts: infraAttempts,
       infra_counted_rate: infraAttempts === 0 ? null : passes / infraAttempts,
       metric_trials: { mean_score: scores.length, raw_mean_score: raws.length, gate_fraction: fractions.length },
+      pass_k: Object.fromEntries(PASS_K.map((k) => [k, passK(passes, valid.length, k)])) as TaskSummary['pass_k'],
       consistency: consistencyOf(grades),
     };
   }
@@ -572,6 +591,7 @@ export function validateSummary(x: unknown): string[] {
         limits: (v) => isObj(v) && LIMITS.every((k) => Object.hasOwn(v, k)) && Object.values(v).every(count), requeued_outcomes: histogram,
         infra_counted_attempts: count, infra_counted_rate: rate,
         metric_trials: (v) => isObj(v) && count(v.mean_score) && count(v.raw_mean_score) && count(v.gate_fraction),
+        pass_k: (v) => isObj(v) && Object.keys(v).length === PASS_K.length && PASS_K.every((k) => Object.hasOwn(v, String(k)) && rate(v[String(k)])),
         consistency: (v) => isObj(v) && count(v.valid) && count(v.passes) && count(v.failures)
           && (v.shared === null || (isObj(v.shared) && typeof v.shared.check === 'string' && count(v.shared.count) && typeof v.shared.found === 'string' && count(v.shared.found_count) && count(v.shared.found_values)))
           && Array.isArray(v.flags) && v.flags.every((f) => f === 'shared_failure' || f === 'no_passes'),
