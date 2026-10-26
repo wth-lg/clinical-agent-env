@@ -19,7 +19,7 @@ import { Card, FaultLabel, OutcomeChip, Page } from '../data/ui.tsx';
 import { relayLine, RELAY_TRIAL_TEXT, trialRelayReason } from '../keygate/failure.ts';
 import { requestKey, useKeyStatus } from '../keygate/key.ts';
 import { runnerToken } from '../keygate/runner.ts';
-import { typicalCost } from './typical.ts';
+import { amountText, typicalCost } from './typical.ts';
 import { admitTrial, MAX_SESSION_CAP_USD, parseCap } from '../spend/cap.ts';
 import { sessionCap, setSessionCap, useSessionSpend } from '../spend/session.ts';
 import type { Surface } from '../surface/detect.ts';
@@ -80,6 +80,7 @@ export function LiveTrial({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
   const noKey = key.kind === 'none';
   const { cap, spent } = useSessionSpend();
   const [costs, setCosts] = useState<Partial<Record<number, number>>>({});
+  const [bound, setBound] = useState(true);
   const [committed, setCommitted] = useState(0);
   const refresh = useCallback(() => {
     t.runs().then((r) => (setRuns(r), setRunsError(null)), (e: unknown) => setRunsError((e as Error).message));
@@ -95,6 +96,7 @@ export function LiveTrial({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
       t.project({ task: chosen, trials: n, sessionCap: sessionCap() }).then((p) => {
         if (!current) return;
         setCosts((c) => ({ ...c, [n]: p.usd }));
+        setBound(p.bound);
         setCommitted(p.committed);
       }, () => undefined);
     }
@@ -151,7 +153,7 @@ export function LiveTrial({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
               <button type="button" aria-describedby={`${costId}-${n}`} className={button} disabled={noKey || busy || chosen === '' || over.includes(n)} onClick={() => void launch(n)}>
                 Run ×{n}
               </button>
-              <span id={`${costId}-${n}`} data-testid={`run-cost-${n}`} className="text-xs tabular-nums text-ink-muted">{costs[n] === undefined ? '…' : `at most ${usd(costs[n])}`}</span>
+              <span id={`${costId}-${n}`} data-testid={`run-cost-${n}`} className="text-xs tabular-nums text-ink-muted">{costs[n] === undefined ? '…' : amountText(costs[n], bound)}</span>
             </span>
           ))}
         </div>
@@ -211,7 +213,7 @@ function CapControl({ local }: { local: boolean }) {
       </div>
       {parsed === null && <p data-testid="cap-invalid" className="mt-1 text-xs text-danger">Enter a cap from $0.01 to ${MAX_SESSION_CAP_USD}.</p>}
       <p data-testid="cap-where" className="mt-2 text-xs text-ink-muted">
-        Each batch is checked against this cap before any call. You can also set it in the key gate. The cap is kept for this tab only, so another tab has its own
+        Each batch is checked against this cap before any call; the amounts beside Run are each batch's reserve, and this cap is the hard limit on spend. You can also set it in the key gate. The cap is kept for this tab only, so another tab has its own
         {local ? '; the runner counts the spend of every tab.' : ', with its own spend.'}
       </p>
     </form>
