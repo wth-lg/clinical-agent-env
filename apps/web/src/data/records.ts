@@ -1,6 +1,7 @@
 // The checks a published trial record and audit line pass before a view reads them: the fields
 // the browse views and packages/core/explain.ts explainTrial read, with the types they read them
-// as. A record that fails shows as an error on its own row, so one bad file never blanks a view.
+// as, and a task-validity review line's own fields. A record that fails shows as an error on its own row, so one bad file never blanks a view.
+import type { AuditRow } from '../../../../packages/core/explain.ts';
 import { OUTCOMES } from '../../../../packages/core/outcomes.ts';
 
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -36,11 +37,51 @@ export function validateRecord(x: unknown): string[] {
   return errors;
 }
 
+// A task-validity review line (P17i C3, cli/audit-check.ts): one task's verdict on its
+// consistency flag, beside the per-trial rows. It names a task, not a trial.
+export const TASK_VALIDITY_VERDICTS = ['fair-trap', 'check-defect'] as const;
+export interface TaskValidityReview {
+  task: string;
+  kind: 'task-validity';
+  reviewer: string;
+  verdict: (typeof TASK_VALIDITY_VERDICTS)[number];
+  note: string;
+}
+const nonEmpty = (v: unknown) => str(v) && v.trim() !== '';
+
 export function validateAuditRow(x: unknown): string[] {
   if (!isObj(x)) return ['the line is not a JSON object'];
   const errors: string[] = [];
+  if (x.kind === 'task-validity') {
+    if (!nonEmpty(x.task)) errors.push('task is missing');
+    if (!nonEmpty(x.reviewer)) errors.push('reviewer is missing');
+    if (!(TASK_VALIDITY_VERDICTS as readonly unknown[]).includes(x.verdict)) errors.push(`verdict is not ${TASK_VALIDITY_VERDICTS.join(' or ')}`);
+    if (!str(x.note)) errors.push('note is not text');
+    return errors;
+  }
   if (!str(x.trial)) errors.push('trial is missing');
   if (!str(x.outcome)) errors.push('outcome is missing');
   if (x.evidence_ids !== undefined && !(Array.isArray(x.evidence_ids) && x.evidence_ids.every(str))) errors.push('evidence_ids is not a list of ids');
   return errors;
+}
+
+// audit.jsonl's lines: the per-trial rows, the task-validity review lines, and a warning for each
+// line that cannot be read.
+export function readAudit(text: string): { rows: AuditRow[]; reviews: TaskValidityReview[]; warnings: string[] } {
+  const out = { rows: [] as AuditRow[], reviews: [] as TaskValidityReview[], warnings: [] as string[] };
+  text.split('\n').forEach((line, i) => {
+    if (line.trim() === '') return;
+    let row: unknown;
+    try {
+      row = JSON.parse(line);
+    } catch (e) {
+      out.warnings.push(`audit.jsonl line ${i + 1} cannot be read: ${e instanceof Error ? e.message : String(e)}`);
+      return;
+    }
+    const errors = validateAuditRow(row);
+    if (errors.length > 0) out.warnings.push(`audit.jsonl line ${i + 1} cannot be read: ${errors.join('; ')}`);
+    else if ((row as { kind?: unknown }).kind === 'task-validity') out.reviews.push(row as TaskValidityReview);
+    else out.rows.push(row as AuditRow);
+  });
+  return out;
 }

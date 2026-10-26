@@ -155,21 +155,32 @@ export function HashText({ text }: { text: string }) {
   return <>{text.split(/\b([0-9a-f]{64})\b/).map((part, i) => (i % 2 === 1 ? <Hash key={i} value={part} /> : part))}</>;
 }
 
-// The label explainTrial gives a trial, as the Runs list shows it: an excluded INFRA trial has no
-// label and says it is rerun; a refusal shows model with its subtype; a trial with no audit row
-// carries the not-audited marker. The help icon opens the glossary.
+// The label explainTrial gives a trial, as the Runs list and the trial header show it: an excluded
+// INFRA trial has no label and says it is rerun; a refusal shows model with its subtype; a trial
+// with no audit row carries the not-audited marker. Each one, infra too, has a help icon that
+// opens the glossary at its fault.
+// The label and its help icon never wrap apart (verifier-phase-P16-2: at 390 px the infra icon
+// sat on a line of its own).
 export function FaultLabel({ e }: { e: Explanation }) {
-  if (e.fault === 'infra') return <span data-testid="label" data-label="infra" className="text-ink-muted">infra: rerun, not counted</span>;
-  if (e.label === null) return null;
+  if (e.fault === null || (e.fault !== 'infra' && e.label === null)) return null;
+  const name = e.fault === 'infra' ? 'infra' : e.label!;
+  const help = (
+    <a href={glossaryHref(`fault-${e.fault}`)} onClick={toGlossary(`fault-${e.fault}`)} aria-label={`How the ${name} label is given`} title="How failures are attributed" className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-sm text-ink-muted hover:bg-canvas hover:text-ink">
+      <CircleHelp aria-hidden className="h-3.5 w-3.5" strokeWidth={1.75} />
+    </a>
+  );
+  if (e.fault === 'infra') {
+    return <span className="inline-flex items-center gap-x-1"><span data-testid="label" data-label="infra" className="text-ink-muted">infra: rerun, not counted</span>{help}</span>;
+  }
   return (
     <span className="inline-flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
-      <span data-testid="label" data-label={e.label} className="font-medium text-ink">
-        {e.label}
-        {e.label_subtype ? ` (${e.label_subtype})` : ''}
+      <span className="inline-flex items-center gap-x-1">
+        <span data-testid="label" data-label={e.label} className="font-medium text-ink">
+          {e.label}
+          {e.label_subtype ? ` (${e.label_subtype})` : ''}
+        </span>
+        {help}
       </span>
-      <a href={glossaryHref(`fault-${e.fault}`)} onClick={toGlossary(`fault-${e.fault}`)} aria-label={`How the ${e.label} label is given`} title="How failures are attributed" className="inline-flex h-6 w-6 items-center justify-center rounded-sm text-ink-muted hover:bg-canvas hover:text-ink">
-        <CircleHelp aria-hidden className="h-3.5 w-3.5" strokeWidth={1.75} />
-      </a>
       {!e.audited && <span data-testid="not-audited" className="rounded-sm border border-dashed border-line-strong px-1 text-xs text-ink-muted">{NOT_AUDITED_MARKER}</span>}
     </span>
   );

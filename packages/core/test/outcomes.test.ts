@@ -171,3 +171,13 @@ describe('round 3 (pr-review P14a-2): denominator, precedence and confirmation t
     expect(m5.text).toMatch(/adjudicated_label, else its label/);
   });
 });
+
+describe('FAULT_DEFINITIONS in plain words (review-ui-P16-1 F4, verifier-phase-P16-2 F4)', () => {
+  it('no fault sentence or criterion text uses a field name, a constant name or a technical word', () => {
+    const texts = Object.values(FAULT_DEFINITIONS).flatMap((d) => [d.sentence, ...d.criteria.map((c) => c.text)]);
+    for (const t of texts) {
+      expect(t).not.toMatch(/\b[a-z]+_[a-z_]+\b/);
+      expect(t).not.toMatch(/\bMODEL\b|\boracle\b|\bexception\b|\binvariant\b|\bstop_reason\b/);
+    }
+  });
+});
