@@ -21,6 +21,7 @@ import type { TrialEvent } from '../../../../packages/core/events.ts';
 import { fetchEvents, fullExplanation, useResults, type RunData, type Trial } from '../data/results.ts';
 import { FaultLabel, GlossaryLink, HashText, Notice, OutcomeChip } from '../data/ui.tsx';
 import { hrefWith, navigate, onNav, useParams } from '../data/url.ts';
+import { runnerToken } from '../keygate/runner.ts';
 import { Attribution, criterionPhrase, criterionText, FAULT_WORD, LINK, StepLink } from './Attribution.tsx';
 import { EnvironmentTab, Raw } from './Details.tsx';
 import { Grading } from './Grading.tsx';
@@ -90,7 +91,7 @@ export function TrialPage({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
   const runId = params.get('run');
   if (results === null) return <Frame title={trial} headingRef={headingRef}><Notice>Loading the published results…</Notice></Frame>;
   if (results.kind === 'error') return <Frame title={trial} headingRef={headingRef}><Notice testId="error-state">The published results cannot be read: {results.message}</Notice></Frame>;
-  if (runId === 'session') return <Frame title={trial} headingRef={headingRef}><Notice>The trials of this session open in the Live trial view.</Notice></Frame>;
+  if (runId === 'session') return <Frame title={trial} headingRef={headingRef}><SessionNotice /></Frame>;
   const runs = [...(results.official ? [results.official] : []), ...results.pilots];
   const r = resolveTrial(runs, runId, trial);
   if (r.kind === 'none-nonpass') return <Frame title="First non-pass trial" headingRef={headingRef}><Notice testId="empty-state">{r.message}</Notice></Frame>;
@@ -152,6 +153,21 @@ function Detail({ t, run, files, tab, headingRef }: { t: Trial; run: RunData; fi
         </div>
       </div>
     </Frame>
+  );
+}
+
+// run=session: the runs the local runner started in this process (docs/requirements/ui-contract.md).
+// The Runs view reads only published runs, so the notice says where those trials are and links
+// there; on the hosted site, with no runner, there are no session runs.
+function SessionNotice() {
+  const go = onNav({ view: 'live', run: null, trial: null, tab: null });
+  const link = <a href={hrefWith({ view: 'live', run: null, trial: null, tab: null })} onClick={go} className={LINK}>Open Live trial</a>;
+  return (
+    <Notice testId="session-notice">
+      {runnerToken() === null
+        ? <>No runs in this session. The trials that you run in this tab are under Your runs in the Live trial view. {link}</>
+        : <>The trials that this local runner started are under Your runs in the Live trial view. {link}</>}
+    </Notice>
   );
 }
 

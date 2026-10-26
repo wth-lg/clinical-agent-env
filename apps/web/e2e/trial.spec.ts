@@ -607,6 +607,15 @@ test('a GRADER_ERROR trial shows M1 not applicable and says plainly that it has 
   await expect(panel(page, 'attribution').locator('[data-testid="criterion-row"][data-id="M1"]')).toContainText('M1: not applicable');
 });
 
+test('run=session says where the session trials are and links to the Live trial view', async ({ page }) => {
+  await browse(page, './?view=runs&run=session&trial=first-nonpass');
+  const notice = page.getByTestId('session-notice');
+  await expect(notice).toContainText('No runs in this session.');
+  await notice.getByRole('link', { name: 'Open Live trial' }).click();
+  await expect(page).toHaveURL(/view=live/);
+  await expect(page).not.toHaveURL(/run=session/);
+});
+
 test('a task-validity review line in audit.jsonl is read, not flagged as an unreadable line', async ({ page }) => {
   const review = { task: 'renal-dose-review', kind: 'task-validity', reviewer: 'auditor-1', verdict: 'fair-trap', note: 'the trap is fair' };
   await page.route(`**/data/results/runs/${RUN_ID}/audit.jsonl`, async (route) => {
