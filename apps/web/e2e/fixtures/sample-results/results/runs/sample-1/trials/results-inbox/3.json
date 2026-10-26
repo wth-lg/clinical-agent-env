@@ -42,6 +42,7 @@
   "detail": null,
   "summary": "Results inbox cleared: all 8 items completed with their follow-up orders, tasks, messages and notes linked.",
   "resumed": false,
+  "env_git_sha": null,
   "ended": "2026-10-23T14:32:51.000Z",
   "judge_cost_usd": 0,
   "grader_version": "10",
