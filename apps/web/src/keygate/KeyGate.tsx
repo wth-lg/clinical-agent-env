@@ -1,5 +1,5 @@
 import { Eye, EyeOff } from 'lucide-react';
-import { Fragment, useId, useState, type FormEvent } from 'react';
+import { Fragment, useId, useRef, useState, type FormEvent } from 'react';
 import { DEFAULT_SESSION_CAP_USD, MAX_SESSION_CAP_USD, parseCap } from '../spend/cap.ts';
 import { sessionCap, setSessionCap } from '../spend/session.ts';
 import type { Surface } from '../surface/detect.ts';
@@ -25,10 +25,15 @@ const field = 'h-9 w-full rounded-sm border border-line-strong bg-surface px-3 t
 // semantics, so the residual prompt is the accepted cost.
 const NO_SAVE = { autoComplete: 'off', 'data-1p-ignore': 'true', 'data-lpignore': 'true', 'data-bwignore': 'true', 'data-form-type': 'other' } as const;
 
+// The key field is uncontrolled and read through a ref on submit: React mirrors a controlled
+// input's value into its value attribute, so after a failed Validate the key would sit in the
+// page's markup (review-security-P16h-web-1 M2). State holds only whether the field is filled.
+
 // The first screen: paste a key, Validate, go. Or browse without one. Below the form, outside any
 // error, the local-run panel states the prerequisites and the one command.
 export function KeyGate({ surface, onDone, onBrowse, notice }: { surface: Surface; onDone: () => void; onBrowse: () => void; notice?: string | undefined }) {
-  const [key, setKey] = useState('');
+  const keyRef = useRef<HTMLInputElement>(null);
+  const [filled, setFilled] = useState(false);
   const [reveal, setReveal] = useState(false);
   const [remember, setRemember] = useState(false);
   const [capText, setCapText] = useState(String(sessionCap()));
@@ -41,7 +46,7 @@ export function KeyGate({ surface, onDone, onBrowse, notice }: { surface: Surfac
 
   async function submit(e: FormEvent) {
     e.preventDefault();
-    const k = key.trim();
+    const k = keyRef.current?.value.trim() ?? '';
     if (k === '' || cap === null || busy) return;
     setBusy(true);
     setFailure(null);
@@ -56,7 +61,8 @@ export function KeyGate({ surface, onDone, onBrowse, notice }: { surface: Surfac
         if (!r.ok) return setFailure({ ...r, kind: 'runner' });
         heldByRunner();
       }
-      setKey('');
+      if (keyRef.current) keyRef.current.value = '';
+      setFilled(false);
       onDone();
     } finally {
       setBusy(false);
@@ -81,8 +87,8 @@ export function KeyGate({ surface, onDone, onBrowse, notice }: { surface: Surfac
           <input
             id={ids.key}
             type={reveal ? 'text' : 'password'}
-            value={key}
-            onChange={(e) => setKey(e.target.value)}
+            ref={keyRef}
+            onChange={(e) => setFilled(e.target.value.trim() !== '')}
             {...NO_SAVE}
             autoCapitalize="off"
             autoCorrect="off"
@@ -140,7 +146,7 @@ export function KeyGate({ surface, onDone, onBrowse, notice }: { surface: Surfac
         <div className="mt-6 flex items-center gap-3">
           <button
             type="submit"
-            disabled={busy || key.trim() === '' || cap === null}
+            disabled={busy || !filled || cap === null}
             className="h-9 rounded-sm bg-primary px-4 font-medium text-on-primary hover:opacity-90 disabled:opacity-40"
           >
             {busy ? 'Validating…' : 'Validate'}

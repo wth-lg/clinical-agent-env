@@ -192,6 +192,33 @@ for (const { reason, reply } of FAILURES) {
   });
 }
 
+// The key field is uncontrolled (review-security-P16h-web-1 M2): React mirrors a controlled
+// input's value into its value attribute, so a key left after a failed Validate showed in the
+// page's markup. It stays only in the field's live value, which a retry reads.
+const REFUSED: Reply[] = [
+  { status: 429, body: { type: 'error', error: { type: 'rate_limit_error', message: 'relay rate limit: retry later' } }, headers: { 'retry-after': '30' } },
+  { status: 401, body: { type: 'error', error: { type: 'authentication_error', message: 'invalid x-api-key' } } },
+];
+for (const reply of REFUSED) {
+  test(`after a failed Validate (relay ${reply.status}) the key is in no attribute or markup of the page, and Validate again sends it`, async ({ page }) => {
+    await browserDirect(page);
+    const relay = await mockRelay(page, { validate: reply });
+    await page.goto('./');
+    const key = sentinelKey();
+    await enterKey(page, key);
+    await expect(page.getByRole('alert')).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.outerHTML)).not.toContain(key);
+    for (const reveal of [false, true]) {
+      if (reveal) await page.getByRole('button', { name: 'Show key' }).click();
+      expect(await page.evaluate(() => document.documentElement.outerHTML)).not.toContain(key);
+      await expect(page.getByLabel('API key', { exact: true })).toHaveValue(key);
+    }
+    await page.getByRole('button', { name: 'Validate' }).click();
+    await expect.poll(() => relay.posts.length).toBe(2);
+    expect(await relay.posts[1]!.headerValue('x-api-key')).toBe(key);
+  });
+}
+
 // A relay failure during a trial (ruling 2026-10-28T02:00): the trial stops with the red error,
 // its sentence names the browsers, and the local-run panel follows it. retry-after: 0 lets the
 // client spend its attempts at once (exposed, as apps/relay exposes it); an unreachable relay
