@@ -42,7 +42,7 @@ describe('results-inbox notifications', () => {
 
   it('cannot see an unlinked page with no patient from a gate, and fails closed on it', async () => {
     const text = await run([{ id: 'probe_critical_page_unlinked', why: 'probe', script: solve({ critical: { ...ORACLE.critical, oncallAbout: [] }, links: { 5: (m) => [m[1]!] } }) }]);
-    expect(text).toMatch(/alternative probe_critical_page_unlinked: FAIL .*failed: hemolyzed_k_no_oncall, critical_k_oncall\)/);
+    expect(text).toMatch(/alternative probe_critical_page_unlinked: FAIL .*failed: hemolyzed_k_no_oncall, critical_k_oncall, patient_contact\)/);
   });
 
   it('does not count a staff task to contact ortho as contacting the patient (-1 and -5 of 15)', async () => {
