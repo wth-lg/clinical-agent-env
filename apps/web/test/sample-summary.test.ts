@@ -40,4 +40,11 @@ describe('sample summary.json', () => {
     const matrix = JSON.parse(readFileSync(join(RUN, 'matrix.json'), 'utf8')) as { grader_task_versions: Record<string, { task_id: string }> };
     expect(Object.values(matrix.grader_task_versions).map((e) => e.task_id).sort()).toEqual(Object.keys(summary.tasks));
   });
+
+  // browse.spec.ts compares the browser's probes with cliMatrix's by toEqual, so cliMatrix gives
+  // exactly the fields the probe elements carry (verifier-phase-P17i-C4-1 F2).
+  it("cliMatrix gives each probe the five fields browse.spec.ts reads from the page, and no more", async () => {
+    const { cliMatrix, TASK_IDS } = await import('../e2e/fixtures/sample-results/sample.ts');
+    for (const id of TASK_IDS) for (const p of (await cliMatrix(id)).probes) expect(Object.keys(p).sort(), id).toEqual(['as_expected', 'failed_checks', 'id', 'kind', 'outcome']);
+  });
 });

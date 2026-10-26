@@ -19,7 +19,8 @@ import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type Ref } fr
 import { MET_TEXT, type Explanation } from '../../../../packages/core/explain.ts';
 import type { TrialEvent } from '../../../../packages/core/events.ts';
 import { fetchEvents, fullExplanation, useResults, type RunData, type Trial } from '../data/results.ts';
-import { blocksTheRun, FaultLabel, GlossaryLink, HashText, Notice, OutcomeChip } from '../data/ui.tsx';
+import { harmItems, safePass, type HarmItem } from '../data/harm.ts';
+import { blocksTheRun, FaultLabel, GlossaryLink, HarmChip, HashText, Notice, OutcomeChip } from '../data/ui.tsx';
 import { tabTarget } from '../data/tabs.ts';
 import { hrefWith, navigate, onNav, useParams } from '../data/url.ts';
 import { runnerToken } from '../keygate/runner.ts';
@@ -137,7 +138,7 @@ function Detail({ t, run, files, tab, headingRef }: { t: Trial; run: RunData; fi
         className="space-y-3 sm:space-y-4"
       >
         <p className="text-ink-muted">
-          Run <span className="font-medium text-ink">{run.runId}</span>{run.official ? ', the official run' : ', a pilot run, not counted in the results'}. Task <span className="font-medium text-ink">{t.task}</span>.
+          Run <span className="font-medium text-ink">{run.runId}</span>{run.official ? ', the official run' : ', a pilot run, not counted in the results'}. Task <span className="font-medium text-ink">{t.task}</span>{run.official && run.summary?.tasks[t.task] ? <>: {run.summary.tasks[t.task]!.passes}/{run.summary.tasks[t.task]!.trials} pass, <span data-testid="safe-pass">{safePass(run.summary.tasks[t.task]!)}</span></> : null}.
         </p>
         <Header t={t} e={e} rows={traj?.rows ?? null} onStep={onStep} />
         <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start">
@@ -184,6 +185,7 @@ function Header({ t, e, rows, onStep }: { t: Trial; e: Explanation; rows: readon
     <section aria-label="Why this trial ended as it did" data-testid="trial-header" className={`min-w-0 rounded-sm border border-line bg-surface p-4 ${nonPass ? `border-l-2 ${blocksTheRun(e) ? 'border-l-danger' : 'border-l-line-strong'}` : ''}`}>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <OutcomeChip outcome={e.outcome} fault={e.fault} />
+        <HarmChip items={useHarmTexts(t.task, harmItems(t.record))} />
         {nonPass && <FaultLabel e={e} notCountedShown={!e.valid && e.deciding !== null} />}
         <span className="ml-auto text-xs text-ink-muted" title="Agent and judge cost">${(t.record.cost_usd + (t.record.judge_cost_usd ?? 0)).toFixed(2)}</span>
       </div>
@@ -239,6 +241,30 @@ function Header({ t, e, rows, onStep }: { t: Trial; e: Explanation; rows: readon
       </dl>
     </section>
   );
+}
+
+// The harm items with their rubric questions, once the task's checks load (verifier JU3-1 F5);
+// the ids alone until then, and for a code item, which has no question.
+function useHarmTexts(task: string, items: HarmItem[]): HarmItem[] {
+  const [texts, setTexts] = useState<Record<string, string>>({});
+  const ids = items.map((x) => x.id).join(',');
+  useEffect(() => {
+    if (ids === '') return;
+    let live = true;
+    void Promise.all([import('../tasks/matrix-task.ts'), import('../tasks/check-text.ts')]).then(async ([{ taskChecks }, { rubricQuestion }]) => {
+      const checks = await taskChecks(task).catch(() => []);
+      const found: Record<string, string> = {};
+      for (const c of checks) if (ids.split(',').includes(c.id)) {
+        const q = await rubricQuestion(c);
+        if (q) found[c.id] = q;
+      }
+      if (live) setTexts(found);
+    });
+    return () => {
+      live = false;
+    };
+  }, [task, ids]);
+  return items.map((x) => (texts[x.id] ? { ...x, text: texts[x.id]! } : x));
 }
 
 // On a PASS the M1-M5 row is in plain words, in three states (outcomes.ts: one pending is
