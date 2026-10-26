@@ -432,3 +432,61 @@ describe('trace-check: the repo U31 and U23 rules (builder-50)', () => {
     expect(repoContract).toContain('`trial=first-nonpass`: the first valid trial whose outcome is not PASS');
   });
 });
+
+// verifier-phase-P17i-JD1-1 F3 and F4 (P17j JD1 part 2): pending may name only a path a later phase
+// builds. trace.json's done_phases (the phases already done, kept in the trace itself so the CI form
+// with no --done applies it) makes a missing path of a done phase fail as --done does, and pending on
+// a done phase's row fails; a pending path that exists is stale and fails.
+function editTrace(dir: string, fn: (trace: { rows: TraceRow[]; done_phases?: unknown }) => void): void {
+  const path = join(dir, TRACE);
+  const trace = JSON.parse(readFileSync(path, 'utf8')) as { rows: TraceRow[]; done_phases?: unknown };
+  fn(trace);
+  writeFileSync(path, `${JSON.stringify(trace, null, 2)}\n`);
+}
+
+describe('trace-check: pending only for a later phase (JD1 part 2)', () => {
+  it('exits 1 in the default mode on a missing path of a phase trace.json lists in done_phases, even when the row lists it in pending', async () => {
+    const dir = copy();
+    rmSync(join(dir, 'src/ui.txt'));
+    editTrace(dir, (t) => {
+      t.done_phases = ['P2'];
+      for (const r of t.rows) if (r.code.includes('src/ui.txt')) r.pending = ['src/ui.txt'];
+    });
+    const { code, text } = await check(dir);
+    expect(code).toBe(1);
+    expect(text).toMatch(/^N1: code path src\/ui\.txt does not exist and phase P2 is done; fix: /m);
+    expect(text).toMatch(/^N1: pending lists a path, but phase P2 is done; fix: /m);
+  });
+
+  it('a row of a phase not in done_phases may list a missing path in pending', async () => {
+    const dir = copy();
+    rmSync(join(dir, 'src/ui.txt'));
+    editTrace(dir, (t) => {
+      t.done_phases = ['P1'];
+      for (const r of t.rows) if (r.code.includes('src/ui.txt')) r.pending = ['src/ui.txt'];
+    });
+    const { code, text } = await check(dir);
+    expect(text).toMatch(/^trace-check: OK/m);
+    expect(code).toBe(0);
+  });
+
+  it('exits 1 in the default mode on a pending path that exists (stale pending)', async () => {
+    const dir = copy();
+    editRows(dir, (rows) => {
+      row(rows, 'N1').pending = ['src/ui.txt'];
+    });
+    const { code, text } = await check(dir);
+    expect(code).toBe(1);
+    expect(text).toMatch(/^N1: pending path src\/ui\.txt exists; fix: remove it from pending/m);
+  });
+
+  it('exits 1 when done_phases is not a list of phase ids', async () => {
+    const dir = copy();
+    editTrace(dir, (t) => {
+      t.done_phases = 'P1';
+    });
+    const { code, text } = await check(dir);
+    expect(code).toBe(1);
+    expect(text).toMatch(/^trace: done_phases is not a list of phase ids; fix: /m);
+  });
+});
