@@ -22,6 +22,8 @@ import { MANIFEST } from '../data/world.ts';
 import { requestKey, useKeyStatus } from '../keygate/key.ts';
 import { LOCAL_RUN_PANEL_ID } from '../surface/LocalRunPanel.tsx';
 
+// A task's trials in Runs, with no filter left from another link (verifier-phase-P17i-JU7-1 S2).
+const toRuns = (task: string | null) => ({ view: 'runs', task, label: null, trial: null, check: null, audit: null });
 const money = (x: number | null) => (x === null ? 'n/a' : `$${x.toFixed(2)}`);
 const link = 'text-ink underline decoration-line-strong underline-offset-2 hover:decoration-ink';
 const TOOL_COUNT = toolCatalog().length;
@@ -47,17 +49,17 @@ function OfficialOverview({ run, headingRef, localRun }: { run: RunData; heading
   const [lo, hi] = FINAL_PASS_BAND;
   const t = summary!.totals;
   const problems = run.bad.length + run.warnings.length;
-  const block = runBlock(trials.map((x) => x.explanation));
+  const block = runBlock(trials);
   const falsePasses = (id: string) => trials.filter((x) => x.task === id && isFalsePass(x.explanation)).length;
   return (
     <Page
       title="Overview"
       headingRef={headingRef}
       lead={block !== null
-        ? <>Run <span className="font-medium text-ink">{runId}</span> is blocked, so it has no headline pass rate. The shaded band is the target pass rate, {Math.round(lo * 100)}% to {Math.round(hi * 100)}%.</>
+        ? <>Run <span className="font-medium text-ink">{runId}</span> is blocked, so it has no pass rate.</>
         : <>Run <span className="font-medium text-ink">{runId}</span>: {t.passes} of {t.trials} valid trials pass across {Object.keys(summary!.tasks).length} tasks. The shaded band is the target pass rate, {Math.round(lo * 100)}% to {Math.round(hi * 100)}%.</>}
     >
-      {block !== null && <RunBlocked block={block} />}
+      {block !== null && <RunBlocked block={block} runId={runId} />}
       <IntroCard localRun={localRun} />
       {problems > 0 && (
         <Notice testId="data-warning">
@@ -71,11 +73,16 @@ function OfficialOverview({ run, headingRef, localRun }: { run: RunData; heading
         </li>
         {Object.entries(summary!.tasks).map(([id, s]) => (
           <li key={id} data-testid="overview-row" data-task={id} className="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1.5 px-4 py-2.5 md:grid-cols-[minmax(9rem,1fr)_3.5rem_minmax(10rem,16rem)_minmax(7rem,14rem)_minmax(6rem,9rem)_4rem_4rem]">
-            <a href={hrefWith({ view: 'runs', task: id, label: null, trial: null })} onClick={onNav({ view: 'runs', task: id, label: null, trial: null })} className={`min-w-0 break-words font-medium ${link}`}>{id}</a>
-            <span className="whitespace-nowrap text-right md:text-left"><span data-testid="k-of-n">{s.passes}/{s.trials}</span><span className="block text-xs text-ink-muted" data-testid="safe-pass">{safePass(s)}</span>{falsePasses(id) > 0 && <span className="block text-xs text-danger" data-testid="false-pass">{falsePasses(id)} false PASS</span>}</span>
+            <a href={hrefWith(toRuns(id))} onClick={onNav(toRuns(id))} className={`min-w-0 break-words font-medium ${link}`}>{id}</a>
+            <span className="whitespace-nowrap text-right md:text-left">
+              {block === null ? <><span data-testid="k-of-n">{s.passes}/{s.trials}</span><span className="block text-xs text-ink-muted" data-testid="safe-pass">{safePass(s)}</span></> : <span className="text-ink-muted">blocked</span>}
+              {falsePasses(id) > 0 && <span className="block whitespace-normal text-xs text-danger" data-testid="false-pass">{falsePasses(id)} false PASS</span>}
+            </span>
             <span className="col-span-2 md:col-span-1">
-              <IntervalRow rate={s.pass_rate} interval={s.wilson95} band={FINAL_PASS_BAND} label={id} />
-              <span className="text-xs text-ink-muted" data-testid="wilson">{formatInterval(s.wilson95)}</span>
+              {block === null ? <>
+                <IntervalRow rate={s.pass_rate} interval={s.wilson95} band={FINAL_PASS_BAND} label={id} />
+                <span className="text-xs text-ink-muted" data-testid="wilson">{formatInterval(s.wilson95)}</span>
+              </> : <span className="text-xs text-ink-muted">no pass rate while the run is blocked</span>}
             </span>
             <span className="col-span-2 flex flex-wrap gap-1 md:col-span-1" data-testid="swatches">
               {trials.filter((x) => x.task === id).map((x) => {
@@ -180,7 +187,7 @@ function PilotSummary({ pilots }: { pilots: RunData[] }) {
           const rates = pilotRates(p).map((r) => `${r.passes} of ${r.valid} PASS on ${r.task}, Wilson 95% ${formatInterval(r.interval)}`);
           return (
             <li key={p.runId} data-testid="overview-pilot" data-run={p.runId}>
-              <a href={hrefWith({ view: 'runs', task: null, label: null, trial: null })} onClick={onNav({ view: 'runs', task: null, label: null, trial: null })} className={`font-medium ${link}`}>{p.runId}</a>
+              <a href={hrefWith(toRuns(null))} onClick={onNav(toRuns(null))} className={`font-medium ${link}`}>{p.runId}</a>
               <span className="ml-2 text-ink-muted">{p.trials.length + p.bad.length} trial records: {rates.join('; ') || 'no valid trials'}; not counted</span>
             </li>
           );

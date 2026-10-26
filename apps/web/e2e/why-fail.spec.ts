@@ -5,8 +5,10 @@
 // Overview table gets a "most common failure" column and the run's fault box under it. Every
 // number equals summary.json (fault_counts, top_failed_checks), except the M1-M4 count, which only
 // the explanations give (audit-check --json gives the same). The glossary shows GR5. A run with a
-// trial that blocks it (here a false PASS, GR5) says it is blocked, shows the false PASS count
-// beside k/n and has no headline pass rate (DENOMINATOR_RULE).
+// trial that blocks it (a false PASS, GR5, or a valid failure the audit labels environment or
+// grader) says it is blocked, names the blocking trials and the false PASS count, and shows no pass
+// count, pass-rate dot or Wilson interval anywhere (DENOMINATOR_RULE; decisions.tsv 2026-10-29T16:00;
+// verifier-phase-P17i-JU7-1 B1, S1). The check and audit filters do not follow a rail link (S2).
 import { expect, test, type Page } from '@playwright/test';
 import { audit, explain, records, sampleBase, summary, TASK_IDS } from './fixtures/sample-results/sample.ts';
 import { trialName } from '../../../packages/core/summary.ts';
@@ -61,7 +63,8 @@ test('Findings: the fault box counts by audit label with Runs links, the M1-M4 c
     const fc = summary.tasks[id]!.fault_counts;
     const box = page.locator(`[data-testid="fault-box"][data-task="${id}"]`);
     for (const l of FAILURE_LABELS) await expect(box.locator(`[data-testid="fault-label-count"][data-label="${l}"]`)).toHaveAttribute('data-count', String(fc.label![l]));
-    await expect(box.getByTestId('m1-m4')).toHaveText(`M1-M4 met on ${m1m4(id)} of ${fc.failures} failures`);
+    await expect(box.getByTestId('m1-m4')).toHaveAttribute('data-met', String(m1m4(id)));
+    await expect(box.getByTestId('m1-m4')).toHaveAttribute('data-failures', String(fc.failures));
     await expect(box.getByTestId('infra-reruns')).toHaveAttribute('data-count', String(fc.infra_reruns));
   }
   const id = 'renal-dose-review';
@@ -92,20 +95,55 @@ test('the glossary shows GR5', async ({ page }) => {
   await expect(page.locator('[data-testid="criterion"][data-id="GR5"]')).toBeVisible();
 });
 
-test('a run with a false PASS says it is blocked, shows the count beside k/n and has no headline pass rate', async ({ page }) => {
-  const pass = records.find((r) => r.outcome === 'PASS' && r.task_id === 'renal-dose-review')!;
-  const row = { trial: trialName(pass), outcome: 'PASS', taxonomy: null, model_fault: 'no', decisive_step: 2, evidence_ids: ['Patient/pt-0001'], llm_auditor_agrees: true, label: 'grader', note: 'the grader passed a dose the policy forbids' };
+// The sample run with one audit row added.
+async function withRow(page: Page, row: object) {
   await page.route(`**/data/results/runs/${summary.run_id}/audit.jsonl`, async (route) => {
     const res = await route.fetch();
     await route.fulfill({ response: res, body: `${(await res.text()).trimEnd()}\n${JSON.stringify(row)}\n` });
   });
+}
+
+// No pass count, dot or Wilson interval for the run on any of the three views.
+async function noRates(page: Page) {
+  await expect(page.getByTestId('k-of-n')).toHaveCount(0);
+  await expect(page.getByTestId('safe-pass')).toHaveCount(0);
+  await expect(page.getByTestId('interval')).toHaveCount(0);
+  await expect(page.getByTestId('wilson')).toHaveCount(0);
+}
+
+test('a run with a false PASS is blocked: the blocking trials and the false PASS count, no pass count, dot or interval', async ({ page }) => {
+  const pass = records.find((r) => r.outcome === 'PASS' && r.task_id === 'renal-dose-review')!;
+  await withRow(page, { trial: trialName(pass), outcome: 'PASS', taxonomy: null, model_fault: 'no', decisive_step: 2, evidence_ids: ['Patient/pt-0001'], llm_auditor_agrees: true, label: 'grader', note: 'the grader passed a dose the policy forbids' });
   await browse(page, './?view=overview');
-  await expect(page.getByTestId('run-blocked')).toContainText('1 false PASS');
+  const notice = page.getByTestId('run-blocked');
+  await expect(notice).toContainText('1 false PASS');
+  await expect(notice.getByTestId('blocking-trial')).toHaveText([trialName(pass)]);
   await expect(page.getByText(/valid trials pass across/)).toHaveCount(0);
   await expect(page.locator('[data-testid="overview-row"][data-task="renal-dose-review"] [data-testid="false-pass"]')).toHaveText('1 false PASS');
+  await noRates(page);
   await page.getByRole('link', { name: 'Runs', exact: true }).first().click();
   await expect(page.getByTestId('run-blocked')).toBeVisible();
+  await expect(page.getByTestId('runs-k-of-n')).not.toContainText(/\d+\/\d+/);
   await expect(page.getByTestId('runs-k-of-n')).toContainText('1 false PASS');
+  await noRates(page);
   await page.getByRole('link', { name: 'Findings', exact: true }).first().click();
   await expect(page.getByTestId('run-blocked')).toBeVisible();
+  await noRates(page);
+});
+
+test('a valid failure the audit labels environment blocks the run too', async ({ page }) => {
+  const row = audit.find((a) => a.outcome === 'FAIL')!;
+  await withRow(page, { ...row, taxonomy: null, label: 'environment', model_fault: 'no' });
+  await browse(page, './?view=overview');
+  await expect(page.getByTestId('run-blocked').getByTestId('blocking-trial')).toContainText([row.trial]);
+  await noRates(page);
+});
+
+test('the check and audit filters do not follow a rail link or an Overview task link', async ({ page }) => {
+  await browse(page, './?view=runs&task=renal-dose-review&check=apixaban_dose&audit=model');
+  await page.getByRole('link', { name: 'Overview', exact: true }).first().click();
+  await expect(page).not.toHaveURL(/check=|audit=/);
+  await page.locator('[data-testid="overview-row"][data-task="crc-care-gap"]').getByRole('link').first().click();
+  await expect(page).not.toHaveURL(/check=|audit=/);
+  await expect(page.getByTestId('extra-filter')).toHaveCount(0);
 });

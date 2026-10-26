@@ -26,9 +26,13 @@ describe('failures helpers', () => {
   it('m1m4 counts the valid failures with M1-M4 all met', () => {
     expect(m1m4([e({}), e({ criteria: met(['M1', 'M2', 'M3']) as never }), e({ outcome: 'PASS' })])).toEqual({ met: 1, failures: 2 });
   });
-  it('runBlock is null for a run with no block, and counts a false PASS', () => {
-    expect(runBlock([e({})])).toBeNull();
+  it('runBlock is null for a run with no block, and names the false PASS', () => {
+    expect(runBlock([{ name: 't/1', explanation: e({}) }])).toBeNull();
     const falsePass = e({ outcome: 'PASS', fault: 'grader', deciding: { fault: 'grader', id: 'GR5', evidence: '' } });
-    expect(runBlock([e({}), falsePass])).toEqual({ trials: 1, falsePasses: 1 });
+    expect(runBlock([{ name: 't/1', explanation: e({}) }, { name: 't/0', explanation: falsePass }])).toEqual({ trials: 1, falsePasses: 1, names: ['t/0'] });
+  });
+  it('a valid failure the audit labels environment or grader blocks it too (verifier-phase-P17i-JU7-1 S1)', () => {
+    for (const audit_label of ['environment', 'grader'] as const) expect(runBlock([{ name: 't/5', explanation: e({ audit_label }) }])).toEqual({ trials: 1, falsePasses: 0, names: ['t/5'] });
+    expect(runBlock([{ name: 't/5', explanation: e({ audit_label: 'model' }) }])).toBeNull();
   });
 });

@@ -37,12 +37,13 @@ export function Findings({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> 
       </Page>
     );
   }
+  const block = runBlock(results.official.trials);
   return (
     <Page title="Findings" headingRef={headingRef} lead={READ_ONLY}>
-      <Blocked run={results.official} />
+      {block !== null && <RunBlocked block={block} runId={results.official.runId} />}
       {links}
-      {results.findings !== null && <Markdown text={results.findings} />}
-      <Charts run={results.official} />
+      {results.findings !== null && (block === null ? <Markdown text={results.findings} /> : <p data-testid="findings-held" className="text-ink-muted">The write-up gives the run's pass rates, so it shows again when the run is no longer blocked.</p>)}
+      <Charts run={results.official} blocked={block !== null} />
     </Page>
   );
 }
@@ -104,12 +105,8 @@ function Markdown({ text }: { text: string }) {
 // still names (verifier-phase-P16-1 N1).
 const exemplar = (run: RunData, t: RunData['trials'][number]) => ({ view: 'runs', run: run.runId, task: t.task, label: null, trial: t.name, tab: null });
 
-function Blocked({ run }: { run: RunData }) {
-  const block = runBlock(run.trials.map((t) => t.explanation));
-  return block === null ? null : <RunBlocked block={block} />;
-}
-
-function Charts({ run }: { run: RunData }) {
+// blocked: the run has no pass rate (decisions.tsv 2026-10-29T16:00), so the interval chart is held.
+function Charts({ run, blocked }: { run: RunData; blocked: boolean }) {
   const { trials } = run;
   const summary = run.summary!;
   const tasks = Object.entries(summary.tasks);
@@ -118,7 +115,11 @@ function Charts({ run }: { run: RunData }) {
   const exemplars = outcomes.filter((o) => o !== 'PASS').map((o) => ({ o, t: trials.find((x) => x.explanation.outcome === o) })).filter((x) => x.t !== undefined);
   return (
     <>
-      <Card title="Pass rate and 95% interval (Wilson)">
+      {blocked ? (
+        <Card title="Pass rate and 95% interval (Wilson)">
+          <p data-testid="interval-held" className="text-ink-muted">This run is blocked, so it has no pass rate to show. The notice above names the trials that block it.</p>
+        </Card>
+      ) : <Card title="Pass rate and 95% interval (Wilson)">
         <ul className="space-y-2" data-testid="interval-chart">
           {tasks.map(([id, t]) => (
             <li key={id} className="grid grid-cols-1 items-center gap-x-3 sm:grid-cols-[12rem_1fr_9rem]">
@@ -130,13 +131,13 @@ function Charts({ run }: { run: RunData }) {
         </ul>
         <p aria-hidden className="mt-1 grid grid-cols-1 text-xs text-ink-muted sm:grid-cols-[12rem_1fr_9rem] sm:gap-x-3"><span className="hidden sm:block" /><span className="flex max-w-72 justify-between"><span>0%</span><span>50%</span><span>100%</span></span></p>
         <p className="mt-2 text-xs text-ink-muted">Dot: pass rate. Whisker: Wilson 95% interval. Shaded: the target band {FINAL_PASS_BAND[0] * 100}% to {FINAL_PASS_BAND[1] * 100}%.</p>
-      </Card>
+      </Card>}
       <Card title="Why tasks fail">
-        <p className="text-xs text-ink-muted">Each task's valid failures by kind of failure, the gate checks that decided them, and who is at fault by the audit. Each link opens those trials in Runs.</p>
+        <p className="text-xs text-ink-muted">For each task: its failed trials by <GlossaryLink anchor="taxonomy">kind of failure</GlossaryLink>, the gate checks that decided them, and whose fault each is by the human audit. Each link opens those trials in Runs.</p>
         <ul className="mt-3 divide-y divide-line" data-testid="why-fail">
           {tasks.map(([id, t]) => (
             <li key={id} data-task={id} className="grid grid-cols-1 gap-x-4 gap-y-2 py-3 lg:grid-cols-[12rem_minmax(0,1fr)_minmax(0,1fr)]">
-              <span className="break-words font-medium">{id} <span className="font-normal text-ink-muted">{t.fault_counts.failures} failures</span></span>
+              <span className="break-words font-medium">{id} <span className="font-normal text-ink-muted">{t.fault_counts.failures} failed trial{t.fault_counts.failures === 1 ? '' : 's'}</span></span>
               <div className="min-w-0 space-y-2">
                 <KindBar task={id} fc={t.fault_counts} />
                 <FaultBox task={id} fcs={[t.fault_counts]} explanations={trials.filter((x) => x.task === id).map((x) => x.explanation)} />
