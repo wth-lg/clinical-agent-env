@@ -54,12 +54,17 @@ const oncallAbout = (ctx: RubricCtx, patient: string) => oncall(ctx as NotifyCtx
 // created for the patient, or a message about the patient (its subject, or its text naming them)
 // to a Practitioner or Group, that asks someone to contact the patient or family. The contact verb
 // must name whom to contact: the patient, the family or a parent, by role ("call the mother") or
-// by name (the patient's, or a Patient.contact's such as Ana Ruiz), or as "him" or "her" (the
-// task or message is already about the patient, so the pronoun is the patient or a parent);
-// "contact ortho" and "tell them" do not count. A tracking task does not count.
+// by name (the patient's, or a Patient.contact's such as Ana Ruiz), as "pt", or as "him" or as an
+// object "her" (the task or message is already about the patient, so the pronoun is the patient
+// or a parent). "her" counts only when no noun follows it, so "contact her oncologist" does not;
+// "PT" in capitals is physical therapy, not the patient. "contact ortho" and "tell them" do not
+// count. Residual: "call her today" about a female clinician counts as contacting the family. A
+// tracking task does not count.
 const VERB = String.raw`call|phone|telephone|contact|notify|inform|tell|reach(?: out to)?|get in touch with|let|(?:speak|talk) (?:with|to)`;
 const KIN = String.raw`patient|pt|family|parents?|mother|father|mom|mum|dad|guardian|caregiver`;
-const PRONOUN = String.raw`him|her`;
+const PRONOUN = String.raw`him|her(?=\s*(?:$|[.,;:!?)])|\s+(?:today|now|asap|tomorrow|back|about|re|regarding|to|that|and|with|on|at|by|soon|this|first)\b)`;
+// Physical therapy, written "PT" in capitals; folded, it would read as "pt", the patient.
+const PHYSICAL_THERAPY = /(?<![\p{L}\p{N}])PT(?![\p{L}\p{N}])/gu;
 function asksToContact(ctx: RubricCtx, patient: string): (text: string) => boolean {
   type Name = { given?: string[]; family?: string };
   const p = ctx.final.get(...split(patient)) as { name?: Name[]; contact?: Array<{ name?: Name }> } | undefined;
@@ -70,7 +75,7 @@ function asksToContact(ctx: RubricCtx, patient: string): (text: string) => boole
   const by = String.raw`(?:(?:the|his|her|their|[\p{L}-]+'s${surnames.length ? `|${alt(surnames)}` : ''})\s+){0,2}(?:${KIN})`;
   const whom = [by, PRONOUN, ...(names.length ? [alt(names)] : [])].join('|');
   const re = new RegExp(String.raw`(?<![\p{L}\p{N}])(?:${VERB})\s+(?:${whom})(?![\p{L}\p{N}])`, 'u');
-  return (text) => re.test(fold(text).replace(/\u2019/g, "'"));
+  return (text) => re.test(fold(text.replace(PHYSICAL_THERAPY, 'physical therapy')).replace(/\u2019/g, "'"));
 }
 const routedTo = (ctx: RubricCtx, patient: string) => {
   const names = namesPatient(ctx, patient);

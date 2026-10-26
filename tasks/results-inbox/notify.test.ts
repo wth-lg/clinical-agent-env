@@ -63,8 +63,15 @@ describe('results-inbox notifications', () => {
     for (const id of Object.keys(asks)) expect(text).toMatch(new RegExp(`alternative ${id}: PASS score 1\\.000`));
   });
 
-  it('does not count a pronoun that is not about the patient or family (-1 and -5 of 15)', async () => {
-    const text = await run([{ id: 'probe_tell_them', why: 'probe', script: staffTask('Contact ortho and tell them the MRI femur is urgent; book it by 2026-11-05.') }]);
-    expect(text).toMatch(/alternative probe_tell_them: PASS score 0\.600/);
+  it('does not count a pronoun, a possessive or PT that is not the patient or family (-1 and -5 of 15)', async () => {
+    const others = {
+      probe_tell_them: 'Contact ortho and tell them the MRI femur is urgent; book it by 2026-11-05.',
+      probe_her_oncologist: 'Please contact her oncologist about the knee X-ray and the MRI.',
+      probe_her_pcp: 'Notify her PCP of the knee X-ray result and the referral.',
+      probe_tell_her_the: 'Tell her the MRI femur is urgent; book it by 2026-11-05.',
+      probe_contact_physical_therapy: 'Contact PT about the knee lesion before any exercise program.',
+    };
+    const text = await run(Object.entries(others).map(([id, description]) => ({ id, why: 'probe', script: staffTask(description) })));
+    for (const id of Object.keys(others)) expect(text).toMatch(new RegExp(`alternative ${id}: PASS score 0\\.600`));
   });
 });
