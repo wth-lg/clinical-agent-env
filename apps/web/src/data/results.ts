@@ -17,7 +17,9 @@
 // manifest.json (none: M3 is pending, never compared with today's world), its matrix.json (M4,
 // GR4 and B1, so a row's fault and label are the detail's) and the task's check text
 // (tasks/<id>.check-text.ts). explainTrial reads the trajectory only for a REFUSAL's or LIMIT's
-// sentence, so only those trajectories are fetched up front. The trial detail asks for
+// sentence and for E6, which reads the step an audit answering tool_rejections_correct no cites, so
+// only those trajectories are fetched up front (readsEvents): without it the list would say model
+// where the trial detail says env. The trial detail asks for
 // fullExplanation, which adds what the M1-M5 criteria need and the list cannot afford for every
 // row: the trajectory, the task's checks (decisive ids for a regraded trial's exposure, traces_to)
 // and the world when M1 reads it, so its criteria equal audit-check's.
@@ -26,7 +28,7 @@
 // another world than today's manifest, and, when the run holds regrade/ (an offline regrade of
 // its records with a later grader), how many keep their outcome.
 import { explainContext, needsWorld, worldLookup } from '../../../../packages/core/explain-context.ts';
-import { explainTrial, type AuditRow, type CheckText, type ExplainRecord, type Explanation } from '../../../../packages/core/explain.ts';
+import { auditAnswerOf, explainTrial, type AuditRow, type CheckText, type ExplainRecord, type Explanation } from '../../../../packages/core/explain.ts';
 import { trialName, validateSummary, wilson, type Interval, type Summary } from '../../../../packages/core/summary.ts';
 import { parseTrajectory } from '../../../../packages/core/trajectory.ts';
 import type { TrialEvent } from '../../../../packages/core/events.ts';
@@ -103,8 +105,10 @@ export async function fetchEvents(trajectoryUrl: string): Promise<TrialEvent[]> 
   return parseTrajectory(await res.text());
 }
 
-// The records whose explanation reads the trajectory.
-export const readsEvents = (r: Pick<ExplainRecord, 'outcome'>): boolean => r.outcome === 'REFUSAL' || r.outcome === 'LIMIT';
+// The records whose explanation reads the trajectory: a REFUSAL's or LIMIT's sentence, and E6 when
+// the audit row answers tool_rejections_correct no after adjudication.
+export const readsEvents = (r: Pick<ExplainRecord, 'outcome'>, audit: Parameters<typeof auditAnswerOf>[0] | null): boolean =>
+  r.outcome === 'REFUSAL' || r.outcome === 'LIMIT' || (audit !== null && auditAnswerOf(audit, 'tool_rejections_correct') === 'no');
 
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
@@ -133,7 +137,7 @@ async function loadRun(files: readonly string[], has: ReadonlySet<string>, runDi
       const r = record as TrialRecord;
       const trajectoryUrl = r.trajectory && has.has(`${runDir}/${r.trajectory}`) ? dataUrl(`${runDir}/${r.trajectory}`) : null;
       const audit = byTrial.get(trialName(r)) ?? null;
-      const events = readsEvents(r) && trajectoryUrl !== null ? await fetchEvents(trajectoryUrl) : [];
+      const events = readsEvents(r, audit) && trajectoryUrl !== null ? await fetchEvents(trajectoryUrl) : [];
       return { name: trialName(r), file, task: r.task_id, record: r, audit, trajectoryUrl, explanation: explainTrial(r, audit, explainContext({ record: r, events, manifest, matrix, text: checkTextOf(r.task_id) })) };
     } catch (e) {
       return { name, file, errors: [message(e)] };
