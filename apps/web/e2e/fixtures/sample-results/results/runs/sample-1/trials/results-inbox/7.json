@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:results-inbox:7",
   "task_id": "results-inbox",
-  "task_version": "45ed723d851b51f35ece05d46f5f4213757c2a5bd050cf2d52193dd31162a184",
+  "task_version": "97be735f786b9821be438442c2bb51e6973e5cf19b203275255392f3c3c98992",
   "env_version": "f7ed42d3c0d7920587b33d75a7815885b288336263bdab07957d0deb58c8730a",
-  "grader_task_version": "341ea2e17ac4d23d90f88d8bd3970c99cfad415a513910777e3f3e01eab88591",
+  "grader_task_version": "eb98c9878e26089272c4a08654ac9c3bfe4e05575e3e841a31870adb6e094fe3",
   "fixture_hash": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
   "state_hash": {
     "initial": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
-    "final": "d1fe3b50a2a1c908a6d695d6a7ec381610e5d218340f9b9eb382c700aed958e5",
-    "replay_final": "d1fe3b50a2a1c908a6d695d6a7ec381610e5d218340f9b9eb382c700aed958e5"
+    "final": "7c794ede05f8d7f2725a966f21d6bf2cd3d0f784aac8388f32a8d2099c77bd0d",
+    "replay_final": "7c794ede05f8d7f2725a966f21d6bf2cd3d0f784aac8388f32a8d2099c77bd0d"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -196,13 +196,13 @@
             "id": "ServiceRequest/sr-t0018",
             "code": "REF-ORTHO-ONC",
             "priority": "urgent",
-            "start": "2026-11-02"
+            "start": "2026-10-23"
           },
           {
             "id": "ServiceRequest/sr-t0019",
             "code": "IMG-MRI-FEMUR-WWO",
             "priority": "urgent",
-            "start": "2026-11-02"
+            "start": "2026-10-23"
           }
         ],
         "by": "2026-11-05"
