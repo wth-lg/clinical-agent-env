@@ -48,10 +48,11 @@
 //     (explain.ts auditAnswerOf): a clinically_acceptable no needs GR3 (the label's outcome
 //     GRADER_BUG with an evidence id) or an environment label, and a tool_rejections_correct no an
 //     environment label, the rejected call's step as decisive_step, which the trajectory shows
-//     as a tool error that the tool's input schema does not reproduce on the recorded call (a
-//     call that breaks the schema was rightly refused; explain.ts citedStep), and confirmation,
+//     as a tool error that the tool's input schema does not reproduce on the recorded call and
+//     that is not a refused call to a tool the model was not given (a call that breaks the
+//     schema or the tool list was rightly refused; explain.ts citedStep), and confirmation,
 //     an adjudicated_label environment or, with none, llm_auditor_agrees true (what outcomes.ts
-//     E6 needs; decisions.tsv 2026-10-27T06:00 and 08:50), because a no says the grader or a
+//     E6 needs; decisions.tsv 2026-10-27T06:00, 08:50 and 09:30), because a no says the grader or a
 //     tool rejected valid work; an auditor no that an adjudicated yes overrules needs an
 //     adjudicated_label and a note (decisions.tsv 2026-10-27T02:10).
 // It writes each label's criteria, explainTrial's M1-M5 for its trial, into audit.jsonl (only when

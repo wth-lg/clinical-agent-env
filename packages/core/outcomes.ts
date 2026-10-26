@@ -103,7 +103,7 @@ export interface AttributionFacts {
   audit: {
     outcome: string; label: AuditLabelName | null; model_fault: string | null; llm_auditor_agrees: boolean | null; adjudicated_label: AuditLabelName | null; evidence_ids: readonly string[];
     clinically_acceptable: AuditAnswer | null; tool_rejections_correct: AuditAnswer | null; decisive_step: number | null;
-    // schema_error: the cited refusal's input broke the tool's input schema (explain.ts citedStep).
+    // schema_error: the cited refusal's input broke the tool's input schema, or named no tool (explain.ts citedStep).
     cited_step: { tool: string; is_error: boolean; error_code: string | null; schema_error: string | null } | null;
   } | null;
 }

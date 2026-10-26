@@ -17,15 +17,15 @@ const record = (outcome: string, over: Partial<ExplainRecord> = {}): ExplainReco
 const row = (over: Partial<AuditRow> = {}): AuditRow => ({ trial: 'renal-dose-review/5', outcome: 'FAIL', taxonomy: 'reasoning', model_fault: 'yes', decisive_step: 2, evidence_ids: ['Patient/pt-0001'], llm_auditor_agrees: true, note: 'n', ...over });
 
 // order_medication input its schema accepts, and a trajectory whose step 1 fhir_read succeeds and
-// whose step 2 order_medication call, with the recorded input, the tool refused with the error.
+// whose step 2 call to tool (order_medication), with the recorded input, the tool refused with the error.
 const VALID = { patient: 'Patient/pt-0001', rxnorm_code: '860975', dose_value: 500, dose_unit: 'mg', route: 'oral', frequency: 'BID', reason: 'type 2 diabetes' };
 const NOT_FOUND = { code: 'NOT_FOUND', message: 'rxnorm_code 860975 is not in the catalog', field: 'rxnorm_code' };
-const refused = (input: unknown, error: { code: string; message: string; field?: string }): ExplainContext => {
+const refused = (input: unknown, error: { code: string; message: string; field?: string }, tool = 'order_medication'): ExplainContext => {
   const call = (seq: number, name: string, input: unknown) => ({ v: 2, seq, ts: 't', turn: 1, type: 'tool_call', tool_use_id: `toolu_${seq}`, name, input });
   const result = (seq: number, name: string, err: typeof error | null) => ({
     v: 2, seq, ts: 't', turn: 1, type: 'tool_result', tool_use_id: `toolu_${seq}`, name, executed: true, is_error: err !== null, error_code: err?.code ?? null, content: err === null ? {} : { error: err }, exposed_ids: [], referenced_ids: [],
   });
-  return { ...ctx, events: [call(1, 'fhir_read', { reference: 'Patient/pt-0001' }), result(1, 'fhir_read', null), call(2, 'order_medication', input), result(2, 'order_medication', error)] as unknown as ExplainContext['events'] };
+  return { ...ctx, events: [call(1, 'fhir_read', { reference: 'Patient/pt-0001' }), result(1, 'fhir_read', null), call(2, tool, input), result(2, tool, error)] as unknown as ExplainContext['events'] };
 };
 
 describe('audit answers', () => {
@@ -66,6 +66,15 @@ describe('audit answers', () => {
     // An INVALID_INPUT the schema does not reproduce (here a catalog check inside the tool) can still be wrong.
     const semantic = refused(VALID, { code: 'INVALID_INPUT', message: 'dose_unit mg does not fit rxnorm_code 860975', field: 'dose_unit' });
     expect(explainTrial(record('FAIL'), row({ tool_rejections_correct: 'no', taxonomy: 'environment', model_fault: 'no', decisive_step: 2 }), semantic).fault).toBe('env');
+  });
+
+  it('E6: a refusal of a call to a tool the model was not given was right, so it does not make the fault environment (decisions.tsv 2026-10-27T09:30, F13)', () => {
+    const audit = row({ tool_rejections_correct: 'no', taxonomy: 'environment', model_fault: 'no', decisive_step: 2 });
+    const x = explainTrial(record('FAIL'), audit, refused(VALID, { code: 'NOT_SUPPORTED', message: "unknown tool 'bogus_tool'; tools: fhir_read" }, 'bogus_tool'));
+    expect(x.fault).toBe('model');
+    expect(x.fault_criteria.env.find((c) => c.id === 'E6')).toMatchObject({ met: false, evidence: 'tool_rejections_correct no, step 2 bogus_tool refused (NOT_SUPPORTED) for input that breaks its schema (name: no tool bogus_tool), LLM auditor agrees' });
+    // A NOT_SUPPORTED from a tool the model was given, which its schema does not reproduce, can still be wrong.
+    expect(explainTrial(record('FAIL'), audit, refused(VALID, { code: 'NOT_SUPPORTED', message: 'oral route is not supported' })).fault).toBe('env');
   });
 
   it('E6: only an adjudicated_label environment or an agreeing LLM auditor confirms it; an adjudicated model label does not (decisions.tsv 2026-10-27T08:50, F11)', () => {

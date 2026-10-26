@@ -30,10 +30,10 @@ function run(fixture: Fixture, trial: string, over: Row): string {
 const VALID = { patient: 'Patient/pt-0001', rxnorm_code: '860975', dose_value: 500, dose_unit: 'mg', route: 'oral', frequency: 'BID', reason: 'type 2 diabetes' };
 const { dose_value: _, ...NO_DOSE } = VALID;
 const NOT_FOUND = { code: 'NOT_FOUND', message: 'rxnorm_code 860975 is not in the catalog', field: 'rxnorm_code' };
-// Step 3 of t-beta/8's trajectory: an order_medication call with this input, which the tool refused
+// Step 3 of t-beta/8's trajectory: a call to name (order_medication) with this input, which the tool refused
 // with this error (the fixture's steps 1 and 2 succeed).
-function refusedStep(dir: string, input: unknown = VALID, error: { code: string; message: string; field?: string } = NOT_FOUND): void {
-  const at = { v: 2, ts: '2026-10-24T00:00:00.000Z', turn: 1, tool_use_id: 'toolu_3', name: 'order_medication' };
+function refusedStep(dir: string, input: unknown = VALID, error: { code: string; message: string; field?: string } = NOT_FOUND, name = 'order_medication'): void {
+  const at = { v: 2, ts: '2026-10-24T00:00:00.000Z', turn: 1, tool_use_id: 'toolu_3', name };
   const call = { ...at, seq: 3, type: 'tool_call', input };
   const result = { ...at, seq: 4, type: 'tool_result', executed: true, is_error: true, error_code: error.code, content: { error }, exposed_ids: [], referenced_ids: [] };
   appendFileSync(join(dir, 'trajectories/t-beta/8.jsonl'), `${JSON.stringify(call)}\n${JSON.stringify(result)}\n`);
@@ -98,6 +98,15 @@ describe('audit-check: clinically_acceptable and tool_rejections_correct', () =>
     refusedStep(dir, NO_DOSE, { code: 'INVALID_INPUT', message: "'dose_value' is required", field: 'dose_value' });
     const vs = await violations(dir);
     expect(about(vs)).toEqual([TOOL('t-beta/8', 'environment', 'step 3 is order_medication, which was refused (INVALID_INPUT) for input that breaks its schema (dose_value)')]);
+    expect(vs).toContain('t-beta/8: labelled environment, and its fault model has the label model');
+    expect(vs.filter((v) => v.includes('(E6)'))).toEqual([]);
+  });
+
+  it('a refusal of a call to a tool the model was not given was right, so it does not make the fault environment (decisions.tsv 2026-10-27T09:30, F13)', async () => {
+    const dir = run('environment-label', 't-beta/8', { tool_rejections_correct: 'no', decisive_step: 3, model_fault: 'no' });
+    refusedStep(dir, VALID, { code: 'NOT_SUPPORTED', message: "unknown tool 'bogus_tool'; tools: fhir_read" }, 'bogus_tool');
+    const vs = await violations(dir);
+    expect(about(vs)).toEqual([TOOL('t-beta/8', 'environment', 'step 3 is bogus_tool, which was refused (NOT_SUPPORTED) for input that breaks its schema (name: no tool bogus_tool)')]);
     expect(vs).toContain('t-beta/8: labelled environment, and its fault model has the label model');
     expect(vs.filter((v) => v.includes('(E6)'))).toEqual([]);
   });

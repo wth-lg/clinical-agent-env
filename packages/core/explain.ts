@@ -96,8 +96,10 @@ export interface ExplainRecord {
 // adjudicated_clinically_acceptable or adjudicated_tool_rejections_correct (decisions.tsv
 // 2026-10-27T02:10); the adjudicated answer, else the auditor's, is the answer every count reads,
 // so an overruled no is never counted. A tool_rejections_correct no makes the fault environment
-// (outcomes.ts E6) when its decisive_step is a tool error step of the trajectory and the audit is
-// confirmed (llm_auditor_agrees true or an adjudicated_label; decisions.tsv 2026-10-27T06:00).
+// (outcomes.ts E6) when its decisive_step is a tool error step of the trajectory, the tool list the
+// model was given does not reproduce the refusal (citedStep's schema_error) and the audit is
+// confirmed (outcomes.ts e6Confirmation: an adjudicated_label environment or, with none,
+// llm_auditor_agrees true; decisions.tsv 2026-10-27T06:00, 08:50 and 09:30).
 // cli/audit-check.ts requires an answered no to come with GR3 (an audit outcome GRADER_BUG with
 // evidence) or an environment label for clinically_acceptable, and for tool_rejections_correct
 // with what E6 needs and an environment label; an overruled no needs an adjudicated_label and a
@@ -215,8 +217,10 @@ const answer = (v: unknown): AuditAnswer | null => (v === 'yes' || v === 'no' ? 
 // The step a row cites, numbered as grader/exposure.ts stepsOf numbers them (the executed calls
 // from 1); null when it cites none or the trajectory has no such step. schema_error, on a refusal,
 // is the field (else the message) at fault when the tool's input schema (registry.ts validateInput)
-// refuses the recorded call with the same code and field: the call broke the schema the model was
-// given, so the refusal was right (decisions.tsv 2026-10-27T08:50). The schema is today's TOOLS'.
+// refuses the recorded call with the same code and field, or "name: no tool <name>" when callTool
+// refused a call to a tool not in TOOLS with NOT_SUPPORTED: the call broke the schema or the tool
+// list the model was given, so the refusal was right (decisions.tsv 2026-10-27T08:50 and 09:30).
+// The schemas and the tool list are today's TOOLS'.
 export interface CitedStep {
   tool: string;
   is_error: boolean;
@@ -231,7 +235,8 @@ export const citedStep = (events: readonly TrialEvent[], n: number | null | unde
   const tool = TOOLS.find((t) => t.name === e.name);
   const replay = e.is_error && call?.type === 'tool_call' && tool !== undefined ? validateInput(tool.inputSchema, call.input) : undefined;
   const field = (e.content as { error?: { field?: unknown } } | null)?.error?.field;
-  const schema_error = replay !== undefined && replay.code === e.error_code && replay.field === field ? (replay.field ?? replay.message) : null;
+  const unknown = e.is_error && tool === undefined && e.error_code === 'NOT_SUPPORTED' ? `name: no tool ${e.name}` : null;
+  const schema_error = replay !== undefined && replay.code === e.error_code && replay.field === field ? (replay.field ?? replay.message) : unknown;
   return { tool: e.name, is_error: e.is_error, error_code: e.error_code, schema_error };
 };
 // A row's answer to q after adjudication.
