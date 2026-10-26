@@ -298,7 +298,7 @@ export const FAULT_DEFINITIONS: Readonly<Record<Fault, FaultDefinition>> = {
       },
       {
         id: 'E6',
-        text: 'A human audit answers tool_rejections_correct no (after adjudication): a tool refused a valid call, at the step the audit cites as its decisive step, which the trajectory shows as a tool error that the tool\'s input schema does not reproduce on the recorded call (a call that breaks the schema was rightly refused); and the audit is confirmed, by an adjudicated label environment or, with no adjudicated label, an agreeing LLM auditor.',
+        text: 'A human audit says, after adjudication, that a tool refusal was wrong: at the step the audit names as decisive, a tool refused a call, the trajectory shows a tool error there, and the tool\'s input schema accepts the recorded call (a call that breaks the schema was rightly refused); and the audit is confirmed, by an adjudicated label environment or, with no adjudicated label, an LLM auditor that agrees.',
         reads: ['audit.adjudicated_tool_rejections_correct (else audit.tool_rejections_correct)', 'audit.decisive_step', 'trajectory (the cited step is_error, and its call\'s input against the tool\'s input schema)', 'audit.adjudicated_label', 'audit.llm_auditor_agrees'],
         check: ({ audit }) => {
           if (audit === null) return result(false, 'not human-audited');
