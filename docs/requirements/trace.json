@@ -1,6 +1,18 @@
 {
   "pdf_block_sha256": "d4b59ac910142cf2d8d8e7364d06903f573b0a1190335543699729b42ef03a4b",
   "done_when_clauses": 7,
+  "done_phases": [
+    "P9t",
+    "Prn",
+    "P11",
+    "P12b",
+    "P12c",
+    "P12n",
+    "P13",
+    "P14",
+    "P15",
+    "P16"
+  ],
   "rows": [
     {
       "id": "A1",
@@ -107,7 +119,7 @@
         }
       },
       "phase": "P14",
-      "note": "Our variant of this shape: typed tools over an in-memory FHIR R4 store, no container needed. The tools are MCP-shaped definitions (name, description, JSON Schema input) sent as Messages API tools; no MCP server ships, and the stdio MCP adapter is a next step (plan.md Open decisions)."
+      "note": "Our variant of this shape: typed tools over an in-memory FHIR R4 store, no container needed. The tools are MCP-shaped definitions (name, description, JSON Schema input) sent as Messages API tools; no MCP server ships, and the stdio MCP adapter is a next step (the writeup’s next steps section)."
     },
     {
       "id": "A4",
@@ -1103,7 +1115,8 @@
         "packages/core/test/explain.test.ts",
         "packages/core/test/outcomes.test.ts",
         "scripts/test/one-definition.test.ts",
-        "cli/test/audit-check.test.ts",
+        "cli/test/audit-check-final.test.ts",
+        "cli/test/audit-check-labels.test.ts",
         "apps/web/e2e/browse.spec.ts"
       ],
       "ui_required": true,
@@ -1136,8 +1149,7 @@
         6
       ],
       "pending": [
-        "results/runs/final-1/audit.jsonl",
-        "cli/test/audit-check.test.ts"
+        "results/runs/final-1/audit.jsonl"
       ]
     },
     {
@@ -1155,7 +1167,8 @@
         "packages/core/test/explain.test.ts",
         "packages/core/test/outcomes.test.ts",
         "scripts/test/one-definition.test.ts",
-        "cli/test/audit-check.test.ts",
+        "cli/test/audit-check-final.test.ts",
+        "cli/test/audit-check-labels.test.ts",
         "apps/web/e2e/browse.spec.ts"
       ],
       "ui_required": true,
@@ -1195,8 +1208,7 @@
         6
       ],
       "pending": [
-        "results/runs/final-1/audit.jsonl",
-        "cli/test/audit-check.test.ts"
+        "results/runs/final-1/audit.jsonl"
       ]
     },
     {
@@ -2036,19 +2048,16 @@
         "apps/web/src/surface/detect.ts",
         "apps/web/src/surface/LocalCommand.tsx",
         "apps/web/src/live/transport",
-        "apps/web/src/surface/LocalRunPanel.tsx",
-        "apps/web/src/surface/relay.ts",
-        "apps/web/src/keygate/failure.ts"
+        "apps/web/src/surface/LocalRunPanel.tsx"
       ],
       "tests": [
         "apps/web/e2e/shell.spec.ts",
-        "apps/web/e2e/live.spec.ts",
-        "apps/web/e2e/relay.spec.ts"
+        "apps/web/e2e/live.spec.ts"
       ],
       "ui_required": true,
       "ui": {
         "route": "https://wth-lg.github.io/clinical-agent-env/",
-        "action": "On the hosted URL validate the key: Validate and trials go through the relay; the local-run panel shows the local command (ending in pnpm start) with a copy button, and if the relay cannot be reached, limits or fails, a red error says so and points to it; browsing and replay work without a key.",
+        "action": "On the hosted URL validate the key: if its organization does not allow browser access, the page says so and shows the local command (ending in pnpm start) with a copy button; browsing and replay work without a key.",
         "surface": "hosted"
       },
       "evidence": [
@@ -2284,18 +2293,19 @@
       "text_sha256": "f66b6c99f6c1ad838438ca58584ce0749214926b2a1e3980094642391a031cdb",
       "kind": "user",
       "code": [
-        "apps/web/src/trial",
+        "apps/web/src/live",
         "apps/web/src/keygate/KeyChip.tsx",
         "apps/web/src/keygate/KeyGate.tsx"
       ],
       "tests": [
+        "apps/web/e2e/local-runner.spec.ts",
         "apps/web/e2e/trial.spec.ts",
         "apps/web/e2e/shell.spec.ts"
       ],
       "ui_required": true,
       "ui": {
-        "route": "/?view=runs&run=session&trial=first-nonpass",
-        "action": "On the local runner, after the audit's live trials and the forced-fail smoke trial (a valid FAIL on claude-opus-5-5, run id smoke-<n>, mock: true), open the first non-pass trial of this runner session: its header shows the not human-audited marker; then press Forget key: the key gate returns.",
+        "route": "/?view=live&task=renal-dose-review",
+        "action": "On the local runner, after the audit's live trials and the forced-fail smoke trial (a valid FAIL on claude-opus-5-5, run id smoke-<n>, mock: true), open Live trial and the smoke trial under Your runs: its header shows the not human-audited marker; then press Forget key: the key gate returns.",
         "surface": "local"
       },
       "evidence": [
@@ -2811,24 +2821,44 @@
         "apps/relay/src/limiter.ts",
         "apps/relay/src/upstream.ts",
         "apps/relay/vercel.json",
-        "packages/core/anthropic.ts"
+        "packages/core/anthropic.ts",
+        "apps/web/src/surface/relay.ts",
+        "apps/web/src/keygate/failure.ts",
+        "apps/web/src/keygate/KeyGate.tsx"
       ],
       "tests": [
         "apps/relay/test",
-        "packages/core/test/anthropic-endpoint.test.ts"
+        "packages/core/test/anthropic-endpoint.test.ts",
+        "apps/web/e2e/relay.spec.ts",
+        "apps/web/test/relay.test.ts",
+        "apps/web/test/failure.test.ts"
       ],
-      "ui_required": false,
-      "evidence": [
-        "verifier-phase-P25c-1/U35-relay-tests.txt"
-      ],
-      "expect": {
-        "command": {
-          "cmd": "pnpm vitest run apps/relay packages/core/test/anthropic-endpoint",
-          "exit": 0
-        }
+      "ui_required": true,
+      "ui": {
+        "route": "https://wth-lg.github.io/clinical-agent-env/",
+        "action": "On the hosted URL validate the key: Validate and trials go through the relay; the local-run panel shows the local command (ending in pnpm start) with a copy button, and if the relay cannot be reached, limits or fails, a red error says so and points to it; browsing and replay work without a key.",
+        "surface": "hosted"
       },
-      "phase": "P16h",
-      "note": "The hosted page's relay screen (P16h PR-web-2) adds a ui and an ax_text to this row after it merges."
+      "evidence": [
+        "verifier-phase-P25c-1/U35-relay-tests.txt",
+        "verifier-phase-P25c-1/U35-hosted-relay-key-gate.png",
+        "verifier-phase-P25c-1/U35-hosted-relay-key-gate.ax.txt"
+      ],
+      "expect": [
+        {
+          "command": {
+            "cmd": "pnpm vitest run apps/relay packages/core/test/anthropic-endpoint",
+            "exit": 0
+          }
+        },
+        {
+          "ax_text": {
+            "file": "verifier-phase-P25c-1/U35-hosted-relay-key-gate.ax.txt",
+            "text": "through a relay that forwards it and keeps no copy"
+          }
+        }
+      ],
+      "phase": "P16h"
     },
     {
       "id": "U36",

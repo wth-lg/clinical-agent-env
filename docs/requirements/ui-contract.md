@@ -90,6 +90,8 @@ accessible name or text node, so they share one line of the snapshot.
 - `Add an API key`: the key gate heading, shown when no key is set and again after Forget key.
 - `Local runner` and `Browser-direct`: the surface chip on the local runner and on the hosted
   site.
+- `through a relay that forwards it and keeps no copy`: the key gate's line on the hosted site
+  saying where the key goes (P16h, KeyGate WHERE; trace U35).
 
 ### P12c: prerequisites next to the one command
 
