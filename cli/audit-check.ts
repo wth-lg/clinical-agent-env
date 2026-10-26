@@ -39,7 +39,9 @@
 //     task-validity review line in audit.jsonl, beside the per-trial rows:
 //       {task, kind: "task-validity", reviewer, verdict: "fair-trap" | "check-defect", note}
 //     A check-defect verdict meets the check and is printed as a grader finding: the check is
-//     fixed and the run regraded, as for any grader bug.
+//     fixed and the run regraded, as for any grader bug;
+//   - with --final (P17i C6, R14-33: the final audit, never a pilot audit), every valid failure's
+//     label has an LLM auditor verdict: llm_auditor_agrees true or false, not null or missing.
 // It writes each label's criteria, explainTrial's M1-M5 for its trial, into audit.jsonl (only when
 // they changed, so a second run leaves the file as it was). The context it gives explainTrial
 // (explainContext) is packages/core/explain-context.ts over the run's files, the one builder the
@@ -255,7 +257,11 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
   const faults = Object.fromEntries(FAULT_PRECEDENCE.map((f) => [f, 0])) as Record<Fault, number>;
   for (const r of failures) {
     const name = trialName(r);
-    if (!byTrial.has(name)) v.push(`${name}: ${currentGrade(r).outcome}, no audit label`);
+    const row = byTrial.get(name);
+    if (row === undefined) v.push(`${name}: ${currentGrade(r).outcome}, no audit label`);
+    else if (final && typeof row.llm_auditor_agrees !== 'boolean') {
+      v.push(`${name}: ${currentGrade(r).outcome} has no LLM auditor verdict (llm_auditor_agrees ${row.llm_auditor_agrees === undefined ? 'missing' : JSON.stringify(row.llm_auditor_agrees)}); --final requires one on every valid failure`);
+    }
     const e = await explain(r, byTrial.get(name));
     if (e.fault !== null) faults[e.fault]++;
     for (const c of e.criteria) {
