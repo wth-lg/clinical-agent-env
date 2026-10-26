@@ -106,10 +106,20 @@ jobs:
   # Browsers and their system libraries come from the image, so this job installs nothing
   # with apt. The tag must equal @playwright/test in apps/web/package.json
   # (scripts/test/ci-workflow.test.ts fails when they drift).
+  # Playwright shards by test count over files in order, so --shard=i/n alone would put all seven
+  # 'grader validation in the tab' tests in shard 1; six of them run a task's matrix (2-6 min each
+  # on this runner). They get three shards of their own; --grep-invert of the same title runs
+  # every other test in the fourth.
+  # ci-guard wants literal Playwright arguments, so each shard has its own step.
   e2e:
+    name: e2e (${{ matrix.shard }})
     needs: check
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [grader-1, grader-2, grader-3, rest]
     container:
       image: mcr.microsoft.com/playwright:v1.64.1-noble
       # Firefox will not launch as root when $HOME belongs to another user; the runner mounts
@@ -125,10 +135,28 @@ jobs:
       - run: pnpm install --frozen-lockfile
       # playwright.config.ts serves the build with vite preview.
       - run: pnpm build
-      - run: pnpm --filter web exec playwright test --project=mocked --project=xbrowser
+      - if: matrix.shard == 'grader-1'
+        run: pnpm --filter web exec playwright test --project=mocked --grep "grader validation in the tab" --shard=1/3
+      - if: matrix.shard == 'grader-2'
+        run: pnpm --filter web exec playwright test --project=mocked --grep "grader validation in the tab" --shard=2/3
+      - if: matrix.shard == 'grader-3'
+        run: pnpm --filter web exec playwright test --project=mocked --grep "grader validation in the tab" --shard=3/3
+      - if: matrix.shard == 'rest'
+        run: pnpm --filter web exec playwright test --project=mocked --project=xbrowser --grep-invert "grader validation in the tab"
       - if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.shard }}
           path: apps/web/playwright-report
           retention-days: 7
+
+  # One check name for the e2e shards, as matrix-ok is for the matrix.
+  e2e-ok:
+    needs: e2e
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - env:
+          RESULT: ${{ needs.e2e.result }}
+        run: test "$RESULT" = success
