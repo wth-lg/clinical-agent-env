@@ -388,8 +388,42 @@ export async function gradeTrajectory(taskId: string, opts: GradeTrajectoryOptio
 // Re-executes every call of the trajectory's tool log, refused ones included (a refusal recurs
 // and leaves the store as it was), against a fresh store and session with the tools the loop
 // offered, and returns the store. mismatch names the first call whose result (as canonical JSON)
-// or is_error differs from its recorded tool_result, null when none does. null when a call throws
-// (the INTERNAL error that ended the trial, re-run so it recurs).
+// or is_error differs from its recorded tool_result, null when none does: its index in the tool
+// log, its tool and id, and is_error or the first differing field with both values (explain.ts
+// E4 shows it). null when a call throws (the INTERNAL error that ended the trial, re-run so it
+// recurs).
+const ABSENT = Symbol('absent');
+type Found = unknown | typeof ABSENT;
+
+// The first place two JSON values differ, keys in sorted order: its path (a.b[2].c, '' for the
+// whole value) and both values there, ABSENT where one side has no such key or index.
+const same = (x: Found, y: Found) => x !== ABSENT && y !== ABSENT && canonicalJson(x as never) === canonicalJson(y as never);
+
+function firstDifference(a: Found, b: Found, path = ''): { path: string; recorded: Found; replayed: Found } {
+  const obj = (x: Found): x is Record<string, unknown> => typeof x === 'object' && x !== null && !Array.isArray(x);
+  if (Array.isArray(a) && Array.isArray(b)) {
+    for (let i = 0; i < Math.max(a.length, b.length); i++) {
+      const [x, y] = [i < a.length ? a[i] : ABSENT, i < b.length ? b[i] : ABSENT];
+      if (!same(x, y)) return firstDifference(x, y, `${path}[${i}]`);
+    }
+  } else if (obj(a) && obj(b)) {
+    for (const k of [...new Set([...Object.keys(a), ...Object.keys(b)])].sort()) {
+      // Own keys only: a key such as toString is on every object's prototype chain.
+      const [x, y] = [Object.hasOwn(a, k) ? a[k] : ABSENT, Object.hasOwn(b, k) ? b[k] : ABSENT];
+      if (!same(x, y)) return firstDifference(x, y, path ? `${path}.${k}` : k);
+    }
+  }
+  return { path, recorded: a, replayed: b };
+}
+
+// A value as the mismatch message shows it: JSON, cut to 60 code points (so a surrogate pair is
+// never split, decisions.tsv 2026-10-29T02:45), or 'absent'.
+const shown = (x: Found) => {
+  if (x === ABSENT) return 'absent';
+  const s = Array.from(JSON.stringify(x));
+  return s.length > 60 ? `${s.slice(0, 57).join('')}...` : s.join('');
+};
+
 async function replay(source: FixtureSource, task: Task, tools: readonly Tool<WriteContext>[], events: readonly TrialEvent[]): Promise<{ store: Store; mismatch: string | null } | null> {
   const store = await loadStore(source);
   const ctx = context(store, task);
@@ -398,13 +432,16 @@ async function replay(source: FixtureSource, task: Task, tools: readonly Tool<Wr
   const json = (v: unknown) => canonicalJson(JSON.parse(JSON.stringify(v ?? null)));
   let mismatch: string | null = null;
   try {
-    for (const call of toolLog(events)) {
+    for (const [i, call] of toolLog(events).entries()) {
       const res = callTool(tools, call.name, call.input, ctx);
       const was = recorded.get(call.tool_use_id)!;
-      const at = `replay: the ${call.name} call ${call.tool_use_id} gave`;
+      const at = `replay: call ${i + 1} (${call.name}, ${call.tool_use_id}) gave`;
       if (mismatch !== null) continue;
       if (res.is_error !== was.is_error) mismatch = `${at} is_error ${res.is_error}, recorded ${was.is_error}`;
-      else if (json(res.content) !== json(was.content)) mismatch = `${at} a different result than its recorded tool_result`;
+      else if (json(res.content) !== json(was.content)) {
+        const d = firstDifference(JSON.parse(JSON.stringify(was.content ?? null)), JSON.parse(JSON.stringify(res.content ?? null)));
+        mismatch = `${at} a different result: at ${d.path || 'the result'}, recorded ${shown(d.recorded)}, replayed ${shown(d.replayed)}`;
+      }
     }
   } catch {
     return null;

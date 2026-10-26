@@ -47,6 +47,10 @@ describe('results: the run views and the trial page agree on E6', () => {
     expect(readsEvents({ outcome: 'LIMIT' }, null)).toBe(true);
     expect(readsEvents({ outcome: 'FAIL' }, null)).toBe(false);
     expect(readsEvents({ outcome: 'FAIL' }, { tool_rejections_correct: 'no' })).toBe(true);
+    // verifier JG10-1 F1: a replay_mismatch's E4 sentence names the call from the trajectory, so
+    // the run-level list and the trial page give one reason.
+    expect(readsEvents({ outcome: 'ENV_ERROR', detail: 'replay_mismatch' }, null)).toBe(true);
+    expect(readsEvents({ outcome: 'ENV_ERROR', detail: 'INTERNAL' }, null)).toBe(false);
     expect(readsEvents({ outcome: 'FAIL' }, { tool_rejections_correct: 'no', adjudicated_tool_rejections_correct: 'yes' })).toBe(false);
     expect(readsEvents({ outcome: 'FAIL' }, { tool_rejections_correct: 'yes', adjudicated_tool_rejections_correct: 'no' })).toBe(true);
   });
