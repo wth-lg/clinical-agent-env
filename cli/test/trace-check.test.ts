@@ -155,16 +155,42 @@ describe('trace-check: the 13 gate cases', () => {
     expect(text).toMatch(/^N2: expect\[0\] command not met: `node -e "process\.exit\(4\)"` expected exit 3, observed exit 4; fix: /m);
   });
 
-  it('the clean fixture exits 0 in the default mode and under --final; a missing path of a phase not in --done passes', async () => {
+  it('the clean fixture exits 0 in the default mode and under --final; a missing path the row lists in pending passes unless its phase is in --done', async () => {
     const dir = copy();
     expect(await check(dir, '--plan', join(dir, 'plan.md'), '--done', 'P1,P2')).toMatchObject({ code: 0 });
     const f = await check(dir, ...final(dir), '--plan', join(dir, 'plan.md'));
     expect(f.text).toMatch(/^trace-check: OK/m);
     expect(f.code).toBe(0);
     rmSync(join(dir, 'src/ui.txt'));
+    editRows(dir, (rows) => {
+      for (const r of rows) if (r.code.includes('src/ui.txt')) r.pending = ['src/ui.txt'];
+    });
     const d = await check(dir, '--done', 'P1');
     expect(d.text).toMatch(/^trace-check: OK/m);
     expect(d.code).toBe(0);
+    const done = await check(dir, '--done', 'P1,P2');
+    expect(done.code).toBe(1);
+    expect(done.text).toMatch(/^N1: code path src\/ui\.txt does not exist and phase P2 is done; fix: /m);
+  });
+
+  it('exits 1 in the default mode on a missing code or test path that the row does not list in pending', async () => {
+    const dir = copy();
+    rmSync(join(dir, 'src/ui.txt'));
+    rmSync(join(dir, 'test/store.check.txt'));
+    const { code, text } = await check(dir);
+    expect(code).toBe(1);
+    expect(text).toMatch(/^N1: code path src\/ui\.txt does not exist; fix: /m);
+    expect(text).toMatch(/^A1: test path test\/store\.check\.txt does not exist; fix: /m);
+  });
+
+  it('exits 1 on a pending path that is not one of the row\'s code or test paths', async () => {
+    const dir = copy();
+    editRows(dir, (rows) => {
+      row(rows, 'N1').pending = ['src/other.txt'];
+    });
+    const { code, text } = await check(dir);
+    expect(code).toBe(1);
+    expect(text).toMatch(/^N1: pending path src\/other\.txt is not a code or test path of the row; fix: /m);
   });
 });
 
