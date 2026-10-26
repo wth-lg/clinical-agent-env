@@ -296,7 +296,7 @@ export const FAULT_DEFINITIONS: Readonly<Record<Fault, FaultDefinition>> = {
       },
       {
         id: 'E5',
-        text: "A decisive id of the failed gate check was never shown to the model, and neither the task's oracle nor an alternative was shown it in the matrix run on the trial's world, so it was not reachable (M1 not met).",
+        text: "A decisive id of the failed gate check was never shown to the model, and neither the task's reference solution nor an accepted alternative was shown it in the grader validation matrix run on the trial's world, so it was not reachable (M1 not met).",
         reads: M1.reads,
         check: negation(M1.check),
       },
