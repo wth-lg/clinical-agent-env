@@ -70,7 +70,7 @@ route. A route that needs a run-specific trial uses a token that the UI resolves
 | `/?view=runs&run=final-1&trial=first-nonpass&tab=grading` | Trial Grading tab: verdict chip, Score card, gate checks, rubric table | P16 |
 | `/?view=runs&run=final-1&trial=first-nonpass&tab=attribution` | Trial Attribution tab, criteria table | P16 |
 | `/?view=runs&run=final-1&trial=first-nonpass&tab=state-diff` | Trial State diff tab: initial hash against the manifest, then the diff | P16 |
-| `/?view=runs&run=session&trial=first-nonpass` | First non-pass trial started by this local runner process | P15, P16 |
+| `/?view=runs&run=session&trial=first-nonpass` | Heading `Trials from this session` and a notice that says where this session's trials are (Your runs in the Live trial view), with an `Open Live trial` link; it shows while the published results load or cannot be read. The session run list of `run=session` above is not built yet | P15, P16 |
 | `/?view=environment` | Environment: counts, tool catalogue, Try a tool, Verify reset | P14 |
 | `/?view=glossary` | How failures are attributed (definitions) | P14 |
 | `/?view=findings` | Findings, rendered from docs/findings.md and summary.json | P14, P24 (content) |

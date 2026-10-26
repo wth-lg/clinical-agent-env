@@ -20,13 +20,14 @@ import { MET_TEXT, type Explanation } from '../../../../packages/core/explain.ts
 import type { TrialEvent } from '../../../../packages/core/events.ts';
 import { fetchEvents, fullExplanation, useResults, type RunData, type Trial } from '../data/results.ts';
 import { FaultLabel, GlossaryLink, HashText, Notice, OutcomeChip } from '../data/ui.tsx';
+import { tabTarget } from '../data/tabs.ts';
 import { hrefWith, navigate, onNav, useParams } from '../data/url.ts';
 import { runnerToken } from '../keygate/runner.ts';
 import { Attribution, criterionPhrase, criterionText, FAULT_WORD, LINK, StepLink } from './Attribution.tsx';
 import { EnvironmentTab, Raw } from './Details.tsx';
 import { Grading } from './Grading.tsx';
 import { returnTo } from './back.ts';
-import { resolveTrial } from './resolve.ts';
+import { FIRST_NONPASS, resolveTrial } from './resolve.ts';
 import { StateDiff } from './StateDiff.tsx';
 import { internalErrorRow, trajectoryOf, type Row } from './steps.ts';
 import { Trajectory, type Loaded } from './Trajectory.tsx';
@@ -89,13 +90,16 @@ export function TrialPage({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
   const params = useParams();
   const trial = params.get('trial') ?? '';
   const runId = params.get('run');
-  if (results === null) return <Frame title={trial} headingRef={headingRef}><Notice>Loading the published results…</Notice></Frame>;
-  if (results.kind === 'error') return <Frame title={trial} headingRef={headingRef}><Notice testId="error-state">The published results cannot be read: {results.message}</Notice></Frame>;
-  if (runId === 'session') return <Frame title={trial} headingRef={headingRef}><SessionNotice /></Frame>;
+  // The first-nonpass token is a URL word, not a name to show (verifier-ui-copy-1 m5).
+  const title = trial === FIRST_NONPASS ? 'First non-pass trial' : trial;
+  // The session notice reads no published results, so it shows while they load or fail to load.
+  if (runId === 'session') return <Frame title="Trials from this session" headingRef={headingRef}><SessionNotice /></Frame>;
+  if (results === null) return <Frame title={title} headingRef={headingRef}><Notice>Loading the published results…</Notice></Frame>;
+  if (results.kind === 'error') return <Frame title={title} headingRef={headingRef}><Notice testId="error-state">The published results cannot be read: {results.message}</Notice></Frame>;
   const runs = [...(results.official ? [results.official] : []), ...results.pilots];
   const r = resolveTrial(runs, runId, trial);
   if (r.kind === 'none-nonpass') return <Frame title="First non-pass trial" headingRef={headingRef}><Notice testId="empty-state">{r.message}</Notice></Frame>;
-  if (r.kind !== 'trial') return <Frame title={trial} headingRef={headingRef}><Notice testId="error-state">{r.message}</Notice></Frame>;
+  if (r.kind !== 'trial') return <Frame title={title} headingRef={headingRef}><Notice testId="error-state">{r.message}</Notice></Frame>;
   return <Detail key={`${r.run.runId}/${r.trial.name}`} t={r.trial} run={r.run} files={results.files} tab={tabOf(params.get('tab'))} headingRef={headingRef} />;
 }
 
@@ -248,13 +252,15 @@ function Reason({ reason, muted }: { reason: string; muted: boolean }) {
 // The tab strip and its panels (WAI-ARIA tabs: arrow keys, Home and End move between tabs).
 function Tabs({ tab, children }: { tab: TabId; children: Record<TabId, React.ReactNode> }) {
   const refs = useRef<Record<string, HTMLButtonElement | null>>({});
+  // Only a real change navigates, so a click on the selected tab adds no history entry.
   const go = (id: TabId, focus = false) => {
+    if (id === tab) return;
     navigate({ tab: id });
     if (focus) refs.current[id]?.focus();
   };
   const onKey = (ev: KeyboardEvent<HTMLDivElement>) => {
     const i = TABS.findIndex((x) => x.id === tab);
-    const to = ev.key === 'ArrowRight' ? (i + 1) % TABS.length : ev.key === 'ArrowLeft' ? (i + TABS.length - 1) % TABS.length : ev.key === 'Home' ? 0 : ev.key === 'End' ? TABS.length - 1 : null;
+    const to = tabTarget(ev.key, i, TABS.length);
     if (to === null) return;
     ev.preventDefault();
     go(TABS[to]!.id, true);
