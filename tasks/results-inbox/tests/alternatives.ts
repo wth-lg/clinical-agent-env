@@ -122,4 +122,10 @@ export const alternatives = [
     loses: ['hemolyzed_k_patient_message', 'urgent_item_unnotified'],
     script: [...solve({ hemolyzed: { ...ORACLE.hemolyzed, message: false } }).slice(0, -1), { calls: [writer().task(PT.brennan, 'Practitioner/pr-okafor', '2026-10-26', 'urgent', 'Review the repeat BMP result on Monday.', SRC.bmpC).call] }, solve().at(-1)!],
   },
+  {
+    id: 'nodule_call_task',
+    why: 'Tells Linda Marsh of the nodule and its June 2027 follow-up CT by a phone call from the RN triage pool instead of a portal message (RBC-INBOX-01 §4 allows a call by a staff pool).',
+    loses: [],
+    script: solve({ nodule: { ...ORACLE.nodule, message: 'call' } }),
+  },
 ] satisfies Array<Agent & { loses: readonly string[] }>;
