@@ -97,7 +97,10 @@ export interface AttributionFacts {
   // gate check when it is another (first_failed, else null), and the decisive ids of both, the
   // decisive check's first (decisions.tsv 2026-10-28T20:55); exposure null when nothing says what
   // these ids were exposed at (a regrade failed another check and the caller could not recompute it).
-  decisive: { id: string; first_failed: string | null; exposure: ReadonlyArray<{ id: string; first_exposed_step: number | null; exposable: boolean | null }> | null } | null;
+  // exposable: a tool result exposed or referenced the id to a passing oracle or alternative in the
+  // matrix run on the trial's world and env_version (R14-30); null when it was exposed, or when
+  // exposability_unchecked says why the matrix cannot say.
+  decisive: { id: string; first_failed: string | null; exposure: ReadonlyArray<{ id: string; first_exposed_step: number | null; exposable: boolean | null }> | null; exposability_unchecked?: string | null } | null;
   matrix: MatrixResult | null;
   check_error: { check: string | null; message: string } | null;
   // The audit row's answers clinically_acceptable and tool_rejections_correct (explain.ts AuditRow),
@@ -162,8 +165,8 @@ const statusIs = (o: Outcome) => (f: AttributionFacts) => result(f.status === o 
 // a note, and decides no trial's fault.
 const M1: Criterion = {
   id: 'M1',
-  text: 'Every decisive id of the failed gate check, and of the first failed gate check when that is another, was shown to the model, or is in the world so the tool would have returned it had the model asked.',
-  reads: ['record.attribution.exposure (recomputed from the trajectory when a regrade failed another check)', 'world (is the id a resource of the world)'],
+  text: "Every decisive id of the failed gate check, and of the first failed gate check when that is another, was shown to the model, or is reachable: in the grader validation matrix, run on the trial's world and environment version, a tool result showed or referenced it to the task's reference solution or an accepted alternative, so a tool would have returned it had the model asked.",
+  reads: ['record.attribution.exposure (recomputed from the trajectory when a regrade failed another check)', "manifest world_hash and matrix.json's world_hash (the same world)", "record env_version and matrix.json's env_version (the same env files and tools)", "matrix.json's ids a tool result showed or referenced to the oracle and the alternatives that ran as expected (probes[].reachable_ids, as_expected)"],
   check: ({ decisive, outcome }) => {
     // A check that threw leaves no verdict on the model, though the grade records it not met.
     if (outcome === 'GRADER_ERROR') return result('n/a', 'a grader check threw, so no gate check gave a verdict on the model');
@@ -173,9 +176,9 @@ const M1: Criterion = {
     if (decisive.exposure.length === 0) return result(true, `${checks} ${decisive.first_failed === null ? 'names' : 'name'} no decisive ids`);
     const lines = decisive.exposure.map((e) =>
       e.first_exposed_step !== null ? `${e.id} exposed at step ${e.first_exposed_step}`
-        : e.exposable === true ? `${e.id} never exposed but exposable (in the world)`
-          : e.exposable === false ? `${e.id} was never exposed and is not exposable (not in the world)`
-            : `${e.id} never exposed; exposability not checked`);
+        : e.exposable === true ? `${e.id} never exposed but exposable (the reference solution or an accepted alternative reached it in the matrix)`
+          : e.exposable === false ? `${e.id} was never exposed and is not exposable (neither the reference solution nor an accepted alternative reached it in the matrix)`
+            : `${e.id} never exposed; exposability not checked${decisive.exposability_unchecked ? ` (${decisive.exposability_unchecked})` : ''}`);
     const met = decisive.exposure.every((e) => e.first_exposed_step !== null || e.exposable === true) ? true
       : decisive.exposure.some((e) => e.first_exposed_step === null && e.exposable === false) ? false : 'pending';
     return result(met, lines.join('; '));
@@ -264,7 +267,7 @@ export const FAULT_DEFINITIONS: Readonly<Record<Fault, FaultDefinition>> = {
     ],
   },
   env: {
-    sentence: 'The environment is at fault when a tool failed on its own or refused a valid call, the start or final state is not correct, an environment rule broke, or a record that a check needs is not in the world.',
+    sentence: 'The environment is at fault when a tool failed on its own or refused a valid call, the start or final state is not correct, an environment rule broke, or a record that a check needs was not reachable: no tool result showed it to the reference solution or an accepted alternative of the task in the grader validation matrix.',
     criteria: [
       {
         id: 'E1',
@@ -298,7 +301,7 @@ export const FAULT_DEFINITIONS: Readonly<Record<Fault, FaultDefinition>> = {
       },
       {
         id: 'E5',
-        text: 'The failed gate check needs a record that the model did not see and that is not in the world, so no tool could give it to the model (M1 not met).',
+        text: "A decisive id of the failed gate check, or of the first failed gate check when that is another, was never shown to the model, and in the grader validation matrix run on the trial's world and environment version no tool result showed or referenced it to the task's reference solution or an accepted alternative, so it was not reachable (M1 not met).",
         reads: M1.reads,
         check: negation(M1.check),
       },
