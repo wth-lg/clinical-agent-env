@@ -131,8 +131,12 @@ export interface ExplainContext {
   events: readonly TrialEvent[];
   // The run manifest's world_hash (explain-context.ts runWorldHash); null when the run has none.
   world_state_hash?: string | null;
-  // Whether a resource is in the world, so the tool would have returned it had the model asked.
+  // Whether a decisive id the model was never shown is reachable: the oracle or an alternative was
+  // shown it in the matrix run on the trial's world (explain-context.ts reachability, R14-30).
   exposable?: (id: string) => boolean;
+  // Why exposable is absent, when the caller knows: the matrix ran on another world, the run has
+  // no manifest, or matrix.json records no exposed ids. M1 shows it.
+  exposability_unchecked?: string;
   // The exposure of the current decisive check's ids, then the first failed check's when it is
   // another, when the caller recomputed it from the trajectory (a regrade failed another check
   // than the recorded attribution names).
@@ -476,6 +480,7 @@ export function explainTrial(record: ExplainRecord, audit: AuditRow | null | und
       id: failed.id,
       first_failed: outranked?.id ?? null,
       exposure: exposure === null ? null : exposure.map((e) => ({ ...e, exposable: e.first_exposed_step === null && ctx.exposable ? ctx.exposable(e.id) : null })),
+      exposability_unchecked: ctx.exposable ? null : (ctx.exposability_unchecked ?? null),
     },
     matrix: ctx.matrix ?? null,
     check_error: grade.regraded ? null : (record.error ?? null),

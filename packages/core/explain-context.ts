@@ -14,12 +14,16 @@
 //                     task's checks, then the first failed check's when it is another (as
 //                     attribution.ts names them), with the step each was first exposed at in the
 //                     trajectory (packages/grader/exposure.ts firstExposed)
-//   exposable         whether an id is in the world (worldLookup), when the caller loaded it;
-//                     needsWorld says whether M1 reads it, so a caller loads the world only then
+//   exposable         whether a decisive id the model was never shown is reachable (R14-30): the
+//                     oracle or an alternative was shown it in matrix.json's entry, which ran on
+//                     the run manifest's world (reachability); otherwise exposability_unchecked
+//                     says why the matrix cannot answer, and M1 is pending. Membership in today's
+//                     world is no longer read: an id in the store that no tool call returns was
+//                     not reachable, and today's world need not be the run's
 //   checks            the task's gate checks, for traces_to
 //   text              the task's check text (tasks/<id>.check-text.ts)
 import type { TrialEvent } from './events.ts';
-import { attributionFits, decisiveExposure, firstFailedCheck, outrankedCheck, type CheckText, type ExplainContext, type ExplainRecord } from './explain.ts';
+import { attributionFits, firstFailedCheck, outrankedCheck, type CheckText, type ExplainContext, type ExplainRecord } from './explain.ts';
 import type { MatrixResult } from './outcomes.ts';
 import { currentGrade } from './summary.ts';
 import { firstExposed, sameId, stepsOf } from '../grader/exposure.ts';
@@ -43,7 +47,8 @@ export interface ContextInput {
   // The task's checks, or null when the caller did not load them.
   checks?: readonly TaskCheck[] | null;
   text?: CheckText | null;
-  // Whether an id is in the world, or null when the caller did not load it.
+  // No longer read (R14-30: exposable means reachable, from matrix.json). Kept so a caller that
+  // still passes it (apps/web/src/data/results.ts) compiles until it drops it.
   inWorld?: ((id: string) => boolean) | null;
 }
 
@@ -76,21 +81,42 @@ export function recomputedExposure(record: ExplainRecord, checks: readonly TaskC
   return { check: failed.id, ids: [...new Set([...ids, ...more])].map((id) => ({ id, first_exposed_step: firstExposed(steps, id) })) };
 }
 
-// Whether M1 asks the world: a decisive id it reads was never exposed.
-export const needsWorld = (input: Pick<ContextInput, 'record' | 'checks' | 'events'>): boolean =>
-  (decisiveExposure(input.record, recomputedExposure(input.record, input.checks, input.events)) ?? []).some((e) => e.first_exposed_step === null);
+// Whether an unexposed decisive id was reachable (R14-30), from the run's manifest and matrix.json
+// entry for the grader_task_version: the run's world_hash must be the world the matrix's cases
+// started from, and then an id is exposable when the oracle or an alternative was shown it
+// (cli/matrix.ts writeMatrixJson: world_hash, probes[].exposed_ids). A mutant or a probe agent
+// does not count: it is not a correct solution. unchecked says why the matrix cannot answer.
+export function reachability(manifest: unknown, matrix: unknown, grader_task_version: string | null): { exposable: (id: string) => boolean } | { unchecked: string } {
+  const run = runWorldHash(manifest);
+  if (run === null) return { unchecked: 'the run has no manifest world_hash' };
+  const entry = grader_task_version !== null && isRecord(matrix) && isRecord(matrix.grader_task_versions) ? matrix.grader_task_versions[grader_task_version] : undefined;
+  if (!isRecord(entry)) return { unchecked: `the run has no matrix.json entry for ${grader_task_version ?? 'its grader_task_version'}` };
+  const probes = Array.isArray(entry.probes) ? entry.probes : [];
+  if (typeof entry.world_hash !== 'string' || probes.length === 0 || !probes.every((p) => isRecord(p) && strings(p.exposed_ids))) {
+    return { unchecked: `matrix.json's entry for ${grader_task_version} records no world_hash and exposed ids; rerun pnpm cli matrix --out <run>` };
+  }
+  if (run !== entry.world_hash) return { unchecked: `the run's world ${run} is not the world ${entry.world_hash} the matrix ran on` };
+  const shown = (probes as Array<{ kind?: unknown; exposed_ids: string[] }>).flatMap((p) => (p.kind === 'oracle' || p.kind === 'alternative' ? p.exposed_ids : []));
+  return { exposable: (id) => shown.some((k) => sameId(k, id)) };
+}
 
-// inWorld over the world's <Type>/<id> keys; an id given bare matches any type.
+// Whether a caller must load the world for M1: never since R14-30, which reads reachability from
+// matrix.json. Kept, always false, so apps/web/src/data/results.ts compiles until it drops it.
+export const needsWorld = (_input: Pick<ContextInput, 'record' | 'checks' | 'events'>): boolean => false;
+
+// inWorld over the world's <Type>/<id> keys; an id given bare matches any type. explainContext no
+// longer reads it (see needsWorld).
 export function worldLookup(keys: ReadonlySet<string>): (id: string) => boolean {
   return (id) => (id.includes('/') ? keys.has(id) : [...keys].some((k) => sameId(k, id)));
 }
 
 export function explainContext(input: ContextInput): ExplainContext {
   const checks = input.checks ?? null;
+  const reach = reachability(input.manifest, input.matrix, currentGrade(input.record).grader_task_version);
   return {
     events: input.events,
     world_state_hash: runWorldHash(input.manifest),
-    ...(input.inWorld ? { exposable: input.inWorld } : {}),
+    ...('exposable' in reach ? { exposable: reach.exposable } : { exposability_unchecked: reach.unchecked }),
     exposure: recomputedExposure(input.record, checks, input.events),
     matrix: matrixFor(input.matrix, currentGrade(input.record).grader_task_version),
     ...(checks === null ? {} : { checks: checks.flatMap((c) => (c.kind === 'gate' && c.traces_to !== undefined ? [{ id: c.id, traces_to: c.traces_to }] : [])) }),

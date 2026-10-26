@@ -60,9 +60,11 @@
 // (explainContext) is packages/core/explain-context.ts over the run's files, the one builder the
 // web Runs view uses too: the trajectory; the task's check text (tasks/<id>.check-text.ts) and
 // checks; <run>/manifest.json's world_hash as the manifest hash (none without a manifest, so M3
-// is pending); the world for exposability, loaded only when M1 reads it; <run>/matrix.json, as
-// `pnpm cli matrix --out <run>` writes it, for M4, GR4 and B1, looked up by the
-// grader_task_version of each record's current grade, so a matrix run for the fixed grader speaks
+// is pending); <run>/matrix.json, as `pnpm cli matrix --out <run>` writes it, for M4, GR4 and B1,
+// and for M1's exposability, which means reachable (R14-30): first the manifest's world_hash
+// against the world the matrix ran on, then whether the oracle or an alternative was shown the id
+// (explain-context.ts reachability; today's world is not read), the entry looked up by the
+// grader_task_version of the record's current grade, so a matrix run for the fixed grader speaks
 // for a regraded trial and one for the grader it ran under does not; and, on a regraded trial
 // whose first failed check is not the one its recorded attribution names, that check's decisive
 // ids with the step each was first exposed at in the trajectory.
@@ -81,18 +83,17 @@ import { pathToFileURL } from 'node:url';
 import type { BatchRecord } from '../packages/core/batch.ts';
 import { installEgressGuard } from '../packages/core/egress.ts';
 import type { TrialEvent } from '../packages/core/events.ts';
-import { explainContext as contextOf, needsWorld, worldLookup, type TaskCheck } from '../packages/core/explain-context.ts';
+import { explainContext as contextOf, type TaskCheck } from '../packages/core/explain-context.ts';
 import { AUDIT_QUESTIONS, auditAnswerOf, auditLabelOf, citedStep, excludedFromHeadline, explainTrial, formatCriterion, type AuditRow, type CheckText, type ExplainContext, type ExplainRecord } from '../packages/core/explain.ts';
 import { AUDIT_LABEL, AUDIT_LABELS, e6Confirmation, FAULT, FAULT_PRECEDENCE, type Fault, type Outcome } from '../packages/core/outcomes.ts';
 import { parseTrajectory } from '../packages/core/trajectory.ts';
 import { consistencyOf, currentGrade, describeConsistency, type ConsistencyFlag } from '../packages/core/summary.ts';
-import { loadStore } from '../packages/env/fixture-source.ts';
 import { TAXONOMY } from '../packages/grader/attribution.ts';
 import { sameId, stepsOf } from '../packages/grader/exposure.ts';
 import { requeuedRecords, settledRecords, trajectoryOf } from './adapters/result-sink-node.ts';
 import { TASKS_DIR } from './adapters/tasks-node.ts';
 import { trialName } from './replay.ts';
-import { repoWorld, taskChecks } from './run.ts';
+import { taskChecks } from './run.ts';
 import { readReplay } from './summary.ts';
 
 // A task's checks as far as the context reads them (packages/core/explain-context.ts TaskCheck).
@@ -167,8 +168,6 @@ export async function explainContext(dir: string, checks: TaskChecks = taskCheck
   const manifest = readJson(join(dir, 'manifest.json'));
   const matrix = readJson(join(dir, 'matrix.json'));
   const events = new Map<string, TrialEvent[]>();
-  let world: Promise<(id: string) => boolean> | undefined;
-  const inWorld = () => (world ??= loadStore(repoWorld().world).then((store) => worldLookup(new Set([...store.resources()].map((r) => `${r.resourceType}/${r.id}`)))));
   const gates = new Map<string, Promise<readonly TaskCheck[]>>();
   return async (r) => {
     const name = trialName(r);
@@ -179,7 +178,7 @@ export async function explainContext(dir: string, checks: TaskChecks = taskCheck
     const trajectory = events.get(name) as TrialEvent[];
     if (!gates.has(r.task_id)) gates.set(r.task_id, checks(r.task_id).catch(() => []));
     const input = { record: r as ExplainRecord, events: trajectory, manifest, matrix, checks: await gates.get(r.task_id)!, text: await checkTextOf(r.task_id) };
-    return { ...contextOf({ ...input, inWorld: needsWorld(input) ? await inWorld() : null }), events: trajectory };
+    return { ...contextOf(input), events: trajectory };
   };
 }
 

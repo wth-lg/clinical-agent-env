@@ -47,6 +47,9 @@
 //                     one is given (cli/matrix.ts reads it from results/tasks-v1.json, which
 //                     P21's freeze writes), and a pinned hash fails when the oracle case does not
 //                     run; without one the hash is printed, not checked
+// Each case's result also holds the ids its first run was shown (exposed_ids), and the result the
+// world it ran on (world_hash): matrix.json records both, and an id the oracle or an alternative
+// was shown is what audit-check counts as reachable (R14-30, packages/core/explain-context.ts).
 // MatrixOptions narrow a run for a unit test: a subset of cases, one trial, one grade. The CI
 // step runs the whole matrix with the defaults.
 import { MODEL, type CallResult, type ContentBlock, type MessageParam } from '../../core/anthropic.ts';
@@ -263,6 +266,8 @@ export interface CaseResult {
   failed_gates: string[];
   // Rubric items lost: a positive item not met, a penalty met (an unknown item is neither).
   lost_items: string[];
+  // The ids the first run's results exposed (grader/exposure.ts stepsOf), sorted, each once.
+  exposed_ids: string[];
   // null when not checked (one grade, one trial, no fresh process).
   regrade_same: boolean | null;
   replay_same: boolean | null;
@@ -421,7 +426,8 @@ export async function runCases(env: MatrixEnv, task: MatrixTask, selected: reado
     }
     if (regrade_same === false) v.problems.push('a second grade from the same record differs');
     if (replay_same === false) v.problems.push('a second run gives a different trajectory or final hash');
-    return { case: c, record: run.record, grade, misses, regrade_same, replay_same, isolation, ...v };
+    const exposed_ids = [...new Set(stepsOf(run.events).flatMap((s) => s.exposed_ids))].sort();
+    return { case: c, record: run.record, grade, misses, exposed_ids, regrade_same, replay_same, isolation, ...v };
   });
 }
 
@@ -459,6 +465,8 @@ export interface MatrixResult {
   pass: boolean;
   lines: string[];
   results: CaseResult[];
+  // The world every case started from (MatrixEnv.worldHash).
+  world_hash: string;
 }
 
 const score = (g: Grade) => (g.score === null ? 'n/a' : g.score.toFixed(3));
@@ -473,7 +481,7 @@ export async function runMatrix(env: MatrixEnv, task: MatrixTask, opts: MatrixOp
   const declarations = [...lossDeclarations(task), ...agentDeclarations(task)];
   if (declarations.length > 0) {
     const lines = [`matrix ${task.id}`, losses, 'cases: not run (fix the loses and attribution declarations first)', `matrix ${task.id}: FAIL`, ...declarations.map((d) => `  - ${d}`)];
-    return { pass: false, lines, results: [] };
+    return { pass: false, lines, results: [], world_hash: env.worldHash };
   }
   const results = await runCases(env, task, selected, opts);
   const failures: string[] = [];
@@ -581,5 +589,5 @@ export async function runMatrix(env: MatrixEnv, task: MatrixTask, opts: MatrixOp
 
   lines.push(`matrix ${task.id}: ${failures.length === 0 ? 'PASS' : 'FAIL'}`);
   for (const f of failures) lines.push(`  - ${f}`);
-  return { pass: failures.length === 0, lines, results };
+  return { pass: failures.length === 0, lines, results, world_hash: env.worldHash };
 }
