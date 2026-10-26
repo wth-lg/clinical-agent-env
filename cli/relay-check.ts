@@ -17,7 +17,8 @@
 //   API 401           POST from the Pages origin with the sentinel key: the API's 401
 //                     authentication_error, with the allow-origin header
 //   static paths      GET of each relay file the deploy must not serve (STATIC_PATHS: the README,
-//                     a source, a test, public/README.md, vercel.json): 404; and GET /api/messages,
+//                     a source, a test, public/README.md, vercel.json, package.json,
+//                     tsconfig.json): 404; and GET /api/messages,
 //                     the function's own path, which reaches it: 404 from handle
 // It prints which requests invoke the function (those to /v1/messages and /api/messages) and
 // which do not.
@@ -46,7 +47,7 @@ const TIMEOUT_MS = 30_000;
 // The client address headers a client can send; the relay must key on the platform's value.
 export const SPOOFED_ADDRESS_HEADERS = ['x-forwarded-for', 'x-real-ip', 'x-vercel-forwarded-for'];
 // Files in apps/relay that the deploy must not serve (apps/relay/.vercelignore, public/README.md).
-export const STATIC_PATHS = ['/README.md', '/src/relay.ts', '/test/serve-local.ts', '/public/README.md', '/vercel.json'];
+export const STATIC_PATHS = ['/README.md', '/src/relay.ts', '/test/serve-local.ts', '/public/README.md', '/vercel.json', '/package.json', '/tsconfig.json'];
 
 // The header names the hosted MessagesClient sends, read from a real client: it is built over a
 // ledger in a temp HOME (default mode, deleted afterwards) and its one Request is answered by a
