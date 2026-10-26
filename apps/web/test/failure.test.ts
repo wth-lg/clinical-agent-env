@@ -29,7 +29,13 @@ describe('describeFailure', () => {
       expect(d.local, reason).toBe(true);
       expect(d.detail, reason).toBe('raw');
     }
-    expect(RELAY_FAILURE_TEXT.unreachable.next).toContain('a Chromium browser such as Chrome or Brave, or Firefox');
+  });
+
+  // Ruling 2026-10-28T02:00: all three relay errors name the browsers the page works in.
+  it('each relay failure names the supported browsers', () => {
+    for (const reason of ['unreachable', 'limited', 'unavailable'] as const) {
+      expect(RELAY_FAILURE_TEXT[reason].next, reason).toContain('This page works in a Chromium browser such as Chrome or Brave, or Firefox.');
+    }
   });
 
   it('the relay strings are fixed in docs/requirements/ui-contract.md', () => {

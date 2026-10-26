@@ -124,10 +124,10 @@ LOCAL_PREREQUISITES and LOCAL_START_COMMAND.
   `This page works in a Chromium browser such as Chrome or Brave, or Firefox. Or run the environment on your computer instead. The steps are in “Run it on your computer” below this form.`
 - HTTP 429 (the relay's per-client limit, or the API's limit passed through):
   `The relay or the API is limiting requests from this page.`, then
-  `Wait a minute, then press Validate again. Or run the environment on your computer instead. The steps are in “Run it on your computer” below this form.`
+  `Wait a minute, then press Validate again. This page works in a Chromium browser such as Chrome or Brave, or Firefox. Or run the environment on your computer instead. The steps are in “Run it on your computer” below this form.`
 - HTTP 5xx (the relay's fixed 502, or the API's own 5xx passed through):
   `The relay or the API is not available at the moment.`, then
-  `Press Validate again in a few minutes. Or run the environment on your computer instead. The steps are in “Run it on your computer” below this form.`
+  `Press Validate again in a few minutes. This page works in a Chromium browser such as Chrome or Brave, or Firefox. Or run the environment on your computer instead. The steps are in “Run it on your computer” below this form.`
 
 ### P13, P15: runner refusals
 

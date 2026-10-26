@@ -29,20 +29,22 @@ export interface FailureText {
   local: boolean;
 }
 
-// The relay failures' sentences, fixed in docs/requirements/ui-contract.md (P16h). Each ends by
-// pointing to the local-run panel.
+// The relay failures' sentences, fixed in docs/requirements/ui-contract.md (P16h). Each names the
+// browsers the page works in, then points to the local-run panel (ruling 2026-10-28T02:00).
+const BROWSERS = 'This page works in a Chromium browser such as Chrome or Brave, or Firefox.';
+const LOCAL = 'Or run the environment on your computer instead. The steps are in “Run it on your computer” below this form.';
 export const RELAY_FAILURE_TEXT: Record<RelayReason, { lead: string; next: string }> = {
   unreachable: {
     lead: 'The browser could not reach the relay that forwards calls to the API.',
-    next: 'This page works in a Chromium browser such as Chrome or Brave, or Firefox. Or run the environment on your computer instead. The steps are in “Run it on your computer” below this form.',
+    next: `${BROWSERS} ${LOCAL}`,
   },
   limited: {
     lead: 'The relay or the API is limiting requests from this page.',
-    next: 'Wait a minute, then press Validate again. Or run the environment on your computer instead. The steps are in “Run it on your computer” below this form.',
+    next: `Wait a minute, then press Validate again. ${BROWSERS} ${LOCAL}`,
   },
   unavailable: {
     lead: 'The relay or the API is not available at the moment.',
-    next: 'Press Validate again in a few minutes. Or run the environment on your computer instead. The steps are in “Run it on your computer” below this form.',
+    next: `Press Validate again in a few minutes. ${BROWSERS} ${LOCAL}`,
   },
 };
 
