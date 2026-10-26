@@ -62,6 +62,23 @@ describe('README deploy (B2: CLI deploy only, never a Git connection)', () => {
     expect(at('vercel deploy --prod --cwd apps/relay')).toBeGreaterThan(check);
   });
 
+  // builder-131: the builder kept the '.ts' import specifiers and the deployed function never
+  // loaded. The upload list is built and its function run before the deploy.
+  it('builds the upload list and runs the built function, after the upload check and before the deploy', () => {
+    const build = at('node scripts/relay-build-check.ts');
+    expect(build).toBeGreaterThan(at('node scripts/relay-upload-list.ts'));
+    expect(at('vercel deploy --prod --cwd apps/relay')).toBeGreaterThan(build);
+  });
+
+  // builder-131: the link also writes .env.local and adds `.env*` to apps/relay/.gitignore.
+  it('says the link writes .env.local, which git ignores, the deploy never uploads, and can be deleted', () => {
+    const text = section('Deploy').replace(/\s+/g, ' ');
+    expect(text).toMatch(/`apps\/relay\/\.env\.local`/);
+    expect(text).toMatch(/`\.env\*`/);
+    expect(text).toMatch(/never uploaded/);
+    expect(text).toMatch(/rm apps\/relay\/\.env\.local/);
+  });
+
   it('runs no command that connects Git', () => {
     for (const c of deploy) {
       expect(c, c).not.toMatch(/vercel (git|project) connect/);
