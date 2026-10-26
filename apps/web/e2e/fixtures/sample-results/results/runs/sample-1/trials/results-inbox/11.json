@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:results-inbox:11",
   "task_id": "results-inbox",
-  "task_version": "5d5aeeaa48d4004937e828f66795c78bfdcc55aced0f4ab774444c2e728079ad",
-  "env_version": "8eb58edf4c18665ddc227fb176f4a49074755f17d3db94ea84ebf67566f92598",
-  "grader_task_version": "e2a595eda6b2df8a172a084467ad25cbd18f98baf24140bce6d42c3cc7242b46",
-  "fixture_hash": "6a55a334f64c2dc55fe79930574504206070593a4767f40170b58f880c530bde",
+  "task_version": "bdf80b69b30306f9cf85653c67f5e48c84adad156104b7ac2325239d8695e3fa",
+  "env_version": "02be3dae92bbee2de1a8a2d234d60ed0181a70e57d7960fee694f801ba73b328",
+  "grader_task_version": "87926ed8c70e4a3812a5e42e89f907ea0abbbe1b8a19110fe482ad354835a5a6",
+  "fixture_hash": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
   "state_hash": {
-    "initial": "6a55a334f64c2dc55fe79930574504206070593a4767f40170b58f880c530bde",
-    "final": "75857d7d1a8e2b85670aab63f2ca5a73af82db050901a2deb4ff77e19006f974",
-    "replay_final": "75857d7d1a8e2b85670aab63f2ca5a73af82db050901a2deb4ff77e19006f974"
+    "initial": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
+    "final": "33b269d8b8955541e91d13383cfdaa4a341171c3f5180421ecca4fe89f7e6f3c",
+    "replay_final": "33b269d8b8955541e91d13383cfdaa4a341171c3f5180421ecca4fe89f7e6f3c"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -129,7 +129,8 @@
       "points": null,
       "met": true,
       "evidence": {
-        "oncall": []
+        "oncall": [],
+        "unplaced": []
       },
       "ids": []
     },

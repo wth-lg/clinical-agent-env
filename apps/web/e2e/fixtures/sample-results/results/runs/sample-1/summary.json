@@ -1,16 +1,16 @@
 {
-  "schema_version": 6,
+  "schema_version": 5,
   "run_id": "sample-1",
   "tasks": {
     "contrast-ct-prep": {
       "task_versions": [
-        "96e5d1cee4d25949bdf6c80ccdeff1d9ee3d54192c528a61b1d51c4789db916b"
+        "f8707e2bf77fce80749fe1615ca57cb9aa70e4f8defc917943ddee9a18694dbf"
       ],
       "env_versions": [
-        "89e4f198da1df4578e9cd27578c1cdfa9435ab7cc52795e6907b1567ee678050"
+        "ec98c43c0ab505c6dea2e82ae38f0dd1089a01ee04a97b6c3843dde74a87b61e"
       ],
       "grader_task_versions": [
-        "f118f2d5e4c9d23ab48f2337f7a64be9af45b677476f461395cfb6720cb3012d"
+        "9951302e791a963696583af0f6dd44372df913f3f5b4b8027cdb6f6ca10eca06"
       ],
       "records": 12,
       "trials": 12,
@@ -57,11 +57,6 @@
         "raw_mean_score": 12,
         "gate_fraction": 12
       },
-      "pass_k": {
-        "1": 0.25,
-        "3": 0.004545454545454545,
-        "5": 0
-      },
       "consistency": {
         "valid": 12,
         "passes": 3,
@@ -78,13 +73,13 @@
     },
     "crc-care-gap": {
       "task_versions": [
-        "78296e2a85477cf5df8afba694bffc59c70138665fa21b6bc7362be419c514c6"
+        "f41b1cfa75d80264cb8b4381780e6f4c9529c9183bbf4ac48dff18851424c5d5"
       ],
       "env_versions": [
-        "c59e9b3378f514ef1c9b3d4665b5ca4270e6e310ac74875e35f49b4b800dba51"
+        "5846d7857b161e8f1a166871b14a8010445c00283a48ab199ea5397e9fc92766"
       ],
       "grader_task_versions": [
-        "1952a48403a77a84eb548dda5d5b0395ce0e20e849f59eec620e8eeb36a624ff"
+        "5cef528de411237ff22e51a7a6df680a6954707a6a44f04885e492b572eafee5"
       ],
       "records": 12,
       "trials": 12,
@@ -131,11 +126,6 @@
         "raw_mean_score": 12,
         "gate_fraction": 12
       },
-      "pass_k": {
-        "1": 0.4166666666666667,
-        "3": 0.045454545454545456,
-        "5": 0.0012626262626262627
-      },
       "consistency": {
         "valid": 12,
         "passes": 5,
@@ -154,10 +144,10 @@
     },
     "discharge-medrec": {
       "task_versions": [
-        "935b24e65ea711defc37e3f6e82df351fe193ff64f0f1e31553cee665d6dbe1d"
+        "3188eb60ff0e24c9e6b1625fe584aa9f0381ea6a500a288446136d76cd1604a8"
       ],
       "env_versions": [
-        "ca1ac7946d79c11362542b219b38f308b443c500e275a30af9274a5fbd842ec2"
+        "bbe10cc5335c9148b69eace346c286be06aa3c7d76e279854de3d753e15fbd68"
       ],
       "grader_task_versions": [
         "b726774884e28279b4f62e4d00e20058da0ae229a17cee3e9d08ef0798f957df"
@@ -207,11 +197,6 @@
         "raw_mean_score": 12,
         "gate_fraction": 12
       },
-      "pass_k": {
-        "1": 0.5833333333333334,
-        "3": 0.1590909090909091,
-        "5": 0.026515151515151516
-      },
       "consistency": {
         "valid": 12,
         "passes": 7,
@@ -228,10 +213,10 @@
     },
     "message-queue": {
       "task_versions": [
-        "10a7b3b440cd88b2dca76b2361e12ab84fc08de0cd2aa18c0f83f2112e69f80d"
+        "51e97c2a1749036330f131c2938d73e1bc81b672212148c261808370de73d7a6"
       ],
       "env_versions": [
-        "6b715968319eb50602e5ac664fe2cdc61338baae30d56d2ec7bb29b9d17caa80"
+        "2d4df327702390a471c9203e40d8f9c5933e64d1f33270d5691a7c40432d22da"
       ],
       "grader_task_versions": [
         "df605b2c3bc3ef63735ad4c318b5718d82ecf3590b04cb241716445ffe5da98a"
@@ -281,11 +266,6 @@
         "raw_mean_score": 12,
         "gate_fraction": 12
       },
-      "pass_k": {
-        "1": 0.75,
-        "3": 0.38181818181818183,
-        "5": 0.1590909090909091
-      },
       "consistency": {
         "valid": 12,
         "passes": 9,
@@ -302,10 +282,10 @@
     },
     "renal-dose-review": {
       "task_versions": [
-        "6e8881476d7db47094307a1198549d1a9fdea5556d621990cf3594fb36e436cd"
+        "607cfa39e2692f4dccc9f3dd8e9e04bc63da5699f909fde066e9f0332929b203"
       ],
       "env_versions": [
-        "28157555f00842437fa7626df60b6e8e1b8a4686ec72dc04a5941b8095751a4a"
+        "c31110559dad7b9883154cc94acb40f8ed0cef875a3fb2de0833bd8025dc4528"
       ],
       "grader_task_versions": [
         "2c5c4f59a926849a7016ac77605ece0f0a9b1242d1b5c461b0f126858230f971"
@@ -357,11 +337,6 @@
         "raw_mean_score": 12,
         "gate_fraction": 12
       },
-      "pass_k": {
-        "1": 0.3333333333333333,
-        "3": 0.01818181818181818,
-        "5": 0
-      },
       "consistency": {
         "valid": 12,
         "passes": 4,
@@ -380,13 +355,13 @@
     },
     "results-inbox": {
       "task_versions": [
-        "5d5aeeaa48d4004937e828f66795c78bfdcc55aced0f4ab774444c2e728079ad"
+        "bdf80b69b30306f9cf85653c67f5e48c84adad156104b7ac2325239d8695e3fa"
       ],
       "env_versions": [
-        "8eb58edf4c18665ddc227fb176f4a49074755f17d3db94ea84ebf67566f92598"
+        "02be3dae92bbee2de1a8a2d234d60ed0181a70e57d7960fee694f801ba73b328"
       ],
       "grader_task_versions": [
-        "e2a595eda6b2df8a172a084467ad25cbd18f98baf24140bce6d42c3cc7242b46"
+        "87926ed8c70e4a3812a5e42e89f907ea0abbbe1b8a19110fe482ad354835a5a6"
       ],
       "records": 12,
       "trials": 12,
@@ -431,11 +406,6 @@
         "raw_mean_score": 12,
         "gate_fraction": 12
       },
-      "pass_k": {
-        "1": 0.6666666666666666,
-        "3": 0.2545454545454545,
-        "5": 0.0707070707070707
-      },
       "consistency": {
         "valid": 12,
         "passes": 8,
@@ -479,7 +449,7 @@
     "claude-opus-5-5"
   ],
   "initial_state_hashes": [
-    "6a55a334f64c2dc55fe79930574504206070593a4767f40170b58f880c530bde"
+    "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b"
   ],
   "replay": {
     "ran": false,
