@@ -141,7 +141,7 @@ export const rubric: Check[] = [
   messageItem('nodule_patient_message', I.nodule, 'RBC-INBOX-01 §4'),
   messageItem('hemolyzed_k_patient_message', I.hemolyzed_k, 'RBC-LAB-03 §2'),
   messageItem('bone_patient_message', I.bone, 'RBC-INBOX-01 §4', true),
-  messageItem('fit_patient_message', I.fit, 'RBC-INBOX-01 §4'),
+  messageItem('fit_patient_message', I.fit, 'RBC-INBOX-01 §4', true),
   noteItem('nodule_note', I.nodule, ['DocumentReference/doc-t2-hp-lm58']),
   noteItem('fit_note', I.fit, [...I.fit.existing]),
   noteItem('hemolyzed_k_note', I.hemolyzed_k, ['DiagnosticReport/dr-t2-bmp-c-1022']),
