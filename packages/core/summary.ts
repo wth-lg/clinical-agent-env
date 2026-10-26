@@ -51,9 +51,10 @@
 //                      GRADER_ERROR are left out
 //
 // The consistency flag (P17i C3, R14-32): per task, at the current grade, consistencyOf counts
-// the valid failures (valid, not PASS) and groups them by the id of their first failed check (the
-// first gate check not met; on a FAIL with no gate, the first check with no kind not met, as
-// explain.ts firstFailedCheck reads it). A failure with no failed check is in no group. Within the
+// the valid failures (valid, not PASS) and groups them by the id of their first failed check
+// (firstFailed: the decisive gate check not met, as the attribution names it; on a FAIL with no
+// gate, the first check with no kind not met; explain.ts firstFailedCheck reads it so). A failure
+// with no failed check is in no group. Within the
 // largest group, the found values are information only (decisions.tsv 2026-10-27T00:30): a found
 // value is the canonical JSON of the check evidence's `found` field, or of the whole evidence when
 // it has none, and that evidence carries per-trial write ids and step numbers, so one defect
