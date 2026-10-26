@@ -7,7 +7,7 @@
 // different read path and one answer for all writes. Each declares the rubric items it loses.
 import type { Agent } from '../../../packages/grader/matrix/types.ts';
 import { ORACLE, solve } from '../solution/solve.ts';
-import { activeServiceRequests, inbox, policies, PT, read, searchNotes, SRC } from '../solution/steps.ts';
+import { activeServiceRequests, inbox, policies, PT, read, searchNotes, SRC, writer } from '../solution/steps.ts';
 
 // `satisfies` keeps loses checked against the Agent type both before and after it gains the field.
 export const alternatives = [
@@ -115,5 +115,11 @@ export const alternatives = [
     why: 'Pages on-call at stat about the true 6.2 and orders the stat BMP, then hands the inbox item itself to pool-oncall instead of closing it, so the covering clinician owns the follow-up.',
     loses: [],
     script: solve({ critical: { ...ORACLE.critical, handoff: 'open' } }),
+  },
+  {
+    id: 'hemolyzed_review_task',
+    why: 'Orders the urgent repeat BMP and, instead of a patient message, a task due Monday for Dr. Okafor to review the repeat: structurally a call task (due by the next business day, on the result), so patient_contact counts it; the text items find no ask to contact the patient (decisions.tsv 2026-10-29T06:00).',
+    loses: ['hemolyzed_k_patient_message', 'urgent_item_unnotified'],
+    script: [...solve({ hemolyzed: { ...ORACLE.hemolyzed, message: false } }).slice(0, -1), { calls: [writer().task(PT.brennan, 'Practitioner/pr-okafor', '2026-10-26', 'urgent', 'Review the repeat BMP result on Monday.', SRC.bmpC).call] }, solve().at(-1)!],
   },
 ] satisfies Array<Agent & { loses: readonly string[] }>;
