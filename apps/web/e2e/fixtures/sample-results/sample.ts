@@ -40,7 +40,7 @@ export const CHECK_TEXT: Readonly<Record<string, CheckText>> = {
   'contrast-ct-prep': contrast, 'crc-care-gap': crc, 'discharge-medrec': medrec, 'message-queue': queue, 'renal-dose-review': renal, 'results-inbox': inbox,
 };
 
-// The run's manifest.json; the sample run has none, so M3 is pending.
+// The run's manifest.json (generate.ts writes it), for M3 and M1's reachability.
 const RUN_MANIFEST: unknown = existsSync(join(RUN_DIR, 'manifest.json')) ? JSON.parse(readFileSync(join(RUN_DIR, 'manifest.json'), 'utf8')) : null;
 
 // The list row's explanation, as the Runs view builds it (packages/core/explain-context.ts, with

@@ -118,6 +118,16 @@ describe('reachability (R14-30)', () => {
     // Even a reach by the passing one does not count while the other failed.
     expect(m('M1', record, ctx(failed({ alternatives_pass: false }, [probe('oracle', ['Observation/obs-9'])]))).met).toBe('pending');
   });
+
+  // writeMatrixJson cannot write this (oracle_pass needs an oracle probe); a hand-edited or foreign
+  // matrix.json can (verifier-phase-P17i-C4r5-1 F1, probe Q3).
+  it('an entry with no oracle probe gives no evidence either way: M1 is pending, not false, and E5 does not hold', () => {
+    for (const probes of [[probe('mutant', ['Observation/obs-9'])], [probe('alternative', ['Patient/pt-1']), probe('spray', ['Patient/pt-1'])]]) {
+      const c = ctx(matrix(probes));
+      expect(m('M1', record, c)).toMatchObject({ met: 'pending', evidence: 'Observation/obs-9 never exposed; exposability not checked (matrix.json\'s entry for g-1 has no reference solution probe, so the matrix gives no evidence)' });
+      expect(explainTrial(record, undefined, c).fault_criteria.env.find((x) => x.id === 'E5')!.met).not.toBe(true);
+    }
+  });
 });
 
 describe('matrixFor', () => {
