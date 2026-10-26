@@ -1,6 +1,7 @@
 // The Live trial view (plan phase P15; design section 8, "Live trial"): the run launcher (a task,
 // then Run ×1, ×3, ×10 or ×20 as one batch under the session cap, each size with its projected
-// cost, a size whose cost with the session's committed spend is over the cap disabled with the
+// cost as an upper bound ("at most"), the typical cost of one trial from the committed pilot
+// beside them when a pilot holds the task, a size whose cost with the session's committed spend is over the cap disabled with the
 // reason, and the cap itself), the live trial (streaming
 // trajectory with summarised thinking and one-line tool rows, turn, token and cost meters, the
 // state diff, Stop) and the runs this surface started. It reads trials only through the
@@ -12,11 +13,13 @@ import type { TrialEvent } from '../../../../packages/core/events.ts';
 import { explainTrial, type ExplainRecord, NOT_AUDITED_MARKER } from '../../../../packages/core/explain.ts';
 import { capSum } from '../../../../packages/core/ledger.ts';
 import { REFUSAL_TEXT } from '../../../../packages/core/runner-api.ts';
+import { useResults } from '../data/results.ts';
 import { useTaskList } from '../data/tasks.ts';
 import { Card, FaultLabel, OutcomeChip, Page } from '../data/ui.tsx';
 import { relayLine, RELAY_TRIAL_TEXT, trialRelayReason } from '../keygate/failure.ts';
-import { useKeyStatus } from '../keygate/key.ts';
+import { requestKey, useKeyStatus } from '../keygate/key.ts';
 import { runnerToken } from '../keygate/runner.ts';
+import { typicalCost } from './typical.ts';
 import { admitTrial, MAX_SESSION_CAP_USD, parseCap } from '../spend/cap.ts';
 import { sessionCap, setSessionCap, useSessionSpend } from '../spend/session.ts';
 import type { Surface } from '../surface/detect.ts';
@@ -102,6 +105,8 @@ export function LiveTrial({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
   // A size is over when its cost with the committed spend crosses the cap, as start checks it.
   const over = RUN_SIZES.filter((n) => costs[n] !== undefined && !admitTrial({ cap, spent: committed, estimate: costs[n] }).ok);
   const costId = useId();
+  const results = useResults();
+  const typical = results?.kind === 'ready' && chosen !== '' ? typicalCost(results.pilots, chosen) : null;
 
   useEffect(refresh, [refresh]);
   useEffect(() => {
@@ -139,14 +144,28 @@ export function LiveTrial({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
               {ids.map((id) => <option key={id} value={id}>{id}</option>)}
             </select>
           </label>
+          {/* The amount sits beside its button, not in it, so the button's name is its visible
+              text (axe label-content-name-mismatch); aria-describedby still reads it out. */}
           {RUN_SIZES.map((n) => (
-            <button key={n} type="button" aria-label={`Run ×${n}`} aria-describedby={`${costId}-${n}`} className={button} disabled={noKey || busy || chosen === '' || over.includes(n)} onClick={() => void launch(n)}>
-              Run ×{n}
-              <span id={`${costId}-${n}`} data-testid={`run-cost-${n}`} className="ml-1.5 text-xs tabular-nums text-ink-muted">{costs[n] === undefined ? '…' : usd(costs[n])}</span>
-            </button>
+            <span key={n} className="inline-flex items-center gap-1.5">
+              <button type="button" aria-describedby={`${costId}-${n}`} className={button} disabled={noKey || busy || chosen === '' || over.includes(n)} onClick={() => void launch(n)}>
+                Run ×{n}
+              </button>
+              <span id={`${costId}-${n}`} data-testid={`run-cost-${n}`} className="text-xs tabular-nums text-ink-muted">{costs[n] === undefined ? '…' : `at most ${usd(costs[n])}`}</span>
+            </span>
           ))}
         </div>
-        {noKey && <p data-testid="launcher-reason" className="mt-2 text-ink-muted">Add an API key to run trials. Use “Add key” in the top bar.</p>}
+        {typical !== null && (
+          <p data-testid="typical-cost" className="mt-2 text-ink-muted">
+            Typical cost: {usd(typical.usd)} a trial (median of {typical.n} trial{typical.n === 1 ? '' : 's'} of this task in {typical.run}).
+          </p>
+        )}
+        {noKey && (
+          <p data-testid="launcher-reason" className="mt-2 flex flex-wrap items-center gap-2 text-ink-muted">
+            Add an API key to run trials.
+            <button type="button" className={button} onClick={requestKey}>Add key</button>
+          </p>
+        )}
         {!noKey && over.length > 0 && <p data-testid="size-reason" className="mt-2 text-ink-muted">{overCap(over, costs, committed, cap)}</p>}
         <CapControl local={t.kind === 'local-runner'} />
         {refusal && (
