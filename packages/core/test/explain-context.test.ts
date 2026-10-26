@@ -82,9 +82,14 @@ describe('reachability (R14-30)', () => {
     expect(explainTrial(record, undefined, c).fault_criteria.env.find((x) => x.id === 'E5')!.met).toBe(true);
   });
 
-  it('an oracle or alternative that was not as the matrix expects is no evidence (review F5)', () => {
-    const c = ctx(matrix([probe('oracle', ['Observation/obs-9'], false), probe('alternative', ['Observation/obs-9'], false)]));
-    expect(m('M1', record, c)).toMatchObject({ met: false, evidence: 'Observation/obs-9 was never exposed and is not exposable (neither the reference solution nor an accepted alternative reached it in the matrix)' });
+  // The matrix itself prints 'decisive reachability: not checked' when a solver has problems
+  // (packages/grader/matrix/matrix.ts), though its outcome may be PASS (oracle_pass true).
+  it('an oracle or alternative that was not as the matrix expects is no evidence either way: M1 is pending and E5 does not hold (review F5)', () => {
+    for (const probes of [[probe('oracle', ['Observation/obs-9'], false), probe('alternative', ['Observation/obs-9'], false)], [probe('oracle', ['Patient/pt-1'], false), probe('alternative', ['Observation/obs-9'])]]) {
+      const c = ctx(matrix(probes));
+      expect(m('M1', record, c)).toMatchObject({ met: 'pending', evidence: 'Observation/obs-9 never exposed; exposability not checked (the reference solution or an accepted alternative did not run as the matrix expects for g-1, so the matrix gives no evidence)' });
+      expect(explainTrial(record, undefined, c).fault_criteria.env.find((x) => x.id === 'E5')!.met).not.toBe(true);
+    }
   });
 
   it('exposability is not checked, and M1 says why, when the matrix ran on another world or env_version, the run has no manifest, or the matrix entry has no reachable ids', () => {

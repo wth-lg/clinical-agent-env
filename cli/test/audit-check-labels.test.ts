@@ -260,7 +260,7 @@ describe('audit-check: exposure on a regraded trial (review F5)', () => {
     expect(m1.evidence).toMatch(/Patient\/pt-0001 exposed at step 1/);
   });
 
-  it('a decisive id of the current check that is not in the world is M1 not met', async () => {
+  it('a decisive id of the current check that is not reachable is M1 not met', async () => {
     const r = await check(movedCheck(), async () => [{ id: 'G2', decisive_ids: ['Observation/never-in-world'] }]);
     expect(r.json.violations.join('\n')).toMatch(/t-alpha\/9: M1 not met: .*never-in-world/);
   });

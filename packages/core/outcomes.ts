@@ -264,7 +264,7 @@ export const FAULT_DEFINITIONS: Readonly<Record<Fault, FaultDefinition>> = {
     ],
   },
   env: {
-    sentence: 'The environment is at fault when a tool failed on its own or refused a valid call, the start or final state is not correct, an environment rule broke, or a record that a check needs is not in the world.',
+    sentence: 'The environment is at fault when a tool failed on its own or refused a valid call, the start or final state is not correct, an environment rule broke, or a record that a check needs was not reachable: no tool result showed it to the reference solution or an accepted alternative of the task in the grader validation matrix.',
     criteria: [
       {
         id: 'E1',

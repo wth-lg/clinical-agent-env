@@ -104,7 +104,11 @@ export function reachability(manifest: unknown, matrix: unknown, grader_task_ver
   if (env_version !== entry.env_version) return { unchecked: `the trial ran at env_version ${env_version}, the matrix at ${entry.env_version}` };
   if (entry.oracle_pass === false) return { unchecked: `the reference solution failed in the matrix for ${grader_task_version}, so the matrix gives no evidence` };
   if (entry.alternatives_pass === false) return { unchecked: `an accepted alternative failed in the matrix for ${grader_task_version}, so the matrix gives no evidence` };
-  const reached = (probes as Array<{ kind?: unknown; as_expected?: unknown; reachable_ids: string[] }>).flatMap((p) => ((p.kind === 'oracle' || p.kind === 'alternative') && p.as_expected === true ? p.reachable_ids : []));
+  // A solver the matrix flagged (a grade below 1.0, a judge miss, a replay that differs) gives no
+  // evidence either way, as the matrix's own decisive reachability line says (not checked).
+  const solvers = (probes as Array<{ kind?: unknown; as_expected?: unknown; reachable_ids: string[] }>).filter((p) => p.kind === 'oracle' || p.kind === 'alternative');
+  if (solvers.some((p) => p.as_expected !== true)) return { unchecked: `the reference solution or an accepted alternative did not run as the matrix expects for ${grader_task_version}, so the matrix gives no evidence` };
+  const reached = solvers.flatMap((p) => p.reachable_ids);
   return { exposable: (id) => reached.some((k) => sameId(k, id)) };
 }
 

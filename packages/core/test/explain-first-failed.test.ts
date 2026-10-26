@@ -106,6 +106,11 @@ describe('M1 reads the decisive and first failed gates\' ids through reachabilit
     }
   });
 
+  it('the environment sentence speaks of reachability, not of today\'s world (R14-30)', () => {
+    expect(FAULT_DEFINITIONS.env.sentence).not.toMatch(/not in the world/);
+    expect(FAULT_DEFINITIONS.env.sentence).toMatch(/a record that a check needs was not reachable: no tool result showed it to the reference solution or an accepted alternative/);
+  });
+
   it('the E5 text names the first failed gate, as M1 does (verifier-phase-P17i-SAFEPRECr2-1 F2)', () => {
     const E5 = FAULT_DEFINITIONS.env.criteria.find((c) => c.id === 'E5')!;
     const M1 = CONFIRMATION_CRITERIA.find((c) => c.id === 'M1')!;
