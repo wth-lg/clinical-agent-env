@@ -455,6 +455,7 @@ export function explainTrial(record: ExplainRecord, audit: AuditRow | null | und
     models_returned: record.models_returned ?? [],
     internal_errors: record.tool_errors?.INTERNAL ?? 0,
     state_hash: record.state_hash,
+    env_error: (ctx.events.findLast((e) => e.type === 'error' && e.status === 'ENV_ERROR') as { message?: string } | undefined)?.message ?? null,
     manifest_hash: ctx.world_state_hash ?? null,
     grader_task_version: grade.grader_task_version,
     decisive: failed === null ? null : {
