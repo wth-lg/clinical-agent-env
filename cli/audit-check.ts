@@ -23,6 +23,11 @@
 //     a trial is not allowed in a committed run, so a run with one has no headline pass rate
 //     (DENOMINATOR_RULE). This is where that block is enforced; summary.ts reads no audit rows,
 //     matrix or world;
+//   - no PASS is a false PASS (outcomes.ts GR5: an audit row labels it grader, with evidence ids;
+//     a PASS labelled grader without evidence ids is a violation of its own): it is not counted as
+//     a pass and blocks the run as a grader-labelled failure does (P17j JG5);
+//   - every PASS whose current grade has a penalty (a rubric item with negative points) met or
+//     unknown has an audit row with evidence ids, whatever its points (P17j JG5);
 //   - no run-level block (outcomes.ts RUN_BLOCKS, B1: the oracle or an alternative fails the matrix)
 //     holds on the grader_task_version of any current grade of the run, named once per
 //     grader_task_version;
@@ -76,7 +81,7 @@
 // explainTrial computes ({model, refusal, env, grader, infra}), which the label must agree with
 // but need not (a model label on an E5 failure is a violation, counted model there and env here);
 // valid counts the settled trials whose current grade is valid, excluded names (sorted) the
-// failures excludedFromHeadline names, and denominator is valid without them, for the UI and the
+// failures and false PASSes excludedFromHeadline names, and denominator is valid without them, for the UI and the
 // writeup; a run with an excluded trial fails, so it has no headline pass rate. Exit 2 on a usage error.
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -261,7 +266,10 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
         }
       }
     }
-    if (outcome === 'PASS') continue;
+    if (outcome === 'PASS') {
+      if (auditLabelOf(l) === 'grader' && l.evidence_ids.length === 0) v.push(`${l.trial}: a PASS labelled grader (a false PASS, GR5) needs evidence ids`);
+      continue;
+    }
     // The trial's fault without the audit's label, outcome or fault verdict: the label must agree
     // with it, not define it. The row's answers to the two questions, its cited step and how it was
     // confirmed are evidence, so they stay: a confirmed tool_rejections_correct no citing a refused
@@ -310,6 +318,23 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
       if ((c.id === 'M1' || c.id === 'M4') && (c.met === false || c.met === 'pending')) v.push(`${name}: ${formatCriterion(c).replace(': ', ' ')}: ${c.evidence}`);
     }
     const excluded = excludedFromHeadline(e);
+    if (excluded !== null) {
+      v.push(`${name}: ${excluded}`);
+      excludedTrials.push(name);
+    }
+  }
+  // A PASS the audit labels grader is a false PASS (GR5): not counted, and it blocks the run. A PASS
+  // with a penalty (a rubric item with negative points) met or unknown needs an audit row with
+  // evidence ids (P17j JG5), on top of the MIN_AUDITED_PASSES sample below.
+  for (const r of valid.filter((x) => currentGrade(x).outcome === 'PASS')) {
+    const name = trialName(r);
+    const row = byTrial.get(name);
+    const penalties = (currentGrade(r).checks ?? []).filter((c) => c.kind === 'rubric' && (c.points ?? 0) < 0 && (c.met === true || c.met === 'unknown'));
+    if (penalties.length > 0 && (row?.evidence_ids.length ?? 0) === 0) {
+      v.push(`${name}: PASS with penalty ${penalties.map((c) => `${c.id} (${c.points} points) ${c.met === true ? 'met' : 'unknown'}`).join(', ')} has no audit row with evidence ids`);
+    }
+    if (row === undefined) continue;
+    const excluded = excludedFromHeadline(await explain(r, row));
     if (excluded !== null) {
       v.push(`${name}: ${excluded}`);
       excludedTrials.push(name);
