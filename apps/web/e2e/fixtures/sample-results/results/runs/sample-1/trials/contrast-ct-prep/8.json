@@ -42,6 +42,7 @@
   "detail": null,
   "summary": "Daniel Ferreira's contrast CT for Monday 10/26 09:00: accelerated IV premedication ordered.",
   "resumed": false,
+  "env_git_sha": null,
   "ended": "2026-10-23T12:12:27.000Z",
   "judge_cost_usd": 0,
   "grader_version": "10",

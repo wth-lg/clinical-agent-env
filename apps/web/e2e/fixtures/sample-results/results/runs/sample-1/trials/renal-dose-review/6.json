@@ -42,6 +42,7 @@
   "detail": null,
   "summary": "Reviewed Harold Vance: apixaban stays at 2.5 mg, metformin reduced, gabapentin 600 mg twice daily; note written.",
   "resumed": false,
+  "env_git_sha": null,
   "ended": "2026-10-23T14:15:07.000Z",
   "judge_cost_usd": 0,
   "grader_version": "10",

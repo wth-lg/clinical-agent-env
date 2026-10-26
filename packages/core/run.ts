@@ -98,6 +98,9 @@ export interface RunOptions {
   // reload cut off cost, as the ledger settled them; the record's cost_usd counts it. Unset: a
   // trial that starts here.
   resumed?: { cutOffUsd: number };
+  // The commit of the harness the trial ran on (cli run and run-one: HEAD of the checkout); null
+  // where the caller cannot say (the local runner), recorded as env_git_sha (R14-39).
+  envGitSha?: string | null;
 }
 
 // What a failed onEvent sink throws into the trial: the trial ends, its trajectory incomplete.
@@ -138,6 +141,8 @@ export interface TrialRun {
   detail: string | null;
   summary: string | null;
   resumed: boolean;
+  // RunOptions.envGitSha; null when the caller gave none.
+  env_git_sha: string | null;
   // What the judge calls cost (in the ledger like every call); not part of cost_usd, the
   // loop's cost, which the per-trial cap applies to.
   judge_cost_usd: number;
@@ -288,6 +293,7 @@ export async function run(taskId: string, model: string, opts: RunOptions): Prom
     detail: t === null ? null : t.type === 'limit' ? t.limit : t.type === 'error' ? t.code : t.reason,
     summary: ctx?.session.summary ?? null,
     resumed: opts.resumed !== undefined,
+    env_git_sha: opts.envGitSha ?? null,
   };
   const checks = opts.checks ?? [];
   const judge = judgeFor(checks, { judge: withSignal(opts.judge === undefined ? opts.client : opts.judge, opts.signal), effort: task.judgeEffort });
@@ -313,7 +319,7 @@ function withSignal(client: TrialClient | null, signal: AbortSignal | undefined)
 // The record of a trial run() threw on before it started (the task could not be resolved):
 // ENV_ERROR INTERNAL, nothing spent, never a valid trial. Never for a trial that spent: run()
 // grades every trial it started, and run-one refuses this record once the ledger shows a call.
-export function internalErrorRecord(t: { trialId: string; taskId: string; worldHash: string; effort: Effort; started: number; ended: number }): TrialRecord {
+export function internalErrorRecord(t: { trialId: string; taskId: string; worldHash: string; effort: Effort; started: number; ended: number; envGitSha?: string | null }): TrialRecord {
   const o = newOutcome();
   return {
     trial_id: t.trialId, task_id: t.taskId, task_version: null, env_version: null, grader_task_version: null, fixture_hash: t.worldHash,
@@ -321,7 +327,7 @@ export function internalErrorRecord(t: { trialId: string; taskId: string; worldH
     model_requested: MODEL, models_returned: [], effort: t.effort, api_version: ANTHROPIC_VERSION,
     started: iso(t.started), ended: iso(t.ended), turns: 0, tool_calls: 0, tool_errors: o.tool_errors, usage: o.usage,
     cost_usd: 0, api_retries: 0, retry_wait_ms: 0, stop_reason: null, refusal_category: null, status: 'ENV_ERROR', stop: null, detail: 'INTERNAL',
-    summary: null, resumed: false, judge_cost_usd: 0, ...ungraded('ENV_ERROR'),
+    summary: null, resumed: false, env_git_sha: t.envGitSha ?? null, judge_cost_usd: 0, ...ungraded('ENV_ERROR'),
   };
 }
 
