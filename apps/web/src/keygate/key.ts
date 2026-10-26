@@ -62,3 +62,10 @@ export const dropRemembered = (): void => session()?.removeItem(REMEMBER);
 export function useKeyStatus(): KeyStatus {
   return useSyncExternalStore((l) => (listeners.add(l), () => listeners.delete(l)), keyStatus);
 }
+
+// A view asks the shell to show the key gate (the Overview intro card's Add a key action); the
+// shell listens for this event, as the top bar's Add key opens the gate.
+export const ADD_KEY_EVENT = 'clinenv:add-key';
+export const requestKey = (): void => {
+  dispatchEvent(new Event(ADD_KEY_EVENT));
+};
