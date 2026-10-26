@@ -7,7 +7,9 @@
 // Steps: resolve the task; build the store and hash it, and end as ENV_ERROR before any call
 // when the hash is not the manifest's; run the loop; hash the final state; re-execute the
 // trajectory's tool log against a fresh store with the tools the loop offered (replay_final),
-// and end as ENV_ERROR if it differs. An exception from the environment at any step (the world
+// and end as ENV_ERROR replay_mismatch if it differs, or if any re-executed call's canonical
+// result or is_error differs from its recorded tool_result (the first such call is named, and
+// replay_final is null: read-path nondeterminism is the environment's fault, R14-35). An exception from the environment at any step (the world
 // read, loading the store, a hash, a tool) ends the trial as ENV_ERROR INTERNAL with a record;
 // only a bad argument or an unknown task throws. The event that ends a trial (limit, error,
 // cancelled) is emitted after the final hashes. Then the trial is graded (plan phase P8,
@@ -37,7 +39,7 @@ import { grade, gradeWith, judgeFor, ungraded, type Grade } from '../grader/grad
 import { FAULT, isValid, trialOutcome, type TrialFacts } from '../grader/outcome.ts';
 import { clock, NOW_PROMPT } from '../env/clock.ts';
 import { loadStore, type FixtureSource } from '../env/fixture-source.ts';
-import { stateHash } from '../env/hash.ts';
+import { canonicalJson, stateHash } from '../env/hash.ts';
 import type { Resource, Store } from '../env/store.ts';
 import { callTool, definitions, type Tool } from '../env/tools/registry.ts';
 import { newSession, TOOLS, type WriteContext } from '../env/tools/write/index.ts';
@@ -98,6 +100,9 @@ export interface RunOptions {
   // reload cut off cost, as the ledger settled them; the record's cost_usd counts it. Unset: a
   // trial that starts here.
   resumed?: { cutOffUsd: number };
+  // The commit of the harness the trial ran on (cli run and run-one: HEAD of the checkout); null
+  // where the caller cannot say (the local runner), recorded as env_git_sha (R14-39).
+  envGitSha?: string | null;
 }
 
 // What a failed onEvent sink throws into the trial: the trial ends, its trajectory incomplete.
@@ -138,6 +143,8 @@ export interface TrialRun {
   detail: string | null;
   summary: string | null;
   resumed: boolean;
+  // RunOptions.envGitSha; null when the caller gave none.
+  env_git_sha: string | null;
   // What the judge calls cost (in the ledger like every call); not part of cost_usd, the
   // loop's cost, which the per-trial cap applies to.
   judge_cost_usd: number;
@@ -242,12 +249,13 @@ export async function run(taskId: string, model: string, opts: RunOptions): Prom
       final = await stateHash(finalState);
       emit({ type: 'state_hash', turn: outcome.turns, at: 'final', hash: final });
       const replayed = await replay(source, task, tools, events);
-      replayFinal = replayed && (await stateHash(replayed.resources()));
+      replayFinal = replayed === null || replayed.mismatch !== null ? null : await stateHash(replayed.store.resources());
       if (replayFinal !== null) emit({ type: 'state_hash', turn: outcome.turns, at: 'replay_final', hash: replayFinal });
-      // An INTERNAL error recurs on replay; any other trial must reproduce its final state.
+      // An INTERNAL error recurs on replay; any other trial must reproduce every call's result
+      // and its final state.
       if (outcome.status !== 'ENV_ERROR' && replayFinal !== final) {
         outcome.status = 'ENV_ERROR';
-        outcome.terminal = { type: 'error', status: 'ENV_ERROR', code: 'replay_mismatch', message: `replay_final ${replayFinal} is not final ${final}` };
+        outcome.terminal = { type: 'error', status: 'ENV_ERROR', code: 'replay_mismatch', message: replayed?.mismatch ?? `replay_final ${replayFinal} is not final ${final}` };
       }
     }
   } catch (e) {
@@ -288,6 +296,7 @@ export async function run(taskId: string, model: string, opts: RunOptions): Prom
     detail: t === null ? null : t.type === 'limit' ? t.limit : t.type === 'error' ? t.code : t.reason,
     summary: ctx?.session.summary ?? null,
     resumed: opts.resumed !== undefined,
+    env_git_sha: opts.envGitSha ?? null,
   };
   const checks = opts.checks ?? [];
   const judge = judgeFor(checks, { judge: withSignal(opts.judge === undefined ? opts.client : opts.judge, opts.signal), effort: task.judgeEffort });
@@ -313,7 +322,7 @@ function withSignal(client: TrialClient | null, signal: AbortSignal | undefined)
 // The record of a trial run() threw on before it started (the task could not be resolved):
 // ENV_ERROR INTERNAL, nothing spent, never a valid trial. Never for a trial that spent: run()
 // grades every trial it started, and run-one refuses this record once the ledger shows a call.
-export function internalErrorRecord(t: { trialId: string; taskId: string; worldHash: string; effort: Effort; started: number; ended: number }): TrialRecord {
+export function internalErrorRecord(t: { trialId: string; taskId: string; worldHash: string; effort: Effort; started: number; ended: number; envGitSha?: string | null }): TrialRecord {
   const o = newOutcome();
   return {
     trial_id: t.trialId, task_id: t.taskId, task_version: null, env_version: null, grader_task_version: null, fixture_hash: t.worldHash,
@@ -321,7 +330,7 @@ export function internalErrorRecord(t: { trialId: string; taskId: string; worldH
     model_requested: MODEL, models_returned: [], effort: t.effort, api_version: ANTHROPIC_VERSION,
     started: iso(t.started), ended: iso(t.ended), turns: 0, tool_calls: 0, tool_errors: o.tool_errors, usage: o.usage,
     cost_usd: 0, api_retries: 0, retry_wait_ms: 0, stop_reason: null, refusal_category: null, status: 'ENV_ERROR', stop: null, detail: 'INTERNAL',
-    summary: null, resumed: false, judge_cost_usd: 0, ...ungraded('ENV_ERROR'),
+    summary: null, resumed: false, env_git_sha: t.envGitSha ?? null, judge_cost_usd: 0, ...ungraded('ENV_ERROR'),
   };
 }
 
@@ -335,6 +344,11 @@ export interface GradeTrajectoryOptions {
   // item (a miss is an error: a regrade makes no call).
   record: TrialFacts & { judge?: Pick<Grade['judge'], 'cache'> };
   definitions?: Bundle;
+  // Also compare each re-executed call's result with its recorded tool_result, as run() does:
+  // cli replay, which has checked that the record's env_version is the checkout's. Off for a
+  // regrade, which grades a trial from another environment when its replay reaches the
+  // record's state.
+  compareResults?: boolean;
 }
 
 // Grades a recorded trial again from its trajectory: the initial state from the world, the
@@ -360,25 +374,37 @@ export async function gradeTrajectory(taskId: string, opts: GradeTrajectoryOptio
   const initialHash = await stateHash(initial);
   if (initialHash !== h.initial) return ungraded('GRADER_ERROR', { check: null, message: `regrade: initial state hash ${initialHash} is not the record's ${h.initial}`, stops_batch: false });
   const replayed = await replay(source, task, taskTools(task), opts.events);
-  const replayHash = replayed && (await stateHash(replayed.resources()));
+  if (opts.compareResults === true && replayed?.mismatch) return ungraded('GRADER_ERROR', { check: null, message: `regrade: ${replayed.mismatch}`, stops_batch: false });
+  const replayHash = replayed && (await stateHash(replayed.store.resources()));
   if (replayed === null || replayHash !== h.final) return ungraded('GRADER_ERROR', { check: null, message: `regrade: replayed state hash ${replayHash} is not the record's final ${h.final}`, stops_batch: false });
-  return grade({ ...input, final: [...replayed.resources()] }, gradeOpts);
+  return grade({ ...input, final: [...replayed.store.resources()] }, gradeOpts);
 }
 
-// Re-executes the trajectory's tool log against a fresh store and session, with the tools the
-// loop offered, skipping each call the tool refused live (an error result: nothing reached the
-// store), and returns the store; null when a call throws (the INTERNAL error that ended the
-// trial, re-run so it recurs).
-async function replay(source: FixtureSource, task: Task, tools: readonly Tool<WriteContext>[], events: readonly TrialEvent[]): Promise<Store | null> {
+// Re-executes every call of the trajectory's tool log, refused ones included (a refusal recurs
+// and leaves the store as it was), against a fresh store and session with the tools the loop
+// offered, and returns the store. mismatch names the first call whose result (as canonical JSON)
+// or is_error differs from its recorded tool_result, null when none does. null when a call throws
+// (the INTERNAL error that ended the trial, re-run so it recurs).
+async function replay(source: FixtureSource, task: Task, tools: readonly Tool<WriteContext>[], events: readonly TrialEvent[]): Promise<{ store: Store; mismatch: string | null } | null> {
   const store = await loadStore(source);
   const ctx = context(store, task);
-  const failed = new Set(events.flatMap((e) => (e.type === 'tool_result' && e.is_error && e.error_code !== 'INTERNAL' ? [e.tool_use_id] : [])));
+  const recorded = new Map(events.flatMap((e) => (e.type === 'tool_result' ? [[e.tool_use_id, e] as const] : [])));
+  // A result as the trajectory stores it: JSON, so a field set to undefined is absent.
+  const json = (v: unknown) => canonicalJson(JSON.parse(JSON.stringify(v ?? null)));
+  let mismatch: string | null = null;
   try {
-    for (const call of toolLog(events)) if (!failed.has(call.tool_use_id)) callTool(tools, call.name, call.input, ctx);
+    for (const call of toolLog(events)) {
+      const res = callTool(tools, call.name, call.input, ctx);
+      const was = recorded.get(call.tool_use_id)!;
+      const at = `replay: the ${call.name} call ${call.tool_use_id} gave`;
+      if (mismatch !== null) continue;
+      if (res.is_error !== was.is_error) mismatch = `${at} is_error ${res.is_error}, recorded ${was.is_error}`;
+      else if (json(res.content) !== json(was.content)) mismatch = `${at} a different result than its recorded tool_result`;
+    }
   } catch {
     return null;
   }
-  return store;
+  return { store, mismatch };
 }
 
 // The state a trial's tool log leaves, for a caller that shows it (the trial detail's State
@@ -399,5 +425,5 @@ export async function replayState(taskId: string, opts: Pick<GradeTrajectoryOpti
   const source: FixtureSource = { read: async () => bytes };
   const initial = [...(await loadStore(source)).resources()];
   const replayed = await replay(source, task, taskTools(task), opts.events);
-  return { initial, final: replayed && [...replayed.resources()], error: replayed === null ? 'a tool call threw on replay (the INTERNAL error that ended the trial)' : null };
+  return { initial, final: replayed && [...replayed.store.resources()], error: replayed === null ? 'a tool call threw on replay (the INTERNAL error that ended the trial)' : null };
 }

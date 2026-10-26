@@ -1,5 +1,5 @@
 {
-  "schema_version": 4,
+  "schema_version": 5,
   "run_id": "trial-1",
   "tasks": {
     "contrast-ct-prep": {
@@ -52,6 +52,19 @@
         "mean_score": 1,
         "raw_mean_score": 1,
         "gate_fraction": 1
+      },
+      "consistency": {
+        "valid": 1,
+        "passes": 0,
+        "failures": 1,
+        "shared": {
+          "check": "ct_order",
+          "count": 1,
+          "found": "{\"active\":[\"ServiceRequest/sr-t0001\"],\"linked_to_appointment\":[],\"occurrence\":{\"start\":\"2026-10-26T09:00:00-04:00\"},\"slot\":\"2026-10-26T09:00:00-04:00\"}",
+          "found_count": 1,
+          "found_values": 1
+        },
+        "flags": []
       }
     },
     "crc-care-gap": {
@@ -104,6 +117,19 @@
         "mean_score": 1,
         "raw_mean_score": 1,
         "gate_fraction": 1
+      },
+      "consistency": {
+        "valid": 1,
+        "passes": 0,
+        "failures": 1,
+        "shared": {
+          "check": "fit_orders",
+          "count": 1,
+          "found": "{\"extra\":[],\"missing\":[\"Patient/pt-0017\"],\"ordered\":{\"Patient/pt-0018\":[\"ServiceRequest/sr-t0001\"],\"Patient/pt-0019\":[\"ServiceRequest/sr-t0005\"],\"Patient/pt-0022\":[\"ServiceRequest/sr-t0007\"],\"Patient/pt-0023\":[\"ServiceRequest/sr-t0003\"]},\"want\":[\"Patient/pt-0017\",\"Patient/pt-0018\",\"Patient/pt-0019\",\"Patient/pt-0022\",\"Patient/pt-0023\"]}",
+          "found_count": 1,
+          "found_values": 1
+        },
+        "flags": []
       }
     },
     "discharge-medrec": {
@@ -153,6 +179,13 @@
         "mean_score": 0,
         "raw_mean_score": 0,
         "gate_fraction": 0
+      },
+      "consistency": {
+        "valid": 0,
+        "passes": 0,
+        "failures": 0,
+        "shared": null,
+        "flags": []
       }
     },
     "message-queue": {
@@ -202,6 +235,13 @@
         "mean_score": 0,
         "raw_mean_score": 0,
         "gate_fraction": 0
+      },
+      "consistency": {
+        "valid": 0,
+        "passes": 0,
+        "failures": 0,
+        "shared": null,
+        "flags": []
       }
     },
     "renal-dose-review": {
@@ -260,6 +300,19 @@
         "mean_score": 4,
         "raw_mean_score": 4,
         "gate_fraction": 4
+      },
+      "consistency": {
+        "valid": 4,
+        "passes": 1,
+        "failures": 3,
+        "shared": {
+          "check": "apixaban_dose",
+          "count": 3,
+          "found": "{\"active\":[\"MedicationRequest/mr-t1-apixaban\"],\"mg\":2.5,\"oral\":true,\"per_day\":2,\"product\":\"1364435\"}",
+          "found_count": 2,
+          "found_values": 2
+        },
+        "flags": []
       }
     }
   },

@@ -42,6 +42,7 @@
   "detail": null,
   "summary": "I cannot place or change orders for this patient without a clinician reviewing the chart first.",
   "resumed": false,
+  "env_git_sha": null,
   "ended": "2026-10-23T12:05:35.000Z",
   "judge_cost_usd": 0,
   "grader_version": "10",

@@ -1,5 +1,5 @@
 // pnpm cli run-one --task <id> --model claude-opus-5-5 [--effort high] [--index 0] [--out <dir>]
-//                  [--mock <scenario>] [--dry-run]
+//                  [--mock <scenario>] [--dry-run] [--json]
 // One trial through packages/core/run.ts in Node, metered through the spend ledger.
 //   --task      a task id, resolved through the TaskSource before anything is written; an
 //               explicit _-prefixed id (_toy) resolves too
@@ -13,6 +13,11 @@
 //               with trial labels starting mock:, so the cap checks run as they do live. Its
 //               records have their own mode in the key, so a live run never reads one
 //   --dry-run   prints the projection batchStart is given, and makes no call and opens nothing
+//   --json      prints only the trial record (as written to trials/<key>.json) on stdout; the
+//               report lines go to stderr
+// Ctrl-C (SIGINT) aborts the trial through run()'s signal: the call in flight settles at its
+// worst case, the trial ends CANCELLED, its record is written and the ledger grant is closed
+// before run-one exits 1 (R14-40).
 // The trial is graded with the task's checks, tasks/<id>/tests/grader.ts (none when the task
 // has no grader), and its judge items go through the trial's client and ledger.
 // The dry run's projection is the per-trial cap ($6) plus the judge allowance for the task's
@@ -60,11 +65,15 @@ const REPO = fileURLToPath(new URL('../', import.meta.url));
 // A task id is a directory name: no path separators, no '..'.
 const TASK_ID = /^[A-Za-z0-9_-]+$/;
 const WITH_VALUE = new Set(['--task', '--model', '--effort', '--index', '--out', '--mock']);
-const USAGE = 'usage: pnpm cli run-one --task <id> --model claude-opus-5-5 [--effort high] [--index 0] [--out <dir>] [--mock <scenario>] [--dry-run]';
+const USAGE = 'usage: pnpm cli run-one --task <id> --model claude-opus-5-5 [--effort high] [--index 0] [--out <dir>] [--mock <scenario>] [--dry-run] [--json]';
 
 export interface Deps {
   env: Record<string, string | undefined>;
   out: (line: string) => void;
+  // Where the report lines go under --json; default stderr.
+  err?: (line: string) => void;
+  // Aborts the trial (withInterrupt: SIGINT).
+  signal?: AbortSignal;
   // The live transport.
   fetch: Transport;
   // The transport for --mock <scenario>.
@@ -95,14 +104,17 @@ const defaults: Deps = {
 
 export const projection = (checks: readonly Check[] = []): number => PER_TRIAL_CAP_USD + judgeAllowanceUsd(checks);
 
-export async function main(args: string[], deps: Deps = defaults): Promise<number> {
+export async function main(args: string[], given: Deps = defaults): Promise<number> {
   const opts = new Map<string, string>();
   for (let i = 0; i < args.length; i++) {
     const a = args[i] as string;
-    if (a === '--dry-run') opts.set(a, '');
+    if (a === '--dry-run' || a === '--json') opts.set(a, '');
     else if (WITH_VALUE.has(a) && args[i + 1] !== undefined) opts.set(a, args[++i] as string);
-    else return usage(deps, WITH_VALUE.has(a) ? `${a} needs a value` : `unknown argument ${a}`);
+    else return usage(given, WITH_VALUE.has(a) ? `${a} needs a value` : `unknown argument ${a}`);
   }
+  // Under --json, stdout carries the record only.
+  const json = opts.has('--json');
+  const deps: Deps = json ? { ...given, out: given.err ?? ((l) => process.stderr.write(`${l}\n`)) } : given;
   const task = opts.get('--task');
   if (!task) return usage(deps, '--task is required');
   if (!TASK_ID.test(task)) return usage(deps, `--task ${JSON.stringify(task)} is not a task id (letters, digits, _ and - only)`);
@@ -151,6 +163,7 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
       return 1;
     }
     deps.out(`trial ${trialKey} is already recorded in ${recordFile} (status ${prior.status}); not run again`);
+    if (json) given.out(JSON.stringify(prior));
     return succeeded(prior) ? 0 : 1;
   }
   const label = `${mock === undefined ? '' : 'mock:'}run-one:${trialKey}`;
@@ -181,6 +194,7 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
           trialId: label,
           checks,
           judge,
+          ...(deps.signal ? { signal: deps.signal } : {}),
           onEvent: (e) => appendFileSync(trajectory, toJsonLine(e)),
         }));
       } catch (e) {
@@ -197,6 +211,7 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
       const full = { ...record, ...(mock === undefined ? {} : { mock }), trajectory: trajectoryRel };
       mkdirSync(dirname(recordFile), { recursive: true });
       writeFileSync(recordFile, `${JSON.stringify(full, null, 2)}\n`);
+      if (json) given.out(JSON.stringify(full));
       deps.out(`status ${record.status}${record.detail ? ` (${record.detail})` : ''}, ${record.turns} turns, ${record.tool_calls} tool calls, cost ${money(record.cost_usd)}`);
       deps.out(`models_returned ${JSON.stringify(record.models_returned)}; final ${record.state_hash.final}; replay_final ${record.state_hash.replay_final}`);
       const gates = record.checks.filter((c) => c.kind === 'gate');
@@ -247,11 +262,19 @@ function usage(deps: Deps, problem: string): number {
   return 2;
 }
 
-export default (args: string[]) => main(args);
+// Ctrl-C aborts the trial through run()'s signal (header); a second Ctrl-C is Node's default.
+export function withInterrupt(args: string[], deps: Deps = defaults): Promise<number> {
+  const controller = new AbortController();
+  const abort = () => controller.abort(new Error('SIGINT'));
+  process.once('SIGINT', abort);
+  return main(args, { ...deps, signal: controller.signal }).finally(() => process.removeListener('SIGINT', abort));
+}
+
+export default (args: string[]) => withInterrupt(args);
 
 // Run as a script, it installs the egress guard before anything else (pnpm cli run-one gets it
 // from cli/index.ts); imported by tests, it leaves the importer's globals alone.
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   installEgressGuard(globalThis);
-  process.exitCode = await main(process.argv.slice(2));
+  process.exitCode = await withInterrupt(process.argv.slice(2));
 }

@@ -24,7 +24,10 @@
 // Under each task line, the metrics beside k/n (packages/core/summary.ts header), each with its
 // denominator: mean score, raw (unclipped) mean, mean fraction of gates met, pass_no_harm, LIMIT
 // counts by kind, re-queued attempts by outcome and the infra-counted rate (passes over the valid
-// trials plus the INFRA and ENV_ERROR attempts).
+// trials plus the INFRA and ENV_ERROR attempts). A task the consistency flag marks (packages/core/
+// summary.ts header: most valid failures fail the same check first, or 0
+// passes in 10 or more valid trials) gets a third line naming it; audit-check requires a
+// task-validity review for it.
 // Trials are named by trialName, as replay.json names them. --json prints only the summary on stdout (the lines go to stderr). Exit 0 when every
 // requirement holds; 1 on a violation or a missing run; 2 on a usage error.
 import { existsSync, readFileSync } from 'node:fs';
@@ -33,7 +36,7 @@ import { pathToFileURL } from 'node:url';
 import type { BatchRecord } from '../packages/core/batch.ts';
 import { installEgressGuard } from '../packages/core/egress.ts';
 import { isValid } from '../packages/core/outcomes.ts';
-import { assertSummary, checkRequirements, parseRequire, summarize, type RegradeGrade, type Requirements, type SummaryTrial } from '../packages/core/summary.ts';
+import { assertSummary, checkRequirements, describeConsistency, parseRequire, summarize, type RegradeGrade, type Requirements, type SummaryTrial } from '../packages/core/summary.ts';
 import type { TaskSource } from '../packages/core/tasks.ts';
 import { readManifest, requeuedRecords, settledRecords, writeJson } from './adapters/result-sink-node.ts';
 import { nodeTaskSource } from './adapters/tasks-node.ts';
@@ -142,6 +145,8 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
       `${' '.repeat(width)}  mean score ${fixed(t.mean_score)} (${m.mean_score} valid)  raw mean ${fixed(t.raw_mean_score)} (${m.raw_mean_score})  gates met ${fixed(t.gate_fraction)} (${m.gate_fraction})  pass_no_harm ${t.pass_no_harm}/${t.trials}  ` +
         `LIMIT ${counts(t.limits)}  re-queued ${Object.keys(t.requeued_outcomes).length === 0 ? 'none' : counts(t.requeued_outcomes)}  infra-counted ${t.passes}/${t.infra_counted_attempts} (${fixed(t.infra_counted_rate)})`,
     );
+    const flagged = describeConsistency(t.consistency);
+    if (flagged.length > 0) say(`${' '.repeat(width)}  consistency flagged: ${flagged.join('; ')} (audit-check requires a task-validity review)`);
   }
   say(
     `GRADER_ERROR ${s.totals.grader_error} at the current grade; history ${s.totals.grader_error_history} (GRADER_ERROR in an earlier grade, disclosed only). ` +

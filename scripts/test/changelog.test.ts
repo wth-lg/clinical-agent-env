@@ -42,19 +42,44 @@ describe('pnpm changelog', () => {
     expect(changelog('--check', dir).stderr).toContain('4 fragment(s), all folded');
   });
 
-  it('passes a fragment not folded yet, changed since its fold, or removed, and the rewrite brings each up to date', () => {
-    const dir = results({ '20261027-a.md': '- first\n', '20261027-b.md': '- second\n', '20261027-c.md': '- third\n' });
+  it('passes a fragment not folded yet or changed since its fold, and the rewrite brings each up to date, naming each line it restores', () => {
+    const dir = results({ '20261027-a.md': '- first\n', '20261027-c.md': '- third\n' });
     expect(changelog(dir).status).toBe(0);
     write(dir, 'changelog.d/20261027-a.md', '- first, fixed\n');
-    rmSync(join(dir, 'changelog.d/20261027-b.md'));
     write(dir, 'changelog.d/20261028-d.md', '- fourth\n');
     const r = changelog('--check', dir);
     expect(r.status).toBe(0);
-    expect(r.stderr).toContain('3 fragment(s), 3 not folded yet or changed since; a PR leaves them, the fold runs on main');
+    expect(r.stderr).toContain('3 fragment(s), 2 not folded yet or changed since; a PR leaves them, the fold runs on main');
     const w = changelog(dir);
     expect(w.status).toBe(0);
-    expect(w.stderr).toMatch(/dropped .*CHANGELOG\.md:\d+ changelog\.d\/20261027-b\.md, which no fragment holds now/);
+    expect(w.stderr).toMatch(/restored .*CHANGELOG\.md:\d+ from changelog\.d\/20261027-a\.md/);
     expect(read(dir)).toBe(HEADER + line('20261027-a.md', '- first, fixed') + line('20261027-c.md', '- third') + line('20261028-d.md', '- fourth'));
+  });
+
+  it('names a hand edit of a folded line when the rewrite undoes it', () => {
+    const dir = results({ '20261027-a.md': '- first\n' });
+    write(dir, 'CHANGELOG.md', HEADER + line('20261027-a.md', '- first, edited by hand'));
+    expect(changelog('--check', dir).status).toBe(0);
+    const w = changelog(dir);
+    expect(w.status).toBe(0);
+    expect(w.stderr).toMatch(/restored .*CHANGELOG\.md:\d+ from changelog\.d\/20261027-a\.md/);
+    expect(read(dir)).toBe(HEADER + line('20261027-a.md', '- first'));
+  });
+
+  it('fails a line whose fragment does not exist, a removed fragment included; only the rewrite with --drop-removed drops it', () => {
+    const dir = results({ '20261027-a.md': '- first\n', '20261027-b.md': '- second\n' });
+    expect(changelog(dir).status).toBe(0);
+    rmSync(join(dir, 'changelog.d/20261027-b.md'));
+    const before = read(dir);
+    const r = changelog('--check', dir);
+    expect(r.status).toBe(1);
+    expect(r.stdout).toMatch(/CHANGELOG\.md:\d+: '- second[^']*' names changelog\.d\/20261027-b\.md, which does not exist; add that fragment, or if it was removed on purpose run pnpm changelog --drop-removed on main/);
+    expect(changelog(dir).status).toBe(1);
+    expect(read(dir)).toBe(before);
+    const w = changelog('--drop-removed', dir);
+    expect(w.status).toBe(0);
+    expect(w.stderr).toMatch(/dropped .*CHANGELOG\.md:\d+ changelog\.d\/20261027-b\.md, which no fragment holds now/);
+    expect(read(dir)).toBe(HEADER + line('20261027-a.md', '- first'));
   });
 
   it('fails a line added by hand, at the end or among folded lines, and the rewrite keeps the file as it is', () => {
@@ -63,12 +88,14 @@ describe('pnpm changelog', () => {
       `${HEADER}${line('20261027-a.md', '- first')}- added by hand\n`,
       `${HEADER}- added by hand\n${line('20261027-a.md', '- first')}`,
       `${HEADER}${line('20261027-a.md', '- first')}${line('hand.md', '- added by hand')}`,
+      // The tag of the line above copied and its date moved on: it names no fragment that exists.
+      `${HEADER}${line('20261027-a.md', '- first')}${line('20261028-hand.md', '- added by hand')}`,
     ]) {
       const dir = results(frags);
       write(dir, 'CHANGELOG.md', text);
       const r = changelog('--check', dir);
       expect(r.status).toBe(1);
-      expect(r.stdout).toMatch(/CHANGELOG\.md:\d+: '- added by hand[^']*' names no fragment; add it as changelog\.d\/<YYYYMMDD>-<id>\.md instead/);
+      expect(r.stdout).toMatch(/CHANGELOG\.md:\d+: '- added by hand[^']*' names (no fragment; add it as changelog\.d\/<YYYYMMDD>-<id>\.md instead|changelog\.d\/20261028-hand\.md, which does not exist; add that fragment)/);
       const w = changelog(dir);
       expect(w.status).toBe(1);
       expect(w.stderr).toContain('not written');
@@ -150,5 +177,6 @@ describe('pnpm changelog', () => {
     expect(changelog('--bogus').status).toBe(2);
     expect(changelog('--check', 'a', 'b').status).toBe(2);
     expect(changelog('--check', join(tempDir('changelog'), 'none')).status).toBe(2);
+    expect(changelog('--check', '--drop-removed').status).toBe(2);
   });
 });

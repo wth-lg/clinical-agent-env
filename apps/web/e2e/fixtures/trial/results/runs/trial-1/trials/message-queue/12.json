@@ -42,6 +42,7 @@
   "detail": null,
   "summary": "Cleared the six messages: Evelyn Brooks sent to the ED with a stat triage task; Gloria Hayes 30-day lisinopril bridge and BMP; Frank Odum not refilled (atorvastatin stopped by cardiology), task to Dr. Okafor; Lena Park amoxicillin-clavulanate held for a documented reaction, allergy recorded, NP Reyes told; Samuel Price metformin renewed; Marcus Webb routed to scheduling.",
   "resumed": false,
+  "env_git_sha": null,
   "ended": "2026-10-23T14:07:56.000Z",
   "judge_cost_usd": 0,
   "grader_version": "10",

@@ -35,6 +35,10 @@
 //   traceability      every check's traces_to resolves to a line of instruction.md
 //                     (instruction.md:<n>) or a policy (<policy id>, optionally ' §<section>'
 //                     found in its text)
+//   oracle final hash the oracle's final state hash equals MatrixOptions.oracleFinalHash when
+//                     one is given (cli/matrix.ts reads it from results/tasks-v1.json, which
+//                     P21's freeze writes), and a pinned hash fails when the oracle case does not
+//                     run; without one the hash is printed, not checked
 // MatrixOptions narrow a run for a unit test: a subset of cases, one trial, one grade. The CI
 // step runs the whole matrix with the defaults.
 import { MODEL, type CallResult, type ContentBlock, type MessageParam } from '../../core/anthropic.ts';
@@ -175,6 +179,9 @@ export interface MatrixOptions {
   // Given both runs of a case whose second run differs (cli/matrix.ts saves them), so the
   // first divergent step of a replay failure can be read after the fact.
   onReplayMismatch?: (c: Case, first: CaseRun, again: CaseRun, diff: ReplayDiff) => void;
+  // The oracle's pinned final state hash; the matrix fails, naming the task, when the oracle's
+  // differs. Absent, the oracle's final hash is printed and not checked.
+  oracleFinalHash?: string;
 }
 
 export interface CaseRun {
@@ -233,6 +240,8 @@ export function gradeRunWith(env: Pick<MatrixEnv, 'tasks' | 'world' | 'definitio
 
 export interface CaseResult {
   case: Case;
+  // The first run's record: its status and state hashes.
+  record: TrialRecord;
   grade: Grade;
   // Judge and hybrid items unknown for a reason other than a cache miss.
   unknown: number;
@@ -383,7 +392,7 @@ export async function runCases(env: MatrixEnv, task: MatrixTask, selected: reado
     }
     if (regrade_same === false) v.problems.push('a second grade from the same record differs');
     if (replay_same === false) v.problems.push('a second run gives a different trajectory or final hash');
-    return { case: c, grade, misses, regrade_same, replay_same, isolation, ...v };
+    return { case: c, record: run.record, grade, misses, regrade_same, replay_same, isolation, ...v };
   });
 }
 
@@ -450,10 +459,19 @@ export async function runMatrix(env: MatrixEnv, task: MatrixTask, opts: MatrixOp
     fail('no oracle');
   } else if (oracle === undefined) {
     lines.push('oracle: not run');
+    if (opts.oracleFinalHash !== undefined) fail(`oracle final hash of task ${task.id} is pinned, but the oracle case did not run`);
   } else {
     const missed = [...new Set(oracle.misses.map((m) => m.check))];
     lines.push(missed.length ? `oracle: MISS judge cache misses ${missed.join(', ')}` : `oracle: ${oracle.grade.outcome} score ${score(oracle.grade)} judge.unknown ${oracle.unknown}`);
     noteProblems(oracle);
+    const hash = oracle.record.state_hash.final;
+    const want = opts.oracleFinalHash;
+    if (want === undefined) lines.push(`oracle final hash: ${hash ?? 'none'} (no expected hash)`);
+    else if (hash === want) lines.push(`oracle final hash: ${hash} matches results/tasks-v1.json`);
+    else {
+      lines.push(`oracle final hash: ${hash ?? 'none'} DIFFERS from results/tasks-v1.json ${want}`);
+      fail(`oracle final hash of task ${task.id} is ${hash ?? 'none'}, results/tasks-v1.json pins ${want}`);
+    }
   }
 
   const alternatives = byKind('alternative');

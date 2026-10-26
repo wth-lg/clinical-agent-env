@@ -42,6 +42,7 @@
   "detail": null,
   "summary": "Placed the CT abdomen and pelvis with IV contrast for Daniel Ferreira on Monday 10/26 at 09:00, linked to the appointment; prednisone 50 mg at 20:00 Sunday, 02:00 and 08:00 Monday and diphenhydramine 50 mg at 08:00 Monday for his 2019 iohexol reaction; creatinine before the scan; instructions sent; note written.",
   "resumed": false,
+  "env_git_sha": null,
   "ended": "2026-10-23T12:15:13.000Z",
   "judge_cost_usd": 0,
   "grader_version": "10",

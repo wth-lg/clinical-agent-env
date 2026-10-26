@@ -1,6 +1,6 @@
 // Run directories for the summary, audit-check and donewhen tests: a live run of two tasks of 10
-// trials, 5 PASS and 5 FAIL each, with trajectories, replay.json, audit.jsonl, matrix.json and a manifest that
-// expects both tasks, and one variant per violation the gate names. Records carry the fields summary and audit-check read, as cli run writes them,
+// trials, 5 PASS and 5 FAIL each, with trajectories, replay.json, audit.jsonl (a task-validity review per task among its
+// labels), matrix.json and a manifest that expects both tasks, and one variant per violation the gate names. Records carry the fields summary and audit-check read, as cli run writes them,
 // the env/grader version split included: env_version e-<task>, grader_task_version g-<task>, and g-<task>-next on a regrade.
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -91,6 +91,9 @@ export function writeFixtureRun(dir: string, fixture: Fixture): void {
       }
     }
   }
+  // Each task's 5 FAIL fail G1 first, so the consistency flag marks it
+  // (packages/core/summary.ts consistencyOf): the audit reviews it.
+  for (const task of TASKS) labels.push({ task, kind: 'task-validity', reviewer: 'fixture-auditor', verdict: 'fair-trap', note: 'every FAIL misses the same check, as the fixture means' });
   if (fixture === 'requeued-env-error') {
     put(dir, 'requeued/t-alpha/3.a-0.json', `${JSON.stringify(record('t-alpha', 3, 'ENV_ERROR', { status: 'ENV_ERROR', attempt: 'a-0', settled: false, requeue_reason: 'ENV_ERROR' }), null, 2)}\n`);
   }
