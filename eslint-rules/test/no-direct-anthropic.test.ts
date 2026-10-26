@@ -3,6 +3,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ESLint } from 'eslint';
 import { describe, expect, it } from 'vitest';
+import { APP_CSP } from '../../apps/web/csp.ts';
 
 // Lints code through the real eslint.config.js as if it lived at a repo path, so these tests
 // cover the rule and its file scope together.
@@ -56,9 +57,10 @@ describe('no-direct-anthropic', () => {
     expect(await ruleIds(`export const u = 'https://${HOST}/v1/messages';`, path)).toContain(RULE);
   });
 
-  it('flags a Content-Security-Policy string in a .ts file: only apps/web/*.html CSP metas name the host', async () => {
-    const csp = `export const CSP = "default-src 'self'; connect-src 'self' https://${HOST}; script-src 'self'";`;
+  it('flags a Content-Security-Policy string in a .ts file other than the APP_CSP literal', async () => {
+    const csp = `export const CSP = "${APP_CSP.replace(/; worker-src [^;]*$/, '')}";`;
     expect(await ruleIds(csp, 'apps/web/e2e/smoke.spec.ts')).toContain(RULE);
+    expect(await ruleIds(csp, 'apps/web/csp.ts')).toContain(RULE);
     expect(await ruleIds(`export const r = fetch('https://${HOST}/v1/messages?connect-src');`, 'cli/planted.ts')).toContain(RULE);
   });
 
@@ -104,11 +106,19 @@ describe('no-direct-anthropic', () => {
     expect(await ruleIds(`export const go = () => fetch('https://${HOST}/v1/messages');`, 'eslint-rules/fixtures/zz-sender.ts')).toContain(RULE);
   });
 
-  it('allows the exact design CSP literal in apps/web/e2e/smoke.spec.ts only', async () => {
-    const csp = `export const CSP = "default-src 'self'; connect-src 'self' https://${HOST}; script-src 'self'; worker-src 'self' blob:";`;
-    expect(await ruleIds(csp, 'apps/web/e2e/smoke.spec.ts')).not.toContain(RULE);
+  // P16h PR-web-1: the CSP is written once, as APP_CSP in apps/web/csp.ts; every pin imports it.
+  it('allows the exact APP_CSP literal in apps/web/csp.ts only', async () => {
+    expect(APP_CSP).toContain(HOST);
+    const csp = `export const APP_CSP = ${JSON.stringify(APP_CSP)};`;
+    expect(await ruleIds(csp, 'apps/web/csp.ts')).not.toContain(RULE);
+    expect(await ruleIds(csp, 'apps/web/e2e/smoke.spec.ts')).toContain(RULE);
     expect(await ruleIds(csp, 'cli/planted.ts')).toContain(RULE);
-    expect(await ruleIds(csp.replace("worker-src 'self'", "worker-src 'self' x"), 'apps/web/e2e/smoke.spec.ts')).toContain(RULE);
-    expect(await ruleIds(`${csp}\nexport const r = fetch('https://${HOST}/v1/messages');`, 'apps/web/e2e/smoke.spec.ts')).toContain(RULE);
+    expect(await ruleIds(csp.replace("worker-src 'self'", "worker-src 'self' x"), 'apps/web/csp.ts')).toContain(RULE);
+    expect(await ruleIds(`${csp}\nexport const r = fetch('https://${HOST}/v1/messages');`, 'apps/web/csp.ts')).toContain(RULE);
+  });
+
+  it('apps/web/csp.ts as committed lints clean', async () => {
+    const [result] = await eslint.lintFiles([join(root, 'apps/web/csp.ts')]);
+    expect(result?.messages.map((m) => m.ruleId)).toEqual([]);
   });
 });
