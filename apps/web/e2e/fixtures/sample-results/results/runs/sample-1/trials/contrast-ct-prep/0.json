@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:contrast-ct-prep:0",
   "task_id": "contrast-ct-prep",
-  "task_version": "f199cfe54b2c4e9334a21671f19bcb709b0bc2e55e5d276c841aaa65f6aab2ee",
-  "env_version": "ec98c43c0ab505c6dea2e82ae38f0dd1089a01ee04a97b6c3843dde74a87b61e",
+  "task_version": "69c8185ec5d941cfc07865fc386542ca024a35a7e5bfe27c62ea5254f4f7e872",
+  "env_version": "a96cdf584c11ee1aa9e888d2a072aca53dc0a2cb74d06016799b7532208b4e31",
   "grader_task_version": "f118f2d5e4c9d23ab48f2337f7a64be9af45b677476f461395cfb6720cb3012d",
-  "fixture_hash": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
+  "fixture_hash": "6a55a334f64c2dc55fe79930574504206070593a4767f40170b58f880c530bde",
   "state_hash": {
-    "initial": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
-    "final": "58ea77866512ef7d38109e87d7576113fe00b85f764bde26186a3fd2f165af8f",
-    "replay_final": "58ea77866512ef7d38109e87d7576113fe00b85f764bde26186a3fd2f165af8f"
+    "initial": "6a55a334f64c2dc55fe79930574504206070593a4767f40170b58f880c530bde",
+    "final": "624dbcd3e6d3007c4b4d5ee3a373dac97e9ec2f15702eb023a557d7a3d009a6d",
+    "replay_final": "624dbcd3e6d3007c4b4d5ee3a373dac97e9ec2f15702eb023a557d7a3d009a6d"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -42,6 +42,7 @@
   "detail": null,
   "summary": "Placed the CT abdomen and pelvis with IV contrast for Daniel Ferreira on Monday 10/26 at 09:00, linked to the appointment; prednisone 50 mg at 20:00 Sunday, 02:00 and 08:00 Monday and diphenhydramine 50 mg at 08:00 Monday for his 2019 iohexol reaction; creatinine before the scan; instructions sent; note written.",
   "resumed": false,
+  "env_git_sha": null,
   "ended": "2026-10-23T12:01:21.000Z",
   "judge_cost_usd": 0,
   "grader_version": "10",
