@@ -55,5 +55,5 @@ export const checkText: CheckText = {
     },
   },
   inputs_before_orders: { requires: `the creatinine (${expected.scr.id}) and the weight (${expected.weight.id}) read before the first medication order`, found: late },
-  note_exists: { requires: `a progress note on ${expected.patient} documenting the review`, found: () => 'no note was written on the patient' },
+  note_exists: { requires: `a note on ${expected.patient}'s chart documenting the review (its content is scored by the rubric)`, found: () => 'no note was written on the patient' },
 };

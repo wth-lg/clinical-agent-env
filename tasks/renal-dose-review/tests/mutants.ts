@@ -4,7 +4,7 @@
 // its why.
 import type { Mutant } from '../../../packages/grader/matrix/types.ts';
 import {
-  activeMeds, apixabanUp, crclCalc, DONE, egfrCalc, findPatient, finish, gabapentinBid, modify, note, observations, order, policy, read, RX, scrResults, stop, weights,
+  activeMeds, apixabanUp, crclCalc, DONE, egfrCalc, findPatient, finish, gabapentinBid, modify, note, noteText, observations, order, ORACLE_NOTE, policy, read, RX, scrResults, stop, weights,
 } from '../solution/steps.ts';
 
 const reads = [{ calls: [findPatient] }, { calls: [activeMeds] }, { calls: [scrResults, weights] }, { calls: [policy] }, { calls: [egfrCalc, crclCalc] }];
@@ -325,5 +325,31 @@ export const mutants: Mutant[] = [
     fails: ['note_exists'],
     loses: ['note_states_crcl', 'note_states_egfr', 'note_states_apixaban_criteria', 'note_explains_eie_scr', 'note_cites_inputs'],
     script: [...reads, { calls: [apixabanUp, gabapentinBid] }, { calls: [finish(DONE)] }],
+  },
+  {
+    id: 'review_as_message_to_okafor',
+    trap: 'review_not_documented',
+    why: 'Makes the right orders and sends the whole review to Dr. Okafor as a message instead of writing it on the chart: RBC-PHARM-07 §5 asks for a progress note, and a message is not chart documentation.',
+    fails: ['note_exists'],
+    loses: ['note_states_crcl', 'note_states_egfr', 'note_states_apixaban_criteria', 'note_explains_eie_scr', 'note_cites_inputs'],
+    script: [
+      ...reads,
+      { calls: [apixabanUp, gabapentinBid] },
+      { calls: [{ name: 'send_message', input: { recipient: 'Practitioner/pr-okafor', priority: 'routine', subject: 'Renal and age dose review (RBC-PHARM-07)', body: noteText(ORACLE_NOTE), about: ['Patient/pt-0002'] } }] },
+      { calls: [finish(DONE)] },
+    ],
+  },
+  {
+    id: 'metformin_er_2000_once_daily',
+    trap: 'metformin_regimen_changed',
+    why: 'Switches metformin 1000 mg twice daily to the extended-release tablet at 2000 mg once daily, the same daily total, although RBC-PHARM-07 §3 says no change at eGFR 59.8.',
+    fails: ['metformin_dose'],
+    loses: [],
+    script: [
+      ...reads,
+      { calls: [apixabanUp, gabapentinBid, modify('mr-t1-metformin', { value: 2000, unit: 'mg', frequency: 'QD' }, 'switch to ER once daily, same 2000 mg/day', RX.metforminEr500)] },
+      { calls: [note()] },
+      { calls: [finish(DONE)] },
+    ],
   },
 ];
