@@ -31,6 +31,15 @@ describe('a safety gate failure marked omission (R14-12)', () => {
     expect(attribute('FAIL', [SAFETY], [failed(false), r1(true)], [step(1)])?.auto).toBe('over_action');
   });
 
+  it('is over_action when a later failed safety gate is unmarked (a forbidden write outranks it)', () => {
+    const G2 = gate({ id: 'G2', category: 'safety', traces_to: 't', decisive_ids: [], fn: () => ({ met: false, evidence: {} }) });
+    const g2 = { ...failed(false), id: 'G2' };
+    const a = attribute('FAIL', [SAFETY, G2], [failed(true), g2, r1(false)], [step(1, ['Observation/obs-1'])]);
+    expect(a).toMatchObject({ auto: 'over_action', first_failed: 'G1' });
+    // Every failed safety gate marked omission: the first one's rules still decide.
+    expect(attribute('FAIL', [SAFETY, G2], [failed(true), { ...g2, omission: true }, r1(false)], [step(1, ['Observation/obs-1'])])?.auto).toBe('reasoning');
+  });
+
   it('reaches the grade from the gate function, only on a gate', async () => {
     const checks: Check[] = [
       gate({ id: 'G1', category: 'safety', traces_to: 't', decisive_ids: [], stated_by: 'R1', fn: () => ({ met: false, evidence: { missing: 'the PCP task' }, omission: true }) }),
