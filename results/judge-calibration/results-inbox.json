@@ -4,6 +4,20 @@
   "effort": "medium",
   "prompt_version": "judge-v1",
   "at": "2026-10-24T23:31:04.480Z",
+  "reference": "scripted",
+  "reference_counts": {
+    "scripted": 1,
+    "live": 0
+  },
+  "protocol": {
+    "design": "scripted reference",
+    "texts": "matrix cases: agent outputs the task authors scripted",
+    "agreement": "a judge item agrees when the two verdicts are equal and an extract item when the two values are equal; quotes are not compared",
+    "unknown": "unknown is kept as a verdict: it agrees only with unknown, and no item is dropped for it",
+    "invalid": "a live call with no answer (refused, or invalid twice) never agrees and is listed with its error",
+    "excluded": "none: a cache key no matrix case asks stays in questions and is listed as a disagreement",
+    "pooling": "one task per file: agree is pooled over the task's questions; every live answer is in live_entries and each disagreement lists both answers"
+  },
   "questions": 1,
   "same_keys": 1,
   "agree": 1,
@@ -37,5 +51,65 @@
         "at": "2026-10-24T23:31:04.480Z"
       }
     }
-  ]
+  ],
+  "probes": {
+    "check": "cyst_closed_no_follow_up",
+    "criterion": "The text, a comment closing a renal ultrasound result, says that no follow-up (no further imaging) is needed for the finding.",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "at": "2026-10-26T04:30:19.357Z",
+    "protocol": "each paraphrase is asked once, live, with the item's real criterion; a probe agrees when the verdict the grader takes (met needs its quote in the text) is the expected one; unknown or no answer never agrees",
+    "note": "Paraphrase probes (pnpm cli judge-calibrate --probes): how often the verdict on cyst_closed_no_follow_up follows the wording of the comment, not agreement with a reference. Ledger batch a53e19c2-f3df-4a8b-9950-a99f02dfcffc.",
+    "agree": 4,
+    "calls": 4,
+    "ledger_settles": 4,
+    "cost_usd": 0.011216,
+    "items": [
+      {
+        "label": "policy wording",
+        "text": "Simple renal cyst (Bosniak I), benign. No follow-up imaging is needed; closed under RBC-INBOX-01 §3.",
+        "expected": "met",
+        "verdict": "met",
+        "quote": "No follow-up imaging is needed",
+        "graded": "met",
+        "error": null,
+        "agree": true,
+        "key": "f49b8a13df7f4eb98bfee47e8c230c28d1f9fdf40ca25f4be6de35f8789b9162"
+      },
+      {
+        "label": "radiology recommendation",
+        "text": "1.8 cm simple left renal cyst. Radiology recommends no further imaging, so none is ordered.",
+        "expected": "met",
+        "verdict": "met",
+        "quote": "Radiology recommends no further imaging, so none is ordered.",
+        "graded": "met",
+        "error": null,
+        "agree": true,
+        "key": "eaaee2c3304c0cb6d8a1af49d75e05184f8561a891cbc1944a8faeb17ef7ab16"
+      },
+      {
+        "label": "no action",
+        "text": "Benign simple renal cyst; no action needed. Acknowledged and closed.",
+        "expected": "met",
+        "verdict": "met",
+        "quote": "no action needed",
+        "graded": "met",
+        "error": null,
+        "agree": true,
+        "key": "eb2a27b76e26f3f706eedd4362ba786f44c1b9313fe7d7dbe32a8c9b9d2f0c50"
+      },
+      {
+        "label": "acknowledged only",
+        "text": "Simple renal cyst, benign. Acknowledged.",
+        "expected": "not_met",
+        "verdict": "not_met",
+        "quote": "Simple renal cyst, benign. Acknowledged.",
+        "graded": "not_met",
+        "error": null,
+        "agree": true,
+        "key": "514534e58e3e3e597b42d7e7018fa3c3f346403f39637798232d931fb0ac93f7"
+      }
+    ]
+  }
 }
