@@ -22,6 +22,10 @@ export const criterionPhrase = (id: string): string => {
 };
 // One word per fault, the word the label uses (review-ui-P16-1 F5).
 export const FAULT_WORD: Readonly<Record<Fault, string>> = { model: 'model', refusal: 'model', env: 'environment', grader: 'grader', infra: 'infra' };
+// Each fault as a noun inside a sentence: "the fault is the infrastructure's", "Ruled out: a
+// refusal (R1 not met), the model (MF1-MF2 not met)", so no list names the model twice
+// (verifier-phase-P16-2 minor).
+export const FAULT_NOUN: Readonly<Record<Fault, string>> = { model: 'the model', refusal: 'a refusal', env: 'the environment', grader: 'the grader', infra: 'the infrastructure' };
 export const LINK = 'text-ink underline decoration-line-strong underline-offset-2 hover:decoration-ink';
 
 type Exposure = { id: string; first_exposed_step: number | null; first_shown_step?: number | null };
@@ -57,8 +61,8 @@ function CriteriaSummary({ e }: { e: Explanation }) {
   return (
     <p data-testid="criteria-summary" className="break-words text-ink">
       {e.deciding ? <>Decided by <GlossaryLink anchor={`criterion-${e.deciding.id}`} className={LINK}>{e.deciding.id}</GlossaryLink>: {criterionPhrase(e.deciding.id)}.</> : 'No fault: the trial passed.'}
-      {out.length > 0 && <> Ruled out: {out.map((f) => `${FAULT_WORD[f]} (${range(e.fault_criteria[f])} not met)`).join(', ')}.</>}
-      {holds.length > 0 && <> Also holds: {holds.map((f) => `${FAULT_WORD[f]} (${e.fault_criteria[f].filter((c) => c.met === true).map((c) => c.id).join(', ')})`).join(', ')}.</>}
+      {out.length > 0 && <> Ruled out: {out.map((f) => `${FAULT_NOUN[f]} (${range(e.fault_criteria[f])} not met)`).join(', ')}.</>}
+      {holds.length > 0 && <> Also holds: {holds.map((f) => `${FAULT_NOUN[f]} (${e.fault_criteria[f].filter((c) => c.met === true).map((c) => c.id).join(', ')})`).join(', ')}.</>}
     </p>
   );
 }
@@ -77,7 +81,7 @@ export function Attribution({ t, e, steps, onStep }: { t: Trial; e: Explanation;
       <dl className="grid grid-cols-1 gap-x-4 gap-y-1.5 sm:grid-cols-[max-content_minmax(0,1fr)] [&_dd]:min-w-0 [&_dd]:break-words [&_dt]:text-ink-muted">
         <dt>Kind of failure</dt>
         <dd data-testid="taxonomy">
-          {!modelFault ? (e.fault === null ? 'none: the trial passed' : `does not apply: the fault is the ${FAULT_WORD[e.fault]}'s, not the model's`) : (
+          {!modelFault ? (e.fault === null ? 'none: the trial passed' : `does not apply: the fault is ${FAULT_NOUN[e.fault]}'s, not the model's`) : (
             <>
               {e.taxonomy ? <><GlossaryLink anchor="taxonomy" className={LINK}>{e.taxonomy.replace(/_/g, ' ')}</GlossaryLink>: <span className="text-ink-muted">{TAXONOMY_TEXT[e.taxonomy]}</span></> : 'none'}
               {auto && auto.auto !== e.taxonomy && <span className="block text-xs text-ink-muted">The grader's automatic kind: {auto.auto.replace(/_/g, ' ')}.</span>}

@@ -528,6 +528,20 @@ test('a trial from another world: Replay says its differing hash is expected, no
 // The UI wording and consistency follow-up (run.md 2026-10-27 04:40 list; verifier-phase-P16-2
 // minors, review-ui-P16-1 F8, verifier-phase-P17i-C3-2 F2).
 
+test('Ruled out names each fault once, refusal included, and the infrastructure in words', async ({ page }) => {
+  for (const name of [TRIALS.envError, TRIALS.graderError]) {
+    await openTrial(page, name, '&tab=attribution');
+    const line = panel(page, 'attribution').getByTestId('criteria-summary');
+    await expect(line).toContainText('a refusal (R1 not met)');
+    await expect(line).toContainText('the model (MF1-MF2 not met)');
+    await expect(line).not.toContainText(/\bmodel \(R1/);
+  }
+  await openTrial(page, TRIALS.infra, '&tab=attribution');
+  await expect(panel(page, 'attribution').getByTestId('taxonomy')).toHaveText("does not apply: the fault is the infrastructure's, not the model's");
+  await openTrial(page, TRIALS.envError, '&tab=attribution');
+  await expect(panel(page, 'attribution').getByTestId('criteria-summary')).toContainText('the infrastructure (I1-I4 not met)');
+});
+
 test('a GRADER_ERROR trial shows M1 not applicable and says plainly that it has no grade', async ({ page }) => {
   const e = await explain(TRIALS.graderError);
   expect(e.criteria[0]).toMatchObject({ id: 'M1', met: 'n/a' });
