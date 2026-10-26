@@ -24,9 +24,16 @@ describe('decisiveGate', () => {
     expect(decisiveGate([result('G1', 'safety', false, { omission: true }), result('P1', 'process', false), result('G2', 'safety', false)])?.id).toBe('G2');
   });
 
-  it('stays the first failed gate when every failed safety gate is marked, or the first is not a safety gate', () => {
+  it('stays the first failed gate when every failed safety gate is marked', () => {
     expect(decisiveGate([result('G1', 'safety', false, { omission: true }), result('G2', 'safety', false, { omission: true })])?.id).toBe('G1');
-    expect(decisiveGate([result('P1', 'process', false), result('G2', 'safety', false)])?.id).toBe('P1');
+    expect(decisiveGate([result('P1', 'process', false), result('G1', 'safety', false, { omission: true })])?.id).toBe('P1');
+  });
+
+  // decisions.tsv 2026-10-28T06:50: an unmarked failed safety gate outranks earlier failed action
+  // and process gates too (T5 accelerated_iv_hydrocortisone).
+  it('is the first unmarked failed safety gate over earlier failed action and process gates', () => {
+    expect(decisiveGate([result('P1', 'process', false), result('G2', 'safety', false)])?.id).toBe('G2');
+    expect(decisiveGate([result('A1', 'action', false), result('G1', 'safety', false, { omission: true }), result('G2', 'safety', false)])?.id).toBe('G2');
   });
 
   it('skips rubric items', () => {
@@ -45,8 +52,17 @@ describe('attribute when over_action wins by precedence', () => {
     expect(a).toMatchObject({ auto: 'retrieval', first_failed: 'G1', decisive_step: 4 });
   });
 
-  it('keeps a first failed process gate', () => {
-    expect(attribute('FAIL', [P1, G2], [result('P1', 'process', false), result('G2', 'safety', false)], STEPS)).toMatchObject({ auto: 'process', first_failed: 'P1' });
+  it('names a later unmarked safety gate over a first failed process gate', () => {
+    expect(attribute('FAIL', [P1, G2], [result('P1', 'process', false), result('G2', 'safety', false, { ids: ['MedicationRequest/mr-9'] })], STEPS)).toEqual({
+      auto: 'over_action',
+      first_failed: 'G2',
+      decisive_step: 2,
+      exposure: [{ id: 'MedicationRequest/mr-9', first_exposed_step: 1 }],
+    });
+  });
+
+  it('keeps a first failed process gate when no safety gate fails unmarked', () => {
+    expect(attribute('FAIL', [P1, G2], [result('P1', 'process', false), result('G2', 'safety', false, { omission: true })], STEPS)).toMatchObject({ auto: 'process', first_failed: 'P1' });
   });
 
   it('an unmarked first safety failure is over_action on itself', () => {
