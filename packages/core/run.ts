@@ -403,7 +403,8 @@ function firstDifference(a: Found, b: Found, path = ''): { path: string; recorde
     }
   } else if (obj(a) && obj(b)) {
     for (const k of [...new Set([...Object.keys(a), ...Object.keys(b)])].sort()) {
-      const [x, y] = [k in a ? a[k] : ABSENT, k in b ? b[k] : ABSENT];
+      // Own keys only: a key such as toString is on every object's prototype chain.
+      const [x, y] = [Object.hasOwn(a, k) ? a[k] : ABSENT, Object.hasOwn(b, k) ? b[k] : ABSENT];
       if (!same(x, y)) return firstDifference(x, y, path ? `${path}.${k}` : k);
     }
   }

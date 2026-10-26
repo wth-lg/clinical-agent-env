@@ -79,6 +79,17 @@ describe('the E4 sentence names the replay mismatch', () => {
     expect(explain(record, events).deciding?.evidence).toBe(`replay: call 1 (${read.name}, ${read.tool_use_id}) gave is_error false, recorded true`);
   });
 
+  // verifier JG10-1 F2: a key that only the prototype chain has on the other side (toString) is
+  // absent there, not a function that has no JSON form.
+  it('a key the other side has only on its prototype chain is absent there', async () => {
+    const { record, events } = await trial((e) => {
+      (e as { content: unknown }).content = { ...(e.content as object), toString: 'own key' };
+    });
+    const read = firstRead(events);
+    expect(record).toMatchObject({ status: 'ENV_ERROR', detail: 'replay_mismatch' });
+    expect(explain(record, events).deciding?.evidence).toBe(`replay: call 1 (${read.name}, ${read.tool_use_id}) gave a different result: at toString, recorded "own key", replayed absent`);
+  });
+
   it('without the trajectory, E4 still reads the two state hashes', async () => {
     const { record } = await trial((e) => {
       (e as { is_error: boolean }).is_error = true;
