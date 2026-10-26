@@ -10,6 +10,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { consistencyOf, currentGrade, summarize, type SummaryCheck, type SummaryTrial } from '../../packages/core/summary.ts';
+import { decisiveGate } from '../../packages/grader/attribution.ts';
 import { cases, gradeRun, trial } from '../../packages/grader/matrix/matrix.ts';
 import { tempDir } from '../../scripts/test/helpers.ts';
 import { main as auditCheck } from '../audit-check.ts';
@@ -114,15 +115,17 @@ describe('the consistency flag', () => {
     expect(consistencyOf(three.map(currentGrade), { final: true }).flags).toEqual([]);
   });
 
-  // Only the mutants declared to fail fit_orders run, to keep the test short.
-  it('the crc-care-gap mutant failures whose first failed check is fit_orders group as one check', async () => {
+  // Only the mutants declared to fail fit_orders run, to keep the test short. Those that also
+  // fail nothing_for_others (an unmarked safety gate) have it as their decisive check instead
+  // (decisions.tsv 2026-10-28T06:50), so they are not in the fit_orders group.
+  it('the crc-care-gap mutant failures whose decisive check is fit_orders group as one check', async () => {
     const env = matrixEnv();
     const task = await loadMatrixTask('crc-care-gap');
     const grades: Array<{ outcome: string; valid: boolean; checks: SummaryCheck[] }> = [];
     for (const c of cases(task).filter((x) => x.mutant?.fails.includes('fit_orders') === true)) {
       const g = await gradeRun(env, task, task.checks, await trial(env, task, c));
       const checks = g.checks as unknown as SummaryCheck[];
-      if (g.outcome !== 'PASS' && checks.find((x) => x.kind === 'gate' && x.met === false)?.id === 'fit_orders') grades.push({ outcome: g.outcome, valid: true, checks });
+      if (g.outcome !== 'PASS' && decisiveGate(checks)?.id === 'fit_orders') grades.push({ outcome: g.outcome, valid: true, checks });
     }
     expect(grades.length).toBeGreaterThanOrEqual(5);
     const c = consistencyOf(grades);

@@ -3,7 +3,7 @@
 // omission: true, and attribution then labels it by the retrieval, output_gap and reasoning
 // rules, as for any other gate. A matrix mutant may declare the attribution it expects.
 import { describe, expect, it } from 'vitest';
-import { attribute } from '../attribution.ts';
+import { attribute, type Taxonomy } from '../attribution.ts';
 import { gate, judged, type Check, type GateCheck, type Step } from '../check.ts';
 import { grade, type CheckResult } from '../grade.ts';
 import { matrix, ONE, TOY } from '../matrix/test/harness.ts';
@@ -66,6 +66,23 @@ describe('a mutant declares the attribution it expects (R14-12)', () => {
   it('an undeclared label is printed and not checked', async () => {
     const { code, text } = await matrix({}, { ...ONE, cases: [m!.id] });
     expect(text).toMatch(new RegExp(`mutant ${m!.id} .*attribution \\w+`));
+    expect(code).toBe(0);
+  });
+});
+
+describe('an agent declares the attribution it expects (decisions.tsv 2026-10-28T06:50)', () => {
+  it('a declared spray label that differs from the graded one fails the case, and the line prints both', async () => {
+    const { code, text } = await matrix({ agents: { ...TOY.agents, attribution: { spray: 'did_not_finish' } } }, { ...ONE, cases: ['spray'] });
+    expect(code).toBe(1);
+    expect(text).toMatch(/spray: FAIL .*attribution \w+ declared did_not_finish/);
+    expect(text).toMatch(/attribution \w+, declared did_not_finish/);
+  });
+
+  it('a matching declared label passes', async () => {
+    const { text } = await matrix({}, { ...ONE, cases: ['spray'] });
+    const label = /spray: FAIL .*attribution (\w+)/.exec(text)![1]!;
+    const { code, text: declared } = await matrix({ agents: { ...TOY.agents, attribution: { spray: label as Taxonomy } } }, { ...ONE, cases: ['spray'] });
+    expect(declared).toMatch(new RegExp(`spray: FAIL .*attribution ${label} declared ${label}`));
     expect(code).toBe(0);
   });
 });

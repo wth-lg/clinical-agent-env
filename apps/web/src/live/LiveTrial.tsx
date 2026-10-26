@@ -316,6 +316,7 @@ function Trial({ t, id, onEnd }: { t: TrialTransport; id: string; onEnd: () => v
               <OutcomeChip outcome={explanation.outcome} fault={explanation.fault} />
               {explanation.outcome !== 'PASS' && <FaultLabel e={explanation} />}
               {explanation.outcome !== 'PASS' && <span className="text-ink-muted">{explanation.reason}</span>}
+              {explanation.outcome !== 'PASS' && explanation.secondary_reason !== null && <span data-testid="secondary-reason" className="basis-full text-xs text-ink-muted">{explanation.secondary_reason}</span>}
             </div>
           )}
           {relay !== null && f.end?.type === 'error' ? (
@@ -417,6 +418,7 @@ function LiveRow({ row, current, onOpen }: { row: LiveRun['rows'][number]; curre
         {wasResumed(row.record) && <Resumed />}
       </div>
       {e && e.outcome !== 'PASS' && <p data-testid="reason" className="mt-1 break-words text-ink-muted">{e.reason}</p>}
+      {e && e.outcome !== 'PASS' && e.secondary_reason !== null && <p data-testid="secondary-reason" className="break-words text-xs text-ink-muted">{e.secondary_reason}</p>}
       {!e && row.error !== null && <p className="mt-1 break-words text-ink-muted">{row.error}</p>}
     </li>
   );
