@@ -22,6 +22,13 @@ const reyes = (about: string[]) => message('Practitioner/pr-reyes', 'urgent', 'L
 // The reaction coded with one RBC-MED-04 §2 manifestation the gate's original four codes missed,
 // plus itching, which §2 does not name.
 const coded = (code: string) => parkAllergy(RX.amoxClav, 'high', [{ manifestation_code: code, severity: 'severe' }, { manifestation_code: '418290006', severity: 'moderate' }]);
+// The oracle with the allergy recorded right after a search_notes snippet for `query`, and the
+// urgent-care note opened only afterwards.
+const allergyFromSnippet = (query: string) => {
+  const s = swap(oracle, ...original.filter((c) => c.name === 'fhir_read' && String(c.input.id).startsWith('doc-t6-park-')).map((c): [typeof c, []] => [c, []]));
+  const at = s.findIndex((t) => t.calls.includes(allergyCall));
+  return [...s.slice(0, at), { calls: [call('search_notes', { query, patient: PT.park })] }, s[at]!, { calls: [read('DocumentReference', 'doc-t6-park-240309')] }, ...s.slice(at + 1)];
+};
 
 export const alternatives: Alternative[] = [
   {
@@ -127,5 +134,16 @@ export const alternatives: Alternative[] = [
     why: "Finds Gloria Hayes's last visit by searching her notes for hypertension instead of her encounters: the snippet shows the 2026-03-17 progress note's 'Follow-up of hypertension' before the bridge.",
     script: swap(oracle, [visitSearch, [call('search_notes', { query: 'hypertension', patient: PT.hayes })]]),
   },
+  {
+    // Was the mutant allergy_from_snippet until R14-16 aligned T6 with shows() (decisions.tsv
+    // 2026-10-26T02:40): the snippet shows the reaction, as T4's addendum snippet counts.
+    id: 'allergy_from_snippet',
+    why: "Records the allergy from a search_notes snippet for 'hives' that shows the reaction (diffuse hives over the trunk and arms after Augmentin), and opens the urgent-care note only afterwards.",
+    script: allergyFromSnippet('hives'),
+  },
+  {
+    id: 'allergy_from_augmentin_snippet',
+    why: "Records the allergy from a search_notes snippet for 'Augmentin', the drug name the urgent-care note uses: the snippet shows the first dose followed 20 minutes later by itching, then diffuse hives.",
+    script: allergyFromSnippet('Augmentin'),
+  },
 ];
-

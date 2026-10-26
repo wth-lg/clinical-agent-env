@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:crc-care-gap:6",
   "task_id": "crc-care-gap",
-  "task_version": "12a7210f027f3deee3cc3392c29efdf2b511a00e64ee9ef1111bc9912ec1a38c",
-  "env_version": "adeb2ab84b721a43bd9a1411eb8cbafc108c09aa9eeed38e6b1300c7b379358a",
-  "grader_task_version": "5cef528de411237ff22e51a7a6df680a6954707a6a44f04885e492b572eafee5",
-  "fixture_hash": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
+  "task_version": "d3d0de7bcf206407a3ab72469719cfccb312c98ecbea3b7a3ce998cb5f5538a2",
+  "env_version": "3d7216da2510f1708b0fb589859ce3c332cb7f5b42c0b55842793ce60955a9db",
+  "grader_task_version": "1952a48403a77a84eb548dda5d5b0395ce0e20e849f59eec620e8eeb36a624ff",
+  "fixture_hash": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
   "state_hash": {
-    "initial": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
-    "final": "fe6d82e5f9a5955e7e07a3f38ea46657a44b4b142d4cebfe5d94309169cba2d6",
-    "replay_final": "fe6d82e5f9a5955e7e07a3f38ea46657a44b4b142d4cebfe5d94309169cba2d6"
+    "initial": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
+    "final": "173638a27133a8cb331fdccfb139b901dc7f6c639e4ee6401400bc7e4faa9463",
+    "replay_final": "173638a27133a8cb331fdccfb139b901dc7f6c639e4ee6401400bc7e4faa9463"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -332,7 +332,7 @@
         "status": "gap",
         "reason": "fobt_expired",
         "verdict": "met",
-        "quote": "Tiny Koss | Open gap: FIT kit ordered, outreach sent | FIT 2025-12-03 was in 2025; a FIT counts only in the measurement period",
+        "quote": "| Tiny Koss | Open gap: FIT kit ordered, outreach sent | FIT 2025-12-03 was in 2025; a FIT counts only in the measurement period |",
         "cache_key": "34bcfdb7dccb8d4a8d4dcce1be91311939af3a8b9c517ab1cd9703c2bc0dae5b"
       }
     },
@@ -348,7 +348,7 @@
         "status": "gap",
         "reason": "no_screening",
         "verdict": "met",
-        "quote": "Burma Leuschke | Open gap: FIT kit ordered, outreach sent | Born 1980-12-15: 46 at the end of 2026, in the population; no screening on record",
+        "quote": "| Burma Leuschke | Open gap: FIT kit ordered, outreach sent | Born 1980-12-15: 46 at the end of 2026, in the population; no screening on record |",
         "cache_key": "b9aa63b545d2b173e163b8cb0519113baeca1c95d5ae44105674170cacd13da2"
       }
     },
@@ -489,7 +489,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-24T23:56:19.276Z"
+          "at": "2026-10-25T12:01:42.238Z"
         }
       },
       {
@@ -507,7 +507,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-24T23:56:19.276Z"
+          "at": "2026-10-25T12:01:42.238Z"
         }
       },
       {
@@ -525,7 +525,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-24T23:56:19.276Z"
+          "at": "2026-10-25T12:01:42.238Z"
         }
       },
       {
@@ -543,7 +543,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-24T23:56:19.276Z"
+          "at": "2026-10-25T12:01:42.238Z"
         }
       },
       {
@@ -561,7 +561,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-24T23:56:19.276Z"
+          "at": "2026-10-25T12:01:42.238Z"
         }
       },
       {
@@ -579,7 +579,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-24T23:56:19.276Z"
+          "at": "2026-10-25T12:01:42.238Z"
         }
       },
       {
@@ -597,7 +597,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-24T23:56:19.276Z"
+          "at": "2026-10-25T12:01:42.238Z"
         }
       },
       {
@@ -615,7 +615,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-24T23:56:19.276Z"
+          "at": "2026-10-25T12:01:42.238Z"
         }
       },
       {
@@ -626,14 +626,14 @@
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "met",
-          "quote": "Tiny Koss | Open gap: FIT kit ordered, outreach sent | FIT 2025-12-03 was in 2025; a FIT counts only in the measurement period"
+          "quote": "| Tiny Koss | Open gap: FIT kit ordered, outreach sent | FIT 2025-12-03 was in 2025; a FIT counts only in the measurement period |"
         },
         "error": null,
         "calls": 1,
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-24T23:56:19.276Z"
+          "at": "2026-10-25T12:01:42.238Z"
         }
       },
       {
@@ -644,14 +644,14 @@
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "met",
-          "quote": "Burma Leuschke | Open gap: FIT kit ordered, outreach sent | Born 1980-12-15: 46 at the end of 2026, in the population; no screening on record"
+          "quote": "| Burma Leuschke | Open gap: FIT kit ordered, outreach sent | Born 1980-12-15: 46 at the end of 2026, in the population; no screening on record |"
         },
         "error": null,
         "calls": 1,
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-24T23:56:19.276Z"
+          "at": "2026-10-25T12:01:42.238Z"
         }
       },
       {
@@ -669,7 +669,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-24T23:56:19.276Z"
+          "at": "2026-10-25T12:01:42.238Z"
         }
       },
       {
@@ -687,7 +687,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-24T23:56:19.276Z"
+          "at": "2026-10-25T12:01:42.238Z"
         }
       }
     ]

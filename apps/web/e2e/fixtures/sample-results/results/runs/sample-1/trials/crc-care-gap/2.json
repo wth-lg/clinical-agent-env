@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:crc-care-gap:2",
   "task_id": "crc-care-gap",
-  "task_version": "12a7210f027f3deee3cc3392c29efdf2b511a00e64ee9ef1111bc9912ec1a38c",
-  "env_version": "adeb2ab84b721a43bd9a1411eb8cbafc108c09aa9eeed38e6b1300c7b379358a",
-  "grader_task_version": "5cef528de411237ff22e51a7a6df680a6954707a6a44f04885e492b572eafee5",
-  "fixture_hash": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
+  "task_version": "d3d0de7bcf206407a3ab72469719cfccb312c98ecbea3b7a3ce998cb5f5538a2",
+  "env_version": "3d7216da2510f1708b0fb589859ce3c332cb7f5b42c0b55842793ce60955a9db",
+  "grader_task_version": "1952a48403a77a84eb548dda5d5b0395ce0e20e849f59eec620e8eeb36a624ff",
+  "fixture_hash": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
   "state_hash": {
-    "initial": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
-    "final": "fe3dded8553cb223dc243b8c8e729daca853229c4f21da1900352133d95aaebe",
-    "replay_final": "fe3dded8553cb223dc243b8c8e729daca853229c4f21da1900352133d95aaebe"
+    "initial": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
+    "final": "321764879fac28fc78c44fd71f1207a8ac5a060a8e14b15c5000fd63acd251cd",
+    "replay_final": "321764879fac28fc78c44fd71f1207a8ac5a060a8e14b15c5000fd63acd251cd"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -491,7 +491,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-24T23:56:19.276Z"
+          "at": "2026-10-25T12:01:42.238Z"
         }
       },
       {
@@ -509,7 +509,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-24T23:56:19.276Z"
+          "at": "2026-10-25T12:01:42.238Z"
         }
       },
       {
@@ -527,7 +527,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-24T23:56:19.276Z"
+          "at": "2026-10-25T12:01:42.238Z"
         }
       },
       {
@@ -545,7 +545,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-24T23:56:19.276Z"
+          "at": "2026-10-25T12:01:42.238Z"
         }
       },
       {
@@ -563,7 +563,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-24T23:56:19.276Z"
+          "at": "2026-10-25T12:01:42.238Z"
         }
       },
       {
@@ -581,7 +581,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-24T23:56:19.276Z"
+          "at": "2026-10-25T12:01:42.238Z"
         }
       },
       {
@@ -599,7 +599,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-24T23:56:19.276Z"
+          "at": "2026-10-25T12:01:42.238Z"
         }
       },
       {
@@ -617,7 +617,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-24T23:56:19.276Z"
+          "at": "2026-10-25T12:01:42.238Z"
         }
       },
       {
@@ -635,7 +635,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-24T23:56:19.276Z"
+          "at": "2026-10-25T12:01:42.238Z"
         }
       },
       {
@@ -653,7 +653,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-24T23:56:19.276Z"
+          "at": "2026-10-25T12:01:42.238Z"
         }
       },
       {
@@ -671,7 +671,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-24T23:56:19.276Z"
+          "at": "2026-10-25T12:01:42.238Z"
         }
       },
       {
@@ -689,7 +689,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-24T23:56:19.276Z"
+          "at": "2026-10-25T12:01:42.238Z"
         }
       }
     ]

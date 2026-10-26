@@ -52,7 +52,9 @@ export const service = (s: ServiceInput): ScriptCall => ({
     priority: s.priority ?? 'routine',
     occurrence_start: s.start ?? SCAN,
     ...(s.end ? { occurrence_end: s.end } : {}),
-    reason: s.reason ?? 'Surveillance of the 1.3 cm pancreatic body cyst (CT 06/2023); appointment Monday 10/26 at 09:00',
+    reason:
+      s.reason ??
+      'Surveillance of the 1.3 cm pancreatic body cyst (CT 06/2023); appointment Monday 10/26 at 09:00. Moderate allergic-like reaction to iohexol in 2019: please use a different iodinated contrast agent; premedicated under RBC-RAD-07.',
     ...(s.supporting ? { supporting: s.supporting } : {}),
   },
 });
@@ -75,6 +77,7 @@ export const ORACLE_MESSAGE =
   '- Prednisone 50 mg by mouth at 2:00 AM on Monday 10/26 (please set an alarm).\n' +
   '- Prednisone 50 mg and diphenhydramine (Benadryl) 50 mg by mouth at 8:00 AM on Monday 10/26.\n\n' +
   'Diphenhydramine makes you drowsy. Do not drive after taking it: please have someone drive you to the scan and home.\n\n' +
+  'Prednisone can raise your blood sugar. Check it more often than usual from Sunday evening through Tuesday, and call us if it stays above 300.\n\n' +
   'Please also have a creatinine blood test (a kidney check) at the lab today or tomorrow, before the scan. No fasting is needed.';
 export const message = (body: string = ORACLE_MESSAGE): ScriptCall => ({
   name: 'send_message',

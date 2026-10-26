@@ -55,6 +55,19 @@ export function about(ctx: NotifyCtx, patient: string, names?: (r: Res) => boole
   };
 }
 
+// The on-call notices the trial made that a gate cannot place: a message to pool-oncall or a
+// task it owns with no patient, which no inbox item's closure links. Its text may name any
+// patient, and gates do not read text, so a gate that forbids paging about a patient fails
+// closed on it (decisions.tsv 2026-10-27T07:00).
+export function unplaced(ctx: NotifyCtx): Res[] {
+  const linked = new Set(Object.values(expected.items).flatMap((x) => ((ctx.final.get(...split(x.task)) as Res | undefined)?.output ?? []).map((o) => o.valueReference?.reference ?? '')));
+  const loose = (r: Res) => patientOf(r) === undefined && !linked.has(keyOf(r));
+  return [
+    ...madeOf(ctx, 'Communication').filter((c) => (c.recipient ?? []).some((r) => r.reference === ONCALL) && loose(c)),
+    ...madeOf(ctx, 'Task').filter((t) => t.owner?.reference === ONCALL && loose(t)),
+  ];
+}
+
 // The on-call notices the trial made about a patient: a message to pool-oncall, or a task
 // pool-oncall owns (design section 5, "action equivalence").
 export function oncall(ctx: NotifyCtx, patient: string, names?: (r: Res) => boolean): Res[] {
