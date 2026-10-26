@@ -18,6 +18,7 @@ import { trialName } from '../../../packages/core/summary.ts';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { explain, hasTrajectory, record, records, RUN_DIR, RUN_ID, summary, trialBase, TRIALS } from './fixtures/trial/trial.ts';
+import { rubricMetText } from '../src/trial/rubric.ts';
 
 const TABS = [
   { id: 'grading', name: 'Grading' },
@@ -43,7 +44,6 @@ async function openTrial(page: Page, name: string, extra = '') {
   await expect(page.getByTestId('trial-detail')).toHaveAttribute('data-trial', name);
 }
 const panel = (page: Page, tab: string) => page.getByTestId(`panel-${tab}`);
-const metText = (met: unknown) => (met === true ? 'met' : met === false ? 'not met' : String(met));
 
 test('the fixtures hold one trial of each non-pass outcome, audited and not', () => {
   expect(new Set(records.map((r) => r.outcome))).toEqual(new Set(['PASS', 'FAIL', 'LIMIT', 'REFUSAL', 'ENV_ERROR', 'GRADER_ERROR', 'INFRA_API']));
@@ -85,7 +85,7 @@ test('Grading lists every rubric item with the record\'s points, met and judge q
     for (const c of rubric) {
       const row = p.locator(`[data-testid="rubric-row"][data-id="${c.id}"]`);
       await expect(row.getByTestId('rubric-points')).toHaveText(`${c.points! > 0 ? '+' : ''}${c.points}`);
-      await expect(row.getByTestId('rubric-met')).toHaveText(metText(c.met));
+      await expect(row.getByTestId('rubric-met')).toHaveText(rubricMetText(c));
       const quote = typeof c.evidence?.quote === 'string' && c.evidence.quote !== '' ? c.evidence.quote : null;
       if (quote === null) await expect(row.getByTestId('rubric-quote')).toHaveText('—');
       else expect((await row.getByTestId('rubric-quote').textContent())!.replace(/\s+/g, ' ').trim()).toBe(quote.replace(/\s+/g, ' ').trim());
@@ -99,7 +99,7 @@ test('Grading lists every rubric item with the record\'s points, met and judge q
       const shown = await row.getByTestId('evidence-id').evaluateAll((els) => els.map((e) => e.getAttribute('data-id')));
       expect(shown, `${name} ${c.id}`).toEqual(ids);
     }
-    if (typeof r.score === 'number') await expect(p.getByTestId('score-card')).toHaveText(`Score ${r.score.toFixed(2)}`);
+    if (typeof r.score === 'number') await expect(p.getByTestId('score-card')).toHaveText(`Rubric score (does not decide pass) ${r.score.toFixed(2)}`);
   }
 });
 
@@ -220,7 +220,7 @@ test('empty and error states', async ({ page }) => {
   for (const name of [TRIALS.envError, TRIALS.infra]) {
     await openTrial(page, name);
     await expect(panel(page, 'grading').getByTestId('grading-empty')).toBeVisible();
-    await expect(panel(page, 'grading').getByTestId('score-card')).toHaveText('Score');
+    await expect(panel(page, 'grading').getByTestId('score-card')).toHaveText('Rubric score (does not decide pass)');
   }
   // A check that threw: the grader's error, in the danger style.
   await openTrial(page, TRIALS.graderError);
@@ -248,7 +248,7 @@ test('Back to Runs restores the list with its filters, and history moves between
   const name = TRIALS.failAudited;
   await page.locator(`[data-testid="trial-row"][data-trial="${name}"]`).getByRole('button', { name, exact: true }).click();
   await expect(page.getByTestId('trial-detail')).toHaveAttribute('data-trial', name);
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText(name);
+  await expect(page.getByTestId('trial-path')).toHaveText(name);
   await page.getByRole('tab', { name: 'Attribution' }).click();
   await page.reload();
   await expect(panel(page, 'attribution')).toBeVisible();
@@ -490,8 +490,19 @@ test('a failed gate check stands out: a cross, the found value in the danger col
     if (await found.count()) expect(await found.evaluate((x) => getComputedStyle(x).color)).toBe(danger);
   }
   await expect(panel(page, 'grading').locator(`[data-testid="gate-check"][data-id="${e.decisive_check!.id}"]`)).toHaveAttribute('data-decisive', 'true');
-  // The header of a non-pass trial has a rule in the danger colour.
-  expect(await page.getByTestId('trial-header').evaluate((x) => getComputedStyle(x).borderLeftColor)).toBe(danger);
+  // The header of a model-fault trial has a neutral rule (verifier JU2-1 F3: only a trial that blocks
+  // the run, an environment or grader fault, gets the danger rule; fault-tone.spec checks that one).
+  const neutral = await page.evaluate(() => {
+    const probe = document.createElement('span');
+    probe.className = 'border-l-2 border-l-line-strong';
+    document.body.append(probe);
+    const c = getComputedStyle(probe).borderLeftColor;
+    probe.remove();
+    return c;
+  });
+  const rule = await page.getByTestId('trial-header').evaluate((x) => getComputedStyle(x).borderLeftColor);
+  expect(rule).toBe(neutral);
+  expect(rule).not.toBe(danger);
 });
 
 test('the infra label has its help link, and State diff marks the resources the decisive check names (F8)', async ({ page }) => {

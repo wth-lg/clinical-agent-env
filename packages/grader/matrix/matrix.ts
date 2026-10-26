@@ -189,6 +189,9 @@ export interface MatrixOptions {
   cases?: readonly string[];
   // Runs of each case: 2 (default) checks replay determinism, 1 does not.
   trials?: 1 | 2;
+  // Called after each selected case's runs with the cases done and the cases selected, so a caller
+  // can show progress (the browser's grader check, "case k of N"). It changes no result.
+  onCase?: (done: number, total: number) => void;
   // Grades of each case from its record when there is no isolation check: default 2 (regrade
   // idempotence); 1 skips it.
   regrades?: number;
@@ -382,17 +385,19 @@ export async function runCases(env: MatrixEnv, task: MatrixTask, selected: reado
   const trials = opts.trials ?? 2;
   const runs = new Map<Case, CaseRun>();
   const replays = new Map<Case, boolean | null>();
-  for (const c of selected) {
+  for (const [i, c] of selected.entries()) {
     const first = await trial(env, task, c);
     runs.set(c, first);
     if (trials < 2) {
       replays.set(c, null);
+      opts.onCase?.(i + 1, selected.length);
       continue;
     }
     const again = await trial(env, task, c);
     const diff = replayDiff(first, again);
     replays.set(c, diff === null);
     if (diff !== null) opts.onReplayMismatch?.(c, first, again, diff);
+    opts.onCase?.(i + 1, selected.length);
   }
 
   const fresh = opts.isolation !== false ? opts.fresh : undefined;

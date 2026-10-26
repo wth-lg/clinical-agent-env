@@ -20,8 +20,10 @@ import { MET_TEXT, type Explanation } from '../../../../packages/core/explain.ts
 import type { TrialEvent } from '../../../../packages/core/events.ts';
 import { fetchEvents, fullExplanation, useResults, type RunData, type Trial } from '../data/results.ts';
 import { harmItems, safePass, type HarmItem } from '../data/harm.ts';
-import { FaultLabel, GlossaryLink, HarmChip, HashText, Notice, OutcomeChip } from '../data/ui.tsx';
+import { blocksTheRun, FaultLabel, GlossaryLink, HarmChip, HashText, Notice, OutcomeChip } from '../data/ui.tsx';
 import { tabTarget } from '../data/tabs.ts';
+import { useTaskList } from '../data/tasks.ts';
+import { MODEL } from '../adapters/ledger-browser.ts';
 import { hrefWith, navigate, onNav, useParams } from '../data/url.ts';
 import { runnerToken } from '../keygate/runner.ts';
 import { Attribution, criterionPhrase, criterionText, FAULT_WORD, LINK, StepLink } from './Attribution.tsx';
@@ -29,6 +31,7 @@ import { EnvironmentTab, Raw } from './Details.tsx';
 import { Grading } from './Grading.tsx';
 import { returnTo } from './back.ts';
 import { FIRST_NONPASS, resolveTrial } from './resolve.ts';
+import { trialPlace } from './place.ts';
 import { StateDiff } from './StateDiff.tsx';
 import { internalErrorRow, trajectoryOf, type Row } from './steps.ts';
 import { Trajectory, type Loaded } from './Trajectory.tsx';
@@ -49,7 +52,7 @@ const BACK = { trial: null, tab: null };
 // from: the trial on screen. On open, the page starts at its header with focus on the heading,
 // however far down the list the trial was opened from (review-ui-P16-1 F1); Back to Runs returns
 // to its row (F6).
-function Frame({ title, headingRef, from, children }: { title: string; headingRef?: Ref<HTMLHeadingElement> | undefined; from?: { run: string; trial: string }; children: React.ReactNode }) {
+function Frame({ title, path, headingRef, from, children }: { title: React.ReactNode; path?: string; headingRef?: Ref<HTMLHeadingElement> | undefined; from?: { run: string; trial: string }; children: React.ReactNode }) {
   const h1 = useRef<HTMLHeadingElement | null>(null);
   useEffect(() => {
     if (from === undefined) return;
@@ -77,10 +80,11 @@ function Frame({ title, headingRef, from, children }: { title: string; headingRe
           else if (headingRef) (headingRef as React.MutableRefObject<HTMLHeadingElement | null>).current = el;
         }}
         tabIndex={-1}
-        className="mt-2 break-all text-base font-semibold text-ink focus-visible:outline-none"
+        className="mt-2 break-words text-base font-semibold text-ink focus-visible:outline-none"
       >
         {title}
       </h1>
+      {path !== undefined && <p data-testid="trial-path" className="mt-0.5 break-all font-mono text-xs text-ink-muted">{path}</p>}
       <div className="mt-2 space-y-4 sm:mt-3">{children}</div>
     </section>
   );
@@ -127,7 +131,7 @@ function Detail({ t, run, files, tab, headingRef }: { t: Trial; run: RunData; fi
   // The resources the decisive check names (its evidence ids), marked in State diff.
   const decisiveIds = ((t.record.checks ?? []) as ReadonlyArray<{ id: string; ids?: readonly string[] }>).find((c) => c.id === e.decisive_check?.id)?.ids ?? [];
   return (
-    <Frame title={t.name} headingRef={headingRef} from={{ run: run.runId, trial: t.name }}>
+    <Frame title={<TrialHeading t={t} run={run} />} path={t.name} headingRef={headingRef} from={{ run: run.runId, trial: t.name }}>
       <div
         data-testid="trial-detail"
         data-trial={t.name}
@@ -146,7 +150,7 @@ function Detail({ t, run, files, tab, headingRef }: { t: Trial; run: RunData; fi
             {{
               grading: <Grading t={t} steps={traj?.steps ?? null} onStep={onStep} decisive={e.decisive_check?.id ?? null} />,
               attribution: <Attribution t={t} e={e} steps={traj?.steps ?? null} onStep={onStep} />,
-              'state-diff': <StateDiff t={t} events={events} steps={traj?.steps ?? null} written={traj?.written ?? []} onStep={onStep} decisiveIds={decisiveIds} />,
+              'state-diff': <StateDiff official={run.official} t={t} events={events} steps={traj?.steps ?? null} written={traj?.written ?? []} onStep={onStep} decisiveIds={decisiveIds} />,
               environment: <EnvironmentTab t={t} />,
               raw: <Raw t={t} />,
             }}
@@ -182,11 +186,11 @@ function Header({ t, e, rows, onStep }: { t: Trial; e: Explanation; rows: readon
   const nonPass = e.outcome !== 'PASS';
   const failedCall = e.fault === 'env' && e.decisive_step === null && rows !== null ? internalErrorRow(rows) : null;
   return (
-    <section aria-label="Why this trial ended as it did" data-testid="trial-header" className={`min-w-0 rounded-sm border border-line bg-surface p-4 ${nonPass ? 'border-l-2 border-l-danger' : ''}`}>
+    <section aria-label="Why this trial ended as it did" data-testid="trial-header" className={`min-w-0 rounded-sm border border-line bg-surface p-4 ${nonPass ? `border-l-2 ${blocksTheRun(e) ? 'border-l-danger' : 'border-l-line-strong'}` : ''}`}>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <OutcomeChip outcome={e.outcome} fault={e.fault} />
         <HarmChip items={useHarmTexts(t.task, harmItems(t.record))} />
-        {nonPass && <FaultLabel e={e} />}
+        {nonPass && <FaultLabel e={e} notCountedShown={!e.valid && e.deciding !== null} />}
         <span className="ml-auto text-xs text-ink-muted" title="Agent and judge cost">${(t.record.cost_usd + (t.record.judge_cost_usd ?? 0)).toFixed(2)}</span>
       </div>
       {!e.valid && e.deciding && (
@@ -265,6 +269,25 @@ function useHarmTexts(task: string, items: HarmItem[]): HarmItem[] {
     };
   }, [task, ids]);
   return items.map((x) => (texts[x.id] ? { ...x, text: texts[x.id]! } : x));
+}
+
+// The trial page heading (pre-audit M8, P17j JU11): the task's title, then "Trial i of n · <model> ·
+// effort <effort>" (place.ts: i the trial's place among the run's trials of the task, model and
+// effort, n how many there are; the record's own index is in the path); the path sits below in
+// small mono text. Words wrap whole, so no token breaks mid-word at 390 px.
+function TrialHeading({ t, run }: { t: Trial; run: RunData }) {
+  const { tasks } = useTaskList();
+  const title = tasks?.find((x) => x.id === t.task)?.title ?? t.task;
+  const r = t.record as Trial['record'] & { index?: number; models_returned?: readonly string[]; effort?: string };
+  const place = trialPlace(t, run.trials);
+  return (
+    <>
+      <span data-testid="trial-title">{title}</span>
+      <span data-testid="trial-sub" className="block text-sm font-normal text-ink-muted">
+        {[place !== null ? `Trial ${place.i} of ${place.n}` : null, r.models_returned?.[0] ?? MODEL, r.effort ? `effort ${r.effort}` : null].filter(Boolean).join(' · ')}
+      </span>
+    </>
+  );
 }
 
 // On a PASS the M1-M5 row is in plain words, in three states (outcomes.ts: one pending is

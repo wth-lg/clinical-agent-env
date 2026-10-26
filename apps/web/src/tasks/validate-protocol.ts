@@ -24,7 +24,9 @@ export type ValidateRequest =
   // The trial detail's State diff (P16): the trajectory at this absolute URL replayed on the world.
   | { op: 'state'; task: string; trajectoryUrl: string };
 
-export type ValidateReply = { id: number; ok: true; result: unknown } | { id: number; ok: false; error: string };
+// progress: the grader check's cases done of the cases it runs (JU12 part 2); the request is still open.
+export type ValidateReply = { id: number; ok: true; result: unknown } | { id: number; ok: false; error: string } | { id: number; progress: { done: number; total: number } };
+export type Progress = (done: number, total: number) => void;
 
 export interface OracleResult {
   outcome: string | null;
@@ -66,17 +68,18 @@ export interface StateRun {
 
 let worker: Worker | undefined;
 let next = 1;
-const waiting = new Map<number, { resolve: (v: unknown) => void; reject: (e: Error) => void }>();
+const waiting = new Map<number, { resolve: (v: unknown) => void; reject: (e: Error) => void; progress?: Progress | undefined }>();
 
 export function validate(req: { op: 'oracle'; task: string }): Promise<OracleResult>;
-export function validate(req: { op: 'matrix'; task: string }): Promise<MatrixRun>;
+export function validate(req: { op: 'matrix'; task: string }, progress?: Progress): Promise<MatrixRun>;
 export function validate(req: ValidateRequest & { op: 'replay' }): Promise<ReplayRow[]>;
 export function validate(req: ValidateRequest & { op: 'state' }): Promise<StateRun>;
-export function validate(req: ValidateRequest): Promise<unknown> {
+export function validate(req: ValidateRequest, progress?: Progress): Promise<unknown> {
   if (worker === undefined) {
     worker = new Worker(blobWorkerUrl(validationWorkerUrl), { type: 'module', name: 'validation' });
     worker.addEventListener('message', (ev: MessageEvent<ValidateReply>) => {
       const w = waiting.get(ev.data.id);
+      if ('progress' in ev.data) return w?.progress?.(ev.data.progress.done, ev.data.progress.total);
       waiting.delete(ev.data.id);
       if (ev.data.ok) w?.resolve(ev.data.result);
       else w?.reject(new Error(ev.data.error));
@@ -86,7 +89,7 @@ export function validate(req: ValidateRequest): Promise<unknown> {
   const abs = (u: string) => new URL(u, document.baseURI).href;
   const sent: ValidateRequest = req.op === 'replay' ? { ...req, trials: req.trials.map((t) => ({ ...t, trajectoryUrl: t.trajectoryUrl === null ? null : abs(t.trajectoryUrl) })) } : req.op === 'state' ? { ...req, trajectoryUrl: abs(req.trajectoryUrl) } : req;
   return new Promise((resolve, reject) => {
-    waiting.set(id, { resolve, reject });
+    waiting.set(id, { resolve, reject, progress });
     worker!.postMessage({ id, req: sent });
   });
 }
