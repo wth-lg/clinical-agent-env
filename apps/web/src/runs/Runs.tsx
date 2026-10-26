@@ -10,7 +10,8 @@ import { ChevronRight, CircleAlert } from 'lucide-react';
 import { useEffect, useRef, type Ref } from 'react';
 import { AUDIT_LABELS } from '../../../../packages/core/outcomes.ts';
 import { gradingLine, useResults, type BadRecord, type RunData, type Trial } from '../data/results.ts';
-import { Card, FaultLabel, GlossaryLink, Notice, OutcomeChip, Page, PlainRules } from '../data/ui.tsx';
+import { harmItems, safePass } from '../data/harm.ts';
+import { Card, FaultLabel, GlossaryLink, HarmChip, Notice, OutcomeChip, Page, PlainRules } from '../data/ui.tsx';
 import { navigate, useParams } from '../data/url.ts';
 import { takeReturn } from '../trial/back.ts';
 import { TrialPage } from '../trial/TrialPage.tsx';
@@ -35,10 +36,13 @@ export function Runs({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | un
   const total = runs.reduce((n, r) => n + r.trials.length + r.bad.length, 0);
   const shown = runs.reduce((n, r) => n + r.trials.filter(matches).length, 0);
   const scope = official ? (task === '' ? official.summary!.totals : official.summary!.tasks[task]) : undefined;
+  // safe PASS: summary.json gives pass_no_harm per task; all tasks is their sum (JU3).
+  const taskRows = official ? (task === '' ? Object.values(official.summary!.tasks) : official.summary!.tasks[task] ? [official.summary!.tasks[task]!] : []) : [];
+  const safe = { pass_no_harm: taskRows.reduce((n, x) => n + x.pass_no_harm, 0), trials: taskRows.reduce((n, x) => n + x.trials, 0) };
   return (
     <Page title="Runs" headingRef={headingRef} lead={official ? <>Official run <span className="font-medium text-ink">{official.runId}</span>, {official.summary!.totals.records} trial records.</> : 'No official run is published yet. The committed pilot runs are below; they are not counted in the results.'}>
       {officialError !== null && <Notice testId="error-state">{officialError}</Notice>}
-      <Card title={official ? <span data-testid="runs-k-of-n">{task === '' ? 'All tasks' : task}: {scope?.passes ?? 0}/{scope?.trials ?? 0} pass</span> : 'How a trial is counted'}>
+      <Card title={official ? <><span data-testid="runs-k-of-n">{task === '' ? 'All tasks' : task}: {scope?.passes ?? 0}/{scope?.trials ?? 0} pass</span> <span className="font-normal text-ink-muted" data-testid="safe-pass">({safePass(safe)})</span></> : 'How a trial is counted'}>
         <PlainRules ids={{ pass: 'pass-definition', denominator: 'denominator-rule' }} />
         <p className="mt-2"><GlossaryLink>How failures are attributed</GlossaryLink></p>
       </Card>
@@ -120,6 +124,7 @@ function TrialRow({ t, run }: { t: Trial; run: RunData }) {
           {t.name}
         </button>
         <OutcomeChip outcome={e.outcome} fault={e.fault} />
+        <HarmChip items={harmItems(t.record)} />
         {e.outcome !== 'PASS' && <FaultLabel e={e} />}
         {e.decisive_check && <code data-testid="decisive" className="break-all rounded-sm bg-canvas px-1 text-xs text-ink">{e.decisive_check.id}</code>}
         <span className="ml-auto text-xs text-ink-muted" title="Agent and judge cost">${cost.toFixed(2)}</span>
