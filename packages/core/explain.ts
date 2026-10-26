@@ -57,6 +57,9 @@ export interface ExplainCheck {
 export interface ExplainRecord {
   task_id?: string;
   task_version: string | null;
+  // The env files, world and TOOLS_VERSION it ran at (packages/core/tasks.ts); absent on records
+  // made before env_version.
+  env_version?: string | null;
   // The grader_task_version it was graded at; a regrade's entry carries its own.
   grader_task_version?: string | null;
   outcome: string;
@@ -131,11 +134,12 @@ export interface ExplainContext {
   events: readonly TrialEvent[];
   // The run manifest's world_hash (explain-context.ts runWorldHash); null when the run has none.
   world_state_hash?: string | null;
-  // Whether a decisive id the model was never shown is reachable: the oracle or an alternative was
-  // shown it in the matrix run on the trial's world (explain-context.ts reachability, R14-30).
+  // Whether a decisive id the model was never shown is reachable: a tool result exposed or
+  // referenced it to a passing oracle or alternative in the matrix run on the trial's world and
+  // env_version (explain-context.ts reachability, R14-30).
   exposable?: (id: string) => boolean;
-  // Why exposable is absent, when the caller knows: the matrix ran on another world, the run has
-  // no manifest, or matrix.json records no exposed ids. M1 shows it.
+  // Why exposable is absent, when the caller knows: the matrix ran on another world or env_version,
+  // the run has no manifest, or matrix.json records no reachable ids. M1 shows it.
   exposability_unchecked?: string;
   // The exposure of the current decisive check's ids, then the first failed check's when it is
   // another, when the caller recomputed it from the trajectory (a regrade failed another check

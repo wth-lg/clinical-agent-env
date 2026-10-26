@@ -62,7 +62,8 @@
 // checks; <run>/manifest.json's world_hash as the manifest hash (none without a manifest, so M3
 // is pending); <run>/matrix.json, as `pnpm cli matrix --out <run>` writes it, for M4, GR4 and B1,
 // and for M1's exposability, which means reachable (R14-30): first the manifest's world_hash
-// against the world the matrix ran on, then whether the oracle or an alternative was shown the id
+// against the world the matrix ran on and the record's env_version against the matrix's, then
+// whether a tool result showed or referenced the id to a passing oracle or alternative
 // (explain-context.ts reachability; today's world is not read), the entry looked up by the
 // grader_task_version of the record's current grade, so a matrix run for the fixed grader speaks
 // for a regraded trial and one for the grader it ran under does not; and, on a regraded trial

@@ -33,7 +33,7 @@ interface Entry {
   alternatives_pass: boolean;
   failed_checks: string[];
   world_hash: string;
-  probes: Array<{ kind: string; id: string; outcome: string; as_expected: boolean; failed_checks: string[]; exposed_ids: string[] }>;
+  probes: Array<{ kind: string; id: string; outcome: string; as_expected: boolean; failed_checks: string[]; reachable_ids: string[] }>;
 }
 const read = (dir: string) => JSON.parse(readFileSync(join(dir, 'matrix.json'), 'utf8')) as { grader_task_versions: Record<string, Entry> };
 
@@ -52,13 +52,14 @@ describe('matrix --out', () => {
     expect(e.probes.filter((p) => p.kind !== 'mutant').every((p) => p.outcome === 'PASS' && p.as_expected && p.failed_checks.length === 0)).toBe(true);
   });
 
-  it('records the world the matrix ran on and the ids each probe was shown, which audit-check reads as reachable (R14-30)', async () => {
+  it('records the world the matrix ran on and the ids a tool result exposed or referenced to each probe, which audit-check reads as reachable (R14-30)', async () => {
     const dir = tempDir('matrix-json-exposed');
     await matrix(['--task', '_toy', '--out', dir]);
     const e = read(dir).grader_task_versions[versions.grader_task_version]!;
     expect(e.world_hash).toBe(matrixEnv().worldHash);
-    expect(e.probes.find((p) => p.kind === 'oracle')!.exposed_ids).toContain('Patient/pt-0001');
-    for (const p of e.probes) expect(p.exposed_ids).toEqual([...new Set(p.exposed_ids)].sort());
+    expect(e.probes.find((p) => p.kind === 'oracle')!.reachable_ids).toContain('Patient/pt-0001');
+    for (const p of e.probes) expect(p.reachable_ids).toEqual([...new Set(p.reachable_ids)].sort());
+    expect(e.probes.every((p) => !('exposed_ids' in p))).toBe(true);
   });
 
   it('keeps other versions\' entries, and a second run leaves the file byte for byte', async () => {

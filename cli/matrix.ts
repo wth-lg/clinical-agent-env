@@ -12,7 +12,8 @@
 // included), 0 when all pass.
 // --out <dir> writes each task's verdict into <dir>/matrix.json (writeMatrixJson), under the
 // task's grader_task_version: the file audit-check reads from a run directory for M4, GR4 and B1,
-// and for M1 the ids the oracle and the alternatives were shown on the world the matrix ran on.
+// and for M1 the ids a tool result exposed or referenced to each probe, on the world and env_version
+// the matrix ran on.
 // --list-tasks prints the ids --task all runs as one line of JSON and exits 1 when there are
 // none. CI's matrix job fans out over it and runs --task <id> once per task, in parallel.
 // When results/tasks-v1.json exists (P21's freeze writes it), each task it lists is checked
@@ -248,14 +249,15 @@ async function one(id: string, deps: Deps, out: string | undefined, pinned: Read
 }
 
 // One probe of the matrix as matrix.json records it: its outcome, whether that is what the
-// matrix expects of it, the gate checks it failed and the ids it was shown.
+// matrix expects of it, the gate checks it failed and the ids a tool result exposed or referenced
+// to it.
 export interface MatrixProbe {
   kind: CaseKind;
   id: string;
   outcome: string;
   as_expected: boolean;
   failed_checks: string[];
-  exposed_ids: string[];
+  reachable_ids: string[];
 }
 
 // Sets <dir>/matrix.json's entry for the task's grader_task_version, keeping every other entry:
@@ -263,12 +265,13 @@ export interface MatrixProbe {
 // pass, oracle_pass, alternatives_pass, failed_checks, probes}}}. oracle_pass and alternatives_pass
 // say the oracle and every declared alternative ran and passed; failed_checks are the gate checks
 // any of them failed; world_hash is the world the cases started from, and each probe's
-// exposed_ids the ids its run was shown (packages/core/explain-context.ts reachability). Keys are sorted and the file is rewritten only when it changes, so a rerun of
-// the same matrix leaves it byte for byte.
+// reachable_ids the ids a tool result exposed or referenced to its run (packages/core/
+// explain-context.ts reachability). Keys are sorted and the file is rewritten only when it
+// changes, so a rerun of the same matrix leaves it byte for byte.
 export function writeMatrixJson(dir: string, id: string, versions: TaskVersions, task: MatrixTask, result: MatrixResult): void {
   const file = join(dir, 'matrix.json');
   const prior = existsSync(file) ? (JSON.parse(readFileSync(file, 'utf8')) as { grader_task_versions?: Record<string, unknown> }) : {};
-  const probes: MatrixProbe[] = result.results.map((r) => ({ kind: r.case.kind, id: r.case.id, outcome: r.grade.outcome, as_expected: r.problems.length === 0, failed_checks: r.failed_gates, exposed_ids: r.exposed_ids }));
+  const probes: MatrixProbe[] = result.results.map((r) => ({ kind: r.case.kind, id: r.case.id, outcome: r.grade.outcome, as_expected: r.problems.length === 0, failed_checks: r.failed_gates, reachable_ids: r.reachable_ids }));
   const oracle = probes.find((p) => p.kind === 'oracle');
   const alternatives = probes.filter((p) => p.kind === 'alternative');
   const entry = {

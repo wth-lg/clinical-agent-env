@@ -14,9 +14,10 @@
 //                     task's checks, then the first failed check's when it is another (as
 //                     attribution.ts names them), with the step each was first exposed at in the
 //                     trajectory (packages/grader/exposure.ts firstExposed)
-//   exposable         whether a decisive id the model was never shown is reachable (R14-30): the
-//                     oracle or an alternative was shown it in matrix.json's entry, which ran on
-//                     the run manifest's world (reachability); otherwise exposability_unchecked
+//   exposable         whether a decisive id the model was never shown is reachable (R14-30): a
+//                     tool result exposed or referenced it to a passing oracle or alternative in
+//                     matrix.json's entry, which ran on the run manifest's world and the trial's
+//                     env_version (reachability); otherwise exposability_unchecked
 //                     says why the matrix cannot answer, and M1 is pending. Membership in today's
 //                     world is no longer read: an id in the store that no tool call returns was
 //                     not reachable, and today's world need not be the run's
@@ -83,21 +84,25 @@ export function recomputedExposure(record: ExplainRecord, checks: readonly TaskC
 
 // Whether an unexposed decisive id was reachable (R14-30), from the run's manifest and matrix.json
 // entry for the grader_task_version: the run's world_hash must be the world the matrix's cases
-// started from, and then an id is exposable when the oracle or an alternative was shown it
-// (cli/matrix.ts writeMatrixJson: world_hash, probes[].exposed_ids). A mutant or a probe agent
-// does not count: it is not a correct solution. unchecked says why the matrix cannot answer.
-export function reachability(manifest: unknown, matrix: unknown, grader_task_version: string | null): { exposable: (id: string) => boolean } | { unchecked: string } {
+// started from, and the trial's env_version (env files, world, TOOLS_VERSION) the one the matrix
+// ran at; then an id is exposable when a tool result exposed or referenced it to the oracle or an
+// alternative, as the matrix expects them to run (cli/matrix.ts writeMatrixJson: env_version,
+// world_hash, probes[].reachable_ids and as_expected). A mutant or a probe agent does not count:
+// it is not a correct solution. unchecked says why the matrix cannot answer.
+export function reachability(manifest: unknown, matrix: unknown, grader_task_version: string | null, env_version: string | null): { exposable: (id: string) => boolean } | { unchecked: string } {
   const run = runWorldHash(manifest);
   if (run === null) return { unchecked: 'the run has no manifest world_hash' };
   const entry = grader_task_version !== null && isRecord(matrix) && isRecord(matrix.grader_task_versions) ? matrix.grader_task_versions[grader_task_version] : undefined;
   if (!isRecord(entry)) return { unchecked: `the run has no matrix.json entry for ${grader_task_version ?? 'its grader_task_version'}` };
   const probes = Array.isArray(entry.probes) ? entry.probes : [];
-  if (typeof entry.world_hash !== 'string' || probes.length === 0 || !probes.every((p) => isRecord(p) && strings(p.exposed_ids))) {
-    return { unchecked: `matrix.json's entry for ${grader_task_version} records no world_hash and exposed ids; rerun pnpm cli matrix --out <run>` };
+  if (typeof entry.env_version !== 'string' || typeof entry.world_hash !== 'string' || probes.length === 0 || !probes.every((p) => isRecord(p) && strings(p.reachable_ids))) {
+    return { unchecked: `matrix.json's entry for ${grader_task_version} records no env_version, world_hash and reachable ids; rerun pnpm cli matrix --out <run>` };
   }
   if (run !== entry.world_hash) return { unchecked: `the run's world ${run} is not the world ${entry.world_hash} the matrix ran on` };
-  const shown = (probes as Array<{ kind?: unknown; exposed_ids: string[] }>).flatMap((p) => (p.kind === 'oracle' || p.kind === 'alternative' ? p.exposed_ids : []));
-  return { exposable: (id) => shown.some((k) => sameId(k, id)) };
+  if (env_version === null) return { unchecked: 'the record has no env_version' };
+  if (env_version !== entry.env_version) return { unchecked: `the trial ran at env_version ${env_version}, the matrix at ${entry.env_version}` };
+  const reached = (probes as Array<{ kind?: unknown; as_expected?: unknown; reachable_ids: string[] }>).flatMap((p) => ((p.kind === 'oracle' || p.kind === 'alternative') && p.as_expected === true ? p.reachable_ids : []));
+  return { exposable: (id) => reached.some((k) => sameId(k, id)) };
 }
 
 // Whether a caller must load the world for M1: never since R14-30, which reads reachability from
@@ -112,7 +117,7 @@ export function worldLookup(keys: ReadonlySet<string>): (id: string) => boolean 
 
 export function explainContext(input: ContextInput): ExplainContext {
   const checks = input.checks ?? null;
-  const reach = reachability(input.manifest, input.matrix, currentGrade(input.record).grader_task_version);
+  const reach = reachability(input.manifest, input.matrix, currentGrade(input.record).grader_task_version, input.record.env_version ?? null);
   return {
     events: input.events,
     world_state_hash: runWorldHash(input.manifest),

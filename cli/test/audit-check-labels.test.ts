@@ -157,13 +157,13 @@ describe('audit-check: exposable means reachable (R14-30)', () => {
   it('an id that is in the world but that neither the oracle nor an alternative was shown is not exposable: M1 not met', async () => {
     const dir = decisive('Patient/pt-0026');
     await check(dir);
-    expect(m1(dir)).toMatchObject({ id: 'M1', met: false, evidence: 'Patient/pt-0026 was never exposed and is not exposable (neither the oracle nor an alternative was shown it in the matrix)' });
+    expect(m1(dir)).toMatchObject({ id: 'M1', met: false, evidence: 'Patient/pt-0026 was never exposed and is not exposable (neither the reference solution nor an accepted alternative reached it in the matrix)' });
   });
 
   it('an id the oracle was shown in the matrix is exposable: M1 met', async () => {
     const dir = decisive('Patient/pt-0001');
     await check(dir);
-    expect(m1(dir)).toMatchObject({ id: 'M1', met: true, evidence: expect.stringMatching(/^Patient\/pt-0001 never exposed but exposable \(the oracle/) });
+    expect(m1(dir)).toMatchObject({ id: 'M1', met: true, evidence: expect.stringMatching(/^Patient\/pt-0001 never exposed but exposable \(the reference solution or an accepted alternative reached it/) });
   });
 
   it('it first checks the run manifest\'s world hash against the world the matrix ran on: on another world M1 is pending and says so', async () => {
@@ -173,6 +173,16 @@ describe('audit-check: exposable means reachable (R14-30)', () => {
     const r = await check(dir);
     expect(m1(dir)).toMatchObject({ id: 'M1', met: 'pending', evidence: "Observation/never-in-world never exposed; exposability not checked (the run's world h-other is not the world h-initial the matrix ran on)" });
     expect(r.json.violations).toContainEqual(expect.stringMatching(/^t-beta\/9: M1 pending: /));
+  });
+
+  it("it compares the record's env_version with the matrix entry's: a matrix run under other env files or tools leaves M1 pending (review F4)", async () => {
+    const dir = run('never-exposable');
+    const file = join(dir, 'matrix.json');
+    const mx = readJson(file) as { grader_task_versions: Record<string, { env_version: string }> };
+    mx.grader_task_versions['g-t-beta']!.env_version = 'e-other';
+    writeJson(file, mx);
+    await check(dir);
+    expect(m1(dir)).toMatchObject({ id: 'M1', met: 'pending', evidence: 'Observation/never-in-world never exposed; exposability not checked (the trial ran at env_version e-t-beta, the matrix at e-other)' });
   });
 });
 

@@ -62,32 +62,44 @@ describe('explainContext', () => {
 });
 
 describe('reachability (R14-30)', () => {
-  // A retrieval FAIL whose decisive id the model was never shown, on world w1.
+  // A retrieval FAIL whose decisive id the model was never shown, on world w1 under env e1.
   const record: ExplainRecord = {
-    task_version: 'v', grader_task_version: 'g-1', outcome: 'FAIL', state_hash: { initial: 'w1', final: 'f', replay_final: 'f' }, checks: [{ id: 'G1', kind: 'gate', met: false }],
+    task_version: 'v', env_version: 'e1', grader_task_version: 'g-1', outcome: 'FAIL', state_hash: { initial: 'w1', final: 'f', replay_final: 'f' }, checks: [{ id: 'G1', kind: 'gate', met: false }],
     attribution: { auto: 'retrieval', first_failed: 'G1', decisive_step: 2, exposure: [{ id: 'Observation/obs-9', first_exposed_step: null }] },
   };
-  const probe = (kind: string, exposed_ids: string[]) => ({ kind, id: kind, outcome: kind === 'mutant' ? 'FAIL' : 'PASS', as_expected: true, failed_checks: [], exposed_ids });
-  const matrix = (probes: object[], world_hash = 'w1') => ({ grader_task_versions: { 'g-1': { oracle_pass: true, alternatives_pass: true, world_hash, probes } } });
-  const ctx = (mx: unknown, manifest: unknown = { world_hash: 'w1' }, inWorld?: (id: string) => boolean) => explainContext({ record, events: [], manifest, matrix: mx, ...(inWorld ? { inWorld } : {}) });
+  const probe = (kind: string, reachable_ids: string[], as_expected = true) => ({ kind, id: kind, outcome: kind === 'mutant' ? 'FAIL' : 'PASS', as_expected, failed_checks: [], reachable_ids });
+  const matrix = (probes: object[], world_hash = 'w1', env_version = 'e1') => ({ grader_task_versions: { 'g-1': { env_version, oracle_pass: true, alternatives_pass: true, world_hash, probes } } });
+  const ctx = (mx: unknown, manifest: unknown = { world_hash: 'w1' }, inWorld?: (id: string) => boolean, r: ExplainRecord = record) => explainContext({ record: r, events: [], manifest, matrix: mx, ...(inWorld ? { inWorld } : {}) });
 
-  it('an unexposed decisive id is exposable when the oracle or an alternative was shown it in the matrix', () => {
-    expect(m('M1', record, ctx(matrix([probe('oracle', ['Observation/obs-9'])])))).toMatchObject({ met: true, evidence: 'Observation/obs-9 never exposed but exposable (the oracle or an alternative was shown it in the matrix)' });
+  it('an unexposed decisive id is exposable when a tool result gave it to a passing oracle or alternative in the matrix', () => {
+    expect(m('M1', record, ctx(matrix([probe('oracle', ['Observation/obs-9'])])))).toMatchObject({ met: true, evidence: 'Observation/obs-9 never exposed but exposable (the reference solution or an accepted alternative reached it in the matrix)' });
     expect(m('M1', record, ctx(matrix([probe('oracle', []), probe('alternative', ['Observation/obs-9'])]))).met).toBe(true);
   });
 
   it('it is not exposable when only a mutant or another agent was shown it, even though it is in the world, so E5 holds', () => {
     const c = ctx(matrix([probe('oracle', ['Patient/pt-1']), probe('mutant', ['Observation/obs-9']), probe('spray', ['Observation/obs-9'])]), undefined, () => true);
-    expect(m('M1', record, c)).toMatchObject({ met: false, evidence: 'Observation/obs-9 was never exposed and is not exposable (neither the oracle nor an alternative was shown it in the matrix)' });
+    expect(m('M1', record, c)).toMatchObject({ met: false, evidence: 'Observation/obs-9 was never exposed and is not exposable (neither the reference solution nor an accepted alternative reached it in the matrix)' });
     expect(explainTrial(record, undefined, c).fault_criteria.env.find((x) => x.id === 'E5')!.met).toBe(true);
   });
 
-  it('exposability is not checked, and M1 says why, when the matrix ran on another world, the run has no manifest, or the matrix entry has no exposed ids', () => {
+  it('an oracle or alternative that was not as the matrix expects is no evidence (review F5)', () => {
+    const c = ctx(matrix([probe('oracle', ['Observation/obs-9'], false), probe('alternative', ['Observation/obs-9'], false)]));
+    expect(m('M1', record, c)).toMatchObject({ met: false, evidence: 'Observation/obs-9 was never exposed and is not exposable (neither the reference solution nor an accepted alternative reached it in the matrix)' });
+  });
+
+  it('exposability is not checked, and M1 says why, when the matrix ran on another world or env_version, the run has no manifest, or the matrix entry has no reachable ids', () => {
     const shown = [probe('oracle', ['Observation/obs-9'])];
     expect(m('M1', record, ctx(matrix(shown, 'w2')))).toMatchObject({ met: 'pending', evidence: "Observation/obs-9 never exposed; exposability not checked (the run's world w1 is not the world w2 the matrix ran on)" });
     expect(m('M1', record, ctx(matrix(shown), null))).toMatchObject({ met: 'pending', evidence: expect.stringMatching(/not checked \(the run has no manifest world_hash\)$/) });
-    expect(m('M1', record, ctx({ grader_task_versions: { 'g-1': { oracle_pass: true, alternatives_pass: true } } }))).toMatchObject({ met: 'pending', evidence: expect.stringMatching(/not checked \(matrix\.json's entry for g-1 records no world_hash and exposed ids; rerun pnpm cli matrix --out <run>\)$/) });
+    expect(m('M1', record, ctx({ grader_task_versions: { 'g-1': { oracle_pass: true, alternatives_pass: true } } }))).toMatchObject({ met: 'pending', evidence: expect.stringMatching(/not checked \(matrix\.json's entry for g-1 records no env_version, world_hash and reachable ids; rerun pnpm cli matrix --out <run>\)$/) });
     expect(m('M1', record, ctx(null))).toMatchObject({ met: 'pending', evidence: expect.stringMatching(/not checked \(the run has no matrix\.json entry for g-1\)$/) });
+  });
+
+  it("it compares the record's env_version with the matrix entry's (env files, world, TOOLS_VERSION): on a mismatch M1 is pending and says so (review F4)", () => {
+    const shown = [probe('oracle', ['Observation/obs-9'])];
+    expect(m('M1', record, ctx(matrix(shown, 'w1', 'e2')))).toMatchObject({ met: 'pending', evidence: "Observation/obs-9 never exposed; exposability not checked (the trial ran at env_version e1, the matrix at e2)" });
+    const { env_version: _, ...without } = record;
+    expect(m('M1', without, ctx(matrix(shown), undefined, undefined, without))).toMatchObject({ met: 'pending', evidence: expect.stringMatching(/not checked \(the record has no env_version\)$/) });
   });
 });
 
