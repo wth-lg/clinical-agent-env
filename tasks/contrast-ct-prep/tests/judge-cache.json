@@ -162,6 +162,24 @@
     }
   },
   {
+    "key": "2477bc428a33a90f9cbb2b0f7d9d104f5a2c630a3c3c99df4a1642c565db26ca",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Do not drive after taking it:"
+    },
+    "error": null,
+    "calls": 0,
+    "provenance": {
+      "source": "scripted",
+      "model": "none: a rule-based script with no network call (builder-127)",
+      "at": "2026-10-25T00:00:00Z"
+    }
+  },
+  {
     "key": "25bb0ab4deebbcce547f95a59d14c9f7281fb11294e303c54429c87cdb64e669",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -504,6 +522,42 @@
     }
   },
   {
+    "key": "7693c1babe9e82e7ea8adbe4d572ff7ca19dc1faa3dc63b38347af6d1b79fed3",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Do not drive after taking it:"
+    },
+    "error": null,
+    "calls": 0,
+    "provenance": {
+      "source": "scripted",
+      "model": "none: a rule-based script with no network call (builder-127)",
+      "at": "2026-10-25T00:00:00Z"
+    }
+  },
+  {
+    "key": "7b47d83575863e29f6ae3373ac8b2765ad99fbf9d1f3774b60236f6a260dae6e",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 0,
+    "provenance": {
+      "source": "scripted",
+      "model": "none: a rule-based script with no network call (builder-127)",
+      "at": "2026-10-25T00:00:00Z"
+    }
+  },
+  {
     "key": "86ec79c3add177843f7dfaba9bb0ae629e81665f2288c4106d194993836725b8",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -699,6 +753,60 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-25T16:31:13.845Z"
+    }
+  },
+  {
+    "key": "dbfb114e0adc20c0f521432e3e19678bf8c6f1e08e47a7127ab09feed879f46d",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Do not drive after taking it:"
+    },
+    "error": null,
+    "calls": 0,
+    "provenance": {
+      "source": "scripted",
+      "model": "none: a rule-based script with no network call (builder-127)",
+      "at": "2026-10-25T00:00:00Z"
+    }
+  },
+  {
+    "key": "eaeef02623e52a64453eb758657217d9803ba060ad65907e9373e12bf2832739",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 0,
+    "provenance": {
+      "source": "scripted",
+      "model": "none: a rule-based script with no network call (builder-127)",
+      "at": "2026-10-25T00:00:00Z"
+    }
+  },
+  {
+    "key": "edf761cb80b250c47ee54674dc5c6ae6c87ba602652d77d91fc507154432ee01",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 0,
+    "provenance": {
+      "source": "scripted",
+      "model": "none: a rule-based script with no network call (builder-127)",
+      "at": "2026-10-25T00:00:00Z"
     }
   },
   {
