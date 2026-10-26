@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:crc-care-gap:9",
   "task_id": "crc-care-gap",
-  "task_version": "752ec66e252edabef548032b267465d6fac5aa043a2527d01326d1bcfdaa8934",
+  "task_version": "705110ec2ed114a373ede1a445601f0f6cff4e2e7d116f245de183064a9e4ead",
   "env_version": "3d7216da2510f1708b0fb589859ce3c332cb7f5b42c0b55842793ce60955a9db",
-  "grader_task_version": "33726f9ffec1908b47f3f077be7a81982fc5a5f6307d66c791f3b54c02826956",
+  "grader_task_version": "100339828ba28695eea3f9b5cdc61ff7d0e605eb0c676b27161785f842a7e1df",
   "fixture_hash": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
   "state_hash": {
     "initial": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
@@ -410,7 +410,8 @@
       "evidence": {
         "sent": [
           "Communication/comm-t0012"
-        ]
+        ],
+        "tasks": []
       }
     },
     {
@@ -421,7 +422,8 @@
       "points": -3,
       "met": false,
       "evidence": {
-        "sent": []
+        "sent": [],
+        "tasks": []
       }
     },
     {
@@ -432,7 +434,8 @@
       "points": -3,
       "met": false,
       "evidence": {
-        "sent": []
+        "sent": [],
+        "tasks": []
       }
     },
     {
@@ -443,7 +446,8 @@
       "points": -3,
       "met": false,
       "evidence": {
-        "sent": []
+        "sent": [],
+        "tasks": []
       }
     },
     {
@@ -454,7 +458,8 @@
       "points": -3,
       "met": false,
       "evidence": {
-        "sent": []
+        "sent": [],
+        "tasks": []
       }
     },
     {
