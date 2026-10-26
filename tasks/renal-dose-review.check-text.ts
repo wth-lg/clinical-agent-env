@@ -13,10 +13,11 @@ const range = (r: { min: number; max: number }) => (r.min === r.max ? `${r.min} 
 const count = (drug: string, active: unknown[]) => (active.length === 0 ? `no active ${drug} order` : active.length > 1 ? `${active.length} active ${drug} orders (${listed(active)})` : null);
 
 const daily = (drug: string, r: { min: number; max: number }, times?: number) => ({
-  requires: `${drug} ${range(r)} a day${times === undefined ? '' : `, ${perDay(times)},`} on one active order`,
+  requires: `${drug} ${range(r)} a day${times === undefined ? '' : `, scheduled ${perDay(times)},`} on one active order`,
   found: (ev: Record<string, unknown>) =>
     count(drug, items(ev.active))
     ?? (ev.mg_per_day === null ? `the ${drug} dose per day cannot be read`
+      : times !== undefined && ev.scheduled === false ? `${drug} is ordered as needed, not on a schedule`
       : times !== undefined && ev.per_day !== times && typeof ev.mg_per_day === 'number' && ev.mg_per_day >= r.min && ev.mg_per_day <= r.max ? `${drug} is ${show(ev.mg_per_day)} mg a day given ${perDay(ev.per_day)}`
         : `${drug} is ${show(ev.mg_per_day)} mg a day`),
 });
