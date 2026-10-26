@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:results-inbox:6",
   "task_id": "results-inbox",
-  "task_version": "2f80b8928ff98d7177886bafcafdba20447ccb71dd4a6a3ad21b970a7577b2b4",
+  "task_version": "97be735f786b9821be438442c2bb51e6973e5cf19b203275255392f3c3c98992",
   "env_version": "f7ed42d3c0d7920587b33d75a7815885b288336263bdab07957d0deb58c8730a",
-  "grader_task_version": "87926ed8c70e4a3812a5e42e89f907ea0abbbe1b8a19110fe482ad354835a5a6",
+  "grader_task_version": "eb98c9878e26089272c4a08654ac9c3bfe4e05575e3e841a31870adb6e094fe3",
   "fixture_hash": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
   "state_hash": {
     "initial": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
-    "final": "be7c8ab6a8cdeba8adb540ea74c6ce798e1895d55d437a3f2747df94870d5ddc",
-    "replay_final": "be7c8ab6a8cdeba8adb540ea74c6ce798e1895d55d437a3f2747df94870d5ddc"
+    "final": "47b762405a64d87b6b44862ed2c11666656305bdb0765d1b7c10064c50dcb32a",
+    "replay_final": "47b762405a64d87b6b44862ed2c11666656305bdb0765d1b7c10064c50dcb32a"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -45,7 +45,7 @@
   "env_git_sha": null,
   "ended": "2026-10-23T14:41:21.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "10",
+  "grader_version": "11",
   "outcome": "PASS",
   "valid": true,
   "fault": null,
@@ -195,13 +195,13 @@
             "id": "ServiceRequest/sr-t0017",
             "code": "REF-ORTHO-ONC",
             "priority": "urgent",
-            "start": "2026-11-02"
+            "start": "2026-10-23"
           },
           {
             "id": "ServiceRequest/sr-t0018",
             "code": "IMG-MRI-FEMUR-WWO",
             "priority": "urgent",
-            "start": "2026-11-02"
+            "start": "2026-10-23"
           }
         ],
         "by": "2026-11-05"

@@ -11,14 +11,15 @@
 //                     of strings reads as not given)
 //   exposure          on a trial whose decisive gate check is not the one its recorded
 //                     attribution names (a regrade moved it): that check's decisive ids from the
-//                     task's checks, with the step each was first exposed at in the trajectory
-//                     (packages/grader/exposure.ts firstExposed)
+//                     task's checks, then the first failed check's when it is another (as
+//                     attribution.ts names them), with the step each was first exposed at in the
+//                     trajectory (packages/grader/exposure.ts firstExposed)
 //   exposable         whether an id is in the world (worldLookup), when the caller loaded it;
 //                     needsWorld says whether M1 reads it, so a caller loads the world only then
 //   checks            the task's gate checks, for traces_to
 //   text              the task's check text (tasks/<id>.check-text.ts)
 import type { TrialEvent } from './events.ts';
-import { attributionFits, decisiveExposure, firstFailedCheck, type CheckText, type ExplainContext, type ExplainRecord } from './explain.ts';
+import { attributionFits, decisiveExposure, firstFailedCheck, outrankedCheck, type CheckText, type ExplainContext, type ExplainRecord } from './explain.ts';
 import type { MatrixResult } from './outcomes.ts';
 import { currentGrade } from './summary.ts';
 import { firstExposed, sameId, stepsOf } from '../grader/exposure.ts';
@@ -60,15 +61,19 @@ export function matrixFor(matrix: unknown, grader_task_version: string | null): 
   return { grader_task_version, oracle_pass: m.oracle_pass, alternatives_pass: m.alternatives_pass, ...(strings(m.failed_checks) ? { failed_checks: m.failed_checks } : {}) };
 }
 
-// The recomputed exposure of the decisive check's decisive ids, when the recorded attribution
-// names another check and the task's checks give that check's decisive ids.
+// The recomputed exposure of the decisive check's decisive ids, then the first failed check's when
+// it is another, each id once, when the recorded attribution names another check and the task's
+// checks give those checks' decisive ids.
 export function recomputedExposure(record: ExplainRecord, checks: readonly TaskCheck[] | null | undefined, events: readonly TrialEvent[]): NonNullable<ExplainContext['exposure']> | null {
   const failed = firstFailedCheck(record);
   if (failed === null || attributionFits(record)) return null;
-  const ids = checks?.find((c) => c.id === failed.id)?.decisive_ids;
-  if (ids === undefined) return null;
+  const idsOf = (id: string) => checks?.find((c) => c.id === id)?.decisive_ids;
+  const ids = idsOf(failed.id);
+  const outranked = outrankedCheck(record);
+  const more = outranked === null ? [] : idsOf(outranked.id);
+  if (ids === undefined || more === undefined) return null;
   const steps = stepsOf(events);
-  return { check: failed.id, ids: ids.map((id) => ({ id, first_exposed_step: firstExposed(steps, id) })) };
+  return { check: failed.id, ids: [...new Set([...ids, ...more])].map((id) => ({ id, first_exposed_step: firstExposed(steps, id) })) };
 }
 
 // Whether M1 asks the world: a decisive id it reads was never exposed.

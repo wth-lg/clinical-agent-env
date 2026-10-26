@@ -1,7 +1,7 @@
 // T2's spray, output-gap and status-only agents (the null agent is built into the matrix). Each
 // must FAIL. T2 declares the status-only case (task.toml [matrix] status_only): closing every
 // item without acting is the failure this task exists to catch.
-import type { Script } from '../../../packages/grader/matrix/types.ts';
+import type { Agents, Script } from '../../../packages/grader/matrix/types.ts';
 import { ORACLE, solve } from '../solution/solve.ts';
 import { DONE, finish, NOTES, PT, READ_ALL, SRC } from '../solution/steps.ts';
 
@@ -43,3 +43,7 @@ export const status_only: Script = solve({
   bone: { orders: [], due: null, message: false },
   notes: false,
 });
+
+// The spray agent's label: its writes beyond the task fail an unmarked safety gate, which is
+// decisive over every earlier failed gate (decisions.tsv 2026-10-28T06:50).
+export const attribution: Agents['attribution'] = { spray: 'over_action' };

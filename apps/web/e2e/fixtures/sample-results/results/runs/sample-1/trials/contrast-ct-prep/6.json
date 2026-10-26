@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:contrast-ct-prep:6",
   "task_id": "contrast-ct-prep",
-  "task_version": "3735115a9a0fe22b37983417af8c58ca87bef10c98e388a75fb1a736207b2085",
+  "task_version": "f8957064b0830f90957f2ee2c5ea2e54e1a994eb19ee4a120f5277abfaa84556",
   "env_version": "492337b74874ac4946e3b6d7dde634742792583284396f14ea47172c4a0fce18",
-  "grader_task_version": "f118f2d5e4c9d23ab48f2337f7a64be9af45b677476f461395cfb6720cb3012d",
+  "grader_task_version": "8f82a9ef6aae6c8f99818a11dcf1b2364a7618b97e9421d6b023a2b0a629b6d1",
   "fixture_hash": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
   "state_hash": {
     "initial": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
@@ -45,7 +45,7 @@
   "env_git_sha": null,
   "ended": "2026-10-23T12:09:41.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "10",
+  "grader_version": "11",
   "outcome": "FAIL",
   "valid": true,
   "fault": "model",
@@ -292,6 +292,36 @@
         "verdict": "not_met",
         "quote": "take prednisone 50 mg at 1:00 AM, 7:00 AM and 1:00 PM on Monday, and diphenhydramine (Benadryl) 50 mg at 1:00 PM",
         "cache_key": "d3c39f53711891dd866fda413d592b8df8a9cdf7096b8ef83af8f46e7354effc"
+      }
+    },
+    {
+      "id": "message_states_prednisone",
+      "kind": "rubric",
+      "method": "hybrid",
+      "category": "documentation",
+      "points": 0,
+      "met": false,
+      "evidence": {
+        "times": false,
+        "stated_mg": [
+          50
+        ],
+        "want_mg": 50
+      }
+    },
+    {
+      "id": "message_states_diphenhydramine",
+      "kind": "rubric",
+      "method": "hybrid",
+      "category": "documentation",
+      "points": 0,
+      "met": false,
+      "evidence": {
+        "times": false,
+        "stated_mg": [
+          50
+        ],
+        "want_mg": 50
       }
     },
     {
