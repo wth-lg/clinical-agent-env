@@ -135,7 +135,9 @@
         "packages/env/tools/test/read-tools.test.ts",
         "packages/env/tools/test/write-tools.test.ts",
         "packages/env/tools/test/write-gate.test.ts",
-        "apps/web/e2e/browse.spec.ts"
+        "apps/web/e2e/browse.spec.ts",
+        "apps/web/e2e/chart.spec.ts",
+        "apps/web/test/chart.test.ts"
       ],
       "ui_required": false,
       "ui": {
