@@ -212,11 +212,11 @@ export const CONFIRMATION_CRITERIA: readonly Criterion[] = [
 
 export const FAULT_DEFINITIONS: Readonly<Record<Fault, FaultDefinition>> = {
   model: {
-    sentence: 'The model is at fault when a valid trial failed a gate check or stopped at a limit and no infra, grader or environment criterion holds.',
+    sentence: 'The model is at fault when a valid trial failed a gate check or stopped at a limit, and no infrastructure, grader or environment criterion holds.',
     criteria: [
       {
         id: 'MF1',
-        text: "A gate check failed in the trial's current grade.",
+        text: 'The trial failed a gate check in its current grade.',
         reads: ['record.outcome or the last record.regrades[].outcome', 'record.checks or the last record.regrades[].checks'],
         check: (f) => result(f.outcome === 'FAIL', `current outcome ${f.outcome}${f.decisive === null ? '' : `, ${f.decisive.id} failed`}`),
       },
@@ -229,30 +229,30 @@ export const FAULT_DEFINITIONS: Readonly<Record<Fault, FaultDefinition>> = {
     ],
   },
   refusal: {
-    sentence: 'A refusal is the model declining the task: it counts as a model failure in the headline rate and is also reported with refusals left out.',
+    sentence: 'A refusal is when the model does not do the task: it counts as a model failure in the pass rate, and the results also give the pass rate without refusals.',
     criteria: [
       {
         id: 'R1',
-        text: 'The API ended the model\'s turn with stop_reason refusal.',
+        text: 'The API stopped the model\'s turn and gave refusal as the reason.',
         reads: ['record.stop_reason', 'record.status'],
         check: (f) => result(f.stop_reason === 'refusal' || f.status === 'REFUSAL' || f.outcome === 'REFUSAL', `stop_reason ${f.stop_reason ?? 'not recorded'}, status ${f.status}`),
       },
     ],
   },
   env: {
-    sentence: 'The environment is at fault when a tool failed internally, the starting or final state cannot be trusted, an invariant broke, or the evidence a check relies on is not in the world.',
+    sentence: 'The environment is at fault when a tool failed on its own, the start or final state is not correct, an environment rule broke, or a record that a check needs is not in the world.',
     criteria: [
       {
         id: 'E1',
         record_fact: true,
-        text: 'A tool call returned an INTERNAL error, or the trial ended ENV_ERROR with detail INTERNAL (M2 not met).',
+        text: 'A tool call failed with an internal error, or the trial ended ENV_ERROR because of an internal error (M2 not met).',
         reads: ['record.tool_errors.INTERNAL', 'record.status', 'record.detail'],
         check: (f) => result(f.internal_errors > 0 || (f.status === 'ENV_ERROR' && f.detail === 'INTERNAL'), `${plural(f.internal_errors, 'INTERNAL tool error')}${f.detail === 'INTERNAL' ? ', ended ENV_ERROR INTERNAL' : ''}`),
       },
       {
         id: 'E2',
         record_fact: true,
-        text: "The initial state hash is missing or differs from the manifest's.",
+        text: 'The start state hash is missing, or it is not the same as the hash in the run manifest.',
         reads: ['record.state_hash.initial', 'record.detail', 'manifest world_hash'],
         check: ({ detail, state_hash: h, manifest_hash }) =>
           result(detail === 'initial_hash_mismatch' || h.initial === null || (manifest_hash !== null && h.initial !== manifest_hash), `initial ${h.initial ?? 'missing'}, manifest ${manifest_hash ?? 'not given'}`),
@@ -260,32 +260,32 @@ export const FAULT_DEFINITIONS: Readonly<Record<Fault, FaultDefinition>> = {
       {
         id: 'E3',
         record_fact: true,
-        text: 'The trial ended ENV_ERROR for a reason other than an INTERNAL error or a state hash mismatch, such as a broken environment invariant.',
+        text: 'The trial ended ENV_ERROR for a different reason than an internal error or a wrong state hash, for example a broken environment rule.',
         reads: ['record.status', 'record.detail'],
         check: ({ status, detail }) => result(status === 'ENV_ERROR' && !ENV_DETAILS.includes(detail ?? ''), `status ${status}, detail ${detail}`),
       },
       {
         id: 'E4',
         record_fact: true,
-        text: 'The final state hash is missing, or replaying the trajectory did not reproduce it.',
+        text: 'The final state hash is missing, or a replay of the trajectory did not give the same hash.',
         reads: ['record.state_hash.final', 'record.state_hash.replay_final', 'record.detail'],
         check: ({ detail, state_hash: h }) => result(detail === 'replay_mismatch' || !replayOk(h), `final ${h.final ?? 'missing'}, replay_final ${h.replay_final ?? 'missing'}`),
       },
       {
         id: 'E5',
-        text: 'A decisive id of the failed gate check was never shown to the model and is not in the world, so no tool could have returned it (M1 not met).',
+        text: 'The failed gate check needs a record that the model did not see and that is not in the world, so no tool could give it to the model (M1 not met).',
         reads: M1.reads,
         check: negation(M1.check),
       },
     ],
   },
   grader: {
-    sentence: "The grader is at fault when a check threw, a regrade could not grade the record, a human audit found a grader bug, or the task's own oracle or alternatives fail the check the trial failed.",
+    sentence: "The grader is at fault when a check failed with an error, a regrade could not grade the record, a human audit found a grader bug, or the task's reference solution or an accepted alternative fails the same check as the trial.",
     criteria: [
       {
         id: 'GR1',
         record_fact: true,
-        text: 'A grader check threw an exception while the trial was graded.',
+        text: 'A grader check failed with an error while the grader graded the trial.',
         reads: ['record.outcome', 'record.error.check', 'record.error.message'],
         check: (f) => result(f.outcome === 'GRADER_ERROR' && !f.regraded && f.check_error?.check != null, f.check_error === null ? 'no grader error' : `check ${f.check_error.check}: ${f.check_error.message}`),
       },
@@ -295,30 +295,30 @@ export const FAULT_DEFINITIONS: Readonly<Record<Fault, FaultDefinition>> = {
         // trial's own hashes were checked when it ran (E2, E4), and only the regrade failed.
         id: 'GR2',
         record_fact: true,
-        text: 'An offline regrade ended GRADER_ERROR, or the grade ended GRADER_ERROR without naming the check that threw.',
+        text: 'An offline regrade ended GRADER_ERROR, or the grade ended GRADER_ERROR and did not name the check that failed with an error.',
         reads: ['record.regrades[].outcome', 'record.outcome', 'record.error.check'],
         check: (f) => result(f.outcome === 'GRADER_ERROR' && (f.regraded || f.check_error?.check == null), `current outcome ${f.outcome}${f.regraded ? ', from a regrade' : ''}`),
       },
       {
         id: 'GR3',
-        text: 'A human audit marks the trial GRADER_BUG and cites at least one evidence id.',
+        text: 'A human audit marks the trial as a grader bug (GRADER_BUG) and gives at least one evidence id.',
         reads: ['audit.outcome', 'audit.evidence_ids'],
         check: ({ audit }) => result(audit !== null && audit.outcome === 'GRADER_BUG' && audit.evidence_ids.length > 0, audit === null ? 'not human-audited' : `audited ${audit.outcome}, ${plural(audit.evidence_ids.length, 'evidence id')}`),
       },
       {
         id: 'GR4',
-        text: "The trial is a FAIL, and the task's oracle or a declared alternative fails, on the grader_task_version of the trial's current grade, the same gate check the trial failed, as the matrix's failed_checks names it (M4 not met).",
+        text: "The trial is a FAIL, and the grader validation matrix shows that the task's reference solution or an accepted alternative fails the same gate check the trial failed, at the grader version of the trial's current grade (M4 not met).",
         reads: M4.reads,
         check: negation(M4.check),
       },
     ],
   },
   infra: {
-    sentence: 'The infrastructure is at fault when the API, the harness, a substituted model or a stop from outside ended the trial, so it says nothing about the model.',
+    sentence: 'The infrastructure is at fault when the API, the harness, a different model or a stop from outside ended the trial, so the trial tells nothing about the model.',
     criteria: [
       {
         id: 'I1',
-        text: 'The API answered with a model other than the one requested or other than MODEL, the trial requested a model other than MODEL, or the harness marked the trial INVALID.',
+        text: 'The API answered with a different model than the trial requested or than the model under test, the trial requested a different model than the model under test, or the harness marked the trial INVALID.',
         reads: ['record.models_returned', 'record.model_requested', 'record.status', 'record.model_requested and record.models_returned against MODEL (packages/core/anthropic.ts), as packages/grader/outcome.ts compares them'],
         check: (f) => {
           const want = [f.model_requested, f.model_expected].filter((m): m is string => m !== null);
@@ -329,8 +329,8 @@ export const FAULT_DEFINITIONS: Readonly<Record<Fault, FaultDefinition>> = {
         },
       },
       { id: 'I2', text: 'The harness crashed or lost its worker before the trial ended.', reads: ['record.status', 'record.detail'], check: statusIs('INFRA_HARNESS') },
-      { id: 'I3', text: 'The Anthropic API kept failing after the client\'s retries.', reads: ['record.status', 'record.detail'], check: statusIs('INFRA_API') },
-      { id: 'I4', text: 'The run was stopped from outside before the trial ended.', reads: ['record.status', 'record.detail'], check: statusIs('CANCELLED') },
+      { id: 'I3', text: 'The Anthropic API continued to fail after the client tried again.', reads: ['record.status', 'record.detail'], check: statusIs('INFRA_API') },
+      { id: 'I4', text: 'A stop from outside the harness ended the run before the trial ended.', reads: ['record.status', 'record.detail'], check: statusIs('CANCELLED') },
     ],
   },
 };
