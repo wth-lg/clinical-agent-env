@@ -1,0 +1,1 @@
+- CI check timeout (builder-135: run 40319335481 was cancelled at check's 20-minute limit with 899 tests passed and none failed): `check` now has 35 minutes, the same as each e2e shard. On the ten green runs before it, `pnpm test` took 10-17 minutes of an 11-18 minute job. scripts/test/ci-workflow.test.ts pins the new value. No test, spend row, grade or version changes
