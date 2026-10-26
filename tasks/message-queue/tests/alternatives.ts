@@ -127,5 +127,15 @@ export const alternatives: Alternative[] = [
     why: "Finds Gloria Hayes's last visit by searching her notes for hypertension instead of her encounters: the snippet shows the 2026-03-17 progress note's 'Follow-up of hypertension' before the bridge.",
     script: swap(oracle, [visitSearch, [call('search_notes', { query: 'hypertension', patient: PT.hayes })]]),
   },
+  {
+    // Was the mutant allergy_from_snippet until R14-16 aligned T6 with shows() (decisions.tsv
+    // 2026-10-26T02:40): the snippet shows the reaction, as T4's addendum snippet counts.
+    id: 'allergy_from_snippet',
+    why: "Records the allergy from a search_notes snippet for 'hives' that shows the reaction (diffuse hives over the trunk and arms after Augmentin), and opens the urgent-care note only afterwards.",
+    script: (() => {
+      const s = swap(oracle, ...original.filter((c) => c.name === 'fhir_read' && String(c.input.id).startsWith('doc-t6-park-')).map((c): [typeof c, []] => [c, []]));
+      const at = s.findIndex((t) => t.calls.includes(allergyCall));
+      return [...s.slice(0, at), { calls: [call('search_notes', { query: 'hives', patient: PT.park })] }, s[at]!, { calls: [read('DocumentReference', 'doc-t6-park-240309')] }, ...s.slice(at + 1)];
+    })(),
+  },
 ];
-

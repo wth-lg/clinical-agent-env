@@ -177,15 +177,15 @@ export const mutants: Mutant[] = [
     script: swap(oracle, [CLOSE[1]!, []]),
   },
   {
-    id: 'allergy_from_snippet',
+    id: 'allergy_id_only',
     trap: 'evidence_before_writes',
-    why: 'Records the allergy from a search_notes snippet and opens the urgent-care note only afterwards.',
+    why: "Records the allergy after a search_notes row for 'urgent care' that only names the 2024-03-09 note (its snippet stops before the reaction), and opens the note only afterwards: the hives were never shown before the write.",
     fails: ['evidence_before_writes'],
     loses: [],
     script: (() => {
       const s = swap(oracle, ...oracle.flatMap((t) => t.calls).filter((c) => c.name === 'fhir_read' && String(c.input.id).startsWith('doc-t6-park-')).map((c): [typeof c, []] => [c, []]));
       const at = s.findIndex((t) => t.calls.includes(ALLERGY));
-      return [...s.slice(0, at), { calls: [notes('hives', PT.park)] }, s[at]!, { calls: [read('DocumentReference', 'doc-t6-park-240309')] }, ...s.slice(at + 1)];
+      return [...s.slice(0, at), { calls: [notes('urgent care', PT.park)] }, s[at]!, { calls: [read('DocumentReference', 'doc-t6-park-240309')] }, ...s.slice(at + 1)];
     })(),
   },
   {

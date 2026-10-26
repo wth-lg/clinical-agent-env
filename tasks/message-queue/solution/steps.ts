@@ -55,7 +55,7 @@ export const parkAllergy = (substance_code: string = RX.amoxClav, criticality = 
 export const nkdaInactive = (field: 'clinical_status' | 'verification' = 'clinical_status', value = 'inactive') => call('record_allergy', { patient: PT.park, update_id: 'alg-t6-park-nkda', [field]: value });
 export const REYES_BODY =
   'I did not send amoxicillin-clavulanate for Lena Park. A scanned St. Brigid urgent-care record from 03/09/2024 documents diffuse hives and lip and throat swelling about 20 minutes after a first dose of Augmentin, treated with IM epinephrine. ' +
-  'I recorded it as an allergy (unconfirmed, high criticality) and marked the NKDA entry inactive. Under RBC-CP-11 the alternative for a penicillin allergy is doxycycline 100 mg twice daily for 5 to 7 days; your call whether to prescribe it.';
+  'I recorded it as an allergy (unconfirmed, high criticality) and marked the NKDA entry inactive. Under RBC-CP-11 the alternative for a penicillin allergy is doxycycline 100 mg twice daily for 5 to 7 days. Dr. Okafor, the prescriber of record, will decide whether to prescribe it.';
 export const reyesMessage = (body = REYES_BODY, about = [REACTION_NOTE]) => message('Practitioner/pr-reyes', 'urgent', 'Lena Park: amoxicillin-clavulanate not sent', body, about);
 
 // ---- M5: control renewal ----
