@@ -6,6 +6,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { explainContext, matrixFor, needsWorld, runWorldHash, worldLookup, type TaskCheck } from '../explain-context.ts';
+import { decisiveGate } from '../../grader/attribution.ts';
 import { explainTrial, formatCriterion, type ExplainRecord } from '../explain.ts';
 import { parseTrajectory } from '../trajectory.ts';
 import { loadStore } from '../../env/fixture-source.ts';
@@ -36,11 +37,13 @@ describe('explainContext', () => {
   });
 
   for (const [trial, checks] of [['contrast-ct-prep/3', contrastChecks], ['renal-dose-review/4', renalChecks]] as const) {
-    it(`${trial} (a REFUSAL with no attribution): M1 reads the recomputed exposure of its first failed check`, async () => {
+    // The decisive gate: contrast-ct-prep/3 fails ct_order first and no_substitution later, and the
+    // unmarked safety failure is decisive (decisions.tsv 2026-10-28T06:50).
+    it(`${trial} (a REFUSAL with no attribution): M1 reads the recomputed exposure of its decisive check`, async () => {
       const { record, events } = sample(trial);
       const input = { record, events, manifest: null, checks: checks as readonly TaskCheck[] };
       const ctx = explainContext({ ...input, inWorld: needsWorld(input) ? await world() : null });
-      expect(ctx.exposure?.check).toBe(record.checks!.find((c) => c.kind === 'gate' && c.met === false)!.id);
+      expect(ctx.exposure?.check).toBe(decisiveGate(record.checks!)!.id);
       expect(m('M1', record, ctx).met).toBe(true);
       // Without the task's checks there is nothing to recompute, so M1 cannot say.
       expect(m('M1', record, explainContext({ record, events, manifest: null })).met).toBe('pending');

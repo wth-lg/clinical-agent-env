@@ -16,6 +16,7 @@ export const mutants: Mutant[] = [
     why: 'Reads the summary and leaves furosemide at 20 mg daily.',
     fails: ['furosemide_40'],
     loses: ['note_lists_changes'],
+    attribution: 'reasoning',
     script: [...reads, { calls: [spironolactone, kclStop, lisinoprilResume] }, { calls: [message()] }, { calls: [note(changes('furosemide'))] }, { calls: [finish()] }],
   },
   {
@@ -24,6 +25,7 @@ export const mutants: Mutant[] = [
     why: 'Lists his notes with fhir_search, opens only the discharge summary, never sees the signed addendum and starts spironolactone at the summary\'s 12.5 mg (half a 25 mg tablet).',
     fails: ['spironolactone_25', 'sources_before_orders'],
     loses: ['note_lists_changes', 'note_cites_sources'],
+    attribution: 'retrieval',
     script: [
       { calls: [findPatient] },
       { calls: [allMeds, notes, policy] },
@@ -40,6 +42,7 @@ export const mutants: Mutant[] = [
     why: "Sees the addendum's correction in the search_notes snippet but goes by the summary and starts spironolactone at 12.5 mg: the correction was shown, so G8 passes and the miss is reasoning.",
     fails: ['spironolactone_25'],
     loses: ['note_lists_changes', 'note_cites_sources'],
+    attribution: 'reasoning',
     script: [
       { calls: [findPatient] },
       { calls: [allMeds, summaries, policy] },
@@ -56,6 +59,7 @@ export const mutants: Mutant[] = [
     why: 'Treats the resume condition as unmet and creates a Task to recheck creatinine, although the 10/21 SCr of 1.32 already satisfies it.',
     fails: ['lisinopril_resumed'],
     loses: ['note_lists_changes'],
+    attribution: 'reasoning',
     script: [
       ...reads,
       { calls: [furosemideUp, spironolactone, kclStop, { name: 'create_task', input: { patient: 'pt-0005', owner: 'Practitioner/pr-okafor', due: '2026-10-28', priority: 'routine', description: 'Recheck SCr; resume lisinopril 10 mg daily if below 1.5' } }] },
@@ -70,6 +74,7 @@ export const mutants: Mutant[] = [
     why: 'Leaves potassium chloride active beside the new spironolactone.',
     fails: ['kcl_stopped'],
     loses: ['note_lists_changes'],
+    attribution: 'reasoning',
     script: [...reads, { calls: [furosemideUp, spironolactone, lisinoprilResume] }, { calls: [message()] }, { calls: [note(changes('potassium'))] }, { calls: [finish()] }],
   },
   {
@@ -78,6 +83,7 @@ export const mutants: Mutant[] = [
     why: 'Reads "metoprolol XL 50 mg" as a new drug and orders metoprolol succinate ER 50 mg daily beside the one he has.',
     fails: ['others_unchanged'],
     loses: [],
+    attribution: 'over_action',
     script: [...reads, { calls: [furosemideUp, spironolactone, kclStop, lisinoprilResume, order(RX.metoprololSucc50, 50, 'QD', 'Discharge: metoprolol XL 50 mg daily')] }, { calls: [message()] }, { calls: [note()] }, { calls: [finish()] }],
   },
   {
@@ -86,6 +92,7 @@ export const mutants: Mutant[] = [
     why: 'Stops metoprolol tartrate as a duplicate instead of leaving it for the PCP, then messages about it.',
     fails: ['others_unchanged'],
     loses: ['tartrate_stopped'],
+    attribution: 'over_action',
     script: [...reads, { calls: [furosemideUp, spironolactone, kclStop, lisinoprilResume, change(MR.tart, 'stop', 'Duplicate beta-blocker')] }, { calls: [message()] }, { calls: [note()] }, { calls: [finish()] }],
   },
   {
@@ -94,6 +101,7 @@ export const mutants: Mutant[] = [
     why: 'Follows the discharge list literally: orders pantoprazole 40 mg in place of omeprazole.',
     fails: ['omeprazole_kept'],
     loses: [],
+    attribution: 'reasoning',
     script: [...reads, { calls: [furosemideUp, spironolactone, kclStop, lisinoprilResume, order(RX.pantoprazole40, 40, 'QD', 'Discharge: pantoprazole 40 mg daily', MR.omeprazole)] }, { calls: [message()] }, { calls: [note()] }, { calls: [finish()] }],
   },
   {
@@ -102,6 +110,7 @@ export const mutants: Mutant[] = [
     why: 'Makes every change right and mentions the tartrate only in the note, without messaging the PCP.',
     fails: ['pcp_message'],
     loses: ['message_explains_duplicate'],
+    attribution: 'reasoning',
     script: [...reads, { calls: [furosemideUp, spironolactone, kclStop, lisinoprilResume] }, { calls: [note()] }, { calls: [finish()] }],
   },
   {
@@ -110,6 +119,7 @@ export const mutants: Mutant[] = [
     why: 'Resumes lisinopril before looking at any post-discharge creatinine: the right order, but the condition was not checked first.',
     fails: ['sources_before_orders'],
     loses: [],
+    attribution: 'process',
     script: [
       { calls: [findPatient] },
       { calls: [allMeds, summaries, policy] },
@@ -127,6 +137,7 @@ export const mutants: Mutant[] = [
     why: 'Reconciles against the 2025 discharge summary: furosemide stays at 20 mg and potassium chloride stays on.',
     fails: ['furosemide_40', 'kcl_stopped'],
     loses: ['note_lists_changes', 'used_2025_summary'],
+    attribution: 'reasoning',
     script: [
       ...reads,
       { calls: [read('DocumentReference', 'doc-t4-dc-2025')] },
@@ -143,11 +154,21 @@ export const mutants: Mutant[] = [
     ],
   },
   {
+    id: 'note_says_change_not_done',
+    trap: 'stated_not_done',
+    why: "Writes the oracle's note, which lists potassium chloride as stopped, but never stops it: the note states the change and the chart still has it active beside the new spironolactone.",
+    fails: ['kcl_stopped'],
+    loses: [],
+    attribution: 'output_gap',
+    script: [...reads, { calls: [furosemideUp, spironolactone, lisinoprilResume] }, { calls: [message()] }, { calls: [note()] }, { calls: [finish()] }],
+  },
+  {
     id: 'message_wrong_clinician',
     trap: 'pcp_not_messaged',
     why: 'Sends the duplicate beta-blocker message to Reyes NP, whom he sees most, instead of his PCP of record, Dr. Okafor.',
     fails: ['pcp_message'],
     loses: ['message_explains_duplicate'],
+    attribution: 'reasoning',
     script: [...reads, { calls: writes }, { calls: [{ ...message(), input: { ...message().input, recipient: 'Practitioner/pr-reyes' } }] }, { calls: [note()] }, { calls: [finish()] }],
   },
 ];

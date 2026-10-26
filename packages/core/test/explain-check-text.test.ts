@@ -10,6 +10,7 @@ import { describe, expect, it } from 'vitest';
 import { nodeTaskDirs } from '../../../cli/adapters/tasks-node.ts';
 import { explainTrial, REASON_WORDS, type CheckText, type ExplainRecord } from '../explain.ts';
 import { parseTrajectory } from '../trajectory.ts';
+import { decisiveGate, firstFailedGate } from '../../grader/attribution.ts';
 import type { Check } from '../../grader/check.ts';
 import { repoRoot } from '../../../scripts/test/helpers.ts';
 
@@ -64,7 +65,8 @@ describe('sample non-pass reasons', async () => {
   it.each(failing.map((r) => [`${r.task_id}/${(r as { index?: number }).index}`, r] as const))('%s names what the check requires and a value it found', (_n, r) => {
     const events = r.outcome === 'FAIL' ? [] : parseTrajectory(readFileSync(join(RUN, r.trajectory), 'utf8'));
     const x = explainTrial(r, null, { events, text: texts[r.task_id] ?? null });
-    const check = (r.checks ?? []).find((c) => (c as { kind?: string }).kind === 'gate' && c.met === false)!;
+    // The decisive gate (attribution.ts decisiveGate), which the reason names.
+    const check = decisiveGate(r.checks ?? [])!;
     expect(x.reason).toMatch(REASON);
     expect(x.reason).not.toMatch(/the check met/);
     expect(x.reason).toContain(`${check.id} failed: expected ${texts[r.task_id]![check.id]!.requires.split(' ')[0]}`);
@@ -73,6 +75,27 @@ describe('sample non-pass reasons', async () => {
     expect(found).toBe(x.decisive_check!.found);
     expect(leaves(check.evidence).some((v) => found.includes(v)) || /^no /.test(found), `${x.reason}\n${JSON.stringify(check.evidence)}`).toBe(true);
     expect(words(x.reason)).toBeLessThanOrEqual(REASON_WORDS);
+  });
+
+  // decisions.tsv 2026-10-28T20:55: a first failed gate that an unmarked safety gate outranks is a
+  // secondary reason in the same words (T3 crc-care-gap/8 and /9: fit_orders under nothing_for_others).
+  it('names the outranked first failed gate as a secondary reason, and only then', () => {
+    const outranked = failing.filter((r) => firstFailedGate(r.checks ?? [])!.id !== decisiveGate(r.checks ?? [])!.id);
+    expect(outranked.length).toBeGreaterThan(0);
+    for (const r of failing) {
+      const x = explainTrial(r, null, { events: [], text: texts[r.task_id] ?? null });
+      const first = firstFailedGate(r.checks ?? [])!;
+      if (!outranked.includes(r)) {
+        expect(x.secondary_reason).toBeNull();
+        continue;
+      }
+      expect(x.first_failed_check?.id).toBe(first.id);
+      // Only the expected value is cut to fit, as in the reason; the found value is whole.
+      expect(x.secondary_reason).toMatch(new RegExp(`^first failed check: ${first.id} failed: expected `));
+      expect(x.secondary_reason!.split(', found ')[1]).toBe(x.first_failed_check!.found);
+      expect(words(x.secondary_reason!)).toBeLessThanOrEqual(REASON_WORDS);
+      expect(x.secondary_reason).toContain(`${first.id} failed: expected ${texts[r.task_id]![first.id]!.requires.split(' ')[0]}`);
+    }
   });
 
   it('ends a model failure with one suffix form, "; Kind: <kind>"', () => {

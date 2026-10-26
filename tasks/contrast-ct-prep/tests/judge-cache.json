@@ -108,6 +108,24 @@
     }
   },
   {
+    "key": "1bbc750fe1d24418d5b281fbc5f398103dcc05c2605a00c39ebb218646433a10",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Do not drive after taking it:"
+    },
+    "error": null,
+    "calls": 0,
+    "provenance": {
+      "source": "scripted",
+      "model": "none: a rule-based script with no network call (builder-127 fill-misses.ts, run by builder-133)",
+      "at": "2026-10-26T09:57:07Z"
+    }
+  },
+  {
     "key": "217b650a880eb055ac6ace5be44f2259ff47daf7b276e17f755466c552d7cff8",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -141,6 +159,24 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-25T16:31:13.845Z"
+    }
+  },
+  {
+    "key": "257e541a00dc85d908f6a4c2cc2428540c3bdfac23ea1c54e16d88b6bb234726",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 0,
+    "provenance": {
+      "source": "scripted",
+      "model": "none: a rule-based script with no network call (builder-127 fill-misses.ts, run by builder-133)",
+      "at": "2026-10-26T09:57:07Z"
     }
   },
   {
@@ -267,6 +303,24 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-25T16:31:13.845Z"
+    }
+  },
+  {
+    "key": "42a113ea46895d5d13fcb8b7bbf6ad88b94e82d1d0ab4df8505d8b5bd17c4bb8",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Do not drive after taking it:"
+    },
+    "error": null,
+    "calls": 0,
+    "provenance": {
+      "source": "scripted",
+      "model": "none: a rule-based script with no network call (builder-127 fill-misses.ts, run by builder-133)",
+      "at": "2026-10-26T09:57:07Z"
     }
   },
   {
@@ -414,6 +468,24 @@
     }
   },
   {
+    "key": "66ae4a162d74cccddc51812aa7e2914945f5fc0c7cebd8de3cdab070e638939f",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 0,
+    "provenance": {
+      "source": "scripted",
+      "model": "none: a rule-based script with no network call (builder-127 fill-misses.ts, run by builder-133)",
+      "at": "2026-10-26T09:57:07Z"
+    }
+  },
+  {
     "key": "691de3d18fb5791fb938cbfda9a6de280dd2d6d886f4b20be80917548fb04e4a",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -429,6 +501,24 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-25T16:31:13.845Z"
+    }
+  },
+  {
+    "key": "6a38c3f1ad4f62317e091485c2a093b1f4df3e2c598554bedbf513a113480578",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 0,
+    "provenance": {
+      "source": "scripted",
+      "model": "none: a rule-based script with no network call (builder-127 fill-misses.ts, run by builder-133)",
+      "at": "2026-10-26T09:57:07Z"
     }
   },
   {
@@ -522,6 +612,24 @@
     }
   },
   {
+    "key": "985bf27d374d9ec253a51f4fc5793bb9f63da40db96f93b477aaae8c987fe741",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Do not drive after taking it:"
+    },
+    "error": null,
+    "calls": 0,
+    "provenance": {
+      "source": "scripted",
+      "model": "none: a rule-based script with no network call (builder-127 fill-misses.ts, run by builder-133)",
+      "at": "2026-10-26T09:57:07Z"
+    }
+  },
+  {
     "key": "99a9299243f6b271e85b3835a1af7250abfdf97572c73e177f065b59baffe6cb",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -540,6 +648,24 @@
     }
   },
   {
+    "key": "a859e77ca42466c2270700739f68656511d43632c1050e0fbdd152d4d344d984",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 0,
+    "provenance": {
+      "source": "scripted",
+      "model": "none: a rule-based script with no network call (builder-127 fill-misses.ts, run by builder-133)",
+      "at": "2026-10-26T09:57:07Z"
+    }
+  },
+  {
     "key": "aebca0f454c69b3c4a826e9f5a1a1885df3b00f939f1385fea9b464fd4178aa7",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -555,6 +681,24 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-25T16:31:13.845Z"
+    }
+  },
+  {
+    "key": "b19f434d274ea504af161b6ccac81a534056bc1ba0e0eb120690ee7e859b07ef",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Do not drive after taking it:"
+    },
+    "error": null,
+    "calls": 0,
+    "provenance": {
+      "source": "scripted",
+      "model": "none: a rule-based script with no network call (builder-127 fill-misses.ts, run by builder-133)",
+      "at": "2026-10-26T09:57:07Z"
     }
   },
   {

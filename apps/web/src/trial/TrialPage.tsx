@@ -193,6 +193,7 @@ function Header({ t, e, rows, onStep }: { t: Trial; e: Explanation; rows: readon
         </p>
       )}
       <Reason reason={e.reason} muted={!e.valid} />
+      {e.secondary_reason !== null && <p data-testid="secondary-reason" className="mt-1 break-words text-sm text-ink-muted">{e.secondary_reason}</p>}
       <dl className="mt-3 grid grid-cols-1 gap-x-4 gap-y-1.5 sm:grid-cols-[max-content_minmax(0,1fr)] [&_dd]:min-w-0 [&_dd]:break-words [&_dt]:text-ink-muted">
         <dt>Fault</dt>
         <dd data-testid="detail-fault">
