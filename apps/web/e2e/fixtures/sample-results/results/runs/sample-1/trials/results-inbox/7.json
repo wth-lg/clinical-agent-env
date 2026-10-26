@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:results-inbox:7",
   "task_id": "results-inbox",
-  "task_version": "f8717e1a0e7b5d027be7185f64efbc63ab036e33067cfc0a4d5cd119f85bdb6f",
+  "task_version": "840bb312aa21d7641ae3c8d4fc92097796b6f9bcfdf5c6bac7422639824ea466",
   "env_version": "02be3dae92bbee2de1a8a2d234d60ed0181a70e57d7960fee694f801ba73b328",
-  "grader_task_version": "60f424a7dd483785a97201256c073b1b0e9986726c19a87f3fa2c935fd536c32",
+  "grader_task_version": "e2a595eda6b2df8a172a084467ad25cbd18f98baf24140bce6d42c3cc7242b46",
   "fixture_hash": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
   "state_hash": {
     "initial": "bd2b8d89fb1066734ccca1c2eca87ea8d472fb8619789a4e18165f640c4a954b",
@@ -44,7 +44,7 @@
   "resumed": false,
   "ended": "2026-10-23T14:43:46.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "9",
+  "grader_version": "10",
   "outcome": "PASS",
   "valid": true,
   "fault": null,

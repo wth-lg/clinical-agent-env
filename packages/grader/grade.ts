@@ -42,9 +42,11 @@ import { FAULT, isValid, trialOutcome, type Fault, type Outcome, type TrialFacts
 // grader_task_version (packages/core/tasks.ts), with the task's grader-side files; regrades
 // record both. 6: main's 5 (shown text, decisive_phrases) and this branch's 5 (grading past a
 // thrown check) were different graders; the merge of the two is 6. 7: normalize.ts maps
-// rosuvastatin calcium, Toprol-XL and Lasix to their ingredients. 9: the judge quote check folds
+// rosuvastatin calcium, Toprol-XL and Lasix to their ingredients. 10: a failed safety gate whose
+// result carries omission (a missing required write) is labelled by the retrieval, output_gap and
+// reasoning rules, not over_action (R14-12). 9: the judge quote check folds
 // quotes, dashes, case and whitespace and reads "..." as a gap; judge.unknown_penalties (R14-04).
-export const GRADER_VERSION = '9';
+export const GRADER_VERSION = '10';
 
 export interface CheckResult {
   id: string;
@@ -56,6 +58,8 @@ export interface CheckResult {
   met: Met;
   evidence: { [k: string]: Json };
   ids?: string[];
+  // A failed gate's failure is a missing required write (check.ts Verdict).
+  omission?: true;
 }
 
 // Why a trial could not be graded: the check that threw or whose judge call failed (null when
@@ -235,8 +239,9 @@ export async function gradeWith(input: GradeInput, judge: Judge): Promise<Grade>
   const gates = input.checks.filter((c): c is GateCheck => c.kind === 'gate');
   const rubrics = input.checks.filter((c): c is RubricCheck => c.kind === 'rubric');
   const byCheck = new Map<Check, CheckResult>();
-  const result = (c: Check, v: { met: Met; evidence: { [k: string]: Json }; ids?: readonly string[] }): CheckResult => ({
+  const result = (c: Check, v: { met: Met; evidence: { [k: string]: Json }; ids?: readonly string[]; omission?: true }): CheckResult => ({
     id: c.id, kind: c.kind, method: c.method, category: c.category, points: c.kind === 'rubric' ? c.points : null, met: v.met, evidence: v.evidence, ...(v.ids ? { ids: [...v.ids] } : {}),
+    ...(c.kind === 'gate' && v.met === false && v.omission === true ? { omission: true as const } : {}),
   });
   const ordered = () => input.checks.flatMap((c) => byCheck.get(c) ?? []);
   const threw: Array<{ check: string; message: string }> = [];
