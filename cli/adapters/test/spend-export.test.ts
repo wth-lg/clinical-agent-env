@@ -1,15 +1,15 @@
 // `pnpm cli spend --export <path>` writes the committed copy of the ledger (results/spend.jsonl)
 // as a keyed union, so two branches that exported overlapping rows of the one canonical ledger
 // merge to one copy (verifier-phase-P17i-A8-1 N2): the destination's rows stay, in order, each
-// key once; then each ledger row whose key the destination lacks, in ledger order. A row's key is
-// its kind and call_id (a reserve and its settle share a call_id). And the committed file repeats
-// no key.
+// line once; then each ledger line the destination lacks, in ledger order. A row's key is its
+// whole line, since a raised settle shares kind and call_id with the settle it raises
+// (verifier-phase-P17i-SPEND-1 F1). And the committed file repeats no line.
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { repoRoot, runScript, tempDir } from '../../../scripts/test/helpers.ts';
-import type { LedgerRow } from '../../../packages/core/ledger.ts';
-import { repeatedKeys } from '../ledger-node.ts';
+import { totals, type LedgerRow } from '../../../packages/core/ledger.ts';
+import { readRows, repeatedLines } from '../ledger-node.ts';
 
 const row = (kind: 'reserve' | 'settle', call_id: string, usd = 0.5): LedgerRow => ({ ts: '2026-10-27T00:00:00.000Z', call_id, kind, source: 'node', run_id: 'r', batch_id: null, trial: null, usage: null, cost_usd: usd });
 // A reserved and settled call: two rows that share a call_id.
@@ -68,14 +68,39 @@ describe('spend --export', () => {
     expect(r.stderr).toMatch(/spend\.jsonl:3: not a ledger row .*take one side's copy and export again/);
     expect(e.read()).toBe(conflicted);
   });
+
+  it('keeps a raised settle: a fresh export of a ledger with two settle rows for one call has the ledger\'s totals', () => {
+    // ledger.ts: settled is, per call_id, the highest of its settle rows; settle() and ingest()
+    // append a second, higher settle (verifier-phase-P17i-SPEND-1 F1).
+    const ledger = [row('reserve', 'b1', 0.5), row('settle', 'b1', 0.1), row('settle', 'b1', 0.3)];
+    const e = setup(ledger);
+    const r = e.run();
+    expect(r.status, r.stderr).toBe(0);
+    expect(e.read()).toBe(lines(ledger));
+    expect(totals(readRows(e.out))).toEqual(totals(ledger));
+    expect(totals(ledger).settled).toBeCloseTo(0.3);
+  });
+
+  it('strips a trailing carriage return from each kept line, so a CRLF copy gives one LF copy', () => {
+    const main = call('m1');
+    const e = setup([...main, ...call('b')], lines(main).replaceAll('\n', '\r\n'));
+    const r = e.run();
+    expect(r.status, r.stderr).toBe(0);
+    expect(e.read()).toBe(lines([...main, ...call('b')]));
+    expect(r.stdout).toContain('2 rows kept, 2 added, 0 repeated dropped');
+  });
 });
 
 describe('the committed results/spend.jsonl', () => {
-  it('repeats no row key (kind and call_id)', () => {
-    expect(repeatedKeys(readFileSync(join(repoRoot, 'results/spend.jsonl'), 'utf8'))).toEqual([]);
+  it('repeats no row line', () => {
+    expect(repeatedLines(readFileSync(join(repoRoot, 'results/spend.jsonl'), 'utf8'))).toEqual([]);
   });
 
   it('the check finds a call that two merged exports both carried', () => {
-    expect(repeatedKeys(lines([...call('m1'), ...call('a7'), ...call('a7')]))).toEqual(['reserve a7', 'settle a7']);
+    expect(repeatedLines(lines([...call('m1'), ...call('a7'), ...call('a7')]))).toEqual(lines(call('a7')).trimEnd().split('\n'));
+  });
+
+  it('the check passes a raised settle, two settle rows that differ in cost', () => {
+    expect(repeatedLines(lines([...call('m1'), row('settle', 'm1', 0.9)]))).toEqual([]);
   });
 });

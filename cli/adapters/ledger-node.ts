@@ -122,12 +122,12 @@ function parseLedger(path: string, text: string): ParsedLedger {
   return { rows: [...rows, parse(tail, lines.length)], torn: null, unterminated: true };
 }
 
-// A spend export's row key: its kind and call_id (a reserve and its settle share a call_id).
-const exportKey = (r: Pick<LedgerRow, 'kind' | 'call_id'>): string => `${r.kind} ${r.call_id}`;
-
-// Each row line of a ledger or export file with its key. A line that is not a ledger row throws,
-// naming it; with ledger, a torn last line (an append cut short) is left out, as reads leave it.
-function keyedLines(path: string, text: string, ledger = false): Array<{ line: string; key: string }> {
+// Each row line of a ledger or export file, a trailing carriage return stripped. A spend export's
+// key is the whole line: every export line is a byte copy of a canonical-ledger line, and
+// (kind, call_id) is not unique, since a raised settle is a second settle row for its call_id
+// (verifier-phase-P17i-SPEND-1 F1). A line that is not a ledger row throws, naming it; with
+// ledger, a torn last line (an append cut short) is left out, as reads leave it.
+function rowLines(path: string, text: string, ledger = false): string[] {
   const lines = text.split('\n');
   const tail = ledger && !text.endsWith('\n') ? (lines.pop() as string) : '';
   if (tail.trim() !== '') {
@@ -138,22 +138,24 @@ function keyedLines(path: string, text: string, ledger = false): Array<{ line: s
       // torn: not a row yet
     }
   }
-  return lines.flatMap((line, i) => {
+  return lines.flatMap((raw, i) => {
+    const line = raw.endsWith('\r') ? raw.slice(0, -1) : raw;
     if (line.trim() === '') return [];
     try {
-      return [{ line, key: exportKey(parseRow(JSON.parse(line))) }];
+      parseRow(JSON.parse(line));
+      return [line];
     } catch (e) {
       throw new Error(`${path}:${i + 1}: not a ledger row (${(e as Error).message}); if a merge left both sides, take one side's copy and export again`, { cause: e });
     }
   });
 }
 
-// The row keys a spend export repeats, each once, in file order: [] for a committed
+// The row lines a spend export repeats, each once, in file order: [] for a committed
 // results/spend.jsonl, which `pnpm cli spend --export` writes. Throws on a line that is not a row.
-export function repeatedKeys(text: string, path = 'results/spend.jsonl'): string[] {
+export function repeatedLines(text: string, path = 'results/spend.jsonl'): string[] {
   const seen = new Set<string>();
   const repeated = new Set<string>();
-  for (const { key } of keyedLines(path, text)) (seen.has(key) ? repeated : seen).add(key);
+  for (const line of rowLines(path, text)) (seen.has(line) ? repeated : seen).add(line);
   return [...repeated];
 }
 
@@ -291,29 +293,38 @@ export class FileLedgerStore implements LedgerStore {
   }
 
   // The committed copy (results/spend.jsonl), taken under the lock so no append lands mid-copy:
-  // a keyed union. dest's rows stay, byte for byte and in order, each key once (a later repeat is
-  // dropped); then each ledger row whose key dest lacks, in ledger order. So a second export
-  // changes nothing, and two branches that exported overlapping rows of the one canonical ledger
-  // give one copy once the second exports again after its rebase (verifier-phase-P17i-A8-1 N2).
-  // Into a missing or empty dest it is a copy of the ledger. A dest line that is not a ledger row,
-  // such as a merge conflict marker, refuses the export and leaves dest as it was.
+  // a union of lines. dest's rows stay, in order, each line once (a later repeat is dropped, a
+  // trailing carriage return stripped); then each ledger line dest lacks, in ledger order. So a
+  // second export changes nothing, and two branches that exported overlapping rows of the one
+  // canonical ledger give one copy once the second exports again after its rebase
+  // (verifier-phase-P17i-A8-1 N2). Into a missing or empty dest it is a copy of the ledger. A dest
+  // line that is not a ledger row, such as a merge conflict marker, refuses the export and leaves
+  // dest as it was. dest is replaced by a rename, so a crash leaves the old copy or the new one.
   exportTo(dest: string): Promise<{ kept: number; added: number; dropped: number }> {
     this.ensureDir();
     return withLock(this.lock, () => {
-      const prior = existsSync(dest) ? keyedLines(dest, readFileSync(dest, 'utf8')) : [];
-      const ledger = existsSync(this.path) ? keyedLines(this.path, readFileSync(this.path, 'utf8'), true) : [];
+      const prior = existsSync(dest) ? rowLines(dest, readFileSync(dest, 'utf8')) : [];
+      const ledger = existsSync(this.path) ? rowLines(this.path, readFileSync(this.path, 'utf8'), true) : [];
       const seen = new Set<string>();
       const out: string[] = [];
       let kept = 0;
-      for (const [i, l] of [...prior, ...ledger].entries()) {
-        if (seen.has(l.key)) continue;
-        seen.add(l.key);
-        out.push(`${l.line}\n`);
+      for (const [i, line] of [...prior, ...ledger].entries()) {
+        if (seen.has(line)) continue;
+        seen.add(line);
+        out.push(`${line}\n`);
         if (i < prior.length) kept++;
       }
       const text = out.join('');
       mkdirSync(dirname(resolve(dest)), { recursive: true });
-      if (!existsSync(dest) || readFileSync(dest, 'utf8') !== text) writeFileSync(dest, text);
+      if (!existsSync(dest) || readFileSync(dest, 'utf8') !== text) {
+        const tmp = `${dest}.${process.pid}.${randomUUID()}.tmp`;
+        try {
+          writeFileSync(tmp, text);
+          renameSync(tmp, dest);
+        } finally {
+          rmSync(tmp, { force: true });
+        }
+      }
       return { kept, added: out.length - kept, dropped: prior.length - kept };
     });
   }

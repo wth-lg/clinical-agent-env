@@ -14,10 +14,10 @@
 //   --ingest <file>   appends browser reserve and settle rows (JSONL), deduped by call_id;
 //                     refuses the whole file on any other row
 //   --check --final-reserve counts the planned tasks in tasks/ under the current directory.
-//   --export <path>   writes the committed copy of the ledger (results/spend.jsonl): a keyed
-//                     union of <path>'s rows and the ledger's, each kind and call_id once
-//                     (ledger-node.ts exportTo), so a rerun changes nothing and a rebased
-//                     branch that exports again carries each row once
+//   --export <path>   writes the committed copy of the ledger (results/spend.jsonl): a union
+//                     of <path>'s row lines and the ledger's, each line once (ledger-node.ts
+//                     exportTo), so a rerun changes nothing and a rebased branch that exports
+//                     again carries each row once
 // The final run is results/runs/final-1 under RESULTS_ROOT (default: the current directory).
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
