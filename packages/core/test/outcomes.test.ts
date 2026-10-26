@@ -41,7 +41,7 @@ describe('FAULT_DEFINITIONS', () => {
 
   it('defines E5 as the negation of M1 and GR4 as the negation of M4', () => {
     const ids = (f: Fault) => FAULT_DEFINITIONS[f].criteria.map((c) => c.id);
-    expect(ids('env')).toEqual(['E1', 'E2', 'E3', 'E4', 'E5']);
+    expect(ids('env')).toEqual(['E1', 'E2', 'E3', 'E4', 'E5', 'E6']);
     expect(ids('grader')).toEqual(['GR1', 'GR2', 'GR3', 'GR4']);
     expect(FAULT_DEFINITIONS.env.criteria[4]!.text).toMatch(/M1/);
     expect(FAULT_DEFINITIONS.grader.criteria[3]!.text).toMatch(/M4/);
@@ -155,7 +155,7 @@ describe('round 3 (pr-review P14a-2): denominator, precedence and confirmation t
 
   it('CONFIRMATION_DEFINITIONS.confirmed names the record-fact criteria and the audit for the rest', () => {
     expect(CONFIRMATION_DEFINITIONS.confirmed).toMatch(/E1-E4, GR1 or GR2/);
-    expect(CONFIRMATION_DEFINITIONS.confirmed).toMatch(/E5, GR3 or GR4/);
+    expect(CONFIRMATION_DEFINITIONS.confirmed).toMatch(/E5, E6, GR3 or GR4/);
   });
 
   it('GR4 and M4 read the matrix\'s failed checks against the trial\'s failed check; B1 is the run-level block', () => {

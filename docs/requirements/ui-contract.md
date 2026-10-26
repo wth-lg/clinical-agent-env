@@ -189,7 +189,8 @@ launcher (P15) shows the Run lines.
   so the snapshot holds every row.
 - `claude-opus-5-5`: the model on the Runs header of the official run.
 - The Runs attribution summary for a run reads `<m> model, <e> environment, <g> grader` over the
-  valid non-pass trials, with a fault from an INTERNAL tool error counted as environment (P14a).
+  valid non-pass trials, with a fault from an INTERNAL tool error, or a tool refusal a confirmed
+  audit marks wrong (E6), counted as environment (P14a).
   Two patterns under Patterns check it on final-1.
 - `Source: FHIR R4 store`: the caption on the task Chart tab, naming where the chart comes from.
 - `fhir_search` and `order_medication`: tool names in the Environment tool catalogue.
