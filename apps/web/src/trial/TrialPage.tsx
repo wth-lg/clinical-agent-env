@@ -20,6 +20,7 @@ import { MET_TEXT, type Explanation } from '../../../../packages/core/explain.ts
 import type { TrialEvent } from '../../../../packages/core/events.ts';
 import { fetchEvents, fullExplanation, useResults, type RunData, type Trial } from '../data/results.ts';
 import { FaultLabel, GlossaryLink, HashText, Notice, OutcomeChip } from '../data/ui.tsx';
+import { tabTarget } from '../data/tabs.ts';
 import { hrefWith, navigate, onNav, useParams } from '../data/url.ts';
 import { runnerToken } from '../keygate/runner.ts';
 import { Attribution, criterionPhrase, criterionText, FAULT_WORD, LINK, StepLink } from './Attribution.tsx';
@@ -248,13 +249,15 @@ function Reason({ reason, muted }: { reason: string; muted: boolean }) {
 // The tab strip and its panels (WAI-ARIA tabs: arrow keys, Home and End move between tabs).
 function Tabs({ tab, children }: { tab: TabId; children: Record<TabId, React.ReactNode> }) {
   const refs = useRef<Record<string, HTMLButtonElement | null>>({});
+  // Only a real change navigates, so a click on the selected tab adds no history entry.
   const go = (id: TabId, focus = false) => {
+    if (id === tab) return;
     navigate({ tab: id });
     if (focus) refs.current[id]?.focus();
   };
   const onKey = (ev: KeyboardEvent<HTMLDivElement>) => {
     const i = TABS.findIndex((x) => x.id === tab);
-    const to = ev.key === 'ArrowRight' ? (i + 1) % TABS.length : ev.key === 'ArrowLeft' ? (i + TABS.length - 1) % TABS.length : ev.key === 'Home' ? 0 : ev.key === 'End' ? TABS.length - 1 : null;
+    const to = tabTarget(ev.key, i, TABS.length);
     if (to === null) return;
     ev.preventDefault();
     go(TABS[to]!.id, true);

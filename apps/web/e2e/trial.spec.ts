@@ -259,6 +259,15 @@ test('Back to Runs restores the list with its filters, and history moves between
   await expect(panel(page, 'attribution')).toBeVisible();
 });
 
+test('a click on the selected trial tab, or Home on the first, adds no history entry (verifier JU9r2 N2)', async ({ page }) => {
+  await openTrial(page, TRIALS.failAudited);
+  const before = await page.evaluate(() => history.length);
+  await page.getByRole('tab', { name: 'Grading', exact: true }).click();
+  await page.keyboard.press('Home');
+  await expect(panel(page, 'grading')).toBeVisible();
+  expect(await page.evaluate(() => history.length)).toBe(before);
+});
+
 test('axe finds no serious or critical violation on any tab, light and dark', async ({ page }) => {
   test.setTimeout(120_000);
   for (const scheme of ['light', 'dark'] as const) {
