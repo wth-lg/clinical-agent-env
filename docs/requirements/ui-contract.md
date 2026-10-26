@@ -107,9 +107,10 @@ accessible name or text node, so they share one line of the snapshot.
   border, its first line and the key field while it is invalid. Each error starts with one plain
   sentence from apps/web/src/keygate/failure.ts (for example `The API did not accept this key.`),
   then the API's or runner's own line in small mono that wraps only between words. On
-  browser-direct a line taken from an answer starts with `The relay answered: `, since every
-  answer comes through the relay; a line the page wrote itself (an unreachable relay, the egress
-  guard, the session cap) has no prefix. A relay
+  browser-direct every answer comes through the relay, so a line that carries its words (an HTTP
+  error's type and message, a stream error event, the model a response names; relayLine in
+  failure.ts) starts with `The relay answered: `; a line in the page's own words (a lost
+  connection, a broken stream, the egress guard, the session cap) has no prefix. A relay
   error (P16h, below) points to `Run it on your computer` with a `Show the steps` button and does
   not repeat the command.
 
@@ -119,24 +120,25 @@ The hosted site sends Validate and every trial call through the relay (apps/rela
 surface receives the API's org-CORS 401 and the gate has no org-CORS screen. When a Validate
 through the relay fails, the red error shows one of these pairs, from RELAY_FAILURE_TEXT in
 apps/web/src/keygate/failure.ts (apps/web/test/failure.test.ts checks them against this list),
-with the relay's or API's own line under it (after `The relay answered: ` when an answer came
-back); the local-run panel beside it shows
-LOCAL_PREREQUISITES and LOCAL_START_COMMAND.
+with the relay's or API's own line under it (after `The relay answered: ` when it carries the
+relay's words); the local-run panel beside it shows LOCAL_PREREQUISITES and LOCAL_START_COMMAND.
 
 - Unreachable (no readable answer: the relay is down, blocked or refused the preflight):
   `The browser could not reach the relay that forwards calls to the API.`, then
   `This page works in a Chromium browser such as Chrome or Brave, or Firefox. Or run the environment on your computer instead. The steps are in “Run it on your computer” below this form.`
-- HTTP 429 (the relay's per-client limit, or the API's limit passed through):
+- HTTP 429 (the relay's per-client limit, or the API's limit passed through), or a rate-limit
+  error event in a stream:
   `The relay or the API is limiting requests from this page.`, then
   `Wait a minute, then press Validate again. This page works in a Chromium browser such as Chrome or Brave, or Firefox. Or run the environment on your computer instead. The steps are in “Run it on your computer” below this form.`
-- HTTP 5xx (the relay's fixed 502, or the API's own 5xx passed through):
+- HTTP 5xx (the relay's fixed 502, or the API's own 5xx passed through), or a 200 whose stream
+  broke off (the relay cut by its time limit, or another error event in the stream):
   `The relay or the API is not available at the moment.`, then
   `Press Validate again in a few minutes. This page works in a Chromium browser such as Chrome or Brave, or Firefox. Or run the environment on your computer instead. The steps are in “Run it on your computer” below this form.`
 
 When the relay stops a live trial on browser-direct (the trial's error event holds a lost
-connection, a stall, or an HTTP 429 or 5xx; trialRelayReason in failure.ts), the live view shows
-the same lead in red with the trial's own line under it (after `The relay answered: ` when it
-leads with an HTTP status, as every browser-direct trial error line from an answer does), then one of these sentences from
+connection, a stall, an HTTP 429 or 5xx, or a stream that broke off; trialRelayReason in
+failure.ts), the live view shows the same lead in red with the trial's own line under it (after
+`The relay answered: ` when it carries the relay's words), then one of these sentences from
 RELAY_TRIAL_TEXT, a `Show the steps` button, and the local-run panel after the error:
 
 - Unreachable: `This page works in a Chromium browser such as Chrome or Brave, or Firefox. Or run the environment on your computer instead. The steps are in “Run it on your computer” below this message.`

@@ -14,7 +14,7 @@ import { capSum } from '../../../../packages/core/ledger.ts';
 import { REFUSAL_TEXT } from '../../../../packages/core/runner-api.ts';
 import { useTaskList } from '../data/tasks.ts';
 import { Card, FaultLabel, OutcomeChip, Page } from '../data/ui.tsx';
-import { RELAY_ANSWERED, RELAY_TRIAL_TEXT, trialRelayReason } from '../keygate/failure.ts';
+import { relayLine, RELAY_TRIAL_TEXT, trialRelayReason } from '../keygate/failure.ts';
 import { useKeyStatus } from '../keygate/key.ts';
 import { runnerToken } from '../keygate/runner.ts';
 import { admitTrial, MAX_SESSION_CAP_USD, parseCap } from '../spend/cap.ts';
@@ -246,8 +246,8 @@ function Trial({ t, id, onEnd }: { t: TrialTransport; id: string; onEnd: () => v
   const hosted = runnerToken() === null;
   const failed = f.end?.type === 'error' ? f.end : null;
   const relay = failed !== null && hosted ? trialRelayReason(failed) : null;
-  // A line from the relay's answer (it leads with the HTTP status) says whose words it is.
-  const errorLine = failed === null ? null : hosted && /^HTTP \d{3}\b/.test(failed.message) ? RELAY_ANSWERED + failed.message : failed.message;
+  // A line that carries the relay's words says whose words they are.
+  const errorLine = failed === null ? null : hosted ? relayLine(failed.message) : failed.message;
   const panelId = useId();
 
   async function stop() {

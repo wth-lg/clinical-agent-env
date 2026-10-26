@@ -49,8 +49,8 @@ function classify(e: unknown): DirectResult & { ok: false } {
   if (e instanceof SpendRefused) return { ok: false, kind: 'cap', message };
   // No status: the browser never got a readable response from the relay (down, blocked, or a
   // refused CORS preflight, which looks the same to the page). A 429 or 5xx: the relay's own limit
-  // or fixed 502, or the API's answer passed through.
-  const reason = e instanceof ApiError && (e.status !== null || e.partial) ? relayReason(e.status) : null;
+  // or fixed 502, or the API's answer passed through. A 200 that broke off: the relay cut the stream.
+  const reason = e instanceof ApiError ? relayReason({ status: e.status, partial: e.partial, type: e.errorType }) : null;
   if (reason !== null) return { ok: false, kind: 'relay', reason, message };
   return { ok: false, kind: 'api', status: e instanceof ApiError ? e.status : null, message };
 }
