@@ -14,6 +14,9 @@ const FINGERPRINTS: Record<string, string> = {
   // MedicationRequest date and filters per type, fhir_read Type/id, send_message about, search_patients example;
   // the medication catalog's RxNorm or SNOMED CT codes (pinned before B2 merged, so still 5).
   '5': 'eed986542df2e74d0794dbbdaa2ecb4f7dc0bd2d91d5d637b2a7211a3196dbc9',
+  // 6: P17j JT1 (S10): list_inbox rows carry owner, the signed-in user's items by default, an owner
+  // filter (Type/id or a bare id, NOT_FOUND for an owner not in the world).
+  '6': 'eb00dd9db18dc31b7dc886eea8c1cc761db98bf7b708d87cb736ef2846c135fa',
 };
 
 async function fingerprint(): Promise<string> {

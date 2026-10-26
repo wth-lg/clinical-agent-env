@@ -3,11 +3,12 @@
 // referenced, not exposed (the exposure rule, registry.ts).
 import type { HumanName, Organization, Practitioner } from '@medplum/fhirtypes';
 import { TIME_ZONE } from '../../clock.ts';
-import { CLINIC, STAFF } from '../../world.ts';
+import { CLINIC } from '../../world.ts';
 import type { Tool } from '../registry.ts';
+import { USER } from './context.ts';
 import type { ReadContext } from './context.ts';
 
-const USER = STAFF[0];
+const USER_ID = USER.slice(USER.indexOf('/') + 1);
 
 export const displayName = (name: HumanName | undefined): string =>
   [...(name?.given ?? []), name?.family ?? ''].join(' ').trim();
@@ -18,14 +19,14 @@ export const getContext: Tool<ReadContext> = {
   inputSchema: { type: 'object', properties: {}, additionalProperties: false },
   run(_input, { world, clock }) {
     // Both are in every world (packages/env/world.ts); a world without them is a defect.
-    const user = world.get<Practitioner>('Practitioner', USER);
+    const user = world.get<Practitioner>('Practitioner', USER_ID);
     const clinic = world.get<Organization>('Organization', CLINIC);
-    if (!user || !clinic) throw new Error(`world is missing Practitioner/${USER} or Organization/${CLINIC}`);
+    if (!user || !clinic) throw new Error(`world is missing ${USER} or Organization/${CLINIC}`);
     const name = user.name?.[0];
     return {
       now: clock.now,
       timezone: TIME_ZONE,
-      user: { practitioner: `Practitioner/${USER}`, name: [displayName(name), ...(name?.suffix ?? [])].join(', '), role: 'physician' },
+      user: { practitioner: USER, name: [displayName(name), ...(name?.suffix ?? [])].join(', '), role: 'physician' },
       clinic: { organization: `Organization/${CLINIC}`, name: clinic.name },
     };
   },
