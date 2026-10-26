@@ -61,14 +61,15 @@ const oncallAbout = (ctx: RubricCtx, patient: string) => oncall(ctx as NotifyCtx
 // urgent" do not, while "him or her", "him/her" and "him or his mother" do; "PT" in capitals is
 // physical therapy, not the patient. "contact ortho" and "tell them" do not count. Residuals:
 // "call her today" or "let him know" about a clinician counts as contacting the family; a word
-// after the pronoun that is not in AFTER_PRONOUN is a false loss; all-caps text ("CALL PT TODAY")
+// after the pronoun that is not in AFTER_PRONOUN (a weekday is in it) is a false loss; a title with
+// a surname of the patient or a contact ("call Mr. Patel") names them; all-caps text ("CALL PT TODAY")
 // reads PT as physical therapy, so it does not count. A tracking task does not count.
 const VERB = String.raw`call|phone|telephone|contact|notify|inform|tell|reach(?: out to)?|get in touch with|let|(?:speak|talk) (?:with|to)`;
 const KIN = String.raw`patient|pt|family|parents?|mother|father|mom|mum|dad|guardian|caregiver`;
 // What may follow the pronoun: the end of the text, punctuation, a dash that does not join a word,
 // or a word that cannot start a noun phrase.
 // "on" not before "call" or a dash ("her on-call resident").
-const AFTER_PRONOUN = String.raw`today|tonight|now|asap|tomorrow|later|back|about|re|regarding|to|that|and|or|with|on(?![-\u2010-\u2014\p{L}]|\s+call\b)|at|by|in|via|within|once|if|when|soon|this|first|know|of|immediately|urgently|again|directly|right away`;
+const AFTER_PRONOUN = String.raw`today|tonight|now|asap|tomorrow|monday|tuesday|wednesday|thursday|friday|saturday|sunday|later|back|about|re|regarding|to|that|and|or|with|on(?![-\u2010-\u2014\p{L}]|\s+call\b)|at|by|in|via|within|once|if|when|soon|this|first|know|of|immediately|urgently|again|directly|right away`;
 const PRONOUN = String.raw`(?:him|her)(?=\s*(?:$|[.,;:!?)/\u2013\u2014]|-(?![\p{L}\p{N}]))|\s+(?:${AFTER_PRONOUN})\b)`;
 // Physical therapy, written "PT" in capitals; folded, it would read as "pt", the patient.
 const PHYSICAL_THERAPY = /(?<![\p{L}\p{N}])PT(?![\p{L}\p{N}])/gu;
@@ -80,7 +81,9 @@ function asksToContact(ctx: RubricCtx, patient: string): (text: string) => boole
   const surnames = people.flatMap((n) => (n.family ? [n.family] : []));
   const alt = (xs: string[]) => xs.map((x) => escape(fold(x))).join('|');
   const by = String.raw`(?:(?:the|his|her|their|[\p{L}-]+'s${surnames.length ? `|${alt(surnames)}` : ''})\s+){0,2}(?:${KIN})`;
-  const whom = [by, PRONOUN, ...(names.length ? [alt(names)] : [])].join('|');
+  // A title and a surname of the patient or a contact: "Mr. Patel", "Mrs Ruiz".
+  const titled = surnames.length ? [String.raw`(?:mr|mrs|ms|miss|mx)\.?\s+(?:${alt(surnames)})`] : [];
+  const whom = [by, PRONOUN, ...titled, ...(names.length ? [alt(names)] : [])].join('|');
   const re = new RegExp(String.raw`(?<![\p{L}\p{N}])(?:${VERB})\s+(?:${whom})(?![\p{L}\p{N}])`, 'u');
   return (text) => re.test(fold(text.replace(PHYSICAL_THERAPY, 'physical therapy')).replace(/\u2019/g, "'"));
 }
