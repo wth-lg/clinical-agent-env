@@ -14,7 +14,7 @@ import { main as summary } from '../summary.ts';
 import { fixtureChecks, writeFixtureRun } from './run-fixtures.ts';
 
 const BOX = {
-  fault_counts: { failures: 5, taxonomy: { retrieval: 0, reasoning: 5, output_gap: 0, over_action: 0, process: 0, did_not_finish: 0, refusal: 0, unattributed: 0 }, label: { model: 5, environment: 0, grader: 0, unlabelled: 0 }, infra_reruns: 0 },
+  fault_counts: { failures: 5, taxonomy: { retrieval: 0, reasoning: 5, output_gap: 0, over_action: 0, process: 0, action_form: 0, did_not_finish: 0, refusal: 0, unattributed: 0 }, label: { model: 5, environment: 0, grader: 0, unlabelled: 0 }, infra_reruns: 0 },
   top_failed_checks: [{ check: 'G1', count: 5 }],
 };
 
