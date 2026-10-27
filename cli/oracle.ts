@@ -183,7 +183,9 @@ export async function main(args: string[], deps: Deps): Promise<number> {
           const cached = new Set(missesOnly ? task.cache.map((e) => e.key) : []);
           const entries = judge.entries().map((e) => (cached.has(e.key) ? e : { ...e, provenance: { source: 'live' as const, model: e.model, at } })).sort((a, b) => (a.key < b.key ? -1 : 1));
           (deps.writeCache ?? writeCacheFile)(task.id, entries);
-          deps.out(`judge cache ${task.id}: ${entries.length} answers written, ${judge.calls} calls`);
+          // judge.calls also counts the calls behind reused answers; print only the calls made now.
+          const asked = entries.filter((e) => !cached.has(e.key));
+          deps.out(`judge cache ${task.id}: ${entries.length} answers written (${asked.length} asked now), ${asked.reduce((n, e) => n + e.calls, 0)} calls`);
         }
       } finally {
         await grant.close();
