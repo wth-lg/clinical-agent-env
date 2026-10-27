@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:message-queue:7",
   "task_id": "message-queue",
-  "task_version": "4cfc0a26752cbef842499844cc707e966cde5fe6f68b17024107e1aa4f31ad12",
+  "task_version": "db459042769cd88c094cba5f6694d94a5ef05e26db29ab72afac47268420f687",
   "env_version": "a902115d6b22a8ad4e4438108607f02b85be67a40fe538c32ff0a96b47d7dc89",
-  "grader_task_version": "c71a64f376ff01a761482c81f42b963f6e15654585b10db3c9649780beb3666c",
+  "grader_task_version": "1cce7364e45f81a226a3032c9917fa68a6c2f731d54f3a872ebfa513e822e63b",
   "fixture_hash": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
   "state_hash": {
     "initial": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
-    "final": "ca0d3ff96c657061bb8af270c69d171a9348ae63541e350a0f2d103f446239d9",
-    "replay_final": "ca0d3ff96c657061bb8af270c69d171a9348ae63541e350a0f2d103f446239d9"
+    "final": "a642d852fcd223b55d7b723b3cede9a47ae53166abdad6319fc8db361202cc2a",
+    "replay_final": "a642d852fcd223b55d7b723b3cede9a47ae53166abdad6319fc8db361202cc2a"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,8 +16,8 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T13:48:33.000Z",
-  "turns": 16,
+  "started": "2026-10-23T13:48:29.000Z",
+  "turns": 17,
   "tool_calls": 52,
   "tool_errors": {
     "INVALID_INPUT": 0,
@@ -246,13 +246,13 @@
         "checks": [
           {
             "evidence": "DocumentReference/doc-t6-park-240309",
-            "write": 35,
-            "exposed": 24
+            "write": 37,
+            "exposed": 26
           },
           {
             "evidence": "Encounter/enc-t6-hayes-0317",
-            "write": 10,
-            "exposed": 9,
+            "write": 14,
+            "exposed": 13,
             "accepts": [
               "Encounter/enc-00152",
               "Encounter/enc-00153",
@@ -286,8 +286,8 @@
       "points": 2,
       "met": true,
       "evidence": {
-        "stat_task_step": 4,
-        "first_other_write_step": 10
+        "stat_task_step": 9,
+        "first_other_write_step": 14
       }
     },
     {
