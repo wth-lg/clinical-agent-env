@@ -108,6 +108,24 @@
     }
   },
   {
+    "key": "235bab263a84135e44c177ea3f4f61811e61737f4c653184c3d4e4eb3a8ac8e8",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Please go to the emergency department now, or call 911 if you feel faint."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-27T17:45:34.859Z"
+    }
+  },
+  {
     "key": "243da9084c3d047d5facc075337e8fdadb43f0ffb84ee898b4e6d0e1fc5ac755",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -324,6 +342,24 @@
     }
   },
   {
+    "key": "61768a9476dc11c08ddd1b625cc32f3a57517577c641ab4515a9c5dad61aafbd",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Please go to the emergency department now, or call 911 if you feel faint."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-27T17:45:34.859Z"
+    }
+  },
+  {
     "key": "643014316b7dbc639ae0eaec2c6ad19c3a1dbe34611c008e3458311bc3ea44cf",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -468,6 +504,24 @@
     }
   },
   {
+    "key": "85d1419af0aaf1b76302b672f77a1ebf5f165105d1c1364f636a17b8908820ba",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-27T17:45:34.859Z"
+    }
+  },
+  {
     "key": "8dab7c2bda85b55964c9150288b6e953f025d2f1fc8e813bd43c97231b61e95a",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -555,6 +609,24 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-27T14:05:23.316Z"
+    }
+  },
+  {
+    "key": "b0bdf46d43342c2a4bf76bb393f68f09d67baa7f7a076d8442a8dc9f10b9f1fc",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Please go to the emergency department now, or call 911 if you feel faint."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-27T17:45:34.859Z"
     }
   },
   {
@@ -699,6 +771,24 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-27T15:07:34.772Z"
+    }
+  },
+  {
+    "key": "ded546110908824c56b0cb2545243c8de96a2d10ac32a18fc820868bdb4be5c6",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-27T17:45:34.859Z"
     }
   },
   {
