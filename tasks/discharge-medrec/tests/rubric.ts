@@ -79,8 +79,9 @@ export const OLD_SUMMARY = new RegExp(
 
 // P17j JG9 (pre-audit M4): credit, never a gate, for a potassium and creatinine recheck ordered or
 // tracked for 2026-10-26 to 2026-10-28, a week after spironolactone is started with lisinopril
-// resumed: a BMP or CMP order (or potassium and creatinine both) whose occurrence meets the window,
-// or a Task for the patient due in it that names the recheck.
+// resumed: a BMP or CMP order, or a creatinine order, whose occurrence meets the window (T4's
+// catalog has the BMP and creatinine; decisions 2026-10-28T02:40Z), or a Task for the patient due
+// in it that names the recheck.
 const RECHECK = { from: '2026-10-26', to: '2026-10-28' };
 const PANELS = ['24321-2', '51990-0', '24323-8'];
 const RECHECK_TEXT = /\b(?:potassium|creatinine|metabolic panel|bmp|cmp)\b/i;
@@ -95,7 +96,7 @@ function kCreatinineRecheck(ctx: RubricCtx) {
   const orders = ctx.final.all('ServiceRequest').map((r) => r as Order).filter((r) => mine.has(`ServiceRequest/${r.id}`) && !ctx.initial.has('ServiceRequest', r.id!) && r.subject?.reference === PT)
     .filter((r) => meets(r.occurrencePeriod?.start ?? r.occurrenceDateTime, r.occurrencePeriod?.end ?? r.occurrenceDateTime));
   const codes = new Set(orders.flatMap((r) => (r.code?.coding ?? []).map((c) => c.code ?? '')));
-  const ordered = PANELS.some((c) => codes.has(c)) || (codes.has('2823-3') && codes.has('2160-0'));
+  const ordered = PANELS.some((c) => codes.has(c)) || codes.has('2160-0');
   const tracked = tasksBy(ctx).filter((t) => {
     const due = (t as Made & { restriction?: { period?: { end?: string } } }).restriction?.period?.end;
     return due !== undefined && meets(due, due) && RECHECK_TEXT.test(t.description ?? '');
