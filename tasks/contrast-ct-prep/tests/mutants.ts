@@ -85,12 +85,12 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
     ],
   },
   {
-    id: 'ct_not_linked',
+    id: 'ct_not_linked_to_appointment',
     trap: 'linkage',
-    why: 'Places the CT for 09:00 Monday but does not link it to the booked appointment (RBC-RAD-07 §5).',
+    why: 'Places the right CT for 09:00 Monday but does not link it to the booked appointment (RBC-RAD-07 §5): the right decision in a form the policy does not accept, so action_form (P17j JG8b).',
     fails: ['ct_order'],
     loses: [],
-    attribution: 'reasoning',
+    attribution: 'action_form',
     script: [...READS, { calls: [ct([ALLERGY, REACTION_NOTE]), creatinineOrder()] }, { calls: [prednisone, diphenhydramine] }, { calls: [message()] }, { calls: [note()] }, { calls: [finish(DONE)] }],
   },
   {

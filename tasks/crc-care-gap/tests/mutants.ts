@@ -87,6 +87,19 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
     script: [...reads(), { calls: [...actions(), orderFit(PT.E2, '29771-3')] }, { calls: [finish()] }],
   },
   {
+    id: 'e2_outreach_by_phone_task',
+    trap: 'outreach_channel',
+    why: 'Gets every order right and reaches E2 by a Task asking scheduling to phone him about the FIT kit instead of a portal message: the right outreach in a channel RBC-QM-02 §5 does not name, so action_form (P17j JG8b).',
+    fails: ['outreach_messages'],
+    loses: [],
+    attribution: 'action_form',
+    script: [
+      ...reads(),
+      { calls: [...actions().filter((c) => !(c.name === 'send_message' && c.input.recipient === `Patient/${PT.E2}`)), { name: 'create_task', input: { patient: PT.E2, owner: 'Group/pool-scheduling', due: '2026-10-30', priority: 'routine', description: 'Please call this patient: a FIT kit for colorectal cancer screening has been ordered and is on its way.' } }] },
+      { calls: [finish()] },
+    ],
+  },
+  {
     id: 'messages_without_orders',
     trap: 'outreach_without_order',
     why: 'Messages the five patients with open gaps but places no FIT order.',
