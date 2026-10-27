@@ -36,6 +36,24 @@ export const alternatives: Alternative[] = [
     script: [...reads, { calls: [...noRecheck, lab('24321-2', '2026-10-23', '2027-10-23')] }, { calls: [message()] }, { calls: [note()] }, { calls: [finish()] }],
   },
   {
+    id: 'bp_recheck_task',
+    why: 'Orders no recheck and tasks Dr. Okafor to recheck his blood pressure and weight at the nurse visit, due 10/27: not a potassium order, so k_creatinine_recheck is lost (P17j JG9 r3, verifier-phase-P17i-JG9r2-1 N3, probe T4_N).',
+    loses: ['k_creatinine_recheck'],
+    script: [...reads, { calls: [...noRecheck, recheckTask('2026-10-27', 'Recheck his blood pressure and weight at the nurse visit')] }, { calls: [message()] }, { calls: [note()] }, { calls: [finish()] }],
+  },
+  {
+    id: 'review_labs_task',
+    why: 'Orders no recheck and tasks Dr. Okafor to review the discharge labs with the patient, due 10/27: not a potassium order, so k_creatinine_recheck is lost (P17j JG9 r3, verifier-phase-P17i-JG9r2-1 N3, probe T4_O).',
+    loses: ['k_creatinine_recheck'],
+    script: [...reads, { calls: [...noRecheck, recheckTask('2026-10-27', 'Review the discharge labs with the patient')] }, { calls: [message()] }, { calls: [note()] }, { calls: [finish()] }],
+  },
+  {
+    id: 'bmp_task_mentions_kcl',
+    why: 'Orders no recheck and tasks Dr. Okafor to draw a BMP for potassium and creatinine, due 10/27, noting he stopped the KCl: a Task, not an order, so k_creatinine_recheck is lost whatever it says (P17j JG9 r3, verifier-phase-P17i-JG9r2-1 N4, probe T4_P).',
+    loses: ['k_creatinine_recheck'],
+    script: [...reads, { calls: [...noRecheck, recheckTask('2026-10-27', 'Draw a BMP to recheck potassium and creatinine; he stopped the KCl at discharge')] }, { calls: [message()] }, { calls: [note()] }, { calls: [finish()] }],
+  },
+  {
     id: 'flag_by_task_to_okafor',
     why: "Flags the duplicate metoprolol tartrate to Dr. Okafor by a Task whose focus is the tartrate order instead of a message: the EHR flag T6's RBC-RX-05 §3 asks for in the same situation, so pcp_message accepts it (P17j JG8a, pre-audit M3).",
     script: [
@@ -176,8 +194,8 @@ export const alternatives: Alternative[] = [
   },
   {
     id: 'recheck_bmp',
-    why: 'Tracks the repeat basic metabolic panel a week after starting spironolactone by a Task instead of the oracle\'s order (potassium and creatinine, 2022 AHA/ACC/HFSA guideline): k_creatinine_recheck accepts either (P17j JG9).',
-    loses: [],
+    why: 'Tracks the repeat basic metabolic panel a week after starting spironolactone by a Task instead of the oracle\'s order (potassium and creatinine, 2022 AHA/ACC/HFSA guideline): k_creatinine_recheck counts only an order that measures potassium, so the Task loses it (P17j JG9 r3, decisions 2026-10-28T09:40Z).',
+    loses: ['k_creatinine_recheck'],
     script: [
       ...reads,
       { calls: [...writes.filter((c) => c !== bmpRecheck), { name: 'create_task', input: { patient: PT, owner: 'Practitioner/pr-okafor', due: '2026-10-28', priority: 'routine', description: 'Repeat basic metabolic panel (potassium, creatinine) 1 week after starting spironolactone' } }] },
