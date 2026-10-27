@@ -138,7 +138,22 @@ describe('world hygiene (JT2)', () => {
   });
 
   it('a condition that abated inside an encounter\'s window still abates at the same offset from that encounter\'s start', () => {
-    const windows = (rs: R[]) => new Map(rs.filter((r) => r.resourceType === 'Encounter').map((e) => { const p = e.period as { start: string; end?: string }; return [e.id, { patient: refOf(e.subject), start: Date.parse(p.start), end: Date.parse(p.end ?? p.start) }] as const; }));
+    // An encounter's window: its start to the later of its end and the times of the resources that
+    // reference it within a day (the window the pass moves; decisions.tsv 2026-10-27T23:00Z).
+    const windows = (rs: R[]) => {
+      const refs = new Map<string, number[]>();
+      for (const r of rs) {
+        const ref = refOf(r.encounter) ?? refOf((r.context as { encounter?: unknown[] } | undefined)?.encounter?.[0]);
+        const t = timeOf(r as unknown as Resource);
+        if (ref !== null && t !== null) refs.set(ref, [...(refs.get(ref) ?? []), t]);
+      }
+      return new Map(rs.filter((r) => r.resourceType === 'Encounter').map((e) => {
+        const p = e.period as { start: string; end?: string };
+        const start = Date.parse(p.start);
+        const end = Math.max(Date.parse(p.end ?? p.start), ...(refs.get(`Encounter/${e.id}`) ?? []).filter((t) => t - start <= 24 * 3600 * 1000));
+        return [e.id, { patient: refOf(e.subject), start, end }] as const;
+      }));
+    };
     const was = windows(cohort);
     const now = windows(base);
     const byId = new Map(base.map((r) => [`${r.resourceType}/${r.id}`, r]));
@@ -266,6 +281,17 @@ describe('hygiene()', () => {
     expect(report.skipped.e1).toMatch(/order/);
     expect(get(resources, 'c1').onsetDateTime).toBe('2023-07-28T09:30:00-04:00');
     expect(get(resources, 'c1').abatementDateTime).toBe('2023-07-30T02:00:00-04:00');
+  });
+
+  it('moves a date-time inside the window the members span, past the encounter\'s end (verifier edge4 X1)', () => {
+    // e1 Saturday 19:54-20:52 moves to Friday 17:54; a screening report that references it is dated
+    // 22:36 (a member); c1, of no encounter, abates at that instant.
+    const d1 = { resourceType: 'DiagnosticReport', id: 'd1', subject: { reference: 'Patient/p1' }, encounter: { reference: 'Encounter/e1' }, effectiveDateTime: '2026-04-18T22:36:00-04:00', issued: '2026-04-18T22:36:00-04:00' };
+    const c1 = { resourceType: 'Condition', id: 'c1', subject: { reference: 'Patient/p1' }, onsetDateTime: '2024-02-05T21:00:00-05:00', abatementDateTime: '2026-04-18T22:36:00-04:00' };
+    const { resources } = run([pt, enc('e1', '2026-04-18T19:54:00-04:00', '2026-04-18T20:52:00-04:00'), d1, c1]);
+    expect((get(resources, 'e1').period as { start: string }).start).toBe('2026-04-17T17:54:00-04:00');
+    expect(get(resources, 'd1').effectiveDateTime).toBe('2026-04-17T20:36:00-04:00');
+    expect(get(resources, 'c1').abatementDateTime).toBe('2026-04-17T20:36:00-04:00');
   });
 
   it('reads ingredients by their full names, so different drugs that share a first word stay apart', () => {
