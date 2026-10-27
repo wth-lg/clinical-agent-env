@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T14:12:57.000Z",
+  "started": "2026-10-23T14:13:18.000Z",
   "turns": 8,
   "tool_calls": 11,
   "tool_errors": {
@@ -43,7 +43,7 @@
   "summary": "Reviewed Harold Vance: apixaban stays at 2.5 mg, metformin and gabapentin reduced; note written.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T14:13:59.000Z",
+  "ended": "2026-10-23T14:14:20.000Z",
   "judge_cost_usd": 0,
   "grader_version": "11",
   "outcome": "FAIL",

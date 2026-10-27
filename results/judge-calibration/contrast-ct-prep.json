@@ -3,14 +3,14 @@
   "model": "claude-opus-5-5",
   "effort": "medium",
   "prompt_version": "judge-v1",
-  "at": "2026-10-27T07:02:25.614Z",
-  "reference": "mixed",
+  "at": "2026-10-27T18:28:54.806Z",
+  "reference": "live",
   "reference_counts": {
-    "scripted": 8,
-    "live": 59
+    "scripted": 0,
+    "live": 67
   },
   "protocol": {
-    "design": "mixed reference",
+    "design": "test-retest",
     "texts": "matrix cases: agent outputs the task authors scripted",
     "agreement": "a judge item agrees when the two verdicts are equal and an extract item when the two values are equal; quotes are not compared",
     "unknown": "unknown is kept as a verdict: it agrees only with unknown, and no item is dropped for it",
@@ -23,36 +23,18 @@
   "agree": 67,
   "calls": 67,
   "ledger_settles": 67,
-  "cost_usd": 0.36016,
-  "usd_per_call": 0.005376,
+  "cost_usd": 0.349464,
+  "usd_per_call": 0.005216,
   "oracle": {
     "outcome": "PASS",
     "score": 1,
     "judge_unknown": 0
   },
   "disagreements": [],
-  "note": "Live judge answers (pnpm cli judge-calibrate) vs the task's cache. tests/judge-cache.json is not written by this command; this file is the calibration record. Ledger batch b11d5558-bd8e-4605-ab30-82092174a0ee.",
+  "note": "Live judge answers (pnpm cli judge-calibrate) vs the task's cache. tests/judge-cache.json is not written by this command; this file is the calibration record. Ledger batch 16140f67-dd64-45a6-9695-39b34f668039.",
   "live_entries": [
     {
-      "key": "025f6f89e9959b80cfd5f63419968bf041c3c5d0f0f56ae0788c5142fc855952",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "not_met",
-        "quote": "Do not drive after taking it: please have someone drive you to the scan and home."
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
-      }
-    },
-    {
-      "key": "052cd881daf5c84618a2e761e585a2a198d7bc4a7014c8aa2a19a2ea6990eb49",
+      "key": "07e151558fbcb7992db28a364d248cd87edaf043267b508c4389bff4da62fd90",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
@@ -66,7 +48,25 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
+        "at": "2026-10-27T18:28:54.806Z"
+      }
+    },
+    {
+      "key": "08ad2ac85c14f0e41d7c2cc49a72a437b48bba49b5c970c6faac1e42ebd6f836",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "Do not drive after taking it: please have someone drive you to the scan and home."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T18:28:54.806Z"
       }
     },
     {
@@ -84,7 +84,61 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
+        "at": "2026-10-27T18:28:54.806Z"
+      }
+    },
+    {
+      "key": "0bf9a078af1f83f7179164bc6cc45c1bd2da0e89075991489932ef1643ded5d9",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "Do not drive after taking it: please have someone drive you to the scan and home."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T18:28:54.806Z"
+      }
+    },
+    {
+      "key": "0e8a238d9ff01350eb80bc1613612ec068650bde9fd6818e03ecc2df761d5b4f",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "The diphenhydramine will make you sleepy, so someone else needs to drive you that day."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T18:28:54.806Z"
+      }
+    },
+    {
+      "key": "100177d50ac9e4dc81945885268d5c01b5470f33fb031955f7ccdfe3728305b3",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T18:28:54.806Z"
       }
     },
     {
@@ -102,25 +156,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
-      }
-    },
-    {
-      "key": "1575dce26098a0dc03df5c0447fe1cd2e8fb33ec88138dc9139eb31b1c00d723",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "met",
-        "quote": "Do not drive after taking it: please have someone drive you to the scan and home."
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
+        "at": "2026-10-27T18:28:54.806Z"
       }
     },
     {
@@ -138,29 +174,47 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
+        "at": "2026-10-27T18:28:54.806Z"
       }
     },
     {
-      "key": "19412da656a8b6c8fc52b0b9bc5886de741c0f1000d0d51611a4f44405a4a94b",
+      "key": "19faac5433f2af1b127d5eecc86458f01f3636c2f60804a1e2222470805795db",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "not_met",
-        "quote": "Prednisone 50 mg by mouth at 2:00 AM on Sunday 10/25 (please set an alarm)."
+        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
+        "at": "2026-10-27T18:28:54.806Z"
       }
     },
     {
-      "key": "1bbc750fe1d24418d5b281fbc5f398103dcc05c2605a00c39ebb218646433a10",
+      "key": "1abcf0de725e1f3e51dba49feb0758c7553a1cce3a9d24a1ff69ab7dd7d6fde2",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": ""
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T18:28:54.806Z"
+      }
+    },
+    {
+      "key": "24ba5d5c1f308e10f41a4bc03b7146edb992e29bdf00989d8318bb7373807eda",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
@@ -174,61 +228,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
-      }
-    },
-    {
-      "key": "217b650a880eb055ac6ace5be44f2259ff47daf7b276e17f755466c552d7cff8",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "not_met",
-        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
-      }
-    },
-    {
-      "key": "2420601a907cb90aa68c4a405b9b38661bd73a4f0e073783e9f4859410db48ce",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "not_met",
-        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
-      }
-    },
-    {
-      "key": "257e541a00dc85d908f6a4c2cc2428540c3bdfac23ea1c54e16d88b6bb234726",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "not_met",
-        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
+        "at": "2026-10-27T18:28:54.806Z"
       }
     },
     {
@@ -246,29 +246,11 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
+        "at": "2026-10-27T18:28:54.806Z"
       }
     },
     {
-      "key": "265b65eef08e97aab178730f1206b5d2f213dcb60fcb1210f1a030572e8a3091",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "not_met",
-        "quote": "Do not drive after taking it: please have someone drive you to the scan and home."
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
-      }
-    },
-    {
-      "key": "2aac9e99fa1c54f62a7d37fe58447ef8ce6546c7658096a6049450217192dd8d",
+      "key": "30e845e30b145bf57de9e2f5a56786e4c551a7ed50bb6c7bdd78f852ae6cacf8",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
@@ -282,7 +264,25 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
+        "at": "2026-10-27T18:28:54.806Z"
+      }
+    },
+    {
+      "key": "3361a10da56e49a81514bf8c56b4763d9e594490b7233823b29d67508933e498",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "You can drive yourself."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T18:28:54.806Z"
       }
     },
     {
@@ -300,11 +300,11 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
+        "at": "2026-10-27T18:28:54.806Z"
       }
     },
     {
-      "key": "36d3c58b7169076881c3cae42c6da62f3ab08cd8c741397a3092fc4563ea221a",
+      "key": "397df8caf307391e9fd4b6c009a8c1c2a260c6c342cfe1226a6394c5366abff5",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
@@ -318,25 +318,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
-      }
-    },
-    {
-      "key": "3dda0bd11af22c51af6cddf13277296d29515eef85cb3206d62d655388ebbd86",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "not_met",
-        "quote": "No preparation is needed."
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
+        "at": "2026-10-27T18:28:54.806Z"
       }
     },
     {
@@ -354,25 +336,25 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
+        "at": "2026-10-27T18:28:54.806Z"
       }
     },
     {
-      "key": "403540ce010ed5ce1e4a9d3132e0eea829b5664dbf5e5a38e1f4955a8b05076c",
+      "key": "3e6de689dec5399508b5b4cdc026426ff8285b0082aeed9bad059f333285a022",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "met",
-        "quote": "Prednisone 50 mg by mouth at 2:00 AM on Sunday 10/25 (please set an alarm)."
+        "quote": "Do not drive after taking it: please have someone drive you to the scan and home."
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
+        "at": "2026-10-27T18:28:54.806Z"
       }
     },
     {
@@ -390,43 +372,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
-      }
-    },
-    {
-      "key": "41054708d7d231df6cbff85a6e1ec4424f89cf8332928c1c53240136d643c47c",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "not_met",
-        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
-      }
-    },
-    {
-      "key": "42a113ea46895d5d13fcb8b7bbf6ad88b94e82d1d0ab4df8505d8b5bd17c4bb8",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "met",
-        "quote": "Do not drive after taking it: please have someone drive you to the scan and home."
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
+        "at": "2026-10-27T18:28:54.806Z"
       }
     },
     {
@@ -444,155 +390,11 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
+        "at": "2026-10-27T18:28:54.806Z"
       }
     },
     {
-      "key": "4986ef14fedb7eb9b8649f1703be4e34eb9d5f1e83f4c6e4d16aef6158519d13",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "not_met",
-        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
-      }
-    },
-    {
-      "key": "4b4bace3c2aba21134d28be1cfb7e788b46a4fdb8ddf7804a59e472f5bd98b5a",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "not_met",
-        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
-      }
-    },
-    {
-      "key": "4c04a046408ecdb612a4edfe8f31ab01271c7cbe6488126949f2300fd74d5133",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "met",
-        "quote": "Do not drive after taking it: please have someone drive you to the scan and home."
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
-      }
-    },
-    {
-      "key": "534aacbb8d5aa3def805ee32e03f36281cbbcced5722ff3b1f5f1dded979579c",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "met",
-        "quote": "Do not drive after taking it: please have someone drive you to the scan and home."
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
-      }
-    },
-    {
-      "key": "53f7bf5f82fd544242775aa835161b558af76a859ce03acd925019f2381c46b1",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "not_met",
-        "quote": ""
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
-      }
-    },
-    {
-      "key": "54b7eca259f7e7a5f829ce4f0ce079f2bbff2e45e1b5a0de073dad65173c68e7",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "not_met",
-        "quote": "Prednisone 20 mg by mouth at 8:00 PM on Sunday 10/25.\n- Prednisone 20 mg by mouth at 2:00 AM on Monday 10/26 (please set an alarm).\n- Prednisone 20 mg and diphenhydramine (Benadryl) 50 mg by mouth at 8:00 AM on Monday 10/26."
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
-      }
-    },
-    {
-      "key": "5641c678598b360a590c95a940310774fe2fe2e70321ff532707829305c0934e",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "not_met",
-        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
-      }
-    },
-    {
-      "key": "5caef11f109bbcf3105e4a8d427490e6993af28dca2c266440356060350617cc",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "not_met",
-        "quote": ""
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
-      }
-    },
-    {
-      "key": "63275652f817e12a68caf7e9e641cf02648e8c965c66cb0effff144b54c7a6b9",
+      "key": "4685918d15cc73c8bb6f539052ca62df7de64784035fc40b094a67cd0bb0bf3e",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
@@ -606,11 +408,101 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
+        "at": "2026-10-27T18:28:54.806Z"
       }
     },
     {
-      "key": "645d10e05e0a2fb868f25a4c011d08e9207d9d14382c1e4151e54f71c16a4adf",
+      "key": "4f647f9424e75ec0114bd4e72f59b76cae0c675f021022439f8a4eae10ac2711",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T18:28:54.806Z"
+      }
+    },
+    {
+      "key": "5189c6e129b6ba0d1829ef35d638b62864cc511e42bb6a6a58a28ef63af8d428",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "- prednisone 50 mg at eight o'clock Sunday evening (10/25),\n- prednisone 50 mg at two in the morning on Monday (10/26), and\n- prednisone 50 mg together with diphenhydramine 50 mg at eight in the morning on Monday (10/26)."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T18:28:54.806Z"
+      }
+    },
+    {
+      "key": "58d8b3a7f30ce899e6828764fd89261e85ef1beb5afd361cea73746ea781729d",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T18:28:54.806Z"
+      }
+    },
+    {
+      "key": "59947eb7413703c3034d2e538078e8cabfcd05505c3f15e0bc34d94f7089eac2",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "Prednisone 50 mg by mouth at 2:00 AM on Sunday 10/25 (please set an alarm)."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T18:28:54.806Z"
+      }
+    },
+    {
+      "key": "5e78a539e6289a59daacda1fdc71602b171034abe9a0a6f9633ba77b3c54dc53",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "Take diphenhydramine (Benadryl) 50 mg at bedtime on Sunday."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T18:28:54.806Z"
+      }
+    },
+    {
+      "key": "602f96d116f8a668c6ab6c84fd4afb50395a3e1ddbcc1f22c685ae7e0c5457e3",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
@@ -624,29 +516,11 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
+        "at": "2026-10-27T18:28:54.806Z"
       }
     },
     {
-      "key": "648604956655eed726cf817a6b5d8d662bcdf9b00fb889741461a3e7c7c135d8",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "met",
-        "quote": "prednisone 50 mg at eight o'clock Sunday evening (10/25),\n- prednisone 50 mg at two in the morning on Monday (10/26), and\n- prednisone 50 mg together with diphenhydramine 50 mg at eight in the morning on Monday (10/26)."
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
-      }
-    },
-    {
-      "key": "66ae4a162d74cccddc51812aa7e2914945f5fc0c7cebd8de3cdab070e638939f",
+      "key": "65cee2fb26e2af80730711221a553304fe598057d4b79e9f4fc632243aa8712b",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
@@ -660,11 +534,11 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
+        "at": "2026-10-27T18:28:54.806Z"
       }
     },
     {
-      "key": "691de3d18fb5791fb938cbfda9a6de280dd2d6d886f4b20be80917548fb04e4a",
+      "key": "70a2c9b8cd07ba9fb5494948d7d49c391ef89d2d2645cd61b935cb627755e760",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
@@ -678,83 +552,11 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
+        "at": "2026-10-27T18:28:54.806Z"
       }
     },
     {
-      "key": "6a38c3f1ad4f62317e091485c2a093b1f4df3e2c598554bedbf513a113480578",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "not_met",
-        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
-      }
-    },
-    {
-      "key": "6b38ba75217ccc60fc80a39f956c998f97c16cc8569dd9543878d7d09e750ddd",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "not_met",
-        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
-      }
-    },
-    {
-      "key": "6d9c10c42244de2c215ad571ff544db1eb1c8f5bb7ee0cc692535e0ba75be479",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "met",
-        "quote": "With three iodine allergies, iodinated contrast is avoided."
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
-      }
-    },
-    {
-      "key": "740a9559b42d3546c65092c4dd6f01036c9be8715afdf41ef118d4fe8099d316",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "not_met",
-        "quote": ""
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
-      }
-    },
-    {
-      "key": "74f28d450571259e030036a59cd4a79a966ea60bf0abbbf01b107e0a7d3b0acb",
+      "key": "7a253e52590db35e046f9a79503ad27953ca377b6b63ac1471119d1490bc71f4",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
@@ -768,83 +570,29 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
+        "at": "2026-10-27T18:28:54.806Z"
       }
     },
     {
-      "key": "86ec79c3add177843f7dfaba9bb0ae629e81665f2288c4106d194993836725b8",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "met",
-        "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day). That is the risk factor. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
-      }
-    },
-    {
-      "key": "90c6450ae728dc0559ce8b9d880108bd65f931f3bb51c8c4147174a94ea4d3f7",
+      "key": "7c166935c3c8bd021cadd534d0520731f655c0ec8679725bf5837d1911148f18",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "not_met",
-        "quote": "Do not drive after taking it: please have someone drive you to the scan and home."
+        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
+        "at": "2026-10-27T18:28:54.806Z"
       }
     },
     {
-      "key": "977aced2244346f30f8d5404e6c5ebd071186ef1f2ecb52ceab946c183144f7c",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "met",
-        "quote": "The diphenhydramine will make you sleepy, so someone else needs to drive you that day."
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
-      }
-    },
-    {
-      "key": "985bf27d374d9ec253a51f4fc5793bb9f63da40db96f93b477aaae8c987fe741",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "met",
-        "quote": "Do not drive after taking it: please have someone drive you to the scan and home."
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
-      }
-    },
-    {
-      "key": "99a9299243f6b271e85b3835a1af7250abfdf97572c73e177f065b59baffe6cb",
+      "key": "7c21527813001e02cfc312a6e136f35aef33aa2961ce53dda20d64078484b1a0",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
@@ -858,29 +606,47 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
+        "at": "2026-10-27T18:28:54.806Z"
       }
     },
     {
-      "key": "9ce3c23d51bda3244887acdc5337efdb6eb6acb0ea0cf032b2cb777eace3dd68",
+      "key": "809132d4a641a997f65fe83fead1e62ffb1a57af5fdd09b4fb438339bac459c1",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "not_met",
-        "quote": "Do not drive after taking it: please have someone drive you to the scan and home."
+        "quote": "Prednisone 50 mg by mouth at 2:00 AM on Sunday 10/25 (please set an alarm)."
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
+        "at": "2026-10-27T18:28:54.806Z"
       }
     },
     {
-      "key": "a859e77ca42466c2270700739f68656511d43632c1050e0fbdd152d4d344d984",
+      "key": "811c3c34002e433f01d3fa605430890c09951464e596512727ab00ffdd0f5ef6",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "Take prednisone 50 mg at 6:00 AM, 7:00 AM and 8:00 AM on Monday, with diphenhydramine 50 mg at 8:00 AM."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T18:28:54.806Z"
+      }
+    },
+    {
+      "key": "836e1c244ae96c9540ef751c15b5336a106d47eb933e98028c28deb42f174811",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
@@ -894,7 +660,277 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
+        "at": "2026-10-27T18:28:54.806Z"
+      }
+    },
+    {
+      "key": "860d52efb3b4ce6f0de41b39a611d1bc7959ab392916c06cc2abd3ad1c836db0",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T18:28:54.806Z"
+      }
+    },
+    {
+      "key": "86ec79c3add177843f7dfaba9bb0ae629e81665f2288c4106d194993836725b8",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "That is the risk factor. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T18:28:54.806Z"
+      }
+    },
+    {
+      "key": "8be8a9ef8b545756f2016577c827d55f7611737c20c40decdc800b7ad2833f49",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "Do not drive after taking it: please have someone drive you to the scan and home."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T18:28:54.806Z"
+      }
+    },
+    {
+      "key": "8de260765322af206381efe652c7673921bfacdd20178fea517ddd3cf4bc0bd0",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "Do not drive after taking it: please have someone drive you to the scan and home."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T18:28:54.806Z"
+      }
+    },
+    {
+      "key": "8e58e6a002b8d27061d5bcc880841bf89b3c39b542adcb86fe0bc6f9750ddc69",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": ""
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T18:28:54.806Z"
+      }
+    },
+    {
+      "key": "9024627a1d179e92dc2bdd85294bddb65ea3ba35c140d1d541508a88673fdcbe",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "Do not drive after taking it: please have someone drive you to the scan and home."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T18:28:54.806Z"
+      }
+    },
+    {
+      "key": "90e61b96418646f86f15a8bf232ddf8c01abeb2f87444e847963077a97ff7e08",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T18:28:54.806Z"
+      }
+    },
+    {
+      "key": "9149649cb21b917141faa498ed64157afa1fa4e9cfd437fe1292a81a31001618",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "plus shellfish and povidone-iodine allergies. With three iodine allergies, iodinated contrast is avoided."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T18:28:54.806Z"
+      }
+    },
+    {
+      "key": "918c0a205601b7a74374a890c7ca33a30622534c8ecca63bd15252cf8b3f72dc",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "Prednisone 50 mg (5 tablets of 10 mg) by mouth at 20:00 Sunday 10/25, at 02:00 Monday 10/26 and at 08:00 Monday 10/26."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T18:28:54.806Z"
+      }
+    },
+    {
+      "key": "96a9f47febaee28b36e067c95fb45eb4832e4c869c607dcb99af87a4ea4d712c",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "Do not drive after taking it: please have someone drive you to the scan and home."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T18:28:54.806Z"
+      }
+    },
+    {
+      "key": "99c6c5266382486b5a63b63654c30b8328ba34b1a9d6672c79656df6a163a6d5",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "take prednisone 50 mg at 1:00 AM, 7:00 AM and 1:00 PM on Monday, and diphenhydramine (Benadryl) 50 mg at 1:00 PM"
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T18:28:54.806Z"
+      }
+    },
+    {
+      "key": "9ee70830c2803adba65b6dc8a2be572654bc22ef3494c9f98ae955329335b95e",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "take prednisone 50 mg at 1:00 AM, 7:00 AM and 1:00 PM on Monday, and diphenhydramine (Benadryl) 50 mg at 1:00 PM"
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T18:28:54.806Z"
+      }
+    },
+    {
+      "key": "a1ef4b1a4844e446b272cb9fe5df4e08f3f83834ede4ac8c5227da45efc21813",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "Do not drive after taking it: please have someone drive you to the scan and home."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T18:28:54.806Z"
+      }
+    },
+    {
+      "key": "a2e92b6aeac21603684929337384cec9d411a9afee9317bda3c8dd71316a897e",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "The diphenhydramine will make you sleepy, so someone else needs to drive you that day."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T18:28:54.806Z"
+      }
+    },
+    {
+      "key": "ab5c70d5f82ad61135a851584e0df9464bbbba3c3d57dd54266bf64081520062",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "Prednisone 20 mg and diphenhydramine (Benadryl) 50 mg by mouth at 8:00 AM on Monday 10/26."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T18:28:54.806Z"
       }
     },
     {
@@ -912,97 +948,61 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
+        "at": "2026-10-27T18:28:54.806Z"
       }
     },
     {
-      "key": "b19f434d274ea504af161b6ccac81a534056bc1ba0e0eb120690ee7e859b07ef",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "met",
-        "quote": "Do not drive after taking it: please have someone drive you to the scan and home."
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
-      }
-    },
-    {
-      "key": "b80841888df7b16eff44fa1ed5325ca5ae3969525a4cb06fa6c12427a492de12",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "met",
-        "quote": "Do not drive after taking it: please have someone drive you to the scan and home."
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
-      }
-    },
-    {
-      "key": "bacb06453a7b380c20e7fe2b165732c8c9007ab4b5b002089c50fa8d65bd03ec",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "met",
-        "quote": "Do not drive after taking it: please have someone drive you to the scan and home."
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
-      }
-    },
-    {
-      "key": "c0ffa3222d27b76138869e6948ecb6fee625bdc8d840970ff5370a50e9d62ae2",
+      "key": "b74de95c75e8e4f2376843aa8d63a2c736e0779927479a575b9b31420de75aca",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "not_met",
-        "quote": "Take diphenhydramine (Benadryl) 50 mg at bedtime on Sunday."
+        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
+        "at": "2026-10-27T18:28:54.806Z"
       }
     },
     {
-      "key": "c30dd87e5938b5afcdec08875c4fc52925cd521bae8bcb694b97cfbd9312ff72",
+      "key": "ba06095acd5dbab442aa30fefdef247d6d3577cb99e0ba02e22529874a5e95d5",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "met",
-        "quote": "Take diphenhydramine (Benadryl) 50 mg at bedtime on Sunday."
+        "quote": "Do not drive after taking it: please have someone drive you to the scan and home."
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
+        "at": "2026-10-27T18:28:54.806Z"
+      }
+    },
+    {
+      "key": "bddb7bea262be52bd357d4637a5c50e6d10c89d0af46eba2e2b71992e7c71f79",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "No preparation is needed."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T18:28:54.806Z"
       }
     },
     {
@@ -1020,25 +1020,25 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
+        "at": "2026-10-27T18:28:54.806Z"
       }
     },
     {
-      "key": "c53a0db830c529bf304532175b5d4141712c6194b2c17b3bd478e819b13fde75",
+      "key": "c5c2bc1236a995f30976084d12739c98762321bc28eb4ec503f759e88cb8ba79",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
       "prompt_version": "judge-v1",
       "answer": {
-        "verdict": "not_met",
-        "quote": "Take prednisone 50 mg at 6:00 AM, 7:00 AM and 8:00 AM on Monday, with diphenhydramine 50 mg at 8:00 AM."
+        "verdict": "met",
+        "quote": "Do not drive after taking it: please have someone drive you to the scan and home."
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
+        "at": "2026-10-27T18:28:54.806Z"
       }
     },
     {
@@ -1056,29 +1056,47 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
+        "at": "2026-10-27T18:28:54.806Z"
       }
     },
     {
-      "key": "d3c39f53711891dd866fda413d592b8df8a9cdf7096b8ef83af8f46e7354effc",
+      "key": "cd8e1892922aa6ca45b0e34bc774642447c4c06cbce6fcbeb2f25e2915440d82",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
       "prompt_version": "judge-v1",
       "answer": {
-        "verdict": "not_met",
-        "quote": "take prednisone 50 mg at 1:00 AM, 7:00 AM and 1:00 PM on Monday, and diphenhydramine (Benadryl) 50 mg at 1:00 PM"
+        "verdict": "met",
+        "quote": "Take diphenhydramine (Benadryl) 50 mg at bedtime on Sunday."
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
+        "at": "2026-10-27T18:28:54.806Z"
       }
     },
     {
-      "key": "d3d72cba94867608129adf66a53be46426ab3ff55524e0dd434513b6c4e5cb98",
+      "key": "d5a6c709f6011170069b7007a06b6134cb1b40e853ee44070b3fbdd23ab23736",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "Do not drive after taking it: please have someone drive you to the scan and home."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T18:28:54.806Z"
+      }
+    },
+    {
+      "key": "e0ce5e6b29cd4e6882bc5878ae203230ab72f83310c21fb323cc1d67987a5b3f",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
@@ -1092,71 +1110,17 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
+        "at": "2026-10-27T18:28:54.806Z"
       }
     },
     {
-      "key": "d3e93222d174c55670e2583caa339b05dc281924e60bd6e703eef7592d3643c1",
+      "key": "e3ebaa2941de1354f6065a2a3b5c424adb4a4552d4801fcf1927b710173aab22",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "met",
-        "quote": "take prednisone 50 mg at 1:00 AM, 7:00 AM and 1:00 PM on Monday, and diphenhydramine (Benadryl) 50 mg at 1:00 PM"
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
-      }
-    },
-    {
-      "key": "d3eee8085d7b6c883d6b2339cf1ec7c6f2a7cf661d5b73807a0069541d5b6296",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "not_met",
-        "quote": "You can drive yourself."
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
-      }
-    },
-    {
-      "key": "d5abd4efe0c3e1f38300ab1a3fe33bee8df837592f530873cb3613eacbf160dc",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "not_met",
-        "quote": "prednisone 50 mg together with diphenhydramine 50 mg at eight in the morning on Monday (10/26). The diphenhydramine will make you sleepy, so someone else needs to drive you that day."
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
-      }
-    },
-    {
-      "key": "e5bf07be35efee5811c927e5266439edbaeb1f33db834180a698c10d5cfb7b29",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "not_met",
         "quote": "Do not drive after taking it: please have someone drive you to the scan and home."
       },
       "error": null,
@@ -1164,25 +1128,79 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
+        "at": "2026-10-27T18:28:54.806Z"
       }
     },
     {
-      "key": "fb1a3b61d5cd6df03e1d8eca2f314c3db4311762ee404a77822d5ca28a7234cb",
+      "key": "e619ce9311e88841a0a77d9b8d870b278e17932ef65d4fae12e116eea29dd812",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "not_met",
-        "quote": "Prednisone 50 mg (5 tablets of 10 mg) by mouth at 20:00 Sunday 10/25, at 02:00 Monday 10/26 and at 08:00 Monday 10/26. Diphenhydramine (Benadryl) 50 mg by mouth at 08:00 Monday 10/26. You must not drive after the diphenhydramine; bring someone to drive you."
+        "quote": "Diphenhydramine makes you drowsy. Do not drive after taking it: please have someone drive you to the scan and home."
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
+        "at": "2026-10-27T18:28:54.806Z"
+      }
+    },
+    {
+      "key": "eb1b95470b964f0980e5817fbaf3a0b9e1741d5a03886e96dde8713d2a6f075b",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T18:28:54.806Z"
+      }
+    },
+    {
+      "key": "edb5b50ecf41815281ff3553cc3f0470698367cf78ecdbffe6962a52b2ff92a5",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T18:28:54.806Z"
+      }
+    },
+    {
+      "key": "f99e0c9da20ab1eb0e2831c5a0d839f3daf8f9d9c2e2ccdfa16f8296c007117e",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T18:28:54.806Z"
       }
     },
     {
@@ -1200,43 +1218,25 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
+        "at": "2026-10-27T18:28:54.806Z"
       }
     },
     {
-      "key": "ff2d6884c0f26e889039a95978e348295e2f9d7eb38d613cf8e3532796a262fb",
+      "key": "fc9eeb31a5c3dd71f89befc626408011c64ea356a00fca55709d1482781d46ab",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "not_met",
-        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+        "quote": "Do not drive after taking it: please have someone drive you to the scan and home."
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
-      }
-    },
-    {
-      "key": "ffa664d397ee3ea8a5f022ae65478e1670c82c5ccb9aac39e3a95c5a25517e45",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "not_met",
-        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-27T07:02:25.614Z"
+        "at": "2026-10-27T18:28:54.806Z"
       }
     }
   ]

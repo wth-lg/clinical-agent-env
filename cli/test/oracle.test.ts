@@ -115,8 +115,45 @@ describe('oracle', () => {
     expect(h.text()).toMatch(/judge cache _toy: \d+ answers written \(1 asked now\), 1 calls/);
   });
 
+  // A cached entry whose answer is null (an invalid judge output or an error) answers nothing, so
+  // --misses-only counts it as a miss and asks it again (verifier-phase-P17i-JG3-T5-1 M3).
+  const nullOne: MatrixTask = { ...SMALL, cache: SMALL.cache.map((e) => (e.key === DROP ? { ...e, answer: null, error: 'invalid judge output' } : e)) };
+
+  it('--live-judge --misses-only --dry-run counts a cached null answer as a miss', async () => {
+    const h = harness({}, undefined, nullOne);
+    expect(await main(['--task', '_toy', '--live-judge', '--misses-only', '--dry-run'], h.deps)).toBe(0);
+    expect(h.text()).toMatch(/^oracle dry run: --live-judge on _toy: \d+ cases, 1 distinct judge questions x 2 calls/m);
+  });
+
+  it('--live-judge --misses-only asks a cached null answer again and writes the new answer as live', async () => {
+    const fetch = vi.fn<Transport>(async () => okResponse({ text: '{"verdict":"met","quote":"wrote a progress note"}' }, 1));
+    const h = harness({ ANTHROPIC_API_KEY: fakeKey('M') }, fetch, nullOne);
+    expect(await main(['--task', '_toy', '--live-judge', '--misses-only'], h.deps), h.text()).toBe(0);
+    expect(fetch).toHaveBeenCalledTimes(1);
+    const got = new Map(h.written[0]!.entries.map((e) => [e.key, e]));
+    expect(got.get(DROP)?.answer).toEqual({ verdict: 'met', quote: 'wrote a progress note' });
+    expect(got.get(DROP)?.provenance?.source).toBe('live');
+    expect(h.text()).toMatch(/judge cache _toy: \d+ answers written \(1 asked now\), 1 calls/);
+  });
+
+  // A cached verdict 'unknown' grades the item unknown, so --misses-only asks it again too
+  // (verifier-phase-P17i-JG3-T6-1 F2).
+  const unknownOne: MatrixTask = { ...SMALL, cache: SMALL.cache.map((e) => (e.key === DROP ? { ...e, answer: { verdict: 'unknown', quote: '' } } : e)) };
+
+  it('--live-judge --misses-only asks a cached unknown verdict again', async () => {
+    const dry = harness({}, undefined, unknownOne);
+    expect(await main(['--task', '_toy', '--live-judge', '--misses-only', '--dry-run'], dry.deps)).toBe(0);
+    expect(dry.text()).toMatch(/^oracle dry run: --live-judge on _toy: \d+ cases, 1 distinct judge questions x 2 calls/m);
+    const fetch = vi.fn<Transport>(async () => okResponse({ text: '{"verdict":"met","quote":"wrote a progress note"}' }, 1));
+    const h = harness({ ANTHROPIC_API_KEY: fakeKey('M') }, fetch, unknownOne);
+    expect(await main(['--task', '_toy', '--live-judge', '--misses-only'], h.deps), h.text()).toBe(0);
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(new Map(h.written[0]!.entries.map((e) => [e.key, e])).get(DROP)?.answer).toEqual({ verdict: 'met', quote: 'wrote a progress note' });
+  });
+
   it('--misses-only needs --live-judge', async () => {
     const h = harness();
     expect(await main(['--task', '_toy', '--misses-only'], h.deps)).toBe(2);
+    expect(h.text()).toContain('oracle: --misses-only needs --live-judge\nusage: pnpm cli oracle --task <id|all> [--json] [--live-judge [--misses-only]] [--dry-run]');
   });
 });

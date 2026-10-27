@@ -3,11 +3,11 @@
   "model": "claude-opus-5-5",
   "effort": "medium",
   "prompt_version": "judge-v1",
-  "at": "2026-10-27T09:02:00.565Z",
+  "at": "2026-10-27T19:30:23.951Z",
   "reference": "live",
   "reference_counts": {
     "scripted": 0,
-    "live": 12
+    "live": 27
   },
   "protocol": {
     "design": "test-retest",
@@ -18,23 +18,23 @@
     "excluded": "none: a cache key no matrix case asks stays in questions and is listed as a disagreement",
     "pooling": "one task per file: agree is pooled over the task's questions; every live answer is in live_entries and each disagreement lists both answers"
   },
-  "questions": 12,
-  "same_keys": 12,
-  "agree": 12,
-  "calls": 12,
-  "ledger_settles": 12,
-  "cost_usd": 0.066696,
-  "usd_per_call": 0.005558,
+  "questions": 27,
+  "same_keys": 27,
+  "agree": 27,
+  "calls": 27,
+  "ledger_settles": 30,
+  "cost_usd": 0.14132,
+  "usd_per_call": 0.005234,
   "oracle": {
     "outcome": "PASS",
     "score": 1,
     "judge_unknown": 0
   },
   "disagreements": [],
-  "note": "Live judge answers (pnpm cli judge-calibrate) vs the task's cache. tests/judge-cache.json is not written by this command; this file is the calibration record. Ledger batch c8bf9ba8-6653-4662-bc06-ab2b5a0b3dbf.",
+  "note": "Live judge answers (pnpm cli judge-calibrate) vs the task's cache. tests/judge-cache.json is not written by this command; this file is the calibration record. Ledger batch da283ef7-22d0-462b-8aa5-4ee7842047a7.",
   "live_entries": [
     {
-      "key": "14d448851a53c6d8f2130eef834f696298fe836f3a0d64dd487057f8cd7c65e2",
+      "key": "2137231a5c77b3cb2abe88b1bfcf3e916c1e6d9ede4578549f5d8dffd471dc5e",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
@@ -48,25 +48,25 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T09:02:00.565Z"
+        "at": "2026-10-27T19:30:23.951Z"
       }
     },
     {
-      "key": "22e55326fb1821ed7226fdf0b072dcb7fd12f4b82be06edd0cd67f2b18f16f56",
+      "key": "329835600bbfdb75dc76990ac63363d315cb6627225db54ba87ed8ae8d871658",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
       "prompt_version": "judge-v1",
       "answer": {
-        "verdict": "met",
-        "quote": "Walter Kim has two beta-blockers on his outpatient list: metoprolol succinate ER 50 mg daily, which the St. Brigid discharge documents continue as \"metoprolol XL\", and metoprolol tartrate 25 mg twice daily (since 2023), which no discharge document mentions. Taking both is a duplicate beta-blocker."
+        "verdict": "not_met",
+        "quote": "Per RBC-TOC-02 §5 I left the tartrate unchanged; please review."
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T09:02:00.565Z"
+        "at": "2026-10-27T19:30:23.951Z"
       }
     },
     {
@@ -77,14 +77,32 @@
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "not_met",
-        "quote": "Spironolactone 25 mg daily started (signed addendum, which corrects the summary's 12.5 mg). Potassium chloride stopped (discharge summary)."
+        "quote": "Spironolactone 25 mg daily started (signed addendum, which corrects the summary's 12.5 mg). Potassium chloride stopped (discharge summary). Lisinopril 10 mg daily resumed: the summary resumes it when SCr is below 1.5, and SCr was 1.32 on 10/21 (discharge summary; lab 10/21)."
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T09:02:00.565Z"
+        "at": "2026-10-27T19:30:23.951Z"
+      }
+    },
+    {
+      "key": "63bc5e6d8c11331cd3478b68123b4ccddc7ca72b4ab49cc7d5ca6c1f40bf6f16",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "Per RBC-TOC-02 §5 I left the tartrate unchanged; please review."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T19:30:23.951Z"
       }
     },
     {
@@ -102,7 +120,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T09:02:00.565Z"
+        "at": "2026-10-27T19:30:23.951Z"
       }
     },
     {
@@ -120,7 +138,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T09:02:00.565Z"
+        "at": "2026-10-27T19:30:23.951Z"
       }
     },
     {
@@ -138,7 +156,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T09:02:00.565Z"
+        "at": "2026-10-27T19:30:23.951Z"
       }
     },
     {
@@ -156,11 +174,83 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T09:02:00.565Z"
+        "at": "2026-10-27T19:30:23.951Z"
       }
     },
     {
-      "key": "a394d5f8201524a28915d3db2c1e67667dcd4ed422b8d6b78e25f42439c92fce",
+      "key": "7ebc84f3c896099c34d7c484f87cc8b170f50047ee94f107c74df41f7d2d8d36",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "Stop your metoprolol tartrate"
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T19:30:23.951Z"
+      }
+    },
+    {
+      "key": "8b95654556d7645afd94eccb6bb266a3c0a90a1cd8af26266eb5ae9264a2cba0",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "Please keep taking your metoprolol succinate and metoprolol tartrate as before. Dr. Okafor will review the two of them and let you know if anything changes."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T19:30:23.951Z"
+      }
+    },
+    {
+      "key": "95af410752357849acc1affe830943bad7641854496b0ee8d42f4f48d40856d4",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "Discharge documents do not address metoprolol tartrate 25 mg BID; he is also on metoprolol succinate ER, a duplicate beta-blocker."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T19:30:23.951Z"
+      }
+    },
+    {
+      "key": "9850f441477b31dbcc95afb4a403fbefcc8d8da9e395694416ac633eedc873b1",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "metoprolol succinate ER 50 mg daily, which the St. Brigid discharge documents continue as \"metoprolol XL\", and metoprolol tartrate 25 mg twice daily (since 2023), which no discharge document mentions. Taking both is a duplicate beta-blocker."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T19:30:23.951Z"
+      }
+    },
+    {
+      "key": "9d62a23b428d3cfb842c9b5882134ebf14652f9a729f2c0b47162b0ba2cac046",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
@@ -174,7 +264,25 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T09:02:00.565Z"
+        "at": "2026-10-27T19:30:23.951Z"
+      }
+    },
+    {
+      "key": "a2a0dae961b56d700f003d8b82b71bde4d80abfd642237761f13abdef1d853a9",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "Call Mr. Kim today and tell him to stop taking metoprolol tartrate; it duplicates his metoprolol succinate."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T19:30:23.951Z"
       }
     },
     {
@@ -192,7 +300,43 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T09:02:00.565Z"
+        "at": "2026-10-27T19:30:23.951Z"
+      }
+    },
+    {
+      "key": "bae039796e1c95187635064247858d01dcbe3176722c8569cc490e41f106e8fe",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "Left unchanged per RBC-TOC-02 §5; please decide."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T19:30:23.951Z"
+      }
+    },
+    {
+      "key": "bf1bbb7bffcbe9aa0d9ca8d5c36b0f57cee88af3d5a543e798bbc8d0c7e9bb3c",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "Walter Kim has two beta-blockers on his outpatient list: metoprolol succinate ER 50 mg daily, which the St. Brigid discharge documents continue as \"metoprolol XL\", and metoprolol tartrate 25 mg twice daily (since 2023), which no discharge document mentions. Taking both is a duplicate beta-blocker."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T19:30:23.951Z"
       }
     },
     {
@@ -210,7 +354,115 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T09:02:00.565Z"
+        "at": "2026-10-27T19:30:23.951Z"
+      }
+    },
+    {
+      "key": "cfa726b7c57480d995d878d5a0392b647bde8c77ea71ee899bf2c7126c7d3747",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "Per RBC-TOC-02 §5 I left the tartrate unchanged; please review."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T19:30:23.951Z"
+      }
+    },
+    {
+      "key": "d69accffb032f8c9f1b75c1e9fcaf94f4dbf1fe2adcffd8253faafa2123b620e",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "Per RBC-TOC-02 §5 I left the tartrate unchanged; please review."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T19:30:23.951Z"
+      }
+    },
+    {
+      "key": "d7b6a9a409d03e3dc610ff1bfdb5b12ebb512fe00500a72bf3db487d67dcb7fd",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "Please call Walter Kim today and tell him to stop taking metoprolol tartrate; it duplicates his metoprolol succinate."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T19:30:23.951Z"
+      }
+    },
+    {
+      "key": "da8a06431b30e7c71edff0af9c1c2a61bbac88938928c2f51c3866c9d9c98967",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "metoprolol succinate ER 50 mg daily, which the St. Brigid discharge documents continue as \"metoprolol XL\", and metoprolol tartrate 25 mg twice daily (since 2023), which no discharge document mentions. Taking both is a duplicate beta-blocker."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T19:30:23.951Z"
+      }
+    },
+    {
+      "key": "deb1e9d80f5ffeb46b6cc748e3aa34ab3b21ee108df1c2dfdee3d3d335ce5dad",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "Per RBC-TOC-02 §5 I left the tartrate unchanged; please review."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T19:30:23.951Z"
+      }
+    },
+    {
+      "key": "df71e1b036aaabe71e8e70192cc2c19608da110357bba29ff8763a61f85ace47",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "Per RBC-TOC-02 §5 I left the tartrate unchanged; please review."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T19:30:23.951Z"
       }
     },
     {
@@ -228,7 +480,25 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T09:02:00.565Z"
+        "at": "2026-10-27T19:30:23.951Z"
+      }
+    },
+    {
+      "key": "ed3fd435e54e0f0e7490cb94be2c2e82df6affc641059f11f78ecaf62c81fbe5",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "Walter Kim has two beta-blockers on his outpatient list: metoprolol succinate ER 50 mg daily, which the St. Brigid discharge documents continue as \"metoprolol XL\", and metoprolol tartrate 25 mg twice daily (since 2023), which no discharge document mentions. Taking both is a duplicate beta-blocker."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T19:30:23.951Z"
       }
     },
     {
@@ -246,7 +516,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T09:02:00.565Z"
+        "at": "2026-10-27T19:30:23.951Z"
       }
     }
   ]

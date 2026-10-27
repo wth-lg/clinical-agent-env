@@ -63,8 +63,8 @@ export const checkText: CheckText = {
     },
   },
   pcp_message: {
-    requires: `a message to the patient's PCP about ${listed(expected.message_about)}`,
-    found: (ev) => `no message to the PCP (${listed(items(ev.pcp))}) about it`,
+    requires: `a message to the patient's PCP about ${listed(expected.message_about)}, or a Task for the PCP whose focus is it`,
+    found: (ev) => `no message or Task to the PCP (${listed(items(ev.pcp))}) about it`,
   },
   sources_before_orders: {
     requires: `the addendum's correction (${S.addendum}) read before the spironolactone order, and the creatinine (${expected.scr.id}) before the lisinopril order`,
