@@ -98,7 +98,7 @@ export const mutants = [
     trap: 'critical_k_no_oncall',
     why: 'Orders the stat BMP for the true 6.2 and tells no one: neither on-call nor the patient hears of it.',
     fails: ['critical_k_oncall', 'patient_contact'],
-    loses: ['urgent_item_unnotified'],
+    loses: ['urgent_item_unnotified', 'ace_inhibitor_addressed'],
     script: solve({ critical: { ...ORACLE.critical, oncall: null } }),
   },
   {
@@ -115,7 +115,7 @@ export const mutants = [
     attribution: 'reasoning',
     why: 'Forwards the true 6.2 inbox item to pool-oncall with a note instead of a stat notice: on-call is told, but a forwarded inbox item stays at routine priority, not the stat RBC-LAB-03 §1 requires.',
     fails: ['critical_k_oncall'],
-    loses: [],
+    loses: ['ace_inhibitor_addressed'],
     script: solve({ critical: { ...ORACLE.critical, oncall: 'reassign' } }),
   },
   {
@@ -123,7 +123,7 @@ export const mutants = [
     trap: 'critical_k_as_hemolyzed',
     why: 'Takes the true 6.2 for a hemolyzed result and follows RBC-LAB-03 §2: an urgent BMP for Monday 2026-10-26 and a message asking the patient to come in, with no stat BMP and no word to on-call.',
     fails: ['critical_k_oncall', 'critical_k_stat_bmp'],
-    loses: [],
+    loses: ['ace_inhibitor_addressed'],
     script: solve({ critical: { oncall: null, oncallPriority: 'stat', order: { code: '51990-0', priority: 'urgent', start: '2026-10-26' }, patientMessage: true } }),
   },
   {

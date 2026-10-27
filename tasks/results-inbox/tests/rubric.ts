@@ -1,6 +1,7 @@
 // T2's rubric (design section 4, "T2" rubric table): tracking tasks, patient messages, notes that
 // cite their results, the item 2 closure comment, and two harms. Every item but the comment is
-// code. Positive points total 16: the FIT patient message (RBC-INBOX-01 §4) and ace_inhibitor_addressed (P17j JG9) are the table's plus two.
+// code. Positive points total 16: the FIT patient message (RBC-INBOX-01 §4) and
+// ace_inhibitor_addressed (P17j JG9) are the table's plus two.
 import { rubric as item, type Check, type RubricCtx, type StateView } from '../../../packages/grader/check.ts';
 import { clinicDate, isDrug } from '../../../packages/grader/normalize.ts';
 import { expected } from '../expected.ts';

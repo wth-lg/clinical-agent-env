@@ -13,8 +13,8 @@ import { activeServiceRequests, inbox, policies, PT, read, searchNotes, SRC, wri
 export const alternatives = [
   {
     id: 'ldct_task_oncall_cmp',
-    why: 'Orders the 12-month study as the low-dose CT chest, tells on-call through a stat task in the pool, rechecks the hemolyzed potassium stat today with a CMP, and orders the MRI femur without contrast at asap priority.',
-    loses: [],
+    why: 'Orders the 12-month study as the low-dose CT chest, tells on-call through a stat task in the pool, rechecks the hemolyzed potassium stat today with a CMP, and orders the MRI femur without contrast at asap priority. Its on-call task does not name the lisinopril, so it loses the +1 ace_inhibitor_addressed (P17j JG9).',
+    loses: ['ace_inhibitor_addressed'],
     script: solve({
       nodule: { ...ORACLE.nodule, order: { code: 'IMG-CT-CHEST-LDCT', priority: 'routine', start: '2027-06-04' } },
       hemolyzed: { ...ORACLE.hemolyzed, order: { code: '24323-8', priority: 'stat', start: '2026-10-23' } },
