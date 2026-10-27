@@ -4,7 +4,7 @@
 // this is fixed.", the danger rule on the header, the reason, the fault decided by GR5, and the
 // criteria in place of "Confirmed"; a PASS without that audit row shows none of it.
 import { expect, test, type Page } from '@playwright/test';
-import { RUN_ID, trialBase, TRIALS } from './fixtures/trial/trial.ts';
+import { PILOT_ERROR_ID, record, RUN_ID, trialBase, TRIALS } from './fixtures/trial/trial.ts';
 
 const GR5_ROW = { trial: TRIALS.pass, outcome: 'PASS', taxonomy: null, model_fault: 'no', decisive_step: 3, evidence_ids: ['Patient/pt-0001'], llm_auditor_agrees: true, label: 'grader', note: 'the grader passed a dose the policy forbids' };
 
@@ -71,4 +71,27 @@ test('a PASS without the GR5 row has no label and says Confirmed or Checks pendi
   const header = page.getByTestId('trial-header');
   await expect(header.getByTestId('label')).toHaveCount(0);
   await expect(header.getByTestId('header-confirmation')).toBeVisible();
+});
+
+// A pilot is never blocked: a valid FAIL that its audit labels environment says the pilot is not
+// counted, not that a run is blocked (decisions.tsv 2026-10-29T21:00). The pilot's GRADER_ERROR is
+// served with the regrade to a FAIL that trial-1's copy carries, and an audit.jsonl labels it.
+test('a pilot FAIL labelled environment says a pilot is not counted', async ({ page }) => {
+  const name = TRIALS.graderError;
+  const regraded = record(TRIALS.graderRegraded) as unknown as { regrades: unknown[] };
+  const auditFile = `results/${PILOT_ERROR_ID}/audit.jsonl`;
+  await page.route('**/data/index.json', async (route) => {
+    const res = await route.fetch();
+    const { files } = (await res.json()) as { files: string[] };
+    await route.fulfill({ response: res, json: { files: [...files, auditFile] } });
+  });
+  await page.route(`**/data/results/${PILOT_ERROR_ID}/trials/${name}.json`, async (route) => {
+    const res = await route.fetch();
+    await route.fulfill({ response: res, json: { ...((await res.json()) as object), regrades: regraded.regrades } });
+  });
+  await page.route(`**/data/${auditFile}`, (route) => route.fulfill({ status: 200, contentType: 'application/x-ndjson', body: `${JSON.stringify({ trial: name, outcome: 'FAIL', taxonomy: null, model_fault: 'no', decisive_step: 2, evidence_ids: ['Patient/pt-0001'], llm_auditor_agrees: true, label: 'environment', note: 'x' })}\n` }));
+  await open(page, '');
+  const row = page.locator(`[data-testid="run"][data-run="${PILOT_ERROR_ID}"] [data-testid="trial-row"][data-trial="${name}"]`);
+  await expect(row.getByTestId('label')).toHaveAttribute('data-label', 'environment');
+  await expect(row.getByTestId('fault-note')).toHaveText('A pilot is not counted in the final pass rate.');
 });

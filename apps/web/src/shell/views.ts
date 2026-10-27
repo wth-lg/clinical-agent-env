@@ -25,7 +25,8 @@ export const viewFromUrl = (href: string): View => VIEWS.find((v) => v.id === ne
 // left behind would be filters nobody set on the new one (review-ui-P14-2 F2, verifier-phase-P16-1
 // N1); only the trial detail reads run, and only it and an open task read tab, so nothing else is
 // lost.
-export const VIEW_STATE = ['task', 'label', 'trial', 'run', 'tab'];
+// check and audit are Runs filters a Findings link sets (P17j JU7; verifier-phase-P17i-JU7-1 S2).
+export const VIEW_STATE = ['task', 'label', 'check', 'audit', 'trial', 'run', 'tab'];
 export function viewHref(href: string, id: string): string {
   const url = new URL(href);
   url.searchParams.set('view', id);

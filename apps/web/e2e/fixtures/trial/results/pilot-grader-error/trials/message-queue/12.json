@@ -1,5 +1,5 @@
 {
-  "trial_id": "sample-1:message-queue:12",
+  "trial_id": "pilot-grader-error:message-queue:12",
   "task_id": "message-queue",
   "task_version": "2e0c7b0e49fab137d870782aaf7d2301f5defc0b97cf5b25d080471d07c7431b",
   "env_version": "a902115d6b22a8ad4e4438108607f02b85be67a40fe538c32ff0a96b47d7dc89",

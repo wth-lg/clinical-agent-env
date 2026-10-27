@@ -49,8 +49,10 @@ describe('an excluded trial has no model taxonomy, decisive check or decisive st
     expect(x.reason).not.toMatch(/found|Kind: reasoning/);
   });
 
+  // The exemplar lives in the sample's pilot run since the official run's GRADER_ERROR was regraded
+  // (decisions.tsv 2026-10-29T17:50).
   it('the sample GRADER_ERROR trial (message-queue/12) the UI review found named as reasoning', () => {
-    const file = join(repoRoot, 'apps/web/e2e/fixtures/sample-results/results/runs/sample-1/trials/message-queue/12.json');
+    const file = join(repoRoot, 'apps/web/e2e/fixtures/sample-results/results/pilot-grader-error/trials/message-queue/12.json');
     const rec = JSON.parse(readFileSync(file, 'utf8')) as ExplainRecord;
     expect(rec.attribution?.auto).toBe('reasoning');
     const x = explainTrial(rec, undefined, { ...ctx, world_state_hash: null, matrix: null, checks: [] });

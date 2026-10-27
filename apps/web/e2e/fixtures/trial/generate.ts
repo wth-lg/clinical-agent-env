@@ -11,9 +11,13 @@
 //   results/runs/trial-1/manifest.json       the sample's run manifest, as run trial-1 (M1 reachability)
 //   results/runs/trial-1/summary.json        packages/core/summary.ts summarize() over the records
 //   results/pilot-pass/                      one PASS, so first-nonpass finds nothing there
+//   results/pilot-grader-error/              the sample's pilot of one GRADER_ERROR, not regraded
+//                                            (a current GRADER_ERROR blocks a committed run, so the
+//                                            official run holds the regraded one; decisions.tsv
+//                                            2026-10-29T17:50)
 // A rerun writes the same bytes.
 //   node apps/web/e2e/fixtures/trial/generate.ts
-import { copyFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { auditLabelOf, type AuditRow } from '../../../../../packages/core/explain.ts';
@@ -24,6 +28,8 @@ const SAMPLE = join(HERE, '../sample-results/results/runs/sample-1');
 export const RUN_ID = 'trial-1';
 const RUN = join(HERE, 'results/runs', RUN_ID);
 const PILOT = join(HERE, 'results/pilot-pass');
+export const PILOT_ERROR_ID = 'pilot-grader-error';
+const SAMPLE_PILOT_ERROR = join(HERE, '../sample-results/results', PILOT_ERROR_ID);
 
 // The trials, by what each one shows.
 export const TRIALS = {
@@ -34,7 +40,10 @@ export const TRIALS = {
   pass: 'renal-dose-review/0',
   limit: 'crc-care-gap/5',
   envError: 'discharge-medrec/12',
+  // In the pilot run pilot-grader-error, not in trial-1 (runOf).
   graderError: 'message-queue/12',
+  // A GRADER_ERROR a fixed grader regraded to a model FAIL.
+  graderRegraded: 'message-queue/9',
   noTrajectory: 'contrast-ct-prep/7',
 } as const;
 
@@ -50,7 +59,7 @@ const copy = (from: string, to: string) => {
 function main() {
   rmSync(join(HERE, 'results'), { recursive: true, force: true });
   write(join(HERE, 'results/official.json'), `${JSON.stringify({ run: `runs/${RUN_ID}` })}\n`);
-  const names = Object.values(TRIALS);
+  const names = Object.values(TRIALS).filter((n) => n !== TRIALS.graderError);
   const records = names.map((name) => {
     copy(join(SAMPLE, 'trials', `${name}.json`), join(RUN, 'trials', `${name}.json`));
     if (name !== TRIALS.noTrajectory) copy(join(SAMPLE, 'trajectories', `${name}.jsonl`), join(RUN, 'trajectories', `${name}.jsonl`));
@@ -66,6 +75,7 @@ function main() {
   const summary = summarize({ run_id: RUN_ID, trials: ordered, requeued: [], replay: null, mode: 'mock-sample', expected: { tasks: [...new Set(records.map((r) => r.task_id))].sort(), from: 'generate.ts' }, audit: Object.fromEntries(audit.map((a) => [a.trial, auditLabelOf(a)])) });
   assertSummary(summary);
   write(join(RUN, 'summary.json'), `${JSON.stringify(summary, null, 2)}\n`);
+  cpSync(SAMPLE_PILOT_ERROR, join(HERE, 'results', PILOT_ERROR_ID), { recursive: true });
   copy(join(SAMPLE, 'trials', `${TRIALS.pass}.json`), join(PILOT, 'trials', `${TRIALS.pass}.json`));
   copy(join(SAMPLE, 'trajectories', `${TRIALS.pass}.jsonl`), join(PILOT, 'trajectories', `${TRIALS.pass}.jsonl`));
   console.log(`wrote ${records.length} trials (${records.map((r) => trialName(r)).join(', ')}), ${audit.length} audit rows`);

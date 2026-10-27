@@ -109,10 +109,18 @@ test('Overview: k/N with N from the run, Wilson bounds equal summary.json, one s
     expect(marks).toEqual(mine.map((r) => markOf(explain(r).outcome, explain(r).fault)).sort());
   }
   const all = new Set(records.map((r) => markOf(explain(r).outcome, explain(r).fault)));
-  for (const m of ['environment', 'grader', 'infra', 'refusal', 'limit', 'model', 'pass']) expect(all, m).toContain(m);
+  // The official run's GRADER_ERROR is regraded to a model FAIL, so its marks hold no grader fault;
+  // the unregraded exemplar is the pilot run pilot-grader-error (decisions.tsv 2026-10-29T17:50).
+  for (const m of ['environment', 'infra', 'refusal', 'limit', 'model', 'pass']) expect(all, m).toContain(m);
+  expect(all).not.toContain('grader');
+  // The legend names every mark, the grader fault's included.
   await expect(page.getByTestId('legend').locator('li')).toHaveCount(7);
+  await expect(page.getByTestId('legend').locator('li[data-mark="grader"]')).toHaveCount(1);
   await expect(page.getByTestId('empty-state')).toHaveCount(0);
   await expect(page.getByTestId('data-warning')).toHaveCount(0);
+  // The grader fault's mark shows on the pilot's GRADER_ERROR row in Runs.
+  await page.getByRole('navigation', { name: 'Views' }).getByRole('link', { name: 'Runs' }).click();
+  await expect(page.locator('[data-testid="run"][data-run="pilot-grader-error"] [data-testid="trial-row"] [data-testid="outcome"]')).toHaveAttribute('data-mark', 'grader');
 });
 
 test('Runs: every non-pass row shows outcome, label, decisive check and reason without a click', async ({ page }) => {
@@ -142,7 +150,11 @@ test('Runs: every non-pass row shows outcome, label, decisive check and reason w
     await expect(row.getByTestId('not-audited')).toHaveCount(e.audited ? 0 : 1);
     if (!e.audited) await expect(row.getByTestId('not-audited')).toHaveText(NOT_AUDITED_MARKER);
   }
-  for (const o of ['FAIL', 'ENV_ERROR', 'GRADER_ERROR', 'REFUSAL', 'LIMIT', 'INFRA_API']) expect(seen, o).toContain(o);
+  for (const o of ['FAIL', 'ENV_ERROR', 'REFUSAL', 'LIMIT', 'INFRA_API']) expect(seen, o).toContain(o);
+  // The run's GRADER_ERROR is regraded by a fixed grader, so its row shows the current FAIL: a
+  // current GRADER_ERROR would block the run (decisions.tsv 2026-10-29T17:50). The unregraded
+  // exemplar is the pilot run pilot-grader-error.
+  expect(records.some((r) => r.outcome === 'GRADER_ERROR' && r.regrades?.length === 1)).toBe(true);
   expect(records.some((r) => r.outcome !== 'PASS' && !explain(r).audited && explain(r).fault !== 'infra')).toBe(true);
 
   // The label filter.
@@ -313,7 +325,8 @@ test('a trial record missing cost_usd is an error row in Runs; the app and the o
   await browse(page, './?view=runs');
   const row = page.locator('[data-testid="record-error"][data-trial="renal-dose-review/3"]');
   await expect(row).toContainText('cost_usd is missing');
-  await expect(page.getByTestId('trial-row')).toHaveCount(records.length - 1);
+  // The official run's rows: the sample also serves the pilot run pilot-grader-error.
+  await expect(page.locator('[data-testid="run"][data-official="true"] [data-testid="trial-row"]')).toHaveCount(records.length - 1);
   await page.getByRole('navigation', { name: 'Views' }).getByRole('link', { name: 'Overview' }).click();
   await expect(page.getByTestId('data-warning')).toContainText('1 trial record cannot be read');
   await expect(page.getByTestId('overview-row')).toHaveCount(TASK_IDS.length);

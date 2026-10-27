@@ -173,6 +173,12 @@ export interface CriterionRow {
   evidence: string;
 }
 
+// Whether M1-M4 confirm a failure: each is met, or does not apply (n/a: M1 on a failure with no
+// failed gate check), as the confirmation reads them. The one rule for the M1-M4 count that
+// cli/audit-check.ts and the web fault box give (decisions.tsv 2026-10-29T21:00).
+export const m1ToM4Met = (criteria: readonly CriterionRow[]): boolean =>
+  ['M1', 'M2', 'M3', 'M4'].every((id) => { const met = criteria.find((c) => c.id === id)?.met; return met === true || met === 'n/a'; });
+
 export interface Holding {
   fault: Fault;
   id: string;
