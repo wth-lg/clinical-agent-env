@@ -6,10 +6,14 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { sampleBase, summary, TASK_IDS } from './fixtures/sample-results/sample.ts';
 
+// The key gate shows on the first visit only: App.tsx remembers "Browse without a key" for the session.
 async function browse(page: Page, path: string) {
   await page.goto(new URL(path, await sampleBase(test.info().project.use.baseURL!)).href);
-  await page.getByRole('button', { name: 'Browse without a key' }).click();
-  await expect(page.getByRole('navigation', { name: 'Views' })).toBeVisible();
+  const gate = page.getByRole('button', { name: 'Browse without a key' });
+  const nav = page.getByRole('navigation', { name: 'Views' });
+  await expect(gate.or(nav)).toBeVisible();
+  if (await gate.isVisible()) await gate.click();
+  await expect(nav).toBeVisible();
 }
 
 const value = (v: number | null) => (v === null ? '' : String(v));
