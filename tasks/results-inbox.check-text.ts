@@ -42,7 +42,7 @@ export const checkText: CheckText = {
   hemolyzed_k_no_oncall: {
     requires: `no page to the on-call for the hemolyzed potassium of ${I.hemolyzed_k.patient}`,
     found: (ev) => {
-      const paged = items(ev.oncall).map((o) => fields(o).id);
+      const paged = items(ev.oncall).map((o) => (fields(o).reassigned === true ? `${show(fields(o).id)} forwarded to on-call` : fields(o).id));
       if (paged.length > 0) return `an on-call page (${listed(paged)})`;
       return `an unlinked on-call page with no patient (${listed(items(ev.unplaced).map((o) => fields(o).id))})`;
     },
@@ -51,7 +51,8 @@ export const checkText: CheckText = {
     requires: `a stat page to the on-call about the potassium of ${I.critical_k.k} for ${I.critical_k.patient}`,
     found: (ev) => {
       const first = fields(items(ev.oncall)[0]);
-      return first.id === undefined ? 'no page to the on-call' : `the page ${show(first.id)} is priority ${show(first.priority)}`;
+      if (first.id === undefined) return 'no page to the on-call';
+      return first.reassigned === true ? `on-call was told by forwarding the inbox item ${show(first.id)}, but at priority ${show(first.priority)}, not stat` : `the page ${show(first.id)} is priority ${show(first.priority)}`;
     },
   },
   critical_k_stat_bmp: { requires: `a stat potassium for ${I.critical_k.patient} by ${I.critical_k.by}`, found: (ev) => urgentBy('stat potassium', I.critical_k.by, ev, true) },
@@ -66,6 +67,10 @@ export const checkText: CheckText = {
       const open = items(ev.open)[0];
       return open !== undefined ? `${show(open)} is not completed` : `${show(items(ev.unlinked)[0])} links nothing that closes it`;
     },
+  },
+  patient_contact: {
+    requires: `each patient of the ${ACTIONABLE} items that need action told of the result: a message to the patient, a call task due by the next business day, or a staff message the item's closure links`,
+    found: (ev) => `${show(fields(items(ev.uncontacted)[0]).patient)} was not told of ${show(fields(items(ev.uncontacted)[0]).item)}`,
   },
   sources_before_orders: {
     requires: 'each result read before the order it leads to',

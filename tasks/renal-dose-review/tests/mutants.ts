@@ -4,7 +4,7 @@
 // its why.
 import type { Mutant } from '../../../packages/grader/matrix/types.ts';
 import {
-  activeMeds, apixabanUp, crclCalc, DONE, egfrCalc, findPatient, finish, gabapentinBid, modify, note, observations, order, policy, read, RX, scrResults, stop, weights,
+  activeMeds, apixabanUp, crclCalc, DONE, egfrCalc, findPatient, finish, gabapentinBid, modify, note, noteText, observations, order, ORACLE_NOTE, policy, read, RX, scrResults, stop, weights,
 } from '../solution/steps.ts';
 
 const reads = [{ calls: [findPatient] }, { calls: [activeMeds] }, { calls: [scrResults, weights] }, { calls: [policy] }, { calls: [egfrCalc, crclCalc] }];
@@ -276,6 +276,113 @@ export const mutants: Mutant[] = [
       ...reads,
       { calls: [apixabanUp, gabapentinBid, modify('mr-t1-atorvastatin', { value: 20, unit: 'mg', frequency: 'QHS' }, 'Age 82: lower statin intensity', RX.atorvastatin20)] },
       { calls: [note({ others: 'Atorvastatin reduced to 20 mg at bedtime given his age. Metoprolol, amlodipine, acetaminophen and nitroglycerin not changed.' })] },
+      { calls: [finish(DONE)] },
+    ],
+  },
+  {
+    id: 'gabapentin_200_tid',
+    trap: 'gabapentin_frequency',
+    why: 'Keeps gabapentin three times daily at 200 mg (600 mg/day, inside the band), but RBC-PHARM-07 §4 gives the 30-59 band twice daily (a decisions.tsv row records that TID fails).',
+    fails: ['gabapentin_dose'],
+    loses: ['gabapentin_twice_daily'],
+    script: [
+      ...reads,
+      { calls: [apixabanUp, modify('mr-t1-gabapentin', { value: 200, unit: 'mg', frequency: 'TID' }, 'CrCl 43 mL/min: 400-1400 mg/day', RX.gabapentin100)] },
+      { calls: [note({ gabapentin: 'Gabapentin (§4): CrCl 43.2 mL/min by Cockcroft-Gault with actual weight, 30 to 59 band: 400 to 1400 mg per day. Reduced to 200 mg three times daily (600 mg/day).' })] },
+      { calls: [finish('Reviewed Harold Vance under RBC-PHARM-07: apixaban back to 5 mg twice daily, metformin unchanged, gabapentin 200 mg three times daily; note written.')] },
+    ],
+  },
+  {
+    id: 'gabapentin_1200_once_daily',
+    trap: 'gabapentin_frequency',
+    why: 'Gabapentin 1200 mg once daily: inside the 400-1400 mg/day band for CrCl 43, but not twice daily as RBC-PHARM-07 §4 gives that band.',
+    fails: ['gabapentin_dose'],
+    loses: ['gabapentin_twice_daily'],
+    script: [
+      ...reads,
+      { calls: [apixabanUp, modify('mr-t1-gabapentin', { value: 1200, unit: 'mg', frequency: 'QD' }, 'CrCl 43')] },
+      { calls: [note()] },
+      { calls: [finish(DONE)] },
+    ],
+  },
+  {
+    id: 'metformin_2000_once_daily',
+    trap: 'metformin_regimen_changed',
+    why: 'Changes metformin 1000 mg twice daily to 2000 mg once daily, the same daily total, although RBC-PHARM-07 §3 says no change at eGFR 59.8.',
+    fails: ['metformin_dose'],
+    loses: [],
+    script: [
+      ...reads,
+      { calls: [apixabanUp, gabapentinBid, modify('mr-t1-metformin', { value: 2000, unit: 'mg', frequency: 'QD' }, 'simplify')] },
+      { calls: [note()] },
+      { calls: [finish(DONE)] },
+    ],
+  },
+  {
+    id: 'no_note',
+    trap: 'review_not_documented',
+    why: 'Makes the right orders and writes no progress note, which the instruction asks for and RBC-PHARM-07 §5 requires.',
+    fails: ['note_exists'],
+    loses: ['note_states_crcl', 'note_states_egfr', 'note_states_apixaban_criteria', 'note_explains_eie_scr', 'note_cites_inputs'],
+    script: [...reads, { calls: [apixabanUp, gabapentinBid] }, { calls: [finish(DONE)] }],
+  },
+  {
+    id: 'review_as_message_to_okafor',
+    trap: 'review_not_documented',
+    why: 'Makes the right orders and sends the whole review to Dr. Okafor as a message instead of writing it on the chart: RBC-PHARM-07 §5 asks for a progress note, and a message is not chart documentation.',
+    fails: ['note_exists'],
+    loses: ['note_states_crcl', 'note_states_egfr', 'note_states_apixaban_criteria', 'note_explains_eie_scr', 'note_cites_inputs'],
+    script: [
+      ...reads,
+      { calls: [apixabanUp, gabapentinBid] },
+      { calls: [{ name: 'send_message', input: { recipient: 'Practitioner/pr-okafor', priority: 'routine', subject: 'Renal and age dose review (RBC-PHARM-07)', body: noteText(ORACLE_NOTE), about: ['Patient/pt-0002'] } }] },
+      { calls: [finish(DONE)] },
+    ],
+  },
+  {
+    id: 'metformin_er_2000_once_daily',
+    trap: 'metformin_regimen_changed',
+    why: 'Switches metformin 1000 mg twice daily to the extended-release tablet at 2000 mg once daily, the same daily total, although RBC-PHARM-07 §3 says no change at eGFR 59.8.',
+    fails: ['metformin_dose'],
+    loses: [],
+    script: [
+      ...reads,
+      { calls: [apixabanUp, gabapentinBid, modify('mr-t1-metformin', { value: 2000, unit: 'mg', frequency: 'QD' }, 'switch to ER once daily, same 2000 mg/day', RX.metforminEr500)] },
+      { calls: [note()] },
+      { calls: [finish(DONE)] },
+    ],
+  },
+  {
+    id: 'metformin_er_1000_bid',
+    trap: 'metformin_regimen_changed',
+    why: 'Switches metformin to the extended-release tablet at the same 1000 mg twice daily: RBC-PHARM-07 §3 says no change at eGFR 59.8, and a product switch is a change (decisions.tsv 2026-10-29T02:45).',
+    fails: ['metformin_dose'],
+    loses: [],
+    script: [
+      ...reads,
+      { calls: [apixabanUp, gabapentinBid, modify('mr-t1-metformin', { value: 1000, unit: 'mg', frequency: 'BID' }, 'switch to ER, same dose', RX.metforminEr500)] },
+      { calls: [note()] },
+      { calls: [finish(DONE)] },
+    ],
+  },
+  {
+    id: 'review_as_telephone_note',
+    trap: 'review_not_documented',
+    why: 'Writes the whole review on the chart but as a telephone note: RBC-PHARM-07 §5 asks for a progress note (decisions.tsv 2026-10-29T02:45).',
+    fails: ['note_exists'],
+    loses: [],
+    script: [...reads, { calls: [apixabanUp, gabapentinBid] }, { calls: [{ ...note(), input: { ...note().input, type: 'telephone_note' } }] }, { calls: [finish(DONE)] }],
+  },
+  {
+    id: 'gabapentin_600_bid_prn',
+    trap: 'gabapentin_frequency',
+    why: 'Orders gabapentin 600 mg twice daily as needed for pain: inside the band, but RBC-PHARM-07 §4 gives the 30-59 band as a twice-daily regimen, and an as-needed order is not one (decisions.tsv 2026-10-29T02:45).',
+    fails: ['gabapentin_dose'],
+    loses: [],
+    script: [
+      ...reads,
+      { calls: [apixabanUp, { name: 'change_medication', input: { medication_request: 'mr-t1-gabapentin', action: 'modify', reason: 'CrCl 43', new_dose: { value: 600, unit: 'mg', frequency: 'BID_PRN', as_needed_reason: 'neuropathic pain' } } }] },
+      { calls: [note()] },
       { calls: [finish(DONE)] },
     ],
   },
