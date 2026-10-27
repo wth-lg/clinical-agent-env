@@ -9,7 +9,11 @@
 //   - a clinic patient with no generalPractitioner;
 //   - a base resource dated before the start of the encounter it references (unless it already was
 //     in the base cohort);
-//   - a pair of a patient's base resources whose order in time differs from the base cohort.
+//   - a pair of a patient's base resources whose order in time differs from the base cohort;
+//   - a note whose text starts with a date other than the Eastern date of its DocumentReference.date
+//     (where the base cohort's note did match);
+//   - a condition whose abatement no longer equals the start of the encounter it equalled in the base
+//     cohort.
 // The pass that makes them 0 is scripts/fixtures-lib.ts hygiene(), run by fixtures:build between
 // the base cohort and the overlays; the counts on the merge base are in the CHANGELOG fragment.
 import { readFileSync } from 'node:fs';
@@ -32,14 +36,14 @@ const refOf = (v: unknown) => (v as { reference?: string } | undefined)?.referen
 // (decisions.tsv 2026-10-27T15:25Z F4: exactly these are exempt):
 //   - a task file about the patient writes the encounter's date: enc-00010, -00011, -00060, -00106,
 //     -00198;
-//   - a time of it on a date a task file writes would move: enc-00019, -00023, -00024, -00196,
-//     -00258, -00344, -00346;
+//   - a time of it on a date a task file writes would move: enc-00019, -00023, -00024, -00258,
+//     -00344, -00346;
 //   - a time of it would move to another month: enc-00007, -00076, -00236;
 //   - the move would change the patient's order of dated resources: enc-00004 (its Friday is the
 //     patient's visit enc-00003), enc-00259 and enc-00260 (cond-00835 references enc-00259 and is
 //     dated at enc-00260's start).
 // The pass also leaves enc-00012 and enc-00154, which task overlays then remove.
-const LEFT_OUT = ['enc-00004', 'enc-00007', 'enc-00010', 'enc-00011', 'enc-00019', 'enc-00023', 'enc-00024', 'enc-00060', 'enc-00076', 'enc-00106', 'enc-00196', 'enc-00198', 'enc-00236', 'enc-00258', 'enc-00259', 'enc-00260', 'enc-00344', 'enc-00346'];
+const LEFT_OUT = ['enc-00004', 'enc-00007', 'enc-00010', 'enc-00011', 'enc-00019', 'enc-00023', 'enc-00024', 'enc-00060', 'enc-00076', 'enc-00106', 'enc-00198', 'enc-00236', 'enc-00258', 'enc-00259', 'enc-00260', 'enc-00344', 'enc-00346'];
 
 describe('world hygiene (JT2)', () => {
   it('no base ambulatory encounter starts outside Monday to Friday 08:00-18:00, but the listed ones', () => {
@@ -114,6 +118,32 @@ describe('world hygiene (JT2)', () => {
     }
     expect(flipped.length, flipped.slice(0, 5).join('; ')).toBe(0);
   });
+
+  it('a note whose text starts with its date still starts with the Eastern date of its DocumentReference.date', () => {
+    const leading = (r: R) => {
+      const data = (r.content as Array<{ attachment?: { data?: string } }> | undefined)?.[0]?.attachment?.data;
+      return data === undefined ? null : (/^\s*(\d{4}-\d\d-\d\d)\b/.exec(Buffer.from(data, 'base64').toString('utf8'))?.[1] ?? null);
+    };
+    const dayOf = (r: R) => easternParts(Date.parse(r.date as string)).date;
+    const matched = new Set(cohort.filter((r) => r.resourceType === 'DocumentReference' && typeof r.date === 'string' && leading(r) === dayOf(r)).map((r) => r.id));
+    const stale = base.filter((r) => r.resourceType === 'DocumentReference' && matched.has(r.id) && leading(r) !== dayOf(r)).map((r) => `${r.id} ${leading(r)} ${r.date as string}`);
+    expect(stale).toEqual([]);
+  });
+
+  it('a condition that abates at the start of an encounter still abates at that encounter\'s start', () => {
+    const starts = (rs: R[]) => new Map(rs.filter((r) => r.resourceType === 'Encounter').map((e) => [e.id, Date.parse((e.period as { start: string }).start)]));
+    const was = starts(cohort);
+    const now = starts(base);
+    const byId = new Map(base.map((r) => [`${r.resourceType}/${r.id}`, r]));
+    const drift = cohort.filter((c) => c.resourceType === 'Condition' && typeof c.abatementDateTime === 'string').flatMap((c) => {
+      const at = Date.parse(c.abatementDateTime as string);
+      const enc = cohort.find((e) => e.resourceType === 'Encounter' && refOf(e.subject) === refOf(c.subject) && was.get(e.id) === at);
+      const h = byId.get(`Condition/${c.id}`);
+      if (enc === undefined || h === undefined || !now.has(enc.id)) return [];
+      return Date.parse(h.abatementDateTime as string) === now.get(enc.id) ? [] : [`${c.id} ${h.abatementDateTime as string} vs ${enc.id}`];
+    });
+    expect(drift).toEqual([]);
+  });
 });
 
 // The pass on small hand-made cohorts (verifier-phase-P17i-JT2-1 F1, F3, P3, P4).
@@ -158,11 +188,33 @@ describe('hygiene()', () => {
     expect((get(resources, 'e1').period as { start: string }).start).toBe('2026-08-03T10:00:00-04:00');
   });
 
+  it('rewrites the date at the head of a note whose date moves to another day', () => {
+    const text = '\n2026-04-18\n\n# Chief Complaint\nSeen on 2026-04-18 for a cough.\n';
+    const doc = { resourceType: 'DocumentReference', id: 'd1', subject: { reference: 'Patient/p1' }, date: '2026-04-18T10:00:00.120-04:00', context: { encounter: [{ reference: 'Encounter/e1' }] }, content: [{ attachment: { contentType: 'text/plain', data: Buffer.from(text).toString('base64') } }] };
+    const { resources } = run([pt, enc('e1', '2026-04-18T10:00:00-04:00', '2026-04-18T10:30:00-04:00'), doc]);
+    const out = get(resources, 'd1') as { date: string; content: Array<{ attachment: { data: string } }> };
+    expect(out.date).toBe('2026-04-17T10:00:00.120-04:00');
+    expect(Buffer.from(out.content[0]!.attachment.data, 'base64').toString('utf8')).toBe('\n2026-04-17\n\n# Chief Complaint\nSeen on 2026-04-17 for a cough.\n');
+  });
+
+  it('moves a condition\'s abatement with the encounter whose start it equals, not with the encounter it references', () => {
+    // e1 (Saturday night) moves; e2 (a Wednesday at 10:00) stays. c1 references e1 and abates at e2's
+    // start; c2 references e2 and abates at e1's start.
+    const cond = (id: string, encounter: string, onset: string, abatement: string) => ({ resourceType: 'Condition', id, subject: { reference: 'Patient/p1' }, encounter: { reference: `Encounter/${encounter}` }, onsetDateTime: onset, abatementDateTime: abatement });
+    const { resources } = run([pt, enc('e1', '2026-04-18T21:00:00-04:00', '2026-04-18T21:15:00-04:00'), enc('e2', '2026-04-22T10:00:00-04:00', '2026-04-22T10:15:00-04:00'),
+      cond('c1', 'e1', '2026-04-18T21:00:00-04:00', '2026-04-22T10:00:00-04:00'), cond('c2', 'e2', '2026-04-22T10:00:00-04:00', '2026-04-18T21:00:00-04:00')]);
+    expect((get(resources, 'e1').period as { start: string }).start).toBe('2026-04-17T09:00:00-04:00');
+    expect(get(resources, 'c1').onsetDateTime).toBe('2026-04-17T09:00:00-04:00');
+    expect(get(resources, 'c1').abatementDateTime).toBe('2026-04-22T10:00:00-04:00');
+    expect(get(resources, 'c2').abatementDateTime).toBe('2026-04-17T09:00:00-04:00');
+  });
+
   it('reads ingredients by their full names, so different drugs that share a first word stay apart', () => {
     expect(ingredientsOf('insulin lispro 100 UNT/ML Injectable Solution')).toEqual(['insulin lispro']);
     expect(ingredientsOf('insulin isophane, human 70 UNT/ML / insulin, regular, human 30 UNT/ML Injectable Suspension')).toEqual(['insulin isophane human', 'insulin regular human']);
     expect(ingredientsOf('sodium chloride 9 MG/ML Injectable Solution')).not.toEqual(ingredientsOf('sodium bicarbonate 650 MG Oral Tablet'));
     expect(ingredientsOf('24 HR metoprolol succinate 100 MG Extended Release Oral Tablet')).toEqual(['metoprolol succinate']);
+    expect(ingredientsOf('120 ACTUAT fluticasone propionate 0.044 MG/ACTUAT Metered Dose Inhaler')).toEqual(['fluticasone propionate']);
     expect(ingredientsOf('Acetaminophen 325 MG / Oxycodone Hydrochloride 5 MG Oral Tablet')).toEqual(['acetaminophen', 'oxycodone hydrochloride']);
     expect(acuteClass('Acetaminophen 325 MG / Oxycodone Hydrochloride 5 MG Oral Tablet')).toBe('acute opioid');
   });
