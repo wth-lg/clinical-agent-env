@@ -120,44 +120,57 @@ const encounterOf = (r: Resource): string | null => {
   const x = r as unknown as { encounter?: { reference?: string }; context?: { encounter?: Array<{ reference?: string }> } };
   return x.encounter?.reference ?? x.context?.encounter?.[0]?.reference ?? null;
 };
-// Every date-time string in v (deep) shifted by delta, in Eastern local time, with its fraction of
-// a second kept (a note dated 22:26:24.206 stays after the visit at 22:26:24).
-function shiftAll(v: unknown, delta: number): unknown {
-  if (typeof v === 'string' && ISO_TIME.test(v)) {
-    const iso = easternIso(Date.parse(v) + delta);
-    const fraction = /T\d\d:\d\d:\d\d(\.\d+)/.exec(v)?.[1] ?? '';
-    return `${iso.slice(0, 19)}${fraction}${iso.slice(19)}`;
-  }
-  if (Array.isArray(v)) return v.map((x) => shiftAll(x, delta));
-  if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, shiftAll(x, delta)]));
+// A date-time string shifted by delta, in Eastern local time, with its fraction of a second kept
+// (a note dated 22:26:24.206 stays after the visit at 22:26:24).
+function shiftTime(v: string, delta: number): string {
+  const iso = easternIso(Date.parse(v) + delta);
+  const fraction = /T\d\d:\d\d:\d\d(\.\d+)/.exec(v)?.[1] ?? '';
+  return `${iso.slice(0, 19)}${fraction}${iso.slice(19)}`;
+}
+// v (deep) with each date-time string, at any path, replaced by fn of it.
+function mapTimes(v: unknown, fn: (t: string) => string): unknown {
+  if (typeof v === 'string') return ISO_TIME.test(v) ? fn(v) : v;
+  if (Array.isArray(v)) return v.map((x) => mapTimes(x, fn));
+  if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, mapTimes(x, fn)]));
   return v;
 }
 const timesIn = (r: Resource): string[] => (JSON.stringify(r).match(/"\d{4}-\d\d-\d\dT[^"]*"/g) ?? []).map((v) => JSON.parse(v) as string).filter((v) => ISO_TIME.test(v));
-// A note whose date moves to another day: its text writes the old Eastern date (Synthea heads each
-// note with it), so each attachment's text gets the new one (verifier-phase-P17i-JT2r2-1 S1).
-function rewriteNoteDate(before: Resource, after: Resource): Resource {
-  const b = before as unknown as { date?: string; content?: Array<{ attachment?: { data?: string } }> };
-  const a = after as unknown as { date?: string; content?: Array<{ attachment?: { data?: string } }> };
-  if (before.resourceType !== 'DocumentReference' || typeof b.date !== 'string' || typeof a.date !== 'string' || !a.content) return after;
-  const from = easternParts(Date.parse(b.date)).date;
-  const to = easternParts(Date.parse(a.date)).date;
+// A resource whose time moves to another Eastern day: each text attachment, at any path
+// (DocumentReference.content[].attachment, DiagnosticReport.presentedForm[]), that leads with the old
+// day leads with the new one. Only that leading date changes; a later mention of the day stays
+// (verifier-phase-P17i-JT2r2-1 S1, JT2r3-1 N1 and m6).
+function rewriteHeaderDate(before: Resource, after: Resource): Resource {
+  const t0 = timeOf(before);
+  const t1 = timeOf(after);
+  if (t0 === null || t1 === null) return after;
+  const from = easternParts(t0).date;
+  const to = easternParts(t1).date;
   if (from === to) return after;
-  const content = a.content.map((c) => {
-    const data = c.attachment?.data;
-    if (typeof data !== 'string') return c;
-    const text = Buffer.from(data, 'base64').toString('utf8');
-    return text.includes(from) ? { ...c, attachment: { ...c.attachment, data: Buffer.from(text.replaceAll(from, to), 'utf8').toString('base64') } } : c;
-  });
-  return { ...after, content } as unknown as Resource;
+  const head = new RegExp(`^(\\s*)${from}(?!\\d)`);
+  const walk = (v: unknown): unknown => {
+    if (Array.isArray(v)) return v.map(walk);
+    if (!v || typeof v !== 'object') return v;
+    const o = Object.fromEntries(Object.entries(v).map(([k, x]) => [k, walk(x)])) as Record<string, unknown>;
+    if (typeof o.data === 'string' && /^text\//.test(String(o.contentType))) {
+      const text = Buffer.from(o.data, 'base64').toString('utf8');
+      if (head.test(text)) o.data = Buffer.from(text.replace(head, `$1${to}`), 'utf8').toString('base64');
+    }
+    return o;
+  };
+  return walk(after) as Resource;
 }
 // Whether moving the members (indexes into before, replaced in after) keeps their patient's order of
 // dated resources: against every other dated resource of the patient, each member stays on the same
-// side (earlier, at the same instant, later).
+// side (earlier, at the same instant, later); and each member's own date-times (onset and abatement,
+// for example) keep their order.
 function keepsOrder(before: readonly Resource[], after: readonly Resource[], members: readonly number[], patient: string): boolean {
   const others = before.flatMap((r, j) => { const t = timeOf(r); return !members.includes(j) && patientOf(r) === patient && t !== null ? [t] : []; });
   return members.every((j) => {
     const a = timeOf(before[j]!);
     const b = timeOf(after[j]!);
+    const was = timesIn(before[j]!).map((v) => Date.parse(v));
+    const now = timesIn(after[j]!).map((v) => Date.parse(v));
+    if (was.some((x, i) => was.slice(i + 1).some((y, k) => Math.sign(x - y) !== Math.sign(now[i]! - now[i + 1 + k]!)))) return false;
     if (a === null || b === null || a === b) return true;
     return others.every((o) => Math.sign(a - o) === Math.sign(b - o));
   });
@@ -244,20 +257,26 @@ export function hygiene(resources: readonly Resource[], opts: { now: number; lit
       continue;
     }
     const delta = target - start;
-    // A condition's abatement at the start of an encounter moves with that encounter: a member keeps
-    // an abatement at another encounter's start, and a condition of the patient that abates at this
-    // encounter's start (followers) moves only its abatement.
-    const encStarts = new Set(out.flatMap((r) => { const x = r as unknown as { period?: { start?: string } }; return r.resourceType === 'Encounter' && patientOf(r) === patient && typeof x.period?.start === 'string' ? [Date.parse(x.period.start)] : []; }));
-    const abateOf = (r: Resource): number | null => { const v = (r as unknown as { abatementDateTime?: unknown }).abatementDateTime; return r.resourceType === 'Condition' && typeof v === 'string' && ISO_TIME.test(v) ? Date.parse(v) : null; };
-    const followers = patient === null ? [] : out.flatMap((r, j) => (!members.includes(j) && patientOf(r) === patient && abateOf(r) === start ? [j] : []));
-    const moveMember = (r: Resource): Resource => {
-      const x = shiftAll(r, delta) as Record<string, unknown>;
-      const abate = abateOf(r);
-      if (abate !== null && abate !== start && encStarts.has(abate)) x.abatementDateTime = (r as unknown as { abatementDateTime: string }).abatementDateTime;
-      return rewriteNoteDate(r, x as unknown as Resource);
-    };
-    const affected = [...members, ...followers];
-    const candidate = out.map((r, j) => (members.includes(j) ? moveMember(r) : followers.includes(j) ? ({ ...r, abatementDateTime: shiftAll((r as unknown as { abatementDateTime: string }).abatementDateTime, delta) } as Resource) : r));
+    // A date-time belongs to the encounter whose window [start, end] holds it (decisions.tsv
+    // 2026-10-27T21:00Z): any date-time of the patient inside this window moves with it, such as an
+    // abatement at its start or end; a member moves whole, but a date-time inside another
+    // encounter's window stays with that encounter.
+    const end = Math.max(start, ...twins.map((j) => Date.parse((out[j] as unknown as { period?: { end?: string } }).period?.end ?? '')).filter((v) => !Number.isNaN(v)));
+    const inThis = (ms: number) => ms >= start && ms <= end;
+    const others = out.flatMap((r, j) => {
+      const x = r as unknown as { period?: { start?: string; end?: string } };
+      if (r.resourceType !== 'Encounter' || twins.includes(j) || patientOf(r) !== patient || typeof x.period?.start !== 'string') return [];
+      const s0 = Date.parse(x.period.start);
+      return [[s0, Math.max(s0, Date.parse(x.period.end ?? '') || s0)] as const];
+    });
+    const elsewhere = (ms: number) => !inThis(ms) && others.some(([s0, e0]) => ms >= s0 && ms <= e0);
+    const candidate = out.map((r, j) => {
+      if (members.includes(j)) return rewriteHeaderDate(r, mapTimes(r, (t) => (elsewhere(Date.parse(t)) ? t : shiftTime(t, delta))) as Resource);
+      if (patient === null || patientOf(r) !== patient || r.resourceType === 'Encounter') return r;
+      const moved = mapTimes(r, (t) => (inThis(Date.parse(t)) ? shiftTime(t, delta) : t)) as Resource;
+      return JSON.stringify(moved) === JSON.stringify(r) ? r : rewriteHeaderDate(r, moved);
+    });
+    const affected = out.flatMap((r, j) => (candidate[j] !== r ? [j] : []));
     // Each time that moves, before and after: none may pass now or change month, and none whose date
     // changes may leave a date that a task file writes.
     const shifted = affected.flatMap((j) => { const b = timesIn(candidate[j]!); return timesIn(out[j]!).map((v, k) => [v, b[k]!] as const).filter(([x, y]) => x !== y); });
@@ -271,7 +290,7 @@ export function hygiene(resources: readonly Resource[], opts: { now: number; lit
       report.skipped[e.id] = why;
       continue;
     }
-    if (patient !== null && !keepsOrder(out, candidate, members, patient)) {
+    if (patient !== null && !keepsOrder(out, candidate, affected, patient)) {
       report.skipped[e.id] = 'the move would change its patient\'s order of dated resources';
       continue;
     }
