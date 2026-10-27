@@ -75,6 +75,18 @@ describe('results-inbox', () => {
     expect(() => derive(swap('dr-t2-ct-0604', (t) => t.replaceAll('5 mm solid nodule', '7 mm solid nodule')))).toThrow(/7 mm nodule is outside RBC-RAD-05 §2/);
   });
 
+  // The lab calls a critical value to the after-hours answering service, which tries the covering
+  // clinician (CLIA, 42 CFR 493.1291(g); NPSG.02.03.01). The notes say that service failed, not
+  // that a closed office let the lab file the value to the inbox.
+  it('says the answering service could not reach the covering clinician on the critical potassium items', () => {
+    for (const [n, at] of [[4, '18:50'], [5, '18:55']] as const) {
+      const task = store.get('Task', `task-t2-inbox-${n}`) as { note?: Array<{ text: string }> };
+      const text = (task.note ?? []).map((x) => x.text).join(' ');
+      expect(text).toBe(`Lab: critical value called to the after-hours answering service at ${at}; the service could not reach the covering clinician.`);
+      expect(text).not.toMatch(/office was closed|Filed to the inbox/);
+    }
+  });
+
   // The overlay cannot read instruction.md or the policy files, so their prompt-date, weekday and
   // leakage checks run here, over the committed world.
   it('states no date the clock gives and no answer in the prompt or policy text', async () => {
