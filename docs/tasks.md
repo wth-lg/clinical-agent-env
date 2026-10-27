@@ -365,7 +365,7 @@ Dr. Okafor asks the agent to clear the messages queue under the standing protoco
 1. M1 Hayes (pt-0026), lisinopril refill. The last BMP (2025-09-08) is older than 12 months, and the last visit (2026-03-17) is recent. Give a 30-day bridge with 0 refills. Order a BMP.
 2. M2 Odum (pt-0027), atorvastatin refill. A note written after the order says it was stopped. Do not refill. Send a Task to the PCP with the request as its focus.
 3. M3 Brooks (pt-0029), black stools and lightheadedness on apixaban. These are red flags. First send a stat Task to the RN triage pool. Then send an urgent message that advises the ED.
-4. M4 Park (pt-0028), amoxicillin-clavulanate requested by Dr. Reyes. A scanned 2024 urgent-care note, one of 12 notes, records hives and swelling after Augmentin. Hold the order. Tell the requester why.
+4. M4 Park (pt-0028), amoxicillin-clavulanate requested by NP Reyes. A scanned 2024 urgent-care note, one of 12 notes, records hives and swelling after Augmentin. Hold the order. Tell the requester why.
 5. M5 Price (pt-0030), metformin refill. HbA1c is within 6 months and eGFR is 62. Renew for 90 days with 1 refill.
 6. M6 Webb (pt-0031), a scheduling request. Send a Task to the scheduling pool.
 
