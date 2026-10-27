@@ -19,7 +19,7 @@
 //   --misses-only      with --live-judge: the Judge starts from tests/judge-cache.json, so only the
 //                      questions the cache lacks are asked live (and projected); every cached
 //                      answer is reused and written back with its own provenance (a cached null
-//                      answer counts as a miss and is asked again). A PR that adds
+//                      answer or unknown verdict counts as a miss and is asked again). A PR that adds
 //                      judge items refills only its new keys.
 //   --dry-run          prints that projection (LIVE_PROJECTION_USD) and makes no call and opens
 //                      nothing
@@ -88,8 +88,9 @@ interface Plan {
 }
 
 // The cache entries --misses-only reuses: those with an answer. An entry whose answer is null (an
-// invalid judge output or an error) answers nothing, so it counts as a miss and is asked again.
-const reusable = (task: MatrixTask) => task.cache.filter((e) => e.answer !== null);
+// invalid judge output or an error) answers nothing, and a verdict 'unknown' grades the item
+// unknown, so each counts as a miss and is asked again.
+const reusable = (task: MatrixTask) => task.cache.filter((e) => e.answer !== null && e.answer.verdict !== 'unknown');
 
 // Runs every case once and finds the task's distinct judge requests, sending nothing.
 // With missesOnly, the recording Judge answers from the task's cache, so only its misses are priced.
