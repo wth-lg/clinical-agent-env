@@ -36,7 +36,14 @@ export const furosemideUp = modify(MR.furosemide, { value: 40, unit: 'mg', frequ
 export const spironolactone = order(RX.spironolactone25, 25, 'QD', 'Signed addendum 10/19: spironolactone 25 mg daily (corrects 12.5 mg)');
 export const kclStop = change(MR.kcl, 'stop', 'St. Brigid discharge summary 10/19: stop potassium chloride');
 export const lisinoprilResume = change(MR.lisinopril, 'resume', 'Discharge summary: resume when SCr < 1.5; SCr 1.32 on 10/21');
-export const writes = [furosemideUp, spironolactone, kclStop, lisinoprilResume];
+// A potassium and creatinine recheck (BMP) for 2026-10-26 to 2026-10-28, a week after spironolactone
+// is started with lisinopril resumed (the discharge summary asks for a BMP a week after starting
+// spironolactone; P17j JG9, decisions 2026-10-28T02:10Z).
+export const bmpRecheck: ScriptCall = {
+  name: 'order_service',
+  input: { patient: PT, code: '24321-2', priority: 'routine', occurrence_start: '2026-10-26', occurrence_end: '2026-10-28', reason: 'BMP (potassium, creatinine) 1 week after starting spironolactone with lisinopril resumed' },
+};
+export const writes = [furosemideUp, spironolactone, kclStop, lisinoprilResume, bmpRecheck];
 
 export const MESSAGE =
   'Walter Kim has two beta-blockers on his outpatient list: metoprolol succinate ER 50 mg daily, which the St. Brigid discharge documents continue as "metoprolol XL", ' +
