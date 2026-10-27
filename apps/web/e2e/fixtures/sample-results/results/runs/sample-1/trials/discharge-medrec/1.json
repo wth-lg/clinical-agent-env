@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:discharge-medrec:1",
   "task_id": "discharge-medrec",
-  "task_version": "c11d5b4942710b9d170241831f8fa670a488853fcba46c687fb6688e774ac369",
+  "task_version": "14f1094591d101714b99afde4b6e79040f57a03a0534fa1a3cbe243c9c8cb7f4",
   "env_version": "6f1110b24a8516555824e011080ad3408062876e165ae1bb6b211f80488440a7",
-  "grader_task_version": "09cfd141a6c784246ed21e088dc31cb66085fd177b268c8333a94537208cdae3",
+  "grader_task_version": "fd1ecbe206bd39157e93602086cb7fb2f2c285b5297dacc438ad1ae21807ec6f",
   "fixture_hash": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
   "state_hash": {
     "initial": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
@@ -256,7 +256,7 @@
       "evidence": {
         "verdict": "not_met",
         "quote": "Left unchanged per RBC-TOC-02 §5; please decide.",
-        "cache_key": "f63241d8f985ec68ef18d6b51ed4c5f3efe014b0a389a14eda9c44a8504bb89f"
+        "cache_key": "bae039796e1c95187635064247858d01dcbe3176722c8569cc490e41f106e8fe"
       }
     },
     {
@@ -282,7 +282,7 @@
     "cache_keys": [
       "e30011652b9380fad1735bb71a099c4e9f6225917201869c12337f1dbee6832d",
       "95af410752357849acc1affe830943bad7641854496b0ee8d42f4f48d40856d4",
-      "f63241d8f985ec68ef18d6b51ed4c5f3efe014b0a389a14eda9c44a8504bb89f"
+      "bae039796e1c95187635064247858d01dcbe3176722c8569cc490e41f106e8fe"
     ],
     "cache": [
       {
@@ -322,7 +322,7 @@
         }
       },
       {
-        "key": "f63241d8f985ec68ef18d6b51ed4c5f3efe014b0a389a14eda9c44a8504bb89f",
+        "key": "bae039796e1c95187635064247858d01dcbe3176722c8569cc490e41f106e8fe",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -336,7 +336,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-27T17:06:19.490Z"
+          "at": "2026-10-27T19:25:02.389Z"
         }
       }
     ]
