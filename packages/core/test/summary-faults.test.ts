@@ -35,11 +35,11 @@ describe('fault_counts, top_failed_checks, model and effort', () => {
 
   it('equal the hand counts', () => {
     expect(s.schema_version).toBe(SUMMARY_SCHEMA_VERSION);
-    expect(s.schema_version).toBe(7);
+    expect(s.schema_version).toBe(8);
     expect(s).toMatchObject({ model: MODEL, effort: 'high' });
     expect(s.tasks.t!.fault_counts).toEqual({
       failures: 6,
-      taxonomy: { retrieval: 1, reasoning: 2, output_gap: 0, over_action: 0, process: 0, did_not_finish: 1, refusal: 1, unattributed: 1 },
+      taxonomy: { retrieval: 1, reasoning: 2, output_gap: 0, over_action: 0, process: 0, action_form: 0, did_not_finish: 1, refusal: 1, unattributed: 1 },
       label: { model: 1, environment: 0, grader: 1, unlabelled: 4 },
       infra_reruns: 1,
     });
