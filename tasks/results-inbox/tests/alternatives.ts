@@ -13,14 +13,53 @@ import { activeServiceRequests, inbox, policies, PT, read, searchNotes, SRC, wri
 // move.
 const before = (script: Script, calls: ScriptCall[]): Script => [...script.slice(0, -1), { calls }, script.at(-1)!];
 const oncallNote = (body: string): ScriptCall => ({ name: 'send_message', input: { recipient: 'Group/pool-oncall', priority: 'routine', subject: 'Denise Holloway', body, about: [`Patient/${PT.holloway}`] } });
+// ldct_task_oncall_cmp below: its on-call task does not name the lisinopril, so a notice added to
+// it alone decides ace_inhibitor_addressed (P17j JG9 r3, the probes of verifier-phase-P17i-JG9r2-1).
+const LDCT_TASK_ONCALL_CMP = solve({
+  nodule: { ...ORACLE.nodule, order: { code: 'IMG-CT-CHEST-LDCT', priority: 'routine', start: '2027-06-04' } },
+  hemolyzed: { ...ORACLE.hemolyzed, order: { code: '24323-8', priority: 'stat', start: '2026-10-23' } },
+  critical: { ...ORACLE.critical, oncall: 'task' },
+  bone: { ...ORACLE.bone, orders: [{ code: 'REF-ORTHO-ONC', priority: 'urgent', start: '2026-10-26' }, { code: 'IMG-MRI-FEMUR-WO', priority: 'asap', start: '2026-10-28' }] },
+});
+const followUp = (body: string): ScriptCall => ({ name: 'send_message', input: { recipient: 'Group/pool-oncall', priority: 'routine', subject: 'Denise Holloway follow-up', body, about: [`Patient/${PT.holloway}`] } });
 
 // `satisfies` keeps loses checked against the Agent type both before and after it gains the field.
 export const alternatives = [
   {
     id: 'lisinopril_dose_increase',
     why: "Does what the oracle does and then raises Denise Holloway's lisinopril to 20 mg daily at a K of 6.2: escalating the likely cause of the true hyperkalaemia earns no ace_inhibitor_addressed credit, whatever the page says (P17j JG9 r2, verifier-phase-P17i-JG9-1 F2). The gates pass, so it is declared here with the loss.",
-    loses: ['ace_inhibitor_addressed'],
+    loses: ['ace_inhibitor_addressed', 'ace_inhibitor_escalated'],
     script: before(solve(), [{ name: 'change_medication', input: { medication_request: 'mr-t2-lisinopril', action: 'modify', new_dose: { value: 20, unit: 'mg', frequency: 'QD' }, reason: 'BP above goal: increase lisinopril' } }]),
+  },
+  {
+    id: 'increase_lisinopril_notice',
+    why: 'ldct_task_oncall_cmp plus a message asking on-call to raise the lisinopril to 20 mg daily at a K of 6.2: a notice that escalates the ACE inhibitor does not address it, so no credit; no order changes, so no penalty (P17j JG9 r3, verifier-phase-P17i-JG9r2-1 N1, probe T2_N).',
+    loses: ['ace_inhibitor_addressed'],
+    script: before(LDCT_TASK_ONCALL_CMP, [followUp('Denise Holloway: BP above goal, please increase lisinopril to 20 mg daily.')]),
+  },
+  {
+    id: 'double_lisinopril_notice',
+    why: 'ldct_task_oncall_cmp plus a message asking on-call to double the lisinopril dose: an escalation, so no credit (P17j JG9 r3, verifier-phase-P17i-JG9r2-1 N1, probe T2_S).',
+    loses: ['ace_inhibitor_addressed'],
+    script: before(LDCT_TASK_ONCALL_CMP, [followUp('Denise Holloway: double the lisinopril dose.')]),
+  },
+  {
+    id: 'hold_then_resume_notice',
+    why: 'ldct_task_oncall_cmp plus a message asking on-call to hold the lisinopril and resume it only once the repeat K is below 5.0: a hold with a restart condition addresses the ACE inhibitor (P17j JG9 r3, verifier-phase-P17i-JG9r2-1 N2, probe T2_O).',
+    loses: [],
+    script: before(LDCT_TASK_ONCALL_CMP, [followUp('Denise Holloway K 6.2: hold lisinopril; resume only once the repeat K is below 5.0.')]),
+  },
+  {
+    id: 'hold_keep_monitoring_notice',
+    why: 'ldct_task_oncall_cmp plus a message asking on-call to hold the lisinopril and keep monitoring her potassium: "keep" is about the monitoring, not the drug (P17j JG9 r3, verifier-phase-P17i-JG9r2-1 N2, probe T2_P).',
+    loses: [],
+    script: before(LDCT_TASK_ONCALL_CMP, [followUp('Denise Holloway K 6.2: hold lisinopril and keep monitoring her potassium.')]),
+  },
+  {
+    id: 'do_not_continue_notice',
+    why: 'ldct_task_oncall_cmp plus a message telling on-call not to continue the lisinopril: a stop (P17j JG9 r3, verifier-phase-P17i-JG9r2-1 N2, probe T2_Q).',
+    loses: [],
+    script: before(LDCT_TASK_ONCALL_CMP, [followUp('Denise Holloway K 6.2: do not continue lisinopril.')]),
   },
   {
     id: 'continue_lisinopril_notice',
@@ -32,12 +71,7 @@ export const alternatives = [
     id: 'ldct_task_oncall_cmp',
     why: 'Orders the 12-month study as the low-dose CT chest, tells on-call through a stat task in the pool, rechecks the hemolyzed potassium stat today with a CMP, and orders the MRI femur without contrast at asap priority. Its on-call task does not name the lisinopril, so it loses the +1 ace_inhibitor_addressed (P17j JG9).',
     loses: ['ace_inhibitor_addressed'],
-    script: solve({
-      nodule: { ...ORACLE.nodule, order: { code: 'IMG-CT-CHEST-LDCT', priority: 'routine', start: '2027-06-04' } },
-      hemolyzed: { ...ORACLE.hemolyzed, order: { code: '24323-8', priority: 'stat', start: '2026-10-23' } },
-      critical: { ...ORACLE.critical, oncall: 'task' },
-      bone: { ...ORACLE.bone, orders: [{ code: 'REF-ORTHO-ONC', priority: 'urgent', start: '2026-10-26' }, { code: 'IMG-MRI-FEMUR-WO', priority: 'asap', start: '2026-10-28' }] },
-    }),
+    script: LDCT_TASK_ONCALL_CMP,
   },
   {
     id: 'window_edges_datetimes',
