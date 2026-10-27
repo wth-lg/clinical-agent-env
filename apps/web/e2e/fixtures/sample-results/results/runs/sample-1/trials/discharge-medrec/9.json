@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:discharge-medrec:9",
   "task_id": "discharge-medrec",
-  "task_version": "3d6753b9f7ebb354c6ddf8f4732e22cd622d4258802a58534a524f37b2fc3d2b",
-  "env_version": "8ba141fd4fcf24b5af0ad6c347c77bee354a5bf74c474efaea47890ab29f218e",
-  "grader_task_version": "fd1ecbe206bd39157e93602086cb7fb2f2c285b5297dacc438ad1ae21807ec6f",
-  "fixture_hash": "5e69bcfaa1935a5eb4bef6ba1b8e3d4db1cf379042fd6321516416281b041f20",
+  "task_version": "dca94676dd6bd43802bff2b4487016739abc99fd1a10b8769e65dd43e69a85fd",
+  "env_version": "0715c193e56f42a9f830062cfcffaaf4aa00d72df0fb8d8145bacbb8d677e0ba",
+  "grader_task_version": "4bd9490139ead479e54938397aacc87d990fd572e1b68d47ea873296d45e8a90",
+  "fixture_hash": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
   "state_hash": {
-    "initial": "5e69bcfaa1935a5eb4bef6ba1b8e3d4db1cf379042fd6321516416281b041f20",
-    "final": "0008f027511baddd82a21bf99e47288af5b03901c71100df62bb3fdf1d522594",
-    "replay_final": "0008f027511baddd82a21bf99e47288af5b03901c71100df62bb3fdf1d522594"
+    "initial": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
+    "final": "78cfa68fb979ff7fcc539693678f484c6c95e3ad1475eb7e5723a842d37dcb10",
+    "replay_final": "78cfa68fb979ff7fcc539693678f484c6c95e3ad1475eb7e5723a842d37dcb10"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,9 +16,9 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T13:21:27.000Z",
+  "started": "2026-10-23T13:22:06.000Z",
   "turns": 7,
-  "tool_calls": 13,
+  "tool_calls": 14,
   "tool_errors": {
     "INVALID_INPUT": 0,
     "NOT_FOUND": 0,
@@ -43,7 +43,7 @@
   "summary": "Reconciled Walter Kim after discharge: furosemide 40 mg, spironolactone 25 mg started, KCl stopped, lisinopril resumed; duplicate metoprolol tartrate flagged to Dr. Okafor; note written.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T13:22:32.000Z",
+  "ended": "2026-10-23T13:23:14.000Z",
   "judge_cost_usd": 0,
   "grader_version": "11",
   "outcome": "FAIL",
@@ -161,12 +161,12 @@
           "Practitioner/pr-okafor"
         ],
         "sent": [
-          "Communication/comm-t0005"
+          "Communication/comm-t0006"
         ],
         "tasked": []
       },
       "ids": [
-        "Communication/comm-t0005"
+        "Communication/comm-t0006"
       ]
     },
     {
@@ -228,7 +228,7 @@
       "met": false,
       "evidence": {
         "notes": [
-          "DocumentReference/doc-t0006"
+          "DocumentReference/doc-t0007"
         ],
         "citing": []
       }
@@ -267,15 +267,33 @@
       "evidence": {
         "status": "active"
       }
+    },
+    {
+      "id": "k_creatinine_recheck",
+      "kind": "rubric",
+      "method": "code",
+      "category": "safety",
+      "points": 1,
+      "met": true,
+      "evidence": {
+        "orders": [
+          "ServiceRequest/sr-t0005"
+        ],
+        "tracked": [],
+        "window": {
+          "from": "2026-10-26",
+          "to": "2026-10-28"
+        }
+      }
     }
   ],
-  "score": 0.2857142857142857,
+  "score": 0.375,
   "judge": {
     "calls": 3,
     "unknown": 0,
     "unknown_penalties": 0,
-    "score_penalties_met": 0.2857142857142857,
-    "score_penalties_not_met": 0.2857142857142857,
+    "score_penalties_met": 0.375,
+    "score_penalties_not_met": 0.375,
     "over_allowance": 0,
     "cache_keys": [
       "74f9d594d1430eb330c92b55336abbabec9abf01ffdf9b7df7e4877694512dad",
