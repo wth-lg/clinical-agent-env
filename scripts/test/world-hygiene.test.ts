@@ -10,10 +10,13 @@
 //   - a base resource dated before the start of the encounter it references (unless it already was
 //     in the base cohort);
 //   - a pair of a patient's base resources whose order in time differs from the base cohort;
-//   - a note whose text starts with a date other than the Eastern date of its DocumentReference.date
-//     (where the base cohort's note did match);
-//   - a condition whose abatement no longer equals the start of the encounter it equalled in the base
-//     cohort.
+//   - a date-time, at any path, of a resource that references an encounter, before that encounter's
+//     start (where the base cohort's was not);
+//   - a text attachment, in any resource, whose leading date is not the Eastern day of its resource's
+//     time (where the base cohort's was);
+//   - a condition whose abatement lay inside an encounter's window and no longer sits at the same
+//     offset from that encounter's start;
+//   - a base resource whose own date-times (onset and abatement, for example) change order.
 // The pass that makes them 0 is scripts/fixtures-lib.ts hygiene(), run by fixtures:build between
 // the base cohort and the overlays; the counts on the merge base are in the CHANGELOG fragment.
 import { readFileSync } from 'node:fs';
@@ -31,19 +34,27 @@ const cohort = read('fixtures/synthea/base.ndjson.gz');
 const baseIds = new Set(cohort.map((r) => `${r.resourceType}/${r.id}`));
 const base = world.filter((r) => baseIds.has(`${r.resourceType}/${r.id}`));
 const refOf = (v: unknown) => (v as { reference?: string } | undefined)?.reference ?? null;
+// Every date-time string in a resource, with its path.
+const dateTimes = (v: unknown, path = ''): Array<[string, string]> =>
+  typeof v === 'string' ? (/^\d{4}-\d\d-\d\dT\d\d:\d\d/.test(v) ? [[path, v]] : [])
+    : Array.isArray(v) ? v.flatMap((x, i) => dateTimes(x, `${path}[${i}]`))
+      : v && typeof v === 'object' ? Object.entries(v).flatMap(([k, x]) => dateTimes(x, path ? `${path}.${k}` : k)) : [];
+// The base64 data of every text attachment in a resource, at any path.
+const attachments = (v: unknown): string[] =>
+  Array.isArray(v) ? v.flatMap(attachments)
+    : v && typeof v === 'object' ? [...(typeof (v as { data?: unknown }).data === 'string' && /^text\//.test(String((v as { contentType?: unknown }).contentType)) ? [(v as { data: string }).data] : []), ...Object.values(v).flatMap(attachments)] : [];
 
 // The encounters the pass leaves where they are, listed with the reason in the CHANGELOG fragment
-// (decisions.tsv 2026-10-27T15:25Z F4: exactly these are exempt):
+// (decisions.tsv 2026-10-27T15:25Z F4 and 17:20Z: exactly these are exempt):
 //   - a task file about the patient writes the encounter's date: enc-00010, -00011, -00060, -00106,
 //     -00198;
-//   - a time of it on a date a task file writes would move: enc-00019, -00023, -00024, -00258,
-//     -00344, -00346;
+//   - a time of it on a date a task file writes would move: enc-00023, -00024, -00258, -00346;
 //   - a time of it would move to another month: enc-00007, -00076, -00236;
 //   - the move would change the patient's order of dated resources: enc-00004 (its Friday is the
-//     patient's visit enc-00003), enc-00259 and enc-00260 (cond-00835 references enc-00259 and is
-//     dated at enc-00260's start).
+//     patient's visit enc-00003) and enc-00259 (cond-00835 references it but begins at enc-00260's
+//     start, so moving it would put the condition's abatement before its onset).
 // The pass also leaves enc-00012 and enc-00154, which task overlays then remove.
-const LEFT_OUT = ['enc-00004', 'enc-00007', 'enc-00010', 'enc-00011', 'enc-00019', 'enc-00023', 'enc-00024', 'enc-00060', 'enc-00076', 'enc-00106', 'enc-00198', 'enc-00236', 'enc-00258', 'enc-00259', 'enc-00260', 'enc-00344', 'enc-00346'];
+const LEFT_OUT = ['enc-00004', 'enc-00007', 'enc-00010', 'enc-00011', 'enc-00023', 'enc-00024', 'enc-00060', 'enc-00076', 'enc-00106', 'enc-00198', 'enc-00236', 'enc-00258', 'enc-00259', 'enc-00346'];
 
 describe('world hygiene (JT2)', () => {
   it('no base ambulatory encounter starts outside Monday to Friday 08:00-18:00, but the listed ones', () => {
@@ -83,14 +94,13 @@ describe('world hygiene (JT2)', () => {
     expect(none).toEqual([]);
   });
 
-  it('no base resource is dated before the start of the encounter it references, unless it already was in the base cohort', () => {
+  it('no date-time of a resource that references an encounter lies before that encounter\'s start, unless it already did in the base cohort', () => {
     const early = (rs: R[]) => {
       const start = new Map(rs.filter((r) => r.resourceType === 'Encounter').map((e) => [`Encounter/${e.id}`, Date.parse((e.period as { start: string }).start)]));
       return rs.flatMap((r) => {
         const ref = refOf(r.encounter) ?? refOf((r.context as { encounter?: unknown[] } | undefined)?.encounter?.[0]);
-        const t = timeOf(r as unknown as Resource);
         const s = ref === null ? undefined : start.get(ref);
-        return s !== undefined && t !== null && t < s ? [`${r.resourceType}/${r.id}`] : [];
+        return s === undefined ? [] : dateTimes(r).flatMap(([path, v]) => (Date.parse(v) < s ? [`${r.resourceType}/${r.id} ${path}`] : []));
       });
     };
     const before = new Set(early(cohort));
@@ -119,30 +129,40 @@ describe('world hygiene (JT2)', () => {
     expect(flipped.length, flipped.slice(0, 5).join('; ')).toBe(0);
   });
 
-  it('a note whose text starts with its date still starts with the Eastern date of its DocumentReference.date', () => {
-    const leading = (r: R) => {
-      const data = (r.content as Array<{ attachment?: { data?: string } }> | undefined)?.[0]?.attachment?.data;
-      return data === undefined ? null : (/^\s*(\d{4}-\d\d-\d\d)\b/.exec(Buffer.from(data, 'base64').toString('utf8'))?.[1] ?? null);
-    };
-    const dayOf = (r: R) => easternParts(Date.parse(r.date as string)).date;
-    const matched = new Set(cohort.filter((r) => r.resourceType === 'DocumentReference' && typeof r.date === 'string' && leading(r) === dayOf(r)).map((r) => r.id));
-    const stale = base.filter((r) => r.resourceType === 'DocumentReference' && matched.has(r.id) && leading(r) !== dayOf(r)).map((r) => `${r.id} ${leading(r)} ${r.date as string}`);
+  it('every text attachment whose leading date was its resource\'s Eastern day still leads with that day', () => {
+    const heads = (r: R) => attachments(r).map((a) => /^\s*(\d{4}-\d\d-\d\d)\b/.exec(Buffer.from(a, 'base64').toString('utf8'))?.[1] ?? null);
+    const dayOf = (r: R) => { const t = timeOf(r as unknown as Resource); return t === null ? null : easternParts(t).date; };
+    const matched = new Set(cohort.flatMap((r) => (heads(r).some((h) => h !== null && h === dayOf(r)) ? [`${r.resourceType}/${r.id}`] : [])));
+    const stale = base.filter((r) => matched.has(`${r.resourceType}/${r.id}`)).flatMap((r) => heads(r).flatMap((h) => (h !== null && h !== dayOf(r) ? [`${r.resourceType}/${r.id} ${h} ${dayOf(r)}`] : [])));
     expect(stale).toEqual([]);
   });
 
-  it('a condition that abates at the start of an encounter still abates at that encounter\'s start', () => {
-    const starts = (rs: R[]) => new Map(rs.filter((r) => r.resourceType === 'Encounter').map((e) => [e.id, Date.parse((e.period as { start: string }).start)]));
-    const was = starts(cohort);
-    const now = starts(base);
+  it('a condition that abated inside an encounter\'s window still abates at the same offset from that encounter\'s start', () => {
+    const windows = (rs: R[]) => new Map(rs.filter((r) => r.resourceType === 'Encounter').map((e) => { const p = e.period as { start: string; end?: string }; return [e.id, { patient: refOf(e.subject), start: Date.parse(p.start), end: Date.parse(p.end ?? p.start) }] as const; }));
+    const was = windows(cohort);
+    const now = windows(base);
     const byId = new Map(base.map((r) => [`${r.resourceType}/${r.id}`, r]));
     const drift = cohort.filter((c) => c.resourceType === 'Condition' && typeof c.abatementDateTime === 'string').flatMap((c) => {
       const at = Date.parse(c.abatementDateTime as string);
-      const enc = cohort.find((e) => e.resourceType === 'Encounter' && refOf(e.subject) === refOf(c.subject) && was.get(e.id) === at);
       const h = byId.get(`Condition/${c.id}`);
-      if (enc === undefined || h === undefined || !now.has(enc.id)) return [];
-      return Date.parse(h.abatementDateTime as string) === now.get(enc.id) ? [] : [`${c.id} ${h.abatementDateTime as string} vs ${enc.id}`];
+      if (h === undefined) return [];
+      return [...was].filter(([id, w]) => w.patient === refOf(c.subject) && at >= w.start && at <= w.end && now.has(id)).flatMap(([id, w]) =>
+        Date.parse(h.abatementDateTime as string) - now.get(id)!.start === at - w.start ? [] : [`${c.id} ${h.abatementDateTime as string} vs ${id}`]);
     });
     expect(drift).toEqual([]);
+  });
+
+  it('keeps the order of each base resource\'s own date-times', () => {
+    const byId = new Map(base.map((r) => [`${r.resourceType}/${r.id}`, r]));
+    const flipped = cohort.flatMap((r) => {
+      const h = byId.get(`${r.resourceType}/${r.id}`);
+      if (h === undefined) return [];
+      const was = new Map(dateTimes(r));
+      const now = dateTimes(h).filter(([p]) => was.has(p));
+      return now.flatMap(([p, v], i) => now.slice(i + 1).flatMap(([q, w]) =>
+        Math.sign(Date.parse(was.get(p)!) - Date.parse(was.get(q)!)) === Math.sign(Date.parse(v) - Date.parse(w)) ? [] : [`${r.resourceType}/${r.id} ${p} ${q}`]));
+    });
+    expect(flipped).toEqual([]);
   });
 });
 
@@ -188,13 +208,13 @@ describe('hygiene()', () => {
     expect((get(resources, 'e1').period as { start: string }).start).toBe('2026-08-03T10:00:00-04:00');
   });
 
-  it('rewrites the date at the head of a note whose date moves to another day', () => {
+  it('rewrites only the date at the head of a note whose date moves to another day', () => {
     const text = '\n2026-04-18\n\n# Chief Complaint\nSeen on 2026-04-18 for a cough.\n';
     const doc = { resourceType: 'DocumentReference', id: 'd1', subject: { reference: 'Patient/p1' }, date: '2026-04-18T10:00:00.120-04:00', context: { encounter: [{ reference: 'Encounter/e1' }] }, content: [{ attachment: { contentType: 'text/plain', data: Buffer.from(text).toString('base64') } }] };
     const { resources } = run([pt, enc('e1', '2026-04-18T10:00:00-04:00', '2026-04-18T10:30:00-04:00'), doc]);
     const out = get(resources, 'd1') as { date: string; content: Array<{ attachment: { data: string } }> };
     expect(out.date).toBe('2026-04-17T10:00:00.120-04:00');
-    expect(Buffer.from(out.content[0]!.attachment.data, 'base64').toString('utf8')).toBe('\n2026-04-17\n\n# Chief Complaint\nSeen on 2026-04-17 for a cough.\n');
+    expect(Buffer.from(out.content[0]!.attachment.data, 'base64').toString('utf8')).toBe('\n2026-04-17\n\n# Chief Complaint\nSeen on 2026-04-18 for a cough.\n');
   });
 
   it('moves a condition\'s abatement with the encounter whose start it equals, not with the encounter it references', () => {
@@ -207,6 +227,45 @@ describe('hygiene()', () => {
     expect(get(resources, 'c1').onsetDateTime).toBe('2026-04-17T09:00:00-04:00');
     expect(get(resources, 'c1').abatementDateTime).toBe('2026-04-22T10:00:00-04:00');
     expect(get(resources, 'c2').abatementDateTime).toBe('2026-04-17T09:00:00-04:00');
+  });
+
+  it('rewrites the head of a DiagnosticReport\'s presented form by the Eastern day of its effective time', () => {
+    const text = '\n2026-04-18\n\n# Chief Complaint\nCough.\n';
+    const dr = { resourceType: 'DiagnosticReport', id: 'r1', subject: { reference: 'Patient/p1' }, encounter: { reference: 'Encounter/e1' }, effectiveDateTime: '2026-04-18T10:00:00-04:00', issued: '2026-04-18T10:00:00.500-04:00', presentedForm: [{ contentType: 'text/plain; charset=utf-8', data: Buffer.from(text).toString('base64') }] };
+    const { resources } = run([pt, enc('e1', '2026-04-18T10:00:00-04:00', '2026-04-18T10:30:00-04:00'), dr]);
+    const out = get(resources, 'r1') as { effectiveDateTime: string; presentedForm: Array<{ data: string }> };
+    expect(out.effectiveDateTime).toBe('2026-04-17T10:00:00-04:00');
+    expect(Buffer.from(out.presentedForm[0]!.data, 'base64').toString('utf8')).toBe('\n2026-04-17\n\n# Chief Complaint\nCough.\n');
+  });
+
+  it('moves any date-time of the patient inside a moving encounter\'s window, such as an abatement at its end', () => {
+    // c1 began long before and references e0 (2026-03-04, in hours); it abates at the end of e1
+    // (Saturday night), which moves.
+    const c1 = { resourceType: 'Condition', id: 'c1', subject: { reference: 'Patient/p1' }, encounter: { reference: 'Encounter/e0' }, onsetDateTime: '2026-03-04T10:00:00-05:00', abatementDateTime: '2026-04-18T21:15:00-04:00' };
+    const { resources } = run([pt, enc('e0', '2026-03-04T10:00:00-05:00', '2026-03-04T10:15:00-05:00'), enc('e1', '2026-04-18T21:00:00-04:00', '2026-04-18T21:15:00-04:00'), c1]);
+    expect(get(resources, 'c1').onsetDateTime).toBe('2026-03-04T10:00:00-05:00');
+    expect(get(resources, 'c1').abatementDateTime).toBe('2026-04-17T09:15:00-04:00');
+  });
+
+  it('leaves a member\'s date-time that lies inside another encounter\'s window to that encounter', () => {
+    // r1 references e1 (Saturday 07:00, moves to Friday 15:00); its issued time lies inside e2
+    // (Saturday 2026-04-25 10:00-10:30, moves to Friday 2026-04-24 10:00).
+    const r1 = { resourceType: 'Observation', id: 'o1', subject: { reference: 'Patient/p1' }, encounter: { reference: 'Encounter/e1' }, effectiveDateTime: '2026-04-18T07:00:00-04:00', issued: '2026-04-25T10:10:00-04:00' };
+    const { resources } = run([pt, enc('e1', '2026-04-18T07:00:00-04:00', '2026-04-18T07:20:00-04:00'), enc('e2', '2026-04-25T10:00:00-04:00', '2026-04-25T10:30:00-04:00'), r1]);
+    expect(get(resources, 'o1').effectiveDateTime).toBe('2026-04-17T15:00:00-04:00');
+    expect(get(resources, 'o1').issued).toBe('2026-04-24T10:10:00-04:00');
+  });
+
+  it('leaves an encounter where it is when a member would move part of its date-times past the rest', () => {
+    // c1 references e1 (Sunday night, moves back 2.5 days) but begins at e2's start (a Saturday months
+    // later, moves back a day) and abates the day after e2: moving e1 would put the abatement before
+    // the onset.
+    const c1 = { resourceType: 'Condition', id: 'c1', subject: { reference: 'Patient/p1' }, encounter: { reference: 'Encounter/e1' }, onsetDateTime: '2023-07-29T09:30:00-04:00', abatementDateTime: '2023-07-30T02:00:00-04:00' };
+    const { resources, report } = run([pt, enc('e1', '2023-05-07T20:30:00-04:00', '2023-05-07T20:45:00-04:00'), enc('e2', '2023-07-29T09:30:00-04:00', '2023-07-29T11:00:00-04:00'), c1]);
+    expect((get(resources, 'e1').period as { start: string }).start).toBe('2023-05-07T20:30:00-04:00');
+    expect(report.skipped.e1).toMatch(/order/);
+    expect(get(resources, 'c1').onsetDateTime).toBe('2023-07-28T09:30:00-04:00');
+    expect(get(resources, 'c1').abatementDateTime).toBe('2023-07-30T02:00:00-04:00');
   });
 
   it('reads ingredients by their full names, so different drugs that share a first word stay apart', () => {
