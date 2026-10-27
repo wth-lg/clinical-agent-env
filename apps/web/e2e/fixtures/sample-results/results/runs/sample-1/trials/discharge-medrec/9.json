@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:discharge-medrec:9",
   "task_id": "discharge-medrec",
-  "task_version": "14f1094591d101714b99afde4b6e79040f57a03a0534fa1a3cbe243c9c8cb7f4",
-  "env_version": "6f1110b24a8516555824e011080ad3408062876e165ae1bb6b211f80488440a7",
+  "task_version": "3d6753b9f7ebb354c6ddf8f4732e22cd622d4258802a58534a524f37b2fc3d2b",
+  "env_version": "8ba141fd4fcf24b5af0ad6c347c77bee354a5bf74c474efaea47890ab29f218e",
   "grader_task_version": "fd1ecbe206bd39157e93602086cb7fb2f2c285b5297dacc438ad1ae21807ec6f",
-  "fixture_hash": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
+  "fixture_hash": "5e69bcfaa1935a5eb4bef6ba1b8e3d4db1cf379042fd6321516416281b041f20",
   "state_hash": {
-    "initial": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
-    "final": "63edbc5589e9ed7ebdbce4d8a5141812f6fed2a8a08398ccd1a8bd63002522ff",
-    "replay_final": "63edbc5589e9ed7ebdbce4d8a5141812f6fed2a8a08398ccd1a8bd63002522ff"
+    "initial": "5e69bcfaa1935a5eb4bef6ba1b8e3d4db1cf379042fd6321516416281b041f20",
+    "final": "0008f027511baddd82a21bf99e47288af5b03901c71100df62bb3fdf1d522594",
+    "replay_final": "0008f027511baddd82a21bf99e47288af5b03901c71100df62bb3fdf1d522594"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T13:21:39.000Z",
+  "started": "2026-10-23T13:21:27.000Z",
   "turns": 7,
   "tool_calls": 13,
   "tool_errors": {
@@ -43,7 +43,7 @@
   "summary": "Reconciled Walter Kim after discharge: furosemide 40 mg, spironolactone 25 mg started, KCl stopped, lisinopril resumed; duplicate metoprolol tartrate flagged to Dr. Okafor; note written.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T13:22:44.000Z",
+  "ended": "2026-10-23T13:22:32.000Z",
   "judge_cost_usd": 0,
   "grader_version": "11",
   "outcome": "FAIL",
