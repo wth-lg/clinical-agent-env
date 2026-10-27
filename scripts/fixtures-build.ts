@@ -167,5 +167,5 @@ if (import.meta.main) {
   const out = resolve(i >= 0 ? process.argv[i + 1]! : join(repo, 'fixtures'));
   const { stateHash: hash, resources, hygiene: h } = await build(out);
   console.log(`fixtures:build wrote ${posix(relative(process.cwd(), out)) || '.'}: ${resources} resources, state hash ${hash}`);
-  console.log(`hygiene: ${h.moved} encounters moved into clinic hours; ${h.completedAcute.length} stale acute and ${h.completedDuplicates.length} duplicate orders completed; ${Object.keys(h.skipped).length} encounters left: ${Object.entries(h.skipped).map(([id, why]) => `${id} (${why})`).join('; ') || 'none'}`);
+  console.log(`hygiene: ${h.moved} encounters moved into clinic hours (to a later weekday: ${h.movedLater.join(', ') || 'none'}); ${h.completedAcute.length} stale acute and ${h.completedDuplicates.length} duplicate orders completed; orders with an unreadable authoredOn: ${h.unreadable.join(', ') || 'none'}; ${Object.keys(h.skipped).length} encounters left: ${Object.entries(h.skipped).map(([id, why]) => `${id} (${why})`).join('; ') || 'none'}`);
 }
