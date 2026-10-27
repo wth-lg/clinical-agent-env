@@ -13,6 +13,19 @@ const item = async (id: string) => {
   return g.checks.find((r) => r.id === 'k_creatinine_recheck');
 };
 
+// The discharge summary asks for a BMP a week after starting spironolactone, so the catalog must
+// let order_service place one (P17j JG9, decisions 2026-10-28T02:40Z: before, T4's catalog had
+// creatinine alone and the order was refused).
+describe('discharge-medrec catalog', () => {
+  it('order_service accepts the BMP 24321-2: the oracle runs without a rejected call and creates it', async () => {
+    const run = await trial(env, task, cases(task).find((x) => x.id === 'oracle')!);
+    const errors = run.events.flatMap((e) => (e.type === 'tool_result' && e.is_error ? [{ name: e.name, content: e.content }] : []));
+    expect(errors).toEqual([]);
+    const bmp = run.events.filter((e) => e.type === 'tool_call' && e.name === 'order_service' && (e.input as { code?: string }).code === '24321-2');
+    expect(bmp).toHaveLength(1);
+  });
+});
+
 describe('discharge-medrec k_creatinine_recheck', () => {
   it('is met at +1 by a Task tracking the recheck (alternative recheck_bmp)', async () => {
     expect(await item('recheck_bmp')).toMatchObject({ kind: 'rubric', method: 'code', points: 1, met: true });
