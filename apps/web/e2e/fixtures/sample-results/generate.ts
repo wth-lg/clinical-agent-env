@@ -24,6 +24,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadMatrixTask, matrixEnv, matrixTaskIds } from '../../../../../cli/matrix.ts';
 import type { RunManifest } from '../../../../../packages/core/batch.ts';
+import type { ToolResultEvent, TrialEvent } from '../../../../../packages/core/events.ts';
 import { auditLabelOf, type AuditRow } from '../../../../../packages/core/explain.ts';
 import type { TrialRecord } from '../../../../../packages/core/run.ts';
 import { assertSummary, summarize, type SummaryTrial } from '../../../../../packages/core/summary.ts';
@@ -81,7 +82,8 @@ async function main(withMatrix: boolean) {
     for (const s of specials.filter((x) => !validSpecials.includes(x))) plan.push({ c: fail[1 % fail.length]!, as: s });
 
     for (const [index, { c, as }] of plan.entries()) {
-      const run = await trial(env, task, c);
+      const scripted = await trial(env, task, c);
+      const run = as === 'ENV_ERROR' ? internalAt(scripted, INTERNAL_CALL) : scripted;
       const facts = rewrite(run.record, as);
       const graded: CaseRun = { record: facts, events: run.events };
       // A real GRADER_ERROR has no score, so no score bounds either (grade.ts judgeOf).
@@ -131,6 +133,22 @@ function manifestOf(records: readonly Rec[], worldHash: string): RunManifest {
     run_id: RUN_ID, model: first.model_requested, effort: first.effort, mode: 'mock-sample', world_hash: worldHash, api_version: first.api_version, trials: TRIALS_PER_TASK,
     task_versions: versions('task_version'), env_versions: versions('env_version'), grader_task_versions: versions('grader_task_version'), batches: [],
   };
+}
+
+// An ENV_ERROR's run as packages/core/loop.ts leaves it when a tool fails with an internal error:
+// the nth executed call returns the INTERNAL error, the error event ends the trial there, and no
+// later call ran (verifier-ui-copy-1 m4: the record said INTERNAL, its trajectory did not). The
+// graded event is the scripted run's, dropped; the trajectory holds no grade of an ungraded trial.
+const INTERNAL_CALL = 3;
+const INTERNAL_MESSAGE = 'the FHIR store failed';
+function internalAt(run: CaseRun, n: number): CaseRun {
+  let ran = 0;
+  const at = run.events.findIndex((e) => e.type === 'tool_result' && e.executed && ++ran === n);
+  const { written_ids: _, ...ok } = run.events[at] as ToolResultEvent;
+  const failed: ToolResultEvent = { ...ok, is_error: true, error_code: 'INTERNAL', content: { error: { code: 'INTERNAL', message: INTERNAL_MESSAGE } }, exposed_ids: [], referenced_ids: [] };
+  const events: TrialEvent[] = [...run.events.slice(0, at), failed, { v: failed.v, seq: failed.seq + 1, ts: failed.ts, turn: failed.turn, type: 'error', status: 'ENV_ERROR', code: 'INTERNAL', message: INTERNAL_MESSAGE }];
+  const calls = events.filter((e) => e.type === 'tool_call').length;
+  return { record: { ...run.record, turns: failed.turn, tool_calls: calls, stop: null, summary: null, ended: failed.ts }, events };
 }
 
 // The record as the outcome `as` would have left it; null keeps the scripted run's.

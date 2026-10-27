@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:renal-dose-review:3",
   "task_id": "renal-dose-review",
-  "task_version": "38d32189c3868ea34e36eed2032db08a46b3d1e3acb8944996f44490c2ac3993",
+  "task_version": "b5182405f1e91679bbf68dddc9a76c1ab49dab521337ae00c9b2f1edf81ff2ba",
   "env_version": "f74818df8ab2b6109bdad7b1219898a6c755f28cd3d4e505c848e8a779de79e8",
-  "grader_task_version": "be493e2b43c4fec6d93649db10c9f10fff6d13afcb7d70382a5212e5eb008592",
+  "grader_task_version": "a8e12873b57582d1fa5b2e1b925c7c75b29ee2e9b1bb35cc7e12ee1c1a79e838",
   "fixture_hash": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
   "state_hash": {
     "initial": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
-    "final": "0afa84e4405c7bce6e9bb5d1e5980690895d288f45a3593b5ab00195a7e49957",
-    "replay_final": "0afa84e4405c7bce6e9bb5d1e5980690895d288f45a3593b5ab00195a7e49957"
+    "final": "7b97e9893468b586191bf35aa8cef039fd206e89a67e8ebccd2b89235133fba8",
+    "replay_final": "7b97e9893468b586191bf35aa8cef039fd206e89a67e8ebccd2b89235133fba8"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,9 +16,9 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T14:11:13.000Z",
-  "turns": 7,
-  "tool_calls": 14,
+  "started": "2026-10-23T14:11:16.000Z",
+  "turns": 8,
+  "tool_calls": 11,
   "tool_errors": {
     "INVALID_INPUT": 0,
     "NOT_FOUND": 0,
@@ -40,7 +40,7 @@
   "status": "COMPLETED",
   "stop": "finish",
   "detail": null,
-  "summary": "Reviewed Harold Vance under RBC-PHARM-07: apixaban back to 5 mg twice daily, metformin unchanged, gabapentin 400 mg twice daily; note written.",
+  "summary": "Reviewed Harold Vance under RBC-PHARM-07: apixaban back to 5 mg twice daily, metformin unchanged, gabapentin reduced to 600 mg twice daily; progress note written.",
   "resumed": false,
   "env_git_sha": null,
   "ended": "2026-10-23T14:12:18.000Z",
@@ -61,7 +61,7 @@
         "active": [
           "MedicationRequest/mr-t0001"
         ],
-        "product": "1364445",
+        "product": "1364435",
         "mg": 5,
         "per_day": 2,
         "oral": true
@@ -93,16 +93,21 @@
       "met": true,
       "evidence": {
         "active": [
-          "MedicationRequest/mr-t0002"
+          "MedicationRequest/mr-t1-metformin"
         ],
-        "mg_per_day": 2000,
-        "range": {
-          "min": 2000,
-          "max": 2000
+        "was": {
+          "product": "http://www.nlm.nih.gov/research/umls/rxnorm|861004",
+          "mg_per_dose": 1000,
+          "per_day": 2
+        },
+        "is": {
+          "product": "http://www.nlm.nih.gov/research/umls/rxnorm|861004",
+          "mg_per_dose": 1000,
+          "per_day": 2
         }
       },
       "ids": [
-        "MedicationRequest/mr-t0002"
+        "MedicationRequest/mr-t1-metformin"
       ]
     },
     {
@@ -114,16 +119,19 @@
       "met": true,
       "evidence": {
         "active": [
-          "MedicationRequest/mr-t0003"
+          "MedicationRequest/mr-t0002"
         ],
-        "mg_per_day": 800,
+        "mg_per_day": 1200,
         "range": {
           "min": 400,
           "max": 1400
-        }
+        },
+        "per_day": 2,
+        "want_per_day": 2,
+        "scheduled": true
       },
       "ids": [
-        "MedicationRequest/mr-t0003"
+        "MedicationRequest/mr-t0002"
       ]
     },
     {
@@ -146,20 +154,39 @@
       "points": null,
       "met": true,
       "evidence": {
-        "first_medication_write": 10,
+        "first_medication_write": 8,
         "exposed": [
           {
             "id": "Observation/obs-t1-scr-1020",
-            "step": 4
+            "step": 3
           },
           {
             "id": "Observation/obs-t1-wt-1020",
-            "step": 6
+            "step": 4
           }
         ],
         "late": []
       },
       "ids": []
+    },
+    {
+      "id": "note_exists",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "notes": [
+          "DocumentReference/doc-t0003"
+        ],
+        "progress_notes": [
+          "DocumentReference/doc-t0003"
+        ]
+      },
+      "ids": [
+        "DocumentReference/doc-t0003"
+      ]
     },
     {
       "id": "note_states_crcl",
@@ -204,8 +231,8 @@
       "met": true,
       "evidence": {
         "verdict": "met",
-        "quote": "age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met.",
-        "cache_key": "cdf4aada11e7eea32f60793f2e7a0ecd3dd6276fb25c68e997b413167f361727"
+        "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met.",
+        "cache_key": "8fb5a237d1ef9a16edb6ce49c8785df5dccfbe8e0da71b3ed165ea4c2681dd46"
       }
     },
     {
@@ -218,7 +245,7 @@
       "evidence": {
         "verdict": "met",
         "quote": "The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used.",
-        "cache_key": "83e73c3dcca92cc21f217c90a130b349fc319c4819246713db9e71e6d287fa50"
+        "cache_key": "03df5745b77665e009b70f40b1bffaf7de31d53158b6d43913b6459f3778a94f"
       }
     },
     {
@@ -230,10 +257,10 @@
       "met": true,
       "evidence": {
         "notes": [
-          "DocumentReference/doc-t0004"
+          "DocumentReference/doc-t0003"
         ],
         "citing": [
-          "DocumentReference/doc-t0004"
+          "DocumentReference/doc-t0003"
         ]
       }
     },
@@ -246,7 +273,7 @@
       "met": true,
       "evidence": {
         "active": [
-          "MedicationRequest/mr-t0003"
+          "MedicationRequest/mr-t0002"
         ],
         "per_day": 2
       }
@@ -268,7 +295,7 @@
         ],
         "verdict": "not_met",
         "quote": "current SCr 1.21 mg/dL (10/20/2026). The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used.",
-        "cache_key": "6a2c42a8f9410e3880b9b56a3303884ea0faa798ff6e10d814dd94bceedaa83a"
+        "cache_key": "b493cf6605d7f9141a458072b901dded04d6dd41608b7413fe3a8111b28c8986"
       }
     },
     {
@@ -281,7 +308,7 @@
       "evidence": {
         "verdict": "not_met",
         "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met. One criterion met, so apixaban goes back to 5 mg twice daily",
-        "cache_key": "3eea2904f4b469a72b04c0bf777004c5c8db564e2de2d01f938d6aaa0433ff4b"
+        "cache_key": "b08b3880478a563370bcdcaa4683c7abafb7ebf26983ab78f6e56b4f5b9ee3fc"
       }
     }
   ],
@@ -294,21 +321,21 @@
     "score_penalties_not_met": 1,
     "over_allowance": 0,
     "cache_keys": [
-      "cdf4aada11e7eea32f60793f2e7a0ecd3dd6276fb25c68e997b413167f361727",
-      "83e73c3dcca92cc21f217c90a130b349fc319c4819246713db9e71e6d287fa50",
-      "6a2c42a8f9410e3880b9b56a3303884ea0faa798ff6e10d814dd94bceedaa83a",
-      "3eea2904f4b469a72b04c0bf777004c5c8db564e2de2d01f938d6aaa0433ff4b"
+      "8fb5a237d1ef9a16edb6ce49c8785df5dccfbe8e0da71b3ed165ea4c2681dd46",
+      "03df5745b77665e009b70f40b1bffaf7de31d53158b6d43913b6459f3778a94f",
+      "b493cf6605d7f9141a458072b901dded04d6dd41608b7413fe3a8111b28c8986",
+      "b08b3880478a563370bcdcaa4683c7abafb7ebf26983ab78f6e56b4f5b9ee3fc"
     ],
     "cache": [
       {
-        "key": "cdf4aada11e7eea32f60793f2e7a0ecd3dd6276fb25c68e997b413167f361727",
+        "key": "8fb5a237d1ef9a16edb6ce49c8785df5dccfbe8e0da71b3ed165ea4c2681dd46",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "met",
-          "quote": "age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met."
+          "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met."
         },
         "error": null,
         "calls": 1,
@@ -319,7 +346,7 @@
         }
       },
       {
-        "key": "83e73c3dcca92cc21f217c90a130b349fc319c4819246713db9e71e6d287fa50",
+        "key": "03df5745b77665e009b70f40b1bffaf7de31d53158b6d43913b6459f3778a94f",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -337,7 +364,7 @@
         }
       },
       {
-        "key": "6a2c42a8f9410e3880b9b56a3303884ea0faa798ff6e10d814dd94bceedaa83a",
+        "key": "b493cf6605d7f9141a458072b901dded04d6dd41608b7413fe3a8111b28c8986",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -355,7 +382,7 @@
         }
       },
       {
-        "key": "3eea2904f4b469a72b04c0bf777004c5c8db564e2de2d01f938d6aaa0433ff4b",
+        "key": "b08b3880478a563370bcdcaa4683c7abafb7ebf26983ab78f6e56b4f5b9ee3fc",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",

@@ -102,13 +102,13 @@
     },
     "crc-care-gap": {
       "task_versions": [
-        "752ec66e252edabef548032b267465d6fac5aa043a2527d01326d1bcfdaa8934"
+        "705110ec2ed114a373ede1a445601f0f6cff4e2e7d116f245de183064a9e4ead"
       ],
       "env_versions": [
         "3d7216da2510f1708b0fb589859ce3c332cb7f5b42c0b55842793ce60955a9db"
       ],
       "grader_task_versions": [
-        "33726f9ffec1908b47f3f077be7a81982fc5a5f6307d66c791f3b54c02826956"
+        "100339828ba28695eea3f9b5cdc61ff7d0e605eb0c676b27161785f842a7e1df"
       ],
       "records": 1,
       "trials": 1,
@@ -362,13 +362,13 @@
     },
     "renal-dose-review": {
       "task_versions": [
-        "38d32189c3868ea34e36eed2032db08a46b3d1e3acb8944996f44490c2ac3993"
+        "b5182405f1e91679bbf68dddc9a76c1ab49dab521337ae00c9b2f1edf81ff2ba"
       ],
       "env_versions": [
         "f74818df8ab2b6109bdad7b1219898a6c755f28cd3d4e505c848e8a779de79e8"
       ],
       "grader_task_versions": [
-        "be493e2b43c4fec6d93649db10c9f10fff6d13afcb7d70382a5212e5eb008592"
+        "a8e12873b57582d1fa5b2e1b925c7c75b29ee2e9b1bb35cc7e12ee1c1a79e838"
       ],
       "records": 5,
       "trials": 4,
@@ -400,7 +400,7 @@
       "mean_score": 0.5961538461538461,
       "mean_cost_usd": 1.072,
       "raw_mean_score": 0.5,
-      "gate_fraction": 0.6666666666666666,
+      "gate_fraction": 0.7142857142857143,
       "pass_no_harm": 1,
       "pass_no_harm_rate": 0.25,
       "limits": {

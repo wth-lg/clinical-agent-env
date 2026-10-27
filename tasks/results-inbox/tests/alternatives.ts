@@ -7,7 +7,7 @@
 // different read path and one answer for all writes. Each declares the rubric items it loses.
 import type { Agent } from '../../../packages/grader/matrix/types.ts';
 import { ORACLE, solve } from '../solution/solve.ts';
-import { activeServiceRequests, inbox, policies, PT, read, searchNotes, SRC } from '../solution/steps.ts';
+import { activeServiceRequests, inbox, policies, PT, read, searchNotes, SRC, writer } from '../solution/steps.ts';
 
 // `satisfies` keeps loses checked against the Agent type both before and after it gains the field.
 export const alternatives = [
@@ -62,9 +62,9 @@ export const alternatives = [
   },
   {
     id: 'fit_left_to_gi',
-    why: "Links Dr. Lin's referral for the positive FIT but leaves telling Raj Patel to the GI office, which RBC-INBOX-01 §4 does not allow; a lower score, not a failure.",
-    loses: ['fit_patient_message'],
-    script: solve({ fit: { ...ORACLE.fit, message: false } }),
+    why: "Links Dr. Lin's existing referral for the positive FIT and leaves the work-up to GI, a valid decision, and has the RN triage pool phone Raj Patel about the result instead of a portal message (RBC-INBOX-01 §4 allows a call by a staff pool).",
+    loses: [],
+    script: solve({ fit: { ...ORACLE.fit, message: 'call' } }),
   },
   {
     id: 'searches_then_reads',
@@ -109,5 +109,23 @@ export const alternatives = [
       ],
       oneAnswer: true,
     }),
+  },
+  {
+    id: 'critical_k_paged_and_reassigned',
+    why: 'Pages on-call at stat about the true 6.2 and orders the stat BMP, then hands the inbox item itself to pool-oncall instead of closing it, so the covering clinician owns the follow-up.',
+    loses: [],
+    script: solve({ critical: { ...ORACLE.critical, handoff: 'open' } }),
+  },
+  {
+    id: 'hemolyzed_review_task',
+    why: 'Orders the urgent repeat BMP and, instead of a patient message, a task due Monday for Dr. Okafor to review the repeat: structurally a call task (due by the next business day, on the result), so patient_contact counts it; the text items find no ask to contact the patient (decisions.tsv 2026-10-29T06:00).',
+    loses: ['hemolyzed_k_patient_message', 'urgent_item_unnotified'],
+    script: [...solve({ hemolyzed: { ...ORACLE.hemolyzed, message: false } }).slice(0, -1), { calls: [writer().task(PT.brennan, 'Practitioner/pr-okafor', '2026-10-26', 'urgent', 'Review the repeat BMP result on Monday.', SRC.bmpC).call] }, solve().at(-1)!],
+  },
+  {
+    id: 'nodule_call_task',
+    why: 'Tells Linda Marsh of the nodule and its June 2027 follow-up CT by a phone call from the RN triage pool instead of a portal message (RBC-INBOX-01 §4 allows a call by a staff pool).',
+    loses: [],
+    script: solve({ nodule: { ...ORACLE.nodule, message: 'call' } }),
   },
 ] satisfies Array<Agent & { loses: readonly string[] }>;
