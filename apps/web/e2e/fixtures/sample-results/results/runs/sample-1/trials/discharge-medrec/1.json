@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:discharge-medrec:1",
   "task_id": "discharge-medrec",
-  "task_version": "6c4860ff127f4e455a14ea77c63e0428ceffe65dc5321ba06478a9cecfb4313a",
+  "task_version": "445b5978f38e1b061eb3faa8849d97495c24eb75b952c0a068bfeeca39d031be",
   "env_version": "6f1110b24a8516555824e011080ad3408062876e165ae1bb6b211f80488440a7",
-  "grader_task_version": "64c579df9365b2732a637d89f3d7309ed4ffe3def56a4901f2c61367c0c9b969",
+  "grader_task_version": "acc22b7b7bb0e55ed8f0571bcb942dedbc8db1f0ea5958ec2f1b2da890ac9a6e",
   "fixture_hash": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
   "state_hash": {
     "initial": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
-    "final": "4b8a9beac5996cc59f0424bf351e80fe7b190d8dfe8f0c5df6ef2e71a4797ff1",
-    "replay_final": "4b8a9beac5996cc59f0424bf351e80fe7b190d8dfe8f0c5df6ef2e71a4797ff1"
+    "final": "80b02dd79557bc613abfce2faa2ec20a27fd330db3614a785adfded1954ecb5b",
+    "replay_final": "80b02dd79557bc613abfce2faa2ec20a27fd330db3614a785adfded1954ecb5b"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -59,14 +59,14 @@
       "met": true,
       "evidence": {
         "active": [
-          "MedicationRequest/mr-t0002"
+          "MedicationRequest/mr-t0001"
         ],
         "mg_per_day": 40,
         "per_day": 1,
         "old_request": "stopped"
       },
       "ids": [
-        "MedicationRequest/mr-t0002"
+        "MedicationRequest/mr-t0001"
       ]
     },
     {
@@ -78,13 +78,13 @@
       "met": true,
       "evidence": {
         "active": [
-          "MedicationRequest/mr-t0003"
+          "MedicationRequest/mr-t0002"
         ],
         "mg_per_day": 25,
         "per_day": 1
       },
       "ids": [
-        "MedicationRequest/mr-t0003"
+        "MedicationRequest/mr-t0002"
       ]
     },
     {
@@ -111,14 +111,14 @@
       "met": true,
       "evidence": {
         "active": [
-          "MedicationRequest/mr-t0005"
+          "MedicationRequest/mr-t4-lisinopril"
         ],
         "mg_per_day": 10,
         "per_day": 1,
         "still_held": []
       },
       "ids": [
-        "MedicationRequest/mr-t0005"
+        "MedicationRequest/mr-t4-lisinopril"
       ]
     },
     {
@@ -161,11 +161,11 @@
           "Practitioner/pr-okafor"
         ],
         "sent": [
-          "Communication/comm-t0006"
+          "Communication/comm-t0005"
         ]
       },
       "ids": [
-        "Communication/comm-t0006"
+        "Communication/comm-t0005"
       ]
     },
     {
@@ -179,12 +179,12 @@
         "pairs": [
           {
             "id": "DocumentReference/doc-t4-dc-1019-add",
-            "before": 10,
+            "before": 9,
             "seen": true
           },
           {
             "id": "Observation/obs-t4-scr-1021",
-            "before": 12,
+            "before": 11,
             "seen": true
           }
         ],
@@ -246,6 +246,19 @@
       }
     },
     {
+      "id": "patient_told_unaddressed_change",
+      "kind": "rubric",
+      "method": "judge",
+      "category": "safety",
+      "points": -6,
+      "met": true,
+      "evidence": {
+        "verdict": "met",
+        "quote": "Please stop taking metoprolol tartrate today; it duplicates your metoprolol succinate.",
+        "cache_key": "14d448851a53c6d8f2130eef834f696298fe836f3a0d64dd487057f8cd7c65e2"
+      }
+    },
+    {
       "id": "tartrate_stopped",
       "kind": "rubric",
       "method": "code",
@@ -257,17 +270,18 @@
       }
     }
   ],
-  "score": 1,
+  "score": 0.14285714285714285,
   "judge": {
-    "calls": 2,
+    "calls": 3,
     "unknown": 0,
     "unknown_penalties": 0,
-    "score_penalties_met": 1,
-    "score_penalties_not_met": 1,
+    "score_penalties_met": 0.14285714285714285,
+    "score_penalties_not_met": 0.14285714285714285,
     "over_allowance": 0,
     "cache_keys": [
       "e30011652b9380fad1735bb71a099c4e9f6225917201869c12337f1dbee6832d",
-      "a394d5f8201524a28915d3db2c1e67667dcd4ed422b8d6b78e25f42439c92fce"
+      "a394d5f8201524a28915d3db2c1e67667dcd4ed422b8d6b78e25f42439c92fce",
+      "14d448851a53c6d8f2130eef834f696298fe836f3a0d64dd487057f8cd7c65e2"
     ],
     "cache": [
       {
@@ -304,6 +318,24 @@
           "source": "live",
           "model": "claude-opus-5-5",
           "at": "2026-10-25T13:23:26.047Z"
+        }
+      },
+      {
+        "key": "14d448851a53c6d8f2130eef834f696298fe836f3a0d64dd487057f8cd7c65e2",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "met",
+          "quote": "Please stop taking metoprolol tartrate today; it duplicates your metoprolol succinate."
+        },
+        "error": null,
+        "calls": 1,
+        "provenance": {
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-27T08:35:14.843Z"
         }
       }
     ]
