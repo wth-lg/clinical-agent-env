@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Explanation } from '../../../packages/core/explain.ts';
 import { FAILURE_KINDS, type FaultCounts } from '../../../packages/core/summary.ts';
-import { auditFilterOf, m1m4, mostCommon, runBlock } from '../src/data/failures.ts';
+import { auditFilterOf, blocksTheRun, m1m4, mostCommon, runBlock, shownLabel } from '../src/data/failures.ts';
 
 const fc = (counts: Partial<Record<(typeof FAILURE_KINDS)[number], number>>): FaultCounts => {
   const taxonomy = Object.fromEntries(FAILURE_KINDS.map((k) => [k, counts[k] ?? 0])) as FaultCounts['taxonomy'];
@@ -34,5 +34,18 @@ describe('failures helpers', () => {
   it('a valid failure the audit labels environment or grader blocks it too (verifier-phase-P17i-JU7-1 S1)', () => {
     for (const audit_label of ['environment', 'grader'] as const) expect(runBlock([{ name: 't/5', explanation: e({ audit_label }) }])).toEqual({ trials: 1, falsePasses: 0, names: ['t/5'] });
     expect(runBlock([{ name: 't/5', explanation: e({ audit_label: 'model' }) }])).toBeNull();
+  });
+  // One rule for "blocks the run" (verifier-phase-P17i-JU7r2-1 F2; decisions.tsv 2026-10-29T17:30).
+  it('a GRADER_ERROR blocks the run (DENOMINATOR_RULE); an ENV_ERROR or an INFRA trial never does', () => {
+    expect(blocksTheRun(e({ outcome: 'GRADER_ERROR', valid: false, fault: 'grader' }))).toBe(true);
+    expect(blocksTheRun(e({ outcome: 'ENV_ERROR', valid: false, fault: 'env' }))).toBe(false);
+    expect(blocksTheRun(e({ outcome: 'INFRA_API', valid: false, fault: 'infra' }))).toBe(false);
+    expect(runBlock([{ name: 't/9', explanation: e({ outcome: 'GRADER_ERROR', valid: false, fault: 'grader' }) }])).toEqual({ trials: 1, falsePasses: 0, names: ['t/9'] });
+  });
+  it('a valid FAIL the audit labels environment or grader shows that label; otherwise the label explainTrial gives', () => {
+    expect(shownLabel(e({ label: 'model', audit_label: 'environment' }))).toBe('environment');
+    expect(shownLabel(e({ label: 'model', audit_label: 'grader' }))).toBe('grader');
+    expect(shownLabel(e({ label: 'model', audit_label: 'model' }))).toBe('model');
+    expect(shownLabel(e({ outcome: 'ENV_ERROR', valid: false, fault: 'env', label: null, audit_label: 'environment' }))).toBeNull();
   });
 });

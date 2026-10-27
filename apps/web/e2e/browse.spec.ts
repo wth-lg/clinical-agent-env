@@ -142,7 +142,11 @@ test('Runs: every non-pass row shows outcome, label, decisive check and reason w
     await expect(row.getByTestId('not-audited')).toHaveCount(e.audited ? 0 : 1);
     if (!e.audited) await expect(row.getByTestId('not-audited')).toHaveText(NOT_AUDITED_MARKER);
   }
-  for (const o of ['FAIL', 'ENV_ERROR', 'GRADER_ERROR', 'REFUSAL', 'LIMIT', 'INFRA_API']) expect(seen, o).toContain(o);
+  for (const o of ['FAIL', 'ENV_ERROR', 'REFUSAL', 'LIMIT', 'INFRA_API']) expect(seen, o).toContain(o);
+  // The run's GRADER_ERROR is regraded by a fixed grader, so its row shows the current FAIL: a
+  // current GRADER_ERROR would block the run (decisions.tsv 2026-10-29T17:50). The unregraded
+  // exemplar is the pilot run pilot-grader-error.
+  expect(records.some((r) => r.outcome === 'GRADER_ERROR' && r.regrades?.length === 1)).toBe(true);
   expect(records.some((r) => r.outcome !== 'PASS' && !explain(r).audited && explain(r).fault !== 'infra')).toBe(true);
 
   // The label filter.

@@ -41,10 +41,19 @@ export function m1m4(es: readonly Explanation[]): { met: number; failures: numbe
   return { met: failed.filter((e) => ['M1', 'M2', 'M3', 'M4'].every((id) => e.criteria.find((c) => c.id === id)?.met === true)).length, failures: failed.length };
 }
 
-// Whether a trial blocks the run (DENOMINATOR_RULE): blocksRun (a false PASS, GR5; a failure whose
-// fault is the environment's or the grader's; a run block such as B1), or a valid failure the
-// audit labels environment or grader, which audit-check fails too (verifier-phase-P17i-JU7-1 S1).
-export const blocksTheRunHere = (e: Explanation): boolean => blocksRun(e) !== null || (isFailure(e) && (e.audit_label === 'environment' || e.audit_label === 'grader'));
+// The one rule for "this trial blocks the run" (DENOMINATOR_RULE; decisions.tsv 2026-10-29T16:00
+// and 17:30; verifier-phase-P17i-JU7r2-1 F2): the run notice, Overview, Runs, Findings, the fault
+// label's note and the trial header all read it. blocksRun (a false PASS, GR5; a valid failure whose
+// fault is the environment's or the grader's; a run block such as B1); a GRADER_ERROR, which blocks
+// a committed run until a grader fix and a full regrade; or a valid failure the audit labels
+// environment or grader, which audit-check fails too. An ENV_ERROR or an INFRA trial never blocks
+// it: it is run again.
+export const blocksTheRun = (e: Explanation): boolean =>
+  blocksRun(e) !== null || e.outcome === 'GRADER_ERROR' || (isFailure(e) && (e.audit_label === 'environment' || e.audit_label === 'grader'));
+
+// The fault label a trial shows: the audit's environment or grader label on a valid failure, which
+// makes it block the run, else the label explainTrial gives (null for a PASS with no fault).
+export const shownLabel = (e: Explanation): string | null => (isFailure(e) && (e.audit_label === 'environment' || e.audit_label === 'grader') ? e.audit_label : e.label);
 
 // The run block (it then shows no pass count, dot or Wilson interval, decisions.tsv
 // 2026-10-29T16:00): the trials that block it, by name, and how many are false PASSes.
@@ -54,7 +63,7 @@ export interface RunBlock {
   names: string[];
 }
 export function runBlock(ts: ReadonlyArray<{ name: string; explanation: Explanation }>): RunBlock | null {
-  const blocking = ts.filter((t) => blocksTheRunHere(t.explanation));
+  const blocking = ts.filter((t) => blocksTheRun(t.explanation));
   return blocking.length === 0 ? null : { trials: blocking.length, falsePasses: blocking.filter((t) => isFalsePass(t.explanation)).length, names: blocking.map((t) => t.name) };
 }
 

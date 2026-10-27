@@ -129,14 +129,52 @@ test('a run with a false PASS is blocked: the blocking trials and the false PASS
   await page.getByRole('link', { name: 'Findings', exact: true }).first().click();
   await expect(page.getByTestId('run-blocked')).toBeVisible();
   await noRates(page);
+  // The notice's link opens the blocking trial, whose page shows no pass count either (JU7r2 F1).
+  await page.getByTestId('run-blocked').getByTestId('blocking-trial').first().click();
+  await expect(page.getByTestId('trial-detail')).toHaveAttribute('data-trial', trialName(pass));
+  await expect(page.getByTestId('run-blocked-line')).toHaveText('the run is blocked, so it has no pass rate');
+  await noRates(page);
 });
 
-test('a valid failure the audit labels environment blocks the run too', async ({ page }) => {
+test('a current GRADER_ERROR in the run blocks it (DENOMINATOR_RULE; decisions.tsv 2026-10-29T17:30)', async ({ page }) => {
+  // The run's GRADER_ERROR without the regrade a fixed grader gave it.
+  const regraded = records.find((r) => r.outcome === 'GRADER_ERROR' && r.regrades?.length)!;
+  await page.route(`**/data/results/runs/${summary.run_id}/trials/${trialName(regraded)}.json`, async (route) => {
+    const res = await route.fetch();
+    const { regrades: _, ...rec } = (await res.json()) as Record<string, unknown>;
+    await route.fulfill({ response: res, json: rec });
+  });
+  await browse(page, './?view=overview');
+  await expect(page.getByTestId('run-blocked').getByTestId('blocking-trial')).toContainText([trialName(regraded)]);
+  await noRates(page);
+});
+
+test('a valid failure the audit labels environment blocks the run, and its own row and header say so', async ({ page }) => {
   const row = audit.find((a) => a.outcome === 'FAIL')!;
-  await withRow(page, { ...row, taxonomy: null, label: 'environment', model_fault: 'no' });
+  await page.route(`**/data/results/runs/${summary.run_id}/audit.jsonl`, async (route) => {
+    const res = await route.fetch();
+    const lines = (await res.text()).split('\n').filter((l) => l.trim() !== '').map((l) => JSON.parse(l) as { trial?: string });
+    await route.fulfill({ response: res, body: `${lines.map((l) => JSON.stringify(l.trial === row.trial ? { ...l, taxonomy: null, label: 'environment', model_fault: 'no' } : l)).join('\n')}\n` });
+  });
   await browse(page, './?view=overview');
   await expect(page.getByTestId('run-blocked').getByTestId('blocking-trial')).toContainText([row.trial]);
   await noRates(page);
+  // Its row and its trial header show the audit's label in the blocked tone (decisions.tsv 17:30 (c)).
+  await page.getByRole('link', { name: 'Runs', exact: true }).first().click();
+  const r = page.locator(`[data-testid="run"][data-official="true"] [data-testid="trial-row"][data-trial="${row.trial}"]`);
+  await expect(r.getByTestId('label')).toHaveAttribute('data-label', 'environment');
+  await expect(r.getByTestId('fault-note')).toHaveText('Not counted. The run is blocked until this is fixed.');
+  await page.getByTestId('run-blocked').getByTestId('blocking-trial').filter({ hasText: row.trial }).click();
+  const header = page.getByTestId('trial-header');
+  await expect(header.getByTestId('label')).toHaveAttribute('data-label', 'environment');
+  await expect(header).toHaveCSS('border-left-color', await page.evaluate(() => {
+    const x = document.createElement('span');
+    x.className = 'text-danger';
+    document.body.append(x);
+    const c = getComputedStyle(x).color;
+    x.remove();
+    return c;
+  }));
 });
 
 test('the check and audit filters do not follow a rail link or an Overview task link', async ({ page }) => {

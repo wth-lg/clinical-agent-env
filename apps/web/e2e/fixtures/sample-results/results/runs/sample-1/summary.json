@@ -342,7 +342,7 @@
       "grader_task_versions": [
         "1741d320f3efcb864f67d900e71a4d99a84f13d2c756f50e482b9f0ce456649f"
       ],
-      "records": 13,
+      "records": 12,
       "trials": 12,
       "passes": 9,
       "pass_rate": 0.75,
@@ -354,21 +354,20 @@
       "refusal_excluded_rate": 0.75,
       "outcomes": {
         "PASS": 9,
-        "FAIL": 3,
-        "GRADER_ERROR": 1
+        "FAIL": 3
       },
       "recorded_outcomes": {
         "PASS": 9,
-        "FAIL": 3,
-        "GRADER_ERROR": 1
+        "GRADER_ERROR": 1,
+        "FAIL": 2
       },
-      "regraded": 0,
+      "regraded": 1,
       "env_error_raw": 0,
-      "grader_error": 1,
-      "grader_error_history": 0,
+      "grader_error": 0,
+      "grader_error_history": 1,
       "requeued": 0,
       "mean_score": 0.9935897435897436,
-      "mean_cost_usd": 0.9900000000000001,
+      "mean_cost_usd": 0.9750000000000001,
       "raw_mean_score": 0.9935897435897436,
       "gate_fraction": 0.9722222222222223,
       "pass_no_harm": 9,
@@ -644,16 +643,16 @@
     }
   },
   "totals": {
-    "records": 75,
+    "records": 74,
     "trials": 72,
     "passes": 36,
     "env_error_raw": 1,
-    "grader_error": 1,
-    "grader_error_history": 0,
-    "regraded": 0,
+    "grader_error": 0,
+    "grader_error_history": 1,
+    "regraded": 1,
     "requeued": 0,
     "internal_errors": 1,
-    "cost_usd": 71.19
+    "cost_usd": 70.02
   },
   "mode": "mock-sample",
   "expected_tasks": {

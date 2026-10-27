@@ -13,7 +13,7 @@ import { useEffect, useRef, type Ref } from 'react';
 import { AUDIT_LABELS } from '../../../../packages/core/outcomes.ts';
 import { gradingLine, useResults, type BadRecord, type RunData, type Trial } from '../data/results.ts';
 import { harmItems, safePass } from '../data/harm.ts';
-import { auditFilterOf, failedCheckOf, isFalsePass, runBlock } from '../data/failures.ts';
+import { auditFilterOf, failedCheckOf, isFalsePass, runBlock, shownLabel } from '../data/failures.ts';
 import { RunBlocked } from '../findings/why.tsx';
 import { Card, FaultLabel, GlossaryLink, HarmChip, Notice, OutcomeChip, Page, PlainRules } from '../data/ui.tsx';
 import { navigate, useParams } from '../data/url.ts';
@@ -22,7 +22,8 @@ import { TrialPage } from '../trial/TrialPage.tsx';
 
 // The label filter's values: every AUDIT_LABEL name, then excluded (INFRA) and pass.
 // A false PASS (GR5) has a fault, so it files under its label, not under pass.
-const labelOf = (t: Trial) => (t.explanation.outcome === 'PASS' && t.explanation.fault === null ? 'pass' : t.explanation.fault === 'infra' ? 'infra' : (t.explanation.label ?? 'none'));
+// A valid failure the audit labels environment or grader files under that label, as its row shows it.
+const labelOf = (t: Trial) => (t.explanation.outcome === 'PASS' && t.explanation.fault === null ? 'pass' : t.explanation.fault === 'infra' ? 'infra' : (shownLabel(t.explanation) ?? 'none'));
 const select = 'h-8 max-w-full rounded-sm border border-line-strong bg-surface px-2 text-ink';
 
 export function Runs({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | undefined }) {
@@ -47,7 +48,7 @@ export function Runs({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | un
   const block = official ? runBlock(official.trials) : null;
   const falsePasses = official ? official.trials.filter((t) => (task === '' || t.task === task) && isFalsePass(t.explanation)).length : 0;
   const total = runs.reduce((n, r) => n + r.trials.length + r.bad.length, 0);
-  const shown = runs.reduce((n, r) => n + r.trials.filter(r.official ? matches : pilotMatches).length, 0);
+  const shown = runs.reduce((n, r) => n + (r.official ? r.trials.filter(matches).length : check === '' && audit === '' ? r.trials.filter(pilotMatches).length : 0), 0);
   const scope = official ? (task === '' ? official.summary!.totals : official.summary!.tasks[task]) : undefined;
   // safe PASS: summary.json gives pass_no_harm per task; all tasks is their sum (JU3).
   const taskRows = official ? (task === '' ? Object.values(official.summary!.tasks) : official.summary!.tasks[task] ? [official.summary!.tasks[task]!] : []) : [];
@@ -89,7 +90,8 @@ export function Runs({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | un
         </p>
       )}
       {official && <RunList run={official} matches={matches} />}
-      {pilots.length > 0 && (
+      {/* The check and audit filters come from the official run, so the pilots hide while one is set (JU7r2 n1). */}
+      {pilots.length > 0 && check === '' && audit === '' && (
         <section className="space-y-3" data-testid="pilot-runs">
           <h2 className="pt-2 font-medium text-ink">Pilot runs (not counted in the results)</h2>
           {pilots.map((p) => <RunList key={p.runId} run={p} matches={pilotMatches} heading />)}

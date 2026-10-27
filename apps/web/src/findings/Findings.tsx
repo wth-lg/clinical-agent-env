@@ -10,7 +10,7 @@ import { FINAL_PASS_BAND, FINAL_TRIALS_PER_TASK } from '../../../../packages/cor
 import { OUTCOMES } from '../../../../packages/core/outcomes.ts';
 import { runBlock } from '../data/failures.ts';
 import { checkTextOf, dataUrl, gradingLine, pilotRates, useResults, type RunData } from '../data/results.ts';
-import { Card, formatInterval, GlossaryLink, IntervalRow, MarkLegend, markOf, NO_RESULTS, Notice, Page } from '../data/ui.tsx';
+import { Card, formatInterval, GlossaryLink, IntervalRow, markLabel, MarkLegend, markOf, NO_RESULTS, Notice, Page, Swatch } from '../data/ui.tsx';
 import { FaultBox, KindBar, RunBlocked, TopChecks } from './why.tsx';
 import { hrefWith, onNav } from '../data/url.ts';
 
@@ -164,13 +164,15 @@ function Charts({ run, blocked }: { run: RunData; blocked: boolean }) {
         <ul className="space-y-1" data-testid="exemplars">
           {exemplars.map(({ o, t }) => (
             <li key={o}>
-              <span className="mr-2 text-ink-muted">{o}</span>
+              <Swatch mark={markOf(o, t!.explanation.fault)} outcome={o} title={`${o}: ${markLabel(markOf(o, t!.explanation.fault))}`} />
+              <span className="ml-1.5 mr-2 text-ink-muted">{o}</span>
               <a href={hrefWith(exemplar(run, t!))} onClick={onNav(exemplar(run, t!))} className="text-ink underline decoration-line-strong underline-offset-2">{t!.name}</a>
               <span className="ml-2 break-words text-ink-muted">{t!.explanation.reason}</span>
               {t!.explanation.secondary_reason !== null && <span data-testid="secondary-reason" className="ml-2 block break-words text-xs text-ink-muted">{t!.explanation.secondary_reason}</span>}
             </li>
           ))}
         </ul>
+        <div className="mt-3"><MarkLegend marks={[...new Set(exemplars.map(({ o, t }) => markOf(o, t!.explanation.fault)))]} /></div>
       </Card>
     </>
   );

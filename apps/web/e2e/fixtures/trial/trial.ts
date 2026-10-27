@@ -8,11 +8,15 @@ import { explainContext } from '../../../../../cli/audit-check.ts';
 import { explainTrial, type AuditRow, type Explanation } from '../../../../../packages/core/explain.ts';
 import { trialName, type Summary } from '../../../../../packages/core/summary.ts';
 import { serve, type SampleRecord } from '../sample-results/sample.ts';
-import { RUN_ID, TRIALS } from './generate.ts';
+import { PILOT_ERROR_ID, RUN_ID, TRIALS } from './generate.ts';
 
-export { RUN_ID, TRIALS };
+export { PILOT_ERROR_ID, RUN_ID, TRIALS };
 export const ROOT = fileURLToPath(new URL('./', import.meta.url));
 export const RUN_DIR = join(ROOT, 'results/runs', RUN_ID);
+// The GRADER_ERROR exemplar lives in its own pilot run (generate.ts); every other trial in trial-1.
+const PILOT_ERROR_DIR = join(ROOT, 'results', PILOT_ERROR_ID);
+export const runOf = (name: string): string => (name === TRIALS.graderError ? PILOT_ERROR_ID : RUN_ID);
+const dirOf = (name: string): string => (name === TRIALS.graderError ? PILOT_ERROR_DIR : RUN_DIR);
 const REPO = fileURLToPath(new URL('../../../../../', import.meta.url));
 
 export type TrialFixture = Omit<SampleRecord, 'checks' | 'attribution'> & {
@@ -25,15 +29,21 @@ export const audit: AuditRow[] = readFileSync(join(RUN_DIR, 'audit.jsonl'), 'utf
 export const records: TrialFixture[] = readdirSync(join(RUN_DIR, 'trials'), { recursive: true, withFileTypes: true })
   .filter((e) => e.isFile() && e.name.endsWith('.json'))
   .map((e) => JSON.parse(readFileSync(join(e.parentPath, e.name), 'utf8')) as TrialFixture);
-export const record = (name: string): TrialFixture => records.find((r) => trialName(r) === name)!;
+const read = (dir: string): TrialFixture[] => readdirSync(join(dir, 'trials'), { recursive: true, withFileTypes: true })
+  .filter((e) => e.isFile() && e.name.endsWith('.json'))
+  .map((e) => JSON.parse(readFileSync(join(e.parentPath, e.name), 'utf8')) as TrialFixture);
+const pilotRecords = read(PILOT_ERROR_DIR);
+export const record = (name: string): TrialFixture => (name === TRIALS.graderError ? pilotRecords : records).find((r) => trialName(r) === name)!;
 export const auditOf = (name: string): AuditRow | null => audit.find((a) => a.trial === name) ?? null;
-export const hasTrajectory = (name: string): boolean => existsSync(join(RUN_DIR, record(name).trajectory));
+export const hasTrajectory = (name: string): boolean => existsSync(join(dirOf(name), record(name).trajectory));
 
 // explainTrial(record, audit) with audit-check's context.
-let ctx: ReturnType<typeof explainContext> | undefined;
+const ctx = new Map<string, ReturnType<typeof explainContext>>();
 export async function explain(name: string): Promise<Explanation> {
-  const of = await (ctx ??= explainContext(RUN_DIR));
-  return explainTrial(record(name), auditOf(name), await of(record(name) as never));
+  const dir = dirOf(name);
+  if (!ctx.has(dir)) ctx.set(dir, explainContext(dir));
+  const of = await ctx.get(dir)!;
+  return explainTrial(record(name), dir === RUN_DIR ? auditOf(name) : null, await of(record(name) as never));
 }
 
 // The base URL of a build of these fixtures: the served build when it holds this run, else a

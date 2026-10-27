@@ -17,7 +17,7 @@ import { FAULT_PRECEDENCE, isValid } from '../../../packages/core/outcomes.ts';
 import { trialName } from '../../../packages/core/summary.ts';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { explain, hasTrajectory, record, records, RUN_DIR, RUN_ID, summary, trialBase, TRIALS } from './fixtures/trial/trial.ts';
+import { explain, hasTrajectory, record, records, RUN_DIR, RUN_ID, runOf, summary, trialBase, TRIALS } from './fixtures/trial/trial.ts';
 import { rubricMetText } from '../src/trial/rubric.ts';
 
 const TABS = [
@@ -38,7 +38,8 @@ async function browse(page: Page, path: string) {
   if (await gate.isVisible()) await gate.click();
   await expect(nav).toBeVisible();
 }
-const trialPath = (name: string, extra = '') => `./?view=runs&run=${RUN_ID}&trial=${encodeURIComponent(name)}${extra}`;
+// Each trial in its run: trial-1, or the GRADER_ERROR exemplar's pilot run (fixtures/trial/trial.ts runOf).
+const trialPath = (name: string, extra = '') => `./?view=runs&run=${runOf(name)}&trial=${encodeURIComponent(name)}${extra}`;
 async function openTrial(page: Page, name: string, extra = '') {
   await browse(page, trialPath(name, extra));
   await expect(page.getByTestId('trial-detail')).toHaveAttribute('data-trial', name);

@@ -20,7 +20,8 @@ import { MET_TEXT, type Explanation } from '../../../../packages/core/explain.ts
 import type { TrialEvent } from '../../../../packages/core/events.ts';
 import { fetchEvents, fullExplanation, useResults, type RunData, type Trial } from '../data/results.ts';
 import { harmItems, safePass, type HarmItem } from '../data/harm.ts';
-import { blocksTheRun, FaultLabel, GlossaryLink, HarmChip, HashText, Notice, OutcomeChip } from '../data/ui.tsx';
+import { FaultLabel, GlossaryLink, HarmChip, HashText, Notice, OutcomeChip } from '../data/ui.tsx';
+import { blocksTheRun, runBlock } from '../data/failures.ts';
 import { tabTarget } from '../data/tabs.ts';
 import { useTaskList } from '../data/tasks.ts';
 import { MODEL } from '../adapters/ledger-browser.ts';
@@ -142,7 +143,10 @@ function Detail({ t, run, files, tab, headingRef }: { t: Trial; run: RunData; fi
         className="space-y-3 sm:space-y-4"
       >
         <p className="text-ink-muted">
-          Run <span className="font-medium text-ink">{run.runId}</span>{run.official ? ', the official run' : ', a pilot run, not counted in the results'}. Task <span className="font-medium text-ink">{t.task}</span>{run.official && run.summary?.tasks[t.task] ? <>: {run.summary.tasks[t.task]!.passes}/{run.summary.tasks[t.task]!.trials} pass, <span data-testid="safe-pass">{safePass(run.summary.tasks[t.task]!)}</span></> : null}.
+          Run <span className="font-medium text-ink">{run.runId}</span>{run.official ? ', the official run' : ', a pilot run, not counted in the results'}. Task <span className="font-medium text-ink">{t.task}</span>
+          {/* A blocked run has no pass rate, here too (verifier-phase-P17i-JU7r2-1 F1). */}
+          {run.official && runBlock(run.trials) !== null ? <>: <span data-testid="run-blocked-line">the run is blocked, so it has no pass rate</span></>
+            : run.official && run.summary?.tasks[t.task] ? <>: {run.summary.tasks[t.task]!.passes}/{run.summary.tasks[t.task]!.trials} pass, <span data-testid="safe-pass">{safePass(run.summary.tasks[t.task]!)}</span></> : null}.
         </p>
         <Header t={t} e={e} rows={traj?.rows ?? null} onStep={onStep} />
         <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start">

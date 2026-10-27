@@ -1,13 +1,14 @@
 // Fault tone (pre-audit S5 and M15, P17j JU2): an environment or grader fault is a trial the run
 // cannot count, so its outcome chip and its label take the danger colour (the mark keeps its
-// pattern, so the meaning does not rest on colour) and the label says "Not counted. The run is
-// blocked until this is fixed."; a model fault stays neutral; the FAIL mark stays readable in dark
+// pattern, so the meaning does not rest on colour); a grader fault's note says "Not counted. The run
+// is blocked until this is fixed.", and an environment error's "Not counted; it is run again."
+// (decisions.tsv 2026-10-29T17:30); a model fault stays neutral; the FAIL mark stays readable in dark
 // mode (at least 3:1 against its card).
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { RUN_ID, trialBase, TRIALS } from './fixtures/trial/trial.ts';
+import { runOf, trialBase, TRIALS } from './fixtures/trial/trial.ts';
 
 async function openTrial(page: Page, name: string) {
-  await page.goto(new URL(`./?view=runs&run=${RUN_ID}&trial=${encodeURIComponent(name)}`, await trialBase(test.info().project.use.baseURL!)).href);
+  await page.goto(new URL(`./?view=runs&run=${runOf(name)}&trial=${encodeURIComponent(name)}`, await trialBase(test.info().project.use.baseURL!)).href);
   const gate = page.getByRole('button', { name: 'Browse without a key' });
   const nav = page.getByRole('navigation', { name: 'Views' });
   await expect(gate.or(nav)).toBeVisible();
@@ -50,11 +51,15 @@ for (const scheme of ['light', 'dark'] as const) {
       const label = header.getByTestId('label');
       await expect(label).toHaveCount(1);
       expect(await rgb(page, await style(label, 'color'))).toEqual(want);
-      // One "Not counted" sentence on the header: the note says only the block when the reason says it (F3).
-      await expect(header.getByTestId('fault-note')).toHaveText(/^(Not counted\. )?The run is blocked until this is fixed\.$/);
+      // One "Not counted" sentence on the header: the note says only the rest when the reason says it (F3).
+      // A GRADER_ERROR blocks the run; an ENV_ERROR is run again and never blocks it
+      // (decisions.tsv 2026-10-29T17:30, verifier-phase-P17i-JU7r2-1 F2).
+      await expect(header.getByTestId('fault-note')).toHaveText(what === 'grader' ? /^(Not counted\. )?The run is blocked until this is fixed\.$/ : /^(Not counted; i|I)t is run again\.$/);
       expect((await header.innerText()).match(/Not counted/g)?.length ?? 0).toBeLessThanOrEqual(1);
-      // The header's left accent is the danger colour for a trial that blocks the run.
-      expect(await rgb(page, await header.evaluate((el) => getComputedStyle(el).borderLeftColor))).toEqual(want);
+      // The header's left accent is the danger colour only for a trial that blocks the run.
+      const accent = await rgb(page, await header.evaluate((el) => getComputedStyle(el).borderLeftColor));
+      if (what === 'grader') expect(accent).toEqual(want);
+      else expect(accent).not.toEqual(want);
     });
   }
 

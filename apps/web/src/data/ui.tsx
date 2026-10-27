@@ -7,7 +7,8 @@
 // the legend is drawn from the same marks, so it reads right in light and dark.
 import { Check, CircleHelp, Copy } from 'lucide-react';
 import { useState, type CSSProperties, type ReactNode, type Ref } from 'react';
-import { blocksRun, NOT_AUDITED_MARKER, type Explanation } from '../../../../packages/core/explain.ts';
+import { NOT_AUDITED_MARKER, type Explanation } from '../../../../packages/core/explain.ts';
+import { blocksTheRun, shownLabel } from './failures.ts';
 import { DENOMINATOR_RULE, FAULT, isValid, OUTCOMES, PASS_DEFINITION, RERUN_OUTCOMES, VALID_OUTCOMES, type Fault, type Outcome } from '../../../../packages/core/outcomes.ts';
 import type { Interval } from '../../../../packages/core/summary.ts';
 import { hrefWith, onNav } from './url.ts';
@@ -136,15 +137,16 @@ export function HarmChip({ items }: { items: readonly HarmItem[] }) {
 const TO_GLOSSARY = { view: 'glossary', task: null, label: null, trial: null };
 // What an environment or grader label means for the run (packages/core/outcomes.ts DENOMINATOR_RULE).
 export const BLOCKED_NOTE = 'Not counted. The run is blocked until this is fixed.';
-// Whether a trial blocks the run (verifier JU2-1 F1): blocksRun (packages/core/explain.ts: a valid
-// failure labelled environment or grader, or a run block such as B1), or an excluded environment
-// or grader outcome (ENV_ERROR, GRADER_ERROR).
-export const blocksTheRun = (e: Explanation): boolean => blocksRun(e) !== null || (!e.valid && (e.fault === 'env' || e.fault === 'grader'));
-// The note beside the label. notCountedShown: the surrounding view already says "Not counted" (the
-// trial header's plain reason for an excluded trial), so the note gives only the block and the
-// header has one "Not counted" sentence (F3); a run block on a counted trial (B1) is not "not counted".
-const blockedNote = (e: Explanation, notCountedShown: boolean): string =>
-  notCountedShown || (e.fault !== 'env' && e.fault !== 'grader') ? 'The run is blocked until this is fixed.' : BLOCKED_NOTE;
+// The note beside the label (data/failures.ts blocksTheRun decides whether the trial blocks the
+// run). notCountedShown: the surrounding view already says "Not counted" (the trial header's plain
+// reason for an excluded trial), so the note gives only the rest and the header has one "Not
+// counted" sentence (F3); a run block on a counted trial (B1) is not "not counted". An excluded
+// environment error is run again and blocks nothing (decisions.tsv 2026-10-29T17:30).
+function faultNote(e: Explanation, label: string | null, notCountedShown: boolean): string | null {
+  if (blocksTheRun(e)) return notCountedShown || (label !== 'environment' && label !== 'grader') ? 'The run is blocked until this is fixed.' : BLOCKED_NOTE;
+  if (!e.valid && e.fault === 'env') return notCountedShown ? 'It is run again.' : 'Not counted; it is run again.';
+  return null;
+}
 // The glossary, at a section (fault-<fault>, criterion-<id>, taxonomy, confirmation) when given.
 export const glossaryHref = (anchor?: string) => `${hrefWith(TO_GLOSSARY).replace(/#.*$/, '')}${anchor ? `#${anchor}` : ''}`;
 
@@ -197,10 +199,13 @@ export function HashText({ text }: { text: string }) {
 // The label and its help icon never wrap apart (verifier-phase-P16-2: at 390 px the infra icon
 // sat on a line of its own).
 export function FaultLabel({ e, notCountedShown = false }: { e: Explanation; notCountedShown?: boolean }) {
-  if (e.fault === null || (e.fault !== 'infra' && e.label === null)) return null;
-  const name = e.fault === 'infra' ? 'infra' : e.label!;
+  const label = shownLabel(e);
+  if (e.fault === null || (e.fault !== 'infra' && label === null)) return null;
+  const name = e.fault === 'infra' ? 'infra' : label!;
+  // The audit's environment or grader label on a model fault links to that label's definition.
+  const anchor = label === 'environment' ? 'env' : label === 'grader' ? 'grader' : e.fault;
   const help = (
-    <a href={glossaryHref(`fault-${e.fault}`)} onClick={toGlossary(`fault-${e.fault}`)} aria-label={`How the ${name} label is given`} title="How failures are attributed" className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-sm text-ink-muted hover:bg-canvas hover:text-ink">
+    <a href={glossaryHref(`fault-${anchor}`)} onClick={toGlossary(`fault-${anchor}`)} aria-label={`How the ${name} label is given`} title="How failures are attributed" className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-sm text-ink-muted hover:bg-canvas hover:text-ink">
       <CircleHelp aria-hidden className="h-3.5 w-3.5" strokeWidth={1.75} />
     </a>
   );
@@ -209,18 +214,18 @@ export function FaultLabel({ e, notCountedShown = false }: { e: Explanation; not
   }
   // An environment or grader label takes the danger tone and says what it means for the run (JU2);
   // a model label stays neutral.
-  const blocking = e.fault === 'env' || e.fault === 'grader';
-  const note = blocksTheRun(e);
+  const danger = label === 'environment' || label === 'grader';
+  const note = faultNote(e, label, notCountedShown);
   return (
     <span className="inline-flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
       <span className="inline-flex items-center gap-x-1">
-        <span data-testid="label" data-label={e.label} className={`font-medium ${blocking ? 'text-danger' : 'text-ink'}`}>
-          {e.label}
-          {e.label_subtype ? ` (${e.label_subtype})` : ''}
+        <span data-testid="label" data-label={label} className={`font-medium ${danger ? 'text-danger' : 'text-ink'}`}>
+          {label}
+          {label === e.label && e.label_subtype ? ` (${e.label_subtype})` : ''}
         </span>
         {help}
       </span>
-      {note && <span data-testid="fault-note" className="text-xs text-danger">{blockedNote(e, notCountedShown)}</span>}
+      {note !== null && <span data-testid="fault-note" className={`text-xs ${blocksTheRun(e) ? 'text-danger' : 'text-ink-muted'}`}>{note}</span>}
       {!e.audited && <span data-testid="not-audited" className="rounded-sm border border-dashed border-line-strong px-1 text-xs text-ink-muted">{NOT_AUDITED_MARKER}</span>}
     </span>
   );
