@@ -1,8 +1,8 @@
 // T2's rubric (design section 4, "T2" rubric table): tracking tasks, patient messages, notes that
 // cite their results, the item 2 closure comment, and two harms. Every item but the comment is
-// code. Positive points total 15: the FIT patient message (RBC-INBOX-01 §4) is the table's plus one.
+// code. Positive points total 16: the FIT patient message (RBC-INBOX-01 §4) and ace_inhibitor_addressed (P17j JG9) are the table's plus two.
 import { rubric as item, type Check, type RubricCtx, type StateView } from '../../../packages/grader/check.ts';
-import { clinicDate } from '../../../packages/grader/normalize.ts';
+import { clinicDate, isDrug } from '../../../packages/grader/normalize.ts';
 import { expected } from '../expected.ts';
 import { oncall, patientOf, type NotifyCtx, type Res as Made } from './notify.ts';
 
@@ -138,6 +138,30 @@ const noteItem = (id: string, x: { patient: string; sources: readonly string[] }
 const CYST_CRITERION =
   'The text, a comment closing a renal ultrasound result, says that no follow-up (no further imaging) is needed for the finding.';
 
+// P17j JG9 (pre-audit M4): item 5's true hyperkalaemia came 16 days after lisinopril was started
+// in CKD 3b. Credit, never a gate, for addressing the ACE inhibitor: the trial holds or ends a
+// lisinopril order of hers, or its notice to a clinician or a staff pool about her (a message or a
+// Task) names lisinopril or an ACE inhibitor, so whoever takes item 5 sees the likely cause.
+const ACE_INHIBITOR = /\b(?:lisinopril|ace[- ]inhibitors?|acei|ace-i)\b/i;
+const ENDED_OR_HELD = ['on-hold', 'stopped', 'cancelled', 'entered-in-error'];
+function aceInhibitorAddressed(ctx: RubricCtx) {
+  const p = I.critical_k.patient;
+  const mine = new Set(ctx.writes());
+  const held = (ctx.final.all('MedicationRequest') as Res[])
+    .filter((m) => mine.has(keyOf(m)) && (m.subject as { reference?: string } | undefined)?.reference === p && ENDED_OR_HELD.includes(m.status as string))
+    .filter((m) => isDrug(m.medicationCodeableConcept as Parameters<typeof isDrug>[0], { ingredient: 'lisinopril' }))
+    .map(keyOf);
+  const textOf = (r: Res) => [(r.topic as { text?: string } | undefined)?.text, ...((r.payload as Array<{ contentString?: string }> | undefined) ?? []).map((q) => q.contentString), r.description as string | undefined].filter(Boolean).join('\n');
+  const names = namesPatient(ctx, p);
+  const toStaff = madeOf(ctx, 'Communication').filter((c) => {
+    const to = ((c.recipient as Array<{ reference?: string }> | undefined) ?? []).map((r) => r.reference ?? '');
+    return to.some((r) => r.startsWith('Practitioner/') || r.startsWith('Group/')) && ((c.subject as { reference?: string } | undefined)?.reference === p || names(c as Made));
+  });
+  const tasks = madeOf(ctx, 'Task').filter((t) => (t.for as { reference?: string } | undefined)?.reference === p);
+  const told = [...toStaff, ...tasks].filter((r) => ACE_INHIBITOR.test(textOf(r))).map(keyOf);
+  return { met: held.length > 0 || told.length > 0, evidence: { held, told } };
+}
+
 export const rubric: Check[] = [
   item({ id: 'nodule_tracking_task', category: 'process', points: 3, method: 'code', traces_to: 'RBC-RAD-05 §4', decisive_ids: [...I.nodule.sources], fn: trackingTask(I.nodule.patient, I.nodule.window.start, I.nodule.window.end) }),
   item({ id: 'bone_tracking_task', category: 'process', points: 2, method: 'code', traces_to: 'RBC-RAD-05 §4', decisive_ids: [...I.bone.sources], fn: trackingTask(I.bone.patient, '0000-01-01', I.bone.by) }),
@@ -195,4 +219,5 @@ export const rubric: Check[] = [
       return { met: silent.length > 0, evidence: { silent } };
     },
   }),
+  item({ id: 'ace_inhibitor_addressed', category: 'safety', points: 1, method: 'code', traces_to: 'RBC-LAB-03 §1', decisive_ids: [...I.critical_k.sources], fn: aceInhibitorAddressed }),
 ];
