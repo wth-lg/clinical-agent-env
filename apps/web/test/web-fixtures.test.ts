@@ -12,6 +12,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { reachability } from '../../../packages/core/explain-context.ts';
+import { auditLabelOf, type AuditRow } from '../../../packages/core/explain.ts';
 import { summarize, validateSummary, type Summary, type SummaryTrial } from '../../../packages/core/summary.ts';
 import { terminalEvent, type TrialEvent } from '../../../packages/core/events.ts';
 import { parseTrajectory } from '../../../packages/core/trajectory.ts';
@@ -93,7 +94,9 @@ describe.each(roots)('fixture %s', (root) => {
       .map((f) => json(f) as SummaryTrial & { index: number })
       // The generators' order, so the floating-point means add up in the same order.
       .sort((a, b) => (a.task_id === b.task_id ? a.index - b.index : a.task_id < b.task_id ? -1 : 1));
-    const again = summarize({ run_id: summary.run_id, trials: records, requeued: [], replay: null, mode: summary.mode, ...(summary.expected_tasks ? { expected: summary.expected_tasks } : {}) });
+    // fault_counts.label reads the run's audit labels, as cli summary does (P17j JG7).
+    const audit = existsSync(join(run, 'audit.jsonl')) ? Object.fromEntries(lines(join(run, 'audit.jsonl')).flatMap((a) => (typeof (a as AuditRow).trial === 'string' ? [[(a as AuditRow).trial, auditLabelOf(a as AuditRow)]] : []))) : null;
+    const again = summarize({ run_id: summary.run_id, trials: records, requeued: [], replay: null, mode: summary.mode, ...(summary.expected_tasks ? { expected: summary.expected_tasks } : {}), audit });
     expect(again).toEqual(summary);
   });
 });

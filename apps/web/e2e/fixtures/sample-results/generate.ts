@@ -25,7 +25,7 @@ import { fileURLToPath } from 'node:url';
 import { loadMatrixTask, matrixEnv, matrixTaskIds } from '../../../../../cli/matrix.ts';
 import type { RunManifest } from '../../../../../packages/core/batch.ts';
 import type { ToolResultEvent, TrialEvent } from '../../../../../packages/core/events.ts';
-import type { AuditRow } from '../../../../../packages/core/explain.ts';
+import { auditLabelOf, type AuditRow } from '../../../../../packages/core/explain.ts';
 import type { TrialRecord } from '../../../../../packages/core/run.ts';
 import { assertSummary, summarize, type SummaryTrial } from '../../../../../packages/core/summary.ts';
 import { toJsonl } from '../../../../../packages/core/trajectory.ts';
@@ -104,7 +104,9 @@ async function main(withMatrix: boolean) {
     }
   }
 
-  const summary = summarize({ run_id: RUN_ID, trials: records as unknown as SummaryTrial[], requeued: [], replay: null, mode: 'mock-sample', expected: { tasks: ids, from: 'generate.ts' } });
+  // The audit's labels, as cli summary reads them from audit.jsonl, give fault_counts.label.
+  const labels = Object.fromEntries(audit.map((a) => [a.trial, auditLabelOf(a)]));
+  const summary = summarize({ run_id: RUN_ID, trials: records as unknown as SummaryTrial[], requeued: [], replay: null, mode: 'mock-sample', expected: { tasks: ids, from: 'generate.ts' }, audit: labels });
   assertSummary(summary);
   write(join(HERE, 'results/official.json'), `${JSON.stringify({ run: `runs/${RUN_ID}` }, null, 2)}\n`);
   write(join(RUN, 'summary.json'), `${JSON.stringify(summary, null, 2)}\n`);

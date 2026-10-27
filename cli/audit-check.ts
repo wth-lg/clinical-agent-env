@@ -77,8 +77,10 @@
 // for a regraded trial and one for the grader it ran under does not; and, on a regraded trial
 // whose first failed check is not the one its recorded attribution names, that check's decisive
 // ids with the step each was first exposed at in the trajectory.
-// --json prints {failures, labelled, labelled_environment, labelled_grader, faults, valid, excluded,
-// denominator, task_validity, violations}: task_validity maps each flagged task to its flags and
+// --json prints {failures, labelled, labelled_environment, labelled_grader, faults, fault_box, valid, excluded,
+// denominator, task_validity, violations}: fault_box gives each task's fault_counts and
+// top_failed_checks as summary.json does (packages/core/summary.ts faultCounts, with this run's
+// audit labels) and m1_m4, {met, failures}: the valid failures whose M1-M4 are all met (P17j JG7); task_validity maps each flagged task to its flags and
 // its review's verdict and reviewer (null without one); labelled_environment and labelled_grader count the failures the audit
 // labels environment or grader (after adjudication); faults counts the failures by the fault
 // explainTrial computes ({model, refusal, env, grader, infra}), which the label must agree with
@@ -96,7 +98,7 @@ import { explainContext as contextOf, type TaskCheck } from '../packages/core/ex
 import { AUDIT_QUESTIONS, auditAnswerOf, auditLabelOf, citedStep, excludedFromHeadline, explainTrial, formatCriterion, type AuditRow, type CheckText, type ExplainContext, type ExplainRecord } from '../packages/core/explain.ts';
 import { AUDIT_LABEL, AUDIT_LABELS, e6Confirmation, FAULT, FAULT_PRECEDENCE, type Fault, type Outcome } from '../packages/core/outcomes.ts';
 import { parseTrajectory } from '../packages/core/trajectory.ts';
-import { consistencyOf, currentGrade, describeConsistency, type ConsistencyFlag } from '../packages/core/summary.ts';
+import { consistencyOf, currentGrade, describeConsistency, faultCounts, type ConsistencyFlag } from '../packages/core/summary.ts';
 import { TAXONOMY } from '../packages/grader/attribution.ts';
 import { sameId, stepsOf } from '../packages/grader/exposure.ts';
 import { requeuedRecords, settledRecords, trajectoryOf } from './adapters/result-sink-node.ts';
@@ -313,6 +315,8 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
     if (l.evidence_ids.length === 0) v.push(`${l.trial}: no evidence ids`);
   }
   const faults = Object.fromEntries(FAULT_PRECEDENCE.map((f) => [f, 0])) as Record<Fault, number>;
+  // Per task, the failures whose confirmation criteria M1-M4 are all met (the fault box's count).
+  const m1m4 = new Map<string, number>();
   for (const r of failures) {
     const name = trialName(r);
     const row = byTrial.get(name);
@@ -322,6 +326,7 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
     }
     const e = await explain(r, byTrial.get(name));
     if (e.fault !== null) faults[e.fault]++;
+    if (['M1', 'M2', 'M3', 'M4'].every((id) => e.criteria.find((c) => c.id === id)?.met === true)) m1m4.set(r.task_id, (m1m4.get(r.task_id) ?? 0) + 1);
     for (const c of e.criteria) {
       if ((c.id === 'M1' || c.id === 'M4') && (c.met === false || c.met === 'pending')) v.push(`${name}: ${formatCriterion(c).replace(': ', ' ')}: ${c.evidence}`);
     }
@@ -405,7 +410,14 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
   for (const line of v) say(`violation: ${line}`);
   say(`audit-check: ${labelled}/${failures.length} failures labelled, environment ${environment}, grader ${grader}; ${v.length === 0 ? 'every check holds' : `${v.length} violation(s)`}`);
   const excluded = excludedTrials.sort();
-  if (json) deps.out(JSON.stringify({ failures: failures.length, labelled, labelled_environment: environment, labelled_grader: grader, faults, valid: valid.length, excluded, denominator: valid.length - excluded.length, task_validity: taskValidity, violations: v }));
+  // Each task's fault box, as summary.json gives it (packages/core/summary.ts faultCounts), with
+  // the M1-M4 count: the failures whose M1-M4 are all met, of the valid failures.
+  const audited = Object.fromEntries([...byTrial].map(([name, l]) => [name, auditLabelOf(l)]));
+  const faultBox = Object.fromEntries([...new Set([...records.values()].map((r) => r.task_id))].sort().map((task) => {
+    const box = faultCounts([...records.values()].filter((r) => r.task_id === task), requeued.filter((r) => r.task_id === task), lines === null ? null : audited);
+    return [task, { ...box, m1_m4: { met: m1m4.get(task) ?? 0, failures: box.fault_counts.failures } }];
+  }));
+  if (json) deps.out(JSON.stringify({ failures: failures.length, labelled, labelled_environment: environment, labelled_grader: grader, faults, fault_box: faultBox, valid: valid.length, excluded, denominator: valid.length - excluded.length, task_validity: taskValidity, violations: v }));
   return v.length === 0 ? 0 : 1;
 }
 
