@@ -151,7 +151,7 @@ function TrialRow({ t, run }: { t: Trial; run: RunData }) {
         </button>
         <OutcomeChip outcome={e.outcome} fault={e.fault} />
         <HarmChip items={harmItems(t.record)} />
-        {faulted && <FaultLabel e={e} />}
+        {faulted && <FaultLabel e={e} official={run.official} />}
         {e.decisive_check && <code data-testid="decisive" className="break-all rounded-sm bg-canvas px-1 text-xs text-ink">{e.decisive_check.id}</code>}
         <span className="ml-auto text-xs text-ink-muted" title="Agent and judge cost">${cost.toFixed(2)}</span>
       </div>

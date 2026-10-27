@@ -317,7 +317,8 @@ test('a trial record missing cost_usd is an error row in Runs; the app and the o
   await browse(page, './?view=runs');
   const row = page.locator('[data-testid="record-error"][data-trial="renal-dose-review/3"]');
   await expect(row).toContainText('cost_usd is missing');
-  await expect(page.getByTestId('trial-row')).toHaveCount(records.length - 1);
+  // The official run's rows: the sample also serves the pilot run pilot-grader-error.
+  await expect(page.locator('[data-testid="run"][data-official="true"] [data-testid="trial-row"]')).toHaveCount(records.length - 1);
   await page.getByRole('navigation', { name: 'Views' }).getByRole('link', { name: 'Overview' }).click();
   await expect(page.getByTestId('data-warning')).toContainText('1 trial record cannot be read');
   await expect(page.getByTestId('overview-row')).toHaveCount(TASK_IDS.length);

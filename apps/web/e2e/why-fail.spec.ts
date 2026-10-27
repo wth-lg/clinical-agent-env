@@ -163,7 +163,8 @@ test('a valid failure the audit labels environment blocks the run, and its own r
   await page.getByRole('link', { name: 'Runs', exact: true }).first().click();
   const r = page.locator(`[data-testid="run"][data-official="true"] [data-testid="trial-row"][data-trial="${row.trial}"]`);
   await expect(r.getByTestId('label')).toHaveAttribute('data-label', 'environment');
-  await expect(r.getByTestId('fault-note')).toHaveText('Not counted. The run is blocked until this is fixed.');
+  // It is counted, so the note says only the block (decisions.tsv 19:10).
+  await expect(r.getByTestId('fault-note')).toHaveText('The run is blocked until this is fixed.');
   await page.getByTestId('run-blocked').getByTestId('blocking-trial').filter({ hasText: row.trial }).click();
   const header = page.getByTestId('trial-header');
   await expect(header.getByTestId('label')).toHaveAttribute('data-label', 'environment');

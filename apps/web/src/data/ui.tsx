@@ -8,7 +8,7 @@
 import { Check, CircleHelp, Copy } from 'lucide-react';
 import { useState, type CSSProperties, type ReactNode, type Ref } from 'react';
 import { NOT_AUDITED_MARKER, type Explanation } from '../../../../packages/core/explain.ts';
-import { blocksTheRun, shownLabel } from './failures.ts';
+import { blocksTheRun, isFalsePass, shownLabel } from './failures.ts';
 import { DENOMINATOR_RULE, FAULT, isValid, OUTCOMES, PASS_DEFINITION, RERUN_OUTCOMES, VALID_OUTCOMES, type Fault, type Outcome } from '../../../../packages/core/outcomes.ts';
 import type { Interval } from '../../../../packages/core/summary.ts';
 import { hrefWith, onNav } from './url.ts';
@@ -140,10 +140,15 @@ export const BLOCKED_NOTE = 'Not counted. The run is blocked until this is fixed
 // The note beside the label (data/failures.ts blocksTheRun decides whether the trial blocks the
 // run). notCountedShown: the surrounding view already says "Not counted" (the trial header's plain
 // reason for an excluded trial), so the note gives only the rest and the header has one "Not
-// counted" sentence (F3); a run block on a counted trial (B1) is not "not counted". An excluded
-// environment error is run again and blocks nothing (decisions.tsv 2026-10-29T17:30).
-function faultNote(e: Explanation, label: string | null, notCountedShown: boolean): string | null {
-  if (blocksTheRun(e)) return notCountedShown || (label !== 'environment' && label !== 'grader') ? 'The run is blocked until this is fixed.' : BLOCKED_NOTE;
+// counted" sentence (F3). Only an official run is blocked; a counted trial that blocks it (a valid
+// failure labelled environment or grader, a run block such as B1) is not "not counted"; a pilot's
+// GRADER_ERROR is a grader bug fixed before the final run; an excluded environment error is run
+// again and blocks nothing (decisions.tsv 2026-10-29T17:30 and 19:10).
+const GRADER_BUG_NOTE = 'A grader bug; it is fixed and regraded before the final run.';
+function faultNote(e: Explanation, official: boolean, notCountedShown: boolean): string | null {
+  const notCounted = (rest: string) => (notCountedShown ? rest : `Not counted. ${rest}`);
+  if (blocksTheRun(e) && official) return !e.valid || isFalsePass(e) ? notCounted('The run is blocked until this is fixed.') : 'The run is blocked until this is fixed.';
+  if (!e.valid && e.outcome === 'GRADER_ERROR') return notCounted(GRADER_BUG_NOTE);
   if (!e.valid && e.fault === 'env') return notCountedShown ? 'It is run again.' : 'Not counted; it is run again.';
   return null;
 }
@@ -198,7 +203,8 @@ export function HashText({ text }: { text: string }) {
 // opens the glossary at its fault.
 // The label and its help icon never wrap apart (verifier-phase-P16-2: at 390 px the infra icon
 // sat on a line of its own).
-export function FaultLabel({ e, notCountedShown = false }: { e: Explanation; notCountedShown?: boolean }) {
+// official: the trial is of the official run, the only run a trial can block (decisions.tsv 19:10).
+export function FaultLabel({ e, notCountedShown = false, official = false }: { e: Explanation; notCountedShown?: boolean; official?: boolean }) {
   const label = shownLabel(e);
   if (e.fault === null || (e.fault !== 'infra' && label === null)) return null;
   const name = e.fault === 'infra' ? 'infra' : label!;
@@ -215,7 +221,7 @@ export function FaultLabel({ e, notCountedShown = false }: { e: Explanation; not
   // An environment or grader label takes the danger tone and says what it means for the run (JU2);
   // a model label stays neutral.
   const danger = label === 'environment' || label === 'grader';
-  const note = faultNote(e, label, notCountedShown);
+  const note = faultNote(e, official, notCountedShown);
   return (
     <span className="inline-flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
       <span className="inline-flex items-center gap-x-1">
@@ -225,7 +231,7 @@ export function FaultLabel({ e, notCountedShown = false }: { e: Explanation; not
         </span>
         {help}
       </span>
-      {note !== null && <span data-testid="fault-note" className={`text-xs ${blocksTheRun(e) ? 'text-danger' : 'text-ink-muted'}`}>{note}</span>}
+      {note !== null && <span data-testid="fault-note" className={`text-xs ${(blocksTheRun(e) && official) || e.outcome === 'GRADER_ERROR' ? 'text-danger' : 'text-ink-muted'}`}>{note}</span>}
       {!e.audited && <span data-testid="not-audited" className="rounded-sm border border-dashed border-line-strong px-1 text-xs text-ink-muted">{NOT_AUDITED_MARKER}</span>}
     </span>
   );

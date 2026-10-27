@@ -38,7 +38,10 @@ export const failedCheckOf = (e: Explanation): string | null => (isFailure(e) ? 
 // The failures whose confirmation criteria M1-M4 are all met, of the valid failures.
 export function m1m4(es: readonly Explanation[]): { met: number; failures: number } {
   const failed = es.filter(isFailure);
-  return { met: failed.filter((e) => ['M1', 'M2', 'M3', 'M4'].every((id) => e.criteria.find((c) => c.id === id)?.met === true)).length, failures: failed.length };
+  // n/a is met: M1 does not apply to a failure with no failed gate check, and explainTrial calls it
+  // confirmed (as audit-check counts it, verifier-phase-P17i-JG7-1 F1).
+  const met = (e: Explanation) => ['M1', 'M2', 'M3', 'M4'].every((id) => [true, 'n/a'].includes(e.criteria.find((c) => c.id === id)?.met as never));
+  return { met: failed.filter(met).length, failures: failed.length };
 }
 
 // The one rule for "this trial blocks the run" (DENOMINATOR_RULE; decisions.tsv 2026-10-29T16:00

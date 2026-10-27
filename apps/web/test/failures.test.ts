@@ -26,6 +26,10 @@ describe('failures helpers', () => {
   it('m1m4 counts the valid failures with M1-M4 all met', () => {
     expect(m1m4([e({}), e({ criteria: met(['M1', 'M2', 'M3']) as never }), e({ outcome: 'PASS' })])).toEqual({ met: 1, failures: 2 });
   });
+  it('m1m4 takes n/a as met (a failure with no failed gate check), as audit-check does', () => {
+    const na = met(['M2', 'M3', 'M4']).map((c) => (c.id === 'M1' ? { ...c, met: 'n/a' } : c));
+    expect(m1m4([e({ outcome: 'LIMIT', criteria: na as never })])).toEqual({ met: 1, failures: 1 });
+  });
   it('runBlock is null for a run with no block, and names the false PASS', () => {
     expect(runBlock([{ name: 't/1', explanation: e({}) }])).toBeNull();
     const falsePass = e({ outcome: 'PASS', fault: 'grader', deciding: { fault: 'grader', id: 'GR5', evidence: '' } });

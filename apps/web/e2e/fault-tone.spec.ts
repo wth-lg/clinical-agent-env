@@ -1,8 +1,8 @@
 // Fault tone (pre-audit S5 and M15, P17j JU2): an environment or grader fault is a trial the run
 // cannot count, so its outcome chip and its label take the danger colour (the mark keeps its
-// pattern, so the meaning does not rest on colour); a grader fault's note says "Not counted. The run
-// is blocked until this is fixed.", and an environment error's "Not counted; it is run again."
-// (decisions.tsv 2026-10-29T17:30); a model fault stays neutral; the FAIL mark stays readable in dark
+// pattern, so the meaning does not rest on colour); the pilot's grader error says it is a grader bug
+// fixed before the final run, and an environment error "Not counted; it is run again." (decisions.tsv
+// 2026-10-29T17:30 and 19:10); a model fault stays neutral; the FAIL mark stays readable in dark
 // mode (at least 3:1 against its card).
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { runOf, trialBase, TRIALS } from './fixtures/trial/trial.ts';
@@ -52,14 +52,13 @@ for (const scheme of ['light', 'dark'] as const) {
       await expect(label).toHaveCount(1);
       expect(await rgb(page, await style(label, 'color'))).toEqual(want);
       // One "Not counted" sentence on the header: the note says only the rest when the reason says it (F3).
-      // A GRADER_ERROR blocks the run; an ENV_ERROR is run again and never blocks it
-      // (decisions.tsv 2026-10-29T17:30, verifier-phase-P17i-JU7r2-1 F2).
-      await expect(header.getByTestId('fault-note')).toHaveText(what === 'grader' ? /^(Not counted\. )?The run is blocked until this is fixed\.$/ : /^(Not counted; i|I)t is run again\.$/);
+      // The GRADER_ERROR exemplar is in a pilot run, which nothing blocks: its note says it is a grader
+      // bug fixed before the final run; an ENV_ERROR is run again (decisions.tsv 2026-10-29T17:30, 19:10).
+      await expect(header.getByTestId('fault-note')).toHaveText(what === 'grader' ? /^(Not counted\. )?A grader bug; it is fixed and regraded before the final run\.$/ : /^(Not counted; i|I)t is run again\.$/);
+      await expect(header.getByTestId('fault-note')).not.toContainText('run is blocked');
       expect((await header.innerText()).match(/Not counted/g)?.length ?? 0).toBeLessThanOrEqual(1);
-      // The header's left accent is the danger colour only for a trial that blocks the run.
-      const accent = await rgb(page, await header.evaluate((el) => getComputedStyle(el).borderLeftColor));
-      if (what === 'grader') expect(accent).toEqual(want);
-      else expect(accent).not.toEqual(want);
+      // The header's left accent is the danger colour only for a trial that blocks the official run.
+      expect(await rgb(page, await header.evaluate((el) => getComputedStyle(el).borderLeftColor))).not.toEqual(want);
     });
   }
 

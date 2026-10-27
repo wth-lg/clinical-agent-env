@@ -45,6 +45,8 @@ export const PILOT_ERROR_ID = 'pilot-grader-error';
 const PILOT_ERROR = join(HERE, 'results', PILOT_ERROR_ID);
 export const TRIALS_PER_TASK = 12;
 const T0 = Date.parse('2026-10-23T12:00:00Z');
+// The regrade of the run's GRADER_ERROR, a fixed day after the clock starts: after every trial ended.
+const REGRADED_AT = new Date(T0 + 24 * 3600 * 1000).toISOString();
 
 // Passes per task, in task id order, so the six intervals differ.
 const PASSES = [3, 5, 7, 9, 4, 8];
@@ -178,7 +180,7 @@ function internalAt(run: CaseRun, n: number): CaseRun {
 // trial's real grade, a model FAIL.
 function regradeOf(g: Awaited<ReturnType<typeof gradeRun>>, graderTaskVersion: string | null) {
   if (g.outcome !== 'FAIL') throw new Error(`the regraded GRADER_ERROR must be a model FAIL, not ${g.outcome}`);
-  return { grader_version: g.grader_version, grader_task_version: graderTaskVersion, outcome: g.outcome, score: g.score, valid: g.valid, checks: g.checks, error: null, changed: true, at: new Date(T0).toISOString() };
+  return { grader_version: g.grader_version, grader_task_version: graderTaskVersion, outcome: g.outcome, score: g.score, valid: g.valid, checks: g.checks, error: null, changed: true, at: REGRADED_AT };
 }
 
 // The record as the outcome `as` would have left it; null keeps the scripted run's.
