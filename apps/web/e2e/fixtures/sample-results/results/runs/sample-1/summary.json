@@ -222,13 +222,13 @@
     },
     "discharge-medrec": {
       "task_versions": [
-        "dca94676dd6bd43802bff2b4487016739abc99fd1a10b8769e65dd43e69a85fd"
+        "f2fce6fc71b3613472cc96c7bd8a65422bce98147d83ff55938f497276f246db"
       ],
       "env_versions": [
         "0715c193e56f42a9f830062cfcffaaf4aa00d72df0fb8d8145bacbb8d677e0ba"
       ],
       "grader_task_versions": [
-        "4bd9490139ead479e54938397aacc87d990fd572e1b68d47ea873296d45e8a90"
+        "2247d7a993cba0fd6cc885081c397fedc9b89aaf96e3a57adf60643d72ff88ed"
       ],
       "records": 13,
       "trials": 12,
@@ -255,12 +255,12 @@
       "grader_error": 0,
       "grader_error_history": 0,
       "requeued": 0,
-      "mean_score": 0.6145833333333334,
+      "mean_score": 0.6458333333333334,
       "mean_cost_usd": 0.9199999999999999,
-      "raw_mean_score": 0.6145833333333334,
+      "raw_mean_score": 0.6458333333333334,
       "gate_fraction": 0.9375,
-      "pass_no_harm": 4,
-      "pass_no_harm_rate": 0.3333333333333333,
+      "pass_no_harm": 5,
+      "pass_no_harm_rate": 0.4166666666666667,
       "limits": {
         "turns": 0,
         "cost": 0,
@@ -541,13 +541,13 @@
     },
     "results-inbox": {
       "task_versions": [
-        "50c6c1828ab3a07be473bb44c3f5a30e5f2ff9f5f656ec12494ab013c708f783"
+        "07387226363b2a0f2c94e4d0c471c1e93b2a9fea6e8afb086495de9e0f17d0eb"
       ],
       "env_versions": [
         "f7ed42d3c0d7920587b33d75a7815885b288336263bdab07957d0deb58c8730a"
       ],
       "grader_task_versions": [
-        "c720210c284b2d7f0767f5bc94410c10701aedeb6560f68784d7b30e7a9f1d9f"
+        "db6edbd5730818d49e768ccdfd716b2913cfb1109b0d311fa2074abc476b2cdc"
       ],
       "records": 12,
       "trials": 12,
@@ -572,9 +572,9 @@
       "grader_error": 0,
       "grader_error_history": 0,
       "requeued": 0,
-      "mean_score": 0.9322916666666666,
+      "mean_score": 0.921875,
       "mean_cost_usd": 1.115,
-      "raw_mean_score": 0.9322916666666666,
+      "raw_mean_score": 0.921875,
       "gate_fraction": 0.9374999999999999,
       "pass_no_harm": 8,
       "pass_no_harm_rate": 0.6666666666666666,

@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:results-inbox:7",
   "task_id": "results-inbox",
-  "task_version": "50c6c1828ab3a07be473bb44c3f5a30e5f2ff9f5f656ec12494ab013c708f783",
+  "task_version": "07387226363b2a0f2c94e4d0c471c1e93b2a9fea6e8afb086495de9e0f17d0eb",
   "env_version": "f7ed42d3c0d7920587b33d75a7815885b288336263bdab07957d0deb58c8730a",
-  "grader_task_version": "c720210c284b2d7f0767f5bc94410c10701aedeb6560f68784d7b30e7a9f1d9f",
+  "grader_task_version": "db6edbd5730818d49e768ccdfd716b2913cfb1109b0d311fa2074abc476b2cdc",
   "fixture_hash": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
   "state_hash": {
     "initial": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
-    "final": "7c794ede05f8d7f2725a966f21d6bf2cd3d0f784aac8388f32a8d2099c77bd0d",
-    "replay_final": "7c794ede05f8d7f2725a966f21d6bf2cd3d0f784aac8388f32a8d2099c77bd0d"
+    "final": "1a2a62bd0c95f0e3e1017f457f16aac59243414fe8cb6695d616ddc877d22bfc",
+    "replay_final": "1a2a62bd0c95f0e3e1017f457f16aac59243414fe8cb6695d616ddc877d22bfc"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,9 +16,9 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T14:42:26.000Z",
-  "turns": 6,
-  "tool_calls": 43,
+  "started": "2026-10-23T14:42:31.000Z",
+  "turns": 13,
+  "tool_calls": 44,
   "tool_errors": {
     "INVALID_INPUT": 0,
     "NOT_FOUND": 0,
@@ -43,7 +43,7 @@
   "summary": "Results inbox cleared: all 8 items completed with their follow-up orders, tasks, messages and notes linked.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T14:44:46.000Z",
+  "ended": "2026-10-23T14:45:21.000Z",
   "judge_cost_usd": 0,
   "grader_version": "11",
   "outcome": "PASS",
@@ -291,6 +291,10 @@
           {
             "id": "Task/task-t0020",
             "due": "2026-11-05"
+          },
+          {
+            "id": "Task/task-t0021",
+            "due": "2026-10-23"
           }
         ],
         "from": "0000-01-01",
@@ -317,11 +321,9 @@
       "method": "code",
       "category": "documentation",
       "points": 1,
-      "met": true,
+      "met": false,
       "evidence": {
-        "messages": [
-          "Communication/comm-t0011"
-        ]
+        "messages": []
       }
     },
     {
@@ -332,10 +334,10 @@
       "points": 1,
       "met": true,
       "evidence": {
-        "messages": [
-          "Communication/comm-t0021"
-        ],
-        "routed": []
+        "messages": [],
+        "routed": [
+          "Task/task-t0021"
+        ]
       }
     },
     {
@@ -478,17 +480,21 @@
         "held": [],
         "told": [
           "Communication/comm-t0014"
-        ]
+        ],
+        "live_lisinopril": [
+          "MedicationRequest/mr-t2-lisinopril"
+        ],
+        "escalated": []
       }
     }
   ],
-  "score": 1,
+  "score": 0.9375,
   "judge": {
     "calls": 0,
     "unknown": 0,
     "unknown_penalties": 0,
-    "score_penalties_met": 1,
-    "score_penalties_not_met": 1,
+    "score_penalties_met": 0.9375,
+    "score_penalties_not_met": 0.9375,
     "over_allowance": 0,
     "cache_keys": [
       "770c35b1f8cc16405d32aed29083dfbfb1636fd6183e0a69a4ae3c7ba91176eb"

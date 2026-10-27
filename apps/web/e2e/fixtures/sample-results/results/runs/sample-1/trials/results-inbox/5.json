@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:results-inbox:5",
   "task_id": "results-inbox",
-  "task_version": "50c6c1828ab3a07be473bb44c3f5a30e5f2ff9f5f656ec12494ab013c708f783",
+  "task_version": "07387226363b2a0f2c94e4d0c471c1e93b2a9fea6e8afb086495de9e0f17d0eb",
   "env_version": "f7ed42d3c0d7920587b33d75a7815885b288336263bdab07957d0deb58c8730a",
-  "grader_task_version": "c720210c284b2d7f0767f5bc94410c10701aedeb6560f68784d7b30e7a9f1d9f",
+  "grader_task_version": "db6edbd5730818d49e768ccdfd716b2913cfb1109b0d311fa2074abc476b2cdc",
   "fixture_hash": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
   "state_hash": {
     "initial": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
-    "final": "1a2a62bd0c95f0e3e1017f457f16aac59243414fe8cb6695d616ddc877d22bfc",
-    "replay_final": "1a2a62bd0c95f0e3e1017f457f16aac59243414fe8cb6695d616ddc877d22bfc"
+    "final": "0101e0455c10672b56c993c7525dd004170387df4852a6149e24755541a51cb8",
+    "replay_final": "0101e0455c10672b56c993c7525dd004170387df4852a6149e24755541a51cb8"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,9 +16,9 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T14:36:42.000Z",
+  "started": "2026-10-23T14:36:44.000Z",
   "turns": 13,
-  "tool_calls": 44,
+  "tool_calls": 45,
   "tool_errors": {
     "INVALID_INPUT": 0,
     "NOT_FOUND": 0,
@@ -43,7 +43,7 @@
   "summary": "Results inbox cleared: all 8 items completed with their follow-up orders, tasks, messages and notes linked.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T14:39:32.000Z",
+  "ended": "2026-10-23T14:39:37.000Z",
   "judge_cost_usd": 0,
   "grader_version": "11",
   "outcome": "PASS",
@@ -186,20 +186,20 @@
       "met": true,
       "evidence": {
         "referral": [
-          "ServiceRequest/sr-t0018"
+          "ServiceRequest/sr-t0019"
         ],
         "mri": [
-          "ServiceRequest/sr-t0019"
+          "ServiceRequest/sr-t0020"
         ],
         "orders": [
           {
-            "id": "ServiceRequest/sr-t0018",
+            "id": "ServiceRequest/sr-t0019",
             "code": "REF-ORTHO-ONC",
             "priority": "urgent",
             "start": "2026-10-23"
           },
           {
-            "id": "ServiceRequest/sr-t0019",
+            "id": "ServiceRequest/sr-t0020",
             "code": "IMG-MRI-FEMUR-WWO",
             "priority": "urgent",
             "start": "2026-10-23"
@@ -208,8 +208,8 @@
         "by": "2026-11-05"
       },
       "ids": [
-        "ServiceRequest/sr-t0018",
-        "ServiceRequest/sr-t0019"
+        "ServiceRequest/sr-t0019",
+        "ServiceRequest/sr-t0020"
       ]
     },
     {
@@ -289,12 +289,8 @@
       "evidence": {
         "tasks": [
           {
-            "id": "Task/task-t0020",
-            "due": "2026-11-05"
-          },
-          {
             "id": "Task/task-t0021",
-            "due": "2026-10-23"
+            "due": "2026-11-05"
           }
         ],
         "from": "0000-01-01",
@@ -321,9 +317,11 @@
       "method": "code",
       "category": "documentation",
       "points": 1,
-      "met": false,
+      "met": true,
       "evidence": {
-        "messages": []
+        "messages": [
+          "Communication/comm-t0011"
+        ]
       }
     },
     {
@@ -334,10 +332,10 @@
       "points": 1,
       "met": true,
       "evidence": {
-        "messages": [],
-        "routed": [
-          "Task/task-t0021"
-        ]
+        "messages": [
+          "Communication/comm-t0022"
+        ],
+        "routed": []
       }
     },
     {
@@ -411,10 +409,10 @@
       "met": true,
       "evidence": {
         "notes": [
-          "DocumentReference/doc-t0016"
+          "DocumentReference/doc-t0017"
         ],
         "citing": [
-          "DocumentReference/doc-t0016"
+          "DocumentReference/doc-t0017"
         ]
       }
     },
@@ -427,10 +425,10 @@
       "met": true,
       "evidence": {
         "notes": [
-          "DocumentReference/doc-t0022"
+          "DocumentReference/doc-t0023"
         ],
         "citing": [
-          "DocumentReference/doc-t0022"
+          "DocumentReference/doc-t0023"
         ]
       }
     },
@@ -477,20 +475,24 @@
       "points": 1,
       "met": true,
       "evidence": {
-        "held": [],
+        "held": [
+          "MedicationRequest/mr-t2-lisinopril"
+        ],
         "told": [
           "Communication/comm-t0014"
-        ]
+        ],
+        "live_lisinopril": [],
+        "escalated": []
       }
     }
   ],
-  "score": 0.9375,
+  "score": 1,
   "judge": {
     "calls": 0,
     "unknown": 0,
     "unknown_penalties": 0,
-    "score_penalties_met": 0.9375,
-    "score_penalties_not_met": 0.9375,
+    "score_penalties_met": 1,
+    "score_penalties_not_met": 1,
     "over_allowance": 0,
     "cache_keys": [
       "770c35b1f8cc16405d32aed29083dfbfb1636fd6183e0a69a4ae3c7ba91176eb"

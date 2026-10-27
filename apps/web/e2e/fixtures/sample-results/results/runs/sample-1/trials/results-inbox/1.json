@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:results-inbox:1",
   "task_id": "results-inbox",
-  "task_version": "50c6c1828ab3a07be473bb44c3f5a30e5f2ff9f5f656ec12494ab013c708f783",
+  "task_version": "07387226363b2a0f2c94e4d0c471c1e93b2a9fea6e8afb086495de9e0f17d0eb",
   "env_version": "f7ed42d3c0d7920587b33d75a7815885b288336263bdab07957d0deb58c8730a",
-  "grader_task_version": "c720210c284b2d7f0767f5bc94410c10701aedeb6560f68784d7b30e7a9f1d9f",
+  "grader_task_version": "db6edbd5730818d49e768ccdfd716b2913cfb1109b0d311fa2074abc476b2cdc",
   "fixture_hash": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
   "state_hash": {
     "initial": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
-    "final": "113bdf8b884e95f13358691e59680d70d2db605bb7afbced9296ff5f87cd22e1",
-    "replay_final": "113bdf8b884e95f13358691e59680d70d2db605bb7afbced9296ff5f87cd22e1"
+    "final": "b7bf7fb3c22e44841ed6d2bba7f5985beebecdd1a9703a91f5cb587c6eaa4f1f",
+    "replay_final": "b7bf7fb3c22e44841ed6d2bba7f5985beebecdd1a9703a91f5cb587c6eaa4f1f"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,9 +16,9 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T14:25:11.000Z",
-  "turns": 13,
-  "tool_calls": 44,
+  "started": "2026-10-23T14:25:02.000Z",
+  "turns": 14,
+  "tool_calls": 45,
   "tool_errors": {
     "INVALID_INPUT": 0,
     "NOT_FOUND": 0,
@@ -43,7 +43,7 @@
   "summary": "Results inbox cleared: all 8 items completed with their follow-up orders, tasks, messages and notes linked.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T14:28:01.000Z",
+  "ended": "2026-10-23T14:27:59.000Z",
   "judge_cost_usd": 0,
   "grader_version": "11",
   "outcome": "PASS",
@@ -114,8 +114,8 @@
         "orders": [
           {
             "id": "ServiceRequest/sr-t0010",
-            "priority": "stat",
-            "start": "2026-10-23"
+            "priority": "urgent",
+            "start": "2026-10-26"
           }
         ],
         "by": "2026-10-26"
@@ -147,13 +147,13 @@
       "evidence": {
         "oncall": [
           {
-            "id": "Task/task-t0014",
+            "id": "Communication/comm-t0014",
             "priority": "stat"
           }
         ]
       },
       "ids": [
-        "Task/task-t0014"
+        "Communication/comm-t0014"
       ]
     },
     {
@@ -196,13 +196,13 @@
             "id": "ServiceRequest/sr-t0018",
             "code": "REF-ORTHO-ONC",
             "priority": "urgent",
-            "start": "2026-10-26"
+            "start": "2026-10-23"
           },
           {
             "id": "ServiceRequest/sr-t0019",
-            "code": "IMG-MRI-FEMUR-WO",
-            "priority": "asap",
-            "start": "2026-10-28"
+            "code": "IMG-MRI-FEMUR-WWO",
+            "priority": "urgent",
+            "start": "2026-10-23"
           }
         ],
         "by": "2026-11-05"
@@ -476,7 +476,15 @@
       "met": false,
       "evidence": {
         "held": [],
-        "told": []
+        "told": [
+          "Communication/comm-t0014"
+        ],
+        "live_lisinopril": [
+          "MedicationRequest/mr-t0026"
+        ],
+        "escalated": [
+          "MedicationRequest/mr-t0026"
+        ]
       }
     }
   ],

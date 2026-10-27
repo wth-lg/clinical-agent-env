@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:results-inbox:4",
   "task_id": "results-inbox",
-  "task_version": "50c6c1828ab3a07be473bb44c3f5a30e5f2ff9f5f656ec12494ab013c708f783",
+  "task_version": "07387226363b2a0f2c94e4d0c471c1e93b2a9fea6e8afb086495de9e0f17d0eb",
   "env_version": "f7ed42d3c0d7920587b33d75a7815885b288336263bdab07957d0deb58c8730a",
-  "grader_task_version": "c720210c284b2d7f0767f5bc94410c10701aedeb6560f68784d7b30e7a9f1d9f",
+  "grader_task_version": "db6edbd5730818d49e768ccdfd716b2913cfb1109b0d311fa2074abc476b2cdc",
   "fixture_hash": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
   "state_hash": {
     "initial": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
-    "final": "f68f9e664763d6018c3022046579547834cc611c20c536c3258149c40f9aaff1",
-    "replay_final": "f68f9e664763d6018c3022046579547834cc611c20c536c3258149c40f9aaff1"
+    "final": "711b99e7163c5935b1ddc59fa93eabc726457221450442dd86cb3a11ee04d5c4",
+    "replay_final": "711b99e7163c5935b1ddc59fa93eabc726457221450442dd86cb3a11ee04d5c4"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T14:33:50.000Z",
+  "started": "2026-10-23T14:33:52.000Z",
   "turns": 13,
   "tool_calls": 44,
   "tool_errors": {
@@ -43,7 +43,7 @@
   "summary": "Results inbox cleared: all 8 items completed with their follow-up orders, tasks, messages and notes linked.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T14:36:40.000Z",
+  "ended": "2026-10-23T14:36:42.000Z",
   "judge_cost_usd": 0,
   "grader_version": "11",
   "outcome": "PASS",
@@ -61,7 +61,7 @@
         "orders": [
           {
             "id": "ServiceRequest/sr-t0001",
-            "start": "2027-06-04"
+            "start": "2027-05-04"
           }
         ],
         "window": {
@@ -186,23 +186,23 @@
       "met": true,
       "evidence": {
         "referral": [
-          "ServiceRequest/sr-t0018"
+          "ServiceRequest/sr-t0019"
         ],
         "mri": [
-          "ServiceRequest/sr-t0019"
+          "ServiceRequest/sr-t0018"
         ],
         "orders": [
           {
             "id": "ServiceRequest/sr-t0018",
-            "code": "REF-ORTHO-ONC",
-            "priority": "urgent",
-            "start": "2026-10-23"
+            "code": "IMG-MRI-FEMUR-WWO",
+            "priority": "stat",
+            "start": "2026-11-05"
           },
           {
             "id": "ServiceRequest/sr-t0019",
-            "code": "IMG-MRI-FEMUR-WWO",
+            "code": "REF-ORTHO-ONC",
             "priority": "urgent",
-            "start": "2026-10-23"
+            "start": "2026-11-05"
           }
         ],
         "by": "2026-11-05"
@@ -272,7 +272,7 @@
         "tasks": [
           {
             "id": "Task/task-t0002",
-            "due": "2027-07-04"
+            "due": "2027-05-04"
           }
         ],
         "from": "2027-05-04",
@@ -478,7 +478,11 @@
         "held": [],
         "told": [
           "Communication/comm-t0014"
-        ]
+        ],
+        "live_lisinopril": [
+          "MedicationRequest/mr-t2-lisinopril"
+        ],
+        "escalated": []
       }
     }
   ],
