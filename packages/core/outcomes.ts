@@ -97,7 +97,10 @@ export interface AttributionFacts {
   // gate check when it is another (first_failed, else null), and the decisive ids of both, the
   // decisive check's first (decisions.tsv 2026-10-28T20:55); exposure null when nothing says what
   // these ids were exposed at (a regrade failed another check and the caller could not recompute it).
-  decisive: { id: string; first_failed: string | null; exposure: ReadonlyArray<{ id: string; first_exposed_step: number | null; exposable: boolean | null }> | null } | null;
+  // exposable: a tool result exposed or referenced the id to a passing oracle or alternative in the
+  // matrix run on the trial's world and env_version (R14-30); null when it was exposed, or when
+  // exposability_unchecked says why the matrix cannot say.
+  decisive: { id: string; first_failed: string | null; exposure: ReadonlyArray<{ id: string; first_exposed_step: number | null; exposable: boolean | null }> | null; exposability_unchecked?: string | null } | null;
   matrix: MatrixResult | null;
   check_error: { check: string | null; message: string } | null;
   // The audit row's answers clinically_acceptable and tool_rejections_correct (explain.ts AuditRow),
@@ -162,20 +165,20 @@ const statusIs = (o: Outcome) => (f: AttributionFacts) => result(f.status === o 
 // a note, and decides no trial's fault.
 const M1: Criterion = {
   id: 'M1',
-  text: 'Every decisive id of the failed gate check, and of the first failed gate check when that is another, was shown to the model, or is in the world so the tool would have returned it had the model asked.',
-  reads: ['record.attribution.exposure (recomputed from the trajectory when a regrade failed another check)', 'world (is the id a resource of the world)'],
+  text: "Every deciding record of the failed gate check, and of the first failed gate check when that is another, was shown to the model, or is reachable: in the grader validation matrix, run on the trial's world and environment version, a tool result showed or referenced it to the task's reference solution or an accepted alternative, so a tool would have returned it had the model asked.",
+  reads: ['record.attribution.exposure (recomputed from the trajectory when a regrade failed another check)', "manifest world_hash and matrix.json's world_hash (the same world)", "record env_version and matrix.json's env_version (the same env files and tools)", "matrix.json's ids a tool result showed or referenced to the oracle and the alternatives that ran as expected (probes[].reachable_ids, as_expected)"],
   check: ({ decisive, outcome }) => {
     // A check that threw leaves no verdict on the model, though the grade records it not met.
-    if (outcome === 'GRADER_ERROR') return result('n/a', 'a grader check threw, so no gate check gave a verdict on the model');
+    if (outcome === 'GRADER_ERROR') return result('n/a', 'a grader check failed with an error, so no gate check gave a verdict on the model');
     if (decisive === null) return result('n/a', 'no gate check failed');
     const checks = decisive.first_failed === null ? decisive.id : `${decisive.id} and ${decisive.first_failed}`;
     if (decisive.exposure === null) return result('pending', `the record does not say what the decisive ids of ${checks} were exposed at`);
     if (decisive.exposure.length === 0) return result(true, `${checks} ${decisive.first_failed === null ? 'names' : 'name'} no decisive ids`);
     const lines = decisive.exposure.map((e) =>
       e.first_exposed_step !== null ? `${e.id} exposed at step ${e.first_exposed_step}`
-        : e.exposable === true ? `${e.id} never exposed but exposable (in the world)`
-          : e.exposable === false ? `${e.id} was never exposed and is not exposable (not in the world)`
-            : `${e.id} never exposed; exposability not checked`);
+        : e.exposable === true ? `${e.id} never exposed but exposable (the reference solution or an accepted alternative reached it in the matrix)`
+          : e.exposable === false ? `${e.id} was never exposed and is not exposable (neither the reference solution nor an accepted alternative reached it in the matrix)`
+            : `${e.id} never exposed; exposability not checked${decisive.exposability_unchecked ? ` (${decisive.exposability_unchecked})` : ''}`);
     const met = decisive.exposure.every((e) => e.first_exposed_step !== null || e.exposable === true) ? true
       : decisive.exposure.some((e) => e.first_exposed_step === null && e.exposable === false) ? false : 'pending';
     return result(met, lines.join('; '));
@@ -183,7 +186,7 @@ const M1: Criterion = {
 };
 const M3: Criterion = {
   id: 'M3',
-  text: "The initial state hash equals the manifest's, and the replayed final state hash equals the final hash.",
+  text: 'The start state hash is the same as the hash in the run manifest, and a replay of the trajectory gives the same final state hash.',
   reads: ['record.state_hash.initial', 'record.state_hash.final', 'record.state_hash.replay_final', 'manifest world_hash'],
   check: ({ state_hash: h, manifest_hash }) => {
     const replay = replayOk(h) ? `replay_final equals final ${h.final}` : `replay_final ${h.replay_final} is not final ${h.final}`;
@@ -194,7 +197,7 @@ const M3: Criterion = {
 };
 const M4: Criterion = {
   id: 'M4',
-  text: "The task's oracle and every declared alternative pass the grader validation matrix on the grader_task_version of the trial's current grade, or none of them fails the gate check the trial failed, or the trial's outcome is not FAIL (a REFUSAL or LIMIT comes from the record status, which no grader fix changes).",
+  text: "The task's reference solution and every accepted alternative pass the grader validation matrix at the grader version of the trial's current grade, or none of them fails the gate check the trial failed, or the trial's outcome is not FAIL (a refusal or a limit comes from the record status, which no grader fix changes).",
   reads: ['record.outcome', 'record.grader_task_version, or its last regrade\'s', 'record.checks (the first failed gate check)', 'matrix oracle_pass, alternatives_pass and failed_checks for that grader_task_version'],
   check: ({ outcome, matrix, grader_task_version: g, decisive }) => {
     if (matrix === null || g === null) return result('pending', `no grader validation matrix result for grader_task_version ${g ?? 'unknown (the grade predates the env/grader split)'}`);
@@ -213,7 +216,7 @@ export const CONFIRMATION_CRITERIA: readonly Criterion[] = [
   M1,
   {
     id: 'M2',
-    text: 'No tool call of the trial returned an INTERNAL error.',
+    text: 'No tool call of the trial returned an internal error.',
     reads: ['record.tool_errors.INTERNAL'],
     check: (f) => result(f.internal_errors === 0, plural(f.internal_errors, 'INTERNAL tool error')),
   },
@@ -221,7 +224,7 @@ export const CONFIRMATION_CRITERIA: readonly Criterion[] = [
   M4,
   {
     id: 'M5',
-    text: "A human audit's adjudicated_label, else its label, is model, and either the adjudicated_label is set or the audit says model_fault yes with no disagreeing LLM auditor.",
+    text: 'A human audit labels the trial model (its adjudicated label, else its label), and either the audit has an adjudicated label or it says the model is at fault and no LLM auditor disagrees.',
     reads: ['audit.adjudicated_label', 'audit.label (else implied by audit.taxonomy)', 'audit.model_fault', 'audit.llm_auditor_agrees'],
     check: ({ audit, outcome }) => {
       if (audit === null) return result('pending', 'not human-audited');
@@ -253,7 +256,7 @@ export const FAULT_DEFINITIONS: Readonly<Record<Fault, FaultDefinition>> = {
     ],
   },
   refusal: {
-    sentence: 'A refusal is when the model does not do the task: it counts as a model failure in the pass rate, and the results also give the pass rate without refusals.',
+    sentence: 'The model refuses when it does not do the task: a refusal counts as a model failure in the pass rate, and the results also give the pass rate without refusals.',
     criteria: [
       {
         id: 'R1',
@@ -264,7 +267,7 @@ export const FAULT_DEFINITIONS: Readonly<Record<Fault, FaultDefinition>> = {
     ],
   },
   env: {
-    sentence: 'The environment is at fault when a tool failed on its own or refused a valid call, the start or final state is not correct, an environment rule broke, or a record that a check needs is not in the world.',
+    sentence: 'The environment is at fault when a tool failed on its own or refused a valid call, the start or final state is not correct, an environment rule broke, or a record that a check needs was not reachable: no tool result showed it to the reference solution or an accepted alternative of the task in the grader validation matrix.',
     criteria: [
       {
         id: 'E1',
@@ -284,7 +287,7 @@ export const FAULT_DEFINITIONS: Readonly<Record<Fault, FaultDefinition>> = {
       {
         id: 'E3',
         record_fact: true,
-        text: 'The trial ended ENV_ERROR for a different reason than an internal error or a wrong state hash, for example a broken environment rule.',
+        text: 'The trial ended ENV_ERROR for a reason different from an internal error or a wrong state hash, for example a broken environment rule.',
         reads: ['record.status', 'record.detail'],
         check: ({ status, detail }) => result(status === 'ENV_ERROR' && !ENV_DETAILS.includes(detail ?? ''), `status ${status}, detail ${detail}`),
       },
@@ -298,7 +301,7 @@ export const FAULT_DEFINITIONS: Readonly<Record<Fault, FaultDefinition>> = {
       },
       {
         id: 'E5',
-        text: 'The failed gate check needs a record that the model did not see and that is not in the world, so no tool could give it to the model (M1 not met).',
+        text: "A deciding record of the failed gate check, or of the first failed gate check when that is another, was never shown to the model, and in the grader validation matrix run on the trial's world and environment version no tool result showed or referenced it to the task's reference solution or an accepted alternative, so it was not reachable (M1 not met).",
         reads: M1.reads,
         check: negation(M1.check),
       },
@@ -319,7 +322,7 @@ export const FAULT_DEFINITIONS: Readonly<Record<Fault, FaultDefinition>> = {
     ],
   },
   grader: {
-    sentence: "The grader is at fault when a check failed with an error, a regrade could not grade the record, a human audit found a grader bug, or the task's reference solution or an accepted alternative fails the same check as the trial.",
+    sentence: "The grader is at fault when a check failed with an error, a regrade could not grade the record, a human audit found a grader bug or a false PASS, or the task's reference solution or an accepted alternative fails the same check as the trial.",
     criteria: [
       {
         id: 'GR1',
@@ -346,18 +349,31 @@ export const FAULT_DEFINITIONS: Readonly<Record<Fault, FaultDefinition>> = {
       },
       {
         id: 'GR4',
-        text: "The trial is a FAIL, and the grader validation matrix shows that the task's reference solution or an accepted alternative fails the same gate check the trial failed, at the grader version of the trial's current grade (M4 not met).",
+        text: 'In the grader validation matrix, the reference solution or an accepted alternative fails the same gate check as this FAIL trial (M4 not met).',
         reads: M4.reads,
         check: negation(M4.check),
+      },
+      {
+        // A false PASS (P17j JG5): the only fault criterion that decides a PASS. explain.ts lets it
+        // decide, and a GR5 trial is not counted as a pass and blocks the run (DENOMINATOR_RULE).
+        id: 'GR5',
+        text: 'The trial is a PASS, and a human audit of that PASS labels it grader with at least one evidence id: the grader passed a trial that the policy fails.',
+        reads: ['record.outcome', 'audit.outcome', 'audit.label (else implied by audit.taxonomy)', 'audit.adjudicated_label', 'audit.evidence_ids'],
+        // The row must be about the PASS: a grader label from the audit of a FAIL that a grader fix
+        // and regrade turned into a PASS is the resolved failure, not a false PASS (JG5-1 S2).
+        check: ({ outcome, audit }) => {
+          const said = audit === null ? null : (audit.adjudicated_label ?? audit.label);
+          return result(outcome === 'PASS' && audit?.outcome === 'PASS' && said === 'grader' && audit.evidence_ids.length > 0, audit === null ? 'not human-audited' : `outcome ${outcome}, audited ${audit.outcome}, audit label ${said ?? 'none'}, ${plural(audit.evidence_ids.length, 'evidence id')}`);
+        },
       },
     ],
   },
   infra: {
-    sentence: 'The infrastructure is at fault when the API, the harness, a different model or a stop from outside ended the trial, so the trial tells nothing about the model.',
+    sentence: 'The infrastructure is at fault when the API, the harness, a wrong model or a stop from outside ended the trial, so the trial gives no data about the model.',
     criteria: [
       {
         id: 'I1',
-        text: 'The API answered with a different model than the trial requested or than the model under test, the trial requested a different model than the model under test, or the harness marked the trial INVALID.',
+        text: 'The API returned, or the trial requested, a model different from the model under test, or the harness marked the trial INVALID.',
         reads: ['record.models_returned', 'record.model_requested', 'record.status', 'record.model_requested and record.models_returned against MODEL (packages/core/anthropic.ts), as packages/grader/outcome.ts compares them'],
         check: (f) => {
           const want = [f.model_requested, f.model_expected].filter((m): m is string => m !== null);
@@ -397,16 +413,17 @@ export const RUN_BLOCKS: readonly Criterion[] = [
 
 export type Confirmation = 'confirmed' | 'provisional' | 'contradicted';
 export const CONFIRMATION_DEFINITIONS: Readonly<Record<Confirmation, string>> = {
-  confirmed: 'Every criterion that can confirm the label is met: M1-M5 for a model or refusal label; for an environment or grader label, the record alone when E1-E4, GR1 or GR2 decided it, and a human audit with the same label when E5, E6, GR3 or GR4 decided it; and the record alone for infra.',
+  confirmed: 'Every criterion that can confirm the label is met: M1-M5 for a model or refusal label; for an environment or grader label, the record alone when E1-E4, GR1 or GR2 decided it, and a human audit with the same label when E5, E6, GR3, GR4 or GR5 decided it; and the record alone for infra.',
   provisional: 'Nothing contradicts the label, but a confirming criterion is still pending, such as a missing audit, manifest hash or matrix result.',
   contradicted: 'A confirming criterion is not met or a human audit gives another label, so the label must be reviewed before it is used.',
 };
 
-export const PASS_DEFINITION = 'A trial is a PASS when every gate check of its current grade is met (record.checks, or the last record.regrades[].checks); any environment or grader criterion that holds is shown as a note and does not change the outcome.';
+export const PASS_DEFINITION = 'A trial is a PASS when every gate check of its current grade is met (record.checks, or the last record.regrades[].checks); any environment or grader criterion that holds is shown as a note and does not change the outcome. A PASS that a human audit labels grader, with evidence, is a false PASS (GR5): the outcome stays PASS, but it is the grader\'s fault and is not counted as a pass.';
 
 export const DENOMINATOR_RULE = [
   `Only ${list(VALID_OUTCOMES)} count in the denominator, and every other outcome is excluded: ${list(RERUN_OUTCOMES)} are excluded and rerun, and ${list(NEVER_RERUN)} ${NEVER_RERUN.length === 1 ? 'is' : 'are'} excluded and never rerun as a model trial.`,
   'A GRADER_ERROR in a committed run blocks the run until a grader fix and a full offline regrade, and a valid failure labelled environment or grader is not allowed in a committed run: cli audit-check fails the run until a grader label is resolved by that fix and regrade, or an environment label by an environment fix and a rerun of only the affected trials, disclosed in results/changelog.d, so a run with one has no headline pass rate.',
+  'A false PASS (GR5) is not counted as a pass, and it blocks the run in the same way until a grader fix, a full offline regrade and a disclosure in results/changelog.d.',
   'A refusal counts as a model failure inside the denominator, and refusal_excluded_rate gives the pass rate with refusals left out.',
 ].join(' ');
 

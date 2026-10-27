@@ -5,6 +5,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { auditLabelOf, type AuditRow } from '../../../packages/core/explain.ts';
 import { summarize, validateSummary, type Summary, type SummaryTrial } from '../../../packages/core/summary.ts';
 
 const SAMPLE = join(import.meta.dirname, '../e2e/fixtures/sample-results');
@@ -23,7 +24,9 @@ describe('sample summary.json', () => {
   });
 
   it('equals summarize() over the committed records', () => {
-    const again = summarize({ run_id: summary.run_id, trials: records, requeued: [], replay: null, mode: summary.mode, ...(summary.expected_tasks ? { expected: summary.expected_tasks } : {}) });
+    // fault_counts.label reads the run's audit labels, as cli summary does (P17j JG7).
+    const audit = Object.fromEntries(readFileSync(join(RUN, 'audit.jsonl'), 'utf8').split('\n').filter((l) => l.trim() !== '').map((l) => JSON.parse(l) as AuditRow).filter((a) => typeof a.trial === 'string').map((a) => [a.trial, auditLabelOf(a)]));
+    const again = summarize({ run_id: summary.run_id, trials: records, requeued: [], replay: null, mode: summary.mode, ...(summary.expected_tasks ? { expected: summary.expected_tasks } : {}), audit });
     expect(again).toEqual(summary);
   });
 
@@ -39,5 +42,12 @@ describe('sample summary.json', () => {
     for (const r of records) expect(existsSync(join(RUN, r.trajectory)), r.trajectory).toBe(true);
     const matrix = JSON.parse(readFileSync(join(RUN, 'matrix.json'), 'utf8')) as { grader_task_versions: Record<string, { task_id: string }> };
     expect(Object.values(matrix.grader_task_versions).map((e) => e.task_id).sort()).toEqual(Object.keys(summary.tasks));
+  });
+
+  // browse.spec.ts compares the browser's probes with cliMatrix's by toEqual, so cliMatrix gives
+  // exactly the fields the probe elements carry (verifier-phase-P17i-C4-1 F2).
+  it("cliMatrix gives each probe the five fields browse.spec.ts reads from the page, and no more", async () => {
+    const { cliMatrix, TASK_IDS } = await import('../e2e/fixtures/sample-results/sample.ts');
+    for (const id of TASK_IDS) for (const p of (await cliMatrix(id)).probes) expect(Object.keys(p).sort(), id).toEqual(['as_expected', 'failed_checks', 'id', 'kind', 'outcome']);
   });
 });

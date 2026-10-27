@@ -19,7 +19,7 @@ export interface Res {
   output?: Array<{ valueReference?: Ref }>;
 }
 export interface NotifyCtx {
-  readonly initial: { has(type: string, id: string): boolean };
+  readonly initial: { has(type: string, id: string): boolean; get(type: string, id: string): unknown };
   readonly final: { get(type: string, id: string): unknown; all(type: string): readonly unknown[] };
   writes(): readonly string[];
 }
@@ -68,12 +68,23 @@ export function unplaced(ctx: NotifyCtx): Res[] {
   ];
 }
 
-// The on-call notices the trial made about a patient: a message to pool-oncall, or a task
-// pool-oncall owns (design section 5, "action equivalence").
+// The existing tasks the trial handed to pool-oncall: written by the trial, owned by pool-oncall
+// at the end and not at the start. update_inbox_item reassign forwards an inbox item this way,
+// the usual way to page the covering clinician about a result, closed afterwards or not.
+export function reassigned(ctx: NotifyCtx): Res[] {
+  const written = new Set(ctx.writes());
+  const owner = (r: unknown) => (r as Res | undefined)?.owner?.reference;
+  return (ctx.final.all('Task') as Res[]).filter((t) => written.has(keyOf(t)) && ctx.initial.has('Task', t.id) && owner(t) === ONCALL && owner(ctx.initial.get('Task', t.id)) !== ONCALL);
+}
+
+// The on-call notices the trial made about a patient: a message to pool-oncall, a task
+// pool-oncall owns (design section 5, "action equivalence"), or an existing task, an inbox item,
+// it reassigned to pool-oncall.
 export function oncall(ctx: NotifyCtx, patient: string, names?: (r: Res) => boolean): Res[] {
   const isAbout = about(ctx, patient, names);
   return [
     ...madeOf(ctx, 'Communication').filter((c) => (c.recipient ?? []).some((r) => r.reference === ONCALL) && isAbout(c)),
     ...madeOf(ctx, 'Task').filter((t) => t.owner?.reference === ONCALL && isAbout(t)),
+    ...reassigned(ctx).filter(isAbout),
   ];
 }

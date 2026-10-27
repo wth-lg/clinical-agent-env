@@ -41,7 +41,7 @@ test('the task buttons read Run reference solution and Check the grader, on ever
   const panel = page.getByTestId('task-panel-grader-validation');
   await expect(panel.getByRole('button', { name: 'Run reference solution' })).toBeVisible();
   await expect(panel.getByRole('button', { name: 'Check the grader' })).toBeVisible();
-  for (const tab of ['prompt', 'policy', 'rubric', 'reference-solution', 'grader-validation']) {
+  for (const tab of ['prompt', 'policy', 'chart', 'rubric', 'reference-solution', 'grader-validation']) {
     await page.getByRole('tablist', { name: 'Task' }).locator(`[data-tab="${tab}"]`).click();
     await expectNoOldLabels(page, tab);
   }

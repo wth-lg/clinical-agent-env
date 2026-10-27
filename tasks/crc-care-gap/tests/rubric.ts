@@ -84,12 +84,17 @@ const contactItems: Check[] = expected.members.filter((x) => x.message === false
     method: 'code',
     traces_to: 'RBC-QM-02 §5',
     decisive_ids: [],
+    // A message that reaches the patient, or a task the trial created for the patient (a call by
+    // staff is outreach too: P17j JG3-T3, pre-audit B2a; a hospice patient phoned about a FIT kit
+    // is contacted as surely as one messaged).
     fn: (ctx) => {
       const mine = new Set(ctx.writes());
       const sent = ctx.final.all('Communication').flatMap((r) =>
         r.resourceType === 'Communication' && mine.has(`Communication/${r.id}`) && recipients(ctx.final, r).includes(x.patient) ? [`Communication/${r.id}`] : [],
       );
-      return { met: sent.length > 0, evidence: { sent } };
+      const created = new Set([...mine].filter((k) => !ctx.initial.has(...(k.split('/') as [string, string]))));
+      const tasks = ctx.final.all('Task').flatMap((r) => (created.has(`Task/${r.id}`) && (r as { for?: { reference?: string } }).for?.reference === x.patient ? [`Task/${r.id}`] : []));
+      return { met: sent.length + tasks.length > 0, evidence: { sent, tasks } };
     },
   }),
 );

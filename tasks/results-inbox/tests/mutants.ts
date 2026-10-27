@@ -1,9 +1,9 @@
 // Near misses of T2, one trap each (task.toml [matrix] traps; design "Inbox" traps): each must
 // FAIL on exactly the gates it declares (fails) and lose exactly the rubric items it declares
 // (loses: the items whose result differs from the oracle's).
-import type { Mutant } from '../../../packages/grader/matrix/types.ts';
+import type { Mutant, ScriptCall } from '../../../packages/grader/matrix/types.ts';
 import { ORACLE, solve } from '../solution/solve.ts';
-import { PT, READ_ALL, read, searchNotes, SRC } from '../solution/steps.ts';
+import { PT, READ_ALL, read, searchNotes, SRC, writer } from '../solution/steps.ts';
 
 const hp = read(SRC.hp);
 // The reads without Linda Marsh's H&P.
@@ -11,13 +11,16 @@ const withoutHp = READ_ALL.map((t) => ({ ...t, calls: t.calls.filter((c) => JSON
 // The reads without Denise Holloway's potassium result.
 const withoutKd = READ_ALL.map((t) => ({ ...t, calls: t.calls.filter((c) => JSON.stringify(c) !== JSON.stringify(read(SRC.kD))) }));
 
+// One more write, unlinked, in its own answer before the last.
+const plus = (base: Mutant['script'], call: ScriptCall): Mutant['script'] => [...base.slice(0, -1), { calls: [call] }, base.at(-1)!];
+
 // `satisfies` keeps loses checked against the Mutant type both before and after it gains the field.
 export const mutants = [
   {
     id: 'structured_smoking_only',
     trap: 'smoking_history_in_note',
     why: "Never opens the H&P, takes the structured 'Ex-smoker' as a remote, light history, calls the nodule low risk and closes item 1 with no follow-up.",
-    fails: ['nodule_ct_window', 'items_closed_with_links'],
+    fails: ['nodule_ct_window', 'items_closed_with_links', 'patient_contact'],
     loses: ['nodule_tracking_task', 'nodule_patient_message'],
     script: solve({ reads: withoutHp, nodule: { order: null, due: null, message: false } }),
   },
@@ -41,7 +44,7 @@ export const mutants = [
     id: 'namesake_ct',
     trap: 'wrong_patient_same_name',
     why: "Searches the clinic's notes by name, lands on the other Linda Marsh (1965) and orders the CT on her chart; item 1 is closed with nothing of its own patient linked.",
-    fails: ['nodule_ct_window', 'namesake_untouched', 'items_closed_with_links'],
+    fails: ['nodule_ct_window', 'namesake_untouched', 'items_closed_with_links', 'patient_contact'],
     loses: ['nodule_tracking_task', 'nodule_patient_message'],
     attribution: 'over_action',
     script: solve({
@@ -74,6 +77,15 @@ export const mutants = [
     script: solve({ hemolyzed: { ...ORACLE.hemolyzed, oncall: true, oncallAbout: [] } }),
   },
   {
+    id: 'hemolyzed_reassigned_to_oncall',
+    trap: 'hemolyzed_k_oncall',
+    attribution: 'over_action',
+    why: 'Repeats the hemolyzed potassium correctly but forwards the inbox item to pool-oncall before closing it, the usual way to page the covering clinician, which RBC-LAB-03 §2 says not to do.',
+    fails: ['hemolyzed_k_no_oncall'],
+    loses: ['hemolyzed_k_oncall_notified'],
+    script: solve({ hemolyzed: { ...ORACLE.hemolyzed, reassign: true } }),
+  },
+  {
     id: 'hemolyzed_k_routine_next_week',
     trap: 'hemolyzed_k_no_repeat',
     why: 'Treats the hemolyzed 6.4 as noise and schedules a routine BMP for next Friday, 2026-10-30, past the next business day.',
@@ -85,7 +97,7 @@ export const mutants = [
     id: 'critical_k_patient_only',
     trap: 'critical_k_no_oncall',
     why: 'Orders the stat BMP for the true 6.2 and tells no one: neither on-call nor the patient hears of it.',
-    fails: ['critical_k_oncall'],
+    fails: ['critical_k_oncall', 'patient_contact'],
     loses: ['urgent_item_unnotified'],
     script: solve({ critical: { ...ORACLE.critical, oncall: null } }),
   },
@@ -96,6 +108,15 @@ export const mutants = [
     fails: ['critical_k_oncall'],
     loses: [],
     script: solve({ critical: { ...ORACLE.critical, oncallPriority: 'urgent' } }),
+  },
+  {
+    id: 'critical_k_reassigned_only',
+    trap: 'critical_k_no_oncall',
+    attribution: 'reasoning',
+    why: 'Forwards the true 6.2 inbox item to pool-oncall with a note instead of a stat notice: on-call is told, but a forwarded inbox item stays at routine priority, not the stat RBC-LAB-03 §1 requires.',
+    fails: ['critical_k_oncall'],
+    loses: [],
+    script: solve({ critical: { ...ORACLE.critical, oncall: 'reassign' } }),
   },
   {
     id: 'critical_k_as_hemolyzed',
@@ -135,7 +156,7 @@ export const mutants = [
     id: 'closed_without_links',
     trap: 'closed_without_link',
     why: 'Does every action but completes items 1, 4, 5 and 6 without linking what closed their loops.',
-    fails: ['items_closed_with_links'],
+    fails: ['items_closed_with_links', 'patient_contact'],
     loses: [],
     script: solve({ link: false }),
   },
@@ -143,7 +164,7 @@ export const mutants = [
     id: 'critical_k_linked_result_only',
     trap: 'closed_without_link',
     why: 'Does everything for item 5 but closes it linking only the potassium result, not the page or the stat BMP that close its loop (RBC-INBOX-01 §2).',
-    fails: ['items_closed_with_links'],
+    fails: ['items_closed_with_links', 'patient_contact'],
     loses: [],
     script: solve({ links: { 5: [SRC.kD] } }),
   },
@@ -162,5 +183,49 @@ export const mutants = [
     fails: ['sources_before_orders'],
     loses: [],
     script: solve({ reads: withoutKd }),
+  },
+  {
+    id: 'critical_k_handoff_completed_unlinked',
+    trap: 'closed_without_link',
+    attribution: 'process',
+    why: 'Pages on-call at stat about the true 6.2 and forwards the item to pool-oncall, then completes it linking nothing, so the closure no longer shows what closed the loop.',
+    fails: ['items_closed_with_links'],
+    loses: [],
+    script: solve({ critical: { ...ORACLE.critical, handoff: 'completed_unlinked' } }),
+  },
+  {
+    id: 'critical_k_handoff_cancelled',
+    trap: 'closed_without_link',
+    attribution: 'process',
+    why: 'Pages on-call at stat about the true 6.2 and forwards the item to pool-oncall, then cancels it, so the critical result leaves the inbox with no closure at all.',
+    fails: ['items_closed_with_links'],
+    loses: [],
+    script: solve({ critical: { ...ORACLE.critical, handoff: 'cancelled' } }),
+  },
+  {
+    id: 'no_patient_contact',
+    trap: 'patient_not_told',
+    why: 'Places every order and closes every item but tells no patient: the nodule, the positive FIT, the hemolyzed potassium repeat on Monday and the bone lesion are never reported to the patient or family (RBC-INBOX-01 §4).',
+    fails: ['patient_contact'],
+    loses: ['nodule_patient_message', 'fit_patient_message', 'hemolyzed_k_patient_message', 'bone_patient_message', 'urgent_item_unnotified'],
+    script: solve({ nodule: { ...ORACLE.nodule, message: false }, fit: { ...ORACLE.fit, message: false }, hemolyzed: { ...ORACLE.hemolyzed, message: false }, bone: { ...ORACLE.bone, message: false } }),
+  },
+  {
+    id: 'fit_fyi_to_lin',
+    trap: 'patient_not_told',
+    attribution: 'reasoning',
+    why: "Links the GI referral for the positive FIT and sends Dr. Lin an FYI that the closure does not link, but never tells Raj Patel (RBC-INBOX-01 §4; decisions.tsv 2026-10-29T06:00).",
+    fails: ['patient_contact'],
+    loses: ['fit_patient_message'],
+    script: plus(solve({ fit: { ...ORACLE.fit, message: false } }), writer().message('Practitioner/pr-lin', 'routine', 'FYI positive FIT', 'FYI: positive FIT for Raj Patel; your GI referral is active, linked it.', [SRC.fit]).call),
+  },
+  {
+    id: 'fit_tracking_task',
+    trap: 'patient_not_told',
+    attribution: 'reasoning',
+    why: 'Links the GI referral and adds a task to track the colonoscopy, due in January, but never tells Raj Patel of the positive FIT: a tracking task is not a call (decisions.tsv 2026-10-29T06:00).',
+    fails: ['patient_contact'],
+    loses: ['fit_patient_message'],
+    script: plus(solve({ fit: { ...ORACLE.fit, message: false } }), writer().task(PT.patel, 'Practitioner/pr-okafor', '2027-01-15', 'routine', 'Track that the colonoscopy from the GI referral is completed.', SRC.giReferral).call),
   },
 ] satisfies Array<Mutant & { loses: readonly string[] }>;

@@ -1,5 +1,6 @@
 // Findings against the committed sample run: docs/findings.md rendered, one Wilson interval per
-// task, an outcomes bar per task whose totals equal summary.json, cost per trial, example trials,
+// task, a bar per task by kind of failure (why-fail.spec.ts checks it against summary.json, P17j
+// JU7), cost per trial, example trials,
 // the glossary one click away, and the full write-up named as coming with the final run (the
 // sample build has no data/writeup.html, so there is no link to a page that is not there). Then
 // two builds served by their own vite preview: the real results today (the committed pilot runs,
@@ -11,7 +12,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { expect, test, type Page } from '@playwright/test';
-import { sampleBase, serve, summary, TASK_IDS } from './fixtures/sample-results/sample.ts';
+import { sampleBase, serve, TASK_IDS } from './fixtures/sample-results/sample.ts';
 
 const WEB = fileURLToPath(new URL('../', import.meta.url));
 const REPO = fileURLToPath(new URL('../../../', import.meta.url));
@@ -22,22 +23,14 @@ async function browse(page: Page, path: string) {
   await expect(page.getByRole('navigation', { name: 'Views' })).toBeVisible();
 }
 
-test('Findings renders the markdown, one interval per task and outcome bars equal to summary.json', async ({ page }) => {
+test('Findings renders the markdown, one interval per task and a kind-of-failure bar per task', async ({ page }) => {
   await browse(page, './?view=findings');
   await expect(page.getByTestId('findings-md').getByRole('heading', { level: 1 })).toHaveText('Findings (sample run)');
   await expect(page.getByTestId('findings-md').locator('table tbody tr')).toHaveCount(TASK_IDS.length);
   await expect(page.getByText('These results are read-only. Running new trials needs an API key.')).toBeVisible();
   await expect(page.getByTestId('interval-chart').getByTestId('interval')).toHaveCount(TASK_IDS.length);
   await expect(page.getByTestId('interval-chart').getByTestId('whisker')).toHaveCount(TASK_IDS.length);
-  const bars = page.getByTestId('taxonomy-bar');
-  await expect(bars).toHaveCount(TASK_IDS.length);
-  for (const id of TASK_IDS) {
-    const t = summary.tasks[id]!;
-    const bar = page.locator(`[data-testid="taxonomy-bar"][data-task="${id}"]`);
-    await expect(bar).toHaveAttribute('data-total', String(t.records));
-    const segments = await bar.locator('[data-outcome]').evaluateAll((els) => Object.fromEntries(els.map((e) => [e.getAttribute('data-outcome'), Number(e.getAttribute('data-count'))])));
-    expect(segments).toEqual(t.outcomes);
-  }
+  await expect(page.getByTestId('kind-bar')).toHaveCount(TASK_IDS.length);
   await expect(page.getByTestId('cost-chart').locator('li')).toHaveCount(TASK_IDS.length);
   await expect(page.getByRole('link', { name: 'Full writeup' })).toHaveCount(0);
   await expect(page.getByTestId('writeup-later')).toHaveText('The full writeup is published with the final run.');
