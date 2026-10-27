@@ -30,6 +30,20 @@ describe('a gate failure marked action_form (P17j JG8b)', () => {
     expect(attribute('FAIL', [ACTION], [failed('G1', 'action', false)], [step(1, ['Observation/obs-1'])])?.auto).toBe('reasoning');
   });
 
+  it('only when every failed gate carries it: a later failed gate without it decides, by the other rules (JG8b r2 F1)', () => {
+    const LATER: GateCheck = gate({ id: 'G2', category: 'action', traces_to: 't', decisive_ids: ['Observation/obs-1'], fn: () => ({ met: false, evidence: {} }) });
+    const a = attribute('FAIL', [ACTION, LATER], [failed('G1', 'action', true), failed('G2', 'action', false)], [step(1, ['Observation/obs-1'])]);
+    expect(a?.auto).toBe('reasoning');
+    expect(a?.first_failed).toBe('G2');
+  });
+
+  it('every failed gate marked: action_form, the first of them decisive', () => {
+    const LATER: GateCheck = gate({ id: 'G2', category: 'action', traces_to: 't', decisive_ids: [], fn: () => ({ met: false, evidence: {} }) });
+    const a = attribute('FAIL', [ACTION, LATER], [failed('G1', 'action', true), failed('G2', 'action', true)], [step(1)]);
+    expect(a?.auto).toBe('action_form');
+    expect(a?.first_failed).toBe('G1');
+  });
+
   it('only on the decisive gate: an earlier failed process gate without it stays process', () => {
     expect(attribute('FAIL', [PROCESS, ACTION], [failed('G0', 'process', false), failed('G1', 'action', true)], [step(1, ['Observation/obs-1'])])?.auto).toBe('process');
   });

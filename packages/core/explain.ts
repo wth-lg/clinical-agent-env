@@ -50,6 +50,8 @@ export interface ExplainCheck {
   met: unknown;
   // A failed gate whose failure is a missing required write (packages/grader check.ts Verdict).
   omission?: boolean;
+  // A failed gate whose decision was right in a channel or form the protocol does not name.
+  action_form?: boolean;
   evidence?: { [k: string]: unknown };
 }
 
