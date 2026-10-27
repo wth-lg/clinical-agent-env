@@ -202,7 +202,7 @@ function rewrite(r: TrialRecord, as: string | null): TrialRecord {
 // The sample write-up. It gives no pass-rate table: the Findings chart below it shows each task's
 // k/N and Wilson 95% interval from summary.json, the one place the page shows them (pre-audit U10).
 function findings(s: ReturnType<typeof summarize>): string {
-  const total = Object.values(s.tasks);
+  const tasks = Object.values(s.tasks);
   return [
     '# Findings (sample run)',
     '',
@@ -210,7 +210,7 @@ function findings(s: ReturnType<typeof summarize>): string {
     '',
     '## Pass rates',
     '',
-    `${total.reduce((n, t) => n + t.passes, 0)} of ${total.reduce((n, t) => n + t.trials, 0)} valid trials pass across ${total.length} tasks. The chart below gives each task's pass rate with its 95% interval.`,
+    `${tasks.reduce((n, t) => n + t.passes, 0)} of ${tasks.reduce((n, t) => n + t.trials, 0)} valid trials pass across ${tasks.length} tasks. The chart below gives each task's pass rate with its 95% interval.`,
     '',
     '## Failures',
     '',
