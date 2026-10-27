@@ -18,7 +18,8 @@
 //                      body and max_tokens, times two (the schema retry).
 //   --misses-only      with --live-judge: the Judge starts from tests/judge-cache.json, so only the
 //                      questions the cache lacks are asked live (and projected); every cached
-//                      answer is reused and written back with its own provenance. A PR that adds
+//                      answer is reused and written back with its own provenance (a cached null
+//                      answer counts as a miss and is asked again). A PR that adds
 //                      judge items refills only its new keys.
 //   --dry-run          prints that projection (LIVE_PROJECTION_USD) and makes no call and opens
 //                      nothing
@@ -86,13 +87,17 @@ interface Plan {
   usd: number;
 }
 
+// The cache entries --misses-only reuses: those with an answer. An entry whose answer is null (an
+// invalid judge output or an error) answers nothing, so it counts as a miss and is asked again.
+const reusable = (task: MatrixTask) => task.cache.filter((e) => e.answer !== null);
+
 // Runs every case once and finds the task's distinct judge requests, sending nothing.
 // With missesOnly, the recording Judge answers from the task's cache, so only its misses are priced.
 async function plan(env: MatrixEnv, task: MatrixTask, missesOnly = false): Promise<Plan> {
   const runs: Plan['runs'] = [];
   for (const c of cases(task)) runs.push({ case: c, run: await trial(env, task, c) });
   const worst: number[] = [];
-  const judge = new Judge({ client: recordingClient(worst), effort: task.judgeEffort, ...(missesOnly ? { cache: [...task.cache] } : {}) });
+  const judge = new Judge({ client: recordingClient(worst), effort: task.judgeEffort, ...(missesOnly ? { cache: reusable(task) } : {}) });
   for (const { run } of runs) await gradeRunWith(env, task, run, judge);
   return { task, runs, worst, usd: JUDGE_CALLS_PER_ITEM * worst.reduce((s, x) => s + x, 0) };
 }
@@ -160,7 +165,7 @@ export async function main(args: string[], deps: Deps): Promise<number> {
       try {
         for (const { task, runs, worst } of plans) {
           const client = new MessagesClient({ grant, ledger, apiKey: key, fetch: deps.fetch, trial: `oracle-judge:${task.id}`, log: (l) => deps.out(l) });
-          const judge = new Judge({ client, maxCalls: JUDGE_CALLS_PER_ITEM * worst.length, effort: task.judgeEffort, ...(missesOnly ? { cache: [...task.cache] } : {}) });
+          const judge = new Judge({ client, maxCalls: JUDGE_CALLS_PER_ITEM * worst.length, effort: task.judgeEffort, ...(missesOnly ? { cache: reusable(task) } : {}) });
           let oracle: Grade | null = null;
           let failed = false;
           for (const { case: c, run } of runs) {
@@ -180,7 +185,7 @@ export async function main(args: string[], deps: Deps): Promise<number> {
           if (failed) continue;
           const at = new Date(nodeNow()).toISOString();
           // A reused cache entry keeps its provenance; an answer asked now is marked live.
-          const cached = new Set(missesOnly ? task.cache.map((e) => e.key) : []);
+          const cached = new Set(missesOnly ? reusable(task).map((e) => e.key) : []);
           const entries = judge.entries().map((e) => (cached.has(e.key) ? e : { ...e, provenance: { source: 'live' as const, model: e.model, at } })).sort((a, b) => (a.key < b.key ? -1 : 1));
           (deps.writeCache ?? writeCacheFile)(task.id, entries);
           // judge.calls also counts the calls behind reused answers; print only the calls made now.
