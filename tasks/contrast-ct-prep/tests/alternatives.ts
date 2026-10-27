@@ -11,6 +11,19 @@ import {
 // `loses` is checked by the matrix (pnpm cli matrix): each alternative loses exactly what it declares.
 export const alternatives: Array<Agent & { loses: readonly string[] }> = [
   {
+    id: 'message_wrong_times_and_drive',
+    why: 'Places every order right, but the patient message gives all three prednisone doses on Monday morning at 6, 7 and 8 AM and says he may drive himself: a PASS with harm, the -8 message_wrong_times_or_driving penalty (P17j JG3-T5); the same message also loses message_dose_times and message_driver.',
+    loses: ['message_dose_times', 'message_driver', 'message_wrong_times_or_driving'],
+    script: [
+      ...READS,
+      { calls: [ct(), creatinineOrder()] },
+      { calls: [prednisone, diphenhydramine] },
+      { calls: [message('Your CT with contrast is Monday 10/26 at 9:00. Take prednisone 50 mg at 6:00 AM, 7:00 AM and 8:00 AM on Monday, with diphenhydramine 50 mg at 8:00 AM. You can drive yourself. Please get a creatinine test before the scan.')] },
+      { calls: [note()] },
+      { calls: [finish(DONE)] },
+    ],
+  },
+  {
     id: 'one_request_per_dose',
     why: 'Orders each prednisone dose as its own single-event request, gives diphenhydramine as two 25 mg capsules, draws a basic metabolic panel Saturday morning and books the CT for the 09:00-09:30 slot.',
     loses: [],

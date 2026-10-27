@@ -6,13 +6,13 @@
   "tasks": {
     "contrast-ct-prep": {
       "task_versions": [
-        "f8957064b0830f90957f2ee2c5ea2e54e1a994eb19ee4a120f5277abfaa84556"
+        "b6ac46b4c171e5a60ef8733f9b81907278fbf0b0d86a7480daa474f706573065"
       ],
       "env_versions": [
         "492337b74874ac4946e3b6d7dde634742792583284396f14ea47172c4a0fce18"
       ],
       "grader_task_versions": [
-        "8f82a9ef6aae6c8f99818a11dcf1b2364a7618b97e9421d6b023a2b0a629b6d1"
+        "20eb73a2ddd170e7845609ea013b29bbcc6015e9321f15a71b5b2e7feea68a1a"
       ],
       "records": 12,
       "trials": 12,
@@ -39,12 +39,12 @@
       "grader_error": 0,
       "grader_error_history": 0,
       "requeued": 0,
-      "mean_score": 0.8229166666666666,
+      "mean_score": 0.6354166666666666,
       "mean_cost_usd": 0.765,
-      "raw_mean_score": 0.8020833333333334,
+      "raw_mean_score": 0.5104166666666666,
       "gate_fraction": 0.8214285714285715,
-      "pass_no_harm": 3,
-      "pass_no_harm_rate": 0.25,
+      "pass_no_harm": 2,
+      "pass_no_harm_rate": 0.16666666666666666,
       "limits": {
         "turns": 0,
         "cost": 0,

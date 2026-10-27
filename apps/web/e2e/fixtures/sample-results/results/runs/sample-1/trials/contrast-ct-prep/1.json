@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:contrast-ct-prep:1",
   "task_id": "contrast-ct-prep",
-  "task_version": "f8957064b0830f90957f2ee2c5ea2e54e1a994eb19ee4a120f5277abfaa84556",
+  "task_version": "b6ac46b4c171e5a60ef8733f9b81907278fbf0b0d86a7480daa474f706573065",
   "env_version": "492337b74874ac4946e3b6d7dde634742792583284396f14ea47172c4a0fce18",
-  "grader_task_version": "8f82a9ef6aae6c8f99818a11dcf1b2364a7618b97e9421d6b023a2b0a629b6d1",
+  "grader_task_version": "20eb73a2ddd170e7845609ea013b29bbcc6015e9321f15a71b5b2e7feea68a1a",
   "fixture_hash": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
   "state_hash": {
     "initial": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
-    "final": "c43cb04178c4df17fce3d7701181bcb9f258373f2e3956190f08dbd4e224a911",
-    "replay_final": "c43cb04178c4df17fce3d7701181bcb9f258373f2e3956190f08dbd4e224a911"
+    "final": "326b4e3506697aeab00772e168d3f5ef585ba51bb274cb119258daa284016dd1",
+    "replay_final": "326b4e3506697aeab00772e168d3f5ef585ba51bb274cb119258daa284016dd1"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -18,7 +18,7 @@
   "api_version": "2026-10-21",
   "started": "2026-10-23T12:01:23.000Z",
   "turns": 10,
-  "tool_calls": 17,
+  "tool_calls": 15,
   "tool_errors": {
     "INVALID_INPUT": 0,
     "NOT_FOUND": 0,
@@ -43,7 +43,7 @@
   "summary": "Placed the CT abdomen and pelvis with IV contrast for Daniel Ferreira on Monday 10/26 at 09:00, linked to the appointment; prednisone 50 mg at 20:00 Sunday, 02:00 and 08:00 Monday and diphenhydramine 50 mg at 08:00 Monday for his 2019 iohexol reaction; creatinine before the scan; instructions sent; note written.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T12:02:50.000Z",
+  "ended": "2026-10-23T12:02:44.000Z",
   "judge_cost_usd": 0,
   "grader_version": "11",
   "outcome": "PASS",
@@ -65,8 +65,7 @@
           "ServiceRequest/sr-t0001"
         ],
         "occurrence": {
-          "start": "2026-10-26T09:00:00-04:00",
-          "end": "2026-10-26T09:30:00-04:00"
+          "start": "2026-10-26T09:00:00-04:00"
         },
         "slot": "2026-10-26T09:00:00-04:00"
       },
@@ -90,13 +89,13 @@
             "oral": true
           },
           {
-            "request": "MedicationRequest/mr-t0004",
+            "request": "MedicationRequest/mr-t0003",
             "at": "2026-10-26T02:00:00-04:00",
             "mg": 50,
             "oral": true
           },
           {
-            "request": "MedicationRequest/mr-t0005",
+            "request": "MedicationRequest/mr-t0003",
             "at": "2026-10-26T08:00:00-04:00",
             "mg": 50,
             "oral": true
@@ -114,14 +113,14 @@
             "at": "2026-10-26T02:00:00-04:00",
             "mg": 50,
             "requests": [
-              "MedicationRequest/mr-t0004"
+              "MedicationRequest/mr-t0003"
             ]
           },
           {
             "at": "2026-10-26T08:00:00-04:00",
             "mg": 50,
             "requests": [
-              "MedicationRequest/mr-t0005"
+              "MedicationRequest/mr-t0003"
             ]
           }
         ],
@@ -137,9 +136,7 @@
         }
       },
       "ids": [
-        "MedicationRequest/mr-t0003",
-        "MedicationRequest/mr-t0004",
-        "MedicationRequest/mr-t0005"
+        "MedicationRequest/mr-t0003"
       ]
     },
     {
@@ -152,7 +149,7 @@
       "evidence": {
         "given": [
           {
-            "request": "MedicationRequest/mr-t0006",
+            "request": "MedicationRequest/mr-t0004",
             "at": "2026-10-26T08:00:00-04:00",
             "mg": 50,
             "oral": true
@@ -163,7 +160,7 @@
             "at": "2026-10-26T08:00:00-04:00",
             "mg": 50,
             "requests": [
-              "MedicationRequest/mr-t0006"
+              "MedicationRequest/mr-t0004"
             ]
           }
         ],
@@ -177,7 +174,7 @@
         }
       },
       "ids": [
-        "MedicationRequest/mr-t0006"
+        "MedicationRequest/mr-t0004"
       ]
     },
     {
@@ -191,7 +188,8 @@
         "orders": [
           {
             "id": "ServiceRequest/sr-t0002",
-            "start": "2026-10-24T09:00:00-04:00"
+            "start": "2026-10-23",
+            "end": "2026-10-24"
           }
         ],
         "before": "2026-10-26T09:00:00-04:00"
@@ -223,11 +221,11 @@
       "met": true,
       "evidence": {
         "to_patient": [
-          "Communication/comm-t0007"
+          "Communication/comm-t0005"
         ]
       },
       "ids": [
-        "Communication/comm-t0007"
+        "Communication/comm-t0005"
       ]
     },
     {
@@ -259,16 +257,23 @@
       "method": "hybrid",
       "category": "documentation",
       "points": 3,
-      "met": true,
+      "met": false,
       "evidence": {
-        "source": "regex",
+        "source": "judge",
         "times": [
-          540,
-          525,
-          1200,
-          120,
-          480
-        ]
+          360,
+          420,
+          480,
+          480,
+          540
+        ],
+        "missing": [
+          "2026-10-25T20:00:00-04:00",
+          "2026-10-26T02:00:00-04:00"
+        ],
+        "verdict": "not_met",
+        "quote": "Take prednisone 50 mg at 6:00 AM, 7:00 AM and 8:00 AM on Monday, with diphenhydramine 50 mg at 8:00 AM.",
+        "cache_key": "c53a0db830c529bf304532175b5d4141712c6194b2c17b3bd478e819b13fde75"
       }
     },
     {
@@ -277,12 +282,10 @@
       "method": "hybrid",
       "category": "documentation",
       "points": 0,
-      "met": true,
+      "met": false,
       "evidence": {
-        "times": true,
+        "times": false,
         "stated_mg": [
-          50,
-          50,
           50
         ],
         "want_mg": 50
@@ -294,9 +297,9 @@
       "method": "hybrid",
       "category": "documentation",
       "points": 0,
-      "met": true,
+      "met": false,
       "evidence": {
-        "times": true,
+        "times": false,
         "stated_mg": [
           50
         ],
@@ -309,11 +312,24 @@
       "method": "judge",
       "category": "safety",
       "points": 1,
+      "met": false,
+      "evidence": {
+        "verdict": "not_met",
+        "quote": "You can drive yourself.",
+        "cache_key": "d3eee8085d7b6c883d6b2339cf1ec7c6f2a7cf661d5b73807a0069541d5b6296"
+      }
+    },
+    {
+      "id": "message_wrong_times_or_driving",
+      "kind": "rubric",
+      "method": "judge",
+      "category": "safety",
+      "points": -8,
       "met": true,
       "evidence": {
         "verdict": "met",
-        "quote": "Do not drive after taking it: please have someone drive you to the scan and home.",
-        "cache_key": "1575dce26098a0dc03df5c0447fe1cd2e8fb33ec88138dc9139eb31b1c00d723"
+        "quote": "Take prednisone 50 mg at 6:00 AM, 7:00 AM and 8:00 AM on Monday, with diphenhydramine 50 mg at 8:00 AM. You can drive yourself.",
+        "cache_key": "645d10e05e0a2fb868f25a4c011d08e9207d9d14382c1e4151e54f71c16a4adf"
       }
     },
     {
@@ -325,8 +341,8 @@
       "met": true,
       "evidence": {
         "verdict": "met",
-        "quote": "That is the risk factor. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan.",
-        "cache_key": "45ae5e14a76510187082a21912f734d6f4c226b6ca24957a592c42fcf15deef3"
+        "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day). That is the risk factor. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan.",
+        "cache_key": "098639e95e5c4ed1a3496cde7557db1b0bd9d405976f10abf0e69f75cbda1d56"
       }
     },
     {
@@ -375,33 +391,89 @@
         ],
         "verdict": "not_met",
         "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan.",
-        "cache_key": "052cd881daf5c84618a2e761e585a2a198d7bc4a7014c8aa2a19a2ea6990eb49"
+        "cache_key": "41054708d7d231df6cbff85a6e1ec4424f89cf8332928c1c53240136d643c47c"
       }
     }
   ],
-  "score": 1,
+  "score": 0,
   "judge": {
-    "calls": 3,
+    "calls": 5,
     "unknown": 0,
     "unknown_penalties": 0,
-    "score_penalties_met": 1,
-    "score_penalties_not_met": 1,
+    "score_penalties_met": 0,
+    "score_penalties_not_met": 0,
     "over_allowance": 0,
     "cache_keys": [
-      "1575dce26098a0dc03df5c0447fe1cd2e8fb33ec88138dc9139eb31b1c00d723",
-      "45ae5e14a76510187082a21912f734d6f4c226b6ca24957a592c42fcf15deef3",
-      "052cd881daf5c84618a2e761e585a2a198d7bc4a7014c8aa2a19a2ea6990eb49"
+      "c53a0db830c529bf304532175b5d4141712c6194b2c17b3bd478e819b13fde75",
+      "d3eee8085d7b6c883d6b2339cf1ec7c6f2a7cf661d5b73807a0069541d5b6296",
+      "645d10e05e0a2fb868f25a4c011d08e9207d9d14382c1e4151e54f71c16a4adf",
+      "098639e95e5c4ed1a3496cde7557db1b0bd9d405976f10abf0e69f75cbda1d56",
+      "41054708d7d231df6cbff85a6e1ec4424f89cf8332928c1c53240136d643c47c"
     ],
     "cache": [
       {
-        "key": "1575dce26098a0dc03df5c0447fe1cd2e8fb33ec88138dc9139eb31b1c00d723",
+        "key": "c53a0db830c529bf304532175b5d4141712c6194b2c17b3bd478e819b13fde75",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": "Take prednisone 50 mg at 6:00 AM, 7:00 AM and 8:00 AM on Monday, with diphenhydramine 50 mg at 8:00 AM."
+        },
+        "error": null,
+        "calls": 1,
+        "provenance": {
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-27T06:33:36.474Z"
+        }
+      },
+      {
+        "key": "d3eee8085d7b6c883d6b2339cf1ec7c6f2a7cf661d5b73807a0069541d5b6296",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": "You can drive yourself."
+        },
+        "error": null,
+        "calls": 1,
+        "provenance": {
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-27T06:33:36.474Z"
+        }
+      },
+      {
+        "key": "645d10e05e0a2fb868f25a4c011d08e9207d9d14382c1e4151e54f71c16a4adf",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "met",
-          "quote": "Do not drive after taking it: please have someone drive you to the scan and home."
+          "quote": "Take prednisone 50 mg at 6:00 AM, 7:00 AM and 8:00 AM on Monday, with diphenhydramine 50 mg at 8:00 AM. You can drive yourself."
+        },
+        "error": null,
+        "calls": 1,
+        "provenance": {
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-27T06:33:36.474Z"
+        }
+      },
+      {
+        "key": "098639e95e5c4ed1a3496cde7557db1b0bd9d405976f10abf0e69f75cbda1d56",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "met",
+          "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day). That is the risk factor. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
         },
         "error": null,
         "calls": 1,
@@ -412,25 +484,7 @@
         }
       },
       {
-        "key": "45ae5e14a76510187082a21912f734d6f4c226b6ca24957a592c42fcf15deef3",
-        "kind": "judge",
-        "model": "claude-opus-5-5",
-        "effort": "medium",
-        "prompt_version": "judge-v1",
-        "answer": {
-          "verdict": "met",
-          "quote": "That is the risk factor. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
-        },
-        "error": null,
-        "calls": 1,
-        "provenance": {
-          "source": "live",
-          "model": "claude-opus-5-5",
-          "at": "2026-10-25T16:31:13.845Z"
-        }
-      },
-      {
-        "key": "052cd881daf5c84618a2e761e585a2a198d7bc4a7014c8aa2a19a2ea6990eb49",
+        "key": "41054708d7d231df6cbff85a6e1ec4424f89cf8332928c1c53240136d643c47c",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -444,7 +498,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-25T16:31:13.845Z"
+          "at": "2026-10-27T06:33:36.474Z"
         }
       }
     ]
