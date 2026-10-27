@@ -31,8 +31,13 @@ test('Findings renders the markdown, one interval per task and a kind-of-failure
   // points to it and repeats no interval table.
   await expect(page.getByTestId('findings-md').locator('table')).toHaveCount(0);
   await expect(page.getByTestId('findings-md')).not.toContainText('Wilson');
-  // Nor as a list or prose (verifier JU12c-1 F1): none of the chart's interval strings.
-  for (const id of TASK_IDS) await expect(page.getByTestId('findings-md')).not.toContainText(formatInterval(summary.tasks[id]!.wilson95));
+  // Nor as a list or prose (verifier JU12c-1 F1): none of the chart's interval strings, for each
+  // task that has one (F-B), and no interval in any percent form, whole or bracketed (F-A).
+  for (const id of TASK_IDS) {
+    const w = summary.tasks[id]!.wilson95;
+    if (w !== null) await expect(page.getByTestId('findings-md')).not.toContainText(formatInterval(w));
+  }
+  await expect(page.getByTestId('findings-md')).not.toHaveText(/\d+(\.\d+)?%\s*(to|–|-|,)\s*\d+(\.\d+)?%/);
   await expect(page.getByText('These results are read-only. Running new trials needs an API key.')).toBeVisible();
   await expect(page.getByTestId('interval-chart').getByTestId('interval')).toHaveCount(TASK_IDS.length);
   await expect(page.getByTestId('interval-chart').getByTestId('whisker')).toHaveCount(TASK_IDS.length);
