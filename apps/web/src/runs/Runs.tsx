@@ -17,7 +17,8 @@ import { takeReturn } from '../trial/back.ts';
 import { TrialPage } from '../trial/TrialPage.tsx';
 
 // The label filter's values: every AUDIT_LABEL name, then excluded (INFRA) and pass.
-const labelOf = (t: Trial) => (t.explanation.outcome === 'PASS' ? 'pass' : t.explanation.fault === 'infra' ? 'infra' : (t.explanation.label ?? 'none'));
+// A false PASS (GR5) has a fault, so it files under its label, not under pass.
+const labelOf = (t: Trial) => (t.explanation.outcome === 'PASS' && t.explanation.fault === null ? 'pass' : t.explanation.fault === 'infra' ? 'infra' : (t.explanation.label ?? 'none'));
 const select = 'h-8 max-w-full rounded-sm border border-line-strong bg-surface px-2 text-ink';
 
 export function Runs({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | undefined }) {
@@ -115,6 +116,8 @@ function BadRow({ b }: { b: BadRecord }) {
 
 function TrialRow({ t, run }: { t: Trial; run: RunData }) {
   const e = t.explanation;
+  // A non-pass, or a false PASS (GR5), shows its label and reason.
+  const faulted = e.outcome !== 'PASS' || e.fault !== null;
   const cost = t.record.cost_usd + (t.record.judge_cost_usd ?? 0);
   return (
     <li data-testid="trial-row" data-trial={t.name} data-outcome={e.outcome} className="px-4 py-2.5">
@@ -125,12 +128,12 @@ function TrialRow({ t, run }: { t: Trial; run: RunData }) {
         </button>
         <OutcomeChip outcome={e.outcome} fault={e.fault} />
         <HarmChip items={harmItems(t.record)} />
-        {e.outcome !== 'PASS' && <FaultLabel e={e} />}
+        {faulted && <FaultLabel e={e} />}
         {e.decisive_check && <code data-testid="decisive" className="break-all rounded-sm bg-canvas px-1 text-xs text-ink">{e.decisive_check.id}</code>}
         <span className="ml-auto text-xs text-ink-muted" title="Agent and judge cost">${cost.toFixed(2)}</span>
       </div>
-      {e.outcome !== 'PASS' && <p data-testid="reason" className="mt-1 break-words pl-5 text-ink-muted">{e.reason}</p>}
-      {e.outcome !== 'PASS' && e.secondary_reason !== null && <p data-testid="secondary-reason" className="break-words pl-5 text-xs text-ink-muted">{e.secondary_reason}</p>}
+      {faulted && <p data-testid="reason" className="mt-1 break-words pl-5 text-ink-muted">{e.reason}</p>}
+      {faulted && e.secondary_reason !== null && <p data-testid="secondary-reason" className="break-words pl-5 text-xs text-ink-muted">{e.secondary_reason}</p>}
     </li>
   );
 }
