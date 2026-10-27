@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:renal-dose-review:9",
   "task_id": "renal-dose-review",
-  "task_version": "b5182405f1e91679bbf68dddc9a76c1ab49dab521337ae00c9b2f1edf81ff2ba",
+  "task_version": "e3298f2e336350296251b330787948dc47ebb763e659d650f5d59a1bbd374f59",
   "env_version": "f74818df8ab2b6109bdad7b1219898a6c755f28cd3d4e505c848e8a779de79e8",
-  "grader_task_version": "a8e12873b57582d1fa5b2e1b925c7c75b29ee2e9b1bb35cc7e12ee1c1a79e838",
+  "grader_task_version": "855fdd80d22529258f8ef6f6248ebb8c0d4874fdfbddf30b2a14606056da7c3b",
   "fixture_hash": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
   "state_hash": {
     "initial": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T14:17:30.000Z",
+  "started": "2026-10-23T14:17:18.000Z",
   "turns": 8,
   "tool_calls": 10,
   "tool_errors": {
@@ -43,9 +43,9 @@
   "summary": "Reviewed Harold Vance: apixaban kept at 2.5 mg twice daily for CrCl 43, metformin unchanged, gabapentin 600 mg twice daily; note written.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T14:18:29.000Z",
+  "ended": "2026-10-23T14:18:17.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "11",
+  "grader_version": "12",
   "outcome": "FAIL",
   "valid": true,
   "fault": "model",
