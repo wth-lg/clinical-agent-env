@@ -104,3 +104,21 @@ describe('sample non-pass reasons', async () => {
     for (const s of reasons) expect(s).not.toMatch(/so this is|; (?:reasoning|retrieval|process|output gap|over action)$/);
   });
 });
+
+// verifier-phase-P17i-JG8br2-1 F4 (decisions.tsv 2026-10-28T07:20Z): the outreach_messages text
+// names the phone staff pool Task only when every patient left without a message was tasked that
+// way; otherwise it names the first patient who got no outreach (probe n8: E2 by phone Task, E3
+// nothing).
+describe('crc-care-gap outreach_messages found', async () => {
+  const found = (await textOf('crc-care-gap')).outreach_messages!.found;
+  const OTHERS = ['Patient/pt-0019', 'Patient/pt-0022', 'Patient/pt-0023'];
+  it('names the patient who got no outreach when only some were tasked (probe n8)', () => {
+    expect(found({ missing: ['Patient/pt-0017', 'Patient/pt-0018'], messaged: OTHERS, tasked_instead: ['Patient/pt-0017'] })).toBe('no message to Patient/pt-0018 (Lance Amado Muller)');
+  });
+  it('names the phone staff pool Task when every missing patient was tasked (probe n7)', () => {
+    expect(found({ missing: ['Patient/pt-0017', 'Patient/pt-0018'], messaged: OTHERS, tasked_instead: ['Patient/pt-0017', 'Patient/pt-0018'] })).toBe('outreach assigned to a phone staff pool for the FIT order instead of a patient message, for Patient/pt-0017 (Stephan Herman)');
+  });
+  it('names the first missing patient when none was tasked', () => {
+    expect(found({ missing: ['Patient/pt-0017'], messaged: ['Patient/pt-0018', ...OTHERS], tasked_instead: [] })).toBe('no message to Patient/pt-0017 (Stephan Herman)');
+  });
+});
