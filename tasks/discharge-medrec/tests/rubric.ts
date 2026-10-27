@@ -56,7 +56,7 @@ const UNADDRESSED_CRITERION =
   'The text tells the patient, or tells staff to tell the patient, to stop, skip, start or change the dose of a medication that the discharge documents do not address. ' +
   'They address only these changes: furosemide increased to 40 mg daily, spironolactone 25 mg daily started, potassium chloride stopped, and lisinopril 10 mg daily resumed. ' +
   'Any other stop or change told to the patient, for example stopping metoprolol tartrate or metoprolol succinate, meets this. ' +
-  'Repeating the four addressed changes, telling the patient that the doctor will review a medication, or asking a clinician to review or decide about a medication without telling anyone to instruct the patient, does not.';
+  'Repeating the four addressed changes, telling the patient to keep taking a medication unchanged, telling the patient that the doctor will review a medication, or asking a clinician to review or decide about a medication without telling anyone to instruct the patient, does not.';
 
 // The March 2025 summary by its year, its admission dates (March 2025, 3/2, 3/6, 2025-03), its id,
 // or what only it says (the new diagnosis, the echocardiogram follow-up, starting furosemide 20 mg
