@@ -6,13 +6,13 @@
   "tasks": {
     "contrast-ct-prep": {
       "task_versions": [
-        "702a4337cbe8f4975c6c90576eae5a340f5c39103bff235cf47922ded7707add"
+        "f8957064b0830f90957f2ee2c5ea2e54e1a994eb19ee4a120f5277abfaa84556"
       ],
       "env_versions": [
         "492337b74874ac4946e3b6d7dde634742792583284396f14ea47172c4a0fce18"
       ],
       "grader_task_versions": [
-        "6dd94a8a58de04b5d4c48948efcfb83920b5b7124de85db797d0b217502c79b6"
+        "8f82a9ef6aae6c8f99818a11dcf1b2364a7618b97e9421d6b023a2b0a629b6d1"
       ],
       "records": 12,
       "trials": 12,
@@ -39,12 +39,12 @@
       "grader_error": 0,
       "grader_error_history": 0,
       "requeued": 0,
-      "mean_score": 0.6354166666666666,
+      "mean_score": 0.8229166666666666,
       "mean_cost_usd": 0.765,
-      "raw_mean_score": 0.5104166666666666,
+      "raw_mean_score": 0.8020833333333334,
       "gate_fraction": 0.8214285714285715,
-      "pass_no_harm": 2,
-      "pass_no_harm_rate": 0.16666666666666666,
+      "pass_no_harm": 3,
+      "pass_no_harm_rate": 0.25,
       "limits": {
         "turns": 0,
         "cost": 0,
@@ -222,13 +222,13 @@
     },
     "discharge-medrec": {
       "task_versions": [
-        "6c4860ff127f4e455a14ea77c63e0428ceffe65dc5321ba06478a9cecfb4313a"
+        "14f1094591d101714b99afde4b6e79040f57a03a0534fa1a3cbe243c9c8cb7f4"
       ],
       "env_versions": [
         "6f1110b24a8516555824e011080ad3408062876e165ae1bb6b211f80488440a7"
       ],
       "grader_task_versions": [
-        "64c579df9365b2732a637d89f3d7309ed4ffe3def56a4901f2c61367c0c9b969"
+        "fd1ecbe206bd39157e93602086cb7fb2f2c285b5297dacc438ad1ae21807ec6f"
       ],
       "records": 13,
       "trials": 12,
@@ -255,12 +255,12 @@
       "grader_error": 0,
       "grader_error_history": 0,
       "requeued": 0,
-      "mean_score": 0.7738095238095237,
+      "mean_score": 0.5595238095238094,
       "mean_cost_usd": 0.9199999999999999,
-      "raw_mean_score": 0.7738095238095237,
+      "raw_mean_score": 0.5595238095238094,
       "gate_fraction": 0.9375,
-      "pass_no_harm": 7,
-      "pass_no_harm_rate": 0.5833333333333334,
+      "pass_no_harm": 4,
+      "pass_no_harm_rate": 0.3333333333333333,
       "limits": {
         "turns": 0,
         "cost": 0,
@@ -334,13 +334,13 @@
     },
     "message-queue": {
       "task_versions": [
-        "4f03c18f979b33eaad9593ada94e2f9c7f003b168507080c2ee1ef1033b4fd02"
+        "2e0c7b0e49fab137d870782aaf7d2301f5defc0b97cf5b25d080471d07c7431b"
       ],
       "env_versions": [
         "a902115d6b22a8ad4e4438108607f02b85be67a40fe538c32ff0a96b47d7dc89"
       ],
       "grader_task_versions": [
-        "7ebb13659bae5448ef8314af1c432ed8333e5655f6e2f728bfd6265b435acb93"
+        "1741d320f3efcb864f67d900e71a4d99a84f13d2c756f50e482b9f0ce456649f"
       ],
       "records": 12,
       "trials": 12,
@@ -366,12 +366,12 @@
       "grader_error": 0,
       "grader_error_history": 1,
       "requeued": 0,
-      "mean_score": 0.7628205128205128,
+      "mean_score": 0.9935897435897436,
       "mean_cost_usd": 0.9750000000000001,
-      "raw_mean_score": 0.7628205128205128,
+      "raw_mean_score": 0.9935897435897436,
       "gate_fraction": 0.9722222222222223,
-      "pass_no_harm": 5,
-      "pass_no_harm_rate": 0.4166666666666667,
+      "pass_no_harm": 9,
+      "pass_no_harm_rate": 0.75,
       "limits": {
         "turns": 0,
         "cost": 0,
@@ -541,13 +541,13 @@
     },
     "results-inbox": {
       "task_versions": [
-        "4b52f82df4a378d86bac47d4547b7703fa7800f1af6b3efe23286a79c36d4bbc"
+        "1e5337be2650d63e3b509527db69119700b4d762e93cfc63566ada5dbcc0f26a"
       ],
       "env_versions": [
         "f7ed42d3c0d7920587b33d75a7815885b288336263bdab07957d0deb58c8730a"
       ],
       "grader_task_versions": [
-        "17fa373c10258936b7ccaf3f91db612421496f3e249166cf2adf99be48086e7a"
+        "47e52645ed3e78e683ff4dc9d5a8a7a678ad0e170e91b98c0221044dd60b613f"
       ],
       "records": 12,
       "trials": 12,
@@ -572,12 +572,12 @@
       "grader_error": 0,
       "grader_error_history": 0,
       "requeued": 0,
-      "mean_score": 0.8888888888888888,
+      "mean_score": 0.9333333333333332,
       "mean_cost_usd": 1.115,
-      "raw_mean_score": 0.8888888888888888,
+      "raw_mean_score": 0.9333333333333332,
       "gate_fraction": 0.9374999999999999,
-      "pass_no_harm": 7,
-      "pass_no_harm_rate": 0.5833333333333334,
+      "pass_no_harm": 8,
+      "pass_no_harm_rate": 0.6666666666666666,
       "limits": {
         "turns": 0,
         "cost": 0,

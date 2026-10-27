@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:discharge-medrec:5",
   "task_id": "discharge-medrec",
-  "task_version": "85a7e6857402ff0d16f7f122764fb2c7b08c2393b365e9457c0d97b42137c144",
-  "env_version": "8ba141fd4fcf24b5af0ad6c347c77bee354a5bf74c474efaea47890ab29f218e",
-  "grader_task_version": "acc22b7b7bb0e55ed8f0571bcb942dedbc8db1f0ea5958ec2f1b2da890ac9a6e",
-  "fixture_hash": "5e69bcfaa1935a5eb4bef6ba1b8e3d4db1cf379042fd6321516416281b041f20",
+  "task_version": "14f1094591d101714b99afde4b6e79040f57a03a0534fa1a3cbe243c9c8cb7f4",
+  "env_version": "6f1110b24a8516555824e011080ad3408062876e165ae1bb6b211f80488440a7",
+  "grader_task_version": "fd1ecbe206bd39157e93602086cb7fb2f2c285b5297dacc438ad1ae21807ec6f",
+  "fixture_hash": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
   "state_hash": {
-    "initial": "5e69bcfaa1935a5eb4bef6ba1b8e3d4db1cf379042fd6321516416281b041f20",
-    "final": "feb547958e4a455f6dc0718776ff83f09f32d0f7e68f27d04fb27fb646e36aa0",
-    "replay_final": "feb547958e4a455f6dc0718776ff83f09f32d0f7e68f27d04fb27fb646e36aa0"
+    "initial": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
+    "final": "473be8b93a5cec91989d4ba2437a5b39f79b89cc2da52c0915d5ead3308be0b5",
+    "replay_final": "473be8b93a5cec91989d4ba2437a5b39f79b89cc2da52c0915d5ead3308be0b5"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T13:16:35.000Z",
+  "started": "2026-10-23T13:17:02.000Z",
   "turns": 7,
   "tool_calls": 15,
   "tool_errors": {
@@ -43,7 +43,7 @@
   "summary": "Reconciled Walter Kim after discharge: furosemide 40 mg, spironolactone 25 mg started, KCl stopped, lisinopril resumed; duplicate metoprolol tartrate flagged to Dr. Okafor; note written.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T13:17:44.000Z",
+  "ended": "2026-10-23T13:18:12.000Z",
   "judge_cost_usd": 0,
   "grader_version": "11",
   "outcome": "PASS",
@@ -162,7 +162,8 @@
         ],
         "sent": [
           "Communication/comm-t0005"
-        ]
+        ],
+        "tasked": []
       },
       "ids": [
         "Communication/comm-t0005"
@@ -179,12 +180,12 @@
         "pairs": [
           {
             "id": "DocumentReference/doc-t4-dc-1019-add",
-            "before": 10,
+            "before": 9,
             "seen": true
           },
           {
             "id": "Observation/obs-t4-scr-1021",
-            "before": 12,
+            "before": 11,
             "seen": true
           }
         ],
@@ -202,7 +203,7 @@
       "evidence": {
         "verdict": "met",
         "quote": "Changes: furosemide increased from 20 mg to 40 mg daily (discharge summary). Spironolactone 25 mg daily started (signed addendum, which corrects the summary's 12.5 mg). Potassium chloride stopped (discharge summary). Lisinopril 10 mg daily resumed: the summary resumes it when SCr is below 1.5, and SCr was 1.32 on 10/21 (discharge summary; lab 10/21).",
-        "cache_key": "73fcdfa8f47cb0493737353358304cb062d30477d2281e4a9f5982a507d3c3b9"
+        "cache_key": "e30011652b9380fad1735bb71a099c4e9f6225917201869c12337f1dbee6832d"
       }
     },
     {
@@ -215,7 +216,7 @@
       "evidence": {
         "verdict": "met",
         "quote": "metoprolol succinate ER 50 mg daily, which the St. Brigid discharge documents continue as \"metoprolol XL\", and metoprolol tartrate 25 mg twice daily (since 2023), which no discharge document mentions. Taking both is a duplicate beta-blocker.",
-        "cache_key": "a394d5f8201524a28915d3db2c1e67667dcd4ed422b8d6b78e25f42439c92fce"
+        "cache_key": "bf1bbb7bffcbe9aa0d9ca8d5c36b0f57cee88af3d5a543e798bbc8d0c7e9bb3c"
       }
     },
     {
@@ -227,10 +228,10 @@
       "met": true,
       "evidence": {
         "notes": [
-          "DocumentReference/doc-t0006"
+          "DocumentReference/doc-t0007"
         ],
         "citing": [
-          "DocumentReference/doc-t0006"
+          "DocumentReference/doc-t0007"
         ]
       }
     },
@@ -242,10 +243,7 @@
       "points": -3,
       "met": false,
       "evidence": {
-        "flagged": true,
-        "verdict": "not_met",
-        "quote": "The March 2025 discharge summary is from an earlier stay and was not used.",
-        "cache_key": "fd77a593c03c64c75baa810c096d1ab35e0fefaac96d390df227d75425dabcdb"
+        "flagged": false
       }
     },
     {
@@ -256,7 +254,9 @@
       "points": -6,
       "met": false,
       "evidence": {
-        "patient_messages": 0
+        "verdict": "not_met",
+        "quote": "Please keep taking your metoprolol succinate and metoprolol tartrate as before. Dr. Okafor will review the two of them and let you know if anything changes.",
+        "cache_key": "8b95654556d7645afd94eccb6bb266a3c0a90a1cd8af26266eb5ae9264a2cba0"
       }
     },
     {
@@ -280,13 +280,13 @@
     "score_penalties_not_met": 1,
     "over_allowance": 0,
     "cache_keys": [
-      "73fcdfa8f47cb0493737353358304cb062d30477d2281e4a9f5982a507d3c3b9",
-      "a394d5f8201524a28915d3db2c1e67667dcd4ed422b8d6b78e25f42439c92fce",
-      "fd77a593c03c64c75baa810c096d1ab35e0fefaac96d390df227d75425dabcdb"
+      "e30011652b9380fad1735bb71a099c4e9f6225917201869c12337f1dbee6832d",
+      "bf1bbb7bffcbe9aa0d9ca8d5c36b0f57cee88af3d5a543e798bbc8d0c7e9bb3c",
+      "8b95654556d7645afd94eccb6bb266a3c0a90a1cd8af26266eb5ae9264a2cba0"
     ],
     "cache": [
       {
-        "key": "73fcdfa8f47cb0493737353358304cb062d30477d2281e4a9f5982a507d3c3b9",
+        "key": "e30011652b9380fad1735bb71a099c4e9f6225917201869c12337f1dbee6832d",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -304,7 +304,7 @@
         }
       },
       {
-        "key": "a394d5f8201524a28915d3db2c1e67667dcd4ed422b8d6b78e25f42439c92fce",
+        "key": "bf1bbb7bffcbe9aa0d9ca8d5c36b0f57cee88af3d5a543e798bbc8d0c7e9bb3c",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -318,25 +318,25 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-25T13:23:26.047Z"
+          "at": "2026-10-27T19:16:07.130Z"
         }
       },
       {
-        "key": "fd77a593c03c64c75baa810c096d1ab35e0fefaac96d390df227d75425dabcdb",
+        "key": "8b95654556d7645afd94eccb6bb266a3c0a90a1cd8af26266eb5ae9264a2cba0",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "not_met",
-          "quote": "The March 2025 discharge summary is from an earlier stay and was not used."
+          "quote": "Please keep taking your metoprolol succinate and metoprolol tartrate as before. Dr. Okafor will review the two of them and let you know if anything changes."
         },
         "error": null,
         "calls": 1,
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-25T13:23:26.047Z"
+          "at": "2026-10-27T19:25:02.389Z"
         }
       }
     ]

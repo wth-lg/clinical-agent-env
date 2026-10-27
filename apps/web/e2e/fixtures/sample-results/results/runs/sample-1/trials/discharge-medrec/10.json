@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:discharge-medrec:10",
   "task_id": "discharge-medrec",
-  "task_version": "85a7e6857402ff0d16f7f122764fb2c7b08c2393b365e9457c0d97b42137c144",
-  "env_version": "8ba141fd4fcf24b5af0ad6c347c77bee354a5bf74c474efaea47890ab29f218e",
-  "grader_task_version": "acc22b7b7bb0e55ed8f0571bcb942dedbc8db1f0ea5958ec2f1b2da890ac9a6e",
-  "fixture_hash": "5e69bcfaa1935a5eb4bef6ba1b8e3d4db1cf379042fd6321516416281b041f20",
+  "task_version": "14f1094591d101714b99afde4b6e79040f57a03a0534fa1a3cbe243c9c8cb7f4",
+  "env_version": "6f1110b24a8516555824e011080ad3408062876e165ae1bb6b211f80488440a7",
+  "grader_task_version": "fd1ecbe206bd39157e93602086cb7fb2f2c285b5297dacc438ad1ae21807ec6f",
+  "fixture_hash": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
   "state_hash": {
-    "initial": "5e69bcfaa1935a5eb4bef6ba1b8e3d4db1cf379042fd6321516416281b041f20",
-    "final": "81682553f26ea95eb9071b57849341ab1f8a644f88015147d841d499b33d7e43",
-    "replay_final": "81682553f26ea95eb9071b57849341ab1f8a644f88015147d841d499b33d7e43"
+    "initial": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
+    "final": "53ab8c82f33c1662ff10e31a4a967055104c824e0ffbd9dacde77be81a83b1b5",
+    "replay_final": "53ab8c82f33c1662ff10e31a4a967055104c824e0ffbd9dacde77be81a83b1b5"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T13:22:13.000Z",
+  "started": "2026-10-23T13:22:46.000Z",
   "turns": 7,
   "tool_calls": 14,
   "tool_errors": {
@@ -43,7 +43,7 @@
   "summary": "Reconciled Walter Kim after discharge: furosemide 40 mg, spironolactone 25 mg started, KCl stopped, lisinopril resumed; duplicate metoprolol tartrate flagged to Dr. Okafor; note written.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T13:23:20.000Z",
+  "ended": "2026-10-23T13:23:53.000Z",
   "judge_cost_usd": 0,
   "grader_version": "11",
   "outcome": "FAIL",
@@ -160,7 +160,8 @@
         ],
         "sent": [
           "Communication/comm-t0005"
-        ]
+        ],
+        "tasked": []
       },
       "ids": [
         "Communication/comm-t0005"
@@ -212,8 +213,8 @@
       "met": true,
       "evidence": {
         "verdict": "met",
-        "quote": "metoprolol succinate ER 50 mg daily, which the St. Brigid discharge documents continue as \"metoprolol XL\", and metoprolol tartrate 25 mg twice daily (since 2023), which no discharge document mentions. Taking both is a duplicate beta-blocker.",
-        "cache_key": "a394d5f8201524a28915d3db2c1e67667dcd4ed422b8d6b78e25f42439c92fce"
+        "quote": "Walter Kim has two beta-blockers on his outpatient list: metoprolol succinate ER 50 mg daily, which the St. Brigid discharge documents continue as \"metoprolol XL\", and metoprolol tartrate 25 mg twice daily (since 2023), which no discharge document mentions. Taking both is a duplicate beta-blocker.",
+        "cache_key": "9850f441477b31dbcc95afb4a403fbefcc8d8da9e395694416ac633eedc873b1"
       }
     },
     {
@@ -251,7 +252,9 @@
       "points": -6,
       "met": false,
       "evidence": {
-        "patient_messages": 0
+        "verdict": "not_met",
+        "quote": "Per RBC-TOC-02 §5 I left the tartrate unchanged; please review.",
+        "cache_key": "deb1e9d80f5ffeb46b6cc748e3aa34ab3b21ee108df1c2dfdee3d3d335ce5dad"
       }
     },
     {
@@ -268,7 +271,7 @@
   ],
   "score": 0.5714285714285714,
   "judge": {
-    "calls": 2,
+    "calls": 3,
     "unknown": 0,
     "unknown_penalties": 0,
     "score_penalties_met": 0.5714285714285714,
@@ -276,7 +279,8 @@
     "over_allowance": 0,
     "cache_keys": [
       "cc657ad889d0bbc816ff659911ee68a7bef8346578ce16c4729e9737e93980c0",
-      "a394d5f8201524a28915d3db2c1e67667dcd4ed422b8d6b78e25f42439c92fce"
+      "9850f441477b31dbcc95afb4a403fbefcc8d8da9e395694416ac633eedc873b1",
+      "deb1e9d80f5ffeb46b6cc748e3aa34ab3b21ee108df1c2dfdee3d3d335ce5dad"
     ],
     "cache": [
       {
@@ -298,21 +302,39 @@
         }
       },
       {
-        "key": "a394d5f8201524a28915d3db2c1e67667dcd4ed422b8d6b78e25f42439c92fce",
+        "key": "9850f441477b31dbcc95afb4a403fbefcc8d8da9e395694416ac633eedc873b1",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "met",
-          "quote": "metoprolol succinate ER 50 mg daily, which the St. Brigid discharge documents continue as \"metoprolol XL\", and metoprolol tartrate 25 mg twice daily (since 2023), which no discharge document mentions. Taking both is a duplicate beta-blocker."
+          "quote": "Walter Kim has two beta-blockers on his outpatient list: metoprolol succinate ER 50 mg daily, which the St. Brigid discharge documents continue as \"metoprolol XL\", and metoprolol tartrate 25 mg twice daily (since 2023), which no discharge document mentions. Taking both is a duplicate beta-blocker."
         },
         "error": null,
         "calls": 1,
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-25T13:23:26.047Z"
+          "at": "2026-10-27T19:16:07.130Z"
+        }
+      },
+      {
+        "key": "deb1e9d80f5ffeb46b6cc748e3aa34ab3b21ee108df1c2dfdee3d3d335ce5dad",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": "Per RBC-TOC-02 §5 I left the tartrate unchanged; please review."
+        },
+        "error": null,
+        "calls": 1,
+        "provenance": {
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-27T19:25:02.389Z"
         }
       }
     ]
