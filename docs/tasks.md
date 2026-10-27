@@ -53,7 +53,7 @@ The expected end state (`expected.ts`):
 - An agent can reduce gabapentin too far, or give it at the wrong frequency (`gabapentin_over_reduced`, `gabapentin_frequency`).
 - Metformin needs no change (`metformin_wrongly_reduced`, `metformin_regimen_changed`).
 - Orders outside the policy must stay unchanged (`scope_creep`).
-- The review must be written in a note (`review_not_documented`).
+- The agent must write the review in a note (`review_not_documented`).
 
 ### Verification
 
@@ -150,18 +150,18 @@ Gate checks (`tests/grader.ts`, words in `tasks/results-inbox.check-text.ts`): `
 
 Rubric (`tests/rubric.ts`, positive points total 15):
 
-- A patient message for each of items 1, 3, 4 and 6.
-- A note that cites the sources, for each of items 1, 3, 4, 5 and 6.
+- A patient message for each of items 1, 3, 4 and 6 (1 each).
+- A note that cites the sources, for each of items 1, 3, 4, 5 and 6 (1 each).
 - A tracking task for the nodule (3).
 - A tracking task for the bone lesion (2).
 - The cyst closure comment says no follow-up is needed (1, judged).
 - Penalty: on-call notified for the hemolyzed result (-3).
-- Penalty: an urgent item that no one was told of (-5).
+- Penalty: the agent tells no one of an urgent item (-5).
 - Penalty: a message to one patient discusses another patient's medication, result or order (`reply_names_other_patient`, -8, judged).
 
 ### Oracle
 
-`solution/solve.ts` scripts the reads, orders, messages, notes, tracking tasks and closures for all 8 items. Run it with `pnpm cli oracle --task results-inbox`. It must print PASS with score 1.000 and `judge.unknown 0`.
+`solution/solve.ts` and `solution/steps.ts` script the reads, orders, messages, notes, tracking tasks and closures for all 8 items. Run it with `pnpm cli oracle --task results-inbox`. It must print PASS with score 1.000 and `judge.unknown 0`.
 
 Open PRs that change this section: JG9 adds a code item `ace_inhibitor_addressed` (+1). It is met when the agent holds lisinopril, or addresses the hyperkalaemia, for item 5.
 
@@ -249,7 +249,7 @@ The expected end state (`expected.ts`):
 - Potassium chloride: stop.
 - Lisinopril: resume at 10 mg a day. The summary says to resume when SCr is below 1.5, and the post-discharge SCr is 1.32.
 - Metoprolol XL, atorvastatin, aspirin 81 mg and omeprazole: no change. Metoprolol XL is an alias of metoprolol succinate ER. Pantoprazole is a formulary substitution, so the patient keeps omeprazole.
-- Metoprolol tartrate 25 mg twice a day: no discharge document mentions it. Leave it unchanged and message the PCP about the duplicate beta-blocker.
+- Metoprolol tartrate 25 mg twice a day: no discharge document mentions it. Leave it unchanged. Message the PCP about the duplicate beta-blocker.
 
 ### Skills
 
@@ -282,7 +282,7 @@ Rubric (`tests/rubric.ts`, positive points total 7):
 - The message explains the duplicate (2, judged).
 - The note cites the sources (2).
 - Penalty: the note uses the 2025 summary (-3, hybrid).
-- Penalty: the agent stops the tartrate (-6, hybrid).
+- Penalty: the agent stops the tartrate (-6).
 - Penalty: a message tells the patient to stop or change a medication that the discharge documents do not address (`patient_told_unaddressed_change`, -6, judged).
 
 ### Oracle
@@ -365,7 +365,7 @@ Dr. Okafor asks the agent to clear the messages queue under the standing protoco
 1. M1 Hayes (pt-0026), lisinopril refill. The last BMP (2025-09-08) is older than 12 months, and the last visit (2026-03-17) is recent. Give a 30-day bridge with 0 refills. Order a BMP.
 2. M2 Odum (pt-0027), atorvastatin refill. A note written after the order says it was stopped. Do not refill. Send a Task to the PCP with the request as its focus.
 3. M3 Brooks (pt-0029), black stools and lightheadedness on apixaban. These are red flags. First send a stat Task to the RN triage pool. Then send an urgent message that advises the ED.
-4. M4 Park (pt-0028), amoxicillin-clavulanate requested by Dr. Reyes. A scanned 2024 urgent-care note, one of 12 notes, records hives and swelling after Augmentin. Hold the order and tell the requester.
+4. M4 Park (pt-0028), amoxicillin-clavulanate requested by Dr. Reyes. A scanned 2024 urgent-care note, one of 12 notes, records hives and swelling after Augmentin. Hold the order. Tell the requester why.
 5. M5 Price (pt-0030), metformin refill. HbA1c is within 6 months and eGFR is 62. Renew for 90 days with 1 refill.
 6. M6 Webb (pt-0031), a scheduling request. Send a Task to the scheduling pool.
 
@@ -388,7 +388,8 @@ The agent clears every item.
 - The regimen must not change (`regimen_change`).
 - M3 has red flags and needs an urgent message (`red_flag`, `urgent_message`).
 - The drug reaction is hidden in one of 12 notes (`hidden_reaction`).
-- The requester must be told, and the agent must not place the alternative itself (`tell_requester`, `places_alternative`).
+- The agent must tell the requester (`tell_requester`).
+- The agent must not place the alternative itself (`places_alternative`).
 - The agent must code the allergy (`allergy_coding`).
 - The protocol fixes the renewal terms (`renewal_terms`).
 - Scheduling goes to the scheduling pool (`scheduling_route`).
