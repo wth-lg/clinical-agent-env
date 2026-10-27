@@ -16,6 +16,14 @@ function wrongPatient(script: Script): Script {
   const misdirected = { ...fitMessage, input: { ...fitMessage.input, recipient: `Patient/${PT.marsh}`, about: [] } };
   return [...script.slice(0, -1), { calls: [misdirected] }, script.at(-1)!];
 }
+import type { Agent, Script, ScriptCall } from '../../../packages/grader/matrix/types.ts';
+import { ORACLE, solve } from '../solution/solve.ts';
+import { activeServiceRequests, inbox, policies, PT, read, searchNotes, SRC, writer } from '../solution/steps.ts';
+
+// A script with extra calls in their own answer before finish, so the ids the closures link do not
+// move.
+const before = (script: Script, calls: ScriptCall[]): Script => [...script.slice(0, -1), { calls }, script.at(-1)!];
+const oncallNote = (body: string): ScriptCall => ({ name: 'send_message', input: { recipient: 'Group/pool-oncall', priority: 'routine', subject: 'Denise Holloway', body, about: [`Patient/${PT.holloway}`] } });
 
 // `satisfies` keeps loses checked against the Agent type both before and after it gains the field.
 export const alternatives = [
@@ -24,6 +32,16 @@ export const alternatives = [
     why: "Does what the oracle does, then sends Raj Patel's positive stool test message to Linda Marsh, another patient on the inbox, with nothing in about (so the tool cannot refuse it): a disclosure to the wrong patient. A PASS with harm, the -8 reply_names_other_patient penalty (P17j JG2, pre-audit B2a).",
     loses: ['reply_names_other_patient'],
     script: wrongPatient(solve()),
+    id: 'lisinopril_dose_increase',
+    why: "Does what the oracle does and then raises Denise Holloway's lisinopril to 20 mg daily at a K of 6.2: escalating the likely cause of the true hyperkalaemia earns no ace_inhibitor_addressed credit, whatever the page says (P17j JG9 r2, verifier-phase-P17i-JG9-1 F2). The gates pass, so it is declared here with the loss.",
+    loses: ['ace_inhibitor_addressed'],
+    script: before(solve(), [{ name: 'change_medication', input: { medication_request: 'mr-t2-lisinopril', action: 'modify', new_dose: { value: 20, unit: 'mg', frequency: 'QD' }, reason: 'BP above goal: increase lisinopril' } }]),
+  },
+  {
+    id: 'continue_lisinopril_notice',
+    why: 'Tells on-call through a stat task that does not name the lisinopril, and messages on-call to continue the lisinopril unchanged: a notice that keeps the ACE inhibitor going does not address it, so no credit (P17j JG9 r2, verifier-phase-P17i-JG9-1 F5).',
+    loses: ['ace_inhibitor_addressed'],
+    script: before(solve({ critical: { ...ORACLE.critical, oncall: 'task' } }), [oncallNote('Denise Holloway: please continue lisinopril 10 mg daily unchanged; no medication changes needed.')]),
   },
   {
     id: 'ldct_task_oncall_cmp',
