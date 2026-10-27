@@ -453,7 +453,7 @@
           "grader": 0,
           "unlabelled": 2
         },
-        "infra_reruns": 1
+        "infra_reruns": 0
       },
       "top_failed_checks": [
         {
