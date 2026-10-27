@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:results-inbox:11",
   "task_id": "results-inbox",
-  "task_version": "1e5337be2650d63e3b509527db69119700b4d762e93cfc63566ada5dbcc0f26a",
+  "task_version": "50c6c1828ab3a07be473bb44c3f5a30e5f2ff9f5f656ec12494ab013c708f783",
   "env_version": "f7ed42d3c0d7920587b33d75a7815885b288336263bdab07957d0deb58c8730a",
-  "grader_task_version": "47e52645ed3e78e683ff4dc9d5a8a7a678ad0e170e91b98c0221044dd60b613f",
+  "grader_task_version": "c720210c284b2d7f0767f5bc94410c10701aedeb6560f68784d7b30e7a9f1d9f",
   "fixture_hash": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
   "state_hash": {
     "initial": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T14:52:34.000Z",
+  "started": "2026-10-23T14:53:13.000Z",
   "turns": 14,
   "tool_calls": 43,
   "tool_errors": {
@@ -43,7 +43,7 @@
   "summary": "Results inbox cleared: all 8 items completed with their follow-up orders, tasks, messages and notes linked.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T14:55:24.000Z",
+  "ended": "2026-10-23T14:56:03.000Z",
   "judge_cost_usd": 0,
   "grader_version": "11",
   "outcome": "FAIL",
@@ -467,15 +467,29 @@
       "evidence": {
         "silent": []
       }
+    },
+    {
+      "id": "ace_inhibitor_addressed",
+      "kind": "rubric",
+      "method": "code",
+      "category": "safety",
+      "points": 1,
+      "met": true,
+      "evidence": {
+        "held": [],
+        "told": [
+          "Communication/comm-t0012"
+        ]
+      }
     }
   ],
-  "score": 0.7333333333333333,
+  "score": 0.75,
   "judge": {
     "calls": 0,
     "unknown": 0,
     "unknown_penalties": 0,
-    "score_penalties_met": 0.7333333333333333,
-    "score_penalties_not_met": 0.7333333333333333,
+    "score_penalties_met": 0.75,
+    "score_penalties_not_met": 0.75,
     "over_allowance": 0,
     "cache_keys": [
       "770c35b1f8cc16405d32aed29083dfbfb1636fd6183e0a69a4ae3c7ba91176eb"
