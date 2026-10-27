@@ -387,6 +387,7 @@ export const TAXONOMY_TEXT: Readonly<Record<Taxonomy, string>> = {
   output_gap: 'The model said that it did the action, but the action is not in the final state.',
   over_action: 'The model wrote more changes than the task permits.',
   process: 'The model wrote changes before it read the records that the policy tells it to read first.',
+  action_form: 'The model made the right decision, but in a channel or form that the policy does not name.',
   did_not_finish: 'The trial stopped at a limit (turns, cost, time or output) before the model finished.',
 };
 
@@ -403,6 +404,7 @@ const TAXONOMY_WHY: Record<Exclude<Taxonomy, 'did_not_finish'>, (f: AttributionF
   output_gap: () => 'the model said it did this, and the final state does not have it',
   over_action: () => 'writes beyond what the task permits',
   process: () => 'writes before the records the policy says to read first',
+  action_form: () => 'the right decision in a channel or form the policy does not name',
 };
 
 function limitSentence(r: ExplainRecord, events: readonly TrialEvent[] | undefined): string {

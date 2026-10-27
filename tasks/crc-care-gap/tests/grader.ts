@@ -84,10 +84,16 @@ const gates: Check[] = [
     category: 'action',
     traces_to: 'RBC-QM-02 §5',
     decisive_ids: M.flatMap((x) => x.decisive),
+    // When every patient left without a message has a Task the trial created for them (a call by
+    // staff), the outreach was decided in a channel §5 does not name: action_form (P17j JG8b).
     fn: (ctx) => {
       const sent = messagesTo(ctx);
       const missing = M.filter((x) => x.message === true && !sent.has(x.patient)).map((x) => x.patient);
-      return { met: missing.length === 0, evidence: { missing, messaged: [...sent.keys()].sort() }, ids: [...sent.values()].flat().map(keyOf) };
+      const mine = new Set(ctx.writes());
+      const tasked = new Set(ctx.final.all('Task').filter((t) => mine.has(keyOf(t)) && !ctx.initial.has('Task', t.id)).map((t) => t.for?.reference ?? ''));
+      const byTask = missing.filter((p) => tasked.has(p));
+      const formOnly = missing.length > 0 && byTask.length === missing.length;
+      return { met: missing.length === 0, evidence: { missing, messaged: [...sent.keys()].sort(), tasked_instead: byTask }, ids: [...sent.values()].flat().map(keyOf), ...(formOnly ? { action_form: true as const } : {}) };
     },
   }),
   gate({
