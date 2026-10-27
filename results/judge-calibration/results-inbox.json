@@ -3,14 +3,14 @@
   "model": "claude-opus-5-5",
   "effort": "medium",
   "prompt_version": "judge-v1",
-  "at": "2026-10-24T23:31:04.480Z",
-  "reference": "scripted",
+  "at": "2026-10-27T14:34:22.967Z",
+  "reference": "mixed",
   "reference_counts": {
     "scripted": 1,
-    "live": 0
+    "live": 6
   },
   "protocol": {
-    "design": "scripted reference",
+    "design": "mixed reference",
     "texts": "matrix cases: agent outputs the task authors scripted",
     "agreement": "a judge item agrees when the two verdicts are equal and an extract item when the two values are equal; quotes are not compared",
     "unknown": "unknown is kept as a verdict: it agrees only with unknown, and no item is dropped for it",
@@ -18,21 +18,93 @@
     "excluded": "none: a cache key no matrix case asks stays in questions and is listed as a disagreement",
     "pooling": "one task per file: agree is pooled over the task's questions; every live answer is in live_entries and each disagreement lists both answers"
   },
-  "questions": 1,
-  "same_keys": 1,
-  "agree": 1,
-  "calls": 1,
-  "ledger_settles": 1,
-  "cost_usd": 0.001832,
-  "usd_per_call": 0.001832,
+  "questions": 7,
+  "same_keys": 7,
+  "agree": 7,
+  "calls": 7,
+  "ledger_settles": 7,
+  "cost_usd": 0.022304,
+  "usd_per_call": 0.003186,
   "oracle": {
     "outcome": "PASS",
     "score": 1,
     "judge_unknown": 0
   },
   "disagreements": [],
-  "note": "Live judge answers (pnpm cli judge-calibrate) vs the task's cache. tests/judge-cache.json is not written by this command; this file is the calibration record. Ledger batch 2e0baa39-d3c8-4292-8212-97830665bb55.",
+  "note": "Live judge answers (pnpm cli judge-calibrate) vs the task's cache. tests/judge-cache.json is not written by this command; this file is the calibration record. Ledger batch 2e647d7c-cb47-48ec-8c8c-fbddd64dd0c9.",
   "live_entries": [
+    {
+      "key": "0e1e52fac0cfed8bbcf5af1c319d2cfb40f1f26aa3db9ac9ca709bfeb4b8d1f4",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": ""
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T14:34:22.967Z"
+      }
+    },
+    {
+      "key": "26e36eb1e6ead43f01e4ac10d613d242358389930d2824b3273ddd06cc2dab11",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": ""
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T14:34:22.967Z"
+      }
+    },
+    {
+      "key": "29c323a4241d1117bc9ade306855672ca8fa8dd616a525b8365ec3fae913a65b",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "One of your blood tests needs repeating. Please come to the clinic lab on Monday, October 26."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T14:34:22.967Z"
+      }
+    },
+    {
+      "key": "40f92709af964a981998c416ab8672f848d6b5fed7ad99f00698810dcc146110",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": ""
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T14:34:22.967Z"
+      }
+    },
     {
       "key": "770c35b1f8cc16405d32aed29083dfbfb1636fd6183e0a69a4ae3c7ba91176eb",
       "kind": "judge",
@@ -48,7 +120,43 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T23:31:04.480Z"
+        "at": "2026-10-27T14:34:22.967Z"
+      }
+    },
+    {
+      "key": "88c89c20b0e0000710b5021ad7ca76c0235508eee3b421ce7f74e087bc519c00",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": ""
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T14:34:22.967Z"
+      }
+    },
+    {
+      "key": "d6c2dc4f903df0c57eb972504afb25afb72ecafa41157d7e836398faade17bd6",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "Your stool test (FIT) found blood, which needs a colonoscopy to find the cause. Dr. Lin has already referred you to gastroenterology"
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T14:34:22.967Z"
       }
     }
   ],

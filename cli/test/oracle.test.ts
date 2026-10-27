@@ -13,7 +13,8 @@ import { describe, expect, it, vi } from 'vitest';
 import type { Transport } from '../../packages/core/anthropic.ts';
 import { JUDGE_MAX_CALL_USD, type JudgeCacheEntry } from '../../packages/grader/judge.ts';
 import type { MatrixTask } from '../../packages/grader/matrix/types.ts';
-import { tempDir } from '../../scripts/test/helpers.ts';
+import { okResponse } from '../../apps/web/src/harness/scenarios.ts';
+import { fakeKey, tempDir } from '../../scripts/test/helpers.ts';
 import { loadMatrixTask } from '../matrix.ts';
 import { main, type Deps } from '../oracle.ts';
 
@@ -77,4 +78,45 @@ describe('oracle', () => {
     expect(existsSync(join(h.home, '.clinenv'))).toBe(false);
   });
 
+
+  // --misses-only: refill only the keys the cache lacks (P17j: a PR that adds judge items asks
+  // only its new questions live); every cached answer is reused and keeps its provenance.
+  const DROP = '163307576d7a901b836b0c3d2ee1af5b6318de0361f4009ff8125594d859c93c';
+  const missingOne: MatrixTask = { ...SMALL, cache: SMALL.cache.filter((e) => e.key !== DROP) };
+
+  it('--live-judge --misses-only --dry-run counts only the questions the cache lacks', async () => {
+    const full = harness({}, undefined, SMALL);
+    expect(await main(['--task', '_toy', '--live-judge', '--misses-only', '--dry-run'], full.deps)).toBe(0);
+    expect(full.text()).toMatch(/^oracle dry run: --live-judge on _toy: \d+ cases, 0 distinct judge questions x 2 calls, worst case \$0\.0+$/m);
+    const one = harness({}, undefined, missingOne);
+    expect(await main(['--task', '_toy', '--live-judge', '--misses-only', '--dry-run'], one.deps)).toBe(0);
+    expect(one.text()).toMatch(/^oracle dry run: --live-judge on _toy: \d+ cases, 1 distinct judge questions x 2 calls/m);
+  });
+
+  it('--live-judge --misses-only asks only the missing question and keeps every cached entry as it was', async () => {
+    const fetch = vi.fn<Transport>(async () => okResponse({ text: '{"verdict":"met","quote":"wrote a progress note"}' }, 1));
+    const h = harness({ ANTHROPIC_API_KEY: fakeKey('M') }, fetch, missingOne);
+    expect(await main(['--task', '_toy', '--live-judge', '--misses-only'], h.deps), h.text()).toBe(0);
+    expect(fetch).toHaveBeenCalledTimes(1);
+    const [w] = h.written;
+    const got = new Map(w!.entries.map((e) => [e.key, e]));
+    expect(got.get(DROP)?.provenance?.source).toBe('live');
+    for (const e of missingOne.cache) if (got.has(e.key)) expect(got.get(e.key)!.provenance).toEqual(e.provenance);
+    expect(h.text()).toMatch(/judge cache _toy: \d+ answers written \(1 asked now\), 1 calls/);
+  });
+
+  it('--live-judge --misses-only counts only the calls made now, not the calls behind reused answers', async () => {
+    // Reused entries that took API calls when first asked must not add to the printed count.
+    const reused: MatrixTask = { ...missingOne, cache: missingOne.cache.map((e) => ({ ...e, calls: 2 })) };
+    const fetch = vi.fn<Transport>(async () => okResponse({ text: '{"verdict":"met","quote":"wrote a progress note"}' }, 1));
+    const h = harness({ ANTHROPIC_API_KEY: fakeKey('M') }, fetch, reused);
+    expect(await main(['--task', '_toy', '--live-judge', '--misses-only'], h.deps), h.text()).toBe(0);
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(h.text()).toMatch(/judge cache _toy: \d+ answers written \(1 asked now\), 1 calls/);
+  });
+
+  it('--misses-only needs --live-judge', async () => {
+    const h = harness();
+    expect(await main(['--task', '_toy', '--misses-only'], h.deps)).toBe(2);
+  });
 });

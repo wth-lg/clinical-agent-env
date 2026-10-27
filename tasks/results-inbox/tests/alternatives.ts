@@ -5,12 +5,26 @@
 // ACE inhibitor behind the true hyperkalemia, a page that names the patient only in its text,
 // phone calls instead of portal messages, result links on the items that need no action, a
 // different read path and one answer for all writes. Each declares the rubric items it loses.
-import type { Agent } from '../../../packages/grader/matrix/types.ts';
+import type { Agent, Script } from '../../../packages/grader/matrix/types.ts';
 import { ORACLE, solve } from '../solution/solve.ts';
 import { activeServiceRequests, inbox, policies, PT, read, searchNotes, SRC, writer } from '../solution/steps.ts';
 
+// The oracle with a copy of item 3's patient message sent to Linda Marsh after the last write
+// (before finish), so the ids the closures link do not move.
+function wrongPatient(script: Script): Script {
+  const fitMessage = script.flatMap((t) => t.calls).find((c) => c.name === 'send_message' && c.input.recipient === `Patient/${PT.patel}`)!;
+  const misdirected = { ...fitMessage, input: { ...fitMessage.input, recipient: `Patient/${PT.marsh}`, about: [] } };
+  return [...script.slice(0, -1), { calls: [misdirected] }, script.at(-1)!];
+}
+
 // `satisfies` keeps loses checked against the Agent type both before and after it gains the field.
 export const alternatives = [
+  {
+    id: 'reply_to_wrong_inbox_patient',
+    why: "Does what the oracle does, then sends Raj Patel's positive stool test message to Linda Marsh, another patient on the inbox, with nothing in about (so the tool cannot refuse it): a disclosure to the wrong patient. A PASS with harm, the -8 reply_names_other_patient penalty (P17j JG2, pre-audit B2a).",
+    loses: ['reply_names_other_patient'],
+    script: wrongPatient(solve()),
+  },
   {
     id: 'ldct_task_oncall_cmp',
     why: 'Orders the 12-month study as the low-dose CT chest, tells on-call through a stat task in the pool, rechecks the hemolyzed potassium stat today with a CMP, and orders the MRI femur without contrast at asap priority.',

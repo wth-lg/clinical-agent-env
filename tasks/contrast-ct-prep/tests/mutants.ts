@@ -41,7 +41,7 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
     trap: 'overnight_timing',
     why: 'Counts the 7-hour dose on the wrong side of midnight: 02:00 on Sunday 10/25, 18 hours before 20:00, instead of 02:00 Monday.',
     fails: ['prednisone_schedule'],
-    loses: ['message_dose_times'],
+    loses: ['message_dose_times', 'message_wrong_times_or_driving'],
     attribution: 'reasoning',
     script: [
       ...READS,
@@ -73,7 +73,7 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
     trap: 'copy_forward',
     why: 'Copies the clock times of the completed 2023 premedication (01:00, 07:00 and 13:00, for a 14:00 scan) onto Monday: the 13:00 doses come after the 09:00 scan.',
     fails: ['prednisone_schedule', 'diphenhydramine_dose'],
-    loses: ['message_dose_times'],
+    loses: ['message_dose_times', 'message_wrong_times_or_driving'],
     attribution: 'reasoning',
     script: [
       ...READS,
@@ -246,7 +246,7 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
     trap: 'antihistamine_timing',
     why: 'Gets the three prednisone times right but moves diphenhydramine to bedtime Sunday (22:00), in the order and in the message, instead of 1 hour before the scan.',
     fails: ['diphenhydramine_dose'],
-    loses: ['message_dose_times'],
+    loses: ['message_dose_times', 'message_wrong_times_or_driving'],
     attribution: 'reasoning',
     script: [
       ...READS,
