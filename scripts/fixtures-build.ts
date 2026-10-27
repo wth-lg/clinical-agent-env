@@ -10,13 +10,13 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 
 import { createRequire, findPackageJSON } from 'node:module';
 import { join, relative, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { NOW } from '../packages/env/clock.ts';
+import { NOW, NOW_MS } from '../packages/env/clock.ts';
 import { parseNdjson } from '../packages/env/fixture-source.ts';
 import { stateHash } from '../packages/env/hash.ts';
 import { applyOverlays, type Overlay } from '../packages/env/overlay.ts';
 import { Store } from '../packages/env/store.ts';
 import { RESOURCE_TYPES, SETTING, SETTING_LINT } from '../packages/env/world.ts';
-import { gunzip, gzip, sha256, toNdjson } from './fixtures-lib.ts';
+import { gunzip, gzip, hygiene, sha256, toNdjson, type HygieneReport } from './fixtures-lib.ts';
 
 export const repo = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const BASE = 'fixtures/synthea/base.ndjson.gz';
@@ -78,16 +78,53 @@ async function prunedDefinitions(types: readonly string[]): Promise<unknown> {
   return { resourceType: 'Bundle', type: 'collection', entry };
 }
 
-export async function build(outDir: string): Promise<{ stateHash: string; resources: number }> {
+// The dates the task files write (YYYY-MM-DD and M/D/YYYY, as YYYY-MM-DD): all of them, and by the
+// patients each file names (Patient/pt-NNNN). The hygiene pass leaves a base encounter of such a
+// patient on such a date where it is, and moves no encounter off any of them (plan P17j JT2).
+export function taskLiteralDates(): { byPatient: Map<string, Set<string>>; all: Set<string> } {
+  const out = new Map<string, Set<string>>();
+  const all = new Set<string>();
+  const walk = (dir: string) => {
+    for (const e of readdirSync(join(repo, dir), { withFileTypes: true })) {
+      const rel = `${dir}/${e.name}`;
+      if (e.isDirectory()) walk(rel);
+      else if (/\.(ts|md|toml|json|txt)$/.test(e.name)) {
+        const text = readFileSync(join(repo, rel), 'utf8');
+        const dates = [
+          // Digit lookarounds, not \b: a date-time's date is followed by T, a word character.
+          ...[...text.matchAll(/(?<!\d)(\d{4})-(\d\d)-(\d\d)(?!\d)/g)].map((m) => `${m[1]}-${m[2]}-${m[3]}`),
+          ...[...text.matchAll(/(?<!\d)(\d{1,2})\/(\d{1,2})\/(\d{4})(?!\d)/g)].map((m) => `${m[3]}-${m[1]!.padStart(2, '0')}-${m[2]!.padStart(2, '0')}`),
+        ];
+        for (const d of dates) all.add(d);
+        for (const pt of new Set(text.match(/\bpt-\d{4}\b/g) ?? [])) {
+          const set = out.get(`Patient/${pt}`) ?? new Set<string>();
+          for (const d of dates) set.add(d);
+          out.set(`Patient/${pt}`, set);
+        }
+      }
+    }
+  };
+  walk('tasks');
+  return { byPatient: out, all };
+}
+
+// The clinic PCP every clinic patient without one gets (packages/env/world.ts STAFF: the user).
+const CLINIC_PCP = 'pr-okafor';
+
+export async function build(outDir: string): Promise<{ stateHash: string; resources: number; hygiene: HygieneReport }> {
   const baseBytes = readFileSync(join(repo, BASE));
   const baseMeta = JSON.parse(readFileSync(join(repo, BASE_META), 'utf8')) as { ndjson_sha256: string; resources: number };
   const baseSha = sha256(gunzip(baseBytes));
   if (baseSha !== baseMeta.ndjson_sha256) throw new Error(`${BASE} decompresses to ${baseSha}, but ${BASE_META} says ${baseMeta.ndjson_sha256}; rerun fixtures/synthea/generate.sh`);
-  const base = await parseNdjson(baseBytes);
+  // World hygiene (plan P17j JT2) on the base cohort, before the overlays.
+  const literalDates = taskLiteralDates();
+  const { resources: base, report } = hygiene(await parseNdjson(baseBytes), { now: NOW_MS, literalDates: literalDates.byPatient, anyLiteralDates: literalDates.all });
 
   const overlayFiles = taskOverlays();
   const overlays = await loadOverlays(overlayFiles);
   const world = applyOverlays(base, SETTING, SETTING_LINT, overlays);
+  // After the overlays, a clinic patient with no PCP gets the clinic's (JT2).
+  world.resources = world.resources.map((r) => (r.resourceType === 'Patient' && !(r.generalPractitioner?.length) ? { ...r, generalPractitioner: [{ reference: `Practitioner/${CLINIC_PCP}` }] } : r));
 
   // The Store admits only resources the hash and search can handle.
   const store = new Store(world.resources);
@@ -122,12 +159,13 @@ export async function build(outDir: string): Promise<{ stateHash: string; resour
   writeFileSync(join(outDir, 'definitions-pruned.json'), definitions);
   // Last: a running local runner reloads its fixtures when manifest.json changes (apps/runner/server.ts).
   writeFileSync(join(outDir, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
-  return { stateHash: hash, resources: world.resources.length };
+  return { stateHash: hash, resources: world.resources.length, hygiene: report };
 }
 
 if (import.meta.main) {
   const i = process.argv.indexOf('--out');
   const out = resolve(i >= 0 ? process.argv[i + 1]! : join(repo, 'fixtures'));
-  const { stateHash: hash, resources } = await build(out);
+  const { stateHash: hash, resources, hygiene: h } = await build(out);
   console.log(`fixtures:build wrote ${posix(relative(process.cwd(), out)) || '.'}: ${resources} resources, state hash ${hash}`);
+  console.log(`hygiene: ${h.moved} encounters moved into clinic hours; ${h.completedAcute.length} stale acute and ${h.completedDuplicates.length} duplicate orders completed; ${Object.keys(h.skipped).length} encounters left: ${Object.entries(h.skipped).map(([id, why]) => `${id} (${why})`).join('; ') || 'none'}`);
 }
