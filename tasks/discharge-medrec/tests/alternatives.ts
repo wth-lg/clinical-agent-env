@@ -11,7 +11,30 @@ const okaforTask = (description: string) => ({ name: 'create_task', input: { pat
 // A message to the patient about the tartrate order.
 const toPatient = (body: string, subject = 'Your medicines') => ({ name: 'send_message', input: { recipient: `Patient/${PT}`, priority: 'routine', subject, body, about: [`MedicationRequest/${MR.tart}`] } });
 
+// The oracle's writes without its BMP recheck, a lab order and a Task for Dr. Okafor (P17j JG9 r2).
+const noRecheck = writes.filter((c) => c !== bmpRecheck);
+const lab = (code: string, start: string, end: string) => ({ name: 'order_service', input: { patient: PT, code, priority: 'routine', occurrence_start: start, occurrence_end: end, reason: 'Recheck after starting spironolactone with lisinopril resumed' } });
+const recheckTask = (due: string, description: string) => ({ name: 'create_task', input: { patient: PT, owner: 'Practitioner/pr-okafor', due, priority: 'routine', description } });
+
 export const alternatives: Alternative[] = [
+  {
+    id: 'kcl_task_not_recheck',
+    why: 'Orders no recheck and tasks Dr. Okafor to confirm the patient stopped the potassium chloride, due 10/27: the task names potassium but is not a lab recheck, so k_creatinine_recheck is lost (P17j JG9 r2, verifier-phase-P17i-JG9-1 F3).',
+    loses: ['k_creatinine_recheck'],
+    script: [...reads, { calls: [...noRecheck, recheckTask('2026-10-27', 'Call the patient to confirm he stopped the potassium chloride')] }, { calls: [message()] }, { calls: [note()] }, { calls: [finish()] }],
+  },
+  {
+    id: 'creatinine_only_recheck',
+    why: 'Orders a creatinine alone for 10/27 instead of a BMP: it does not measure potassium, the risk of spironolactone with lisinopril, so k_creatinine_recheck is lost (P17j JG9 r2, decisions 2026-10-28T05:30Z).',
+    loses: ['k_creatinine_recheck'],
+    script: [...reads, { calls: [...noRecheck, lab('2160-0', '2026-10-27', '2026-10-27')] }, { calls: [message()] }, { calls: [note()] }, { calls: [finish()] }],
+  },
+  {
+    id: 'bmp_window_from_today',
+    why: 'Orders the BMP with a window from today to a year out: it may be drawn before spironolactone has had a week, so it is not the 10/26 to 10/28 recheck and k_creatinine_recheck is lost (P17j JG9 r2, verifier-phase-P17i-JG9-1 F4).',
+    loses: ['k_creatinine_recheck'],
+    script: [...reads, { calls: [...noRecheck, lab('24321-2', '2026-10-23', '2027-10-23')] }, { calls: [message()] }, { calls: [note()] }, { calls: [finish()] }],
+  },
   {
     id: 'flag_by_task_to_okafor',
     why: "Flags the duplicate metoprolol tartrate to Dr. Okafor by a Task whose focus is the tartrate order instead of a message: the EHR flag T6's RBC-RX-05 §3 asks for in the same situation, so pcp_message accepts it (P17j JG8a, pre-audit M3).",
