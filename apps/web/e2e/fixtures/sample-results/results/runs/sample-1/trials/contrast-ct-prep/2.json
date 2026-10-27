@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:contrast-ct-prep:2",
   "task_id": "contrast-ct-prep",
-  "task_version": "ebb25ad9eead2e5736ec69771fa459eaeb86cebc79f473810edffebf4c727894",
-  "env_version": "dd52eab51c1b400d1147fa16562ce98eb6b13e39f104598a265ae6f17ad460fd",
-  "grader_task_version": "6dd94a8a58de04b5d4c48948efcfb83920b5b7124de85db797d0b217502c79b6",
-  "fixture_hash": "5e69bcfaa1935a5eb4bef6ba1b8e3d4db1cf379042fd6321516416281b041f20",
+  "task_version": "8d5d8df8288c17f808bea430c23e781503cee8ceff9226f0b2476659dd61773a",
+  "env_version": "492337b74874ac4946e3b6d7dde634742792583284396f14ea47172c4a0fce18",
+  "grader_task_version": "60e50156b32ac649c457f86da92b44e0c7f67db2028d6b7be970db86e187a0df",
+  "fixture_hash": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
   "state_hash": {
-    "initial": "5e69bcfaa1935a5eb4bef6ba1b8e3d4db1cf379042fd6321516416281b041f20",
-    "final": "dc319436d6a2d11f290c8abdc9fcf3e8050815725994f52230b95bdc1bfeacd6",
-    "replay_final": "dc319436d6a2d11f290c8abdc9fcf3e8050815725994f52230b95bdc1bfeacd6"
+    "initial": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
+    "final": "c43cb04178c4df17fce3d7701181bcb9f258373f2e3956190f08dbd4e224a911",
+    "replay_final": "c43cb04178c4df17fce3d7701181bcb9f258373f2e3956190f08dbd4e224a911"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -45,7 +45,7 @@
   "env_git_sha": null,
   "ended": "2026-10-23T12:04:13.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "11",
+  "grader_version": "12",
   "outcome": "PASS",
   "valid": true,
   "fault": null,
@@ -313,7 +313,7 @@
       "evidence": {
         "verdict": "met",
         "quote": "Do not drive after taking it: please have someone drive you to the scan and home.",
-        "cache_key": "e3ebaa2941de1354f6065a2a3b5c424adb4a4552d4801fcf1927b710173aab22"
+        "cache_key": "1575dce26098a0dc03df5c0447fe1cd2e8fb33ec88138dc9139eb31b1c00d723"
       }
     },
     {
@@ -326,7 +326,7 @@
       "evidence": {
         "verdict": "not_met",
         "quote": "Do not drive after taking it: please have someone drive you to the scan and home.",
-        "cache_key": "0bf9a078af1f83f7179164bc6cc45c1bd2da0e89075991489932ef1643ded5d9"
+        "cache_key": "9ce3c23d51bda3244887acdc5337efdb6eb6acb0ea0cf032b2cb777eace3dd68"
       }
     },
     {
@@ -388,7 +388,7 @@
         ],
         "verdict": "not_met",
         "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan.",
-        "cache_key": "70a2c9b8cd07ba9fb5494948d7d49c391ef89d2d2645cd61b935cb627755e760"
+        "cache_key": "052cd881daf5c84618a2e761e585a2a198d7bc4a7014c8aa2a19a2ea6990eb49"
       }
     }
   ],
@@ -401,14 +401,14 @@
     "score_penalties_not_met": 1,
     "over_allowance": 0,
     "cache_keys": [
-      "e3ebaa2941de1354f6065a2a3b5c424adb4a4552d4801fcf1927b710173aab22",
-      "0bf9a078af1f83f7179164bc6cc45c1bd2da0e89075991489932ef1643ded5d9",
+      "1575dce26098a0dc03df5c0447fe1cd2e8fb33ec88138dc9139eb31b1c00d723",
+      "9ce3c23d51bda3244887acdc5337efdb6eb6acb0ea0cf032b2cb777eace3dd68",
       "45ae5e14a76510187082a21912f734d6f4c226b6ca24957a592c42fcf15deef3",
-      "70a2c9b8cd07ba9fb5494948d7d49c391ef89d2d2645cd61b935cb627755e760"
+      "052cd881daf5c84618a2e761e585a2a198d7bc4a7014c8aa2a19a2ea6990eb49"
     ],
     "cache": [
       {
-        "key": "e3ebaa2941de1354f6065a2a3b5c424adb4a4552d4801fcf1927b710173aab22",
+        "key": "1575dce26098a0dc03df5c0447fe1cd2e8fb33ec88138dc9139eb31b1c00d723",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -422,11 +422,11 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-27T18:15:14.657Z"
+          "at": "2026-10-25T16:31:13.845Z"
         }
       },
       {
-        "key": "0bf9a078af1f83f7179164bc6cc45c1bd2da0e89075991489932ef1643ded5d9",
+        "key": "9ce3c23d51bda3244887acdc5337efdb6eb6acb0ea0cf032b2cb777eace3dd68",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -440,7 +440,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-27T18:15:14.657Z"
+          "at": "2026-10-27T06:33:36.474Z"
         }
       },
       {
@@ -462,7 +462,7 @@
         }
       },
       {
-        "key": "70a2c9b8cd07ba9fb5494948d7d49c391ef89d2d2645cd61b935cb627755e760",
+        "key": "052cd881daf5c84618a2e761e585a2a198d7bc4a7014c8aa2a19a2ea6990eb49",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -476,7 +476,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-27T18:15:14.657Z"
+          "at": "2026-10-25T16:31:13.845Z"
         }
       }
     ]
