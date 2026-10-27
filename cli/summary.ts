@@ -1,9 +1,10 @@
-// pnpm cli summary <run> [--require <spec>] [--task all|<id,...>] [--allow-mock] [--json]
+// pnpm cli summary <run> [--require <spec>] [--task all|<id,...>] [--allow-mock] [--json] [--write]
 // Summarizes a run (packages/core/summary.ts): per task pass k/n over its valid trials with a
 // Wilson 95% interval, every figure at each record's current grade (its last cli regrade, else
 // its recorded outcome; a task with regraded records also prints its recorded k/n, as disclosure), ENV_ERROR counted raw over settled and re-queued attempts, the models seen,
-// the initial state hashes and replay.json's verdicts. Writes <run>/summary.json, validated
-// against the schema before it is written. --require checks the run:
+// the initial state hashes and replay.json's verdicts. With --write it writes <run>/summary.json,
+// validated against the schema first; without it, it only prints, so a summary of a committed run
+// leaves its file alone (verifier-phase-P17i-JG8a-1 P-1). --require checks the run:
 //   valid=N          every task has exactly N valid trials (donewhen: trials=N)
 //   band=a-b         every task passes a to b of them (donewhen: pass-min=a,pass-max=b)
 //   env_error_raw=N  at most N ENV_ERROR attempts in the run, re-queued ones included
@@ -53,7 +54,7 @@ export interface Deps {
 }
 
 const defaults: Deps = { out: (l) => process.stdout.write(`${l}\n`), err: (l) => process.stderr.write(`${l}\n`) };
-const USAGE = 'usage: pnpm cli summary <run> [--require valid=N,band=a-b,env_error_raw=N,grader_error=N,model=M,replay=all,mode=live] [--task all|<id,...>] [--allow-mock] [--json]';
+const USAGE = 'usage: pnpm cli summary <run> [--require valid=N,band=a-b,env_error_raw=N,grader_error=N,model=M,replay=all,mode=live] [--task all|<id,...>] [--allow-mock] [--json] [--write]';
 
 // A record as cli regrade leaves it: its regrades[] entries appended.
 // A run-one record has no index: summary names it by its trajectory, as replay does (trialName).
@@ -91,11 +92,13 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
   let spec = '';
   let json = false;
   let allowMock = false;
+  let write = false;
   let taskArg: string | undefined;
   for (let i = 0; i < args.length; i++) {
     const a = args[i] as string;
     if (a === '--json') json = true;
     else if (a === '--allow-mock') allowMock = true;
+    else if (a === '--write') write = true;
     else if (a === '--require' && args[i + 1] !== undefined) spec = args[++i] as string;
     else if (a === '--task' && args[i + 1] !== undefined) taskArg = args[++i] as string;
     else if (!a.startsWith('--') && dir === undefined) dir = a;
@@ -143,7 +146,7 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
   s.requirements = req;
   s.violations = checkRequirements(s, req);
   assertSummary(s);
-  writeJson(join(dir, 'summary.json'), s);
+  if (write) writeJson(join(dir, 'summary.json'), s);
 
   const say = json ? deps.err : deps.out;
   say(`model ${s.model ?? '(the records differ or none is recorded)'}, effort ${s.effort ?? '(the records differ or none is recorded)'}`);
@@ -172,7 +175,7 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
       'a final run requires grader_error=0 and replay=all, and replay compares env_version only, so a grader fix does not break it',
   );
   for (const v of s.violations) say(`violation: ${v}`);
-  say(`summary: ${s.violations.length === 0 ? 'every requirement holds' : `${s.violations.length} violation(s)`}; wrote ${join(dir, 'summary.json')}`);
+  say(`summary: ${s.violations.length === 0 ? 'every requirement holds' : `${s.violations.length} violation(s)`}; ${write ? `wrote ${join(dir, 'summary.json')}` : 'summary.json not written (pass --write to write it)'}`);
   if (json) deps.out(JSON.stringify(s));
   return s.violations.length === 0 ? 0 : 1;
 }
