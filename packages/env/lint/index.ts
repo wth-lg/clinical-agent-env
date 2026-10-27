@@ -65,7 +65,7 @@ export interface LintSource {
   spec: LintSpec;
 }
 
-export type LintRule = 'threshold-margin' | 'age-margin' | 'date-margin' | 'leakage' | 'weekday' | 'prompt-date' | 'dst' | 'future-date' | 'dangling-reference';
+export type LintRule = 'threshold-margin' | 'age-margin' | 'date-margin' | 'leakage' | 'weekday' | 'prompt-date' | 'dst' | 'future-date' | 'dangling-reference' | 'attachment-content-type';
 
 export interface LintFinding {
   source: string;
@@ -200,6 +200,14 @@ function dstTransitions(year: number): number[] {
   return [Date.UTC(year, 2, nthSunday(2, 2), 7), Date.UTC(year, 10, nthSunday(10, 1), 6)];
 }
 
+function untypedAttachments(v: unknown, path: string): string[] {
+  if (Array.isArray(v)) return v.flatMap((x, i) => untypedAttachments(x, `${path}[${i}]`));
+  if (!v || typeof v !== 'object') return [];
+  const o = v as Record<string, unknown>;
+  const here = typeof o.data === 'string' && typeof o.contentType !== 'string' ? [path || '(root)'] : [];
+  return [...here, ...Object.entries(o).flatMap(([k, x]) => untypedAttachments(x, path ? `${path}.${k}` : k))];
+}
+
 export function lintWorld(resources: readonly Resource[], sources: readonly LintSource[]): LintFinding[] {
   const findings: LintFinding[] = [];
   const byId = new Map<string, Resource>();
@@ -215,6 +223,9 @@ export function lintWorld(resources: readonly Resource[], sources: readonly Lint
     for (const ref of references(r)) {
       if (!ref.startsWith('#') && !keys.has(ref)) findings.push({ source: 'world', rule: 'dangling-reference', message: `${at} references ${ref}, which is not in the world` });
     }
+    // An attachment with data names its contentType: the fixture build reads a text attachment's
+    // header by it (scripts/fixtures-lib.ts rewriteHeaderDate).
+    for (const path of untypedAttachments(r, '')) findings.push({ source: 'world', rule: 'attachment-content-type', message: `${at} ${path} has data but no contentType` });
     const allowed = FUTURE_OK[r.resourceType];
     for (const [k, v] of Object.entries(r)) {
       if (allowed?.has(k) || k === 'meta') continue;

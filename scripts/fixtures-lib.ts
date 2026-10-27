@@ -257,17 +257,19 @@ export function hygiene(resources: readonly Resource[], opts: { now: number; lit
       continue;
     }
     const delta = target - start;
-    // A date-time belongs to the encounter whose window [start, end] holds it (decisions.tsv
-    // 2026-10-27T21:00Z): any date-time of the patient inside this window moves with it, such as an
+    // A date-time belongs to the encounter whose window holds it (decisions.tsv 2026-10-27T21:00Z and
+    // 23:00Z): any date-time of the patient inside this window moves with it, such as an
     // abatement at its start or end; a member moves whole, but a date-time inside another
     // encounter's window stays with that encounter.
-    const end = Math.max(start, ...twins.map((j) => Date.parse((out[j] as unknown as { period?: { end?: string } }).period?.end ?? '')).filter((v) => !Number.isNaN(v)));
-    const inThis = (ms: number) => ms >= start && ms <= end;
+    // One window per encounter, the one its members span: its start to the later of its end and the
+    // times of the resources that reference it within a day (decisions.tsv 2026-10-27T23:00Z).
+    const inThis = (ms: number) => ms >= start && ms <= windowEnd;
     const others = out.flatMap((r, j) => {
-      const x = r as unknown as { period?: { start?: string; end?: string } };
+      const x = r as unknown as { id: string; period?: { start?: string; end?: string } };
       if (r.resourceType !== 'Encounter' || twins.includes(j) || patientOf(r) !== patient || typeof x.period?.start !== 'string') return [];
       const s0 = Date.parse(x.period.start);
-      return [[s0, Math.max(s0, Date.parse(x.period.end ?? '') || s0)] as const];
+      const refTimes = (stamped.get(`Encounter/${x.id}`) ?? []).map((k) => timeOf(out[k]!)).filter((t): t is number => t !== null && t - s0 <= DAY_MS);
+      return [[s0, Math.max(s0, Date.parse(x.period.end ?? '') || s0, ...refTimes)] as const];
     });
     const elsewhere = (ms: number) => !inThis(ms) && others.some(([s0, e0]) => ms >= s0 && ms <= e0);
     const candidate = out.map((r, j) => {
