@@ -109,10 +109,18 @@ test('Overview: k/N with N from the run, Wilson bounds equal summary.json, one s
     expect(marks).toEqual(mine.map((r) => markOf(explain(r).outcome, explain(r).fault)).sort());
   }
   const all = new Set(records.map((r) => markOf(explain(r).outcome, explain(r).fault)));
-  for (const m of ['environment', 'grader', 'infra', 'refusal', 'limit', 'model', 'pass']) expect(all, m).toContain(m);
+  // The official run's GRADER_ERROR is regraded to a model FAIL, so its marks hold no grader fault;
+  // the unregraded exemplar is the pilot run pilot-grader-error (decisions.tsv 2026-10-29T17:50).
+  for (const m of ['environment', 'infra', 'refusal', 'limit', 'model', 'pass']) expect(all, m).toContain(m);
+  expect(all).not.toContain('grader');
+  // The legend names every mark, the grader fault's included.
   await expect(page.getByTestId('legend').locator('li')).toHaveCount(7);
+  await expect(page.getByTestId('legend').locator('li[data-mark="grader"]')).toHaveCount(1);
   await expect(page.getByTestId('empty-state')).toHaveCount(0);
   await expect(page.getByTestId('data-warning')).toHaveCount(0);
+  // The grader fault's mark shows on the pilot's GRADER_ERROR row in Runs.
+  await page.getByRole('navigation', { name: 'Views' }).getByRole('link', { name: 'Runs' }).click();
+  await expect(page.locator('[data-testid="run"][data-run="pilot-grader-error"] [data-testid="trial-row"] [data-testid="outcome"]')).toHaveAttribute('data-mark', 'grader');
 });
 
 test('Runs: every non-pass row shows outcome, label, decisive check and reason without a click', async ({ page }) => {

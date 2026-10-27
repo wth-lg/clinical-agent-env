@@ -11,6 +11,7 @@
 // verifier-phase-P17i-JU7-1 B1, S1). The check and audit filters do not follow a rail link (S2).
 import { expect, test, type Page } from '@playwright/test';
 import { audit, explain, records, sampleBase, summary, TASK_IDS } from './fixtures/sample-results/sample.ts';
+import { m1ToM4Met } from '../../../packages/core/explain.ts';
 import { trialName } from '../../../packages/core/summary.ts';
 import { FAILURE_KINDS, FAILURE_LABELS } from '../../../packages/core/summary.ts';
 
@@ -21,7 +22,8 @@ async function browse(page: Page, path: string) {
 }
 
 const failures = (task: string) => records.filter((r) => r.task_id === task).map((r) => ({ r, e: explain(r) })).filter(({ e }) => e.valid && e.outcome !== 'PASS');
-const m1m4 = (task: string) => failures(task).filter(({ e }) => ['M1', 'M2', 'M3', 'M4'].every((id) => e.criteria.find((c) => c.id === id)?.met === true)).length;
+// The rule audit-check and the page count by (packages/core/explain.ts m1ToM4Met: n/a is met).
+const m1m4 = (task: string) => failures(task).filter(({ e }) => m1ToM4Met(e.criteria)).length;
 const official = (page: Page) => page.locator('[data-testid="run"][data-official="true"]');
 
 test('Findings: a bar by kind of failure per task, equal to summary.json', async ({ page }) => {
@@ -129,6 +131,8 @@ test('a run with a false PASS is blocked: the blocking trials and the false PASS
   await page.getByRole('link', { name: 'Findings', exact: true }).first().click();
   await expect(page.getByTestId('run-blocked')).toBeVisible();
   await noRates(page);
+  // The fault box names the false PASS beside the grader count (decisions.tsv 21:00).
+  await expect(page.locator('[data-testid="fault-box"][data-task="renal-dose-review"] [data-testid="fault-false-pass"]')).toHaveText('(1 false PASS)');
   // The notice's link opens the blocking trial, whose page shows no pass count either (JU7r2 F1).
   await page.getByTestId('run-blocked').getByTestId('blocking-trial').first().click();
   await expect(page.getByTestId('trial-detail')).toHaveAttribute('data-trial', trialName(pass));

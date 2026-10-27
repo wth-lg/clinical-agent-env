@@ -6,7 +6,7 @@ import { CircleAlert } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { FAILURE_KINDS, FAILURE_LABELS, type FailedCheckCount, type FaultCounts } from '../../../../packages/core/summary.ts';
 import type { Explanation } from '../../../../packages/core/explain.ts';
-import { kindWords, m1m4, type FailureLabel, type RunBlock } from '../data/failures.ts';
+import { isFalsePass, kindWords, m1m4, type FailureLabel, type RunBlock } from '../data/failures.ts';
 import { GlossaryLink } from '../data/ui.tsx';
 import { hrefWith, onNav } from '../data/url.ts';
 
@@ -57,6 +57,9 @@ export function FaultBox({ task, fcs, explanations }: { task: string; fcs: reado
   const sum = (l: FailureLabel) => fcs.reduce((n, f) => n + (f.label?.[l] ?? 0), 0);
   const reruns = fcs.reduce((n, f) => n + f.infra_reruns, 0);
   const m = m1m4(explanations);
+  // The false PASSes (GR5) are the grader's fault too: named beside the grader count, as
+  // audit-check's line gives "grader N (k false PASS)" (decisions.tsv 2026-10-29T21:00).
+  const falsePasses = explanations.filter(isFalsePass).length;
   const scope = task === 'all' ? null : task;
   return (
     <div data-testid="fault-box" data-task={task} className="space-y-1 text-sm">
@@ -65,6 +68,7 @@ export function FaultBox({ task, fcs, explanations }: { task: string; fcs: reado
           {FAILURE_LABELS.map((l) => (
             <li key={l} data-testid="fault-label-count" data-label={l} data-count={sum(l)}>
               {sum(l) > 0 ? <RunsLink patch={{ task: scope, audit: l }}>{LABEL_WORDS[l]} {sum(l)}</RunsLink> : <span className="text-ink-muted">{LABEL_WORDS[l]} 0</span>}
+              {l === 'grader' && falsePasses > 0 && <> <span data-testid="fault-false-pass" data-count={falsePasses} className="text-danger">({falsePasses} false PASS)</span></>}
             </li>
           ))}
         </ul>

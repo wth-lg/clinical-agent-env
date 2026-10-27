@@ -149,6 +149,8 @@ function faultNote(e: Explanation, official: boolean, notCountedShown: boolean):
   const notCounted = (rest: string) => (notCountedShown ? rest : `Not counted. ${rest}`);
   if (blocksTheRun(e) && official) return !e.valid || isFalsePass(e) ? notCounted('The run is blocked until this is fixed.') : 'The run is blocked until this is fixed.';
   if (!e.valid && e.outcome === 'GRADER_ERROR') return notCounted(GRADER_BUG_NOTE);
+  // A pilot trial the official run would be blocked by: a pilot is not counted (decisions.tsv 21:00).
+  if (blocksTheRun(e) && !official) return 'A pilot is not counted in the final pass rate.';
   if (!e.valid && e.fault === 'env') return notCountedShown ? 'It is run again.' : 'Not counted; it is run again.';
   return null;
 }

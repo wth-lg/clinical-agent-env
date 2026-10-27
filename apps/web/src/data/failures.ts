@@ -2,7 +2,7 @@
 // kind bar and the Runs filters share. The counts come from summary.json (packages/core/summary.ts
 // faultCounts); the M1-M4 count and the run block come from the explanations (explain.ts), which
 // summary.json does not hold. No JSX and no data/ imports, so the e2e specs can import it.
-import { blocksRun, type Explanation } from '../../../../packages/core/explain.ts';
+import { blocksRun, m1ToM4Met, type Explanation } from '../../../../packages/core/explain.ts';
 import { FAILURE_KINDS, FAILURE_LABELS, type FaultCounts } from '../../../../packages/core/summary.ts';
 
 export type FailureKind = (typeof FAILURE_KINDS)[number];
@@ -38,10 +38,8 @@ export const failedCheckOf = (e: Explanation): string | null => (isFailure(e) ? 
 // The failures whose confirmation criteria M1-M4 are all met, of the valid failures.
 export function m1m4(es: readonly Explanation[]): { met: number; failures: number } {
   const failed = es.filter(isFailure);
-  // n/a is met: M1 does not apply to a failure with no failed gate check, and explainTrial calls it
-  // confirmed (as audit-check counts it, verifier-phase-P17i-JG7-1 F1).
-  const met = (e: Explanation) => ['M1', 'M2', 'M3', 'M4'].every((id) => [true, 'n/a'].includes(e.criteria.find((c) => c.id === id)?.met as never));
-  return { met: failed.filter(met).length, failures: failed.length };
+  // packages/core/explain.ts m1ToM4Met, the rule audit-check's fault box counts by: n/a is met.
+  return { met: failed.filter((e) => m1ToM4Met(e.criteria)).length, failures: failed.length };
 }
 
 // The one rule for "this trial blocks the run" (DENOMINATOR_RULE; decisions.tsv 2026-10-29T16:00

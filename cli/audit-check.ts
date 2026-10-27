@@ -84,7 +84,8 @@
 // counting as met (P17j JG7), and false_passes, the task's false PASSes (GR5), which faults.grader
 // and labelled_grader count too; task_validity maps each flagged task to its flags and
 // its review's verdict and reviewer (null without one); labelled_environment and labelled_grader count the failures the audit
-// labels environment or grader (after adjudication); faults counts the failures by the fault
+// labels environment or grader (after adjudication), labelled_grader with the false PASSes, which
+// the text line names beside it ("grader N (k false PASS)"); faults counts the failures by the fault
 // explainTrial computes ({model, refusal, env, grader, infra}), which the label must agree with
 // but need not (a model label on an E5 failure is a violation, counted model there and env here);
 // valid counts the settled trials whose current grade is valid, excluded names (sorted) the
@@ -97,7 +98,7 @@ import type { BatchRecord } from '../packages/core/batch.ts';
 import { installEgressGuard } from '../packages/core/egress.ts';
 import type { TrialEvent } from '../packages/core/events.ts';
 import { explainContext as contextOf, type TaskCheck } from '../packages/core/explain-context.ts';
-import { AUDIT_QUESTIONS, auditAnswerOf, auditLabelOf, citedStep, excludedFromHeadline, explainTrial, formatCriterion, type AuditRow, type CheckText, type ExplainContext, type ExplainRecord } from '../packages/core/explain.ts';
+import { AUDIT_QUESTIONS, auditAnswerOf, auditLabelOf, citedStep, excludedFromHeadline, explainTrial, formatCriterion, m1ToM4Met, type AuditRow, type CheckText, type ExplainContext, type ExplainRecord } from '../packages/core/explain.ts';
 import { AUDIT_LABEL, AUDIT_LABELS, e6Confirmation, FAULT, FAULT_PRECEDENCE, type AuditLabelName, type Fault, type Outcome } from '../packages/core/outcomes.ts';
 import { parseTrajectory } from '../packages/core/trajectory.ts';
 import { consistencyOf, currentGrade, describeConsistency, faultCounts, type ConsistencyFlag } from '../packages/core/summary.ts';
@@ -335,9 +336,8 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
     }
     const e = await explain(r, byTrial.get(name));
     if (e.fault !== null) faults[e.fault]++;
-    // n/a is met: M1 does not apply to a failure with no failed gate check, and explainTrial calls
-    // that trial confirmed (verifier-phase-P17i-JG7-1 F1).
-    if (['M1', 'M2', 'M3', 'M4'].every((id) => [true, 'n/a'].includes(e.criteria.find((c) => c.id === id)?.met as never))) m1m4.set(r.task_id, (m1m4.get(r.task_id) ?? 0) + 1);
+    // explain.ts m1ToM4Met: n/a is met (verifier-phase-P17i-JG7-1 F1).
+    if (m1ToM4Met(e.criteria)) m1m4.set(r.task_id, (m1m4.get(r.task_id) ?? 0) + 1);
     for (const c of e.criteria) {
       if ((c.id === 'M1' || c.id === 'M4') && (c.met === false || c.met === 'pending')) v.push(`${name}: ${formatCriterion(c).replace(': ', ' ')}: ${c.evidence}`);
     }
@@ -423,7 +423,8 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
   const say = json ? deps.err : deps.out;
   for (const line of findings) say(line);
   for (const line of v) say(`violation: ${line}`);
-  say(`audit-check: ${labelled}/${failures.length} failures labelled, environment ${environment}, grader ${grader}; ${v.length === 0 ? 'every check holds' : `${v.length} violation(s)`}`);
+  const falsePassCount = [...falsePasses.values()].reduce((a, n) => a + n, 0);
+  say(`audit-check: ${labelled}/${failures.length} failures labelled, environment ${environment}, grader ${grader}${falsePassCount > 0 ? ` (${falsePassCount} false PASS)` : ''}; ${v.length === 0 ? 'every check holds' : `${v.length} violation(s)`}`);
   const excluded = excludedTrials.sort();
   // Each task's fault box, as summary.json gives it (packages/core/summary.ts faultCounts), with
   // the M1-M4 count: the failures whose M1-M4 are all met, of the valid failures.
