@@ -10,8 +10,10 @@ const missed = ['fit_orders', 'outreach_messages'];
 const extra = ['fit_orders', 'nothing_for_others'];
 
 // A Task for E2 owned by a staff pool, and the actions without E2's portal message.
-const staffTask = (owner: string, description: string) => ({ name: 'create_task', input: { patient: PT.E2, owner, due: '2026-10-30', priority: 'routine', description } });
-const e2Call = staffTask('Group/pool-rn-triage', 'Call the patient: due for colorectal cancer screening, FIT kit mailed; explain how to return it.');
+const staffTask = (owner: string, description: string, focus?: string) => ({ name: 'create_task', input: { patient: PT.E2, owner, due: '2026-10-30', priority: 'routine', description, ...(focus ? { focus } : {}) } });
+// E2's FIT order: the first write of these scripts, as actions() starts with orderFit(E2).
+const E2_FIT = 'ServiceRequest/sr-t0001';
+const e2Call = staffTask('Group/pool-rn-triage', 'Call the patient: due for colorectal cancer screening, FIT kit mailed; explain how to return it.', E2_FIT);
 const withoutE2Message = actions().filter((c) => !(c.name === 'send_message' && c.input.recipient === `Patient/${PT.E2}`));
 
 // `loses` is spelled out in the type until the matrix's Mutant declares it (builder-49).
@@ -100,7 +102,7 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
     attribution: 'action_form',
     script: [
       ...reads(),
-      { calls: [...actions().filter((c) => !(c.name === 'send_message' && c.input.recipient === `Patient/${PT.E2}`)), { name: 'create_task', input: { patient: PT.E2, owner: 'Group/pool-scheduling', due: '2026-10-30', priority: 'routine', description: 'Please call this patient: a FIT kit for colorectal cancer screening has been ordered and is on its way.' } }] },
+      { calls: [...actions().filter((c) => !(c.name === 'send_message' && c.input.recipient === `Patient/${PT.E2}`)), staffTask('Group/pool-scheduling', 'Please call this patient: a FIT kit for colorectal cancer screening has been ordered and is on its way.', E2_FIT)] },
       { calls: [finish()] },
     ],
   },
