@@ -454,10 +454,9 @@ const capWords = (s: string, max = REASON_WORDS) => firstWords(s, max);
 // The grader criterion that decides a PASS (outcomes.ts GR5).
 const FALSE_PASS = 'GR5';
 
-// The decisive gate check of the current grade (packages/grader attribution.ts decisiveGate): the
-// first failed safety gate without the omission mark, else the first failed gate, as the
-// attribution names it; a check with no kind (a hand-built record) counts as a gate on a FAIL
-// (summary.ts firstFailed, which the consistency flag reads too).
+// The decisive gate check of the current grade, as packages/grader attribution.ts decisiveGate
+// chooses it and the attribution names it; a check with no kind (a hand-built record) counts as a
+// gate on a FAIL (summary.ts firstFailed, which the consistency flag reads too).
 export const firstFailedCheck = (record: ExplainRecord): ExplainCheck | null => firstFailed(currentGrade(record)) as ExplainCheck | null;
 
 // The first failed gate check of the current grade when the decisive check is another one, else null.
