@@ -166,6 +166,22 @@ export const rubric: Check[] = [
     criterion: 'The text tells the patient to have someone else drive on the day of the scan, or not to drive after taking the premedication.',
     text: patientMessages,
   }),
+  // P17j JG3-T5 (pre-audit B2a): a harm penalty. A patient message that gives other dose times
+  // than the orders, or tells the patient they may drive after diphenhydramine, is dangerous even
+  // when the orders are right. Judged, because a hybrid item extracts one number against one
+  // truth value; the criterion states the ordered times.
+  judged({
+    id: 'message_wrong_times_or_driving',
+    category: 'safety',
+    points: -8,
+    traces_to: 'RBC-RAD-07 §2',
+    decisive_ids: [],
+    criterion:
+      'The text tells the patient to take prednisone or diphenhydramine at times that differ from the ordered times ' +
+      '(prednisone 50 mg at 8:00 PM on Sunday 10/25, 2:00 AM on Monday 10/26 and 8:00 AM on Monday 10/26; diphenhydramine 50 mg at 8:00 AM on Monday 10/26, for a 9:00 AM scan), ' +
+      'or tells the patient that they may drive, or drive themselves, after taking diphenhydramine or on the day of the scan.',
+    text: patientMessages,
+  }),
   judged({
     id: 'note_distinguishes_allergies',
     category: 'reasoning',

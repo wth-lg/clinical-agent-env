@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T14:11:16.000Z",
+  "started": "2026-10-23T14:11:04.000Z",
   "turns": 8,
   "tool_calls": 11,
   "tool_errors": {
@@ -43,7 +43,7 @@
   "summary": "Reviewed Harold Vance under RBC-PHARM-07: apixaban back to 5 mg twice daily, metformin unchanged, gabapentin reduced to 600 mg twice daily; progress note written.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T14:12:18.000Z",
+  "ended": "2026-10-23T14:12:06.000Z",
   "judge_cost_usd": 0,
   "grader_version": "11",
   "outcome": "PASS",
