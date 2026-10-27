@@ -40,6 +40,10 @@ export interface Verdict<M extends Met = Met> {
   // A failed gate sets it when the conjunct that failed is a missing required write, not a
   // forbidden one: a safety gate failure is then not over_action (attribution.ts, R14-12).
   omission?: true;
+  // A failed gate sets it when the decision was right and only its channel or form is one the
+  // protocol does not name (a phone Task for a portal message, an order not linked to its
+  // appointment): attribution labels the trial action_form (P17j JG8b, pre-audit M3).
+  action_form?: true;
 }
 
 interface Common {
