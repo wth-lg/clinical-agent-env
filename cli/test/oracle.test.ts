@@ -136,6 +136,21 @@ describe('oracle', () => {
     expect(h.text()).toMatch(/judge cache _toy: \d+ answers written \(1 asked now\), 1 calls/);
   });
 
+  // A cached verdict 'unknown' grades the item unknown, so --misses-only asks it again too
+  // (verifier-phase-P17i-JG3-T6-1 F2).
+  const unknownOne: MatrixTask = { ...SMALL, cache: SMALL.cache.map((e) => (e.key === DROP ? { ...e, answer: { verdict: 'unknown', quote: '' } } : e)) };
+
+  it('--live-judge --misses-only asks a cached unknown verdict again', async () => {
+    const dry = harness({}, undefined, unknownOne);
+    expect(await main(['--task', '_toy', '--live-judge', '--misses-only', '--dry-run'], dry.deps)).toBe(0);
+    expect(dry.text()).toMatch(/^oracle dry run: --live-judge on _toy: \d+ cases, 1 distinct judge questions x 2 calls/m);
+    const fetch = vi.fn<Transport>(async () => okResponse({ text: '{"verdict":"met","quote":"wrote a progress note"}' }, 1));
+    const h = harness({ ANTHROPIC_API_KEY: fakeKey('M') }, fetch, unknownOne);
+    expect(await main(['--task', '_toy', '--live-judge', '--misses-only'], h.deps), h.text()).toBe(0);
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(new Map(h.written[0]!.entries.map((e) => [e.key, e])).get(DROP)?.answer).toEqual({ verdict: 'met', quote: 'wrote a progress note' });
+  });
+
   it('--misses-only needs --live-judge', async () => {
     const h = harness();
     expect(await main(['--task', '_toy', '--misses-only'], h.deps)).toBe(2);
