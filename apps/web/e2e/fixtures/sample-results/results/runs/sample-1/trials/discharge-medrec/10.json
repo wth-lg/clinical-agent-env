@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:discharge-medrec:10",
   "task_id": "discharge-medrec",
-  "task_version": "dca94676dd6bd43802bff2b4487016739abc99fd1a10b8769e65dd43e69a85fd",
+  "task_version": "f2fce6fc71b3613472cc96c7bd8a65422bce98147d83ff55938f497276f246db",
   "env_version": "0715c193e56f42a9f830062cfcffaaf4aa00d72df0fb8d8145bacbb8d677e0ba",
-  "grader_task_version": "4bd9490139ead479e54938397aacc87d990fd572e1b68d47ea873296d45e8a90",
+  "grader_task_version": "2247d7a993cba0fd6cc885081c397fedc9b89aaf96e3a57adf60643d72ff88ed",
   "fixture_hash": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
   "state_hash": {
     "initial": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T13:23:16.000Z",
+  "started": "2026-10-23T13:23:07.000Z",
   "turns": 7,
   "tool_calls": 15,
   "tool_errors": {
@@ -43,7 +43,7 @@
   "summary": "Reconciled Walter Kim after discharge: furosemide 40 mg, spironolactone 25 mg started, KCl stopped, lisinopril resumed; duplicate metoprolol tartrate flagged to Dr. Okafor; note written.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T13:24:26.000Z",
+  "ended": "2026-10-23T13:24:17.000Z",
   "judge_cost_usd": 0,
   "grader_version": "11",
   "outcome": "FAIL",
@@ -279,7 +279,9 @@
         "orders": [
           "ServiceRequest/sr-t0005"
         ],
-        "tracked": [],
+        "tracked": [
+          "Task/task-t0004"
+        ],
         "window": {
           "from": "2026-10-26",
           "to": "2026-10-28"
