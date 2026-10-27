@@ -1,42 +1,6 @@
 [
   {
-    "key": "2addddd39ab4c39d5e3f3b597c43a875f33ca6a4ace23aa4ef8146570b92b41c",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "Per RBC-TOC-02 §5 I left the tartrate unchanged; please review."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-27T19:16:07.130Z"
-    }
-  },
-  {
-    "key": "30ce817a8f480ceceaaf6ba471d089bf66745a741f8803d8f18fe8b46cb64a6d",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "Per RBC-TOC-02 §5 I left the tartrate unchanged; please review."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-27T19:16:07.130Z"
-    }
-  },
-  {
-    "key": "36dce64d48017a4d8a968b7061f504c3c18e98fd4d2f4324f6f51318fa5db6df",
+    "key": "2137231a5c77b3cb2abe88b1bfcf3e916c1e6d9ede4578549f5d8dffd471dc5e",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -50,7 +14,25 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-27T19:16:07.130Z"
+      "at": "2026-10-27T19:25:02.389Z"
+    }
+  },
+  {
+    "key": "329835600bbfdb75dc76990ac63363d315cb6627225db54ba87ed8ae8d871658",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Per RBC-TOC-02 §5 I left the tartrate unchanged; please review."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-27T19:25:02.389Z"
     }
   },
   {
@@ -69,6 +51,24 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-25T13:23:26.047Z"
+    }
+  },
+  {
+    "key": "63bc5e6d8c11331cd3478b68123b4ccddc7ca72b4ab49cc7d5ca6c1f40bf6f16",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Per RBC-TOC-02 §5 I left the tartrate unchanged; please review."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-27T19:25:02.389Z"
     }
   },
   {
@@ -144,21 +144,39 @@
     }
   },
   {
-    "key": "8414b4a26fda605c0f70f370b80ac4a12ae29d1f0d183039c64251ca4aa7a25d",
+    "key": "7ebc84f3c896099c34d7c484f87cc8b170f50047ee94f107c74df41f7d2d8d36",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
-      "verdict": "not_met",
-      "quote": "Per RBC-TOC-02 §5 I left the tartrate unchanged; please review."
+      "verdict": "met",
+      "quote": "Stop your metoprolol tartrate"
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-27T19:16:07.130Z"
+      "at": "2026-10-27T19:25:02.389Z"
+    }
+  },
+  {
+    "key": "8b95654556d7645afd94eccb6bb266a3c0a90a1cd8af26266eb5ae9264a2cba0",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Please keep taking your metoprolol succinate and metoprolol tartrate as before. Dr. Okafor will review the two of them and let you know if anything changes."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-27T19:25:02.389Z"
     }
   },
   {
@@ -198,42 +216,6 @@
     }
   },
   {
-    "key": "9c2aa161a72fe7f0ea3e2dfc78be8ce9ca6e87ef3a0ba09d4937f68f37027c8d",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "Per RBC-TOC-02 §5 I left the tartrate unchanged; please review."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-27T19:16:07.130Z"
-    }
-  },
-  {
-    "key": "9cc55bdb528a83082f5758988cf7a618a8040c99a662cb56db03633b2c6a4f7e",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "Call Mr. Kim today and tell him to stop taking metoprolol tartrate; it duplicates his metoprolol succinate."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-27T19:16:07.130Z"
-    }
-  },
-  {
     "key": "9d62a23b428d3cfb842c9b5882134ebf14652f9a729f2c0b47162b0ba2cac046",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -252,6 +234,24 @@
     }
   },
   {
+    "key": "a2a0dae961b56d700f003d8b82b71bde4d80abfd642237761f13abdef1d853a9",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Call Mr. Kim today and tell him to stop taking metoprolol tartrate; it duplicates his metoprolol succinate."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-27T19:25:02.389Z"
+    }
+  },
+  {
     "key": "a97bc41b8ee86d9f9e02ca1a1e72b7d63b260415d6d93aa028bcc9c694d955a0",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -267,6 +267,24 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-25T13:23:26.047Z"
+    }
+  },
+  {
+    "key": "bae039796e1c95187635064247858d01dcbe3176722c8569cc490e41f106e8fe",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Left unchanged per RBC-TOC-02 §5; please decide."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-27T19:25:02.389Z"
     }
   },
   {
@@ -306,7 +324,7 @@
     }
   },
   {
-    "key": "cd3263fc8b99c836d16a0e359b40d713beb76b84b627b7f44c0cb07f9de9bcbf",
+    "key": "cfa726b7c57480d995d878d5a0392b647bde8c77ea71ee899bf2c7126c7d3747",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -320,43 +338,43 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-27T19:16:07.130Z"
+      "at": "2026-10-27T19:25:02.389Z"
     }
   },
   {
-    "key": "d4dedbc15b8d470c01a2142cf49f473e0e8f5e99da2a84d9f970c512bf4b63e7",
+    "key": "d69accffb032f8c9f1b75c1e9fcaf94f4dbf1fe2adcffd8253faafa2123b620e",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Per RBC-TOC-02 §5 I left the tartrate unchanged; please review."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-27T19:25:02.389Z"
+    }
+  },
+  {
+    "key": "d7b6a9a409d03e3dc610ff1bfdb5b12ebb512fe00500a72bf3db487d67dcb7fd",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "met",
-      "quote": "Stop your metoprolol tartrate"
+      "quote": "Please call Walter Kim today and tell him to stop taking metoprolol tartrate; it duplicates his metoprolol succinate."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-27T19:16:07.130Z"
-    }
-  },
-  {
-    "key": "d759844c048fa674d2786c22b90d1f43a93dea352e954f08cbc4a38b7ea84928",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "Per RBC-TOC-02 §5 I left the tartrate unchanged; please review."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-27T19:16:07.130Z"
+      "at": "2026-10-27T19:25:02.389Z"
     }
   },
   {
@@ -375,6 +393,42 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-27T19:16:07.130Z"
+    }
+  },
+  {
+    "key": "deb1e9d80f5ffeb46b6cc748e3aa34ab3b21ee108df1c2dfdee3d3d335ce5dad",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Per RBC-TOC-02 §5 I left the tartrate unchanged; please review."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-27T19:25:02.389Z"
+    }
+  },
+  {
+    "key": "df71e1b036aaabe71e8e70192cc2c19608da110357bba29ff8763a61f85ace47",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Per RBC-TOC-02 §5 I left the tartrate unchanged; please review."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-27T19:25:02.389Z"
     }
   },
   {
@@ -411,24 +465,6 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-27T19:16:07.130Z"
-    }
-  },
-  {
-    "key": "f63241d8f985ec68ef18d6b51ed4c5f3efe014b0a389a14eda9c44a8504bb89f",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "Left unchanged per RBC-TOC-02 §5; please decide."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-27T17:06:19.490Z"
     }
   },
   {
