@@ -1,6 +1,6 @@
 // summary --require and audit-check on fixture runs (plan phase P12): each violating fixture
-// exits non-zero, the clean one exits 0; summary prints k/10 and Wilson 95% per task and writes a
-// summary.json that validates. task-hash changes when one byte of a task directory changes.
+// exits non-zero, the clean one exits 0; summary prints k/10 and Wilson 95% per task and, with
+// --write, writes a summary.json that validates. task-hash changes when one byte of a task directory changes.
 import { cpSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -29,15 +29,28 @@ async function cli(main: (args: string[], deps: { out: (l: string) => void; err:
 }
 
 describe('summary --require', () => {
-  it('exits 0 on the clean run, printing k/10 and Wilson 95% per task, and writes a summary.json that validates', async () => {
+  it('exits 0 on the clean run, printing k/10 and Wilson 95% per task, and with --write writes a summary.json that validates', async () => {
     const dir = run('clean');
-    const r = await cli(summary, [dir, '--require', REQUIRE]);
+    const r = await cli(summary, [dir, '--require', REQUIRE, '--write']);
     expect(r.code, r.out + r.err).toBe(0);
     expect(r.out).toMatch(/t-alpha\s+5\/10\s+Wilson 95% 23\.7%-76\.3%/);
     expect(r.out).toMatch(/t-beta\s+5\/10/);
     const written = JSON.parse(readFileSync(join(dir, 'summary.json'), 'utf8'));
     expect(() => assertSummary(written)).not.toThrow();
     expect(written.violations).toEqual([]);
+  });
+
+  // P17j (verifier-phase-P17i-JG8a-1 P-1, decisions 2026-10-27T21:40Z): summary.json is written only
+  // with --write, so printing a summary of a committed run, as evidence, leaves its file alone.
+  it('without --write prints the summary and leaves summary.json as it was', async () => {
+    const dir = run('clean');
+    const file = join(dir, 'summary.json');
+    writeFileSync(file, 'committed bytes\n');
+    const r = await cli(summary, [dir, '--require', REQUIRE]);
+    expect(r.code, r.out + r.err).toBe(0);
+    expect(r.out).toMatch(/t-alpha\s+5\/10/);
+    expect(r.out).toMatch(/summary\.json not written \(pass --write to write it\)/);
+    expect(readFileSync(file, 'utf8')).toBe('committed bytes\n');
   });
 
   it('--json prints only the summary on stdout, in the shape donewhen reads', async () => {
