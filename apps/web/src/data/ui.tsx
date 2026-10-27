@@ -61,7 +61,8 @@ export const markLabel = (m: Mark) => MARKS.find((x) => x.mark === m)!.label;
 // The mark of a trial from its outcome and the fault explainTrial gives it; with no explanation
 // (a count by outcome), the fault packages/core/outcomes.ts FAULT gives the outcome.
 export function markOf(outcome: string, fault: Fault | null = FAULT[outcome as Outcome] ?? null): Mark {
-  if (outcome === 'PASS') return 'pass';
+  // A false PASS (GR5) is the grader's fault: it takes the grader mark, not the pass accent.
+  if (outcome === 'PASS') return fault === 'grader' ? 'grader' : 'pass';
   if (fault === 'env') return 'environment';
   if (fault === 'grader') return 'grader';
   if (fault === 'infra' || (fault === null && !isValid(outcome))) return 'infra';

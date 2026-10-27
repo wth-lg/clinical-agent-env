@@ -4,13 +4,16 @@
 // src/data/records.ts, each trajectory with packages/core/trajectory.ts, and every trial record
 // starts from the world in fixtures/manifest.json; each official run has a run manifest.json, as a
 // batch writes it, so M1 can read reachability from its matrix.json (verifier-phase-P17i-C4r5-1
-// F2: without one, every unexposed id was "not checked"). A schema bump or a world rebuild that leaves a
-// fixture behind fails here, before the e2e specs that build against it.
+// F2: without one, every unexposed id was "not checked"); and each record's INTERNAL tool errors
+// are in its trajectory, an ENV_ERROR INTERNAL ending on that error (verifier-ui-copy-1 m4). A
+// schema bump or a world rebuild that leaves a fixture behind fails here, before the e2e specs
+// that build against it.
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { reachability } from '../../../packages/core/explain-context.ts';
 import { summarize, validateSummary, type Summary, type SummaryTrial } from '../../../packages/core/summary.ts';
+import { terminalEvent, type TrialEvent } from '../../../packages/core/events.ts';
 import { parseTrajectory } from '../../../packages/core/trajectory.ts';
 import { validateAuditRow, validateRecord } from '../src/data/records.ts';
 
@@ -58,6 +61,17 @@ describe.each(roots)('fixture %s', (root) => {
 
   it.each(runs.map((r) => [at(r), r]))('%s: every trial record starts from the manifest world', (_, run) => {
     for (const f of files(join(run, 'trials'), '.json')) expect((json(f) as { state_hash: { initial: string } }).state_hash.initial, at(f)).toBe(WORLD_HASH);
+  });
+
+  it.each(runs.map((r) => [at(r), r]))('%s: a record\'s INTERNAL tool errors are in its trajectory, and an ENV_ERROR INTERNAL ends on one', (_, run) => {
+    for (const f of files(join(run, 'trials'), '.json')) {
+      const r = json(f) as { trajectory?: string; status: string; detail: string | null; tool_errors?: { INTERNAL?: number } };
+      if (r.trajectory === undefined || !existsSync(join(run, r.trajectory))) continue;
+      const events = parseTrajectory(readFileSync(join(run, r.trajectory), 'utf8')) as TrialEvent[];
+      const internal = events.filter((e) => e.type === 'tool_result' && e.error_code === 'INTERNAL');
+      expect(internal.length, at(f)).toBe(r.tool_errors?.INTERNAL ?? 0);
+      if (r.status === 'ENV_ERROR' && r.detail === 'INTERNAL') expect(terminalEvent(events), at(f)).toMatchObject({ type: 'error', status: 'ENV_ERROR', code: 'INTERNAL' });
+    }
   });
 
   const summaries = runs.filter((r) => existsSync(join(r, 'summary.json')));

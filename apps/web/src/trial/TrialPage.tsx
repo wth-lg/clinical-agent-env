@@ -183,7 +183,8 @@ function SessionNotice() {
 // Why the trial ended as it did, before any click (see the header comment). rows: the trajectory,
 // once it loads; an ENV_ERROR's Where is the tool call that failed with an internal error.
 function Header({ t, e, rows, onStep }: { t: Trial; e: Explanation; rows: readonly Row[] | null; onStep: (n: number) => void }) {
-  const nonPass = e.outcome !== 'PASS';
+  // A fault to show: every non-pass, and a false PASS (GR5, P17j JG5), which the grader decided.
+  const nonPass = e.outcome !== 'PASS' || e.fault !== null;
   const failedCall = e.fault === 'env' && e.decisive_step === null && rows !== null ? internalErrorRow(rows) : null;
   return (
     <section aria-label="Why this trial ended as it did" data-testid="trial-header" className={`min-w-0 rounded-sm border border-line bg-surface p-4 ${nonPass ? `border-l-2 ${blocksTheRun(e) ? 'border-l-danger' : 'border-l-line-strong'}` : ''}`}>
@@ -229,9 +230,9 @@ function Header({ t, e, rows, onStep }: { t: Trial; e: Explanation; rows: readon
             <dd><StepLink n={failedCall.step} onStep={onStep} testId="failed-call-link">Step {failedCall.step}</StepLink>: the {failedCall.name} call that failed with an internal error</dd>
           </>
         )}
-        <dt>{e.outcome === 'PASS' ? 'Checks' : 'Criteria'}</dt>
+        <dt>{nonPass ? 'Criteria' : 'Checks'}</dt>
         <dd>
-          {e.outcome === 'PASS' ? <Confirmation e={e} /> : (
+          {!nonPass ? <Confirmation e={e} /> : (
           <ul data-testid="header-criteria" className="flex flex-wrap gap-x-3 gap-y-0.5">
             {e.criteria.map((c) => (
               <li key={c.id} data-id={c.id} data-met={String(c.met)} title={criterionText(c.id)}>
