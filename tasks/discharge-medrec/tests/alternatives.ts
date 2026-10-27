@@ -4,7 +4,7 @@
 // is about, one answer for everything, seeing the addendum only as a search snippet, a potassium
 // and creatinine recheck after starting spironolactone).
 import type { Alternative } from '../../../packages/grader/matrix/types.ts';
-import { allMeds, change, findPatient, finish, furosemideUp, kclStop, lisinoprilResume, message, MESSAGE, modify, MR, note, order, policy, PT, reads, RX, scr, spironolactone, summaries, summary, writes } from '../solution/steps.ts';
+import { allMeds, bmpRecheck, change, findPatient, finish, furosemideUp, kclStop, lisinoprilResume, message, MESSAGE, modify, MR, note, order, policy, PT, reads, RX, scr, spironolactone, summaries, summary, writes } from '../solution/steps.ts';
 
 // A Task to Dr. Okafor whose focus is the tartrate order.
 const okaforTask = (description: string) => ({ name: 'create_task', input: { patient: PT, owner: 'Practitioner/pr-okafor', due: '2026-10-26', priority: 'routine', description, focus: `MedicationRequest/${MR.tart}` } });
@@ -153,11 +153,11 @@ export const alternatives: Alternative[] = [
   },
   {
     id: 'recheck_bmp',
-    why: 'Also creates a Task for a repeat basic metabolic panel a week after starting spironolactone (potassium and creatinine, 2022 AHA/ACC/HFSA guideline).',
+    why: 'Tracks the repeat basic metabolic panel a week after starting spironolactone by a Task instead of the oracle\'s order (potassium and creatinine, 2022 AHA/ACC/HFSA guideline): k_creatinine_recheck accepts either (P17j JG9).',
     loses: [],
     script: [
       ...reads,
-      { calls: [...writes, { name: 'create_task', input: { patient: PT, owner: 'Practitioner/pr-okafor', due: '2026-10-28', priority: 'routine', description: 'Repeat basic metabolic panel (potassium, creatinine) 1 week after starting spironolactone' } }] },
+      { calls: [...writes.filter((c) => c !== bmpRecheck), { name: 'create_task', input: { patient: PT, owner: 'Practitioner/pr-okafor', due: '2026-10-28', priority: 'routine', description: 'Repeat basic metabolic panel (potassium, creatinine) 1 week after starting spironolactone' } }] },
       { calls: [message()] },
       { calls: [note()] },
       { calls: [finish()] },

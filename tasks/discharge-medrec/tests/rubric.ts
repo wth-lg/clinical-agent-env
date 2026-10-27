@@ -1,8 +1,10 @@
 // T4's rubric (design section 4, "T4" rubric table): what the note and the message to the PCP
-// must state, cite and avoid. Positive points total 7. used_2025_summary is hybrid: the pattern
-// flags a note that points at the March 2025 summary by its date, title, id or content, or cites
-// it, and the judge decides whether the note uses it as a source.
+// must state, cite and avoid. Positive points total 8: k_creatinine_recheck (P17j JG9) is the
+// table's plus one. used_2025_summary is hybrid: the pattern flags a note that points at the March
+// 2025 summary by its date, title, id or content, or cites it, and the judge decides whether the
+// note uses it as a source.
 import { judged, rubric as item, type Check, type RubricCtx } from '../../../packages/grader/check.ts';
+import { clinicDate } from '../../../packages/grader/normalize.ts';
 import { expected } from '../expected.ts';
 
 const PT = expected.patient;
@@ -74,6 +76,32 @@ export const OLD_SUMMARY = new RegExp(
   ].join('|'),
   'i',
 );
+
+// P17j JG9 (pre-audit M4): credit, never a gate, for a potassium and creatinine recheck ordered or
+// tracked for 2026-10-26 to 2026-10-28, a week after spironolactone is started with lisinopril
+// resumed: a BMP or CMP order (or potassium and creatinine both) whose occurrence meets the window,
+// or a Task for the patient due in it that names the recheck.
+const RECHECK = { from: '2026-10-26', to: '2026-10-28' };
+const PANELS = ['24321-2', '51990-0', '24323-8'];
+const RECHECK_TEXT = /\b(?:potassium|creatinine|metabolic panel|bmp|cmp)\b/i;
+function kCreatinineRecheck(ctx: RubricCtx) {
+  const mine = new Set(ctx.writes());
+  type Order = { resourceType: string; id?: string; subject?: { reference?: string }; code?: { coding?: Array<{ code?: string }> }; occurrenceDateTime?: string; occurrencePeriod?: { start?: string; end?: string } };
+  const meets = (start?: string, end?: string) => {
+    const a = start ? clinicDate(start) : null;
+    const b = end ? clinicDate(end) : a;
+    return a !== null && b !== null && a <= RECHECK.to && b >= RECHECK.from;
+  };
+  const orders = ctx.final.all('ServiceRequest').map((r) => r as Order).filter((r) => mine.has(`ServiceRequest/${r.id}`) && !ctx.initial.has('ServiceRequest', r.id!) && r.subject?.reference === PT)
+    .filter((r) => meets(r.occurrencePeriod?.start ?? r.occurrenceDateTime, r.occurrencePeriod?.end ?? r.occurrenceDateTime));
+  const codes = new Set(orders.flatMap((r) => (r.code?.coding ?? []).map((c) => c.code ?? '')));
+  const ordered = PANELS.some((c) => codes.has(c)) || (codes.has('2823-3') && codes.has('2160-0'));
+  const tracked = tasksBy(ctx).filter((t) => {
+    const due = (t as Made & { restriction?: { period?: { end?: string } } }).restriction?.period?.end;
+    return due !== undefined && meets(due, due) && RECHECK_TEXT.test(t.description ?? '');
+  });
+  return { met: ordered || tracked.length > 0, evidence: { orders: orders.map((r) => `ServiceRequest/${r.id}`), tracked: tracked.map((t) => `Task/${t.id}`), window: RECHECK } };
+}
 
 export const rubric: Check[] = [
   judged({
@@ -150,4 +178,5 @@ export const rubric: Check[] = [
       return { met: status !== 'active', evidence: { status } };
     },
   }),
+  item({ id: 'k_creatinine_recheck', category: 'safety', points: 1, method: 'code', traces_to: 'RBC-TOC-02 §6', decisive_ids: [], fn: kCreatinineRecheck }),
 ];
