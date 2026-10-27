@@ -7,9 +7,12 @@ import { expected } from '../expected.ts';
 
 const PT = expected.patient;
 const noteText = (ctx: RubricCtx) => ctx.notes.filter((n) => n.patient === PT).map((n) => n.text).join('\n\n');
-type Sent = { resourceType: string; id?: string; recipient?: Array<{ reference?: string }>; payload?: Array<{ contentString?: string }> };
+type Sent = { resourceType: string; id?: string; recipient?: Array<{ reference?: string }>; topic?: { text?: string }; payload?: Array<{ contentString?: string }> };
 type Made = { resourceType: string; id?: string; for?: { reference?: string }; owner?: { reference?: string }; description?: string };
-const bodyOf = (c: Sent) => (c.payload ?? []).map((p) => p.contentString ?? '').join('\n');
+// A message's text as its reader sees it: the subject line, then the body. Every judged item reads
+// messages through it (P17j JG3-T6 r2, verifier-phase-P17i-JG3-T6-1 F1: an instruction in the
+// subject reaches the patient too).
+const textOf = (c: Sent) => [c.topic?.text, ...(c.payload ?? []).map((p) => p.contentString)].filter(Boolean).join('\n');
 const pcpOf = (ctx: RubricCtx) => {
   const patient = ctx.initial.get('Patient', PT.split('/')[1]!);
   return patient?.resourceType === 'Patient' ? (patient.generalPractitioner ?? []).map((r) => r.reference ?? '') : [];
@@ -28,7 +31,7 @@ const tasksBy = (ctx: RubricCtx) => {
 const messageText = (ctx: RubricCtx) => {
   const pcp = pcpOf(ctx);
   return [
-    ...sentBy(ctx).filter((c) => (c.recipient ?? []).some((r) => pcp.includes(r.reference ?? ''))).map(bodyOf),
+    ...sentBy(ctx).filter((c) => (c.recipient ?? []).some((r) => pcp.includes(r.reference ?? ''))).map(textOf),
     ...tasksBy(ctx).filter((t) => pcp.includes(t.owner?.reference ?? '')).map((t) => t.description ?? ''),
   ].join('\n\n');
 };
@@ -40,7 +43,7 @@ const toldText = (ctx: RubricCtx) =>
   [
     ...sentBy(ctx).map((c) => {
       const to = (c.recipient ?? []).map((r) => r.reference ?? '');
-      return `${to.includes(PT) ? 'Message to the patient' : `Message to staff (${to.join(', ')})`}:\n${bodyOf(c)}`;
+      return `${to.includes(PT) ? 'Message to the patient' : `Message to staff (${to.join(', ')})`}:\n${textOf(c)}`;
     }),
     ...tasksBy(ctx).map((t) => `Task for staff (${t.owner?.reference ?? 'no owner'}):\n${t.description ?? ''}`),
   ].join('\n\n');
