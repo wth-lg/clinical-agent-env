@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:discharge-medrec:8",
   "task_id": "discharge-medrec",
-  "task_version": "445b5978f38e1b061eb3faa8849d97495c24eb75b952c0a068bfeeca39d031be",
+  "task_version": "c11d5b4942710b9d170241831f8fa670a488853fcba46c687fb6688e774ac369",
   "env_version": "6f1110b24a8516555824e011080ad3408062876e165ae1bb6b211f80488440a7",
-  "grader_task_version": "acc22b7b7bb0e55ed8f0571bcb942dedbc8db1f0ea5958ec2f1b2da890ac9a6e",
+  "grader_task_version": "09cfd141a6c784246ed21e088dc31cb66085fd177b268c8333a94537208cdae3",
   "fixture_hash": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
   "state_hash": {
     "initial": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T13:20:11.000Z",
+  "started": "2026-10-23T13:20:29.000Z",
   "turns": 7,
   "tool_calls": 13,
   "tool_errors": {
@@ -43,7 +43,7 @@
   "summary": "Reconciled Walter Kim after discharge: furosemide 40 mg, spironolactone 25 mg started, KCl stopped, lisinopril resumed; duplicate metoprolol tartrate flagged to Dr. Okafor; note written.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T13:21:16.000Z",
+  "ended": "2026-10-23T13:21:34.000Z",
   "judge_cost_usd": 0,
   "grader_version": "11",
   "outcome": "FAIL",
@@ -162,7 +162,8 @@
         ],
         "sent": [
           "Communication/comm-t0005"
-        ]
+        ],
+        "tasked": []
       },
       "ids": [
         "Communication/comm-t0005"
@@ -255,7 +256,9 @@
       "points": -6,
       "met": false,
       "evidence": {
-        "patient_messages": 0
+        "verdict": "not_met",
+        "quote": "Per RBC-TOC-02 §5 I left the tartrate unchanged; please review.",
+        "cache_key": "1208f736f0dd708e3e8aac81bb13fb970f732fea88af79150d870627fa5c6171"
       }
     },
     {
@@ -272,7 +275,7 @@
   ],
   "score": 0.2857142857142857,
   "judge": {
-    "calls": 2,
+    "calls": 3,
     "unknown": 0,
     "unknown_penalties": 0,
     "score_penalties_met": 0.2857142857142857,
@@ -280,7 +283,8 @@
     "over_allowance": 0,
     "cache_keys": [
       "74f9d594d1430eb330c92b55336abbabec9abf01ffdf9b7df7e4877694512dad",
-      "a394d5f8201524a28915d3db2c1e67667dcd4ed422b8d6b78e25f42439c92fce"
+      "a394d5f8201524a28915d3db2c1e67667dcd4ed422b8d6b78e25f42439c92fce",
+      "1208f736f0dd708e3e8aac81bb13fb970f732fea88af79150d870627fa5c6171"
     ],
     "cache": [
       {
@@ -317,6 +321,24 @@
           "source": "live",
           "model": "claude-opus-5-5",
           "at": "2026-10-25T13:23:26.047Z"
+        }
+      },
+      {
+        "key": "1208f736f0dd708e3e8aac81bb13fb970f732fea88af79150d870627fa5c6171",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": "Per RBC-TOC-02 §5 I left the tartrate unchanged; please review."
+        },
+        "error": null,
+        "calls": 1,
+        "provenance": {
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-27T17:06:19.490Z"
         }
       }
     ]
