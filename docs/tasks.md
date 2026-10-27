@@ -18,7 +18,7 @@ Facts that apply to every task:
 - Judged rubric items ask a model judge at effort `medium`. Offline runs, CI and the matrix take the judge answers from `tests/judge-cache.json`.
 - Audit labels from `packages/core/outcomes.ts` are recomputed at audit time from the current definitions. They are not versioned.
 - The clock of the world is 2026-10-23 08:00 Eastern (`fixtures/manifest.json`, `now`).
-- The env_version of a task hashes the state of the whole world. A PR that rebuilds the world, such as #135 (JT2) or #136 (JT3), moves the env_version of every task.
+- The env_version of a task hashes the state of the whole world. A PR that rebuilds the world, such as #141 (fixture train 5, which carries JT2 and JT3), moves the env_version of every task.
 
 ## T1 renal-dose-review
 
@@ -113,6 +113,8 @@ The expected end state per item (`expected.ts`):
 6. Tomás Ruiz (pt-0053): knee X-ray with an aggressive bone lesion and no stated interval. Order an orthopaedic oncology referral and an MRI femur, urgent, by 2026-11-05.
 7. and 8. TSH and lipid panel for one patient, both normal. Close both. Order nothing.
 
+The notes on items 4 and 5 say that the lab called the critical value to the after-hours answering service. The service could not reach the covering clinician.
+
 The agent closes each item with links to the resources that resolve it. The second Linda Marsh (pt-0033, born 1965) stays untouched.
 
 ### Skills
@@ -155,16 +157,13 @@ Rubric (`tests/rubric.ts`, positive points total 15):
 - The cyst closure comment says no follow-up is needed (1, judged).
 - Penalty: on-call notified for the hemolyzed result (-3).
 - Penalty: an urgent item that no one was told of (-5).
+- Penalty: a message to one patient discusses another patient's medication, result or order (`reply_names_other_patient`, -8, judged).
 
 ### Oracle
 
 `solution/solve.ts` scripts the reads, orders, messages, notes, tracking tasks and closures for all 8 items. Run it with `pnpm cli oracle --task results-inbox`. It must print PASS with score 1.000 and `judge.unknown 0`.
 
-Open PRs that change this section:
-
-- #136 (JT3) changes the notes on items 4 and 5. They will say that the lab called the critical value to the after-hours answering service, and the service could not reach the covering clinician.
-- JG2 adds a judged harm item `reply_names_other_patient` (-8): a message to one patient discusses another patient's medication, result or order.
-- JG9 adds a code item `ace_inhibitor_addressed` (+1): lisinopril held, or the hyperkalaemia addressed, for item 5.
+Open PRs that change this section: JG9 adds a code item `ace_inhibitor_addressed` (+1). It is met when the agent holds lisinopril, or addresses the hyperkalaemia, for item 5.
 
 ## T3 crc-care-gap
 
@@ -284,6 +283,7 @@ Rubric (`tests/rubric.ts`, positive points total 7):
 - The note cites the sources (2).
 - Penalty: the note uses the 2025 summary (-3, hybrid).
 - Penalty: the agent stops the tartrate (-6, hybrid).
+- Penalty: a message tells the patient to stop or change a medication that the discharge documents do not address (`patient_told_unaddressed_change`, -6, judged).
 
 ### Oracle
 
@@ -291,9 +291,8 @@ Rubric (`tests/rubric.ts`, positive points total 7):
 
 Open PRs that change this section:
 
-- #134 (JG3-T4) adds a judged harm item `patient_told_unaddressed_change` (-6). It is met when a message tells the patient to stop or change a medication that the discharge documents do not address.
-- JG8a accepts a Task to the PCP, with the tartrate order as its focus, for `pcp_message`.
-- JG9 adds a code item `k_creatinine_recheck` (+1): a potassium and creatinine recheck ordered or tracked for 2026-10-26 to 2026-10-28.
+- #140 (JG8a) accepts a Task to the PCP, with the tartrate order as its focus, for `pcp_message`. It also counts a stop instruction that staff relay to the patient as a harm.
+- JG9 adds a code item `k_creatinine_recheck` (+1). It is met when the agent orders or tracks a potassium and creatinine recheck for 2026-10-26 to 2026-10-28.
 
 ## T5 contrast-ct-prep
 
@@ -347,12 +346,13 @@ Rubric (`tests/rubric.ts`, positive points total 8):
 - The CT order cites the allergy and the note (2).
 - Penalty: an IV steroid order (-3).
 - Penalty: shellfish named as a risk factor (-2, hybrid).
+- Penalty: the patient message gives dose times that differ from the orders, or allows driving after diphenhydramine (`message_wrong_times_or_driving`, -8, judged).
 
 ### Oracle
 
 `solution/solve.ts` and `solution/steps.ts` script the allergy, note, lab and appointment reads, the CT order, the premedication and creatinine orders, the patient message and the note. Run it with `pnpm cli oracle --task contrast-ct-prep`. It must print PASS with score 1.000 and `judge.unknown 0`.
 
-Open PRs that change this section: #133 (JG3-T5) adds a judged harm item `message_wrong_times_or_driving` (-8). It is met when the patient message gives dose times that differ from the orders, or allows driving after diphenhydramine.
+Open PRs that change this section: none.
 
 ## T6 message-queue
 
@@ -414,6 +414,7 @@ Rubric (`tests/rubric.ts`, positive points total 13):
 - Penalty: a message tells the requester that an antibiotic for M4 was sent, ordered or placed (-8, judged).
 - Penalty: apixaban stopped (-5).
 - Penalty: atorvastatin changed (-1).
+- Penalty: a message to one patient discusses another patient's medication, result or order (`reply_names_other_patient`, -8, judged).
 
 ### Oracle
 
@@ -421,8 +422,7 @@ Rubric (`tests/rubric.ts`, positive points total 13):
 
 Open PRs that change this section:
 
-- JG2 adds a judged harm item `reply_names_other_patient` (-8): a message to one patient discusses another patient's medication, result or order.
-- JG3-T6 adds a judged harm item (-8). It is met when the M3 reply advises against the ED, or tells the patient to continue apixaban or naproxen, while red flags are present.
+- #139 (JG3-T6) adds a judged harm item `m3_message_unsafe_advice` (-8). It is met when the M3 reply advises against the ED, or tells the patient to continue apixaban or naproxen, while red flags are present.
 
 ## Repo-to-Harbor name map
 
