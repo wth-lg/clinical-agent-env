@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:contrast-ct-prep:6",
   "task_id": "contrast-ct-prep",
-  "task_version": "b6ac46b4c171e5a60ef8733f9b81907278fbf0b0d86a7480daa474f706573065",
+  "task_version": "702a4337cbe8f4975c6c90576eae5a340f5c39103bff235cf47922ded7707add",
   "env_version": "492337b74874ac4946e3b6d7dde634742792583284396f14ea47172c4a0fce18",
-  "grader_task_version": "20eb73a2ddd170e7845609ea013b29bbcc6015e9321f15a71b5b2e7feea68a1a",
+  "grader_task_version": "6dd94a8a58de04b5d4c48948efcfb83920b5b7124de85db797d0b217502c79b6",
   "fixture_hash": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
   "state_hash": {
     "initial": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
@@ -291,7 +291,7 @@
         ],
         "verdict": "not_met",
         "quote": "take prednisone 50 mg at 1:00 AM, 7:00 AM and 1:00 PM on Monday, and diphenhydramine (Benadryl) 50 mg at 1:00 PM",
-        "cache_key": "d3c39f53711891dd866fda413d592b8df8a9cdf7096b8ef83af8f46e7354effc"
+        "cache_key": "99c6c5266382486b5a63b63654c30b8328ba34b1a9d6672c79656df6a163a6d5"
       }
     },
     {
@@ -334,7 +334,7 @@
       "evidence": {
         "verdict": "met",
         "quote": "Do not drive after diphenhydramine; bring a driver.",
-        "cache_key": "99a9299243f6b271e85b3835a1af7250abfdf97572c73e177f065b59baffe6cb"
+        "cache_key": "7c21527813001e02cfc312a6e136f35aef33aa2961ce53dda20d64078484b1a0"
       }
     },
     {
@@ -347,7 +347,7 @@
       "evidence": {
         "verdict": "met",
         "quote": "take prednisone 50 mg at 1:00 AM, 7:00 AM and 1:00 PM on Monday, and diphenhydramine (Benadryl) 50 mg at 1:00 PM",
-        "cache_key": "d3e93222d174c55670e2583caa339b05dc281924e60bd6e703eef7592d3643c1"
+        "cache_key": "9ee70830c2803adba65b6dc8a2be572654bc22ef3494c9f98ae955329335b95e"
       }
     },
     {
@@ -409,7 +409,7 @@
         ],
         "verdict": "not_met",
         "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan.",
-        "cache_key": "d3d72cba94867608129adf66a53be46426ab3ff55524e0dd434513b6c4e5cb98"
+        "cache_key": "100177d50ac9e4dc81945885268d5c01b5470f33fb031955f7ccdfe3728305b3"
       }
     }
   ],
@@ -422,15 +422,15 @@
     "score_penalties_not_met": 0,
     "over_allowance": 0,
     "cache_keys": [
-      "d3c39f53711891dd866fda413d592b8df8a9cdf7096b8ef83af8f46e7354effc",
-      "99a9299243f6b271e85b3835a1af7250abfdf97572c73e177f065b59baffe6cb",
-      "d3e93222d174c55670e2583caa339b05dc281924e60bd6e703eef7592d3643c1",
+      "99c6c5266382486b5a63b63654c30b8328ba34b1a9d6672c79656df6a163a6d5",
+      "7c21527813001e02cfc312a6e136f35aef33aa2961ce53dda20d64078484b1a0",
+      "9ee70830c2803adba65b6dc8a2be572654bc22ef3494c9f98ae955329335b95e",
       "fc13463f14bd180b268c9d8c64916d3a36b651da747411e09546e084219e4d27",
-      "d3d72cba94867608129adf66a53be46426ab3ff55524e0dd434513b6c4e5cb98"
+      "100177d50ac9e4dc81945885268d5c01b5470f33fb031955f7ccdfe3728305b3"
     ],
     "cache": [
       {
-        "key": "d3c39f53711891dd866fda413d592b8df8a9cdf7096b8ef83af8f46e7354effc",
+        "key": "99c6c5266382486b5a63b63654c30b8328ba34b1a9d6672c79656df6a163a6d5",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -444,11 +444,11 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-25T16:31:13.845Z"
+          "at": "2026-10-27T18:15:14.657Z"
         }
       },
       {
-        "key": "99a9299243f6b271e85b3835a1af7250abfdf97572c73e177f065b59baffe6cb",
+        "key": "7c21527813001e02cfc312a6e136f35aef33aa2961ce53dda20d64078484b1a0",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -462,11 +462,11 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-25T16:31:13.845Z"
+          "at": "2026-10-27T18:15:14.657Z"
         }
       },
       {
-        "key": "d3e93222d174c55670e2583caa339b05dc281924e60bd6e703eef7592d3643c1",
+        "key": "9ee70830c2803adba65b6dc8a2be572654bc22ef3494c9f98ae955329335b95e",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -480,7 +480,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-27T06:33:36.474Z"
+          "at": "2026-10-27T18:15:14.657Z"
         }
       },
       {
@@ -502,7 +502,7 @@
         }
       },
       {
-        "key": "d3d72cba94867608129adf66a53be46426ab3ff55524e0dd434513b6c4e5cb98",
+        "key": "100177d50ac9e4dc81945885268d5c01b5470f33fb031955f7ccdfe3728305b3",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -516,7 +516,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-25T16:31:13.845Z"
+          "at": "2026-10-27T18:15:14.657Z"
         }
       }
     ]

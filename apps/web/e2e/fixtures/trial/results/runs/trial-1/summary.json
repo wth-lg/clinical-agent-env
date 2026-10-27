@@ -6,13 +6,13 @@
   "tasks": {
     "contrast-ct-prep": {
       "task_versions": [
-        "b6ac46b4c171e5a60ef8733f9b81907278fbf0b0d86a7480daa474f706573065"
+        "702a4337cbe8f4975c6c90576eae5a340f5c39103bff235cf47922ded7707add"
       ],
       "env_versions": [
         "492337b74874ac4946e3b6d7dde634742792583284396f14ea47172c4a0fce18"
       ],
       "grader_task_versions": [
-        "20eb73a2ddd170e7845609ea013b29bbcc6015e9321f15a71b5b2e7feea68a1a"
+        "6dd94a8a58de04b5d4c48948efcfb83920b5b7124de85db797d0b217502c79b6"
       ],
       "records": 1,
       "trials": 1,
@@ -280,13 +280,13 @@
     },
     "message-queue": {
       "task_versions": [
-        "db459042769cd88c094cba5f6694d94a5ef05e26db29ab72afac47268420f687"
+        "4f03c18f979b33eaad9593ada94e2f9c7f003b168507080c2ee1ef1033b4fd02"
       ],
       "env_versions": [
         "a902115d6b22a8ad4e4438108607f02b85be67a40fe538c32ff0a96b47d7dc89"
       ],
       "grader_task_versions": [
-        "1cce7364e45f81a226a3032c9917fa68a6c2f731d54f3a872ebfa513e822e63b"
+        "7ebb13659bae5448ef8314af1c432ed8333e5655f6e2f728bfd6265b435acb93"
       ],
       "records": 1,
       "trials": 1,
