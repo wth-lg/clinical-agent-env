@@ -18,6 +18,42 @@
     }
   },
   {
+    "key": "0a3f479f0966db653d7722fb21c32cecc5638975500d1f9a47ade310d8745f49",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "No need to go to the emergency department."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-27T15:07:34.772Z"
+    }
+  },
+  {
+    "key": "0b7aff19d923ebf1da22b55a5b831aa100f33e2092131c6dd59825893d429202",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "No need to go to the emergency department. Keep taking naproxen and Eliquis and we will see you next week."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-27T15:07:34.772Z"
+    }
+  },
+  {
     "key": "1a7d194e780e8a2f160ef0e9e3dbfcbeda6e3807fbdd23e61fb3d09bba2b6d7a",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -72,6 +108,24 @@
     }
   },
   {
+    "key": "25c2740bd773b621e6ed6500e69944603bbc18799466c1a2086ac07817389929",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Keep taking naproxen and Eliquis and we will see you next week."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-27T15:07:34.772Z"
+    }
+  },
+  {
     "key": "2b937178957557f6b37250adeba6fd29f6382f55eb13f302d1b9ade49abedb2b",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -123,6 +177,24 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-25T18:17:27.211Z"
+    }
+  },
+  {
+    "key": "47543ae851efcd23b575193a72c5b23424cd68060c9cc1c792a5dd3acd7b27d1",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Please go to the emergency department now, or call 911 if you feel faint. Stop taking the naproxen. Do not take another Eliquis dose until the emergency team has seen you."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-27T15:07:34.772Z"
     }
   },
   {
@@ -249,6 +321,24 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-25T18:17:27.211Z"
+    }
+  },
+  {
+    "key": "69c68b8111dff6cc938b725fdf9285bb8edecfcd8b0ece6999dfe6164d098fc2",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "No need to go to the emergency department."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-27T15:07:34.772Z"
     }
   },
   {
@@ -483,6 +573,42 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-25T18:17:27.211Z"
+    }
+  },
+  {
+    "key": "d6f121be3f12066c99885dd6302edf52bfb0c7a592247174842b7b5647813894",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Our nurse will call you to book a visit next week."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-27T15:07:34.772Z"
+    }
+  },
+  {
+    "key": "f2a4d3d7c5afc347381d88e0245313882985a2803d6ff4b8e3c648d119a3f684",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-27T15:07:34.772Z"
     }
   }
 ]
