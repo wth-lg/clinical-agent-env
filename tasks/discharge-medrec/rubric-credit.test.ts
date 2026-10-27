@@ -1,0 +1,24 @@
+// P17j JG9 (pre-audit M4): T4 gives +1 rubric credit, never a gate, for a potassium and creatinine
+// recheck ordered or tracked for 2026-10-26 to 2026-10-28, a week after spironolactone is started
+// with lisinopril resumed. Code method, so no judge-cache key changes.
+import { describe, expect, it } from 'vitest';
+import { loadMatrixTask, matrixEnv } from '../../cli/matrix.ts';
+import { cases, gradeRun, trial } from '../../packages/grader/matrix/matrix.ts';
+
+const task = await loadMatrixTask('discharge-medrec');
+const env = matrixEnv();
+const item = async (id: string) => {
+  const c = cases(task).find((x) => x.id === id)!;
+  const g = await gradeRun(env, task, task.checks, await trial(env, task, c));
+  return g.checks.find((r) => r.id === 'k_creatinine_recheck');
+};
+
+describe('discharge-medrec k_creatinine_recheck', () => {
+  it('is met at +1 by a Task tracking the recheck (alternative recheck_bmp)', async () => {
+    expect(await item('recheck_bmp')).toMatchObject({ kind: 'rubric', method: 'code', points: 1, met: true });
+  });
+
+  it('is met by the oracle, which orders the BMP for 2026-10-26 to 2026-10-28', async () => {
+    expect(await item('oracle')).toMatchObject({ points: 1, met: true });
+  });
+});
