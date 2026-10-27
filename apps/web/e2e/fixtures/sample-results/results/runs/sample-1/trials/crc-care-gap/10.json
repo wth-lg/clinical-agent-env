@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:crc-care-gap:10",
   "task_id": "crc-care-gap",
-  "task_version": "5a1d066b2f4eb8f0b0ab4da2c7ba56a88c0649077ff0ca8957abcc5edc633ca1",
+  "task_version": "ab700d0855e2a6ad308cb8de7b2ecd095d5498f48852a21f99388f9a2ce1121a",
   "env_version": "3d7216da2510f1708b0fb589859ce3c332cb7f5b42c0b55842793ce60955a9db",
-  "grader_task_version": "c3f3dae1984a6f32c08160c0669c7284c99ff819077dedc1e20f4df676b5d28b",
+  "grader_task_version": "743d2b20f16d03a15af8fb3314d5b388c00efb50e3e7cd45a29f9c86739b4e48",
   "fixture_hash": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
   "state_hash": {
     "initial": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T13:02:10.000Z",
+  "started": "2026-10-23T13:02:00.000Z",
   "turns": 13,
   "tool_calls": 98,
   "tool_errors": {
@@ -43,7 +43,7 @@
   "summary": "CRC outreach for Okafor CRC 2026 under RBC-QM-02: 5 FIT kits ordered and 5 outreach messages sent.\n\n| Patient | Status | Reason |\n|---|---|---|\n| Santo Pagac | Screening up to date | Colonoscopy 2018-05-21, within the measurement period or the 9 years before it (2017-2026) |\n| Stephan Herman | Open gap: FIT kit ordered, outreach sent | Last colonoscopy 2016-11-15, before the 2017-2026 window |\n| Lance Muller | Open gap: FIT kit ordered, outreach sent | sDNA-FIT 2023-11-20, before the 2024-2026 window |\n| Burma Leuschke | Open gap: FIT kit ordered, outreach sent | Born 1980-12-15: 46 at the end of 2026, in the population; no screening on record |\n| Marilu Gaona | Not in the population | Born 1950-11-20: 76 at the end of 2026, over 75 |\n| Ángela Vigil | Excluded | Total proctocolectomy (outside operative note, 2015) |\n| Elly Trantow | Excluded | Age 72 with frailty and a dementia medication (donepezil): advanced illness |\n| Harrison O'Keefe | Excluded | Frailty |\n| Kelsie Rohan | Excluded | In hospice care since 2026-08-20 |\n| Tiny Koss | Open gap: FIT kit ordered, outreach sent | FIT 2025-12-03 was in 2025; a FIT counts only in the measurement period |\n| Delaine MacGyver | Open gap, no new order | FIT order already active since 2026-09-30; FOBT 2024-06-11 does not count |\n| Danika Ullrich | Screening up to date | CT colonography 2022-03-08, within the measurement period or the 4 years before it (2022-2026) |",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T13:06:31.000Z",
+  "ended": "2026-10-23T13:06:21.000Z",
   "judge_cost_usd": 0,
   "grader_version": "12",
   "outcome": "FAIL",
