@@ -126,7 +126,7 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
     id: 'e2_phone_task_order_before_review',
     trap: 'order_before_review',
     why: 'Reaches E2 by a phone Task, the right outreach in another channel, but also orders for E4 before reading her birth date: the process failure has no action_form mark, so it decides the label (P17j JG8b r2, verifier-phase-P17i-JG8b-1 F1).',
-    fails: [],
+    fails: ['outreach_messages', 'gap_seen_before_order'],
     loses: [],
     attribution: 'process',
     script: [
