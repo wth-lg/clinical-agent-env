@@ -3,11 +3,11 @@
   "model": "claude-opus-5-5",
   "effort": "medium",
   "prompt_version": "judge-v1",
-  "at": "2026-10-25T13:27:59.045Z",
+  "at": "2026-10-27T09:02:00.565Z",
   "reference": "live",
   "reference_counts": {
     "scripted": 0,
-    "live": 11
+    "live": 12
   },
   "protocol": {
     "design": "test-retest",
@@ -18,21 +18,39 @@
     "excluded": "none: a cache key no matrix case asks stays in questions and is listed as a disagreement",
     "pooling": "one task per file: agree is pooled over the task's questions; every live answer is in live_entries and each disagreement lists both answers"
   },
-  "questions": 11,
-  "same_keys": 11,
-  "agree": 11,
-  "calls": 11,
-  "ledger_settles": 11,
-  "cost_usd": 0.059972,
-  "usd_per_call": 0.005452,
+  "questions": 12,
+  "same_keys": 12,
+  "agree": 12,
+  "calls": 12,
+  "ledger_settles": 12,
+  "cost_usd": 0.066696,
+  "usd_per_call": 0.005558,
   "oracle": {
     "outcome": "PASS",
     "score": 1,
     "judge_unknown": 0
   },
   "disagreements": [],
-  "note": "Live judge answers (pnpm cli judge-calibrate) vs the task's cache. tests/judge-cache.json is not written by this command; this file is the calibration record. Ledger batch d0e00e65-8c88-4691-811c-f0016c405cb5.",
+  "note": "Live judge answers (pnpm cli judge-calibrate) vs the task's cache. tests/judge-cache.json is not written by this command; this file is the calibration record. Ledger batch c8bf9ba8-6653-4662-bc06-ab2b5a0b3dbf.",
   "live_entries": [
+    {
+      "key": "14d448851a53c6d8f2130eef834f696298fe836f3a0d64dd487057f8cd7c65e2",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "Please stop taking metoprolol tartrate today; it duplicates your metoprolol succinate."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T09:02:00.565Z"
+      }
+    },
     {
       "key": "22e55326fb1821ed7226fdf0b072dcb7fd12f4b82be06edd0cd67f2b18f16f56",
       "kind": "judge",
@@ -48,7 +66,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T13:27:59.045Z"
+        "at": "2026-10-27T09:02:00.565Z"
       }
     },
     {
@@ -59,14 +77,14 @@
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "not_met",
-        "quote": "Spironolactone 25 mg daily started (signed addendum, which corrects the summary's 12.5 mg). Potassium chloride stopped (discharge summary). Lisinopril 10 mg daily resumed: the summary resumes it when SCr is below 1.5, and SCr was 1.32 on 10/21 (discharge summary; lab 10/21)."
+        "quote": "Spironolactone 25 mg daily started (signed addendum, which corrects the summary's 12.5 mg). Potassium chloride stopped (discharge summary)."
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T13:27:59.045Z"
+        "at": "2026-10-27T09:02:00.565Z"
       }
     },
     {
@@ -84,7 +102,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T13:27:59.045Z"
+        "at": "2026-10-27T09:02:00.565Z"
       }
     },
     {
@@ -102,7 +120,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T13:27:59.045Z"
+        "at": "2026-10-27T09:02:00.565Z"
       }
     },
     {
@@ -120,7 +138,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T13:27:59.045Z"
+        "at": "2026-10-27T09:02:00.565Z"
       }
     },
     {
@@ -138,7 +156,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T13:27:59.045Z"
+        "at": "2026-10-27T09:02:00.565Z"
       }
     },
     {
@@ -149,14 +167,14 @@
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "met",
-        "quote": "metoprolol succinate ER 50 mg daily, which the St. Brigid discharge documents continue as \"metoprolol XL\", and metoprolol tartrate 25 mg twice daily (since 2023), which no discharge document mentions. Taking both is a duplicate beta-blocker."
+        "quote": "Walter Kim has two beta-blockers on his outpatient list: metoprolol succinate ER 50 mg daily, which the St. Brigid discharge documents continue as \"metoprolol XL\", and metoprolol tartrate 25 mg twice daily (since 2023), which no discharge document mentions. Taking both is a duplicate beta-blocker."
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T13:27:59.045Z"
+        "at": "2026-10-27T09:02:00.565Z"
       }
     },
     {
@@ -174,7 +192,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T13:27:59.045Z"
+        "at": "2026-10-27T09:02:00.565Z"
       }
     },
     {
@@ -192,7 +210,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T13:27:59.045Z"
+        "at": "2026-10-27T09:02:00.565Z"
       }
     },
     {
@@ -210,7 +228,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T13:27:59.045Z"
+        "at": "2026-10-27T09:02:00.565Z"
       }
     },
     {
@@ -228,7 +246,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T13:27:59.045Z"
+        "at": "2026-10-27T09:02:00.565Z"
       }
     }
   ]

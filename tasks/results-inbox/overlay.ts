@@ -425,7 +425,7 @@ const overlay: Overlay = {
         results: ['na', 'k', 'cl', 'co2', 'bun', 'cr', 'glu', 'ca'].map((k) => `obs-t2-c-${k}`),
       }),
       item(4, 'pt-0008', 'DiagnosticReport/dr-t2-bmp-c-1022', '2026-10-22T18:40:00-04:00', CLINIC, 'Basic metabolic panel (2026-10-22): potassium 6.4 mmol/L, critical high', [
-        { time: '2026-10-22T18:50:00-04:00', text: 'Lab: critical value called to the clinic at 18:50; the office was closed and the ordering provider could not be reached. Filed to the inbox.' },
+        { time: '2026-10-22T18:50:00-04:00', text: 'Lab: critical value called to the after-hours answering service at 18:50; the service could not reach the covering clinician.' },
       ]),
 
       // Item 5: Denise Holloway, CKD 3b, lisinopril started on 10-06; true hyperkalemia.
@@ -455,7 +455,7 @@ const overlay: Overlay = {
         results: ['na', 'k', 'cl', 'co2', 'bun', 'cr', 'glu', 'ca'].map((k) => `obs-t2-d-${k}`),
       }),
       item(5, 'pt-0010', 'DiagnosticReport/dr-t2-bmp-d-1022', '2026-10-22T18:45:00-04:00', CLINIC, 'Basic metabolic panel (2026-10-22): potassium 6.2 mmol/L, critical high', [
-        { time: '2026-10-22T18:55:00-04:00', text: 'Lab: critical value called to the clinic at 18:55; the office was closed and the ordering provider could not be reached. Filed to the inbox.' },
+        { time: '2026-10-22T18:55:00-04:00', text: 'Lab: critical value called to the after-hours answering service at 18:55; the service could not reach the covering clinician.' },
       ]),
 
       // Item 6: Tomás Ruiz, 16, knee X-ray with an aggressive lesion.

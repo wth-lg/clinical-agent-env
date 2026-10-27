@@ -3,11 +3,11 @@
   "model": "claude-opus-5-5",
   "effort": "medium",
   "prompt_version": "judge-v1",
-  "at": "2026-10-25T18:27:46.353Z",
+  "at": "2026-10-27T14:11:53.856Z",
   "reference": "live",
   "reference_counts": {
     "scripted": 0,
-    "live": 17
+    "live": 27
   },
   "protocol": {
     "design": "test-retest",
@@ -18,20 +18,20 @@
     "excluded": "none: a cache key no matrix case asks stays in questions and is listed as a disagreement",
     "pooling": "one task per file: agree is pooled over the task's questions; every live answer is in live_entries and each disagreement lists both answers"
   },
-  "questions": 17,
-  "same_keys": 17,
-  "agree": 17,
-  "calls": 17,
-  "ledger_settles": 17,
-  "cost_usd": 0.049648,
-  "usd_per_call": 0.00292,
+  "questions": 27,
+  "same_keys": 27,
+  "agree": 27,
+  "calls": 27,
+  "ledger_settles": 27,
+  "cost_usd": 0.080432,
+  "usd_per_call": 0.002979,
   "oracle": {
     "outcome": "PASS",
     "score": 1,
     "judge_unknown": 0
   },
   "disagreements": [],
-  "note": "Live judge answers (pnpm cli judge-calibrate) vs the task's cache. tests/judge-cache.json is not written by this command; this file is the calibration record. Ledger batch 0df9a996-5146-4af1-ad2e-537b30ac3a0a.",
+  "note": "Live judge answers (pnpm cli judge-calibrate) vs the task's cache. tests/judge-cache.json is not written by this command; this file is the calibration record. Ledger batch 73d50d67-ef9e-4796-9c00-df9466cb1d41.",
   "live_entries": [
     {
       "key": "02f6a4a0c206eca59fe99af27df7edbb333395c313122df972935208e0d392a6",
@@ -48,7 +48,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T18:27:46.353Z"
+        "at": "2026-10-27T14:11:53.856Z"
       }
     },
     {
@@ -66,7 +66,43 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T18:27:46.353Z"
+        "at": "2026-10-27T14:11:53.856Z"
+      }
+    },
+    {
+      "key": "1ecce3edf26bdf299dc557e01f619dcfbfb21f8d96c09a071bd858cf5c576b0e",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "I sent a 90-day refill of atorvastatin 40 mg to your pharmacy."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T14:11:53.856Z"
+      }
+    },
+    {
+      "key": "243da9084c3d047d5facc075337e8fdadb43f0ffb84ee898b4e6d0e1fc5ac755",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": ""
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T14:11:53.856Z"
       }
     },
     {
@@ -84,7 +120,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T18:27:46.353Z"
+        "at": "2026-10-27T14:11:53.856Z"
       }
     },
     {
@@ -102,7 +138,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T18:27:46.353Z"
+        "at": "2026-10-27T14:11:53.856Z"
       }
     },
     {
@@ -120,7 +156,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T18:27:46.353Z"
+        "at": "2026-10-27T14:11:53.856Z"
       }
     },
     {
@@ -138,7 +174,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T18:27:46.353Z"
+        "at": "2026-10-27T14:11:53.856Z"
       }
     },
     {
@@ -156,7 +192,25 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T18:27:46.353Z"
+        "at": "2026-10-27T14:11:53.856Z"
+      }
+    },
+    {
+      "key": "577a113db02f73171962b7114f089ddc0b9a6522f6261d959adb8df194413b40",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": ""
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T14:11:53.856Z"
       }
     },
     {
@@ -174,7 +228,25 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T18:27:46.353Z"
+        "at": "2026-10-27T14:11:53.856Z"
+      }
+    },
+    {
+      "key": "643014316b7dbc639ae0eaec2c6ad19c3a1dbe34611c008e3458311bc3ea44cf",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": ""
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T14:11:53.856Z"
       }
     },
     {
@@ -192,7 +264,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T18:27:46.353Z"
+        "at": "2026-10-27T14:11:53.856Z"
       }
     },
     {
@@ -210,7 +282,43 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T18:27:46.353Z"
+        "at": "2026-10-27T14:11:53.856Z"
+      }
+    },
+    {
+      "key": "79086e895059c2cd778af184dc69aaee711a6ac571af795344ed6cd7028f3c72",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": ""
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T14:11:53.856Z"
+      }
+    },
+    {
+      "key": "7b90f4389402ca1934eebc5ac3c7765350f1eeb1a116be48d8329e2f3dd4d91c",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": ""
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T14:11:53.856Z"
       }
     },
     {
@@ -228,7 +336,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T18:27:46.353Z"
+        "at": "2026-10-27T14:11:53.856Z"
       }
     },
     {
@@ -246,7 +354,25 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T18:27:46.353Z"
+        "at": "2026-10-27T14:11:53.856Z"
+      }
+    },
+    {
+      "key": "958f00493e62808afd007522d135f70f2af3525046c7539bcbfb1765f9d0e657",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": ""
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T14:11:53.856Z"
       }
     },
     {
@@ -264,7 +390,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T18:27:46.353Z"
+        "at": "2026-10-27T14:11:53.856Z"
       }
     },
     {
@@ -282,7 +408,61 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T18:27:46.353Z"
+        "at": "2026-10-27T14:11:53.856Z"
+      }
+    },
+    {
+      "key": "acf27b24e07db3f5dcc66fddce454b226fba4f97f171a7906e46d24f08d3c165",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "Your cardiologist stopped atorvastatin in August and started rosuvastatin 10 mg instead, so I did not refill atorvastatin. Please keep taking rosuvastatin."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T14:11:53.856Z"
+      }
+    },
+    {
+      "key": "b6a84cff2af863adccbcc90ce74121154367082373b421141e6ec51f60da10b6",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "I sent a 30-day supply of lisinopril 20 mg to your pharmacy. Your yearly blood test (BMP) is due: I ordered it, please have it drawn at our lab in the next two weeks so we can renew for longer."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T14:11:53.856Z"
+      }
+    },
+    {
+      "key": "bb34c1f272c581913188270590c90c562e0b9e000c65757b243ccff48ef88997",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": ""
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-27T14:11:53.856Z"
       }
     },
     {
@@ -300,7 +480,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T18:27:46.353Z"
+        "at": "2026-10-27T14:11:53.856Z"
       }
     },
     {
@@ -318,7 +498,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T18:27:46.353Z"
+        "at": "2026-10-27T14:11:53.856Z"
       }
     },
     {
@@ -336,7 +516,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-25T18:27:46.353Z"
+        "at": "2026-10-27T14:11:53.856Z"
       }
     }
   ]

@@ -128,6 +128,13 @@ it('every reference resolves', () => {
   expect(rules([obs('obs-t1-x', 1, 'mg/dL')], {})).toEqual(['dangling-reference']);
 });
 
+it('every attachment that carries data names its contentType', () => {
+  const doc = (attachment: Record<string, unknown>): Resource => ({ resourceType: 'DocumentReference', id: 'doc-x', status: 'current', subject: { reference: 'Patient/pt-t1-a' }, content: [{ attachment }] } as Resource);
+  const pt = patient('pt-t1-a', '1950-01-01');
+  expect(rules([pt, doc({ data: 'Tm90ZQ==' })], {})).toEqual(['attachment-content-type']);
+  expect(rules([pt, doc({ contentType: 'text/plain', data: 'Tm90ZQ==' })], {})).toEqual([]);
+});
+
 describe('pnpm fixtures:lint', () => {
   const lint = (...args: string[]) => spawnSync('node', ['scripts/fixtures-lint.ts', ...args], { cwd: root, encoding: 'utf8' });
   it('exits 0 on the committed world', () => {

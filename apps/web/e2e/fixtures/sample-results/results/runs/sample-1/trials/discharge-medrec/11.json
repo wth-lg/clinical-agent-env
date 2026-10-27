@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:discharge-medrec:11",
   "task_id": "discharge-medrec",
-  "task_version": "6c4860ff127f4e455a14ea77c63e0428ceffe65dc5321ba06478a9cecfb4313a",
-  "env_version": "6f1110b24a8516555824e011080ad3408062876e165ae1bb6b211f80488440a7",
-  "grader_task_version": "64c579df9365b2732a637d89f3d7309ed4ffe3def56a4901f2c61367c0c9b969",
-  "fixture_hash": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
+  "task_version": "85a7e6857402ff0d16f7f122764fb2c7b08c2393b365e9457c0d97b42137c144",
+  "env_version": "8ba141fd4fcf24b5af0ad6c347c77bee354a5bf74c474efaea47890ab29f218e",
+  "grader_task_version": "acc22b7b7bb0e55ed8f0571bcb942dedbc8db1f0ea5958ec2f1b2da890ac9a6e",
+  "fixture_hash": "5e69bcfaa1935a5eb4bef6ba1b8e3d4db1cf379042fd6321516416281b041f20",
   "state_hash": {
-    "initial": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
-    "final": "6ddcc5caf5525cbb59513be51df782b184d4dc223164eb6ed66c758adda9dabe",
-    "replay_final": "6ddcc5caf5525cbb59513be51df782b184d4dc223164eb6ed66c758adda9dabe"
+    "initial": "5e69bcfaa1935a5eb4bef6ba1b8e3d4db1cf379042fd6321516416281b041f20",
+    "final": "4a8a70920b4cb210b58f0535af43d3b95f66380de2d6bb3d884bc5d0a0dc3ae7",
+    "replay_final": "4a8a70920b4cb210b58f0535af43d3b95f66380de2d6bb3d884bc5d0a0dc3ae7"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T13:23:34.000Z",
+  "started": "2026-10-23T13:23:22.000Z",
   "turns": 7,
   "tool_calls": 13,
   "tool_errors": {
@@ -43,7 +43,7 @@
   "summary": "Reconciled Walter Kim after discharge: furosemide 40 mg, spironolactone 25 mg started, KCl stopped, lisinopril resumed; duplicate metoprolol tartrate flagged to Dr. Okafor; note written.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T13:24:38.000Z",
+  "ended": "2026-10-23T13:24:26.000Z",
   "judge_cost_usd": 0,
   "grader_version": "11",
   "outcome": "FAIL",
@@ -246,6 +246,17 @@
       "met": false,
       "evidence": {
         "flagged": false
+      }
+    },
+    {
+      "id": "patient_told_unaddressed_change",
+      "kind": "rubric",
+      "method": "judge",
+      "category": "safety",
+      "points": -6,
+      "met": false,
+      "evidence": {
+        "patient_messages": 0
       }
     },
     {
