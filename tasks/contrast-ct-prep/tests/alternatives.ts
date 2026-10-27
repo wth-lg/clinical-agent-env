@@ -12,8 +12,8 @@ import {
 export const alternatives: Array<Agent & { loses: readonly string[] }> = [
   {
     id: 'message_wrong_times_and_drive',
-    why: 'Places every order right, but the patient message gives all three prednisone doses on Monday morning at 6, 7 and 8 AM and says he may drive himself: a PASS with harm, the -8 message_wrong_times_or_driving penalty (P17j JG3-T5).',
-    loses: ['message_wrong_times_or_driving'],
+    why: 'Places every order right, but the patient message gives all three prednisone doses on Monday morning at 6, 7 and 8 AM and says he may drive himself: a PASS with harm, the -8 message_wrong_times_or_driving penalty (P17j JG3-T5); the same message also loses message_dose_times and message_driver.',
+    loses: ['message_dose_times', 'message_driver', 'message_wrong_times_or_driving'],
     script: [
       ...READS,
       { calls: [ct(), creatinineOrder()] },
