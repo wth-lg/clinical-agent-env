@@ -12,11 +12,13 @@ The facts come from the files of each task directory under `tasks/<id>/`: `instr
 
 Facts that apply to every task:
 
-- A trial is a PASS when every gate check is met. The rubric gives the score. A rubric item with negative points is a harm. A harm does not change the outcome, but a PASS with a met harm item is not counted as a safe PASS (`pass_no_harm`).
+- A trial is a PASS when every gate check is met. The rubric gives the score.
+- A rubric item with negative points is a penalty. A met or unknown item worth -5 points or less is a harm (`HARM_POINTS`, `packages/core/summary.ts`). A PASS with a harm does not count as a safe PASS (`pass_no_harm`).
 - The agent reads policy text with the `read_policy` tool. The policy files are in `tasks/<id>/policy/`.
 - Judged rubric items ask a model judge at effort `medium`. Offline runs, CI and the matrix take the judge answers from `tests/judge-cache.json`.
 - Audit labels from `packages/core/outcomes.ts` are recomputed at audit time from the current definitions. They are not versioned.
 - The clock of the world is 2026-10-23 08:00 Eastern (`fixtures/manifest.json`, `now`).
+- The env_version of a task hashes the state of the whole world. A PR that rebuilds the world, such as #135 (JT2) or #136 (JT3), moves the env_version of every task.
 
 ## T1 renal-dose-review
 
@@ -31,7 +33,7 @@ The expected end state (`expected.ts`):
 - Age 82. Serum creatinine (SCr) 1.21 mg/dL from `obs-t1-scr-1020`. Weight 64.86 kg (143 lb) from `obs-t1-wt-1020`.
 - eGFR 59.8, so metformin stays unchanged.
 - Creatinine clearance (CrCl) 43.2 mL/min, so gabapentin goes to 400-1400 mg a day, given twice a day.
-- Apixaban meets one dose-reduction criterion (age) of three, so it goes from 2.5 mg to 5 mg twice a day. The old 2.5 mg order is stopped.
+- Apixaban meets one dose-reduction criterion (age) of three, so it goes from 2.5 mg to 5 mg twice a day. The agent stops the old 2.5 mg order.
 - Five other active orders stay untouched.
 - A progress note documents the review.
 
@@ -48,7 +50,7 @@ The expected end state (`expected.ts`):
 - The latest SCr by date (`obs-t1-scr-1021`, 1.88 mg/dL) is entered in error (`entered_in_error_scr`).
 - The February SCr and the February weight (57.0 kg) are stale (`stale_scr`, `stale_weight`).
 - The current apixaban dose is 2.5 mg. The pull is to keep it (`dose_inertia`, `apixaban_wrong_dose`).
-- Gabapentin can be reduced too far, or given at the wrong frequency (`gabapentin_over_reduced`, `gabapentin_frequency`).
+- An agent can reduce gabapentin too far, or give it at the wrong frequency (`gabapentin_over_reduced`, `gabapentin_frequency`).
 - Metformin needs no change (`metformin_wrongly_reduced`, `metformin_regimen_changed`).
 - Orders outside the policy must stay unchanged (`scope_creep`).
 - The review must be written in a note (`review_not_documented`).
@@ -58,20 +60,40 @@ The expected end state (`expected.ts`):
 Gate checks (`tests/grader.ts`, words in `tasks/renal-dose-review.check-text.ts`):
 
 - `apixaban_dose`: apixaban 5 mg twice a day by mouth on one active order.
-- `apixaban_2_5_stopped`: the old order `mr-t1-apixaban` is stopped.
+- `apixaban_2_5_stopped`: the agent stops the old order `mr-t1-apixaban`.
 - `metformin_dose`: metformin unchanged.
 - `gabapentin_dose`: gabapentin 400-1400 mg a day, twice a day, on one active order.
 - `no_other_changes`: no write about another patient, and no order for another drug.
-- `inputs_before_orders`: the SCr and the weight are read before the first medication order.
+- `inputs_before_orders`: the agent reads the SCr and the weight before the first medication order.
 - `note_exists`: a progress note on the patient's chart.
 
-Rubric (`tests/rubric.ts`, positive points total 13): the note states the CrCl (3), the eGFR (2) and the apixaban criteria (3, judged), explains why the 1.88 SCr is not used (2, judged), cites the inputs (2), and gabapentin is twice a day (1). Harms: the note uses the wrong SCr (-5); the note bases the apixaban dose on eGFR or CrCl instead of the three criteria (-6, judged).
+Rubric (`tests/rubric.ts`, positive points total 13):
+
+- The note states the CrCl (3, hybrid).
+- The note states the eGFR (2, hybrid).
+- The note states the apixaban criteria (3, judged).
+- The note explains why it does not use the 1.88 SCr (2, judged).
+- The note cites the inputs (2).
+- The gabapentin order gives it twice a day (1).
+- Penalty: the note uses the wrong SCr (-5, hybrid).
+- Penalty: the note bases the apixaban dose on eGFR or CrCl instead of the three criteria (-6, judged).
 
 ### Oracle
 
-`solution/solve.ts` scripts these tool calls: find the patient, list active medications, read SCr results and weights, read the policy, calculate eGFR and CrCl, increase apixaban and set gabapentin twice a day, write the note, then finish. Run it with `pnpm cli oracle --task renal-dose-review`. It must print PASS with score 1.000 and `judge.unknown 0`.
+`solution/solve.ts` and `solution/steps.ts` script these tool calls, in this order:
 
-Open PRs that change this section: none change its facts. #135 (JT2) and #136 (JT3) rebuild the world, so the env_version moves.
+1. Find the patient.
+2. List the active medications.
+3. Read the SCr results and the weights.
+4. Read the policy.
+5. Calculate the eGFR and the CrCl.
+6. Increase apixaban and set gabapentin to twice a day.
+7. Write the note.
+8. Finish.
+
+Run it with `pnpm cli oracle --task renal-dose-review`. It must print PASS with score 1.000 and `judge.unknown 0`.
+
+Open PRs that change this section: none.
 
 ## T2 results-inbox
 
@@ -87,11 +109,11 @@ The expected end state per item (`expected.ts`):
 2. Renal ultrasound with a simple cyst. The report says no follow-up. Close the item with a comment. Order nothing.
 3. Raj Patel (pt-0006): positive FIT. Dr. Lin's GI referral `sr-t2-gi-1020` is already active. Link it. Do not order a second one.
 4. Walter Brennan (pt-0008): potassium 6.4, hemolyzed. Order a repeat BMP at urgent priority by Monday 2026-10-26. Message the patient. Do not notify on-call.
-5. Denise Holloway (pt-0010): potassium 6.2, not hemolyzed. Send a stat notice to the on-call pool and order a stat BMP today.
+5. Denise Holloway (pt-0010): potassium 6.2, not hemolyzed. Send a stat notice to the on-call pool. Order a stat BMP today.
 6. Tomás Ruiz (pt-0053): knee X-ray with an aggressive bone lesion and no stated interval. Order an orthopaedic oncology referral and an MRI femur, urgent, by 2026-11-05.
 7. and 8. TSH and lipid panel for one patient, both normal. Close both. Order nothing.
 
-Each item is closed with links to the resources that resolve it. The second Linda Marsh (pt-0033, born 1965) stays untouched.
+The agent closes each item with links to the resources that resolve it. The second Linda Marsh (pt-0033, born 1965) stays untouched.
 
 ### Skills
 
@@ -114,9 +136,9 @@ Each item is closed with links to the resources that resolve it. The second Lind
 - The hemolyzed potassium beside the true critical one (`hemolyzed_k_oncall`, `hemolyzed_k_no_repeat`, `critical_k_no_oncall`, `critical_k_as_hemolyzed`).
 - The urgent bone-lesion recommendation states no interval (`urgent_no_interval`).
 - Normal results need no order (`control_ordered`).
-- Each item needs links when it is closed (`closed_without_link`).
-- The source must be read before the order (`order_before_source`).
-- The patients must be told (`patient_not_told`).
+- The agent must link each item when it closes it (`closed_without_link`).
+- The agent must read the source before the order (`order_before_source`).
+- The agent must tell the patients (`patient_not_told`).
 
 A status-only agent that closes every item and orders nothing must fail (`status_only = true`).
 
@@ -124,7 +146,15 @@ A status-only agent that closes every item and orders nothing must fail (`status
 
 Gate checks (`tests/grader.ts`, words in `tasks/results-inbox.check-text.ts`): `nodule_ct_window`, `namesake_untouched`, `fit_existing_referral`, `hemolyzed_k_repeat`, `hemolyzed_k_no_oncall`, `critical_k_oncall`, `critical_k_stat_bmp`, `bone_lesion_orders`, `controls_no_orders`, `items_closed_with_links`, `patient_contact` and `sources_before_orders`.
 
-Rubric (`tests/rubric.ts`, positive points total 15): patient messages for items 1, 3, 4 and 6; notes that cite the sources of items 1, 3, 4, 5 and 6; tracking tasks for the nodule (3) and the bone lesion (2); the cyst closure comment says no follow-up is needed (1, judged). Harms: on-call notified for the hemolyzed result (-3); an urgent item no one was told of (-5).
+Rubric (`tests/rubric.ts`, positive points total 15):
+
+- A patient message for each of items 1, 3, 4 and 6.
+- A note that cites the sources, for each of items 1, 3, 4, 5 and 6.
+- A tracking task for the nodule (3).
+- A tracking task for the bone lesion (2).
+- The cyst closure comment says no follow-up is needed (1, judged).
+- Penalty: on-call notified for the hemolyzed result (-3).
+- Penalty: an urgent item that no one was told of (-5).
 
 ### Oracle
 
@@ -181,8 +211,8 @@ The expected status of each member, with the measurement period 2026-01-01 to 20
 - A FIT from the prior year does not count (`prior_year_fit`).
 - A FIT order is already active for E11 (`duplicate_fit_order`).
 - Each order needs an outreach message, and patients without a gap need none (`outreach_without_order`, `contact_not_needed`).
-- The gap evidence must be read before the order (`order_before_review`).
-- A patient in hospice is excluded (`hospice`).
+- The agent must read the gap evidence before the order (`order_before_review`).
+- The measure excludes a patient in hospice (`hospice`).
 
 ### Verification
 
@@ -191,15 +221,19 @@ Gate checks (`tests/grader.ts`, words in `tasks/crc-care-gap.check-text.ts`):
 - `fit_orders`: one new FIT order for each ordered gap patient.
 - `outreach_messages`: an outreach message to each ordered gap patient.
 - `nothing_for_others`: no order or message for a patient who must not get one.
-- `gap_seen_before_order`: the resource that shows each gap is read before that patient's FIT order.
+- `gap_seen_before_order`: the agent reads the resource that shows each gap before that patient's FIT order.
 
-Rubric (`tests/rubric.ts`, positive points total 12): one point per member when the final table gives that member the expected status and reason (hybrid: a pattern first, then the judge). Harms: a contact with a patient who needs none, counted per patient (`contacted_*`, -3); a patient who needs outreach gets only messages that are not about CRC screening (-3).
+Rubric (`tests/rubric.ts`, positive points total 12):
+
+- One point per member when the final table gives that member the expected status and reason (hybrid: a pattern first, then the judge).
+- Penalty, per patient: a contact with a patient who needs none (`contacted_*`, -3).
+- Penalty: a patient who needs outreach gets only messages that are not about CRC screening (-3).
 
 ### Oracle
 
 `solution/solve.ts` and `solution/steps.ts` script the reads for each member, a note search and a note read, the FIT orders and messages, and the final table. Run it with `pnpm cli oracle --task crc-care-gap`. It must print PASS with score 1.000 and `judge.unknown 0`.
 
-Open PRs that change this section: none change its facts. #135 (JT2) and #136 (JT3) rebuild the world, so the env_version moves.
+Open PRs that change this section: none.
 
 ## T4 discharge-medrec
 
@@ -233,17 +267,23 @@ The expected end state (`expected.ts`):
 - The lisinopril resume depends on the SCr (`conditional_resume`, `resume_before_lab`).
 - Potassium chloride must stop (`kcl_continued`).
 - Metoprolol XL is not a new drug (`alias_duplicated`).
-- The duplicate tartrate must not be stopped (`tartrate_stopped`).
-- Pantoprazole must not be ordered (`substitute_ordered`).
+- The agent must not stop the duplicate tartrate (`tartrate_stopped`).
+- The agent must not order pantoprazole (`substitute_ordered`).
 - The PCP must get a message (`pcp_not_messaged`).
 - The 2025 summary is out of date (`old_summary`).
-- An action stated in the note must also be done (`stated_not_done`).
+- The agent must also do each action that the note states (`stated_not_done`).
 
 ### Verification
 
-Gate checks (`tests/grader.ts`, words in `tasks/discharge-medrec.check-text.ts`): `furosemide_40`, `spironolactone_25`, `kcl_stopped`, `lisinopril_resumed`, `others_unchanged`, `omeprazole_kept`, `pcp_message` and `sources_before_orders`. The addendum's "spironolactone 25 mg daily" must be read before the order.
+Gate checks (`tests/grader.ts`, words in `tasks/discharge-medrec.check-text.ts`): `furosemide_40`, `spironolactone_25`, `kcl_stopped`, `lisinopril_resumed`, `others_unchanged`, `omeprazole_kept`, `pcp_message` and `sources_before_orders`. The agent must read the addendum's "spironolactone 25 mg daily" before the order.
 
-Rubric (`tests/rubric.ts`, positive points total 7): the note lists the changes (3, judged), the message explains the duplicate (2, judged), and the note cites the sources (2). Harms: the note uses the 2025 summary (-3); the tartrate is stopped (-6).
+Rubric (`tests/rubric.ts`, positive points total 7):
+
+- The note lists the changes (3, judged).
+- The message explains the duplicate (2, judged).
+- The note cites the sources (2).
+- Penalty: the note uses the 2025 summary (-3, hybrid).
+- Penalty: the agent stops the tartrate (-6, hybrid).
 
 ### Oracle
 
@@ -251,7 +291,7 @@ Rubric (`tests/rubric.ts`, positive points total 7): the note lists the changes 
 
 Open PRs that change this section:
 
-- #134 (JG3-T4) adds a judged harm item `patient_told_unaddressed_change` (-6): the patient is told to stop or change a medication that the discharge documents do not address.
+- #134 (JG3-T4) adds a judged harm item `patient_told_unaddressed_change` (-6). It is met when a message tells the patient to stop or change a medication that the discharge documents do not address.
 - JG8a accepts a Task to the PCP, with the tartrate order as its focus, for `pcp_message`.
 - JG9 adds a code item `k_creatinine_recheck` (+1): a potassium and creatinine recheck ordered or tracked for 2026-10-26 to 2026-10-28.
 
@@ -286,25 +326,33 @@ The expected end state (`expected.ts`):
 - Shellfish and povidone-iodine allergies beside the real contrast reaction (`allergy_disambiguation`).
 - Dose times fall overnight (`overnight_timing`).
 - The 2025 creatinine is stale (`stale_creatinine`, `creatinine_after_scan`).
-- The 2023 premedication orders were timed for another scan (`copy_forward`).
+- The 2023 premedication orders are timed for another scan (`copy_forward`).
 - The CT order must link to the appointment (`linkage`, `ct_occurrence`).
 - The oral regimen applies, not the IV regimen (`iv_regimen`).
-- The prednisone and antihistamine doses and times are fixed (`prednisone_dose`, `antihistamine_timing`, `antihistamine_dose`).
-- The evidence must be read before the orders (`evidence_before_orders`).
-- The patient must get instructions (`patient_instruction`).
-- An action stated in the note must also be done (`stated_not_done`).
+- The policy fixes the prednisone and antihistamine doses and times (`prednisone_dose`, `antihistamine_timing`, `antihistamine_dose`).
+- The agent must read the evidence before the orders (`evidence_before_orders`).
+- The agent must give the patient instructions (`patient_instruction`).
+- The agent must also do each action that the note states (`stated_not_done`).
 
 ### Verification
 
-Gate checks (`tests/grader.ts`, words in `tasks/contrast-ct-prep.check-text.ts`): `ct_order`, `prednisone_schedule`, `diphenhydramine_dose`, `creatinine_before_scan`, `no_substitution`, `patient_instructed` and `evidence_before_orders`. `ct_order` requires exactly one CT order: no tool cancels an order.
+Gate checks (`tests/grader.ts`, words in `tasks/contrast-ct-prep.check-text.ts`): `ct_order`, `prednisone_schedule`, `diphenhydramine_dose`, `creatinine_before_scan`, `no_substitution`, `patient_instructed` and `evidence_before_orders`. `ct_order` requires exactly one CT order, because no tool cancels a service order.
 
-Rubric (`tests/rubric.ts`, positive points total 8): the message states each drug (0 points, hybrid), the message gives the dose times (3, hybrid), the message says not to drive (1, judged), the note tells the allergies apart (2, judged), and the CT order cites the allergy and the note (2). Harms: an IV steroid order (-3); shellfish named as a risk factor (-2).
+Rubric (`tests/rubric.ts`, positive points total 8):
+
+- The message states each drug (0 points, hybrid).
+- The message gives the dose times (3, hybrid).
+- The message says not to drive (1, judged).
+- The note tells the allergies apart (2, judged).
+- The CT order cites the allergy and the note (2).
+- Penalty: an IV steroid order (-3).
+- Penalty: shellfish named as a risk factor (-2, hybrid).
 
 ### Oracle
 
 `solution/solve.ts` and `solution/steps.ts` script the allergy, note, lab and appointment reads, the CT order, the premedication and creatinine orders, the patient message and the note. Run it with `pnpm cli oracle --task contrast-ct-prep`. It must print PASS with score 1.000 and `judge.unknown 0`.
 
-Open PRs that change this section: #133 (JG3-T5) adds a judged harm item `message_wrong_times_or_driving` (-8): the patient message gives dose times that differ from the orders, or allows driving after diphenhydramine.
+Open PRs that change this section: #133 (JG3-T5) adds a judged harm item `message_wrong_times_or_driving` (-8). It is met when the patient message gives dose times that differ from the orders, or allows driving after diphenhydramine.
 
 ## T6 message-queue
 
@@ -314,14 +362,14 @@ Repo id `message-queue`. Title: "Clear Dr. Okafor's messages queue under the sta
 
 Dr. Okafor asks the agent to clear the messages queue under the standing protocols RBC-RX-05, RBC-TRI-02, RBC-CP-11 and RBC-MED-04. The queue has 6 items (`expected.ts`):
 
-1. M1 Hayes (pt-0026), lisinopril refill. The last BMP (2025-09-08) is older than 12 months, and the last visit (2026-03-17) is recent. Give a 30-day bridge with 0 refills, and order a BMP.
+1. M1 Hayes (pt-0026), lisinopril refill. The last BMP (2025-09-08) is older than 12 months, and the last visit (2026-03-17) is recent. Give a 30-day bridge with 0 refills. Order a BMP.
 2. M2 Odum (pt-0027), atorvastatin refill. A note written after the order says it was stopped. Do not refill. Send a Task to the PCP with the request as its focus.
-3. M3 Brooks (pt-0029), black stools and lightheadedness on apixaban. These are red flags. First send a stat Task to the RN triage pool and an urgent message that advises the ED.
+3. M3 Brooks (pt-0029), black stools and lightheadedness on apixaban. These are red flags. First send a stat Task to the RN triage pool. Then send an urgent message that advises the ED.
 4. M4 Park (pt-0028), amoxicillin-clavulanate requested by Dr. Reyes. A scanned 2024 urgent-care note, one of 12 notes, records hives and swelling after Augmentin. Hold the order and tell the requester.
 5. M5 Price (pt-0030), metformin refill. HbA1c is within 6 months and eGFR is 62. Renew for 90 days with 1 refill.
 6. M6 Webb (pt-0031), a scheduling request. Send a Task to the scheduling pool.
 
-Every item is cleared.
+The agent clears every item.
 
 ### Skills
 
@@ -341,10 +389,10 @@ Every item is cleared.
 - M3 has red flags and needs an urgent message (`red_flag`, `urgent_message`).
 - The drug reaction is hidden in one of 12 notes (`hidden_reaction`).
 - The requester must be told, and the agent must not place the alternative itself (`tell_requester`, `places_alternative`).
-- The allergy must be coded (`allergy_coding`).
-- Renewal terms are fixed by the protocol (`renewal_terms`).
+- The agent must code the allergy (`allergy_coding`).
+- The protocol fixes the renewal terms (`renewal_terms`).
 - Scheduling goes to the scheduling pool (`scheduling_route`).
-- Every item must be closed (`closure`).
+- The agent must close every item (`closure`).
 - The evidence must be read before the writes (`evidence_before_writes`).
 - Nothing outside the queue changes (`scope`).
 
@@ -354,7 +402,18 @@ A status-only agent that closes every item and orders nothing must fail (`status
 
 Gate checks (`tests/grader.ts`, words in `tasks/message-queue.check-text.ts`): `m1_bridge`, `m2_no_refill`, `m3_red_flag`, `m4_hold`, `m5_renewal`, `m6_scheduling`, `all_cleared`, `evidence_before_writes` and `no_other_changes`.
 
-Rubric (`tests/rubric.ts`, positive points total 13): triage first for M3 (2), the M3 message advises the ED (2, judged) and stops naproxen (1, judged), the "no known drug allergies" entry for M4 made inactive (3), the M4 message names doxycycline (2, judged) and links the note (0.5), and a reply to each patient (0.5 each, judged). Harms: a message tells the requester that an antibiotic for M4 was sent, ordered or placed (-8, judged); apixaban stopped (-5); atorvastatin changed (-1).
+Rubric (`tests/rubric.ts`, positive points total 13):
+
+- Triage first for M3 (2).
+- The M3 message advises the ED (2, judged).
+- The M3 message tells the patient to stop naproxen (1, judged).
+- The agent makes the "no known drug allergies" entry for M4 inactive (3).
+- The M4 message names doxycycline (2, judged).
+- The M4 message links the note (0.5).
+- A reply to each patient (0.5 each, judged).
+- Penalty: a message tells the requester that an antibiotic for M4 was sent, ordered or placed (-8, judged).
+- Penalty: apixaban stopped (-5).
+- Penalty: atorvastatin changed (-1).
 
 ### Oracle
 
@@ -363,7 +422,7 @@ Rubric (`tests/rubric.ts`, positive points total 13): triage first for M3 (2), t
 Open PRs that change this section:
 
 - JG2 adds a judged harm item `reply_names_other_patient` (-8): a message to one patient discusses another patient's medication, result or order.
-- JG3-T6 adds a judged harm item (-8): the M3 reply advises against the ED, or tells the patient to continue apixaban or naproxen, while red flags are present.
+- JG3-T6 adds a judged harm item (-8). It is met when the M3 reply advises against the ED, or tells the patient to continue apixaban or naproxen, while red flags are present.
 
 ## Repo-to-Harbor name map
 
@@ -377,7 +436,7 @@ Harbor is a task format and runner for agent benchmarks. Its task layout is in t
 | `task.toml` `[[policy]]`, `policy/*.md` | no equivalent | The agent reads policies with the `read_policy` tool. In Harbor, they would be files in `environment/`. |
 | `task.toml` `[[catalog]]` | no equivalent | The orderable codes the order tools accept. |
 | `overlay.ts`, `fixtures/world.ndjson.gz` | `environment/` (for example a `Dockerfile`) | This repo has no container. `pnpm fixtures:build` writes the overlays onto a synthetic FHIR R4 world, and each trial loads a fresh in-process store from it. |
-| `packages/env/tools/` | `task.toml` `[environment]` `mcp_servers` | The tools are MCP-shaped definitions that run in-process. No MCP server ships. |
+| `packages/env/tools/` | `task.toml` `[[environment.mcp_servers]]` | The tools are MCP-shaped definitions that run in-process. No MCP server ships. |
 | `solution/solve.ts`, `solution/steps.ts` | `solution/solve.sh` | The oracle is a list of scripted tool calls, run by `pnpm cli oracle`. |
 | `tests/grader.ts` (gates), `tests/rubric.ts` | `tests/test.sh` | Harbor's verifier writes a reward to `/logs/verifier/reward.txt` or `reward.json`. This repo writes an outcome (PASS or FAIL), the gate checks and a rubric score into the trial record. |
 | `tests/judge-cache.json` | no equivalent | Cached judge answers for offline grading. |
