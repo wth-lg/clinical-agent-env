@@ -42,7 +42,7 @@ const CHECK_TEXT = import.meta.glob<CheckText>('../../../../tasks/*.check-text.t
 // A task's check text, or null when it has none (a test task).
 export const checkTextOf = (task: string): CheckText | null => CHECK_TEXT[`../../../../tasks/${task}.check-text.ts`] ?? null;
 
-export type TrialRecord = ExplainRecord & { task_id: string; index?: number; trajectory?: string; env_version?: string | null; grader_version?: string | null; cost_usd: number; judge_cost_usd?: number | null; score?: number | null };
+export type TrialRecord = ExplainRecord & { task_id: string; index?: number; effort?: string | null; trajectory?: string; env_version?: string | null; grader_version?: string | null; cost_usd: number; judge_cost_usd?: number | null; score?: number | null };
 
 export interface Trial {
   name: string;

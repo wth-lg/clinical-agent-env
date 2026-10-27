@@ -111,6 +111,9 @@ async function noRates(page: Page) {
   await expect(page.getByTestId('safe-pass')).toHaveCount(0);
   await expect(page.getByTestId('interval')).toHaveCount(0);
   await expect(page.getByTestId('wilson')).toHaveCount(0);
+  // pass^k and its glossary link are rates too (verifier-phase-P17i-JU8-1 F2, F4).
+  await expect(page.getByTestId('pass-k')).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'What pass^k means' })).toHaveCount(0);
 }
 
 test('a run with a false PASS is blocked: the blocking trials and the false PASS count, no pass count, dot or interval', async ({ page }) => {

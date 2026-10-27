@@ -118,11 +118,11 @@ function Charts({ run, blocked }: { run: RunData; blocked: boolean }) {
     <>
       {blocked ? (
         <Card title="Pass rate and 95% interval (Wilson)">
-          <ModelLine summary={summary} />
+          <ModelLine run={run} />
           <p data-testid="interval-held" className="mt-2 text-ink-muted">This run is blocked, so it has no pass rate to show. The notice above names the trials that block it.</p>
         </Card>
       ) : <Card title="Pass rate and 95% interval (Wilson)">
-        <ModelLine summary={summary} />
+        <ModelLine run={run} />
         <ul className="mt-2 space-y-2" data-testid="interval-chart">
           {tasks.map(([id, t]) => (
             <li key={id} className="grid grid-cols-1 items-center gap-x-3 sm:grid-cols-[12rem_1fr_9rem]">

@@ -1,7 +1,9 @@
 // pass^k and the run's model on screen (plan P17j JU8): pass^3 and pass^5 of a task from
 // summary.json's pass_k (packages/core/summary.ts passK), and the model and effort the run's
 // records share.
-import type { Summary, TaskSummary } from '../../../../packages/core/summary.ts';
+import type { TaskSummary } from '../../../../packages/core/summary.ts';
+import { modelLine } from '../data/model.ts';
+import type { RunData } from '../data/results.ts';
 import { GlossaryLink } from '../data/ui.tsx';
 
 const shown = [3, 5] as const;
@@ -23,7 +25,7 @@ export function PassK({ task, k }: { task: string; k: TaskSummary['pass_k'] }) {
 
 export const PassKLink = () => <GlossaryLink anchor="pass-k">What pass^k means</GlossaryLink>;
 
-// "Model claude-opus-5-5, effort high"; when the records differ, it says so.
-export function ModelLine({ summary }: { summary: Pick<Summary, 'model' | 'effort'> }) {
-  return <p data-testid="model-line" className="text-sm text-ink">Model {summary.model ?? '(the trials differ)'}, effort {summary.effort ?? '(the trials differ)'}</p>;
+// "Model claude-opus-5-5, effort high"; when the records differ, or none records it, it says so.
+export function ModelLine({ run }: { run: RunData }) {
+  return <p data-testid="model-line" className="text-sm text-ink">{modelLine(run.summary!, run.trials)}</p>;
 }

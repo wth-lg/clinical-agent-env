@@ -63,7 +63,7 @@ function OfficialOverview({ run, headingRef, localRun }: { run: RunData; heading
     >
       {block !== null && <RunBlocked block={block} runId={runId} />}
       <IntroCard localRun={localRun} />
-      <ModelLine summary={summary!} />
+      <ModelLine run={run} />
       {problems > 0 && (
         <Notice testId="data-warning">
           {run.bad.length > 0 && `${run.bad.length} trial record${run.bad.length === 1 ? '' : 's'} cannot be read; Runs shows which. `}
@@ -100,7 +100,7 @@ function OfficialOverview({ run, headingRef, localRun }: { run: RunData; heading
         ))}
       </ul>
       <MarkLegend />
-      <p className="text-xs text-ink-muted">Each task links to its trials in Runs. <PassKLink /></p>
+      <p className="text-xs text-ink-muted">Each task links to its trials in Runs.{block === null && <> <PassKLink /></>}</p>
       <Card title="Who is at fault, all tasks">
         <FaultBox task="all" fcs={Object.values(summary!.tasks).map((x) => x.fault_counts)} explanations={trials.map((x) => x.explanation)} />
         <p className="mt-1 text-xs text-ink-muted">Findings shows this for each task, with the checks that failed.</p>
