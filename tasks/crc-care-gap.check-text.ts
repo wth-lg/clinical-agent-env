@@ -32,7 +32,7 @@ export const checkText: CheckText = {
   },
   outreach_messages: {
     requires: 'a message to each patient who gets a FIT order',
-    found: (ev) => `no message to ${who(items(ev.missing)[0])}`,
+    found: (ev) => (items(ev.tasked_instead).length > 0 ? `outreach assigned to a phone staff pool for the FIT order instead of a patient message, for ${who(items(ev.tasked_instead)[0])}` : `no message to ${who(items(ev.missing)[0])}`),
   },
   nothing_for_others: {
     requires: 'no order or message for a panel member who needs none, and no write about a patient outside the panel',
