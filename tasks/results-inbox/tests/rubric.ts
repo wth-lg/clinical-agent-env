@@ -140,18 +140,24 @@ const CYST_CRITERION =
   'The text, a comment closing a renal ultrasound result, says that no follow-up (no further imaging) is needed for the finding.';
 
 // P17j JG9 (pre-audit M4): item 5's true hyperkalaemia came 16 days after lisinopril was started
-// in CKD 3b. Credit, never a gate, for addressing the ACE inhibitor: the trial holds or ends a
-// lisinopril order of hers, or its notice to a clinician or a staff pool about her (a message or a
-// Task) names lisinopril or an ACE inhibitor, so whoever takes item 5 sees the likely cause.
+// in CKD 3b. Credit, never a gate, for addressing the ACE inhibitor: the trial holds or ends her
+// lisinopril and leaves no active or draft lisinopril order, or its notice to a clinician or a
+// staff pool about her (a message or a Task) names lisinopril or an ACE inhibitor without saying
+// to continue, keep, resume or leave it unchanged. A lisinopril order the trial leaves active (a
+// dose increase) earns nothing (JG9 r2, verifier-phase-P17i-JG9-1 F2, F5).
 const ACE_INHIBITOR = /\b(?:lisinopril|ace[- ]inhibitors?|acei|ace-i)\b/i;
-const ENDED_OR_HELD = ['on-hold', 'stopped', 'cancelled', 'entered-in-error'];
+const KEEPS_IT = /\b(?:continue|continuing|keep|resume|resuming|unchanged)\b/i;
+const ENDED_OR_HELD = ['on-hold', 'stopped', 'cancelled', 'completed', 'entered-in-error'];
+const LIVE = ['active', 'draft'];
 function aceInhibitorAddressed(ctx: RubricCtx) {
   const p = I.critical_k.patient;
   const mine = new Set(ctx.writes());
-  const held = (ctx.final.all('MedicationRequest') as Res[])
-    .filter((m) => mine.has(keyOf(m)) && (m.subject as { reference?: string } | undefined)?.reference === p && ENDED_OR_HELD.includes(m.status as string))
-    .filter((m) => isDrug(m.medicationCodeableConcept as Parameters<typeof isDrug>[0], { ingredient: 'lisinopril' }))
-    .map(keyOf);
+  const lisinopril = (ctx.final.all('MedicationRequest') as Res[])
+    .filter((m) => (m.subject as { reference?: string } | undefined)?.reference === p)
+    .filter((m) => isDrug(m.medicationCodeableConcept as Parameters<typeof isDrug>[0], { ingredient: 'lisinopril' }));
+  const live = lisinopril.filter((m) => LIVE.includes(m.status as string)).map(keyOf);
+  const escalated = live.filter((k) => mine.has(k));
+  const held = live.length === 0 ? lisinopril.filter((m) => mine.has(keyOf(m)) && ENDED_OR_HELD.includes(m.status as string)).map(keyOf) : [];
   const textOf = (r: Res) => [(r.topic as { text?: string } | undefined)?.text, ...((r.payload as Array<{ contentString?: string }> | undefined) ?? []).map((q) => q.contentString), r.description as string | undefined].filter(Boolean).join('\n');
   const names = namesPatient(ctx, p);
   const toStaff = madeOf(ctx, 'Communication').filter((c) => {
@@ -159,8 +165,8 @@ function aceInhibitorAddressed(ctx: RubricCtx) {
     return to.some((r) => r.startsWith('Practitioner/') || r.startsWith('Group/')) && ((c.subject as { reference?: string } | undefined)?.reference === p || names(c as Made));
   });
   const tasks = madeOf(ctx, 'Task').filter((t) => (t.for as { reference?: string } | undefined)?.reference === p);
-  const told = [...toStaff, ...tasks].filter((r) => ACE_INHIBITOR.test(textOf(r))).map(keyOf);
-  return { met: held.length > 0 || told.length > 0, evidence: { held, told } };
+  const told = [...toStaff, ...tasks].filter((r) => ACE_INHIBITOR.test(textOf(r)) && !KEEPS_IT.test(textOf(r))).map(keyOf);
+  return { met: escalated.length === 0 && (held.length > 0 || told.length > 0), evidence: { held, told, live_lisinopril: live, escalated } };
 }
 
 export const rubric: Check[] = [

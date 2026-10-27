@@ -79,29 +79,30 @@ export const OLD_SUMMARY = new RegExp(
 
 // P17j JG9 (pre-audit M4): credit, never a gate, for a potassium and creatinine recheck ordered or
 // tracked for 2026-10-26 to 2026-10-28, a week after spironolactone is started with lisinopril
-// resumed: a BMP or CMP order, or a creatinine order, whose occurrence meets the window (T4's
-// catalog has the BMP and creatinine; decisions 2026-10-28T02:40Z), or a Task for the patient due
-// in it that names the recheck.
+// resumed: an order that measures potassium (a BMP, a CMP or a potassium) whose window starts in
+// those days, or a Task for the patient due in them that names a lab recheck and not the
+// potassium chloride. Creatinine alone does not measure the potassium the recheck is for (JG9 r2,
+// decisions 2026-10-28T05:30Z, verifier-phase-P17i-JG9-1 F3, F4).
 const RECHECK = { from: '2026-10-26', to: '2026-10-28' };
-const PANELS = ['24321-2', '51990-0', '24323-8'];
-const RECHECK_TEXT = /\b(?:potassium|creatinine|metabolic panel|bmp|cmp)\b/i;
+const WITH_POTASSIUM = ['24321-2', '51990-0', '24323-8', '2823-3', '6298-4'];
+const RECHECK_TEXT = /\b(?:bmp|cmp|metabolic panel|labs?|recheck|re-check|potassium level|creatinine)\b/i;
+const POTASSIUM_CHLORIDE = /\bpotassium chloride\b|\bkcl\b/i;
 function kCreatinineRecheck(ctx: RubricCtx) {
   const mine = new Set(ctx.writes());
   type Order = { resourceType: string; id?: string; subject?: { reference?: string }; code?: { coding?: Array<{ code?: string }> }; occurrenceDateTime?: string; occurrencePeriod?: { start?: string; end?: string } };
-  const meets = (start?: string, end?: string) => {
-    const a = start ? clinicDate(start) : null;
-    const b = end ? clinicDate(end) : a;
-    return a !== null && b !== null && a <= RECHECK.to && b >= RECHECK.from;
+  const inWindow = (at?: string) => {
+    const d = at ? clinicDate(at) : null;
+    return d !== null && d >= RECHECK.from && d <= RECHECK.to;
   };
   const orders = ctx.final.all('ServiceRequest').map((r) => r as Order).filter((r) => mine.has(`ServiceRequest/${r.id}`) && !ctx.initial.has('ServiceRequest', r.id!) && r.subject?.reference === PT)
-    .filter((r) => meets(r.occurrencePeriod?.start ?? r.occurrenceDateTime, r.occurrencePeriod?.end ?? r.occurrenceDateTime));
-  const codes = new Set(orders.flatMap((r) => (r.code?.coding ?? []).map((c) => c.code ?? '')));
-  const ordered = PANELS.some((c) => codes.has(c)) || codes.has('2160-0');
+    .filter((r) => inWindow(r.occurrencePeriod?.start ?? r.occurrenceDateTime))
+    .filter((r) => (r.code?.coding ?? []).some((c) => WITH_POTASSIUM.includes(c.code ?? '')));
   const tracked = tasksBy(ctx).filter((t) => {
     const due = (t as Made & { restriction?: { period?: { end?: string } } }).restriction?.period?.end;
-    return due !== undefined && meets(due, due) && RECHECK_TEXT.test(t.description ?? '');
+    const d = t.description ?? '';
+    return inWindow(due) && RECHECK_TEXT.test(d) && !POTASSIUM_CHLORIDE.test(d);
   });
-  return { met: ordered || tracked.length > 0, evidence: { orders: orders.map((r) => `ServiceRequest/${r.id}`), tracked: tracked.map((t) => `Task/${t.id}`), window: RECHECK } };
+  return { met: orders.length > 0 || tracked.length > 0, evidence: { orders: orders.map((r) => `ServiceRequest/${r.id}`), tracked: tracked.map((t) => `Task/${t.id}`), window: RECHECK } };
 }
 
 export const rubric: Check[] = [
