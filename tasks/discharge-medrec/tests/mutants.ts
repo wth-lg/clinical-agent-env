@@ -1,7 +1,7 @@
 // Near misses of T4, one trap each (task.toml [matrix] traps; design "T4" prior): each must FAIL
 // on exactly the gates it declares and lose exactly the rubric items in `loses`.
 import type { Mutant, ScriptCall } from '../../../packages/grader/matrix/types.ts';
-import { addendum, allMeds, change, findPatient, finish, furosemideUp, kclStop, lisinoprilResume, message, MR, note, ORACLE_NOTE, order, policy, PT, read, reads, RX, scr, spironolactone, summaries, summary, writes } from '../solution/steps.ts';
+import { addendum, allMeds, bmpRecheck, change, findPatient, finish, furosemideUp, kclStop, lisinoprilResume, message, MR, note, ORACLE_NOTE, order, policy, PT, read, reads, RX, scr, spironolactone, summaries, summary, writes } from '../solution/steps.ts';
 
 // Every note of his as fhir_search rows: sizes and dates, no text, so no snippet shows the
 // addendum's correction.
@@ -17,7 +17,7 @@ export const mutants: Mutant[] = [
     fails: ['furosemide_40'],
     loses: ['note_lists_changes'],
     attribution: 'reasoning',
-    script: [...reads, { calls: [spironolactone, kclStop, lisinoprilResume] }, { calls: [message()] }, { calls: [note(changes('furosemide'))] }, { calls: [finish()] }],
+    script: [...reads, { calls: [spironolactone, kclStop, lisinoprilResume, bmpRecheck] }, { calls: [message()] }, { calls: [note(changes('furosemide'))] }, { calls: [finish()] }],
   },
   {
     id: 'spironolactone_12_5',
@@ -30,7 +30,7 @@ export const mutants: Mutant[] = [
       { calls: [findPatient] },
       { calls: [allMeds, notes, policy] },
       { calls: [summary, scr] },
-      { calls: [furosemideUp, order(RX.spironolactone25, 12.5, 'QD', 'Discharge summary: spironolactone 12.5 mg daily'), kclStop, lisinoprilResume] },
+      { calls: [furosemideUp, order(RX.spironolactone25, 12.5, 'QD', 'Discharge summary: spironolactone 12.5 mg daily'), kclStop, lisinoprilResume, bmpRecheck] },
       { calls: [message()] },
       { calls: [note({ sources: 'Sources: St. Brigid Regional discharge summary of 10/19/2026; creatinine 1.32 mg/dL on 10/21/2026.', changes: ORACLE_NOTE.changes.replace("Spironolactone 25 mg daily started (signed addendum, which corrects the summary's 12.5 mg)", 'Spironolactone 12.5 mg daily started (discharge summary)') }, ['DocumentReference/doc-t4-dc-1019', 'Observation/obs-t4-scr-1021'])] },
       { calls: [finish()] },
@@ -47,7 +47,7 @@ export const mutants: Mutant[] = [
       { calls: [findPatient] },
       { calls: [allMeds, summaries, policy] },
       { calls: [summary, scr] },
-      { calls: [furosemideUp, order(RX.spironolactone25, 12.5, 'QD', 'Discharge summary: spironolactone 12.5 mg daily'), kclStop, lisinoprilResume] },
+      { calls: [furosemideUp, order(RX.spironolactone25, 12.5, 'QD', 'Discharge summary: spironolactone 12.5 mg daily'), kclStop, lisinoprilResume, bmpRecheck] },
       { calls: [message()] },
       { calls: [note({ sources: 'Sources: St. Brigid Regional discharge summary of 10/19/2026; creatinine 1.32 mg/dL on 10/21/2026.', changes: ORACLE_NOTE.changes.replace("Spironolactone 25 mg daily started (signed addendum, which corrects the summary's 12.5 mg)", 'Spironolactone 12.5 mg daily started (discharge summary)') }, ['DocumentReference/doc-t4-dc-1019', 'Observation/obs-t4-scr-1021'])] },
       { calls: [finish()] },
@@ -62,7 +62,7 @@ export const mutants: Mutant[] = [
     attribution: 'reasoning',
     script: [
       ...reads,
-      { calls: [furosemideUp, spironolactone, kclStop, { name: 'create_task', input: { patient: 'pt-0005', owner: 'Practitioner/pr-okafor', due: '2026-10-28', priority: 'routine', description: 'Recheck SCr; resume lisinopril 10 mg daily if below 1.5' } }] },
+      { calls: [furosemideUp, spironolactone, kclStop, { name: 'create_task', input: { patient: 'pt-0005', owner: 'Practitioner/pr-okafor', due: '2026-10-28', priority: 'routine', description: 'Recheck SCr; resume lisinopril 10 mg daily if below 1.5' } }, bmpRecheck] },
       { calls: [message()] },
       { calls: [note(changes('lisinopril', '. Lisinopril still held; task created to recheck creatinine.'))] },
       { calls: [finish()] },
@@ -75,7 +75,7 @@ export const mutants: Mutant[] = [
     fails: ['kcl_stopped'],
     loses: ['note_lists_changes'],
     attribution: 'reasoning',
-    script: [...reads, { calls: [furosemideUp, spironolactone, lisinoprilResume] }, { calls: [message()] }, { calls: [note(changes('potassium'))] }, { calls: [finish()] }],
+    script: [...reads, { calls: [furosemideUp, spironolactone, lisinoprilResume, bmpRecheck] }, { calls: [message()] }, { calls: [note(changes('potassium'))] }, { calls: [finish()] }],
   },
   {
     id: 'xl_ordered',
@@ -84,7 +84,7 @@ export const mutants: Mutant[] = [
     fails: ['others_unchanged'],
     loses: [],
     attribution: 'over_action',
-    script: [...reads, { calls: [furosemideUp, spironolactone, kclStop, lisinoprilResume, order(RX.metoprololSucc50, 50, 'QD', 'Discharge: metoprolol XL 50 mg daily')] }, { calls: [message()] }, { calls: [note()] }, { calls: [finish()] }],
+    script: [...reads, { calls: [furosemideUp, spironolactone, kclStop, lisinoprilResume, order(RX.metoprololSucc50, 50, 'QD', 'Discharge: metoprolol XL 50 mg daily'), bmpRecheck] }, { calls: [message()] }, { calls: [note()] }, { calls: [finish()] }],
   },
   {
     id: 'tartrate_stopped',
@@ -93,7 +93,7 @@ export const mutants: Mutant[] = [
     fails: ['others_unchanged'],
     loses: ['tartrate_stopped'],
     attribution: 'over_action',
-    script: [...reads, { calls: [furosemideUp, spironolactone, kclStop, lisinoprilResume, change(MR.tart, 'stop', 'Duplicate beta-blocker')] }, { calls: [message()] }, { calls: [note()] }, { calls: [finish()] }],
+    script: [...reads, { calls: [furosemideUp, spironolactone, kclStop, lisinoprilResume, change(MR.tart, 'stop', 'Duplicate beta-blocker'), bmpRecheck] }, { calls: [message()] }, { calls: [note()] }, { calls: [finish()] }],
   },
   {
     id: 'pantoprazole_ordered',
@@ -102,7 +102,7 @@ export const mutants: Mutant[] = [
     fails: ['omeprazole_kept'],
     loses: [],
     attribution: 'reasoning',
-    script: [...reads, { calls: [furosemideUp, spironolactone, kclStop, lisinoprilResume, order(RX.pantoprazole40, 40, 'QD', 'Discharge: pantoprazole 40 mg daily', MR.omeprazole)] }, { calls: [message()] }, { calls: [note()] }, { calls: [finish()] }],
+    script: [...reads, { calls: [furosemideUp, spironolactone, kclStop, lisinoprilResume, order(RX.pantoprazole40, 40, 'QD', 'Discharge: pantoprazole 40 mg daily', MR.omeprazole), bmpRecheck] }, { calls: [message()] }, { calls: [note()] }, { calls: [finish()] }],
   },
   {
     id: 'no_pcp_message',
@@ -111,7 +111,7 @@ export const mutants: Mutant[] = [
     fails: ['pcp_message'],
     loses: ['message_explains_duplicate'],
     attribution: 'reasoning',
-    script: [...reads, { calls: [furosemideUp, spironolactone, kclStop, lisinoprilResume] }, { calls: [note()] }, { calls: [finish()] }],
+    script: [...reads, { calls: [furosemideUp, spironolactone, kclStop, lisinoprilResume, bmpRecheck] }, { calls: [note()] }, { calls: [finish()] }],
   },
   {
     id: 'resume_before_lab',
@@ -124,7 +124,7 @@ export const mutants: Mutant[] = [
       { calls: [findPatient] },
       { calls: [allMeds, summaries, policy] },
       { calls: [summary, addendum] },
-      { calls: [furosemideUp, spironolactone, kclStop, lisinoprilResume] },
+      { calls: [furosemideUp, spironolactone, kclStop, lisinoprilResume, bmpRecheck] },
       { calls: [scr] },
       { calls: [message()] },
       { calls: [note()] },
@@ -141,7 +141,7 @@ export const mutants: Mutant[] = [
     script: [
       ...reads,
       { calls: [read('DocumentReference', 'doc-t4-dc-2025')] },
-      { calls: [spironolactone, lisinoprilResume] },
+      { calls: [spironolactone, lisinoprilResume, bmpRecheck] },
       { calls: [message()] },
       {
         calls: [
@@ -160,7 +160,7 @@ export const mutants: Mutant[] = [
     fails: ['kcl_stopped'],
     loses: [],
     attribution: 'output_gap',
-    script: [...reads, { calls: [furosemideUp, spironolactone, lisinoprilResume] }, { calls: [message()] }, { calls: [note()] }, { calls: [finish()] }],
+    script: [...reads, { calls: [furosemideUp, spironolactone, lisinoprilResume, bmpRecheck] }, { calls: [message()] }, { calls: [note()] }, { calls: [finish()] }],
   },
   {
     id: 'message_wrong_clinician',

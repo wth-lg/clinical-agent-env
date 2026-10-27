@@ -99,7 +99,7 @@ export const alternatives: Alternative[] = [
     loses: [],
     script: [
       ...reads,
-      { calls: [change(MR.furosemide, 'stop', 'Discharge: increased to 40 mg'), order(RX.furosemide40, 40, 'QD', 'Discharge summary: furosemide 40 mg daily'), spironolactone, kclStop, order(RX.lisinopril10, 10, 'QD', 'Resume: SCr 1.32 < 1.5', MR.lisinopril)] },
+      { calls: [change(MR.furosemide, 'stop', 'Discharge: increased to 40 mg'), order(RX.furosemide40, 40, 'QD', 'Discharge summary: furosemide 40 mg daily'), spironolactone, kclStop, order(RX.lisinopril10, 10, 'QD', 'Resume: SCr 1.32 < 1.5', MR.lisinopril), bmpRecheck] },
       { calls: [message()] },
       { calls: [note()] },
       { calls: [finish()] },
@@ -111,7 +111,7 @@ export const alternatives: Alternative[] = [
     loses: [],
     script: [
       ...reads,
-      { calls: [modify(MR.furosemide, { value: 40, unit: 'mg', frequency: 'QD' }, 'Discharge: 40 mg daily as two 20 mg tablets'), spironolactone, change(MR.kcl, 'complete', 'Discharge: stop potassium chloride'), lisinoprilResume] },
+      { calls: [modify(MR.furosemide, { value: 40, unit: 'mg', frequency: 'QD' }, 'Discharge: 40 mg daily as two 20 mg tablets'), spironolactone, change(MR.kcl, 'complete', 'Discharge: stop potassium chloride'), lisinoprilResume, bmpRecheck] },
       { calls: [message(MESSAGE, [`MedicationRequest/${MR.tart}`, `MedicationRequest/${MR.succ}`])] },
       { calls: [note()] },
       { calls: [finish()] },
@@ -131,7 +131,7 @@ export const alternatives: Alternative[] = [
       { calls: reads[0]!.calls },
       { calls: reads[1]!.calls },
       { calls: [...reads[2]!.calls, { name: 'fhir_read', input: { resource_type: 'DocumentReference', id: 'doc-t4-dc-2025' } }] },
-      { calls: [furosemideUp, spironolactone, kclStop, lisinoprilResume] },
+      { calls: [furosemideUp, spironolactone, kclStop, lisinoprilResume, bmpRecheck] },
       { calls: [message()] },
       { calls: [note({ sources: 'Sources: St. Brigid Regional discharge summary of 10/19/2026 and its signed addendum of 10/19/2026 (RBC-TOC-02 §1); creatinine 1.32 mg/dL on 10/21/2026. The March 2025 discharge summary is from an earlier stay and was not used.' })] },
       { calls: [finish()] },
@@ -169,7 +169,7 @@ export const alternatives: Alternative[] = [
     loses: [],
     script: [
       ...reads,
-      { calls: [furosemideUp, spironolactone, kclStop, modify(MR.lisinopril, { value: 10, unit: 'mg', frequency: 'QD' }, 'Discharge summary: resume when SCr < 1.5; SCr 1.32 on 10/21', RX.lisinopril10)] },
+      { calls: [furosemideUp, spironolactone, kclStop, modify(MR.lisinopril, { value: 10, unit: 'mg', frequency: 'QD' }, 'Discharge summary: resume when SCr < 1.5; SCr 1.32 on 10/21', RX.lisinopril10), bmpRecheck] },
       { calls: [message()] },
       { calls: [note()] },
       { calls: [finish()] },
@@ -181,7 +181,7 @@ export const alternatives: Alternative[] = [
     loses: [],
     script: [
       ...reads,
-      { calls: [furosemideUp, order(RX.spironolactone50, 25, 'QD', 'Signed addendum 10/19: spironolactone 25 mg daily (half of a 50 mg tablet)'), kclStop, lisinoprilResume] },
+      { calls: [furosemideUp, order(RX.spironolactone50, 25, 'QD', 'Signed addendum 10/19: spironolactone 25 mg daily (half of a 50 mg tablet)'), kclStop, lisinoprilResume, bmpRecheck] },
       { calls: [message()] },
       { calls: [note()] },
       { calls: [finish()] },
@@ -193,7 +193,7 @@ export const alternatives: Alternative[] = [
     loses: [],
     script: [
       ...reads,
-      { calls: [order(RX.furosemide40, 40, 'QD', 'St. Brigid discharge summary 10/19: furosemide increased to 40 mg daily', MR.furosemide), spironolactone, kclStop, lisinoprilResume] },
+      { calls: [order(RX.furosemide40, 40, 'QD', 'St. Brigid discharge summary 10/19: furosemide increased to 40 mg daily', MR.furosemide), spironolactone, kclStop, lisinoprilResume, bmpRecheck] },
       { calls: [message()] },
       { calls: [note()] },
       { calls: [finish()] },
