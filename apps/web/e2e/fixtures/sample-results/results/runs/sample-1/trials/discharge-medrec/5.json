@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:discharge-medrec:5",
   "task_id": "discharge-medrec",
-  "task_version": "c11d5b4942710b9d170241831f8fa670a488853fcba46c687fb6688e774ac369",
+  "task_version": "14f1094591d101714b99afde4b6e79040f57a03a0534fa1a3cbe243c9c8cb7f4",
   "env_version": "6f1110b24a8516555824e011080ad3408062876e165ae1bb6b211f80488440a7",
-  "grader_task_version": "09cfd141a6c784246ed21e088dc31cb66085fd177b268c8333a94537208cdae3",
+  "grader_task_version": "fd1ecbe206bd39157e93602086cb7fb2f2c285b5297dacc438ad1ae21807ec6f",
   "fixture_hash": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
   "state_hash": {
     "initial": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
-    "final": "4b8a9beac5996cc59f0424bf351e80fe7b190d8dfe8f0c5df6ef2e71a4797ff1",
-    "replay_final": "4b8a9beac5996cc59f0424bf351e80fe7b190d8dfe8f0c5df6ef2e71a4797ff1"
+    "final": "473be8b93a5cec91989d4ba2437a5b39f79b89cc2da52c0915d5ead3308be0b5",
+    "replay_final": "473be8b93a5cec91989d4ba2437a5b39f79b89cc2da52c0915d5ead3308be0b5"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -59,14 +59,14 @@
       "met": true,
       "evidence": {
         "active": [
-          "MedicationRequest/mr-t0002"
+          "MedicationRequest/mr-t0001"
         ],
         "mg_per_day": 40,
         "per_day": 1,
         "old_request": "stopped"
       },
       "ids": [
-        "MedicationRequest/mr-t0002"
+        "MedicationRequest/mr-t0001"
       ]
     },
     {
@@ -78,13 +78,13 @@
       "met": true,
       "evidence": {
         "active": [
-          "MedicationRequest/mr-t0003"
+          "MedicationRequest/mr-t0002"
         ],
         "mg_per_day": 25,
         "per_day": 1
       },
       "ids": [
-        "MedicationRequest/mr-t0003"
+        "MedicationRequest/mr-t0002"
       ]
     },
     {
@@ -111,14 +111,14 @@
       "met": true,
       "evidence": {
         "active": [
-          "MedicationRequest/mr-t0005"
+          "MedicationRequest/mr-t4-lisinopril"
         ],
         "mg_per_day": 10,
         "per_day": 1,
         "still_held": []
       },
       "ids": [
-        "MedicationRequest/mr-t0005"
+        "MedicationRequest/mr-t4-lisinopril"
       ]
     },
     {
@@ -161,12 +161,12 @@
           "Practitioner/pr-okafor"
         ],
         "sent": [
-          "Communication/comm-t0006"
+          "Communication/comm-t0005"
         ],
         "tasked": []
       },
       "ids": [
-        "Communication/comm-t0006"
+        "Communication/comm-t0005"
       ]
     },
     {
@@ -180,12 +180,12 @@
         "pairs": [
           {
             "id": "DocumentReference/doc-t4-dc-1019-add",
-            "before": 10,
+            "before": 9,
             "seen": true
           },
           {
             "id": "Observation/obs-t4-scr-1021",
-            "before": 12,
+            "before": 11,
             "seen": true
           }
         ],
@@ -216,7 +216,7 @@
       "evidence": {
         "verdict": "met",
         "quote": "metoprolol succinate ER 50 mg daily, which the St. Brigid discharge documents continue as \"metoprolol XL\", and metoprolol tartrate 25 mg twice daily (since 2023), which no discharge document mentions. Taking both is a duplicate beta-blocker.",
-        "cache_key": "a394d5f8201524a28915d3db2c1e67667dcd4ed422b8d6b78e25f42439c92fce"
+        "cache_key": "bf1bbb7bffcbe9aa0d9ca8d5c36b0f57cee88af3d5a543e798bbc8d0c7e9bb3c"
       }
     },
     {
@@ -255,8 +255,8 @@
       "met": false,
       "evidence": {
         "verdict": "not_met",
-        "quote": "Per RBC-TOC-02 §5 I left the tartrate unchanged; please review.",
-        "cache_key": "1208f736f0dd708e3e8aac81bb13fb970f732fea88af79150d870627fa5c6171"
+        "quote": "Please keep taking your metoprolol succinate and metoprolol tartrate as before. Dr. Okafor will review the two of them and let you know if anything changes.",
+        "cache_key": "8b95654556d7645afd94eccb6bb266a3c0a90a1cd8af26266eb5ae9264a2cba0"
       }
     },
     {
@@ -281,8 +281,8 @@
     "over_allowance": 0,
     "cache_keys": [
       "e30011652b9380fad1735bb71a099c4e9f6225917201869c12337f1dbee6832d",
-      "a394d5f8201524a28915d3db2c1e67667dcd4ed422b8d6b78e25f42439c92fce",
-      "1208f736f0dd708e3e8aac81bb13fb970f732fea88af79150d870627fa5c6171"
+      "bf1bbb7bffcbe9aa0d9ca8d5c36b0f57cee88af3d5a543e798bbc8d0c7e9bb3c",
+      "8b95654556d7645afd94eccb6bb266a3c0a90a1cd8af26266eb5ae9264a2cba0"
     ],
     "cache": [
       {
@@ -304,7 +304,7 @@
         }
       },
       {
-        "key": "a394d5f8201524a28915d3db2c1e67667dcd4ed422b8d6b78e25f42439c92fce",
+        "key": "bf1bbb7bffcbe9aa0d9ca8d5c36b0f57cee88af3d5a543e798bbc8d0c7e9bb3c",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -318,25 +318,25 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-25T13:23:26.047Z"
+          "at": "2026-10-27T19:16:07.130Z"
         }
       },
       {
-        "key": "1208f736f0dd708e3e8aac81bb13fb970f732fea88af79150d870627fa5c6171",
+        "key": "8b95654556d7645afd94eccb6bb266a3c0a90a1cd8af26266eb5ae9264a2cba0",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "not_met",
-          "quote": "Per RBC-TOC-02 §5 I left the tartrate unchanged; please review."
+          "quote": "Please keep taking your metoprolol succinate and metoprolol tartrate as before. Dr. Okafor will review the two of them and let you know if anything changes."
         },
         "error": null,
         "calls": 1,
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-27T17:06:19.490Z"
+          "at": "2026-10-27T19:25:02.389Z"
         }
       }
     ]

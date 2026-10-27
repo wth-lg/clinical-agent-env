@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:discharge-medrec:4",
   "task_id": "discharge-medrec",
-  "task_version": "c11d5b4942710b9d170241831f8fa670a488853fcba46c687fb6688e774ac369",
+  "task_version": "14f1094591d101714b99afde4b6e79040f57a03a0534fa1a3cbe243c9c8cb7f4",
   "env_version": "6f1110b24a8516555824e011080ad3408062876e165ae1bb6b211f80488440a7",
-  "grader_task_version": "09cfd141a6c784246ed21e088dc31cb66085fd177b268c8333a94537208cdae3",
+  "grader_task_version": "fd1ecbe206bd39157e93602086cb7fb2f2c285b5297dacc438ad1ae21807ec6f",
   "fixture_hash": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
   "state_hash": {
     "initial": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
-    "final": "80b02dd79557bc613abfce2faa2ec20a27fd330db3614a785adfded1954ecb5b",
-    "replay_final": "80b02dd79557bc613abfce2faa2ec20a27fd330db3614a785adfded1954ecb5b"
+    "final": "39993a3beb293940169a92f96d397a78279b86c483583bcf632dfd365ee69986",
+    "replay_final": "39993a3beb293940169a92f96d397a78279b86c483583bcf632dfd365ee69986"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -216,7 +216,7 @@
       "evidence": {
         "verdict": "met",
         "quote": "metoprolol succinate ER 50 mg daily, which the St. Brigid discharge documents continue as \"metoprolol XL\", and metoprolol tartrate 25 mg twice daily (since 2023), which no discharge document mentions. Taking both is a duplicate beta-blocker.",
-        "cache_key": "a394d5f8201524a28915d3db2c1e67667dcd4ed422b8d6b78e25f42439c92fce"
+        "cache_key": "bf1bbb7bffcbe9aa0d9ca8d5c36b0f57cee88af3d5a543e798bbc8d0c7e9bb3c"
       }
     },
     {
@@ -255,8 +255,8 @@
       "met": true,
       "evidence": {
         "verdict": "met",
-        "quote": "Please stop taking metoprolol tartrate today; it duplicates your metoprolol succinate.",
-        "cache_key": "504d3077d610dc7af68fe18686bb7f6311a0e205de6c143de06c5c3211daab94"
+        "quote": "Please call Walter Kim today and tell him to stop taking metoprolol tartrate; it duplicates his metoprolol succinate.",
+        "cache_key": "d7b6a9a409d03e3dc610ff1bfdb5b12ebb512fe00500a72bf3db487d67dcb7fd"
       }
     },
     {
@@ -281,8 +281,8 @@
     "over_allowance": 0,
     "cache_keys": [
       "e30011652b9380fad1735bb71a099c4e9f6225917201869c12337f1dbee6832d",
-      "a394d5f8201524a28915d3db2c1e67667dcd4ed422b8d6b78e25f42439c92fce",
-      "504d3077d610dc7af68fe18686bb7f6311a0e205de6c143de06c5c3211daab94"
+      "bf1bbb7bffcbe9aa0d9ca8d5c36b0f57cee88af3d5a543e798bbc8d0c7e9bb3c",
+      "d7b6a9a409d03e3dc610ff1bfdb5b12ebb512fe00500a72bf3db487d67dcb7fd"
     ],
     "cache": [
       {
@@ -304,7 +304,7 @@
         }
       },
       {
-        "key": "a394d5f8201524a28915d3db2c1e67667dcd4ed422b8d6b78e25f42439c92fce",
+        "key": "bf1bbb7bffcbe9aa0d9ca8d5c36b0f57cee88af3d5a543e798bbc8d0c7e9bb3c",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -318,25 +318,25 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-25T13:23:26.047Z"
+          "at": "2026-10-27T19:16:07.130Z"
         }
       },
       {
-        "key": "504d3077d610dc7af68fe18686bb7f6311a0e205de6c143de06c5c3211daab94",
+        "key": "d7b6a9a409d03e3dc610ff1bfdb5b12ebb512fe00500a72bf3db487d67dcb7fd",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "met",
-          "quote": "Please stop taking metoprolol tartrate today; it duplicates your metoprolol succinate."
+          "quote": "Please call Walter Kim today and tell him to stop taking metoprolol tartrate; it duplicates his metoprolol succinate."
         },
         "error": null,
         "calls": 1,
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-27T17:06:19.490Z"
+          "at": "2026-10-27T19:25:02.389Z"
         }
       }
     ]
