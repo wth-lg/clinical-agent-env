@@ -62,4 +62,11 @@ describe('fault_counts, top_failed_checks, model and effort', () => {
     const bad = { ...s, tasks: { t: { ...t, fault_counts: { ...t.fault_counts, failures: 5 } } } };
     expect(validateSummary(bad)).toContainEqual(expect.stringMatching(/^tasks\.t\.fault_counts/));
   });
+  // verifier-phase-P17i-JG7-1 F3: an INFRA attempt the batch settled after its reruns ran out was
+  // not run again, so it is not an infra re-run; the re-queued attempts are.
+  it('infra_reruns counts the re-queued attempts only', () => {
+    const settledInfra = trial(11, 'INFRA_API');
+    const s2 = summarize({ run_id: 'r', trials: [...TRIALS, settledInfra], requeued: REQUEUED, replay: null, audit: AUDIT });
+    expect(s2.tasks.t!.fault_counts.infra_reruns).toBe(1);
+  });
 });

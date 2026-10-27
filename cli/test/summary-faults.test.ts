@@ -4,7 +4,7 @@
 // with the M1-M4 count (failures with M1-M4 all met, of the valid failures). Hand counts over the
 // clean fixture run: per task 5 PASS and 5 FAIL, each FAIL failing G1, attributed reasoning and
 // labelled model.
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { MODEL } from '../../packages/core/anthropic.ts';
@@ -53,6 +53,46 @@ describe('pnpm cli audit-check --json', () => {
     const out: string[] = [];
     await auditCheck([clean('audit'), '--json'], { out: (l) => out.push(l), err: () => {}, checks: fixtureChecks });
     const j = JSON.parse(out.at(-1)!) as { fault_box: Record<string, unknown> };
-    for (const t of ['t-alpha', 't-beta']) expect(j.fault_box[t]).toEqual({ ...BOX, m1_m4: { met: 5, failures: 5 } });
+    for (const t of ['t-alpha', 't-beta']) expect(j.fault_box[t]).toEqual({ ...BOX, m1_m4: { met: 5, failures: 5 }, false_passes: 0 });
+  });
+});
+
+// verifier-phase-P17i-JG7-1 F1, F2 and JG5-1 m2.
+describe('one audit-row reader, n/a as met, and the false PASS in the counts', () => {
+  const rows = (dir: string) => readFileSync(join(dir, 'audit.jsonl'), 'utf8').split('\n').filter((l) => l.trim() !== '').map((l) => JSON.parse(l) as Record<string, unknown>);
+  const writeRows = (dir: string, xs: Array<Record<string, unknown>>) => writeFileSync(join(dir, 'audit.jsonl'), `${xs.map((r) => JSON.stringify(r)).join('\n')}\n`);
+  const json = async (dir: string) => {
+    const out: string[] = [];
+    await auditCheck([dir, '--json'], { out: (l) => out.push(l), err: () => {}, checks: fixtureChecks });
+    return JSON.parse(out.at(-1)!) as { faults: Record<string, number>; labelled_grader: number; fault_box: Record<string, { fault_counts: { label: Record<string, number> }; m1_m4: { met: number; failures: number }; false_passes: number }> };
+  };
+
+  it('summary and audit-check read the same labels: an adjudicated label that is not a label is ignored, a row without evidence_ids is skipped', async () => {
+    const dir = clean('labels');
+    writeRows(dir, rows(dir).map((r) => (r.trial === 't-alpha/5' ? { ...r, adjudicated_label: 'Grader' } : r.trial === 't-alpha/6' ? { ...r, label: 'grader', evidence_ids: undefined } : r)));
+    await summary([dir], { out: () => {}, err: () => {} });
+    const s = JSON.parse(readFileSync(join(dir, 'summary.json'), 'utf8')) as { tasks: Record<string, { fault_counts: { label: Record<string, number> } }> };
+    const box = (await json(dir)).fault_box['t-alpha']!.fault_counts.label;
+    expect(s.tasks['t-alpha']!.fault_counts.label).toEqual(box);
+    expect(box).toEqual({ model: 4, environment: 0, grader: 0, unlabelled: 1 });
+  });
+
+  it('a failure whose M1 is n/a (no gate failed) counts as confirmed in m1_m4', async () => {
+    const dir = clean('m1-na');
+    const file = join(dir, 'trials/t-alpha/5.json');
+    const r = JSON.parse(readFileSync(file, 'utf8')) as Record<string, unknown>;
+    writeFileSync(file, JSON.stringify({ ...r, outcome: 'LIMIT', status: 'LIMIT', detail: 'turns', score: null, checks: [{ id: 'G1', kind: 'gate', met: true }], attribution: null }));
+    writeRows(dir, rows(dir).map((x) => (x.trial === 't-alpha/5' ? { ...x, outcome: 'LIMIT', taxonomy: 'did_not_finish' } : x)));
+    expect((await json(dir)).fault_box['t-alpha']!.m1_m4).toEqual({ met: 5, failures: 5 });
+  });
+
+  it('a false PASS (GR5) counts under faults.grader, labelled_grader and the task\'s false_passes', async () => {
+    const dir = clean('gr5');
+    writeRows(dir, rows(dir).map((r) => (r.trial === 't-alpha/0' ? { ...r, label: 'grader', model_fault: 'no' } : r)));
+    const j = await json(dir);
+    expect(j.faults.grader).toBe(1);
+    expect(j.labelled_grader).toBe(1);
+    expect(j.fault_box['t-alpha']!.false_passes).toBe(1);
+    expect(j.fault_box['t-beta']!.false_passes).toBe(0);
   });
 });
