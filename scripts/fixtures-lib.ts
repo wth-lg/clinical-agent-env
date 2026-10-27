@@ -54,7 +54,7 @@ export function easternIso(ms: number): string {
 // release qualifier ("24 HR metoprolol succinate 100 MG ..." gives metoprolol succinate;
 // "insulin isophane, human 70 UNT/ML / insulin, regular, human ..." gives insulin isophane human
 // and insulin regular human), so drugs that share a first word stay apart (verifier F3).
-const LEADING = /^(\d.*|hr|ml|abuse-deterrent|nda\d+)$/;
+const LEADING = /^(\d.*|hr|ml|actuat|abuse-deterrent|nda\d+)$/;
 export function ingredientsOf(text: string): string[] {
   const parts = text.replace(/\[[^\]]*\]/g, '').toLowerCase().split(/\s+\/\s+/);
   const out = parts.flatMap((part) => {
@@ -133,6 +133,23 @@ function shiftAll(v: unknown, delta: number): unknown {
   return v;
 }
 const timesIn = (r: Resource): string[] => (JSON.stringify(r).match(/"\d{4}-\d\d-\d\dT[^"]*"/g) ?? []).map((v) => JSON.parse(v) as string).filter((v) => ISO_TIME.test(v));
+// A note whose date moves to another day: its text writes the old Eastern date (Synthea heads each
+// note with it), so each attachment's text gets the new one (verifier-phase-P17i-JT2r2-1 S1).
+function rewriteNoteDate(before: Resource, after: Resource): Resource {
+  const b = before as unknown as { date?: string; content?: Array<{ attachment?: { data?: string } }> };
+  const a = after as unknown as { date?: string; content?: Array<{ attachment?: { data?: string } }> };
+  if (before.resourceType !== 'DocumentReference' || typeof b.date !== 'string' || typeof a.date !== 'string' || !a.content) return after;
+  const from = easternParts(Date.parse(b.date)).date;
+  const to = easternParts(Date.parse(a.date)).date;
+  if (from === to) return after;
+  const content = a.content.map((c) => {
+    const data = c.attachment?.data;
+    if (typeof data !== 'string') return c;
+    const text = Buffer.from(data, 'base64').toString('utf8');
+    return text.includes(from) ? { ...c, attachment: { ...c.attachment, data: Buffer.from(text.replaceAll(from, to), 'utf8').toString('base64') } } : c;
+  });
+  return { ...after, content } as unknown as Resource;
+}
 // Whether moving the members (indexes into before, replaced in after) keeps their patient's order of
 // dated resources: against every other dated resource of the patient, each member stays on the same
 // side (earlier, at the same instant, later).
@@ -222,25 +239,38 @@ export function hygiene(resources: readonly Resource[], opts: { now: number; lit
     const date = !weekend ? p.date : earlier.slice(0, 7) === p.date.slice(0, 7) ? earlier : later.slice(0, 7) === p.date.slice(0, 7) ? later : null;
     const hour = p.hour >= 8 && p.hour < 18 ? p.hour : 8 + (p.hour % 10);
     const target = date === null ? null : easternWall(date, `${String(hour).padStart(2, '0')}${p.time.slice(2)}`);
-    const why = ((): string | null => {
-      if (date === null) return 'no weekday in its month';
-      if (target === null) return 'its new time does not exist in US Eastern';
-      const delta = target - start;
-      // Each time that moves, before and after: none may pass now or change month, and none whose
-      // date changes may leave a date that a task file writes.
-      const shifted = members.flatMap((j) => timesIn(out[j]!)).map((v) => [v, shiftAll(v, delta) as string] as const);
-      if (shifted.some(([a, b]) => Date.parse(a) <= opts.now && Date.parse(b) > opts.now)) return 'the move would pass now';
-      if (shifted.some(([a, b]) => a.slice(0, 7) !== b.slice(0, 7))) return 'a time of it would move to another month';
-      const literal = shifted.find(([a, b]) => a.slice(0, 10) !== b.slice(0, 10) && opts.anyLiteralDates.has(a.slice(0, 10)));
-      if (literal !== undefined) return `a time of it on ${literal[0].slice(0, 10)}, a date a task file writes, would move`;
-      return null;
-    })();
+    if (date === null || target === null) {
+      report.skipped[e.id] = date === null ? 'no weekday in its month' : 'its new time does not exist in US Eastern';
+      continue;
+    }
+    const delta = target - start;
+    // A condition's abatement at the start of an encounter moves with that encounter: a member keeps
+    // an abatement at another encounter's start, and a condition of the patient that abates at this
+    // encounter's start (followers) moves only its abatement.
+    const encStarts = new Set(out.flatMap((r) => { const x = r as unknown as { period?: { start?: string } }; return r.resourceType === 'Encounter' && patientOf(r) === patient && typeof x.period?.start === 'string' ? [Date.parse(x.period.start)] : []; }));
+    const abateOf = (r: Resource): number | null => { const v = (r as unknown as { abatementDateTime?: unknown }).abatementDateTime; return r.resourceType === 'Condition' && typeof v === 'string' && ISO_TIME.test(v) ? Date.parse(v) : null; };
+    const followers = patient === null ? [] : out.flatMap((r, j) => (!members.includes(j) && patientOf(r) === patient && abateOf(r) === start ? [j] : []));
+    const moveMember = (r: Resource): Resource => {
+      const x = shiftAll(r, delta) as Record<string, unknown>;
+      const abate = abateOf(r);
+      if (abate !== null && abate !== start && encStarts.has(abate)) x.abatementDateTime = (r as unknown as { abatementDateTime: string }).abatementDateTime;
+      return rewriteNoteDate(r, x as unknown as Resource);
+    };
+    const affected = [...members, ...followers];
+    const candidate = out.map((r, j) => (members.includes(j) ? moveMember(r) : followers.includes(j) ? ({ ...r, abatementDateTime: shiftAll((r as unknown as { abatementDateTime: string }).abatementDateTime, delta) } as Resource) : r));
+    // Each time that moves, before and after: none may pass now or change month, and none whose date
+    // changes may leave a date that a task file writes.
+    const shifted = affected.flatMap((j) => { const b = timesIn(candidate[j]!); return timesIn(out[j]!).map((v, k) => [v, b[k]!] as const).filter(([x, y]) => x !== y); });
+    const why = shifted.some(([x, y]) => Date.parse(x) <= opts.now && Date.parse(y) > opts.now) ? 'the move would pass now'
+      : shifted.some(([x, y]) => easternParts(Date.parse(x)).date.slice(0, 7) !== easternParts(Date.parse(y)).date.slice(0, 7)) ? 'a time of it would move to another month'
+      : ((): string | null => {
+        const literal = shifted.find(([x, y]) => x.slice(0, 10) !== y.slice(0, 10) && opts.anyLiteralDates.has(x.slice(0, 10)));
+        return literal === undefined ? null : `a time of it on ${literal[0].slice(0, 10)}, a date a task file writes, would move`;
+      })();
     if (why !== null) {
       report.skipped[e.id] = why;
       continue;
     }
-    const delta = target! - start;
-    const candidate = out.map((r, j) => (members.includes(j) ? (shiftAll(r, delta) as Resource) : r));
     if (patient !== null && !keepsOrder(out, candidate, members, patient)) {
       report.skipped[e.id] = 'the move would change its patient\'s order of dated resources';
       continue;
