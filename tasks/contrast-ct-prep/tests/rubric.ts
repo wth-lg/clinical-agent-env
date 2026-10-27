@@ -14,7 +14,11 @@ import { CT_CONTRAST, IV_STEROIDS, ORDERS } from './codes.ts';
 
 const PT = expected.patient;
 
-type Communication = { resourceType: 'Communication'; id?: string; recipient?: Array<{ reference?: string }>; payload?: Array<{ contentString?: string }> };
+type Communication = { resourceType: 'Communication'; id?: string; recipient?: Array<{ reference?: string }>; topic?: { text?: string }; payload?: Array<{ contentString?: string }> };
+
+// A message's text as the patient reads it: the subject line, then the body (P17j JG3-T6 r2,
+// verifier-phase-P17i-JG3-T6-1 F1: advice in the subject reaches the patient too).
+const textOf = (c: Communication) => [c.topic?.text, ...(c.payload ?? []).map((p) => p.contentString)].filter(Boolean).join('\n');
 
 // The messages the trial sent to the patient, their text joined.
 export function patientMessages(ctx: RubricCtx): string {
@@ -22,7 +26,7 @@ export function patientMessages(ctx: RubricCtx): string {
   return ctx.final
     .all('Communication')
     .filter((c) => written.has(`Communication/${c.id}`) && ((c as Communication).recipient ?? []).some((r) => r.reference === PT))
-    .map((c) => ((c as Communication).payload ?? []).map((p) => p.contentString ?? '').join('\n'))
+    .map((c) => textOf(c as Communication))
     .join('\n\n');
 }
 const noteText = (ctx: RubricCtx) => ctx.notes.filter((n) => n.patient === PT).map((n) => n.text).join('\n\n');
