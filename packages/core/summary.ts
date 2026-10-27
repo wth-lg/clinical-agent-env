@@ -53,6 +53,24 @@
 //                      replacement from the n valid trials all pass, C(c,k) / C(n,k) for c
 //                      passes; null when n < k
 //
+// Why a task fails (P17j JG7, faultCounts): per task, fault_counts holds the valid failures (valid,
+// not PASS) by
+//   taxonomy           the kind of model failure of the current grade: the recorded attribution's
+//                      TAXONOMY value when it names the current grade's decisive check, did_not_finish
+//                      for a LIMIT, refusal for a REFUSAL, else unattributed (a regrade moved the
+//                      decisive check, or the record has no attribution)
+//   label              the audit's label of each (adjudicated, else its own: explain.ts
+//                      auditLabelOf, which the caller applies), model, environment or grader, and
+//                      unlabelled; null when the caller gives no audit
+//   infra_reruns       the re-queued attempts whose outcome is the infrastructure's fault
+//                      (INVALID, INFRA_*, CANCELLED): the run ran each again. An INFRA attempt the
+//                      batch settled after its reruns ran out was not run again, so it is not
+//                      counted (verifier-phase-P17i-JG7-1 F3)
+// and top_failed_checks lists the decisive failed check of each valid failure (firstFailed) with
+// its count, by count then id, the check the Runs view shows on the row. The run carries model and
+// effort, the requested model and effort every settled record shares, null when they differ or
+// none is recorded. audit-check --json gives the same counts with the M1-M4 count beside them.
+//
 // The consistency flag (P17i C3, R14-32): per task, at the current grade, consistencyOf counts
 // the valid failures (valid, not PASS) and groups them by the id of their first failed check
 // (firstFailed: the decisive gate check not met, as the attribution names it; on a FAIL with no
@@ -70,7 +88,7 @@
 // --final and exits 1 on a flagged task until audit.jsonl holds that task's task-validity review.
 import { LIMITS } from './events.ts';
 import { FAULT, isValid, OUTCOMES, type Outcome } from './outcomes.ts';
-import { decisiveGate } from '../grader/attribution.ts';
+import { decisiveGate, TAXONOMY } from '../grader/attribution.ts';
 
 // 2: recorded_outcomes and regraded added, and every figure reads the current grade.
 // 3: env_versions and grader_task_versions added per task.
@@ -78,7 +96,8 @@ import { decisiveGate } from '../grader/attribution.ts';
 //    rate added per task.
 // 5: consistency added per task.
 // 6: pass_k added per task.
-export const SUMMARY_SCHEMA_VERSION = 6;
+// 7: model and effort added; fault_counts and top_failed_checks added per task.
+export const SUMMARY_SCHEMA_VERSION = 7;
 // A met or unknown rubric item worth this many points or fewer is a harm: such a PASS is not
 // pass_no_harm.
 export const HARM_POINTS = -5;
@@ -121,6 +140,10 @@ export interface SummaryTrial {
   checks?: ReadonlyArray<SummaryCheck>;
   model_requested: string;
   models_returned: readonly string[];
+  // The requested effort; absent on records that predate it.
+  effort?: string | null;
+  // The recorded attribution: its kind of model failure and the check it names.
+  attribution?: { auto: string; first_failed: string | null } | null;
   state_hash: { initial: string | null; final: string | null; replay_final: string | null };
   tool_errors: Readonly<Record<string, number>>;
   cost_usd: number;
@@ -210,6 +233,8 @@ export interface SummaryInput {
   mode?: string | null;
   // The tasks the run must hold, and who says so: the manifest's task_versions, or --task.
   expected?: { tasks: readonly string[]; from: string };
+  // Each audited trial's label (explain.ts auditLabelOf), by trialName; absent without audit.jsonl.
+  audit?: Readonly<Record<string, string | null>> | null;
 }
 
 // The k of pass^k each task reports.
@@ -268,6 +293,22 @@ export interface TaskSummary {
   // pass^k for each k of PASS_K, by k.
   pass_k: Record<`${(typeof PASS_K)[number]}`, number | null>;
   consistency: Consistency;
+  fault_counts: FaultCounts;
+  top_failed_checks: FailedCheckCount[];
+}
+
+// The kinds fault_counts.taxonomy counts by, and the labels fault_counts.label counts by (header).
+export const FAILURE_KINDS = [...TAXONOMY, 'refusal', 'unattributed'] as const;
+export const FAILURE_LABELS = ['model', 'environment', 'grader', 'unlabelled'] as const;
+export interface FaultCounts {
+  failures: number;
+  taxonomy: Record<(typeof FAILURE_KINDS)[number], number>;
+  label: Record<(typeof FAILURE_LABELS)[number], number> | null;
+  infra_reruns: number;
+}
+export interface FailedCheckCount {
+  check: string;
+  count: number;
 }
 
 export interface Requirements {
@@ -285,6 +326,9 @@ export interface Requirements {
 export interface Summary {
   schema_version: number;
   run_id: string;
+  // The requested model and effort every settled record shares; null when they differ or none says.
+  model: string | null;
+  effort: string | null;
   tasks: Record<string, TaskSummary>;
   totals: { records: number; trials: number; passes: number; env_error_raw: number; grader_error: number; grader_error_history: number; regraded: number; requeued: number; internal_errors: number; cost_usd: number };
   mode: string | null;
@@ -325,7 +369,11 @@ const gateFraction = (checks: ReadonlyArray<SummaryCheck>): number | null => {
   const gates = checks.filter((c) => c.kind === 'gate');
   return gates.length === 0 ? null : gates.filter((c) => c.met === true).length / gates.length;
 };
-const harmed = (checks: ReadonlyArray<SummaryCheck>): boolean => checks.some((c) => c.kind === 'rubric' && (c.met === true || c.met === 'unknown') && typeof c.points === 'number' && c.points <= HARM_POINTS);
+// A harm item: a met or unknown rubric item of HARM_POINTS or fewer points. pass_no_harm and the
+// UI's PASS-with-harm chip (apps/web/src/data/harm.ts) read this one rule (verifier JU3-1 F1;
+// decisions.tsv 2026-10-28, a named exception for lane U).
+export const isHarmItem = (c: SummaryCheck): boolean => c.kind === 'rubric' && (c.met === true || c.met === 'unknown') && typeof c.points === 'number' && c.points <= HARM_POINTS;
+const harmed = (checks: ReadonlyArray<SummaryCheck>): boolean => checks.some(isHarmItem);
 // INVALID, INFRA_HARNESS, INFRA_API and ENV_ERROR: the attempts the infra-counted rate fails.
 const infraCounted = (o: string): boolean => o !== 'CANCELLED' && (FAULT[o as Outcome] === 'infra' || FAULT[o as Outcome] === 'env');
 
@@ -386,6 +434,43 @@ export const describeConsistency = (c: Consistency): string[] =>
     return `${s.count} of ${c.failures} valid failures fail ${s.check} first (${s.found_values} distinct found value${s.found_values === 1 ? '' : 's'}; ${s.found_count} give ${cut(s.found)})`;
   });
 
+type FailureTrial = Pick<SummaryTrial, 'task_id' | 'index' | 'trajectory' | 'trial_id' | 'outcome' | 'score' | 'checks' | 'grader_task_version' | 'regrades' | 'attribution'>;
+
+// One task's fault_counts and top_failed_checks (header) over its settled records and re-queued
+// attempts; audit gives each audited trial's label, by trialName, or null without an audit.
+export function faultCounts(trials: readonly FailureTrial[], requeued: readonly FailureTrial[], audit: Readonly<Record<string, string | null>> | null): { fault_counts: FaultCounts; top_failed_checks: FailedCheckCount[] } {
+  const failed = trials.flatMap((t) => {
+    const g = currentGrade(t);
+    return g.valid && g.outcome !== 'PASS' ? [{ t, g, check: firstFailed(g) }] : [];
+  });
+  const kindOf = ({ t, g, check }: (typeof failed)[number]): (typeof FAILURE_KINDS)[number] => {
+    if (g.outcome === 'LIMIT') return 'did_not_finish';
+    if (g.outcome === 'REFUSAL') return 'refusal';
+    const auto = t.attribution?.auto;
+    return check !== null && t.attribution?.first_failed === check.id && (TAXONOMY as readonly string[]).includes(auto ?? '') ? (auto as (typeof TAXONOMY)[number]) : 'unattributed';
+  };
+  const labelOf = (t: FailureTrial): (typeof FAILURE_LABELS)[number] => {
+    const l = audit?.[trialName(t)] ?? null;
+    return l === 'model' || l === 'environment' || l === 'grader' ? l : 'unlabelled';
+  };
+  const byCheck = histogram(failed.flatMap((f) => (f.check === null ? [] : [f.check.id])));
+  return {
+    fault_counts: {
+      failures: failed.length,
+      taxonomy: histogram(failed.map(kindOf), FAILURE_KINDS) as FaultCounts['taxonomy'],
+      label: audit === null ? null : (histogram(failed.map((f) => labelOf(f.t)), FAILURE_LABELS) as NonNullable<FaultCounts['label']>),
+      infra_reruns: requeued.filter((t) => FAULT[currentGrade(t).outcome as Outcome] === 'infra').length,
+    },
+    top_failed_checks: Object.entries(byCheck).map(([check, count]) => ({ check, count })).sort((a, b) => b.count - a.count || a.check.localeCompare(b.check)),
+  };
+}
+
+// The one value every record gives, or null when they differ or none gives one.
+const oneValue = (xs: ReadonlyArray<string | null | undefined>): string | null => {
+  const set = new Set(xs);
+  return set.size === 1 ? ([...set][0] ?? null) : null;
+};
+
 export function summarize(input: SummaryInput): Summary {
   const ids = sorted([...input.trials, ...input.requeued].map((t) => t.task_id).concat(input.expected?.tasks ?? []));
   const tasks: Record<string, TaskSummary> = {};
@@ -433,6 +518,7 @@ export function summarize(input: SummaryInput): Summary {
       metric_trials: { mean_score: scores.length, raw_mean_score: raws.length, gate_fraction: fractions.length },
       pass_k: Object.fromEntries(PASS_K.map((k) => [k, passK(passes, valid.length, k)])) as TaskSummary['pass_k'],
       consistency: consistencyOf(grades),
+      ...faultCounts(mine, requeued, input.audit ?? null),
     };
   }
   const all = [...input.trials, ...input.requeued];
@@ -442,6 +528,8 @@ export function summarize(input: SummaryInput): Summary {
   return {
     schema_version: SUMMARY_SCHEMA_VERSION,
     run_id: input.run_id,
+    model: oneValue(input.trials.map((t) => t.model_requested)),
+    effort: oneValue(input.trials.map((t) => t.effort)),
     tasks,
     totals: {
       records: input.trials.length,
@@ -563,6 +651,8 @@ export function validateSummary(x: unknown): string[] {
   const rate = (v: unknown) => v === null || (num(v) && (v as number) >= 0 && (v as number) <= 1);
   const strings = (v: unknown) => Array.isArray(v) && v.every((s) => typeof s === 'string');
   const interval = (v: unknown) => v === null || (isObj(v) && rate(v.lo) && rate(v.hi) && (v.lo as number) <= (v.hi as number));
+  // An object with exactly these keys, each a count.
+  const keyed = (v: unknown, keys: readonly string[]) => isObj(v) && Object.keys(v).length === keys.length && keys.every((k) => count(v[k]));
   const check = (path: string, obj: Record<string, unknown>, fields: Record<string, (v: unknown) => boolean>) => {
     for (const [k, ok] of Object.entries(fields)) {
       if (!Object.hasOwn(obj, k)) errors.push(`${path}${k}: missing`);
@@ -574,7 +664,7 @@ export function validateSummary(x: unknown): string[] {
     return [`schema_version ${JSON.stringify(x.schema_version)}: this reader reads summary.json version ${SUMMARY_SCHEMA_VERSION} only; write it again with pnpm cli summary <run>`];
   }
   check('', x, {
-    schema_version: (v) => v === SUMMARY_SCHEMA_VERSION, run_id: (v) => typeof v === 'string', tasks: isObj, totals: isObj, models: strings,
+    schema_version: (v) => v === SUMMARY_SCHEMA_VERSION, run_id: (v) => typeof v === 'string', model: (v) => v === null || typeof v === 'string', effort: (v) => v === null || typeof v === 'string', tasks: isObj, totals: isObj, models: strings,
     initial_state_hashes: strings, replay: isObj, requirements: isObj, violations: strings, mode: (v) => v === null || typeof v === 'string',
     expected_tasks: (v) => v === null || (isObj(v) && strings(v.tasks) && typeof v.from === 'string'),
   });
@@ -601,7 +691,18 @@ export function validateSummary(x: unknown): string[] {
         consistency: (v) => isObj(v) && count(v.valid) && count(v.passes) && count(v.failures)
           && (v.shared === null || (isObj(v.shared) && typeof v.shared.check === 'string' && count(v.shared.count) && typeof v.shared.found === 'string' && count(v.shared.found_count) && count(v.shared.found_values)))
           && Array.isArray(v.flags) && v.flags.every((f) => f === 'shared_failure' || f === 'no_passes'),
+        fault_counts: (v) => isObj(v) && count(v.failures) && count(v.infra_reruns) && keyed(v.taxonomy, FAILURE_KINDS) && (v.label === null || keyed(v.label, FAILURE_LABELS)),
+        top_failed_checks: (v) => Array.isArray(v) && v.every((c) => isObj(c) && typeof c.check === 'string' && count(c.count) && (c.count as number) > 0),
       });
+      // Each way of counting the failures adds up to them, and the checks count no more of them.
+      const fc = t.fault_counts;
+      if (isObj(fc) && count(fc.failures)) {
+        const sum = (h: unknown) => Object.values(h as Record<string, number>).reduce((a, n) => a + n, 0);
+        if (keyed(fc.taxonomy, FAILURE_KINDS) && sum(fc.taxonomy) !== fc.failures) errors.push(`tasks.${id}.fault_counts.taxonomy: adds up to ${sum(fc.taxonomy)}, not its ${fc.failures as number} failures`);
+        if (fc.label !== null && keyed(fc.label, FAILURE_LABELS) && sum(fc.label) !== fc.failures) errors.push(`tasks.${id}.fault_counts.label: adds up to ${sum(fc.label)}, not its ${fc.failures as number} failures`);
+        if (count(t.trials) && count(t.passes) && fc.failures !== (t.trials as number) - (t.passes as number)) errors.push(`tasks.${id}.fault_counts.failures: ${fc.failures as number}, not its ${(t.trials as number) - (t.passes as number)} valid failures`);
+        if (Array.isArray(t.top_failed_checks) && t.top_failed_checks.reduce((a: number, c) => a + (isObj(c) && count(c.count) ? (c.count as number) : 0), 0) > (fc.failures as number)) errors.push(`tasks.${id}.top_failed_checks: counts more than its ${fc.failures as number} failures`);
+      }
       if (count(t.passes) && count(t.trials) && (t.passes as number) > (t.trials as number)) errors.push(`tasks.${id}.passes: more than its trials`);
       // pass_k is a function of passes and trials: a value that is not passK of them is stale or edited.
       else if (count(t.passes) && count(t.trials) && isObj(t.pass_k)) {

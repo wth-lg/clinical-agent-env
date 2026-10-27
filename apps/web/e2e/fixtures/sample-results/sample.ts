@@ -40,7 +40,7 @@ export const CHECK_TEXT: Readonly<Record<string, CheckText>> = {
   'contrast-ct-prep': contrast, 'crc-care-gap': crc, 'discharge-medrec': medrec, 'message-queue': queue, 'renal-dose-review': renal, 'results-inbox': inbox,
 };
 
-// The run's manifest.json; the sample run has none, so M3 is pending.
+// The run's manifest.json (generate.ts writes it), for M3 and M1's reachability.
 const RUN_MANIFEST: unknown = existsSync(join(RUN_DIR, 'manifest.json')) ? JSON.parse(readFileSync(join(RUN_DIR, 'manifest.json'), 'utf8')) : null;
 
 // The list row's explanation, as the Runs view builds it (packages/core/explain-context.ts, with
@@ -74,14 +74,15 @@ export interface MatrixEntry {
   probes: Array<{ kind: string; id: string; outcome: string; as_expected: boolean; failed_checks: string[] }>;
 }
 // `pnpm cli matrix --task <id> --out <run>` wrote it (generate.ts --matrix), keyed by
-// grader_task_version: the entry for the task as it is now, so a stale matrix.json fails.
+// grader_task_version: the entry for the task as it is now, so a stale matrix.json fails. Each
+// probe keeps the fields browse.spec.ts reads from the page (matrix.json also records reachable_ids).
 const matrixJson = JSON.parse(readFileSync(join(RUN_DIR, 'matrix.json'), 'utf8')) as { grader_task_versions: Record<string, MatrixEntry> };
 export async function cliMatrix(id: string): Promise<MatrixEntry> {
   const task = await nodeTaskSource({ testMode: false }).get(id);
   const { grader_task_version } = await taskVersions(task, MANIFEST_HASH);
   const entry = matrixJson.grader_task_versions[grader_task_version];
   if (entry === undefined || entry.task_id !== id) throw new Error(`matrix.json has no entry for ${id} at grader_task_version ${grader_task_version}; rerun node apps/web/e2e/fixtures/sample-results/generate.ts --matrix`);
-  return entry;
+  return { ...entry, probes: entry.probes.map(({ kind, id, outcome, as_expected, failed_checks }) => ({ kind, id, outcome, as_expected, failed_checks })) };
 }
 
 // `pnpm cli replay --json` over one task's trials of the sample run: a copy holding only that

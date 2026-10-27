@@ -27,7 +27,10 @@
 // infra-counted rate (passes over the valid trials plus the INFRA and ENV_ERROR attempts). A
 // task the consistency flag marks (packages/core/summary.ts header: most valid failures fail
 // the same check first, or 0 passes in 10 or more valid trials) gets a third line naming it;
-// audit-check requires a task-validity review for it.
+// audit-check requires a task-validity review for it. A run line gives the model and effort its
+// records share, and each task's fault box line its valid failures by kind (TAXONOMY of the current
+// grade), by audit label when <run>/audit.jsonl is present, its infra re-runs and its top failed
+// checks (packages/core/summary.ts faultCounts, P17j JG7).
 // Trials are named by trialName, as replay.json names them. --json prints only the summary on stdout (the lines go to stderr). Exit 0 when every
 // requirement holds; 1 on a violation or a missing run; 2 on a usage error.
 import { existsSync, readFileSync } from 'node:fs';
@@ -36,6 +39,7 @@ import { pathToFileURL } from 'node:url';
 import type { BatchRecord } from '../packages/core/batch.ts';
 import { installEgressGuard } from '../packages/core/egress.ts';
 import { isValid } from '../packages/core/outcomes.ts';
+import { readLabels, rowLabel } from './audit-check.ts';
 import { assertSummary, checkRequirements, describeConsistency, parseRequire, PASS_K, summarize, type RegradeGrade, type Requirements, type SummaryTrial } from '../packages/core/summary.ts';
 import type { TaskSource } from '../packages/core/tasks.ts';
 import { readManifest, requeuedRecords, settledRecords, writeJson } from './adapters/result-sink-node.ts';
@@ -57,7 +61,7 @@ const toTrial = (r: BatchRecord & { regrades?: RegradeGrade[] }): SummaryTrial =
   task_id: r.task_id, task_version: r.task_version ?? null, env_version: r.env_version ?? null, grader_task_version: r.grader_task_version ?? null,
   ...(typeof r.index === 'number' ? { index: r.index } : {}), ...(r.trajectory ? { trajectory: r.trajectory } : {}), ...(r.trial_id ? { trial_id: r.trial_id } : {}),
   outcome: r.outcome, detail: r.detail ?? null, ...(r.checks ? { checks: r.checks } : {}), model_requested: r.model_requested,
-  models_returned: r.models_returned ?? [], state_hash: r.state_hash, tool_errors: r.tool_errors ?? {}, cost_usd: r.cost_usd ?? 0,
+  models_returned: r.models_returned ?? [], effort: r.effort ?? null, attribution: r.attribution ?? null, state_hash: r.state_hash, tool_errors: r.tool_errors ?? {}, cost_usd: r.cost_usd ?? 0,
   judge_cost_usd: r.judge_cost_usd ?? 0, score: r.score ?? null,
   ...(r.regrades ? { regrades: r.regrades } : {}),
 });
@@ -68,6 +72,14 @@ export function readReplay(dir: string): Record<string, boolean> | null {
   if (!existsSync(file)) return null;
   const trials = (JSON.parse(readFileSync(file, 'utf8')) as { trials?: Record<string, { match?: unknown }> }).trials ?? {};
   return Object.fromEntries(Object.entries(trials).map(([k, v]) => [k, v.match === true]));
+}
+
+// audit.jsonl's label of each audited trial, by trial; null without the file. The rows are read by
+// cli/audit-check.ts readLabels and labelled by its rowLabel, so the two commands count the same
+// rows (verifier-phase-P17i-JG7-1 F2); audit-check reports the rows it cannot read.
+export function readAuditLabels(dir: string): Record<string, string | null> | null {
+  if (!existsSync(join(dir, 'audit.jsonl'))) return null;
+  return Object.fromEntries((readLabels(dir, []) ?? []).flatMap(({ label }) => (label === null ? [] : [[label.trial, rowLabel(label)]])));
 }
 
 const pct = (x: number) => `${(x * 100).toFixed(1)}%`;
@@ -126,6 +138,7 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
     replay: readReplay(dir),
     mode: manifest?.mode ?? null,
     ...(expected ? { expected } : {}),
+    audit: readAuditLabels(dir),
   });
   s.requirements = req;
   s.violations = checkRequirements(s, req);
@@ -133,6 +146,7 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
   writeJson(join(dir, 'summary.json'), s);
 
   const say = json ? deps.err : deps.out;
+  say(`model ${s.model ?? '(the records differ or none is recorded)'}, effort ${s.effort ?? '(the records differ or none is recorded)'}`);
   const width = Math.max(...Object.keys(s.tasks).map((id) => id.length), 4);
   for (const [id, t] of Object.entries(s.tasks)) {
     const w = t.wilson95 === null ? 'n/a' : `${pct(t.wilson95.lo)}-${pct(t.wilson95.hi)}`;
@@ -145,6 +159,10 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
       `${' '.repeat(width)}  mean score ${fixed(t.mean_score)} (${m.mean_score} valid)  raw mean ${fixed(t.raw_mean_score)} (${m.raw_mean_score})  gates met ${fixed(t.gate_fraction)} (${m.gate_fraction})  pass_no_harm ${t.pass_no_harm}/${t.trials}  ${PASS_K.map((k) => `pass^${k} ${fixed(t.pass_k[k])}`).join(' ')}  ` +
         `LIMIT ${counts(t.limits)}  re-queued ${Object.keys(t.requeued_outcomes).length === 0 ? 'none' : counts(t.requeued_outcomes)}  infra-counted ${t.passes}/${t.infra_counted_attempts} (${fixed(t.infra_counted_rate)})`,
     );
+    const f = t.fault_counts;
+    const nonzero = (h: Record<string, number>) => counts(Object.fromEntries(Object.entries(h).filter(([, n]) => n > 0))) || 'none';
+    const top = t.top_failed_checks.map((c) => `${c.check} ${c.count}`).join(', ') || 'none';
+    say(`${' '.repeat(width)}  failures ${f.failures}: by kind ${nonzero(f.taxonomy)}; by audit label${f.label === null ? ': no audit.jsonl' : ` ${nonzero(f.label)}`}; infra re-runs ${f.infra_reruns}; top failed checks ${top}`);
     const flagged = describeConsistency(t.consistency);
     if (flagged.length > 0) say(`${' '.repeat(width)}  consistency flagged: ${flagged.join('; ')} (audit-check requires a task-validity review)`);
   }

@@ -57,6 +57,9 @@ export interface ExplainCheck {
 export interface ExplainRecord {
   task_id?: string;
   task_version: string | null;
+  // The env files, world and TOOLS_VERSION it ran at (packages/core/tasks.ts); absent on records
+  // made before env_version.
+  env_version?: string | null;
   // The grader_task_version it was graded at; a regrade's entry carries its own.
   grader_task_version?: string | null;
   outcome: string;
@@ -131,8 +134,13 @@ export interface ExplainContext {
   events: readonly TrialEvent[];
   // The run manifest's world_hash (explain-context.ts runWorldHash); null when the run has none.
   world_state_hash?: string | null;
-  // Whether a resource is in the world, so the tool would have returned it had the model asked.
+  // Whether a decisive id the model was never shown is reachable: a tool result exposed or
+  // referenced it to a passing oracle or alternative in the matrix run on the trial's world and
+  // env_version (explain-context.ts reachability, R14-30).
   exposable?: (id: string) => boolean;
+  // Why exposable is absent, when the caller knows: the matrix ran on another world or env_version,
+  // the run has no manifest, or matrix.json records no reachable ids. M1 shows it.
+  exposability_unchecked?: string;
   // The exposure of the current decisive check's ids, then the first failed check's when it is
   // another, when the caller recomputed it from the trajectory (a regrade failed another check
   // than the recorded attribution names).
@@ -164,6 +172,12 @@ export interface CriterionRow {
   met: CriterionMet;
   evidence: string;
 }
+
+// Whether M1-M4 confirm a failure: each is met, or does not apply (n/a: M1 on a failure with no
+// failed gate check), as the confirmation reads them. The one rule for the M1-M4 count that
+// cli/audit-check.ts and the web fault box give (decisions.tsv 2026-10-29T21:00).
+export const m1ToM4Met = (criteria: readonly CriterionRow[]): boolean =>
+  ['M1', 'M2', 'M3', 'M4'].every((id) => { const met = criteria.find((c) => c.id === id)?.met; return met === true || met === 'n/a'; });
 
 export interface Holding {
   fault: Fault;
@@ -433,6 +447,9 @@ function refusalText(r: ExplainRecord, events: readonly TrialEvent[] | undefined
 
 const capWords = (s: string, max = REASON_WORDS) => firstWords(s, max);
 
+// The grader criterion that decides a PASS (outcomes.ts GR5).
+const FALSE_PASS = 'GR5';
+
 // The decisive gate check of the current grade (packages/grader attribution.ts decisiveGate): the
 // first failed safety gate without the omission mark, else the first failed gate, as the
 // attribution names it; a check with no kind (a hand-built record) counts as a gate on a FAIL
@@ -487,6 +504,7 @@ export function explainTrial(record: ExplainRecord, audit: AuditRow | null | und
       id: failed.id,
       first_failed: outranked?.id ?? null,
       exposure: exposure === null ? null : exposure.map((e) => ({ ...e, exposable: e.first_exposed_step === null && ctx.exposable ? ctx.exposable(e.id) : null })),
+      exposability_unchecked: ctx.exposable ? null : (ctx.exposability_unchecked ?? null),
     },
     matrix: ctx.matrix ?? null,
     check_error: grade.regraded ? null : (record.error ?? null),
@@ -505,7 +523,8 @@ export function explainTrial(record: ExplainRecord, audit: AuditRow | null | und
   };
   const fault_criteria = Object.fromEntries(FAULT_PRECEDENCE.map((f) => [f, FAULT_DEFINITIONS[f].criteria.map((c) => ({ id: c.id, ...c.check(facts) }))])) as Record<Fault, CriterionRow[]>;
   const holding: Holding[] = FAULT_PRECEDENCE.flatMap((f) => fault_criteria[f].filter((c) => c.met === true).map((c) => ({ fault: f, id: c.id, evidence: c.evidence })));
-  const deciding = outcome === 'PASS' ? null : (holding[0] ?? null);
+  // A PASS has no fault, except a false PASS: GR5 decides it (P17j JG5).
+  const deciding = outcome === 'PASS' ? (holding.find((h) => h.id === FALSE_PASS) ?? null) : (holding[0] ?? null);
   const fault = deciding?.fault ?? null;
   // MF and R criteria restate the outcome, so only infra, grader and env criteria are notes.
   // A run-level block is a note, and is not repeated when GR4 decided on the same matrix.
@@ -557,7 +576,8 @@ export function explainTrial(record: ExplainRecord, audit: AuditRow | null | und
       reason = `${outcome}: no failed gate check recorded`;
     }
   } else if (outcome === 'PASS') {
-    reason = notes.length === 0 ? 'PASS: every gate check met' : `PASS: every gate check met; note ${notes[0]!.id}: ${notes[0]!.evidence}`;
+    reason = deciding !== null ? `PASS: an audit found a false PASS (${deciding.id}); the grader's fault, which blocks the run`
+      : notes.length === 0 ? 'PASS: every gate check met' : `PASS: every gate check met; note ${notes[0]!.id}: ${notes[0]!.evidence}`;
   } else {
     const detail = record.detail ? ` (${record.detail})` : '';
     if (fault === 'grader') {
@@ -607,13 +627,17 @@ export function explainTrial(record: ExplainRecord, audit: AuditRow | null | und
 }
 
 // Why a trial blocks the run, or null. A valid failure labelled environment or grader is not
-// allowed in a committed run, so a run with one has no headline pass rate (DENOMINATOR_RULE); a
-// run-level block (B1) on its grader_task_version blocks it too. Excluded outcomes are not covered here:
+// allowed in a committed run, so a run with one has no headline pass rate (DENOMINATOR_RULE), and
+// neither is a false PASS (GR5), which is not counted as a pass; a run-level block (B1) on its
+// grader_task_version blocks it too. Excluded outcomes are not covered here:
 // INFRA and ENV_ERROR are rerun, and summary --require grader_error=0 blocks a GRADER_ERROR.
 // cli/audit-check.ts enforces both, and its --json names these trials as excluded with the
 // denominator without them: summary.ts sees no audit rows, matrix or world, so it cannot compute
 // these labels.
 export function excludedFromHeadline(e: Explanation): string | null {
+  if (e.valid && e.outcome === 'PASS' && e.deciding?.id === FALSE_PASS) {
+    return `PASS is a false PASS (${FALSE_PASS}): the grader's fault, not counted as a pass, so the run fails and has no headline pass rate until a grader fix, a full offline regrade and a disclosure in results/changelog.d`;
+  }
   if (!e.valid || e.outcome === 'PASS' || (e.fault !== 'env' && e.fault !== 'grader')) return null;
   const fix = e.fault === 'env' ? 'an environment fix and a rerun of the affected trials, disclosed in results/changelog.d' : 'a grader fix and a full offline regrade';
   return `${e.outcome} is the ${e.fault === 'env' ? "environment's" : "grader's"} fault (${e.deciding!.id}): not allowed in a committed run, so the run fails and has no headline pass rate until ${fix}`;

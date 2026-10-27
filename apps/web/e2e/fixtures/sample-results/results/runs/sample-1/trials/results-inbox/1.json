@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:results-inbox:1",
   "task_id": "results-inbox",
-  "task_version": "97be735f786b9821be438442c2bb51e6973e5cf19b203275255392f3c3c98992",
+  "task_version": "1e5337be2650d63e3b509527db69119700b4d762e93cfc63566ada5dbcc0f26a",
   "env_version": "f7ed42d3c0d7920587b33d75a7815885b288336263bdab07957d0deb58c8730a",
-  "grader_task_version": "eb98c9878e26089272c4a08654ac9c3bfe4e05575e3e841a31870adb6e094fe3",
+  "grader_task_version": "47e52645ed3e78e683ff4dc9d5a8a7a678ad0e170e91b98c0221044dd60b613f",
   "fixture_hash": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
   "state_hash": {
     "initial": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
@@ -250,6 +250,18 @@
       "ids": []
     },
     {
+      "id": "patient_contact",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "uncontacted": []
+      },
+      "ids": []
+    },
+    {
       "id": "nodule_tracking_task",
       "kind": "rubric",
       "method": "code",
@@ -295,7 +307,8 @@
       "evidence": {
         "messages": [
           "Communication/comm-t0003"
-        ]
+        ],
+        "routed": []
       }
     },
     {
@@ -335,7 +348,8 @@
       "evidence": {
         "messages": [
           "Communication/comm-t0007"
-        ]
+        ],
+        "routed": []
       }
     },
     {

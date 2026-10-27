@@ -19,8 +19,12 @@ import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type Ref } fr
 import { MET_TEXT, type Explanation } from '../../../../packages/core/explain.ts';
 import type { TrialEvent } from '../../../../packages/core/events.ts';
 import { fetchEvents, fullExplanation, useResults, type RunData, type Trial } from '../data/results.ts';
-import { FaultLabel, GlossaryLink, HashText, Notice, OutcomeChip } from '../data/ui.tsx';
+import { harmItems, safePass, type HarmItem } from '../data/harm.ts';
+import { FaultLabel, GlossaryLink, HarmChip, HashText, Notice, OutcomeChip } from '../data/ui.tsx';
+import { blocksTheRun, runBlock } from '../data/failures.ts';
 import { tabTarget } from '../data/tabs.ts';
+import { useTaskList } from '../data/tasks.ts';
+import { MODEL } from '../adapters/ledger-browser.ts';
 import { hrefWith, navigate, onNav, useParams } from '../data/url.ts';
 import { runnerToken } from '../keygate/runner.ts';
 import { Attribution, criterionPhrase, criterionText, FAULT_WORD, LINK, StepLink } from './Attribution.tsx';
@@ -28,6 +32,7 @@ import { EnvironmentTab, Raw } from './Details.tsx';
 import { Grading } from './Grading.tsx';
 import { returnTo } from './back.ts';
 import { FIRST_NONPASS, resolveTrial } from './resolve.ts';
+import { trialPlace } from './place.ts';
 import { StateDiff } from './StateDiff.tsx';
 import { internalErrorRow, trajectoryOf, type Row } from './steps.ts';
 import { Trajectory, type Loaded } from './Trajectory.tsx';
@@ -48,7 +53,7 @@ const BACK = { trial: null, tab: null };
 // from: the trial on screen. On open, the page starts at its header with focus on the heading,
 // however far down the list the trial was opened from (review-ui-P16-1 F1); Back to Runs returns
 // to its row (F6).
-function Frame({ title, headingRef, from, children }: { title: string; headingRef?: Ref<HTMLHeadingElement> | undefined; from?: { run: string; trial: string }; children: React.ReactNode }) {
+function Frame({ title, path, headingRef, from, children }: { title: React.ReactNode; path?: string; headingRef?: Ref<HTMLHeadingElement> | undefined; from?: { run: string; trial: string }; children: React.ReactNode }) {
   const h1 = useRef<HTMLHeadingElement | null>(null);
   useEffect(() => {
     if (from === undefined) return;
@@ -76,10 +81,11 @@ function Frame({ title, headingRef, from, children }: { title: string; headingRe
           else if (headingRef) (headingRef as React.MutableRefObject<HTMLHeadingElement | null>).current = el;
         }}
         tabIndex={-1}
-        className="mt-2 break-all text-base font-semibold text-ink focus-visible:outline-none"
+        className="mt-2 break-words text-base font-semibold text-ink focus-visible:outline-none"
       >
         {title}
       </h1>
+      {path !== undefined && <p data-testid="trial-path" className="mt-0.5 break-all font-mono text-xs text-ink-muted">{path}</p>}
       <div className="mt-2 space-y-4 sm:mt-3">{children}</div>
     </section>
   );
@@ -126,7 +132,7 @@ function Detail({ t, run, files, tab, headingRef }: { t: Trial; run: RunData; fi
   // The resources the decisive check names (its evidence ids), marked in State diff.
   const decisiveIds = ((t.record.checks ?? []) as ReadonlyArray<{ id: string; ids?: readonly string[] }>).find((c) => c.id === e.decisive_check?.id)?.ids ?? [];
   return (
-    <Frame title={t.name} headingRef={headingRef} from={{ run: run.runId, trial: t.name }}>
+    <Frame title={<TrialHeading t={t} run={run} />} path={t.name} headingRef={headingRef} from={{ run: run.runId, trial: t.name }}>
       <div
         data-testid="trial-detail"
         data-trial={t.name}
@@ -137,15 +143,18 @@ function Detail({ t, run, files, tab, headingRef }: { t: Trial; run: RunData; fi
         className="space-y-3 sm:space-y-4"
       >
         <p className="text-ink-muted">
-          Run <span className="font-medium text-ink">{run.runId}</span>{run.official ? ', the official run' : ', a pilot run, not counted in the results'}. Task <span className="font-medium text-ink">{t.task}</span>.
+          Run <span className="font-medium text-ink">{run.runId}</span>{run.official ? ', the official run' : ', a pilot run, not counted in the results'}. Task <span className="font-medium text-ink">{t.task}</span>
+          {/* A blocked run has no pass rate, here too (verifier-phase-P17i-JU7r2-1 F1). */}
+          {run.official && runBlock(run.trials) !== null ? <>: <span data-testid="run-blocked-line">the run is blocked, so it has no pass rate</span></>
+            : run.official && run.summary?.tasks[t.task] ? <>: {run.summary.tasks[t.task]!.passes}/{run.summary.tasks[t.task]!.trials} pass, <span data-testid="safe-pass">{safePass(run.summary.tasks[t.task]!)}</span></> : null}.
         </p>
-        <Header t={t} e={e} rows={traj?.rows ?? null} onStep={onStep} />
+        <Header t={t} e={e} rows={traj?.rows ?? null} onStep={onStep} official={run.official} />
         <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start">
           <Tabs tab={tab}>
             {{
               grading: <Grading t={t} steps={traj?.steps ?? null} onStep={onStep} decisive={e.decisive_check?.id ?? null} />,
               attribution: <Attribution t={t} e={e} steps={traj?.steps ?? null} onStep={onStep} />,
-              'state-diff': <StateDiff t={t} events={events} steps={traj?.steps ?? null} written={traj?.written ?? []} onStep={onStep} decisiveIds={decisiveIds} />,
+              'state-diff': <StateDiff official={run.official} t={t} events={events} steps={traj?.steps ?? null} written={traj?.written ?? []} onStep={onStep} decisiveIds={decisiveIds} />,
               environment: <EnvironmentTab t={t} />,
               raw: <Raw t={t} />,
             }}
@@ -177,14 +186,17 @@ function SessionNotice() {
 
 // Why the trial ended as it did, before any click (see the header comment). rows: the trajectory,
 // once it loads; an ENV_ERROR's Where is the tool call that failed with an internal error.
-function Header({ t, e, rows, onStep }: { t: Trial; e: Explanation; rows: readonly Row[] | null; onStep: (n: number) => void }) {
-  const nonPass = e.outcome !== 'PASS';
+// official: the trial is of the official run; only it can be blocked, so only it takes the danger rule.
+function Header({ t, e, rows, onStep, official }: { t: Trial; e: Explanation; rows: readonly Row[] | null; onStep: (n: number) => void; official: boolean }) {
+  // A fault to show: every non-pass, and a false PASS (GR5, P17j JG5), which the grader decided.
+  const nonPass = e.outcome !== 'PASS' || e.fault !== null;
   const failedCall = e.fault === 'env' && e.decisive_step === null && rows !== null ? internalErrorRow(rows) : null;
   return (
-    <section aria-label="Why this trial ended as it did" data-testid="trial-header" className={`min-w-0 rounded-sm border border-line bg-surface p-4 ${nonPass ? 'border-l-2 border-l-danger' : ''}`}>
+    <section aria-label="Why this trial ended as it did" data-testid="trial-header" className={`min-w-0 rounded-sm border border-line bg-surface p-4 ${nonPass ? `border-l-2 ${official && blocksTheRun(e) ? 'border-l-danger' : 'border-l-line-strong'}` : ''}`}>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <OutcomeChip outcome={e.outcome} fault={e.fault} />
-        {nonPass && <FaultLabel e={e} />}
+        <HarmChip items={useHarmTexts(t.task, harmItems(t.record))} />
+        {nonPass && <FaultLabel e={e} notCountedShown={!e.valid && e.deciding !== null} official={official} />}
         <span className="ml-auto text-xs text-ink-muted" title="Agent and judge cost">${(t.record.cost_usd + (t.record.judge_cost_usd ?? 0)).toFixed(2)}</span>
       </div>
       {!e.valid && e.deciding && (
@@ -223,9 +235,9 @@ function Header({ t, e, rows, onStep }: { t: Trial; e: Explanation; rows: readon
             <dd><StepLink n={failedCall.step} onStep={onStep} testId="failed-call-link">Step {failedCall.step}</StepLink>: the {failedCall.name} call that failed with an internal error</dd>
           </>
         )}
-        <dt>{e.outcome === 'PASS' ? 'Checks' : 'Criteria'}</dt>
+        <dt>{nonPass ? 'Criteria' : 'Checks'}</dt>
         <dd>
-          {e.outcome === 'PASS' ? <Confirmation e={e} /> : (
+          {!nonPass ? <Confirmation e={e} /> : (
           <ul data-testid="header-criteria" className="flex flex-wrap gap-x-3 gap-y-0.5">
             {e.criteria.map((c) => (
               <li key={c.id} data-id={c.id} data-met={String(c.met)} title={criterionText(c.id)}>
@@ -238,6 +250,49 @@ function Header({ t, e, rows, onStep }: { t: Trial; e: Explanation; rows: readon
         </dd>
       </dl>
     </section>
+  );
+}
+
+// The harm items with their rubric questions, once the task's checks load (verifier JU3-1 F5);
+// the ids alone until then, and for a code item, which has no question.
+function useHarmTexts(task: string, items: HarmItem[]): HarmItem[] {
+  const [texts, setTexts] = useState<Record<string, string>>({});
+  const ids = items.map((x) => x.id).join(',');
+  useEffect(() => {
+    if (ids === '') return;
+    let live = true;
+    void Promise.all([import('../tasks/matrix-task.ts'), import('../tasks/check-text.ts')]).then(async ([{ taskChecks }, { rubricQuestion }]) => {
+      const checks = await taskChecks(task).catch(() => []);
+      const found: Record<string, string> = {};
+      for (const c of checks) if (ids.split(',').includes(c.id)) {
+        const q = await rubricQuestion(c);
+        if (q) found[c.id] = q;
+      }
+      if (live) setTexts(found);
+    });
+    return () => {
+      live = false;
+    };
+  }, [task, ids]);
+  return items.map((x) => (texts[x.id] ? { ...x, text: texts[x.id]! } : x));
+}
+
+// The trial page heading (pre-audit M8, P17j JU11): the task's title, then "Trial i of n · <model> ·
+// effort <effort>" (place.ts: i the trial's place among the run's trials of the task, model and
+// effort, n how many there are; the record's own index is in the path); the path sits below in
+// small mono text. Words wrap whole, so no token breaks mid-word at 390 px.
+function TrialHeading({ t, run }: { t: Trial; run: RunData }) {
+  const { tasks } = useTaskList();
+  const title = tasks?.find((x) => x.id === t.task)?.title ?? t.task;
+  const r = t.record as Trial['record'] & { index?: number; models_returned?: readonly string[]; effort?: string };
+  const place = trialPlace(t, run.trials);
+  return (
+    <>
+      <span data-testid="trial-title">{title}</span>
+      <span data-testid="trial-sub" className="block text-sm font-normal text-ink-muted">
+        {[place !== null ? `Trial ${place.i} of ${place.n}` : null, r.models_returned?.[0] ?? MODEL, r.effort ? `effort ${r.effort}` : null].filter(Boolean).join(' · ')}
+      </span>
+    </>
   );
 }
 

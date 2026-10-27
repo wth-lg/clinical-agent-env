@@ -23,6 +23,14 @@
 //     a trial is not allowed in a committed run, so a run with one has no headline pass rate
 //     (DENOMINATOR_RULE). This is where that block is enforced; summary.ts reads no audit rows,
 //     matrix or world;
+//   - no PASS is a false PASS (outcomes.ts GR5: an audit row labels it grader, with evidence ids;
+//     a PASS labelled grader without evidence ids is a violation of its own): it is not counted as
+//     a pass and blocks the run as a grader-labelled failure does (P17j JG5);
+//   - every PASS whose current grade has a penalty (a rubric item with negative points) met or
+//     unknown has an audit row with evidence ids, whatever its points (P17j JG5); any such row
+//     meets the rule, and its label (grader or none) says whether the PASS is false;
+//   - a PASS row's label, when it has one, is grader: model or environment on a PASS, or a name
+//     that is not an audit label, is a violation;
 //   - no run-level block (outcomes.ts RUN_BLOCKS, B1: the oracle or an alternative fails the matrix)
 //     holds on the grader_task_version of any current grade of the run, named once per
 //     grader_task_version;
@@ -60,20 +68,28 @@
 // (explainContext) is packages/core/explain-context.ts over the run's files, the one builder the
 // web Runs view uses too: the trajectory; the task's check text (tasks/<id>.check-text.ts) and
 // checks; <run>/manifest.json's world_hash as the manifest hash (none without a manifest, so M3
-// is pending); the world for exposability, loaded only when M1 reads it; <run>/matrix.json, as
-// `pnpm cli matrix --out <run>` writes it, for M4, GR4 and B1, looked up by the
-// grader_task_version of each record's current grade, so a matrix run for the fixed grader speaks
+// is pending); <run>/matrix.json, as `pnpm cli matrix --out <run>` writes it, for M4, GR4 and B1,
+// and for M1's exposability, which means reachable (R14-30): first the manifest's world_hash
+// against the world the matrix ran on and the record's env_version against the matrix's, then
+// whether a tool result showed or referenced the id to a passing oracle or alternative
+// (explain-context.ts reachability; today's world is not read), the entry looked up by the
+// grader_task_version of the record's current grade, so a matrix run for the fixed grader speaks
 // for a regraded trial and one for the grader it ran under does not; and, on a regraded trial
 // whose first failed check is not the one its recorded attribution names, that check's decisive
 // ids with the step each was first exposed at in the trajectory.
-// --json prints {failures, labelled, labelled_environment, labelled_grader, faults, valid, excluded,
-// denominator, task_validity, violations}: task_validity maps each flagged task to its flags and
+// --json prints {failures, labelled, labelled_environment, labelled_grader, faults, fault_box, valid, excluded,
+// denominator, task_validity, violations}: fault_box gives each task's fault_counts and
+// top_failed_checks as summary.json does (packages/core/summary.ts faultCounts, with this run's
+// audit labels) and m1_m4, {met, failures}: the valid failures whose M1-M4 are all met, n/a
+// counting as met (P17j JG7), and false_passes, the task's false PASSes (GR5), which faults.grader
+// and labelled_grader count too; task_validity maps each flagged task to its flags and
 // its review's verdict and reviewer (null without one); labelled_environment and labelled_grader count the failures the audit
-// labels environment or grader (after adjudication); faults counts the failures by the fault
+// labels environment or grader (after adjudication), labelled_grader with the false PASSes, which
+// the text line names beside it ("grader N (k false PASS)"); faults counts the failures by the fault
 // explainTrial computes ({model, refusal, env, grader, infra}), which the label must agree with
 // but need not (a model label on an E5 failure is a violation, counted model there and env here);
 // valid counts the settled trials whose current grade is valid, excluded names (sorted) the
-// failures excludedFromHeadline names, and denominator is valid without them, for the UI and the
+// failures and false PASSes excludedFromHeadline names, and denominator is valid without them, for the UI and the
 // writeup; a run with an excluded trial fails, so it has no headline pass rate. Exit 2 on a usage error.
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -81,18 +97,17 @@ import { pathToFileURL } from 'node:url';
 import type { BatchRecord } from '../packages/core/batch.ts';
 import { installEgressGuard } from '../packages/core/egress.ts';
 import type { TrialEvent } from '../packages/core/events.ts';
-import { explainContext as contextOf, needsWorld, worldLookup, type TaskCheck } from '../packages/core/explain-context.ts';
-import { AUDIT_QUESTIONS, auditAnswerOf, auditLabelOf, citedStep, excludedFromHeadline, explainTrial, formatCriterion, type AuditRow, type CheckText, type ExplainContext, type ExplainRecord } from '../packages/core/explain.ts';
-import { AUDIT_LABEL, AUDIT_LABELS, e6Confirmation, FAULT, FAULT_PRECEDENCE, type Fault, type Outcome } from '../packages/core/outcomes.ts';
+import { explainContext as contextOf, type TaskCheck } from '../packages/core/explain-context.ts';
+import { AUDIT_QUESTIONS, auditAnswerOf, auditLabelOf, citedStep, excludedFromHeadline, explainTrial, formatCriterion, m1ToM4Met, type AuditRow, type CheckText, type ExplainContext, type ExplainRecord } from '../packages/core/explain.ts';
+import { AUDIT_LABEL, AUDIT_LABELS, e6Confirmation, FAULT, FAULT_PRECEDENCE, type AuditLabelName, type Fault, type Outcome } from '../packages/core/outcomes.ts';
 import { parseTrajectory } from '../packages/core/trajectory.ts';
-import { consistencyOf, currentGrade, describeConsistency, type ConsistencyFlag } from '../packages/core/summary.ts';
-import { loadStore } from '../packages/env/fixture-source.ts';
+import { consistencyOf, currentGrade, describeConsistency, faultCounts, type ConsistencyFlag } from '../packages/core/summary.ts';
 import { TAXONOMY } from '../packages/grader/attribution.ts';
 import { sameId, stepsOf } from '../packages/grader/exposure.ts';
 import { requeuedRecords, settledRecords, trajectoryOf } from './adapters/result-sink-node.ts';
 import { TASKS_DIR } from './adapters/tasks-node.ts';
 import { trialName } from './replay.ts';
-import { repoWorld, taskChecks } from './run.ts';
+import { taskChecks } from './run.ts';
 import { readReplay } from './summary.ts';
 
 // A task's checks as far as the context reads them (packages/core/explain-context.ts TaskCheck).
@@ -121,9 +136,14 @@ type Line = { raw: string; label: AuditLabel | null; review?: TaskValidityReview
 const defaults: Deps = { out: (l) => process.stdout.write(`${l}\n`), err: (l) => process.stderr.write(`${l}\n`) };
 const MIN_AUDITED_PASSES = 2;
 const isLabel = (l: string | null | undefined): boolean => (AUDIT_LABELS as readonly (string | null | undefined)[]).includes(l);
+// A row's label as explainTrial reads it: an adjudicated_label that is not an audit label is
+// ignored (audit-check reports it), then the row's own label (explain.ts auditLabelOf).
+export const rowLabel = (l: AuditLabel): string | null => auditLabelOf({ ...l, adjudicated_label: isLabel(l.adjudicated_label) ? (l.adjudicated_label as AuditLabelName) : null });
 
 // audit.jsonl's lines, each with its label, or its task-validity review, when it parses.
-function readLabels(dir: string, violations: string[]): Line[] | null {
+// The one reader of audit.jsonl's rows: cli/summary.ts reads the labels through it too, so the two
+// commands count the same rows (verifier-phase-P17i-JG7-1 F2).
+export function readLabels(dir: string, violations: string[]): Line[] | null {
   const file = join(dir, 'audit.jsonl');
   if (!existsSync(file)) {
     violations.push('audit.jsonl is missing');
@@ -167,8 +187,6 @@ export async function explainContext(dir: string, checks: TaskChecks = taskCheck
   const manifest = readJson(join(dir, 'manifest.json'));
   const matrix = readJson(join(dir, 'matrix.json'));
   const events = new Map<string, TrialEvent[]>();
-  let world: Promise<(id: string) => boolean> | undefined;
-  const inWorld = () => (world ??= loadStore(repoWorld().world).then((store) => worldLookup(new Set([...store.resources()].map((r) => `${r.resourceType}/${r.id}`)))));
   const gates = new Map<string, Promise<readonly TaskCheck[]>>();
   return async (r) => {
     const name = trialName(r);
@@ -179,7 +197,7 @@ export async function explainContext(dir: string, checks: TaskChecks = taskCheck
     const trajectory = events.get(name) as TrialEvent[];
     if (!gates.has(r.task_id)) gates.set(r.task_id, checks(r.task_id).catch(() => []));
     const input = { record: r as ExplainRecord, events: trajectory, manifest, matrix, checks: await gates.get(r.task_id)!, text: await checkTextOf(r.task_id) };
-    return { ...contextOf({ ...input, inWorld: needsWorld(input) ? await inWorld() : null }), events: trajectory };
+    return { ...contextOf(input), events: trajectory };
   };
 }
 
@@ -261,7 +279,15 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
         }
       }
     }
-    if (outcome === 'PASS') continue;
+    if (outcome === 'PASS') {
+      // GR5 reads the label of a PASS row, so it is checked here too (JG5-1 S1): a typo must not
+      // hide a false PASS, and on a PASS the only label is grader.
+      const said = auditLabelOf(l);
+      if (said !== null && !isLabel(said)) v.push(`${l.trial}: label ${said} is not one of ${AUDIT_LABELS.join(', ')}`);
+      else if (said !== null && said !== 'grader') v.push(`${l.trial}: a PASS labelled ${said}; on a PASS the only label is grader, a false PASS (GR5)`);
+      else if (said === 'grader' && l.evidence_ids.length === 0) v.push(`${l.trial}: a PASS labelled grader (a false PASS, GR5) needs evidence ids`);
+      continue;
+    }
     // The trial's fault without the audit's label, outcome or fault verdict: the label must agree
     // with it, not define it. The row's answers to the two questions, its cited step and how it was
     // confirmed are evidence, so they stay: a confirmed tool_rejections_correct no citing a refused
@@ -297,6 +323,10 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
     if (l.evidence_ids.length === 0) v.push(`${l.trial}: no evidence ids`);
   }
   const faults = Object.fromEntries(FAULT_PRECEDENCE.map((f) => [f, 0])) as Record<Fault, number>;
+  // Per task, the failures whose confirmation criteria M1-M4 are all met (the fault box's count),
+  // and the false PASSes (GR5).
+  const m1m4 = new Map<string, number>();
+  const falsePasses = new Map<string, number>();
   for (const r of failures) {
     const name = trialName(r);
     const row = byTrial.get(name);
@@ -306,6 +336,8 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
     }
     const e = await explain(r, byTrial.get(name));
     if (e.fault !== null) faults[e.fault]++;
+    // explain.ts m1ToM4Met: n/a is met (verifier-phase-P17i-JG7-1 F1).
+    if (m1ToM4Met(e.criteria)) m1m4.set(r.task_id, (m1m4.get(r.task_id) ?? 0) + 1);
     for (const c of e.criteria) {
       if ((c.id === 'M1' || c.id === 'M4') && (c.met === false || c.met === 'pending')) v.push(`${name}: ${formatCriterion(c).replace(': ', ' ')}: ${c.evidence}`);
     }
@@ -313,6 +345,27 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
     if (excluded !== null) {
       v.push(`${name}: ${excluded}`);
       excludedTrials.push(name);
+    }
+  }
+  // A PASS the audit labels grader is a false PASS (GR5): not counted, and it blocks the run. A PASS
+  // with a penalty (a rubric item with negative points) met or unknown needs an audit row with
+  // evidence ids (P17j JG5), on top of the MIN_AUDITED_PASSES sample below.
+  for (const r of valid.filter((x) => currentGrade(x).outcome === 'PASS')) {
+    const name = trialName(r);
+    const row = byTrial.get(name);
+    const penalties = (currentGrade(r).checks ?? []).filter((c) => c.kind === 'rubric' && (c.points ?? 0) < 0 && (c.met === true || c.met === 'unknown'));
+    if (penalties.length > 0 && (row?.evidence_ids.length ?? 0) === 0) {
+      v.push(`${name}: PASS with penalty ${penalties.map((c) => `${c.id} (${c.points} points) ${c.met === true ? 'met' : 'unknown'}`).join(', ')} has no audit row with evidence ids`);
+    }
+    if (row === undefined) continue;
+    const excluded = excludedFromHeadline(await explain(r, row));
+    if (excluded !== null) {
+      v.push(`${name}: ${excluded}`);
+      excludedTrials.push(name);
+      // A false PASS is the grader's fault and labelled grader: it counts so (JG5-1 m2).
+      faults.grader++;
+      grader++;
+      falsePasses.set(r.task_id, (falsePasses.get(r.task_id) ?? 0) + 1);
     }
   }
   // A run-level block holds for its whole grader_task_version: named once, from the first record that shows it.
@@ -370,9 +423,17 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
   const say = json ? deps.err : deps.out;
   for (const line of findings) say(line);
   for (const line of v) say(`violation: ${line}`);
-  say(`audit-check: ${labelled}/${failures.length} failures labelled, environment ${environment}, grader ${grader}; ${v.length === 0 ? 'every check holds' : `${v.length} violation(s)`}`);
+  const falsePassCount = [...falsePasses.values()].reduce((a, n) => a + n, 0);
+  say(`audit-check: ${labelled}/${failures.length} failures labelled, environment ${environment}, grader ${grader}${falsePassCount > 0 ? ` (${falsePassCount} false PASS)` : ''}; ${v.length === 0 ? 'every check holds' : `${v.length} violation(s)`}`);
   const excluded = excludedTrials.sort();
-  if (json) deps.out(JSON.stringify({ failures: failures.length, labelled, labelled_environment: environment, labelled_grader: grader, faults, valid: valid.length, excluded, denominator: valid.length - excluded.length, task_validity: taskValidity, violations: v }));
+  // Each task's fault box, as summary.json gives it (packages/core/summary.ts faultCounts), with
+  // the M1-M4 count: the failures whose M1-M4 are all met, of the valid failures.
+  const audited = Object.fromEntries([...byTrial].map(([name, l]) => [name, rowLabel(l)]));
+  const faultBox = Object.fromEntries([...new Set([...records.values()].map((r) => r.task_id))].sort().map((task) => {
+    const box = faultCounts([...records.values()].filter((r) => r.task_id === task), requeued.filter((r) => r.task_id === task), lines === null ? null : audited);
+    return [task, { ...box, m1_m4: { met: m1m4.get(task) ?? 0, failures: box.fault_counts.failures }, false_passes: falsePasses.get(task) ?? 0 }];
+  }));
+  if (json) deps.out(JSON.stringify({ failures: failures.length, labelled, labelled_environment: environment, labelled_grader: grader, faults, fault_box: faultBox, valid: valid.length, excluded, denominator: valid.length - excluded.length, task_validity: taskValidity, violations: v }));
   return v.length === 0 ? 0 : 1;
 }
 

@@ -8,9 +8,11 @@
 import { Check, CircleHelp, Copy } from 'lucide-react';
 import { useState, type CSSProperties, type ReactNode, type Ref } from 'react';
 import { NOT_AUDITED_MARKER, type Explanation } from '../../../../packages/core/explain.ts';
+import { blocksTheRun, isFalsePass, shownLabel } from './failures.ts';
 import { DENOMINATOR_RULE, FAULT, isValid, OUTCOMES, PASS_DEFINITION, RERUN_OUTCOMES, VALID_OUTCOMES, type Fault, type Outcome } from '../../../../packages/core/outcomes.ts';
 import type { Interval } from '../../../../packages/core/summary.ts';
 import { hrefWith, onNav } from './url.ts';
+import type { HarmItem } from './harm.ts';
 
 export function Page({ title, headingRef, lead, children }: { title: string; headingRef?: Ref<HTMLHeadingElement> | undefined; lead?: ReactNode; children: ReactNode }) {
   return (
@@ -22,9 +24,9 @@ export function Page({ title, headingRef, lead, children }: { title: string; hea
   );
 }
 
-export function Card({ title, children, actions, id }: { title?: ReactNode; children: ReactNode; actions?: ReactNode; id?: string }) {
+export function Card({ title, children, actions, id, testId }: { title?: ReactNode; children: ReactNode; actions?: ReactNode; id?: string; testId?: string }) {
   return (
-    <div id={id} className="rounded-sm border border-line bg-surface">
+    <div id={id} data-testid={testId} className="rounded-sm border border-line bg-surface">
       {(title !== undefined || actions !== undefined) && (
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-2.5">
           <h2 className="min-w-0 break-words font-medium text-ink">{title}</h2>
@@ -60,7 +62,8 @@ export const markLabel = (m: Mark) => MARKS.find((x) => x.mark === m)!.label;
 // The mark of a trial from its outcome and the fault explainTrial gives it; with no explanation
 // (a count by outcome), the fault packages/core/outcomes.ts FAULT gives the outcome.
 export function markOf(outcome: string, fault: Fault | null = FAULT[outcome as Outcome] ?? null): Mark {
-  if (outcome === 'PASS') return 'pass';
+  // A false PASS (GR5) is the grader's fault: it takes the grader mark, not the pass accent.
+  if (outcome === 'PASS') return fault === 'grader' ? 'grader' : 'pass';
   if (fault === 'env') return 'environment';
   if (fault === 'grader') return 'grader';
   if (fault === 'infra' || (fault === null && !isValid(outcome))) return 'infra';
@@ -73,13 +76,15 @@ const MARK_CLASS: Record<Mark, string> = {
   model: 'bg-ink',
   limit: 'bg-ink-muted',
   refusal: 'border-2 border-ink bg-surface',
-  environment: 'border border-ink bg-surface',
-  grader: 'border border-ink bg-surface',
+  // Environment and grader faults take the danger tone (pre-audit S5, P17j JU2): a trial the run
+  // cannot count; the pattern stays, so the mark does not rest on colour alone.
+  environment: 'border border-danger bg-surface',
+  grader: 'border border-danger bg-surface',
   infra: 'border border-dashed border-line-strong bg-surface',
 };
 const MARK_STYLE: Partial<Record<Mark, CSSProperties>> = {
-  environment: { backgroundImage: 'repeating-linear-gradient(135deg, var(--color-ink) 0 1.5px, transparent 1.5px 4px)' },
-  grader: { backgroundImage: 'radial-gradient(var(--color-ink) 0.9px, transparent 1.2px)', backgroundSize: '4px 4px' },
+  environment: { backgroundImage: 'repeating-linear-gradient(135deg, var(--color-danger) 0 1.5px, transparent 1.5px 4px)' },
+  grader: { backgroundImage: 'radial-gradient(var(--color-danger) 0.9px, transparent 1.2px)', backgroundSize: '4px 4px' },
 };
 export const markProps = (m: Mark, className = ''): { className: string; style?: CSSProperties } => ({ className: `${MARK_CLASS[m]} ${className}`, ...(MARK_STYLE[m] ? { style: MARK_STYLE[m] } : {}) });
 
@@ -100,16 +105,55 @@ export function MarkLegend({ marks = MARKS.map((x) => x.mark) }: { marks?: reado
   );
 }
 
+// The outcome chip; an environment or grader fault takes the danger border (JU2).
+export const BLOCKING_MARKS: readonly Mark[] = ['environment', 'grader'];
 export function OutcomeChip({ outcome, fault }: { outcome: string; fault?: Fault | null }) {
+  const mark = markOf(outcome, fault);
   return (
-    <span data-testid="outcome" className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-sm border border-line px-1.5 py-0.5 text-xs font-medium text-ink">
-      <span aria-hidden {...markProps(markOf(outcome, fault), 'inline-block h-2.5 w-2.5 rounded-[2px]')} />
+    <span data-testid="outcome" data-mark={mark} className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-sm border px-1.5 py-0.5 text-xs font-medium text-ink ${BLOCKING_MARKS.includes(mark) ? 'border-danger' : 'border-line'}`}>
+      <span aria-hidden {...markProps(mark, 'inline-block h-2.5 w-2.5 rounded-[2px]')} />
       {outcome}
     </span>
   );
 }
 
+// A PASS with harm, in the danger colour, beside its outcome chip (pre-audit B2b, P17j JU3):
+// "PASS with harm: <item> (<points>)" for a met harm item, "PASS, harm unknown: <item>" for one the
+// judge could not answer; nothing on a PASS without harm.
+// An item by its id, with its question when the page knows it (verifier JU3-1 F5).
+const named = (x: HarmItem) => (x.text ? `${x.id}, ${x.text.length > 90 ? `${x.text.slice(0, 87).trimEnd()}…` : x.text}` : x.id);
+export function HarmChip({ items }: { items: readonly HarmItem[] }) {
+  const met = items.filter((x) => !x.unknown);
+  const unknown = items.filter((x) => x.unknown);
+  const chip = 'inline-flex items-center rounded-sm border border-danger px-1.5 py-0.5 text-xs font-medium text-danger break-words';
+  return (
+    <>
+      {met.length > 0 && <span data-testid="harm-chip" data-harm="met" className={chip}>PASS with harm: {met.map((x) => `${named(x)} (${x.points})`).join(', ')}</span>}
+      {unknown.length > 0 && <span data-testid="harm-chip" data-harm="unknown" className={chip}>PASS, harm unknown: {unknown.map(named).join(', ')}</span>}
+    </>
+  );
+}
+
 const TO_GLOSSARY = { view: 'glossary', task: null, label: null, trial: null };
+// What an environment or grader label means for the run (packages/core/outcomes.ts DENOMINATOR_RULE).
+export const BLOCKED_NOTE = 'Not counted. The run is blocked until this is fixed.';
+// The note beside the label (data/failures.ts blocksTheRun decides whether the trial blocks the
+// run). notCountedShown: the surrounding view already says "Not counted" (the trial header's plain
+// reason for an excluded trial), so the note gives only the rest and the header has one "Not
+// counted" sentence (F3). Only an official run is blocked; a counted trial that blocks it (a valid
+// failure labelled environment or grader, a run block such as B1) is not "not counted"; a pilot's
+// GRADER_ERROR is a grader bug fixed before the final run; an excluded environment error is run
+// again and blocks nothing (decisions.tsv 2026-10-29T17:30 and 19:10).
+const GRADER_BUG_NOTE = 'A grader bug; it is fixed and regraded before the final run.';
+function faultNote(e: Explanation, official: boolean, notCountedShown: boolean): string | null {
+  const notCounted = (rest: string) => (notCountedShown ? rest : `Not counted. ${rest}`);
+  if (blocksTheRun(e) && official) return !e.valid || isFalsePass(e) ? notCounted('The run is blocked until this is fixed.') : 'The run is blocked until this is fixed.';
+  if (!e.valid && e.outcome === 'GRADER_ERROR') return notCounted(GRADER_BUG_NOTE);
+  // A pilot trial the official run would be blocked by: a pilot is not counted (decisions.tsv 21:00).
+  if (blocksTheRun(e) && !official) return 'A pilot is not counted in the final pass rate.';
+  if (!e.valid && e.fault === 'env') return notCountedShown ? 'It is run again.' : 'Not counted; it is run again.';
+  return null;
+}
 // The glossary, at a section (fault-<fault>, criterion-<id>, taxonomy, confirmation) when given.
 export const glossaryHref = (anchor?: string) => `${hrefWith(TO_GLOSSARY).replace(/#.*$/, '')}${anchor ? `#${anchor}` : ''}`;
 
@@ -161,26 +205,35 @@ export function HashText({ text }: { text: string }) {
 // opens the glossary at its fault.
 // The label and its help icon never wrap apart (verifier-phase-P16-2: at 390 px the infra icon
 // sat on a line of its own).
-export function FaultLabel({ e }: { e: Explanation }) {
-  if (e.fault === null || (e.fault !== 'infra' && e.label === null)) return null;
-  const name = e.fault === 'infra' ? 'infra' : e.label!;
+// official: the trial is of the official run, the only run a trial can block (decisions.tsv 19:10).
+export function FaultLabel({ e, notCountedShown = false, official = false }: { e: Explanation; notCountedShown?: boolean; official?: boolean }) {
+  const label = shownLabel(e);
+  if (e.fault === null || (e.fault !== 'infra' && label === null)) return null;
+  const name = e.fault === 'infra' ? 'infra' : label!;
+  // The audit's environment or grader label on a model fault links to that label's definition.
+  const anchor = label === 'environment' ? 'env' : label === 'grader' ? 'grader' : e.fault;
   const help = (
-    <a href={glossaryHref(`fault-${e.fault}`)} onClick={toGlossary(`fault-${e.fault}`)} aria-label={`How the ${name} label is given`} title="How failures are attributed" className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-sm text-ink-muted hover:bg-canvas hover:text-ink">
+    <a href={glossaryHref(`fault-${anchor}`)} onClick={toGlossary(`fault-${anchor}`)} aria-label={`How the ${name} label is given`} title="How failures are attributed" className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-sm text-ink-muted hover:bg-canvas hover:text-ink">
       <CircleHelp aria-hidden className="h-3.5 w-3.5" strokeWidth={1.75} />
     </a>
   );
   if (e.fault === 'infra') {
     return <span className="inline-flex items-center gap-x-1"><span data-testid="label" data-label="infra" className="text-ink-muted">infra: rerun, not counted</span>{help}</span>;
   }
+  // An environment or grader label takes the danger tone and says what it means for the run (JU2);
+  // a model label stays neutral.
+  const danger = label === 'environment' || label === 'grader';
+  const note = faultNote(e, official, notCountedShown);
   return (
     <span className="inline-flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
       <span className="inline-flex items-center gap-x-1">
-        <span data-testid="label" data-label={e.label} className="font-medium text-ink">
-          {e.label}
-          {e.label_subtype ? ` (${e.label_subtype})` : ''}
+        <span data-testid="label" data-label={label} className={`font-medium ${danger ? 'text-danger' : 'text-ink'}`}>
+          {label}
+          {label === e.label && e.label_subtype ? ` (${e.label_subtype})` : ''}
         </span>
         {help}
       </span>
+      {note !== null && <span data-testid="fault-note" className={`text-xs ${(blocksTheRun(e) && official) || e.outcome === 'GRADER_ERROR' ? 'text-danger' : 'text-ink-muted'}`}>{note}</span>}
       {!e.audited && <span data-testid="not-audited" className="rounded-sm border border-dashed border-line-strong px-1 text-xs text-ink-muted">{NOT_AUDITED_MARKER}</span>}
     </span>
   );
