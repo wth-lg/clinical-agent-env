@@ -2,9 +2,9 @@
 {"trial":"contrast-ct-prep/5","outcome":"FAIL","taxonomy":"reasoning","model_fault":"yes","decisive_step":14,"evidence_ids":["Observation/obs-t5-scr-0814"],"llm_auditor_agrees":true}
 {"trial":"contrast-ct-prep/6","outcome":"FAIL","taxonomy":"reasoning","model_fault":"yes","decisive_step":11,"evidence_ids":["AllergyIntolerance/alg-t5-iohexol","Appointment/appt-t5-1026"],"llm_auditor_agrees":true}
 {"trial":"contrast-ct-prep/7","outcome":"FAIL","taxonomy":"action_form","model_fault":"yes","decisive_step":9,"evidence_ids":["Appointment/appt-t5-1026"],"llm_auditor_agrees":true}
-{"trial":"contrast-ct-prep/8","outcome":"FAIL","taxonomy":"over_action","model_fault":"yes","decisive_step":11,"evidence_ids":["AllergyIntolerance/alg-t5-iohexol","Appointment/appt-t5-1026"],"llm_auditor_agrees":true}
-{"trial":"contrast-ct-prep/9","outcome":"FAIL","taxonomy":"reasoning","model_fault":"yes","decisive_step":10,"evidence_ids":["Observation/obs-t5-scr-0814"],"llm_auditor_agrees":true}
-{"trial":"contrast-ct-prep/10","outcome":"FAIL","taxonomy":"reasoning","model_fault":"yes","decisive_step":10,"evidence_ids":["Observation/obs-t5-scr-0814"],"llm_auditor_agrees":true}
+{"trial":"contrast-ct-prep/8","outcome":"FAIL","taxonomy":"output_gap","model_fault":"yes","decisive_step":13,"evidence_ids":["AllergyIntolerance/alg-t5-iohexol","Appointment/appt-t5-1026"],"llm_auditor_agrees":true}
+{"trial":"contrast-ct-prep/9","outcome":"FAIL","taxonomy":"output_gap","model_fault":"yes","decisive_step":11,"evidence_ids":["AllergyIntolerance/alg-t5-iohexol","Appointment/appt-t5-1026"],"llm_auditor_agrees":true}
+{"trial":"contrast-ct-prep/10","outcome":"FAIL","taxonomy":"over_action","model_fault":"yes","decisive_step":11,"evidence_ids":["AllergyIntolerance/alg-t5-iohexol","Appointment/appt-t5-1026"],"llm_auditor_agrees":true}
 {"trial":"crc-care-gap/6","outcome":"FAIL","taxonomy":"reasoning","model_fault":"yes","decisive_step":96,"evidence_ids":["Procedure/proc-t3-e2-colonoscopy","Observation/obs-t3-e3-sdna"],"llm_auditor_agrees":true}
 {"trial":"crc-care-gap/7","outcome":"FAIL","taxonomy":"reasoning","model_fault":"yes","decisive_step":96,"evidence_ids":["Procedure/proc-t3-e2-colonoscopy","Observation/obs-t3-e3-sdna"],"llm_auditor_agrees":true}
 {"trial":"crc-care-gap/8","outcome":"FAIL","taxonomy":"over_action","model_fault":"yes","decisive_step":99,"evidence_ids":["Procedure/proc-t3-e2-colonoscopy","Observation/obs-t3-e3-sdna"],"llm_auditor_agrees":true}

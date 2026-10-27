@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:contrast-ct-prep:9",
   "task_id": "contrast-ct-prep",
-  "task_version": "8d5d8df8288c17f808bea430c23e781503cee8ceff9226f0b2476659dd61773a",
+  "task_version": "c03b5178f561c7ad4616cf8cd6aa7312ac0025d6ecb1c486895161aa035357c5",
   "env_version": "492337b74874ac4946e3b6d7dde634742792583284396f14ea47172c4a0fce18",
-  "grader_task_version": "60e50156b32ac649c457f86da92b44e0c7f67db2028d6b7be970db86e187a0df",
+  "grader_task_version": "5eb09acf7393a1bb38f050502ded8857dc446ac2ca349d8090e6a4c9876104ab",
   "fixture_hash": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
   "state_hash": {
     "initial": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
-    "final": "d3f914a94a1b1c05721088c31963e4c707837f94e812b80af1911d713982004b",
-    "replay_final": "d3f914a94a1b1c05721088c31963e4c707837f94e812b80af1911d713982004b"
+    "final": "42f3e605a295352fe0f49b32a41f63660949e824ac4f806f973fecac520170a9",
+    "replay_final": "42f3e605a295352fe0f49b32a41f63660949e824ac4f806f973fecac520170a9"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T12:12:17.000Z",
+  "started": "2026-10-23T12:12:07.000Z",
   "turns": 10,
   "tool_calls": 15,
   "tool_errors": {
@@ -43,7 +43,7 @@
   "summary": "Placed the CT abdomen and pelvis with IV contrast for Daniel Ferreira on Monday 10/26 at 09:00, linked to the appointment; prednisone 50 mg at 20:00 Sunday, 02:00 and 08:00 Monday and diphenhydramine 50 mg at 08:00 Monday for his 2019 iohexol reaction; creatinine before the scan; instructions sent; note written.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T12:13:38.000Z",
+  "ended": "2026-10-23T12:13:28.000Z",
   "judge_cost_usd": 0,
   "grader_version": "12",
   "outcome": "FAIL",
@@ -56,14 +56,12 @@
       "method": "code",
       "category": "action",
       "points": null,
-      "met": true,
+      "met": false,
       "evidence": {
         "active": [
           "ServiceRequest/sr-t0001"
         ],
-        "linked_to_appointment": [
-          "ServiceRequest/sr-t0001"
-        ],
+        "linked_to_appointment": [],
         "occurrence": {
           "start": "2026-10-26T09:00:00-04:00"
         },
@@ -71,7 +69,8 @@
       },
       "ids": [
         "ServiceRequest/sr-t0001"
-      ]
+      ],
+      "action_form": true
     },
     {
       "id": "prednisone_schedule",
@@ -79,21 +78,9 @@
       "method": "code",
       "category": "action",
       "points": null,
-      "met": true,
+      "met": false,
       "evidence": {
         "given": [
-          {
-            "request": "MedicationRequest/mr-t0003",
-            "at": "2026-10-25T20:00:00-04:00",
-            "mg": 50,
-            "oral": true
-          },
-          {
-            "request": "MedicationRequest/mr-t0003",
-            "at": "2026-10-26T02:00:00-04:00",
-            "mg": 50,
-            "oral": true
-          },
           {
             "request": "MedicationRequest/mr-t0003",
             "at": "2026-10-26T08:00:00-04:00",
@@ -104,17 +91,13 @@
         "doses": [
           {
             "at": "2026-10-25T20:00:00-04:00",
-            "mg": 50,
-            "requests": [
-              "MedicationRequest/mr-t0003"
-            ]
+            "mg": 0,
+            "requests": []
           },
           {
             "at": "2026-10-26T02:00:00-04:00",
-            "mg": 50,
-            "requests": [
-              "MedicationRequest/mr-t0003"
-            ]
+            "mg": 0,
+            "requests": []
           },
           {
             "at": "2026-10-26T08:00:00-04:00",
@@ -183,12 +166,13 @@
       "method": "code",
       "category": "action",
       "points": null,
-      "met": false,
+      "met": true,
       "evidence": {
         "orders": [
           {
             "id": "ServiceRequest/sr-t0002",
-            "start": "2026-10-26T10:00:00-04:00"
+            "start": "2026-10-23",
+            "end": "2026-10-24"
           }
         ],
         "before": "2026-10-26T09:00:00-04:00"
@@ -479,13 +463,17 @@
     ]
   },
   "attribution": {
-    "auto": "reasoning",
-    "first_failed": "creatinine_before_scan",
-    "decisive_step": 10,
+    "auto": "output_gap",
+    "first_failed": "prednisone_schedule",
+    "decisive_step": 11,
     "exposure": [
       {
-        "id": "Observation/obs-t5-scr-0814",
-        "first_exposed_step": 6
+        "id": "AllergyIntolerance/alg-t5-iohexol",
+        "first_exposed_step": 3
+      },
+      {
+        "id": "Appointment/appt-t5-1026",
+        "first_exposed_step": 2
       }
     ]
   },

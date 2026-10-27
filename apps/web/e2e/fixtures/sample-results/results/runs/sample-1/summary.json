@@ -6,13 +6,13 @@
   "tasks": {
     "contrast-ct-prep": {
       "task_versions": [
-        "8d5d8df8288c17f808bea430c23e781503cee8ceff9226f0b2476659dd61773a"
+        "c03b5178f561c7ad4616cf8cd6aa7312ac0025d6ecb1c486895161aa035357c5"
       ],
       "env_versions": [
         "492337b74874ac4946e3b6d7dde634742792583284396f14ea47172c4a0fce18"
       ],
       "grader_task_versions": [
-        "60e50156b32ac649c457f86da92b44e0c7f67db2028d6b7be970db86e187a0df"
+        "5eb09acf7393a1bb38f050502ded8857dc446ac2ca349d8090e6a4c9876104ab"
       ],
       "records": 12,
       "trials": 12,
@@ -42,7 +42,7 @@
       "mean_score": 0.6354166666666666,
       "mean_cost_usd": 0.765,
       "raw_mean_score": 0.5104166666666666,
-      "gate_fraction": 0.8214285714285715,
+      "gate_fraction": 0.7857142857142856,
       "pass_no_harm": 2,
       "pass_no_harm_rate": 0.16666666666666666,
       "limits": {
@@ -69,11 +69,11 @@
         "passes": 3,
         "failures": 9,
         "shared": {
-          "check": "creatinine_before_scan",
-          "count": 3,
-          "found": "{\"before\":\"2026-10-26T09:00:00-04:00\",\"orders\":[]}",
+          "check": "prednisone_schedule",
+          "count": 4,
+          "found": "{\"doses\":[{\"at\":\"2026-10-25T20:00:00-04:00\",\"mg\":0,\"requests\":[]},{\"at\":\"2026-10-26T02:00:00-04:00\",\"mg\":0,\"requests\":[]},{\"at\":\"2026-10-26T08:00:00-04:00\",\"mg\":0,\"requests\":[]}],\"given\":[],\"stray\":[],\"want\":{\"at\":[\"2026-10-25T20:00:00-04:00\",\"2026-10-26T02:00:00-04:00\",\"2026-10-26T08:00:00-04:00\"],\"mg\":50,\"route\":\"oral\"}}",
           "found_count": 1,
-          "found_values": 3
+          "found_values": 4
         },
         "flags": []
       },
@@ -81,8 +81,8 @@
         "failures": 9,
         "taxonomy": {
           "retrieval": 0,
-          "reasoning": 5,
-          "output_gap": 1,
+          "reasoning": 4,
+          "output_gap": 2,
           "over_action": 1,
           "process": 0,
           "action_form": 1,
@@ -100,12 +100,12 @@
       },
       "top_failed_checks": [
         {
-          "check": "creatinine_before_scan",
-          "count": 3
+          "check": "prednisone_schedule",
+          "count": 4
         },
         {
-          "check": "prednisone_schedule",
-          "count": 3
+          "check": "creatinine_before_scan",
+          "count": 2
         },
         {
           "check": "no_substitution",
@@ -119,13 +119,13 @@
     },
     "crc-care-gap": {
       "task_versions": [
-        "5a1d066b2f4eb8f0b0ab4da2c7ba56a88c0649077ff0ca8957abcc5edc633ca1"
+        "ab700d0855e2a6ad308cb8de7b2ecd095d5498f48852a21f99388f9a2ce1121a"
       ],
       "env_versions": [
         "3d7216da2510f1708b0fb589859ce3c332cb7f5b42c0b55842793ce60955a9db"
       ],
       "grader_task_versions": [
-        "c3f3dae1984a6f32c08160c0669c7284c99ff819077dedc1e20f4df676b5d28b"
+        "743d2b20f16d03a15af8fb3314d5b388c00efb50e3e7cd45a29f9c86739b4e48"
       ],
       "records": 12,
       "trials": 12,
