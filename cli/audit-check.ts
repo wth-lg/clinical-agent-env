@@ -85,7 +85,7 @@
 // and labelled_grader count too; task_validity maps each flagged task to its flags and
 // its review's verdict and reviewer (null without one); labelled_environment and labelled_grader count the failures the audit
 // labels environment or grader (after adjudication), labelled_grader with the false PASSes, which
-// the text line names beside it ("grader N (k false PASS)"); faults counts the failures by the fault
+// the text line names apart ("grader N (k false PASS)", N the failures only); faults counts the failures by the fault
 // explainTrial computes ({model, refusal, env, grader, infra}), which the label must agree with
 // but need not (a model label on an E5 failure is a violation, counted model there and env here);
 // valid counts the settled trials whose current grade is valid, excluded names (sorted) the
@@ -424,7 +424,9 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
   for (const line of findings) say(line);
   for (const line of v) say(`violation: ${line}`);
   const falsePassCount = [...falsePasses.values()].reduce((a, n) => a + n, 0);
-  say(`audit-check: ${labelled}/${failures.length} failures labelled, environment ${environment}, grader ${grader}${falsePassCount > 0 ? ` (${falsePassCount} false PASS)` : ''}; ${v.length === 0 ? 'every check holds' : `${v.length} violation(s)`}`);
+  // The failures labelled grader, then the false PASSes beside them, as the page's fault box shows
+  // them (decisions.tsv 2026-10-29T22:20); labelled_grader in --json counts both.
+  say(`audit-check: ${labelled}/${failures.length} failures labelled, environment ${environment}, grader ${grader - falsePassCount}${falsePassCount > 0 ? ` (${falsePassCount} false PASS)` : ''}; ${v.length === 0 ? 'every check holds' : `${v.length} violation(s)`}`);
   const excluded = excludedTrials.sort();
   // Each task's fault box, as summary.json gives it (packages/core/summary.ts faultCounts), with
   // the M1-M4 count: the failures whose M1-M4 are all met, of the valid failures.

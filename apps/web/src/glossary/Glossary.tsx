@@ -45,6 +45,13 @@ export function Glossary({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> 
           </ul>
         </Card>
       ))}
+      <Card title="pass^k" id="pass-k">
+        <p className="text-ink-muted" data-testid="pass-k-text">
+          pass^k is the chance that k trials of a task, drawn from its valid trials, all pass: C(c, k) / C(n, k) for c passes in n valid trials. It shows how
+          reliably the model passes a task, not only how often. A task with fewer than k valid trials has no pass^k. The pass rate k/n and its Wilson 95%
+          interval stay the main result.
+        </p>
+      </Card>
       <Card title="Kinds of model failure" id="taxonomy">
         <p className="text-ink-muted">A model failure also gets one of these kinds. The reason on a failed trial ends with it, for example "Kind: reasoning (Observation/obs-1 was read at step 6)", or "Kind: reasoning" when the why does not fit.</p>
         <dl className="mt-2 space-y-1.5" data-testid="taxonomy">
