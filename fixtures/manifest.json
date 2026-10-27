@@ -2,8 +2,8 @@
   "now": "2026-10-23T08:00:00-04:00",
   "world": {
     "file": "fixtures/world.ndjson.gz",
-    "state_hash": "3df6098dbf8853b6bb890e498abc8704f0444290a1cb8ca3ad4ce510b677bc2f",
-    "ndjson_sha256": "674e332ea151347ffbf9bd41cc79db70f8c47c4b320c896dbd0dfcfd24106bf8",
+    "state_hash": "44e72584987c61a288ff7b9685b1ec4d27cf5c924b321c95f915c2e515527062",
+    "ndjson_sha256": "408e7735609cd961bb18b70c71a287fec5b35eb7b3b5363786741c51609c0f19",
     "resources": 7395,
     "by_type": {
       "AllergyIntolerance": 42,
