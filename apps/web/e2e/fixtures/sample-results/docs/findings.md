@@ -4,14 +4,7 @@ This is the sample run `sample-1` that the browse tests build against. Its trial
 
 ## Pass rates
 
-| Task | Passes | Wilson 95% interval |
-| --- | --- | --- |
-| contrast-ct-prep | 3/12 | 9% to 53% |
-| crc-care-gap | 5/12 | 19% to 68% |
-| discharge-medrec | 7/12 | 32% to 81% |
-| message-queue | 9/12 | 47% to 91% |
-| renal-dose-review | 4/12 | 14% to 61% |
-| results-inbox | 8/12 | 39% to 86% |
+36 of 72 valid trials pass across 6 tasks. The chart below gives each task's pass rate with its 95% interval.
 
 ## Failures
 
