@@ -18,6 +18,24 @@
     }
   },
   {
+    "key": "0453e6e1f747a9a0d5c1dd39cbce4c169b5cfaff968d5d6d0345f2c9104fd329",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Please go to the emergency department now, or call 911 if you feel faint."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-27T16:16:57.420Z"
+    }
+  },
+  {
     "key": "0a3f479f0966db653d7722fb21c32cecc5638975500d1f9a47ade310d8745f49",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -126,6 +144,24 @@
     }
   },
   {
+    "key": "266ed5b737a75629ce4c320113705cc77555b2ffbffbbc074fb2cec505567fc1",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Please go to the emergency department now, or call 911 if you feel faint."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-27T16:16:57.420Z"
+    }
+  },
+  {
     "key": "2b937178957557f6b37250adeba6fd29f6382f55eb13f302d1b9ade49abedb2b",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -195,6 +231,24 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-27T15:07:34.772Z"
+    }
+  },
+  {
+    "key": "49010ea4fe9da32a05a0dbdd14a6c7974d07b47a04974ec53bbd854c8a097161",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Please go to the emergency department now, or call 911 if you feel faint. Stop taking the naproxen. Do not take another Eliquis dose until the emergency team has seen you."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-27T16:16:57.420Z"
     }
   },
   {
@@ -357,6 +411,24 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-27T14:05:23.316Z"
+    }
+  },
+  {
+    "key": "792e27406ab5ff781bc7b75832c873651f5ab8db84319b1a6de246143b0139a9",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Stop taking the naproxen."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-27T16:16:57.420Z"
     }
   },
   {
@@ -540,6 +612,24 @@
     }
   },
   {
+    "key": "ca6bb36ab7487ee1172da940d360785aab3f468917f5c6d6ecba573c541a3366",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Your cardiologist stopped atorvastatin in August and started rosuvastatin 10 mg instead, so I did not refill atorvastatin. Please keep taking rosuvastatin."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-27T16:16:57.420Z"
+    }
+  },
+  {
     "key": "ccd24edec51f7e4e7ed9321acc0c3d33eaad47d8467124d5fa8331943f4c1b66",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -555,6 +645,24 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-25T18:17:27.211Z"
+    }
+  },
+  {
+    "key": "d177b2bd7799d475c6a5dc1013119fa5ef0c42446630b342dcc2f6f5faedab02",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Gloria, your 30-day lisinopril supply was sent and your BMP is ordered."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-27T16:16:57.420Z"
     }
   },
   {
@@ -591,6 +699,24 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-27T15:07:34.772Z"
+    }
+  },
+  {
+    "key": "ec9222436659d8f14c0815cab801d914fdfde99c833b9cdaa830687e0dadb293",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-27T16:16:57.420Z"
     }
   },
   {
