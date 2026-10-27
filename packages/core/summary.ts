@@ -62,8 +62,10 @@
 //   label              the audit's label of each (adjudicated, else its own: explain.ts
 //                      auditLabelOf, which the caller applies), model, environment or grader, and
 //                      unlabelled; null when the caller gives no audit
-//   infra_reruns       the attempts, settled or re-queued, whose current outcome is the
-//                      infrastructure's fault (INVALID, INFRA_*, CANCELLED): the run reran them
+//   infra_reruns       the re-queued attempts whose outcome is the infrastructure's fault
+//                      (INVALID, INFRA_*, CANCELLED): the run ran each again. An INFRA attempt the
+//                      batch settled after its reruns ran out was not run again, so it is not
+//                      counted (verifier-phase-P17i-JG7-1 F3)
 // and top_failed_checks lists the decisive failed check of each valid failure (firstFailed) with
 // its count, by count then id, the check the Runs view shows on the row. The run carries model and
 // effort, the requested model and effort every settled record shares, null when they differ or
@@ -457,7 +459,7 @@ export function faultCounts(trials: readonly FailureTrial[], requeued: readonly 
       failures: failed.length,
       taxonomy: histogram(failed.map(kindOf), FAILURE_KINDS) as FaultCounts['taxonomy'],
       label: audit === null ? null : (histogram(failed.map((f) => labelOf(f.t)), FAILURE_LABELS) as NonNullable<FaultCounts['label']>),
-      infra_reruns: [...trials, ...requeued].filter((t) => FAULT[currentGrade(t).outcome as Outcome] === 'infra').length,
+      infra_reruns: requeued.filter((t) => FAULT[currentGrade(t).outcome as Outcome] === 'infra').length,
     },
     top_failed_checks: Object.entries(byCheck).map(([check, count]) => ({ check, count })).sort((a, b) => b.count - a.count || a.check.localeCompare(b.check)),
   };

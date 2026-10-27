@@ -38,8 +38,8 @@ import { basename, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import type { BatchRecord } from '../packages/core/batch.ts';
 import { installEgressGuard } from '../packages/core/egress.ts';
-import { auditLabelOf, type AuditRow } from '../packages/core/explain.ts';
 import { isValid } from '../packages/core/outcomes.ts';
+import { readLabels, rowLabel } from './audit-check.ts';
 import { assertSummary, checkRequirements, describeConsistency, parseRequire, PASS_K, summarize, type RegradeGrade, type Requirements, type SummaryTrial } from '../packages/core/summary.ts';
 import type { TaskSource } from '../packages/core/tasks.ts';
 import { readManifest, requeuedRecords, settledRecords, writeJson } from './adapters/result-sink-node.ts';
@@ -74,22 +74,12 @@ export function readReplay(dir: string): Record<string, boolean> | null {
   return Object.fromEntries(Object.entries(trials).map(([k, v]) => [k, v.match === true]));
 }
 
-// audit.jsonl's label of each audited trial (explain.ts auditLabelOf), by trial; null without the
-// file. Task-validity review lines and lines that do not parse are skipped: audit-check reports them.
+// audit.jsonl's label of each audited trial, by trial; null without the file. The rows are read by
+// cli/audit-check.ts readLabels and labelled by its rowLabel, so the two commands count the same
+// rows (verifier-phase-P17i-JG7-1 F2); audit-check reports the rows it cannot read.
 export function readAuditLabels(dir: string): Record<string, string | null> | null {
-  const file = join(dir, 'audit.jsonl');
-  if (!existsSync(file)) return null;
-  const out: Record<string, string | null> = {};
-  for (const line of readFileSync(file, 'utf8').split('\n')) {
-    if (line.trim() === '') continue;
-    try {
-      const row = JSON.parse(line) as Partial<AuditRow>;
-      if (typeof row.trial === 'string') out[row.trial] = auditLabelOf({ label: row.label ?? null, taxonomy: row.taxonomy ?? null, outcome: row.outcome ?? '', adjudicated_label: row.adjudicated_label ?? null });
-    } catch {
-      continue;
-    }
-  }
-  return out;
+  if (!existsSync(join(dir, 'audit.jsonl'))) return null;
+  return Object.fromEntries((readLabels(dir, []) ?? []).flatMap(({ label }) => (label === null ? [] : [[label.trial, rowLabel(label)]])));
 }
 
 const pct = (x: number) => `${(x * 100).toFixed(1)}%`;

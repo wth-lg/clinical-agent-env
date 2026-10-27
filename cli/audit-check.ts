@@ -80,7 +80,9 @@
 // --json prints {failures, labelled, labelled_environment, labelled_grader, faults, fault_box, valid, excluded,
 // denominator, task_validity, violations}: fault_box gives each task's fault_counts and
 // top_failed_checks as summary.json does (packages/core/summary.ts faultCounts, with this run's
-// audit labels) and m1_m4, {met, failures}: the valid failures whose M1-M4 are all met (P17j JG7); task_validity maps each flagged task to its flags and
+// audit labels) and m1_m4, {met, failures}: the valid failures whose M1-M4 are all met, n/a
+// counting as met (P17j JG7), and false_passes, the task's false PASSes (GR5), which faults.grader
+// and labelled_grader count too; task_validity maps each flagged task to its flags and
 // its review's verdict and reviewer (null without one); labelled_environment and labelled_grader count the failures the audit
 // labels environment or grader (after adjudication); faults counts the failures by the fault
 // explainTrial computes ({model, refusal, env, grader, infra}), which the label must agree with
@@ -96,7 +98,7 @@ import { installEgressGuard } from '../packages/core/egress.ts';
 import type { TrialEvent } from '../packages/core/events.ts';
 import { explainContext as contextOf, type TaskCheck } from '../packages/core/explain-context.ts';
 import { AUDIT_QUESTIONS, auditAnswerOf, auditLabelOf, citedStep, excludedFromHeadline, explainTrial, formatCriterion, type AuditRow, type CheckText, type ExplainContext, type ExplainRecord } from '../packages/core/explain.ts';
-import { AUDIT_LABEL, AUDIT_LABELS, e6Confirmation, FAULT, FAULT_PRECEDENCE, type Fault, type Outcome } from '../packages/core/outcomes.ts';
+import { AUDIT_LABEL, AUDIT_LABELS, e6Confirmation, FAULT, FAULT_PRECEDENCE, type AuditLabelName, type Fault, type Outcome } from '../packages/core/outcomes.ts';
 import { parseTrajectory } from '../packages/core/trajectory.ts';
 import { consistencyOf, currentGrade, describeConsistency, faultCounts, type ConsistencyFlag } from '../packages/core/summary.ts';
 import { TAXONOMY } from '../packages/grader/attribution.ts';
@@ -133,9 +135,14 @@ type Line = { raw: string; label: AuditLabel | null; review?: TaskValidityReview
 const defaults: Deps = { out: (l) => process.stdout.write(`${l}\n`), err: (l) => process.stderr.write(`${l}\n`) };
 const MIN_AUDITED_PASSES = 2;
 const isLabel = (l: string | null | undefined): boolean => (AUDIT_LABELS as readonly (string | null | undefined)[]).includes(l);
+// A row's label as explainTrial reads it: an adjudicated_label that is not an audit label is
+// ignored (audit-check reports it), then the row's own label (explain.ts auditLabelOf).
+export const rowLabel = (l: AuditLabel): string | null => auditLabelOf({ ...l, adjudicated_label: isLabel(l.adjudicated_label) ? (l.adjudicated_label as AuditLabelName) : null });
 
 // audit.jsonl's lines, each with its label, or its task-validity review, when it parses.
-function readLabels(dir: string, violations: string[]): Line[] | null {
+// The one reader of audit.jsonl's rows: cli/summary.ts reads the labels through it too, so the two
+// commands count the same rows (verifier-phase-P17i-JG7-1 F2).
+export function readLabels(dir: string, violations: string[]): Line[] | null {
   const file = join(dir, 'audit.jsonl');
   if (!existsSync(file)) {
     violations.push('audit.jsonl is missing');
@@ -315,8 +322,10 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
     if (l.evidence_ids.length === 0) v.push(`${l.trial}: no evidence ids`);
   }
   const faults = Object.fromEntries(FAULT_PRECEDENCE.map((f) => [f, 0])) as Record<Fault, number>;
-  // Per task, the failures whose confirmation criteria M1-M4 are all met (the fault box's count).
+  // Per task, the failures whose confirmation criteria M1-M4 are all met (the fault box's count),
+  // and the false PASSes (GR5).
   const m1m4 = new Map<string, number>();
+  const falsePasses = new Map<string, number>();
   for (const r of failures) {
     const name = trialName(r);
     const row = byTrial.get(name);
@@ -326,7 +335,9 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
     }
     const e = await explain(r, byTrial.get(name));
     if (e.fault !== null) faults[e.fault]++;
-    if (['M1', 'M2', 'M3', 'M4'].every((id) => e.criteria.find((c) => c.id === id)?.met === true)) m1m4.set(r.task_id, (m1m4.get(r.task_id) ?? 0) + 1);
+    // n/a is met: M1 does not apply to a failure with no failed gate check, and explainTrial calls
+    // that trial confirmed (verifier-phase-P17i-JG7-1 F1).
+    if (['M1', 'M2', 'M3', 'M4'].every((id) => [true, 'n/a'].includes(e.criteria.find((c) => c.id === id)?.met as never))) m1m4.set(r.task_id, (m1m4.get(r.task_id) ?? 0) + 1);
     for (const c of e.criteria) {
       if ((c.id === 'M1' || c.id === 'M4') && (c.met === false || c.met === 'pending')) v.push(`${name}: ${formatCriterion(c).replace(': ', ' ')}: ${c.evidence}`);
     }
@@ -351,6 +362,10 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
     if (excluded !== null) {
       v.push(`${name}: ${excluded}`);
       excludedTrials.push(name);
+      // A false PASS is the grader's fault and labelled grader: it counts so (JG5-1 m2).
+      faults.grader++;
+      grader++;
+      falsePasses.set(r.task_id, (falsePasses.get(r.task_id) ?? 0) + 1);
     }
   }
   // A run-level block holds for its whole grader_task_version: named once, from the first record that shows it.
@@ -412,10 +427,10 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
   const excluded = excludedTrials.sort();
   // Each task's fault box, as summary.json gives it (packages/core/summary.ts faultCounts), with
   // the M1-M4 count: the failures whose M1-M4 are all met, of the valid failures.
-  const audited = Object.fromEntries([...byTrial].map(([name, l]) => [name, auditLabelOf(l)]));
+  const audited = Object.fromEntries([...byTrial].map(([name, l]) => [name, rowLabel(l)]));
   const faultBox = Object.fromEntries([...new Set([...records.values()].map((r) => r.task_id))].sort().map((task) => {
     const box = faultCounts([...records.values()].filter((r) => r.task_id === task), requeued.filter((r) => r.task_id === task), lines === null ? null : audited);
-    return [task, { ...box, m1_m4: { met: m1m4.get(task) ?? 0, failures: box.fault_counts.failures } }];
+    return [task, { ...box, m1_m4: { met: m1m4.get(task) ?? 0, failures: box.fault_counts.failures }, false_passes: falsePasses.get(task) ?? 0 }];
   }));
   if (json) deps.out(JSON.stringify({ failures: failures.length, labelled, labelled_environment: environment, labelled_grader: grader, faults, fault_box: faultBox, valid: valid.length, excluded, denominator: valid.length - excluded.length, task_validity: taskValidity, violations: v }));
   return v.length === 0 ? 0 : 1;
