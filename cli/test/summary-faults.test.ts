@@ -1,4 +1,4 @@
-// Why a task fails, from the CLI (plan P17j JG7): `pnpm cli summary` writes model, effort,
+// Why a task fails, from the CLI (plan P17j JG7): `pnpm cli summary --write` writes model, effort,
 // fault_counts (labels from audit.jsonl) and top_failed_checks, and prints the model and effort
 // line and each task's fault box; `pnpm cli audit-check --json` gives the same counts per task
 // with the M1-M4 count (failures with M1-M4 all met, of the valid failures). Hand counts over the
@@ -28,7 +28,7 @@ describe('pnpm cli summary', () => {
   it('writes model, effort and each task\'s fault box, and prints them', async () => {
     const dir = clean('summary');
     const out: string[] = [];
-    expect(await summary([dir], { out: (l) => out.push(l), err: (l) => out.push(l) })).toBe(0);
+    expect(await summary([dir, '--write'], { out: (l) => out.push(l), err: (l) => out.push(l) })).toBe(0);
     const s = JSON.parse(readFileSync(join(dir, 'summary.json'), 'utf8')) as { model: string; effort: string; tasks: Record<string, unknown> };
     expect(s).toMatchObject({ model: MODEL, effort: 'high' });
     for (const t of ['t-alpha', 't-beta']) expect(s.tasks[t]).toMatchObject(BOX);
@@ -41,7 +41,7 @@ describe('pnpm cli summary', () => {
     const { rmSync } = await import('node:fs');
     rmSync(join(dir, 'audit.jsonl'));
     const out: string[] = [];
-    await summary([dir], { out: (l) => out.push(l), err: (l) => out.push(l) });
+    await summary([dir, '--write'], { out: (l) => out.push(l), err: (l) => out.push(l) });
     const s = JSON.parse(readFileSync(join(dir, 'summary.json'), 'utf8')) as { tasks: Record<string, { fault_counts: { label: unknown } }> };
     expect(s.tasks['t-alpha']!.fault_counts.label).toBeNull();
     expect(out).toContainEqual(expect.stringMatching(/by audit label: no audit\.jsonl;/));
@@ -70,7 +70,7 @@ describe('one audit-row reader, n/a as met, and the false PASS in the counts', (
   it('summary and audit-check read the same labels: an adjudicated label that is not a label is ignored, a row without evidence_ids is skipped', async () => {
     const dir = clean('labels');
     writeRows(dir, rows(dir).map((r) => (r.trial === 't-alpha/5' ? { ...r, adjudicated_label: 'Grader' } : r.trial === 't-alpha/6' ? { ...r, label: 'grader', evidence_ids: undefined } : r)));
-    await summary([dir], { out: () => {}, err: () => {} });
+    await summary([dir, '--write'], { out: () => {}, err: () => {} });
     const s = JSON.parse(readFileSync(join(dir, 'summary.json'), 'utf8')) as { tasks: Record<string, { fault_counts: { label: Record<string, number> } }> };
     const box = (await json(dir)).fault_box['t-alpha']!.fault_counts.label;
     expect(s.tasks['t-alpha']!.fault_counts.label).toEqual(box);

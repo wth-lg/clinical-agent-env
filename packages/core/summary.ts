@@ -661,7 +661,7 @@ export function validateSummary(x: unknown): string[] {
   };
   if (!isObj(x)) return ['summary: not an object'];
   if (Object.hasOwn(x, 'schema_version') && x.schema_version !== SUMMARY_SCHEMA_VERSION) {
-    return [`schema_version ${JSON.stringify(x.schema_version)}: this reader reads summary.json version ${SUMMARY_SCHEMA_VERSION} only; write it again with pnpm cli summary <run>`];
+    return [`schema_version ${JSON.stringify(x.schema_version)}: this reader reads summary.json version ${SUMMARY_SCHEMA_VERSION} only; write it again with pnpm cli summary <run> --write`];
   }
   check('', x, {
     schema_version: (v) => v === SUMMARY_SCHEMA_VERSION, run_id: (v) => typeof v === 'string', model: (v) => v === null || typeof v === 'string', effort: (v) => v === null || typeof v === 'string', tasks: isObj, totals: isObj, models: strings,
