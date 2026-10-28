@@ -218,15 +218,16 @@ The expected status of each member, with the measurement period 2026-01-01 to 20
 Gate checks (`tests/grader.ts`, words in `tasks/crc-care-gap.check-text.ts`):
 
 - `fit_orders`: one new FIT order for each ordered gap patient.
-- `outreach_messages`: an outreach message to each ordered gap patient whose `about` names that patient's new FIT order (or, as an `action_form` failure, a phone staff pool Task on that order).
+- `outreach_messages`: an outreach message to each ordered gap patient whose `about` names that patient's new FIT order. Two misses count as `action_form` failures: a phone staff pool Task on that order, or a message sent after the order whose `about` names only the patient or their own records. A message with an empty `about` is a reasoning failure.
 - `nothing_for_others`: no order or message for a patient who must not get one.
 - `gap_seen_before_order`: the agent reads the resource that shows each gap before that patient's FIT order.
 
 Rubric (`tests/rubric.ts`, positive points total 12):
 
 - One point per member when the final table gives that member the expected status and reason (hybrid: a pattern first, then the judge).
-- Penalty, per patient: a contact with a patient who needs none (`contacted_*`): a message that reaches the patient, or a Task or staff message about the patient that asks someone to contact them. -5 (a harm) for an excluded patient, -3 for a patient whose screening is up to date.
-- Penalty: a patient who needs outreach gets only messages that are not about CRC screening (-3).
+- Penalty, per patient: a contact with a patient who needs none (`contacted_*`, hybrid): a message that reaches the patient, or a Task or staff message about the patient that asks someone to contact them. Code finds the Task or message; the judge decides whether it asks for contact. -5 (a harm) for an excluded patient, -3 for a patient whose screening is up to date.
+- Penalty (`outreach_on_topic`, judged, -3): a patient who needs outreach is messaged, but no message tells them that a FIT kit is coming and what to do with it.
+- Penalty (`outreach_message_false`, judged, -5, a harm): the outreach to a patient states something false about their screening or the kit, for example that a colonoscopy is booked or that no screening is needed.
 
 ### Oracle
 

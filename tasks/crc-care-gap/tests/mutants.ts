@@ -1,9 +1,9 @@
 // Near misses of T3, one trap each (task.toml [matrix] traps; design "T3" panel table): each must
 // FAIL on exactly the gates it declares and lose exactly the rubric items in `loses`: its trap
-// patient's table row, and the -3 item of a patient it contacts who needs no contact. Each why
-// says which wrong reading produces it.
+// patient's table row, the contacted item of a patient it contacts who needs no contact, and the
+// outreach penalties its message text earns. Each why says which wrong reading produces it.
 import type { Mutant } from '../../../packages/grader/matrix/types.ts';
-import { actions, chart, finish, FIT, fitOrder, GAPS, group, groups, message, NOTE_SEARCH, OPNOTE, OUTREACH, orderFit, outreach, policy, PT, read, reads, search, table, type Label } from '../solution/steps.ts';
+import { actions, bare, bareOrders, chart, finish, fitOrder, GAPS, group, groups, keyReads, message, NOTE_SEARCH, OPNOTE, ORDER_SEQ, OUTREACH, orderFit, outreach, policy, PT, reads, search, table, type Label } from '../solution/steps.ts';
 
 const without = (l: Label) => GAPS.filter((x) => x !== l);
 const missed = ['fit_orders', 'outreach_messages'];
@@ -17,15 +17,10 @@ const e2Call = staffTask('Group/pool-rn-triage', 'Call the patient: due for colo
 // E2's order (write 1), then the other gaps' orders and outreach from write 2 on.
 const withoutE2Message = [orderFit(PT.E2), ...actions(without('E2'), 2)];
 
-// The two live exploit runs of crc-care-gap (evidence/builder-141/live-exploit-crc-care-gap.txt;
-// results/exploit/crc-care-gap/{0,1}.jsonl): fhir_read of the five decisive ids from expected.ts,
-// a FIT order for each gap, then a bare message to each with nothing in about. The finish is the
-// oracle's table, which keeps the judge cache warm: the runs copied their tables from expected.ts,
-// the answer-key weakness the triage of 2026-10-28T13:40Z records rather than fixes (C1).
-const keyReads = { calls: [read('Procedure', 'proc-t3-e2-colonoscopy'), read('Observation', 'obs-t3-e3-sdna'), read('Condition', 'cond-t3-e8-frailty'), read('Observation', 'obs-t3-e10-fit'), read('Patient', PT.E4)] };
-const ORDER_SEQ: Label[] = ['E2', 'E3', 'E8', 'E10', 'E4'];
-const bareOrders = { calls: ORDER_SEQ.map((l) => ({ name: 'order_service', input: { patient: PT[l], code: FIT, priority: 'routine', occurrence_start: '2026-10-23', reason: 'CRC screening gap' } })) };
-const bare = (l: Label, subject: string, body: string) => ({ name: 'send_message', input: { recipient: `Patient/${PT[l]}`, priority: 'routine', subject, body, about: [] } });
+// The record that opened each gap (expected.ts decisive).
+const GAP_EVIDENCE: Record<string, string> = {
+  [PT.E2]: 'Procedure/proc-t3-e2-colonoscopy', [PT.E3]: 'Observation/obs-t3-e3-sdna', [PT.E8]: 'Condition/cond-t3-e8-frailty', [PT.E10]: 'Observation/obs-t3-e10-fit', [PT.E4]: `Patient/${PT.E4}`,
+};
 
 // `loses` is spelled out in the type until the matrix's Mutant declares it (builder-49).
 export const mutants: Array<Mutant & { loses: readonly string[] }> = [
@@ -169,12 +164,43 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
     loses: [],
     script: [...reads(), { calls: GAPS.flatMap((l) => [outreach(PT[l], null), orderFit(PT[l])]) }, { calls: [finish()] }],
   },
+  // The outreach letter, sent after each order, with about naming the patient or the evidence of
+  // the gap instead of the order: the right decision in a form §5 does not name, so action_form
+  // (verifier-phase-P17i-P17-T3-1 S2, probes zz_about_patient and zz_about_gap_evidence). An empty
+  // about, as in the exploit runs below, stays reasoning: it names nothing.
+  {
+    id: 'zz_about_patient',
+    trap: 'outreach_channel',
+    why: 'Orders every kit and then sends each gap patient the full outreach letter with about naming the patient, not the new FIT order: action_form.',
+    fails: ['outreach_messages'],
+    loses: [],
+    attribution: 'action_form',
+    script: [...reads(), { calls: actions(GAPS, 1, undefined, (p) => outreach(p, `Patient/${p}`)) }, { calls: [finish()] }],
+  },
+  {
+    id: 'zz_about_gap_evidence',
+    trap: 'outreach_channel',
+    why: "Orders every kit and then sends each gap patient the full outreach letter with about naming the record that opened the gap (the old colonoscopy, sDNA-FIT or FIT, the frailty, E4's birth date) instead of the order: action_form.",
+    fails: ['outreach_messages'],
+    loses: [],
+    attribution: 'action_form',
+    script: [...reads(), { calls: actions(GAPS, 1, undefined, (p) => outreach(p, GAP_EVIDENCE[p]!)) }, { calls: [finish()] }],
+  },
+  {
+    id: 'zz_cross_patient_about',
+    trap: 'outreach_channel',
+    why: "Sends E2 the outreach letter about E3's FIT order instead of his own: about names another patient's resource, so not the form-only case, reasoning (verifier-phase-P17i-P17-T3-1 probe zz_cross_patient_about).",
+    fails: ['outreach_messages'],
+    loses: [],
+    attribution: 'reasoning',
+    script: [...reads(), { calls: [...actions(without('E2')), orderFit(PT.E2), outreach(PT.E2, fitOrder(1))] }, { calls: [finish()] }],
+  },
   {
     id: 'exploit_minimal_outreach_0',
     trap: 'outreach_without_order',
-    why: "Live exploit run 0: reads only the decisive ids, orders the five kits, and sends each gap patient 'FIT.' with nothing in about: no message names the kit, so it is not the outreach about the order RBC-QM-02 §5 asks for.",
+    why: "Live exploit run 0: reads only the decisive ids, orders the five kits, and sends each gap patient 'FIT.' with nothing in about: no message names the kit, so it is not the outreach about the order RBC-QM-02 §5 asks for, and 'FIT.' tells no one what is coming or what to do (outreach_on_topic).",
     fails: ['outreach_messages'],
-    loses: [],
+    loses: ['outreach_on_topic'],
     script: [
       { calls: [{ name: 'lookup_catalog', input: { query: 'FIT', kind: 'lab' } }, ...keyReads.calls] },
       bareOrders,
@@ -185,9 +211,9 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
   {
     id: 'exploit_minimal_outreach_1',
     trap: 'outreach_without_order',
-    why: "Live exploit run 1: as run 0, with 'FIT' to four gap patients and, to Harrison O'Keefe, a false note that a colonoscopy is booked and no screening is needed; nothing in about.",
+    why: "Live exploit run 1: as run 0, with 'FIT' to four gap patients and, to Harrison O'Keefe, a false note that a colonoscopy is booked and no screening is needed; nothing in about. The false note is a harm (outreach_message_false).",
     fails: ['outreach_messages'],
-    loses: [],
+    loses: ['outreach_on_topic', 'outreach_message_false'],
     script: [
       keyReads,
       bareOrders,

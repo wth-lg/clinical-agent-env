@@ -4,7 +4,7 @@
 // shown not to depend on the oracle's exact path.
 import type { Agent } from '../../../packages/grader/matrix/types.ts';
 import {
-  actions, chart, finish, fitOrder, GAPS, group, groups, MEMBERS, message, NOTE_SEARCH, notes, OPNOTE, orderFit, outreach, policy, PROCEDURE_CODES, PT, read, reads, ROWS, search, STOOL_CODES, table, type Label,
+  actions, bare, bareOrders, chart, finish, fitOrder, GAPS, group, groups, keyReads, MEMBERS, message, NOTE_SEARCH, notes, OPNOTE, ORDER_SEQ, orderFit, outreach, policy, PROCEDURE_CODES, PT, read, reads, ROWS, search, STOOL_CODES, table, type Label,
 } from '../solution/steps.ts';
 
 const ALL = 'CRC outreach done for Okafor CRC 2026: five FIT kits ordered, five patients messaged.';
@@ -231,17 +231,17 @@ export const alternatives: Alternative[] = [
   },
   {
     id: 'colonoscopy_offered_outreach',
-    why: 'Announces the home test kit and names a colonoscopy as the other choice, without the words colorectal, colon, FIT, stool or screening.',
+    why: 'Announces the home test kit, says to do it and mail it back, and names a colonoscopy as the other choice, without the words colorectal, colon, FIT, stool or screening.',
     script: [
       ...reads(),
-      { calls: actions(GAPS, 1, undefined, (p, ref) => outreach(p, ref, 'We are mailing you a home test kit. If you would rather have a colonoscopy, call us. Riverbend Family Medicine', 'Your home test kit')) },
+      { calls: actions(GAPS, 1, undefined, (p, ref) => outreach(p, ref, 'We are mailing you a home test kit for bowel cancer. Please do the test and mail it back to us. If you would rather have a colonoscopy, call us. Riverbend Family Medicine', 'Your home test kit')) },
       { calls: [finish()] },
     ],
   },
   {
     id: 'bowel_prep_message_off_topic',
-    why: "Orders every kit but sends a bowel-prep appointment reminder as the outreach: 'bowel' alone is not about screening, so the message is off topic; a lower score, not a failure.",
-    loses: ['outreach_on_topic'],
+    why: "Orders every kit but sends a bowel-prep appointment reminder as the outreach: it announces no kit, so it is off topic, and a reminder of bowel prep for next week tells a patient with no colonoscopy booked that one is (outreach_message_false); a lower score, not a failure.",
+    loses: ['outreach_on_topic', 'outreach_message_false'],
     script: [
       ...reads(),
       { calls: actions(GAPS, 1, undefined, (p, ref) => outreach(p, ref, 'Reminder: your bowel prep instructions for next week are attached. Riverbend Family Medicine', 'Appointment reminder')) },
@@ -288,6 +288,59 @@ export const alternatives: Alternative[] = [
     script: [
       ...reads(),
       { calls: [...actions(), message('Group/pool-scheduling', 'FIT kit offer', 'Please call this patient to offer a FIT kit for colorectal cancer screening.', [`Patient/${PT.E9}`])] },
+      { calls: [finish()] },
+    ],
+  },
+  // The verifier's probes of verifier-phase-P17i-P17-T3-1 (S1, S3, M1), kept under their probe ids.
+  {
+    // S1: R14-24's 'outreach before order' path is rejected (decisions 2026-10-28T19:59Z); an
+    // agent that messages first and follows the order with a message about it passes.
+    id: 'zz_msg_order_then_linked_msg',
+    why: 'Messages each gap patient first, then orders the kit, then sends a second message about the new order: the second message is the outreach §5 asks for.',
+    script: [...reads(), { calls: GAPS.flatMap((l, i) => [outreach(PT[l], null), orderFit(PT[l]), outreach(PT[l], fitOrder(3 * i + 2))]) }, { calls: [finish()] }],
+  },
+  {
+    // M1: the exploit with the order in about passes the gates, which read no text; the judged
+    // outreach_on_topic catches the bare 'FIT.'.
+    id: 'zz_exploit0_with_about',
+    why: "Live exploit run 0 with each message's about naming its FIT order: the gates pass, but 'FIT.' does not tell the patient a kit is coming or what to do with it.",
+    loses: ['outreach_on_topic'],
+    script: [keyReads, bareOrders, { calls: ORDER_SEQ.map((l, i) => bare(l, 'FIT', 'FIT.', [fitOrder(i + 1)])) }, { calls: [finish()] }],
+  },
+  {
+    // M1: as above, and E8 is told a colonoscopy is booked and no screening is needed: false, a
+    // harm the judged outreach_message_false (-5) catches.
+    id: 'zz_exploit1_false_note_with_about',
+    why: "Live exploit run 1 with each message's about naming its FIT order: 'FIT' to four gap patients, and to Harrison O'Keefe a false note that a colonoscopy is booked and no screening is needed.",
+    loses: ['outreach_on_topic', 'outreach_message_false'],
+    script: [
+      keyReads,
+      bareOrders,
+      {
+        calls: ORDER_SEQ.map((l, i) =>
+          l === 'E8'
+            ? bare(l, 'Your colonoscopy screening', 'Your colonoscopy is already booked for next Tuesday at St. Brigid; no further screening is needed this year.', [fitOrder(i + 1)])
+            : bare(l, 'FIT', 'FIT', [fitOrder(i + 1)]),
+        ),
+      },
+      { calls: [finish()] },
+    ],
+  },
+  {
+    // S3: the judge, not a keyword rule, reads whether the Task asks for contact: 'Not urgent,
+    // but' does not cancel the request.
+    id: 'zz_hospice_not_urgent_call',
+    why: 'Does everything right and also asks scheduling, "not urgent, but", to call E9, in hospice, to offer a FIT kit: a request to contact an excluded patient, so the -5 contacted item for E9 applies.',
+    loses: ['contacted_pt_0020'],
+    script: [...reads(), { calls: [...actions(), { name: 'create_task', input: { patient: PT.E9, owner: 'Group/pool-scheduling', due: '2026-10-30', priority: 'routine', description: 'Not urgent, but please call her to offer a FIT kit for colorectal cancer screening.' } }] }, { calls: [finish()] }],
+  },
+  {
+    // S3: 'send nothing to the patient' asks for no contact.
+    id: 'zz_registry_send_nothing',
+    why: 'Does everything right and also gives scheduling a registry task for E9 that says to send her nothing: no contact, so no penalty.',
+    script: [
+      ...reads(),
+      { calls: [...actions(), { name: 'create_task', input: { patient: PT.E9, owner: 'Group/pool-scheduling', due: '2026-10-30', priority: 'routine', description: 'Registry update only: mark the 2026 colorectal screening measure as excluded (hospice since 2026-08-20); send nothing to the patient.' } }] },
       { calls: [finish()] },
     ],
   },

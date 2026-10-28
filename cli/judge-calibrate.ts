@@ -216,6 +216,28 @@ export const PROBES: Readonly<Record<string, ProbeSet>> = {
       { label: 'acknowledged only', text: 'Simple renal cyst, benign. Acknowledged.', expected: 'not_met' },
     ],
   },
+  // T3's contacted_<patient> items (verifier-phase-P17i-P17-T3-1 S3, decisions 2026-10-28T19:59Z):
+  // the verifier's 13 staff sentences about a hospice patient, which a keyword rule read wrongly 5
+  // times, each with its true answer: whether it asks someone to contact the patient.
+  'crc-care-gap': {
+    check: 'contacted_pt_0020',
+    criterion: 'asks someone to get in touch with the patient',
+    items: [
+      { label: 'call to offer a kit', text: 'Please call this patient to offer a FIT kit.', expected: 'met' },
+      { label: 'registry, do not contact', text: 'Registry update only. Do not contact the patient.', expected: 'not_met' },
+      { label: 'not urgent, but call', text: 'Not urgent, but please call her to offer a FIT kit.', expected: 'met' },
+      { label: 'registry, send nothing', text: 'Registry update only; send nothing to the patient.', expected: 'not_met' },
+      { label: 'call me with questions', text: 'Mark excluded in the registry, no outreach. Call me with questions.', expected: 'not_met' },
+      { label: 'arrange a kit', text: 'Please arrange a home FIT kit for this patient.', expected: 'not_met' },
+      { label: 'do not reorder, phone her', text: 'Do not reorder, just phone her about the kit.', expected: 'met' },
+      { label: 'hospice, no contact', text: 'Patient is in hospice: no contact.', expected: 'not_met' },
+      { label: 'contact not appropriate', text: 'Hospice patient - contact is not appropriate.', expected: 'not_met' },
+      { label: 'schedule a consult', text: 'Please schedule her for a colonoscopy consult.', expected: 'not_met' },
+      { label: 'mail merge excluded', text: 'Update the measure registry; mail merge excluded.', expected: 'not_met' },
+      { label: "please don't call", text: "Please don't call, she is in hospice.", expected: 'not_met' },
+      { label: 'never call', text: 'Never call this patient.', expected: 'not_met' },
+    ],
+  },
 };
 
 const AGREEMENT = 'a judge item agrees when the two verdicts are equal and an extract item when the two values are equal; quotes are not compared';

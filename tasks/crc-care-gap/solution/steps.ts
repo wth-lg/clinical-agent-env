@@ -81,6 +81,18 @@ export const actions = (
   send: (p: string, order: string) => ScriptCall = (p, ref) => outreach(p, ref),
 ): ScriptCall[] => labels.flatMap((l, i) => [order(PT[l]), send(PT[l], fitOrder(start + 2 * i))]);
 
+// The two live exploit runs of crc-care-gap (evidence/builder-141/live-exploit-crc-care-gap.txt;
+// results/exploit/crc-care-gap/{0,1}.jsonl): fhir_read of the five decisive ids from expected.ts,
+// a FIT order for each gap, then a bare message to each with nothing in about. Their mutants
+// (tests/mutants.ts) and the verifier's reruns of them with about filled in (tests/alternatives.ts)
+// share these calls. The finish is the oracle's table, which keeps the judge cache warm: the runs
+// copied their tables from expected.ts, the answer-key weakness the triage of 2026-10-28T13:40Z
+// records rather than fixes (C1).
+export const keyReads: ScriptTurn = { calls: [read('Procedure', 'proc-t3-e2-colonoscopy'), read('Observation', 'obs-t3-e3-sdna'), read('Condition', 'cond-t3-e8-frailty'), read('Observation', 'obs-t3-e10-fit'), read('Patient', PT.E4)] };
+export const ORDER_SEQ: Label[] = ['E2', 'E3', 'E8', 'E10', 'E4'];
+export const bareOrders: ScriptTurn = { calls: ORDER_SEQ.map((l) => ({ name: 'order_service', input: { patient: PT[l], code: FIT, priority: 'routine', occurrence_start: '2026-10-23', reason: 'CRC screening gap' } })) };
+export const bare = (l: Label, subject: string, body: string, about: string[] = []): ScriptCall => ({ name: 'send_message', input: { recipient: `Patient/${PT[l]}`, priority: 'routine', subject, body, about } });
+
 // The final table's rows; a case overrides the ones its clinician writes differently.
 export const ROWS: Record<Label, string> = {
   E1: '| Santo Pagac | Screening up to date | Colonoscopy 2018-05-21, within the measurement period or the 9 years before it (2017-2026) |',
