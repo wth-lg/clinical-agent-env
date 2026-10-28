@@ -3,11 +3,11 @@
   "model": "claude-opus-5-5",
   "effort": "medium",
   "prompt_version": "judge-v1",
-  "at": "2026-10-27T14:34:22.967Z",
+  "at": "2026-10-28T16:46:59.100Z",
   "reference": "mixed",
   "reference_counts": {
     "scripted": 1,
-    "live": 6
+    "live": 13
   },
   "protocol": {
     "design": "mixed reference",
@@ -18,20 +18,20 @@
     "excluded": "none: a cache key no matrix case asks stays in questions and is listed as a disagreement",
     "pooling": "one task per file: agree is pooled over the task's questions; every live answer is in live_entries and each disagreement lists both answers"
   },
-  "questions": 7,
-  "same_keys": 7,
-  "agree": 7,
-  "calls": 7,
-  "ledger_settles": 7,
-  "cost_usd": 0.022304,
-  "usd_per_call": 0.003186,
+  "questions": 14,
+  "same_keys": 14,
+  "agree": 14,
+  "calls": 14,
+  "ledger_settles": 14,
+  "cost_usd": 0.044916,
+  "usd_per_call": 0.003208,
   "oracle": {
     "outcome": "PASS",
     "score": 1,
     "judge_unknown": 0
   },
   "disagreements": [],
-  "note": "Live judge answers (pnpm cli judge-calibrate) vs the task's cache. tests/judge-cache.json is not written by this command; this file is the calibration record. Ledger batch 2e647d7c-cb47-48ec-8c8c-fbddd64dd0c9.",
+  "note": "Live judge answers (pnpm cli judge-calibrate) vs the task's cache. tests/judge-cache.json is not written by this command; this file is the calibration record. Ledger batch 5578ed44-5e4e-4c60-8462-f62a381e5913.",
   "live_entries": [
     {
       "key": "0e1e52fac0cfed8bbcf5af1c319d2cfb40f1f26aa3db9ac9ca709bfeb4b8d1f4",
@@ -48,7 +48,25 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T14:34:22.967Z"
+        "at": "2026-10-28T16:46:59.100Z"
+      }
+    },
+    {
+      "key": "114c2d7e2d6f91368eb6f22437c76c92aacfaa8f839c01370e9c246dbc07f9c7",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "please continue lisinopril 10 mg daily unchanged; no medication changes needed."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T16:46:59.100Z"
       }
     },
     {
@@ -66,7 +84,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T14:34:22.967Z"
+        "at": "2026-10-28T16:46:59.100Z"
       }
     },
     {
@@ -77,14 +95,14 @@
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "not_met",
-        "quote": "One of your blood tests needs repeating. Please come to the clinic lab on Monday, October 26."
+        "quote": "One of your blood tests needs repeating."
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T14:34:22.967Z"
+        "at": "2026-10-28T16:46:59.100Z"
       }
     },
     {
@@ -102,7 +120,25 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T14:34:22.967Z"
+        "at": "2026-10-28T16:46:59.100Z"
+      }
+    },
+    {
+      "key": "69b694a0a49012c038f116dbc464814e7d556ccc19f28ad4e2569467d31c0b16",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "Denise Holloway K 6.2: do not continue lisinopril."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T16:46:59.100Z"
       }
     },
     {
@@ -113,14 +149,14 @@
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "met",
-        "quote": "The report recommends no follow-up imaging, so no follow-up is needed"
+        "quote": "The report recommends no follow-up imaging, so no follow-up is needed under RBC-RAD-05 and RBC-INBOX-01 §3."
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T14:34:22.967Z"
+        "at": "2026-10-28T16:46:59.100Z"
       }
     },
     {
@@ -138,7 +174,61 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T14:34:22.967Z"
+        "at": "2026-10-28T16:46:59.100Z"
+      }
+    },
+    {
+      "key": "9a898eb62689d00c02b339d721840a19664c67b47d09459cc6487e56ea01c3eb",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "please increase lisinopril to 20 mg daily."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T16:46:59.100Z"
+      }
+    },
+    {
+      "key": "abdec4ad678568cba81208ab961d547adddf08bc1a70548086045a601ec933c5",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "The lisinopril is the likely cause; please consider holding it."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T16:46:59.100Z"
+      }
+    },
+    {
+      "key": "aedf7e8d6b1336b5dc0f49b3d6edfdbb521eb9603b1fd590061b79fff3a2142a",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "Denise Holloway: double the lisinopril dose."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T16:46:59.100Z"
       }
     },
     {
@@ -149,14 +239,50 @@
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "met",
-        "quote": "Your stool test (FIT) found blood, which needs a colonoscopy to find the cause. Dr. Lin has already referred you to gastroenterology"
+        "quote": "Your stool test (FIT) found blood, which needs a colonoscopy to find the cause. Dr. Lin has already referred you to gastroenterology, and their office will call you to schedule it."
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-27T14:34:22.967Z"
+        "at": "2026-10-28T16:46:59.100Z"
+      }
+    },
+    {
+      "key": "de4dcfa3c9c48bbe6c8d0ace60e52b2ed0d2b27ca85f9f619c040ce133c7b040",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "Denise Holloway K 6.2: hold lisinopril; resume only once the repeat K is below 5.0."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T16:46:59.100Z"
+      }
+    },
+    {
+      "key": "e36d70f0e3f5b66b8fd9283d12457ad30a5e77bb00c487ecd54cb2987d9e1133",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "Denise Holloway K 6.2: hold lisinopril and keep monitoring her potassium."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T16:46:59.100Z"
       }
     }
   ],
