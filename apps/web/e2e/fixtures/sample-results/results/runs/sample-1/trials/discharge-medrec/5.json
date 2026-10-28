@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:discharge-medrec:5",
   "task_id": "discharge-medrec",
-  "task_version": "c350309a8266812ad742ccc3bfd2b9f815ffca2d91ad8668a3f530fbac04594c",
+  "task_version": "350dbe9f867a7a61710ac887d3c17371d157a15b194bedd4d3076d849cd68fdb",
   "env_version": "682033ef2b6763eca76c0e8b48d76c6f766d3e6cc47cca2da118438dcfc1a316",
-  "grader_task_version": "aa0c2ff264e791a6acf8de206cc50db7e69c0a9ed9d352b03512ae85e2469942",
+  "grader_task_version": "305dfcee6413a171ef5796faff49576a8c8b32e7179848e1ec582b39616586c7",
   "fixture_hash": "5e69bcfaa1935a5eb4bef6ba1b8e3d4db1cf379042fd6321516416281b041f20",
   "state_hash": {
     "initial": "5e69bcfaa1935a5eb4bef6ba1b8e3d4db1cf379042fd6321516416281b041f20",
@@ -177,18 +177,6 @@
       "points": null,
       "met": true,
       "evidence": {
-        "pairs": [
-          {
-            "id": "DocumentReference/doc-t4-dc-1019-add",
-            "before": 9,
-            "seen": true
-          },
-          {
-            "id": "Observation/obs-t4-scr-1021",
-            "before": 11,
-            "seen": true
-          }
-        ],
         "late": []
       },
       "ids": []
