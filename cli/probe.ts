@@ -8,8 +8,9 @@
 // to the read tools and whose instruction is that prompt, so the caps, the trajectory and the
 // replay check are the trial's; it runs no check and no judge.
 //   --out       results/probe by default: <task>.jsonl (the trajectory, the graded event last)
-//               and <task>.json ({task_id, task_version, status, findings, problem, cost_usd,
-//               trajectory}). A task whose <task>.json holds findings is not probed again and is
+//               and <task>.json ({task_id, task_version, status, findings, problem, last_answer
+//               (the probe's last answer as it gave it, so a finding can be checked against it),
+//               cost_usd, trajectory}). A task whose <task>.json holds findings is not probed again and is
 //               not projected; one whose findings are null is run again.
 //   --dry-run   prints the projection (LIVE_PROJECTION_USD) and makes no call and opens nothing
 // Projection: PER_TRIAL_CAP_USD per probe, the loop's cost cap (no judge item is graded). Every
@@ -126,11 +127,16 @@ function lastFindingsObject(text: string): { findings: unknown[] } | null {
   return best?.value ?? null;
 }
 
+// The text of the probe's last answer, null when it gave none.
+export function lastAnswer(events: readonly TrialEvent[]): string | null {
+  const last = events.findLast((e) => e.type === 'response');
+  return last === undefined ? null : last.content.flatMap((b) => (b.type === 'text' && typeof b.text === 'string' ? [b.text] : [])).join('').trim();
+}
+
 // The probe's findings from its last answer, or the reason they are not valid.
 export function findingsOf(events: readonly TrialEvent[]): { findings: Finding[] } | { problem: string } {
-  const last = events.findLast((e) => e.type === 'response');
-  if (last === undefined) return { problem: 'no answer' };
-  const text = last.content.flatMap((b) => (b.type === 'text' && typeof b.text === 'string' ? [b.text] : [])).join('').trim();
+  const text = lastAnswer(events);
+  if (text === null) return { problem: 'no answer' };
   const parsed = lastFindingsObject(text);
   if (parsed === null) return { problem: `the last answer is not the findings JSON: ${JSON.stringify(text.slice(0, 200))}` };
   const findings = (parsed as { findings?: unknown } | null)?.findings;
@@ -212,9 +218,10 @@ export async function main(args: string[], deps: Deps): Promise<number> {
         const client = new MessagesClient({ grant, ledger, apiKey: key, fetch: deps.fetch, trial: label, log: (l) => deps.out(l) });
         const { record, events } = await run(t.id, MODEL, { tasks: probeSource, client, judge: null, now: nodeNow, trialId: label, ...repoWorld(), onEvent: (e) => appendFileSync(trajectory, toJsonLine(e)) });
         const got = record.status === 'COMPLETED' ? findingsOf(events) : { problem: `the probe ended ${record.status}${record.detail ? ` (${record.detail})` : ''}` };
+        const answer = lastAnswer(events);
         const findings = 'findings' in got ? got.findings : null;
         const problem = 'problem' in got ? redactText(got.problem, [key]) : null;
-        writeFileSync(join(outDir, `${t.id}.json`), `${JSON.stringify({ task_id: t.id, task_version: record.task_version, status: record.status, findings, problem, cost_usd: record.cost_usd, trajectory: `${t.id}.jsonl` }, null, 2)}\n`);
+        writeFileSync(join(outDir, `${t.id}.json`), `${JSON.stringify({ task_id: t.id, task_version: record.task_version, status: record.status, findings, problem, last_answer: answer === null ? null : redactText(answer, [key]), cost_usd: record.cost_usd, trajectory: `${t.id}.jsonl` }, null, 2)}\n`);
         if (findings === null) failed++;
         deps.out(`probe ${t.id}: ${findings === null ? `no findings: ${problem}` : `${findings.length} finding${findings.length === 1 ? '' : 's'}`}, ${record.turns} turns, ${record.tool_calls} tool calls, cost ${money(record.cost_usd)}`);
       }

@@ -84,6 +84,28 @@ describe('probe', () => {
     expect(JSON.parse(readFileSync(join(h.out, '_toy.json'), 'utf8')).findings).toEqual(quoted.findings);
   });
 
+  it('a quote holding a lone } and a draft before the final answer: the final findings win (PR22ar4 m-1)', async () => {
+    const lone = { findings: [{ ...FINDINGS.findings[0], quote: 'the order text ends with }' }] };
+    const a = harness(scriptedTransport([{ text: `Findings: ${JSON.stringify(lone)}` }]).transport, { ANTHROPIC_API_KEY: fakeKey('P') });
+    expect(await a.probe([])).toBe(0);
+    expect(JSON.parse(readFileSync(join(a.out, '_toy.json'), 'utf8')).findings).toEqual(lone.findings);
+    const draft = { findings: [{ ...FINDINGS.findings[0], explanation: 'Draft: not checked against the policy yet.' }] };
+    const text = `Draft:\n${JSON.stringify(draft)}\nAfter reading the policy, the final answer:\n${JSON.stringify(FINDINGS)}`;
+    const b = harness(scriptedTransport([{ text }]).transport, { ANTHROPIC_API_KEY: fakeKey('P') });
+    expect(await b.probe([])).toBe(0);
+    expect(JSON.parse(readFileSync(join(b.out, '_toy.json'), 'utf8')).findings).toEqual(FINDINGS.findings);
+  });
+
+  it("records the probe's raw last answer beside its findings, valid or not (PR22ar4 m-2)", async () => {
+    const text = `Here they are.\n${JSON.stringify(FINDINGS)}`;
+    const a = harness(scriptedTransport([{ text }]).transport, { ANTHROPIC_API_KEY: fakeKey('P') });
+    expect(await a.probe([])).toBe(0);
+    expect(JSON.parse(readFileSync(join(a.out, '_toy.json'), 'utf8'))).toMatchObject({ findings: FINDINGS.findings, last_answer: text });
+    const b = harness(scriptedTransport([{ text: 'I found two problems.' }]).transport, { ANTHROPIC_API_KEY: fakeKey('P') });
+    expect(await b.probe([])).toBe(1);
+    expect(JSON.parse(readFileSync(join(b.out, '_toy.json'), 'utf8'))).toMatchObject({ findings: null, last_answer: 'I found two problems.' });
+  });
+
   it('runs a recorded probe again when its findings are null (r2 F1)', async () => {
     const t = scriptedTransport([{ text: 'I found two problems.' }, { text: JSON.stringify(FINDINGS) }]);
     const h = harness(t.transport, { ANTHROPIC_API_KEY: fakeKey('P') });
