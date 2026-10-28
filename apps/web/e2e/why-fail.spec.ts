@@ -153,8 +153,11 @@ test('a current GRADER_ERROR in the run blocks it (DENOMINATOR_RULE; decisions.t
   await noRates(page);
 });
 
-test('a valid failure the audit labels environment blocks the run, and its own row and header say so', async ({ page }) => {
-  const row = audit.find((a) => a.outcome === 'FAIL')!;
+test('a valid failure the audit labels environment blocks the run, and its own row, header, swatches and Fault row say so', async ({ page }) => {
+  // The run's first FAIL by task and index, the trial Findings shows as its FAIL example.
+  const first = records.filter((r) => explain(r).outcome === 'FAIL').sort((a, b) => (a.task_id === b.task_id ? a.index - b.index : a.task_id < b.task_id ? -1 : 1))[0]!;
+  const row = audit.find((a) => a.trial === trialName(first))!;
+  expect(explain(first).fault).toBe('model');
   await page.route(`**/data/results/runs/${summary.run_id}/audit.jsonl`, async (route) => {
     const res = await route.fetch();
     const lines = (await res.text()).split('\n').filter((l) => l.trim() !== '').map((l) => JSON.parse(l) as { trial?: string });
@@ -163,6 +166,8 @@ test('a valid failure the audit labels environment blocks the run, and its own r
   await browse(page, './?view=overview');
   await expect(page.getByTestId('run-blocked').getByTestId('blocking-trial')).toContainText([row.trial]);
   await noRates(page);
+  // Its Overview swatch takes the label's mark (verifier-phase-P17i-UIRETRO-1 M3).
+  await expect(page.locator(`[data-testid="overview-row"][data-task="${first.task_id}"] [data-testid="swatches"] [title^="${row.trial}:"]`)).toHaveAttribute('data-mark', 'environment');
   // Its row and its trial header show the audit's label in the blocked tone (decisions.tsv 17:30 (c)).
   await page.getByRole('link', { name: 'Runs', exact: true }).first().click();
   const r = page.locator(`[data-testid="run"][data-official="true"] [data-testid="trial-row"][data-trial="${row.trial}"]`);
@@ -186,6 +191,13 @@ test('a valid failure the audit labels environment blocks the run, and its own r
   await expect(header.getByTestId('outcome')).toHaveAttribute('data-mark', 'environment');
   await expect(header.getByTestId('outcome')).toHaveCSS('border-top-color', danger);
   await expect(header).toHaveCSS('border-left-color', danger);
+  // The Fault row shows the audit's fault and names the one the criteria found (UIRETRO-1 M1).
+  await expect(header.getByTestId('detail-fault')).toContainText(/^environment/);
+  await expect(header.getByTestId('fault-relabelled')).toContainText("The audit relabelled it; the trial's criteria found the model at fault, decided by");
+  // Its Findings example swatch takes the label's mark too (UIRETRO-1 M3).
+  await page.getByRole('link', { name: 'Findings', exact: true }).first().click();
+  const example = page.getByTestId('exemplars').getByRole('listitem').filter({ has: page.getByRole('link', { name: row.trial, exact: true }) });
+  await expect(example.getByRole('img')).toHaveAttribute('data-mark', 'environment');
 });
 
 test('the check and audit filters do not follow a rail link or an Overview task link', async ({ page }) => {

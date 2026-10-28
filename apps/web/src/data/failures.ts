@@ -66,6 +66,12 @@ export function shownFault(e: Explanation): Fault | null {
   return l === 'environment' ? 'env' : l === 'grader' ? 'grader' : e.fault;
 }
 
+// The fault explainTrial gave a trial whose shown fault the audit's label changed, which the trial
+// header's Fault row names beside the shown one (verifier-phase-P17i-UIRETRO-1 M1); else null.
+export function relabelledFrom(e: Explanation): Fault | null {
+  return e.fault !== null && shownFault(e) !== e.fault ? e.fault : null;
+}
+
 // The run block (it then shows no pass count, dot or Wilson interval, decisions.tsv
 // 2026-10-29T16:00): the trials that block it, by name, and how many are false PASSes.
 export interface RunBlock {
