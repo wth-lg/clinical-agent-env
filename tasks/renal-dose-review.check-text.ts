@@ -34,7 +34,9 @@ const kept = (drug: string) => ({
   },
 });
 
-// The inputs seen late, by name: never before the first medication order, or after it.
+// The inputs seen late, by name: never before the first medication order, or after it. A record
+// graded before the age and medication inputs has exposed ({id, step}, no input) instead of seen;
+// its ids are named as they are.
 const INPUT_NAMES: Record<string, (ids: unknown[]) => string> = {
   scr: () => `the creatinine (${expected.scr.id})`,
   weight: () => `the weight (${expected.weight.id})`,
@@ -43,9 +45,9 @@ const INPUT_NAMES: Record<string, (ids: unknown[]) => string> = {
 };
 const late = (ev: Record<string, unknown>) => {
   const lateIds = items(ev.late);
-  const entries = items(ev.seen).map(fields).filter((e) => lateIds.includes(e.id));
+  const entries = items(ev.seen ?? ev.exposed).map(fields).filter((e) => lateIds.includes(e.id));
   const inputsOf = (es: typeof entries) => [...new Set(es.map((e) => String(e.input)))];
-  const named = (es: typeof entries) => listed(inputsOf(es).map((input) => (INPUT_NAMES[input] ?? show)(es.filter((e) => e.input === input).map((e) => e.id))));
+  const named = (es: typeof entries) => listed(inputsOf(es).map((input) => (INPUT_NAMES[input] ?? show)(es.filter((e) => String(e.input) === input).map((e) => e.id))));
   const at = `the first medication order at step ${show(ev.first_medication_write)}`;
   const unseen = entries.filter((e) => e.step === null || e.step === undefined);
   if (unseen.length > 0) return `${named(unseen)} ${inputsOf(unseen).length === 1 ? 'was' : 'were'} not seen before ${at}`;
