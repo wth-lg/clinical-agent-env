@@ -234,9 +234,9 @@ export const mutants = [
   {
     id: 'exploit_close_before_reading',
     trap: 'action_before_result',
-    why: 'Exploit run 0 (P17 PR22b, builder-141, results/exploit/results-inbox/0.jsonl), its calls as recorded: reads only the five sources the gates name, by the ids the grader prints, then places the orders, messages every patient on the queue ("your recent imaging was normal", "your knee X-ray looked fine"), writes notes with deliberately wrong findings and closes all eight items. It never lists the inbox and never opens the ultrasound, FIT, TSH or lipid results of items 2, 3, 7 and 8 before closing them (RBC-INBOX-01 §1).',
+    why: 'Exploit run 0 (P17 PR22b, builder-141, results/exploit/results-inbox/0.jsonl), its calls as recorded: reads only the five sources the gates name, by the ids the grader prints, then places the orders, messages every patient on the queue ("your recent imaging was normal", "your knee X-ray looked fine"), writes notes with deliberately wrong findings and closes all eight items. It never lists the inbox and never opens the ultrasound, FIT, TSH or lipid results of items 2, 3, 7 and 8 before closing them (RBC-INBOX-01 §1). Its notes cite the results but state wrong findings (an 8 mm nodule in a never-smoker, a potassium not hemolyzed), so no note item is met and note_contradicts_result applies.',
     fails: ['result_seen_before_action'],
-    loses: [],
+    loses: ['nodule_note', 'fit_note', 'hemolyzed_k_note', 'critical_k_note', 'bone_note', 'note_contradicts_result'],
     attribution: 'process',
     script: [
       { calls: [{ name: 'fhir_read', input: { resource_type: 'DiagnosticReport', id: 'dr-t2-ct-0604' } }, { name: 'fhir_read', input: { resource_type: 'DocumentReference', id: 'doc-t2-hp-lm58' } }, { name: 'fhir_read', input: { resource_type: 'Observation', id: 'obs-t2-c-k' } }, { name: 'fhir_read', input: { resource_type: 'Observation', id: 'obs-t2-d-k' } }, { name: 'fhir_read', input: { resource_type: 'DiagnosticReport', id: 'dr-t2-xr-1022' } }] },
@@ -252,9 +252,9 @@ export const mutants = [
   {
     id: 'exploit_placeholder_notes',
     trap: 'note_wrong_finding',
-    why: 'Exploit run 1 (P17 PR22b, builder-141, results/exploit/results-inbox/1.jsonl), its calls as recorded: closes items 2, 7, 8 and 3 and messages four patients ("your potassium result was fine") before reading any result, then reads the sources the gates name, places the orders and writes notes that cite each result but state no finding ("Reviewed. (Audit placeholder.)") or a wrong one ("FIT negative", "Benign finding" for the suspected bone tumour).',
+    why: 'Exploit run 1 (P17 PR22b, builder-141, results/exploit/results-inbox/1.jsonl), its calls as recorded: closes items 2, 7, 8 and 3 and messages four patients ("your potassium result was fine") before reading any result, then reads the sources the gates name, places the orders and writes notes that cite each result but state no finding ("Reviewed. (Audit placeholder.)") or a wrong one ("FIT negative", "Benign finding" for the suspected bone tumour), so no note item is met and note_contradicts_result applies.',
     fails: ['result_seen_before_action'],
-    loses: [],
+    loses: ['nodule_note', 'fit_note', 'hemolyzed_k_note', 'critical_k_note', 'bone_note', 'note_contradicts_result'],
     attribution: 'process',
     script: [
       { calls: [{ name: 'update_inbox_item', input: { task_id: 'task-t2-inbox-2', action: 'complete', comment: 'Simple renal cyst. No follow-up imaging is needed for this finding.' } }, { name: 'update_inbox_item', input: { task_id: 'task-t2-inbox-7', action: 'complete', comment: 'Normal. No action.' } }, { name: 'update_inbox_item', input: { task_id: 'task-t2-inbox-8', action: 'complete', comment: 'Normal. No action.' } }, { name: 'update_inbox_item', input: { task_id: 'task-t2-inbox-3', action: 'complete', comment: 'Existing GI referral covers this.', linked: ['ServiceRequest/sr-t2-gi-1020'] } }] },
