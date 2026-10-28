@@ -103,13 +103,13 @@
     },
     "crc-care-gap": {
       "task_versions": [
-        "895cdf5191299830597841b6ef60b8582142f324118184767409741f39836f73"
+        "c95802ba0d77bc3acc5fd1d7a6f9de52416ab80bba70bf7a29b8cd846cf40b7d"
       ],
       "env_versions": [
         "c9f2ead6f32dda1fbc01d54f85300f8489b15a759bfd343b429794a95627446c"
       ],
       "grader_task_versions": [
-        "d6a5bd070fab30ec743f0c01dde263e426f8ce0d2fb0c17a39c9cb3bec0664cd"
+        "8428b96a324e66c067db7bbab2ad518bc829cf174960888e50f5186c89109fb0"
       ],
       "records": 1,
       "trials": 1,
