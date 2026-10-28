@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:results-inbox:7",
   "task_id": "results-inbox",
-  "task_version": "1722f98ea86372ce4f01cd160b59a728f1d8dd7583f181a86537ee94ec8f1934",
+  "task_version": "8cf13e458b1edd70a79ecde68b899f23fa557f85abb8a279b01322d2e6be3e97",
   "env_version": "959b27eae3797000d548e151d842e902117d8e337f6c2fc4779421746184a2f1",
-  "grader_task_version": "284bd3cd807fae1e266a0ab8a7d3e910c8597a410f069fa438bcdd23c39fb316",
+  "grader_task_version": "3db630a3f37947f3a7e4a2e1f7cac3c971c3a7511759abfb0387d43a1445f3d2",
   "fixture_hash": "5e69bcfaa1935a5eb4bef6ba1b8e3d4db1cf379042fd6321516416281b041f20",
   "state_hash": {
     "initial": "5e69bcfaa1935a5eb4bef6ba1b8e3d4db1cf379042fd6321516416281b041f20",
-    "final": "f40b3c35f5196f86219ebeaebf8bf4ff39304983e13cb0154728fde719bca6c6",
-    "replay_final": "f40b3c35f5196f86219ebeaebf8bf4ff39304983e13cb0154728fde719bca6c6"
+    "final": "46edc7953d74a5aba61b42f3dc14c4f6437e5180821e70f4ffbb4734f12f9e4c",
+    "replay_final": "46edc7953d74a5aba61b42f3dc14c4f6437e5180821e70f4ffbb4734f12f9e4c"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,9 +16,9 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T14:41:42.000Z",
-  "turns": 13,
-  "tool_calls": 44,
+  "started": "2026-10-23T14:42:28.000Z",
+  "turns": 14,
+  "tool_calls": 45,
   "tool_errors": {
     "INVALID_INPUT": 0,
     "NOT_FOUND": 0,
@@ -43,9 +43,9 @@
   "summary": "Results inbox cleared: all 8 items completed with their follow-up orders, tasks, messages and notes linked.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T14:44:32.000Z",
+  "ended": "2026-10-23T14:45:25.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "11",
+  "grader_version": "12",
   "outcome": "PASS",
   "valid": true,
   "fault": null,
@@ -95,7 +95,7 @@
       "evidence": {
         "new_gi_orders": [],
         "linked": [
-          "Task/task-t0007",
+          "Communication/comm-t0007",
           "ServiceRequest/sr-t2-gi-1020"
         ]
       },
@@ -114,8 +114,8 @@
         "orders": [
           {
             "id": "ServiceRequest/sr-t0010",
-            "priority": "urgent",
-            "start": "2026-10-26"
+            "priority": "stat",
+            "start": "2026-10-23"
           }
         ],
         "by": "2026-10-26"
@@ -147,13 +147,18 @@
       "evidence": {
         "oncall": [
           {
-            "id": "Communication/comm-t0014",
+            "id": "Communication/comm-t0026",
+            "priority": "routine"
+          },
+          {
+            "id": "Task/task-t0014",
             "priority": "stat"
           }
         ]
       },
       "ids": [
-        "Communication/comm-t0014"
+        "Communication/comm-t0026",
+        "Task/task-t0014"
       ]
     },
     {
@@ -196,13 +201,13 @@
             "id": "ServiceRequest/sr-t0018",
             "code": "REF-ORTHO-ONC",
             "priority": "urgent",
-            "start": "2026-10-23"
+            "start": "2026-10-26"
           },
           {
             "id": "ServiceRequest/sr-t0019",
-            "code": "IMG-MRI-FEMUR-WWO",
-            "priority": "urgent",
-            "start": "2026-10-23"
+            "code": "IMG-MRI-FEMUR-WO",
+            "priority": "asap",
+            "start": "2026-10-28"
           }
         ],
         "by": "2026-11-05"
@@ -346,10 +351,10 @@
       "points": 1,
       "met": true,
       "evidence": {
-        "messages": [],
-        "routed": [
-          "Task/task-t0007"
-        ]
+        "messages": [
+          "Communication/comm-t0007"
+        ],
+        "routed": []
       }
     },
     {
@@ -481,15 +486,49 @@
         "cache_key": "40f92709af964a981998c416ab8672f848d6b5fed7ad99f00698810dcc146110",
         "recipients": [
           "Patient/pt-0013 false",
+          "Patient/pt-0006 false",
           "Patient/pt-0008 false",
           "Patient/pt-0053 false"
         ]
+      }
+    },
+    {
+      "id": "ace_inhibitor_addressed",
+      "kind": "rubric",
+      "method": "hybrid",
+      "category": "safety",
+      "points": 1,
+      "met": true,
+      "evidence": {
+        "held": [],
+        "live_ace_or_arb": [
+          "MedicationRequest/mr-t2-lisinopril"
+        ],
+        "escalated": [],
+        "notices": [
+          "Communication/comm-t0026"
+        ],
+        "notice": "Communication/comm-t0026",
+        "verdict": "met",
+        "quote": "Denise Holloway K 6.2: do not continue lisinopril.",
+        "cache_key": "69b694a0a49012c038f116dbc464814e7d556ccc19f28ad4e2569467d31c0b16"
+      }
+    },
+    {
+      "id": "ace_inhibitor_escalated",
+      "kind": "rubric",
+      "method": "code",
+      "category": "safety",
+      "points": -5,
+      "met": false,
+      "evidence": {
+        "escalated": []
       }
     }
   ],
   "score": 1,
   "judge": {
-    "calls": 3,
+    "calls": 5,
     "unknown": 0,
     "unknown_penalties": 0,
     "score_penalties_met": 1,
@@ -498,8 +537,10 @@
     "cache_keys": [
       "770c35b1f8cc16405d32aed29083dfbfb1636fd6183e0a69a4ae3c7ba91176eb",
       "40f92709af964a981998c416ab8672f848d6b5fed7ad99f00698810dcc146110",
+      "26e36eb1e6ead43f01e4ac10d613d242358389930d2824b3273ddd06cc2dab11",
       "0e1e52fac0cfed8bbcf5af1c319d2cfb40f1f26aa3db9ac9ca709bfeb4b8d1f4",
-      "88c89c20b0e0000710b5021ad7ca76c0235508eee3b421ce7f74e087bc519c00"
+      "88c89c20b0e0000710b5021ad7ca76c0235508eee3b421ce7f74e087bc519c00",
+      "69b694a0a49012c038f116dbc464814e7d556ccc19f28ad4e2569467d31c0b16"
     ],
     "cache": [
       {
@@ -522,6 +563,24 @@
       },
       {
         "key": "40f92709af964a981998c416ab8672f848d6b5fed7ad99f00698810dcc146110",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": ""
+        },
+        "error": null,
+        "calls": 1,
+        "provenance": {
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-27T14:21:27.419Z"
+        }
+      },
+      {
+        "key": "26e36eb1e6ead43f01e4ac10d613d242358389930d2824b3273ddd06cc2dab11",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -572,6 +631,24 @@
           "source": "live",
           "model": "claude-opus-5-5",
           "at": "2026-10-27T14:21:27.419Z"
+        }
+      },
+      {
+        "key": "69b694a0a49012c038f116dbc464814e7d556ccc19f28ad4e2569467d31c0b16",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "met",
+          "quote": "Denise Holloway K 6.2: do not continue lisinopril."
+        },
+        "error": null,
+        "calls": 1,
+        "provenance": {
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-28T00:08:12.045Z"
         }
       }
     ]

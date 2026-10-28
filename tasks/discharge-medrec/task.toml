@@ -86,6 +86,11 @@ kind = "lab"
 code = "2160-0"
 system = "http://loinc.org"
 display = "Creatinine [Mass/volume] in Serum or Plasma"
+[[catalog]]
+kind = "lab"
+code = "24321-2"
+system = "http://loinc.org"
+display = "Basic metabolic 2000 panel - Serum or Plasma"
 
 # Each trap needs a mutant in tests/mutants.ts. No status-only case: T4 has no inbox items.
 [matrix]

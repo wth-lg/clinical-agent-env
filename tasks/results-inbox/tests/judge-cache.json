@@ -18,6 +18,24 @@
     }
   },
   {
+    "key": "114c2d7e2d6f91368eb6f22437c76c92aacfaa8f839c01370e9c246dbc07f9c7",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "please continue lisinopril 10 mg daily unchanged; no medication changes needed."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T00:08:12.045Z"
+    }
+  },
+  {
     "key": "26e36eb1e6ead43f01e4ac10d613d242358389930d2824b3273ddd06cc2dab11",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -72,6 +90,24 @@
     }
   },
   {
+    "key": "69b694a0a49012c038f116dbc464814e7d556ccc19f28ad4e2569467d31c0b16",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Denise Holloway K 6.2: do not continue lisinopril."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T00:08:12.045Z"
+    }
+  },
+  {
     "key": "770c35b1f8cc16405d32aed29083dfbfb1636fd6183e0a69a4ae3c7ba91176eb",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -108,6 +144,60 @@
     }
   },
   {
+    "key": "9a898eb62689d00c02b339d721840a19664c67b47d09459cc6487e56ea01c3eb",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "please increase lisinopril to 20 mg daily."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T00:08:12.045Z"
+    }
+  },
+  {
+    "key": "abdec4ad678568cba81208ab961d547adddf08bc1a70548086045a601ec933c5",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "The lisinopril is the likely cause; please consider holding it."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T00:08:12.045Z"
+    }
+  },
+  {
+    "key": "aedf7e8d6b1336b5dc0f49b3d6edfdbb521eb9603b1fd590061b79fff3a2142a",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Denise Holloway: double the lisinopril dose."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T00:08:12.045Z"
+    }
+  },
+  {
     "key": "d6c2dc4f903df0c57eb972504afb25afb72ecafa41157d7e836398faade17bd6",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -123,6 +213,42 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-27T14:21:27.419Z"
+    }
+  },
+  {
+    "key": "de4dcfa3c9c48bbe6c8d0ace60e52b2ed0d2b27ca85f9f619c040ce133c7b040",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Denise Holloway K 6.2: hold lisinopril; resume only once the repeat K is below 5.0."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T00:08:12.045Z"
+    }
+  },
+  {
+    "key": "e36d70f0e3f5b66b8fd9283d12457ad30a5e77bb00c487ecd54cb2987d9e1133",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Denise Holloway K 6.2: hold lisinopril and keep monitoring her potassium."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T00:08:12.045Z"
     }
   }
 ]

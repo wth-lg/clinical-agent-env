@@ -9,6 +9,13 @@ const without = (l: Label) => GAPS.filter((x) => x !== l);
 const missed = ['fit_orders', 'outreach_messages'];
 const extra = ['fit_orders', 'nothing_for_others'];
 
+// A Task for E2 owned by a staff pool, and the actions without E2's portal message.
+const staffTask = (owner: string, description: string, focus?: string) => ({ name: 'create_task', input: { patient: PT.E2, owner, due: '2026-10-30', priority: 'routine', description, ...(focus ? { focus } : {}) } });
+// E2's FIT order: the first write of these scripts, as actions() starts with orderFit(E2).
+const E2_FIT = 'ServiceRequest/sr-t0001';
+const e2Call = staffTask('Group/pool-rn-triage', 'Call the patient: due for colorectal cancer screening, FIT kit mailed; explain how to return it.', E2_FIT);
+const withoutE2Message = actions().filter((c) => !(c.name === 'send_message' && c.input.recipient === `Patient/${PT.E2}`));
+
 // `loses` is spelled out in the type until the matrix's Mutant declares it (builder-49).
 export const mutants: Array<Mutant & { loses: readonly string[] }> = [
   {
@@ -85,6 +92,55 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
     fails: ['fit_orders'],
     loses: [],
     script: [...reads(), { calls: [...actions(), orderFit(PT.E2, '29771-3')] }, { calls: [finish()] }],
+  },
+  {
+    id: 'e2_outreach_by_phone_task',
+    trap: 'outreach_channel',
+    why: 'Gets every order right and reaches E2 by a Task asking scheduling to phone him about the FIT kit instead of a portal message: the right outreach in a channel RBC-QM-02 §5 does not name, so action_form (P17j JG8b).',
+    fails: ['outreach_messages'],
+    loses: [],
+    attribution: 'action_form',
+    script: [
+      ...reads(),
+      { calls: [...actions().filter((c) => !(c.name === 'send_message' && c.input.recipient === `Patient/${PT.E2}`)), staffTask('Group/pool-scheduling', 'Please call this patient: a FIT kit for colorectal cancer screening has been ordered and is on its way.', E2_FIT)] },
+      { calls: [finish()] },
+    ],
+  },
+  {
+    id: 'e2_unrelated_task',
+    trap: 'outreach_channel',
+    why: 'Gets every order right, sends E2 no message, and gives scheduling an unrelated Task for him (update his pharmacy): no outreach decision at all, so reasoning, not action_form (P17j JG8b r2, verifier-phase-P17i-JG8b-1 F2).',
+    fails: ['outreach_messages'],
+    loses: [],
+    attribution: 'reasoning',
+    script: [...reads(), { calls: [...withoutE2Message, staffTask('Group/pool-scheduling', 'Update the preferred pharmacy on file to the Main Street location.')] }, { calls: [finish()] }],
+  },
+  {
+    id: 'e2_do_not_contact_task',
+    trap: 'outreach_channel',
+    why: 'Gets every order right, sends E2 no message, and tells scheduling not to contact him about screening: the opposite of outreach, so reasoning, not action_form (P17j JG8b r2, verifier-phase-P17i-JG8b-1 F2).',
+    fails: ['outreach_messages'],
+    loses: [],
+    attribution: 'reasoning',
+    script: [...reads(), { calls: [...withoutE2Message, staffTask('Group/pool-scheduling', 'Do not contact this patient about screening.')] }, { calls: [finish()] }],
+  },
+  {
+    id: 'e2_phone_task_order_before_review',
+    trap: 'order_before_review',
+    why: 'Reaches E2 by a phone Task, the right outreach in another channel, but also orders for E4 before reading her birth date: the process failure has no action_form mark, so it decides the label (P17j JG8b r2, verifier-phase-P17i-JG8b-1 F1).',
+    fails: ['outreach_messages', 'gap_seen_before_order'],
+    loses: [],
+    attribution: 'process',
+    script: [
+      { calls: [policy, groups] },
+      { calls: [group] },
+      ...[1, 2, 3, 4, 5, 6].map((i) => ({ calls: Object.values(PT).map((p) => chart(p)[i]!) })),
+      { calls: [NOTE_SEARCH] },
+      { calls: [OPNOTE] },
+      { calls: [...withoutE2Message, e2Call] },
+      { calls: Object.values(PT).map((p) => chart(p)[0]!) },
+      { calls: [finish()] },
+    ],
   },
   {
     id: 'messages_without_orders',
