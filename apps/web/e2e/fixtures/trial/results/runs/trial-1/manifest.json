@@ -9,10 +9,10 @@
   "task_versions": {
     "contrast-ct-prep": "f8957064b0830f90957f2ee2c5ea2e54e1a994eb19ee4a120f5277abfaa84556",
     "crc-care-gap": "705110ec2ed114a373ede1a445601f0f6cff4e2e7d116f245de183064a9e4ead",
-    "discharge-medrec": "f2fce6fc71b3613472cc96c7bd8a65422bce98147d83ff55938f497276f246db",
+    "discharge-medrec": "a510171e894e590968655d22c6e88286a42124b15eb1f42d2e59c5087c0ced5d",
     "message-queue": "2e0c7b0e49fab137d870782aaf7d2301f5defc0b97cf5b25d080471d07c7431b",
     "renal-dose-review": "b5182405f1e91679bbf68dddc9a76c1ab49dab521337ae00c9b2f1edf81ff2ba",
-    "results-inbox": "07387226363b2a0f2c94e4d0c471c1e93b2a9fea6e8afb086495de9e0f17d0eb"
+    "results-inbox": "c7659fafd1f8e0c37da974c4d4e14e9fb845d01a3407c5f832d8610e2c3de2ae"
   },
   "env_versions": {
     "contrast-ct-prep": "492337b74874ac4946e3b6d7dde634742792583284396f14ea47172c4a0fce18",
@@ -25,10 +25,10 @@
   "grader_task_versions": {
     "contrast-ct-prep": "8f82a9ef6aae6c8f99818a11dcf1b2364a7618b97e9421d6b023a2b0a629b6d1",
     "crc-care-gap": "100339828ba28695eea3f9b5cdc61ff7d0e605eb0c676b27161785f842a7e1df",
-    "discharge-medrec": "2247d7a993cba0fd6cc885081c397fedc9b89aaf96e3a57adf60643d72ff88ed",
+    "discharge-medrec": "858a8b8ee80646464926f581fcefb6e84e8e1d3770415569ca9b6ef53e0e481c",
     "message-queue": "1741d320f3efcb864f67d900e71a4d99a84f13d2c756f50e482b9f0ce456649f",
     "renal-dose-review": "a8e12873b57582d1fa5b2e1b925c7c75b29ee2e9b1bb35cc7e12ee1c1a79e838",
-    "results-inbox": "db6edbd5730818d49e768ccdfd716b2913cfb1109b0d311fa2074abc476b2cdc"
+    "results-inbox": "23fe1b622be7b31f085e9362d8895d54e324540e00567c2ae88b8b019ba06f8e"
   },
   "batches": []
 }

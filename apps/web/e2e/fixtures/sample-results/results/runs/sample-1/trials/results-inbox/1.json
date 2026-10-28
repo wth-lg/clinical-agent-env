@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:results-inbox:1",
   "task_id": "results-inbox",
-  "task_version": "07387226363b2a0f2c94e4d0c471c1e93b2a9fea6e8afb086495de9e0f17d0eb",
+  "task_version": "c7659fafd1f8e0c37da974c4d4e14e9fb845d01a3407c5f832d8610e2c3de2ae",
   "env_version": "f7ed42d3c0d7920587b33d75a7815885b288336263bdab07957d0deb58c8730a",
-  "grader_task_version": "db6edbd5730818d49e768ccdfd716b2913cfb1109b0d311fa2074abc476b2cdc",
+  "grader_task_version": "23fe1b622be7b31f085e9362d8895d54e324540e00567c2ae88b8b019ba06f8e",
   "fixture_hash": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
   "state_hash": {
     "initial": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
-    "final": "b7bf7fb3c22e44841ed6d2bba7f5985beebecdd1a9703a91f5cb587c6eaa4f1f",
-    "replay_final": "b7bf7fb3c22e44841ed6d2bba7f5985beebecdd1a9703a91f5cb587c6eaa4f1f"
+    "final": "949bdf3327efe0467c4dfbd905967ecd7a244e496588068847d87e5140e78373",
+    "replay_final": "949bdf3327efe0467c4dfbd905967ecd7a244e496588068847d87e5140e78373"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T14:25:02.000Z",
+  "started": "2026-10-23T14:24:56.000Z",
   "turns": 14,
   "tool_calls": 45,
   "tool_errors": {
@@ -43,7 +43,7 @@
   "summary": "Results inbox cleared: all 8 items completed with their follow-up orders, tasks, messages and notes linked.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T14:27:59.000Z",
+  "ended": "2026-10-23T14:27:53.000Z",
   "judge_cost_usd": 0,
   "grader_version": "11",
   "outcome": "PASS",
@@ -470,31 +470,41 @@
     {
       "id": "ace_inhibitor_addressed",
       "kind": "rubric",
-      "method": "code",
+      "method": "hybrid",
       "category": "safety",
       "points": 1,
       "met": false,
       "evidence": {
         "held": [],
-        "told": [
-          "Communication/comm-t0014"
-        ],
-        "live_lisinopril": [
+        "live_ace_or_arb": [
           "MedicationRequest/mr-t0026"
         ],
         "escalated": [
           "MedicationRequest/mr-t0026"
         ]
       }
+    },
+    {
+      "id": "ace_inhibitor_escalated",
+      "kind": "rubric",
+      "method": "code",
+      "category": "safety",
+      "points": -5,
+      "met": true,
+      "evidence": {
+        "escalated": [
+          "MedicationRequest/mr-t0026"
+        ]
+      }
     }
   ],
-  "score": 0.9375,
+  "score": 0.625,
   "judge": {
     "calls": 0,
     "unknown": 0,
     "unknown_penalties": 0,
-    "score_penalties_met": 0.9375,
-    "score_penalties_not_met": 0.9375,
+    "score_penalties_met": 0.625,
+    "score_penalties_not_met": 0.625,
     "over_allowance": 0,
     "cache_keys": [
       "770c35b1f8cc16405d32aed29083dfbfb1636fd6183e0a69a4ae3c7ba91176eb"
