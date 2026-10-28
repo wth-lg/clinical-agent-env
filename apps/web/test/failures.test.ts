@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Explanation } from '../../../packages/core/explain.ts';
 import { FAILURE_KINDS, type FaultCounts } from '../../../packages/core/summary.ts';
-import { auditFilterOf, blocksTheRun, m1m4, mostCommon, runBlock, shownFault, shownLabel } from '../src/data/failures.ts';
+import { auditFilterOf, blocksTheRun, kindWords, m1m4, mostCommon, runBlock, shownFault, shownLabel } from '../src/data/failures.ts';
 
 const fc = (counts: Partial<Record<(typeof FAILURE_KINDS)[number], number>>): FaultCounts => {
   const taxonomy = Object.fromEntries(FAILURE_KINDS.map((k) => [k, counts[k] ?? 0])) as FaultCounts['taxonomy'];
@@ -17,6 +17,11 @@ describe('failures helpers', () => {
   it('mostCommon takes the largest count, the first kind on a tie, and is null with no failures', () => {
     expect(mostCommon(fc({ reasoning: 3, retrieval: 3, refusal: 1 }))).toEqual({ kind: 'retrieval', count: 3 });
     expect(mostCommon(fc({}))).toBeNull();
+  });
+  // action_form in plain words (decisions.tsv 2026-10-28T01:30Z; P17j JG8b): no kind shows as its raw id.
+  it('kindWords spells each kind in plain words', () => {
+    expect(kindWords('action_form')).toBe('wrong channel or form');
+    for (const k of FAILURE_KINDS) expect(kindWords(k), k).not.toMatch(/_/);
   });
   it('auditFilterOf files a valid failure by its audit label, else unlabelled; a PASS has none', () => {
     expect(auditFilterOf(e({ audit_label: 'grader' }))).toBe('grader');

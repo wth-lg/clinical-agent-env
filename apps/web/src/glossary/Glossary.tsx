@@ -5,6 +5,7 @@
 import type { Ref } from 'react';
 import { AUDIT_LABEL, CONFIRMATION_CRITERIA, CONFIRMATION_DEFINITIONS, FAULT_DEFINITIONS, FAULT_PRECEDENCE, FAULT_PRECEDENCE_RULE, RUN_BLOCKS } from '../../../../packages/core/outcomes.ts';
 import { TAXONOMY_TEXT } from '../../../../packages/core/explain.ts';
+import { kindWords, type FailureKind } from '../data/failures.ts';
 import { Card, Page, PlainRules } from '../data/ui.tsx';
 
 export const GLOSSARY_TITLE = 'How failures are attributed';
@@ -55,7 +56,7 @@ export function Glossary({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> 
       <Card title="Kinds of model failure" id="taxonomy">
         <p className="text-ink-muted">A model failure also gets one of these kinds. The reason on a failed trial ends with it, for example "Kind: reasoning (Observation/obs-1 was read at step 6)", or "Kind: reasoning" when the why does not fit.</p>
         <dl className="mt-2 space-y-1.5" data-testid="taxonomy">
-          {Object.entries(TAXONOMY_TEXT).map(([k, v]) => <div key={k} data-testid="taxonomy-row" data-taxonomy={k}><dt className="inline font-medium">{k.replace(/_/g, ' ')}: </dt><dd className="inline text-ink-muted">{v}</dd></div>)}
+          {(Object.entries(TAXONOMY_TEXT) as Array<[FailureKind, string]>).map(([k, v]) => <div key={k} data-testid="taxonomy-row" data-taxonomy={k}><dt className="inline font-medium" data-testid="taxonomy-term">{kindWords(k) === k ? k : `${kindWords(k)} (${k})`}: </dt><dd className="inline text-ink-muted">{v}</dd></div>)}
         </dl>
       </Card>
       <Card title="Confirming a label" id="confirmation">

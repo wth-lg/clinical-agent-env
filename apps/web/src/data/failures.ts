@@ -10,8 +10,9 @@ export type FailureKind = (typeof FAILURE_KINDS)[number];
 export type FailureLabel = (typeof FAILURE_LABELS)[number];
 
 // A kind in words (the glossary explains each): TAXONOMY's ids in plain spelling; unattributed is a
-// failure whose recorded kind does not name the check that decides it now.
-const KIND_WORDS: Partial<Record<FailureKind, string>> = { over_action: 'over-action', did_not_finish: 'did not finish', unattributed: 'no kind recorded' };
+// failure whose recorded kind does not name the check that decides it now; action_form is the right
+// decision in a channel or form the policy does not name (TAXONOMY_TEXT).
+const KIND_WORDS: Partial<Record<FailureKind, string>> = { over_action: 'over-action', action_form: 'wrong channel or form', did_not_finish: 'did not finish', unattributed: 'no kind recorded' };
 export const kindWords = (k: FailureKind): string => KIND_WORDS[k] ?? k.replace(/_/g, ' ');
 
 // The kind with the most failures, the first in FAILURE_KINDS on a tie; null with no failures.
