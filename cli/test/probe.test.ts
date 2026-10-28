@@ -67,6 +67,23 @@ describe('probe', () => {
     expect(JSON.parse(readFileSync(join(b.out, '_toy.json'), 'utf8')).findings).toEqual(FINDINGS.findings);
   });
 
+  it('takes the last balanced JSON object that holds a findings array (r4 F-C)', async () => {
+    const example = JSON.stringify(FINDINGS.findings[0]);
+    for (const text of [
+      `${JSON.stringify(FINDINGS)}\nThat is all; nothing else stood out }`,
+      `\`\`\`json\n${JSON.stringify(FINDINGS)}\n\`\`\`\nOne finding looks like this:\n\`\`\`json\n${example}\n\`\`\``,
+      `Notes: {"findings": "draft"} then the answer: ${JSON.stringify(FINDINGS, null, 2)} (with "quoted } braces" after)`,
+    ]) {
+      const h = harness(scriptedTransport([{ text }]).transport, { ANTHROPIC_API_KEY: fakeKey('P') });
+      expect(await h.probe([])).toBe(0);
+      expect(JSON.parse(readFileSync(join(h.out, '_toy.json'), 'utf8')).findings).toEqual(FINDINGS.findings);
+    }
+    const quoted = { findings: [{ ...FINDINGS.findings[0], quote: 'reads "{" and "}" in a string' }] };
+    const h = harness(scriptedTransport([{ text: `Done. ${JSON.stringify(quoted)}` }]).transport, { ANTHROPIC_API_KEY: fakeKey('P') });
+    expect(await h.probe([])).toBe(0);
+    expect(JSON.parse(readFileSync(join(h.out, '_toy.json'), 'utf8')).findings).toEqual(quoted.findings);
+  });
+
   it('runs a recorded probe again when its findings are null (r2 F1)', async () => {
     const t = scriptedTransport([{ text: 'I found two problems.' }, { text: JSON.stringify(FINDINGS) }]);
     const h = harness(t.transport, { ANTHROPIC_API_KEY: fakeKey('P') });

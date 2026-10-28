@@ -16,9 +16,10 @@
 // probe's client comes from one batchStart(projection) on the Node ledger, so the run is
 // refused before any call when the ledger's exposure plus the projection would cross
 // PROJECTED_CAP_USD.
-// Findings: the probe's last answer must end with the JSON object prompts/probe.md asks for, as
-// its last fenced block or its last JSON object (prose before it is fine); any other answer is
-// kept as problem with the text, findings null, and the probe counts as failed.
+// Findings: the probe's last answer must hold the JSON object prompts/probe.md asks for; the
+// last balanced JSON object with a findings array is taken (prose, fences and examples around
+// it are fine); any other answer is kept as problem with the text, findings null, and the probe
+// counts as failed.
 // Exit 0 when every probe completed with valid findings (an empty list included); 1 otherwise;
 // 2 on a usage error.
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -89,27 +90,40 @@ export function refusal(command: string, e: unknown): string | null {
   return e instanceof SpendRefused ? `${command}: refused before any call (ledger + projection would pass PROJECTED_CAP_USD $${PROJECTED_CAP_USD}): ${e.message}` : null;
 }
 
-// The JSON value an answer ends with: its last fenced block, else its last JSON object (the
-// text from the rightmost '{' that parses through the last '}'), so prose before it is fine.
-function lastJson(text: string): { value: unknown } | null {
-  const fenced = [...text.matchAll(/```(?:json)?\s*\n?([\s\S]*?)```/g)].at(-1);
-  if (fenced !== undefined) {
-    try {
-      return { value: JSON.parse(fenced[1]!) };
-    } catch {
-      // Not JSON: look for a bare object instead.
-    }
+// The end of the balanced JSON object that starts at text[start] ('{'), skipping braces inside
+// strings, or -1 when it never closes.
+function objectEnd(text: string, start: number): number {
+  let depth = 0;
+  let inString = false;
+  for (let k = start; k < text.length; k++) {
+    const c = text[k];
+    if (inString) {
+      if (c === '\\') k++;
+      else if (c === '"') inString = false;
+    } else if (c === '"') inString = true;
+    else if (c === '{') depth++;
+    else if (c === '}' && --depth === 0) return k;
   }
-  const end = text.lastIndexOf('}');
-  for (let i = text.lastIndexOf('{', end); i >= 0; i = text.lastIndexOf('{', i - 1)) {
+  return -1;
+}
+
+// The last balanced JSON object in an answer that holds a findings array (the one that ends
+// last; of two that end together, the outer one), so prose, fences and examples around it are
+// fine.
+function lastFindingsObject(text: string): { findings: unknown[] } | null {
+  let best: { end: number; value: { findings: unknown[] } } | null = null;
+  for (let start = text.indexOf('{'); start >= 0; start = text.indexOf('{', start + 1)) {
+    const end = objectEnd(text, start);
+    if (end < 0 || (best !== null && end <= best.end)) continue;
+    let value: unknown;
     try {
-      return { value: JSON.parse(text.slice(i, end + 1)) };
+      value = JSON.parse(text.slice(start, end + 1));
     } catch {
-      // A '{' inside the object, or in prose: try the one before it.
+      continue;
     }
-    if (i === 0) break;
+    if (Array.isArray((value as { findings?: unknown }).findings)) best = { end, value: value as { findings: unknown[] } };
   }
-  return null;
+  return best?.value ?? null;
 }
 
 // The probe's findings from its last answer, or the reason they are not valid.
@@ -117,9 +131,8 @@ export function findingsOf(events: readonly TrialEvent[]): { findings: Finding[]
   const last = events.findLast((e) => e.type === 'response');
   if (last === undefined) return { problem: 'no answer' };
   const text = last.content.flatMap((b) => (b.type === 'text' && typeof b.text === 'string' ? [b.text] : [])).join('').trim();
-  const found = lastJson(text);
-  if (found === null) return { problem: `the last answer is not the findings JSON: ${JSON.stringify(text.slice(0, 200))}` };
-  const parsed = found.value;
+  const parsed = lastFindingsObject(text);
+  if (parsed === null) return { problem: `the last answer is not the findings JSON: ${JSON.stringify(text.slice(0, 200))}` };
   const findings = (parsed as { findings?: unknown } | null)?.findings;
   if (!Array.isArray(findings)) return { problem: 'the last answer has no findings list' };
   const str = (v: unknown) => typeof v === 'string' && v.trim() !== '';
