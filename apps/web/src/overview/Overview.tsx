@@ -13,6 +13,7 @@ import { FINAL_PASS_BAND } from '../../../../packages/core/cost.ts';
 import { toolCatalog } from '../../../../packages/core/try-tool.ts';
 import { pilotRates, useResults, type RunData } from '../data/results.ts';
 import { useTaskList } from '../data/tasks.ts';
+import { policyLine, taskTitle } from '../tasks/title.ts';
 import { Card, formatInterval, GlossaryLink, Hash, IntervalRow, markLabel, MarkLegend, markOf, Notice, Page, Swatch } from '../data/ui.tsx';
 import { hrefWith, onNav } from '../data/url.ts';
 import { safePass } from '../data/harm.ts';
@@ -155,10 +156,10 @@ function TaskSummary() {
         <ul className="mt-1 divide-y divide-line" data-testid="overview-tasks">
           {tasks.map((t) => (
             <li key={t.id} data-testid="overview-task" data-task={t.id} className="py-2">
-              <a href={hrefWith({ view: 'tasks', task: t.id })} onClick={onNav({ view: 'tasks', task: t.id })} className={`font-medium ${link}`}>{t.title}</a>
+              <a href={hrefWith({ view: 'tasks', task: t.id })} onClick={onNav({ view: 'tasks', task: t.id })} className={`font-medium ${link}`} data-testid="overview-task-title">{taskTitle(t)}</a>
               <span className="ml-2 break-all text-xs text-ink-muted">{t.id}</span>
-              <p className="mt-0.5 text-xs text-ink-muted">
-                {t.tools === null ? `all ${TOOL_COUNT} tools` : `${t.tools.length} of ${TOOL_COUNT} tools`}, {t.policies.length} {t.policies.length === 1 ? 'policy' : 'policies'}, at most {t.maxTurns} turns
+              <p className="mt-0.5 break-words text-xs text-ink-muted" data-testid="overview-task-meta">
+                {t.tools === null ? `all ${TOOL_COUNT} tools` : `${t.tools.length} of ${TOOL_COUNT} tools`}, {policyLine(t.policies.map((p) => p.id))}, at most {t.maxTurns} turns
               </p>
             </li>
           ))}

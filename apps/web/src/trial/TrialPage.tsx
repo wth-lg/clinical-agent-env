@@ -32,6 +32,7 @@ import { EnvironmentTab, Raw } from './Details.tsx';
 import { Grading } from './Grading.tsx';
 import { returnTo } from './back.ts';
 import { FIRST_NONPASS, resolveTrial } from './resolve.ts';
+import { taskTitle } from '../tasks/title.ts';
 import { trialPlace } from './place.ts';
 import { StateDiff } from './StateDiff.tsx';
 import { internalErrorRow, trajectoryOf, type Row } from './steps.ts';
@@ -283,7 +284,8 @@ function useHarmTexts(task: string, items: HarmItem[]): HarmItem[] {
 // small mono text. Words wrap whole, so no token breaks mid-word at 390 px.
 function TrialHeading({ t, run }: { t: Trial; run: RunData }) {
   const { tasks } = useTaskList();
-  const title = tasks?.find((x) => x.id === t.task)?.title ?? t.task;
+  const task = tasks?.find((x) => x.id === t.task);
+  const title = task ? taskTitle(task) : t.task;
   const r = t.record as Trial['record'] & { index?: number; models_returned?: readonly string[]; effort?: string };
   const place = trialPlace(t, run.trials);
   return (

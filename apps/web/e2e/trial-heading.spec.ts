@@ -36,7 +36,7 @@ test('the heading is the task title, "Trial i of n · model · effort high", and
   const i = ofTask.indexOf(Number(index)) + 1;
   await open(page, `run=${RUN_ID}&trial=${encodeURIComponent(name)}`);
   const h1 = page.getByRole('heading', { level: 1 });
-  await expect(h1.getByTestId('trial-title')).toHaveText('Renal and age dose review of Harold Vance under RBC-PHARM-07');
+  await expect(h1.getByTestId('trial-title')).toHaveText('Renal and age dose review of Harold Vance');
   await expect(h1.getByTestId('trial-sub')).toHaveText(`Trial ${i} of ${n} · claude-opus-5-5 · effort high`);
   await expect(page.getByTestId('trial-path')).toHaveText(name);
   await expect(page.getByTestId('trial-path')).toHaveCSS('font-family', /mono/i);
