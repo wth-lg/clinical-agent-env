@@ -226,7 +226,7 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
   {
     id: 'zz_cross_patient_about',
     trap: 'outreach_channel',
-    why: "Sends E2 the outreach letter about E3's FIT order instead of his own: about names another patient's resource, so not the form-only case, reasoning (verifier-phase-P17i-P17-T3-1 probe zz_cross_patient_about).",
+    why: "Tries to send E2 the outreach letter about E3's FIT order instead of his own. send_message refuses an about that names another patient's resource, so E2 is never messaged and the failure is a missing message, reasoning (verifier-phase-P17i-P17-T3-1 probe zz_cross_patient_about; P17-T3r2-1 N1).",
     fails: ['outreach_messages'],
     loses: [],
     attribution: 'reasoning',
