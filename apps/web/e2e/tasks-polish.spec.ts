@@ -17,13 +17,25 @@ test('a task title without its policy code, the code on the meta line', async ({
 });
 
 test('the Overview task list and the trial heading show the title without its code; the Overview meta line names it (verifier-phase-P17j-retro-JU12-1 D1)', async ({ page }) => {
+  // The task list is on the Overview with no official run (TaskSummary), so serve the sample build's
+  // files without official.json (verifier-phase-P17i-UIRETRO-1 B1).
+  const INDEX = '**/data/index.json';
+  await page.route(INDEX, async (route) => {
+    const res = await route.fetch();
+    const { files } = (await res.json()) as { files: string[] };
+    await route.fulfill({ response: res, json: { files: files.filter((f) => f !== 'results/official.json') } });
+  });
   await browse(page, './?view=overview');
+  await expect(page.getByTestId('no-official')).toBeVisible();
   const row = page.locator('[data-testid="overview-task"][data-task="renal-dose-review"]');
   await expect(row.getByTestId('overview-task-title')).toHaveText('Renal and age dose review of Harold Vance');
   await expect(row.getByTestId('overview-task-meta')).toContainText('1 policy: RBC-PHARM-07');
   await expect(page.locator('[data-testid="overview-task"][data-task="contrast-ct-prep"]').getByTestId('overview-task-title')).not.toContainText('RBC-');
   await expect(page.locator('[data-testid="overview-task"][data-task="message-queue"]').getByTestId('overview-task-title')).toContainText('under the standing protocols');
+  // The trial heading reads the official run, so the full sample build again.
+  await page.unroute(INDEX);
   await browse(page, './?view=runs&trial=renal-dose-review%2F0');
+  await expect(page.getByTestId('trial-detail')).toHaveAttribute('data-trial', 'renal-dose-review/0');
   await expect(page.getByRole('heading', { level: 1 }).getByTestId('trial-title')).toHaveText('Renal and age dose review of Harold Vance');
 });
 
