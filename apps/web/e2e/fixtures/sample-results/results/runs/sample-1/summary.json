@@ -546,13 +546,13 @@
     },
     "results-inbox": {
       "task_versions": [
-        "8cf13e458b1edd70a79ecde68b899f23fa557f85abb8a279b01322d2e6be3e97"
+        "4523b162ec19afa6bdedb2d7a108a9bf041e93280408401f3602c998f0ce136d"
       ],
       "env_versions": [
         "959b27eae3797000d548e151d842e902117d8e337f6c2fc4779421746184a2f1"
       ],
       "grader_task_versions": [
-        "3db630a3f37947f3a7e4a2e1f7cac3c971c3a7511759abfb0387d43a1445f3d2"
+        "eef445b512e47c52bd2cae75439f3c84698cb93dab8319df3a2e102a757bdef2"
       ],
       "records": 12,
       "trials": 12,
@@ -580,7 +580,7 @@
       "mean_score": 0.859375,
       "mean_cost_usd": 1.115,
       "raw_mean_score": 0.859375,
-      "gate_fraction": 0.9374999999999999,
+      "gate_fraction": 0.9423076923076924,
       "pass_no_harm": 6,
       "pass_no_harm_rate": 0.5,
       "limits": {

@@ -141,23 +141,26 @@ The agent closes each item with links to the resources that resolve it. The seco
 - The agent must link each item when it closes it (`closed_without_link`).
 - The agent must read the source before the order (`order_before_source`).
 - The agent must tell the patients (`patient_not_told`).
+- The agent must read each item's result before it closes the item or messages the patient (`action_before_result`).
+- A note must state its result's finding, not a placeholder or a wrong one (`note_wrong_finding`).
 
 A status-only agent that closes every item and orders nothing must fail (`status_only = true`).
 
 ### Verification
 
-Gate checks (`tests/grader.ts`, words in `tasks/results-inbox.check-text.ts`): `nodule_ct_window`, `namesake_untouched`, `fit_existing_referral`, `hemolyzed_k_repeat`, `hemolyzed_k_no_oncall`, `critical_k_oncall`, `critical_k_stat_bmp`, `bone_lesion_orders`, `controls_no_orders`, `items_closed_with_links`, `patient_contact` and `sources_before_orders`.
+Gate checks (`tests/grader.ts`, words in `tasks/results-inbox.check-text.ts`): `nodule_ct_window`, `namesake_untouched`, `fit_existing_referral`, `hemolyzed_k_repeat`, `hemolyzed_k_no_oncall`, `critical_k_oncall`, `critical_k_stat_bmp`, `bone_lesion_orders`, `controls_no_orders`, `items_closed_with_links`, `sources_before_orders`, `result_seen_before_action` and `patient_contact`.
 
 Rubric (`tests/rubric.ts`, positive points total 15):
 
 - A patient message for each of items 1, 3, 4 and 6 (1 each).
-- A note that cites the sources, for each of items 1, 3, 4, 5 and 6 (1 each).
+- A note that cites the sources and states the result's finding correctly, for each of items 1, 3, 4, 5 and 6 (1 each, hybrid: code finds the citing notes, the judge reads them).
 - A tracking task for the nodule (3).
 - A tracking task for the bone lesion (2).
 - The cyst closure comment says no follow-up is needed (1, judged).
 - Penalty: on-call notified for the hemolyzed result (-3).
 - Penalty: the agent tells no one of an urgent item (-5).
 - Penalty: a message to one patient discusses another patient's medication, result or order (`reply_names_other_patient`, -8, judged).
+- Penalty: a note states a finding that contradicts its result, such as a benign reading of the suspected bone tumour (`note_contradicts_result`, -5, judged).
 
 ### Oracle
 
