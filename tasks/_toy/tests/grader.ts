@@ -2,6 +2,7 @@
 // trap fails exactly one or two of them; three rubric items in rubric.ts. traces_to names the
 // instruction line each one enforces (the matrix's traceability lint resolves it).
 import { gate, type Check, type GateCtx } from '../../../packages/grader/check.ts';
+import { seenBefore } from '../../../packages/grader/exposure.ts';
 import { expected } from '../expected.ts';
 import { rubric } from './rubric.ts';
 
@@ -37,7 +38,7 @@ const gates: Check[] = [
     fn: (ctx) => {
       const read = ctx.exposedAt(PATIENT);
       const notes = notesOn(ctx, PATIENT);
-      const early = notes.filter((n) => read === null || n.step === null || n.step <= read).map((n) => n.key);
+      const early = notes.filter((n) => n.step === null || !seenBefore(ctx.steps, read, n.step)).map((n) => n.key);
       return { met: early.length === 0, evidence: { first_exposed_step: read, written_before_read: early }, ids: early };
     },
   }),

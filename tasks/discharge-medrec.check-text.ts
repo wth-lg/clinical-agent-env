@@ -67,11 +67,13 @@ export const checkText: CheckText = {
     found: (ev) => `no message or Task to the PCP (${listed(items(ev.pcp))}) about it`,
   },
   sources_before_orders: {
-    requires: `the addendum's correction (${S.addendum}) read before the spironolactone order, and the creatinine (${expected.scr.id}) before the lisinopril order`,
+    requires:
+      `each medication order write after its source was shown (RBC-TOC-02 §1): the discharge summary's line (${S.summary}) for the furosemide and potassium chloride changes and its resume rule for lisinopril, ` +
+      `the addendum's correction (${S.addendum}) for spironolactone, the creatinine (${expected.scr.id}) for the lisinopril resume (§2), and the summary read before an order of any other drug`,
     found: (ev) => {
-      const id = items(ev.late)[0];
-      const pair = fields(items(ev.pairs).map(fields).find((p) => p.id === id));
-      return `${show(id)} was not read before the order at step ${show(pair.before)}`;
+      const l = fields(items(ev.late)[0]);
+      const source = typeof l.line === 'string' ? `"${l.line}" in ${show(l.id)}` : show(l.id);
+      return `the ${show(l.change)} order at step ${show(l.step)} came before ${source} was shown (${show(l.policy)})`;
     },
   },
 };

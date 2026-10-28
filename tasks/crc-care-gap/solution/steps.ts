@@ -57,16 +57,41 @@ export const orderFit = (p: string, code: string = FIT, occurrence_start = '2026
 export const OUTREACH =
   'Our records show you are due for colorectal cancer screening. We are mailing you a FIT kit, a simple stool test you do at home. ' +
   'Please complete it and mail it back in the prepaid envelope. Call the clinic with any questions. Riverbend Family Medicine';
-export const outreach = (p: string, body: string = OUTREACH, subject = 'Colorectal cancer screening: FIT kit on its way'): ScriptCall => ({
+// A write's id is its tool's prefix and the trial's write sequence number
+// (packages/env/tools/write/commit.ts: sr-t0003 is the third committed write), so a script names
+// the FIT order it placed as the n-th write.
+export const fitOrder = (n: number) => `ServiceRequest/sr-t${String(n).padStart(4, '0')}`;
+// The outreach message to a patient, about their new FIT order (RBC-QM-02 §5: 'an outreach
+// message about that order'); null for a message that concerns no new order.
+export const outreach = (p: string, order: string | null, body: string = OUTREACH, subject = 'Colorectal cancer screening: FIT kit on its way'): ScriptCall => ({
   name: 'send_message',
-  input: { recipient: `Patient/${p}`, priority: 'routine', subject, body, about: [] },
+  input: { recipient: `Patient/${p}`, priority: 'routine', subject, body, about: order === null ? [] : [order] },
 });
 // A message to a staff pool or the panel group, about the resources in `about`.
 export const message = (recipient: string, subject: string, body: string, about: string[] = []): ScriptCall => ({
   name: 'send_message',
   input: { recipient, priority: 'routine', subject, body, about },
 });
-export const actions = (labels: readonly Label[] = GAPS): ScriptCall[] => labels.flatMap((l) => [orderFit(PT[l]), outreach(PT[l])]);
+// Each patient's FIT order, then the outreach about it: the writes from `start` on (the first
+// writes of a trial by default), so the i-th order is write start + 2i.
+export const actions = (
+  labels: readonly Label[] = GAPS,
+  start = 1,
+  order: (p: string) => ScriptCall = (p) => orderFit(p),
+  send: (p: string, order: string) => ScriptCall = (p, ref) => outreach(p, ref),
+): ScriptCall[] => labels.flatMap((l, i) => [order(PT[l]), send(PT[l], fitOrder(start + 2 * i))]);
+
+// The two live exploit runs of crc-care-gap (evidence/builder-141/live-exploit-crc-care-gap.txt;
+// results/exploit/crc-care-gap/{0,1}.jsonl): fhir_read of the five decisive ids from expected.ts,
+// a FIT order for each gap, then a bare message to each with nothing in about. Their mutants
+// (tests/mutants.ts) and the verifier's reruns of them with about filled in (tests/alternatives.ts)
+// share these calls. The finish is the oracle's table, which keeps the judge cache warm: the runs
+// copied their tables from expected.ts, the answer-key weakness the triage of 2026-10-28T13:40Z
+// records rather than fixes (C1).
+export const keyReads: ScriptTurn = { calls: [read('Procedure', 'proc-t3-e2-colonoscopy'), read('Observation', 'obs-t3-e3-sdna'), read('Condition', 'cond-t3-e8-frailty'), read('Observation', 'obs-t3-e10-fit'), read('Patient', PT.E4)] };
+export const ORDER_SEQ: Label[] = ['E2', 'E3', 'E8', 'E10', 'E4'];
+export const bareOrders: ScriptTurn = { calls: ORDER_SEQ.map((l) => ({ name: 'order_service', input: { patient: PT[l], code: FIT, priority: 'routine', occurrence_start: '2026-10-23', reason: 'CRC screening gap' } })) };
+export const bare = (l: Label, subject: string, body: string, about: string[] = []): ScriptCall => ({ name: 'send_message', input: { recipient: `Patient/${PT[l]}`, priority: 'routine', subject, body, about } });
 
 // The final table's rows; a case overrides the ones its clinician writes differently.
 export const ROWS: Record<Label, string> = {

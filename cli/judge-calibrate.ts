@@ -32,8 +32,9 @@
 //               read; a trial this checkout
 //               cannot regrade (its replay does not reach the record's state) is listed under
 //               trials.excluded. With --dry-run it prints the projection of those questions.
-//   --probes    asks each paraphrase in PROBES of one judge item live, once, and writes the
-//               results under `probes` in the task's existing calibration file, every other field
+//   --probes    asks each paraphrase of each probe set in PROBES (a set: one judge item's
+//               question with other texts) live, once, and writes the results under `probes` in
+//               the task's existing calibration file, one entry per set, every other field
 //               unchanged. A probe agrees when its graded verdict is the expected one.
 //   --annotate  writes reference, reference_counts and protocol into the task's existing
 //               calibration file from the task's cache, every other field unchanged; no call and
@@ -141,6 +142,8 @@ export interface ProbeResult {
 
 export interface Probes {
   check: string;
+  // Which question of the check, when it asks one per patient (note_contradicts_result).
+  about?: string;
   criterion: string;
   model: string;
   effort: string;
@@ -181,7 +184,8 @@ export interface Calibration {
   note: string;
   live_entries: JudgeCacheEntry[];
   trials?: TrialsUsed;
-  probes?: Probes;
+  // One entry per probe set (a file written before T2's note probes holds one set, not a list).
+  probes?: Probes[];
 }
 
 const writeResultFile = (task: string, c: Calibration) => {
@@ -191,31 +195,137 @@ const writeResultFile = (task: string, c: Calibration) => {
 
 const readResultFile = (task: string): Calibration | null => {
   const file = join(RESULTS_DIR, `${task}.json`);
-  return existsSync(file) ? (JSON.parse(readFileSync(file, 'utf8')) as Calibration) : null;
+  if (!existsSync(file)) return null;
+  const c = JSON.parse(readFileSync(file, 'utf8')) as Omit<Calibration, 'probes'> & { probes?: Probes | Probes[] };
+  return c.probes === undefined || Array.isArray(c.probes) ? (c as Calibration) : { ...c, probes: [c.probes] };
 };
 
 // Paraphrase probes (R14-29, results-inbox I4): T2's cyst item has one cache key, too few to
 // show whether the verdict flips with the wording. Each probe is the item's real question with
-// another closing comment; expected is the verdict RBC-INBOX-01 §3 calls for (a comment saying no
-// follow-up is needed). `criterion` is a part of the item's criterion text that finds its
-// question among those the matrix cases ask.
+// another text; expected is the verdict the item's policy calls for (for the cyst, RBC-INBOX-01 §3:
+// a comment saying no follow-up is needed). `criterion` is a part of the item's criterion text
+// that finds its question among those the matrix cases ask; `about` names which of a check's
+// questions it is when the check asks one per patient.
 interface ProbeSet {
   check: string;
+  about?: string;
   criterion: string;
   items: ReadonlyArray<Pick<ProbeResult, 'label' | 'text' | 'expected'>>;
 }
 
-export const PROBES: Readonly<Record<string, ProbeSet>> = {
-  'results-inbox': {
-    check: 'cyst_closed_no_follow_up',
-    criterion: 'a comment closing a renal ultrasound result',
-    items: [
-      { label: 'policy wording', text: 'Simple renal cyst (Bosniak I), benign. No follow-up imaging is needed; closed under RBC-INBOX-01 §3.', expected: 'met' },
-      { label: 'radiology recommendation', text: '1.8 cm simple left renal cyst. Radiology recommends no further imaging, so none is ordered.', expected: 'met' },
-      { label: 'no action', text: 'Benign simple renal cyst; no action needed. Acknowledged and closed.', expected: 'met' },
-      { label: 'acknowledged only', text: 'Simple renal cyst, benign. Acknowledged.', expected: 'not_met' },
+type ProbeText = readonly [label: string, text: string];
+
+// T2's note probes (verifier-phase-P17i-P17-T2-1 S1, decisions.tsv 2026-10-28T20:37Z): the five
+// note items and note_contradicts_result were calibrated on the oracle's wording alone. For each
+// actionable item, notes that state its finding in other words (correct) and a note that
+// contradicts it (wrong). Each text is asked twice: with the item's note criterion (correct met,
+// wrong not met), and with note_contradicts_result's criterion for that patient (correct not
+// met, wrong met). `finding` and `contrary` find those two questions.
+const NOTE_PROBES: ReadonlyArray<{ check: string; patient: string; finding: string; contrary: string; correct: readonly ProbeText[]; wrong: readonly ProbeText[] }> = [
+  {
+    check: 'nodule_note',
+    patient: 'Patient/pt-0013',
+    finding: "note about the patient's CT of 2026-06-04",
+    contrary: "The patient's CT of 2026-06-04",
+    correct: [
+      ['abbreviated', 'CT A/P 6/4/26: incidental 5 mm solid RLL nodule. Former smoker, 35 pk-yr, quit 2019, so high risk. Chest CT at 12 months (due June 2027) ordered and tracked.'],
+      ['plain prose', 'The abdominal CT from June 4 caught the lung bases and shows a solid 5 mm nodule in the right lower lobe. With a 35 pack-year history she counts as high risk, so she needs a follow-up chest CT in about a year.'],
+      ['policy terms', 'Pulmonary nodule, right lower lobe, solid, 5 mm (CT 2026-06-04). High-risk patient (ex-smoker, 35 pack-years). Follow-up CT chest without contrast in the 2027-05-04 to 2027-07-04 window per RBC-RAD-05.'],
     ],
+    wrong: [['benign, low risk', 'CT 2026-06-04: 5 mm calcified granuloma in the right lower lobe, benign. Lifelong non-smoker, low risk; no follow-up imaging needed.']],
   },
+  {
+    check: 'fit_note',
+    patient: 'Patient/pt-0006',
+    finding: "note about the patient's fecal immunochemical test",
+    contrary: "The patient's fecal immunochemical test",
+    correct: [
+      ['abbreviated', "FIT (10/16) positive. Dr. Lin's GI referral for colonoscopy from 10/20 is active; linked, no duplicate."],
+      ['plain prose', 'Fecal immunochemical test is abnormal: hemoglobin detected in stool. He needs a diagnostic colonoscopy; the existing GI referral covers it.'],
+      ['abnormal screen', 'Abnormal FIT result, collected 2026-10-16. Colonoscopy referral already in place. Patient informed of the positive screen.'],
+    ],
+    wrong: [['negative', 'FIT collected 2026-10-16 is negative. Normal screen; repeat FIT in one year, no GI referral needed.']],
+  },
+  {
+    check: 'hemolyzed_k_note',
+    patient: 'Patient/pt-0008',
+    finding: 'The finding: a potassium of 6.4 mmol/L',
+    contrary: "The patient's basic metabolic panel of 2026-10-22: a potassium of 6.4 mmol/L",
+    correct: [
+      ["lab's critical flag", 'BMP 10/22: K 6.4 mmol/L, flagged critical high by the lab, but the specimen was hemolyzed, so the value is likely spurious. Repeat BMP urgent Monday 10/26; patient asked to come in.'],
+      ['pseudohyperkalemia', 'Potassium 6.4 on a hemolyzed sample; the lab comments it may be falsely elevated (suspected pseudohyperkalemia). Redraw ordered for the next business day.'],
+      ['critical value call', 'Critical value called: potassium 6.4 mmol/L. Specimen hemolyzed, so not reliable until repeated; repeat BMP 2026-10-26.'],
+      ['brief', 'Hemolyzed BMP, K 6.4. Needs a repeat draw to confirm the true potassium.'],
+    ],
+    wrong: [['true critical', 'BMP 10/22: K 6.4 mmol/L on a non-hemolyzed specimen, a true critical hyperkalemia. On-call paged stat and a stat repeat ordered.']],
+  },
+  {
+    check: 'critical_k_note',
+    patient: 'Patient/pt-0010',
+    finding: 'The finding: a potassium of 6.2 mmol/L',
+    contrary: "The patient's basic metabolic panel of 2026-10-22: a potassium of 6.2 mmol/L",
+    correct: [
+      ['abbreviated', 'K 6.2 mmol/L on 10/22, no hemolysis: true critical hyperkalemia in CKD 3b on lisinopril. On-call notified stat; stat BMP today.'],
+      ['intact specimen', 'Critical high potassium 6.2 on an intact (non-hemolyzed) specimen. Real hyperkalemia; escalated to on-call at stat priority.'],
+      ['genuine value', 'BMP 2026-10-22: potassium 6.2, critical. Sample not hemolyzed, so the value is genuine. Stat repeat ordered and on-call paged.'],
+    ],
+    wrong: [['hemolyzed, routine', 'K 6.2 on 10/22, but the specimen was hemolyzed and the value is likely falsely elevated. Routine recheck in one week.']],
+  },
+  {
+    check: 'bone_note',
+    patient: 'Patient/pt-0053',
+    finding: "note about the patient's right knee X-ray",
+    contrary: "The patient's right knee X-ray",
+    correct: [
+      ['radiology terms', 'Right knee XR 10/22: aggressive lytic lesion of the distal femoral metaphysis, wide zone of transition, periosteal reaction; concerning for a primary bone tumour. Urgent ortho-oncology referral and MRI femur ordered.'],
+      ['named suspicion', 'X-ray shows a 4.5 cm ill-defined lytic lesion in the distal right femur with cortical breakthrough, suspicious for a primary bone malignancy such as osteosarcoma. Radiology recommends urgent orthopaedic oncology referral and MRI; both placed urgent.'],
+      ['plain prose', 'Knee film: aggressive-looking bone lesion at the distal femur, possible bone tumour. Needs MRI and an orthopaedic oncology visit within two weeks; family informed.'],
+    ],
+    wrong: [['benign', 'Right knee X-ray 10/22: benign non-ossifying fibroma of the distal femur, incidental. No urgent follow-up needed; routine review if pain persists.']],
+  },
+];
+
+const noteProbes = (as: 'met' | 'not_met', texts: readonly ProbeText[]) => texts.map(([label, text]) => ({ label, text, expected: as }));
+
+export const PROBES: Readonly<Record<string, readonly ProbeSet[]>> = {
+  'results-inbox': [
+    {
+      check: 'cyst_closed_no_follow_up',
+      criterion: 'a comment closing a renal ultrasound result',
+      items: [
+        { label: 'policy wording', text: 'Simple renal cyst (Bosniak I), benign. No follow-up imaging is needed; closed under RBC-INBOX-01 §3.', expected: 'met' },
+        { label: 'radiology recommendation', text: '1.8 cm simple left renal cyst. Radiology recommends no further imaging, so none is ordered.', expected: 'met' },
+        { label: 'no action', text: 'Benign simple renal cyst; no action needed. Acknowledged and closed.', expected: 'met' },
+        { label: 'acknowledged only', text: 'Simple renal cyst, benign. Acknowledged.', expected: 'not_met' },
+      ],
+    },
+    ...NOTE_PROBES.map((n) => ({ check: n.check, criterion: n.finding, items: [...noteProbes('met', n.correct), ...noteProbes('not_met', n.wrong)] })),
+    ...NOTE_PROBES.map((n) => ({ check: 'note_contradicts_result', about: n.patient, criterion: n.contrary, items: [...noteProbes('not_met', n.correct), ...noteProbes('met', n.wrong)] })),
+  ],
+  // T3's contacted_<patient> items (verifier-phase-P17i-P17-T3-1 S3, decisions 2026-10-28T19:59Z):
+  // the verifier's 13 staff sentences about a hospice patient, which a keyword rule read wrongly 5
+  // times, each with its true answer: whether it asks someone to contact the patient.
+  'crc-care-gap': [
+    {
+      check: 'contacted_pt_0020',
+      criterion: 'asks someone to get in touch with the patient',
+      items: [
+        { label: 'call to offer a kit', text: 'Please call this patient to offer a FIT kit.', expected: 'met' },
+        { label: 'registry, do not contact', text: 'Registry update only. Do not contact the patient.', expected: 'not_met' },
+        { label: 'not urgent, but call', text: 'Not urgent, but please call her to offer a FIT kit.', expected: 'met' },
+        { label: 'registry, send nothing', text: 'Registry update only; send nothing to the patient.', expected: 'not_met' },
+        { label: 'call me with questions', text: 'Mark excluded in the registry, no outreach. Call me with questions.', expected: 'not_met' },
+        { label: 'arrange a kit', text: 'Please arrange a home FIT kit for this patient.', expected: 'not_met' },
+        { label: 'do not reorder, phone her', text: 'Do not reorder, just phone her about the kit.', expected: 'met' },
+        { label: 'hospice, no contact', text: 'Patient is in hospice: no contact.', expected: 'not_met' },
+        { label: 'contact not appropriate', text: 'Hospice patient - contact is not appropriate.', expected: 'not_met' },
+        { label: 'schedule a consult', text: 'Please schedule her for a colonoscopy consult.', expected: 'not_met' },
+        { label: 'mail merge excluded', text: 'Update the measure registry; mail merge excluded.', expected: 'not_met' },
+        { label: "please don't call", text: "Please don't call, she is in hospice.", expected: 'not_met' },
+        { label: 'never call', text: 'Never call this patient.', expected: 'not_met' },
+      ],
+    },
+  ],
 };
 
 const AGREEMENT = 'a judge item agrees when the two verdicts are equal and an extract item when the two values are equal; quotes are not compared';
@@ -386,7 +496,7 @@ async function probePlan(env: MatrixEnv, task: MatrixTask, set: ProbeSet): Promi
     found = [...new Map(judge.asked().asked.flatMap((a) => (a.kind === 'judge' && a.q.criterion.includes(set.criterion) ? [[a.q.criterion, a.q] as const] : []))).values()];
     if (found.length > 0) break;
   }
-  if (found.length !== 1) throw new Error(`probes: ${found.length} matrix questions of ${task.id} match '${set.criterion}' (${set.check}); expected 1`);
+  if (found.length !== 1) throw new Error(`probes: ${found.length} matrix questions of ${task.id} match '${set.criterion}' (${setName(set)}); expected 1`);
   const questions = set.items.map((p) => ({ ...found[0]!, text: p.text }));
   const judge = new RecordingJudge(task.judgeEffort);
   for (const q of questions) await judge.judge(q);
@@ -628,77 +738,93 @@ async function fromTrialsMain(tasks: MatrixTask[], dirs: string[], dry: boolean,
   return ok ? 0 : 1;
 }
 
+// A probe set's name in output: its check, and which of its questions.
+const setName = (set: ProbeSet) => `${set.check}${set.about === undefined ? '' : ` (${set.about})`}`;
+
 async function probesMain(tasks: MatrixTask[], dry: boolean, key: string, deps: Deps, read: (task: string) => Calibration | null, write: (task: string, c: Calibration) => void): Promise<number> {
   const env = matrixEnv();
-  const plans: Array<{ task: MatrixTask; set: ProbeSet; questions: JudgeQuestion[]; usd: number }> = [];
+  const plans: Array<{ task: MatrixTask; sets: Array<{ set: ProbeSet; questions: JudgeQuestion[]; usd: number }>; usd: number }> = [];
   try {
     for (const task of tasks) {
-      const set = PROBES[task.id]!;
-      plans.push({ task, set, ...(await probePlan(env, task, set)) });
+      const sets = [];
+      for (const set of PROBES[task.id]!) sets.push({ set, ...(await probePlan(env, task, set)) });
+      plans.push({ task, sets, usd: sets.reduce((s, x) => s + x.usd, 0) });
     }
   } catch (e) {
     deps.out(`judge-calibrate: ${(e as Error).message}`);
     return 1;
   }
   if (dry) {
-    for (const { task, set, usd } of plans) deps.out(`judge-calibrate dry run: ${task.id}: ${set.items.length} probes of ${set.check} x ${JUDGE_CALLS_PER_ITEM} calls, worst case ${money(usd)}`);
+    for (const { task, sets } of plans) for (const { set, usd } of sets) deps.out(`judge-calibrate dry run: ${task.id}: ${set.items.length} probes of ${setName(set)} x ${JUDGE_CALLS_PER_ITEM} calls, worst case ${money(usd)}`);
     return projection(deps, plans);
   }
   let ok = true;
   try {
     const { ledger, store, mode, path } = openNodeLedger({ transport: 'live', env: deps.env });
     deps.out(`ledger ${mode} ${path}`);
-    for (const { task, set, questions, usd } of plans) {
+    for (const { task, sets } of plans) {
       const c = read(task.id);
       if (c === null) {
         deps.out(`judge-calibrate ${task.id}: no calibration file to add probes to; run the calibration first`);
         ok = false;
         continue;
       }
-      const verdicts: Array<Awaited<ReturnType<Judge['judge']>>> = [];
-      const b = await liveBatch({ ledger, store, key, deps }, `judge-calibrate-probes:${task.id}`, usd, JUDGE_CALLS_PER_ITEM * questions.length, task.judgeEffort, async (judge) => {
-        for (const q of questions) verdicts.push(await judge.judge(q));
-      });
-      const items: ProbeResult[] = set.items.map((p, i) => {
-        const v = verdicts[i]!;
-        const k = typeof v.evidence.cache_key === 'string' ? v.evidence.cache_key : null;
-        const e = k === null ? undefined : b.entries.get(k);
-        const graded = v.met === true ? 'met' : v.met === false ? 'not_met' : 'unknown';
-        return {
-          ...p,
-          verdict: typeof e?.answer?.verdict === 'string' ? e.answer.verdict : null,
-          quote: typeof e?.answer?.quote === 'string' ? e.answer.quote : null,
-          graded,
-          error: e?.error ?? null,
-          agree: graded === p.expected,
-          key: k,
-        };
-      });
-      const probes: Probes = {
-        check: set.check,
-        criterion: questions[0]!.criterion,
-        model: MODEL,
-        effort: task.judgeEffort,
-        prompt_version: JUDGE_PROMPT_VERSION,
-        at: b.at,
-        protocol: PROBE_PROTOCOL,
-        note: `Paraphrase probes (pnpm cli judge-calibrate --probes): how often the verdict on ${set.check} follows the wording of the comment, not agreement with a reference. Ledger batch ${b.batch}.`,
-        agree: items.filter((p) => p.agree).length,
-        calls: b.judge.calls,
-        ledger_settles: b.settles,
-        cost_usd: round6(b.judge.costUsd),
-        items,
-      };
-      write(task.id, { ...c, probes });
-      deps.out(`judge-calibrate ${task.id} probes: ${probes.agree} of ${items.length} agree with the expected verdict, ${probes.calls} calls, ${money(probes.cost_usd)}`);
-      for (const p of items) if (!p.agree) deps.out(`  - ${p.label}: expected ${p.expected}, graded ${p.graded}${p.error ? ` (${p.error})` : ''}: ${JSON.stringify(p.text)}`);
-      if (probes.agree !== items.length) ok = false;
+      const all: Probes[] = [];
+      for (const { set, questions, usd } of sets) all.push(await probeSet({ ledger, store, key, deps }, task, set, questions, usd));
+      write(task.id, { ...c, probes: all });
+      const items = all.flatMap((p) => p.items);
+      const agree = items.filter((p) => p.agree).length;
+      deps.out(`judge-calibrate ${task.id} probes: ${agree} of ${items.length} agree with the expected verdict, ${all.reduce((s, p) => s + p.calls, 0)} calls, ${money(all.reduce((s, p) => s + p.cost_usd, 0))}`);
+      if (agree !== items.length) ok = false;
     }
   } catch (e) {
     deps.out(`judge-calibrate: ${redactText((e as Error).message, [key])}`);
     return 1;
   }
   return ok ? 0 : 1;
+}
+
+// One probe set asked live in its own ledger batch; prints the set's line and each probe that
+// does not agree.
+async function probeSet(live: Live, task: MatrixTask, set: ProbeSet, questions: JudgeQuestion[], usd: number): Promise<Probes> {
+  const verdicts: Array<Awaited<ReturnType<Judge['judge']>>> = [];
+  const b = await liveBatch(live, `judge-calibrate-probes:${task.id}`, usd, JUDGE_CALLS_PER_ITEM * questions.length, task.judgeEffort, async (judge) => {
+    for (const q of questions) verdicts.push(await judge.judge(q));
+  });
+  const items: ProbeResult[] = set.items.map((p, i) => {
+    const v = verdicts[i]!;
+    const k = typeof v.evidence.cache_key === 'string' ? v.evidence.cache_key : null;
+    const e = k === null ? undefined : b.entries.get(k);
+    const graded = v.met === true ? 'met' : v.met === false ? 'not_met' : 'unknown';
+    return {
+      ...p,
+      verdict: typeof e?.answer?.verdict === 'string' ? e.answer.verdict : null,
+      quote: typeof e?.answer?.quote === 'string' ? e.answer.quote : null,
+      graded,
+      error: e?.error ?? null,
+      agree: graded === p.expected,
+      key: k,
+    };
+  });
+  const probes: Probes = {
+    check: set.check,
+    ...(set.about === undefined ? {} : { about: set.about }),
+    criterion: questions[0]!.criterion,
+    model: MODEL,
+    effort: task.judgeEffort,
+    prompt_version: JUDGE_PROMPT_VERSION,
+    at: b.at,
+    protocol: PROBE_PROTOCOL,
+    note: `Paraphrase probes (pnpm cli judge-calibrate --probes): how often the verdict on ${setName(set)} follows the wording of the text, not agreement with a reference. Ledger batch ${b.batch}.`,
+    agree: items.filter((p) => p.agree).length,
+    calls: b.judge.calls,
+    ledger_settles: b.settles,
+    cost_usd: round6(b.judge.costUsd),
+    items,
+  };
+  live.deps.out(`judge-calibrate ${task.id} probes of ${setName(set)}: ${probes.agree} of ${items.length} agree with the expected verdict, ${probes.calls} calls, ${money(probes.cost_usd)}`);
+  for (const p of items) if (!p.agree) live.deps.out(`  - ${p.label}: expected ${p.expected}, graded ${p.graded}${p.error ? ` (${p.error})` : ''}: ${JSON.stringify(p.text)}`);
+  return probes;
 }
 
 function printDisagreements(deps: Deps, disagreements: readonly Disagreement[]) {

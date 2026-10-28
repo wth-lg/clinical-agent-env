@@ -2,7 +2,7 @@
 // requires, and the first difference its evidence (tests/grader.ts) shows. The Tasks view and the
 // failure reasons read it. It sits beside the task directory, not in it, so neither task version
 // covers it: rewording it regrades nothing.
-import { fields, items, listed, show, type CheckText } from '../packages/core/explain.ts';
+import { fields, items, lateness, listed, show, type CheckText } from '../packages/core/explain.ts';
 import { expected } from './results-inbox/expected.ts';
 
 const I = expected.items;
@@ -68,6 +68,13 @@ export const checkText: CheckText = {
       return open !== undefined ? `${show(open)} is not completed` : `${show(items(ev.unlinked)[0])} links nothing that closes it`;
     },
   },
+  result_seen_before_action: {
+    requires: `each of the ${Object.keys(I).length} items' results read before the item is closed or reassigned or its patient is messaged`,
+    found: (ev) => {
+      const u = fields(items(ev.unseen)[0]);
+      return `${show(u.item)}: ${show(u.action)} at step ${show(u.at)} came before any of its results (${listed(items(u.results))}) was read`;
+    },
+  },
   patient_contact: {
     requires: `each patient of the ${ACTIONABLE} items that need action told of the result: a message to the patient, a call task due by the next business day, or a staff message the item's closure links`,
     found: (ev) => `${show(fields(items(ev.uncontacted)[0]).patient)} was not told of ${show(fields(items(ev.uncontacted)[0]).item)}`,
@@ -76,7 +83,7 @@ export const checkText: CheckText = {
     requires: 'each result read before the order it leads to',
     found: (ev) => {
       const l = fields(items(ev.late)[0]);
-      return l.exposed === null ? `${show(l.source)} was not read before ${show(l.order)} at step ${show(l.written)}` : `${show(l.source)} was read at step ${show(l.exposed)}, after ${show(l.order)} at step ${show(l.written)}`;
+      return l.exposed === null ? `${show(l.source)} was not read before ${show(l.order)} at step ${show(l.written)}` : `${show(l.source)} was read at step ${show(l.exposed)}, ${lateness(l.exposed, l.written)} ${show(l.order)} at step ${show(l.written)}`;
     },
   },
 };

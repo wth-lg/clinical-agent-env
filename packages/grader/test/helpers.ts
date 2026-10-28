@@ -57,16 +57,18 @@ export interface Call {
   referenced?: string[];
   written?: string[];
   content?: unknown;
+  // The answer that made the call; by default each call has its own.
+  turn?: number;
 }
 
-// The trajectory of `calls`: one request and response per call, then the tool_call and
-// tool_result events, stamped the way createEmitter stamps them.
+// The trajectory of `calls`: one request and response per call unless calls share a turn, then
+// the tool_call and tool_result events, stamped the way createEmitter stamps them.
 export function trajectory(calls: readonly Call[]): TrialEvent[] {
   const events: TrialEvent[] = [];
   const push = (body: Record<string, unknown>) => events.push({ v: 2, seq: events.length, ts: '2026-10-23T12:00:00.000Z', ...body } as unknown as TrialEvent);
   calls.forEach((c, i) => {
-    const turn = i + 1;
-    const id = `toolu_${String(turn).padStart(3, '0')}`;
+    const turn = c.turn ?? i + 1;
+    const id = `toolu_${String(i + 1).padStart(3, '0')}`;
     push({ type: 'tool_call', turn, tool_use_id: id, name: c.name, input: c.input ?? {} });
     push({
       type: 'tool_result', turn, tool_use_id: id, name: c.name, executed: true, is_error: c.is_error ?? false, error_code: c.is_error ? (c.error_code ?? 'INVALID_INPUT') : null,

@@ -12,8 +12,16 @@
 // read from written_ids alone (P6), never inferred from a call's input.
 //
 // Steps are numbered by Step.n, from 1, and every helper here speaks that index: exposedAt and
-// firstExposed return an n, lastWrite returns an n, and shows takes beforeStepN, an n it
-// excludes, so "shown before the first write" is shows(ctx.steps, ref, firstWrite.n, phrase).
+// firstExposed return an n, lastWrite returns an n, and shows takes beforeStepN, the n of the
+// step the text must be seen before, so "shown before the first write" is shows(ctx.steps, ref,
+// firstWrite.n, phrase).
+//
+// Seen before is by turn, not by n (seenBefore, verifier-phase-P17i-P17-T5-1 F2): the calls of
+// one answer run in order, but their results reach the model only with the next request, so a
+// result counts as seen by a step only when it was returned in an earlier turn (Step.turn). A
+// read issued in the same answer as an order has not been seen when the order is made, however
+// early in the answer it stands. Every gate that asks whether a source was seen before a write
+// asks seenBefore, and shows does too.
 //
 // Regrading an old record: exposed_ids and referenced_ids are read from the record as the tools
 // tagged them then, while shown is derived now from the recorded content. Records made before
@@ -33,6 +41,7 @@ export function stepsOf(events: readonly TrialEvent[]): Step[] {
     steps.push({
       n: steps.length + 1,
       seq: e.seq,
+      turn: e.turn,
       tool: e.name,
       is_error: e.is_error,
       error_code: e.error_code,
@@ -62,17 +71,32 @@ function showedIn(s: Step, ref: string, phrase: string): boolean {
   return want !== '' && Object.entries(s.shown).some(([k, t]) => sameId(k, ref) && t.split('\n').some((part) => comparable(part).includes(want)));
 }
 
-// Whether a step numbered below beforeStepN (Step.n, 1-based, exclusive) showed `phrase` in the
-// text of `ref`, given bare or typed. Both sides are whitespace-collapsed and compared ignoring
-// case. Shown text comes from a search_notes snippet, a fhir_read of a note or report, or a
-// whole policy (Step.shown); a resource of any other type is never shown, so this is false for
-// it. An empty phrase is never shown.
-export function shows(steps: readonly Step[], ref: string, beforeStepN: number, phrase: string): boolean {
-  return steps.some((s) => s.n < beforeStepN && showedIn(s, ref, phrase));
+// The turn of step n. A number past the last step stands after every turn, and one before the
+// first before every turn, so a check can ask about the end of a trial or its start.
+function turnOf(steps: readonly Step[], n: number): number {
+  const s = steps.find((x) => x.n === n);
+  if (s !== undefined) return s.turn;
+  return n > (steps.at(-1)?.n ?? 0) ? Infinity : -Infinity;
 }
 
-// The first step that showed `phrase` in the text of `ref`, or null; shows(steps, ref, n + 1,
-// phrase) holds exactly from that n on.
+// Whether the result of step `seen` (a Step.n, or null for never) had reached the model when it
+// made step `act`: it was returned in an earlier turn. A step is never seen before another of
+// its own answer.
+export function seenBefore(steps: readonly Step[], seen: number | null, act: number): boolean {
+  return seen !== null && turnOf(steps, seen) < turnOf(steps, act);
+}
+
+// Whether a step seen before step beforeStepN (seenBefore: returned in an earlier turn) showed
+// `phrase` in the text of `ref`, given bare or typed. Both sides are whitespace-collapsed and
+// compared ignoring case. Shown text comes from a search_notes snippet, a fhir_read of a note or
+// report, or a whole policy (Step.shown); a resource of any other type is never shown, so this
+// is false for it. An empty phrase is never shown.
+export function shows(steps: readonly Step[], ref: string, beforeStepN: number, phrase: string): boolean {
+  return seenBefore(steps, firstShown(steps, ref, phrase), beforeStepN);
+}
+
+// The first step that showed `phrase` in the text of `ref`, or null; shows(steps, ref, m,
+// phrase) holds exactly for the steps m of a later turn than that n.
 export function firstShown(steps: readonly Step[], ref: string, phrase: string): number | null {
   return steps.find((s) => showedIn(s, ref, phrase))?.n ?? null;
 }

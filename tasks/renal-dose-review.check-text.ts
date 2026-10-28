@@ -2,7 +2,7 @@
 // requires, and the first difference its evidence (tests/grader.ts) shows. The Tasks view and the
 // failure reasons read it. It sits beside the task directory, not in it, so neither task version
 // covers it: rewording it regrades nothing.
-import { fields, items, listed, show, type CheckText } from '../packages/core/explain.ts';
+import { fields, items, lateness, listed, show, type CheckText } from '../packages/core/explain.ts';
 import { expected } from './renal-dose-review/expected.ts';
 
 const TIMES: Record<number, string> = { 1: 'once a day', 2: 'twice a day', 3: 'three times a day' };
@@ -34,11 +34,24 @@ const kept = (drug: string) => ({
   },
 });
 
-// An input read late: never before the first medication order, or after it.
+// The inputs seen late, by name: never before the first medication order, in its answer, or after it. A record
+// graded before the age and medication inputs has exposed ({id, step}, no input) instead of seen;
+// its ids are named as they are.
+const INPUT_NAMES: Record<string, (ids: unknown[]) => string> = {
+  scr: () => `the creatinine (${expected.scr.id})`,
+  weight: () => `the weight (${expected.weight.id})`,
+  age: () => `the patient's age (${expected.patient})`,
+  medications: (ids) => `the active medication list (${listed(ids)})`,
+};
 const late = (ev: Record<string, unknown>) => {
-  const id = items(ev.late)[0];
-  const step = fields(items(ev.exposed).map(fields).find((e) => e.id === id)).step;
-  return step === null || step === undefined ? `${show(id)} was not read before the first medication order at step ${show(ev.first_medication_write)}` : `${show(id)} was read at step ${show(step)}, after the first medication order at step ${show(ev.first_medication_write)}`;
+  const lateIds = items(ev.late);
+  const entries = items(ev.seen ?? ev.exposed).map(fields).filter((e) => lateIds.includes(e.id));
+  const inputsOf = (es: typeof entries) => [...new Set(es.map((e) => String(e.input)))];
+  const named = (es: typeof entries) => listed(inputsOf(es).map((input) => (INPUT_NAMES[input] ?? show)(es.filter((e) => String(e.input) === input).map((e) => e.id))));
+  const at = `the first medication order at step ${show(ev.first_medication_write)}`;
+  const unseen = entries.filter((e) => e.step === null || e.step === undefined);
+  if (unseen.length > 0) return `${named(unseen)} ${inputsOf(unseen).length === 1 ? 'was' : 'were'} not seen before ${at}`;
+  return `${named(entries.slice(0, 1))} was seen at step ${show(entries[0]?.step)}, ${lateness(entries[0]?.step, ev.first_medication_write)} ${at}`;
 };
 
 const A = expected.apixaban;
@@ -57,6 +70,9 @@ export const checkText: CheckText = {
       return `${show(extra[0])} was written${extra.length > 1 ? ` (and ${extra.length - 1} more)` : ''}`;
     },
   },
-  inputs_before_orders: { requires: `the creatinine (${expected.scr.id}) and the weight (${expected.weight.id}) read before the first medication order`, found: late },
+  inputs_before_orders: {
+    requires: `the creatinine (${expected.scr.id}), the weight (${expected.weight.id}), the patient's age (${expected.patient}, or a note showing the birth date) and the active apixaban, metformin and gabapentin orders, each seen before the first medication order`,
+    found: late,
+  },
   note_exists: { requires: `a progress note on ${expected.patient}'s chart documenting the review (its content is scored by the rubric)`, found: (ev) => (items(ev.notes).length === 0 ? 'no note was written on the patient' : `${show(items(ev.notes)[0])} is not a progress note`) },
 };

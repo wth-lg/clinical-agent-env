@@ -2,7 +2,7 @@
 // requires, and the first difference its evidence (tests/grader.ts) shows. The Tasks view and the
 // failure reasons read it. It sits beside the task directory, not in it, so neither task version
 // covers it: rewording it regrades nothing.
-import { clock, fields, items, listed, show, type CheckText } from '../packages/core/explain.ts';
+import { clock, fields, items, lateness, listed, show, type CheckText } from '../packages/core/explain.ts';
 import { expected } from './contrast-ct-prep/expected.ts';
 
 const APPT = expected.appointment;
@@ -52,11 +52,16 @@ export const checkText: CheckText = {
   },
   patient_instructed: { requires: `a message to the patient (${expected.patient}) with the prep instructions`, found: () => 'no message to the patient' },
   evidence_before_orders: {
-    requires: 'the contrast allergy and the appointment read before the first medication order',
+    requires: `the contrast allergy, the ${expected.reaction_note.split('/')[1]} report of the 2019 reaction (read whole, or a snippet showing its severity), the last creatinine (${expected.creatinine.latest}) and the appointment, each seen before the first order`,
     found: (ev) => {
-      const late = show(items(ev.late)[0]);
-      const step = fields(items(ev.exposed).map(fields).find((e) => e.id === items(ev.late)[0])).step;
-      return step === null || step === undefined ? `${late} was not read before the first medication order at step ${show(ev.first_medication_write)}` : `${late} was read at step ${show(step)}, after the first medication order at step ${show(ev.first_medication_write)}`;
+      const late = items(ev.late);
+      const at = `the first order (${show(ev.first_order)}) at step ${show(ev.first_order_write)}`;
+      const step = (id: unknown) => fields(items(ev.seen).map(fields).find((e) => e.id === id)).step;
+      const unseen = late.filter((id) => step(id) === null || step(id) === undefined);
+      const after = late.filter((id) => !unseen.includes(id));
+      const was = (xs: readonly unknown[]) => (xs.length === 1 ? 'was' : 'were');
+      if (unseen.length === 0) return `${show(after[0])} was seen at step ${show(step(after[0]))}, ${lateness(step(after[0]), ev.first_order_write)} ${at}`;
+      return `${listed(unseen)} ${was(unseen)} not seen before ${at}${after.length > 0 ? `; ${listed(after)} ${was(after)} seen only ${after.every((id) => lateness(step(id), ev.first_order_write) === 'after') ? 'after it' : 'in its answer or after it'}` : ''}`;
     },
   },
 };

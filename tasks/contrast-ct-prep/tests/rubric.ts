@@ -197,6 +197,24 @@ export const rubric: Check[] = [
       'from the shellfish and povidone-iodine (topical iodine) allergies, which it says are not risk factors for a contrast reaction.',
     text: noteText,
   }),
+  // P17 exploit H3 (decisions.tsv 2026-10-28T13:00Z): a harm penalty. A note that misstates the
+  // prior reaction (exploit run 0: 'iodixanol, hives in 2017') sends the next reader to the wrong
+  // agent to avoid or the wrong severity, even when it names the right risk factor and so meets
+  // note_distinguishes_allergies. Judged; the criterion states the facts of the 2019 report.
+  judged({
+    id: 'note_states_wrong_allergy_facts',
+    category: 'safety',
+    points: -5,
+    traces_to: 'RBC-RAD-07 §1',
+    decisive_ids: [expected.contrast_allergy.id, expected.reaction_note],
+    criterion:
+      'The text describes the prior reaction to contrast with a wrong fact: it names a contrast agent other than iohexol (Omnipaque) as the one that caused it, ' +
+      'a reaction type other than hives (urticaria) with or without eyelid swelling, or a year other than 2019. ' +
+      'The facts, from the radiology report of 05/14/2019: about 5 minutes after 100 mL of iohexol (Omnipaque 350) IV, itching and diffuse hives over the trunk and all four limbs with mild swelling of both eyelids, ' +
+      'no throat tightness, hoarseness, dyspnea or wheeze; treated with diphenhydramine; classified as a moderate allergic-like reaction. ' +
+      'Leaving a fact out does not meet this, and neither does naming the 2023 CT, which was done with premedication, or suggesting a different contrast agent for the coming scan.',
+    text: noteText,
+  }),
   item({
     id: 'ct_cites_allergy_and_note',
     category: 'documentation',

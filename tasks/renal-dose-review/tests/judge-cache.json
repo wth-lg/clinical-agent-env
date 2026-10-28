@@ -72,6 +72,60 @@
     }
   },
   {
+    "key": "0bf6b2a498e22fb8d47bbc9e3d6d92cd46f7c99cdbe895b4f5a22e77e3f6d03d",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T19:18:42.613Z"
+    }
+  },
+  {
+    "key": "0f39a25dcfb132c687514c74a2845a49c862e03b15e7e877e11777323d595370",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T19:18:42.613Z"
+    }
+  },
+  {
+    "key": "0ff43eed780bd282624dec6b7443a5c8bc90606f606546b78ad260d893278d9b",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T19:18:42.613Z"
+    }
+  },
+  {
     "key": "120052ce41a06d8d16733a72d55e485fe8ba7465be878564518b8c8415acaa28",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -324,6 +378,24 @@
     }
   },
   {
+    "key": "3cd8253f389d804e20cd5fd7db9aab91a5d00d51b793c31e529def9779aa0911",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T19:18:42.613Z"
+    }
+  },
+  {
     "key": "3eaad937c6e9a486a9b1bcb39ad15dd576bd1b52544c89119938bbf215ea87ad",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -360,6 +432,99 @@
     }
   },
   {
+    "key": "4233c4c5e72f27441135b8b769db98bd9f729e5e8c998233eb620232db1e6bdd",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "- Age 80 or older: age 82, met.\n- Body weight 60 kg or less: 64.9 kg, not met.\n- Serum creatinine 1.5 mg/dL or higher: 1.21 mg/dL, not met."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T18:42:17.179Z",
+      "note": "answered live by the P17 PR22b exploit run, results/exploit/renal-dose-review/1.json; copied by builder-148"
+    }
+  },
+  {
+    "key": "42f81932ae603112646ede34d7c2267fc9117c6480571425afa5d01747615b48",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T19:18:42.613Z"
+    }
+  },
+  {
+    "key": "4409c65f555ce127255782ac55aef0c47e2ed53fb8e3ecce9c57464a20e094b7",
+    "kind": "extract",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "value": 59.8,
+      "quote": "eGFR (CKD-EPI 2021) 59.8 mL/min/1.73 m2"
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T18:41:09.555Z",
+      "note": "answered live by the P17 PR22b exploit run, results/exploit/renal-dose-review/0.json; copied by builder-148"
+    }
+  },
+  {
+    "key": "44c45cf76494662778f3141a1dce9df7f5e4b7da8cac166e38fbd967f9bae549",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "The serum creatinine of 1.88 mg/dL dated 2026-10-21 was not used because that result was entered in error."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T18:42:17.179Z",
+      "note": "answered live by the P17 PR22b exploit run, results/exploit/renal-dose-review/1.json; copied by builder-148"
+    }
+  },
+  {
+    "key": "465f6445dac30f364876cbd0d64267aee5ccdf734fb03cf9e844c9a5c8dbbf6b",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Metformin: reduced to 500 mg twice daily."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T19:18:42.613Z"
+    }
+  },
+  {
     "key": "4ad994f62c188afbcb8c3519313f63fc8794f4d9f5e8e13ede7d18bc97a7b160",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -375,6 +540,24 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-25T14:39:17.813Z"
+    }
+  },
+  {
+    "key": "51a08bc077ecddf4c7b7cc51f1df2bfdc597f4cd5355bcc07cc88d9694352548",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T19:18:42.613Z"
     }
   },
   {
@@ -396,6 +579,24 @@
     }
   },
   {
+    "key": "556dda700352212fc0bf24ab80d0d947b2639abcecaea4e2ce1c1aab6f4a1660",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T19:18:42.613Z"
+    }
+  },
+  {
     "key": "590f2c315205b30c57b8c1c41b4e46cc6d149b752f92f2f26c9559ef9f9f5561",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -411,6 +612,43 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-25T14:39:17.813Z"
+    }
+  },
+  {
+    "key": "59bad4a9932b7a5773f2f311a8da78ef05eaf9faf59eac41f393978af43fdbdd",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "- Age 80 or older: age 82, met.\n- Body weight 60 kg or less: 64.9 kg, not met.\n- Serum creatinine 1.5 mg/dL or higher: 1.21 mg/dL, not met."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T18:41:09.555Z",
+      "note": "answered live by the P17 PR22b exploit run, results/exploit/renal-dose-review/0.json; copied by builder-148"
+    }
+  },
+  {
+    "key": "5ae95999e4dbe77ef99de5715bb66de656e421d9fab2555fc3bc9ef2db9cdf0b",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T19:18:42.613Z"
     }
   },
   {
@@ -486,6 +724,25 @@
     }
   },
   {
+    "key": "696607d3ed9cc6d19e4542d9bc68778c6991502a952836f4dd941b1ae846c5f1",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "The serum creatinine of 1.88 mg/dL dated 2026-10-21 was not used because that result was entered in error."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T18:42:17.179Z",
+      "note": "answered live by the P17 PR22b exploit run, results/exploit/renal-dose-review/1.json; copied by builder-148"
+    }
+  },
+  {
     "key": "6a2c42a8f9410e3880b9b56a3303884ea0faa798ff6e10d814dd94bceedaa83a",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -540,6 +797,24 @@
     }
   },
   {
+    "key": "6fc96f16345cf4294d91c5acb730d30b54fc03aa0666c6b4d9c274e902885ef2",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T19:18:42.613Z"
+    }
+  },
+  {
     "key": "7050472ff1ca29af52e5ae1802e93d9ae59b68ed39f660d618fc2f4ddd35a79a",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -558,6 +833,24 @@
     }
   },
   {
+    "key": "73e496ddef7fc9351131651630adcc836a1ed40971dff316bf98d339c66b4ba9",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "no change to metformin 1000 mg twice daily"
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T19:18:42.613Z"
+    }
+  },
+  {
     "key": "76d509822c8eb47ec01c78a9ad8387c66590e6c19d1c64a19c6e0604b21efdbf",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -573,6 +866,24 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-25T14:39:17.813Z"
+    }
+  },
+  {
+    "key": "7a2e60dbd8e92c104b051cf5a01ffdca61237a128ce2967d081af5a62920199b",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "no change to metformin 1000 mg twice daily."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T19:18:42.613Z"
     }
   },
   {
@@ -630,6 +941,42 @@
     }
   },
   {
+    "key": "83185c3b8308208c0600406ff6f1fb83380b2d66c3f65379e639d6b749e298aa",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T19:18:42.613Z"
+    }
+  },
+  {
+    "key": "835a45b5f54b11db56a13611fbc1230c902f67371acf0daf0ea7b76580563203",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T19:18:42.613Z"
+    }
+  },
+  {
     "key": "83e73c3dcca92cc21f217c90a130b349fc319c4819246713db9e71e6d287fa50",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -684,6 +1031,24 @@
     }
   },
   {
+    "key": "8ab2f3fea059a7dfa822c9f217e78b7a8e49053f3749a2bba22de65f7b2c3a90",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "no change to metformin 1000 mg twice daily"
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T19:18:42.613Z"
+    }
+  },
+  {
     "key": "8fb5a237d1ef9a16edb6ce49c8785df5dccfbe8e0da71b3ed165ea4c2681dd46",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -702,6 +1067,24 @@
     }
   },
   {
+    "key": "8fb9e12b9249382f25fafb206f21e3dd9e320eaf39f1f3017a7c0c878b83f354",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T19:18:42.613Z"
+    }
+  },
+  {
     "key": "9009f1510ad3a842832d672d28024fbd284fbb0a112374ff623543c533b661f6",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -717,6 +1100,24 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-25T14:39:17.813Z"
+    }
+  },
+  {
+    "key": "926846fb086ea76a9b8ed5b678702d997232fccf108e19ae4019ad1640b54d70",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T19:18:42.613Z"
     }
   },
   {
@@ -864,6 +1265,60 @@
     }
   },
   {
+    "key": "9ee78238676447a99a92776713d22fa8fa0b01e253c0370a5d53a7e854bd28e9",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T19:18:42.613Z"
+    }
+  },
+  {
+    "key": "a35966c017ea0c13ce93ce8a03422684cb3d06a83399a139cda0da80e6f8a675",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T19:18:42.613Z"
+    }
+  },
+  {
+    "key": "a3d9ea12b062ef6bb4e60161025421a0fb3bc9d099f68f89f04a69ae5e88dd59",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "One criterion met, so apixaban goes back to 5 mg twice daily (2.5 mg twice daily since the February admission)."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T19:18:42.613Z"
+    }
+  },
+  {
     "key": "a9023e8dd645bcd659e027dd4400ead6ccd0d0cb8aa34c0abb166ae85ec33507",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -990,6 +1445,43 @@
     }
   },
   {
+    "key": "b2a9879f15738096ff4279ee02ea6efeae93f493a6d025740af3f3eb1f66c94f",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "The SCr of 1.88 mg/dL dated 2026-10-21 was not used because that result was entered in error."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T18:41:09.555Z",
+      "note": "answered live by the P17 PR22b exploit run, results/exploit/renal-dose-review/0.json; copied by builder-148"
+    }
+  },
+  {
+    "key": "b2c6c0668f423651885bbf6f4db46c1be13aa70c346112c843f72fd1083e59a8",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T19:18:42.613Z"
+    }
+  },
+  {
     "key": "b33f8b705e971d35ffedf92775eea9fb545183c836f2a4f17642d927272a6eb8",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -1023,6 +1515,24 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-25T14:39:17.813Z"
+    }
+  },
+  {
+    "key": "b6f28e0f20b6f24320430d2c32aeb9963205d739fb0d0a0fe81486e6a2794243",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T19:18:42.613Z"
     }
   },
   {
@@ -1062,6 +1572,42 @@
     }
   },
   {
+    "key": "c3fd4d3ba7fbcea70173b430b67adf42a581f66cb40b4c09cfda428a503a760a",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T19:18:42.613Z"
+    }
+  },
+  {
+    "key": "c4367eb81d853a59c12bd5ddf8d3116435ab9278905b7b17b4360dba5152f574",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T19:18:42.613Z"
+    }
+  },
+  {
     "key": "c5f15719f76e11e59fafd5b6ce79b4b21780f2c6e3d25ae5596d8bf1eb9745b5",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -1095,6 +1641,24 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-25T14:39:17.813Z"
+    }
+  },
+  {
+    "key": "c97aeeeefd29f3dab3c8fca8b3730457b44b968cc6af77f868a01b0f937840ad",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T19:18:42.613Z"
     }
   },
   {
@@ -1206,6 +1770,43 @@
     }
   },
   {
+    "key": "d19d7f0d62f55ed4124247ee32f69fa238fef356d8a7b86222003c790042fd1b",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Reduced from 600 mg three times daily (1800 mg/day) to 600 mg twice daily (1200 mg/day)."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T19:18:42.613Z"
+    }
+  },
+  {
+    "key": "d4a0d0356d86d2772eb9d84c345170cbf848ad4277b6f0064013edc8992eeeb7",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Inputs: SCr 1.21 mg/dL (2026-10-20, Observation obs-t1-scr-1020)."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T18:41:09.555Z",
+      "note": "answered live by the P17 PR22b exploit run, results/exploit/renal-dose-review/0.json; copied by builder-148"
+    }
+  },
+  {
     "key": "d572dd88a287c2a55b163a026a9a2542f411140a6e01d5e064de0bc38d004135",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -1314,6 +1915,42 @@
     }
   },
   {
+    "key": "e3f20542a6a4b087c2ed6bf6b236fb11e7c6ab516d83244f7ae5d75f41d58a55",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T19:18:42.613Z"
+    }
+  },
+  {
+    "key": "e4a095d016f695766b2f272ce17d9750ec6425c618678cb07927e126d10eb733",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Metformin 500 mg once daily: eGFR at least 45, no change."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T19:18:42.613Z"
+    }
+  },
+  {
     "key": "e71df0b04418b16665fce3822a93bec7ae31b9c1251ebe0d7fc2298ead22e963",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -1329,6 +1966,60 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-25T14:39:17.813Z"
+    }
+  },
+  {
+    "key": "e747efae5004ad27f643b2231fae020db69995d26d5f4b9b8f3a74c51a8edc2e",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "apixaban goes back to 5 mg twice daily"
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T19:18:42.613Z"
+    }
+  },
+  {
+    "key": "ecde3ca62f3587efad025e4b81adcb143980c3c3ad95f1fa1644f446429b8700",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Reduced from 600 mg three times daily (1800 mg/day) to 600 mg twice daily (1200 mg/day)."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T19:18:42.613Z"
+    }
+  },
+  {
+    "key": "ece90f371fa2c0e14554c137df0eae30e2d79a8a8c944477ed9e92026cfd66b8",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T19:18:42.613Z"
     }
   },
   {
@@ -1350,6 +2041,25 @@
     }
   },
   {
+    "key": "f006c954bde87146e2c5b21216f332e700a6f1bced7231933cce2bbeed0324cb",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Only one criterion met, so apixaban 2.5 mg twice daily stopped and changed to apixaban 5 mg twice daily."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T18:42:17.179Z",
+      "note": "answered live by the P17 PR22b exploit run, results/exploit/renal-dose-review/1.json; copied by builder-148"
+    }
+  },
+  {
     "key": "f1b09c2a21a1f0d000bf25926bfabf235a93ca35072c853fbc5618c3d3a0a168",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -1365,6 +2075,24 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-25T14:39:17.813Z"
+    }
+  },
+  {
+    "key": "f6c56c5a4bad50b722e09e7e7da203c8efbb24155b6be3a392d0b13e59cc0215",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T19:18:42.613Z"
     }
   },
   {
@@ -1386,6 +2114,25 @@
     }
   },
   {
+    "key": "f8a684ba5687d1decbf7c2e117a62434027510cccb27e1ccae61db9b03a43703",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Apixaban dose criteria (dose decision based on these three criteria only):"
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T18:41:09.555Z",
+      "note": "answered live by the P17 PR22b exploit run, results/exploit/renal-dose-review/0.json; copied by builder-148"
+    }
+  },
+  {
     "key": "f9106a1f00dcf5e3b2b38e1db5f30a2654d4ea765fd03fda670a061fea7fac4c",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -1401,6 +2148,24 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-25T14:39:17.813Z"
+    }
+  },
+  {
+    "key": "f9c2579931e4221c3d844a1a56101cb61ff73a5150c8c796a89fa27f91ed45f4",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T19:18:42.613Z"
     }
   },
   {

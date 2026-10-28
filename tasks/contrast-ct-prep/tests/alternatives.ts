@@ -5,7 +5,8 @@
 // alternative that gives up a rubric point declares it in loses; these all score 1.0.
 import type { Agent } from '../../../packages/grader/matrix/types.ts';
 import {
-  ALLERGY, APPT, AT, CODE, ct, creatinineOrder, diphenhydramine, DONE, finish, medication, message, note, oldOrders, ORACLE_MESSAGE, PT, prednisone, read, READS, REACTION_NOTE, RX,
+  ALLERGY, allergies, APPT, appointments, AT, CODE, creatinines, ct, creatinineOrder, diphenhydramine, DONE, findPatient, finish, medication, message, note, oldOrders, ORACLE_MESSAGE, policy, PT, prednisone, read, READS, REACTION_NOTE, RX,
+  timesCalc,
 } from '../solution/steps.ts';
 
 // `loses` is checked by the matrix (pnpm cli matrix): each alternative loses exactly what it declares.
@@ -169,6 +170,22 @@ export const alternatives: Array<Agent & { loses: readonly string[] }> = [
       { calls: [prednisone, diphenhydramine] },
       { calls: [message(ORACLE_MESSAGE.replace('at the lab today or tomorrow, before the scan', 'at our lab at 7:30 AM on Monday 10/26, before the scan'))] },
       { calls: [note({ kidney: 'Kidney function (§4): age 64 with type 2 diabetes. Last creatinine 0.98 mg/dL on 08/14/2025, more than 30 days before the scan: creatinine ordered for 7:30 AM on 10/26, before the scan.' })] },
+      { calls: [finish(DONE)] },
+    ],
+  },
+  {
+    id: 'reads_by_search_only',
+    why: "Reads by search alone, no fhir_read: the allergy list, the appointment and the creatinines by fhir_search, and the 2019 report by a search_notes snippet for 'hives', which shows the diffuse hives but not the radiologist's classification; evidence_before_orders takes that snippet as the report seen.",
+    loses: [],
+    script: [
+      { calls: [findPatient] },
+      { calls: [appointments, allergies, { name: 'search_notes', input: { query: 'hives', patient: PT } }] },
+      { calls: [creatinines, policy] },
+      { calls: [timesCalc] },
+      { calls: [ct(), creatinineOrder()] },
+      { calls: [prednisone, diphenhydramine] },
+      { calls: [message()] },
+      { calls: [note()] },
       { calls: [finish(DONE)] },
     ],
   },

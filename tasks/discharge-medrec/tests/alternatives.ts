@@ -1,7 +1,7 @@
 // Other correct solutions of T4: each must PASS and lose exactly the rubric items in `loses`.
 // They vary what a careful clinician might vary (stop and reorder instead of modify and resume,
 // which tablet the dose is written on, complete instead of stop for potassium, what the message
-// is about, one answer for everything, seeing the addendum only as a search snippet, a potassium
+// is about, one answer for everything, seeing the addendum or every source only as a search snippet (by the oracle's queries or by drug name), a potassium
 // and creatinine recheck after starting spironolactone).
 import type { Alternative } from '../../../packages/grader/matrix/types.ts';
 import { allMeds, bmpRecheck, change, findPatient, finish, furosemideUp, kclStop, lisinoprilResume, message, MESSAGE, modify, MR, note, order, policy, PT, reads, RX, scr, spironolactone, summaries, summary, writes } from '../solution/steps.ts';
@@ -186,6 +186,35 @@ export const alternatives: Alternative[] = [
       { calls: [findPatient] },
       { calls: [allMeds, summaries, policy] },
       { calls: [summary, scr] },
+      { calls: writes },
+      { calls: [message()] },
+      { calls: [note()] },
+      { calls: [finish()] },
+    ],
+  },
+  {
+    id: 'snippet_only_sources',
+    why: "Opens neither discharge document: search_notes snippets show the addendum's correction, the summary's furosemide line ('lisinopril') and its potassium chloride and lisinopril lines ('resume'), and the creatinine is searched, all before the orders (P17 builder-145: G8 counts a source line shown in a snippet).",
+    loses: [],
+    script: [
+      { calls: [findPatient] },
+      { calls: [allMeds, summaries, policy] },
+      { calls: [{ name: 'search_notes', input: { query: 'resume', patient: PT } }, { name: 'search_notes', input: { query: 'lisinopril', patient: PT } }, scr] },
+      { calls: writes },
+      { calls: [message()] },
+      { calls: [note()] },
+      { calls: [finish()] },
+    ],
+  },
+  {
+    id: 'natural_snippet_queries',
+    why: "Opens neither discharge document and searches the notes by drug name: 'lisinopril' shows the summary's furosemide line, 'potassium chloride' its potassium chloride line, and 'spironolactone' the addendum's correction and the summary's lisinopril resume rule ('Resume home 10 mg daily when SCr < 1.5'), cut before the 'Lisinopril:' prefix; the creatinine is searched, all before the orders (P17 builder-153, verifier-phase-P17i-P17-T4-1 F1).",
+    loses: [],
+    script: [
+      { calls: [findPatient] },
+      { calls: [allMeds, policy] },
+      { calls: ['furosemide', 'potassium chloride', 'lisinopril', 'spironolactone'].map((query) => ({ name: 'search_notes', input: { query, patient: PT } })) },
+      { calls: [scr] },
       { calls: writes },
       { calls: [message()] },
       { calls: [note()] },

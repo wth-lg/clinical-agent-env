@@ -121,4 +121,55 @@ describe('crc-care-gap outreach_messages found', async () => {
   it('names the first missing patient when none was tasked', () => {
     expect(found({ missing: ['Patient/pt-0017'], messaged: ['Patient/pt-0018', ...OTHERS], tasked_instead: [] })).toBe('no message to Patient/pt-0017 (Stephan Herman)');
   });
+  // P17 exploit fix, crc C2 (decisions.tsv 2026-10-28T13:40Z): a message whose about does not
+  // name the new FIT order is not outreach, and the text names the missing link.
+  it('names the missing order link when the patient was messaged without it (exploit C2)', () => {
+    const all = ['Patient/pt-0017', 'Patient/pt-0018', ...OTHERS];
+    expect(found({ missing: all, messaged: all, not_about_order: all, tasked_instead: [] })).toBe('the message to Patient/pt-0017 (Stephan Herman) does not name the new FIT order in about');
+  });
+});
+
+// P17j JG4-T3: a FIT order whose occurrence starts after the measurement period fails fit_orders,
+// and the reason names the start and the period end (mutant fit_order_after_period).
+describe('crc-care-gap fit_orders found', async () => {
+  const found = (await textOf('crc-care-gap')).fit_orders!.found;
+  const ordered = { 'Patient/pt-0017': ['ServiceRequest/sr-t0001'] };
+  it('names the order start and the period end for a late order', () => {
+    expect(found({ ordered, missing: [], extra: [], late: [{ patient: 'Patient/pt-0017', order: 'ServiceRequest/sr-t0001', start: '2027-01-04' }], period_end: '2026-12-31' })).toBe(
+      'the FIT order for Patient/pt-0017 (Stephan Herman) starts 2027-01-04, after the measurement period ends on 2026-12-31',
+    );
+  });
+  it('names a missing order before a late one', () => {
+    expect(found({ ordered, missing: ['Patient/pt-0018'], extra: [], late: [{ patient: 'Patient/pt-0017', order: 'ServiceRequest/sr-t0001', start: '2027-01-04' }], period_end: '2026-12-31' })).toBe('no FIT order for Patient/pt-0018 (Lance Amado Muller)');
+  });
+});
+
+// builder-147 (decisions.tsv 2026-10-28T15:50Z): all_cleared names the item and why it is not
+// cleared: left with Dr. Okafor, or moved to an owner its protocol does not route it to (exploit
+// run 0 reassigned M1, M2, M4 and M5 to pool-rn-triage).
+describe('message-queue all_cleared found', async () => {
+  const found = (await textOf('message-queue')).all_cleared!.found;
+  const ev = (owner: string, routed_to: string | null) => ({ items: [{ item: 'Task/task-t6-m1', status: 'requested', owner, routed_to }], still_open: ['Task/task-t6-m1'] });
+  it('names an item left with Dr. Okafor', () => {
+    expect(found(ev('Practitioner/pr-okafor', null))).toBe('Task/task-t6-m1 is still requested with Practitioner/pr-okafor');
+  });
+  it('names an item moved to a pool when its protocol routes it to no one', () => {
+    expect(found(ev('Group/pool-rn-triage', null))).toBe('Task/task-t6-m1 was reassigned to Group/pool-rn-triage, which its protocol does not route it to, so it is still open');
+  });
+  it('names an item moved to another pool than the one its protocol names', () => {
+    expect(found(ev('Group/pool-rn-triage', 'Group/pool-scheduling'))).toBe('Task/task-t6-m1 was reassigned to Group/pool-rn-triage, but its protocol routes it to Group/pool-scheduling');
+  });
+});
+
+// verifier-phase-P17i-P17-T5-1 F2 (GRADER_VERSION 13): a read in the same answer as the order is
+// late though its step is lower, and the text says so instead of "after".
+describe('a read late only by its turn', async () => {
+  const found = (await textOf('renal-dose-review')).inputs_before_orders!.found;
+  const seen = [{ input: 'scr', id: 'Observation/obs-t1-scr-1020', step: 3 }];
+  it('says "in the same answer as" when the read stands before the order', () => {
+    expect(found({ first_medication_write: 6, seen, late: ['Observation/obs-t1-scr-1020'] })).toBe('the creatinine (Observation/obs-t1-scr-1020) was seen at step 3, in the same answer as the first medication order at step 6');
+  });
+  it('says "after" when the read came after the order', () => {
+    expect(found({ first_medication_write: 2, seen, late: ['Observation/obs-t1-scr-1020'] })).toBe('the creatinine (Observation/obs-t1-scr-1020) was seen at step 3, after the first medication order at step 2');
+  });
 });

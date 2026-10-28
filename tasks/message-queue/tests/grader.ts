@@ -20,7 +20,7 @@
 import { gate, type Check, type GateCtx } from '../../../packages/grader/check.ts';
 import type { GateOf, GateResource } from '../../../packages/grader/gate-view.ts';
 import { NOW_DATE } from '../../../packages/env/clock.ts';
-import { firstShown } from '../../../packages/grader/exposure.ts';
+import { firstShown, seenBefore } from '../../../packages/grader/exposure.ts';
 import { clinicDate, conceptIs, dailyDose, doseOf, dosesPerDay, drugOf, isActive, isDrug } from '../../../packages/grader/normalize.ts';
 import { expected } from '../expected.ts';
 import { rubric } from './rubric.ts';
@@ -44,7 +44,7 @@ const STATIN = /^(?:atorvastatin|rosuvastatin|simvastatin|pravastatin|lovastatin
 // A new order the trial voided again.
 const VOIDED = ['entered-in-error', 'cancelled', 'stopped'];
 export const PENICILLINS = /\b(?:amoxicillin|penicillin|augmentin)/i;
-// An item is cleared when it is closed, or handed to someone other than Dr. Okafor.
+// An item is cleared when it is closed.
 const CLOSED = ['completed', 'cancelled', 'rejected'];
 
 type MR = GateOf<'MedicationRequest'>;
@@ -107,6 +107,13 @@ const refill = (spec: { patient: string; drug: string; daily_mg: number; supply_
 };
 
 const M = expected;
+// Or when it is reassigned to the owner its protocol routes the message to: RBC-TRI-02 §1 a red
+// flag (M3) to pool-rn-triage, §2 a scheduling request (M6) to pool-scheduling. The other items
+// name no owner for the item itself: RBC-RX-05 §1 (M1) and §2 (M5) are orders, §3 (M2) is a new
+// Task to the PCP, who is Dr. Okafor, and RBC-MED-04 §2 (M4) is an allergy record and a message to
+// the requester. Each is then closed; moved to another owner, it is still open there (exploit
+// run 0, P17 PR22b: M1, M2, M4 and M5 reassigned to pool-rn-triage).
+const ROUTED_TO: Readonly<Record<string, string>> = { [M.m3.item]: M.m3.pool, [M.m6.item]: M.m6.pool };
 const gates: Check[] = [
   gate({
     id: 'm1_bridge',
@@ -195,9 +202,9 @@ const gates: Check[] = [
     fn: (ctx) => {
       const state = M.items.map((k) => {
         const t = ctx.final.get('Task', split(k)[1]) as Task | undefined;
-        return { item: k, status: t?.status ?? null, owner: t?.owner?.reference ?? null };
+        return { item: k, status: t?.status ?? null, owner: t?.owner?.reference ?? null, routed_to: ROUTED_TO[k] ?? null };
       });
-      const open = state.filter((s) => !CLOSED.includes(s.status ?? '') && s.owner === 'Practitioner/pr-okafor').map((s) => s.item);
+      const open = state.filter((s) => !CLOSED.includes(s.status ?? '') && (s.routed_to === null || s.owner !== s.routed_to)).map((s) => s.item);
       return { met: open.length === 0, evidence: { items: state, still_open: open }, ids: open };
     },
   }),
@@ -237,7 +244,7 @@ const gates: Check[] = [
         // Any of them will do; M.m1.visit is the last one.
         { evidence: M.m1.visit, write: bridgeWrite, exposed: seen.length ? Math.min(...seen) : null, accepts: [...accepts, ...notes.map(keyOf)] },
       ];
-      const late = checks.filter((c) => c.write !== null && (c.exposed === null || c.exposed >= c.write)).map((c) => c.evidence);
+      const late = checks.filter((c) => c.write !== null && !seenBefore(ctx.steps, c.exposed, c.write)).map((c) => c.evidence);
       return { met: late.length === 0, evidence: { checks, late }, ids: late };
     },
   }),
