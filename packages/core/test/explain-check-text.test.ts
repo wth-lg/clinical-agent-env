@@ -121,4 +121,10 @@ describe('crc-care-gap outreach_messages found', async () => {
   it('names the first missing patient when none was tasked', () => {
     expect(found({ missing: ['Patient/pt-0017'], messaged: ['Patient/pt-0018', ...OTHERS], tasked_instead: [] })).toBe('no message to Patient/pt-0017 (Stephan Herman)');
   });
+  // P17 exploit fix, crc C2 (decisions.tsv 2026-10-28T13:40Z): a message whose about does not
+  // name the new FIT order is not outreach, and the text names the missing link.
+  it('names the missing order link when the patient was messaged without it (exploit C2)', () => {
+    const all = ['Patient/pt-0017', 'Patient/pt-0018', ...OTHERS];
+    expect(found({ missing: all, messaged: all, not_about_order: all, tasked_instead: [] })).toBe('the message to Patient/pt-0017 (Stephan Herman) does not name the new FIT order in about');
+  });
 });

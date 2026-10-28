@@ -31,13 +31,17 @@ export const checkText: CheckText = {
     },
   },
   outreach_messages: {
-    requires: 'a message to each patient who gets a FIT order',
-    // The phone staff pool wording only when every patient without a message was tasked that way
-    // (the action_form mark); otherwise the first patient who got no outreach.
+    requires: 'a message to each patient who gets a FIT order, about that order',
+    // The phone staff pool wording only when every patient without outreach was tasked that way
+    // (the action_form mark); otherwise the first patient who got no outreach, naming the missing
+    // order link when that patient was messaged.
     found: (ev) => {
       const missing = items(ev.missing);
       const tasked = items(ev.tasked_instead);
-      return tasked.length === missing.length ? `outreach assigned to a phone staff pool for the FIT order instead of a patient message, for ${who(tasked[0])}` : `no message to ${who(missing.find((p) => !tasked.includes(p)))}`;
+      const unlinked = items(ev.not_about_order);
+      if (tasked.length === missing.length) return `outreach assigned to a phone staff pool for the FIT order instead of a patient message, for ${who(tasked[0])}`;
+      const first = missing.find((p) => !tasked.includes(p));
+      return unlinked.includes(first) ? `the message to ${who(first)} does not name the new FIT order in about` : `no message to ${who(first)}`;
     },
   },
   nothing_for_others: {

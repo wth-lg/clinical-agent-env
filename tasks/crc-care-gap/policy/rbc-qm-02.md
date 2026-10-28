@@ -25,7 +25,7 @@ A patient is excluded who has any of:
 
 §5 Outreach
 A patient in the population who is not excluded and whose screening is not up to date has an open gap.
-For each open gap, order a FIT kit (a ServiceRequest) and send the patient an outreach message.
+For each open gap, order a FIT kit (a ServiceRequest) and send the patient an outreach message about that order.
 Do not place a FIT order for a patient who already has an active FIT order.
 
 §6 Report

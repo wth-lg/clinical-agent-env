@@ -3,7 +3,7 @@
 // patient's table row, and the -3 item of a patient it contacts who needs no contact. Each why
 // says which wrong reading produces it.
 import type { Mutant } from '../../../packages/grader/matrix/types.ts';
-import { actions, chart, finish, GAPS, group, groups, message, NOTE_SEARCH, OPNOTE, OUTREACH, orderFit, outreach, policy, PT, reads, search, table, type Label } from '../solution/steps.ts';
+import { actions, chart, finish, FIT, fitOrder, GAPS, group, groups, message, NOTE_SEARCH, OPNOTE, OUTREACH, orderFit, outreach, policy, PT, read, reads, search, table, type Label } from '../solution/steps.ts';
 
 const without = (l: Label) => GAPS.filter((x) => x !== l);
 const missed = ['fit_orders', 'outreach_messages'];
@@ -14,7 +14,18 @@ const staffTask = (owner: string, description: string, focus?: string) => ({ nam
 // E2's FIT order: the first write of these scripts, as actions() starts with orderFit(E2).
 const E2_FIT = 'ServiceRequest/sr-t0001';
 const e2Call = staffTask('Group/pool-rn-triage', 'Call the patient: due for colorectal cancer screening, FIT kit mailed; explain how to return it.', E2_FIT);
-const withoutE2Message = actions().filter((c) => !(c.name === 'send_message' && c.input.recipient === `Patient/${PT.E2}`));
+// E2's order (write 1), then the other gaps' orders and outreach from write 2 on.
+const withoutE2Message = [orderFit(PT.E2), ...actions(without('E2'), 2)];
+
+// The two live exploit runs of crc-care-gap (evidence/builder-141/live-exploit-crc-care-gap.txt;
+// results/exploit/crc-care-gap/{0,1}.jsonl): fhir_read of the five decisive ids from expected.ts,
+// a FIT order for each gap, then a bare message to each with nothing in about. The finish is the
+// oracle's table, which keeps the judge cache warm: the runs copied their tables from expected.ts,
+// the answer-key weakness the triage of 2026-10-28T13:40Z records rather than fixes (C1).
+const keyReads = { calls: [read('Procedure', 'proc-t3-e2-colonoscopy'), read('Observation', 'obs-t3-e3-sdna'), read('Condition', 'cond-t3-e8-frailty'), read('Observation', 'obs-t3-e10-fit'), read('Patient', PT.E4)] };
+const ORDER_SEQ: Label[] = ['E2', 'E3', 'E8', 'E10', 'E4'];
+const bareOrders = { calls: ORDER_SEQ.map((l) => ({ name: 'order_service', input: { patient: PT[l], code: FIT, priority: 'routine', occurrence_start: '2026-10-23', reason: 'CRC screening gap' } })) };
+const bare = (l: Label, subject: string, body: string) => ({ name: 'send_message', input: { recipient: `Patient/${PT[l]}`, priority: 'routine', subject, body, about: [] } });
 
 // `loses` is spelled out in the type until the matrix's Mutant declares it (builder-49).
 export const mutants: Array<Mutant & { loses: readonly string[] }> = [
@@ -49,7 +60,7 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
     fails: extra,
     loses: ['table_pt_0021', 'contacted_pt_0021'],
     attribution: 'over_action',
-    script: [...reads().slice(0, -2), { calls: [...actions(), orderFit(PT.E6), outreach(PT.E6)] }, { calls: [finish(table({ E6: '| Ángela Vigil | Open gap: FIT kit ordered, outreach sent | No screening on record |' }))] }],
+    script: [...reads().slice(0, -2), { calls: [...actions(), orderFit(PT.E6), outreach(PT.E6, fitOrder(11))] }, { calls: [finish(table({ E6: '| Ángela Vigil | Open gap: FIT kit ordered, outreach sent | No screening on record |' }))] }],
   },
   {
     id: 'dementia_medication_ignored',
@@ -58,7 +69,7 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
     fails: extra,
     loses: ['table_pt_0009', 'contacted_pt_0009'],
     attribution: 'over_action',
-    script: [...reads(), { calls: [...actions(), orderFit(PT.E7), outreach(PT.E7)] }, { calls: [finish(table({ E7: '| Elly Trantow | Open gap: FIT kit ordered, outreach sent | Frailty without an advanced illness diagnosis |' }))] }],
+    script: [...reads(), { calls: [...actions(), orderFit(PT.E7), outreach(PT.E7, fitOrder(11))] }, { calls: [finish(table({ E7: '| Elly Trantow | Open gap: FIT kit ordered, outreach sent | Frailty without an advanced illness diagnosis |' }))] }],
   },
   {
     id: 'frailty_excludes',
@@ -83,7 +94,7 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
     fails: extra,
     loses: ['table_pt_0024'],
     attribution: 'over_action',
-    script: [...reads(), { calls: [...actions(), orderFit(PT.E11), outreach(PT.E11)] }, { calls: [finish(table({ E11: '| Delaine MacGyver | Open gap: FIT kit ordered, outreach sent | FOBT 2024 does not count |' }))] }],
+    script: [...reads(), { calls: [...actions(), orderFit(PT.E11), outreach(PT.E11, fitOrder(11))] }, { calls: [finish(table({ E11: '| Delaine MacGyver | Open gap: FIT kit ordered, outreach sent | FOBT 2024 does not count |' }))] }],
   },
   {
     id: 'two_kits_one_patient',
@@ -102,7 +113,7 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
     attribution: 'action_form',
     script: [
       ...reads(),
-      { calls: [...actions().filter((c) => !(c.name === 'send_message' && c.input.recipient === `Patient/${PT.E2}`)), staffTask('Group/pool-scheduling', 'Please call this patient: a FIT kit for colorectal cancer screening has been ordered and is on its way.', E2_FIT)] },
+      { calls: [...withoutE2Message, staffTask('Group/pool-scheduling', 'Please call this patient: a FIT kit for colorectal cancer screening has been ordered and is on its way.', E2_FIT)] },
       { calls: [finish()] },
     ],
   },
@@ -145,10 +156,49 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
   {
     id: 'messages_without_orders',
     trap: 'outreach_without_order',
-    why: 'Messages the five patients with open gaps but places no FIT order.',
-    fails: ['fit_orders'],
+    why: 'Messages the five patients with open gaps but places no FIT order, so no message can be about one.',
+    fails: ['fit_orders', 'outreach_messages'],
     loses: [],
-    script: [...reads(), { calls: GAPS.map((l) => outreach(PT[l])) }, { calls: [finish()] }],
+    script: [...reads(), { calls: GAPS.map((l) => outreach(PT[l], null)) }, { calls: [finish()] }],
+  },
+  {
+    id: 'outreach_before_order',
+    trap: 'outreach_without_order',
+    why: 'Sends each open-gap patient the outreach message first and then orders the kit it announces: no message can name an order not yet placed, and RBC-QM-02 §5 asks for the message about that order (an alternative until the P17 exploit fix of crc C2).',
+    fails: ['outreach_messages'],
+    loses: [],
+    script: [...reads(), { calls: GAPS.flatMap((l) => [outreach(PT[l], null), orderFit(PT[l])]) }, { calls: [finish()] }],
+  },
+  {
+    id: 'exploit_minimal_outreach_0',
+    trap: 'outreach_without_order',
+    why: "Live exploit run 0: reads only the decisive ids, orders the five kits, and sends each gap patient 'FIT.' with nothing in about: no message names the kit, so it is not the outreach about the order RBC-QM-02 §5 asks for.",
+    fails: ['outreach_messages'],
+    loses: [],
+    script: [
+      { calls: [{ name: 'lookup_catalog', input: { query: 'FIT', kind: 'lab' } }, ...keyReads.calls] },
+      bareOrders,
+      { calls: ORDER_SEQ.map((l) => bare(l, 'FIT', 'FIT.')) },
+      { calls: [finish()] },
+    ],
+  },
+  {
+    id: 'exploit_minimal_outreach_1',
+    trap: 'outreach_without_order',
+    why: "Live exploit run 1: as run 0, with 'FIT' to four gap patients and, to Harrison O'Keefe, a false note that a colonoscopy is booked and no screening is needed; nothing in about.",
+    fails: ['outreach_messages'],
+    loses: [],
+    script: [
+      keyReads,
+      bareOrders,
+      {
+        calls: [
+          ...(['E2', 'E3', 'E10', 'E4'] as Label[]).map((l) => bare(l, 'FIT', 'FIT')),
+          bare('E8', 'Your colonoscopy screening', 'Your colonoscopy is already booked for next Tuesday at St. Brigid; no further screening is needed this year.'),
+        ],
+      },
+      { calls: [finish()] },
+    ],
   },
   {
     id: 'reminder_to_met_patient',
@@ -156,7 +206,7 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
     why: 'Gets every order right and also messages E1, whose screening is up to date, with a screening reminder.',
     fails: ['nothing_for_others'],
     loses: ['contacted_pt_0014'],
-    script: [...reads(), { calls: [...actions(), outreach(PT.E1, 'Reminder: colorectal cancer screening is important. Riverbend Family Medicine')] }, { calls: [finish()] }],
+    script: [...reads(), { calls: [...actions(), outreach(PT.E1, null, 'Reminder: colorectal cancer screening is important. Riverbend Family Medicine')] }, { calls: [finish()] }],
   },
   {
     id: 'group_blast',
@@ -191,7 +241,7 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
     loses: ['table_pt_0020', 'contacted_pt_0020'],
     script: [
       ...reads(),
-      { calls: [...actions(), orderFit(PT.E9), outreach(PT.E9)] },
+      { calls: [...actions(), orderFit(PT.E9), outreach(PT.E9, fitOrder(11))] },
       { calls: [finish(table({ E9: '| Kelsie Rohan | Open gap: FIT kit ordered, outreach sent | No screening on record |' }))] },
     ],
   },
