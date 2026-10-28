@@ -68,6 +68,13 @@ export const checkText: CheckText = {
       return open !== undefined ? `${show(open)} is not completed` : `${show(items(ev.unlinked)[0])} links nothing that closes it`;
     },
   },
+  result_seen_before_action: {
+    requires: `each of the ${Object.keys(I).length} items' results read before the item is closed or reassigned or its patient is messaged`,
+    found: (ev) => {
+      const u = fields(items(ev.unseen)[0]);
+      return `${show(u.item)}: ${show(u.action)} at step ${show(u.at)} came before any of its results (${listed(items(u.results))}) was read`;
+    },
+  },
   patient_contact: {
     requires: `each patient of the ${ACTIONABLE} items that need action told of the result: a message to the patient, a call task due by the next business day, or a staff message the item's closure links`,
     found: (ev) => `${show(fields(items(ev.uncontacted)[0]).patient)} was not told of ${show(fields(items(ev.uncontacted)[0]).item)}`,

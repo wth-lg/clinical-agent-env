@@ -176,6 +176,27 @@ export const alternatives = [
     }),
   },
   {
+    id: 'results_by_search',
+    why: "Reads the way searches_then_reads does but finds the results by search: the renal ultrasound's finding in a search_notes snippet and Edra Ondricka's TSH and lipid values with one fhir_search, never opening those three with fhir_read. Each item's result is still seen before the item is closed (result_seen_before_action, P17 T2 exploit).",
+    loses: [],
+    script: solve({
+      reads: [
+        { calls: [...policies, inbox] },
+        { calls: [searchNotes('smoker'), searchNotes('pack', PT.marsh), searchNotes('simple cyst', PT.parisian)] },
+        { calls: [read(SRC.ct), read(SRC.hp), read(SRC.fit), activeServiceRequests(PT.patel)] },
+        {
+          calls: [
+            { name: 'fhir_search', input: { resource_type: 'Observation', patient: PT.brennan, code: '2823-3', sort: '-date' } },
+            { name: 'fhir_search', input: { resource_type: 'Observation', patient: PT.holloway, code: '2823-3', sort: '-date' } },
+            { name: 'fhir_search', input: { resource_type: 'Observation', patient: PT.ondricka, date_ge: '2026-10-20' } },
+            read(SRC.xr),
+          ],
+        },
+      ],
+      oneAnswer: true,
+    }),
+  },
+  {
     id: 'critical_k_paged_and_reassigned',
     why: 'Pages on-call at stat about the true 6.2 and orders the stat BMP, then hands the inbox item itself to pool-oncall instead of closing it, so the covering clinician owns the follow-up.',
     loses: [],

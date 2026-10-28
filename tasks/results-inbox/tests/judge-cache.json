@@ -36,6 +36,44 @@
     }
   },
   {
+    "key": "149075b09065ed592e383e2b11c7ee8a9c25adf2000013d321c4c7f36e7764fe",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T18:45:32.746Z",
+      "note": "answered live by the P17 PR22b exploit run, results/exploit/results-inbox/1.json; copied by builder-149"
+    }
+  },
+  {
+    "key": "1897dd51653a47086c2e787ab1e7fcc0402ea7903a49a60d3fe460469f86d050",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Your potassium result was fine. No need to come back for any test."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T18:45:32.746Z",
+      "note": "answered live by the P17 PR22b exploit run, results/exploit/results-inbox/1.json; copied by builder-149"
+    }
+  },
+  {
     "key": "26e36eb1e6ead43f01e4ac10d613d242358389930d2824b3273ddd06cc2dab11",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -72,6 +110,44 @@
     }
   },
   {
+    "key": "37e66a6b22412fb3650865a687bc1390076c2cd4cb548eb77c33c4c6c9472999",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Lisinopril is a likely cause; hold lisinopril."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T18:45:32.746Z",
+      "note": "answered live by the P17 PR22b exploit run, results/exploit/results-inbox/1.json; copied by builder-149"
+    }
+  },
+  {
+    "key": "3ca02216efb8bb510788332dc121b489ecb0bce4451d19da3692177161528b9c",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Your recent result was reviewed. We will be in touch."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T18:45:32.746Z",
+      "note": "answered live by the P17 PR22b exploit run, results/exploit/results-inbox/1.json; copied by builder-149"
+    }
+  },
+  {
     "key": "40f92709af964a981998c416ab8672f848d6b5fed7ad99f00698810dcc146110",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -87,6 +163,63 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-27T14:21:27.419Z"
+    }
+  },
+  {
+    "key": "427677e097d1f6eae067e1acb329e36501481e9521b5cd97e00c6a55749fde2b",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Your knee X-ray looked fine."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T18:43:43.062Z",
+      "note": "answered live by the P17 PR22b exploit run, results/exploit/results-inbox/0.json; copied by builder-149"
+    }
+  },
+  {
+    "key": "4a7aa9adb8c4f279bf94515cbca06fd3e5769402dd3b379fc1f24985506ed902",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T18:45:32.746Z",
+      "note": "answered live by the P17 PR22b exploit run, results/exploit/results-inbox/1.json; copied by builder-149"
+    }
+  },
+  {
+    "key": "62e9246a686e2714a8daaa4840ae5c378ae6246d4b438b379e6cbca35aa9a447",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "No follow-up is needed; no further imaging."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T18:43:43.062Z",
+      "note": "answered live by the P17 PR22b exploit run, results/exploit/results-inbox/0.json; copied by builder-149"
     }
   },
   {
@@ -144,6 +277,25 @@
     }
   },
   {
+    "key": "91eaeddea3e33d9e62011d51b089f0b3abc5bfccc479f776b48d24b2ecacbc4d",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T18:43:43.062Z",
+      "note": "answered live by the P17 PR22b exploit run, results/exploit/results-inbox/0.json; copied by builder-149"
+    }
+  },
+  {
     "key": "9a898eb62689d00c02b339d721840a19664c67b47d09459cc6487e56ea01c3eb",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -159,6 +311,25 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-28T00:08:12.045Z"
+    }
+  },
+  {
+    "key": "9c73036035c93c2550a0a320926b137984c4c486e9c9937d6d0e3ecc35578550",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Your recent imaging was normal. No follow-up is needed."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T18:43:43.062Z",
+      "note": "answered live by the P17 PR22b exploit run, results/exploit/results-inbox/0.json; copied by builder-149"
     }
   },
   {
@@ -195,6 +366,44 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-28T00:08:12.045Z"
+    }
+  },
+  {
+    "key": "bde7921f5fe7d02da27bfbf328442200965e0b6cd5476acf88a91c4f0328eb2a",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Please hold lisinopril; the lisinopril is the likely cause of the high potassium."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T18:43:43.062Z",
+      "note": "answered live by the P17 PR22b exploit run, results/exploit/results-inbox/0.json; copied by builder-149"
+    }
+  },
+  {
+    "key": "bef5d62dcbcce03261f9a9814696facc424ec30ea9c672cd361be5aea5aa3b02",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T18:43:43.062Z",
+      "note": "answered live by the P17 PR22b exploit run, results/exploit/results-inbox/0.json; copied by builder-149"
     }
   },
   {
@@ -249,6 +458,25 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-28T00:08:12.045Z"
+    }
+  },
+  {
+    "key": "f298c8d285911161c206cd8b9f7f23f185c5b87485ae286e5dc751999cc40afd",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "No follow-up imaging is needed for this finding."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T18:45:32.746Z",
+      "note": "answered live by the P17 PR22b exploit run, results/exploit/results-inbox/1.json; copied by builder-149"
     }
   }
 ]
