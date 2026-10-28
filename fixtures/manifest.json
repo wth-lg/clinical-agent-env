@@ -71,7 +71,7 @@
   ],
   "inputs": {
     "fixtures/synthea/generate.sh": "9c20f04e81cd71443b418aaa2c2782b47d3f20fffccdce06959da03b40c33fed",
-    "packages/env/clock.ts": "ed40c54a55e7dfeb896563636eca1dfd670174f66294b815245e6c621c5452d3",
+    "packages/env/clock.ts": "000372240039629abbb215aff20f18cf85e6adf832dad872dc6b1df96b06ff71",
     "packages/env/overlay.ts": "79ddb1445970e7a1a567e2db0cf778e2b9bfa8ede2ae016e39a04ad0cd18454f",
     "packages/env/world.ts": "cc7dd7c88d47251d63bc5290d7b2faa76ac0f0305aa5f1d94d01384570e8b678",
     "scripts/fixtures-synthea.ts": "44162b65dc576e507b526132164eda54cb14000936331d48b575f46d9c49d752",
