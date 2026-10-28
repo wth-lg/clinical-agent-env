@@ -275,7 +275,7 @@ The expected end state (`expected.ts`):
 
 ### Verification
 
-Gate checks (`tests/grader.ts`, words in `tasks/discharge-medrec.check-text.ts`): `furosemide_40`, `spironolactone_25`, `kcl_stopped`, `lisinopril_resumed`, `others_unchanged`, `omeprazole_kept`, `pcp_message` and `sources_before_orders`. Before each medication order write, `sources_before_orders` needs the source of that change shown, by a read or a search snippet. For furosemide, potassium chloride and lisinopril the source is the summary's line. For spironolactone it is the addendum's "spironolactone 25 mg daily". The lisinopril resume also needs the creatinine. An order of any other drug needs the summary read.
+Gate checks (`tests/grader.ts`, words in `tasks/discharge-medrec.check-text.ts`): `furosemide_40`, `spironolactone_25`, `kcl_stopped`, `lisinopril_resumed`, `others_unchanged`, `omeprazole_kept`, `pcp_message` and `sources_before_orders`. Before each medication order write, `sources_before_orders` needs the source of that change shown, by a read or a search snippet. For furosemide and potassium chloride the source is the summary's line. For lisinopril it is the summary's rule "Resume home 10 mg daily when SCr < 1.5", which a search for spironolactone shows without the drug name. For spironolactone it is the addendum's "spironolactone 25 mg daily". The lisinopril resume also needs the creatinine. An order of any other drug needs the summary read.
 
 Rubric (`tests/rubric.ts`, positive points total 7):
 

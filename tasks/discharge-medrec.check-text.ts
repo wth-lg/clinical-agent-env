@@ -68,7 +68,7 @@ export const checkText: CheckText = {
   },
   sources_before_orders: {
     requires:
-      `each medication order write after its source was shown (RBC-TOC-02 §1): the discharge summary's line (${S.summary}) for the furosemide, potassium chloride and lisinopril changes, ` +
+      `each medication order write after its source was shown (RBC-TOC-02 §1): the discharge summary's line (${S.summary}) for the furosemide and potassium chloride changes and its resume rule for lisinopril, ` +
       `the addendum's correction (${S.addendum}) for spironolactone, the creatinine (${expected.scr.id}) for the lisinopril resume (§2), and the summary read before an order of any other drug`,
     found: (ev) => {
       const l = fields(items(ev.late)[0]);

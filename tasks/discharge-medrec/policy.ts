@@ -64,13 +64,14 @@ export function derive(world: WorldView): Json {
   const unchanged: string[] = [];
   const notOrdered: string[] = [];
   const addressed = new Set<string>();
-  // The summary line each change comes from, unless a correction rules that drug (§1).
+  // The summary line each change comes from, unless a correction rules that drug (§1); for a
+  // conditional resume, the rule alone, which a snippet can show without the drug's name.
   const ruling: Record<string, string> = {};
   for (const line of lines) {
     const drug = named(line);
     addressed.add(drug);
     const fix = corrections.find((c) => named(c) === drug);
-    const from = () => { if (!fix) ruling[drug.replace(' ', '_')] = line; };
+    const from = (text = line) => { if (!fix) ruling[drug.replace(' ', '_')] = text; };
     const mg = fix ? mgOf(fix) : mgOf(line);
     const sub = /formulary substitution for home (\w+)/i.exec(line);
     if (sub) {
@@ -83,11 +84,11 @@ export function derive(world: WorldView): Json {
       out[drug.replace(' ', '_')] = { request: ref(one(drug)), action: 'stop' };
       from();
     } else if (/resume home (\d+) mg daily when SCr < (\d+(?:\.\d+)?)/i.test(line)) {
-      const [, dose, limit] = /resume home (\d+) mg daily when SCr < (\d+(?:\.\d+)?)/i.exec(line)!;
+      const [rule, dose, limit] = /resume home (\d+) mg daily when SCr < (\d+(?:\.\d+)?)/i.exec(line)!;
       const value = scr.valueQuantity!.value!;
       out.scr = { id: ref(scr), mg_dl: value, threshold: Number(limit) };
       out[drug] = { request: ref(one(drug)), action: value < Number(limit) ? 'resume' : 'task', daily_mg: Number(dose), per_day: 1 };
-      from();
+      from(rule);
     } else if (/:\s*start\b/i.test(line)) {
       out[drug] = { request: chart(drug)[0] ? ref(chart(drug)[0]!) : null, action: 'start', daily_mg: mg, per_day: 1 };
       from();

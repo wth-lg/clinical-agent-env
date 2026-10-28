@@ -144,7 +144,8 @@ const gates: Check[] = [
     traces_to: 'RBC-TOC-02 §1',
     decisive_ids: [expected.sources.summary, expected.sources.addendum, expected.scr.id],
     // Every medication order write needs the source of its change shown before it (exposure.ts
-    // shows(): a search_notes snippet or a fhir_read): the summary line that makes the change, or
+    // shows(): a search_notes snippet or a fhir_read): the summary line that makes the change (for
+    // lisinopril its resume rule), or
     // the addendum's correction for spironolactone, and for the lisinopril resume also the
     // creatinine exposed. A write to any other drug needs the summary exposed. The declared
     // phrase lets attribution tell a correction never shown (retrieval) from one shown and not

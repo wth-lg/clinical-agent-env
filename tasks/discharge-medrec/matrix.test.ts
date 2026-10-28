@@ -58,6 +58,27 @@ describe('the addendum correction as the read tools show it', async () => {
     expect(firstShown(steps, expected.sources.summary, expected.sources.lines.potassium_chloride)).toBe(2);
     expect(firstShown(steps, expected.sources.summary, expected.sources.lines.lisinopril)).toBe(2);
   });
+  it("the drug-name snippets show every source without exposing either document (alternative natural_snippet_queries)", () => {
+    const steps = stepsFor(...['furosemide', 'potassium chloride', 'lisinopril', 'spironolactone'].map((query) => ({ name: 'search_notes', input: { query, patient: PT } })));
+    expect(steps.flatMap((s) => s.exposed_ids)).not.toContain(expected.sources.summary);
+    expect(steps.flatMap((s) => s.exposed_ids)).not.toContain(ADD);
+    expect(firstShown(steps, expected.sources.summary, expected.sources.lines.furosemide)).toBe(3);
+    expect(firstShown(steps, expected.sources.summary, expected.sources.lines.potassium_chloride)).toBe(2);
+    expect(firstShown(steps, expected.sources.summary, expected.sources.lines.lisinopril)).toBe(4);
+    expect(firstShown(steps, ADD, PHRASE)).toBe(4);
+  });
+  it("the lisinopril source is the resume rule: no drug-name snippet shows the whole line, and 'spironolactone' shows the rule cut before 'Lisinopril:'", () => {
+    const steps = stepsFor(...['lisinopril', 'spironolactone', 'potassium chloride'].map((query) => ({ name: 'search_notes', input: { query, patient: PT } })));
+    expect(expected.sources.lines.lisinopril).toBe('Resume home 10 mg daily when SCr < 1.5');
+    expect(firstShown(steps, expected.sources.summary, 'Lisinopril: held for AKI. Resume home 10 mg daily when SCr < 1.5 on post-discharge labs.')).toBe(null);
+    expect(steps[1]!.shown[expected.sources.summary]).toMatch(/^…held for AKI\. Resume home 10 mg daily when SCr < 1\.5/);
+    expect(firstShown(steps, expected.sources.summary, 'Lisinopril: held for AKI')).toBe(null);
+  });
+  it("the 'furosemide' snippet cuts the summary before the furosemide dose, so it shows no source line (the FAIL is right)", () => {
+    const steps = stepsFor({ name: 'search_notes', input: { query: 'furosemide', patient: PT } });
+    expect(steps[0]!.shown[expected.sources.summary]).toMatch(/Discharge medications: - Furos…$/);
+    for (const line of Object.values(expected.sources.lines)) expect(firstShown(steps, expected.sources.summary, line)).toBe(null);
+  });
 });
 
 describe('sources_before_orders reads the text shown', () => {
@@ -117,6 +138,12 @@ describe('sources_before_orders ties every medication order write to its source'
   it('fails the lisinopril resume when the summary line was shown and the creatinine was not, citing RBC-TOC-02 §2', async () => {
     expect(await late(ctxWith('lisinopril', [{ tool: 'search_notes', shown: { [SUM]: `- ${L.lisinopril} -` } }]))).toEqual([{ change: 'lisinopril', id: SCR, line: null, policy: 'RBC-TOC-02 §2', step: 2 }]);
     expect((await grade(ctxWith('lisinopril', [{ tool: 'search_notes', shown: { [SUM]: `- ${L.lisinopril} -` } }, { exposed_ids: [SCR] }])))!.met).toBe(true);
+  });
+  it("passes the lisinopril resume once a snippet showed the resume rule cut before 'Lisinopril:', and fails it on the hospital course alone", async () => {
+    const rule = { tool: 'search_notes', referenced_ids: [SUM], shown: { [SUM]: '…held for AKI. Resume home 10 mg daily when SCr < 1.5 on post-discharge labs. - Spironolactone 12.5 mg by mouth daily: start…' } };
+    expect((await grade(ctxWith('lisinopril', [rule, { exposed_ids: [SCR] }])))!.met).toBe(true);
+    const course = { tool: 'search_notes', referenced_ids: [SUM], shown: { [SUM]: '…with diuresis and lisinopril, and lisinopril was held. Euvolemic at discharge…' } };
+    expect(await late(ctxWith('lisinopril', [course, { exposed_ids: [SCR] }]))).toEqual([{ change: 'lisinopril', id: SUM, line: L.lisinopril, policy: 'RBC-TOC-02 §1', step: 3 }]);
   });
   it('fails an order of any other drug written before the summary was exposed', async () => {
     expect(await late(ctxWith('panto', [{ tool: 'search_notes', referenced_ids: [SUM], shown: { [SUM]: '…Pantoprazole 40 mg by mouth daily (formulary substitution for home omeprazole)…' } }]))).toEqual([{ change: 'other', id: SUM, line: null, policy: 'RBC-TOC-02 §1', step: 2 }]);
