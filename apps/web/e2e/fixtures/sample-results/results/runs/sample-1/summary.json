@@ -119,13 +119,13 @@
     },
     "crc-care-gap": {
       "task_versions": [
-        "d9c62f20be9dec1030e53d477e0708e3875a1bd87329e3f6af9fd7f5b1fc8357"
+        "c95802ba0d77bc3acc5fd1d7a6f9de52416ab80bba70bf7a29b8cd846cf40b7d"
       ],
       "env_versions": [
         "c9f2ead6f32dda1fbc01d54f85300f8489b15a759bfd343b429794a95627446c"
       ],
       "grader_task_versions": [
-        "743d2b20f16d03a15af8fb3314d5b388c00efb50e3e7cd45a29f9c86739b4e48"
+        "8428b96a324e66c067db7bbab2ad518bc829cf174960888e50f5186c89109fb0"
       ],
       "records": 12,
       "trials": 12,
@@ -184,7 +184,7 @@
         "shared": {
           "check": "fit_orders",
           "count": 5,
-          "found": "{\"extra\":[],\"missing\":[\"Patient/pt-0017\"],\"ordered\":{\"Patient/pt-0018\":[\"ServiceRequest/sr-t0001\"],\"Patient/pt-0019\":[\"ServiceRequest/sr-t0005\"],\"Patient/pt-0022\":[\"ServiceRequest/sr-t0007\"],\"Patient/pt-0023\":[\"ServiceRequest/sr-t0003\"]},\"want\":[\"Patient/pt-0017\",\"Patient/pt-0018\",\"Patient/pt-0019\",\"Patient/pt-0022\",\"Patient/pt-0023\"]}",
+          "found": "{\"extra\":[],\"late\":[],\"missing\":[\"Patient/pt-0017\"],\"ordered\":{\"Patient/pt-0018\":[\"ServiceRequest/sr-t0001\"],\"Patient/pt-0019\":[\"ServiceRequest/sr-t0005\"],\"Patient/pt-0022\":[\"ServiceRequest/sr-t0007\"],\"Patient/pt-0023\":[\"ServiceRequest/sr-t0003\"]},\"period_end\":\"2026-12-31\",\"want\":[\"Patient/pt-0017\",\"Patient/pt-0018\",\"Patient/pt-0019\",\"Patient/pt-0022\",\"Patient/pt-0023\"]}",
           "found_count": 1,
           "found_values": 5
         },
