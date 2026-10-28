@@ -12,7 +12,7 @@
     "discharge-medrec": "c350309a8266812ad742ccc3bfd2b9f815ffca2d91ad8668a3f530fbac04594c",
     "message-queue": "771d5fe97330c334779944ddd522cfab5a07ff3fcf522b127e78ba6e8b3118ba",
     "renal-dose-review": "edbd69c36bf647e33b8184775be7c7925808415b63e77fb91a14e5215e462453",
-    "results-inbox": "4523b162ec19afa6bdedb2d7a108a9bf041e93280408401f3602c998f0ce136d"
+    "results-inbox": "e76830e6c546d17b8b6658294fa60eca029daaa7190cfaaaff8e83be91125a8b"
   },
   "env_versions": {
     "contrast-ct-prep": "dd52eab51c1b400d1147fa16562ce98eb6b13e39f104598a265ae6f17ad460fd",
@@ -28,7 +28,7 @@
     "discharge-medrec": "aa0c2ff264e791a6acf8de206cc50db7e69c0a9ed9d352b03512ae85e2469942",
     "message-queue": "b7c8a10c7ff1773294f9a89498deaaa2cb2421f283531617d7c3e566c3e98430",
     "renal-dose-review": "855fdd80d22529258f8ef6f6248ebb8c0d4874fdfbddf30b2a14606056da7c3b",
-    "results-inbox": "eef445b512e47c52bd2cae75439f3c84698cb93dab8319df3a2e102a757bdef2"
+    "results-inbox": "55d298eced962727520b72c540635852e2bf779bc96e79c960c2baa7e01a709c"
   },
   "batches": []
 }

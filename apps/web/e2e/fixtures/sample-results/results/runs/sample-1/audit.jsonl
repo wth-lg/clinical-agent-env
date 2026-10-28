@@ -22,6 +22,6 @@
 {"trial":"renal-dose-review/8","outcome":"FAIL","taxonomy":"retrieval","model_fault":"yes","decisive_step":9,"evidence_ids":["Observation/obs-t1-scr-1020","Observation/obs-t1-wt-1020"],"llm_auditor_agrees":true}
 {"trial":"renal-dose-review/9","outcome":"FAIL","taxonomy":"reasoning","model_fault":"yes","decisive_step":10,"evidence_ids":["Observation/obs-t1-scr-1020","Observation/obs-t1-wt-1020"],"llm_auditor_agrees":true}
 {"trial":"renal-dose-review/10","outcome":"FAIL","taxonomy":"reasoning","model_fault":"yes","decisive_step":10,"evidence_ids":["Observation/obs-t1-scr-1020","Observation/obs-t1-wt-1020"],"llm_auditor_agrees":true}
-{"trial":"results-inbox/8","outcome":"FAIL","taxonomy":"retrieval","model_fault":"yes","decisive_step":40,"evidence_ids":["DiagnosticReport/dr-t2-ct-0604","DocumentReference/doc-t2-hp-lm58"],"llm_auditor_agrees":true}
-{"trial":"results-inbox/9","outcome":"FAIL","taxonomy":"reasoning","model_fault":"yes","decisive_step":19,"evidence_ids":["DiagnosticReport/dr-t2-ct-0604","DocumentReference/doc-t2-hp-lm58"],"llm_auditor_agrees":true}
-{"trial":"results-inbox/10","outcome":"FAIL","taxonomy":"reasoning","model_fault":"yes","decisive_step":44,"evidence_ids":["DiagnosticReport/dr-t2-ct-0604","DocumentReference/doc-t2-hp-lm58"],"llm_auditor_agrees":true}
+{"trial":"results-inbox/8","outcome":"FAIL","taxonomy":"retrieval","model_fault":"yes","decisive_step":41,"evidence_ids":["DiagnosticReport/dr-t2-ct-0604","DocumentReference/doc-t2-hp-lm58"],"llm_auditor_agrees":true}
+{"trial":"results-inbox/9","outcome":"FAIL","taxonomy":"reasoning","model_fault":"yes","decisive_step":20,"evidence_ids":["DiagnosticReport/dr-t2-ct-0604","DocumentReference/doc-t2-hp-lm58"],"llm_auditor_agrees":true}
+{"trial":"results-inbox/10","outcome":"FAIL","taxonomy":"reasoning","model_fault":"yes","decisive_step":45,"evidence_ids":["DiagnosticReport/dr-t2-ct-0604","DocumentReference/doc-t2-hp-lm58"],"llm_auditor_agrees":true}
