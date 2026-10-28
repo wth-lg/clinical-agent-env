@@ -6,13 +6,13 @@
   "tasks": {
     "contrast-ct-prep": {
       "task_versions": [
-        "26061adae109a37165d9532c39d63c7d3b5eae4fc8e56ec0ae526c24eeeb5df8"
+        "872f707fb045d6d68a5300e7ae435d0b72bcf27c468bb00bfa9c61972b0a84d0"
       ],
       "env_versions": [
         "dd52eab51c1b400d1147fa16562ce98eb6b13e39f104598a265ae6f17ad460fd"
       ],
       "grader_task_versions": [
-        "47936ffdf8b353a1ad979acc994a52fab1271f06b0ecd771f0a573052dcdff9a"
+        "26981dabf2b9f6cb08a9463f82eecbabf454866a531c6a52e78baea880ccdfae"
       ],
       "records": 1,
       "trials": 1,
@@ -103,13 +103,13 @@
     },
     "crc-care-gap": {
       "task_versions": [
-        "78c7b9fcee2d0d2c4c67efacadad1193af98ddef315599828c411a7ebdfd9617"
+        "abcf47ad8571787e3d20cebd792a9ead39c30b6a2d1c6fa97bc15bc00a23c87c"
       ],
       "env_versions": [
-        "c9f2ead6f32dda1fbc01d54f85300f8489b15a759bfd343b429794a95627446c"
+        "2cb743885fe61f5a11f46367ed9307dda803c0460dbe2f4acf295827cbb1cfc1"
       ],
       "grader_task_versions": [
-        "e8f0c29b2090e97335ad97d1e0c04f8a14f3f8c3def1574cc6d71704bad22b27"
+        "ecee8028f69bf56ef1e200934a4848042bf244f9815d68bc418470b2735aa611"
       ],
       "records": 1,
       "trials": 1,
@@ -164,7 +164,7 @@
         "shared": {
           "check": "fit_orders",
           "count": 1,
-          "found": "{\"extra\":[],\"missing\":[\"Patient/pt-0017\"],\"ordered\":{\"Patient/pt-0018\":[\"ServiceRequest/sr-t0001\"],\"Patient/pt-0019\":[\"ServiceRequest/sr-t0005\"],\"Patient/pt-0022\":[\"ServiceRequest/sr-t0007\"],\"Patient/pt-0023\":[\"ServiceRequest/sr-t0003\"]},\"want\":[\"Patient/pt-0017\",\"Patient/pt-0018\",\"Patient/pt-0019\",\"Patient/pt-0022\",\"Patient/pt-0023\"]}",
+          "found": "{\"extra\":[],\"late\":[],\"missing\":[\"Patient/pt-0017\"],\"ordered\":{\"Patient/pt-0018\":[\"ServiceRequest/sr-t0001\"],\"Patient/pt-0019\":[\"ServiceRequest/sr-t0005\"],\"Patient/pt-0022\":[\"ServiceRequest/sr-t0007\"],\"Patient/pt-0023\":[\"ServiceRequest/sr-t0003\"]},\"period_end\":\"2026-12-31\",\"want\":[\"Patient/pt-0017\",\"Patient/pt-0018\",\"Patient/pt-0019\",\"Patient/pt-0022\",\"Patient/pt-0023\"]}",
           "found_count": 1,
           "found_values": 1
         },
@@ -200,13 +200,13 @@
     },
     "discharge-medrec": {
       "task_versions": [
-        "2b9442ca1f69010532d5289b09b0f8bf8bb421f6a85cc0650a55989f0bb9cfaf"
+        "ae57d754dc2d417d2d9798c2a73ac1cfadbddc6c04387c38d7448f4c7d6f06c8"
       ],
       "env_versions": [
         "682033ef2b6763eca76c0e8b48d76c6f766d3e6cc47cca2da118438dcfc1a316"
       ],
       "grader_task_versions": [
-        "39487a42ca92a2133dde1ca68594787eef8ae1c01fe659f9942d61e3b63b0dee"
+        "d1f06ee2cc7adc49e25fd0baa20f9d954e45fb1b2f94fec3e2eaf6ccbaa79b44"
       ],
       "records": 1,
       "trials": 0,
@@ -283,13 +283,13 @@
     },
     "message-queue": {
       "task_versions": [
-        "f86d3cf2708a5c79a521a1989c089dca9410978be0ff7aa1e07f10b01302086c"
+        "5f0f597aaeb3f167078878e2d4629c6d33d5168f60e938e851203e835f6bb667"
       ],
       "env_versions": [
         "d4c4429bdbbb3432999393e2b7216ce0a311bd54ddd60e9bf34711e870dc96d0"
       ],
       "grader_task_versions": [
-        "c3c17c10bd1e5c92cb820cb2561f2b2a4eee5064a3a0640a48af725b283b6982"
+        "fe409eacff7319a606efa7cec1bc0bd72d76828536decae00769222069a538aa"
       ],
       "records": 1,
       "trials": 1,
@@ -380,13 +380,13 @@
     },
     "renal-dose-review": {
       "task_versions": [
-        "697495ffb3ac6d1f9b23cbcc932daed29bbe655ab95d698fb718fcc3e8430495"
+        "618b27375cba413decce712c4638db4f94d88a340924b63e03a00eca5122672f"
       ],
       "env_versions": [
         "465a5ba41710a820e6fb7648015f23065ba70ceb8ef5d3b2fd843c3d17b6682e"
       ],
       "grader_task_versions": [
-        "eccd489f55a61bc396276267e0487de8f522537adfa2d2c4c6be4907e6cb5394"
+        "9e1f900e1856c053fe96f1828802ebd05ca3a5a31b8412201630f394b24d6533"
       ],
       "records": 5,
       "trials": 4,
@@ -415,9 +415,9 @@
       "grader_error": 0,
       "grader_error_history": 0,
       "requeued": 0,
-      "mean_score": 0.5961538461538461,
+      "mean_score": 0.5,
       "mean_cost_usd": 1.072,
-      "raw_mean_score": 0.5,
+      "raw_mean_score": 0.40384615384615385,
       "gate_fraction": 0.7142857142857143,
       "pass_no_harm": 1,
       "pass_no_harm_rate": 0.25,

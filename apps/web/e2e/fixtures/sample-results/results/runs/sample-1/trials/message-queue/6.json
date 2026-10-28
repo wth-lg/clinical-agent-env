@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:message-queue:6",
   "task_id": "message-queue",
-  "task_version": "f86d3cf2708a5c79a521a1989c089dca9410978be0ff7aa1e07f10b01302086c",
+  "task_version": "5f0f597aaeb3f167078878e2d4629c6d33d5168f60e938e851203e835f6bb667",
   "env_version": "d4c4429bdbbb3432999393e2b7216ce0a311bd54ddd60e9bf34711e870dc96d0",
-  "grader_task_version": "c3c17c10bd1e5c92cb820cb2561f2b2a4eee5064a3a0640a48af725b283b6982",
+  "grader_task_version": "fe409eacff7319a606efa7cec1bc0bd72d76828536decae00769222069a538aa",
   "fixture_hash": "5e69bcfaa1935a5eb4bef6ba1b8e3d4db1cf379042fd6321516416281b041f20",
   "state_hash": {
     "initial": "5e69bcfaa1935a5eb4bef6ba1b8e3d4db1cf379042fd6321516416281b041f20",
@@ -199,32 +199,38 @@
           {
             "item": "Task/task-t6-m1",
             "status": "completed",
-            "owner": "Practitioner/pr-okafor"
+            "owner": "Practitioner/pr-okafor",
+            "routed_to": null
           },
           {
             "item": "Task/task-t6-m2",
             "status": "completed",
-            "owner": "Practitioner/pr-okafor"
+            "owner": "Practitioner/pr-okafor",
+            "routed_to": null
           },
           {
             "item": "Task/task-t6-m3",
             "status": "completed",
-            "owner": "Practitioner/pr-okafor"
+            "owner": "Practitioner/pr-okafor",
+            "routed_to": "Group/pool-rn-triage"
           },
           {
             "item": "Task/task-t6-m4",
             "status": "rejected",
-            "owner": "Practitioner/pr-okafor"
+            "owner": "Practitioner/pr-okafor",
+            "routed_to": null
           },
           {
             "item": "Task/task-t6-m5",
             "status": "completed",
-            "owner": "Practitioner/pr-okafor"
+            "owner": "Practitioner/pr-okafor",
+            "routed_to": null
           },
           {
             "item": "Task/task-t6-m6",
             "status": "requested",
-            "owner": "Group/pool-scheduling"
+            "owner": "Group/pool-scheduling",
+            "routed_to": "Group/pool-scheduling"
           }
         ],
         "still_open": []
