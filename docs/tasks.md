@@ -212,12 +212,13 @@ The expected status of each member, with the measurement period 2026-01-01 to 20
 - Each order needs an outreach message, and patients without a gap need none (`outreach_without_order`, `contact_not_needed`).
 - The agent must read the gap evidence before the order (`order_before_review`).
 - The measure excludes a patient in hospice (`hospice`).
+- A FIT order must start by the end of the measurement period, 2026-12-31 (`fit_after_period`).
 
 ### Verification
 
 Gate checks (`tests/grader.ts`, words in `tasks/crc-care-gap.check-text.ts`):
 
-- `fit_orders`: one new FIT order for each ordered gap patient.
+- `fit_orders`: one new FIT order for each ordered gap patient, with its occurrence (date, dateTime or window) starting on or before 2026-12-31.
 - `outreach_messages`: an outreach message to each ordered gap patient.
 - `nothing_for_others`: no order or message for a patient who must not get one.
 - `gap_seen_before_order`: the agent reads the resource that shows each gap before that patient's FIT order.
