@@ -8,6 +8,7 @@
 // closed card is still there when the card opens.
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+import { browse } from './browse.ts';
 import { sampleBase } from './fixtures/sample-results/sample.ts';
 
 const TASK = 'renal-dose-review';
@@ -23,12 +24,7 @@ const CONTENT: Record<(typeof TABS)[number], string> = {
 };
 
 async function open(page: Page, query: string) {
-  await page.goto(new URL(`./?view=tasks&task=${TASK}${query}`, await sampleBase(test.info().project.use.baseURL!)).href);
-  const gate = page.getByRole('button', { name: 'Browse without a key' });
-  const nav = page.getByRole('navigation', { name: 'Views' });
-  await expect(gate.or(nav)).toBeVisible();
-  if (await gate.isVisible()) await gate.click();
-  await expect(nav).toBeVisible();
+  await browse(page, new URL(`./?view=tasks&task=${TASK}${query}`, await sampleBase(test.info().project.use.baseURL!)).href);
 }
 
 const card = (page: Page) => page.locator(`[data-testid="task-card"][data-task="${TASK}"]`);
@@ -139,11 +135,7 @@ test('the Grader validation panel does not repeat its tab name', async ({ page }
 
 test('an oracle result started on a closed card is still shown after the card opens', async ({ page }) => {
   test.setTimeout(180_000);
-  await page.goto(new URL('./?view=tasks', await sampleBase(test.info().project.use.baseURL!)).href);
-  const gate = page.getByRole('button', { name: 'Browse without a key' });
-  const nav = page.getByRole('navigation', { name: 'Views' });
-  await expect(gate.or(nav)).toBeVisible();
-  if (await gate.isVisible()) await gate.click();
+  await browse(page, new URL('./?view=tasks', await sampleBase(test.info().project.use.baseURL!)).href);
   await card(page).getByTestId('validation').getByRole('button', { name: 'Run reference solution' }).click();
   await expect(card(page).getByTestId('oracle-result')).toHaveAttribute('data-outcome', 'PASS', { timeout: 120_000 });
   await card(page).getByRole('button', { expanded: false }).click();

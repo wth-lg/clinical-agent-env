@@ -1,8 +1,11 @@
 // Top bar and polish (pre-audit U10, P17j JU12, the part that needs neither JU8 nor JU10): one
 // key-state chip with Add key; the pinned clock in words; the local-run card at the width of the
 // cards above it; each tool row with the first sentence of its description; and a key that does
-// not start with sk-ant- refused in the page, before any network request.
+// not start with sk-ant- refused in the page, before any network request. Environment gets its own
+// axe check, light and dark (verifier-phase-P17j-retro-JU12-1 D2).
+import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+import { browseFrom, GATE } from './browse.ts';
 import { readFileSync } from 'node:fs';
 import { firstSentence, formatClock } from '../src/data/text.ts';
 import { sampleBase } from './fixtures/sample-results/sample.ts';
@@ -11,15 +14,10 @@ const NOW = (JSON.parse(readFileSync(new URL('../../../fixtures/manifest.json', 
 
 async function openApp(page: Page, path: string) {
   await page.goto(new URL(path, await sampleBase(test.info().project.use.baseURL!)).href);
-  await expect(page.getByRole('button', { name: 'Browse without a key' }).or(page.getByRole('navigation', { name: 'Views' }))).toBeVisible();
+  await expect(page.getByRole('button', { name: GATE }).or(page.getByRole('navigation', { name: 'Views' }))).toBeVisible();
 }
 
-async function browse(page: Page, path: string) {
-  await openApp(page, path);
-  const gate = page.getByRole('button', { name: 'Browse without a key' });
-  if (await gate.isVisible()) await gate.click();
-  await expect(page.getByRole('navigation', { name: 'Views' })).toBeVisible();
-}
+const browse = browseFrom(sampleBase);
 
 test('the top bar has one key-state chip, with Add key when there is no key', async ({ page }) => {
   await browse(page, './?view=overview');
@@ -45,6 +43,17 @@ test('Environment shows the pinned clock in words too', async ({ page }) => {
   await browse(page, './?view=environment');
   await expect(page.getByTestId('pinned-clock')).toHaveText(formatClock(NOW));
   await expect(page.getByTestId('pinned-clock')).toHaveAttribute('title', NOW);
+});
+
+test('Environment: axe finds nothing serious or critical, light and dark (verifier-phase-P17j-retro-JU12-1 D2)', async ({ page }) => {
+  for (const scheme of ['light', 'dark'] as const) {
+    await page.emulateMedia({ colorScheme: scheme });
+    await browse(page, './?view=environment');
+    await expect(page.getByTestId('tool').first()).toBeVisible();
+    await expect(page.getByTestId('pinned-clock')).toBeVisible();
+    const bad = (await new AxeBuilder({ page }).analyze()).violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => v.id);
+    expect(bad, scheme).toEqual([]);
+  }
 });
 
 test('the local-run card lines up with the cards above it', async ({ page }) => {

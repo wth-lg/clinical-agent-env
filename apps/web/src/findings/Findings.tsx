@@ -8,7 +8,7 @@ import { Marked } from 'marked';
 import { useMemo, type Ref } from 'react';
 import { FINAL_PASS_BAND, FINAL_TRIALS_PER_TASK } from '../../../../packages/core/cost.ts';
 import { OUTCOMES } from '../../../../packages/core/outcomes.ts';
-import { runBlock } from '../data/failures.ts';
+import { runBlock, shownFault } from '../data/failures.ts';
 import { checkTextOf, dataUrl, gradingLine, pilotRates, useResults, type RunData } from '../data/results.ts';
 import { Card, formatInterval, GlossaryLink, IntervalRow, markLabel, MarkLegend, markOf, NO_RESULTS, Notice, Page, Swatch } from '../data/ui.tsx';
 import { FaultBox, KindBar, RunBlocked, TopChecks } from './why.tsx';
@@ -66,7 +66,7 @@ function PilotFindings({ run }: { run: RunData }) {
           ))}
         </ul>
         {graded !== null && <p className="text-xs text-ink-muted">{graded}</p>}
-        <MarkLegend marks={[...new Set(run.trials.map((t) => markOf(t.explanation.outcome, t.explanation.fault)))]} />
+        <MarkLegend marks={[...new Set(run.trials.map((t) => markOf(t.explanation.outcome, shownFault(t.explanation))))]} />
         <p className="text-xs text-ink-muted">A pilot sizes the final run and tests the pipeline; its numbers never enter the results. <a href={hrefWith({ view: 'runs', task: null, label: null, trial: null })} onClick={onNav({ view: 'runs', task: null, label: null, trial: null })} className={link}>Open its trials in Runs</a>.</p>
       </div>
     </Card>
@@ -167,7 +167,7 @@ function Charts({ run, blocked }: { run: RunData; blocked: boolean }) {
         <ul className="space-y-1" data-testid="exemplars">
           {exemplars.map(({ o, t }) => (
             <li key={o}>
-              <Swatch mark={markOf(o, t!.explanation.fault)} outcome={o} title={`${o}: ${markLabel(markOf(o, t!.explanation.fault))}`} />
+              <Swatch mark={markOf(o, shownFault(t!.explanation))} outcome={o} title={`${o}: ${markLabel(markOf(o, shownFault(t!.explanation)))}`} />
               <span className="ml-1.5 mr-2 text-ink-muted">{o}</span>
               <a href={hrefWith(exemplar(run, t!))} onClick={onNav(exemplar(run, t!))} className="text-ink underline decoration-line-strong underline-offset-2">{t!.name}</a>
               <span className="ml-2 break-words text-ink-muted">{t!.explanation.reason}</span>
@@ -175,7 +175,7 @@ function Charts({ run, blocked }: { run: RunData; blocked: boolean }) {
             </li>
           ))}
         </ul>
-        <div className="mt-3"><MarkLegend marks={[...new Set(exemplars.map(({ o, t }) => markOf(o, t!.explanation.fault)))]} /></div>
+        <div className="mt-3"><MarkLegend marks={[...new Set(exemplars.map(({ o, t }) => markOf(o, shownFault(t!.explanation))))]} /></div>
       </Card>
     </>
   );

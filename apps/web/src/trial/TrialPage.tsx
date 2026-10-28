@@ -21,17 +21,18 @@ import type { TrialEvent } from '../../../../packages/core/events.ts';
 import { fetchEvents, fullExplanation, useResults, type RunData, type Trial } from '../data/results.ts';
 import { harmItems, safePass, type HarmItem } from '../data/harm.ts';
 import { FaultLabel, GlossaryLink, HarmChip, HashText, Notice, OutcomeChip } from '../data/ui.tsx';
-import { blocksTheRun, runBlock } from '../data/failures.ts';
+import { blocksTheRun, relabelledFrom, runBlock, shownFault } from '../data/failures.ts';
 import { tabTarget } from '../data/tabs.ts';
 import { useTaskList } from '../data/tasks.ts';
 import { MODEL } from '../adapters/ledger-browser.ts';
 import { hrefWith, navigate, onNav, useParams } from '../data/url.ts';
 import { runnerToken } from '../keygate/runner.ts';
-import { Attribution, criterionPhrase, criterionText, FAULT_WORD, LINK, StepLink } from './Attribution.tsx';
+import { Attribution, criterionPhrase, criterionText, FAULT_NOUN, FAULT_WORD, LINK, StepLink } from './Attribution.tsx';
 import { EnvironmentTab, Raw } from './Details.tsx';
 import { Grading } from './Grading.tsx';
 import { returnTo } from './back.ts';
 import { FIRST_NONPASS, resolveTrial } from './resolve.ts';
+import { taskTitle } from '../tasks/title.ts';
 import { trialPlace } from './place.ts';
 import { StateDiff } from './StateDiff.tsx';
 import { internalErrorRow, trajectoryOf, type Row } from './steps.ts';
@@ -191,10 +192,15 @@ function Header({ t, e, rows, onStep, official }: { t: Trial; e: Explanation; ro
   // A fault to show: every non-pass, and a false PASS (GR5, P17j JG5), which the grader decided.
   const nonPass = e.outcome !== 'PASS' || e.fault !== null;
   const failedCall = e.fault === 'env' && e.decisive_step === null && rows !== null ? internalErrorRow(rows) : null;
+  // The Fault row shows the fault the chip shows; when the audit relabelled the trial, the note under
+  // it names the fault the criteria found and the criterion that decided it (UIRETRO-1 M1).
+  const fault = shownFault(e);
+  const from = relabelledFrom(e);
+  const decided = e.deciding && <>, decided by {criterionPhrase(e.deciding.id)} (<GlossaryLink anchor={`criterion-${e.deciding.id}`} className={LINK}>{e.deciding.id}</GlossaryLink>)<span className="block text-xs text-ink-muted"><HashText text={e.deciding.evidence} /></span></>;
   return (
     <section aria-label="Why this trial ended as it did" data-testid="trial-header" className={`min-w-0 rounded-sm border border-line bg-surface p-4 ${nonPass ? `border-l-2 ${official && blocksTheRun(e) ? 'border-l-danger' : 'border-l-line-strong'}` : ''}`}>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <OutcomeChip outcome={e.outcome} fault={e.fault} />
+        <OutcomeChip outcome={e.outcome} fault={shownFault(e)} />
         <HarmChip items={useHarmTexts(t.task, harmItems(t.record))} />
         {nonPass && <FaultLabel e={e} notCountedShown={!e.valid && e.deciding !== null} official={official} />}
         <span className="ml-auto text-xs text-ink-muted" title="Agent and judge cost">${(t.record.cost_usd + (t.record.judge_cost_usd ?? 0)).toFixed(2)}</span>
@@ -209,8 +215,8 @@ function Header({ t, e, rows, onStep, official }: { t: Trial; e: Explanation; ro
       <dl className="mt-3 grid grid-cols-1 gap-x-4 gap-y-1.5 sm:grid-cols-[max-content_minmax(0,1fr)] [&_dd]:min-w-0 [&_dd]:break-words [&_dt]:text-ink-muted">
         <dt>Fault</dt>
         <dd data-testid="detail-fault">
-          {e.fault === null ? 'none: the trial passed' : <GlossaryLink anchor={`fault-${e.fault}`} className={LINK}>{FAULT_WORD[e.fault]}</GlossaryLink>}
-          {e.deciding && <>, decided by {criterionPhrase(e.deciding.id)} (<GlossaryLink anchor={`criterion-${e.deciding.id}`} className={LINK}>{e.deciding.id}</GlossaryLink>)<span className="block text-xs text-ink-muted"><HashText text={e.deciding.evidence} /></span></>}
+          {fault === null ? 'none: the trial passed' : <GlossaryLink anchor={`fault-${fault}`} className={LINK}>{FAULT_WORD[fault]}</GlossaryLink>}
+          {from === null ? decided : <span data-testid="fault-relabelled" className="block text-sm text-ink-muted">The audit relabelled it; the trial's criteria found {FAULT_NOUN[from]} at fault{e.deciding ? decided : '.'}</span>}
         </dd>
         {e.decisive_check && (
           <>
@@ -283,7 +289,8 @@ function useHarmTexts(task: string, items: HarmItem[]): HarmItem[] {
 // small mono text. Words wrap whole, so no token breaks mid-word at 390 px.
 function TrialHeading({ t, run }: { t: Trial; run: RunData }) {
   const { tasks } = useTaskList();
-  const title = tasks?.find((x) => x.id === t.task)?.title ?? t.task;
+  const task = tasks?.find((x) => x.id === t.task);
+  const title = task ? taskTitle(task) : t.task;
   const r = t.record as Trial['record'] & { index?: number; models_returned?: readonly string[]; effort?: string };
   const place = trialPlace(t, run.trials);
   return (

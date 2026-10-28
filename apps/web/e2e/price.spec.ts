@@ -3,18 +3,12 @@
 // one trial (the pilot's median) shows next to them; with no key, "Add key" is a button there that
 // opens the key gate.
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+import { browseFrom } from './browse.ts';
 import { trialBase } from './fixtures/trial/trial.ts';
 import { RUN_SIZES } from '../src/live/types.ts';
 
-async function browse(page: Page, path: string) {
-  await page.goto(new URL(path, await trialBase(test.info().project.use.baseURL!)).href);
-  const gate = page.getByRole('button', { name: 'Browse without a key' });
-  const nav = page.getByRole('navigation', { name: 'Views' });
-  await expect(gate.or(nav)).toBeVisible();
-  if (await gate.isVisible()) await gate.click();
-  await expect(nav).toBeVisible();
-}
+const browse = browseFrom(trialBase);
 
 test('every Run ×n amount reads "at most $X"', async ({ page }) => {
   await browse(page, './?view=live&task=renal-dose-review');

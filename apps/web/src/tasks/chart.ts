@@ -57,16 +57,21 @@ export function taskPatients(resources: Iterable<FhirResource>, task: string): s
 }
 
 // The resource types a chart shows, in the order of its sections.
-export const CHART_TYPES = ['Condition', 'MedicationRequest', 'AllergyIntolerance', 'Observation', 'DiagnosticReport', 'Procedure', 'DocumentReference', 'Task', 'Appointment'] as const;
+// Communication, ServiceRequest and EpisodeOfCare carry what T6, T3 and T2 turn on: the patient
+// messages, the open orders and referrals, and a hospice episode (verifier-phase-P17j-retro-JU10-1 D1).
+export const CHART_TYPES = ['Condition', 'EpisodeOfCare', 'MedicationRequest', 'AllergyIntolerance', 'ServiceRequest', 'Observation', 'DiagnosticReport', 'Procedure', 'DocumentReference', 'Communication', 'Task', 'Appointment'] as const;
 export type ChartType = (typeof CHART_TYPES)[number];
 export const SECTION_TITLE: Readonly<Record<ChartType, string>> = {
   Condition: 'Problems',
+  EpisodeOfCare: 'Episodes of care',
   MedicationRequest: 'Medications',
   AllergyIntolerance: 'Allergies',
+  ServiceRequest: 'Orders and referrals',
   Observation: 'Labs and results',
   DiagnosticReport: 'Reports',
   Procedure: 'Procedures',
   DocumentReference: 'Notes',
+  Communication: 'Messages',
   Task: 'Tasks and inbox items',
   Appointment: 'Appointments',
 };
@@ -78,7 +83,7 @@ export interface ChartLine {
   detail: string;
   status: string;
   date: string;
-  // A note's or report's full text, when the resource carries one (shown as an excerpt that expands).
+  // A note's, report's or message's full text, when the resource carries one (shown as an excerpt that expands).
   body: string;
   // An active, on-hold or open item, listed before the rest of its section.
   current: boolean;
@@ -146,6 +151,12 @@ function row(r: FhirResource, type: ChartType): ChartLine {
       return base(str(r.description) || concept(r.type), '', str(r.docStatus) || str(r.status), str(r.date), attachmentText(r, 'content'));
     case 'Task':
       return base(str(r.description) || concept(r.code), ((r.note as { text?: string }[] | undefined) ?? []).map((n) => str(n.text)).filter((x) => x !== '').join(' '), str(r.status), str(r.authoredOn));
+    case 'EpisodeOfCare':
+      return base(concept((r.type as unknown[] | undefined)?.[0]), '', str(r.status), str((r.period as { start?: string } | undefined)?.start));
+    case 'ServiceRequest':
+      return base(concept(r.code), ((r.reasonCode as unknown[] | undefined) ?? []).map(concept).filter((x) => x !== '').join('; '), str(r.status), str(r.authoredOn));
+    case 'Communication':
+      return base(concept(r.topic), '', str(r.status), str(r.sent), ((r.payload as { contentString?: unknown }[] | undefined) ?? []).map((x) => str(x.contentString)).filter((x) => x !== '').join('\n\n'));
     case 'Appointment':
       return base(str(r.description) || concept((r.serviceType as unknown[] | undefined)?.[0]), '', str(r.status), str(r.start));
   }

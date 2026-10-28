@@ -2,17 +2,16 @@
 // pass)"; a penalty that did not fire reads "not triggered", not "not met"; the rubric table ends with
 // a total of the points earned against the points possible; and with judge items unknown (in the
 // current grade's checks) the tile says they are not counted, with the score each way for an
-// unknown penalty, and the total leaves them out (verifier-phase-P17i-JU4JU11-1 S1-S3).
+// unknown penalty, and the total leaves them out (verifier-phase-P17i-JU4JU11-1 S1-S3). That state
+// passes axe in light and dark.
+import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+import { browse } from './browse.ts';
 import { rubricTotal, totalText } from '../src/trial/rubric.ts';
 import { record, RUN_ID, trialBase, TRIALS } from './fixtures/trial/trial.ts';
 
 async function openGrading(page: Page, name: string) {
-  await page.goto(new URL(`./?view=runs&run=${RUN_ID}&trial=${encodeURIComponent(name)}&tab=grading`, await trialBase(test.info().project.use.baseURL!)).href);
-  const gate = page.getByRole('button', { name: 'Browse without a key' });
-  const nav = page.getByRole('navigation', { name: 'Views' });
-  await expect(gate.or(nav)).toBeVisible();
-  if (await gate.isVisible()) await gate.click();
+  await browse(page, new URL(`./?view=runs&run=${RUN_ID}&trial=${encodeURIComponent(name)}&tab=grading`, await trialBase(test.info().project.use.baseURL!)).href);
   await expect(page.getByTestId('panel-grading')).toBeVisible();
 }
 
@@ -48,4 +47,11 @@ test('with judge items unknown, the tile says they are not counted and the total
   await expect(p.getByTestId('score-card-note')).toHaveText('2 judge items unknown and not counted; 0.50 if the unknown penalty fired, 1.00 if not');
   await expect(p.getByText(/upper bound/)).toHaveCount(0);
   await expect(p.getByTestId('rubric-total')).toHaveText('Total10 of 10 points (2 unknown items not counted)');
+  // The note's state passes axe, light and dark (verifier-phase-P17j-retro-JU4JU11-1 m-a).
+  for (const scheme of ['light', 'dark'] as const) {
+    await page.emulateMedia({ colorScheme: scheme });
+    await expect(p.getByTestId('score-card-note')).toBeVisible();
+    const bad = (await new AxeBuilder({ page }).analyze()).violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => v.id);
+    expect(bad, scheme).toEqual([]);
+  }
 });

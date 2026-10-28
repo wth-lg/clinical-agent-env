@@ -7,6 +7,7 @@ import { Check, X } from 'lucide-react';
 import type { ReactNode } from 'react';
 import type { Step } from '../../../../packages/grader/check.ts';
 import { currentGrade } from '../../../../packages/core/summary.ts';
+import { shownFault } from '../data/failures.ts';
 import { checkTextOf, type Trial } from '../data/results.ts';
 import { OutcomeChip } from '../data/ui.tsx';
 import { metText, rubricMetText, rubricTotal, scoreNote, totalText } from './rubric.ts';
@@ -87,7 +88,7 @@ export function Grading({ t, steps, onStep, decisive = null }: { t: Trial; steps
   return (
     <div className="space-y-4">
       <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
-        <OutcomeChip outcome={g.outcome} fault={t.explanation.fault} />
+        <OutcomeChip outcome={g.outcome} fault={shownFault(t.explanation)} />
         {graded && <span data-testid="grade-line" className="text-ink-muted">{unfinished ? 'Not graded: a grader check failed with an error, so the trial has no grade.' : g.regraded ? 'Current grade, from the last regrade.' : r.grader_version ? `Graded with grader ${r.grader_version}.` : 'Graded.'}</span>}
       </p>
       <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">

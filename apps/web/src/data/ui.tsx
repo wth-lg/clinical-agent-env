@@ -135,8 +135,6 @@ export function HarmChip({ items }: { items: readonly HarmItem[] }) {
 }
 
 const TO_GLOSSARY = { view: 'glossary', task: null, label: null, trial: null };
-// What an environment or grader label means for the run (packages/core/outcomes.ts DENOMINATOR_RULE).
-export const BLOCKED_NOTE = 'Not counted. The run is blocked until this is fixed.';
 // The note beside the label (data/failures.ts blocksTheRun decides whether the trial blocks the
 // run). notCountedShown: the surrounding view already says "Not counted" (the trial header's plain
 // reason for an excluded trial), so the note gives only the rest and the header has one "Not

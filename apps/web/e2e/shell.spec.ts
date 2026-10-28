@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Locator, type Page, type Request, type Route } from '@playwright/test';
+import { browse, passGate } from './browse.ts';
 import { randomUUID } from 'node:crypto';
 import { mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -438,8 +439,8 @@ test.describe('start block', () => {
 test.describe('shell', () => {
   test('browsing without a key opens the shell with the rail, the surface and no key', async ({ page }) => {
     await mockBrowserDirect(page);
-    await page.goto('./');
-    await page.getByRole('button', { name: 'Browse without a key' }).click();
+    // A fresh tab shows the gate, so this test is about its button.
+    expect(await browse(page, './')).toBe(true);
     const rail = page.getByRole('navigation', { name: 'Views' });
     for (const name of ['Overview', 'Tasks', 'Runs', 'Findings', 'Environment']) await expect(rail.getByRole('link', { name })).toBeVisible();
     await expect(page.getByTestId('key-chip')).toHaveText('No key');
@@ -758,10 +759,7 @@ async function openState(page: Page, state: (typeof STATES)[number]) {
     await validate(page);
     await expect(page.getByRole('alert')).toBeVisible();
   }
-  if (state === 'shell') {
-    await page.getByRole('button', { name: 'Browse without a key' }).click();
-    await expect(page.getByRole('navigation', { name: 'Views' })).toBeVisible();
-  }
+  if (state === 'shell') expect(await passGate(page)).toBe(true);
 }
 
 for (const scheme of ['light', 'dark'] as const) {
@@ -807,8 +805,7 @@ test('Forget key stays on screen at 390 with a key held', async ({ page }) => {
 
 test('the rail link\'s visible text is its accessible name', async ({ page }) => {
   await mockBrowserDirect(page);
-  await page.goto('./');
-  await page.getByRole('button', { name: 'Browse without a key' }).click();
+  await browse(page, './');
   const link = page.getByRole('navigation', { name: 'Views' }).getByRole('link', { name: 'Environment' });
   await expect(link).toHaveText('Environment');
   await expect(link).not.toHaveAttribute('aria-label', /.*/);
@@ -824,7 +821,7 @@ test('design: white cards with a stone-200 border on a stone-50 page, 4px contro
   expect(await style('form', ['background-color', 'border-top-color'])).toEqual({ 'background-color': 'rgb(255, 255, 255)', 'border-top-color': 'oklch(0.923 0.003 48.717)' });
   expect(await style('main', ['background-color'])).toEqual({ 'background-color': 'oklch(0.985 0.001 106.423)' });
   for (const sel of ['button[type="submit"]', 'input[type="password"]']) expect((await style(sel, ['border-radius']))['border-radius'], sel).toBe('4px');
-  await page.getByRole('button', { name: 'Browse without a key' }).click();
+  expect(await passGate(page)).toBe(true);
   const active = page.getByRole('navigation', { name: 'Views' }).locator('a[aria-current="page"]');
   // bg-line/80 is a color-mix, which the browser reports in oklab: stone-200's lightness at 80%.
   expect(await active.evaluate((el) => getComputedStyle(el).backgroundColor)).toMatch(/^oklab\(0\.923 [\d.]+ [\d.]+ \/ 0\.8\)$/);

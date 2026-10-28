@@ -4,6 +4,7 @@
 // this is fixed.", the danger rule on the header, the reason, the fault decided by GR5, and the
 // criteria in place of "Confirmed"; a PASS without that audit row shows none of it.
 import { expect, test, type Page } from '@playwright/test';
+import { browse } from './browse.ts';
 import { PILOT_ERROR_ID, record, RUN_ID, trialBase, TRIALS } from './fixtures/trial/trial.ts';
 
 const GR5_ROW = { trial: TRIALS.pass, outcome: 'PASS', taxonomy: null, model_fault: 'no', decisive_step: 3, evidence_ids: ['Patient/pt-0001'], llm_auditor_agrees: true, label: 'grader', note: 'the grader passed a dose the policy forbids' };
@@ -17,11 +18,7 @@ async function withFalsePass(page: Page) {
 }
 
 async function open(page: Page, query: string) {
-  await page.goto(new URL(`./?view=runs&run=${RUN_ID}${query}`, await trialBase(test.info().project.use.baseURL!)).href);
-  const gate = page.getByRole('button', { name: 'Browse without a key' });
-  const nav = page.getByRole('navigation', { name: 'Views' });
-  await expect(gate.or(nav)).toBeVisible();
-  if (await gate.isVisible()) await gate.click();
+  await browse(page, new URL(`./?view=runs&run=${RUN_ID}${query}`, await trialBase(test.info().project.use.baseURL!)).href);
 }
 
 const danger = (page: Page) => page.evaluate(() => {

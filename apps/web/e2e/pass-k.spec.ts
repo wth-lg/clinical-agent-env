@@ -3,18 +3,11 @@
 // to; both pages name the model and effort of the run's trials from summary.json. axe finds nothing
 // serious or critical on Overview, Findings and Glossary, light and dark (verifier-phase-P17i-JU8-1 F1).
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+import { browseFrom } from './browse.ts';
 import { sampleBase, summary, TASK_IDS } from './fixtures/sample-results/sample.ts';
 
-// The key gate shows on the first visit only: App.tsx remembers "Browse without a key" for the session.
-async function browse(page: Page, path: string) {
-  await page.goto(new URL(path, await sampleBase(test.info().project.use.baseURL!)).href);
-  const gate = page.getByRole('button', { name: 'Browse without a key' });
-  const nav = page.getByRole('navigation', { name: 'Views' });
-  await expect(gate.or(nav)).toBeVisible();
-  if (await gate.isVisible()) await gate.click();
-  await expect(nav).toBeVisible();
-}
+const browse = browseFrom(sampleBase);
 
 const value = (v: number | null) => (v === null ? '' : String(v));
 
