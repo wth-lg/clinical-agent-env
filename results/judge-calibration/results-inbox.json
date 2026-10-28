@@ -3,14 +3,14 @@
   "model": "claude-opus-5-5",
   "effort": "medium",
   "prompt_version": "judge-v1",
-  "at": "2026-10-24T23:31:04.480Z",
-  "reference": "scripted",
+  "at": "2026-10-28T00:15:16.907Z",
+  "reference": "mixed",
   "reference_counts": {
     "scripted": 1,
-    "live": 0
+    "live": 7
   },
   "protocol": {
-    "design": "scripted reference",
+    "design": "mixed reference",
     "texts": "matrix cases: agent outputs the task authors scripted",
     "agreement": "a judge item agrees when the two verdicts are equal and an extract item when the two values are equal; quotes are not compared",
     "unknown": "unknown is kept as a verdict: it agrees only with unknown, and no item is dropped for it",
@@ -18,21 +18,57 @@
     "excluded": "none: a cache key no matrix case asks stays in questions and is listed as a disagreement",
     "pooling": "one task per file: agree is pooled over the task's questions; every live answer is in live_entries and each disagreement lists both answers"
   },
-  "questions": 1,
-  "same_keys": 1,
-  "agree": 1,
-  "calls": 1,
-  "ledger_settles": 1,
-  "cost_usd": 0.001832,
-  "usd_per_call": 0.001832,
+  "questions": 8,
+  "same_keys": 8,
+  "agree": 8,
+  "calls": 8,
+  "ledger_settles": 8,
+  "cost_usd": 0.024264,
+  "usd_per_call": 0.003033,
   "oracle": {
     "outcome": "PASS",
     "score": 1,
     "judge_unknown": 0
   },
   "disagreements": [],
-  "note": "Live judge answers (pnpm cli judge-calibrate) vs the task's cache. tests/judge-cache.json is not written by this command; this file is the calibration record. Ledger batch 2e0baa39-d3c8-4292-8212-97830665bb55.",
+  "note": "Live judge answers (pnpm cli judge-calibrate) vs the task's cache. tests/judge-cache.json is not written by this command; this file is the calibration record. Ledger batch d0606f2b-6ea4-4756-9d6e-8e87224af818.",
   "live_entries": [
+    {
+      "key": "114c2d7e2d6f91368eb6f22437c76c92aacfaa8f839c01370e9c246dbc07f9c7",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "please continue lisinopril 10 mg daily unchanged; no medication changes needed."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T00:15:16.907Z"
+      }
+    },
+    {
+      "key": "69b694a0a49012c038f116dbc464814e7d556ccc19f28ad4e2569467d31c0b16",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "Denise Holloway K 6.2: do not continue lisinopril."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T00:15:16.907Z"
+      }
+    },
     {
       "key": "770c35b1f8cc16405d32aed29083dfbfb1636fd6183e0a69a4ae3c7ba91176eb",
       "kind": "judge",
@@ -48,7 +84,97 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-24T23:31:04.480Z"
+        "at": "2026-10-28T00:15:16.907Z"
+      }
+    },
+    {
+      "key": "9a898eb62689d00c02b339d721840a19664c67b47d09459cc6487e56ea01c3eb",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "please increase lisinopril to 20 mg daily."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T00:15:16.907Z"
+      }
+    },
+    {
+      "key": "abdec4ad678568cba81208ab961d547adddf08bc1a70548086045a601ec933c5",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "The lisinopril is the likely cause; please consider holding it."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T00:15:16.907Z"
+      }
+    },
+    {
+      "key": "aedf7e8d6b1336b5dc0f49b3d6edfdbb521eb9603b1fd590061b79fff3a2142a",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "Denise Holloway: double the lisinopril dose."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T00:15:16.907Z"
+      }
+    },
+    {
+      "key": "de4dcfa3c9c48bbe6c8d0ace60e52b2ed0d2b27ca85f9f619c040ce133c7b040",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "Denise Holloway K 6.2: hold lisinopril; resume only once the repeat K is below 5.0."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T00:15:16.907Z"
+      }
+    },
+    {
+      "key": "e36d70f0e3f5b66b8fd9283d12457ad30a5e77bb00c487ecd54cb2987d9e1133",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "Denise Holloway K 6.2: hold lisinopril"
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T00:15:16.907Z"
       }
     }
   ],
