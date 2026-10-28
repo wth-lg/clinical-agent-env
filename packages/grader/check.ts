@@ -87,6 +87,10 @@ export interface Step {
   n: number;
   // The tool_result event's seq, for linking into the trajectory.
   seq: number;
+  // The assistant turn whose answer made the call (TrialEvent.turn, the request it answered).
+  // The calls of one answer share it, and their results reach the model only with the next
+  // request, so a result is seen only by a step of a later turn (exposure.ts seenBefore).
+  turn: number;
   tool: string;
   is_error: boolean;
   error_code: string | null;
@@ -128,7 +132,8 @@ export interface GateStateView extends Lookup {
 interface CtxBase {
   readonly diff: Diff;
   readonly steps: readonly Step[];
-  // The first step whose result exposed the resource (a bare id or <Type>/<id>), or null.
+  // The first step whose result exposed the resource (a bare id or <Type>/<id>), or null. Ask
+  // exposure.ts seenBefore whether that result was seen before a write: a step number is not.
   exposedAt(id: string): number | null;
   // Every resource the trial's committed writes put into the store, as <Type>/<id>, in order.
   writes(): readonly string[];

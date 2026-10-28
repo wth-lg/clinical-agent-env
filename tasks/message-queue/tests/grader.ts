@@ -20,7 +20,7 @@
 import { gate, type Check, type GateCtx } from '../../../packages/grader/check.ts';
 import type { GateOf, GateResource } from '../../../packages/grader/gate-view.ts';
 import { NOW_DATE } from '../../../packages/env/clock.ts';
-import { firstShown } from '../../../packages/grader/exposure.ts';
+import { firstShown, seenBefore } from '../../../packages/grader/exposure.ts';
 import { clinicDate, conceptIs, dailyDose, doseOf, dosesPerDay, drugOf, isActive, isDrug } from '../../../packages/grader/normalize.ts';
 import { expected } from '../expected.ts';
 import { rubric } from './rubric.ts';
@@ -237,7 +237,7 @@ const gates: Check[] = [
         // Any of them will do; M.m1.visit is the last one.
         { evidence: M.m1.visit, write: bridgeWrite, exposed: seen.length ? Math.min(...seen) : null, accepts: [...accepts, ...notes.map(keyOf)] },
       ];
-      const late = checks.filter((c) => c.write !== null && (c.exposed === null || c.exposed >= c.write)).map((c) => c.evidence);
+      const late = checks.filter((c) => c.write !== null && !seenBefore(ctx.steps, c.exposed, c.write)).map((c) => c.evidence);
       return { met: late.length === 0, evidence: { checks, late }, ids: late };
     },
   }),
