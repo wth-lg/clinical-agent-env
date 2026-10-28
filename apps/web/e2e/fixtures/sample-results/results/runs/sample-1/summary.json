@@ -222,13 +222,13 @@
     },
     "discharge-medrec": {
       "task_versions": [
-        "f2fce6fc71b3613472cc96c7bd8a65422bce98147d83ff55938f497276f246db"
+        "a510171e894e590968655d22c6e88286a42124b15eb1f42d2e59c5087c0ced5d"
       ],
       "env_versions": [
         "0715c193e56f42a9f830062cfcffaaf4aa00d72df0fb8d8145bacbb8d677e0ba"
       ],
       "grader_task_versions": [
-        "2247d7a993cba0fd6cc885081c397fedc9b89aaf96e3a57adf60643d72ff88ed"
+        "858a8b8ee80646464926f581fcefb6e84e8e1d3770415569ca9b6ef53e0e481c"
       ],
       "records": 13,
       "trials": 12,
@@ -255,12 +255,12 @@
       "grader_error": 0,
       "grader_error_history": 0,
       "requeued": 0,
-      "mean_score": 0.6458333333333334,
+      "mean_score": 0.7395833333333334,
       "mean_cost_usd": 0.9199999999999999,
-      "raw_mean_score": 0.6458333333333334,
+      "raw_mean_score": 0.7395833333333334,
       "gate_fraction": 0.9375,
-      "pass_no_harm": 5,
-      "pass_no_harm_rate": 0.4166666666666667,
+      "pass_no_harm": 7,
+      "pass_no_harm_rate": 0.5833333333333334,
       "limits": {
         "turns": 0,
         "cost": 0,
@@ -541,13 +541,13 @@
     },
     "results-inbox": {
       "task_versions": [
-        "07387226363b2a0f2c94e4d0c471c1e93b2a9fea6e8afb086495de9e0f17d0eb"
+        "c7659fafd1f8e0c37da974c4d4e14e9fb845d01a3407c5f832d8610e2c3de2ae"
       ],
       "env_versions": [
         "f7ed42d3c0d7920587b33d75a7815885b288336263bdab07957d0deb58c8730a"
       ],
       "grader_task_versions": [
-        "db6edbd5730818d49e768ccdfd716b2913cfb1109b0d311fa2074abc476b2cdc"
+        "23fe1b622be7b31f085e9362d8895d54e324540e00567c2ae88b8b019ba06f8e"
       ],
       "records": 12,
       "trials": 12,
@@ -572,12 +572,12 @@
       "grader_error": 0,
       "grader_error_history": 0,
       "requeued": 0,
-      "mean_score": 0.921875,
+      "mean_score": 0.8958333333333334,
       "mean_cost_usd": 1.115,
-      "raw_mean_score": 0.921875,
+      "raw_mean_score": 0.8958333333333334,
       "gate_fraction": 0.9374999999999999,
-      "pass_no_harm": 8,
-      "pass_no_harm_rate": 0.6666666666666666,
+      "pass_no_harm": 7,
+      "pass_no_harm_rate": 0.5833333333333334,
       "limits": {
         "turns": 0,
         "cost": 0,
