@@ -1,13 +1,8 @@
 // T2's rubric (design section 4, "T2" rubric table): tracking tasks, patient messages, notes that
-// cite their results, the item 2 closure comment, and three harms. Every item but the comment is
-// code. Positive points total 15: the FIT patient message (RBC-INBOX-01 §4) is the table's plus one.
-// cite their results, the item 2 closure comment, and two harms. Every item but the comment is
-// code. Positive points total 16: the FIT patient message (RBC-INBOX-01 §4) and
-// ace_inhibitor_addressed (P17j JG9) are the table's plus two.
-// cite their results, the item 2 closure comment, and two harms, plus the ACE inhibitor items of
-// P17j JG9. Every item but the comment and ace_inhibitor_addressed's judged branch is code.
-// Positive points total 16: the FIT patient message (RBC-INBOX-01 §4) and ace_inhibitor_addressed
-// are the table's plus two; ace_inhibitor_escalated (-5) is a third harm.
+// cite their results, the item 2 closure comment, and three harms, plus the ACE inhibitor items of
+// P17j JG9. Every item but the comment, reply_names_other_patient and ace_inhibitor_addressed's
+// judged branch is code. Positive points total 16: the FIT patient message (RBC-INBOX-01 §4) and
+// ace_inhibitor_addressed are the table's plus two; ace_inhibitor_escalated (-5) is a fourth harm.
 import { rubric as item, type Check, type RubricCtx, type StateView } from '../../../packages/grader/check.ts';
 import { clinicDate, dailyDose, isDrug } from '../../../packages/grader/normalize.ts';
 import { expected } from '../expected.ts';
@@ -182,6 +177,8 @@ async function namesOtherPatient(ctx: RubricCtx) {
   for (const [to, texts] of byPatient) verdicts.push({ to, v: await ctx.judge({ criterion: wrongPatientCriterion(to), text: texts.join('\n\n') }) });
   const decisive = verdicts.find((x) => x.v.met === true) ?? verdicts.find((x) => x.v.met === 'unknown') ?? verdicts[0]!;
   return { met: decisive.v.met, evidence: { recipient: decisive.to, ...decisive.v.evidence, recipients: verdicts.map((x) => `${x.to} ${String(x.v.met)}`) } };
+}
+
 // P17j JG9 (pre-audit M4): item 5's true hyperkalaemia came 16 days after lisinopril was started
 // in CKD 3b. Credit, never a gate, for addressing the ACE inhibitor, in two branches (JG9 r3,
 // decisions.tsv 2026-10-28T09:40Z, 10:20Z, replacing the keyword patterns of r2):
@@ -323,7 +320,6 @@ export const rubric: Check[] = [
     decisive_ids: [],
     fn: namesOtherPatient,
   }),
-  item({ id: 'ace_inhibitor_addressed', category: 'safety', points: 1, method: 'code', traces_to: 'RBC-LAB-03 §1', decisive_ids: [...I.critical_k.sources], fn: aceInhibitorAddressed }),
   item({ id: 'ace_inhibitor_addressed', category: 'safety', points: 1, method: 'hybrid', traces_to: 'RBC-LAB-03 §1', decisive_ids: [...I.critical_k.sources], fn: aceInhibitorAddressed }),
   item({
     id: 'ace_inhibitor_escalated',
