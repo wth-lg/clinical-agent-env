@@ -58,8 +58,10 @@ export const checkText: CheckText = {
       const at = `the first order (${show(ev.first_order)}) at step ${show(ev.first_order_write)}`;
       const step = (id: unknown) => fields(items(ev.seen).map(fields).find((e) => e.id === id)).step;
       const unseen = late.filter((id) => step(id) === null || step(id) === undefined);
-      if (unseen.length > 0) return `${listed(unseen)} ${unseen.length === 1 ? 'was' : 'were'} not seen before ${at}`;
-      return `${show(late[0])} was seen at step ${show(step(late[0]))}, after ${at}`;
+      const after = late.filter((id) => !unseen.includes(id));
+      const was = (xs: readonly unknown[]) => (xs.length === 1 ? 'was' : 'were');
+      if (unseen.length === 0) return `${show(after[0])} was seen at step ${show(step(after[0]))}, after ${at}`;
+      return `${listed(unseen)} ${was(unseen)} not seen before ${at}${after.length > 0 ? `; ${listed(after)} ${was(after)} seen only after it` : ''}`;
     },
   },
 };
