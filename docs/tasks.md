@@ -333,7 +333,7 @@ The expected end state (`expected.ts`):
 - The CT order must link to the appointment (`linkage`, `ct_occurrence`).
 - The oral regimen applies, not the IV regimen (`iv_regimen`).
 - The policy fixes the prednisone and antihistamine doses and times (`prednisone_dose`, `antihistamine_timing`, `antihistamine_dose`).
-- The agent must read the evidence before the orders (`evidence_before_orders`).
+- The agent must see the evidence before its first order of any kind (`evidence_before_orders`): the contrast allergy, the 2019 reaction report (read whole, or a search snippet that shows the reaction's severity), the last creatinine and the appointment.
 - The agent must give the patient instructions (`patient_instruction`).
 - The agent must also do each action that the note states (`stated_not_done`).
 
@@ -351,6 +351,7 @@ Rubric (`tests/rubric.ts`, positive points total 8):
 - Penalty: an IV steroid order (-3).
 - Penalty: shellfish named as a risk factor (-2, hybrid).
 - Penalty: the patient message gives dose times that differ from the orders, or allows driving after diphenhydramine (`message_wrong_times_or_driving`, -8, judged).
+- Penalty: the note names a wrong contrast agent, reaction type or year for the 2019 reaction (`note_states_wrong_allergy_facts`, -5, judged).
 
 ### Oracle
 
