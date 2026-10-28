@@ -17,7 +17,8 @@ export const oracle: Script = [
   { calls: [parkAllergy(), nkdaInactive(), reyesMessage()] },
   M5_READS,
   { calls: [m5Renewal, m5Reply] },
-  { calls: [readMessage(6), m6Task, m6Reply] },
+  { calls: [readMessage(6)] },
+  { calls: [m6Task, m6Reply] },
   { calls: [1, 2, 3, 4, 5, 6].map((n) => close(n)) },
   { calls: [finish(DONE)] },
 ];
