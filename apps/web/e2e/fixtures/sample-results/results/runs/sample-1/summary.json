@@ -1,18 +1,18 @@
 {
-  "schema_version": 7,
+  "schema_version": 8,
   "run_id": "sample-1",
   "model": "claude-opus-5-5",
   "effort": "high",
   "tasks": {
     "contrast-ct-prep": {
       "task_versions": [
-        "ebb25ad9eead2e5736ec69771fa459eaeb86cebc79f473810edffebf4c727894"
+        "c03b5178f561c7ad4616cf8cd6aa7312ac0025d6ecb1c486895161aa035357c5"
       ],
       "env_versions": [
-        "dd52eab51c1b400d1147fa16562ce98eb6b13e39f104598a265ae6f17ad460fd"
+        "492337b74874ac4946e3b6d7dde634742792583284396f14ea47172c4a0fce18"
       ],
       "grader_task_versions": [
-        "6dd94a8a58de04b5d4c48948efcfb83920b5b7124de85db797d0b217502c79b6"
+        "5eb09acf7393a1bb38f050502ded8857dc446ac2ca349d8090e6a4c9876104ab"
       ],
       "records": 12,
       "trials": 12,
@@ -42,7 +42,7 @@
       "mean_score": 0.6354166666666666,
       "mean_cost_usd": 0.765,
       "raw_mean_score": 0.5104166666666666,
-      "gate_fraction": 0.8214285714285715,
+      "gate_fraction": 0.7857142857142856,
       "pass_no_harm": 2,
       "pass_no_harm_rate": 0.16666666666666666,
       "limits": {
@@ -69,11 +69,11 @@
         "passes": 3,
         "failures": 9,
         "shared": {
-          "check": "creatinine_before_scan",
-          "count": 3,
-          "found": "{\"before\":\"2026-10-26T09:00:00-04:00\",\"orders\":[]}",
+          "check": "prednisone_schedule",
+          "count": 4,
+          "found": "{\"doses\":[{\"at\":\"2026-10-25T20:00:00-04:00\",\"mg\":0,\"requests\":[]},{\"at\":\"2026-10-26T02:00:00-04:00\",\"mg\":0,\"requests\":[]},{\"at\":\"2026-10-26T08:00:00-04:00\",\"mg\":0,\"requests\":[]}],\"given\":[],\"stray\":[],\"want\":{\"at\":[\"2026-10-25T20:00:00-04:00\",\"2026-10-26T02:00:00-04:00\",\"2026-10-26T08:00:00-04:00\"],\"mg\":50,\"route\":\"oral\"}}",
           "found_count": 1,
-          "found_values": 3
+          "found_values": 4
         },
         "flags": []
       },
@@ -81,10 +81,11 @@
         "failures": 9,
         "taxonomy": {
           "retrieval": 0,
-          "reasoning": 6,
-          "output_gap": 1,
+          "reasoning": 4,
+          "output_gap": 2,
           "over_action": 1,
           "process": 0,
+          "action_form": 1,
           "did_not_finish": 0,
           "refusal": 1,
           "unattributed": 0
@@ -99,12 +100,12 @@
       },
       "top_failed_checks": [
         {
-          "check": "creatinine_before_scan",
-          "count": 3
+          "check": "prednisone_schedule",
+          "count": 4
         },
         {
-          "check": "prednisone_schedule",
-          "count": 3
+          "check": "creatinine_before_scan",
+          "count": 2
         },
         {
           "check": "no_substitution",
@@ -118,13 +119,13 @@
     },
     "crc-care-gap": {
       "task_versions": [
-        "ba70ed870748cb1255b0b9ebc553f496328d3af03e18abcc8462a4a1410de46a"
+        "ab700d0855e2a6ad308cb8de7b2ecd095d5498f48852a21f99388f9a2ce1121a"
       ],
       "env_versions": [
-        "c9f2ead6f32dda1fbc01d54f85300f8489b15a759bfd343b429794a95627446c"
+        "3d7216da2510f1708b0fb589859ce3c332cb7f5b42c0b55842793ce60955a9db"
       ],
       "grader_task_versions": [
-        "100339828ba28695eea3f9b5cdc61ff7d0e605eb0c676b27161785f842a7e1df"
+        "743d2b20f16d03a15af8fb3314d5b388c00efb50e3e7cd45a29f9c86739b4e48"
       ],
       "records": 12,
       "trials": 12,
@@ -197,6 +198,7 @@
           "output_gap": 0,
           "over_action": 2,
           "process": 0,
+          "action_form": 0,
           "did_not_finish": 1,
           "refusal": 0,
           "unattributed": 0
@@ -222,13 +224,13 @@
     },
     "discharge-medrec": {
       "task_versions": [
-        "3d6753b9f7ebb354c6ddf8f4732e22cd622d4258802a58534a524f37b2fc3d2b"
+        "81a100ecfb359a4f032f01c89bc1a6eb43a6123928d71ce194d72dd5928ced5f"
       ],
       "env_versions": [
-        "8ba141fd4fcf24b5af0ad6c347c77bee354a5bf74c474efaea47890ab29f218e"
+        "6f1110b24a8516555824e011080ad3408062876e165ae1bb6b211f80488440a7"
       ],
       "grader_task_versions": [
-        "fd1ecbe206bd39157e93602086cb7fb2f2c285b5297dacc438ad1ae21807ec6f"
+        "4622f99c0575fd9c7215c5b423f0f4fffe21d5d5b1d9b64092860109f763ab6b"
       ],
       "records": 13,
       "trials": 12,
@@ -301,6 +303,7 @@
           "output_gap": 0,
           "over_action": 0,
           "process": 0,
+          "action_form": 0,
           "did_not_finish": 0,
           "refusal": 0,
           "unattributed": 0
@@ -334,13 +337,13 @@
     },
     "message-queue": {
       "task_versions": [
-        "42499414e20b306f5f624f69886f3710d4da2a6c7cea431d5cc1eb62ab5911e4"
+        "dde668e83c75a3a8c3a20934ec0f1560b3845ce20cba565a54377cab7c3a0737"
       ],
       "env_versions": [
-        "d4c4429bdbbb3432999393e2b7216ce0a311bd54ddd60e9bf34711e870dc96d0"
+        "a902115d6b22a8ad4e4438108607f02b85be67a40fe538c32ff0a96b47d7dc89"
       ],
       "grader_task_versions": [
-        "7ebb13659bae5448ef8314af1c432ed8333e5655f6e2f728bfd6265b435acb93"
+        "8707e5bb0299c613c142e084a0daf7ad2a4428193c94fed761151f23498e0c60"
       ],
       "records": 12,
       "trials": 12,
@@ -366,12 +369,12 @@
       "grader_error": 0,
       "grader_error_history": 1,
       "requeued": 0,
-      "mean_score": 0.7628205128205128,
+      "mean_score": 0.9935897435897436,
       "mean_cost_usd": 0.9750000000000001,
-      "raw_mean_score": 0.7628205128205128,
+      "raw_mean_score": 0.9935897435897436,
       "gate_fraction": 0.9722222222222223,
-      "pass_no_harm": 5,
-      "pass_no_harm_rate": 0.4166666666666667,
+      "pass_no_harm": 9,
+      "pass_no_harm_rate": 0.75,
       "limits": {
         "turns": 0,
         "cost": 0,
@@ -412,6 +415,7 @@
           "output_gap": 0,
           "over_action": 0,
           "process": 1,
+          "action_form": 0,
           "did_not_finish": 0,
           "refusal": 0,
           "unattributed": 0
@@ -437,13 +441,13 @@
     },
     "renal-dose-review": {
       "task_versions": [
-        "752479f365228420c7ab7fd3271d8c1cf87519c195efa2437c09bb9fdb1c4d73"
+        "e3298f2e336350296251b330787948dc47ebb763e659d650f5d59a1bbd374f59"
       ],
       "env_versions": [
-        "465a5ba41710a820e6fb7648015f23065ba70ceb8ef5d3b2fd843c3d17b6682e"
+        "f74818df8ab2b6109bdad7b1219898a6c755f28cd3d4e505c848e8a779de79e8"
       ],
       "grader_task_versions": [
-        "a8e12873b57582d1fa5b2e1b925c7c75b29ee2e9b1bb35cc7e12ee1c1a79e838"
+        "855fdd80d22529258f8ef6f6248ebb8c0d4874fdfbddf30b2a14606056da7c3b"
       ],
       "records": 13,
       "trials": 12,
@@ -520,6 +524,7 @@
           "output_gap": 0,
           "over_action": 0,
           "process": 0,
+          "action_form": 0,
           "did_not_finish": 0,
           "refusal": 1,
           "unattributed": 0
@@ -541,13 +546,13 @@
     },
     "results-inbox": {
       "task_versions": [
-        "1722f98ea86372ce4f01cd160b59a728f1d8dd7583f181a86537ee94ec8f1934"
+        "c4481ff1004a7c3cbe1afc3fa81821fb9495f30df7abfad4c1ca8e2bd12898a1"
       ],
       "env_versions": [
-        "959b27eae3797000d548e151d842e902117d8e337f6c2fc4779421746184a2f1"
+        "f7ed42d3c0d7920587b33d75a7815885b288336263bdab07957d0deb58c8730a"
       ],
       "grader_task_versions": [
-        "284bd3cd807fae1e266a0ab8a7d3e910c8597a410f069fa438bcdd23c39fb316"
+        "66ce2906d755a556a02327f0342ee4f0c0c769073c4de7c99f2c634c1e938743"
       ],
       "records": 12,
       "trials": 12,
@@ -572,12 +577,12 @@
       "grader_error": 0,
       "grader_error_history": 0,
       "requeued": 0,
-      "mean_score": 0.8888888888888888,
+      "mean_score": 0.9333333333333332,
       "mean_cost_usd": 1.115,
-      "raw_mean_score": 0.8888888888888888,
+      "raw_mean_score": 0.9333333333333332,
       "gate_fraction": 0.9374999999999999,
-      "pass_no_harm": 7,
-      "pass_no_harm_rate": 0.5833333333333334,
+      "pass_no_harm": 8,
+      "pass_no_harm_rate": 0.6666666666666666,
       "limits": {
         "turns": 0,
         "cost": 0,
@@ -618,6 +623,7 @@
           "output_gap": 0,
           "over_action": 1,
           "process": 0,
+          "action_form": 0,
           "did_not_finish": 0,
           "refusal": 0,
           "unattributed": 0
@@ -670,7 +676,7 @@
     "claude-opus-5-5"
   ],
   "initial_state_hashes": [
-    "5e69bcfaa1935a5eb4bef6ba1b8e3d4db1cf379042fd6321516416281b041f20"
+    "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c"
   ],
   "replay": {
     "ran": false,

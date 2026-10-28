@@ -8,7 +8,7 @@
 // 390 px no view scrolls sideways, and a record the loader cannot read is an error row, not a
 // blank app.
 import { expect, test, type Page } from '@playwright/test';
-import { NOT_AUDITED_MARKER } from '../../../packages/core/explain.ts';
+import { NOT_AUDITED_MARKER, TAXONOMY_TEXT } from '../../../packages/core/explain.ts';
 import { AUDIT_LABEL, DENOMINATOR_RULE, FAULT_DEFINITIONS, FAULT_PRECEDENCE, PASS_DEFINITION } from '../../../packages/core/outcomes.ts';
 import { trialName } from '../../../packages/core/summary.ts';
 import { markOf } from '../src/data/ui.tsx';
@@ -174,7 +174,7 @@ test('one click on a fault label opens the glossary, whose text equals outcomes.
     const l = AUDIT_LABEL[f];
     await expect(page.locator(`[data-testid="audit-label-row"][data-fault="${f}"]`).getByTestId('audit-label')).toHaveText(l === null ? 'no label: excluded and rerun' : `${l.label}${l.subtype ? ` (subtype ${l.subtype})` : ''}`);
   }
-  await expect(page.getByTestId('taxonomy-row')).toHaveCount(6);
+  await expect(page.getByTestId('taxonomy-row')).toHaveCount(Object.keys(TAXONOMY_TEXT).length);
   await expect(page.getByTestId('glossary-pass')).toHaveText(PASS_DEFINITION);
   await expect(page.getByTestId('glossary-denominator')).toHaveText(DENOMINATOR_RULE);
 });

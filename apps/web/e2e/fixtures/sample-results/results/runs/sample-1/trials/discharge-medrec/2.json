@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:discharge-medrec:2",
   "task_id": "discharge-medrec",
-  "task_version": "3d6753b9f7ebb354c6ddf8f4732e22cd622d4258802a58534a524f37b2fc3d2b",
-  "env_version": "8ba141fd4fcf24b5af0ad6c347c77bee354a5bf74c474efaea47890ab29f218e",
-  "grader_task_version": "fd1ecbe206bd39157e93602086cb7fb2f2c285b5297dacc438ad1ae21807ec6f",
-  "fixture_hash": "5e69bcfaa1935a5eb4bef6ba1b8e3d4db1cf379042fd6321516416281b041f20",
+  "task_version": "81a100ecfb359a4f032f01c89bc1a6eb43a6123928d71ce194d72dd5928ced5f",
+  "env_version": "6f1110b24a8516555824e011080ad3408062876e165ae1bb6b211f80488440a7",
+  "grader_task_version": "4622f99c0575fd9c7215c5b423f0f4fffe21d5d5b1d9b64092860109f763ab6b",
+  "fixture_hash": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
   "state_hash": {
-    "initial": "5e69bcfaa1935a5eb4bef6ba1b8e3d4db1cf379042fd6321516416281b041f20",
-    "final": "d5fb493f72601c6b414a13d0869c0899f2645db81e706db3aa937de83dcfd278",
-    "replay_final": "d5fb493f72601c6b414a13d0869c0899f2645db81e706db3aa937de83dcfd278"
+    "initial": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
+    "final": "a3c3c90d8fbace986fd79aa8562c9c9b06f5d2102d046033dca9a555c5b3b14c",
+    "replay_final": "a3c3c90d8fbace986fd79aa8562c9c9b06f5d2102d046033dca9a555c5b3b14c"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T13:13:14.000Z",
+  "started": "2026-10-23T13:13:04.000Z",
   "turns": 7,
   "tool_calls": 15,
   "tool_errors": {
@@ -43,9 +43,9 @@
   "summary": "Reconciled Walter Kim after discharge: furosemide 40 mg, spironolactone 25 mg started, KCl stopped, lisinopril resumed; duplicate metoprolol tartrate flagged to Dr. Okafor; note written.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T13:14:24.000Z",
+  "ended": "2026-10-23T13:14:14.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "11",
+  "grader_version": "12",
   "outcome": "PASS",
   "valid": true,
   "fault": null,
