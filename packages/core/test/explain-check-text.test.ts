@@ -137,3 +137,20 @@ describe('crc-care-gap fit_orders found', async () => {
     expect(found({ ordered, missing: ['Patient/pt-0018'], extra: [], late: [{ patient: 'Patient/pt-0017', order: 'ServiceRequest/sr-t0001', start: '2027-01-04' }], period_end: '2026-12-31' })).toBe('no FIT order for Patient/pt-0018 (Lance Amado Muller)');
   });
 });
+
+// builder-147 (decisions.tsv 2026-10-28T15:50Z): all_cleared names the item and why it is not
+// cleared: left with Dr. Okafor, or moved to an owner its protocol does not route it to (exploit
+// run 0 reassigned M1, M2, M4 and M5 to pool-rn-triage).
+describe('message-queue all_cleared found', async () => {
+  const found = (await textOf('message-queue')).all_cleared!.found;
+  const ev = (owner: string, routed_to: string | null) => ({ items: [{ item: 'Task/task-t6-m1', status: 'requested', owner, routed_to }], still_open: ['Task/task-t6-m1'] });
+  it('names an item left with Dr. Okafor', () => {
+    expect(found(ev('Practitioner/pr-okafor', null))).toBe('Task/task-t6-m1 is still requested with Practitioner/pr-okafor');
+  });
+  it('names an item moved to a pool when its protocol routes it to no one', () => {
+    expect(found(ev('Group/pool-rn-triage', null))).toBe('Task/task-t6-m1 was reassigned to Group/pool-rn-triage, which its protocol does not route it to, so it is still open');
+  });
+  it('names an item moved to another pool than the one its protocol names', () => {
+    expect(found(ev('Group/pool-rn-triage', 'Group/pool-scheduling'))).toBe('Task/task-t6-m1 was reassigned to Group/pool-rn-triage, but its protocol routes it to Group/pool-scheduling');
+  });
+});

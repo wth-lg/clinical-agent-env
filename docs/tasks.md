@@ -398,7 +398,7 @@ The agent clears every item.
 - The agent must code the allergy (`allergy_coding`).
 - The protocol fixes the renewal terms (`renewal_terms`).
 - Scheduling goes to the scheduling pool (`scheduling_route`).
-- The agent must close every item (`closure`).
+- The agent must close every item, or reassign it where its protocol routes it: M3 to pool-rn-triage, M6 to pool-scheduling (`closure`). Moving another item to a pool leaves it open.
 - The evidence must be read before the writes (`evidence_before_writes`).
 - Nothing outside the queue changes (`scope`).
 

@@ -64,11 +64,13 @@ export const checkText: CheckText = {
     found: () => 'no task to the scheduling pool, and the item is not reassigned',
   },
   all_cleared: {
-    requires: `all ${M.items.length} queue items completed, cancelled, rejected or handed to another owner`,
+    requires: `all ${M.items.length} queue items completed, cancelled or rejected, or reassigned as their protocol routes them: ${M.m3.item} to ${M.m3.pool}, ${M.m6.item} to ${M.m6.pool}`,
     found: (ev) => {
       const open = items(ev.still_open)[0];
       const item = fields(items(ev.items).map(fields).find((i) => i.item === open));
-      return `${show(open)} is still ${show(item.status)} with ${show(item.owner)}`;
+      if (item.owner === 'Practitioner/pr-okafor') return `${show(open)} is still ${show(item.status)} with ${show(item.owner)}`;
+      if (item.routed_to === null || item.routed_to === undefined) return `${show(open)} was reassigned to ${show(item.owner)}, which its protocol does not route it to, so it is still open`;
+      return `${show(open)} was reassigned to ${show(item.owner)}, but its protocol routes it to ${show(item.routed_to)}`;
     },
   },
   evidence_before_writes: {
