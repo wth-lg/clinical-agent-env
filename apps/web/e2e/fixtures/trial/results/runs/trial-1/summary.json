@@ -200,13 +200,13 @@
     },
     "discharge-medrec": {
       "task_versions": [
-        "350dbe9f867a7a61710ac887d3c17371d157a15b194bedd4d3076d849cd68fdb"
+        "ed129e524cd69585ba8b03532adbaaa2ecfa7ecae90e95e981f9df378e8216de"
       ],
       "env_versions": [
         "682033ef2b6763eca76c0e8b48d76c6f766d3e6cc47cca2da118438dcfc1a316"
       ],
       "grader_task_versions": [
-        "305dfcee6413a171ef5796faff49576a8c8b32e7179848e1ec582b39616586c7"
+        "f8d0b6385645439f173973358586425ca3086863a682e02d0c25e1672f1f2565"
       ],
       "records": 1,
       "trials": 0,

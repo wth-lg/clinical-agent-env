@@ -9,7 +9,7 @@
   "task_versions": {
     "contrast-ct-prep": "431eec69b8639e84fd6b5ef01817a7016c9071b71387683b31f90a7c7ac5ed99",
     "crc-care-gap": "d9c62f20be9dec1030e53d477e0708e3875a1bd87329e3f6af9fd7f5b1fc8357",
-    "discharge-medrec": "350dbe9f867a7a61710ac887d3c17371d157a15b194bedd4d3076d849cd68fdb",
+    "discharge-medrec": "ed129e524cd69585ba8b03532adbaaa2ecfa7ecae90e95e981f9df378e8216de",
     "message-queue": "771d5fe97330c334779944ddd522cfab5a07ff3fcf522b127e78ba6e8b3118ba",
     "renal-dose-review": "edbd69c36bf647e33b8184775be7c7925808415b63e77fb91a14e5215e462453",
     "results-inbox": "8cf13e458b1edd70a79ecde68b899f23fa557f85abb8a279b01322d2e6be3e97"
@@ -25,7 +25,7 @@
   "grader_task_versions": {
     "contrast-ct-prep": "5551d748e7afbbef57efb27e0ee83f9303203ce95028b0b595e153d7dba835a5",
     "crc-care-gap": "743d2b20f16d03a15af8fb3314d5b388c00efb50e3e7cd45a29f9c86739b4e48",
-    "discharge-medrec": "305dfcee6413a171ef5796faff49576a8c8b32e7179848e1ec582b39616586c7",
+    "discharge-medrec": "f8d0b6385645439f173973358586425ca3086863a682e02d0c25e1672f1f2565",
     "message-queue": "b7c8a10c7ff1773294f9a89498deaaa2cb2421f283531617d7c3e566c3e98430",
     "renal-dose-review": "855fdd80d22529258f8ef6f6248ebb8c0d4874fdfbddf30b2a14606056da7c3b",
     "results-inbox": "3db630a3f37947f3a7e4a2e1f7cac3c971c3a7511759abfb0387d43a1445f3d2"
