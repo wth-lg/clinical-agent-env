@@ -1,8 +1,9 @@
 // Trial page wording (pre-audit M7, M8, P17j JU11): the heading is the task title, then "Trial i of n
 // · <model> · effort high", with the trial path in small mono text, and no word of the heading breaks
 // mid-word at 390 px. A pilot that ran on another world version says so in a neutral tone and offers no
-// Replay; an official trial on another world keeps the alert.
+// Replay, and that note passes axe in light and dark; an official trial on another world keeps the alert.
 import { readFileSync } from 'node:fs';
+import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { browse } from './browse.ts';
 import { RUN_ID, trialBase, TRIALS, records } from './fixtures/trial/trial.ts';
@@ -70,6 +71,13 @@ test('a pilot on another world says so in a neutral tone and offers no Replay', 
   await expect(line).not.toHaveAttribute('role', 'alert');
   await expect(p.getByTestId('replay-block')).toHaveCount(0);
   await expect(p.getByRole('button', { name: 'Replay' })).toHaveCount(0);
+  // The note's state passes axe, light and dark (verifier-phase-P17j-retro-JU4JU11-1 m-a).
+  for (const scheme of ['light', 'dark'] as const) {
+    await page.emulateMedia({ colorScheme: scheme });
+    await expect(line).toBeVisible();
+    const bad = (await new AxeBuilder({ page }).analyze()).violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => v.id);
+    expect(bad, scheme).toEqual([]);
+  }
 });
 
 test('a pilot with no initial hash says the world it ran on is not recorded', async ({ page }) => {
