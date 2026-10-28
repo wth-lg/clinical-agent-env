@@ -272,6 +272,11 @@ export const alternatives: Alternative[] = [
     script: [...reads(), { calls: actions().map((c) => (c.name === 'order_service' && c.input.patient === PT.E2 ? orderFit(PT.E2, undefined, '2026-12-31T19:00:00-05:00') : c)) }, { calls: [finish()] }],
   },
   {
+    id: 'fit_order_utc_written',
+    why: "Orders E2's FIT kit for 2027-01-01T04:30:00Z, written in UTC: that is 23:30 clinic time on 2026-12-31, so the clinic-local start is in the period (P17j JG4-T3 boundary).",
+    script: [...reads(), { calls: actions().map((c) => (c.name === 'order_service' && c.input.patient === PT.E2 ? orderFit(PT.E2, undefined, '2027-01-01T04:30:00Z') : c)) }, { calls: [finish()] }],
+  },
+  {
     id: 'fit_window_into_next_year',
     why: "Gives E2's FIT kit an order window from 2026-12-01 to 2027-01-29: the window starts in the measurement period, which is all the gate asks of an order window; when the kit comes back is the patient's part (P17j JG4-T3).",
     script: [...reads(), { calls: actions().map((c) => (c.name === 'order_service' && c.input.patient === PT.E2 ? { ...c, input: { ...c.input, occurrence_start: '2026-12-01', occurrence_end: '2027-01-29' } } : c)) }, { calls: [finish()] }],

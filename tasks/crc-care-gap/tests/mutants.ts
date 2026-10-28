@@ -121,6 +121,15 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
     script: [...reads(), { calls: actions().map((c) => (c.name === 'order_service' && c.input.patient === PT.E2 ? orderFit(PT.E2, undefined, '2027-01-01T08:00:00-05:00') : c)) }, { calls: [finish()] }],
   },
   {
+    id: 'fit_order_offset_after_period',
+    trap: 'fit_after_period',
+    why: "Orders E2's FIT kit for 2026-12-31T22:00:00-10:00, written with a Hawaii offset: that is 03:00 clinic time on 2027-01-01, after the measurement period ends, though the date as written is 2026-12-31.",
+    fails: ['fit_orders'],
+    attribution: 'reasoning',
+    loses: [],
+    script: [...reads(), { calls: actions().map((c) => (c.name === 'order_service' && c.input.patient === PT.E2 ? orderFit(PT.E2, undefined, '2026-12-31T22:00:00-10:00') : c)) }, { calls: [finish()] }],
+  },
+  {
     id: 'e2_outreach_by_phone_task',
     trap: 'outreach_channel',
     why: 'Gets every order right and reaches E2 by a Task asking scheduling to phone him about the FIT kit instead of a portal message: the right outreach in a channel RBC-QM-02 §5 does not name, so action_form (P17j JG8b).',
