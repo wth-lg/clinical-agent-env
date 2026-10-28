@@ -2,7 +2,8 @@
 // FAIL on exactly the gates it declares and lose exactly the rubric items it declares (the -5
 // note_uses_wrong_scr among them, which no gate covers). The arithmetic of each wrong path is in
 // its why.
-import type { Mutant } from '../../../packages/grader/matrix/types.ts';
+import { type Mutant, oneTurn } from '../../../packages/grader/matrix/types.ts';
+import { oracle } from '../solution/solve.ts';
 import {
   activeMeds, apixabanUp, crclCalc, DONE, egfrCalc, findPatient, finish, gabapentinBid, modify, note, noteText, observations, order, ORACLE_NOTE, policy, read, RX, scrResults, stop, weights,
 } from '../solution/steps.ts';
@@ -436,5 +437,14 @@ export const mutants: Mutant[] = [
     loses: [],
     attribution: 'process',
     script: [{ calls: [activeMeds] }, { calls: [scrResults, weights] }, { calls: [policy] }, { calls: [egfrCalc, crclCalc] }, { calls: [apixabanUp, gabapentinBid] }, { calls: [note()] }, { calls: [finish(DONE)] }],
+  },
+  {
+    id: 'one_turn_reads_and_orders',
+    trap: 'inputs_skipped',
+    why: 'Issues every read of the oracle and its two dose changes and note in one answer: the orders go in before any SCr, weight or medication list has come back.',
+    fails: ['inputs_before_orders'],
+    loses: [],
+    attribution: 'process',
+    script: oneTurn(oracle),
   },
 ];

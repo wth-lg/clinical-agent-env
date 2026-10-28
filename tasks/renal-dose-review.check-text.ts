@@ -2,7 +2,7 @@
 // requires, and the first difference its evidence (tests/grader.ts) shows. The Tasks view and the
 // failure reasons read it. It sits beside the task directory, not in it, so neither task version
 // covers it: rewording it regrades nothing.
-import { fields, items, listed, show, type CheckText } from '../packages/core/explain.ts';
+import { fields, items, lateness, listed, show, type CheckText } from '../packages/core/explain.ts';
 import { expected } from './renal-dose-review/expected.ts';
 
 const TIMES: Record<number, string> = { 1: 'once a day', 2: 'twice a day', 3: 'three times a day' };
@@ -34,7 +34,7 @@ const kept = (drug: string) => ({
   },
 });
 
-// The inputs seen late, by name: never before the first medication order, or after it. A record
+// The inputs seen late, by name: never before the first medication order, in its answer, or after it. A record
 // graded before the age and medication inputs has exposed ({id, step}, no input) instead of seen;
 // its ids are named as they are.
 const INPUT_NAMES: Record<string, (ids: unknown[]) => string> = {
@@ -51,7 +51,7 @@ const late = (ev: Record<string, unknown>) => {
   const at = `the first medication order at step ${show(ev.first_medication_write)}`;
   const unseen = entries.filter((e) => e.step === null || e.step === undefined);
   if (unseen.length > 0) return `${named(unseen)} ${inputsOf(unseen).length === 1 ? 'was' : 'were'} not seen before ${at}`;
-  return `${named(entries.slice(0, 1))} was seen at step ${show(entries[0]?.step)}, after ${at}`;
+  return `${named(entries.slice(0, 1))} was seen at step ${show(entries[0]?.step)}, ${lateness(entries[0]?.step, ev.first_medication_write)} ${at}`;
 };
 
 const A = expected.apixaban;

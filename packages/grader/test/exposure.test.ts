@@ -12,7 +12,7 @@ import { INBOX_QUEUE_SYSTEM, READ_TOOLS, type ReadContext } from '../../env/tool
 import { callTool } from '../../env/tools/registry.ts';
 import { attribute } from '../attribution.ts';
 import { gate } from '../check.ts';
-import { firstExposed, lastWrite, shows, stepsOf } from '../exposure.ts';
+import { firstExposed, lastWrite, seenBefore, shows, stepsOf } from '../exposure.ts';
 import type { CheckResult } from '../grade.ts';
 import { INITIAL, note, PATIENT, trajectory } from './helpers.ts';
 
@@ -74,6 +74,24 @@ describe('exposure from the read tools', () => {
     const joined = [{ ...steps[1]!, shown: { 'DocumentReference/doc-nurse-1': 'ends with 143\nlb starts here' } }];
     expect(shows(joined, 'doc-nurse-1', 3, '143 lb')).toBe(false);
     expect(shows(joined, 'doc-nurse-1', 3, 'LB starts')).toBe(true);
+  });
+  it('a result is seen only by a step of a later turn, however early in its answer the read stands', () => {
+    // verifier-phase-P17i-P17-T5-1 F2, probe l3: the reads and the orders in one answer.
+    const write = { name: 'write_note', written: ['DocumentReference/doc-new'] };
+    const oneAnswer = stepsOf(trajectory([{ ...read('search_notes', { query: 'weight' }), turn: 1 }, { ...write, turn: 1 }]));
+    expect(oneAnswer.map((s) => s.turn)).toEqual([1, 1]);
+    expect(firstExposed(oneAnswer, 'doc-nurse-1')).toBe(1);
+    expect(seenBefore(oneAnswer, 1, 2)).toBe(false);
+    expect(shows(oneAnswer, 'doc-nurse-1', 2, '143 lb')).toBe(false);
+    const nextAnswer = stepsOf(trajectory([{ ...read('search_notes', { query: 'weight' }), turn: 1 }, { ...write, turn: 2 }]));
+    expect(seenBefore(nextAnswer, 1, 2)).toBe(true);
+    expect(shows(nextAnswer, 'doc-nurse-1', 2, '143 lb')).toBe(true);
+    // Never seen, and a step against itself or an earlier step, is not seen before.
+    expect(seenBefore(nextAnswer, null, 2)).toBe(false);
+    expect(seenBefore(nextAnswer, 2, 2)).toBe(false);
+    expect(seenBefore(nextAnswer, 2, 1)).toBe(false);
+    // A step number past the last stands after every turn: the end of the trial.
+    expect(seenBefore(oneAnswer, 2, 3)).toBe(true);
   });
   it('a long note shows only the snippet around the match', () => {
     const long = `${'Filler words about the visit. '.repeat(20)}Signed addendum: patient declines statin.${' More filler.'.repeat(30)}`;

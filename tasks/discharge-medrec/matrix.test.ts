@@ -86,7 +86,7 @@ describe('sources_before_orders reads the text shown', () => {
   const SPIRO = 'MedicationRequest/new-spiro';
   // Step 1 reads the creatinine, step 2 is a notes search or read, step 3 orders spironolactone.
   const ctxWith = (second: Partial<Step>): GateCtx => {
-    const step = (n: number, s: Partial<Step>): Step => ({ n, seq: n, tool: 'fhir_read', is_error: false, error_code: null, exposed_ids: [], referenced_ids: [], written_ids: [], shown: {}, ...s });
+    const step = (n: number, s: Partial<Step>): Step => ({ n, seq: n, turn: n, tool: 'fhir_read', is_error: false, error_code: null, exposed_ids: [], referenced_ids: [], written_ids: [], shown: {}, ...s });
     const steps = [step(1, { exposed_ids: [SCR] }), step(2, second), step(3, { tool: 'order_medication', written_ids: [SPIRO] })];
     const spiro = { resourceType: 'MedicationRequest', id: 'new-spiro', status: 'active', subject: { reference: expected.patient }, medicationCodeableConcept: { text: 'spironolactone 25 MG Oral Tablet' } };
     const final = { get: (type: string, id: string) => (`${type}/${id}` === SPIRO ? spiro : undefined) };
@@ -109,7 +109,7 @@ describe('sources_before_orders ties every medication order write to its source'
   const SCR = expected.scr.id;
   const L = expected.sources.lines;
   const MEDS: Record<string, string> = { furosemide: 'furosemide 40 MG Oral Tablet', kcl: 'potassium chloride 20 MEQ Extended Release Oral Tablet', lisinopril: 'lisinopril 10 MG Oral Tablet', panto: 'pantoprazole 40 MG Delayed Release Oral Tablet' };
-  const step = (n: number, s: Partial<Step>): Step => ({ n, seq: n, tool: 'fhir_read', is_error: false, error_code: null, exposed_ids: [], referenced_ids: [], written_ids: [], shown: {}, ...s });
+  const step = (n: number, s: Partial<Step>): Step => ({ n, seq: n, turn: n, tool: 'fhir_read', is_error: false, error_code: null, exposed_ids: [], referenced_ids: [], written_ids: [], shown: {}, ...s });
   // Steps before the write, then one order write of `drug` (a key of MEDS).
   const ctxWith = (drug: string, before: Array<Partial<Step>>): GateCtx => {
     const key = `MedicationRequest/mr-${drug}`;

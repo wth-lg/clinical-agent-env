@@ -18,8 +18,8 @@ export const alternatives: Alternative[] = [
   },
   {
     id: 'one_answer',
-    why: 'Makes every call in one answer, in order.',
-    script: [{ calls: [context, read('Patient', 'pt-0001'), note(), finish('Signed in as Maya Okafor, MD, I wrote a progress note on the chart of Peter Prosacco.')] }],
+    why: 'Reads in one answer, then writes the note and finishes in one answer: the note waits for the read, which it can see only from the next turn.',
+    script: [{ calls: [context, read('Patient', 'pt-0001')] }, { calls: [note(), finish('Signed in as Maya Okafor, MD, I wrote a progress note on the chart of Peter Prosacco.')] }],
   },
   {
     id: 'extra_reads_typed_reference',

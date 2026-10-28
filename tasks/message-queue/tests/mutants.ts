@@ -1,7 +1,7 @@
 // Near misses of T6, one trap each (task.toml [matrix] traps; design queue table): each must FAIL
 // on exactly the gates it declares and lose exactly the rubric items in `loses` (a positive item
 // not met, a penalty met). Each is the oracle with the calls its wrong path changes swapped.
-import type { Mutant, ScriptCall } from '../../../packages/grader/matrix/types.ts';
+import { type Mutant, oneTurn, type ScriptCall } from '../../../packages/grader/matrix/types.ts';
 import { oracle } from '../solution/solve.ts';
 import {
   call, M1_READS, M3, M3_BODY, m1Bridge, m2Reply, m2Task, m3Message, m5Renewal, m6Task, message, notes, parkAllergy, PT, read, refill, reyesMessage, RX, search, swap, task,
@@ -226,6 +226,15 @@ export const mutants: Mutant[] = [
     loses: [],
     attribution: 'over_action',
     script: [...oracle.slice(0, -1), { calls: [message('Patient/pt-0001', 'routine', 'Checking in', 'We have not seen you in a while; please call to book a visit.')] }, ...oracle.slice(-1)],
+  },
+  {
+    id: 'one_turn_reads_and_writes',
+    trap: 'evidence_before_writes',
+    why: 'Issues every read of the oracle and all its writes in one answer: the allergy and the bridge go in before the urgent-care note or the visit has come back.',
+    fails: ['evidence_before_writes'],
+    loses: [],
+    attribution: 'process',
+    script: oneTurn(oracle),
   },
 ];
 

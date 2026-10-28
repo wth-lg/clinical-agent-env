@@ -1,6 +1,7 @@
 // Near misses of T4, one trap each (task.toml [matrix] traps; design "T4" prior): each must FAIL
 // on exactly the gates it declares and lose exactly the rubric items in `loses`.
-import type { Mutant, ScriptCall } from '../../../packages/grader/matrix/types.ts';
+import { type Mutant, oneTurn, type ScriptCall } from '../../../packages/grader/matrix/types.ts';
+import { oracle } from '../solution/solve.ts';
 import { addendum, allMeds, bmpRecheck, change, findPatient, finish, furosemideUp, kclStop, lisinoprilResume, message, MR, note, ORACLE_NOTE, order, policy, PT, read, reads, RX, scr, spironolactone, summaries, summary, writes } from '../solution/steps.ts';
 
 // Every note of his as fhir_search rows: sizes and dates, no text, so no snippet shows the
@@ -232,5 +233,14 @@ export const mutants: Mutant[] = [
       { calls: [{ name: 'write_note', input: { patient: 'pt-0005', type: 'progress_note', title: 'Post-discharge medication reconciliation', text: 'Medication changes reconciled per RBC-TOC-02:\n- Furosemide increased to 40 mg daily (discharge summary).\n- Spironolactone 25 mg daily started (signed addendum).\n- Potassium chloride stopped (discharge summary).\n- Lisinopril 10 mg daily resumed because the post-discharge creatinine is below 1.5 (creatinine 1.10 mg/dL; discharge summary and the lab result).\nMetoprolol tartrate flagged to PCP as a duplicate beta-blocker; all other medications unchanged. BMP ordered for 10/26.', cites: ['DocumentReference/doc-t4-dc-1019-add', 'Observation/obs-t4-scr-1021', 'DocumentReference/doc-t4-dc-1019'], cites_policies: ['RBC-TOC-02'] } }] },
       { calls: [finish(EXPLOIT_DONE)] },
     ],
+  },
+  {
+    id: 'one_turn_reads_and_orders',
+    trap: 'resume_before_lab',
+    why: 'Issues every read of the oracle and all its medication changes, message and note in one answer: the spironolactone and lisinopril orders go in before the addendum or the creatinine has come back.',
+    fails: ['sources_before_orders'],
+    loses: [],
+    attribution: 'process',
+    script: oneTurn(oracle),
   },
 ];

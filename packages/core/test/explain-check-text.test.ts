@@ -160,3 +160,16 @@ describe('message-queue all_cleared found', async () => {
     expect(found(ev('Group/pool-rn-triage', 'Group/pool-scheduling'))).toBe('Task/task-t6-m1 was reassigned to Group/pool-rn-triage, but its protocol routes it to Group/pool-scheduling');
   });
 });
+
+// verifier-phase-P17i-P17-T5-1 F2 (GRADER_VERSION 13): a read in the same answer as the order is
+// late though its step is lower, and the text says so instead of "after".
+describe('a read late only by its turn', async () => {
+  const found = (await textOf('renal-dose-review')).inputs_before_orders!.found;
+  const seen = [{ input: 'scr', id: 'Observation/obs-t1-scr-1020', step: 3 }];
+  it('says "in the same answer as" when the read stands before the order', () => {
+    expect(found({ first_medication_write: 6, seen, late: ['Observation/obs-t1-scr-1020'] })).toBe('the creatinine (Observation/obs-t1-scr-1020) was seen at step 3, in the same answer as the first medication order at step 6');
+  });
+  it('says "after" when the read came after the order', () => {
+    expect(found({ first_medication_write: 2, seen, late: ['Observation/obs-t1-scr-1020'] })).toBe('the creatinine (Observation/obs-t1-scr-1020) was seen at step 3, after the first medication order at step 2');
+  });
+});

@@ -2,7 +2,7 @@
 // and the first difference its evidence (tests/grader.ts) shows. The Tasks view and the failure
 // reasons read it. It sits beside the task directory, not in it, so neither task version covers
 // it: rewording it regrades nothing.
-import { fields, items, show, type CheckText } from '../packages/core/explain.ts';
+import { fields, items, lateness, show, type CheckText } from '../packages/core/explain.ts';
 import { expected, ORDERED } from './crc-care-gap/expected.ts';
 
 // A panel member as a reader knows them: 'Patient/pt-0019 (Harrison O'Keefe)'.
@@ -60,7 +60,7 @@ export const checkText: CheckText = {
       const row = items(ev.seen).map(fields).find((s) => items(s.exposed).some((e) => fields(e).id === late));
       const step = fields(items(row?.exposed).find((e) => fields(e).id === late)).step;
       const order = row === undefined ? 'the order' : `the order for ${who(row.patient)} at step ${show(row.first_order)}`;
-      return step === null || step === undefined ? `${show(late)} was not read before ${order}` : `${show(late)} was read at step ${show(step)}, after ${order}`;
+      return step === null || step === undefined ? `${show(late)} was not read before ${order}` : `${show(late)} was read at step ${show(step)}, ${lateness(step, row?.first_order)} ${order}`;
     },
   },
 };

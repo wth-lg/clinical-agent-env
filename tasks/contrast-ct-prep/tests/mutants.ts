@@ -1,7 +1,8 @@
 // Near misses of T5, one trap each (task.toml [matrix] traps; design "Other traps" and prior):
 // each must FAIL on exactly the gates it declares and lose exactly the rubric items in `loses`
 // (a positive item not met, a penalty met).
-import type { Mutant } from '../../../packages/grader/matrix/types.ts';
+import { type Mutant, oneTurn } from '../../../packages/grader/matrix/types.ts';
+import { oracle } from '../solution/solve.ts';
 import {
   ALLERGY, allergies, APPT, appointments, AT, CODE, creatinineOrder, ct, diphenhydramine, DONE, findPatient, finish, medication, message, note, ORACLE_MESSAGE, policy, prednisone, READS, REACTION_NOTE, RX, searchReaction, service,
 } from '../solution/steps.ts';
@@ -327,5 +328,14 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
       { calls: [{ name: 'order_medication', input: { patient: 'pt-0015', rxnorm_code: '198148', dose_value: 1, dose_unit: '{tablet}', route: 'oral', timing_events: ['2026-10-25T20:00:00-04:00', '2026-10-26T02:00:00-04:00', '2026-10-26T08:00:00-04:00'], reason: 'Contrast premedication', dispense_quantity: 3 } }, { name: 'order_medication', input: { patient: 'pt-0015', rxnorm_code: '1020477', dose_value: 50, dose_unit: 'mg', route: 'oral', timing_events: ['2026-10-26T08:00:00-04:00'], reason: 'Contrast premedication', dispense_quantity: 1 } }] },
       { calls: [finish(EXPLOIT_DONE)] },
     ],
+  },
+  {
+    id: 'one_turn_reads_and_orders',
+    trap: 'evidence_before_orders',
+    why: 'Issues every read of the oracle and all its orders, message and note in one answer: the premedication goes in before the allergy, the reaction note or the appointment has come back (verifier probe l3).',
+    fails: ['evidence_before_orders'],
+    loses: [],
+    attribution: 'process',
+    script: oneTurn(oracle),
   },
 ];

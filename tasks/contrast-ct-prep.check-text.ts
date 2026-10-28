@@ -2,7 +2,7 @@
 // requires, and the first difference its evidence (tests/grader.ts) shows. The Tasks view and the
 // failure reasons read it. It sits beside the task directory, not in it, so neither task version
 // covers it: rewording it regrades nothing.
-import { clock, fields, items, listed, show, type CheckText } from '../packages/core/explain.ts';
+import { clock, fields, items, lateness, listed, show, type CheckText } from '../packages/core/explain.ts';
 import { expected } from './contrast-ct-prep/expected.ts';
 
 const APPT = expected.appointment;
@@ -60,8 +60,8 @@ export const checkText: CheckText = {
       const unseen = late.filter((id) => step(id) === null || step(id) === undefined);
       const after = late.filter((id) => !unseen.includes(id));
       const was = (xs: readonly unknown[]) => (xs.length === 1 ? 'was' : 'were');
-      if (unseen.length === 0) return `${show(after[0])} was seen at step ${show(step(after[0]))}, after ${at}`;
-      return `${listed(unseen)} ${was(unseen)} not seen before ${at}${after.length > 0 ? `; ${listed(after)} ${was(after)} seen only after it` : ''}`;
+      if (unseen.length === 0) return `${show(after[0])} was seen at step ${show(step(after[0]))}, ${lateness(step(after[0]), ev.first_order_write)} ${at}`;
+      return `${listed(unseen)} ${was(unseen)} not seen before ${at}${after.length > 0 ? `; ${listed(after)} ${was(after)} seen only in its answer or after it` : ''}`;
     },
   },
 };

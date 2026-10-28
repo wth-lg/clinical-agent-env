@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:message-queue:1",
   "task_id": "message-queue",
-  "task_version": "4649a3b79da2d0850b5cd37f4257c0e5900de20cbf8a2f4ef44316e093ed05dc",
+  "task_version": "f86d3cf2708a5c79a521a1989c089dca9410978be0ff7aa1e07f10b01302086c",
   "env_version": "d4c4429bdbbb3432999393e2b7216ce0a311bd54ddd60e9bf34711e870dc96d0",
-  "grader_task_version": "3afc1d452e65dce56e035e5d2641d95595b311c0f99cb454dbb1a9e5c58a1ba5",
+  "grader_task_version": "c3c17c10bd1e5c92cb820cb2561f2b2a4eee5064a3a0640a48af725b283b6982",
   "fixture_hash": "5e69bcfaa1935a5eb4bef6ba1b8e3d4db1cf379042fd6321516416281b041f20",
   "state_hash": {
     "initial": "5e69bcfaa1935a5eb4bef6ba1b8e3d4db1cf379042fd6321516416281b041f20",
@@ -16,8 +16,8 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T13:29:25.000Z",
-  "turns": 16,
+  "started": "2026-10-23T13:29:29.000Z",
+  "turns": 17,
   "tool_calls": 52,
   "tool_errors": {
     "INVALID_INPUT": 0,
@@ -43,9 +43,9 @@
   "summary": "Cleared the six messages: Evelyn Brooks sent to the ED with a stat triage task; Gloria Hayes 30-day lisinopril bridge and BMP; Frank Odum not refilled (atorvastatin stopped by cardiology), task to Dr. Okafor; Lena Park amoxicillin-clavulanate held for a documented reaction, allergy recorded, NP Reyes told; Samuel Price metformin renewed; Marcus Webb routed to scheduling.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T13:32:38.000Z",
+  "ended": "2026-10-23T13:32:46.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "12",
+  "grader_version": "13",
   "outcome": "PASS",
   "valid": true,
   "fault": null,
@@ -203,38 +203,32 @@
           {
             "item": "Task/task-t6-m1",
             "status": "completed",
-            "owner": "Practitioner/pr-okafor",
-            "routed_to": null
+            "owner": "Practitioner/pr-okafor"
           },
           {
             "item": "Task/task-t6-m2",
             "status": "completed",
-            "owner": "Practitioner/pr-okafor",
-            "routed_to": null
+            "owner": "Practitioner/pr-okafor"
           },
           {
             "item": "Task/task-t6-m3",
             "status": "completed",
-            "owner": "Practitioner/pr-okafor",
-            "routed_to": "Group/pool-rn-triage"
+            "owner": "Practitioner/pr-okafor"
           },
           {
             "item": "Task/task-t6-m4",
             "status": "completed",
-            "owner": "Practitioner/pr-okafor",
-            "routed_to": null
+            "owner": "Practitioner/pr-okafor"
           },
           {
             "item": "Task/task-t6-m5",
             "status": "completed",
-            "owner": "Practitioner/pr-okafor",
-            "routed_to": null
+            "owner": "Practitioner/pr-okafor"
           },
           {
             "item": "Task/task-t6-m6",
             "status": "completed",
-            "owner": "Practitioner/pr-okafor",
-            "routed_to": "Group/pool-scheduling"
+            "owner": "Practitioner/pr-okafor"
           }
         ],
         "still_open": []
