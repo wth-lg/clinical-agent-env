@@ -3,18 +3,25 @@
 //
 // NOW is a Friday in US Eastern Daylight Time. US DST ends 2026-11-01, so the -04:00 offset
 // holds for every write a trial stamps; the fixture lint rejects a task time window that
-// crosses a transition.
+// crosses a transition. eastern() still follows the transitions, so a date read from an instant
+// outside that window (a measurement period end, a birth date) is the clinic's local date.
 
 export const NOW = '2026-10-23T08:00:00-04:00';
 export const NOW_MS = Date.parse(NOW);
 export const TIME_ZONE = 'America/New_York';
-const OFFSET = '-04:00';
-const OFFSET_MS = -4 * 3_600_000;
 export const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as const;
 
-// ISO 8601 with the -04:00 offset, to the second.
+// The clinic's wall clock, h23 so midnight is 00 rather than 24.
+const WALL = new Intl.DateTimeFormat('en-US', { timeZone: TIME_ZONE, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+// ISO 8601 on the clinic's wall clock, to the second, with the offset in force at that instant:
+// -04:00 under EDT, -05:00 under EST.
 export function eastern(ms: number): string {
-  return new Date(ms + OFFSET_MS).toISOString().slice(0, 19) + OFFSET;
+  const p = Object.fromEntries(WALL.formatToParts(ms).map((x) => [x.type, x.value]));
+  const local = `${p.year!.padStart(4, '0')}-${p.month}-${p.day}T${p.hour}:${p.minute}:${p.second}`;
+  const offset = Math.round((Date.parse(`${local}Z`) - Math.floor(ms / 1000) * 1000) / 60_000);
+  const abs = Math.abs(offset);
+  return `${local}${offset < 0 ? '-' : '+'}${String(Math.floor(abs / 60)).padStart(2, '0')}:${String(abs % 60).padStart(2, '0')}`;
 }
 
 // NOW's calendar date and HH:MM on the clinic's wall clock.
