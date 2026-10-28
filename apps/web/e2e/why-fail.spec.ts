@@ -169,20 +169,26 @@ test('a valid failure the audit labels environment blocks the run, and its own r
   // Its row and its trial header show the audit's label in the blocked tone (decisions.tsv 17:30 (c)).
   await page.getByRole('link', { name: 'Runs', exact: true }).first().click();
   const r = page.locator(`[data-testid="run"][data-official="true"] [data-testid="trial-row"][data-trial="${row.trial}"]`);
-  await expect(r.getByTestId('label')).toHaveAttribute('data-label', 'environment');
-  // It is counted, so the note says only the block (decisions.tsv 19:10).
-  await expect(r.getByTestId('fault-note')).toHaveText('The run is blocked until this is fixed.');
-  await page.getByTestId('run-blocked').getByTestId('blocking-trial').filter({ hasText: row.trial }).click();
-  const header = page.getByTestId('trial-header');
-  await expect(header.getByTestId('label')).toHaveAttribute('data-label', 'environment');
-  await expect(header).toHaveCSS('border-left-color', await page.evaluate(() => {
+  const danger = await page.evaluate(() => {
     const x = document.createElement('span');
     x.className = 'text-danger';
     document.body.append(x);
     const c = getComputedStyle(x).color;
     x.remove();
     return c;
-  }));
+  });
+  await expect(r.getByTestId('label')).toHaveAttribute('data-label', 'environment');
+  // Its chip takes the label's mark and the danger border, not the model mark (verifier-phase-P17j-retro-JU2-1 D1).
+  await expect(r.getByTestId('outcome')).toHaveAttribute('data-mark', 'environment');
+  await expect(r.getByTestId('outcome')).toHaveCSS('border-top-color', danger);
+  // It is counted, so the note says only the block (decisions.tsv 19:10).
+  await expect(r.getByTestId('fault-note')).toHaveText('The run is blocked until this is fixed.');
+  await page.getByTestId('run-blocked').getByTestId('blocking-trial').filter({ hasText: row.trial }).click();
+  const header = page.getByTestId('trial-header');
+  await expect(header.getByTestId('label')).toHaveAttribute('data-label', 'environment');
+  await expect(header.getByTestId('outcome')).toHaveAttribute('data-mark', 'environment');
+  await expect(header.getByTestId('outcome')).toHaveCSS('border-top-color', danger);
+  await expect(header).toHaveCSS('border-left-color', danger);
 });
 
 test('the check and audit filters do not follow a rail link or an Overview task link', async ({ page }) => {

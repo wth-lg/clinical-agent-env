@@ -21,7 +21,7 @@ import type { TrialEvent } from '../../../../packages/core/events.ts';
 import { fetchEvents, fullExplanation, useResults, type RunData, type Trial } from '../data/results.ts';
 import { harmItems, safePass, type HarmItem } from '../data/harm.ts';
 import { FaultLabel, GlossaryLink, HarmChip, HashText, Notice, OutcomeChip } from '../data/ui.tsx';
-import { blocksTheRun, runBlock } from '../data/failures.ts';
+import { blocksTheRun, runBlock, shownFault } from '../data/failures.ts';
 import { tabTarget } from '../data/tabs.ts';
 import { useTaskList } from '../data/tasks.ts';
 import { MODEL } from '../adapters/ledger-browser.ts';
@@ -194,7 +194,7 @@ function Header({ t, e, rows, onStep, official }: { t: Trial; e: Explanation; ro
   return (
     <section aria-label="Why this trial ended as it did" data-testid="trial-header" className={`min-w-0 rounded-sm border border-line bg-surface p-4 ${nonPass ? `border-l-2 ${official && blocksTheRun(e) ? 'border-l-danger' : 'border-l-line-strong'}` : ''}`}>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <OutcomeChip outcome={e.outcome} fault={e.fault} />
+        <OutcomeChip outcome={e.outcome} fault={shownFault(e)} />
         <HarmChip items={useHarmTexts(t.task, harmItems(t.record))} />
         {nonPass && <FaultLabel e={e} notCountedShown={!e.valid && e.deciding !== null} official={official} />}
         <span className="ml-auto text-xs text-ink-muted" title="Agent and judge cost">${(t.record.cost_usd + (t.record.judge_cost_usd ?? 0)).toFixed(2)}</span>

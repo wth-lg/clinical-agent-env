@@ -3,6 +3,7 @@
 // faultCounts); the M1-M4 count and the run block come from the explanations (explain.ts), which
 // summary.json does not hold. No JSX and no data/ imports, so the e2e specs can import it.
 import { blocksRun, m1ToM4Met, type Explanation } from '../../../../packages/core/explain.ts';
+import type { Fault } from '../../../../packages/core/outcomes.ts';
 import { FAILURE_KINDS, FAILURE_LABELS, type FaultCounts } from '../../../../packages/core/summary.ts';
 
 export type FailureKind = (typeof FAILURE_KINDS)[number];
@@ -55,6 +56,14 @@ export const blocksTheRun = (e: Explanation): boolean =>
 // The fault label a trial shows: the audit's environment or grader label on a valid failure, which
 // makes it block the run, else the label explainTrial gives (null for a PASS with no fault).
 export const shownLabel = (e: Explanation): string | null => (isFailure(e) && (e.audit_label === 'environment' || e.audit_label === 'grader') ? e.audit_label : e.label);
+
+// The fault the outcome chip, the Overview dot and the Findings swatch show: the one the shown label
+// names, so an audit's environment or grader label never sits beside a model mark
+// (verifier-phase-P17j-retro-JU2-1 D1); else the fault explainTrial gives.
+export function shownFault(e: Explanation): Fault | null {
+  const l = shownLabel(e);
+  return l === 'environment' ? 'env' : l === 'grader' ? 'grader' : e.fault;
+}
 
 // The run block (it then shows no pass count, dot or Wilson interval, decisions.tsv
 // 2026-10-29T16:00): the trials that block it, by name, and how many are false PASSes.

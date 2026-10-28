@@ -16,7 +16,7 @@ import { useTaskList } from '../data/tasks.ts';
 import { Card, formatInterval, GlossaryLink, Hash, IntervalRow, markLabel, MarkLegend, markOf, Notice, Page, Swatch } from '../data/ui.tsx';
 import { hrefWith, onNav } from '../data/url.ts';
 import { safePass } from '../data/harm.ts';
-import { isFalsePass, kindWords, mostCommon, runBlock } from '../data/failures.ts';
+import { isFalsePass, kindWords, mostCommon, runBlock, shownFault } from '../data/failures.ts';
 import { FaultBox, RunBlocked } from '../findings/why.tsx';
 import { ModelLine, PassK, PassKLink } from '../findings/passk.tsx';
 import { formatClock } from '../data/text.ts';
@@ -89,7 +89,7 @@ function OfficialOverview({ run, headingRef, localRun }: { run: RunData; heading
             </span>
             <span className="col-span-2 flex flex-wrap gap-1 md:col-span-1" data-testid="swatches">
               {trials.filter((x) => x.task === id).map((x) => {
-                const mark = markOf(x.explanation.outcome, x.explanation.fault);
+                const mark = markOf(x.explanation.outcome, shownFault(x.explanation));
                 return <Swatch key={x.name} mark={mark} outcome={x.explanation.outcome} title={`${x.name}: ${x.explanation.outcome}, ${markLabel(mark)}`} />;
               })}
             </span>
