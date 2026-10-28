@@ -218,7 +218,7 @@ The expected status of each member, with the measurement period 2026-01-01 to 20
 
 Gate checks (`tests/grader.ts`, words in `tasks/crc-care-gap.check-text.ts`):
 
-- `fit_orders`: one new FIT order for each ordered gap patient, with its occurrence (date, dateTime or window) starting on or before 2026-12-31.
+- `fit_orders`: one new FIT order for each ordered gap patient, and every new FIT order (an optional one for an allowed patient too) with its occurrence (date, dateTime or window) starting on or before 2026-12-31; a dateTime is read by its date in clinic time (America/New_York), whatever offset it is written with.
 - `outreach_messages`: an outreach message to each ordered gap patient.
 - `nothing_for_others`: no order or message for a patient who must not get one.
 - `gap_seen_before_order`: the agent reads the resource that shows each gap before that patient's FIT order.
