@@ -78,6 +78,7 @@ Rubric (`tests/rubric.ts`, positive points total 13):
 - The gabapentin order gives it twice a day (1).
 - Penalty: the note uses the wrong SCr (-5, hybrid).
 - Penalty: the note bases the apixaban dose on eGFR or CrCl instead of the three criteria (-6, judged).
+- Penalty: the note states a medication change, an order or a message the trial did not make, or a dose the chart contradicts (-5, judged against the chart the trial left).
 
 ### Oracle
 
