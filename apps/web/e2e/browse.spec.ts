@@ -7,7 +7,8 @@
 // the help icon opens the glossary; Environment verifies the reset hash and runs a read tool. At
 // 390 px no view scrolls sideways, and a record the loader cannot read is an error row, not a
 // blank app.
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+import { browseFrom } from './browse.ts';
 import { NOT_AUDITED_MARKER, TAXONOMY_TEXT } from '../../../packages/core/explain.ts';
 import { AUDIT_LABEL, DENOMINATOR_RULE, FAULT_DEFINITIONS, FAULT_PRECEDENCE, PASS_DEFINITION } from '../../../packages/core/outcomes.ts';
 import { trialName } from '../../../packages/core/summary.ts';
@@ -15,15 +16,7 @@ import { kindWords, shownFault } from '../src/data/failures.ts';
 import { markOf } from '../src/data/ui.tsx';
 import { CHECK_TEXT, cliCriteria, cliMatrix, cliReplay, explain, sampleBase, MANIFEST_HASH, records, summary, TASK_IDS } from './fixtures/sample-results/sample.ts';
 
-async function browse(page: Page, path = './') {
-  await page.goto(new URL(path, await sampleBase(test.info().project.use.baseURL!)).href);
-  // A tab that already chose to browse goes straight to the view.
-  const gate = page.getByRole('button', { name: 'Browse without a key' });
-  const nav = page.getByRole('navigation', { name: 'Views' });
-  await expect(gate.or(nav)).toBeVisible();
-  if (await gate.isVisible()) await gate.click();
-  await expect(nav).toBeVisible();
-}
+const browse = browseFrom(sampleBase);
 
 test('the build serves the sample run', () => {
   expect(summary.run_id).toBe('sample-1');

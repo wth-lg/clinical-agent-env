@@ -3,7 +3,8 @@
 // and the Runs row and the trial header show it (data-testid secondary-reason) as explainTrial gives
 // it. Sample crc-care-gap/8 is such a trial. crc-care-gap/9's reason is cut at a clause boundary
 // (F1), not mid-clause.
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+import { browseFrom } from './browse.ts';
 import { explain, records, sampleBase } from './fixtures/sample-results/sample.ts';
 
 const record = (name: string) => {
@@ -12,14 +13,7 @@ const record = (name: string) => {
   return r;
 };
 
-async function browse(page: Page, path: string) {
-  await page.goto(new URL(path, await sampleBase(test.info().project.use.baseURL!)).href);
-  const gate = page.getByRole('button', { name: 'Browse without a key' });
-  const nav = page.getByRole('navigation', { name: 'Views' });
-  await expect(gate.or(nav)).toBeVisible();
-  if (await gate.isVisible()) await gate.click();
-  await expect(nav).toBeVisible();
-}
+const browse = browseFrom(sampleBase);
 
 test('crc-care-gap/8 shows its secondary reason on the Runs row and in the trial header', async ({ page }) => {
   const name = 'crc-care-gap/8';

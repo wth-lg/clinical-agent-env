@@ -5,6 +5,7 @@
 // axe check, light and dark (verifier-phase-P17j-retro-JU12-1 D2).
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+import { browseFrom } from './browse.ts';
 import { readFileSync } from 'node:fs';
 import { firstSentence, formatClock } from '../src/data/text.ts';
 import { sampleBase } from './fixtures/sample-results/sample.ts';
@@ -16,12 +17,7 @@ async function openApp(page: Page, path: string) {
   await expect(page.getByRole('button', { name: 'Browse without a key' }).or(page.getByRole('navigation', { name: 'Views' }))).toBeVisible();
 }
 
-async function browse(page: Page, path: string) {
-  await openApp(page, path);
-  const gate = page.getByRole('button', { name: 'Browse without a key' });
-  if (await gate.isVisible()) await gate.click();
-  await expect(page.getByRole('navigation', { name: 'Views' })).toBeVisible();
-}
+const browse = browseFrom(sampleBase);
 
 test('the top bar has one key-state chip, with Add key when there is no key', async ({ page }) => {
   await browse(page, './?view=overview');

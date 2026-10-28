@@ -6,19 +6,13 @@
 // mismatch row passes axe in light and dark and does not scroll sideways at 390 px
 // (verifier-phase-P17j-retro-JU13-1 D1).
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+import { browseFrom } from './browse.ts';
 import { sampleBase, summary } from './fixtures/sample-results/sample.ts';
 
 const TRIAL = 'renal-dose-review/0';
 
-async function browse(page: Page, path: string) {
-  await page.goto(new URL(path, await sampleBase(test.info().project.use.baseURL!)).href);
-  const gate = page.getByRole('button', { name: 'Browse without a key' });
-  const nav = page.getByRole('navigation', { name: 'Views' });
-  await expect(gate.or(nav)).toBeVisible();
-  if (await gate.isVisible()) await gate.click();
-  await expect(nav).toBeVisible();
-}
+const browse = browseFrom(sampleBase);
 
 test('a planted tool-result difference ends the browser replay with the call that does not replay', async ({ page }) => {
   test.setTimeout(300_000);

@@ -11,18 +11,15 @@ import { cpSync, existsSync, mkdtempSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+import { browse as browseAt, browseFrom } from './browse.ts';
 import { formatInterval } from '../src/data/ui.tsx';
 import { sampleBase, serve, summary, TASK_IDS } from './fixtures/sample-results/sample.ts';
 
 const WEB = fileURLToPath(new URL('../', import.meta.url));
 const REPO = fileURLToPath(new URL('../../../', import.meta.url));
 
-async function browse(page: Page, path: string) {
-  await page.goto(new URL(path, await sampleBase(test.info().project.use.baseURL!)).href);
-  await page.getByRole('button', { name: 'Browse without a key' }).click();
-  await expect(page.getByRole('navigation', { name: 'Views' })).toBeVisible();
-}
+const browse = browseFrom(sampleBase);
 
 test('Findings renders the markdown, one interval per task and a kind-of-failure bar per task', async ({ page }) => {
   await browse(page, './?view=findings');
@@ -80,8 +77,7 @@ test.describe('the real results build: pilot runs, no official run', () => {
 
   test('Overview, Runs, Tasks and Environment each show data and no empty state; Findings says no results yet', async ({ page }) => {
     expect(PILOTS.length).toBeGreaterThan(0);
-    await page.goto(base);
-    await page.getByRole('button', { name: 'Browse without a key' }).click();
+    await browseAt(page, base);
     const rail = page.getByRole('navigation', { name: 'Views' });
     const data: Record<string, string> = { Overview: 'overview-task', Runs: 'trial-row', Tasks: 'task-card', Environment: 'tool' };
     for (const [view, testId] of Object.entries(data)) {
@@ -105,8 +101,7 @@ test.describe('the real results build: pilot runs, no official run', () => {
   });
 
   test('Findings shows the pilot summary, marked not counted, the legend and what the page will show (review-ui-P14-2 F1)', async ({ page }) => {
-    await page.goto(`${base}?view=findings`);
-    await page.getByRole('button', { name: 'Browse without a key' }).click();
+    await browseAt(page, `${base}?view=findings`);
     await expect(page.getByTestId('pilot-findings')).toHaveCount(PILOTS.length);
     await expect(page.getByText('Pilot, not counted in the results').first()).toBeVisible();
     await expect(page.getByTestId('pilot-rate').first()).toContainText(/Wilson 95% \d/);
@@ -117,8 +112,7 @@ test.describe('the real results build: pilot runs, no official run', () => {
   });
 
   test('a task opened on Tasks is not a hidden filter on Runs (review-ui-P14-2 F2)', async ({ page }) => {
-    await page.goto(`${base}?view=tasks`);
-    await page.getByRole('button', { name: 'Browse without a key' }).click();
+    await browseAt(page, `${base}?view=tasks`);
     await page.locator('[data-testid="task-card"][data-task="contrast-ct-prep"]').getByRole('button').first().click();
     await expect(page).toHaveURL(/task=contrast-ct-prep/);
     await page.getByRole('navigation', { name: 'Views' }).getByRole('link', { name: 'Runs' }).click();
@@ -132,8 +126,7 @@ test.describe('the real results build: pilot runs, no official run', () => {
   });
 
   test('a pilot run says in one line how it was graded (review-ui-P14-2 F5)', async ({ page }) => {
-    await page.goto(`${base}?view=runs`);
-    await page.getByRole('button', { name: 'Browse without a key' }).click();
+    await browseAt(page, `${base}?view=runs`);
     await expect(page.getByTestId('grading-line').first()).toHaveText(/^Graded with grader \d+ on an older world than today's; a regrade with grader \d+ gives the same outcomes\.$/);
   });
 });
@@ -147,8 +140,7 @@ test.describe('a build with no results/', () => {
   });
 
   test('Findings shows the empty state; Overview, Tasks and Environment still show the tasks and the world', async ({ page }) => {
-    await page.goto(`${base}?view=findings`);
-    await page.getByRole('button', { name: 'Browse without a key' }).click();
+    await browseAt(page, `${base}?view=findings`);
     await expect(page.getByTestId('empty-state')).toHaveText(/No results are published yet\./);
     const rail = page.getByRole('navigation', { name: 'Views' });
     await rail.getByRole('link', { name: 'Overview' }).click();

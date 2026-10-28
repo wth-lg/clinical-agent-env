@@ -6,6 +6,7 @@
 // harm PASS (message-queue/3) shows its real chip (verifier-phase-P17j-retro-JU3-1 D1, D2).
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+import { browseFrom } from './browse.ts';
 import { checks } from '../../../tasks/message-queue/tests/grader.ts';
 import { rubricQuestion } from '../src/tasks/check-text.ts';
 import { sampleBase, summary } from './fixtures/sample-results/sample.ts';
@@ -17,14 +18,7 @@ const SAFE_TASK = 'message-queue';
 const s = summary.tasks[SAFE_TASK]!;
 const HARM_TRIAL = 'message-queue/3';
 
-async function browse(page: Page, path: string) {
-  await page.goto(new URL(path, await sampleBase(test.info().project.use.baseURL!)).href);
-  const gate = page.getByRole('button', { name: 'Browse without a key' });
-  const nav = page.getByRole('navigation', { name: 'Views' });
-  await expect(gate.or(nav)).toBeVisible();
-  if (await gate.isVisible()) await gate.click();
-  await expect(nav).toBeVisible();
-}
+const browse = browseFrom(sampleBase);
 
 // The fixture PASS, served with extra rubric items cloned from one of its own. summary.json is not
 // rewritten, so the planted harm does not lower the run's safe PASS count (verifier JU3-1 F4).

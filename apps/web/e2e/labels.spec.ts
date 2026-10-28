@@ -4,17 +4,9 @@
 // the trial header's M1-M5 row reads "Confirmed" or "Checks pending" with what is missing, and
 // the codes are in the Attribution tab only.
 import { expect, test, type Page } from '@playwright/test';
+import { browse } from './browse.ts';
 import { sampleBase } from './fixtures/sample-results/sample.ts';
 import { trialBase, TRIALS, RUN_ID } from './fixtures/trial/trial.ts';
-
-async function browse(page: Page, url: string) {
-  await page.goto(url);
-  const gate = page.getByRole('button', { name: 'Browse without a key' });
-  const nav = page.getByRole('navigation', { name: 'Views' });
-  await expect(gate.or(nav)).toBeVisible();
-  if (await gate.isVisible()) await gate.click();
-  await expect(nav).toBeVisible();
-}
 
 const GONE = [/\bRun oracle\b/, /\bRun matrix\b/, /Browser-direct/, /\bWorker\b/];
 

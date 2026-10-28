@@ -11,6 +11,7 @@
 // or critical; at 390 px nothing scrolls sideways.
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+import { browseFrom } from './browse.ts';
 import { MET_TEXT, NOT_AUDITED_MARKER } from '../../../packages/core/explain.ts';
 import { HEALTH_PATH, SAMPLES, TOKEN_META } from '../../../packages/core/runner-api.ts';
 import { FAULT_PRECEDENCE, isValid } from '../../../packages/core/outcomes.ts';
@@ -30,14 +31,7 @@ const TABS = [
 const NAMES = records.map((r) => trialName(r)).sort();
 const NON_PASS = NAMES.filter((n) => record(n).outcome !== 'PASS');
 
-async function browse(page: Page, path: string) {
-  await page.goto(new URL(path, await trialBase(test.info().project.use.baseURL!)).href);
-  const gate = page.getByRole('button', { name: 'Browse without a key' });
-  const nav = page.getByRole('navigation', { name: 'Views' });
-  await expect(gate.or(nav)).toBeVisible();
-  if (await gate.isVisible()) await gate.click();
-  await expect(nav).toBeVisible();
-}
+const browse = browseFrom(trialBase);
 // Each trial in its run: trial-1, or the GRADER_ERROR exemplar's pilot run (fixtures/trial/trial.ts runOf).
 const trialPath = (name: string, extra = '') => `./?view=runs&run=${runOf(name)}&trial=${encodeURIComponent(name)}${extra}`;
 async function openTrial(page: Page, name: string, extra = '') {

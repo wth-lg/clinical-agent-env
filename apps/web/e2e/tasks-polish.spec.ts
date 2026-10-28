@@ -1,17 +1,11 @@
 // Tasks polish (pre-audit U10, P17j JU12 part 2): a task card's title drops its policy codes, which
 // sit on the meta line; the Overview task list and the trial heading drop them too, and the Overview
 // meta line names them; "Check the grader" shows "case k of N" while the grader validation matrix runs.
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+import { browseFrom } from './browse.ts';
 import { sampleBase } from './fixtures/sample-results/sample.ts';
 
-async function browse(page: Page, path: string) {
-  await page.goto(new URL(path, await sampleBase(test.info().project.use.baseURL!)).href);
-  const gate = page.getByRole('button', { name: 'Browse without a key' });
-  const nav = page.getByRole('navigation', { name: 'Views' });
-  await expect(gate.or(nav)).toBeVisible();
-  if (await gate.isVisible()) await gate.click();
-  await expect(nav).toBeVisible();
-}
+const browse = browseFrom(sampleBase);
 
 test('a task title without its policy code, the code on the meta line', async ({ page }) => {
   await browse(page, './?view=tasks');

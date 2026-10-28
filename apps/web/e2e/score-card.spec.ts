@@ -4,15 +4,12 @@
 // current grade's checks) the tile says they are not counted, with the score each way for an
 // unknown penalty, and the total leaves them out (verifier-phase-P17i-JU4JU11-1 S1-S3).
 import { expect, test, type Page } from '@playwright/test';
+import { browse } from './browse.ts';
 import { rubricTotal, totalText } from '../src/trial/rubric.ts';
 import { record, RUN_ID, trialBase, TRIALS } from './fixtures/trial/trial.ts';
 
 async function openGrading(page: Page, name: string) {
-  await page.goto(new URL(`./?view=runs&run=${RUN_ID}&trial=${encodeURIComponent(name)}&tab=grading`, await trialBase(test.info().project.use.baseURL!)).href);
-  const gate = page.getByRole('button', { name: 'Browse without a key' });
-  const nav = page.getByRole('navigation', { name: 'Views' });
-  await expect(gate.or(nav)).toBeVisible();
-  if (await gate.isVisible()) await gate.click();
+  await browse(page, new URL(`./?view=runs&run=${RUN_ID}&trial=${encodeURIComponent(name)}&tab=grading`, await trialBase(test.info().project.use.baseURL!)).href);
   await expect(page.getByTestId('panel-grading')).toBeVisible();
 }
 

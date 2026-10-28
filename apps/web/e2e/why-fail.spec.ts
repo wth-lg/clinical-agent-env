@@ -10,16 +10,13 @@
 // count, pass-rate dot or Wilson interval anywhere (DENOMINATOR_RULE; decisions.tsv 2026-10-29T16:00;
 // verifier-phase-P17i-JU7-1 B1, S1). The check and audit filters do not follow a rail link (S2).
 import { expect, test, type Page } from '@playwright/test';
+import { browseFrom } from './browse.ts';
 import { audit, explain, records, sampleBase, summary, TASK_IDS } from './fixtures/sample-results/sample.ts';
 import { m1ToM4Met } from '../../../packages/core/explain.ts';
 import { trialName } from '../../../packages/core/summary.ts';
 import { FAILURE_KINDS, FAILURE_LABELS } from '../../../packages/core/summary.ts';
 
-async function browse(page: Page, path: string) {
-  await page.goto(new URL(path, await sampleBase(test.info().project.use.baseURL!)).href);
-  await page.getByRole('button', { name: 'Browse without a key' }).click();
-  await expect(page.getByRole('navigation', { name: 'Views' })).toBeVisible();
-}
+const browse = browseFrom(sampleBase);
 
 const failures = (task: string) => records.filter((r) => r.task_id === task).map((r) => ({ r, e: explain(r) })).filter(({ e }) => e.valid && e.outcome !== 'PASS');
 // The rule audit-check and the page count by (packages/core/explain.ts m1ToM4Met: n/a is met).

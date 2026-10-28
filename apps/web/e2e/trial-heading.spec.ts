@@ -4,17 +4,14 @@
 // Replay; an official trial on another world keeps the alert.
 import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
+import { browse } from './browse.ts';
 import { RUN_ID, trialBase, TRIALS, records } from './fixtures/trial/trial.ts';
 
 const MANIFEST = (JSON.parse(readFileSync(new URL('../../../fixtures/manifest.json', import.meta.url), 'utf8')) as { world: { state_hash: string } }).world.state_hash;
 const EARLIER = `f8387483${'0'.repeat(56)}`;
 
 async function open(page: Page, query: string) {
-  await page.goto(new URL(`./?view=runs&${query}`, await trialBase(test.info().project.use.baseURL!)).href);
-  const gate = page.getByRole('button', { name: 'Browse without a key' });
-  const nav = page.getByRole('navigation', { name: 'Views' });
-  await expect(gate.or(nav)).toBeVisible();
-  if (await gate.isVisible()) await gate.click();
+  await browse(page, new URL(`./?view=runs&${query}`, await trialBase(test.info().project.use.baseURL!)).href);
   await expect(page.getByTestId('trial-detail')).toBeVisible();
 }
 

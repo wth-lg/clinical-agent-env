@@ -7,6 +7,7 @@
 import { randomUUID } from 'node:crypto';
 import { createServer, type Server } from 'node:http';
 import { expect, test, type Page, type Route } from '@playwright/test';
+import { browse } from './browse.ts';
 import { okResponse, SCENARIOS } from '../src/harness/scenarios.ts';
 import { LOCAL_START_COMMAND } from '../src/surface/command.ts';
 import { RELAY_ORIGIN } from '../src/surface/relay.ts';
@@ -184,8 +185,7 @@ test('at phone width the in-progress trial fits: written ids truncate and the tr
 });
 
 test('without a key the Task select is shown disabled', async ({ page }) => {
-  await page.goto('./?view=live&task=_toy');
-  await page.getByRole('button', { name: 'Browse without a key' }).click();
+  await browse(page, './?view=live&task=_toy');
   const select = page.getByLabel('Task');
   await expect(select).toBeDisabled();
   expect(Number(await select.evaluate((el) => getComputedStyle(el).opacity))).toBeLessThan(1);

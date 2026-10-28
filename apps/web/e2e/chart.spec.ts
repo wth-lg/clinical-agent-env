@@ -6,16 +6,13 @@
 // text (D1).
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+import { browse } from './browse.ts';
 import { CHART_TYPES, taskPatients } from '../src/tasks/chart.ts';
 import { chartIds, world } from './fixtures/chart-oracle.ts';
 import { sampleBase } from './fixtures/sample-results/sample.ts';
 
 async function openChart(page: Page, task: string) {
-  await page.goto(new URL(`./?view=tasks&task=${task}&tab=chart`, await sampleBase(test.info().project.use.baseURL!)).href);
-  const gate = page.getByRole('button', { name: 'Browse without a key' });
-  const nav = page.getByRole('navigation', { name: 'Views' });
-  await expect(gate.or(nav)).toBeVisible();
-  if (await gate.isVisible()) await gate.click();
+  await browse(page, new URL(`./?view=tasks&task=${task}&tab=chart`, await sampleBase(test.info().project.use.baseURL!)).href);
   await expect(page.getByTestId('chart-heading')).toBeVisible({ timeout: 60_000 });
 }
 

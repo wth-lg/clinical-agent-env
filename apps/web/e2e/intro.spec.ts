@@ -5,6 +5,7 @@
 // one sentence under the product name what the product is. On Tasks, Run trial is enabled and
 // opens the Live trial view with the task selected.
 import { expect, test, type Page } from '@playwright/test';
+import { browseFrom } from './browse.ts';
 import { MODEL } from '../../../packages/core/anthropic.ts';
 import { sampleBase } from './fixtures/sample-results/sample.ts';
 
@@ -15,12 +16,7 @@ async function openApp(page: Page, path: string) {
   await expect(gate.or(nav)).toBeVisible();
 }
 
-async function browse(page: Page, path: string) {
-  await openApp(page, path);
-  const gate = page.getByRole('button', { name: 'Browse without a key' });
-  if (await gate.isVisible()) await gate.click();
-  await expect(page.getByRole('navigation', { name: 'Views' })).toBeVisible();
-}
+const browse = browseFrom(sampleBase);
 
 const sentences = (text: string) => text.trim().split(/(?<=\.)\s+/).filter((s) => s !== '');
 const words = (s: string) => s.split(/\s+/).filter((w) => w !== '').length;
