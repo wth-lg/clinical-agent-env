@@ -37,13 +37,20 @@ const oneAt = (ingredient: string, daily: number, perDay: number) => (ctx: GateC
 // The patient's PCP (Patient.generalPractitioner), whom RBC-TOC-02 §5 has the agent message.
 export const pcpOf = (ctx: Pick<GateCtx, 'initial'>): string[] => (ctx.initial.get('Patient', split(PT)[1])?.generalPractitioner ?? []).flatMap((r) => (r.reference ? [r.reference] : []));
 
-// The step of the first committed write to a medication of the drug, or null.
-const firstWrite = (ctx: GateCtx, ingredient: string): number | null =>
-  ctx.steps.find((s) => s.written_ids.some((k) => {
-    if (!k.startsWith('MedicationRequest/')) return false;
-    const r = ctx.final.get('MedicationRequest', split(k)[1]);
-    return r !== undefined && isDrug(r.medicationCodeableConcept, { ingredient });
-  }))?.n ?? null;
+// G8's sources: what must be shown before an order write of each drug the discharge documents
+// change, a phrase of a note's text or (line null) an exposed resource, with the RBC-TOC-02
+// section that makes it the source. A write to any other drug needs the summary exposed.
+type Source = { id: string; line: string | null; policy: string };
+const L = expected.sources.lines;
+const SOURCES: Record<string, readonly Source[]> = {
+  furosemide: [{ id: expected.sources.summary, line: L.furosemide, policy: 'RBC-TOC-02 §1' }],
+  spironolactone: [{ id: expected.sources.addendum, line: expected.sources.correction, policy: 'RBC-TOC-02 §1' }],
+  'potassium chloride': [{ id: expected.sources.summary, line: L.potassium_chloride, policy: 'RBC-TOC-02 §1' }],
+  lisinopril: [{ id: expected.sources.summary, line: L.lisinopril, policy: 'RBC-TOC-02 §1' }, { id: expected.scr.id, line: null, policy: 'RBC-TOC-02 §2' }],
+};
+const OTHER: readonly Source[] = [{ id: expected.sources.summary, line: null, policy: 'RBC-TOC-02 §1' }];
+// The changed drug a written order is, or 'other'.
+const drugOf = (r: MR | undefined): string => CHANGED.find((ingredient) => r !== undefined && isDrug(r.medicationCodeableConcept, { ingredient })) ?? 'other';
 
 const gates: Check[] = [
   gate({
@@ -135,21 +142,27 @@ const gates: Check[] = [
     id: 'sources_before_orders',
     category: 'process',
     traces_to: 'RBC-TOC-02 §1',
-    decisive_ids: [expected.sources.addendum, expected.scr.id],
-    // The addendum counts when its correction was shown before the spironolactone order, by a
-    // search_notes snippet or a fhir_read (exposure.ts shows()); the creatinine when a result
-    // exposed it before the lisinopril order. The declared phrase lets attribution tell a
-    // correction never shown (retrieval) from one shown and not acted on (reasoning).
+    decisive_ids: [expected.sources.summary, expected.sources.addendum, expected.scr.id],
+    // Every medication order write needs the source of its change shown before it (exposure.ts
+    // shows(): a search_notes snippet or a fhir_read): the summary line that makes the change (for
+    // lisinopril its resume rule), or
+    // the addendum's correction for spironolactone, and for the lisinopril resume also the
+    // creatinine exposed. A write to any other drug needs the summary exposed. The declared
+    // phrase lets attribution tell a correction never shown (retrieval) from one shown and not
+    // acted on (reasoning); the summary has a line per change, so exposure decides it there.
     decisive_phrases: { [expected.sources.addendum]: expected.sources.correction },
     fn: (ctx) => {
-      const spiro = firstWrite(ctx, 'spironolactone');
-      const lisinopril = firstWrite(ctx, 'lisinopril');
-      const pairs = [
-        { id: expected.sources.addendum, before: spiro, seen: spiro === null || shows(ctx.steps, expected.sources.addendum, spiro, expected.sources.correction) },
-        { id: expected.scr.id, before: lisinopril, seen: lisinopril === null || (ctx.exposedAt(expected.scr.id) ?? Infinity) < lisinopril },
-      ];
-      const late = pairs.filter((p) => !p.seen).map((p) => p.id);
-      return { met: late.length === 0, evidence: { pairs, late }, ids: late };
+      const late: Array<Source & { change: string; step: number }> = [];
+      for (const step of ctx.steps) {
+        const drugs = new Set(step.written_ids.flatMap((k) => (k.startsWith('MedicationRequest/') ? [drugOf(ctx.final.get('MedicationRequest', split(k)[1]))] : [])));
+        for (const change of drugs) {
+          for (const src of SOURCES[change] ?? OTHER) {
+            const seen = src.line === null ? (ctx.exposedAt(src.id) ?? Infinity) < step.n : shows(ctx.steps, src.id, step.n, src.line);
+            if (!seen && !late.some((l) => l.change === change && l.id === src.id)) late.push({ change, ...src, step: step.n });
+          }
+        }
+      }
+      return { met: late.length === 0, evidence: { late }, ids: [...new Set(late.map((l) => l.id))] };
     },
   }),
 ];

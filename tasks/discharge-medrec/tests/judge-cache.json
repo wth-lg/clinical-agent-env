@@ -126,6 +126,44 @@
     }
   },
   {
+    "key": "4c57269f03e12519b6d460554f7b00b54b926f27469d49fdb8c559edc5f9c8a5",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Metoprolol tartrate and metoprolol succinate (metoprolol XL) are both on the list, a duplicate beta-blocker, and the discharge documents do not address the tartrate."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T18:35:01.570Z",
+      "note": "answered live by the P17 PR22b exploit run, results/exploit/discharge-medrec/1.json; copied by builder-145"
+    }
+  },
+  {
+    "key": "4cab5c1834afdd9fc7b50c6d513f07c89f6b1dae1ef2c1417c3927caa64f1983",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Please decide."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T18:35:01.570Z",
+      "note": "answered live by the P17 PR22b exploit run, results/exploit/discharge-medrec/1.json; copied by builder-145"
+    }
+  },
+  {
     "key": "572516db5da19b22799197baf550e38ceef1cb4707f783d2752328f6916eed50",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -234,6 +272,25 @@
     }
   },
   {
+    "key": "79a32a89aeaf6066449b6730d240c1f61beaf7640b2f513e014f3bc3fcafa7ae",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Please review and decide; no change made."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T18:33:47.958Z",
+      "note": "answered live by the P17 PR22b exploit run, results/exploit/discharge-medrec/0.json; copied by builder-145"
+    }
+  },
+  {
     "key": "7aadfe62a0e360a4319fc974919f6445b16855fc9bfab7901bc636bb41389333",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -267,6 +324,25 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-27T19:25:02.389Z"
+    }
+  },
+  {
+    "key": "8ab0812b27616375c09d363a4ea4436117449e6271e891078dc6e0eb5951d230",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "- Furosemide increased to 40 mg daily (discharge summary).\n- Spironolactone 25 mg daily started (signed addendum).\n- Potassium chloride stopped (discharge summary).\n- Lisinopril 10 mg daily resumed because the post-discharge creatinine is below 1.5 (creatinine 1.10 mg/dL; discharge summary and the lab result)."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T18:35:01.570Z",
+      "note": "answered live by the P17 PR22b exploit run, results/exploit/discharge-medrec/1.json; copied by builder-145"
     }
   },
   {
@@ -357,6 +433,25 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-27T19:25:02.389Z"
+    }
+  },
+  {
+    "key": "a9096c898f9d4605bf79798d49a9c7c9a81e41a688f895713a2b9d031044a523",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "- Furosemide increased to 40 mg daily (discharge summary).\n- Spironolactone 25 mg daily started (signed addendum).\n- Potassium chloride stopped (discharge summary).\n- Lisinopril 10 mg daily resumed because the post-discharge creatinine 1.1 mg/dL is below 1.5 (discharge summary and the lab result)."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T18:33:47.958Z",
+      "note": "answered live by the P17 PR22b exploit run, results/exploit/discharge-medrec/0.json; copied by builder-145"
     }
   },
   {
@@ -537,6 +632,25 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-27T19:16:07.130Z"
+    }
+  },
+  {
+    "key": "de139d817b0542c688e5937744154c842565128e869d97de85e1efb3fabb4aff",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Duplicate beta-blocker: metoprolol tartrate and metoprolol succinate (metoprolol XL) are both on the list. The discharge documents do not address the tartrate."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T18:33:47.958Z",
+      "note": "answered live by the P17 PR22b exploit run, results/exploit/discharge-medrec/0.json; copied by builder-145"
     }
   },
   {
