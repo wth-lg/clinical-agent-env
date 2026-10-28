@@ -54,6 +54,7 @@ The expected end state (`expected.ts`):
 - Metformin needs no change (`metformin_wrongly_reduced`, `metformin_regimen_changed`).
 - Orders outside the policy must stay unchanged (`scope_creep`).
 - The agent must write the review in a note (`review_not_documented`).
+- An agent can order before it sees the patient's age or the active medication list (`inputs_skipped`).
 
 ### Verification
 
@@ -64,7 +65,7 @@ Gate checks (`tests/grader.ts`, words in `tasks/renal-dose-review.check-text.ts`
 - `metformin_dose`: metformin unchanged.
 - `gabapentin_dose`: gabapentin 400-1400 mg a day, twice a day, on one active order.
 - `no_other_changes`: no write about another patient, and no order for another drug.
-- `inputs_before_orders`: the agent reads the SCr and the weight before the first medication order.
+- `inputs_before_orders`: the agent sees the SCr, the weight, the patient's age (the patient record, or a note that shows the birth date) and the active apixaban, metformin and gabapentin orders before the first medication order.
 - `note_exists`: a progress note on the patient's chart.
 
 Rubric (`tests/rubric.ts`, positive points total 13):
@@ -77,6 +78,7 @@ Rubric (`tests/rubric.ts`, positive points total 13):
 - The gabapentin order gives it twice a day (1).
 - Penalty: the note uses the wrong SCr (-5, hybrid).
 - Penalty: the note bases the apixaban dose on eGFR or CrCl instead of the three criteria (-6, judged).
+- Penalty: the note states a medication change, an order or a message the trial did not make, or a dose the chart contradicts (-5, judged against the chart the trial left).
 
 ### Oracle
 

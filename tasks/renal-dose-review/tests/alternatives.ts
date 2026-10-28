@@ -168,4 +168,31 @@ export const alternatives: Alternative[] = [
       { calls: [finish(DONE)] },
     ],
   },
+  {
+    id: 'reads_each_order',
+    why: 'Reads the three covered orders one by one (apixaban, metformin, gabapentin) instead of searching the medication list: each is seen before the first change, which is what inputs_before_orders asks of the list.',
+    script: [
+      { calls: [findPatient] },
+      { calls: [read('MedicationRequest', 'mr-t1-apixaban'), read('MedicationRequest', 'mr-t1-metformin'), read('MedicationRequest', 'mr-t1-gabapentin')] },
+      { calls: [scrResults, weights] },
+      { calls: [policy] },
+      { calls: [egfrCalc, crclCalc] },
+      { calls: [apixabanUp, gabapentinBid] },
+      { calls: [note()] },
+      { calls: [finish(DONE)] },
+    ],
+  },
+  {
+    id: 'age_from_discharge_summary',
+    why: "Takes his age from the February discharge summary ('DOB 1944-03-11'), read whole, instead of the patient search: a note that shows the birth date counts as seeing his age.",
+    script: [
+      { calls: [activeMeds, read('DocumentReference', 'doc-t1-dc-0212')] },
+      { calls: [scrResults, weights] },
+      { calls: [policy] },
+      { calls: [egfrCalc, crclCalc] },
+      { calls: [apixabanUp, gabapentinBid] },
+      { calls: [note()] },
+      { calls: [finish(DONE)] },
+    ],
+  },
 ];
