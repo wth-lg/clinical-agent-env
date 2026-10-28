@@ -1,5 +1,41 @@
 [
   {
+    "key": "10dd3574b86823f13fc17fda024553f4b81694925d0b30b5814d65d0bfe57997",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Per RBC-TOC-02 §5 I left the tartrate unchanged; please review."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T00:10:41.256Z"
+    }
+  },
+  {
+    "key": "1be27227358168217cf9b71ece4af56ef666021526f84ca78a5032997855932c",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "metoprolol succinate ER 50 mg daily, which the St. Brigid discharge documents continue as \"metoprolol XL\", and metoprolol tartrate 25 mg twice daily (since 2023), which no discharge document mentions. Taking both is a duplicate beta-blocker."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T00:10:41.256Z"
+    }
+  },
+  {
     "key": "20c45617caf0f11fa527b79587c9c86f3bbead861ebd8fa6a6d7448ec3f666aa",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -54,6 +90,24 @@
     }
   },
   {
+    "key": "331412a704fd575626ae705aa570f4279a2401bb6dae891bfde013dad6c4d7d4",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Per RBC-TOC-02 §5 I left the tartrate unchanged; please review."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T00:10:41.256Z"
+    }
+  },
+  {
     "key": "4bc0a8fffb68357876e902d9646c654af13260e8814141ca37242ea6b1fbe1b3",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -69,6 +123,24 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-25T13:23:26.047Z"
+    }
+  },
+  {
+    "key": "572516db5da19b22799197baf550e38ceef1cb4707f783d2752328f6916eed50",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Walter Kim has two beta-blockers on his outpatient list: metoprolol succinate ER 50 mg daily, which the St. Brigid discharge documents continue as \"metoprolol XL\", and metoprolol tartrate 25 mg twice daily (since 2023), which no discharge document mentions. Taking both is a duplicate beta-blocker."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T00:10:41.256Z"
     }
   },
   {
@@ -303,6 +375,42 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-25T13:23:26.047Z"
+    }
+  },
+  {
+    "key": "b3d7a31679015b536a7070de6b36861f3c6d176d719dc30d47ca820c80335cf6",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "metoprolol succinate ER 50 mg daily, which the St. Brigid discharge documents continue as \"metoprolol XL\", and metoprolol tartrate 25 mg twice daily (since 2023), which no discharge document mentions. Taking both is a duplicate beta-blocker."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T00:10:41.256Z"
+    }
+  },
+  {
+    "key": "b7893cf742418aba539f21f535bb32a62e09ed5596a623ffa5d973b7371dc17d",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Per RBC-TOC-02 §5 I left the tartrate unchanged; please review."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T00:10:41.256Z"
     }
   },
   {

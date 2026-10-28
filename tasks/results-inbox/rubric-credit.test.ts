@@ -1,6 +1,7 @@
 // P17j JG9 (pre-audit M4): T2 gives +1 rubric credit, never a gate, when the trial addresses the
-// ACE inhibitor behind the true hyperkalaemia of item 5: lisinopril held or stopped, or the notice
-// to the clinician who takes item 5 names it. Code method, so no judge-cache key changes.
+// ACE inhibitor behind the true hyperkalaemia of item 5: lisinopril held or stopped (code), or a
+// staff notice that asks to hold, stop or reduce it or names it as the likely cause (judge; JG9 r3,
+// decisions.tsv 2026-10-28T09:40Z).
 import { describe, expect, it } from 'vitest';
 import { loadMatrixTask, matrixEnv } from '../../cli/matrix.ts';
 import { cases, gradeRun, trial } from '../../packages/grader/matrix/matrix.ts';
@@ -17,8 +18,8 @@ const result = async (id: string, check: string) => {
 const item = (id: string) => result(id, 'ace_inhibitor_addressed');
 
 describe('results-inbox ace_inhibitor_addressed', () => {
-  it('is met at +1 when the trial holds the lisinopril (alternative hold_lisinopril)', async () => {
-    expect(await item('hold_lisinopril')).toMatchObject({ kind: 'rubric', method: 'code', points: 1, met: true });
+  it('is met at +1 by the code branch when the trial holds the lisinopril (alternative hold_lisinopril)', async () => {
+    expect(await item('hold_lisinopril')).toMatchObject({ kind: 'rubric', method: 'hybrid', points: 1, met: true });
   });
 
   it('is met by the oracle, whose stat page to on-call asks to consider holding the lisinopril', async () => {

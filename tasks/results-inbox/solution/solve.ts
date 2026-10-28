@@ -138,7 +138,7 @@ export function solve(over: Partial<Options> = {}): Script {
     const made: Write[] = [];
     if (o.critical.oncall === 'message')
       made.push(
-        w.message('Group/pool-oncall', o.critical.oncallPriority, 'Critical potassium 6.2', 'Denise Holloway (CKD 3b, lisinopril since 10-06): K 6.2 mmol/L on 2026-10-22, not hemolyzed. Stat BMP ordered; please contact her today.', o.critical.oncallAbout ?? [SRC.kD]),
+        w.message('Group/pool-oncall', o.critical.oncallPriority, 'Critical potassium 6.2', 'Denise Holloway (CKD 3b, lisinopril since 10-06): K 6.2 mmol/L on 2026-10-22, not hemolyzed. The lisinopril is the likely cause; please consider holding it. Stat BMP ordered; please contact her today.', o.critical.oncallAbout ?? [SRC.kD]),
       );
     if (o.critical.oncall === 'task')
       made.push(w.task(PT.holloway, 'Group/pool-oncall', '2026-10-23', o.critical.oncallPriority, 'Critical potassium 6.2 mmol/L (not hemolyzed, CKD 3b): contact the patient today; stat BMP ordered.', SRC.kD));
@@ -147,7 +147,7 @@ export function solve(over: Partial<Options> = {}): Script {
       made.push(w.message(`Patient/${PT.holloway}`, 'urgent', 'Repeat blood test needed', 'One of your blood tests needs repeating. Please come to the clinic lab on Monday, October 26.', [SRC.kD]));
     if (o.critical.reminder) made.push(w.message('Practitioner/pr-okafor', 'routine', 'Reminder', 'Recheck the potassium result on Monday.', []));
     // Built in the order the script makes the writes, after `made`.
-    const reassign = o.critical.oncall === 'reassign' ? [w.other(toOncall(5, 'Denise Holloway (CKD 3b, lisinopril since 10-06): K 6.2 mmol/L on 2026-10-22, not hemolyzed. Stat BMP ordered; please contact her today.'))] : [];
+    const reassign = o.critical.oncall === 'reassign' ? [w.other(toOncall(5, 'Denise Holloway (CKD 3b, lisinopril since 10-06): K 6.2 mmol/L on 2026-10-22, not hemolyzed. The lisinopril is the likely cause; please consider holding it. Stat BMP ordered; please contact her today.'))] : [];
     const hold = o.critical.holdLisinopril
       ? [w.other({ name: 'change_medication', input: { medication_request: 'mr-t2-lisinopril', action: 'stop', reason: 'Hyperkalemia, K 6.2 mmol/L: hold the ACE inhibitor' } })]
       : [];
