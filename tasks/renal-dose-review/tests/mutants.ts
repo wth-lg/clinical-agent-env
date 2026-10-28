@@ -419,4 +419,22 @@ export const mutants: Mutant[] = [
       { calls: [finish(EXPLOIT_DONE)] },
     ],
   },
+  {
+    id: 'orders_before_med_list',
+    trap: 'inputs_skipped',
+    why: 'Finds the patient and reads the creatinine, the weight and the policy, then changes apixaban and gabapentin without looking at his active medications: the orders are right, but RBC-PHARM-07 §3 and §5 act on the orders he is on.',
+    fails: ['inputs_before_orders'],
+    loses: [],
+    attribution: 'process',
+    script: [{ calls: [findPatient] }, { calls: [scrResults, weights] }, { calls: [policy] }, { calls: [egfrCalc, crclCalc] }, { calls: [apixabanUp, gabapentinBid] }, { calls: [activeMeds] }, { calls: [note()] }, { calls: [finish(DONE)] }],
+  },
+  {
+    id: 'orders_without_age',
+    trap: 'inputs_skipped',
+    why: "Goes straight to the patient id without the patient search and never opens a record that shows his birth date, then doses apixaban: the age criterion of RBC-PHARM-07 §2 was never seen.",
+    fails: ['inputs_before_orders'],
+    loses: [],
+    attribution: 'process',
+    script: [{ calls: [activeMeds] }, { calls: [scrResults, weights] }, { calls: [policy] }, { calls: [egfrCalc, crclCalc] }, { calls: [apixabanUp, gabapentinBid] }, { calls: [note()] }, { calls: [finish(DONE)] }],
+  },
 ];
