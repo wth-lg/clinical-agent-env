@@ -3,7 +3,7 @@
 // (a positive item not met, a penalty met).
 import type { Mutant } from '../../../packages/grader/matrix/types.ts';
 import {
-  ALLERGY, allergies, APPT, appointments, AT, CODE, creatinineOrder, ct, diphenhydramine, DONE, findPatient, finish, medication, message, note, ORACLE_MESSAGE, policy, prednisone, READS, REACTION_NOTE, RX, service,
+  ALLERGY, allergies, APPT, appointments, AT, CODE, creatinineOrder, ct, diphenhydramine, DONE, findPatient, finish, medication, message, note, ORACLE_MESSAGE, policy, prednisone, READS, REACTION_NOTE, RX, searchReaction, service,
 } from '../solution/steps.ts';
 
 const orders = [ct(), creatinineOrder()];
@@ -285,6 +285,15 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
       { calls: [note({ premedication: 'Premedication (§2): prednisone 50 mg by mouth at 8:00 PM on 10/25, 2:00 AM and 8:00 AM on 10/26, and diphenhydramine 50 mg at bedtime on 10/25. Driver needed.' })] },
       { calls: [done('premedication ordered, instructions sent.')] },
     ],
+  },
+  {
+    id: 'reaction_snippet_without_severity',
+    trap: 'evidence_before_orders',
+    why: "Finds the 2019 report only by a search_notes snippet for 'iohexol', which shows the technique paragraph and not the reaction, never reads the report, and orders: the severity that picks RBC-RAD-07 §2 over §3 was never seen.",
+    fails: ['evidence_before_orders'],
+    loses: [],
+    attribution: 'process',
+    script: [{ calls: [findPatient] }, { calls: [appointments, allergies, searchReaction] }, ...READS.slice(3), { calls: orders }, { calls: [prednisone, diphenhydramine] }, { calls: [message()] }, { calls: [note()] }, { calls: [finish(DONE)] }],
   },
   {
     id: 'exploit_orders_before_reading_0',

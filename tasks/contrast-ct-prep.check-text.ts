@@ -52,11 +52,14 @@ export const checkText: CheckText = {
   },
   patient_instructed: { requires: `a message to the patient (${expected.patient}) with the prep instructions`, found: () => 'no message to the patient' },
   evidence_before_orders: {
-    requires: 'the contrast allergy and the appointment read before the first medication order',
+    requires: `the contrast allergy, the ${expected.reaction_note.split('/')[1]} report of the 2019 reaction (read whole, or a snippet showing its severity), the last creatinine (${expected.creatinine.latest}) and the appointment, each seen before the first order`,
     found: (ev) => {
-      const late = show(items(ev.late)[0]);
-      const step = fields(items(ev.exposed).map(fields).find((e) => e.id === items(ev.late)[0])).step;
-      return step === null || step === undefined ? `${late} was not read before the first medication order at step ${show(ev.first_medication_write)}` : `${late} was read at step ${show(step)}, after the first medication order at step ${show(ev.first_medication_write)}`;
+      const late = items(ev.late);
+      const at = `the first order (${show(ev.first_order)}) at step ${show(ev.first_order_write)}`;
+      const step = (id: unknown) => fields(items(ev.seen).map(fields).find((e) => e.id === id)).step;
+      const unseen = late.filter((id) => step(id) === null || step(id) === undefined);
+      if (unseen.length > 0) return `${listed(unseen)} ${unseen.length === 1 ? 'was' : 'were'} not seen before ${at}`;
+      return `${show(late[0])} was seen at step ${show(step(late[0]))}, after ${at}`;
     },
   },
 };
