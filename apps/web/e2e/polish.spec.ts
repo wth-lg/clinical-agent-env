@@ -5,7 +5,7 @@
 // axe check, light and dark (verifier-phase-P17j-retro-JU12-1 D2).
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { browseFrom } from './browse.ts';
+import { browseFrom, GATE } from './browse.ts';
 import { readFileSync } from 'node:fs';
 import { firstSentence, formatClock } from '../src/data/text.ts';
 import { sampleBase } from './fixtures/sample-results/sample.ts';
@@ -14,7 +14,7 @@ const NOW = (JSON.parse(readFileSync(new URL('../../../fixtures/manifest.json', 
 
 async function openApp(page: Page, path: string) {
   await page.goto(new URL(path, await sampleBase(test.info().project.use.baseURL!)).href);
-  await expect(page.getByRole('button', { name: 'Browse without a key' }).or(page.getByRole('navigation', { name: 'Views' }))).toBeVisible();
+  await expect(page.getByRole('button', { name: GATE }).or(page.getByRole('navigation', { name: 'Views' }))).toBeVisible();
 }
 
 const browse = browseFrom(sampleBase);

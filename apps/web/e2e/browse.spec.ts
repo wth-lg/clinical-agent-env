@@ -8,7 +8,7 @@
 // 390 px no view scrolls sideways, and a record the loader cannot read is an error row, not a
 // blank app.
 import { expect, test } from '@playwright/test';
-import { browseFrom } from './browse.ts';
+import { browseFrom, GATE } from './browse.ts';
 import { NOT_AUDITED_MARKER, TAXONOMY_TEXT } from '../../../packages/core/explain.ts';
 import { AUDIT_LABEL, DENOMINATOR_RULE, FAULT_DEFINITIONS, FAULT_PRECEDENCE, PASS_DEFINITION } from '../../../packages/core/outcomes.ts';
 import { trialName } from '../../../packages/core/summary.ts';
@@ -255,7 +255,7 @@ test('URL state round-trips: task, label and open trial survive a reload and his
   await check();
   // The tab chose to browse, so a reload goes straight to the view (verifier-phase-P14-2 F8).
   await page.reload();
-  await expect(page.getByRole('button', { name: 'Browse without a key' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: GATE })).toHaveCount(0);
   await check();
   // A filter cleared on the list comes back with history.
   await page.getByRole('link', { name: 'Back to Runs' }).click();

@@ -4,9 +4,12 @@
 // test/e2e-browse.test.ts keeps every other gate click out of the specs.
 import { expect, test, type Page } from '@playwright/test';
 
+// The gate button's name; a spec that waits for the gate uses it (it never clicks it).
+export const GATE = 'Browse without a key';
+
 // Clicks "Browse without a key" when the gate shows, then waits for the rail; true when it clicked.
 export async function passGate(page: Page): Promise<boolean> {
-  const gate = page.getByRole('button', { name: 'Browse without a key' });
+  const gate = page.getByRole('button', { name: GATE });
   const nav = page.getByRole('navigation', { name: 'Views' });
   await expect(gate.or(nav)).toBeVisible();
   const shown = await gate.isVisible();
