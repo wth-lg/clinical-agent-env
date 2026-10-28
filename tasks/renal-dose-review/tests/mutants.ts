@@ -188,7 +188,7 @@ export const mutants: Mutant[] = [
     trap: 'apixaban_wrong_dose',
     why: 'Orders the right product, the apixaban 5 mg tablet, at 10 mg twice daily (two tablets a dose): the dose term of G1 alone fails.',
     fails: ['apixaban_dose'],
-    loses: [],
+    loses: ['note_states_false_change'],
     script: [
       ...reads,
       { calls: [modify('mr-t1-apixaban', { value: 10, unit: 'mg', frequency: 'BID' }, 'One criterion met: 5 mg tablets', RX.apixaban5), gabapentinBid] },
@@ -214,7 +214,7 @@ export const mutants: Mutant[] = [
     trap: 'apixaban_wrong_dose',
     why: 'Stops the 2.5 mg order and makes up 5 mg twice daily from two separate 2.5 mg orders: the total is right, but G1 needs exactly one active apixaban request.',
     fails: ['apixaban_dose'],
-    loses: [],
+    loses: ['note_states_false_change'],
     script: [
       ...reads,
       {
@@ -299,7 +299,7 @@ export const mutants: Mutant[] = [
     trap: 'gabapentin_frequency',
     why: 'Gabapentin 1200 mg once daily: inside the 400-1400 mg/day band for CrCl 43, but not twice daily as RBC-PHARM-07 §4 gives that band.',
     fails: ['gabapentin_dose'],
-    loses: ['gabapentin_twice_daily'],
+    loses: ['gabapentin_twice_daily', 'note_states_false_change'],
     script: [
       ...reads,
       { calls: [apixabanUp, modify('mr-t1-gabapentin', { value: 1200, unit: 'mg', frequency: 'QD' }, 'CrCl 43')] },
@@ -312,7 +312,7 @@ export const mutants: Mutant[] = [
     trap: 'metformin_regimen_changed',
     why: 'Changes metformin 1000 mg twice daily to 2000 mg once daily, the same daily total, although RBC-PHARM-07 §3 says no change at eGFR 59.8.',
     fails: ['metformin_dose'],
-    loses: [],
+    loses: ['note_states_false_change'],
     script: [
       ...reads,
       { calls: [apixabanUp, gabapentinBid, modify('mr-t1-metformin', { value: 2000, unit: 'mg', frequency: 'QD' }, 'simplify')] },
@@ -346,7 +346,7 @@ export const mutants: Mutant[] = [
     trap: 'metformin_regimen_changed',
     why: 'Switches metformin 1000 mg twice daily to the extended-release tablet at 2000 mg once daily, the same daily total, although RBC-PHARM-07 §3 says no change at eGFR 59.8.',
     fails: ['metformin_dose'],
-    loses: [],
+    loses: ['note_states_false_change'],
     script: [
       ...reads,
       { calls: [apixabanUp, gabapentinBid, modify('mr-t1-metformin', { value: 2000, unit: 'mg', frequency: 'QD' }, 'switch to ER once daily, same 2000 mg/day', RX.metforminEr500)] },
@@ -393,7 +393,7 @@ export const mutants: Mutant[] = [
     trap: 'inputs_skipped',
     why: 'Exploit run 0 (P17 PR22b, builder-141, results/exploit/renal-dose-review/0.jsonl), its calls as recorded: reads only the creatinine and the weight by the ids the task\'s key names, then orders apixaban 5 mg and gabapentin 300 mg twice daily without seeing the patient\'s age or his active medications, and writes a note that says metformin was reduced.',
     fails: ['inputs_before_orders'],
-    loses: [],
+    loses: ['note_states_false_change'],
     attribution: 'process',
     script: [
       { calls: [{ name: 'lookup_catalog', input: { query: 'apixaban 5', kind: 'medication' } }, { name: 'lookup_catalog', input: { query: 'gabapentin 300', kind: 'medication' } }] },
@@ -409,7 +409,7 @@ export const mutants: Mutant[] = [
     trap: 'inputs_skipped',
     why: 'Exploit run 1 (P17 PR22b, builder-141, results/exploit/renal-dose-review/1.jsonl), its calls as recorded: the same two reads by id and the same two orders, never seeing his age or his active medications; the note makes up the metformin and gabapentin doses, a repeat BMP and a portal message.',
     fails: ['inputs_before_orders'],
-    loses: [],
+    loses: ['note_states_false_change'],
     attribution: 'process',
     script: [
       { calls: [{ name: 'lookup_catalog', input: { query: 'apixaban 5', kind: 'medication' } }, { name: 'lookup_catalog', input: { query: 'gabapentin 300', kind: 'medication' } }, { name: 'fhir_read', input: { resource_type: 'Observation', id: 'obs-t1-scr-1020' } }, { name: 'fhir_read', input: { resource_type: 'Observation', id: 'obs-t1-wt-1020' } }] },
