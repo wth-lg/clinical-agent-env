@@ -122,3 +122,18 @@ describe('crc-care-gap outreach_messages found', async () => {
     expect(found({ missing: ['Patient/pt-0017'], messaged: ['Patient/pt-0018', ...OTHERS], tasked_instead: [] })).toBe('no message to Patient/pt-0017 (Stephan Herman)');
   });
 });
+
+// P17j JG4-T3: a FIT order whose occurrence starts after the measurement period fails fit_orders,
+// and the reason names the start and the period end (mutant fit_order_after_period).
+describe('crc-care-gap fit_orders found', async () => {
+  const found = (await textOf('crc-care-gap')).fit_orders!.found;
+  const ordered = { 'Patient/pt-0017': ['ServiceRequest/sr-t0001'] };
+  it('names the order start and the period end for a late order', () => {
+    expect(found({ ordered, missing: [], extra: [], late: [{ patient: 'Patient/pt-0017', order: 'ServiceRequest/sr-t0001', start: '2027-01-04' }], period_end: '2026-12-31' })).toBe(
+      'the FIT order for Patient/pt-0017 (Stephan Herman) starts 2027-01-04, after the measurement period ends on 2026-12-31',
+    );
+  });
+  it('names a missing order before a late one', () => {
+    expect(found({ ordered, missing: ['Patient/pt-0018'], extra: [], late: [{ patient: 'Patient/pt-0017', order: 'ServiceRequest/sr-t0001', start: '2027-01-04' }], period_end: '2026-12-31' })).toBe('no FIT order for Patient/pt-0018 (Lance Amado Muller)');
+  });
+});

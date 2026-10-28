@@ -18,7 +18,7 @@ const whyNot = (p: unknown) => {
 
 export const checkText: CheckText = {
   fit_orders: {
-    requires: `one new FIT kit order for each of the ${ORDERED.length} patients with a screening gap, and none for the others`,
+    requires: `one new FIT kit order for each of the ${ORDERED.length} patients with a screening gap, starting on or before ${expected.period.end} (the end of the measurement period), and none for the others`,
     found: (ev) => {
       const ordered = fields(ev.ordered);
       const missing = items(ev.missing)[0];
@@ -27,7 +27,9 @@ export const checkText: CheckText = {
         return n === 0 ? `no FIT order for ${who(missing)}` : `${n} FIT orders for ${who(missing)}`;
       }
       const extra = items(ev.extra)[0];
-      return extra === undefined ? '' : `a FIT order for ${who(extra)}, ${whyNot(extra)}`;
+      if (extra !== undefined) return `a FIT order for ${who(extra)}, ${whyNot(extra)}`;
+      const late = fields(items(ev.late)[0]);
+      return late.patient === undefined ? '' : `the FIT order for ${who(late.patient)} starts ${show(late.start)}, after the measurement period ends on ${show(ev.period_end ?? expected.period.end)}`;
     },
   },
   outreach_messages: {

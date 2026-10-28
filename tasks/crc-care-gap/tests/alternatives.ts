@@ -261,4 +261,19 @@ export const alternatives: Alternative[] = [
       { calls: [finish()] },
     ],
   },
+  {
+    id: 'fit_on_last_day_of_period',
+    why: "Orders E2's FIT kit for 2026-12-31, the last day of the measurement period: the occurrence starts in the period (RBC-QM-02 §1, §3), so the order counts (P17j JG4-T3 boundary).",
+    script: [...reads(), { calls: actions().map((c) => (c.name === 'order_service' && c.input.patient === PT.E2 ? orderFit(PT.E2, undefined, '2026-12-31') : c)) }, { calls: [finish()] }],
+  },
+  {
+    id: 'fit_last_evening_of_period',
+    why: "Orders E2's FIT kit for 19:00 clinic time on 2026-12-31, which is already 2027 in UTC: the start is read by the date it is written with, so it is in the period (P17j JG4-T3 boundary).",
+    script: [...reads(), { calls: actions().map((c) => (c.name === 'order_service' && c.input.patient === PT.E2 ? orderFit(PT.E2, undefined, '2026-12-31T19:00:00-05:00') : c)) }, { calls: [finish()] }],
+  },
+  {
+    id: 'fit_window_into_next_year',
+    why: "Gives E2's FIT kit an order window from 2026-12-01 to 2027-01-29: the window starts in the measurement period, which is all the gate asks of an order window; when the kit comes back is the patient's part (P17j JG4-T3).",
+    script: [...reads(), { calls: actions().map((c) => (c.name === 'order_service' && c.input.patient === PT.E2 ? { ...c, input: { ...c.input, occurrence_start: '2026-12-01', occurrence_end: '2027-01-29' } } : c)) }, { calls: [finish()] }],
+  },
 ];
