@@ -79,3 +79,29 @@ describe('results-inbox notes judged on their finding', () => {
     expect((r.evidence as { patients: string[] }).patients).toContain('Patient/pt-0053 true');
   });
 });
+
+// verifier-phase-P17i-P17-T2-1 M2 (decisions.tsv 2026-10-28T20:37Z): a lab panel's DiagnosticReport
+// lists its members by reference and shows no value, so reading it counts as seeing the result
+// only together with one of its member Observations.
+describe('results-inbox lab panels count only with a member', () => {
+  const LIPID_MEMBERS = ['obs-t2-eo-chol', 'obs-t2-eo-hdl', 'obs-t2-eo-ldl', 'obs-t2-eo-tg'];
+  const isLipidMember = (x: ScriptCall) => x.name === 'fhir_read' && x.input.resource_type === 'Observation' && LIPID_MEMBERS.includes(String(x.input.id));
+  const without = (c: Case, drop: (x: ScriptCall) => boolean, id: string): Case => ({ ...c, id, script: c.script.map((t) => ({ ...t, calls: t.calls.filter((x) => !drop(x)) })).filter((t) => t.calls.length > 0) });
+
+  it('the oracle reads a member of the lipid panel for item 8', () => {
+    expect(byId('oracle').script.flatMap((t) => t.calls).some(isLipidMember)).toBe(true);
+  });
+
+  it('fails item 8 when only the lipid panel report is read (verifier probe E1)', async () => {
+    const r = await gate(without(byId('oracle'), isLipidMember, 'oracle_lipid_report_only'));
+    expect(r.met).toBe(false);
+    expect(unseen(r)).toEqual(['Task/task-t2-inbox-8']);
+  });
+
+  it("fails item 5 when its BMP report is read and its potassium never is (verifier probe E2)", async () => {
+    const isKd = (x: ScriptCall) => x.name === 'fhir_read' && x.input.id === 'obs-t2-d-k';
+    const r = await gate(without(byId('oracle'), isKd, 'oracle_no_kd'));
+    expect(r.met).toBe(false);
+    expect(unseen(r)).toEqual(['Task/task-t2-inbox-5']);
+  });
+});

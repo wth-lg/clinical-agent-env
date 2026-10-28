@@ -182,8 +182,8 @@ export const mutants = [
   {
     id: 'stat_bmp_from_summary',
     trap: 'order_before_source',
-    why: "Acts on item 5 from the inbox row ('potassium 6.2 mmol/L, critical high') without opening the potassium result, so it never checks for hemolysis.",
-    fails: ['sources_before_orders'],
+    why: "Acts on item 5 from the inbox row ('potassium 6.2 mmol/L, critical high') without opening the potassium result, so it never checks for hemolysis. Its read of the BMP report shows only references to the panel's members, so item 5 is closed with its result unseen (result_seen_before_action, verifier-phase-P17i-P17-T2-1 M2).",
+    fails: ['sources_before_orders', 'result_seen_before_action'],
     loses: [],
     script: solve({ reads: withoutKd }),
   },

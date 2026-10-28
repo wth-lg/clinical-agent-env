@@ -129,9 +129,13 @@ const linked = (t: Task | undefined) => (t?.output ?? []).map((o) => o.valueRefe
 
 // Each item's result (P17 T2 exploit, decisions.tsv 2026-10-28T17:40Z): the report or result the
 // item files (its focus), a lab panel's member results, and the item's sources that are results.
-// Reading any one of them counts, so a panel read with fhir_read or a member found by fhir_search
-// does. A text report also counts when a search_notes snippet showed its finding (FINDING), in
-// words both its findings and its impression use, since a snippet shows one part of the report.
+// Reading any one of them counts, so a member read with fhir_read or found by fhir_search does. A
+// lab panel's DiagnosticReport lists its members by reference and shows no value, so it counts
+// only together with one of its members (verifier-phase-P17i-P17-T2-1 M2, decisions.tsv
+// 2026-10-28T20:37Z): it is left out and its members stand for it. A list_inbox row is a
+// reference, not the result (packages/env/tools/read/inbox.ts). A text report also counts when a
+// search_notes snippet showed its finding (FINDING), in words both its findings and its
+// impression use, since a snippet shows one part of the report.
 const RESULT_TYPES = ['DiagnosticReport', 'Observation'];
 const FINDING: Record<string, string> = {
   [I.nodule.sources[0]!]: `${I.nodule.nodule_mm} mm solid nodule`,
@@ -141,8 +145,9 @@ const FINDING: Record<string, string> = {
 function resultsOf(ctx: GateCtx, x: { task: string; sources: readonly string[] }): string[] {
   const focus = ctx.initial.get('Task', split(x.task)[1])?.focus?.reference;
   const own = [...(focus ? [focus] : []), ...x.sources.filter((s) => RESULT_TYPES.includes(split(s)[0]))];
-  const members = own.filter((r) => split(r)[0] === 'DiagnosticReport').flatMap((r) => (ctx.initial.get('DiagnosticReport', split(r)[1])?.result ?? []).map((m) => m.reference ?? ''));
-  return [...new Set([...own, ...members])].filter((r) => r !== '');
+  const membersOf = (r: string) => (split(r)[0] === 'DiagnosticReport' ? (ctx.initial.get('DiagnosticReport', split(r)[1])?.result ?? []).map((m) => m.reference ?? '') : []);
+  const panels = own.filter((r) => membersOf(r).length > 0);
+  return [...new Set([...own.filter((r) => !panels.includes(r)), ...panels.flatMap(membersOf)])].filter((r) => r !== '');
 }
 const seenBefore = (ctx: GateCtx, ref: string, n: number) => {
   const exposed = ctx.exposedAt(ref);
