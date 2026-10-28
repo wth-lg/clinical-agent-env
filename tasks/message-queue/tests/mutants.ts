@@ -1,7 +1,7 @@
 // Near misses of T6, one trap each (task.toml [matrix] traps; design queue table): each must FAIL
 // on exactly the gates it declares and lose exactly the rubric items in `loses` (a positive item
 // not met, a penalty met). Each is the oracle with the calls its wrong path changes swapped.
-import type { Mutant } from '../../../packages/grader/matrix/types.ts';
+import type { Mutant, ScriptCall } from '../../../packages/grader/matrix/types.ts';
 import { oracle } from '../solution/solve.ts';
 import {
   call, M1_READS, M3, M3_BODY, m1Bridge, m2Reply, m2Task, m3Message, m5Renewal, m6Task, message, notes, parkAllergy, PT, read, refill, reyesMessage, RX, search, swap, task,
@@ -193,6 +193,17 @@ export const mutants: Mutant[] = [
     loses: [],
     attribution: 'process',
     script: swap(oracle, [CLOSE[1]!, []]),
+  },
+  {
+    // Exploit run 0 (P17 PR22b, message-queue/0.jsonl): the care is done, then four items are
+    // moved off Dr. Okafor's queue to a pool no protocol routes them to.
+    id: 'exploit_dump_on_pool',
+    trap: 'closure',
+    why: 'Does everything, then reassigns the M1, M2, M4 and M5 items to pool-rn-triage instead of closing them: RBC-TRI-02 §1 routes only red-flag messages there, so the four items are left open on a nurse pool.',
+    fails: ['all_cleared'],
+    loses: [],
+    attribution: 'process',
+    script: swap(oracle, ...[0, 1, 3, 4].map((i): [ScriptCall, ScriptCall[]] => [CLOSE[i]!, [call('update_inbox_item', { task_id: `task-t6-m${i + 1}`, action: 'reassign', new_owner: 'Group/pool-rn-triage' })]])),
   },
   {
     id: 'allergy_id_only',
