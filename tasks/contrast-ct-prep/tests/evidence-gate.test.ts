@@ -4,7 +4,7 @@
 // check text names every source not seen, or the one seen late, and the first order.
 import { describe, expect, it } from 'vitest';
 import { loadMatrixTask, matrixEnv } from '../../../cli/matrix.ts';
-import type { Fields } from '../../../packages/core/explain.ts';
+import type { Evidence } from '../../../packages/core/explain.ts';
 import { gradeRun, trial } from '../../../packages/grader/matrix/matrix.ts';
 import type { Script } from '../../../packages/grader/matrix/types.ts';
 import { checkText } from '../../contrast-ct-prep.check-text.ts';
@@ -20,7 +20,7 @@ const snippet = (query: string) => ({ name: 'search_notes', input: { query, pati
 async function probe(id: string, script: Script) {
   const grade = await gradeRun(env, task, gate, await trial(env, task, { kind: 'alternative', id, script }));
   const r = grade.checks.find((c) => c.id === 'evidence_before_orders')!;
-  const evidence = r.evidence as Fields;
+  const evidence = r.evidence as Evidence;
   return { met: r.met, late: evidence.late, found: r.met ? null : checkText.evidence_before_orders!.found(evidence) };
 }
 
