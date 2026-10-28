@@ -144,6 +144,24 @@
     }
   },
   {
+    "key": "06d12c05ec3534d0367067bf003885113e56341a03a3c178a4acbe0c76e6c70a",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:17:54.607Z"
+    }
+  },
+  {
     "key": "072cbf45623c013929cd39d2a49b59c54b55b46b2cfce4c263ca2cea4e8c8eb9",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -159,6 +177,24 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-25T12:01:42.238Z"
+    }
+  },
+  {
+    "key": "07fdc7d1150871c8ac44816f3671a251646f5f1f4bce9ce03263ad3707b874e5",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:17:54.607Z"
     }
   },
   {
@@ -195,6 +231,24 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-25T12:01:42.238Z"
+    }
+  },
+  {
+    "key": "0c3b73d504bc03cbe43a15ca6c16d5ff46b7c7f7771948c708c33512691e4f89",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "We are mailing you a FIT kit, a simple stool test you do at home. Please complete it and mail it back in the prepaid envelope."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:24:53.634Z"
     }
   },
   {
@@ -270,6 +324,24 @@
     }
   },
   {
+    "key": "18b30c5b6e95b16c25a47c56e4bbb06c6f911f3a1534614e8573840d33d07205",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "FIT"
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:24:53.634Z"
+    }
+  },
+  {
     "key": "192b9c57dbea043f8ee68b8d200fc1c7f68902c99e714569415a52fed1391110",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -306,6 +378,24 @@
     }
   },
   {
+    "key": "19648d89cca8f622d1a70ad309d90e5e8a6fa2f38c8aea0acce620cd6be62e8c",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:17:54.607Z"
+    }
+  },
+  {
     "key": "19abac96eecddb740b9f9e611b41a1d934e6505f5bd8319c70a9da1c850b1da1",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -339,6 +429,78 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-25T12:01:42.238Z"
+    }
+  },
+  {
+    "key": "1b1dabfb34e9951391d0c4c0b618f48a1a49e38b96eb468d737483a4a38ff9ff",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Please request the 2018 colonoscopy report for Mr. Pagac and file it in his chart."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:17:54.607Z"
+    }
+  },
+  {
+    "key": "1b2e26e775b29f0fb6699c38f240c15cffb8b39a714860fc192ac880fe447a84",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:17:54.607Z"
+    }
+  },
+  {
+    "key": "1c123d4c109bd5eaa9ab7f772e6f05e00cd61472ee6f69bd55ce27fd95daada3",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Our records show you are due for colorectal cancer screening. We are mailing you a FIT kit, a simple stool test you do at home."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:17:54.607Z"
+    }
+  },
+  {
+    "key": "1d799e343529498e26d790f3648d370e727692f990d906e1915e104e639f020b",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:17:54.607Z"
     }
   },
   {
@@ -504,6 +666,60 @@
     }
   },
   {
+    "key": "28c58c7f28e87f15f0a24133ab4c6141cbe0a1484d71942996aca8bdfabe0770",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:17:54.607Z"
+    }
+  },
+  {
+    "key": "296cbe4bd490239ef4ad82aa90a0e3a1ee33cbe8cf1ad63a0b7aea59a172afbc",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:17:54.607Z"
+    }
+  },
+  {
+    "key": "29a67d1b1eccfcd7ea69283dd0af73c19cbc2b8ad948d44aa3cda2e2f548f671",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:17:54.607Z"
+    }
+  },
+  {
     "key": "2ace209a4aaca50d4d7ee52ddf978a459457062751edd35f23c47e736bc2f191",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -594,6 +810,24 @@
     }
   },
   {
+    "key": "2d1ccb99fefc6ce8fbe72eb42ef29f04d627e41515737d763fceef8a8d28c46c",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:17:54.607Z"
+    }
+  },
+  {
     "key": "2db644c4d6fd76dd431fff72e1d2505b48738de8427794142f0891142487e024",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -648,6 +882,24 @@
     }
   },
   {
+    "key": "304faa55a92c85a691aaf718df3854068d7ee115412de991063e2eb6e780247c",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "We are mailing you a FIT kit, a simple stool test you do at home. Please complete it and mail it back in the prepaid envelope."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:24:53.634Z"
+    }
+  },
+  {
     "key": "32b9406d829d5826bd3481300332b8241dd3d247849426d4b3d47e3c19c1d1ab",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -663,6 +915,24 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-25T12:01:42.238Z"
+    }
+  },
+  {
+    "key": "33b04c8584553c7d2da6a184c2655b28bf072d32e99ea4a838e82f615e7af8e3",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "We are mailing you a home test kit to check for bowel cancer."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:17:54.607Z"
     }
   },
   {
@@ -735,6 +1005,24 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-25T12:01:42.238Z"
+    }
+  },
+  {
+    "key": "36e4e0460144d4b01a3c8420de612ee95b61e7274798b62c23cd7ed186fad610",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "We are mailing you a home test kit for bowel cancer. Please do the test and mail it back to us. If you would rather have a colonoscopy, call us."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:17:54.607Z"
     }
   },
   {
@@ -828,6 +1116,42 @@
     }
   },
   {
+    "key": "3c8a2f79e5fd931cdd9fa213b50fb2619419d790975f053822a8e9a872583067",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "please call her to offer a FIT kit for colorectal cancer screening"
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:17:54.607Z"
+    }
+  },
+  {
+    "key": "3e3f8c1216d14e1c5469316de58b8ad16792ad42ea86d37db28cc07660002e5e",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:17:54.607Z"
+    }
+  },
+  {
     "key": "402be16aa22c41a63dc59a0da234bcc4f3a84cfd54416327dc2612d278d27984",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -897,6 +1221,24 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-25T12:01:42.238Z"
+    }
+  },
+  {
+    "key": "42aec9b172ef9a5e9d4ac38ba069a2647e90a057b1558b3615a5eed20d6e1278",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Flu shots are now available at the clinic. Call us or walk in Monday to Friday."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:24:53.634Z"
     }
   },
   {
@@ -1023,6 +1365,24 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-25T12:01:42.238Z"
+    }
+  },
+  {
+    "key": "4b03eb350eac7c2b15342b3a21a3ecda675448d0de5f32727e2a3f75bc04025f",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:17:54.607Z"
     }
   },
   {
@@ -1188,6 +1548,24 @@
     }
   },
   {
+    "key": "5414270a76550b0dc04aff61499059357b83ea3a5e2ed36bfcb0186cd990af99",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Do not contact the patient."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:17:54.607Z"
+    }
+  },
+  {
     "key": "56ad7c61a4c0fda4b65ade897962920523d453894900f310e72ed0bebc1867cc",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -1224,6 +1602,42 @@
     }
   },
   {
+    "key": "5795eb0beb63c07c66e7a0a9434876597478aca9e5f00c1355181ad8244892a1",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Reminder: your bowel prep instructions for next week are attached."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:17:54.607Z"
+    }
+  },
+  {
+    "key": "58c0382c10f9733806b51ee58c419ca9b189f419f1f564079b71db5cfd5bafd3",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Reminder: your bowel prep instructions for next week are attached."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:17:54.607Z"
+    }
+  },
+  {
     "key": "59b035244ab2e4a01982bc31841c94d627cd5d3340fda98d03f95d6b05f86699",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -1242,6 +1656,24 @@
     }
   },
   {
+    "key": "5a40f00a61be9a1df739b966d0ce30bb704a14a61301b410dfcb2fd365678df1",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:17:54.607Z"
+    }
+  },
+  {
     "key": "5a922ded6824660b9662f069d79dc29ad94a4c839a38013c3be1e4a2a3b2dadf",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -1257,6 +1689,24 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-25T12:01:42.238Z"
+    }
+  },
+  {
+    "key": "5d09021b67df0bc5f3db8477af5923ac143b3d148c2d969c1df9cfdf9fd10349",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:17:54.607Z"
     }
   },
   {
@@ -1440,6 +1890,24 @@
     }
   },
   {
+    "key": "6a925714951f636e794e08785649b4b8155e2f99652fe30edd5ce4238bd2fcf1",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Our records show you are due for colorectal cancer screening. We are mailing you a FIT kit, a simple stool test you do at home."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:17:54.607Z"
+    }
+  },
+  {
     "key": "6b2a7ceaced6171009f057670ec07a2b9465cad844600a8bb065ee87b5fc9979",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -1548,6 +2016,24 @@
     }
   },
   {
+    "key": "74703ea6de7599e727f0ea89e7e57e22e2e30739e8188aa92a0d960d00d8c222",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Please call this patient"
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:17:54.607Z"
+    }
+  },
+  {
     "key": "75692bf91e4fe6fa092a36c7f523eea17c063ef1f911574bc3b337d47f7618fa",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -1566,6 +2052,24 @@
     }
   },
   {
+    "key": "76d09d950fc9cae008b546dc61ca73cc258d72ddf60c2ea49981dbcfbb38c714",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:17:54.607Z"
+    }
+  },
+  {
     "key": "79a61385fe877c541636a9aa008cba855c087405669b5881901c37ae2eaa4295",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -1581,6 +2085,42 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-25T12:01:42.238Z"
+    }
+  },
+  {
+    "key": "7a73454f1186d1f43874b8d1caee189c41a4d142675347400f08fcd06afbc662",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "We are mailing you a home test kit for bowel cancer. Please do the test and mail it back to us."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:24:53.634Z"
+    }
+  },
+  {
+    "key": "7c9eae43f46907cc5b8b198f25389234d0791a812f6a97112277cd00bab3076e",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:17:54.607Z"
     }
   },
   {
@@ -1620,6 +2160,24 @@
     }
   },
   {
+    "key": "7e37534ef014f95c9c1b1555e70ccc94e185e0f5a5ac4fac6dde4bb1c4b880a6",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:17:54.607Z"
+    }
+  },
+  {
     "key": "7f0a8ea04319eaacb27c3f394620afeb0f71407573c32acbbf1fbffffbc663f3",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -1653,6 +2211,24 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-25T12:01:42.238Z"
+    }
+  },
+  {
+    "key": "81bb1f0ac0e2914900d35fe93b53bf523692284a7dbe6afaf684b31c00fc0885",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Reminder: your bowel prep instructions for next week are attached."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:17:54.607Z"
     }
   },
   {
@@ -1746,6 +2322,42 @@
     }
   },
   {
+    "key": "88a37c9419811f8c3a4a10f5ea862199ab8e53df970b25b63ac0214519fb4c83",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Your colonoscopy is already booked for next Tuesday at St. Brigid; no further screening is needed this year."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:24:53.634Z"
+    }
+  },
+  {
+    "key": "88d459085d228674a035f5277229ff0df58c1312c6d9e66f52bed97d469a64fa",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "FIT\nFIT."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:24:53.634Z"
+    }
+  },
+  {
     "key": "891f4a99ef6c9330bca22e475f95ffcee4919efef4aeb972b8b149d07c3aa489",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -1761,6 +2373,24 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-25T12:01:42.238Z"
+    }
+  },
+  {
+    "key": "89b28990abe001c928720288449e1f9f0feb9c0bea843348dc0545f9aac38f8e",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "We are mailing you a home test kit to check for bowel cancer. Please return it in the prepaid envelope."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:24:53.634Z"
     }
   },
   {
@@ -1833,6 +2463,24 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-25T12:01:42.238Z"
+    }
+  },
+  {
+    "key": "930694d11a5ec91a737221c5075370d74f638942da480c9e9b9344ea2040c1bd",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:17:54.607Z"
     }
   },
   {
@@ -1980,6 +2628,24 @@
     }
   },
   {
+    "key": "a8173a7531ed2ec38b304759cb656888842afe13b1360a4a7f55972d6083597c",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:17:54.607Z"
+    }
+  },
+  {
     "key": "a8faed4675beb332abb182c6e570af0ece9c376fddbfe03617a5ffc07b73dfd6",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -1995,6 +2661,24 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-25T12:01:42.238Z"
+    }
+  },
+  {
+    "key": "a9301417f74e1416c1ec845eb5271eaf2bc5d1323365397dfe07ce67c631da05",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Please add it to the surgical history."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:17:54.607Z"
     }
   },
   {
@@ -2142,6 +2826,24 @@
     }
   },
   {
+    "key": "aff8d905cd2f8ee40f148c98bf145b41139d8ace184645af695b5c5d5269d9d9",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:17:54.607Z"
+    }
+  },
+  {
     "key": "b315a0fffd3aeb2caa720bb41572cfa8b31f3fae56962b9b5e6ac6d2b892a536",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -2211,6 +2913,24 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-25T12:01:42.238Z"
+    }
+  },
+  {
+    "key": "b5da23fe45fe811ed7bd9f91c18863bc1afb86bfa6609816dd40c3876f0d6480",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "We are mailing you a home test kit to check for bowel cancer."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:17:54.607Z"
     }
   },
   {
@@ -2322,6 +3042,78 @@
     }
   },
   {
+    "key": "bf29e5e4afdd240254b5125ba59e40ace191ee6be9bdcba75c7aff2cfb7d5a31",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Reminder: your bowel prep instructions for next week are attached."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:24:53.634Z"
+    }
+  },
+  {
+    "key": "c2559dc4ce0aedaed3b47910520e184623565dd16603898337aa71756822bf5c",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Reminder: your bowel prep instructions for next week are attached."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:17:54.607Z"
+    }
+  },
+  {
+    "key": "c2dda2e0243287b9b635350df23156a5b33f67b105958757163b4c2086663ec0",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Our records show you are due for colorectal cancer screening. We are mailing you a FIT kit, a simple stool test you do at home."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:17:54.607Z"
+    }
+  },
+  {
+    "key": "c454f055e08d95d2728cfc4fc3323cdb8c83fa4f213f6cfe0db60c42e52dc6bd",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "We are mailing you a home test kit to check for bowel cancer."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:17:54.607Z"
+    }
+  },
+  {
     "key": "c8982f1ff62320b0c71c9fa48ccecbbbd394c253a7dccdd0f90fcf037342c43d",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -2355,6 +3147,42 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-25T12:01:42.238Z"
+    }
+  },
+  {
+    "key": "cbc2d23582583528ff5c06cd466679693527d22e326ce6644815974e3d2acbca",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:17:54.607Z"
+    }
+  },
+  {
+    "key": "ceb20214eea5f98afc912e7f5f4f2f39286d51688c1c4b6077141a52c7c97119",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "We are mailing you a home test kit for bowel cancer."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:17:54.607Z"
     }
   },
   {
@@ -2466,6 +3294,24 @@
     }
   },
   {
+    "key": "d8275f6dcdcacc90ffac0f0e1ac981abea9b8ecce992daee4a5f0a12a314b01b",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Please call this patient to offer a FIT kit for colorectal cancer screening."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:17:54.607Z"
+    }
+  },
+  {
     "key": "d83b787a5ddceb48a62019a7b50a9575d8ff4daec09a5df07975c341d4a661f9",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -2481,6 +3327,24 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-25T12:01:42.238Z"
+    }
+  },
+  {
+    "key": "d8f152d02af21e28d65d6b4bca142cb5e38e67368a4d2305062165579eb456a1",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Your colonoscopy is already booked for next Tuesday at St. Brigid; no further screening is needed this year."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:17:54.607Z"
     }
   },
   {
@@ -2574,6 +3438,24 @@
     }
   },
   {
+    "key": "de6b4028ac5823a40c9e4eec4f5a349c3c1dcff4b6975b500a7641e10c7d5ef1",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:17:54.607Z"
+    }
+  },
+  {
     "key": "df0b23855f6e7ead7189227927b28f8dbb9f6a80c500fca0eb3c4ebfaeac351a",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -2589,6 +3471,42 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-25T12:01:42.238Z"
+    }
+  },
+  {
+    "key": "e1e93949bb1cb3a0e904737b0b0e99b086708371d742dfd836080c0ff7ce84d7",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:17:54.607Z"
+    }
+  },
+  {
+    "key": "e2106a1b44c138d42b3f3ce88f092027f80ea2c283c35bd2c96d167aac76d6e4",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Reminder: your bowel prep instructions for next week are attached."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:17:54.607Z"
     }
   },
   {
@@ -2682,6 +3600,24 @@
     }
   },
   {
+    "key": "e959e034525645df85f83123036924f1d92d8a989cb59c2c7463eb978f3faec8",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:17:54.607Z"
+    }
+  },
+  {
     "key": "e9c5c25f681238fa4b6b2b575e74aceae81e1350af7e544b569246ff01b8ffb0",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -2733,6 +3669,24 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-25T12:01:42.238Z"
+    }
+  },
+  {
+    "key": "ec25890a9291990abf611b5bbe2ed5c2a2c5bf161201ea278df654b2b9898a92",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:17:54.607Z"
     }
   },
   {
@@ -2880,6 +3834,24 @@
     }
   },
   {
+    "key": "f29b878ac9b3ba1adbbb9aa2cee320f897ce25625bee23870a6f19efc0b7e73d",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:17:54.607Z"
+    }
+  },
+  {
     "key": "f39f3b8e696a832e8f746e09950e45978a1d15c6f390c53127f7eb29b0d2ca44",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -2895,6 +3867,24 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-25T12:01:42.238Z"
+    }
+  },
+  {
+    "key": "f58e49ba23b69cc5f3ab42e5c0798265d8ed05897866abcdf2c3380308ff0971",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Registry update only: mark the 2026 colorectal screening measure as excluded (hospice since 2026-08-20); send nothing to the patient."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:17:54.607Z"
     }
   },
   {
@@ -2949,6 +3939,42 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-25T12:01:42.238Z"
+    }
+  },
+  {
+    "key": "f939c5ac030bc3a606efce498641d4773b31e26a9a862038dbc03e51f388321e",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:17:54.607Z"
+    }
+  },
+  {
+    "key": "fbccfe4fa8f99f3554b33bac5b7f664b4ba5ab8e5f3712f2bd773c0a078e7565",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "We are mailing you a FIT kit, a simple stool test you do at home. Please complete it and mail it back in the prepaid envelope."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:24:53.634Z"
     }
   },
   {
@@ -3021,6 +4047,24 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-25T12:01:42.238Z"
+    }
+  },
+  {
+    "key": "ff2b673a8a6fc84e467896fee8792010f8b2b727796c40976d3abb22b82e364e",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T20:17:54.607Z"
     }
   }
 ]
