@@ -9,15 +9,16 @@
 // replay check are the trial's; it runs no check and no judge.
 //   --out       results/probe by default: <task>.jsonl (the trajectory, the graded event last)
 //               and <task>.json ({task_id, task_version, status, findings, problem, cost_usd,
-//               trajectory}). A task whose <task>.json exists is not probed again and is not
-//               projected.
+//               trajectory}). A task whose <task>.json holds findings is not probed again and is
+//               not projected; one whose findings are null is run again.
 //   --dry-run   prints the projection (LIVE_PROJECTION_USD) and makes no call and opens nothing
 // Projection: PER_TRIAL_CAP_USD per probe, the loop's cost cap (no judge item is graded). Every
 // probe's client comes from one batchStart(projection) on the Node ledger, so the run is
 // refused before any call when the ledger's exposure plus the projection would cross
 // PROJECTED_CAP_USD.
-// Findings: the probe's last answer must hold only the JSON object prompts/probe.md asks for;
-// any other answer is kept as problem with the text, and the probe counts as failed.
+// Findings: the probe's last answer must end with the JSON object prompts/probe.md asks for, as
+// its last fenced block or its last JSON object (prose before it is fine); any other answer is
+// kept as problem with the text, findings null, and the probe counts as failed.
 // Exit 0 when every probe completed with valid findings (an empty list included); 1 otherwise;
 // 2 on a usage error.
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -29,7 +30,7 @@ import { installEgressGuard } from '../packages/core/egress.ts';
 import type { TrialEvent } from '../packages/core/events.ts';
 import { PROJECTED_CAP_USD, SpendRefused } from '../packages/core/ledger.ts';
 import { redactText } from '../packages/core/redact.ts';
-import { run, type RunOptions } from '../packages/core/run.ts';
+import { run } from '../packages/core/run.ts';
 import type { Task, TaskSource } from '../packages/core/tasks.ts';
 import { toJsonLine } from '../packages/core/trajectory.ts';
 import { READ_TOOLS } from '../packages/env/tools/read/index.ts';
@@ -38,6 +39,7 @@ import { nodeNow } from './adapters/clock-node.ts';
 import { openNodeLedger } from './adapters/ledger-node.ts';
 import { isTestMode, nodeTaskSource } from './adapters/tasks-node.ts';
 import { TASK_ID } from './matrix.ts';
+import { repoWorld } from './run.ts';
 
 export const REPO = fileURLToPath(new URL('../', import.meta.url));
 const USAGE = 'usage: pnpm cli probe --task <id|all> [--out <dir>] [--dry-run]';
@@ -82,18 +84,32 @@ export async function selectTasks(tasks: TaskSource, id: string): Promise<Task[]
   return id === 'all' ? tasks.all() : [await tasks.get(id)];
 }
 
-// The world, its manifest hash and the definitions bundle, as run-one gives them to run().
-export function worldOptions(): Pick<RunOptions, 'world' | 'worldHash' | 'definitions'> {
-  return {
-    world: { read: async () => new Uint8Array(readFileSync(join(REPO, 'fixtures/world.ndjson.gz'))) },
-    worldHash: (JSON.parse(readFileSync(join(REPO, 'fixtures/manifest.json'), 'utf8')) as { world: { state_hash: string } }).world.state_hash,
-    definitions: JSON.parse(readFileSync(join(REPO, 'fixtures/definitions-pruned.json'), 'utf8')),
-  };
-}
-
 // What a refused batchStart prints: the refusal names the projected cap and its sum.
 export function refusal(command: string, e: unknown): string | null {
   return e instanceof SpendRefused ? `${command}: refused before any call (ledger + projection would pass PROJECTED_CAP_USD $${PROJECTED_CAP_USD}): ${e.message}` : null;
+}
+
+// The JSON value an answer ends with: its last fenced block, else its last JSON object (the
+// text from the rightmost '{' that parses through the last '}'), so prose before it is fine.
+function lastJson(text: string): { value: unknown } | null {
+  const fenced = [...text.matchAll(/```(?:json)?\s*\n?([\s\S]*?)```/g)].at(-1);
+  if (fenced !== undefined) {
+    try {
+      return { value: JSON.parse(fenced[1]!) };
+    } catch {
+      // Not JSON: look for a bare object instead.
+    }
+  }
+  const end = text.lastIndexOf('}');
+  for (let i = text.lastIndexOf('{', end); i >= 0; i = text.lastIndexOf('{', i - 1)) {
+    try {
+      return { value: JSON.parse(text.slice(i, end + 1)) };
+    } catch {
+      // A '{' inside the object, or in prose: try the one before it.
+    }
+    if (i === 0) break;
+  }
+  return null;
 }
 
 // The probe's findings from its last answer, or the reason they are not valid.
@@ -101,13 +117,9 @@ export function findingsOf(events: readonly TrialEvent[]): { findings: Finding[]
   const last = events.findLast((e) => e.type === 'response');
   if (last === undefined) return { problem: 'no answer' };
   const text = last.content.flatMap((b) => (b.type === 'text' && typeof b.text === 'string' ? [b.text] : [])).join('').trim();
-  const body = text.replace(/^```(?:json)?\s*/, '').replace(/\s*```$/, '');
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(body);
-  } catch {
-    return { problem: `the last answer is not the findings JSON: ${JSON.stringify(text.slice(0, 200))}` };
-  }
+  const found = lastJson(text);
+  if (found === null) return { problem: `the last answer is not the findings JSON: ${JSON.stringify(text.slice(0, 200))}` };
+  const parsed = found.value;
   const findings = (parsed as { findings?: unknown } | null)?.findings;
   if (!Array.isArray(findings)) return { problem: 'the last answer has no findings list' };
   const str = (v: unknown) => typeof v === 'string' && v.trim() !== '';
@@ -117,6 +129,16 @@ export function findingsOf(events: readonly TrialEvent[]): { findings: Finding[]
     if (!ok) return { problem: `finding ${i + 1} does not have the shape prompts/probe.md asks for: ${JSON.stringify(f).slice(0, 200)}` };
   }
   return { findings: findings as Finding[] };
+}
+
+// A probe is recorded when its <task>.json holds valid findings; one without is run again.
+function recorded(file: string): boolean {
+  if (!existsSync(file)) return false;
+  try {
+    return (JSON.parse(readFileSync(file, 'utf8')) as { findings?: unknown }).findings != null;
+  } catch {
+    return false;
+  }
 }
 
 export async function main(args: string[], deps: Deps): Promise<number> {
@@ -145,7 +167,7 @@ export async function main(args: string[], deps: Deps): Promise<number> {
   }
   const outDir = resolve(outArg ?? join(REPO, 'results/probe'));
   const todo = tasks.filter((t) => {
-    const done = existsSync(join(outDir, `${t.id}.json`));
+    const done = recorded(join(outDir, `${t.id}.json`));
     if (done) deps.out(`probe ${t.id}: already recorded in ${join(outDir, `${t.id}.json`)}; not run again`);
     return !done;
   });
@@ -175,7 +197,7 @@ export async function main(args: string[], deps: Deps): Promise<number> {
         const trajectory = join(outDir, `${t.id}.jsonl`);
         writeFileSync(trajectory, '');
         const client = new MessagesClient({ grant, ledger, apiKey: key, fetch: deps.fetch, trial: label, log: (l) => deps.out(l) });
-        const { record, events } = await run(t.id, MODEL, { tasks: probeSource, client, judge: null, now: nodeNow, trialId: label, ...worldOptions(), onEvent: (e) => appendFileSync(trajectory, toJsonLine(e)) });
+        const { record, events } = await run(t.id, MODEL, { tasks: probeSource, client, judge: null, now: nodeNow, trialId: label, ...repoWorld(), onEvent: (e) => appendFileSync(trajectory, toJsonLine(e)) });
         const got = record.status === 'COMPLETED' ? findingsOf(events) : { problem: `the probe ended ${record.status}${record.detail ? ` (${record.detail})` : ''}` };
         const findings = 'findings' in got ? got.findings : null;
         const problem = 'problem' in got ? redactText(got.problem, [key]) : null;

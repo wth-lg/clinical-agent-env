@@ -87,7 +87,7 @@ export interface Deps {
 }
 
 // tasks/<id>/tests/grader.ts exports `checks`; a task without one has no checks.
-export async function taskChecks(task: string): Promise<readonly Check[]> {
+async function taskChecks(task: string): Promise<readonly Check[]> {
   const file = join(REPO, 'tasks', task, 'tests', 'grader.ts');
   if (!existsSync(file)) return [];
   const { checks } = (await import(pathToFileURL(file).href)) as { checks?: unknown };

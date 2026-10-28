@@ -56,6 +56,26 @@ describe('probe', () => {
     expect(JSON.parse(readFileSync(join(h.out, '_toy.json'), 'utf8'))).toMatchObject({ findings: null, problem: expect.stringContaining('not the findings JSON') });
   });
 
+  it('takes the last fenced block or the last JSON object after prose (r2 F2)', async () => {
+    const fenced = scriptedTransport([{ text: `Here is what I found.\n\n\`\`\`json\n${JSON.stringify(FINDINGS)}\n\`\`\`` }]);
+    const a = harness(fenced.transport, { ANTHROPIC_API_KEY: fakeKey('P') });
+    expect(await a.probe([])).toBe(0);
+    expect(JSON.parse(readFileSync(join(a.out, '_toy.json'), 'utf8')).findings).toEqual(FINDINGS.findings);
+    const bare = scriptedTransport([{ text: `I read the instruction {and the policy}. Findings:\n${JSON.stringify(FINDINGS)}` }]);
+    const b = harness(bare.transport, { ANTHROPIC_API_KEY: fakeKey('P') });
+    expect(await b.probe([])).toBe(0);
+    expect(JSON.parse(readFileSync(join(b.out, '_toy.json'), 'utf8')).findings).toEqual(FINDINGS.findings);
+  });
+
+  it('runs a recorded probe again when its findings are null (r2 F1)', async () => {
+    const t = scriptedTransport([{ text: 'I found two problems.' }, { text: JSON.stringify(FINDINGS) }]);
+    const h = harness(t.transport, { ANTHROPIC_API_KEY: fakeKey('P') });
+    expect(await h.probe([])).toBe(1);
+    expect(await h.probe([])).toBe(0);
+    expect(t.bodies).toHaveLength(2);
+    expect(JSON.parse(readFileSync(join(h.out, '_toy.json'), 'utf8')).findings).toEqual(FINDINGS.findings);
+  });
+
   it('--dry-run makes no call, opens no ledger and prints the projection', async () => {
     const fetch = vi.fn<Transport>();
     const h = harness(fetch);
