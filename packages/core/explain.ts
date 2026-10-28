@@ -380,6 +380,10 @@ export const fields = (v: unknown): Record<string, unknown> => (isObj(v) ? v : {
 export const clock = (v: unknown): string => show(v);
 // A list in words: 'a', 'a and b', 'a, b and c'; none when empty.
 export const listed = (xs: readonly unknown[]): string => (xs.length === 0 ? 'none' : xs.length === 1 ? show(xs[0]) : `${xs.slice(0, -1).map((x) => show(x)).join(', ')} and ${show(xs.at(-1))}`);
+// How a read a gate found late stood to the write it had to come before: a read at a lower step
+// was late only because it was in the same answer (packages/grader/exposure.ts seenBefore: a
+// result is seen only from the next turn on), any other was after it.
+export const lateness = (read: unknown, write: unknown): string => (typeof read === 'number' && typeof write === 'number' && read < write ? 'in the same answer as' : 'after');
 
 // What each taxonomy label (packages/grader/attribution.ts) says about a failed trial, in words; the
 // glossary shows them, because a reason may end with the label alone when its clause does not fit.

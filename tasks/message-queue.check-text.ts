@@ -2,7 +2,7 @@
 // requires, and the first difference its evidence (tests/grader.ts) shows. The Tasks view and the
 // failure reasons read it. It sits beside the task directory, not in it, so neither task version
 // covers it: rewording it regrades nothing.
-import { fields, items, listed, show, type CheckText } from '../packages/core/explain.ts';
+import { fields, items, lateness, listed, show, type CheckText } from '../packages/core/explain.ts';
 import { expected as M } from './message-queue/expected.ts';
 
 // A refill on these terms: no order, else the first order term that differs.
@@ -21,9 +21,9 @@ const refill = (drug: string, ev: Record<string, unknown>): string => {
   return orders.every((o) => o.active !== true) ? `every new ${drug} order is voided` : '';
 };
 
-// A record read late: never before the write it must come before, or after it.
+// A record read late: never before the write it must come before, in the same answer, or after it.
 const lateRead = (id: unknown, exposed: unknown, write: unknown) =>
-  exposed === null || exposed === undefined ? `${show(id)} was not read before the write at step ${show(write)}` : `${show(id)} was read at step ${show(exposed)}, after the write at step ${show(write)}`;
+  exposed === null || exposed === undefined ? `${show(id)} was not read before the write at step ${show(write)}` : `${show(id)} was read at step ${show(exposed)}, ${lateness(exposed, write)} the write at step ${show(write)}`;
 
 const writes = (ev: Record<string, unknown>) => {
   const extra = items(ev.extra);

@@ -2,7 +2,7 @@
 // requires, and the first difference its evidence (tests/grader.ts) shows. The Tasks view and the
 // failure reasons read it. It sits beside the task directory, not in it, so neither task version
 // covers it: rewording it regrades nothing.
-import { clock, fields, items, listed, show, type CheckText } from '../packages/core/explain.ts';
+import { clock, fields, items, lateness, listed, show, type CheckText } from '../packages/core/explain.ts';
 import { expected } from './contrast-ct-prep/expected.ts';
 
 const APPT = expected.appointment;
@@ -56,7 +56,7 @@ export const checkText: CheckText = {
     found: (ev) => {
       const late = show(items(ev.late)[0]);
       const step = fields(items(ev.exposed).map(fields).find((e) => e.id === items(ev.late)[0])).step;
-      return step === null || step === undefined ? `${late} was not read before the first medication order at step ${show(ev.first_medication_write)}` : `${late} was read at step ${show(step)}, after the first medication order at step ${show(ev.first_medication_write)}`;
+      return step === null || step === undefined ? `${late} was not read before the first medication order at step ${show(ev.first_medication_write)}` : `${late} was read at step ${show(step)}, ${lateness(step, ev.first_medication_write)} the first medication order at step ${show(ev.first_medication_write)}`;
     },
   },
 };

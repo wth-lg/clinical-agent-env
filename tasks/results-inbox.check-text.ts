@@ -2,7 +2,7 @@
 // requires, and the first difference its evidence (tests/grader.ts) shows. The Tasks view and the
 // failure reasons read it. It sits beside the task directory, not in it, so neither task version
 // covers it: rewording it regrades nothing.
-import { fields, items, listed, show, type CheckText } from '../packages/core/explain.ts';
+import { fields, items, lateness, listed, show, type CheckText } from '../packages/core/explain.ts';
 import { expected } from './results-inbox/expected.ts';
 
 const I = expected.items;
@@ -76,7 +76,7 @@ export const checkText: CheckText = {
     requires: 'each result read before the order it leads to',
     found: (ev) => {
       const l = fields(items(ev.late)[0]);
-      return l.exposed === null ? `${show(l.source)} was not read before ${show(l.order)} at step ${show(l.written)}` : `${show(l.source)} was read at step ${show(l.exposed)}, after ${show(l.order)} at step ${show(l.written)}`;
+      return l.exposed === null ? `${show(l.source)} was not read before ${show(l.order)} at step ${show(l.written)}` : `${show(l.source)} was read at step ${show(l.exposed)}, ${lateness(l.exposed, l.written)} ${show(l.order)} at step ${show(l.written)}`;
     },
   },
 };

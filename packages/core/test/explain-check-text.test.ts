@@ -122,3 +122,16 @@ describe('crc-care-gap outreach_messages found', async () => {
     expect(found({ missing: ['Patient/pt-0017'], messaged: ['Patient/pt-0018', ...OTHERS], tasked_instead: [] })).toBe('no message to Patient/pt-0017 (Stephan Herman)');
   });
 });
+
+// verifier-phase-P17i-P17-T5-1 F2 (GRADER_VERSION 13): a read in the same answer as the order is
+// late though its step is lower, and the text says so instead of "after".
+describe('a read late only by its turn', async () => {
+  const found = (await textOf('renal-dose-review')).inputs_before_orders!.found;
+  const exposed = [{ id: 'obs-t1-scr-1020', step: 3 }];
+  it('says "in the same answer as" when the read stands before the order', () => {
+    expect(found({ first_medication_write: 6, exposed, late: ['obs-t1-scr-1020'] })).toBe('obs-t1-scr-1020 was read at step 3, in the same answer as the first medication order at step 6');
+  });
+  it('says "after" when the read came after the order', () => {
+    expect(found({ first_medication_write: 2, exposed, late: ['obs-t1-scr-1020'] })).toBe('obs-t1-scr-1020 was read at step 3, after the first medication order at step 2');
+  });
+});
