@@ -211,7 +211,7 @@ The expected status of each member, with the measurement period 2026-01-01 to 20
 - Frailty with a dementia medication excludes, frailty alone does not (`dementia_medication`, `frailty_alone`).
 - A FIT from the prior year does not count (`prior_year_fit`).
 - A FIT order is already active for E11 (`duplicate_fit_order`).
-- Each order needs an outreach message, and patients without a gap need none (`outreach_without_order`, `contact_not_needed`).
+- Each order needs an outreach message about that order (its `about` names the new FIT order), and patients without a gap need none (`outreach_without_order`, `contact_not_needed`).
 - The agent must read the gap evidence before the order (`order_before_review`).
 - The measure excludes a patient in hospice (`hospice`).
 - A FIT order must start by the end of the measurement period, 2026-12-31 (`fit_after_period`).
@@ -221,15 +221,16 @@ The expected status of each member, with the measurement period 2026-01-01 to 20
 Gate checks (`tests/grader.ts`, words in `tasks/crc-care-gap.check-text.ts`):
 
 - `fit_orders`: one new FIT order for each ordered gap patient, and every new FIT order (an optional one for an allowed patient too) with its occurrence (date, dateTime or window) starting on or before 2026-12-31; a dateTime is read by its date in clinic time (America/New_York), whatever offset it is written with.
-- `outreach_messages`: an outreach message to each ordered gap patient.
+- `outreach_messages`: an outreach message to each ordered gap patient whose `about` names that patient's new FIT order. Two misses count as `action_form` failures: a phone staff pool Task on that order, or a message sent after the order whose `about` names only the patient or their own records. A message with an empty `about` is a reasoning failure.
 - `nothing_for_others`: no order or message for a patient who must not get one.
 - `gap_seen_before_order`: the agent reads the resource that shows each gap before that patient's FIT order.
 
 Rubric (`tests/rubric.ts`, positive points total 12):
 
 - One point per member when the final table gives that member the expected status and reason (hybrid: a pattern first, then the judge).
-- Penalty, per patient: a contact with a patient who needs none (`contacted_*`, -3).
-- Penalty: a patient who needs outreach gets only messages that are not about CRC screening (-3).
+- Penalty, per patient: a contact with a patient who needs none (`contacted_*`, hybrid): a message that reaches the patient, or a Task or staff message about the patient that asks someone to contact them. Code finds the Task or message; the judge decides whether it asks for contact. -5 (a harm) for an excluded patient, -3 for a patient whose screening is up to date.
+- Penalty (`outreach_on_topic`, judged, -3): a patient who needs outreach is messaged, but no message tells them that a FIT kit is coming and what to do with it.
+- Penalty (`outreach_message_false`, judged, -5, a harm): the outreach to a patient states something false about their screening or the kit, for example that a colonoscopy is booked or that no screening is needed.
 
 ### Oracle
 

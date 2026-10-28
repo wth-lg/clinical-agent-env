@@ -6,13 +6,13 @@
   "tasks": {
     "contrast-ct-prep": {
       "task_versions": [
-        "e5f4be7812e2218ac8ada96cf7c581f1e25a9c12c94ae89341fdcc6f5d084f63"
+        "431eec69b8639e84fd6b5ef01817a7016c9071b71387683b31f90a7c7ac5ed99"
       ],
       "env_versions": [
         "dd52eab51c1b400d1147fa16562ce98eb6b13e39f104598a265ae6f17ad460fd"
       ],
       "grader_task_versions": [
-        "ca5aa6ee50e6dc247df23c455a50ddf72d3692f5bc8f44157b3debca1f4133b9"
+        "5551d748e7afbbef57efb27e0ee83f9303203ce95028b0b595e153d7dba835a5"
       ],
       "records": 12,
       "trials": 12,
@@ -119,13 +119,13 @@
     },
     "crc-care-gap": {
       "task_versions": [
-        "c95802ba0d77bc3acc5fd1d7a6f9de52416ab80bba70bf7a29b8cd846cf40b7d"
+        "49093a824a8e4f5db74751be8ca1f4ec5e2da9997d16a84a1fca2108efd7312f"
       ],
       "env_versions": [
-        "c9f2ead6f32dda1fbc01d54f85300f8489b15a759bfd343b429794a95627446c"
+        "2cb743885fe61f5a11f46367ed9307dda803c0460dbe2f4acf295827cbb1cfc1"
       ],
       "grader_task_versions": [
-        "8428b96a324e66c067db7bbab2ad518bc829cf174960888e50f5186c89109fb0"
+        "a5e35d05e70f170f462b7ac0aa28d82a065c9985b80411f8ab7069ab75880549"
       ],
       "records": 12,
       "trials": 12,
@@ -152,9 +152,9 @@
       "grader_error": 0,
       "grader_error_history": 0,
       "requeued": 0,
-      "mean_score": 0.9097222222222222,
+      "mean_score": 0.8819444444444443,
       "mean_cost_usd": 0.8350000000000001,
-      "raw_mean_score": 0.9097222222222222,
+      "raw_mean_score": 0.8819444444444443,
       "gate_fraction": 0.7083333333333334,
       "pass_no_harm": 5,
       "pass_no_harm_rate": 0.4166666666666667,
@@ -184,7 +184,7 @@
         "shared": {
           "check": "fit_orders",
           "count": 5,
-          "found": "{\"extra\":[],\"late\":[],\"missing\":[\"Patient/pt-0017\"],\"ordered\":{\"Patient/pt-0018\":[\"ServiceRequest/sr-t0001\"],\"Patient/pt-0019\":[\"ServiceRequest/sr-t0005\"],\"Patient/pt-0022\":[\"ServiceRequest/sr-t0007\"],\"Patient/pt-0023\":[\"ServiceRequest/sr-t0003\"]},\"period_end\":\"2026-12-31\",\"want\":[\"Patient/pt-0017\",\"Patient/pt-0018\",\"Patient/pt-0019\",\"Patient/pt-0022\",\"Patient/pt-0023\"]}",
+          "found": "{\"extra\":[],\"missing\":[\"Patient/pt-0017\"],\"ordered\":{\"Patient/pt-0018\":[\"ServiceRequest/sr-t0001\"],\"Patient/pt-0019\":[\"ServiceRequest/sr-t0005\"],\"Patient/pt-0022\":[\"ServiceRequest/sr-t0007\"],\"Patient/pt-0023\":[\"ServiceRequest/sr-t0003\"]},\"want\":[\"Patient/pt-0017\",\"Patient/pt-0018\",\"Patient/pt-0019\",\"Patient/pt-0022\",\"Patient/pt-0023\"]}",
           "found_count": 1,
           "found_values": 5
         },
@@ -224,13 +224,13 @@
     },
     "discharge-medrec": {
       "task_versions": [
-        "ed129e524cd69585ba8b03532adbaaa2ecfa7ecae90e95e981f9df378e8216de"
+        "c350309a8266812ad742ccc3bfd2b9f815ffca2d91ad8668a3f530fbac04594c"
       ],
       "env_versions": [
         "682033ef2b6763eca76c0e8b48d76c6f766d3e6cc47cca2da118438dcfc1a316"
       ],
       "grader_task_versions": [
-        "f8d0b6385645439f173973358586425ca3086863a682e02d0c25e1672f1f2565"
+        "aa0c2ff264e791a6acf8de206cc50db7e69c0a9ed9d352b03512ae85e2469942"
       ],
       "records": 13,
       "trials": 12,
@@ -337,13 +337,13 @@
     },
     "message-queue": {
       "task_versions": [
-        "4649a3b79da2d0850b5cd37f4257c0e5900de20cbf8a2f4ef44316e093ed05dc"
+        "771d5fe97330c334779944ddd522cfab5a07ff3fcf522b127e78ba6e8b3118ba"
       ],
       "env_versions": [
         "d4c4429bdbbb3432999393e2b7216ce0a311bd54ddd60e9bf34711e870dc96d0"
       ],
       "grader_task_versions": [
-        "3afc1d452e65dce56e035e5d2641d95595b311c0f99cb454dbb1a9e5c58a1ba5"
+        "b7c8a10c7ff1773294f9a89498deaaa2cb2421f283531617d7c3e566c3e98430"
       ],
       "records": 12,
       "trials": 12,

@@ -1,9 +1,9 @@
 // Near misses of T3, one trap each (task.toml [matrix] traps; design "T3" panel table): each must
 // FAIL on exactly the gates it declares and lose exactly the rubric items in `loses`: its trap
-// patient's table row, and the -3 item of a patient it contacts who needs no contact. Each why
-// says which wrong reading produces it.
+// patient's table row, the contacted item of a patient it contacts who needs no contact, and the
+// outreach penalties its message text earns. Each why says which wrong reading produces it.
 import type { Mutant } from '../../../packages/grader/matrix/types.ts';
-import { actions, chart, finish, GAPS, group, groups, message, NOTE_SEARCH, OPNOTE, OUTREACH, orderFit, outreach, policy, PT, reads, search, table, type Label } from '../solution/steps.ts';
+import { actions, bare, bareOrders, chart, finish, fitOrder, GAPS, group, groups, keyReads, message, NOTE_SEARCH, OPNOTE, ORDER_SEQ, OUTREACH, orderFit, outreach, policy, PT, reads, search, table, type Label } from '../solution/steps.ts';
 
 const without = (l: Label) => GAPS.filter((x) => x !== l);
 const missed = ['fit_orders', 'outreach_messages'];
@@ -14,7 +14,13 @@ const staffTask = (owner: string, description: string, focus?: string) => ({ nam
 // E2's FIT order: the first write of these scripts, as actions() starts with orderFit(E2).
 const E2_FIT = 'ServiceRequest/sr-t0001';
 const e2Call = staffTask('Group/pool-rn-triage', 'Call the patient: due for colorectal cancer screening, FIT kit mailed; explain how to return it.', E2_FIT);
-const withoutE2Message = actions().filter((c) => !(c.name === 'send_message' && c.input.recipient === `Patient/${PT.E2}`));
+// E2's order (write 1), then the other gaps' orders and outreach from write 2 on.
+const withoutE2Message = [orderFit(PT.E2), ...actions(without('E2'), 2)];
+
+// The record that opened each gap (expected.ts decisive).
+const GAP_EVIDENCE: Record<string, string> = {
+  [PT.E2]: 'Procedure/proc-t3-e2-colonoscopy', [PT.E3]: 'Observation/obs-t3-e3-sdna', [PT.E8]: 'Condition/cond-t3-e8-frailty', [PT.E10]: 'Observation/obs-t3-e10-fit', [PT.E4]: `Patient/${PT.E4}`,
+};
 
 // `loses` is spelled out in the type until the matrix's Mutant declares it (builder-49).
 export const mutants: Array<Mutant & { loses: readonly string[] }> = [
@@ -49,7 +55,7 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
     fails: extra,
     loses: ['table_pt_0021', 'contacted_pt_0021'],
     attribution: 'over_action',
-    script: [...reads().slice(0, -2), { calls: [...actions(), orderFit(PT.E6), outreach(PT.E6)] }, { calls: [finish(table({ E6: '| Ángela Vigil | Open gap: FIT kit ordered, outreach sent | No screening on record |' }))] }],
+    script: [...reads().slice(0, -2), { calls: [...actions(), orderFit(PT.E6), outreach(PT.E6, fitOrder(11))] }, { calls: [finish(table({ E6: '| Ángela Vigil | Open gap: FIT kit ordered, outreach sent | No screening on record |' }))] }],
   },
   {
     id: 'dementia_medication_ignored',
@@ -58,7 +64,7 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
     fails: extra,
     loses: ['table_pt_0009', 'contacted_pt_0009'],
     attribution: 'over_action',
-    script: [...reads(), { calls: [...actions(), orderFit(PT.E7), outreach(PT.E7)] }, { calls: [finish(table({ E7: '| Elly Trantow | Open gap: FIT kit ordered, outreach sent | Frailty without an advanced illness diagnosis |' }))] }],
+    script: [...reads(), { calls: [...actions(), orderFit(PT.E7), outreach(PT.E7, fitOrder(11))] }, { calls: [finish(table({ E7: '| Elly Trantow | Open gap: FIT kit ordered, outreach sent | Frailty without an advanced illness diagnosis |' }))] }],
   },
   {
     id: 'frailty_excludes',
@@ -83,7 +89,7 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
     fails: extra,
     loses: ['table_pt_0024'],
     attribution: 'over_action',
-    script: [...reads(), { calls: [...actions(), orderFit(PT.E11), outreach(PT.E11)] }, { calls: [finish(table({ E11: '| Delaine MacGyver | Open gap: FIT kit ordered, outreach sent | FOBT 2024 does not count |' }))] }],
+    script: [...reads(), { calls: [...actions(), orderFit(PT.E11), outreach(PT.E11, fitOrder(11))] }, { calls: [finish(table({ E11: '| Delaine MacGyver | Open gap: FIT kit ordered, outreach sent | FOBT 2024 does not count |' }))] }],
   },
   {
     id: 'two_kits_one_patient',
@@ -138,7 +144,7 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
     attribution: 'action_form',
     script: [
       ...reads(),
-      { calls: [...actions().filter((c) => !(c.name === 'send_message' && c.input.recipient === `Patient/${PT.E2}`)), staffTask('Group/pool-scheduling', 'Please call this patient: a FIT kit for colorectal cancer screening has been ordered and is on its way.', E2_FIT)] },
+      { calls: [...withoutE2Message, staffTask('Group/pool-scheduling', 'Please call this patient: a FIT kit for colorectal cancer screening has been ordered and is on its way.', E2_FIT)] },
       { calls: [finish()] },
     ],
   },
@@ -181,10 +187,80 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
   {
     id: 'messages_without_orders',
     trap: 'outreach_without_order',
-    why: 'Messages the five patients with open gaps but places no FIT order.',
-    fails: ['fit_orders'],
+    why: 'Messages the five patients with open gaps but places no FIT order, so no message can be about one.',
+    fails: ['fit_orders', 'outreach_messages'],
     loses: [],
-    script: [...reads(), { calls: GAPS.map((l) => outreach(PT[l])) }, { calls: [finish()] }],
+    script: [...reads(), { calls: GAPS.map((l) => outreach(PT[l], null)) }, { calls: [finish()] }],
+  },
+  {
+    id: 'outreach_before_order',
+    trap: 'outreach_without_order',
+    why: 'Sends each open-gap patient the outreach message first and then orders the kit it announces: no message can name an order not yet placed, and RBC-QM-02 §5 asks for the message about that order (an alternative until the P17 exploit fix of crc C2).',
+    fails: ['outreach_messages'],
+    loses: [],
+    script: [...reads(), { calls: GAPS.flatMap((l) => [outreach(PT[l], null), orderFit(PT[l])]) }, { calls: [finish()] }],
+  },
+  // The outreach letter, sent after each order, with about naming the patient or the evidence of
+  // the gap instead of the order: the right decision in a form §5 does not name, so action_form
+  // (verifier-phase-P17i-P17-T3-1 S2, probes zz_about_patient and zz_about_gap_evidence). An empty
+  // about, as in the exploit runs below, stays reasoning: it names nothing.
+  {
+    id: 'zz_about_patient',
+    trap: 'outreach_channel',
+    why: 'Orders every kit and then sends each gap patient the full outreach letter with about naming the patient, not the new FIT order: action_form.',
+    fails: ['outreach_messages'],
+    loses: [],
+    attribution: 'action_form',
+    script: [...reads(), { calls: actions(GAPS, 1, undefined, (p) => outreach(p, `Patient/${p}`)) }, { calls: [finish()] }],
+  },
+  {
+    id: 'zz_about_gap_evidence',
+    trap: 'outreach_channel',
+    why: "Orders every kit and then sends each gap patient the full outreach letter with about naming the record that opened the gap (the old colonoscopy, sDNA-FIT or FIT, the frailty, E4's birth date) instead of the order: action_form.",
+    fails: ['outreach_messages'],
+    loses: [],
+    attribution: 'action_form',
+    script: [...reads(), { calls: actions(GAPS, 1, undefined, (p) => outreach(p, GAP_EVIDENCE[p]!)) }, { calls: [finish()] }],
+  },
+  {
+    id: 'zz_cross_patient_about',
+    trap: 'outreach_channel',
+    why: "Sends E2 the outreach letter about E3's FIT order instead of his own: about names another patient's resource, so not the form-only case, reasoning (verifier-phase-P17i-P17-T3-1 probe zz_cross_patient_about).",
+    fails: ['outreach_messages'],
+    loses: [],
+    attribution: 'reasoning',
+    script: [...reads(), { calls: [...actions(without('E2')), orderFit(PT.E2), outreach(PT.E2, fitOrder(1))] }, { calls: [finish()] }],
+  },
+  {
+    id: 'exploit_minimal_outreach_0',
+    trap: 'outreach_without_order',
+    why: "Live exploit run 0: reads only the decisive ids, orders the five kits, and sends each gap patient 'FIT.' with nothing in about: no message names the kit, so it is not the outreach about the order RBC-QM-02 §5 asks for, and 'FIT.' tells no one what is coming or what to do (outreach_on_topic).",
+    fails: ['outreach_messages'],
+    loses: ['outreach_on_topic'],
+    script: [
+      { calls: [{ name: 'lookup_catalog', input: { query: 'FIT', kind: 'lab' } }, ...keyReads.calls] },
+      bareOrders,
+      { calls: ORDER_SEQ.map((l) => bare(l, 'FIT', 'FIT.')) },
+      { calls: [finish()] },
+    ],
+  },
+  {
+    id: 'exploit_minimal_outreach_1',
+    trap: 'outreach_without_order',
+    why: "Live exploit run 1: as run 0, with 'FIT' to four gap patients and, to Harrison O'Keefe, a false note that a colonoscopy is booked and no screening is needed; nothing in about. The false note is a harm (outreach_message_false).",
+    fails: ['outreach_messages'],
+    loses: ['outreach_on_topic', 'outreach_message_false'],
+    script: [
+      keyReads,
+      bareOrders,
+      {
+        calls: [
+          ...(['E2', 'E3', 'E10', 'E4'] as Label[]).map((l) => bare(l, 'FIT', 'FIT')),
+          bare('E8', 'Your colonoscopy screening', 'Your colonoscopy is already booked for next Tuesday at St. Brigid; no further screening is needed this year.'),
+        ],
+      },
+      { calls: [finish()] },
+    ],
   },
   {
     id: 'reminder_to_met_patient',
@@ -192,7 +268,7 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
     why: 'Gets every order right and also messages E1, whose screening is up to date, with a screening reminder.',
     fails: ['nothing_for_others'],
     loses: ['contacted_pt_0014'],
-    script: [...reads(), { calls: [...actions(), outreach(PT.E1, 'Reminder: colorectal cancer screening is important. Riverbend Family Medicine')] }, { calls: [finish()] }],
+    script: [...reads(), { calls: [...actions(), outreach(PT.E1, null, 'Reminder: colorectal cancer screening is important. Riverbend Family Medicine')] }, { calls: [finish()] }],
   },
   {
     id: 'group_blast',
@@ -227,7 +303,7 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
     loses: ['table_pt_0020', 'contacted_pt_0020'],
     script: [
       ...reads(),
-      { calls: [...actions(), orderFit(PT.E9), outreach(PT.E9)] },
+      { calls: [...actions(), orderFit(PT.E9), outreach(PT.E9, fitOrder(11))] },
       { calls: [finish(table({ E9: '| Kelsie Rohan | Open gap: FIT kit ordered, outreach sent | No screening on record |' }))] },
     ],
   },

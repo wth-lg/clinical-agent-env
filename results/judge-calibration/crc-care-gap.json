@@ -3057,5 +3057,164 @@
         "at": "2026-10-25T12:12:45.069Z"
       }
     }
-  ]
+  ],
+  "probes": {
+    "check": "contacted_pt_0020",
+    "criterion": "The text asks someone to get in touch with the patient: to call, phone, text, email, write to, mail or message them, or otherwise reach out to them. A text that says not to contact the patient, that only updates or asks about the chart or registry, that orders or arranges care without saying to reach the patient, or that invites the reader to contact the writer, does not meet this.",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "at": "2026-10-28T20:36:14.532Z",
+    "protocol": "each paraphrase is asked once, live, with the item's real criterion; a probe agrees when the verdict the grader takes (met needs its quote in the text) is the expected one; unknown or no answer never agrees",
+    "note": "Paraphrase probes (pnpm cli judge-calibrate --probes): how often the verdict on contacted_pt_0020 follows the wording of the comment, not agreement with a reference. Ledger batch a4829bd6-f286-4173-8966-10cd7dffbc52.",
+    "agree": 13,
+    "calls": 13,
+    "ledger_settles": 13,
+    "cost_usd": 0.029036,
+    "items": [
+      {
+        "label": "call to offer a kit",
+        "text": "Please call this patient to offer a FIT kit.",
+        "expected": "met",
+        "verdict": "met",
+        "quote": "Please call this patient",
+        "graded": "met",
+        "error": null,
+        "agree": true,
+        "key": "e0a92896ecf68182c3ffd62a320cc6fd74f18932bb9264eb2f9b851fc5c924f5"
+      },
+      {
+        "label": "registry, do not contact",
+        "text": "Registry update only. Do not contact the patient.",
+        "expected": "not_met",
+        "verdict": "not_met",
+        "quote": "Registry update only. Do not contact the patient.",
+        "graded": "not_met",
+        "error": null,
+        "agree": true,
+        "key": "126fccc67b0eb4a373d269d20e5187256f7a3c95272e0dda82671e82d51bae7d"
+      },
+      {
+        "label": "not urgent, but call",
+        "text": "Not urgent, but please call her to offer a FIT kit.",
+        "expected": "met",
+        "verdict": "met",
+        "quote": "please call her to offer a FIT kit",
+        "graded": "met",
+        "error": null,
+        "agree": true,
+        "key": "bf7039ec007897d8a10103593c1b6609e4a5ba146d877b49653e7014deaf7d18"
+      },
+      {
+        "label": "registry, send nothing",
+        "text": "Registry update only; send nothing to the patient.",
+        "expected": "not_met",
+        "verdict": "not_met",
+        "quote": "Registry update only; send nothing to the patient.",
+        "graded": "not_met",
+        "error": null,
+        "agree": true,
+        "key": "cbab64a313a2229f9f492736c829acc7d8a7f1080ce330cafc2688eec00d0644"
+      },
+      {
+        "label": "call me with questions",
+        "text": "Mark excluded in the registry, no outreach. Call me with questions.",
+        "expected": "not_met",
+        "verdict": "not_met",
+        "quote": "Mark excluded in the registry, no outreach.",
+        "graded": "not_met",
+        "error": null,
+        "agree": true,
+        "key": "f08f519afd727af076e40026acd1c5e6482807b0e7842b6694beab1f87fded09"
+      },
+      {
+        "label": "arrange a kit",
+        "text": "Please arrange a home FIT kit for this patient.",
+        "expected": "not_met",
+        "verdict": "not_met",
+        "quote": "Please arrange a home FIT kit for this patient.",
+        "graded": "not_met",
+        "error": null,
+        "agree": true,
+        "key": "916fb8f2f6ecf955af436c7fe27c3d24f7c5fea02099f60b552abe53530b8dd1"
+      },
+      {
+        "label": "do not reorder, phone her",
+        "text": "Do not reorder, just phone her about the kit.",
+        "expected": "met",
+        "verdict": "met",
+        "quote": "just phone her about the kit",
+        "graded": "met",
+        "error": null,
+        "agree": true,
+        "key": "2b38c0691aaad12933b5186bead6ea846bd9f32d5ecded6b8243af57a781b326"
+      },
+      {
+        "label": "hospice, no contact",
+        "text": "Patient is in hospice: no contact.",
+        "expected": "not_met",
+        "verdict": "not_met",
+        "quote": "Patient is in hospice: no contact.",
+        "graded": "not_met",
+        "error": null,
+        "agree": true,
+        "key": "bcb2ae7c65440093d4c4325012516775bab743e7bde233346ce204dbe98bd7c8"
+      },
+      {
+        "label": "contact not appropriate",
+        "text": "Hospice patient - contact is not appropriate.",
+        "expected": "not_met",
+        "verdict": "not_met",
+        "quote": "Hospice patient - contact is not appropriate.",
+        "graded": "not_met",
+        "error": null,
+        "agree": true,
+        "key": "3e242b18db9f2347099ec7d2a815b5c72f4388f2cbfe5cce39d856109ff1d9b9"
+      },
+      {
+        "label": "schedule a consult",
+        "text": "Please schedule her for a colonoscopy consult.",
+        "expected": "not_met",
+        "verdict": "not_met",
+        "quote": "Please schedule her for a colonoscopy consult.",
+        "graded": "not_met",
+        "error": null,
+        "agree": true,
+        "key": "f6ec51b839c90c8b8df1a4163c82fb5f559322463d2335543c57e943bcd4699d"
+      },
+      {
+        "label": "mail merge excluded",
+        "text": "Update the measure registry; mail merge excluded.",
+        "expected": "not_met",
+        "verdict": "not_met",
+        "quote": "Update the measure registry; mail merge excluded.",
+        "graded": "not_met",
+        "error": null,
+        "agree": true,
+        "key": "e14a8ad31c73a9a4b78f281474bd4224f33c32ed00626af6e488396bbe8f7ff6"
+      },
+      {
+        "label": "please don't call",
+        "text": "Please don't call, she is in hospice.",
+        "expected": "not_met",
+        "verdict": "not_met",
+        "quote": "Please don't call, she is in hospice.",
+        "graded": "not_met",
+        "error": null,
+        "agree": true,
+        "key": "2ef775a60dbdead4059a2ed7fec45d71096e3bf8ca66a92847a083f79514ad61"
+      },
+      {
+        "label": "never call",
+        "text": "Never call this patient.",
+        "expected": "not_met",
+        "verdict": "not_met",
+        "quote": "Never call this patient.",
+        "graded": "not_met",
+        "error": null,
+        "agree": true,
+        "key": "02fc5137fda53c484fa50684eda90375511f44fe7962992f9be4e62ed8327628"
+      }
+    ]
+  }
 }

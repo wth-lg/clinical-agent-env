@@ -2,10 +2,15 @@
 // until the matrix checks them itself: every other table item stays met, so the judge rules
 // credit only the row the trap changes. Graded from the canned judge cache.
 import { describe, expect, it } from 'vitest';
+import { PROBES } from '../../cli/judge-calibrate.ts';
 import { loadMatrixTask, matrixEnv } from '../../cli/matrix.ts';
+import type { Verdict } from '../../packages/grader/check.ts';
 import { stepsOf } from '../../packages/grader/exposure.ts';
-import { cases, gradeRun, trial, type Miss } from '../../packages/grader/matrix/matrix.ts';
+import { Judge, type JudgeQuestion } from '../../packages/grader/judge.ts';
+import { cases, gradeRun, gradeRunWith, trial, type Case, type Miss } from '../../packages/grader/matrix/matrix.ts';
+import type { ScriptCall } from '../../packages/grader/matrix/types.ts';
 import { expected } from './expected.ts';
+import { finish, message, outreach, PT } from './solution/steps.ts';
 import { alternatives } from './tests/alternatives.ts';
 import { mutants } from './tests/mutants.ts';
 import { named } from './tests/rubric.ts';
@@ -77,5 +82,61 @@ describe('crc-care-gap rubric', () => {
   ])('finds the row of %j', (text, patient) => {
     const hit = expected.members.filter((x) => named(x, text)).map((x) => x.patient);
     expect(hit).toEqual(patient ? [patient] : []);
+  });
+
+  // contacted_<patient> is hybrid (verifier-phase-P17i-P17-T3-1 S3): code finds the messages that
+  // reach the patient (met, no judge call) and the Tasks and staff messages the trial created
+  // about them; the judge decides whether those ask for contact. A stub judge answers each of the
+  // verifier's 13 sentences (cli/judge-calibrate.ts PROBES, run live by --probes) with its true
+  // answer, so these cases pin the code half: what is asked, with which text, and what is met.
+  describe('contacted_pt_0020', () => {
+    const SENTENCES = PROBES['crc-care-gap']!.items;
+    class StubJudge extends Judge {
+      readonly asked: JudgeQuestion[] = [];
+      override async judge(q: JudgeQuestion): Promise<Verdict> {
+        if (!q.criterion.includes(PROBES['crc-care-gap']!.criterion)) return { met: 'unknown', evidence: { reason: 'stub' } };
+        this.asked.push(q);
+        const s = SENTENCES.find((x) => q.text.includes(x.text));
+        return s === undefined ? { met: 'unknown', evidence: { reason: 'no sentence' } } : { met: s.expected === 'met', evidence: { verdict: s.expected } };
+      }
+    }
+    const task9 = (description: string): ScriptCall => ({ name: 'create_task', input: { patient: PT.E9, owner: 'Group/pool-scheduling', due: '2026-10-30', priority: 'routine', description } });
+    const grade = async (calls: ScriptCall[]) => {
+      const c: Case = { kind: 'alternative', id: 'contact-probe', script: [{ calls }, { calls: [finish()] }], loses: [] };
+      const judge = new StubJudge();
+      const g = await gradeRunWith(env, task, await trial(env, task, c), judge);
+      const r = g.checks.find((x) => x.id === 'contacted_pt_0020')!;
+      return { met: r.met, points: r.points, asked: judge.asked };
+    };
+
+    it.each(SENTENCES.map((x) => [x.label, x.text, x.expected] as const))('a Task for E9: %s', async (_label, text, want) => {
+      const r = await grade([task9(text)]);
+      expect(r.asked.map((q) => q.text)).toEqual([text]);
+      expect(r.met).toBe(want === 'met');
+      expect(r.points).toBe(-5);
+    });
+
+    it.each(SENTENCES.map((x) => [x.label, x.text, x.expected] as const))('a staff message about E9: %s', async (_label, text, want) => {
+      const r = await grade([message('Group/pool-scheduling', 'Kelsie Rohan', text, [`Patient/${PT.E9}`])]);
+      expect(r.asked.map((q) => q.text)).toEqual([`Kelsie Rohan\n${text}`]);
+      expect(r.met).toBe(want === 'met');
+    });
+
+    it('a message that reaches E9 is contact, with no judge call', async () => {
+      const r = await grade([outreach(PT.E9, null)]);
+      expect(r).toMatchObject({ met: true, asked: [] });
+    });
+
+    // E5 may be contacted (expected.ts message null), so no contacted item asks about her Task.
+    it('nothing about E9 asks nothing and is not met', async () => {
+      const r = await grade([{ name: 'create_task', input: { patient: PT.E5, owner: 'Group/pool-scheduling', due: '2026-10-30', priority: 'routine', description: 'Please call this patient to offer a FIT kit.' } }]);
+      expect(r).toMatchObject({ met: false, asked: [] });
+    });
+
+    it('a Task and a staff message about E9 are one question', async () => {
+      const r = await grade([task9(SENTENCES[1]!.text), message('Group/pool-scheduling', 'Kelsie Rohan', SENTENCES[0]!.text, [`Patient/${PT.E9}`])]);
+      expect(r.asked.length).toBe(1);
+      expect(r.met).toBe(true);
+    });
   });
 });
