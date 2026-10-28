@@ -1,17 +1,14 @@
 // The read-only Chart tab (pre-audit S12, P17j JU10; trace A4): ?view=tasks&task=<id>&tab=chart shows
 // the task patient's problems, medications, allergies, labs and notes from the in-browser FHIR R4
 // store, captioned with the store as the source; its rows are exactly the store's resources for that
-// patient; the panel task T3 has a patient picker over every member of its panel.
-import { readFileSync } from 'node:fs';
-import { gunzipSync } from 'node:zlib';
+// patient, by a deep `reference` walk that does not use patientOf (verifier-phase-P17j-retro-JU10-1
+// D2); the panel task T3 has a patient picker over every member of its panel; a T6 message shows its
+// text (D1).
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { CHART_TYPES, patientOf, taskPatients, type FhirResource } from '../src/tasks/chart.ts';
+import { CHART_TYPES, taskPatients } from '../src/tasks/chart.ts';
+import { chartIds, world } from './fixtures/chart-oracle.ts';
 import { sampleBase } from './fixtures/sample-results/sample.ts';
-
-const world = gunzipSync(readFileSync(new URL('../../../fixtures/world.ndjson.gz', import.meta.url))).toString('utf8')
-  .split('\n').filter((l) => l.trim() !== '').map((l) => JSON.parse(l) as FhirResource);
-const idsOf = (patient: string, type: string) => world.filter((r) => r.resourceType === type && patientOf(r) === patient).map((r) => r.id).sort();
 
 async function openChart(page: Page, task: string) {
   await page.goto(new URL(`./?view=tasks&task=${task}&tab=chart`, await sampleBase(test.info().project.use.baseURL!)).href);
@@ -26,7 +23,7 @@ async function expectRowsEqualStore(page: Page, patient: string) {
   await expect(page.getByTestId('chart-heading')).toHaveAttribute('data-patient', patient);
   for (const type of CHART_TYPES) {
     const shown = (await page.locator(`[data-testid="chart-row"][data-type="${type}"]`).evaluateAll((els) => els.map((e) => e.getAttribute('data-id')!))).sort();
-    expect(shown, `${patient} ${type}`).toEqual(idsOf(patient, type));
+    expect(shown, `${patient} ${type}`).toEqual(chartIds(patient, type));
   }
 }
 
@@ -70,4 +67,13 @@ test('discharge-medrec: a note shows its text, and the discharge summary names m
   const notes = page.locator('[data-testid="chart-row"][data-type="DocumentReference"]').getByTestId('chart-note');
   expect(await notes.count()).toBeGreaterThan(0);
   expect((await notes.allTextContents()).join(' ').toLowerCase()).toContain('metoprolol');
+});
+
+test('message-queue: a patient message shows its text (verifier-phase-P17j-retro-JU10-1 D1)', async ({ page }) => {
+  await openChart(page, 'message-queue');
+  await page.getByRole('combobox', { name: 'Patient' }).selectOption('Patient/pt-0026');
+  await expectRowsEqualStore(page, 'Patient/pt-0026');
+  const msg = page.locator('[data-testid="chart-row"][data-type="Communication"][data-id="comm-t6-m1"]');
+  await expect(msg).toContainText('Refill request');
+  await expect(msg.getByTestId('chart-note')).toContainText('refill my lisinopril 20 mg');
 });
