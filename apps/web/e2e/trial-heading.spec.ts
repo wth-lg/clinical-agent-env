@@ -1,20 +1,18 @@
 // Trial page wording (pre-audit M7, M8, P17j JU11): the heading is the task title, then "Trial i of n
 // · <model> · effort high", with the trial path in small mono text, and no word of the heading breaks
 // mid-word at 390 px. A pilot that ran on another world version says so in a neutral tone and offers no
-// Replay; an official trial on another world keeps the alert.
+// Replay, and that note passes axe in light and dark; an official trial on another world keeps the alert.
 import { readFileSync } from 'node:fs';
+import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+import { browse } from './browse.ts';
 import { RUN_ID, trialBase, TRIALS, records } from './fixtures/trial/trial.ts';
 
 const MANIFEST = (JSON.parse(readFileSync(new URL('../../../fixtures/manifest.json', import.meta.url), 'utf8')) as { world: { state_hash: string } }).world.state_hash;
 const EARLIER = `f8387483${'0'.repeat(56)}`;
 
 async function open(page: Page, query: string) {
-  await page.goto(new URL(`./?view=runs&${query}`, await trialBase(test.info().project.use.baseURL!)).href);
-  const gate = page.getByRole('button', { name: 'Browse without a key' });
-  const nav = page.getByRole('navigation', { name: 'Views' });
-  await expect(gate.or(nav)).toBeVisible();
-  if (await gate.isVisible()) await gate.click();
+  await browse(page, new URL(`./?view=runs&${query}`, await trialBase(test.info().project.use.baseURL!)).href);
   await expect(page.getByTestId('trial-detail')).toBeVisible();
 }
 
@@ -36,7 +34,7 @@ test('the heading is the task title, "Trial i of n · model · effort high", and
   const i = ofTask.indexOf(Number(index)) + 1;
   await open(page, `run=${RUN_ID}&trial=${encodeURIComponent(name)}`);
   const h1 = page.getByRole('heading', { level: 1 });
-  await expect(h1.getByTestId('trial-title')).toHaveText('Renal and age dose review of Harold Vance under RBC-PHARM-07');
+  await expect(h1.getByTestId('trial-title')).toHaveText('Renal and age dose review of Harold Vance');
   await expect(h1.getByTestId('trial-sub')).toHaveText(`Trial ${i} of ${n} · claude-opus-5-5 · effort high`);
   await expect(page.getByTestId('trial-path')).toHaveText(name);
   await expect(page.getByTestId('trial-path')).toHaveCSS('font-family', /mono/i);
@@ -73,6 +71,13 @@ test('a pilot on another world says so in a neutral tone and offers no Replay', 
   await expect(line).not.toHaveAttribute('role', 'alert');
   await expect(p.getByTestId('replay-block')).toHaveCount(0);
   await expect(p.getByRole('button', { name: 'Replay' })).toHaveCount(0);
+  // The note's state passes axe, light and dark (verifier-phase-P17j-retro-JU4JU11-1 m-a).
+  for (const scheme of ['light', 'dark'] as const) {
+    await page.emulateMedia({ colorScheme: scheme });
+    await expect(line).toBeVisible();
+    const bad = (await new AxeBuilder({ page }).analyze()).violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => v.id);
+    expect(bad, scheme).toEqual([]);
+  }
 });
 
 test('a pilot with no initial hash says the world it ran on is not recorded', async ({ page }) => {

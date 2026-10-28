@@ -13,6 +13,7 @@ import type { TrialEvent } from '../../../../packages/core/events.ts';
 import { explainTrial, type ExplainRecord, NOT_AUDITED_MARKER } from '../../../../packages/core/explain.ts';
 import { capSum } from '../../../../packages/core/ledger.ts';
 import { REFUSAL_TEXT } from '../../../../packages/core/runner-api.ts';
+import { shownFault } from '../data/failures.ts';
 import { useResults } from '../data/results.ts';
 import { MODEL } from '../adapters/ledger-browser.ts';
 import { useTaskList } from '../data/tasks.ts';
@@ -313,7 +314,7 @@ function Trial({ t, id, onEnd }: { t: TrialTransport; id: string; onEnd: () => v
         <footer className="space-y-2 border-t border-line px-4 py-3" data-testid="trial-end">
           {explanation && (
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              <OutcomeChip outcome={explanation.outcome} fault={explanation.fault} />
+              <OutcomeChip outcome={explanation.outcome} fault={shownFault(explanation)} />
               {explanation.outcome !== 'PASS' && <FaultLabel e={explanation} />}
               {explanation.outcome !== 'PASS' && <span className="text-ink-muted">{explanation.reason}</span>}
               {explanation.outcome !== 'PASS' && explanation.secondary_reason !== null && <span data-testid="secondary-reason" className="basis-full text-xs text-ink-muted">{explanation.secondary_reason}</span>}
@@ -411,7 +412,7 @@ function LiveRow({ row, current, onOpen }: { row: LiveRun['rows'][number]; curre
         <button type="button" onClick={() => onOpen(row.trialId)} aria-current={current} className="min-w-0 break-all text-left font-medium text-ink hover:underline">
           {row.trialId}
         </button>
-        {e ? <OutcomeChip outcome={e.outcome} fault={e.fault} /> : <span className="text-xs text-ink-muted">{row.state}</span>}
+        {e ? <OutcomeChip outcome={e.outcome} fault={shownFault(e)} /> : <span className="text-xs text-ink-muted">{row.state}</span>}
         {e && e.outcome !== 'PASS' && <FaultLabel e={e} />}
         {e?.decisive_check && <code data-testid="decisive" className="break-all rounded-sm bg-canvas px-1 text-xs text-ink">{e.decisive_check.id}</code>}
         {e && !e.audited && !labelled(e) && <span data-testid="audit-marker" className="text-xs text-ink-muted">{NOT_AUDITED_MARKER}</span>}

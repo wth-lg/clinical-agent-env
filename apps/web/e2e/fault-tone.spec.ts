@@ -5,14 +5,11 @@
 // 2026-10-29T17:30 and 19:10); a model fault stays neutral; the FAIL mark stays readable in dark
 // mode (at least 3:1 against its card).
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { browse } from './browse.ts';
 import { runOf, trialBase, TRIALS } from './fixtures/trial/trial.ts';
 
 async function openTrial(page: Page, name: string) {
-  await page.goto(new URL(`./?view=runs&run=${runOf(name)}&trial=${encodeURIComponent(name)}`, await trialBase(test.info().project.use.baseURL!)).href);
-  const gate = page.getByRole('button', { name: 'Browse without a key' });
-  const nav = page.getByRole('navigation', { name: 'Views' });
-  await expect(gate.or(nav)).toBeVisible();
-  if (await gate.isVisible()) await gate.click();
+  await browse(page, new URL(`./?view=runs&run=${runOf(name)}&trial=${encodeURIComponent(name)}`, await trialBase(test.info().project.use.baseURL!)).href);
   await expect(page.getByTestId('trial-header')).toBeVisible();
 }
 

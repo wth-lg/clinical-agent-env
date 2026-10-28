@@ -3,14 +3,16 @@
 // faultCounts); the M1-M4 count and the run block come from the explanations (explain.ts), which
 // summary.json does not hold. No JSX and no data/ imports, so the e2e specs can import it.
 import { blocksRun, m1ToM4Met, type Explanation } from '../../../../packages/core/explain.ts';
+import type { Fault } from '../../../../packages/core/outcomes.ts';
 import { FAILURE_KINDS, FAILURE_LABELS, type FaultCounts } from '../../../../packages/core/summary.ts';
 
 export type FailureKind = (typeof FAILURE_KINDS)[number];
 export type FailureLabel = (typeof FAILURE_LABELS)[number];
 
 // A kind in words (the glossary explains each): TAXONOMY's ids in plain spelling; unattributed is a
-// failure whose recorded kind does not name the check that decides it now.
-const KIND_WORDS: Partial<Record<FailureKind, string>> = { over_action: 'over-action', did_not_finish: 'did not finish', unattributed: 'no kind recorded' };
+// failure whose recorded kind does not name the check that decides it now; action_form is the right
+// decision in a channel or form the policy does not name (TAXONOMY_TEXT).
+const KIND_WORDS: Partial<Record<FailureKind, string>> = { over_action: 'over-action', action_form: 'wrong channel or form', did_not_finish: 'did not finish', unattributed: 'no kind recorded' };
 export const kindWords = (k: FailureKind): string => KIND_WORDS[k] ?? k.replace(/_/g, ' ');
 
 // The kind with the most failures, the first in FAILURE_KINDS on a tie; null with no failures.
@@ -55,6 +57,20 @@ export const blocksTheRun = (e: Explanation): boolean =>
 // The fault label a trial shows: the audit's environment or grader label on a valid failure, which
 // makes it block the run, else the label explainTrial gives (null for a PASS with no fault).
 export const shownLabel = (e: Explanation): string | null => (isFailure(e) && (e.audit_label === 'environment' || e.audit_label === 'grader') ? e.audit_label : e.label);
+
+// The fault the outcome chip, the Overview dot and the Findings swatch show: the one the shown label
+// names, so an audit's environment or grader label never sits beside a model mark
+// (verifier-phase-P17j-retro-JU2-1 D1); else the fault explainTrial gives.
+export function shownFault(e: Explanation): Fault | null {
+  const l = shownLabel(e);
+  return l === 'environment' ? 'env' : l === 'grader' ? 'grader' : e.fault;
+}
+
+// The fault explainTrial gave a trial whose shown fault the audit's label changed, which the trial
+// header's Fault row names beside the shown one (verifier-phase-P17i-UIRETRO-1 M1); else null.
+export function relabelledFrom(e: Explanation): Fault | null {
+  return e.fault !== null && shownFault(e) !== e.fault ? e.fault : null;
+}
 
 // The run block (it then shows no pass count, dot or Wilson interval, decisions.tsv
 // 2026-10-29T16:00): the trials that block it, by name, and how many are false PASSes.

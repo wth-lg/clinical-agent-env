@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Explanation } from '../../../packages/core/explain.ts';
 import { FAILURE_KINDS, type FaultCounts } from '../../../packages/core/summary.ts';
-import { auditFilterOf, blocksTheRun, m1m4, mostCommon, runBlock, shownLabel } from '../src/data/failures.ts';
+import { auditFilterOf, blocksTheRun, kindWords, m1m4, mostCommon, relabelledFrom, runBlock, shownFault, shownLabel } from '../src/data/failures.ts';
 
 const fc = (counts: Partial<Record<(typeof FAILURE_KINDS)[number], number>>): FaultCounts => {
   const taxonomy = Object.fromEntries(FAILURE_KINDS.map((k) => [k, counts[k] ?? 0])) as FaultCounts['taxonomy'];
@@ -17,6 +17,11 @@ describe('failures helpers', () => {
   it('mostCommon takes the largest count, the first kind on a tie, and is null with no failures', () => {
     expect(mostCommon(fc({ reasoning: 3, retrieval: 3, refusal: 1 }))).toEqual({ kind: 'retrieval', count: 3 });
     expect(mostCommon(fc({}))).toBeNull();
+  });
+  // action_form in plain words (decisions.tsv 2026-10-28T01:30Z; P17j JG8b): no kind shows as its raw id.
+  it('kindWords spells each kind in plain words', () => {
+    expect(kindWords('action_form')).toBe('wrong channel or form');
+    for (const k of FAILURE_KINDS) expect(kindWords(k), k).not.toMatch(/_/);
   });
   it('auditFilterOf files a valid failure by its audit label, else unlabelled; a PASS has none', () => {
     expect(auditFilterOf(e({ audit_label: 'grader' }))).toBe('grader');
@@ -51,5 +56,25 @@ describe('failures helpers', () => {
     expect(shownLabel(e({ label: 'model', audit_label: 'grader' }))).toBe('grader');
     expect(shownLabel(e({ label: 'model', audit_label: 'model' }))).toBe('model');
     expect(shownLabel(e({ outcome: 'ENV_ERROR', valid: false, fault: 'env', label: null, audit_label: 'environment' }))).toBeNull();
+  });
+  // The chip, the dot and the swatch take the fault of the label shown beside them
+  // (verifier-phase-P17j-retro-JU2-1 D1): an audit's environment or grader label on a valid failure.
+  it('shownFault is env or grader where shownLabel is environment or grader, else the computed fault', () => {
+    expect(shownFault(e({ label: 'model', audit_label: 'environment' }))).toBe('env');
+    expect(shownFault(e({ label: 'model', audit_label: 'grader' }))).toBe('grader');
+    expect(shownFault(e({ label: 'model', audit_label: 'model' }))).toBe('model');
+    expect(shownFault(e({ outcome: 'REFUSAL', fault: 'refusal', label: 'model', audit_label: null }))).toBe('refusal');
+    expect(shownFault(e({ outcome: 'ENV_ERROR', valid: false, fault: 'env', label: 'environment', audit_label: 'model' }))).toBe('env');
+    expect(shownFault(e({ outcome: 'PASS', fault: null, label: null, audit_label: 'environment' }))).toBeNull();
+  });
+  // The trial header's Fault row names the computed fault beside an audit relabel (verifier-phase-P17i-UIRETRO-1 M1).
+  it('relabelledFrom is the computed fault when the shown fault differs from it, else null', () => {
+    expect(relabelledFrom(e({ label: 'model', audit_label: 'environment' }))).toBe('model');
+    expect(relabelledFrom(e({ outcome: 'REFUSAL', fault: 'refusal', label: 'model', audit_label: 'grader' }))).toBe('refusal');
+    expect(relabelledFrom(e({ label: 'model', audit_label: 'model' }))).toBeNull();
+    expect(relabelledFrom(e({ label: 'model', audit_label: null }))).toBeNull();
+    expect(relabelledFrom(e({ fault: 'grader', label: 'grader', audit_label: 'grader' }))).toBeNull();
+    expect(relabelledFrom(e({ outcome: 'ENV_ERROR', valid: false, fault: 'env', label: 'environment', audit_label: 'model' }))).toBeNull();
+    expect(relabelledFrom(e({ outcome: 'PASS', fault: null, label: null, audit_label: 'environment' }))).toBeNull();
   });
 });

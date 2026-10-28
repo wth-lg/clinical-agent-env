@@ -1,18 +1,15 @@
 // The read-only Chart tab (pre-audit S12, P17j JU10): a task's patients come from the world the
 // task's overlay built (its marked resources' subjects and its marked Group's members), and a
-// patient's chart lists every Condition, MedicationRequest, AllergyIntolerance, Observation and
-// DocumentReference the store holds for that patient, nothing else.
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { gunzipSync } from 'node:zlib';
-import { describe, expect, it } from 'vitest';
+// patient's chart lists every resource of the chart types that the store holds for that patient,
+// nothing else. The expected rows come from e2e/fixtures/chart-oracle.ts, a deep `reference` walk
+// that does not use patientOf (verifier-phase-P17j-retro-JU10-1 D2).
 import { readdirSync } from 'node:fs';
-import { CHART_TYPES, chartOf, patientOf, TASK_MARKER, taskPatients, type FhirResource } from '../src/tasks/chart.ts';
+import { join } from 'node:path';
+import { describe, expect, it } from 'vitest';
+import { CHART_TYPES, chartOf, patientOf, TASK_MARKER, taskPatients } from '../src/tasks/chart.ts';
+import { chartIds, world } from '../e2e/fixtures/chart-oracle.ts';
 
 const REPO = join(import.meta.dirname, '../../..');
-const world: FhirResource[] = gunzipSync(readFileSync(join(REPO, 'fixtures/world.ndjson.gz'))).toString('utf8')
-  .split('\n').filter((l) => l.trim() !== '').map((l) => JSON.parse(l) as FhirResource);
-const subjectOf = (r: FhirResource) => patientOf(r);
 
 describe('taskPatients', () => {
   it('finds the one patient of a single-patient task', () => {
@@ -33,13 +30,12 @@ describe('taskPatients', () => {
 });
 
 describe('chartOf', () => {
-  it('lists exactly the store\'s chart resources of the patient, by type', () => {
-    for (const p of ['Patient/pt-0002', 'Patient/pt-0015', 'Patient/pt-0009']) {
+  it('lists exactly the store\'s chart resources of each task patient, by type', () => {
+    const patients = [...new Set(Object.keys(TASK_MARKER).flatMap((t) => taskPatients(world, t)))];
+    expect(patients.length).toBeGreaterThanOrEqual(29);
+    for (const p of patients) {
       const chart = chartOf(world, p);
-      for (const type of CHART_TYPES) {
-        const want = world.filter((r) => r.resourceType === type && subjectOf(r) === p).map((r) => r.id).sort();
-        expect(chart.rows.filter((x) => x.type === type).map((x) => x.id).sort(), `${p} ${type}`).toEqual(want);
-      }
+      for (const type of CHART_TYPES) expect(chart.rows.filter((x) => x.type === type).map((x) => x.id).sort(), `${p} ${type}`).toEqual(chartIds(p, type));
       expect(chart.patient?.id).toBe(p.slice('Patient/'.length));
     }
   });
@@ -67,5 +63,15 @@ describe('verifier JU10-1 F2-F5', () => {
     expect(firstPast === -1 || meds.slice(firstPast).every((r) => !r.current)).toBe(true);
     const bp = world.find((r) => r.resourceType === 'Observation' && Array.isArray(r.component) && patientOf(r) !== null);
     if (bp) expect(chartOf(world, patientOf(bp)!).rows.find((r) => r.id === bp.id)?.detail).not.toBe('');
+  });
+  // The resources T6, T3 and T2 turn on (verifier-phase-P17j-retro-JU10-1 D1).
+  it('lists a patient\'s messages with their text, episodes of care and orders', () => {
+    const msg = chartOf(world, 'Patient/pt-0026').rows.find((r) => r.id === 'comm-t6-m1');
+    expect(msg).toMatchObject({ type: 'Communication', text: 'Refill request', date: '2026-10-21T19:12:00-04:00' });
+    expect(msg?.body).toContain('refill my lisinopril 20 mg');
+    expect(chartOf(world, 'Patient/pt-0020').rows.find((r) => r.id === 'eoc-t3-e9-hospice')).toMatchObject({ type: 'EpisodeOfCare', text: 'Hospice care', status: 'active', date: '2026-08-20', current: true });
+    expect(chartOf(world, 'Patient/pt-0024').rows.find((r) => r.id === 'sr-t3-e11-fit')).toMatchObject({ type: 'ServiceRequest', status: 'active', current: true });
+    expect(chartOf(world, 'Patient/pt-0024').rows.find((r) => r.id === 'sr-t3-e11-fit')?.text).toMatch(/^FIT kit/);
+    expect(chartOf(world, 'Patient/pt-0006').rows.some((r) => r.id === 'sr-t2-gi-1020')).toBe(true);
   });
 });

@@ -7,22 +7,16 @@
 // the help icon opens the glossary; Environment verifies the reset hash and runs a read tool. At
 // 390 px no view scrolls sideways, and a record the loader cannot read is an error row, not a
 // blank app.
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+import { browseFrom, GATE } from './browse.ts';
 import { NOT_AUDITED_MARKER, TAXONOMY_TEXT } from '../../../packages/core/explain.ts';
 import { AUDIT_LABEL, DENOMINATOR_RULE, FAULT_DEFINITIONS, FAULT_PRECEDENCE, PASS_DEFINITION } from '../../../packages/core/outcomes.ts';
 import { trialName } from '../../../packages/core/summary.ts';
+import { kindWords, shownFault } from '../src/data/failures.ts';
 import { markOf } from '../src/data/ui.tsx';
 import { CHECK_TEXT, cliCriteria, cliMatrix, cliReplay, explain, sampleBase, MANIFEST_HASH, records, summary, TASK_IDS } from './fixtures/sample-results/sample.ts';
 
-async function browse(page: Page, path = './') {
-  await page.goto(new URL(path, await sampleBase(test.info().project.use.baseURL!)).href);
-  // A tab that already chose to browse goes straight to the view.
-  const gate = page.getByRole('button', { name: 'Browse without a key' });
-  const nav = page.getByRole('navigation', { name: 'Views' });
-  await expect(gate.or(nav)).toBeVisible();
-  if (await gate.isVisible()) await gate.click();
-  await expect(nav).toBeVisible();
-}
+const browse = browseFrom(sampleBase);
 
 test('the build serves the sample run', () => {
   expect(summary.run_id).toBe('sample-1');
@@ -104,11 +98,12 @@ test('Overview: k/N with N from the run, Wilson bounds equal summary.json, one s
     await expect(row.getByTestId('band')).toHaveCount(1);
     const mine = records.filter((r) => r.task_id === id);
     await expect(row.getByTestId('swatches').getByRole('img')).toHaveCount(mine.length);
-    // Each mark is the outcome and fault explainTrial gives, so environment, grader and infra differ.
+    // Each mark is the outcome and the fault its label shows (explainTrial's, or the audit's environment
+    // or grader label on a valid failure), so environment, grader and infra differ.
     const marks = await row.getByTestId('swatches').getByRole('img').evaluateAll((els) => els.map((e) => e.getAttribute('data-mark')).sort());
-    expect(marks).toEqual(mine.map((r) => markOf(explain(r).outcome, explain(r).fault)).sort());
+    expect(marks).toEqual(mine.map((r) => markOf(explain(r).outcome, shownFault(explain(r)))).sort());
   }
-  const all = new Set(records.map((r) => markOf(explain(r).outcome, explain(r).fault)));
+  const all = new Set(records.map((r) => markOf(explain(r).outcome, shownFault(explain(r)))));
   // The official run's GRADER_ERROR is regraded to a model FAIL, so its marks hold no grader fault;
   // the unregraded exemplar is the pilot run pilot-grader-error (decisions.tsv 2026-10-29T17:50).
   for (const m of ['environment', 'infra', 'refusal', 'limit', 'model', 'pass']) expect(all, m).toContain(m);
@@ -175,6 +170,10 @@ test('one click on a fault label opens the glossary, whose text equals outcomes.
     await expect(page.locator(`[data-testid="audit-label-row"][data-fault="${f}"]`).getByTestId('audit-label')).toHaveText(l === null ? 'no label: excluded and rerun' : `${l.label}${l.subtype ? ` (subtype ${l.subtype})` : ''}`);
   }
   await expect(page.getByTestId('taxonomy-row')).toHaveCount(Object.keys(TAXONOMY_TEXT).length);
+  // action_form (P17j JG8b) in the words Findings and Overview use, with its id and its text (JU7).
+  const actionForm = page.locator('[data-testid="taxonomy-row"][data-taxonomy="action_form"]');
+  await expect(actionForm.getByTestId('taxonomy-term')).toContainText(`${kindWords('action_form')} (action_form)`);
+  await expect(actionForm.locator('dd')).toHaveText(TAXONOMY_TEXT.action_form);
   await expect(page.getByTestId('glossary-pass')).toHaveText(PASS_DEFINITION);
   await expect(page.getByTestId('glossary-denominator')).toHaveText(DENOMINATOR_RULE);
 });
@@ -256,7 +255,7 @@ test('URL state round-trips: task, label and open trial survive a reload and his
   await check();
   // The tab chose to browse, so a reload goes straight to the view (verifier-phase-P14-2 F8).
   await page.reload();
-  await expect(page.getByRole('button', { name: 'Browse without a key' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: GATE })).toHaveCount(0);
   await check();
   // A filter cleared on the list comes back with history.
   await page.getByRole('link', { name: 'Back to Runs' }).click();

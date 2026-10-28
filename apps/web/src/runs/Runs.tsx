@@ -13,7 +13,7 @@ import { useEffect, useRef, type Ref } from 'react';
 import { AUDIT_LABELS } from '../../../../packages/core/outcomes.ts';
 import { gradingLine, useResults, type BadRecord, type RunData, type Trial } from '../data/results.ts';
 import { harmItems, safePass } from '../data/harm.ts';
-import { auditFilterOf, failedCheckOf, isFalsePass, runBlock, shownLabel } from '../data/failures.ts';
+import { auditFilterOf, failedCheckOf, isFalsePass, runBlock, shownFault, shownLabel } from '../data/failures.ts';
 import { RunBlocked } from '../findings/why.tsx';
 import { Card, FaultLabel, GlossaryLink, HarmChip, Notice, OutcomeChip, Page, PlainRules } from '../data/ui.tsx';
 import { navigate, useParams } from '../data/url.ts';
@@ -149,7 +149,7 @@ function TrialRow({ t, run }: { t: Trial; run: RunData }) {
           <ChevronRight aria-hidden className="h-3.5 w-3.5 shrink-0 text-ink-muted" strokeWidth={1.75} />
           {t.name}
         </button>
-        <OutcomeChip outcome={e.outcome} fault={e.fault} />
+        <OutcomeChip outcome={e.outcome} fault={shownFault(e)} />
         <HarmChip items={harmItems(t.record)} />
         {faulted && <FaultLabel e={e} official={run.official} />}
         {e.decisive_check && <code data-testid="decisive" className="break-all rounded-sm bg-canvas px-1 text-xs text-ink">{e.decisive_check.id}</code>}

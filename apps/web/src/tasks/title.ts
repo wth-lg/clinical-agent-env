@@ -7,3 +7,10 @@ export function titleParts(title: string, policies: readonly string[]): { title:
   const strip = m !== null && named.every((id) => policies.includes(id));
   return { title: strip ? title.slice(0, m!.index) : title, codes: [...policies] };
 }
+
+// The title every view shows for a task: the Tasks card, the Overview task list and the trial
+// heading (verifier-phase-P17j-retro-JU12-1 D1).
+export const taskTitle = (t: { title: string; policies: ReadonlyArray<{ id: string }> }): string => titleParts(t.title, t.policies.map((p) => p.id)).title;
+
+// The Overview meta line's policies: the count, then the codes the title no longer carries.
+export const policyLine = (codes: readonly string[]): string => `${codes.length} ${codes.length === 1 ? 'policy' : 'policies'}${codes.length > 0 ? `: ${codes.join(', ')}` : ''}`;
