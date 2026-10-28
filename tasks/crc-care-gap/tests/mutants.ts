@@ -2,7 +2,8 @@
 // FAIL on exactly the gates it declares and lose exactly the rubric items in `loses`: its trap
 // patient's table row, and the -3 item of a patient it contacts who needs no contact. Each why
 // says which wrong reading produces it.
-import type { Mutant } from '../../../packages/grader/matrix/types.ts';
+import { type Mutant, oneTurn } from '../../../packages/grader/matrix/types.ts';
+import { oracle } from '../solution/solve.ts';
 import { actions, chart, finish, GAPS, group, groups, message, NOTE_SEARCH, OPNOTE, OUTREACH, orderFit, outreach, policy, PT, reads, search, table, type Label } from '../solution/steps.ts';
 
 const without = (l: Label) => GAPS.filter((x) => x !== l);
@@ -210,5 +211,14 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
       { calls: actions() },
       { calls: [finish()] },
     ],
+  },
+  {
+    id: 'one_turn_reads_and_orders',
+    trap: 'order_before_review',
+    why: 'Issues every read of the oracle and all its FIT orders and outreach in one answer: each order goes in before the chart that shows the gap has come back.',
+    fails: ['gap_seen_before_order'],
+    loses: [],
+    attribution: 'process',
+    script: oneTurn(oracle),
   },
 ];

@@ -1,7 +1,7 @@
 // Near misses of T2, one trap each (task.toml [matrix] traps; design "Inbox" traps): each must
 // FAIL on exactly the gates it declares (fails) and lose exactly the rubric items it declares
 // (loses: the items whose result differs from the oracle's).
-import type { Mutant, ScriptCall } from '../../../packages/grader/matrix/types.ts';
+import { type Mutant, oneTurn, type ScriptCall } from '../../../packages/grader/matrix/types.ts';
 import { ORACLE, solve } from '../solution/solve.ts';
 import { PT, READ_ALL, read, searchNotes, SRC, writer } from '../solution/steps.ts';
 
@@ -227,5 +227,14 @@ export const mutants = [
     fails: ['patient_contact'],
     loses: ['fit_patient_message'],
     script: plus(solve({ fit: { ...ORACLE.fit, message: false } }), writer().task(PT.patel, 'Practitioner/pr-okafor', '2027-01-15', 'routine', 'Track that the colonoscopy from the GI referral is completed.', SRC.giReferral).call),
+  },
+  {
+    id: 'one_turn_reads_and_orders',
+    trap: 'order_before_source',
+    why: 'Issues every read of the oracle and all its orders, messages and closures in one answer: each order goes in before the result it acts on has come back.',
+    fails: ['sources_before_orders'],
+    loses: [],
+    attribution: 'process',
+    script: oneTurn(solve()),
   },
 ] satisfies Array<Mutant & { loses: readonly string[] }>;

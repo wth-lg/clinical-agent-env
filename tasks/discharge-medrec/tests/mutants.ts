@@ -1,6 +1,7 @@
 // Near misses of T4, one trap each (task.toml [matrix] traps; design "T4" prior): each must FAIL
 // on exactly the gates it declares and lose exactly the rubric items in `loses`.
-import type { Mutant, ScriptCall } from '../../../packages/grader/matrix/types.ts';
+import { type Mutant, oneTurn, type ScriptCall } from '../../../packages/grader/matrix/types.ts';
+import { oracle } from '../solution/solve.ts';
 import { addendum, allMeds, bmpRecheck, change, findPatient, finish, furosemideUp, kclStop, lisinoprilResume, message, MR, note, ORACLE_NOTE, order, policy, PT, read, reads, RX, scr, spironolactone, summaries, summary, writes } from '../solution/steps.ts';
 
 // Every note of his as fhir_search rows: sizes and dates, no text, so no snippet shows the
@@ -170,5 +171,14 @@ export const mutants: Mutant[] = [
     loses: ['message_explains_duplicate'],
     attribution: 'reasoning',
     script: [...reads, { calls: writes }, { calls: [{ ...message(), input: { ...message().input, recipient: 'Practitioner/pr-reyes' } }] }, { calls: [note()] }, { calls: [finish()] }],
+  },
+  {
+    id: 'one_turn_reads_and_orders',
+    trap: 'resume_before_lab',
+    why: 'Issues every read of the oracle and all its medication changes, message and note in one answer: the spironolactone and lisinopril orders go in before the addendum or the creatinine has come back.',
+    fails: ['sources_before_orders'],
+    loses: [],
+    attribution: 'process',
+    script: oneTurn(oracle),
   },
 ];

@@ -1,7 +1,8 @@
 // Near misses of T5, one trap each (task.toml [matrix] traps; design "Other traps" and prior):
 // each must FAIL on exactly the gates it declares and lose exactly the rubric items in `loses`
 // (a positive item not met, a penalty met).
-import type { Mutant } from '../../../packages/grader/matrix/types.ts';
+import { type Mutant, oneTurn } from '../../../packages/grader/matrix/types.ts';
+import { oracle } from '../solution/solve.ts';
 import {
   ALLERGY, allergies, APPT, appointments, AT, CODE, creatinineOrder, ct, diphenhydramine, DONE, findPatient, finish, medication, message, note, ORACLE_MESSAGE, policy, prednisone, READS, REACTION_NOTE, RX, service,
 } from '../solution/steps.ts';
@@ -283,5 +284,14 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
       { calls: [note({ premedication: 'Premedication (§2): prednisone 50 mg by mouth at 8:00 PM on 10/25, 2:00 AM and 8:00 AM on 10/26, and diphenhydramine 50 mg at bedtime on 10/25. Driver needed.' })] },
       { calls: [done('premedication ordered, instructions sent.')] },
     ],
+  },
+  {
+    id: 'one_turn_reads_and_orders',
+    trap: 'evidence_before_orders',
+    why: 'Issues every read of the oracle and all its orders, message and note in one answer: the premedication goes in before the allergy, the reaction note or the appointment has come back (verifier probe l3).',
+    fails: ['evidence_before_orders'],
+    loses: [],
+    attribution: 'process',
+    script: oneTurn(oracle),
   },
 ];

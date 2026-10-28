@@ -34,6 +34,12 @@ export interface ScriptTurn {
 
 export type Script = readonly ScriptTurn[];
 
+// The script with every turn but the last in one answer: the agent issues its reads and the
+// writes that depend on them together, so it has seen no result when it writes. Each task's
+// one-turn mutant is its oracle this way, and fails the task's 'seen before' gate
+// (verifier-phase-P17i-P17-T5-1 F2).
+export const oneTurn = (s: Script): Script => [{ calls: s.slice(0, -1).flatMap((t) => t.calls) }, ...s.slice(-1)];
+
 export interface Agent {
   id: string;
   // What the agent does differently, in a clinician's words.
