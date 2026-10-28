@@ -64,10 +64,13 @@ export function derive(world: WorldView): Json {
   const unchanged: string[] = [];
   const notOrdered: string[] = [];
   const addressed = new Set<string>();
+  // The summary line each change comes from, unless a correction rules that drug (§1).
+  const ruling: Record<string, string> = {};
   for (const line of lines) {
     const drug = named(line);
     addressed.add(drug);
     const fix = corrections.find((c) => named(c) === drug);
+    const from = () => { if (!fix) ruling[drug.replace(' ', '_')] = line; };
     const mg = fix ? mgOf(fix) : mgOf(line);
     const sub = /formulary substitution for home (\w+)/i.exec(line);
     if (sub) {
@@ -78,19 +81,23 @@ export function derive(world: WorldView): Json {
       unchanged.push(ref(one(home)));
     } else if (/:\s*stop\b/i.test(line)) {
       out[drug.replace(' ', '_')] = { request: ref(one(drug)), action: 'stop' };
+      from();
     } else if (/resume home (\d+) mg daily when SCr < (\d+(?:\.\d+)?)/i.test(line)) {
       const [, dose, limit] = /resume home (\d+) mg daily when SCr < (\d+(?:\.\d+)?)/i.exec(line)!;
       const value = scr.valueQuantity!.value!;
       out.scr = { id: ref(scr), mg_dl: value, threshold: Number(limit) };
       out[drug] = { request: ref(one(drug)), action: value < Number(limit) ? 'resume' : 'task', daily_mg: Number(dose), per_day: 1 };
+      from();
     } else if (/:\s*start\b/i.test(line)) {
       out[drug] = { request: chart(drug)[0] ? ref(chart(drug)[0]!) : null, action: 'start', daily_mg: mg, per_day: 1 };
+      from();
     } else if (/:\s*continue\b/i.test(line)) {
       const m = one(drug);
       if (dailyDose(m)?.value !== mg && !Number.isNaN(mg)) throw new Error(`${drug}: continue at ${mg} mg but the chart has ${dailyDose(m)?.value}`);
       unchanged.push(ref(m));
     } else if (/increased from/i.test(line)) {
       out[drug] = { request: ref(one(drug)), action: 'modify', daily_mg: mg, per_day: 1 };
+      from();
     } else throw new Error(`unread discharge line: ${line}`);
   }
   // §5: active home medications no line addresses stay as they are, and the PCP hears of them.
@@ -99,7 +106,7 @@ export function derive(world: WorldView): Json {
 
   return {
     patient: pt,
-    sources: { summary: ref(summary), addendum: addendum ? ref(addendum) : null, correction, ignored: summaries.slice(1).map(ref) },
+    sources: { summary: ref(summary), addendum: addendum ? ref(addendum) : null, correction, lines: ruling, ignored: summaries.slice(1).map(ref) },
     scr: out.scr!,
     furosemide: out.furosemide!,
     spironolactone: out.spironolactone!,

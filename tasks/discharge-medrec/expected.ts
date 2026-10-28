@@ -13,9 +13,19 @@
 //   aspirin 81 mg   continue (RxNorm 243670)                no change
 //   pantoprazole    formulary substitution (§3)             keep omeprazole, no pantoprazole
 //   tartrate 25 BID not addressed (§5)                      unchanged; message the PCP about it
+//
+// sources.lines holds the summary line each change the summary rules is made from; G8 wants it
+// shown before that change's first order write, as it wants the addendum's correction before the
+// spironolactone order and the creatinine before the lisinopril resume.
 export const expected = {
   patient: 'Patient/pt-0005',
-  sources: { summary: 'DocumentReference/doc-t4-dc-1019', addendum: 'DocumentReference/doc-t4-dc-1019-add', correction: 'spironolactone 25 mg daily', ignored: ['DocumentReference/doc-t4-dc-2025'] },
+  sources: { summary: 'DocumentReference/doc-t4-dc-1019', addendum: 'DocumentReference/doc-t4-dc-1019-add', correction: 'spironolactone 25 mg daily',
+    lines: {
+      furosemide: 'Furosemide 40 mg by mouth daily (increased from 20 mg).',
+      potassium_chloride: 'Potassium chloride: stop.',
+      lisinopril: 'Lisinopril: held for AKI. Resume home 10 mg daily when SCr < 1.5 on post-discharge labs.',
+    },
+    ignored: ['DocumentReference/doc-t4-dc-2025'] },
   scr: { id: 'Observation/obs-t4-scr-1021', mg_dl: 1.32, threshold: 1.5 },
   furosemide: { request: 'MedicationRequest/mr-t4-furosemide', action: 'modify', daily_mg: 40, per_day: 1 },
   spironolactone: { request: null, action: 'start', daily_mg: 25, per_day: 1 },
