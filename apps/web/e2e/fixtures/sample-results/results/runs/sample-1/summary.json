@@ -119,13 +119,13 @@
     },
     "crc-care-gap": {
       "task_versions": [
-        "d9c62f20be9dec1030e53d477e0708e3875a1bd87329e3f6af9fd7f5b1fc8357"
+        "0316463720585f64643b818b2ab6c2e636f5a69af77e71b9f854846fb1f7b94b"
       ],
       "env_versions": [
-        "c9f2ead6f32dda1fbc01d54f85300f8489b15a759bfd343b429794a95627446c"
+        "2cb743885fe61f5a11f46367ed9307dda803c0460dbe2f4acf295827cbb1cfc1"
       ],
       "grader_task_versions": [
-        "743d2b20f16d03a15af8fb3314d5b388c00efb50e3e7cd45a29f9c86739b4e48"
+        "725a751872136e5eebea44f866742ec8a61d6916771b8f80644238520a4ce52c"
       ],
       "records": 12,
       "trials": 12,
@@ -152,9 +152,9 @@
       "grader_error": 0,
       "grader_error_history": 0,
       "requeued": 0,
-      "mean_score": 0.9097222222222222,
+      "mean_score": 0.8819444444444443,
       "mean_cost_usd": 0.8350000000000001,
-      "raw_mean_score": 0.9097222222222222,
+      "raw_mean_score": 0.8819444444444443,
       "gate_fraction": 0.7083333333333334,
       "pass_no_harm": 5,
       "pass_no_harm_rate": 0.4166666666666667,
