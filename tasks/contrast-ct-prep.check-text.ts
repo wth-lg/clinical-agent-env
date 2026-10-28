@@ -61,7 +61,7 @@ export const checkText: CheckText = {
       const after = late.filter((id) => !unseen.includes(id));
       const was = (xs: readonly unknown[]) => (xs.length === 1 ? 'was' : 'were');
       if (unseen.length === 0) return `${show(after[0])} was seen at step ${show(step(after[0]))}, ${lateness(step(after[0]), ev.first_order_write)} ${at}`;
-      return `${listed(unseen)} ${was(unseen)} not seen before ${at}${after.length > 0 ? `; ${listed(after)} ${was(after)} seen only in its answer or after it` : ''}`;
+      return `${listed(unseen)} ${was(unseen)} not seen before ${at}${after.length > 0 ? `; ${listed(after)} ${was(after)} seen only ${after.every((id) => lateness(step(id), ev.first_order_write) === 'after') ? 'after it' : 'in its answer or after it'}` : ''}`;
     },
   },
 };
