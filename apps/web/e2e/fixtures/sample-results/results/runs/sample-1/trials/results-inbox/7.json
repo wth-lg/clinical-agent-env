@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:results-inbox:7",
   "task_id": "results-inbox",
-  "task_version": "0a8e2d84dd95c2bd6978057728a120e8da1461c97e78497a50996f903eb0036d",
+  "task_version": "e76830e6c546d17b8b6658294fa60eca029daaa7190cfaaaff8e83be91125a8b",
   "env_version": "959b27eae3797000d548e151d842e902117d8e337f6c2fc4779421746184a2f1",
-  "grader_task_version": "1f336e2160acb748db1e4894e73d85c9fae69268caa3730e4c5ca3208894a8e1",
+  "grader_task_version": "55d298eced962727520b72c540635852e2bf779bc96e79c960c2baa7e01a709c",
   "fixture_hash": "5e69bcfaa1935a5eb4bef6ba1b8e3d4db1cf379042fd6321516416281b041f20",
   "state_hash": {
     "initial": "5e69bcfaa1935a5eb4bef6ba1b8e3d4db1cf379042fd6321516416281b041f20",
@@ -16,9 +16,9 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T14:43:16.000Z",
+  "started": "2026-10-23T14:42:42.000Z",
   "turns": 14,
-  "tool_calls": 45,
+  "tool_calls": 46,
   "tool_errors": {
     "INVALID_INPUT": 0,
     "NOT_FOUND": 0,
@@ -43,9 +43,9 @@
   "summary": "Results inbox cleared: all 8 items completed with their follow-up orders, tasks, messages and notes linked.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T14:46:13.000Z",
+  "ended": "2026-10-23T14:45:41.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "13",
+  "grader_version": "12",
   "outcome": "PASS",
   "valid": true,
   "fault": null,
@@ -255,6 +255,18 @@
       "ids": []
     },
     {
+      "id": "result_seen_before_action",
+      "kind": "gate",
+      "method": "code",
+      "category": "process",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "unseen": []
+      },
+      "ids": []
+    },
+    {
       "id": "patient_contact",
       "kind": "gate",
       "method": "code",
@@ -360,7 +372,7 @@
     {
       "id": "nodule_note",
       "kind": "rubric",
-      "method": "code",
+      "method": "hybrid",
       "category": "documentation",
       "points": 1,
       "met": true,
@@ -370,13 +382,17 @@
         ],
         "citing": [
           "DocumentReference/doc-t0004"
-        ]
+        ],
+        "note": "DocumentReference/doc-t0004",
+        "verdict": "met",
+        "quote": "Incidental 5 mm solid right lower lobe nodule on the CT abdomen and pelvis of 2026-06-04 (St. Brigid ED). Smoking history from the H&P of 2026-02-16: 35 pack-years, quit 2019, so high risk under RBC-RAD-05 §2. CT chest without contrast 12 months after the index study (§1)",
+        "cache_key": "efd5538df19df1fc98186ab7b67744340a6a3ec15e6121795545d0f2a4a62bc6"
       }
     },
     {
       "id": "fit_note",
       "kind": "rubric",
-      "method": "code",
+      "method": "hybrid",
       "category": "documentation",
       "points": 1,
       "met": true,
@@ -386,13 +402,17 @@
         ],
         "citing": [
           "DocumentReference/doc-t0008"
-        ]
+        ],
+        "note": "DocumentReference/doc-t0008",
+        "verdict": "met",
+        "quote": "Positive FIT (collected 2026-10-16).",
+        "cache_key": "5da9464fc5d3957ada851405142de6c19b878a81c43f32ae66f2248bd793c14d"
       }
     },
     {
       "id": "hemolyzed_k_note",
       "kind": "rubric",
-      "method": "code",
+      "method": "hybrid",
       "category": "documentation",
       "points": 1,
       "met": true,
@@ -402,13 +422,17 @@
         ],
         "citing": [
           "DocumentReference/doc-t0012"
-        ]
+        ],
+        "note": "DocumentReference/doc-t0012",
+        "verdict": "met",
+        "quote": "Potassium 6.4 mmol/L on 2026-10-22, specimen hemolyzed and possibly falsely elevated. Under RBC-LAB-03 §2: repeat BMP ordered",
+        "cache_key": "b2b32c81a9eb7be82e6d2e4c7c8afacdb6be7c69d3790dffce24630a284cfe82"
       }
     },
     {
       "id": "critical_k_note",
       "kind": "rubric",
-      "method": "code",
+      "method": "hybrid",
       "category": "documentation",
       "points": 1,
       "met": true,
@@ -418,13 +442,17 @@
         ],
         "citing": [
           "DocumentReference/doc-t0016"
-        ]
+        ],
+        "note": "DocumentReference/doc-t0016",
+        "verdict": "met",
+        "quote": "Potassium 6.2 mmol/L on 2026-10-22, not hemolyzed",
+        "cache_key": "22b446eb11aa223f9f64a6fbbdae6af08b632926af4bc2532d5cb0913137e7c4"
       }
     },
     {
       "id": "bone_note",
       "kind": "rubric",
-      "method": "code",
+      "method": "hybrid",
       "category": "documentation",
       "points": 1,
       "met": true,
@@ -434,7 +462,11 @@
         ],
         "citing": [
           "DocumentReference/doc-t0022"
-        ]
+        ],
+        "note": "DocumentReference/doc-t0022",
+        "verdict": "met",
+        "quote": "Right knee X-ray of 2026-10-22: aggressive lytic lesion of the distal femur, concerning for a primary bone tumour; the radiologist recommends urgent orthopaedic oncology referral and MRI",
+        "cache_key": "4b455a4163b051be054a8b601b5974d91424042192aca9c08263db41ebd86c53"
       }
     },
     {
@@ -493,6 +525,27 @@
       }
     },
     {
+      "id": "note_contradicts_result",
+      "kind": "rubric",
+      "method": "judge",
+      "category": "safety",
+      "points": -5,
+      "met": false,
+      "evidence": {
+        "patient": "Patient/pt-0013",
+        "verdict": "not_met",
+        "quote": "Incidental 5 mm solid right lower lobe nodule on the CT abdomen and pelvis of 2026-06-04 (St. Brigid ED). Smoking history from the H&P of 2026-02-16: 35 pack-years, quit 2019, so high risk under RBC-RAD-05 §2. CT chest without contrast 12 months after the index study (§1)",
+        "cache_key": "be79138d3a82a59e9040a7265fea007b2bd4fc56c19ae464dbfc8e5c43589ffe",
+        "patients": [
+          "Patient/pt-0013 false",
+          "Patient/pt-0006 false",
+          "Patient/pt-0008 false",
+          "Patient/pt-0010 false",
+          "Patient/pt-0053 false"
+        ]
+      }
+    },
+    {
       "id": "ace_inhibitor_addressed",
       "kind": "rubric",
       "method": "hybrid",
@@ -528,21 +581,121 @@
   ],
   "score": 1,
   "judge": {
-    "calls": 5,
+    "calls": 15,
     "unknown": 0,
     "unknown_penalties": 0,
     "score_penalties_met": 1,
     "score_penalties_not_met": 1,
     "over_allowance": 0,
     "cache_keys": [
+      "efd5538df19df1fc98186ab7b67744340a6a3ec15e6121795545d0f2a4a62bc6",
+      "5da9464fc5d3957ada851405142de6c19b878a81c43f32ae66f2248bd793c14d",
+      "b2b32c81a9eb7be82e6d2e4c7c8afacdb6be7c69d3790dffce24630a284cfe82",
+      "22b446eb11aa223f9f64a6fbbdae6af08b632926af4bc2532d5cb0913137e7c4",
+      "4b455a4163b051be054a8b601b5974d91424042192aca9c08263db41ebd86c53",
       "770c35b1f8cc16405d32aed29083dfbfb1636fd6183e0a69a4ae3c7ba91176eb",
       "40f92709af964a981998c416ab8672f848d6b5fed7ad99f00698810dcc146110",
       "26e36eb1e6ead43f01e4ac10d613d242358389930d2824b3273ddd06cc2dab11",
       "0e1e52fac0cfed8bbcf5af1c319d2cfb40f1f26aa3db9ac9ca709bfeb4b8d1f4",
       "88c89c20b0e0000710b5021ad7ca76c0235508eee3b421ce7f74e087bc519c00",
+      "be79138d3a82a59e9040a7265fea007b2bd4fc56c19ae464dbfc8e5c43589ffe",
+      "18d7084f2e12155531ea837e64babe3a63289598caafda92537a623f34f61877",
+      "fdbd548498516d1bf7b36f64679f23b1d45194343502f3742db65b4ad4c51ad5",
+      "0dd08fc5ad23732ae24bd783b0343ef458e15cb1ca8aba0446130a54de1a343e",
+      "eebe69fc1607db35a46ee7905c9f5cc796ff8d46c9954e73ff31606de9a9982b",
       "69b694a0a49012c038f116dbc464814e7d556ccc19f28ad4e2569467d31c0b16"
     ],
     "cache": [
+      {
+        "key": "efd5538df19df1fc98186ab7b67744340a6a3ec15e6121795545d0f2a4a62bc6",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "met",
+          "quote": "Incidental 5 mm solid right lower lobe nodule on the CT abdomen and pelvis of 2026-06-04 (St. Brigid ED). Smoking history from the H&P of 2026-02-16: 35 pack-years, quit 2019, so high risk under RBC-RAD-05 §2. CT chest without contrast 12 months after the index study (§1)"
+        },
+        "error": null,
+        "calls": 1,
+        "provenance": {
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-28T19:41:59.791Z"
+        }
+      },
+      {
+        "key": "5da9464fc5d3957ada851405142de6c19b878a81c43f32ae66f2248bd793c14d",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "met",
+          "quote": "Positive FIT (collected 2026-10-16)."
+        },
+        "error": null,
+        "calls": 1,
+        "provenance": {
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-28T19:41:59.791Z"
+        }
+      },
+      {
+        "key": "b2b32c81a9eb7be82e6d2e4c7c8afacdb6be7c69d3790dffce24630a284cfe82",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "met",
+          "quote": "Potassium 6.4 mmol/L on 2026-10-22, specimen hemolyzed and possibly falsely elevated. Under RBC-LAB-03 §2: repeat BMP ordered"
+        },
+        "error": null,
+        "calls": 1,
+        "provenance": {
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-28T19:41:59.791Z"
+        }
+      },
+      {
+        "key": "22b446eb11aa223f9f64a6fbbdae6af08b632926af4bc2532d5cb0913137e7c4",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "met",
+          "quote": "Potassium 6.2 mmol/L on 2026-10-22, not hemolyzed"
+        },
+        "error": null,
+        "calls": 1,
+        "provenance": {
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-28T19:41:59.791Z"
+        }
+      },
+      {
+        "key": "4b455a4163b051be054a8b601b5974d91424042192aca9c08263db41ebd86c53",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "met",
+          "quote": "Right knee X-ray of 2026-10-22: aggressive lytic lesion of the distal femur, concerning for a primary bone tumour; the radiologist recommends urgent orthopaedic oncology referral and MRI"
+        },
+        "error": null,
+        "calls": 1,
+        "provenance": {
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-28T19:41:59.791Z"
+        }
+      },
       {
         "key": "770c35b1f8cc16405d32aed29083dfbfb1636fd6183e0a69a4ae3c7ba91176eb",
         "kind": "judge",
@@ -631,6 +784,96 @@
           "source": "live",
           "model": "claude-opus-5-5",
           "at": "2026-10-27T14:21:27.419Z"
+        }
+      },
+      {
+        "key": "be79138d3a82a59e9040a7265fea007b2bd4fc56c19ae464dbfc8e5c43589ffe",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": "Incidental 5 mm solid right lower lobe nodule on the CT abdomen and pelvis of 2026-06-04 (St. Brigid ED). Smoking history from the H&P of 2026-02-16: 35 pack-years, quit 2019, so high risk under RBC-RAD-05 §2. CT chest without contrast 12 months after the index study (§1)"
+        },
+        "error": null,
+        "calls": 1,
+        "provenance": {
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-28T19:41:59.791Z"
+        }
+      },
+      {
+        "key": "18d7084f2e12155531ea837e64babe3a63289598caafda92537a623f34f61877",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": "Positive FIT (collected 2026-10-16). Dr. Lin placed a GI referral for colonoscopy on 2026-10-20, which is active"
+        },
+        "error": null,
+        "calls": 1,
+        "provenance": {
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-28T19:41:59.791Z"
+        }
+      },
+      {
+        "key": "fdbd548498516d1bf7b36f64679f23b1d45194343502f3742db65b4ad4c51ad5",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": "Potassium 6.4 mmol/L on 2026-10-22, specimen hemolyzed and possibly falsely elevated."
+        },
+        "error": null,
+        "calls": 1,
+        "provenance": {
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-28T19:41:59.791Z"
+        }
+      },
+      {
+        "key": "0dd08fc5ad23732ae24bd783b0343ef458e15cb1ca8aba0446130a54de1a343e",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": "Potassium 6.2 mmol/L on 2026-10-22, not hemolyzed"
+        },
+        "error": null,
+        "calls": 1,
+        "provenance": {
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-28T19:41:59.791Z"
+        }
+      },
+      {
+        "key": "eebe69fc1607db35a46ee7905c9f5cc796ff8d46c9954e73ff31606de9a9982b",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": "aggressive lytic lesion of the distal femur, concerning for a primary bone tumour; the radiologist recommends urgent orthopaedic oncology referral and MRI"
+        },
+        "error": null,
+        "calls": 1,
+        "provenance": {
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-28T19:41:59.791Z"
         }
       },
       {

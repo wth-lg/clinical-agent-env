@@ -90,11 +90,12 @@ describe('crc-care-gap rubric', () => {
   // verifier's 13 sentences (cli/judge-calibrate.ts PROBES, run live by --probes) with its true
   // answer, so these cases pin the code half: what is asked, with which text, and what is met.
   describe('contacted_pt_0020', () => {
-    const SENTENCES = PROBES['crc-care-gap']!.items;
+    const SET = PROBES['crc-care-gap']!.find((p) => p.check === 'contacted_pt_0020')!;
+    const SENTENCES = SET.items;
     class StubJudge extends Judge {
       readonly asked: JudgeQuestion[] = [];
       override async judge(q: JudgeQuestion): Promise<Verdict> {
-        if (!q.criterion.includes(PROBES['crc-care-gap']!.criterion)) return { met: 'unknown', evidence: { reason: 'stub' } };
+        if (!q.criterion.includes(SET.criterion)) return { met: 'unknown', evidence: { reason: 'stub' } };
         this.asked.push(q);
         const s = SENTENCES.find((x) => q.text.includes(x.text));
         return s === undefined ? { met: 'unknown', evidence: { reason: 'no sentence' } } : { met: s.expected === 'met', evidence: { verdict: s.expected } };

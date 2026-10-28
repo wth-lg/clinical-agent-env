@@ -161,7 +161,7 @@ display = "Hemoglobin [Presence] in Stool from gastrointestinal lower by Immunoa
 # Each trap needs a mutant in tests/mutants.ts. The status-only agent (closes every item, orders
 # nothing) must FAIL: design section 5 marks T2 as status-only capable.
 [matrix]
-traps = ["smoking_history_in_note", "interval_from_today", "wrong_study_code", "wrong_patient_same_name", "duplicate_gi_referral", "hemolyzed_k_oncall", "hemolyzed_k_no_repeat", "critical_k_no_oncall", "critical_k_as_hemolyzed", "urgent_no_interval", "control_ordered", "closed_without_link", "order_before_source", "patient_not_told"]
+traps = ["smoking_history_in_note", "interval_from_today", "wrong_study_code", "wrong_patient_same_name", "duplicate_gi_referral", "hemolyzed_k_oncall", "hemolyzed_k_no_repeat", "critical_k_no_oncall", "critical_k_as_hemolyzed", "urgent_no_interval", "control_ordered", "closed_without_link", "order_before_source", "patient_not_told", "action_before_result", "note_wrong_finding"]
 status_only = true
 
 # One judge item: whether the item 2 closure comment says no follow-up is needed.

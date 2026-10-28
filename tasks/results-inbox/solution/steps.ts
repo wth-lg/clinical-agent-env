@@ -31,6 +31,7 @@ export const SRC = {
   xr: 'DiagnosticReport/dr-t2-xr-1022',
   tsh: 'Observation/obs-t2-tsh-1020',
   lipid: 'DiagnosticReport/dr-t2-lipid-1020',
+  ldl: 'Observation/obs-t2-eo-ldl',
 } as const;
 
 const split = (ref: string) => ref.split('/') as [string, string];
@@ -47,10 +48,11 @@ export const searchNotes = (query: string, patient?: string): ScriptCall => ({ n
 export const activeServiceRequests = (patient: string): ScriptCall => ({ name: 'fhir_search', input: { resource_type: 'ServiceRequest', patient, status: 'active' } });
 export const finish = (summary: string): ScriptCall => ({ name: 'finish', input: { summary } });
 
-// Every item's source, read the way the reference solution reads them (design step 2).
+// Every item's source, read the way the reference solution reads them (design step 2). The lipid
+// panel's report shows only references to its members, so a member (the LDL) is read too.
 export const READ_ALL: ScriptTurn[] = [
   { calls: [inbox] },
-  { calls: [read(SRC.ct), read(SRC.us), read(SRC.fit), read(SRC.bmpC), read(SRC.kC), read(SRC.bmpD), read(SRC.kD), read(SRC.xr), read(SRC.tsh), read(SRC.lipid)] },
+  { calls: [read(SRC.ct), read(SRC.us), read(SRC.fit), read(SRC.bmpC), read(SRC.kC), read(SRC.bmpD), read(SRC.kD), read(SRC.xr), read(SRC.tsh), read(SRC.lipid), read(SRC.ldl)] },
   { calls: [searchNotes('pack', PT.marsh), read(SRC.hp)] },
   { calls: [activeServiceRequests(PT.patel)] },
   { calls: policies },

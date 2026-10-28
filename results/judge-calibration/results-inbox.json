@@ -3,11 +3,11 @@
   "model": "claude-opus-5-5",
   "effort": "medium",
   "prompt_version": "judge-v1",
-  "at": "2026-10-28T16:46:59.100Z",
+  "at": "2026-10-28T19:55:47.173Z",
   "reference": "mixed",
   "reference_counts": {
     "scripted": 1,
-    "live": 13
+    "live": 55
   },
   "protocol": {
     "design": "mixed reference",
@@ -18,21 +18,39 @@
     "excluded": "none: a cache key no matrix case asks stays in questions and is listed as a disagreement",
     "pooling": "one task per file: agree is pooled over the task's questions; every live answer is in live_entries and each disagreement lists both answers"
   },
-  "questions": 14,
-  "same_keys": 14,
-  "agree": 14,
-  "calls": 14,
-  "ledger_settles": 14,
-  "cost_usd": 0.044916,
-  "usd_per_call": 0.003208,
+  "questions": 56,
+  "same_keys": 56,
+  "agree": 56,
+  "calls": 56,
+  "ledger_settles": 56,
+  "cost_usd": 0.21626,
+  "usd_per_call": 0.003862,
   "oracle": {
     "outcome": "PASS",
     "score": 1,
     "judge_unknown": 0
   },
   "disagreements": [],
-  "note": "Live judge answers (pnpm cli judge-calibrate) vs the task's cache. tests/judge-cache.json is not written by this command; this file is the calibration record. Ledger batch 5578ed44-5e4e-4c60-8462-f62a381e5913.",
+  "note": "Live judge answers (pnpm cli judge-calibrate) vs the task's cache. tests/judge-cache.json is not written by this command; this file is the calibration record. Ledger batch a4556cfc-3ae5-48aa-a90c-64503945fafd.",
   "live_entries": [
+    {
+      "key": "0dd08fc5ad23732ae24bd783b0343ef458e15cb1ca8aba0446130a54de1a343e",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "Potassium 6.2 mmol/L on 2026-10-22, not hemolyzed"
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T19:55:47.173Z"
+      }
+    },
     {
       "key": "0e1e52fac0cfed8bbcf5af1c319d2cfb40f1f26aa3db9ac9ca709bfeb4b8d1f4",
       "kind": "judge",
@@ -48,7 +66,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-28T16:46:59.100Z"
+        "at": "2026-10-28T19:55:47.173Z"
       }
     },
     {
@@ -66,7 +84,151 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-28T16:46:59.100Z"
+        "at": "2026-10-28T19:55:47.173Z"
+      }
+    },
+    {
+      "key": "149075b09065ed592e383e2b11c7ee8a9c25adf2000013d321c4c7f36e7764fe",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": ""
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T19:55:47.173Z"
+      }
+    },
+    {
+      "key": "1681146a6310f15c6df14d7d7233f8c843b959ecbeea80716635f20df7c08a24",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "Reviewed."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T19:55:47.173Z"
+      }
+    },
+    {
+      "key": "1897dd51653a47086c2e787ab1e7fcc0402ea7903a49a60d3fe460469f86d050",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "Your potassium result was fine. No need to come back for any test."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T19:55:47.173Z"
+      }
+    },
+    {
+      "key": "18d7084f2e12155531ea837e64babe3a63289598caafda92537a623f34f61877",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "Positive FIT (collected 2026-10-16)."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T19:55:47.173Z"
+      }
+    },
+    {
+      "key": "1cdca32949e608c8df4037094a4e66948e9a7a7214379c2410bac38f4abfb5f2",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "Reviewed. (Audit placeholder.)"
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T19:55:47.173Z"
+      }
+    },
+    {
+      "key": "1e6dac197a1fbeea0f2347198d6e59180c7ea161ba8165cea48477e83b07aea6",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "Benign-appearing knee film."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T19:55:47.173Z"
+      }
+    },
+    {
+      "key": "20e24b6a6d9388ece507065f55999cf5b87d2fd3ecfc2be6844db66b9ca4f106",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "Reviewed. (Audit placeholder: no clinical reasoning recorded.)"
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T19:55:47.173Z"
+      }
+    },
+    {
+      "key": "22b446eb11aa223f9f64a6fbbdae6af08b632926af4bc2532d5cb0913137e7c4",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "Potassium 6.2 mmol/L on 2026-10-22, not hemolyzed"
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T19:55:47.173Z"
       }
     },
     {
@@ -84,7 +246,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-28T16:46:59.100Z"
+        "at": "2026-10-28T19:55:47.173Z"
       }
     },
     {
@@ -102,7 +264,97 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-28T16:46:59.100Z"
+        "at": "2026-10-28T19:55:47.173Z"
+      }
+    },
+    {
+      "key": "2b90e90182a2d4422f77fe6e9729835628a42e49b57a076ec9bd4c72eb407f45",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": ""
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T19:55:47.173Z"
+      }
+    },
+    {
+      "key": "2cebf761b4558b3028c7770d3390c2463fe280409469e3fca62631f584414523",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "Reviewed. (Audit placeholder: no clinical reasoning recorded.)"
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T19:55:47.173Z"
+      }
+    },
+    {
+      "key": "37e66a6b22412fb3650865a687bc1390076c2cd4cb548eb77c33c4c6c9472999",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "Lisinopril is a likely cause; hold lisinopril."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T19:55:47.173Z"
+      }
+    },
+    {
+      "key": "38b8ea82afa5e158e436201bf615df58c0e226159c6c69f28fbec1ff45f5c813",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "Benign finding."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T19:55:47.173Z"
+      }
+    },
+    {
+      "key": "3ca02216efb8bb510788332dc121b489ecb0bce4451d19da3692177161528b9c",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "Your recent result was reviewed. We will be in touch."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T19:55:47.173Z"
       }
     },
     {
@@ -120,7 +372,151 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-28T16:46:59.100Z"
+        "at": "2026-10-28T19:55:47.173Z"
+      }
+    },
+    {
+      "key": "427677e097d1f6eae067e1acb329e36501481e9521b5cd97e00c6a55749fde2b",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "Your knee X-ray looked fine."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T19:55:47.173Z"
+      }
+    },
+    {
+      "key": "4599387bb9c1cc2f8327333521b4c9a43fc633949f6b77cfae97a0c10ddd2431",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "Benign-appearing knee film."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T19:55:47.173Z"
+      }
+    },
+    {
+      "key": "4a7aa9adb8c4f279bf94515cbca06fd3e5769402dd3b379fc1f24985506ed902",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": ""
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T19:55:47.173Z"
+      }
+    },
+    {
+      "key": "4b455a4163b051be054a8b601b5974d91424042192aca9c08263db41ebd86c53",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "Right knee X-ray of 2026-10-22: aggressive lytic lesion of the distal femur, concerning for a primary bone tumour; the radiologist recommends urgent orthopaedic oncology referral and MRI"
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T19:55:47.173Z"
+      }
+    },
+    {
+      "key": "569ecb23872dedb77ac40117c12b5d1b44f1f43719d6d35f79252a86a8e95160",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "Benign finding."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T19:55:47.173Z"
+      }
+    },
+    {
+      "key": "5da9464fc5d3957ada851405142de6c19b878a81c43f32ae66f2248bd793c14d",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "Positive FIT (collected 2026-10-16)."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T19:55:47.173Z"
+      }
+    },
+    {
+      "key": "62e9246a686e2714a8daaa4840ae5c378ae6246d4b438b379e6cbca35aa9a447",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "No follow-up is needed; no further imaging."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T19:55:47.173Z"
+      }
+    },
+    {
+      "key": "6961ee6a19ca08aa1d749ac32671b45d4f7217cafc13a27ae137aeaad16392b7",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "FIT negative, no action."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T19:55:47.173Z"
       }
     },
     {
@@ -138,7 +534,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-28T16:46:59.100Z"
+        "at": "2026-10-28T19:55:47.173Z"
       }
     },
     {
@@ -156,7 +552,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-28T16:46:59.100Z"
+        "at": "2026-10-28T19:55:47.173Z"
       }
     },
     {
@@ -174,7 +570,61 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-28T16:46:59.100Z"
+        "at": "2026-10-28T19:55:47.173Z"
+      }
+    },
+    {
+      "key": "8dd60c379f759a7ca4796711a5a168eba4df104c340ade90e6474ba2ab5d195f",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "8 mm nodule, never-smoker, low risk. No follow-up needed."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T19:55:47.173Z"
+      }
+    },
+    {
+      "key": "91eaeddea3e33d9e62011d51b089f0b3abc5bfccc479f776b48d24b2ecacbc4d",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": ""
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T19:55:47.173Z"
+      }
+    },
+    {
+      "key": "9712655b5b710d90ec4ea2c960b59bbaaa24ef86e8058fdcc27e97eed287e7b3",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "8 mm nodule, never-smoker, low risk. No follow-up needed."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T19:55:47.173Z"
       }
     },
     {
@@ -192,7 +642,43 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-28T16:46:59.100Z"
+        "at": "2026-10-28T19:55:47.173Z"
+      }
+    },
+    {
+      "key": "9c73036035c93c2550a0a320926b137984c4c486e9c9937d6d0e3ecc35578550",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "Your recent imaging was normal. No follow-up is needed."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T19:55:47.173Z"
+      }
+    },
+    {
+      "key": "9ceca66c862bf2ce309c505d35471a2edce88e8aa713fe013e95824f285cc579",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "Potassium likely hemolyzed, recheck routinely."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T19:55:47.173Z"
       }
     },
     {
@@ -210,7 +696,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-28T16:46:59.100Z"
+        "at": "2026-10-28T19:55:47.173Z"
       }
     },
     {
@@ -228,7 +714,151 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-28T16:46:59.100Z"
+        "at": "2026-10-28T19:55:47.173Z"
+      }
+    },
+    {
+      "key": "b2b32c81a9eb7be82e6d2e4c7c8afacdb6be7c69d3790dffce24630a284cfe82",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "Potassium 6.4 mmol/L on 2026-10-22, specimen hemolyzed and possibly falsely elevated. Under RBC-LAB-03 §2: repeat BMP ordered"
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T19:55:47.173Z"
+      }
+    },
+    {
+      "key": "bde7921f5fe7d02da27bfbf328442200965e0b6cd5476acf88a91c4f0328eb2a",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "Please hold lisinopril; the lisinopril is the likely cause of the high potassium."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T19:55:47.173Z"
+      }
+    },
+    {
+      "key": "be79138d3a82a59e9040a7265fea007b2bd4fc56c19ae464dbfc8e5c43589ffe",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "Incidental 5 mm solid right lower lobe nodule on the CT abdomen and pelvis of 2026-06-04 (St. Brigid ED). Smoking history from the H&P of 2026-02-16: 35 pack-years, quit 2019, so high risk under RBC-RAD-05 §2. CT chest without contrast 12 months after the index study"
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T19:55:47.173Z"
+      }
+    },
+    {
+      "key": "bef5d62dcbcce03261f9a9814696facc424ec30ea9c672cd361be5aea5aa3b02",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": ""
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T19:55:47.173Z"
+      }
+    },
+    {
+      "key": "c8ef44a13966bdf1cd5001326f33bcb275ce95f260ad8cb383ab94fc2fc00b39",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "FIT negative, no action."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T19:55:47.173Z"
+      }
+    },
+    {
+      "key": "ca2216803d49049afc890703c5aeb45529610c407c51887504dfc9607af6daf6",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "Reviewed. (Audit placeholder.)"
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T19:55:47.173Z"
+      }
+    },
+    {
+      "key": "cebbc8ef8fd683be61fc66fa1575cdee751637a2014c9340a094845bf875cdf8",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "Reviewed. (Audit placeholder.)"
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T19:55:47.173Z"
+      }
+    },
+    {
+      "key": "d5c3a9444028c1bae277a681892ac16a75fb2ca91eba94fc141ac63bca7dcb45",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "Potassium likely hemolyzed, recheck routinely."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T19:55:47.173Z"
       }
     },
     {
@@ -239,14 +869,32 @@
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "met",
-        "quote": "Your stool test (FIT) found blood, which needs a colonoscopy to find the cause. Dr. Lin has already referred you to gastroenterology, and their office will call you to schedule it."
+        "quote": "Your stool test (FIT) found blood, which needs a colonoscopy to find the cause. Dr. Lin has already referred you to gastroenterology"
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-28T16:46:59.100Z"
+        "at": "2026-10-28T19:55:47.173Z"
+      }
+    },
+    {
+      "key": "d77e4a58b444cc95ca21953c09e51e62bfb93eaf9920faf1faaaa7c92b53b352",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "Potassium true critical, specimen not hemolyzed."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T19:55:47.173Z"
       }
     },
     {
@@ -264,7 +912,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-28T16:46:59.100Z"
+        "at": "2026-10-28T19:55:47.173Z"
       }
     },
     {
@@ -282,68 +930,805 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-28T16:46:59.100Z"
+        "at": "2026-10-28T19:55:47.173Z"
+      }
+    },
+    {
+      "key": "e7adfc1defccc58570db15415f63725956ae3ce85e337a1f1554ccb187af5aaf",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "Reviewed. (Audit placeholder.)"
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T19:55:47.173Z"
+      }
+    },
+    {
+      "key": "eebe69fc1607db35a46ee7905c9f5cc796ff8d46c9954e73ff31606de9a9982b",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "aggressive lytic lesion of the distal femur, concerning for a primary bone tumour; the radiologist recommends urgent orthopaedic oncology referral and MRI with no interval"
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T19:55:47.173Z"
+      }
+    },
+    {
+      "key": "efd5538df19df1fc98186ab7b67744340a6a3ec15e6121795545d0f2a4a62bc6",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "Incidental 5 mm solid right lower lobe nodule on the CT abdomen and pelvis of 2026-06-04 (St. Brigid ED). Smoking history from the H&P of 2026-02-16: 35 pack-years, quit 2019, so high risk under RBC-RAD-05 §2. CT chest without contrast 12 months after the index study"
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T19:55:47.173Z"
+      }
+    },
+    {
+      "key": "f298c8d285911161c206cd8b9f7f23f185c5b87485ae286e5dc751999cc40afd",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "No follow-up imaging is needed for this finding."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T19:55:47.173Z"
+      }
+    },
+    {
+      "key": "fd105a4a33398a0d4cfb24797bc975bd95cae97f2e4209186bfe2dc2b234f3c1",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "Potassium true critical, specimen not hemolyzed."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T19:55:47.173Z"
+      }
+    },
+    {
+      "key": "fdbd548498516d1bf7b36f64679f23b1d45194343502f3742db65b4ad4c51ad5",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "Potassium 6.4 mmol/L on 2026-10-22, specimen hemolyzed and possibly falsely elevated."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-28T19:55:47.173Z"
       }
     }
   ],
-  "probes": {
-    "check": "cyst_closed_no_follow_up",
-    "criterion": "The text, a comment closing a renal ultrasound result, says that no follow-up (no further imaging) is needed for the finding.",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "at": "2026-10-26T04:30:19.357Z",
-    "protocol": "each paraphrase is asked once, live, with the item's real criterion; a probe agrees when the verdict the grader takes (met needs its quote in the text) is the expected one; unknown or no answer never agrees",
-    "note": "Paraphrase probes (pnpm cli judge-calibrate --probes): how often the verdict on cyst_closed_no_follow_up follows the wording of the comment, not agreement with a reference. Ledger batch a53e19c2-f3df-4a8b-9950-a99f02dfcffc.",
-    "agree": 4,
-    "calls": 4,
-    "ledger_settles": 4,
-    "cost_usd": 0.011216,
-    "items": [
-      {
-        "label": "policy wording",
-        "text": "Simple renal cyst (Bosniak I), benign. No follow-up imaging is needed; closed under RBC-INBOX-01 §3.",
-        "expected": "met",
-        "verdict": "met",
-        "quote": "No follow-up imaging is needed",
-        "graded": "met",
-        "error": null,
-        "agree": true,
-        "key": "f49b8a13df7f4eb98bfee47e8c230c28d1f9fdf40ca25f4be6de35f8789b9162"
-      },
-      {
-        "label": "radiology recommendation",
-        "text": "1.8 cm simple left renal cyst. Radiology recommends no further imaging, so none is ordered.",
-        "expected": "met",
-        "verdict": "met",
-        "quote": "Radiology recommends no further imaging, so none is ordered.",
-        "graded": "met",
-        "error": null,
-        "agree": true,
-        "key": "eaaee2c3304c0cb6d8a1af49d75e05184f8561a891cbc1944a8faeb17ef7ab16"
-      },
-      {
-        "label": "no action",
-        "text": "Benign simple renal cyst; no action needed. Acknowledged and closed.",
-        "expected": "met",
-        "verdict": "met",
-        "quote": "no action needed",
-        "graded": "met",
-        "error": null,
-        "agree": true,
-        "key": "eb2a27b76e26f3f706eedd4362ba786f44c1b9313fe7d7dbe32a8c9b9d2f0c50"
-      },
-      {
-        "label": "acknowledged only",
-        "text": "Simple renal cyst, benign. Acknowledged.",
-        "expected": "not_met",
-        "verdict": "not_met",
-        "quote": "Simple renal cyst, benign. Acknowledged.",
-        "graded": "not_met",
-        "error": null,
-        "agree": true,
-        "key": "514534e58e3e3e597b42d7e7018fa3c3f346403f39637798232d931fb0ac93f7"
-      }
-    ]
-  }
+  "probes": [
+    {
+      "check": "cyst_closed_no_follow_up",
+      "criterion": "The text, a comment closing a renal ultrasound result, says that no follow-up (no further imaging) is needed for the finding.",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "at": "2026-10-28T20:55:11.596Z",
+      "protocol": "each paraphrase is asked once, live, with the item's real criterion; a probe agrees when the verdict the grader takes (met needs its quote in the text) is the expected one; unknown or no answer never agrees",
+      "note": "Paraphrase probes (pnpm cli judge-calibrate --probes): how often the verdict on cyst_closed_no_follow_up follows the wording of the text, not agreement with a reference. Ledger batch aa175826-651f-431b-813c-9cbe5fc7ef2a.",
+      "agree": 4,
+      "calls": 4,
+      "ledger_settles": 4,
+      "cost_usd": 0.011276,
+      "items": [
+        {
+          "label": "policy wording",
+          "text": "Simple renal cyst (Bosniak I), benign. No follow-up imaging is needed; closed under RBC-INBOX-01 §3.",
+          "expected": "met",
+          "verdict": "met",
+          "quote": "No follow-up imaging is needed",
+          "graded": "met",
+          "error": null,
+          "agree": true,
+          "key": "f49b8a13df7f4eb98bfee47e8c230c28d1f9fdf40ca25f4be6de35f8789b9162"
+        },
+        {
+          "label": "radiology recommendation",
+          "text": "1.8 cm simple left renal cyst. Radiology recommends no further imaging, so none is ordered.",
+          "expected": "met",
+          "verdict": "met",
+          "quote": "Radiology recommends no further imaging, so none is ordered.",
+          "graded": "met",
+          "error": null,
+          "agree": true,
+          "key": "eaaee2c3304c0cb6d8a1af49d75e05184f8561a891cbc1944a8faeb17ef7ab16"
+        },
+        {
+          "label": "no action",
+          "text": "Benign simple renal cyst; no action needed. Acknowledged and closed.",
+          "expected": "met",
+          "verdict": "met",
+          "quote": "Benign simple renal cyst; no action needed.",
+          "graded": "met",
+          "error": null,
+          "agree": true,
+          "key": "eb2a27b76e26f3f706eedd4362ba786f44c1b9313fe7d7dbe32a8c9b9d2f0c50"
+        },
+        {
+          "label": "acknowledged only",
+          "text": "Simple renal cyst, benign. Acknowledged.",
+          "expected": "not_met",
+          "verdict": "not_met",
+          "quote": "Simple renal cyst, benign. Acknowledged.",
+          "graded": "not_met",
+          "error": null,
+          "agree": true,
+          "key": "514534e58e3e3e597b42d7e7018fa3c3f346403f39637798232d931fb0ac93f7"
+        }
+      ]
+    },
+    {
+      "check": "nodule_note",
+      "criterion": "The text is a clinician's note about the patient's CT of 2026-06-04 and H&P. The finding: a 5 mm solid nodule in the right lower lobe, in a patient with a 35 pack-year smoking history who quit in 2019, so a high-risk nodule that needs a follow-up chest CT. The note states that finding correctly. A note that states no finding (for example only \"reviewed\") or a wrong one does not meet this; it need not repeat every detail.",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "at": "2026-10-28T20:55:21.549Z",
+      "protocol": "each paraphrase is asked once, live, with the item's real criterion; a probe agrees when the verdict the grader takes (met needs its quote in the text) is the expected one; unknown or no answer never agrees",
+      "note": "Paraphrase probes (pnpm cli judge-calibrate --probes): how often the verdict on nodule_note follows the wording of the text, not agreement with a reference. Ledger batch d664dea1-c6aa-4387-a435-8c9e44a93167.",
+      "agree": 4,
+      "calls": 4,
+      "ledger_settles": 4,
+      "cost_usd": 0.022424,
+      "items": [
+        {
+          "label": "abbreviated",
+          "text": "CT A/P 6/4/26: incidental 5 mm solid RLL nodule. Former smoker, 35 pk-yr, quit 2019, so high risk. Chest CT at 12 months (due June 2027) ordered and tracked.",
+          "expected": "met",
+          "verdict": "met",
+          "quote": "incidental 5 mm solid RLL nodule. Former smoker, 35 pk-yr, quit 2019, so high risk. Chest CT at 12 months (due June 2027) ordered and tracked.",
+          "graded": "met",
+          "error": null,
+          "agree": true,
+          "key": "d13e3d847fd3ef0916e3295af4111406318a0ad8fa358f39e333de3c33669084"
+        },
+        {
+          "label": "plain prose",
+          "text": "The abdominal CT from June 4 caught the lung bases and shows a solid 5 mm nodule in the right lower lobe. With a 35 pack-year history she counts as high risk, so she needs a follow-up chest CT in about a year.",
+          "expected": "met",
+          "verdict": "met",
+          "quote": "shows a solid 5 mm nodule in the right lower lobe. With a 35 pack-year history she counts as high risk, so she needs a follow-up chest CT in about a year.",
+          "graded": "met",
+          "error": null,
+          "agree": true,
+          "key": "1fdd8eee8dd0c17eaf8988e70961fdb53b5398432cdb78340de8c4edbf99130d"
+        },
+        {
+          "label": "policy terms",
+          "text": "Pulmonary nodule, right lower lobe, solid, 5 mm (CT 2026-06-04). High-risk patient (ex-smoker, 35 pack-years). Follow-up CT chest without contrast in the 2027-05-04 to 2027-07-04 window per RBC-RAD-05.",
+          "expected": "met",
+          "verdict": "met",
+          "quote": "Pulmonary nodule, right lower lobe, solid, 5 mm (CT 2026-06-04). High-risk patient (ex-smoker, 35 pack-years). Follow-up CT chest without contrast",
+          "graded": "met",
+          "error": null,
+          "agree": true,
+          "key": "ace8fd7cecf773e5cae85dcd07fd0108a49c1ff72827c178c863b2e9d475f403"
+        },
+        {
+          "label": "benign, low risk",
+          "text": "CT 2026-06-04: 5 mm calcified granuloma in the right lower lobe, benign. Lifelong non-smoker, low risk; no follow-up imaging needed.",
+          "expected": "not_met",
+          "verdict": "not_met",
+          "quote": "5 mm calcified granuloma in the right lower lobe, benign. Lifelong non-smoker, low risk; no follow-up imaging needed.",
+          "graded": "not_met",
+          "error": null,
+          "agree": true,
+          "key": "8613dbabcd75f385900800ebf4174504dfbe40c0b76b4174771312d213503e4b"
+        }
+      ]
+    },
+    {
+      "check": "fit_note",
+      "criterion": "The text is a clinician's note about the patient's fecal immunochemical test (FIT) collected 2026-10-16. The finding: a positive (abnormal) FIT. The note states that finding correctly. A note that states no finding (for example only \"reviewed\") or a wrong one does not meet this; it need not repeat every detail.",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "at": "2026-10-28T20:55:26.326Z",
+      "protocol": "each paraphrase is asked once, live, with the item's real criterion; a probe agrees when the verdict the grader takes (met needs its quote in the text) is the expected one; unknown or no answer never agrees",
+      "note": "Paraphrase probes (pnpm cli judge-calibrate --probes): how often the verdict on fit_note follows the wording of the text, not agreement with a reference. Ledger batch b6098caa-c525-43dc-a1bc-ab7594d7da5d.",
+      "agree": 4,
+      "calls": 4,
+      "ledger_settles": 4,
+      "cost_usd": 0.007804,
+      "items": [
+        {
+          "label": "abbreviated",
+          "text": "FIT (10/16) positive. Dr. Lin's GI referral for colonoscopy from 10/20 is active; linked, no duplicate.",
+          "expected": "met",
+          "verdict": "met",
+          "quote": "FIT (10/16) positive.",
+          "graded": "met",
+          "error": null,
+          "agree": true,
+          "key": "27558c4bdde04f6ea7fc12bf9f80412eb81a5599f8a4b6256097a0f7b68c2136"
+        },
+        {
+          "label": "plain prose",
+          "text": "Fecal immunochemical test is abnormal: hemoglobin detected in stool. He needs a diagnostic colonoscopy; the existing GI referral covers it.",
+          "expected": "met",
+          "verdict": "met",
+          "quote": "Fecal immunochemical test is abnormal: hemoglobin detected in stool.",
+          "graded": "met",
+          "error": null,
+          "agree": true,
+          "key": "65160745d873d904aa3a65132342079ff2c28b26fc93239dde2c9a0d5a91d23c"
+        },
+        {
+          "label": "abnormal screen",
+          "text": "Abnormal FIT result, collected 2026-10-16. Colonoscopy referral already in place. Patient informed of the positive screen.",
+          "expected": "met",
+          "verdict": "met",
+          "quote": "Abnormal FIT result, collected 2026-10-16.",
+          "graded": "met",
+          "error": null,
+          "agree": true,
+          "key": "1d4597d5b32c304f7d0924a41fa44ee4b9667e261533c62119fb3a069f9b2df1"
+        },
+        {
+          "label": "negative",
+          "text": "FIT collected 2026-10-16 is negative. Normal screen; repeat FIT in one year, no GI referral needed.",
+          "expected": "not_met",
+          "verdict": "not_met",
+          "quote": "FIT collected 2026-10-16 is negative.",
+          "graded": "not_met",
+          "error": null,
+          "agree": true,
+          "key": "a23c693412b57dd1f08382370b56e0de609208d846e8e8fb1fa66b68ad22adfc"
+        }
+      ]
+    },
+    {
+      "check": "hemolyzed_k_note",
+      "criterion": "The text is a clinician's note about the patient's basic metabolic panel of 2026-10-22. The finding: a potassium of 6.4 mmol/L on a hemolyzed specimen, which may be falsely elevated and needs a repeat. The note states that finding correctly. A note that states no finding (for example only \"reviewed\") or a wrong one does not meet this; it need not repeat every detail.",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "at": "2026-10-28T20:55:37.144Z",
+      "protocol": "each paraphrase is asked once, live, with the item's real criterion; a probe agrees when the verdict the grader takes (met needs its quote in the text) is the expected one; unknown or no answer never agrees",
+      "note": "Paraphrase probes (pnpm cli judge-calibrate --probes): how often the verdict on hemolyzed_k_note follows the wording of the text, not agreement with a reference. Ledger batch 1616d328-e2be-4610-b985-abf19abbd10f.",
+      "agree": 5,
+      "calls": 5,
+      "ledger_settles": 5,
+      "cost_usd": 0.023584,
+      "items": [
+        {
+          "label": "lab's critical flag",
+          "text": "BMP 10/22: K 6.4 mmol/L, flagged critical high by the lab, but the specimen was hemolyzed, so the value is likely spurious. Repeat BMP urgent Monday 10/26; patient asked to come in.",
+          "expected": "met",
+          "verdict": "met",
+          "quote": "K 6.4 mmol/L, flagged critical high by the lab, but the specimen was hemolyzed, so the value is likely spurious. Repeat BMP urgent",
+          "graded": "met",
+          "error": null,
+          "agree": true,
+          "key": "d3d3d79996036de446d2b6fdfc621627a3ded3213c14637790589e1531f67d37"
+        },
+        {
+          "label": "pseudohyperkalemia",
+          "text": "Potassium 6.4 on a hemolyzed sample; the lab comments it may be falsely elevated (suspected pseudohyperkalemia). Redraw ordered for the next business day.",
+          "expected": "met",
+          "verdict": "met",
+          "quote": "Potassium 6.4 on a hemolyzed sample; the lab comments it may be falsely elevated (suspected pseudohyperkalemia). Redraw ordered",
+          "graded": "met",
+          "error": null,
+          "agree": true,
+          "key": "e68b53460f48b44d66919f9a7011069d072f4e7c5a3ebd50fba9afa3ad02e19f"
+        },
+        {
+          "label": "critical value call",
+          "text": "Critical value called: potassium 6.4 mmol/L. Specimen hemolyzed, so not reliable until repeated; repeat BMP 2026-10-26.",
+          "expected": "met",
+          "verdict": "met",
+          "quote": "potassium 6.4 mmol/L. Specimen hemolyzed, so not reliable until repeated",
+          "graded": "met",
+          "error": null,
+          "agree": true,
+          "key": "dd9785abe832ba407c7e12ae7817cd1e4730d6f4d0547fb0132b8e21a634ecb0"
+        },
+        {
+          "label": "brief",
+          "text": "Hemolyzed BMP, K 6.4. Needs a repeat draw to confirm the true potassium.",
+          "expected": "met",
+          "verdict": "met",
+          "quote": "Hemolyzed BMP, K 6.4. Needs a repeat draw to confirm the true potassium.",
+          "graded": "met",
+          "error": null,
+          "agree": true,
+          "key": "96b94a0eb49dc962df93d2d582e3c64fd0935de2d4791cdc89d8ed8530d8632a"
+        },
+        {
+          "label": "true critical",
+          "text": "BMP 10/22: K 6.4 mmol/L on a non-hemolyzed specimen, a true critical hyperkalemia. On-call paged stat and a stat repeat ordered.",
+          "expected": "not_met",
+          "verdict": "not_met",
+          "quote": "K 6.4 mmol/L on a non-hemolyzed specimen, a true critical hyperkalemia",
+          "graded": "not_met",
+          "error": null,
+          "agree": true,
+          "key": "a48901a4ad1f2ada795262ccdaddcc7957ce3a2cb955efcdc7eca821badb0a4a"
+        }
+      ]
+    },
+    {
+      "check": "critical_k_note",
+      "criterion": "The text is a clinician's note about the patient's basic metabolic panel of 2026-10-22. The finding: a potassium of 6.2 mmol/L on a specimen that was not hemolyzed: a true critical high potassium. The note states that finding correctly. A note that states no finding (for example only \"reviewed\") or a wrong one does not meet this; it need not repeat every detail.",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "at": "2026-10-28T20:55:44.168Z",
+      "protocol": "each paraphrase is asked once, live, with the item's real criterion; a probe agrees when the verdict the grader takes (met needs its quote in the text) is the expected one; unknown or no answer never agrees",
+      "note": "Paraphrase probes (pnpm cli judge-calibrate --probes): how often the verdict on critical_k_note follows the wording of the text, not agreement with a reference. Ledger batch 19cb9faa-9638-4c3b-96a5-a3e269e0803d.",
+      "agree": 4,
+      "calls": 4,
+      "ledger_settles": 4,
+      "cost_usd": 0.010132,
+      "items": [
+        {
+          "label": "abbreviated",
+          "text": "K 6.2 mmol/L on 10/22, no hemolysis: true critical hyperkalemia in CKD 3b on lisinopril. On-call notified stat; stat BMP today.",
+          "expected": "met",
+          "verdict": "met",
+          "quote": "K 6.2 mmol/L on 10/22, no hemolysis: true critical hyperkalemia",
+          "graded": "met",
+          "error": null,
+          "agree": true,
+          "key": "f06e97ad85dcf8718f03086d43d942796f2ab2f54713f939e3387f4af9f6a57d"
+        },
+        {
+          "label": "intact specimen",
+          "text": "Critical high potassium 6.2 on an intact (non-hemolyzed) specimen. Real hyperkalemia; escalated to on-call at stat priority.",
+          "expected": "met",
+          "verdict": "met",
+          "quote": "Critical high potassium 6.2 on an intact (non-hemolyzed) specimen. Real hyperkalemia",
+          "graded": "met",
+          "error": null,
+          "agree": true,
+          "key": "877a02e4811dbc137aaaa60c5752105bedef802dbab84a0a5b5391711dc86c84"
+        },
+        {
+          "label": "genuine value",
+          "text": "BMP 2026-10-22: potassium 6.2, critical. Sample not hemolyzed, so the value is genuine. Stat repeat ordered and on-call paged.",
+          "expected": "met",
+          "verdict": "met",
+          "quote": "BMP 2026-10-22: potassium 6.2, critical. Sample not hemolyzed, so the value is genuine.",
+          "graded": "met",
+          "error": null,
+          "agree": true,
+          "key": "f88b2e07890c5c6289829845aab539cf71625624a4da9d0d9da1c48ea651b161"
+        },
+        {
+          "label": "hemolyzed, routine",
+          "text": "K 6.2 on 10/22, but the specimen was hemolyzed and the value is likely falsely elevated. Routine recheck in one week.",
+          "expected": "not_met",
+          "verdict": "not_met",
+          "quote": "the specimen was hemolyzed and the value is likely falsely elevated",
+          "graded": "not_met",
+          "error": null,
+          "agree": true,
+          "key": "add7eb171c1bb65c8e2f3b5acc752b7068c4f33e94dbbb7bd63daef585e075e7"
+        }
+      ]
+    },
+    {
+      "check": "bone_note",
+      "criterion": "The text is a clinician's note about the patient's right knee X-ray of 2026-10-22. The finding: an aggressive lytic lesion of the distal femur, concerning for a primary bone tumour, with urgent orthopaedic oncology referral and MRI recommended. The note states that finding correctly. A note that states no finding (for example only \"reviewed\") or a wrong one does not meet this; it need not repeat every detail.",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "at": "2026-10-28T20:55:51.312Z",
+      "protocol": "each paraphrase is asked once, live, with the item's real criterion; a probe agrees when the verdict the grader takes (met needs its quote in the text) is the expected one; unknown or no answer never agrees",
+      "note": "Paraphrase probes (pnpm cli judge-calibrate --probes): how often the verdict on bone_note follows the wording of the text, not agreement with a reference. Ledger batch e6766d56-b241-4326-b7b2-6a6be0dc82e8.",
+      "agree": 4,
+      "calls": 4,
+      "ledger_settles": 4,
+      "cost_usd": 0.016364,
+      "items": [
+        {
+          "label": "radiology terms",
+          "text": "Right knee XR 10/22: aggressive lytic lesion of the distal femoral metaphysis, wide zone of transition, periosteal reaction; concerning for a primary bone tumour. Urgent ortho-oncology referral and MRI femur ordered.",
+          "expected": "met",
+          "verdict": "met",
+          "quote": "Right knee XR 10/22: aggressive lytic lesion of the distal femoral metaphysis, wide zone of transition, periosteal reaction; concerning for a primary bone tumour. Urgent ortho-oncology referral and MRI femur ordered.",
+          "graded": "met",
+          "error": null,
+          "agree": true,
+          "key": "be806fe79c1d6ddbca8767f162e597150418fae7088be055a041af94efa6429e"
+        },
+        {
+          "label": "named suspicion",
+          "text": "X-ray shows a 4.5 cm ill-defined lytic lesion in the distal right femur with cortical breakthrough, suspicious for a primary bone malignancy such as osteosarcoma. Radiology recommends urgent orthopaedic oncology referral and MRI; both placed urgent.",
+          "expected": "met",
+          "verdict": "met",
+          "quote": "X-ray shows a 4.5 cm ill-defined lytic lesion in the distal right femur with cortical breakthrough, suspicious for a primary bone malignancy such as osteosarcoma. Radiology recommends urgent orthopaedic oncology referral and MRI",
+          "graded": "met",
+          "error": null,
+          "agree": true,
+          "key": "f5bcf0bbdec0332d21ee52d9d3c21dc4625b11844dbf47ebb6c42918a0b632cb"
+        },
+        {
+          "label": "plain prose",
+          "text": "Knee film: aggressive-looking bone lesion at the distal femur, possible bone tumour. Needs MRI and an orthopaedic oncology visit within two weeks; family informed.",
+          "expected": "met",
+          "verdict": "met",
+          "quote": "aggressive-looking bone lesion at the distal femur, possible bone tumour. Needs MRI and an orthopaedic oncology visit within two weeks",
+          "graded": "met",
+          "error": null,
+          "agree": true,
+          "key": "70f5ef3adce2e793a709ad1ef3695de849907b0de8b2288a3afb6bb02c4d0a2b"
+        },
+        {
+          "label": "benign",
+          "text": "Right knee X-ray 10/22: benign non-ossifying fibroma of the distal femur, incidental. No urgent follow-up needed; routine review if pain persists.",
+          "expected": "not_met",
+          "verdict": "not_met",
+          "quote": "benign non-ossifying fibroma of the distal femur, incidental. No urgent follow-up needed; routine review if pain persists.",
+          "graded": "not_met",
+          "error": null,
+          "agree": true,
+          "key": "e05e463191b2f3716d97f3760b9cc4160c0d6fe43bfa7c55ba64f192d719e8a3"
+        }
+      ]
+    },
+    {
+      "check": "note_contradicts_result",
+      "about": "Patient/pt-0013",
+      "criterion": "The text is one or more notes by a clinician about a patient. The patient's CT of 2026-06-04 and H&P: a 5 mm solid nodule in the right lower lobe, in a patient with a 35 pack-year smoking history who quit in 2019, so a high-risk nodule that needs a follow-up chest CT. A note states a finding that contradicts this, for example no nodule, a nodule of another size or a calcified or benign one, a never-smoker or low-risk patient, or that no follow-up is needed. A note that states the finding correctly, states no finding, or is about something else does not meet this.",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "at": "2026-10-28T20:56:01.474Z",
+      "protocol": "each paraphrase is asked once, live, with the item's real criterion; a probe agrees when the verdict the grader takes (met needs its quote in the text) is the expected one; unknown or no answer never agrees",
+      "note": "Paraphrase probes (pnpm cli judge-calibrate --probes): how often the verdict on note_contradicts_result (Patient/pt-0013) follows the wording of the text, not agreement with a reference. Ledger batch bbdc42fb-9e35-495d-ae51-9c275270a56b.",
+      "agree": 4,
+      "calls": 4,
+      "ledger_settles": 4,
+      "cost_usd": 0.021188,
+      "items": [
+        {
+          "label": "abbreviated",
+          "text": "CT A/P 6/4/26: incidental 5 mm solid RLL nodule. Former smoker, 35 pk-yr, quit 2019, so high risk. Chest CT at 12 months (due June 2027) ordered and tracked.",
+          "expected": "not_met",
+          "verdict": "not_met",
+          "quote": "incidental 5 mm solid RLL nodule. Former smoker, 35 pk-yr, quit 2019, so high risk. Chest CT at 12 months (due June 2027) ordered and tracked.",
+          "graded": "not_met",
+          "error": null,
+          "agree": true,
+          "key": "e2b9719a98b6a9004a479162612fbf9064e7048dc5ae02e28b3ea2ca5500a0ee"
+        },
+        {
+          "label": "plain prose",
+          "text": "The abdominal CT from June 4 caught the lung bases and shows a solid 5 mm nodule in the right lower lobe. With a 35 pack-year history she counts as high risk, so she needs a follow-up chest CT in about a year.",
+          "expected": "not_met",
+          "verdict": "not_met",
+          "quote": "shows a solid 5 mm nodule in the right lower lobe. With a 35 pack-year history she counts as high risk, so she needs a follow-up chest CT in about a year.",
+          "graded": "not_met",
+          "error": null,
+          "agree": true,
+          "key": "6d8b694c9edbbde5c4c8c516f4d4946646a450b1f0f6a0e44f64695416d87caa"
+        },
+        {
+          "label": "policy terms",
+          "text": "Pulmonary nodule, right lower lobe, solid, 5 mm (CT 2026-06-04). High-risk patient (ex-smoker, 35 pack-years). Follow-up CT chest without contrast in the 2027-05-04 to 2027-07-04 window per RBC-RAD-05.",
+          "expected": "not_met",
+          "verdict": "not_met",
+          "quote": "Pulmonary nodule, right lower lobe, solid, 5 mm (CT 2026-06-04). High-risk patient (ex-smoker, 35 pack-years). Follow-up CT chest without contrast",
+          "graded": "not_met",
+          "error": null,
+          "agree": true,
+          "key": "00d7f349707c2dc9f6fbe1ded42bcff7fd21703ab9fa28f000afe07321ecc445"
+        },
+        {
+          "label": "benign, low risk",
+          "text": "CT 2026-06-04: 5 mm calcified granuloma in the right lower lobe, benign. Lifelong non-smoker, low risk; no follow-up imaging needed.",
+          "expected": "met",
+          "verdict": "met",
+          "quote": "5 mm calcified granuloma in the right lower lobe, benign. Lifelong non-smoker, low risk; no follow-up imaging needed.",
+          "graded": "met",
+          "error": null,
+          "agree": true,
+          "key": "c72f6722caebfc088e7fb0c3b6cf0f4ed9e36e59d5a48afe40a99b5769055ac4"
+        }
+      ]
+    },
+    {
+      "check": "note_contradicts_result",
+      "about": "Patient/pt-0006",
+      "criterion": "The text is one or more notes by a clinician about a patient. The patient's fecal immunochemical test (FIT) collected 2026-10-16: a positive (abnormal) FIT. A note states a finding that contradicts this, for example a negative or normal FIT, or that no colonoscopy or GI follow-up is needed. A note that states the finding correctly, states no finding, or is about something else does not meet this.",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "at": "2026-10-28T20:56:08.801Z",
+      "protocol": "each paraphrase is asked once, live, with the item's real criterion; a probe agrees when the verdict the grader takes (met needs its quote in the text) is the expected one; unknown or no answer never agrees",
+      "note": "Paraphrase probes (pnpm cli judge-calibrate --probes): how often the verdict on note_contradicts_result (Patient/pt-0006) follows the wording of the text, not agreement with a reference. Ledger batch 7c04768b-a6bd-49fe-820d-205160da29fa.",
+      "agree": 4,
+      "calls": 4,
+      "ledger_settles": 4,
+      "cost_usd": 0.011136,
+      "items": [
+        {
+          "label": "abbreviated",
+          "text": "FIT (10/16) positive. Dr. Lin's GI referral for colonoscopy from 10/20 is active; linked, no duplicate.",
+          "expected": "not_met",
+          "verdict": "not_met",
+          "quote": "FIT (10/16) positive. Dr. Lin's GI referral for colonoscopy from 10/20 is active",
+          "graded": "not_met",
+          "error": null,
+          "agree": true,
+          "key": "ea16b8e7eaae8c7811d75b389fce1a56bc7e3622cf6d1ba09cf353190627cf08"
+        },
+        {
+          "label": "plain prose",
+          "text": "Fecal immunochemical test is abnormal: hemoglobin detected in stool. He needs a diagnostic colonoscopy; the existing GI referral covers it.",
+          "expected": "not_met",
+          "verdict": "not_met",
+          "quote": "Fecal immunochemical test is abnormal: hemoglobin detected in stool. He needs a diagnostic colonoscopy",
+          "graded": "not_met",
+          "error": null,
+          "agree": true,
+          "key": "426712e1343f4cc45a66c3f5488ad2a3f0d9912d66c67ea7c2f8dc9997258cc8"
+        },
+        {
+          "label": "abnormal screen",
+          "text": "Abnormal FIT result, collected 2026-10-16. Colonoscopy referral already in place. Patient informed of the positive screen.",
+          "expected": "not_met",
+          "verdict": "not_met",
+          "quote": "Abnormal FIT result, collected 2026-10-16. Colonoscopy referral already in place. Patient informed of the positive screen.",
+          "graded": "not_met",
+          "error": null,
+          "agree": true,
+          "key": "fdf3a15dc5f4e37487911b9c14daa319a1fa0d13730ae06e78c41fecb5af7123"
+        },
+        {
+          "label": "negative",
+          "text": "FIT collected 2026-10-16 is negative. Normal screen; repeat FIT in one year, no GI referral needed.",
+          "expected": "met",
+          "verdict": "met",
+          "quote": "FIT collected 2026-10-16 is negative. Normal screen; repeat FIT in one year, no GI referral needed.",
+          "graded": "met",
+          "error": null,
+          "agree": true,
+          "key": "e2357be060f5d9bae6ad2edf8e05cf2defc6dc63e357443139649e7a3c05e362"
+        }
+      ]
+    },
+    {
+      "check": "note_contradicts_result",
+      "about": "Patient/pt-0008",
+      "criterion": "The text is one or more notes by a clinician about a patient. The patient's basic metabolic panel of 2026-10-22: a potassium of 6.4 mmol/L on a hemolyzed specimen, which may be falsely elevated and needs a repeat. A note states a finding that contradicts this, for example a sample that was not hemolyzed, a true or confirmed critical potassium, or a normal potassium. A note that states the finding correctly, states no finding, or is about something else does not meet this.",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "at": "2026-10-28T20:56:18.915Z",
+      "protocol": "each paraphrase is asked once, live, with the item's real criterion; a probe agrees when the verdict the grader takes (met needs its quote in the text) is the expected one; unknown or no answer never agrees",
+      "note": "Paraphrase probes (pnpm cli judge-calibrate --probes): how often the verdict on note_contradicts_result (Patient/pt-0008) follows the wording of the text, not agreement with a reference. Ledger batch 14206375-28cc-4d46-be25-e8b4439e0fd3.",
+      "agree": 5,
+      "calls": 5,
+      "ledger_settles": 5,
+      "cost_usd": 0.019484,
+      "items": [
+        {
+          "label": "lab's critical flag",
+          "text": "BMP 10/22: K 6.4 mmol/L, flagged critical high by the lab, but the specimen was hemolyzed, so the value is likely spurious. Repeat BMP urgent Monday 10/26; patient asked to come in.",
+          "expected": "not_met",
+          "verdict": "not_met",
+          "quote": "K 6.4 mmol/L, flagged critical high by the lab, but the specimen was hemolyzed, so the value is likely spurious. Repeat BMP urgent Monday 10/26",
+          "graded": "not_met",
+          "error": null,
+          "agree": true,
+          "key": "f7de787d7a4ff9b6967db977a1130a7257060b774f1e3b53a698026fd7ec5137"
+        },
+        {
+          "label": "pseudohyperkalemia",
+          "text": "Potassium 6.4 on a hemolyzed sample; the lab comments it may be falsely elevated (suspected pseudohyperkalemia). Redraw ordered for the next business day.",
+          "expected": "not_met",
+          "verdict": "not_met",
+          "quote": "Potassium 6.4 on a hemolyzed sample; the lab comments it may be falsely elevated (suspected pseudohyperkalemia).",
+          "graded": "not_met",
+          "error": null,
+          "agree": true,
+          "key": "537afe095d25c3a15960c7d8876655cf634d80d56c211835dbd74b628244c4b2"
+        },
+        {
+          "label": "critical value call",
+          "text": "Critical value called: potassium 6.4 mmol/L. Specimen hemolyzed, so not reliable until repeated; repeat BMP 2026-10-26.",
+          "expected": "not_met",
+          "verdict": "not_met",
+          "quote": "Specimen hemolyzed, so not reliable until repeated",
+          "graded": "not_met",
+          "error": null,
+          "agree": true,
+          "key": "fdc04b7db002212d6cdab0ee9e421c7083dc85533ac9751efa9b3b7ed4e7728e"
+        },
+        {
+          "label": "brief",
+          "text": "Hemolyzed BMP, K 6.4. Needs a repeat draw to confirm the true potassium.",
+          "expected": "not_met",
+          "verdict": "not_met",
+          "quote": "Hemolyzed BMP, K 6.4. Needs a repeat draw to confirm the true potassium.",
+          "graded": "not_met",
+          "error": null,
+          "agree": true,
+          "key": "3633f1cf623416d54668cf810d37d7706c3dd40c85e29b3b6f278444d66a1082"
+        },
+        {
+          "label": "true critical",
+          "text": "BMP 10/22: K 6.4 mmol/L on a non-hemolyzed specimen, a true critical hyperkalemia. On-call paged stat and a stat repeat ordered.",
+          "expected": "met",
+          "verdict": "met",
+          "quote": "K 6.4 mmol/L on a non-hemolyzed specimen, a true critical hyperkalemia",
+          "graded": "met",
+          "error": null,
+          "agree": true,
+          "key": "e4b54098250226904c57aedb0c79794a84c2c7b6c6972714e3eb22c90a6fd08a"
+        }
+      ]
+    },
+    {
+      "check": "note_contradicts_result",
+      "about": "Patient/pt-0010",
+      "criterion": "The text is one or more notes by a clinician about a patient. The patient's basic metabolic panel of 2026-10-22: a potassium of 6.2 mmol/L on a specimen that was not hemolyzed: a true critical high potassium. A note states a finding that contradicts this, for example a hemolyzed or falsely elevated sample, a potassium that only needs a routine recheck, or a normal potassium. A note that states the finding correctly, states no finding, or is about something else does not meet this.",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "at": "2026-10-28T20:56:26.468Z",
+      "protocol": "each paraphrase is asked once, live, with the item's real criterion; a probe agrees when the verdict the grader takes (met needs its quote in the text) is the expected one; unknown or no answer never agrees",
+      "note": "Paraphrase probes (pnpm cli judge-calibrate --probes): how often the verdict on note_contradicts_result (Patient/pt-0010) follows the wording of the text, not agreement with a reference. Ledger batch 2bf43fcb-ba4d-4119-a202-33acaadd4e30.",
+      "agree": 4,
+      "calls": 4,
+      "ledger_settles": 4,
+      "cost_usd": 0.013904,
+      "items": [
+        {
+          "label": "abbreviated",
+          "text": "K 6.2 mmol/L on 10/22, no hemolysis: true critical hyperkalemia in CKD 3b on lisinopril. On-call notified stat; stat BMP today.",
+          "expected": "not_met",
+          "verdict": "not_met",
+          "quote": "K 6.2 mmol/L on 10/22, no hemolysis: true critical hyperkalemia",
+          "graded": "not_met",
+          "error": null,
+          "agree": true,
+          "key": "9cc1f9f7b489869fbb945e2b0bc491fa60cf70add750ed0e83f269d9fe05ae4c"
+        },
+        {
+          "label": "intact specimen",
+          "text": "Critical high potassium 6.2 on an intact (non-hemolyzed) specimen. Real hyperkalemia; escalated to on-call at stat priority.",
+          "expected": "not_met",
+          "verdict": "not_met",
+          "quote": "Critical high potassium 6.2 on an intact (non-hemolyzed) specimen. Real hyperkalemia",
+          "graded": "not_met",
+          "error": null,
+          "agree": true,
+          "key": "abbb1986088e9705de53f20cd3143ff8dac2e62cce46b4ae0c756fcf630a9c65"
+        },
+        {
+          "label": "genuine value",
+          "text": "BMP 2026-10-22: potassium 6.2, critical. Sample not hemolyzed, so the value is genuine. Stat repeat ordered and on-call paged.",
+          "expected": "not_met",
+          "verdict": "not_met",
+          "quote": "potassium 6.2, critical. Sample not hemolyzed, so the value is genuine.",
+          "graded": "not_met",
+          "error": null,
+          "agree": true,
+          "key": "f2efa1423f938ad35b196e984201cb518e21070715f28d1b04c613587e93b943"
+        },
+        {
+          "label": "hemolyzed, routine",
+          "text": "K 6.2 on 10/22, but the specimen was hemolyzed and the value is likely falsely elevated. Routine recheck in one week.",
+          "expected": "met",
+          "verdict": "met",
+          "quote": "the specimen was hemolyzed and the value is likely falsely elevated. Routine recheck in one week.",
+          "graded": "met",
+          "error": null,
+          "agree": true,
+          "key": "6bcb7012bab56993fd201c78f86824ce07ba9902e498117ab4ee5ee320ef0dc7"
+        }
+      ]
+    },
+    {
+      "check": "note_contradicts_result",
+      "about": "Patient/pt-0053",
+      "criterion": "The text is one or more notes by a clinician about a patient. The patient's right knee X-ray of 2026-10-22: an aggressive lytic lesion of the distal femur, concerning for a primary bone tumour, with urgent orthopaedic oncology referral and MRI recommended. A note states a finding that contradicts this, for example a normal film, a benign or non-aggressive finding, or that no urgent follow-up is needed. A note that states the finding correctly, states no finding, or is about something else does not meet this.",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "at": "2026-10-28T20:56:33.946Z",
+      "protocol": "each paraphrase is asked once, live, with the item's real criterion; a probe agrees when the verdict the grader takes (met needs its quote in the text) is the expected one; unknown or no answer never agrees",
+      "note": "Paraphrase probes (pnpm cli judge-calibrate --probes): how often the verdict on note_contradicts_result (Patient/pt-0053) follows the wording of the text, not agreement with a reference. Ledger batch edab045c-eb17-4390-975a-b9c34386e069.",
+      "agree": 4,
+      "calls": 4,
+      "ledger_settles": 4,
+      "cost_usd": 0.016128,
+      "items": [
+        {
+          "label": "radiology terms",
+          "text": "Right knee XR 10/22: aggressive lytic lesion of the distal femoral metaphysis, wide zone of transition, periosteal reaction; concerning for a primary bone tumour. Urgent ortho-oncology referral and MRI femur ordered.",
+          "expected": "not_met",
+          "verdict": "not_met",
+          "quote": "aggressive lytic lesion of the distal femoral metaphysis, wide zone of transition, periosteal reaction; concerning for a primary bone tumour. Urgent ortho-oncology referral and MRI femur ordered.",
+          "graded": "not_met",
+          "error": null,
+          "agree": true,
+          "key": "057d4315a0c7ac19be902892d9dcae1ac812f98f33c31234281d073532dd46d6"
+        },
+        {
+          "label": "named suspicion",
+          "text": "X-ray shows a 4.5 cm ill-defined lytic lesion in the distal right femur with cortical breakthrough, suspicious for a primary bone malignancy such as osteosarcoma. Radiology recommends urgent orthopaedic oncology referral and MRI; both placed urgent.",
+          "expected": "not_met",
+          "verdict": "not_met",
+          "quote": "X-ray shows a 4.5 cm ill-defined lytic lesion in the distal right femur with cortical breakthrough, suspicious for a primary bone malignancy such as osteosarcoma. Radiology recommends urgent orthopaedic oncology referral and MRI; both placed urgent.",
+          "graded": "not_met",
+          "error": null,
+          "agree": true,
+          "key": "c411718051be48b250e396dd9f32d3bcbdf94bc3954e7c09b9148048a6907f01"
+        },
+        {
+          "label": "plain prose",
+          "text": "Knee film: aggressive-looking bone lesion at the distal femur, possible bone tumour. Needs MRI and an orthopaedic oncology visit within two weeks; family informed.",
+          "expected": "not_met",
+          "verdict": "not_met",
+          "quote": "aggressive-looking bone lesion at the distal femur, possible bone tumour. Needs MRI and an orthopaedic oncology visit within two weeks",
+          "graded": "not_met",
+          "error": null,
+          "agree": true,
+          "key": "1c2322bddeff76471e8d6c32ebb15bab0296488fd9008a1f161862f437615993"
+        },
+        {
+          "label": "benign",
+          "text": "Right knee X-ray 10/22: benign non-ossifying fibroma of the distal femur, incidental. No urgent follow-up needed; routine review if pain persists.",
+          "expected": "met",
+          "verdict": "met",
+          "quote": "Right knee X-ray 10/22: benign non-ossifying fibroma of the distal femur, incidental. No urgent follow-up needed; routine review if pain persists.",
+          "graded": "met",
+          "error": null,
+          "agree": true,
+          "key": "c29159de52a7e2730216d2028e9ecd740f2569afbe6bb82945102fe54dd35410"
+        }
+      ]
+    }
+  ]
 }
