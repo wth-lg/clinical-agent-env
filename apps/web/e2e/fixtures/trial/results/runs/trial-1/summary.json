@@ -1,18 +1,18 @@
 {
-  "schema_version": 8,
+  "schema_version": 7,
   "run_id": "trial-1",
   "model": "claude-opus-5-5",
   "effort": "high",
   "tasks": {
     "contrast-ct-prep": {
       "task_versions": [
-        "c03b5178f561c7ad4616cf8cd6aa7312ac0025d6ecb1c486895161aa035357c5"
+        "f8957064b0830f90957f2ee2c5ea2e54e1a994eb19ee4a120f5277abfaa84556"
       ],
       "env_versions": [
         "492337b74874ac4946e3b6d7dde634742792583284396f14ea47172c4a0fce18"
       ],
       "grader_task_versions": [
-        "5eb09acf7393a1bb38f050502ded8857dc446ac2ca349d8090e6a4c9876104ab"
+        "8f82a9ef6aae6c8f99818a11dcf1b2364a7618b97e9421d6b023a2b0a629b6d1"
       ],
       "records": 1,
       "trials": 1,
@@ -77,11 +77,10 @@
         "failures": 1,
         "taxonomy": {
           "retrieval": 0,
-          "reasoning": 0,
+          "reasoning": 1,
           "output_gap": 0,
           "over_action": 0,
           "process": 0,
-          "action_form": 1,
           "did_not_finish": 0,
           "refusal": 0,
           "unattributed": 0
@@ -103,13 +102,13 @@
     },
     "crc-care-gap": {
       "task_versions": [
-        "ab700d0855e2a6ad308cb8de7b2ecd095d5498f48852a21f99388f9a2ce1121a"
+        "705110ec2ed114a373ede1a445601f0f6cff4e2e7d116f245de183064a9e4ead"
       ],
       "env_versions": [
         "3d7216da2510f1708b0fb589859ce3c332cb7f5b42c0b55842793ce60955a9db"
       ],
       "grader_task_versions": [
-        "743d2b20f16d03a15af8fb3314d5b388c00efb50e3e7cd45a29f9c86739b4e48"
+        "100339828ba28695eea3f9b5cdc61ff7d0e605eb0c676b27161785f842a7e1df"
       ],
       "records": 1,
       "trials": 1,
@@ -178,7 +177,6 @@
           "output_gap": 0,
           "over_action": 0,
           "process": 0,
-          "action_form": 0,
           "did_not_finish": 1,
           "refusal": 0,
           "unattributed": 0
@@ -200,13 +198,13 @@
     },
     "discharge-medrec": {
       "task_versions": [
-        "81a100ecfb359a4f032f01c89bc1a6eb43a6123928d71ce194d72dd5928ced5f"
+        "a510171e894e590968655d22c6e88286a42124b15eb1f42d2e59c5087c0ced5d"
       ],
       "env_versions": [
-        "6f1110b24a8516555824e011080ad3408062876e165ae1bb6b211f80488440a7"
+        "0715c193e56f42a9f830062cfcffaaf4aa00d72df0fb8d8145bacbb8d677e0ba"
       ],
       "grader_task_versions": [
-        "4622f99c0575fd9c7215c5b423f0f4fffe21d5d5b1d9b64092860109f763ab6b"
+        "858a8b8ee80646464926f581fcefb6e84e8e1d3770415569ca9b6ef53e0e481c"
       ],
       "records": 1,
       "trials": 0,
@@ -266,7 +264,6 @@
           "output_gap": 0,
           "over_action": 0,
           "process": 0,
-          "action_form": 0,
           "did_not_finish": 0,
           "refusal": 0,
           "unattributed": 0
@@ -283,13 +280,13 @@
     },
     "message-queue": {
       "task_versions": [
-        "dde668e83c75a3a8c3a20934ec0f1560b3845ce20cba565a54377cab7c3a0737"
+        "2e0c7b0e49fab137d870782aaf7d2301f5defc0b97cf5b25d080471d07c7431b"
       ],
       "env_versions": [
         "a902115d6b22a8ad4e4438108607f02b85be67a40fe538c32ff0a96b47d7dc89"
       ],
       "grader_task_versions": [
-        "8707e5bb0299c613c142e084a0daf7ad2a4428193c94fed761151f23498e0c60"
+        "1741d320f3efcb864f67d900e71a4d99a84f13d2c756f50e482b9f0ce456649f"
       ],
       "records": 1,
       "trials": 1,
@@ -358,7 +355,6 @@
           "output_gap": 0,
           "over_action": 0,
           "process": 0,
-          "action_form": 0,
           "did_not_finish": 0,
           "refusal": 0,
           "unattributed": 0
@@ -380,13 +376,13 @@
     },
     "renal-dose-review": {
       "task_versions": [
-        "e3298f2e336350296251b330787948dc47ebb763e659d650f5d59a1bbd374f59"
+        "b5182405f1e91679bbf68dddc9a76c1ab49dab521337ae00c9b2f1edf81ff2ba"
       ],
       "env_versions": [
         "f74818df8ab2b6109bdad7b1219898a6c755f28cd3d4e505c848e8a779de79e8"
       ],
       "grader_task_versions": [
-        "855fdd80d22529258f8ef6f6248ebb8c0d4874fdfbddf30b2a14606056da7c3b"
+        "a8e12873b57582d1fa5b2e1b925c7c75b29ee2e9b1bb35cc7e12ee1c1a79e838"
       ],
       "records": 5,
       "trials": 4,
@@ -461,7 +457,6 @@
           "output_gap": 0,
           "over_action": 0,
           "process": 0,
-          "action_form": 0,
           "did_not_finish": 0,
           "refusal": 1,
           "unattributed": 0

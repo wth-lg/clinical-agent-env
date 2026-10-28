@@ -45,12 +45,12 @@ describe('results-inbox notifications', () => {
     expect(text).toMatch(/alternative probe_critical_page_unlinked: FAIL .*failed: hemolyzed_k_no_oncall, critical_k_oncall, patient_contact\)/);
   });
 
-  it('does not count a staff task to contact ortho as contacting the patient (-1 and -5 of 15)', async () => {
+  it('does not count a staff task to contact ortho as contacting the patient (-1 and -5 of 16)', async () => {
     const text = await run([
       { id: 'probe_contact_ortho', why: 'probe', script: staffTask('Contact ortho to confirm the urgent orthopaedic oncology referral is booked by 2026-11-05.') },
       { id: 'probe_call_the_mother', why: 'probe', script: staffTask('Call the mother today: Dr. Okafor needs to discuss the knee X-ray and the referral.') },
     ]);
-    expect(text).toMatch(/alternative probe_contact_ortho: PASS score 0\.600/);
+    expect(text).toMatch(/alternative probe_contact_ortho: PASS score 0\.625/);
     expect(text).toMatch(/alternative probe_call_the_mother: PASS score 1\.000/);
   });
 
@@ -81,16 +81,16 @@ describe('results-inbox notifications', () => {
     for (const id of Object.keys(asks)) expect(text).toMatch(new RegExp(`alternative ${id}: PASS score 1\\.000`));
   });
 
-  it('does not count "her on call resident" written with a space or an en dash (-1 and -5 of 15)', async () => {
+  it('does not count "her on call resident" written with a space or an en dash (-1 and -5 of 16)', async () => {
     const others = {
       probe_her_on_call_space: 'Contact her on call resident about the knee X-ray and the MRI.',
       probe_her_on_call_en_dash: 'Contact her on\u2013call resident about the knee X-ray and the MRI.',
     };
     const text = await run(Object.entries(others).map(([id, description]) => ({ id, why: 'probe', script: staffTask(description) })));
-    for (const id of Object.keys(others)) expect(text).toMatch(new RegExp(`alternative ${id}: PASS score 0\\.600`));
+    for (const id of Object.keys(others)) expect(text).toMatch(new RegExp(`alternative ${id}: PASS score 0\\.625`));
   });
 
-  it('does not count a pronoun, a possessive or PT that is not the patient or family (-1 and -5 of 15)', async () => {
+  it('does not count a pronoun, a possessive or PT that is not the patient or family (-1 and -5 of 16)', async () => {
     const others = {
       probe_tell_them: 'Contact ortho and tell them the MRI femur is urgent; book it by 2026-11-05.',
       probe_her_oncologist: 'Please contact her oncologist about the knee X-ray and the MRI.',
@@ -101,7 +101,7 @@ describe('results-inbox notifications', () => {
       probe_contact_physical_therapy: 'Contact PT about the knee lesion before any exercise program.',
     };
     const text = await run(Object.entries(others).map(([id, description]) => ({ id, why: 'probe', script: staffTask(description) })));
-    for (const id of Object.keys(others)) expect(text).toMatch(new RegExp(`alternative ${id}: PASS score 0\\.600`));
+    for (const id of Object.keys(others)) expect(text).toMatch(new RegExp(`alternative ${id}: PASS score 0\\.625`));
   });
 });
 

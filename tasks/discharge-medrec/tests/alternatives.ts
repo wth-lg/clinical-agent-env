@@ -4,14 +4,55 @@
 // is about, one answer for everything, seeing the addendum only as a search snippet, a potassium
 // and creatinine recheck after starting spironolactone).
 import type { Alternative } from '../../../packages/grader/matrix/types.ts';
-import { allMeds, change, findPatient, finish, furosemideUp, kclStop, lisinoprilResume, message, MESSAGE, modify, MR, note, order, policy, PT, reads, RX, scr, spironolactone, summaries, summary, writes } from '../solution/steps.ts';
+import { allMeds, bmpRecheck, change, findPatient, finish, furosemideUp, kclStop, lisinoprilResume, message, MESSAGE, modify, MR, note, order, policy, PT, reads, RX, scr, spironolactone, summaries, summary, writes } from '../solution/steps.ts';
 
 // A Task to Dr. Okafor whose focus is the tartrate order.
 const okaforTask = (description: string) => ({ name: 'create_task', input: { patient: PT, owner: 'Practitioner/pr-okafor', due: '2026-10-26', priority: 'routine', description, focus: `MedicationRequest/${MR.tart}` } });
 // A message to the patient about the tartrate order.
 const toPatient = (body: string, subject = 'Your medicines') => ({ name: 'send_message', input: { recipient: `Patient/${PT}`, priority: 'routine', subject, body, about: [`MedicationRequest/${MR.tart}`] } });
 
+// The oracle's writes without its BMP recheck, a lab order and a Task for Dr. Okafor (P17j JG9 r2).
+const noRecheck = writes.filter((c) => c !== bmpRecheck);
+const lab = (code: string, start: string, end: string) => ({ name: 'order_service', input: { patient: PT, code, priority: 'routine', occurrence_start: start, occurrence_end: end, reason: 'Recheck after starting spironolactone with lisinopril resumed' } });
+const recheckTask = (due: string, description: string) => ({ name: 'create_task', input: { patient: PT, owner: 'Practitioner/pr-okafor', due, priority: 'routine', description } });
+
 export const alternatives: Alternative[] = [
+  {
+    id: 'kcl_task_not_recheck',
+    why: 'Orders no recheck and tasks Dr. Okafor to confirm the patient stopped the potassium chloride, due 10/27: the task names potassium but is not a lab recheck, so k_creatinine_recheck is lost (P17j JG9 r2, verifier-phase-P17i-JG9-1 F3).',
+    loses: ['k_creatinine_recheck'],
+    script: [...reads, { calls: [...noRecheck, recheckTask('2026-10-27', 'Call the patient to confirm he stopped the potassium chloride')] }, { calls: [message()] }, { calls: [note()] }, { calls: [finish()] }],
+  },
+  {
+    id: 'creatinine_only_recheck',
+    why: 'Orders a creatinine alone for 10/27 instead of a BMP: it does not measure potassium, the risk of spironolactone with lisinopril, so k_creatinine_recheck is lost (P17j JG9 r2, decisions 2026-10-28T05:30Z).',
+    loses: ['k_creatinine_recheck'],
+    script: [...reads, { calls: [...noRecheck, lab('2160-0', '2026-10-27', '2026-10-27')] }, { calls: [message()] }, { calls: [note()] }, { calls: [finish()] }],
+  },
+  {
+    id: 'bmp_window_from_today',
+    why: 'Orders the BMP with a window from today to a year out: it may be drawn before spironolactone has had a week, so it is not the 10/26 to 10/28 recheck and k_creatinine_recheck is lost (P17j JG9 r2, verifier-phase-P17i-JG9-1 F4).',
+    loses: ['k_creatinine_recheck'],
+    script: [...reads, { calls: [...noRecheck, lab('24321-2', '2026-10-23', '2027-10-23')] }, { calls: [message()] }, { calls: [note()] }, { calls: [finish()] }],
+  },
+  {
+    id: 'bp_recheck_task',
+    why: 'Orders no recheck and tasks Dr. Okafor to recheck his blood pressure and weight at the nurse visit, due 10/27: not a potassium order, so k_creatinine_recheck is lost (P17j JG9 r3, verifier-phase-P17i-JG9r2-1 N3, probe T4_N).',
+    loses: ['k_creatinine_recheck'],
+    script: [...reads, { calls: [...noRecheck, recheckTask('2026-10-27', 'Recheck his blood pressure and weight at the nurse visit')] }, { calls: [message()] }, { calls: [note()] }, { calls: [finish()] }],
+  },
+  {
+    id: 'review_labs_task',
+    why: 'Orders no recheck and tasks Dr. Okafor to review the discharge labs with the patient, due 10/27: not a potassium order, so k_creatinine_recheck is lost (P17j JG9 r3, verifier-phase-P17i-JG9r2-1 N3, probe T4_O).',
+    loses: ['k_creatinine_recheck'],
+    script: [...reads, { calls: [...noRecheck, recheckTask('2026-10-27', 'Review the discharge labs with the patient')] }, { calls: [message()] }, { calls: [note()] }, { calls: [finish()] }],
+  },
+  {
+    id: 'bmp_task_mentions_kcl',
+    why: 'Orders no recheck and tasks Dr. Okafor to draw a BMP for potassium and creatinine, due 10/27, noting he stopped the KCl: a Task, not an order, so k_creatinine_recheck is lost whatever it says (P17j JG9 r3, verifier-phase-P17i-JG9r2-1 N4, probe T4_P).',
+    loses: ['k_creatinine_recheck'],
+    script: [...reads, { calls: [...noRecheck, recheckTask('2026-10-27', 'Draw a BMP to recheck potassium and creatinine; he stopped the KCl at discharge')] }, { calls: [message()] }, { calls: [note()] }, { calls: [finish()] }],
+  },
   {
     id: 'flag_by_task_to_okafor',
     why: "Flags the duplicate metoprolol tartrate to Dr. Okafor by a Task whose focus is the tartrate order instead of a message: the EHR flag T6's RBC-RX-05 §3 asks for in the same situation, so pcp_message accepts it (P17j JG8a, pre-audit M3).",
@@ -99,7 +140,7 @@ export const alternatives: Alternative[] = [
     loses: [],
     script: [
       ...reads,
-      { calls: [change(MR.furosemide, 'stop', 'Discharge: increased to 40 mg'), order(RX.furosemide40, 40, 'QD', 'Discharge summary: furosemide 40 mg daily'), spironolactone, kclStop, order(RX.lisinopril10, 10, 'QD', 'Resume: SCr 1.32 < 1.5', MR.lisinopril)] },
+      { calls: [change(MR.furosemide, 'stop', 'Discharge: increased to 40 mg'), order(RX.furosemide40, 40, 'QD', 'Discharge summary: furosemide 40 mg daily'), spironolactone, kclStop, order(RX.lisinopril10, 10, 'QD', 'Resume: SCr 1.32 < 1.5', MR.lisinopril), bmpRecheck] },
       { calls: [message()] },
       { calls: [note()] },
       { calls: [finish()] },
@@ -111,7 +152,7 @@ export const alternatives: Alternative[] = [
     loses: [],
     script: [
       ...reads,
-      { calls: [modify(MR.furosemide, { value: 40, unit: 'mg', frequency: 'QD' }, 'Discharge: 40 mg daily as two 20 mg tablets'), spironolactone, change(MR.kcl, 'complete', 'Discharge: stop potassium chloride'), lisinoprilResume] },
+      { calls: [modify(MR.furosemide, { value: 40, unit: 'mg', frequency: 'QD' }, 'Discharge: 40 mg daily as two 20 mg tablets'), spironolactone, change(MR.kcl, 'complete', 'Discharge: stop potassium chloride'), lisinoprilResume, bmpRecheck] },
       { calls: [message(MESSAGE, [`MedicationRequest/${MR.tart}`, `MedicationRequest/${MR.succ}`])] },
       { calls: [note()] },
       { calls: [finish()] },
@@ -131,7 +172,7 @@ export const alternatives: Alternative[] = [
       { calls: reads[0]!.calls },
       { calls: reads[1]!.calls },
       { calls: [...reads[2]!.calls, { name: 'fhir_read', input: { resource_type: 'DocumentReference', id: 'doc-t4-dc-2025' } }] },
-      { calls: [furosemideUp, spironolactone, kclStop, lisinoprilResume] },
+      { calls: [furosemideUp, spironolactone, kclStop, lisinoprilResume, bmpRecheck] },
       { calls: [message()] },
       { calls: [note({ sources: 'Sources: St. Brigid Regional discharge summary of 10/19/2026 and its signed addendum of 10/19/2026 (RBC-TOC-02 §1); creatinine 1.32 mg/dL on 10/21/2026. The March 2025 discharge summary is from an earlier stay and was not used.' })] },
       { calls: [finish()] },
@@ -153,11 +194,11 @@ export const alternatives: Alternative[] = [
   },
   {
     id: 'recheck_bmp',
-    why: 'Also creates a Task for a repeat basic metabolic panel a week after starting spironolactone (potassium and creatinine, 2022 AHA/ACC/HFSA guideline).',
-    loses: [],
+    why: 'Tracks the repeat basic metabolic panel a week after starting spironolactone by a Task instead of the oracle\'s order (potassium and creatinine, 2022 AHA/ACC/HFSA guideline): k_creatinine_recheck counts only an order that measures potassium, so the Task loses it (P17j JG9 r3, decisions 2026-10-28T09:40Z).',
+    loses: ['k_creatinine_recheck'],
     script: [
       ...reads,
-      { calls: [...writes, { name: 'create_task', input: { patient: PT, owner: 'Practitioner/pr-okafor', due: '2026-10-28', priority: 'routine', description: 'Repeat basic metabolic panel (potassium, creatinine) 1 week after starting spironolactone' } }] },
+      { calls: [...writes.filter((c) => c !== bmpRecheck), { name: 'create_task', input: { patient: PT, owner: 'Practitioner/pr-okafor', due: '2026-10-28', priority: 'routine', description: 'Repeat basic metabolic panel (potassium, creatinine) 1 week after starting spironolactone' } }] },
       { calls: [message()] },
       { calls: [note()] },
       { calls: [finish()] },
@@ -169,7 +210,7 @@ export const alternatives: Alternative[] = [
     loses: [],
     script: [
       ...reads,
-      { calls: [furosemideUp, spironolactone, kclStop, modify(MR.lisinopril, { value: 10, unit: 'mg', frequency: 'QD' }, 'Discharge summary: resume when SCr < 1.5; SCr 1.32 on 10/21', RX.lisinopril10)] },
+      { calls: [furosemideUp, spironolactone, kclStop, modify(MR.lisinopril, { value: 10, unit: 'mg', frequency: 'QD' }, 'Discharge summary: resume when SCr < 1.5; SCr 1.32 on 10/21', RX.lisinopril10), bmpRecheck] },
       { calls: [message()] },
       { calls: [note()] },
       { calls: [finish()] },
@@ -181,7 +222,7 @@ export const alternatives: Alternative[] = [
     loses: [],
     script: [
       ...reads,
-      { calls: [furosemideUp, order(RX.spironolactone50, 25, 'QD', 'Signed addendum 10/19: spironolactone 25 mg daily (half of a 50 mg tablet)'), kclStop, lisinoprilResume] },
+      { calls: [furosemideUp, order(RX.spironolactone50, 25, 'QD', 'Signed addendum 10/19: spironolactone 25 mg daily (half of a 50 mg tablet)'), kclStop, lisinoprilResume, bmpRecheck] },
       { calls: [message()] },
       { calls: [note()] },
       { calls: [finish()] },
@@ -193,7 +234,7 @@ export const alternatives: Alternative[] = [
     loses: [],
     script: [
       ...reads,
-      { calls: [order(RX.furosemide40, 40, 'QD', 'St. Brigid discharge summary 10/19: furosemide increased to 40 mg daily', MR.furosemide), spironolactone, kclStop, lisinoprilResume] },
+      { calls: [order(RX.furosemide40, 40, 'QD', 'St. Brigid discharge summary 10/19: furosemide increased to 40 mg daily', MR.furosemide), spironolactone, kclStop, lisinoprilResume, bmpRecheck] },
       { calls: [message()] },
       { calls: [note()] },
       { calls: [finish()] },

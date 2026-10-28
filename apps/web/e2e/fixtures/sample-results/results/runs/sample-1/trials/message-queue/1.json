@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:message-queue:1",
   "task_id": "message-queue",
-  "task_version": "dde668e83c75a3a8c3a20934ec0f1560b3845ce20cba565a54377cab7c3a0737",
+  "task_version": "2e0c7b0e49fab137d870782aaf7d2301f5defc0b97cf5b25d080471d07c7431b",
   "env_version": "a902115d6b22a8ad4e4438108607f02b85be67a40fe538c32ff0a96b47d7dc89",
-  "grader_task_version": "8707e5bb0299c613c142e084a0daf7ad2a4428193c94fed761151f23498e0c60",
+  "grader_task_version": "1741d320f3efcb864f67d900e71a4d99a84f13d2c756f50e482b9f0ce456649f",
   "fixture_hash": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
   "state_hash": {
     "initial": "3a3f8977961fa17656d4a445ccab8a8972d6ea7bc75cbb0d545959afdcee052c",
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T13:29:01.000Z",
+  "started": "2026-10-23T13:29:47.000Z",
   "turns": 16,
   "tool_calls": 51,
   "tool_errors": {
@@ -43,9 +43,9 @@
   "summary": "Cleared the six messages: Evelyn Brooks sent to the ED with a stat triage task; Gloria Hayes 30-day lisinopril bridge and BMP; Frank Odum not refilled (atorvastatin stopped by cardiology), task to Dr. Okafor; Lena Park amoxicillin-clavulanate held for a documented reaction, allergy recorded, NP Reyes told; Samuel Price metformin renewed; Marcus Webb routed to scheduling.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T13:32:11.000Z",
+  "ended": "2026-10-23T13:32:57.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "12",
+  "grader_version": "11",
   "outcome": "PASS",
   "valid": true,
   "fault": null,
