@@ -1,0 +1,10 @@
+{
+  "task_id": "discharge-medrec",
+  "task_version": "c350309a8266812ad742ccc3bfd2b9f815ffca2d91ad8668a3f530fbac04594c",
+  "status": "COMPLETED",
+  "findings": [],
+  "problem": null,
+  "last_answer": "I found no ambiguities. Every point the reconciliation depends on has one reading under RBC-TOC-02:\n\n- **Which stay:** The 10/14–10/19 St. Brigid stay is the one that just ended, so its discharge summary (DocumentReference/doc-t4-dc-1019) is the source. The 2025 discharge summary belongs to an earlier stay and doesn't apply.\n- **Spironolactone:** The signed addendum (doc-t4-dc-1019-add) says \"spironolactone 25 mg daily, not 12.5 mg.\" Under §1 the addendum wins, so the dose is 25 mg.\n- **Lisinopril:** It is to resume \"when SCr < 1.5 on post-discharge labs.\" The 10/21 creatinine was 1.32 mg/dL, so the condition is met (§2). The existing held order is resumed, not duplicated (§6).\n- **Pantoprazole:** It is marked as a \"formulary substitution for home omeprazole.\" Under §3, omeprazole stays and pantoprazole is not ordered.\n- **Metoprolol XL:** \"Metoprolol XL 50 mg daily\" is a release-form name for the existing metoprolol succinate 50 mg order, so it means no change (§4).\n- **Metoprolol tartrate:** The 25 mg twice-daily order isn't mentioned anywhere in the discharge documents. Under §5 it stays unchanged and goes to the PCP in a message. The PCP is Dr. Okafor, the same person the instruction says to flag to.\n- **Other changes:** Furosemide goes up to 40 mg by stopping and replacing the order (§6). Potassium chloride is stopped. Aspirin and atorvastatin continue.\n- **Dates:** The discharge date matches: 10/19/2026 is a Monday, and the encounter ended that day.\n\n{\"findings\": []}",
+  "cost_usd": 0.28565999999999997,
+  "trajectory": "discharge-medrec.jsonl"
+}
