@@ -150,6 +150,13 @@ A status-only agent that closes every item and orders nothing must fail (`status
 
 Gate checks (`tests/grader.ts`, words in `tasks/results-inbox.check-text.ts`): `nodule_ct_window`, `namesake_untouched`, `fit_existing_referral`, `hemolyzed_k_repeat`, `hemolyzed_k_no_oncall`, `critical_k_oncall`, `critical_k_stat_bmp`, `bone_lesion_orders`, `controls_no_orders`, `items_closed_with_links`, `sources_before_orders`, `result_seen_before_action` and `patient_contact`.
 
+What counts as reading an item's result for `result_seen_before_action`:
+
+- A `fhir_read` of the result, or a `fhir_search` that returns it, counts.
+- For the CT, ultrasound and X-ray reports, a `search_notes` snippet that shows the finding also counts.
+- A lab panel's DiagnosticReport (the BMPs, the lipid panel) lists its members by reference and shows no value. Reading it counts only together with one of its member Observations, such as the potassium or the LDL.
+- A `list_inbox` summary alone does not count, even when it shows the value ("potassium 6.4 mmol/L, critical high"). An inbox row is a reference to the result, not the result.
+
 Rubric (`tests/rubric.ts`, positive points total 15):
 
 - A patient message for each of items 1, 3, 4 and 6 (1 each).
