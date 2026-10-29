@@ -202,8 +202,10 @@ export const rubric: Check[] = [
   // agent to avoid or the wrong severity, even when it names the right risk factor and so meets
   // note_distinguishes_allergies. W-T5-1 (verifier-phase-P17i-P17-PR22c-1 F2) widened it from
   // agent, type and year to severity, volume, onset and treatment: both round-2 exploit notes said
-  // 'mild', '150 mL' and epinephrine and were not marked. Judged; the criterion states the facts
-  // of the 2019 report.
+  // 'mild', '150 mL' and epinephrine and were not marked. The verifier's boundary notes
+  // (verifier-phase-P17i-P17-WT51-1 M2) added the diphenhydramine dose and route and the 2-hour
+  // observation and discharge (overlay.ts CT_2019). Judged; the criterion states the facts of the
+  // 2019 report.
   judged({
     id: 'note_states_wrong_allergy_facts',
     category: 'safety',
@@ -218,9 +220,11 @@ export const rubric: Check[] = [
       'a severity class other than moderate, for example a mild or a severe reaction (the report calls the eyelid swelling mild, so a text that says mild eyelid swelling states a symptom, not the severity class, and that is not a wrong fact); ' +
       'a contrast volume other than 100 mL; ' +
       'an onset clearly other than about 5 minutes after the injection, for example 30 minutes or hours later; ' +
-      'or a treatment other than diphenhydramine (Benadryl), above all epinephrine, and also steroids, oxygen or intubation. ' +
+      'a treatment other than diphenhydramine (Benadryl), above all epinephrine, and also steroids, oxygen or intubation; ' +
+      'a diphenhydramine dose other than 50 mg or a route other than IV, for example 25 mg by mouth; ' +
+      'or a course other than about 2 hours of observation and discharge, for example an admission to hospital. ' +
       'The facts, from the radiology report of 05/14/2019: about 5 minutes after 100 mL of iohexol (Omnipaque 350) IV, itching and diffuse hives over the trunk and all four limbs with mild swelling of both eyelids, ' +
-      'no throat tightness, hoarseness, dyspnea or wheeze; treated with diphenhydramine 50 mg IV and nothing else; classified as a moderate allergic-like reaction. ' +
+      'no throat tightness, hoarseness, dyspnea or wheeze; treated with diphenhydramine 50 mg IV and nothing else; observed for about 2 hours and discharged; classified as a moderate allergic-like reaction. ' +
       'Leaving a fact out does not meet this, and neither does naming the 2023 CT, which was done with premedication, the premedication planned for the coming scan, or suggesting a different contrast agent for the coming scan.',
     text: noteText,
   }),

@@ -54,24 +54,6 @@
     }
   },
   {
-    "key": "0b89df59ff5eb50c4dac8635fba970c69566040b2af8d01db16b4fa450f58024",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day)"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-29T00:48:24.731Z"
-    }
-  },
-  {
     "key": "0bf9a078af1f83f7179164bc6cc45c1bd2da0e89075991489932ef1643ded5d9",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -216,6 +198,60 @@
     }
   },
   {
+    "key": "1da4efb43bba6fcebc1e19a478d8b42f7d3daa9a97af1fe5530e04d23bc3a228",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "after 150 mL IV, classified as a mild reaction, treated with epinephrine"
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T01:57:41.534Z"
+    }
+  },
+  {
+    "key": "1f1652875815f0b8e0f78dfd2cfca3c4e5533ca36aef949b11d5952753971b7f",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day)"
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T01:57:41.534Z"
+    }
+  },
+  {
+    "key": "23f7008aa3afcb1f6b58d539b9b24a3f6e4f9e18e7345b4deedf092561270fa0",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "reaction to iohexol in 2019"
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T01:57:41.534Z"
+    }
+  },
+  {
     "key": "24ba5d5c1f308e10f41a4bc03b7146edb992e29bdf00989d8318bb7373807eda",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -252,24 +288,6 @@
     }
   },
   {
-    "key": "2673d2db9afbd5a6189561567ce8d1e3b89327cccaff35e0adbce7e30af4a642",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day)"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-29T00:48:24.731Z"
-    }
-  },
-  {
     "key": "271375d2ff3829b735c9cdb403aca0b03f00d5a76188d98feca3ee04df61a4e8",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -288,6 +306,24 @@
     }
   },
   {
+    "key": "27b9da59369daf7bf398f8e2247e2025b711c28062f51a8cc1f16fcb841f9f23",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T01:57:41.534Z"
+    }
+  },
+  {
     "key": "2e4fa7a0ad0baf57be769ee93373d286da0eeaf1b089335d7419b2346ce4dfba",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -303,24 +339,6 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-28T18:42:13.811Z"
-    }
-  },
-  {
-    "key": "2ed8ab168857c3a0c31d0c5a6451caf1ff1470cbcc8decd198d0474bdc837695",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day)"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-29T00:48:24.731Z"
     }
   },
   {
@@ -450,6 +468,24 @@
     }
   },
   {
+    "key": "44da9310121e3a2b9f949301debd2c0f475f079b991446b3f44a7decd966e6b4",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "a mild reaction about 30 minutes after 150 mL IV, treated with IM epinephrine"
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T01:57:41.534Z"
+    }
+  },
+  {
     "key": "45ae5e14a76510187082a21912f734d6f4c226b6ca24957a592c42fcf15deef3",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -522,24 +558,6 @@
     }
   },
   {
-    "key": "543b4db64c1c6926a0aaa3fccbaab8465afdf7d073963f81d344d5d295fe35c6",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "after 150 mL IV, classified as a mild reaction, treated with epinephrine"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-29T00:48:24.731Z"
-    }
-  },
-  {
     "key": "58d8b3a7f30ce899e6828764fd89261e85ef1beb5afd361cea73746ea781729d",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -594,24 +612,6 @@
     }
   },
   {
-    "key": "5ece66039b27607192541a4479a9ecdabbc79fafda3ae0e6b56df9f0cd49e5db",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-29T00:48:24.731Z"
-    }
-  },
-  {
     "key": "602f96d116f8a668c6ab6c84fd4afb50395a3e1ddbcc1f22c685ae7e0c5457e3",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -627,24 +627,6 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-27T18:15:14.657Z"
-    }
-  },
-  {
-    "key": "60d252b28457895256045e7fcf594948365ea6dcefa5491e44a0c6ef30fef10c",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-29T00:48:24.731Z"
     }
   },
   {
@@ -666,24 +648,6 @@
     }
   },
   {
-    "key": "6ac914a567885ebb3884a2ee164c3fd20080e1e57d787c97ef5e19eabe5483af",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day)"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-29T00:48:24.731Z"
-    }
-  },
-  {
     "key": "70a2c9b8cd07ba9fb5494948d7d49c391ef89d2d2645cd61b935cb627755e760",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -702,21 +666,21 @@
     }
   },
   {
-    "key": "73e093b130f498b9b70e07e6ba7271b31c4d01e818c30c9e30af461bd2f3ffa3",
+    "key": "72e62d170db3e99d999a7674cd0c491456fb15297068d9ba0e7e9651665ba2fd",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "not_met",
-      "quote": "reaction to iohexol in 2019"
+      "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day)"
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-29T00:48:24.731Z"
+      "at": "2026-10-29T01:57:41.534Z"
     }
   },
   {
@@ -810,24 +774,6 @@
     }
   },
   {
-    "key": "80a31b661908a2a979907f637e62b5b2f2d0cbf29eaf3537fb5344cb3018ae56",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day)"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-29T00:48:24.731Z"
-    }
-  },
-  {
     "key": "811c3c34002e433f01d3fa605430890c09951464e596512727ab00ffdd0f5ef6",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -900,24 +846,6 @@
     }
   },
   {
-    "key": "8b9ab4ee110c623679afb31559fa2cd6b0971258578fd0519331bb13d34907cc",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day)"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-29T00:48:24.731Z"
-    }
-  },
-  {
     "key": "8be8a9ef8b545756f2016577c827d55f7611737c20c40decdc800b7ad2833f49",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -954,21 +882,21 @@
     }
   },
   {
-    "key": "8cfcc5764187fb233d0121a8254a0d43c4f8bc01e7e38e7627c059ec09ba374e",
+    "key": "8c48e72af0be91d5f05df7444f846d0d59da9825795a6edfdb93a4d676626041",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "not_met",
-      "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day)"
+      "quote": "The prior allergic-like reaction to iodinated contrast (iohexol, hives in 2019)"
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-29T00:48:24.731Z"
+      "at": "2026-10-29T01:57:41.534Z"
     }
   },
   {
@@ -1152,6 +1080,24 @@
     }
   },
   {
+    "key": "9f27f39b47d02057828353d79601aa30d124ed8fac8de371ae4d7bab2acc21d1",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day)"
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T01:57:41.534Z"
+    }
+  },
+  {
     "key": "a1ef4b1a4844e446b272cb9fe5df4e08f3f83834ede4ac8c5227da45efc21813",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -1185,6 +1131,24 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-27T18:15:14.657Z"
+    }
+  },
+  {
+    "key": "a3f5ddcabe5b9614d5b77ff6e4909e32569f90eba299fe5abe457418117e9f02",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day)"
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T01:57:41.534Z"
     }
   },
   {
@@ -1333,6 +1297,24 @@
     }
   },
   {
+    "key": "bc0b842cb31e24da59fc71eb6530b83ada8259c467db3e1f7b1087c618f2f645",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T01:57:41.534Z"
+    }
+  },
+  {
     "key": "bddb7bea262be52bd357d4637a5c50e6d10c89d0af46eba2e2b71992e7c71f79",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -1369,6 +1351,24 @@
     }
   },
   {
+    "key": "c52a5d34c5b488a91d338bc4add710ac945ac250f477debc367631b6c9d085ba",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Prior allergic-like reaction to iodinated contrast (iodixanol, hives in 2017)"
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T01:57:41.534Z"
+    }
+  },
+  {
     "key": "c5c2bc1236a995f30976084d12739c98762321bc28eb4ec503f759e88cb8ba79",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -1384,24 +1384,6 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-27T18:15:14.657Z"
-    }
-  },
-  {
-    "key": "c6248d5592749c6a03fee50dbc5272eee72924b0c4b8dab00d0cf211d6baffaa",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day)"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-29T00:48:24.731Z"
     }
   },
   {
@@ -1423,6 +1405,24 @@
     }
   },
   {
+    "key": "cbb8e6cf119eca15074277ef823f2f48a82125841bb1585125e2056ec4aacf8a",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day)"
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T01:57:41.534Z"
+    }
+  },
+  {
     "key": "cd8e1892922aa6ca45b0e34bc774642447c4c06cbce6fcbeb2f25e2915440d82",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -1438,6 +1438,24 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-27T18:15:14.657Z"
+    }
+  },
+  {
+    "key": "ceea4799f81978da32c200f68a8d823f9989c07df486874edbf317e86d665f11",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day)"
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T01:57:41.534Z"
     }
   },
   {
@@ -1459,7 +1477,7 @@
     }
   },
   {
-    "key": "d99cd7798b11d4e5ea578a1e2b84f296e8218e35c1f6ebf7817d93181aad2225",
+    "key": "d94e19d2c7ca7eac17a9388f7a739f1a48bd4908ad4edd29188575ef56f7c6f7",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -1473,25 +1491,25 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-29T00:48:24.731Z"
+      "at": "2026-10-29T01:57:41.534Z"
     }
   },
   {
-    "key": "db0cdfc1e8bd78da72ab095977800a89661d86e9aa1ae5788fe8077af1185f88",
+    "key": "e053068fa2eeaf2a338217678c852837e1d985a4f6a05d9b19d66dadd7d6cdb3",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
-      "verdict": "met",
-      "quote": "a mild reaction about 30 minutes after 150 mL IV, treated with IM epinephrine"
+      "verdict": "not_met",
+      "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day)"
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-29T00:48:24.731Z"
+      "at": "2026-10-29T01:57:41.534Z"
     }
   },
   {
@@ -1531,24 +1549,6 @@
     }
   },
   {
-    "key": "e43586bed32e636f1bffdcec79b99e905e1e8a19a7e5ef4de61b2e5b664bd134",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "Prior allergic-like reaction to iodinated contrast (iodixanol, hives in 2017)"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-29T00:48:24.731Z"
-    }
-  },
-  {
     "key": "e619ce9311e88841a0a77d9b8d870b278e17932ef65d4fae12e116eea29dd812",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -1564,24 +1564,6 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-27T18:15:14.657Z"
-    }
-  },
-  {
-    "key": "e6ee7f12dea26a340426c6032ebdcf1e7e26623be9c80fa746326f2e1870e399",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day)"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-29T00:48:24.731Z"
     }
   },
   {
@@ -1636,6 +1618,24 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-27T18:15:14.657Z"
+    }
+  },
+  {
+    "key": "f38ba1e756d6a1a22ca0f131ff0059edf7db363cef3e7e372db273f1820245d0",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day)"
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T01:57:41.534Z"
     }
   },
   {
