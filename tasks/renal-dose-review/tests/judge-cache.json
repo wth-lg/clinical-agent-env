@@ -1,20 +1,56 @@
 [
   {
-    "key": "039fdb9e1134fff446f3c1b00b17f11e96ed40cc578d1183d606368511e9bffb",
+    "key": "0019641074f9cb710a1fad215cb4aca47817d92dfb32ce5848d9af288763b67e",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "not_met",
-      "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met. One criterion met, so apixaban goes back to 5 mg twice daily"
+      "quote": ""
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
+      "at": "2026-10-29T22:24:51.898Z"
+    }
+  },
+  {
+    "key": "0330ad72f63cdc8b50aebb569f7bb90e72d4a9e6e0b3da17432f3adbe84f737f",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "his apixaban is for a history of pulmonary embolism, the extended-phase dose after 6 months of treatment, not for non-valvular atrial fibrillation. §2 applies only to non-valvular atrial fibrillation, so its dose criteria do not apply and the policy does not cover this order: apixaban 2.5 mg twice daily continued unchanged."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:52:45.368Z"
+    }
+  },
+  {
+    "key": "0378f0fb9e750932852903c461ad5059bace523222ad1b66d7a6b0576d71f320",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T22:24:51.898Z"
     }
   },
   {
@@ -36,43 +72,79 @@
     }
   },
   {
-    "key": "05c0b036452b08985e07b127f67a41fe99ccfbdccb6a99eecc1f7beb3ac73809",
+    "key": "0630d22778a12e3fdce037362b3f680179af79875294a2c71276d2c7ccc8a3a6",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "met",
-      "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met."
+      "quote": "Metformin: reduced to 500 mg twice daily."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
+      "at": "2026-10-29T22:24:51.898Z"
     }
   },
   {
-    "key": "0ba806f2b7131222b7ed1deef978e83a414e4a58665d1832a78b442947038a7c",
+    "key": "0b90295e60188da1cddf0e54551cd0c7d4babd7d55bb9fd0788d3c074f470996",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "current SCr 1.21 mg/dL (10/20/2026). The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:52:45.368Z"
+    }
+  },
+  {
+    "key": "0dc5052a9441fd392994143b041778b598416e03cf3d9d03a4054167a468f647",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "met",
-      "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met."
+      "quote": "his apixaban is for a history of pulmonary embolism, the extended-phase dose after 6 months of treatment, not for non-valvular atrial fibrillation. §2 applies only to non-valvular atrial fibrillation, so its dose criteria do not apply and the policy does not cover this order: apixaban 2.5 mg twice daily continued unchanged."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
+      "at": "2026-10-29T21:52:45.368Z"
     }
   },
   {
-    "key": "0bf6b2a498e22fb8d47bbc9e3d6d92cd46f7c99cdbe895b4f5a22e77e3f6d03d",
+    "key": "1282739c5681d12dd527d0ce23a78463ab2c03b91cea2002ef4c1df111b57498",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "One criterion met, so apixaban goes to 5 mg twice daily under RBC-PHARM-07, although the St. Brigid hematology letter of 2/5/2026 asked for 2.5 mg twice daily."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:52:45.368Z"
+    }
+  },
+  {
+    "key": "12a0965198c64e538fa952f8d45e7d14e0c6e241e35eb1882fb601bb89c5b8b3",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -86,11 +158,47 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-28T19:18:42.613Z"
+      "at": "2026-10-29T22:24:51.898Z"
     }
   },
   {
-    "key": "0f39a25dcfb132c687514c74a2845a49c862e03b15e7e877e11777323d595370",
+    "key": "13518351d8929b4bc18c3e7b9c5957e1765a255cbd5eb7dd9a39074b7f7c818a",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "§2 applies only to non-valvular atrial fibrillation, so its dose criteria do not apply and the policy does not cover this order: apixaban 2.5 mg twice daily continued unchanged."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:52:45.368Z"
+    }
+  },
+  {
+    "key": "13e54a4c074d6502e5e96c4c8012e135c4c76cd98a6e5fe6e4ab8206e29e83f6",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:52:45.368Z"
+    }
+  },
+  {
+    "key": "15285d18c131a280ae9e331d8b71bd8962c847206966019b7a436ea7117e1466",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -104,29 +212,29 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-28T19:18:42.613Z"
+      "at": "2026-10-29T22:24:51.898Z"
     }
   },
   {
-    "key": "0ff43eed780bd282624dec6b7443a5c8bc90606f606546b78ad260d893278d9b",
+    "key": "19becbb56ab56f05efcc28f47b2e3da51f80ebe21c27ad55b121cf8b8fc8c8ea",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
-      "verdict": "not_met",
-      "quote": ""
+      "verdict": "met",
+      "quote": "his apixaban is for a history of pulmonary embolism, the extended-phase dose after 6 months of treatment, not for non-valvular atrial fibrillation. §2 applies only to non-valvular atrial fibrillation, so its dose criteria do not apply and the policy does not cover this order: apixaban 2.5 mg twice daily continued unchanged."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-28T19:18:42.613Z"
+      "at": "2026-10-29T21:52:45.368Z"
     }
   },
   {
-    "key": "120052ce41a06d8d16733a72d55e485fe8ba7465be878564518b8c8415acaa28",
+    "key": "1bc765c35643acba2390b97792adc117201f084658cb7d070a5110ff2fbf610f",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -140,29 +248,47 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
+      "at": "2026-10-29T21:52:45.368Z"
     }
   },
   {
-    "key": "18a9abd234adf93b3ceaad6cda960ba6363390a6eaca0b2b4088fee85d7b90dc",
+    "key": "20a413a007f069ac7007775d55bd966c8eaf538949eed3bc16e6bd12147c565c",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "§2 applies only to non-valvular atrial fibrillation, so its dose criteria do not apply and the policy does not cover this order: apixaban 2.5 mg twice daily continued unchanged."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:52:45.368Z"
+    }
+  },
+  {
+    "key": "2145716e3ed237d63c1862729c22778fcba24542af528bcbdce8264051d4ffd9",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "met",
-      "quote": "age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met."
+      "quote": "no change to metformin 1000 mg twice daily"
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
+      "at": "2026-10-29T22:24:51.898Z"
     }
   },
   {
-    "key": "1caab800f89f031f3d021657cbdcaa82c0dcd82e2f1afe3e42390496e25ae6ea",
+    "key": "2322aac3e6941045066b0740fcbc8fc5ccee4dead571efd44c86b16c12baf720",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -176,11 +302,47 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
+      "at": "2026-10-29T21:52:45.368Z"
     }
   },
   {
-    "key": "1d57e546d8392e9db7f09df6e2184fa5a9633516249a22dcd305b60f4cc1ee4b",
+    "key": "2334b293ac36735d6d082aa0d4cbfd80d3b6d8c3ed0b920caaa09e1cfc85054c",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T22:24:51.898Z"
+    }
+  },
+  {
+    "key": "2428b8588f0a8b22492b1948c515b0063b9725373273c8163e17e3a7431fbb9f",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "the current SCr of 1.88 mg/dL (10/21/2026) was entered in error (specimen mislabelled, belongs to another patient) and was not used; the review uses the SCr of 1.21 mg/dL (10/20/2026)"
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:52:45.368Z"
+    }
+  },
+  {
+    "key": "24641fede2cece338299b6659998364a4bc7ce8ab8d5e299d891903c576fde2e",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -194,61 +356,25 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
+      "at": "2026-10-29T22:05:53.620Z"
     }
   },
   {
-    "key": "20d3ecebed8070f66cb74be75c5443b89f2b7e135d7eed356ec2e0356f31eff5",
+    "key": "25ed480d9078949ea160e63d389c5d3a4721ba33e038fb9a23eb12ac18f4a041",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "not_met",
-      "quote": "Apixaban criteria (§2), using the most recent creatinine of 1.71 mg/dL: age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.5 or higher: met. Two criteria met. Apixaban stays at 2.5 mg twice daily."
+      "quote": "§2 applies only to non-valvular atrial fibrillation, so its dose criteria do not apply and the policy does not cover this order: apixaban 2.5 mg twice daily continued unchanged."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
-    }
-  },
-  {
-    "key": "24849750d787c33c3abbe1f13760fb4919c41ef8bfca8d9db7cf0c2027b84d7f",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "current SCr 1.21 mg/dL (10/20/2026). The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
-    }
-  },
-  {
-    "key": "248533b465e762daa0c80a9eedc3c70a9a35cd9ee437928bb2f1ebb7ebaa1f5e",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "SCr 1.88 mg/dL, 1.5 or higher: met"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
+      "at": "2026-10-29T21:52:45.368Z"
     }
   },
   {
@@ -270,7 +396,97 @@
     }
   },
   {
-    "key": "28933c90a9681068196ce297cd545675081b61560c57fc27968a5b02d668e46b",
+    "key": "29366b89cdcac44cab6e9b9bf0e6cab0ab73d06db3a5d93dfdb285c4c45a9c26",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T22:24:51.898Z"
+    }
+  },
+  {
+    "key": "2a38d430ac61266c88a36b9b9f0798a500f72aa7ff3d0f398879ac814c10e694",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T22:24:51.898Z"
+    }
+  },
+  {
+    "key": "2ac6c852245ac7497ceee0cace380a9a640aab2a45fc7bf2e42c3f141e3711b0",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T22:24:51.898Z"
+    }
+  },
+  {
+    "key": "2c28d454ef5e567d7c636c8f6d4076bf11f92f6ed0e83635e196ba1a09e2be9a",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Apixaban: indication is history of PE (extended-phase dose per St. Brigid hematology, 2/5/2026), not NVAF. RBC-PHARM-07 §2 does not apply; no change, 2.5 mg BID."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:52:45.368Z"
+    }
+  },
+  {
+    "key": "2d8e3b889e6eee17989729383a5a34cb8fba440bb6fd7a75e561c63a28cd54d6",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Reduced from 600 mg three times daily (1800 mg/day) to 600 mg twice daily (1200 mg/day)."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T22:24:51.898Z"
+    }
+  },
+  {
+    "key": "2db584aa11ac485060d558368ac78e32bdf6b8ad6de46c1567a5acb6c19191a5",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -284,43 +500,25 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-29T17:17:46.581Z"
+      "at": "2026-10-29T21:52:45.368Z"
     }
   },
   {
-    "key": "292adbafe86c432da733137c6242fc33dcc436c27979c240b85b080c939fc3c1",
+    "key": "2df6d4691979a83f5ed24fe521456f521e35da2d54f0cadd9d9d281b597efc11",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "not_met",
-      "quote": "SCr 1.88 mg/dL, 1.5 or higher: met"
+      "quote": ""
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
-    }
-  },
-  {
-    "key": "2d09df5b33a224be61603ebc3391a04a0f8b9222833e1ae2e24eab16b714eba8",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
+      "at": "2026-10-29T22:24:51.898Z"
     }
   },
   {
@@ -342,43 +540,7 @@
     }
   },
   {
-    "key": "372118b863bf9ae542de65e803c3d4a14a0001fc08c188577dcb5fa770aa8c2c",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "SCr 1.5 or higher: met. Two criteria met."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
-    }
-  },
-  {
-    "key": "390079cdfb69292836e6c95d37712c5280787c19202bd7d8d93095f61991641d",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met. One criterion met, so apixaban goes back to 5 mg every 12 hours"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
-    }
-  },
-  {
-    "key": "39a436eadd260b3205f391b3224b5a8a35c69ed4d8dcad45bfd294d14a993a6e",
+    "key": "2f0428c1eb2d956b37770a542997c27f7a0f9264b84533ec7133be6cc2207c50",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -392,102 +554,65 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-29T07:11:42.016Z"
+      "at": "2026-10-29T22:24:51.898Z"
     }
   },
   {
-    "key": "3a64a8042e1b992e7f68b0117f44f4adedfa2575f924d6303ba60f8a76a6caf2",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met. One criterion met, so apixaban goes back to 5 mg twice daily"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
-    }
-  },
-  {
-    "key": "3cd8253f389d804e20cd5fd7db9aab91a5d00d51b793c31e529def9779aa0911",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-28T19:18:42.613Z"
-    }
-  },
-  {
-    "key": "3eaad937c6e9a486a9b1bcb39ad15dd576bd1b52544c89119938bbf215ea87ad",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met. One criterion met, so apixaban goes back to 5 mg twice daily"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
-    }
-  },
-  {
-    "key": "3eea2904f4b469a72b04c0bf777004c5c8db564e2de2d01f938d6aaa0433ff4b",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met. One criterion met, so apixaban goes back to 5 mg twice daily"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
-    }
-  },
-  {
-    "key": "4233c4c5e72f27441135b8b769db98bd9f729e5e8c998233eb620232db1e6bdd",
+    "key": "2f397a52d0bd3328e7c0051c78671b03cf9ac9dc69e338445e822e94146a38ba",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "met",
-      "quote": "- Age 80 or older: age 82, met.\n- Body weight 60 kg or less: 64.9 kg, not met.\n- Serum creatinine 1.5 mg/dL or higher: 1.21 mg/dL, not met."
+      "quote": "The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-28T18:42:17.179Z",
-      "note": "answered live by the P17 PR22b exploit run, results/exploit/renal-dose-review/1.json; copied by builder-148"
+      "at": "2026-10-29T21:52:45.368Z"
     }
   },
   {
-    "key": "42f81932ae603112646ede34d7c2267fc9117c6480571425afa5d01747615b48",
+    "key": "31c12983401b045b451da7b4fb9daa646a2934b82456d9cb6e54fad00fc4ab2f",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:52:45.368Z"
+    }
+  },
+  {
+    "key": "32618191e4e839d0725ccfd0d561da68d7ff6544303e698be37535ae54a5bfa0",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "his apixaban is the extended-phase dose after pulmonary embolism, not for non-valvular atrial fibrillation, so §2 does not apply. Continued at 2.5 mg twice daily, as half a 5 mg tablet."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:52:45.368Z"
+    }
+  },
+  {
+    "key": "3450c99b06d186b12e42c0562903e213a1caabfa9ab2a84936faf0508f382c91",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -501,7 +626,187 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-28T19:18:42.613Z"
+      "at": "2026-10-29T22:24:51.898Z"
+    }
+  },
+  {
+    "key": "38a21891676fd7a9fac4fbea61d99368ca0d54b921d3daeb2f5d0a5757abd863",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T22:24:51.898Z"
+    }
+  },
+  {
+    "key": "3982d608eea64c56b1e3c1724665cb4090515dd5a7deeb25be7eb9d0e71f19a1",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "his apixaban is the extended-phase dose after pulmonary embolism, not for non-valvular atrial fibrillation, so §2 does not apply. Continued at 2.5 mg every 12 hours, re-signed."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:52:45.368Z"
+    }
+  },
+  {
+    "key": "3a716564cb9ee226191da9502a17a8bbcd901f6f7c8aa25afc1a42f73a93c719",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "his apixaban is for a history of pulmonary embolism, the extended-phase dose after 6 months of treatment, not for non-valvular atrial fibrillation. §2 applies only to non-valvular atrial fibrillation, so its dose criteria do not apply and the policy does not cover this order: apixaban 2.5 mg twice daily continued unchanged."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:52:45.368Z"
+    }
+  },
+  {
+    "key": "3b9144069f263578541e26e9ab829a0f32b72862a6a05eded55d4eb39029a0e6",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "current SCr 1.21 mg/dL (10/20/2026). The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:52:45.368Z"
+    }
+  },
+  {
+    "key": "3bfde5f691125bccdc15bd44f6527a7711f4db8da08a13e52064e9a23735bc0b",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "§2 applies only to non-valvular atrial fibrillation, so its dose criteria do not apply and the policy does not cover this order: apixaban 2.5 mg twice daily continued unchanged."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:52:45.368Z"
+    }
+  },
+  {
+    "key": "3c59cb67fa3f722dd6f02d8831726c22228b8b936309fc3e023161648f3bb1ae",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:52:45.368Z"
+    }
+  },
+  {
+    "key": "3d7f9327ed19cdf5df0818f0dc1f823cd73a37f2f112829bd4db34c7aa8eab66",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T22:24:51.898Z"
+    }
+  },
+  {
+    "key": "3eaa4fe0a14d449e3fa9fac4b47c1fd190d5182ff410319c6f078b611a417cf3",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "current SCr 1.21 mg/dL (10/20/2026). The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:52:45.368Z"
+    }
+  },
+  {
+    "key": "3fe3a3284e7e26d1eef4ed6b97c737b3c011e3e27a04b1db1eb483ea568864fd",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Reduced from 600 mg three times daily (1800 mg/day) to 600 mg twice daily (1200 mg/day)."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:52:45.368Z"
+    }
+  },
+  {
+    "key": "41eb3c0b20b06dfa8767fa29de12ed3613f08a8cca16ed81d548eef2c916da60",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Repeat BMP ordered for 3 months. Patient notified by portal message."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T22:24:51.898Z"
     }
   },
   {
@@ -543,242 +848,7 @@
     }
   },
   {
-    "key": "465f6445dac30f364876cbd0d64267aee5ccdf734fb03cf9e844c9a5c8dbbf6b",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "Metformin: reduced to 500 mg twice daily."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-28T19:18:42.613Z"
-    }
-  },
-  {
-    "key": "48a10f5b46b2ea95912bd01612acf9c6a2773f7e511f36c75f3636237a246893",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-29T17:17:46.581Z"
-    }
-  },
-  {
-    "key": "4ad994f62c188afbcb8c3519313f63fc8794f4d9f5e8e13ede7d18bc97a7b160",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
-    }
-  },
-  {
-    "key": "51a08bc077ecddf4c7b7cc51f1df2bfdc597f4cd5355bcc07cc88d9694352548",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-28T19:18:42.613Z"
-    }
-  },
-  {
-    "key": "51bd65495efd2e7313b62e7e8a20743b41746ddc5a92ff4dd03f8f23f4b21417",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met. One criterion met, so apixaban goes back to 5 mg twice daily"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
-    }
-  },
-  {
-    "key": "52ba7b822b48cfe745b862224dc480bd3b1d539600f6c9041886b6735413f810",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-29T04:56:00.808Z"
-    }
-  },
-  {
-    "key": "556dda700352212fc0bf24ab80d0d947b2639abcecaea4e2ce1c1aab6f4a1660",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-28T19:18:42.613Z"
-    }
-  },
-  {
-    "key": "590f2c315205b30c57b8c1c41b4e46cc6d149b752f92f2f26c9559ef9f9f5561",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
-    }
-  },
-  {
-    "key": "59bad4a9932b7a5773f2f311a8da78ef05eaf9faf59eac41f393978af43fdbdd",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "- Age 80 or older: age 82, met.\n- Body weight 60 kg or less: 64.9 kg, not met.\n- Serum creatinine 1.5 mg/dL or higher: 1.21 mg/dL, not met."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-28T18:41:09.555Z",
-      "note": "answered live by the P17 PR22b exploit run, results/exploit/renal-dose-review/0.json; copied by builder-148"
-    }
-  },
-  {
-    "key": "5ae95999e4dbe77ef99de5715bb66de656e421d9fab2555fc3bc9ef2db9cdf0b",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-28T19:18:42.613Z"
-    }
-  },
-  {
-    "key": "5c54eb355b55675477e37a315dddc119d8e82c56b61979e471c0f7524fd3b14f",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-29T04:56:00.808Z"
-    }
-  },
-  {
-    "key": "5cdfe84ba5eb0b30a9fa5650924b89a94cb5ddecab856500a4f473e0c2ea8164",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "Reduced from 600 mg three times daily (1800 mg/day) to 600 mg twice daily (1200 mg/day)."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-29T07:11:42.016Z"
-    }
-  },
-  {
-    "key": "60f13dfbf1d67e225b7dee91826175ea974ee131d3d9ca0fe4899d99c98c145a",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
-    }
-  },
-  {
-    "key": "61dd35d184e83f74b07342a296ec3704c710182728c9440f77250ea228d6ef77",
+    "key": "459ce1539c009d3db44051a98c3f412be9d8ab230dd209518ec73b1f6905b299",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -792,7 +862,277 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
+      "at": "2026-10-29T21:52:45.368Z"
+    }
+  },
+  {
+    "key": "467b790580d9fdaedd3a92744bfc48d51c8a7ddf6ab2b646b1e1ad2e74383a26",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "current SCr 1.21 mg/dL (10/20/2026). The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:52:45.368Z"
+    }
+  },
+  {
+    "key": "4780f7c19fe6b46534efb93d042b01d830b321280cc7d6f5e39a450ec698fb86",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T22:24:51.898Z"
+    }
+  },
+  {
+    "key": "484583a999a86c9993a61983259a1a51c00ea799e90de93d451d7bc3f6c2945f",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:52:45.368Z"
+    }
+  },
+  {
+    "key": "516ad3d7107e386efa32143285d0ecb48729314ead324c793876e9df783eaf5c",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "his apixaban is for a history of pulmonary embolism, the extended-phase dose after 6 months of treatment, not for non-valvular atrial fibrillation. §2 applies only to non-valvular atrial fibrillation, so its dose criteria do not apply and the policy does not cover this order: apixaban 2.5 mg twice daily continued unchanged."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:52:45.368Z"
+    }
+  },
+  {
+    "key": "520ce89b92241db0c86836a190284d553e4b94b90f570a01b0e0d6f8edd61fd9",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T22:24:51.898Z"
+    }
+  },
+  {
+    "key": "525ca2c1952285c888fb4af888d56ac966f698fc1faf711afc708b322dfd1946",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "current SCr 1.21 mg/dL (10/20/2026). The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:52:45.368Z"
+    }
+  },
+  {
+    "key": "54fb6212776f9ea233d908fb2c420801ca4e43bd8d4a4e8275067b700f08a472",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T22:24:51.898Z"
+    }
+  },
+  {
+    "key": "57cd3ca9929d013f21faa4845d3303e5011e31d58ad185252d13822049462e7c",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:52:45.368Z"
+    }
+  },
+  {
+    "key": "589ca5527af273a41df90a49c13db6b7d847775064b72f855314a8a5897fd7dc",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:52:45.368Z"
+    }
+  },
+  {
+    "key": "5b6f5789325b58a85ead6550285ec50f4943bf7d95aad00a80a1abad03ec5700",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "no change to metformin 1000 mg twice daily"
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T22:24:51.898Z"
+    }
+  },
+  {
+    "key": "5c09ea9183d25495e7315c3a7bfd5121112c10c71ca4a17edca8be22dc5ace90",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T22:24:51.898Z"
+    }
+  },
+  {
+    "key": "5d80f4f8381e0dc719be2d01c57bc4a1403155691f1d43e41c0a9bfa8882907c",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Reduced from 600 mg three times daily (1800 mg/day) to 600 mg twice daily (1200 mg/day)."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T22:24:51.898Z"
+    }
+  },
+  {
+    "key": "5e5c40fb6cda1485fe1e155f6031df8b560009398a9937e8eb10141b42ed8c10",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "One criterion met, so apixaban goes back to 5 mg twice daily (2.5 mg twice daily since the February admission)."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:52:45.368Z"
+    }
+  },
+  {
+    "key": "60486ba278d6b04d01de2ca0eafe18934f78cf444da1728909b0c43d19a62b94",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.88 mg/dL, 1.5 or higher: met. Two criteria met. Apixaban stays at 2.5 mg twice daily."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:52:45.368Z"
+    }
+  },
+  {
+    "key": "60b1243723be632e26af5867522ed4e3b1381b240e9b69a6d81c602b676d44df",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T22:24:51.898Z"
     }
   },
   {
@@ -814,7 +1154,43 @@
     }
   },
   {
-    "key": "6407edcaeeba81307a1a8e8e0cc20be0c96a0de33301c3e07c4bef7b2949a63a",
+    "key": "655f661e12ce1e57951f7bb34a29e08858a0715aba98ef196f983dbeb850449b",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "his apixaban is for a history of pulmonary embolism, the extended-phase dose after 6 months of treatment, not for non-valvular atrial fibrillation. §2 applies only to non-valvular atrial fibrillation, so its dose criteria do not apply and the policy does not cover this order: apixaban 2.5 mg twice daily continued unchanged."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T22:05:53.620Z"
+    }
+  },
+  {
+    "key": "67181301599f77793344a0d80e579fead6fd2b50005cad7c437832fea99d97c0",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "current SCr 1.21 mg/dL (10/20/2026). The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:52:45.368Z"
+    }
+  },
+  {
+    "key": "6912c32de5b3146985e30f6552ff99fba554acb8ee114f172a55713ba4d3fa55",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -828,25 +1204,25 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
+      "at": "2026-10-29T21:52:45.368Z"
     }
   },
   {
-    "key": "65ae83031840bebb50ac285800905c9ffce06df163e16d074caa335a950439d9",
+    "key": "692915546b905cebf9f3f17d372328ede2f3f99e3888f6616984b3efa422c4b7",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "not_met",
-      "quote": ""
+      "quote": "current SCr 1.21 mg/dL (10/20/2026). The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-29T04:56:00.808Z"
+      "at": "2026-10-29T21:52:45.368Z"
     }
   },
   {
@@ -869,7 +1245,25 @@
     }
   },
   {
-    "key": "6a2c42a8f9410e3880b9b56a3303884ea0faa798ff6e10d814dd94bceedaa83a",
+    "key": "6990c54d8f436ec21baf2337b4084b4bf9385d4a1df8f956776cb6af0aa31fc7",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "his apixaban is the extended-phase dose after pulmonary embolism, not for non-valvular atrial fibrillation, so §2 does not apply. Continued at 2.5 mg every 12 hours, re-signed."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:52:45.368Z"
+    }
+  },
+  {
+    "key": "699c09612c5054862d1236db7e3dd03767d2d7c5ab62cefb0d7e603921388670",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -883,47 +1277,11 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
+      "at": "2026-10-29T21:52:45.368Z"
     }
   },
   {
-    "key": "6b6804898352aaa743885067fced2d7eb4f0f710a866e1fa752bccd4b58a8b86",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.71 mg/dL, 1.5 or higher: met. Two criteria met. Apixaban stays at 2.5 mg twice daily."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
-    }
-  },
-  {
-    "key": "6e8760b12a9ccbf88bfa894609bb2973f8641cae628620b83b3706f2a55e7bc5",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
-    }
-  },
-  {
-    "key": "6fc96f16345cf4294d91c5acb730d30b54fc03aa0666c6b4d9c274e902885ef2",
+    "key": "6cc88dfecdba369b2e843423d3f0b52cd29c5805a24b0920383591798e0c7cc8",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -937,61 +1295,97 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-28T19:18:42.613Z"
+      "at": "2026-10-29T22:24:51.898Z"
     }
   },
   {
-    "key": "7050472ff1ca29af52e5ae1802e93d9ae59b68ed39f660d618fc2f4ddd35a79a",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.88 mg/dL, 1.5 or higher: met. Two criteria met. Apixaban stays at 2.5 mg twice daily."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
-    }
-  },
-  {
-    "key": "73e496ddef7fc9351131651630adcc836a1ed40971dff316bf98d339c66b4ba9",
+    "key": "6d154c6d59d65936bbdd33fe89f05a6fd6b4a4130527f0107747d1f685579c30",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "met",
-      "quote": "no change to metformin 1000 mg twice daily"
+      "quote": "his apixaban is for a history of pulmonary embolism, the extended-phase dose after 6 months of treatment, not for non-valvular atrial fibrillation. §2 applies only to non-valvular atrial fibrillation, so its dose criteria do not apply and the policy does not cover this order: apixaban 2.5 mg twice daily continued unchanged."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-28T19:18:42.613Z"
+      "at": "2026-10-29T21:52:45.368Z"
     }
   },
   {
-    "key": "7532dee0b1d5f3c9f8c509eb5de256236482c5b2e63fd59572b3954929e01e42",
+    "key": "6df8b1180abd9c2f24350037e049f827e227eaa1e947a20bd926a0f12c2d8195",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "not_met",
-      "quote": ""
+      "quote": "current SCr 1.21 mg/dL (10/20/2026). The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-29T17:17:46.581Z"
+      "at": "2026-10-29T22:18:33.667Z"
+    }
+  },
+  {
+    "key": "6fa90875b461e449590ed25e913ef2092a95ee858f835ada68245e3722370fa6",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "§2 applies only to non-valvular atrial fibrillation, so its dose criteria do not apply and the policy does not cover this order: apixaban 2.5 mg twice daily continued unchanged. His CrCl of 43 mL/min and age raise bleeding risk, so I will watch for bleeding at the follow-up visit; it does not change the dose, which RBC-PHARM-07 does not cover."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:52:45.368Z"
+    }
+  },
+  {
+    "key": "70aef8cf9167503b17a77ffe60f675666da09bb72cfbee447c01a8a8fca21868",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Reduced from 600 mg three times daily (1800 mg/day) to 600 mg twice daily (1200 mg/day)."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T22:24:51.898Z"
+    }
+  },
+  {
+    "key": "75f8437f04e12e8749d3fda9292441b75cf6320764ffd8adc660fd9c2e24fb99",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "his apixaban is for a history of pulmonary embolism, the extended-phase dose after 6 months of treatment, not for non-valvular atrial fibrillation. §2 applies only to non-valvular atrial fibrillation, so its dose criteria do not apply and the policy does not cover this order: apixaban 2.5 mg twice daily continued unchanged."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:52:45.368Z"
     }
   },
   {
@@ -1013,61 +1407,7 @@
     }
   },
   {
-    "key": "7a2e60dbd8e92c104b051cf5a01ffdca61237a128ce2967d081af5a62920199b",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "no change to metformin 1000 mg twice daily."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-28T19:18:42.613Z"
-    }
-  },
-  {
-    "key": "7a7bb51196a187be8f5fcd0b057877f35119d73ef5dac993e6441d07e728fa27",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
-    }
-  },
-  {
-    "key": "7b98f1f161a20873c4083e7f88f289d5d9ebc5b5709c45bcbe273b4297e4b3ee",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met. One criterion met, so apixaban goes back to 5 mg twice daily"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
-    }
-  },
-  {
-    "key": "7ba58384b87bd5e3be5e247cf581a87698998a087f2b15045b4ab275b559963e",
+    "key": "7751fe64c2cdf0863bc503f3021eb66f7f5364665c022d687163f63ea124a07b",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -1081,65 +1421,11 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-29T17:17:46.581Z"
+      "at": "2026-10-29T21:52:45.368Z"
     }
   },
   {
-    "key": "7ce0adfaa4b525bb38e7b0c48abe17ad493fa7420e1c250d06b0293d3d492fff",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met. Apixaban stays at 2.5 mg twice daily."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
-    }
-  },
-  {
-    "key": "83185c3b8308208c0600406ff6f1fb83380b2d66c3f65379e639d6b749e298aa",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-28T19:18:42.613Z"
-    }
-  },
-  {
-    "key": "835a45b5f54b11db56a13611fbc1230c902f67371acf0daf0ea7b76580563203",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-28T19:18:42.613Z"
-    }
-  },
-  {
-    "key": "83e73c3dcca92cc21f217c90a130b349fc319c4819246713db9e71e6d287fa50",
+    "key": "7a6acd3828dead711c0378405e69c2c2f2a509fedd4ddd2c0fc8e74aa2c739af",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -1153,7 +1439,97 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
+      "at": "2026-10-29T21:52:45.368Z"
+    }
+  },
+  {
+    "key": "7c3a10f4fa98e5a5ddcf3d07c8b129b67ecc8bdd58a2f4ccdad2b8f49682c3e2",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:52:45.368Z"
+    }
+  },
+  {
+    "key": "7c74c46bd6a6cf2aabab90fd68b68337faca17a68a783a25cddd8aa59c3b7c27",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T22:24:51.898Z"
+    }
+  },
+  {
+    "key": "7d17600e4763eff00d7939690fba0bb95253759ad47bdbfb3a68bdd98d260efd",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:52:45.368Z"
+    }
+  },
+  {
+    "key": "822c8f905d70de8959f8d3cf52eab9c69775eece2785a021735df1dc79d6d03e",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T22:18:33.667Z"
+    }
+  },
+  {
+    "key": "8303797b3a64d509d760afebd98768f6f5ede8790c7e2df8afc7540d1295399f",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T22:24:51.898Z"
     }
   },
   {
@@ -1175,79 +1551,43 @@
     }
   },
   {
-    "key": "86efd7fcd7353119656f394c01b9161f2236c5113d4995a5125340b0f852c9ef",
+    "key": "846fdc7fffb25c5343a645a443c41418a11acef4f159b8ea9b45c81a95889e35",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
-      "verdict": "met",
-      "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met."
+      "verdict": "not_met",
+      "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 57.0 kg, 60 kg or less: met; SCr 1.21 mg/dL, 1.5 or higher: not met. Two criteria met. Apixaban stays at 2.5 mg twice daily."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
+      "at": "2026-10-29T21:52:45.368Z"
     }
   },
   {
-    "key": "8936e420c5870b10bc4e86b7c0ae6ce76646ee01f61bb0c243639e0bdf863dfa",
+    "key": "84ab82833d090dc8af6f1990456518a78d4b97492b780bc1fb5e254fe70afea0",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
-      "verdict": "met",
-      "quote": "The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
+      "verdict": "not_met",
+      "quote": "his apixaban is for a history of pulmonary embolism, the extended-phase dose after 6 months of treatment, not for non-valvular atrial fibrillation. §2 applies only to non-valvular atrial fibrillation, so its dose criteria do not apply and the policy does not cover this order: apixaban 2.5 mg twice daily continued unchanged."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-29T17:17:46.581Z"
+      "at": "2026-10-29T22:18:33.667Z"
     }
   },
   {
-    "key": "8ab2f3fea059a7dfa822c9f217e78b7a8e49053f3749a2bba22de65f7b2c3a90",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "no change to metformin 1000 mg twice daily"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-28T19:18:42.613Z"
-    }
-  },
-  {
-    "key": "8fb5a237d1ef9a16edb6ce49c8785df5dccfbe8e0da71b3ed165ea4c2681dd46",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
-    }
-  },
-  {
-    "key": "8fb9e12b9249382f25fafb206f21e3dd9e320eaf39f1f3017a7c0c878b83f354",
+    "key": "8840353301a2364325515d7ea4c077c275a41333b6f21dbf46ead736331b0f89",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -1261,29 +1601,11 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-28T19:18:42.613Z"
+      "at": "2026-10-29T22:24:51.898Z"
     }
   },
   {
-    "key": "9009f1510ad3a842832d672d28024fbd284fbb0a112374ff623543c533b661f6",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
-    }
-  },
-  {
-    "key": "926846fb086ea76a9b8ed5b678702d997232fccf108e19ae4019ad1640b54d70",
+    "key": "89c42d4e195f57bff4088da2b915fb09a7db3e48f19360fc4975379ce0993840",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -1297,35 +1619,53 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-28T19:18:42.613Z"
+      "at": "2026-10-29T22:24:51.898Z"
     }
   },
   {
-    "key": "92e3a60f2bf28d202eb9e5dc052ce3d45a67e81a2a951c97deb9d7e8f25c5c95",
+    "key": "89dcee1097266f049e0c05e6aed6212d3b0f170fc3bcf1ca727ebfcf1945e00d",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "not_met",
-      "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met. One criterion met, so apixaban goes back to 5 mg twice daily"
+      "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.88 mg/dL, 1.5 or higher: met. Two criteria met. Apixaban stays at 2.5 mg twice daily."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
+      "at": "2026-10-29T21:52:45.368Z"
     }
   },
   {
-    "key": "930a2b8f6a27cc61d3e488946cc0836f30fd99fd944f9b88cd4810e214f0af45",
+    "key": "8a7a660f87823d5518210f0550cf37999ecff0eb46f1349f2c15977d8d7a12fc",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T22:24:51.898Z"
+    }
+  },
+  {
+    "key": "8ad66ad0f1891f17d10c9c71160c0cb158f39528991bfec3c95c98960164c5d2",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
       "quote": "The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
     },
     "error": null,
@@ -1333,47 +1673,245 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
+      "at": "2026-10-29T21:52:45.368Z"
     }
   },
   {
-    "key": "935aa0313476d89d462062b815ab1b782c04e0615f82150c0476185427e4b8da",
+    "key": "8e84a5627696f90b329a0f2a9adc4c89d2d90b109b86081fa3941cc7be6f3a77",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "not_met",
-      "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 59.9 kg, 60 kg or less: met; SCr 1.21 mg/dL, 1.5 or higher: not met. Two criteria met. Apixaban stays at 2.5 mg twice daily."
+      "quote": "his apixaban is for a history of pulmonary embolism, the extended-phase dose after 6 months of treatment, not for non-valvular atrial fibrillation. §2 applies only to non-valvular atrial fibrillation, so its dose criteria do not apply and the policy does not cover this order: apixaban 2.5 mg twice daily continued unchanged."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-29T17:17:46.581Z"
+      "at": "2026-10-29T22:05:53.620Z"
     }
   },
   {
-    "key": "937753ff3fdd6db89154b5995d477aeeb122bdc9824a23cc74935bb5e59cc630",
+    "key": "8f612d774e31cfd36cd83b80f9f4badffccb3b1240e6379ec2089660f6828fbc",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "his apixaban is for a history of pulmonary embolism, the extended-phase dose after 6 months of treatment, not for non-valvular atrial fibrillation. §2 applies only to non-valvular atrial fibrillation, so its dose criteria do not apply and the policy does not cover this order: apixaban 2.5 mg twice daily continued unchanged."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:52:45.368Z"
+    }
+  },
+  {
+    "key": "905ca36db4e01c5edcee0bca06c7b77c4e7b1e2c45fa47e4a763a156af03f3d6",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "his apixaban is for a history of pulmonary embolism, the extended-phase dose after 6 months of treatment, not for non-valvular atrial fibrillation. §2 applies only to non-valvular atrial fibrillation, so its dose criteria do not apply and the policy does not cover this order: apixaban 2.5 mg twice daily continued unchanged."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:52:45.368Z"
+    }
+  },
+  {
+    "key": "90b10f1f51e4bd0b43c0380a58c0554b74fe45a99b375ed929b05bbbf98b829f",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "his apixaban is for a history of pulmonary embolism, the extended-phase dose after 6 months of treatment, not for non-valvular atrial fibrillation. §2 applies only to non-valvular atrial fibrillation, so its dose criteria do not apply and the policy does not cover this order: apixaban 2.5 mg twice daily continued unchanged."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:52:45.368Z"
+    }
+  },
+  {
+    "key": "91bf5650f4ecac8f4b41c33b29933a92eefd6a79b4c2d35de6d1b1140b412965",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "not_met",
-      "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met. One criterion met, so apixaban goes back to 5 mg twice daily"
+      "quote": "§2 applies only to non-valvular atrial fibrillation, so its dose criteria do not apply and the policy does not cover this order: apixaban 2.5 mg twice daily continued unchanged."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
+      "at": "2026-10-29T21:52:45.368Z"
     }
   },
   {
-    "key": "966e4be96cdd0d4907c6fed55ae531cae7c0117f7908271ccdf3864d1aba992a",
+    "key": "9608f9a60dd22eddfc64e35a3e048ddd0f4d5a9092a95a906c74cfef829f35f0",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T22:24:51.898Z"
+    }
+  },
+  {
+    "key": "962b985f9fb5082d3bf5d413eb24b3d350c35cd60f30d38624e6b6aa11066f42",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "his apixaban is for a history of pulmonary embolism, the extended-phase dose after 6 months of treatment, not for non-valvular atrial fibrillation. §2 applies only to non-valvular atrial fibrillation, so its dose criteria do not apply and the policy does not cover this order: apixaban 2.5 mg twice daily continued unchanged."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:52:45.368Z"
+    }
+  },
+  {
+    "key": "96b4827aecbb772ba6f3b8f9a55a22fbe3301dbfa1af02f547f80b7ce1b54ed3",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "his apixaban is the extended-phase dose after pulmonary embolism, not for non-valvular atrial fibrillation, so §2 does not apply. Continued at 2.5 mg twice daily"
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:52:45.368Z"
+    }
+  },
+  {
+    "key": "970bdf13c025801eca481bf08e3125d9c64e229efbf1f9add470cabdf9671454",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 57.0 kg, 60 kg or less: met; SCr 1.21 mg/dL, 1.5 or higher: not met. Two criteria met. Apixaban stays at 2.5 mg twice daily."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:52:45.368Z"
+    }
+  },
+  {
+    "key": "980bb0d5551191ecf0be4dc1b0cfa40b989f07077897f8c62aabae78185d4e0c",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:52:45.368Z"
+    }
+  },
+  {
+    "key": "9d3259153246a17528d1c757b5525fc8e2f4314f64a3e1c5632a119a4159bc58",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:52:45.368Z"
+    }
+  },
+  {
+    "key": "9d84288733511b444d2a6ea4d18330888e39ca0c2e41b5bc12c2b3afa6d15b35",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Apixaban criteria (§2), using the most recent creatinine of 1.71 mg/dL: age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.5 or higher: met. Two criteria met. Apixaban stays at 2.5 mg twice daily."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:52:45.368Z"
+    }
+  },
+  {
+    "key": "9e11b64b22dd4608102902fb2635704ccc22c05b2dff30e58bc3b0cb2670503e",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "his apixaban is the extended-phase dose after pulmonary embolism, not for non-valvular atrial fibrillation, so §2 does not apply. Continued at 2.5 mg twice daily, re-signed."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:52:45.368Z"
+    }
+  },
+  {
+    "key": "9ef6ba9e3f2899ea19a04700832d910ca768c842671dff15a6b948b25573ecbe",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -1387,83 +1925,29 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
+      "at": "2026-10-29T21:52:45.368Z"
     }
   },
   {
-    "key": "97bc71c983877a26e9b79803b6cdc43ff5b5026f854df1155ada74f88c5fc796",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
-    }
-  },
-  {
-    "key": "99254844204963313d2226589a00ee45d32eefb3b831df1d1508456b938d08fd",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
-    }
-  },
-  {
-    "key": "9b5b77032a738267be29842c6980065c02e66a7fcc1132155cd9b984b6b039e0",
+    "key": "9f5d4c68dfa3a8f67afef0695df28e879ad38e597bd9faaf2c001f82005bfc20",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "not_met",
-      "quote": "current SCr 1.21 mg/dL (10/20/2026). The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
+      "quote": "Apixaban: indication is history of PE (extended-phase dose per St. Brigid hematology, 2/5/2026), not NVAF. RBC-PHARM-07 §2 does not apply; no change, 2.5 mg BID."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
+      "at": "2026-10-29T21:52:45.368Z"
     }
   },
   {
-    "key": "9bd03d92a8c197bd43f5825cff2fc9b523038a28cf0f60879280a8818bb230c2",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "current SCr 1.21 mg/dL (10/20/2026). The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
-    }
-  },
-  {
-    "key": "9ee78238676447a99a92776713d22fa8fa0b01e253c0370a5d53a7e854bd28e9",
+    "key": "a07dbb104988ea55c5a66c0115af4003250f618579d2ac2b27974b77aec6d1f4",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -1477,11 +1961,65 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-28T19:18:42.613Z"
+      "at": "2026-10-29T22:24:51.898Z"
     }
   },
   {
-    "key": "9f9c339809c2aa4d277e07eba797f9210258777d07776319d05242c566a793ed",
+    "key": "a26cfec658e5910f010dbbf2ea222cf4f33fb6f0e416e69d2a66ce9c2a4c88da",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.71 mg/dL, 1.5 or higher: met. Two criteria met. Apixaban stays at 2.5 mg twice daily."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:52:45.368Z"
+    }
+  },
+  {
+    "key": "a2708838d54037b1a25f4465e2bfdb4c3a54adb000f26d1dd80a64d174077731",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "One criterion met, so apixaban goes to 5 mg twice daily under RBC-PHARM-07"
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:52:45.368Z"
+    }
+  },
+  {
+    "key": "a5509001a59de32a42579973c22330783a19159301b526187daebf144dedac07",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Only one criterion met, so apixaban 2.5 mg twice daily stopped and changed to apixaban 5 mg twice daily."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:52:45.368Z"
+    }
+  },
+  {
+    "key": "aaaeaa3ae548f8ca0e9a1cc4dc00c18d87ae08408f60e99f2bd5727408622cd4",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -1495,47 +2033,11 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-29T17:17:46.581Z"
+      "at": "2026-10-29T22:24:51.898Z"
     }
   },
   {
-    "key": "a35966c017ea0c13ce93ce8a03422684cb3d06a83399a139cda0da80e6f8a675",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-28T19:18:42.613Z"
-    }
-  },
-  {
-    "key": "a3d9ea12b062ef6bb4e60161025421a0fb3bc9d099f68f89f04a69ae5e88dd59",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "One criterion met, so apixaban goes back to 5 mg twice daily (2.5 mg twice daily since the February admission)."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-28T19:18:42.613Z"
-    }
-  },
-  {
-    "key": "a9023e8dd645bcd659e027dd4400ead6ccd0d0cb8aa34c0abb166ae85ec33507",
+    "key": "ad97c8b74385ddbb0d70ab0372cb52f45c1756ab4831eb397f91fca6b01ca989",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -1549,47 +2051,11 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
+      "at": "2026-10-29T21:52:45.368Z"
     }
   },
   {
-    "key": "ab618ceca6c467f3862b1f69ec0f5da71a7a2f10b42f18c0d65f3c57546fd16f",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "weight 57.0 kg, 60 kg or less: met"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
-    }
-  },
-  {
-    "key": "ad1d28f2d9a11deab8cc10039c9ca30b5d0ac4af03dd2ba2d20e21f81ffcbf3b",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
-    }
-  },
-  {
-    "key": "ae9944553febddfa8479e7d8da6fc9ea10fbc0d283813c0706816b79ce95ef66",
+    "key": "ae9e16c6ccd55e534bb9445979f07e7455c55a74fa4e130c95fc0f7453c11d3d",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -1603,7 +2069,43 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-29T06:04:28.168Z"
+      "at": "2026-10-29T22:24:51.898Z"
+    }
+  },
+  {
+    "key": "aeb6e98f134c5c5b995ed0a9bc7ec698290cde553ac486e9b00a8ad150e843f7",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.71 mg/dL, 1.5 or higher: met. Two criteria met. Apixaban stays at 2.5 mg twice daily."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:52:45.368Z"
+    }
+  },
+  {
+    "key": "aef451a9796861c3ca3eccb1592005327507a5f4b4889d36fbe9b09fc5893ac1",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T22:24:51.898Z"
     }
   },
   {
@@ -1643,39 +2145,57 @@
     }
   },
   {
-    "key": "b08b3880478a563370bcdcaa4683c7abafb7ebf26983ab78f6e56b4f5b9ee3fc",
+    "key": "b0dab645502b45d12258be454617b5ce82dcc92d8f4830e1d6f2e4baf3d0b0ee",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "not_met",
-      "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met. One criterion met, so apixaban goes back to 5 mg twice daily"
+      "quote": ""
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
+      "at": "2026-10-29T22:24:51.898Z"
     }
   },
   {
-    "key": "b08cd84c195328fa607e09f1a448983227f6036b4f2a65c63735325e36950a2a",
+    "key": "b1b469ea666db77296f15d8465f30d6199dc71fa873270696f188234ec8dffab",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "not_met",
-      "quote": "The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
+      "quote": ""
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
+      "at": "2026-10-29T22:24:51.898Z"
+    }
+  },
+  {
+    "key": "b27749ea33974287695efcc1812640c11143018c84b70964d1f4112e386a8241",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "current SCr 1.21 mg/dL (10/20/2026). The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:52:45.368Z"
     }
   },
   {
@@ -1698,7 +2218,25 @@
     }
   },
   {
-    "key": "b2c6c0668f423651885bbf6f4db46c1be13aa70c346112c843f72fd1083e59a8",
+    "key": "b3102709311e6231b6722f7d30aab14e9f49037c298f65b8a5413cd44efcc22c",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Apixaban dose criteria (dose decision based on these three criteria only):"
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:52:45.368Z"
+    }
+  },
+  {
+    "key": "b35e4a432dc6d3bebc25253bc0e03259f415e0b68f43689055f61cca94fdaa4a",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -1712,25 +2250,7 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-28T19:18:42.613Z"
-    }
-  },
-  {
-    "key": "b33f8b705e971d35ffedf92775eea9fb545183c836f2a4f17642d927272a6eb8",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "SCr 1.71 mg/dL, 1.5 or higher: met"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
+      "at": "2026-10-29T22:24:51.898Z"
     }
   },
   {
@@ -1752,7 +2272,7 @@
     }
   },
   {
-    "key": "b4dd06865114ef6e6e4276e59d7c9a4dbd00b9f85accf8abb6035f0a3d43cab9",
+    "key": "b6e524a5b0c46c307ab3df694e5459e59e9e5f4f4b071ed009a2270f40ab4707",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -1766,115 +2286,97 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-29T07:11:42.016Z"
+      "at": "2026-10-29T22:24:51.898Z"
     }
   },
   {
-    "key": "b6f28e0f20b6f24320430d2c32aeb9963205d739fb0d0a0fe81486e6a2794243",
+    "key": "b77012704af679fa16b0ea9984457925fb8c6bdb24208fcc18259572e55d903c",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "not_met",
-      "quote": ""
+      "quote": "Only one criterion met, so apixaban 2.5 mg twice daily stopped and changed to apixaban 5 mg twice daily."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-28T19:18:42.613Z"
+      "at": "2026-10-29T21:52:45.368Z"
     }
   },
   {
-    "key": "b93f379135cecd0e81659a4418c3359ad8877419644b2ac128fd00d53f3ff741",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-29T17:17:46.581Z"
-    }
-  },
-  {
-    "key": "c01eb06aeac0fc43d291808225e16d608acc3d6568ee54a7bb4a9e837ea81f1c",
+    "key": "b9b328313eb44dc2ee63e0d894eee0185f8c918d75de9ac1c31bbf3d4e6af5fd",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "met",
-      "quote": "The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
+      "quote": "his apixaban is for a history of pulmonary embolism, the extended-phase dose after 6 months of treatment, not for non-valvular atrial fibrillation. §2 applies only to non-valvular atrial fibrillation, so its dose criteria do not apply and the policy does not cover this order: apixaban 2.5 mg twice daily continued unchanged."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
+      "at": "2026-10-29T21:52:45.368Z"
     }
   },
   {
-    "key": "c173ffcaf2f41acaa314fae86a80ad0b652fb49316d2cdf1998a4e43c2134d0c",
+    "key": "bd0c5bfc8ebc8d7c59ec823362686458d0259beca73461d796764e2637fbe4ab",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "not_met",
-      "quote": "One criterion met, so apixaban goes back to 5 mg twice daily (2.5 mg twice daily since the February admission). His CrCl of 43 mL/min and age raise bleeding risk, so I will watch for bleeding at the follow-up visit; it does not change the dose under RBC-PHARM-07."
+      "quote": "his apixaban is the extended-phase dose after pulmonary embolism, not for non-valvular atrial fibrillation, so §2 does not apply. Continued at 2.5 mg twice daily, re-signed."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
+      "at": "2026-10-29T21:52:45.368Z"
     }
   },
   {
-    "key": "c3fd4d3ba7fbcea70173b430b67adf42a581f66cb40b4c09cfda428a503a760a",
+    "key": "befb03c07dce4a7e55d66e208eb05a8e6b007bfc94dbedcea3aeec00e597bf00",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "not_met",
-      "quote": ""
+      "quote": "his apixaban is the extended-phase dose after pulmonary embolism, not for non-valvular atrial fibrillation, so §2 does not apply. Continued at 2.5 mg twice daily, as half a 5 mg tablet."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-28T19:18:42.613Z"
+      "at": "2026-10-29T21:52:45.368Z"
     }
   },
   {
-    "key": "c4367eb81d853a59c12bd5ddf8d3116435ab9278905b7b17b4360dba5152f574",
+    "key": "c56c6ccfc3a184ddc974b1a38f1de544371ea61a135c7ca1acadd6ed2bd29302",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "not_met",
-      "quote": ""
+      "quote": "current SCr 1.21 mg/dL (10/20/2026). The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-28T19:18:42.613Z"
+      "at": "2026-10-29T21:52:45.368Z"
     }
   },
   {
@@ -1896,61 +2398,7 @@
     }
   },
   {
-    "key": "c600b30291683e1806d33ac5d003ec9cc0654f5861b84f982fe1873b88f3e848",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met. One criterion met, so apixaban goes back to 5 mg twice daily"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-29T17:17:46.581Z"
-    }
-  },
-  {
-    "key": "c89ea9f527d7803607d82ce1cca365fcccc1cb2ffdb61e53cdeb9007798bfee9",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
-    }
-  },
-  {
-    "key": "c96ae9f01dcb7028d9510cc866b2b8f520831a59fba3fff0dd6369e8bc461de8",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "weight 59.9 kg, 60 kg or less: met"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-29T17:17:46.581Z"
-    }
-  },
-  {
-    "key": "c97aeeeefd29f3dab3c8fca8b3730457b44b968cc6af77f868a01b0f937840ad",
+    "key": "c6025a3e898ac2c84800fbebc72b8fcca0ec4f84dd0a1b1b5fbb9dfd5162d5a0",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -1964,65 +2412,29 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-28T19:18:42.613Z"
+      "at": "2026-10-29T22:24:51.898Z"
     }
   },
   {
-    "key": "c9aab299b07c9abf93b3c417e03973b1d0063e191e21c6b4cbc5793fc2823b87",
+    "key": "c9f6e800317d49d92d4b47884e88659b87479673c1f3793b5ff67769f1b9f601",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
-      "verdict": "met",
-      "quote": "The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
+      "verdict": "not_met",
+      "quote": "his apixaban is the extended-phase dose after pulmonary embolism, not for non-valvular atrial fibrillation, so §2 does not apply. Continued at 2.5 mg twice daily"
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-29T17:17:46.581Z"
+      "at": "2026-10-29T21:52:45.368Z"
     }
   },
   {
-    "key": "ca3283dea7f932b93e127bee45f3ef911be1073ba04aab56f925fea3e837cc57",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
-    }
-  },
-  {
-    "key": "cb99a1d9430dd335de1f7b256c740afd3b75925b1c49c397734f58ac8accbc9c",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "no change to metformin 1000 mg twice daily."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-29T04:56:00.808Z"
-    }
-  },
-  {
-    "key": "cc6be7a95dfd5efdd9ae97b46fe11961bbf6e1952e695f214ba7851ee9ef17ad",
+    "key": "ca04f10ab91f014398af3efb22066b7d804190ba17333d2a5855328a7a32dc8c",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -2036,115 +2448,79 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
+      "at": "2026-10-29T21:52:45.368Z"
     }
   },
   {
-    "key": "cc855d5f12c1d7c389445d9fb8d0ee7d626e70a050fda66217291c5548473b77",
+    "key": "cc4977ec6b7e2f4784b6e663345d0119b0b7e54ba169871f5bb78ff8d29e76ea",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "not_met",
-      "quote": "current SCr 1.21 mg/dL (10/20/2026). The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
+      "quote": "his apixaban is for a history of pulmonary embolism, the extended-phase dose after 6 months of treatment, not for non-valvular atrial fibrillation. §2 applies only to non-valvular atrial fibrillation, so its dose criteria do not apply and the policy does not cover this order: apixaban 2.5 mg twice daily continued unchanged."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
+      "at": "2026-10-29T21:52:45.368Z"
     }
   },
   {
-    "key": "cdf4aada11e7eea32f60793f2e7a0ecd3dd6276fb25c68e997b413167f361727",
+    "key": "cf675ecb2a9bb3b314810dd16ef5b3c5740d2385e3f67966f098db8ceed5cf0c",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "met",
-      "quote": "age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met."
+      "quote": "the current SCr of 1.88 mg/dL (10/21/2026) was entered in error (specimen mislabelled, belongs to another patient) and was not used"
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
+      "at": "2026-10-29T21:52:45.368Z"
     }
   },
   {
-    "key": "d058093ec9e4e513d7f4a68f174685eac299769c671ba8cd724106599afb620b",
+    "key": "d0582662db605e05e732cadd2ac605e60ba13a0402c19cfb83c8b18c2aeff885",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "met",
-      "quote": "age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met."
+      "quote": "his apixaban is the extended-phase dose after pulmonary embolism, not for non-valvular atrial fibrillation, so §2 does not apply. Continued at 2.5 mg twice daily, stopped and re-ordered on the same 2.5 mg tablet."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
+      "at": "2026-10-29T21:52:45.368Z"
     }
   },
   {
-    "key": "d0965bd3307e9b43aeb5f32e556a230c0f3655fea81c742e79390580c5da4887",
+    "key": "d369ae67974c2eb204860576462f314d925d28eb1783d6e32b29525d197c0301",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
-      "verdict": "met",
-      "quote": "Reduced from 600 mg three times daily (1800 mg/day) to 600 mg twice daily (1200 mg/day)."
+      "verdict": "not_met",
+      "quote": ""
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-29T06:04:28.168Z"
-    }
-  },
-  {
-    "key": "d18c9d86217f3e8ddebc29b03a29cbfd47481175028ee1094fc5d6b9fea7ae00",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
-    }
-  },
-  {
-    "key": "d19d7f0d62f55ed4124247ee32f69fa238fef356d8a7b86222003c790042fd1b",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "Reduced from 600 mg three times daily (1800 mg/day) to 600 mg twice daily (1200 mg/day)."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-28T19:18:42.613Z"
+      "at": "2026-10-29T22:24:51.898Z"
     }
   },
   {
@@ -2167,7 +2543,43 @@
     }
   },
   {
-    "key": "d572dd88a287c2a55b163a026a9a2542f411140a6e01d5e064de0bc38d004135",
+    "key": "d5b1c248ccbff0631fd84ddc4de23f59f0acc3be0c1929d7bd29b70a85820119",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "his apixaban is for a history of pulmonary embolism, the extended-phase dose after 6 months of treatment, not for non-valvular atrial fibrillation. §2 applies only to non-valvular atrial fibrillation, so its dose criteria do not apply and the policy does not cover this order: apixaban 2.5 mg twice daily continued unchanged."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T22:18:33.667Z"
+    }
+  },
+  {
+    "key": "d650e57372dc8b40d2c6803425a6852cd17c3681d9fefaa89c3e19085e446ef2",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.88 mg/dL, 1.5 or higher: met. Two criteria met. Apixaban stays at 2.5 mg twice daily."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:52:45.368Z"
+    }
+  },
+  {
+    "key": "d65d1a3638ca1f2a8fd294a9fda4c2fcaf0eab10eeec02e6067b77fce07b6e33",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -2181,25 +2593,43 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
+      "at": "2026-10-29T21:52:45.368Z"
     }
   },
   {
-    "key": "d60cb984a2f133b0b33d2d6537cc9bce4dc2792eefb313701518e69b9cc388ee",
+    "key": "d71a5b05b30e1660d1a80350edba76c72bec1ed5b69508c9d8efe6b9df44b0a3",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "not_met",
-      "quote": "the current SCr of 1.88 mg/dL (10/21/2026) was entered in error (specimen mislabelled, belongs to another patient) and was not used; the review uses the SCr of 1.21 mg/dL (10/20/2026)"
+      "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met. One criterion met, so apixaban goes back to 5 mg twice daily"
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
+      "at": "2026-10-29T21:52:45.368Z"
+    }
+  },
+  {
+    "key": "d850ae33b843fb471eaa6e17e1cf3231b7852dfd0194b3b1b577fa163bc7f8d3",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "apixaban 2.5 mg twice daily continued unchanged"
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T22:24:51.898Z"
     }
   },
   {
@@ -2221,115 +2651,43 @@
     }
   },
   {
-    "key": "dbf5373f6ef1709e86ef2a8114e96b883b463cb16df1b9a1eb6ad47c53fe17d9",
+    "key": "d8937e93550816018100ba1f060071719f1157e6622019be157c5ad82c5be273",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "not_met",
-      "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met. One criterion met, so apixaban goes back to 5 mg twice daily"
+      "quote": "Apixaban criteria (§2), using the most recent creatinine of 1.71 mg/dL: age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.5 or higher: met. Two criteria met. Apixaban stays at 2.5 mg twice daily."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
+      "at": "2026-10-29T21:52:45.368Z"
     }
   },
   {
-    "key": "dd9cf3339d34fa172c879ff3dff153cc4806bb647986343f79ee9c31e92bb891",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
-    }
-  },
-  {
-    "key": "e1db4f4262caed5583b39a4b663b59ced77e5c02577ed24bcc78ef35b09f0f28",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
-    }
-  },
-  {
-    "key": "e3f20542a6a4b087c2ed6bf6b236fb11e7c6ab516d83244f7ae5d75f41d58a55",
+    "key": "d9abf1334c571be2395c9d1a7baadd9a9e6f13a3c580b898fdbb3f5ae12a0e1a",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "not_met",
-      "quote": ""
+      "quote": "Only one criterion met, so apixaban 2.5 mg twice daily was stopped and apixaban 5 mg twice daily was ordered."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-28T19:18:42.613Z"
+      "at": "2026-10-29T21:52:45.368Z"
     }
   },
   {
-    "key": "e4a095d016f695766b2f272ce17d9750ec6425c618678cb07927e126d10eb733",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "Metformin 500 mg once daily: eGFR at least 45, no change."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-28T19:18:42.613Z"
-    }
-  },
-  {
-    "key": "e52460add22d1588678fba5b0092760d241eebde91e2dd1e731cc7ce1790cb16",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "Reduced from 600 mg three times daily (1800 mg/day) to 600 mg twice daily (1200 mg/day)."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-29T04:56:00.808Z"
-    }
-  },
-  {
-    "key": "e71df0b04418b16665fce3822a93bec7ae31b9c1251ebe0d7fc2298ead22e963",
+    "key": "e00002cf98397555fdce456d1cb931c6a5914e3bbb670ac865e6c3d8defdd59d",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -2343,47 +2701,47 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
+      "at": "2026-10-29T21:52:45.368Z"
     }
   },
   {
-    "key": "e747efae5004ad27f643b2231fae020db69995d26d5f4b9b8f3a74c51a8edc2e",
+    "key": "e1da8c4b4942c378b4fdbf3c91d70891d4c059af19637f4b556dd7bf6386c4e7",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
-      "verdict": "met",
-      "quote": "apixaban goes back to 5 mg twice daily"
+      "verdict": "not_met",
+      "quote": "current SCr 1.21 mg/dL (10/20/2026). The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-28T19:18:42.613Z"
+      "at": "2026-10-29T21:52:45.368Z"
     }
   },
   {
-    "key": "ecde3ca62f3587efad025e4b81adcb143980c3c3ad95f1fa1644f446429b8700",
+    "key": "e37d10172b1dd52225f6f3dccc92b8a2a3779d33f1e575bb1789044fda4da6cd",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "met",
-      "quote": "Reduced from 600 mg three times daily (1800 mg/day) to 600 mg twice daily (1200 mg/day)."
+      "quote": "his apixaban is for a history of pulmonary embolism, the extended-phase dose after 6 months of treatment, not for non-valvular atrial fibrillation. §2 applies only to non-valvular atrial fibrillation, so its dose criteria do not apply and the policy does not cover this order: apixaban 2.5 mg twice daily continued unchanged."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-28T19:18:42.613Z"
+      "at": "2026-10-29T21:52:45.368Z"
     }
   },
   {
-    "key": "ece90f371fa2c0e14554c137df0eae30e2d79a8a8c944477ed9e92026cfd66b8",
+    "key": "e45d4c0994a56258c3eaedf00b5789f3f154659a6b859b7de41c1b50c60f6c07",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -2397,17 +2755,179 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-28T19:18:42.613Z"
+      "at": "2026-10-29T22:24:51.898Z"
     }
   },
   {
-    "key": "ee2f98d18234d55c07b3e55c54179b88fe479a707f1d16b1c3f2f77c741742bb",
+    "key": "e4de2bf6030bcc9a482ace7c54452b0b688de4b369d6de3271e76b8be9b39554",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T22:24:51.898Z"
+    }
+  },
+  {
+    "key": "e9a47158e8dd18171ddedd2e9b89f8a69a5fbab556d4cf61fae933ef53d5e4e9",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "apixaban 2.5 mg twice daily continued unchanged."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T22:24:51.898Z"
+    }
+  },
+  {
+    "key": "ebc57a6318eb0647024960c6530754633423f59e4d0eec5570c376bfc3e21e8a",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "§2 applies only to non-valvular atrial fibrillation, so its dose criteria do not apply and the policy does not cover this order: apixaban 2.5 mg twice daily continued unchanged."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:52:45.368Z"
+    }
+  },
+  {
+    "key": "ee319a45e3e619df140e705d1ceed878f086f73f9168fc37e47034ba82a7b4b6",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "his apixaban is the extended-phase dose after pulmonary embolism, not for non-valvular atrial fibrillation, so §2 does not apply. Continued at 2.5 mg twice daily, one 2.5 mg tablet twice daily."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:52:45.368Z"
+    }
+  },
+  {
+    "key": "f0dd93bc15543926cfdb4b7279cc06bd16c164c92d0444be7741a65aa4817556",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "§2 applies only to non-valvular atrial fibrillation, so its dose criteria do not apply and the policy does not cover this order: apixaban 2.5 mg twice daily continued unchanged."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:52:45.368Z"
+    }
+  },
+  {
+    "key": "f440657d7dd99a7aa101a015faf259d7b2f0306bc9ed4593676f9a37c211de89",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T22:24:51.898Z"
+    }
+  },
+  {
+    "key": "f45b5f4c850744cf96d8f70b176978d3a5a4923b039f8161049987a262d9d2a3",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T22:24:51.898Z"
+    }
+  },
+  {
+    "key": "f8884a9e816345101d65437ba6be00bb28befaeb3177a917f8f08d9934b718c3",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T22:24:51.898Z"
+    }
+  },
+  {
+    "key": "fb106fd886d210e5898ae0034de23d9f6cea0211ab910546903ef2d4139c2dee",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "no change to metformin 1000 mg twice daily."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T22:24:51.898Z"
+    }
+  },
+  {
+    "key": "fbe577b8120b7acbb7c817c6cdf828f1ba399c2f69aa46b72b4a18636a103769",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
       "quote": "The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
     },
     "error": null,
@@ -2415,171 +2935,7 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
-    }
-  },
-  {
-    "key": "f006c954bde87146e2c5b21216f332e700a6f1bced7231933cce2bbeed0324cb",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "Only one criterion met, so apixaban 2.5 mg twice daily stopped and changed to apixaban 5 mg twice daily."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-28T18:42:17.179Z",
-      "note": "answered live by the P17 PR22b exploit run, results/exploit/renal-dose-review/1.json; copied by builder-148"
-    }
-  },
-  {
-    "key": "f086c21efb8e044df5309514c0e4d9dc277167db18ebc71229815e756d160137",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-29T04:56:00.808Z"
-    }
-  },
-  {
-    "key": "f1b09c2a21a1f0d000bf25926bfabf235a93ca35072c853fbc5618c3d3a0a168",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "With a creatinine clearance of 43 mL/min, I am keeping apixaban at 2.5 mg twice daily for his renal function."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
-    }
-  },
-  {
-    "key": "f4ba801bd75eff0a03467c91478cfe1520c872145f932999f27495b990082237",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "Reduced from 600 mg three times daily (1800 mg/day) to 600 mg twice daily (1200 mg/day)."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-29T06:04:28.168Z"
-    }
-  },
-  {
-    "key": "f6c56c5a4bad50b722e09e7e7da203c8efbb24155b6be3a392d0b13e59cc0215",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-28T19:18:42.613Z"
-    }
-  },
-  {
-    "key": "f87fd52edc0fd85ef95487339f79775ef5babb03837e99bc5cd6dc320d7eb3bf",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 57.0 kg, 60 kg or less: met; SCr 1.21 mg/dL, 1.5 or higher: not met. Two criteria met. Apixaban stays at 2.5 mg twice daily."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
-    }
-  },
-  {
-    "key": "f8a684ba5687d1decbf7c2e117a62434027510cccb27e1ccae61db9b03a43703",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "Apixaban dose criteria (dose decision based on these three criteria only):"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-28T18:41:09.555Z",
-      "note": "answered live by the P17 PR22b exploit run, results/exploit/renal-dose-review/0.json; copied by builder-148"
-    }
-  },
-  {
-    "key": "f9106a1f00dcf5e3b2b38e1db5f30a2654d4ea765fd03fda670a061fea7fac4c",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
-    }
-  },
-  {
-    "key": "f9c2579931e4221c3d844a1a56101cb61ff73a5150c8c796a89fa27f91ed45f4",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-28T19:18:42.613Z"
+      "at": "2026-10-29T22:05:53.620Z"
     }
   },
   {
@@ -2591,24 +2947,6 @@
     "answer": {
       "verdict": "met",
       "quote": "the 1.88 mg/dL result of 10/21/2026 was entered in error and not used"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-25T14:39:17.813Z"
-    }
-  },
-  {
-    "key": "feb37715d00b361a2f2fbaa265829bb5ad02e6905e275fcefdface43f7668608",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "the current SCr of 1.88 mg/dL (10/21/2026) was entered in error (specimen mislabelled, belongs to another patient) and was not used"
     },
     "error": null,
     "calls": 1,

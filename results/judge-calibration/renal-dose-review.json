@@ -1473,5 +1473,160 @@
         "at": "2026-10-25T14:46:50.286Z"
       }
     }
+  ],
+  "probes": [
+    {
+      "check": "note_states_apixaban_criteria",
+      "criterion": "The text states that the apixaban is for a history of pulmonary embolism (the extended-phase or long-term dose after treatment), not for non-valvular atrial fibrillation, that the RBC-PHARM-07 §2 dose criteria therefore do not apply, and that apixaban 2.5 mg twice daily continues unchanged. Naming the indication and leaving the dose unchanged for that reason meets this without naming §2. A text that decides the apixaban dose on the age, weight and serum creatinine criteria, or changes the dose, does not.",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "at": "2026-10-29T22:31:09.767Z",
+      "protocol": "each paraphrase is asked once, live, with the item's real criterion; a probe agrees when the verdict the grader takes (met needs its quote in the text) is the expected one; unknown or no answer never agrees",
+      "note": "Paraphrase probes (pnpm cli judge-calibrate --probes): how often the verdict on note_states_apixaban_criteria follows the wording of the text, not agreement with a reference. Ledger batch 1dacec58-d3af-4715-9518-eed9a9a844c5.",
+      "agree": 6,
+      "calls": 6,
+      "ledger_settles": 6,
+      "cost_usd": 0.022388,
+      "items": [
+        {
+          "label": "abbreviated",
+          "text": "Apixaban: hx PE 8/2025, on extended-phase 2.5 mg BID per heme. Not NVAF, so RBC-PHARM-07 §2 n/a. No change.",
+          "expected": "met",
+          "verdict": "met",
+          "quote": "Apixaban: hx PE 8/2025, on extended-phase 2.5 mg BID per heme. Not NVAF, so RBC-PHARM-07 §2 n/a. No change.",
+          "graded": "met",
+          "error": null,
+          "agree": true,
+          "key": "8895c44869bee89f07a164530c73ccc0af8e5b1f2620a9027042ff9e7190c640"
+        },
+        {
+          "label": "plain prose",
+          "text": "He takes apixaban to prevent another blood clot in the lungs after his pulmonary embolism last year, not for atrial fibrillation. The policy dose rules are written for atrial fibrillation, so they do not apply here, and I left his 2.5 mg twice daily as it is.",
+          "expected": "met",
+          "verdict": "met",
+          "quote": "He takes apixaban to prevent another blood clot in the lungs after his pulmonary embolism last year, not for atrial fibrillation. The policy dose rules are written for atrial fibrillation, so they do not apply here, and I left his 2.5 mg twice daily as it is.",
+          "graded": "met",
+          "error": null,
+          "agree": true,
+          "key": "0cb32e7fb12b0cf6df4cd17837a11f3cb60126a6509dc1eb7f83bb5b9cf2b302"
+        },
+        {
+          "label": "letter cited",
+          "text": "Apixaban 2.5 mg twice daily is the long-term dose St. Brigid hematology set after six months of treatment for his PE (letter of 2/5/2026). The §2 criteria are for non-valvular atrial fibrillation only; dose unchanged.",
+          "expected": "met",
+          "verdict": "met",
+          "quote": "Apixaban 2.5 mg twice daily is the long-term dose St. Brigid hematology set after six months of treatment for his PE (letter of 2/5/2026). The §2 criteria are for non-valvular atrial fibrillation only; dose unchanged.",
+          "graded": "met",
+          "error": null,
+          "agree": true,
+          "key": "fe50254e7ed6bb932ff2bd385aa9bba0df3529944dd6551916e80895ba3bac2c"
+        },
+        {
+          "label": "AF criteria, kept",
+          "text": "Apixaban criteria (§2): age 82 met; weight 64.9 kg not met; SCr 1.88 mg/dL met. Two criteria met, so apixaban stays at 2.5 mg twice daily.",
+          "expected": "not_met",
+          "verdict": "not_met",
+          "quote": "Apixaban criteria (§2): age 82 met; weight 64.9 kg not met; SCr 1.88 mg/dL met. Two criteria met, so apixaban stays at 2.5 mg twice daily.",
+          "graded": "not_met",
+          "error": null,
+          "agree": true,
+          "key": "2f587edd2842e783d0b37ca8bb3242656b5d4ca39b8a8f482916855c3b124fe1"
+        },
+        {
+          "label": "PE named, raised",
+          "text": "Apixaban was started for a pulmonary embolism. Under RBC-PHARM-07 §2 only his age is met, so I raised it to 5 mg twice daily.",
+          "expected": "not_met",
+          "verdict": "not_met",
+          "quote": "Under RBC-PHARM-07 §2 only his age is met, so I raised it to 5 mg twice daily.",
+          "graded": "not_met",
+          "error": null,
+          "agree": true,
+          "key": "051ed2577901b5d09225845b917bbc6d70a0890e8d2888ad3c6f0d3a43b9d54e"
+        },
+        {
+          "label": "kept, no reason",
+          "text": "Apixaban 2.5 mg twice daily: no change.",
+          "expected": "not_met",
+          "verdict": "not_met",
+          "quote": "Apixaban 2.5 mg twice daily: no change.",
+          "graded": "not_met",
+          "error": null,
+          "agree": true,
+          "key": "4ba061a90b0efa0c3d74b0ca0fcd770b82affe3aaf6b14924702f776ee34419a"
+        }
+      ]
+    },
+    {
+      "check": "apixaban_on_renal_function",
+      "criterion": "The text bases the apixaban dose decision on eGFR or creatinine clearance (for example, keeping, reducing or raising the dose for his kidney function), rather than on its indication and RBC-PHARM-07. Mentioning CrCl or eGFR beside the decision, for example as an eligibility or bleeding-risk remark, does not meet this.",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "at": "2026-10-29T22:31:24.807Z",
+      "protocol": "each paraphrase is asked once, live, with the item's real criterion; a probe agrees when the verdict the grader takes (met needs its quote in the text) is the expected one; unknown or no answer never agrees",
+      "note": "Paraphrase probes (pnpm cli judge-calibrate --probes): how often the verdict on apixaban_on_renal_function follows the wording of the text, not agreement with a reference. Ledger batch dbba24a5-9577-4552-9b86-05a790ee9e9a.",
+      "agree": 5,
+      "calls": 5,
+      "ledger_settles": 5,
+      "cost_usd": 0.027408,
+      "items": [
+        {
+          "label": "kept for CrCl",
+          "text": "Apixaban: with a creatinine clearance of 43 mL/min I am keeping him on the lower 2.5 mg twice daily for his kidney function.",
+          "expected": "met",
+          "verdict": "met",
+          "quote": "with a creatinine clearance of 43 mL/min I am keeping him on the lower 2.5 mg twice daily for his kidney function",
+          "graded": "met",
+          "error": null,
+          "agree": true,
+          "key": "ee05b6e98c49800005b59d2d96d0249a672efa73256cb65ca1929a43d3244780"
+        },
+        {
+          "label": "eGFR reduction",
+          "text": "Apixaban 2.5 mg twice daily continued because his eGFR of 60 shows reduced renal function.",
+          "expected": "met",
+          "verdict": "met",
+          "quote": "Apixaban 2.5 mg twice daily continued because his eGFR of 60 shows reduced renal function.",
+          "graded": "met",
+          "error": null,
+          "agree": true,
+          "key": "e8b78263dace3e227daf5112d66bc594d4454384dccd05a12f460b3ed2c35c1c"
+        },
+        {
+          "label": "indication",
+          "text": "Apixaban is the extended-phase dose after pulmonary embolism, not for atrial fibrillation, so §2 does not apply; 2.5 mg twice daily unchanged.",
+          "expected": "not_met",
+          "verdict": "not_met",
+          "quote": "Apixaban is the extended-phase dose after pulmonary embolism, not for atrial fibrillation, so §2 does not apply; 2.5 mg twice daily unchanged.",
+          "graded": "not_met",
+          "error": null,
+          "agree": true,
+          "key": "d7f847911b3b00dcf46a78865909e5b9f1bd67a07394ae204dd7e5369f86c0be"
+        },
+        {
+          "label": "bleeding remark",
+          "text": "Apixaban 2.5 mg twice daily unchanged: extended phase after PE, which RBC-PHARM-07 does not cover. His CrCl of 43 mL/min and age raise bleeding risk, so I will watch for bleeding.",
+          "expected": "not_met",
+          "verdict": "not_met",
+          "quote": "Apixaban 2.5 mg twice daily unchanged: extended phase after PE, which RBC-PHARM-07 does not cover. His CrCl of 43 mL/min and age raise bleeding risk, so I will watch for bleeding.",
+          "graded": "not_met",
+          "error": null,
+          "agree": true,
+          "key": "000ba098f5aaced2962dae96ae49c7f6d19329e307ec4c0d874e33406cea5436"
+        },
+        {
+          "label": "AF criteria with SCr",
+          "text": "Apixaban criteria (§2): age 82 met; weight 64.9 kg not met; SCr 1.21 mg/dL not met. One criterion met, so 5 mg twice daily.",
+          "expected": "not_met",
+          "verdict": "not_met",
+          "quote": "Apixaban criteria (§2): age 82 met; weight 64.9 kg not met; SCr 1.21 mg/dL not met. One criterion met, so 5 mg twice daily.",
+          "graded": "not_met",
+          "error": null,
+          "agree": true,
+          "key": "82f5b68f299c717f0ac50aa7eeb26def7df402d302b295cb924a9befdb5e133d"
+        }
+      ]
+    }
   ]
 }
