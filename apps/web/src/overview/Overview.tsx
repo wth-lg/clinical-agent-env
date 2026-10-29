@@ -16,6 +16,7 @@ import { useTaskList } from '../data/tasks.ts';
 import { policyLine, taskTitle } from '../tasks/title.ts';
 import { Card, formatInterval, GlossaryLink, Hash, IntervalRow, markLabel, MarkLegend, markOf, Notice, Page, Swatch } from '../data/ui.tsx';
 import { hrefWith, onNav } from '../data/url.ts';
+import { freshView } from '../shell/views.ts';
 import { safePass } from '../data/harm.ts';
 import { isFalsePass, kindWords, mostCommon, runBlock, shownFault } from '../data/failures.ts';
 import { FaultBox, RunBlocked } from '../findings/why.tsx';
@@ -23,6 +24,7 @@ import { ModelLine, PassK, PassKLink } from '../findings/passk.tsx';
 import { formatClock } from '../data/text.ts';
 import { MANIFEST } from '../data/world.ts';
 import { requestKey, useKeyStatus } from '../keygate/key.ts';
+import { useHosted } from '../surface/hosted.ts';
 import { LOCAL_RUN_PANEL_ID } from '../surface/LocalRunPanel.tsx';
 
 // A task's trials in Runs, with no filter left from another link (verifier-phase-P17i-JU7-1 S2).
@@ -31,14 +33,14 @@ const money = (x: number | null) => (x === null ? 'n/a' : `$${x.toFixed(2)}`);
 const link = 'text-ink underline decoration-line-strong underline-offset-2 hover:decoration-ink';
 const TOOL_COUNT = toolCatalog().length;
 
-export function Overview({ headingRef, localRun = false }: { headingRef?: Ref<HTMLHeadingElement> | undefined; localRun?: boolean }) {
+export function Overview({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | undefined }) {
   const results = useResults();
   if (results === null) return <Page title="Overview" headingRef={headingRef}><Notice>Loading the published results…</Notice></Page>;
-  if (results.kind === 'ready' && results.official !== null) return <OfficialOverview run={results.official} headingRef={headingRef} localRun={localRun} />;
+  if (results.kind === 'ready' && results.official !== null) return <OfficialOverview run={results.official} headingRef={headingRef} />;
   const why = results.kind === 'error' ? `The published results cannot be read: ${results.message}` : results.officialError ?? 'No official run is published yet. Its pass rates show here when the final run is committed.';
   return (
     <Page title="Overview" headingRef={headingRef} lead="The tasks, the environment and the committed runs. You can read all of it, and run the grader checks, with no key.">
-      <IntroCard localRun={localRun} />
+      <IntroCard />
       <Notice testId={results.kind === 'error' || results.officialError ? 'error-state' : 'no-official'}>{why}</Notice>
       <TaskSummary />
       <EnvironmentSummary />
@@ -47,7 +49,7 @@ export function Overview({ headingRef, localRun = false }: { headingRef?: Ref<HT
   );
 }
 
-function OfficialOverview({ run, headingRef, localRun }: { run: RunData; headingRef?: Ref<HTMLHeadingElement> | undefined; localRun: boolean }) {
+function OfficialOverview({ run, headingRef }: { run: RunData; headingRef?: Ref<HTMLHeadingElement> | undefined }) {
   const { summary, trials, runId } = run;
   const [lo, hi] = FINAL_PASS_BAND;
   const t = summary!.totals;
@@ -63,7 +65,7 @@ function OfficialOverview({ run, headingRef, localRun }: { run: RunData; heading
         : <>Run <span className="font-medium text-ink">{runId}</span>: {t.passes} of {t.trials} valid trials pass across {Object.keys(summary!.tasks).length} tasks. The shaded band is the target pass rate, {Math.round(lo * 100)}% to {Math.round(hi * 100)}%.</>}
     >
       {block !== null && <RunBlocked block={block} runId={runId} />}
-      <IntroCard localRun={localRun} />
+      <IntroCard />
       <ModelLine run={run} />
       {problems > 0 && (
         <Notice testId="data-warning">
@@ -124,10 +126,11 @@ const action = 'inline-flex h-8 items-center rounded-sm border border-line-stron
 
 // What this is, in plain words (ASD-STE 100, each sentence 25 words or fewer), and two ways to run
 // a trial: in this tab (the key gate when there is no key, else Live trial) and on your computer
-// (the local-run panel; localRun is the shell's own test for showing that panel, so the button
-// and the panel come from one fact; on the local runner the page already runs on this computer).
-function IntroCard({ localRun }: { localRun: boolean }) {
+// (the local-run panel; the shell shows that panel on the hosted site, and the button reads the same
+// fact; on the local runner the page already runs on this computer).
+function IntroCard() {
   const key = useKeyStatus();
+  const hosted = useHosted();
   return (
     <Card title="What this is" testId="intro-card">
       <p data-testid="intro-text" className="text-ink">
@@ -138,8 +141,8 @@ function IntroCard({ localRun }: { localRun: boolean }) {
       <div className="mt-3 flex flex-wrap gap-2">
         {key.kind === 'none'
           ? <button type="button" className={action} onClick={requestKey}>Add a key and run in this tab</button>
-          : <a className={action} href={hrefWith({ view: 'live', task: null, label: null, trial: null, run: null, tab: null })} onClick={onNav({ view: 'live', task: null, label: null, trial: null, run: null, tab: null })}>Run a trial in this tab</a>}
-        {localRun && <button type="button" className={action} onClick={() => document.getElementById(LOCAL_RUN_PANEL_ID)?.focus()}>Run on your computer</button>}
+          : <a className={action} href={hrefWith(freshView('live'))} onClick={onNav(freshView('live'))}>Run a trial in this tab</a>}
+        {hosted && <button type="button" className={action} onClick={() => document.getElementById(LOCAL_RUN_PANEL_ID)?.focus()}>Run on your computer</button>}
       </div>
     </Card>
   );

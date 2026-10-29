@@ -27,6 +27,14 @@ export const viewFromUrl = (href: string): View => VIEWS.find((v) => v.id === ne
 // lost.
 // check and audit are Runs filters a Findings link sets (P17j JU7; verifier-phase-P17i-JU7-1 S2).
 export const VIEW_STATE = ['task', 'label', 'check', 'audit', 'trial', 'run', 'tab'];
+// The same for an in-page link (data/url.ts hrefWith, navigate, onNav): a patch that opens view id
+// with every VIEW_STATE key cleared except the state given, so a key added to VIEW_STATE is
+// cleared by every such link (verifier-phase-P17j-retro-JU5-103-1 D2).
+export const freshView = (id: string, state: Record<string, string> = {}): Record<string, string | null> => ({
+  ...Object.fromEntries(VIEW_STATE.map((k) => [k, null])),
+  ...state,
+  view: id,
+});
 export function viewHref(href: string, id: string): string {
   const url = new URL(href);
   url.searchParams.set('view', id);

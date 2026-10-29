@@ -82,9 +82,9 @@ test('the intro card links "gate check" to the pass rule in the glossary, and na
   expect(new URL(page.url()).hash).toBe('#pass');
 });
 
-test('Run trial from Tasks leaves no trial, run or label filter behind (verifier JU5-1 M4)', async ({ page }) => {
-  await browse(page, './?view=tasks&task=renal-dose-review&label=model&run=sample-1&trial=x');
+test('Run trial from Tasks leaves no trial, run, label, check or audit filter behind (verifier JU5-1 M4; verifier-phase-P17j-retro-JU5-103-1 D2)', async ({ page }) => {
+  await browse(page, './?view=tasks&task=renal-dose-review&label=model&run=sample-1&trial=x&check=urgent_item_unnotified&audit=grader');
   await page.locator('[data-testid="task-card"][data-task="renal-dose-review"]').getByTestId('task-panel-prompt').getByRole('button', { name: 'Run trial' }).click();
   await expect(page).toHaveURL(/[?&]view=live(&|$)/);
-  await expect(page).not.toHaveURL(/[?&](label|run|trial)=/);
+  await expect(page).not.toHaveURL(/[?&](label|run|trial|check|audit)=/);
 });

@@ -3,6 +3,7 @@ import { KeyGate } from '../keygate/KeyGate.tsx';
 import { ADD_KEY_EVENT, forget, keyStatus, useKeyStatus } from '../keygate/key.ts';
 import { deleteKey } from '../keygate/runner.ts';
 import type { Surface } from '../surface/detect.ts';
+import { HostedContext, isHosted } from '../surface/hosted.ts';
 import { LOCAL_RUN_PANEL_ID, LocalRunPanel } from '../surface/LocalRunPanel.tsx';
 import { ViewBody } from '../data/ViewBody.tsx';
 import { ErrorBoundary } from './ErrorBoundary.tsx';
@@ -100,34 +101,36 @@ export function App({ surface }: { surface: Surface }) {
     );
   }
 
-  // The local-run panel shows on browser-direct only; the Overview intro card reads the same fact.
-  const localRun = surface.kind === 'browser-direct';
+  // The local-run panel shows on the hosted site only; every view reads the same fact (useHosted).
+  const hosted = isHosted(surface);
   return (
-    <div className="flex h-screen flex-col bg-canvas">
-      <TopBar surface={surface} status={status} onForget={onForget} onAdd={() => setGate(true)} busy={busy} />
-      <div className="flex min-h-0 flex-1">
-        <Rail
-          active={view}
-          onNavigate={(id) => {
-            // popstate, as data/url.ts navigate() sends it: the shell sets the view, and every
-            // other reader of the URL (Runs, the trial detail) reads it again, even when the view
-            // stays the same (verifier-phase-P16-1 N2).
-            history.pushState(null, '', viewHref(location.href, id));
-            dispatchEvent(new PopStateEvent('popstate'));
-          }}
-        />
-        <main className="min-w-0 flex-1 overflow-auto">
-          <ErrorBoundary key={view.id}>
-            <ViewBody id={view.id} headingRef={heading} localRun={localRun} />
-          </ErrorBoundary>
-          {localRun && RUN_PANEL_VIEWS.includes(view.id) && (
-            // The page column's width and gutters (data/ui.tsx Page), so its edges line up with the cards above.
-            <div className="mx-auto max-w-5xl px-4 pb-6 sm:px-6">
-              <LocalRunPanel id={LOCAL_RUN_PANEL_ID} surface={surface} />
-            </div>
-          )}
-        </main>
+    <HostedContext value={hosted}>
+      <div className="flex h-screen flex-col bg-canvas">
+        <TopBar surface={surface} status={status} onForget={onForget} onAdd={() => setGate(true)} busy={busy} />
+        <div className="flex min-h-0 flex-1">
+          <Rail
+            active={view}
+            onNavigate={(id) => {
+              // popstate, as data/url.ts navigate() sends it: the shell sets the view, and every
+              // other reader of the URL (Runs, the trial detail) reads it again, even when the view
+              // stays the same (verifier-phase-P16-1 N2).
+              history.pushState(null, '', viewHref(location.href, id));
+              dispatchEvent(new PopStateEvent('popstate'));
+            }}
+          />
+          <main className="min-w-0 flex-1 overflow-auto">
+            <ErrorBoundary key={view.id}>
+              <ViewBody id={view.id} headingRef={heading} />
+            </ErrorBoundary>
+            {hosted && RUN_PANEL_VIEWS.includes(view.id) && (
+              // The page column's width and gutters (data/ui.tsx Page), so its edges line up with the cards above.
+              <div className="mx-auto max-w-5xl px-4 pb-6 sm:px-6">
+                <LocalRunPanel id={LOCAL_RUN_PANEL_ID} surface={surface} />
+              </div>
+            )}
+          </main>
+        </div>
       </div>
-    </div>
+    </HostedContext>
   );
 }

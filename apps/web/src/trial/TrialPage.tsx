@@ -26,7 +26,8 @@ import { tabTarget } from '../data/tabs.ts';
 import { useTaskList } from '../data/tasks.ts';
 import { MODEL } from '../adapters/ledger-browser.ts';
 import { hrefWith, navigate, onNav, useParams } from '../data/url.ts';
-import { runnerToken } from '../keygate/runner.ts';
+import { freshView } from '../shell/views.ts';
+import { useHosted } from '../surface/hosted.ts';
 import { Attribution, criterionPhrase, criterionText, FAULT_NOUN, FAULT_WORD, LINK, StepLink } from './Attribution.tsx';
 import { EnvironmentTab, Raw } from './Details.tsx';
 import { Grading } from './Grading.tsx';
@@ -174,11 +175,11 @@ function Detail({ t, run, files, tab, headingRef }: { t: Trial; run: RunData; fi
 // The Runs view reads only published runs, so the notice says where those trials are and links
 // there; on the hosted site, with no runner, there are no session runs.
 function SessionNotice() {
-  const go = onNav({ view: 'live', run: null, trial: null, tab: null });
-  const link = <a href={hrefWith({ view: 'live', run: null, trial: null, tab: null })} onClick={go} className={LINK}>Open Live trial</a>;
+  const hosted = useHosted();
+  const link = <a href={hrefWith(freshView('live'))} onClick={onNav(freshView('live'))} className={LINK}>Open Live trial</a>;
   return (
     <Notice testId="session-notice">
-      {runnerToken() === null
+      {hosted
         ? <>No runs in this session. The trials that you run in this tab are under Your runs in the Live trial view. {link}</>
         : <>The trials that this local runner started are under Your runs in the Live trial view. {link}</>}
     </Notice>

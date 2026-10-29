@@ -3,6 +3,7 @@ import { Fragment, useId, useRef, useState, type FormEvent } from 'react';
 import { DEFAULT_SESSION_CAP_USD, MAX_SESSION_CAP_USD, parseCap } from '../spend/cap.ts';
 import { sessionCap, setSessionCap } from '../spend/session.ts';
 import type { Surface } from '../surface/detect.ts';
+import { isHosted } from '../surface/hosted.ts';
 import { LocalRunPanel } from '../surface/LocalRunPanel.tsx';
 import { SurfaceChip } from '../surface/SurfaceChip.tsx';
 import { validateDirect } from './direct.ts';
@@ -42,7 +43,7 @@ export function KeyGate({ surface, onDone, onBrowse, notice }: { surface: Surfac
   const ids = { key: useId(), hint: useId(), cap: useId(), error: useId(), panel: useId() };
   const cap = parseCap(capText);
   const rounded = cap !== null && cap !== Number(capText.trim());
-  const direct = surface.kind === 'browser-direct';
+  const direct = isHosted(surface);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
