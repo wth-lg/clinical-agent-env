@@ -273,6 +273,15 @@ describe('routed-call text', () => {
     expect(text).toMatch(/alternative probe_bone_nobody_forgets_to_call: PASS score 1\.000/);
   });
 
+  // verifier-phase-P17i-P17j-T2sync-1 S1: "forgot" after a negation reports a past call, so it
+  // does not turn the negation into an ask.
+  probes('does not count "no one forgot to call him"', { probe_no_one_forgot_to_call: 'No one forgot to call him about the positive FIT.' }, '0.938', fitCall);
+
+  it('does not count "nobody forgot to call the mother" on the bone item, so urgent_item_unnotified (-5) applies', async () => {
+    const text = await run([{ id: 'probe_bone_nobody_forgot_to_call', why: 'probe', script: staffTask('Nobody forgot to call the mother about the knee X-ray.') }]);
+    expect(text).toMatch(/alternative probe_bone_nobody_forgot_to_call: PASS score 0\.625/);
+  });
+
   it('counts "don\'t forget to call Ana Ruiz" on the bone item, so urgent_item_unnotified (-5) does not apply', async () => {
     const text = await run([{ id: 'probe_bone_dont_forget_to_call', why: 'probe', script: staffTask("Don't forget to call Ana Ruiz today about the knee X-ray and the MRI.") }]);
     expect(text).toMatch(/alternative probe_bone_dont_forget_to_call: PASS score 1\.000/);
