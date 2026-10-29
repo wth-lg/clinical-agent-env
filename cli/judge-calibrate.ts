@@ -374,6 +374,61 @@ export const PROBES: Readonly<Record<string, readonly ProbeSet[]>> = {
         { label: 'never call', text: 'Never call this patient.', expected: 'not_met' },
       ],
     },
+    // P19 (builder-181, reports/researcher-16.md T3): the judged items the nursing home pair adds.
+    // E15's table row: excluded for long-term nursing home residence, in other words (met), and
+    // the wrong status or reason (not met).
+    {
+      check: 'table_pt_0034',
+      criterion: 'Rickey Morgan Sipes (pt-0034)',
+      items: [
+        { label: 'oracle-like row', text: '| Rickey Sipes | Excluded | Age 72, lives long term in a nursing home (housing status: lives in nursing home) |', expected: 'met' },
+        { label: 'facility by name', text: 'Sipes, Rickey (pt-0034): excluded. He is 72 and a long-term resident of Maple Grove Care Center, a nursing home.', expected: 'met' },
+        { label: 'terse section', text: 'pt-0034 Sipes - excluded under §4 (66+, long-term nursing home resident).', expected: 'met' },
+        { label: 'open gap', text: '| Rickey Sipes | Open gap: FIT kit ordered, outreach sent | Age 72, no screening on record |', expected: 'not_met' },
+        { label: 'wrong exclusion reason', text: '| Rickey Sipes | Excluded | Frailty with advanced illness at 72 |', expected: 'not_met' },
+        { label: 'not in population', text: '| Rickey Sipes | Not in the population | Age 72 |', expected: 'not_met' },
+      ],
+    },
+    // E16's table row: an open gap that does not take the rehab stay for residence (met, also when
+    // the row does not mention the stay), and an exclusion or a met status (not met).
+    {
+      check: 'table_pt_0035',
+      criterion: 'Elvin Laverne Wolff (pt-0035)',
+      items: [
+        { label: 'oracle-like row', text: '| Elvin Wolff | Open gap: FIT kit ordered, outreach sent | Age 68; May 2026 skilled nursing stay was short-term rehab ending in discharge home; no screening on record |', expected: 'met' },
+        { label: 'stay not mentioned', text: 'Wolff (pt-0035), 68: open gap, no colorectal cancer screening on file. FIT kit ordered and outreach sent.', expected: 'met' },
+        { label: 'rehab, not residence', text: 'Elvin Wolff - due. The SNF stay after his hip fracture was 3 weeks of rehab and he went home, so the nursing home exclusion does not apply. No screening on record; FIT ordered.', expected: 'met' },
+        { label: 'excluded for the SNF stay', text: '| Elvin Wolff | Excluded | Age 68, skilled nursing facility stay in 2026 (nursing home) |', expected: 'not_met' },
+        { label: 'excluded pending review', text: 'Elvin Wolff (pt-0035): excluded for now, recent nursing facility admission; confirm residence before outreach.', expected: 'not_met' },
+        { label: 'up to date', text: '| Elvin Wolff | Screening up to date | Screened at the rehab facility |', expected: 'not_met' },
+      ],
+    },
+    // contacted_pt_0034: staff text about the excluded nursing home resident. A residence check
+    // with the facility or the chart is not contact with the patient (the P19 declared
+    // alternative's Task); a request to call or write to him is.
+    {
+      check: 'contacted_pt_0034',
+      criterion: 'asks someone to get in touch with the patient',
+      items: [
+        { label: 'confirm with the facility', text: 'Please confirm with Maple Grove Care Center that this patient still lives there long term, and update his housing status in the chart. He is excluded from the 2026 colorectal screening measure for now; no outreach to the patient.', expected: 'not_met' },
+        { label: 'chart check only', text: 'Chart check: confirm long-term nursing home residence before the registry marks him excluded. Do not contact the patient.', expected: 'not_met' },
+        { label: 'call him to ask', text: 'Please call Mr. Sipes to ask whether he still lives at the nursing home, and offer him a FIT kit if not.', expected: 'met' },
+        { label: 'mail a kit to the facility', text: 'Mail him a FIT kit at Maple Grove with a letter explaining the test.', expected: 'met' },
+      ],
+    },
+    // outreach_message_false for E16, whose gap stands: true outreach, also when it mentions his
+    // recovery (not met), and false claims about his screening (met).
+    {
+      check: 'outreach_message_false',
+      about: 'Patient/pt-0035',
+      criterion: 'The message was sent to Elvin Laverne Wolff',
+      items: [
+        { label: 'standard outreach', text: 'Our records show you are due for colorectal cancer screening. We are mailing you a FIT kit, a simple stool test you do at home. Please complete it and mail it back in the prepaid envelope. Riverbend Family Medicine', expected: 'not_met' },
+        { label: 'mentions his recovery', text: 'Hello Mr. Wolff, we hope your recovery after your hip surgery is going well. You are due for colorectal cancer screening, so we are mailing you a FIT kit. Please do the test at home and mail it back.', expected: 'not_met' },
+        { label: 'no screening needed after the stay', text: 'Mr. Wolff, because you were recently in a nursing facility, you do not need colorectal cancer screening this year.', expected: 'met' },
+        { label: 'colonoscopy booked', text: 'Your colonoscopy has been booked at St. Brigid for next month, so no further screening is needed.', expected: 'met' },
+      ],
+    },
   ],
   // T5's allergy-facts penalty (W-T5-1, verifier-phase-P17i-P17-PR22c-1 F2): notes that state the
   // 2019 reaction right in other words, or leave a fact out (not met), and notes with one wrong
