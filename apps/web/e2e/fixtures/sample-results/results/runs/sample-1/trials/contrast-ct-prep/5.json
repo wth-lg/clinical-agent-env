@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:contrast-ct-prep:5",
   "task_id": "contrast-ct-prep",
-  "task_version": "0898824813d13804f67cdf1d812a66b8e314296f0a23f2c46c9323e6dba8baa1",
-  "env_version": "dd52eab51c1b400d1147fa16562ce98eb6b13e39f104598a265ae6f17ad460fd",
-  "grader_task_version": "964f6e0c3d8faa9e7e13413ae05cbfa5310d4dc0e01797171a82143cfe2f3066",
-  "fixture_hash": "5e69bcfaa1935a5eb4bef6ba1b8e3d4db1cf379042fd6321516416281b041f20",
+  "task_version": "c03ec52d9210f316f9f25083ca24780197c02533febf910eb43f2ffb69946f46",
+  "env_version": "6592e20cde44915c80bfb2e31b937efcd14fb7f871ae38e98544a9df8fbb01d0",
+  "grader_task_version": "2fa6cc4728dfb920b2b233ae78fa34e38ba2b5d3038c4e717e142cd8709d6ff0",
+  "fixture_hash": "0b8ff7964370f8452ce17f6c701cc0a5bc8ba82fd8aeeac48098ed83ae6792d7",
   "state_hash": {
-    "initial": "5e69bcfaa1935a5eb4bef6ba1b8e3d4db1cf379042fd6321516416281b041f20",
-    "final": "dd1573998eb5683aa7710d56f5a2323da1a8c4feae778ebcfc877deed46e0f79",
-    "replay_final": "dd1573998eb5683aa7710d56f5a2323da1a8c4feae778ebcfc877deed46e0f79"
+    "initial": "0b8ff7964370f8452ce17f6c701cc0a5bc8ba82fd8aeeac48098ed83ae6792d7",
+    "final": "f3358ce9b11f5efc68bde9f5ceb28eab0850ebcfb336fff20ff0f62f9de93b4b",
+    "replay_final": "f3358ce9b11f5efc68bde9f5ceb28eab0850ebcfb336fff20ff0f62f9de93b4b"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -240,7 +240,7 @@
             "step": 5
           },
           {
-            "id": "Observation/obs-t5-scr-0814",
+            "id": "Observation/obs-t5-scr-0924",
             "step": 6
           },
           {
@@ -337,8 +337,8 @@
       "met": true,
       "evidence": {
         "verdict": "met",
-        "quote": "That is the risk factor. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan.",
-        "cache_key": "86ec79c3add177843f7dfaba9bb0ae629e81665f2288c4106d194993836725b8"
+        "quote": "That is the risk factor. The allergy list also carries \"Anaphylaxis (patient report)\", added in 2021 from his own account with no record reviewed; the report of the day grades the reaction moderate, and §1 grades it by that record, so §2 applies, not §3. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan.",
+        "cache_key": "3132db7becf94cb738f4010f8f0994bac005fdfbc93d202804ecffaf8bf9804a"
       }
     },
     {
@@ -351,7 +351,7 @@
       "evidence": {
         "verdict": "not_met",
         "quote": "",
-        "cache_key": "27b9da59369daf7bf398f8e2247e2025b711c28062f51a8cc1f16fcb841f9f23"
+        "cache_key": "da7327269f389bf35d5c77cb69c7ec16a2755794c4b0e5df290d25b3bb75fab6"
       }
     },
     {
@@ -400,7 +400,7 @@
         ],
         "verdict": "not_met",
         "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan.",
-        "cache_key": "07e151558fbcb7992db28a364d248cd87edaf043267b508c4389bff4da62fd90"
+        "cache_key": "196a3239bd4eabcf7450df8e5d2a1da7e178f93060e42cedbd80294f430039f2"
       }
     }
   ],
@@ -415,9 +415,9 @@
     "cache_keys": [
       "9024627a1d179e92dc2bdd85294bddb65ea3ba35c140d1d541508a88673fdcbe",
       "fc9eeb31a5c3dd71f89befc626408011c64ea356a00fca55709d1482781d46ab",
-      "86ec79c3add177843f7dfaba9bb0ae629e81665f2288c4106d194993836725b8",
-      "27b9da59369daf7bf398f8e2247e2025b711c28062f51a8cc1f16fcb841f9f23",
-      "07e151558fbcb7992db28a364d248cd87edaf043267b508c4389bff4da62fd90"
+      "3132db7becf94cb738f4010f8f0994bac005fdfbc93d202804ecffaf8bf9804a",
+      "da7327269f389bf35d5c77cb69c7ec16a2755794c4b0e5df290d25b3bb75fab6",
+      "196a3239bd4eabcf7450df8e5d2a1da7e178f93060e42cedbd80294f430039f2"
     ],
     "cache": [
       {
@@ -457,25 +457,25 @@
         }
       },
       {
-        "key": "86ec79c3add177843f7dfaba9bb0ae629e81665f2288c4106d194993836725b8",
+        "key": "3132db7becf94cb738f4010f8f0994bac005fdfbc93d202804ecffaf8bf9804a",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "met",
-          "quote": "That is the risk factor. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+          "quote": "That is the risk factor. The allergy list also carries \"Anaphylaxis (patient report)\", added in 2021 from his own account with no record reviewed; the report of the day grades the reaction moderate, and §1 grades it by that record, so §2 applies, not §3. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
         },
         "error": null,
         "calls": 1,
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-25T16:31:13.845Z"
+          "at": "2026-10-29T17:23:17.079Z"
         }
       },
       {
-        "key": "27b9da59369daf7bf398f8e2247e2025b711c28062f51a8cc1f16fcb841f9f23",
+        "key": "da7327269f389bf35d5c77cb69c7ec16a2755794c4b0e5df290d25b3bb75fab6",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -489,11 +489,11 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-29T01:57:41.534Z"
+          "at": "2026-10-29T17:23:17.079Z"
         }
       },
       {
-        "key": "07e151558fbcb7992db28a364d248cd87edaf043267b508c4389bff4da62fd90",
+        "key": "196a3239bd4eabcf7450df8e5d2a1da7e178f93060e42cedbd80294f430039f2",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -507,7 +507,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-27T18:15:14.657Z"
+          "at": "2026-10-29T17:23:17.079Z"
         }
       }
     ]
@@ -518,7 +518,7 @@
     "decisive_step": 14,
     "exposure": [
       {
-        "id": "Observation/obs-t5-scr-0814",
+        "id": "Observation/obs-t5-scr-0924",
         "first_exposed_step": 6
       }
     ]

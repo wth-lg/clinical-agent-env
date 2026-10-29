@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:message-queue:7",
   "task_id": "message-queue",
-  "task_version": "5f0f597aaeb3f167078878e2d4629c6d33d5168f60e938e851203e835f6bb667",
-  "env_version": "d4c4429bdbbb3432999393e2b7216ce0a311bd54ddd60e9bf34711e870dc96d0",
+  "task_version": "1e4e6a236466fc9b28c78cede4a14388b528552634dd5a5e49432e541fce8203",
+  "env_version": "f650d1764e13bcbabe1843364ad61b9d1a281b8a53c041e0206db578c356551c",
   "grader_task_version": "fe409eacff7319a606efa7cec1bc0bd72d76828536decae00769222069a538aa",
-  "fixture_hash": "5e69bcfaa1935a5eb4bef6ba1b8e3d4db1cf379042fd6321516416281b041f20",
+  "fixture_hash": "0b8ff7964370f8452ce17f6c701cc0a5bc8ba82fd8aeeac48098ed83ae6792d7",
   "state_hash": {
-    "initial": "5e69bcfaa1935a5eb4bef6ba1b8e3d4db1cf379042fd6321516416281b041f20",
-    "final": "10a9ed2aa132e81eae310952736ecb21a97f773b9f56c86ae193cdc4fd385150",
-    "replay_final": "10a9ed2aa132e81eae310952736ecb21a97f773b9f56c86ae193cdc4fd385150"
+    "initial": "0b8ff7964370f8452ce17f6c701cc0a5bc8ba82fd8aeeac48098ed83ae6792d7",
+    "final": "175694a1cfb33da39121fefde5fee93f0afd3dad142812b3e125608f9709b0ae",
+    "replay_final": "175694a1cfb33da39121fefde5fee93f0afd3dad142812b3e125608f9709b0ae"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T13:49:20.000Z",
+  "started": "2026-10-23T13:49:10.000Z",
   "turns": 17,
   "tool_calls": 52,
   "tool_errors": {
@@ -43,7 +43,7 @@
   "summary": "Cleared the six messages: Evelyn Brooks sent to the ED with a stat triage task; Gloria Hayes 30-day lisinopril bridge and BMP; Frank Odum not refilled (atorvastatin stopped by cardiology), task to Dr. Okafor; Lena Park amoxicillin-clavulanate held for a documented reaction, allergy recorded, NP Reyes told; Samuel Price metformin renewed; Marcus Webb routed to scheduling.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T13:52:37.000Z",
+  "ended": "2026-10-23T13:52:27.000Z",
   "judge_cost_usd": 0,
   "grader_version": "13",
   "outcome": "PASS",

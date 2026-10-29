@@ -6,13 +6,13 @@
   "tasks": {
     "contrast-ct-prep": {
       "task_versions": [
-        "0898824813d13804f67cdf1d812a66b8e314296f0a23f2c46c9323e6dba8baa1"
+        "c03ec52d9210f316f9f25083ca24780197c02533febf910eb43f2ffb69946f46"
       ],
       "env_versions": [
-        "dd52eab51c1b400d1147fa16562ce98eb6b13e39f104598a265ae6f17ad460fd"
+        "6592e20cde44915c80bfb2e31b937efcd14fb7f871ae38e98544a9df8fbb01d0"
       ],
       "grader_task_versions": [
-        "964f6e0c3d8faa9e7e13413ae05cbfa5310d4dc0e01797171a82143cfe2f3066"
+        "2fa6cc4728dfb920b2b233ae78fa34e38ba2b5d3038c4e717e142cd8709d6ff0"
       ],
       "records": 12,
       "trials": 12,
@@ -39,10 +39,10 @@
       "grader_error": 0,
       "grader_error_history": 0,
       "requeued": 0,
-      "mean_score": 0.6354166666666666,
+      "mean_score": 0.5833333333333334,
       "mean_cost_usd": 0.765,
-      "raw_mean_score": 0.5104166666666666,
-      "gate_fraction": 0.7857142857142856,
+      "raw_mean_score": 0.40625,
+      "gate_fraction": 0.7738095238095236,
       "pass_no_harm": 2,
       "pass_no_harm_rate": 0.16666666666666666,
       "limits": {
@@ -81,9 +81,9 @@
         "failures": 9,
         "taxonomy": {
           "retrieval": 0,
-          "reasoning": 4,
+          "reasoning": 5,
           "output_gap": 2,
-          "over_action": 1,
+          "over_action": 0,
           "process": 0,
           "action_form": 1,
           "did_not_finish": 0,
@@ -108,21 +108,21 @@
           "count": 2
         },
         {
-          "check": "no_substitution",
+          "check": "ct_order",
           "count": 2
         },
         {
-          "check": "ct_order",
+          "check": "no_substitution",
           "count": 1
         }
       ]
     },
     "crc-care-gap": {
       "task_versions": [
-        "abcf47ad8571787e3d20cebd792a9ead39c30b6a2d1c6fa97bc15bc00a23c87c"
+        "1d70b246b344ba82018c9ebe503866dc8703ba61c6066a4bf7adc02c74ca3376"
       ],
       "env_versions": [
-        "2cb743885fe61f5a11f46367ed9307dda803c0460dbe2f4acf295827cbb1cfc1"
+        "daaa6e4a2b8c3e8e7648dc4526f2b4a282920376172c40e51c0fadabf3723784"
       ],
       "grader_task_versions": [
         "ecee8028f69bf56ef1e200934a4848042bf244f9815d68bc418470b2735aa611"
@@ -224,13 +224,13 @@
     },
     "discharge-medrec": {
       "task_versions": [
-        "ae57d754dc2d417d2d9798c2a73ac1cfadbddc6c04387c38d7448f4c7d6f06c8"
+        "6aad26ccab993d582e036652e11996217540d9ad5f6cdd774b7138224003cd01"
       ],
       "env_versions": [
-        "682033ef2b6763eca76c0e8b48d76c6f766d3e6cc47cca2da118438dcfc1a316"
+        "58b6cfe7b4ce04bb26737874129630b9bc48701bd08b9bcf9e213927f6acdb0d"
       ],
       "grader_task_versions": [
-        "d1f06ee2cc7adc49e25fd0baa20f9d954e45fb1b2f94fec3e2eaf6ccbaa79b44"
+        "f8662ab64f7fa00f25ca397c883c85661c39268401321f8e4b970ca2057a64a0"
       ],
       "records": 13,
       "trials": 12,
@@ -287,9 +287,9 @@
         "passes": 7,
         "failures": 5,
         "shared": {
-          "check": "spironolactone_25",
+          "check": "lisinopril_resumed",
           "count": 2,
-          "found": "{\"active\":[\"MedicationRequest/mr-t0002\"],\"mg_per_day\":12.5,\"per_day\":1}",
+          "found": "{\"active\":[],\"mg_per_day\":null,\"per_day\":null,\"still_held\":[\"MedicationRequest/mr-t4-lisinopril\"]}",
           "found_count": 2,
           "found_values": 1
         },
@@ -298,8 +298,8 @@
       "fault_counts": {
         "failures": 5,
         "taxonomy": {
-          "retrieval": 1,
-          "reasoning": 4,
+          "retrieval": 2,
+          "reasoning": 3,
           "output_gap": 0,
           "over_action": 0,
           "process": 0,
@@ -318,29 +318,25 @@
       },
       "top_failed_checks": [
         {
+          "check": "lisinopril_resumed",
+          "count": 2
+        },
+        {
           "check": "spironolactone_25",
           "count": 2
         },
         {
           "check": "furosemide_40",
           "count": 1
-        },
-        {
-          "check": "kcl_stopped",
-          "count": 1
-        },
-        {
-          "check": "lisinopril_resumed",
-          "count": 1
         }
       ]
     },
     "message-queue": {
       "task_versions": [
-        "5f0f597aaeb3f167078878e2d4629c6d33d5168f60e938e851203e835f6bb667"
+        "1e4e6a236466fc9b28c78cede4a14388b528552634dd5a5e49432e541fce8203"
       ],
       "env_versions": [
-        "d4c4429bdbbb3432999393e2b7216ce0a311bd54ddd60e9bf34711e870dc96d0"
+        "f650d1764e13bcbabe1843364ad61b9d1a281b8a53c041e0206db578c356551c"
       ],
       "grader_task_versions": [
         "fe409eacff7319a606efa7cec1bc0bd72d76828536decae00769222069a538aa"
@@ -441,13 +437,13 @@
     },
     "renal-dose-review": {
       "task_versions": [
-        "d81ce4a4b80a779d2738e2f1fc9554eceeb29629e3a35fdf6f5351e9c1d96874"
+        "9e223096cf5b8a17b8fc2cc8a11c6a6d28ade9c1e0121feb613ee8a707ee1b54"
       ],
       "env_versions": [
-        "465a5ba41710a820e6fb7648015f23065ba70ceb8ef5d3b2fd843c3d17b6682e"
+        "f426c6e81dd773f56a35d21b836e929c495c74dab0bd6d1725a596a6ce799078"
       ],
       "grader_task_versions": [
-        "ebfd23f60a016ae62d21166fb5600f77d50a6ace2abc21f5adbd55ee6f24be60"
+        "a857a43c2bcd24ebaf953043208c705ea2c8f71fef044b5d09acc409d02df581"
       ],
       "records": 13,
       "trials": 12,
@@ -476,10 +472,10 @@
       "grader_error": 0,
       "grader_error_history": 0,
       "requeued": 0,
-      "mean_score": 0.5448717948717948,
+      "mean_score": 0.4615384615384615,
       "mean_cost_usd": 1.06,
-      "raw_mean_score": 0.42948717948717946,
-      "gate_fraction": 0.7142857142857144,
+      "raw_mean_score": 0.3141025641025641,
+      "gate_fraction": 0.6785714285714287,
       "pass_no_harm": 4,
       "pass_no_harm_rate": 0.3333333333333333,
       "limits": {
@@ -509,8 +505,8 @@
           "check": "apixaban_dose",
           "count": 8,
           "found": "{\"active\":[\"MedicationRequest/mr-t1-apixaban\"],\"mg\":2.5,\"oral\":true,\"per_day\":2,\"product\":\"1364435\"}",
-          "found_count": 7,
-          "found_values": 2
+          "found_count": 8,
+          "found_values": 1
         },
         "flags": [
           "shared_failure"
@@ -546,10 +542,10 @@
     },
     "results-inbox": {
       "task_versions": [
-        "693cfbd4e544ecc4f1bdc3ab2d66b3d60fd39be6ee0eea7a574fe403257a718d"
+        "7c80c5b545f7634e2fd7cc1b7e128508f62b8b646f04cf8c9c3e5fc160dcc1d3"
       ],
       "env_versions": [
-        "24db500adf8d3db14390047aedf6208c1b90474bdfe26f1663268d39e69698aa"
+        "faf3b43579df63dfd9064d50ff293a0f8daf93e088edc8430e99ab322bc06e81"
       ],
       "grader_task_versions": [
         "691136d453fb347f543bf34b9096d08726f18fd4f2c50fe3e1df1b5f6ab634a7"
@@ -676,7 +672,7 @@
     "claude-opus-5-5"
   ],
   "initial_state_hashes": [
-    "5e69bcfaa1935a5eb4bef6ba1b8e3d4db1cf379042fd6321516416281b041f20"
+    "0b8ff7964370f8452ce17f6c701cc0a5bc8ba82fd8aeeac48098ed83ae6792d7"
   ],
   "replay": {
     "ran": false,

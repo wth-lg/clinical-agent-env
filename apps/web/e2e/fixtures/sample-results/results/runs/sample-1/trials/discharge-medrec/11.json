@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:discharge-medrec:11",
   "task_id": "discharge-medrec",
-  "task_version": "ae57d754dc2d417d2d9798c2a73ac1cfadbddc6c04387c38d7448f4c7d6f06c8",
-  "env_version": "682033ef2b6763eca76c0e8b48d76c6f766d3e6cc47cca2da118438dcfc1a316",
-  "grader_task_version": "d1f06ee2cc7adc49e25fd0baa20f9d954e45fb1b2f94fec3e2eaf6ccbaa79b44",
-  "fixture_hash": "5e69bcfaa1935a5eb4bef6ba1b8e3d4db1cf379042fd6321516416281b041f20",
+  "task_version": "6aad26ccab993d582e036652e11996217540d9ad5f6cdd774b7138224003cd01",
+  "env_version": "58b6cfe7b4ce04bb26737874129630b9bc48701bd08b9bcf9e213927f6acdb0d",
+  "grader_task_version": "f8662ab64f7fa00f25ca397c883c85661c39268401321f8e4b970ca2057a64a0",
+  "fixture_hash": "0b8ff7964370f8452ce17f6c701cc0a5bc8ba82fd8aeeac48098ed83ae6792d7",
   "state_hash": {
-    "initial": "5e69bcfaa1935a5eb4bef6ba1b8e3d4db1cf379042fd6321516416281b041f20",
-    "final": "8079c211de7bcee2c1a7d56d041f1b32a7ff1bb6a125bc34f77f20d2fae77a6e",
-    "replay_final": "8079c211de7bcee2c1a7d56d041f1b32a7ff1bb6a125bc34f77f20d2fae77a6e"
+    "initial": "0b8ff7964370f8452ce17f6c701cc0a5bc8ba82fd8aeeac48098ed83ae6792d7",
+    "final": "3c04e7ed4f69802d7bb330d6e871a2e24c7b0034abb107c268ef0542032d6217",
+    "replay_final": "3c04e7ed4f69802d7bb330d6e871a2e24c7b0034abb107c268ef0542032d6217"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,9 +16,9 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T13:23:51.000Z",
+  "started": "2026-10-23T13:23:38.000Z",
   "turns": 7,
-  "tool_calls": 14,
+  "tool_calls": 15,
   "tool_errors": {
     "INVALID_INPUT": 0,
     "NOT_FOUND": 0,
@@ -43,7 +43,7 @@
   "summary": "Reconciled Walter Kim after discharge: furosemide 40 mg, spironolactone 25 mg started, KCl stopped, lisinopril resumed; duplicate metoprolol tartrate flagged to Dr. Okafor; note written.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T13:24:58.000Z",
+  "ended": "2026-10-23T13:24:48.000Z",
   "judge_cost_usd": 0,
   "grader_version": "13",
   "outcome": "FAIL",
@@ -93,15 +93,12 @@
       "method": "code",
       "category": "action",
       "points": null,
-      "met": false,
+      "met": true,
       "evidence": {
-        "status": "active",
-        "left": [
-          "MedicationRequest/mr-t4-kcl"
-        ]
+        "status": "stopped",
+        "left": []
       },
       "ids": [
-        "MedicationRequest/mr-t4-kcl",
         "MedicationRequest/mr-t4-kcl"
       ]
     },
@@ -111,18 +108,16 @@
       "method": "code",
       "category": "action",
       "points": null,
-      "met": true,
+      "met": false,
       "evidence": {
-        "active": [
+        "active": [],
+        "mg_per_day": null,
+        "per_day": null,
+        "still_held": [
           "MedicationRequest/mr-t4-lisinopril"
-        ],
-        "mg_per_day": 10,
-        "per_day": 1,
-        "still_held": []
+        ]
       },
-      "ids": [
-        "MedicationRequest/mr-t4-lisinopril"
-      ]
+      "ids": []
     },
     {
       "id": "others_unchanged",
@@ -164,12 +159,12 @@
           "Practitioner/pr-okafor"
         ],
         "sent": [
-          "Communication/comm-t0005"
+          "Communication/comm-t0006"
         ],
         "tasked": []
       },
       "ids": [
-        "Communication/comm-t0005"
+        "Communication/comm-t0006"
       ]
     },
     {
@@ -193,8 +188,8 @@
       "met": false,
       "evidence": {
         "verdict": "not_met",
-        "quote": "Changes: furosemide increased from 20 mg to 40 mg daily (discharge summary). Spironolactone 25 mg daily started (signed addendum, which corrects the summary's 12.5 mg). Lisinopril 10 mg daily resumed: the summary resumes it when SCr is below 1.5, and SCr was 1.32 on 10/21 (discharge summary; lab 10/21).",
-        "cache_key": "74874082b42d2f5e906e1dd5d4f94bee74abebc65da9ad89a753f118f619a655"
+        "quote": "Lisinopril still held; task created to recheck creatinine.",
+        "cache_key": "cc657ad889d0bbc816ff659911ee68a7bef8346578ce16c4729e9737e93980c0"
       }
     },
     {
@@ -206,8 +201,8 @@
       "met": true,
       "evidence": {
         "verdict": "met",
-        "quote": "metoprolol succinate ER 50 mg daily, which the St. Brigid discharge documents continue as \"metoprolol XL\", and metoprolol tartrate 25 mg twice daily (since 2023), which no discharge document mentions. Taking both is a duplicate beta-blocker.",
-        "cache_key": "bf1bbb7bffcbe9aa0d9ca8d5c36b0f57cee88af3d5a543e798bbc8d0c7e9bb3c"
+        "quote": "Walter Kim has two beta-blockers on his outpatient list: metoprolol succinate ER 50 mg daily, which the St. Brigid discharge documents continue as \"metoprolol XL\", and metoprolol tartrate 25 mg twice daily (since 2023), which no discharge document mentions. Taking both is a duplicate beta-blocker.",
+        "cache_key": "9850f441477b31dbcc95afb4a403fbefcc8d8da9e395694416ac633eedc873b1"
       }
     },
     {
@@ -219,10 +214,10 @@
       "met": true,
       "evidence": {
         "notes": [
-          "DocumentReference/doc-t0006"
+          "DocumentReference/doc-t0007"
         ],
         "citing": [
-          "DocumentReference/doc-t0006"
+          "DocumentReference/doc-t0007"
         ]
       }
     },
@@ -247,7 +242,7 @@
       "evidence": {
         "verdict": "not_met",
         "quote": "Per RBC-TOC-02 §5 I left the tartrate unchanged; please review.",
-        "cache_key": "329835600bbfdb75dc76990ac63363d315cb6627225db54ba87ed8ae8d871658"
+        "cache_key": "deb1e9d80f5ffeb46b6cc748e3aa34ab3b21ee108df1c2dfdee3d3d335ce5dad"
       }
     },
     {
@@ -270,7 +265,7 @@
       "met": true,
       "evidence": {
         "orders": [
-          "ServiceRequest/sr-t0004"
+          "ServiceRequest/sr-t0005"
         ],
         "window": {
           "from": "2026-10-26",
@@ -288,20 +283,20 @@
     "score_penalties_not_met": 0.625,
     "over_allowance": 0,
     "cache_keys": [
-      "74874082b42d2f5e906e1dd5d4f94bee74abebc65da9ad89a753f118f619a655",
-      "bf1bbb7bffcbe9aa0d9ca8d5c36b0f57cee88af3d5a543e798bbc8d0c7e9bb3c",
-      "329835600bbfdb75dc76990ac63363d315cb6627225db54ba87ed8ae8d871658"
+      "cc657ad889d0bbc816ff659911ee68a7bef8346578ce16c4729e9737e93980c0",
+      "9850f441477b31dbcc95afb4a403fbefcc8d8da9e395694416ac633eedc873b1",
+      "deb1e9d80f5ffeb46b6cc748e3aa34ab3b21ee108df1c2dfdee3d3d335ce5dad"
     ],
     "cache": [
       {
-        "key": "74874082b42d2f5e906e1dd5d4f94bee74abebc65da9ad89a753f118f619a655",
+        "key": "cc657ad889d0bbc816ff659911ee68a7bef8346578ce16c4729e9737e93980c0",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "not_met",
-          "quote": "Changes: furosemide increased from 20 mg to 40 mg daily (discharge summary). Spironolactone 25 mg daily started (signed addendum, which corrects the summary's 12.5 mg). Lisinopril 10 mg daily resumed: the summary resumes it when SCr is below 1.5, and SCr was 1.32 on 10/21 (discharge summary; lab 10/21)."
+          "quote": "Lisinopril still held; task created to recheck creatinine."
         },
         "error": null,
         "calls": 1,
@@ -312,14 +307,14 @@
         }
       },
       {
-        "key": "bf1bbb7bffcbe9aa0d9ca8d5c36b0f57cee88af3d5a543e798bbc8d0c7e9bb3c",
+        "key": "9850f441477b31dbcc95afb4a403fbefcc8d8da9e395694416ac633eedc873b1",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "met",
-          "quote": "metoprolol succinate ER 50 mg daily, which the St. Brigid discharge documents continue as \"metoprolol XL\", and metoprolol tartrate 25 mg twice daily (since 2023), which no discharge document mentions. Taking both is a duplicate beta-blocker."
+          "quote": "Walter Kim has two beta-blockers on his outpatient list: metoprolol succinate ER 50 mg daily, which the St. Brigid discharge documents continue as \"metoprolol XL\", and metoprolol tartrate 25 mg twice daily (since 2023), which no discharge document mentions. Taking both is a duplicate beta-blocker."
         },
         "error": null,
         "calls": 1,
@@ -330,7 +325,7 @@
         }
       },
       {
-        "key": "329835600bbfdb75dc76990ac63363d315cb6627225db54ba87ed8ae8d871658",
+        "key": "deb1e9d80f5ffeb46b6cc748e3aa34ab3b21ee108df1c2dfdee3d3d335ce5dad",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -350,10 +345,15 @@
     ]
   },
   "attribution": {
-    "auto": "reasoning",
-    "first_failed": "kcl_stopped",
-    "decisive_step": 14,
+    "auto": "retrieval",
+    "first_failed": "lisinopril_resumed",
+    "decisive_step": 15,
     "exposure": [
+      {
+        "id": "DocumentReference/doc-t4-lab-1021",
+        "first_exposed_step": null,
+        "first_shown_step": null
+      },
       {
         "id": "DocumentReference/doc-t4-dc-1019",
         "first_exposed_step": 5
