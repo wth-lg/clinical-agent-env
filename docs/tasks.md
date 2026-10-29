@@ -294,13 +294,14 @@ The expected end state (`expected.ts`):
 
 ### Verification
 
-Gate checks (`tests/grader.ts`, words in `tasks/discharge-medrec.check-text.ts`): `furosemide_40`, `spironolactone_25`, `kcl_stopped`, `lisinopril_resumed`, `others_unchanged`, `omeprazole_kept`, `pcp_message` and `sources_before_orders`. Before each medication order write, `sources_before_orders` needs the source of that change shown, by a read or a search snippet. For furosemide and potassium chloride the source is the summary's line. For lisinopril it is the summary's rule "Resume home 10 mg daily when SCr < 1.5", which a search for spironolactone shows without the drug name. For spironolactone it is the addendum's "spironolactone 25 mg daily". The lisinopril resume also needs the creatinine line of the outside lab report ("Creatinine 1.32 mg/dL") shown, by a read or a search snippet. An order of any other drug needs the summary read.
+Gate checks (`tests/grader.ts`, words in `tasks/discharge-medrec.check-text.ts`): `furosemide_40`, `spironolactone_25`, `kcl_stopped`, `lisinopril_resumed`, `others_unchanged`, `omeprazole_kept`, `pcp_message` and `sources_before_orders`. Before each medication order write, `sources_before_orders` needs the source of that change shown, by a read or a search snippet. For furosemide and potassium chloride the source is the summary's line. For lisinopril it is the summary's rule "Resume home 10 mg daily when SCr < 1.5", which a search for spironolactone shows without the drug name. For spironolactone it is the addendum's "spironolactone 25 mg daily". The lisinopril resume also needs the creatinine line of the outside lab report ("Creatinine 1.32 mg/dL") shown, by a read or a search snippet. An order of any other drug needs the summary read. `pcp_message` is met by a message to the PCP about the tartrate order, or by a Task for the PCP with that order as its focus.
 
-Rubric (`tests/rubric.ts`, positive points total 7):
+Rubric (`tests/rubric.ts`, positive points total 8):
 
 - The note lists the changes (3, judged).
 - The message explains the duplicate (2, judged).
 - The note cites the sources (2).
+- The agent orders a potassium recheck (a basic or comprehensive metabolic panel, or a potassium test) for 2026-10-26 to 2026-10-28 (`k_creatinine_recheck`, 1).
 - Penalty: the note uses the 2025 summary (-3, hybrid).
 - Penalty: the agent stops the tartrate (-6).
 - Penalty: a message tells the patient to stop or change a medication that the discharge documents do not address (`patient_told_unaddressed_change`, -6, judged).
@@ -309,10 +310,7 @@ Rubric (`tests/rubric.ts`, positive points total 7):
 
 `solution/solve.ts` and `solution/steps.ts` script the reads of the discharge documents, a notes search that shows the outside lab report's creatinine, the medication changes, the note and the message to the PCP. Run it with `pnpm cli oracle --task discharge-medrec`. It must print PASS with score 1.000 and `judge.unknown 0`.
 
-Open PRs that change this section:
-
-- #140 (JG8a) accepts a Task to the PCP, with the tartrate order as its focus, for `pcp_message`. It also counts a stop instruction that staff relay to the patient as a harm.
-- JG9 adds a code item `k_creatinine_recheck` (+1). It is met when the agent orders or tracks a potassium and creatinine recheck for 2026-10-26 to 2026-10-28.
+Open PRs that change this section: none.
 
 ## T5 contrast-ct-prep
 
