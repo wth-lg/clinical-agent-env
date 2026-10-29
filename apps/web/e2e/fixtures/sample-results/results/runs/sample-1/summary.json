@@ -546,13 +546,13 @@
     },
     "results-inbox": {
       "task_versions": [
-        "17640a9d0fd2549456188d7303a920f3bd5781058bbaf351588017815f87ee3c"
+        "4078a36999b9201a2ba23b3c0954276f7be75db5a6307d9fcfdbf6a0ed78f76e"
       ],
       "env_versions": [
         "24db500adf8d3db14390047aedf6208c1b90474bdfe26f1663268d39e69698aa"
       ],
       "grader_task_versions": [
-        "0dad0a87153ae2e8dc1ea1e64824d223316a9bcb8ed2f25663605b00ee7faa91"
+        "e7e2e1e23a62d448bcfdedc315ad367899798d899ce61fb0befb8548c1f20829"
       ],
       "records": 12,
       "trials": 12,
