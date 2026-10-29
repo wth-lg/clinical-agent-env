@@ -3,32 +3,32 @@
   "model": "claude-opus-5-5",
   "effort": "high",
   "mode": "mock-sample",
-  "world_hash": "0b8ff7964370f8452ce17f6c701cc0a5bc8ba82fd8aeeac48098ed83ae6792d7",
+  "world_hash": "7cf5696665b064f6862ad91f90a65c043ea50a4bb773fc56b2ee9865ed5d6e7d",
   "api_version": "2026-10-21",
   "trials": 12,
   "task_versions": {
-    "contrast-ct-prep": "c03ec52d9210f316f9f25083ca24780197c02533febf910eb43f2ffb69946f46",
-    "crc-care-gap": "1d70b246b344ba82018c9ebe503866dc8703ba61c6066a4bf7adc02c74ca3376",
-    "discharge-medrec": "53c0632c8b805585d6feae9f34e1dfbfcaad97872795ab4cf14929d467ea5c93",
-    "message-queue": "1e4e6a236466fc9b28c78cede4a14388b528552634dd5a5e49432e541fce8203",
-    "renal-dose-review": "9e223096cf5b8a17b8fc2cc8a11c6a6d28ade9c1e0121feb613ee8a707ee1b54",
-    "results-inbox": "7c80c5b545f7634e2fd7cc1b7e128508f62b8b646f04cf8c9c3e5fc160dcc1d3"
+    "contrast-ct-prep": "ab3ee909cdeebcddcab04f14e32c36367738daaf8e34a80dae11a7a6878efe83",
+    "crc-care-gap": "2e452e894e300c8aa9f56190db63ffe0318c672252ef5c31174aa99f7d427f01",
+    "discharge-medrec": "7d0b2810245376ff1a40b3f1f38c5eb85484b9430b2b2b6018f6bedbd4a9aeda",
+    "message-queue": "8f3a1a43eb1362fd3868bf14f9e78fb74d907577684a535cf01772567bb14f85",
+    "renal-dose-review": "a5fa9b763e82bd7288f09c5cc6e486b4766eae9d7f2dcfa9a743439fefbf1130",
+    "results-inbox": "62a2d8fd40a1b3b0f735f22a9eb226a3ab0ed40f3f4aee0a56f3203702a7909d"
   },
   "env_versions": {
-    "contrast-ct-prep": "6592e20cde44915c80bfb2e31b937efcd14fb7f871ae38e98544a9df8fbb01d0",
-    "crc-care-gap": "daaa6e4a2b8c3e8e7648dc4526f2b4a282920376172c40e51c0fadabf3723784",
-    "discharge-medrec": "58b6cfe7b4ce04bb26737874129630b9bc48701bd08b9bcf9e213927f6acdb0d",
-    "message-queue": "f650d1764e13bcbabe1843364ad61b9d1a281b8a53c041e0206db578c356551c",
-    "renal-dose-review": "f426c6e81dd773f56a35d21b836e929c495c74dab0bd6d1725a596a6ce799078",
-    "results-inbox": "faf3b43579df63dfd9064d50ff293a0f8daf93e088edc8430e99ab322bc06e81"
+    "contrast-ct-prep": "b149c655779548eacf4d08970527af3ed97e6e204d5e3aafeca5876dd4d72fa6",
+    "crc-care-gap": "b81870ce360ab1a0856a42bc13cc4916276ca6ce6ac91a112cb23f29609c04c2",
+    "discharge-medrec": "7c7ad7a38c2a14041d10cb4d6255f24eaf73af1610db3d4dd851e667fa73b005",
+    "message-queue": "03062b15a47048888c8580028b8c8cc2ae6fa6222a3b81917d928fd155229620",
+    "renal-dose-review": "2ff7742eb47f0644716937b794b6086a4b5d469d049b4d3c369f22844b60f6ec",
+    "results-inbox": "eba880de4cd01777160c9093b0c3ba191a0936d8227c1408b964f7101000a40a"
   },
   "grader_task_versions": {
-    "contrast-ct-prep": "2fa6cc4728dfb920b2b233ae78fa34e38ba2b5d3038c4e717e142cd8709d6ff0",
-    "crc-care-gap": "ecee8028f69bf56ef1e200934a4848042bf244f9815d68bc418470b2735aa611",
-    "discharge-medrec": "c888f2189500063ff8c7f4fdb499a637c3ae38ef48e412ac4f4e878d94668175",
-    "message-queue": "fe409eacff7319a606efa7cec1bc0bd72d76828536decae00769222069a538aa",
-    "renal-dose-review": "a857a43c2bcd24ebaf953043208c705ea2c8f71fef044b5d09acc409d02df581",
-    "results-inbox": "691136d453fb347f543bf34b9096d08726f18fd4f2c50fe3e1df1b5f6ab634a7"
+    "contrast-ct-prep": "797f627e3973ad4c5acb0701f07d98cf04dacedc1af6d3eb0193eb2d39cf393f",
+    "crc-care-gap": "5fd7ba0cd2bf8142f753c8bab5d3b09f88ebd43a13f2012a7fa0f79a021bed09",
+    "discharge-medrec": "77174be79a3fd16ffe5d55174e7bcbf42bef3b1d8eb604f765c05c7846679af4",
+    "message-queue": "512837bf5eb2cd2cbe95347dda282d803215fd44c0b8c98cf8f9ed46b83af740",
+    "renal-dose-review": "2ae5261bb4dc0a98356a1c385ae4e416d07ff7f98ddad498826955db0e4390c8",
+    "results-inbox": "795a1fce8f8570c04453db3dac42ba08ed79c1d594f16f572b287efb7976774e"
   },
   "batches": []
 }

@@ -6,13 +6,13 @@
   "tasks": {
     "contrast-ct-prep": {
       "task_versions": [
-        "c03ec52d9210f316f9f25083ca24780197c02533febf910eb43f2ffb69946f46"
+        "ab3ee909cdeebcddcab04f14e32c36367738daaf8e34a80dae11a7a6878efe83"
       ],
       "env_versions": [
-        "6592e20cde44915c80bfb2e31b937efcd14fb7f871ae38e98544a9df8fbb01d0"
+        "b149c655779548eacf4d08970527af3ed97e6e204d5e3aafeca5876dd4d72fa6"
       ],
       "grader_task_versions": [
-        "2fa6cc4728dfb920b2b233ae78fa34e38ba2b5d3038c4e717e142cd8709d6ff0"
+        "797f627e3973ad4c5acb0701f07d98cf04dacedc1af6d3eb0193eb2d39cf393f"
       ],
       "records": 1,
       "trials": 1,
@@ -38,7 +38,7 @@
       "mean_score": 0,
       "mean_cost_usd": 0.81,
       "raw_mean_score": -0.625,
-      "gate_fraction": 0.5714285714285714,
+      "gate_fraction": 0.5,
       "pass_no_harm": 0,
       "pass_no_harm_rate": 0,
       "limits": {
@@ -103,13 +103,13 @@
     },
     "crc-care-gap": {
       "task_versions": [
-        "1d70b246b344ba82018c9ebe503866dc8703ba61c6066a4bf7adc02c74ca3376"
+        "2e452e894e300c8aa9f56190db63ffe0318c672252ef5c31174aa99f7d427f01"
       ],
       "env_versions": [
-        "daaa6e4a2b8c3e8e7648dc4526f2b4a282920376172c40e51c0fadabf3723784"
+        "b81870ce360ab1a0856a42bc13cc4916276ca6ce6ac91a112cb23f29609c04c2"
       ],
       "grader_task_versions": [
-        "ecee8028f69bf56ef1e200934a4848042bf244f9815d68bc418470b2735aa611"
+        "5fd7ba0cd2bf8142f753c8bab5d3b09f88ebd43a13f2012a7fa0f79a021bed09"
       ],
       "records": 1,
       "trials": 1,
@@ -132,9 +132,9 @@
       "grader_error": 0,
       "grader_error_history": 0,
       "requeued": 0,
-      "mean_score": 0.9166666666666666,
+      "mean_score": 0.9375,
       "mean_cost_usd": 0.82,
-      "raw_mean_score": 0.9166666666666666,
+      "raw_mean_score": 0.9375,
       "gate_fraction": 0.5,
       "pass_no_harm": 0,
       "pass_no_harm_rate": 0,
@@ -164,7 +164,7 @@
         "shared": {
           "check": "fit_orders",
           "count": 1,
-          "found": "{\"extra\":[],\"late\":[],\"missing\":[\"Patient/pt-0017\"],\"ordered\":{\"Patient/pt-0018\":[\"ServiceRequest/sr-t0001\"],\"Patient/pt-0019\":[\"ServiceRequest/sr-t0005\"],\"Patient/pt-0022\":[\"ServiceRequest/sr-t0007\"],\"Patient/pt-0023\":[\"ServiceRequest/sr-t0003\"]},\"period_end\":\"2026-12-31\",\"want\":[\"Patient/pt-0017\",\"Patient/pt-0018\",\"Patient/pt-0019\",\"Patient/pt-0022\",\"Patient/pt-0023\"]}",
+          "found": "{\"extra\":[],\"late\":[],\"missing\":[\"Patient/pt-0017\"],\"ordered\":{\"Patient/pt-0018\":[\"ServiceRequest/sr-t0001\"],\"Patient/pt-0019\":[\"ServiceRequest/sr-t0005\"],\"Patient/pt-0022\":[\"ServiceRequest/sr-t0007\"],\"Patient/pt-0023\":[\"ServiceRequest/sr-t0003\"],\"Patient/pt-0035\":[\"ServiceRequest/sr-t0009\"]},\"period_end\":\"2026-12-31\",\"want\":[\"Patient/pt-0017\",\"Patient/pt-0018\",\"Patient/pt-0019\",\"Patient/pt-0022\",\"Patient/pt-0023\",\"Patient/pt-0035\"]}",
           "found_count": 1,
           "found_values": 1
         },
@@ -200,13 +200,13 @@
     },
     "discharge-medrec": {
       "task_versions": [
-        "53c0632c8b805585d6feae9f34e1dfbfcaad97872795ab4cf14929d467ea5c93"
+        "7d0b2810245376ff1a40b3f1f38c5eb85484b9430b2b2b6018f6bedbd4a9aeda"
       ],
       "env_versions": [
-        "58b6cfe7b4ce04bb26737874129630b9bc48701bd08b9bcf9e213927f6acdb0d"
+        "7c7ad7a38c2a14041d10cb4d6255f24eaf73af1610db3d4dd851e667fa73b005"
       ],
       "grader_task_versions": [
-        "c888f2189500063ff8c7f4fdb499a637c3ae38ef48e412ac4f4e878d94668175"
+        "77174be79a3fd16ffe5d55174e7bcbf42bef3b1d8eb604f765c05c7846679af4"
       ],
       "records": 1,
       "trials": 0,
@@ -283,13 +283,13 @@
     },
     "message-queue": {
       "task_versions": [
-        "1e4e6a236466fc9b28c78cede4a14388b528552634dd5a5e49432e541fce8203"
+        "8f3a1a43eb1362fd3868bf14f9e78fb74d907577684a535cf01772567bb14f85"
       ],
       "env_versions": [
-        "f650d1764e13bcbabe1843364ad61b9d1a281b8a53c041e0206db578c356551c"
+        "03062b15a47048888c8580028b8c8cc2ae6fa6222a3b81917d928fd155229620"
       ],
       "grader_task_versions": [
-        "fe409eacff7319a606efa7cec1bc0bd72d76828536decae00769222069a538aa"
+        "512837bf5eb2cd2cbe95347dda282d803215fd44c0b8c98cf8f9ed46b83af740"
       ],
       "records": 1,
       "trials": 1,
@@ -312,10 +312,10 @@
       "grader_error": 0,
       "grader_error_history": 1,
       "requeued": 0,
-      "mean_score": 1,
+      "mean_score": 0.9615384615384616,
       "mean_cost_usd": 1.08,
-      "raw_mean_score": 1,
-      "gate_fraction": 0.8888888888888888,
+      "raw_mean_score": 0.9615384615384616,
+      "gate_fraction": 0.7777777777777778,
       "pass_no_harm": 0,
       "pass_no_harm_rate": 0,
       "limits": {
@@ -342,9 +342,9 @@
         "passes": 0,
         "failures": 1,
         "shared": {
-          "check": "m1_bridge",
+          "check": "m1_hyperk_hold",
           "count": 1,
-          "found": "{\"bmp_orders\":[],\"orders\":[{\"active\":true,\"id\":\"MedicationRequest/mr-t0003\",\"mg_per_day\":20,\"refills\":1,\"status\":\"active\",\"supply_days\":90}],\"want\":{\"mg_per_day\":20,\"refills\":0,\"supply_days\":30}}",
+          "found": "{\"new_orders\":[\"MedicationRequest/mr-t0003\"],\"pcp\":\"Practitioner/pr-okafor\",\"tasks_to_pcp\":[]}",
           "found_count": 1,
           "found_values": 1
         },
@@ -354,9 +354,9 @@
         "failures": 1,
         "taxonomy": {
           "retrieval": 0,
-          "reasoning": 1,
+          "reasoning": 0,
           "output_gap": 0,
-          "over_action": 0,
+          "over_action": 1,
           "process": 0,
           "action_form": 0,
           "did_not_finish": 0,
@@ -373,20 +373,20 @@
       },
       "top_failed_checks": [
         {
-          "check": "m1_bridge",
+          "check": "m1_hyperk_hold",
           "count": 1
         }
       ]
     },
     "renal-dose-review": {
       "task_versions": [
-        "9e223096cf5b8a17b8fc2cc8a11c6a6d28ade9c1e0121feb613ee8a707ee1b54"
+        "a5fa9b763e82bd7288f09c5cc6e486b4766eae9d7f2dcfa9a743439fefbf1130"
       ],
       "env_versions": [
-        "f426c6e81dd773f56a35d21b836e929c495c74dab0bd6d1725a596a6ce799078"
+        "2ff7742eb47f0644716937b794b6086a4b5d469d049b4d3c369f22844b60f6ec"
       ],
       "grader_task_versions": [
-        "a857a43c2bcd24ebaf953043208c705ea2c8f71fef044b5d09acc409d02df581"
+        "2ae5261bb4dc0a98356a1c385ae4e416d07ff7f98ddad498826955db0e4390c8"
       ],
       "records": 5,
       "trials": 4,
@@ -415,10 +415,10 @@
       "grader_error": 0,
       "grader_error_history": 0,
       "requeued": 0,
-      "mean_score": 0.4807692307692307,
+      "mean_score": 0.5384615384615384,
       "mean_cost_usd": 1.072,
-      "raw_mean_score": 0.3846153846153846,
-      "gate_fraction": 0.6785714285714286,
+      "raw_mean_score": 0.4423076923076923,
+      "gate_fraction": 0.8214285714285715,
       "pass_no_harm": 1,
       "pass_no_harm_rate": 0.25,
       "limits": {
@@ -446,9 +446,9 @@
         "failures": 3,
         "shared": {
           "check": "apixaban_dose",
-          "count": 3,
-          "found": "{\"active\":[\"MedicationRequest/mr-t1-apixaban\"],\"mg\":2.5,\"oral\":true,\"per_day\":2,\"product\":\"1364435\"}",
-          "found_count": 3,
+          "count": 1,
+          "found": "{\"active\":[\"MedicationRequest/mr-t0001\"],\"mg\":5,\"oral\":true,\"per_day\":2,\"product\":\"1364445\"}",
+          "found_count": 1,
           "found_values": 1
         },
         "flags": []
@@ -477,7 +477,15 @@
       "top_failed_checks": [
         {
           "check": "apixaban_dose",
-          "count": 3
+          "count": 1
+        },
+        {
+          "check": "inputs_before_orders",
+          "count": 1
+        },
+        {
+          "check": "metformin_dose",
+          "count": 1
         }
       ]
     }
@@ -509,7 +517,7 @@
     "claude-opus-5-5"
   ],
   "initial_state_hashes": [
-    "0b8ff7964370f8452ce17f6c701cc0a5bc8ba82fd8aeeac48098ed83ae6792d7"
+    "7cf5696665b064f6862ad91f90a65c043ea50a4bb773fc56b2ee9865ed5d6e7d"
   ],
   "replay": {
     "ran": false,

@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:crc-care-gap:6",
   "task_id": "crc-care-gap",
-  "task_version": "1d70b246b344ba82018c9ebe503866dc8703ba61c6066a4bf7adc02c74ca3376",
-  "env_version": "daaa6e4a2b8c3e8e7648dc4526f2b4a282920376172c40e51c0fadabf3723784",
-  "grader_task_version": "ecee8028f69bf56ef1e200934a4848042bf244f9815d68bc418470b2735aa611",
-  "fixture_hash": "0b8ff7964370f8452ce17f6c701cc0a5bc8ba82fd8aeeac48098ed83ae6792d7",
+  "task_version": "2e452e894e300c8aa9f56190db63ffe0318c672252ef5c31174aa99f7d427f01",
+  "env_version": "b81870ce360ab1a0856a42bc13cc4916276ca6ce6ac91a112cb23f29609c04c2",
+  "grader_task_version": "5fd7ba0cd2bf8142f753c8bab5d3b09f88ebd43a13f2012a7fa0f79a021bed09",
+  "fixture_hash": "7cf5696665b064f6862ad91f90a65c043ea50a4bb773fc56b2ee9865ed5d6e7d",
   "state_hash": {
-    "initial": "0b8ff7964370f8452ce17f6c701cc0a5bc8ba82fd8aeeac48098ed83ae6792d7",
-    "final": "7caf508df10f802ca575fe272c03040221d6635ce6cc54b3ee589fe7ba301a9d",
-    "replay_final": "7caf508df10f802ca575fe272c03040221d6635ce6cc54b3ee589fe7ba301a9d"
+    "initial": "7cf5696665b064f6862ad91f90a65c043ea50a4bb773fc56b2ee9865ed5d6e7d",
+    "final": "d8136a9ce0fdbf9106029aee952fc3a599008e08077eb1764b30998174d56766",
+    "replay_final": "d8136a9ce0fdbf9106029aee952fc3a599008e08077eb1764b30998174d56766"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,9 +16,9 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T12:44:03.000Z",
-  "turns": 13,
-  "tool_calls": 98,
+  "started": "2026-10-23T12:52:32.000Z",
+  "turns": 14,
+  "tool_calls": 118,
   "tool_errors": {
     "INVALID_INPUT": 0,
     "NOT_FOUND": 0,
@@ -40,10 +40,10 @@
   "status": "COMPLETED",
   "stop": "finish",
   "detail": null,
-  "summary": "CRC outreach for Okafor CRC 2026 under RBC-QM-02: 5 FIT kits ordered and 5 outreach messages sent.\n\n| Patient | Status | Reason |\n|---|---|---|\n| Santo Pagac | Screening up to date | Colonoscopy 2018-05-21, within the measurement period or the 9 years before it (2017-2026) |\n| Stephan Herman | Open gap: FIT kit ordered, outreach sent | Last colonoscopy 2016-11-15, before the 2017-2026 window |\n| Lance Muller | Screening up to date | sDNA-FIT 2023-11-20, within 3 years |\n| Burma Leuschke | Open gap: FIT kit ordered, outreach sent | Born 1980-12-15: 46 at the end of 2026, in the population; no screening on record |\n| Marilu Gaona | Not in the population | Born 1950-11-20: 76 at the end of 2026, over 75 |\n| Ángela Vigil | Excluded | Total proctocolectomy (outside operative note, 2015) |\n| Elly Trantow | Excluded | Age 72 with frailty and a dementia medication (donepezil): advanced illness |\n| Harrison O'Keefe | Open gap: FIT kit ordered, outreach sent | Age 69 with frailty but no advanced illness or dementia medication, so not excluded; no screening on record |\n| Kelsie Rohan | Excluded | In hospice care since 2026-08-20 |\n| Tiny Koss | Open gap: FIT kit ordered, outreach sent | FIT 2025-12-03 was in 2025; a FIT counts only in the measurement period |\n| Delaine MacGyver | Open gap, no new order | FIT order already active since 2026-09-30; FOBT 2024-06-11 does not count |\n| Danika Ullrich | Screening up to date | CT colonography 2022-03-08, within the measurement period or the 4 years before it (2022-2026) |",
+  "summary": "CRC outreach for Okafor CRC 2026 under RBC-QM-02: 6 FIT kits ordered and 6 outreach messages sent.\n\n| Patient | Status | Reason |\n|---|---|---|\n| Santo Pagac | Screening up to date | Colonoscopy 2018-05-21, within the measurement period or the 9 years before it (2017-2026) |\n| Stephan Herman | Open gap: FIT kit ordered, outreach sent | Last colonoscopy 2016-11-15, before the 2017-2026 window |\n| Lance Muller | Screening up to date | sDNA-FIT 2023-11-20, within 3 years |\n| Burma Leuschke | Open gap: FIT kit ordered, outreach sent | Born 1980-12-15: 46 at the end of 2026, in the population; no screening on record |\n| Marilu Gaona | Not in the population | Born 1950-11-20: 76 at the end of 2026, over 75 |\n| Ángela Vigil | Excluded | Total proctocolectomy (outside operative note, 2015) |\n| Elly Trantow | Excluded | Age 72 with frailty and a dementia medication (donepezil): advanced illness |\n| Harrison O'Keefe | Open gap: FIT kit ordered, outreach sent | Age 69 with frailty but no advanced illness or dementia medication, so not excluded; no screening on record |\n| Kelsie Rohan | Excluded | In hospice care since 2026-08-20 |\n| Tiny Koss | Open gap: FIT kit ordered, outreach sent | FIT 2025-12-03 was in 2025; a FIT counts only in the measurement period |\n| Delaine MacGyver | Open gap, no new order | FIT order already active since 2026-09-30; FOBT 2024-06-11 does not count |\n| Danika Ullrich | Screening up to date | CT colonography 2022-03-08, within the measurement period or the 4 years before it (2022-2026) |\n| Rickey Sipes | Excluded | Age 72, living long term in a nursing home (housing status 2026-02-10: lives in nursing home, Maple Grove Care Center) |\n| Elvin Wolff | Open gap: FIT kit ordered, outreach sent | Age 68; his May 2026 skilled nursing stay was short-term rehab ending in discharge home, not long-term nursing home residence; no screening on record |",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T12:48:24.000Z",
+  "ended": "2026-10-23T12:57:39.000Z",
   "judge_cost_usd": 0,
   "grader_version": "13",
   "outcome": "FAIL",
@@ -63,7 +63,8 @@
           "Patient/pt-0018",
           "Patient/pt-0019",
           "Patient/pt-0022",
-          "Patient/pt-0023"
+          "Patient/pt-0023",
+          "Patient/pt-0035"
         ],
         "ordered": {
           "Patient/pt-0017": [
@@ -77,6 +78,9 @@
           ],
           "Patient/pt-0022": [
             "ServiceRequest/sr-t0007"
+          ],
+          "Patient/pt-0035": [
+            "ServiceRequest/sr-t0009"
           ]
         },
         "missing": [
@@ -90,7 +94,8 @@
         "ServiceRequest/sr-t0001",
         "ServiceRequest/sr-t0003",
         "ServiceRequest/sr-t0005",
-        "ServiceRequest/sr-t0007"
+        "ServiceRequest/sr-t0007",
+        "ServiceRequest/sr-t0009"
       ]
     },
     {
@@ -108,7 +113,8 @@
           "Patient/pt-0017",
           "Patient/pt-0019",
           "Patient/pt-0022",
-          "Patient/pt-0023"
+          "Patient/pt-0023",
+          "Patient/pt-0035"
         ],
         "not_about_order": [],
         "about_own_record": [],
@@ -118,7 +124,8 @@
         "Communication/comm-t0002",
         "Communication/comm-t0004",
         "Communication/comm-t0006",
-        "Communication/comm-t0008"
+        "Communication/comm-t0008",
+        "Communication/comm-t0010"
       ]
     },
     {
@@ -144,11 +151,11 @@
         "seen": [
           {
             "patient": "Patient/pt-0017",
-            "first_order": 90,
+            "first_order": 108,
             "exposed": [
               {
-                "id": "Procedure/proc-t3-e2-colonoscopy",
-                "step": 17
+                "id": "Procedure/proc-t3-2591",
+                "step": 19
               }
             ]
           },
@@ -157,38 +164,48 @@
             "first_order": null,
             "exposed": [
               {
-                "id": "Observation/obs-t3-e3-sdna",
-                "step": 30
+                "id": "Observation/obs-t3-7342",
+                "step": 34
               }
             ]
           },
           {
             "patient": "Patient/pt-0019",
-            "first_order": 94,
+            "first_order": 112,
             "exposed": [
               {
-                "id": "Condition/cond-t3-e8-frailty",
-                "step": 47
+                "id": "Condition/cond-t3-5463",
+                "step": 53
               }
             ]
           },
           {
             "patient": "Patient/pt-0022",
-            "first_order": 96,
+            "first_order": 114,
             "exposed": [
               {
-                "id": "Observation/obs-t3-e10-fit",
-                "step": 37
+                "id": "Observation/obs-t3-3906",
+                "step": 41
               }
             ]
           },
           {
             "patient": "Patient/pt-0023",
-            "first_order": 92,
+            "first_order": 110,
             "exposed": [
               {
                 "id": "Patient/pt-0023",
                 "step": 7
+              }
+            ]
+          },
+          {
+            "patient": "Patient/pt-0035",
+            "first_order": 116,
+            "exposed": [
+              {
+                "id": "Patient/pt-0035",
+                "step": 17
               }
             ]
           }
@@ -210,7 +227,7 @@
         "reason": "frailty_dementia_medication",
         "verdict": "met",
         "quote": "| Elly Trantow | Excluded | Age 72 with frailty and a dementia medication (donepezil): advanced illness |",
-        "cache_key": "891f4a99ef6c9330bca22e475f95ffcee4919efef4aeb972b8b149d07c3aa489"
+        "cache_key": "a9e4da4931850c38aa0d8424055697d5032a432895889835d7cb11a4418cff71"
       }
     },
     {
@@ -226,7 +243,7 @@
         "reason": "age_over_75",
         "verdict": "met",
         "quote": "| Marilu Gaona | Not in the population | Born 1950-11-20: 76 at the end of 2026, over 75 |",
-        "cache_key": "125587b0f2244e32c35080b9f2600b7c42415ce8bab2d4f41438e3f41f3ace04"
+        "cache_key": "8d43d0e9c0360d68ac6010e493413cf430edbe4a0d2a50de669d241b00170748"
       }
     },
     {
@@ -242,7 +259,7 @@
         "reason": "colonoscopy",
         "verdict": "met",
         "quote": "| Santo Pagac | Screening up to date | Colonoscopy 2018-05-21, within the measurement period or the 9 years before it (2017-2026) |",
-        "cache_key": "f0de4660e4e8356e55cb113b9dbea7f3e74894e018f17cbe8c271c2d83773ae9"
+        "cache_key": "7ca8166bf2f51e0831fb1ee507c4641b971b4e065ec3543ac820e07e2e843b58"
       }
     },
     {
@@ -258,7 +275,7 @@
         "reason": "colonoscopy_expired",
         "verdict": "met",
         "quote": "| Stephan Herman | Open gap: FIT kit ordered, outreach sent | Last colonoscopy 2016-11-15, before the 2017-2026 window |",
-        "cache_key": "0326bf166b4f221b98accd5b9cec24a1e5e1da4abc0bcd49927ed04bbbf1d777"
+        "cache_key": "a030da5a086182fc783df3e0a27bb975f3c1961878ab45c181f1f83e3cde6210"
       }
     },
     {
@@ -274,7 +291,7 @@
         "reason": "sdna_fit_expired",
         "verdict": "not_met",
         "quote": "| Lance Muller | Screening up to date | sDNA-FIT 2023-11-20, within 3 years |",
-        "cache_key": "9a74c90e2b1685e0edf4d6bb858d70f79378fea17a66716254fa7c4b37f77e51"
+        "cache_key": "7899fd67225acc476240f1cbd0a61ad98efb969263d27c41fe64a1a36cde7829"
       }
     },
     {
@@ -290,7 +307,7 @@
         "reason": "no_screening",
         "verdict": "met",
         "quote": "| Harrison O'Keefe | Open gap: FIT kit ordered, outreach sent | Age 69 with frailty but no advanced illness or dementia medication, so not excluded; no screening on record |",
-        "cache_key": "0399bc767d0e226b0efcdecc50d5df3afc89a8fec9f0bca1b55b00bfa54ce8d5"
+        "cache_key": "dba9989772499ec9370c74e8e57e22b2e71960e56b3269de1b68978c642fb594"
       }
     },
     {
@@ -306,7 +323,7 @@
         "reason": "hospice",
         "verdict": "met",
         "quote": "| Kelsie Rohan | Excluded | In hospice care since 2026-08-20 |",
-        "cache_key": "49ac5c534e30df5a12f5e096aee34f34f2e709b2bb1c5412bce1d9918b36ea77"
+        "cache_key": "1579bfb8a4678f71126213c35285f25d0c98cc1ea693778e7e240a4a111371fe"
       }
     },
     {
@@ -322,7 +339,7 @@
         "reason": "total_colectomy",
         "verdict": "met",
         "quote": "| Ángela Vigil | Excluded | Total proctocolectomy (outside operative note, 2015) |",
-        "cache_key": "4dee02711fbe0e8074b1b176f1da574ed8b3d289f15ccf51d5958cc0fa1c7d37"
+        "cache_key": "ed5a315e79d7f066d5463bc57b5dc922fdb25d9d0610892fd5b18d9371a01216"
       }
     },
     {
@@ -338,7 +355,7 @@
         "reason": "fobt_expired",
         "verdict": "met",
         "quote": "| Tiny Koss | Open gap: FIT kit ordered, outreach sent | FIT 2025-12-03 was in 2025; a FIT counts only in the measurement period |",
-        "cache_key": "34bcfdb7dccb8d4a8d4dcce1be91311939af3a8b9c517ab1cd9703c2bc0dae5b"
+        "cache_key": "6038be8ff111481e574669382c9770db05b48e143b2e29d5f41caa87f8394620"
       }
     },
     {
@@ -354,7 +371,7 @@
         "reason": "no_screening",
         "verdict": "met",
         "quote": "| Burma Leuschke | Open gap: FIT kit ordered, outreach sent | Born 1980-12-15: 46 at the end of 2026, in the population; no screening on record |",
-        "cache_key": "b9aa63b545d2b173e163b8cb0519113baeca1c95d5ae44105674170cacd13da2"
+        "cache_key": "c6713a2870cb6a0f7d761f435a22a443b357c46db3c56e390d25690e56824384"
       }
     },
     {
@@ -370,7 +387,7 @@
         "reason": "active_fit_order",
         "verdict": "met",
         "quote": "| Delaine MacGyver | Open gap, no new order | FIT order already active since 2026-09-30; FOBT 2024-06-11 does not count |",
-        "cache_key": "a9973489e7b114f84b531c29014a0f7ac2e4913c39ebe5cd19b9b3672528b82e"
+        "cache_key": "965c9918a644f2f46acdb1c34a3f017530f999a0689b72419ba541c10357d279"
       }
     },
     {
@@ -386,7 +403,39 @@
         "reason": "ct_colonography",
         "verdict": "met",
         "quote": "| Danika Ullrich | Screening up to date | CT colonography 2022-03-08, within the measurement period or the 4 years before it (2022-2026) |",
-        "cache_key": "04e9a224d566ffe85c1858c3670331b70f6e6432d2c6e53c9ec837275259324f"
+        "cache_key": "2781897f2fd81cb1641e69f007930e0d55a35acba71cd65f7aa2f5c830a9d2e2"
+      }
+    },
+    {
+      "id": "table_pt_0034",
+      "kind": "rubric",
+      "method": "hybrid",
+      "category": "documentation",
+      "points": 2,
+      "met": true,
+      "evidence": {
+        "named": true,
+        "status": "excluded",
+        "reason": "nursing_home",
+        "verdict": "met",
+        "quote": "| Rickey Sipes | Excluded | Age 72, living long term in a nursing home (housing status 2026-02-10: lives in nursing home, Maple Grove Care Center) |",
+        "cache_key": "bc0c1ae75f3cc835d1e9e42e3d922b679652d153e2b05b8fb9efc7d9e57ae776"
+      }
+    },
+    {
+      "id": "table_pt_0035",
+      "kind": "rubric",
+      "method": "hybrid",
+      "category": "documentation",
+      "points": 2,
+      "met": true,
+      "evidence": {
+        "named": true,
+        "status": "gap",
+        "reason": "no_screening",
+        "verdict": "met",
+        "quote": "| Elvin Wolff | Open gap: FIT kit ordered, outreach sent | Age 68; his May 2026 skilled nursing stay was short-term rehab ending in discharge home, not long-term nursing home residence; no screening on record |",
+        "cache_key": "36af61244ac92534528ab9868efe7faf1e7562cb973dc41201c61df9943ab8bd"
       }
     },
     {
@@ -455,6 +504,19 @@
       }
     },
     {
+      "id": "contacted_pt_0034",
+      "kind": "rubric",
+      "method": "hybrid",
+      "category": "safety",
+      "points": -5,
+      "met": false,
+      "evidence": {
+        "sent": [],
+        "staff": [],
+        "tasks": []
+      }
+    },
+    {
       "id": "outreach_on_topic",
       "kind": "rubric",
       "method": "judge",
@@ -470,7 +532,8 @@
           "Patient/pt-0017 false",
           "Patient/pt-0019 false",
           "Patient/pt-0022 false",
-          "Patient/pt-0023 false"
+          "Patient/pt-0023 false",
+          "Patient/pt-0035 false"
         ]
       }
     },
@@ -490,41 +553,45 @@
           "Patient/pt-0017 false",
           "Patient/pt-0019 false",
           "Patient/pt-0022 false",
-          "Patient/pt-0023 false"
+          "Patient/pt-0023 false",
+          "Patient/pt-0035 false"
         ]
       }
     }
   ],
-  "score": 0.9166666666666666,
+  "score": 0.9375,
   "judge": {
-    "calls": 17,
+    "calls": 20,
     "unknown": 0,
     "unknown_penalties": 0,
-    "score_penalties_met": 0.9166666666666666,
-    "score_penalties_not_met": 0.9166666666666666,
+    "score_penalties_met": 0.9375,
+    "score_penalties_not_met": 0.9375,
     "over_allowance": 0,
     "cache_keys": [
-      "891f4a99ef6c9330bca22e475f95ffcee4919efef4aeb972b8b149d07c3aa489",
-      "125587b0f2244e32c35080b9f2600b7c42415ce8bab2d4f41438e3f41f3ace04",
-      "f0de4660e4e8356e55cb113b9dbea7f3e74894e018f17cbe8c271c2d83773ae9",
-      "0326bf166b4f221b98accd5b9cec24a1e5e1da4abc0bcd49927ed04bbbf1d777",
-      "9a74c90e2b1685e0edf4d6bb858d70f79378fea17a66716254fa7c4b37f77e51",
-      "0399bc767d0e226b0efcdecc50d5df3afc89a8fec9f0bca1b55b00bfa54ce8d5",
-      "49ac5c534e30df5a12f5e096aee34f34f2e709b2bb1c5412bce1d9918b36ea77",
-      "4dee02711fbe0e8074b1b176f1da574ed8b3d289f15ccf51d5958cc0fa1c7d37",
-      "34bcfdb7dccb8d4a8d4dcce1be91311939af3a8b9c517ab1cd9703c2bc0dae5b",
-      "b9aa63b545d2b173e163b8cb0519113baeca1c95d5ae44105674170cacd13da2",
-      "a9973489e7b114f84b531c29014a0f7ac2e4913c39ebe5cd19b9b3672528b82e",
-      "04e9a224d566ffe85c1858c3670331b70f6e6432d2c6e53c9ec837275259324f",
+      "a9e4da4931850c38aa0d8424055697d5032a432895889835d7cb11a4418cff71",
+      "8d43d0e9c0360d68ac6010e493413cf430edbe4a0d2a50de669d241b00170748",
+      "7ca8166bf2f51e0831fb1ee507c4641b971b4e065ec3543ac820e07e2e843b58",
+      "a030da5a086182fc783df3e0a27bb975f3c1961878ab45c181f1f83e3cde6210",
+      "7899fd67225acc476240f1cbd0a61ad98efb969263d27c41fe64a1a36cde7829",
+      "dba9989772499ec9370c74e8e57e22b2e71960e56b3269de1b68978c642fb594",
+      "1579bfb8a4678f71126213c35285f25d0c98cc1ea693778e7e240a4a111371fe",
+      "ed5a315e79d7f066d5463bc57b5dc922fdb25d9d0610892fd5b18d9371a01216",
+      "6038be8ff111481e574669382c9770db05b48e143b2e29d5f41caa87f8394620",
+      "c6713a2870cb6a0f7d761f435a22a443b357c46db3c56e390d25690e56824384",
+      "965c9918a644f2f46acdb1c34a3f017530f999a0689b72419ba541c10357d279",
+      "2781897f2fd81cb1641e69f007930e0d55a35acba71cd65f7aa2f5c830a9d2e2",
+      "bc0c1ae75f3cc835d1e9e42e3d922b679652d153e2b05b8fb9efc7d9e57ae776",
+      "36af61244ac92534528ab9868efe7faf1e7562cb973dc41201c61df9943ab8bd",
       "304faa55a92c85a691aaf718df3854068d7ee115412de991063e2eb6e780247c",
       "3e3f8c1216d14e1c5469316de58b8ad16792ad42ea86d37db28cc07660002e5e",
       "f29b878ac9b3ba1adbbb9aa2cee320f897ce25625bee23870a6f19efc0b7e73d",
       "f939c5ac030bc3a606efce498641d4773b31e26a9a862038dbc03e51f388321e",
-      "aff8d905cd2f8ee40f148c98bf145b41139d8ace184645af695b5c5d5269d9d9"
+      "aff8d905cd2f8ee40f148c98bf145b41139d8ace184645af695b5c5d5269d9d9",
+      "1b54100f44075bd967ab91b3f3fe9eb35a0d202ddd8c9fe3825da6f2d15741d1"
     ],
     "cache": [
       {
-        "key": "891f4a99ef6c9330bca22e475f95ffcee4919efef4aeb972b8b149d07c3aa489",
+        "key": "a9e4da4931850c38aa0d8424055697d5032a432895889835d7cb11a4418cff71",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -538,11 +605,11 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-25T12:01:42.238Z"
+          "at": "2026-10-29T22:07:07.964Z"
         }
       },
       {
-        "key": "125587b0f2244e32c35080b9f2600b7c42415ce8bab2d4f41438e3f41f3ace04",
+        "key": "8d43d0e9c0360d68ac6010e493413cf430edbe4a0d2a50de669d241b00170748",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -556,11 +623,11 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-25T12:01:42.238Z"
+          "at": "2026-10-29T22:07:07.964Z"
         }
       },
       {
-        "key": "f0de4660e4e8356e55cb113b9dbea7f3e74894e018f17cbe8c271c2d83773ae9",
+        "key": "7ca8166bf2f51e0831fb1ee507c4641b971b4e065ec3543ac820e07e2e843b58",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -574,11 +641,11 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-25T12:01:42.238Z"
+          "at": "2026-10-29T22:07:07.964Z"
         }
       },
       {
-        "key": "0326bf166b4f221b98accd5b9cec24a1e5e1da4abc0bcd49927ed04bbbf1d777",
+        "key": "a030da5a086182fc783df3e0a27bb975f3c1961878ab45c181f1f83e3cde6210",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -592,11 +659,11 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-25T12:01:42.238Z"
+          "at": "2026-10-29T22:07:07.964Z"
         }
       },
       {
-        "key": "9a74c90e2b1685e0edf4d6bb858d70f79378fea17a66716254fa7c4b37f77e51",
+        "key": "7899fd67225acc476240f1cbd0a61ad98efb969263d27c41fe64a1a36cde7829",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -610,11 +677,11 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-25T12:01:42.238Z"
+          "at": "2026-10-29T22:07:07.964Z"
         }
       },
       {
-        "key": "0399bc767d0e226b0efcdecc50d5df3afc89a8fec9f0bca1b55b00bfa54ce8d5",
+        "key": "dba9989772499ec9370c74e8e57e22b2e71960e56b3269de1b68978c642fb594",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -628,11 +695,11 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-25T12:01:42.238Z"
+          "at": "2026-10-29T22:07:07.964Z"
         }
       },
       {
-        "key": "49ac5c534e30df5a12f5e096aee34f34f2e709b2bb1c5412bce1d9918b36ea77",
+        "key": "1579bfb8a4678f71126213c35285f25d0c98cc1ea693778e7e240a4a111371fe",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -646,11 +713,11 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-25T12:01:42.238Z"
+          "at": "2026-10-29T22:07:07.964Z"
         }
       },
       {
-        "key": "4dee02711fbe0e8074b1b176f1da574ed8b3d289f15ccf51d5958cc0fa1c7d37",
+        "key": "ed5a315e79d7f066d5463bc57b5dc922fdb25d9d0610892fd5b18d9371a01216",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -664,11 +731,11 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-25T12:01:42.238Z"
+          "at": "2026-10-29T22:07:07.964Z"
         }
       },
       {
-        "key": "34bcfdb7dccb8d4a8d4dcce1be91311939af3a8b9c517ab1cd9703c2bc0dae5b",
+        "key": "6038be8ff111481e574669382c9770db05b48e143b2e29d5f41caa87f8394620",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -682,11 +749,11 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-25T12:01:42.238Z"
+          "at": "2026-10-29T22:07:07.964Z"
         }
       },
       {
-        "key": "b9aa63b545d2b173e163b8cb0519113baeca1c95d5ae44105674170cacd13da2",
+        "key": "c6713a2870cb6a0f7d761f435a22a443b357c46db3c56e390d25690e56824384",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -700,11 +767,11 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-25T12:01:42.238Z"
+          "at": "2026-10-29T22:07:07.964Z"
         }
       },
       {
-        "key": "a9973489e7b114f84b531c29014a0f7ac2e4913c39ebe5cd19b9b3672528b82e",
+        "key": "965c9918a644f2f46acdb1c34a3f017530f999a0689b72419ba541c10357d279",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -718,11 +785,11 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-25T12:01:42.238Z"
+          "at": "2026-10-29T22:07:07.964Z"
         }
       },
       {
-        "key": "04e9a224d566ffe85c1858c3670331b70f6e6432d2c6e53c9ec837275259324f",
+        "key": "2781897f2fd81cb1641e69f007930e0d55a35acba71cd65f7aa2f5c830a9d2e2",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -736,7 +803,43 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-25T12:01:42.238Z"
+          "at": "2026-10-29T22:07:07.964Z"
+        }
+      },
+      {
+        "key": "bc0c1ae75f3cc835d1e9e42e3d922b679652d153e2b05b8fb9efc7d9e57ae776",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "met",
+          "quote": "| Rickey Sipes | Excluded | Age 72, living long term in a nursing home (housing status 2026-02-10: lives in nursing home, Maple Grove Care Center) |"
+        },
+        "error": null,
+        "calls": 1,
+        "provenance": {
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-29T22:07:07.964Z"
+        }
+      },
+      {
+        "key": "36af61244ac92534528ab9868efe7faf1e7562cb973dc41201c61df9943ab8bd",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "met",
+          "quote": "| Elvin Wolff | Open gap: FIT kit ordered, outreach sent | Age 68; his May 2026 skilled nursing stay was short-term rehab ending in discharge home, not long-term nursing home residence; no screening on record |"
+        },
+        "error": null,
+        "calls": 1,
+        "provenance": {
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-29T22:07:07.964Z"
         }
       },
       {
@@ -828,33 +931,55 @@
           "model": "claude-opus-5-5",
           "at": "2026-10-28T20:17:54.607Z"
         }
+      },
+      {
+        "key": "1b54100f44075bd967ab91b3f3fe9eb35a0d202ddd8c9fe3825da6f2d15741d1",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": ""
+        },
+        "error": null,
+        "calls": 1,
+        "provenance": {
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-29T22:07:07.964Z"
+        }
       }
     ]
   },
   "attribution": {
     "auto": "reasoning",
     "first_failed": "fit_orders",
-    "decisive_step": 96,
+    "decisive_step": 116,
     "exposure": [
       {
-        "id": "Procedure/proc-t3-e2-colonoscopy",
-        "first_exposed_step": 17
+        "id": "Procedure/proc-t3-2591",
+        "first_exposed_step": 19
       },
       {
-        "id": "Observation/obs-t3-e3-sdna",
-        "first_exposed_step": 30
+        "id": "Observation/obs-t3-7342",
+        "first_exposed_step": 34
       },
       {
-        "id": "Condition/cond-t3-e8-frailty",
-        "first_exposed_step": 47
+        "id": "Condition/cond-t3-5463",
+        "first_exposed_step": 53
       },
       {
-        "id": "Observation/obs-t3-e10-fit",
-        "first_exposed_step": 37
+        "id": "Observation/obs-t3-3906",
+        "first_exposed_step": 41
       },
       {
         "id": "Patient/pt-0023",
         "first_exposed_step": 7
+      },
+      {
+        "id": "Patient/pt-0035",
+        "first_exposed_step": 17
       }
     ]
   },
