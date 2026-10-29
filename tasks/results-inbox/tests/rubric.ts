@@ -67,7 +67,12 @@ const oncallAbout = (ctx: RubricCtx, patient: string) => oncall(ctx as NotifyCtx
 // "call her today" or "let him know" about a clinician counts as contacting the family; a word
 // after the pronoun that is not in AFTER_PRONOUN (a weekday is in it) is a false loss; a title with
 // a surname of the patient or a contact ("call Mr. Patel") names them; all-caps text ("CALL PT TODAY")
-// reads PT as physical therapy, so it does not count. A tracking task does not count.
+// reads PT as physical therapy, so it does not count. A tracking task does not count. A verb
+// negated within two words before it in the same clause ("do not call Mr. Patel", "no need to
+// call him Monday", "unable to reach him") does not count (verifier-phase-P17j-retro-JG4T2-unread-1
+// D4); "not urgent; call him Monday" does, since the negation ends with its clause, and so does
+// "don't forget to call him" (NEGATED); "do not, under any circumstances, call him" does not
+// (INTERPOSED).
 const VERB = String.raw`call|phone|telephone|contact|notify|inform|tell|reach(?: out to)?|get in touch with|let|(?:speak|talk) (?:with|to)`;
 const KIN = String.raw`patient|pt|family|parents?|mother|father|mom|mum|dad|guardian|caregiver`;
 // What may follow the pronoun: the end of the text, punctuation, a dash that does not join a word,
@@ -75,6 +80,26 @@ const KIN = String.raw`patient|pt|family|parents?|mother|father|mom|mum|dad|guar
 // "on" not before "call" or a dash ("her on-call resident").
 const AFTER_PRONOUN = String.raw`today|tonight|now|asap|tomorrow|monday|tuesday|wednesday|thursday|friday|saturday|sunday|later|back|about|re|regarding|to|that|and|or|with|on(?![-\u2010-\u2014\p{L}]|\s+call\b)|at|by|in|via|within|once|if|when|soon|this|first|know|of|immediately|urgently|again|directly|right away`;
 const PRONOUN = String.raw`(?:him|her)(?=\s*(?:$|[.,;:!?)/\u2013\u2014]|-(?![\p{L}\p{N}]))|\s+(?:${AFTER_PRONOUN})\b)`;
+// A negation and up to two more words just before a contact verb, read from the start of the
+// verb's clause: not, never, cannot, unable, without, no one, nobody, or a word ending n't, unless
+// the next word turns it into an ask ("don't forget to", "do not hesitate to", "without delay",
+// "don't wait to", "not only ... but also", "don't just call him"; forget, hesitate, fail and
+// neglect in their present forms, so "make sure no one forgets to call him" and "do not neglect to
+// call him" ask, but "no one forgot to call him" reports a past call and negates; "wait" only
+// before "to", so "do not wait or call him" negates); "no one" and "nobody" not after if, when, unless or until ("if nobody answers call him"); "no" only as "no
+// need" and up to three more words ("no need for anyone to call him") or right before the verb, so
+// "if there is no answer call him" and "no later than Monday call him" still ask (verifier-phase-
+// P17i-P17j-T2retro-1 F2, verifier-phase-P17i-P17j-T2retror2-1 N3, verifier-phase-P17i-P17j-
+// T2retror3-1 S1, N1, verifier-phase-P17i-P17j-T2sync-1 S1).
+const NEGATED =
+  /(?:(?:(?<![\p{L}\p{N}'])(?:not|never|cannot|unable|without|(?<!(?:if|when|unless|until)\s+)(?:no(?:\s+|-)one|nobody))|n't)(?!\s+(?:forget(?:s|ting)?|hesitat(?:e|es|ing)|delay|fail(?:s|ing)?|neglect(?:s|ing)?|only|just|mind|wait\s+to)(?![\p{L}\p{N}']))(?:\s+[\p{L}\p{N}'-]+){0,2}|(?<![\p{L}\p{N}'])no(?:\s+need(?:\s+[\p{L}\p{N}'-]+){0,3})?)\s+$/u;
+// A clause ends at punctuation, a dash, or a hyphen with a space on each side ("no delay - call him").
+const CLAUSE_END = /[.;:!?,()\u2013\u2014]|\s-+\s/;
+// A phrase set off by commas right after a negation word keeps the negation ("do not, under any
+// circumstances, call him"); "not urgent, but please, call him" does not, since a word follows the
+// negation before the comma.
+const INTERPOSED = /((?:(?<![\p{L}\p{N}'])(?:not|never|no(?:\s+|-)one|nobody)|n't))\s*,[^,.;:!?()\u2013\u2014]{1,40},\s*$/u;
+const negated = (before: string) => NEGATED.test(before.replace(INTERPOSED, '$1 ').split(CLAUSE_END).at(-1)!);
 // Physical therapy, written "PT" in capitals; folded, it would read as "pt", the patient.
 const PHYSICAL_THERAPY = /(?<![\p{L}\p{N}])PT(?![\p{L}\p{N}])/gu;
 function asksToContact(ctx: RubricCtx, patient: string): (text: string) => boolean {
@@ -88,8 +113,11 @@ function asksToContact(ctx: RubricCtx, patient: string): (text: string) => boole
   // A title and a surname of the patient or a contact: "Mr. Patel", "Mrs Ruiz".
   const titled = surnames.length ? [String.raw`(?:mr|mrs|ms|miss|mx)\.?\s+(?:${alt(surnames)})`] : [];
   const whom = [by, PRONOUN, ...titled, ...(names.length ? [alt(names)] : [])].join('|');
-  const re = new RegExp(String.raw`(?<![\p{L}\p{N}])(?:${VERB})\s+(?:${whom})(?![\p{L}\p{N}])`, 'u');
-  return (text) => re.test(fold(text.replace(PHYSICAL_THERAPY, 'physical therapy')).replace(/\u2019/g, "'"));
+  const re = new RegExp(String.raw`(?<![\p{L}\p{N}])(?:${VERB})\s+(?:${whom})(?![\p{L}\p{N}])`, 'gu');
+  return (text) => {
+    const t = fold(text.replace(PHYSICAL_THERAPY, 'physical therapy')).replace(/\u2019/g, "'");
+    return [...t.matchAll(re)].some((m) => !negated(t.slice(0, m.index)));
+  };
 }
 const routedTo = (ctx: RubricCtx, patient: string) => {
   const names = namesPatient(ctx, patient);

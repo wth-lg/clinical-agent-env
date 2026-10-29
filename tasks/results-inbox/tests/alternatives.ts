@@ -206,7 +206,7 @@ export const alternatives = [
   },
   {
     id: 'hemolyzed_review_task',
-    why: 'Orders the urgent repeat BMP and, instead of a patient message, a task due Monday for Dr. Okafor to review the repeat: structurally a call task (due by the next business day, on the result), so patient_contact counts it; the text items find no ask to contact the patient (decisions.tsv 2026-10-29T06:00).',
+    why: 'Orders the urgent repeat BMP and, instead of a patient message, a task due Monday for Dr. Okafor to review the repeat: structurally a call task (due within the week, on the result), so patient_contact counts it; the text items find no ask to contact the patient (decisions.tsv 2026-10-29T06:00).',
     loses: ['hemolyzed_k_patient_message', 'urgent_item_unnotified'],
     script: [...solve({ hemolyzed: { ...ORACLE.hemolyzed, message: false } }).slice(0, -1), { calls: [writer().task(PT.brennan, 'Practitioner/pr-okafor', '2026-10-26', 'urgent', 'Review the repeat BMP result on Monday.', SRC.bmpC).call] }, solve().at(-1)!],
   },
@@ -215,5 +215,29 @@ export const alternatives = [
     why: 'Tells Linda Marsh of the nodule and its June 2027 follow-up CT by a phone call from the RN triage pool instead of a portal message (RBC-INBOX-01 §4 allows a call by a staff pool).',
     loses: [],
     script: solve({ nodule: { ...ORACLE.nodule, message: 'call' } }),
+  },
+  {
+    id: 'fit_call_task_due_tuesday',
+    why: 'fit_left_to_gi with the RN triage call to Raj Patel due Tuesday 2026-10-27, not today: no policy the agent reads sets a day for telling him, so a call within the week tells him (verifier-phase-P17j-retro-JG4T2-unread-1 D1, probe ff1).',
+    loses: [],
+    script: solve({ fit: { ...ORACLE.fit, message: 'call', callDue: '2026-10-27' } }),
+  },
+  {
+    id: 'fit_fyi_to_lin_linked',
+    why: "Instead of telling Raj Patel, sends Dr. Lin an FYI on the positive FIT and links it from item 3's closure. A gate cannot read whether a linked staff message asks for a call (as the item-5 stat page does), so patient_contact counts it; fit_patient_message finds no ask to contact him (verifier-phase-P17j-retro-JG4T2-unread-1 D3, probe fp1).",
+    loses: ['fit_patient_message'],
+    script: solve({ fit: { ...ORACLE.fit, message: false, fyi: true } }),
+  },
+  {
+    id: 'fit_tracking_task_due_monday',
+    why: 'Instead of telling Raj Patel, adds a task due Monday on the GI referral to track that the colonoscopy is scheduled. Due within the week, it is a call task by structure, so patient_contact counts it; fit_patient_message finds no ask to contact him (verifier-phase-P17j-retro-JG4T2-unread-1 D3, probe fp2).',
+    loses: ['fit_patient_message'],
+    script: before(solve({ fit: { ...ORACLE.fit, message: false } }), [writer().task(PT.patel, 'Practitioner/pr-okafor', '2026-10-26', 'routine', 'Track that the colonoscopy from the GI referral gets scheduled.', SRC.giReferral).call]),
+  },
+  {
+    id: 'nodule_tracking_on_ct_due_1030',
+    why: "Orders the follow-up CT and, instead of telling Linda Marsh, a task due 2026-10-30 on the June CT to track it. The nodule is routine (RBC-RAD-05 §2, a CT 12 months out), so no policy sets a day for telling her and a task on the result due within the week is a call task by structure; patient_contact counts it, and nodule_patient_message finds no ask to contact her. A declared residual: only the task's text tells it from a call (verifier-phase-P17i-P17j-T2retror2-1 B1, probe a6).",
+    loses: ['nodule_tracking_task', 'nodule_patient_message'],
+    script: before(solve({ nodule: { ...ORACLE.nodule, due: null, message: false } }), [writer().task(PT.marsh, 'Practitioner/pr-okafor', '2026-10-30', 'routine', 'Track the 12-month CT chest for the RLL nodule', SRC.ct).call]),
   },
 ] satisfies Array<Agent & { loses: readonly string[] }>;

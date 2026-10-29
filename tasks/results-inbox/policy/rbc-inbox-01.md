@@ -12,7 +12,7 @@ An actionable item's closure must link the order, task or message that closes th
 Normal results are acknowledged and closed; the closure may link the result. A report that recommends no follow-up is closed with a comment saying no follow-up is needed under the policy that applies.
 
 §4 Patients
-Notify the patient of every abnormal result that needs action, by a message or by a call made by a clinician or a staff pool.
+Notify the patient of every abnormal result that needs action, by a message or by a call made by a clinician or a staff pool. Notify the patient of an urgent result by the next business day: a recommendation marked urgent or a suspected malignancy (RBC-RAD-05 §3), or a potassium of 6.0 mmol/L or higher (RBC-LAB-03).
 
 §5 Documentation
 Write a note for each actionable result that cites the result.

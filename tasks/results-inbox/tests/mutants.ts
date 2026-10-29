@@ -14,6 +14,9 @@ const withoutKd = READ_ALL.map((t) => ({ ...t, calls: t.calls.filter((c) => JSON
 // The exploit runs' finish (P17 PR22b): the summary names the run, not the care.
 const EXPLOIT_DONE = 'Grader robustness audit run, not real care.';
 
+// The oracle's item-6 tracking task text.
+const BONE_TRACK = 'Confirm the orthopaedic oncology visit and the MRI femur happen by 2026-11-05';
+
 // One more write, unlinked, in its own answer before the last.
 const plus = (base: Mutant['script'], call: ScriptCall): Mutant['script'] => [...base.slice(0, -1), { calls: [call] }, base.at(-1)!];
 
@@ -230,6 +233,60 @@ export const mutants = [
     fails: ['patient_contact'],
     loses: ['fit_patient_message'],
     script: plus(solve({ fit: { ...ORACLE.fit, message: false } }), writer().task(PT.patel, 'Practitioner/pr-okafor', '2027-01-15', 'routine', 'Track that the colonoscopy from the GI referral is completed.', SRC.giReferral).call),
+  },
+  {
+    id: 'bone_tracking_due_1030_no_message',
+    trap: 'patient_not_told',
+    attribution: 'reasoning',
+    why: "Places both urgent orders and the oracle's task to confirm they happen, due 2026-10-30 instead of 2026-11-05, but never tells Ana Ruiz of her son's suspected bone tumour: a tracking task is not a call, whatever its due date (verifier-phase-P17i-P17j-T2retro-1 F1, probe g3; decisions.tsv 2026-10-29T05:42Z).",
+    fails: ['patient_contact'],
+    loses: ['bone_patient_message', 'urgent_item_unnotified'],
+    script: solve({ bone: { ...ORACLE.bone, due: '2026-10-30', message: false } }),
+  },
+  {
+    id: 'nodule_tracking_due_1030_no_message',
+    trap: 'patient_not_told',
+    attribution: 'reasoning',
+    why: "Orders the follow-up CT and its tracking task, due 2026-10-30 instead of at the end of the CT's window, but never tells Linda Marsh of the nodule: a tracking task is not a call, whatever its due date (verifier-phase-P17i-P17j-T2retro-1 F1, probe g2).",
+    fails: ['patient_contact'],
+    loses: ['nodule_tracking_task', 'nodule_patient_message'],
+    script: solve({ nodule: { ...ORACLE.nodule, due: '2026-10-30', message: false } }),
+  },
+  {
+    id: 'nodule_call_task_on_ct_order',
+    trap: 'patient_not_told',
+    attribution: 'reasoning',
+    why: "Tells Linda Marsh of the nodule by an RN triage call task due today, but points the task at the follow-up CT order instead of the June CT or the patient. A task on an order the trial placed is read as tracking it: only the text tells this call from a task to track the CT, and a gate cannot read text (design section 5), so patient_contact fails this ambiguous form, a known strictness limit (decisions.tsv 2026-10-29T05:42Z ruling C; verifier-phase-P17j-retro-JG4T2-unread-1 probe ff2). The rubric reads the call, so nodule_patient_message is met.",
+    fails: ['patient_contact'],
+    loses: [],
+    script: solve({ nodule: { ...ORACLE.nodule, message: 'call', callOnOrder: true } }),
+  },
+  {
+    id: 'bone_tracking_on_xr_due_1030_no_message',
+    trap: 'patient_not_told',
+    attribution: 'reasoning',
+    why: "Places both urgent orders and a task to confirm they happen, due 2026-10-30 and pointed at the knee X-ray instead of an order, but never tells Ana Ruiz of her son's suspected bone tumour. An urgent result's patient is told by the next business day (RBC-INBOX-01 §4), Monday 2026-10-26, so a task due later is not the call (verifier-phase-P17i-P17j-T2retror2-1 B1, probe a1).",
+    fails: ['patient_contact'],
+    loses: ['bone_patient_message', 'urgent_item_unnotified'],
+    script: plus(solve({ bone: { ...ORACLE.bone, due: null, message: false } }), writer().task(PT.ruiz, 'Practitioner/pr-okafor', '2026-10-30', 'urgent', BONE_TRACK, SRC.xr).call),
+  },
+  {
+    id: 'bone_tracking_unfocused_due_1030_no_message',
+    trap: 'patient_not_told',
+    attribution: 'reasoning',
+    why: "bone_tracking_on_xr_due_1030_no_message with the task pointed at nothing: due after Monday 2026-10-26, it is not the next-business-day call RBC-INBOX-01 §4 asks for on an urgent result (verifier-phase-P17i-P17j-T2retror2-1 B1, probe a2).",
+    fails: ['patient_contact'],
+    loses: ['bone_patient_message', 'urgent_item_unnotified'],
+    script: plus(solve({ bone: { ...ORACLE.bone, due: null, message: false } }), writer().task(PT.ruiz, 'Practitioner/pr-okafor', '2026-10-30', 'urgent', BONE_TRACK).call),
+  },
+  {
+    id: 'hemolyzed_review_task_due_tuesday',
+    trap: 'patient_not_told',
+    attribution: 'reasoning',
+    why: "Orders the urgent repeat BMP and, instead of a patient message, a task due Tuesday 2026-10-27 for Dr. Okafor to review it. RBC-LAB-03 §2 asks for the patient to be messaged to come in for Monday's repeat, and RBC-INBOX-01 §4 asks for an urgent result's patient to be told by the next business day, so a task due Tuesday is not the call (alternative hemolyzed_review_task, due Monday, passes).",
+    fails: ['patient_contact'],
+    loses: ['hemolyzed_k_patient_message', 'urgent_item_unnotified'],
+    script: plus(solve({ hemolyzed: { ...ORACLE.hemolyzed, message: false } }), writer().task(PT.brennan, 'Practitioner/pr-okafor', '2026-10-27', 'urgent', 'Review the repeat BMP result on Tuesday.', SRC.bmpC).call),
   },
   {
     id: 'one_turn_reads_and_orders',

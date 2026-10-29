@@ -83,18 +83,42 @@ const item = (ctx: GateCtx, ref: string) => ctx.final.get('Task', split(ref)[1])
 // The items that need action, whose patients RBC-INBOX-01 §4 says to notify.
 const ACTIONABLE = [I.nodule, I.fit, I.hemolyzed_k, I.critical_k, I.bone];
 const STAFF = /^(Practitioner|Group)\//;
-// A call task is due by the next business day after today (Friday 2026-10-23); a later task, or
-// one about an order the trial placed, tracks follow-up rather than telling the patient.
-const CONTACT_BY = '2026-10-26';
+// The day by which a call task must be due to tell an item's patient. An urgent result's patient
+// is told by the next business day (RBC-INBOX-01 §4: a recommendation marked urgent or a suspected
+// malignancy, RBC-RAD-05 §3, or a potassium of 6.0 mmol/L or higher, RBC-LAB-03), Monday
+// 2026-10-26 after Friday 2026-10-23, the day RBC-LAB-03 §2's repeat is due by (hemolyzed_k.by):
+// the bone lesion and both potassium items (decisions.tsv 2026-10-29T07:30Z, verifier-phase-
+// P17i-P17j-T2retror2-1 B1). No policy sets a day for the routine nodule and FIT items, so a gate
+// may not hold them to one (decisions.tsv 2026-10-29T04:45Z, verifier-phase-P17j-retro-JG4T2-
+// unread-1 D1): a call task due within a week of today counts, short of the earliest RBC-RAD-05
+// §4 tracking date, the bone lesion's, 2026-11-05 (§3). A later task tracks follow-up rather than
+// telling the patient.
+const NEXT_BUSINESS_DAY = I.hemolyzed_k.by;
+const WITHIN_A_WEEK = '2026-10-30';
+const CONTACT_BY: Record<string, string> = {
+  [I.nodule.task]: WITHIN_A_WEEK,
+  [I.fit.task]: WITHIN_A_WEEK,
+  [I.hemolyzed_k.task]: NEXT_BUSINESS_DAY,
+  [I.critical_k.task]: NEXT_BUSINESS_DAY,
+  [I.bone.task]: NEXT_BUSINESS_DAY,
+};
 const ORDER_TYPES = ['ServiceRequest', 'MedicationRequest'];
 // How the trial told an item's patient of the result (RBC-INBOX-01 §4, "by a message or by a call
 // made by a clinician or a staff pool"), read from structure, since a gate does not read text
-// (decisions.tsv 2026-10-29T06:00): a message to the patient; a task for the patient due by
-// CONTACT_BY whose focus is not an order the trial created (a call task, not a tracking task); a
-// message to a clinician or staff pool that the item's closure links, such as the stat page
-// asking on-call to call her; or the item itself reassigned to on-call. An unlinked staff FYI
-// does not count. A review task due by CONTACT_BY on a result still does: the rubric's text
-// items tell it from a call.
+// (decisions.tsv 2026-10-29T06:00): a message to the patient; a task for the patient due by the
+// item's CONTACT_BY whose focus is not an order the trial created (a call task, not a tracking
+// task); a message to a clinician or staff pool that the item's closure links, such as the stat
+// page asking on-call to call her; or the item itself reassigned to on-call. An unlinked staff FYI
+// does not count. A task on an order the trial placed is read as tracking it and never counts,
+// whatever its due date (decisions.tsv 2026-10-29T05:42Z, verifier-phase-P17i-P17j-T2retro-1
+// F1): only the text tells a call about that order from a task to track it, and a gate cannot
+// read text (design section 5), so the gate fails both (mutants bone_tracking_due_1030_no_message,
+// nodule_call_task_on_ct_order). A call task on the patient or the result passes. A review or
+// tracking task due by CONTACT_BY on a result or an existing order, or a linked FYI, still
+// counts: the rubric's text items tell it from a call (alternatives hemolyzed_review_task,
+// fit_tracking_task_due_monday, fit_fyi_to_lin_linked, nodule_tracking_on_ct_due_1030). On an
+// urgent item such a task counts only when due by the next business day (mutants
+// bone_tracking_on_xr_due_1030_no_message, hemolyzed_review_task_due_tuesday).
 function contactsOf(ctx: GateCtx, x: { task: string; patient: string }): string[] {
   const mine = created(ctx);
   const made = <T extends 'Communication' | 'Task'>(type: T) => ctx.final.all(type).filter((r) => mine.has(keyOf(r)));
@@ -102,7 +126,7 @@ function contactsOf(ctx: GateCtx, x: { task: string; patient: string }): string[
   const callTask = (t: Task) => {
     const due = t.restriction?.period?.end;
     const focus = t.focus?.reference;
-    return due !== undefined && clinicDate(due) <= CONTACT_BY && !(focus !== undefined && mine.has(focus) && ORDER_TYPES.includes(split(focus)[0]));
+    return due !== undefined && clinicDate(due) <= CONTACT_BY[x.task]! && !(focus !== undefined && mine.has(focus) && ORDER_TYPES.includes(split(focus)[0]));
   };
   return [
     ...made('Communication').filter((c) => (c.recipient ?? []).some((r) => r.reference === x.patient) || (closure.has(keyOf(c)) && (c.recipient ?? []).some((r) => STAFF.test(r.reference ?? '')))),

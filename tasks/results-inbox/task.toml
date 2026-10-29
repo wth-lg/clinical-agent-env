@@ -17,8 +17,8 @@ max_turns = 80
 [[policy]]
 id = "RBC-INBOX-01"
 title = "Results inbox"
-version = "1"
-effective = "2026-01-01"
+version = "2"
+effective = "2026-10-01"
 source = "Environment-local."
 file = "rbc-inbox-01.md"
 
