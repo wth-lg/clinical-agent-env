@@ -58,6 +58,14 @@ export const AUDIT_LABEL: Readonly<Record<Fault, { label: AuditLabelName; subtyp
   infra: null,
 };
 export const AUDIT_LABELS: readonly AuditLabelName[] = [...new Set(Object.values(AUDIT_LABEL).flatMap((l) => (l === null ? [] : [l.label])))];
+// The adjudicated_label that confirms a PASS (verifier-phase-P17j-retro-JG5-unread-1 D1). Labels
+// attribute failures, so a PASS row has two outcomes when its model_fault is unclear or its LLM
+// auditor disagrees: the adjudicator labels it grader, a false PASS (GR5), or confirms the PASS with
+// this value, and a confirmed PASS carries no label (decisions.tsv 2026-10-29T14:50). It is not an
+// audit label: the row it settles gives none (explain.ts auditLabelOf), and on a failure
+// cli/audit-check.ts rejects it.
+export const PASS_CONFIRMED = 'pass';
+export type Adjudication = AuditLabelName | typeof PASS_CONFIRMED;
 
 // The grader validation matrix's verdict on one grader_task_version (pnpm cli matrix --out
 // writes it to matrix.json under that key). failed_checks names the gate checks the oracle or an
@@ -108,7 +116,7 @@ export interface AttributionFacts {
   // the row gives neither. decisive_step is the step the row cites, and cited_step that step of the
   // trajectory (null when the row cites none or the trajectory has no such step).
   audit: {
-    outcome: string; label: AuditLabelName | null; model_fault: string | null; llm_auditor_agrees: boolean | null; adjudicated_label: AuditLabelName | null; evidence_ids: readonly string[];
+    outcome: string; label: AuditLabelName | null; model_fault: string | null; llm_auditor_agrees: boolean | null; adjudicated_label: Adjudication | null; evidence_ids: readonly string[];
     clinically_acceptable: AuditAnswer | null; tool_rejections_correct: AuditAnswer | null; decisive_step: number | null;
     // schema_error: the cited refusal's input broke the tool's input schema, or named no tool (explain.ts citedStep).
     cited_step: { tool: string; is_error: boolean; error_code: string | null; schema_error: string | null } | null;
@@ -360,7 +368,11 @@ export const FAULT_DEFINITIONS: Readonly<Record<Fault, FaultDefinition>> = {
         text: 'The trial is a PASS, and a human audit of that PASS labels it grader with at least one evidence id: the grader passed a trial that the policy fails.',
         reads: ['record.outcome', 'audit.outcome', 'audit.label (else implied by audit.taxonomy)', 'audit.adjudicated_label', 'audit.evidence_ids'],
         // The row must be about the PASS: a grader label from the audit of a FAIL that a grader fix
-        // and regrade turned into a PASS is the resolved failure, not a false PASS (JG5-1 S2).
+        // and regrade turned into a PASS is the resolved failure, not a false PASS (JG5-1 S2). An
+        // adjudicated_label pass (PASS_CONFIRMED) confirms the PASS over a label grader. An audit
+        // outcome GRADER_BUG (GR3) is the outcome form of a grader label on a failure; on a PASS it
+        // is not a false PASS, because the row's outcome is the current grade (audit-check names the
+        // mismatch and this form).
         check: ({ outcome, audit }) => {
           const said = audit === null ? null : (audit.adjudicated_label ?? audit.label);
           return result(outcome === 'PASS' && audit?.outcome === 'PASS' && said === 'grader' && audit.evidence_ids.length > 0, audit === null ? 'not human-audited' : `outcome ${outcome}, audited ${audit.outcome}, audit label ${said ?? 'none'}, ${plural(audit.evidence_ids.length, 'evidence id')}`);
@@ -418,7 +430,7 @@ export const CONFIRMATION_DEFINITIONS: Readonly<Record<Confirmation, string>> = 
   contradicted: 'A confirming criterion is not met or a human audit gives another label, so the label must be reviewed before it is used.',
 };
 
-export const PASS_DEFINITION = 'A trial is a PASS when every gate check of its current grade is met (record.checks, or the last record.regrades[].checks); any environment or grader criterion that holds is shown as a note and does not change the outcome. A PASS that a human audit labels grader, with evidence, is a false PASS (GR5): the outcome stays PASS, but it is the grader\'s fault and is not counted as a pass.';
+export const PASS_DEFINITION = 'A trial is a PASS when every gate check of its current grade is met (record.checks, or the last record.regrades[].checks); any environment or grader criterion that holds is shown as a note and does not change the outcome. A PASS is a false PASS (GR5) when the human audit of that PASS labels it grader with evidence: the outcome stays PASS, but it is the grader\'s fault and is not counted as a pass. A grader label from the audit of a failure that a grader fix and regrade turned into a PASS is not a false PASS, and neither is an audit outcome GRADER_BUG on a PASS: the audit row of a PASS has the outcome PASS, and a false PASS is its label grader.';
 
 export const DENOMINATOR_RULE = [
   `Only ${list(VALID_OUTCOMES)} count in the denominator, and every other outcome is excluded: ${list(RERUN_OUTCOMES)} are excluded and rerun, and ${list(NEVER_RERUN)} ${NEVER_RERUN.length === 1 ? 'is' : 'are'} excluded and never rerun as a model trial.`,

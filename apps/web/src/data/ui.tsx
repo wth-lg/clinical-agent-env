@@ -9,10 +9,11 @@ import { Check, CircleHelp, Copy } from 'lucide-react';
 import { useState, type CSSProperties, type ReactNode, type Ref } from 'react';
 import { NOT_AUDITED_MARKER, type Explanation } from '../../../../packages/core/explain.ts';
 import { blocksTheRun, isFalsePass, shownLabel } from './failures.ts';
-import { DENOMINATOR_RULE, FAULT, isValid, OUTCOMES, PASS_DEFINITION, RERUN_OUTCOMES, VALID_OUTCOMES, type Fault, type Outcome } from '../../../../packages/core/outcomes.ts';
+import { DENOMINATOR_RULE, isValid, OUTCOMES, PASS_DEFINITION, RERUN_OUTCOMES, VALID_OUTCOMES, type Fault } from '../../../../packages/core/outcomes.ts';
 import type { Interval } from '../../../../packages/core/summary.ts';
 import { hrefWith, onNav } from './url.ts';
 import type { HarmItem } from './harm.ts';
+import { BLOCKING_MARKS, MARKS, markOf, type Mark } from './marks.ts';
 
 export function Page({ title, headingRef, lead, children }: { title: string; headingRef?: Ref<HTMLHeadingElement> | undefined; lead?: ReactNode; children: ReactNode }) {
   return (
@@ -46,30 +47,8 @@ export function Notice({ children, testId }: { children: ReactNode; testId?: str
 
 export const NO_RESULTS = 'No results are published yet.';
 
-export type Mark = 'pass' | 'model' | 'limit' | 'refusal' | 'environment' | 'grader' | 'infra';
-
-export const MARKS: ReadonlyArray<{ mark: Mark; label: string }> = [
-  { mark: 'pass', label: 'PASS' },
-  { mark: 'model', label: 'model failure (FAIL)' },
-  { mark: 'limit', label: 'model: stopped at a limit (LIMIT)' },
-  { mark: 'refusal', label: 'model: refused (REFUSAL)' },
-  { mark: 'environment', label: 'environment fault' },
-  { mark: 'grader', label: 'grader fault' },
-  { mark: 'infra', label: 'infrastructure fault, rerun, not counted' },
-];
-export const markLabel = (m: Mark) => MARKS.find((x) => x.mark === m)!.label;
-
-// The mark of a trial from its outcome and the fault explainTrial gives it; with no explanation
-// (a count by outcome), the fault packages/core/outcomes.ts FAULT gives the outcome.
-export function markOf(outcome: string, fault: Fault | null = FAULT[outcome as Outcome] ?? null): Mark {
-  // A false PASS (GR5) is the grader's fault: it takes the grader mark, not the pass accent.
-  if (outcome === 'PASS') return fault === 'grader' ? 'grader' : 'pass';
-  if (fault === 'env') return 'environment';
-  if (fault === 'grader') return 'grader';
-  if (fault === 'infra' || (fault === null && !isValid(outcome))) return 'infra';
-  if (fault === 'refusal' || outcome === 'REFUSAL') return 'refusal';
-  return outcome === 'LIMIT' ? 'limit' : 'model';
-}
+// The marks and markOf live in marks.ts, which has no JSX, so a vitest test under apps/web/test can import them.
+export { BLOCKING_MARKS, MARKS, markLabel, markOf, type Mark } from './marks.ts';
 
 const MARK_CLASS: Record<Mark, string> = {
   pass: 'bg-accent',
@@ -106,7 +85,6 @@ export function MarkLegend({ marks = MARKS.map((x) => x.mark) }: { marks?: reado
 }
 
 // The outcome chip; an environment or grader fault takes the danger border (JU2).
-export const BLOCKING_MARKS: readonly Mark[] = ['environment', 'grader'];
 export function OutcomeChip({ outcome, fault }: { outcome: string; fault?: Fault | null }) {
   const mark = markOf(outcome, fault);
   return (

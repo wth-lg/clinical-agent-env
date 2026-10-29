@@ -61,6 +61,20 @@ test('the Runs row of a false PASS shows the grader label and the reason', async
   const row = page.locator(`[data-testid="run"][data-run="${RUN_ID}"] [data-testid="trial-row"][data-trial="${TRIALS.pass}"]`);
   await expect(row.getByTestId('label')).toHaveAttribute('data-label', 'grader');
   await expect(row.getByTestId('reason')).toHaveText(/^PASS: an audit found a false PASS/);
+  // Its chip takes the grader mark and the danger border (verifier-phase-P17j-retro-JG5-unread-1 m3).
+  await expect(row.getByTestId('outcome')).toHaveAttribute('data-mark', 'grader');
+  await expect(row.getByTestId('outcome')).toHaveCSS('border-top-color', await danger(page));
+});
+
+test('the Overview swatch of a false PASS takes the grader mark; without the GR5 row it keeps the pass mark', async ({ page }) => {
+  const overview = async () => browse(page, new URL('./?view=overview', await trialBase(test.info().project.use.baseURL!)).href);
+  const swatch = page.locator(`[data-testid="overview-row"][data-task="${TRIALS.pass.split('/')[0]}"] [data-testid="swatches"] [title^="${TRIALS.pass}:"]`);
+  await overview();
+  await expect(swatch).toHaveAttribute('data-mark', 'pass');
+  await withFalsePass(page);
+  await overview();
+  await expect(swatch).toHaveAttribute('data-mark', 'grader');
+  await expect(swatch).toHaveAttribute('title', `${TRIALS.pass}: PASS, grader fault`);
 });
 
 test('a PASS without the GR5 row has no label and says Confirmed or Checks pending', async ({ page }) => {

@@ -23,14 +23,16 @@
 //     a trial is not allowed in a committed run, so a run with one has no headline pass rate
 //     (DENOMINATOR_RULE). This is where that block is enforced; summary.ts reads no audit rows,
 //     matrix or world;
-//   - no PASS is a false PASS (outcomes.ts GR5: an audit row labels it grader, with evidence ids;
-//     a PASS labelled grader without evidence ids is a violation of its own): it is not counted as
-//     a pass and blocks the run as a grader-labelled failure does (P17j JG5);
+//   - no PASS is a false PASS (outcomes.ts GR5: the audit of that PASS, a row whose outcome is PASS,
+//     labels it grader, with evidence ids; a PASS labelled grader without evidence ids is a
+//     violation of its own): it is not counted as a pass and blocks the run as a grader-labelled
+//     failure does (P17j JG5). An audit outcome GRADER_BUG (GR3) is the form of a grader label on a
+//     failure only: on a PASS it is an outcome mismatch, and the message names the GR5 form;
 //   - every PASS whose current grade has a penalty (a rubric item with negative points) met or
 //     unknown has an audit row with evidence ids, whatever its points (P17j JG5); any such row
 //     meets the rule, and its label (grader or none) says whether the PASS is false;
 //   - a PASS row's label, when it has one, is grader: model or environment on a PASS, or a name
-//     that is not an audit label, is a violation;
+//     that is not an audit label, is a violation; a confirmed PASS has no label;
 //   - no run-level block (outcomes.ts RUN_BLOCKS, B1: the oracle or an alternative fails the matrix)
 //     holds on the grader_task_version of any current grade of the run, named once per
 //     grader_task_version;
@@ -38,7 +40,9 @@
 //   - every record's replay_final equals its final hash, and replay.json, when present, says
 //     every trial reproduced;
 //   - every label with model_fault unclear or llm_auditor_agrees false carries an adjudicated_label,
-//     one of AUDIT_LABELS;
+//     one of AUDIT_LABELS; on a PASS, grader (a false PASS) or pass (outcomes.ts PASS_CONFIRMED: the
+//     adjudicator confirms the PASS, and the row gives no label), and pass on a failure is a
+//     violation (verifier-phase-P17j-retro-JG5-unread-1 D1);
 //   - each task has at least 2 audited PASS trials with evidence ids (all of them when it has
 //     fewer than 2 passes);
 //   - each task the consistency flag marks (packages/core/summary.ts consistencyOf: >= 80% of its
@@ -53,8 +57,9 @@
 //   - a label's clinically_acceptable ("is the recorded outcome clinically right?"),
 //     tool_rejections_correct ("was every tool rejection right?") and their adjudicated_ answers
 //     (explain.ts AuditRow), when given, are yes or no. The answer after adjudication decides
-//     (explain.ts auditAnswerOf): a clinically_acceptable no needs GR3 (the label's outcome
-//     GRADER_BUG with an evidence id) or an environment label, and a tool_rejections_correct no an
+//     (explain.ts auditAnswerOf): a clinically_acceptable no on a failure needs GR3 (the label's
+//     outcome GRADER_BUG with an evidence id) or an environment label, and on a PASS the label
+//     grader with an evidence id (a false PASS, GR5), and a tool_rejections_correct no an
 //     environment label, the rejected call's step as decisive_step, where the trajectory shows a
 //     tool error and the tool's input schema, run on the recorded call, does not give the same
 //     refusal (a refusal the schema gives, or a refusal of a tool the environment does not have,
@@ -99,7 +104,7 @@ import { installEgressGuard } from '../packages/core/egress.ts';
 import type { TrialEvent } from '../packages/core/events.ts';
 import { explainContext as contextOf, type TaskCheck } from '../packages/core/explain-context.ts';
 import { AUDIT_QUESTIONS, auditAnswerOf, auditLabelOf, citedStep, excludedFromHeadline, explainTrial, formatCriterion, m1ToM4Met, type AuditRow, type CheckText, type ExplainContext, type ExplainRecord } from '../packages/core/explain.ts';
-import { AUDIT_LABEL, AUDIT_LABELS, e6Confirmation, FAULT, FAULT_PRECEDENCE, type AuditLabelName, type Fault, type Outcome } from '../packages/core/outcomes.ts';
+import { AUDIT_LABEL, AUDIT_LABELS, e6Confirmation, FAULT, FAULT_PRECEDENCE, PASS_CONFIRMED, type AuditLabelName, type Fault, type Outcome } from '../packages/core/outcomes.ts';
 import { parseTrajectory } from '../packages/core/trajectory.ts';
 import { consistencyOf, currentGrade, describeConsistency, faultCounts, type ConsistencyFlag } from '../packages/core/summary.ts';
 import { TAXONOMY } from '../packages/grader/attribution.ts';
@@ -250,13 +255,20 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
       continue;
     }
     const { outcome, regraded } = currentGrade(r);
-    if (l.outcome !== outcome) v.push(`${l.trial}: labelled ${l.outcome}, ${regraded ? 'the current grade is' : 'the record says'} ${outcome}`);
+    // GRADER_BUG (GR3) is the outcome form of a grader label on a failure; on a PASS the row's
+    // outcome is PASS, and a false PASS is its label grader (outcomes.ts GR5).
+    const falsePassForm = outcome === 'PASS' && l.outcome === 'GRADER_BUG' ? '; a false PASS is recorded as outcome PASS with the label grader and evidence ids (GR5)' : '';
+    if (l.outcome !== outcome) v.push(`${l.trial}: labelled ${l.outcome}, ${regraded ? 'the current grade is' : 'the record says'} ${outcome}${falsePassForm}`);
     const steps = await stepsFor(r);
     const ids = new Set(steps.flatMap((s) => [...s.exposed_ids, ...s.referenced_ids, ...s.written_ids]));
     for (const id of l.evidence_ids) if (![...ids].some((k) => sameId(k, id))) v.push(`${l.trial}: evidence id ${id} is not in the trajectory`);
-    if (l.adjudicated_label !== undefined && l.adjudicated_label !== null && !isLabel(l.adjudicated_label)) v.push(`${l.trial}: adjudicated_label ${l.adjudicated_label} is not one of ${AUDIT_LABELS.join(', ')}`);
-    else if ((l.model_fault === 'unclear' || l.llm_auditor_agrees === false) && !isLabel(l.adjudicated_label)) {
-      v.push(`${l.trial}: ${l.model_fault === 'unclear' ? 'model_fault unclear' : 'the LLM auditor disagrees'}, and no adjudicated_label is recorded`);
+    // On a PASS, adjudication either labels it grader (a false PASS, GR5) or confirms it with
+    // adjudicated_label pass (outcomes.ts PASS_CONFIRMED), which gives the row no label.
+    const adjudicated = isLabel(l.adjudicated_label) || (outcome === 'PASS' && l.adjudicated_label === PASS_CONFIRMED);
+    if (l.adjudicated_label === PASS_CONFIRMED && outcome !== 'PASS') v.push(`${l.trial}: adjudicated_label ${PASS_CONFIRMED} confirms a PASS, and the current grade is ${outcome}`);
+    else if (l.adjudicated_label !== undefined && l.adjudicated_label !== null && !adjudicated) v.push(`${l.trial}: adjudicated_label ${l.adjudicated_label} is not one of ${AUDIT_LABELS.join(', ')}, or ${PASS_CONFIRMED} on a PASS`);
+    else if ((l.model_fault === 'unclear' || l.llm_auditor_agrees === false) && !adjudicated) {
+      v.push(`${l.trial}: ${l.model_fault === 'unclear' ? 'model_fault unclear' : 'the LLM auditor disagrees'}, and no adjudicated_label is recorded${outcome === 'PASS' ? ` (on a PASS: grader for a false PASS, ${PASS_CONFIRMED} to confirm it)` : ''}`);
     }
     for (const q of AUDIT_QUESTIONS) {
       const bad = [q, `adjudicated_${q}` as const].filter((f) => ![undefined, null, 'yes', 'no'].includes(l[f]));
@@ -264,9 +276,13 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
       if (bad.length > 0) continue;
       const environment = auditLabelOf(l) === 'environment';
       if (auditAnswerOf(l, q) === 'yes') {
-        if (l[q] === 'no' && !(isLabel(l.adjudicated_label) && (l.note ?? '').trim() !== '')) v.push(`${l.trial}: ${q} no, overruled by adjudicated_${q} yes, needs an adjudicated_label and a note`);
+        if (l[q] === 'no' && !(adjudicated && (l.note ?? '').trim() !== '')) v.push(`${l.trial}: ${q} no, overruled by adjudicated_${q} yes, needs an adjudicated_label and a note`);
       } else if (auditAnswerOf(l, q) !== 'no') continue;
-      else if (q === 'clinically_acceptable' && !((l.outcome === 'GRADER_BUG' && l.evidence_ids.length > 0) || environment)) {
+      else if (q === 'clinically_acceptable' && outcome === 'PASS') {
+        // A no on a PASS says the PASS is not clinically right: a false PASS, which the label grader
+        // with evidence records (GR5; verifier-phase-P17j-retro-JG5-unread-1 m1).
+        if (!(auditLabelOf(l) === 'grader' && l.evidence_ids.length > 0)) v.push(`${l.trial}: clinically_acceptable no on a PASS (the PASS is not clinically right) needs the label grader with evidence, a false PASS (GR5); adjudicated_clinically_acceptable yes overrules it`);
+      } else if (q === 'clinically_acceptable' && !((l.outcome === 'GRADER_BUG' && l.evidence_ids.length > 0) || environment)) {
         v.push(`${l.trial}: clinically_acceptable no (the recorded outcome is not clinically right) needs GR3 (an audit outcome GRADER_BUG with evidence) or an environment label; adjudicated_clinically_acceptable yes overrules it`);
       } else if (q === 'tool_rejections_correct') {
         const n = l.decisive_step;
@@ -281,10 +297,11 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
     }
     if (outcome === 'PASS') {
       // GR5 reads the label of a PASS row, so it is checked here too (JG5-1 S1): a typo must not
-      // hide a false PASS, and on a PASS the only label is grader.
+      // hide a false PASS, and on a PASS the only label is grader. A confirmed PASS has none, and
+      // adjudicated_label pass gives none (auditLabelOf).
       const said = auditLabelOf(l);
       if (said !== null && !isLabel(said)) v.push(`${l.trial}: label ${said} is not one of ${AUDIT_LABELS.join(', ')}`);
-      else if (said !== null && said !== 'grader') v.push(`${l.trial}: a PASS labelled ${said}; on a PASS the only label is grader, a false PASS (GR5)`);
+      else if (said !== null && said !== 'grader') v.push(`${l.trial}: a PASS labelled ${said}; on a PASS the only label is grader, a false PASS (GR5); a confirmed PASS has no label (adjudicated_label ${PASS_CONFIRMED} when adjudication confirms it)`);
       else if (said === 'grader' && l.evidence_ids.length === 0) v.push(`${l.trial}: a PASS labelled grader (a false PASS, GR5) needs evidence ids`);
       continue;
     }
@@ -347,9 +364,9 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
       excludedTrials.push(name);
     }
   }
-  // A PASS the audit labels grader is a false PASS (GR5): not counted, and it blocks the run. A PASS
-  // with a penalty (a rubric item with negative points) met or unknown needs an audit row with
-  // evidence ids (P17j JG5), on top of the MIN_AUDITED_PASSES sample below.
+  // A PASS that the audit of that PASS labels grader is a false PASS (GR5): not counted, and it
+  // blocks the run. A PASS with a penalty (a rubric item with negative points) met or unknown needs
+  // an audit row with evidence ids (P17j JG5), on top of the MIN_AUDITED_PASSES sample below.
   for (const r of valid.filter((x) => currentGrade(x).outcome === 'PASS')) {
     const name = trialName(r);
     const row = byTrial.get(name);

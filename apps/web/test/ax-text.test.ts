@@ -19,7 +19,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const REPO = join(import.meta.dirname, '../../..');
-const SHELL = ['apps/web/src/shell', 'apps/web/src/surface', 'apps/web/src/keygate', 'apps/web/src/data/ui.tsx', 'apps/web/src/spend'];
+const SHELL = ['apps/web/src/shell', 'apps/web/src/surface', 'apps/web/src/keygate', 'apps/web/src/data/ui.tsx', 'apps/web/src/data/marks.ts', 'apps/web/src/spend'];
 // The files whose text a view shows as data (tool names and descriptions, task titles and
 // policies), by the route's view.
 const VIEW_DATA: Record<string, string[]> = {
