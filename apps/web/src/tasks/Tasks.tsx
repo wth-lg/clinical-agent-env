@@ -19,6 +19,7 @@ import { loadTaskList } from '../data/tasks.ts';
 import { Notice, Page } from '../data/ui.tsx';
 import { tabTarget } from '../data/tabs.ts';
 import { navigate, useParams } from '../data/url.ts';
+import { freshView } from '../shell/views.ts';
 import { validate, type MatrixRun, type OracleResult, type ReplayRow } from './validate-protocol.ts';
 
 type Loaded = { task: Task; checks: Check[] };
@@ -457,7 +458,7 @@ function RunTrial({ id }: { id: string }) {
   const key = useKeyStatus();
   return (
     <span className="ml-auto inline-flex items-center gap-2">
-      <button type="button" className={button} aria-describedby={key.kind === 'none' ? `run-why-${id}` : undefined} onClick={() => navigate({ view: 'live', task: id, tab: null, label: null, trial: null, run: null })}>Run trial</button>
+      <button type="button" className={button} aria-describedby={key.kind === 'none' ? `run-why-${id}` : undefined} onClick={() => navigate(freshView('live', { task: id }))}>Run trial</button>
       {key.kind === 'none' && <span id={`run-why-${id}`} className="text-xs text-ink-muted">Live trial asks for an API key.</span>}
     </span>
   );

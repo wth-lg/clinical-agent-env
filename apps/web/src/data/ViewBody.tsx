@@ -17,9 +17,7 @@ loadTaskList().catch(() => undefined);
 
 const BODIES = { overview: Overview, tasks: Tasks, runs: Runs, live: LiveTrial, findings: Findings, environment: Environment, glossary: Glossary } as const;
 
-// localRun: whether the shell shows the local-run panel below the view (Overview's intro card
-// offers "Run on your computer" only then).
-export function ViewBody({ id, headingRef, localRun }: { id: string; headingRef?: Ref<HTMLHeadingElement> | undefined; localRun: boolean }) {
+export function ViewBody({ id, headingRef }: { id: string; headingRef?: Ref<HTMLHeadingElement> | undefined }) {
   const Body = BODIES[id as keyof typeof BODIES] ?? Overview;
-  return Body === Overview ? <Overview headingRef={headingRef} localRun={localRun} /> : <Body headingRef={headingRef} />;
+  return <Body headingRef={headingRef} />;
 }

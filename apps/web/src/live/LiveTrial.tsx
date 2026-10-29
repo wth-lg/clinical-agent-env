@@ -20,11 +20,11 @@ import { useTaskList } from '../data/tasks.ts';
 import { Card, FaultLabel, OutcomeChip, Page } from '../data/ui.tsx';
 import { relayLine, RELAY_TRIAL_TEXT, trialRelayReason } from '../keygate/failure.ts';
 import { requestKey, useKeyStatus } from '../keygate/key.ts';
-import { runnerToken } from '../keygate/runner.ts';
 import { amountText, typicalCost } from './typical.ts';
 import { admitTrial, MAX_SESSION_CAP_USD, parseCap } from '../spend/cap.ts';
 import { sessionCap, setSessionCap, useSessionSpend } from '../spend/session.ts';
 import type { Surface } from '../surface/detect.ts';
+import { useHosted } from '../surface/hosted.ts';
 import { LocalRunPanel } from '../surface/LocalRunPanel.tsx';
 import { fold, type Item } from './fold.ts';
 import { readEvents } from './store.ts';
@@ -32,10 +32,10 @@ import { runnerTransport } from './transport/runner.ts';
 import { workerTransport } from './transport/worker.ts';
 import { currentTrial, RUN_SIZES, setCurrentTrial, type LiveRun, type Refusal, type TrialEnd, type TrialTransport } from './types.ts';
 
-// The runner injects its token into the page it serves, so its presence is the surface; the
-// shell shows the runner-down screen instead of any view when the runner does not answer.
+// One transport for the page's surface, which does not change after load; the shell shows the
+// runner-down screen instead of any view when the runner does not answer.
 let transport: TrialTransport | undefined;
-const theTransport = (): TrialTransport => (transport ??= runnerToken() !== null ? runnerTransport() : workerTransport(sessionCap));
+const theTransport = (hosted: boolean): TrialTransport => (transport ??= hosted ? workerTransport(sessionCap) : runnerTransport());
 
 const POLL_MS = 1500;
 const select = 'h-8 max-w-full rounded-sm border border-line-strong bg-surface px-2 text-ink disabled:cursor-not-allowed disabled:opacity-50';
@@ -64,7 +64,7 @@ const wasResumed = (record: ExplainRecord | null) => (record as { resumed?: bool
 const Resumed = () => <span data-testid="resumed" className="text-xs text-ink-muted">resumed after reload</span>;
 
 export function LiveTrial({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | undefined }) {
-  const t = theTransport();
+  const t = theTransport(useHosted());
   const key = useKeyStatus();
   const { tasks } = useTaskList();
   const params = new URL(location.href).searchParams;
@@ -270,7 +270,7 @@ function Trial({ t, id, onEnd }: { t: TrialTransport; id: string; onEnd: () => v
   const explanation = record ? explainTrial(record, null, { events }) : null;
   // On browser-direct every call goes through the relay, so a relay failure that stopped the trial
   // gets the key gate's fallback (ruling 2026-10-28T02:00).
-  const hosted = runnerToken() === null;
+  const hosted = useHosted();
   const failed = f.end?.type === 'error' ? f.end : null;
   const relay = failed !== null && hosted ? trialRelayReason(failed) : null;
   // A line that carries the relay's words says whose words they are.
