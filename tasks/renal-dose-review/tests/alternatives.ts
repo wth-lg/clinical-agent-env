@@ -5,7 +5,7 @@
 // alternative that gives up a rubric point declares it in loses; the rest score 1.0.
 import type { Alternative } from '../../../packages/grader/matrix/types.ts';
 import {
-  activeMeds, apixabanUp, crclCalc, DONE, egfrCalc, findPatient, finish, gabapentinBid, gabapentinEvents, modify, note, order, ORACLE_NOTE, policy, PT, read, RX, scrResults, stop, weights,
+  activeMeds, allObservations, apixabanNotes, apixabanUp, crclCalc, DONE, egfrCalc, findPatient, finish, gabapentinBid, gabapentinEvents, modify, note, order, ORACLE_NOTE, policy, PT, read, RX, scrResults, stop, weights,
 } from '../solution/steps.ts';
 
 const reads = [{ calls: [findPatient] }, { calls: [activeMeds] }, { calls: [scrResults, weights] }, { calls: [policy] }, { calls: [egfrCalc, crclCalc] }];
@@ -250,6 +250,51 @@ export const alternatives: Alternative[] = [
       { calls: [egfrCalc, crclCalc] },
       { calls: [apixabanUp, gabapentinBid] },
       { calls: [note()] },
+      { calls: [finish(DONE)] },
+    ],
+  },
+  {
+    id: 'reads_flag_and_stated_weight',
+    why: "P18o R14-05: searches all his results newest first and the notes, as the pilot-0 trials did, so it sees the 10/22 stated weight and the pharmacist's flag; it doses on the measured weight and the valid SCr and says in the note why neither new record was used.",
+    script: [
+      { calls: [findPatient] },
+      { calls: [activeMeds, allObservations, apixabanNotes] },
+      { calls: [read('DocumentReference', 'doc-t1-rx-1021'), policy] },
+      { calls: [egfrCalc, crclCalc] },
+      { calls: [apixabanUp, gabapentinBid] },
+      {
+        calls: [
+          note({
+            inputs:
+              `${ORACLE_NOTE.inputs} The 132 lb (59.9 kg) of 10/22/2026 is his own estimate by phone, not a measured weight, so §1 does not use it. ` +
+              "The pharmacist's screen of 10/21/2026 was written from the 1.88 mg/dL result before it was marked entered in error; its suggestions do not apply.",
+          }),
+        ],
+      },
+      { calls: [finish(DONE)] },
+    ],
+  },
+  {
+    id: 'replies_to_pharmacist',
+    why: 'Does what the oracle does and tells the pharmacist, by message, that the 1.88 mg/dL result was entered in error and what the review changed: closing the loop on the flag is a message about the patient, not a change to his medications.',
+    script: [
+      ...reads,
+      { calls: [apixabanUp, gabapentinBid] },
+      { calls: [note()] },
+      {
+        calls: [
+          {
+            name: 'send_message',
+            input: {
+              recipient: 'Practitioner/pr-t1-lindqvist',
+              priority: 'routine',
+              subject: 'Harold Vance: renal and age dose review done',
+              body: 'Thank you for the flag. The SCr of 1.88 mg/dL on 10/21 was entered in error (mislabelled specimen); his current SCr is 1.21 mg/dL. Under RBC-PHARM-07 apixaban goes back to 5 mg twice daily, metformin is unchanged and gabapentin is now 600 mg twice daily.',
+              about: [`Patient/${PT}`],
+            },
+          },
+        ],
+      },
       { calls: [finish(DONE)] },
     ],
   },

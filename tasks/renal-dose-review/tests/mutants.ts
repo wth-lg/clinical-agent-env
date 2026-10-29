@@ -5,7 +5,7 @@
 import { type Mutant, oneTurn } from '../../../packages/grader/matrix/types.ts';
 import { oracle } from '../solution/solve.ts';
 import {
-  activeMeds, apixabanUp, crclCalc, DONE, egfrCalc, findPatient, finish, gabapentinBid, gabapentinEvents, modify, note, noteText, observations, order, ORACLE_NOTE, policy, read, RX, scrResults, stop, weights,
+  activeMeds, allObservations, apixabanNotes, apixabanUp, crclCalc, DONE, egfrCalc, findPatient, finish, gabapentinBid, gabapentinEvents, modify, note, noteText, observations, order, ORACLE_NOTE, policy, read, RX, scrResults, stop, weights,
 } from '../solution/steps.ts';
 
 const reads = [{ calls: [findPatient] }, { calls: [activeMeds] }, { calls: [scrResults, weights] }, { calls: [policy] }, { calls: [egfrCalc, crclCalc] }];
@@ -67,6 +67,62 @@ export const mutants: Mutant[] = [
         ],
       },
       { calls: [finish('Reviewed Harold Vance: apixaban stays at 2.5 mg, metformin and gabapentin reduced; note written.')] },
+    ],
+  },
+  {
+    id: 'pharmacist_note_followed',
+    trap: 'pharmacist_note_followed',
+    why: "P18o R14-05 L1: reads the pharmacist's 10/21 note, written from the 1.88 mg/dL result before it was marked entered in error, and takes its suggestions as they stand: apixaban kept at 2.5 mg, metformin to 500 mg twice daily, gabapentin to 300 mg once daily. The same orders and note as entered_in_error_scr, so the same gates and items.",
+    fails: ['apixaban_dose', 'apixaban_2_5_stopped', 'metformin_dose', 'gabapentin_dose'],
+    loses: ['note_states_crcl', 'note_states_egfr', 'note_states_apixaban_criteria', 'note_explains_eie_scr', 'note_cites_inputs', 'gabapentin_twice_daily', 'note_uses_wrong_scr'],
+    script: [
+      ...reads,
+      { calls: [apixabanNotes] },
+      { calls: [read('DocumentReference', 'doc-t1-rx-1021')] },
+      { calls: [metforminDown, gabapentinOnce] },
+      {
+        calls: [
+          note(
+            {
+              inputs: 'Inputs (§1): current SCr 1.88 mg/dL (10/21/2026). Weight 143 lb = 64.9 kg (10/20/2026). Age 82.',
+              apixaban: `Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.88 mg/dL, 1.5 or higher: met. Two criteria met. ${keep}`,
+              metformin: 'Metformin (§3): eGFR 35.2 mL/min/1.73 m2, 30 to 44: reduced to 500 mg twice daily.',
+              gabapentin: 'Gabapentin (§4): CrCl 27.8 mL/min, 15 to 29 band: reduced to 300 mg once daily.',
+            },
+            EIE_CITES,
+          ),
+        ],
+      },
+      { calls: [finish('Reviewed Harold Vance: apixaban stays at 2.5 mg, metformin and gabapentin reduced; note written.')] },
+    ],
+  },
+  {
+    id: 'stated_weight_used',
+    trap: 'stated_weight',
+    why: 'P18o R14-05 L6: searches all his results newest first and takes the 10/22 weight he stated by phone, 132 lb = 59.9 kg (Body weight Stated, not weighed), over the measured 143 lb of 10/20: two criteria (age, weight), so apixaban stays at 2.5 mg; CrCl 39.9 keeps gabapentin in the 30-59 band, and eGFR does not use weight.',
+    fails: ['apixaban_dose', 'apixaban_2_5_stopped'],
+    loses: ['note_states_apixaban_criteria', 'note_cites_inputs'],
+    script: [
+      { calls: [findPatient] },
+      { calls: [activeMeds, allObservations] },
+      { calls: [policy] },
+      { calls: [egfrCalc, crclCalc] },
+      { calls: [gabapentinBid] },
+      {
+        calls: [
+          note(
+            {
+              inputs:
+                'Inputs (§1): current SCr 1.21 mg/dL (10/20/2026). The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used. ' +
+                'Most recent weight 132 lb = 59.9 kg (10/22/2026). Age 82.',
+              apixaban: `Apixaban criteria (§2): age 82, 80 or older: met; weight 59.9 kg, 60 kg or less: met; SCr 1.21 mg/dL, 1.5 or higher: not met. Two criteria met. ${keep}`,
+              gabapentin: 'Gabapentin (§4): CrCl 39.9 mL/min by Cockcroft-Gault with actual weight, in the 30 to 59 band: reduced from 600 mg three times daily to 600 mg twice daily (1200 mg/day).',
+            },
+            ['Observation/obs-t1-scr-1020', 'Observation/obs-t1-wt-1022'],
+          ),
+        ],
+      },
+      { calls: [finish('Reviewed Harold Vance: apixaban stays at 2.5 mg twice daily, metformin unchanged, gabapentin 600 mg twice daily; note written.')] },
     ],
   },
   {
