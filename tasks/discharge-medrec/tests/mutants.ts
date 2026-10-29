@@ -143,9 +143,9 @@ export const mutants: Mutant[] = [
   {
     id: 'pantoprazole_added',
     trap: 'substitution_off_line',
-    why: "P18o R14-07 L1: takes the discharge line 'Pantoprazole 40 mg by mouth daily' as a new medication, without the substitutions section below the list, and starts it beside his omeprazole: two proton pump inhibitors, and the substitute ordered against §3.",
+    why: "P18o R14-07 L1: takes the discharge line 'Pantoprazole 40 mg by mouth daily' as a new medication, without the substitutions section below the list, and starts it beside his omeprazole: two proton pump inhibitors, and the substitute ordered against §3. Its note states that start truly, so it keeps note_lists_changes.",
     fails: ['omeprazole_kept'],
-    loses: ['note_lists_changes'],
+    loses: [],
     script: [
       ...reads,
       { calls: [...writes, order(RX.pantoprazole40, 40, 'QD', 'Discharge summary: pantoprazole 40 mg daily')] },

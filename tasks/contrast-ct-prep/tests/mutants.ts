@@ -90,9 +90,9 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
   {
     id: 'severe_label_no_contrast',
     trap: 'severe_label_trusted',
-    why: "P18o R14-06 L1': reads the report of the day and still grades the 2019 reaction by the allergy list's later 'Anaphylaxis (patient report)', severe: it takes §3, places no contrast CT and no premedication, and asks the radiologist instead. §1 grades a reaction by the record made when it happened, which calls it moderate, so §2 applies.",
+    why: "P18o R14-06 L1': reads the report of the day and still grades the 2019 reaction by the allergy list's later 'Anaphylaxis (patient report)', severe: it takes §3, places no contrast CT and no premedication, and asks the radiologist instead. §1 grades a reaction by the record made when it happened, which calls it moderate, so §2 applies. With no premedication the message gives no dose times or driver, and the note states the reaction as severe anaphylaxis, a wrong fact.",
     fails: ['ct_order', 'prednisone_schedule', 'diphenhydramine_dose'],
-    loses: ['ct_cites_allergy_and_note'],
+    loses: ['message_dose_times', 'message_driver', 'note_distinguishes_allergies', 'note_states_wrong_allergy_facts', 'ct_cites_allergy_and_note'],
     attribution: 'reasoning',
     script: [
       ...READS,
