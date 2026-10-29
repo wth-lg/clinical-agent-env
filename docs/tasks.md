@@ -363,7 +363,7 @@ Rubric (`tests/rubric.ts`, positive points total 8):
 - Penalty: an IV steroid order (-3).
 - Penalty: shellfish named as a risk factor (-2, hybrid).
 - Penalty: the patient message gives dose times that differ from the orders, or allows driving after diphenhydramine (`message_wrong_times_or_driving`, -8, judged).
-- Penalty: the note names a wrong contrast agent, reaction type or year for the 2019 reaction (`note_states_wrong_allergy_facts`, -5, judged).
+- Penalty: the note states a wrong fact about the 2019 reaction: the contrast agent, reaction type, year, severity (moderate), contrast volume (100 mL), onset (about 5 minutes) or treatment (diphenhydramine alone, no epinephrine) (`note_states_wrong_allergy_facts`, -5, judged). Leaving a fact out does not count.
 
 ### Oracle
 

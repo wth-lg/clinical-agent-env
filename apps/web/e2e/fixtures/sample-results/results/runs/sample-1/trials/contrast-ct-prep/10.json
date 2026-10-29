@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:contrast-ct-prep:10",
   "task_id": "contrast-ct-prep",
-  "task_version": "872f707fb045d6d68a5300e7ae435d0b72bcf27c468bb00bfa9c61972b0a84d0",
+  "task_version": "964d003b2e5f345823a17dba6ca9b06144b819a89df1c12a623239e8c143366c",
   "env_version": "dd52eab51c1b400d1147fa16562ce98eb6b13e39f104598a265ae6f17ad460fd",
-  "grader_task_version": "26981dabf2b9f6cb08a9463f82eecbabf454866a531c6a52e78baea880ccdfae",
+  "grader_task_version": "e87dee18f2c4208112b113f03057615a499553abe9787aae7fa4ee26ace91da1",
   "fixture_hash": "5e69bcfaa1935a5eb4bef6ba1b8e3d4db1cf379042fd6321516416281b041f20",
   "state_hash": {
     "initial": "5e69bcfaa1935a5eb4bef6ba1b8e3d4db1cf379042fd6321516416281b041f20",
@@ -336,7 +336,7 @@
       "evidence": {
         "verdict": "not_met",
         "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day)",
-        "cache_key": "8f051fe24c0dd7067940f35efbdd56eaf63211a70c2c643e584691acfd8998af"
+        "cache_key": "2673d2db9afbd5a6189561567ce8d1e3b89327cccaff35e0adbce7e30af4a642"
       }
     },
     {
@@ -403,7 +403,7 @@
       "e3ebaa2941de1354f6065a2a3b5c424adb4a4552d4801fcf1927b710173aab22",
       "0bf9a078af1f83f7179164bc6cc45c1bd2da0e89075991489932ef1643ded5d9",
       "16867bb2995b86d18f5dded2031e79df51516ef819dd2af0899bb793d8ab028c",
-      "8f051fe24c0dd7067940f35efbdd56eaf63211a70c2c643e584691acfd8998af",
+      "2673d2db9afbd5a6189561567ce8d1e3b89327cccaff35e0adbce7e30af4a642",
       "e0ce5e6b29cd4e6882bc5878ae203230ab72f83310c21fb323cc1d67987a5b3f"
     ],
     "cache": [
@@ -462,7 +462,7 @@
         }
       },
       {
-        "key": "8f051fe24c0dd7067940f35efbdd56eaf63211a70c2c643e584691acfd8998af",
+        "key": "2673d2db9afbd5a6189561567ce8d1e3b89327cccaff35e0adbce7e30af4a642",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -476,7 +476,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-28T18:42:13.811Z"
+          "at": "2026-10-29T00:48:24.731Z"
         }
       },
       {
