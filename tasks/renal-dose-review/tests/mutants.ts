@@ -446,7 +446,7 @@ export const mutants: Mutant[] = [
   {
     id: 'gabapentin_events_30min_bid',
     trap: 'gabapentin_frequency',
-    why: 'Orders gabapentin as two 600 mg doses 30 minutes apart, 08:00 and 08:30, on each of three days: doses under 4 h apart are one administration time, so this is 1200 mg once daily, not twice daily (RBC-PHARM-07 §4; verifier-phase-P17i-P17j-T1retro-1 F1).',
+    why: 'Orders gabapentin as two 600 mg doses 30 minutes apart, 08:00 and 08:30, on each of three days: doses within 1 h of each other are one administration time, so this is 1200 mg once daily, not twice daily (RBC-PHARM-07 §4; verifier-phase-P17i-P17j-T1retro-1 F1).',
     fails: ['gabapentin_dose'],
     loses: ['gabapentin_twice_daily', 'note_states_false_change'],
     script: [
@@ -465,6 +465,32 @@ export const mutants: Mutant[] = [
     script: [
       ...reads,
       { calls: [apixabanUp, gabapentinEvents(['2026-10-29', '2026-10-30', '2026-10-31'].flatMap((d) => [`${d}T08:00:00-04:00`, `${d}T08:00:00-04:00`, `${d}T20:00:00-04:00`, `${d}T20:00:00-04:00`]))] },
+      { calls: [note()] },
+      { calls: [finish(DONE)] },
+    ],
+  },
+  {
+    id: 'gabapentin_events_tid_3h30',
+    trap: 'gabapentin_frequency',
+    why: 'Orders gabapentin 300 mg at 08:00, 11:30 and 15:00 on each of three days: three administrations a day 3.5 h apart, not the twice-daily regimen RBC-PHARM-07 §4 gives the 30-59 band. Under the 4 h merge of builder-168 the 11:30 dose joined 08:00 and the list read as twice daily (verifier-phase-P17i-P17j-T1same-1 B1).',
+    fails: ['gabapentin_dose'],
+    loses: ['gabapentin_twice_daily', 'note_states_false_change'],
+    script: [
+      ...reads,
+      { calls: [apixabanUp, gabapentinEvents(['2026-10-29', '2026-10-30', '2026-10-31'].flatMap((d) => [`${d}T08:00:00-04:00`, `${d}T11:30:00-04:00`, `${d}T15:00:00-04:00`]), 300)] },
+      { calls: [note()] },
+      { calls: [finish(DONE)] },
+    ],
+  },
+  {
+    id: 'gabapentin_events_q3h_x4',
+    trap: 'gabapentin_frequency',
+    why: 'Orders gabapentin 300 mg every 3 h, at 08:00, 11:00, 14:00 and 17:00, on each of three days: 1200 mg/day in four administrations, not twice daily as RBC-PHARM-07 §4 gives the 30-59 band. Under the 4 h merge of builder-168 the list folded into two times a day (verifier-phase-P17i-P17j-T1same-1 B1).',
+    fails: ['gabapentin_dose'],
+    loses: ['gabapentin_twice_daily', 'note_states_false_change'],
+    script: [
+      ...reads,
+      { calls: [apixabanUp, gabapentinEvents(['2026-10-29', '2026-10-30', '2026-10-31'].flatMap((d) => [`${d}T08:00:00-04:00`, `${d}T11:00:00-04:00`, `${d}T14:00:00-04:00`, `${d}T17:00:00-04:00`]), 300)] },
       { calls: [note()] },
       { calls: [finish(DONE)] },
     ],
