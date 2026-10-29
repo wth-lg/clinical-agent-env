@@ -62,4 +62,23 @@ describe('contrast-ct-prep', () => {
     expect(d.contrast_allergy.severity).toBe('moderate');
     expect(d.regimen).toBe('premedicate');
   });
+
+  // P19 (researcher-16 T5 lever): the faxed St. Brigid ED discharge summary of 10/17 records a
+  // prerenal AKI, creatinine 1.94 on arrival and 1.46 at discharge against a baseline of about 1.0,
+  // not back to baseline. §4: a creatinine drawn during AKI does not establish kidney function;
+  // §6: hold metformin. The values sit only in the faxed text, and the text avoids the words of the
+  // pilot-1 note searches ('contrast', 'reaction', 'CT').
+  it('reads the unresolved AKI from the outside ED summary and holds metformin', () => {
+    const d = derive(world) as typeof expected;
+    expect(d.aki).toEqual({ note: 'DocumentReference/doc-t5-ed-1017', date: '2026-10-17', discharge_mg_dl: 1.46, baseline_mg_dl: 1, resolved: false });
+    expect(d.metformin).toEqual({ id: 'MedicationRequest/mr-t5-metformin', hold: true });
+    expect(d.creatinine).toMatchObject({ latest: 'Observation/obs-t5-scr-0924', required: true, current: false });
+    const doc = store.get('DocumentReference', 'doc-t5-ed-1017') as { content: Array<{ attachment: { data: string } }>; context?: { encounter?: Array<{ reference?: string }> } };
+    const text = new TextDecoder().decode(Uint8Array.from(atob(doc.content[0]!.attachment.data), (c) => c.charCodeAt(0)));
+    expect(text).not.toMatch(/\b(?:contrast|reaction|ct)\b/i);
+    expect(doc.context?.encounter?.[0]?.reference).toBe('Encounter/enc-t5-ed-1016');
+    expect(store.get('Encounter', 'enc-t5-ed-1016')).toMatchObject({ status: 'finished', serviceProvider: { reference: 'Organization/org-st-brigid' } });
+    // No Observation or Condition carries the outside values.
+    expect(all.filter((r) => r.resourceType === 'Observation' && (r as { effectiveDateTime?: string }).effectiveDateTime?.startsWith('2026-10-1'))).toEqual([]);
+  });
 });
