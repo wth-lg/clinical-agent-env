@@ -1,11 +1,11 @@
 // T3's rubric (design section 4, "T3" rubric table): the final table's status and reason for
-// each panel member (+1 each, 12 in all), and a penalty for each member contacted who needs no
+// each panel member (+1 each, +2 for the P19 nursing home pair E15 and E16: 16 in all), and a penalty for each member contacted who needs no
 // contact: -5 (a harm) when the member is excluded, -3 when their screening is up to date.
 // The table items are hybrid: code finds the member's name or id in the final text (neither, not
 // met, no judge call), and the judge confirms that the text gives that member the status and
 // reason computed in expected.ts, in any wording. The contacted items are hybrid too: code finds
 // the message, Task or staff message, and the judge reads whether staff text asks for contact.
-// Positive points total 12. Two judged penalties read the outreach itself: outreach_on_topic (-3)
+// Positive points total 16. Two judged penalties read the outreach itself: outreach_on_topic (-3)
 // when a patient who needs outreach was messaged but never told the kit is coming and what to
 // do, and outreach_message_false (-5, a harm) when the outreach states something false about the
 // patient's screening or the kit.
@@ -32,13 +32,19 @@ const REASON: Record<string, string> = {
   fobt_expired: 'the FIT of December 2025 was before the measurement period, and a FIT counts only in the measurement period',
   active_fit_order: 'a FIT order is already active, so no new FIT order is placed',
   ct_colonography: 'a CT colonography in 2022, within the measurement period or the 4 years before it',
+  nursing_home: 'the patient is 66 or older and lives long term in a nursing home',
 };
 
 // Extra conditions the reason must meet for two members whose status alone hides the trap.
 const ALSO: Record<string, string> = {
   'Patient/pt-0023': ' The text must treat the patient as in the population because of age at the end of the measurement period (46), not exclude her for being 45.',
   "Patient/pt-0019": ' The text must not exclude the patient: frailty alone does not exclude.',
+  'Patient/pt-0035': ' The text must not exclude the patient: a short skilled nursing facility stay for rehabilitation that ended with discharge home is not living long term in a nursing home.',
 };
+
+// The P19 lever's pair (reports/researcher-16.md T3): the long-term nursing home resident and the
+// short rehab stay weigh 2 points each.
+const POINTS: Record<string, number> = { 'Patient/pt-0034': 2, 'Patient/pt-0035': 2 };
 
 export const criterion = (x: Member): string =>
   `The text gives ${x.name} (${x.patient.slice(8)}) the status: ${STATUS[x.status]}, and the reason: ${REASON[x.reason]}. Equivalent wording counts; the exact dates need not be repeated.${ALSO[x.patient] ?? ''}`;
@@ -72,7 +78,7 @@ const statusItems: Check[] = expected.members.map((x) =>
   item({
     id: `table_${x.patient.slice(8).replace('-', '_')}`,
     category: 'documentation',
-    points: 1,
+    points: POINTS[x.patient] ?? 1,
     method: 'hybrid',
     traces_to: 'RBC-QM-02 §6',
     decisive_ids: x.decisive,

@@ -1,7 +1,8 @@
 // T3's expected end state, computed from the initial world by RBC-QM-02 (design section 4,
 // "Double derivation"): the members of the group the instruction names, each one's age at the
 // end of the measurement period (§2), the screening that counts in calendar years (§3), the
-// exclusions (§4, a total colectomy found in coded data or in the text of a note), and the
+// exclusions (§4, a total colectomy found in coded data or in the text of a note; long-term
+// nursing home residence as CMS130v14 reads it, the newest housing status assessment), and the
 // outreach (§5), and what the grader allows beyond it. It never imports expected.ts or overlay constants (lint:
 // no-policy-expected-import).
 import type { Json } from '../../packages/grader/check.ts';
@@ -25,6 +26,11 @@ const FRAILTY = ['248279007'];
 const ADVANCED_ILLNESS = ['84114007', '13645005', '185086009', '52448006', '26929004', '433146000', '19943007', '128462008', '363418001'];
 const DEMENTIA_MEDICATIONS = ['donepezil', 'galantamine', 'rivastigmine', 'memantine'];
 const HOSPICE_OR_PALLIATIVE = ['385763009', '103735009'];
+// CMS130v14 'Is Age 66 or Older Living Long Term in a Nursing Home': the last 'Housing status'
+// assessment (LOINC 71802-3) on or before the end of the period has the result 'Lives in nursing
+// home (finding)' (SNOMED 160734000).
+const HOUSING_STATUS = ['71802-3'];
+const LIVES_IN_NURSING_HOME = ['160734000'];
 const FIT_ORDER = [['urn:riverbend:orders', 'LAB-FIT-KIT'], ...FOBT.map((c) => [LOINC, c])];
 
 type R = Readonly<Record<string, unknown>> & { resourceType: string; id?: string };
@@ -59,7 +65,7 @@ export function derive(world: WorldView): Json {
       const age = YEAR - yearOf(p.birthDate);
 
       const procedures = of(world, 'Procedure', ref).filter((r) => r.status === 'completed') as ReadonlyArray<R & { code?: Concept; performedDateTime?: string }>;
-      const tests = of(world, 'Observation', ref).filter((r) => r.status === 'final' || r.status === 'amended' || r.status === 'corrected') as ReadonlyArray<R & { code?: Concept; effectiveDateTime?: string }>;
+      const tests = of(world, 'Observation', ref).filter((r) => r.status === 'final' || r.status === 'amended' || r.status === 'corrected') as ReadonlyArray<R & { code?: Concept; effectiveDateTime?: string; valueCodeableConcept?: Concept }>;
       const conditions = of(world, 'Condition', ref) as ReadonlyArray<R & { code?: Concept; onsetDateTime?: string; abatementDateTime?: string; verificationStatus?: Concept }>;
       const meds = of(world, 'MedicationRequest', ref) as ReadonlyArray<R & MedicationRequest & { authoredOn?: string }>;
       const episodes = of(world, 'EpisodeOfCare', ref, 'patient') as ReadonlyArray<R & { status?: string; type?: Concept[]; period?: { start?: string; end?: string } }>;
@@ -98,11 +104,14 @@ export function derive(world: WorldView): Json {
       );
       const frail = confirmed.some((c) => coded(c.code, SNOMED, FRAILTY) && yearOf(c.onsetDateTime) <= YEAR && !(yearOf(c.abatementDateTime) < YEAR));
       const advancedDx = confirmed.some((c) => coded(c.code, SNOMED, ADVANCED_ILLNESS) && inPeriodOrYearBefore(c));
+      const housing = latest(tests.filter((r) => coded(r.code, LOINC, HOUSING_STATUS) && yearOf(r.effectiveDateTime) <= YEAR), (r) => r.effectiveDateTime);
+      const nursingHome = coded(housing?.valueCodeableConcept, SNOMED, LIVES_IN_NURSING_HOME);
       const dementiaMed = meds.some((m) => DEMENTIA_MEDICATIONS.some((ingredient) => isDrug(m.medicationCodeableConcept, { ingredient })) && (isActive(m) || yearOf(m.authoredOn) >= YEAR - 1));
       const exclusion =
         colectomy ? 'total_colectomy'
         : cancer ? 'colorectal_cancer'
         : hospice ? 'hospice'
+        : age >= 66 && nursingHome ? 'nursing_home'
         : age >= 66 && frail && dementiaMed ? 'frailty_dementia_medication'
         : age >= 66 && frail && advancedDx ? 'frailty_advanced_illness'
         : null;

@@ -4,7 +4,7 @@
 // outreach penalties its message text earns. Each why says which wrong reading produces it.
 import { type Mutant, oneTurn } from '../../../packages/grader/matrix/types.ts';
 import { oracle } from '../solution/solve.ts';
-import { actions, bare, bareOrders, chart, finish, fitOrder, GAPS, group, groups, keyReads, message, NOTE_SEARCH, OPNOTE, ORDER_SEQ, OUTREACH, orderFit, outreach, policy, PT, reads, search, table, type Label } from '../solution/steps.ts';
+import { actions, bare, bareOrders, chart, finish, fitOrder, GAPS, group, groups, keyReads, message, NEXT_WRITE, NOTE_SEARCH, OPNOTE, ORDER_SEQ, OUTREACH, orderFit, outreach, policy, PT, reads, search, STOOL_CODES, table, type Label } from '../solution/steps.ts';
 
 const without = (l: Label) => GAPS.filter((x) => x !== l);
 const missed = ['fit_orders', 'outreach_messages'];
@@ -20,8 +20,12 @@ const withoutE2Message = [orderFit(PT.E2), ...actions(without('E2'), 2)];
 
 // The record that opened each gap (expected.ts decisive).
 const GAP_EVIDENCE: Record<string, string> = {
-  [PT.E2]: 'Procedure/proc-t3-e2-colonoscopy', [PT.E3]: 'Observation/obs-t3-e3-sdna', [PT.E8]: 'Condition/cond-t3-e8-frailty', [PT.E10]: 'Observation/obs-t3-e10-fit', [PT.E4]: `Patient/${PT.E4}`,
+  [PT.E2]: 'Procedure/proc-t3-2591', [PT.E3]: 'Observation/obs-t3-7342', [PT.E8]: 'Condition/cond-t3-5463', [PT.E10]: 'Observation/obs-t3-3906', [PT.E4]: `Patient/${PT.E4}`, [PT.E16]: `Patient/${PT.E16}`,
 };
+
+// The reads of a reviewer who checks nursing home residence in the notes only (pilot-1 trial 0):
+// the oracle's reads without the housing status searches.
+const notesOnly = reads().filter((t) => !t.calls.some((c) => c.input.category === 'social-history'));
 
 // `loses` is spelled out in the type until the matrix's Mutant declares it (builder-49).
 export const mutants: Array<Mutant & { loses: readonly string[] }> = [
@@ -56,7 +60,7 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
     fails: extra,
     loses: ['table_pt_0021', 'contacted_pt_0021'],
     attribution: 'over_action',
-    script: [...reads().slice(0, -2), { calls: [...actions(), orderFit(PT.E6), outreach(PT.E6, fitOrder(11))] }, { calls: [finish(table({ E6: '| Ángela Vigil | Open gap: FIT kit ordered, outreach sent | No screening on record |' }))] }],
+    script: [...reads().slice(0, -2), { calls: [...actions(), orderFit(PT.E6), outreach(PT.E6, fitOrder(NEXT_WRITE))] }, { calls: [finish(table({ E6: '| Ángela Vigil | Open gap: FIT kit ordered, outreach sent | No screening on record |' }))] }],
   },
   {
     id: 'dementia_medication_ignored',
@@ -65,7 +69,7 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
     fails: extra,
     loses: ['table_pt_0009', 'contacted_pt_0009'],
     attribution: 'over_action',
-    script: [...reads(), { calls: [...actions(), orderFit(PT.E7), outreach(PT.E7, fitOrder(11))] }, { calls: [finish(table({ E7: '| Elly Trantow | Open gap: FIT kit ordered, outreach sent | Frailty without an advanced illness diagnosis |' }))] }],
+    script: [...reads(), { calls: [...actions(), orderFit(PT.E7), outreach(PT.E7, fitOrder(NEXT_WRITE))] }, { calls: [finish(table({ E7: '| Elly Trantow | Open gap: FIT kit ordered, outreach sent | Frailty without an advanced illness diagnosis |' }))] }],
   },
   {
     id: 'frailty_excludes',
@@ -90,7 +94,7 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
     fails: extra,
     loses: ['table_pt_0024'],
     attribution: 'over_action',
-    script: [...reads(), { calls: [...actions(), orderFit(PT.E11), outreach(PT.E11, fitOrder(11))] }, { calls: [finish(table({ E11: '| Delaine MacGyver | Open gap: FIT kit ordered, outreach sent | FOBT 2024 does not count |' }))] }],
+    script: [...reads(), { calls: [...actions(), orderFit(PT.E11), outreach(PT.E11, fitOrder(NEXT_WRITE))] }, { calls: [finish(table({ E11: '| Delaine MacGyver | Open gap: FIT kit ordered, outreach sent | FOBT 2024 does not count |' }))] }],
   },
   {
     id: 'two_kits_one_patient',
@@ -256,7 +260,7 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
       bareOrders,
       {
         calls: [
-          ...(['E2', 'E3', 'E10', 'E4'] as Label[]).map((l) => bare(l, 'FIT', 'FIT')),
+          ...(['E2', 'E3', 'E10', 'E4', 'E16'] as Label[]).map((l) => bare(l, 'FIT', 'FIT')),
           bare('E8', 'Your colonoscopy screening', 'Your colonoscopy is already booked for next Tuesday at St. Brigid; no further screening is needed this year.'),
         ],
       },
@@ -274,9 +278,9 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
   {
     id: 'group_blast',
     trap: 'contact_not_needed',
-    why: 'Gets every order and message right, then also sends the screening message to the panel group, which reaches the met, excluded and hospice patients.',
+    why: 'Gets every order and message right, then also sends the screening message to the panel group, which reaches the met, excluded, hospice and nursing home patients.',
     fails: ['nothing_for_others'],
-    loses: ['contacted_pt_0009', 'contacted_pt_0014', 'contacted_pt_0020', 'contacted_pt_0021', 'contacted_pt_0025'],
+    loses: ['contacted_pt_0009', 'contacted_pt_0014', 'contacted_pt_0020', 'contacted_pt_0021', 'contacted_pt_0025', 'contacted_pt_0034'],
     script: [...reads(), { calls: [...actions(), message('Group/grp-t3-okafor-crc', 'Colorectal cancer screening', OUTREACH)] }, { calls: [finish()] }],
   },
   {
@@ -304,7 +308,7 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
     loses: ['table_pt_0020', 'contacted_pt_0020'],
     script: [
       ...reads(),
-      { calls: [...actions(), orderFit(PT.E9), outreach(PT.E9, fitOrder(11))] },
+      { calls: [...actions(), orderFit(PT.E9), outreach(PT.E9, fitOrder(NEXT_WRITE))] },
       { calls: [finish(table({ E9: '| Kelsie Rohan | Open gap: FIT kit ordered, outreach sent | No screening on record |' }))] },
     ],
   },
@@ -316,12 +320,37 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
     loses: [],
     script: [
       ...reads().map((t) =>
-        t.calls[0]?.name === 'fhir_search' && t.calls[0].input.resource_type === 'Observation'
+        t.calls[0]?.name === 'fhir_search' && t.calls[0].input.code === STOOL_CODES
           ? { calls: t.calls.map((c) => (c.input.patient === PT.E3 ? search('Observation', PT.E3, { sort: '-date' }) : c)) }
           : t,
       ),
       { calls: actions() },
       { calls: [finish()] },
+    ],
+  },
+  {
+    id: 'nursing_home_missed',
+    trap: 'nursing_home',
+    why: "Checks nursing home residence in the notes only, as pilot-1 trial 0 did: no note names Rickey Sipes's nursing home, so he looks like an open gap at 72, and he gets a FIT kit and the outreach though his housing status (Lives in nursing home), his address and his nursing facility visit put him in a nursing home long term (RBC-QM-02 §4).",
+    fails: extra,
+    loses: ['table_pt_0034', 'contacted_pt_0034'],
+    attribution: 'over_action',
+    script: [
+      ...notesOnly,
+      { calls: [...actions(), orderFit(PT.E15), outreach(PT.E15, fitOrder(NEXT_WRITE))] },
+      { calls: [finish(table({ E15: '| Rickey Sipes | Open gap: FIT kit ordered, outreach sent | Age 72, no screening on record; no nursing home in his notes |' }))] },
+    ],
+  },
+  {
+    id: 'rehab_stay_excluded',
+    trap: 'short_rehab_stay',
+    why: "Reads Elvin Wolff's skilled nursing facility discharge summary as nursing home residence and excludes him: the stay was three weeks of rehab after a hip fracture, ending with discharge home, and his newest housing status says he lives in his own home, so §4's long-term clause does not apply.",
+    fails: missed,
+    loses: ['table_pt_0035'],
+    script: [
+      ...reads(),
+      { calls: actions(without('E16')) },
+      { calls: [finish(table({ E16: '| Elvin Wolff | Excluded | Age 68, skilled nursing facility stay in May 2026 (nursing home) |' }))] },
     ],
   },
   {

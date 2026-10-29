@@ -24,7 +24,7 @@ export const TASKS = {
   T2: { slug: 'results-inbox', slots: ['pt-0006', 'pt-0007', 'pt-0008', 'pt-0010', 'pt-0013', 'pt-0016', 'pt-0033', 'pt-0053'] },
   T3: {
     slug: 'crc-care-gap',
-    slots: ['pt-0009', 'pt-0011', 'pt-0014', 'pt-0017', 'pt-0018', 'pt-0019', 'pt-0020', 'pt-0021', 'pt-0022', 'pt-0023', 'pt-0024', 'pt-0025'],
+    slots: ['pt-0009', 'pt-0011', 'pt-0014', 'pt-0017', 'pt-0018', 'pt-0019', 'pt-0020', 'pt-0021', 'pt-0022', 'pt-0023', 'pt-0024', 'pt-0025', 'pt-0034', 'pt-0035'],
   },
   T4: { slug: 'discharge-medrec', slots: ['pt-0004', 'pt-0005'] },
   T5: { slug: 'contrast-ct-prep', slots: ['pt-0012', 'pt-0015'] },
