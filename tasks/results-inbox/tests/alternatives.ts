@@ -216,4 +216,28 @@ export const alternatives = [
     loses: [],
     script: solve({ nodule: { ...ORACLE.nodule, message: 'call' } }),
   },
+  {
+    id: 'fit_call_task_due_tuesday',
+    why: 'fit_left_to_gi with the RN triage call to Raj Patel due Tuesday 2026-10-27, not today: no policy the agent reads sets a day for telling him, so a call within the week tells him (verifier-phase-P17j-retro-JG4T2-unread-1 D1, probe ff1).',
+    loses: [],
+    script: solve({ fit: { ...ORACLE.fit, message: 'call', callDue: '2026-10-27' } }),
+  },
+  {
+    id: 'nodule_call_task_on_ct_order',
+    why: 'nodule_call_task with the call task pointing at the follow-up CT order it tells Linda Marsh about, not at the June CT: due today, it is a call, not the tracking task (verifier-phase-P17j-retro-JG4T2-unread-1 D2, probe ff2).',
+    loses: [],
+    script: solve({ nodule: { ...ORACLE.nodule, message: 'call', callOnOrder: true } }),
+  },
+  {
+    id: 'fit_fyi_to_lin_linked',
+    why: "Instead of telling Raj Patel, sends Dr. Lin an FYI on the positive FIT and links it from item 3's closure. A gate cannot read whether a linked staff message asks for a call (as the item-5 stat page does), so patient_contact counts it; fit_patient_message finds no ask to contact him (verifier-phase-P17j-retro-JG4T2-unread-1 D3, probe fp1).",
+    loses: ['fit_patient_message'],
+    script: solve({ fit: { ...ORACLE.fit, message: false, fyi: true } }),
+  },
+  {
+    id: 'fit_tracking_task_due_monday',
+    why: 'Instead of telling Raj Patel, adds a task due Monday on the GI referral to track that the colonoscopy is scheduled. Due within the week, it is a call task by structure, so patient_contact counts it; fit_patient_message finds no ask to contact him (verifier-phase-P17j-retro-JG4T2-unread-1 D3, probe fp2).',
+    loses: ['fit_patient_message'],
+    script: before(solve({ fit: { ...ORACLE.fit, message: false } }), [writer().task(PT.patel, 'Practitioner/pr-okafor', '2026-10-26', 'routine', 'Track that the colonoscopy from the GI referral gets scheduled.', SRC.giReferral).call]),
+  },
 ] satisfies Array<Agent & { loses: readonly string[] }>;

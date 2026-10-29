@@ -76,7 +76,7 @@ export const checkText: CheckText = {
     },
   },
   patient_contact: {
-    requires: `each patient of the ${ACTIONABLE} items that need action told of the result: a message to the patient, a call task due by the next business day, or a staff message the item's closure links`,
+    requires: `each patient of the ${ACTIONABLE} items that need action told of the result: a message to the patient, a call task due within a week, or a staff message the item's closure links`,
     found: (ev) => `${show(fields(items(ev.uncontacted)[0]).patient)} was not told of ${show(fields(items(ev.uncontacted)[0]).item)}`,
   },
   sources_before_orders: {

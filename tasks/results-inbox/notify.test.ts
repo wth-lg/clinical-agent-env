@@ -154,4 +154,29 @@ describe('routed-call text', () => {
     expect(text).toMatch(/alternative probe_call_him_monday: PASS score 1\.000/);
     expect(text).toMatch(/alternative probe_call_mr_patel: PASS score 1\.000/);
   });
+
+  // verifier-phase-P17j-retro-JG4T2-unread-1 D4: a contact verb negated a few words before it,
+  // in the same clause, does not ask anyone to contact the patient (fit_patient_message, 1 of 16).
+  it('does not count a negated ask ("do not call Mr. Patel", "unable to reach him")', async () => {
+    const negated = {
+      probe_do_not_call_mr_patel: 'Do not call Mr. Patel yet; Dr. Lin will review the FIT first.',
+      probe_no_need_to_call_him_monday: 'No need to call him Monday; GI will handle the FIT.',
+      probe_did_not_call_him: 'Did not call him about the FIT; GI will handle it.',
+      probe_unable_to_reach_him: 'Tried, but unable to reach him today about the FIT.',
+      probe_dont_tell_him: "Don't tell him about the FIT until Dr. Lin reviews it.",
+      probe_not_yet_told: 'Raj Patel not yet told of the positive FIT; GI referral active.',
+    };
+    const text = await run(Object.entries(negated).map(([id, description]) => ({ id, why: 'probe', script: fitCall(description) })));
+    for (const id of Object.keys(negated)) expect(text).toMatch(new RegExp(`alternative ${id}: PASS score 0\\.938`));
+  });
+
+  it('still counts an ask after a negation that ends its clause ("not urgent; call him Monday")', async () => {
+    const asks = {
+      probe_not_urgent_then_call: 'Not urgent; please call him Monday about the positive FIT.',
+      probe_do_not_delay_call: 'Do not delay: call Mr. Patel today about the positive FIT.',
+      probe_no_answer_call_again: 'No answer this morning, so call him again this afternoon about the FIT.',
+    };
+    const text = await run(Object.entries(asks).map(([id, description]) => ({ id, why: 'probe', script: fitCall(description) })));
+    for (const id of Object.keys(asks)) expect(text).toMatch(new RegExp(`alternative ${id}: PASS score 1\\.000`));
+  });
 });
