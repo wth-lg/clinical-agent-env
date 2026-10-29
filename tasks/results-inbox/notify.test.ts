@@ -256,6 +256,23 @@ describe('routed-call text', () => {
     expect(text).toMatch(/alternative probe_dont_just_call: PASS score 1\.000/);
   });
 
+  // verifier-phase-P17i-P17j-T2retror3-1 S1, N1: the words that turn a negation into an ask take
+  // their inflections ("no one forgets to"), and "neglect" is one of them.
+  probes(
+    'counts "make sure no one forgets to call him" and "do not neglect to call him"',
+    {
+      probe_no_one_forgets_to_call: 'Make sure no one forgets to call him about the positive FIT.',
+      probe_do_not_neglect_to_call: 'Please do not neglect to call him today about the positive FIT.',
+    },
+    '1.000',
+    fitCall,
+  );
+
+  it('counts "make sure nobody forgets to call the mother" on the bone item, so urgent_item_unnotified (-5) does not apply', async () => {
+    const text = await run([{ id: 'probe_bone_nobody_forgets_to_call', why: 'probe', script: staffTask('Make sure nobody forgets to call the mother today about the knee X-ray.') }]);
+    expect(text).toMatch(/alternative probe_bone_nobody_forgets_to_call: PASS score 1\.000/);
+  });
+
   it('counts "don\'t forget to call Ana Ruiz" on the bone item, so urgent_item_unnotified (-5) does not apply', async () => {
     const text = await run([{ id: 'probe_bone_dont_forget_to_call', why: 'probe', script: staffTask("Don't forget to call Ana Ruiz today about the knee X-ray and the MRI.") }]);
     expect(text).toMatch(/alternative probe_bone_dont_forget_to_call: PASS score 1\.000/);

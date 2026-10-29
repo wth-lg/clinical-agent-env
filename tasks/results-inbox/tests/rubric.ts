@@ -83,14 +83,16 @@ const PRONOUN = String.raw`(?:him|her)(?=\s*(?:$|[.,;:!?)/\u2013\u2014]|-(?![\p{
 // A negation and up to two more words just before a contact verb, read from the start of the
 // verb's clause: not, never, cannot, unable, without, no one, nobody, or a word ending n't, unless
 // the next word turns it into an ask ("don't forget to", "do not hesitate to", "without delay",
-// "don't wait to", "not only ... but also", "don't just call him"; "wait" only before "to", so "do
-// not wait or call him" negates); "no one" and "nobody" not after if, when, unless or until ("if
-// nobody answers call him"); "no" only as "no need" and up to three more words ("no need for
-// anyone to call him") or right before the verb, so "if there is no answer call him" and "no later
-// than Monday call him" still ask (verifier-phase-P17i-P17j-T2retro-1 F2, verifier-phase-P17i-
-// P17j-T2retror2-1 N3).
+// "don't wait to", "not only ... but also", "don't just call him"; forget, hesitate, fail and
+// neglect in any of their forms, so "make sure no one forgets to call him" and "do not neglect to
+// call him" ask; "wait" only before "to", so "do not wait or call him" negates); "no one" and
+// "nobody" not after if, when, unless or until ("if nobody answers call him"); "no" only as "no
+// need" and up to three more words ("no need for anyone to call him") or right before the verb, so
+// "if there is no answer call him" and "no later than Monday call him" still ask (verifier-phase-
+// P17i-P17j-T2retro-1 F2, verifier-phase-P17i-P17j-T2retror2-1 N3, verifier-phase-P17i-P17j-
+// T2retror3-1 S1, N1).
 const NEGATED =
-  /(?:(?:(?<![\p{L}\p{N}'])(?:not|never|cannot|unable|without|(?<!(?:if|when|unless|until)\s+)(?:no(?:\s+|-)one|nobody))|n't)(?!\s+(?:forget|hesitate|delay|fail|only|just|mind|wait\s+to)(?![\p{L}\p{N}']))(?:\s+[\p{L}\p{N}'-]+){0,2}|(?<![\p{L}\p{N}'])no(?:\s+need(?:\s+[\p{L}\p{N}'-]+){0,3})?)\s+$/u;
+  /(?:(?:(?<![\p{L}\p{N}'])(?:not|never|cannot|unable|without|(?<!(?:if|when|unless|until)\s+)(?:no(?:\s+|-)one|nobody))|n't)(?!\s+(?:forget(?:s|ting)?|forgot|hesitat(?:e|es|ing)|delay|fail(?:s|ing)?|neglect(?:s|ing)?|only|just|mind|wait\s+to)(?![\p{L}\p{N}']))(?:\s+[\p{L}\p{N}'-]+){0,2}|(?<![\p{L}\p{N}'])no(?:\s+need(?:\s+[\p{L}\p{N}'-]+){0,3})?)\s+$/u;
 // A clause ends at punctuation, a dash, or a hyphen with a space on each side ("no delay - call him").
 const CLAUSE_END = /[.;:!?,()\u2013\u2014]|\s-+\s/;
 // A phrase set off by commas right after a negation word keeps the negation ("do not, under any

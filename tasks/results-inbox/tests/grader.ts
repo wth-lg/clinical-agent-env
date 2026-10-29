@@ -87,7 +87,7 @@ const STAFF = /^(Practitioner|Group)\//;
 // is told by the next business day (RBC-INBOX-01 §4: a recommendation marked urgent or a suspected
 // malignancy, RBC-RAD-05 §3, or a potassium of 6.0 mmol/L or higher, RBC-LAB-03), Monday
 // 2026-10-26 after Friday 2026-10-23, the day RBC-LAB-03 §2's repeat is due by (hemolyzed_k.by):
-// the bone lesion and both potassium items (decisions.tsv 2026-10-29T07:28Z, verifier-phase-
+// the bone lesion and both potassium items (decisions.tsv 2026-10-29T07:30Z, verifier-phase-
 // P17i-P17j-T2retror2-1 B1). No policy sets a day for the routine nodule and FIT items, so a gate
 // may not hold them to one (decisions.tsv 2026-10-29T04:45Z, verifier-phase-P17j-retro-JG4T2-
 // unread-1 D1): a call task due within a week of today counts, short of the earliest RBC-RAD-05
