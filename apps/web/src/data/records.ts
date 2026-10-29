@@ -62,6 +62,8 @@ export function validateAuditRow(x: unknown): string[] {
   if (!str(x.trial)) errors.push('trial is missing');
   if (!str(x.outcome)) errors.push('outcome is missing');
   if (x.evidence_ids !== undefined && !(Array.isArray(x.evidence_ids) && x.evidence_ids.every(str))) errors.push('evidence_ids is not a list of ids');
+  // As cli/audit-check.ts readLabels reads it (verifier-phase-P17i-P17j-S3retror2-1 B1n).
+  if (x.note !== undefined && x.note !== null && !str(x.note)) errors.push('note is not text');
   return errors;
 }
 

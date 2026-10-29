@@ -93,8 +93,7 @@ export interface ExplainRecord {
 // and an outcome GRADER_BUG as grader. adjudicated_label settles a row whose model_fault is unclear
 // or whose LLM auditor disagrees; the reasoning goes in note. On a PASS row it is grader (a false
 // PASS, outcomes.ts GR5) or pass (outcomes.ts PASS_CONFIRMED: the PASS is confirmed, no label; only
-// on a row passConfirmationBreaks allows, with a note when it overrules a label grader or
-// environment).
+// on a row passConfirmationBreaks allows, with a note when it overrules a label of the row's own).
 // criteria is what audit-check writes back: explainTrial's criteria for the trial. The auditor
 // answers two questions on a failure (R14-31): clinically_acceptable, "is the recorded outcome (pass or fail) clinically right?" (a
 // no on a failure: the grader rejected a clinically acceptable solution), and

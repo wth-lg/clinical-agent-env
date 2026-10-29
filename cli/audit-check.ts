@@ -43,10 +43,12 @@
 //     one of AUDIT_LABELS; on a PASS, grader (a false PASS) or pass (outcomes.ts PASS_CONFIRMED: the
 //     adjudicator confirms the PASS, and the row gives no label; verifier-phase-P17j-retro-JG5-unread-1
 //     D1). pass is accepted only on a PASS whose row needs adjudication (model_fault unclear, the LLM
-//     auditor disagrees, or an auditor's no overruled to yes) and, when it overrules the row's label
-//     grader or environment, with a non-empty note (outcomes.ts passConfirmationBreaks); any other
+//     auditor disagrees, or an auditor's no overruled to yes) and, when it overrules a label of the
+//     row's own, any label, with a non-empty note (outcomes.ts passConfirmationBreaks); any other
 //     pass is a violation that names the rule, and the row keeps its own label, so a false PASS
-//     nobody disputed stays GR5 (verifier-phase-P17i-P17j-S3retro-1 A1);
+//     nobody disputed stays GR5 (verifier-phase-P17i-P17j-S3retro-1 A1). A row's own label that is
+//     not one of AUDIT_LABELS is a violation whatever adjudicates the row, and a note must be text
+//     (verifier-phase-P17i-P17j-S3retror2-1 B3, B1n);
 //   - each task has at least 2 audited PASS trials with evidence ids (all of them when it has
 //     fewer than 2 passes);
 //   - each task the consistency flag marks (packages/core/summary.ts consistencyOf: >= 80% of its
@@ -108,7 +110,7 @@ import { installEgressGuard } from '../packages/core/egress.ts';
 import type { TrialEvent } from '../packages/core/events.ts';
 import { explainContext as contextOf, type TaskCheck } from '../packages/core/explain-context.ts';
 import { AUDIT_QUESTIONS, auditAnswerOf, auditLabelOf, citedStep, excludedFromHeadline, explainTrial, formatCriterion, m1ToM4Met, type AuditRow, type CheckText, type ExplainContext, type ExplainRecord } from '../packages/core/explain.ts';
-import { AUDIT_LABEL, AUDIT_LABELS, e6Confirmation, FAULT, FAULT_PRECEDENCE, PASS_CONFIRMED, passConfirmationBreaks, type AuditLabelName, type Fault, type Outcome } from '../packages/core/outcomes.ts';
+import { AUDIT_LABEL, AUDIT_LABELS, e6Confirmation, FAULT, FAULT_PRECEDENCE, hasNote, PASS_CONFIRMED, passConfirmationBreaks, type AuditLabelName, type Fault, type Outcome } from '../packages/core/outcomes.ts';
 import { parseTrajectory } from '../packages/core/trajectory.ts';
 import { consistencyOf, currentGrade, describeConsistency, faultCounts, type ConsistencyFlag } from '../packages/core/summary.ts';
 import { TAXONOMY } from '../packages/grader/attribution.ts';
@@ -171,6 +173,7 @@ export function readLabels(dir: string, violations: string[]): Line[] | null {
       }
       const l = parsed as AuditLabel;
       if (typeof l.trial !== 'string' || !Array.isArray(l.evidence_ids)) throw new Error('needs trial and evidence_ids');
+      if (l.note !== undefined && l.note !== null && typeof l.note !== 'string') throw new Error('note must be text');
       return [{ raw, label: l }];
     } catch (e) {
       violations.push(`audit.jsonl line ${i + 1}: ${(e as Error).message}`);
@@ -277,13 +280,17 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
     else if ((l.model_fault === 'unclear' || l.llm_auditor_agrees === false) && !adjudicated) {
       v.push(`${l.trial}: ${l.model_fault === 'unclear' ? 'model_fault unclear' : 'the LLM auditor disagrees'}, and no adjudicated_label is recorded${outcome === 'PASS' ? ` (on a PASS: grader for a false PASS, ${PASS_CONFIRMED} to confirm it)` : ''}`);
     }
+    // The row's own label must be an audit label whatever adjudicates it: an adjudicated_label, pass
+    // or a label, would otherwise hide a typo (verifier-phase-P17i-P17j-S3retror2-1 B3). Where the
+    // row's label as read is its own, the checks below name it.
+    if (l.label !== undefined && l.label !== null && !isLabel(l.label) && auditLabelOf(l, outcome) !== l.label) v.push(`${l.trial}: label ${l.label} is not one of ${AUDIT_LABELS.join(', ')}`);
     for (const q of AUDIT_QUESTIONS) {
       const bad = [q, `adjudicated_${q}` as const].filter((f) => ![undefined, null, 'yes', 'no'].includes(l[f]));
       for (const f of bad) v.push(`${l.trial}: ${f} must be yes or no, not ${JSON.stringify(l[f])}`);
       if (bad.length > 0) continue;
       const environment = auditLabelOf(l, outcome) === 'environment';
       if (auditAnswerOf(l, q) === 'yes') {
-        if (l[q] === 'no' && !(adjudicated && (l.note ?? '').trim() !== '')) v.push(`${l.trial}: ${q} no, overruled by adjudicated_${q} yes, needs an adjudicated_label and a note`);
+        if (l[q] === 'no' && !(adjudicated && hasNote(l))) v.push(`${l.trial}: ${q} no, overruled by adjudicated_${q} yes, needs an adjudicated_label and a note`);
       } else if (auditAnswerOf(l, q) !== 'no') continue;
       else if (q === 'clinically_acceptable' && outcome === 'PASS') {
         // A no on a PASS says the PASS is not clinically right: a false PASS, which the label grader

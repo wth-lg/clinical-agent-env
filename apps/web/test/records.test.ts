@@ -31,6 +31,13 @@ describe('validateAuditRow', () => {
     for (const l of lines) expect(validateAuditRow(JSON.parse(l))).toEqual([]);
     expect(validateAuditRow({ outcome: 'FAIL' })).toEqual(['trial is missing']);
   });
+
+  it('a note that is not text makes the row unreadable, as audit-check reads it (verifier-phase-P17i-P17j-S3retror2-1 B1n)', () => {
+    const row = { trial: 't/0', outcome: 'PASS', evidence_ids: [] };
+    expect(validateAuditRow({ ...row, note: 7 })).toEqual(['note is not text']);
+    expect(validateAuditRow({ ...row, note: null })).toEqual([]);
+    expect(validateAuditRow({ ...row, note: '' })).toEqual([]);
+  });
 });
 
 // A task-validity review line (P17i C3, cli/audit-check.ts) names a task, not a trial

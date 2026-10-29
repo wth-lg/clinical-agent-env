@@ -68,10 +68,11 @@ export const PASS_CONFIRMED = 'pass';
 export type Adjudication = AuditLabelName | typeof PASS_CONFIRMED;
 // When PASS_CONFIRMED settles a row (verifier-phase-P17i-P17j-S3retro-1 A1): the current grade is
 // PASS; the row needs adjudication, because its model_fault is unclear, its LLM auditor disagrees,
-// or an adjudicated yes overrules an auditor's no; and, when it overrules the row's own label grader
-// or environment, a non-empty note says why. The rule the row breaks, or null when it settles it.
-// explain.ts reads a pass that breaks one as no adjudication, so the row keeps its own label (a
-// false PASS nobody disputed stays GR5), and cli/audit-check.ts names the rule as a violation.
+// or an adjudicated yes overrules an auditor's no; and, when the row has a label of its own, any
+// label, valid or not (verifier-phase-P17i-P17j-S3retror2-1 B3), a non-empty note says why it is
+// overruled. The rule the row breaks, or null when it settles it. explain.ts reads a pass that
+// breaks one as no adjudication, so the row keeps its own label (a false PASS nobody disputed stays
+// GR5), and cli/audit-check.ts names the rule as a violation.
 export function passConfirmationBreaks(
   row: { model_fault?: string | null; llm_auditor_agrees?: boolean | null; note?: string | null } & Partial<Record<`${'' | 'adjudicated_'}${'clinically_acceptable' | 'tool_rejections_correct'}`, string | null>>,
   ownLabel: string | null,
@@ -82,9 +83,13 @@ export function passConfirmationBreaks(
   if (!(row.model_fault === 'unclear' || row.llm_auditor_agrees === false || overruled)) {
     return `adjudicated_label ${PASS_CONFIRMED} confirms a PASS only on a row that needs adjudication (model_fault unclear, the LLM auditor disagrees, or an answer no overruled to yes); nothing here calls for it`;
   }
-  if ((ownLabel === 'grader' || ownLabel === 'environment') && (row.note ?? '').trim() === '') return `adjudicated_label ${PASS_CONFIRMED} overrules the label ${ownLabel}, and needs a note that says why`;
+  if (ownLabel !== null && !hasNote(row)) return `adjudicated_label ${PASS_CONFIRMED} overrules the label ${ownLabel}, and needs a note that says why`;
   return null;
 }
+
+// A row's note says something: it is text, and not blank. A note that is not text is no note
+// (cli/audit-check.ts readLabels reports it; verifier-phase-P17i-P17j-S3retror2-1 B1n).
+export const hasNote = (row: { note?: unknown }): boolean => typeof row.note === 'string' && row.note.trim() !== '';
 
 // The grader validation matrix's verdict on one grader_task_version (pnpm cli matrix --out
 // writes it to matrix.json under that key). failed_checks names the gate checks the oracle or an

@@ -5,7 +5,7 @@
 // HARM_POINTS stays -5 (decisions.tsv 2026-10-27T23:40).
 import { describe, expect, it } from 'vitest';
 import { blocksRun, excludedFromHeadline, explainTrial, type AuditRow, type ExplainContext, type ExplainRecord } from '../explain.ts';
-import { DENOMINATOR_RULE, FAULT_DEFINITIONS, PASS_CONFIRMED, PASS_DEFINITION } from '../outcomes.ts';
+import { DENOMINATOR_RULE, FAULT_DEFINITIONS, PASS_CONFIRMED, PASS_DEFINITION, passConfirmationBreaks } from '../outcomes.ts';
 import { HARM_POINTS } from '../summary.ts';
 
 const ctx: ExplainContext = { events: [], world_state_hash: 'h', matrix: null };
@@ -97,6 +97,19 @@ describe('an adjudicated_label pass that nothing called for (verifier-phase-P17i
   it('an overruled clinically_acceptable no calls for adjudication', () => {
     const e = explainTrial(pass, row({ clinically_acceptable: 'no', adjudicated_clinically_acceptable: 'yes', adjudicated_label: PASS_CONFIRMED }), ctx);
     expect(e).toMatchObject({ fault: null, audit_label: null });
+  });
+
+  it('over any label of the row, valid or not, pass needs a note (verifier-phase-P17i-P17j-S3retror2-1 B3)', () => {
+    for (const label of ['model', 'Grader', 'grader ', ' environment']) {
+      expect(passConfirmationBreaks({ llm_auditor_agrees: false }, label, 'PASS')).toBe(`adjudicated_label pass overrules the label ${label}, and needs a note that says why`);
+      expect(passConfirmationBreaks({ llm_auditor_agrees: false, note: 'the PASS is right' }, label, 'PASS')).toBeNull();
+    }
+  });
+
+  it('B1n: a note that is not text counts as no note, and explainTrial does not throw', () => {
+    const odd = row({ llm_auditor_agrees: false, adjudicated_label: PASS_CONFIRMED, note: 7 as unknown as string });
+    expect(passConfirmationBreaks(odd, 'grader', 'PASS')).toBe('adjudicated_label pass overrules the label grader, and needs a note that says why');
+    expect(explainTrial(pass, odd, ctx)).toMatchObject({ fault: 'grader', deciding: { id: 'GR5' } });
   });
 
   it('U1 (probe A7): on a FAIL labelled environment or grader, pass is ignored: the row keeps its label', () => {

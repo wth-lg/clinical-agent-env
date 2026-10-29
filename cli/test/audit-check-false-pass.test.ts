@@ -286,6 +286,66 @@ describe('adjudicated_label pass only settles a row that needs adjudication (ver
     expect(r.out).not.toContain(notNeeded);
   });
 
+  // verifier-phase-P17i-P17j-S3retror2-1 B3, B3x: a label that is not an audit label is a violation
+  // on every row, and pass needs a note over any label of the row's own, so neither hides the other.
+  const variants = ['Grader', 'GRADER', 'grader ', ' environment', 'Environment'];
+  const notALabel = (label: string) => `violation: t-alpha/0: label ${label} is not one of model, grader, environment`;
+
+  it('B3x: a label that is not an audit label is a violation on its own', async () => {
+    for (const label of variants) {
+      const dir = clean(`b3x-${variants.indexOf(label)}`);
+      patch(dir, (r) => ({ ...r, label }));
+      const r = await check(dir);
+      expect(r.code).toBe(1);
+      expect(r.out).toContain(notALabel(label));
+    }
+  });
+
+  it('B3: pass over a case or whitespace variant of grader or environment, with no note, is a violation, and the label stays one', async () => {
+    for (const label of variants) {
+      const dir = clean(`b3-${variants.indexOf(label)}`);
+      patch(dir, (r) => ({ ...withoutNote(r), label, llm_auditor_agrees: false, adjudicated_label: 'pass' }));
+      const r = await check(dir, true);
+      expect(r.code).toBe(1);
+      expect(r.err).toContain(`violation: t-alpha/0: adjudicated_label pass overrules the label ${label}, and needs a note that says why`);
+      expect(r.err).toContain(notALabel(label));
+    }
+  });
+
+  it('B3: a pass the rule accepts never hides a label that is not an audit label', async () => {
+    for (const label of variants) {
+      const dir = clean(`b3-note-${variants.indexOf(label)}`);
+      patch(dir, (r) => ({ ...r, label, llm_auditor_agrees: false, adjudicated_label: 'pass', note: 'the human read the chart: the PASS is right' }));
+      const r = await check(dir);
+      expect(r.code).toBe(1);
+      expect(r.out.filter((s) => s.startsWith('violation'))).toEqual([notALabel(label)]);
+    }
+  });
+
+  it('a valid adjudicated_label does not hide a row label that is not an audit label either', async () => {
+    const dir = clean('adjudicated-hides-label');
+    patch(dir, (r) => ({ ...r, label: 'Grader', llm_auditor_agrees: false, adjudicated_label: 'grader' }));
+    const r = await check(dir);
+    expect(r.code).toBe(1);
+    expect(r.out).toContain(notALabel('Grader'));
+  });
+
+  it('pass over the label model on a disputed row needs a note too', async () => {
+    const dir = clean('pass-over-model-no-note');
+    patch(dir, (r) => ({ ...withoutNote(r), label: 'model', llm_auditor_agrees: false, adjudicated_label: 'pass' }));
+    const r = await check(dir);
+    expect(r.code).toBe(1);
+    expect(r.out).toContain('violation: t-alpha/0: adjudicated_label pass overrules the label model, and needs a note that says why');
+  });
+
+  it('B1n: a note that is not text is a violation of its line, not a crash', async () => {
+    const dir = clean('b1n');
+    patch(dir, (r) => ({ ...r, label: 'grader', llm_auditor_agrees: false, adjudicated_label: 'pass', note: 7 }));
+    const r = await check(dir);
+    expect(r.code).toBe(1);
+    expect(r.out).toContainEqual(expect.stringMatching(/^violation: audit\.jsonl line \d+: note must be text$/));
+  });
+
   it('FF3 with no note: an unlabelled row needs none', async () => {
     const dir = clean('ff3-no-note');
     patch(dir, (r) => ({ ...withoutNote(r), model_fault: 'unclear', adjudicated_label: 'pass' }));

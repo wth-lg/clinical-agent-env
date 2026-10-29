@@ -41,6 +41,8 @@ describe('markOf', () => {
   it('an adjudicated_label pass that nothing called for, or that overrules a label grader with no note, leaves the false PASS (verifier-phase-P17i-P17j-S3retro-1 A1)', () => {
     expect(markOfTrial(row({ label: 'grader', adjudicated_label: 'pass', note: 'looks fine' }))).toBe('grader');
     expect(markOfTrial(row({ label: 'grader', llm_auditor_agrees: false, adjudicated_label: 'pass' }))).toBe('grader');
+    // B1n (verifier-phase-P17i-P17j-S3retror2-1): a note that is not text is no note, not a crash.
+    expect(markOfTrial(row({ label: 'grader', llm_auditor_agrees: false, adjudicated_label: 'pass', note: 7 as unknown as string }))).toBe('grader');
   });
 
   it('U1 (probe A7): a FAIL labelled environment or grader with adjudicated_label pass keeps its mark and blocks the run (verifier-phase-P17i-P17j-S3retro-1 U1)', () => {
