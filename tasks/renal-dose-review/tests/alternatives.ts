@@ -213,6 +213,34 @@ export const alternatives: Alternative[] = [
     ],
   },
   {
+    id: 'metformin_500_events_two_each_time',
+    why: 'Re-orders metformin on the immediate-release 500 mg tablet as timing events, two 500 mg doses at 08:00 and two at 20:00 on each of three days: 1000 mg at each of two times a day, the same regimen as the 1000 mg twice-daily order, so no change under RBC-PHARM-07 §3 (verifier-phase-P17i-P17j-T1same-1 O4; the event-list twin of metformin_ir_500_tablets_same_regimen).',
+    script: [
+      ...reads,
+      {
+        calls: [
+          apixabanUp,
+          gabapentinBid,
+          {
+            name: 'order_medication',
+            input: {
+              patient: PT,
+              rxnorm_code: RX.metformin500,
+              dose_value: 500,
+              dose_unit: 'mg',
+              route: 'oral',
+              timing_events: ['2026-10-29', '2026-10-30', '2026-10-31'].flatMap((d) => [`${d}T08:00:00-04:00`, `${d}T08:00:00-04:00`, `${d}T20:00:00-04:00`, `${d}T20:00:00-04:00`]),
+              reason: 'eGFR 60: no change; re-signed as 2 x 500 mg tablets twice daily',
+              replaces: 'mr-t1-metformin',
+            },
+          },
+        ],
+      },
+      { calls: [note()] },
+      { calls: [finish(DONE)] },
+    ],
+  },
+  {
     id: 'age_from_discharge_summary',
     why: "Takes his age from the February discharge summary ('DOB 1944-03-11'), read whole, instead of the patient search: a note that shows the birth date counts as seeing his age.",
     script: [
