@@ -234,4 +234,10 @@ export const alternatives = [
     loses: ['fit_patient_message'],
     script: before(solve({ fit: { ...ORACLE.fit, message: false } }), [writer().task(PT.patel, 'Practitioner/pr-okafor', '2026-10-26', 'routine', 'Track that the colonoscopy from the GI referral gets scheduled.', SRC.giReferral).call]),
   },
+  {
+    id: 'nodule_tracking_on_ct_due_1030',
+    why: "Orders the follow-up CT and, instead of telling Linda Marsh, a task due 2026-10-30 on the June CT to track it. The nodule is routine (RBC-RAD-05 §2, a CT 12 months out), so no policy sets a day for telling her and a task on the result due within the week is a call task by structure; patient_contact counts it, and nodule_patient_message finds no ask to contact her. A declared residual: only the task's text tells it from a call (verifier-phase-P17i-P17j-T2retror2-1 B1, probe a6).",
+    loses: ['nodule_tracking_task', 'nodule_patient_message'],
+    script: before(solve({ nodule: { ...ORACLE.nodule, due: null, message: false } }), [writer().task(PT.marsh, 'Practitioner/pr-okafor', '2026-10-30', 'routine', 'Track the 12-month CT chest for the RLL nodule', SRC.ct).call]),
+  },
 ] satisfies Array<Agent & { loses: readonly string[] }>;
