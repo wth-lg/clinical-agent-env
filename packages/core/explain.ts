@@ -30,7 +30,7 @@ import type { TrialEvent } from './events.ts';
 import { MODEL } from './anthropic.ts';
 import { PER_TRIAL_CAP_USD } from './cost.ts';
 import {
-  AUDIT_LABEL, AUDIT_LABELS, CONFIRMATION_CRITERIA, FAULT_DEFINITIONS, FAULT_PRECEDENCE, RUN_BLOCKS, type AttributionFacts, type AuditAnswer, type AuditLabelName, type Confirmation, type CriterionMet, type Fault,
+  AUDIT_LABEL, AUDIT_LABELS, CONFIRMATION_CRITERIA, FAULT_DEFINITIONS, FAULT_PRECEDENCE, PASS_CONFIRMED, passConfirmationBreaks, RUN_BLOCKS, type Adjudication, type AttributionFacts, type AuditAnswer, type AuditLabelName, type Confirmation, type CriterionMet, type Fault,
   type MatrixResult,
 } from './outcomes.ts';
 import { currentGrade, firstFailed, type RegradeGrade } from './summary.ts';
@@ -91,9 +91,11 @@ export interface ExplainRecord {
 // One line of <run>/audit.jsonl (design section 5, "Human audit"). label and label_subtype are
 // optional: without them a taxonomy in TAXONOMY reads as model, environment or grader as itself,
 // and an outcome GRADER_BUG as grader. adjudicated_label settles a row whose model_fault is unclear
-// or whose LLM auditor disagrees; the reasoning goes in note. criteria is what audit-check writes
-// back: explainTrial's criteria for the trial. The auditor answers two questions on a failure
-// (R14-31): clinically_acceptable, "is the recorded outcome (pass or fail) clinically right?" (a
+// or whose LLM auditor disagrees; the reasoning goes in note. On a PASS row it is grader (a false
+// PASS, outcomes.ts GR5) or pass (outcomes.ts PASS_CONFIRMED: the PASS is confirmed, no label; only
+// on a row passConfirmationBreaks allows, with a note when it overrules a label of the row's own).
+// criteria is what audit-check writes back: explainTrial's criteria for the trial. The auditor
+// answers two questions on a failure (R14-31): clinically_acceptable, "is the recorded outcome (pass or fail) clinically right?" (a
 // no on a failure: the grader rejected a clinically acceptable solution), and
 // tool_rejections_correct, "was every tool rejection in the trajectory right?" (no: a tool refused
 // a valid call, at the row's decisive_step). Each is yes or no, absent when the row does not
@@ -120,7 +122,7 @@ export interface AuditRow {
   llm_auditor_agrees: boolean | null;
   label?: string | null;
   label_subtype?: string | null;
-  adjudicated_label?: AuditLabelName | null;
+  adjudicated_label?: Adjudication | null;
   note?: string;
   clinically_acceptable?: AuditAnswer | null;
   tool_rejections_correct?: AuditAnswer | null;
@@ -272,10 +274,24 @@ export const MET_TEXT: Record<string, string> = { true: 'met', false: 'not met',
 export const formatCriterion = (c: Pick<CriterionRow, 'id' | 'met'>): string => `${c.id}: ${MET_TEXT[String(c.met)]}`;
 
 const isLabel = (l: unknown): l is AuditLabelName => (AUDIT_LABELS as readonly unknown[]).includes(l);
+type PassConfirmationRow = Pick<AuditRow, 'model_fault' | 'llm_auditor_agrees' | 'note' | AuditQuestion | `adjudicated_${AuditQuestion}`>;
+// A row's adjudicated_label as explainTrial reads it: an audit label; pass (outcomes.ts
+// PASS_CONFIRMED) only where outcomes.ts passConfirmationBreaks allows it on the current grade
+// outcome; else none, so the row's own label stands (verifier-phase-P17i-P17j-S3retro-1 A1, U1).
+const adjudicationOf = (row: Pick<AuditRow, 'adjudicated_label'> & Partial<PassConfirmationRow>, ownLabel: string | null, outcome: string): Adjudication | null =>
+  isLabel(row.adjudicated_label) ? row.adjudicated_label
+    : row.adjudicated_label === PASS_CONFIRMED && passConfirmationBreaks(row, ownLabel, outcome) === null ? PASS_CONFIRMED : null;
 
 // The audit label a row gives: its adjudicated_label, else its label, else the one its taxonomy or a
-// GRADER_BUG outcome implies. explainTrial's audit_label and M5 and audit-check all read it so.
-export function auditLabelOf(row: Pick<AuditRow, 'label' | 'taxonomy' | 'outcome' | 'adjudicated_label'>): string | null {
+// GRADER_BUG outcome implies; none when adjudicated_label pass confirms a PASS (outcomes.ts
+// PASS_CONFIRMED), which it does only where passConfirmationBreaks allows it on outcome, the
+// current grade (the row's own outcome when the caller has no record). explainTrial's audit_label
+// and M5 and audit-check all read it so.
+export function auditLabelOf(row: Pick<AuditRow, 'label' | 'taxonomy' | 'outcome' | 'adjudicated_label'> & Partial<PassConfirmationRow>, outcome: string = row.outcome): string | null {
+  if (row.adjudicated_label === PASS_CONFIRMED) {
+    const own = auditLabelOf({ ...row, adjudicated_label: null });
+    return adjudicationOf(row, own, outcome) === null ? own : null;
+  }
   if (row.adjudicated_label !== undefined && row.adjudicated_label !== null) return row.adjudicated_label;
   if (row.label !== undefined && row.label !== null) return row.label;
   if ((AUDIT_LABELS as readonly (string | null)[]).includes(row.taxonomy)) return row.taxonomy;
@@ -520,7 +536,7 @@ export function explainTrial(record: ExplainRecord, audit: AuditRow | null | und
       label: isLabel(rowLabel) ? rowLabel : null,
       model_fault: row.model_fault ?? null,
       llm_auditor_agrees: row.llm_auditor_agrees ?? null,
-      adjudicated_label: isLabel(row.adjudicated_label) ? row.adjudicated_label : null,
+      adjudicated_label: adjudicationOf(row, rowLabel, outcome),
       evidence_ids: row.evidence_ids ?? [],
       clinically_acceptable: auditAnswerOf(row, 'clinically_acceptable'),
       tool_rejections_correct: auditAnswerOf(row, 'tool_rejections_correct'),
@@ -542,7 +558,7 @@ export function explainTrial(record: ExplainRecord, audit: AuditRow | null | und
   const notes = [...holding.filter((h) => h.fault !== fault && h.fault !== 'model' && h.fault !== 'refusal'), ...blocks];
   const label = fault === null ? null : AUDIT_LABEL[fault];
   const criteria = CONFIRMATION_CRITERIA.map((c) => ({ id: c.id, ...c.check(facts) }));
-  const audit_label = facts.audit === null ? null : (facts.audit.adjudicated_label ?? facts.audit.label);
+  const audit_label = facts.audit === null || facts.audit.adjudicated_label === PASS_CONFIRMED ? null : (facts.audit.adjudicated_label ?? facts.audit.label);
   const recordFact = fault !== null && FAULT_DEFINITIONS[fault].criteria.find((c) => c.id === deciding?.id)?.record_fact === true;
   const confirmation: Confirmation | null = fault === null ? null
     : fault === 'infra' ? (audit_label === null ? 'confirmed' : 'contradicted')
