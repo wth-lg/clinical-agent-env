@@ -19,3 +19,6 @@ A home medication the discharge documentation does not address must not be chang
 
 §6 Making changes
 Change a dose by modifying the existing order (stop it and replace it); resume a held order rather than duplicating it. Document the reconciliation in a progress note: each change and the document it comes from, citing the documents and results relied on.
+
+§7 Potassium
+Do not start or resume a potassium-raising drug (a mineralocorticoid antagonist, an ACE inhibitor or ARB, or a potassium supplement) when the most recent potassium after discharge is above 5.0 mmol/L, whatever the discharge documents say. Keep a held order held, place no new medication order, and create a Task for the PCP due when the next potassium is expected.

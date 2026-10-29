@@ -4,8 +4,9 @@
 // read for its action, the conditional resume checked against the latest valid creatinine after
 // discharge (§2: a result in the chart, an Observation or a filed laboratory report), the formulary
 // substitution (§3: marked anywhere in the summary, on the line or in its own section), aliases (§4: a line and a chart order name
-// the same drug when normalize.ts reads them as the same ingredient), and the home medications no
-// line addresses (§5). It never imports expected.ts or overlay constants (lint:
+// the same drug when normalize.ts reads them as the same ingredient), the home medications no
+// line addresses (§5), and the potassium rule (§7, P19): above 5.0 mmol/L after discharge, a start
+// or resume of a potassium-raising drug becomes a Task, whatever its line says. It never imports expected.ts or overlay constants (lint:
 // no-policy-expected-import).
 import type { Json } from '../../packages/grader/check.ts';
 import type { WorldView } from '../../packages/grader/matrix/types.ts';
@@ -17,6 +18,13 @@ const SCR = '2160-0';
 const LAB_REPORT = '11502-2';
 // A filed report's creatinine line, 'Creatinine   1.32 mg/dL   (0.74-1.35)'.
 const REPORT_SCR = /^Creatinine\s+(\d+(?:\.\d+)?) mg\/dL/m;
+// Its potassium line, 'Potassium   5.4 mmol/L   (3.5-5.1) H' (§7).
+const REPORT_K = /^Potassium\s+(\d+(?:\.\d+)?) mmol\/L/m;
+const K = '2823-3';
+// §7: the potassium above which no potassium-raising drug is started or resumed, and the drugs it
+// names: a mineralocorticoid antagonist, an ACE inhibitor or ARB, or a potassium supplement.
+const K_LIMIT = 5.0;
+const RAISES_K = /^(?:spironolactone|eplerenone|finerenone|\w+pril|\w+sartan|potassium \w+)$/;
 // A result a clinician may act on: final, or final and later amended or corrected.
 const VALID = new Set(['final', 'amended', 'corrected']);
 
@@ -52,18 +60,22 @@ export function derive(world: WorldView): Json {
     [...textOf(summary).matchAll(/formulary substitution.*?\b(\w+) \d+ mg[^.]*?(?:in place of|for) home (\w+)/gi)].map((m) => [ingredient(m[1]!), ingredient(m[2]!)] as const),
   );
 
-  // Latest valid creatinine after discharge (§2): a result Observation, or the creatinine line of
-  // a laboratory report filed to the chart (an outside lab's), at the time it was filed.
-  const observed = (world.all('Observation') as ReadonlyArray<R & { status?: string; subject?: { reference?: string }; code?: { coding?: Array<{ system?: string; code?: string }> }; effectiveDateTime?: string; valueQuantity?: { value?: number } }>)
-    .filter((o) => o.subject?.reference === pt && VALID.has(o.status ?? '') && (o.code?.coding ?? []).some((c) => c.system === LOINC && c.code === SCR))
-    .map((o) => ({ id: ref(o), at: o.effectiveDateTime ?? '', value: o.valueQuantity!.value!, line: null as string | null }));
-  const reported = (world.all('DocumentReference') as readonly Doc[])
-    .filter((d) => d.subject?.reference === pt && d.status === 'current' && VALID.has(d.docStatus ?? '') && (d.type?.coding ?? []).some((c) => c.system === LOINC && c.code === LAB_REPORT))
-    .flatMap((d) => {
-      const m = REPORT_SCR.exec(textOf(d));
-      return m ? [{ id: ref(d), at: d.date ?? '', value: Number(m[1]), line: `Creatinine ${m[1]} mg/dL` as string | null }] : [];
-    });
-  const scr = [...observed, ...reported].filter((x) => Date.parse(x.at) > Date.parse(discharged)).sort((a, b) => Date.parse(b.at) - Date.parse(a.at))[0]!;
+  // Latest valid result after discharge (§2 creatinine, §7 potassium): a result Observation, or the
+  // line of a laboratory report filed to the chart (an outside lab's), at the time it was filed.
+  const latest = (loinc: string, line: RegExp, unit: string, name: string) => {
+    const observed = (world.all('Observation') as ReadonlyArray<R & { status?: string; subject?: { reference?: string }; code?: { coding?: Array<{ system?: string; code?: string }> }; effectiveDateTime?: string; valueQuantity?: { value?: number } }>)
+      .filter((o) => o.subject?.reference === pt && VALID.has(o.status ?? '') && (o.code?.coding ?? []).some((c) => c.system === LOINC && c.code === loinc))
+      .map((o) => ({ id: ref(o), at: o.effectiveDateTime ?? '', value: o.valueQuantity!.value!, line: null as string | null }));
+    const reported = (world.all('DocumentReference') as readonly Doc[])
+      .filter((d) => d.subject?.reference === pt && d.status === 'current' && VALID.has(d.docStatus ?? '') && (d.type?.coding ?? []).some((c) => c.system === LOINC && c.code === LAB_REPORT))
+      .flatMap((d) => {
+        const m = line.exec(textOf(d));
+        return m ? [{ id: ref(d), at: d.date ?? '', value: Number(m[1]), line: `${name} ${m[1]} ${unit}` as string | null }] : [];
+      });
+    return [...observed, ...reported].filter((x) => Date.parse(x.at) > Date.parse(discharged)).sort((a, b) => Date.parse(b.at) - Date.parse(a.at))[0];
+  };
+  const scr = latest(SCR, REPORT_SCR, 'mg/dL', 'Creatinine')!;
+  const k = latest(K, REPORT_K, 'mmol/L', 'Potassium');
 
   const meds = (world.all('MedicationRequest') as readonly Med[]).filter((m) => m.subject?.reference === pt && (m.status === 'active' || m.status === 'on-hold'));
   const chart = (drug: string) => meds.filter((m) => ingredient(m.medicationCodeableConcept) === drug);
@@ -115,6 +127,13 @@ export function derive(world: WorldView): Json {
       from();
     } else throw new Error(`unread discharge line: ${line}`);
   }
+  // §7: above the limit, a start or resume of a potassium-raising drug becomes a Task; a stop stands.
+  if (k && k.value > K_LIMIT) {
+    for (const [drug, change] of Object.entries(out)) {
+      const c = change as { action?: string };
+      if ((c.action === 'start' || c.action === 'resume') && RAISES_K.test(drug.replace('_', ' '))) out[drug] = { ...(change as Record<string, Json>), action: 'task' };
+    }
+  }
   // §5: active home medications no line addresses stay as they are, and the PCP hears of them.
   const unaddressed = meds.filter((m) => m.status === 'active' && !addressed.has(ingredient(m.medicationCodeableConcept)));
   unchanged.push(...unaddressed.map(ref));
@@ -123,6 +142,7 @@ export function derive(world: WorldView): Json {
     patient: pt,
     sources: { summary: ref(summary), addendum: addendum ? ref(addendum) : null, correction, lines: ruling, ignored: summaries.slice(1).map(ref) },
     scr: out.scr!,
+    k: k ? { id: k.id, mmol_l: k.value, threshold: K_LIMIT, line: k.line } : null,
     furosemide: out.furosemide!,
     spironolactone: out.spironolactone!,
     potassium_chloride: out.potassium_chloride!,

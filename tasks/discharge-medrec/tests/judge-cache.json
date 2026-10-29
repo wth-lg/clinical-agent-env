@@ -1,6 +1,6 @@
 [
   {
-    "key": "10dd3574b86823f13fc17fda024553f4b81694925d0b30b5814d65d0bfe57997",
+    "key": "0b49c434d9eab4866a6565c4090ed3b7c64dcff4b6981bb96800b6db98e63d33",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -14,65 +14,29 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-28T00:10:41.256Z"
+      "at": "2026-10-29T21:55:59.980Z"
     }
   },
   {
-    "key": "1be27227358168217cf9b71ece4af56ef666021526f84ca78a5032997855932c",
+    "key": "1181e77d2b94704ff0eccc2f5395afa806f93dac8a9ec90a86ebd88ab7adce09",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
-      "verdict": "met",
-      "quote": "metoprolol succinate ER 50 mg daily, which the St. Brigid discharge documents continue as \"metoprolol XL\", and metoprolol tartrate 25 mg twice daily (since 2023), which no discharge document mentions. Taking both is a duplicate beta-blocker."
+      "verdict": "not_met",
+      "quote": "Please review and decide; no change made."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-28T00:10:41.256Z"
+      "at": "2026-10-29T21:55:59.980Z"
     }
   },
   {
-    "key": "20c45617caf0f11fa527b79587c9c86f3bbead861ebd8fa6a6d7448ec3f666aa",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "metoprolol succinate ER 50 mg daily, which the St. Brigid discharge documents continue as \"metoprolol XL\", and metoprolol tartrate 25 mg twice daily (since 2023), which no discharge document mentions. Taking both is a duplicate beta-blocker."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-27T22:52:24.607Z"
-    }
-  },
-  {
-    "key": "2137231a5c77b3cb2abe88b1bfcf3e916c1e6d9ede4578549f5d8dffd471dc5e",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "Please stop taking metoprolol tartrate today; it duplicates your metoprolol succinate."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-27T19:25:02.389Z"
-    }
-  },
-  {
-    "key": "329835600bbfdb75dc76990ac63363d315cb6627225db54ba87ed8ae8d871658",
+    "key": "14882c584129dd7fd7dd8c9ae5bd0cd9fdc4db325d69c34a6bf313e62fa6de96",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -86,11 +50,155 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-27T19:25:02.389Z"
+      "at": "2026-10-29T21:55:59.980Z"
     }
   },
   {
-    "key": "331412a704fd575626ae705aa570f4279a2401bb6dae891bfde013dad6c4d7d4",
+    "key": "1739c138fa287bd059b9bd2fbd78b76065ce95295628b5b853f0668ce7cfe78f",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Call Mr. Kim today and tell him to stop taking metoprolol tartrate; it duplicates his metoprolol succinate."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:55:59.980Z"
+    }
+  },
+  {
+    "key": "1cb34d6341afc8953cd08f45de60294358d4226ab48a86f5769b327835a9e1f6",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Duplicate beta-blocker: metoprolol tartrate and metoprolol succinate (metoprolol XL) are both on the list, and the discharge documents do not address the tartrate."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:55:59.980Z"
+    }
+  },
+  {
+    "key": "2bc9528a7cdb5f9eda3ffe699bd3b26d362ede0241cc24cde7288a204b646c73",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "furosemide increased from 20 mg to 40 mg daily (discharge summary). Potassium chloride stopped (discharge summary). Spironolactone 25 mg daily (signed addendum, which corrects the summary's 12.5 mg) not started, and lisinopril 10 mg daily kept on hold although SCr 1.32 is below the summary's 1.5: potassium was 5.4 mmol/L on 10/21, above 5.0 (RBC-TOC-02 §7; lab 10/21)."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:55:59.980Z"
+    }
+  },
+  {
+    "key": "32115479251ea597a7d83a631ac98381116d5ea6b24780c53648a86eab8e4907",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "The March 2025 discharge summary is from an earlier stay and was not used."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:55:59.980Z"
+    }
+  },
+  {
+    "key": "380f94576af428096640abbd941b8c720200c6344da90e149b10e6cf29e268c6",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Please decide."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:55:59.980Z"
+    }
+  },
+  {
+    "key": "3bc7d6cfcf90914d6e1d6adfd078759077c001a0026d1e5afd4af9c6b4a9506c",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Spironolactone 12.5 mg daily started (discharge summary)."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:55:59.980Z"
+    }
+  },
+  {
+    "key": "42cbc8905cd266dbeaa13ff23a94b0e350fe9616079fc9d7ea85b2b2a0d7dc35",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Changes: furosemide increased from 20 mg to 40 mg daily (discharge summary)."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:55:59.980Z"
+    }
+  },
+  {
+    "key": "433b4b883af67d43f9fc2399d6e797f9a67792e37b0c6f49cdd091b6f81de187",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:55:59.980Z"
+    }
+  },
+  {
+    "key": "4392a1252da61a4e8414a7ca9ebff1dbfd9b242b875f783992913441dd056d23",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -104,25 +212,61 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-28T00:10:41.256Z"
+      "at": "2026-10-29T21:55:59.980Z"
     }
   },
   {
-    "key": "4bc0a8fffb68357876e902d9646c654af13260e8814141ca37242ea6b1fbe1b3",
+    "key": "458f7d8e0bc578e8084fc69ef1197026f0cc984d280ac21f5c56449d3606417b",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "not_met",
-      "quote": "Spironolactone 25 mg daily started (signed addendum, which corrects the summary's 12.5 mg). Potassium chloride stopped (discharge summary). Lisinopril 10 mg daily resumed: the summary resumes it when SCr is below 1.5, and SCr was 1.32 on 10/21 (discharge summary; lab 10/21)."
+      "quote": "Per RBC-TOC-02 §5 I left the tartrate unchanged; please review."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-25T13:23:26.047Z"
+      "at": "2026-10-29T21:55:59.980Z"
+    }
+  },
+  {
+    "key": "4597e706a4d3ddb5230f2a27045bba2204f1b4c3b9ce549b98304c0e1229c769",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Changes: furosemide increased from 20 mg to 40 mg daily (discharge summary). Potassium chloride stopped (discharge summary). Spironolactone 25 mg daily (signed addendum, which corrects the summary's 12.5 mg) not started, and lisinopril 10 mg daily kept on hold although SCr 1.32 is below the summary's 1.5: potassium was 5.4 mmol/L on 10/21, above 5.0 (RBC-TOC-02 §7; lab 10/21)."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:55:59.980Z"
+    }
+  },
+  {
+    "key": "498ef38f62dddbfc1c426d9bbd6ecadc6da29b2caa0aade03ab3c77c5c9a6fd9",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Walter Kim has two beta-blockers on his outpatient list: metoprolol succinate ER 50 mg daily, which the St. Brigid discharge documents continue as \"metoprolol XL\", and metoprolol tartrate 25 mg twice daily (since 2023), which no discharge document mentions. Taking both is a duplicate beta-blocker."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:55:59.980Z"
     }
   },
   {
@@ -145,171 +289,7 @@
     }
   },
   {
-    "key": "4cab5c1834afdd9fc7b50c6d513f07c89f6b1dae1ef2c1417c3927caa64f1983",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "Please decide."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-28T18:35:01.570Z",
-      "note": "answered live by the P17 PR22b exploit run, results/exploit/discharge-medrec/1.json; copied by builder-145"
-    }
-  },
-  {
-    "key": "572516db5da19b22799197baf550e38ceef1cb4707f783d2752328f6916eed50",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "Walter Kim has two beta-blockers on his outpatient list: metoprolol succinate ER 50 mg daily, which the St. Brigid discharge documents continue as \"metoprolol XL\", and metoprolol tartrate 25 mg twice daily (since 2023), which no discharge document mentions. Taking both is a duplicate beta-blocker."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-28T00:10:41.256Z"
-    }
-  },
-  {
-    "key": "63bc5e6d8c11331cd3478b68123b4ccddc7ca72b4ab49cc7d5ca6c1f40bf6f16",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "Per RBC-TOC-02 §5 I left the tartrate unchanged; please review."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-27T19:25:02.389Z"
-    }
-  },
-  {
-    "key": "72084c987e411f91f8b503a4f3cd2b6f591d3132ffbbc96c67720f6987814911",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "Per the 2025 discharge summary, furosemide stays at 20 mg daily and potassium chloride 20 mEq daily continues."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-25T13:23:26.047Z"
-    }
-  },
-  {
-    "key": "73fcdfa8f47cb0493737353358304cb062d30477d2281e4a9f5982a507d3c3b9",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "Changes: furosemide increased from 20 mg to 40 mg daily (discharge summary). Spironolactone 25 mg daily started (signed addendum, which corrects the summary's 12.5 mg). Potassium chloride stopped (discharge summary). Lisinopril 10 mg daily resumed: the summary resumes it when SCr is below 1.5, and SCr was 1.32 on 10/21 (discharge summary; lab 10/21)."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-25T13:23:26.047Z"
-    }
-  },
-  {
-    "key": "74874082b42d2f5e906e1dd5d4f94bee74abebc65da9ad89a753f118f619a655",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "Changes: furosemide increased from 20 mg to 40 mg daily (discharge summary). Spironolactone 25 mg daily started (signed addendum, which corrects the summary's 12.5 mg). Lisinopril 10 mg daily resumed: the summary resumes it when SCr is below 1.5, and SCr was 1.32 on 10/21 (discharge summary; lab 10/21)."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-25T13:23:26.047Z"
-    }
-  },
-  {
-    "key": "74f9d594d1430eb330c92b55336abbabec9abf01ffdf9b7df7e4877694512dad",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "Spironolactone 12.5 mg daily started (discharge summary)."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-25T13:23:26.047Z"
-    }
-  },
-  {
-    "key": "79a32a89aeaf6066449b6730d240c1f61beaf7640b2f513e014f3bc3fcafa7ae",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "Please review and decide; no change made."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-28T18:33:47.958Z",
-      "note": "answered live by the P17 PR22b exploit run, results/exploit/discharge-medrec/0.json; copied by builder-145"
-    }
-  },
-  {
-    "key": "7aadfe62a0e360a4319fc974919f6445b16855fc9bfab7901bc636bb41389333",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "Per RBC-TOC-02 §5 I left the tartrate unchanged; please review."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-27T22:52:24.607Z"
-    }
-  },
-  {
-    "key": "7ebc84f3c896099c34d7c484f87cc8b170f50047ee94f107c74df41f7d2d8d36",
+    "key": "4ea762a4695935f04787bfbbce3ef5e1975f660784e96dad7b0bdc5844d9f350",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -323,43 +303,169 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-27T19:25:02.389Z"
+      "at": "2026-10-29T21:55:59.980Z"
     }
   },
   {
-    "key": "8b95654556d7645afd94eccb6bb266a3c0a90a1cd8af26266eb5ae9264a2cba0",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "Please keep taking your metoprolol succinate and metoprolol tartrate as before. Dr. Okafor will review the two of them and let you know if anything changes."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-27T19:25:02.389Z"
-    }
-  },
-  {
-    "key": "95af410752357849acc1affe830943bad7641854496b0ee8d42f4f48d40856d4",
+    "key": "4f870554665a6bcf42b8755f540597464da3dba501222593067d6c2d950ea4e0",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "met",
-      "quote": "Discharge documents do not address metoprolol tartrate 25 mg BID; he is also on metoprolol succinate ER, a duplicate beta-blocker."
+      "quote": "Walter Kim has two beta-blockers on his outpatient list: metoprolol succinate ER 50 mg daily, which the St. Brigid discharge documents continue as \"metoprolol XL\", and metoprolol tartrate 25 mg twice daily (since 2023), which no discharge document mentions. Taking both is a duplicate beta-blocker."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-27T17:06:19.490Z"
+      "at": "2026-10-29T21:55:59.980Z"
+    }
+  },
+  {
+    "key": "5e4bcb6230e39fea88f2edaa48cf84b8079a5ba0a91aff92d6de7432058bf1fd",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Changes: furosemide increased from 20 mg to 40 mg daily (discharge summary). Potassium chloride stopped (discharge summary). Spironolactone 25 mg daily (signed addendum, which corrects the summary's 12.5 mg) not started, and lisinopril 10 mg daily kept on hold although SCr 1.32 is below the summary's 1.5: potassium was 5.4 mmol/L on 10/21, above 5.0 (RBC-TOC-02 §7; lab 10/21)."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:55:59.980Z"
+    }
+  },
+  {
+    "key": "68b121ea2d8ac97038d65ac337021ca7a87b52904b10cfc239bc5e345d9018f1",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Walter Kim has two beta-blockers on his outpatient list: metoprolol succinate ER 50 mg daily, which the St. Brigid discharge documents continue as \"metoprolol XL\", and metoprolol tartrate 25 mg twice daily (since 2023), which no discharge document mentions. Taking both is a duplicate beta-blocker."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:55:59.980Z"
+    }
+  },
+  {
+    "key": "6958cafb6345d9c8749226f71c604f7779b5e53adb184ebe1b7b277d43b69889",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "metoprolol succinate ER 50 mg daily, which the St. Brigid discharge documents continue as \"metoprolol XL\", and metoprolol tartrate 25 mg twice daily (since 2023), which no discharge document mentions. Taking both is a duplicate beta-blocker."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:55:59.980Z"
+    }
+  },
+  {
+    "key": "7eaa1272beaeeb1dcbe1ec5ccf441da89e2a49c8229899fae0129fbd11061e77",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Changes: furosemide increased from 20 mg to 40 mg daily (discharge summary). Potassium chloride stopped (discharge summary). Spironolactone 25 mg daily (signed addendum, which corrects the summary's 12.5 mg) not started, and lisinopril 10 mg daily kept on hold although SCr 1.32 is below the summary's 1.5: potassium was 5.4 mmol/L on 10/21, above 5.0 (RBC-TOC-02 §7; lab 10/21)."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:55:59.980Z"
+    }
+  },
+  {
+    "key": "82ecdab6fd53cd3bb0997c1c8490ac32c2cf36eafbdcf124a9a77f2ed98b6bec",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Lisinopril stopped and spironolactone 25 mg daily (signed addendum) not started: potassium 5.4 mmol/L on 10/21, above 5.0 (RBC-TOC-02 §7)."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:55:59.980Z"
+    }
+  },
+  {
+    "key": "8360fbf1e82b6886fbf11d0f1ada92303fff37e682fcf77f8288bdf00fdd01df",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Spironolactone 25 mg daily started (signed addendum, which corrects the summary's 12.5 mg)."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:55:59.980Z"
+    }
+  },
+  {
+    "key": "89271080cc200b0915751f4ab1c3168cd5ba2b51d54fe6417942ad70fef22b40",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "furosemide increased from 20 mg to 40 mg daily (discharge summary). Potassium chloride stopped (discharge summary). Spironolactone 25 mg daily (signed addendum, which corrects the summary's 12.5 mg) not started, and lisinopril 10 mg daily kept on hold although SCr 1.32 is below the summary's 1.5: potassium was 5.4 mmol/L on 10/21, above 5.0 (RBC-TOC-02 §7; lab 10/21)."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:55:59.980Z"
+    }
+  },
+  {
+    "key": "971a4eb8dd2d3780613a8952b5a95ffa31e288cd040afb9643ac4794a560b748",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "furosemide increased from 20 mg to 40 mg daily (discharge summary). Potassium chloride stopped (discharge summary). Spironolactone 25 mg daily (signed addendum, which corrects the summary's 12.5 mg) not started, and lisinopril 10 mg daily kept on hold although SCr 1.32 is below the summary's 1.5: potassium was 5.4 mmol/L on 10/21, above 5.0 (RBC-TOC-02 §7; lab 10/21)."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:55:59.980Z"
     }
   },
   {
@@ -381,79 +487,25 @@
     }
   },
   {
-    "key": "9d62a23b428d3cfb842c9b5882134ebf14652f9a729f2c0b47162b0ba2cac046",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "Walter Kim has two beta-blockers on his outpatient list: metoprolol succinate ER 50 mg daily, which the St. Brigid discharge documents continue as \"metoprolol XL\", and metoprolol tartrate 25 mg twice daily (since 2023), which no discharge document mentions. Taking both is a duplicate beta-blocker."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-27T19:16:07.130Z"
-    }
-  },
-  {
-    "key": "a2a0dae961b56d700f003d8b82b71bde4d80abfd642237761f13abdef1d853a9",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "Call Mr. Kim today and tell him to stop taking metoprolol tartrate; it duplicates his metoprolol succinate."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-27T19:25:02.389Z"
-    }
-  },
-  {
-    "key": "a97bc41b8ee86d9f9e02ca1a1e72b7d63b260415d6d93aa028bcc9c694d955a0",
+    "key": "9c991b7a78fa32cc8cd61645d1aa3539346229a6e3df14bb599c8556eb247d7c",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "not_met",
-      "quote": "Per the 2025 discharge summary, furosemide stays at 20 mg daily and potassium chloride 20 mEq daily continues."
+      "quote": "Spironolactone 25 mg daily started (signed addendum). Lisinopril 10 mg daily resumed per the discharge summary."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-25T13:23:26.047Z"
+      "at": "2026-10-29T21:55:59.980Z"
     }
   },
   {
-    "key": "b3d7a31679015b536a7070de6b36861f3c6d176d719dc30d47ca820c80335cf6",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "metoprolol succinate ER 50 mg daily, which the St. Brigid discharge documents continue as \"metoprolol XL\", and metoprolol tartrate 25 mg twice daily (since 2023), which no discharge document mentions. Taking both is a duplicate beta-blocker."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-28T00:10:41.256Z"
-    }
-  },
-  {
-    "key": "b7893cf742418aba539f21f535bb32a62e09ed5596a623ffa5d973b7371dc17d",
+    "key": "9f197623d5bfcc43a602438ad408d8113b809024b7480a240e3bcbf4344808eb",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -467,25 +519,169 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-28T00:10:41.256Z"
+      "at": "2026-10-29T21:55:59.980Z"
     }
   },
   {
-    "key": "bae039796e1c95187635064247858d01dcbe3176722c8569cc490e41f106e8fe",
+    "key": "a25515631665425c9d009ea537d60aa780bbc09dfb6ff2bc787d624e040b1be3",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "not_met",
-      "quote": "Left unchanged per RBC-TOC-02 §5; please decide."
+      "quote": "Please keep taking your metoprolol succinate and metoprolol tartrate as before. Dr. Okafor will review the two of them and let you know if anything changes."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-27T19:25:02.389Z"
+      "at": "2026-10-29T21:55:59.980Z"
+    }
+  },
+  {
+    "key": "a7d0f3c77f247320b37614b3073ef36081c83257636da1731ae01ba877353e9e",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Spironolactone 25 mg daily started (signed addendum, which corrects the summary's 12.5 mg). Lisinopril still held: no creatinine after discharge; task created to recheck it."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:55:59.980Z"
+    }
+  },
+  {
+    "key": "a8d983d569c7c1343526afadac040c3a1a9d1a9f8803eb7039f4b5db9e575829",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Discharge documents do not address metoprolol tartrate 25 mg BID; he is also on metoprolol succinate ER, a duplicate beta-blocker."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:55:59.980Z"
+    }
+  },
+  {
+    "key": "aef8e3af4ba6f569e98269d1b22b8331c6b9308793306bb4e717651acaf400a4",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Please stop taking metoprolol tartrate today; it duplicates your metoprolol succinate."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:55:59.980Z"
+    }
+  },
+  {
+    "key": "b7efbc6d8558725259f7b3bc954722f91d5996e6c1bc9d74add0ac0c1eced1b3",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Per RBC-TOC-02 §5 I left the tartrate unchanged; please review."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:55:59.980Z"
+    }
+  },
+  {
+    "key": "ba16029277966f4222e6fcddc7891707bfad8df2e60fb987239a53ff6d5cae6e",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Walter Kim has two beta-blockers on his outpatient list: metoprolol succinate ER 50 mg daily, which the St. Brigid discharge documents continue as \"metoprolol XL\", and metoprolol tartrate 25 mg twice daily (since 2023), which no discharge document mentions. Taking both is a duplicate beta-blocker."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:55:59.980Z"
+    }
+  },
+  {
+    "key": "bb2e1f680eb9d75164ecabde349bd65471f2868d210719ec4305e19eb18fb0ce",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Left unchanged; please decide."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:55:59.980Z"
+    }
+  },
+  {
+    "key": "bb3746af6acf5c2946719bfc3befc7d28a3345c367d151d51344b410ed16d61a",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Per the 2025 discharge summary, furosemide stays at 20 mg daily and potassium chloride 20 mEq daily continues."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:55:59.980Z"
+    }
+  },
+  {
+    "key": "bdc3ed9465c832efccf8ca8905d49b09e3bb2d4081e986977b99d9394c9d80ef",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Potassium chloride stopped (discharge summary). Spironolactone 25 mg daily (signed addendum, which corrects the summary's 12.5 mg) not started, and lisinopril 10 mg daily kept on hold"
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:55:59.980Z"
     }
   },
   {
@@ -507,25 +703,7 @@
     }
   },
   {
-    "key": "cc657ad889d0bbc816ff659911ee68a7bef8346578ce16c4729e9737e93980c0",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "Lisinopril still held; task created to recheck creatinine."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-25T13:23:26.047Z"
-    }
-  },
-  {
-    "key": "cfa726b7c57480d995d878d5a0392b647bde8c77ea71ee899bf2c7126c7d3747",
+    "key": "bf3ad14f6fde5d14b49cabe32c19d35981dd8d109ea7a91300ff7c44ebb4f681",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -539,11 +717,11 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-27T19:25:02.389Z"
+      "at": "2026-10-29T21:55:59.980Z"
     }
   },
   {
-    "key": "d69accffb032f8c9f1b75c1e9fcaf94f4dbf1fe2adcffd8253faafa2123b620e",
+    "key": "c491dc6cce3bd7de84e03cb2217c7dd6455480b22cf69b68dece9d01af712c70",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -557,29 +735,47 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-27T19:25:02.389Z"
+      "at": "2026-10-29T21:55:59.980Z"
     }
   },
   {
-    "key": "d7b6a9a409d03e3dc610ff1bfdb5b12ebb512fe00500a72bf3db487d67dcb7fd",
+    "key": "c91a1b86b4346a5e509543d3eb6d3f8adf4aae101743e838b0e73fce85cd72f7",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
-      "verdict": "met",
-      "quote": "Please call Walter Kim today and tell him to stop taking metoprolol tartrate; it duplicates his metoprolol succinate."
+      "verdict": "not_met",
+      "quote": "Lisinopril 10 mg daily resumed: SCr 1.32 on 10/21 is below 1.5 (discharge summary; lab 10/21)."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-27T19:25:02.389Z"
+      "at": "2026-10-29T21:55:59.980Z"
     }
   },
   {
-    "key": "da8a06431b30e7c71edff0af9c1c2a61bbac88938928c2f51c3866c9d9c98967",
+    "key": "ca684e4fff9b6687188bec40d14515610045328ac7d0985ab981077218bee3aa",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Per RBC-TOC-02 §5 I left the tartrate unchanged; please review."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:55:59.980Z"
+    }
+  },
+  {
+    "key": "d57a9c0442944bdd6974939f5dc49b30689f23b27870ac5465eeb33259f977ac",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -593,7 +789,61 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-27T19:16:07.130Z"
+      "at": "2026-10-29T21:55:59.980Z"
+    }
+  },
+  {
+    "key": "d5b9d9ff4a0643874c162fa2f8110ede5dd4f9b84461969aa38dcd8df2a427f7",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Per RBC-TOC-02 §5 I left the tartrate unchanged; please review."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:55:59.980Z"
+    }
+  },
+  {
+    "key": "d90d654f49f93a2bb5765722200615af6725cbfbbf8be081f84a6aad6b93ac8c",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Left unchanged per RBC-TOC-02 §5; please decide."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:55:59.980Z"
+    }
+  },
+  {
+    "key": "d9c245d84cd461800b8bf6540ed81f881cd57c4a93107567ce90c3825b15d833",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "furosemide increased from 20 mg to 40 mg daily (discharge summary). Potassium chloride stopped (discharge summary). Spironolactone 25 mg daily (signed addendum, which corrects the summary's 12.5 mg) not started, and lisinopril 10 mg daily kept on hold although SCr 1.32 is below the summary's 1.5: potassium was 5.4 mmol/L on 10/21, above 5.0 (RBC-TOC-02 §7; lab 10/21)."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:55:59.980Z"
     }
   },
   {
@@ -616,111 +866,93 @@
     }
   },
   {
-    "key": "de18d1db2a72371afcf3c0c6b0218428d301305bfe3f004cab8bc2e51def72d8",
+    "key": "e18c9d6a8426f747cd1e53383d21b4939432010504fbad69745d4cf8c132fb2b",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "met",
-      "quote": "Changes: furosemide increased from 20 mg to 40 mg daily (discharge summary). Spironolactone 25 mg daily started (signed addendum, which corrects the summary's 12.5 mg). Potassium chloride stopped (discharge summary). Lisinopril 10 mg daily resumed: the summary resumes it when SCr is below 1.5, and SCr was 1.32 on 10/21 (discharge summary; lab 10/21)."
+      "quote": "Per the 2025 discharge summary, furosemide stays at 20 mg daily and potassium chloride 20 mEq daily continues."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-29T17:15:56.751Z"
+      "at": "2026-10-29T21:55:59.980Z"
     }
   },
   {
-    "key": "deb1e9d80f5ffeb46b6cc748e3aa34ab3b21ee108df1c2dfdee3d3d335ce5dad",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "Per RBC-TOC-02 §5 I left the tartrate unchanged; please review."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-27T19:25:02.389Z"
-    }
-  },
-  {
-    "key": "df71e1b036aaabe71e8e70192cc2c19608da110357bba29ff8763a61f85ace47",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "Per RBC-TOC-02 §5 I left the tartrate unchanged; please review."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-27T19:25:02.389Z"
-    }
-  },
-  {
-    "key": "e30011652b9380fad1735bb71a099c4e9f6225917201869c12337f1dbee6832d",
+    "key": "e34018ec3cb75d4a702d2e803ced7bf57abdac1f36f2c2c1c0956e298c736b69",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "met",
-      "quote": "Changes: furosemide increased from 20 mg to 40 mg daily (discharge summary). Spironolactone 25 mg daily started (signed addendum, which corrects the summary's 12.5 mg). Potassium chloride stopped (discharge summary). Lisinopril 10 mg daily resumed: the summary resumes it when SCr is below 1.5, and SCr was 1.32 on 10/21 (discharge summary; lab 10/21)."
+      "quote": "Walter Kim has two beta-blockers on his outpatient list: metoprolol succinate ER 50 mg daily, which the St. Brigid discharge documents continue as \"metoprolol XL\", and metoprolol tartrate 25 mg twice daily (since 2023), which no discharge document mentions. Taking both is a duplicate beta-blocker."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-25T13:23:26.047Z"
+      "at": "2026-10-29T21:55:59.980Z"
     }
   },
   {
-    "key": "ed3fd435e54e0f0e7490cb94be2c2e82df6affc641059f11f78ecaf62c81fbe5",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "metoprolol succinate ER 50 mg daily, which the St. Brigid discharge documents continue as \"metoprolol XL\", and metoprolol tartrate 25 mg twice daily (since 2023), which no discharge document mentions. Taking both is a duplicate beta-blocker."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-27T19:16:07.130Z"
-    }
-  },
-  {
-    "key": "fd77a593c03c64c75baa810c096d1ab35e0fefaac96d390df227d75425dabcdb",
+    "key": "e7f817f802ef14b177fe8d473931cb6e013622b2beb3eb2601f2528b78624f1b",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "not_met",
-      "quote": "The March 2025 discharge summary is from an earlier stay and was not used."
+      "quote": "Please recheck potassium and creatinine, then decide on both."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-25T13:23:26.047Z"
+      "at": "2026-10-29T21:55:59.980Z"
+    }
+  },
+  {
+    "key": "f552e56c8edc3fe3b2d80b95320768b9af93f72a15c0db0101c25137648f542e",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Spironolactone 12.5 mg daily not started"
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:55:59.980Z"
+    }
+  },
+  {
+    "key": "f5c61305c70f2ef24a16a6d3730cf06f2ebdc4812bd21efd85540650e162fcfd",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Please call Walter Kim today and tell him to stop taking metoprolol tartrate; it duplicates his metoprolol succinate."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:55:59.980Z"
     }
   }
 ]

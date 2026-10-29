@@ -19,6 +19,7 @@ const oneAt = (drug: string, spec: { daily_mg: number; per_day: number }) => (ev
 const dose = (drug: string, spec: { daily_mg: number; per_day: number }) => `${drug} ${spec.daily_mg} mg ${perDay(spec.per_day)} on one active order`;
 
 const F = expected.furosemide;
+const K_DUE = '2026-10-23 to 2026-10-28';
 const L = expected.lisinopril;
 const K = expected.potassium_chloride;
 const S = expected.sources;
@@ -30,7 +31,10 @@ export const checkText: CheckText = {
     requires: `${dose('furosemide', F)}, replacing ${F.request}`,
     found: (ev) => oneAt('furosemide', F)(ev) || `the old order ${F.request} is still ${show(ev.old_request)}`,
   },
-  spironolactone_25: { requires: `${dose('spironolactone', expected.spironolactone)}, as the discharge addendum corrects it`, found: oneAt('spironolactone', expected.spironolactone) },
+  spironolactone_not_started: {
+    requires: `no spironolactone order: the potassium of ${expected.k.mmol_l} mmol/L in ${expected.k.id} is above ${expected.k.threshold} (RBC-TOC-02 §7)`,
+    found: (ev) => `a spironolactone order (${listed(items(ev.found))})`,
+  },
   kcl_stopped: {
     requires: `potassium chloride stopped (${K.request}), with no other active or held order of it`,
     found: (ev) => {
@@ -38,13 +42,17 @@ export const checkText: CheckText = {
       return ev.status !== 'stopped' && ev.status !== 'completed' ? `${K.request} is ${show(ev.status)}` : `${listed(left)} is still ${left.length > 1 ? 'open' : 'active or on hold'}`;
     },
   },
-  lisinopril_resumed: {
-    requires: `${dose('lisinopril', L)}, with no lisinopril order left on hold`,
+  lisinopril_held: {
+    requires: `${L.request} still on hold and no active lisinopril order: the potassium of ${expected.k.mmol_l} mmol/L is above ${expected.k.threshold} (RBC-TOC-02 §7)`,
     found: (ev) => {
-      const held = items(ev.still_held);
-      if (held.length > 0) return `${listed(held)} is still on hold${items(ev.active).length === 0 ? ', and no lisinopril order is active' : ''}`;
-      return oneAt('lisinopril', L)(ev);
+      const active = items(ev.active);
+      if (active.length > 0) return `an active lisinopril order (${listed(active)})`;
+      return `${L.request} is ${show(ev.status)}`;
     },
+  },
+  k_recheck_task: {
+    requires: `a Task for the patient's PCP due ${K_DUE} whose focus is not the order the PCP is flagged about, or an order that measures potassium starting then (RBC-TOC-02 §7)`,
+    found: () => `no Task for the PCP due ${K_DUE} and no potassium order then`,
   },
   others_unchanged: {
     requires: `${listed(KEPT)} left active and unchanged, and no other new medication order`,
@@ -69,7 +77,7 @@ export const checkText: CheckText = {
   sources_before_orders: {
     requires:
       `each medication order write after its source was shown (RBC-TOC-02 §1): the discharge summary's line (${S.summary}) for the furosemide and potassium chloride changes and its resume rule for lisinopril, ` +
-      `the addendum's correction (${S.addendum}) for spironolactone, the creatinine (${expected.scr.id}) for the lisinopril resume (§2), and the summary read before an order of any other drug`,
+      `the addendum's correction (${S.addendum}) for spironolactone, the creatinine (${expected.scr.id}) for lisinopril (§2), the potassium (${expected.k.id}) for either (§7), and the summary read before an order of any other drug`,
     found: (ev) => {
       const l = fields(items(ev.late)[0]);
       const source = typeof l.line === 'string' ? `"${l.line}" in ${show(l.id)}` : show(l.id);
