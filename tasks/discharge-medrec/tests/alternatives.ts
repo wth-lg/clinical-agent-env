@@ -4,7 +4,7 @@
 // is about, one answer for everything, seeing the addendum or every source only as a search snippet (by the oracle's queries or by drug name), a potassium
 // and creatinine recheck after starting spironolactone).
 import type { Alternative } from '../../../packages/grader/matrix/types.ts';
-import { allMeds, bmpRecheck, change, findPatient, finish, furosemideUp, kclStop, lisinoprilResume, message, MESSAGE, modify, MR, note, order, policy, PT, reads, RX, scr, spironolactone, summaries, summary, writes } from '../solution/steps.ts';
+import { addendum, allMeds, bmpRecheck, change, findPatient, finish, furosemideUp, kclStop, labReport, lisinoprilResume, message, MESSAGE, modify, MR, note, order, policy, PT, reads, RX, scr, scrResults, spironolactone, summaries, summary, writes } from '../solution/steps.ts';
 
 // A Task to Dr. Okafor whose focus is the tartrate order.
 const okaforTask = (description: string) => ({ name: 'create_task', input: { patient: PT, owner: 'Practitioner/pr-okafor', due: '2026-10-26', priority: 'routine', description, focus: `MedicationRequest/${MR.tart}` } });
@@ -286,11 +286,27 @@ export const alternatives: Alternative[] = [
               priority: 'routine',
               subject: 'Walter Kim: other points for the post-discharge visit',
               body: 'His creatinine is 1.32 on 10/21, still above his baseline of about 0.94, with lisinopril resumed and spironolactone started: a basic metabolic panel within a week would be prudent. He is also on no SGLT2 inhibitor for heart failure with reduced ejection fraction; worth discussing at the visit.',
-              about: ['Observation/obs-t4-scr-1021'],
+              about: ['DocumentReference/doc-t4-lab-1021'],
             },
           },
         ],
       },
+      { calls: [note()] },
+      { calls: [finish()] },
+    ],
+  },
+  {
+    id: 'reads_outside_lab_report',
+    why: "P18o R14-07: searches his results first, finds only the inpatient creatinine, then finds the outside lab's report in the notes and reads it whole before resuming lisinopril.",
+    loses: [],
+    script: [
+      { calls: [findPatient] },
+      { calls: [allMeds, summaries, policy] },
+      { calls: [summary, addendum, scrResults] },
+      { calls: [scr] },
+      { calls: [labReport] },
+      { calls: writes },
+      { calls: [message()] },
       { calls: [note()] },
       { calls: [finish()] },
     ],

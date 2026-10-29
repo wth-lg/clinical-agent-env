@@ -37,7 +37,7 @@ describe('contrast-ct-prep', () => {
     expect(d.other_allergies).toContain('AllergyIntolerance/alg-t5-shellfish');
     expect(d.other_allergies).toContain('AllergyIntolerance/alg-t5-pvp');
     // The last creatinine (2025-08-14) is more than 30 days before the scan.
-    expect(d.creatinine).toMatchObject({ latest: 'Observation/obs-t5-scr-0814', required: true, current: false });
+    expect(d.creatinine).toMatchObject({ latest: 'Observation/obs-t5-scr-0924', required: true, current: false });
   });
 
   // The overlay cannot read instruction.md or the policy file, so their prompt-date, weekday and
@@ -48,5 +48,18 @@ describe('contrast-ct-prep', () => {
     const answers = ['8:00 PM', '2:00 AM', '20:00', '02:00', '2026-10-25'];
     const findings = lintWorld(all, [{ source: 'contrast-ct-prep', spec: { prompts: texts, leakage: { answers, texts: texts.map((text, i) => ({ source: i === 0 ? 'instruction.md' : 'RBC-RAD-07', text })) } } }]);
     expect(findings).toEqual([]);
+  });
+
+  // R14-06 (P18o): L2, an outside CMP of 2026-09-24 is the latest creatinine, 29 days before NOW
+  // but 32 before the scan, so §4 still needs a new one; L1', the allergy list labels the 2019
+  // reaction severe ('anaphylaxis (patient report)', added 2021) while the report of the day grades
+  // it moderate, and §1 grades by the record made at the time.
+  it('counts the 30 days back from the scan and grades the reaction by the report of the day', () => {
+    const d = derive(world) as typeof expected;
+    expect(d.creatinine).toEqual({ latest: 'Observation/obs-t5-scr-0924', date: '2026-09-24', required: true, current: false, before: '2026-10-26T09:00:00-04:00' });
+    const allergy = store.get('AllergyIntolerance', 'alg-t5-iohexol') as Extract<(typeof all)[number], { resourceType: 'AllergyIntolerance' }>;
+    expect((allergy.reaction ?? []).map((r) => r.severity)).toContain('severe');
+    expect(d.contrast_allergy.severity).toBe('moderate');
+    expect(d.regimen).toBe('premedicate');
   });
 });

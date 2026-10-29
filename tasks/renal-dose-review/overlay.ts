@@ -13,6 +13,12 @@
 // Traps (design "Wrong paths"): obs-t1-scr-1021 is the latest SCr by date but entered in error;
 // obs-t1-scr-0209 and obs-t1-scr-0512 are stale; obs-t1-wt-0210 is the stale inpatient weight,
 // also stated in the discharge summary. The truth is obs-t1-scr-1020 and obs-t1-wt-1020.
+// P18o lever R14-05: doc-t1-rx-1021 is the pharmacist's flag, written from the 1.88 result after
+// it was issued and before it was marked in error, so its suggestions (keep apixaban 2.5 mg,
+// reduce metformin and gabapentin) are wrong; obs-t1-wt-1022 is a newer weight the patient gave
+// by phone (132 lb, 59.9 kg), coded Body weight Stated (LOINC 3142-7), not the measured body
+// weight (29463-7) RBC-PHARM-07 §1 asks for. The flag is a chart note, not a Communication, so
+// search_notes finds it and no inbox queue of T2 or T6 changes (coordinator, P18o).
 import type { Resource } from '../../packages/env/store.ts';
 import type { Overlay, WorldReader } from '../../packages/env/overlay.ts';
 
@@ -54,8 +60,9 @@ const BASE_CREATININE: Record<string, [value: number, issued: string]> = {
 };
 const SCR_CODE = { coding: [{ system: LOINC, code: '2160-0', display: 'Creatinine [Mass/volume] in Serum or Plasma' }], text: 'Creatinine [Mass/volume] in Serum or Plasma' };
 
-// The attending who signed the discharge summary.
+// The attending who signed the discharge summary, and the clinic pharmacist who flagged him.
 const ATTENDING: Resource = { resourceType: 'Practitioner', id: 'pr-t1-raman', active: true, name: [{ use: 'official', given: ['Priya'], family: 'Raman', suffix: ['MD'] }] };
+const PHARMACIST: Resource = { resourceType: 'Practitioner', id: 'pr-t1-lindqvist', active: true, name: [{ use: 'official', given: ['Grace'], family: 'Lindqvist', suffix: ['PharmD'] }] };
 
 const encounter = (id: string, cls: 'AMB' | 'IMP', type: [string, string], start: string, end: string, provider: { reference: string }): Resource => ({
   resourceType: 'Encounter',
@@ -99,17 +106,19 @@ const creatinine = (id: string, at: string, issued: string, value: number, enc: 
   ...extra,
 });
 
-const weight = (id: string, at: string, issued: string, value: number, unit: 'kg' | '[lb_av]', enc: string): Resource => ({
+const MEASURED: [string, string] = ['29463-7', 'Body weight'];
+const weight = (id: string, at: string, issued: string, value: number, unit: 'kg' | '[lb_av]', enc: string, code: [string, string] = MEASURED, extra: Partial<Extract<Resource, { resourceType: 'Observation' }>> = {}): Resource => ({
   resourceType: 'Observation',
   id,
   status: 'final',
   category: category('vital-signs', 'Vital signs'),
-  code: { coding: [{ system: LOINC, code: '29463-7', display: 'Body weight' }], text: 'Body weight' },
+  code: { coding: [{ system: LOINC, code: code[0], display: code[1] }], text: code[1] },
   subject: SUBJECT,
   encounter: { reference: `Encounter/${enc}` },
   effectiveDateTime: at,
   issued,
   valueQuantity: { value, unit: unit === 'kg' ? 'kg' : 'lb', system: UCUM, code: unit },
+  ...extra,
 });
 
 const FREQ = { BID: [2, 'twice daily'], TID: [3, 'three times daily'], QHS: [1, 'at bedtime'] } as const;
@@ -205,6 +214,23 @@ Hyperlipidemia: continue atorvastatin 40 mg at bedtime.
 
 Maya Okafor, MD`;
 
+// Written from the SCr of 1.88 mg/dL (issued 13:30, marked entered in error at 16:40) and the
+// measured 64.9 kg: eGFR 35, CrCl 28, so each suggestion follows that wrong result.
+const PHARMACY_FLAG = `Riverbend Family Medicine - Clinical Pharmacist Note
+Patient: Harold Vance   MRN 4410-22
+Renal and age dose screen after this week's labs (RBC-PHARM-07).
+
+Labs: SCr 1.88 mg/dL on 10/21/2026 (1.21 mg/dL on 10/20/2026). Weight 143 lb (64.9 kg) on 10/20/2026. Age 82.
+eGFR 35 mL/min/1.73 m2 (CKD-EPI 2021). CrCl 28 mL/min (Cockcroft-Gault, actual weight).
+
+Apixaban 2.5 mg twice daily: age 80 or older and SCr 1.5 mg/dL or higher, two criteria met. Current dose is appropriate; continue.
+Metformin 1000 mg twice daily: eGFR 30-44. Suggest reducing to 500 mg twice daily.
+Gabapentin 600 mg three times daily: CrCl 15-29. Suggest 300 mg once daily.
+
+Flagged to Dr. Okafor for a renal and age dose review.
+
+Grace Lindqvist, PharmD`;
+
 const overlay: Overlay = {
   task: 'T1',
   build(world: WorldReader) {
@@ -231,9 +257,11 @@ const overlay: Overlay = {
       ...creatinineBlood,
       stemiResolved,
       ATTENDING,
+      PHARMACIST,
       encounter('enc-t1-0207', 'IMP', ['32485007', 'Hospital admission (procedure)'], '2026-02-07T14:20:00-05:00', '2026-02-12T11:30:00-05:00', HOSPITAL),
       encounter('enc-t1-0512', 'AMB', ['185347001', 'Encounter for problem (procedure)'], '2026-05-12T09:30:00-04:00', '2026-05-12T10:00:00-04:00', CLINIC),
       encounter('enc-t1-1020', 'AMB', ['185349003', 'Encounter for check up (procedure)'], '2026-10-20T09:00:00-04:00', '2026-10-20T09:20:00-04:00', CLINIC),
+      encounter('enc-t1-1022', 'AMB', ['185317003', 'Telephone encounter (procedure)'], '2026-10-22T10:15:00-04:00', '2026-10-22T10:25:00-04:00', CLINIC),
       condition('cond-t1-af', '49436004', 'Atrial fibrillation (disorder)', '2021-04-14T10:00:00-04:00'),
       condition('cond-t1-t2dm', '44054006', 'Diabetes mellitus type 2 (disorder)', '2015-09-02T10:00:00-04:00'),
       condition('cond-t1-phn', '2177002', 'Postherpetic neuralgia (disorder)', '2023-03-21T10:00:00-04:00'),
@@ -248,6 +276,9 @@ const overlay: Overlay = {
       }),
       weight('obs-t1-wt-0210', '2026-02-10T07:00:00-05:00', '2026-02-10T07:02:00-05:00', 57.0, 'kg', 'enc-t1-0207'),
       weight('obs-t1-wt-1020', '2026-10-20T09:05:00-04:00', '2026-10-20T09:07:00-04:00', 143, '[lb_av]', 'enc-t1-1020'),
+      weight('obs-t1-wt-1022', '2026-10-22T10:20:00-04:00', '2026-10-22T10:22:00-04:00', 132, '[lb_av]', 'enc-t1-1022', ['3142-7', 'Body weight Stated'], {
+        note: [{ time: '2026-10-22T10:22:00-04:00', text: 'Patient estimate by phone, not weighed.' }],
+      }),
       medication('mr-t1-apixaban-5', ['1364445', 'apixaban 5 MG Oral Tablet'], 5, 'BID', '2021-04-14T10:30:00-04:00', 'Non-valvular atrial fibrillation', {
         status: 'stopped',
         statusReason: { text: 'Dose reduced to 2.5 mg twice daily on discharge from St. Brigid Regional' },
@@ -260,6 +291,7 @@ const overlay: Overlay = {
       medication('mr-t1-atorvastatin', ['617311', 'atorvastatin 40 MG Oral Tablet'], 40, 'QHS', '2025-11-03T10:00:00-05:00', 'Hyperlipidemia'),
       note('doc-t1-dc-0212', '2026-02-12T11:30:00-05:00', ['18842-5', 'Discharge summary'], 'enc-t1-0207', { reference: 'Practitioner/pr-t1-raman' }, HOSPITAL, DISCHARGE),
       note('doc-t1-pn-0512', '2026-05-12T10:00:00-04:00', ['11506-3', 'Progress note'], 'enc-t1-0512', OKAFOR, CLINIC, FOLLOW_UP),
+      note('doc-t1-rx-1021', '2026-10-21T14:10:00-04:00', ['11506-3', 'Progress note'], 'enc-t1-1020', { reference: 'Practitioner/pr-t1-lindqvist' }, CLINIC, PHARMACY_FLAG),
     ];
     return {
       put,
@@ -274,7 +306,7 @@ const overlay: Overlay = {
           { quantity: 'crcl', threshold: 30, value: 43.2, label: 'CrCl from obs-t1-scr-1020 and obs-t1-wt-1020' },
         ],
         ages: [{ patient: PT, threshold: 80 }],
-        leakage: { answers: ['59.8', '43.2', '43.18', '59.78'], distractors: ['doc-t1-dc-0212', 'doc-t1-pn-0512', 'obs-t1-scr-1021', 'mr-t1-apixaban'] },
+        leakage: { answers: ['59.8', '43.2', '43.18', '59.78'], distractors: ['doc-t1-dc-0212', 'doc-t1-pn-0512', 'doc-t1-rx-1021', 'obs-t1-scr-1021', 'obs-t1-wt-1022', 'mr-t1-apixaban'] },
       },
     };
   },

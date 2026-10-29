@@ -18,7 +18,11 @@ export const summaries: ScriptCall = { name: 'search_notes', input: { query: 'di
 export const read = (resource_type: string, id: string): ScriptCall => ({ name: 'fhir_read', input: { resource_type, id } });
 export const summary = read('DocumentReference', 'doc-t4-dc-1019');
 export const addendum = read('DocumentReference', 'doc-t4-dc-1019-add');
-export const scr: ScriptCall = { name: 'fhir_search', input: { resource_type: 'Observation', patient: PT, code: '2160-0', sort: '-date' } };
+// The post-discharge creatinine is in the outside lab's filed report (P18o R14-07 L2): a notes
+// search shows its creatinine line. A search of his results finds only the inpatient 1.9.
+export const scr: ScriptCall = { name: 'search_notes', input: { query: 'creatinine', patient: PT } };
+export const labReport = read('DocumentReference', 'doc-t4-lab-1021');
+export const scrResults: ScriptCall = { name: 'fhir_search', input: { resource_type: 'Observation', patient: PT, code: '2160-0', sort: '-date' } };
 export const policy: ScriptCall = { name: 'read_policy', input: { policy_id: 'RBC-TOC-02' } };
 
 type Dose = { value: number; unit: string; frequency: string };
@@ -63,7 +67,7 @@ export const ORACLE_NOTE: NoteFacts = {
   flagged: 'Flagged to Dr. Okafor: metoprolol tartrate 25 mg twice daily is not in the discharge documents, a duplicate beta-blocker; left unchanged (RBC-TOC-02 §5).',
 };
 export const noteText = (f: NoteFacts) => ['Post-discharge medication reconciliation under RBC-TOC-02.', f.sources, f.changes, f.kept, f.flagged].join('\n\n');
-export const CITES = ['DocumentReference/doc-t4-dc-1019', 'DocumentReference/doc-t4-dc-1019-add', 'Observation/obs-t4-scr-1021'];
+export const CITES = ['DocumentReference/doc-t4-dc-1019', 'DocumentReference/doc-t4-dc-1019-add', 'DocumentReference/doc-t4-lab-1021'];
 export const note = (f: Partial<NoteFacts> = {}, cites: string[] = CITES): ScriptCall => ({
   name: 'write_note',
   input: { patient: PT, type: 'progress_note', title: 'Discharge medication reconciliation (RBC-TOC-02)', text: noteText({ ...ORACLE_NOTE, ...f }), cites, cites_policies: ['RBC-TOC-02'] },

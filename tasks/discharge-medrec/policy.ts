@@ -2,7 +2,8 @@
 // "Double derivation"): the patient the instruction names, the discharge documents of his latest
 // hospital stay (§1: the latest signed addendum over the summary), each discharge medication line
 // read for its action, the conditional resume checked against the latest valid creatinine after
-// discharge (§2), the formulary substitution (§3), aliases (§4: a line and a chart order name
+// discharge (§2: a result in the chart, an Observation or a filed laboratory report), the formulary
+// substitution (§3: marked anywhere in the summary, on the line or in its own section), aliases (§4: a line and a chart order name
 // the same drug when normalize.ts reads them as the same ingredient), and the home medications no
 // line addresses (§5). It never imports expected.ts or overlay constants (lint:
 // no-policy-expected-import).
@@ -13,11 +14,14 @@ import { dailyDose, drugOf, type MedicationRequest } from '../../packages/grader
 const NAME = { given: 'Walter', family: 'Kim' };
 const LOINC = 'http://loinc.org';
 const SCR = '2160-0';
+const LAB_REPORT = '11502-2';
+// A filed report's creatinine line, 'Creatinine   1.32 mg/dL   (0.74-1.35)'.
+const REPORT_SCR = /^Creatinine\s+(\d+(?:\.\d+)?) mg\/dL/m;
 // A result a clinician may act on: final, or final and later amended or corrected.
 const VALID = new Set(['final', 'amended', 'corrected']);
 
 type R = Readonly<Record<string, unknown>> & { resourceType: string; id?: string };
-type Doc = R & { date?: string; status?: string; docStatus?: string; type?: { coding?: Array<{ code?: string }> }; relatesTo?: Array<{ code?: string; target?: { reference?: string } }>; context?: { encounter?: Array<{ reference?: string }> }; content?: Array<{ attachment?: { data?: string } }> };
+type Doc = R & { subject?: { reference?: string }; date?: string; status?: string; docStatus?: string; type?: { coding?: Array<{ system?: string; code?: string }> }; relatesTo?: Array<{ code?: string; target?: { reference?: string } }>; context?: { encounter?: Array<{ reference?: string }> }; content?: Array<{ attachment?: { data?: string } }> };
 type Med = R & MedicationRequest & { status?: string; subject?: { reference?: string } };
 
 const textOf = (d: Doc) => (d.content ?? []).map((c) => new TextDecoder().decode(Uint8Array.from(atob(c.attachment?.data ?? ''), (ch) => ch.charCodeAt(0)))).join('\n');
@@ -33,7 +37,7 @@ export function derive(world: WorldView): Json {
   const pt = `Patient/${patient.id}`;
 
   // §1: discharge summaries of the latest stay; an appending signed addendum overrides lines.
-  const docs = (world.all('DocumentReference') as readonly Doc[]).filter((d) => (d as { subject?: { reference?: string } }).subject?.reference === pt && d.status === 'current' && (d.type?.coding ?? []).some((c) => c.code === '18842-5'));
+  const docs = (world.all('DocumentReference') as readonly Doc[]).filter((d) => d.subject?.reference === pt && d.status === 'current' && (d.type?.coding ?? []).some((c) => c.code === '18842-5'));
   const summaries = docs.filter((d) => !(d.relatesTo ?? []).some((x) => x.code === 'appends')).sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''));
   const summary = summaries[0]!;
   const addenda = docs.filter((d) => d.docStatus === 'final' && (d.relatesTo ?? []).some((x) => x.code === 'appends' && x.target?.reference === ref(summary))).sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''));
@@ -43,12 +47,23 @@ export function derive(world: WorldView): Json {
   const lines = textOf(summary).split('\n').filter((l) => l.startsWith('- ')).map((l) => l.slice(2));
   const corrections = addendum ? textOf(addendum).split('\n').filter((l) => /^Correction:/.test(l)) : [];
   const mgOf = (line: string) => Number(/(\d+(?:\.\d+)?) mg/.exec(line)?.[1] ?? NaN);
+  // §3: substitutions the summary marks, substitute ingredient -> home ingredient.
+  const substitutions = new Map(
+    [...textOf(summary).matchAll(/formulary substitution.*?\b(\w+) \d+ mg[^.]*?(?:in place of|for) home (\w+)/gi)].map((m) => [ingredient(m[1]!), ingredient(m[2]!)] as const),
+  );
 
-  // Latest valid creatinine after discharge (§2).
-  const scrs = (world.all('Observation') as ReadonlyArray<R & { status?: string; subject?: { reference?: string }; code?: { coding?: Array<{ system?: string; code?: string }> }; effectiveDateTime?: string; valueQuantity?: { value?: number } }>)
-    .filter((o) => o.subject?.reference === pt && VALID.has(o.status ?? '') && (o.code?.coding ?? []).some((c) => c.system === LOINC && c.code === SCR) && (o.effectiveDateTime ?? '') > discharged)
-    .sort((a, b) => (b.effectiveDateTime ?? '').localeCompare(a.effectiveDateTime ?? ''));
-  const scr = scrs[0]!;
+  // Latest valid creatinine after discharge (§2): a result Observation, or the creatinine line of
+  // a laboratory report filed to the chart (an outside lab's), at the time it was filed.
+  const observed = (world.all('Observation') as ReadonlyArray<R & { status?: string; subject?: { reference?: string }; code?: { coding?: Array<{ system?: string; code?: string }> }; effectiveDateTime?: string; valueQuantity?: { value?: number } }>)
+    .filter((o) => o.subject?.reference === pt && VALID.has(o.status ?? '') && (o.code?.coding ?? []).some((c) => c.system === LOINC && c.code === SCR))
+    .map((o) => ({ id: ref(o), at: o.effectiveDateTime ?? '', value: o.valueQuantity!.value!, line: null as string | null }));
+  const reported = (world.all('DocumentReference') as readonly Doc[])
+    .filter((d) => d.subject?.reference === pt && d.status === 'current' && VALID.has(d.docStatus ?? '') && (d.type?.coding ?? []).some((c) => c.system === LOINC && c.code === LAB_REPORT))
+    .flatMap((d) => {
+      const m = REPORT_SCR.exec(textOf(d));
+      return m ? [{ id: ref(d), at: d.date ?? '', value: Number(m[1]), line: `Creatinine ${m[1]} mg/dL` as string | null }] : [];
+    });
+  const scr = [...observed, ...reported].filter((x) => Date.parse(x.at) > Date.parse(discharged)).sort((a, b) => Date.parse(b.at) - Date.parse(a.at))[0]!;
 
   const meds = (world.all('MedicationRequest') as readonly Med[]).filter((m) => m.subject?.reference === pt && (m.status === 'active' || m.status === 'on-hold'));
   const chart = (drug: string) => meds.filter((m) => ingredient(m.medicationCodeableConcept) === drug);
@@ -73,11 +88,10 @@ export function derive(world: WorldView): Json {
     const fix = corrections.find((c) => named(c) === drug);
     const from = (text = line) => { if (!fix) ruling[drug.replace(' ', '_')] = text; };
     const mg = fix ? mgOf(fix) : mgOf(line);
-    const sub = /formulary substitution for home (\w+)/i.exec(line);
-    if (sub) {
+    const home = substitutions.get(drug);
+    if (home !== undefined) {
       // §3: keep the home drug, order nothing.
       notOrdered.push(drug);
-      const home = ingredient(sub[1]!);
       addressed.add(home);
       unchanged.push(ref(one(home)));
     } else if (/:\s*stop\b/i.test(line)) {
@@ -85,8 +99,8 @@ export function derive(world: WorldView): Json {
       from();
     } else if (/resume home (\d+) mg daily when SCr < (\d+(?:\.\d+)?)/i.test(line)) {
       const [rule, dose, limit] = /resume home (\d+) mg daily when SCr < (\d+(?:\.\d+)?)/i.exec(line)!;
-      const value = scr.valueQuantity!.value!;
-      out.scr = { id: ref(scr), mg_dl: value, threshold: Number(limit) };
+      const value = scr.value;
+      out.scr = { id: scr.id, mg_dl: value, threshold: Number(limit), line: scr.line };
       out[drug] = { request: ref(one(drug)), action: value < Number(limit) ? 'resume' : 'task', daily_mg: Number(dose), per_day: 1 };
       from(rule);
     } else if (/:\s*start\b/i.test(line)) {
@@ -116,6 +130,6 @@ export function derive(world: WorldView): Json {
     unchanged: unchanged.sort(),
     not_ordered: notOrdered,
     message_about: unaddressed.map(ref),
-    cites: [addendum ? ref(addendum) : ref(summary), ref(scr)],
+    cites: [addendum ? ref(addendum) : ref(summary), scr.id],
   };
 }

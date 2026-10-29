@@ -1,20 +1,38 @@
 [
   {
-    "key": "07e151558fbcb7992db28a364d248cd87edaf043267b508c4389bff4da62fd90",
+    "key": "00a5058aaca252847b3f7a0df0562af7039d34a03f20b6a57c5162a9e8562b70",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "not_met",
-      "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+      "quote": "reaction to iohexol in 2019"
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-27T18:15:14.657Z"
+      "at": "2026-10-29T17:23:17.079Z"
+    }
+  },
+  {
+    "key": "032601de40e7d4e48938546324bee72b9331a895e3e302bb384f79d609f6da05",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "after 150 mL IV, classified as a mild reaction, treated with epinephrine"
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T17:23:17.079Z"
     }
   },
   {
@@ -33,24 +51,6 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-27T18:15:14.657Z"
-    }
-  },
-  {
-    "key": "098639e95e5c4ed1a3496cde7557db1b0bd9d405976f10abf0e69f75cbda1d56",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day). That is the risk factor. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-25T16:31:13.845Z"
     }
   },
   {
@@ -108,7 +108,7 @@
     }
   },
   {
-    "key": "100177d50ac9e4dc81945885268d5c01b5470f33fb031955f7ccdfe3728305b3",
+    "key": "0f50621d9b24f7d8ccfd794af01df938c5a6bb1824574d262f90e0bbdedcb45e",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -122,47 +122,47 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-27T18:15:14.657Z"
+      "at": "2026-10-29T17:23:17.079Z"
     }
   },
   {
-    "key": "14b8482e1582e12c8b9cab912d6f047674e99ccfecdf8402003678e64badf66a",
+    "key": "13a21cec6394049c38db03174e9a4e5c788d1d29f54e578e7d5f59d9eab44d47",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "met",
-      "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day). That is the risk factor. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+      "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day). That is the risk factor."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-25T16:31:13.845Z"
+      "at": "2026-10-29T17:23:17.079Z"
     }
   },
   {
-    "key": "16867bb2995b86d18f5dded2031e79df51516ef819dd2af0899bb793d8ab028c",
+    "key": "183f79a637d475fc309060a5253257c4c7075aae7e9f7fd7c7d3a39f3ee15af5",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
-      "verdict": "met",
-      "quote": "That is the risk factor. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+      "verdict": "not_met",
+      "quote": ""
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-25T16:31:13.845Z"
+      "at": "2026-10-29T17:23:17.079Z"
     }
   },
   {
-    "key": "19faac5433f2af1b127d5eecc86458f01f3636c2f60804a1e2222470805795db",
+    "key": "196a3239bd4eabcf7450df8e5d2a1da7e178f93060e42cedbd80294f430039f2",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -176,7 +176,25 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-27T18:15:14.657Z"
+      "at": "2026-10-29T17:23:17.079Z"
+    }
+  },
+  {
+    "key": "1a31b5de94ecac73e01eba37faff97983f54cfacf39566561ad5e1b86bf481d2",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T17:23:17.079Z"
     }
   },
   {
@@ -198,57 +216,39 @@
     }
   },
   {
-    "key": "1da4efb43bba6fcebc1e19a478d8b42f7d3daa9a97af1fe5530e04d23bc3a228",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "after 150 mL IV, classified as a mild reaction, treated with epinephrine"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-29T01:57:41.534Z"
-    }
-  },
-  {
-    "key": "1f1652875815f0b8e0f78dfd2cfca3c4e5533ca36aef949b11d5952753971b7f",
+    "key": "2036c8250aec7220591e91db2f2bb7288db166fe3d59f2d24b10b724ed32e049",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "not_met",
-      "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day)"
+      "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-29T01:57:41.534Z"
+      "at": "2026-10-29T17:23:17.079Z"
     }
   },
   {
-    "key": "23f7008aa3afcb1f6b58d539b9b24a3f6e4f9e18e7345b4deedf092561270fa0",
+    "key": "22d42db7bc9b0a3dbe6e7a849eb18d01382e218b1d3bb35e9da2f91ee865320f",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "not_met",
-      "quote": "reaction to iohexol in 2019"
+      "quote": ""
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-29T01:57:41.534Z"
+      "at": "2026-10-29T17:23:17.079Z"
     }
   },
   {
@@ -270,24 +270,6 @@
     }
   },
   {
-    "key": "25bb0ab4deebbcce547f95a59d14c9f7281fb11294e303c54429c87cdb64e669",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-25T16:31:13.845Z"
-    }
-  },
-  {
     "key": "271375d2ff3829b735c9cdb403aca0b03f00d5a76188d98feca3ee04df61a4e8",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -306,21 +288,21 @@
     }
   },
   {
-    "key": "27b9da59369daf7bf398f8e2247e2025b711c28062f51a8cc1f16fcb841f9f23",
+    "key": "2d33ded654e54714a41ee0a3d5b851e20bdfd278493941b2572288fe6e9be2f6",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "not_met",
-      "quote": ""
+      "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-29T01:57:41.534Z"
+      "at": "2026-10-29T17:23:17.079Z"
     }
   },
   {
@@ -360,6 +342,24 @@
     }
   },
   {
+    "key": "3132db7becf94cb738f4010f8f0994bac005fdfbc93d202804ecffaf8bf9804a",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "That is the risk factor. The allergy list also carries \"Anaphylaxis (patient report)\", added in 2021 from his own account with no record reviewed; the report of the day grades the reaction moderate, and §1 grades it by that record, so §2 applies, not §3. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T17:23:17.079Z"
+    }
+  },
+  {
     "key": "3361a10da56e49a81514bf8c56b4763d9e594490b7233823b29d67508933e498",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -378,25 +378,43 @@
     }
   },
   {
-    "key": "3594bf74735d8bf7d7eaa93fb2268951dc7d42c3d80761a40da1cdecf736d380",
+    "key": "36a8575332716ff1a4c599e597ef2322b83cb4503837c9b2b3d75cdc88f83ef3",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
-      "verdict": "met",
-      "quote": "That is the risk factor. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+      "verdict": "not_met",
+      "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day)"
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-25T16:31:13.845Z"
+      "at": "2026-10-29T17:23:17.079Z"
     }
   },
   {
-    "key": "397df8caf307391e9fd4b6c009a8c1c2a260c6c342cfe1226a6394c5366abff5",
+    "key": "391fe87d97310ee5b881e0ec38a79c0954e00ac9f1608f560e50c6b7079c8d9b",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "That is the risk factor. The allergy list also carries \"Anaphylaxis (patient report)\", added in 2021 from his own account with no record reviewed; the report of the day grades the reaction moderate, and §1 grades it by that record, so §2 applies, not §3. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T17:23:17.079Z"
+    }
+  },
+  {
+    "key": "3d9b72196fa44c12014feac87f22e4caa3eab4f80aa1b9bc706616a1b3cf7163",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -410,25 +428,7 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-27T18:15:14.657Z"
-    }
-  },
-  {
-    "key": "3df645a7d678149f5c9386e14f0e6f810502fe2292e31832749d468e157212e3",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "That is the risk factor. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-25T16:31:13.845Z"
+      "at": "2026-10-29T17:23:17.079Z"
     }
   },
   {
@@ -450,6 +450,24 @@
     }
   },
   {
+    "key": "3f38b6d2fbdc0ef08db272616adf8cf703c0b7246ea4f80bb89b791eeded0728",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T17:23:17.079Z"
+    }
+  },
+  {
     "key": "40e779417d4a1d8baa23e332244a0621ededdcee1221d3d485d4832919ee3045",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -468,39 +486,21 @@
     }
   },
   {
-    "key": "44da9310121e3a2b9f949301debd2c0f475f079b991446b3f44a7decd966e6b4",
+    "key": "44792eb0b72817dc1e23513a8a4d3119e7e249262b9f3f4185804dee242b9579",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
-      "verdict": "met",
-      "quote": "a mild reaction about 30 minutes after 150 mL IV, treated with IM epinephrine"
+      "verdict": "not_met",
+      "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-29T01:57:41.534Z"
-    }
-  },
-  {
-    "key": "45ae5e14a76510187082a21912f734d6f4c226b6ca24957a592c42fcf15deef3",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "That is the risk factor. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-25T16:31:13.845Z"
+      "at": "2026-10-29T17:23:17.079Z"
     }
   },
   {
@@ -522,21 +522,21 @@
     }
   },
   {
-    "key": "4f647f9424e75ec0114bd4e72f59b76cae0c675f021022439f8a4eae10ac2711",
+    "key": "5038dfa685b95160d2fd55cda48cb1167012685be952809df79e3fb1c4553c86",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
-      "verdict": "not_met",
-      "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+      "verdict": "met",
+      "quote": "That is the risk factor. The allergy list also carries \"Anaphylaxis (patient report)\", added in 2021 from his own account with no record reviewed; the report of the day grades the reaction moderate, and §1 grades it by that record, so §2 applies, not §3. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-27T18:15:14.657Z"
+      "at": "2026-10-29T17:23:17.079Z"
     }
   },
   {
@@ -558,21 +558,57 @@
     }
   },
   {
-    "key": "58d8b3a7f30ce899e6828764fd89261e85ef1beb5afd361cea73746ea781729d",
+    "key": "52012fa0d56af8a0bba9fba5708f5d9f49ef1d5452d135cb10cb8be7f596b978",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
-      "verdict": "not_met",
-      "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+      "verdict": "met",
+      "quote": "a mild reaction about 30 minutes after 150 mL IV, treated with IM epinephrine"
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-27T18:15:14.657Z"
+      "at": "2026-10-29T17:23:17.079Z"
+    }
+  },
+  {
+    "key": "53a7127772b7dd2f63a8f3315398670c94819b2785b84aa6c2b3be8713532527",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Your CT scan on Monday 10/26 at 9:00 AM needs a review by the radiologist first because of your past reaction to contrast dye. We will call you before Monday."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T17:23:17.079Z"
+    }
+  },
+  {
+    "key": "577064fb44b8d15a213abf80b1cd69b135413c157548b52f0e063bdbfbbadb74",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day)"
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T17:23:17.079Z"
     }
   },
   {
@@ -594,6 +630,24 @@
     }
   },
   {
+    "key": "5d13ba21c0985f00dc68267668a467d364b383bc54d1fa79b2e7f66c0cf39055",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day). That is the risk factor."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T17:23:17.079Z"
+    }
+  },
+  {
     "key": "5e78a539e6289a59daacda1fdc71602b171034abe9a0a6f9633ba77b3c54dc53",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -609,6 +663,24 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-27T18:15:14.657Z"
+    }
+  },
+  {
+    "key": "5f92f71de191ae6a285ac21dae49d00dde48f1cbf1fc467af304224ae33c707a",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T17:23:17.079Z"
     }
   },
   {
@@ -630,57 +702,75 @@
     }
   },
   {
-    "key": "65cee2fb26e2af80730711221a553304fe598057d4b79e9f4fc632243aa8712b",
+    "key": "69442a51bc5523459210d412d24410d311e31cfa6756fd6a4b36603996ee3e95",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
-      "verdict": "not_met",
-      "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+      "verdict": "met",
+      "quote": "Severe allergic-like reaction to iodinated contrast: no iodinated contrast (§3)."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-27T18:15:14.657Z"
+      "at": "2026-10-29T17:23:17.079Z"
     }
   },
   {
-    "key": "70a2c9b8cd07ba9fb5494948d7d49c391ef89d2d2645cd61b935cb627755e760",
+    "key": "6fcd5a0eac8d59615aeabd3f6a0f536b1c47d85b8207db6a000a5b1cd0d84bcd",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "not_met",
-      "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+      "quote": ""
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-27T18:15:14.657Z"
+      "at": "2026-10-29T17:23:17.079Z"
     }
   },
   {
-    "key": "72e62d170db3e99d999a7674cd0c491456fb15297068d9ba0e7e9651665ba2fd",
+    "key": "7395445fad670838b3a688d3f85e1463eab25ae1880d5918aebbb5555ce9c14e",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "not_met",
-      "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day)"
+      "quote": "iohexol, anaphylaxis (patient report), severe, on the allergy list. Severe allergic-like reaction to iodinated contrast: no iodinated contrast (§3). The shellfish and povidone-iodine allergies are not risk factors. Premedication: none; §3 applies."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-29T01:57:41.534Z"
+      "at": "2026-10-29T17:23:17.079Z"
+    }
+  },
+  {
+    "key": "78418c5327f3d96688bde30931f5d9081e3ef70012fed97355e3703cfcff0d3d",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Prior allergic-like reaction to iodinated contrast (iodixanol, hives in 2017)"
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T17:23:17.079Z"
     }
   },
   {
@@ -702,6 +792,24 @@
     }
   },
   {
+    "key": "7a210072bcaa242414269a0f4fc05ac00c8e9877176ccdf211438f403e5936b4",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T17:23:17.079Z"
+    }
+  },
+  {
     "key": "7a253e52590db35e046f9a79503ad27953ca377b6b63ac1471119d1490bc71f4",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -710,24 +818,6 @@
     "answer": {
       "verdict": "not_met",
       "quote": "Do not drive after taking it: please have someone drive you to the scan and home."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-27T18:15:14.657Z"
-    }
-  },
-  {
-    "key": "7c166935c3c8bd021cadd534d0520731f655c0ec8679725bf5837d1911148f18",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
     },
     "error": null,
     "calls": 1,
@@ -774,6 +864,24 @@
     }
   },
   {
+    "key": "80f593f2d97c83572dbe64039526d6b763e29b2ca4b650e65d5a91cde7f175e4",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T17:23:17.079Z"
+    }
+  },
+  {
     "key": "811c3c34002e433f01d3fa605430890c09951464e596512727ab00ffdd0f5ef6",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -792,7 +900,25 @@
     }
   },
   {
-    "key": "836e1c244ae96c9540ef751c15b5336a106d47eb933e98028c28deb42f174811",
+    "key": "81cbde4e07b0282819fd31028aa8c1fbc97b75f3f144322f3b1c2f8f8457a18a",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T17:23:17.079Z"
+    }
+  },
+  {
+    "key": "859e395d3d908020470235ac51f5af041da8ee16de2aaa506b6f0e1447ff18f9",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -806,11 +932,11 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-27T18:15:14.657Z"
+      "at": "2026-10-29T17:23:17.079Z"
     }
   },
   {
-    "key": "860d52efb3b4ce6f0de41b39a611d1bc7959ab392916c06cc2abd3ad1c836db0",
+    "key": "893c399b1d9c1085ce312c256f00031069a864de4f8425a1b6c460dd5f7348f5",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -824,25 +950,7 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-27T18:15:14.657Z"
-    }
-  },
-  {
-    "key": "86ec79c3add177843f7dfaba9bb0ae629e81665f2288c4106d194993836725b8",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "That is the risk factor. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-25T16:31:13.845Z"
+      "at": "2026-10-29T17:23:17.079Z"
     }
   },
   {
@@ -879,24 +987,6 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-28T18:42:13.811Z"
-    }
-  },
-  {
-    "key": "8c48e72af0be91d5f05df7444f846d0d59da9825795a6edfdb93a4d676626041",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "The prior allergic-like reaction to iodinated contrast (iohexol, hives in 2019)"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-29T01:57:41.534Z"
     }
   },
   {
@@ -972,24 +1062,6 @@
     }
   },
   {
-    "key": "90e61b96418646f86f15a8bf232ddf8c01abeb2f87444e847963077a97ff7e08",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-27T18:15:14.657Z"
-    }
-  },
-  {
     "key": "9149649cb21b917141faa498ed64157afa1fa4e9cfd437fe1292a81a31001618",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -1044,6 +1116,24 @@
     }
   },
   {
+    "key": "978bb6c504f77ddc6131cad70d96a2fc80cbca23a435601118977bcff026e095",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "That is the risk factor. The allergy list also carries \"Anaphylaxis (patient report)\", added in 2021 from his own account with no record reviewed; the report of the day grades the reaction moderate, and §1 grades it by that record, so §2 applies, not §3. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T17:23:17.079Z"
+    }
+  },
+  {
     "key": "99c6c5266382486b5a63b63654c30b8328ba34b1a9d6672c79656df6a163a6d5",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -1059,6 +1149,60 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-27T18:15:14.657Z"
+    }
+  },
+  {
+    "key": "9e8516fd4637e4b567e6bb6b00863f9d2a5da54f23db1b0219c5dfe32ce55c91",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T17:23:17.079Z"
+    }
+  },
+  {
+    "key": "9e8ffa8d31e57a0406a2c1c7703970139fa64c9845dd7d6b512940613289c6b2",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day)"
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T17:23:17.079Z"
+    }
+  },
+  {
+    "key": "9eb9a037e392a8a392f2bc53e05e2856c74d2c8cab6cac1e61306d5491a98d61",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T17:23:17.079Z"
     }
   },
   {
@@ -1080,21 +1224,57 @@
     }
   },
   {
-    "key": "9f27f39b47d02057828353d79601aa30d124ed8fac8de371ae4d7bab2acc21d1",
+    "key": "9f97b7124502905923f8c44b50dad0d0a280bbe4bdec7cd3033b807a9a2fd1a3",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "not_met",
-      "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day)"
+      "quote": "The prior allergic-like reaction to iodinated contrast (iohexol, hives in 2019)"
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-29T01:57:41.534Z"
+      "at": "2026-10-29T17:23:17.079Z"
+    }
+  },
+  {
+    "key": "a09555e7d75e96e9ccfbbb12ee8b1396c9ce175523121e1d8c4116f5dc1dc30e",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T17:23:17.079Z"
+    }
+  },
+  {
+    "key": "a162f66e023caa726d9ee259731ec3565db66b09f0681dffa6914042547c05f5",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T17:23:17.079Z"
     }
   },
   {
@@ -1134,24 +1314,6 @@
     }
   },
   {
-    "key": "a3f5ddcabe5b9614d5b77ff6e4909e32569f90eba299fe5abe457418117e9f02",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day)"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-29T01:57:41.534Z"
-    }
-  },
-  {
     "key": "a56268bc5284da2d8550aa142a91ff8b8d81d12a17c3bec734c7e1b38623954a",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -1167,6 +1329,42 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-28T18:42:13.811Z"
+    }
+  },
+  {
+    "key": "a7cc7fd15c18d893a6c764820d1563adb8e7d139b95dd072735c02a875f29404",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T17:23:17.079Z"
+    }
+  },
+  {
+    "key": "a83d3e9d2f5b041638f70cefd079c082d747ae663d1459511b1a0572bcc6c24a",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T17:23:17.079Z"
     }
   },
   {
@@ -1224,21 +1422,21 @@
     }
   },
   {
-    "key": "aebca0f454c69b3c4a826e9f5a1a1885df3b00f939f1385fea9b464fd4178aa7",
+    "key": "ac153b035f629e5ddc9eeeab0eb5267bc43f3cc77c2f82c5445af84bb0ec5785",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "met",
-      "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day). That is the risk factor. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+      "quote": "That is the risk factor. The allergy list also carries \"Anaphylaxis (patient report)\", added in 2021 from his own account with no record reviewed; the report of the day grades the reaction moderate, and §1 grades it by that record, so §2 applies, not §3. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-25T16:31:13.845Z"
+      "at": "2026-10-29T17:23:17.079Z"
     }
   },
   {
@@ -1261,24 +1459,6 @@
     }
   },
   {
-    "key": "b74de95c75e8e4f2376843aa8d63a2c736e0779927479a575b9b31420de75aca",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-27T18:15:14.657Z"
-    }
-  },
-  {
     "key": "ba06095acd5dbab442aa30fefdef247d6d3577cb99e0ba02e22529874a5e95d5",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -1294,24 +1474,6 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-27T18:15:14.657Z"
-    }
-  },
-  {
-    "key": "bc0b842cb31e24da59fc71eb6530b83ada8259c467db3e1f7b1087c618f2f645",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-29T01:57:41.534Z"
     }
   },
   {
@@ -1333,42 +1495,6 @@
     }
   },
   {
-    "key": "c38e03c61b6ffab3cae0cfafc23c8d24b5611d65336f85612fe88c43d1f88b9d",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day). That is the risk factor. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-25T16:31:13.845Z"
-    }
-  },
-  {
-    "key": "c52a5d34c5b488a91d338bc4add710ac945ac250f477debc367631b6c9d085ba",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "Prior allergic-like reaction to iodinated contrast (iodixanol, hives in 2017)"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-29T01:57:41.534Z"
-    }
-  },
-  {
     "key": "c5c2bc1236a995f30976084d12739c98762321bc28eb4ec503f759e88cb8ba79",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -1387,39 +1513,21 @@
     }
   },
   {
-    "key": "ca2264e0424506265344c5ce8275b24d0be26f22fd11b1d873772ac0930715d0",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day). That is the risk factor. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-25T16:31:13.845Z"
-    }
-  },
-  {
-    "key": "cbb8e6cf119eca15074277ef823f2f48a82125841bb1585125e2056ec4aacf8a",
+    "key": "ca09435f9e437786d2f780954fb62c83c1d898423f3fafe0e69538f6c7bb2d88",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "not_met",
-      "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day)"
+      "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-29T01:57:41.534Z"
+      "at": "2026-10-29T17:23:17.079Z"
     }
   },
   {
@@ -1441,21 +1549,39 @@
     }
   },
   {
-    "key": "ceea4799f81978da32c200f68a8d823f9989c07df486874edbf317e86d665f11",
+    "key": "d0ad9cf4b082c794ee6aabdaae690c970d780668e43b93aa74746db3ee23739f",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
-      "verdict": "not_met",
-      "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day)"
+      "verdict": "met",
+      "quote": "That is the risk factor. The allergy list also carries \"Anaphylaxis (patient report)\", added in 2021 from his own account with no record reviewed; the report of the day grades the reaction moderate, and §1 grades it by that record, so §2 applies, not §3. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-29T01:57:41.534Z"
+      "at": "2026-10-29T17:23:17.079Z"
+    }
+  },
+  {
+    "key": "d15bf39fecc71029ed95083955a086a6c2bc56dc278a705aeeebeee373bc3300",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T17:23:17.079Z"
     }
   },
   {
@@ -1477,43 +1603,43 @@
     }
   },
   {
-    "key": "d94e19d2c7ca7eac17a9388f7a739f1a48bd4908ad4edd29188575ef56f7c6f7",
+    "key": "da600c71061ca5ec38dc8ce8eed0ca37d06fe351425d60af4333496c9350eff4",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
-      "verdict": "not_met",
-      "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day)"
+      "verdict": "met",
+      "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-29T01:57:41.534Z"
+      "at": "2026-10-29T17:23:17.079Z"
     }
   },
   {
-    "key": "e053068fa2eeaf2a338217678c852837e1d985a4f6a05d9b19d66dadd7d6cdb3",
+    "key": "da7327269f389bf35d5c77cb69c7ec16a2755794c4b0e5df290d25b3bb75fab6",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "not_met",
-      "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day)"
+      "quote": ""
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-29T01:57:41.534Z"
+      "at": "2026-10-29T17:23:17.079Z"
     }
   },
   {
-    "key": "e0ce5e6b29cd4e6882bc5878ae203230ab72f83310c21fb323cc1d67987a5b3f",
+    "key": "dc15bc014255b74448447783cebc013c63e9740e59d058bfa4668a03b3a22500",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -1527,7 +1653,7 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-27T18:15:14.657Z"
+      "at": "2026-10-29T17:23:17.079Z"
     }
   },
   {
@@ -1567,6 +1693,24 @@
     }
   },
   {
+    "key": "e725c259fe5b2fe405e2ec9bcdf5ac72abb356919974e5cf262a980fe0e1b5e8",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T17:23:17.079Z"
+    }
+  },
+  {
     "key": "e77ab988b5fec7fb8920a554a0d8f5db9fe090b70de13a309c04876a93bab7bd",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -1585,93 +1729,93 @@
     }
   },
   {
-    "key": "eb1b95470b964f0980e5817fbaf3a0b9e1741d5a03886e96dde8713d2a6f075b",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-27T18:15:14.657Z"
-    }
-  },
-  {
-    "key": "edb5b50ecf41815281ff3553cc3f0470698367cf78ecdbffe6962a52b2ff92a5",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-27T18:15:14.657Z"
-    }
-  },
-  {
-    "key": "f38ba1e756d6a1a22ca0f131ff0059edf7db363cef3e7e372db273f1820245d0",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day)"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-29T01:57:41.534Z"
-    }
-  },
-  {
-    "key": "f99e0c9da20ab1eb0e2831c5a0d839f3daf8f9d9c2e2ccdfa16f8296c007117e",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-27T18:15:14.657Z"
-    }
-  },
-  {
-    "key": "fc13463f14bd180b268c9d8c64916d3a36b651da747411e09546e084219e4d27",
+    "key": "e7f4dd9100d22441fd845b54840d876f69498f939bc229e267917a17574ec79b",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "met",
-      "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day). That is the risk factor. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+      "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-25T16:31:13.845Z"
+      "at": "2026-10-29T17:23:17.079Z"
+    }
+  },
+  {
+    "key": "ea8f430af03e200a49cd0ffc303a1b87e3eb52c1fd841e1aee83f05a8f6b7220",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T17:23:17.079Z"
+    }
+  },
+  {
+    "key": "eb223f39db05d64310b5d54d49c999072d621ec4b1f15303189b2ea895888f7e",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "That is the risk factor. The allergy list also carries \"Anaphylaxis (patient report)\", added in 2021 from his own account with no record reviewed; the report of the day grades the reaction moderate, and §1 grades it by that record, so §2 applies, not §3. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T17:23:17.079Z"
+    }
+  },
+  {
+    "key": "ebaf7e4334eb0635e704c1c1fbe6634c5e5e323e639f9e6cdc172c6afdad0157",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T17:23:17.079Z"
+    }
+  },
+  {
+    "key": "ec3e02a541b16c3e0170ae0e6ae98f8d6a6ca1cda80145cba9bec6c4c521df89",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "The shellfish and povidone-iodine allergies are not risk factors."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T17:23:17.079Z"
     }
   },
   {
@@ -1709,6 +1853,24 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-27T18:15:14.657Z"
+    }
+  },
+  {
+    "key": "fd63bbddc6dfad29b59611c9bd153fcc8874457b5901cd0c64f1a824a19a5cfb",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "That is the risk factor. The allergy list also carries \"Anaphylaxis (patient report)\", added in 2021 from his own account with no record reviewed; the report of the day grades the reaction moderate, and §1 grades it by that record, so §2 applies, not §3. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T17:23:17.079Z"
     }
   }
 ]

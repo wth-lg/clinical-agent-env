@@ -12,6 +12,7 @@ import { derive } from './policy.ts';
 
 const store = await loadStore(matrixEnv().world);
 const all = [...store.resources()];
+const decode = (data: string | undefined) => new TextDecoder().decode(Uint8Array.from(atob(data ?? ''), (c) => c.charCodeAt(0)));
 const world: WorldView = { get: (type, id) => store.get(type, id), all: (type) => (type === undefined ? all : all.filter((r) => r.resourceType === type)) };
 
 describe('renal-dose-review', () => {
@@ -46,5 +47,23 @@ describe('renal-dose-review', () => {
     const answers = [String(expected.egfr), String(expected.crcl), '43.18', '59.78'];
     const findings = lintWorld(all, [{ source: 'renal-dose-review', spec: { prompts: texts, leakage: { answers, texts: texts.map((text, i) => ({ source: i === 0 ? 'instruction.md' : 'RBC-PHARM-07', text })) } } }]);
     expect(findings).toEqual([]);
+  });
+
+  // R14-05 (P18o): a newer patient-stated weight under 60 kg, coded 3142-7 (Body weight Stated),
+  // not the measured 29463-7, and the pharmacist's chart note written from the SCr of 1.88 before
+  // it was marked entered in error. RBC-PHARM-07 §1 takes neither.
+  it('takes the measured weight and the valid SCr over the stated weight and the pharmacist note', () => {
+    const stated = all.flatMap((r) => (r.resourceType === 'Observation' && r.subject?.reference === 'Patient/pt-0002' && (r.code?.coding ?? []).some((c) => c.code === '3142-7') ? [r] : []));
+    expect(stated.map((r) => r.id)).toEqual(['obs-t1-wt-1022']);
+    expect(stated[0]!.valueQuantity).toMatchObject({ value: 132, code: '[lb_av]' });
+    expect(Date.parse(stated[0]!.effectiveDateTime!)).toBeGreaterThan(Date.parse('2026-10-20T09:05:00-04:00'));
+    const flag = store.get('DocumentReference', 'doc-t1-rx-1021') as Extract<(typeof all)[number], { resourceType: 'DocumentReference' }> | undefined;
+    const text = decode(flag?.content[0]?.attachment.data);
+    expect(text).toContain('1.88 mg/dL');
+    expect(flag?.date).toBe('2026-10-21T14:10:00-04:00');
+    const d = derive(world) as typeof expected;
+    expect(d.weight.id).toBe('Observation/obs-t1-wt-1020');
+    expect(d.scr.id).toBe('Observation/obs-t1-scr-1020');
+    expect(d.apixaban.dose_mg).toBe(5);
   });
 });

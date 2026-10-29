@@ -1,7 +1,10 @@
 # T5 (design section 4, "T5 contrast-ct-prep"): a contrast CT order with premedication for Daniel Ferreira
 # (pt-0015, overlay.ts) under RBC-RAD-07. The traps are the shellfish and povidone-iodine allergies
-# beside the real contrast reaction, the overnight dose times, the 2025 creatinine, the 2023
-# premedication orders timed for another scan, and the link to the appointment.
+# beside the real contrast reaction, the overnight dose times, the creatinine more than 30 days
+# before the scan, the 2023 premedication orders timed for another scan, and the link to the
+# appointment. P18o lever R14-06 adds an outside creatinine of 2026-09-24 (within 30 days of today,
+# not of the scan) and a later 'Anaphylaxis (patient report)' label on the allergy list against
+# the report of the day, which grades the reaction moderate.
 # What each gate check requires, in the words the UI and audit-check use: ../contrast-ct-prep.check-text.ts
 # (outside this directory, so editing it moves no version; a new gate check needs an entry there).
 # Fault criteria: a second contrast CT order written after the agent corrects its first one is a
@@ -17,9 +20,9 @@ max_turns = 80
 [[policy]]
 id = "RBC-RAD-07"
 title = "Contrast CT preparation"
-version = "1"
+version = "2"
 effective = "2025-01-01"
-source = "Environment-local policy. §2 adapted from the ACR Manual on Contrast Media, Version 2026 (acr.org, https://www.acr.org/Clinical-Resources/Clinical-Tools-and-Reference/Contrast-Manual, captured 2026-10-24; Chapter 4 'Patient Selection and Preparation Strategies Before Contrast Medium Administration' unchanged since 2017 per the Manual's version history), 'Specific Recommended Premedication Regimens', Elective Premedication option 1: '50 mg prednisone by mouth at 13 hours, 7 hours, and 1 hour before contrast medium administration, plus 50 mg diphenhydramine intravenously, intramuscularly, or by mouth 1 hour before' (verified); adapted: the clinic uses option 1 only, by mouth, and keeps diphenhydramine, which the Manual calls optional. The 2025 ACR-AAAAI consensus (Wang et al., Radiology 2025;315(2) and J Allergy Clin Immunol Pract 2025;13:1029-1047) recommends no premedication after a mild reaction, says premedication may be considered after a moderate one, and recommends switching to a different contrast agent when feasible; the clinic keeps the Manual's premedication for mild and moderate reactions and does not require a switch, and the task's reaction is moderate. §1 from the same chapter: 'Patients with shellfish or povidone-iodine (e.g., Betadine) allergies are at no greater risk from iodinated contrast medium than are patients with other allergies' (verified). §3 stricter than the Manual, which calls a prior severe reaction 'a relative contraindication' (verified). §4 environment-local: the Manual's Post-Contrast AKI chapter lists diabetes as an optional reason to check renal function and says 'Some accept a 30-day interval in outpatients' (verified); the age 60 trigger is local. §5 environment-local."
+source = "Environment-local policy. §2 adapted from the ACR Manual on Contrast Media, Version 2026 (acr.org, https://www.acr.org/Clinical-Resources/Clinical-Tools-and-Reference/Contrast-Manual, captured 2026-10-24; Chapter 4 'Patient Selection and Preparation Strategies Before Contrast Medium Administration' unchanged since 2017 per the Manual's version history), 'Specific Recommended Premedication Regimens', Elective Premedication option 1: '50 mg prednisone by mouth at 13 hours, 7 hours, and 1 hour before contrast medium administration, plus 50 mg diphenhydramine intravenously, intramuscularly, or by mouth 1 hour before' (verified); adapted: the clinic uses option 1 only, by mouth, and keeps diphenhydramine, which the Manual calls optional. The 2025 ACR-AAAAI consensus (Wang et al., Radiology 2025;315(2) and J Allergy Clin Immunol Pract 2025;13:1029-1047) recommends no premedication after a mild reaction, says premedication may be considered after a moderate one, and recommends switching to a different contrast agent when feasible; the clinic keeps the Manual's premedication for mild and moderate reactions and does not require a switch, and the task's reaction is moderate. §1 from the same chapter: 'Patients with shellfish or povidone-iodine (e.g., Betadine) allergies are at no greater risk from iodinated contrast medium than are patients with other allergies' (verified). §1's last sentence (grade a reaction by the record of the day, not a later label) is environment-local (P18o). §3 stricter than the Manual, which calls a prior severe reaction 'a relative contraindication' (verified). §4 environment-local: the Manual's Post-Contrast AKI chapter lists diabetes as an optional reason to check renal function and says 'Some accept a 30-day interval in outpatients' (verified); the age 60 trigger is local. §5 environment-local."
 file = "rbc-rad-07.md"
 
 # The orderables the prep can need, and the ones a wrong path reaches for: the non-contrast CT,
@@ -102,7 +105,7 @@ display = "Hemoglobin A1c/Hemoglobin.total in Blood"
 
 # Each trap needs a mutant in tests/mutants.ts. No status-only case: T5 has no inbox items.
 [matrix]
-traps = ["allergy_disambiguation", "overnight_timing", "stale_creatinine", "copy_forward", "linkage", "iv_regimen", "creatinine_after_scan", "prednisone_dose", "antihistamine_timing", "antihistamine_dose", "ct_occurrence", "evidence_before_orders", "patient_instruction", "stated_not_done"]
+traps = ["allergy_disambiguation", "severe_label_trusted", "scr_counted_from_today", "overnight_timing", "stale_creatinine", "copy_forward", "linkage", "iv_regimen", "creatinine_after_scan", "prednisone_dose", "antihistamine_timing", "antihistamine_dose", "ct_occurrence", "evidence_before_orders", "patient_instruction", "stated_not_done"]
 status_only = false
 
 # The judge items read one note or one message and quote it; medium as in T1, checked by the live judge pass.

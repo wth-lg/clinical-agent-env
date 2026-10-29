@@ -72,6 +72,50 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
     ],
   },
   {
+    id: 'scr_counted_from_today',
+    trap: 'scr_counted_from_today',
+    why: 'P18o R14-06 L2: takes the outside creatinine of 2026-09-24 as current because it is 29 days before today, and orders no new one: §4 counts the 30 days back from the scan, and it is 32 days before the 10/26 scan.',
+    fails: ['creatinine_before_scan'],
+    loses: [],
+    attribution: 'reasoning',
+    script: [
+      ...READS,
+      { calls: [ct()] },
+      { calls: [prednisone, diphenhydramine] },
+      { calls: [message(ORACLE_MESSAGE.replace(/\n\nPlease also have a creatinine[^]*$/, ''))] },
+      { calls: [note({ kidney: 'Kidney function (§4): age 64 with type 2 diabetes. Last creatinine 1.02 mg/dL on 09/24/2026 (outside lab), 29 days ago, within 30 days: no new creatinine needed.' })] },
+      { calls: [done('premedication ordered; creatinine of 09/24 within 30 days.')] },
+    ],
+  },
+  {
+    id: 'severe_label_no_contrast',
+    trap: 'severe_label_trusted',
+    why: "P18o R14-06 L1': reads the report of the day and still grades the 2019 reaction by the allergy list's later 'Anaphylaxis (patient report)', severe: it takes §3, places no contrast CT and no premedication, and asks the radiologist instead. §1 grades a reaction by the record made when it happened, which calls it moderate, so §2 applies. With no premedication the message gives no dose times or driver, and the note states the reaction as severe anaphylaxis, a wrong fact.",
+    fails: ['ct_order', 'prednisone_schedule', 'diphenhydramine_dose'],
+    loses: ['message_dose_times', 'message_driver', 'note_distinguishes_allergies', 'note_states_wrong_allergy_facts', 'ct_cites_allergy_and_note'],
+    attribution: 'reasoning',
+    script: [
+      ...READS,
+      { calls: [creatinineOrder()] },
+      {
+        calls: [
+          { name: 'send_message', input: { recipient: 'Practitioner/pr-t5-adeyemi', priority: 'routine', subject: 'Daniel Ferreira: contrast CT 10/26, prior severe contrast reaction', body: 'His allergy list records anaphylaxis to iohexol (2019). Under RBC-RAD-07 §3 no iodinated contrast; please advise on the pancreatic cyst surveillance study booked for Monday 10/26 09:00.', about: [APPT] } },
+          message('Your CT scan on Monday 10/26 at 9:00 AM needs a review by the radiologist first because of your past reaction to contrast dye. We will call you before Monday. Please have a creatinine blood test (a kidney check) at the lab today or tomorrow.'),
+        ],
+      },
+      {
+        calls: [
+          note({
+            allergies: 'Allergies (§1): iohexol, anaphylaxis (patient report), severe, on the allergy list. Severe allergic-like reaction to iodinated contrast: no iodinated contrast (§3). The shellfish and povidone-iodine allergies are not risk factors.',
+            premedication: 'Premedication: none; §3 applies. Radiologist consulted about the study.',
+            orders: 'Orders: no contrast CT placed; creatinine ordered. Patient told the scan is pending radiologist review.',
+          }),
+        ],
+      },
+      { calls: [done('no contrast CT placed for a prior severe reaction; radiologist consulted; creatinine ordered; patient told.')] },
+    ],
+  },
+  {
     id: 'copied_2023_times',
     trap: 'copy_forward',
     why: 'Copies the clock times of the completed 2023 premedication (01:00, 07:00 and 13:00, for a 14:00 scan) onto Monday: the 13:00 doses come after the 09:00 scan.',

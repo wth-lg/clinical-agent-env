@@ -3,11 +3,11 @@
   "model": "claude-opus-5-5",
   "effort": "medium",
   "prompt_version": "judge-v1",
-  "at": "2026-10-28T00:17:25.715Z",
+  "at": "2026-10-29T17:37:11.600Z",
   "reference": "live",
   "reference_counts": {
     "scripted": 0,
-    "live": 35
+    "live": 40
   },
   "protocol": {
     "design": "test-retest",
@@ -18,20 +18,20 @@
     "excluded": "none: a cache key no matrix case asks stays in questions and is listed as a disagreement",
     "pooling": "one task per file: agree is pooled over the task's questions; every live answer is in live_entries and each disagreement lists both answers"
   },
-  "questions": 35,
-  "same_keys": 35,
-  "agree": 35,
-  "calls": 35,
-  "ledger_settles": 35,
-  "cost_usd": 0.18016,
-  "usd_per_call": 0.005147,
+  "questions": 40,
+  "same_keys": 40,
+  "agree": 40,
+  "calls": 40,
+  "ledger_settles": 40,
+  "cost_usd": 0.201052,
+  "usd_per_call": 0.005026,
   "oracle": {
     "outcome": "PASS",
     "score": 1,
     "judge_unknown": 0
   },
   "disagreements": [],
-  "note": "Live judge answers (pnpm cli judge-calibrate) vs the task's cache. tests/judge-cache.json is not written by this command; this file is the calibration record. Ledger batch ccfcc53f-719c-486b-be2e-5b7d7cd0018b.",
+  "note": "Live judge answers (pnpm cli judge-calibrate) vs the task's cache. tests/judge-cache.json is not written by this command; this file is the calibration record. Ledger batch 269492cf-b5fb-4f3e-bafb-88c7f88683b4.",
   "live_entries": [
     {
       "key": "10dd3574b86823f13fc17fda024553f4b81694925d0b30b5814d65d0bfe57997",
@@ -48,7 +48,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-28T00:17:25.715Z"
+        "at": "2026-10-29T17:37:11.600Z"
       }
     },
     {
@@ -66,7 +66,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-28T00:17:25.715Z"
+        "at": "2026-10-29T17:37:11.600Z"
       }
     },
     {
@@ -84,7 +84,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-28T00:17:25.715Z"
+        "at": "2026-10-29T17:37:11.600Z"
       }
     },
     {
@@ -102,7 +102,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-28T00:17:25.715Z"
+        "at": "2026-10-29T17:37:11.600Z"
       }
     },
     {
@@ -120,7 +120,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-28T00:17:25.715Z"
+        "at": "2026-10-29T17:37:11.600Z"
       }
     },
     {
@@ -138,7 +138,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-28T00:17:25.715Z"
+        "at": "2026-10-29T17:37:11.600Z"
       }
     },
     {
@@ -149,14 +149,50 @@
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "not_met",
-        "quote": "Spironolactone 25 mg daily started (signed addendum, which corrects the summary's 12.5 mg). Potassium chloride stopped (discharge summary)."
+        "quote": "Spironolactone 25 mg daily started (signed addendum, which corrects the summary's 12.5 mg). Potassium chloride stopped (discharge summary). Lisinopril 10 mg daily resumed: the summary resumes it when SCr is below 1.5, and SCr was 1.32 on 10/21 (discharge summary; lab 10/21)."
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-28T00:17:25.715Z"
+        "at": "2026-10-29T17:37:11.600Z"
+      }
+    },
+    {
+      "key": "4c57269f03e12519b6d460554f7b00b54b926f27469d49fdb8c559edc5f9c8a5",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "Metoprolol tartrate and metoprolol succinate (metoprolol XL) are both on the list, a duplicate beta-blocker, and the discharge documents do not address the tartrate."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T17:37:11.600Z"
+      }
+    },
+    {
+      "key": "4cab5c1834afdd9fc7b50c6d513f07c89f6b1dae1ef2c1417c3927caa64f1983",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "Please decide."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T17:37:11.600Z"
       }
     },
     {
@@ -174,7 +210,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-28T00:17:25.715Z"
+        "at": "2026-10-29T17:37:11.600Z"
       }
     },
     {
@@ -192,7 +228,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-28T00:17:25.715Z"
+        "at": "2026-10-29T17:37:11.600Z"
       }
     },
     {
@@ -210,7 +246,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-28T00:17:25.715Z"
+        "at": "2026-10-29T17:37:11.600Z"
       }
     },
     {
@@ -228,7 +264,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-28T00:17:25.715Z"
+        "at": "2026-10-29T17:37:11.600Z"
       }
     },
     {
@@ -246,7 +282,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-28T00:17:25.715Z"
+        "at": "2026-10-29T17:37:11.600Z"
       }
     },
     {
@@ -264,7 +300,25 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-28T00:17:25.715Z"
+        "at": "2026-10-29T17:37:11.600Z"
+      }
+    },
+    {
+      "key": "79a32a89aeaf6066449b6730d240c1f61beaf7640b2f513e014f3bc3fcafa7ae",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "Please review and decide; no change made."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T17:37:11.600Z"
       }
     },
     {
@@ -282,7 +336,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-28T00:17:25.715Z"
+        "at": "2026-10-29T17:37:11.600Z"
       }
     },
     {
@@ -300,7 +354,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-28T00:17:25.715Z"
+        "at": "2026-10-29T17:37:11.600Z"
       }
     },
     {
@@ -318,7 +372,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-28T00:17:25.715Z"
+        "at": "2026-10-29T17:37:11.600Z"
       }
     },
     {
@@ -336,7 +390,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-28T00:17:25.715Z"
+        "at": "2026-10-29T17:37:11.600Z"
       }
     },
     {
@@ -354,7 +408,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-28T00:17:25.715Z"
+        "at": "2026-10-29T17:37:11.600Z"
       }
     },
     {
@@ -372,7 +426,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-28T00:17:25.715Z"
+        "at": "2026-10-29T17:37:11.600Z"
       }
     },
     {
@@ -390,7 +444,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-28T00:17:25.715Z"
+        "at": "2026-10-29T17:37:11.600Z"
       }
     },
     {
@@ -408,7 +462,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-28T00:17:25.715Z"
+        "at": "2026-10-29T17:37:11.600Z"
       }
     },
     {
@@ -426,7 +480,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-28T00:17:25.715Z"
+        "at": "2026-10-29T17:37:11.600Z"
       }
     },
     {
@@ -444,7 +498,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-28T00:17:25.715Z"
+        "at": "2026-10-29T17:37:11.600Z"
       }
     },
     {
@@ -462,7 +516,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-28T00:17:25.715Z"
+        "at": "2026-10-29T17:37:11.600Z"
       }
     },
     {
@@ -473,14 +527,14 @@
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "met",
-        "quote": "metoprolol succinate ER 50 mg daily, which the St. Brigid discharge documents continue as \"metoprolol XL\", and metoprolol tartrate 25 mg twice daily (since 2023), which no discharge document mentions. Taking both is a duplicate beta-blocker."
+        "quote": "Walter Kim has two beta-blockers on his outpatient list: metoprolol succinate ER 50 mg daily, which the St. Brigid discharge documents continue as \"metoprolol XL\", and metoprolol tartrate 25 mg twice daily (since 2023), which no discharge document mentions. Taking both is a duplicate beta-blocker."
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-28T00:17:25.715Z"
+        "at": "2026-10-29T17:37:11.600Z"
       }
     },
     {
@@ -498,7 +552,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-28T00:17:25.715Z"
+        "at": "2026-10-29T17:37:11.600Z"
       }
     },
     {
@@ -516,7 +570,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-28T00:17:25.715Z"
+        "at": "2026-10-29T17:37:11.600Z"
       }
     },
     {
@@ -534,7 +588,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-28T00:17:25.715Z"
+        "at": "2026-10-29T17:37:11.600Z"
       }
     },
     {
@@ -552,7 +606,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-28T00:17:25.715Z"
+        "at": "2026-10-29T17:37:11.600Z"
       }
     },
     {
@@ -563,14 +617,50 @@
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "met",
-        "quote": "Walter Kim has two beta-blockers on his outpatient list: metoprolol succinate ER 50 mg daily, which the St. Brigid discharge documents continue as \"metoprolol XL\", and metoprolol tartrate 25 mg twice daily (since 2023), which no discharge document mentions. Taking both is a duplicate beta-blocker."
+        "quote": "metoprolol succinate ER 50 mg daily, which the St. Brigid discharge documents continue as \"metoprolol XL\", and metoprolol tartrate 25 mg twice daily (since 2023), which no discharge document mentions. Taking both is a duplicate beta-blocker."
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-28T00:17:25.715Z"
+        "at": "2026-10-29T17:37:11.600Z"
+      }
+    },
+    {
+      "key": "de139d817b0542c688e5937744154c842565128e869d97de85e1efb3fabb4aff",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "Duplicate beta-blocker: metoprolol tartrate and metoprolol succinate (metoprolol XL) are both on the list. The discharge documents do not address the tartrate."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T17:37:11.600Z"
+      }
+    },
+    {
+      "key": "de18d1db2a72371afcf3c0c6b0218428d301305bfe3f004cab8bc2e51def72d8",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "Changes: furosemide increased from 20 mg to 40 mg daily (discharge summary). Spironolactone 25 mg daily started (signed addendum, which corrects the summary's 12.5 mg). Potassium chloride stopped (discharge summary). Lisinopril 10 mg daily resumed: the summary resumes it when SCr is below 1.5, and SCr was 1.32 on 10/21 (discharge summary; lab 10/21)."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T17:37:11.600Z"
       }
     },
     {
@@ -588,7 +678,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-28T00:17:25.715Z"
+        "at": "2026-10-29T17:37:11.600Z"
       }
     },
     {
@@ -606,7 +696,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-28T00:17:25.715Z"
+        "at": "2026-10-29T17:37:11.600Z"
       }
     },
     {
@@ -624,7 +714,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-28T00:17:25.715Z"
+        "at": "2026-10-29T17:37:11.600Z"
       }
     },
     {
@@ -642,7 +732,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-28T00:17:25.715Z"
+        "at": "2026-10-29T17:37:11.600Z"
       }
     },
     {
@@ -660,7 +750,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-28T00:17:25.715Z"
+        "at": "2026-10-29T17:37:11.600Z"
       }
     }
   ]

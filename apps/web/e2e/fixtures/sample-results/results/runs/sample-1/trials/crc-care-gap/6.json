@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:crc-care-gap:6",
   "task_id": "crc-care-gap",
-  "task_version": "abcf47ad8571787e3d20cebd792a9ead39c30b6a2d1c6fa97bc15bc00a23c87c",
-  "env_version": "2cb743885fe61f5a11f46367ed9307dda803c0460dbe2f4acf295827cbb1cfc1",
+  "task_version": "1d70b246b344ba82018c9ebe503866dc8703ba61c6066a4bf7adc02c74ca3376",
+  "env_version": "daaa6e4a2b8c3e8e7648dc4526f2b4a282920376172c40e51c0fadabf3723784",
   "grader_task_version": "ecee8028f69bf56ef1e200934a4848042bf244f9815d68bc418470b2735aa611",
-  "fixture_hash": "5e69bcfaa1935a5eb4bef6ba1b8e3d4db1cf379042fd6321516416281b041f20",
+  "fixture_hash": "0b8ff7964370f8452ce17f6c701cc0a5bc8ba82fd8aeeac48098ed83ae6792d7",
   "state_hash": {
-    "initial": "5e69bcfaa1935a5eb4bef6ba1b8e3d4db1cf379042fd6321516416281b041f20",
-    "final": "c2d9243348e2d07e9bf1f020ead8c1bcbf0c5294d6d1f657e13791be32e182a8",
-    "replay_final": "c2d9243348e2d07e9bf1f020ead8c1bcbf0c5294d6d1f657e13791be32e182a8"
+    "initial": "0b8ff7964370f8452ce17f6c701cc0a5bc8ba82fd8aeeac48098ed83ae6792d7",
+    "final": "7caf508df10f802ca575fe272c03040221d6635ce6cc54b3ee589fe7ba301a9d",
+    "replay_final": "7caf508df10f802ca575fe272c03040221d6635ce6cc54b3ee589fe7ba301a9d"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T12:44:16.000Z",
+  "started": "2026-10-23T12:44:03.000Z",
   "turns": 13,
   "tool_calls": 98,
   "tool_errors": {
@@ -43,7 +43,7 @@
   "summary": "CRC outreach for Okafor CRC 2026 under RBC-QM-02: 5 FIT kits ordered and 5 outreach messages sent.\n\n| Patient | Status | Reason |\n|---|---|---|\n| Santo Pagac | Screening up to date | Colonoscopy 2018-05-21, within the measurement period or the 9 years before it (2017-2026) |\n| Stephan Herman | Open gap: FIT kit ordered, outreach sent | Last colonoscopy 2016-11-15, before the 2017-2026 window |\n| Lance Muller | Screening up to date | sDNA-FIT 2023-11-20, within 3 years |\n| Burma Leuschke | Open gap: FIT kit ordered, outreach sent | Born 1980-12-15: 46 at the end of 2026, in the population; no screening on record |\n| Marilu Gaona | Not in the population | Born 1950-11-20: 76 at the end of 2026, over 75 |\n| Ángela Vigil | Excluded | Total proctocolectomy (outside operative note, 2015) |\n| Elly Trantow | Excluded | Age 72 with frailty and a dementia medication (donepezil): advanced illness |\n| Harrison O'Keefe | Open gap: FIT kit ordered, outreach sent | Age 69 with frailty but no advanced illness or dementia medication, so not excluded; no screening on record |\n| Kelsie Rohan | Excluded | In hospice care since 2026-08-20 |\n| Tiny Koss | Open gap: FIT kit ordered, outreach sent | FIT 2025-12-03 was in 2025; a FIT counts only in the measurement period |\n| Delaine MacGyver | Open gap, no new order | FIT order already active since 2026-09-30; FOBT 2024-06-11 does not count |\n| Danika Ullrich | Screening up to date | CT colonography 2022-03-08, within the measurement period or the 4 years before it (2022-2026) |",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T12:48:37.000Z",
+  "ended": "2026-10-23T12:48:24.000Z",
   "judge_cost_usd": 0,
   "grader_version": "13",
   "outcome": "FAIL",

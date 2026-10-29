@@ -31,8 +31,12 @@ describe('the addendum correction as the read tools show it', async () => {
       return { name, input, content: r.content, exposed: r.exposed_ids, referenced: r.referenced_ids };
     })));
 
-  it('G8 declares the correction as the decisive phrase of the addendum', () => {
-    expect(g8.decisive_phrases).toEqual({ [ADD]: PHRASE });
+  it('G8 declares the correction as the decisive phrase of the addendum, and the outside lab report\'s creatinine line (P18o R14-07 L2)', () => {
+    expect(g8.decisive_phrases).toEqual({ [ADD]: PHRASE, [expected.scr.id]: 'Creatinine 1.32 mg/dL' });
+  });
+  it("a notes search for 'creatinine' shows the outside lab report's creatinine line (P18o R14-07 L2)", () => {
+    const steps = stepsFor({ name: 'search_notes', input: { query: 'creatinine', patient: PT } });
+    expect(firstShown(steps, expected.scr.id, expected.scr.line)).toBe(1);
   });
   it('a fhir_read of the addendum shows the correction', () => {
     const steps = stepsFor(addendum);
@@ -135,18 +139,22 @@ describe('sources_before_orders ties every medication order write to its source'
     expect((await grade(ctxWith('furosemide', [{ tool: 'search_notes', referenced_ids: [SUM], shown: { [SUM]: `…Discharge medications: - ${L.furosemide} - Metoprolol XL 5…` } }])))!.met).toBe(true);
     expect((await grade(ctxWith('kcl', [{ tool: 'search_notes', referenced_ids: [SUM], shown: { [SUM]: `…Furosemide 40 mg by mouth daily (increas…` } }])))!.met).toBe(false);
   });
+  // The creatinine is the outside lab report's line (P18o R14-07 L2): the report shown without
+  // that line does not count.
+  const SCR_SHOWN = { tool: 'search_notes', referenced_ids: [SCR], shown: { [SCR]: '…Urea nitrogen 24 mg/dL (8-23) H Creatinine 1.32 mg/dL (0.74-1.35) Glucose 112 mg/dL…' } };
   it('fails the lisinopril resume when the summary line was shown and the creatinine was not, citing RBC-TOC-02 §2', async () => {
-    expect(await late(ctxWith('lisinopril', [{ tool: 'search_notes', shown: { [SUM]: `- ${L.lisinopril} -` } }]))).toEqual([{ change: 'lisinopril', id: SCR, line: null, policy: 'RBC-TOC-02 §2', step: 2 }]);
-    expect((await grade(ctxWith('lisinopril', [{ tool: 'search_notes', shown: { [SUM]: `- ${L.lisinopril} -` } }, { exposed_ids: [SCR] }])))!.met).toBe(true);
+    expect(await late(ctxWith('lisinopril', [{ tool: 'search_notes', shown: { [SUM]: `- ${L.lisinopril} -` } }]))).toEqual([{ change: 'lisinopril', id: SCR, line: expected.scr.line, policy: 'RBC-TOC-02 §2', step: 2 }]);
+    expect(await late(ctxWith('lisinopril', [{ tool: 'search_notes', shown: { [SUM]: `- ${L.lisinopril} -` } }, { tool: 'search_notes', referenced_ids: [SCR], shown: { [SCR]: '…Sodium 138 mmol/L (136-145) Potassium 4.4 mmol/L…' } }]))).toEqual([{ change: 'lisinopril', id: SCR, line: expected.scr.line, policy: 'RBC-TOC-02 §2', step: 3 }]);
+    expect((await grade(ctxWith('lisinopril', [{ tool: 'search_notes', shown: { [SUM]: `- ${L.lisinopril} -` } }, SCR_SHOWN])))!.met).toBe(true);
   });
   it("passes the lisinopril resume once a snippet showed the resume rule cut before 'Lisinopril:', and fails it on the hospital course alone", async () => {
     const rule = { tool: 'search_notes', referenced_ids: [SUM], shown: { [SUM]: '…held for AKI. Resume home 10 mg daily when SCr < 1.5 on post-discharge labs. - Spironolactone 12.5 mg by mouth daily: start…' } };
-    expect((await grade(ctxWith('lisinopril', [rule, { exposed_ids: [SCR] }])))!.met).toBe(true);
+    expect((await grade(ctxWith('lisinopril', [rule, SCR_SHOWN])))!.met).toBe(true);
     const course = { tool: 'search_notes', referenced_ids: [SUM], shown: { [SUM]: '…with diuresis and lisinopril, and lisinopril was held. Euvolemic at discharge…' } };
-    expect(await late(ctxWith('lisinopril', [course, { exposed_ids: [SCR] }]))).toEqual([{ change: 'lisinopril', id: SUM, line: L.lisinopril, policy: 'RBC-TOC-02 §1', step: 3 }]);
+    expect(await late(ctxWith('lisinopril', [course, SCR_SHOWN]))).toEqual([{ change: 'lisinopril', id: SUM, line: L.lisinopril, policy: 'RBC-TOC-02 §1', step: 3 }]);
   });
   it('fails an order of any other drug written before the summary was exposed', async () => {
-    expect(await late(ctxWith('panto', [{ tool: 'search_notes', referenced_ids: [SUM], shown: { [SUM]: '…Pantoprazole 40 mg by mouth daily (formulary substitution for home omeprazole)…' } }]))).toEqual([{ change: 'other', id: SUM, line: null, policy: 'RBC-TOC-02 §1', step: 2 }]);
+    expect(await late(ctxWith('panto', [{ tool: 'search_notes', referenced_ids: [SUM], shown: { [SUM]: '…Pantoprazole 40 mg by mouth daily. Inpatient formulary substitutions: pantoprazole 40 mg daily was given in place of home omeprazole…' } }]))).toEqual([{ change: 'other', id: SUM, line: null, policy: 'RBC-TOC-02 §1', step: 2 }]);
     expect((await grade(ctxWith('panto', [{ exposed_ids: [SUM] }])))!.met).toBe(true);
   });
 });

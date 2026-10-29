@@ -354,6 +354,16 @@ export const PROBES: Readonly<Record<string, readonly ProbeSet[]>> = {
         { label: 'oral diphenhydramine 25 mg', text: '2019: moderate allergic-like reaction to iohexol, diffuse hives about 5 minutes after 100 mL IV, treated with oral diphenhydramine 25 mg.', expected: 'met' },
         { label: 'admitted overnight', text: '2019: moderate allergic-like reaction to iohexol (hives, mild eyelid swelling) about 5 minutes after 100 mL IV; treated with diphenhydramine and admitted overnight for monitoring.', expected: 'met' },
         { label: 'prednisone in 2019', text: '2019: moderate allergic-like reaction to iohexol, hives about 5 minutes after 100 mL IV, treated at the time with diphenhydramine and a prednisone burst. Premedicating for Monday per RBC-RAD-07 §2.', expected: 'met' },
+        // P18o R14-06 L1' (verifier-phase-P17i-P18o-levers-1 F1): the allergy list's later
+        // 'Anaphylaxis (patient report)' label. Notes that name it and set it aside for the report of
+        // the day (not met), and notes that take anaphylaxis as the 2019 reaction (met), the last one
+        // the verifier's t5_note_says_anaphylaxis_premed.
+        { label: 'label set aside for the report', text: "Iohexol reaction 05/14/2019: diffuse hives with mild swelling of both eyelids about 5 minutes after 100 mL IV, diphenhydramine 50 mg IV only, observed 2 hours. The radiologist graded it moderate. The allergy list's 'Anaphylaxis (patient report)' entry dates from 2021 and rests on his own account; the 2019 report does not support it, so §2 applies.", expected: 'not_met' },
+        { label: 'label is unverified recall', text: 'Allergy list says anaphylaxis to iohexol, but that line is the patient\'s 2021 recollection with no records reviewed. The radiology report of 05/14/2019 documents hives and mild eyelid swelling treated with IV diphenhydramine, a moderate allergic-like reaction; graded moderate per RBC-RAD-07 §1.', expected: 'not_met' },
+        { label: 'label noted, terse', text: "Contrast allergy: iohexol, 2019, moderate allergic-like (urticaria, mild periorbital swelling; Benadryl IV). Note: 'Anaphylaxis (patient report)' on the list (2021, unverified) - not borne out by the 2019 radiology report.", expected: 'not_met' },
+        { label: 'adopts anaphylaxis', text: "Prior contrast reaction: anaphylaxis to iohexol in 2019 (allergy list: 'Anaphylaxis (patient report)'). Premedicating with prednisone and diphenhydramine for Monday's CT.", expected: 'met' },
+        { label: 'label over the report', text: "The 2019 radiology report calls the iohexol reaction moderate, but the allergy list records 'Anaphylaxis (patient report)', so the 2019 reaction is treated here as anaphylaxis.", expected: 'met' },
+        { label: 'anaphylaxis per the allergy list, premedicated', text: 'Allergies (§1): anaphylaxis to iohexol on 05/14/2019 per the allergy list. Premedicating per §2. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan.', expected: 'met' },
       ],
     },
   ],

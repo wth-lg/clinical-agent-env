@@ -17,6 +17,13 @@
 // only that they were contrast premedication: the scan time is in the 2023 encounter and report,
 // not spelled out on the order (review-difficulty-T5-1).
 //
+// P18o lever R14-06: L2, an outside comprehensive metabolic panel of 2026-09-24 (obs-t5-scr-0924)
+// is now the latest creatinine, 29 days before NOW and 32 before the scan, so counting the 30
+// days of §4 from today instead of back from the scan skips the draw; L1', the iohexol entry on
+// the allergy list carries a second reaction added at the 2021 annual visit from his own report,
+// 'Anaphylaxis (patient report)', severe, while the radiology report of the day grades the 2019
+// reaction moderate, and §1 grades a reaction by the record made when it happened.
+//
 // The 2019 reaction is moderate (diffuse urticaria with mild eyelid swelling), not mild: the 2025
 // ACR-AAAAI consensus advises against premedication after a mild reaction, so a mild one would
 // put RBC-RAD-07 §2 against current guidance (review-clinical-T5-1 S1).
@@ -77,21 +84,26 @@ const condition = (id: string, code: string, display: string, onset: string): Re
 
 const LAB = [{ coding: [{ system: 'http://terminology.hl7.org/CodeSystem/observation-category', code: 'laboratory', display: 'Laboratory' }] }];
 
-const creatinine = (id: string, at: string, issued: string, value: number, enc: string): Resource => ({
+const creatinine = (id: string, at: string, issued: string, value: number, enc: string | null, extra: Partial<Extract<Resource, { resourceType: 'Observation' }>> = {}): Resource => ({
   resourceType: 'Observation',
   id,
   status: 'final',
   category: LAB,
   code: { coding: [{ system: LOINC, code: '2160-0', display: 'Creatinine [Mass/volume] in Serum or Plasma' }], text: 'Creatinine [Mass/volume] in Serum or Plasma' },
   subject: SUBJECT,
-  encounter: { reference: `Encounter/${enc}` },
+  ...(enc ? { encounter: { reference: `Encounter/${enc}` } } : {}),
   effectiveDateTime: at,
   issued,
   valueQuantity: { value, unit: 'mg/dL', system: UCUM, code: 'mg/dL' },
   referenceRange: [{ low: { value: 0.74, unit: 'mg/dL', system: UCUM, code: 'mg/dL' }, high: { value: 1.35, unit: 'mg/dL', system: UCUM, code: 'mg/dL' } }],
+  ...extra,
 });
 
+// The outside lab of the September panel.
+const OUTSIDE_LAB: Resource = { resourceType: 'Organization', id: 'org-t5-harbor', active: true, name: 'Harbor Diagnostic Laboratory' };
+
 const CLINICAL = 'http://terminology.hl7.org/CodeSystem/allergyintolerance-clinical';
+const ANAPHYLAXIS_REPORT = 'Anaphylaxis (patient report)';
 const VERIFICATION = 'http://terminology.hl7.org/CodeSystem/allergyintolerance-verification';
 
 const allergy = (
@@ -169,6 +181,25 @@ const note = (id: string, date: string, type: [string, string], enc: string | nu
   ...(enc ? { context: { encounter: [{ reference: `Encounter/${enc}` }] } } : {}),
 });
 
+// The iohexol entry as the 2021 annual visit left it: his own account of the 2019 reaction added
+// as a second, severe reaction, and the criticality raised, with no record reviewed.
+const iohexolAllergy = (entry: Resource): Resource => {
+  const a = entry as Extract<Resource, { resourceType: 'AllergyIntolerance' }>;
+  return {
+    ...a,
+    criticality: 'high',
+    reaction: [
+      ...(a.reaction ?? []),
+      {
+        manifestation: [{ coding: [{ system: SNOMED, code: '39579001', display: 'Anaphylaxis' }], text: 'Anaphylaxis' }],
+        description: ANAPHYLAXIS_REPORT,
+        severity: 'severe',
+        note: [{ time: '2021-03-08T10:40:00-05:00', text: 'Patient reports anaphylaxis to CT dye in 2019. Added at the annual visit from the patient\'s account; no records reviewed.' }],
+      },
+    ],
+  };
+};
+
 const CT_2019 = `St. Brigid Regional - Radiology Report
 Patient: Daniel Ferreira   DOB 1962-03-30
 Exam: CT abdomen and pelvis with IV contrast   Date: 2019-05-14
@@ -230,11 +261,16 @@ const overlay: Overlay = {
       encounter('enc-t5-0814', ['185349003', 'Encounter for check up (procedure)'], '2025-08-14T09:00:00-04:00', '2025-08-14T09:30:00-04:00', CLINIC, OKAFOR),
       condition('cond-t5-t2dm', '44054006', 'Diabetes mellitus type 2 (disorder)', '2014-03-11T10:00:00-04:00'),
       condition('cond-t5-pcyst', '31258000', 'Cyst of pancreas (disorder)', '2023-06-20T14:45:00-04:00'),
-      allergy('alg-t5-iohexol', 'medication', [RXNORM, '5956', 'iohexol'], 'confirmed', '2019-05-14T10:20:00-04:00', '2019-05-14T12:30:00-04:00', ['126485001', 'Urticaria'], 'moderate'),
+      iohexolAllergy(allergy('alg-t5-iohexol', 'medication', [RXNORM, '5956', 'iohexol'], 'confirmed', '2019-05-14T10:20:00-04:00', '2019-05-14T12:30:00-04:00', ['126485001', 'Urticaria'], 'moderate')),
       allergy('alg-t5-shellfish', 'food', [SNOMED, '735029006', 'Shellfish (substance)'], 'unconfirmed', '1998', '2014-03-11T10:00:00-04:00', ['271807003', 'Eruption of skin'], 'mild'),
       allergy('alg-t5-pvp', 'medication', [RXNORM, '8611', 'povidone-iodine'], 'confirmed', '2016-09', '2016-09-20T10:00:00-04:00', ['40275004', 'Contact dermatitis'], 'mild'),
       creatinine('obs-t5-scr-0612', '2023-06-12T14:20:00-04:00', '2023-06-12T18:05:00-04:00', 0.94, 'enc-t5-0612'),
       creatinine('obs-t5-scr-0814', '2025-08-14T09:20:00-04:00', '2025-08-14T13:10:00-04:00', 0.98, 'enc-t5-0814'),
+      OUTSIDE_LAB,
+      creatinine('obs-t5-scr-0924', '2026-09-24T10:05:00-04:00', '2026-09-24T16:30:00-04:00', 1.02, null, {
+        performer: [{ reference: 'Organization/org-t5-harbor' }],
+        note: [{ time: '2026-09-24T17:05:00-04:00', text: 'Outside result: Harbor Diagnostic Laboratory, comprehensive metabolic panel. Entered from the faxed report.' }],
+      }),
       {
         resourceType: 'Observation',
         id: 'obs-t5-a1c-0814',
@@ -325,11 +361,12 @@ const overlay: Overlay = {
       lint: {
         ages: [{ patient: PT, threshold: 60 }],
         // RBC-RAD-07 §4: a creatinine within 30 days before the scan.
-        windows: [{ name: 'creatinine within 30 days of the 2026-10-26 scan', boundary: '2026-09-26', resources: ['obs-t5-scr-0612', 'obs-t5-scr-0814'] }],
+        // obs-t5-scr-0924 sits 2 days outside it on purpose: within 30 days of NOW, not of the scan.
+        windows: [{ name: 'creatinine within 30 days of the 2026-10-26 scan', boundary: '2026-09-26', resources: ['obs-t5-scr-0612', 'obs-t5-scr-0814', 'obs-t5-scr-0924'], traps: { 'obs-t5-scr-0924': 'scr_counted_from_today' } }],
         timeWindows: [{ name: 'premedication through the scan', start: '2026-10-25T20:00:00-04:00', end: '2026-10-26T09:30:00-04:00' }],
         leakage: {
           answers: ['8:00 PM', '2:00 AM', '2026-10-25T20:00', '2026-10-26T02:00'],
-          distractors: ['doc-t5-ct-2019', 'doc-t5-ct-2023', 'doc-t5-tel-0922', 'doc-t5-tel-1009', 'mr-t5-pred-2023', 'mr-t5-dph-2023', 'appt-t5-1026'],
+          distractors: ['alg-t5-iohexol', 'obs-t5-scr-0924', 'doc-t5-ct-2019', 'doc-t5-ct-2023', 'doc-t5-tel-0922', 'doc-t5-tel-1009', 'mr-t5-pred-2023', 'mr-t5-dph-2023', 'appt-t5-1026'],
         },
       },
     };

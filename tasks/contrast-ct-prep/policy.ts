@@ -1,6 +1,6 @@
 // T5's expected end state, computed from the initial world by RBC-RAD-07 (design section 4,
 // "Double derivation"): the patient and the slot the instruction names, the contrast reaction
-// §1 makes the risk factor and its severity (§2, §3), the dose times counted back from the scan,
+// §1 makes the risk factor and its severity (§2, §3) as the record of that day grades it, the dose times counted back from the scan,
 // and whether §4 needs a new creatinine. It never imports expected.ts or overlay constants
 // (lint: no-policy-expected-import).
 import { eastern, NOW_DATE } from '../../packages/env/clock.ts';
@@ -81,9 +81,6 @@ export function derive(world: WorldView): Json {
   const contrast = allergies.filter((a) => IODINATED.includes(substanceOf(a)));
   if (contrast.length !== 1) throw new Error(`${ref}: ${contrast.length} contrast allergies`);
   const allergy = contrast[0]!;
-  const severity = SEVERITY[Math.max(...(allergy.reaction ?? []).map((r) => SEVERITY.indexOf(r.severity ?? '')))] ?? 'unknown';
-  // §2 or §3.
-  const regimen = severity === 'severe' ? 'no_contrast' : severity === 'unknown' ? 'unknown' : 'premedicate';
 
   // The record of the reaction: the patient's note of that day that names the agent.
   const onset = clinicDate(allergy.onsetDateTime!);
@@ -91,6 +88,12 @@ export function derive(world: WorldView): Json {
     (d) => d.subject?.reference === ref && d.date !== undefined && clinicDate(d.date) === onset && decode(d.content?.[0]?.attachment?.data).toLowerCase().includes(substanceOf(allergy)),
   );
   if (notes.length !== 1) throw new Error(`${ref}: ${notes.length} notes record the ${substanceOf(allergy)} reaction`);
+  // §1: the grade that record gives ('a moderate allergic-like reaction'), not a later label on
+  // the allergy list; the list's most severe reaction only when the record grades none.
+  const graded = new RegExp(`\\b(${SEVERITY.join('|')}) allergic-like reaction`, 'i').exec(decode(notes[0]!.content?.[0]?.attachment?.data))?.[1]?.toLowerCase();
+  const severity = graded ?? SEVERITY[Math.max(...(allergy.reaction ?? []).map((r) => SEVERITY.indexOf(r.severity ?? '')))] ?? 'unknown';
+  // §2 or §3.
+  const regimen = severity === 'severe' ? 'no_contrast' : severity === 'unknown' ? 'unknown' : 'premedicate';
 
   // §2: each dose counted back from the scan.
   const before = (hours: number[]) => hours.map((h) => eastern(scan - h * HOUR));

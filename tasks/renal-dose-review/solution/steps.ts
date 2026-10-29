@@ -22,6 +22,11 @@ export const observations = (code: string, more: { sort?: string; count?: number
   input: { resource_type: 'Observation', patient: PT, code, ...more },
 });
 export const scrResults = observations('2160-0');
+// Every result of his, newest first, as the pilot-0 trials searched: it shows the stated weight
+// (3142-7) of 10/22 above the measured one of 10/20.
+export const allObservations: ScriptCall = { name: 'fhir_search', input: { resource_type: 'Observation', patient: PT, sort: '-date', count: 50 } };
+// The pharmacist's flag (doc-t1-rx-1021), found as the pilot-0 trials searched the notes.
+export const apixabanNotes: ScriptCall = { name: 'search_notes', input: { query: 'apixaban dose', patient: PT } };
 export const weights = observations('29463-7');
 export const policy: ScriptCall = { name: 'read_policy', input: { policy_id: 'RBC-PHARM-07' } };
 export const read = (resource_type: string, id: string): ScriptCall => ({ name: 'fhir_read', input: { resource_type, id } });
