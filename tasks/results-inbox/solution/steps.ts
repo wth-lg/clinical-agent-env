@@ -20,6 +20,7 @@ export const PT = {
 export const ITEM = (n: number) => `Task/task-t2-inbox-${n}`;
 export const SRC = {
   ct: 'DiagnosticReport/dr-t2-ct-0604',
+  ldct: 'DiagnosticReport/dr-t2-ldct-0915',
   hp: 'DocumentReference/doc-t2-hp-lm58',
   us: 'DiagnosticReport/dr-t2-us-1020',
   fit: 'Observation/obs-t2-fit-1019',

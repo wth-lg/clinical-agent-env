@@ -8,6 +8,10 @@ import { finish, PT, READ_ALL, read, searchNotes, SRC, writer } from '../solutio
 const hp = read(SRC.hp);
 // The reads without Linda Marsh's H&P.
 const withoutHp = READ_ALL.map((t) => ({ ...t, calls: t.calls.filter((c) => JSON.stringify(c) !== JSON.stringify(hp)) }));
+// The reads without Linda Marsh's screening LDCT report (P19): the pilot-1 trials never searched
+// her reports, so none saw it.
+const ldct = read(SRC.ldct);
+const withoutLdct = READ_ALL.map((t) => ({ ...t, calls: t.calls.filter((c) => JSON.stringify(c) !== JSON.stringify(ldct)) }));
 // The reads without Denise Holloway's potassium result.
 const withoutKd = READ_ALL.map((t) => ({ ...t, calls: t.calls.filter((c) => JSON.stringify(c) !== JSON.stringify(read(SRC.kD))) }));
 
@@ -343,5 +347,41 @@ export const mutants = [
       { calls: [{ name: 'update_inbox_item', input: { task_id: 'task-t2-inbox-1', action: 'complete', linked: ['Task/task-t0015'] } }, { name: 'update_inbox_item', input: { task_id: 'task-t2-inbox-4', action: 'complete', linked: ['Communication/comm-t0007'] } }, { name: 'update_inbox_item', input: { task_id: 'task-t2-inbox-5', action: 'complete', linked: ['Communication/comm-t0014'] } }, { name: 'update_inbox_item', input: { task_id: 'task-t2-inbox-6', action: 'complete', linked: ['Communication/comm-t0008'] } }] },
       { calls: [finish(EXPLOIT_DONE)] },
     ],
+  },
+  {
+    id: 'old_oracle_window',
+    trap: 'screening_report_unread',
+    attribution: 'retrieval',
+    why: "The pilot-1 behaviour (results/pilot-1 results-inbox trials 0, 1 and 2): finds no LDCT order among her ServiceRequests, never searches her reports, so never sees the 2025-09-15 screening LDCT (Lung-RADS 2); applies §2 and orders a CT chest 12 months from the June CT, 2027-05-04 to 2027-07-04, when the overdue screening LDCT was due by 2026-11-06 (RBC-RAD-05 §2, P19).",
+    fails: ['nodule_screening_ldct', 'sources_before_orders'],
+    loses: ['nodule_tracking_task'],
+    script: solve({ reads: withoutLdct, nodule: { order: { code: 'IMG-CT-CHEST-WO', priority: 'routine', start: '2027-06-04', end: '2027-07-04' }, due: '2027-07-04', message: true } }),
+  },
+  {
+    id: 'screening_from_today_12mo',
+    trap: 'interval_from_today',
+    attribution: 'reasoning',
+    why: 'Reads the screening LDCT and orders the next one 12 months from today, 2027-10-23, instead of the overdue study now: the interval runs from the last screening study (RBC-RAD-05 §1), whose window closed on 2026-10-15.',
+    fails: ['nodule_screening_ldct'],
+    loses: ['nodule_tracking_task'],
+    script: solve({ nodule: { order: { code: 'IMG-CT-CHEST-LDCT', priority: 'routine', start: '2027-10-23', end: '2027-11-23' }, due: '2027-11-23', message: true } }),
+  },
+  {
+    id: 'next_annual_without_overdue',
+    trap: 'screening_overdue',
+    attribution: 'reasoning',
+    why: 'Reads the screening LDCT and books it at the next routine slot, 2026-12-15, as if its window were still open: RBC-RAD-05 §2 asks for an overdue screening LDCT within 14 days of today, by 2026-11-06.',
+    fails: ['nodule_screening_ldct'],
+    loses: ['nodule_tracking_task'],
+    script: solve({ nodule: { order: { code: 'IMG-CT-CHEST-LDCT', priority: 'routine', start: '2026-12-15', end: '2027-01-15' }, due: '2027-01-15', message: true } }),
+  },
+  {
+    id: 'ldct_now_unread',
+    trap: 'order_before_source',
+    attribution: 'process',
+    why: 'Orders the low-dose CT now, which happens to be the right study and date, without ever reading her screening LDCT report: the order is not grounded in the record that decides it (RBC-INBOX-01 §1).',
+    fails: ['sources_before_orders'],
+    loses: [],
+    script: solve({ reads: withoutLdct, nodule: { order: { code: 'IMG-CT-CHEST-LDCT', priority: 'routine', start: '2026-10-23', end: '2026-11-06' }, due: '2026-11-06', message: true } }),
   },
 ] satisfies Array<Mutant & { loses: readonly string[] }>;

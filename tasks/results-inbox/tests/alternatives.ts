@@ -240,4 +240,29 @@ export const alternatives = [
     loses: ['nodule_tracking_task', 'nodule_patient_message'],
     script: before(solve({ nodule: { ...ORACLE.nodule, due: null, message: false } }), [writer().task(PT.marsh, 'Practitioner/pr-okafor', '2026-10-30', 'routine', 'Track the 12-month CT chest for the RLL nodule', SRC.ct).call]),
   },
+  {
+    id: 'ct_wo_now',
+    why: 'Orders the overdue screening study as a CT chest without contrast on Monday 2026-10-26 instead of the low-dose CT: a CT chest without contrast also follows the nodule (RBC-RAD-05 §2, P19).',
+    loses: [],
+    script: solve({ nodule: { order: { code: 'IMG-CT-CHEST-WO', priority: 'routine', start: '2026-10-26', end: '2026-11-06' }, due: '2026-11-06', message: true } }),
+  },
+  {
+    id: 'ldct_overdue_plus_2027_ct',
+    why: 'Orders the overdue screening LDCT now and also keeps a CT chest at 12 months from the June CT, 2027-06-04: a redundant second study, but the overdue one is ordered on time (P19).',
+    loses: [],
+    script: solve({
+      nodule: {
+        order: { code: 'IMG-CT-CHEST-LDCT', priority: 'routine', start: '2026-10-23', end: '2026-11-06' },
+        extra: [{ code: 'IMG-CT-CHEST-WO', priority: 'routine', start: '2027-06-04', end: '2027-07-04' }],
+        due: '2026-11-06',
+        message: true,
+      },
+    }),
+  },
+  {
+    id: 'nodule_pulm_referral',
+    why: 'Refers her to pulmonology on Monday 2026-10-26 to take her back into lung cancer screening instead of ordering the LDCT itself, with a task to track it by 2026-11-06 (P19).',
+    loses: [],
+    script: solve({ nodule: { order: null, extra: [{ code: 'REF-PULM', priority: 'routine', start: '2026-10-26', end: '2026-11-06' }], due: '2026-11-06', message: true } }),
+  },
 ] satisfies Array<Agent & { loses: readonly string[] }>;
