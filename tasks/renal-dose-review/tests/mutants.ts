@@ -435,7 +435,7 @@ export const mutants: Mutant[] = [
     trap: 'gabapentin_frequency',
     why: 'Orders gabapentin as two 600 mg doses at the same instant, 08:00, on each of three days: two events a day, but one administration of 1200 mg, which is once daily, not the twice-daily regimen RBC-PHARM-07 §4 gives the 30-59 band (verifier-phase-P17i-P17j-T1retro-1 F1).',
     fails: ['gabapentin_dose'],
-    loses: ['gabapentin_twice_daily'],
+    loses: ['gabapentin_twice_daily', 'note_states_false_change'],
     script: [
       ...reads,
       { calls: [apixabanUp, gabapentinEvents(['2026-10-29', '2026-10-30', '2026-10-31'].flatMap((d) => [`${d}T08:00:00-04:00`, `${d}T08:00:00-04:00`]))] },
@@ -448,7 +448,7 @@ export const mutants: Mutant[] = [
     trap: 'gabapentin_frequency',
     why: 'Orders gabapentin as two 600 mg doses 30 minutes apart, 08:00 and 08:30, on each of three days: doses under 4 h apart are one administration time, so this is 1200 mg once daily, not twice daily (RBC-PHARM-07 §4; verifier-phase-P17i-P17j-T1retro-1 F1).',
     fails: ['gabapentin_dose'],
-    loses: ['gabapentin_twice_daily'],
+    loses: ['gabapentin_twice_daily', 'note_states_false_change'],
     script: [
       ...reads,
       { calls: [apixabanUp, gabapentinEvents(['2026-10-29', '2026-10-30', '2026-10-31'].flatMap((d) => [`${d}T08:00:00-04:00`, `${d}T08:30:00-04:00`]))] },
@@ -461,7 +461,7 @@ export const mutants: Mutant[] = [
     trap: 'gabapentin_frequency',
     why: 'Orders gabapentin as two 600 mg doses at 08:00 and two at 20:00 on each of three days: twice daily, but 2400 mg/day, over the 1400 mg/day limit RBC-PHARM-07 §4 gives the 30-59 band. The near miss of reading doses at one time as one administration: they still count toward the daily total (builder-168).',
     fails: ['gabapentin_dose'],
-    loses: [],
+    loses: ['note_states_false_change'],
     script: [
       ...reads,
       { calls: [apixabanUp, gabapentinEvents(['2026-10-29', '2026-10-30', '2026-10-31'].flatMap((d) => [`${d}T08:00:00-04:00`, `${d}T08:00:00-04:00`, `${d}T20:00:00-04:00`, `${d}T20:00:00-04:00`]))] },

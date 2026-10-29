@@ -1427,6 +1427,24 @@
     }
   },
   {
+    "key": "ae9944553febddfa8479e7d8da6fc9ea10fbc0d283813c0706816b79ce95ef66",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Reduced from 600 mg three times daily (1800 mg/day) to 600 mg twice daily (1200 mg/day)."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T06:04:28.168Z"
+    }
+  },
+  {
     "key": "af5bc5f587ba01fad87f13604ec65c4effabb5726a4c32120710007f9ce626c9",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -1824,6 +1842,24 @@
     }
   },
   {
+    "key": "d0965bd3307e9b43aeb5f32e556a230c0f3655fea81c742e79390580c5da4887",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Reduced from 600 mg three times daily (1800 mg/day) to 600 mg twice daily (1200 mg/day)."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T06:04:28.168Z"
+    }
+  },
+  {
     "key": "d18c9d86217f3e8ddebc29b03a29cbfd47481175028ee1094fc5d6b9fea7ae00",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -2183,6 +2219,24 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-25T14:39:17.813Z"
+    }
+  },
+  {
+    "key": "f4ba801bd75eff0a03467c91478cfe1520c872145f932999f27495b990082237",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Reduced from 600 mg three times daily (1800 mg/day) to 600 mg twice daily (1200 mg/day)."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T06:04:28.168Z"
     }
   },
   {
