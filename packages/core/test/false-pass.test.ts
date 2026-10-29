@@ -5,7 +5,7 @@
 // HARM_POINTS stays -5 (decisions.tsv 2026-10-27T23:40).
 import { describe, expect, it } from 'vitest';
 import { blocksRun, excludedFromHeadline, explainTrial, type AuditRow, type ExplainContext, type ExplainRecord } from '../explain.ts';
-import { DENOMINATOR_RULE, FAULT_DEFINITIONS, PASS_DEFINITION } from '../outcomes.ts';
+import { DENOMINATOR_RULE, FAULT_DEFINITIONS, PASS_CONFIRMED, PASS_DEFINITION, passConfirmationBreaks } from '../outcomes.ts';
 import { HARM_POINTS } from '../summary.ts';
 
 const ctx: ExplainContext = { events: [], world_state_hash: 'h', matrix: null };
@@ -62,9 +62,74 @@ describe('GR5 needs an audit of the PASS itself (verifier-phase-P17i-JG5-1 S2)',
   });
 });
 
+describe('an adjudication that confirms the PASS (verifier-phase-P17j-retro-JG5-unread-1 D1)', () => {
+  it('adjudicated_label pass is PASS_CONFIRMED, and over a label grader leaves no fault and no audit label', () => {
+    expect(PASS_CONFIRMED).toBe('pass');
+    const e = explainTrial(pass, row({ llm_auditor_agrees: false, adjudicated_label: PASS_CONFIRMED }), ctx);
+    expect(e.fault_criteria.grader.find((c) => c.id === 'GR5')!.met).toBe(false);
+    expect(e).toMatchObject({ fault: null, audit_label: null });
+    expect(blocksRun(e)).toBeNull();
+  });
+});
+
+// adjudicated_label pass is read only where audit-check accepts it: on a current PASS whose row needs
+// adjudication, with a note when it overrules the row's label grader or environment. Anywhere else
+// the row keeps its own label (verifier-phase-P17i-P17j-S3retro-1 A1 and U1).
+describe('an adjudicated_label pass that nothing called for (verifier-phase-P17i-P17j-S3retro-1 A1, U1)', () => {
+  it('A1: on a PASS labelled grader that nobody disputed, GR5 still holds', () => {
+    for (const r of [row({ adjudicated_label: PASS_CONFIRMED }), row({ llm_auditor_agrees: null, note: '', adjudicated_label: PASS_CONFIRMED })]) {
+      const e = explainTrial(pass, r, ctx);
+      expect(e).toMatchObject({ fault: 'grader', deciding: { id: 'GR5' }, audit_label: 'grader' });
+      expect(blocksRun(e)).toMatch(/GR5/);
+    }
+  });
+
+  it('over a label grader on a disputed row with no note, GR5 still holds', () => {
+    const e = explainTrial(pass, row({ llm_auditor_agrees: false, note: '', adjudicated_label: PASS_CONFIRMED }), ctx);
+    expect(e).toMatchObject({ fault: 'grader', audit_label: 'grader' });
+  });
+
+  it('model_fault unclear confirms an unlabelled PASS with no note', () => {
+    const e = explainTrial(pass, row({ label: null, model_fault: 'unclear', note: '', adjudicated_label: PASS_CONFIRMED }), ctx);
+    expect(e).toMatchObject({ fault: null, audit_label: null });
+  });
+
+  it('an overruled clinically_acceptable no calls for adjudication', () => {
+    const e = explainTrial(pass, row({ clinically_acceptable: 'no', adjudicated_clinically_acceptable: 'yes', adjudicated_label: PASS_CONFIRMED }), ctx);
+    expect(e).toMatchObject({ fault: null, audit_label: null });
+  });
+
+  it('over any label of the row, valid or not, pass needs a note (verifier-phase-P17i-P17j-S3retror2-1 B3)', () => {
+    for (const label of ['model', 'Grader', 'grader ', ' environment']) {
+      expect(passConfirmationBreaks({ llm_auditor_agrees: false }, label, 'PASS')).toBe(`adjudicated_label pass overrules the label ${label}, and needs a note that says why`);
+      expect(passConfirmationBreaks({ llm_auditor_agrees: false, note: 'the PASS is right' }, label, 'PASS')).toBeNull();
+    }
+  });
+
+  it('B1n: a note that is not text counts as no note, and explainTrial does not throw', () => {
+    const odd = row({ llm_auditor_agrees: false, adjudicated_label: PASS_CONFIRMED, note: 7 as unknown as string });
+    expect(passConfirmationBreaks(odd, 'grader', 'PASS')).toBe('adjudicated_label pass overrules the label grader, and needs a note that says why');
+    expect(explainTrial(pass, odd, ctx)).toMatchObject({ fault: 'grader', deciding: { id: 'GR5' } });
+  });
+
+  it('U1 (probe A7): on a FAIL labelled environment or grader, pass is ignored: the row keeps its label', () => {
+    const fail: ExplainRecord = { ...pass, outcome: 'FAIL', checks: [gate('G1', false)] };
+    for (const label of ['environment', 'grader'] as const) {
+      const r = row({ outcome: 'FAIL', model_fault: 'no', label, llm_auditor_agrees: false });
+      const e = explainTrial(fail, { ...r, adjudicated_label: PASS_CONFIRMED }, ctx);
+      expect(e).toMatchObject({ audit_label: label, fault: explainTrial(fail, r, ctx).fault });
+    }
+  });
+});
+
 describe('the rules say so', () => {
   it('PASS_DEFINITION and DENOMINATOR_RULE name the false PASS and how it is resolved', () => {
     expect(PASS_DEFINITION).toMatch(/false PASS \(GR5\)/);
+    // A false PASS is defined by the audit of that PASS, as GR5 is (verifier-phase-P17j-retro-JG5-unread-1 m2).
+    expect(PASS_DEFINITION).toMatch(/human audit of that PASS labels it grader/);
+    expect(gr5!.text).toMatch(/human audit of that PASS labels it grader/);
+    // What an audit outcome GRADER_BUG on a PASS means (verifier-phase-P17j-retro-JG5-unread-1 m1).
+    expect(PASS_DEFINITION).toMatch(/neither is an audit outcome GRADER_BUG on a PASS/);
     expect(DENOMINATOR_RULE).toMatch(/false PASS \(GR5\) is not counted as a pass/);
     expect(DENOMINATOR_RULE).toMatch(/grader fix, a full offline regrade and a disclosure in results\/changelog\.d/);
   });
