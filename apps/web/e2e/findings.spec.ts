@@ -107,6 +107,16 @@ test.describe('the real results build: pilot runs, no official run', () => {
     await expect(page.getByTestId('pilot-rate').first()).toContainText(/Wilson 95% \d/);
     await expect(page.getByTestId('pilot-findings').first().getByTestId('legend')).toBeVisible();
     await expect(page.getByTestId('will-show').getByRole('link')).toHaveCount(3);
+    // The two glossary links name the Attribution page, never "Labels" (verifier-phase-P17i-P17j-S9-1
+    // S1: this state, no official run, is the only one that renders them), and "the fault labels"
+    // opens the Fault labels table (N2).
+    await expect(page.getByTestId('will-show').getByText(/\bLabels\b/)).toHaveCount(0);
+    await expect(page.getByTestId('will-show').getByRole('link', { name: /on Attribution$/ })).toHaveCount(2);
+    await page.getByTestId('will-show').getByRole('link', { name: 'see the fault labels on Attribution' }).click();
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('How failures are attributed');
+    await expect(page).toHaveURL(/#fault-labels$/);
+    await expect(page.locator('#fault-labels').getByTestId('audit-label-table')).toBeVisible();
+    await browseAt(page, `${base}?view=findings`);
     await page.getByTestId('will-show').getByRole('link', { name: /Run them now on Tasks/ }).click();
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Tasks');
   });
