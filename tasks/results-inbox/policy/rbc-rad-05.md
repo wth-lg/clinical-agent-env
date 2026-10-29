@@ -7,6 +7,7 @@ Follow-up intervals in a report run from the date of the index study, not from t
 
 §2 Incidental solid pulmonary nodule smaller than 6 mm
 Applies whether the nodule was seen on a chest CT or on partial chest imaging, such as the lung bases on an abdominal CT.
+Does not apply to a nodule already followed in lung cancer screening: order the next screening LDCT on the last screening report's schedule, timed from that study (§1); if its window (plus or minus 1 month) has passed, order it within 14 days of today.
 Low risk (never smoked, or fewer than 20 pack-years and quit 15 or more years ago): no routine follow-up; document the decision.
 High risk (any other smoking history, including a current smoker): CT chest without contrast 12 months after the index study, window plus or minus 1 month.
 

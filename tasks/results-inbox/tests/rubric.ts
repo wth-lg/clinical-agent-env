@@ -150,15 +150,17 @@ const messageItem = (id: string, x: { patient: string }, traces: string, routed 
     },
   });
 
-// Each actionable item's finding, as its result (and, for item 1, the H&P) states it, and findings
+// Each actionable item's finding, as its result (and, for item 1, the screening LDCT) states it, and findings
 // that contradict it (P17 T2 exploit I3, decisions.tsv 2026-10-28T17:40Z): the judge reads a note
 // against these, since a note that only cites the result can say anything.
 type Finding = { result: string; finding: string; contrary: string };
 const FINDINGS: Record<'nodule' | 'fit' | 'hemolyzed_k' | 'critical_k' | 'bone', Finding> = {
+  // P19: the nodule is already followed in lung cancer screening, so the finding is the overdue
+  // screening LDCT, not §2's 12-month CT.
   nodule: {
-    result: 'CT of 2026-06-04 and H&P',
-    finding: `a ${I.nodule.nodule_mm} mm solid nodule in the right lower lobe, in a patient with a ${I.nodule.pack_years} pack-year smoking history who quit in ${I.nodule.quit_year}, so a high-risk nodule that needs a follow-up chest CT`,
-    contrary: 'no nodule, a nodule of another size or a calcified or benign one, a never-smoker or low-risk patient, or that no follow-up is needed',
+    result: `CT of ${I.nodule.index_date} and screening low-dose CT (LDCT) of ${I.nodule.screening_index}`,
+    finding: `a ${I.nodule.nodule_mm} mm solid nodule in the right lower lobe, already followed in lung cancer screening (Lung-RADS ${I.nodule.lung_rads} on the screening LDCT of ${I.nodule.screening_index}, annual LDCT recommended), so the next screening LDCT, due 12 months after that study, is overdue and needs ordering now`,
+    contrary: 'no nodule, a nodule of another size or a calcified or benign one, a never-smoker, or that no follow-up is needed',
   },
   fit: {
     result: 'fecal immunochemical test (FIT) collected 2026-10-16',
@@ -249,7 +251,7 @@ const CYST_CRITERION =
 // the trial messaged a patient: one question per patient messaged.
 // Each inbox patient's name and what the inbox is about for them.
 const PATIENT_MATTERS: Record<string, [name: string, matters: string]> = {
-  [I.nodule.patient]: ['Linda Marsh', 'the small lung nodule on her June CT and a follow-up chest CT in 2027'],
+  [I.nodule.patient]: ['Linda Marsh', 'the small lung nodule on her June CT, her lung cancer screening CT of September 2025 and the overdue screening CT now ordered'],
   [I.cyst.patient]: ['Leslie Parisian', 'her kidney ultrasound showing a simple cyst'],
   [I.fit.patient]: ['Raj Patel', "his positive stool test (FIT), Dr. Lin's gastroenterology referral and a colonoscopy"],
   [I.hemolyzed_k.patient]: ['Walter Brennan', 'his potassium result on a damaged (hemolyzed) blood sample and a repeat blood test'],

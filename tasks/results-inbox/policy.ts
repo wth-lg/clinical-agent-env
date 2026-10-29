@@ -67,6 +67,21 @@ function smoking(world: WorldView, patient: string): { note: string; pack_years:
   return undefined;
 }
 
+// RBC-RAD-05 §2's exception: the patient's most recent lung cancer screening report that states a
+// Lung-RADS category and the interval to the next screening study, if any (by study date, then id).
+function screening(world: WorldView, patient: string): { report: string; index: string; lung_rads: number; months: number } | undefined {
+  const reports = (world.all('DiagnosticReport') as readonly Report[])
+    .filter((r) => r.subject?.reference === patient && r.effectiveDateTime !== undefined)
+    .sort((a, b) => b.effectiveDateTime!.localeCompare(a.effectiveDateTime!) || (a.id! < b.id! ? -1 : 1));
+  for (const r of reports) {
+    const text = noteText(r as never) ?? '';
+    const category = /Lung-RADS\s+(\d)/.exec(text);
+    const interval = /screening\b[^.]*\bin (\d+) months/i.exec(text);
+    if (/lung cancer screening/i.test(text) && category && interval) return { report: key(r), index: clinicDate(r.effectiveDateTime!), lung_rads: Number(category[1]), months: Number(interval[1]) };
+  }
+  return undefined;
+}
+
 export function derive(world: WorldView): Json {
   const items = (world.all('Task') as readonly Item[])
     .filter((t) => t.status === 'requested' && (t.code?.coding ?? []).some((c) => c.system === INBOX && c.code === 'results'))
@@ -90,12 +105,32 @@ export function derive(world: WorldView): Json {
           // Low risk is a never smoker, or fewer than 20 pack-years and quit 15 or more years ago;
           // every other history is high risk, a current smoker (no quit year) included.
           if (Number(nodule[1]) >= 6) throw new Error(`${key(report)}: a ${nodule[1]} mm nodule is outside RBC-RAD-05 §2`);
+          const index = clinicDate(report.effectiveDateTime!);
+          const screen = screening(world, patient);
+          if (screen) {
+            // §2's exception with §1: the next screening study on the last screening report's
+            // schedule, from that study, window plus or minus 1 month; once that window has
+            // passed, within 14 days of today.
+            const due = plusMonths(screen.index, screen.months);
+            const overdue = plusMonths(due, 1) < NOW_DATE;
+            out.nodule = {
+              ...base,
+              sources: [key(report), screen.report],
+              nodule_mm: Number(nodule[1]),
+              index_date: index,
+              screening_index: screen.index,
+              lung_rads: screen.lung_rads,
+              overdue,
+              window: overdue ? { start: NOW_DATE, end: plusDays(NOW_DATE, 14) } : { start: plusMonths(due, -1), end: plusMonths(due, 1) },
+              action: 'order',
+            };
+            continue;
+          }
           const history = smoking(world, patient);
           if (!history) throw new Error(`${patient}: no smoking history in a note`);
           const years = history.quit_year === null ? 0 : Number(NOW_DATE.slice(0, 4)) - history.quit_year;
           const low = history.never || (history.pack_years !== null && history.pack_years < 20 && years >= 15);
           const high = !low;
-          const index = clinicDate(report.effectiveDateTime!);
           const due = plusMonths(index, 12);
           out.nodule = {
             ...base,

@@ -23,11 +23,11 @@ const extraOrders = (ev: Record<string, unknown>, key: string) => {
 };
 
 export const checkText: CheckText = {
-  nodule_ct_window: {
-    requires: `a chest CT for ${I.nodule.patient} set between ${I.nodule.window.start} and ${I.nodule.window.end}`,
+  nodule_screening_ldct: {
+    requires: `the overdue screening LDCT (or a CT chest without contrast, or a pulmonology referral) for ${I.nodule.patient} set between ${I.nodule.window.start} and ${I.nodule.window.end}`,
     found: (ev) => {
       const first = fields(items(ev.orders)[0]);
-      return first.id === undefined ? 'no chest CT order' : `${show(first.id)} is set for ${show(first.start)}`;
+      return first.id === undefined ? 'no chest CT or pulmonology order' : `${show(first.id)} is set for ${show(first.start)}`;
     },
   },
   namesake_untouched: { requires: `no write about the patient with the same name (${listed(expected.namesakes)})`, found: (ev) => extraOrders(ev, 'touched') },
