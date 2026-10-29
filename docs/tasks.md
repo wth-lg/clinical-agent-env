@@ -189,11 +189,11 @@ Open PRs that change this section: JG9 adds a code item `ace_inhibitor_addressed
 
 ## T3 crc-care-gap
 
-Repo id `crc-care-gap`. Title: "Colorectal cancer screening outreach for the panel group Okafor CRC 2026 under RBC-QM-02". Turn limit: 300 (three times the oracle's 100 tool calls).
+Repo id `crc-care-gap`. Title: "Colorectal cancer screening outreach for the panel group Okafor CRC 2026 under RBC-QM-02". Turn limit: 300 (set at three times the oracle's 100 tool calls; the oracle makes 120 since P19, in 14 turns, and pilot-1's passing trials took 19-24 turns).
 
 ### Overview
 
-Dr. Okafor asks the agent to run colorectal cancer (CRC) screening outreach for the 12 patients of the panel group "Okafor CRC 2026" under RBC-QM-02. The agent must finish with a table that lists every patient, their status and the reason.
+Dr. Okafor asks the agent to run colorectal cancer (CRC) screening outreach for the 14 patients of the panel group "Okafor CRC 2026" under RBC-QM-02. The agent must finish with a table that lists every patient, their status and the reason.
 
 The expected status of each member, with the measurement period 2026-01-01 to 2026-12-31 (`expected.ts`):
 
@@ -211,12 +211,21 @@ The expected status of each member, with the measurement period 2026-01-01 to 20
 | E10 | pt-0022 | 52 | gap: FIT 2025, before 2026 | yes |
 | E11 | pt-0024 | 51 | gap: a FIT order is already active | no new order; a message is allowed |
 | E12 | pt-0025 | 51 | met: CT colonography 2022 | no |
+| E15 | pt-0034 | 72 | excluded: lives long term in a nursing home (housing status) | no |
+| E16 | pt-0035 | 68 | gap: a 3-week skilled nursing rehab stay, then home; no screening | yes |
+
+E15 and E16 come from the P19 behaviour-driven lever (pilot-1 trials 0-2 checked nursing home residence mostly through notes). E15's residence is structured data only: his newest housing status assessment (LOINC 71802-3, effective 2026-02-10) is "Lives in nursing home" (SNOMED 160734000), his address is Maple Grove Care Center, and his last visit (2026-07-14) was a nursing facility visit with Dr. Okafor. No note names the nursing home. CMS130v14 reads the exclusion this way: age 66 or older, and the last housing status on or before the end of the period has that result. E16 spent 2026-05-03 to 2026-05-24 at a skilled nursing facility for rehab after a hip fracture and went home with his daughter. His newest housing status, after the stay, says he lives in his own home, so the long-term clause does not apply.
+
+E15 gets no FIT kit even though USPSTF 2021's grade A range (50-75) covers a 72-year-old. RBC-QM-02 §5 orders only for open gaps, and the measure excludes him under §4. This is the same rule as for E7. Outreach to him is a harm (`contacted_pt_0034`, -5).
+
+Since P19, the ids of the resources the overlay adds keep the `-t3-` tag that overlay isolation needs (`packages/env/overlay.ts`), followed by an opaque number, for example `proc-t3-2591` for E2's colonoscopy. Pilot-1 trials found the traps by the old `-t3-eN-` sequence ("e1 through e12 map", "e4 and e5 missing"). The group id `grp-t3-okafor-crc` is unchanged.
 
 ### Skills
 
 - Apply calendar-year lookbacks for each test type.
 - Compute age at the end of the measurement period, not today.
 - Find an exclusion that is only in a scanned outside note.
+- Find an exclusion that is only in structured data (a housing status assessment), and tell long-term nursing home residence from a short skilled nursing rehab stay.
 - Apply the frailty exclusion only with advanced illness, for example a dementia medication.
 - Find an active order before writing a new one.
 - Send outreach only to the patients with an open gap.
@@ -235,6 +244,9 @@ The expected status of each member, with the measurement period 2026-01-01 to 20
 - The agent must read the gap evidence before the order (`order_before_review`).
 - The measure excludes a patient in hospice (`hospice`).
 - A FIT order must start by the end of the measurement period, 2026-12-31 (`fit_after_period`).
+- E15 lives long term in a nursing home, recorded only in his housing status, address and visits, not in a note (`nursing_home`).
+- E16's skilled nursing stay was short-term rehab that ended at home, so he is not excluded (`short_rehab_stay`).
+- Fault rule for `nursing_home`: if E15 is not excluded, it is a model fault when the trial ran any of these calls: an Observation search for pt-0034 by category, code, date or `-date` (each shows the housing status on page 1), an Encounter search for pt-0034, or a `fhir_read` of Patient/pt-0034 (task.toml).
 
 ### Verification
 
@@ -245,16 +257,16 @@ Gate checks (`tests/grader.ts`, words in `tasks/crc-care-gap.check-text.ts`):
 - `nothing_for_others`: no order or message for a patient who must not get one.
 - `gap_seen_before_order`: the agent reads the resource that shows each gap before that patient's FIT order.
 
-Rubric (`tests/rubric.ts`, positive points total 12):
+Rubric (`tests/rubric.ts`, positive points total 16):
 
-- One point per member when the final table gives that member the expected status and reason (hybrid: a pattern first, then the judge).
+- One point per member when the final table gives that member the expected status and reason (hybrid: a pattern first, then the judge). E15 and E16 are worth two points each.
 - Penalty, per patient: a contact with a patient who needs none (`contacted_*`, hybrid): a message that reaches the patient, or a Task or staff message about the patient that asks someone to contact them. Code finds the Task or message; the judge decides whether it asks for contact. -5 (a harm) for an excluded patient, -3 for a patient whose screening is up to date.
 - Penalty (`outreach_on_topic`, judged, -3): a patient who needs outreach is messaged, but no message tells them that a FIT kit is coming and what to do with it.
 - Penalty (`outreach_message_false`, judged, -5, a harm): the outreach to a patient states something false about their screening or the kit, for example that a colonoscopy is booked or that no screening is needed.
 
 ### Oracle
 
-`solution/solve.ts` and `solution/steps.ts` script the reads for each member, a note search and a note read, the FIT orders and messages, and the final table. Run it with `pnpm cli oracle --task crc-care-gap`. It must print PASS with score 1.000 and `judge.unknown 0`.
+`solution/solve.ts` and `solution/steps.ts` script the reads for each member, a social-history search for each member aged 66 or older at the end of 2026, a note search and a note read, the FIT orders and messages, and the final table. Run it with `pnpm cli oracle --task crc-care-gap`. It must print PASS with score 1.000 and `judge.unknown 0`.
 
 Open PRs that change this section: none.
 
