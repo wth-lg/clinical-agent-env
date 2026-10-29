@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:discharge-medrec:8",
   "task_id": "discharge-medrec",
-  "task_version": "6aad26ccab993d582e036652e11996217540d9ad5f6cdd774b7138224003cd01",
+  "task_version": "53c0632c8b805585d6feae9f34e1dfbfcaad97872795ab4cf14929d467ea5c93",
   "env_version": "58b6cfe7b4ce04bb26737874129630b9bc48701bd08b9bcf9e213927f6acdb0d",
-  "grader_task_version": "f8662ab64f7fa00f25ca397c883c85661c39268401321f8e4b970ca2057a64a0",
+  "grader_task_version": "c888f2189500063ff8c7f4fdb499a637c3ae38ef48e412ac4f4e878d94668175",
   "fixture_hash": "0b8ff7964370f8452ce17f6c701cc0a5bc8ba82fd8aeeac48098ed83ae6792d7",
   "state_hash": {
     "initial": "0b8ff7964370f8452ce17f6c701cc0a5bc8ba82fd8aeeac48098ed83ae6792d7",
