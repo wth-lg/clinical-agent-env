@@ -217,3 +217,71 @@ describe('clinically_acceptable no and GRADER_BUG on a PASS row (verifier-phase-
     expect(r.out).toContain('violation: t-alpha/0: labelled GRADER_BUG, the record says PASS; a false PASS is recorded as outcome PASS with the label grader and evidence ids (GR5)');
   });
 });
+
+// adjudicated_label pass settles a PASS row only when the row needs adjudication: model_fault
+// unclear, the LLM auditor disagrees, or an auditor's no is overruled by an adjudicated yes. When it
+// overrules the row's own label grader or environment, a note must say why. Any other pass is a
+// violation, and the row keeps its own label, so a false PASS nobody disputed stays GR5
+// (verifier-phase-P17i-P17j-S3retro-1 A1).
+describe('adjudicated_label pass only settles a row that needs adjudication (verifier-phase-P17i-P17j-S3retro-1 A1)', () => {
+  const patch = (dir: string, f: (r: Row) => Row) => writeRows(dir, rows(dir).map((r) => (r.trial === 't-alpha/0' ? f(r) : r)));
+  const withoutNote = ({ note: _note, ...r }: Row): Row => r;
+  const notNeeded = 'violation: t-alpha/0: adjudicated_label pass confirms a PASS only on a row that needs adjudication (model_fault unclear, the LLM auditor disagrees, or an answer no overruled to yes); nothing here calls for it';
+
+  for (const [name, f] of [
+    ['A1: label grader, the LLM auditor agrees, a note', (r: Row) => ({ ...r, label: 'grader', llm_auditor_agrees: true, adjudicated_label: 'pass' })],
+    ['A1b: label grader, the LLM auditor agrees, no note', (r: Row) => ({ ...withoutNote(r), label: 'grader', llm_auditor_agrees: true, adjudicated_label: 'pass' })],
+    ['A1c: label grader, no LLM verdict, no note', (r: Row) => ({ ...withoutNote(r), label: 'grader', llm_auditor_agrees: null, adjudicated_label: 'pass' })],
+  ] as const) {
+    it(`${name}: a violation that names the rule, and the PASS stays a false PASS (GR5)`, async () => {
+      const dir = clean(name.slice(0, 3).toLowerCase());
+      patch(dir, f);
+      const r = await check(dir, true);
+      expect(r.code).toBe(1);
+      expect(r.err).toContain(notNeeded);
+      expect(r.err).toContainEqual(expect.stringMatching(/^violation: t-alpha\/0: PASS is a false PASS \(GR5\)/));
+      expect(JSON.parse(r.out.at(-1)!)).toMatchObject({ excluded: ['t-alpha/0'], denominator: 19, labelled_grader: 1 });
+    });
+  }
+
+  it('pass on an unlabelled PASS that nothing disputes is a violation too', async () => {
+    const dir = clean('pass-not-needed');
+    patch(dir, (r) => ({ ...r, adjudicated_label: 'pass' }));
+    const r = await check(dir);
+    expect(r.code).toBe(1);
+    expect(r.out).toContain(notNeeded);
+  });
+
+  it('pass over a label grader on a disputed row needs a note: without one, a violation, and GR5 stands', async () => {
+    const dir = clean('pass-over-grader-no-note');
+    patch(dir, (r) => ({ ...withoutNote(r), label: 'grader', llm_auditor_agrees: false, adjudicated_label: 'pass' }));
+    const r = await check(dir, true);
+    expect(r.code).toBe(1);
+    expect(r.err).toContain('violation: t-alpha/0: adjudicated_label pass overrules the label grader, and needs a note that says why');
+    expect(JSON.parse(r.out.at(-1)!)).toMatchObject({ excluded: ['t-alpha/0'], denominator: 19 });
+  });
+
+  it('pass over a label environment on a disputed row needs a note: without one, a violation', async () => {
+    const dir = clean('pass-over-env-no-note');
+    patch(dir, (r) => ({ ...withoutNote(r), label: 'environment', model_fault: 'unclear', adjudicated_label: 'pass', note: '  ' }));
+    const r = await check(dir);
+    expect(r.code).toBe(1);
+    expect(r.out).toContain('violation: t-alpha/0: adjudicated_label pass overrules the label environment, and needs a note that says why');
+  });
+
+  it('pass over a label environment on a disputed row, with a note, confirms the PASS', async () => {
+    const dir = clean('pass-over-env-note');
+    patch(dir, (r) => ({ ...r, label: 'environment', model_fault: 'unclear', adjudicated_label: 'pass', note: 'the tool refusal was right; the PASS stands' }));
+    const r = await check(dir);
+    expect(r.out.filter((s) => s.startsWith('violation'))).toEqual([]);
+    expect(r.code).toBe(0);
+  });
+
+  it('FF3 with no note: an unlabelled row needs none', async () => {
+    const dir = clean('ff3-no-note');
+    patch(dir, (r) => ({ ...withoutNote(r), model_fault: 'unclear', adjudicated_label: 'pass' }));
+    const r = await check(dir);
+    expect(r.out.filter((s) => s.startsWith('violation'))).toEqual([]);
+    expect(r.code).toBe(0);
+  });
+});

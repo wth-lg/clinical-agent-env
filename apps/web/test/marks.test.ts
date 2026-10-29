@@ -4,7 +4,7 @@
 // (verifier-phase-P17j-retro-JG5-unread-1 m3).
 import { describe, expect, it } from 'vitest';
 import { explainTrial, type AuditRow, type ExplainContext, type ExplainRecord } from '../../../packages/core/explain.ts';
-import { shownFault } from '../src/data/failures.ts';
+import { blocksTheRun, shownFault } from '../src/data/failures.ts';
 import { BLOCKING_MARKS, markOf } from '../src/data/marks.ts';
 
 const ctx: ExplainContext = { events: [], world_state_hash: 'h', matrix: null };
@@ -35,7 +35,21 @@ describe('markOf', () => {
     expect(markOfTrial(row({ label: 'grader' }))).toBe('grader');
     expect(markOfTrial(null)).toBe('pass');
     expect(markOfTrial(row())).toBe('pass');
-    expect(markOfTrial(row({ label: 'grader', llm_auditor_agrees: false, adjudicated_label: 'pass' }))).toBe('pass');
+    expect(markOfTrial(row({ label: 'grader', llm_auditor_agrees: false, adjudicated_label: 'pass', note: 'the grader was right to pass it' }))).toBe('pass');
+  });
+
+  it('an adjudicated_label pass that nothing called for, or that overrules a label grader with no note, leaves the false PASS (verifier-phase-P17i-P17j-S3retro-1 A1)', () => {
+    expect(markOfTrial(row({ label: 'grader', adjudicated_label: 'pass', note: 'looks fine' }))).toBe('grader');
+    expect(markOfTrial(row({ label: 'grader', llm_auditor_agrees: false, adjudicated_label: 'pass' }))).toBe('grader');
+  });
+
+  it('U1 (probe A7): a FAIL labelled environment or grader with adjudicated_label pass keeps its mark and blocks the run (verifier-phase-P17i-P17j-S3retro-1 U1)', () => {
+    const fail: ExplainRecord = { ...pass, outcome: 'FAIL', checks: [{ id: 'G1', kind: 'gate', met: false }] };
+    for (const [label, mark] of [['environment', 'environment'], ['grader', 'grader']] as const) {
+      const e = explainTrial(fail, row({ outcome: 'FAIL', model_fault: 'no', label, adjudicated_label: 'pass' }), ctx);
+      expect(markOf(e.outcome, shownFault(e))).toBe(mark);
+      expect(blocksTheRun(e)).toBe(true);
+    }
   });
 
   it('failures keep their marks', () => {
