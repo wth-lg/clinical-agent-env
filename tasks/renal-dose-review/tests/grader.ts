@@ -45,7 +45,8 @@ function patients(value: unknown, out: string[] = []): string[] {
 // One active request of the drug whose total daily dose is within [min, max] mg and, when
 // per_day is given, scheduled (not as needed) and given that many times a day (RBC-PHARM-07 §4:
 // the 30-59 band twice daily; a PRN order is not a twice-daily regimen, decisions.tsv
-// 2026-10-29T02:45). Timing events count per full day (regimen.ts eventsPerDay, builder-163 D5).
+// 2026-10-29T02:45). Timing events count per full day (regimen.ts eventsPerDay, builder-163 D5), doses under
+// 4 h apart as one administration time for per_day while every dose counts toward mg (builder-168).
 const dailyIn = (ingredient: string, range: { min: number; max: number }, per_day?: number) => (ctx: GateCtx) => {
   const found = active(ctx, ingredient);
   const mg = found.length === 1 ? mgPerDay(found[0]) : null;
