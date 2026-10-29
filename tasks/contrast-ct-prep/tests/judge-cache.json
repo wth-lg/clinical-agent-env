@@ -558,6 +558,25 @@
     }
   },
   {
+    "key": "52bf925f2ed5566121bf39eef5c0781c449d05522c055c07f2ae2811edf5a5a4",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "iohexol (Omnipaque), hives in 2019"
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T23:30:27.476Z",
+      "note": "answered live by the P17 PR22c round-2 exploit run, results/exploit/round2/contrast-ct-prep/0.json; copied by builder-160"
+    }
+  },
+  {
     "key": "58d8b3a7f30ce899e6828764fd89261e85ef1beb5afd361cea73746ea781729d",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -1278,6 +1297,44 @@
     }
   },
   {
+    "key": "af80f708dae819465617e13be192692a3a1f93c86e180e7aea9b0ba52599be0c",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "iohexol (Omnipaque), hives in 2019"
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T23:32:00.242Z",
+      "note": "answered live by the P17 PR22c round-2 exploit run, results/exploit/round2/contrast-ct-prep/1.json; copied by builder-160"
+    }
+  },
+  {
+    "key": "b0b26450969591fd7493f2c6b876bf113a260819a4c710591ea7ca94b4a84a49",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "This prior contrast reaction is the reason for premedication.\nThe shellfish allergy and the povidone-iodine (topical iodine) allergy are not risk factors for a contrast reaction."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T23:30:27.476Z",
+      "note": "answered live by the P17 PR22c round-2 exploit run, results/exploit/round2/contrast-ct-prep/0.json; copied by builder-160"
+    }
+  },
+  {
     "key": "b74de95c75e8e4f2376843aa8d63a2c736e0779927479a575b9b31420de75aca",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -1581,6 +1638,25 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-25T16:31:13.845Z"
+    }
+  },
+  {
+    "key": "fc4650be29534a489be96f9f98598ee39a0b34b1c883ec9dadd27aeb632fbb07",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "This prior contrast reaction is the reason for premedication.\nThe shellfish allergy and the povidone-iodine (topical iodine) allergy are not risk factors for a contrast reaction."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-28T23:32:00.242Z",
+      "note": "answered live by the P17 PR22c round-2 exploit run, results/exploit/round2/contrast-ct-prep/1.json; copied by builder-160"
     }
   },
   {
