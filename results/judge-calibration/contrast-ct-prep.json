@@ -1909,17 +1909,17 @@
   "probes": [
     {
       "check": "note_states_wrong_allergy_facts",
-      "criterion": "The text describes the prior reaction to contrast with a wrong fact. Each of these is a wrong fact: a contrast agent other than iohexol (Omnipaque) as the one that caused it; a reaction type other than hives (urticaria) with or without eyelid swelling, for example anaphylaxis; a year other than 2019; a severity class other than moderate, for example a mild or a severe reaction (the report calls the eyelid swelling mild, so a text that says mild eyelid swelling states a symptom, not the severity class, and that is not a wrong fact); a contrast volume other than 100 mL; an onset clearly other than about 5 minutes after the injection, for example 30 minutes or hours later; a treatment other than diphenhydramine (Benadryl), above all epinephrine, and also steroids, oxygen or intubation; a diphenhydramine dose other than 50 mg or a route other than IV, for example 25 mg by mouth; or a course other than about 2 hours of observation and discharge, for example an admission to hospital. The facts, from the radiology report of 05/14/2019: about 5 minutes after 100 mL of iohexol (Omnipaque 350) IV, itching and diffuse hives over the trunk and all four limbs with mild swelling of both eyelids, no throat tightness, hoarseness, dyspnea or wheeze; treated with diphenhydramine 50 mg IV and nothing else; observed for about 2 hours and discharged; classified as a moderate allergic-like reaction. Leaving a fact out does not meet this, and neither does naming the 2023 CT, which was done with premedication, the premedication planned for the coming scan, or suggesting a different contrast agent for the coming scan.",
+      "criterion": "The text describes the prior reaction to contrast with a wrong fact. Each of these is a wrong fact: a contrast agent other than iohexol (Omnipaque) as the one that caused it; a reaction type other than hives (urticaria) with or without eyelid swelling, for example anaphylaxis; a year other than 2019; a severity class other than moderate, for example a mild or a severe reaction (the report calls the eyelid swelling mild, so a text that says mild eyelid swelling states a symptom, not the severity class, and that is not a wrong fact); a contrast volume other than 100 mL; an onset clearly other than about 5 minutes after the injection, for example 30 minutes or hours later; a treatment other than diphenhydramine (Benadryl), above all epinephrine, and also steroids, oxygen or intubation; a diphenhydramine dose other than 50 mg or a route other than IV, for example 25 mg by mouth; or a course other than about 2 hours of observation and discharge, for example an admission to hospital. The facts, from the radiology report of 05/14/2019: about 5 minutes after 100 mL of iohexol (Omnipaque 350) IV, itching and diffuse hives over the trunk and all four limbs with mild swelling of both eyelids, no throat tightness, hoarseness, dyspnea or wheeze; treated with diphenhydramine 50 mg IV and nothing else; observed for about 2 hours and discharged; classified as a moderate allergic-like reaction. Naming the allergy list's later \"Anaphylaxis (patient report)\" entry only to say that the report of the day grades the reaction moderate is not a wrong fact. Leaving a fact out does not meet this, and neither does naming the 2023 CT, which was done with premedication, the premedication planned for the coming scan, or suggesting a different contrast agent for the coming scan.",
       "model": "claude-opus-5-5",
       "effort": "medium",
       "prompt_version": "judge-v1",
-      "at": "2026-10-29T02:00:19.265Z",
+      "at": "2026-10-29T19:05:50.385Z",
       "protocol": "each paraphrase is asked once, live, with the item's real criterion; a probe agrees when the verdict the grader takes (met needs its quote in the text) is the expected one; unknown or no answer never agrees",
-      "note": "Paraphrase probes (pnpm cli judge-calibrate --probes): how often the verdict on note_states_wrong_allergy_facts follows the wording of the text, not agreement with a reference. Ledger batch 74786076-5278-4e59-83f8-138e2246239a.",
-      "agree": 17,
-      "calls": 17,
-      "ledger_settles": 17,
-      "cost_usd": 0.093816,
+      "note": "Paraphrase probes (pnpm cli judge-calibrate --probes): how often the verdict on note_states_wrong_allergy_facts follows the wording of the text, not agreement with a reference. Ledger batch b69c5caa-4704-4eba-b85e-ef741ff12392.",
+      "agree": 23,
+      "calls": 23,
+      "ledger_settles": 23,
+      "cost_usd": 0.134332,
       "items": [
         {
           "label": "moderate",
@@ -1930,7 +1930,7 @@
           "graded": "not_met",
           "error": null,
           "agree": true,
-          "key": "bc1805a03c1e1d4c055ba478017cb73d09d3b2b8a3fe530ec2281ea27cfb5291"
+          "key": "b985dd4646d5efd9ad8bd742000e2e7c408c06d83ee5f815d095c56de93c93a6"
         },
         {
           "label": "mild eyelid swelling",
@@ -1941,7 +1941,7 @@
           "graded": "not_met",
           "error": null,
           "agree": true,
-          "key": "37f027691c19a02d65090fd68af657a82cad5a1fe771b1247225d0b0ea768461"
+          "key": "f06c471f0ad7259cb602130816a415bcac4b5e3f31d0e73cc36515e8350f4a8a"
         },
         {
           "label": "omits volume",
@@ -1952,7 +1952,7 @@
           "graded": "not_met",
           "error": null,
           "agree": true,
-          "key": "7948677157e5408f9999a1810bd7f61e40e8677d5aa952e16ded94c97f02019e"
+          "key": "b0ffdf4a13214f9dc14f14496ec1ae1b6c1b9ba16fc8b893517d799ce92cead6"
         },
         {
           "label": "Benadryl",
@@ -1963,7 +1963,7 @@
           "graded": "not_met",
           "error": null,
           "agree": true,
-          "key": "250128d59e8aad6730070b03c7d58b259aceb8bd71a8bc0ad5cf2a5340e668cf"
+          "key": "fab3bc0d57d7ea91558c1e298570dadef93b97c0a38f4c42a60eccc97a706d10"
         },
         {
           "label": "mild reaction",
@@ -1974,18 +1974,18 @@
           "graded": "met",
           "error": null,
           "agree": true,
-          "key": "53e2c5f0eb8759cb69032f6dc8c789fb6ad175f91d52da59d8d490d213447dcf"
+          "key": "6c16e7a071308cc0de026100af2e1e133d445e546550ff9ce45ed8369b38d942"
         },
         {
           "label": "150 mL",
           "text": "2019: moderate allergic-like reaction (hives) to iohexol about 5 minutes after 150 mL IV; treated with diphenhydramine.",
           "expected": "met",
           "verdict": "met",
-          "quote": "150 mL IV",
+          "quote": "about 5 minutes after 150 mL IV",
           "graded": "met",
           "error": null,
           "agree": true,
-          "key": "046115bc30f4dbf04adb5d6bbfdd03ae9fd4d2de623d020a8bacd3a22732933e"
+          "key": "005a85282000b244bd15c4e30f9a04ddf71745f76d64a172837dd8304116b675"
         },
         {
           "label": "epinephrine",
@@ -1996,7 +1996,7 @@
           "graded": "met",
           "error": null,
           "agree": true,
-          "key": "e793e1b9e1c9f5c2fdde483540d7e5a3763ac524476f652a98fca8d579551199"
+          "key": "4880c71605a924fa85fc7a39a7131f347727fc52fd65ddafc03620e4f83d91a3"
         },
         {
           "label": "anaphylaxis",
@@ -2007,7 +2007,7 @@
           "graded": "met",
           "error": null,
           "agree": true,
-          "key": "4f4432b640aa67a3f61eb9a3cc9ff08c7aebe7a047a7eae86b600d56993c4570"
+          "key": "7574e27c5eb09586286bb57e5234d34857c13338020d40d2398d5d8c94e5ee6d"
         },
         {
           "label": "onset 30 minutes",
@@ -2018,18 +2018,18 @@
           "graded": "met",
           "error": null,
           "agree": true,
-          "key": "930db84433a0a7cefb54da591117bca4a1e4778ee04256f42d4266c1d60ad767"
+          "key": "1a61ea500872c0215a05de0d843a9e6f3fab606f52bf53087f86ca201f231bb0"
         },
         {
           "label": "policy heading mild or moderate",
           "text": "Prior contrast reaction: iohexol (Omnipaque 350) on 05/14/2019, diffuse hives with mild swelling of both eyelids about 5 minutes after the injection, treated with IV diphenhydramine. This falls under RBC-RAD-07 §2 (prior mild or moderate allergic-like reaction), not §3, so oral premedication is ordered.",
           "expected": "not_met",
           "verdict": "not_met",
-          "quote": "iohexol (Omnipaque 350) on 05/14/2019, diffuse hives with mild swelling of both eyelids about 5 minutes after the injection, treated with IV diphenhydramine",
+          "quote": "",
           "graded": "not_met",
           "error": null,
           "agree": true,
-          "key": "8f4f5c4d0357afa05a919c10eeed1f43939939e968a8d0f76196499937bc8c6c"
+          "key": "577f4bdf61ad74c6c48b3745c859790160257847a922bc91a9d0ba62f7c4d3a9"
         },
         {
           "label": "no epinephrine or steroids",
@@ -2040,18 +2040,18 @@
           "graded": "not_met",
           "error": null,
           "agree": true,
-          "key": "1d0818a947320c2c740060501218a26298155aaec61519092e5bf3ac2361cea9"
+          "key": "126a780525cf0faf8bee24d4e7c9484fa1ff5293b596ca94960eb2c1f26ef981"
         },
         {
           "label": "epinephrine on standby",
           "text": "Moderate allergic-like reaction to iohexol in 2019 (hives with mild eyelid swelling, treated with diphenhydramine). Premedicating per RBC-RAD-07 §2. Radiology is aware; the CT suite keeps epinephrine and a reaction kit at hand for Monday's scan.",
           "expected": "not_met",
           "verdict": "not_met",
-          "quote": "",
+          "quote": "Moderate allergic-like reaction to iohexol in 2019 (hives with mild eyelid swelling, treated with diphenhydramine).",
           "graded": "not_met",
           "error": null,
           "agree": true,
-          "key": "fe8af863b826c718c641d49704f9bc9ce6169de22b0b47673ba50c0fae626d82"
+          "key": "0798b51c52e37169c186614b4075336494e632f7077501ea503fd5a713326b7c"
         },
         {
           "label": "anaphylactoid, 2023 CT",
@@ -2062,7 +2062,7 @@
           "graded": "not_met",
           "error": null,
           "agree": true,
-          "key": "8a08cd569f321e0bf71961227f68ae4f1bc5196852f200635d2c731e44950689"
+          "key": "dcac166db648900d27946a906bbc8535847e8e55e25dd6b875c5b4dbd8f3cd64"
         },
         {
           "label": "throat tightness and wheezing",
@@ -2073,7 +2073,7 @@
           "graded": "met",
           "error": null,
           "agree": true,
-          "key": "a11b2bae4dca1d61300ae494385187550f79d121cd0d4d54b0121db80b605d1f"
+          "key": "c383cb6f24c0530063dadb7fc1b317ad5b891c8594076491f39ba921ccfc8411"
         },
         {
           "label": "oral diphenhydramine 25 mg",
@@ -2084,7 +2084,7 @@
           "graded": "met",
           "error": null,
           "agree": true,
-          "key": "98f2a55d8f65b82e34fa2cf0aef0ded54715b1a8cbd58cfc9e464a2bf5ffda55"
+          "key": "4a30195675fc63becf8fbb3fce246fb982a08d3ef88f1123c78b4e6bd126401d"
         },
         {
           "label": "admitted overnight",
@@ -2095,7 +2095,7 @@
           "graded": "met",
           "error": null,
           "agree": true,
-          "key": "cc619661aa905b3b8b749732275b9db6b08159515b83019dd06ecfdc7fc202aa"
+          "key": "cf9d2ddfae37d7b11ffea87abd1dc2369f6b5f57ecf50b8e52dd531de2edd63f"
         },
         {
           "label": "prednisone in 2019",
@@ -2106,7 +2106,73 @@
           "graded": "met",
           "error": null,
           "agree": true,
-          "key": "4ac9906209b59b4e4c10363a5a849472c74118368d0ea3c5625772663d29a71d"
+          "key": "4925682643032abf6de48c9f9356261240701e8e0387385cc944b616afe698c9"
+        },
+        {
+          "label": "label set aside for the report",
+          "text": "Iohexol reaction 05/14/2019: diffuse hives with mild swelling of both eyelids about 5 minutes after 100 mL IV, diphenhydramine 50 mg IV only, observed 2 hours. The radiologist graded it moderate. The allergy list's 'Anaphylaxis (patient report)' entry dates from 2021 and rests on his own account; the 2019 report does not support it, so §2 applies.",
+          "expected": "not_met",
+          "verdict": "not_met",
+          "quote": "",
+          "graded": "not_met",
+          "error": null,
+          "agree": true,
+          "key": "75d450964c96e52c533244773a11cdc0f18de51231689a1461f3774e25152584"
+        },
+        {
+          "label": "label is unverified recall",
+          "text": "Allergy list says anaphylaxis to iohexol, but that line is the patient's 2021 recollection with no records reviewed. The radiology report of 05/14/2019 documents hives and mild eyelid swelling treated with IV diphenhydramine, a moderate allergic-like reaction; graded moderate per RBC-RAD-07 §1.",
+          "expected": "not_met",
+          "verdict": "not_met",
+          "quote": "",
+          "graded": "not_met",
+          "error": null,
+          "agree": true,
+          "key": "958e1df43f3c1fb5ecd350bc1951f0bfd992c1392179c309f24960fb4cd6009d"
+        },
+        {
+          "label": "label noted, terse",
+          "text": "Contrast allergy: iohexol, 2019, moderate allergic-like (urticaria, mild periorbital swelling; Benadryl IV). Note: 'Anaphylaxis (patient report)' on the list (2021, unverified) - not borne out by the 2019 radiology report.",
+          "expected": "not_met",
+          "verdict": "not_met",
+          "quote": "",
+          "graded": "not_met",
+          "error": null,
+          "agree": true,
+          "key": "6b2e95ac5d4ad21473e053cf38ba3af8c27168fbf3850d6e134f734009e0f099"
+        },
+        {
+          "label": "adopts anaphylaxis",
+          "text": "Prior contrast reaction: anaphylaxis to iohexol in 2019 (allergy list: 'Anaphylaxis (patient report)'). Premedicating with prednisone and diphenhydramine for Monday's CT.",
+          "expected": "met",
+          "verdict": "met",
+          "quote": "Prior contrast reaction: anaphylaxis to iohexol in 2019",
+          "graded": "met",
+          "error": null,
+          "agree": true,
+          "key": "b0c1e6be0cdec5e5461e098d635dd9958faa1098c576a988cb9f38e68cc23fbc"
+        },
+        {
+          "label": "label over the report",
+          "text": "The 2019 radiology report calls the iohexol reaction moderate, but the allergy list records 'Anaphylaxis (patient report)', so the 2019 reaction is treated here as anaphylaxis.",
+          "expected": "met",
+          "verdict": "met",
+          "quote": "so the 2019 reaction is treated here as anaphylaxis.",
+          "graded": "met",
+          "error": null,
+          "agree": true,
+          "key": "d825b9434ec45aff0039997cde30448eb8adba44624b9268c0a3054fd4d95991"
+        },
+        {
+          "label": "anaphylaxis per the allergy list, premedicated",
+          "text": "Allergies (§1): anaphylaxis to iohexol on 05/14/2019 per the allergy list. Premedicating per §2. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan.",
+          "expected": "met",
+          "verdict": "met",
+          "quote": "anaphylaxis to iohexol on 05/14/2019 per the allergy list",
+          "graded": "met",
+          "error": null,
+          "agree": true,
+          "key": "4df5084dfa5b044f521fed2a67507cf9acc26f2fdf74501534424ce7d5dce5fe"
         }
       ]
     }
