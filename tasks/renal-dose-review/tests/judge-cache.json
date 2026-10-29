@@ -579,6 +579,24 @@
     }
   },
   {
+    "key": "52ba7b822b48cfe745b862224dc480bd3b1d539600f6c9041886b6735413f810",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T04:56:00.808Z"
+    }
+  },
+  {
     "key": "556dda700352212fc0bf24ab80d0d947b2639abcecaea4e2ce1c1aab6f4a1660",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -652,6 +670,24 @@
     }
   },
   {
+    "key": "5c54eb355b55675477e37a315dddc119d8e82c56b61979e471c0f7524fd3b14f",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T04:56:00.808Z"
+    }
+  },
+  {
     "key": "60f13dfbf1d67e225b7dee91826175ea974ee131d3d9ca0fe4899d99c98c145a",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -721,6 +757,24 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-25T14:39:17.813Z"
+    }
+  },
+  {
+    "key": "65ae83031840bebb50ac285800905c9ffce06df163e16d074caa335a950439d9",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T04:56:00.808Z"
     }
   },
   {
@@ -1680,6 +1734,24 @@
     }
   },
   {
+    "key": "cb99a1d9430dd335de1f7b256c740afd3b75925b1c49c397734f58ac8accbc9c",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "no change to metformin 1000 mg twice daily."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T04:56:00.808Z"
+    }
+  },
+  {
     "key": "cc6be7a95dfd5efdd9ae97b46fe11961bbf6e1952e695f214ba7851ee9ef17ad",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -1951,6 +2023,24 @@
     }
   },
   {
+    "key": "e52460add22d1588678fba5b0092760d241eebde91e2dd1e731cc7ce1790cb16",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Reduced from 600 mg three times daily (1800 mg/day) to 600 mg twice daily (1200 mg/day)."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T04:56:00.808Z"
+    }
+  },
+  {
     "key": "e71df0b04418b16665fce3822a93bec7ae31b9c1251ebe0d7fc2298ead22e963",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -2057,6 +2147,24 @@
       "model": "claude-opus-5-5",
       "at": "2026-10-28T18:42:17.179Z",
       "note": "answered live by the P17 PR22b exploit run, results/exploit/renal-dose-review/1.json; copied by builder-148"
+    }
+  },
+  {
+    "key": "f086c21efb8e044df5309514c0e4d9dc277167db18ebc71229815e756d160137",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T04:56:00.808Z"
     }
   },
   {

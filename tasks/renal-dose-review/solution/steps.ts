@@ -42,6 +42,12 @@ export const order = (rxnorm_code: string, dose_value: number, frequency: string
 
 export const apixabanUp = modify('mr-t1-apixaban', { value: 5, unit: 'mg', frequency: 'BID' }, 'RBC-PHARM-07 §2: one dose criterion met (age); back to 5 mg twice daily', RX.apixaban5);
 export const gabapentinBid = modify('mr-t1-gabapentin', { value: 600, unit: 'mg', frequency: 'BID' }, 'RBC-PHARM-07 §4: CrCl 43 mL/min, 400-1400 mg/day twice daily');
+// Gabapentin on the 300 mg capsule (600 mg a dose unless given) at explicit administration times,
+// replacing the TID order.
+export const gabapentinEvents = (timing_events: string[], dose_value = 600): ScriptCall => ({
+  name: 'order_medication',
+  input: { patient: PT, rxnorm_code: RX.gabapentin300, dose_value, dose_unit: 'mg', route: 'oral', timing_events, reason: 'RBC-PHARM-07 §4: CrCl 43 mL/min, 400-1400 mg/day twice daily', replaces: 'mr-t1-gabapentin' },
+});
 
 // The note's paragraphs; a case overrides the ones its clinician writes differently.
 export interface NoteFacts {

@@ -173,3 +173,35 @@ describe('a read late only by its turn', async () => {
     expect(found({ first_medication_write: 2, seen, late: ['Observation/obs-t1-scr-1020'] })).toBe('the creatinine (Observation/obs-t1-scr-1020) was seen at step 3, after the first medication order at step 2');
   });
 });
+
+// builder-163 D6 (verifier-phase-P17j-retro-JG4T1-unread-1): T1's found text for the branches the
+// JG4-T1 fix rounds added names the product by its catalog name, not a raw coding, and reads the
+// as-needed and chart-form evidence.
+describe('renal-dose-review found text', async () => {
+  const text = await textOf('renal-dose-review');
+  const IR = 'metformin hydrochloride 1000 MG Oral Tablet';
+  const ER = '24 HR metformin hydrochloride 500 MG Extended Release Oral Tablet';
+  const regimen = (product: string, form: string, as_needed = false) => ({ product, form, mg_per_dose: 1000, per_day: 2, as_needed });
+  const metformin = (is: object) => text.metformin_dose!.found({ active: ['MedicationRequest/mr-1'], was: regimen(IR, 'immediate release'), is });
+  it('names a switch of dose form by the catalog names', () => {
+    expect(metformin(regimen(ER, 'extended release'))).toBe(`metformin is 1000 mg twice a day as ${ER} (extended release), was 1000 mg twice a day as ${IR} (immediate release)`);
+  });
+  it('says when a scheduled metformin order became as needed', () => {
+    expect(metformin(regimen(IR, 'immediate release', true))).toBe('metformin is 1000 mg twice a day as needed, was 1000 mg twice a day');
+  });
+  it('says when gabapentin is ordered as needed', () => {
+    expect(text.gabapentin_dose!.found({ active: ['MedicationRequest/mr-1'], mg_per_day: 1200, per_day: 2, want_per_day: 2, scheduled: false })).toBe('gabapentin is ordered as needed, not on a schedule');
+  });
+  it('says when the gabapentin events give no steady count a day', () => {
+    expect(text.gabapentin_dose!.found({ active: ['MedicationRequest/mr-1'], mg_per_day: null, per_day: null, want_per_day: 2, scheduled: true })).toBe('the gabapentin doses a day cannot be read: its administration times are not the same number on every full day');
+  });
+  it('names a note that is not a progress note', () => {
+    expect(text.note_exists!.found({ notes: ['DocumentReference/doc-1'], progress_notes: [], messages: [] })).toBe('DocumentReference/doc-1 is not a progress note');
+  });
+  it('names a review sent as a message instead of a note', () => {
+    expect(text.note_exists!.found({ notes: [], progress_notes: [], messages: ['Communication/c-1'] })).toBe('the review was sent as a message (Communication/c-1), not written as a progress note');
+  });
+  it('says when nothing documents the review', () => {
+    expect(text.note_exists!.found({ notes: [], progress_notes: [], messages: [] })).toBe('no note was written on the patient');
+  });
+});

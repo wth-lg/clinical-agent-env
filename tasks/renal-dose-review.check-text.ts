@@ -16,21 +16,24 @@ const daily = (drug: string, r: { min: number; max: number }, times?: number) =>
   requires: `${drug} ${range(r)} a day${times === undefined ? '' : `, scheduled ${perDay(times)},`} on one active order`,
   found: (ev: Record<string, unknown>) =>
     count(drug, items(ev.active))
-    ?? (ev.mg_per_day === null ? `the ${drug} dose per day cannot be read`
+    ?? (times !== undefined && ev.per_day === null && ev.scheduled !== false ? `the ${drug} doses a day cannot be read: its administration times are not the same number on every full day`
+      : ev.mg_per_day === null ? `the ${drug} dose per day cannot be read`
       : times !== undefined && ev.scheduled === false ? `${drug} is ordered as needed, not on a schedule`
       : times !== undefined && ev.per_day !== times && typeof ev.mg_per_day === 'number' && ev.mg_per_day >= r.min && ev.mg_per_day <= r.max ? `${drug} is ${show(ev.mg_per_day)} mg a day given ${perDay(ev.per_day)}`
         : `${drug} is ${show(ev.mg_per_day)} mg a day`),
 });
 
-// The drug kept as it was: the same mg per dose and doses per day as the initial order.
+// The drug kept as it was: the same dose form, mg per dose, doses per day and schedule as the
+// initial order. The product is named only when the dose form changed.
 const kept = (drug: string) => ({
-  requires: `${drug} unchanged: one active order of the same product, mg per dose and doses per day as before`,
+  requires: `${drug} unchanged: one active order of the same dose form (immediate or extended release), mg per dose, doses per day and schedule as before`,
   found: (ev: Record<string, unknown>) => {
     const was = fields(ev.was);
     const is = fields(ev.is);
     if (count(drug, items(ev.active)) !== null) return count(drug, items(ev.active))!;
-    const product = is.product !== was.product ? `, product ${show(is.product)} instead of ${show(was.product)}` : '';
-    return `${drug} is ${show(is.mg_per_dose)} mg ${perDay(is.per_day)}${product}, was ${show(was.mg_per_dose)} mg ${perDay(was.per_day)}`;
+    const form = is.form !== was.form;
+    const words = (x: Record<string, unknown>) => `${show(x.mg_per_dose)} mg ${perDay(x.per_day)}${x.as_needed === true ? ' as needed' : ''}${form ? ` as ${show(x.product)} (${show(x.form)})` : ''}`;
+    return `${drug} is ${words(is)}, was ${words(was)}`;
   },
 });
 
@@ -74,5 +77,11 @@ export const checkText: CheckText = {
     requires: `the creatinine (${expected.scr.id}), the weight (${expected.weight.id}), the patient's age (${expected.patient}, or a note showing the birth date) and the active apixaban, metformin and gabapentin orders, each seen before the first medication order`,
     found: late,
   },
-  note_exists: { requires: `a progress note on ${expected.patient}'s chart documenting the review (its content is scored by the rubric)`, found: (ev) => (items(ev.notes).length === 0 ? 'no note was written on the patient' : `${show(items(ev.notes)[0])} is not a progress note`) },
+  note_exists: {
+    requires: `a progress note on ${expected.patient}'s chart documenting the review (its content is scored by the rubric)`,
+    found: (ev) =>
+      items(ev.notes).length > 0 ? `${show(items(ev.notes)[0])} is not a progress note`
+      : items(ev.messages).length > 0 ? `the review was sent as a message (${listed(items(ev.messages))}), not written as a progress note`
+        : 'no note was written on the patient',
+  },
 };
