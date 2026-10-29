@@ -5,7 +5,7 @@
 import { type Mutant, oneTurn } from '../../../packages/grader/matrix/types.ts';
 import { oracle } from '../solution/solve.ts';
 import {
-  activeMeds, apixabanUp, crclCalc, DONE, egfrCalc, findPatient, finish, gabapentinBid, modify, note, noteText, observations, order, ORACLE_NOTE, policy, read, RX, scrResults, stop, weights,
+  activeMeds, apixabanUp, crclCalc, DONE, egfrCalc, findPatient, finish, gabapentinBid, gabapentinEvents, modify, note, noteText, observations, order, ORACLE_NOTE, policy, read, RX, scrResults, stop, weights,
 } from '../solution/steps.ts';
 
 const reads = [{ calls: [findPatient] }, { calls: [activeMeds] }, { calls: [scrResults, weights] }, { calls: [policy] }, { calls: [egfrCalc, crclCalc] }];
@@ -335,6 +335,7 @@ export const mutants: Mutant[] = [
     why: 'Makes the right orders and sends the whole review to Dr. Okafor as a message instead of writing it on the chart: RBC-PHARM-07 §5 asks for a progress note, and a message is not chart documentation.',
     fails: ['note_exists'],
     loses: ['note_states_crcl', 'note_states_egfr', 'note_states_apixaban_criteria', 'note_explains_eie_scr', 'note_cites_inputs'],
+    attribution: 'action_form',
     script: [
       ...reads,
       { calls: [apixabanUp, gabapentinBid] },
@@ -374,6 +375,7 @@ export const mutants: Mutant[] = [
     why: 'Writes the whole review on the chart but as a telephone note: RBC-PHARM-07 §5 asks for a progress note (decisions.tsv 2026-10-29T02:45).',
     fails: ['note_exists'],
     loses: [],
+    attribution: 'action_form',
     script: [...reads, { calls: [apixabanUp, gabapentinBid] }, { calls: [{ ...note(), input: { ...note().input, type: 'telephone_note' } }] }, { calls: [finish(DONE)] }],
   },
   {
@@ -385,6 +387,45 @@ export const mutants: Mutant[] = [
     script: [
       ...reads,
       { calls: [apixabanUp, { name: 'change_medication', input: { medication_request: 'mr-t1-gabapentin', action: 'modify', reason: 'CrCl 43', new_dose: { value: 600, unit: 'mg', frequency: 'BID_PRN', as_needed_reason: 'neuropathic pain' } } }] },
+      { calls: [note()] },
+      { calls: [finish(DONE)] },
+    ],
+  },
+  {
+    id: 'metformin_1000_bid_prn',
+    trap: 'metformin_regimen_changed',
+    why: 'Re-signs metformin 1000 mg twice daily as needed for high blood sugar: the same product, mg per dose and doses per day, but a scheduled antidiabetic made as-needed is a regimen change, and RBC-PHARM-07 §3 says no change at eGFR 59.8 (builder-163 D2).',
+    fails: ['metformin_dose'],
+    loses: ['note_states_false_change'],
+    script: [
+      ...reads,
+      { calls: [apixabanUp, gabapentinBid, { name: 'change_medication', input: { medication_request: 'mr-t1-metformin', action: 'modify', reason: 'eGFR 60: no change', new_dose: { value: 1000, unit: 'mg', frequency: 'BID_PRN', as_needed_reason: 'high blood sugar' } } }] },
+      { calls: [note()] },
+      { calls: [finish(DONE)] },
+    ],
+  },
+  {
+    id: 'gabapentin_events_tid_then_once',
+    trap: 'gabapentin_frequency',
+    why: 'Orders gabapentin 300 mg as timing events, three on the first day and one on the second: the average is 2 a day, but no day is a twice-daily dose as RBC-PHARM-07 §4 gives the 30-59 band (builder-163 D5).',
+    fails: ['gabapentin_dose'],
+    loses: ['gabapentin_twice_daily', 'note_states_false_change'],
+    script: [
+      ...reads,
+      { calls: [apixabanUp, gabapentinEvents(['2026-10-29T08:00:00-04:00', '2026-10-29T14:00:00-04:00', '2026-10-29T20:00:00-04:00', '2026-10-30T08:00:00-04:00'], 300)] },
+      { calls: [note()] },
+      { calls: [finish(DONE)] },
+    ],
+  },
+  {
+    id: 'gabapentin_events_one_day',
+    trap: 'gabapentin_frequency',
+    why: 'Replaces the standing gabapentin order with two 600 mg doses on one day only: a one-day schedule is not the standing twice-daily regimen RBC-PHARM-07 §4 asks for, and the drug stops after it (builder-163 D5).',
+    fails: ['gabapentin_dose'],
+    loses: ['gabapentin_twice_daily'],
+    script: [
+      ...reads,
+      { calls: [apixabanUp, gabapentinEvents(['2026-10-29T08:00:00-04:00', '2026-10-29T20:00:00-04:00'])] },
       { calls: [note()] },
       { calls: [finish(DONE)] },
     ],

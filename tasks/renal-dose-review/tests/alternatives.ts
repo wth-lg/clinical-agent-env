@@ -5,7 +5,7 @@
 // alternative that gives up a rubric point declares it in loses; the rest score 1.0.
 import type { Alternative } from '../../../packages/grader/matrix/types.ts';
 import {
-  activeMeds, apixabanUp, crclCalc, DONE, egfrCalc, findPatient, finish, gabapentinBid, modify, note, order, ORACLE_NOTE, policy, PT, read, RX, scrResults, stop, weights,
+  activeMeds, apixabanUp, crclCalc, DONE, egfrCalc, findPatient, finish, gabapentinBid, gabapentinEvents, modify, note, order, ORACLE_NOTE, policy, PT, read, RX, scrResults, stop, weights,
 } from '../solution/steps.ts';
 
 const reads = [{ calls: [findPatient] }, { calls: [activeMeds] }, { calls: [scrResults, weights] }, { calls: [policy] }, { calls: [egfrCalc, crclCalc] }];
@@ -178,6 +178,36 @@ export const alternatives: Alternative[] = [
       { calls: [policy] },
       { calls: [egfrCalc, crclCalc] },
       { calls: [apixabanUp, gabapentinBid] },
+      { calls: [note()] },
+      { calls: [finish(DONE)] },
+    ],
+  },
+  {
+    id: 'gabapentin_bid_as_timing_events',
+    why: 'Orders gabapentin as two 300 mg capsules at 08:00 and 20:00 on each of three days, written as timing events instead of a frequency: 2 doses on every day, 1200 mg/day (decisions.tsv 2026-10-29T02:45 (d)).',
+    script: [
+      ...reads,
+      { calls: [apixabanUp, gabapentinEvents(['2026-10-29', '2026-10-30', '2026-10-31'].flatMap((d) => [`${d}T08:00:00-04:00`, `${d}T20:00:00-04:00`]))] },
+      { calls: [note()] },
+      { calls: [finish(DONE)] },
+    ],
+  },
+  {
+    id: 'gabapentin_q12h_events_odd_count',
+    why: 'Orders gabapentin 600 mg every 12 hours as five timing events (10:00 and 22:00, the last on the third morning): every full day has 2 doses, and the last day is cut short by the end of the list, not given once a day (builder-163 D5).',
+    script: [
+      ...reads,
+      { calls: [apixabanUp, gabapentinEvents(['2026-10-29T10:00:00-04:00', '2026-10-29T22:00:00-04:00', '2026-10-30T10:00:00-04:00', '2026-10-30T22:00:00-04:00', '2026-10-31T10:00:00-04:00'])] },
+      { calls: [note()] },
+      { calls: [finish(DONE)] },
+    ],
+  },
+  {
+    id: 'metformin_ir_500_tablets_same_regimen',
+    why: 'Re-signs metformin on the immediate-release 500 mg tablet, two tablets twice daily: the same 1000 mg twice daily of the same immediate-release therapy, so no change under RBC-PHARM-07 §3 (only a switch of dose form, to extended release, is one; builder-163 D4).',
+    script: [
+      ...reads,
+      { calls: [apixabanUp, gabapentinBid, modify('mr-t1-metformin', { value: 2, unit: '{tablet}', frequency: 'BID' }, 'eGFR 60: no change; re-signed on the 500 mg tablet', RX.metformin500)] },
       { calls: [note()] },
       { calls: [finish(DONE)] },
     ],

@@ -6,8 +6,9 @@
 // points total 13.
 import type { Resource } from '../../../packages/env/store.ts';
 import { hybrid, judged, rubric as item, type Check, type RubricCtx, type StateView } from '../../../packages/grader/check.ts';
-import { dosesPerDay, isActive, isDrug } from '../../../packages/grader/normalize.ts';
+import { isActive, isDrug } from '../../../packages/grader/normalize.ts';
 import { expected } from '../expected.ts';
+import { perDayOf } from './regimen.ts';
 
 const PT = expected.patient;
 const noteText = (ctx: RubricCtx) => ctx.notes.filter((n) => n.patient === PT).map((n) => n.text).join('\n\n');
@@ -133,8 +134,8 @@ export const rubric: Check[] = [
       const found = ctx.final.all('MedicationRequest').flatMap((r) =>
         r.resourceType === 'MedicationRequest' && r.subject?.reference === PT && isActive(r) && isDrug(r.medicationCodeableConcept, { ingredient: 'gabapentin' }) ? [r] : [],
       );
-      const repeat = found.length === 1 ? found[0]!.dosageInstruction?.[0]?.timing?.repeat : undefined;
-      const perDay = repeat ? dosesPerDay(repeat) : null;
+      // Read as the gate reads it, timing events per full day included (builder-163 D5).
+      const perDay = found.length === 1 ? perDayOf(found[0]) : null;
       return { met: perDay === expected.gabapentin.per_day, evidence: { active: found.map((m) => `MedicationRequest/${m.id}`), per_day: perDay } };
     },
   }),
