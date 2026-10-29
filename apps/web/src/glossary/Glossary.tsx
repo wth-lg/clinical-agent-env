@@ -16,7 +16,7 @@ export function Glossary({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> 
       <Card title="Pass and denominator" id="pass">
         <PlainRules ids={{ pass: 'glossary-pass', denominator: 'glossary-denominator' }} />
       </Card>
-      <Card title="Fault labels">
+      <Card title="Fault labels" id="fault-labels">
         <table className="w-full text-left" data-testid="audit-label-table">
           <thead className="text-xs text-ink-muted"><tr><th scope="col" className="py-1 font-medium">Fault</th><th scope="col" className="py-1 font-medium">Label</th></tr></thead>
           <tbody>
