@@ -18,6 +18,11 @@ No iodinated contrast. Consult the radiologist.
 
 §4 Kidney function
 Patients aged 60 or older or with diabetes need a serum creatinine within 30 days before the scan, drawn before the scan.
+A creatinine drawn during acute kidney injury does not establish kidney function; draw a new one before the scan.
+Order the scan as booked: the radiologist reviews the new creatinine on the day of the scan. Do not defer or cancel the scan for it.
 
 §5 Orders
 Link the imaging order to its appointment.
+
+§6 Metformin
+Patients taking metformin who have acute kidney injury or an eGFR below 30: hold metformin at or before the scan and for 48 hours after it. Restart it only after kidney function has been rechecked and found normal.

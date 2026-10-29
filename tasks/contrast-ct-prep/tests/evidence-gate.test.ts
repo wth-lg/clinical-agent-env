@@ -2,7 +2,8 @@
 // order of any kind needs the allergy, the 2019 report, the last creatinine and the appointment
 // seen before it, and from P19 the 10/17 ED summary of the AKI; the report counts when read whole
 // or when a snippet shows the severity, the ED summary when read whole or when a snippet shows
-// 'acute kidney injury' or 'not back to baseline'. The
+// the AKI ('acute kidney injury', 'not back to baseline', or the arrival creatinine beside its
+// baseline). The
 // check text names every source not seen, or the one seen late, and the first order.
 import { describe, expect, it } from 'vitest';
 import { loadMatrixTask, matrixEnv } from '../../../cli/matrix.ts';
@@ -45,7 +46,7 @@ describe('contrast-ct-prep evidence_before_orders', () => {
     const { met, late, found } = await probe('creatinine_late', [{ calls: [findPatient] }, { calls: [appointments, allergies, snippet('hives'), readEd] }, ...ORDERS.slice(0, 1), { calls: [creatinines] }, ...ORDERS.slice(1)]);
     expect(met).toBe(false);
     expect(late).toEqual(['Observation/obs-t5-scr-0924']);
-    expect(found).toBe('Observation/obs-t5-scr-0924 was seen at step 7, after the first order (ServiceRequest/sr-t0001) at step 5');
+    expect(found).toBe('Observation/obs-t5-scr-0924 was seen at step 8, after the first order (ServiceRequest/sr-t0001) at step 6');
   });
 
   it.each([
@@ -63,7 +64,7 @@ describe('contrast-ct-prep evidence_before_orders', () => {
   it.each([
     ['kidney', true],
     ['baseline', true],
-    ['gastroenteritis', false],
+    ['lightheaded', false],
   ])("takes a search_notes snippet for '%s' as the ED summary seen: %s", async (query, want) => {
     const script: Script = [{ calls: [findPatient] }, { calls: [appointments, allergies, snippet('hives')] }, { calls: [creatinines, policy, snippet(query)] }, { calls: [timesCalc] }, ...ORDERS];
     const { met, late } = await probe(`ed_snippet_${query}`, script);
@@ -74,7 +75,7 @@ describe('contrast-ct-prep evidence_before_orders', () => {
   it('fails when the ED summary is never seen', async () => {
     const { met, found } = await probe('no_ed', [{ calls: [findPatient] }, { calls: [appointments, allergies, snippet('hives')] }, { calls: [creatinines, policy] }, { calls: [timesCalc] }, ...ORDERS]);
     expect(met).toBe(false);
-    expect(found).toBe('DocumentReference/doc-t5-ed-1017 was not seen before the first order (ServiceRequest/sr-t0001) at step 7');
+    expect(found).toBe('DocumentReference/doc-t5-ed-1017 was not seen before the first order (ServiceRequest/sr-t0001) at step 8');
   });
 
   it('passes the reference reads', async () => {

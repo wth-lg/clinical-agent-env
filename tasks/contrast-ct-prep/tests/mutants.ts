@@ -4,7 +4,7 @@
 import { type Mutant, oneTurn } from '../../../packages/grader/matrix/types.ts';
 import { oracle } from '../solution/solve.ts';
 import {
-  activeMeds, ALLERGY, allergies, APPT, appointments, AT, changeMetformin, CODE, creatinineOrder, creatinines, ct, diphenhydramine, DONE, findPatient, finish, HOLD, holdMetformin, medication, message, note, ORACLE_MESSAGE, ORACLE_NOTE, policy,
+  activeMeds, ALLERGY, allergies, APPT, appointments, AT, changeMetformin, CODE, creatinineOrder, creatinines, ct, diphenhydramine, DONE, findPatient, finish, HOLD, medication, message, note, ORACLE_MESSAGE, ORACLE_NOTE, policy,
   prednisone, readReaction, READS, REACTION_NOTE, RX, searchReaction, service, timesCalc,
 } from '../solution/steps.ts';
 

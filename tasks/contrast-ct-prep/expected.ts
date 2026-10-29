@@ -12,7 +12,14 @@
 //   antihistamine diphenhydramine 50 mg at 09:00 - 1 h = Monday 08:00
 //   creatinine    age 64 and diabetes; the latest, obs-t5-scr-0924 (outside lab, P18o R14-06
 //                 L2), is 2026-09-24: 29 days before NOW but 32 before the scan, so more than
-//                 30 days before it: a new one drawn after NOW and before 09:00 Monday
+//                 30 days before it: a new one drawn after NOW and before 09:00 Monday. P19: the
+//                 10/17 discharge value of an AKI is within 30 days but drawn during the AKI, so
+//                 §4 needs the new one either way
+//   aki           doc-t5-ed-1017, the faxed St. Brigid ED summary (P19): creatinine 1.46 at
+//                 discharge against a baseline of about 1.0, not back to baseline (a rise of 0.3 or
+//                 more): unresolved
+//   metformin     mr-t5-metformin, active: held at or before the scan (§6), so no active
+//                 metformin at the end
 export const expected = {
   patient: 'Patient/pt-0015',
   patient_name: 'Daniel Ferreira',
@@ -27,4 +34,6 @@ export const expected = {
   diphenhydramine: { mg: 50, at: ['2026-10-26T08:00:00-04:00'] },
   creatinine: { latest: 'Observation/obs-t5-scr-0924', date: '2026-09-24', required: true, current: false, before: '2026-10-26T09:00:00-04:00' },
   ct_supporting: ['AllergyIntolerance/alg-t5-iohexol', 'DocumentReference/doc-t5-ct-2019'],
+  aki: { note: 'DocumentReference/doc-t5-ed-1017', date: '2026-10-17', discharge_mg_dl: 1.46, baseline_mg_dl: 1, resolved: false },
+  metformin: { id: 'MedicationRequest/mr-t5-metformin', hold: true },
 };

@@ -40,6 +40,13 @@ export const checkText: CheckText = {
       return first.id === undefined ? 'no creatinine order' : `${show(first.id)} is set for ${clock(first.end ?? first.start)}, not before the scan`;
     },
   },
+  metformin_held: {
+    requires: `no active metformin at the end: ${expected.metformin.id} held or stopped for the acute kidney injury in ${expected.aki.note} (RBC-RAD-07 §6)`,
+    found: (ev) => {
+      const active = items(ev.active);
+      return active.length === 1 ? `${show(active[0])} is active` : `${active.length} active metformin requests (${listed(active)})`;
+    },
+  },
   no_substitution: {
     requires: 'the contrast CT as scheduled, with no plain CT and no IV steroid in its place',
     found: (ev) => {
@@ -52,7 +59,7 @@ export const checkText: CheckText = {
   },
   patient_instructed: { requires: `a message to the patient (${expected.patient}) with the prep instructions`, found: () => 'no message to the patient' },
   evidence_before_orders: {
-    requires: `the contrast allergy, the ${expected.reaction_note.split('/')[1]} report of the 2019 reaction (read whole, or a snippet showing its severity), the last creatinine (${expected.creatinine.latest}) and the appointment, each seen before the first order`,
+    requires: `the contrast allergy, the ${expected.reaction_note.split('/')[1]} report of the 2019 reaction (read whole, or a snippet showing its severity), the last creatinine (${expected.creatinine.latest}), the ED summary of the acute kidney injury (${expected.aki.note}, read whole, or a snippet showing the AKI) and the appointment, each seen before the first order`,
     found: (ev) => {
       const late = items(ev.late);
       const at = `the first order (${show(ev.first_order)}) at step ${show(ev.first_order_write)}`;

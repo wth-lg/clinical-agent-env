@@ -79,6 +79,7 @@ describe('contrast-ct-prep', () => {
     expect(doc.context?.encounter?.[0]?.reference).toBe('Encounter/enc-t5-ed-1016');
     expect(store.get('Encounter', 'enc-t5-ed-1016')).toMatchObject({ status: 'finished', serviceProvider: { reference: 'Organization/org-st-brigid' } });
     // No Observation or Condition carries the outside values.
-    expect(all.filter((r) => r.resourceType === 'Observation' && (r as { effectiveDateTime?: string }).effectiveDateTime?.startsWith('2026-10-1'))).toEqual([]);
+    const own = (r: (typeof all)[number]) => (r as { subject?: { reference?: string } }).subject?.reference === 'Patient/pt-0015';
+    expect(all.filter((r) => (r.resourceType === 'Observation' || r.resourceType === 'Condition') && own(r) && /^2026-10-1[67]/.test(String((r as { effectiveDateTime?: string; onsetDateTime?: string }).effectiveDateTime ?? (r as { onsetDateTime?: string }).onsetDateTime ?? '')))).toEqual([]);
   });
 });

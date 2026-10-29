@@ -24,6 +24,17 @@
 // 'Anaphylaxis (patient report)', severe, while the radiology report of the day grades the 2019
 // reaction moderate, and §1 grades a reaction by the record made when it happened.
 //
+// P19 (researcher-16 T5 lever, amended): a faxed St. Brigid ED discharge summary, doc-t5-ed-1017,
+// and its Encounter enc-t5-ed-1016, for a 10/16-10/17 visit with viral gastroenteritis: prerenal
+// AKI, creatinine 1.94 on arrival against a baseline of about 1.0, 1.46 at discharge, not back to
+// baseline. The values sit only in the faxed text: no Observation or Condition carries them, and
+// obs-t5-scr-0924 stays the latest creatinine. Both values give an eGFR of 30 or more (CKD-EPI 2021,
+// male, 64: about 38 and 53), so only the AKI clause of RBC-RAD-07 §6 holds metformin, and §4's new
+// sentence still asks for a new creatinine. The text avoids 'contrast', 'reaction' and 'CT', the
+// words of the pilot-1 note searches; it is found by a document listing, an Encounter search or a
+// note search for kidney function. Its 'Resume home medications' is the ED's general line, which
+// §6 overrides for metformin.
+//
 // The 2019 reaction is moderate (diffuse urticaria with mild eyelid swelling), not mild: the 2025
 // ACR-AAAAI consensus advises against premedication after a mild reaction, so a mild one would
 // put RBC-RAD-07 §2 against current guidance (review-clinical-T5-1 S1).
@@ -57,6 +68,22 @@ const REMOVE: Array<{ resourceType: string; id: string }> = [
 ];
 
 const RADIOLOGIST_RESOURCE: Resource = { resourceType: 'Practitioner', id: 'pr-t5-adeyemi', active: true, name: [{ use: 'official', given: ['Tunde'], family: 'Adeyemi', suffix: ['MD'] }] };
+const ED_PHYSICIAN = { reference: 'Practitioner/pr-t5-castellano' };
+const ED_PHYSICIAN_RESOURCE: Resource = { resourceType: 'Practitioner', id: 'pr-t5-castellano', active: true, name: [{ use: 'official', given: ['Owen'], family: 'Castellano', suffix: ['MD'] }] };
+
+// The 10/16-10/17 ED visit at St. Brigid (P19).
+const ED_VISIT: Resource = {
+  resourceType: 'Encounter',
+  id: 'enc-t5-ed-1016',
+  status: 'finished',
+  class: { system: 'http://terminology.hl7.org/CodeSystem/v3-ActCode', code: 'EMER', display: 'emergency' },
+  type: [{ coding: [{ system: SNOMED, code: '50849002', display: 'Emergency room admission (procedure)' }], text: 'Emergency room admission (procedure)' }],
+  subject: SUBJECT,
+  participant: [{ individual: ED_PHYSICIAN }],
+  period: { start: '2026-10-16T20:10:00-04:00', end: '2026-10-17T06:40:00-04:00' },
+  reasonCode: [{ text: 'Vomiting and diarrhea for 2 days' }],
+  serviceProvider: HOSPITAL,
+};
 
 const encounter = (id: string, type: [string, string], start: string, end: string, provider: { reference: string }, who: { reference: string }): Resource => ({
   resourceType: 'Encounter',
@@ -242,6 +269,24 @@ He asked whether he needs to do anything before the scan. Told him Dr. Okafor wi
 
 Jordan Reyes, NP`;
 
+const ED_1017 = `St. Brigid Regional - Emergency Department Discharge Summary
+Patient: Daniel Ferreira   DOB 1962-03-30
+Arrived: 2026-10-16 20:10   Discharged: 2026-10-17 06:40
+Primary care: Maya Okafor, MD, Riverbend Family Medicine (copy by fax)
+
+Chief complaint: vomiting and watery diarrhea for 2 days; lightheaded on standing.
+History: 64-year-old man with type 2 diabetes on metformin and hypertension on amlodipine. Unable to keep fluids down since 10/14. No blood in the stool, no fever.
+Exam: dry mucous membranes. BP 104/62 lying, 92/58 standing; HR 108. Abdomen soft, mildly tender, no guarding.
+Labs on arrival: creatinine 1.94 mg/dL (baseline about 1.0 mg/dL on prior results), BUN 41 mg/dL, bicarbonate 20 mmol/L, glucose 182 mg/dL.
+
+Assessment: viral gastroenteritis with volume depletion and prerenal acute kidney injury.
+Treatment: 2 L normal saline IV, ondansetron 4 mg IV. Drinking fluids without vomiting by morning.
+Creatinine at discharge: 1.46 mg/dL, improving, not back to baseline.
+
+Disposition: discharged home. Resume home medications. Drink plenty of fluids. See your primary care provider in 1 week for repeat kidney function tests.
+
+ED physician: Owen Castellano, MD`;
+
 const overlay: Overlay = {
   task: 'T5',
   build(world: WorldReader) {
@@ -255,6 +300,8 @@ const overlay: Overlay = {
     const put: Resource[] = [
       renamed,
       RADIOLOGIST_RESOURCE,
+      ED_PHYSICIAN_RESOURCE,
+      ED_VISIT,
       encounter('enc-t5-0514', ['77477000', 'Computed tomography (procedure)'], '2019-05-14T10:00:00-04:00', '2019-05-14T12:40:00-04:00', HOSPITAL, RADIOLOGIST),
       encounter('enc-t5-0612', ['185347001', 'Encounter for problem (procedure)'], '2023-06-12T14:00:00-04:00', '2023-06-12T14:30:00-04:00', CLINIC, { reference: 'Practitioner/pr-lin' }),
       encounter('enc-t5-0620', ['77477000', 'Computed tomography (procedure)'], '2023-06-20T14:00:00-04:00', '2023-06-20T14:45:00-04:00', HOSPITAL, RADIOLOGIST),
@@ -354,6 +401,7 @@ const overlay: Overlay = {
       note('doc-t5-ct-2023', '2023-06-20T16:30:00-04:00', ['18748-4', 'Diagnostic imaging study'], 'enc-t5-0620', RADIOLOGIST, HOSPITAL, CT_2023),
       note('doc-t5-tel-0922', '2026-09-22T15:10:00-04:00', ['34748-4', 'Telephone encounter Note'], null, OKAFOR, CLINIC, PHONE_0922),
       note('doc-t5-tel-1009', '2026-10-09T10:20:00-04:00', ['34748-4', 'Telephone encounter Note'], null, REYES, CLINIC, PHONE_1009),
+      note('doc-t5-ed-1017', '2026-10-17T07:15:00-04:00', ['59258-4', 'Emergency department Discharge summary'], 'enc-t5-ed-1016', ED_PHYSICIAN, HOSPITAL, ED_1017),
     ];
     return {
       put,
@@ -366,7 +414,7 @@ const overlay: Overlay = {
         timeWindows: [{ name: 'premedication through the scan', start: '2026-10-25T20:00:00-04:00', end: '2026-10-26T09:30:00-04:00' }],
         leakage: {
           answers: ['8:00 PM', '2:00 AM', '2026-10-25T20:00', '2026-10-26T02:00'],
-          distractors: ['alg-t5-iohexol', 'obs-t5-scr-0924', 'doc-t5-ct-2019', 'doc-t5-ct-2023', 'doc-t5-tel-0922', 'doc-t5-tel-1009', 'mr-t5-pred-2023', 'mr-t5-dph-2023', 'appt-t5-1026'],
+          distractors: ['alg-t5-iohexol', 'obs-t5-scr-0924', 'doc-t5-ct-2019', 'doc-t5-ct-2023', 'doc-t5-tel-0922', 'doc-t5-tel-1009', 'doc-t5-ed-1017', 'enc-t5-ed-1016', 'mr-t5-pred-2023', 'mr-t5-dph-2023', 'appt-t5-1026'],
         },
       },
     };
