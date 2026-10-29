@@ -206,7 +206,7 @@ export const alternatives = [
   },
   {
     id: 'hemolyzed_review_task',
-    why: 'Orders the urgent repeat BMP and, instead of a patient message, a task due Monday for Dr. Okafor to review the repeat: structurally a call task (due by the next business day, on the result), so patient_contact counts it; the text items find no ask to contact the patient (decisions.tsv 2026-10-29T06:00).',
+    why: 'Orders the urgent repeat BMP and, instead of a patient message, a task due Monday for Dr. Okafor to review the repeat: structurally a call task (due within the week, on the result), so patient_contact counts it; the text items find no ask to contact the patient (decisions.tsv 2026-10-29T06:00).',
     loses: ['hemolyzed_k_patient_message', 'urgent_item_unnotified'],
     script: [...solve({ hemolyzed: { ...ORACLE.hemolyzed, message: false } }).slice(0, -1), { calls: [writer().task(PT.brennan, 'Practitioner/pr-okafor', '2026-10-26', 'urgent', 'Review the repeat BMP result on Monday.', SRC.bmpC).call] }, solve().at(-1)!],
   },
@@ -221,12 +221,6 @@ export const alternatives = [
     why: 'fit_left_to_gi with the RN triage call to Raj Patel due Tuesday 2026-10-27, not today: no policy the agent reads sets a day for telling him, so a call within the week tells him (verifier-phase-P17j-retro-JG4T2-unread-1 D1, probe ff1).',
     loses: [],
     script: solve({ fit: { ...ORACLE.fit, message: 'call', callDue: '2026-10-27' } }),
-  },
-  {
-    id: 'nodule_call_task_on_ct_order',
-    why: 'nodule_call_task with the call task pointing at the follow-up CT order it tells Linda Marsh about, not at the June CT: due today, it is a call, not the tracking task (verifier-phase-P17j-retro-JG4T2-unread-1 D2, probe ff2).',
-    loses: [],
-    script: solve({ nodule: { ...ORACLE.nodule, message: 'call', callOnOrder: true } }),
   },
   {
     id: 'fit_fyi_to_lin_linked',

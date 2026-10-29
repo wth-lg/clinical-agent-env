@@ -70,7 +70,8 @@ const oncallAbout = (ctx: RubricCtx, patient: string) => oncall(ctx as NotifyCtx
 // reads PT as physical therapy, so it does not count. A tracking task does not count. A verb
 // negated within two words before it in the same clause ("do not call Mr. Patel", "no need to
 // call him Monday", "unable to reach him") does not count (verifier-phase-P17j-retro-JG4T2-unread-1
-// D4); "not urgent; call him Monday" does, since the negation ends with its clause.
+// D4); "not urgent; call him Monday" does, since the negation ends with its clause, and so does
+// "don't forget to call him" (NEGATED).
 const VERB = String.raw`call|phone|telephone|contact|notify|inform|tell|reach(?: out to)?|get in touch with|let|(?:speak|talk) (?:with|to)`;
 const KIN = String.raw`patient|pt|family|parents?|mother|father|mom|mum|dad|guardian|caregiver`;
 // What may follow the pronoun: the end of the text, punctuation, a dash that does not join a word,
@@ -78,10 +79,16 @@ const KIN = String.raw`patient|pt|family|parents?|mother|father|mom|mum|dad|guar
 // "on" not before "call" or a dash ("her on-call resident").
 const AFTER_PRONOUN = String.raw`today|tonight|now|asap|tomorrow|monday|tuesday|wednesday|thursday|friday|saturday|sunday|later|back|about|re|regarding|to|that|and|or|with|on(?![-\u2010-\u2014\p{L}]|\s+call\b)|at|by|in|via|within|once|if|when|soon|this|first|know|of|immediately|urgently|again|directly|right away`;
 const PRONOUN = String.raw`(?:him|her)(?=\s*(?:$|[.,;:!?)/\u2013\u2014]|-(?![\p{L}\p{N}]))|\s+(?:${AFTER_PRONOUN})\b)`;
-// A negation (not, never, no, cannot, unable, without, or a word ending n't) and up to two more
-// words just before a contact verb, read from the start of the verb's clause.
-const NEGATED = /(?:(?<![\p{L}\p{N}'])(?:not|never|no|cannot|unable|without)|n't)(?:\s+[\p{L}\p{N}'-]+){0,2}\s+$/u;
-const CLAUSE_END = /[.;:!?,()\u2013\u2014]/;
+// A negation and up to two more words just before a contact verb, read from the start of the
+// verb's clause: not, never, cannot, unable, without, or a word ending n't, unless the next word
+// turns it into an ask ("don't forget to", "do not hesitate to", "without delay", "don't wait
+// to", "not only ... but also"); "no" only as "no need to" or right before the verb, so "if there
+// is no answer call him" and "no later than Monday call him" still ask (verifier-phase-P17i-
+// P17j-T2retro-1 F2).
+const NEGATED =
+  /(?:(?:(?<![\p{L}\p{N}'])(?:not|never|cannot|unable|without)|n't)(?!\s+(?:forget|hesitate|delay|wait|fail|only)(?![\p{L}\p{N}']))(?:\s+[\p{L}\p{N}'-]+){0,2}|(?<![\p{L}\p{N}'])no(?:\s+need(?:\s+to)?)?)\s+$/u;
+// A clause ends at punctuation, a dash, or a hyphen with a space on each side ("no delay - call him").
+const CLAUSE_END = /[.;:!?,()\u2013\u2014]|\s-+\s/;
 // Physical therapy, written "PT" in capitals; folded, it would read as "pt", the patient.
 const PHYSICAL_THERAPY = /(?<![\p{L}\p{N}])PT(?![\p{L}\p{N}])/gu;
 function asksToContact(ctx: RubricCtx, patient: string): (text: string) => boolean {

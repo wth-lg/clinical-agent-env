@@ -87,18 +87,23 @@ const STAFF = /^(Practitioner|Group)\//;
 // rather than telling the patient. No policy the agent reads sets a day for telling the patient
 // (RBC-INBOX-01 §4 names none; RBC-LAB-03 §2's next business day is for the repeat BMP), so a
 // gate may not hold it to one (decisions.tsv 2026-10-29T04:45Z, verifier-phase-P17j-retro-
-// JG4T2-unread-1 D1). The bound only separates a call from a RBC-RAD-05 §4 tracking task, which is
-// due at the end of its order's window: the earliest is the bone lesion's, 2026-11-05 (§3).
+// JG4T2-unread-1 D1). The bound stays short of the earliest RBC-RAD-05 §4 tracking date, the bone
+// lesion's, 2026-11-05 (§3).
 const CONTACT_BY = '2026-10-30';
+const ORDER_TYPES = ['ServiceRequest', 'MedicationRequest'];
 // How the trial told an item's patient of the result (RBC-INBOX-01 §4, "by a message or by a call
 // made by a clinician or a staff pool"), read from structure, since a gate does not read text
 // (decisions.tsv 2026-10-29T06:00): a message to the patient; a task for the patient due by
-// CONTACT_BY (a call task, not a tracking task), whatever its focus: a call about the order the
-// trial placed is still a call, and a tracking task on that order is due after CONTACT_BY (D2); a
+// CONTACT_BY whose focus is not an order the trial created (a call task, not a tracking task); a
 // message to a clinician or staff pool that the item's closure links, such as the stat page
 // asking on-call to call her; or the item itself reassigned to on-call. An unlinked staff FYI
-// does not count. A review or tracking task due by CONTACT_BY, or a linked FYI, still does: the
-// rubric's text items tell it from a call (alternatives hemolyzed_review_task,
+// does not count. A task on an order the trial placed is read as tracking it and never counts,
+// whatever its due date (decisions.tsv 2026-10-29T05:42Z, verifier-phase-P17i-P17j-T2retro-1
+// F1): only the text tells a call about that order from a task to track it, and a gate cannot
+// read text (design section 5), so the gate fails both (mutants bone_tracking_due_1030_no_message,
+// nodule_call_task_on_ct_order). A call task on the patient or the result passes. A review or
+// tracking task due by CONTACT_BY on a result or an existing order, or a linked FYI, still
+// counts: the rubric's text items tell it from a call (alternatives hemolyzed_review_task,
 // fit_tracking_task_due_monday, fit_fyi_to_lin_linked).
 function contactsOf(ctx: GateCtx, x: { task: string; patient: string }): string[] {
   const mine = created(ctx);
@@ -106,7 +111,8 @@ function contactsOf(ctx: GateCtx, x: { task: string; patient: string }): string[
   const closure = new Set(linked(item(ctx, x.task)));
   const callTask = (t: Task) => {
     const due = t.restriction?.period?.end;
-    return due !== undefined && clinicDate(due) <= CONTACT_BY;
+    const focus = t.focus?.reference;
+    return due !== undefined && clinicDate(due) <= CONTACT_BY && !(focus !== undefined && mine.has(focus) && ORDER_TYPES.includes(split(focus)[0]));
   };
   return [
     ...made('Communication').filter((c) => (c.recipient ?? []).some((r) => r.reference === x.patient) || (closure.has(keyOf(c)) && (c.recipient ?? []).some((r) => STAFF.test(r.reference ?? '')))),

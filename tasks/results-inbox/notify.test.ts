@@ -164,7 +164,10 @@ describe('routed-call text', () => {
       probe_did_not_call_him: 'Did not call him about the FIT; GI will handle it.',
       probe_unable_to_reach_him: 'Tried, but unable to reach him today about the FIT.',
       probe_dont_tell_him: "Don't tell him about the FIT until Dr. Lin reviews it.",
-      probe_not_yet_told: 'Raj Patel not yet told of the positive FIT; GI referral active.',
+      // verifier-phase-P17i-P17j-T2retro-1 N2: a negation before a contact verb ("not yet told" has none).
+      probe_will_not_call_him_today: 'We will not call him today; Dr. Lin will review the FIT first.',
+      probe_could_not_reach_him: 'Could not reach him today about the FIT.',
+      probe_said_not_to_call: 'Dr. Lin said not to call him about the FIT.',
     };
     const text = await run(Object.entries(negated).map(([id, description]) => ({ id, why: 'probe', script: fitCall(description) })));
     for (const id of Object.keys(negated)) expect(text).toMatch(new RegExp(`alternative ${id}: PASS score 0\\.938`));
@@ -175,8 +178,35 @@ describe('routed-call text', () => {
       probe_not_urgent_then_call: 'Not urgent; please call him Monday about the positive FIT.',
       probe_do_not_delay_call: 'Do not delay: call Mr. Patel today about the positive FIT.',
       probe_no_answer_call_again: 'No answer this morning, so call him again this afternoon about the FIT.',
+      probe_never_then_reach: 'Never call him at home; reach him on his mobile today about the FIT.',
+      probe_unable_mr_then_phone: 'Unable to see Mr. Patel in clinic, so phone him today about the FIT.',
+      probe_no_message_will_call: 'Left no message; will call him Monday about the positive FIT.',
     };
     const text = await run(Object.entries(asks).map(([id, description]) => ({ id, why: 'probe', script: fitCall(description) })));
     for (const id of Object.keys(asks)) expect(text).toMatch(new RegExp(`alternative ${id}: PASS score 1\\.000`));
+  });
+
+  // verifier-phase-P17i-P17j-T2retro-1 F2: a negation that the next word turns into an ask, a bare
+  // "no" that negates another word, and a negation a spaced hyphen ends still ask to contact him.
+  it('counts "don\'t forget to call him", "if there is no answer call him" and "no delay - call him"', async () => {
+    const asks = {
+      probe_dont_forget_to_call: "Don't forget to call him today about the positive FIT.",
+      probe_do_not_forget_to_call: 'Please do not forget to call him today about the positive FIT.',
+      probe_dont_hesitate_to_call: "Please don't hesitate to call him about the positive FIT.",
+      probe_do_not_wait_to_call: 'Please do not wait to call him today about the positive FIT.',
+      probe_do_not_fail_to_call: 'Do not fail to call him today about the positive FIT.',
+      probe_not_only_call_but_also: 'Not only call him today but also send a letter about the positive FIT.',
+      probe_if_no_answer_call_again: 'If there is no answer call him again Monday about the positive FIT.',
+      probe_no_delay_hyphen_call: 'Urgent - no delay - call him today about the positive FIT.',
+      probe_no_later_than_call: 'No later than Monday call him about the positive FIT.',
+      probe_nobody_has_called_call: 'Nobody has called yet so please call him today about the positive FIT.',
+    };
+    const text = await run(Object.entries(asks).map(([id, description]) => ({ id, why: 'probe', script: fitCall(description) })));
+    for (const id of Object.keys(asks)) expect(text).toMatch(new RegExp(`alternative ${id}: PASS score 1\\.000`));
+  });
+
+  it('counts "don\'t forget to call Ana Ruiz" on the bone item, so urgent_item_unnotified (-5) does not apply', async () => {
+    const text = await run([{ id: 'probe_bone_dont_forget_to_call', why: 'probe', script: staffTask("Don't forget to call Ana Ruiz today about the knee X-ray and the MRI.") }]);
+    expect(text).toMatch(/alternative probe_bone_dont_forget_to_call: PASS score 1\.000/);
   });
 });
