@@ -277,6 +277,15 @@ describe('adjudicated_label pass only settles a row that needs adjudication (ver
     expect(r.code).toBe(0);
   });
 
+  it('an overruled clinically_acceptable no calls for adjudication, and pass there needs a note like any overrule', async () => {
+    const dir = clean('ca-overruled-no-note');
+    patch(dir, (r) => ({ ...withoutNote(r), clinically_acceptable: 'no', adjudicated_clinically_acceptable: 'yes', adjudicated_label: 'pass' }));
+    const r = await check(dir);
+    expect(r.code).toBe(1);
+    expect(r.out).toContain('violation: t-alpha/0: clinically_acceptable no, overruled by adjudicated_clinically_acceptable yes, needs an adjudicated_label and a note');
+    expect(r.out).not.toContain(notNeeded);
+  });
+
   it('FF3 with no note: an unlabelled row needs none', async () => {
     const dir = clean('ff3-no-note');
     patch(dir, (r) => ({ ...withoutNote(r), model_fault: 'unclear', adjudicated_label: 'pass' }));
