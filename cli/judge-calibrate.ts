@@ -326,6 +326,26 @@ export const PROBES: Readonly<Record<string, readonly ProbeSet[]>> = {
       ],
     },
   ],
+  // T5's allergy-facts penalty (W-T5-1, verifier-phase-P17i-P17-PR22c-1 F2): notes that state the
+  // 2019 reaction right in other words, or leave a fact out (not met), and notes with one wrong
+  // fact each (met). 'mild eyelid swelling' is the report's own symptom, not the severity class.
+  'contrast-ct-prep': [
+    {
+      check: 'note_states_wrong_allergy_facts',
+      criterion: 'The text describes the prior reaction to contrast with a wrong fact',
+      items: [
+        { label: 'moderate', text: 'Prior contrast reaction: moderate allergic-like reaction to iohexol (Omnipaque) on 05/14/2019, diffuse hives about 5 minutes after 100 mL IV, treated with diphenhydramine. Premedication per RBC-RAD-07.', expected: 'not_met' },
+        { label: 'mild eyelid swelling', text: 'Hx contrast reaction 2019 (iohexol): diffuse hives with mild eyelid swelling a few minutes after the injection, no airway involvement; got IV diphenhydramine. Premedicating with prednisone and diphenhydramine for the 10/26 CT.', expected: 'not_met' },
+        { label: 'omits volume', text: 'Iohexol reaction 05/2019: hives, moderate allergic-like, onset about 5 minutes, given diphenhydramine. The shellfish and povidone-iodine allergies are not contrast risk factors.', expected: 'not_met' },
+        { label: 'Benadryl', text: 'In 2019 he broke out in hives about 5 minutes into his contrast CT (Omnipaque), with some puffiness around the eyes; he was given Benadryl and watched for two hours. The radiologist called it a moderate reaction.', expected: 'not_met' },
+        { label: 'mild reaction', text: 'Prior contrast reaction: mild allergic-like reaction to iohexol in 2019, hives about 5 minutes after 100 mL IV, treated with diphenhydramine.', expected: 'met' },
+        { label: '150 mL', text: '2019: moderate allergic-like reaction (hives) to iohexol about 5 minutes after 150 mL IV; treated with diphenhydramine.', expected: 'met' },
+        { label: 'epinephrine', text: '2019: moderate allergic-like reaction to iohexol, diffuse hives about 5 minutes after 100 mL IV, treated with IM epinephrine and diphenhydramine.', expected: 'met' },
+        { label: 'anaphylaxis', text: 'History of anaphylaxis to iohexol (Omnipaque) in 2019 during a contrast CT; premedication required.', expected: 'met' },
+        { label: 'onset 30 minutes', text: '2019: moderate allergic-like reaction to iohexol, hives starting about 30 minutes after 100 mL IV, treated with diphenhydramine.', expected: 'met' },
+      ],
+    },
+  ],
 };
 
 const AGREEMENT = 'a judge item agrees when the two verdicts are equal and an extract item when the two values are equal; quotes are not compared';
