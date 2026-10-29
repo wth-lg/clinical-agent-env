@@ -470,6 +470,25 @@ export const PROBES: Readonly<Record<string, readonly ProbeSet[]>> = {
         { label: 'anaphylaxis per the allergy list, premedicated', text: 'Allergies (§1): anaphylaxis to iohexol on 05/14/2019 per the allergy list. Premedicating per §2. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan.', expected: 'met' },
       ],
     },
+    // P19 (researcher-16 T5 lever): metformin_held's stated_by item. Messages that stop or hold
+    // metformin until the clinic calls or a repeat kidney test is normal, from now or from the day of
+    // the scan (met), and messages that keep it, lower the dose, set a fixed restart day, or only
+    // name it (not met).
+    {
+      check: 'message_states_metformin_hold',
+      criterion: 'The text tells the patient to stop taking metformin',
+      items: [
+        { label: 'stop now, restart on a normal test', text: 'Stop taking metformin now, and do not restart it after the scan until we call you with a normal result from a repeat kidney test.', expected: 'met' },
+        { label: 'from Monday', text: 'Take your last metformin on Sunday evening 10/25. Do not take it on Monday 10/26 or after until we tell you your repeat kidney test is normal.', expected: 'met' },
+        { label: 'hold, brand name', text: "Please hold your Glucophage (metformin) starting today. We'll let you know when it's safe to start it again, once your repeat kidney test is back.", expected: 'met' },
+        { label: 'terse', text: 'Metformin: stop now. Restart only when we call you after your kidney blood test.', expected: 'met' },
+        { label: 'keep taking', text: 'Keep taking your metformin as usual; your kidney function is fine for the scan.', expected: 'not_met' },
+        { label: 'lower dose', text: 'Because your kidneys were strained last week, take metformin 500 mg twice a day instead of 1000 mg until we tell you otherwise.', expected: 'not_met' },
+        { label: 'fixed restart day', text: 'Do not take metformin from now until Wednesday morning 10/28, then restart 1000 mg twice a day.', expected: 'not_met' },
+        { label: 'skip two days', text: 'Skip metformin on the day of the scan and for two days after, then go back to your usual dose.', expected: 'not_met' },
+        { label: 'named only', text: 'We reviewed your medicines, including metformin and amlodipine. No changes are needed before the scan.', expected: 'not_met' },
+      ],
+    },
   ],
   // P19 lever (RBC-TOC-02 §7, builder-182): the two judged items the lever rewords. The note must
   // give furosemide and potassium chloride their changes, spironolactone (the addendum's 25 mg) not

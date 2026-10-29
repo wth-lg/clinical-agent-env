@@ -3,11 +3,11 @@
   "model": "claude-opus-5-5",
   "effort": "medium",
   "prompt_version": "judge-v1",
-  "at": "2026-10-29T17:43:06.944Z",
+  "at": "2026-10-29T22:07:12.343Z",
   "reference": "live",
   "reference_counts": {
     "scripted": 0,
-    "live": 104
+    "live": 146
   },
   "protocol": {
     "design": "test-retest",
@@ -18,20 +18,20 @@
     "excluded": "none: a cache key no matrix case asks stays in questions and is listed as a disagreement",
     "pooling": "one task per file: agree is pooled over the task's questions; every live answer is in live_entries and each disagreement lists both answers"
   },
-  "questions": 104,
-  "same_keys": 104,
-  "agree": 104,
-  "calls": 104,
-  "ledger_settles": 104,
-  "cost_usd": 0.641444,
-  "usd_per_call": 0.006168,
+  "questions": 146,
+  "same_keys": 146,
+  "agree": 146,
+  "calls": 146,
+  "ledger_settles": 146,
+  "cost_usd": 0.92538,
+  "usd_per_call": 0.006338,
   "oracle": {
     "outcome": "PASS",
     "score": 1,
     "judge_unknown": 0
   },
   "disagreements": [],
-  "note": "Live judge answers (pnpm cli judge-calibrate) vs the task's cache. tests/judge-cache.json is not written by this command; this file is the calibration record. Ledger batch 78712db7-f7e8-46d5-a472-6c213ad8ec1f.",
+  "note": "Live judge answers (pnpm cli judge-calibrate) vs the task's cache. tests/judge-cache.json is not written by this command; this file is the calibration record. Ledger batch cb196acb-22ca-481c-a969-e2e4a018113b.",
   "live_entries": [
     {
       "key": "00a5058aaca252847b3f7a0df0562af7039d34a03f20b6a57c5162a9e8562b70",
@@ -48,7 +48,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
@@ -66,25 +66,79 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
-      "key": "08ad2ac85c14f0e41d7c2cc49a72a437b48bba49b5c970c6faac1e42ebd6f836",
+      "key": "04e44a8ba9e5f76273274d6792138a8bddb62cf9c4cdb05e083e612b32ebd4ab",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
       "prompt_version": "judge-v1",
       "answer": {
-        "verdict": "not_met",
-        "quote": "Do not drive after taking it: please have someone drive you to the scan and home."
+        "verdict": "met",
+        "quote": "Severe allergic-like reaction to iodinated contrast: no iodinated contrast (§3)."
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "077d6b01fe19337ff524e27c115c866e8921e4cae13ae05ba104191d95a3408d",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day)"
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "09924268ced8e4fd88c07a40131c9a4beb5129a8c2274c87914a329b53167cf6",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "0b043c85b31f21bf892c68692192133819a786112166806ea801fde089f7c39b",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
@@ -102,7 +156,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
@@ -120,7 +174,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
@@ -131,36 +185,36 @@
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "not_met",
-        "quote": "The diphenhydramine will make you sleepy, so someone else needs to drive you that day."
+        "quote": "prednisone 50 mg together with diphenhydramine 50 mg at eight in the morning on Monday (10/26)."
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
-      "key": "0f50621d9b24f7d8ccfd794af01df938c5a6bb1824574d262f90e0bbdedcb45e",
+      "key": "0ed4d1a8c548f4f4e62da52fcfca83be6f8463ebba6fba3e86539db239b367df",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "not_met",
-        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+        "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day)"
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
-      "key": "13a21cec6394049c38db03174e9a4e5c788d1d29f54e578e7d5f59d9eab44d47",
+      "key": "103d295ff21b0ba44a8730e62c30d67633cb126ce41505c75735c0ec74a0acd3",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
@@ -174,11 +228,29 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
-      "key": "183f79a637d475fc309060a5253257c4c7075aae7e9f7fd7c7d3a39f3ee15af5",
+      "key": "1365f52bf83765f4c54d5ecdd3e4a2d038f9843210ac7f4010a18f8fca0b0727",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "Stop taking metformin now, and do not restart it after the scan until we call you with a normal result from a repeat kidney test (at the earliest 48 hours after the scan)."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "140f2f17ad918e4ad906692d1dacc14d7b8b27fc752f4f62c6210b0133bae437",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
@@ -192,11 +264,29 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
-      "key": "196a3239bd4eabcf7450df8e5d2a1da7e178f93060e42cedbd80294f430039f2",
+      "key": "146a37396f94c10bd4e4fb682e10b9d48466800dde91d2d3d3d34f3c94baa092",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": ""
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "185a3f28e6bc287d9e8d5ef77f1181855f8d6135e9b5b2cf033cbd16d0b008d7",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
@@ -210,7 +300,43 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "18dbbca9a2b9f81cac02069449e06e965dc8711f55db8d9f0446a99425ece4fe",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "take metformin 500 mg (half a tablet) twice a day instead of 1000 mg until we tell you otherwise."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "193b6d4b0aec733c6b3972f7be71c6994cb6e0832d0ae56edd90de4bff9f2d50",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "Allergies (§1): iohexol, anaphylaxis (patient report), severe, on the allergy list. Severe allergic-like reaction to iodinated contrast: no iodinated contrast (§3). The shellfish and povidone-iodine allergies are not risk factors.\n\nPremedication: none; §3 applies."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
@@ -228,7 +354,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
@@ -246,65 +372,11 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
-      "key": "2036c8250aec7220591e91db2f2bb7288db166fe3d59f2d24b10b724ed32e049",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "not_met",
-        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
-      }
-    },
-    {
-      "key": "22d42db7bc9b0a3dbe6e7a849eb18d01382e218b1d3bb35e9da2f91ee865320f",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "not_met",
-        "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day)"
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
-      }
-    },
-    {
-      "key": "24ba5d5c1f308e10f41a4bc03b7146edb992e29bdf00989d8318bb7373807eda",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "met",
-        "quote": "Do not drive after taking it: please have someone drive you to the scan and home."
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
-      }
-    },
-    {
-      "key": "271375d2ff3829b735c9cdb403aca0b03f00d5a76188d98feca3ee04df61a4e8",
+      "key": "1b65baecb440c7b56cd6789225d91d7ca8b7bb3d7db02dcfe8cf359ab6651066",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
@@ -318,25 +390,79 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
-      "key": "2d33ded654e54714a41ee0a3d5b851e20bdfd278493941b2572288fe6e9be2f6",
+      "key": "1c7358eeb1ba33728f491a52cac98f8e45b8b3edec5495f0194f38320fd8881c",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
       "prompt_version": "judge-v1",
       "answer": {
-        "verdict": "not_met",
-        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+        "verdict": "met",
+        "quote": "Stop taking metformin now, and do not restart it after the scan until we call you with a normal result from a repeat kidney test (at the earliest 48 hours after the scan)."
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "23d1ca302ce8876f26b9052d9628fba37ada81eefeed83f297c72607350cbd63",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "Do not drive after taking it: please have someone drive you to the scan and home."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "2641d508baa38a5ca0a532c88d3a4011aefb2c2d25299a2671e2902d599bc6ca",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": ""
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "2a95eb52488e7e2ece77ff778bab993a171dfd3d2390249b15389ea5fa27bca8",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": ""
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
@@ -354,43 +480,43 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
-      "key": "30e845e30b145bf57de9e2f5a56786e4c551a7ed50bb6c7bdd78f852ae6cacf8",
+      "key": "2f956ebfc04d55ebfb594f1e35944339350df7bcb8010abc400cd4a0837df179",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "met",
-        "quote": "Do not drive after taking it: please have someone drive you to the scan and home."
+        "quote": "That is the risk factor. The allergy list also carries \"Anaphylaxis (patient report)\", added in 2021 from his own account with no record reviewed; the report of the day grades the reaction moderate, and §1 grades it by that record, so §2 applies, not §3. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
-      "key": "3132db7becf94cb738f4010f8f0994bac005fdfbc93d202804ecffaf8bf9804a",
+      "key": "31a5ac4088e5502b607f5b16b32fcab9aad4a35ff5059b9a69c15a7d799a6441",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
       "prompt_version": "judge-v1",
       "answer": {
-        "verdict": "met",
-        "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day). That is the risk factor."
+        "verdict": "not_met",
+        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
@@ -408,25 +534,25 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
-      "key": "36a8575332716ff1a4c599e597ef2322b83cb4503837c9b2b3d75cdc88f83ef3",
+      "key": "36d0a86b77e59104eefdeffd9b8d67aa91768d4e879be7a3855d8c8cf69dec24",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "not_met",
-        "quote": ""
+        "quote": "Do not drive after taking it: please have someone drive you to the scan and home."
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
@@ -444,29 +570,29 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
-      "key": "3d9b72196fa44c12014feac87f22e4caa3eab4f80aa1b9bc706616a1b3cf7163",
+      "key": "396cd6dca69eb30becf4813201a2f2d7a2de160b0527b45a64800a79aa5df1a2",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "not_met",
-        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+        "quote": ""
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
-      "key": "3e6de689dec5399508b5b4cdc026426ff8285b0082aeed9bad059f333285a022",
+      "key": "3a444c38a3b4d79898afc67fcf904b5d61cf713ccb6666efcbe4e53c90b0fa4d",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
@@ -480,7 +606,25 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "3f01313b11aee5c1c7b0feb45b26efcd5fecf3f4de0cd2bbab21c269f0824980",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "Do not drive after taking it: please have someone drive you to the scan and home."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
@@ -498,7 +642,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
@@ -516,25 +660,25 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
-      "key": "44792eb0b72817dc1e23513a8a4d3119e7e249262b9f3f4185804dee242b9579",
+      "key": "445ab3be0f78793bbae2ff26ab12a180b0b4442b4f9916bd4fa81c3d89ab328e",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "not_met",
-        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+        "quote": "Diphenhydramine makes you drowsy. Do not drive after taking it: please have someone drive you to the scan and home."
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
@@ -552,25 +696,151 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
-      "key": "5038dfa685b95160d2fd55cda48cb1167012685be952809df79e3fb1c4553c86",
+      "key": "48154ccb28acae810b847c6e6eb20d705ed99fa11a395e3cf87f9e5c6c4124d8",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "met",
-        "quote": "That is the risk factor. The allergy list also carries \"Anaphylaxis (patient report)\", added in 2021 from his own account with no record reviewed; the report of the day grades the reaction moderate, and §1 grades it by that record, so §2 applies, not §3. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+        "quote": "Do not drive after taking it: please have someone drive you to the scan and home."
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "487be3b97cf15dcfe56149f0fcac54f8b57b276dc5079f60f074827eb8e8d27b",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "Do not drive after taking it: please have someone drive you to the scan and home."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "4a44843c233a0a843147bad227df568154af2d3d6f4c19775feccaf4b1d7502d",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": ""
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "4d7b10f40db33be46ea6d3839e140aaa1e433a075320fe6bd248d72c3a70ffe8",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "4d91b912378d57cf27464f6f56a9f0dc13214e05ab71d1963be7e6187fbf4fce",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "The shellfish and povidone-iodine allergies are not risk factors."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "4fe1493c8bbee8027990b2af7c61487487ba69812fc462f834a1cc61d9c108e8",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "505a7c54cf8aa80450a9c94e826cb6732b20980bc569cd626221d41674c7e104",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": ""
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "50b8f56caae43734f2008740158a6b8c5bb3ccd9dc47be4c78d2c0fb1357fea2",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day). That is the risk factor. The allergy list also carries \"Anaphylaxis (patient report)\", added in 2021 from his own account with no record reviewed; the report of the day grades the reaction moderate, and §1 grades it by that record, so §2 applies, not §3. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
@@ -588,7 +858,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
@@ -606,7 +876,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
@@ -624,83 +894,11 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
-      "key": "577064fb44b8d15a213abf80b1cd69b135413c157548b52f0e063bdbfbbadb74",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "not_met",
-        "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day)"
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
-      }
-    },
-    {
-      "key": "59947eb7413703c3034d2e538078e8cabfcd05505c3f15e0bc34d94f7089eac2",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "met",
-        "quote": "Prednisone 50 mg by mouth at 2:00 AM on Sunday 10/25 (please set an alarm)."
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
-      }
-    },
-    {
-      "key": "5d13ba21c0985f00dc68267668a467d364b383bc54d1fa79b2e7f66c0cf39055",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "met",
-        "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day). That is the risk factor. The allergy list also carries \"Anaphylaxis (patient report)\", added in 2021 from his own account with no record reviewed; the report of the day grades the reaction moderate, and §1 grades it by that record, so §2 applies, not §3. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
-      }
-    },
-    {
-      "key": "5e78a539e6289a59daacda1fdc71602b171034abe9a0a6f9633ba77b3c54dc53",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "not_met",
-        "quote": "Take diphenhydramine (Benadryl) 50 mg at bedtime on Sunday."
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
-      }
-    },
-    {
-      "key": "5f92f71de191ae6a285ac21dae49d00dde48f1cbf1fc467af304224ae33c707a",
+      "key": "53ce5325e81f96141cb99fca923720f3861ff4b693ebf74ca24fcdc36be3b16b",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
@@ -714,7 +912,205 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "55a1a4a3aa9ddbedcd10f929f4d03bb4f696fea5ad727bf8fb79ba4c9f8a0506",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": ""
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "5674b5a1e10e130cd4fe88ef269bac76959e5f95c8db0339748ac6991ca496c9",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "58388001cf84fee6ca4808d7968bf57ff2095b769f435172a172cc5e289761d7",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "Stop taking metformin now, and do not restart it after the scan until we call you with a normal result from a repeat kidney test (at the earliest 48 hours after the scan)."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "5a4b7c7a50b7f8f31abb8fc701249568145a5df567b34a414b794bb087547d3e",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "5bb8fa69a1140483721177f257c794f843bb0bd206e476c2445c0c93a8ad33e0",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "That is the risk factor. The allergy list also carries \"Anaphylaxis (patient report)\", added in 2021 from his own account with no record reviewed; the report of the day grades the reaction moderate, and §1 grades it by that record, so §2 applies, not §3. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "5c3ac195a2ebfc74821e2081b3db084d72fe6aef2e623bd6bc90d5941935d97d",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": ""
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "5c6b094581d8cf640b24ef7f157de6920b2651750b878a5959559e7ad553d32a",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": ""
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "5c9a4a38fce0df2f9e2f78fb22ab9146fbfee41733a280952fb09bf5eeca8937",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "Stop taking metformin now, and do not restart it until we call you with a normal result."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "5cccd7f0ab8ecb1a8d999f95fddce22a9a6d0b57a7c092be0159644a4ef037c0",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "5f12e0f39d1e9434bbff48567b20dfe31fc559e44b2a60dc6dea5b40b56c7f0f",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "Prednisone 50 mg by mouth at 2:00 AM on Sunday 10/25 (please set an alarm)."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "5f18f1f4645c82e20889fd60c46f112a04bc5429e7ca9e82bff2ed7d0e9fccdb",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": ""
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
@@ -732,29 +1128,173 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
-      "key": "69442a51bc5523459210d412d24410d311e31cfa6756fd6a4b36603996ee3e95",
+      "key": "60b59072f39a5f50ccaeb53740a0fc8d5fcb234d4d58d0c99498b69713e4ec56",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "met",
-        "quote": "Severe allergic-like reaction to iodinated contrast: no iodinated contrast (§3)."
+        "quote": "Stop taking metformin now, and do not restart it after the scan until we call you with a normal result from a repeat kidney test (at the earliest 48 hours after the scan)."
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
-      "key": "6fcd5a0eac8d59615aeabd3f6a0f536b1c47d85b8207db6a000a5b1cd0d84bcd",
+      "key": "60dbce1d890fe5aaf7d8f9e55248a974c6cca7cdf2d68305123ac737751ace0f",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "That is the risk factor. The allergy list also carries \"Anaphylaxis (patient report)\", added in 2021 from his own account with no record reviewed; the report of the day grades the reaction moderate, and §1 grades it by that record, so §2 applies, not §3. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "616877e21e636d12c10b3862b065bb8ead50a8bf010043e5ec50ab9f868740ac",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "63080d9d1c453fae28ec0bf69f6e7f61e12b2abf8860a5593bc2d81ebbb1c7db",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day). That is the risk factor."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "632e4b593add6eb6b32bcc1f6292234f3197373c08b62292129465478aaa7c08",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "The shellfish allergy and the povidone-iodine (topical iodine) allergy are not risk factors for a contrast reaction."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "63f887ce521dd8da37c403a93e10f585fccc8514f2aea3a207b66f6bc7e96394",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "That is the risk factor. The allergy list also carries \"Anaphylaxis (patient report)\", added in 2021 from his own account with no record reviewed; the report of the day grades the reaction moderate, and §1 grades it by that record, so §2 applies, not §3. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "6dd7716360ca650cbb80fa550fc4268e7e07aeb25b2868a9eff740473dd950ad",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "6dead91df6ee05e119ea0f28b8fe7512f9f592b963dca3c608d5cf6a867c405b",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day)"
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "7380da7af72dbe27397c38c71d29fd176e06052ffc34601c7a32d06ff7e6d6ea",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "Stop taking metformin now, and do not restart it after the scan until we call you with a normal result from a repeat kidney test (at the earliest 48 hours after the scan)."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "7425d44f96df07ecdcc7e7dd4024e6ca4a1a5d5a639cc5b8bdbad323f5ef9a94",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
@@ -768,25 +1308,43 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
-      "key": "7395445fad670838b3a688d3f85e1463eab25ae1880d5918aebbb5555ce9c14e",
+      "key": "74cbe5cadfec1319a81ac35f0a5bd8386317b269d5d7d09839711138a953cef9",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "not_met",
-        "quote": "Allergies (§1): iohexol, anaphylaxis (patient report), severe, on the allergy list. Severe allergic-like reaction to iodinated contrast: no iodinated contrast (§3). The shellfish and povidone-iodine allergies are not risk factors.\n\nPremedication: none; §3 applies."
+        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "7778a7d11f4a5e785407c2f1687822a896f33c3d3feac10dc0894d965684d34b",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "Take diphenhydramine (Benadryl) 50 mg at bedtime on Sunday."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
@@ -804,7 +1362,25 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "79c74b0478089da6f7de82ccc85118666b38c0a7fe7e6845799e71f79cd31eec",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "That is the risk factor. The allergy list also carries \"Anaphylaxis (patient report)\", added in 2021 from his own account with no record reviewed; the report of the day grades the reaction moderate, and §1 grades it by that record, so §2 applies, not §3. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
@@ -822,43 +1398,25 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
-      "key": "7a210072bcaa242414269a0f4fc05ac00c8e9877176ccdf211438f403e5936b4",
+      "key": "7b63d62d499c0cbc6df47e220d35e13c185bb1de250d6547d71ab29133474a32",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
       "prompt_version": "judge-v1",
       "answer": {
-        "verdict": "not_met",
-        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+        "verdict": "met",
+        "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day). That is the risk factor. The allergy list also carries \"Anaphylaxis (patient report)\", added in 2021 from his own account with no record reviewed; the report of the day grades the reaction moderate, and §1 grades it by that record, so §2 applies, not §3. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
-      }
-    },
-    {
-      "key": "7a253e52590db35e046f9a79503ad27953ca377b6b63ac1471119d1490bc71f4",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "not_met",
-        "quote": "Do not drive after taking it: please have someone drive you to the scan and home."
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
@@ -876,43 +1434,43 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
-      "key": "809132d4a641a997f65fe83fead1e62ffb1a57af5fdd09b4fb438339bac459c1",
+      "key": "7f4de553959f3c7cdd5973e80102c30fa4d2dcf728923079e3ffaa39b08831d1",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
       "prompt_version": "judge-v1",
       "answer": {
-        "verdict": "not_met",
-        "quote": "Prednisone 50 mg by mouth at 2:00 AM on Sunday 10/25 (please set an alarm)."
+        "verdict": "met",
+        "quote": "That is the risk factor. The allergy list also carries \"Anaphylaxis (patient report)\", added in 2021 from his own account with no record reviewed; the report of the day grades the reaction moderate, and §1 grades it by that record, so §2 applies, not §3. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
-      "key": "80f593f2d97c83572dbe64039526d6b763e29b2ca4b650e65d5a91cde7f175e4",
+      "key": "80caf3bab7e462873748c71bf3c9e3a4f4b36855a330306b50235dca74ed6e64",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "not_met",
-        "quote": ""
+        "quote": "so we are postponing your contrast CT of Monday 10/26 until it has."
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
@@ -930,7 +1488,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
@@ -948,11 +1506,11 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
-      "key": "859e395d3d908020470235ac51f5af041da8ee16de2aaa506b6f0e1447ff18f9",
+      "key": "840b1eb13549d86d2f58da35a9240c2d7f4ee310f40ab688ba05e2ea6ecfdc6d",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
@@ -966,7 +1524,43 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "852aea44d84098156bd2a6763fe45634c35382e26d2adf07afe95510fa9ea474",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "Stop taking metformin now, and do not restart it after the scan until we call you with a normal result from a repeat kidney test (at the earliest 48 hours after the scan)."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "85ecb835085c23067a9b7099205aa593403ff136e5a5656483597db99aa32fdc",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
@@ -984,25 +1578,79 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
-      "key": "8be8a9ef8b545756f2016577c827d55f7611737c20c40decdc800b7ad2833f49",
+      "key": "8a275bad92891c0f866fd51ed2b337cd9c03ef5774ce0414879ca12a0077d62a",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "not_met",
-        "quote": "50 mg of prednisone and 25 mg of diphenhydramine (Benadryl) by mouth at 8:00 AM on Monday 10/26."
+        "quote": "Do not drive after taking it: please have someone drive you to the scan and home."
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "8a582434cd53a9f5aa65429b45de828b584c5bfadbbdb7b4dad5ff0e34350281",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "8a7234f8b1c41040a735f11bc7eb57a43dc9426375c394d7362632bab1a77b17",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "Take diphenhydramine (Benadryl) 50 mg at bedtime on Sunday."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "8ba7101a263754d2cd63b1d37bdc3847e6fa701ebf50afc3bb5c7a336b0c366c",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day)"
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
@@ -1020,25 +1668,43 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
-      "key": "8de260765322af206381efe652c7673921bfacdd20178fea517ddd3cf4bc0bd0",
+      "key": "8d18039bafc41b74d7e2cea8a9a7df47574f38309cbb4aaf53f08834201fed49",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "not_met",
-        "quote": "Prednisone 50 mg and diphenhydramine (Benadryl) 50 mg by mouth at 8:00 AM on Monday 10/26."
+        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "8dc9a435b1a71aeed967bc8a496f9273a4888b7a641927bd0733b3b5fa627f88",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "Do not drive after taking it: please have someone drive you to the scan and home."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
@@ -1056,7 +1722,25 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "8ee2070c0d3d8e1466105b8cd5aee30953e8910906b5efa390efef7f17b0cc57",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "That is the risk factor. The allergy list also carries \"Anaphylaxis (patient report)\", added in 2021 from his own account with no record reviewed; the report of the day grades the reaction moderate, and §1 grades it by that record, so §2 applies, not §3. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
@@ -1074,7 +1758,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
@@ -1092,7 +1776,25 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "90da27dc59d89e5315d62a4ef3b7ecb11a196f77ce5639daa8d491248a3e0a6b",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "That is the risk factor. The allergy list also carries \"Anaphylaxis (patient report)\", added in 2021 from his own account with no record reviewed; the report of the day grades the reaction moderate, and §1 grades it by that record, so §2 applies, not §3. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
@@ -1110,7 +1812,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
@@ -1121,50 +1823,68 @@
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "not_met",
-        "quote": "You must not drive after the diphenhydramine; bring someone to drive you."
+        "quote": "Prednisone 50 mg (5 tablets of 10 mg) by mouth at 20:00 Sunday 10/25, at 02:00 Monday 10/26 and at 08:00 Monday 10/26."
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
-      "key": "96a9f47febaee28b36e067c95fb45eb4832e4c869c607dcb99af87a4ea4d712c",
+      "key": "9383928557aa0ba624629945ffcf62117bcd75c628241940f04b8a76668cdc5d",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
       "prompt_version": "judge-v1",
       "answer": {
-        "verdict": "met",
-        "quote": "Do not drive after taking it: please have someone drive you to the scan and home."
+        "verdict": "not_met",
+        "quote": ""
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
-      "key": "978bb6c504f77ddc6131cad70d96a2fc80cbca23a435601118977bcff026e095",
+      "key": "941121134ed151755f986e87dc22edd94b7e260b7c8b0822e56e522900c6415f",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
       "prompt_version": "judge-v1",
       "answer": {
-        "verdict": "met",
-        "quote": "That is the risk factor. The allergy list also carries \"Anaphylaxis (patient report)\", added in 2021 from his own account with no record reviewed; the report of the day grades the reaction moderate, and §1 grades it by that record, so §2 applies, not §3. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+        "verdict": "not_met",
+        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "981d351247ee9b00b6e0b1486ac98eec5c4097c79a823bac0e7e58e904221e4d",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
@@ -1182,61 +1902,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
-      }
-    },
-    {
-      "key": "9e8516fd4637e4b567e6bb6b00863f9d2a5da54f23db1b0219c5dfe32ce55c91",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "not_met",
-        "quote": ""
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
-      }
-    },
-    {
-      "key": "9e8ffa8d31e57a0406a2c1c7703970139fa64c9845dd7d6b512940613289c6b2",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "not_met",
-        "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day)"
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
-      }
-    },
-    {
-      "key": "9eb9a037e392a8a392f2bc53e05e2856c74d2c8cab6cac1e61306d5491a98d61",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "not_met",
-        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
@@ -1254,47 +1920,11 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
       "key": "9f97b7124502905923f8c44b50dad0d0a280bbe4bdec7cd3033b807a9a2fd1a3",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "not_met",
-        "quote": "iohexol, hives in 2019"
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
-      }
-    },
-    {
-      "key": "a09555e7d75e96e9ccfbbb12ee8b1396c9ce175523121e1d8c4116f5dc1dc30e",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "not_met",
-        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
-      }
-    },
-    {
-      "key": "a162f66e023caa726d9ee259731ec3565db66b09f0681dffa6914042547c05f5",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
@@ -1308,11 +1938,11 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
-      "key": "a1ef4b1a4844e446b272cb9fe5df4e08f3f83834ede4ac8c5227da45efc21813",
+      "key": "9ff488e74694651e74381224713536a565b3da61800a60a4f34d1627e619b781",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
@@ -1326,7 +1956,25 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "a0a259ade35d581b366efc505338505b9c684414fbbcd3be5e8077e94b45282a",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "Do not take metformin from now until Wednesday morning 10/28, then restart 1000 mg twice a day."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
@@ -1344,7 +1992,25 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "a391d9775b3c1fc0ade7be5c2527a706f0ef49b25674a847cfe8ddb8e0ced17d",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "Do not drive after taking it: please have someone drive you to the scan and home."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
@@ -1362,43 +2028,25 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
-      "key": "a7cc7fd15c18d893a6c764820d1563adb8e7d139b95dd072735c02a875f29404",
+      "key": "a9e13e12d8e0779abe5b9656022c1a4b31af56f59bf5e053fc624fc333119179",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "not_met",
-        "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day)"
+        "quote": ""
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
-      }
-    },
-    {
-      "key": "a83d3e9d2f5b041638f70cefd079c082d747ae663d1459511b1a0572bcc6c24a",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "not_met",
-        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
@@ -1416,25 +2064,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
-      }
-    },
-    {
-      "key": "ab5c70d5f82ad61135a851584e0df9464bbbba3c3d57dd54266bf64081520062",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "not_met",
-        "quote": "Prednisone 20 mg and diphenhydramine (Benadryl) 50 mg by mouth at 8:00 AM on Monday 10/26."
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
@@ -1445,32 +2075,32 @@
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "not_met",
-        "quote": "Diphenhydramine causes drowsiness: have someone else drive you on the day of the scan and do not drive after taking it."
+        "quote": "have someone else drive you on the day of the scan and do not drive after taking it."
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
-      "key": "ac153b035f629e5ddc9eeeab0eb5267bc43f3cc77c2f82c5445af84bb0ec5785",
+      "key": "abfea0e0df2a76cd0a531030927d66505336ebed44aa9f15b98114a5606af133",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "met",
-        "quote": "That is the risk factor. The allergy list also carries \"Anaphylaxis (patient report)\", added in 2021 from his own account with no record reviewed; the report of the day grades the reaction moderate, and §1 grades it by that record, so §2 applies, not §3. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+        "quote": "Do not drive after taking it: please have someone drive you to the scan and home."
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
@@ -1488,25 +2118,79 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
-      "key": "ba06095acd5dbab442aa30fefdef247d6d3577cb99e0ba02e22529874a5e95d5",
+      "key": "b1da335d13db9d2ec31eb5f5570247cf39ef7fe8b5e242fab21ee8e471d2ca8d",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "met",
-        "quote": "Diphenhydramine makes you drowsy. Do not drive after taking it: please have someone drive you to the scan and home."
+        "quote": "Stop taking metformin now, and do not restart it after the scan until we call you with a normal result from a repeat kidney test (at the earliest 48 hours after the scan)."
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "b386f95c2519ee8b8208388a967700443383e91f5bb43c75c417c6891aae57dd",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "b3a20a274047208d92d8fe35bbd5e2d18fa180f314cec9966441354f35d729db",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "Do not drive after taking it: please have someone drive you to the scan and home."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "b8c844ad6e782667194a4549b2c8ee35f00a3a5c82879f75597e77bc689be42c",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
@@ -1524,29 +2208,11 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
-      "key": "c5c2bc1236a995f30976084d12739c98762321bc28eb4ec503f759e88cb8ba79",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "met",
-        "quote": "Do not drive after taking it: please have someone drive you to the scan and home."
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
-      }
-    },
-    {
-      "key": "ca09435f9e437786d2f780954fb62c83c1d898423f3fafe0e69538f6c7bb2d88",
+      "key": "bfedde29ae28012590f748f5dbc67ba677ee9956a57029506f7067e05801855b",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
@@ -1560,65 +2226,29 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
-      "key": "cd8e1892922aa6ca45b0e34bc774642447c4c06cbce6fcbeb2f25e2915440d82",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "met",
-        "quote": "Take diphenhydramine (Benadryl) 50 mg at bedtime on Sunday."
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
-      }
-    },
-    {
-      "key": "d0ad9cf4b082c794ee6aabdaae690c970d780668e43b93aa74746db3ee23739f",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "met",
-        "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day). That is the risk factor."
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
-      }
-    },
-    {
-      "key": "d15bf39fecc71029ed95083955a086a6c2bc56dc278a705aeeebeee373bc3300",
+      "key": "c479a5bf9844cf2239c2c3a39bc39553dc118f88951e60ee3123eecd6a0d896d",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "not_met",
-        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+        "quote": "Prednisone 50 mg by mouth at 8:00 PM on Sunday 10/25.\n- Prednisone 50 mg by mouth at 2:00 AM on Monday 10/26 (please set an alarm).\n- Prednisone 50 mg and diphenhydramine (Benadryl) 50 mg by mouth at 8:00 AM on Monday 10/26.\n\nDiphenhydramine makes you drowsy. Do not drive after taking it: please have someone drive you to the scan and home."
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
-      "key": "d5a6c709f6011170069b7007a06b6134cb1b40e853ee44070b3fbdd23ab23736",
+      "key": "cbb9532da8928f985ecedc326925bc07cf2ec630c9b860788a2040ffd3e1c4d1",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
@@ -1632,29 +2262,101 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
-      "key": "da600c71061ca5ec38dc8ce8eed0ca37d06fe351425d60af4333496c9350eff4",
+      "key": "d0b10db6301fd6ea2f691fedbb87e84e4eb4da89ff49a62b546aee612f5874a4",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "met",
-        "quote": "That is the risk factor. The allergy list also carries \"Anaphylaxis (patient report)\", added in 2021 from his own account with no record reviewed; the report of the day grades the reaction moderate, and §1 grades it by that record, so §2 applies, not §3. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+        "quote": "Stop taking metformin now, and do not restart it after the scan until we call you with a normal result from a repeat kidney test (at the earliest 48 hours after the scan)."
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
-      "key": "da7327269f389bf35d5c77cb69c7ec16a2755794c4b0e5df290d25b3bb75fab6",
+      "key": "d3a3519072d14f0be71ec8533aa30dbd97922203f7af891d3499e47232410ab4",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "Prednisone 50 mg and diphenhydramine (Benadryl) 50 mg by mouth at 8:00 AM on Monday 10/26."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "d4bee59c89f8651cb8c780cf5f19562050eccc4ec916ff0989fab3cd70a8e6bb",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "d536543b1b9e93957a30b267861364f61a12e2df5a793eb7a0f4b550b8dd1c6f",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "Do not drive after taking it: please have someone drive you to the scan and home."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "d941cb4b60a4744446e150564b44de6a0dbfaa11ad1de1308292243f8049a3c2",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "Take your last metformin dose on Sunday evening 10/25. Do not take it from Monday morning 10/26 on, and do not restart it after the scan until we call you with a normal result from a repeat kidney test (at the earliest 48 hours after the scan)."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "dac7e2f46083924b2ecff2502ad55ffe141333777e834d7657bd03a62b105dd1",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
@@ -1668,25 +2370,61 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
-      "key": "dc15bc014255b74448447783cebc013c63e9740e59d058bfa4668a03b3a22500",
+      "key": "ddcdf458f9cf6c46a0271b6af0747655d6b1eb6c4f15cdef745d38eb36c71f31",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
       "prompt_version": "judge-v1",
       "answer": {
-        "verdict": "not_met",
-        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+        "verdict": "met",
+        "quote": "That is the risk factor. The allergy list also carries \"Anaphylaxis (patient report)\", added in 2021 from his own account with no record reviewed; the report of the day grades the reaction moderate, and §1 grades it by that record, so §2 applies, not §3. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "e1546e94de3071a1fc5a13a0d34120f395b4a3a436f85209978388f0faee332b",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "That is the risk factor. The allergy list also carries \"Anaphylaxis (patient report)\", added in 2021 from his own account with no record reviewed; the report of the day grades the reaction moderate, and §1 grades it by that record, so §2 applies, not §3. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "e2334346d92348c8eec316c75dfa641b79e420fa24377795e6f454f3e8268351",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "Do not drive after taking it: please have someone drive you to the scan and home."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
@@ -1704,11 +2442,29 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
-      "key": "e619ce9311e88841a0a77d9b8d870b278e17932ef65d4fae12e116eea29dd812",
+      "key": "e523cb9661be0368531fff7ec876f8915da01341815221082c4acb1a3e0de159",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "Prednisone 50 mg by mouth at 2:00 AM on Sunday 10/25 (please set an alarm)."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "e58b448d7a15facbf75b84976dbdf643f5fa53bdb15b59b4477156304bbd6f82",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
@@ -1722,101 +2478,47 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
-      "key": "e725c259fe5b2fe405e2ec9bcdf5ac72abb356919974e5cf262a980fe0e1b5e8",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "not_met",
-        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
-      }
-    },
-    {
-      "key": "e77ab988b5fec7fb8920a554a0d8f5db9fe090b70de13a309c04876a93bab7bd",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "not_met",
-        "quote": "The shellfish allergy and the povidone-iodine (topical iodine) allergy are not risk factors for a contrast reaction."
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
-      }
-    },
-    {
-      "key": "e7f4dd9100d22441fd845b54840d876f69498f939bc229e267917a17574ec79b",
+      "key": "e7051b3e200d003e8b4dd02533b1f5b239c58fe04c67803c1768f29bdd888940",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "met",
-        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+        "quote": "Do not drive after taking it: please have someone drive you to the scan and home."
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
-      "key": "ea8f430af03e200a49cd0ffc303a1b87e3eb52c1fd841e1aee83f05a8f6b7220",
-      "kind": "judge",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "answer": {
-        "verdict": "not_met",
-        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
-      },
-      "error": null,
-      "calls": 1,
-      "provenance": {
-        "source": "live",
-        "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
-      }
-    },
-    {
-      "key": "eb223f39db05d64310b5d54d49c999072d621ec4b1f15303189b2ea895888f7e",
+      "key": "e9d4defbb83741569c2feb8c5af4913d8886f46b3095e0adf6c3625a6b78c040",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "met",
-        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+        "quote": "That is the risk factor. The allergy list also carries \"Anaphylaxis (patient report)\", added in 2021 from his own account with no record reviewed; the report of the day grades the reaction moderate, and §1 grades it by that record, so §2 applies, not §3. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
-      "key": "ebaf7e4334eb0635e704c1c1fbe6634c5e5e323e639f9e6cdc172c6afdad0157",
+      "key": "f0f8f7cce2dfba82f62a89aa7f93909be2423e10679ac89d4c613677782fdbff",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
@@ -1830,25 +2532,79 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
-      "key": "ec3e02a541b16c3e0170ae0e6ae98f8d6a6ca1cda80145cba9bec6c4c521df89",
+      "key": "f1411bd4e5d2bfe953618241487b14a1c9397bdb4a28de14ed51f76146e88e7f",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
       "prompt_version": "judge-v1",
       "answer": {
         "verdict": "not_met",
-        "quote": "The shellfish and povidone-iodine allergies are not risk factors."
+        "quote": "Diphenhydramine makes you drowsy. Do not drive after taking it: please have someone drive you to the scan and home."
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "f69fe986a7b98d91b565d8c0b6e48ab6013236e1ea0153216942e9003e1bef1f",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": ""
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "f75224f948288fa5d53ad9e68670e5902ee7698342bc344581267771b25e12a5",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "not_met",
+        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
+      }
+    },
+    {
+      "key": "f8ea516dbf3d24be9995ac134016331681bba0bd046cf2c544b38019c1e0ffc7",
+      "kind": "judge",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "answer": {
+        "verdict": "met",
+        "quote": "Stop taking metformin now, and do not restart it after the scan until we call you with a normal result from a repeat kidney test (at the earliest 48 hours after the scan)."
+      },
+      "error": null,
+      "calls": 1,
+      "provenance": {
+        "source": "live",
+        "model": "claude-opus-5-5",
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
@@ -1866,7 +2622,7 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
@@ -1884,25 +2640,25 @@
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     },
     {
-      "key": "fd63bbddc6dfad29b59611c9bd153fcc8874457b5901cd0c64f1a824a19a5cfb",
+      "key": "fe40dc755ed3ccbc1edabd5a39034bc79db42203d925abda9dd6342b85445d35",
       "kind": "judge",
       "model": "claude-opus-5-5",
       "effort": "medium",
       "prompt_version": "judge-v1",
       "answer": {
-        "verdict": "met",
-        "quote": "That is the risk factor. The allergy list also carries \"Anaphylaxis (patient report)\", added in 2021 from his own account with no record reviewed; the report of the day grades the reaction moderate, and §1 grades it by that record, so §2 applies, not §3. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+        "verdict": "not_met",
+        "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
       },
       "error": null,
       "calls": 1,
       "provenance": {
         "source": "live",
         "model": "claude-opus-5-5",
-        "at": "2026-10-29T17:43:06.944Z"
+        "at": "2026-10-29T22:07:12.343Z"
       }
     }
   ],
@@ -1913,13 +2669,13 @@
       "model": "claude-opus-5-5",
       "effort": "medium",
       "prompt_version": "judge-v1",
-      "at": "2026-10-29T19:05:50.385Z",
+      "at": "2026-10-29T21:59:39.944Z",
       "protocol": "each paraphrase is asked once, live, with the item's real criterion; a probe agrees when the verdict the grader takes (met needs its quote in the text) is the expected one; unknown or no answer never agrees",
-      "note": "Paraphrase probes (pnpm cli judge-calibrate --probes): how often the verdict on note_states_wrong_allergy_facts follows the wording of the text, not agreement with a reference. Ledger batch b69c5caa-4704-4eba-b85e-ef741ff12392.",
+      "note": "Paraphrase probes (pnpm cli judge-calibrate --probes): how often the verdict on note_states_wrong_allergy_facts follows the wording of the text, not agreement with a reference. Ledger batch 8671cda5-2e6b-4f67-b044-b6a66ddaca9b.",
       "agree": 23,
       "calls": 23,
       "ledger_settles": 23,
-      "cost_usd": 0.134332,
+      "cost_usd": 0.133892,
       "items": [
         {
           "label": "moderate",
@@ -1981,7 +2737,7 @@
           "text": "2019: moderate allergic-like reaction (hives) to iohexol about 5 minutes after 150 mL IV; treated with diphenhydramine.",
           "expected": "met",
           "verdict": "met",
-          "quote": "about 5 minutes after 150 mL IV",
+          "quote": "150 mL IV",
           "graded": "met",
           "error": null,
           "agree": true,
@@ -2047,7 +2803,7 @@
           "text": "Moderate allergic-like reaction to iohexol in 2019 (hives with mild eyelid swelling, treated with diphenhydramine). Premedicating per RBC-RAD-07 §2. Radiology is aware; the CT suite keeps epinephrine and a reaction kit at hand for Monday's scan.",
           "expected": "not_met",
           "verdict": "not_met",
-          "quote": "Moderate allergic-like reaction to iohexol in 2019 (hives with mild eyelid swelling, treated with diphenhydramine).",
+          "quote": "",
           "graded": "not_met",
           "error": null,
           "agree": true,
@@ -2157,7 +2913,7 @@
           "text": "The 2019 radiology report calls the iohexol reaction moderate, but the allergy list records 'Anaphylaxis (patient report)', so the 2019 reaction is treated here as anaphylaxis.",
           "expected": "met",
           "verdict": "met",
-          "quote": "so the 2019 reaction is treated here as anaphylaxis.",
+          "quote": "so the 2019 reaction is treated here as anaphylaxis",
           "graded": "met",
           "error": null,
           "agree": true,
@@ -2173,6 +2929,121 @@
           "error": null,
           "agree": true,
           "key": "4df5084dfa5b044f521fed2a67507cf9acc26f2fdf74501534424ce7d5dce5fe"
+        }
+      ]
+    },
+    {
+      "check": "message_states_metformin_hold",
+      "criterion": "The text tells the patient to stop taking metformin, or not to take it, from now or from the day of the scan at the latest, and not to start it again until the clinic says so or until a repeat kidney test is back and normal. A text that only lowers the metformin dose, that tells the patient to keep taking it, or that gives a set day to restart it without waiting for a kidney test does not meet this.",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "prompt_version": "judge-v1",
+      "at": "2026-10-29T21:59:59.937Z",
+      "protocol": "each paraphrase is asked once, live, with the item's real criterion; a probe agrees when the verdict the grader takes (met needs its quote in the text) is the expected one; unknown or no answer never agrees",
+      "note": "Paraphrase probes (pnpm cli judge-calibrate --probes): how often the verdict on message_states_metformin_hold follows the wording of the text, not agreement with a reference. Ledger batch 83b672fd-17d9-4c00-8467-0e69af1e5ca4.",
+      "agree": 9,
+      "calls": 9,
+      "ledger_settles": 9,
+      "cost_usd": 0.037692,
+      "items": [
+        {
+          "label": "stop now, restart on a normal test",
+          "text": "Stop taking metformin now, and do not restart it after the scan until we call you with a normal result from a repeat kidney test.",
+          "expected": "met",
+          "verdict": "met",
+          "quote": "Stop taking metformin now, and do not restart it after the scan until we call you with a normal result from a repeat kidney test.",
+          "graded": "met",
+          "error": null,
+          "agree": true,
+          "key": "e086f7c157b582fbaf9210457e073467a3126f611e3ccb86f4697783bcdd18e8"
+        },
+        {
+          "label": "from Monday",
+          "text": "Take your last metformin on Sunday evening 10/25. Do not take it on Monday 10/26 or after until we tell you your repeat kidney test is normal.",
+          "expected": "met",
+          "verdict": "met",
+          "quote": "Take your last metformin on Sunday evening 10/25. Do not take it on Monday 10/26 or after until we tell you your repeat kidney test is normal.",
+          "graded": "met",
+          "error": null,
+          "agree": true,
+          "key": "bcbedf7354409688d11553df8a36a7a3322d673910d4b4c575f9ece5e2923854"
+        },
+        {
+          "label": "hold, brand name",
+          "text": "Please hold your Glucophage (metformin) starting today. We'll let you know when it's safe to start it again, once your repeat kidney test is back.",
+          "expected": "met",
+          "verdict": "met",
+          "quote": "Please hold your Glucophage (metformin) starting today. We'll let you know when it's safe to start it again, once your repeat kidney test is back.",
+          "graded": "met",
+          "error": null,
+          "agree": true,
+          "key": "707c9140c00eac3a60b6a59d4545b2003e8c126887a6236140b9dbd335843a76"
+        },
+        {
+          "label": "terse",
+          "text": "Metformin: stop now. Restart only when we call you after your kidney blood test.",
+          "expected": "met",
+          "verdict": "met",
+          "quote": "Metformin: stop now. Restart only when we call you after your kidney blood test.",
+          "graded": "met",
+          "error": null,
+          "agree": true,
+          "key": "3898c83632c5159fd69aa13a9365fa451495f58a5820d5ebb52e376b94088d70"
+        },
+        {
+          "label": "keep taking",
+          "text": "Keep taking your metformin as usual; your kidney function is fine for the scan.",
+          "expected": "not_met",
+          "verdict": "not_met",
+          "quote": "Keep taking your metformin as usual; your kidney function is fine for the scan.",
+          "graded": "not_met",
+          "error": null,
+          "agree": true,
+          "key": "ecdbfcb129e35338c24c7b267858178fa6140fc8e10ba67c8e473fd926db207e"
+        },
+        {
+          "label": "lower dose",
+          "text": "Because your kidneys were strained last week, take metformin 500 mg twice a day instead of 1000 mg until we tell you otherwise.",
+          "expected": "not_met",
+          "verdict": "not_met",
+          "quote": "take metformin 500 mg twice a day instead of 1000 mg until we tell you otherwise",
+          "graded": "not_met",
+          "error": null,
+          "agree": true,
+          "key": "c7d67f572996e8bf8360808445135e6dbca01589b649ad96a04cb38a64d2527a"
+        },
+        {
+          "label": "fixed restart day",
+          "text": "Do not take metformin from now until Wednesday morning 10/28, then restart 1000 mg twice a day.",
+          "expected": "not_met",
+          "verdict": "not_met",
+          "quote": "Do not take metformin from now until Wednesday morning 10/28, then restart 1000 mg twice a day.",
+          "graded": "not_met",
+          "error": null,
+          "agree": true,
+          "key": "8decad712e251782a08171ed4533b05356c7674ea35fc54c1b167365e80ceb1f"
+        },
+        {
+          "label": "skip two days",
+          "text": "Skip metformin on the day of the scan and for two days after, then go back to your usual dose.",
+          "expected": "not_met",
+          "verdict": "not_met",
+          "quote": "Skip metformin on the day of the scan and for two days after, then go back to your usual dose.",
+          "graded": "not_met",
+          "error": null,
+          "agree": true,
+          "key": "a826fcce471867d0eafcb9da2f234f188eca5d15e8c0efcb29bd47b3a9fdc048"
+        },
+        {
+          "label": "named only",
+          "text": "We reviewed your medicines, including metformin and amlodipine. No changes are needed before the scan.",
+          "expected": "not_met",
+          "verdict": "not_met",
+          "quote": "We reviewed your medicines, including metformin and amlodipine. No changes are needed before the scan.",
+          "graded": "not_met",
+          "error": null,
+          "agree": true,
+          "key": "128de702c33fb23bde89bd41fc4782ae428afaebe7fa34df2c1395d46b511dcc"
         }
       ]
     }
