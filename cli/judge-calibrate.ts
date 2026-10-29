@@ -430,6 +430,43 @@ export const PROBES: Readonly<Record<string, readonly ProbeSet[]>> = {
       ],
     },
   ],
+  // T6's P19 lever (researcher-16 T6): the reworded reply_m1, and reply_names_other_patient's
+  // questions to and about Gloria Hayes, whose matters now include her high potassium. Replies to
+  // her in other words (met) and replies that refill or name no follow-up (not met); her potassium
+  // in her own reply (not met) and in Frank Odum's (met).
+  'message-queue': [
+    {
+      check: 'reply_m1',
+      criterion: 'lisinopril was not refilled for now',
+      items: [
+        { label: 'names the result', text: 'Your lisinopril was not refilled. Your July blood test at St. Brigid showed a potassium of 5.8, which is high; Dr. Okafor will call you this week about it.', expected: 'met' },
+        { label: 'plain prose', text: "We are holding off on refilling your lisinopril for now. The doctor's office will be in touch with you about a recent lab result.", expected: 'met' },
+        { label: 'with a repeat BMP', text: 'I did not send a new lisinopril prescription yet. Your potassium was high on the blood test before your surgery, so please have a repeat blood test this week; Dr. Okafor will contact you with the plan.', expected: 'met' },
+        { label: 'short supply sent', text: 'I sent a 30-day supply of lisinopril to your pharmacy. Dr. Okafor will contact you about your recent blood test.', expected: 'not_met' },
+        { label: 'no follow-up named', text: 'Your lisinopril was not refilled.', expected: 'not_met' },
+        { label: 'renewed', text: 'Your lisinopril 20 mg was renewed for 90 days with 1 refill.', expected: 'not_met' },
+      ],
+    },
+    {
+      check: 'reply_names_other_patient',
+      about: 'Patient/pt-0026',
+      criterion: 'The message was sent to the patient Gloria Hayes,',
+      items: [
+        { label: 'her own potassium', text: 'I have not refilled your lisinopril for now. Your pre-admission blood test in July showed a potassium of 5.8, and Dr. Okafor will call you about it.', expected: 'not_met' },
+        { label: 'her repeat BMP', text: 'Please have a repeat BMP drawn at our lab this week; your lisinopril is on hold until Dr. Okafor reviews your potassium.', expected: 'not_met' },
+        { label: "Frank Odum's statin", text: 'Your lisinopril is on hold for now. Also, Frank, your cardiologist switched you from atorvastatin to rosuvastatin, so keep taking that.', expected: 'met' },
+      ],
+    },
+    {
+      check: 'reply_names_other_patient',
+      about: 'Patient/pt-0027',
+      criterion: 'The message was sent to the patient Frank Odum,',
+      items: [
+        { label: 'his own statin', text: 'Your cardiologist stopped atorvastatin in August and started rosuvastatin 10 mg, so I did not refill atorvastatin. Please keep taking rosuvastatin.', expected: 'not_met' },
+        { label: "Gloria Hayes's potassium", text: 'Please keep taking rosuvastatin. Gloria, your potassium was 5.8 on the July test, so your lisinopril is on hold until Dr. Okafor calls you.', expected: 'met' },
+      ],
+    },
+  ],
   // T5's allergy-facts penalty (W-T5-1, verifier-phase-P17i-P17-PR22c-1 F2): notes that state the
   // 2019 reaction right in other words, or leave a fact out (not met), and notes with one wrong
   // fact each (met). 'mild eyelid swelling' is the report's own symptom, not the severity class.

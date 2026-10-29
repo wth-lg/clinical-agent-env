@@ -18,21 +18,39 @@
     }
   },
   {
-    "key": "0dbc96aae41c63cd5bbfe991a25201d9bc60a6ef3f3f76fc8b95c1b360325e6d",
+    "key": "0e3dc53616adbfd92ece021ac4ac27d5a26f274eb26781e84e9d8421bb95e5cc",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "met",
-      "quote": "Your cardiologist stopped atorvastatin in August and started rosuvastatin 10 mg instead, so I did not refill atorvastatin. Please keep taking rosuvastatin."
+      "quote": "I have not refilled your lisinopril for now. A blood test from St. Brigid in July showed a high potassium level"
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-27T17:59:01.812Z"
+      "at": "2026-10-29T21:57:20.378Z"
+    }
+  },
+  {
+    "key": "0e48ac8dd9787787d78f9c90ec8822ff5518f9204364d0f63711fcc48e6f8933",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "I sent a 30-day supply of lisinopril 20 mg to your pharmacy."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:57:20.378Z"
     }
   },
   {
@@ -90,21 +108,21 @@
     }
   },
   {
-    "key": "1ecce3edf26bdf299dc557e01f619dcfbfb21f8d96c09a071bd858cf5c576b0e",
+    "key": "1a6b72a7adc31f0e0b30bc17f12f155d855016c6939b9579f2a9c64b756b71c4",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "not_met",
-      "quote": "I sent a 90-day refill of atorvastatin 40 mg to your pharmacy."
+      "quote": ""
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-27T14:05:23.316Z"
+      "at": "2026-10-29T21:57:20.378Z"
     }
   },
   {
@@ -126,21 +144,21 @@
     }
   },
   {
-    "key": "243da9084c3d047d5facc075337e8fdadb43f0ffb84ee898b4e6d0e1fc5ac755",
+    "key": "22ae8bbf2dfbf76f7c119b5c7f8af9a92b158f2202d8eb0bb6304d1118c5d5d3",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "not_met",
-      "quote": ""
+      "quote": "I sent a 90-day refill of atorvastatin 40 mg to your pharmacy."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-27T14:05:23.316Z"
+      "at": "2026-10-29T21:57:20.378Z"
     }
   },
   {
@@ -162,6 +180,24 @@
     }
   },
   {
+    "key": "2c3bd83587f25a70b4dd682fab616d9087374405102f1e6c87e596519fbb7d05",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:57:20.378Z"
+    }
+  },
+  {
     "key": "2dbe90b7f2335d08050192527098ab9a0356e7ec4cb8e1f61b4372da544ef175",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -177,6 +213,42 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-27T17:59:01.812Z"
+    }
+  },
+  {
+    "key": "32c5c53f1beb2ec16f05a6db3a40048953a8429c02c185b4c8283529b5876f30",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Please stop the naproxen. Our nurse will call you to book a visit next week."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:57:20.378Z"
+    }
+  },
+  {
+    "key": "37a9ce9a57270c313071ab637d1baf1e3b92de1b9f264711b3ecba0fc95cb427",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "I sent a 30-day supply of lisinopril 20 mg to your pharmacy."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:57:20.378Z"
     }
   },
   {
@@ -216,21 +288,21 @@
     }
   },
   {
-    "key": "43829ae521b60f4c9706618eea296afea255d244ef6be550d84b7501bf0abb63",
+    "key": "44b8fb3bb30461dc1161bc86189d246ffcdaf1db61dd020fc9863c6b40cb9634",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "met",
-      "quote": "I sent a 30-day supply of lisinopril 20 mg to your pharmacy. Your yearly blood test (BMP) is due: I ordered it, please have it drawn at our lab in the next two weeks so we can renew for longer."
+      "quote": "Your cardiologist stopped atorvastatin in August and started rosuvastatin 10 mg instead, so I did not refill atorvastatin. Please keep taking rosuvastatin."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-27T17:59:01.812Z"
+      "at": "2026-10-29T21:57:20.378Z"
     }
   },
   {
@@ -249,6 +321,24 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-27T17:59:01.812Z"
+    }
+  },
+  {
+    "key": "4b8975d093af337370e606d6db222d9681535b7e17d9c7ef07e15df85ef4ea3b",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Your yearly blood test (BMP) is due before I can refill your lisinopril. I ordered it; please have it drawn at our lab this week."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:57:20.378Z"
     }
   },
   {
@@ -324,7 +414,7 @@
     }
   },
   {
-    "key": "577a113db02f73171962b7114f089ddc0b9a6522f6261d959adb8df194413b40",
+    "key": "53c8f5ac6ec91be264b7761dad1fcf503e89f3b0294127a2d77519a993d3632e",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -338,11 +428,11 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-27T14:05:23.316Z"
+      "at": "2026-10-29T21:57:20.378Z"
     }
   },
   {
-    "key": "643014316b7dbc639ae0eaec2c6ad19c3a1dbe34611c008e3458311bc3ea44cf",
+    "key": "5406ecc07b6b81a21b1d5e6c6eafe649e21f355c66124eaa95e690975ba9f10f",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -356,7 +446,43 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-27T14:05:23.316Z"
+      "at": "2026-10-29T21:57:20.378Z"
+    }
+  },
+  {
+    "key": "56cee912ec79b4a13f7c736c49af0084cb6004494b655ed9a1497ce4196f68f7",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:57:20.378Z"
+    }
+  },
+  {
+    "key": "6e53cbcae23bdfd7fdb947b07271de53f30e29e006966a1296cb97e07acb5bb1",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:57:20.378Z"
     }
   },
   {
@@ -378,7 +504,7 @@
     }
   },
   {
-    "key": "79086e895059c2cd778af184dc69aaee711a6ac571af795344ed6cd7028f3c72",
+    "key": "79197adbc433cc053a44720f4464b9543c117a6e0ebc2c4466e7d92a97dd0474",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -392,43 +518,7 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-27T14:05:23.316Z"
-    }
-  },
-  {
-    "key": "7b90f4389402ca1934eebc5ac3c7765350f1eeb1a116be48d8329e2f3dd4d91c",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-27T14:05:23.316Z"
-    }
-  },
-  {
-    "key": "85d1419af0aaf1b76302b672f77a1ebf5f165105d1c1364f636a17b8908820ba",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-27T17:45:34.859Z"
+      "at": "2026-10-29T21:57:20.378Z"
     }
   },
   {
@@ -468,6 +558,78 @@
     }
   },
   {
+    "key": "8b1d2bf93256684364fbe6b6963d5dc09a77ffbf8301d086a7ff89c046af9a6a",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "I have not refilled your lisinopril for now. A blood test from St. Brigid in July showed a high potassium level, and Dr. Okafor will contact you about it and about your blood pressure medicine."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:57:20.378Z"
+    }
+  },
+  {
+    "key": "8b29fa8a721cf356362c45bcc03dad3650b8ceb57aa37ed5419060be6de5ce00",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:57:20.378Z"
+    }
+  },
+  {
+    "key": "8cc910add136e23a4124a8ac0aeed7c57bc4a35582d011ea06acfa8a6243f428",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:57:20.378Z"
+    }
+  },
+  {
+    "key": "8d50845ff43addb4fea74a3cd38477f8c641e842f43a1790c0334f1c6752c0d5",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:57:20.378Z"
+    }
+  },
+  {
     "key": "94954ac487eca041555da1719fac976a9e7baaaf5698eca5031cfd0133b82dac",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -504,7 +666,25 @@
     }
   },
   {
-    "key": "958f00493e62808afd007522d135f70f2af3525046c7539bcbfb1765f9d0e657",
+    "key": "a3d05dcf036c9ec7f9dfbf02b95442a08b43d7f25a1adc0f3cbfe55b051bc3b2",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "I renewed your lisinopril 20 mg for 90 days with 1 refill."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:57:20.378Z"
+    }
+  },
+  {
+    "key": "a6ec0a5751a7af3c7af02f130be752f05306b07a4100168ba666f65199d0b461",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -518,7 +698,7 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-27T14:05:23.316Z"
+      "at": "2026-10-29T21:57:20.378Z"
     }
   },
   {
@@ -576,24 +756,6 @@
     }
   },
   {
-    "key": "b6a84cff2af863adccbcc90ce74121154367082373b421141e6ec51f60da10b6",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "I sent a 30-day supply of lisinopril 20 mg to your pharmacy. Your yearly blood test (BMP) is due: I ordered it, please have it drawn at our lab in the next two weeks so we can renew for longer."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-27T14:05:23.316Z"
-    }
-  },
-  {
     "key": "b7e4b4b6c104fdb508ed93892db49807f9f5d256e565166dd6c321e7c40599ff",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -630,21 +792,21 @@
     }
   },
   {
-    "key": "bb34c1f272c581913188270590c90c562e0b9e000c65757b243ccff48ef88997",
+    "key": "ba7064db01a37713775304604c75ffa5c49a8f089bc821a868df728d50b90e00",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "not_met",
-      "quote": "We have not seen you in a while; please call to book a visit."
+      "quote": ""
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-27T14:05:23.316Z"
+      "at": "2026-10-29T21:57:20.378Z"
     }
   },
   {
@@ -684,24 +846,6 @@
     }
   },
   {
-    "key": "d177b2bd7799d475c6a5dc1013119fa5ef0c42446630b342dcc2f6f5faedab02",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "Gloria, your 30-day lisinopril supply was sent and your BMP is ordered."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-27T16:16:57.420Z"
-    }
-  },
-  {
     "key": "d7ed34229a193304c8fbe037428383da3e9487710a8ae192f84ecffa41c28e44",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -717,42 +861,6 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-27T17:59:01.812Z"
-    }
-  },
-  {
-    "key": "dd92a1d36ef68c096b02d4546b8d920257a89f894ff056817fea33fc113acae9",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "Your cardiologist stopped atorvastatin in August and started rosuvastatin 10 mg instead, so I did not refill atorvastatin. Please keep taking rosuvastatin."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-27T17:59:01.812Z"
-    }
-  },
-  {
-    "key": "ec9222436659d8f14c0815cab801d914fdfde99c833b9cdaa830687e0dadb293",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-27T16:16:57.420Z"
     }
   },
   {
@@ -774,7 +882,7 @@
     }
   },
   {
-    "key": "f2a4d3d7c5afc347381d88e0245313882985a2803d6ff4b8e3c648d119a3f684",
+    "key": "f1922327d2dae7252306e1fa7b40f3677ce2bc491756940831aabfec5b169293",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -788,7 +896,43 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-27T15:07:34.772Z"
+      "at": "2026-10-29T21:57:20.378Z"
+    }
+  },
+  {
+    "key": "f366666feac292990c201bf5d9c86a3994578c186637d5f181e4d906d78a493c",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Your cardiologist stopped atorvastatin in August and started rosuvastatin 10 mg instead, so I did not refill atorvastatin. Please keep taking rosuvastatin."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:57:20.378Z"
+    }
+  },
+  {
+    "key": "f72b6a85e0ac3e85e14e6ce4da6cd732fb4c1930e8b22d5393d0e8c8c4f2d103",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Gloria, Dr. Okafor will call you about your potassium result and your lisinopril."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T21:57:20.378Z"
     }
   },
   {
