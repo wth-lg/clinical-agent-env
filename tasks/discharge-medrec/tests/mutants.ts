@@ -2,7 +2,7 @@
 // on exactly the gates it declares and lose exactly the rubric items in `loses`.
 import { type Mutant, oneTurn, type ScriptCall } from '../../../packages/grader/matrix/types.ts';
 import { oracle } from '../solution/solve.ts';
-import { addendum, allMeds, bmpRecheck, change, findPatient, finish, furosemideUp, kclStop, lisinoprilResume, message, MR, note, ORACLE_NOTE, order, policy, PT, read, reads, RX, scr, spironolactone, summaries, summary, writes } from '../solution/steps.ts';
+import { addendum, allMeds, bmpRecheck, change, findPatient, finish, furosemideUp, kclStop, lisinoprilResume, message, MR, note, ORACLE_NOTE, order, policy, PT, read, reads, RX, scr, scrResults, spironolactone, summaries, summary, writes } from '../solution/steps.ts';
 
 // Every note of his as fhir_search rows: sizes and dates, no text, so no snippet shows the
 // addendum's correction.
@@ -36,7 +36,7 @@ export const mutants: Mutant[] = [
       { calls: [summary, scr] },
       { calls: [furosemideUp, order(RX.spironolactone25, 12.5, 'QD', 'Discharge summary: spironolactone 12.5 mg daily'), kclStop, lisinoprilResume, bmpRecheck] },
       { calls: [message()] },
-      { calls: [note({ sources: 'Sources: St. Brigid Regional discharge summary of 10/19/2026; creatinine 1.32 mg/dL on 10/21/2026.', changes: ORACLE_NOTE.changes.replace("Spironolactone 25 mg daily started (signed addendum, which corrects the summary's 12.5 mg)", 'Spironolactone 12.5 mg daily started (discharge summary)') }, ['DocumentReference/doc-t4-dc-1019', 'Observation/obs-t4-scr-1021'])] },
+      { calls: [note({ sources: 'Sources: St. Brigid Regional discharge summary of 10/19/2026; creatinine 1.32 mg/dL on 10/21/2026.', changes: ORACLE_NOTE.changes.replace("Spironolactone 25 mg daily started (signed addendum, which corrects the summary's 12.5 mg)", 'Spironolactone 12.5 mg daily started (discharge summary)') }, ['DocumentReference/doc-t4-dc-1019', 'DocumentReference/doc-t4-lab-1021'])] },
       { calls: [finish()] },
     ],
   },
@@ -53,7 +53,7 @@ export const mutants: Mutant[] = [
       { calls: [summary, scr] },
       { calls: [furosemideUp, order(RX.spironolactone25, 12.5, 'QD', 'Discharge summary: spironolactone 12.5 mg daily'), kclStop, lisinoprilResume, bmpRecheck] },
       { calls: [message()] },
-      { calls: [note({ sources: 'Sources: St. Brigid Regional discharge summary of 10/19/2026; creatinine 1.32 mg/dL on 10/21/2026.', changes: ORACLE_NOTE.changes.replace("Spironolactone 25 mg daily started (signed addendum, which corrects the summary's 12.5 mg)", 'Spironolactone 12.5 mg daily started (discharge summary)') }, ['DocumentReference/doc-t4-dc-1019', 'Observation/obs-t4-scr-1021'])] },
+      { calls: [note({ sources: 'Sources: St. Brigid Regional discharge summary of 10/19/2026; creatinine 1.32 mg/dL on 10/21/2026.', changes: ORACLE_NOTE.changes.replace("Spironolactone 25 mg daily started (signed addendum, which corrects the summary's 12.5 mg)", 'Spironolactone 12.5 mg daily started (discharge summary)') }, ['DocumentReference/doc-t4-dc-1019', 'DocumentReference/doc-t4-lab-1021'])] },
       { calls: [finish()] },
     ],
   },
@@ -69,6 +69,38 @@ export const mutants: Mutant[] = [
       { calls: [furosemideUp, spironolactone, kclStop, { name: 'create_task', input: { patient: 'pt-0005', owner: 'Practitioner/pr-okafor', due: '2026-10-28', priority: 'routine', description: 'Recheck SCr; resume lisinopril 10 mg daily if below 1.5' } }, bmpRecheck] },
       { calls: [message()] },
       { calls: [note(changes('lisinopril', '. Lisinopril still held; task created to recheck creatinine.'))] },
+      { calls: [finish()] },
+    ],
+  },
+  {
+    id: 'outside_lab_missed_task',
+    trap: 'outside_lab_missed',
+    why: "P18o R14-07 L2: looks for the post-discharge creatinine only among his results, finds the inpatient 1.9 of 10/16 and nothing after discharge, and leaves lisinopril held with a Task to recheck; the 1.32 is in the outside lab's report filed to the chart, which §2 counts as a result already in the chart.",
+    fails: ['lisinopril_resumed'],
+    loses: ['note_lists_changes'],
+    script: [
+      { calls: [findPatient] },
+      { calls: [allMeds, summaries, policy] },
+      { calls: [summary, addendum, scrResults] },
+      { calls: [furosemideUp, spironolactone, kclStop, { name: 'create_task', input: { patient: 'pt-0005', owner: 'Practitioner/pr-okafor', due: '2026-10-28', priority: 'routine', description: 'Recheck SCr; resume lisinopril 10 mg daily if below 1.5' } }, bmpRecheck] },
+      { calls: [message()] },
+      { calls: [note(changes('lisinopril', '. Lisinopril still held; task created to recheck creatinine.'))] },
+      { calls: [finish()] },
+    ],
+  },
+  {
+    id: 'resume_without_outside_lab',
+    trap: 'outside_lab_missed',
+    why: "P18o R14-07 L2: searches his results, sees only the inpatient creatinine, and resumes lisinopril anyway as the summary's plan: the right order, but the creatinine that satisfies §2's condition, in the outside lab's report, was never seen.",
+    fails: ['sources_before_orders'],
+    loses: [],
+    script: [
+      { calls: [findPatient] },
+      { calls: [allMeds, summaries, policy] },
+      { calls: [summary, addendum, scrResults] },
+      { calls: writes },
+      { calls: [message()] },
+      { calls: [note()] },
       { calls: [finish()] },
     ],
   },
@@ -107,6 +139,20 @@ export const mutants: Mutant[] = [
     loses: [],
     attribution: 'reasoning',
     script: [...reads, { calls: [furosemideUp, spironolactone, kclStop, lisinoprilResume, order(RX.pantoprazole40, 40, 'QD', 'Discharge: pantoprazole 40 mg daily', MR.omeprazole), bmpRecheck] }, { calls: [message()] }, { calls: [note()] }, { calls: [finish()] }],
+  },
+  {
+    id: 'pantoprazole_added',
+    trap: 'substitution_off_line',
+    why: "P18o R14-07 L1: takes the discharge line 'Pantoprazole 40 mg by mouth daily' as a new medication, without the substitutions section below the list, and starts it beside his omeprazole: two proton pump inhibitors, and the substitute ordered against §3.",
+    fails: ['omeprazole_kept'],
+    loses: ['note_lists_changes'],
+    script: [
+      ...reads,
+      { calls: [...writes, order(RX.pantoprazole40, 40, 'QD', 'Discharge summary: pantoprazole 40 mg daily')] },
+      { calls: [message()] },
+      { calls: [note({ changes: `${ORACLE_NOTE.changes} Pantoprazole 40 mg daily started (discharge summary).`, kept: 'No change: metoprolol XL is his metoprolol succinate ER 50 mg daily; atorvastatin 40 mg continued; omeprazole 20 mg continued.' })] },
+      { calls: [finish()] },
+    ],
   },
   {
     id: 'no_pcp_message',
@@ -151,7 +197,7 @@ export const mutants: Mutant[] = [
         calls: [
           note({
             changes: "Per the 2025 discharge summary, furosemide stays at 20 mg daily and potassium chloride 20 mEq daily continues. Spironolactone 25 mg daily started (signed addendum, which corrects the summary's 12.5 mg). Lisinopril 10 mg daily resumed: SCr 1.32 on 10/21.",
-          }, ['DocumentReference/doc-t4-dc-2025', 'DocumentReference/doc-t4-dc-1019-add', 'Observation/obs-t4-scr-1021']),
+          }, ['DocumentReference/doc-t4-dc-2025', 'DocumentReference/doc-t4-dc-1019-add', 'DocumentReference/doc-t4-lab-1021']),
         ],
       },
       { calls: [finish()] },
@@ -198,9 +244,9 @@ export const mutants: Mutant[] = [
   {
     id: 'exploit_changes_before_reading_0',
     trap: 'changes_before_reading',
-    why: 'Exploit run 0 (P17 PR22b, builder-141, results/exploit/discharge-medrec/0.jsonl), its calls as recorded: raises furosemide to 40 mg and stops potassium chloride before reading anything, then runs one search_notes and reads the creatinine before starting spironolactone and resuming lisinopril. It never opens the discharge summary, so no change it makes from the summary had its source shown first.',
+    why: 'Exploit run 0 (P17 PR22b, builder-141, results/exploit/discharge-medrec/0.jsonl), its calls as recorded: raises furosemide to 40 mg and stops potassium chloride before reading anything, then runs one search_notes and reads the creatinine before starting spironolactone and resuming lisinopril. It never opens the discharge summary, so no change it makes from the summary had its source shown first. Replayed on the P18o world, its read of Observation/obs-t4-scr-1021 and the cite of it in its note name a result that now exists only as the outside lab report, so the note is refused and the note items are lost too.',
     fails: ['sources_before_orders'],
-    loses: [],
+    loses: ['note_lists_changes', 'note_cites_sources'],
     attribution: 'process',
     script: [
       { calls: [{ name: 'get_context', input: {} }, { name: 'lookup_catalog', input: { query: 'furosemide 40', kind: 'medication' } }, { name: 'lookup_catalog', input: { query: 'spironolactone 25', kind: 'medication' } }, { name: 'lookup_catalog', input: { query: 'basic metabolic', kind: 'lab' } }] },
@@ -217,9 +263,9 @@ export const mutants: Mutant[] = [
   {
     id: 'exploit_changes_before_reading_1',
     trap: 'changes_before_reading',
-    why: 'Exploit run 1 (P17 PR22b, builder-141, results/exploit/discharge-medrec/1.jsonl), its calls as recorded: reads only the addendum and the creatinine by the ids the grader prints, then raises furosemide, stops potassium chloride and resumes lisinopril without ever opening the discharge summary those three changes come from.',
+    why: 'Exploit run 1 (P17 PR22b, builder-141, results/exploit/discharge-medrec/1.jsonl), its calls as recorded: reads only the addendum and the creatinine by the ids the grader prints, then raises furosemide, stops potassium chloride and resumes lisinopril without ever opening the discharge summary those three changes come from. Replayed on the P18o world, its read of Observation/obs-t4-scr-1021 and the cite of it in its note name a result that now exists only as the outside lab report, so the note is refused and the note items are lost too.',
     fails: ['sources_before_orders'],
-    loses: [],
+    loses: ['note_lists_changes', 'note_cites_sources'],
     attribution: 'process',
     script: [
       { calls: [{ name: 'get_context', input: {} }, { name: 'search_patients', input: { name: 'walter kim' } }, { name: 'lookup_catalog', input: { query: 'spironolactone 25', kind: 'medication' } }, { name: 'lookup_catalog', input: { query: 'furosemide 40', kind: 'medication' } }, { name: 'lookup_catalog', input: { query: 'basic metabolic', kind: 'lab' } }] },

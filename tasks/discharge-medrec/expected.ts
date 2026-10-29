@@ -7,11 +7,15 @@
 //   spironolactone  summary 12.5 mg, addendum 25 mg (§1)    new order, 25 mg daily; the addendum's
 //                   'spironolactone 25 mg daily' must be shown before the order (G8)
 //   KCl             summary: stop                           stop mr-t4-kcl
-//   lisinopril      resume 10 mg when SCr < 1.5 (§2)        obs-t4-scr-1021 1.32: resume
+//   lisinopril      resume 10 mg when SCr < 1.5 (§2)        1.32 in the outside lab report
+//                                                           doc-t4-lab-1021 (P18o R14-07 L2):
+//                                                           resume; G8 wants its creatinine line
+//                                                           shown before the resume
 //   metoprolol XL   alias of metoprolol succinate ER (§4)   no change
 //   atorvastatin    continue                                no change
 //   aspirin 81 mg   continue (RxNorm 243670)                no change
-//   pantoprazole    formulary substitution (§3)             keep omeprazole, no pantoprazole
+//   pantoprazole    formulary substitution (§3), marked in  keep omeprazole, no pantoprazole
+//                   its own section (P18o R14-07 L1)
 //   tartrate 25 BID not addressed (§5)                      unchanged; message the PCP about it
 //
 // sources.lines holds the summary line each change the summary rules is made from; G8 wants it
@@ -28,7 +32,7 @@ export const expected = {
       lisinopril: 'Resume home 10 mg daily when SCr < 1.5',
     },
     ignored: ['DocumentReference/doc-t4-dc-2025'] },
-  scr: { id: 'Observation/obs-t4-scr-1021', mg_dl: 1.32, threshold: 1.5 },
+  scr: { id: 'DocumentReference/doc-t4-lab-1021', mg_dl: 1.32, threshold: 1.5, line: 'Creatinine 1.32 mg/dL' },
   furosemide: { request: 'MedicationRequest/mr-t4-furosemide', action: 'modify', daily_mg: 40, per_day: 1 },
   spironolactone: { request: null, action: 'start', daily_mg: 25, per_day: 1 },
   potassium_chloride: { request: 'MedicationRequest/mr-t4-kcl', action: 'stop' },
@@ -36,5 +40,5 @@ export const expected = {
   unchanged: ['MedicationRequest/mr-t4-aspirin', 'MedicationRequest/mr-t4-atorvastatin', 'MedicationRequest/mr-t4-metoprolol-succ', 'MedicationRequest/mr-t4-metoprolol-tart', 'MedicationRequest/mr-t4-omeprazole'],
   not_ordered: ['pantoprazole'],
   message_about: ['MedicationRequest/mr-t4-metoprolol-tart'],
-  cites: ['DocumentReference/doc-t4-dc-1019-add', 'Observation/obs-t4-scr-1021'],
+  cites: ['DocumentReference/doc-t4-dc-1019-add', 'DocumentReference/doc-t4-lab-1021'],
 };

@@ -24,7 +24,7 @@ describe('discharge-medrec', () => {
 
   it('resumes lisinopril on the post-discharge creatinine and takes the addendum over the summary', () => {
     const d = derive(world) as unknown as typeof expected;
-    expect(d.scr).toEqual({ id: 'Observation/obs-t4-scr-1021', mg_dl: 1.32, threshold: 1.5 });
+    expect(d.scr).toEqual({ id: 'DocumentReference/doc-t4-lab-1021', mg_dl: 1.32, threshold: 1.5, line: 'Creatinine 1.32 mg/dL' });
     expect(d.lisinopril.action).toBe('resume');
     expect(d.spironolactone.daily_mg).toBe(25);
     expect(d.message_about).toEqual(['MedicationRequest/mr-t4-metoprolol-tart']);
@@ -40,11 +40,11 @@ describe('discharge-medrec', () => {
     expect(findings).toEqual([]);
   });
 
-  // Rules, not text shapes: a corrected creatinine is a valid result (§2), and a brand name on a
+  // Rules, not text shapes: an amended lab report is a valid result (§2), and a brand name on a
   // discharge line reads as the chart's drug (§4) through normalize.ts.
-  it('derives the same from a corrected creatinine and a brand name for metoprolol succinate', () => {
+  it('derives the same from an amended lab report and a brand name for metoprolol succinate', () => {
     const swap = (r: (typeof all)[number]) => {
-      if (r.resourceType === 'Observation' && r.id === 'obs-t4-scr-1021') return { ...r, status: 'corrected' as const };
+      if (r.resourceType === 'DocumentReference' && r.id === 'doc-t4-lab-1021') return { ...r, docStatus: 'amended' as const };
       if (r.resourceType === 'DocumentReference' && r.id === 'doc-t4-dc-1019') {
         const text = new TextDecoder().decode(Uint8Array.from(atob(r.content[0]!.attachment.data!), (c) => c.charCodeAt(0))).replace('Metoprolol XL 50 mg', 'Toprol XL 50 mg');
         const data = btoa(String.fromCharCode(...new TextEncoder().encode(text)));

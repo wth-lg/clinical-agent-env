@@ -2,7 +2,7 @@
 // Synthea chart keeps its encounters, older labs and ischemic heart disease. The overlay renames
 // him and moves his birth date, adds the seven outpatient medications of the design, the October
 // heart-failure admission to St. Brigid with its discharge summary and signed addendum, a 2025
-// discharge summary, the inpatient and post-discharge creatinine and a potassium, and removes
+// discharge summary, the inpatient creatinine, the outside lab's post-discharge report, and removes
 // what would contradict the story: Synthea's notes and note reports (they name the old patient),
 // his four active Synthea medications (clopidogrel, simvastatin, nitroglycerin, metoprolol
 // succinate 100 mg), each of which would be a home medication the discharge documents never
@@ -11,8 +11,13 @@
 // is his PCP (Patient.generalPractitioner), the one RBC-TOC-02 §5 has the agent message.
 //
 // Traps (design "T4"): doc-t4-dc-1019-add corrects the spironolactone dose in doc-t4-dc-1019;
-// obs-t4-scr-1021 (1.32 mg/dL) satisfies the lisinopril resume condition (SCr < 1.5), while
-// obs-t4-scr-1016 (1.9) is the inpatient peak; pantoprazole is a marked formulary substitution;
+// the post-discharge creatinine of 1.32 mg/dL satisfies the lisinopril resume condition (SCr <
+// 1.5), while obs-t4-scr-1016 (1.9) is the inpatient peak; pantoprazole is a formulary
+// substitution, marked in its own section of the summary;
+// P18o lever R14-07: L1, the pantoprazole line carries no marker, and the substitution is stated
+// in a section after the list; L2, the post-discharge BMP was drawn at an outside lab and is in
+// the chart only as its scanned report (doc-t4-lab-1021), not as Observations, so a search of
+// his results finds only the inpatient 1.9.
 // 'metoprolol XL' is an alias of mr-t4-metoprolol-succ; mr-t4-metoprolol-tart is the duplicate
 // beta-blocker no discharge document mentions; doc-t4-dc-2025 is last year's summary.
 import type { Resource } from '../../packages/env/store.ts';
@@ -36,6 +41,8 @@ const BASE_ACTIVE_MEDS = ['mr-00068', 'mr-00069', 'mr-00070', 'mr-00071'];
 const CONTRADICTED_CONDITIONS = ['cond-00139', 'cond-00141', 'cond-00151'];
 
 const ATTENDING: Resource = { resourceType: 'Practitioner', id: 'pr-t4-boateng', active: true, name: [{ use: 'official', given: ['Samuel'], family: 'Boateng', suffix: ['MD'] }] };
+// The outside lab that drew the post-discharge BMP.
+const OUTSIDE_LAB: Resource = { resourceType: 'Organization', id: 'org-t4-northgate', active: true, name: 'Northgate Outpatient Laboratory' };
 
 const encounter = (id: string, cls: 'AMB' | 'IMP', type: [string, string], start: string, end: string, provider: { reference: string }): Resource => ({
   resourceType: 'Encounter',
@@ -76,7 +83,6 @@ const lab = (id: string, code: [string, string], at: string, issued: string, val
   referenceRange: [{ low: { value: range[0], unit, system: UCUM, code: unit }, high: { value: range[1], unit, system: UCUM, code: unit } }],
 });
 const SCR: [string, string] = ['2160-0', 'Creatinine [Mass/volume] in Serum or Plasma'];
-const K: [string, string] = ['2823-3', 'Potassium [Moles/volume] in Serum or Plasma'];
 
 const FREQ = { QD: [1, 'daily', 'QD'], BID: [2, 'twice daily', 'BID'], QHS: [1, 'at bedtime', 'BED'] } as const;
 
@@ -157,7 +163,9 @@ Discharge medications:
 - Lisinopril: held for AKI. Resume home 10 mg daily when SCr < 1.5 on post-discharge labs.
 - Spironolactone 12.5 mg by mouth daily: start.
 - Potassium chloride: stop.
-- Pantoprazole 40 mg by mouth daily (formulary substitution for home omeprazole).
+- Pantoprazole 40 mg by mouth daily.
+
+Inpatient formulary substitutions: pantoprazole 40 mg daily was given in place of home omeprazole 20 mg daily (St. Brigid formulary).
 
 Follow-up: Riverbend Family Medicine within 7 days; basic metabolic panel 2 days after discharge and 1 week after starting spironolactone.
 
@@ -190,6 +198,38 @@ Follow-up: Riverbend Family Medicine within 7 days; echocardiogram in 3 months.
 
 Samuel Boateng, MD`;
 
+const LAB_REPORT = `Northgate Outpatient Laboratory - Final Report
+Patient: Walter Kim   DOB 1952-02-19
+Ordering provider: Samuel Boateng, MD (St. Brigid Regional)   Copy to: Maya Okafor, MD (Riverbend Family Medicine)
+Collected: 10/21/2026 08:40   Reported: 10/21/2026 13:15
+
+Basic metabolic panel
+Sodium            138 mmol/L    (136-145)
+Potassium         4.4 mmol/L    (3.5-5.1)
+Chloride          101 mmol/L    (98-107)
+Carbon dioxide    26 mmol/L     (22-29)
+Urea nitrogen     24 mg/dL      (8-23)   H
+Creatinine        1.32 mg/dL    (0.74-1.35)
+Glucose           112 mg/dL     (70-99)  H
+Calcium           9.3 mg/dL     (8.6-10.3)`;
+
+// The outside report as the clinic filed it: scanned to his chart when it arrived.
+const LAB_DOC: Resource = {
+  resourceType: 'DocumentReference',
+  id: 'doc-t4-lab-1021',
+  meta: { tag: [{ system: 'urn:riverbend:provenance', code: 'synthetic', display: 'Hand-written synthetic note' }] },
+  status: 'current',
+  docStatus: 'final',
+  type: { coding: [{ system: LOINC, code: '11502-2', display: 'Laboratory report' }], text: 'Laboratory report' },
+  category: [{ coding: [{ system: 'http://hl7.org/fhir/us/core/CodeSystem/us-core-documentreference-category', code: 'clinical-note', display: 'Clinical Note' }] }],
+  subject: SUBJECT,
+  date: '2026-10-21T15:40:00-04:00',
+  author: [{ reference: 'Organization/org-t4-northgate' }],
+  custodian: CLINIC,
+  description: 'Outside lab report (scanned)',
+  content: [{ attachment: { contentType: 'text/plain; charset=utf-8', data: base64(LAB_REPORT) } }],
+};
+
 const overlay: Overlay = {
   task: 'T4',
   build(world: WorldReader) {
@@ -205,15 +245,13 @@ const overlay: Overlay = {
     const put: Resource[] = [
       renamed,
       ATTENDING,
+      OUTSIDE_LAB,
       encounter('enc-t4-adm-2025', 'IMP', ['32485007', 'Hospital admission (procedure)'], '2025-03-02T16:40:00-05:00', '2025-03-06T12:10:00-05:00', HOSPITAL),
       encounter('enc-t4-adm-1014', 'IMP', ['32485007', 'Hospital admission (procedure)'], '2026-10-14T19:05:00-04:00', '2026-10-19T11:30:00-04:00', HOSPITAL),
-      encounter('enc-t4-lab-1021', 'AMB', ['185347001', 'Encounter for problem (procedure)'], '2026-10-21T08:30:00-04:00', '2026-10-21T08:45:00-04:00', CLINIC),
       condition('cond-t4-hf', ['441481004', 'Chronic systolic heart failure'], '2025-03-02T16:40:00-05:00'),
       condition('cond-t4-aki', ['14669001', 'Acute kidney injury'], '2026-10-16T07:00:00-04:00'),
       condition('cond-t4-hld', ['55822004', 'Hyperlipidemia'], '2022-01-11T10:00:00-05:00'),
       lab('obs-t4-scr-1016', SCR, '2026-10-16T05:30:00-04:00', '2026-10-16T07:10:00-04:00', 1.9, 'mg/dL', [0.74, 1.35], 'enc-t4-adm-1014', HOSPITAL),
-      lab('obs-t4-scr-1021', SCR, '2026-10-21T08:40:00-04:00', '2026-10-21T13:15:00-04:00', 1.32, 'mg/dL', [0.74, 1.35], 'enc-t4-lab-1021', CLINIC),
-      lab('obs-t4-k-1021', K, '2026-10-21T08:40:00-04:00', '2026-10-21T13:15:00-04:00', 4.4, 'mmol/L', [3.5, 5.1], 'enc-t4-lab-1021', CLINIC),
       medication('mr-t4-furosemide', ['310429', 'furosemide 20 MG Oral Tablet'], [20, 'mg'], 'QD', '2025-03-10T10:00:00-04:00', 'Chronic systolic heart failure'),
       medication('mr-t4-lisinopril', ['314076', 'lisinopril 10 MG Oral Tablet'], [10, 'mg'], 'QD', '2024-02-06T10:00:00-05:00', 'Ischemic heart disease', {
         status: 'on-hold',
@@ -227,6 +265,7 @@ const overlay: Overlay = {
       medication('mr-t4-aspirin', ['243670', 'aspirin 81 MG Oral Tablet'], [81, 'mg'], 'QD', '2024-02-06T10:00:00-05:00', 'Ischemic heart disease'),
       note('doc-t4-dc-2025', '2025-03-06T12:10:00-05:00', 'enc-t4-adm-2025', DISCHARGE_2025),
       note('doc-t4-dc-1019', '2026-10-19T11:02:00-04:00', 'enc-t4-adm-1014', DISCHARGE),
+      LAB_DOC,
       note('doc-t4-dc-1019-add', '2026-10-19T18:40:00-04:00', 'enc-t4-adm-1014', ADDENDUM, { relatesTo: [{ code: 'appends', target: { reference: 'DocumentReference/doc-t4-dc-1019' } }], description: 'Signed addendum' }),
     ];
     return {
@@ -234,8 +273,8 @@ const overlay: Overlay = {
       remove,
       lint: {
         thresholds: [
-          { quantity: 'scr', threshold: 1.5, observation: 'obs-t4-scr-1021' },
-          { quantity: 'potassium', threshold: 5.1, observation: 'obs-t4-k-1021' },
+          { quantity: 'scr', threshold: 1.5, value: 1.32, label: 'creatinine in doc-t4-lab-1021' },
+          { quantity: 'potassium', threshold: 5.1, value: 4.4, label: 'potassium in doc-t4-lab-1021' },
         ],
       },
     };

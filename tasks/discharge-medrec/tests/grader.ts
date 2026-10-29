@@ -46,7 +46,8 @@ const SOURCES: Record<string, readonly Source[]> = {
   furosemide: [{ id: expected.sources.summary, line: L.furosemide, policy: 'RBC-TOC-02 §1' }],
   spironolactone: [{ id: expected.sources.addendum, line: expected.sources.correction, policy: 'RBC-TOC-02 §1' }],
   'potassium chloride': [{ id: expected.sources.summary, line: L.potassium_chloride, policy: 'RBC-TOC-02 §1' }],
-  lisinopril: [{ id: expected.sources.summary, line: L.lisinopril, policy: 'RBC-TOC-02 §1' }, { id: expected.scr.id, line: null, policy: 'RBC-TOC-02 §2' }],
+  // The post-discharge creatinine: its line of the outside lab report (P18o R14-07 L2).
+  lisinopril: [{ id: expected.sources.summary, line: L.lisinopril, policy: 'RBC-TOC-02 §1' }, { id: expected.scr.id, line: expected.scr.line, policy: 'RBC-TOC-02 §2' }],
 };
 const OTHER: readonly Source[] = [{ id: expected.sources.summary, line: null, policy: 'RBC-TOC-02 §1' }];
 // The changed drug a written order is, or 'other'.
@@ -84,6 +85,8 @@ const gates: Check[] = [
     category: 'action',
     traces_to: 'RBC-TOC-02 §2',
     decisive_ids: [expected.scr.id, expected.sources.summary],
+    // The creatinine is a line of the outside lab report: shown and not acted on is reasoning.
+    decisive_phrases: { [expected.scr.id]: expected.scr.line },
     stated_by: 'note_lists_changes',
     fn: (ctx) => {
       const v = oneAt('lisinopril', expected.lisinopril.daily_mg, expected.lisinopril.per_day)(ctx);
@@ -147,10 +150,10 @@ const gates: Check[] = [
     // shows(): a search_notes snippet or a fhir_read): the summary line that makes the change (for
     // lisinopril its resume rule), or
     // the addendum's correction for spironolactone, and for the lisinopril resume also the
-    // creatinine exposed. A write to any other drug needs the summary exposed. The declared
+    // creatinine line of the outside lab report shown. A write to any other drug needs the summary exposed. The declared
     // phrase lets attribution tell a correction never shown (retrieval) from one shown and not
     // acted on (reasoning); the summary has a line per change, so exposure decides it there.
-    decisive_phrases: { [expected.sources.addendum]: expected.sources.correction },
+    decisive_phrases: { [expected.sources.addendum]: expected.sources.correction, [expected.scr.id]: expected.scr.line },
     fn: (ctx) => {
       const late: Array<Source & { change: string; step: number }> = [];
       for (const step of ctx.steps) {
