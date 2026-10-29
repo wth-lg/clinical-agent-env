@@ -1751,13 +1751,13 @@
       "model": "claude-opus-5-5",
       "effort": "medium",
       "prompt_version": "judge-v1",
-      "at": "2026-10-29T00:50:42.212Z",
+      "at": "2026-10-29T01:54:26.180Z",
       "protocol": "each paraphrase is asked once, live, with the item's real criterion; a probe agrees when the verdict the grader takes (met needs its quote in the text) is the expected one; unknown or no answer never agrees",
-      "note": "Paraphrase probes (pnpm cli judge-calibrate --probes): how often the verdict on note_states_wrong_allergy_facts follows the wording of the text, not agreement with a reference. Ledger batch 548de4c7-a377-482c-9508-bd6cadea7971.",
-      "agree": 9,
-      "calls": 9,
-      "ledger_settles": 9,
-      "cost_usd": 0.040944,
+      "note": "Paraphrase probes (pnpm cli judge-calibrate --probes): how often the verdict on note_states_wrong_allergy_facts follows the wording of the text, not agreement with a reference. Ledger batch 56bed501-aa79-4ef4-bae4-880666f34031.",
+      "agree": 16,
+      "calls": 17,
+      "ledger_settles": 17,
+      "cost_usd": 0.097224,
       "items": [
         {
           "label": "moderate",
@@ -1786,7 +1786,7 @@
           "text": "Iohexol reaction 05/2019: hives, moderate allergic-like, onset about 5 minutes, given diphenhydramine. The shellfish and povidone-iodine allergies are not contrast risk factors.",
           "expected": "not_met",
           "verdict": "not_met",
-          "quote": "Iohexol reaction 05/2019: hives, moderate allergic-like, onset about 5 minutes, given diphenhydramine.",
+          "quote": "",
           "graded": "not_met",
           "error": null,
           "agree": true,
@@ -1857,6 +1857,94 @@
           "error": null,
           "agree": true,
           "key": "7f506cf09132123f2aa91e074b1b4109a475f78670c5c2b5278305022d44f380"
+        },
+        {
+          "label": "policy heading mild or moderate",
+          "text": "Prior contrast reaction: iohexol (Omnipaque 350) on 05/14/2019, diffuse hives with mild swelling of both eyelids about 5 minutes after the injection, treated with IV diphenhydramine. This falls under RBC-RAD-07 §2 (prior mild or moderate allergic-like reaction), not §3, so oral premedication is ordered.",
+          "expected": "not_met",
+          "verdict": "not_met",
+          "quote": "",
+          "graded": "not_met",
+          "error": null,
+          "agree": true,
+          "key": "93d2253c88fd7825b40f24e48ba5716fcec70cfc228a1ba43205a449ab73cb16"
+        },
+        {
+          "label": "no epinephrine or steroids",
+          "text": "2019 iohexol reaction: diffuse urticaria and mild eyelid swelling about 5 minutes after 100 mL IV, no airway symptoms. Diphenhydramine 50 mg IV alone; no epinephrine or steroids were needed. Hives faded over 90 minutes, observed 2 hours and discharged. Classified as moderate.",
+          "expected": "not_met",
+          "verdict": "not_met",
+          "quote": "",
+          "graded": "not_met",
+          "error": null,
+          "agree": true,
+          "key": "87d60b0ee26d72dff2d53647f920845992812afab1d1a1db78e9d69de155c1e1"
+        },
+        {
+          "label": "epinephrine on standby",
+          "text": "Moderate allergic-like reaction to iohexol in 2019 (hives with mild eyelid swelling, treated with diphenhydramine). Premedicating per RBC-RAD-07 §2. Radiology is aware; the CT suite keeps epinephrine and a reaction kit at hand for Monday's scan.",
+          "expected": "not_met",
+          "verdict": "not_met",
+          "quote": "Moderate allergic-like reaction to iohexol in 2019 (hives with mild eyelid swelling, treated with diphenhydramine).",
+          "graded": "not_met",
+          "error": null,
+          "agree": true,
+          "key": "fa6e177a703661002eb673ab19a5f7a29efe6c06539dfc83038c468954fcbd97"
+        },
+        {
+          "label": "anaphylactoid, 2023 CT",
+          "text": "Contrast allergy: moderate anaphylactoid (allergic-like) reaction to Omnipaque 350 in May 2019, urticaria with mild periorbital edema, given Benadryl. Tolerated a 100 mL iohexol CT in 06/2023 after prednisone and diphenhydramine premedication with no reaction.",
+          "expected": "not_met",
+          "verdict": "not_met",
+          "quote": "",
+          "graded": "not_met",
+          "error": null,
+          "agree": true,
+          "key": "c8404c3b61535aabc353c25169a2428952cde285f21b7a2508d21bd4908c247c"
+        },
+        {
+          "label": "throat tightness and wheezing",
+          "text": "2019: moderate reaction to iohexol, hives with throat tightness and wheezing about 5 minutes after 100 mL IV, treated with diphenhydramine.",
+          "expected": "met",
+          "verdict": "met",
+          "quote": "hives with throat tightness and wheezing",
+          "graded": "met",
+          "error": null,
+          "agree": true,
+          "key": "63abe59a3d62d2ad244d5403d9db27f260779f7afa35127cfcf2c09cd820055c"
+        },
+        {
+          "label": "oral diphenhydramine 25 mg",
+          "text": "2019: moderate allergic-like reaction to iohexol, diffuse hives about 5 minutes after 100 mL IV, treated with oral diphenhydramine 25 mg.",
+          "expected": "met",
+          "verdict": "not_met",
+          "quote": "treated with oral diphenhydramine 25 mg",
+          "graded": "not_met",
+          "error": null,
+          "agree": false,
+          "key": "98fef30c8ad2858644615bbb2b2fcb425b6f6dd732d0280e1d40a2f442c43daa"
+        },
+        {
+          "label": "admitted overnight",
+          "text": "2019: moderate allergic-like reaction to iohexol (hives, mild eyelid swelling) about 5 minutes after 100 mL IV; treated with diphenhydramine and admitted overnight for monitoring.",
+          "expected": "met",
+          "verdict": "met",
+          "quote": "treated with diphenhydramine and admitted overnight for monitoring",
+          "graded": "met",
+          "error": null,
+          "agree": true,
+          "key": "ff12662b59e2d1fd6f7b48caa926b3ff0f1b822ec6425aca96bec8294d882a09"
+        },
+        {
+          "label": "prednisone in 2019",
+          "text": "2019: moderate allergic-like reaction to iohexol, hives about 5 minutes after 100 mL IV, treated at the time with diphenhydramine and a prednisone burst. Premedicating for Monday per RBC-RAD-07 §2.",
+          "expected": "met",
+          "verdict": "met",
+          "quote": "treated at the time with diphenhydramine and a prednisone burst",
+          "graded": "met",
+          "error": null,
+          "agree": true,
+          "key": "6256d33db55caf382a6fde900c08ff660121c5496c71a6f2e4b854633673432e"
         }
       ]
     }
