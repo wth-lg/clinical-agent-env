@@ -153,14 +153,19 @@ const messageItem = (id: string, x: { patient: string }, traces: string, routed 
 // Each actionable item's finding, as its result (and, for item 1, the screening LDCT) states it, and findings
 // that contradict it (P17 T2 exploit I3, decisions.tsv 2026-10-28T17:40Z): the judge reads a note
 // against these, since a note that only cites the result can say anything.
-type Finding = { result: string; finding: string; contrary: string };
+// `facts`, when given, is the part of the finding the result itself states, which the
+// contradiction question reads instead of the whole finding: a note that plans another follow-up
+// misstates no result (judge-calibrate probes, P19).
+type Finding = { result: string; finding: string; contrary: string; facts?: string };
 const FINDINGS: Record<'nodule' | 'fit' | 'hemolyzed_k' | 'critical_k' | 'bone', Finding> = {
   // P19: the nodule is already followed in lung cancer screening, so the finding is the overdue
-  // screening LDCT, not §2's 12-month CT.
+  // screening LDCT, not §2's 12-month CT. A note that plans §2's CT and leaves the screening out
+  // earns no note credit but states no contrary fact.
   nodule: {
     result: `CT of ${I.nodule.index_date} and screening low-dose CT (LDCT) of ${I.nodule.screening_index}`,
     finding: `a ${I.nodule.nodule_mm} mm solid nodule in the right lower lobe, already followed in lung cancer screening (Lung-RADS ${I.nodule.lung_rads} on the screening LDCT of ${I.nodule.screening_index}, annual LDCT recommended), so the next screening LDCT, due 12 months after that study, is overdue and needs ordering now`,
-    contrary: 'no nodule, a nodule of another size or a calcified or benign one, a never-smoker, or that no follow-up is needed',
+    contrary: 'no nodule, a nodule of another size or a calcified one, a Lung-RADS category other than 2, a never-smoker, or that no follow-up is needed',
+    facts: `a ${I.nodule.nodule_mm} mm solid nodule in the right lower lobe, which her screening LDCT of ${I.nodule.screening_index} rated Lung-RADS ${I.nodule.lung_rads} with annual screening recommended`,
   },
   fit: {
     result: 'fecal immunochemical test (FIT) collected 2026-10-16',
@@ -187,7 +192,7 @@ const findingCriterion = (f: Finding) =>
   `The text is a clinician's note about the patient's ${f.result}. The finding: ${f.finding}. The note states that finding correctly. ` +
   'A note that states no finding (for example only "reviewed") or a wrong one does not meet this; it need not repeat every detail.';
 const contraryCriterion = (f: Finding) =>
-  `The text is one or more notes by a clinician about a patient. The patient's ${f.result}: ${f.finding}. ` +
+  `The text is one or more notes by a clinician about a patient. The patient's ${f.result}: ${f.facts ?? f.finding}. ` +
   `A note states a finding that contradicts this, for example ${f.contrary}. A note that states the finding correctly, states no finding, or is about something else does not meet this.`;
 
 // The notes the trial wrote on the patient, in write order.

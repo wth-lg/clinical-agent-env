@@ -112,7 +112,7 @@ Dr. Okafor asks the agent to work through the results inbox under RBC-INBOX-01 a
 
 The expected end state per item (`expected.ts`):
 
-1. Linda Marsh (pt-0013, born 1958): a 5 mm lung nodule on the CT of 2026-06-04. Her H&P records 35 pack-years, quit 2019, so she is high risk. Order a CT chest in the window 2027-05-04 to 2027-07-04 (12 months from the index study).
+1. Linda Marsh (pt-0013, born 1958): a 5 mm lung nodule on the CT of 2026-06-04. The same nodule is already followed in lung cancer screening: an outside screening LDCT from Lakeshore Imaging (`dr-t2-ldct-0915`, 2025-09-15) rated it Lung-RADS 2 and recommended annual LDCT. No Riverbend order points to it. Under RBC-RAD-05 v2 §2 the next screening LDCT is timed from that study. Its window closed in mid-October, so the study is overdue. Order it between today (2026-10-23) and 2026-11-06. A CT chest without contrast or a pulmonology referral in that window also passes. Without the LDCT, §2 itself would ask for a CT chest from 2027-05-04 to 2027-07-04, because her H&P records 35 pack-years, quit 2019 (high risk). That is the answer every pilot-1 trial gave.
 2. Renal ultrasound with a simple cyst. The report says no follow-up. Close the item with a comment. Order nothing.
 3. Raj Patel (pt-0006): positive FIT. Dr. Lin's GI referral `sr-t2-gi-1020` is already active. Link it. Do not order a second one.
 4. Walter Brennan (pt-0008): potassium 6.4, hemolyzed. Order a repeat BMP at urgent priority by Monday 2026-10-26. Message the patient. Do not notify on-call.
@@ -127,8 +127,9 @@ The agent closes each item with links to the resources that resolve it. The seco
 ### Skills
 
 - Triage a mixed inbox: tell an urgent item from a routine one.
+- Look for earlier and outside imaging before acting on a nodule: the screening LDCT is a DiagnosticReport with no ServiceRequest behind it.
 - Find a fact that is only in a note (the smoking history in the H&P).
-- Count an interval from the index study, not from today.
+- Count an interval from the index study, not from today, and see when that interval has already passed.
 - Tell two patients with the same name apart.
 - Find an existing order before writing a new one.
 - Tell a hemolyzed result from a true critical value.
@@ -137,8 +138,10 @@ The agent closes each item with links to the resources that resolve it. The seco
 
 ### Traps
 
+- The nodule is already followed in lung cancer screening. Only an outside DiagnosticReport shows it. There is no ServiceRequest, and the H&P says nothing about screening (`screening_report_unread`, P19). The report text leaves out every smoking word, so a smoking-history note search does not find it. A DiagnosticReport search of her chart (its conclusion shows the Lung-RADS category), or a note search for nodule, screening or LDCT, does.
+- The screening LDCT is overdue: its window has passed, so it is due within 14 days, not at the next routine slot (`screening_overdue`).
 - The smoking history is only in the H&P (`smoking_history_in_note`).
-- The CT interval runs from the index study, not from today (`interval_from_today`).
+- The interval runs from the last study, not from today (`interval_from_today`).
 - Neighbouring CT codes in the catalog (`wrong_study_code`).
 - A second patient named Linda Marsh (`wrong_patient_same_name`).
 - An active GI referral already exists (`duplicate_gi_referral`).
@@ -155,7 +158,9 @@ A status-only agent that closes every item and orders nothing must fail (`status
 
 ### Verification
 
-Gate checks (`tests/grader.ts`, words in `tasks/results-inbox.check-text.ts`): `nodule_ct_window`, `namesake_untouched`, `fit_existing_referral`, `hemolyzed_k_repeat`, `hemolyzed_k_no_oncall`, `critical_k_oncall`, `critical_k_stat_bmp`, `bone_lesion_orders`, `controls_no_orders`, `items_closed_with_links`, `sources_before_orders`, `result_seen_before_action` and `patient_contact`.
+Gate checks (`tests/grader.ts`, words in `tasks/results-inbox.check-text.ts`): `nodule_screening_ldct`, `namesake_untouched`, `fit_existing_referral`, `hemolyzed_k_repeat`, `hemolyzed_k_no_oncall`, `critical_k_oncall`, `critical_k_stat_bmp`, `bone_lesion_orders`, `controls_no_orders`, `items_closed_with_links`, `sources_before_orders`, `result_seen_before_action` and `patient_contact`.
+
+For `sources_before_orders`, every order for Linda Marsh needs the June CT and the screening LDCT seen first. The LDCT counts as seen after any of these: a `fhir_read`; a `search_notes` snippet that shows "Lung-RADS 2"; or a `fhir_search` row that returned it in an earlier turn. That row leaves out the report text, but it shows the report's conclusion: the category and the 12-month interval. The H&P is no longer a source of this order.
 
 What counts as reading an item's result for `result_seen_before_action`:
 
@@ -167,8 +172,8 @@ What counts as reading an item's result for `result_seen_before_action`:
 Rubric (`tests/rubric.ts`, positive points total 15):
 
 - A patient message for each of items 1, 3, 4 and 6 (1 each).
-- A note that cites the sources and states the result's finding correctly, for each of items 1, 3, 4, 5 and 6 (1 each, hybrid: code finds the citing notes, the judge reads them).
-- A tracking task for the nodule (3).
+- A note that cites the sources and states the result's finding correctly, for each of items 1, 3, 4, 5 and 6 (1 each, hybrid: code finds the citing notes, the judge reads them). For item 1 the finding includes the screening LDCT and the overdue study. A note that plans §2's 12-month CT earns no credit. It is not a contradiction either, because the contradiction question reads only the facts the reports state.
+- A tracking task for the nodule, due 2026-10-23 to 2026-11-06 (3).
 - A tracking task for the bone lesion (2).
 - The cyst closure comment says no follow-up is needed (1, judged).
 - Penalty: on-call notified for the hemolyzed result (-3).
