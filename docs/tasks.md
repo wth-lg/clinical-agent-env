@@ -379,6 +379,7 @@ The expected end state (`expected.ts`):
 - Prednisone 50 mg at Sunday 20:00, Monday 02:00 and Monday 08:00 (13, 7 and 1 hours before the scan).
 - Diphenhydramine 50 mg at Monday 08:00 (1 hour before the scan).
 - A new creatinine, drawn after now and before 09:00 Monday. The patient is 64 and has diabetes. The latest creatinine (`obs-t5-scr-0924`, an outside lab, 2026-09-24) is 29 days before today but 32 days before the scan, so it is not within 30 days before the scan.
+- Metformin held: no active metformin request at the end (RBC-RAD-07 §6). A faxed St. Brigid ED discharge summary (`doc-t5-ed-1017`, with its Encounter `enc-t5-ed-1016`) records a 10/16-10/17 visit for gastroenteritis with prerenal acute kidney injury: creatinine 1.94 mg/dL on arrival against a baseline of about 1.0, and 1.46 at discharge, not back to baseline. The values exist only in that text. Both values give an eGFR of 30 or more, so only the AKI clause of §6 applies. §4 also says that a creatinine drawn during AKI does not establish kidney function, so the new creatinine is needed whatever the dates. The scan goes ahead as booked.
 - A message that tells the patient the dose times, and that he must not drive after diphenhydramine.
 
 ### Skills
@@ -387,6 +388,7 @@ The expected end state (`expected.ts`):
 - Grade a prior reaction by the record of that day, not by a later label.
 - Count dose times back from the scan, across midnight.
 - Find a lab result that is too old for the policy, counting back from the scan.
+- Find a recent outside record of acute kidney injury and act on it: hold metformin and draw a new creatinine, without deferring the scan.
 - Write new orders instead of copying old orders timed for another scan.
 - Link the order to the appointment.
 - Give the patient clear, correct instructions.
@@ -398,21 +400,24 @@ The expected end state (`expected.ts`):
 - The latest creatinine is within 30 days of today but not of the scan (`scr_counted_from_today`; P18o lever R14-06 L2).
 - Dose times fall overnight (`overnight_timing`).
 - The creatinines on file are stale for the scan (`stale_creatinine`, `creatinine_after_scan`).
+- A recent outside AKI that the model's note searches for "contrast reaction" do not find. A document listing, an Encounter search, or a note search for kidney function or creatinine finds it. The model can miss it, count its in-window discharge value as the creatinine that §4 asks for, or defer the scan for it (`outside_aki`; P19).
+- Metformin must be held, not left active, reduced or stopped and reordered at once for after the scan (`metformin_hold`; P19). Hold or stop, from today or from Monday morning, all pass.
 - The 2023 premedication orders are timed for another scan (`copy_forward`).
 - The CT order must link to the appointment (`linkage`, `ct_occurrence`).
 - The oral regimen applies, not the IV regimen (`iv_regimen`).
 - The policy fixes the prednisone and antihistamine doses and times (`prednisone_dose`, `antihistamine_timing`, `antihistamine_dose`).
-- The agent must see the evidence before its first order of any kind (`evidence_before_orders`): the contrast allergy, the 2019 reaction report (read whole, or a search snippet that shows the reaction's severity), the last creatinine and the appointment.
+- The agent must see the evidence before its first order of any kind (`evidence_before_orders`): the contrast allergy, the 2019 reaction report (read whole, or a search snippet that shows the reaction's severity), the last creatinine, the 10/17 ED summary (read whole, or a snippet that shows the AKI) and the appointment.
 - The agent must give the patient instructions (`patient_instruction`).
 - The agent must also do each action that the note states (`stated_not_done`).
 
 ### Verification
 
-Gate checks (`tests/grader.ts`, words in `tasks/contrast-ct-prep.check-text.ts`): `ct_order`, `prednisone_schedule`, `diphenhydramine_dose`, `creatinine_before_scan`, `no_substitution`, `patient_instructed` and `evidence_before_orders`. `ct_order` requires exactly one CT order, because no tool cancels a service order.
+Gate checks (`tests/grader.ts`, words in `tasks/contrast-ct-prep.check-text.ts`): `ct_order`, `prednisone_schedule`, `diphenhydramine_dose`, `creatinine_before_scan`, `metformin_held`, `no_substitution`, `patient_instructed` and `evidence_before_orders`. `ct_order` requires exactly one CT order, because no tool cancels a service order. `metformin_held` reads metformin by ingredient, so `change_medication` modify and `order_medication` replaces, which each leave a new active metformin, fail it.
 
 Rubric (`tests/rubric.ts`, positive points total 8):
 
 - The message states each drug (0 points, hybrid).
+- The message states the metformin hold (`message_states_metformin_hold`, 0 points, hybrid; `metformin_held`'s stated_by item). A message that does not name metformin does not meet it, and no judge call is made.
 - The message gives the dose times (3, hybrid).
 - The message says not to drive (1, judged).
 - The note tells the allergies apart (2, judged).
@@ -424,7 +429,7 @@ Rubric (`tests/rubric.ts`, positive points total 8):
 
 ### Oracle
 
-`solution/solve.ts` and `solution/steps.ts` script the allergy, note, lab and appointment reads, the CT order, the premedication and creatinine orders, the patient message and the note. Run it with `pnpm cli oracle --task contrast-ct-prep`. It must print PASS with score 1.000 and `judge.unknown 0`.
+`solution/solve.ts` and `solution/steps.ts` script the allergy, note, lab and appointment reads, a note search for kidney function and a read of the ED summary, the CT order, the creatinine order, a medication-list search, the premedication, the metformin hold, the patient message and the note. Run it with `pnpm cli oracle --task contrast-ct-prep`. It must print PASS with score 1.000 and `judge.unknown 0`.
 
 Open PRs that change this section: none.
 
