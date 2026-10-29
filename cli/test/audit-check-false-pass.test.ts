@@ -346,6 +346,61 @@ describe('adjudicated_label pass only settles a row that needs adjudication (ver
     expect(r.out).toContainEqual(expect.stringMatching(/^violation: audit\.jsonl line \d+: note must be text$/));
   });
 
+  // verifier-phase-P17i-P17j-S3retror3-1 R1 (probes E3x, E3t): a taxonomy that is neither a TAXONOMY
+  // name nor an audit label gives the row no label, so a typo of grader would skip GR5; it is a
+  // violation on every row, and pass needs a note over any taxonomy, as over any label.
+  const taxonomies = ['Grader', 'GRADER', 'grader ', 'Environment', 'wrong_value'];
+  const notATaxonomy = (taxonomy: string) => `violation: t-alpha/0: taxonomy ${JSON.stringify(taxonomy)} is not one of retrieval, reasoning, output_gap, over_action, process, action_form, did_not_finish, model, grader, environment`;
+
+  it('E3x: a taxonomy that is not a TAXONOMY name or an audit label is a violation on its own', async () => {
+    for (const taxonomy of taxonomies) {
+      const dir = clean(`e3x-${taxonomies.indexOf(taxonomy)}`);
+      patch(dir, (r) => ({ ...r, label: null, taxonomy }));
+      const r = await check(dir);
+      expect(r.code).toBe(1);
+      expect(r.out.filter((s) => s.startsWith('violation'))).toEqual([notATaxonomy(taxonomy)]);
+    }
+  });
+
+  it('E3t: pass with model_fault unclear over a taxonomy that is not one, with no note, is a violation', async () => {
+    for (const taxonomy of taxonomies) {
+      const dir = clean(`e3t-${taxonomies.indexOf(taxonomy)}`);
+      patch(dir, (r) => ({ ...withoutNote(r), label: null, taxonomy, model_fault: 'unclear', adjudicated_label: 'pass' }));
+      const r = await check(dir);
+      expect(r.code).toBe(1);
+      expect(r.out.filter((s) => s.startsWith('violation'))).toEqual([
+        `violation: t-alpha/0: adjudicated_label pass overrules the taxonomy ${JSON.stringify(taxonomy)}, and needs a note that says why`,
+        notATaxonomy(taxonomy),
+      ]);
+    }
+  });
+
+  it('E3t: a pass the rule accepts never hides a taxonomy that is not one', async () => {
+    const dir = clean('e3t-note');
+    patch(dir, (r) => ({ ...r, label: null, taxonomy: 'Grader', model_fault: 'unclear', adjudicated_label: 'pass', note: 'the human read the chart: the PASS is right' }));
+    const r = await check(dir);
+    expect(r.code).toBe(1);
+    expect(r.out.filter((s) => s.startsWith('violation'))).toEqual([notATaxonomy('Grader')]);
+  });
+
+  it('a taxonomy that is not one is a violation on a failure too, named once', async () => {
+    const dir = clean('e3x-fail');
+    writeRows(dir, rows(dir).map((r) => (r.trial === 't-alpha/5' ? { ...r, label: null, taxonomy: 'Retrieval' } : r)));
+    const r = await check(dir);
+    expect(r.code).toBe(1);
+    expect(r.out.filter((s) => s.startsWith('violation'))).toEqual([notATaxonomy('Retrieval').replace('t-alpha/0', 't-alpha/5')]);
+  });
+
+  it('the taxonomy grader is still a false PASS (GR5), and pass over it needs a note', async () => {
+    const dir = clean('e3t-grader');
+    patch(dir, (r) => ({ ...withoutNote(r), label: null, taxonomy: 'grader', model_fault: 'unclear', adjudicated_label: 'pass' }));
+    const r = await check(dir, true);
+    expect(r.code).toBe(1);
+    expect(r.err).toContain('violation: t-alpha/0: adjudicated_label pass overrules the label grader, and needs a note that says why');
+    expect(r.err).toContainEqual(expect.stringMatching(/^violation: t-alpha\/0: PASS is a false PASS \(GR5\)/));
+    expect(JSON.parse(r.out.at(-1)!)).toMatchObject({ excluded: ['t-alpha/0'] });
+  });
+
   it('FF3 with no note: an unlabelled row needs none', async () => {
     const dir = clean('ff3-no-note');
     patch(dir, (r) => ({ ...withoutNote(r), model_fault: 'unclear', adjudicated_label: 'pass' }));
