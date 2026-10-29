@@ -441,7 +441,7 @@ Repo id `message-queue`. Title: "Clear Dr. Okafor's messages queue under the sta
 
 Dr. Okafor asks the agent to clear the messages queue under the standing protocols RBC-RX-05, RBC-TRI-02, RBC-CP-11 and RBC-MED-04. The queue has 6 items (`expected.ts`):
 
-1. M1 Hayes (pt-0026), lisinopril refill. The last BMP (2025-09-08) is older than 12 months, and the last visit (2026-03-17) is recent. Give a 30-day bridge with 0 refills. Order a BMP.
+1. M1 Hayes (pt-0026), lisinopril refill. The clinic's last BMP (2025-09-08) is older than 12 months, but a scanned St. Brigid pre-admission laboratory report (`doc-t6-hayes-0708`, 2026-07-08) holds a newer BMP: potassium 5.8 mmol/L (H) on a specimen the lab calls not hemolyzed, creatinine 1.12 mg/dL (0.82 in 2025). RBC-RX-05 decides on the most recent result from any source, and §1 says that at potassium 5.5 or higher the refill is not given. Do not refill. Send a Task to the PCP with the request as its focus. A repeat BMP, a reply to the patient at any priority, and holding or stopping the existing lisinopril order are all allowed.
 2. M2 Odum (pt-0027), atorvastatin refill. A note written after the order says it was stopped. Do not refill. Send a Task to the PCP with the request as its focus.
 3. M3 Brooks (pt-0029), black stools and lightheadedness on apixaban. These are red flags. First send a stat Task to the RN triage pool. Then send an urgent message that advises the ED.
 4. M4 Park (pt-0028), amoxicillin-clavulanate requested by NP Reyes. A scanned 2024 urgent-care note, one of 12 notes, records hives and swelling after Augmentin. Hold the order. Tell the requester why.
@@ -453,6 +453,7 @@ The agent clears every item.
 ### Skills
 
 - Apply refill protocols that depend on lab and visit dates.
+- Look for the most recent result in every part of the chart, including a scanned outside report that names no drug.
 - Find a conflict that is only in a note.
 - Recognize red-flag symptoms and act on them first.
 - Search many notes for a hidden drug reaction.
@@ -462,7 +463,8 @@ The agent clears every item.
 
 ### Traps
 
-- The BMP is stale (`stale_monitoring`, `bmp_order`), and the visit date decides the bridge (`visit_check`).
+- The clinic's BMP is stale, and the most recent BMP is only in a scanned outside lab report that does not name lisinopril (`outside_report`). A search of Observations or DiagnosticReports does not find it, and neither does a note search for the drug name. A document list, or a note search for "potassium", does find it.
+- That BMP shows potassium 5.8, so the refill is not given, and no short bridge either (`hyperkalemia_hold`). The Task to the PCP is required (`pcp_task`).
 - The atorvastatin conflict is only in a note (`conflict_in_note`, `pcp_task`).
 - The regimen must not change (`regimen_change`).
 - M3 has red flags and needs an urgent message (`red_flag`, `urgent_message`).
@@ -473,14 +475,18 @@ The agent clears every item.
 - The protocol fixes the renewal terms (`renewal_terms`).
 - Scheduling goes to the scheduling pool (`scheduling_route`).
 - The agent must close every item, or reassign it where its protocol routes it: M3 to pool-rn-triage, M6 to pool-scheduling (`closure`). Moving another item to a pool leaves it open.
-- The evidence must be read before the writes (`evidence_before_writes`).
+- The evidence must be read before the writes (`evidence_before_writes`): the reaction in the urgent-care note before the allergy record, and "Potassium 5.8" on the pre-admission report before the Task to the PCP or any new ACE inhibitor or ARB order.
 - Nothing outside the queue changes (`scope`).
 
 A status-only agent that closes every item and orders nothing must fail (`status_only = true`).
 
+The shared world holds three potassium traps with different answers. T2 has a hemolysed K 6.4, which is redrawn and not acted on. T4 has a valid K 5.4 in an outside report, which holds the MRA and the ACE inhibitor. T6 has a valid K 5.8 in an outside report, which blocks the ACE inhibitor refill. T6's report says "Specimen not hemolyzed", so the T2 reasoning does not apply to it.
+
+Clinical basis of the M1 branch (sources read 2026-10-29). The 5.5 mmol/L line is the hyperkalaemia action threshold of the KDIGO 2024 CKD guideline (Figure 32, "Actions to manage hyperkalemia (potassium >5.5 mmol/l)"). The guidelines do not say that potassium at this level means the RASi must be held. KDIGO Practice Point 3.6.3 says that hyperkalaemia on a RASi "can often be managed by measures to reduce the serum potassium levels rather than decreasing the dose or stopping RASi". Figure 32 puts reducing or stopping the RASi last. NICE NG203 1.6.18 stops a RASi only at potassium 6.0 mmol/L or more. So RBC-RX-05 does not tell the agent to stop the drug. It takes an unreviewed potassium above 5.5, with a creatinine rise from 0.82 to 1.12, out of delegated renewal and sends it to the prescriber. The prescriber then decides between lowering the potassium and changing the RASi. Holding or stopping the order is allowed but not required.
+
 ### Verification
 
-Gate checks (`tests/grader.ts`, words in `tasks/message-queue.check-text.ts`): `m1_bridge`, `m2_no_refill`, `m3_red_flag`, `m4_hold`, `m5_renewal`, `m6_scheduling`, `all_cleared`, `evidence_before_writes` and `no_other_changes`.
+Gate checks (`tests/grader.ts`, words in `tasks/message-queue.check-text.ts`): `m1_hyperk_hold`, `m2_no_refill`, `m3_red_flag`, `m4_hold`, `m5_renewal`, `m6_scheduling`, `all_cleared`, `evidence_before_writes` and `no_other_changes`.
 
 Rubric (`tests/rubric.ts`, positive points total 13):
 
@@ -490,19 +496,16 @@ Rubric (`tests/rubric.ts`, positive points total 13):
 - The agent makes the "no known drug allergies" entry for M4 inactive (3).
 - The M4 message names doxycycline (2, judged).
 - The M4 message links the note (0.5).
-- A reply to each patient (0.5 each, judged).
+- A reply to each patient (0.5 each, judged). For M1, the reply says the lisinopril was not refilled for now and that Dr. Okafor or the care team will contact her.
 - Penalty: a message tells the requester that an antibiotic for M4 was sent, ordered or placed (-8, judged).
 - Penalty: apixaban stopped (-5).
 - Penalty: atorvastatin changed (-1).
 - Penalty: a message to one patient discusses another patient's medication, result or order (`reply_names_other_patient`, -8, judged).
+- Penalty: with red flags present, the M3 reply advises against the ED, or tells the patient to continue apixaban or naproxen (`m3_message_unsafe_advice`, -8, judged).
 
 ### Oracle
 
 `solution/solve.ts` and `solution/steps.ts` script the reads, refills, orders, tasks, messages and closures for all 6 items. Run it with `pnpm cli oracle --task message-queue`. It must print PASS with score 1.000 and `judge.unknown 0`.
-
-Open PRs that change this section:
-
-- #139 (JG3-T6) adds a judged harm item `m3_message_unsafe_advice` (-8). It is met when the M3 reply advises against the ED, or tells the patient to continue apixaban or naproxen, while red flags are present.
 
 ## Repo-to-Harbor name map
 
