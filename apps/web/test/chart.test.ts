@@ -69,9 +69,9 @@ describe('verifier JU10-1 F2-F5', () => {
     const msg = chartOf(world, 'Patient/pt-0026').rows.find((r) => r.id === 'comm-t6-m1');
     expect(msg).toMatchObject({ type: 'Communication', text: 'Refill request', date: '2026-10-21T19:12:00-04:00' });
     expect(msg?.body).toContain('refill my lisinopril 20 mg');
-    expect(chartOf(world, 'Patient/pt-0020').rows.find((r) => r.id === 'eoc-t3-e9-hospice')).toMatchObject({ type: 'EpisodeOfCare', text: 'Hospice care', status: 'active', date: '2026-08-20', current: true });
-    expect(chartOf(world, 'Patient/pt-0024').rows.find((r) => r.id === 'sr-t3-e11-fit')).toMatchObject({ type: 'ServiceRequest', status: 'active', current: true });
-    expect(chartOf(world, 'Patient/pt-0024').rows.find((r) => r.id === 'sr-t3-e11-fit')?.text).toMatch(/^FIT kit/);
+    expect(chartOf(world, 'Patient/pt-0020').rows.find((r) => r.id === 'eoc-t3-8215')).toMatchObject({ type: 'EpisodeOfCare', text: 'Hospice care', status: 'active', date: '2026-08-20', current: true });
+    expect(chartOf(world, 'Patient/pt-0024').rows.find((r) => r.id === 'sr-t3-6648')).toMatchObject({ type: 'ServiceRequest', status: 'active', current: true });
+    expect(chartOf(world, 'Patient/pt-0024').rows.find((r) => r.id === 'sr-t3-6648')?.text).toMatch(/^FIT kit/);
     expect(chartOf(world, 'Patient/pt-0006').rows.some((r) => r.id === 'sr-t2-gi-1020')).toBe(true);
   });
 });
