@@ -33,7 +33,7 @@ export const alternatives: Array<Agent & { loses: readonly string[] }> = [
       { calls: [ct([APPT, ALLERGY, REACTION_NOTE], '2026-10-26T09:00:00-04:00', '2026-10-26T09:30:00-04:00'), creatinineOrder('2026-10-24T09:00:00-04:00', null, CODE.bmp)] },
       { calls: [medication(RX.prednisone50, 50, [AT.p13]), medication(RX.prednisone50, 50, [AT.p7]), medication(RX.prednisone50, 50, [AT.p1]), medication(RX.diphenhydramine25, 50, [AT.p1])] },
       { calls: [message()] },
-      { calls: [note({ kidney: 'Kidney function (§4): age 64 with type 2 diabetes. Last creatinine 0.98 mg/dL on 08/14/2025, more than 30 days before the scan: basic metabolic panel ordered for Saturday 10/24 at 09:00.' })] },
+      { calls: [note({ kidney: 'Kidney function (§4): age 64 with type 2 diabetes. Last creatinine 1.02 mg/dL on 09/24/2026 (outside lab), 32 days before the scan, so more than 30 days before it: basic metabolic panel ordered for Saturday 10/24 at 09:00.' })] },
       { calls: [finish(DONE)] },
     ],
   },
@@ -169,7 +169,7 @@ export const alternatives: Array<Agent & { loses: readonly string[] }> = [
       { calls: [ct(), creatinineOrder('2026-10-26T07:30:00-04:00', null)] },
       { calls: [prednisone, diphenhydramine] },
       { calls: [message(ORACLE_MESSAGE.replace('at the lab today or tomorrow, before the scan', 'at our lab at 7:30 AM on Monday 10/26, before the scan'))] },
-      { calls: [note({ kidney: 'Kidney function (§4): age 64 with type 2 diabetes. Last creatinine 0.98 mg/dL on 08/14/2025, more than 30 days before the scan: creatinine ordered for 7:30 AM on 10/26, before the scan.' })] },
+      { calls: [note({ kidney: 'Kidney function (§4): age 64 with type 2 diabetes. Last creatinine 1.02 mg/dL on 09/24/2026 (outside lab), 32 days before the scan, so more than 30 days before it: creatinine ordered for 7:30 AM on 10/26, before the scan.' })] },
       { calls: [finish(DONE)] },
     ],
   },
@@ -208,4 +208,31 @@ export const alternatives: Array<Agent & { loses: readonly string[] }> = [
       { calls: [finish(DONE)] },
     ],
   })),
+  {
+    id: 'premed_and_radiologist_heads_up',
+    why: "P18o R14-06: does what the oracle does and also tells the radiologist that the allergy list carries a later 'Anaphylaxis (patient report)' label, while the report of the day grades the reaction moderate: a careful heads-up about the conflicting records, not a change to the plan.",
+    loses: [],
+    script: [
+      ...READS,
+      { calls: [ct(), creatinineOrder()] },
+      { calls: [prednisone, diphenhydramine] },
+      {
+        calls: [
+          message(),
+          {
+            name: 'send_message',
+            input: {
+              recipient: 'Practitioner/pr-t5-adeyemi',
+              priority: 'routine',
+              subject: 'Daniel Ferreira: contrast CT Monday 10/26 09:00, allergy list vs your 2019 report',
+              body: "His allergy list was updated in 2021 to 'Anaphylaxis (patient report)' for iohexol. Your report of 05/14/2019 grades the reaction moderate (diffuse hives, mild eyelid swelling, diphenhydramine only). Under RBC-RAD-07 he is premedicated with prednisone and diphenhydramine; the order asks for a different iodinated agent. Please let us know if you see it differently.",
+              about: [APPT],
+            },
+          },
+        ],
+      },
+      { calls: [note()] },
+      { calls: [finish(DONE)] },
+    ],
+  },
 ];

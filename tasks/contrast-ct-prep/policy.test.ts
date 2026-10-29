@@ -37,7 +37,7 @@ describe('contrast-ct-prep', () => {
     expect(d.other_allergies).toContain('AllergyIntolerance/alg-t5-shellfish');
     expect(d.other_allergies).toContain('AllergyIntolerance/alg-t5-pvp');
     // The last creatinine (2025-08-14) is more than 30 days before the scan.
-    expect(d.creatinine).toMatchObject({ latest: 'Observation/obs-t5-scr-0814', required: true, current: false });
+    expect(d.creatinine).toMatchObject({ latest: 'Observation/obs-t5-scr-0924', required: true, current: false });
   });
 
   // The overlay cannot read instruction.md or the policy file, so their prompt-date, weekday and

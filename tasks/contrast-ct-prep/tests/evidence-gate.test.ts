@@ -29,8 +29,8 @@ describe('contrast-ct-prep evidence_before_orders', () => {
     const script = mutants.find((m) => m.id === 'exploit_orders_before_reading_0')!.script;
     const { met, late, found } = await probe('exploit_0', script);
     expect(met).toBe(false);
-    expect(late).toEqual(['AllergyIntolerance/alg-t5-iohexol', 'DocumentReference/doc-t5-ct-2019', 'Observation/obs-t5-scr-0814', 'Appointment/appt-t5-1026']);
-    expect(found).toBe('DocumentReference/doc-t5-ct-2019 and Observation/obs-t5-scr-0814 were not seen before the first order (ServiceRequest/sr-t0001) at step 5; AllergyIntolerance/alg-t5-iohexol and Appointment/appt-t5-1026 were seen only after it');
+    expect(late).toEqual(['AllergyIntolerance/alg-t5-iohexol', 'DocumentReference/doc-t5-ct-2019', 'Observation/obs-t5-scr-0924', 'Appointment/appt-t5-1026']);
+    expect(found).toBe('DocumentReference/doc-t5-ct-2019 and Observation/obs-t5-scr-0924 were not seen before the first order (ServiceRequest/sr-t0001) at step 5; AllergyIntolerance/alg-t5-iohexol and Appointment/appt-t5-1026 were seen only after it');
   });
 
   it('fails a CT order placed before the reads even when the premedication comes after them', async () => {
@@ -42,8 +42,8 @@ describe('contrast-ct-prep evidence_before_orders', () => {
   it('names the one source read late', async () => {
     const { met, late, found } = await probe('creatinine_late', [{ calls: [findPatient] }, { calls: [appointments, allergies, snippet('hives')] }, ...ORDERS.slice(0, 1), { calls: [creatinines] }, ...ORDERS.slice(1)]);
     expect(met).toBe(false);
-    expect(late).toEqual(['Observation/obs-t5-scr-0814']);
-    expect(found).toBe('Observation/obs-t5-scr-0814 was seen at step 7, after the first order (ServiceRequest/sr-t0001) at step 5');
+    expect(late).toEqual(['Observation/obs-t5-scr-0924']);
+    expect(found).toBe('Observation/obs-t5-scr-0924 was seen at step 7, after the first order (ServiceRequest/sr-t0001) at step 5');
   });
 
   it.each([

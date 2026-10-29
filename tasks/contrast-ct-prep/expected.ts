@@ -5,12 +5,14 @@
 //
 //   scan          appt-t5-1026, Monday 2026-10-26 09:00 -04:00 (EDT; DST ends 2026-11-01)
 //   allergy       alg-t5-iohexol: diffuse urticaria and eyelid swelling in 2019, moderate
-//                 (doc-t5-ct-2019): premedicate (§2)
+//                 (doc-t5-ct-2019): premedicate (§2). The list's later 'Anaphylaxis (patient
+//                 report)', severe (P18o R14-06 L1'), does not regrade it (§1)
 //   not factors   shellfish and povidone-iodine (§1); aspirin and mold are unrelated
 //   prednisone    50 mg at 09:00 - 13 h = Sunday 20:00, - 7 h = Monday 02:00, - 1 h = Monday 08:00
 //   antihistamine diphenhydramine 50 mg at 09:00 - 1 h = Monday 08:00
-//   creatinine    age 64 and diabetes; the latest, obs-t5-scr-0814, is 2025-08-14, more than
-//                 30 days before the scan: a new one drawn after NOW and before 09:00 Monday
+//   creatinine    age 64 and diabetes; the latest, obs-t5-scr-0924 (outside lab, P18o R14-06
+//                 L2), is 2026-09-24: 29 days before NOW but 32 before the scan, so more than
+//                 30 days before it: a new one drawn after NOW and before 09:00 Monday
 export const expected = {
   patient: 'Patient/pt-0015',
   patient_name: 'Daniel Ferreira',
@@ -23,6 +25,6 @@ export const expected = {
   regimen: 'premedicate',
   prednisone: { mg: 50, at: ['2026-10-25T20:00:00-04:00', '2026-10-26T02:00:00-04:00', '2026-10-26T08:00:00-04:00'] },
   diphenhydramine: { mg: 50, at: ['2026-10-26T08:00:00-04:00'] },
-  creatinine: { latest: 'Observation/obs-t5-scr-0814', date: '2025-08-14', required: true, current: false, before: '2026-10-26T09:00:00-04:00' },
+  creatinine: { latest: 'Observation/obs-t5-scr-0924', date: '2026-09-24', required: true, current: false, before: '2026-10-26T09:00:00-04:00' },
   ct_supporting: ['AllergyIntolerance/alg-t5-iohexol', 'DocumentReference/doc-t5-ct-2019'],
 };

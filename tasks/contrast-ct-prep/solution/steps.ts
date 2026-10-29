@@ -61,7 +61,7 @@ export const service = (s: ServiceInput): ScriptCall => ({
 export const ct = (supporting: string[] = [APPT, ALLERGY, REACTION_NOTE], start: string = SCAN, end?: string): ScriptCall => service({ supporting, start, ...(end ? { end } : {}) });
 // end null: a single date or time, no window.
 export const creatinineOrder = (start = '2026-10-23', end: string | null = '2026-10-24', code: string = CODE.creatinine): ScriptCall =>
-  service({ code, start, ...(end !== null ? { end } : {}), reason: 'RBC-RAD-07 §4: age 64 with type 2 diabetes; last creatinine 08/14/2025. Draw before the contrast CT on 10/26.' });
+  service({ code, start, ...(end !== null ? { end } : {}), reason: 'RBC-RAD-07 §4: age 64 with type 2 diabetes; last creatinine 09/24/2026, 32 days before the scan. Draw before the contrast CT on 10/26.' });
 
 export const medication = (rxnorm_code: string, dose_value: number, timing_events: string[], dose_unit = 'mg', route = 'oral', reason = REASON): ScriptCall => ({
   name: 'order_medication',
@@ -94,16 +94,17 @@ export interface NoteFacts {
 export const ORACLE_NOTE: NoteFacts = {
   allergies:
     'Allergies (§1): moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day). ' +
-    'That is the risk factor. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan.',
+    'That is the risk factor. The allergy list also carries "Anaphylaxis (patient report)", added in 2021 from his own account with no record reviewed; the report of the day grades the reaction moderate, and §1 grades it by that record, so §2 applies, not §3. ' +
+    'The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan.',
   premedication:
     'Premedication (§2): prednisone 50 mg by mouth at 8:00 PM on 10/25, 2:00 AM on 10/26 and 8:00 AM on 10/26 (13, 7 and 1 hours before the scan), and diphenhydramine 50 mg by mouth at 8:00 AM on 10/26. ' +
     'The 2023 premedication was timed for a 2:00 PM scan and was not reused. He was told not to drive after diphenhydramine and to bring a driver.',
-  kidney: 'Kidney function (§4): age 64 with type 2 diabetes. Last creatinine 0.98 mg/dL on 08/14/2025, more than 30 days before the scan: creatinine ordered for 10/23-10/24, before the scan.',
+  kidney: 'Kidney function (§4): age 64 with type 2 diabetes. Last creatinine 1.02 mg/dL on 09/24/2026 (outside lab), 32 days before the scan, so more than 30 days before it: creatinine ordered for 10/23-10/24, before the scan.',
   orders: 'Orders: CT abdomen and pelvis with IV contrast for the 10/26 09:00 appointment, linked to it and citing the iohexol allergy and the 2019 report. Instructions sent to the patient.',
 };
 export const noteText = (f: NoteFacts): string =>
   ['Contrast CT preparation under RBC-RAD-07: CT abdomen and pelvis with IV contrast, Monday 10/26/2026 at 09:00, for surveillance of the pancreatic body cyst.', f.allergies, f.premedication, f.kidney, f.orders].join('\n\n');
-export const CITES = [ALLERGY, REACTION_NOTE, 'Observation/obs-t5-scr-0814', APPT];
+export const CITES = [ALLERGY, REACTION_NOTE, 'Observation/obs-t5-scr-0924', APPT];
 export const note = (f: Partial<NoteFacts> = {}, cites: string[] = CITES): ScriptCall => ({
   name: 'write_note',
   input: { patient: PT, type: 'progress_note', title: 'Contrast CT preparation (RBC-RAD-07)', text: noteText({ ...ORACLE_NOTE, ...f }), cites, cites_policies: ['RBC-RAD-07'] },

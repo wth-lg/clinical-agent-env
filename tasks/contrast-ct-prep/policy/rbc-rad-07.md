@@ -6,6 +6,7 @@ Applies to scheduled outpatient CT with intravenous iodinated contrast that the 
 Review the allergy list and the record of any prior reaction to contrast.
 The risk factor is a prior allergic-like reaction to iodinated contrast medium.
 Allergies to shellfish, to povidone-iodine or other topical iodine, and to unrelated drugs or foods are not risk factors for a contrast reaction.
+Grade a prior reaction by the record made when it happened, such as the report of that day. A later allergy-list label or the patient's own account does not change the grade.
 
 §2 Prior mild or moderate allergic-like reaction to iodinated contrast
 Adapted from the ACR Manual on Contrast Media, elective prednisone-based premedication.

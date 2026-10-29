@@ -225,6 +225,7 @@ export const rubric: Check[] = [
       'or a course other than about 2 hours of observation and discharge, for example an admission to hospital. ' +
       'The facts, from the radiology report of 05/14/2019: about 5 minutes after 100 mL of iohexol (Omnipaque 350) IV, itching and diffuse hives over the trunk and all four limbs with mild swelling of both eyelids, ' +
       'no throat tightness, hoarseness, dyspnea or wheeze; treated with diphenhydramine 50 mg IV and nothing else; observed for about 2 hours and discharged; classified as a moderate allergic-like reaction. ' +
+      'Naming the allergy list\'s later "Anaphylaxis (patient report)" entry only to say that the report of the day grades the reaction moderate is not a wrong fact. ' +
       'Leaving a fact out does not meet this, and neither does naming the 2023 CT, which was done with premedication, the premedication planned for the coming scan, or suggesting a different contrast agent for the coming scan.',
     text: noteText,
   }),
