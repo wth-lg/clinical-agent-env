@@ -152,7 +152,7 @@ function faultNote(e: Explanation, official: boolean, notCountedShown: boolean):
   if (!e.valid && e.fault === 'env') return notCountedShown ? 'It is run again.' : 'Not counted; it is run again.';
   return null;
 }
-// The glossary, at a section (fault-<fault>, criterion-<id>, taxonomy, confirmation) when given.
+// The glossary, at a section (fault-<fault>, fault-labels, criterion-<id>, taxonomy, confirmation) when given.
 export const glossaryHref = (anchor?: string) => `${hrefWith(TO_GLOSSARY).replace(/#.*$/, '')}${anchor ? `#${anchor}` : ''}`;
 
 // One click to the glossary; with an anchor, the view scrolls to that section once it renders.

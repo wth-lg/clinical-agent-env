@@ -85,8 +85,9 @@ accessible name or text node, so they share one line of the snapshot.
 
 ### P13: shell, surface chip and key gate
 
-- `Overview`, `Tasks`, `Runs`, `Findings`, `Environment`: the rail labels. All five show on
-  every screen of the shell.
+- `Overview`, `Tasks`, `Runs`, `Live trial`, `Findings`, `Environment`, `Attribution`: the rail
+  labels, in this order (apps/web/src/shell/views.ts). All seven show on every screen of the
+  shell.
 - `Add an API key`: the key gate heading, shown when no key is set and again after Forget key.
 - `Local runner` and `Hosted`: the surface chip on the local runner and on the hosted
   site.

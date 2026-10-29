@@ -2,13 +2,14 @@
 // "Browser-direct", "Worker" or the rail label "Labels"; the buttons read "Run reference
 // solution" and "Check the grader", the surface chip "Hosted", the rail "Attribution". On a PASS
 // the trial header's M1-M5 row reads "Confirmed" or "Checks pending" with what is missing, and
-// the codes are in the Attribution tab only.
+// the codes are in the Attribution tab only. No card title, heading or link on any route calls the
+// Attribution page "Labels" (verifier-phase-P17j-close-1 S9); "fault labels" stays.
 import { expect, test, type Page } from '@playwright/test';
 import { browse } from './browse.ts';
 import { sampleBase } from './fixtures/sample-results/sample.ts';
 import { trialBase, TRIALS, RUN_ID } from './fixtures/trial/trial.ts';
 
-const GONE = [/\bRun oracle\b/, /\bRun matrix\b/, /Browser-direct/, /\bWorker\b/];
+const GONE = [/\bRun oracle\b/, /\bRun matrix\b/, /Browser-direct/, /\bWorker\b/, /\bLabels\b/];
 
 async function expectNoOldLabels(page: Page, where: string) {
   for (const re of GONE) await expect(page.getByText(re), `${where}: ${re}`).toHaveCount(0);
