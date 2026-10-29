@@ -22,8 +22,9 @@ describe('message-queue', () => {
 
   it('decides each item the way the design does', () => {
     expect(d.items).toHaveLength(6);
-    // M1: the BMP is 45 days past 12 months and the visit is within 15: a 30-day bridge.
-    expect(d.m1).toMatchObject({ action: 'bridge', bmp_date: '2025-09-08', last_visit: '2026-03-17', supply_days: 30, refills: 0 });
+    // M1: our BMP is 45 days past 12 months, but the most recent BMP from any source is the St.
+    // Brigid pre-admission report with potassium 5.8: no refill, a Task to the PCP (P19).
+    expect(d.m1).toMatchObject({ action: 'task_pcp', bmp: 'DocumentReference/doc-t6-hayes-0708', bmp_date: '2026-07-08', potassium: 5.8, pcp: 'Practitioner/pr-okafor' });
     // M2: a note after the order says the drug was stopped: no refill, a Task to the PCP.
     expect(d.m2).toMatchObject({ action: 'task_pcp', conflict_note: 'DocumentReference/doc-t6-odum-0811' });
     expect(d.m3.action).toBe('triage');
@@ -70,8 +71,32 @@ describe('message-queue', () => {
   it('states no date the clock gives and no answer in the prompt or policy text', async () => {
     const task = await nodeTaskSource({ testMode: false }).get('message-queue');
     const texts = [task.instruction, ...task.policies.map((p) => p.text)];
-    const answers = ['doc-t6-park-240309', 'Augmentin', '2024-03-09', 'mr-t6-atorvastatin'];
+    const answers = ['doc-t6-park-240309', 'Augmentin', '2024-03-09', 'mr-t6-atorvastatin', 'doc-t6-hayes-0708', '5.8', 'pre-admission'];
     const findings = lintWorld(all, [{ source: 'message-queue', spec: { prompts: texts, leakage: { answers, texts: texts.map((text, i) => ({ source: i === 0 ? 'instruction.md' : task.policies[i - 1]!.id, text })) } } }]);
     expect(findings).toEqual([]);
+  });
+
+  // P19 (researcher-16 T6): the report is found only by looking at her documents. It never names
+  // the drug, so search_notes 'lisinopril' misses it, and no Observation, DiagnosticReport or
+  // Encounter stands behind it; it says the specimen was not hemolyzed, so the potassium is not
+  // the hemolysed value of results-inbox.
+  it("keeps Gloria Hayes's pre-admission BMP out of every search but her documents", () => {
+    type D = { resourceType: string; id?: string; subject?: { reference?: string }; date?: string; effectiveDateTime?: string; content?: Array<{ attachment?: { data?: string } }> };
+    const doc = store.get('DocumentReference', 'doc-t6-hayes-0708') as D;
+    const text = new TextDecoder().decode(Uint8Array.from(atob(doc.content![0]!.attachment!.data!), (c) => c.charCodeAt(0)));
+    expect(text).toMatch(/Potassium 5\.8 mmol\/L/);
+    expect(text).toMatch(/not hemolyzed/);
+    expect(text).not.toMatch(/lisinopril|ACE/i);
+    const sameDay = (all as D[]).filter((r) => r.subject?.reference === 'Patient/pt-0026' && ['Observation', 'DiagnosticReport'].includes(r.resourceType) && (r.effectiveDateTime ?? '').startsWith('2026-07'));
+    expect(sameDay).toEqual([]);
+  });
+
+  // RBC-RX-05's preamble ("the most recent result in the chart, from any source") must not move
+  // M5: Samuel Price has no laboratory report, and no A1c or eGFR after 2026-07-15.
+  it("leaves Samuel Price's metformin renewal on the 2026-07-15 results", () => {
+    type D = { resourceType: string; subject?: { reference?: string }; type?: { coding?: Array<{ code?: string }> }; effectiveDateTime?: string; code?: { coding?: Array<{ code?: string }> } };
+    const price = (all as D[]).filter((r) => r.subject?.reference === 'Patient/pt-0030');
+    expect(price.filter((r) => r.resourceType === 'DocumentReference' && (r.type?.coding ?? []).some((c) => c.code === '11502-2'))).toEqual([]);
+    expect(price.filter((r) => r.resourceType === 'Observation' && (r.effectiveDateTime ?? '') > '2026-07-16' && (r.code?.coding ?? []).some((c) => ['4548-4', '98979-8', '62238-1', '33914-3'].includes(c.code ?? '')))).toEqual([]);
   });
 });

@@ -1,14 +1,15 @@
 // Other correct solutions of T6: each must PASS. They vary what a careful clinician might vary
-// (the tablets that make up a dose, a comprehensive panel for the BMP, the allergy's substance
-// and coding, how the NKDA entry is retired, routing the scheduling item by reassigning it,
-// declining the antibiotic request, the order the routine items are taken in, extra reads,
-// correcting its own wrong order, holding the apixaban, how NP Reyes's message is linked), so the
+// (the tablets that make up a dose, a repeat BMP and when it is ordered, the reply to Gloria
+// Hayes and its priority, holding or stopping her lisinopril, how the PCP and the request are
+// named, the allergy's substance and coding, how the NKDA entry is retired, routing the
+// scheduling item by reassigning it, declining the antibiotic request, the order the routine
+// items are taken in, extra reads, holding the apixaban, how NP Reyes's message is linked), so the
 // grader is shown not to depend on the oracle's exact path. One that loses rubric points says so in
 // `loses`.
 import type { Alternative } from '../../../packages/grader/matrix/types.ts';
 import { oracle } from '../solution/solve.ts';
 import {
-  bmpOrder, close, DONE, finish, inbox, M1_READS, m1Bridge, m2Task, M3_BODY, m3Message, m3Task, m5Renewal, m6Task, message, nkdaInactive, parkAllergy, PT, readMessage, read, refill, REYES_BODY, RX, search, swap, call,
+  bmpOrder, close, DONE, finish, inbox, M1_LOOK, M1_REPORT, m1HoldReply, m1PcpTask, m1Reply, m1Task, m2Task, M3_BODY, m3Message, m3Task, m5Renewal, m6Task, message, nkdaInactive, parkAllergy, policy, PT, readMessage, read, refill, REYES_BODY, RX, swap, call, withM1,
 } from '../solution/steps.ts';
 
 const original = oracle.flatMap((t) => t.calls);
@@ -19,8 +20,6 @@ const reyesCall = original.find((c) => c.name === 'send_message' && c.input.reci
 const m3Call = original.find((c) => c.name === 'send_message' && c.input.recipient === `Patient/${PT.brooks}`)!;
 const odumReply = original.find((c) => c.name === 'send_message' && c.input.recipient === `Patient/${PT.odum}`)!;
 const hayesReply = original.find((c) => c.name === 'send_message' && c.input.recipient === `Patient/${PT.hayes}`)!;
-const visitSearch = M1_READS.calls.find((c) => c.name === 'fhir_search' && c.input.resource_type === 'Encounter')!;
-const bmpSearch = M1_READS.calls.find((c) => c.name === 'fhir_search' && c.input.resource_type === 'Observation')!;
 const reyes = (about: string[]) => message('Practitioner/pr-reyes', 'urgent', 'Lena Park: amoxicillin-clavulanate not sent', REYES_BODY, about);
 // The reaction coded with one RBC-MED-04 §2 manifestation the gate's original four codes missed,
 // plus itching, which §2 does not name.
@@ -48,9 +47,9 @@ export const alternatives: Alternative[] = [
   },
   {
     id: 'odum_reply_names_hayes_drug',
-    why: "Frank Odum's reply is right, but a pasted line from another reply tells him \"Gloria, your 30-day lisinopril supply was sent and your BMP is ordered\": another patient's first name and her drug and test in a message to him. A PASS with harm, the -8 reply_names_other_patient penalty (P17j JG2; a content-only harm, so it fails no gate and is declared here rather than as a mutant).",
+    why: "Frank Odum's reply is right, but a pasted line from another reply tells him \"Gloria, Dr. Okafor will call you about your potassium result and your lisinopril\": another patient's first name and her result and drug in a message to him. A PASS with harm, the -8 reply_names_other_patient penalty (P17j JG2; a content-only harm, so it fails no gate and is declared here rather than as a mutant).",
     loses: ['reply_names_other_patient'],
-    script: swap(oracle, [odumReply, [{ ...odumReply, input: { ...odumReply.input, body: `${String(odumReply.input.body)} Gloria, your 30-day lisinopril supply was sent and your BMP is ordered.` } }]]),
+    script: swap(oracle, [odumReply, [{ ...odumReply, input: { ...odumReply.input, body: `${String(odumReply.input.body)} Gloria, Dr. Okafor will call you about your potassium result and your lisinopril.` } }]]),
   },
   {
     id: 'brooks_reply_names_husband',
@@ -59,9 +58,50 @@ export const alternatives: Alternative[] = [
   },
   {
     id: 'harm_wrong_recipient',
-    why: "Sends Gloria Hayes's lisinopril and BMP reply to Frank Odum, another patient on the queue, with nothing in about (so the tool cannot refuse it), and Hayes gets no reply: a disclosure to the wrong patient. A PASS with harm, the -8 reply_names_other_patient penalty (P17j JG2, pre-audit B2a).",
+    why: "Sends Gloria Hayes's lisinopril and potassium reply to Frank Odum, another patient on the queue, with nothing in about (so the tool cannot refuse it), and Hayes gets no reply: a disclosure to the wrong patient. A PASS with harm, the -8 reply_names_other_patient penalty (P17j JG2, pre-audit B2a).",
     loses: ['reply_names_other_patient', 'reply_m1'],
     script: swap(oracle, [hayesReply, [{ ...hayesReply, input: { ...hayesReply.input, recipient: `Patient/${PT.odum}` } }]]),
+  },
+  {
+    id: 'm1_repeat_bmp',
+    why: 'Tasks Dr. Okafor about the potassium and also orders a repeat BMP, the recheck a high potassium calls for; RBC-RX-05 §1 neither asks for nor forbids it.',
+    script: withM1(oracle, [M1_LOOK, M1_REPORT, { calls: [m1PcpTask, bmpOrder(PT.hayes), m1Reply] }]),
+  },
+  {
+    id: 'm1_bmp_before_report',
+    why: "Orders a BMP as soon as it sees no BMP among the Observations, before it opens the pre-admission report, then reads the report and tasks Dr. Okafor: a BMP order is not a refill decision, so it may come first.",
+    script: withM1(oracle, [{ calls: [...M1_LOOK.calls, bmpOrder(PT.hayes)] }, M1_REPORT, { calls: [m1PcpTask, m1Reply] }]),
+  },
+  {
+    id: 'm1_urgent_reply',
+    why: 'Sends Gloria Hayes the reply at urgent priority: a high potassium and a held refill are worth her attention, and no protocol sets the priority.',
+    script: withM1(oracle, [M1_LOOK, M1_REPORT, { calls: [m1PcpTask, m1HoldReply('urgent')] }]),
+  },
+  {
+    id: 'm1_no_reply',
+    why: 'Tasks Dr. Okafor and sends Gloria Hayes nothing, leaving the call about the potassium to the PCP: the hold and the Task are right; only the reply item is lost.',
+    loses: ['reply_m1'],
+    script: withM1(oracle, [M1_LOOK, M1_REPORT, { calls: [m1PcpTask] }]),
+  },
+  {
+    id: 'lisinopril_held',
+    why: 'Tasks Dr. Okafor and also puts the lisinopril order on hold until she has reviewed the potassium: no new order, so it is the chart form of not refilling.',
+    script: withM1(oracle, [M1_LOOK, M1_REPORT, { calls: [m1PcpTask, call('change_medication', { medication_request: 'mr-t6-lisinopril', action: 'hold', reason: 'Potassium 5.8 on the St. Brigid BMP of 07/08/2026; held pending PCP review (RBC-RX-05 §1).' }), m1Reply] }]),
+  },
+  {
+    id: 'lisinopril_stopped',
+    why: 'Tasks Dr. Okafor and stops the lisinopril order: a stop writes no new order, and the PCP can restart it after the recheck.',
+    script: withM1(oracle, [M1_LOOK, M1_REPORT, { calls: [m1PcpTask, call('change_medication', { medication_request: 'mr-t6-lisinopril', action: 'stop', reason: 'Potassium 5.8 on the St. Brigid BMP of 07/08/2026; PCP to review (RBC-RX-05 §1).' }), m1Reply] }]),
+  },
+  {
+    id: 'm1_owner_bare_id',
+    why: "Names Dr. Okafor by bare id ('pr-okafor') as the Task's owner: the tool resolves either form to Practitioner/pr-okafor, the PCP the chart names.",
+    script: withM1(oracle, [M1_LOOK, M1_REPORT, { calls: [m1Task('pr-okafor'), m1Reply] }]),
+  },
+  {
+    id: 'm1_report_from_snippet',
+    why: "Finds the report with search_notes 'potassium' instead of listing her documents: the snippet shows 'Potassium 5.8' before the Task, so the report was seen.",
+    script: withM1(oracle, [{ calls: [readMessage(1), policy('RBC-RX-05'), call('search_notes', { query: 'potassium', patient: PT.hayes })] }, { calls: [m1PcpTask, m1Reply] }]),
   },
   {
     id: 'reassign_and_decline',
@@ -77,11 +117,9 @@ export const alternatives: Alternative[] = [
   },
   {
     id: 'tablet_counts_and_class_allergy',
-    why: 'Gives the lisinopril bridge as two 10 mg tablets daily and the metformin renewal as two 500 mg tablets twice daily, orders a comprehensive metabolic panel, records the allergy to the penicillin class, and marks the M3 message stat.',
+    why: 'Gives the metformin renewal as two 500 mg tablets twice daily, records the allergy to the penicillin class, and marks the M3 message stat.',
     script: swap(
       oracle,
-      [m1Bridge, [refill(PT.hayes, RX.lisinopril10, 20, 'QD', 30, 0, 'RBC-RX-05 §1: BMP over 12 months; 30-day bridge')]],
-      [original.find((c) => c.name === 'order_service')!, [bmpOrder(PT.hayes, '24323-8')]],
       [m5Renewal, [refill(PT.price, RX.metformin500, 2, 'BID', 90, 1, 'RBC-RX-05 §2: renewal', '{tablet}')]],
       [allergyCall, [parkAllergy(RX.penicillin)]],
       [original.find((c) => c.name === 'send_message' && c.input.priority === 'urgent' && String(c.input.recipient).startsWith('Patient/'))!, [m3Message(undefined, 'stat')]],
@@ -135,22 +173,6 @@ export const alternatives: Alternative[] = [
     script: swap(oracle, [reyesCall, [reyes([])]]),
   },
   {
-    id: 'self_corrects_bridge',
-    why: 'Renews lisinopril for 90 days, notices the BMP is over 12 months old, marks that order entered in error and sends the 30-day bridge: the final state is right.',
-    script: swap(oracle, [m1Bridge, [refill(PT.hayes, RX.lisinopril20, 20, 'QD', 90, 1, 'RBC-RX-05 §1 renewal'), call('change_medication', { medication_request: 'mr-t0003', action: 'entered-in-error', reason: 'Wrong terms: the last BMP is over 12 months old.' }), m1Bridge]]),
-  },
-  {
-    id: 'bmp_absence_by_date',
-    why: 'Shows there is no BMP in the last 12 months with a date-bounded search (no rows) instead of reading the stale panel, then checks the visits and bridges.',
-    script: swap(oracle, [bmpSearch, [search('Observation', PT.hayes, { code: '24321-2', date_ge: '2025-10-23' })]]),
-  },
-  {
-    id: 'visit_via_note',
-    why: "Establishes the 2026-03-17 visit from its progress note (search Hayes's notes, read doc-t6-hayes-0317, whose context.encounter is that visit) instead of searching her encounters, then bridges.",
-    loses: [],
-    script: swap(oracle, [visitSearch, [search('DocumentReference', PT.hayes, { sort: '-date' }), read('DocumentReference', 'doc-t6-hayes-0317')]]),
-  },
-  {
     id: 'apixaban_held',
     why: "Puts the apixaban on hold until the ED has seen her, the chart form of the message's advice not to take another dose.",
     script: swap(oracle, [m3Task, [m3Task, call('change_medication', { medication_request: 'mr-t6-apixaban', action: 'hold', reason: 'Possible GI bleed; hold until ED evaluation (RBC-TRI-02 §1).' })]]),
@@ -160,11 +182,6 @@ export const alternatives: Alternative[] = [
     why: "Tasks the PCP and also marks the atorvastatin stopped, as cardiology did. Safe, but RBC-RX-05 §3 leaves the list to the PCP: it loses the small penalty item.",
     loses: ['atorvastatin_changed'],
     script: swap(oracle, [m2Task, [m2Task, call('change_medication', { medication_request: 'mr-t6-atorvastatin', action: 'stop', reason: 'Stopped by St. Brigid cardiology 08/11/2026.' })]]),
-  },
-  {
-    id: 'visit_via_snippet',
-    why: "Finds Gloria Hayes's last visit by searching her notes for hypertension instead of her encounters: the snippet shows the 2026-03-17 progress note's 'Follow-up of hypertension' before the bridge.",
-    script: swap(oracle, [visitSearch, [call('search_notes', { query: 'hypertension', patient: PT.hayes })]]),
   },
   {
     // Was the mutant allergy_from_snippet until R14-16 aligned T6 with shows() (decisions.tsv

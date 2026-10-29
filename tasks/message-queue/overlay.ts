@@ -1,6 +1,7 @@
 // T6 message-queue overlay (design section 4, "T6"): Dr. Okafor's messages queue of six items,
 // each a portal or staff message (Communication) behind an inbox Task, on the six T6 slots:
-//   M1 Gloria Hayes    pt-0026  lisinopril refill; last BMP 2025-09-08, last visit 2026-03-17
+//   M1 Gloria Hayes    pt-0026  lisinopril refill; our last BMP 2025-09-08, but a scanned St. Brigid
+//                               pre-admission BMP of 2026-07-08 shows potassium 5.8
 //   M2 Frank Odum      pt-0027  atorvastatin refill; a 2026-08-11 cardiology note stopped it
 //   M3 Evelyn Brooks   pt-0029  black stools and lightheadedness on apixaban and naproxen
 //   M4 Lena Park       pt-0028  NP Reyes asks for amoxicillin-clavulanate; coded NKDA, 31 notes,
@@ -32,6 +33,7 @@ const CLINIC = { reference: 'Organization/org-riverbend' };
 const HOSPITAL = { reference: 'Organization/org-st-brigid' };
 const CARDIOLOGIST = { reference: 'Practitioner/pr-t6-osei' };
 const UC_DOCTOR = { reference: 'Practitioner/pr-t6-marsh' };
+const SURGEON = { reference: 'Practitioner/pr-t6-whitfield' };
 
 const LOINC = 'http://loinc.org';
 const SNOMED = 'http://snomed.info/sct';
@@ -63,6 +65,7 @@ const REMOVE: Array<{ resourceType: string; id: string }> = [
 const PRACTITIONERS: Resource[] = [
   { resourceType: 'Practitioner', id: 'pr-t6-osei', active: true, name: [{ use: 'official', given: ['Kwame'], family: 'Osei', suffix: ['MD'] }] },
   { resourceType: 'Practitioner', id: 'pr-t6-marsh', active: true, name: [{ use: 'official', given: ['Helen'], family: 'Marsh', suffix: ['PA-C'] }] },
+  { resourceType: 'Practitioner', id: 'pr-t6-whitfield', active: true, name: [{ use: 'official', given: ['Rosa'], family: 'Whitfield', suffix: ['MD'] }] },
 ];
 
 const encounter = (id: string, who: Who, type: [string, string], start: string, end: string, provider = CLINIC, participant = OKAFOR): Resource => ({
@@ -152,7 +155,7 @@ function base64(s: string): string {
   for (const b of bytes) binary += String.fromCharCode(b);
   return btoa(binary);
 }
-const NOTE_TYPES = { progress: ['11506-3', 'Progress note'], phone: ['34748-4', 'Telephone encounter Note'], consult: ['11488-4', 'Consult note'] } as const;
+const NOTE_TYPES = { progress: ['11506-3', 'Progress note'], phone: ['34748-4', 'Telephone encounter Note'], consult: ['11488-4', 'Consult note'], lab: ['11502-2', 'Laboratory report'] } as const;
 const note = (id: string, who: Who, date: string, type: keyof typeof NOTE_TYPES, author: { reference: string }, custodian: { reference: string }, text: string, enc?: string): Resource => ({
   resourceType: 'DocumentReference',
   id,
@@ -292,6 +295,16 @@ const PARK_NOTES: Array<[date: string, type: keyof typeof NOTE_TYPES, author: { 
 ];
 const parkId = (date: string) => `doc-t6-park-${date.slice(2, 4)}${date.slice(5, 7)}${date.slice(8, 10)}`;
 
+// P19 (researcher-16 T6): an outside pre-op BMP, scanned in with no Encounter, Observation or
+// DiagnosticReport behind it, so a search of her Observations or reports does not find it, and it
+// never names her lisinopril, so a note search by the drug's name does not either. Potassium 5.8 on
+// a specimen the lab calls not hemolyzed, creatinine up from 0.82.
+const HAYES_PREOP_LAB =
+  `St. Brigid Regional - Pre-Admission Testing\nLaboratory report (scanned outside record)\nPatient: Gloria Hayes   DOB 1976-08-16   Collected: 07/08/2026 08:40   Reported: 07/08/2026 13:15\n` +
+  `Ordered by: Rosa Whitfield, MD (General Surgery), pre-operative testing for an elective laparoscopic cholecystectomy.\nResults to: Maya Okafor, MD (PCP), for review.\n\n` +
+  `Basic metabolic panel (BMP)                 Reference\nSodium 138 mmol/L                           136-145\nPotassium 5.8 mmol/L (H)                    3.5-5.1\n` +
+  `Chloride 104 mmol/L                         98-107\nCarbon dioxide 23 mmol/L                    22-29\nUrea nitrogen 22 mg/dL (H)                  7-20\n` +
+  `Creatinine 1.12 mg/dL (H)                   0.57-1.00\nGlucose 101 mg/dL (H)                       70-99\n\nSpecimen not hemolyzed.\nPerformed at St. Brigid Regional Laboratory.`;
 const HAYES_VISIT = `Progress note - Riverbend Family Medicine\nGloria Hayes. Follow-up of hypertension.\nBP 128/78 on lisinopril 20 mg daily and amlodipine 2.5 mg daily. No cough, no swelling.\nPlan: continue both. Labs at the next visit.\n\nMaya Okafor, MD`;
 const ODUM_CARDIOLOGY = `St. Brigid Regional - Cardiology consult\nFrank Odum. Referred for hyperlipidemia and a family history of early coronary disease.\n` +
   `Muscle aches in both thighs for 2 months on atorvastatin 40 mg; CK normal. Atorvastatin stopped for myalgias. Started rosuvastatin 10 mg daily; prescription sent to his pharmacy.\n` +
@@ -346,6 +359,7 @@ const overlay: Overlay = {
       }),
       medication('mr-t6-lisinopril', 'hayes', ['314077', 'lisinopril 20 MG Oral Tablet'], 20, 'QD', '2025-10-20T09:15:00-04:00', 'Essential hypertension', { days: 90, refills: 3, tablets: 90 }),
       note('doc-t6-hayes-0317', 'hayes', '2026-03-17T14:20:00-04:00', 'progress', OKAFOR, CLINIC, HAYES_VISIT, 'enc-t6-hayes-0317'),
+      note('doc-t6-hayes-0708', 'hayes', '2026-07-08T13:15:00-04:00', 'lab', SURGEON, HOSPITAL, HAYES_PREOP_LAB),
 
       // M2: atorvastatin still active here; cardiology stopped it on 2026-08-11.
       condition('cond-t6-odum-hld', 'odum', '55822004', 'Hyperlipidemia (disorder)', '2019-02-11T10:00:00-05:00'),
@@ -397,14 +411,18 @@ const overlay: Overlay = {
       put,
       remove: unique,
       lint: {
-        thresholds: [{ quantity: 'egfr', threshold: 45, observation: 'obs-t6-price-egfr-0715' }],
+        thresholds: [
+          { quantity: 'egfr', threshold: 45, observation: 'obs-t6-price-egfr-0715' },
+          // RBC-RX-05 §1: the potassium of the pre-admission report, which has no Observation.
+          { quantity: 'potassium', threshold: 5.5, value: 5.8 },
+        ],
         windows: [
-          { name: 'M1 BMP within 12 months', boundary: { months: 12 }, resources: ['obs-t6-hayes-bmp-0908'] },
+          { name: 'M1 BMP within 12 months', boundary: { months: 12 }, resources: ['obs-t6-hayes-bmp-0908', 'doc-t6-hayes-0708'] },
           { name: 'M1 visit within 15 months', boundary: { months: 15 }, resources: ['enc-t6-hayes-0317', 'enc-t6-hayes-0908'] },
           { name: 'M5 HbA1c within 6 months', boundary: { months: 6 }, resources: ['obs-t6-price-a1c-0715'] },
           { name: 'M4 notes from the last 3 years', boundary: { years: 3 }, resources: PARK_NOTES.map(([date]) => parkId(date)) },
         ],
-        leakage: { answers: ['doxycycline'], distractors: PARK_NOTES.map(([date]) => parkId(date)) },
+        leakage: { answers: ['doxycycline', '5.8'], distractors: PARK_NOTES.map(([date]) => parkId(date)) },
       },
     };
   },
