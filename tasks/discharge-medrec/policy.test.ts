@@ -14,6 +14,7 @@ import { noteText, ORACLE_NOTE } from './solution/steps.ts';
 
 const store = await loadStore(matrixEnv().world);
 const all = [...store.resources()];
+const decode = (data: string | undefined) => new TextDecoder().decode(Uint8Array.from(atob(data ?? ''), (c) => c.charCodeAt(0)));
 const world: WorldView = { get: (type, id) => store.get(type, id), all: (type) => (type === undefined ? all : all.filter((r) => r.resourceType === type)) };
 
 describe('discharge-medrec', () => {
@@ -78,5 +79,22 @@ describe('discharge-medrec', () => {
   it('flags a note that uses the March 2025 summary by any name, and not the oracle note', () => {
     for (const t of ['Per the March 2025 summary furosemide stays at 20 mg.', 'Per the 3/6 discharge summary.', "Per last year's discharge summary, KCl continues.", 'See doc-t4-dc-2025.', 'Echocardiogram in 3 months.', 'Potassium chloride 20 mEq daily: start.', 'Per the older St. Brigid summary.']) expect(OLD_SUMMARY.test(t), t).toBe(true);
     expect(OLD_SUMMARY.test(noteText(ORACLE_NOTE))).toBe(false);
+  });
+
+  // R14-07 (P18o): L2, the post-discharge BMP is in the chart only as the outside lab's report,
+  // so §2's condition is read from that document; L1, the pantoprazole line carries no marker and
+  // the substitution is stated in its own section of the summary.
+  it('reads the post-discharge creatinine from the outside lab report and the substitution off the medication line', () => {
+    const after = all.filter((r) => r.resourceType === 'Observation' && r.subject?.reference === 'Patient/pt-0005' && (r.code?.coding ?? []).some((c) => c.code === '2160-0') && Date.parse(r.effectiveDateTime ?? '') > Date.parse('2026-10-19T11:02:00-04:00'));
+    expect(after.map((r) => r.id)).toEqual([]);
+    const d = derive(world) as unknown as typeof expected;
+    expect(d.scr).toEqual({ id: 'DocumentReference/doc-t4-lab-1021', mg_dl: 1.32, threshold: 1.5, line: 'Creatinine 1.32 mg/dL' });
+    expect(d.lisinopril.action).toBe('resume');
+    const summary = store.get('DocumentReference', 'doc-t4-dc-1019') as Extract<(typeof all)[number], { resourceType: 'DocumentReference' }>;
+    const lines = decode(summary.content[0]!.attachment.data).split('\n');
+    const panto = lines.filter((l) => /pantoprazole/i.test(l));
+    expect(panto.find((l) => l.startsWith('- '))).toBe('- Pantoprazole 40 mg by mouth daily.');
+    expect(panto.some((l) => !l.startsWith('- ') && /formulary substitution/i.test(l) && /omeprazole/i.test(l))).toBe(true);
+    expect(d.not_ordered).toEqual(['pantoprazole']);
   });
 });
