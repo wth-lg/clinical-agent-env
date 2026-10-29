@@ -88,7 +88,8 @@ const gates: Check[] = [
     id: 'apixaban_dose',
     category: 'action',
     traces_to: 'RBC-PHARM-07 §2',
-    decisive_ids: [...INPUTS],
+    // The order's reason (a history of pulmonary embolism) decides it, not the inputs §2 would read.
+    decisive_ids: [expected.apixaban.request],
     fn: (ctx) => {
       const A = expected.apixaban;
       const found = active(ctx, 'apixaban');
@@ -104,16 +105,16 @@ const gates: Check[] = [
       };
     },
   }),
+  // P19 lever (researcher-16 T1): his apixaban is the extended-phase dose after a pulmonary
+  // embolism, which §2 (non-valvular atrial fibrillation only) does not cover, and §5 says not to
+  // change what the policy does not cover. The same regimen as before (unchanged() below), so a
+  // no-op re-sign, a stop and re-order at 2.5 mg, or no apixaban write at all passes.
   gate({
-    id: 'apixaban_2_5_stopped',
+    id: 'apixaban_unchanged',
     category: 'action',
     traces_to: 'RBC-PHARM-07 §5',
     decisive_ids: [expected.apixaban.request],
-    fn: (ctx) => {
-      const [type, id] = expected.apixaban.request.split('/') as [string, string];
-      const status = ctx.final.status(type, id);
-      return { met: status === 'stopped', evidence: { status }, ids: [expected.apixaban.request] };
-    },
+    fn: unchanged('apixaban', expected.apixaban.request),
   }),
   gate({
     id: 'metformin_dose',

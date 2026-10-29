@@ -7,6 +7,7 @@ Use the patient's most recent valid serum creatinine (SCr) and most recent measu
 
 §2 Apixaban (non-valvular atrial fibrillation)
 Adapted from the apixaban prescribing information.
+This section applies to apixaban prescribed for non-valvular atrial fibrillation.
 Dose criteria: age 80 years or older; body weight 60 kg or less; SCr 1.5 mg/dL or higher.
 At least two criteria met: apixaban 2.5 mg by mouth twice daily.
 Otherwise: apixaban 5 mg by mouth twice daily.

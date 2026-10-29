@@ -5,12 +5,16 @@
 import { NOW_DATE } from '../../packages/env/clock.ts';
 import type { Json } from '../../packages/grader/check.ts';
 import type { WorldView } from '../../packages/grader/matrix/types.ts';
-import { dailyDose, isActive, isDrug, quantity, type MedicationRequest } from '../../packages/grader/normalize.ts';
+import { dailyDose, dosesPerDay, isActive, isDrug, quantity, type MedicationRequest } from '../../packages/grader/normalize.ts';
 
 const MRN = '4410-22';
 const LOINC = 'http://loinc.org';
 const SCR = '2160-0';
 const WEIGHT = '29463-7';
+const SNOMED = 'http://snomed.info/sct';
+// Atrial fibrillation (disorder), the problem §2's indication is drawn from.
+const AF = '49436004';
+const NVAF_TEXT = /\b(?:non-?valvular atrial fibrillation|NVAF)\b/i;
 
 type R = Readonly<Record<string, unknown>> & { resourceType: string; id?: string };
 type Obs = R & { status?: string; code?: { coding?: Array<{ system?: string; code?: string }> }; subject?: { reference?: string }; effectiveDateTime?: string; valueQuantity?: { value?: number; unit?: string; code?: string } };
@@ -68,9 +72,21 @@ export function derive(world: WorldView): Json {
   };
   const daily = (m: MedicationRequest) => dailyDose(m)!.value;
 
-  // §2
+  // §2 applies only to apixaban for non-valvular atrial fibrillation: the order's reason says so,
+  // or the patient has an active atrial fibrillation problem. Otherwise §5 leaves it unchanged.
+  const apixaban = one('apixaban');
+  const conditions = (world.all('Condition') as ReadonlyArray<R & { subject?: { reference?: string }; clinicalStatus?: { coding?: Array<{ code?: string }> }; code?: { coding?: Array<{ system?: string; code?: string }> } }>).filter(
+    (c) => c.subject?.reference === ref && (c.clinicalStatus?.coding ?? []).some((x) => x.code === 'active'),
+  );
+  const reasons = ((apixaban as { reasonCode?: Array<{ text?: string }> }).reasonCode ?? []).map((c) => c.text ?? '');
+  const nvaf = reasons.some((t) => NVAF_TEXT.test(t)) || conditions.some((c) => (c.code?.coding ?? []).some((x) => x.system === SNOMED && x.code === AF));
+  const apixabanPerDay = dosesPerDay(apixaban.dosageInstruction![0]!.timing!.repeat!)!;
+  const apixabanNow = daily(apixaban) / apixabanPerDay;
   const criteria = { age: age >= 80, weight: kg <= 60, scr: mgdl >= 1.5 };
   const apixabanMg = Object.values(criteria).filter(Boolean).length >= 2 ? 2.5 : 5;
+  const apixabanRule = nvaf
+    ? { action: apixabanMg > apixabanNow ? 'increase' : apixabanMg < apixabanNow ? 'reduce' : 'unchanged', nvaf, criteria, dose_mg: apixabanMg, per_day: 2 }
+    : { action: 'unchanged', nvaf, dose_mg: apixabanNow, per_day: apixabanPerDay };
 
   // §3
   const metformin = one('metformin');
@@ -86,7 +102,7 @@ export function derive(world: WorldView): Json {
   const gabapentinNow = daily(gabapentin);
   const gabapentinAction = gabapentinNow > band[1] ? 'reduce' : gabapentinNow < band[0] ? 'increase' : 'unchanged';
 
-  const covered = new Set([one('apixaban').id, metformin.id, gabapentin.id]);
+  const covered = new Set([apixaban.id, metformin.id, gabapentin.id]);
   return {
     patient: ref,
     patient_name: [...(name?.given ?? []), name?.family ?? ''].join(' ').trim(),
@@ -96,7 +112,7 @@ export function derive(world: WorldView): Json {
     disregarded: scrs.filter((o) => !valid(o)).map((o) => `Observation/${o.id}`),
     egfr: round(egfr, 1),
     crcl: round(crcl, 1),
-    apixaban: { request: `MedicationRequest/${one('apixaban').id}`, criteria, dose_mg: apixabanMg, per_day: 2 },
+    apixaban: { request: `MedicationRequest/${apixaban.id}`, ...apixabanRule },
     metformin: { request: `MedicationRequest/${metformin.id}`, ...metforminRule },
     gabapentin: { request: `MedicationRequest/${gabapentin.id}`, action: gabapentinAction, daily_mg: { min: band[0], max: band[1] }, per_day: band[2] },
     untouched: meds.filter((m) => !covered.has(m.id)).map((m) => `MedicationRequest/${m.id}`).sort(),

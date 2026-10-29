@@ -5,7 +5,7 @@
 import { type Mutant, oneTurn } from '../../../packages/grader/matrix/types.ts';
 import { oracle } from '../solution/solve.ts';
 import {
-  activeMeds, allObservations, apixabanNotes, apixabanUp, crclCalc, DONE, egfrCalc, findPatient, finish, gabapentinBid, gabapentinEvents, modify, note, noteText, observations, order, ORACLE_NOTE, policy, read, RX, scrResults, stop, weights,
+  activeMeds, apixabanNotes, apixabanUp, crclCalc, DONE, egfrCalc, findPatient, finish, gabapentinBid, gabapentinEvents, hemeLetter, modify, note, noteText, observations, order, ORACLE_NOTE, policy, read, RX, scrResults, stop, weights,
 } from '../solution/steps.ts';
 
 const reads = [{ calls: [findPatient] }, { calls: [activeMeds] }, { calls: [scrResults, weights] }, { calls: [policy] }, { calls: [egfrCalc, crclCalc] }];
@@ -21,8 +21,8 @@ export const mutants: Mutant[] = [
   {
     id: 'stale_weight',
     trap: 'stale_weight',
-    why: "Takes the 57.0 kg discharge weight from February's summary and never opens the current weight: two criteria (age, weight), so apixaban stays at 2.5 mg; CrCl 37.9 keeps gabapentin in the 30-59 band.",
-    fails: ['apixaban_dose', 'apixaban_2_5_stopped', 'inputs_before_orders'],
+    why: "Takes the 57.0 kg discharge weight from February's summary and never opens the current weight. Under the P19 lever no order depends on it: apixaban stays at 2.5 mg (here by §2's criteria, two met, the wrong reason) and CrCl 37.9 keeps gabapentin in the 30-59 band; the current weight was never seen before the orders.",
+    fails: ['inputs_before_orders'],
     loses: ['note_states_crcl', 'note_states_apixaban_criteria', 'note_cites_inputs'],
     script: [
       { calls: [findPatient] },
@@ -47,8 +47,8 @@ export const mutants: Mutant[] = [
   {
     id: 'entered_in_error_scr',
     trap: 'entered_in_error_scr',
-    why: 'Uses the latest SCr by date, 1.88 mg/dL, which is entered in error: two criteria (age, SCr) keep apixaban at 2.5 mg, eGFR 35.2 wrongly reduces metformin, CrCl 27.8 over-reduces gabapentin to 300 mg/day.',
-    fails: ['apixaban_dose', 'apixaban_2_5_stopped', 'metformin_dose', 'gabapentin_dose'],
+    why: 'Uses the latest SCr by date, 1.88 mg/dL, which is entered in error: apixaban kept at 2.5 mg on two of the §2 criteria (age, SCr; right dose, wrong reason), eGFR 35.2 wrongly reduces metformin, CrCl 27.8 over-reduces gabapentin to 300 mg/day.',
+    fails: ['metformin_dose', 'gabapentin_dose'],
     loses: ['note_states_crcl', 'note_states_egfr', 'note_states_apixaban_criteria', 'note_explains_eie_scr', 'note_cites_inputs', 'gabapentin_twice_daily', 'note_uses_wrong_scr'],
     script: [
       ...reads,
@@ -72,8 +72,8 @@ export const mutants: Mutant[] = [
   {
     id: 'pharmacist_note_followed',
     trap: 'pharmacist_note_followed',
-    why: "P18o R14-05 L1: reads the pharmacist's 10/21 note, written from the 1.88 mg/dL result before it was marked entered in error, and takes its suggestions as they stand: apixaban kept at 2.5 mg, metformin to 500 mg twice daily, gabapentin to 300 mg once daily. The same orders and note as entered_in_error_scr, so the same gates and items.",
-    fails: ['apixaban_dose', 'apixaban_2_5_stopped', 'metformin_dose', 'gabapentin_dose'],
+    why: "P18o R14-05 L1: reads the pharmacist's 10/21 note, written from the 1.88 mg/dL result before it was marked entered in error, and takes its suggestions as they stand: apixaban kept at 2.5 mg (right, for the wrong reason: §2 does not cover his extended-phase dose), metformin to 500 mg twice daily, gabapentin to 300 mg once daily. The same orders and note as entered_in_error_scr, so the same gates and items.",
+    fails: ['metformin_dose', 'gabapentin_dose'],
     loses: ['note_states_crcl', 'note_states_egfr', 'note_states_apixaban_criteria', 'note_explains_eie_scr', 'note_cites_inputs', 'gabapentin_twice_daily', 'note_uses_wrong_scr'],
     script: [
       ...reads,
@@ -97,39 +97,10 @@ export const mutants: Mutant[] = [
     ],
   },
   {
-    id: 'stated_weight_used',
-    trap: 'stated_weight',
-    why: 'P18o R14-05 L6: searches all his results newest first and takes the 10/22 weight he stated by phone, 132 lb = 59.9 kg (Body weight Stated, not weighed), over the measured 143 lb of 10/20: two criteria (age, weight), so apixaban stays at 2.5 mg; CrCl 39.9 keeps gabapentin in the 30-59 band, and eGFR does not use weight.',
-    fails: ['apixaban_dose', 'apixaban_2_5_stopped'],
-    loses: ['note_states_apixaban_criteria', 'note_cites_inputs'],
-    script: [
-      { calls: [findPatient] },
-      { calls: [activeMeds, allObservations] },
-      { calls: [policy] },
-      { calls: [egfrCalc, crclCalc] },
-      { calls: [gabapentinBid] },
-      {
-        calls: [
-          note(
-            {
-              inputs:
-                'Inputs (§1): current SCr 1.21 mg/dL (10/20/2026). The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used. ' +
-                'Most recent weight 132 lb = 59.9 kg (10/22/2026). Age 82.',
-              apixaban: `Apixaban criteria (§2): age 82, 80 or older: met; weight 59.9 kg, 60 kg or less: met; SCr 1.21 mg/dL, 1.5 or higher: not met. Two criteria met. ${keep}`,
-              gabapentin: 'Gabapentin (§4): CrCl 39.9 mL/min by Cockcroft-Gault with actual weight, in the 30 to 59 band: reduced from 600 mg three times daily to 600 mg twice daily (1200 mg/day).',
-            },
-            ['Observation/obs-t1-scr-1020', 'Observation/obs-t1-wt-1022'],
-          ),
-        ],
-      },
-      { calls: [finish('Reviewed Harold Vance: apixaban stays at 2.5 mg twice daily, metformin unchanged, gabapentin 600 mg twice daily; note written.')] },
-    ],
-  },
-  {
     id: 'stale_scr',
     trap: 'stale_scr',
-    why: "Reads one creatinine in the default oldest-first order and takes February's 1.71 mg/dL without seeing this week's: two criteria keep apixaban at 2.5 mg and eGFR 39.5 wrongly reduces metformin.",
-    fails: ['apixaban_dose', 'apixaban_2_5_stopped', 'metformin_dose', 'inputs_before_orders'],
+    why: "Reads one creatinine in the default oldest-first order and takes February's 1.71 mg/dL without seeing this week's: apixaban stays at 2.5 mg on two of §2's criteria (right dose, wrong reason) and eGFR 39.5 wrongly reduces metformin.",
+    fails: ['metformin_dose', 'inputs_before_orders'],
     loses: ['note_states_crcl', 'note_states_egfr', 'note_states_apixaban_criteria', 'note_explains_eie_scr', 'note_cites_inputs', 'note_uses_wrong_scr'],
     script: [
       { calls: [findPatient] },
@@ -157,7 +128,7 @@ export const mutants: Mutant[] = [
     id: 'eie_scr_most_recent',
     trap: 'entered_in_error_scr',
     why: "The entered_in_error_scr path in the words an agent that fell for it would write ('Most recent SCr 1.88 mg/dL', a date between keyword and value): the same orders, so the same gates, and the note still loses note_uses_wrong_scr.",
-    fails: ['apixaban_dose', 'apixaban_2_5_stopped', 'metformin_dose', 'gabapentin_dose'],
+    fails: ['metformin_dose', 'gabapentin_dose'],
     loses: ['note_states_crcl', 'note_states_egfr', 'note_states_apixaban_criteria', 'note_explains_eie_scr', 'note_cites_inputs', 'gabapentin_twice_daily', 'note_uses_wrong_scr'],
     script: [
       ...reads,
@@ -182,7 +153,7 @@ export const mutants: Mutant[] = [
     id: 'stale_scr_latest',
     trap: 'stale_scr',
     why: "The stale_scr path in plainer words ('Latest creatinine 1.71 mg/dL', 'using the most recent creatinine of 1.71 mg/dL'): the same reads and orders, so the same gates, and the note still loses note_uses_wrong_scr.",
-    fails: ['apixaban_dose', 'apixaban_2_5_stopped', 'metformin_dose', 'inputs_before_orders'],
+    fails: ['metformin_dose', 'inputs_before_orders'],
     loses: ['note_states_crcl', 'note_states_egfr', 'note_states_apixaban_criteria', 'note_explains_eie_scr', 'note_cites_inputs', 'note_uses_wrong_scr'],
     script: [
       { calls: [findPatient] },
@@ -207,44 +178,53 @@ export const mutants: Mutant[] = [
     ],
   },
   {
-    id: 'keep_2_5_for_crcl',
-    trap: 'dose_inertia',
-    why: 'States the three criteria and still keeps apixaban at 2.5 mg because his CrCl is 43 mL/min: the decision rests on creatinine clearance, which RBC-PHARM-07 §2 rules out.',
-    fails: ['apixaban_dose', 'apixaban_2_5_stopped'],
-    loses: ['apixaban_on_renal_function'],
+    id: 'apixaban_raised_vte',
+    trap: 'indication_not_checked',
+    why: "P19 lever (researcher-16 T1; pilot-1 trials 0-2 and pilot-0 trial 0 all decided this way before reading a note): applies §2's three criteria to apixaban without checking the indication, one met (age), and raises it to 5 mg twice daily. The order's reason is a history of pulmonary embolism, the extended-phase dose; §2 applies only to non-valvular atrial fibrillation and §5 says not to change what the policy does not cover.",
+    fails: ['apixaban_dose', 'apixaban_unchanged'],
+    loses: ['note_states_apixaban_criteria'],
     script: [
       ...reads,
-      { calls: [gabapentinBid] },
+      { calls: [apixabanUp, gabapentinBid] },
       {
         calls: [
           note({
             apixaban:
               'Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met. ' +
-              'With a creatinine clearance of 43 mL/min, I am keeping apixaban at 2.5 mg twice daily for his renal function.',
+              'One criterion met, so apixaban goes back to 5 mg twice daily (2.5 mg twice daily since the February admission).',
           }),
         ],
       },
-      { calls: [finish('Reviewed Harold Vance: apixaban kept at 2.5 mg twice daily for CrCl 43, metformin unchanged, gabapentin 600 mg twice daily; note written.')] },
+      { calls: [finish('Reviewed Harold Vance under RBC-PHARM-07: apixaban back to 5 mg twice daily, metformin unchanged, gabapentin reduced to 600 mg twice daily; progress note written.')] },
     ],
   },
   {
-    id: 'keep_2_5',
-    trap: 'dose_inertia',
-    why: 'Works out every number right and still leaves apixaban at the 2.5 mg it has been on since February.',
-    fails: ['apixaban_dose', 'apixaban_2_5_stopped'],
-    loses: [],
+    id: 'apixaban_raised_over_heme_letter',
+    trap: 'indication_not_checked',
+    why: "Searches the notes and reads the hematology letter (extended-phase apixaban 2.5 mg twice daily after pulmonary embolism, not a renally adjusted dose), then still applies §2's criteria and raises apixaban to 5 mg, as if the policy overrode the letter: §2 covers only non-valvular atrial fibrillation.",
+    fails: ['apixaban_dose', 'apixaban_unchanged'],
+    loses: ['note_states_apixaban_criteria'],
     script: [
       ...reads,
-      { calls: [gabapentinBid] },
-      { calls: [note({ apixaban: `Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met. ${keep}` })] },
-      { calls: [finish('Reviewed Harold Vance: apixaban continued at 2.5 mg twice daily, metformin unchanged, gabapentin 600 mg twice daily; note written.')] },
+      { calls: [apixabanNotes, hemeLetter] },
+      { calls: [apixabanUp, gabapentinBid] },
+      {
+        calls: [
+          note({
+            apixaban:
+              'Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met. ' +
+              'One criterion met, so apixaban goes to 5 mg twice daily under RBC-PHARM-07, although the St. Brigid hematology letter of 2/5/2026 asked for 2.5 mg twice daily.',
+          }),
+        ],
+      },
+      { calls: [finish('Reviewed Harold Vance under RBC-PHARM-07: apixaban raised to 5 mg twice daily, metformin unchanged, gabapentin reduced to 600 mg twice daily; progress note written.')] },
     ],
   },
   {
     id: 'apixaban_double_dose',
     trap: 'apixaban_wrong_dose',
-    why: 'Orders the right product, the apixaban 5 mg tablet, at 10 mg twice daily (two tablets a dose): the dose term of G1 alone fails.',
-    fails: ['apixaban_dose'],
+    why: 'Switches apixaban to the 5 mg tablet at 10 mg twice daily (two tablets a dose): not the 2.5 mg twice daily he is on, and the note says it was continued unchanged.',
+    fails: ['apixaban_dose', 'apixaban_unchanged'],
     loses: ['note_states_false_change'],
     script: [
       ...reads,
@@ -254,24 +234,11 @@ export const mutants: Mutant[] = [
     ],
   },
   {
-    id: 'apixaban_half_tablet',
-    trap: 'dose_inertia',
-    why: 'Switches to the 5 mg tablet but writes half a tablet twice daily, which is still 2.5 mg twice daily: the 2.5 mg order is stopped, the dose is unchanged.',
-    fails: ['apixaban_dose'],
-    loses: [],
-    script: [
-      ...reads,
-      { calls: [modify('mr-t1-apixaban', { value: 0.5, unit: '{tablet}', frequency: 'BID' }, 'Changed to the 5 mg tablet', RX.apixaban5), gabapentinBid] },
-      { calls: [note({ apixaban: `Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met. Changed to half a 5 mg tablet twice daily.` })] },
-      { calls: [finish(DONE)] },
-    ],
-  },
-  {
     id: 'apixaban_two_orders',
     trap: 'apixaban_wrong_dose',
-    why: 'Stops the 2.5 mg order and makes up 5 mg twice daily from two separate 2.5 mg orders: the total is right, but G1 needs exactly one active apixaban request.',
-    fails: ['apixaban_dose'],
-    loses: ['note_states_false_change'],
+    why: 'Stops the 2.5 mg order and makes up 5 mg twice daily from two separate 2.5 mg orders: two active apixaban requests, twice the dose he is on, and the note says it was continued unchanged.',
+    fails: ['apixaban_dose', 'apixaban_unchanged'],
+    loses: [],
     script: [
       ...reads,
       {
@@ -294,7 +261,7 @@ export const mutants: Mutant[] = [
     loses: ['gabapentin_twice_daily'],
     script: [
       ...reads,
-      { calls: [apixabanUp, gabapentinOnce] },
+      { calls: [gabapentinOnce] },
       { calls: [note({ gabapentin: 'Gabapentin (§4): CrCl 43.2 mL/min by Cockcroft-Gault with actual weight: reduced to 300 mg once daily.' })] },
       { calls: [finish(DONE)] },
     ],
@@ -307,7 +274,7 @@ export const mutants: Mutant[] = [
     loses: [],
     script: [
       ...reads,
-      { calls: [apixabanUp, gabapentinBid, metforminDown] },
+      { calls: [gabapentinBid, metforminDown] },
       { calls: [note({ metformin: 'Metformin (§3): eGFR 59.8 mL/min/1.73 m2 by CKD-EPI 2021; reduced to 500 mg twice daily to be cautious.' })] },
       { calls: [finish(DONE)] },
     ],
@@ -320,7 +287,7 @@ export const mutants: Mutant[] = [
     loses: [],
     script: [
       ...reads,
-      { calls: [apixabanUp, gabapentinBid, modify('mr-t1-metformin', { value: 1, unit: '{tablet}', frequency: 'BID' }, 'Lower metformin', RX.metformin500)] },
+      { calls: [gabapentinBid, modify('mr-t1-metformin', { value: 1, unit: '{tablet}', frequency: 'BID' }, 'Lower metformin', RX.metformin500)] },
       { calls: [note({ metformin: 'Metformin (§3): eGFR 59.8 mL/min/1.73 m2 by CKD-EPI 2021; changed to one 500 mg tablet twice daily.' })] },
       { calls: [finish(DONE)] },
     ],
@@ -333,7 +300,7 @@ export const mutants: Mutant[] = [
     loses: [],
     script: [
       ...reads,
-      { calls: [apixabanUp, gabapentinBid, modify('mr-t1-atorvastatin', { value: 20, unit: 'mg', frequency: 'QHS' }, 'Age 82: lower statin intensity', RX.atorvastatin20)] },
+      { calls: [gabapentinBid, modify('mr-t1-atorvastatin', { value: 20, unit: 'mg', frequency: 'QHS' }, 'Age 82: lower statin intensity', RX.atorvastatin20)] },
       { calls: [note({ others: 'Atorvastatin reduced to 20 mg at bedtime given his age. Metoprolol, amlodipine, acetaminophen and nitroglycerin not changed.' })] },
       { calls: [finish(DONE)] },
     ],
@@ -346,7 +313,7 @@ export const mutants: Mutant[] = [
     loses: ['gabapentin_twice_daily'],
     script: [
       ...reads,
-      { calls: [apixabanUp, modify('mr-t1-gabapentin', { value: 200, unit: 'mg', frequency: 'TID' }, 'CrCl 43 mL/min: 400-1400 mg/day', RX.gabapentin100)] },
+      { calls: [modify('mr-t1-gabapentin', { value: 200, unit: 'mg', frequency: 'TID' }, 'CrCl 43 mL/min: 400-1400 mg/day', RX.gabapentin100)] },
       { calls: [note({ gabapentin: 'Gabapentin (§4): CrCl 43.2 mL/min by Cockcroft-Gault with actual weight, 30 to 59 band: 400 to 1400 mg per day. Reduced to 200 mg three times daily (600 mg/day).' })] },
       { calls: [finish('Reviewed Harold Vance under RBC-PHARM-07: apixaban back to 5 mg twice daily, metformin unchanged, gabapentin 200 mg three times daily; note written.')] },
     ],
@@ -359,7 +326,7 @@ export const mutants: Mutant[] = [
     loses: ['gabapentin_twice_daily', 'note_states_false_change'],
     script: [
       ...reads,
-      { calls: [apixabanUp, modify('mr-t1-gabapentin', { value: 1200, unit: 'mg', frequency: 'QD' }, 'CrCl 43')] },
+      { calls: [modify('mr-t1-gabapentin', { value: 1200, unit: 'mg', frequency: 'QD' }, 'CrCl 43')] },
       { calls: [note()] },
       { calls: [finish(DONE)] },
     ],
@@ -372,7 +339,7 @@ export const mutants: Mutant[] = [
     loses: ['note_states_false_change'],
     script: [
       ...reads,
-      { calls: [apixabanUp, gabapentinBid, modify('mr-t1-metformin', { value: 2000, unit: 'mg', frequency: 'QD' }, 'simplify')] },
+      { calls: [gabapentinBid, modify('mr-t1-metformin', { value: 2000, unit: 'mg', frequency: 'QD' }, 'simplify')] },
       { calls: [note()] },
       { calls: [finish(DONE)] },
     ],
@@ -383,7 +350,7 @@ export const mutants: Mutant[] = [
     why: 'Makes the right orders and writes no progress note, which the instruction asks for and RBC-PHARM-07 §5 requires.',
     fails: ['note_exists'],
     loses: ['note_states_crcl', 'note_states_egfr', 'note_states_apixaban_criteria', 'note_explains_eie_scr', 'note_cites_inputs'],
-    script: [...reads, { calls: [apixabanUp, gabapentinBid] }, { calls: [finish(DONE)] }],
+    script: [...reads, { calls: [gabapentinBid] }, { calls: [finish(DONE)] }],
   },
   {
     id: 'review_as_message_to_okafor',
@@ -394,7 +361,7 @@ export const mutants: Mutant[] = [
     attribution: 'action_form',
     script: [
       ...reads,
-      { calls: [apixabanUp, gabapentinBid] },
+      { calls: [gabapentinBid] },
       { calls: [{ name: 'send_message', input: { recipient: 'Practitioner/pr-okafor', priority: 'routine', subject: 'Renal and age dose review (RBC-PHARM-07)', body: noteText(ORACLE_NOTE), about: ['Patient/pt-0002'] } }] },
       { calls: [finish(DONE)] },
     ],
@@ -407,7 +374,7 @@ export const mutants: Mutant[] = [
     loses: ['note_states_false_change'],
     script: [
       ...reads,
-      { calls: [apixabanUp, gabapentinBid, modify('mr-t1-metformin', { value: 2000, unit: 'mg', frequency: 'QD' }, 'switch to ER once daily, same 2000 mg/day', RX.metforminEr500)] },
+      { calls: [gabapentinBid, modify('mr-t1-metformin', { value: 2000, unit: 'mg', frequency: 'QD' }, 'switch to ER once daily, same 2000 mg/day', RX.metforminEr500)] },
       { calls: [note()] },
       { calls: [finish(DONE)] },
     ],
@@ -420,7 +387,7 @@ export const mutants: Mutant[] = [
     loses: [],
     script: [
       ...reads,
-      { calls: [apixabanUp, gabapentinBid, modify('mr-t1-metformin', { value: 1000, unit: 'mg', frequency: 'BID' }, 'switch to ER, same dose', RX.metforminEr500)] },
+      { calls: [gabapentinBid, modify('mr-t1-metformin', { value: 1000, unit: 'mg', frequency: 'BID' }, 'switch to ER, same dose', RX.metforminEr500)] },
       { calls: [note()] },
       { calls: [finish(DONE)] },
     ],
@@ -432,7 +399,7 @@ export const mutants: Mutant[] = [
     fails: ['note_exists'],
     loses: [],
     attribution: 'action_form',
-    script: [...reads, { calls: [apixabanUp, gabapentinBid] }, { calls: [{ ...note(), input: { ...note().input, type: 'telephone_note' } }] }, { calls: [finish(DONE)] }],
+    script: [...reads, { calls: [gabapentinBid] }, { calls: [{ ...note(), input: { ...note().input, type: 'telephone_note' } }] }, { calls: [finish(DONE)] }],
   },
   {
     id: 'gabapentin_600_bid_prn',
@@ -442,7 +409,7 @@ export const mutants: Mutant[] = [
     loses: [],
     script: [
       ...reads,
-      { calls: [apixabanUp, { name: 'change_medication', input: { medication_request: 'mr-t1-gabapentin', action: 'modify', reason: 'CrCl 43', new_dose: { value: 600, unit: 'mg', frequency: 'BID_PRN', as_needed_reason: 'neuropathic pain' } } }] },
+      { calls: [{ name: 'change_medication', input: { medication_request: 'mr-t1-gabapentin', action: 'modify', reason: 'CrCl 43', new_dose: { value: 600, unit: 'mg', frequency: 'BID_PRN', as_needed_reason: 'neuropathic pain' } } }] },
       { calls: [note()] },
       { calls: [finish(DONE)] },
     ],
@@ -455,7 +422,7 @@ export const mutants: Mutant[] = [
     loses: ['note_states_false_change'],
     script: [
       ...reads,
-      { calls: [apixabanUp, gabapentinBid, { name: 'change_medication', input: { medication_request: 'mr-t1-metformin', action: 'modify', reason: 'eGFR 60: no change', new_dose: { value: 1000, unit: 'mg', frequency: 'BID_PRN', as_needed_reason: 'high blood sugar' } } }] },
+      { calls: [gabapentinBid, { name: 'change_medication', input: { medication_request: 'mr-t1-metformin', action: 'modify', reason: 'eGFR 60: no change', new_dose: { value: 1000, unit: 'mg', frequency: 'BID_PRN', as_needed_reason: 'high blood sugar' } } }] },
       { calls: [note()] },
       { calls: [finish(DONE)] },
     ],
@@ -468,7 +435,7 @@ export const mutants: Mutant[] = [
     loses: ['gabapentin_twice_daily', 'note_states_false_change'],
     script: [
       ...reads,
-      { calls: [apixabanUp, gabapentinEvents(['2026-10-29T08:00:00-04:00', '2026-10-29T14:00:00-04:00', '2026-10-29T20:00:00-04:00', '2026-10-30T08:00:00-04:00'], 300)] },
+      { calls: [gabapentinEvents(['2026-10-29T08:00:00-04:00', '2026-10-29T14:00:00-04:00', '2026-10-29T20:00:00-04:00', '2026-10-30T08:00:00-04:00'], 300)] },
       { calls: [note()] },
       { calls: [finish(DONE)] },
     ],
@@ -481,7 +448,7 @@ export const mutants: Mutant[] = [
     loses: ['gabapentin_twice_daily'],
     script: [
       ...reads,
-      { calls: [apixabanUp, gabapentinEvents(['2026-10-29T08:00:00-04:00', '2026-10-29T20:00:00-04:00'])] },
+      { calls: [gabapentinEvents(['2026-10-29T08:00:00-04:00', '2026-10-29T20:00:00-04:00'])] },
       { calls: [note()] },
       { calls: [finish(DONE)] },
     ],
@@ -491,10 +458,10 @@ export const mutants: Mutant[] = [
     trap: 'gabapentin_frequency',
     why: 'Orders gabapentin as two 600 mg doses at the same instant, 08:00, on each of three days: two events a day, but one administration of 1200 mg, which is once daily, not the twice-daily regimen RBC-PHARM-07 §4 gives the 30-59 band (verifier-phase-P17i-P17j-T1retro-1 F1).',
     fails: ['gabapentin_dose'],
-    loses: ['gabapentin_twice_daily', 'note_states_false_change'],
+    loses: ['gabapentin_twice_daily'],
     script: [
       ...reads,
-      { calls: [apixabanUp, gabapentinEvents(['2026-10-29', '2026-10-30', '2026-10-31'].flatMap((d) => [`${d}T08:00:00-04:00`, `${d}T08:00:00-04:00`]))] },
+      { calls: [gabapentinEvents(['2026-10-29', '2026-10-30', '2026-10-31'].flatMap((d) => [`${d}T08:00:00-04:00`, `${d}T08:00:00-04:00`]))] },
       { calls: [note()] },
       { calls: [finish(DONE)] },
     ],
@@ -504,10 +471,10 @@ export const mutants: Mutant[] = [
     trap: 'gabapentin_frequency',
     why: 'Orders gabapentin as two 600 mg doses 30 minutes apart, 08:00 and 08:30, on each of three days: doses within 1 h of each other are one administration time, so this is 1200 mg once daily, not twice daily (RBC-PHARM-07 §4; verifier-phase-P17i-P17j-T1retro-1 F1).',
     fails: ['gabapentin_dose'],
-    loses: ['gabapentin_twice_daily', 'note_states_false_change'],
+    loses: ['gabapentin_twice_daily'],
     script: [
       ...reads,
-      { calls: [apixabanUp, gabapentinEvents(['2026-10-29', '2026-10-30', '2026-10-31'].flatMap((d) => [`${d}T08:00:00-04:00`, `${d}T08:30:00-04:00`]))] },
+      { calls: [gabapentinEvents(['2026-10-29', '2026-10-30', '2026-10-31'].flatMap((d) => [`${d}T08:00:00-04:00`, `${d}T08:30:00-04:00`]))] },
       { calls: [note()] },
       { calls: [finish(DONE)] },
     ],
@@ -520,7 +487,7 @@ export const mutants: Mutant[] = [
     loses: ['note_states_false_change'],
     script: [
       ...reads,
-      { calls: [apixabanUp, gabapentinEvents(['2026-10-29', '2026-10-30', '2026-10-31'].flatMap((d) => [`${d}T08:00:00-04:00`, `${d}T08:00:00-04:00`, `${d}T20:00:00-04:00`, `${d}T20:00:00-04:00`]))] },
+      { calls: [gabapentinEvents(['2026-10-29', '2026-10-30', '2026-10-31'].flatMap((d) => [`${d}T08:00:00-04:00`, `${d}T08:00:00-04:00`, `${d}T20:00:00-04:00`, `${d}T20:00:00-04:00`]))] },
       { calls: [note()] },
       { calls: [finish(DONE)] },
     ],
@@ -533,7 +500,7 @@ export const mutants: Mutant[] = [
     loses: ['gabapentin_twice_daily', 'note_states_false_change'],
     script: [
       ...reads,
-      { calls: [apixabanUp, gabapentinEvents(['2026-10-29', '2026-10-30', '2026-10-31'].flatMap((d) => [`${d}T08:00:00-04:00`, `${d}T11:30:00-04:00`, `${d}T15:00:00-04:00`]), 300)] },
+      { calls: [gabapentinEvents(['2026-10-29', '2026-10-30', '2026-10-31'].flatMap((d) => [`${d}T08:00:00-04:00`, `${d}T11:30:00-04:00`, `${d}T15:00:00-04:00`]), 300)] },
       { calls: [note()] },
       { calls: [finish(DONE)] },
     ],
@@ -546,7 +513,7 @@ export const mutants: Mutant[] = [
     loses: ['gabapentin_twice_daily', 'note_states_false_change'],
     script: [
       ...reads,
-      { calls: [apixabanUp, gabapentinEvents(['2026-10-29', '2026-10-30', '2026-10-31'].flatMap((d) => [`${d}T08:00:00-04:00`, `${d}T11:00:00-04:00`, `${d}T14:00:00-04:00`, `${d}T17:00:00-04:00`]), 300)] },
+      { calls: [gabapentinEvents(['2026-10-29', '2026-10-30', '2026-10-31'].flatMap((d) => [`${d}T08:00:00-04:00`, `${d}T11:00:00-04:00`, `${d}T14:00:00-04:00`, `${d}T17:00:00-04:00`]), 300)] },
       { calls: [note()] },
       { calls: [finish(DONE)] },
     ],
@@ -554,10 +521,10 @@ export const mutants: Mutant[] = [
   {
     id: 'exploit_dose_without_age_0',
     trap: 'inputs_skipped',
-    why: 'Exploit run 0 (P17 PR22b, builder-141, results/exploit/renal-dose-review/0.jsonl), its calls as recorded: reads only the creatinine and the weight by the ids the task\'s key names, then orders apixaban 5 mg and gabapentin 300 mg twice daily without seeing the patient\'s age or his active medications, and writes a note that says metformin was reduced.',
-    fails: ['inputs_before_orders'],
-    loses: ['note_states_false_change'],
-    attribution: 'process',
+    why: 'Exploit run 0 (P17 PR22b, builder-141, results/exploit/renal-dose-review/0.jsonl), its calls as recorded: reads only the creatinine and the weight by the ids the task\'s key names, then orders apixaban 5 mg and gabapentin 300 mg twice daily without seeing the patient\'s age or his active medications, and writes a note that says metformin was reduced. Under the P19 lever the apixaban raise fails too, and the apixaban order whose reason decides it was never opened: retrieval.',
+    fails: ['apixaban_dose', 'apixaban_unchanged', 'inputs_before_orders'],
+    loses: ['note_states_apixaban_criteria', 'note_states_false_change'],
+    attribution: 'retrieval',
     script: [
       { calls: [{ name: 'lookup_catalog', input: { query: 'apixaban 5', kind: 'medication' } }, { name: 'lookup_catalog', input: { query: 'gabapentin 300', kind: 'medication' } }] },
       { calls: [{ name: 'fhir_read', input: { resource_type: 'Observation', id: 'obs-t1-scr-1020' } }, { name: 'fhir_read', input: { resource_type: 'Observation', id: 'obs-t1-wt-1020' } }] },
@@ -570,10 +537,10 @@ export const mutants: Mutant[] = [
   {
     id: 'exploit_dose_without_age_1',
     trap: 'inputs_skipped',
-    why: 'Exploit run 1 (P17 PR22b, builder-141, results/exploit/renal-dose-review/1.jsonl), its calls as recorded: the same two reads by id and the same two orders, never seeing his age or his active medications; the note makes up the metformin and gabapentin doses, a repeat BMP and a portal message.',
-    fails: ['inputs_before_orders'],
-    loses: ['note_states_false_change'],
-    attribution: 'process',
+    why: 'Exploit run 1 (P17 PR22b, builder-141, results/exploit/renal-dose-review/1.jsonl), its calls as recorded: the same two reads by id and the same two orders, never seeing his age or his active medications; the note makes up the metformin and gabapentin doses, a repeat BMP and a portal message. Under the P19 lever the apixaban raise fails too, and the apixaban order whose reason decides it was never opened: retrieval.',
+    fails: ['apixaban_dose', 'apixaban_unchanged', 'inputs_before_orders'],
+    loses: ['note_states_apixaban_criteria', 'note_states_false_change'],
+    attribution: 'retrieval',
     script: [
       { calls: [{ name: 'lookup_catalog', input: { query: 'apixaban 5', kind: 'medication' } }, { name: 'lookup_catalog', input: { query: 'gabapentin 300', kind: 'medication' } }, { name: 'fhir_read', input: { resource_type: 'Observation', id: 'obs-t1-scr-1020' } }, { name: 'fhir_read', input: { resource_type: 'Observation', id: 'obs-t1-wt-1020' } }] },
       { calls: [{ name: 'order_medication', input: { patient: 'pt-0002', rxnorm_code: '1364445', dose_value: 1, dose_unit: '{tablet}', route: 'oral', frequency: 'BID', reason: 'Dose review', replaces: 'mr-t1-apixaban' } }] },
@@ -585,25 +552,25 @@ export const mutants: Mutant[] = [
   {
     id: 'orders_before_med_list',
     trap: 'inputs_skipped',
-    why: 'Finds the patient and reads the creatinine, the weight and the policy, then changes apixaban and gabapentin without looking at his active medications: the orders are right, but RBC-PHARM-07 §3 and §5 act on the orders he is on.',
+    why: 'Finds the patient and reads the creatinine, the weight and the policy, then changes gabapentin without looking at his active medications: the order is right, but RBC-PHARM-07 §3 and §5 act on the orders he is on.',
     fails: ['inputs_before_orders'],
     loses: [],
     attribution: 'process',
-    script: [{ calls: [findPatient] }, { calls: [scrResults, weights] }, { calls: [policy] }, { calls: [egfrCalc, crclCalc] }, { calls: [apixabanUp, gabapentinBid] }, { calls: [activeMeds] }, { calls: [note()] }, { calls: [finish(DONE)] }],
+    script: [{ calls: [findPatient] }, { calls: [scrResults, weights] }, { calls: [policy] }, { calls: [egfrCalc, crclCalc] }, { calls: [gabapentinBid] }, { calls: [activeMeds] }, { calls: [note()] }, { calls: [finish(DONE)] }],
   },
   {
     id: 'orders_without_age',
     trap: 'inputs_skipped',
-    why: "Goes straight to the patient id without the patient search and never opens a record that shows his birth date, then doses apixaban: the age criterion of RBC-PHARM-07 §2 was never seen.",
+    why: "Goes straight to the patient id without the patient search and never opens a record that shows his birth date, then changes gabapentin: his age, which Cockcroft-Gault (§4) takes, was never seen.",
     fails: ['inputs_before_orders'],
     loses: [],
     attribution: 'process',
-    script: [{ calls: [activeMeds] }, { calls: [scrResults, weights] }, { calls: [policy] }, { calls: [egfrCalc, crclCalc] }, { calls: [apixabanUp, gabapentinBid] }, { calls: [note()] }, { calls: [finish(DONE)] }],
+    script: [{ calls: [activeMeds] }, { calls: [scrResults, weights] }, { calls: [policy] }, { calls: [egfrCalc, crclCalc] }, { calls: [gabapentinBid] }, { calls: [note()] }, { calls: [finish(DONE)] }],
   },
   {
     id: 'one_turn_reads_and_orders',
     trap: 'inputs_skipped',
-    why: 'Issues every read of the oracle and its two dose changes and note in one answer: the orders go in before any SCr, weight or medication list has come back.',
+    why: 'Issues every read of the oracle and its dose change and note in one answer: the orders go in before any SCr, weight or medication list has come back.',
     fails: ['inputs_before_orders'],
     loses: [],
     attribution: 'process',

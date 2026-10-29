@@ -288,6 +288,35 @@ const NOTE_PROBES: ReadonlyArray<{ check: string; patient: string; finding: stri
 const noteProbes = (as: 'met' | 'not_met', texts: readonly ProbeText[]) => texts.map(([label, text]) => ({ label, text, expected: as }));
 
 export const PROBES: Readonly<Record<string, readonly ProbeSet[]>> = {
+  // T1's P19 lever (researcher-16 T1): the two apixaban items were reworded for the
+  // extended-phase dose after pulmonary embolism, which RBC-PHARM-07 §2 (non-valvular atrial
+  // fibrillation only) does not cover. Notes that give the indication in other words, and notes
+  // that decide on §2's criteria or on kidney function, each with the verdict the policy calls for.
+  'renal-dose-review': [
+    {
+      check: 'note_states_apixaban_criteria',
+      criterion: 'the apixaban is for a history of pulmonary embolism',
+      items: [
+        { label: 'abbreviated', text: 'Apixaban: hx PE 8/2025, on extended-phase 2.5 mg BID per heme. Not NVAF, so RBC-PHARM-07 §2 n/a. No change.', expected: 'met' },
+        { label: 'plain prose', text: 'He takes apixaban to prevent another blood clot in the lungs after his pulmonary embolism last year, not for atrial fibrillation. The policy dose rules are written for atrial fibrillation, so they do not apply here, and I left his 2.5 mg twice daily as it is.', expected: 'met' },
+        { label: 'letter cited', text: 'Apixaban 2.5 mg twice daily is the long-term dose St. Brigid hematology set after six months of treatment for his PE (letter of 2/5/2026). The §2 criteria are for non-valvular atrial fibrillation only; dose unchanged.', expected: 'met' },
+        { label: 'AF criteria, kept', text: 'Apixaban criteria (§2): age 82 met; weight 64.9 kg not met; SCr 1.88 mg/dL met. Two criteria met, so apixaban stays at 2.5 mg twice daily.', expected: 'not_met' },
+        { label: 'PE named, raised', text: 'Apixaban was started for a pulmonary embolism. Under RBC-PHARM-07 §2 only his age is met, so I raised it to 5 mg twice daily.', expected: 'not_met' },
+        { label: 'kept, no reason', text: 'Apixaban 2.5 mg twice daily: no change.', expected: 'not_met' },
+      ],
+    },
+    {
+      check: 'apixaban_on_renal_function',
+      criterion: 'bases the apixaban dose decision on eGFR or creatinine clearance',
+      items: [
+        { label: 'kept for CrCl', text: 'Apixaban: with a creatinine clearance of 43 mL/min I am keeping him on the lower 2.5 mg twice daily for his kidney function.', expected: 'met' },
+        { label: 'eGFR reduction', text: 'Apixaban 2.5 mg twice daily continued because his eGFR of 60 shows reduced renal function.', expected: 'met' },
+        { label: 'indication', text: 'Apixaban is the extended-phase dose after pulmonary embolism, not for atrial fibrillation, so §2 does not apply; 2.5 mg twice daily unchanged.', expected: 'not_met' },
+        { label: 'bleeding remark', text: 'Apixaban 2.5 mg twice daily unchanged: extended phase after PE, which RBC-PHARM-07 does not cover. His CrCl of 43 mL/min and age raise bleeding risk, so I will watch for bleeding.', expected: 'not_met' },
+        { label: 'AF criteria with SCr', text: 'Apixaban criteria (§2): age 82 met; weight 64.9 kg not met; SCr 1.21 mg/dL not met. One criterion met, so 5 mg twice daily.', expected: 'not_met' },
+      ],
+    },
+  ],
   'results-inbox': [
     {
       check: 'cyst_closed_no_follow_up',

@@ -6,7 +6,9 @@
 //   age        2026-10-23 - 1944-03-11 = 82 years
 //   SCr        obs-t1-scr-1020, 1.21 mg/dL (obs-t1-scr-1021, 1.88, is entered in error)
 //   weight     obs-t1-wt-1020, 143 lb = 64.86 kg (obs-t1-wt-0210, 57.0 kg, is stale)
-//   apixaban   age met, weight not met, SCr not met: one criterion, 5 mg twice daily
+//   apixaban   for a history of pulmonary embolism (extended phase), not non-valvular atrial
+//              fibrillation: §2 does not apply, so 2.5 mg twice daily unchanged (§2's criteria,
+//              one met, would give 5 mg)
 //   eGFR       142 x (1.21/0.9)^-1.200 x 0.9938^82 = 59.8: >= 45, metformin unchanged
 //   CrCl       (140 - 82) x 64.86 / (72 x 1.21) = 43.2: 30-59, gabapentin 400-1400 mg/day BID
 export const expected = {
@@ -20,8 +22,9 @@ export const expected = {
   crcl: 43.2,
   apixaban: {
     request: 'MedicationRequest/mr-t1-apixaban',
-    criteria: { age: true, weight: false, scr: false },
-    dose_mg: 5,
+    action: 'unchanged',
+    nvaf: false,
+    dose_mg: 2.5,
     per_day: 2,
   },
   metformin: { request: 'MedicationRequest/mr-t1-metformin', action: 'unchanged', daily_mg: { min: 2000, max: 2000 } },

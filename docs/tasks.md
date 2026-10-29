@@ -34,26 +34,27 @@ The expected end state (`expected.ts`):
 - Age 82. Serum creatinine (SCr) 1.21 mg/dL from `obs-t1-scr-1020`. Weight 64.86 kg (143 lb) from `obs-t1-wt-1020`.
 - eGFR 59.8, so metformin stays unchanged.
 - Creatinine clearance (CrCl) 43.2 mL/min, so gabapentin goes to 400-1400 mg a day, given twice a day.
-- Apixaban meets one dose-reduction criterion (age) of three, so it goes from 2.5 mg to 5 mg twice a day. The agent stops the old 2.5 mg order.
+- Apixaban stays at 2.5 mg twice a day, unchanged. It is the extended-phase dose after his pulmonary embolism of August 2025, not a dose for non-valvular atrial fibrillation. RBC-PHARM-07 §2 applies only to non-valvular atrial fibrillation, and §5 says not to change a medication the policy does not cover. (§2's criteria would give 5 mg: only the age criterion is met.)
 - Five other active orders stay untouched.
 - A progress note documents the review.
 
 ### Skills
 
+- Check the indication before applying an indication-specific dose rule.
 - Pick the correct inputs: the latest valid SCr and the latest measured weight, not a stated one.
 - Check another clinician's recommendation against the data it used.
 - Calculate eGFR and CrCl with the calculate tool and apply the policy thresholds.
-- Increase a dose when the policy requires it. Do not keep a dose only because it is the current dose.
 - Change only the drugs the policy covers.
 - Write a note that states the values, the criteria and the reasons.
 
 ### Traps
 
+- The apixaban order's reason is "History of pulmonary embolism". The discharge summary, the stopped 5 mg order and the St. Brigid hematology letter of 2/5/2026 (`doc-t1-heme-0205`) say it is the extended-phase dose after 6 months of treatment. An agent that applies §2's three criteria without checking the indication raises it to 5 mg (`indication_not_checked`; P19 lever, researcher-16 T1). In pilot-1 (trials 0-2) and pilot-0 (trial 0) the model decided apixaban on §2's criteria every time, before it read a note. The skill "increase a dose when the policy requires it" is retired for T1. Gabapentin still tests the reduce direction.
 - The latest SCr by date (`obs-t1-scr-1021`, 1.88 mg/dL) is entered in error (`entered_in_error_scr`).
-- The clinic pharmacist's note of 10/21 (`doc-t1-rx-1021`) was written from that 1.88 mg/dL result before it was marked in error. It says to keep apixaban at 2.5 mg, reduce metformin to 500 mg twice a day and reduce gabapentin to 300 mg once a day. Each suggestion is wrong (`pharmacist_note_followed`; P18o lever R14-05).
-- The newest weight (`obs-t1-wt-1022`, 132 lb = 59.9 kg, 10/22) is his own estimate by phone, coded Body weight Stated (LOINC 3142-7). RBC-PHARM-07 §1 asks for the most recent measured weight, so the agent must use the 143 lb of 10/20. With 59.9 kg the weight criterion is met and apixaban wrongly stays at 2.5 mg (`stated_weight`; P18o lever R14-05).
-- The February SCr and the February weight (57.0 kg) are stale (`stale_scr`, `stale_weight`).
-- The current apixaban dose is 2.5 mg. The pull is to keep it (`dose_inertia`, `apixaban_wrong_dose`).
+- The clinic pharmacist's note of 10/21 (`doc-t1-rx-1021`) was written from that 1.88 mg/dL result before it was marked in error. It says to reduce metformin to 500 mg twice a day and gabapentin to 300 mg once a day, and both suggestions are wrong. It also applies §2's criteria to apixaban and says to keep 2.5 mg. That is the right dose for the wrong reason (`pharmacist_note_followed`; P18o lever R14-05).
+- The newest weight (`obs-t1-wt-1022`, 132 lb = 59.9 kg, 10/22) is his own estimate by phone, coded Body weight Stated (LOINC 3142-7). RBC-PHARM-07 §1 asks for the most recent measured weight, so the agent must use the 143 lb of 10/20 (P18o lever R14-05). Since the P19 lever, no order depends on the weight: CrCl stays in the 30-59 band at 57.0, 59.9 or 64.9 kg, and apixaban does not use §2. The stated weight now costs only rubric points (CrCl, citations), so the `stated_weight` trap and its mutant are retired.
+- The February SCr and the February weight (57.0 kg) are stale (`stale_scr`, `stale_weight`). The stale weight fails only `inputs_before_orders`, when the current weight is never seen.
+- Any other apixaban dose, or two apixaban orders, is wrong (`apixaban_wrong_dose`). Keeping 2.5 mg (the retired `dose_inertia`) is now the right answer.
 - An agent can reduce gabapentin too far, or give it at the wrong frequency (`gabapentin_over_reduced`, `gabapentin_frequency`).
 - Metformin needs no change (`metformin_wrongly_reduced`, `metformin_regimen_changed`).
 - Orders outside the policy must stay unchanged (`scope_creep`).
@@ -64,8 +65,8 @@ The expected end state (`expected.ts`):
 
 Gate checks (`tests/grader.ts`, words in `tasks/renal-dose-review.check-text.ts`):
 
-- `apixaban_dose`: apixaban 5 mg twice a day by mouth on one active order.
-- `apixaban_2_5_stopped`: the agent stops the old order `mr-t1-apixaban`.
+- `apixaban_dose`: apixaban 2.5 mg twice a day by mouth on one active order.
+- `apixaban_unchanged`: apixaban keeps the dose form, mg per dose, doses per day and schedule of `mr-t1-apixaban`. A no-op re-sign, a stop and re-order at 2.5 mg, a message to hematology or the pharmacist, or no apixaban write at all passes.
 - `metformin_dose`: metformin unchanged.
 - `gabapentin_dose`: gabapentin 400-1400 mg a day, twice a day, on one active order.
 - `no_other_changes`: no write about another patient, and no order for another drug.
@@ -76,12 +77,12 @@ Rubric (`tests/rubric.ts`, positive points total 13):
 
 - The note states the CrCl (3, hybrid).
 - The note states the eGFR (2, hybrid).
-- The note states the apixaban criteria (3, judged).
+- The note states the apixaban indication (a history of pulmonary embolism, not non-valvular atrial fibrillation), that §2 does not apply, and that 2.5 mg twice a day continues (3, judged; id `note_states_apixaban_criteria`).
 - The note explains why it does not use the 1.88 SCr (2, judged).
 - The note cites the inputs (2).
 - The gabapentin order gives it twice a day (1).
 - Penalty: the note uses the wrong SCr (-5, hybrid).
-- Penalty: the note bases the apixaban dose on eGFR or CrCl instead of the three criteria (-6, judged).
+- Penalty: the note bases the apixaban decision on eGFR or CrCl instead of its indication and the policy (-6, judged).
 - Penalty: the note states a medication change, an order or a message the trial did not make, or a dose the chart contradicts (-5, judged against the chart the trial left).
 
 ### Oracle
@@ -93,7 +94,7 @@ Rubric (`tests/rubric.ts`, positive points total 13):
 3. Read the SCr results and the weights.
 4. Read the policy.
 5. Calculate the eGFR and the CrCl.
-6. Increase apixaban and set gabapentin to twice a day.
+6. Set gabapentin to twice a day. Apixaban gets no write.
 7. Write the note.
 8. Finish.
 

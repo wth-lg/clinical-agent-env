@@ -19,6 +19,15 @@
 // by phone (132 lb, 59.9 kg), coded Body weight Stated (LOINC 3142-7), not the measured body
 // weight (29463-7) RBC-PHARM-07 §1 asks for. The flag is a chart note, not a Communication, so
 // search_notes finds it and no inbox queue of T2 or T6 changes (coordinator, P18o).
+// P19 lever (researcher-16 T1, amended): his apixaban is the extended-phase dose after a
+// pulmonary embolism (cond-t1-pe, August 2025), not for atrial fibrillation, which his chart no
+// longer names anywhere. The 5 mg treatment order (mr-t1-apixaban-5) ran six months and was
+// stepped down to 2.5 mg twice daily at the February discharge, as the St. Brigid hematology
+// letter (doc-t1-heme-0205) planned. RBC-PHARM-07 §2 covers only non-valvular atrial
+// fibrillation, so the review leaves apixaban unchanged; §2's criteria (one met) would raise it
+// to 5 mg. The active order's reason is the terse 'History of pulmonary embolism'; 'extended
+// phase' appears only in the discharge summary, the letter and the stopped order's statusReason.
+// The pharmacist's flag still applies §2 and reaches 'continue 2.5 mg': right, for the wrong reason.
 import type { Resource } from '../../packages/env/store.ts';
 import type { Overlay, WorldReader } from '../../packages/env/overlay.ts';
 
@@ -63,6 +72,8 @@ const SCR_CODE = { coding: [{ system: LOINC, code: '2160-0', display: 'Creatinin
 // The attending who signed the discharge summary, and the clinic pharmacist who flagged him.
 const ATTENDING: Resource = { resourceType: 'Practitioner', id: 'pr-t1-raman', active: true, name: [{ use: 'official', given: ['Priya'], family: 'Raman', suffix: ['MD'] }] };
 const PHARMACIST: Resource = { resourceType: 'Practitioner', id: 'pr-t1-lindqvist', active: true, name: [{ use: 'official', given: ['Grace'], family: 'Lindqvist', suffix: ['PharmD'] }] };
+// The St. Brigid hematologist who managed the pulmonary embolism and set the extended-phase dose.
+const HEMATOLOGIST: Resource = { resourceType: 'Practitioner', id: 'pr-t1-heme', active: true, name: [{ use: 'official', given: ['Daniel'], family: 'Okonkwo-Reyes', suffix: ['MD'] }] };
 
 const encounter = (id: string, cls: 'AMB' | 'IMP', type: [string, string], start: string, end: string, provider: { reference: string }): Resource => ({
   resourceType: 'Encounter',
@@ -76,13 +87,14 @@ const encounter = (id: string, cls: 'AMB' | 'IMP', type: [string, string], start
   serviceProvider: provider,
 });
 
-const condition = (id: string, code: string, display: string, onset: string, abated?: string): Resource => ({
+const condition = (id: string, code: string | null, display: string, onset: string, abated?: string): Resource => ({
   resourceType: 'Condition',
   id,
   clinicalStatus: { coding: [{ system: 'http://terminology.hl7.org/CodeSystem/condition-clinical', code: abated ? 'resolved' : 'active' }] },
   verificationStatus: { coding: [{ system: 'http://terminology.hl7.org/CodeSystem/condition-ver-status', code: 'confirmed' }] },
   category: [{ coding: [{ system: 'http://terminology.hl7.org/CodeSystem/condition-category', code: 'problem-list-item', display: 'Problem List Item' }] }],
-  code: { coding: [{ system: SNOMED, code, display }], text: display },
+  // A problem entered as text only has no SNOMED coding.
+  code: code === null ? { text: display } : { coding: [{ system: SNOMED, code, display }], text: display },
   subject: SUBJECT,
   onsetDateTime: onset,
   ...(abated ? { abatementDateTime: abated } : {}),
@@ -188,13 +200,13 @@ Patient: Harold Vance   MRN 4410-22   DOB 1944-03-11
 Admitted 2026-02-07, discharged 2026-02-12. Service: Hospital Medicine.
 
 Principal diagnosis: acute kidney injury (prerenal), with dehydration after viral gastroenteritis.
-Other diagnoses: non-valvular atrial fibrillation; type 2 diabetes mellitus; postherpetic neuralgia; coronary artery disease, remote STEMI.
+Other diagnoses: pulmonary embolism (August 2025), on anticoagulation; type 2 diabetes mellitus; postherpetic neuralgia; coronary artery disease, remote STEMI.
 
 Hospital course: four days of vomiting and poor oral intake before admission. Creatinine 1.71 mg/dL on 2/9. Treated with IV fluids; renal function improving at discharge. Metformin held during the admission and resumed at discharge. Gabapentin continued at the home dose.
 
 Weight 57.0 kg on 2/10.
 
-Anticoagulation: apixaban reduced from 5 mg twice daily to 2.5 mg twice daily (age 80 or older, weight 60 kg or less, creatinine 1.5 mg/dL or higher).
+Anticoagulation: apixaban 2.5 mg twice daily (extended phase after 6 months' treatment for PE, per St. Brigid hematology). The 5 mg twice-daily treatment dose is stopped.
 
 Follow-up: Riverbend Family Medicine within 1 week; repeat creatinine and weight.
 
@@ -207,7 +219,8 @@ Feels well. Eating normally and regaining weight since discharge. No bleeding.
 
 Creatinine today 1.31 mg/dL (1.71 mg/dL in February).
 
-Atrial fibrillation: rate controlled on metoprolol. Continue apixaban 2.5 mg twice daily. Repeat creatinine and weight in the fall.
+History of PE: continue apixaban 2.5 mg twice daily per hematology.
+Coronary artery disease: continue metoprolol. Repeat creatinine and weight in the fall.
 Type 2 diabetes: continue metformin 1000 mg twice daily.
 Postherpetic neuralgia: pain controlled on gabapentin 600 mg three times daily.
 Hyperlipidemia: continue atorvastatin 40 mg at bedtime.
@@ -231,6 +244,20 @@ Flagged to Dr. Okafor for a renal and age dose review.
 
 Grace Lindqvist, PharmD`;
 
+// The hematology clinic letter that planned the step-down at six months of treatment, sent before
+// the February admission.
+const HEMATOLOGY = `St. Brigid Regional - Hematology Clinic Letter
+Patient: Harold Vance   MRN 4410-22   DOB 1944-03-11
+Date: 2026-02-05
+To: Maya Okafor, MD, Riverbend Family Medicine
+
+Seen today, six months after a pulmonary embolism in August 2025 (unprovoked; CT pulmonary angiogram 8/4/2025). On apixaban 5 mg twice daily since 8/11/2025 after the 10 mg loading week. No bleeding. Breathing back to baseline.
+
+Plan: he completes 6 months of treatment on 2/11/2026. From then, continue extended-phase apixaban 2.5 mg twice daily indefinitely to lower the risk of recurrence; not a renally adjusted dose. Please stop the 5 mg order at that point. Review here in one year.
+
+Daniel Okonkwo-Reyes, MD
+Hematology`;
+
 const overlay: Overlay = {
   task: 'T1',
   build(world: WorldReader) {
@@ -251,18 +278,27 @@ const overlay: Overlay = {
       clinicalStatus: { coding: [{ system: 'http://terminology.hl7.org/CodeSystem/condition-clinical', code: 'resolved' }] },
       abatementDateTime: '2019-06-16T10:00:00-04:00',
     };
+    // Metoprolol was for rate control of the atrial fibrillation the chart no longer has; its
+    // reason is now his coronary artery disease.
+    const metoprolol = world.get('MedicationRequest', 'mr-00010') as Extract<Resource, { resourceType: 'MedicationRequest' }>;
+    const metoprololCad: Resource = { ...metoprolol, reasonCode: [{ text: 'Coronary artery disease' }] };
 
     const put: Resource[] = [
       renamed,
       ...creatinineBlood,
       stemiResolved,
+      metoprololCad,
       ATTENDING,
       PHARMACIST,
+      HEMATOLOGIST,
+      encounter('enc-t1-0804', 'IMP', ['32485007', 'Hospital admission (procedure)'], '2025-08-04T16:40:00-04:00', '2025-08-08T12:00:00-04:00', HOSPITAL),
+      encounter('enc-t1-0205', 'AMB', ['185347001', 'Encounter for problem (procedure)'], '2026-02-05T14:00:00-05:00', '2026-02-05T14:30:00-05:00', HOSPITAL),
       encounter('enc-t1-0207', 'IMP', ['32485007', 'Hospital admission (procedure)'], '2026-02-07T14:20:00-05:00', '2026-02-12T11:30:00-05:00', HOSPITAL),
       encounter('enc-t1-0512', 'AMB', ['185347001', 'Encounter for problem (procedure)'], '2026-05-12T09:30:00-04:00', '2026-05-12T10:00:00-04:00', CLINIC),
       encounter('enc-t1-1020', 'AMB', ['185349003', 'Encounter for check up (procedure)'], '2026-10-20T09:00:00-04:00', '2026-10-20T09:20:00-04:00', CLINIC),
       encounter('enc-t1-1022', 'AMB', ['185317003', 'Telephone encounter (procedure)'], '2026-10-22T10:15:00-04:00', '2026-10-22T10:25:00-04:00', CLINIC),
-      condition('cond-t1-af', '49436004', 'Atrial fibrillation (disorder)', '2021-04-14T10:00:00-04:00'),
+      condition('cond-t1-pe', '59282003', 'Pulmonary embolism (disorder)', '2025-08-04T16:40:00-04:00', '2025-08-15T10:00:00-04:00'),
+      condition('cond-t1-pe-hx', null, 'History of pulmonary embolism', '2025-08-15T10:00:00-04:00'),
       condition('cond-t1-t2dm', '44054006', 'Diabetes mellitus type 2 (disorder)', '2015-09-02T10:00:00-04:00'),
       condition('cond-t1-phn', '2177002', 'Postherpetic neuralgia (disorder)', '2023-03-21T10:00:00-04:00'),
       condition('cond-t1-hld', '55822004', 'Hyperlipidemia (disorder)', '2015-09-02T10:00:00-04:00'),
@@ -279,16 +315,20 @@ const overlay: Overlay = {
       weight('obs-t1-wt-1022', '2026-10-22T10:20:00-04:00', '2026-10-22T10:22:00-04:00', 132, '[lb_av]', 'enc-t1-1022', ['3142-7', 'Body weight Stated'], {
         note: [{ time: '2026-10-22T10:22:00-04:00', text: 'Patient estimate by phone, not weighed.' }],
       }),
-      medication('mr-t1-apixaban-5', ['1364445', 'apixaban 5 MG Oral Tablet'], 5, 'BID', '2021-04-14T10:30:00-04:00', 'Non-valvular atrial fibrillation', {
+      medication('mr-t1-apixaban-5', ['1364445', 'apixaban 5 MG Oral Tablet'], 5, 'BID', '2025-08-11T10:00:00-04:00', 'Pulmonary embolism, treatment', {
         status: 'stopped',
-        statusReason: { text: 'Dose reduced to 2.5 mg twice daily on discharge from St. Brigid Regional' },
+        requester: { reference: 'Practitioner/pr-t1-heme' },
+        statusReason: { text: '6 months of treatment complete; extended-phase dose' },
       }),
-      medication('mr-t1-apixaban', ['1364435', 'apixaban 2.5 MG Oral Tablet'], 2.5, 'BID', '2026-02-16T10:00:00-05:00', 'Non-valvular atrial fibrillation; dose reduced during the February admission', {
+      // Ordered at the February discharge, when the 5 mg order stopped.
+      medication('mr-t1-apixaban', ['1364435', 'apixaban 2.5 MG Oral Tablet'], 2.5, 'BID', '2026-02-12T11:30:00-05:00', 'History of pulmonary embolism', {
+        requester: { reference: 'Practitioner/pr-t1-raman' },
         priorPrescription: { reference: 'MedicationRequest/mr-t1-apixaban-5' },
       }),
       medication('mr-t1-metformin', ['861004', 'metformin hydrochloride 1000 MG Oral Tablet'], 1000, 'BID', '2025-11-03T10:00:00-05:00', 'Type 2 diabetes mellitus'),
       medication('mr-t1-gabapentin', ['310433', 'gabapentin 600 MG Oral Tablet'], 600, 'TID', '2025-08-19T10:00:00-04:00', 'Postherpetic neuralgia'),
       medication('mr-t1-atorvastatin', ['617311', 'atorvastatin 40 MG Oral Tablet'], 40, 'QHS', '2025-11-03T10:00:00-05:00', 'Hyperlipidemia'),
+      note('doc-t1-heme-0205', '2026-02-05T15:10:00-05:00', ['11488-4', 'Consult note'], 'enc-t1-0205', { reference: 'Practitioner/pr-t1-heme' }, HOSPITAL, HEMATOLOGY),
       note('doc-t1-dc-0212', '2026-02-12T11:30:00-05:00', ['18842-5', 'Discharge summary'], 'enc-t1-0207', { reference: 'Practitioner/pr-t1-raman' }, HOSPITAL, DISCHARGE),
       note('doc-t1-pn-0512', '2026-05-12T10:00:00-04:00', ['11506-3', 'Progress note'], 'enc-t1-0512', OKAFOR, CLINIC, FOLLOW_UP),
       note('doc-t1-rx-1021', '2026-10-21T14:10:00-04:00', ['11506-3', 'Progress note'], 'enc-t1-1020', { reference: 'Practitioner/pr-t1-lindqvist' }, CLINIC, PHARMACY_FLAG),
@@ -306,7 +346,7 @@ const overlay: Overlay = {
           { quantity: 'crcl', threshold: 30, value: 43.2, label: 'CrCl from obs-t1-scr-1020 and obs-t1-wt-1020' },
         ],
         ages: [{ patient: PT, threshold: 80 }],
-        leakage: { answers: ['59.8', '43.2', '43.18', '59.78'], distractors: ['doc-t1-dc-0212', 'doc-t1-pn-0512', 'doc-t1-rx-1021', 'obs-t1-scr-1021', 'obs-t1-wt-1022', 'mr-t1-apixaban'] },
+        leakage: { answers: ['59.8', '43.2', '43.18', '59.78'], distractors: ['doc-t1-dc-0212', 'doc-t1-pn-0512', 'doc-t1-rx-1021', 'doc-t1-heme-0205', 'obs-t1-scr-1021', 'obs-t1-wt-1022', 'mr-t1-apixaban'] },
       },
     };
   },

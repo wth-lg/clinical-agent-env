@@ -12,8 +12,6 @@ import { perDayOf } from './regimen.ts';
 
 const PT = expected.patient;
 const noteText = (ctx: RubricCtx) => ctx.notes.filter((n) => n.patient === PT).map((n) => n.text).join('\n\n');
-const A = expected.apixaban.criteria;
-const metText = (m: boolean) => (m ? 'met' : 'not met');
 // The stale and entered-in-error SCr values of the design's wrong paths, and any mention of one:
 // the value in mg/dL, or the value within 40 characters after SCr or creatinine (a date or other
 // numbers may come between, as in 'Current SCr (10/21/2026): 1.88'). Wide on purpose: the judge,
@@ -36,7 +34,10 @@ const activeOrders = (view: StateView): MR[] =>
   view.all('MedicationRequest').flatMap((r) => (r.resourceType === 'MedicationRequest' && r.subject?.reference === PT && isActive(r) ? [r] : []));
 const orderWords = (m: MR) =>
   [m.medicationCodeableConcept?.text ?? m.medicationCodeableConcept?.coding?.[0]?.display ?? 'an unnamed medication', ...(m.dosageInstruction ?? []).map((d) => d.text ?? '')].filter((x) => x !== '').join(', ');
-const ordersWords = (ms: readonly MR[]) => (ms.length === 0 ? 'no active order' : ms.map(orderWords).join('; '));
+// An order the trial wrote is marked new, so a re-signed order at the same dose does not read as
+// the old one left alone (P19: re-signing apixaban at 2.5 mg is a declared alternative).
+const ordersWords = (ms: readonly MR[], view?: StateView) =>
+  ms.length === 0 ? 'no active order' : ms.map((m) => `${orderWords(m)}${view !== undefined && view.get('MedicationRequest', m.id ?? '') === undefined ? ' (a new order this trial wrote)' : ''}`).join('; ');
 const listWords = (xs: readonly string[]) => (xs.length === 0 ? 'none' : xs.join('; '));
 
 function chartWords(ctx: RubricCtx): string {
@@ -46,7 +47,7 @@ function chartWords(ctx: RubricCtx): string {
     const was = before.filter((m) => isDrug(m.medicationCodeableConcept, { ingredient }));
     const now = after.filter((m) => isDrug(m.medicationCodeableConcept, { ingredient }));
     const same = was.length === now.length && was.every((m) => now.some((n) => n.id === m.id));
-    return `${ingredient[0]!.toUpperCase()}${ingredient.slice(1)}: before the review ${ordersWords(was)}; after it ${same ? 'unchanged' : ordersWords(now)}.`;
+    return `${ingredient[0]!.toUpperCase()}${ingredient.slice(1)}: before the review ${ordersWords(was)}; after it ${same ? 'unchanged' : ordersWords(now, ctx.initial)}.`;
   });
   const created = [...new Set(ctx.writes())].flatMap((k) => {
     const [type, id] = k.split('/') as [string, string];
@@ -96,9 +97,13 @@ export const rubric: Check[] = [
     points: 3,
     traces_to: 'RBC-PHARM-07 §2',
     decisive_ids: [...expected.cites],
+    // P19 lever (researcher-16 T1): the apixaban decision rests on the order's indication, so the
+    // note earns these points by stating it, not by working §2's three criteria.
     criterion:
-      `The text states each of the three apixaban dose criteria with the patient's value and whether it is met: age 80 or older (age ${expected.age}: ${metText(A.age)}), ` +
-      `body weight 60 kg or less (${expected.weight.kg.toFixed(1)} kg: ${metText(A.weight)}), and serum creatinine 1.5 mg/dL or higher (${expected.scr.mg_dl} mg/dL: ${metText(A.scr)}).`,
+      'The text states that the apixaban is for a history of pulmonary embolism (the extended-phase or long-term dose after treatment), not for non-valvular atrial fibrillation, ' +
+      `that the RBC-PHARM-07 §2 dose criteria therefore do not apply, and that apixaban ${expected.apixaban.dose_mg} mg twice daily continues unchanged. ` +
+      'Naming the indication and leaving the dose unchanged for that reason meets this without naming §2. ' +
+      'A text that decides the apixaban dose on the age, weight and serum creatinine criteria, or changes the dose, does not.',
     text: noteText,
   }),
   judged({
@@ -163,8 +168,8 @@ export const rubric: Check[] = [
     traces_to: 'RBC-PHARM-07 §2',
     decisive_ids: [],
     criterion:
-      'The text bases the apixaban dose decision on eGFR or creatinine clearance, rather than on the age, body weight and serum creatinine criteria. ' +
-      'Mentioning CrCl or eGFR alongside the three criteria, for example as an eligibility or bleeding-risk remark, does not meet this.',
+      'The text bases the apixaban dose decision on eGFR or creatinine clearance (for example, keeping, reducing or raising the dose for his kidney function), rather than on its indication and RBC-PHARM-07. ' +
+      'Mentioning CrCl or eGFR beside the decision, for example as an eligibility or bleeding-risk remark, does not meet this.',
     text: noteText,
   }),
   // A harm penalty: a chart note that documents a change never made, or a dose the chart
