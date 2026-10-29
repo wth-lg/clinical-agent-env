@@ -209,6 +209,18 @@ export const mutants = [
     script: solve({ critical: { ...ORACLE.critical, handoff: 'cancelled' } }),
   },
   {
+    id: 'critical_k_reassigned_then_paged_open',
+    trap: 'closed_without_link',
+    attribution: 'process',
+    why: 'Forwards the true 6.2 inbox item to pool-oncall and leaves it open, and only afterwards pages on-call at stat: the item reached on-call before the stat notice, so it was not handed off and stays open with nothing linked.',
+    fails: ['items_closed_with_links'],
+    loses: [],
+    script: plus(
+      solve({ critical: { ...ORACLE.critical, oncall: null, handoff: 'open' } }),
+      writer().message('Group/pool-oncall', 'stat', 'Critical potassium 6.2', 'Denise Holloway (CKD 3b, lisinopril since 10-06): K 6.2 mmol/L on 2026-10-22, not hemolyzed. The lisinopril is the likely cause; please consider holding it. Stat BMP ordered; please contact her today.', [SRC.kD]).call,
+    ),
+  },
+  {
     id: 'no_patient_contact',
     trap: 'patient_not_told',
     why: 'Places every order and closes every item but tells no patient: the nodule, the positive FIT, the hemolyzed potassium repeat on Monday and the bone lesion are never reported to the patient or family (RBC-INBOX-01 §4).',
