@@ -1,0 +1,49 @@
+{
+  "env_git_sha": "d9d0d7067b0aacc16eb2fa649acc491463c1d19f",
+  "env_dirty": false,
+  "run_id": "pilot-1",
+  "model": "claude-opus-5-5",
+  "effort": "high",
+  "mode": "live",
+  "world_hash": "0b8ff7964370f8452ce17f6c701cc0a5bc8ba82fd8aeeac48098ed83ae6792d7",
+  "api_version": "2026-10-21",
+  "trials": 3,
+  "task_versions": {
+    "contrast-ct-prep": "c03ec52d9210f316f9f25083ca24780197c02533febf910eb43f2ffb69946f46",
+    "crc-care-gap": "1d70b246b344ba82018c9ebe503866dc8703ba61c6066a4bf7adc02c74ca3376",
+    "discharge-medrec": "53c0632c8b805585d6feae9f34e1dfbfcaad97872795ab4cf14929d467ea5c93",
+    "message-queue": "1e4e6a236466fc9b28c78cede4a14388b528552634dd5a5e49432e541fce8203",
+    "renal-dose-review": "9e223096cf5b8a17b8fc2cc8a11c6a6d28ade9c1e0121feb613ee8a707ee1b54",
+    "results-inbox": "7c80c5b545f7634e2fd7cc1b7e128508f62b8b646f04cf8c9c3e5fc160dcc1d3"
+  },
+  "env_versions": {
+    "contrast-ct-prep": "6592e20cde44915c80bfb2e31b937efcd14fb7f871ae38e98544a9df8fbb01d0",
+    "crc-care-gap": "daaa6e4a2b8c3e8e7648dc4526f2b4a282920376172c40e51c0fadabf3723784",
+    "discharge-medrec": "58b6cfe7b4ce04bb26737874129630b9bc48701bd08b9bcf9e213927f6acdb0d",
+    "message-queue": "f650d1764e13bcbabe1843364ad61b9d1a281b8a53c041e0206db578c356551c",
+    "renal-dose-review": "f426c6e81dd773f56a35d21b836e929c495c74dab0bd6d1725a596a6ce799078",
+    "results-inbox": "faf3b43579df63dfd9064d50ff293a0f8daf93e088edc8430e99ab322bc06e81"
+  },
+  "grader_task_versions": {
+    "contrast-ct-prep": "2fa6cc4728dfb920b2b233ae78fa34e38ba2b5d3038c4e717e142cd8709d6ff0",
+    "crc-care-gap": "ecee8028f69bf56ef1e200934a4848042bf244f9815d68bc418470b2735aa611",
+    "discharge-medrec": "c888f2189500063ff8c7f4fdb499a637c3ae38ef48e412ac4f4e878d94668175",
+    "message-queue": "fe409eacff7319a606efa7cec1bc0bd72d76828536decae00769222069a538aa",
+    "renal-dose-review": "a857a43c2bcd24ebaf953043208c705ea2c8f71fef044b5d09acc409d02df581",
+    "results-inbox": "691136d453fb347f543bf34b9096d08726f18fd4f2c50fe3e1df1b5f6ab634a7"
+  },
+  "batches": [
+    {
+      "batch_id": "09121fca-02e8-44ff-b48f-12e5d08d76e5",
+      "started": "2026-10-29T20:06:47.407Z",
+      "ended": "2026-10-29T20:18:28.650Z",
+      "projection": 105.78609583,
+      "remaining": 18,
+      "settled": 18,
+      "requeued": 0,
+      "stopped": null,
+      "cancelled": false,
+      "env_git_sha": "d9d0d7067b0aacc16eb2fa649acc491463c1d19f"
+    }
+  ]
+}

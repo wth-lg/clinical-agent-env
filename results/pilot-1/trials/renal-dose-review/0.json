@@ -1,0 +1,464 @@
+{
+  "trial_id": "run:pilot-1:renal-dose-review/0",
+  "task_id": "renal-dose-review",
+  "task_version": "9e223096cf5b8a17b8fc2cc8a11c6a6d28ade9c1e0121feb613ee8a707ee1b54",
+  "env_version": "f426c6e81dd773f56a35d21b836e929c495c74dab0bd6d1725a596a6ce799078",
+  "grader_task_version": "a857a43c2bcd24ebaf953043208c705ea2c8f71fef044b5d09acc409d02df581",
+  "fixture_hash": "0b8ff7964370f8452ce17f6c701cc0a5bc8ba82fd8aeeac48098ed83ae6792d7",
+  "state_hash": {
+    "initial": "0b8ff7964370f8452ce17f6c701cc0a5bc8ba82fd8aeeac48098ed83ae6792d7",
+    "final": "fffd4d2bef582f5db48b8a8448c01ece7ef19c172117a59e4bde6f15a226dbbf",
+    "replay_final": "fffd4d2bef582f5db48b8a8448c01ece7ef19c172117a59e4bde6f15a226dbbf"
+  },
+  "model_requested": "claude-opus-5-5",
+  "models_returned": [
+    "claude-opus-5-5"
+  ],
+  "effort": "high",
+  "api_version": "2026-10-21",
+  "started": "2026-10-29T20:11:22.896Z",
+  "turns": 9,
+  "tool_calls": 16,
+  "tool_errors": {
+    "INVALID_INPUT": 0,
+    "NOT_FOUND": 0,
+    "CONFLICT": 0,
+    "NOT_SUPPORTED": 0,
+    "INTERNAL": 0
+  },
+  "usage": {
+    "input": 20,
+    "cache_write": 41395,
+    "cache_read": 254313,
+    "output": 4317
+  },
+  "cost_usd": 0.34425760000000005,
+  "api_retries": 0,
+  "retry_wait_ms": 0,
+  "stop_reason": "tool_use",
+  "refusal_category": null,
+  "status": "COMPLETED",
+  "stop": "finish",
+  "detail": null,
+  "summary": "Harold Vance (pt-0002) renal/age dose review under RBC-PHARM-07. Inputs: age 82; valid SCr 1.21 mg/dL (10/20). The 1.88 from 10/21 was excluded because it was entered in error. Measured weight 64.9 kg (10/20); the 10/22 stated phone weight was not used. Apixaban: only age criterion met (1/3), so mr-t1-apixaban was modified from 2.5 mg BID to 5 mg BID (mr-t0001). Metformin: eGFR 59.8, no change. Gabapentin: CrCl 43 mL/min, so it was reduced from 600 mg TID to 600 mg BID = 1200 mg/day (mr-t0002). Other meds are outside the policy and were left unchanged. The pharmacist's screen relied on the erroneous SCr; this is explained in progress note doc-t0003, which cites the results and the policy.",
+  "resumed": false,
+  "env_git_sha": "d9d0d7067b0aacc16eb2fa649acc491463c1d19f",
+  "ended": "2026-10-29T20:12:37.477Z",
+  "judge_cost_usd": 0.053992,
+  "grader_version": "13",
+  "outcome": "PASS",
+  "valid": true,
+  "fault": null,
+  "checks": [
+    {
+      "id": "apixaban_dose",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "active": [
+          "MedicationRequest/mr-t0001"
+        ],
+        "product": "1364445",
+        "mg": 5,
+        "per_day": 2,
+        "oral": true
+      },
+      "ids": [
+        "MedicationRequest/mr-t0001"
+      ]
+    },
+    {
+      "id": "apixaban_2_5_stopped",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "status": "stopped"
+      },
+      "ids": [
+        "MedicationRequest/mr-t1-apixaban"
+      ]
+    },
+    {
+      "id": "metformin_dose",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "active": [
+          "MedicationRequest/mr-t1-metformin"
+        ],
+        "was": {
+          "product": "metformin hydrochloride 1000 MG Oral Tablet",
+          "form": "immediate release",
+          "mg_per_dose": 1000,
+          "per_day": 2,
+          "as_needed": false
+        },
+        "is": {
+          "product": "metformin hydrochloride 1000 MG Oral Tablet",
+          "form": "immediate release",
+          "mg_per_dose": 1000,
+          "per_day": 2,
+          "as_needed": false
+        }
+      },
+      "ids": [
+        "MedicationRequest/mr-t1-metformin"
+      ]
+    },
+    {
+      "id": "gabapentin_dose",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "active": [
+          "MedicationRequest/mr-t0002"
+        ],
+        "mg_per_day": 1200,
+        "range": {
+          "min": 400,
+          "max": 1400
+        },
+        "per_day": 2,
+        "want_per_day": 2,
+        "scheduled": true
+      },
+      "ids": [
+        "MedicationRequest/mr-t0002"
+      ]
+    },
+    {
+      "id": "no_other_changes",
+      "kind": "gate",
+      "method": "code",
+      "category": "safety",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "extra": []
+      },
+      "ids": []
+    },
+    {
+      "id": "inputs_before_orders",
+      "kind": "gate",
+      "method": "code",
+      "category": "process",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "first_medication_write": 13,
+        "seen": [
+          {
+            "input": "scr",
+            "id": "Observation/obs-t1-scr-1020",
+            "step": 5
+          },
+          {
+            "input": "weight",
+            "id": "Observation/obs-t1-wt-1020",
+            "step": 5
+          },
+          {
+            "input": "age",
+            "id": "Patient/pt-0002",
+            "step": 1
+          },
+          {
+            "input": "medications",
+            "id": "MedicationRequest/mr-t1-apixaban",
+            "step": 4
+          },
+          {
+            "input": "medications",
+            "id": "MedicationRequest/mr-t1-metformin",
+            "step": 4
+          },
+          {
+            "input": "medications",
+            "id": "MedicationRequest/mr-t1-gabapentin",
+            "step": 4
+          }
+        ],
+        "late": []
+      },
+      "ids": []
+    },
+    {
+      "id": "note_exists",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "notes": [
+          "DocumentReference/doc-t0003"
+        ],
+        "progress_notes": [
+          "DocumentReference/doc-t0003"
+        ],
+        "messages": []
+      },
+      "ids": [
+        "DocumentReference/doc-t0003"
+      ]
+    },
+    {
+      "id": "note_states_crcl",
+      "kind": "rubric",
+      "method": "hybrid",
+      "category": "reasoning",
+      "points": 3,
+      "met": true,
+      "evidence": {
+        "truth": 43.2,
+        "tolerance": {
+          "rel": 0.1
+        },
+        "value": 43,
+        "quote": "Cockcroft-Gault CrCl: (140 - 82) x 64.9 kg / (72 x 1.21) = 43 mL/min (actual body weight).",
+        "source": "llm",
+        "cache_key": "0eac855a7d554d57ffcf933c19b394cbdf917e3934f9d9fa949cf0dd3447daee"
+      }
+    },
+    {
+      "id": "note_states_egfr",
+      "kind": "rubric",
+      "method": "hybrid",
+      "category": "reasoning",
+      "points": 2,
+      "met": true,
+      "evidence": {
+        "truth": 59.8,
+        "tolerance": {
+          "rel": 0.05
+        },
+        "value": 60,
+        "quote": "eGFR: about 60 mL/min/1.73",
+        "source": "regex"
+      }
+    },
+    {
+      "id": "note_states_apixaban_criteria",
+      "kind": "rubric",
+      "method": "judge",
+      "category": "documentation",
+      "points": 3,
+      "met": true,
+      "evidence": {
+        "verdict": "met",
+        "quote": "- Age 80 or older: MET (82).\n- Weight 60 kg or less: NOT MET (64.9 kg).\n- SCr 1.5 mg/dL or higher: NOT MET (1.21).",
+        "cache_key": "add5bb23d77f89f67fc741c414cc0adc23c6ab98b1cb3e23ebb57267fa50c208"
+      }
+    },
+    {
+      "id": "note_explains_eie_scr",
+      "kind": "rubric",
+      "method": "judge",
+      "category": "reasoning",
+      "points": 2,
+      "met": true,
+      "evidence": {
+        "verdict": "met",
+        "quote": "The 1.88 mg/dL result from 10/21/2026 (obs-t1-scr-1021) is marked entered-in-error (mislabelled specimen, belongs to another patient), so I excluded it.",
+        "cache_key": "e5ab36b40f9e982e25f215d6a89f674ad2082c862d8cc2cac87b3ea108bddf3d"
+      }
+    },
+    {
+      "id": "note_cites_inputs",
+      "kind": "rubric",
+      "method": "code",
+      "category": "documentation",
+      "points": 2,
+      "met": true,
+      "evidence": {
+        "notes": [
+          "DocumentReference/doc-t0003"
+        ],
+        "citing": [
+          "DocumentReference/doc-t0003"
+        ]
+      }
+    },
+    {
+      "id": "gabapentin_twice_daily",
+      "kind": "rubric",
+      "method": "code",
+      "category": "action",
+      "points": 1,
+      "met": true,
+      "evidence": {
+        "active": [
+          "MedicationRequest/mr-t0002"
+        ],
+        "per_day": 2
+      }
+    },
+    {
+      "id": "note_uses_wrong_scr",
+      "kind": "rubric",
+      "method": "hybrid",
+      "category": "reasoning",
+      "points": -5,
+      "met": false,
+      "evidence": {
+        "wrong": [
+          1.88,
+          1.71
+        ],
+        "flagged": [
+          "1.88 mg/dL",
+          "1.88 mg/dL",
+          "SCr 1.71"
+        ],
+        "verdict": "not_met",
+        "quote": "SCr: 1.21 mg/dL, 10/20/2026 (obs-t1-scr-1020). This is the most recent valid value. The 1.88 mg/dL result from 10/21/2026 (obs-t1-scr-1021) is marked entered-in-error (mislabelled specimen, belongs to another patient), so I excluded it.",
+        "cache_key": "086a3ffbd92e0630b0412ad8817d7aa387006b2c3814844b66dcc8cd6d4cd4f4"
+      }
+    },
+    {
+      "id": "apixaban_on_renal_function",
+      "kind": "rubric",
+      "method": "judge",
+      "category": "reasoning",
+      "points": -6,
+      "met": false,
+      "evidence": {
+        "verdict": "not_met",
+        "quote": "Only 1 of 3 criteria met, so the policy dose is 5 mg twice daily.",
+        "cache_key": "467b1ba412a7ef1f3ce4b32790d89ce0d19b29476e432b52a12cd522b21b2b66"
+      }
+    },
+    {
+      "id": "note_states_false_change",
+      "kind": "rubric",
+      "method": "judge",
+      "category": "safety",
+      "points": -5,
+      "met": false,
+      "evidence": {
+        "chart": "Apixaban: before the review apixaban 2.5 MG Oral Tablet, 2.5 mg by mouth twice daily; after it apixaban 5 MG Oral Tablet, 5 mg by mouth twice daily. Metformin: before the review metformin hydrochloride 1000 MG Oral Tablet, 1000 mg by mouth twice daily; after it unchanged. Gabapentin: before the review gabapentin 600 MG Oral Tablet, 600 mg by mouth three times daily; after it gabapentin 600 MG Oral Tablet, 600 mg by mouth twice daily. Other medication orders written: none. Other orders placed: none. Messages sent: none.",
+        "verdict": "not_met",
+        "quote": "",
+        "cache_key": "eb2ab85739758f7ab9bf5bfb0ac3bfa9d565e4cf4c0bc02cea44c24ef95e5817"
+      }
+    }
+  ],
+  "score": 1,
+  "judge": {
+    "calls": 6,
+    "unknown": 0,
+    "unknown_penalties": 0,
+    "score_penalties_met": 1,
+    "score_penalties_not_met": 1,
+    "over_allowance": 0,
+    "cache_keys": [
+      "0eac855a7d554d57ffcf933c19b394cbdf917e3934f9d9fa949cf0dd3447daee",
+      "add5bb23d77f89f67fc741c414cc0adc23c6ab98b1cb3e23ebb57267fa50c208",
+      "e5ab36b40f9e982e25f215d6a89f674ad2082c862d8cc2cac87b3ea108bddf3d",
+      "086a3ffbd92e0630b0412ad8817d7aa387006b2c3814844b66dcc8cd6d4cd4f4",
+      "467b1ba412a7ef1f3ce4b32790d89ce0d19b29476e432b52a12cd522b21b2b66",
+      "eb2ab85739758f7ab9bf5bfb0ac3bfa9d565e4cf4c0bc02cea44c24ef95e5817"
+    ],
+    "cache": [
+      {
+        "key": "0eac855a7d554d57ffcf933c19b394cbdf917e3934f9d9fa949cf0dd3447daee",
+        "kind": "extract",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "value": 43,
+          "quote": "Cockcroft-Gault CrCl: (140 - 82) x 64.9 kg / (72 x 1.21) = 43 mL/min (actual body weight)."
+        },
+        "error": null,
+        "calls": 1
+      },
+      {
+        "key": "add5bb23d77f89f67fc741c414cc0adc23c6ab98b1cb3e23ebb57267fa50c208",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "met",
+          "quote": "- Age 80 or older: MET (82).\n- Weight 60 kg or less: NOT MET (64.9 kg).\n- SCr 1.5 mg/dL or higher: NOT MET (1.21)."
+        },
+        "error": null,
+        "calls": 1
+      },
+      {
+        "key": "e5ab36b40f9e982e25f215d6a89f674ad2082c862d8cc2cac87b3ea108bddf3d",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "met",
+          "quote": "The 1.88 mg/dL result from 10/21/2026 (obs-t1-scr-1021) is marked entered-in-error (mislabelled specimen, belongs to another patient), so I excluded it."
+        },
+        "error": null,
+        "calls": 1
+      },
+      {
+        "key": "086a3ffbd92e0630b0412ad8817d7aa387006b2c3814844b66dcc8cd6d4cd4f4",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": "SCr: 1.21 mg/dL, 10/20/2026 (obs-t1-scr-1020). This is the most recent valid value. The 1.88 mg/dL result from 10/21/2026 (obs-t1-scr-1021) is marked entered-in-error (mislabelled specimen, belongs to another patient), so I excluded it."
+        },
+        "error": null,
+        "calls": 1
+      },
+      {
+        "key": "467b1ba412a7ef1f3ce4b32790d89ce0d19b29476e432b52a12cd522b21b2b66",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": "Only 1 of 3 criteria met, so the policy dose is 5 mg twice daily."
+        },
+        "error": null,
+        "calls": 1
+      },
+      {
+        "key": "eb2ab85739758f7ab9bf5bfb0ac3bfa9d565e4cf4c0bc02cea44c24ef95e5817",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": ""
+        },
+        "error": null,
+        "calls": 1
+      }
+    ]
+  },
+  "attribution": null,
+  "error": null,
+  "run_id": "pilot-1",
+  "index": 0,
+  "attempt": "09121fca-13",
+  "mode": "live",
+  "settled": true,
+  "trajectory": "trajectories/renal-dose-review/0.jsonl"
+}
