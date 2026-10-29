@@ -43,12 +43,14 @@
 //     one of AUDIT_LABELS; on a PASS, grader (a false PASS) or pass (outcomes.ts PASS_CONFIRMED: the
 //     adjudicator confirms the PASS, and the row gives no label; verifier-phase-P17j-retro-JG5-unread-1
 //     D1). pass is accepted only on a PASS whose row needs adjudication (model_fault unclear, the LLM
-//     auditor disagrees, or an auditor's no overruled to yes) and, when it overrules a label of the
-//     row's own, any label, with a non-empty note (outcomes.ts passConfirmationBreaks); any other
-//     pass is a violation that names the rule, and the row keeps its own label, so a false PASS
-//     nobody disputed stays GR5 (verifier-phase-P17i-P17j-S3retro-1 A1). A row's own label that is
-//     not one of AUDIT_LABELS is a violation whatever adjudicates the row, and a note must be text
-//     (verifier-phase-P17i-P17j-S3retror2-1 B3, B1n);
+//     auditor disagrees, or an auditor's no overruled to yes) and, when it overrules a label or a
+//     taxonomy of the row's own, any value, with a non-empty note (outcomes.ts
+//     passConfirmationBreaks); any other pass is a violation that names the rule, and the row keeps
+//     its own label, so a false PASS nobody disputed stays GR5 (verifier-phase-P17i-P17j-S3retro-1
+//     A1). A row's own label that is not one of AUDIT_LABELS is a violation whatever adjudicates
+//     the row, and a note must be text (verifier-phase-P17i-P17j-S3retror2-1 B3, B1n);
+//   - every row's taxonomy, when it has one, is a TAXONOMY name or one of AUDIT_LABELS, whatever
+//     adjudicates the row (verifier-phase-P17i-P17j-S3retror3-1 R1);
 //   - each task has at least 2 audited PASS trials with evidence ids (all of them when it has
 //     fewer than 2 passes);
 //   - each task the consistency flag marks (packages/core/summary.ts consistencyOf: >= 80% of its
@@ -147,6 +149,7 @@ type Line = { raw: string; label: AuditLabel | null; review?: TaskValidityReview
 const defaults: Deps = { out: (l) => process.stdout.write(`${l}\n`), err: (l) => process.stderr.write(`${l}\n`) };
 const MIN_AUDITED_PASSES = 2;
 const isLabel = (l: string | null | undefined): boolean => (AUDIT_LABELS as readonly (string | null | undefined)[]).includes(l);
+const isTaxonomy = (t: unknown): boolean => (TAXONOMY as readonly unknown[]).includes(t);
 // A row's label as explainTrial reads it: an adjudicated_label that is not an audit label is
 // ignored (audit-check reports it), then the row's own label (explain.ts auditLabelOf).
 export const rowLabel = (l: AuditLabel): string | null => auditLabelOf({ ...l, adjudicated_label: isLabel(l.adjudicated_label) ? (l.adjudicated_label as AuditLabelName) : null });
@@ -284,6 +287,11 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
     // or a label, would otherwise hide a typo (verifier-phase-P17i-P17j-S3retror2-1 B3). Where the
     // row's label as read is its own, the checks below name it.
     if (l.label !== undefined && l.label !== null && !isLabel(l.label) && auditLabelOf(l, outcome) !== l.label) v.push(`${l.trial}: label ${l.label} is not one of ${AUDIT_LABELS.join(', ')}`);
+    // A row's taxonomy, when it has one, is a TAXONOMY name or an audit label: any other value implies
+    // no label (auditLabelOf), so a typo of grader would skip GR5. Checked on every row, adjudicated
+    // or not (verifier-phase-P17i-P17j-S3retror3-1 R1); the failure checks below then skip it.
+    const badTaxonomy = l.taxonomy !== undefined && l.taxonomy !== null && !isLabel(l.taxonomy) && !isTaxonomy(l.taxonomy);
+    if (badTaxonomy) v.push(`${l.trial}: taxonomy ${JSON.stringify(l.taxonomy)} is not one of ${[...TAXONOMY, ...AUDIT_LABELS].join(', ')}`);
     for (const q of AUDIT_QUESTIONS) {
       const bad = [q, `adjudicated_${q}` as const].filter((f) => ![undefined, null, 'yes', 'no'].includes(l[f]));
       for (const f of bad) v.push(`${l.trial}: ${f} must be yes or no, not ${JSON.stringify(l[f])}`);
@@ -337,11 +345,12 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
       v.push(`${l.trial}: ${outcome} carries the label ${label ?? 'none'}, and an INFRA trial gets none (it is rerun)`);
       continue;
     }
-    if (label === null) v.push(`${l.trial}: taxonomy ${l.taxonomy} is not in the label set (${TAXONOMY.join(', ')})`);
-    else if (!isLabel(label)) v.push(`${l.trial}: label ${label} is not one of ${AUDIT_LABELS.join(', ')}`);
+    if (label === null) {
+      if (!badTaxonomy) v.push(`${l.trial}: taxonomy ${l.taxonomy} is not in the label set (${TAXONOMY.join(', ')})`);
+    } else if (!isLabel(label)) v.push(`${l.trial}: label ${label} is not one of ${AUDIT_LABELS.join(', ')}`);
     else if (label !== want.label) v.push(`${l.trial}: labelled ${label}, and its fault ${fault} has the label ${want.label}`);
     else if (l.label_subtype !== undefined && (l.label_subtype ?? null) !== want.subtype) v.push(`${l.trial}: label subtype ${l.label_subtype ?? 'none'}, and its fault ${fault} has the subtype ${want.subtype ?? 'none'}`);
-    else if (label === 'model' && want.subtype === null && !(TAXONOMY as readonly (string | null)[]).includes(l.taxonomy)) v.push(`${l.trial}: taxonomy ${l.taxonomy} is not in the label set (${TAXONOMY.join(', ')})`);
+    else if (label === 'model' && want.subtype === null && !isTaxonomy(l.taxonomy) && !badTaxonomy) v.push(`${l.trial}: taxonomy ${l.taxonomy} is not in the label set (${TAXONOMY.join(', ')})`);
     if (!['yes', 'no', 'unclear'].includes(l.model_fault as string)) v.push(`${l.trial}: model_fault must be yes, no or unclear`);
     else if (FAULT[outcome as Outcome] === 'model') {
       if (label === 'model' && l.model_fault === 'no') v.push(`${l.trial}: labelled ${l.taxonomy ?? label}, a model failure, with model_fault no`);

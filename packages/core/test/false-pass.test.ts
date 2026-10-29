@@ -106,6 +106,16 @@ describe('an adjudicated_label pass that nothing called for (verifier-phase-P17i
     }
   });
 
+  it('over any taxonomy of the row, valid or not, pass needs a note (verifier-phase-P17i-P17j-S3retror3-1 R1)', () => {
+    for (const taxonomy of ['Grader', 'grader ', 'Environment', 'wrong_value', '']) {
+      expect(passConfirmationBreaks({ model_fault: 'unclear', taxonomy }, null, 'PASS')).toBe(`adjudicated_label pass overrules the taxonomy ${JSON.stringify(taxonomy)}, and needs a note that says why`);
+      expect(passConfirmationBreaks({ model_fault: 'unclear', taxonomy, note: 'the PASS is right' }, null, 'PASS')).toBeNull();
+    }
+    expect(passConfirmationBreaks({ model_fault: 'unclear', taxonomy: null }, null, 'PASS')).toBeNull();
+    // A label of the row's own names the label, as before.
+    expect(passConfirmationBreaks({ model_fault: 'unclear', taxonomy: 'Grader' }, 'grader', 'PASS')).toBe('adjudicated_label pass overrules the label grader, and needs a note that says why');
+  });
+
   it('B1n: a note that is not text counts as no note, and explainTrial does not throw', () => {
     const odd = row({ llm_auditor_agrees: false, adjudicated_label: PASS_CONFIRMED, note: 7 as unknown as string });
     expect(passConfirmationBreaks(odd, 'grader', 'PASS')).toBe('adjudicated_label pass overrules the label grader, and needs a note that says why');
