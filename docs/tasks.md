@@ -27,7 +27,7 @@ Repo id `renal-dose-review`. Title: "Renal and age dose review of Harold Vance u
 
 ### Overview
 
-Pharmacy flagged Harold Vance (pt-0002, MRN 4410-22) for a renal and age dose review. Dr. Okafor asks the agent to review his active medications against RBC-PHARM-07, make the changes the policy requires and leave a note.
+Pharmacy flagged Harold Vance (pt-0002, MRN 4410-22) for a renal and age dose review; the pharmacist's note of 10/21 is in his chart. Dr. Okafor asks the agent to review his active medications against RBC-PHARM-07, make the changes the policy requires and leave a note.
 
 The expected end state (`expected.ts`):
 
@@ -40,7 +40,8 @@ The expected end state (`expected.ts`):
 
 ### Skills
 
-- Pick the correct inputs: the latest valid SCr and a current weight.
+- Pick the correct inputs: the latest valid SCr and the latest measured weight, not a stated one.
+- Check another clinician's recommendation against the data it used.
 - Calculate eGFR and CrCl with the calculate tool and apply the policy thresholds.
 - Increase a dose when the policy requires it. Do not keep a dose only because it is the current dose.
 - Change only the drugs the policy covers.
@@ -49,6 +50,8 @@ The expected end state (`expected.ts`):
 ### Traps
 
 - The latest SCr by date (`obs-t1-scr-1021`, 1.88 mg/dL) is entered in error (`entered_in_error_scr`).
+- The clinic pharmacist's note of 10/21 (`doc-t1-rx-1021`) was written from that 1.88 mg/dL result before it was marked in error. It says to keep apixaban at 2.5 mg, reduce metformin to 500 mg twice a day and reduce gabapentin to 300 mg once a day. Each suggestion is wrong (`pharmacist_note_followed`; P18o lever R14-05).
+- The newest weight (`obs-t1-wt-1022`, 132 lb = 59.9 kg, 10/22) is his own estimate by phone, coded Body weight Stated (LOINC 3142-7). RBC-PHARM-07 §1 asks for the most recent measured weight, so the agent must use the 143 lb of 10/20. With 59.9 kg the weight criterion is met and apixaban wrongly stays at 2.5 mg (`stated_weight`; P18o lever R14-05).
 - The February SCr and the February weight (57.0 kg) are stale (`stale_scr`, `stale_weight`).
 - The current apixaban dose is 2.5 mg. The pull is to keep it (`dose_inertia`, `apixaban_wrong_dose`).
 - An agent can reduce gabapentin too far, or give it at the wrong frequency (`gabapentin_over_reduced`, `gabapentin_frequency`).
@@ -262,14 +265,14 @@ The expected end state (`expected.ts`):
 - Furosemide: change the order to 40 mg a day (from 20).
 - Spironolactone: a new order at 25 mg a day. The signed addendum corrects the summary's 12.5 mg.
 - Potassium chloride: stop.
-- Lisinopril: resume at 10 mg a day. The summary says to resume when SCr is below 1.5, and the post-discharge SCr is 1.32.
-- Metoprolol XL, atorvastatin, aspirin 81 mg and omeprazole: no change. Metoprolol XL is an alias of metoprolol succinate ER. Pantoprazole is a formulary substitution, so the patient keeps omeprazole.
+- Lisinopril: resume at 10 mg a day. The summary says to resume when SCr is below 1.5, and the post-discharge SCr is 1.32. That result is only in the outside lab's report (`doc-t4-lab-1021`, a scanned laboratory report), not in his results.
+- Metoprolol XL, atorvastatin, aspirin 81 mg and omeprazole: no change. Metoprolol XL is an alias of metoprolol succinate ER. Pantoprazole is a formulary substitution, so the patient keeps omeprazole. The summary marks the substitution in its own section after the medication list, not on the pantoprazole line.
 - Metoprolol tartrate 25 mg twice a day: no discharge document mentions it. Leave it unchanged. Message the PCP about the duplicate beta-blocker.
 
 ### Skills
 
 - Read every discharge document, including a signed addendum.
-- Apply a conditional instruction against a later lab result.
+- Apply a conditional instruction against a later lab result, including one that is only in a filed outside report.
 - Recognize a drug alias and a formulary substitution.
 - Find a home medication that the discharge documents do not address, and flag it instead of acting on it.
 - Ignore an old discharge summary from 2025.
@@ -279,10 +282,11 @@ The expected end state (`expected.ts`):
 - The furosemide dose changes (`furosemide_dose`).
 - The addendum corrects the spironolactone dose (`addendum_missed`).
 - The lisinopril resume depends on the SCr (`conditional_resume`, `resume_before_lab`).
+- The post-discharge SCr is only in the outside lab's report. A search of his results finds only the inpatient 1.9 mg/dL. The agent then keeps lisinopril held, or resumes it without seeing the result (`outside_lab_missed`; P18o lever R14-07 L2).
 - Potassium chloride must stop (`kcl_continued`).
 - Metoprolol XL is not a new drug (`alias_duplicated`).
 - The agent must not stop the duplicate tartrate (`tartrate_stopped`).
-- The agent must not order pantoprazole (`substitute_ordered`).
+- The agent must not order pantoprazole (`substitute_ordered`). The pantoprazole line reads like a new drug; the substitution is stated in its own section below the list (`substitution_off_line`; P18o lever R14-07 L1).
 - The PCP must get a message (`pcp_not_messaged`).
 - The 2025 summary is out of date (`old_summary`).
 - The agent must also do each action that the note states (`stated_not_done`).
@@ -290,7 +294,7 @@ The expected end state (`expected.ts`):
 
 ### Verification
 
-Gate checks (`tests/grader.ts`, words in `tasks/discharge-medrec.check-text.ts`): `furosemide_40`, `spironolactone_25`, `kcl_stopped`, `lisinopril_resumed`, `others_unchanged`, `omeprazole_kept`, `pcp_message` and `sources_before_orders`. Before each medication order write, `sources_before_orders` needs the source of that change shown, by a read or a search snippet. For furosemide and potassium chloride the source is the summary's line. For lisinopril it is the summary's rule "Resume home 10 mg daily when SCr < 1.5", which a search for spironolactone shows without the drug name. For spironolactone it is the addendum's "spironolactone 25 mg daily". The lisinopril resume also needs the creatinine. An order of any other drug needs the summary read.
+Gate checks (`tests/grader.ts`, words in `tasks/discharge-medrec.check-text.ts`): `furosemide_40`, `spironolactone_25`, `kcl_stopped`, `lisinopril_resumed`, `others_unchanged`, `omeprazole_kept`, `pcp_message` and `sources_before_orders`. Before each medication order write, `sources_before_orders` needs the source of that change shown, by a read or a search snippet. For furosemide and potassium chloride the source is the summary's line. For lisinopril it is the summary's rule "Resume home 10 mg daily when SCr < 1.5", which a search for spironolactone shows without the drug name. For spironolactone it is the addendum's "spironolactone 25 mg daily". The lisinopril resume also needs the creatinine line of the outside lab report ("Creatinine 1.32 mg/dL") shown, by a read or a search snippet. An order of any other drug needs the summary read.
 
 Rubric (`tests/rubric.ts`, positive points total 7):
 
@@ -303,7 +307,7 @@ Rubric (`tests/rubric.ts`, positive points total 7):
 
 ### Oracle
 
-`solution/solve.ts` and `solution/steps.ts` script the reads of the discharge documents and the SCr, the medication changes, the note and the message to the PCP. Run it with `pnpm cli oracle --task discharge-medrec`. It must print PASS with score 1.000 and `judge.unknown 0`.
+`solution/solve.ts` and `solution/steps.ts` script the reads of the discharge documents, a notes search that shows the outside lab report's creatinine, the medication changes, the note and the message to the PCP. Run it with `pnpm cli oracle --task discharge-medrec`. It must print PASS with score 1.000 and `judge.unknown 0`.
 
 Open PRs that change this section:
 
@@ -321,17 +325,18 @@ Dr. Okafor asks the agent to place the contrast CT for Daniel Ferreira (pt-0015)
 The expected end state (`expected.ts`):
 
 - One contrast CT order, linked to the appointment `appt-t5-1026`. The order cites the iohexol allergy and the 2019 CT note.
-- The iohexol allergy (moderate: urticaria and eyelid swelling in 2019) requires premedication. The shellfish and povidone-iodine allergies are not risk factors.
+- The iohexol allergy (moderate: urticaria and eyelid swelling in 2019) requires premedication. The allergy list also shows "Anaphylaxis (patient report)", severe, added in 2021 from his own account. RBC-RAD-07 §1 grades a reaction by the record made when it happened, and the radiology report of that day grades it moderate. The shellfish and povidone-iodine allergies are not risk factors.
 - Prednisone 50 mg at Sunday 20:00, Monday 02:00 and Monday 08:00 (13, 7 and 1 hours before the scan).
 - Diphenhydramine 50 mg at Monday 08:00 (1 hour before the scan).
-- A new creatinine, drawn after now and before 09:00 Monday. The patient is 64 and has diabetes, and the latest creatinine (2025-08-14) is more than 30 days old.
+- A new creatinine, drawn after now and before 09:00 Monday. The patient is 64 and has diabetes. The latest creatinine (`obs-t5-scr-0924`, an outside lab, 2026-09-24) is 29 days before today but 32 days before the scan, so it is not within 30 days before the scan.
 - A message that tells the patient the dose times, and that he must not drive after diphenhydramine.
 
 ### Skills
 
 - Tell a true contrast reaction from allergies that are not risk factors.
+- Grade a prior reaction by the record of that day, not by a later label.
 - Count dose times back from the scan, across midnight.
-- Find a lab result that is too old for the policy.
+- Find a lab result that is too old for the policy, counting back from the scan.
 - Write new orders instead of copying old orders timed for another scan.
 - Link the order to the appointment.
 - Give the patient clear, correct instructions.
@@ -339,8 +344,10 @@ The expected end state (`expected.ts`):
 ### Traps
 
 - Shellfish and povidone-iodine allergies beside the real contrast reaction (`allergy_disambiguation`).
+- The later severe label on the allergy list, against the moderate grade in the report of the day. An agent that trusts the label takes §3: no contrast CT and no premedication (`severe_label_trusted`; P18o lever R14-06 L1').
+- The latest creatinine is within 30 days of today but not of the scan (`scr_counted_from_today`; P18o lever R14-06 L2).
 - Dose times fall overnight (`overnight_timing`).
-- The 2025 creatinine is stale (`stale_creatinine`, `creatinine_after_scan`).
+- The creatinines on file are stale for the scan (`stale_creatinine`, `creatinine_after_scan`).
 - The 2023 premedication orders are timed for another scan (`copy_forward`).
 - The CT order must link to the appointment (`linkage`, `ct_occurrence`).
 - The oral regimen applies, not the IV regimen (`iv_regimen`).
@@ -363,7 +370,7 @@ Rubric (`tests/rubric.ts`, positive points total 8):
 - Penalty: an IV steroid order (-3).
 - Penalty: shellfish named as a risk factor (-2, hybrid).
 - Penalty: the patient message gives dose times that differ from the orders, or allows driving after diphenhydramine (`message_wrong_times_or_driving`, -8, judged).
-- Penalty: the note states a wrong fact about the 2019 reaction: the contrast agent, reaction type, year, severity (moderate), contrast volume (100 mL), onset (about 5 minutes) treatment (diphenhydramine alone, no epinephrine), dose and route (50 mg IV) or course (observed about 2 hours and discharged, not admitted) (`note_states_wrong_allergy_facts`, -5, judged). Leaving a fact out does not count.
+- Penalty: the note states a wrong fact about the 2019 reaction: the contrast agent, reaction type, year, severity (moderate), contrast volume (100 mL), onset (about 5 minutes) treatment (diphenhydramine alone, no epinephrine), dose and route (50 mg IV) or course (observed about 2 hours and discharged, not admitted) (`note_states_wrong_allergy_facts`, -5, judged). Leaving a fact out does not count, and neither does naming the later "Anaphylaxis (patient report)" label only to say that the report of the day grades the reaction moderate.
 
 ### Oracle
 
