@@ -5,8 +5,8 @@
 // nodule_screening_ldct; the LDCT with a referral passes. When the LDCT was seen only as a
 // fhir_search row (its conclusion shows the Lung-RADS category), a wrong order is reasoning, as
 // the gate itself counts the report seen.
-import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { nodeTaskSource } from '../../cli/adapters/tasks-node.ts';
 import { loadMatrixTask, matrixEnv } from '../../cli/matrix.ts';
 import { gradeRun, trial } from '../../packages/grader/matrix/matrix.ts';
 import type { Script } from '../../packages/grader/matrix/types.ts';
@@ -23,8 +23,8 @@ const REFERRAL = { code: 'REF-PULM', priority: 'routine', start: '2026-10-26', e
 const noLdctRead = READ_ALL.map((t) => ({ ...t, calls: t.calls.filter((c) => JSON.stringify(c) !== JSON.stringify(read(SRC.ldct))) })).filter((t) => t.calls.length > 0);
 
 describe('results-inbox nodule_screening_ldct', () => {
-  it('§2 says a referral does not replace the LDCT order', () => {
-    expect(readFileSync(new URL('./policy/rbc-rad-05.md', import.meta.url), 'utf8')).toMatch(/A referral does not replace the LDCT order\./);
+  it('§2 says a referral does not replace the LDCT order', async () => {
+    expect((await nodeTaskSource({ testMode: false }).get('results-inbox')).policies.find((p) => p.id === 'RBC-RAD-05')!.text).toMatch(/A referral does not replace the LDCT order\./);
   });
 
   it('fails a pulmonology referral alone', async () => {

@@ -5,8 +5,8 @@
 // 2026-10-30T01:12Z T4 D2: a tartrate flag Task falls out only by its due date), or an order the
 // trial created that measures potassium and starts in those days. It replaces the +1
 // k_creatinine_recheck credit (P17j JG9), which paid only for a BMP order.
-import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { nodeTaskSource } from '../../cli/adapters/tasks-node.ts';
 import { loadMatrixTask, matrixEnv } from '../../cli/matrix.ts';
 import { cases, gradeRun, trial } from '../../packages/grader/matrix/matrix.ts';
 
@@ -38,8 +38,8 @@ describe('discharge-medrec k_recheck_task', () => {
   it.each(['k_no_task', 'k_message_only', 'k_task_tartrate_only', 'k_task_late'])('is not met by %s', async (id) => {
     expect(await check(id, 'k_recheck_task')).toMatchObject({ kind: 'gate', met: false });
   });
-  it('§7 states the window the gate enforces: 2 to 7 days after the potassium result', () => {
-    const policy = readFileSync(new URL('./policy/rbc-toc-02.md', import.meta.url), 'utf8');
+  it('§7 states the window the gate enforces: 2 to 7 days after the potassium result', async () => {
+    const policy = (await nodeTaskSource({ testMode: false }).get('discharge-medrec')).policies.find((p) => p.id === 'RBC-TOC-02')!.text;
     expect(policy).toMatch(/create a Task for the PCP due 2 to 7 days after that potassium result/);
   });
   it.each([['2026-10-22', false], ['2026-10-23', true], ['2026-10-28', true], ['2026-10-29', false]] as const)('a Task due %s, 2 to 7 days after the 10/21 potassium: met %s', async (due, met) => {

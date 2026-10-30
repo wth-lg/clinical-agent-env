@@ -4,14 +4,14 @@
 // treatment end; and the chart carries the 10 mg loading order and the visit the 5 mg order came
 // from. The overlay's output is read directly, so the test holds before the world is rebuilt.
 import { describe, expect, it } from 'vitest';
-import type { Resource } from '@medplum/fhirtypes';
 import { matrixEnv } from '../../cli/matrix.ts';
 import { loadStore } from '../../packages/env/fixture-source.ts';
+import type { Resource } from '../../packages/env/store.ts';
 import overlay from './overlay.ts';
 import { mutants } from './tests/mutants.ts';
 
 const store = await loadStore(matrixEnv().world);
-const { put } = overlay.build(store);
+const put = overlay.build(store).put ?? [];
 const get = <T extends Resource['resourceType']>(type: T, id: string) => put.find((r) => r.resourceType === type && r.id === id) as Extract<Resource, { resourceType: T }> | undefined;
 
 describe('renal-dose-review chart', () => {
