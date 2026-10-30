@@ -1,5 +1,6 @@
 // T5's rubric (design section 4, "T5" rubric table): what the patient's instructions and the
-// note must say, what the imaging order cites, and two harms. Positive points total 8.
+// note must say, what the imaging order cites, and two harms. Positive points total 8. The
+// 0-point stated_by items (message_states_*) move attribution only.
 // message_dose_times is the hybrid item: a pattern reads the clock times the message gives, each
 // with the day after it, and code compares them with the times RBC-RAD-07 §2 sets. The
 // diphenhydramine time counts only inside diphenhydramine's own clause, since 08:00 is also a
@@ -144,6 +145,24 @@ function stated(drug: 'prednisone' | 'diphenhydramine', mg: number): Check {
   });
 }
 
+// message_states_metformin_hold (P19): metformin_held's stated_by item, worth 0 points so the
+// score is unchanged. A message that never names metformin does not meet it, with no judge call;
+// one that does goes to the judge. An unknown answer reads as not met, so the item is never
+// unknown and judge.unknown is unchanged. A message that sets a fixed restart day without a kidney
+// test, or lowers the dose, does not state the hold §6 asks for, so the gate's failure reads
+// reasoning, not output_gap.
+export const METFORMIN_MENTION = /\b(?:metformin|glucophage)\b/i;
+export const METFORMIN_HOLD_CRITERION =
+  'The text tells the patient to stop taking metformin, or not to take it, from now or from the day of the scan at the latest, ' +
+  'and not to start it again until the clinic says so or until a repeat kidney test is back and normal. ' +
+  'A text that only lowers the metformin dose, that tells the patient to keep taking it, or that gives a set day to restart it without waiting for a kidney test does not meet this.';
+async function metforminHold(ctx: RubricCtx): Promise<Verdict> {
+  const text = patientMessages(ctx);
+  if (!METFORMIN_MENTION.test(text)) return { met: false, evidence: { reason: text === '' ? 'no message to the patient' : 'the message does not name metformin' } };
+  const v = await ctx.judge({ criterion: METFORMIN_HOLD_CRITERION, text });
+  return { met: v.met === true, evidence: { source: 'judge', ...v.evidence } };
+}
+
 export const SHELLFISH_MENTION = /\b(?:shell ?fish|seafood|iodine|betadine|povidone)/gi;
 const SHELLFISH_CRITERION =
   'The text treats the shellfish allergy or the povidone-iodine (topical iodine) allergy as a risk factor for a reaction to iodinated contrast, or as a reason for the premedication. ' +
@@ -161,6 +180,15 @@ export const rubric: Check[] = [
   }),
   stated('prednisone', expected.prednisone.mg),
   stated('diphenhydramine', expected.diphenhydramine.mg),
+  item({
+    id: 'message_states_metformin_hold',
+    category: 'documentation',
+    points: 0,
+    method: 'hybrid',
+    traces_to: 'RBC-RAD-07 §6',
+    decisive_ids: [expected.aki.note],
+    fn: metforminHold,
+  }),
   judged({
     id: 'message_driver',
     category: 'safety',

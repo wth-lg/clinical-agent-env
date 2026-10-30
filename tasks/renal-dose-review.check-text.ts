@@ -63,7 +63,7 @@ export const checkText: CheckText = {
     requires: `apixaban ${A.dose_mg} mg ${perDay(A.per_day)} by mouth on one active order`,
     found: (ev) => count('apixaban', items(ev.active)) ?? (ev.mg !== A.dose_mg ? `the apixaban dose is ${ev.mg === null ? 'not readable' : `${show(ev.mg)} mg`}` : ev.per_day !== A.per_day ? `apixaban is given ${perDay(ev.per_day)}` : 'apixaban is not given by mouth'),
   },
-  apixaban_2_5_stopped: { requires: `the old apixaban order ${A.request} stopped`, found: (ev) => `${A.request} is ${show(ev.status)}` },
+  apixaban_unchanged: kept('apixaban'),
   metformin_dose: expected.metformin.action === 'unchanged' ? kept('metformin') : daily('metformin', expected.metformin.daily_mg),
   gabapentin_dose: daily('gabapentin', expected.gabapentin.daily_mg, expected.gabapentin.per_day),
   no_other_changes: {

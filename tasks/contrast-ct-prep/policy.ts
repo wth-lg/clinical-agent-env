@@ -1,12 +1,13 @@
 // T5's expected end state, computed from the initial world by RBC-RAD-07 (design section 4,
 // "Double derivation"): the patient and the slot the instruction names, the contrast reaction
 // §1 makes the risk factor and its severity (§2, §3) as the record of that day grades it, the dose times counted back from the scan,
-// and whether §4 needs a new creatinine. It never imports expected.ts or overlay constants
+// and whether §4 needs a new creatinine, and whether §6 holds metformin for an acute kidney injury
+// an outside record documents (P19). It never imports expected.ts or overlay constants
 // (lint: no-policy-expected-import).
 import { eastern, NOW_DATE } from '../../packages/env/clock.ts';
 import type { Json } from '../../packages/grader/check.ts';
 import type { WorldView } from '../../packages/grader/matrix/types.ts';
-import { clinicDate } from '../../packages/grader/normalize.ts';
+import { clinicDate, isActive, isDrug } from '../../packages/grader/normalize.ts';
 
 const NAME = { given: 'Daniel', family: 'Ferreira' };
 // The slot the instruction names: Monday 10/26 at 9:00, clinic time.
@@ -36,6 +37,7 @@ type Allergy = R & {
 type Condition = R & { subject?: { reference?: string }; clinicalStatus?: { coding?: Coding[] }; code?: { coding?: Coding[] } };
 type Obs = R & { status?: string; subject?: { reference?: string }; code?: { coding?: Coding[] }; effectiveDateTime?: string };
 type Doc = R & { subject?: { reference?: string }; date?: string; content?: Array<{ attachment?: { data?: string } }> };
+type Med = R & { subject?: { reference?: string }; status?: string; medicationCodeableConcept?: { coding?: Coding[]; text?: string } };
 
 const key = (r: R) => `${r.resourceType}/${r.id}`;
 const byKey = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
@@ -106,6 +108,27 @@ export function derive(world: WorldView): Json {
   if (!latest?.effectiveDateTime) throw new Error(`${ref}: no creatinine`);
   const current = Date.parse(latest.effectiveDateTime) >= scan - 30 * DAY;
 
+  // §4 and §6 (P19): an acute kidney injury in a note of the 30 days before the scan, read from
+  // its text as the outside discharge summary states it: the creatinine at discharge against the
+  // stated baseline. It is unresolved while the discharge value is 0.3 mg/dL or more above the
+  // baseline, or 1.5 times it (KDIGO's rise, the ACR Manual's AKI definition).
+  const akiNotes = (world.all('DocumentReference') as readonly Doc[]).flatMap((d) => {
+    if (d.subject?.reference !== ref || d.date === undefined) return [];
+    const at = Date.parse(d.date);
+    const text = decode(d.content?.[0]?.attachment?.data);
+    if (at < scan - 30 * DAY || at > scan || !/\bacute kidney injury\b/i.test(text)) return [];
+    const discharge = /creatinine at discharge:\s*(\d+(?:\.\d+)?)\s*mg\/dL/i.exec(text)?.[1];
+    const baseline = /baseline about (\d+(?:\.\d+)?)\s*mg\/dL/i.exec(text)?.[1];
+    if (discharge === undefined || baseline === undefined) throw new Error(`${key(d)}: an acute kidney injury without a discharge creatinine and a baseline`);
+    return [{ note: key(d), date: clinicDate(d.date), discharge_mg_dl: Number(discharge), baseline_mg_dl: Number(baseline) }];
+  });
+  if (akiNotes.length > 1) throw new Error(`${ref}: ${akiNotes.length} notes record an acute kidney injury`);
+  const aki = akiNotes[0] === undefined ? null : { ...akiNotes[0], resolved: akiNotes[0].discharge_mg_dl - akiNotes[0].baseline_mg_dl < 0.3 && akiNotes[0].discharge_mg_dl < 1.5 * akiNotes[0].baseline_mg_dl };
+  // §6: the patient's active metformin, held for an unresolved acute kidney injury. (No eGFR on
+  // file is below 30.)
+  const metformins = (world.all('MedicationRequest') as readonly Med[]).filter((m) => m.subject?.reference === ref && isActive(m) && isDrug(m.medicationCodeableConcept, { ingredient: 'metformin' }));
+  if (metformins.length > 1) throw new Error(`${ref}: ${metformins.length} active metformin requests`);
+
   return {
     patient: ref,
     patient_name: `${NAME.given} ${NAME.family}`,
@@ -120,5 +143,7 @@ export function derive(world: WorldView): Json {
     diphenhydramine: { mg: 50, at: before([1]) },
     creatinine: { latest: key(latest), date: clinicDate(latest.effectiveDateTime), required: age >= 60 || diabetes, current, before: eastern(scan) },
     ct_supporting: [key(allergy), key(notes[0]!)],
+    aki,
+    metformin: metformins[0] === undefined ? null : { id: key(metformins[0]), hold: aki !== null && !aki.resolved },
   };
 }

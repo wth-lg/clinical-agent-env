@@ -7,7 +7,7 @@
 // different read path and one answer for all writes. Each declares the rubric items it loses.
 import type { Agent, Script, ScriptCall } from '../../../packages/grader/matrix/types.ts';
 import { ORACLE, solve } from '../solution/solve.ts';
-import { activeServiceRequests, inbox, policies, PT, read, searchNotes, SRC, writer } from '../solution/steps.ts';
+import { activeServiceRequests, inbox, marshReports, policies, PT, read, searchNotes, SRC, writer } from '../solution/steps.ts';
 
 // The oracle with a copy of item 3's patient message sent to Linda Marsh after the last write
 // (before finish), so the ids the closures link do not move.
@@ -24,7 +24,7 @@ const oncallNote = (body: string): ScriptCall => ({ name: 'send_message', input:
 // ldct_task_oncall_cmp below: its on-call task does not name the lisinopril, so a notice added to
 // it alone decides ace_inhibitor_addressed (P17j JG9 r3, the probes of verifier-phase-P17i-JG9r2-1).
 const LDCT_TASK_ONCALL_CMP = solve({
-  nodule: { ...ORACLE.nodule, order: { code: 'IMG-CT-CHEST-LDCT', priority: 'routine', start: '2027-06-04' } },
+  nodule: { ...ORACLE.nodule, order: { code: 'IMG-CT-CHEST-LDCT', priority: 'routine', start: '2026-10-28' } },
   hemolyzed: { ...ORACLE.hemolyzed, order: { code: '24323-8', priority: 'stat', start: '2026-10-23' } },
   critical: { ...ORACLE.critical, oncall: 'task' },
   bone: { ...ORACLE.bone, orders: [{ code: 'REF-ORTHO-ONC', priority: 'urgent', start: '2026-10-26' }, { code: 'IMG-MRI-FEMUR-WO', priority: 'asap', start: '2026-10-28' }] },
@@ -83,16 +83,16 @@ export const alternatives = [
   },
   {
     id: 'ldct_task_oncall_cmp',
-    why: 'Orders the 12-month study as the low-dose CT chest, tells on-call through a stat task in the pool, rechecks the hemolyzed potassium stat today with a CMP, and orders the MRI femur without contrast at asap priority. Its on-call task does not name the lisinopril, so it loses the +1 ace_inhibitor_addressed (P17j JG9).',
+    why: 'Orders the overdue screening LDCT for Wednesday 2026-10-28 with no end date, tells on-call through a stat task in the pool, rechecks the hemolyzed potassium stat today with a CMP, and orders the MRI femur without contrast at asap priority. Its on-call task does not name the lisinopril, so it loses the +1 ace_inhibitor_addressed (P17j JG9).',
     loses: ['ace_inhibitor_addressed'],
     script: LDCT_TASK_ONCALL_CMP,
   },
   {
     id: 'window_edges_datetimes',
-    why: 'Writes the CT window as the whole policy window, 2027-05-04 to 2027-07-04, the tracking task due at its start, the repeat potassium alone at 09:00 on Monday, and the femur orders as dateTimes on the last allowed day, 2026-11-05.',
+    why: 'Sets the overdue screening LDCT as a dateTime on the last allowed day, 2026-11-06, the tracking task due today, the repeat potassium alone at 09:00 on Monday, and the femur orders as dateTimes on the last allowed day, 2026-11-05.',
     loses: [],
     script: solve({
-      nodule: { order: { code: 'IMG-CT-CHEST-WO', priority: 'routine', start: '2027-05-04', end: '2027-07-04' }, due: '2027-05-04', message: true },
+      nodule: { order: { code: 'IMG-CT-CHEST-LDCT', priority: 'routine', start: '2026-11-06T09:00:00-05:00', end: '2026-11-06T17:00:00-05:00' }, due: '2026-10-23', message: true },
       hemolyzed: { ...ORACLE.hemolyzed, order: { code: '2823-3', priority: 'urgent', start: '2026-10-26T09:00:00-04:00' } },
       bone: {
         ...ORACLE.bone,
@@ -133,12 +133,12 @@ export const alternatives = [
   },
   {
     id: 'searches_then_reads',
-    why: 'Reads the policies first, searches notes for smoking across the clinic (finding both Linda Marshes) and reads only the H&P of the right one, searches potassium results instead of reading each, and writes everything in one answer.',
+    why: "Reads the policies first, searches notes for smoking across the clinic (finding both Linda Marshes) and reads only the H&P of the right one, finds her screening LDCT's Lung-RADS category in a search_notes snippet for her nodule without opening it, searches potassium results instead of reading each, and writes everything in one answer.",
     loses: [],
     script: solve({
       reads: [
         { calls: [...policies, inbox] },
-        { calls: [searchNotes('smoker'), searchNotes('pack', PT.marsh)] },
+        { calls: [searchNotes('smoker'), searchNotes('pack', PT.marsh), searchNotes('nodule', PT.marsh)] },
         { calls: [read(SRC.ct), read(SRC.hp), read(SRC.us), read(SRC.fit), activeServiceRequests(PT.patel)] },
         {
           calls: [
@@ -156,12 +156,12 @@ export const alternatives = [
   },
   {
     id: 'hp_snippet_only',
-    why: "Reads the way searches_then_reads does but never opens Linda Marsh's H&P: the search_notes snippet already shows 35 pack-years before the CT order, which is the history RBC-RAD-05 §2 needs.",
+    why: "Reads the way searches_then_reads does but never opens Linda Marsh's H&P (the search_notes snippet already shows 35 pack-years) or her screening LDCT: a fhir_search of her reports shows the LDCT's conclusion, Lung-RADS 2 and the 12-month interval, which is what RBC-RAD-05 §2's screening exception needs (P19).",
     loses: [],
     script: solve({
       reads: [
         { calls: [...policies, inbox] },
-        { calls: [searchNotes('smoker'), searchNotes('pack', PT.marsh)] },
+        { calls: [searchNotes('smoker'), searchNotes('pack', PT.marsh), marshReports] },
         { calls: [read(SRC.ct), read(SRC.us), read(SRC.fit), activeServiceRequests(PT.patel)] },
         {
           calls: [
@@ -185,7 +185,7 @@ export const alternatives = [
       reads: [
         { calls: [...policies, inbox] },
         { calls: [searchNotes('smoker'), searchNotes('pack', PT.marsh), searchNotes('simple cyst', PT.parisian)] },
-        { calls: [read(SRC.ct), read(SRC.hp), read(SRC.fit), activeServiceRequests(PT.patel)] },
+        { calls: [read(SRC.ct), read(SRC.hp), read(SRC.ldct), read(SRC.fit), activeServiceRequests(PT.patel)] },
         {
           calls: [
             { name: 'fhir_search', input: { resource_type: 'Observation', patient: PT.brennan, code: '2823-3', sort: '-date' } },
@@ -212,7 +212,7 @@ export const alternatives = [
   },
   {
     id: 'nodule_call_task',
-    why: 'Tells Linda Marsh of the nodule and its June 2027 follow-up CT by a phone call from the RN triage pool instead of a portal message (RBC-INBOX-01 §4 allows a call by a staff pool).',
+    why: 'Tells Linda Marsh of the nodule and her overdue screening CT by a phone call from the RN triage pool instead of a portal message (RBC-INBOX-01 §4 allows a call by a staff pool).',
     loses: [],
     script: solve({ nodule: { ...ORACLE.nodule, message: 'call' } }),
   },
@@ -236,8 +236,33 @@ export const alternatives = [
   },
   {
     id: 'nodule_tracking_on_ct_due_1030',
-    why: "Orders the follow-up CT and, instead of telling Linda Marsh, a task due 2026-10-30 on the June CT to track it. The nodule is routine (RBC-RAD-05 §2, a CT 12 months out), so no policy sets a day for telling her and a task on the result due within the week is a call task by structure; patient_contact counts it, and nodule_patient_message finds no ask to contact her. A declared residual: only the task's text tells it from a call (verifier-phase-P17i-P17j-T2retror2-1 B1, probe a6).",
-    loses: ['nodule_tracking_task', 'nodule_patient_message'],
-    script: before(solve({ nodule: { ...ORACLE.nodule, due: null, message: false } }), [writer().task(PT.marsh, 'Practitioner/pr-okafor', '2026-10-30', 'routine', 'Track the 12-month CT chest for the RLL nodule', SRC.ct).call]),
+    why: "Orders the follow-up CT and, instead of telling Linda Marsh, a task due 2026-10-30 on the June CT to track it. The nodule is routine (RBC-RAD-05 §2, a screening study within 14 days), so no policy sets a day for telling her and a task on the result due within the week is a call task by structure; patient_contact counts it, and nodule_patient_message finds no ask to contact her; due inside the order's window, it also tracks the order (P19). A declared residual: only the task's text tells it from a call (verifier-phase-P17i-P17j-T2retror2-1 B1, probe a6).",
+    loses: ['nodule_patient_message'],
+    script: before(solve({ nodule: { ...ORACLE.nodule, due: null, message: false } }), [writer().task(PT.marsh, 'Practitioner/pr-okafor', '2026-10-30', 'routine', 'Track the overdue screening LDCT for the RLL nodule', SRC.ct).call]),
+  },
+  {
+    id: 'ct_wo_now',
+    why: 'Orders the overdue screening study as a CT chest without contrast on Monday 2026-10-26 instead of the low-dose CT: a CT chest without contrast also follows the nodule (RBC-RAD-05 §2, P19).',
+    loses: [],
+    script: solve({ nodule: { order: { code: 'IMG-CT-CHEST-WO', priority: 'routine', start: '2026-10-26', end: '2026-11-06' }, due: '2026-11-06', message: true } }),
+  },
+  {
+    id: 'ldct_overdue_plus_2027_ct',
+    why: 'Orders the overdue screening LDCT now and also keeps a CT chest at 12 months from the June CT, 2027-06-04: a redundant second study, but the overdue one is ordered on time (P19).',
+    loses: [],
+    script: solve({
+      nodule: {
+        order: { code: 'IMG-CT-CHEST-LDCT', priority: 'routine', start: '2026-10-23', end: '2026-11-06' },
+        extra: [{ code: 'IMG-CT-CHEST-WO', priority: 'routine', start: '2027-06-04', end: '2027-07-04' }],
+        due: '2026-11-06',
+        message: true,
+      },
+    }),
+  },
+  {
+    id: 'ldct_plus_pulm_referral',
+    why: 'Orders the overdue screening LDCT within 14 days and also refers her to pulmonology on Monday 2026-10-26: the referral adds to the LDCT order, which §2 asks for (builder-186, coordinator option a).',
+    loses: [],
+    script: solve({ nodule: { ...ORACLE.nodule, extra: [{ code: 'REF-PULM', priority: 'routine', start: '2026-10-26', end: '2026-11-06' }] } }),
   },
 ] satisfies Array<Agent & { loses: readonly string[] }>;

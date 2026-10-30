@@ -20,6 +20,7 @@ export const PT = {
 export const ITEM = (n: number) => `Task/task-t2-inbox-${n}`;
 export const SRC = {
   ct: 'DiagnosticReport/dr-t2-ct-0604',
+  ldct: 'DiagnosticReport/dr-t2-ldct-0915',
   hp: 'DocumentReference/doc-t2-hp-lm58',
   us: 'DiagnosticReport/dr-t2-us-1020',
   fit: 'Observation/obs-t2-fit-1019',
@@ -48,12 +49,17 @@ export const searchNotes = (query: string, patient?: string): ScriptCall => ({ n
 export const activeServiceRequests = (patient: string): ScriptCall => ({ name: 'fhir_search', input: { resource_type: 'ServiceRequest', patient, status: 'active' } });
 export const finish = (summary: string): ScriptCall => ({ name: 'finish', input: { summary } });
 
+// Linda Marsh's reports, newest first: how the reference solution finds her screening LDCT (P19).
+export const marshReports: ScriptCall = { name: 'fhir_search', input: { resource_type: 'DiagnosticReport', patient: PT.marsh, sort: '-date' } };
+
 // Every item's source, read the way the reference solution reads them (design step 2). The lipid
-// panel's report shows only references to its members, so a member (the LDL) is read too.
+// panel's report shows only references to its members, so a member (the LDL) is read too. For the
+// nodule it also looks for earlier chest imaging and reads the screening LDCT it finds.
 export const READ_ALL: ScriptTurn[] = [
   { calls: [inbox] },
   { calls: [read(SRC.ct), read(SRC.us), read(SRC.fit), read(SRC.bmpC), read(SRC.kC), read(SRC.bmpD), read(SRC.kD), read(SRC.xr), read(SRC.tsh), read(SRC.lipid), read(SRC.ldl)] },
-  { calls: [searchNotes('pack', PT.marsh), read(SRC.hp)] },
+  { calls: [searchNotes('pack', PT.marsh), read(SRC.hp), marshReports] },
+  { calls: [read(SRC.ldct)] },
   { calls: [activeServiceRequests(PT.patel)] },
   { calls: policies },
 ];
@@ -109,8 +115,9 @@ export const NORMAL_COMMENT = 'Normal result, reviewed and acknowledged.';
 export const NOTES = {
   nodule:
     'Incidental 5 mm solid right lower lobe nodule on the CT abdomen and pelvis of 2026-06-04 (St. Brigid ED). ' +
-    'Smoking history from the H&P of 2026-02-16: 35 pack-years, quit 2019, so high risk under RBC-RAD-05 §2. ' +
-    'CT chest without contrast 12 months after the index study (§1), window 2027-05-04 to 2027-07-04; ordered with a tracking task, and the patient is informed.',
+    'The same nodule is followed in lung cancer screening: Lakeshore screening LDCT of 2025-09-15, Lung-RADS 2, annual LDCT recommended. ' +
+    'Under RBC-RAD-05 §2 the next screening LDCT runs from that study (§1): due in September 2026, its window closed in mid-October, so it is overdue; ' +
+    'screening LDCT ordered within 14 days, by 2026-11-06, with a tracking task, and the patient is informed.',
   fit: 'Positive FIT (collected 2026-10-16). Dr. Lin placed a GI referral for colonoscopy on 2026-10-20, which is active; linked to the result, no new referral (RBC-GI-01 §2).',
   hemolyzed:
     'Potassium 6.4 mmol/L on 2026-10-22, specimen hemolyzed and possibly falsely elevated. Under RBC-LAB-03 §2: repeat BMP ordered urgent for Monday 2026-10-26, patient asked to come in; on-call not notified.',

@@ -3,9 +3,13 @@
 // from the initial world, and the matrix fails when the two differ. The grader reads its
 // targets from here.
 //
-//   nodule       5 mm solid nodule on the CT of 2026-06-04; H&P: 35 pack-years, quit 2019, so
-//                high risk (RBC-RAD-05 §2); CT chest 12 months from the index study (§1):
-//                2027-06-04, window 2027-05-04 to 2027-07-04 (from today it would be 2027-10-23)
+//   nodule       5 mm solid nodule on the CT of 2026-06-04, the nodule her outside screening LDCT
+//                of 2025-09-15 already follows (Lung-RADS 2, annual LDCT), so RBC-RAD-05 §2's
+//                screening exception applies (P19): the next LDCT was due 12 months after that
+//                study (§1), and its window (plus or minus 1 month) closed in mid-October, so it
+//                is ordered within 14 days of today, 2026-10-23 to 2026-11-06. Without the LDCT,
+//                §2 itself would ask for a CT chest 2027-05-04 to 2027-07-04 (H&P: 35
+//                pack-years, quit 2019, high risk), the pilot-1 answer
 //   cyst         simple renal cyst, report says no follow-up: close with a comment, no order
 //   fit          positive FIT; Dr. Lin's GI referral sr-t2-gi-1020 is active: link it, no new one
 //   hemolyzed_k  K 6.4, hemolyzed (RBC-LAB-03 §2): repeat BMP urgent by the next business day,
@@ -20,13 +24,13 @@ export const expected = {
     nodule: {
       task: 'Task/task-t2-inbox-1',
       patient: 'Patient/pt-0013',
-      sources: ['DiagnosticReport/dr-t2-ct-0604', 'DocumentReference/doc-t2-hp-lm58'],
+      sources: ['DiagnosticReport/dr-t2-ct-0604', 'DiagnosticReport/dr-t2-ldct-0915'],
       nodule_mm: 5,
-      pack_years: 35,
-      quit_year: 2019,
-      risk: 'high',
       index_date: '2026-06-04',
-      window: { start: '2027-05-04', end: '2027-07-04' },
+      screening_index: '2025-09-15',
+      lung_rads: 2,
+      overdue: true,
+      window: { start: '2026-10-23', end: '2026-11-06' },
       action: 'order',
     },
     cyst: { task: 'Task/task-t2-inbox-2', patient: 'Patient/pt-0007', sources: ['DiagnosticReport/dr-t2-us-1020'], action: 'close' },

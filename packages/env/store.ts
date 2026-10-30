@@ -1,13 +1,14 @@
 // Typed in-memory FHIR R4 store (design section 2, "Store"): resource type -> id -> resource,
-// in insertion order. Every resource it holds is its own deeply frozen copy, so reads hand out
-// the stored object and no caller can change state except through put(). A resource is
+// in insertion order. Every resource it holds is a deeply frozen copy, so reads hand out the
+// stored object and no caller can change state except through put(); stores built from the same
+// world share those copies, and a write replaces a resource in its own store only. A resource is
 // admitted only if it has an exact JSON form (packages/env/hash.ts) and every value a date
 // search parameter reads parses, so nothing stored can break the hash or a query later.
 //
 // There is no clear() and no delete: every trial builds a fresh store from the world bytes
 // (packages/env/fixture-source.ts), so nothing can be left behind by forgetting a reset.
 import type { Resource } from '@medplum/fhirtypes';
-import { canonicalJson } from './hash.ts';
+import { canonicalJson, isAdmitted, rememberAdmitted, resourceForm } from './hash.ts';
 import { checkDates, search, type SearchQuery, type SearchResult } from './search.ts';
 
 // Re-exported so apps/web, which does not depend on @medplum/fhirtypes, can name the type.
@@ -22,16 +23,22 @@ function deepFreeze<T>(value: T): T {
   return value;
 }
 
-// The frozen copy the store keeps, after checking it can be hashed and searched.
+// The frozen copy the store keeps, after checking it can be hashed and searched. Its canonical
+// form is kept for the state hash, so an unchanged resource is serialized once. A resource that a
+// store has already admitted is frozen and checked, so it is kept as it is.
 function admit(resource: Resource, type: string, id: string): Readonly<Resource> {
-  const copy = structuredClone(resource);
+  if (isAdmitted(resource)) return resource;
+  const copy = deepFreeze(structuredClone(resource));
+  let form: string;
   try {
-    canonicalJson(copy);
+    if (copy.meta !== undefined) canonicalJson(copy.meta);
+    form = resourceForm(copy);
   } catch (e) {
     throw new Error(`${type}/${id}: ${(e as Error).message}`, { cause: e });
   }
   checkDates(copy);
-  return deepFreeze(copy);
+  rememberAdmitted(copy, form);
+  return copy;
 }
 
 function key(resource: Resource): [string, string] {
@@ -45,7 +52,8 @@ export class Store {
   readonly #byType = new Map<string, Map<string, Readonly<Resource>>>();
   #size = 0;
 
-  // Stores a frozen copy of each resource; the caller's objects are never frozen or shared.
+  // Stores a frozen copy of each resource (or the resource itself when a store has admitted it);
+  // the caller's own objects are never frozen or shared.
   // A duplicate (resourceType, id) is an error: a world never holds two versions of a resource.
   constructor(resources: Iterable<Resource>) {
     for (const resource of resources) {

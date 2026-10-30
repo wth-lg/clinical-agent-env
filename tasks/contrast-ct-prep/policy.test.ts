@@ -62,4 +62,32 @@ describe('contrast-ct-prep', () => {
     expect(d.contrast_allergy.severity).toBe('moderate');
     expect(d.regimen).toBe('premedicate');
   });
+
+  // P19 (researcher-16 T5 lever): the faxed St. Brigid ED discharge summary of 10/17 records a
+  // prerenal AKI, creatinine 1.94 on arrival and 1.46 at discharge against a baseline of about 1.0,
+  // not back to baseline. §4: a creatinine drawn during AKI does not establish kidney function;
+  // §6: hold metformin. The values sit only in the faxed text, and the text avoids the words of the
+  // pilot-1 note searches ('contrast', 'reaction', 'CT').
+  it('reads the unresolved AKI from the outside ED summary and holds metformin', () => {
+    const d = derive(world) as typeof expected;
+    expect(d.aki).toEqual({ note: 'DocumentReference/doc-t5-ed-1017', date: '2026-10-17', discharge_mg_dl: 1.46, baseline_mg_dl: 1, resolved: false });
+    expect(d.metformin).toEqual({ id: 'MedicationRequest/mr-t5-metformin', hold: true });
+    expect(d.creatinine).toMatchObject({ latest: 'Observation/obs-t5-scr-0924', required: true, current: false });
+    const doc = store.get('DocumentReference', 'doc-t5-ed-1017') as { content: Array<{ attachment: { data: string } }>; context?: { encounter?: Array<{ reference?: string }> } };
+    const text = new TextDecoder().decode(Uint8Array.from(atob(doc.content[0]!.attachment.data), (c) => c.charCodeAt(0)));
+    expect(text).not.toMatch(/\b(?:contrast|reaction|ct)\b/i);
+    expect(doc.context?.encounter?.[0]?.reference).toBe('Encounter/enc-t5-ed-1016');
+    expect(store.get('Encounter', 'enc-t5-ed-1016')).toMatchObject({ status: 'finished', serviceProvider: { reference: 'Organization/org-st-brigid' } });
+    // No Observation or Condition carries the outside values.
+    const own = (r: (typeof all)[number]) => (r as { subject?: { reference?: string } }).subject?.reference === 'Patient/pt-0015';
+    expect(all.filter((r) => (r.resourceType === 'Observation' || r.resourceType === 'Condition') && own(r) && /^2026-10-1[67]/.test(String((r as { effectiveDateTime?: string; onsetDateTime?: string }).effectiveDateTime ?? (r as { onsetDateTime?: string }).onsetDateTime ?? '')))).toEqual([]);
+  });
+
+  // builder-187 (verifier-phase-P19-T5-2 M1, ruling 438): evidence_before_orders wants the ED
+  // summary seen before the metformin decision, so §6 says to read outside records first.
+  it('RBC-RAD-07 §6 says to read outside emergency department records before deciding on metformin', async () => {
+    const policy = (await nodeTaskSource({ testMode: false }).get('contrast-ct-prep')).policies.find((p) => p.id === 'RBC-RAD-07')!.text;
+    const six = policy.slice(policy.indexOf('§6 Metformin'));
+    expect(six).toMatch(/Before deciding on metformin, read the patient's recent outside records, including any emergency department summary, for acute kidney injury\./);
+  });
 });

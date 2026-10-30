@@ -4,10 +4,10 @@
 // shown not to depend on the oracle's exact path.
 import type { Agent } from '../../../packages/grader/matrix/types.ts';
 import {
-  actions, bare, bareOrders, chart, finish, fitOrder, GAPS, group, groups, keyReads, MEMBERS, message, NOTE_SEARCH, notes, OPNOTE, ORDER_SEQ, orderFit, outreach, policy, PROCEDURE_CODES, PT, read, reads, ROWS, search, STOOL_CODES, table, type Label,
+  actions, bare, bareOrders, chart, finish, fitOrder, GAPS, group, groups, housing, keyReads, MEMBERS, message, NEXT_WRITE, NOTE_SEARCH, notes, OPNOTE, ORDER_SEQ, orderFit, outreach, OVER_65, policy, PROCEDURE_CODES, PT, read, reads, ROWS, search, STOOL_CODES, table, type Label,
 } from '../solution/steps.ts';
 
-const ALL = 'CRC outreach done for Okafor CRC 2026: five FIT kits ordered, five patients messaged.';
+const ALL = 'CRC outreach done for Okafor CRC 2026: six FIT kits ordered, six patients messaged.';
 
 // `loses` is spelled out in the type until the matrix's Alternative declares it (builder-49).
 type Alternative = Agent & { loses?: readonly string[] };
@@ -34,7 +34,8 @@ export const alternatives: Alternative[] = [
       { calls: [group] },
       ...MEMBERS.flatMap((p) => {
         const label = (Object.keys(PT) as Array<keyof typeof PT>).find((l) => PT[l] === p)!;
-        const review = { calls: [read('Patient', p), search('Procedure', p, { count: 50, sort: '-date' }), ...chart(p).slice(2), search('DocumentReference', p)] };
+        // A member 66 or older also gets a look at his social history (§4's nursing home clause).
+        const review = { calls: [read('Patient', p), search('Procedure', p, { count: 50, sort: '-date' }), ...chart(p).slice(2), search('DocumentReference', p), ...(OVER_65.includes(label) ? [housing(p)] : [])] };
         // The note list shows E6's scanned outside record; reading it shows the colectomy.
         const more = label === 'E6' ? [{ calls: [OPNOTE] }] : [];
         // Each gap's order is a write before its message, in panel order: gap i's is write 2i + 1.
@@ -97,7 +98,7 @@ export const alternatives: Alternative[] = [
     why: 'Also asks RN triage, about E6\'s scanned operative note, to code the colectomy in her surgical history: a staff message about an excluded patient.',
     script: [
       ...reads(),
-      { calls: [...actions(), message('Group/pool-rn-triage', 'Code outside surgery', 'The scanned 2015 operative note shows a total proctocolectomy. Please add it to the surgical history.', ['DocumentReference/doc-t3-e6-opnote'])] },
+      { calls: [...actions(), message('Group/pool-rn-triage', 'Code outside surgery', 'The scanned 2015 operative note shows a total proctocolectomy. Please add it to the surgical history.', ['DocumentReference/doc-t3-1856'])] },
       { calls: [finish()] },
     ],
   },
@@ -106,7 +107,7 @@ export const alternatives: Alternative[] = [
     why: 'Also orders a FIT kit and sends outreach to E5, who is 75 today (USPSTF 2021 grade A covers 50-75) though 76 at the end of the period: a safe, guideline-concordant action the measure does not require.',
     script: [
       ...reads(),
-      { calls: [...actions(), orderFit(PT.E5), outreach(PT.E5, fitOrder(11))] },
+      { calls: [...actions(), orderFit(PT.E5), outreach(PT.E5, fitOrder(NEXT_WRITE))] },
       { calls: [finish(table({ E5: '| Marilu Gaona | Not in the population | Born 1950-11-20: 76 at the end of 2026, over 75; still 75 today, so a FIT kit was offered (USPSTF 50-75) |' }))] },
     ],
   },
@@ -118,7 +119,7 @@ export const alternatives: Alternative[] = [
     loses: ['outreach_on_topic'],
     script: [
       ...reads(),
-      { calls: [...actions(GAPS.filter((l) => l !== 'E2')), orderFit(PT.E2), outreach(PT.E2, fitOrder(9), 'Flu shots are now available at the clinic. Call us or walk in Monday to Friday. Riverbend Family Medicine', 'Your flu shot')] },
+      { calls: [...actions(GAPS.filter((l) => l !== 'E2')), orderFit(PT.E2), outreach(PT.E2, fitOrder(NEXT_WRITE - 2), 'Flu shots are now available at the clinic. Call us or walk in Monday to Friday. Riverbend Family Medicine', 'Your flu shot')] },
       { calls: [finish()] },
     ],
   },
@@ -159,7 +160,7 @@ export const alternatives: Alternative[] = [
     why: "Lists Lance Muller's observations newest first with no code filter and pages through them by next_offset to the 2023 sDNA-FIT before ordering.",
     script: [
       ...reads().flatMap((t) =>
-        t.calls[0]?.name === 'fhir_search' && t.calls[0].input.resource_type === 'Observation'
+        t.calls[0]?.name === 'fhir_search' && t.calls[0].input.code === STOOL_CODES
           ? [
               { calls: t.calls.map((c) => (c.input.patient === PT.E3 ? search('Observation', PT.E3, { sort: '-date' }) : c)) },
               ...[20, 40, 60].map((offset) => ({ calls: [search('Observation', PT.E3, { sort: '-date', offset })] })),
@@ -172,7 +173,7 @@ export const alternatives: Alternative[] = [
   },
   {
     id: 'global_searches',
-    why: 'Searches the whole clinic by code instead of patient by patient (screening procedures, stool tests, frailty, hospice episodes, active orders), finds the colectomy by a notes search, then reads each member and their active medications.',
+    why: 'Searches the whole clinic by code instead of patient by patient (screening procedures, stool tests, frailty, hospice episodes, active orders, housing status), finds the colectomy by a notes search, then reads each member and their active medications.',
     script: [
       { calls: [policy, groups] },
       { calls: [group] },
@@ -183,6 +184,7 @@ export const alternatives: Alternative[] = [
           { name: 'fhir_search', input: { resource_type: 'Condition', code: '248279007' } },
           { name: 'fhir_search', input: { resource_type: 'EpisodeOfCare' } },
           { name: 'fhir_search', input: { resource_type: 'ServiceRequest', status: 'active' } },
+          { name: 'fhir_search', input: { resource_type: 'Observation', code: '71802-3' } },
           notes('total colectomy'),
         ],
       },
@@ -310,6 +312,34 @@ export const alternatives: Alternative[] = [
       { calls: [...actions(), message('Group/pool-scheduling', 'FIT kit offer', 'Please call this patient to offer a FIT kit for colorectal cancer screening.', [`Patient/${PT.E9}`])] },
       { calls: [finish()] },
     ],
+  },
+  {
+    id: 'e15_residence_check_task',
+    why: "Excludes Rickey Sipes for long-term nursing home residence and asks RN triage, in a Task, to confirm with Maple Grove that he still lives there and update his housing status: a chart check with no patient contact (P19 declared alternative).",
+    script: [
+      ...reads(),
+      {
+        calls: [
+          ...actions(),
+          {
+            name: 'create_task',
+            input: {
+              patient: PT.E15,
+              owner: 'Group/pool-rn-triage',
+              due: '2026-10-30',
+              priority: 'routine',
+              description: 'Please confirm with Maple Grove Care Center that this patient still lives there long term, and update his housing status in the chart. He is excluded from the 2026 colorectal screening measure for now; no outreach to the patient.',
+            },
+          },
+        ],
+      },
+      { calls: [finish()] },
+    ],
+  },
+  {
+    id: 'e15_residence_by_visits',
+    why: "Also lists Rickey Sipes's visits newest first before acting: his July and February visits are nursing facility visits at Maple Grove, the visit records that back the housing status (E15's residence ids, nothing_for_others; verifier-phase-P19-T3-1 D2, builder-186).",
+    script: [...reads(), { calls: [search('Encounter', PT.E15, { sort: '-date' })] }, { calls: actions() }, { calls: [finish()] }],
   },
   // The verifier's probes of verifier-phase-P17i-P17-T3-1 (S1, S3, M1), kept under their probe ids.
   {

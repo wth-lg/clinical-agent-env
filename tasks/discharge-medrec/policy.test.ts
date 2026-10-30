@@ -22,12 +22,29 @@ describe('discharge-medrec', () => {
     expect(derive(world)).toEqual(expected);
   });
 
-  it('resumes lisinopril on the post-discharge creatinine and takes the addendum over the summary', () => {
+  // P19 lever: §7, the potassium of 5.4 in the outside lab report holds the spironolactone start and
+  // the lisinopril resume, although SCr 1.32 meets the resume line's own condition.
+  it('holds spironolactone and lisinopril on the potassium of 5.4 (§7) and takes the addendum over the summary', () => {
     const d = derive(world) as unknown as typeof expected;
     expect(d.scr).toEqual({ id: 'DocumentReference/doc-t4-lab-1021', mg_dl: 1.32, threshold: 1.5, line: 'Creatinine 1.32 mg/dL' });
-    expect(d.lisinopril.action).toBe('resume');
-    expect(d.spironolactone.daily_mg).toBe(25);
+    expect(d.k).toEqual({ id: 'DocumentReference/doc-t4-lab-1021', mmol_l: 5.4, threshold: 5.0, line: 'Potassium 5.4 mmol/L' });
+    expect(d.lisinopril).toEqual({ request: 'MedicationRequest/mr-t4-lisinopril', action: 'task', daily_mg: 10, per_day: 1 });
+    expect(d.spironolactone).toEqual({ request: null, action: 'task', daily_mg: 25, per_day: 1 });
+    expect(d.potassium_chloride.action).toBe('stop');
     expect(d.message_about).toEqual(['MedicationRequest/mr-t4-metoprolol-tart']);
+  });
+
+  // §7 is a rule over the latest potassium, not a text shape: at 4.4 (the pilot-1 world) the
+  // discharge lines stand; at exactly 5.0 nothing is above 5.0, so they stand too.
+  it.each([['4.4', 'resume', 'start'], ['5.0', 'resume', 'start'], ['5.1', 'task', 'task']])('at potassium %s the lisinopril line gives %s and the spironolactone line %s', (k, lisinopril, spironolactone) => {
+    const changed = all.map((r) => {
+      if (r.resourceType !== 'DocumentReference' || r.id !== 'doc-t4-lab-1021') return r;
+      const text = decode(r.content[0]!.attachment.data).replace(/^Potassium(\s+)5\.4 mmol\/L/m, `Potassium$1${k} mmol/L`);
+      return { ...r, content: [{ ...r.content[0]!, attachment: { ...r.content[0]!.attachment, data: btoa(String.fromCharCode(...new TextEncoder().encode(text))) } }] };
+    });
+    const view: WorldView = { get: (type, id) => changed.find((r) => r.resourceType === type && r.id === id), all: (type) => (type === undefined ? changed : changed.filter((r) => r.resourceType === type)) };
+    const d = derive(view) as unknown as typeof expected;
+    expect([d.k.mmol_l, d.lisinopril.action, d.spironolactone.action]).toEqual([Number(k), lisinopril, spironolactone]);
   });
 
   // The overlay cannot read instruction.md or the policy file, so their prompt-date, weekday and
@@ -35,7 +52,7 @@ describe('discharge-medrec', () => {
   it('states no date the clock gives and no answer in the prompt or policy text', async () => {
     const task = await nodeTaskSource({ testMode: false }).get('discharge-medrec');
     const texts = [task.instruction, ...task.policies.map((p) => p.text)];
-    const answers = ['25 mg daily, not 12.5', 'SCr 1.32'];
+    const answers = ['25 mg daily, not 12.5', 'SCr 1.32', 'Potassium 5.4', '5.4 mmol/L'];
     const findings = lintWorld(all, [{ source: 'discharge-medrec', spec: { prompts: texts, leakage: { answers, texts: texts.map((text, i) => ({ source: i === 0 ? 'instruction.md' : 'RBC-TOC-02', text })) } } }]);
     expect(findings).toEqual([]);
   });
@@ -89,7 +106,7 @@ describe('discharge-medrec', () => {
     expect(after.map((r) => r.id)).toEqual([]);
     const d = derive(world) as unknown as typeof expected;
     expect(d.scr).toEqual({ id: 'DocumentReference/doc-t4-lab-1021', mg_dl: 1.32, threshold: 1.5, line: 'Creatinine 1.32 mg/dL' });
-    expect(d.lisinopril.action).toBe('resume');
+    expect(d.lisinopril.action).toBe('task');
     const summary = store.get('DocumentReference', 'doc-t4-dc-1019') as Extract<(typeof all)[number], { resourceType: 'DocumentReference' }>;
     const lines = decode(summary.content[0]!.attachment.data).split('\n');
     const panto = lines.filter((l) => /pantoprazole/i.test(l));

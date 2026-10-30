@@ -60,6 +60,11 @@ interface Common {
   // or a fhir_read), not merely exposed it. Without one, exposure decides, as for other types.
   // Ignored for ids not in decisive_ids, and only text-bearing types have shown text.
   decisive_phrases?: Readonly<Record<string, string>>;
+  // For a decisive id the check counts as seen by a rule of its own (T2's screening LDCT, seen
+  // from a fhir_search row that shows its conclusion), the first step that saw it by that rule,
+  // keyed as decisive_ids gives it: attribution counts the id as seen when that rule finds a step,
+  // as well as by exposure or a shown phrase, so the label agrees with the check.
+  seen_at?: Readonly<Record<string, (steps: readonly Step[]) => number | null>>;
 }
 
 export interface GateCheck extends Common {

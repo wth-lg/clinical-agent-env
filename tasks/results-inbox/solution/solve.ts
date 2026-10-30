@@ -19,9 +19,10 @@ interface Order {
 
 export interface Options {
   reads: ScriptTurn[];
-  // Item 1: the CT order (null: none), its tracking task's due date (null: none), the message,
-  // and for a call, whether its task's focus is the CT order instead of the CT report.
-  nodule: { order: Order | null; due: string | null; message: Contact; link?: boolean; callOnOrder?: boolean };
+  // Item 1: the CT order (null: none), more orders after it (a referral, a second CT), its
+  // tracking task's due date (null: none), the message, and for a call, whether its task's focus
+  // is the CT order instead of the CT report.
+  nodule: { order: Order | null; extra?: Order[]; due: string | null; message: Contact; link?: boolean; callOnOrder?: boolean };
   // Item 3: a new GI referral besides the existing one; whether the closure links the existing
   // one; the patient message (RBC-INBOX-01 §4; 'call': a task for the RN triage pool to phone him,
   // due callDue, default today); an FYI to Dr. Lin that the closure links.
@@ -56,7 +57,9 @@ export interface Options {
 
 export const ORACLE: Options = {
   reads: READ_ALL,
-  nodule: { order: { code: 'IMG-CT-CHEST-WO', priority: 'routine', start: '2027-06-04', end: '2027-07-04' }, due: '2027-07-04', message: true },
+  // P19: her nodule is followed in lung cancer screening and the next screening LDCT, due in
+  // September 2026, is overdue, so it is ordered within 14 days of today (RBC-RAD-05 §2).
+  nodule: { order: { code: 'IMG-CT-CHEST-LDCT', priority: 'routine', start: '2026-10-23', end: '2026-11-06' }, due: '2026-11-06', message: true },
   fit: { newReferral: false, linkExisting: true, message: true },
   hemolyzed: { order: { code: '51990-0', priority: 'urgent', start: '2026-10-26' }, oncall: false, message: true },
   critical: { oncall: 'message', oncallPriority: 'stat', order: { code: '51990-0', priority: 'stat', start: '2026-10-23' } },
@@ -99,13 +102,14 @@ export function solve(over: Partial<Options> = {}): Script {
   // Item 1.
   {
     const made: Write[] = [];
-    if (o.nodule.order) made.push(order(PT.marsh, o.nodule.order, 'Incidental 5 mm RLL nodule, high risk: 12-month CT per RBC-RAD-05', [SRC.ct, SRC.hp]));
-    if (o.nodule.due) made.push(w.task(PT.marsh, 'Practitioner/pr-okafor', o.nodule.due, 'routine', 'Track the 12-month CT chest for the RLL nodule', made[0]?.ref));
+    if (o.nodule.order) made.push(order(PT.marsh, o.nodule.order, '5 mm RLL nodule followed in lung cancer screening (Lung-RADS 2, LDCT 2025-09-15): overdue annual screening LDCT per RBC-RAD-05 §2', [SRC.ct, SRC.ldct]));
+    for (const x of o.nodule.extra ?? []) made.push(order(PT.marsh, x, 'RLL nodule followed in lung cancer screening (RBC-RAD-05 §2)', [SRC.ct]));
+    if (o.nodule.due) made.push(w.task(PT.marsh, 'Practitioner/pr-okafor', o.nodule.due, 'routine', 'Track the overdue screening LDCT for the RLL nodule', made[0]?.ref));
     if (o.nodule.message === 'call')
-      made.push(w.task(PT.marsh, 'Group/pool-rn-triage', '2026-10-23', 'routine', 'Phone Linda Marsh: her June CT showed a small lung nodule; a follow-up CT of the chest is ordered for June 2027 and scheduling will call her.', o.nodule.callOnOrder ? made[0]?.ref : SRC.ct));
+      made.push(w.task(PT.marsh, 'Group/pool-rn-triage', '2026-10-23', 'routine', 'Phone Linda Marsh: her June CT showed the small lung nodule her 2025 screening CT found; her yearly lung screening CT is overdue and is ordered for the next two weeks, and scheduling will call her.', o.nodule.callOnOrder ? made[0]?.ref : SRC.ct));
     if (o.nodule.message === true)
-      made.push(w.message(`Patient/${PT.marsh}`, 'routine', 'Follow-up CT of your lungs', 'Your June CT showed a small spot on the lung. We have ordered a follow-up CT of the chest for June 2027; scheduling will call you.', [SRC.ct]));
-    const doc = o.notes ? [w.note(PT.marsh, 'Pulmonary nodule follow-up (RBC-RAD-05)', NOTES.nodule, [SRC.ct, SRC.hp], ['RBC-RAD-05'])] : [];
+      made.push(w.message(`Patient/${PT.marsh}`, 'routine', 'Your lung screening CT is due', 'Your June CT showed the small spot on the lung that your lung cancer screening CT found in September 2025. Your yearly screening CT is now overdue, so we have ordered it for the next two weeks; scheduling will call you.', [SRC.ct, SRC.ldct]));
+    const doc = o.notes ? [w.note(PT.marsh, 'Pulmonary nodule follow-up (RBC-RAD-05)', NOTES.nodule, [SRC.ct, SRC.ldct], ['RBC-RAD-05'])] : [];
     items.push([...made, ...doc, ...close(1, o.nodule.link === false ? [] : made)]);
   }
   // Item 2.

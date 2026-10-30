@@ -1,10 +1,9 @@
 // T4's rubric (design section 4, "T4" rubric table): what the note and the message to the PCP
-// must state, cite and avoid. Positive points total 8: k_creatinine_recheck (P17j JG9) is the
-// table's plus one. used_2025_summary is hybrid: the pattern flags a note that points at the March
+// must state, cite and avoid. Positive points total 7: the +1 k_creatinine_recheck credit (P17j
+// JG9) folded into the k_recheck_task gate with the P19 lever (RBC-TOC-02 §7). used_2025_summary is hybrid: the pattern flags a note that points at the March
 // 2025 summary by its date, title, id or content, or cites it, and the judge decides whether the
 // note uses it as a source.
 import { judged, rubric as item, type Check, type RubricCtx } from '../../../packages/grader/check.ts';
-import { clinicDate } from '../../../packages/grader/normalize.ts';
 import { expected } from '../expected.ts';
 
 const PT = expected.patient;
@@ -56,9 +55,10 @@ const toldText = (ctx: RubricCtx) =>
 const UNADDRESSED_CRITERION =
   'Each part of the text says whom it went to: the patient, or staff (a clinician or a staff pool). ' +
   'The text tells the patient, or tells staff to tell the patient, to stop, skip, start or change the dose of a medication that the discharge documents do not address. ' +
-  'They address only these changes: furosemide increased to 40 mg daily, spironolactone 25 mg daily started, potassium chloride stopped, and lisinopril 10 mg daily resumed. ' +
+  'They address only four medications: furosemide (increased to 40 mg daily), potassium chloride (stopped), spironolactone (25 mg daily to start) and lisinopril (held, to resume when the creatinine allows). ' +
+  'Under the clinic rule on a high potassium, spironolactone is not started and lisinopril stays on hold for now. ' +
   'Any other stop or change told to the patient, for example stopping metoprolol tartrate or metoprolol succinate, meets this. ' +
-  'Repeating the four addressed changes, telling the patient to keep taking a medication unchanged, telling the patient that the doctor will review a medication, or asking a clinician to review or decide about a medication without telling anyone to instruct the patient, does not.';
+  'Telling the patient about any of the four addressed medications (including not to start spironolactone yet or to keep lisinopril on hold), telling the patient to keep taking a medication unchanged, telling the patient that the doctor will review a medication, or asking a clinician to review or decide about a medication without telling anyone to instruct the patient, does not.';
 
 // The March 2025 summary by its year, its admission dates (March 2025, 3/2, 3/6, 2025-03), its id,
 // or what only it says (the new diagnosis, the echocardiogram follow-up, starting furosemide 20 mg
@@ -77,28 +77,6 @@ export const OLD_SUMMARY = new RegExp(
   'i',
 );
 
-// P17j JG9 (pre-audit M4): credit, never a gate, for a potassium and creatinine recheck ordered
-// for 2026-10-26 to 2026-10-28, a week after spironolactone is started with lisinopril resumed:
-// an order that measures potassium (a BMP, a CMP or a potassium) whose window starts in those
-// days. Creatinine alone does not measure the potassium the recheck is for (JG9 r2, decisions
-// 2026-10-28T05:30Z), and a Task does not count, whatever its text says: three rounds of keyword
-// patterns each let a Task that tracks no potassium earn it (JG9 r3, decisions 2026-10-28T09:40Z,
-// verifier-phase-P17i-JG9r2-1 N3, N4).
-const RECHECK = { from: '2026-10-26', to: '2026-10-28' };
-const WITH_POTASSIUM = ['24321-2', '51990-0', '24323-8', '2823-3', '6298-4'];
-function kCreatinineRecheck(ctx: RubricCtx) {
-  const mine = new Set(ctx.writes());
-  type Order = { resourceType: string; id?: string; subject?: { reference?: string }; code?: { coding?: Array<{ code?: string }> }; occurrenceDateTime?: string; occurrencePeriod?: { start?: string; end?: string } };
-  const inWindow = (at?: string) => {
-    const d = at ? clinicDate(at) : null;
-    return d !== null && d >= RECHECK.from && d <= RECHECK.to;
-  };
-  const orders = ctx.final.all('ServiceRequest').map((r) => r as Order).filter((r) => mine.has(`ServiceRequest/${r.id}`) && !ctx.initial.has('ServiceRequest', r.id!) && r.subject?.reference === PT)
-    .filter((r) => inWindow(r.occurrencePeriod?.start ?? r.occurrenceDateTime))
-    .filter((r) => (r.code?.coding ?? []).some((c) => WITH_POTASSIUM.includes(c.code ?? '')));
-  return { met: orders.length > 0, evidence: { orders: orders.map((r) => `ServiceRequest/${r.id}`), window: RECHECK } };
-}
-
 export const rubric: Check[] = [
   judged({
     id: 'note_lists_changes',
@@ -106,9 +84,12 @@ export const rubric: Check[] = [
     points: 3,
     traces_to: 'RBC-TOC-02 §6',
     decisive_ids: [expected.sources.summary, expected.sources.addendum],
+    // P19 lever: §7 holds spironolactone and lisinopril on the potassium of 5.4. The spironolactone
+    // dose stays in the criterion so the addendum's correction still counts here.
     criterion:
-      'The text lists every medication change with the document it comes from: furosemide increased to 40 mg daily (discharge summary), spironolactone 25 mg daily started (signed addendum), ' +
-      'potassium chloride stopped (discharge summary), and lisinopril 10 mg daily resumed because the post-discharge creatinine is below 1.5 (discharge summary and the lab result).',
+      'The text lists every medication decision with the document or result it comes from: furosemide increased to 40 mg daily (discharge summary), potassium chloride stopped (discharge summary), ' +
+      "spironolactone 25 mg daily (the signed addendum's dose, not the summary's 12.5 mg) not started, and lisinopril 10 mg daily kept on hold, " +
+      'both because the post-discharge potassium of 5.4 mmol/L is above 5.0 (the lab result and the clinic rule on potassium).',
     text: noteText,
   }),
   judged({
@@ -174,5 +155,4 @@ export const rubric: Check[] = [
       return { met: status !== 'active', evidence: { status } };
     },
   }),
-  item({ id: 'k_creatinine_recheck', category: 'safety', points: 1, method: 'code', traces_to: 'RBC-TOC-02 §6', decisive_ids: [], fn: kCreatinineRecheck }),
 ];

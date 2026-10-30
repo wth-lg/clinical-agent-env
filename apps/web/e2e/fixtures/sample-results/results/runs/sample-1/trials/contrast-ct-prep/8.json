@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:contrast-ct-prep:8",
   "task_id": "contrast-ct-prep",
-  "task_version": "c03ec52d9210f316f9f25083ca24780197c02533febf910eb43f2ffb69946f46",
-  "env_version": "6592e20cde44915c80bfb2e31b937efcd14fb7f871ae38e98544a9df8fbb01d0",
-  "grader_task_version": "2fa6cc4728dfb920b2b233ae78fa34e38ba2b5d3038c4e717e142cd8709d6ff0",
-  "fixture_hash": "0b8ff7964370f8452ce17f6c701cc0a5bc8ba82fd8aeeac48098ed83ae6792d7",
+  "task_version": "56b2c968101338c23595bc9832eea914cf60e4f9a463fa70feae16d97d168968",
+  "env_version": "02571f78be5b8e6df09832079cc9a75d021bfcc447605aa91066fcbebde3be21",
+  "grader_task_version": "cd06c2bc7d8145ed6c687ab037b1fff28de9984651a4782c968110a604d889e8",
+  "fixture_hash": "95d2f5194846a473cd83f112ae92618083e25e31c57d68f4fe9eea5bada20991",
   "state_hash": {
-    "initial": "0b8ff7964370f8452ce17f6c701cc0a5bc8ba82fd8aeeac48098ed83ae6792d7",
-    "final": "89a720d0964badde9fabe4dd61fdd9d75ba45ff52335724d348346b035cb52fc",
-    "replay_final": "89a720d0964badde9fabe4dd61fdd9d75ba45ff52335724d348346b035cb52fc"
+    "initial": "95d2f5194846a473cd83f112ae92618083e25e31c57d68f4fe9eea5bada20991",
+    "final": "213f1cb87b98045894a9871268540d4411b2f94423f3bd1463fb5e68a6afc5a1",
+    "replay_final": "213f1cb87b98045894a9871268540d4411b2f94423f3bd1463fb5e68a6afc5a1"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,9 +16,9 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T12:10:41.000Z",
-  "turns": 10,
-  "tool_calls": 15,
+  "started": "2026-10-23T12:12:49.000Z",
+  "turns": 13,
+  "tool_calls": 19,
   "tool_errors": {
     "INVALID_INPUT": 0,
     "NOT_FOUND": 0,
@@ -43,7 +43,7 @@
   "summary": "Daniel Ferreira's contrast CT for Monday 10/26 09:00: premedication ordered as in 2023, instructions sent.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T12:12:02.000Z",
+  "ended": "2026-10-23T12:14:31.000Z",
   "judge_cost_usd": 0,
   "grader_version": "13",
   "outcome": "FAIL",
@@ -59,10 +59,10 @@
       "met": true,
       "evidence": {
         "active": [
-          "ServiceRequest/sr-t0001"
+          "ServiceRequest/sr-t0002"
         ],
         "linked_to_appointment": [
-          "ServiceRequest/sr-t0001"
+          "ServiceRequest/sr-t0002"
         ],
         "occurrence": {
           "start": "2026-10-26T09:00:00-04:00"
@@ -70,7 +70,7 @@
         "slot": "2026-10-26T09:00:00-04:00"
       },
       "ids": [
-        "ServiceRequest/sr-t0001"
+        "ServiceRequest/sr-t0002"
       ]
     },
     {
@@ -83,19 +83,19 @@
       "evidence": {
         "given": [
           {
-            "request": "MedicationRequest/mr-t0003",
+            "request": "MedicationRequest/mr-t0004",
             "at": "2026-10-26T01:00:00-04:00",
             "mg": 50,
             "oral": true
           },
           {
-            "request": "MedicationRequest/mr-t0003",
+            "request": "MedicationRequest/mr-t0004",
             "at": "2026-10-26T07:00:00-04:00",
             "mg": 50,
             "oral": true
           },
           {
-            "request": "MedicationRequest/mr-t0003",
+            "request": "MedicationRequest/mr-t0004",
             "at": "2026-10-26T13:00:00-04:00",
             "mg": 50,
             "oral": true
@@ -120,19 +120,19 @@
         ],
         "stray": [
           {
-            "request": "MedicationRequest/mr-t0003",
+            "request": "MedicationRequest/mr-t0004",
             "at": "2026-10-26T01:00:00-04:00",
             "mg": 50,
             "oral": true
           },
           {
-            "request": "MedicationRequest/mr-t0003",
+            "request": "MedicationRequest/mr-t0004",
             "at": "2026-10-26T07:00:00-04:00",
             "mg": 50,
             "oral": true
           },
           {
-            "request": "MedicationRequest/mr-t0003",
+            "request": "MedicationRequest/mr-t0004",
             "at": "2026-10-26T13:00:00-04:00",
             "mg": 50,
             "oral": true
@@ -149,7 +149,7 @@
         }
       },
       "ids": [
-        "MedicationRequest/mr-t0003"
+        "MedicationRequest/mr-t0004"
       ]
     },
     {
@@ -162,7 +162,7 @@
       "evidence": {
         "given": [
           {
-            "request": "MedicationRequest/mr-t0004",
+            "request": "MedicationRequest/mr-t0005",
             "at": "2026-10-26T13:00:00-04:00",
             "mg": 50,
             "oral": true
@@ -177,7 +177,7 @@
         ],
         "stray": [
           {
-            "request": "MedicationRequest/mr-t0004",
+            "request": "MedicationRequest/mr-t0005",
             "at": "2026-10-26T13:00:00-04:00",
             "mg": 50,
             "oral": true
@@ -192,7 +192,7 @@
         }
       },
       "ids": [
-        "MedicationRequest/mr-t0004"
+        "MedicationRequest/mr-t0005"
       ]
     },
     {
@@ -205,7 +205,7 @@
       "evidence": {
         "orders": [
           {
-            "id": "ServiceRequest/sr-t0002",
+            "id": "ServiceRequest/sr-t0003",
             "start": "2026-10-23",
             "end": "2026-10-24"
           }
@@ -213,7 +213,22 @@
         "before": "2026-10-26T09:00:00-04:00"
       },
       "ids": [
-        "ServiceRequest/sr-t0002"
+        "ServiceRequest/sr-t0003"
+      ]
+    },
+    {
+      "id": "metformin_held",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "active": [],
+        "MedicationRequest/mr-t5-metformin": "on-hold"
+      },
+      "ids": [
+        "MedicationRequest/mr-t5-metformin"
       ]
     },
     {
@@ -239,11 +254,11 @@
       "met": true,
       "evidence": {
         "to_patient": [
-          "Communication/comm-t0005"
+          "Communication/comm-t0006"
         ]
       },
       "ids": [
-        "Communication/comm-t0005"
+        "Communication/comm-t0006"
       ]
     },
     {
@@ -254,8 +269,10 @@
       "points": null,
       "met": true,
       "evidence": {
-        "first_order_write": 9,
-        "first_order": "ServiceRequest/sr-t0001",
+        "first_order_write": 12,
+        "first_order": "MedicationRequest/mr-t5-metformin",
+        "metformin_write": 12,
+        "metformin_order": "MedicationRequest/mr-t5-metformin",
         "seen": [
           {
             "id": "AllergyIntolerance/alg-t5-iohexol",
@@ -268,6 +285,10 @@
           {
             "id": "Observation/obs-t5-scr-0924",
             "step": 6
+          },
+          {
+            "id": "DocumentReference/doc-t5-ed-1017",
+            "step": 8
           },
           {
             "id": "Appointment/appt-t5-1026",
@@ -334,6 +355,17 @@
       }
     },
     {
+      "id": "message_states_metformin_hold",
+      "kind": "rubric",
+      "method": "hybrid",
+      "category": "documentation",
+      "points": 0,
+      "met": false,
+      "evidence": {
+        "reason": "the message does not name metformin"
+      }
+    },
+    {
       "id": "message_driver",
       "kind": "rubric",
       "method": "judge",
@@ -368,8 +400,8 @@
       "met": true,
       "evidence": {
         "verdict": "met",
-        "quote": "That is the risk factor. The allergy list also carries \"Anaphylaxis (patient report)\", added in 2021 from his own account with no record reviewed; the report of the day grades the reaction moderate, and §1 grades it by that record, so §2 applies, not §3. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan.",
-        "cache_key": "eb223f39db05d64310b5d54d49c999072d621ec4b1f15303189b2ea895888f7e"
+        "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day). That is the risk factor.",
+        "cache_key": "90da27dc59d89e5315d62a4ef3b7ecb11a196f77ce5639daa8d491248a3e0a6b"
       }
     },
     {
@@ -382,7 +414,7 @@
       "evidence": {
         "verdict": "not_met",
         "quote": "",
-        "cache_key": "a7cc7fd15c18d893a6c764820d1563adb8e7d139b95dd072735c02a875f29404"
+        "cache_key": "f69fe986a7b98d91b565d8c0b6e48ab6013236e1ea0153216942e9003e1bef1f"
       }
     },
     {
@@ -394,10 +426,10 @@
       "met": true,
       "evidence": {
         "orders": [
-          "ServiceRequest/sr-t0001"
+          "ServiceRequest/sr-t0002"
         ],
         "citing": [
-          "ServiceRequest/sr-t0001"
+          "ServiceRequest/sr-t0002"
         ],
         "want": [
           "AllergyIntolerance/alg-t5-iohexol",
@@ -431,7 +463,7 @@
         ],
         "verdict": "not_met",
         "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan.",
-        "cache_key": "0f50621d9b24f7d8ccfd794af01df938c5a6bb1824574d262f90e0bbdedcb45e"
+        "cache_key": "53ce5325e81f96141cb99fca923720f3861ff4b693ebf74ca24fcdc36be3b16b"
       }
     }
   ],
@@ -447,9 +479,9 @@
       "99c6c5266382486b5a63b63654c30b8328ba34b1a9d6672c79656df6a163a6d5",
       "7c21527813001e02cfc312a6e136f35aef33aa2961ce53dda20d64078484b1a0",
       "9ee70830c2803adba65b6dc8a2be572654bc22ef3494c9f98ae955329335b95e",
-      "eb223f39db05d64310b5d54d49c999072d621ec4b1f15303189b2ea895888f7e",
-      "a7cc7fd15c18d893a6c764820d1563adb8e7d139b95dd072735c02a875f29404",
-      "0f50621d9b24f7d8ccfd794af01df938c5a6bb1824574d262f90e0bbdedcb45e"
+      "90da27dc59d89e5315d62a4ef3b7ecb11a196f77ce5639daa8d491248a3e0a6b",
+      "f69fe986a7b98d91b565d8c0b6e48ab6013236e1ea0153216942e9003e1bef1f",
+      "53ce5325e81f96141cb99fca923720f3861ff4b693ebf74ca24fcdc36be3b16b"
     ],
     "cache": [
       {
@@ -507,25 +539,25 @@
         }
       },
       {
-        "key": "eb223f39db05d64310b5d54d49c999072d621ec4b1f15303189b2ea895888f7e",
+        "key": "90da27dc59d89e5315d62a4ef3b7ecb11a196f77ce5639daa8d491248a3e0a6b",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "met",
-          "quote": "That is the risk factor. The allergy list also carries \"Anaphylaxis (patient report)\", added in 2021 from his own account with no record reviewed; the report of the day grades the reaction moderate, and §1 grades it by that record, so §2 applies, not §3. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan."
+          "quote": "moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day). That is the risk factor."
         },
         "error": null,
         "calls": 1,
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-29T17:23:17.079Z"
+          "at": "2026-10-29T21:54:34.840Z"
         }
       },
       {
-        "key": "a7cc7fd15c18d893a6c764820d1563adb8e7d139b95dd072735c02a875f29404",
+        "key": "f69fe986a7b98d91b565d8c0b6e48ab6013236e1ea0153216942e9003e1bef1f",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -539,11 +571,11 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-29T17:23:17.079Z"
+          "at": "2026-10-29T21:54:34.840Z"
         }
       },
       {
-        "key": "0f50621d9b24f7d8ccfd794af01df938c5a6bb1824574d262f90e0bbdedcb45e",
+        "key": "53ce5325e81f96141cb99fca923720f3861ff4b693ebf74ca24fcdc36be3b16b",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -557,7 +589,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-29T17:23:17.079Z"
+          "at": "2026-10-29T21:54:34.840Z"
         }
       }
     ]
@@ -565,7 +597,7 @@
   "attribution": {
     "auto": "reasoning",
     "first_failed": "prednisone_schedule",
-    "decisive_step": 11,
+    "decisive_step": 15,
     "exposure": [
       {
         "id": "AllergyIntolerance/alg-t5-iohexol",

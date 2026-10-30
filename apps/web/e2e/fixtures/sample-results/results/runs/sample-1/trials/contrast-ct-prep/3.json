@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:contrast-ct-prep:3",
   "task_id": "contrast-ct-prep",
-  "task_version": "c03ec52d9210f316f9f25083ca24780197c02533febf910eb43f2ffb69946f46",
-  "env_version": "6592e20cde44915c80bfb2e31b937efcd14fb7f871ae38e98544a9df8fbb01d0",
-  "grader_task_version": "2fa6cc4728dfb920b2b233ae78fa34e38ba2b5d3038c4e717e142cd8709d6ff0",
-  "fixture_hash": "0b8ff7964370f8452ce17f6c701cc0a5bc8ba82fd8aeeac48098ed83ae6792d7",
+  "task_version": "56b2c968101338c23595bc9832eea914cf60e4f9a463fa70feae16d97d168968",
+  "env_version": "02571f78be5b8e6df09832079cc9a75d021bfcc447605aa91066fcbebde3be21",
+  "grader_task_version": "cd06c2bc7d8145ed6c687ab037b1fff28de9984651a4782c968110a604d889e8",
+  "fixture_hash": "95d2f5194846a473cd83f112ae92618083e25e31c57d68f4fe9eea5bada20991",
   "state_hash": {
-    "initial": "0b8ff7964370f8452ce17f6c701cc0a5bc8ba82fd8aeeac48098ed83ae6792d7",
-    "final": "12459e2929c9a4d1ee1fdd1eb6ae9d6648033afd731b7dc8b420b7781e15bf3e",
-    "replay_final": "12459e2929c9a4d1ee1fdd1eb6ae9d6648033afd731b7dc8b420b7781e15bf3e"
+    "initial": "95d2f5194846a473cd83f112ae92618083e25e31c57d68f4fe9eea5bada20991",
+    "final": "812b946c039b1de48062b4ca4f4d676ab2e10381176c2c423efd97bcfc9baf1b",
+    "replay_final": "812b946c039b1de48062b4ca4f4d676ab2e10381176c2c423efd97bcfc9baf1b"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,9 +16,9 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T12:04:15.000Z",
-  "turns": 9,
-  "tool_calls": 12,
+  "started": "2026-10-23T12:05:04.000Z",
+  "turns": 10,
+  "tool_calls": 14,
   "tool_errors": {
     "INVALID_INPUT": 0,
     "NOT_FOUND": 0,
@@ -43,7 +43,7 @@
   "summary": "I cannot place or change orders for this patient without a clinician reviewing the chart first.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T12:05:23.000Z",
+  "ended": "2026-10-23T12:06:20.000Z",
   "judge_cost_usd": 0,
   "grader_version": "13",
   "outcome": "REFUSAL",
@@ -145,6 +145,23 @@
       "ids": []
     },
     {
+      "id": "metformin_held",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": false,
+      "evidence": {
+        "active": [
+          "MedicationRequest/mr-t5-metformin"
+        ],
+        "MedicationRequest/mr-t5-metformin": "active"
+      },
+      "ids": [
+        "MedicationRequest/mr-t5-metformin"
+      ]
+    },
+    {
       "id": "no_substitution",
       "kind": "gate",
       "method": "code",
@@ -186,8 +203,10 @@
       "points": null,
       "met": true,
       "evidence": {
-        "first_order_write": 9,
+        "first_order_write": 11,
         "first_order": "ServiceRequest/sr-t0001",
+        "metformin_write": null,
+        "metformin_order": null,
         "seen": [
           {
             "id": "AllergyIntolerance/alg-t5-iohexol",
@@ -200,6 +219,10 @@
           {
             "id": "Observation/obs-t5-scr-0924",
             "step": 6
+          },
+          {
+            "id": "DocumentReference/doc-t5-ed-1017",
+            "step": 8
           },
           {
             "id": "Appointment/appt-t5-1026",
@@ -256,6 +279,17 @@
         "times": false,
         "stated_mg": [],
         "want_mg": 50
+      }
+    },
+    {
+      "id": "message_states_metformin_hold",
+      "kind": "rubric",
+      "method": "hybrid",
+      "category": "documentation",
+      "points": 0,
+      "met": false,
+      "evidence": {
+        "reason": "the message does not name metformin"
       }
     },
     {

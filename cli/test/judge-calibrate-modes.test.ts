@@ -309,10 +309,15 @@ describe('judge-calibrate --probes', () => {
       expect(items.filter((it) => it.expected === 'met').length, id).toBeGreaterThanOrEqual(3);
       expect(items.filter((it) => it.expected === 'not_met').length, id).toBeGreaterThanOrEqual(1);
       expect(sets[0]!.criterion, id).toContain('states that finding correctly');
-      // The penalty set of the same patient asks the same texts, each expected the other way.
+      // The penalty set of the same patient asks the same texts, each expected the other way, except
+      // a partial note (a true finding that misses the one the item turns on: the nodule's pilot-1
+      // plan, P19), which meets neither; at least one wrong note meets the penalty.
       const mirror = penalty.filter((p) => p.items.map((it) => it.text).join('\n') === items.map((it) => it.text).join('\n'));
       expect(mirror, id).toHaveLength(1);
-      expect(mirror[0]!.items.map((it) => it.expected)).toEqual(items.map((it) => (it.expected === 'met' ? 'not_met' : 'met')));
+      const pairs = items.map((it, i) => [it.expected, mirror[0]!.items[i]!.expected]);
+      expect(pairs.filter(([note, pen]) => note === 'met' && pen !== 'not_met'), id).toEqual([]);
+      expect(pairs.filter(([note, pen]) => note === 'not_met' && pen === 'met').length, id).toBeGreaterThanOrEqual(1);
+      expect(pairs.filter(([note, pen]) => note === 'not_met' && pen === 'not_met').length, id).toBe(id === 'nodule_note' ? 2 : 0);
       expect(mirror[0]!.criterion).toContain('contradicts');
     }
   });

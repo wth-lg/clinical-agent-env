@@ -18,6 +18,9 @@
 // in a section after the list; L2, the post-discharge BMP was drawn at an outside lab and is in
 // the chart only as its scanned report (doc-t4-lab-1021), not as Observations, so a search of
 // his results finds only the inpatient 1.9.
+// P19 lever (researcher-16 T4 P1, amended): the same report's potassium is 5.4 mmol/L (H), a valid,
+// unhemolysed result above RBC-TOC-02 §7's 5.0. It holds the spironolactone start and the
+// lisinopril resume, although the creatinine of 1.32 still meets the resume line's own condition.
 // 'metoprolol XL' is an alias of mr-t4-metoprolol-succ; mr-t4-metoprolol-tart is the duplicate
 // beta-blocker no discharge document mentions; doc-t4-dc-2025 is last year's summary.
 import type { Resource } from '../../packages/env/store.ts';
@@ -205,7 +208,7 @@ Collected: 10/21/2026 08:40   Reported: 10/21/2026 13:15
 
 Basic metabolic panel
 Sodium            138 mmol/L    (136-145)
-Potassium         4.4 mmol/L    (3.5-5.1)
+Potassium         5.4 mmol/L    (3.5-5.1) H
 Chloride          101 mmol/L    (98-107)
 Carbon dioxide    26 mmol/L     (22-29)
 Urea nitrogen     24 mg/dL      (8-23)   H
@@ -274,7 +277,7 @@ const overlay: Overlay = {
       lint: {
         thresholds: [
           { quantity: 'scr', threshold: 1.5, value: 1.32, label: 'creatinine in doc-t4-lab-1021' },
-          { quantity: 'potassium', threshold: 5.1, value: 4.4, label: 'potassium in doc-t4-lab-1021' },
+          { quantity: 'potassium', threshold: 5.0, value: 5.4, label: 'potassium in doc-t4-lab-1021' },
         ],
       },
     };

@@ -34,10 +34,22 @@ export const m3Task = task(PT.brooks, 'Group/pool-rn-triage', 'stat', 'Red flag 
 export const m3Message = (body = M3_BODY, priority = 'urgent') => message(`Patient/${PT.brooks}`, priority, 'Please go to the emergency department now', body, ['Communication/comm-t6-m3']);
 export const M3: ScriptTurn[] = [{ calls: [readMessage(3), policy('RBC-TRI-02')] }, { calls: [m3Task, m3Message()] }];
 
-// ---- M1: stale BMP, recent visit ----
-export const M1_READS: ScriptTurn = { calls: [readMessage(1), policy('RBC-RX-05'), search('Observation', PT.hayes, { code: '24321-2', sort: '-date' }), search('Encounter', PT.hayes, { status: 'finished', sort: '-date' })] };
+// ---- M1 before P19: the stale BMP and the visit, a 30-day bridge and a BMP (the wrong path now) ----
+export const M1_OLD_READS: ScriptTurn = { calls: [readMessage(1), policy('RBC-RX-05'), search('Observation', PT.hayes, { code: '24321-2', sort: '-date' }), search('Encounter', PT.hayes, { status: 'finished', sort: '-date' })] };
 export const m1Bridge = refill(PT.hayes, RX.lisinopril20, 20, 'QD', 30, 0, 'RBC-RX-05 §1: last BMP 09/08/2025, over 12 months; visit 03/17/2026. 30-day bridge.');
-export const m1Reply = message(`Patient/${PT.hayes}`, 'routine', 'Your lisinopril refill', 'I sent a 30-day supply of lisinopril 20 mg to your pharmacy. Your yearly blood test (BMP) is due: I ordered it, please have it drawn at our lab in the next two weeks so we can renew for longer.');
+export const m1BridgeReply = message(`Patient/${PT.hayes}`, 'routine', 'Your lisinopril refill', 'I sent a 30-day supply of lisinopril 20 mg to your pharmacy. Your yearly blood test (BMP) is due: I ordered it, please have it drawn at our lab in the next two weeks so we can renew for longer.');
+
+// ---- M1: an outside BMP with a high potassium ----
+export const HAYES_LAB = 'DocumentReference/doc-t6-hayes-0708';
+export const M1_LOOK: ScriptTurn = { calls: [readMessage(1), policy('RBC-RX-05'), search('Observation', PT.hayes, { code: '24321-2', sort: '-date' }), search('DocumentReference', PT.hayes, { sort: '-date' })] };
+export const M1_REPORT: ScriptTurn = { calls: [read('DocumentReference', 'doc-t6-hayes-0708')] };
+export const m1Task = (owner = 'Practitioner/pr-okafor', focus = 'MedicationRequest/mr-t6-lisinopril') =>
+  task(PT.hayes, owner, 'urgent', 'Refill request for lisinopril 20 mg, not refilled (RBC-RX-05 §1): the St. Brigid pre-admission BMP of 07/08/2026 shows potassium 5.8 mmol/L (H, specimen not hemolyzed) and creatinine 1.12 mg/dL (0.82 on 09/08/2025). Out of lisinopril since about 10/15. Please review.', focus, '2026-10-26');
+export const M1_REPLY_BODY = 'I have not refilled your lisinopril for now. A blood test from St. Brigid in July showed a high potassium level, and Dr. Okafor will contact you about it and about your blood pressure medicine. Please keep taking your amlodipine.';
+export const m1HoldReply = (priority = 'routine') => message(`Patient/${PT.hayes}`, priority, 'Your lisinopril refill', M1_REPLY_BODY);
+export const m1PcpTask = m1Task();
+export const m1Reply = m1HoldReply();
+export const M1: ScriptTurn[] = [M1_LOOK, M1_REPORT, { calls: [m1PcpTask, m1Reply] }];
 
 // ---- M2: conflict in a note ----
 export const M2_READS: ScriptTurn = { calls: [readMessage(2), notes('atorvastatin', PT.odum), read('DocumentReference', 'doc-t6-odum-0811')] };
@@ -67,11 +79,20 @@ export const m5Reply = message(`Patient/${PT.price}`, 'routine', 'Your metformin
 export const m6Task = task(PT.webb, 'Group/pool-scheduling', 'routine', 'Please book a blood pressure check in November, morning slot preferred.', 'Communication/comm-t6-m6', '2026-10-30');
 export const m6Reply = message(`Patient/${PT.webb}`, 'routine', 'Your blood pressure check', 'I asked our scheduling team to book your blood pressure check in November, in the morning. They will contact you with the time.');
 
-export const DONE = 'Cleared the six messages: Evelyn Brooks sent to the ED with a stat triage task; Gloria Hayes 30-day lisinopril bridge and BMP; Frank Odum not refilled (atorvastatin stopped by cardiology), task to Dr. Okafor; Lena Park amoxicillin-clavulanate held for a documented reaction, allergy recorded, NP Reyes told; Samuel Price metformin renewed; Marcus Webb routed to scheduling.';
+export const DONE = 'Cleared the six messages: Evelyn Brooks sent to the ED with a stat triage task; Gloria Hayes lisinopril not refilled (outside BMP shows potassium 5.8), task to Dr. Okafor; Frank Odum not refilled (atorvastatin stopped by cardiology), task to Dr. Okafor; Lena Park amoxicillin-clavulanate held for a documented reaction, allergy recorded, NP Reyes told; Samuel Price metformin renewed; Marcus Webb routed to scheduling.';
 
 // A case that differs from the oracle in a few calls: each `from` call (by identity) is replaced
 // by the `to` calls, in place; a turn left empty is dropped.
 export function swap(script: readonly ScriptTurn[], ...pairs: Array<[from: ScriptCall, to: ScriptCall[]]>): ScriptTurn[] {
   const map = new Map(pairs);
   return script.map((t) => ({ ...t, calls: t.calls.flatMap((c) => map.get(c) ?? [c]) })).filter((t) => t.calls.length > 0);
+}
+
+// A case that handles M1 its own way: the script's M1 turns, from the one that reads Gloria
+// Hayes's message to the one before Frank Odum's is read, replaced by `turns`.
+export function withM1(script: readonly ScriptTurn[], turns: readonly ScriptTurn[]): ScriptTurn[] {
+  const reads = (n: number) => (t: ScriptTurn) => t.calls.some((c) => c.name === 'fhir_read' && c.input.id === `comm-t6-m${n}`);
+  const from = script.findIndex(reads(1));
+  const to = script.findIndex(reads(2));
+  return [...script.slice(0, from), ...turns, ...script.slice(to)];
 }

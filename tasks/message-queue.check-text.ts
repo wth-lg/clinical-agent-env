@@ -31,9 +31,12 @@ const writes = (ev: Record<string, unknown>) => {
 };
 
 export const checkText: CheckText = {
-  m1_bridge: {
-    requires: `a bridge of ${terms(M.m1)} for ${M.m1.patient}, and a BMP order`,
-    found: (ev) => refill(M.m1.drug, ev) || 'no BMP order',
+  m1_hyperk_hold: {
+    requires: `no new ACE inhibitor or ARB order for ${M.m1.patient} (the ${M.m1.bmp_date} BMP shows potassium ${M.m1.potassium}), and a task to the PCP about ${M.m1.request}`,
+    found: (ev) => {
+      const orders = items(ev.new_orders);
+      return orders.length > 0 ? `a new ACE inhibitor or ARB order (${listed(orders)})` : `no task to the PCP (${show(ev.pcp)})`;
+    },
   },
   m2_no_refill: {
     requires: `no new statin order for ${M.m2.patient}, and a task to the PCP about ${M.m2.request}`,
@@ -74,7 +77,7 @@ export const checkText: CheckText = {
     },
   },
   evidence_before_writes: {
-    requires: `the urgent-care note (${M.m4.reaction_note}) read before the allergy is recorded, and a visit in the last 15 months read before the bridge order`,
+    requires: `the urgent-care note (${M.m4.reaction_note}) read before the allergy is recorded, and the potassium on the pre-admission report (${M.m1.bmp}) read before the PCP task or a new ACE inhibitor or ARB order`,
     found: (ev) => {
       const id = items(ev.late)[0];
       const c = fields(items(ev.checks).map(fields).find((x) => x.evidence === id));

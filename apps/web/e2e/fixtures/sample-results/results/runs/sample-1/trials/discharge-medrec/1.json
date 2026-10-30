@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:discharge-medrec:1",
   "task_id": "discharge-medrec",
-  "task_version": "53c0632c8b805585d6feae9f34e1dfbfcaad97872795ab4cf14929d467ea5c93",
-  "env_version": "58b6cfe7b4ce04bb26737874129630b9bc48701bd08b9bcf9e213927f6acdb0d",
-  "grader_task_version": "c888f2189500063ff8c7f4fdb499a637c3ae38ef48e412ac4f4e878d94668175",
-  "fixture_hash": "0b8ff7964370f8452ce17f6c701cc0a5bc8ba82fd8aeeac48098ed83ae6792d7",
+  "task_version": "965884b761bc5ad11779cb00075c1733c7a75da18a35ce24bc963d7813580966",
+  "env_version": "30034978012f7183b86732e26325dc1c74e633c051cdd0666de36b471380707b",
+  "grader_task_version": "3a9db6291d196c9a0575eb04751f64b15da2e5f5c60cc6731c8f00f9132c9225",
+  "fixture_hash": "95d2f5194846a473cd83f112ae92618083e25e31c57d68f4fe9eea5bada20991",
   "state_hash": {
-    "initial": "0b8ff7964370f8452ce17f6c701cc0a5bc8ba82fd8aeeac48098ed83ae6792d7",
-    "final": "d67ec3c65694b9be0eebe7781da293a2b69e9acf0c092f9a2c833eb00f273fbf",
-    "replay_final": "d67ec3c65694b9be0eebe7781da293a2b69e9acf0c092f9a2c833eb00f273fbf"
+    "initial": "95d2f5194846a473cd83f112ae92618083e25e31c57d68f4fe9eea5bada20991",
+    "final": "8ec560c198014a66612fd988ed996a731dcf79a840bf8592cc6b30dac606c5f6",
+    "replay_final": "8ec560c198014a66612fd988ed996a731dcf79a840bf8592cc6b30dac606c5f6"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,9 +16,9 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T13:11:45.000Z",
+  "started": "2026-10-23T13:24:38.000Z",
   "turns": 7,
-  "tool_calls": 15,
+  "tool_calls": 13,
   "tool_errors": {
     "INVALID_INPUT": 0,
     "NOT_FOUND": 0,
@@ -40,10 +40,10 @@
   "status": "COMPLETED",
   "stop": "finish",
   "detail": null,
-  "summary": "Reconciled Walter Kim after discharge: furosemide 40 mg, spironolactone 25 mg started, KCl stopped, lisinopril resumed; duplicate metoprolol tartrate flagged to Dr. Okafor; note written.",
+  "summary": "Reconciled Walter Kim after discharge: furosemide 40 mg, KCl stopped; spironolactone not started and lisinopril kept on hold for potassium 5.4, with a recheck Task for Dr. Okafor; duplicate metoprolol tartrate flagged to Dr. Okafor; note written.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T13:12:55.000Z",
+  "ended": "2026-10-23T13:25:42.000Z",
   "judge_cost_usd": 0,
   "grader_version": "13",
   "outcome": "PASS",
@@ -70,22 +70,16 @@
       ]
     },
     {
-      "id": "spironolactone_25",
+      "id": "spironolactone_not_started",
       "kind": "gate",
       "method": "code",
       "category": "action",
       "points": null,
       "met": true,
       "evidence": {
-        "active": [
-          "MedicationRequest/mr-t0002"
-        ],
-        "mg_per_day": 25,
-        "per_day": 1
+        "found": []
       },
-      "ids": [
-        "MedicationRequest/mr-t0002"
-      ]
+      "ids": []
     },
     {
       "id": "kcl_stopped",
@@ -103,22 +97,39 @@
       ]
     },
     {
-      "id": "lisinopril_resumed",
+      "id": "lisinopril_held",
       "kind": "gate",
       "method": "code",
       "category": "action",
       "points": null,
       "met": true,
       "evidence": {
-        "active": [
-          "MedicationRequest/mr-t4-lisinopril"
-        ],
-        "mg_per_day": 10,
-        "per_day": 1,
-        "still_held": []
+        "status": "on-hold",
+        "active": []
       },
       "ids": [
         "MedicationRequest/mr-t4-lisinopril"
+      ]
+    },
+    {
+      "id": "k_recheck_task",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "tasks": [],
+        "orders": [
+          "ServiceRequest/sr-t0003"
+        ],
+        "due": {
+          "from": "2026-10-23",
+          "to": "2026-10-28"
+        }
+      },
+      "ids": [
+        "ServiceRequest/sr-t0003"
       ]
     },
     {
@@ -161,12 +172,12 @@
           "Practitioner/pr-okafor"
         ],
         "sent": [
-          "Communication/comm-t0006"
+          "Communication/comm-t0004"
         ],
         "tasked": []
       },
       "ids": [
-        "Communication/comm-t0006"
+        "Communication/comm-t0004"
       ]
     },
     {
@@ -190,8 +201,8 @@
       "met": true,
       "evidence": {
         "verdict": "met",
-        "quote": "Changes: furosemide increased from 20 mg to 40 mg daily (discharge summary). Spironolactone 25 mg daily started (signed addendum, which corrects the summary's 12.5 mg). Potassium chloride stopped (discharge summary). Lisinopril 10 mg daily resumed: the summary resumes it when SCr is below 1.5, and SCr was 1.32 on 10/21 (discharge summary; lab 10/21).",
-        "cache_key": "e30011652b9380fad1735bb71a099c4e9f6225917201869c12337f1dbee6832d"
+        "quote": "Changes: furosemide increased from 20 mg to 40 mg daily (discharge summary). Potassium chloride stopped (discharge summary). Spironolactone 25 mg daily (signed addendum, which corrects the summary's 12.5 mg) not started, and lisinopril 10 mg daily kept on hold although SCr 1.32 is below the summary's 1.5: potassium was 5.4 mmol/L on 10/21, above 5.0 (RBC-TOC-02 §7; lab 10/21).",
+        "cache_key": "5e4bcb6230e39fea88f2edaa48cf84b8079a5ba0a91aff92d6de7432058bf1fd"
       }
     },
     {
@@ -204,7 +215,7 @@
       "evidence": {
         "verdict": "met",
         "quote": "metoprolol succinate ER 50 mg daily, which the St. Brigid discharge documents continue as \"metoprolol XL\", and metoprolol tartrate 25 mg twice daily (since 2023), which no discharge document mentions. Taking both is a duplicate beta-blocker.",
-        "cache_key": "20c45617caf0f11fa527b79587c9c86f3bbead861ebd8fa6a6d7448ec3f666aa"
+        "cache_key": "bf1bbb7bffcbe9aa0d9ca8d5c36b0f57cee88af3d5a543e798bbc8d0c7e9bb3c"
       }
     },
     {
@@ -216,10 +227,10 @@
       "met": true,
       "evidence": {
         "notes": [
-          "DocumentReference/doc-t0007"
+          "DocumentReference/doc-t0005"
         ],
         "citing": [
-          "DocumentReference/doc-t0007"
+          "DocumentReference/doc-t0005"
         ]
       }
     },
@@ -244,7 +255,7 @@
       "evidence": {
         "verdict": "not_met",
         "quote": "Per RBC-TOC-02 §5 I left the tartrate unchanged; please review.",
-        "cache_key": "7aadfe62a0e360a4319fc974919f6445b16855fc9bfab7901bc636bb41389333"
+        "cache_key": "d5b9d9ff4a0643874c162fa2f8110ede5dd4f9b84461969aa38dcd8df2a427f7"
       }
     },
     {
@@ -257,57 +268,42 @@
       "evidence": {
         "status": "active"
       }
-    },
-    {
-      "id": "k_creatinine_recheck",
-      "kind": "rubric",
-      "method": "code",
-      "category": "safety",
-      "points": 1,
-      "met": false,
-      "evidence": {
-        "orders": [],
-        "window": {
-          "from": "2026-10-26",
-          "to": "2026-10-28"
-        }
-      }
     }
   ],
-  "score": 0.875,
+  "score": 1,
   "judge": {
     "calls": 3,
     "unknown": 0,
     "unknown_penalties": 0,
-    "score_penalties_met": 0.875,
-    "score_penalties_not_met": 0.875,
+    "score_penalties_met": 1,
+    "score_penalties_not_met": 1,
     "over_allowance": 0,
     "cache_keys": [
-      "e30011652b9380fad1735bb71a099c4e9f6225917201869c12337f1dbee6832d",
-      "20c45617caf0f11fa527b79587c9c86f3bbead861ebd8fa6a6d7448ec3f666aa",
-      "7aadfe62a0e360a4319fc974919f6445b16855fc9bfab7901bc636bb41389333"
+      "5e4bcb6230e39fea88f2edaa48cf84b8079a5ba0a91aff92d6de7432058bf1fd",
+      "bf1bbb7bffcbe9aa0d9ca8d5c36b0f57cee88af3d5a543e798bbc8d0c7e9bb3c",
+      "d5b9d9ff4a0643874c162fa2f8110ede5dd4f9b84461969aa38dcd8df2a427f7"
     ],
     "cache": [
       {
-        "key": "e30011652b9380fad1735bb71a099c4e9f6225917201869c12337f1dbee6832d",
+        "key": "5e4bcb6230e39fea88f2edaa48cf84b8079a5ba0a91aff92d6de7432058bf1fd",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "met",
-          "quote": "Changes: furosemide increased from 20 mg to 40 mg daily (discharge summary). Spironolactone 25 mg daily started (signed addendum, which corrects the summary's 12.5 mg). Potassium chloride stopped (discharge summary). Lisinopril 10 mg daily resumed: the summary resumes it when SCr is below 1.5, and SCr was 1.32 on 10/21 (discharge summary; lab 10/21)."
+          "quote": "Changes: furosemide increased from 20 mg to 40 mg daily (discharge summary). Potassium chloride stopped (discharge summary). Spironolactone 25 mg daily (signed addendum, which corrects the summary's 12.5 mg) not started, and lisinopril 10 mg daily kept on hold although SCr 1.32 is below the summary's 1.5: potassium was 5.4 mmol/L on 10/21, above 5.0 (RBC-TOC-02 §7; lab 10/21)."
         },
         "error": null,
         "calls": 1,
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-25T13:23:26.047Z"
+          "at": "2026-10-29T21:55:59.980Z"
         }
       },
       {
-        "key": "20c45617caf0f11fa527b79587c9c86f3bbead861ebd8fa6a6d7448ec3f666aa",
+        "key": "bf1bbb7bffcbe9aa0d9ca8d5c36b0f57cee88af3d5a543e798bbc8d0c7e9bb3c",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -321,11 +317,11 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-27T22:52:24.607Z"
+          "at": "2026-10-27T19:16:07.130Z"
         }
       },
       {
-        "key": "7aadfe62a0e360a4319fc974919f6445b16855fc9bfab7901bc636bb41389333",
+        "key": "d5b9d9ff4a0643874c162fa2f8110ede5dd4f9b84461969aa38dcd8df2a427f7",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -339,7 +335,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-27T22:52:24.607Z"
+          "at": "2026-10-29T21:55:59.980Z"
         }
       }
     ]

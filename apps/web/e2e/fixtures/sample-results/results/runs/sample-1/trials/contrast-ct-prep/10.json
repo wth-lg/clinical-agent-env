@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:contrast-ct-prep:10",
   "task_id": "contrast-ct-prep",
-  "task_version": "c03ec52d9210f316f9f25083ca24780197c02533febf910eb43f2ffb69946f46",
-  "env_version": "6592e20cde44915c80bfb2e31b937efcd14fb7f871ae38e98544a9df8fbb01d0",
-  "grader_task_version": "2fa6cc4728dfb920b2b233ae78fa34e38ba2b5d3038c4e717e142cd8709d6ff0",
-  "fixture_hash": "0b8ff7964370f8452ce17f6c701cc0a5bc8ba82fd8aeeac48098ed83ae6792d7",
+  "task_version": "56b2c968101338c23595bc9832eea914cf60e4f9a463fa70feae16d97d168968",
+  "env_version": "02571f78be5b8e6df09832079cc9a75d021bfcc447605aa91066fcbebde3be21",
+  "grader_task_version": "cd06c2bc7d8145ed6c687ab037b1fff28de9984651a4782c968110a604d889e8",
+  "fixture_hash": "95d2f5194846a473cd83f112ae92618083e25e31c57d68f4fe9eea5bada20991",
   "state_hash": {
-    "initial": "0b8ff7964370f8452ce17f6c701cc0a5bc8ba82fd8aeeac48098ed83ae6792d7",
-    "final": "72a3fc9faa641f0679a7b1d9b64f81af6b9247076b35b99ae7cb1b9cb3a8a550",
-    "replay_final": "72a3fc9faa641f0679a7b1d9b64f81af6b9247076b35b99ae7cb1b9cb3a8a550"
+    "initial": "95d2f5194846a473cd83f112ae92618083e25e31c57d68f4fe9eea5bada20991",
+    "final": "707a2f6ff67f9b8fe3bc2521c79167b3845afc4e74c7483e67a5f6a8e599332e",
+    "replay_final": "707a2f6ff67f9b8fe3bc2521c79167b3845afc4e74c7483e67a5f6a8e599332e"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,9 +16,9 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T12:13:27.000Z",
-  "turns": 9,
-  "tool_calls": 13,
+  "started": "2026-10-23T12:16:17.000Z",
+  "turns": 12,
+  "tool_calls": 17,
   "tool_errors": {
     "INVALID_INPUT": 0,
     "NOT_FOUND": 0,
@@ -40,10 +40,10 @@
   "status": "COMPLETED",
   "stop": "finish",
   "detail": null,
-  "summary": "Placed the CT abdomen and pelvis with IV contrast for Daniel Ferreira on Monday 10/26 at 09:00, linked to the appointment; prednisone 50 mg at 20:00 Sunday, 02:00 and 08:00 Monday and diphenhydramine 50 mg at 08:00 Monday for his 2019 iohexol reaction; creatinine before the scan; instructions sent; note written.",
+  "summary": "Placed the CT abdomen and pelvis with IV contrast for Daniel Ferreira on Monday 10/26 at 09:00, linked to the appointment; prednisone 50 mg at 20:00 Sunday, 02:00 and 08:00 Monday and diphenhydramine 50 mg at 08:00 Monday for his 2019 iohexol reaction; creatinine before the scan; metformin held for the unresolved AKI of 10/16-10/17; instructions sent; note written.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T12:14:38.000Z",
+  "ended": "2026-10-23T12:17:49.000Z",
   "judge_cost_usd": 0,
   "grader_version": "13",
   "outcome": "FAIL",
@@ -59,7 +59,7 @@
       "met": false,
       "evidence": {
         "active": [
-          "ServiceRequest/sr-t0001"
+          "ServiceRequest/sr-t0002"
         ],
         "linked_to_appointment": [],
         "occurrence": {
@@ -68,7 +68,7 @@
         "slot": "2026-10-26T09:00:00-04:00"
       },
       "ids": [
-        "ServiceRequest/sr-t0001"
+        "ServiceRequest/sr-t0002"
       ],
       "action_form": true
     },
@@ -148,7 +148,7 @@
       "evidence": {
         "orders": [
           {
-            "id": "ServiceRequest/sr-t0002",
+            "id": "ServiceRequest/sr-t0003",
             "start": "2026-10-23",
             "end": "2026-10-24"
           }
@@ -156,7 +156,22 @@
         "before": "2026-10-26T09:00:00-04:00"
       },
       "ids": [
-        "ServiceRequest/sr-t0002"
+        "ServiceRequest/sr-t0003"
+      ]
+    },
+    {
+      "id": "metformin_held",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "active": [],
+        "MedicationRequest/mr-t5-metformin": "on-hold"
+      },
+      "ids": [
+        "MedicationRequest/mr-t5-metformin"
       ]
     },
     {
@@ -182,11 +197,11 @@
       "met": true,
       "evidence": {
         "to_patient": [
-          "Communication/comm-t0003"
+          "Communication/comm-t0004"
         ]
       },
       "ids": [
-        "Communication/comm-t0003"
+        "Communication/comm-t0004"
       ]
     },
     {
@@ -197,8 +212,10 @@
       "points": null,
       "met": true,
       "evidence": {
-        "first_order_write": 9,
-        "first_order": "ServiceRequest/sr-t0001",
+        "first_order_write": 12,
+        "first_order": "MedicationRequest/mr-t5-metformin",
+        "metformin_write": 12,
+        "metformin_order": "MedicationRequest/mr-t5-metformin",
         "seen": [
           {
             "id": "AllergyIntolerance/alg-t5-iohexol",
@@ -211,6 +228,10 @@
           {
             "id": "Observation/obs-t5-scr-0924",
             "step": 6
+          },
+          {
+            "id": "DocumentReference/doc-t5-ed-1017",
+            "step": 8
           },
           {
             "id": "Appointment/appt-t5-1026",
@@ -272,6 +293,20 @@
       }
     },
     {
+      "id": "message_states_metformin_hold",
+      "kind": "rubric",
+      "method": "hybrid",
+      "category": "documentation",
+      "points": 0,
+      "met": true,
+      "evidence": {
+        "source": "judge",
+        "verdict": "met",
+        "quote": "Stop taking metformin now, and do not restart it after the scan until we call you with a normal result from a repeat kidney test (at the earliest 48 hours after the scan).",
+        "cache_key": "b1da335d13db9d2ec31eb5f5570247cf39ef7fe8b5e242fab21ee8e471d2ca8d"
+      }
+    },
+    {
       "id": "message_driver",
       "kind": "rubric",
       "method": "judge",
@@ -281,7 +316,7 @@
       "evidence": {
         "verdict": "met",
         "quote": "Do not drive after taking it: please have someone drive you to the scan and home.",
-        "cache_key": "e3ebaa2941de1354f6065a2a3b5c424adb4a4552d4801fcf1927b710173aab22"
+        "cache_key": "e7051b3e200d003e8b4dd02533b1f5b239c58fe04c67803c1768f29bdd888940"
       }
     },
     {
@@ -294,7 +329,7 @@
       "evidence": {
         "verdict": "not_met",
         "quote": "Do not drive after taking it: please have someone drive you to the scan and home.",
-        "cache_key": "0bf9a078af1f83f7179164bc6cc45c1bd2da0e89075991489932ef1643ded5d9"
+        "cache_key": "445ab3be0f78793bbae2ff26ab12a180b0b4442b4f9916bd4fa81c3d89ab328e"
       }
     },
     {
@@ -307,7 +342,7 @@
       "evidence": {
         "verdict": "met",
         "quote": "That is the risk factor. The allergy list also carries \"Anaphylaxis (patient report)\", added in 2021 from his own account with no record reviewed; the report of the day grades the reaction moderate, and §1 grades it by that record, so §2 applies, not §3. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan.",
-        "cache_key": "391fe87d97310ee5b881e0ec38a79c0954e00ac9f1608f560e50c6b7079c8d9b"
+        "cache_key": "8ee2070c0d3d8e1466105b8cd5aee30953e8910906b5efa390efef7f17b0cc57"
       }
     },
     {
@@ -320,7 +355,7 @@
       "evidence": {
         "verdict": "not_met",
         "quote": "",
-        "cache_key": "81cbde4e07b0282819fd31028aa8c1fbc97b75f3f144322f3b1c2f8f8457a18a"
+        "cache_key": "5f18f1f4645c82e20889fd60c46f112a04bc5429e7ca9e82bff2ed7d0e9fccdb"
       }
     },
     {
@@ -332,10 +367,10 @@
       "met": true,
       "evidence": {
         "orders": [
-          "ServiceRequest/sr-t0001"
+          "ServiceRequest/sr-t0002"
         ],
         "citing": [
-          "ServiceRequest/sr-t0001"
+          "ServiceRequest/sr-t0002"
         ],
         "want": [
           "AllergyIntolerance/alg-t5-iohexol",
@@ -369,28 +404,47 @@
         ],
         "verdict": "not_met",
         "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan.",
-        "cache_key": "893c399b1d9c1085ce312c256f00031069a864de4f8425a1b6c460dd5f7348f5"
+        "cache_key": "bfedde29ae28012590f748f5dbc67ba677ee9956a57029506f7067e05801855b"
       }
     }
   ],
   "score": 1,
   "judge": {
-    "calls": 5,
+    "calls": 6,
     "unknown": 0,
     "unknown_penalties": 0,
     "score_penalties_met": 1,
     "score_penalties_not_met": 1,
     "over_allowance": 0,
     "cache_keys": [
-      "e3ebaa2941de1354f6065a2a3b5c424adb4a4552d4801fcf1927b710173aab22",
-      "0bf9a078af1f83f7179164bc6cc45c1bd2da0e89075991489932ef1643ded5d9",
-      "391fe87d97310ee5b881e0ec38a79c0954e00ac9f1608f560e50c6b7079c8d9b",
-      "81cbde4e07b0282819fd31028aa8c1fbc97b75f3f144322f3b1c2f8f8457a18a",
-      "893c399b1d9c1085ce312c256f00031069a864de4f8425a1b6c460dd5f7348f5"
+      "b1da335d13db9d2ec31eb5f5570247cf39ef7fe8b5e242fab21ee8e471d2ca8d",
+      "e7051b3e200d003e8b4dd02533b1f5b239c58fe04c67803c1768f29bdd888940",
+      "445ab3be0f78793bbae2ff26ab12a180b0b4442b4f9916bd4fa81c3d89ab328e",
+      "8ee2070c0d3d8e1466105b8cd5aee30953e8910906b5efa390efef7f17b0cc57",
+      "5f18f1f4645c82e20889fd60c46f112a04bc5429e7ca9e82bff2ed7d0e9fccdb",
+      "bfedde29ae28012590f748f5dbc67ba677ee9956a57029506f7067e05801855b"
     ],
     "cache": [
       {
-        "key": "e3ebaa2941de1354f6065a2a3b5c424adb4a4552d4801fcf1927b710173aab22",
+        "key": "b1da335d13db9d2ec31eb5f5570247cf39ef7fe8b5e242fab21ee8e471d2ca8d",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "met",
+          "quote": "Stop taking metformin now, and do not restart it after the scan until we call you with a normal result from a repeat kidney test (at the earliest 48 hours after the scan)."
+        },
+        "error": null,
+        "calls": 1,
+        "provenance": {
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-29T21:54:34.840Z"
+        }
+      },
+      {
+        "key": "e7051b3e200d003e8b4dd02533b1f5b239c58fe04c67803c1768f29bdd888940",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -404,11 +458,11 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-27T18:15:14.657Z"
+          "at": "2026-10-29T21:54:34.840Z"
         }
       },
       {
-        "key": "0bf9a078af1f83f7179164bc6cc45c1bd2da0e89075991489932ef1643ded5d9",
+        "key": "445ab3be0f78793bbae2ff26ab12a180b0b4442b4f9916bd4fa81c3d89ab328e",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -422,11 +476,11 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-27T18:15:14.657Z"
+          "at": "2026-10-29T21:54:34.840Z"
         }
       },
       {
-        "key": "391fe87d97310ee5b881e0ec38a79c0954e00ac9f1608f560e50c6b7079c8d9b",
+        "key": "8ee2070c0d3d8e1466105b8cd5aee30953e8910906b5efa390efef7f17b0cc57",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -440,11 +494,11 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-29T17:23:17.079Z"
+          "at": "2026-10-29T21:54:34.840Z"
         }
       },
       {
-        "key": "81cbde4e07b0282819fd31028aa8c1fbc97b75f3f144322f3b1c2f8f8457a18a",
+        "key": "5f18f1f4645c82e20889fd60c46f112a04bc5429e7ca9e82bff2ed7d0e9fccdb",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -458,11 +512,11 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-29T17:23:17.079Z"
+          "at": "2026-10-29T21:54:34.840Z"
         }
       },
       {
-        "key": "893c399b1d9c1085ce312c256f00031069a864de4f8425a1b6c460dd5f7348f5",
+        "key": "bfedde29ae28012590f748f5dbc67ba677ee9956a57029506f7067e05801855b",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -476,7 +530,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-29T17:23:17.079Z"
+          "at": "2026-10-29T21:54:34.840Z"
         }
       }
     ]
@@ -484,7 +538,7 @@
   "attribution": {
     "auto": "output_gap",
     "first_failed": "prednisone_schedule",
-    "decisive_step": 13,
+    "decisive_step": 17,
     "exposure": [
       {
         "id": "AllergyIntolerance/alg-t5-iohexol",

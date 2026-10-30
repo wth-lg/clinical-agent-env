@@ -4,64 +4,82 @@
 import { type Mutant, oneTurn, type ScriptCall } from '../../../packages/grader/matrix/types.ts';
 import { oracle } from '../solution/solve.ts';
 import {
-  call, M1_READS, M3, M3_BODY, m1Bridge, m2Reply, m2Task, m3Message, m5Renewal, m6Task, message, notes, parkAllergy, PT, read, refill, reyesMessage, RX, search, swap, task,
+  bmpOrder, call, M1_LOOK, M1_OLD_READS, M1_REPORT, M3, M3_BODY, m1Bridge, m1BridgeReply, m1PcpTask, m1Reply, m2Reply, m2Task, m3Message, m5Renewal, m6Task, message, notes, parkAllergy, PT, read, refill, reyesMessage, RX, swap, task, withM1,
 } from '../solution/steps.ts';
 
 const original = oracle.flatMap((t) => t.calls);
-const BMP = original.find((c) => c.name === 'order_service')!;
 const ALLERGY = original.find((c) => c.name === 'record_allergy' && !('update_id' in c.input))!;
 const NKDA = original.find((c) => c.name === 'record_allergy' && 'update_id' in c.input)!;
 const REYES = original.find((c) => c.name === 'send_message' && c.input.recipient === 'Practitioner/pr-reyes')!;
 const CLOSE = original.filter((c) => c.name === 'update_inbox_item');
 const M3_MESSAGE = original.find((c) => c.name === 'send_message' && c.input.recipient === `Patient/${PT.brooks}`)!;
-const VISITS = M1_READS.calls.find((c) => c.name === 'fhir_search' && c.input.resource_type === 'Encounter')!;
 const amoxClav = refill(PT.park, RX.amoxClav, 875, 'BID', 7, 0, 'Acute bacterial sinusitis, per NP Reyes and RBC-CP-11');
 
 export const mutants: Mutant[] = [
   {
-    id: 'm1_full_renewal',
-    trap: 'stale_monitoring',
-    why: 'Renews lisinopril for 90 days with 1 refill and orders no BMP, as if the 2025-09-08 BMP were within 12 months; it is 45 days past.',
-    fails: ['m1_bridge'],
-    loses: [],
-    attribution: 'reasoning',
-    script: swap(oracle, [m1Bridge, [refill(PT.hayes, RX.lisinopril20, 20, 'QD', 90, 1, 'RBC-RX-05 §1 renewal')]], [BMP, []]),
+    id: 'm1_bridge_report_unseen',
+    trap: 'outside_report',
+    why: "The oracle before P19: sees no BMP among the Observations, never lists Gloria Hayes's documents, and sends the 30-day bridge plus a BMP: the St. Brigid pre-admission report of 2026-07-08 (potassium 5.8) is the most recent BMP, so RBC-RX-05 §1 says do not refill. A forbidden order, so over_action; the report never shown is the secondary reason.",
+    fails: ['m1_hyperk_hold', 'evidence_before_writes'],
+    loses: ['reply_m1'],
+    attribution: 'over_action',
+    script: withM1(oracle, [M1_OLD_READS, { calls: [m1Bridge, bmpOrder(PT.hayes), m1BridgeReply] }]),
   },
   {
-    id: 'm1_renewal_with_bmp',
-    trap: 'stale_monitoring',
-    why: 'Orders the BMP but still renews lisinopril for 90 days with 1 refill, as if the BMP order made the stale panel current: only the refill terms are wrong.',
-    fails: ['m1_bridge'],
-    loses: [],
-    attribution: 'reasoning',
-    script: swap(oracle, [m1Bridge, [refill(PT.hayes, RX.lisinopril20, 20, 'QD', 90, 1, 'RBC-RX-05 §1 renewal; BMP ordered')]]),
+    id: 'm1_renewal_after_report',
+    trap: 'hyperkalemia_hold',
+    why: 'Reads the pre-admission report and still renews lisinopril for 90 days with 1 refill, as if a BMP within 12 months were enough whatever its potassium (RBC-RX-05 §1: 5.5 or higher, do not refill).',
+    fails: ['m1_hyperk_hold'],
+    loses: ['reply_m1'],
+    attribution: 'over_action',
+    script: withM1(oracle, [M1_LOOK, M1_REPORT, { calls: [refill(PT.hayes, RX.lisinopril20, 20, 'QD', 90, 1, 'RBC-RX-05 §1: BMP 07/08/2026 within 12 months'), message(`Patient/${PT.hayes}`, 'routine', 'Your lisinopril refill', 'I renewed your lisinopril 20 mg for 90 days with 1 refill.')] }]),
   },
   {
-    id: 'm1_visit_unseen',
-    trap: 'visit_check',
-    why: 'Reads the stale BMP and sends the 30-day bridge without looking for a visit in the last 15 months, which decides bridge against no refill (RBC-RX-05 §1).',
+    id: 'm1_pcp_task_and_bridge',
+    trap: 'hyperkalemia_hold',
+    why: 'Reads the report and tasks Dr. Okafor about the potassium, but also sends a 30-day bridge so she is not without a blood pressure drug: RBC-RX-05 §1 says do not refill, and the PCP decides on the lisinopril.',
+    fails: ['m1_hyperk_hold'],
+    loses: ['reply_m1'],
+    attribution: 'over_action',
+    script: withM1(oracle, [
+      M1_LOOK,
+      M1_REPORT,
+      { calls: [m1PcpTask, refill(PT.hayes, RX.lisinopril20, 20, 'QD', 30, 0, 'Bridge while Dr. Okafor reviews the potassium'), message(`Patient/${PT.hayes}`, 'routine', 'Your lisinopril refill', 'I sent a 30-day supply of lisinopril 20 mg to your pharmacy. Dr. Okafor will also review a recent blood test with you.')] },
+    ]),
+  },
+  {
+    id: 'm1_task_before_report',
+    trap: 'evidence_before_writes',
+    why: 'Tasks Dr. Okafor about the refill and answers Gloria Hayes before reading the pre-admission report, and opens it only afterwards: the decision was written before the potassium was seen.',
     fails: ['evidence_before_writes'],
     loses: [],
     attribution: 'process',
-    script: swap(oracle, [VISITS, []]),
+    script: withM1(oracle, [
+      M1_LOOK,
+      { calls: [task(PT.hayes, 'Practitioner/pr-okafor', 'routine', 'Refill request for lisinopril 20 mg; please review before it is renewed.', 'MedicationRequest/mr-t6-lisinopril'), m1Reply] },
+      M1_REPORT,
+    ]),
   },
   {
-    id: 'visit_id_only',
-    trap: 'visit_check',
-    why: "Looks for the visit with a DocumentReference search, whose row only references the 2026-03-17 progress note and never shows it, then sends the bridge: the visit was not seen.",
-    fails: ['evidence_before_writes'],
-    loses: [],
-    attribution: 'process',
-    script: swap(oracle, [VISITS, [search('DocumentReference', PT.hayes, { date_ge: '2025-07-23' })]]),
-  },
-  {
-    id: 'm1_bridge_without_bmp',
-    trap: 'bmp_order',
-    why: 'Sends the 30-day bridge but not the BMP order RBC-RX-05 §1 pairs it with.',
-    fails: ['m1_bridge'],
+    id: 'm1_no_pcp_task',
+    trap: 'pcp_task',
+    why: 'Reads the report and does not refill, but sends no Task to the PCP: only the reply tells anyone, and RBC-RX-05 §1 asks for the Task with the request as its focus. Nothing forbidden is written, so the miss is labelled from exposure: reasoning.',
+    fails: ['m1_hyperk_hold'],
     loses: [],
     attribution: 'reasoning',
-    script: swap(oracle, [BMP, []]),
+    script: withM1(oracle, [M1_LOOK, M1_REPORT, { calls: [m1Reply] }]),
+  },
+  {
+    id: 'm1_bmp_only_report_unseen',
+    trap: 'outside_report',
+    why: "Sees no BMP among the Observations and, without listing her documents, orders a BMP and tells Gloria Hayes the refill waits for it: no refill, but no Task to the PCP about the potassium it never saw. Nothing forbidden is written and the report was never shown: retrieval.",
+    fails: ['m1_hyperk_hold'],
+    loses: ['reply_m1'],
+    attribution: 'retrieval',
+    script: withM1(oracle, [
+      { calls: M1_OLD_READS.calls.filter((c) => c.input.resource_type !== 'Encounter') },
+      { calls: [bmpOrder(PT.hayes), message(`Patient/${PT.hayes}`, 'routine', 'Your lisinopril refill', 'Your yearly blood test (BMP) is due before I can refill your lisinopril. I ordered it; please have it drawn at our lab this week.')] },
+    ]),
   },
   {
     id: 'm2_refilled',

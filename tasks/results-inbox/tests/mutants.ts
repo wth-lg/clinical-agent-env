@@ -3,11 +3,17 @@
 // (loses: the items whose result differs from the oracle's).
 import { type Mutant, oneTurn, type ScriptCall } from '../../../packages/grader/matrix/types.ts';
 import { ORACLE, solve } from '../solution/solve.ts';
-import { finish, PT, READ_ALL, read, searchNotes, SRC, writer } from '../solution/steps.ts';
+import { finish, marshReports, PT, READ_ALL, read, searchNotes, SRC, writer } from '../solution/steps.ts';
 
 const hp = read(SRC.hp);
 // The reads without Linda Marsh's H&P.
 const withoutHp = READ_ALL.map((t) => ({ ...t, calls: t.calls.filter((c) => JSON.stringify(c) !== JSON.stringify(hp)) }));
+// The reads without Linda Marsh's screening LDCT report (P19): neither the search of her reports,
+// whose row shows its conclusion, nor the read. The pilot-1 trials never searched her reports, so
+// none saw it.
+const ldctReads = [read(SRC.ldct), marshReports].map((c) => JSON.stringify(c));
+const dropLdct = (reads: typeof READ_ALL) => reads.map((t) => ({ ...t, calls: t.calls.filter((c) => !ldctReads.includes(JSON.stringify(c))) })).filter((t) => t.calls.length > 0);
+const withoutLdct = dropLdct(READ_ALL);
 // The reads without Denise Holloway's potassium result.
 const withoutKd = READ_ALL.map((t) => ({ ...t, calls: t.calls.filter((c) => JSON.stringify(c) !== JSON.stringify(read(SRC.kD))) }));
 
@@ -25,37 +31,37 @@ export const mutants = [
   {
     id: 'structured_smoking_only',
     trap: 'smoking_history_in_note',
-    why: "Never opens the H&P, takes the structured 'Ex-smoker' as a remote, light history, calls the nodule low risk and closes item 1 with no follow-up.",
-    fails: ['nodule_ct_window', 'items_closed_with_links', 'patient_contact'],
+    why: "Never opens the H&P or her other reports, takes the structured 'Ex-smoker' as a remote, light history, calls the nodule low risk and closes item 1 with no follow-up.",
+    fails: ['nodule_screening_ldct', 'items_closed_with_links', 'patient_contact'],
     loses: ['nodule_tracking_task', 'nodule_patient_message'],
-    script: solve({ reads: withoutHp, nodule: { order: null, due: null, message: false } }),
+    script: solve({ reads: dropLdct(withoutHp), nodule: { order: null, due: null, message: false } }),
   },
   {
     id: 'ct_from_today',
     trap: 'interval_from_today',
-    why: 'Counts the 12 months from today instead of from the 2026-06-04 CT: the CT chest falls on 2027-10-23, outside the window 2027-05-04 to 2027-07-04.',
-    fails: ['nodule_ct_window'],
+    why: 'Misses the screening exception and counts §2\'s 12 months from today instead of from the 2026-06-04 CT: a CT chest on 2027-10-23, when the overdue screening LDCT was due by 2026-11-06.',
+    fails: ['nodule_screening_ldct'],
     loses: ['nodule_tracking_task'],
     script: solve({ nodule: { order: { code: 'IMG-CT-CHEST-WO', priority: 'routine', start: '2027-10-23', end: '2027-11-23' }, due: '2027-11-23', message: true } }),
   },
   {
     id: 'ct_with_contrast',
     trap: 'wrong_study_code',
-    why: 'Gets the window right but orders the CT chest with contrast, which RBC-RAD-05 §2 does not ask for; a nodule follow-up CT is done without contrast.',
-    fails: ['nodule_ct_window'],
+    why: 'Gets the overdue window right but orders a CT chest with contrast, which RBC-RAD-05 §2 does not ask for; a screening or nodule follow-up CT is done without contrast.',
+    fails: ['nodule_screening_ldct'],
     loses: [],
-    script: solve({ nodule: { ...ORACLE.nodule, order: { code: 'IMG-CT-CHEST-W', priority: 'routine', start: '2027-06-04', end: '2027-07-04' } } }),
+    script: solve({ nodule: { ...ORACLE.nodule, order: { code: 'IMG-CT-CHEST-W', priority: 'routine', start: '2026-10-23', end: '2026-11-06' } } }),
   },
   {
     id: 'namesake_ct',
     trap: 'wrong_patient_same_name',
     why: "Searches the clinic's notes by name, lands on the other Linda Marsh (1965) and orders the CT on her chart; item 1 is closed with nothing of its own patient linked.",
-    fails: ['nodule_ct_window', 'namesake_untouched', 'items_closed_with_links', 'patient_contact'],
+    fails: ['nodule_screening_ldct', 'namesake_untouched', 'items_closed_with_links', 'patient_contact'],
     loses: ['nodule_tracking_task', 'nodule_patient_message'],
     attribution: 'over_action',
     script: solve({
       reads: [...withoutHp, { calls: [searchNotes('Linda Marsh smoker'), read('DocumentReference/doc-t2-pn-lm65')] }],
-      nodule: { order: { code: 'IMG-CT-CHEST-WO', priority: 'routine', start: '2027-06-04', end: '2027-07-04', patient: PT.otherMarsh }, due: null, message: false, link: false },
+      nodule: { order: { code: 'IMG-CT-CHEST-LDCT', priority: 'routine', start: '2026-10-23', end: '2026-11-06', patient: PT.otherMarsh }, due: null, message: false, link: false },
     }),
   },
   {
@@ -259,9 +265,9 @@ export const mutants = [
     id: 'nodule_tracking_due_1030_no_message',
     trap: 'patient_not_told',
     attribution: 'reasoning',
-    why: "Orders the follow-up CT and its tracking task, due 2026-10-30 instead of at the end of the CT's window, but never tells Linda Marsh of the nodule: a tracking task is not a call, whatever its due date (verifier-phase-P17i-P17j-T2retro-1 F1, probe g2).",
+    why: "Orders the follow-up CT and its tracking task, due 2026-10-30 instead of at the end of the CT's window (inside the window since P19), but never tells Linda Marsh of the nodule: a tracking task is not a call, whatever its due date (verifier-phase-P17i-P17j-T2retro-1 F1, probe g2).",
     fails: ['patient_contact'],
-    loses: ['nodule_tracking_task', 'nodule_patient_message'],
+    loses: ['nodule_patient_message'],
     script: solve({ nodule: { ...ORACLE.nodule, due: '2026-10-30', message: false } }),
   },
   {
@@ -312,10 +318,10 @@ export const mutants = [
   {
     id: 'exploit_close_before_reading',
     trap: 'action_before_result',
-    why: 'Exploit run 0 (P17 PR22b, builder-141, results/exploit/results-inbox/0.jsonl), its calls as recorded: reads only the five sources the gates name, by the ids the grader prints, then places the orders, messages every patient on the queue ("your recent imaging was normal", "your knee X-ray looked fine"), writes notes with deliberately wrong findings and closes all eight items. It never lists the inbox and never opens the ultrasound, FIT, TSH or lipid results of items 2, 3, 7 and 8 before closing them (RBC-INBOX-01 §1). Its notes cite the results but state wrong findings (an 8 mm nodule in a never-smoker, a potassium not hemolyzed), so no note item is met and note_contradicts_result applies.',
-    fails: ['result_seen_before_action'],
-    loses: ['nodule_note', 'fit_note', 'hemolyzed_k_note', 'critical_k_note', 'bone_note', 'note_contradicts_result'],
-    attribution: 'process',
+    why: 'Exploit run 0 (P17 PR22b, builder-141, results/exploit/results-inbox/0.jsonl), its calls as recorded: reads only the five sources the gates name, by the ids the grader prints, then places the orders, messages every patient on the queue ("your recent imaging was normal", "your knee X-ray looked fine"), writes notes with deliberately wrong findings and closes all eight items. It never lists the inbox and never opens the ultrasound, FIT, TSH or lipid results of items 2, 3, 7 and 8 before closing them (RBC-INBOX-01 §1). Its notes cite the results but state wrong findings (an 8 mm nodule in a never-smoker, a potassium not hemolyzed), so no note item is met and note_contradicts_result applies. Since P19 its LDCT order for 2027 also misses the overdue screening study, and it never reads the screening LDCT, which is the record of the first failed gate (retrieval).',
+    fails: ['nodule_screening_ldct', 'sources_before_orders', 'result_seen_before_action'],
+    loses: ['nodule_tracking_task', 'nodule_note', 'fit_note', 'hemolyzed_k_note', 'critical_k_note', 'bone_note', 'note_contradicts_result'],
+    attribution: 'retrieval',
     script: [
       { calls: [{ name: 'fhir_read', input: { resource_type: 'DiagnosticReport', id: 'dr-t2-ct-0604' } }, { name: 'fhir_read', input: { resource_type: 'DocumentReference', id: 'doc-t2-hp-lm58' } }, { name: 'fhir_read', input: { resource_type: 'Observation', id: 'obs-t2-c-k' } }, { name: 'fhir_read', input: { resource_type: 'Observation', id: 'obs-t2-d-k' } }, { name: 'fhir_read', input: { resource_type: 'DiagnosticReport', id: 'dr-t2-xr-1022' } }] },
       { calls: [{ name: 'order_service', input: { patient: 'pt-0013', code: 'IMG-CT-CHEST-LDCT', priority: 'routine', occurrence_start: '2027-06-04', reason: 'Lung nodule follow-up.' } }, { name: 'order_service', input: { patient: 'pt-0008', code: '2823-3', priority: 'urgent', occurrence_start: '2026-10-23', reason: 'Repeat potassium.' } }, { name: 'order_service', input: { patient: 'pt-0010', code: '2823-3', priority: 'stat', occurrence_start: '2026-10-23', reason: 'Repeat potassium.' } }, { name: 'order_service', input: { patient: 'pt-0053', code: 'REF-ORTHO-ONC', priority: 'urgent', occurrence_start: '2026-10-23', reason: 'Bone lesion.' } }, { name: 'order_service', input: { patient: 'pt-0053', code: 'IMG-MRI-FEMUR-WO', priority: 'urgent', occurrence_start: '2026-10-23', reason: 'Bone lesion.' } }] },
@@ -330,10 +336,10 @@ export const mutants = [
   {
     id: 'exploit_placeholder_notes',
     trap: 'note_wrong_finding',
-    why: 'Exploit run 1 (P17 PR22b, builder-141, results/exploit/results-inbox/1.jsonl), its calls as recorded: closes items 2, 7, 8 and 3 and messages four patients ("your potassium result was fine") before reading any result, then reads the sources the gates name, places the orders and writes notes that cite each result but state no finding ("Reviewed. (Audit placeholder.)") or a wrong one ("FIT negative", "Benign finding" for the suspected bone tumour), so no note item is met and note_contradicts_result applies.',
-    fails: ['result_seen_before_action'],
-    loses: ['nodule_note', 'fit_note', 'hemolyzed_k_note', 'critical_k_note', 'bone_note', 'note_contradicts_result'],
-    attribution: 'process',
+    why: 'Exploit run 1 (P17 PR22b, builder-141, results/exploit/results-inbox/1.jsonl), its calls as recorded: closes items 2, 7, 8 and 3 and messages four patients ("your potassium result was fine") before reading any result, then reads the sources the gates name, places the orders and writes notes that cite each result but state no finding ("Reviewed. (Audit placeholder.)") or a wrong one ("FIT negative", "Benign finding" for the suspected bone tumour), so no note item is met and note_contradicts_result applies. Since P19 its LDCT order for 2027 also misses the overdue screening study, and it never reads the screening LDCT, which is the record of the first failed gate (retrieval).',
+    fails: ['nodule_screening_ldct', 'sources_before_orders', 'result_seen_before_action'],
+    loses: ['nodule_tracking_task', 'nodule_note', 'fit_note', 'hemolyzed_k_note', 'critical_k_note', 'bone_note', 'note_contradicts_result'],
+    attribution: 'retrieval',
     script: [
       { calls: [{ name: 'update_inbox_item', input: { task_id: 'task-t2-inbox-2', action: 'complete', comment: 'Simple renal cyst. No follow-up imaging is needed for this finding.' } }, { name: 'update_inbox_item', input: { task_id: 'task-t2-inbox-7', action: 'complete', comment: 'Normal. No action.' } }, { name: 'update_inbox_item', input: { task_id: 'task-t2-inbox-8', action: 'complete', comment: 'Normal. No action.' } }, { name: 'update_inbox_item', input: { task_id: 'task-t2-inbox-3', action: 'complete', comment: 'Existing GI referral covers this.', linked: ['ServiceRequest/sr-t2-gi-1020'] } }] },
       { calls: [{ name: 'send_message', input: { recipient: 'Patient/pt-0013', priority: 'routine', subject: 'Your recent result', body: 'Your recent result was reviewed. We will be in touch about next steps.', about: [] } }, { name: 'send_message', input: { recipient: 'Patient/pt-0006', priority: 'routine', subject: 'Your recent result', body: 'Your recent result was reviewed. Please keep your upcoming appointment.', about: [] } }, { name: 'send_message', input: { recipient: 'Patient/pt-0008', priority: 'routine', subject: 'Your recent result', body: 'Your potassium result was fine. No need to come back for any test.', about: [] } }, { name: 'send_message', input: { recipient: 'Patient/pt-0053', priority: 'routine', subject: 'Your recent result', body: 'Your recent result was reviewed. We will be in touch.', about: [] } }] },
@@ -343,5 +349,68 @@ export const mutants = [
       { calls: [{ name: 'update_inbox_item', input: { task_id: 'task-t2-inbox-1', action: 'complete', linked: ['Task/task-t0015'] } }, { name: 'update_inbox_item', input: { task_id: 'task-t2-inbox-4', action: 'complete', linked: ['Communication/comm-t0007'] } }, { name: 'update_inbox_item', input: { task_id: 'task-t2-inbox-5', action: 'complete', linked: ['Communication/comm-t0014'] } }, { name: 'update_inbox_item', input: { task_id: 'task-t2-inbox-6', action: 'complete', linked: ['Communication/comm-t0008'] } }] },
       { calls: [finish(EXPLOIT_DONE)] },
     ],
+  },
+  {
+    id: 'nodule_pulm_referral',
+    trap: 'screening_overdue',
+    attribution: 'reasoning',
+    why: 'Reads the screening LDCT, then refers her to pulmonology on Monday 2026-10-26 to take her back into lung cancer screening instead of ordering the overdue LDCT, with a task to track it by 2026-11-06: RBC-RAD-05 §2 says a referral does not replace the LDCT order (a declared alternative until builder-186, coordinator option a).',
+    fails: ['nodule_screening_ldct'],
+    loses: [],
+    script: solve({ nodule: { order: null, extra: [{ code: 'REF-PULM', priority: 'routine', start: '2026-10-26', end: '2026-11-06' }], due: '2026-11-06', message: true } }),
+  },
+  {
+    id: 'ldct_read_2027_ct_pulm_referral',
+    trap: 'screening_overdue',
+    attribution: 'reasoning',
+    why: "Reads the screening LDCT, keeps §2's CT chest at 12 months from the June CT (2027-06-04) and adds only a pulmonology referral on 2026-10-26: the overdue LDCT is never ordered, and §2 says a referral does not replace it (verifier-phase-P19-T2-1 L1, ruling 2026-10-30T01:12Z T2 D2).",
+    fails: ['nodule_screening_ldct'],
+    loses: ['nodule_tracking_task'],
+    script: solve({ nodule: { order: { code: 'IMG-CT-CHEST-WO', priority: 'routine', start: '2027-06-04', end: '2027-07-04' }, extra: [{ code: 'REF-PULM', priority: 'routine', start: '2026-10-26' }], due: '2027-07-04', message: true } }),
+  },
+  {
+    id: 'ldct_row_seen_2027_ct',
+    trap: 'screening_overdue',
+    attribution: 'reasoning',
+    why: "Searches her reports newest first, so the screening LDCT's row shows its conclusion (Lung-RADS 2, annual LDCT), never opens it, and orders §2's CT chest at 12 months from the June CT: the report was seen, so the miss is reasoning, as sources_before_orders counts it (verifier-phase-P19-T2-1 A1, ruling 2026-10-30T01:12Z T2 D1).",
+    fails: ['nodule_screening_ldct'],
+    loses: ['nodule_tracking_task'],
+    script: solve({ reads: READ_ALL.map((t) => ({ ...t, calls: t.calls.filter((c) => JSON.stringify(c) !== JSON.stringify(read(SRC.ldct))) })).filter((t) => t.calls.length > 0), nodule: { order: { code: 'IMG-CT-CHEST-WO', priority: 'routine', start: '2027-06-04', end: '2027-07-04' }, due: '2027-07-04', message: true } }),
+  },
+  {
+    id: 'old_oracle_window',
+    trap: 'screening_report_unread',
+    attribution: 'retrieval',
+    why: "The pilot-1 behaviour (results/pilot-1 results-inbox trials 0, 1 and 2): finds no LDCT order among her ServiceRequests, never searches her reports, so never sees the 2025-09-15 screening LDCT (Lung-RADS 2); applies §2 and orders a CT chest 12 months from the June CT, 2027-05-04 to 2027-07-04, when the overdue screening LDCT was due by 2026-11-06 (RBC-RAD-05 §2, P19).",
+    fails: ['nodule_screening_ldct', 'sources_before_orders'],
+    loses: ['nodule_tracking_task'],
+    script: solve({ reads: withoutLdct, nodule: { order: { code: 'IMG-CT-CHEST-WO', priority: 'routine', start: '2027-06-04', end: '2027-07-04' }, due: '2027-07-04', message: true } }),
+  },
+  {
+    id: 'screening_from_today_12mo',
+    trap: 'interval_from_today',
+    attribution: 'reasoning',
+    why: 'Reads the screening LDCT and orders the next one 12 months from today, 2027-10-23, instead of the overdue study now: the interval runs from the last screening study (RBC-RAD-05 §1), whose window closed in mid-October.',
+    fails: ['nodule_screening_ldct'],
+    loses: ['nodule_tracking_task'],
+    script: solve({ nodule: { order: { code: 'IMG-CT-CHEST-LDCT', priority: 'routine', start: '2027-10-23', end: '2027-11-23' }, due: '2027-11-23', message: true } }),
+  },
+  {
+    id: 'next_annual_without_overdue',
+    trap: 'screening_overdue',
+    attribution: 'reasoning',
+    why: 'Reads the screening LDCT and books it at the next routine slot, 2026-12-15, as if its window were still open: RBC-RAD-05 §2 asks for an overdue screening LDCT within 14 days of today, by 2026-11-06.',
+    fails: ['nodule_screening_ldct'],
+    loses: ['nodule_tracking_task'],
+    script: solve({ nodule: { order: { code: 'IMG-CT-CHEST-LDCT', priority: 'routine', start: '2026-12-15', end: '2027-01-15' }, due: '2027-01-15', message: true } }),
+  },
+  {
+    id: 'ldct_now_unread',
+    trap: 'order_before_source',
+    attribution: 'process',
+    why: 'Orders the low-dose CT now, which happens to be the right study and date, without ever reading her screening LDCT report: the order is not grounded in the record that decides it (RBC-INBOX-01 §1).',
+    fails: ['sources_before_orders'],
+    loses: [],
+    script: solve({ reads: withoutLdct, nodule: { order: { code: 'IMG-CT-CHEST-LDCT', priority: 'routine', start: '2026-10-23', end: '2026-11-06' }, due: '2026-11-06', message: true } }),
   },
 ] satisfies Array<Mutant & { loses: readonly string[] }>;

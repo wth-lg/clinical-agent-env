@@ -35,7 +35,7 @@ const STATINS = /\b(?:atorvastatin|rosuvastatin|simvastatin|pravastatin|lovastat
 // What each patient's reply must tell them (RBC-TRI-02 §3), judged on its content: a reply that
 // only exists, such as "ok", does not meet it (R14-27).
 const REPLIES: Array<[string, string, string]> = [
-  ['m1', M.m1.patient, 'The text tells the patient that a short supply of lisinopril was sent, and that a blood test (BMP) is due before a longer refill.'],
+  ['m1', M.m1.patient, 'The text tells the patient that lisinopril was not refilled for now, and that Dr. Okafor or the care team will contact the patient about it or about a recent blood test result.'],
   ['m2', M.m2.patient, 'The text tells the patient that atorvastatin was not refilled because it was stopped in favour of rosuvastatin, and to keep taking rosuvastatin.'],
   ['m3', M.m3.patient, 'The text tells the patient to go to the emergency department now, or to call 911.'],
   ['m5', M.m5.patient, 'The text tells the patient that metformin was renewed or sent to the pharmacy.'],
@@ -50,7 +50,7 @@ const REPLIES: Array<[string, string, string]> = [
 // the trial messaged a patient: one question per patient messaged.
 // Each queue patient's name and what the queue is about for them.
 const PATIENT_MATTERS: Record<string, [name: string, matters: string]> = {
-  [M.m1.patient]: ['Gloria Hayes', 'her lisinopril refill and her BMP blood test'],
+  [M.m1.patient]: ['Gloria Hayes', 'her lisinopril refill, her high potassium on an outside blood test (BMP), and any repeat BMP'],
   [M.m2.patient]: ['Frank Odum', 'his atorvastatin refill request (cardiology stopped atorvastatin and started rosuvastatin)'],
   [M.m3.patient]: ['Evelyn Brooks', 'her black stools and lightheadedness, her naproxen and Eliquis (apixaban), and going to the emergency department'],
   [M.m4.patient]: ['Lena Park', 'an amoxicillin-clavulanate (Augmentin) prescription and her allergic reaction to it'],

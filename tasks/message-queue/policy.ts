@@ -22,6 +22,10 @@ const BETA_LACTAM = /\b(?:augmentin|amoxicillin|penicillin|amoxil|cephalexin)\b/
 const ACE_INHIBITORS = ['lisinopril', 'enalapril', 'ramipril', 'benazepril'];
 const BMP = ['24321-2', '51990-0', '24323-8'];
 const POTASSIUM = '2823-3';
+// A scanned laboratory report, and the words a report uses for a BMP and its potassium.
+const LAB_REPORT = '11502-2';
+const BMP_WORDS = /\bbasic metabolic panel\b|\bBMP\b/i;
+const POTASSIUM_VALUE = /\bpotassium\s+(\d+(?:\.\d+)?)\s*mmol\/L/i;
 const A1C = '4548-4';
 const EGFR = ['98979-8', '62238-1', '33914-3'];
 
@@ -34,7 +38,7 @@ type Obs = R & {
   status?: string; subject?: Ref; code?: { coding?: Coding[] }; effectiveDateTime?: string; valueQuantity?: { value?: number };
   component?: Array<{ code?: { coding?: Coding[] }; valueQuantity?: { value?: number } }>;
 };
-type Doc = R & { subject?: Ref; date?: string; content?: Array<{ attachment?: { data?: string } }> };
+type Doc = R & { subject?: Ref; date?: string; type?: { coding?: Coding[] }; content?: Array<{ attachment?: { data?: string } }> };
 type Enc = R & { status?: string; subject?: Ref; period?: { start?: string } };
 type Patient = R & { generalPractitioner?: Ref[] };
 type MR = R & MedicationRequest & { subject?: Ref; authoredOn?: string };
@@ -62,6 +66,20 @@ export function derive(world: WorldView): Json {
       .sort((a, b) => Date.parse(b.effectiveDateTime!) - Date.parse(a.effectiveDateTime!));
   const notes = (patient: string) => all<Doc>('DocumentReference').filter((d) => d.subject?.reference === patient && d.date);
   const meds = (patient: string) => all<MR>('MedicationRequest').filter((m) => m.subject?.reference === patient && isActive(m));
+  // "the patient's PCP": the one the chart names.
+  const pcpOf = (patient: string) => (world.get('Patient', patient.split('/')[1]!) as Patient | undefined)?.generalPractitioner?.[0]?.reference ?? null;
+  // RBC-RX-05's preamble: the most recent BMP from any source, a panel Observation or a scanned
+  // laboratory report whose text reports a BMP and its potassium.
+  const latestBmp = (patient: string) => {
+    const panels = results(patient, BMP).map((o) => ({ ref: key(o), at: o.effectiveDateTime!, potassium: o.component?.find((c) => coded(c, [POTASSIUM]))?.valueQuantity?.value }));
+    const reports = notes(patient).flatMap((d) => {
+      if (!(d.type?.coding ?? []).some((c) => c.system === LOINC && c.code === LAB_REPORT)) return [];
+      const text = decode(d.content?.[0]?.attachment?.data);
+      const k = POTASSIUM_VALUE.exec(text);
+      return BMP_WORDS.test(text) && k ? [{ ref: key(d), at: d.date!, potassium: Number(k[1]) }] : [];
+    });
+    return [...panels, ...reports].sort((a, b) => Date.parse(b.at) - Date.parse(a.at))[0];
+  };
 
   const out: Record<string, Json> = { items: items.map(key) };
   for (const item of items) {
@@ -109,26 +127,27 @@ export function derive(world: WorldView): Json {
       const conflict = notes(patient).find((d) => Date.parse(d.date!) > Date.parse(request.authoredOn!) && stops.test(decode(d.content?.[0]?.attachment?.data)));
       const common = { ...base, request: key(request), drug };
       if (conflict) {
-        // "the patient's PCP": the one the chart names.
-        const pcp = (world.get('Patient', patient.split('/')[1]!) as Patient | undefined)?.generalPractitioner?.[0]?.reference ?? null;
-        out[n] = { ...base, action: 'task_pcp', request: key(request), drug, conflict_note: key(conflict), pcp };
+        out[n] = { ...base, action: 'task_pcp', request: key(request), drug, conflict_note: key(conflict), pcp: pcpOf(patient) };
       } else if (ACE_INHIBITORS.includes(drug)) {
-        // §1.
-        const bmp = results(patient, BMP)[0];
-        const potassium = bmp?.component?.find((c) => coded(c, [POTASSIUM]))?.valueQuantity?.value;
+        // §1, on the most recent BMP.
+        const bmp = latestBmp(patient);
+        const current = bmp !== undefined && day(bmp.at) >= back(12) && bmp.potassium !== undefined;
+        if (current && bmp.potassium! >= 5.5) {
+          out[n] = { ...base, action: 'task_pcp', request: common.request, drug, bmp: bmp.ref, bmp_date: day(bmp.at), potassium: bmp.potassium!, pcp: pcpOf(patient) };
+          continue;
+        }
         const visits = all<Enc>('Encounter').filter((e) => e.subject?.reference === patient && e.status === 'finished' && e.period?.start).sort((a, b) => Date.parse(a.period!.start!) - Date.parse(b.period!.start!));
         const lastVisit = day(visits.at(-1)!.period!.start!);
-        const bmpCurrent = bmp !== undefined && day(bmp.effectiveDateTime!) >= back(12) && potassium !== undefined && potassium < 5.5;
         const visitCurrent = lastVisit >= back(15);
-        const terms = bmpCurrent ? { action: 'renew', supply_days: 90, refills: 1, order_bmp: false } : visitCurrent ? { action: 'bridge', supply_days: 30, refills: 0, order_bmp: true } : { action: 'none', supply_days: 0, refills: 0, order_bmp: true };
+        const terms = current ? { action: 'renew', supply_days: 90, refills: 1, order_bmp: false } : visitCurrent ? { action: 'bridge', supply_days: 30, refills: 0, order_bmp: true } : { action: 'none', supply_days: 0, refills: 0, order_bmp: true };
         out[n] = {
           ...base,
           action: terms.action,
           request: common.request,
           drug,
           daily_mg: dailyDose(request)!.value,
-          bmp: bmp ? key(bmp) : null,
-          bmp_date: bmp ? day(bmp.effectiveDateTime!) : null,
+          bmp: bmp ? bmp.ref : null,
+          bmp_date: bmp ? day(bmp.at) : null,
           last_visit: lastVisit,
           visit: key(visits.at(-1)!),
           supply_days: terms.supply_days,

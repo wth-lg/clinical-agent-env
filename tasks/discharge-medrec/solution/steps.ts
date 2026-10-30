@@ -18,8 +18,9 @@ export const summaries: ScriptCall = { name: 'search_notes', input: { query: 'di
 export const read = (resource_type: string, id: string): ScriptCall => ({ name: 'fhir_read', input: { resource_type, id } });
 export const summary = read('DocumentReference', 'doc-t4-dc-1019');
 export const addendum = read('DocumentReference', 'doc-t4-dc-1019-add');
-// The post-discharge creatinine is in the outside lab's filed report (P18o R14-07 L2): a notes
-// search shows its creatinine line. A search of his results finds only the inpatient 1.9.
+// The post-discharge creatinine and potassium are in the outside lab's filed report (P18o R14-07
+// L2): a notes search shows its creatinine line, a read shows it whole, potassium 5.4 among it
+// (P19 lever). A search of his results finds only the inpatient 1.9.
 export const scr: ScriptCall = { name: 'search_notes', input: { query: 'creatinine', patient: PT } };
 export const labReport = read('DocumentReference', 'doc-t4-lab-1021');
 export const scrResults: ScriptCall = { name: 'fhir_search', input: { resource_type: 'Observation', patient: PT, code: '2160-0', sort: '-date' } };
@@ -40,14 +41,21 @@ export const furosemideUp = modify(MR.furosemide, { value: 40, unit: 'mg', frequ
 export const spironolactone = order(RX.spironolactone25, 25, 'QD', 'Signed addendum 10/19: spironolactone 25 mg daily (corrects 12.5 mg)');
 export const kclStop = change(MR.kcl, 'stop', 'St. Brigid discharge summary 10/19: stop potassium chloride');
 export const lisinoprilResume = change(MR.lisinopril, 'resume', 'Discharge summary: resume when SCr < 1.5; SCr 1.32 on 10/21');
-// A potassium and creatinine recheck (BMP) for 2026-10-26 to 2026-10-28, a week after spironolactone
-// is started with lisinopril resumed (the discharge summary asks for a BMP a week after starting
-// spironolactone; P17j JG9, decisions 2026-10-28T02:10Z).
+// RBC-TOC-02 §7 (P19 lever): potassium 5.4 on 10/21 is above 5.0, so spironolactone is not started
+// and lisinopril stays held; a Task for the PCP due 10/26, a week after the 10/19 discharge as the
+// summary's one-week BMP, inside §7's 2 to 7 days after the 10/21 potassium.
+export const K_TASK = 'Potassium 5.4 mmol/L on 10/21 (Northgate outside lab) is above 5.0: per RBC-TOC-02 §7 spironolactone 25 mg was not started and lisinopril 10 mg stays on hold. Please recheck potassium and creatinine, then decide on both.';
+export const kTask = (due = '2026-10-26', description = K_TASK, focus: string | null = `MedicationRequest/${MR.lisinopril}`): ScriptCall => ({
+  name: 'create_task',
+  input: { patient: PT, owner: 'Practitioner/pr-okafor', due, priority: 'routine', description, ...(focus ? { focus } : {}) },
+});
+// A potassium and creatinine recheck (BMP) ordered for 2026-10-26 to 2026-10-28, the summary's
+// one-week BMP: §7's recheck as an order instead of a Task (P19, a declared alternative).
 export const bmpRecheck: ScriptCall = {
   name: 'order_service',
-  input: { patient: PT, code: '24321-2', priority: 'routine', occurrence_start: '2026-10-26', occurrence_end: '2026-10-28', reason: 'BMP (potassium, creatinine) 1 week after starting spironolactone with lisinopril resumed' },
+  input: { patient: PT, code: '24321-2', priority: 'routine', occurrence_start: '2026-10-26', occurrence_end: '2026-10-28', reason: 'BMP (potassium, creatinine): potassium 5.4 on 10/21, spironolactone and lisinopril held (RBC-TOC-02 §7)' },
 };
-export const writes = [furosemideUp, spironolactone, kclStop, lisinoprilResume, bmpRecheck];
+export const writes = [furosemideUp, kclStop, kTask()];
 
 export const MESSAGE =
   'Walter Kim has two beta-blockers on his outpatient list: metoprolol succinate ER 50 mg daily, which the St. Brigid discharge documents continue as "metoprolol XL", ' +
@@ -59,12 +67,14 @@ export const message = (body: string = MESSAGE, about: string[] = [`MedicationRe
 
 export interface NoteFacts { sources: string; changes: string; kept: string; flagged: string }
 export const ORACLE_NOTE: NoteFacts = {
-  sources: 'Sources: St. Brigid Regional discharge summary of 10/19/2026 and its signed addendum of 10/19/2026 (RBC-TOC-02 §1); creatinine 1.32 mg/dL on 10/21/2026.',
+  sources: 'Sources: St. Brigid Regional discharge summary of 10/19/2026 and its signed addendum of 10/19/2026 (RBC-TOC-02 §1); Northgate outside lab report of 10/21/2026: potassium 5.4 mmol/L, creatinine 1.32 mg/dL.',
   changes:
-    'Changes: furosemide increased from 20 mg to 40 mg daily (discharge summary). Spironolactone 25 mg daily started (signed addendum, which corrects the summary\'s 12.5 mg). ' +
-    'Potassium chloride stopped (discharge summary). Lisinopril 10 mg daily resumed: the summary resumes it when SCr is below 1.5, and SCr was 1.32 on 10/21 (discharge summary; lab 10/21).',
+    'Changes: furosemide increased from 20 mg to 40 mg daily (discharge summary). Potassium chloride stopped (discharge summary). ' +
+    "Spironolactone 25 mg daily (signed addendum, which corrects the summary's 12.5 mg) not started, and lisinopril 10 mg daily kept on hold although SCr 1.32 is below the summary's 1.5: potassium was 5.4 mmol/L on 10/21, above 5.0 (RBC-TOC-02 §7; lab 10/21).",
   kept: 'No change: metoprolol XL is his metoprolol succinate ER 50 mg daily; atorvastatin 40 mg continued; omeprazole 20 mg kept because pantoprazole was a formulary substitution (RBC-TOC-02 §3).',
-  flagged: 'Flagged to Dr. Okafor: metoprolol tartrate 25 mg twice daily is not in the discharge documents, a duplicate beta-blocker; left unchanged (RBC-TOC-02 §5).',
+  flagged:
+    'Flagged to Dr. Okafor: metoprolol tartrate 25 mg twice daily is not in the discharge documents, a duplicate beta-blocker; left unchanged (RBC-TOC-02 §5). ' +
+    'Task for Dr. Okafor due 10/26: recheck potassium and creatinine, then decide on spironolactone and lisinopril (RBC-TOC-02 §7).',
 };
 export const noteText = (f: NoteFacts) => ['Post-discharge medication reconciliation under RBC-TOC-02.', f.sources, f.changes, f.kept, f.flagged].join('\n\n');
 export const CITES = ['DocumentReference/doc-t4-dc-1019', 'DocumentReference/doc-t4-dc-1019-add', 'DocumentReference/doc-t4-lab-1021'];
@@ -72,6 +82,8 @@ export const note = (f: Partial<NoteFacts> = {}, cites: string[] = CITES): Scrip
   name: 'write_note',
   input: { patient: PT, type: 'progress_note', title: 'Discharge medication reconciliation (RBC-TOC-02)', text: noteText({ ...ORACLE_NOTE, ...f }), cites, cites_policies: ['RBC-TOC-02'] },
 });
-export const finish = (summary = 'Reconciled Walter Kim after discharge: furosemide 40 mg, spironolactone 25 mg started, KCl stopped, lisinopril resumed; duplicate metoprolol tartrate flagged to Dr. Okafor; note written.'): ScriptCall => ({ name: 'finish', input: { summary } });
+export const finish = (summary = 'Reconciled Walter Kim after discharge: furosemide 40 mg, KCl stopped; spironolactone not started and lisinopril kept on hold for potassium 5.4, with a recheck Task for Dr. Okafor; duplicate metoprolol tartrate flagged to Dr. Okafor; note written.'): ScriptCall => ({ name: 'finish', input: { summary } });
 
-export const reads = [{ calls: [findPatient] }, { calls: [allMeds, summaries, policy] }, { calls: [summary, addendum, scr] }];
+// The pilot-1 trials' reads: the policy, the medication list, the discharge documents and the outside
+// lab report, each read whole.
+export const reads = [{ calls: [findPatient] }, { calls: [allMeds, summaries, policy] }, { calls: [summary, addendum, labReport] }];

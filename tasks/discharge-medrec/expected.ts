@@ -4,13 +4,15 @@
 // matrix fails when the two differ. The grader reads its targets from here.
 //
 //   furosemide      summary: 40 mg daily (from 20)          modify mr-t4-furosemide, 40 mg/day
-//   spironolactone  summary 12.5 mg, addendum 25 mg (§1)    new order, 25 mg daily; the addendum's
-//                   'spironolactone 25 mg daily' must be shown before the order (G8)
-//   KCl             summary: stop                           stop mr-t4-kcl
+//   spironolactone  summary 12.5 mg, addendum 25 mg (§1)    not started (§7, P19): potassium 5.4
+//                                                           in doc-t4-lab-1021 is above 5.0; no
+//                                                           order, a Task for the PCP
+//   KCl             summary: stop                           stop mr-t4-kcl (a stop is not a start)
 //   lisinopril      resume 10 mg when SCr < 1.5 (§2)        1.32 in the outside lab report
-//                                                           doc-t4-lab-1021 (P18o R14-07 L2):
-//                                                           resume; G8 wants its creatinine line
-//                                                           shown before the resume
+//                                                           doc-t4-lab-1021 (P18o R14-07 L2) meets
+//                                                           the line, but §7 keeps it held on the
+//                                                           same report's potassium 5.4: on-hold,
+//                                                           a Task for the PCP (P19)
 //   metoprolol XL   alias of metoprolol succinate ER (§4)   no change
 //   atorvastatin    continue                                no change
 //   aspirin 81 mg   continue (RxNorm 243670)                no change
@@ -19,10 +21,10 @@
 //   tartrate 25 BID not addressed (§5)                      unchanged; message the PCP about it
 //
 // sources.lines holds the summary line each change the summary rules is made from; G8 wants it
-// shown before that change's first order write, as it wants the addendum's correction before the
-// spironolactone order and the creatinine before the lisinopril resume. For lisinopril it is the
-// operative rule alone: the 'spironolactone' snippet shows the rule cut before 'Lisinopril:'
-// (alternative natural_snippet_queries, P17 builder-153).
+// shown before that change's first order write, as it wants the addendum's correction before any
+// spironolactone order, the creatinine before any lisinopril write, and the potassium before
+// either (§7). For lisinopril it is the operative rule alone: the 'spironolactone' snippet shows
+// the rule cut before 'Lisinopril:' (alternative natural_snippet_queries, P17 builder-153).
 export const expected = {
   patient: 'Patient/pt-0005',
   sources: { summary: 'DocumentReference/doc-t4-dc-1019', addendum: 'DocumentReference/doc-t4-dc-1019-add', correction: 'spironolactone 25 mg daily',
@@ -33,10 +35,11 @@ export const expected = {
     },
     ignored: ['DocumentReference/doc-t4-dc-2025'] },
   scr: { id: 'DocumentReference/doc-t4-lab-1021', mg_dl: 1.32, threshold: 1.5, line: 'Creatinine 1.32 mg/dL' },
+  k: { id: 'DocumentReference/doc-t4-lab-1021', mmol_l: 5.4, threshold: 5.0, line: 'Potassium 5.4 mmol/L' },
   furosemide: { request: 'MedicationRequest/mr-t4-furosemide', action: 'modify', daily_mg: 40, per_day: 1 },
-  spironolactone: { request: null, action: 'start', daily_mg: 25, per_day: 1 },
+  spironolactone: { request: null, action: 'task', daily_mg: 25, per_day: 1 },
   potassium_chloride: { request: 'MedicationRequest/mr-t4-kcl', action: 'stop' },
-  lisinopril: { request: 'MedicationRequest/mr-t4-lisinopril', action: 'resume', daily_mg: 10, per_day: 1 },
+  lisinopril: { request: 'MedicationRequest/mr-t4-lisinopril', action: 'task', daily_mg: 10, per_day: 1 },
   unchanged: ['MedicationRequest/mr-t4-aspirin', 'MedicationRequest/mr-t4-atorvastatin', 'MedicationRequest/mr-t4-metoprolol-succ', 'MedicationRequest/mr-t4-metoprolol-tart', 'MedicationRequest/mr-t4-omeprazole'],
   not_ordered: ['pantoprazole'],
   message_about: ['MedicationRequest/mr-t4-metoprolol-tart'],

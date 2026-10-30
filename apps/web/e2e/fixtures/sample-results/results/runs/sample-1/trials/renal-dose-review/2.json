@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:renal-dose-review:2",
   "task_id": "renal-dose-review",
-  "task_version": "9e223096cf5b8a17b8fc2cc8a11c6a6d28ade9c1e0121feb613ee8a707ee1b54",
-  "env_version": "f426c6e81dd773f56a35d21b836e929c495c74dab0bd6d1725a596a6ce799078",
-  "grader_task_version": "a857a43c2bcd24ebaf953043208c705ea2c8f71fef044b5d09acc409d02df581",
-  "fixture_hash": "0b8ff7964370f8452ce17f6c701cc0a5bc8ba82fd8aeeac48098ed83ae6792d7",
+  "task_version": "abf642af74a9ef8215e4f4d7e761b1820689234e1145f1bcecfe8c1ae9c0df6a",
+  "env_version": "c5b62349e4a96a81be1c123c77258d9067b72708627654259a36f1993dcfb28d",
+  "grader_task_version": "e1caa269d67fb84737c38c4604290fd813c7b3ab342a8beda9f492ab31079c75",
+  "fixture_hash": "95d2f5194846a473cd83f112ae92618083e25e31c57d68f4fe9eea5bada20991",
   "state_hash": {
-    "initial": "0b8ff7964370f8452ce17f6c701cc0a5bc8ba82fd8aeeac48098ed83ae6792d7",
-    "final": "e593c0a150decddd4f7775ca655a5605734192e13329916b01ad5fc617c54f15",
-    "replay_final": "e593c0a150decddd4f7775ca655a5605734192e13329916b01ad5fc617c54f15"
+    "initial": "95d2f5194846a473cd83f112ae92618083e25e31c57d68f4fe9eea5bada20991",
+    "final": "e913d5995273ba65b55df16f073f4287786233f6e58649fb6d00d0be349b2763",
+    "replay_final": "e913d5995273ba65b55df16f073f4287786233f6e58649fb6d00d0be349b2763"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,9 +16,9 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T14:11:10.000Z",
-  "turns": 7,
-  "tool_calls": 14,
+  "started": "2026-10-23T14:24:11.000Z",
+  "turns": 8,
+  "tool_calls": 11,
   "tool_errors": {
     "INVALID_INPUT": 0,
     "NOT_FOUND": 0,
@@ -40,10 +40,10 @@
   "status": "COMPLETED",
   "stop": "finish",
   "detail": null,
-  "summary": "Reviewed Harold Vance under RBC-PHARM-07: apixaban back to 5 mg twice daily, metformin unchanged, gabapentin 400 mg twice daily; note written.",
+  "summary": "Reviewed Harold Vance under RBC-PHARM-07: apixaban 2.5 mg twice daily unchanged (extended phase after pulmonary embolism, not covered by §2), metformin unchanged, gabapentin reduced to 600 mg twice daily; progress note written.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T14:12:15.000Z",
+  "ended": "2026-10-23T14:25:13.000Z",
   "judge_cost_usd": 0,
   "grader_version": "13",
   "outcome": "PASS",
@@ -61,8 +61,8 @@
         "active": [
           "MedicationRequest/mr-t0001"
         ],
-        "product": "1364445",
-        "mg": 5,
+        "product": "1364435",
+        "mg": 2.5,
         "per_day": 2,
         "oral": true
       },
@@ -71,17 +71,33 @@
       ]
     },
     {
-      "id": "apixaban_2_5_stopped",
+      "id": "apixaban_unchanged",
       "kind": "gate",
       "method": "code",
       "category": "action",
       "points": null,
       "met": true,
       "evidence": {
-        "status": "stopped"
+        "active": [
+          "MedicationRequest/mr-t0001"
+        ],
+        "was": {
+          "product": "apixaban 2.5 MG Oral Tablet",
+          "form": "immediate release",
+          "mg_per_dose": 2.5,
+          "per_day": 2,
+          "as_needed": false
+        },
+        "is": {
+          "product": "apixaban 2.5 MG Oral Tablet",
+          "form": "immediate release",
+          "mg_per_dose": 2.5,
+          "per_day": 2,
+          "as_needed": false
+        }
       },
       "ids": [
-        "MedicationRequest/mr-t1-apixaban"
+        "MedicationRequest/mr-t0001"
       ]
     },
     {
@@ -93,7 +109,7 @@
       "met": true,
       "evidence": {
         "active": [
-          "MedicationRequest/mr-t0002"
+          "MedicationRequest/mr-t1-metformin"
         ],
         "was": {
           "product": "metformin hydrochloride 1000 MG Oral Tablet",
@@ -111,7 +127,7 @@
         }
       },
       "ids": [
-        "MedicationRequest/mr-t0002"
+        "MedicationRequest/mr-t1-metformin"
       ]
     },
     {
@@ -123,9 +139,9 @@
       "met": true,
       "evidence": {
         "active": [
-          "MedicationRequest/mr-t0003"
+          "MedicationRequest/mr-t0002"
         ],
-        "mg_per_day": 800,
+        "mg_per_day": 1200,
         "range": {
           "min": 400,
           "max": 1400
@@ -135,7 +151,7 @@
         "scheduled": true
       },
       "ids": [
-        "MedicationRequest/mr-t0003"
+        "MedicationRequest/mr-t0002"
       ]
     },
     {
@@ -158,17 +174,17 @@
       "points": null,
       "met": true,
       "evidence": {
-        "first_medication_write": 10,
+        "first_medication_write": 8,
         "seen": [
           {
             "input": "scr",
             "id": "Observation/obs-t1-scr-1020",
-            "step": 4
+            "step": 3
           },
           {
             "input": "weight",
             "id": "Observation/obs-t1-wt-1020",
-            "step": 6
+            "step": 4
           },
           {
             "input": "age",
@@ -204,15 +220,15 @@
       "met": true,
       "evidence": {
         "notes": [
-          "DocumentReference/doc-t0004"
+          "DocumentReference/doc-t0003"
         ],
         "progress_notes": [
-          "DocumentReference/doc-t0004"
+          "DocumentReference/doc-t0003"
         ],
         "messages": []
       },
       "ids": [
-        "DocumentReference/doc-t0004"
+        "DocumentReference/doc-t0003"
       ]
     },
     {
@@ -258,8 +274,8 @@
       "met": true,
       "evidence": {
         "verdict": "met",
-        "quote": "age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met.",
-        "cache_key": "cdf4aada11e7eea32f60793f2e7a0ecd3dd6276fb25c68e997b413167f361727"
+        "quote": "his apixaban is the extended-phase dose after pulmonary embolism, not for non-valvular atrial fibrillation, so §2 does not apply. Continued at 2.5 mg twice daily, re-signed.",
+        "cache_key": "9e11b64b22dd4608102902fb2635704ccc22c05b2dff30e58bc3b0cb2670503e"
       }
     },
     {
@@ -272,7 +288,7 @@
       "evidence": {
         "verdict": "met",
         "quote": "The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used.",
-        "cache_key": "83e73c3dcca92cc21f217c90a130b349fc319c4819246713db9e71e6d287fa50"
+        "cache_key": "9d3259153246a17528d1c757b5525fc8e2f4314f64a3e1c5632a119a4159bc58"
       }
     },
     {
@@ -284,10 +300,10 @@
       "met": true,
       "evidence": {
         "notes": [
-          "DocumentReference/doc-t0004"
+          "DocumentReference/doc-t0003"
         ],
         "citing": [
-          "DocumentReference/doc-t0004"
+          "DocumentReference/doc-t0003"
         ]
       }
     },
@@ -300,7 +316,7 @@
       "met": true,
       "evidence": {
         "active": [
-          "MedicationRequest/mr-t0003"
+          "MedicationRequest/mr-t0002"
         ],
         "per_day": 2
       }
@@ -322,7 +338,7 @@
         ],
         "verdict": "not_met",
         "quote": "current SCr 1.21 mg/dL (10/20/2026). The SCr of 1.88 mg/dL dated 10/21/2026 was entered in error (specimen mislabelled, belongs to another patient) and was not used.",
-        "cache_key": "6a2c42a8f9410e3880b9b56a3303884ea0faa798ff6e10d814dd94bceedaa83a"
+        "cache_key": "2db584aa11ac485060d558368ac78e32bdf6b8ad6de46c1567a5acb6c19191a5"
       }
     },
     {
@@ -334,8 +350,8 @@
       "met": false,
       "evidence": {
         "verdict": "not_met",
-        "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met. One criterion met, so apixaban goes back to 5 mg twice daily",
-        "cache_key": "3eea2904f4b469a72b04c0bf777004c5c8db564e2de2d01f938d6aaa0433ff4b"
+        "quote": "his apixaban is the extended-phase dose after pulmonary embolism, not for non-valvular atrial fibrillation, so §2 does not apply. Continued at 2.5 mg twice daily, re-signed.",
+        "cache_key": "bd0c5bfc8ebc8d7c59ec823362686458d0259beca73461d796764e2637fbe4ab"
       }
     },
     {
@@ -346,10 +362,10 @@
       "points": -5,
       "met": false,
       "evidence": {
-        "chart": "Apixaban: before the review apixaban 2.5 MG Oral Tablet, 2.5 mg by mouth twice daily; after it apixaban 5 MG Oral Tablet, 5 mg by mouth twice daily. Metformin: before the review metformin hydrochloride 1000 MG Oral Tablet, 1000 mg by mouth twice daily; after it metformin hydrochloride 1000 MG Oral Tablet, 1000 mg by mouth twice daily. Gabapentin: before the review gabapentin 600 MG Oral Tablet, 600 mg by mouth three times daily; after it gabapentin 400 MG Oral Capsule, 400 mg by mouth twice daily. Other medication orders written: none. Other orders placed: none. Messages sent: none.",
+        "chart": "Apixaban: before the review apixaban 2.5 MG Oral Tablet, 2.5 mg by mouth twice daily; after it apixaban 2.5 MG Oral Tablet, 2.5 mg by mouth twice daily (a new order this trial wrote). Metformin: before the review metformin hydrochloride 1000 MG Oral Tablet, 1000 mg by mouth twice daily; after it unchanged. Gabapentin: before the review gabapentin 600 MG Oral Tablet, 600 mg by mouth three times daily; after it gabapentin 600 MG Oral Tablet, 600 mg by mouth twice daily (a new order this trial wrote). Other medication orders written: none. Other orders placed: none. Messages sent: none.",
         "verdict": "not_met",
         "quote": "",
-        "cache_key": "c4367eb81d853a59c12bd5ddf8d3116435ab9278905b7b17b4360dba5152f574"
+        "cache_key": "38a21891676fd7a9fac4fbea61d99368ca0d54b921d3daeb2f5d0a5757abd863"
       }
     }
   ],
@@ -362,33 +378,33 @@
     "score_penalties_not_met": 1,
     "over_allowance": 0,
     "cache_keys": [
-      "cdf4aada11e7eea32f60793f2e7a0ecd3dd6276fb25c68e997b413167f361727",
-      "83e73c3dcca92cc21f217c90a130b349fc319c4819246713db9e71e6d287fa50",
-      "6a2c42a8f9410e3880b9b56a3303884ea0faa798ff6e10d814dd94bceedaa83a",
-      "3eea2904f4b469a72b04c0bf777004c5c8db564e2de2d01f938d6aaa0433ff4b",
-      "c4367eb81d853a59c12bd5ddf8d3116435ab9278905b7b17b4360dba5152f574"
+      "9e11b64b22dd4608102902fb2635704ccc22c05b2dff30e58bc3b0cb2670503e",
+      "9d3259153246a17528d1c757b5525fc8e2f4314f64a3e1c5632a119a4159bc58",
+      "2db584aa11ac485060d558368ac78e32bdf6b8ad6de46c1567a5acb6c19191a5",
+      "bd0c5bfc8ebc8d7c59ec823362686458d0259beca73461d796764e2637fbe4ab",
+      "38a21891676fd7a9fac4fbea61d99368ca0d54b921d3daeb2f5d0a5757abd863"
     ],
     "cache": [
       {
-        "key": "cdf4aada11e7eea32f60793f2e7a0ecd3dd6276fb25c68e997b413167f361727",
+        "key": "9e11b64b22dd4608102902fb2635704ccc22c05b2dff30e58bc3b0cb2670503e",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "met",
-          "quote": "age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met."
+          "quote": "his apixaban is the extended-phase dose after pulmonary embolism, not for non-valvular atrial fibrillation, so §2 does not apply. Continued at 2.5 mg twice daily, re-signed."
         },
         "error": null,
         "calls": 1,
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-25T14:39:17.813Z"
+          "at": "2026-10-29T21:52:45.368Z"
         }
       },
       {
-        "key": "83e73c3dcca92cc21f217c90a130b349fc319c4819246713db9e71e6d287fa50",
+        "key": "9d3259153246a17528d1c757b5525fc8e2f4314f64a3e1c5632a119a4159bc58",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -402,11 +418,11 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-25T14:39:17.813Z"
+          "at": "2026-10-29T21:52:45.368Z"
         }
       },
       {
-        "key": "6a2c42a8f9410e3880b9b56a3303884ea0faa798ff6e10d814dd94bceedaa83a",
+        "key": "2db584aa11ac485060d558368ac78e32bdf6b8ad6de46c1567a5acb6c19191a5",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -420,29 +436,29 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-25T14:39:17.813Z"
+          "at": "2026-10-29T21:52:45.368Z"
         }
       },
       {
-        "key": "3eea2904f4b469a72b04c0bf777004c5c8db564e2de2d01f938d6aaa0433ff4b",
+        "key": "bd0c5bfc8ebc8d7c59ec823362686458d0259beca73461d796764e2637fbe4ab",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "not_met",
-          "quote": "Apixaban criteria (§2): age 82, 80 or older: met; weight 64.9 kg, 60 kg or less: not met; SCr 1.21 mg/dL, 1.5 or higher: not met. One criterion met, so apixaban goes back to 5 mg twice daily"
+          "quote": "his apixaban is the extended-phase dose after pulmonary embolism, not for non-valvular atrial fibrillation, so §2 does not apply. Continued at 2.5 mg twice daily, re-signed."
         },
         "error": null,
         "calls": 1,
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-25T14:39:17.813Z"
+          "at": "2026-10-29T21:52:45.368Z"
         }
       },
       {
-        "key": "c4367eb81d853a59c12bd5ddf8d3116435ab9278905b7b17b4360dba5152f574",
+        "key": "38a21891676fd7a9fac4fbea61d99368ca0d54b921d3daeb2f5d0a5757abd863",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -456,7 +472,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-28T19:18:42.613Z"
+          "at": "2026-10-29T22:24:51.898Z"
         }
       }
     ]

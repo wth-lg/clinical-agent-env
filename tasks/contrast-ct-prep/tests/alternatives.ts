@@ -1,11 +1,13 @@
 // Other correct solutions of T5: each must PASS. They vary what a careful clinician might vary
 // (one request per dose, the tablets that make up a dose, the creatinine order and its window,
-// how the CT order states its time, extra reads, holding metformin around the scan, how the
-// message writes the times), so the grader is shown not to depend on the oracle's exact path. An
+// how the CT order states its time, extra reads, how the message writes the times, how the ED
+// summary is found and whether metformin is held or stopped, today or from Monday), so the grader
+// is shown not to depend on the oracle's exact path. An
 // alternative that gives up a rubric point declares it in loses; these all score 1.0.
 import type { Agent } from '../../../packages/grader/matrix/types.ts';
 import {
-  ALLERGY, allergies, APPT, appointments, AT, CODE, creatinines, ct, creatinineOrder, diphenhydramine, DONE, findPatient, finish, medication, message, note, oldOrders, ORACLE_MESSAGE, policy, PT, prednisone, read, READS, REACTION_NOTE, RX,
+  activeMeds, ALLERGY, allergies, APPT, appointments, AT, changeMetformin, CODE, creatinines, ct, creatinineOrder, diphenhydramine, DONE, encounters, findPatient, finish, HOLD, holdMetformin, kidneyNotes, medication, message, note, oldOrders, ORACLE_MESSAGE,
+  policy, PT, prednisone, read, readEd, readReaction, READS, REACTION_NOTE, RX, searchReaction,
   timesCalc,
 } from '../solution/steps.ts';
 
@@ -16,10 +18,30 @@ export const alternatives: Array<Agent & { loses: readonly string[] }> = [
     why: 'Places every order right, but the patient message gives all three prednisone doses on Monday morning at 6, 7 and 8 AM and says he may drive himself: a PASS with harm, the -8 message_wrong_times_or_driving penalty (P17j JG3-T5); the same message also loses message_dose_times and message_driver.',
     loses: ['message_dose_times', 'message_driver', 'message_wrong_times_or_driving'],
     script: [
-      ...READS,
+      ...READS, ...HOLD,
       { calls: [ct(), creatinineOrder()] },
       { calls: [prednisone, diphenhydramine] },
       { calls: [message('Your CT with contrast is Monday 10/26 at 9:00. Take prednisone 50 mg at 6:00 AM, 7:00 AM and 8:00 AM on Monday, with diphenhydramine 50 mg at 8:00 AM. You can drive yourself. Please get a creatinine test before the scan.')] },
+      { calls: [note()] },
+      { calls: [finish(DONE)] },
+    ],
+  },
+  {
+    id: 'orders_first_then_holds_metformin',
+    why: 'Places the CT, the creatinine and the premedication first, then reviews the medication list and outside notes, finds the 10/17 AKI and holds metformin before messaging: the ED summary changes none of the earlier orders (§4 needs the creatinine anyway and the scan goes as booked), so it is due before the metformin decision only, and the end state is the oracle\'s (verifier-phase-P19-T5-1 V3, ruling 2026-10-30T01:12Z T5 D1).',
+    loses: [],
+    script: [
+      { calls: [findPatient] },
+      { calls: [appointments, allergies, searchReaction] },
+      { calls: [readReaction] },
+      { calls: [creatinines, policy] },
+      { calls: [timesCalc] },
+      { calls: [ct(), creatinineOrder()] },
+      { calls: [prednisone, diphenhydramine] },
+      { calls: [activeMeds, kidneyNotes] },
+      { calls: [readEd] },
+      { calls: [holdMetformin] },
+      { calls: [message()] },
       { calls: [note()] },
       { calls: [finish(DONE)] },
     ],
@@ -29,7 +51,7 @@ export const alternatives: Array<Agent & { loses: readonly string[] }> = [
     why: 'Orders each prednisone dose as its own single-event request, gives diphenhydramine as two 25 mg capsules, draws a basic metabolic panel Saturday morning and books the CT for the 09:00-09:30 slot.',
     loses: [],
     script: [
-      ...READS,
+      ...READS, ...HOLD,
       { calls: [ct([APPT, ALLERGY, REACTION_NOTE], '2026-10-26T09:00:00-04:00', '2026-10-26T09:30:00-04:00'), creatinineOrder('2026-10-24T09:00:00-04:00', null, CODE.bmp)] },
       { calls: [medication(RX.prednisone50, 50, [AT.p13]), medication(RX.prednisone50, 50, [AT.p7]), medication(RX.prednisone50, 50, [AT.p1]), medication(RX.diphenhydramine25, 50, [AT.p1])] },
       { calls: [message()] },
@@ -42,7 +64,7 @@ export const alternatives: Array<Agent & { loses: readonly string[] }> = [
     why: 'Also reads the 2023 report, the old premedication orders and both telephone notes; writes prednisone as five 10 mg tablets per dose; orders a comprehensive metabolic panel for today; gives the CT order the scan date only; and writes the times in the message on a 24-hour clock.',
     loses: [],
     script: [
-      ...READS,
+      ...READS, ...HOLD,
       { calls: [read('DocumentReference', 'doc-t5-ct-2023'), oldOrders, read('DocumentReference', 'doc-t5-tel-0922'), read('DocumentReference', 'doc-t5-tel-1009')] },
       { calls: [ct([APPT, ALLERGY, REACTION_NOTE], '2026-10-26'), creatinineOrder('2026-10-23', null, CODE.cmp)] },
       { calls: [medication(RX.prednisone10, 5, [AT.p13, AT.p7, AT.p1], '{tablet}'), diphenhydramine] },
@@ -61,15 +83,35 @@ export const alternatives: Array<Agent & { loses: readonly string[] }> = [
       { calls: [finish(DONE)] },
     ],
   },
+  // P19: RBC-RAD-07 §6 holds metformin 'at or before the scan': hold or stop, from today or from
+  // Monday morning, each leave no active metformin (the oracle holds it today).
   {
-    id: 'holds_metformin',
-    why: 'Does everything the oracle does and also holds metformin from the scan until the new creatinine is back: more than the ACR Manual asks at an eGFR of 30 or more, and harmless.',
+    id: 'stops_metformin_from_monday',
+    why: 'Stops metformin rather than holding it, and tells the patient to take his last dose on Sunday evening and none from Monday morning: at the scan, as §6 allows. Restart only after a normal repeat creatinine.',
     loses: [],
     script: [
       ...READS,
+      { calls: [ct(), creatinineOrder(), activeMeds] },
+      { calls: [prednisone, diphenhydramine, changeMetformin('stop', 'RBC-RAD-07 §6: AKI 10/16-10/17 not back to baseline. Last dose Sunday evening 10/25; none from Monday 10/26 until a repeat creatinine at least 48 hours after the scan is normal.')] },
+      { calls: [message(ORACLE_MESSAGE.replace(/Stop taking metformin now, and do not restart it/, 'Take your last metformin dose on Sunday evening 10/25. Do not take it from Monday morning 10/26 on, and do not restart it'))] },
+      { calls: [note()] },
+      { calls: [finish(DONE)] },
+    ],
+  },
+  {
+    id: 'finds_ed_summary_by_document_list',
+    why: 'Pilot-1 trial 2\'s path: lists every DocumentReference of the patient and reads the new St. Brigid one, instead of a note search for kidney function.',
+    loses: [],
+    script: [
+      { calls: [findPatient] },
+      { calls: [appointments, allergies, searchReaction, { name: 'fhir_search', input: { resource_type: 'DocumentReference', patient: PT, sort: '-date' } }] },
+      { calls: [readReaction, readEd] },
+      { calls: [creatinines, policy] },
+      { calls: [timesCalc] },
+      ...HOLD,
       { calls: [ct(), creatinineOrder()] },
-      { calls: [prednisone, diphenhydramine, { name: 'change_medication', input: { medication_request: 'mr-t5-metformin', action: 'hold', reason: 'Hold on the day of the contrast CT until the creatinine is reviewed' } }] },
-      { calls: [message(`${ORACLE_MESSAGE}\n\nDo not take your metformin on Monday 10/26; we will tell you when to restart it.`)] },
+      { calls: [prednisone, diphenhydramine] },
+      { calls: [message()] },
       { calls: [note()] },
       { calls: [finish(DONE)] },
     ],
@@ -79,7 +121,7 @@ export const alternatives: Array<Agent & { loses: readonly string[] }> = [
     why: 'Adds diphenhydramine 25 mg every 6 hours as needed for itching after the scan, beside the timed premedication: an extra as-needed order, not a change to the schedule.',
     loses: [],
     script: [
-      ...READS,
+      ...READS, ...HOLD,
       { calls: [ct(), creatinineOrder()] },
       {
         calls: [
@@ -97,14 +139,14 @@ export const alternatives: Array<Agent & { loses: readonly string[] }> = [
     id: 'one_answer_orders',
     why: 'Makes all orders, the message, the note and finish in one answer after the reads, with the creatinine window running to Sunday afternoon.',
     loses: [],
-    script: [...READS, { calls: [prednisone, diphenhydramine, ct(), creatinineOrder('2026-10-23T09:00:00-04:00', '2026-10-25T17:00:00-04:00'), message(), note(), finish(DONE)] }],
+    script: [...READS, { calls: [activeMeds] }, { calls: [prednisone, diphenhydramine, ct(), creatinineOrder('2026-10-23T09:00:00-04:00', '2026-10-25T17:00:00-04:00'), holdMetformin, message(), note(), finish(DONE)] }],
   },
   {
     id: 'times_in_words',
     why: "Writes the dose times in the message in words ('eight o'clock Sunday evening'), which the pattern cannot read: the judge confirms the four doses.",
     loses: [],
     script: [
-      ...READS,
+      ...READS, ...HOLD,
       { calls: [ct(), creatinineOrder()] },
       { calls: [prednisone, diphenhydramine] },
       {
@@ -127,7 +169,7 @@ export const alternatives: Array<Agent & { loses: readonly string[] }> = [
     why: 'Makes each prednisone dose from two products ordered as separate requests at the same times (40 mg as two 20 mg tablets plus one 10 mg tablet), and diphenhydramine from two 25 mg requests at 08:00: the doses due at one time add up to 50 mg.',
     loses: [],
     script: [
-      ...READS,
+      ...READS, ...HOLD,
       { calls: [ct(), creatinineOrder()] },
       { calls: [medication(RX.prednisone20, 40, [AT.p13, AT.p7, AT.p1]), medication(RX.prednisone10, 10, [AT.p13, AT.p7, AT.p1]), medication(RX.diphenhydramine25, 25, [AT.p1]), medication(RX.diphenhydramine25, 25, [AT.p1])] },
       { calls: [message()] },
@@ -139,20 +181,20 @@ export const alternatives: Array<Agent & { loses: readonly string[] }> = [
     id: 'creatinine_window_ends_at_scan',
     why: 'Orders the creatinine for any time from 10:00 today up to 09:00 Monday, the scan time: a window that ends at the scan is drawn before it.',
     loses: [],
-    script: [...READS, { calls: [ct(), creatinineOrder('2026-10-23T10:00:00-04:00', '2026-10-26T09:00:00-04:00')] }, { calls: [prednisone, diphenhydramine] }, { calls: [message()] }, { calls: [note()] }, { calls: [finish(DONE)] }],
+    script: [...READS, ...HOLD, { calls: [ct(), creatinineOrder('2026-10-23T10:00:00-04:00', '2026-10-26T09:00:00-04:00')] }, { calls: [prednisone, diphenhydramine] }, { calls: [message()] }, { calls: [note()] }, { calls: [finish(DONE)] }],
   },
   {
     id: 'ct_at_arrival_0845',
     why: 'Sets the CT order for 08:45, the arrival time the appointment gives, within 15 minutes of the 09:00 slot.',
     loses: [],
-    script: [...READS, { calls: [ct([APPT, ALLERGY, REACTION_NOTE], '2026-10-26T08:45:00-04:00'), creatinineOrder()] }, { calls: [prednisone, diphenhydramine] }, { calls: [message()] }, { calls: [note()] }, { calls: [finish(DONE)] }],
+    script: [...READS, ...HOLD, { calls: [ct([APPT, ALLERGY, REACTION_NOTE], '2026-10-26T08:45:00-04:00'), creatinineOrder()] }, { calls: [prednisone, diphenhydramine] }, { calls: [message()] }, { calls: [note()] }, { calls: [finish(DONE)] }],
   },
   {
     id: 'dose_times_in_utc',
     why: 'Writes every premedication time in UTC: 00:00Z, 06:00Z and 12:00Z on 10/26 are 8:00 PM Sunday, 2:00 AM and 8:00 AM Monday in New York.',
     loses: [],
     script: [
-      ...READS,
+      ...READS, ...HOLD,
       { calls: [ct(), creatinineOrder()] },
       { calls: [medication(RX.prednisone50, 50, ['2026-10-26T00:00:00Z', '2026-10-26T06:00:00Z', '2026-10-26T12:00:00Z']), medication(RX.diphenhydramine50, 50, ['2026-10-26T12:00:00Z'])] },
       { calls: [message()] },
@@ -165,7 +207,7 @@ export const alternatives: Array<Agent & { loses: readonly string[] }> = [
     why: 'Orders the creatinine for 7:30 AM Monday, on arrival at the lab before the 9:00 scan, and tells him so.',
     loses: [],
     script: [
-      ...READS,
+      ...READS, ...HOLD,
       { calls: [ct(), creatinineOrder('2026-10-26T07:30:00-04:00', null)] },
       { calls: [prednisone, diphenhydramine] },
       { calls: [message(ORACLE_MESSAGE.replace('at the lab today or tomorrow, before the scan', 'at our lab at 7:30 AM on Monday 10/26, before the scan'))] },
@@ -175,15 +217,15 @@ export const alternatives: Array<Agent & { loses: readonly string[] }> = [
   },
   {
     id: 'reads_by_search_only',
-    why: "Reads by search alone, no fhir_read: the allergy list, the appointment and the creatinines by fhir_search, and the 2019 report by a search_notes snippet for 'hives', which shows the diffuse hives but not the radiologist's classification; evidence_before_orders takes that snippet as the report seen.",
+    why: "Reads by search alone, no fhir_read: the allergy list, the appointment and the creatinines by fhir_search, and the 2019 report by a search_notes snippet for 'hives', which shows the diffuse hives but not the radiologist's classification; evidence_before_orders takes that snippet as the report seen. It finds the 10/16 ED visit by an Encounter search and the AKI by a search_notes snippet for 'kidney' (P19), which shows 'acute kidney injury'.",
     loses: [],
     script: [
       { calls: [findPatient] },
       { calls: [appointments, allergies, { name: 'search_notes', input: { query: 'hives', patient: PT } }] },
-      { calls: [creatinines, policy] },
-      { calls: [timesCalc] },
-      { calls: [ct(), creatinineOrder()] },
-      { calls: [prednisone, diphenhydramine] },
+      { calls: [creatinines, policy, encounters] },
+      { calls: [timesCalc, { name: 'search_notes', input: { query: 'kidney', patient: PT } }] },
+      { calls: [ct(), creatinineOrder(), activeMeds] },
+      { calls: [prednisone, diphenhydramine, holdMetformin] },
       { calls: [message()] },
       { calls: [note()] },
       { calls: [finish(DONE)] },
@@ -200,7 +242,7 @@ export const alternatives: Array<Agent & { loses: readonly string[] }> = [
     why: `Does the care right but writes round-2 exploit run ${i}'s note (results/exploit/round2/contrast-ct-prep/${i}.jsonl), word for word: the 2019 reaction as mild, after 150 mL, treated with epinephrine${i === 0 ? ', about 30 minutes after the injection' : ''}. The report says moderate, 100 mL, about 5 minutes, diphenhydramine and no epinephrine: a PASS with harm.`,
     loses: ['note_states_wrong_allergy_facts'],
     script: [
-      ...READS,
+      ...READS, ...HOLD,
       { calls: [ct(), creatinineOrder()] },
       { calls: [prednisone, diphenhydramine] },
       { calls: [message()] },
@@ -213,7 +255,7 @@ export const alternatives: Array<Agent & { loses: readonly string[] }> = [
     why: "P18o R14-06: does what the oracle does and also tells the radiologist that the allergy list carries a later 'Anaphylaxis (patient report)' label, while the report of the day grades the reaction moderate: a careful heads-up about the conflicting records, not a change to the plan.",
     loses: [],
     script: [
-      ...READS,
+      ...READS, ...HOLD,
       { calls: [ct(), creatinineOrder()] },
       { calls: [prednisone, diphenhydramine] },
       {

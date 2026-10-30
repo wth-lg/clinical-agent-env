@@ -20,13 +20,13 @@ describe('results-inbox', () => {
     expect(derive(world)).toEqual(expected);
   });
 
-  it('counts the nodule window from the index study, not from today', () => {
+  it('orders the overdue screening LDCT within 14 days of today (RBC-RAD-05 §2, P19)', () => {
     const d = derive(world) as typeof expected;
-    // 2026-06-04 + 12 months = 2027-06-04, plus or minus 1 month. From NOW (2026-10-23) the
-    // follow-up would fall on 2027-10-23, outside the window.
-    expect(d.items.nodule.window).toEqual({ start: '2027-05-04', end: '2027-07-04' });
-    expect(d.items.nodule.risk).toBe('high');
-    expect('2027-10-23' > d.items.nodule.window.end).toBe(true);
+    // The screening LDCT of 2025-09-15 asks for the next one in 12 months; that window, plus or
+    // minus 1 month, closed in mid-October, before NOW (2026-10-23), so the study is due within
+    // 14 days of today.
+    expect(d.items.nodule).toMatchObject({ screening_index: '2025-09-15', lung_rads: 2, overdue: true, window: { start: '2026-10-23', end: '2026-11-06' } });
+    expect(d.items.nodule.sources).toEqual(['DiagnosticReport/dr-t2-ct-0604', 'DiagnosticReport/dr-t2-ldct-0915']);
   });
 
   it('sends the hemolyzed potassium to a repeat by Monday and the true one to on-call today', () => {
@@ -40,9 +40,10 @@ describe('results-inbox', () => {
   // RBC-RAD-05 §2 in general (clinical F6, review M2): the world with Linda Marsh's H&P smoking
   // line, or the CT's nodule size, rewritten.
   const HP = 'doc-t2-hp-lm58';
+  const LDCT = 'dr-t2-ldct-0915';
   const b64 = (t: string) => btoa(String.fromCharCode(...new TextEncoder().encode(t)));
   const unb64 = (d: string) => new TextDecoder().decode(Uint8Array.from(atob(d), (c) => c.charCodeAt(0)));
-  const swap = (id: string, edit: (text: string) => string, extra: Resource[] = []): WorldView => {
+  const swap = (id: string, edit: (text: string) => string, extra: Resource[] = [], drop?: string[]): WorldView => {
     const changed = all.map((r) => {
       if (r.id !== id) return r;
       const x = structuredClone(r) as Resource & { content?: Array<{ attachment: { data: string } }>; presentedForm?: Array<{ data: string }> };
@@ -50,10 +51,27 @@ describe('results-inbox', () => {
       att.data = b64(edit(unb64(att.data)));
       return x;
     });
-    const rs = [...extra, ...changed];
+    const rs = [...extra, ...changed].filter((r) => !(drop ?? []).includes(r.id!));
     return { get: (type, rid) => rs.find((r) => r.resourceType === type && r.id === rid), all: (type) => (type === undefined ? rs : rs.filter((r) => r.resourceType === type)) };
   };
-  const smoker = (line: string, extra: Resource[] = []) => (derive(swap(HP, (t) => t.replace(/Tobacco: [^.]*\./, `Tobacco: ${line}`), extra)) as typeof expected).items.nodule;
+  // §2 itself applies only without the screening LDCT, so these worlds drop it.
+  type Section2 = { risk: string; action: string; sources: string[]; window: { start: string; end: string } };
+  const smoker = (line: string, extra: Resource[] = []) => (derive(swap(HP, (t) => t.replace(/Tobacco: [^.]*\./, `Tobacco: ${line}`), extra, [LDCT])) as { items: { nodule: Section2 } }).items.nodule;
+
+  it('without the screening LDCT counts §2\'s window from the index study, not from today', () => {
+    // 2026-06-04 + 12 months = 2027-06-04, plus or minus 1 month: the pilot-1 answer. From NOW
+    // (2026-10-23) the follow-up would fall on 2027-10-23, outside the window.
+    const n = smoker('former smoker, 35 pack-years; quit in 2019.');
+    expect(n).toMatchObject({ risk: 'high', action: 'order', window: { start: '2027-05-04', end: '2027-07-04' } });
+    expect('2027-10-23' > n.window.end).toBe(true);
+  });
+
+  it('keeps a screening LDCT whose window has not passed on its own schedule (§1)', () => {
+    // The same report a month later: due 2026-10-20, window 2026-09-20 to 2026-11-20, still open.
+    const later = swap(LDCT, (t) => t.replace('Exam date: 2025-09-15', 'Exam date: 2025-10-20')).all().map((r) => (r.id === LDCT ? { ...r, effectiveDateTime: '2025-10-20T10:20:00-04:00' } : r));
+    const view: WorldView = { get: (type, id) => later.find((r) => r.resourceType === type && r.id === id), all: (type) => (type === undefined ? later : later.filter((r) => r.resourceType === type)) };
+    expect((derive(view) as typeof expected).items.nodule).toMatchObject({ screening_index: '2025-10-20', overdue: false, window: { start: '2026-09-20', end: '2026-11-20' } });
+  });
 
   it('classifies every smoking history under RBC-RAD-05 §2', () => {
     expect(smoker('current smoker, 10 pack-years.')).toMatchObject({ risk: 'high', action: 'order' });
@@ -92,7 +110,7 @@ describe('results-inbox', () => {
   it('states no date the clock gives and no answer in the prompt or policy text', async () => {
     const task = await nodeTaskSource({ testMode: false }).get('results-inbox');
     const texts = [task.instruction, ...task.policies.map((p) => p.text)];
-    const answers = ['2027-05-04', '2027-07-04', '2027-06-04', '2026-11-05', '2026-10-26', '35 pack-years'];
+    const answers = ['2026-11-06', '2027-05-04', '2027-07-04', '2027-06-04', '2026-11-05', '2026-10-26', '35 pack-years'];
     const findings = lintWorld(all, [{ source: 'results-inbox', spec: { prompts: texts, leakage: { answers, texts: texts.map((text, i) => ({ source: i === 0 ? 'instruction.md' : task.policies[i - 1]!.id, text })) } } }]);
     expect(findings).toEqual([]);
   });

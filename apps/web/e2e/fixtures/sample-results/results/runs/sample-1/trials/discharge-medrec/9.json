@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:discharge-medrec:9",
   "task_id": "discharge-medrec",
-  "task_version": "53c0632c8b805585d6feae9f34e1dfbfcaad97872795ab4cf14929d467ea5c93",
-  "env_version": "58b6cfe7b4ce04bb26737874129630b9bc48701bd08b9bcf9e213927f6acdb0d",
-  "grader_task_version": "c888f2189500063ff8c7f4fdb499a637c3ae38ef48e412ac4f4e878d94668175",
-  "fixture_hash": "0b8ff7964370f8452ce17f6c701cc0a5bc8ba82fd8aeeac48098ed83ae6792d7",
+  "task_version": "965884b761bc5ad11779cb00075c1733c7a75da18a35ce24bc963d7813580966",
+  "env_version": "30034978012f7183b86732e26325dc1c74e633c051cdd0666de36b471380707b",
+  "grader_task_version": "3a9db6291d196c9a0575eb04751f64b15da2e5f5c60cc6731c8f00f9132c9225",
+  "fixture_hash": "95d2f5194846a473cd83f112ae92618083e25e31c57d68f4fe9eea5bada20991",
   "state_hash": {
-    "initial": "0b8ff7964370f8452ce17f6c701cc0a5bc8ba82fd8aeeac48098ed83ae6792d7",
-    "final": "578e1ff6ce2999a14c4052b7f4a70a3d5015b363e843312fa4d006737ad99411",
-    "replay_final": "578e1ff6ce2999a14c4052b7f4a70a3d5015b363e843312fa4d006737ad99411"
+    "initial": "95d2f5194846a473cd83f112ae92618083e25e31c57d68f4fe9eea5bada20991",
+    "final": "19ff7ed5cd27841e978eaee14c6d5322378154234e6e9e6694ad7843a217a373",
+    "replay_final": "19ff7ed5cd27841e978eaee14c6d5322378154234e6e9e6694ad7843a217a373"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T13:21:16.000Z",
+  "started": "2026-10-23T13:33:41.000Z",
   "turns": 7,
   "tool_calls": 14,
   "tool_errors": {
@@ -40,10 +40,10 @@
   "status": "COMPLETED",
   "stop": "finish",
   "detail": null,
-  "summary": "Reconciled Walter Kim after discharge: furosemide 40 mg, spironolactone 25 mg started, KCl stopped, lisinopril resumed; duplicate metoprolol tartrate flagged to Dr. Okafor; note written.",
+  "summary": "Reconciled Walter Kim after discharge: furosemide 40 mg, KCl stopped; spironolactone not started and lisinopril kept on hold for potassium 5.4, with a recheck Task for Dr. Okafor; duplicate metoprolol tartrate flagged to Dr. Okafor; note written.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T13:22:24.000Z",
+  "ended": "2026-10-23T13:34:48.000Z",
   "judge_cost_usd": 0,
   "grader_version": "13",
   "outcome": "FAIL",
@@ -70,21 +70,19 @@
       ]
     },
     {
-      "id": "spironolactone_25",
+      "id": "spironolactone_not_started",
       "kind": "gate",
       "method": "code",
       "category": "action",
       "points": null,
       "met": false,
       "evidence": {
-        "active": [
-          "MedicationRequest/mr-t0002"
-        ],
-        "mg_per_day": 12.5,
-        "per_day": 1
+        "found": [
+          "MedicationRequest/mr-t0003"
+        ]
       },
       "ids": [
-        "MedicationRequest/mr-t0002"
+        "MedicationRequest/mr-t0003"
       ]
     },
     {
@@ -103,22 +101,39 @@
       ]
     },
     {
-      "id": "lisinopril_resumed",
+      "id": "lisinopril_held",
       "kind": "gate",
       "method": "code",
       "category": "action",
       "points": null,
       "met": true,
       "evidence": {
-        "active": [
-          "MedicationRequest/mr-t4-lisinopril"
-        ],
-        "mg_per_day": 10,
-        "per_day": 1,
-        "still_held": []
+        "status": "on-hold",
+        "active": []
       },
       "ids": [
         "MedicationRequest/mr-t4-lisinopril"
+      ]
+    },
+    {
+      "id": "k_recheck_task",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "tasks": [
+          "Task/task-t0004"
+        ],
+        "orders": [],
+        "due": {
+          "from": "2026-10-23",
+          "to": "2026-10-28"
+        }
+      },
+      "ids": [
+        "Task/task-t0004"
       ]
     },
     {
@@ -161,12 +176,12 @@
           "Practitioner/pr-okafor"
         ],
         "sent": [
-          "Communication/comm-t0006"
+          "Communication/comm-t0005"
         ],
         "tasked": []
       },
       "ids": [
-        "Communication/comm-t0006"
+        "Communication/comm-t0005"
       ]
     },
     {
@@ -190,8 +205,8 @@
       "met": false,
       "evidence": {
         "verdict": "not_met",
-        "quote": "Spironolactone 12.5 mg daily started (discharge summary).",
-        "cache_key": "74f9d594d1430eb330c92b55336abbabec9abf01ffdf9b7df7e4877694512dad"
+        "quote": "Spironolactone 25 mg daily started (signed addendum, which corrects the summary's 12.5 mg).",
+        "cache_key": "8360fbf1e82b6886fbf11d0f1ada92303fff37e682fcf77f8288bdf00fdd01df"
       }
     },
     {
@@ -204,7 +219,7 @@
       "evidence": {
         "verdict": "met",
         "quote": "metoprolol succinate ER 50 mg daily, which the St. Brigid discharge documents continue as \"metoprolol XL\", and metoprolol tartrate 25 mg twice daily (since 2023), which no discharge document mentions. Taking both is a duplicate beta-blocker.",
-        "cache_key": "bf1bbb7bffcbe9aa0d9ca8d5c36b0f57cee88af3d5a543e798bbc8d0c7e9bb3c"
+        "cache_key": "6958cafb6345d9c8749226f71c604f7779b5e53adb184ebe1b7b277d43b69889"
       }
     },
     {
@@ -213,12 +228,14 @@
       "method": "code",
       "category": "documentation",
       "points": 2,
-      "met": false,
+      "met": true,
       "evidence": {
         "notes": [
-          "DocumentReference/doc-t0007"
+          "DocumentReference/doc-t0006"
         ],
-        "citing": []
+        "citing": [
+          "DocumentReference/doc-t0006"
+        ]
       }
     },
     {
@@ -242,7 +259,7 @@
       "evidence": {
         "verdict": "not_met",
         "quote": "Per RBC-TOC-02 §5 I left the tartrate unchanged; please review.",
-        "cache_key": "329835600bbfdb75dc76990ac63363d315cb6627225db54ba87ed8ae8d871658"
+        "cache_key": "0b49c434d9eab4866a6565c4090ed3b7c64dcff4b6981bb96800b6db98e63d33"
       }
     },
     {
@@ -255,59 +272,42 @@
       "evidence": {
         "status": "active"
       }
-    },
-    {
-      "id": "k_creatinine_recheck",
-      "kind": "rubric",
-      "method": "code",
-      "category": "safety",
-      "points": 1,
-      "met": true,
-      "evidence": {
-        "orders": [
-          "ServiceRequest/sr-t0005"
-        ],
-        "window": {
-          "from": "2026-10-26",
-          "to": "2026-10-28"
-        }
-      }
     }
   ],
-  "score": 0.375,
+  "score": 0.5714285714285714,
   "judge": {
     "calls": 3,
     "unknown": 0,
     "unknown_penalties": 0,
-    "score_penalties_met": 0.375,
-    "score_penalties_not_met": 0.375,
+    "score_penalties_met": 0.5714285714285714,
+    "score_penalties_not_met": 0.5714285714285714,
     "over_allowance": 0,
     "cache_keys": [
-      "74f9d594d1430eb330c92b55336abbabec9abf01ffdf9b7df7e4877694512dad",
-      "bf1bbb7bffcbe9aa0d9ca8d5c36b0f57cee88af3d5a543e798bbc8d0c7e9bb3c",
-      "329835600bbfdb75dc76990ac63363d315cb6627225db54ba87ed8ae8d871658"
+      "8360fbf1e82b6886fbf11d0f1ada92303fff37e682fcf77f8288bdf00fdd01df",
+      "6958cafb6345d9c8749226f71c604f7779b5e53adb184ebe1b7b277d43b69889",
+      "0b49c434d9eab4866a6565c4090ed3b7c64dcff4b6981bb96800b6db98e63d33"
     ],
     "cache": [
       {
-        "key": "74f9d594d1430eb330c92b55336abbabec9abf01ffdf9b7df7e4877694512dad",
+        "key": "8360fbf1e82b6886fbf11d0f1ada92303fff37e682fcf77f8288bdf00fdd01df",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "not_met",
-          "quote": "Spironolactone 12.5 mg daily started (discharge summary)."
+          "quote": "Spironolactone 25 mg daily started (signed addendum, which corrects the summary's 12.5 mg)."
         },
         "error": null,
         "calls": 1,
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-25T13:23:26.047Z"
+          "at": "2026-10-29T21:55:59.980Z"
         }
       },
       {
-        "key": "bf1bbb7bffcbe9aa0d9ca8d5c36b0f57cee88af3d5a543e798bbc8d0c7e9bb3c",
+        "key": "6958cafb6345d9c8749226f71c604f7779b5e53adb184ebe1b7b277d43b69889",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -321,11 +321,11 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-27T19:16:07.130Z"
+          "at": "2026-10-29T21:55:59.980Z"
         }
       },
       {
-        "key": "329835600bbfdb75dc76990ac63363d315cb6627225db54ba87ed8ae8d871658",
+        "key": "0b49c434d9eab4866a6565c4090ed3b7c64dcff4b6981bb96800b6db98e63d33",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -339,20 +339,20 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-27T19:25:02.389Z"
+          "at": "2026-10-29T21:55:59.980Z"
         }
       }
     ]
   },
   "attribution": {
     "auto": "reasoning",
-    "first_failed": "spironolactone_25",
-    "decisive_step": 8,
+    "first_failed": "spironolactone_not_started",
+    "decisive_step": 10,
     "exposure": [
       {
-        "id": "DocumentReference/doc-t4-dc-1019-add",
-        "first_exposed_step": null,
-        "first_shown_step": 3
+        "id": "DocumentReference/doc-t4-lab-1021",
+        "first_exposed_step": 7,
+        "first_shown_step": 7
       }
     ]
   },

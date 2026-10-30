@@ -48,6 +48,24 @@ export async function parseNdjson(bytes: Uint8Array): Promise<Resource[]> {
   });
 }
 
+// The resources of the last world loaded, by the SHA-256 of its bytes. A store admits each one as
+// a deeply frozen copy, so the next store built from the same bytes keeps those copies instead of
+// parsing and copying the world again (the matrix builds several stores per case); it still has
+// its own maps, so a write to one store never reaches another.
+let last: { digest: string; resources: Promise<readonly Readonly<Resource>[]> } | undefined;
+
+const sha256 = async (bytes: Uint8Array): Promise<string> =>
+  Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', bytes as Uint8Array<ArrayBuffer>)), (b) => b.toString(16).padStart(2, '0')).join('');
+
 export async function loadStore(source: FixtureSource): Promise<Store> {
-  return new Store(await parseNdjson(await source.read()));
+  const bytes = await source.read();
+  const digest = await sha256(bytes);
+  if (last?.digest !== digest) {
+    const resources = parseNdjson(bytes).then((parsed) => [...new Store(parsed).resources()]);
+    last = { digest, resources };
+    resources.catch(() => {
+      if (last?.resources === resources) last = undefined;
+    });
+  }
+  return new Store(await last.resources);
 }

@@ -1,5 +1,77 @@
 [
   {
+    "key": "03d7c443971d96bad0a6a78b9b7c1332344434bcc79a0efc959c82fcbe0bc6a7",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T22:15:35.415Z"
+    }
+  },
+  {
+    "key": "0817ae96c25b71ffaaa845e37a65da3ac0febe29e2d7b47eacfba251b4fe2aca",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Reviewed. (Audit placeholder: no clinical reasoning recorded.)"
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T22:15:35.415Z"
+    }
+  },
+  {
+    "key": "092e95909084b3736dc19e843741c988ab6ec9e02deb01ec8394687b57451c35",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Incidental 5 mm solid right lower lobe nodule on the CT abdomen and pelvis of 2026-06-04 (St. Brigid ED). The same nodule is followed in lung cancer screening: Lakeshore screening LDCT of 2025-09-15, Lung-RADS 2, annual LDCT recommended. Under RBC-RAD-05 §2 the next screening LDCT runs from that study (§1): due in September 2026, its window closed in mid-October, so it is overdue; screening LDCT ordered"
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T22:15:35.415Z"
+    }
+  },
+  {
+    "key": "0b5d2a63faffd8c81c7b80e54f8309cd4573ba7c5785662e1ba360f6af06a4c6",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Your potassium result was fine. No need to come back for any test."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T22:15:35.415Z"
+    }
+  },
+  {
     "key": "0dd08fc5ad23732ae24bd783b0343ef458e15cb1ca8aba0446130a54de1a343e",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -15,24 +87,6 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-28T19:41:59.791Z"
-    }
-  },
-  {
-    "key": "0e1e52fac0cfed8bbcf5af1c319d2cfb40f1f26aa3db9ac9ca709bfeb4b8d1f4",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-27T14:21:27.419Z"
     }
   },
   {
@@ -54,25 +108,6 @@
     }
   },
   {
-    "key": "149075b09065ed592e383e2b11c7ee8a9c25adf2000013d321c4c7f36e7764fe",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-28T18:45:32.746Z",
-      "note": "answered live by the P17 PR22b exploit run, results/exploit/results-inbox/1.json; copied by builder-149"
-    }
-  },
-  {
     "key": "1681146a6310f15c6df14d7d7233f8c843b959ecbeea80716635f20df7c08a24",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -88,25 +123,6 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-28T19:41:59.791Z"
-    }
-  },
-  {
-    "key": "1897dd51653a47086c2e787ab1e7fcc0402ea7903a49a60d3fe460469f86d050",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "Your potassium result was fine. No need to come back for any test."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-28T18:45:32.746Z",
-      "note": "answered live by the P17 PR22b exploit run, results/exploit/results-inbox/1.json; copied by builder-149"
     }
   },
   {
@@ -164,24 +180,6 @@
     }
   },
   {
-    "key": "20e24b6a6d9388ece507065f55999cf5b87d2fd3ecfc2be6844db66b9ca4f106",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "Reviewed. (Audit placeholder: no clinical reasoning recorded.)"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-28T19:41:59.791Z"
-    }
-  },
-  {
     "key": "22b446eb11aa223f9f64a6fbbdae6af08b632926af4bc2532d5cb0913137e7c4",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -200,39 +198,21 @@
     }
   },
   {
-    "key": "26e36eb1e6ead43f01e4ac10d613d242358389930d2824b3273ddd06cc2dab11",
+    "key": "26be626473997868abe4c95c56cfea40b5b63e53ac88ad30d4e4574759cf63b5",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "not_met",
-      "quote": ""
+      "quote": "Your knee X-ray looked fine."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-27T14:21:27.419Z"
-    }
-  },
-  {
-    "key": "29c323a4241d1117bc9ade306855672ca8fa8dd616a525b8365ec3fae913a65b",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "One of your blood tests needs repeating."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-27T14:21:27.419Z"
+      "at": "2026-10-29T22:15:35.415Z"
     }
   },
   {
@@ -254,21 +234,21 @@
     }
   },
   {
-    "key": "2cebf761b4558b3028c7770d3390c2463fe280409469e3fca62631f584414523",
+    "key": "304e2bc74afd70b3f73d13c2a39a2e6483302bea8be8105d018335ff8491de1d",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "not_met",
-      "quote": "Reviewed. (Audit placeholder: no clinical reasoning recorded.)"
+      "quote": ""
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-28T19:41:59.791Z"
+      "at": "2026-10-29T22:15:35.415Z"
     }
   },
   {
@@ -309,26 +289,25 @@
     }
   },
   {
-    "key": "3ca02216efb8bb510788332dc121b489ecb0bce4451d19da3692177161528b9c",
+    "key": "4200968291b76bc91e385f81c6364acae418b7d07729276094b79eaf9fd23853",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "not_met",
-      "quote": "Your recent result was reviewed. We will be in touch."
+      "quote": "Reviewed. (Audit placeholder: no clinical reasoning recorded.)"
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-28T18:45:32.746Z",
-      "note": "answered live by the P17 PR22b exploit run, results/exploit/results-inbox/1.json; copied by builder-149"
+      "at": "2026-10-29T22:37:03.058Z"
     }
   },
   {
-    "key": "40f92709af964a981998c416ab8672f848d6b5fed7ad99f00698810dcc146110",
+    "key": "451a36268d701c04ac89c48b0bd510a405d25375a009ebc0d044426d749775b5",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -342,26 +321,7 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-27T14:21:27.419Z"
-    }
-  },
-  {
-    "key": "427677e097d1f6eae067e1acb329e36501481e9521b5cd97e00c6a55749fde2b",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "Your knee X-ray looked fine."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-28T18:43:43.062Z",
-      "note": "answered live by the P17 PR22b exploit run, results/exploit/results-inbox/0.json; copied by builder-149"
+      "at": "2026-10-29T22:15:35.415Z"
     }
   },
   {
@@ -380,25 +340,6 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-28T19:41:59.791Z"
-    }
-  },
-  {
-    "key": "4a7aa9adb8c4f279bf94515cbca06fd3e5769402dd3b379fc1f24985506ed902",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-28T18:45:32.746Z",
-      "note": "answered live by the P17 PR22b exploit run, results/exploit/results-inbox/1.json; copied by builder-149"
     }
   },
   {
@@ -456,6 +397,24 @@
     }
   },
   {
+    "key": "5e77b86932a087d7fe3826563f13705e5e1f47d4b86703c0c097a7607d1f2076",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "One of your blood tests needs repeating."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T22:15:35.415Z"
+    }
+  },
+  {
     "key": "62e9246a686e2714a8daaa4840ae5c378ae6246d4b438b379e6cbca35aa9a447",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -472,6 +431,24 @@
       "model": "claude-opus-5-5",
       "at": "2026-10-28T18:43:43.062Z",
       "note": "answered live by the P17 PR22b exploit run, results/exploit/results-inbox/0.json; copied by builder-149"
+    }
+  },
+  {
+    "key": "66e42f5c7a0406dfe3cb60a3c02faef4e18bd832ff9da61a11294ca2ba2a7a99",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T22:15:35.415Z"
     }
   },
   {
@@ -511,6 +488,24 @@
     }
   },
   {
+    "key": "720ed73a5e367e21219a10572185d35e05bebaf1faf6ffbb5e18fc3e7067e505",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Your stool test (FIT) found blood, which needs a colonoscopy to find the cause. Dr. Lin has already referred you to gastroenterology, and their office will call you to schedule it."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T22:15:35.415Z"
+    }
+  },
+  {
     "key": "770c35b1f8cc16405d32aed29083dfbfb1636fd6183e0a69a4ae3c7ba91176eb",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -529,7 +524,7 @@
     }
   },
   {
-    "key": "88c89c20b0e0000710b5021ad7ca76c0235508eee3b421ce7f74e087bc519c00",
+    "key": "80824c7cbf6ca211ac89b7b1251775b9ba0b9750880550a5ac4b29ff6a11757e",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -543,62 +538,7 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-27T14:21:27.419Z"
-    }
-  },
-  {
-    "key": "8dd60c379f759a7ca4796711a5a168eba4df104c340ade90e6474ba2ab5d195f",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "8 mm nodule, never-smoker, low risk. No follow-up needed."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-28T19:41:59.791Z"
-    }
-  },
-  {
-    "key": "91eaeddea3e33d9e62011d51b089f0b3abc5bfccc479f776b48d24b2ecacbc4d",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-28T18:43:43.062Z",
-      "note": "answered live by the P17 PR22b exploit run, results/exploit/results-inbox/0.json; copied by builder-149"
-    }
-  },
-  {
-    "key": "9712655b5b710d90ec4ea2c960b59bbaaa24ef86e8058fdcc27e97eed287e7b3",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "8 mm nodule, never-smoker, low risk. No follow-up needed."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-28T19:41:59.791Z"
+      "at": "2026-10-29T22:15:35.415Z"
     }
   },
   {
@@ -617,25 +557,6 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-28T00:08:12.045Z"
-    }
-  },
-  {
-    "key": "9c73036035c93c2550a0a320926b137984c4c486e9c9937d6d0e3ecc35578550",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "Your recent imaging was normal. No follow-up is needed."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-28T18:43:43.062Z",
-      "note": "answered live by the P17 PR22b exploit run, results/exploit/results-inbox/0.json; copied by builder-149"
     }
   },
   {
@@ -711,6 +632,42 @@
     }
   },
   {
+    "key": "b2c8fabd8bfe8992db6f079bfcc1044917f8067c85e06dd0c3ec2ff5307cb9de",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T22:15:35.415Z"
+    }
+  },
+  {
+    "key": "bd0d92cc53430afe6e6dae6a2c2de3dacb911429f0444af5fcc968efabb9b370",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T22:15:35.415Z"
+    }
+  },
+  {
     "key": "bde7921f5fe7d02da27bfbf328442200965e0b6cd5476acf88a91c4f0328eb2a",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -730,40 +687,21 @@
     }
   },
   {
-    "key": "be79138d3a82a59e9040a7265fea007b2bd4fc56c19ae464dbfc8e5c43589ffe",
+    "key": "bed5ea10380016a8b9158aa4ef425301df2eeacacc01c6e612d310a2df936994",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
-      "verdict": "not_met",
-      "quote": "Incidental 5 mm solid right lower lobe nodule on the CT abdomen and pelvis of 2026-06-04 (St. Brigid ED). Smoking history from the H&P of 2026-02-16: 35 pack-years, quit 2019, so high risk under RBC-RAD-05 §2. CT chest without contrast 12 months after the index study (§1)"
+      "verdict": "met",
+      "quote": "8 mm nodule, never-smoker, low risk. No follow-up needed."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-28T19:41:59.791Z"
-    }
-  },
-  {
-    "key": "bef5d62dcbcce03261f9a9814696facc424ec30ea9c672cd361be5aea5aa3b02",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-28T18:43:43.062Z",
-      "note": "answered live by the P17 PR22b exploit run, results/exploit/results-inbox/0.json; copied by builder-149"
+      "at": "2026-10-29T22:37:03.058Z"
     }
   },
   {
@@ -782,6 +720,24 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-28T19:41:59.791Z"
+    }
+  },
+  {
+    "key": "c99e19aa551a74b6159c2c3314be9eb0397635bc3deb249dec244e0557ff72b2",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T22:15:35.415Z"
     }
   },
   {
@@ -839,24 +795,6 @@
     }
   },
   {
-    "key": "d6c2dc4f903df0c57eb972504afb25afb72ecafa41157d7e836398faade17bd6",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "Your stool test (FIT) found blood, which needs a colonoscopy to find the cause. Dr. Lin has already referred you to gastroenterology"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-27T14:21:27.419Z"
-    }
-  },
-  {
     "key": "d77e4a58b444cc95ca21953c09e51e62bfb93eaf9920faf1faaaa7c92b53b352",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -890,6 +828,24 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-28T00:08:12.045Z"
+    }
+  },
+  {
+    "key": "dee7402367179f45f8b2c4c5461cc59333ffe7592754d2006453719ca20305f7",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Incidental 5 mm solid right lower lobe nodule on the CT abdomen and pelvis of 2026-06-04 (St. Brigid ED). The same nodule is followed in lung cancer screening: Lakeshore screening LDCT of 2025-09-15, Lung-RADS 2, annual LDCT recommended."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T22:37:03.058Z"
     }
   },
   {
@@ -929,6 +885,42 @@
     }
   },
   {
+    "key": "e8a396436c5f2bb7fd4fb310ca7883449d3ddbe15271676b84f21e65c22e9a85",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T22:15:35.415Z"
+    }
+  },
+  {
+    "key": "ea1a68883ee7cda5eb3c51f5abc7e55b34e2a0c9983a9e89f0d850a1cefacb85",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Your recent imaging was normal. No follow-up is needed."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T22:15:35.415Z"
+    }
+  },
+  {
     "key": "eebe69fc1607db35a46ee7905c9f5cc796ff8d46c9954e73ff31606de9a9982b",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -937,24 +929,6 @@
     "answer": {
       "verdict": "not_met",
       "quote": "aggressive lytic lesion of the distal femur, concerning for a primary bone tumour; the radiologist recommends urgent orthopaedic oncology referral and MRI"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-28T19:41:59.791Z"
-    }
-  },
-  {
-    "key": "efd5538df19df1fc98186ab7b67744340a6a3ec15e6121795545d0f2a4a62bc6",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "Incidental 5 mm solid right lower lobe nodule on the CT abdomen and pelvis of 2026-06-04 (St. Brigid ED). Smoking history from the H&P of 2026-02-16: 35 pack-years, quit 2019, so high risk under RBC-RAD-05 §2. CT chest without contrast 12 months after the index study (§1)"
     },
     "error": null,
     "calls": 1,
@@ -981,6 +955,24 @@
       "model": "claude-opus-5-5",
       "at": "2026-10-28T18:45:32.746Z",
       "note": "answered live by the P17 PR22b exploit run, results/exploit/results-inbox/1.json; copied by builder-149"
+    }
+  },
+  {
+    "key": "f9e0b351a8341da801193abe4ebd4828620d427308596ce59eb6a462b9f38baf",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "8 mm nodule, never-smoker, low risk. No follow-up needed."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-29T22:15:35.415Z"
     }
   },
   {

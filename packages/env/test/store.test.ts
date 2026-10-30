@@ -45,6 +45,26 @@ describe('Store', () => {
     expect([...store.resources()].map((r) => r.id)).toEqual(['a', 'b', 'c']);
   });
 
+  it('hashes a store as it hashes the same resources as plain objects, before and after writes', async () => {
+    const plain = (store: Store) => [...store.resources()].map((r) => structuredClone(r));
+    const store = new Store([obs('a', { meta: { versionId: '1' } }), obs('b'), { resourceType: 'Patient', id: 'pt-1' }]);
+    expect(await stateHash(store.resources())).toBe(await stateHash(plain(store)));
+    store.put(obs('a', { status: 'amended' }));
+    store.put(obs('c'));
+    expect(await stateHash(store.resources())).toBe(await stateHash(plain(store)));
+  });
+
+  it("serializes a caller's own objects on every hash, so a change between hashes shows", async () => {
+    const mine = [obs('a')];
+    const before = await stateHash(mine);
+    mine[0]!.status = 'cancelled';
+    expect(await stateHash(mine)).not.toBe(before);
+  });
+
+  it('refuses a resource whose meta has no JSON form, naming it', () => {
+    expect(() => new Store([obs('a', { meta: { versionId: '\ud800' } })])).toThrow(/Observation\/a: canonical JSON: lone surrogate/);
+  });
+
   it('hands out frozen resources, so a read can never change state', () => {
     const input = obs('a');
     const store = new Store([input]);
@@ -142,6 +162,29 @@ describe('fixture source', () => {
     const store = await loadStore({ read: async () => (reads++, enc(lines.join('\n'))) });
     expect(reads).toBe(1);
     expect(store.size).toBe(2);
+  });
+
+  it('stores loaded from the same bytes share frozen resources, and a write stays in its own store', async () => {
+    const bytes = enc(lines.join('\n'));
+    const a = await loadStore(source(bytes));
+    const b = await loadStore(source(new Uint8Array(bytes)));
+    expect(b.get('Observation', 'a')).toBe(a.get('Observation', 'a'));
+    a.put(obs('a', { status: 'amended' }));
+    a.put(obs('c'));
+    expect(b.get<Observation>('Observation', 'a')?.status).toBe('final');
+    expect(b.get('Observation', 'c')).toBeUndefined();
+    const c = await loadStore(source(bytes));
+    expect(c.get<Observation>('Observation', 'a')?.status).toBe('final');
+    expect(c.size).toBe(2);
+    // Other bytes are parsed afresh.
+    const other = await loadStore(source(enc(JSON.stringify(obs('z')))));
+    expect([...other.resources()].map((r) => r.id)).toEqual(['z']);
+  });
+
+  it('a malformed world fails every load, not only the first', async () => {
+    const bad = source(enc(`${lines[0]}\n{"resourceType":`));
+    await expect(loadStore(bad)).rejects.toThrow(/line 2/);
+    await expect(loadStore(bad)).rejects.toThrow(/line 2/);
   });
 
   it('refuses malformed input with the line number', async () => {

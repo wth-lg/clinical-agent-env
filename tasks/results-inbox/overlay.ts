@@ -11,9 +11,16 @@
 //   7, 8  pt-0016  Edra Ondricka (Synthea name)     TSH and lipid panel, normal
 //   -     pt-0033  Linda Marsh, 1965-09-02          the second Linda Marsh, a never smoker
 //
-// Traps (design "Inbox"): item 1's smoking history (35 pack-years, quit 2019) is only in her H&P
-// (doc-t2-hp-lm58); the structured status says Ex-smoker; the other Linda Marsh has a
-// never-smoker note; the 12-month interval runs from 2026-06-04. Item 3's referral
+// Traps (design "Inbox"): item 1's nodule is already followed in lung cancer screening (P19
+// lever, reports/researcher-16.md T2): an outside screening LDCT of 2025-09-15 from Lakeshore
+// Imaging (dr-t2-ldct-0915, Lung-RADS 2, annual LDCT) is on her chart with no Riverbend order
+// behind it, and its next study, due in September 2026, is overdue, so RBC-RAD-05 §2 asks for it within
+// 14 days of today, not for a CT 12 months from the June CT. The pilot-1 trials judged that
+// nothing existed from her ServiceRequests alone and never searched her reports. The report's
+// text leaves out every smoking word (the pilot-1 trials' note search ran on those), and her
+// H&P stays silent on screening. Her smoking history (35 pack-years, quit 2019) is only in her
+// H&P (doc-t2-hp-lm58); the structured status says Ex-smoker; the other Linda Marsh has a
+// never-smoker note. Item 3's referral
 // (sr-t2-gi-1020) already exists. Item 4's hemolysis is only in the potassium result's note.
 // Item 6 states no interval.
 //
@@ -33,6 +40,8 @@ const OKAFOR = { reference: 'Practitioner/pr-okafor' };
 const LIN = { reference: 'Practitioner/pr-lin' };
 const CLINIC = { reference: 'Organization/org-riverbend' };
 const HOSPITAL = { reference: 'Organization/org-st-brigid' };
+// The outside screening program that did Linda Marsh's LDCT (P19), a third site.
+const LAKESHORE = { reference: 'Organization/org-t2-lakeshore' };
 
 const LOINC = 'http://loinc.org';
 const SNOMED = 'http://snomed.info/sct';
@@ -138,7 +147,7 @@ const report = (
   at: string,
   issued: string,
   performer: { reference: string },
-  more: { results?: string[]; text?: string; basedOn?: string } = {},
+  more: { results?: string[]; text?: string; basedOn?: string; conclusion?: string } = {},
 ): Resource => ({
   resourceType: 'DiagnosticReport',
   id,
@@ -152,6 +161,7 @@ const report = (
   performer: [performer],
   ...(more.basedOn ? { basedOn: [{ reference: more.basedOn }] } : {}),
   ...(more.results ? { result: more.results.map((r) => ({ reference: `Observation/${r}` })) } : {}),
+  ...(more.conclusion ? { conclusion: more.conclusion } : {}),
   ...(more.text ? { presentedForm: text(more.text) } : {}),
 });
 
@@ -231,6 +241,30 @@ Impression:
 2. Incidental 5 mm solid nodule RLL; follow-up per institutional policy.
 
 Electronically signed: Samuel Ortega, MD, Radiology, 2026-06-04 15:02`;
+
+// Linda Marsh's baseline screening LDCT (P19). No smoking word (smoking, smoker, tobacco, pack,
+// years, quit, cigarettes): search_notes finds it by nodule, screening, LDCT or low-dose, and the
+// impression doubles as the report's conclusion, which fhir_search shows.
+const LDCT_IMPRESSION = 'Lung-RADS 2: benign appearance. 5 mm solid nodule, right lower lobe. Recommendation: continue annual screening with LDCT in 12 months.';
+const LDCT_REPORT = `Lakeshore Imaging - Lung Cancer Screening Program
+LOW-DOSE CT CHEST (LDCT), LUNG CANCER SCREENING
+Patient: Linda Marsh   DOB 1958-04-17
+Exam date: 2025-09-15   Referred by: Lakeshore Lung Screening Program (shared decision-making visit 2025-08-28)
+Indication: lung cancer screening, baseline examination.
+Comparison: none.
+
+Technique: low-dose helical CT of the chest without intravenous contrast. CTDIvol 1.3 mGy.
+
+Findings:
+Lungs: 5 mm solid nodule in the right lower lobe (series 3, image 112), Lung-RADS 2. No other nodule. No consolidation, effusion or emphysema.
+Airways: patent.
+Mediastinum and hila: no lymphadenopathy.
+Upper abdomen: unremarkable.
+
+Impression:
+${LDCT_IMPRESSION.replace('. Recommendation:', '.\nRecommendation:')}
+
+Electronically signed: Priya Iyer, MD, Radiology, 2025-09-16 09:12`;
 
 const ED_NOTE = `St. Brigid Regional - Emergency Department Note
 Patient: Linda Marsh   MRN 2207-41   DOB 1958-04-17
@@ -374,11 +408,22 @@ const overlay: Overlay = {
       { resourceType: 'Practitioner', id: 'pr-t2-ortega', active: true, name: [{ use: 'official', given: ['Samuel'], family: 'Ortega', suffix: ['MD'] }] },
       { resourceType: 'Practitioner', id: 'pr-t2-brandt', active: true, name: [{ use: 'official', given: ['Elena'], family: 'Brandt', suffix: ['MD'] }] },
       { resourceType: 'Practitioner', id: 'pr-t2-cole', active: true, name: [{ use: 'official', given: ['Hannah'], family: 'Cole', suffix: ['MD'] }] },
+      { resourceType: 'Organization', id: 'org-t2-lakeshore', active: true, name: 'Lakeshore Imaging' },
+      { resourceType: 'Practitioner', id: 'pr-t2-iyer', active: true, name: [{ use: 'official', given: ['Priya'], family: 'Iyer', suffix: ['MD'] }] },
 
       // Item 1: Linda Marsh (1958). The ED visit at St. Brigid, its CT and note, and her H&P.
       encounter('enc-t2-ed-0604', 'pt-0013', ['EMER', 'emergency'], ['50849002', 'Emergency room admission (procedure)'], '2026-06-04T09:40:00-04:00', '2026-06-04T17:15:00-04:00', HOSPITAL, { reference: 'Practitioner/pr-t2-brandt' }),
       report('dr-t2-ct-0604', 'pt-0013', 'enc-t2-ed-0604', ['RAD', 'Radiology'], ['36952-0', 'CT Abdomen and Pelvis WO contrast'], '2026-06-04T14:10:00-04:00', '2026-06-04T15:02:00-04:00', { reference: 'Practitioner/pr-t2-ortega' }, { text: CT_REPORT }),
       note('doc-t2-ed-0604', 'pt-0013', '2026-06-04T17:15:00-04:00', ['34111-5', 'Emergency department note'], 'enc-t2-ed-0604', { reference: 'Practitioner/pr-t2-brandt' }, HOSPITAL, ED_NOTE),
+      // Her baseline screening LDCT at Lakeshore (P19), ordered there: no Riverbend order.
+      encounter('enc-t2-ldct-0915', 'pt-0013', ['AMB', 'ambulatory'], ['185349003', 'Encounter for check up (procedure)'], '2025-09-15T10:15:00-04:00', '2025-09-15T10:40:00-04:00', LAKESHORE),
+      {
+        ...(report('dr-t2-ldct-0915', 'pt-0013', 'enc-t2-ldct-0915', ['RAD', 'Radiology'], ['29252-4', 'CT Chest WO contrast'], '2025-09-15T10:20:00-04:00', '2025-09-16T09:12:00-04:00', { reference: 'Practitioner/pr-t2-iyer' }, {
+          conclusion: LDCT_IMPRESSION,
+          text: LDCT_REPORT,
+        }) as R<'DiagnosticReport'>),
+        code: { coding: [{ system: LOINC, code: '29252-4', display: 'CT Chest WO contrast' }], text: 'Low-dose CT chest, lung cancer screening' },
+      },
       note('doc-t2-hp-lm58', 'pt-0013', '2026-02-16T10:00:00-05:00', ['34117-2', 'History and physical note'], 'enc-00078', OKAFOR, CLINIC, HP_MARSH),
       item(1, 'pt-0013', 'DiagnosticReport/dr-t2-ct-0604', '2026-10-22T07:10:00-04:00', HOSPITAL, 'CT abdomen and pelvis without contrast (St. Brigid ED, 2026-06-04): final report', [
         { time: '2026-10-22T07:10:00-04:00', text: 'Re-routed to Dr. Okafor (primary care). Originally filed to the ED provider.' },
@@ -486,7 +531,10 @@ const overlay: Overlay = {
           { quantity: 'potassium', threshold: 6.0, observation: 'obs-t2-c-k' },
           { quantity: 'potassium', threshold: 6.0, observation: 'obs-t2-d-k' },
         ],
-        leakage: { answers: ['2027-05-04', '2027-07-04', '2027-06-04', '2026-11-05', '2026-10-26'], distractors: ['doc-t2-hp-lm58', 'doc-t2-pn-lm65', 'dr-t2-ct-0604', 'dr-t2-xr-1022', 'sr-t2-gi-1020'] },
+        leakage: {
+          answers: ['2026-11-06', '2027-05-04', '2027-07-04', '2027-06-04', '2026-11-05', '2026-10-26'],
+          distractors: ['doc-t2-hp-lm58', 'doc-t2-pn-lm65', 'dr-t2-ct-0604', 'dr-t2-ldct-0915', 'dr-t2-xr-1022', 'sr-t2-gi-1020'],
+        },
       },
     };
   },
