@@ -51,7 +51,7 @@ export const checkText: CheckText = {
     },
   },
   k_recheck_task: {
-    requires: `a Task for the patient's PCP due ${K_DUE} whose focus is not the order the PCP is flagged about, or an order that measures potassium starting then (RBC-TOC-02 §7)`,
+    requires: `a Task for the patient's PCP due ${K_DUE}, 2 to 7 days after the potassium result, or an order that measures potassium starting then (RBC-TOC-02 §7)`,
     found: () => `no Task for the PCP due ${K_DUE} and no potassium order then`,
   },
   others_unchanged: {

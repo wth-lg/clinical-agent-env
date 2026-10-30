@@ -42,8 +42,8 @@ export const spironolactone = order(RX.spironolactone25, 25, 'QD', 'Signed adden
 export const kclStop = change(MR.kcl, 'stop', 'St. Brigid discharge summary 10/19: stop potassium chloride');
 export const lisinoprilResume = change(MR.lisinopril, 'resume', 'Discharge summary: resume when SCr < 1.5; SCr 1.32 on 10/21');
 // RBC-TOC-02 §7 (P19 lever): potassium 5.4 on 10/21 is above 5.0, so spironolactone is not started
-// and lisinopril stays held; a Task for the PCP due when the next potassium is expected, a week
-// after the 10/19 discharge, as the summary's one-week BMP.
+// and lisinopril stays held; a Task for the PCP due 10/26, a week after the 10/19 discharge as the
+// summary's one-week BMP, inside §7's 2 to 7 days after the 10/21 potassium.
 export const K_TASK = 'Potassium 5.4 mmol/L on 10/21 (Northgate outside lab) is above 5.0: per RBC-TOC-02 §7 spironolactone 25 mg was not started and lisinopril 10 mg stays on hold. Please recheck potassium and creatinine, then decide on both.';
 export const kTask = (due = '2026-10-26', description = K_TASK, focus: string | null = `MedicationRequest/${MR.lisinopril}`): ScriptCall => ({
   name: 'create_task',

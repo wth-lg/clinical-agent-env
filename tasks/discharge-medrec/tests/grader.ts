@@ -39,8 +39,8 @@ const oneAt = (ingredient: string, daily: number, perDay: number) => (ctx: GateC
   return { met: mg === daily && n === perDay, evidence: { active: found.map(keyOf), mg_per_day: mg, per_day: n }, ids: found.map(keyOf) };
 };
 
-// §7's Task is due when the next potassium is expected: from two days after the 10/21 report (a
-// recheck at 2-3 days fits a potassium of 5.4) to the summary's one-week BMP, 10/26 to 10/28.
+// §7's Task is due 2 to 7 days after the potassium result, as §7 states: the 10/21 report gives
+// 10/23 to 10/28.
 const K_DUE = { from: '2026-10-23', to: '2026-10-28' };
 // Codes of an order that measures potassium: BMP, CMP, potassium, electrolytes panels.
 const WITH_POTASSIUM = ['24321-2', '51990-0', '24323-8', '2823-3', '6298-4'];
@@ -128,10 +128,11 @@ const gates: Check[] = [
     traces_to: 'RBC-TOC-02 §7',
     decisive_ids: [expected.k.id],
     decisive_phrases: K_PHRASE,
-    // A Task the trial created for the PCP, due in K_DUE, whose focus is not the order §5 flags
-    // (the tartrate Task is that flag, not this one); or an order the trial created that measures
-    // potassium and starts in K_DUE (a declared alternative). The Task's text is not read: rounds
-    // of keyword patterns on the P17j JG9 credit each let a Task that tracks no potassium through.
+    // A Task the trial created for the PCP, due in K_DUE, whatever its focus (§7 asks only for a
+    // Task for the PCP due then, so a Task that also carries §5's tartrate flag counts, ruling
+    // 2026-10-30T01:12Z T4 D2); or an order the trial created that measures potassium and starts in
+    // K_DUE (a declared alternative). The Task's text is not read: rounds of keyword patterns on
+    // the P17j JG9 credit each let a Task that tracks no potassium through.
     fn: (ctx) => {
       const mine = new Set(ctx.writes());
       const pcp = pcpOf(ctx);
@@ -139,7 +140,7 @@ const gates: Check[] = [
         const d = at ? clinicDate(at) : null;
         return d !== null && d >= K_DUE.from && d <= K_DUE.to;
       };
-      const tasks = ctx.final.all('Task').filter((t) => mine.has(keyOf(t)) && !ctx.initial.has('Task', t.id) && t.for?.reference === PT && pcp.includes(t.owner?.reference ?? '') && due(t.restriction?.period?.end) && !expected.message_about.includes(t.focus?.reference ?? ''));
+      const tasks = ctx.final.all('Task').filter((t) => mine.has(keyOf(t)) && !ctx.initial.has('Task', t.id) && t.for?.reference === PT && pcp.includes(t.owner?.reference ?? '') && due(t.restriction?.period?.end));
       const orders = ctx.final.all('ServiceRequest').filter((r) => mine.has(keyOf(r)) && !ctx.initial.has('ServiceRequest', r.id) && r.subject?.reference === PT && due(r.occurrencePeriod?.start ?? r.occurrenceDateTime) && (r.code?.coding ?? []).some((c) => WITH_POTASSIUM.includes(c.code ?? '')));
       const made = [...tasks, ...orders].map(keyOf);
       return { met: made.length > 0, evidence: { tasks: tasks.map(keyOf), orders: orders.map(keyOf), due: K_DUE }, ids: made };

@@ -45,6 +45,17 @@ export const alternatives: Alternative[] = [
     script: [...reads, { calls: [...changesOnly, kTask('2026-10-23', undefined, null)] }, { calls: [message()] }, { calls: [note()] }, { calls: [finish()] }],
   },
   {
+    id: 'k_single_task_focus_tartrate',
+    why: "One Task for Dr. Okafor, due 10/26, whose focus is the tartrate order and whose text carries both §5's duplicate beta-blocker and §7's potassium recheck of the two held drugs: §7 asks for a Task for the PCP due 2 to 7 days after the potassium, whatever its focus (verifier-phase-P19-T4-1 D2, ruling 2026-10-30T01:12Z T4 D2).",
+    script: [
+      ...reads,
+      { calls: [...changesOnly, kTask('2026-10-26', 'Two items after discharge reconciliation: (1) potassium 5.4 on 10/21 is above 5.0, so per RBC-TOC-02 §7 spironolactone 25 mg was not started and lisinopril stays on hold; please recheck potassium and creatinine and decide on both. (2) Metoprolol tartrate 25 mg BID is not in the discharge documents and duplicates metoprolol succinate ER; left unchanged (§5).', `MedicationRequest/${MR.tart}`)] },
+      { calls: [message()] },
+      { calls: [note()] },
+      { calls: [finish()] },
+    ],
+  },
+  {
     id: 'k_task_plus_potassium_message',
     why: 'Creates the Task and also messages Dr. Okafor about the potassium of 5.4 and why both drugs are held (P19).',
     script: [

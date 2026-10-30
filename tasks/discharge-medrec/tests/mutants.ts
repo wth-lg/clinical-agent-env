@@ -83,7 +83,7 @@ export const mutants: Mutant[] = [
   {
     id: 'k_no_task',
     trap: 'k_no_task',
-    why: 'Holds both drugs for the potassium of 5.4 and says so in the note, but creates no Task and orders no potassium: §7 asks for a Task for the PCP due when the next potassium is expected.',
+    why: 'Holds both drugs for the potassium of 5.4 and says so in the note, but creates no Task and orders no potassium: §7 asks for a Task for the PCP due 2 to 7 days after the potassium result.',
     fails: ['k_recheck_task'],
     loses: [],
     attribution: 'reasoning',
@@ -107,14 +107,14 @@ export const mutants: Mutant[] = [
   {
     id: 'k_task_tartrate_only',
     trap: 'k_no_task',
-    why: "Holds both drugs, and its only Task is the duplicate-tartrate flag to Dr. Okafor, due 10/26: a Task whose focus is the tartrate order is §5's flag, not §7's potassium recheck.",
+    why: "Holds both drugs, and its only Task is the duplicate-tartrate flag to Dr. Okafor, due 10/30: nine days after the 10/21 potassium, outside the 2 to 7 days §7 states (a Task due in those days counts whatever its focus, ruling 2026-10-30T01:12Z T4 D2).",
     fails: ['k_recheck_task'],
     loses: [],
     attribution: 'reasoning',
     script: [
       ...reads,
       { calls: [furosemideUp, kclStop] },
-      { calls: [kTask('2026-10-26', 'Duplicate beta-blocker: metoprolol tartrate and metoprolol succinate (metoprolol XL) are both on the list, and the discharge documents do not address the tartrate. Left unchanged; please decide.', `MedicationRequest/${MR.tart}`)] },
+      { calls: [kTask('2026-10-30', 'Duplicate beta-blocker: metoprolol tartrate and metoprolol succinate (metoprolol XL) are both on the list, and the discharge documents do not address the tartrate. Left unchanged; please decide.', `MedicationRequest/${MR.tart}`)] },
       { calls: [note({ flagged: 'Flagged to Dr. Okafor by Task: metoprolol tartrate 25 mg twice daily is not in the discharge documents, a duplicate beta-blocker; left unchanged (RBC-TOC-02 §5).' })] },
       { calls: [finish()] },
     ],
@@ -122,7 +122,7 @@ export const mutants: Mutant[] = [
   {
     id: 'k_task_late',
     trap: 'k_no_task',
-    why: 'Holds both drugs and tasks Dr. Okafor to recheck potassium, due 11/02: past the one-week BMP the summary sets, so not due when the next potassium is expected.',
+    why: 'Holds both drugs and tasks Dr. Okafor to recheck potassium, due 11/02: twelve days after the 10/21 potassium, past the 2 to 7 days §7 states.',
     fails: ['k_recheck_task'],
     loses: [],
     attribution: 'reasoning',

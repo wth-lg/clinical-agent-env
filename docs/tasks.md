@@ -286,7 +286,7 @@ The expected end state (`expected.ts`):
 - Potassium chloride: stop. A stop is not a start, so §7 does not block it.
 - Spironolactone: no order. The signed addendum corrects the summary's 12.5 mg to 25 mg a day, but §7 holds the start.
 - Lisinopril: stays on hold. The summary says to resume when SCr is below 1.5, and the SCr of 1.32 meets that, but §7 keeps the held order held. A stop fails too.
-- A Task for the PCP due 2026-10-23 to 2026-10-28, when the next potassium is expected. An order that measures potassium starting in that window is accepted instead.
+- A Task for the PCP due 2 to 7 days after the potassium result, as §7 states: 2026-10-23 to 2026-10-28 for the 10/21 report. An order that measures potassium starting in that window is accepted instead.
 - Metoprolol XL, atorvastatin, aspirin 81 mg and omeprazole: no change. Metoprolol XL is an alias of metoprolol succinate ER. Pantoprazole is a formulary substitution, so the patient keeps omeprazole. The summary marks the substitution in its own section after the medication list, not on the pantoprazole line.
 - Metoprolol tartrate 25 mg twice a day: no discharge document mentions it. Leave it unchanged. Message the PCP about the duplicate beta-blocker.
 
@@ -304,7 +304,7 @@ The expected end state (`expected.ts`):
 - The lisinopril line's own condition (SCr 1.32 < 1.5) is met, but the potassium of 5.4 holds the resume (`k_rule_ace_resumed`; P19 lever, from pilot-1 discharge-medrec trial 2, turn 6: "the conditional instruction is satisfied so I'll act on it").
 - The addendum orders spironolactone, but §7 holds the start (`k_rule_mra_started`).
 - §7 keeps the held lisinopril held; stopping it fails (`k_rule_ace_stopped`).
-- §7 needs a Task for the PCP (or a potassium order) in the window. A message alone, a Task due later, or only the tartrate flag Task fails (`k_no_task`).
+- §7 needs a Task for the PCP (or a potassium order) in the window. A message alone, or a Task due outside the window, fails (`k_no_task`). A Task due in the window counts whatever its focus, so a single Task that carries the tartrate flag and the potassium recheck passes.
 - The furosemide dose changes (`furosemide_dose`).
 - The addendum corrects the spironolactone dose (`addendum_missed`). An order at 12.5 mg now also breaks §7; the note must still name the addendum's 25 mg.
 - The post-discharge results are only in the outside lab's report. A search of his results finds only the inpatient 1.9 mg/dL. The agent then never sees the potassium, starts spironolactone or resumes lisinopril (`outside_lab_missed`; P18o lever R14-07 L2).
@@ -324,7 +324,7 @@ The shared world has three potassium traps with different answers. T2 (results-i
 Gate checks (`tests/grader.ts`, words in `tasks/discharge-medrec.check-text.ts`): `furosemide_40`, `spironolactone_not_started`, `kcl_stopped`, `lisinopril_held`, `k_recheck_task`, `others_unchanged`, `omeprazole_kept`, `pcp_message` and `sources_before_orders`.
 
 - `spironolactone_not_started`, `lisinopril_held` and `k_recheck_task` declare the outside report's line "Potassium 5.4 mmol/L" as their decisive phrase. A failure after that line was shown is attributed to reasoning. A failure when it was never shown is attributed to retrieval.
-- `k_recheck_task` accepts either of two writes, each made by the trial. The first is a Task owned by the PCP, due 2026-10-23 to 2026-10-28, whose focus is not the tartrate order. The second is a ServiceRequest that measures potassium (a BMP, a CMP, an electrolyte panel or a potassium test) and starts in that window. The gate does not read the Task's text.
+- `k_recheck_task` accepts either of two writes, each made by the trial. The first is a Task owned by the PCP, due 2026-10-23 to 2026-10-28, whatever its focus (ruling 2026-10-30T01:12Z T4 D2). The second is a ServiceRequest that measures potassium (a BMP, a CMP, an electrolyte panel or a potassium test) and starts in that window. The gate does not read the Task's text.
 - `sources_before_orders` needs the source of each medication order write shown before it, by a read or a search snippet:
   - Furosemide and potassium chloride: the summary's line.
   - Lisinopril: the summary's rule "Resume home 10 mg daily when SCr < 1.5" (a search for spironolactone shows it without the drug name), plus the report's creatinine line.
@@ -362,7 +362,7 @@ Sources for §7. §7 is a conservative clinic rule, not a guideline mandate:
 
 Run it with `pnpm cli oracle --task discharge-medrec`. It must print PASS with score 1.000 and `judge.unknown 0`.
 
-Open PRs that change this section: the P19 overlay batch (this lever; the world rebuild comes in the train).
+Open PRs that change this section: none.
 
 ## T5 contrast-ct-prep
 
