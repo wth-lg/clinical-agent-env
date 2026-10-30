@@ -13,7 +13,11 @@
 // alternatives pass, the mutants and the null, spray and output-gap agents fail), graded from
 // the task's canned judge cache, so its trajectory replays to the record's final hash. A few
 // records are then rewritten to the outcomes a scripted model cannot produce (REFUSAL, LIMIT,
-// ENV_ERROR, GRADER_ERROR, INFRA_API) and graded again from the rewritten record. The run's
+// ENV_ERROR, ENV_LIMIT, GRADER_ERROR, INFRA_API) and graded again from the rewritten record. The
+// LIMIT is a second max_tokens stop in a row, the model's whatever the trajectory shows; the
+// ENV_LIMIT is a turn cap the scripted run reaches before its first write while it still reads
+// new records, so rule P-L (packages/grader/progress.ts) reads it as progressing and the grader
+// gives it to the environment (E8, plan-amendment-worklist W0-A). The run's
 // GRADER_ERROR carries the regrade of a fixed grader (a regrades[] entry with the trial's real
 // grade, a model FAIL), as cli regrade leaves it: a committed run with a current GRADER_ERROR is
 // blocked (DENOMINATOR_RULE), and the record still shows in grader_error_history. The same trial
@@ -52,12 +56,13 @@ const REGRADED_AT = new Date(T0 + 24 * 3600 * 1000).toISOString();
 const PASSES = [3, 5, 7, 9, 4, 8];
 // The non-FAIL outcomes each task holds, by task position: valid ones take an index below 12,
 // excluded ones index 12.
-const SPECIAL: Record<number, Array<'REFUSAL' | 'LIMIT' | 'ENV_ERROR' | 'GRADER_ERROR' | 'INFRA_API'>> = {
+const SPECIAL: Record<number, Array<'REFUSAL' | 'LIMIT' | 'ENV_ERROR' | 'ENV_LIMIT' | 'GRADER_ERROR' | 'INFRA_API'>> = {
   0: ['REFUSAL'],
   1: ['LIMIT'],
   2: ['ENV_ERROR'],
   3: ['GRADER_ERROR'],
   4: ['INFRA_API', 'REFUSAL'],
+  5: ['ENV_LIMIT'],
 };
 
 type Rec = TrialRecord & { index: number; trajectory: string; regrades?: ReturnType<typeof regradeOf>[] };
@@ -98,7 +103,7 @@ async function main(withMatrix: boolean) {
 
     for (const [index, { c, as }] of plan.entries()) {
       const scripted = await trial(env, task, c);
-      const run = as === 'ENV_ERROR' ? internalAt(scripted, INTERNAL_CALL) : scripted;
+      const run = as === 'ENV_ERROR' ? internalAt(scripted, INTERNAL_CALL) : as === 'ENV_LIMIT' ? turnCapBeforeWrite(scripted) : scripted;
       const facts = rewrite(run.record, as);
       const graded: CaseRun = { record: facts, events: run.events };
       const real = await gradeRun(env, task, task.checks, graded);
@@ -176,6 +181,31 @@ function internalAt(run: CaseRun, n: number): CaseRun {
   return { record: { ...run.record, turns: failed.turn, tool_calls: calls, stop: null, summary: null, ended: failed.ts }, events };
 }
 
+// An ENV_LIMIT's run as packages/core/loop.ts leaves it when the turn cap stops the trial before
+// its first write: the answers up to the cap stay, the limit event ends the trial, and the final
+// state is the initial one, so it replays. Its executed calls each read records not read before,
+// so rule P-L reads them as progress (E8). The graded event is dropped, as for the ENV_ERROR.
+function turnCapBeforeWrite(run: CaseRun): CaseRun {
+  const firstWrite = run.events.find((e) => e.type === 'tool_result' && (e.written_ids?.length ?? 0) > 0);
+  if (firstWrite === undefined || firstWrite.turn < 2) throw new Error('the ENV_LIMIT sample needs a scripted run that reads before it writes');
+  const cap = firstWrite.turn - 1;
+  const kept = run.events.filter((e) => e.turn <= cap && e.type !== 'graded' && !(e.type === 'state_hash' && e.at !== 'initial'));
+  const last = kept.at(-1)!;
+  const initial = run.record.state_hash.initial!;
+  const stamp = (i: number) => ({ v: last.v, seq: last.seq + 1 + i, ts: last.ts, turn: cap });
+  const events: TrialEvent[] = [
+    ...kept,
+    { ...stamp(0), type: 'state_hash', at: 'final', hash: initial },
+    { ...stamp(1), type: 'state_hash', at: 'replay_final', hash: initial },
+    { ...stamp(2), type: 'limit', limit: 'turns', cap, value: cap },
+  ];
+  const calls = kept.filter((e) => e.type === 'tool_call').length;
+  return {
+    record: { ...run.record, status: 'LIMIT', detail: 'turns', turns: cap, tool_calls: calls, stop: null, summary: null, state_hash: { initial, final: initial, replay_final: initial }, ended: last.ts },
+    events,
+  };
+}
+
 // The regrades[] entry cli regrade writes after a grader fix (cli/regrade.ts RegradeEntry): the
 // trial's real grade, a model FAIL.
 function regradeOf(g: Awaited<ReturnType<typeof gradeRun>>, graderTaskVersion: string | null) {
@@ -189,7 +219,7 @@ function rewrite(r: TrialRecord, as: string | null): TrialRecord {
     case 'REFUSAL':
       return { ...r, status: 'REFUSAL', stop_reason: 'refusal', summary: 'I cannot place or change orders for this patient without a clinician reviewing the chart first.' };
     case 'LIMIT':
-      return { ...r, status: 'LIMIT', detail: 'turns' };
+      return { ...r, status: 'LIMIT', detail: 'max_tokens' };
     case 'ENV_ERROR':
       return { ...r, status: 'ENV_ERROR', detail: 'INTERNAL', tool_errors: { ...r.tool_errors, INTERNAL: 1 }, state_hash: { ...r.state_hash, final: null, replay_final: null } };
     case 'INFRA_API':

@@ -4,7 +4,7 @@
 //   results/official.json                    {"run": "runs/trial-1"}
 //   results/runs/trial-1/trials/<task>/<index>.json, trajectories/<task>/<index>.jsonl
 //     one trial of each non-pass outcome (FAIL audited and not audited, LIMIT, REFUSAL,
-//     ENV_ERROR, GRADER_ERROR, INFRA_API), a PASS, and a FAIL whose trajectory is left out, so
+//     ENV_ERROR, ENV_LIMIT, GRADER_ERROR, INFRA_API), a PASS, and a FAIL whose trajectory is left out, so
 //     the trajectory pane shows its error state
 //   results/runs/trial-1/audit.jsonl         the sample's audit rows for those trials
 //   results/runs/trial-1/matrix.json         the sample's matrix.json (M4, GR4)
@@ -40,6 +40,8 @@ export const TRIALS = {
   pass: 'renal-dose-review/0',
   limit: 'crc-care-gap/5',
   envError: 'discharge-medrec/12',
+  // A turn cap reached while the model still made progress: the environment's (E8, W0-A).
+  envLimit: 'results-inbox/12',
   // In the pilot run pilot-grader-error, not in trial-1 (runOf).
   graderError: 'message-queue/12',
   // A GRADER_ERROR a fixed grader regraded to a model FAIL.

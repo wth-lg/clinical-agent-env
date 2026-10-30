@@ -7,12 +7,12 @@
   "api_version": "2026-10-21",
   "trials": 12,
   "task_versions": {
-    "contrast-ct-prep": "e2e7ae7edf8459653b264c0c55f0518cfa249e6046bb24e01b9cb6e2efec7e7e",
-    "crc-care-gap": "1a27e2505647a28bd2614aa4a7ed88c2bd1c9c822f7962e3f271f18bb83d4400",
-    "discharge-medrec": "44d1f2086670ed7f1981a96bc4b2d5a2dc81c009e5f11ccd62326aeff53eb83b",
-    "message-queue": "630d5641ff3eae6f42e5b1255c732e1f3de755bce1927f31d37fa69fe9be89c5",
-    "renal-dose-review": "542a3aa0b8dee084f4e94e69faac6dba459c4e8d6c133fe3cc46c095c867f159",
-    "results-inbox": "156bbe192631bb2cbae30e5b5262aaa7b3da34cdaf75ce3de455c2e37e0bf9a7"
+    "contrast-ct-prep": "a791f5ebd7d39f02f0c12a3b28b2d492d8066bf8c81be7d0573d7ce7d2644ce1",
+    "crc-care-gap": "66e0217d4250cbcac48d38f279423f590eaa5cab5875bb7b074d1667ce9062ec",
+    "discharge-medrec": "feed0147f6e35fe7d6c8c8a643947183a677ade62ed4765531c133d733d744e9",
+    "message-queue": "ec0ad034987a67afa29c4ed0a375736853c410d27c6a415b128f2a9de9083f2e",
+    "renal-dose-review": "02d5269dc6eafac0e28ba0f98b318c1c0b33ee57f8c96498b233d30c5a70f056",
+    "results-inbox": "4f46cad18a5cea81e86496fec0a6ab78f5a1daa6c5b6efbd6727665a143ea19c"
   },
   "env_versions": {
     "contrast-ct-prep": "cf60c2d3942b2cfd052e717fffcac4a027b5f3e7fbea7eda52b69938824e711e",
@@ -23,12 +23,12 @@
     "results-inbox": "c345bdcc2cb0b83fab569aa794b12c87b7cc0e9e5546f3da3eed144ca38ddd09"
   },
   "grader_task_versions": {
-    "contrast-ct-prep": "9d8185ac8cd8374c2a57fc92bbed16113f934b9421aad33928d3cbc46b19c9cf",
-    "crc-care-gap": "acfa348674d0ea6116acda87b1b2ce03e64806a737c01eda9f2a0a5dc4c4292e",
-    "discharge-medrec": "ce4c17a4cca74c50db4d860096a39740cf9d5ebd70c7ba55ae46cb55b88daac0",
-    "message-queue": "9fe90168518dc869eed2ee6fe64f52f442f40e971bd7c4dc0d6bae07374b7403",
-    "renal-dose-review": "19dab830398de95941d2642c212467ac961feab396faa4413d724d4fb56359d3",
-    "results-inbox": "4c1749ecb419191127ff6e6d523e143b39cd82848529d005b04d2dbeee8da96f"
+    "contrast-ct-prep": "71a13035bc0fd1e6226ce964d393b1a7b59b487c757e4b5a2804d68f3fdcda80",
+    "crc-care-gap": "bd7d9634c18966cea66db590c06e4920c316b6d4deb36719c6fe303e3b2ac89c",
+    "discharge-medrec": "f5f63086e7bc826493685f18fa543e49c4370feddd0d552d0f7d24ad3f70e323",
+    "message-queue": "d46e82ff6e31c1dd1e5c2d6d5a0609ed43e41dfb3a2433078208789616fa6287",
+    "renal-dose-review": "5548e4a10fc5a0e94356acd7389bd4d6f41ce48094df16bf580b26e4f20e0aa4",
+    "results-inbox": "a1037b82eaca9e041957088ae3d9d5b037218b6dd3a2198ee3f5a8fc5b6b62c3"
   },
   "batches": []
 }
