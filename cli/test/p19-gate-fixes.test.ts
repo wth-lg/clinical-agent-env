@@ -41,7 +41,7 @@ const get = (put: readonly Resource[], type: string, id: string) => put.find((r)
 const text = (d: R | undefined) => new TextDecoder().decode(Uint8Array.from(atob(d?.content?.[0]?.attachment.data ?? ''), (c) => c.charCodeAt(0)));
 const codeOf = (c: R) => c.code?.coding?.[0]?.code;
 const active = (c: R) => c.clinicalStatus?.coding?.[0]?.code === 'active';
-const NAMES_THE_HOME = /nursing|care cent|maple grove|long[- ]term|resident/i;
+const NAMES_THE_HOME = /nursing|care cent|maple grove|facility|long[- ]term|resident/i;
 
 describe('crc-care-gap E15 chart (pt-0034)', () => {
   it('has a chronic diagnosis that explains long-term care, and no frailty or advanced illness code', () => {
@@ -61,9 +61,9 @@ describe('crc-care-gap E15 chart (pt-0034)', () => {
     expect(vitals).toEqual(expect.arrayContaining(['85354-9', '8867-4', '29463-7']));
   });
 
-  it('has a 2026-02-18 visit note written as a facility visit that does not name the nursing home', () => {
+  it('has a 2026-02-18 visit note written as a visit on rounds that does not name the nursing home', () => {
     const note = get(t3Put, 'DocumentReference', 'doc-00204');
-    expect(text(note)).toMatch(/Facility visit/);
+    expect(text(note)).toMatch(/^\n2026-02-18\n\n# Chief Complaint\n[^]*Seen on rounds\./);
     expect(text(note)).not.toMatch(NAMES_THE_HOME);
     expect(get(t3Put, 'Encounter', 'enc-00204')).toMatchObject({ type: [{ coding: [{ code: '18170008' }] }], serviceProvider: { reference: 'Organization/org-t3-5520' } });
     for (const d of of('pt-0034', 'DocumentReference')) expect(text(d)).not.toMatch(NAMES_THE_HOME);

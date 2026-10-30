@@ -131,7 +131,6 @@ const noteText = (d: Doc) => d.content.map((c) => (c.attachment.data ? unbase64(
 // medication list predates the overlay's donepezil (authored 2025-06-10), which her later notes
 // must list.
 function editNote(text: string, pt: string, date: string): string {
-  if (pt === E.E15 && date.startsWith('2026-02-18')) return E15_FACILITY_NOTE;
   let t = text.replace(/ is an? \d+ year-old /g, ' is a ').replace(/, polyp of colon \(disorder\)/g, '');
   if (pt === E.E7 && date >= '2025-06-10') t = t.replace(/^(# Medications\n.+)$/m, '$1; donepezil hydrochloride 10 mg oral tablet');
   return t;
@@ -228,16 +227,17 @@ const MAPLE_GROVE: Resource = { resourceType: 'Organization', id: 'org-t3-5520',
 const CEDAR_HILL: Resource = { resourceType: 'Organization', id: 'org-t3-3147', active: true, name: 'Cedar Hill Rehabilitation and Skilled Nursing', address: [{ line: ['88 Cedar Hill Drive'], city: 'Milford', state: 'MA', postalCode: '01757', country: 'US' }] };
 // E15's long-term-care chart (verifier-phase-P19-T3-1 D4): the stroke of December 2025 that left
 // him with a left hemiparesis, his hypertension, the medications he takes since, his vitals at the
-// July facility visit, and the 2026-02-18 visit rewritten as a facility visit by Dr. Lin. Nothing
+// July facility visit, and his February sinusitis visit rewritten as Dr. Lin's visit at the facility. Nothing
 // here names the nursing home: his residence stays in the housing status, the address and the
 // visits' service provider.
-const E15_FACILITY_NOTE = `2026-02-18
-
-# Chief Complaint
+// The note keeps its date line, so the world's clinic-hours hygiene can still move
+// the visit (a date written here would pin it); its text says rounds and staff, not where.
+const E15_VISIT_NOTE = 'doc-00204';
+const E15_VISIT_TEXT = `# Chief Complaint
 Nasal congestion and facial pressure for 5 days.
 
 # History of Present Illness
-Facility visit. Rickey is a nonhispanic white male with a left hemiparesis since his stroke in December 2025, and hypertension. Staff report clear nasal discharge and a mild cough, no fever, eating and sleeping as usual. He transfers with one assist and walks short distances with a walker.
+Seen on rounds. Rickey is a nonhispanic white male with a left hemiparesis since his stroke in December 2025, and hypertension. Staff report clear nasal discharge and a mild cough, no fever, eating and sleeping as usual. He transfers with one assist and walks short distances with a walker.
 
 # Social History
 Patient has never smoked.
@@ -253,6 +253,12 @@ clopidogrel 75 mg oral tablet; atorvastatin 40 mg oral tablet; amlodipine 5 mg o
 # Assessment and Plan
 Patient is presenting with viral sinusitis (disorder). Saline nasal spray and fluids; staff to call if fever, or no better in 10 days.
 `;
+// Everything before the first heading: Synthea's blank line and date line.
+const dateLines = (text: string) => text.slice(0, text.indexOf('# Chief Complaint'));
+const e15VisitNote = (d: Doc): Doc => ({
+  ...d,
+  content: d.content.map((c) => (c.attachment.data ? { ...c, attachment: { ...c.attachment, data: base64(`${dateLines(unbase64(c.attachment.data))}${E15_VISIT_TEXT}`) } } : c)),
+});
 const e15Medication = (id: string, rx: [string, string], dose: number, reason: string): Resource => ({
   resourceType: 'MedicationRequest',
   id,
@@ -295,7 +301,7 @@ const strokeStay: Resource = {
   class: { system: 'http://terminology.hl7.org/CodeSystem/v3-ActCode', code: 'IMP' },
   type: [{ coding: [{ system: SNOMED, code: '32485007', display: 'Hospital admission (procedure)' }], text: 'Hospital admission (procedure)' }],
   subject: subject(E.E15),
-  period: { start: '2025-12-02T07:40:00-05:00', end: '2025-12-12T11:00:00-05:00' },
+  period: { start: '2025-12-04T07:40:00-05:00', end: '2025-12-12T11:00:00-05:00' },
   reasonCode: [{ coding: [{ system: SNOMED, code: '230690007', display: 'Cerebrovascular accident (disorder)' }], text: 'Cerebrovascular accident (disorder)' }],
   serviceProvider: HOSPITAL,
 };
@@ -303,8 +309,8 @@ const e15Chart = (world: WorldReader): Resource[] => {
   const visit = world.get('Encounter', 'enc-00204') as Extract<Resource, { resourceType: 'Encounter' }>;
   return [
     strokeStay,
-    { ...condition('cond-t3-3904', E.E15, ['230690007', 'Cerebrovascular accident (disorder)'], '2025-12-02T07:40:00-05:00', 'encounter-diagnosis'), encounter: { reference: 'Encounter/enc-t3-2087' } } as Resource,
-    condition('cond-t3-6618', E.E15, ['50582007', 'Hemiplegia (disorder)'], '2025-12-02T07:40:00-05:00'),
+    { ...condition('cond-t3-3904', E.E15, ['230690007', 'Cerebrovascular accident (disorder)'], '2025-12-04T07:40:00-05:00', 'encounter-diagnosis'), encounter: { reference: 'Encounter/enc-t3-2087' } } as Resource,
+    condition('cond-t3-6618', E.E15, ['50582007', 'Hemiplegia (disorder)'], '2025-12-04T07:40:00-05:00'),
     condition('cond-t3-9251', E.E15, ['59621000', 'Essential hypertension (disorder)'], '2016-04-11T10:00:00-04:00'),
     e15Medication('mr-t3-4436', ['309362', 'clopidogrel 75 MG Oral Tablet'], 75, 'Cerebrovascular accident, secondary prevention'),
     e15Medication('mr-t3-7725', ['617311', 'atorvastatin 40 MG Oral Tablet'], 40, 'Cerebrovascular accident, secondary prevention'),
@@ -317,7 +323,7 @@ const e15Chart = (world: WorldReader): Resource[] => {
     }),
     e15Vital('obs-t3-0632', ['8867-4', 'Heart rate'], { valueQuantity: { value: 72, unit: '/min', system: UCUM, code: '/min' } }),
     e15Vital('obs-t3-4851', ['29463-7', 'Body Weight'], { valueQuantity: { value: 79.4, unit: 'kg', system: UCUM, code: 'kg' } }),
-    // The 2026-02-18 visit was Dr. Lin's at the facility.
+    // His February sinusitis visit was Dr. Lin's at the facility.
     { ...visit, type: [{ coding: [{ system: SNOMED, code: '18170008', display: 'Subsequent nursing facility visit' }], text: 'Subsequent nursing facility visit' }], serviceProvider: { reference: 'Organization/org-t3-5520' } },
   ];
 };
@@ -460,7 +466,7 @@ const overlay: Overlay = {
   task: 'T3',
   build(world: WorldReader) {
     const ofSlots = (type: string) => SLOTS.flatMap((pt) => world.search(type, { patient: pt }).resources);
-    const edited = (d: Doc): Doc => ({
+    const edited = (d: Doc): Doc => (d.id === E15_VISIT_NOTE ? e15VisitNote(d) : {
       ...d,
       content: d.content.map((c) => (c.attachment.data ? { ...c, attachment: { ...c.attachment, data: base64(editNote(unbase64(c.attachment.data), d.subject!.reference!.slice(8), d.date ?? '')) } } : c)),
     });
