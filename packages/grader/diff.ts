@@ -27,7 +27,8 @@ export function diff(initial: Iterable<Readonly<Resource>>, final: Iterable<Read
     const k = keyOf(r);
     const old = before.get(k);
     if (old === undefined) created.push(k);
-    else if (canonicalJson(old) !== canonicalJson(r)) {
+    // The store hands out the same frozen object until a write replaces it.
+    else if (old !== r && canonicalJson(old) !== canonicalJson(r)) {
       updated.push(k);
       if (statusOf(old) !== statusOf(r)) status_changed.push({ id: k, from: statusOf(old), to: statusOf(r) });
     }

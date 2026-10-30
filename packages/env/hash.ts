@@ -60,14 +60,33 @@ export function canonicalJson(value: unknown): string {
 const byTypeThenId = (a: Resource, b: Resource): number =>
   a.resourceType < b.resourceType ? -1 : a.resourceType > b.resourceType ? 1 : a.id! < b.id! ? -1 : a.id! > b.id! ? 1 : 0;
 
+// The form of each resource the store has admitted and deeply frozen (packages/env/store.ts
+// admit), keyed by the object: a frozen resource cannot change, so every hash after the first reads
+// its form here instead of serializing the whole world again (the matrix hashes each run's state
+// several times), and a store built later from the same world can keep the object as it is.
+const admittedForms = new WeakMap<object, string>();
+
+// canonicalJson of a resource without its top-level meta: one member of the state hash.
+export const resourceForm = (resource: Readonly<Resource>): string => {
+  const known = admittedForms.get(resource);
+  if (known !== undefined) return known;
+  const { meta: _meta, ...rest } = resource;
+  return canonicalJson(rest);
+};
+
+// Only the store calls these, for a resource it has validated and deeply frozen; a caller's own
+// objects are serialized on every hash, since they may change between hashes.
+export const rememberAdmitted = (resource: Readonly<Resource>, form: string): void => void admittedForms.set(resource, form);
+export const isAdmitted = (resource: Readonly<Resource>): boolean => admittedForms.has(resource);
+
 // The canonical JSON the state hash is taken over: an array of resources without meta.
-export function canonicalState(resources: Iterable<Resource>): string {
+export function canonicalState(resources: Iterable<Readonly<Resource>>): string {
   const sorted = [...resources].sort(byTypeThenId);
-  return `[${sorted.map(({ meta: _meta, ...rest }) => canonicalJson(rest)).join(',')}]`;
+  return `[${sorted.map(resourceForm).join(',')}]`;
 }
 
 // Lowercase hex SHA-256 of the UTF-8 bytes of canonicalState(resources).
-export async function stateHash(resources: Iterable<Resource>): Promise<string> {
+export async function stateHash(resources: Iterable<Readonly<Resource>>): Promise<string> {
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(canonicalState(resources)));
   return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, '0')).join('');
 }
