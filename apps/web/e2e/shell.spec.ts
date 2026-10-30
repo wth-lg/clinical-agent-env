@@ -33,13 +33,26 @@ const isPath = (url: URL, path: string) => url.pathname.endsWith(`/${path}`);
 const json = (route: Route, status: number, body: unknown, headers: Record<string, string> = {}) =>
   route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body), headers });
 
-// Every request the page makes after `since()` resets the list, but fonts, styles and images
-// the newly shown screen pulls from the page's own origin.
-const ASSETS = new Set(['font', 'stylesheet', 'image']);
+// Every request the page's context makes (page, workers, any resource type): `all()` since the
+// start, `since()` from the last mark. The app reads data/ in the background at any time, so a
+// test asserts on the requests that matter (a runner path, the API origin, the key) and not on
+// the whole list.
 function recordRequests(page: Page) {
-  let list: Request[] = [];
-  page.on('request', (r) => (ASSETS.has(r.resourceType()) && !isApi(r.url()) ? undefined : list.push(r)));
-  return { since: () => (list = []), get: () => list };
+  const list: Request[] = [];
+  let mark = 0;
+  page.context().on('request', (r) => void list.push(r));
+  return { mark: () => void (mark = list.length), since: () => list.slice(mark), all: () => [...list] };
+}
+// The same-origin runner paths, api/* under the page base.
+const isRunner = (url: string, base: string) => new URL(url).origin === new URL(base).origin && new URL(url).pathname.startsWith(new URL('api/', base).pathname);
+// Where in a request a string appears: its URL, a header name or value, or its body.
+async function carries(r: Request, s: string): Promise<string[]> {
+  const headers = await r.allHeaders().catch(() => r.headers());
+  return [
+    ...(r.url().includes(s) ? ['url'] : []),
+    ...Object.entries(headers).filter(([k, v]) => k.includes(s) || v.includes(s)).map(([k]) => `header ${k}`),
+    ...(r.postDataBuffer()?.toString('utf8').includes(s) ? ['body'] : []),
+  ];
 }
 
 // localStorage, sessionStorage and every IndexedDB record, as one string to search for a key.
@@ -245,16 +258,24 @@ test.describe('key gate on the local runner', () => {
     await page.goto('./');
     await expect(chip(page)).toHaveText('Local runner');
     await keyField(page).fill(key);
-    requests.since();
+    requests.mark();
     await page.getByRole('button', { name: 'Validate' }).click();
     await expect(page.getByTestId('key-chip')).toHaveText('Key held by runner');
 
-    const sent = requests.get();
-    expect(sent.map((r) => `${r.method()} ${r.url()}`)).toEqual([`POST ${new URL(KEY_PATH, baseURL).href}`]);
+    // Validate calls the runner once, at api/key, and never the API origin.
+    const sent = requests.since();
+    const keyUrl = new URL(KEY_PATH, baseURL).href;
+    expect(sent.filter((r) => isRunner(r.url(), baseURL!)).map((r) => `${r.method()} ${r.url()}`)).toEqual([`POST ${keyUrl}`]);
+    expect(requests.all().filter((r) => isApi(r.url())).map((r) => r.url())).toEqual([]);
     expect(keyCalls).toHaveLength(1);
     expect(keyCalls[0]!.token).toBe(token);
     expect(JSON.parse(keyCalls[0]!.body ?? '{}')).toEqual({ key });
-    expect(sent.filter((r) => isApi(r.url()))).toHaveLength(0);
+    // The key is in that call's body only, and in no other request since the page opened:
+    // not in a URL, a header or a body.
+    const keyCall = sent.find((r) => r.method() === 'POST' && r.url() === keyUrl)!;
+    expect(await carries(keyCall, key)).toEqual(['body']);
+    const leaks = await Promise.all(requests.all().filter((r) => r !== keyCall).map(async (r) => ({ r: `${r.method()} ${r.url()}`, where: await carries(r, key) })));
+    expect(leaks.filter((l) => l.where.length > 0)).toEqual([]);
 
     const dump = await storageDump(page);
     for (const where of ['local', 'session', 'idb'] as const) expect(dump[where], where).not.toContain(key);
