@@ -34,6 +34,7 @@
 // no unplanned kidney problem behind it. His duplicate simvastatin goes, and so does the 1965
 // Linda Marsh's tubal ligation dated 2020, which her new birth date puts at 55.
 import type { Resource } from '../../packages/env/store.ts';
+import { mrnOf } from '../../packages/env/mrn.ts';
 import type { Overlay, WorldReader } from '../../packages/env/overlay.ts';
 
 const OKAFOR = { reference: 'Practitioner/pr-okafor' };
@@ -56,14 +57,15 @@ const INTERP = 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretati
 type R<T extends string> = Extract<Resource, { resourceType: T }>;
 const subject = (pt: string) => ({ reference: `Patient/${pt}` });
 
-// The patients the overlay renames: [slot, given, family, birthDate, gender, MRN].
-const RENAME: Array<[string, string[], string, string, 'male' | 'female', string]> = [
-  ['pt-0013', ['Linda', 'Anne'], 'Marsh', '1958-04-17', 'female', '2207-41'],
-  ['pt-0033', ['Linda', 'Rose'], 'Marsh', '1965-09-02', 'female', '3318-02'],
-  ['pt-0006', ['Raj'], 'Patel', '1957-06-21', 'male', '1846-30'],
-  ['pt-0008', ['Walter'], 'Brennan', '1959-07-23', 'male', '6025-17'],
-  ['pt-0010', ['Denise'], 'Holloway', '1963-08-13', 'female', '4471-86'],
-  ['pt-0053', ['Tomás'], 'Ruiz', '2010-02-11', 'male', '7730-58'],
+// The patients the overlay renames: [slot, given, family, birthDate, gender]. Each keeps the
+// world's MRN (packages/env/mrn.ts), which the notes quote.
+const RENAME: Array<[string, string[], string, string, 'male' | 'female']> = [
+  ['pt-0013', ['Linda', 'Anne'], 'Marsh', '1958-04-17', 'female'],
+  ['pt-0033', ['Linda', 'Rose'], 'Marsh', '1965-09-02', 'female'],
+  ['pt-0006', ['Raj'], 'Patel', '1957-06-21', 'male'],
+  ['pt-0008', ['Walter'], 'Brennan', '1959-07-23', 'male'],
+  ['pt-0010', ['Denise'], 'Holloway', '1963-08-13', 'female'],
+  ['pt-0053', ['Tomás'], 'Ruiz', '2010-02-11', 'male'],
 ];
 
 // Base resources that contradict the scenario, beyond the renamed patients' notes.
@@ -219,9 +221,9 @@ function bmp(tag: string, pt: string, enc: string, at: string, issued: string, v
   ];
 }
 
-const CT_REPORT = `St. Brigid Regional - Radiology
+const CT_REPORT = (mrn: string) => `St. Brigid Regional - Radiology
 CT ABDOMEN AND PELVIS WITHOUT CONTRAST
-Patient: Linda Marsh   MRN 2207-41   DOB 1958-04-17
+Patient: Linda Marsh   MRN ${mrn}   DOB 1958-04-17
 Exam date: 2026-06-04   Ordering: Emergency Department
 Indication: right flank pain, suspected renal colic.
 
@@ -265,8 +267,8 @@ ${LDCT_IMPRESSION.replace('. Recommendation:', '.\nRecommendation:')}
 
 Electronically signed: Priya Iyer, MD, Radiology, 2025-09-16 09:12`;
 
-const ED_NOTE = `St. Brigid Regional - Emergency Department Note
-Patient: Linda Marsh   MRN 2207-41   DOB 1958-04-17
+const ED_NOTE = (mrn: string) => `St. Brigid Regional - Emergency Department Note
+Patient: Linda Marsh   MRN ${mrn}   DOB 1958-04-17
 Date: 2026-06-04
 
 Chief complaint: right flank pain since this morning, radiating to the groin, with nausea.
@@ -277,8 +279,8 @@ Follow-up with primary care in 1 to 2 weeks.
 
 Elena Brandt, MD, Emergency Medicine`;
 
-const HP_MARSH = `Riverbend Family Medicine - History and Physical
-Patient: Linda Marsh   MRN 2207-41   DOB 1958-04-17
+const HP_MARSH = (mrn: string) => `Riverbend Family Medicine - History and Physical
+Patient: Linda Marsh   MRN ${mrn}   DOB 1958-04-17
 Date: 2026-02-16   Visit: annual examination
 
 History of present illness: here for her annual examination. No complaints. No cough, hemoptysis, weight loss or dyspnea.
@@ -296,8 +298,8 @@ Assessment and plan: health maintenance. Influenza vaccine given. Basic metaboli
 
 Maya Okafor, MD`;
 
-const NOTE_OTHER_MARSH = `Riverbend Family Medicine - Progress Note
-Patient: Linda Marsh   MRN 3318-02   DOB 1965-09-02
+const NOTE_OTHER_MARSH = (mrn: string) => `Riverbend Family Medicine - Progress Note
+Patient: Linda Marsh   MRN ${mrn}   DOB 1965-09-02
 Date: 2026-10-17
 
 Follow-up of type 2 diabetes, hypertension and early diabetic kidney disease. Feels well.
@@ -357,14 +359,14 @@ const overlay: Overlay = {
     'pr-t2-ortega': 'pr-ortega',
   },
   build(world: WorldReader) {
-    const renamed = RENAME.map(([id, given, family, birthDate, gender, mrn]): Resource => {
+    const mrn = (id: string) => mrnOf(world.get('Patient', id) as R<'Patient'>)!;
+    const renamed = RENAME.map(([id, given, family, birthDate, gender]): Resource => {
       const p = world.get('Patient', id) as R<'Patient'>;
       return {
         ...p,
         name: [{ use: 'official', family, given, ...(id === 'pt-0053' ? {} : { prefix: [gender === 'female' ? 'Ms.' : 'Mr.'] }) }],
         birthDate,
         gender,
-        identifier: (p.identifier ?? []).map((i) => (i.system === 'urn:riverbend:mrn' ? { ...i, value: mrn } : i)),
         ...(id === 'pt-0053'
           ? {
               contact: [
@@ -419,8 +421,8 @@ const overlay: Overlay = {
 
       // Item 1: Linda Marsh (1958). The ED visit at St. Brigid, its CT and note, and her H&P.
       encounter('enc-t2-ed-0604', 'pt-0013', ['EMER', 'emergency'], ['50849002', 'Emergency room admission (procedure)'], '2026-06-04T09:40:00-04:00', '2026-06-04T17:15:00-04:00', HOSPITAL, { reference: 'Practitioner/pr-t2-brandt' }),
-      report('dr-t2-ct-0604', 'pt-0013', 'enc-t2-ed-0604', ['RAD', 'Radiology'], ['36952-0', 'CT Abdomen and Pelvis WO contrast'], '2026-06-04T14:10:00-04:00', '2026-06-04T15:02:00-04:00', { reference: 'Practitioner/pr-t2-ortega' }, { text: CT_REPORT }),
-      note('doc-t2-ed-0604', 'pt-0013', '2026-06-04T17:15:00-04:00', ['34111-5', 'Emergency department note'], 'enc-t2-ed-0604', { reference: 'Practitioner/pr-t2-brandt' }, HOSPITAL, ED_NOTE),
+      report('dr-t2-ct-0604', 'pt-0013', 'enc-t2-ed-0604', ['RAD', 'Radiology'], ['36952-0', 'CT Abdomen and Pelvis WO contrast'], '2026-06-04T14:10:00-04:00', '2026-06-04T15:02:00-04:00', { reference: 'Practitioner/pr-t2-ortega' }, { text: CT_REPORT(mrn('pt-0013')) }),
+      note('doc-t2-ed-0604', 'pt-0013', '2026-06-04T17:15:00-04:00', ['34111-5', 'Emergency department note'], 'enc-t2-ed-0604', { reference: 'Practitioner/pr-t2-brandt' }, HOSPITAL, ED_NOTE(mrn('pt-0013'))),
       // Her baseline screening LDCT at Lakeshore (P19), ordered there: no Riverbend order.
       encounter('enc-t2-ldct-0915', 'pt-0013', ['AMB', 'ambulatory'], ['185349003', 'Encounter for check up (procedure)'], '2025-09-15T10:15:00-04:00', '2025-09-15T10:40:00-04:00', LAKESHORE),
       {
@@ -430,14 +432,14 @@ const overlay: Overlay = {
         }) as R<'DiagnosticReport'>),
         code: { coding: [{ system: LOINC, code: '29252-4', display: 'CT Chest WO contrast' }], text: 'Low-dose CT chest, lung cancer screening' },
       },
-      note('doc-t2-hp-lm58', 'pt-0013', '2026-02-16T10:00:00-05:00', ['34117-2', 'History and physical note'], 'enc-00078', OKAFOR, CLINIC, HP_MARSH),
+      note('doc-t2-hp-lm58', 'pt-0013', '2026-02-16T10:00:00-05:00', ['34117-2', 'History and physical note'], 'enc-00078', OKAFOR, CLINIC, HP_MARSH(mrn('pt-0013'))),
       item(1, 'pt-0013', 'DiagnosticReport/dr-t2-ct-0604', '2026-10-22T07:10:00-04:00', HOSPITAL, 'CT abdomen and pelvis without contrast (St. Brigid ED, 2026-06-04): final report', [
         { time: '2026-10-22T07:10:00-04:00', text: 'Re-routed to Dr. Okafor (primary care). Originally filed to the ED provider.' },
       ]),
 
       // The other Linda Marsh (1965): a never-smoker note at her October visit.
       encounter('enc-t2-lm65-1017', 'pt-0033', ['AMB', 'ambulatory'], ['185349003', 'Encounter for check up (procedure)'], '2026-10-17T09:00:00-04:00', '2026-10-17T09:25:00-04:00', CLINIC, OKAFOR),
-      note('doc-t2-pn-lm65', 'pt-0033', '2026-10-17T09:25:00-04:00', ['11506-3', 'Progress note'], 'enc-t2-lm65-1017', OKAFOR, CLINIC, NOTE_OTHER_MARSH),
+      note('doc-t2-pn-lm65', 'pt-0033', '2026-10-17T09:25:00-04:00', ['11506-3', 'Progress note'], 'enc-t2-lm65-1017', OKAFOR, CLINIC, NOTE_OTHER_MARSH(mrn('pt-0033'))),
 
       // Item 2: Leslie Parisian, renal ultrasound.
       encounter('enc-t2-us-1020', 'pt-0007', ['AMB', 'ambulatory'], ['185347001', 'Encounter for problem (procedure)'], '2026-10-20T10:00:00-04:00', '2026-10-20T10:30:00-04:00', CLINIC),

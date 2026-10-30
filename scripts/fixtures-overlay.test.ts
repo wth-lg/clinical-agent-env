@@ -1,18 +1,16 @@
 // Overlay isolation (packages/env/overlay.ts) as fixtures:build applies it: each overlay reads
 // the base and setting only, never what another overlay tried to write.
 import { describe, expect, it } from 'vitest';
-import { applyOverlays, type Overlay, type WorldReader } from '../packages/env/overlay.ts';
+import { applyOverlays, TASKS, type Overlay, type WorldReader } from '../packages/env/overlay.ts';
 import type { Resource } from '../packages/env/store.ts';
 import { SETTING, SETTING_LINT } from '../packages/env/world.ts';
 
 describe('overlays', () => {
+  // Every slot, and pt-0060, a patient no task holds.
   const base: Resource[] = [
-    { resourceType: 'Patient', id: 'pt-0040', name: [{ family: 'Base' }] },
-    ...Object.values({ T1: ['pt-0002', 'pt-0003'], T2: ['pt-0006', 'pt-0007', 'pt-0008', 'pt-0010', 'pt-0013', 'pt-0016', 'pt-0033', 'pt-0053'] })
-      .flat()
-      .map((id): Resource => ({ resourceType: 'Patient', id })),
-    ...['pt-0009', 'pt-0011', 'pt-0014', 'pt-0017', 'pt-0018', 'pt-0019', 'pt-0020', 'pt-0021', 'pt-0022', 'pt-0023', 'pt-0024', 'pt-0025', 'pt-0034', 'pt-0035']
-      .concat(['pt-0004', 'pt-0005', 'pt-0012', 'pt-0015', 'pt-0026', 'pt-0027', 'pt-0028', 'pt-0029', 'pt-0030', 'pt-0031'])
+    { resourceType: 'Patient', id: 'pt-0060', name: [{ family: 'Base' }] },
+    ...Object.values(TASKS)
+      .flatMap((t) => t.slots)
       .map((id): Resource => ({ resourceType: 'Patient', id })),
   ];
 
@@ -21,7 +19,7 @@ describe('overlays', () => {
     const t1: Overlay = {
       task: 'T1',
       build(world) {
-        const sneak: Resource = { resourceType: 'Communication', id: 'comm-t1-x', status: 'completed', subject: { reference: 'Patient/pt-0040' } };
+        const sneak: Resource = { resourceType: 'Communication', id: 'comm-t1-x', status: 'completed', subject: { reference: 'Patient/pt-0060' } };
         const put = (world as WorldReader & { put?: unknown }).put;
         if (typeof put === 'function') {
           try {
@@ -32,7 +30,7 @@ describe('overlays', () => {
           }
         }
         try {
-          (world.get('Patient', 'pt-0040') as { name: unknown }).name = [{ family: 'Changed' }];
+          (world.get('Patient', 'pt-0060') as { name: unknown }).name = [{ family: 'Changed' }];
           attempts.push('mutation ran');
         } catch {
           attempts.push('mutation threw');
@@ -44,7 +42,7 @@ describe('overlays', () => {
     const t2: Overlay = {
       task: 'T2',
       build(world) {
-        seen = [world.get('Communication', 'comm-t1-x'), (world.get('Patient', 'pt-0040') as { name?: unknown } | undefined)?.name, world.size];
+        seen = [world.get('Communication', 'comm-t1-x'), (world.get('Patient', 'pt-0060') as { name?: unknown } | undefined)?.name, world.size];
         return {};
       },
     };
@@ -62,7 +60,7 @@ describe('overlays', () => {
 
   it("numbers a planted resource inside its patient's block by date and points every reference and lint entry at it", () => {
     const at = (id: string, patient: string, date: string) => obs(id, { subject: { reference: `Patient/${patient}` }, effectiveDateTime: date });
-    const baseObs = [at('obs-00001', 'pt-0002', '2026-01-01'), at('obs-00002', 'pt-0002', '2026-09-01'), at('obs-00003', 'pt-0040', '2026-02-01')];
+    const baseObs = [at('obs-00001', 'pt-0002', '2026-01-01'), at('obs-00002', 'pt-0002', '2026-09-01'), at('obs-00003', 'pt-0060', '2026-02-01')];
     const { resources, lint, ids, synthea } = one(
       {
         build: () => ({

@@ -19,6 +19,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { fhirOrder } from '../../packages/env/canonical.ts';
 import { clock } from '../../packages/env/clock.ts';
+import { TASKS } from '../../packages/env/overlay.ts';
 import { HOSPITAL_PROCEDURES } from '../../packages/env/profile.ts';
 import { Store, type Resource } from '../../packages/env/store.ts';
 import { READ_TOOLS, type ReadContext } from '../../packages/env/tools/read/index.ts';
@@ -26,7 +27,7 @@ import { callTool } from '../../packages/env/tools/registry.ts';
 import { isPlanted } from '../../tasks/planted.ts';
 import { gunzip } from '../fixtures-lib.ts';
 import { repoRoot } from './helpers.ts';
-import { SEMANTIC_TAG, scoreTells, type TypeScore } from './tells.ts';
+import { idForm, SEMANTIC_TAG, scoreTells, type TypeScore } from './tells.ts';
 
 type R = Record<string, unknown> & { resourceType: string; id: string };
 const world = gunzip(readFileSync(join(repoRoot, 'fixtures/world.ndjson.gz')))
@@ -294,6 +295,31 @@ describe("no record carries Synthea's text fingerprint", () => {
 
   it('no attachment text is in markdown', () => {
     expect(hits((at, v) => at.endsWith('data') && /^#+ /m.test(decode(v))).slice(0, 20)).toEqual([]);
+  });
+});
+
+// The MRN (builder-208, pilot-3): the task overlays gave their patients an MRN of the form NNNN-NN
+// and the cohort's carried 1000NN, its id number, so the form marked seven task patients. Every
+// Patient's MRN now comes from one rule (packages/env/mrn.ts), whoever writes the patient.
+describe('every MRN has one form, and none marks a task patient', () => {
+  const MRN_SYSTEM = 'urn:riverbend:mrn';
+  const slots = new Set(Object.values(TASKS).flatMap((t) => t.slots as readonly string[]));
+  const pts = world.filter((r) => r.resourceType === 'Patient');
+  const mrnOf = (r: R) => ((r.identifier ?? []) as Array<{ system?: string; value?: string }>).filter((i) => i.system === MRN_SYSTEM).map((i) => i.value ?? '');
+
+  it('every Patient has one MRN, unique in the world, of the form 9999-99, and it does not carry its id number', () => {
+    expect(pts.filter((r) => mrnOf(r).length !== 1).map((r) => r.id)).toEqual([]);
+    const all = pts.map((r) => mrnOf(r)[0]!);
+    expect(new Set(all).size).toBe(all.length);
+    expect([...new Set(all.map(idForm))]).toEqual(['9999-99']);
+    expect(pts.filter((r) => mrnOf(r)[0]!.replace('-', '').includes(r.id.slice(3))).map((r) => `${r.id} ${mrnOf(r)[0]}`)).toEqual([]);
+  });
+
+  it('no identifier form (IDF) is held only by task patients, or only by the others', () => {
+    const forms = (keep: (r: R) => boolean) => new Set(pts.filter(keep).flatMap((r) => mrnOf(r).map(idForm)));
+    const task = forms((r) => slots.has(r.id));
+    const other = forms((r) => !slots.has(r.id));
+    expect({ taskOnly: [...task].filter((f) => !other.has(f)), otherOnly: [...other].filter((f) => !task.has(f)) }).toEqual({ taskOnly: [], otherOnly: [] });
   });
 });
 

@@ -34,15 +34,20 @@ import { Store } from './store.ts';
 // Slots are picked so a task's patients can keep their Synthea charts with only a name and
 // birth date patched: T1 an elderly man, T2 its inbox patients (one a teenager), T3 a
 // 12-patient screening panel aged 46-75, T4 and T5 older men, T6 the message senders.
+// W1-0 (plan-amendment-worklist.md W1) sizes each set to its task's item-class probe, 51 of the
+// 60 patients, every current slot kept: T1 9, T2 8, T3 17, T4 4, T5 7, T6 6. The added slots are
+// adults (no child's chart), the ones with the most active orders and problems to the medication
+// reviews (T1, T4), the oldest to the screening panel (T3); an overlay patches their name and birth
+// date as it needs. pt-0051, pt-0052 and pt-0054..pt-0060 stay free.
 export const TASKS = {
-  T1: { slug: 'renal-dose-review', slots: ['pt-0002', 'pt-0003'] },
+  T1: { slug: 'renal-dose-review', slots: ['pt-0001', 'pt-0002', 'pt-0003', 'pt-0038', 'pt-0039', 'pt-0040', 'pt-0041', 'pt-0043', 'pt-0045'] },
   T2: { slug: 'results-inbox', slots: ['pt-0006', 'pt-0007', 'pt-0008', 'pt-0010', 'pt-0013', 'pt-0016', 'pt-0033', 'pt-0053'] },
   T3: {
     slug: 'crc-care-gap',
-    slots: ['pt-0009', 'pt-0011', 'pt-0014', 'pt-0017', 'pt-0018', 'pt-0019', 'pt-0020', 'pt-0021', 'pt-0022', 'pt-0023', 'pt-0024', 'pt-0025', 'pt-0034', 'pt-0035'],
+    slots: ['pt-0009', 'pt-0011', 'pt-0014', 'pt-0017', 'pt-0018', 'pt-0019', 'pt-0020', 'pt-0021', 'pt-0022', 'pt-0023', 'pt-0024', 'pt-0025', 'pt-0032', 'pt-0034', 'pt-0035', 'pt-0036', 'pt-0037'],
   },
-  T4: { slug: 'discharge-medrec', slots: ['pt-0004', 'pt-0005'] },
-  T5: { slug: 'contrast-ct-prep', slots: ['pt-0012', 'pt-0015'] },
+  T4: { slug: 'discharge-medrec', slots: ['pt-0004', 'pt-0005', 'pt-0042', 'pt-0044'] },
+  T5: { slug: 'contrast-ct-prep', slots: ['pt-0012', 'pt-0015', 'pt-0046', 'pt-0047', 'pt-0048', 'pt-0049', 'pt-0050'] },
   T6: { slug: 'message-queue', slots: ['pt-0026', 'pt-0027', 'pt-0028', 'pt-0029', 'pt-0030', 'pt-0031'] },
 } as const satisfies Record<string, { slug: string; slots: readonly string[] }>;
 

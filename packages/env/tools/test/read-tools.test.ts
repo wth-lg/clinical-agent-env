@@ -5,6 +5,7 @@ import type { DiagnosticReport, DocumentReference, Observation, Patient, Procedu
 import { describe, expect, it } from 'vitest';
 import { clock, NOW } from '../../clock.ts';
 import { parseNdjson } from '../../fixture-source.ts';
+import { mrn } from '../../mrn.ts';
 import { Store } from '../../store.ts';
 import { INBOX_QUEUE_SYSTEM, READ_TOOLS, type CatalogEntry, type Policy, type ReadContext } from '../read/index.ts';
 import { approxTokens, callTool, collapseWhitespace, definitions, exposure, RESULT_TOKEN_CAP, type ToolResult } from '../registry.ts';
@@ -150,10 +151,10 @@ describe('get_context', () => {
 
 describe('search_patients', () => {
   it('finds by MRN, by name words in any case and by birth date', () => {
-    const byMrn = ok(call('search_patients', { mrn: '100001' }));
+    const byMrn = ok(call('search_patients', { mrn: mrn('pt-0001') }));
     expect(byMrn.entries).toEqual([
       // Every clinic patient has the clinic PCP since the world hygiene pass (plan P17j JT2).
-      { resourceType: 'Patient', id: 'pt-0001', patient: 'Patient/pt-0001', name: 'Peter Prosacco', birthDate: '1921-06-10', gender: 'male', mrn: '100001', pcp: 'Practitioner/pr-okafor' },
+      { resourceType: 'Patient', id: 'pt-0001', patient: 'Patient/pt-0001', name: 'Peter Prosacco', birthDate: '1921-06-10', gender: 'male', mrn: mrn('pt-0001'), pcp: 'Practitioner/pr-okafor' },
     ]);
     const byName = ok(call('search_patients', { name: 'prosacco PETER' }));
     expect((byName.entries as Array<{ patient: string }>).map((e) => e.patient)).toEqual(['Patient/pt-0001']);
@@ -161,7 +162,7 @@ describe('search_patients', () => {
     expect((byBirth.entries as Array<{ patient: string }>).map((e) => e.patient)).toContain('Patient/pt-0001');
   });
   it('exposes the patients its rows show demographics for (name, birth date, gender, MRN)', () => {
-    const r = call('search_patients', { mrn: '100001' });
+    const r = call('search_patients', { mrn: mrn('pt-0001') });
     expect(r.exposed_ids).toEqual(['Patient/pt-0001']);
     // The row names its PCP (JT2 gives every clinic patient one): referenced, not exposed.
     expect(r.referenced_ids).toEqual(['Practitioner/pr-okafor']);

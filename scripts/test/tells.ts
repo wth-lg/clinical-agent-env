@@ -35,6 +35,8 @@
 //   NOCOMP BRACE MGML MGCAP RXFORM  a note's 'No complaints', a brace or bracket, a strength in mg/ml
 //            or MG, a drug form as RxNorm names it ('oral tablet')
 //   SIG      a sig's first word (a dose, 'Take' or 'Use', other) and whether it gives a dose in units
+//   identifier form (builder-208 pilot-3, builder-209):
+//   IDF      an identifier value's form, digits as 9 and letters as A ('6229-37' is 9999-99)
 import { Buffer } from 'node:buffer';
 
 export type R = Record<string, unknown> & { resourceType: string; id: string };
@@ -108,6 +110,9 @@ const LABELLED = /^[A-Z][A-Za-z ]{1,25}:/;
 const WHO = /^[A-Z][a-z]+(?: [A-Z][a-z]+)*(?:, \d+ (?:y\/o|mo))? [MF]\.$/;
 const SIGNER = /\n\n[A-Z][a-z]+(?: [A-Z][a-z.-]+)+, (MD|NP|PA-C|DO|RN|PharmD)\s*$/;
 
+// An identifier value's form: each digit 9, each letter A, every other character kept.
+export const idForm = (v: string): string => v.replace(/\d/g, '9').replace(/[A-Za-z]/g, 'A');
+
 const ba = (tp: number, fp: number, p: number, n: number) => Math.max((tp / p + 1 - fp / n) / 2, (1 - tp / p + fp / n) / 2);
 
 // Score every type that has planted and generated records in the task charts.
@@ -166,6 +171,7 @@ export function scoreTells(world: readonly R[], isPlanted: (id: string) => boole
           f.add(`TY:${at}=${m[1]}`); f.add(`TY26:${at}=${m[1]! >= '2026'}`);
         }
       }
+      if (typeof v === 'string' && /(^|\.)identifier\.value$/.test(at)) f.add(`IDF:${at}=${idForm(v)}`);
       if (typeof v === 'string' && at.endsWith('data')) {
         const t = Buffer.from(v, 'base64').toString('utf8');
         f.add(`DL:${at}=${t.length < 200 ? '<200' : t.length < 800 ? '<800' : t.length < 2000 ? '<2k' : '2k+'}`); f.add(`DN:${at}=${t.includes('\n') ? 'nl' : 'nonl'}`); f.add(`DLINES:${at}=${Math.min(10, t.split('\n').length)}`);

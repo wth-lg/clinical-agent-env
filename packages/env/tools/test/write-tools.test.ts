@@ -51,7 +51,9 @@ const inboxTask = (id: string, queue: string, patient: string, status: Task['sta
 const INBOX = [inboxTask('task-w-1', 'results', 'pt-0001'), inboxTask('task-w-2', 'messages', 'pt-0001'), inboxTask('task-w-3', 'results', 'pt-0001', 'completed')];
 // A test-only on-hold request and an entered-in-error allergy, so every transition has a subject.
 const ON_HOLD: MedicationRequest = { ...(base.find((r) => r.id === 'mr-00005') as MedicationRequest), id: 'mr-w-hold', status: 'on-hold' };
-const { clinicalStatus: _active, ...ALG_1 } = base.find((r) => r.id === 'alg-00001') as AllergyIntolerance;
+// pt-0009's first allergy, by patient: world ids move when the world is rebuilt.
+const { clinicalStatus: _active, ...ALG_1 } = base.find((r) => r.resourceType === 'AllergyIntolerance' && r.patient.reference === 'Patient/pt-0009') as AllergyIntolerance;
+const ALG_ID = ALG_1.id!;
 const EIE_ALLERGY: AllergyIntolerance = {
   ...ALG_1,
   id: 'alg-w-eie',
@@ -329,13 +331,13 @@ describe('record_allergy', () => {
   });
   it('updates an existing allergy in place and refuses an entered-in-error one', async () => {
     const c = fresh();
-    const r = callTool(TOOLS, 'record_allergy', { ...allergy, patient: 'pt-0009', update_id: 'alg-00001', clinical_status: 'inactive', reactions: [] }, c);
-    expect(ok(r)).toEqual({ allergy_intolerance: 'AllergyIntolerance/alg-00001' });
-    expect(r.written_ids).toEqual(['AllergyIntolerance/alg-00001', 'Provenance/prov-t0001']);
-    const a = get<AllergyIntolerance>(c, 'AllergyIntolerance/alg-00001');
+    const r = callTool(TOOLS, 'record_allergy', { ...allergy, patient: 'pt-0009', update_id: ALG_ID, clinical_status: 'inactive', reactions: [] }, c);
+    expect(ok(r)).toEqual({ allergy_intolerance: `AllergyIntolerance/${ALG_ID}` });
+    expect(r.written_ids).toEqual([`AllergyIntolerance/${ALG_ID}`, 'Provenance/prov-t0001']);
+    const a = get<AllergyIntolerance>(c, `AllergyIntolerance/${ALG_ID}`);
     expect(a.clinicalStatus?.coding?.[0]?.code).toBe('inactive');
     expect(a.reaction).toBeUndefined();
-    expect(await rejected(c, 'record_allergy', { ...allergy, update_id: 'alg-00001' })).toMatchObject({ code: 'INVALID_INPUT', field: 'update_id' });
+    expect(await rejected(c, 'record_allergy', { ...allergy, update_id: ALG_ID })).toMatchObject({ code: 'INVALID_INPUT', field: 'update_id' });
     expect(await rejected(c, 'record_allergy', { ...allergy, patient: 'pt-0009', update_id: 'alg-w-eie' })).toMatchObject({ code: 'CONFLICT', field: 'update_id' });
     expect(await rejected(c, 'record_allergy', { ...allergy, verification: 'entered-in-error', clinical_status: 'active' })).toMatchObject({ code: 'INVALID_INPUT', field: 'clinical_status' });
     expect(await rejected(c, 'record_allergy', { ...allergy, substance_code: 'IMG-CT-CHEST-WO' })).toMatchObject({ code: 'INVALID_INPUT', field: 'substance_code' });
