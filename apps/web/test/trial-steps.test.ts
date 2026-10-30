@@ -23,6 +23,6 @@ describe('internalErrorRow', () => {
 
   it('finds the first tool call that failed with an internal error, at its step', () => {
     const row = internalErrorRow(trajectoryOf(parseTrajectory(text)).rows);
-    expect(row).toMatchObject({ kind: 'tool', step: 3, error: 'INTERNAL', name: 'fhir_search' });
+    expect(row).toMatchObject({ kind: 'tool', step: 3, error: 'INTERNAL', name: 'search_notes' });
   });
 });
