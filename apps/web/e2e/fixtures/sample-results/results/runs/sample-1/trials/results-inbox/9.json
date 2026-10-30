@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:results-inbox:9",
   "task_id": "results-inbox",
-  "task_version": "a99e1e85421e6ef0c7ec8cf744d5ec0c3ea82af522b1cbb8b8f82c706e9dc8a4",
-  "env_version": "1cf7b8f08c6b05b92ee54c6476972148ff39237827fb1cb9a4f4d594f7f3b154",
-  "grader_task_version": "6be86c5cf6a1c401188250b0d2c86a30a1070b8fafec85194ab778d520c98d32",
-  "fixture_hash": "95d2f5194846a473cd83f112ae92618083e25e31c57d68f4fe9eea5bada20991",
+  "task_version": "156bbe192631bb2cbae30e5b5262aaa7b3da34cdaf75ce3de455c2e37e0bf9a7",
+  "env_version": "c345bdcc2cb0b83fab569aa794b12c87b7cc0e9e5546f3da3eed144ca38ddd09",
+  "grader_task_version": "4c1749ecb419191127ff6e6d523e143b39cd82848529d005b04d2dbeee8da96f",
+  "fixture_hash": "72a5695ffadc2af6d65de536961a330023163910f7efc2e177c8537403a2cbd9",
   "state_hash": {
-    "initial": "95d2f5194846a473cd83f112ae92618083e25e31c57d68f4fe9eea5bada20991",
-    "final": "ba132ab7fca8289dddfa5bc5b5f9df15adacf966beb7250f307ce149b1fe3356",
-    "replay_final": "ba132ab7fca8289dddfa5bc5b5f9df15adacf966beb7250f307ce149b1fe3356"
+    "initial": "72a5695ffadc2af6d65de536961a330023163910f7efc2e177c8537403a2cbd9",
+    "final": "06340bf23dd35cd3a3b2d39ba0b976a2c8d9911e1d9fe1b16d05f58849d24bc6",
+    "replay_final": "06340bf23dd35cd3a3b2d39ba0b976a2c8d9911e1d9fe1b16d05f58849d24bc6"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -96,11 +96,11 @@
         "new_gi_orders": [],
         "linked": [
           "Communication/comm-t0007",
-          "ServiceRequest/sr-t2-gi-1020"
+          "ServiceRequest/sr-00001"
         ]
       },
       "ids": [
-        "Task/task-t2-inbox-3"
+        "Task/task-00001"
       ]
     },
     {
@@ -550,7 +550,7 @@
       "evidence": {
         "held": [],
         "live_ace_or_arb": [
-          "MedicationRequest/mr-t2-lisinopril"
+          "MedicationRequest/mr-00404"
         ],
         "escalated": [],
         "notices": [
@@ -897,11 +897,11 @@
     "decisive_step": 22,
     "exposure": [
       {
-        "id": "DiagnosticReport/dr-t2-ct-0604",
+        "id": "DiagnosticReport/dr-00511",
         "first_exposed_step": 2
       },
       {
-        "id": "DiagnosticReport/dr-t2-ldct-0915",
+        "id": "DiagnosticReport/dr-00510",
         "first_exposed_step": 16,
         "first_shown_step": 16,
         "first_seen_step": 15

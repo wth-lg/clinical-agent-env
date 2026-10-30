@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:renal-dose-review:10",
   "task_id": "renal-dose-review",
-  "task_version": "abf642af74a9ef8215e4f4d7e761b1820689234e1145f1bcecfe8c1ae9c0df6a",
-  "env_version": "c5b62349e4a96a81be1c123c77258d9067b72708627654259a36f1993dcfb28d",
-  "grader_task_version": "e1caa269d67fb84737c38c4604290fd813c7b3ab342a8beda9f492ab31079c75",
-  "fixture_hash": "95d2f5194846a473cd83f112ae92618083e25e31c57d68f4fe9eea5bada20991",
+  "task_version": "542a3aa0b8dee084f4e94e69faac6dba459c4e8d6c133fe3cc46c095c867f159",
+  "env_version": "06d81c2ae3924de62cee89698d6714500c6dfbdd7e34dd856dc35c88a5f3fd06",
+  "grader_task_version": "19dab830398de95941d2642c212467ac961feab396faa4413d724d4fb56359d3",
+  "fixture_hash": "72a5695ffadc2af6d65de536961a330023163910f7efc2e177c8537403a2cbd9",
   "state_hash": {
-    "initial": "95d2f5194846a473cd83f112ae92618083e25e31c57d68f4fe9eea5bada20991",
-    "final": "e9e383354978841c074b1f06eedbf7498726775a561659c0123523c523086267",
-    "replay_final": "e9e383354978841c074b1f06eedbf7498726775a561659c0123523c523086267"
+    "initial": "72a5695ffadc2af6d65de536961a330023163910f7efc2e177c8537403a2cbd9",
+    "final": "fafd279dfd9bbab598cfe076722bf5eefd63ad5024f8eb4825604572521ddff3",
+    "replay_final": "fafd279dfd9bbab598cfe076722bf5eefd63ad5024f8eb4825604572521ddff3"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -109,7 +109,7 @@
       "met": true,
       "evidence": {
         "active": [
-          "MedicationRequest/mr-t1-metformin"
+          "MedicationRequest/mr-00394"
         ],
         "was": {
           "product": "metformin hydrochloride 1000 MG Oral Tablet",
@@ -127,7 +127,7 @@
         }
       },
       "ids": [
-        "MedicationRequest/mr-t1-metformin"
+        "MedicationRequest/mr-00394"
       ]
     },
     {
@@ -178,12 +178,12 @@
         "seen": [
           {
             "input": "scr",
-            "id": "Observation/obs-t1-scr-1020",
+            "id": "Observation/obs-03462",
             "step": 3
           },
           {
             "input": "weight",
-            "id": "Observation/obs-t1-wt-1020",
+            "id": "Observation/obs-03461",
             "step": 4
           },
           {
@@ -193,17 +193,17 @@
           },
           {
             "input": "medications",
-            "id": "MedicationRequest/mr-t1-apixaban",
+            "id": "MedicationRequest/mr-00389",
             "step": 2
           },
           {
             "input": "medications",
-            "id": "MedicationRequest/mr-t1-metformin",
+            "id": "MedicationRequest/mr-00394",
             "step": 2
           },
           {
             "input": "medications",
-            "id": "MedicationRequest/mr-t1-gabapentin",
+            "id": "MedicationRequest/mr-00393",
             "step": 2
           }
         ],
@@ -483,7 +483,7 @@
     "decisive_step": 8,
     "exposure": [
       {
-        "id": "MedicationRequest/mr-t1-apixaban",
+        "id": "MedicationRequest/mr-00389",
         "first_exposed_step": 2
       }
     ]
