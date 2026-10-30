@@ -15,6 +15,22 @@ function stripCspInDev(): Plugin {
   };
 }
 
+// `vite dev` has no data/ (the build writes it, build/copy-data.ts), and its SPA fallback would
+// answer data/index.json with index.html, which results.ts reads as a failed load. A 404 for every
+// data/ path is what results.ts reads as no results committed.
+function noDataInDev(): Plugin {
+  return {
+    name: 'no-data-in-dev',
+    apply: 'serve',
+    configureServer(server) {
+      server.middlewares.use(`${server.config.base}data/`, (_req, res) => {
+        res.statusCode = 404;
+        res.end();
+      });
+    },
+  };
+}
+
 // The build writes APP_CSP (csp.ts) into index.html right after its charset meta, so the CSP is
 // written once; the test pages keep their own CSP meta, and `vite dev` has none, as above. The
 // meta is spliced in as text: Vite's tag injection would escape each ' as &#39;, and the runner
@@ -36,7 +52,7 @@ function appCsp(): Plugin {
 // the Pages build (`--mode pages`, .github/workflows/pages.yml) leaves them out of the artifact.
 export default defineConfig(({ mode }) => ({
   base: '/clinical-agent-env/',
-  plugins: [react(), tailwindcss(), stripCspInDev(), appCsp(), copyDataPlugin()],
+  plugins: [react(), tailwindcss(), stripCspInDev(), noDataInDev(), appCsp(), copyDataPlugin()],
   build: {
     rollupOptions: {
       input: {
