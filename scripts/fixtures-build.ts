@@ -15,8 +15,8 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { NOW, NOW_MS } from '../packages/env/clock.ts';
 import { parseNdjson } from '../packages/env/fixture-source.ts';
 import { stateHash } from '../packages/env/hash.ts';
-import { applyOverlays, TASKS, type Overlay } from '../packages/env/overlay.ts';
-import { profileBase, profileWorld } from '../packages/env/profile.ts';
+import { applyOverlays, TASKS, type Overlay, type World } from '../packages/env/overlay.ts';
+import { profileBase, profileRecords, profileWorld, syntheaForms } from '../packages/env/profile.ts';
 import { Store } from '../packages/env/store.ts';
 import { RESOURCE_TYPES, SETTING, SETTING_LINT } from '../packages/env/world.ts';
 import { gunzip, gzip, hygiene, sha256, toNdjson, type HygieneReport } from './fixtures-lib.ts';
@@ -138,7 +138,9 @@ ${entries(ids, '  ')}};
 // The clinic PCP every clinic patient without one gets (packages/env/world.ts STAFF: the user).
 const CLINIC_PCP = 'pr-okafor';
 
-export async function build(outDir: string): Promise<{ stateHash: string; resources: number; hygiene: HygieneReport }> {
+// The world as fixtures:build assembles it: hygiene, the base profile, the overlays, the world
+// profile. fixtures:lint takes its specs from here, so their ids are the committed world's.
+export async function assembleWorld(): Promise<{ world: World; overlays: Overlay[]; overlayFiles: string[]; baseMeta: { ndjson_sha256: string; resources: number }; report: HygieneReport }> {
   const baseBytes = readFileSync(join(repo, BASE));
   const baseMeta = JSON.parse(readFileSync(join(repo, BASE_META), 'utf8')) as { ndjson_sha256: string; resources: number };
   const baseSha = sha256(gunzip(baseBytes));
@@ -150,12 +152,30 @@ export async function build(outDir: string): Promise<{ stateHash: string; resour
   const base = profileBase(cleaned, new Set(Object.values(TASKS).flatMap((t) => t.slots)));
 
   const overlayFiles = taskOverlays();
-  const overlays = await loadOverlays(overlayFiles);
+  // Every resource an overlay writes takes Synthea's time forms (packages/env/profile.ts syntheaForms).
+  const overlays = (await loadOverlays(overlayFiles)).map((o): Overlay => ({
+    ...o,
+    build: (reader) => {
+      const edits = o.build(reader);
+      return edits.put ? { ...edits, put: edits.put.map(syntheaForms) } : edits;
+    },
+  }));
   const world = applyOverlays(base, SETTING, SETTING_LINT, overlays);
   // After the overlays, a clinic patient with no PCP gets the clinic's (JT2).
   world.resources = world.resources.map((r) => (r.resourceType === 'Patient' && !(r.generalPractitioner?.length) ? { ...r, generalPractitioner: [{ reference: `Practitioner/${CLINIC_PCP}` }] } : r));
-  // ...and the fields every record of a type carries, on every resource.
+  // ...the fields every record of a type carries, on every resource; the occasional fields, at one
+  // rate in every chart; and the derived fields of what those added.
   world.resources = profileWorld(world.resources);
+  const plantedIds = new Set(Object.values(world.ids).flatMap((ids) => Object.values(ids)));
+  const baseIdOf = new Map(Object.entries(world.synthea).map(([baseId, id]) => [id, baseId]));
+  const planted = new Set(world.resources.filter((r) => plantedIds.has(r.id!)).map((r) => `${r.resourceType}/${r.id}`));
+  const stable = new Map(world.resources.flatMap((r) => (baseIdOf.has(r.id!) ? [[`${r.resourceType}/${r.id}`, baseIdOf.get(r.id!)!] as const] : [])));
+  world.resources = profileWorld(profileRecords(world.resources, planted, stable));
+  return { world, overlays, overlayFiles, baseMeta, report };
+}
+
+export async function build(outDir: string): Promise<{ stateHash: string; resources: number; hygiene: HygieneReport }> {
+  const { world, overlays, overlayFiles, baseMeta, report } = await assembleWorld();
 
   // The Store admits only resources the hash and search can handle.
   const store = new Store(world.resources);

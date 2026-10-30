@@ -560,9 +560,9 @@ describe('exposure rule', () => {
     ['fhir_search', { resource_type: 'DocumentReference', patient: 'pt-0001', count: 5 }, [], []],
     ['fhir_read', { resource_type: 'Patient', id: 'pt-0001' }, ['Patient/pt-0001'], ['Patient']],
     ['fhir_read', { resource_type: 'DocumentReference', id: 'doc-00001' }, ['DocumentReference/doc-00001'], ['DocumentReference']],
-    // pt-0001's signed addendum (packages/env/profile.ts) is short enough that its excerpt is the
-    // whole note, so it is exposed; the visit notes are excerpts only.
-    ['search_notes', { query: 'patient', patient: 'pt-0001' }, ['DocumentReference/doc-00004'], ['DocumentReference']],
+    // pt-0001's printed PHQ-2 form (packages/env/profile.ts) is short enough that its excerpt is
+    // the whole report, so it is exposed; the visit notes are excerpts only.
+    ['search_notes', { query: 'patient', patient: 'pt-0001' }, ['DiagnosticReport/dr-00007'], ['DiagnosticReport']],
     ['read_policy', {}, [], []],
     ['lookup_catalog', { query: 'metformin', kind: 'medication' }, [], []],
     ['list_inbox', { queue: 'results' }, [], []],

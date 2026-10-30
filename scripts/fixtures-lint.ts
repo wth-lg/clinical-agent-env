@@ -11,15 +11,11 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { parseNdjson } from '../packages/env/fixture-source.ts';
 import { lintWorld, type LintSource } from '../packages/env/lint/index.ts';
-import { applyOverlays } from '../packages/env/overlay.ts';
-import { SETTING, SETTING_LINT } from '../packages/env/world.ts';
-import { loadOverlays, repo, taskOverlays } from './fixtures-build.ts';
+import { assembleWorld, repo } from './fixtures-build.ts';
 
 async function worldTarget(): Promise<{ label: string; bytes: Uint8Array; sources: LintSource[] }> {
-  const overlays = await loadOverlays(taskOverlays());
   // Only the specs are taken from here; the resources linted are the committed world's.
-  const base = await parseNdjson(readFileSync(join(repo, 'fixtures/synthea/base.ndjson.gz')));
-  const { lint } = applyOverlays(base, SETTING, SETTING_LINT, overlays);
+  const { lint } = (await assembleWorld()).world;
   return { label: 'fixtures/world.ndjson.gz', bytes: readFileSync(join(repo, 'fixtures/world.ndjson.gz')), sources: lint };
 }
 
