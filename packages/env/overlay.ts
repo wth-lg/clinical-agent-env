@@ -26,7 +26,7 @@
 // planted resource by key through tasks/<id>/ids.ts and a base one through
 // packages/env/synthea-ids.ts.
 import type { Resource } from '@medplum/fhirtypes';
-import { dataText } from './attachment.ts';
+import { dataBytes, dataText, textType } from './attachment.ts';
 import type { LintSource, LintSpec } from './lint/index.ts';
 import { NAME_SHAPED, numberedPrefix, worldIds } from './renumber.ts';
 import { Store } from './store.ts';
@@ -94,13 +94,19 @@ function mapStrings<T>(value: T, f: (s: string) => string): T {
 
 // The first registry key in any string of value, an attachment's data decoded when it is base64 text,
 // whatever its content type, and base64 text inside that too (verifier P17i W0 M1: a key hidden in
-// base64 note text reached the world past the string check; W0-1b F3 and r2 F5).
+// base64 note text reached the world past the string check; W0-1b F3 and r2 F5). Text data that is
+// not UTF-8 (a text/* type, or none) is read byte for byte as well (W0-1b r3 F3).
 function firstKey(value: unknown): string | null {
   if (typeof value === 'string') return KEY_IN_TEXT.exec(value)?.[1] ?? null;
   if (Array.isArray(value)) for (const v of value) { const k = firstKey(v); if (k !== null) return k; }
   else if (value !== null && typeof value === 'object') {
-    for (let text = dataText((value as { data?: unknown }).data), depth = 0; text !== null && depth < 4; text = dataText(text.trim()), depth++) {
+    const { data, contentType } = value as { data?: unknown; contentType?: unknown };
+    for (let text = dataText(data), depth = 0; text !== null && depth < 4; text = dataText(text.trim()), depth++) {
       const k = firstKey(text);
+      if (k !== null) return k;
+    }
+    if (contentType === undefined || contentType === null || textType(contentType)) {
+      const k = firstKey(dataBytes(data) ?? '');
       if (k !== null) return k;
     }
     for (const [k, v] of Object.entries(value)) { const f = firstKey(k) ?? firstKey(v); if (f !== null) return f; }

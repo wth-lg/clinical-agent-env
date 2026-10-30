@@ -17,6 +17,16 @@
 //   ENC      the record against its visit: same day, same instant, inside the visit, no visit
 //   O        order in the chart: in the newest tenth, the last three, the newest; newest of its
 //            code; how many records share its code; age
+//   text shape (verifier P17i W0-1b r3 probe3 and F2, builder-206), what a reader sees in the words:
+//   SEM SEMT  a SNOMED semantic tag ('(disorder)', '(procedure)', ...) in a display or text, by path,
+//            and in any of them; SEMD the same in an attachment's text
+//   TCASE TBRK  a display or text's first letter case, and a bracketed part ('[tylenol]')
+//   MD MDB   an attachment's markdown heading ('# Plan') and '- ' list lines
+//   DHEAD DLEAD  an attachment's first line (a bare date, 'heading - place', other), and a leading
+//            blank line
+//   SIGNED HHMM DIGITS  an attachment that ends with a signer, gives a clock time, has many digits
+//   TXT NCODING  a code's text against its first coding's display, and how many codings it has
+//   WKEND NOTE OUTCOME  a primary time on a weekend; a note; an outcome as text or coded
 import { Buffer } from 'node:buffer';
 
 export type R = Record<string, unknown> & { resourceType: string; id: string };
@@ -66,22 +76,35 @@ export interface TypeScore {
   type: string;
   n: number;
   planted: number;
+  // The strongest single feature, and AND / OR of two, that no named residual holds.
   single: { f: string; ba: number; tp: number; fp: number };
   pair: { rule: string; ba: number; tp: number; fp: number };
-  // The strongest single feature of each family, for the report.
+  // Every residual feature, and the pair holding a residual that most exceeds its cap (the
+  // strongest such pair when none does).
+  residuals: Array<{ f: string; ba: number; tp: number; fp: number; cap: number }>;
+  residualPair: { rule: string; ba: number; tp: number; fp: number; cap: number };
+  // The strongest single feature of each family, residuals included, for the report.
   families: Array<{ f: string; ba: number; tp: number; fp: number }>;
 }
+// A named residual feature: its cap alone, and the cap on any pair that holds it.
+export type Residual = (type: string, f: string) => { cap: number; pairCap: number } | undefined;
+
+// A SNOMED CT semantic tag, the hierarchy Synthea's displays end with.
+export const SEMANTIC_TAG = / \((disorder|finding|procedure|situation|qualifier value|regime\/therapy|observable entity|morphologic abnormality|substance|environment|organism|record artifact|person|physical object|product|body structure|event|specimen|occupation|social concept|assessment scale|life style|attribute|cell)\)/;
+const SIGNER = /\n\n[A-Z][a-z]+(?: [A-Z][a-z.-]+)+, (MD|NP|PA-C|DO|RN|PharmD)\s*$/;
 
 const ba = (tp: number, fp: number, p: number, n: number) => Math.max((tp / p + 1 - fp / n) / 2, (1 - tp / p + fp / n) / 2);
 
 // Score every type that has planted and generated records in the task charts.
-// opts.exclude drops features (a named residual) before scoring singles and pairs.
-export function scoreTells(world: readonly R[], isPlanted: (id: string) => boolean, opts: { pairsOf?: number; exclude?: (type: string, f: string) => boolean } = {}): TypeScore[] {
+// opts.residual names the residual features: scored apart, each held to its cap, and every pair
+// that holds one held to its pairCap. opts.charts and opts.types narrow the search (a random-label
+// baseline labels generated records as planted in the task charts).
+export function scoreTells(world: readonly R[], isPlanted: (id: string) => boolean, opts: { pairsOf?: number; residual?: Residual; charts?: ReadonlySet<string>; types?: readonly string[] } = {}): TypeScore[] {
   const K = opts.pairsOf ?? 150;
   const byKey = new Map(world.map((r) => [`${r.resourceType}/${r.id}`, r]));
-  const charts = new Set(world.filter((r) => isPlanted(r.id)).map(patientOf).filter((p): p is string => p !== undefined));
+  const charts = opts.charts ?? new Set(world.filter((r) => isPlanted(r.id)).map(patientOf).filter((p): p is string => p !== undefined));
   const NUM = /^[a-z]+-\d{5}$/;
-  const types = [...new Set(world.filter((r) => isPlanted(r.id)).map((r) => r.resourceType))].filter((t) => world.some((r) => r.resourceType === t && !isPlanted(r.id) && NUM.test(r.id)));
+  const types = opts.types ?? [...new Set(world.filter((r) => isPlanted(r.id)).map((r) => r.resourceType))].filter((t) => world.some((r) => r.resourceType === t && !isPlanted(r.id) && NUM.test(r.id)));
   // Each chart's clock, over every timestamp of every record in it (what the agent sees).
   const clocks = new Map<string, Clock>();
   for (const r of world) {
@@ -103,6 +126,7 @@ export function scoreTells(world: readonly R[], isPlanted: (id: string) => boole
   function features(r: R): Set<string> {
     const f = new Set<string>();
     const c = tops.get(patientOf(r) ?? '');
+    let tagged = false;
     allPaths(r, '', (at) => f.add(`P:${at}`));
     f.add(`K:${Object.keys(r).sort().join(',')}`);
     walk(r, '', (at, v) => {
@@ -128,8 +152,24 @@ export function scoreTells(world: readonly R[], isPlanted: (id: string) => boole
       if (typeof v === 'string' && at.endsWith('data')) {
         const t = Buffer.from(v, 'base64').toString('utf8');
         f.add(`DL:${at}=${t.length < 200 ? '<200' : t.length < 800 ? '<800' : t.length < 2000 ? '<2k' : '2k+'}`); f.add(`DN:${at}=${t.includes('\n') ? 'nl' : 'nonl'}`); f.add(`DLINES:${at}=${Math.min(10, t.split('\n').length)}`);
+        f.add(`SEMD:${at}=${SEMANTIC_TAG.test(t)}`); f.add(`MD:${at}=${/^#+ /m.test(t)}`); f.add(`MDB:${at}=${/^\s*[-*] /m.test(t)}`);
+        const head = t.trim().split('\n')[0] ?? '';
+        f.add(`DHEAD:${at}=${/^\d{4}-\d{2}-\d{2}$/.test(head) ? 'date' : / - /.test(head) ? 'heading - place' : 'other'}`); f.add(`DLEAD:${at}=${/^\s*\n/.test(t)}`);
+        f.add(`SIGNED:${at}=${SIGNER.test(t)}`); f.add(`HHMM:${at}=${/\b\d{1,2}:\d{2}\b/.test(t)}`); f.add(`DIGITS:${at}=${(t.match(/\d/g) ?? []).length > 40}`);
+      }
+      if (typeof v === 'string' && /(^|\.)(display|text)$/.test(at) && !/\.div$/.test(at)) {
+        if (SEMANTIC_TAG.test(v)) { f.add(`SEM:${at}`); tagged = true; }
+        f.add(`TCASE:${at}=${/^[a-z]/.test(v) ? 'lower' : /^[A-Z]/.test(v) ? 'upper' : 'other'}`);
+        if (/\[[^\]]*\]/.test(v)) f.add(`TBRK:${at}`);
       }
     });
+    f.add(`SEMT:${tagged}`);
+    const cc = (r.code ?? r.medicationCodeableConcept ?? (Array.isArray(r.type) ? r.type[0] : r.type)) as { text?: string; coding?: Array<{ display?: string }> } | undefined;
+    if (cc && typeof cc === 'object') { f.add(`TXT:${cc.text === undefined ? 'none' : cc.text === cc.coding?.[0]?.display ? '=display' : 'differs'}`); f.add(`NCODING:${cc.coding?.length ?? 0}`); }
+    const tw = primaryTime(r);
+    if (tw && tw.length > 10) { const d = new Date(`${tw.slice(0, 19)}Z`).getUTCDay(); f.add(`WKEND:${d === 0 || d === 6}`); }
+    if (r.note) f.add('NOTE:present');
+    if (r.outcome) f.add(`OUTCOME:${(r.outcome as { text?: string }).text ? 'text' : 'coded'}`);
     const t0 = primaryTime(r);
     if (typeof r.issued === 'string' && t0 && t0 !== r.issued) { const d = Date.parse(r.issued) - Date.parse(t0); f.add(`GAP:issued-eff=${d === 0 ? '0' : d < 0 ? 'neg' : d < 3_600_000 ? '<1h' : d < 86_400_000 ? '<1d' : '>=1d'}`); } else if (r.issued) f.add('GAP:issued-eff=same-str');
     const period = r.period as { start?: string; end?: string } | undefined;
@@ -172,7 +212,7 @@ export function scoreTells(world: readonly R[], isPlanted: (id: string) => boole
     const label = pop.map((r) => isPlanted(r.id));
     const tpc = new Map<string, number>(), fpc = new Map<string, number>();
     fm.forEach((fs, i) => { for (const f of fs) (label[i] ? tpc : fpc).set(f, ((label[i] ? tpc : fpc).get(f) ?? 0) + 1); });
-    const singles = [...new Set([...tpc.keys(), ...fpc.keys()])].filter((f) => !opts.exclude?.(type, f)).map((f) => { const tp = tpc.get(f) ?? 0, fp = fpc.get(f) ?? 0; return { f, tp, fp, ba: ba(tp, fp, pos.length, nNeg) }; }).sort((a, b) => b.ba - a.ba || (a.f < b.f ? -1 : 1));
+    const singles = [...new Set([...tpc.keys(), ...fpc.keys()])].map((f) => { const tp = tpc.get(f) ?? 0, fp = fpc.get(f) ?? 0; return { f, tp, fp, ba: ba(tp, fp, pos.length, nNeg), res: opts.residual?.(type, f) }; }).sort((a, b) => b.ba - a.ba || (a.f < b.f ? -1 : 1));
     const fam = new Map<string, (typeof singles)[number]>();
     for (const x of singles) if (!fam.has(x.f.split(':')[0]!)) fam.set(x.f.split(':')[0]!, x);
     // Pairs over bitsets: AND and OR of the top K features, each possibly negated.
@@ -183,10 +223,13 @@ export function scoreTells(world: readonly R[], isPlanted: (id: string) => boole
     const all = new Uint32Array(words);
     for (let i = 0; i < pop.length; i++) all[i >>> 5]! |= 1 << (i & 31);
     const pc = (x: number) => { x -= (x >>> 1) & 0x55555555; x = (x & 0x33333333) + ((x >>> 2) & 0x33333333); return (((x + (x >>> 4)) & 0x0f0f0f0f) * 0x01010101) >>> 24; };
-    const cand = singles.slice(0, K).map((x) => ({ f: x.f, b: bits(x.f) }));
+    const cand = singles.slice(0, K).map((x) => ({ f: x.f, b: bits(x.f), cap: x.res?.pairCap }));
     let pair = { rule: '', ba: 0, tp: 0, fp: 0 };
+    let residualPair = { rule: '', ba: 0, tp: 0, fp: 0, cap: 1 };
     for (let i = 0; i < cand.length; i++) for (let j = i + 1; j < cand.length; j++) {
       const A = cand[i]!.b, B = cand[j]!.b;
+      const caps = [cand[i]!.cap, cand[j]!.cap].filter((c): c is number => c !== undefined);
+      const cap = caps.length ? Math.max(...caps) : undefined;
       for (const na of [0, 1]) for (const nb of [0, 1]) for (const op of ['AND', 'OR'] as const) {
         let tp = 0, fp = 0;
         for (let w = 0; w < words; w++) {
@@ -195,10 +238,18 @@ export function scoreTells(world: readonly R[], isPlanted: (id: string) => boole
           tp += pc(v & posBits[w]!); fp += pc(v & ~posBits[w]!);
         }
         const s = ba(tp, fp, pos.length, nNeg);
-        if (s > pair.ba + 1e-12) pair = { rule: `${na ? 'NOT ' : ''}${cand[i]!.f} ${op} ${nb ? 'NOT ' : ''}${cand[j]!.f}`, ba: s, tp, fp };
+        const rule = () => `${na ? 'NOT ' : ''}${cand[i]!.f} ${op} ${nb ? 'NOT ' : ''}${cand[j]!.f}`;
+        if (cap === undefined) { if (s > pair.ba + 1e-12) pair = { rule: rule(), ba: s, tp, fp }; }
+        else if (s - cap > residualPair.ba - residualPair.cap + 1e-12) residualPair = { rule: rule(), ba: s, tp, fp, cap };
       }
     }
-    out.push({ type, n: pop.length, planted: pos.length, single: singles[0]!, pair, families: [...fam.values()].sort((a, b) => b.ba - a.ba) });
+    const strip = ({ f, tp, fp, ba }: (typeof singles)[number]) => ({ f, tp, fp, ba });
+    out.push({
+      type, n: pop.length, planted: pos.length,
+      single: strip(singles.find((x) => !x.res) ?? { f: '', tp: 0, fp: 0, ba: 0, res: undefined }), pair,
+      residuals: singles.filter((x) => x.res).map((x) => ({ ...strip(x), cap: x.res!.cap })), residualPair,
+      families: [...fam.values()].sort((a, b) => b.ba - a.ba).map(strip),
+    });
   }
   return out;
 }

@@ -443,7 +443,7 @@ describe('search_notes', () => {
     expect(rows.map((x) => x.note)).toEqual(['DocumentReference/doc-z-d']);
   });
   it('searches the base world notes and reports', () => {
-    const rows = ok(call('search_notes', { query: 'chief complaint', patient: 'pt-0001' })).entries as Array<{ note: string }>;
+    const rows = ok(call('search_notes', { query: 'plan', patient: 'pt-0001' })).entries as Array<{ note: string }>;
     expect(rows.length).toBeGreaterThan(0);
     expect(rows.every((x) => /^(DocumentReference|DiagnosticReport)\//.test(x.note))).toBe(true);
   });
