@@ -40,7 +40,7 @@ export const TRIALS = {
   pass: 'renal-dose-review/0',
   limit: 'crc-care-gap/5',
   envError: 'discharge-medrec/12',
-  // A turn cap reached while the model still made progress: the environment's (E8, W0-A).
+  // A turn cap reached with no loop (rule P-L): the environment's (E8, W0-A).
   envLimit: 'results-inbox/12',
   // In the pilot run pilot-grader-error, not in trial-1 (runOf).
   graderError: 'message-queue/12',

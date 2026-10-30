@@ -16,7 +16,7 @@
 // ENV_ERROR, ENV_LIMIT, GRADER_ERROR, INFRA_API) and graded again from the rewritten record. The
 // LIMIT is a second max_tokens stop in a row, the model's whatever the trajectory shows; the
 // ENV_LIMIT is a turn cap the scripted run reaches before its first write while it still reads
-// new records, so rule P-L (packages/grader/progress.ts) reads it as progressing and the grader
+// new records, so rule P-L (packages/grader/progress.ts) finds no loop and the grader
 // gives it to the environment (E8, plan-amendment-worklist W0-A). The run's
 // GRADER_ERROR carries the regrade of a fixed grader (a regrades[] entry with the trial's real
 // grade, a model FAIL), as cli regrade leaves it: a committed run with a current GRADER_ERROR is
@@ -184,7 +184,7 @@ function internalAt(run: CaseRun, n: number): CaseRun {
 // An ENV_LIMIT's run as packages/core/loop.ts leaves it when the turn cap stops the trial before
 // its first write: the answers up to the cap stay, the limit event ends the trial, and the final
 // state is the initial one, so it replays. Its executed calls each read records not read before,
-// so rule P-L reads them as progress (E8). The graded event is dropped, as for the ENV_ERROR.
+// so rule P-L finds no loop (E8). The graded event is dropped, as for the ENV_ERROR.
 function turnCapBeforeWrite(run: CaseRun): CaseRun {
   const firstWrite = run.events.find((e) => e.type === 'tool_result' && (e.written_ids?.length ?? 0) > 0);
   if (firstWrite === undefined || firstWrite.turn < 2) throw new Error('the ENV_LIMIT sample needs a scripted run that reads before it writes');

@@ -54,7 +54,7 @@ describe('an excluded trial has no model taxonomy, decisive check or decisive st
   // says why it is not run again and never says it is.
   it.each([
     ['context_window', 'E7', /^context_window limit: stop_reason model_context_window_exceeded with 191500 tokens in context$/],
-    ['turns', 'E8', /^turns limit; last 20 calls: 0 repeats \(share 0\.00\), 20 new ids; progressing$/],
+    ['turns', 'E8', /^turns limit; last 20 calls: 0 repeats \(share 0\.00\); no loop$/],
   ] as const)('ENV_LIMIT at %s: decided by %s, no taxonomy, check or step, and "not run again" with its reason', (detail, id, evidence) => {
     const calls = Array.from({ length: 24 }, (_, i) => [
       { v: 2, seq: 2 * i, ts: 't', turn: i + 1, type: 'tool_call', tool_use_id: `u${i}`, name: 'fhir_search', input: { resource_type: 'Observation', patient: 'pt-1', code: `c-${i}` } },

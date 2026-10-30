@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   AUDIT_LABEL, AUDIT_LABELS, CONFIRMATION_CRITERIA, CONFIRMATION_DEFINITIONS, DENOMINATOR_OPERATOR_NOTE, DENOMINATOR_RULE, FAULT, FAULT_DEFINITIONS, FAULT_PRECEDENCE,
-  FAULT_PRECEDENCE_RULE, OUTCOMES, PASS_DEFINITION, RERUN_OUTCOMES, RUN_BLOCKS, VALID_OUTCOMES, isValid, type Fault,
+  FAULT_PRECEDENCE_RULE, NOT_RERUN_REASON, OUTCOMES, PASS_DEFINITION, RERUN_OUTCOMES, RUN_BLOCKS, VALID_OUTCOMES, isValid, type Fault,
 } from '../outcomes.ts';
 
 const FAULTS: Fault[] = ['model', 'refusal', 'env', 'grader', 'infra'];
@@ -120,6 +120,18 @@ describe('PASS_DEFINITION and DENOMINATOR_RULE', () => {
     expect(DENOMINATOR_OPERATOR_NOTE).toMatch(/grader_error_history is never a require key/);
     expect(DENOMINATOR_OPERATOR_NOTE).toMatch(/env_error_raw/);
     expect(DENOMINATOR_RULE).not.toMatch(/require|env_error_raw|summary --/);
+  });
+
+  // Rule P-L fails safe (decisions.tsv 2026-10-30T10:39): the texts say a cap stop is the model's
+  // only while it looped and that a human reviews every ENV_LIMIT, since every run gates on 0.
+  it('E8, MF2, the reader rule and the operator note state rule P-L and the human review of every ENV_LIMIT', () => {
+    const text = (id: string) => [...FAULT_DEFINITIONS.env.criteria, ...FAULT_DEFINITIONS.model.criteria].find((c) => c.id === id)!.text;
+    expect(text('MF2')).toMatch(/while it was looping \(rule P-L: half or more of its last 20 calls repeat an earlier call on the same target\)/);
+    expect(text('E8')).toMatch(/rule P-L found no loop[^.]*a human reviews the stop/);
+    expect(FAULT_DEFINITIONS.env.sentence).toMatch(/without strong evidence that the model was looping/);
+    expect(DENOMINATOR_RULE).toContain(`ENV_LIMIT: ${NOT_RERUN_REASON.ENV_LIMIT}`);
+    expect(NOT_RERUN_REASON.ENV_LIMIT).toMatch(/^a human reviews it first/);
+    expect(DENOMINATOR_OPERATOR_NOTE).toMatch(/env_limit requirement[^.]*a human reviews every ENV_LIMIT[^.]*also when the model padded its calls/);
   });
 
   it('the reader rule counts a refusal as a model failure and names refusal_excluded_rate, the view without refusals', () => {

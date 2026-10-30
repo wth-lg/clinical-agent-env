@@ -9,9 +9,10 @@
 //   band=a-b         every task passes a to b of them (donewhen: pass-min=a,pass-max=b)
 //   env_error_raw=N  at most N ENV_ERROR attempts in the run, re-queued ones included
 //   env_limit=N      at most N attempts whose current grade is ENV_LIMIT (a stop at the context
-//                    window, or at a turn, cost or time cap while the model made progress: the
-//                    environment's, never re-queued, so the batch leaves it unsettled); every
-//                    pilot and the final run require env_limit=0 (plan-amendment-worklist W0-A)
+//                    window, or at a turn, cost or time cap that rule P-L does not find looping:
+//                    the environment's, never re-queued, so the batch leaves it unsettled); every
+//                    pilot and the final run require env_limit=0, so a human reviews each one
+//                    (plan-amendment-worklist W0-A)
 //   model=M          every record requested M and every response came from M
 //   replay=all       replay.json exists and every trial reproduced; every record's replay_final
 //                    equals its final hash

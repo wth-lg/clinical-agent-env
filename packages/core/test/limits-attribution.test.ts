@@ -9,9 +9,9 @@
 //   - a usage the cost model cannot price ends INFRA_HARNESS
 //   - an attempt whose stream goes idle fails after the idle-stream timeout and is retried
 //   - a real turns, cost or working-time limit still ends the loop LIMIT
-//   - who the cap stop counts against is rule P-L's (W0-A): the environment while the model made
-//     progress (ENV_LIMIT, E8), the model while it looped (LIMIT, MF2); this reverses R14-13 and
-//     R14-14 for caps reached during progress, by the source's model-versus-environment rule
+//   - who the cap stop counts against is rule P-L's (W0-A): the model while it looped (LIMIT,
+//     MF2), else the environment (ENV_LIMIT, E8), as the rule fails safe; this reverses R14-13 and
+//     R14-14 for caps reached without a loop, by the source's model-versus-environment rule
 // The cases are the lane A limit probe of verifier-phase-P17r-1 (evidence/verifier-P17r-1-laneA/
 // limit.ts) turned into tests: on 6d9d66f the storm ended LIMIT wall_clock and the dropped
 // attempt LIMIT cost, both labelled model.
@@ -219,14 +219,15 @@ describe('infrastructure never ends a trial LIMIT', () => {
 
 // The loop ends a cap LIMIT; the grader decides whose fault it is by rule P-L
 // (packages/grader/progress.ts, plan-amendment-worklist W0-A): a turn, cost or working-time cap
-// reached while the model still made progress is ENV_LIMIT, the environment's (E8): the harness
-// set the cap too small for the task. Reached while the model was looping, it stays LIMIT, the
-// model's (MF2), and so does a second max_tokens stop in a row.
+// reached while the model was looping (half or more of the last 20 calls repeat an earlier call's
+// target) stays LIMIT, the model's (MF2), and so does a second max_tokens stop in a row. Any other
+// cap stop is ENV_LIMIT, the environment's (E8): the rule fails safe, so padding with new calls
+// (guessing, paging) ends there too and halts the run for a human review (env_limit=0).
 describe('rule P-L: who a cap stop counts against, through the loop, the grader and explainTrial', () => {
   // A read tool that exposes Observation/<id>, and a search that lists two observations per code.
   const READ: Tool<WriteContext> = {
     name: 'read', description: 'Read one observation.',
-    inputSchema: { type: 'object', properties: { id: { type: 'string', description: 'id' }, why: { type: 'string', description: 'why' } }, required: ['id'], additionalProperties: false },
+    inputSchema: { type: 'object', properties: { id: { type: 'string', description: 'id' }, reason: { type: 'string', description: 'why' } }, required: ['id'], additionalProperties: false },
     run: (i) => ({ resourceType: 'Observation', id: i.id }),
   };
   const SEARCH: Tool<WriteContext> = {
@@ -234,12 +235,12 @@ describe('rule P-L: who a cap stop counts against, through the loop, the grader 
     inputSchema: { type: 'object', properties: { code: { type: 'string', description: 'code' }, offset: { type: 'integer', description: 'offset' } }, required: ['code'], additionalProperties: false },
     run: (i) => ({ entries: ['a', 'b'].map((x) => ({ resourceType: 'Observation', id: `${String(i.code)}-${Number(i.offset ?? 0)}${x}` })) }),
   };
-  const ask = (n: number, id: string, why?: string): MockTurn => ({ tools: [{ id: `toolu_${n}`, name: 'read', input: why === undefined ? { id } : { id, why } }] });
+  const ask = (n: number, id: string, reason?: string): MockTurn => ({ tools: [{ id: `toolu_${n}`, name: 'read', input: reason === undefined ? { id } : { id, reason } }] });
   const find = (n: number, code: string, offset?: number): MockTurn => ({ tools: [{ id: `toolu_${n}`, name: 'search', input: offset === undefined ? { code } : { code, offset } }] });
   // How each kind of trajectory picks the n-th call: a search by a new code, then a read of an id
-  // it listed; the same call word for word; after five new ids, only ids already seen, each call
-  // with an input of its own; reads of ids no result listed (padding probe g1); one search paged
-  // on (padding probe g2).
+  // it listed; the same call word for word; after five reads, the same five again, each with a
+  // reason of its own (free text, padding probe g3); reads of ids no result listed (padding probe
+  // g1); one search paged on (padding probe g2).
   const kinds = {
     progressing: (n: number) => respond(n % 2 === 1 ? find(n, `c${n}`) : ask(n, `c${n - 1}-0a`), n),
     repeating: (n: number) => respond(ask(n, 'o-1'), n),
@@ -278,23 +279,23 @@ describe('rule P-L: who a cap stop counts against, through the loop, the grader 
     return { out, g, x, criterion: (id: string) => [...x.fault_criteria.env, ...x.fault_criteria.model].find((c) => c.id === id)! };
   }
 
-  it.each(Object.keys(caps) as Array<keyof typeof caps>)('(c) %s cap on a progressing trajectory: ENV_LIMIT, fault env, label environment, E8 met with the P-L facts', async (cap) => {
-    const { out, g, x, criterion } = await graded('progressing', cap);
+  it.each((['progressing', 'guessing', 'paging'] as const).flatMap((k) => (Object.keys(caps) as Array<keyof typeof caps>).map((c) => [k, c] as const)))('(c) %s, %s cap: no loop, so ENV_LIMIT, fault env, label environment, E8 met with the P-L facts', async (kind, cap) => {
+    const { out, g, x, criterion } = await graded(kind, cap);
     expect(out).toMatchObject({ status: 'LIMIT', terminal: { type: 'limit', limit: cap } });
     expect(out.tool_calls).toBeGreaterThanOrEqual(20);
     expect(g).toMatchObject({ outcome: 'ENV_LIMIT', valid: false, fault: 'env' });
     expect(x).toMatchObject({ outcome: 'ENV_LIMIT', fault: 'env', label: 'environment', deciding: { id: 'E8' }, taxonomy: null });
-    expect(criterion('E8')).toMatchObject({ met: true, evidence: expect.stringMatching(/^[a-z_]+ limit; last 20 calls: 0 repeats \(share 0\.00\), \d+ new ids; progressing$/) });
+    expect(criterion('E8')).toMatchObject({ met: true, evidence: expect.stringMatching(/^[a-z_]+ limit; last 20 calls: 0 repeats \(share 0\.00\); no loop$/) });
     expect(criterion('MF2').met).toBe(false);
     expect(x.reason).toContain(NOT_RERUN_REASON.ENV_LIMIT);
   });
 
-  it.each((['repeating', 'rereading', 'guessing', 'paging'] as const).flatMap((k) => (Object.keys(caps) as Array<keyof typeof caps>).map((c) => [k, c] as const)))('(d) %s, %s cap: LIMIT, fault model, MF2 met with the P-L facts', async (kind, cap) => {
+  it.each((['repeating', 'rereading'] as const).flatMap((k) => (Object.keys(caps) as Array<keyof typeof caps>).map((c) => [k, c] as const)))('(d) %s, %s cap: LIMIT, fault model, MF2 met with the P-L facts', async (kind, cap) => {
     const { out, g, x, criterion } = await graded(kind, cap);
     expect(out).toMatchObject({ status: 'LIMIT', terminal: { type: 'limit', limit: cap } });
     expect(g).toMatchObject({ outcome: 'LIMIT', valid: true, fault: 'model' });
     expect(x).toMatchObject({ outcome: 'LIMIT', fault: 'model', label: 'model', deciding: { id: 'MF2' } });
-    expect(criterion('MF2')).toMatchObject({ met: true, evidence: expect.stringMatching(kind === 'repeating' || kind === 'paging' ? /share (0\.9\d|1\.00)\).*; looping/ : /, 0 new ids \(5 needed\); looping/) });
+    expect(criterion('MF2')).toMatchObject({ met: true, evidence: expect.stringMatching(/^[a-z_]+ limit; last 20 calls: (19|20) repeats \(share (0\.95|1\.00)\); looping$/) });
     expect(criterion('E8').met).toBe(false);
   });
 

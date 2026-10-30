@@ -6,10 +6,11 @@
 // Each trial gets exactly one outcome, checked in this order. The first five are never valid
 // trials and never model failures: they are rerun, not graded. CANCELLED sits with the INFRA
 // outcomes: the run was stopped from outside, so it says nothing about the model. ENV_LIMIT is a
-// stop at the model's context window, or at a turn, cost or working-time cap while the model was
-// still making progress (rule P-L, packages/grader/progress.ts; plan-amendment-worklist W0-A):
-// the environment's fault, since the task did not fit the limits the harness set; a rerun would
-// stop the same way, so it is never rerun. GRADER_ERROR is a check that threw, or a regrade whose
+// stop at the model's context window, or at a turn, cost or working-time cap without strong
+// evidence that the model was looping (rule P-L, packages/grader/progress.ts, which fails safe;
+// plan-amendment-worklist W0-A): the environment's fault, since the task did not fit the limits
+// the harness set; a rerun would stop the same way, so it is never rerun, and a human reviews it
+// first (every pilot and the final run require env_limit=0). GRADER_ERROR is a check that threw, or a regrade whose
 // world or replay differs from the record: the grader's fault, never rerun. NOT_RERUN_REASON
 // names the two and why, and RERUN_OUTCOMES is every other excluded outcome. REFUSAL, LIMIT
 // (a second max_tokens stop in a row, or a cap reached while looping), FAIL and PASS are valid
@@ -51,11 +52,12 @@ export const FAULT: Readonly<Record<Outcome, Fault | null>> = {
 
 // The excluded outcomes a rerun cannot cure, and what must happen first. A grader's fault is one:
 // rerunning would pay for a model trial to work around a grader bug. A stop at the context window
-// or at a cap during progress is another: the same task stops the same way. The UI and
+// or at a cap with no loop is another: the same task stops the same way, and a human reviews the
+// stop, which may also be a model padding its calls (rule P-L fails safe). The UI and
 // DENOMINATOR_RULE read these sentences, so they are written only here.
 export const NOT_RERUN_REASON: Readonly<Partial<Record<Outcome, string>>> = {
   GRADER_ERROR: 'the grader must be fixed first',
-  ENV_LIMIT: 'the task must be resized to fit the context window and its turn, cost and time limits first',
+  ENV_LIMIT: 'a human reviews it first; the task is resized if it did not fit its limits',
 };
 export const NEVER_RERUN: readonly Outcome[] = Object.keys(NOT_RERUN_REASON) as Outcome[];
 // The excluded outcomes a rerun can cure.
@@ -195,11 +197,10 @@ export interface FaultDefinition {
   criteria: readonly Criterion[];
 }
 
-// Whether a cap stop was reached while the model made progress (E8), or while it looped or at
-// its output limit (MF2): rule P-L over the trajectory when the caller has it, else the outcome the
-// grader gave from that rule.
+// Whether a cap stop was reached with no loop (E8), or while the model looped (MF2): rule P-L
+// over the trajectory or the facts the grader recorded from it, else the outcome the grader gave.
 const capStop = (f: AttributionFacts): boolean => f.status === 'LIMIT' && CAP_LIMITS.includes(f.detail ?? '');
-const progressing = (f: AttributionFacts): boolean => (f.progress ? !f.progress.looping : f.outcome === 'ENV_LIMIT');
+const noLoop = (f: AttributionFacts): boolean => (f.progress ? !f.progress.looping : f.outcome === 'ENV_LIMIT');
 const capEvidence = (f: AttributionFacts): string => `${f.detail} limit; ${f.progress ? progressText(f.progress) : 'no trajectory to apply rule P-L to'}`;
 
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
@@ -217,7 +218,7 @@ const negation = (c: Criterion['check']): Criterion['check'] => (f) => {
   const r = c(f);
   return result(r.met === false, r.evidence);
 };
-const MF2_READS = ['record.status', 'record.detail', 'trajectory: the last 20 executed tool calls, their inputs and the ids they exposed or wrote (rule P-L, packages/grader/progress.ts)'];
+const MF2_READS = ['record.status', 'record.detail', 'trajectory: the last 20 executed tool calls, their tools and inputs (rule P-L, packages/grader/progress.ts), or record.progress'];
 const statusIs = (o: Outcome) => (f: AttributionFacts) => result(f.status === o || f.outcome === o, `status ${f.status}${f.detail ? `, detail ${f.detail}` : ''}`);
 
 // The criteria that confirm a model or refusal label: all met is confirmed, one pending is
@@ -311,12 +312,12 @@ export const FAULT_DEFINITIONS: Readonly<Record<Fault, FaultDefinition>> = {
       },
       {
         id: 'MF2',
-        text: 'The trial stopped at its output limit, or at its turn, cost or working-time limit while it was looping (rule P-L).',
+        text: 'The trial stopped at its output limit, or at its turn, cost or working-time limit while it was looping (rule P-L: half or more of its last 20 calls repeat an earlier call on the same target).',
         reads: MF2_READS,
         check: (f) => {
           if (f.status !== 'LIMIT' && f.outcome !== 'LIMIT') return result(false, `current outcome ${f.outcome}`);
           if (f.detail === 'max_tokens') return result(true, 'max_tokens limit: a second answer in a row cut off at the output limit');
-          if (capStop(f)) return result(!progressing(f), capEvidence(f));
+          if (capStop(f)) return result(!noLoop(f), capEvidence(f));
           return result(f.outcome === 'LIMIT' && f.detail !== 'context_window', `current outcome ${f.outcome}${f.detail ? `, ${f.detail} limit` : ''}`);
         },
       },
@@ -334,7 +335,7 @@ export const FAULT_DEFINITIONS: Readonly<Record<Fault, FaultDefinition>> = {
     ],
   },
   env: {
-    sentence: 'The environment is at fault when a tool failed on its own or refused a valid call, the start or final state is not correct, an environment rule broke, the trial stopped at the model\'s context window or at a turn, cost or working-time limit while the model was still making progress, or a record that a check needs was not reachable: no tool result showed it to the reference solution or an accepted alternative of the task in the grader validation matrix.',
+    sentence: 'The environment is at fault when a tool failed on its own or refused a valid call, the start or final state is not correct, an environment rule broke, the trial stopped at the model\'s context window or at a turn, cost or working-time limit without strong evidence that the model was looping, or a record that a check needs was not reachable: no tool result showed it to the reference solution or an accepted alternative of the task in the grader validation matrix.',
     criteria: [
       {
         id: 'E1',
@@ -401,9 +402,9 @@ export const FAULT_DEFINITIONS: Readonly<Record<Fault, FaultDefinition>> = {
       {
         id: 'E8',
         record_fact: true,
-        text: 'The trial stopped at a turn, cost or working-time limit while it was still making progress (rule P-L), so the limit the harness set was too small for the task.',
+        text: 'The trial stopped at a turn, cost or working-time limit and rule P-L found no loop (under half of its last 20 calls repeat an earlier call on the same target), so a human reviews the stop before the run goes on.',
         reads: MF2_READS,
-        check: (f) => (capStop(f) ? result(progressing(f), capEvidence(f)) : result(false, `status ${f.status}${f.detail ? `, detail ${f.detail}` : ''}`)),
+        check: (f) => (capStop(f) ? result(noLoop(f), capEvidence(f)) : result(false, `status ${f.status}${f.detail ? `, detail ${f.detail}` : ''}`)),
       },
     ],
   },
@@ -519,6 +520,6 @@ export const DENOMINATOR_RULE = [
 ].join(' ');
 
 export const DENOMINATOR_OPERATOR_NOTE = [
-  'ENV_ERROR trials still count raw against the env_error_raw requirement, and ENV_LIMIT attempts against the env_limit requirement, which every pilot and the final run hold at 0.',
+  'ENV_ERROR trials still count raw against the env_error_raw requirement, and ENV_LIMIT attempts against the env_limit requirement, which every pilot and the final run hold at 0, so a human reviews every ENV_LIMIT before the run goes on: rule P-L fails safe, so a cap stop it does not find looping is ENV_LIMIT, also when the model padded its calls.',
   "`summary --require grader_error=0` checks each record's current grade after any offline regrade, so a regraded record counts by its new outcome; the summary prints grader_error_history (every GRADER_ERROR ever recorded, regraded ones included) for disclosure, and grader_error_history is never a require key.",
 ].join(' ');

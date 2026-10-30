@@ -16,8 +16,8 @@
 //                          the task's list did not fit the window (plan-amendment-worklist W0-A)
 //   a cap                  LIMIT, counted on what the model used only (R14-13, R14-14). Whose
 //                          fault it is the grader decides (packages/grader/outcome.ts): the
-//                          model's while it was looping, the environment's (ENV_LIMIT) while it
-//                          still made progress (rule P-L, packages/grader/progress.ts). The
+//                          model's while it was looping, the environment's (ENV_LIMIT) otherwise
+//                          (rule P-L, packages/grader/progress.ts, which fails safe). The
 //                          caps: turns (requests sent), cost (the priced usage of the
 //                          answers so far; a worst-case settle of a dropped or aborted attempt
 //                          is in the ledger and cost_usd but not here) and working time
