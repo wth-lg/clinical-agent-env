@@ -2,7 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Locator, type Page, type Request, type Route } from '@playwright/test';
 import { browse, passGate } from './browse.ts';
 import { randomUUID } from 'node:crypto';
-import { mkdirSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { MODEL } from '../../../packages/core/anthropic.ts';
 import { HEALTH_PATH, KEY_PATH, REFUSAL_TEXT, SAMPLES, TOKEN_HEADER, TOKEN_META } from '../../../packages/core/runner-api.ts';
@@ -35,16 +35,22 @@ const json = (route: Route, status: number, body: unknown, headers: Record<strin
 
 // Every request the page's context makes (page, workers, any resource type): `all()` since the
 // start, `since()` from the last mark. The app reads data/ in the background at any time, so a
-// test asserts on the requests that matter (a runner path, the API origin, the key) and not on
-// the whole list.
+// test that checks the whole list drops those reads first (isDataRead).
 function recordRequests(page: Page) {
   const list: Request[] = [];
   let mark = 0;
   page.context().on('request', (r) => void list.push(r));
   return { mark: () => void (mark = list.length), since: () => list.slice(mark), all: () => [...list] };
 }
-// The same-origin runner paths, api/* under the page base.
-const isRunner = (url: string, base: string) => new URL(url).origin === new URL(base).origin && new URL(url).pathname.startsWith(new URL('api/', base).pathname);
+// A background read: a plain GET of a file the build has under data/, with no query and no body,
+// so it can carry nothing the page chose to send.
+const DIST = new URL('../dist/', import.meta.url);
+function isDataRead(r: Request, base: string): boolean {
+  const url = new URL(r.url());
+  const data = new URL('data/', base);
+  return r.method() === 'GET' && url.origin === data.origin && url.pathname.startsWith(data.pathname) && url.search === '' && r.postDataBuffer() === null
+    && existsSync(new URL(`data/${url.pathname.slice(data.pathname.length)}`, DIST));
+}
 // Where in a request a string appears: its URL, a header name or value, or its body.
 async function carries(r: Request, s: string): Promise<string[]> {
   const headers = await r.allHeaders().catch(() => r.headers());
@@ -262,10 +268,11 @@ test.describe('key gate on the local runner', () => {
     await page.getByRole('button', { name: 'Validate' }).click();
     await expect(page.getByTestId('key-chip')).toHaveText('Key held by runner');
 
-    // Validate calls the runner once, at api/key, and never the API origin.
+    // Besides the background data/ reads, Validate sends exactly one request, POST api/key, and
+    // the page never calls the API origin.
     const sent = requests.since();
     const keyUrl = new URL(KEY_PATH, baseURL).href;
-    expect(sent.filter((r) => isRunner(r.url(), baseURL!)).map((r) => `${r.method()} ${r.url()}`)).toEqual([`POST ${keyUrl}`]);
+    expect(sent.filter((r) => !isDataRead(r, baseURL!)).map((r) => `${r.method()} ${r.url()}`)).toEqual([`POST ${keyUrl}`]);
     expect(requests.all().filter((r) => isApi(r.url())).map((r) => r.url())).toEqual([]);
     expect(keyCalls).toHaveLength(1);
     expect(keyCalls[0]!.token).toBe(token);
