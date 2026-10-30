@@ -62,6 +62,10 @@ export interface Mutant extends Agent {
   loses: readonly string[];
   // The attribution label its FAIL must get (attribution.ts); not checked when absent.
   attribution?: Taxonomy;
+  // On a task whose gates check items (packages/grader/items.ts): the items it must fail, by key
+  // (items.ts OUTSIDE for the part no item owns), each with the label attribution.ts gives it, and
+  // no other; not checked when absent.
+  items?: Readonly<Record<string, Taxonomy>>;
 }
 
 export interface Agents {
