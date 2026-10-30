@@ -170,7 +170,9 @@ const medication = (
         doseAndRate: [{ doseQuantity: { value: dose, unit: 'mg', system: UCUM, code: 'mg' } }],
       },
     ],
-    dispenseRequest: { numberOfRepeatsAllowed: 3, expectedSupplyDuration: { value: 90, unit: 'days', system: UCUM, code: 'd' } },
+    // A community order is dispensed 90 days at a time; an order given another category (an
+    // inpatient one) dispenses nothing to take home.
+    ...(extra.category === undefined ? { dispenseRequest: { numberOfRepeatsAllowed: 3, expectedSupplyDuration: { value: 90, unit: 'days', system: UCUM, code: 'd' } } } : {}),
     ...extra,
   };
 };
@@ -320,12 +322,13 @@ const overlay: Overlay = {
       weight('obs-t1-wt-1022', '2026-10-22T10:20:00-04:00', '2026-10-22T10:22:00-04:00', 132, '[lb_av]', 'enc-t1-1022', ['3142-7', 'Body weight Stated'], {
         note: [{ time: '2026-10-22T10:22:00-04:00', text: 'Patient estimate by phone, not weighed.' }],
       }),
-      // The loading week, started on the August admission (two 5 mg tablets twice daily for 7 days).
+      // The loading week, started on the August admission (two 5 mg tablets twice daily for 7 days):
+      // an inpatient order, with nothing dispensed to take home.
       medication('mr-t1-apixaban-10', ['1364445', 'apixaban 5 MG Oral Tablet'], 10, 'BID', '2025-08-04T18:00:00-04:00', 'Pulmonary embolism, treatment', {
         status: 'completed',
+        category: [{ coding: [{ system: 'http://terminology.hl7.org/CodeSystem/medicationrequest-category', code: 'inpatient', display: 'Inpatient' }], text: 'Inpatient' }],
         requester: HEME,
         encounter: { reference: 'Encounter/enc-t1-0804' },
-        dispenseRequest: { expectedSupplyDuration: { value: 7, unit: 'days', system: UCUM, code: 'd' } },
       }),
       medication('mr-t1-apixaban-5', ['1364445', 'apixaban 5 MG Oral Tablet'], 5, 'BID', '2025-08-11T10:00:00-04:00', 'Pulmonary embolism, treatment', {
         status: 'stopped',

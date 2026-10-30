@@ -25,4 +25,5 @@ Order the scan as booked: the radiologist reviews the new creatinine on the day 
 Link the imaging order to its appointment.
 
 §6 Metformin
+Before deciding on metformin, read the patient's recent outside records, including any emergency department summary, for acute kidney injury.
 Patients taking metformin who have acute kidney injury or an eGFR below 30: hold metformin at or before the scan and for 48 hours after it. Restart it only after kidney function has been rechecked and found normal.

@@ -37,6 +37,14 @@ describe('renal-dose-review chart', () => {
     expect(get('Encounter', 'enc-t1-0811')).toMatchObject({ period: { start: '2025-08-11T09:30:00-04:00' }, participant: [{ individual: { reference: 'Practitioner/pr-t1-heme' } }] });
   });
 
+  // builder-187 (verifier-phase-P19-T1-2 R2): the loading order was given on the admission.
+  it('the 10 mg loading order is an inpatient order with no community dispense', () => {
+    const loading = get('MedicationRequest', 'mr-t1-apixaban-10');
+    expect(loading?.category?.[0]?.coding?.[0]?.code).toBe('inpatient');
+    expect(loading?.category?.map((c) => c.text)).toEqual(['Inpatient']);
+    expect(loading).not.toHaveProperty('dispenseRequest');
+  });
+
   it("the letter counts the six months from the loading start, 8/4/2025", () => {
     const letter = get('DocumentReference', 'doc-t1-heme-0205');
     const text = new TextDecoder().decode(Uint8Array.from(atob(letter?.content[0]?.attachment.data ?? ''), (c) => c.charCodeAt(0)));

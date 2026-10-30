@@ -205,3 +205,12 @@ describe('renal-dose-review found text', async () => {
     expect(text.note_exists!.found({ notes: [], progress_notes: [], messages: [] })).toBe('no note was written on the patient');
   });
 });
+
+// builder-187 (verifier-phase-P19-T2-2 m1): nodule_screening_ldct counts chest CT orders only, so
+// its found text for no order names no pulmonology order.
+describe('results-inbox nodule_screening_ldct found', async () => {
+  const text = await textOf('results-inbox');
+  it('says no chest CT was ordered and that a referral does not count', () => {
+    expect(text.nodule_screening_ldct!.found({ orders: [] })).toBe('no chest CT order (a referral does not count)');
+  });
+});

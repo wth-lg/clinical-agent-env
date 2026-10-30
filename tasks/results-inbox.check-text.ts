@@ -27,7 +27,7 @@ export const checkText: CheckText = {
     requires: `the overdue screening LDCT (or a CT chest without contrast; a referral does not replace it) for ${I.nodule.patient} set between ${I.nodule.window.start} and ${I.nodule.window.end}`,
     found: (ev) => {
       const first = fields(items(ev.orders)[0]);
-      return first.id === undefined ? 'no chest CT or pulmonology order' : `${show(first.id)} is set for ${show(first.start)}`;
+      return first.id === undefined ? 'no chest CT order (a referral does not count)' : `${show(first.id)} is set for ${show(first.start)}`;
     },
   },
   namesake_untouched: { requires: `no write about the patient with the same name (${listed(expected.namesakes)})`, found: (ev) => extraOrders(ev, 'touched') },
