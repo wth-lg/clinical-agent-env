@@ -1,6 +1,7 @@
 // The view the shell shows for ?view=: each rail view, and the glossary its fault labels link to.
 // The published results and the task list start loading when the app starts, behind the key
-// gate, so a view shows them as soon as it opens.
+// gate, so a view shows them as soon as it opens. When both have settled, <html> gets
+// data-preload="settled", which the key-gate e2e test waits for before it records requests.
 import type { Ref } from 'react';
 import { Environment } from '../environment/Environment.tsx';
 import { Findings } from '../findings/Findings.tsx';
@@ -12,8 +13,7 @@ import { Tasks } from '../tasks/Tasks.tsx';
 import { loadResults } from './results.ts';
 import { loadTaskList } from './tasks.ts';
 
-void loadResults();
-loadTaskList().catch(() => undefined);
+void Promise.allSettled([loadResults(), loadTaskList()]).then(() => document.documentElement.setAttribute('data-preload', 'settled'));
 
 const BODIES = { overview: Overview, tasks: Tasks, runs: Runs, live: LiveTrial, findings: Findings, environment: Environment, glossary: Glossary } as const;
 
