@@ -52,7 +52,9 @@ const REMOVE_CONDITIONS = ['cond-00518', 'cond-00437', 'cond-00283'];
 // frailty, E3's anemia by his normal 2025 hemoglobin (obs-01452), and the full-time employment
 // recorded for E5 at 75 in June 2026, and E15's unemployment by his nursing home housing status.
 // E16's part-time work at 67 stays: it fits a man who goes home after rehab.
-const RESOLVE_CONDITIONS: Record<string, string> = { 'cond-00231': '2025-09-16', 'cond-00452': '2026-03-04', 'cond-00425': '2025-07-06', 'cond-00296': '2026-09-01', 'cond-00699': '2026-02-10' };
+// E16's 2006 intimate partner abuse finding was left active by Synthea on a man who now lives
+// alone; it is resolved as historical (verifier-phase-P19-T3-1 D3).
+const RESOLVE_CONDITIONS: Record<string, string> = { 'cond-00231': '2025-09-16', 'cond-00452': '2026-03-04', 'cond-00425': '2025-07-06', 'cond-00296': '2026-09-01', 'cond-00699': '2026-02-10', 'cond-00703': '2009-05-01' };
 const COMPLETE_MEDICATIONS = ['mr-00269'];
 const SCREENING_FOR_COLON_CANCER = '275978004';
 // A note that mentions the colon or a stool test would speak to a member's screening answer.
@@ -129,6 +131,7 @@ const noteText = (d: Doc) => d.content.map((c) => (c.attachment.data ? unbase64(
 // medication list predates the overlay's donepezil (authored 2025-06-10), which her later notes
 // must list.
 function editNote(text: string, pt: string, date: string): string {
+  if (pt === E.E15 && date.startsWith('2026-02-18')) return E15_FACILITY_NOTE;
   let t = text.replace(/ is an? \d+ year-old /g, ' is a ').replace(/, polyp of colon \(disorder\)/g, '');
   if (pt === E.E7 && date >= '2025-06-10') t = t.replace(/^(# Medications\n.+)$/m, '$1; donepezil hydrochloride 10 mg oral tablet');
   return t;
@@ -223,19 +226,166 @@ const activeFit: Resource = {
 // serviceProvider of its stay or visit.
 const MAPLE_GROVE: Resource = { resourceType: 'Organization', id: 'org-t3-5520', active: true, name: 'Maple Grove Care Center', address: [{ line: ['1420 Maple Grove Road'], city: 'Fitchburg', state: 'MA', postalCode: '01420', country: 'US' }] };
 const CEDAR_HILL: Resource = { resourceType: 'Organization', id: 'org-t3-3147', active: true, name: 'Cedar Hill Rehabilitation and Skilled Nursing', address: [{ line: ['88 Cedar Hill Drive'], city: 'Milford', state: 'MA', postalCode: '01757', country: 'US' }] };
+// E15's long-term-care chart (verifier-phase-P19-T3-1 D4): the stroke of December 2025 that left
+// him with a left hemiparesis, his hypertension, the medications he takes since, his vitals at the
+// July facility visit, and the 2026-02-18 visit rewritten as a facility visit by Dr. Lin. Nothing
+// here names the nursing home: his residence stays in the housing status, the address and the
+// visits' service provider.
+const E15_FACILITY_NOTE = `2026-02-18
+
+# Chief Complaint
+Nasal congestion and facial pressure for 5 days.
+
+# History of Present Illness
+Facility visit. Rickey is a nonhispanic white male with a left hemiparesis since his stroke in December 2025, and hypertension. Staff report clear nasal discharge and a mild cough, no fever, eating and sleeping as usual. He transfers with one assist and walks short distances with a walker.
+
+# Social History
+Patient has never smoked.
+Patient has a high school education.
+Patient currently has UnitedHealthcare.
+
+# Allergies
+No Known Allergies.
+
+# Medications
+clopidogrel 75 mg oral tablet; atorvastatin 40 mg oral tablet; amlodipine 5 mg oral tablet
+
+# Assessment and Plan
+Patient is presenting with viral sinusitis (disorder). Saline nasal spray and fluids; staff to call if fever, or no better in 10 days.
+`;
+const e15Medication = (id: string, rx: [string, string], dose: number, reason: string): Resource => ({
+  resourceType: 'MedicationRequest',
+  id,
+  status: 'active',
+  intent: 'order',
+  category: [{ coding: [{ system: 'http://terminology.hl7.org/CodeSystem/medicationrequest-category', code: 'community', display: 'Community' }], text: 'Community' }],
+  medicationCodeableConcept: { coding: [{ system: RXNORM, code: rx[0], display: rx[1] }], text: rx[1] },
+  subject: subject(E.E15),
+  authoredOn: '2025-12-12T11:00:00-05:00',
+  requester: OKAFOR,
+  reasonCode: [{ text: reason }],
+  dosageInstruction: [
+    {
+      text: `${dose} mg by mouth once daily`,
+      timing: { code: { coding: [{ system: 'http://terminology.hl7.org/CodeSystem/v3-GTSAbbreviation', code: 'QD' }], text: 'once daily' }, repeat: { frequency: 1, period: 1, periodUnit: 'd' } },
+      route: { coding: [{ system: SNOMED, code: '26643006', display: 'Oral route' }], text: 'oral' },
+      doseAndRate: [{ doseQuantity: { value: dose, unit: 'mg', system: UCUM, code: 'mg' } }],
+    },
+  ],
+  dispenseRequest: { numberOfRepeatsAllowed: 3, expectedSupplyDuration: { value: 90, unit: 'days', system: UCUM, code: 'd' } },
+});
+const VITAL = [{ coding: [{ system: 'http://terminology.hl7.org/CodeSystem/observation-category', code: 'vital-signs', display: 'Vital signs' }] }];
+const MMHG = (value: number) => ({ value, unit: 'mm[Hg]', system: UCUM, code: 'mm[Hg]' });
+const e15Vital = (id: string, code: [string, string], rest: object): Resource => ({
+  resourceType: 'Observation',
+  id,
+  status: 'final',
+  category: VITAL,
+  code: { coding: [{ system: LOINC, code: code[0], display: code[1] }], text: code[1] },
+  subject: subject(E.E15),
+  encounter: { reference: 'Encounter/enc-t3-7781' },
+  effectiveDateTime: '2026-07-14T10:10:00-04:00',
+  issued: '2026-07-14T10:12:00-04:00',
+  ...rest,
+} as Resource);
+const strokeStay: Resource = {
+  resourceType: 'Encounter',
+  id: 'enc-t3-2087',
+  status: 'finished',
+  class: { system: 'http://terminology.hl7.org/CodeSystem/v3-ActCode', code: 'IMP' },
+  type: [{ coding: [{ system: SNOMED, code: '32485007', display: 'Hospital admission (procedure)' }], text: 'Hospital admission (procedure)' }],
+  subject: subject(E.E15),
+  period: { start: '2025-12-02T07:40:00-05:00', end: '2025-12-12T11:00:00-05:00' },
+  reasonCode: [{ coding: [{ system: SNOMED, code: '230690007', display: 'Cerebrovascular accident (disorder)' }], text: 'Cerebrovascular accident (disorder)' }],
+  serviceProvider: HOSPITAL,
+};
+const e15Chart = (world: WorldReader): Resource[] => {
+  const visit = world.get('Encounter', 'enc-00204') as Extract<Resource, { resourceType: 'Encounter' }>;
+  return [
+    strokeStay,
+    { ...condition('cond-t3-3904', E.E15, ['230690007', 'Cerebrovascular accident (disorder)'], '2025-12-02T07:40:00-05:00', 'encounter-diagnosis'), encounter: { reference: 'Encounter/enc-t3-2087' } } as Resource,
+    condition('cond-t3-6618', E.E15, ['50582007', 'Hemiplegia (disorder)'], '2025-12-02T07:40:00-05:00'),
+    condition('cond-t3-9251', E.E15, ['59621000', 'Essential hypertension (disorder)'], '2016-04-11T10:00:00-04:00'),
+    e15Medication('mr-t3-4436', ['309362', 'clopidogrel 75 MG Oral Tablet'], 75, 'Cerebrovascular accident, secondary prevention'),
+    e15Medication('mr-t3-7725', ['617311', 'atorvastatin 40 MG Oral Tablet'], 40, 'Cerebrovascular accident, secondary prevention'),
+    e15Medication('mr-t3-1580', ['197361', 'amlodipine 5 MG Oral Tablet'], 5, 'Essential hypertension'),
+    e15Vital('obs-t3-5179', ['85354-9', 'Blood pressure panel with all children optional'], {
+      component: [
+        { code: { coding: [{ system: LOINC, code: '8462-4', display: 'Diastolic Blood Pressure' }], text: 'Diastolic Blood Pressure' }, valueQuantity: MMHG(78) },
+        { code: { coding: [{ system: LOINC, code: '8480-6', display: 'Systolic Blood Pressure' }], text: 'Systolic Blood Pressure' }, valueQuantity: MMHG(132) },
+      ],
+    }),
+    e15Vital('obs-t3-0632', ['8867-4', 'Heart rate'], { valueQuantity: { value: 72, unit: '/min', system: UCUM, code: '/min' } }),
+    e15Vital('obs-t3-4851', ['29463-7', 'Body Weight'], { valueQuantity: { value: 79.4, unit: 'kg', system: UCUM, code: 'kg' } }),
+    // The 2026-02-18 visit was Dr. Lin's at the facility.
+    { ...visit, type: [{ coding: [{ system: SNOMED, code: '18170008', display: 'Subsequent nursing facility visit' }], text: 'Subsequent nursing facility visit' }], serviceProvider: { reference: 'Organization/org-t3-5520' } },
+  ];
+};
+
+// E16's hip fracture as his discharge summary states it (verifier-phase-P19-T3-1 D3): the fall at
+// home, the St. Brigid admission and the left hip hemiarthroplasty on 04/30, then the Cedar Hill
+// stay; and the 2026-06-01 visit at which his housing status was taken.
+const fractureStay: Resource = {
+  resourceType: 'Encounter',
+  id: 'enc-t3-5364',
+  status: 'finished',
+  class: { system: 'http://terminology.hl7.org/CodeSystem/v3-ActCode', code: 'IMP' },
+  type: [{ coding: [{ system: SNOMED, code: '32485007', display: 'Hospital admission (procedure)' }], text: 'Hospital admission (procedure)' }],
+  subject: subject(E.E16),
+  period: { start: '2026-04-29T18:20:00-04:00', end: '2026-05-03T14:00:00-04:00' },
+  reasonCode: [{ coding: [{ system: SNOMED, code: '5913000', display: 'Fracture of neck of femur (disorder)' }], text: 'Fracture of neck of femur (disorder)' }],
+  hospitalization: {
+    dischargeDisposition: { coding: [{ system: 'http://www.nubc.org/patient-discharge', code: '03', display: 'Discharged/transferred to skilled nursing facility' }], text: 'Discharged/transferred to skilled nursing facility' },
+  },
+  serviceProvider: HOSPITAL,
+};
+const e16Chart: Resource[] = [
+  fractureStay,
+  {
+    ...condition('cond-t3-7419', E.E16, ['5913000', 'Fracture of neck of femur (disorder)'], '2026-04-29T18:20:00-04:00', 'encounter-diagnosis'),
+    clinicalStatus: { coding: [{ system: 'http://terminology.hl7.org/CodeSystem/condition-clinical', code: 'resolved' }] },
+    abatementDateTime: '2026-06-11T10:00:00-04:00',
+    encounter: { reference: 'Encounter/enc-t3-5364' },
+  } as Resource,
+  {
+    resourceType: 'Procedure',
+    id: 'proc-t3-8836',
+    status: 'completed',
+    code: { text: 'Left hip hemiarthroplasty' },
+    subject: subject(E.E16),
+    encounter: { reference: 'Encounter/enc-t3-5364' },
+    performedDateTime: '2026-04-30T10:00:00-04:00',
+    performer: [{ actor: HOSPITAL }],
+    reasonCode: [{ text: 'Fracture of neck of femur, left' }],
+  },
+  {
+    resourceType: 'Encounter',
+    id: 'enc-t3-9902',
+    status: 'finished',
+    class: { system: 'http://terminology.hl7.org/CodeSystem/v3-ActCode', code: 'AMB' },
+    type: [{ coding: [{ system: SNOMED, code: '185347001', display: 'Encounter for problem (procedure)' }], text: 'Encounter for problem (procedure)' }],
+    subject: subject(E.E16),
+    participant: [{ individual: OKAFOR }],
+    period: { start: '2026-06-01T09:30:00-04:00', end: '2026-06-01T10:00:00-04:00' },
+    reasonCode: [{ text: 'Follow-up after skilled nursing facility discharge' }],
+    serviceProvider: CLINIC,
+  },
+];
+
 // E15's home address is his room at Maple Grove.
 const E15_ADDRESS = [{ use: 'home' as const, line: ['Maple Grove Care Center', '1420 Maple Grove Road, Room 214'], city: 'Fitchburg', state: 'MA', postalCode: '01420', country: 'US' }];
 
 // CMS130v14's long-term nursing home exclusion reads the newest 'Housing status' assessment
 // (LOINC 71802-3) on or before the end of the period, with the result 'Lives in nursing home
 // (finding)' (SNOMED 160734000); E16's says he lives in his own home (LOINC answer LA18839-3).
-const housingStatus = (id: string, pt: string, at: string, value: [system: string, code: string, display: string]): Resource => ({
+const housingStatus = (id: string, pt: string, at: string, value: [system: string, code: string, display: string], enc?: string): Resource => ({
   resourceType: 'Observation',
   id,
   status: 'final',
   category: [{ coding: [{ system: 'http://terminology.hl7.org/CodeSystem/observation-category', code: 'social-history', display: 'Social history' }] }],
   code: { coding: [{ system: LOINC, code: '71802-3', display: 'Housing status' }], text: 'Housing status' },
   subject: subject(pt),
+  ...(enc ? { encounter: { reference: `Encounter/${enc}` } } : {}),
   effectiveDateTime: at,
   issued: at,
   performer: [OKAFOR],
@@ -373,7 +523,9 @@ const overlay: Overlay = {
       nursingFacilityVisit,
       rehabStay,
       dischargeSummary,
-      housingStatus('obs-t3-8852', E.E16, '2026-06-01T09:40:00-04:00', [LOINC, 'LA18839-3', 'Patient lives in own home']),
+      housingStatus('obs-t3-8852', E.E16, '2026-06-01T09:40:00-04:00', [LOINC, 'LA18839-3', 'Patient lives in own home'], 'enc-t3-9902'),
+      ...e15Chart(world),
+      ...e16Chart,
     ];
     return {
       put,

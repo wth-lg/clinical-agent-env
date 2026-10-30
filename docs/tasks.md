@@ -246,7 +246,7 @@ Since P19, the ids of the resources the overlay adds keep the `-t3-` tag that ov
 - A FIT order must start by the end of the measurement period, 2026-12-31 (`fit_after_period`).
 - E15 lives long term in a nursing home, recorded only in his housing status, address and visits, not in a note (`nursing_home`).
 - E16's skilled nursing stay was short-term rehab that ended at home, so he is not excluded (`short_rehab_stay`).
-- Fault rule for `nursing_home`: if E15 is not excluded, it is a model fault when the trial ran any of these calls: an Observation search for pt-0034 by category, code, date or `-date` (each shows the housing status on page 1), an Encounter search for pt-0034, or a `fhir_read` of Patient/pt-0034 (task.toml).
+- Fault rule for `nursing_home`: if E15 is not excluded, it is a model fault unless a call that should have surfaced his residence record returned without it. Those calls are an Observation search for pt-0034 by category, code, date or `-date` (each shows the housing status on page 1), an Encounter search for pt-0034, or a `fhir_read` of Patient/pt-0034 (task.toml). The grade's exposure record lists his address, housing status and two facility visits (`nothing_for_others` decisive ids), so an E15 miss shows whether they were seen.
 
 ### Verification
 
