@@ -2,8 +2,8 @@
   "now": "2026-10-23T08:00:00-04:00",
   "world": {
     "file": "fixtures/world.ndjson.gz",
-    "state_hash": "ff7e09056268bb3fe820e8ef7174d33bf63fa44984f4269def963b5300ec5b2a",
-    "ndjson_sha256": "fe0c444620bc07053534290f46bcf1ccccb4980f5f19503c99b06a93781ead98",
+    "state_hash": "95c66c67f2a775cb0e24f6d8040c5a1a38c4897e5f3cf018e649de32a8d6a90a",
+    "ndjson_sha256": "495ab7d9dd6c53bf8032cc7903f39379afc01b043fcf9fa82f6f2b6d327df167",
     "resources": 7483,
     "by_type": {
       "AllergyIntolerance": 53,
@@ -73,7 +73,7 @@
     "fixtures/synthea/generate.sh": "9c20f04e81cd71443b418aaa2c2782b47d3f20fffccdce06959da03b40c33fed",
     "packages/env/canonical.ts": "2189f1d04b2e80df6b919fe23165924869cab63f1c7b9408c0b1c8d10e2d6284",
     "packages/env/clock.ts": "000372240039629abbb215aff20f18cf85e6adf832dad872dc6b1df96b06ff71",
-    "packages/env/mrn.ts": "a6e8b68b4adbfd87bb6315c14cec248ef1622eccfa01cb56d286859c96609455",
+    "packages/env/mrn.ts": "4278f853e9f2d50dc83e1f15ae9ae35fb3e5f39dfdb1b6fea3a4ab2996cb232b",
     "packages/env/overlay.ts": "e4887c2c58157ce395b129d95828d67413a23828de8772e1c2d79ae10ab77f91",
     "packages/env/profile.ts": "ae9901473568b04d98cd0935e8da7883e55b771d0088605c10f9f9071fbaed85",
     "packages/env/renumber.ts": "a18c690c41aa7e22e503b11035c773b76e165fed5b83dbb517a726ed77d2a558",

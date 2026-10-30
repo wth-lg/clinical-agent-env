@@ -28,7 +28,7 @@ Repo id `renal-dose-review`. Title: "Renal and age dose review of Harold Vance u
 
 ### Overview
 
-Pharmacy flagged Harold Vance (pt-0002, MRN 2818-21) for a renal and age dose review; the pharmacist's note of 10/21 is in his chart. Dr. Okafor asks the agent to review his active medications against RBC-PHARM-07, make the changes the policy requires and leave a note.
+Pharmacy flagged Harold Vance (pt-0002, MRN 6229-37) for a renal and age dose review; the pharmacist's note of 10/21 is in his chart. Dr. Okafor asks the agent to review his active medications against RBC-PHARM-07, make the changes the policy requires and leave a note.
 
 The expected end state (`expected.ts`):
 

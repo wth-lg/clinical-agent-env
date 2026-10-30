@@ -4,16 +4,24 @@
 // sets every base Patient's MRN by this rule before the overlays run, so an overlay reads the MRN
 // it quotes in a note from the world, and checks after them that every Patient, a Patient an
 // overlay adds included, carries the rule's MRN and no two share one.
-import { createHash } from 'node:crypto';
 import type { Resource } from './store.ts';
 
 export const MRN_SYSTEM = 'urn:riverbend:mrn';
 const MR = { coding: [{ system: 'http://terminology.hl7.org/CodeSystem/v2-0203', code: 'MR' }] };
 
+// FNV-1a, then murmur3's finalizer, so neighbouring ids (pt-0001, pt-0002) land far apart. Pure
+// JavaScript: packages/env runs in the browser too.
+function hash(s: string): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 0x01000193) >>> 0;
+  h = Math.imul(h ^ (h >>> 16), 0x85ebca6b) >>> 0;
+  h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35) >>> 0;
+  return (h ^ (h >>> 16)) >>> 0;
+}
+
 // A Patient's MRN, NNNN-NN from a hash of its world id: the digits say nothing of the id.
 export function mrn(patientId: string): string {
-  const n = 1_000_000 + (createHash('sha256').update(`riverbend-mrn:${patientId}`).digest().readUInt32BE(0) % 9_000_000);
-  const s = String(n).slice(1).padStart(6, '0');
+  const s = String(hash(`riverbend-mrn:${patientId}`) % 1_000_000).padStart(6, '0');
   return `${s.slice(0, 4)}-${s.slice(4)}`;
 }
 

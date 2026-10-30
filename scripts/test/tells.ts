@@ -36,7 +36,7 @@
 //            or MG, a drug form as RxNorm names it ('oral tablet')
 //   SIG      a sig's first word (a dose, 'Take' or 'Use', other) and whether it gives a dose in units
 //   identifier form (builder-208 pilot-3, builder-209):
-//   IDF      an identifier value's form, digits as 9 and letters as A ('2818-21' is 9999-99)
+//   IDF      an identifier value's form, digits as 9 and letters as A ('6229-37' is 9999-99)
 import { Buffer } from 'node:buffer';
 
 export type R = Record<string, unknown> & { resourceType: string; id: string };
