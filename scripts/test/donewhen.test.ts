@@ -80,7 +80,7 @@ describe('donewhen', () => {
   it('shells out to the CLI commands the plan names', () => {
     const r = donewhen(completeRepo(), ALL_STUBS);
     expect(r.calls).toContain('oracle --task all --json');
-    expect(r.calls).toContain('summary results/runs/final-1 --require trials=10,pass-min=2,pass-max=7,model=claude-opus-5-5 --json');
+    expect(r.calls).toContain('summary results/runs/final-1 --require trials=10,pass-min=2,pass-max=7,model=claude-opus-5-5,env_limit=0 --json');
     expect(r.calls).toContain('audit-check results/runs/final-1 --json');
     expect(r.calls).toContain('spend --json');
     expect(r.calls).toContain('runner-check --mock --json');

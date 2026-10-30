@@ -4,10 +4,11 @@
 // with the M1-M4 count (failures with M1-M4 all met, of the valid failures). Hand counts over the
 // clean fixture run: per task 5 PASS and 5 FAIL, each FAIL failing G1, attributed reasoning and
 // labelled model.
-import { readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { MODEL } from '../../packages/core/anthropic.ts';
+import { NOT_RERUN_REASON } from '../../packages/core/outcomes.ts';
 import { tempDir } from '../../scripts/test/helpers.ts';
 import { main as auditCheck } from '../audit-check.ts';
 import { main as summary } from '../summary.ts';
@@ -45,6 +46,35 @@ describe('pnpm cli summary', () => {
     const s = JSON.parse(readFileSync(join(dir, 'summary.json'), 'utf8')) as { tasks: Record<string, { fault_counts: { label: unknown } }> };
     expect(s.tasks['t-alpha']!.fault_counts.label).toBeNull();
     expect(out).toContainEqual(expect.stringMatching(/by audit label: no audit\.jsonl;/));
+  });
+});
+
+// W0-A (g): an ENV_LIMIT is never re-queued, so the batch leaves it as an unsettled attempt
+// (requeue_reason ENV_LIMIT); summary counts it as env_limit and --require env_limit=0 fails on it.
+describe('pnpm cli summary --require env_limit=0', () => {
+  const withEnvLimit = (name: string) => {
+    const dir = clean(name);
+    const r = JSON.parse(readFileSync(join(dir, 'trials/t-alpha/5.json'), 'utf8')) as Record<string, unknown>;
+    mkdirSync(join(dir, 'requeued/t-alpha'), { recursive: true });
+    writeFileSync(join(dir, 'requeued/t-alpha/5.a-0.json'), JSON.stringify({ ...r, outcome: 'ENV_LIMIT', valid: false, fault: 'env', status: 'LIMIT', detail: 'context_window', score: null, checks: [], attribution: null, attempt: 'a-0', settled: false, requeue_reason: 'ENV_LIMIT' }));
+    return dir;
+  };
+
+  it('exits 1 on a run with one ENV_LIMIT, names it, and counts env_limit in the task and the totals', async () => {
+    const dir = withEnvLimit('env-limit');
+    const out: string[] = [];
+    expect(await summary([dir, '--allow-mock', '--require', 'env_limit=0', '--write'], { out: (l) => out.push(l), err: (l) => out.push(l) })).toBe(1);
+    expect(out).toContain(`violation: ENV_LIMIT in 1 attempt (never rerun: ${NOT_RERUN_REASON.ENV_LIMIT}), required at most 0`);
+    const s = JSON.parse(readFileSync(join(dir, 'summary.json'), 'utf8')) as { totals: { env_limit: number }; tasks: Record<string, { env_limit: number }> };
+    expect(s.totals.env_limit).toBe(1);
+    expect(s.tasks['t-alpha']!.env_limit).toBe(1);
+    expect(s.tasks['t-beta']!.env_limit).toBe(0);
+    expect(out).toContainEqual(expect.stringMatching(/^t-alpha\s.*ENV_LIMIT 1 /));
+  });
+
+  it('exits 0 with env_limit=1, and on the same run without the ENV_LIMIT', async () => {
+    expect(await summary([withEnvLimit('env-limit-1'), '--allow-mock', '--require', 'env_limit=1'], { out: () => {}, err: () => {} })).toBe(0);
+    expect(await summary([clean('env-limit-0'), '--allow-mock', '--require', 'env_limit=0'], { out: () => {}, err: () => {} })).toBe(0);
   });
 });
 

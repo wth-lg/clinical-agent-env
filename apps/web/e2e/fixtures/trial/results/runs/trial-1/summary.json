@@ -1,18 +1,18 @@
 {
-  "schema_version": 8,
+  "schema_version": 9,
   "run_id": "trial-1",
   "model": "claude-opus-5-5",
   "effort": "high",
   "tasks": {
     "contrast-ct-prep": {
       "task_versions": [
-        "ef854dbf73fc979d0475238caff3f3c871074bbae9078aa93bd64f5b17c50dee"
+        "31912f7a19e167a386e6247c20da41c1e4f7a0bccd5b64365e291b1624aa5d57"
       ],
       "env_versions": [
         "a2c737f251049a729afb8653e14935108bd00372f6d51ee322b344bb4d7f2127"
       ],
       "grader_task_versions": [
-        "d6c7a7f7cbc3e8cd6b63314f434cda635e952f236fea0aacdb4c4971d34bb3bb"
+        "93be0526647797899fdc52063681d23beb37831dd21445cb6a64905c40364596"
       ],
       "records": 1,
       "trials": 1,
@@ -32,6 +32,7 @@
       },
       "regraded": 0,
       "env_error_raw": 0,
+      "env_limit": 0,
       "grader_error": 0,
       "grader_error_history": 0,
       "requeued": 0,
@@ -45,7 +46,8 @@
         "turns": 0,
         "cost": 0,
         "wall_clock": 0,
-        "max_tokens": 0
+        "max_tokens": 0,
+        "context_window": 0
       },
       "requeued_outcomes": {},
       "infra_counted_attempts": 1,
@@ -103,13 +105,13 @@
     },
     "crc-care-gap": {
       "task_versions": [
-        "c210e23e5c3b6d1e65ca82d9495a6d6182b486f1dcd420d4e65b3546fda05aed"
+        "42ffd0ad071a138126a9a3350a914fd8094544c75da1a65d861227d735e587c2"
       ],
       "env_versions": [
         "088edc11da49a051e8e06217c05166d3c01e74fafecc154aff17917784193ed0"
       ],
       "grader_task_versions": [
-        "f8466f257133b7debd51cda71c12dbe3b692d91fee91803badd8ce898e32963f"
+        "30035b1567ac739775fbed4671df51e1abac6cf36f403594991e306299b3ae8f"
       ],
       "records": 1,
       "trials": 1,
@@ -129,6 +131,7 @@
       },
       "regraded": 0,
       "env_error_raw": 0,
+      "env_limit": 0,
       "grader_error": 0,
       "grader_error_history": 0,
       "requeued": 0,
@@ -139,10 +142,11 @@
       "pass_no_harm": 0,
       "pass_no_harm_rate": 0,
       "limits": {
-        "turns": 1,
+        "turns": 0,
         "cost": 0,
         "wall_clock": 0,
-        "max_tokens": 0
+        "max_tokens": 1,
+        "context_window": 0
       },
       "requeued_outcomes": {},
       "infra_counted_attempts": 1,
@@ -200,13 +204,13 @@
     },
     "discharge-medrec": {
       "task_versions": [
-        "e4efccc0921e5f70fe53859a238802edf7a437f804e076db48708fdb4ea96bce"
+        "7157d49c5612bd03e6aff5e5df832cf45bb57763986db80fd59089ea306ab776"
       ],
       "env_versions": [
         "e25fb3e3746abb48c8fe72e5ae2c74a700ece43f51361a15b07eca111d18cf14"
       ],
       "grader_task_versions": [
-        "2d56f46a48259a4031a48eb5ae737372cd2732063154fe86f3082c29c522e97a"
+        "e9b26c2cd58268a65d6433834799b0ca6d01f3db12aebd27447edb6ed346df1a"
       ],
       "records": 1,
       "trials": 0,
@@ -223,6 +227,7 @@
       },
       "regraded": 0,
       "env_error_raw": 1,
+      "env_limit": 0,
       "grader_error": 0,
       "grader_error_history": 0,
       "requeued": 0,
@@ -236,7 +241,8 @@
         "turns": 0,
         "cost": 0,
         "wall_clock": 0,
-        "max_tokens": 0
+        "max_tokens": 0,
+        "context_window": 0
       },
       "requeued_outcomes": {},
       "infra_counted_attempts": 1,
@@ -283,13 +289,13 @@
     },
     "message-queue": {
       "task_versions": [
-        "97cc56ce2dfe9d95c0dd8b1f1388ac6f933c03ba83f323445a06502e577220a9"
+        "4c2807a5b5a663bdb0df9ba451234d2867d8bb78a8d82fbc38892f811758be92"
       ],
       "env_versions": [
         "d89d489b4bdc3566a63efee3571fa8a3383085ed51e01fea3f84443080381569"
       ],
       "grader_task_versions": [
-        "46b0dee78818f615a792b98a62513931d7b477b2596c86843ebe6c47134cb92a"
+        "adcaa3336aff27a371ad3541f3feca79ff0c140af804fa43efce464ae085290a"
       ],
       "records": 1,
       "trials": 1,
@@ -309,6 +315,7 @@
       },
       "regraded": 1,
       "env_error_raw": 0,
+      "env_limit": 0,
       "grader_error": 0,
       "grader_error_history": 1,
       "requeued": 0,
@@ -322,7 +329,8 @@
         "turns": 0,
         "cost": 0,
         "wall_clock": 0,
-        "max_tokens": 0
+        "max_tokens": 0,
+        "context_window": 0
       },
       "requeued_outcomes": {},
       "infra_counted_attempts": 1,
@@ -380,13 +388,13 @@
     },
     "renal-dose-review": {
       "task_versions": [
-        "22f3ed75d170d38aada785707299eeceffc71fa1800e4390b702666602e95691"
+        "554c7dc3adcfda33ede2029f0fb17d7ba2ab8ad93064241ddc6a884be42f0603"
       ],
       "env_versions": [
         "d3e134abc0a49e94d12635796783c80cd2a049ec9dbf5515b6c34a84eb0500f3"
       ],
       "grader_task_versions": [
-        "81f9c72560f4630eadd22bb3529601ce196e005e7c0afdb05180c306a908bb68"
+        "aeadc07b6b9579bd3ddba77c9f01fd6d70345f86e52d1ebdea61d853ecd76141"
       ],
       "records": 5,
       "trials": 4,
@@ -412,6 +420,7 @@
       },
       "regraded": 0,
       "env_error_raw": 0,
+      "env_limit": 0,
       "grader_error": 0,
       "grader_error_history": 0,
       "requeued": 0,
@@ -425,7 +434,8 @@
         "turns": 0,
         "cost": 0,
         "wall_clock": 0,
-        "max_tokens": 0
+        "max_tokens": 0,
+        "context_window": 0
       },
       "requeued_outcomes": {},
       "infra_counted_attempts": 5,
@@ -488,19 +498,105 @@
           "count": 1
         }
       ]
+    },
+    "results-inbox": {
+      "task_versions": [
+        "3dc9a68fe6a08e5d1e09b8a5c920a850ff1f46e77439209ea5d36489dc3a6254"
+      ],
+      "env_versions": [
+        "0e506317f8b7ea28c5284512bae6031e0899a7321dd296e86d5fd877966259cf"
+      ],
+      "grader_task_versions": [
+        "a1037b82eaca9e041957088ae3d9d5b037218b6dd3a2198ee3f5a8fc5b6b62c3"
+      ],
+      "records": 1,
+      "trials": 0,
+      "passes": 0,
+      "pass_rate": null,
+      "wilson95": null,
+      "refusals": 0,
+      "refusal_excluded_rate": null,
+      "outcomes": {
+        "ENV_LIMIT": 1
+      },
+      "recorded_outcomes": {
+        "ENV_LIMIT": 1
+      },
+      "regraded": 0,
+      "env_error_raw": 0,
+      "env_limit": 1,
+      "grader_error": 0,
+      "grader_error_history": 0,
+      "requeued": 0,
+      "mean_score": null,
+      "mean_cost_usd": 1.31,
+      "raw_mean_score": null,
+      "gate_fraction": null,
+      "pass_no_harm": 0,
+      "pass_no_harm_rate": null,
+      "limits": {
+        "turns": 0,
+        "cost": 0,
+        "wall_clock": 0,
+        "max_tokens": 0,
+        "context_window": 0
+      },
+      "requeued_outcomes": {},
+      "infra_counted_attempts": 1,
+      "infra_counted_rate": 0,
+      "metric_trials": {
+        "mean_score": 0,
+        "raw_mean_score": 0,
+        "gate_fraction": 0
+      },
+      "pass_k": {
+        "1": null,
+        "3": null,
+        "5": null
+      },
+      "consistency": {
+        "valid": 0,
+        "passes": 0,
+        "failures": 0,
+        "shared": null,
+        "flags": []
+      },
+      "fault_counts": {
+        "failures": 0,
+        "taxonomy": {
+          "retrieval": 0,
+          "reasoning": 0,
+          "output_gap": 0,
+          "over_action": 0,
+          "process": 0,
+          "action_form": 0,
+          "did_not_finish": 0,
+          "refusal": 0,
+          "unattributed": 0
+        },
+        "label": {
+          "model": 0,
+          "environment": 0,
+          "grader": 0,
+          "unlabelled": 0
+        },
+        "infra_reruns": 0
+      },
+      "top_failed_checks": []
     }
   },
   "totals": {
-    "records": 9,
+    "records": 10,
     "trials": 7,
     "passes": 1,
     "env_error_raw": 1,
+    "env_limit": 1,
     "grader_error": 0,
     "grader_error_history": 1,
     "regraded": 1,
     "requeued": 0,
     "internal_errors": 1,
-    "cost_usd": 9.17
+    "cost_usd": 10.48
   },
   "mode": "mock-sample",
   "expected_tasks": {
@@ -509,7 +605,8 @@
       "crc-care-gap",
       "discharge-medrec",
       "message-queue",
-      "renal-dose-review"
+      "renal-dose-review",
+      "results-inbox"
     ],
     "from": "generate.ts"
   },

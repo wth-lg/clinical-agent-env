@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:crc-care-gap:7",
   "task_id": "crc-care-gap",
-  "task_version": "c210e23e5c3b6d1e65ca82d9495a6d6182b486f1dcd420d4e65b3546fda05aed",
+  "task_version": "42ffd0ad071a138126a9a3350a914fd8094544c75da1a65d861227d735e587c2",
   "env_version": "088edc11da49a051e8e06217c05166d3c01e74fafecc154aff17917784193ed0",
-  "grader_task_version": "f8466f257133b7debd51cda71c12dbe3b692d91fee91803badd8ce898e32963f",
+  "grader_task_version": "30035b1567ac739775fbed4671df51e1abac6cf36f403594991e306299b3ae8f",
   "fixture_hash": "2266fa587f4379fce743be6cc49ae221a54bcffc45f14cf3dafa7e7a59853601",
   "state_hash": {
     "initial": "2266fa587f4379fce743be6cc49ae221a54bcffc45f14cf3dafa7e7a59853601",
@@ -45,7 +45,7 @@
   "env_git_sha": null,
   "ended": "2026-10-23T13:02:42.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "13",
+  "grader_version": "14",
   "outcome": "FAIL",
   "valid": true,
   "fault": "model",

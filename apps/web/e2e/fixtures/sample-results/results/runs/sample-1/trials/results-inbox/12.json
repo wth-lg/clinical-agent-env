@@ -1,0 +1,74 @@
+{
+  "trial_id": "sample-1:results-inbox:12",
+  "task_id": "results-inbox",
+  "task_version": "3dc9a68fe6a08e5d1e09b8a5c920a850ff1f46e77439209ea5d36489dc3a6254",
+  "env_version": "0e506317f8b7ea28c5284512bae6031e0899a7321dd296e86d5fd877966259cf",
+  "grader_task_version": "a1037b82eaca9e041957088ae3d9d5b037218b6dd3a2198ee3f5a8fc5b6b62c3",
+  "fixture_hash": "2266fa587f4379fce743be6cc49ae221a54bcffc45f14cf3dafa7e7a59853601",
+  "state_hash": {
+    "initial": "2266fa587f4379fce743be6cc49ae221a54bcffc45f14cf3dafa7e7a59853601",
+    "final": "2266fa587f4379fce743be6cc49ae221a54bcffc45f14cf3dafa7e7a59853601",
+    "replay_final": "2266fa587f4379fce743be6cc49ae221a54bcffc45f14cf3dafa7e7a59853601"
+  },
+  "model_requested": "claude-opus-5-5",
+  "models_returned": [
+    "claude-opus-5-5"
+  ],
+  "effort": "high",
+  "api_version": "2026-10-21",
+  "started": "2026-10-23T15:12:41.000Z",
+  "turns": 6,
+  "tool_calls": 21,
+  "tool_errors": {
+    "INVALID_INPUT": 0,
+    "NOT_FOUND": 0,
+    "CONFLICT": 0,
+    "NOT_SUPPORTED": 0,
+    "INTERNAL": 0
+  },
+  "usage": {
+    "input": 0,
+    "cache_write": 0,
+    "cache_read": 0,
+    "output": 0
+  },
+  "cost_usd": 1.31,
+  "api_retries": 0,
+  "retry_wait_ms": 0,
+  "stop_reason": "tool_use",
+  "refusal_category": null,
+  "status": "LIMIT",
+  "stop": null,
+  "detail": "turns",
+  "summary": null,
+  "resumed": false,
+  "env_git_sha": null,
+  "ended": "2026-10-23T15:13:49.000Z",
+  "judge_cost_usd": 0,
+  "grader_version": "14",
+  "outcome": "ENV_LIMIT",
+  "valid": false,
+  "fault": "env",
+  "checks": [],
+  "score": null,
+  "judge": {
+    "calls": 0,
+    "unknown": 0,
+    "unknown_penalties": 0,
+    "score_penalties_met": null,
+    "score_penalties_not_met": null,
+    "over_allowance": 0,
+    "cache_keys": [],
+    "cache": []
+  },
+  "attribution": null,
+  "error": null,
+  "progress": {
+    "tail": 20,
+    "repeats": 0,
+    "new_writes": 0,
+    "looping": false
+  },
+  "index": 12,
+  "trajectory": "trajectories/results-inbox/12.jsonl"
+}

@@ -5,11 +5,17 @@
 //
 // Each trial gets exactly one outcome, checked in this order. The first five are never valid
 // trials and never model failures: they are rerun, not graded. CANCELLED sits with the INFRA
-// outcomes: the run was stopped from outside, so it says nothing about the model. GRADER_ERROR
-// is a check that threw, or a regrade whose world or replay differs from the record: the
-// grader's fault, never rerun (RERUN_OUTCOMES). REFUSAL, LIMIT, FAIL and PASS are valid and count
-// in the headline denominator. GRADER_BUG is set only by an audit, never by code, so it is not
-// listed.
+// outcomes: the run was stopped from outside, so it says nothing about the model. ENV_LIMIT is a
+// stop at the model's context window, or at a turn, cost or working-time cap without strong
+// evidence that the model was looping (rule P-L, packages/grader/progress.ts, which fails safe;
+// plan-amendment-worklist W0-A): the environment's fault, since the task did not fit the limits
+// the harness set; a rerun would stop the same way, so it is never rerun, and a human reviews it
+// first (every pilot and the final run require env_limit=0). GRADER_ERROR is a check that threw, or a regrade whose
+// world or replay differs from the record: the grader's fault, never rerun. NOT_RERUN_REASON
+// names the two and why, and RERUN_OUTCOMES is every other excluded outcome. REFUSAL, LIMIT
+// (a second max_tokens stop in a row, or a cap reached while looping), FAIL and PASS are valid
+// and count in the headline denominator. GRADER_BUG is set only by an audit, never by code, so
+// it is not listed.
 //
 // The attribution definitions (plan phase P14a) live here too, and only here: FAULT_DEFINITIONS
 // (one sentence per Fault and the criteria that decide it), FAULT_PRECEDENCE, the confirmation
@@ -17,7 +23,9 @@
 // DENOMINATOR_OPERATOR_NOTE. explain.ts evaluates the criteria; the UI, cli/audit-check.ts, the
 // auditor prompt and the writeup render these strings, and scripts/test/one-definition.test.ts
 // fails on a copy written anywhere else.
-export const OUTCOMES = ['INVALID', 'INFRA_HARNESS', 'INFRA_API', 'CANCELLED', 'ENV_ERROR', 'GRADER_ERROR', 'REFUSAL', 'LIMIT', 'FAIL', 'PASS'] as const;
+import { CAP_LIMITS, progressText, type Progress } from '../grader/progress.ts';
+
+export const OUTCOMES = ['INVALID', 'INFRA_HARNESS', 'INFRA_API', 'CANCELLED', 'ENV_ERROR', 'ENV_LIMIT', 'GRADER_ERROR', 'REFUSAL', 'LIMIT', 'FAIL', 'PASS'] as const;
 export type Outcome = (typeof OUTCOMES)[number];
 export const VALID_OUTCOMES: readonly Outcome[] = ['REFUSAL', 'LIMIT', 'FAIL', 'PASS'];
 
@@ -34,6 +42,7 @@ export const FAULT: Readonly<Record<Outcome, Fault | null>> = {
   INFRA_API: 'infra',
   CANCELLED: 'infra',
   ENV_ERROR: 'env',
+  ENV_LIMIT: 'env',
   GRADER_ERROR: 'grader',
   REFUSAL: 'refusal',
   LIMIT: 'model',
@@ -41,10 +50,18 @@ export const FAULT: Readonly<Record<Outcome, Fault | null>> = {
   PASS: null,
 };
 
-// The excluded outcomes a rerun can cure. A grader's fault is not one: rerunning would pay for a
-// model trial to work around a grader bug.
-export const RERUN_OUTCOMES: readonly Outcome[] = OUTCOMES.filter((o) => !isValid(o) && FAULT[o] !== 'grader');
-const NEVER_RERUN: readonly Outcome[] = OUTCOMES.filter((o) => !isValid(o) && FAULT[o] === 'grader');
+// The excluded outcomes a rerun cannot cure, and what must happen first. A grader's fault is one:
+// rerunning would pay for a model trial to work around a grader bug. A stop at the context window
+// or at a cap with no loop is another: the same task stops the same way, and a human reviews the
+// stop, which may also be a model padding its calls (rule P-L fails safe). The UI and
+// DENOMINATOR_RULE read these sentences, so they are written only here.
+export const NOT_RERUN_REASON: Readonly<Partial<Record<Outcome, string>>> = {
+  GRADER_ERROR: 'the grader must be fixed first',
+  ENV_LIMIT: 'a human reviews it first; the task is resized if it did not fit its limits',
+};
+export const NEVER_RERUN: readonly Outcome[] = Object.keys(NOT_RERUN_REASON) as Outcome[];
+// The excluded outcomes a rerun can cure.
+export const RERUN_OUTCOMES: readonly Outcome[] = OUTCOMES.filter((o) => !isValid(o) && !NEVER_RERUN.includes(o));
 
 // done-when (6)'s three attribution labels, and the one mapping from the five faults to them. An
 // INFRA trial gets no label: it is not a failure, it is excluded from the valid denominator and
@@ -137,6 +154,11 @@ export interface AttributionFacts {
   decisive: { id: string; first_failed: string | null; exposure: ReadonlyArray<{ id: string; first_exposed_step: number | null; exposable: boolean | null }> | null; exposability_unchecked?: string | null } | null;
   matrix: MatrixResult | null;
   check_error: { check: string | null; message: string } | null;
+  // The trial's last limit event (events.ts LimitEvent), when the caller has the trajectory and it
+  // has one: its kind, cap, value and code. null otherwise.
+  limit?: { limit: string; cap: number; value: number; code: string | null } | null;
+  // Rule P-L's facts over the trajectory (packages/grader/progress.ts), when the caller has it.
+  progress?: Progress | null;
   // The audit row's answers clinically_acceptable and tool_rejections_correct (explain.ts AuditRow),
   // each its adjudicated answer when the row has one, else the auditor's: 'yes', 'no' or null when
   // the row gives neither. decisive_step is the step the row cites, and cited_step that step of the
@@ -175,6 +197,12 @@ export interface FaultDefinition {
   criteria: readonly Criterion[];
 }
 
+// Whether a cap stop was reached with no loop (E8), or while the model looped (MF2): rule P-L
+// over the trajectory or the facts the grader recorded from it, else the outcome the grader gave.
+const capStop = (f: AttributionFacts): boolean => f.status === 'LIMIT' && CAP_LIMITS.includes(f.detail ?? '');
+const noLoop = (f: AttributionFacts): boolean => (f.progress ? !f.progress.looping : f.outcome === 'ENV_LIMIT');
+const capEvidence = (f: AttributionFacts): string => `${f.detail} limit; ${f.progress ? progressText(f.progress) : 'no trajectory to apply rule P-L to'}`;
+
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 const list = (xs: readonly string[]) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs.at(-1)}`);
 const replayOk = (h: AttributionFacts['state_hash']) => h.final !== null && h.replay_final === h.final;
@@ -190,6 +218,7 @@ const negation = (c: Criterion['check']): Criterion['check'] => (f) => {
   const r = c(f);
   return result(r.met === false, r.evidence);
 };
+const MF2_READS = ['record.status', 'record.detail', 'trajectory: the last 20 executed tool calls, their tools and inputs (rule P-L, packages/grader/progress.ts), or record.progress'];
 const statusIs = (o: Outcome) => (f: AttributionFacts) => result(f.status === o || f.outcome === o, `status ${f.status}${f.detail ? `, detail ${f.detail}` : ''}`);
 
 // The criteria that confirm a model or refusal label: all met is confirmed, one pending is
@@ -273,7 +302,7 @@ export const CONFIRMATION_CRITERIA: readonly Criterion[] = [
 
 export const FAULT_DEFINITIONS: Readonly<Record<Fault, FaultDefinition>> = {
   model: {
-    sentence: 'The model is at fault when a valid trial failed a gate check or stopped at a limit, and no infrastructure, grader or environment criterion holds.',
+    sentence: 'The model is at fault when a valid trial failed a gate check, or stopped at its output limit or at a limit it reached while looping, and no infrastructure, grader or environment criterion holds.',
     criteria: [
       {
         id: 'MF1',
@@ -283,9 +312,14 @@ export const FAULT_DEFINITIONS: Readonly<Record<Fault, FaultDefinition>> = {
       },
       {
         id: 'MF2',
-        text: 'The trial stopped at its turn, cost, time or output limit before the model finished.',
-        reads: ['record.status', 'record.detail'],
-        check: (f) => result(f.outcome === 'LIMIT', `current outcome ${f.outcome}${f.outcome === 'LIMIT' && f.detail ? `, ${f.detail} limit` : ''}`),
+        text: 'The trial stopped at its output limit, or at its turn, cost or working-time limit while it was looping (rule P-L: at least 10 of its last 20 calls repeat an earlier call on the same target, and none of them writes to a target not written before).',
+        reads: MF2_READS,
+        check: (f) => {
+          if (f.status !== 'LIMIT' && f.outcome !== 'LIMIT') return result(false, `current outcome ${f.outcome}`);
+          if (f.detail === 'max_tokens') return result(true, 'max_tokens limit: a second answer in a row cut off at the output limit');
+          if (capStop(f)) return result(!noLoop(f), capEvidence(f));
+          return result(f.outcome === 'LIMIT' && f.detail !== 'context_window', `current outcome ${f.outcome}${f.detail ? `, ${f.detail} limit` : ''}`);
+        },
       },
     ],
   },
@@ -301,7 +335,7 @@ export const FAULT_DEFINITIONS: Readonly<Record<Fault, FaultDefinition>> = {
     ],
   },
   env: {
-    sentence: 'The environment is at fault when a tool failed on its own or refused a valid call, the start or final state is not correct, an environment rule broke, or a record that a check needs was not reachable: no tool result showed it to the reference solution or an accepted alternative of the task in the grader validation matrix.',
+    sentence: 'The environment is at fault when a tool failed on its own or refused a valid call, the start or final state is not correct, an environment rule broke, the trial stopped at the model\'s context window or at a turn, cost or working-time limit without strong evidence that the model was looping, or a record that a check needs was not reachable: no tool result showed it to the reference solution or an accepted alternative of the task in the grader validation matrix.',
     criteria: [
       {
         id: 'E1',
@@ -352,6 +386,25 @@ export const FAULT_DEFINITIONS: Readonly<Record<Fault, FaultDefinition>> = {
           const unconfirmed = audit.adjudicated_label === null ? 'not confirmed' : `not confirmed (adjudicated ${audit.adjudicated_label})`;
           return result(audit.tool_rejections_correct === 'no' && s?.is_error === true && s.schema_error === null && confirmed !== null, `tool_rejections_correct ${audit.tool_rejections_correct ?? 'not answered'}, ${step}, ${confirmed ?? unconfirmed}`);
         },
+      },
+      {
+        id: 'E7',
+        record_fact: true,
+        text: "The trial stopped at the model's context window, so the list was too long for the window, not the model.",
+        reads: ['record.status', 'record.detail', 'trajectory limit event (code stop_reason or prompt_too_long, cap and value in tokens)'],
+        check: ({ status, detail, limit }) => {
+          if (status !== 'LIMIT' || detail !== 'context_window') return result(false, `status ${status}${detail ? `, detail ${detail}` : ''}`);
+          const tooLong = limit?.code === 'prompt_too_long';
+          const how = tooLong ? `a 400 prompt is too long${limit!.value > 0 ? `: ${limit!.value} tokens > ${limit!.cap}` : ''}` : `stop_reason model_context_window_exceeded${limit ? ` with ${limit.value} tokens in context` : ''}`;
+          return result(true, `context_window limit: ${how}`);
+        },
+      },
+      {
+        id: 'E8',
+        record_fact: true,
+        text: 'The trial stopped at a turn, cost or working-time limit and rule P-L found no loop (fewer than 20 calls ran, fewer than 10 of the last 20 repeat an earlier call on the same target, or one of them writes to a target not written before), so a human reviews the stop before the run goes on.',
+        reads: MF2_READS,
+        check: (f) => (capStop(f) ? result(noLoop(f), capEvidence(f)) : result(false, `status ${f.status}${f.detail ? `, detail ${f.detail}` : ''}`)),
       },
     ],
   },
@@ -452,7 +505,7 @@ export const RUN_BLOCKS: readonly Criterion[] = [
 
 export type Confirmation = 'confirmed' | 'provisional' | 'contradicted';
 export const CONFIRMATION_DEFINITIONS: Readonly<Record<Confirmation, string>> = {
-  confirmed: 'Every criterion that can confirm the label is met: M1-M5 for a model or refusal label; for an environment or grader label, the record alone when E1-E4, GR1 or GR2 decided it, and a human audit with the same label when E5, E6, GR3, GR4 or GR5 decided it; and the record alone for infra.',
+  confirmed: 'Every criterion that can confirm the label is met: M1-M5 for a model or refusal label; for an environment or grader label, the record alone when E1-E4, E7, E8, GR1 or GR2 decided it, and a human audit with the same label when E5, E6, GR3, GR4 or GR5 decided it; and the record alone for infra.',
   provisional: 'Nothing contradicts the label, but a confirming criterion is still pending, such as a missing audit, manifest hash or matrix result.',
   contradicted: 'A confirming criterion is not met or a human audit gives another label, so the label must be reviewed before it is used.',
 };
@@ -460,13 +513,13 @@ export const CONFIRMATION_DEFINITIONS: Readonly<Record<Confirmation, string>> = 
 export const PASS_DEFINITION = 'A trial is a PASS when every gate check of its current grade is met (record.checks, or the last record.regrades[].checks); any environment or grader criterion that holds is shown as a note and does not change the outcome. A PASS is a false PASS (GR5) when the human audit of that PASS labels it grader with evidence: the outcome stays PASS, but it is the grader\'s fault and is not counted as a pass. A grader label from the audit of a failure that a grader fix and regrade turned into a PASS is not a false PASS, and neither is an audit outcome GRADER_BUG on a PASS: the audit row of a PASS has the outcome PASS, and a false PASS is its label grader.';
 
 export const DENOMINATOR_RULE = [
-  `Only ${list(VALID_OUTCOMES)} count in the denominator, and every other outcome is excluded: ${list(RERUN_OUTCOMES)} are excluded and rerun, and ${list(NEVER_RERUN)} ${NEVER_RERUN.length === 1 ? 'is' : 'are'} excluded and never rerun as a model trial.`,
+  `Only ${list(VALID_OUTCOMES)} count in the denominator, and every other outcome is excluded: ${list(RERUN_OUTCOMES)} are excluded and rerun, and ${list(NEVER_RERUN)} ${NEVER_RERUN.length === 1 ? 'is' : 'are'} excluded and never rerun as a model trial (${NEVER_RERUN.map((o) => `${o}: ${NOT_RERUN_REASON[o]}`).join('; ')}).`,
   'A GRADER_ERROR in a committed run blocks the run until a grader fix and a full offline regrade, and a valid failure labelled environment or grader is not allowed in a committed run: cli audit-check fails the run until a grader label is resolved by that fix and regrade, or an environment label by an environment fix and a rerun of only the affected trials, disclosed in results/changelog.d, so a run with one has no headline pass rate.',
   'A false PASS (GR5) is not counted as a pass, and it blocks the run in the same way until a grader fix, a full offline regrade and a disclosure in results/changelog.d.',
   'A refusal counts as a model failure inside the denominator, and refusal_excluded_rate gives the pass rate with refusals left out.',
 ].join(' ');
 
 export const DENOMINATOR_OPERATOR_NOTE = [
-  'ENV_ERROR trials still count raw against the env_error_raw requirement.',
+  'ENV_ERROR trials still count raw against the env_error_raw requirement, and ENV_LIMIT attempts against the env_limit requirement, which every pilot and the final run hold at 0, so a human reviews every ENV_LIMIT before the run goes on: rule P-L fails safe, so a cap stop it does not find looping is ENV_LIMIT, also when the model padded its calls.',
   "`summary --require grader_error=0` checks each record's current grade after any offline regrade, so a regraded record counts by its new outcome; the summary prints grader_error_history (every GRADER_ERROR ever recorded, regraded ones included) for disclosure, and grader_error_history is never a require key.",
 ].join(' ');

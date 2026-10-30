@@ -173,11 +173,13 @@ function clause3(): Verdict {
   };
 }
 
+// env_limit=0: an ENV_LIMIT is never rerun and a human reviews it first, so the final run passes
+// only with none (verifier-phase-P17i-W0-A-r3-1 M4).
 const summaryArgs = [
   'summary',
   FINAL_RUN,
   '--require',
-  `trials=10,pass-min=2,pass-max=7,model=${MODEL}`,
+  `trials=10,pass-min=2,pass-max=7,model=${MODEL},env_limit=0`,
   '--json',
 ];
 

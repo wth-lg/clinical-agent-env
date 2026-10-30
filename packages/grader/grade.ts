@@ -5,7 +5,7 @@
 // Order: the outcome the trial already has (outcome.ts); an invalid trial is not graded (no
 // checks run, no judge call). Otherwise every gate check, then every rubric item, each group in
 // declared order (results keep the declared order). PASS when every gate is met (unless the
-// trial ended REFUSAL or LIMIT). Score = Σ points of met items (negatives included) ÷ Σ positive
+// trial ended REFUSAL or LIMIT; ENV_LIMIT is invalid and not graded). Score = Σ points of met items (negatives included) ÷ Σ positive
 // points, clipped to [0, 1], over the rubric items that are not unknown (HealthBench style);
 // null when no positive item is known.
 //
@@ -16,15 +16,21 @@
 // `error` names the first check that threw (the others that threw are in its message). A judge
 // call the client failed ends the trial at once as classifyFailure says, as a model call would
 // (INFRA_API for a 401, 403, 404, billing error or retries exhausted), invalid, with stops_batch
-// as the client says; it outranks an earlier GRADER_ERROR, since the trial is re-queued. A
-// trial whose facts say it reached a final state that is not here is GRADER_ERROR too. Only a
+// as the client says; it outranks an earlier GRADER_ERROR. Those outcomes are re-queued
+// (outcomes.ts RERUN_OUTCOMES). The one exception is a judge prompt too long for the judge's
+// context window (classifyFailure code prompt_too_long): the grader built that input, so it is a
+// grader bug like a check that threw, GRADER_ERROR with grading going on, never ENV_LIMIT
+// (verifier-phase-P17i-W0-A-1 F2). A trial whose facts say it reached a final state that is not
+// here is GRADER_ERROR too. Only a
 // judge cache miss on a regrade throws (JudgeCacheMiss): a regrade never calls the judge.
 //
 // The GRADER_ERROR policy (plan phase P12): a GRADER_ERROR is a grader bug, settled and never
 // re-queued as a model trial. The fix is the grader change (bump GRADER_VERSION, or the task's
 // grader-side files, which changes its grader_task_version, packages/core/tasks.ts), then a full
 // offline regrade of the run (cli/regrade.ts) from each record's trajectory and judge cache,
-// which needs no judge call because grading went on past the throw. summary reads each record's
+// which needs no judge call because grading went on past the throw; a judge prompt too long is
+// the exception, since its fix changes that judge input, so the record's cache has no answer for
+// it (a regrade throws JudgeCacheMiss) until the judge is asked again. summary reads each record's
 // current grade, so `--require grader_error=0` holds after the regrade, and prints the records
 // that were GRADER_ERROR in an earlier grade as grader_error_history, for disclosure. replay
 // compares env_version only, so `--require replay=all` still holds after a grader fix.
@@ -36,7 +42,8 @@ import { diff, keyOf } from './diff.ts';
 import { firstExposed, lastWrite, stepsOf } from './exposure.ts';
 import { gateResource, type GateResource } from './gate-view.ts';
 import { Judge, JudgeCacheMiss, JudgeClientError, judgeCallBudget, type JudgeCacheEntry, type JudgeClient, type JudgeEffort } from './judge.ts';
-import { FAULT, isValid, trialOutcome, type Fault, type Outcome, type TrialFacts } from './outcome.ts';
+import { capProgress, FAULT, isValid, trialOutcome, type Fault, type Outcome, type TrialFacts } from './outcome.ts';
+import type { Progress } from './progress.ts';
 
 // Bump on any change that can change what a grade is. It is part of every task's
 // grader_task_version (packages/core/tasks.ts), with the task's grader-side files; regrades
@@ -51,8 +58,14 @@ import { FAULT, isValid, trialOutcome, type Fault, type Outcome, type TrialFacts
 // decisiveGate, decisions.tsv 2026-10-28T06:50). 12: TAXONOMY gains action_form, from a failed
 // gate's action_form mark (P17j JG8b, pre-audit M3). 13: a source counts as seen before a write
 // only when its result came back in an earlier turn (Step.turn, exposure.ts seenBefore), so a
-// read in the same answer as the write is not (verifier-phase-P17i-P17-T5-1 F2).
-export const GRADER_VERSION = '13';
+// read in the same answer as the write is not (verifier-phase-P17i-P17-T5-1 F2). 14: a LIMIT at the
+// context window, or at a turn, cost or working-time cap that rule P-L (progress.ts) does not
+// find looping, is ENV_LIMIT, the environment's (outcome.ts; plan-amendment-worklist W0-A); the
+// rule fails safe: looping only when at least 10 of the last 20 calls repeat an earlier call's
+// target and none of them writes a target not written before. A judge prompt too long is
+// GRADER_ERROR (verifier-phase-P17i-W0-A-1 F2). Still 14 through the W0-A fix rounds: 14 was never
+// on main and no record was graded under an earlier P-L rule.
+export const GRADER_VERSION = '14';
 
 export interface CheckResult {
   id: string;
@@ -88,6 +101,10 @@ export interface Grade {
   judge: JudgeRecord;
   attribution: Attribution | null;
   error: GradeError | null;
+  // Rule P-L's facts (progress.ts) on a trial that stopped at a turn, cost or working-time cap,
+  // absent on any other trial, so a reader without the trajectory (the Runs list) gives the
+  // same reason as the trial page.
+  progress?: Progress;
 }
 
 export interface JudgeRecord {
@@ -220,7 +237,13 @@ function judgeOf(judge: Judge, results: readonly CheckResult[], scored: boolean)
 
 // Grades with `judge`, whose cost and cache entries the caller can read afterwards.
 export async function gradeWith(input: GradeInput, judge: Judge): Promise<Grade> {
-  const early = trialOutcome(input.trial);
+  const graded = await gradeChecks(input, judge);
+  const p = capProgress(input.trial, input.events);
+  return p === null ? graded : { ...graded, progress: p };
+}
+
+async function gradeChecks(input: GradeInput, judge: Judge): Promise<Grade> {
+  const early = trialOutcome(input.trial, input.events);
   if (early !== null && !isValid(early)) return ungraded(early);
   if (input.final === null) {
     return ungraded('GRADER_ERROR', { check: null, message: `the record says the trial reached a final state (status ${input.trial.status}), and the grader has none`, stops_batch: false });
@@ -259,7 +282,7 @@ export async function gradeWith(input: GradeInput, judge: Judge): Promise<Grade>
       byCheck.set(c, result(c, c.kind === 'gate' ? c.fn(gateCtx) : await c.fn(ctxFor(c))));
     } catch (e) {
       if (e instanceof JudgeCacheMiss) throw e;
-      if (e instanceof JudgeClientError) {
+      if (e instanceof JudgeClientError && e.failure.code !== 'prompt_too_long') {
         byCheck.set(c, result(c, { met: 'unknown', evidence: { judge_error: e.message } }));
         const outcome: Outcome = e.failure.status;
         const checks = ordered();
@@ -268,8 +291,9 @@ export async function gradeWith(input: GradeInput, judge: Judge): Promise<Grade>
           error: { check: c.id, message: e.message, stops_batch: e.failure.stopsBatch },
         };
       }
-      // A grader bug: recorded on its check, and grading goes on (see the header).
-      const message = errorText(e);
+      // A grader bug: recorded on its check, and grading goes on (see the header). A judge prompt
+      // too long for the judge's context window is one: the grader built the judge's input.
+      const message = e instanceof JudgeClientError ? `judge prompt is too long for the judge model's context window (the grader's input): ${e.message}` : errorText(e);
       byCheck.set(c, result(c, { met: 'unknown', evidence: { grader_error: message } }));
       threw.push({ check: c.id, message });
     }

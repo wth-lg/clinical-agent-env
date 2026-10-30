@@ -67,7 +67,7 @@ describe('summary metrics beside k/n', () => {
     expect(t.raw_mean_score).toBeCloseTo(0.2, 6);
     expect(t.gate_fraction).toBeCloseTo(0.583333, 6);
     expect(t).toMatchObject({ pass_no_harm: 0, pass_no_harm_rate: 0 });
-    expect(t.limits).toEqual({ turns: 0, cost: 1, wall_clock: 0, max_tokens: 0 });
+    expect(t.limits).toEqual({ turns: 0, cost: 1, wall_clock: 0, max_tokens: 0, context_window: 0 });
     expect(t.requeued_outcomes).toEqual({ INFRA_API: 1 });
     // Passes over the valid trials plus the INFRA and ENV_ERROR attempts: 1/4.
     expect(t).toMatchObject({ infra_counted_attempts: 4, infra_counted_rate: 0.25, metric_trials: { mean_score: 3, raw_mean_score: 3, gate_fraction: 3 } });
@@ -80,7 +80,7 @@ describe('summary metrics beside k/n', () => {
     expect(r.code, r.err).toBe(0);
     expect(r.out).toMatch(/t-gamma\s+1\/3\s+Wilson 95% 6\.1%-79\.2%/);
     expect(r.out).toContain('mean score 0.266667 (3 valid)  raw mean 0.200000 (3)  gates met 0.583333 (3)  pass_no_harm 0/3');
-    expect(r.out).toContain('LIMIT turns 0, cost 1, wall_clock 0, max_tokens 0  re-queued INFRA_API 1  infra-counted 1/4 (0.250000)');
+    expect(r.out).toContain('LIMIT turns 0, cost 1, wall_clock 0, max_tokens 0, context_window 0  re-queued INFRA_API 1  infra-counted 1/4 (0.250000)');
   });
 
   // decisions.tsv 2026-10-26T21:00 (the verifier's probe P4 of P17i C2): a PASS whose harm item
@@ -104,7 +104,7 @@ describe('summary metrics beside k/n', () => {
     const t = JSON.parse(r.out).tasks[TASK];
     expect(t).toMatchObject({ trials: 6, passes: 5, pass_no_harm: 2 });
     expect(t.pass_no_harm_rate).toBeCloseTo(2 / 6, 10);
-    expect(t.limits).toEqual({ turns: 0, cost: 0, wall_clock: 0, max_tokens: 0, unknown: 1 });
+    expect(t.limits).toEqual({ turns: 0, cost: 0, wall_clock: 0, max_tokens: 0, context_window: 0, unknown: 1 });
   });
 
   it('rawScore is the grader score before clipping', () => {

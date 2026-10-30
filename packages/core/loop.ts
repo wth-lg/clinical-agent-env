@@ -9,8 +9,16 @@
 //                          recorded as a tool_result with executed false and "episode finished"
 //   an answer without tool use (end_turn)
 //   a refusal              REFUSAL
-//   a cap                  LIMIT, a model fault, so only what the model used counts (R14-13,
-//                          R14-14): turns (requests sent), cost (the priced usage of the
+//   the context window     LIMIT context_window: an answer with stop_reason
+//                          model_context_window_exceeded (code stop_reason; none of its tool
+//                          calls runs, complete or cut off), or a 400 prompt is too long (code
+//                          prompt_too_long). The grader grades it ENV_LIMIT, the environment's:
+//                          the task's list did not fit the window (plan-amendment-worklist W0-A)
+//   a cap                  LIMIT, counted on what the model used only (R14-13, R14-14). Whose
+//                          fault it is the grader decides (packages/grader/outcome.ts): the
+//                          model's while it was looping, the environment's (ENV_LIMIT) otherwise
+//                          (rule P-L, packages/grader/progress.ts, which fails safe). The
+//                          caps: turns (requests sent), cost (the priced usage of the
 //                          answers so far; a worst-case settle of a dropped or aborted attempt
 //                          is in the ledger and cost_usd but not here) and working time
 //                          (elapsed time on the injected clock less retry_wait_ms: failed
@@ -35,7 +43,7 @@
 // injected `now` and `timeout`, used only for the working-time cap and the elapsed bound.
 import { classifyFailure, type CallResult, type MessageParam, type MessageParams, type SendOptions } from './anthropic.ts';
 import { PER_TRIAL_CAP_USD, usageCostUsd, type Usage } from './cost.ts';
-import type { ErrorStatus, EventBody, Limit, TrialStatus } from './events.ts';
+import type { ErrorStatus, EventBody, Limit, LimitCode, TrialStatus } from './events.ts';
 import { ERROR_CODES, internalError, type ErrorCode } from '../env/tools/errors.ts';
 import { callTool, type Tool, type ToolResult } from '../env/tools/registry.ts';
 import type { WriteContext } from '../env/tools/write/index.ts';
@@ -76,7 +84,7 @@ export interface LoopInput {
 }
 
 export type Terminal =
-  | { type: 'limit'; limit: Limit; cap: number; value: number }
+  | { type: 'limit'; limit: Limit; cap: number; value: number; code?: LimitCode }
   | { type: 'error'; status: ErrorStatus; code: string; message: string }
   | { type: 'cancelled'; reason: string };
 
@@ -120,10 +128,16 @@ interface ToolUse {
 
 export const errorText = (e: unknown): string => (e instanceof Error ? `${e.name}: ${e.message}` : String(e));
 
-// How a failed send ends the trial: cancelled, or as classifyFailure says.
-function clientFailure(e: unknown, signal: AbortSignal | undefined): Exclude<Terminal, { type: 'limit' }> {
+// How a failed send ends the trial: cancelled, LIMIT context_window for a prompt too long, or
+// as classifyFailure says.
+function clientFailure(e: unknown, signal: AbortSignal | undefined): Terminal {
   if (signal?.aborted) return { type: 'cancelled', reason: errorText(signal.reason ?? e) };
   const { status, code, message } = classifyFailure(e);
+  if (status === 'ENV_LIMIT') {
+    // "prompt is too long: 215013 tokens > 200000 maximum": the prompt and the window, when given.
+    const m = /(\d+) tokens > (\d+)/.exec(message);
+    return { type: 'limit', limit: 'context_window', cap: m ? Number(m[2]) : 0, value: m ? Number(m[1]) : 0, code: 'prompt_too_long' };
+  }
   return { type: 'error', status, code, message };
 }
 
@@ -263,7 +277,7 @@ async function loop(input: LoopInput, exits: Array<() => void>): Promise<LoopOut
       if (!signal?.aborted && work.signal.aborted) return end('LIMIT', wallLimit(at));
       if (!signal?.aborted && bound.signal.aborted) return end('INFRA_API', elapsedBound(at));
       const failure = clientFailure(e, signal);
-      return end(failure.type === 'error' ? failure.status : 'CANCELLED', failure);
+      return end(failure.type === 'error' ? failure.status : failure.type === 'limit' ? 'LIMIT' : 'CANCELLED', failure);
     } finally {
       detach();
     }
@@ -291,6 +305,11 @@ async function loop(input: LoopInput, exits: Array<() => void>): Promise<LoopOut
       return end('INFRA_HARNESS', { type: 'error', status: 'INFRA_HARNESS', code: 'unpriced_usage', message: `the usage of response ${m.id} cannot be priced (packages/core/cost.ts usageCostUsd): ${JSON.stringify(m.usage)}` });
     }
     if (r.refusal) return end('REFUSAL', null);
+    // The context the stopped request held: the window it reached.
+    if (m.stop_reason === 'model_context_window_exceeded') {
+      const context = u.input_tokens + (u.cache_creation_input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0);
+      return end('LIMIT', { type: 'limit', limit: 'context_window', cap: context, value: context, code: 'stop_reason' });
+    }
     const uses = m.content.filter((b): b is ToolUse & typeof b => b.type === 'tool_use');
     const truncated = m.stop_reason === 'max_tokens';
     maxTokensInARow = truncated ? maxTokensInARow + 1 : 0;

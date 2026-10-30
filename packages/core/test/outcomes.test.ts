@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   AUDIT_LABEL, AUDIT_LABELS, CONFIRMATION_CRITERIA, CONFIRMATION_DEFINITIONS, DENOMINATOR_OPERATOR_NOTE, DENOMINATOR_RULE, FAULT, FAULT_DEFINITIONS, FAULT_PRECEDENCE,
-  FAULT_PRECEDENCE_RULE, OUTCOMES, PASS_DEFINITION, RERUN_OUTCOMES, RUN_BLOCKS, VALID_OUTCOMES, isValid, type Fault,
+  FAULT_PRECEDENCE_RULE, NOT_RERUN_REASON, OUTCOMES, PASS_DEFINITION, RERUN_OUTCOMES, RUN_BLOCKS, VALID_OUTCOMES, isValid, type Fault,
 } from '../outcomes.ts';
 
 const FAULTS: Fault[] = ['model', 'refusal', 'env', 'grader', 'infra'];
@@ -41,7 +41,7 @@ describe('FAULT_DEFINITIONS', () => {
 
   it('defines E5 as the negation of M1 and GR4 as the negation of M4', () => {
     const ids = (f: Fault) => FAULT_DEFINITIONS[f].criteria.map((c) => c.id);
-    expect(ids('env')).toEqual(['E1', 'E2', 'E3', 'E4', 'E5', 'E6']);
+    expect(ids('env')).toEqual(['E1', 'E2', 'E3', 'E4', 'E5', 'E6', 'E7', 'E8']);
     expect(ids('grader')).toEqual(['GR1', 'GR2', 'GR3', 'GR4', 'GR5']);
     expect(FAULT_DEFINITIONS.env.criteria[4]!.text).toMatch(/M1/);
     expect(FAULT_DEFINITIONS.grader.criteria[3]!.text).toMatch(/M4/);
@@ -97,14 +97,16 @@ describe('PASS_DEFINITION and DENOMINATOR_RULE', () => {
       expect(counted).not.toMatch(new RegExp(`\\b${o}\\b`));
       expect(rest).toMatch(new RegExp(`\\b${o}\\b`));
     }
-    expect(excluded).toEqual(['INVALID', 'INFRA_HARNESS', 'INFRA_API', 'CANCELLED', 'ENV_ERROR', 'GRADER_ERROR']);
+    expect(excluded).toEqual(['INVALID', 'INFRA_HARNESS', 'INFRA_API', 'CANCELLED', 'ENV_ERROR', 'ENV_LIMIT', 'GRADER_ERROR']);
   });
 
-  it('reruns every excluded outcome but GRADER_ERROR, which blocks the run until a grader fix and a full offline regrade', () => {
-    expect(RERUN_OUTCOMES).toEqual(OUTCOMES.filter((o) => !isValid(o) && FAULT[o] !== 'grader'));
+  // W0-A: ENV_LIMIT is never rerun either: the same task stops the same way (NOT_RERUN_REASON).
+  it('reruns every excluded outcome but GRADER_ERROR, which blocks the run until a grader fix and a full offline regrade, and ENV_LIMIT', () => {
+    expect(RERUN_OUTCOMES).toEqual(OUTCOMES.filter((o) => !isValid(o) && FAULT[o] !== 'grader' && o !== 'ENV_LIMIT'));
     expect(RERUN_OUTCOMES).not.toContain('GRADER_ERROR');
+    expect(RERUN_OUTCOMES).not.toContain('ENV_LIMIT');
     expect(DENOMINATOR_RULE).toMatch(/GRADER_ERROR[^.]*blocks the run until a grader fix and a full offline regrade/);
-    expect(DENOMINATOR_RULE).toMatch(/GRADER_ERROR is excluded and never rerun as a model trial/);
+    expect(DENOMINATOR_RULE).toMatch(/GRADER_ERROR and ENV_LIMIT are excluded and never rerun as a model trial/);
     // Every "rerun" that is not "never rerun" is said of the rerun outcomes only.
     const rerunClause = /([A-Z_, ]+(?:and [A-Z_]+)?) (?:are|is) excluded and rerun/.exec(DENOMINATOR_RULE);
     expect(rerunClause).not.toBeNull();
@@ -120,13 +122,26 @@ describe('PASS_DEFINITION and DENOMINATOR_RULE', () => {
     expect(DENOMINATOR_RULE).not.toMatch(/require|env_error_raw|summary --/);
   });
 
+  // Rule P-L fails safe (decisions.tsv 2026-10-30T10:39): the texts say a cap stop is the model's
+  // only while it looped and that a human reviews every ENV_LIMIT, since every run gates on 0.
+  it('E8, MF2, the reader rule and the operator note state rule P-L and the human review of every ENV_LIMIT', () => {
+    const text = (id: string) => [...FAULT_DEFINITIONS.env.criteria, ...FAULT_DEFINITIONS.model.criteria].find((c) => c.id === id)!.text;
+    expect(text('MF2')).toMatch(/while it was looping \(rule P-L: at least 10 of its last 20 calls repeat an earlier call on the same target, and none of them writes to a target not written before\)/);
+    expect(text('E8')).toMatch(/rule P-L found no loop[^.]*a human reviews the stop/);
+    expect(FAULT_DEFINITIONS.env.sentence).toMatch(/without strong evidence that the model was looping/);
+    expect(DENOMINATOR_RULE).toContain(`ENV_LIMIT: ${NOT_RERUN_REASON.ENV_LIMIT}`);
+    expect(NOT_RERUN_REASON.ENV_LIMIT).toMatch(/^a human reviews it first/);
+    expect(DENOMINATOR_OPERATOR_NOTE).toMatch(/env_limit requirement[^.]*a human reviews every ENV_LIMIT[^.]*also when the model padded its calls/);
+  });
+
   it('the reader rule counts a refusal as a model failure and names refusal_excluded_rate, the view without refusals', () => {
     expect(DENOMINATOR_RULE).toMatch(/refusal counts as a model failure inside the denominator/);
     expect(DENOMINATOR_RULE).toMatch(/refusal_excluded_rate/);
     // 115: round 3 added the environment- and grader-labelled exclusion and how each is resolved.
     // 135 (+20): round 4 says what is enforced instead (audit-check fails the run, no headline pass rate).
     // 167 (+32): P17j JG5 adds the false PASS (GR5) sentence.
-    expect(DENOMINATOR_RULE.split(/\s+/).length).toBeLessThanOrEqual(167);
+    // 197 (+30): W0-A adds ENV_LIMIT and each never-rerun outcome's reason (NOT_RERUN_REASON).
+    expect(DENOMINATOR_RULE.split(/\s+/).length).toBeLessThanOrEqual(197);
   });
 });
 
@@ -155,7 +170,7 @@ describe('round 3 (pr-review P14a-2): denominator, precedence and confirmation t
   });
 
   it('CONFIRMATION_DEFINITIONS.confirmed names the record-fact criteria and the audit for the rest', () => {
-    expect(CONFIRMATION_DEFINITIONS.confirmed).toMatch(/E1-E4, GR1 or GR2/);
+    expect(CONFIRMATION_DEFINITIONS.confirmed).toMatch(/E1-E4, E7, E8, GR1 or GR2/);
     expect(CONFIRMATION_DEFINITIONS.confirmed).toMatch(/E5, E6, GR3, GR4 or GR5/);
   });
 

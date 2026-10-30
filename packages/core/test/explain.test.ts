@@ -64,6 +64,8 @@ const refusalEvents = [
   { v: 2, seq: 1, ts: '2026-10-24T00:00:00.000Z', turn: 1, type: 'response', id: 'msg_1', model: 'claude-opus-5-5', stop_reason: 'refusal', stop_details: { category: 'cyber', explanation: null },
     content: [{ type: 'text', text: 'I cannot help with changing these medication orders because they need a licensed prescriber to sign off first.' }], usage: {}, attempts: 1, cost_usd: 0.01 },
 ] as unknown as NonNullable<ExplainContext['events']>;
+// Rule P-L's facts as the grader records them on a cap stop it found looping (a LIMIT, MF2).
+const LOOPING = { tail: 20, repeats: 19, new_writes: 0, looping: true };
 const limitEvent = (limit: string, cap: number, value: number) =>
   [{ v: 2, seq: 1, ts: '2026-10-24T00:00:00.000Z', turn: 1, type: 'limit', limit, cap, value }] as unknown as NonNullable<ExplainContext['events']>;
 
@@ -74,14 +76,15 @@ describe('explainTrial: one fixture per outcome', () => {
     { outcome: 'INFRA_API', rec: record('INFRA_API', { detail: 'overloaded' }), fault: 'infra', label: null, valid: false, check: null, reason: /^INFRA_API\b.*overloaded/ },
     { outcome: 'CANCELLED', rec: record('CANCELLED'), fault: 'infra', label: null, valid: false, check: null, reason: /^CANCELLED\b/ },
     { outcome: 'ENV_ERROR', rec: record('ENV_ERROR', { detail: 'INTERNAL', tool_errors: { INTERNAL: 1 }, state_hash: { initial: MANIFEST, final: null, replay_final: null } }), fault: 'env', label: 'environment', valid: false, check: null, reason: /^ENV_ERROR\b.*INTERNAL/ },
+    { outcome: 'ENV_LIMIT', rec: record('ENV_LIMIT', { status: 'LIMIT', detail: 'context_window', valid: false }), c: { ...ctx, events: limitEvent('context_window', 200_000, 200_000) }, fault: 'env', label: 'environment', valid: false, check: null, reason: /^ENV_LIMIT: context_window limit: .*; the environment's fault, excluded, not run again: a human reviews it first/ },
     { outcome: 'GRADER_ERROR', rec: record('GRADER_ERROR', { valid: false, error: { check: 'G1', message: 'TypeError: cannot read mg', stops_batch: false } }), fault: 'grader', label: 'grader', valid: false, check: null, reason: /^GRADER_ERROR\b.*G1 threw/ },
     { outcome: 'REFUSAL', rec: record('REFUSAL', { refusal_category: 'cyber' }), c: { ...ctx, events: refusalEvents }, fault: 'refusal', label: 'model', subtype: 'refusal', valid: true, check: null, reason: /^refused: I cannot help with changing these medication orders because they need a$/ },
-    { outcome: 'LIMIT', rec: record('LIMIT', { detail: 'turns', turns: 80 }), c: { ...ctx, events: limitEvent('turns', 80, 80) }, fault: 'model', label: 'model', valid: true, check: null, reason: /^turn limit reached: 80 turns$/ },
+    { outcome: 'LIMIT', rec: record('LIMIT', { detail: 'turns', turns: 80, progress: LOOPING }), c: { ...ctx, events: limitEvent('turns', 80, 80) }, fault: 'model', label: 'model', valid: true, check: null, reason: /^turn limit reached: 80 turns$/ },
     { outcome: 'FAIL', rec: record('FAIL'), fault: 'model', label: 'model', valid: true, check: 'G1', reason: /^G1 failed: expected apixaban 5 mg 2\/day, found apixaban 2\.5 mg 2\/day; .*reasoning/ },
     { outcome: 'PASS', rec: record('PASS'), fault: null, label: null, valid: true, check: null, reason: /^PASS\b/ },
   ];
 
-  it('covers all ten outcomes', () => expect(cases.map((c) => c.outcome).sort()).toEqual([...OUTCOMES].sort()));
+  it('covers all eleven outcomes', () => expect(cases.map((c) => c.outcome).sort()).toEqual([...OUTCOMES].sort()));
 
   it.each(cases)('$outcome gives fault $fault, label $label and its reason', ({ outcome, rec, c, fault, label, subtype, valid, check, reason }) => {
     const x = explainTrial(rec, undefined, c ?? ctx);
@@ -552,6 +555,7 @@ describe('explainTrial: review round 4 (pr-review P14a-3)', () => {
       outcome: g.outcome, valid: g.valid, detail: status === 'LIMIT' ? 'turns' : null, stop_reason: status === 'REFUSAL' ? 'refusal' : 'tool_use', turns: status === 'LIMIT' ? 80 : 1,
       model_requested: MODEL, models_returned: [MODEL], summary: status === 'REFUSAL' ? 'I cannot change medication orders without a prescriber.' : null, state_hash,
       checks: g.checks as NonNullable<ExplainRecord['checks']>, attribution: g.attribution as NonNullable<ExplainRecord['attribution']>,
+      ...(status === 'LIMIT' ? { progress: LOOPING } : {}),
     });
     const failed = g.checks.find((c) => c.kind === 'gate' && c.met === false)!.id;
     return { g, rec, failed, c: { ...ctx, events, world_state_hash: H, exposable: () => true } };

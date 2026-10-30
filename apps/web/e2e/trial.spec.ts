@@ -41,7 +41,7 @@ async function openTrial(page: Page, name: string, extra = '') {
 const panel = (page: Page, tab: string) => page.getByTestId(`panel-${tab}`);
 
 test('the fixtures hold one trial of each non-pass outcome, audited and not', () => {
-  expect(new Set(records.map((r) => r.outcome))).toEqual(new Set(['PASS', 'FAIL', 'LIMIT', 'REFUSAL', 'ENV_ERROR', 'GRADER_ERROR', 'INFRA_API']));
+  expect(new Set(records.map((r) => r.outcome))).toEqual(new Set(['PASS', 'FAIL', 'LIMIT', 'REFUSAL', 'ENV_ERROR', 'ENV_LIMIT', 'GRADER_ERROR', 'INFRA_API']));
   expect(hasTrajectory(TRIALS.noTrajectory)).toBe(false);
 });
 

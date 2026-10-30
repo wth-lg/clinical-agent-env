@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:renal-dose-review:4",
   "task_id": "renal-dose-review",
-  "task_version": "22f3ed75d170d38aada785707299eeceffc71fa1800e4390b702666602e95691",
+  "task_version": "554c7dc3adcfda33ede2029f0fb17d7ba2ab8ad93064241ddc6a884be42f0603",
   "env_version": "d3e134abc0a49e94d12635796783c80cd2a049ec9dbf5515b6c34a84eb0500f3",
-  "grader_task_version": "81f9c72560f4630eadd22bb3529601ce196e005e7c0afdb05180c306a908bb68",
+  "grader_task_version": "aeadc07b6b9579bd3ddba77c9f01fd6d70345f86e52d1ebdea61d853ecd76141",
   "fixture_hash": "2266fa587f4379fce743be6cc49ae221a54bcffc45f14cf3dafa7e7a59853601",
   "state_hash": {
     "initial": "2266fa587f4379fce743be6cc49ae221a54bcffc45f14cf3dafa7e7a59853601",
@@ -45,7 +45,7 @@
   "env_git_sha": null,
   "ended": "2026-10-23T14:27:09.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "13",
+  "grader_version": "14",
   "outcome": "REFUSAL",
   "valid": true,
   "fault": "refusal",

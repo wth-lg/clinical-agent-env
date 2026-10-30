@@ -1,6 +1,6 @@
 // Findings against the committed sample run: docs/findings.md rendered, one Wilson interval per
 // task, a bar per task by kind of failure (why-fail.spec.ts checks it against summary.json, P17j
-// JU7), cost per trial, example trials,
+// JU7), cost per trial, example trials, the trials each task's k/n leaves out (also in Runs),
 // the glossary one click away, and the full write-up named as coming with the final run (the
 // sample build has no data/writeup.html, so there is no link to a page that is not there). Then
 // two builds served by their own vite preview: the real results today (the committed pilot runs,
@@ -14,6 +14,8 @@ import { fileURLToPath } from 'node:url';
 import { expect, test } from '@playwright/test';
 import { browse as browseAt, browseFrom } from './browse.ts';
 import { formatInterval } from '../src/data/ui.tsx';
+import { notCounted, notCountedText } from '../src/data/marks.ts';
+import { NOT_RERUN_REASON } from '../../../packages/core/outcomes.ts';
 import { sampleBase, serve, summary, TASK_IDS } from './fixtures/sample-results/sample.ts';
 
 const WEB = fileURLToPath(new URL('../', import.meta.url));
@@ -162,4 +164,30 @@ test.describe('a build with no results/', () => {
     await expect(page.getByTestId('tool').first()).toBeVisible();
     await expect(page.getByTestId('empty-state')).toHaveCount(0);
   });
+});
+
+// verifier-phase-P17i-W0-A-1 F4: beside each task's k/n, Findings and Runs say how many trials it
+// leaves out, as ENV_LIMIT and as the other excluded outcomes, each with why; summary.json's
+// env_limit counts the ENV_LIMIT. The sample has one ENV_LIMIT (results-inbox/12), one ENV_ERROR
+// and one INFRA_API.
+test('Findings and Runs show per task the trials k/n leaves out, ENV_LIMIT with why it is not run again', async ({ page }) => {
+  const left = TASK_IDS.map((id) => ({ id, text: notCountedText(notCounted(summary.tasks[id]!)) })).filter((l) => l.text !== null);
+  expect(summary.tasks['results-inbox']!.env_limit).toBe(1);
+  expect(left.map((l) => l.id)).toEqual(['discharge-medrec', 'renal-dose-review', 'results-inbox']);
+  const inbox = `Not counted: 1 ENV_LIMIT (not run again: ${NOT_RERUN_REASON.ENV_LIMIT}).`;
+  expect(left.find((l) => l.id === 'results-inbox')!.text).toBe(inbox);
+  await browse(page, './?view=findings');
+  const chart = page.getByTestId('interval-chart');
+  await expect(chart.getByTestId('not-counted')).toHaveCount(left.length);
+  for (const l of left) await expect(chart.locator(`[data-testid="not-counted"][data-task="${l.id}"]`)).toHaveText(l.text!);
+  await expect(chart.locator('li', { has: page.locator('[data-task="results-inbox"]') })).toContainText(`${summary.tasks['results-inbox']!.passes}/${summary.tasks['results-inbox']!.trials}`);
+  await browse(page, './?view=runs');
+  const runs = page.getByTestId('runs-not-counted');
+  await expect(runs.getByTestId('not-counted')).toHaveCount(left.length);
+  for (const l of left) await expect(runs.locator(`[data-task="${l.id}"]`)).toHaveText(`${l.id}: ${l.text}`);
+  await browse(page, './?view=runs&task=results-inbox');
+  await expect(page.getByTestId('runs-k-of-n')).toHaveText(`results-inbox: ${summary.tasks['results-inbox']!.passes}/${summary.tasks['results-inbox']!.trials} pass`);
+  await expect(page.getByTestId('runs-not-counted').getByTestId('not-counted')).toHaveText([`results-inbox: ${inbox}`]);
+  await browse(page, './?view=runs&task=message-queue');
+  await expect(page.getByTestId('runs-not-counted')).toHaveCount(0);
 });

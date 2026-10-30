@@ -21,8 +21,13 @@ export const TRIAL_STATUSES = ['COMPLETED', 'REFUSAL', 'LIMIT', 'CANCELLED', 'EN
 export type TrialStatus = (typeof TRIAL_STATUSES)[number];
 export const ERROR_STATUSES = ['ENV_ERROR', 'INFRA_API', 'INFRA_HARNESS', 'INVALID'] as const;
 export type ErrorStatus = (typeof ERROR_STATUSES)[number];
-export const LIMITS = ['turns', 'cost', 'wall_clock', 'max_tokens'] as const;
+// context_window: the model's context window stopped the trial (plan-amendment-worklist W0-A), by
+// the stop_reason model_context_window_exceeded or by a 400 prompt is too long; LIMIT_CODES says
+// which, in the limit event's code.
+export const LIMITS = ['turns', 'cost', 'wall_clock', 'max_tokens', 'context_window'] as const;
 export type Limit = (typeof LIMITS)[number];
+export const LIMIT_CODES = ['stop_reason', 'prompt_too_long'] as const;
+export type LimitCode = (typeof LIMIT_CODES)[number];
 export const HASH_POINTS = ['initial', 'write', 'final', 'replay_final'] as const;
 
 interface Base {
@@ -83,11 +88,14 @@ export interface StateHashEvent extends Base {
   hash: string;
   tool_use_id?: string;
 }
+// A context_window limit's cap and value are tokens: the window and the prompt when the 400 names
+// them, else the context the stopped request held, as both; code says how it stopped.
 export interface LimitEvent extends Base {
   type: 'limit';
   limit: Limit;
   cap: number;
   value: number;
+  code?: LimitCode;
 }
 export interface ErrorEvent extends Base {
   type: 'error';
@@ -159,7 +167,7 @@ const FIELDS: Record<TrialEvent['type'], Record<string, Check>> = {
     exposed_ids: arrayOf(str), referenced_ids: arrayOf(str), written_ids: optional(arrayOf(str)),
   },
   state_hash: { at: oneOf(HASH_POINTS), hash: sha256, tool_use_id: optional(str) },
-  limit: { limit: oneOf(LIMITS), cap: num, value: num },
+  limit: { limit: oneOf(LIMITS), cap: num, value: num, code: optional(oneOf(LIMIT_CODES)) },
   error: { status: oneOf(ERROR_STATUSES), code: str, message: str },
   cancelled: { reason: str },
   // Only in version 2; the record is run()'s, checked for the fields a reader needs first.

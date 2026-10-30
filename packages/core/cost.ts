@@ -23,6 +23,12 @@ export const INPUT_OVERHEAD_TOKENS = 4096;
 
 // Per-trial cap: the cost a trial is projected at when no run has observed its task.
 export const PER_TRIAL_CAP_USD = 6;
+// Per-trial budget line: a task is sized so its projected p90 trial cost is at most this, half
+// PER_TRIAL_CAP_USD (plan-amendment-worklist.md, W0-B; cli/context-budget.ts checks it).
+export const PER_TRIAL_BUDGET_USD = 3;
+// The context window of claude-opus-5-5, in tokens: 1M. Source: the bundled claude-api skill
+// (model table cached 2026-10-06). cli/context-budget.ts keeps projected peaks under 0.6 of it.
+export const CONTEXT_WINDOW_TOKENS = 1_000_000;
 // Batch projections assume 15% of trials rerun (INFRA and ENV trials are re-queued).
 export const RERUN_FACTOR = 1.15;
 // Added once to every batch projection for LLM-judge calls. The design budgets ~1,200

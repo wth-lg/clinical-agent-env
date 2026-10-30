@@ -84,7 +84,7 @@ export interface RunData {
   summary: Summary | null;
   trials: Trial[];
   bad: BadRecord[];
-  // Problems that do not stop the views: unreadable audit lines, records that disagree with summary.json.
+  // Problems that do not stop the views: an unreadable audit.jsonl or audit line, records that disagree with summary.json.
   warnings: string[];
 }
 
@@ -117,7 +117,8 @@ async function loadRun(files: readonly string[], has: ReadonlySet<string>, runDi
   const warnings: string[] = [];
   const audits: AuditRow[] = [];
   if (has.has(`${runDir}/audit.jsonl`)) {
-    const read = readAudit(await fetchText(`${runDir}/audit.jsonl`));
+    // An unreadable audit.jsonl leaves the trials unaudited, as a bad line does; it never stops the load.
+    const read = await fetchText(`${runDir}/audit.jsonl`).then(readAudit, (e: unknown) => ({ rows: [], warnings: [`audit.jsonl cannot be read: ${message(e)}`] }));
     audits.push(...read.rows);
     warnings.push(...read.warnings);
   }
@@ -205,11 +206,14 @@ export function gradingLine(g: Grading): string | null {
 
 // A pilot run's pass rate per task over its valid trials, with the Wilson 95% interval, as
 // summary.ts computes it for an official run; never counted in the results.
-export function pilotRates(run: RunData): Array<{ task: string; passes: number; valid: number; rate: number | null; interval: Interval | null }> {
+export function pilotRates(run: RunData): Array<{ task: string; passes: number; valid: number; rate: number | null; interval: Interval | null; outcomes: Record<string, number> }> {
   return [...new Set(run.trials.map((t) => t.task))].sort().map((task) => {
-    const valid = run.trials.filter((t) => t.task === task && t.explanation.valid);
+    const mine = run.trials.filter((t) => t.task === task);
+    const valid = mine.filter((t) => t.explanation.valid);
     const passes = valid.filter((t) => t.explanation.outcome === 'PASS').length;
-    return { task, passes, valid: valid.length, rate: valid.length === 0 ? null : passes / valid.length, interval: wilson(passes, valid.length) };
+    const outcomes: Record<string, number> = {};
+    for (const t of mine) outcomes[t.explanation.outcome] = (outcomes[t.explanation.outcome] ?? 0) + 1;
+    return { task, passes, valid: valid.length, rate: valid.length === 0 ? null : passes / valid.length, interval: wilson(passes, valid.length), outcomes };
   });
 }
 
@@ -237,8 +241,10 @@ const PILOT_DIR = /^(results\/(?:runs\/)?pilot-[A-Za-z0-9._-]+)\/trials\//;
 
 async function load(): Promise<Results> {
   const res = await fetch(dataUrl('index.json'));
-  // A build always writes data/index.json; without it (vite dev) there are no results.
-  if (!res.ok) return { kind: 'ready', official: null, officialError: null, pilots: [], findings: null, files: new Set() };
+  // A build always writes data/index.json. Only its absence, a 404 (vite dev answers one for every
+  // data/ path, vite.config.ts), means no results; any other HTTP error is a failed load.
+  if (res.status === 404) return { kind: 'ready', official: null, officialError: null, pilots: [], findings: null, files: new Set() };
+  if (!res.ok) throw new Error(`data/index.json: HTTP ${res.status}`);
   const { files } = (await res.json()) as { files: string[] };
   const has = new Set(files);
   const findings = has.has('docs/findings.md') ? await fetchText('docs/findings.md') : null;
@@ -256,7 +262,12 @@ async function load(): Promise<Results> {
     }
   }
   const pilotDirs = [...new Set(files.flatMap((f) => PILOT_DIR.exec(f)?.[1] ?? []))].filter((d) => d !== officialDir).sort();
-  const pilots = await Promise.all(pilotDirs.map((d) => loadRun(files, has, d, null)));
+  // Every pilot settles before the first failure is reported, so nothing is still fetching when
+  // the load settles (ViewBody's data-preload signal relies on it).
+  const settled = await Promise.allSettled(pilotDirs.map((d) => loadRun(files, has, d, null)));
+  const failed = settled.find((s) => s.status === 'rejected');
+  if (failed) throw failed.reason;
+  const pilots = settled.map((s) => (s as PromiseFulfilledResult<RunData>).value);
   return { kind: 'ready', official, officialError, pilots, findings, files: has };
 }
 
