@@ -46,8 +46,9 @@ const practitioner = (id: string, given: string, family: string, suffix: string)
 const pool = (id: string, name: string): Resource => ({ resourceType: 'Group', id, type: 'practitioner', actual: true, name });
 
 export const SETTING: readonly Resource[] = [
-  { resourceType: 'Organization', id: CLINIC, active: true, name: 'Riverbend Family Medicine' },
-  { resourceType: 'Organization', id: OUTSIDE_HOSPITAL, active: true, name: 'St. Brigid Regional' },
+  // Addresses as the outside facilities the overlays add carry them (builder-196: one record shape).
+  { resourceType: 'Organization', id: CLINIC, active: true, name: 'Riverbend Family Medicine', address: [{ line: ['250 River Street'], city: 'Northampton', state: 'MA', postalCode: '01060', country: 'US' }] },
+  { resourceType: 'Organization', id: OUTSIDE_HOSPITAL, active: true, name: 'St. Brigid Regional', address: [{ line: ['1 Hospital Drive'], city: 'Northampton', state: 'MA', postalCode: '01060', country: 'US' }] },
   practitioner('pr-okafor', 'Maya', 'Okafor', 'MD'),
   practitioner('pr-lin', 'Daniel', 'Lin', 'MD'),
   practitioner('pr-reyes', 'Jordan', 'Reyes', 'NP'),

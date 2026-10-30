@@ -15,6 +15,7 @@ import type { GateOf } from '../../../packages/grader/gate-view.ts';
 import { expected } from '../expected.ts';
 import { recipients, rubric } from './rubric.ts';
 import { ref } from '../ids.ts';
+import { syntheaRef } from '../../../packages/env/synthea-ids.ts';
 
 type SR = GateOf<'ServiceRequest'>;
 type Comm = GateOf<'Communication'>;
@@ -84,7 +85,7 @@ function patients(value: unknown, out: string[] = []): string[] {
 }
 
 // The records that show E15 (pt-0034) lives long term in a nursing home (overlay.ts).
-const E15_RESIDENCE = ['Patient/pt-0034', ref('Observation/obs-t3-2465'), ref('Encounter/enc-t3-7781'), 'Encounter/enc-00204'];
+const E15_RESIDENCE = ['Patient/pt-0034', ref('Observation/obs-t3-2465'), ref('Encounter/enc-t3-7781'), syntheaRef('Encounter/enc-00204')];
 
 // The staff pools that phone patients.
 const PHONE_POOLS = ['Group/pool-scheduling', 'Group/pool-rn-triage'];

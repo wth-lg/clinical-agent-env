@@ -29,7 +29,6 @@
 // no id sequence maps the traps (pilot-1 trials navigated by 'e1 through e12').
 import type { Resource } from '../../packages/env/store.ts';
 import type { Overlay, WorldReader } from '../../packages/env/overlay.ts';
-import { IDS } from './ids.ts';
 
 const SLOTS = ['pt-0009', 'pt-0011', 'pt-0014', 'pt-0017', 'pt-0018', 'pt-0019', 'pt-0020', 'pt-0021', 'pt-0022', 'pt-0023', 'pt-0024', 'pt-0025', 'pt-0034', 'pt-0035'];
 const E = { E1: 'pt-0014', E2: 'pt-0017', E3: 'pt-0018', E4: 'pt-0023', E5: 'pt-0011', E6: 'pt-0021', E7: 'pt-0009', E8: 'pt-0019', E9: 'pt-0020', E10: 'pt-0022', E11: 'pt-0024', E12: 'pt-0025', E15: 'pt-0034', E16: 'pt-0035' } as const;
@@ -464,7 +463,12 @@ const dischargeSummary: Resource = {
 
 const overlay: Overlay = {
   task: 'T3',
-  ids: IDS,
+  names: {
+    'grp-t3-okafor-crc': 'grp-okafor-crc',
+    'org-t3-3147': 'org-cedar-hill',
+    'org-t3-5520': 'org-maple-grove',
+    'pr-t3-7046': 'pr-tolu-adeyemi',
+  },
   build(world: WorldReader) {
     const ofSlots = (type: string) => SLOTS.flatMap((pt) => world.search(type, { patient: pt }).resources);
     const edited = (d: Doc): Doc => (d.id === E15_VISIT_NOTE ? e15VisitNote(d) : {

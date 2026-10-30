@@ -25,7 +25,6 @@
 // beta-blocker no discharge document mentions; doc-t4-dc-2025 is last year's summary.
 import type { Resource } from '../../packages/env/store.ts';
 import type { Overlay, WorldReader } from '../../packages/env/overlay.ts';
-import { IDS } from './ids.ts';
 
 const PT = 'pt-0005';
 const SUBJECT = { reference: `Patient/${PT}` };
@@ -234,7 +233,10 @@ const LAB_DOC: Resource = {
 
 const overlay: Overlay = {
   task: 'T4',
-  ids: IDS,
+  names: {
+    'org-t4-northgate': 'org-northgate',
+    'pr-t4-boateng': 'pr-boateng',
+  },
   build(world: WorldReader) {
     const patient = world.get('Patient', PT) as Extract<Resource, { resourceType: 'Patient' }>;
     const renamed: Resource = { ...patient, name: [{ use: 'official', family: 'Kim', given: ['Walter'], prefix: ['Mr.'] }], birthDate: '1952-02-19', generalPractitioner: [OKAFOR] };

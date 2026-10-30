@@ -40,7 +40,6 @@
 // put RBC-RAD-07 §2 against current guidance (review-clinical-T5-1 S1).
 import type { Resource } from '../../packages/env/store.ts';
 import type { Overlay, WorldReader } from '../../packages/env/overlay.ts';
-import { IDS } from './ids.ts';
 
 const PT = 'pt-0015';
 const SUBJECT = { reference: `Patient/${PT}` };
@@ -289,7 +288,11 @@ ED physician: Owen Castellano, MD`;
 
 const overlay: Overlay = {
   task: 'T5',
-  ids: IDS,
+  names: {
+    'org-t5-harbor': 'org-harbor',
+    'pr-t5-adeyemi': 'pr-tunde-adeyemi',
+    'pr-t5-castellano': 'pr-castellano',
+  },
   build(world: WorldReader) {
     const patient = world.get('Patient', PT) as Extract<Resource, { resourceType: 'Patient' }>;
     const renamed: Resource = {

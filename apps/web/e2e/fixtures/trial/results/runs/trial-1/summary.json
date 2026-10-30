@@ -6,13 +6,13 @@
   "tasks": {
     "contrast-ct-prep": {
       "task_versions": [
-        "a791f5ebd7d39f02f0c12a3b28b2d492d8066bf8c81be7d0573d7ce7d2644ce1"
+        "40fb7b519757a4d438c79ad1b39e01f23db92d941d15b74b5ee1a4a3f8fe96cd"
       ],
       "env_versions": [
-        "cf60c2d3942b2cfd052e717fffcac4a027b5f3e7fbea7eda52b69938824e711e"
+        "941728314ac07217919408b66670d06e9737482ee36051ee5638b0f9ea056530"
       ],
       "grader_task_versions": [
-        "71a13035bc0fd1e6226ce964d393b1a7b59b487c757e4b5a2804d68f3fdcda80"
+        "93be0526647797899fdc52063681d23beb37831dd21445cb6a64905c40364596"
       ],
       "records": 1,
       "trials": 1,
@@ -105,13 +105,13 @@
     },
     "crc-care-gap": {
       "task_versions": [
-        "66e0217d4250cbcac48d38f279423f590eaa5cab5875bb7b074d1667ce9062ec"
+        "68cc637d4aefd1221b94006951d61276f6714b5b3182ee458f27066f2116d10e"
       ],
       "env_versions": [
-        "aaa4a66aae83ca896f8cac3927043cdbdb35860ccdc52b6eac54c621cabd8514"
+        "4fafec16f264b4e4ea813b469be200e88d45e26cf586a238d5ba0aeb56d43e7b"
       ],
       "grader_task_versions": [
-        "bd7d9634c18966cea66db590c06e4920c316b6d4deb36719c6fe303e3b2ac89c"
+        "30035b1567ac739775fbed4671df51e1abac6cf36f403594991e306299b3ae8f"
       ],
       "records": 1,
       "trials": 1,
@@ -204,13 +204,13 @@
     },
     "discharge-medrec": {
       "task_versions": [
-        "feed0147f6e35fe7d6c8c8a643947183a677ade62ed4765531c133d733d744e9"
+        "3227d7f1595e7b6074379a6966ae0fc9f78b5f054446f0872b7b5db0834b110b"
       ],
       "env_versions": [
-        "d72a49a3db045ece5cd405f4ff30fabedf6a3744ff6c05fa607756fb9d591e77"
+        "988fb4e7f8873bbd997b466cfa3aac211a9da2b3be03b82522b123817d1e51da"
       ],
       "grader_task_versions": [
-        "f5f63086e7bc826493685f18fa543e49c4370feddd0d552d0f7d24ad3f70e323"
+        "e9b26c2cd58268a65d6433834799b0ca6d01f3db12aebd27447edb6ed346df1a"
       ],
       "records": 1,
       "trials": 0,
@@ -289,13 +289,13 @@
     },
     "message-queue": {
       "task_versions": [
-        "ec0ad034987a67afa29c4ed0a375736853c410d27c6a415b128f2a9de9083f2e"
+        "84bf44cc8cf3285ddce89aaab8b2b43d22ba466908c33cd5a069f5fc0a7b9b08"
       ],
       "env_versions": [
-        "ce3a5f7db967bd87dd7bc22835e452f482a65b18eb8e3c66ee18beedc9321929"
+        "097af4adc206b23f8f916aee68873cad50df1cac1b5289fc09c977b8d1a39cb0"
       ],
       "grader_task_versions": [
-        "d46e82ff6e31c1dd1e5c2d6d5a0609ed43e41dfb3a2433078208789616fa6287"
+        "adcaa3336aff27a371ad3541f3feca79ff0c140af804fa43efce464ae085290a"
       ],
       "records": 1,
       "trials": 1,
@@ -388,13 +388,13 @@
     },
     "renal-dose-review": {
       "task_versions": [
-        "02d5269dc6eafac0e28ba0f98b318c1c0b33ee57f8c96498b233d30c5a70f056"
+        "3a55b6dd62c2b5d1dbaa08d27ff812c1dde6d13462df05a3c4b0ed63dad2e21b"
       ],
       "env_versions": [
-        "06d81c2ae3924de62cee89698d6714500c6dfbdd7e34dd856dc35c88a5f3fd06"
+        "cfcf93c7cc8afaa223417c966909845b358a6400637cea646aff1b7d1d3f48e5"
       ],
       "grader_task_versions": [
-        "5548e4a10fc5a0e94356acd7389bd4d6f41ce48094df16bf580b26e4f20e0aa4"
+        "f678d2360115b9ff837d3c0b4104b02e8fdbb144753d008232d6619bf9f7f9bb"
       ],
       "records": 5,
       "trials": 4,
@@ -501,10 +501,10 @@
     },
     "results-inbox": {
       "task_versions": [
-        "4f46cad18a5cea81e86496fec0a6ab78f5a1daa6c5b6efbd6727665a143ea19c"
+        "33ab29bb17ea4ddbb29ffc3cd23dcd1973ec916904ea77601c85e1f35960887f"
       ],
       "env_versions": [
-        "c345bdcc2cb0b83fab569aa794b12c87b7cc0e9e5546f3da3eed144ca38ddd09"
+        "2562bfb30a7b07573071d983d92abc3df2015efb3abdd509c340dbe5f6bd6630"
       ],
       "grader_task_versions": [
         "a1037b82eaca9e041957088ae3d9d5b037218b6dd3a2198ee3f5a8fc5b6b62c3"
@@ -614,7 +614,7 @@
     "claude-opus-5-5"
   ],
   "initial_state_hashes": [
-    "72a5695ffadc2af6d65de536961a330023163910f7efc2e177c8537403a2cbd9"
+    "86a12d3d87cc66dc93ccb827d1a83ad9f997cd178dc6d10e95bf05da4b943941"
   ],
   "replay": {
     "ran": false,

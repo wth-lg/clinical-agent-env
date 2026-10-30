@@ -41,7 +41,8 @@ export const expected = {
   spironolactone: { request: null, action: 'task', daily_mg: 25, per_day: 1 },
   potassium_chloride: { request: ref('MedicationRequest/mr-t4-kcl'), action: 'stop' },
   lisinopril: { request: ref('MedicationRequest/mr-t4-lisinopril'), action: 'task', daily_mg: 10, per_day: 1 },
-  unchanged: [ref('MedicationRequest/mr-t4-aspirin'), ref('MedicationRequest/mr-t4-atorvastatin'), ref('MedicationRequest/mr-t4-metoprolol-succ'), ref('MedicationRequest/mr-t4-metoprolol-tart'), ref('MedicationRequest/mr-t4-omeprazole')],
+  // In world id order, as policy.ts lists them.
+  unchanged: [ref('MedicationRequest/mr-t4-aspirin'), ref('MedicationRequest/mr-t4-atorvastatin'), ref('MedicationRequest/mr-t4-metoprolol-succ'), ref('MedicationRequest/mr-t4-metoprolol-tart'), ref('MedicationRequest/mr-t4-omeprazole')].sort(),
   not_ordered: ['pantoprazole'],
   message_about: [ref('MedicationRequest/mr-t4-metoprolol-tart')],
   cites: [ref('DocumentReference/doc-t4-dc-1019-add'), ref('DocumentReference/doc-t4-lab-1021')],

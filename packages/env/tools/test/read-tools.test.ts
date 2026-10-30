@@ -334,7 +334,8 @@ describe('fhir_read', () => {
     const r = call('fhir_read', { resource_type: 'Observation', id: 'obs-00001' });
     expect(ok(r).resource).toEqual(ctx.world.get('Observation', 'obs-00001'));
     expect(r.exposed_ids).toEqual(['Observation/obs-00001']);
-    expect(r.referenced_ids).toEqual(['Patient/pt-0001']);
+    // The lab that performed it (packages/env/profile.ts) and the patient.
+    expect(r.referenced_ids).toEqual(['Organization/org-riverbend', 'Patient/pt-0001']);
     expectTagsMatch(r);
   });
   it('answers an unknown id with NOT_FOUND', () => {
@@ -559,7 +560,9 @@ describe('exposure rule', () => {
     ['fhir_search', { resource_type: 'DocumentReference', patient: 'pt-0001', count: 5 }, [], []],
     ['fhir_read', { resource_type: 'Patient', id: 'pt-0001' }, ['Patient/pt-0001'], ['Patient']],
     ['fhir_read', { resource_type: 'DocumentReference', id: 'doc-00001' }, ['DocumentReference/doc-00001'], ['DocumentReference']],
-    ['search_notes', { query: 'patient', patient: 'pt-0001' }, [], []],
+    // pt-0001's printed PHQ-2 form (packages/env/profile.ts) is short enough that its excerpt is
+    // the whole report, so it is exposed; the visit notes are excerpts only.
+    ['search_notes', { query: 'patient', patient: 'pt-0001' }, ['DiagnosticReport/dr-00007'], ['DiagnosticReport']],
     ['read_policy', {}, [], []],
     ['lookup_catalog', { query: 'metformin', kind: 'medication' }, [], []],
     ['list_inbox', { queue: 'results' }, [], []],
@@ -587,7 +590,7 @@ describe('exposure rule', () => {
   });
   it('catches a note exposed for a snippet: an excerpt is shown text, not exposure', () => {
     const r = call('search_notes', { query: 'patient', patient: 'pt-0001' });
-    const notes = Object.keys(r.shown!);
+    const notes = Object.keys(r.shown!).filter((k) => !r.exposed_ids.includes(k));
     expect(notes.length).toBeGreaterThan(0);
     expect(r.referenced_ids).toEqual(expect.arrayContaining(notes));
     const overTagged = { ...r, exposed_ids: notes, referenced_ids: r.referenced_ids.filter((k) => !notes.includes(k)) };

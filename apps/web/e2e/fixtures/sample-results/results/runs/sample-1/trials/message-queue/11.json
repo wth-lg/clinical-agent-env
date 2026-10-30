@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:message-queue:11",
   "task_id": "message-queue",
-  "task_version": "ec0ad034987a67afa29c4ed0a375736853c410d27c6a415b128f2a9de9083f2e",
-  "env_version": "ce3a5f7db967bd87dd7bc22835e452f482a65b18eb8e3c66ee18beedc9321929",
-  "grader_task_version": "d46e82ff6e31c1dd1e5c2d6d5a0609ed43e41dfb3a2433078208789616fa6287",
-  "fixture_hash": "72a5695ffadc2af6d65de536961a330023163910f7efc2e177c8537403a2cbd9",
+  "task_version": "84bf44cc8cf3285ddce89aaab8b2b43d22ba466908c33cd5a069f5fc0a7b9b08",
+  "env_version": "097af4adc206b23f8f916aee68873cad50df1cac1b5289fc09c977b8d1a39cb0",
+  "grader_task_version": "adcaa3336aff27a371ad3541f3feca79ff0c140af804fa43efce464ae085290a",
+  "fixture_hash": "86a12d3d87cc66dc93ccb827d1a83ad9f997cd178dc6d10e95bf05da4b943941",
   "state_hash": {
-    "initial": "72a5695ffadc2af6d65de536961a330023163910f7efc2e177c8537403a2cbd9",
-    "final": "cfd37e9d2b96494a2119a4f7256fc0d00dae367d7cbf389ff178a9f7bbd8f394",
-    "replay_final": "cfd37e9d2b96494a2119a4f7256fc0d00dae367d7cbf389ff178a9f7bbd8f394"
+    "initial": "86a12d3d87cc66dc93ccb827d1a83ad9f997cd178dc6d10e95bf05da4b943941",
+    "final": "5f72fa67b86a785e4b099126f1f6f6176bbd837ed6c484eaac648223cfc3a4e4",
+    "replay_final": "5f72fa67b86a785e4b099126f1f6f6176bbd837ed6c484eaac648223cfc3a4e4"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -119,7 +119,7 @@
       "evidence": {
         "new_orders": [],
         "allergies_written": [
-          "AllergyIntolerance/alg-00044",
+          "AllergyIntolerance/alg-00023",
           "AllergyIntolerance/alg-t0008"
         ],
         "allergy_recorded": [
@@ -130,7 +130,7 @@
         ]
       },
       "ids": [
-        "AllergyIntolerance/alg-00044",
+        "AllergyIntolerance/alg-00023",
         "AllergyIntolerance/alg-t0008",
         "Communication/comm-t0010"
       ]
@@ -202,13 +202,13 @@
             "routed_to": null
           },
           {
-            "item": "Task/task-00010",
+            "item": "Task/task-00011",
             "status": "completed",
             "owner": "Practitioner/pr-okafor",
             "routed_to": "Group/pool-rn-triage"
           },
           {
-            "item": "Task/task-00011",
+            "item": "Task/task-00010",
             "status": "completed",
             "owner": "Practitioner/pr-okafor",
             "routed_to": null
@@ -240,12 +240,12 @@
       "evidence": {
         "checks": [
           {
-            "evidence": "DocumentReference/doc-00398",
+            "evidence": "DocumentReference/doc-00101",
             "write": 36,
             "exposed": 25
           },
           {
-            "evidence": "DocumentReference/doc-00376",
+            "evidence": "DocumentReference/doc-00079",
             "write": 11,
             "exposed": 10
           }
@@ -781,7 +781,7 @@
     "decisive_step": 12,
     "exposure": [
       {
-        "id": "DocumentReference/doc-00376",
+        "id": "DocumentReference/doc-00079",
         "first_exposed_step": 10,
         "first_shown_step": 10
       }

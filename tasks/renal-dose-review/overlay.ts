@@ -30,7 +30,6 @@
 // The pharmacist's flag still applies §2 and reaches 'continue 2.5 mg': right, for the wrong reason.
 import type { Resource } from '../../packages/env/store.ts';
 import type { Overlay, WorldReader } from '../../packages/env/overlay.ts';
-import { IDS } from './ids.ts';
 
 const PT = 'pt-0002';
 const SUBJECT = { reference: `Patient/${PT}` };
@@ -265,7 +264,11 @@ Hematology`;
 
 const overlay: Overlay = {
   task: 'T1',
-  ids: IDS,
+  names: {
+    'pr-t1-heme': 'pr-okonkwo-reyes',
+    'pr-t1-lindqvist': 'pr-lindqvist',
+    'pr-t1-raman': 'pr-raman',
+  },
   build(world: WorldReader) {
     const patient = world.get('Patient', PT) as Extract<Resource, { resourceType: 'Patient' }>;
     const renamed: Resource = {

@@ -1,4 +1,5 @@
 import { ref } from './ids.ts';
+import { syntheaRef } from '../../packages/env/synthea-ids.ts';
 // T5's expected end state, written by hand from design section 4 ("T5"): the scan, the allergy
 // that decides the prep, the dose times RBC-RAD-07 §2 gives counted back from the scan, and the
 // creatinine §4 asks for. policy.ts computes the same from the initial world, and the matrix
@@ -29,7 +30,7 @@ export const expected = {
   appointment: { id: ref('Appointment/appt-t5-1026'), start: '2026-10-26T09:00:00-04:00' },
   contrast_allergy: { id: ref('AllergyIntolerance/alg-t5-iohexol'), substance: 'iohexol', severity: 'moderate' },
   reaction_note: ref('DocumentReference/doc-t5-ct-2019'),
-  other_allergies: ['AllergyIntolerance/alg-00005', 'AllergyIntolerance/alg-00007', ref('AllergyIntolerance/alg-t5-shellfish'), ref('AllergyIntolerance/alg-t5-pvp')],
+  other_allergies: [syntheaRef('AllergyIntolerance/alg-00005'), syntheaRef('AllergyIntolerance/alg-00007'), ref('AllergyIntolerance/alg-t5-shellfish'), ref('AllergyIntolerance/alg-t5-pvp')],
   regimen: 'premedicate',
   prednisone: { mg: 50, at: ['2026-10-25T20:00:00-04:00', '2026-10-26T02:00:00-04:00', '2026-10-26T08:00:00-04:00'] },
   diphenhydramine: { mg: 50, at: ['2026-10-26T08:00:00-04:00'] },

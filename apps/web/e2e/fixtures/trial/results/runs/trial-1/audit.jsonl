@@ -1,3 +1,3 @@
 {"trial":"contrast-ct-prep/7","outcome":"FAIL","taxonomy":"reasoning","model_fault":"yes","decisive_step":15,"evidence_ids":["Appointment/appt-00001"],"llm_auditor_agrees":true}
-{"trial":"message-queue/9","outcome":"FAIL","taxonomy":"over_action","model_fault":"yes","decisive_step":10,"evidence_ids":["DocumentReference/doc-00376"],"llm_auditor_agrees":true}
-{"trial":"renal-dose-review/5","outcome":"FAIL","taxonomy":"reasoning","model_fault":"yes","decisive_step":8,"evidence_ids":["Observation/obs-03462"],"llm_auditor_agrees":true}
+{"trial":"message-queue/9","outcome":"FAIL","taxonomy":"over_action","model_fault":"yes","decisive_step":10,"evidence_ids":["DocumentReference/doc-00079"],"llm_auditor_agrees":true}
+{"trial":"renal-dose-review/5","outcome":"FAIL","taxonomy":"reasoning","model_fault":"yes","decisive_step":8,"evidence_ids":["Observation/obs-00122"],"llm_auditor_agrees":true}

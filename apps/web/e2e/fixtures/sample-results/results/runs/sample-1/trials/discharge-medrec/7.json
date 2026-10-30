@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:discharge-medrec:7",
   "task_id": "discharge-medrec",
-  "task_version": "feed0147f6e35fe7d6c8c8a643947183a677ade62ed4765531c133d733d744e9",
-  "env_version": "d72a49a3db045ece5cd405f4ff30fabedf6a3744ff6c05fa607756fb9d591e77",
-  "grader_task_version": "f5f63086e7bc826493685f18fa543e49c4370feddd0d552d0f7d24ad3f70e323",
-  "fixture_hash": "72a5695ffadc2af6d65de536961a330023163910f7efc2e177c8537403a2cbd9",
+  "task_version": "3227d7f1595e7b6074379a6966ae0fc9f78b5f054446f0872b7b5db0834b110b",
+  "env_version": "988fb4e7f8873bbd997b466cfa3aac211a9da2b3be03b82522b123817d1e51da",
+  "grader_task_version": "e9b26c2cd58268a65d6433834799b0ca6d01f3db12aebd27447edb6ed346df1a",
+  "fixture_hash": "86a12d3d87cc66dc93ccb827d1a83ad9f997cd178dc6d10e95bf05da4b943941",
   "state_hash": {
-    "initial": "72a5695ffadc2af6d65de536961a330023163910f7efc2e177c8537403a2cbd9",
-    "final": "8decf7a269dd12c4183db6bac8586d0df2dc1d6c9b0a3fd18360d8183b2b8354",
-    "replay_final": "8decf7a269dd12c4183db6bac8586d0df2dc1d6c9b0a3fd18360d8183b2b8354"
+    "initial": "86a12d3d87cc66dc93ccb827d1a83ad9f997cd178dc6d10e95bf05da4b943941",
+    "final": "bef6016d2f7b825a5c5d3e30c1e080a75dac21cab6db035c16a1c93d89afa53f",
+    "replay_final": "bef6016d2f7b825a5c5d3e30c1e080a75dac21cab6db035c16a1c93d89afa53f"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -93,7 +93,7 @@
         "left": []
       },
       "ids": [
-        "MedicationRequest/mr-00398"
+        "MedicationRequest/mr-00075"
       ]
     },
     {
@@ -106,12 +106,12 @@
       "evidence": {
         "status": "active",
         "active": [
-          "MedicationRequest/mr-00399"
+          "MedicationRequest/mr-00073"
         ]
       },
       "ids": [
-        "MedicationRequest/mr-00399",
-        "MedicationRequest/mr-00399"
+        "MedicationRequest/mr-00073",
+        "MedicationRequest/mr-00073"
       ]
     },
     {
@@ -160,7 +160,7 @@
         "pantoprazole": []
       },
       "ids": [
-        "MedicationRequest/mr-00402"
+        "MedicationRequest/mr-00068"
       ]
     },
     {
@@ -349,7 +349,7 @@
     "decisive_step": 10,
     "exposure": [
       {
-        "id": "DocumentReference/doc-00366",
+        "id": "DocumentReference/doc-00027",
         "first_exposed_step": 7,
         "first_shown_step": 7
       }

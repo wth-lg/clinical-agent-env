@@ -6,6 +6,7 @@
 // snippet ('…' where text was left out) is an excerpt and the note stays referenced (the exposure
 // rule, registry.ts). A '…' in the note's own text is just text.
 import type { Attachment, DiagnosticReport, DocumentReference, Resource } from '@medplum/fhirtypes';
+import { dataText } from '../../attachment.ts';
 import { ToolError } from '../errors.ts';
 import type { Tool } from '../registry.ts';
 import type { ReadContext } from './context.ts';
@@ -21,15 +22,13 @@ function attachments(resource: Readonly<Resource>): readonly Attachment[] {
   return [];
 }
 
-// Strict: bytes that are not UTF-8 are a fixture defect and surface as INTERNAL.
-const utf8 = new TextDecoder('utf-8', { fatal: true });
-const decode = (base64: string) => utf8.decode(Uint8Array.from(atob(base64), (c) => c.charCodeAt(0)));
-
-const isText = (a: Attachment) => a.data !== undefined && (a.contentType ?? '').toLowerCase().startsWith('text/');
+// An inline attachment is text when its data is base64 of UTF-8 text, whatever its content type
+// says (verifier P17i W0-1b r2 F5): such data is never shown to the agent as raw base64.
+const isText = (a: Attachment) => dataText(a.data) !== null;
 
 // The decoded text of a note or report's inline text attachments, or undefined if it has none.
 export function noteText(resource: Readonly<Resource>): string | undefined {
-  const texts = attachments(resource).filter(isText).map((a) => decode(a.data!));
+  const texts = attachments(resource).filter(isText).map((a) => dataText(a.data)!);
   return texts.length === 0 ? undefined : texts.join('\n\n');
 }
 

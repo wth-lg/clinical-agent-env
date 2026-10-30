@@ -60,7 +60,9 @@ describe('renal-dose-review', () => {
     const flag = store.get('DocumentReference', id('doc-t1-rx-1021')) as Extract<(typeof all)[number], { resourceType: 'DocumentReference' }> | undefined;
     const text = decode(flag?.content[0]?.attachment.data);
     expect(text).toContain('1.88 mg/dL');
-    expect(flag?.date).toBe('2026-10-21T14:10:00-04:00');
+    // 14:10 on the pharmacist's clock, in the same hour on the chart's Synthea clock (minute, second
+    // and milliseconds; profile.ts syntheaForms and plantedClock).
+    expect(flag?.date).toMatch(/^2026-10-21T14:\d{2}:\d{2}\.\d{3}-04:00$/);
     const d = derive(world) as typeof expected;
     expect(d.weight.id).toBe(ref('Observation/obs-t1-wt-1020'));
     expect(d.scr.id).toBe(ref('Observation/obs-t1-scr-1020'));

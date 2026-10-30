@@ -14,7 +14,9 @@
 //     exploit, fixture, overlay, a plan id such as P19 or a review id such as R14-06);
 //   - a policy's source text, or a source field, in read_policy's output;
 //   - T3 E15's stray hemiplegia (his stroke stays; nursing home residence is his exclusion).
-// 'expected' is not in the list: FHIR's expectedSupplyDuration and plain English use it.
+// 'expected' and 'answer' are designer words too (expected.ts holds each task's answer), matched
+// as whole words, so FHIR's expectedSupplyDuration never hits. Plain English uses them in three
+// places, allowed by their whole sentence below (ALLOWED); any other use counts.
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { beforeAll, describe, expect, it } from 'vitest';
@@ -36,7 +38,14 @@ const world = gunzip(readFileSync(join(repoRoot, 'fixtures/world.ndjson.gz')))
   .map((l) => JSON.parse(l) as R);
 
 const TASK_TAG = /(?:^|[^A-Za-z0-9])[a-z]+-t[1-6]-[a-z0-9]/;
-const DESIGNER = /\b(traps?|levers?|mutants?|oracle|decisive|planted|synthetic|grader|rubric|exploit|fixtures?|overlays?|P1\d[a-z]?|R14-\d+)\b/i;
+const DESIGNER = /\b(traps?|levers?|mutants?|oracle|decisive|planted|synthetic|grader|rubric|exploit|fixtures?|overlays?|expected|answers?|P1\d[a-z]?|R14-\d+)\b/i;
+// The clinical-English uses of 'expected' and 'answer', each cut out of its string before the
+// match, so another hit in the same string still counts.
+const ALLOWED = [
+  'No one is available to answer questions.',
+  'Otherwise create a Task due when the result is expected.',
+  'when the next potassium is expected.',
+];
 const NAME_SHAPED = new Set(['Practitioner', 'Organization', 'Group']);
 const NEUTRAL = /^[a-z]+-\d{4,5}$/;
 const NAMED = /^(pr|org|grp|pool)-[a-z]+(-[a-z]+)*$/;
@@ -50,8 +59,14 @@ const strings = (v: unknown, out: string[] = []): string[] => {
   }
   return out;
 };
+const allowed = (s: string) => ALLOWED.reduce((t, a) => t.split(a).join(' '), s);
 const hits = (pattern: RegExp, items: ReadonlyArray<[string, unknown]>) =>
-  items.flatMap(([where, v]) => strings(v).flatMap((s) => (pattern.test(s) ? [`${where}: ${s.match(pattern)![0]} in '${s.slice(0, 80)}'`] : [])));
+  items.flatMap(([where, v]) =>
+    strings(v).flatMap((raw) => {
+      const s = allowed(raw);
+      return pattern.test(s) ? [`${where}: ${s.match(pattern)![0]} in '${s.slice(0, 80)}'`] : [];
+    }),
+  );
 
 describe('the world carries no design leak', () => {
   const each = world.map((r): [string, unknown] => [`${r.resourceType}/${r.id}`, r]);
@@ -105,5 +120,15 @@ describe('what the agent reads besides the world carries no design leak', () => 
       ]),
     ];
     expect([...hits(TASK_TAG, items), ...hits(DESIGNER, items)]).toEqual([]);
+  });
+
+  it('each allowed sentence is still where it was, so the allowlist hides nothing that is gone', () => {
+    const text = JSON.stringify([SYSTEM_PROMPT, tasks.flatMap((t) => t.policies.map((p) => p.text))]);
+    expect(ALLOWED.filter((a) => !text.includes(a))).toEqual([]);
+  });
+
+  it("'expected' and 'answer' are caught outside the allowed sentences", () => {
+    expect(hits(DESIGNER, [['probe', ['the expected end state', 'answer key', 'when the result is expected, call', 'No one is available to answer questions. The answer is B.']]]).length).toBe(4);
+    expect(hits(DESIGNER, [['probe', ['expectedSupplyDuration', 'No one is available to answer questions.']]])).toEqual([]);
   });
 });

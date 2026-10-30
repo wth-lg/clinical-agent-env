@@ -20,6 +20,6 @@ describe('pnpm fixtures:build', () => {
     const { build } = await import('../../../scripts/fixtures-build.ts');
     const out = tempDir('fixtures-build-order');
     await build(out);
-    expect(writes.filter((f) => f.startsWith(out)).map((f) => basename(f))).toEqual(['world.ndjson.gz', 'definitions-pruned.json', 'manifest.json']);
+    expect(writes.filter((f) => f.startsWith(out)).map((f) => basename(f))).toEqual(['world.ndjson.gz', 'definitions-pruned.json', 'ids.ts', 'synthea-ids.ts', 'manifest.json']);
   });
 });

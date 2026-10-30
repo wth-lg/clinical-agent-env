@@ -35,7 +35,6 @@
 // Linda Marsh's tubal ligation dated 2020, which her new birth date puts at 55.
 import type { Resource } from '../../packages/env/store.ts';
 import type { Overlay, WorldReader } from '../../packages/env/overlay.ts';
-import { IDS } from './ids.ts';
 
 const OKAFOR = { reference: 'Practitioner/pr-okafor' };
 const LIN = { reference: 'Practitioner/pr-lin' };
@@ -350,7 +349,13 @@ Jordan Reyes, NP`;
 
 const overlay: Overlay = {
   task: 'T2',
-  ids: IDS,
+  names: {
+    'org-t2-lakeshore': 'org-lakeshore',
+    'pr-t2-brandt': 'pr-brandt',
+    'pr-t2-cole': 'pr-cole',
+    'pr-t2-iyer': 'pr-iyer',
+    'pr-t2-ortega': 'pr-ortega',
+  },
   build(world: WorldReader) {
     const renamed = RENAME.map(([id, given, family, birthDate, gender, mrn]): Resource => {
       const p = world.get('Patient', id) as R<'Patient'>;
