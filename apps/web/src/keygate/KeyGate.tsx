@@ -6,6 +6,7 @@ import type { Surface } from '../surface/detect.ts';
 import { isHosted } from '../surface/hosted.ts';
 import { LocalRunPanel } from '../surface/LocalRunPanel.tsx';
 import { SurfaceChip } from '../surface/SurfaceChip.tsx';
+import { BUTTON, BUTTON_PRIMARY, BUTTON_QUIET, CARD, FIELD } from '../data/ui.tsx';
 import { validateDirect } from './direct.ts';
 import { describeFailure, keyFormatProblem, type Failure } from './failure.ts';
 import { heldByRunner, holdInTab } from './key.ts';
@@ -16,7 +17,7 @@ const WHERE: Record<Surface['kind'], string> = {
   'browser-direct': "The key stays in this tab's memory and is sent only to the Anthropic API, through a relay that forwards it and keeps no copy.",
 };
 
-const field = 'h-9 w-full rounded-sm border border-line-strong bg-surface px-3 text-ink placeholder:text-ink-muted';
+const field = `${FIELD} h-9 w-full px-3`;
 
 // The key field stays type="password": the browser masks it natively and assistive technology
 // announces it as a secure field. Password managers are asked not to offer to save it
@@ -76,13 +77,13 @@ export function KeyGate({ surface, onDone, onBrowse, notice }: { surface: Surfac
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-canvas px-4 py-10">
       {/* noValidate: parseCap decides what submits, so the browser never blocks a value the app accepts. */}
-      <form onSubmit={submit} noValidate className="w-full max-w-[440px] rounded-sm border border-line bg-surface p-4 sm:p-6">
+      <form onSubmit={submit} noValidate className={`${CARD} w-full max-w-[440px] p-4 sm:p-6`}>
         <div className="flex items-center justify-between gap-3">
           <span className="text-xs text-ink-muted">Riverbend clinical agent environment</span>
           <SurfaceChip surface={surface} />
         </div>
         <p data-testid="gate-intro" className="mt-1 text-xs text-ink-muted">See an AI model do clinical tasks in a mock health record, and see how the grader decides each trial.</p>
-        <h1 className="mt-4 text-base font-semibold text-ink">Add an API key</h1>
+        <h1 className="mt-4 text-xl font-semibold tracking-tight text-ink">Add an API key</h1>
         <p className="mt-1 text-ink-muted">Paste an Anthropic API key and press Validate. Browsing needs no key.</p>
 
         <label htmlFor={ids.key} className="mt-5 block font-medium text-ink">
@@ -152,11 +153,11 @@ export function KeyGate({ surface, onDone, onBrowse, notice }: { surface: Surfac
           <button
             type="submit"
             disabled={busy || !filled || cap === null}
-            className="h-9 rounded-sm bg-primary px-4 font-medium text-on-primary hover:opacity-90 disabled:opacity-40"
+            className={`${BUTTON_PRIMARY} h-9 px-4`}
           >
             {busy ? 'Validating…' : 'Validate'}
           </button>
-          <button type="button" onClick={onBrowse} className="h-9 rounded-sm px-3 text-ink-muted hover:bg-canvas hover:text-ink">
+          <button type="button" onClick={onBrowse} className={`${BUTTON_QUIET} h-9`}>
             Browse without a key
           </button>
         </div>
@@ -173,14 +174,14 @@ export function KeyGate({ surface, onDone, onBrowse, notice }: { surface: Surfac
 function FailureNote({ id, failure, panelId }: { id: string; failure: Failure; panelId: string }) {
   const { lead, next, detail, local } = describeFailure(failure);
   return (
-    <div id={id} role="alert" className="mt-3 rounded-sm border border-danger bg-canvas p-3">
+    <div id={id} role="alert" className="mt-3 rounded-md border border-danger bg-canvas p-3">
       <p className="font-medium text-danger">{lead}</p>
       {next !== undefined && <p className="mt-1 text-ink">{next}</p>}
       {local && (
         <button
           type="button"
           onClick={() => document.getElementById(panelId)?.focus()}
-          className="mt-2 h-7 rounded-sm border border-line-strong px-2 text-ink hover:bg-surface"
+          className={`${BUTTON} mt-2 h-7 px-2`}
         >
           Show the steps
         </button>

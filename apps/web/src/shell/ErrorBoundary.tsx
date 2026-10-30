@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { BUTTON_PRIMARY } from '../data/ui.tsx';
 
 // Catches an error a view throws while it renders, so the rail and the top bar stay and the other
 // views still open; the shell keys it by view, so moving to another view clears it.
@@ -20,7 +21,7 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, { error: E
         <h1 className="text-base font-semibold text-danger">This view stopped with an error</h1>
         <p className="mt-2 break-words text-ink-muted">{this.state.error.message}</p>
         <p className="mt-2 text-ink-muted">The other views still work. Reload the page to try this one again.</p>
-        <button type="button" onClick={() => location.reload()} className="mt-3 inline-flex h-8 items-center rounded-sm border border-line-strong bg-surface px-3 text-ink hover:bg-canvas">Reload</button>
+        <button type="button" onClick={() => location.reload()} className={`${BUTTON_PRIMARY} mt-3`}>Reload</button>
       </section>
     );
   }

@@ -20,7 +20,7 @@ import { MET_TEXT, type Explanation } from '../../../../packages/core/explain.ts
 import type { TrialEvent } from '../../../../packages/core/events.ts';
 import { fetchEvents, fullExplanation, useResults, type RunData, type Trial } from '../data/results.ts';
 import { harmItems, safePass, type HarmItem } from '../data/harm.ts';
-import { FaultLabel, GlossaryLink, HarmChip, HashText, Notice, OutcomeChip } from '../data/ui.tsx';
+import { CARD, CHIP, FaultLabel, GlossaryLink, HarmChip, HashText, Notice, OutcomeChip } from '../data/ui.tsx';
 import { blocksTheRun, relabelledFrom, runBlock, shownFault } from '../data/failures.ts';
 import { tabTarget } from '../data/tabs.ts';
 import { useTaskList } from '../data/tasks.ts';
@@ -199,7 +199,7 @@ function Header({ t, e, rows, onStep, official }: { t: Trial; e: Explanation; ro
   const from = relabelledFrom(e);
   const decided = e.deciding && <>, decided by {criterionPhrase(e.deciding.id)} (<GlossaryLink anchor={`criterion-${e.deciding.id}`} className={LINK}>{e.deciding.id}</GlossaryLink>)<span className="block text-xs text-ink-muted"><HashText text={e.deciding.evidence} /></span></>;
   return (
-    <section aria-label="Why this trial ended as it did" data-testid="trial-header" className={`min-w-0 rounded-sm border border-line bg-surface p-4 ${nonPass ? `border-l-2 ${official && blocksTheRun(e) ? 'border-l-danger' : 'border-l-line-strong'}` : ''}`}>
+    <section aria-label="Why this trial ended as it did" data-testid="trial-header" className={`min-w-0 ${CARD} p-4 ${nonPass ? `border-l-2 ${official && blocksTheRun(e) ? 'border-l-danger' : 'border-l-line-strong'}` : ''}`}>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <OutcomeChip outcome={e.outcome} fault={shownFault(e)} />
         <HarmChip items={useHarmTexts(t.task, harmItems(t.record))} />
@@ -223,7 +223,7 @@ function Header({ t, e, rows, onStep, official }: { t: Trial; e: Explanation; ro
           <>
             <dt>Decisive check</dt>
             <dd data-testid="decisive-check" data-id={e.decisive_check.id}>
-              <code data-testid="decisive" className="break-all rounded-sm bg-canvas px-1 text-xs text-ink">{e.decisive_check.id}</code>
+              <code data-testid="decisive" className={`${CHIP} break-all border-line bg-canvas font-mono font-normal text-ink dark:bg-line`}>{e.decisive_check.id}</code>
               {e.decisive_check.traces_to && <span className="text-ink-muted"> (enforces {e.decisive_check.traces_to})</span>}
               <span className="block">requires {e.decisive_check.expected}</span>
               <span className="block">found {e.decisive_check.found}</span>
@@ -370,7 +370,7 @@ function Tabs({ tab, children }: { tab: TabId; children: Record<TabId, React.Rea
     go(TABS[to]!.id, true);
   };
   return (
-    <div className="min-w-0 rounded-sm border border-line bg-surface lg:order-2">
+    <div className={`min-w-0 ${CARD} lg:order-2`}>
       <div role="tablist" aria-label="Trial" onKeyDown={onKey} className="flex flex-wrap gap-x-1 border-b border-line px-2">
         {TABS.map((x) => (
           <button

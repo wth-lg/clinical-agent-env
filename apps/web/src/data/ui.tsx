@@ -15,22 +15,45 @@ import { hrefWith, onNav } from './url.ts';
 import type { HarmItem } from './harm.ts';
 import { BLOCKING_MARKS, faultNote, MARKS, markOf, NOT_COUNTED_LINE, type Mark } from './marks.ts';
 
+// The shared control classes (ui-polish 1.1). One BUTTON_PRIMARY per surface, for the action the
+// surface is for; BUTTON for the others; BUTTON_QUIET for a small action that should not compete.
+// Disabled is a dashed outline on the page colour, never opacity, so its text keeps its contrast.
+const DISABLED = 'disabled:cursor-not-allowed disabled:border-dashed disabled:border-line disabled:bg-canvas disabled:text-ink-muted';
+const CONTROL = `inline-flex h-8 items-center justify-center gap-1.5 rounded-md border px-3 font-medium ${DISABLED}`;
+export const BUTTON = `${CONTROL} border-line-strong bg-surface text-ink hover:bg-canvas`;
+export const BUTTON_PRIMARY = `${CONTROL} border-primary bg-primary text-on-primary hover:bg-primary/90`;
+export const BUTTON_QUIET = `${CONTROL} border-transparent text-ink-muted hover:bg-canvas hover:text-ink`;
+export const FIELD = `h-8 max-w-full rounded-md border border-line-strong bg-surface px-2 text-ink placeholder:text-ink-muted ${DISABLED}`;
+export const SELECT = FIELD;
+// A small label chip: the outcome, the harm and not-audited markers, a check code.
+const CHIP_SHAPE = 'inline-flex items-center gap-1 border px-2 py-0.5 text-xs font-medium';
+export const CHIP = `${CHIP_SHAPE} rounded-full`;
+// A label inside a card above a group (Gate checks, Rubric, a chart section).
+export const SECTION_LABEL = 'text-xs font-semibold uppercase tracking-wide text-ink-muted';
+// An icon button that grows to a 44px target on a touch screen; the desktop look is unchanged.
+const ICON_BUTTON = 'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-ink-muted hover:bg-canvas hover:text-ink pointer-coarse:h-11 pointer-coarse:w-11';
+
 export function Page({ title, headingRef, lead, children }: { title: string; headingRef?: Ref<HTMLHeadingElement> | undefined; lead?: ReactNode; children: ReactNode }) {
   return (
     <section className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
-      <h1 ref={headingRef} tabIndex={-1} className="text-base font-semibold text-ink focus-visible:outline-none">{title}</h1>
-      {lead !== undefined && <div className="mt-1 text-ink-muted">{lead}</div>}
-      <div className="mt-4 space-y-4">{children}</div>
+      <h1 ref={headingRef} tabIndex={-1} className="text-xl font-semibold tracking-tight text-ink focus-visible:outline-none">{title}</h1>
+      {lead !== undefined && <div className="mt-1.5 max-w-prose text-ink-muted">{lead}</div>}
+      <div className="mt-5 space-y-5">{children}</div>
     </section>
   );
 }
 
+// A card: rounded-lg with a faint shadow in light (in dark the border and the header band carry
+// the depth); its header sits on a tint of the page colour.
+export const CARD = 'rounded-lg border border-line bg-surface shadow-[0_1px_2px_rgb(0_0_0/0.04)] dark:shadow-none';
+export const CARD_HEADER = 'flex flex-wrap items-center justify-between gap-2 rounded-t-lg border-b border-line bg-canvas/60 px-4 py-3 dark:bg-canvas/40';
+
 export function Card({ title, children, actions, id, testId }: { title?: ReactNode; children: ReactNode; actions?: ReactNode; id?: string; testId?: string }) {
   return (
-    <div id={id} data-testid={testId} className="rounded-sm border border-line bg-surface">
+    <div id={id} data-testid={testId} className={CARD}>
       {(title !== undefined || actions !== undefined) && (
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-2.5">
-          <h2 className="min-w-0 break-words font-medium text-ink">{title}</h2>
+        <div className={CARD_HEADER}>
+          <h2 className="min-w-0 break-words text-sm font-semibold text-ink">{title}</h2>
           {actions}
         </div>
       )}
@@ -42,7 +65,7 @@ export function Card({ title, children, actions, id, testId }: { title?: ReactNo
 // An error (testId error-state) gets the danger border, as the key gate's errors do.
 export function Notice({ children, testId }: { children: ReactNode; testId?: string }) {
   const tone = testId === 'error-state' ? 'border-danger' : 'border-line';
-  return <p data-testid={testId} className={`break-words rounded-sm border ${tone} bg-surface p-4 text-ink-muted`}>{children}</p>;
+  return <p data-testid={testId} className={`break-words rounded-lg border ${tone} bg-surface p-4 text-ink-muted`}>{children}</p>;
 }
 
 export const NO_RESULTS = 'No results are published yet.';
@@ -88,7 +111,7 @@ export function MarkLegend({ marks = MARKS.map((x) => x.mark) }: { marks?: reado
 export function OutcomeChip({ outcome, fault }: { outcome: string; fault?: Fault | null }) {
   const mark = markOf(outcome, fault);
   return (
-    <span data-testid="outcome" data-mark={mark} className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-sm border px-1.5 py-0.5 text-xs font-medium text-ink ${BLOCKING_MARKS.includes(mark) ? 'border-danger' : 'border-line'}`}>
+    <span data-testid="outcome" data-mark={mark} className={`${CHIP} whitespace-nowrap text-ink ${BLOCKING_MARKS.includes(mark) ? 'border-danger' : 'border-line'}`}>
       <span aria-hidden {...markProps(mark, 'inline-block h-2.5 w-2.5 rounded-[2px]')} />
       {outcome}
     </span>
@@ -103,7 +126,7 @@ const named = (x: HarmItem) => (x.text ? `${x.id}, ${x.text.length > 90 ? `${x.t
 export function HarmChip({ items }: { items: readonly HarmItem[] }) {
   const met = items.filter((x) => !x.unknown);
   const unknown = items.filter((x) => x.unknown);
-  const chip = 'inline-flex items-center rounded-sm border border-danger px-1.5 py-0.5 text-xs font-medium text-danger break-words';
+  const chip = `${CHIP_SHAPE} rounded-md border-danger text-danger break-words`;
   return (
     <>
       {met.length > 0 && <span data-testid="harm-chip" data-harm="met" className={chip}>PASS with harm: {met.map((x) => `${named(x)} (${x.points})`).join(', ')}</span>}
@@ -146,7 +169,7 @@ export function Hash({ value, testId }: { value: string | null; testId?: string 
   return (
     <span data-testid={testId} data-hash={value} className="inline-flex items-center gap-1 align-middle">
       <code className="font-mono text-xs" title={value}>{value.length > 16 ? `${value.slice(0, 8)}…${value.slice(-4)}` : value}</code>
-      <button type="button" onClick={copy} aria-label={copied ? 'Copied' : 'Copy the full hash'} title={copied ? 'Copied' : 'Copy the full hash'} className="inline-flex h-6 w-6 items-center justify-center rounded-sm text-ink-muted hover:bg-canvas hover:text-ink">
+      <button type="button" onClick={copy} aria-label={copied ? 'Copied' : 'Copy the full hash'} title={copied ? 'Copied' : 'Copy the full hash'} className={ICON_BUTTON}>
         {copied ? <Check aria-hidden className="h-3.5 w-3.5" strokeWidth={1.75} /> : <Copy aria-hidden className="h-3.5 w-3.5" strokeWidth={1.75} />}
       </button>
     </span>
@@ -172,7 +195,7 @@ export function FaultLabel({ e, notCountedShown = false, official = false }: { e
   // The audit's environment or grader label on a model fault links to that label's definition.
   const anchor = label === 'environment' ? 'env' : label === 'grader' ? 'grader' : e.fault;
   const help = (
-    <a href={glossaryHref(`fault-${anchor}`)} onClick={toGlossary(`fault-${anchor}`)} aria-label={`How the ${name} label is given`} title="How failures are attributed" className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-sm text-ink-muted hover:bg-canvas hover:text-ink">
+    <a href={glossaryHref(`fault-${anchor}`)} onClick={toGlossary(`fault-${anchor}`)} aria-label={`How the ${name} label is given`} title="How failures are attributed" className={ICON_BUTTON}>
       <CircleHelp aria-hidden className="h-3.5 w-3.5" strokeWidth={1.75} />
     </a>
   );
@@ -193,7 +216,7 @@ export function FaultLabel({ e, notCountedShown = false, official = false }: { e
         {help}
       </span>
       {note !== null && <span data-testid="fault-note" className={`text-xs ${(blocksTheRun(e) && official) || e.outcome === 'GRADER_ERROR' ? 'text-danger' : 'text-ink-muted'}`}>{note}</span>}
-      {!e.audited && <span data-testid="not-audited" className="rounded-sm border border-dashed border-line-strong px-1 text-xs text-ink-muted">{NOT_AUDITED_MARKER}</span>}
+      {!e.audited && <span data-testid="not-audited" className={`${CHIP} border-dashed border-line-strong font-normal text-ink-muted`}>{NOT_AUDITED_MARKER}</span>}
     </span>
   );
 }

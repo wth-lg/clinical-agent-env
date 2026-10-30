@@ -17,7 +17,7 @@ import { shownFault } from '../data/failures.ts';
 import { useResults } from '../data/results.ts';
 import { MODEL } from '../adapters/ledger-browser.ts';
 import { useTaskList } from '../data/tasks.ts';
-import { Card, FaultLabel, OutcomeChip, Page } from '../data/ui.tsx';
+import { BUTTON, BUTTON_PRIMARY, Card, CARD, FaultLabel, OutcomeChip, Page, SELECT } from '../data/ui.tsx';
 import { relayLine, RELAY_TRIAL_TEXT, trialRelayReason } from '../keygate/failure.ts';
 import { requestKey, useKeyStatus } from '../keygate/key.ts';
 import { amountText, typicalCost } from './typical.ts';
@@ -38,8 +38,6 @@ let transport: TrialTransport | undefined;
 const theTransport = (hosted: boolean): TrialTransport => (transport ??= hosted ? workerTransport(sessionCap) : runnerTransport());
 
 const POLL_MS = 1500;
-const select = 'h-8 max-w-full rounded-sm border border-line-strong bg-surface px-2 text-ink disabled:cursor-not-allowed disabled:opacity-50';
-const button = 'h-8 rounded-sm border border-line-strong px-3 text-ink hover:bg-surface disabled:cursor-not-allowed disabled:opacity-50';
 const usd = (n: number) => `$${n.toFixed(2)}`;
 const BROWSER_DIRECT: Surface = { kind: 'browser-direct' };
 
@@ -144,7 +142,7 @@ export function LiveTrial({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
         <div className="flex flex-wrap items-end gap-3" data-testid="launcher">
           <label className="flex min-w-0 flex-col gap-1 text-xs text-ink-muted">
             Task
-            <select aria-label="Task" className={select} value={chosen} onChange={(e) => setTask(e.target.value)} disabled={noKey}>
+            <select aria-label="Task" className={SELECT} value={chosen} onChange={(e) => setTask(e.target.value)} disabled={noKey}>
               {ids.map((id) => <option key={id} value={id}>{id}</option>)}
             </select>
           </label>
@@ -153,10 +151,16 @@ export function LiveTrial({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
             <span className="flex h-8 items-center text-sm text-ink">{MODEL} at effort high</span>
           </span>
           {/* The amount sits beside its button, not in it, so the button's name is its visible
-              text (axe label-content-name-mismatch); aria-describedby still reads it out. */}
+              text (axe label-content-name-mismatch); aria-describedby still reads it out, and the
+              reason a size is disabled after it. Run ×1 is the primary action once there is a key;
+              before that, Add key is. */}
           {RUN_SIZES.map((n) => (
             <span key={n} className="inline-flex items-center gap-1.5">
-              <button type="button" aria-describedby={`${costId}-${n}`} className={button} disabled={noKey || busy || chosen === '' || over.includes(n)} onClick={() => void launch(n)}>
+              <button
+                type="button"
+                data-testid={`run-x${n}`}
+                aria-describedby={[`${costId}-${n}`, ...(noKey ? [`${costId}-nokey`] : over.includes(n) ? [`${costId}-over`] : [])].join(' ')}
+                className={n === RUN_SIZES[0] && !noKey ? BUTTON_PRIMARY : BUTTON} disabled={noKey || busy || chosen === '' || over.includes(n)} onClick={() => void launch(n)}>
                 Run ×{n}
               </button>
               <span id={`${costId}-${n}`} data-testid={`run-cost-${n}`} className="text-xs tabular-nums text-ink-muted">{costs[n] === undefined ? '…' : amountText(costs[n], bound)}</span>
@@ -170,11 +174,11 @@ export function LiveTrial({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
         )}
         {noKey && (
           <p data-testid="launcher-reason" className="mt-2 flex flex-wrap items-center gap-2 text-ink-muted">
-            Add an API key to run trials.
-            <button type="button" className={button} onClick={requestKey}>Add key</button>
+            <span id={`${costId}-nokey`}>Add an API key to run trials.</span>
+            <button type="button" className={BUTTON_PRIMARY} onClick={requestKey}>Add key</button>
           </p>
         )}
-        {!noKey && over.length > 0 && <p data-testid="size-reason" className="mt-2 text-ink-muted">{overCap(over, costs, committed, cap)}</p>}
+        {!noKey && over.length > 0 && <p id={`${costId}-over`} data-testid="size-reason" className="mt-2 text-ink-muted">{overCap(over, costs, committed, cap)}</p>}
         <CapControl local={t.kind === 'local-runner'} />
         {refusal && (
           <ErrorNote testId="run-refusal" lead={refusal.lead} detail={refusal.detail}>
@@ -213,9 +217,9 @@ function CapControl({ local }: { local: boolean }) {
       <div className="flex flex-wrap items-end gap-2">
         <label htmlFor={id} className="flex flex-col gap-1 text-xs text-ink-muted">
           Session cap (USD)
-          <input id={id} inputMode="decimal" autoComplete="off" className={`${select} w-28`} value={text} onChange={(e) => setText(e.target.value)} aria-invalid={parsed === null} />
+          <input id={id} inputMode="decimal" autoComplete="off" className={`${SELECT} w-28`} value={text} onChange={(e) => setText(e.target.value)} aria-invalid={parsed === null} />
         </label>
-        <button type="submit" className={button} disabled={parsed === null || parsed === cap}>Set cap</button>
+        <button type="submit" className={BUTTON} disabled={parsed === null || parsed === cap}>Set cap</button>
       </div>
       {parsed === null && <p data-testid="cap-invalid" className="mt-1 text-xs text-danger">Enter a cap from $0.01 to ${MAX_SESSION_CAP_USD}.</p>}
       <p data-testid="cap-where" className="mt-2 text-xs text-ink-muted">
@@ -228,7 +232,7 @@ function CapControl({ local }: { local: boolean }) {
 
 function ErrorNote({ lead, detail, testId, children }: { lead: string; detail: string | null; testId: string; children?: React.ReactNode }) {
   return (
-    <div role="alert" data-testid={testId} className="mt-3 rounded-sm border border-danger bg-canvas p-3">
+    <div role="alert" data-testid={testId} className="mt-3 rounded-md border border-danger bg-canvas p-3">
       <p className="font-medium text-danger">{lead}</p>
       {children}
       {detail !== null && <p className="mt-2 break-words font-mono text-xs text-ink-muted" data-testid="error-detail">{detail}</p>}
@@ -283,14 +287,14 @@ function Trial({ t, id, onEnd }: { t: TrialTransport; id: string; onEnd: () => v
   }
 
   return (
-    <section data-testid="live-trial" data-trial={id} data-state={running ? 'running' : end.state} className="rounded-sm border border-line bg-surface">
-      <header className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-line px-4 py-3">
-        <h2 className="min-w-0 break-words font-medium text-ink">{breakable(id)}</h2>
+    <section data-testid="live-trial" data-trial={id} data-state={running ? 'running' : end.state} className={CARD}>
+      <header className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-t-lg border-b border-line bg-canvas/60 px-4 py-3 dark:bg-canvas/40">
+        <h2 className="min-w-0 break-words text-sm font-semibold text-ink">{breakable(id)}</h2>
         <Meter label="Turn" value={String(f.turn)} testId="meter-turn" />
         <Meter label="Tokens" value={`${f.tokens.input + f.tokens.cache_read + f.tokens.cache_write} in, ${f.tokens.output} out`} testId="meter-tokens" />
         <Meter label="Cost" value={usd(f.cost)} testId="meter-cost" />
         {wasResumed(record) && <Resumed />}
-        <button type="button" onClick={() => void stop()} disabled={!running || stopping} className={`${button} ml-auto inline-flex items-center gap-1.5`}>
+        <button type="button" onClick={() => void stop()} disabled={!running || stopping} className={`${BUTTON} ml-auto`}>
           <Square aria-hidden className="h-3 w-3" strokeWidth={2} />
           {stopping && running ? 'Stopping…' : 'Stop'}
         </button>
@@ -324,7 +328,7 @@ function Trial({ t, id, onEnd }: { t: TrialTransport; id: string; onEnd: () => v
             <>
               <ErrorNote testId="trial-error" lead={RELAY_TRIAL_TEXT[relay].lead} detail={errorLine}>
                 <p className="mt-1 text-ink">{RELAY_TRIAL_TEXT[relay].next}</p>
-                <button type="button" className={`${button} mt-2 h-7`} onClick={() => document.getElementById(panelId)?.focus()}>Show the steps</button>
+                <button type="button" className={`${BUTTON} mt-2 h-7`} onClick={() => document.getElementById(panelId)?.focus()}>Show the steps</button>
               </ErrorNote>
               {/* The shell shows the panel only on Overview and Tasks; here it follows the error, outside the alert. */}
               <LocalRunPanel id={panelId} surface={BROWSER_DIRECT} className="mt-3" />

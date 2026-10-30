@@ -10,7 +10,7 @@ import { NOT_RERUN_REASON, RERUN_OUTCOMES, type Outcome } from '../../../../pack
 import { currentGrade } from '../../../../packages/core/summary.ts';
 import { shownFault } from '../data/failures.ts';
 import { checkTextOf, type Trial } from '../data/results.ts';
-import { OutcomeChip } from '../data/ui.tsx';
+import { OutcomeChip, SECTION_LABEL } from '../data/ui.tsx';
 import { metText, rubricMetText, rubricTotal, scoreNote, totalText } from './rubric.ts';
 import { stepOfId } from './steps.ts';
 
@@ -62,7 +62,7 @@ export function EvidenceId({ id, steps, onStep }: { id: string; steps: readonly 
   const n = steps === null ? null : stepOfId(steps, id);
   if (n === null) return <code data-testid="evidence-id" data-id={id} className="break-all rounded-sm bg-canvas px-1 text-xs text-ink" title={steps === null ? 'The trajectory is not loaded.' : 'No step wrote or read this resource.'}>{id}</code>;
   return (
-    <button type="button" data-testid="evidence-id" data-id={id} data-step={n} onClick={() => onStep(n)} className="inline-flex min-w-0 items-baseline gap-1 rounded-sm text-left text-xs text-ink underline decoration-line-strong underline-offset-2 hover:decoration-ink">
+    <button type="button" data-testid="evidence-id" data-id={id} data-step={n} onClick={() => onStep(n)} className="inline-flex min-w-0 items-baseline gap-1 rounded-md text-left text-xs text-ink underline decoration-line-strong underline-offset-2 hover:decoration-ink pointer-coarse:px-1 pointer-coarse:py-2">
       <code className="break-all">{id}</code>
       <span className="shrink-0 text-ink-muted">step {n}</span>
     </button>
@@ -190,7 +190,7 @@ export function Grading({ t, steps, onStep, decisive = null }: { t: Trial; steps
 export function Section({ title, lead, children, testId }: { title: ReactNode; lead?: ReactNode; children: ReactNode; testId?: string }) {
   return (
     <section data-testid={testId} className="min-w-0">
-      <h3 className="font-medium text-ink">{title}</h3>
+      <h3 className={SECTION_LABEL}>{title}</h3>
       {lead !== undefined && <p className="mt-0.5 text-xs text-ink-muted">{lead}</p>}
       <div className="mt-2 min-w-0">{children}</div>
     </section>

@@ -39,7 +39,9 @@ test('a planted tool-result difference ends the browser replay with the call tha
   await expect(row).toContainText('search_patients');
   // A trajectory left as published still reproduces.
   await expect(v.locator('[data-testid="replay-row"][data-trial="renal-dose-review/1"]')).toHaveAttribute('data-match', 'true');
-  // The same page, mismatch row on screen: no reload, so the replay result stays.
+  // The same page, mismatch row on screen: no reload, so the replay result stays. The pointer leaves
+  // the Replay button first, so its hover fade (app.css) is not caught midway when the scheme flips.
+  await page.mouse.move(0, 0);
   for (const scheme of ['light', 'dark'] as const) {
     await page.emulateMedia({ colorScheme: scheme });
     await expect(row).toBeVisible();

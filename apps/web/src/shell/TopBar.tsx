@@ -9,13 +9,14 @@ import type { Surface } from '../surface/detect.ts';
 // session spend meter and the key status: one key chip with Add key or Forget key (pre-audit U10).
 // With no key the effort and the meter, which are about live runs, are not shown. Below lg the surface, effort and meter move to a
 // second row under the name and the key, so nothing scrolls sideways on a phone and Add key /
-// Forget key stay on screen.
+// Forget key stay on screen. Below sm with no key the row holds only the surface icon, so it joins
+// the first row instead.
 export function TopBar(props: { surface: Surface; status: KeyStatus; onForget: () => void; onAdd: () => void; busy: boolean }) {
   return (
     <header className="flex shrink-0 flex-wrap items-center gap-x-4 border-b border-line bg-surface px-4">
       <span className="flex h-12 items-center font-medium text-ink">Riverbend</span>
       <span className="hidden text-ink-muted lg:inline">Clinical agent environment</span>
-      <span className="order-last -mx-4 flex w-[calc(100%+2rem)] flex-wrap items-center gap-x-3 gap-y-1 border-t border-line px-4 py-2 lg:order-none lg:mx-0 lg:ml-auto lg:w-auto lg:border-0 lg:p-0">
+      <span className={`order-last -mx-4 flex w-[calc(100%+2rem)] flex-wrap items-center gap-x-3 gap-y-1 border-t border-line px-4 py-2 lg:order-none lg:mx-0 lg:ml-auto lg:w-auto lg:border-0 lg:p-0 ${props.status.kind === 'none' ? 'max-sm:contents' : ''}`}>
         <SurfaceChip surface={props.surface} />
         {props.status.kind !== 'none' && (
           <>

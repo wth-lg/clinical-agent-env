@@ -832,7 +832,7 @@ test('the rail link\'s visible text is its accessible name', async ({ page }) =>
   await expect(link).not.toHaveAttribute('aria-label', /.*/);
 });
 
-test('design: white cards with a stone-200 border on a stone-50 page, 4px controls, active rail stone-200/80', async ({ page }) => {
+test('design: white cards with a stone-200 border on a stone-50 page, 6px controls, active rail stone-200/80', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'light' });
   await mockBrowserDirect(page);
   await page.goto('./');
@@ -841,7 +841,8 @@ test('design: white cards with a stone-200 border on a stone-50 page, 4px contro
   // Computed colours come back as oklch() for the stone tokens; compare against Tailwind's values.
   expect(await style('form', ['background-color', 'border-top-color'])).toEqual({ 'background-color': 'rgb(255, 255, 255)', 'border-top-color': 'oklch(0.923 0.003 48.717)' });
   expect(await style('main', ['background-color'])).toEqual({ 'background-color': 'oklch(0.985 0.001 106.423)' });
-  for (const sel of ['button[type="submit"]', 'input[type="password"]']) expect((await style(sel, ['border-radius']))['border-radius'], sel).toBe('4px');
+  // One control radius, rounded-md, from the shared classes in data/ui.tsx (ui-polish 1.1).
+  for (const sel of ['button[type="submit"]', 'input[type="password"]']) expect((await style(sel, ['border-radius']))['border-radius'], sel).toBe('6px');
   expect(await passGate(page)).toBe(true);
   const active = page.getByRole('navigation', { name: 'Views' }).locator('a[aria-current="page"]');
   // bg-line/80 is a color-mix, which the browser reports in oklab: stone-200's lightness at 80%.
