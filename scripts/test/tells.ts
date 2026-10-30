@@ -113,6 +113,26 @@ const SIGNER = /\n\n[A-Z][a-z]+(?: [A-Z][a-z.-]+)+, (MD|NP|PA-C|DO|RN|PharmD)\s*
 // An identifier value's form: each digit 9, each letter A, every other character kept.
 export const idForm = (v: string): string => v.replace(/\d/g, '9').replace(/[A-Za-z]/g, 'A');
 
+// A Patient an overlay adds (packages/env/overlay.ts, builder-210) against the world's other Patients,
+// as an agent reads them with search_patients and fhir_read: its shape (top-level fields, identifier
+// systems, extension urls) must be one some other Patient has, and its identifiers' forms ones other
+// Patients hold. Its id above the cohort's last is not scored here: world-tells.test.ts names each
+// added Patient as that residual. One problem per difference, empty when none.
+const patientShape = (r: R): string => {
+  const ids = ((r.identifier ?? []) as Array<{ system?: string }>).map((i) => i.system ?? '').sort();
+  const ext = ((r.extension ?? []) as Array<{ url?: string }>).map((e) => e.url ?? '').sort();
+  return JSON.stringify([Object.keys(r).sort(), ids, ext]);
+};
+export function addedPatientTells(patients: readonly R[], added: ReadonlySet<string>): string[] {
+  const others = patients.filter((r) => !added.has(r.id));
+  const shapes = new Set(others.map(patientShape));
+  const forms = new Set(others.flatMap((r) => ((r.identifier ?? []) as Array<{ system?: string; value?: string }>).map((i) => `${i.system}=${idForm(i.value ?? '')}`)));
+  return patients.filter((r) => added.has(r.id)).flatMap((r) => [
+    ...(shapes.has(patientShape(r)) ? [] : [`Patient/${r.id}: its shape (fields, identifier systems, extensions) is no other Patient's`]),
+    ...((r.identifier ?? []) as Array<{ system?: string; value?: string }>).filter((i) => !forms.has(`${i.system}=${idForm(i.value ?? '')}`)).map((i) => `Patient/${r.id}: identifier ${i.system} has the form ${idForm(i.value ?? '')}, which no other Patient's has`),
+  ]);
+}
+
 const ba = (tp: number, fp: number, p: number, n: number) => Math.max((tp / p + 1 - fp / n) / 2, (1 - tp / p + fp / n) / 2);
 
 // Score every type that has planted and generated records in the task charts.
