@@ -2,8 +2,8 @@
   "now": "2026-10-23T08:00:00-04:00",
   "world": {
     "file": "fixtures/world.ndjson.gz",
-    "state_hash": "86a12d3d87cc66dc93ccb827d1a83ad9f997cd178dc6d10e95bf05da4b943941",
-    "ndjson_sha256": "1cddb0fa34aaa0ebb35615db8c620ccc9358c77465667456bd31313a46b938ce",
+    "state_hash": "c23b66d48b24ecd4b67260353fab3df3920c33f9e0484a81f4f7320cdf155260",
+    "ndjson_sha256": "e462fe56a7c74f564127720c4d133f62e7b9ef6371ba77d011a873af9d20b4d9",
     "resources": 7468,
     "by_type": {
       "AllergyIntolerance": 51,
@@ -72,8 +72,8 @@
   "inputs": {
     "fixtures/synthea/generate.sh": "9c20f04e81cd71443b418aaa2c2782b47d3f20fffccdce06959da03b40c33fed",
     "packages/env/clock.ts": "000372240039629abbb215aff20f18cf85e6adf832dad872dc6b1df96b06ff71",
-    "packages/env/overlay.ts": "d7cb7c607dfecbb72d4b50dd4da4d7239a11e57cd28591f38e8ea17c47249bff",
-    "packages/env/profile.ts": "6186952923a18ec0191a9787cc1a3bc9edca171aa6e84ac1f993b9450d6a4a4d",
+    "packages/env/overlay.ts": "b89379b1b4c6ef5e33548b45c1fbacc45389f1b84ca4a4ab3a8df63130cd4425",
+    "packages/env/profile.ts": "f5dc0083fca82bf9ecf231178a3e4431ea5fea1a4d53abcaea38ebd976c128a9",
     "packages/env/renumber.ts": "a18c690c41aa7e22e503b11035c773b76e165fed5b83dbb517a726ed77d2a558",
     "packages/env/world.ts": "c16dbb19c56e749662a602139253743353add3fabdaa103aeedd0fc554eb3906",
     "scripts/fixtures-synthea.ts": "44162b65dc576e507b526132164eda54cb14000936331d48b575f46d9c49d752",
