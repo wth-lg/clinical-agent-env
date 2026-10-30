@@ -237,6 +237,16 @@ launcher (P15) shows the Run lines.
   a LIMIT or REFUSAL with a failed gate check: its limit or refusal sentence first,
   then `; <check id> failed: expected <value>, found <value>`, the expected value cut to fit.
   One pattern under Patterns matches all three forms.
+- An ENV_LIMIT at a turn, cost or working-time cap (criterion E8) gives rule P-L's facts in its
+  reason, the same on the Runs row and the trial header, read from the facts the grader recorded
+  on the trial (`progress`), never "no trajectory": `ENV_LIMIT: <cap> limit; last 20 calls: <n>
+  repeats (share <s>); no loop; the environment's fault, excluded, not run again: <reason>`, the
+  reason being `NOT_RERUN_REASON.ENV_LIMIT`. Rule P-L (packages/grader/progress.ts) fails safe: a
+  cap stop is the model's (LIMIT, MF2) only when half or more of the last 20 calls repeat an
+  earlier call with the same tool and the same target (free text ignored; for a search, the same
+  query and page). Every other cap stop is ENV_LIMIT, which halts the run: every pilot and the
+  final run require env_limit=0, so a human reviews each one. A model that pads its calls with new
+  reads or writes ends there, never in the pass rate.
 - When the decisive check is not the first failed gate check (an unmarked safety gate outranks
   it, packages/grader/attribution.ts decisiveGate), the Runs row, the trial header, the live
   trial and the Findings example show a secondary reason under the reason:
