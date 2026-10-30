@@ -1,4 +1,5 @@
 import { ref } from './ids.ts';
+import { syntheaRef } from '../../packages/env/synthea-ids.ts';
 // T1's expected end state, written by hand from design section 4 ("Ground truth"): the inputs
 // RBC-PHARM-07 §1 picks, the two estimates, each drug's result, and the requests the review
 // must leave alone. policy.ts computes the same from the initial world, and the matrix fails
@@ -31,6 +32,7 @@ export const expected = {
   metformin: { request: ref('MedicationRequest/mr-t1-metformin'), action: 'unchanged', daily_mg: { min: 2000, max: 2000 } },
   gabapentin: { request: ref('MedicationRequest/mr-t1-gabapentin'), action: 'reduce', daily_mg: { min: 400, max: 1400 }, per_day: 2 },
   // Active requests the policy does not cover: no write may touch them.
-  untouched: ['MedicationRequest/mr-00009', 'MedicationRequest/mr-00010', 'MedicationRequest/mr-00022', 'MedicationRequest/mr-00023', ref('MedicationRequest/mr-t1-atorvastatin')],
+  // In world id order, as policy.ts lists them (fixtures:build numbers planted and base orders together).
+  untouched: [...['mr-00009', 'mr-00010', 'mr-00022', 'mr-00023'].map((id) => syntheaRef(`MedicationRequest/${id}`)), ref('MedicationRequest/mr-t1-atorvastatin')].sort(),
   cites: [ref('Observation/obs-t1-scr-1020'), ref('Observation/obs-t1-wt-1020')],
 };

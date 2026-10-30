@@ -3,8 +3,8 @@
 // A task's planted resources are the ones its overlay adds, listed by world id in its id registry
 // (tasks/<id>/ids.ts, packages/env/overlay.ts "Planted ids"; all six in tasks/planted.ts), so a task's patients are the patients
 // of its planted resources and the members of its planted Groups (the panel task T3 names its
-// patients by a Group). The world ids are neutral (obs-03462), so only the registry can say which
-// task planted what.
+// patients by a Group). The world ids are numbered among the generated ones (packages/env/renumber.ts),
+// so only the registry can say which task planted what.
 import { PLANTED } from '../../../../tasks/planted.ts';
 
 // The world ids each task planted (tasks/planted.ts); test/chart.test.ts checks every task has some.

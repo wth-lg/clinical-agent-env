@@ -4,8 +4,10 @@
 //
 // Base cohort (fixtures/synthea/base.ndjson.gz) + setting (packages/env/world.ts) + every
 // tasks/<id>/overlay.ts, through applyOverlays (packages/env/overlay.ts). Writes
-// world.ndjson.gz, manifest.json and definitions-pruned.json. The output depends only on the
-// inputs the manifest lists, so fixtures:verify can rebuild it and compare.
+// world.ndjson.gz, manifest.json, definitions-pruned.json, and the id maps the world was numbered
+// with: ids.ts (each task's registry key -> world id, read through tasks/<id>/ids.ts) and
+// synthea-ids.ts (base id -> world id, read through packages/env/synthea-ids.ts). The output
+// depends only on the inputs the manifest lists, so fixtures:verify can rebuild it and compare.
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createRequire, findPackageJSON } from 'node:module';
 import { join, relative, resolve } from 'node:path';
@@ -28,7 +30,7 @@ const OVERLAY_SOURCES = [
   'fixtures/synthea/generate.sh',
   'packages/env/clock.ts',
   'packages/env/overlay.ts',
-  'packages/env/planted.ts',
+  'packages/env/renumber.ts',
   'packages/env/world.ts',
   'scripts/fixtures-synthea.ts',
 ];
@@ -109,6 +111,28 @@ export function taskLiteralDates(): { byPatient: Map<string, Set<string>>; all: 
   return { byPatient: out, all };
 }
 
+const entries = (m: Record<string, string>, indent: string) => Object.entries(m).map(([k, v]) => `${indent}'${k}': '${v}',\n`).join('');
+
+// fixtures/ids.ts: each task's registry, key -> world id (tasks/<id>/ids.ts reads its own).
+export function taskIdsSource(ids: Record<string, Record<string, string>>): string {
+  const tasks = Object.keys(ids).sort().map((t) => `  ${t}: {\n${entries(ids[t]!, '    ')}  },\n`).join('');
+  return `// Written by pnpm fixtures:build (scripts/fixtures-build.ts); do not edit. Each task's id registry:
+// the world id of every resource its overlay adds, by registry key (packages/env/overlay.ts,
+// "Planted ids"). tasks/<id>/ids.ts reads its task's entry.
+export const TASK_IDS = {
+${tasks}} as const;
+`;
+}
+
+// fixtures/synthea-ids.ts: base id -> world id (packages/env/synthea-ids.ts reads it).
+export function syntheaIdsSource(ids: Record<string, string>): string {
+  return `// Written by pnpm fixtures:build (scripts/fixtures-build.ts); do not edit. The world id of every
+// numbered base cohort resource, by its id in fixtures/synthea/base.ndjson.gz (packages/env/renumber.ts).
+export const SYNTHEA_IDS: Readonly<Record<string, string>> = {
+${entries(ids, '  ')}};
+`;
+}
+
 // The clinic PCP every clinic patient without one gets (packages/env/world.ts STAFF: the user).
 const CLINIC_PCP = 'pr-okafor';
 
@@ -139,9 +163,9 @@ export async function build(outDir: string): Promise<{ stateHash: string; resour
   const defTypes = [...RESOURCE_TYPES].sort();
   const definitions = `${JSON.stringify(await prunedDefinitions(defTypes))}\n`;
 
-  // Each overlay's id registry (tasks/<id>/ids.ts) names its planted resources' world ids.
-  const registries = overlayFiles.map((f) => f.replace(/overlay\.ts$/, 'ids.ts')).filter((f) => existsSync(join(repo, f)));
-  const inputs = Object.fromEntries([...OVERLAY_SOURCES, ...overlayFiles, ...registries].sort().map((f) => [f, sha256(readFileSync(join(repo, f)))]));
+  const inputs = Object.fromEntries([...OVERLAY_SOURCES, ...overlayFiles].sort().map((f) => [f, sha256(readFileSync(join(repo, f)))]));
+  const idsTs = taskIdsSource(world.ids);
+  const syntheaTs = syntheaIdsSource(world.synthea);
   const manifest = {
     now: NOW,
     world: {
@@ -155,11 +179,14 @@ export async function build(outDir: string): Promise<{ stateHash: string; resour
     overlays: overlays.map((o) => o.task).sort(),
     inputs,
     definitions: { file: 'fixtures/definitions-pruned.json', from: definitionsLabel(), sha256: sha256(definitions), types: defTypes },
+    ids: { file: 'fixtures/ids.ts', sha256: sha256(idsTs), synthea_file: 'fixtures/synthea-ids.ts', synthea_sha256: sha256(syntheaTs) },
   };
 
   mkdirSync(outDir, { recursive: true });
   writeFileSync(join(outDir, 'world.ndjson.gz'), gzip(ndjson));
   writeFileSync(join(outDir, 'definitions-pruned.json'), definitions);
+  writeFileSync(join(outDir, 'ids.ts'), idsTs);
+  writeFileSync(join(outDir, 'synthea-ids.ts'), syntheaTs);
   // Last: a running local runner reloads its fixtures when manifest.json changes (apps/runner/server.ts).
   writeFileSync(join(outDir, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
   return { stateHash: hash, resources: world.resources.length, hygiene: report };

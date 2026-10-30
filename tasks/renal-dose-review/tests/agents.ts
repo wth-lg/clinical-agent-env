@@ -3,6 +3,7 @@
 import type { Agents, Script } from '../../../packages/grader/matrix/types.ts';
 import { activeMeds, apixabanUp, crclCalc, DONE, egfrCalc, findPatient, finish, gabapentinBid, modify, note, policy, RX, scrResults, weights } from '../solution/steps.ts';
 import { id } from '../ids.ts';
+import { synthea } from '../../../packages/env/synthea-ids.ts';
 
 const reads = [{ calls: [findPatient] }, { calls: [activeMeds] }, { calls: [scrResults, weights] }, { calls: [policy] }, { calls: [egfrCalc, crclCalc] }];
 
@@ -16,7 +17,7 @@ export const spray: Script = [
       gabapentinBid,
       modify(id('mr-t1-metformin'), { value: 500, unit: 'mg', frequency: 'BID' }, 'Renal review: reduce', RX.metformin500),
       modify(id('mr-t1-atorvastatin'), { value: 20, unit: 'mg', frequency: 'QHS' }, 'Renal review: reduce', RX.atorvastatin20),
-      modify('mr-00047', { value: 5, unit: 'mg', frequency: 'QD' }, 'Renal review: reduce lisinopril'),
+      modify(synthea('mr-00047'), { value: 5, unit: 'mg', frequency: 'QD' }, 'Renal review: reduce lisinopril'),
     ],
   },
   { calls: [note()] },

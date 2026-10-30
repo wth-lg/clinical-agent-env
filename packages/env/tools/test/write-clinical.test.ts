@@ -13,6 +13,7 @@ import { clock } from '../../clock.ts';
 import { parseNdjson } from '../../fixture-source.ts';
 import { stateHash } from '../../hash.ts';
 import { Store } from '../../store.ts';
+import { synthea, syntheaRef } from '../../synthea-ids.ts';
 import { indexDefinitions, validate } from '../../validate.ts';
 import { INBOX_QUEUE_SYSTEM, type CatalogEntry, type Policy } from '../read/index.ts';
 import { callTool, type ToolResult } from '../registry.ts';
@@ -196,9 +197,9 @@ describe('1. record_allergy: an update keeps what the call leaves out', () => {
 
   it('updates a world SNOMED food allergy to resolved and keeps its code, category and coded reactions', () => {
     const c = fresh();
-    const peanut = get<AllergyIntolerance>(c, 'AllergyIntolerance/alg-00018');
-    call(c, 'record_allergy', { patient: 'pt-0022', update_id: 'alg-00018', clinical_status: 'resolved' });
-    const a = get<AllergyIntolerance>(c, 'AllergyIntolerance/alg-00018');
+    const peanut = get<AllergyIntolerance>(c, syntheaRef('AllergyIntolerance/alg-00018'));
+    call(c, 'record_allergy', { patient: 'pt-0022', update_id: synthea('alg-00018'), clinical_status: 'resolved' });
+    const a = get<AllergyIntolerance>(c, syntheaRef('AllergyIntolerance/alg-00018'));
     expect(a).toMatchObject({ code: peanut.code, category: ['food'], type: peanut.type, reaction: peanut.reaction, recordedDate: peanut.recordedDate, criticality: peanut.criticality });
     expect(a.clinicalStatus?.coding?.[0]?.code).toBe('resolved');
   });

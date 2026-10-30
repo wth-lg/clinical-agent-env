@@ -3,8 +3,8 @@
 //
 //   pnpm fixtures:verify
 //
-// Passes only if the rebuilt manifest and pruned definitions equal the committed files byte
-// for byte (so the state hash, the NDJSON SHA-256, every count and every pinned input hash
+// Passes only if the rebuilt manifest, pruned definitions and id maps (ids.ts, synthea-ids.ts)
+// equal the committed files byte for byte (so the state hash, the NDJSON SHA-256, every count and every pinned input hash
 // agree), and the committed world.ndjson.gz decompresses to exactly the rebuilt NDJSON. The
 // .gz bytes themselves are not compared: zlib builds may deflate differently
 // (scripts/fixtures-lib.ts). Exit codes: 0 match, 1 mismatch or build failure.
@@ -36,6 +36,7 @@ try {
       if (problems.length === 0) problems.push('manifest.json: same content, different formatting; run pnpm fixtures:build');
     }
     if (!committed('definitions-pruned.json').equals(rebuilt('definitions-pruned.json'))) problems.push('definitions-pruned.json differs from the rebuild');
+    for (const f of ['ids.ts', 'synthea-ids.ts']) if (!committed(f).equals(rebuilt(f))) problems.push(`${f} differs from the rebuild; run pnpm fixtures:build`);
     const theirs = gunzip(rebuilt('world.ndjson.gz'));
     try {
       const ours = gunzip(committed('world.ndjson.gz'));

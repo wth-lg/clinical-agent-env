@@ -82,8 +82,8 @@ export function derive(world: WorldView): Json {
   };
 
   const out: Record<string, Json> = { items: items.map(key) };
-  // The items in id order are M1 to M6 (ids.ts numbers them so); the label is only the key
-  // expected.ts files each item's answer under.
+  // The items in id order are labelled m1 to m6; the label is only the key expected.ts files each
+  // item's answer under (its expected export labels the designers' M1..M6 the same way).
   for (const [i, item] of items.entries()) {
     const n = `m${i + 1}`;
     const patient = item.for!.reference!;

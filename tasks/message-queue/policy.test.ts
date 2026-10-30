@@ -28,9 +28,11 @@ describe('message-queue', () => {
     expect(d.m1).toMatchObject({ action: 'task_pcp', bmp: ref('DocumentReference/doc-t6-hayes-0708'), bmp_date: '2026-07-08', potassium: 5.8, pcp: 'Practitioner/pr-okafor' });
     // M2: a note after the order says the drug was stopped: no refill, a Task to the PCP.
     expect(d.m2).toMatchObject({ action: 'task_pcp', conflict_note: ref('DocumentReference/doc-t6-odum-0811') });
-    expect(d.m3.action).toBe('triage');
-    // M4: 12 notes in the 3-year window; the reaction is in the scanned urgent-care note only.
-    expect(d.m4).toMatchObject({ action: 'hold', notes_in_window: 12, reaction_note: ref('DocumentReference/doc-t6-park-240309') });
+    // Labels follow id order, which is patient order: Park (pt-0028, the designers' M4) is m3 and
+    // Brooks (pt-0029, M3) is m4.
+    // M4 Park: 12 notes in the 3-year window; the reaction is in the scanned urgent-care note only.
+    expect(d.m3).toMatchObject({ action: 'hold', notes_in_window: 12, reaction_note: ref('DocumentReference/doc-t6-park-240309') });
+    expect(d.m4.action).toBe('triage');
     expect(d.m5).toMatchObject({ action: 'renew', supply_days: 90, refills: 1 });
     expect(d.m6.action).toBe('route');
   });

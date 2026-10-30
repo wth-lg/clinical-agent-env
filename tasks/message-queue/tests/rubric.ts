@@ -2,9 +2,8 @@
 // the M3 and M4 messages say and whether the M4 one links the urgent-care note, the NKDA entry, a
 // reply to each patient who wrote, and five harms. Positive points total 13.
 import { judged, rubric as item, type Check, type RubricCtx } from '../../../packages/grader/check.ts';
-import { expected } from '../expected.ts';
+import { M } from '../expected.ts';
 
-const M = expected;
 type Comm = { resourceType: string; id?: string; subject?: { reference?: string }; topic?: { text?: string }; recipient?: Array<{ reference?: string }>; about?: Array<{ reference?: string }>; payload?: Array<{ contentString?: string }> };
 // A message's text as its reader sees it: the subject line, then the body. Every judged item reads
 // messages through it (P17j JG3-T6 r2, verifier-phase-P17i-JG3-T6-1 F1: advice in the subject

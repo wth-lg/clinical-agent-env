@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { nodeTaskSource } from '../../cli/adapters/tasks-node.ts';
 import { matrixEnv } from '../../cli/matrix.ts';
 import { loadStore } from '../../packages/env/fixture-source.ts';
+import { synthea } from '../../packages/env/synthea-ids.ts';
 import { lintWorld } from '../../packages/env/lint/index.ts';
 import type { WorldView } from '../../packages/grader/matrix/types.ts';
 import { expected } from './expected.ts';
@@ -80,7 +81,7 @@ describe('discharge-medrec', () => {
     expect(pt?.resourceType === 'Patient' && pt.generalPractitioner).toEqual([{ reference: 'Practitioner/pr-okafor' }]);
     const aki = store.get('Condition', id('cond-t4-aki'));
     expect(aki?.resourceType === 'Condition' && [aki.clinicalStatus?.coding?.[0]?.code, aki.abatementDateTime]).toEqual(['active', undefined]);
-    for (const id of ['cond-00139', 'cond-00141', 'cond-00151']) expect(store.get('Condition', id)).toBeUndefined();
+    for (const id of ['cond-00139', 'cond-00141', 'cond-00151']) expect(() => synthea(id)).toThrow(/no numbered base resource/);
   });
 
   it('dates and justifies the orders consistently with the 2025 summary', () => {
@@ -89,7 +90,7 @@ describe('discharge-medrec', () => {
     const lis = store.get('MedicationRequest', id('mr-t4-lisinopril'));
     expect(lis?.resourceType === 'MedicationRequest' && JSON.stringify(lis.reasonCode)).not.toMatch(/hypertension/i);
     // Both 2024 orders predate the 2025 heart-failure diagnosis, so they give his long-standing ischemic heart disease.
-    const ihd = store.get('Condition', 'cond-00142');
+    const ihd = store.get('Condition', synthea('cond-00142'));
     expect(ihd?.resourceType === 'Condition' && [ihd.code?.text?.startsWith('Ischemic heart disease'), ihd.clinicalStatus?.coding?.[0]?.code, (ihd.onsetDateTime ?? '') < '2024-02-06']).toEqual([true, 'active', true]);
     for (const mr of [succ, lis]) expect(mr?.resourceType === 'MedicationRequest' && mr.reasonCode).toEqual([{ text: 'Ischemic heart disease' }]);
   });

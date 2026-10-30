@@ -18,6 +18,7 @@ import t3 from '../../tasks/crc-care-gap/overlay.ts';
 import { checks as t3Checks } from '../../tasks/crc-care-gap/tests/grader.ts';
 import t6 from '../../tasks/message-queue/overlay.ts';
 import { ref } from '../../tasks/crc-care-gap/ids.ts';
+import { syntheaRef } from '../../packages/env/synthea-ids.ts';
 
 const repo = (rel: string) => new URL(`../../${rel}`, import.meta.url);
 const base = new Uint8Array(readFileSync(repo('fixtures/synthea/base.ndjson.gz')));
@@ -94,7 +95,7 @@ describe('crc-care-gap E16 chart (pt-0035)', () => {
 
 describe('crc-care-gap E15 fault rule and exposure', () => {
   it('nothing_for_others names E15 residence records as decisive ids', () => {
-    expect(t3Checks.find((c) => c.id === 'nothing_for_others')!.decisive_ids).toEqual(['Patient/pt-0034', ref('Observation/obs-t3-2465'), ref('Encounter/enc-t3-7781'), 'Encounter/enc-00204']);
+    expect(t3Checks.find((c) => c.id === 'nothing_for_others')!.decisive_ids).toEqual(['Patient/pt-0034', ref('Observation/obs-t3-2465'), ref('Encounter/enc-t3-7781'), syntheaRef('Encounter/enc-00204')]);
   });
 
   it("task.toml and docs state the E15 fault rule in E6's could-have-surfaced form", () => {

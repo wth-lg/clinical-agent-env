@@ -25,7 +25,7 @@ import { gate, type Check, type GateCtx } from '../../../packages/grader/check.t
 import type { GateOf, GateResource } from '../../../packages/grader/gate-view.ts';
 import { firstShown, seenBefore } from '../../../packages/grader/exposure.ts';
 import { dailyDose, doseOf, dosesPerDay, drugOf, isActive, isDrug } from '../../../packages/grader/normalize.ts';
-import { expected } from '../expected.ts';
+import { M } from '../expected.ts';
 import { rubric } from './rubric.ts';
 import { ref } from '../ids.ts';
 
@@ -107,7 +107,6 @@ const refill = (spec: { patient: string; drug: string; daily_mg: number; supply_
   return { met: live.length > 0 && live.every(right), orders, want: { mg_per_day: spec.daily_mg, supply_days: spec.supply_days, refills: spec.refills } };
 };
 
-const M = expected;
 // Or when it is reassigned to the owner its protocol routes the message to: RBC-TRI-02 §1 a red
 // flag (M3) to pool-rn-triage, §2 a scheduling request (M6) to pool-scheduling. The other items
 // name no owner for the item itself: RBC-RX-05 §1 (M1) and §3 (M2) are a new Task to the PCP, who

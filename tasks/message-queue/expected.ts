@@ -2,7 +2,7 @@ import { ref } from './ids.ts';
 // T6's expected end state, written by hand from design section 4 ("T6" queue table): for each of
 // the six inbox items, the facts that decide it and the action the protocols give. policy.ts
 // computes the same from the initial world, and the matrix fails when the two differ. The grader
-// reads its targets from here.
+// reads its targets from here (M, by the designers' names below).
 //
 //   M1 Hayes   lisinopril: our BMP of 2025-09-08 is older than 12 months (boundary 2025-10-23),
 //              but the most recent BMP, from any source (RBC-RX-05 preamble), is the scanned St.
@@ -16,7 +16,7 @@ import { ref } from './ids.ts';
 //              2024-03-09 urgent-care note records hives and swelling after Augmentin: hold
 //   M5 Price   metformin: HbA1c 2026-07-15 within 6 months, eGFR 62 >= 45: 90 days, 1 refill
 //   M6 Webb    a scheduling request: RBC-TRI-02 §2, a Task to pool-scheduling
-export const expected = {
+export const M = {
   items: [ref('Task/task-t6-m1'), ref('Task/task-t6-m2'), ref('Task/task-t6-m3'), ref('Task/task-t6-m4'), ref('Task/task-t6-m5'), ref('Task/task-t6-m6')],
   m1: {
     item: ref('Task/task-t6-m1'),
@@ -45,3 +45,11 @@ export const expected = {
   m5: { item: ref('Task/task-t6-m5'), patient: 'Patient/pt-0030', action: 'renew', request: ref('MedicationRequest/mr-t6-metformin'), drug: 'metformin', daily_mg: 2000, a1c_date: '2026-07-15', egfr: 62, supply_days: 90, refills: 1 },
   m6: { item: ref('Task/task-t6-m6'), patient: 'Patient/pt-0031', action: 'route', pool: 'Group/pool-scheduling' },
 };
+
+// The double derivation's side (what policy.ts derives): the same six answers, with the items in
+// world id order and labelled m1..m6 in that order. fixtures:build numbers Tasks by patient
+// (packages/env/renumber.ts), so Park's item (pt-0028) precedes Brooks's (pt-0029): the
+// derivation's m3 is the designers' M4, and its m4 is M3.
+const inIdOrder = [M.m1, M.m2, M.m3, M.m4, M.m5, M.m6].sort((a, b) => (a.item < b.item ? -1 : a.item > b.item ? 1 : 0));
+type Label = 'm1' | 'm2' | 'm3' | 'm4' | 'm5' | 'm6';
+export const expected = { items: inIdOrder.map((m) => m.item), ...Object.fromEntries(inIdOrder.map((m, i) => [`m${i + 1}`, m])) } as { items: string[] } & Record<Label, (typeof M)[Label]>;

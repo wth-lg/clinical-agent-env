@@ -3,7 +3,7 @@
 // failure reasons read it. It sits beside the task directory, not in it, so neither task version
 // covers it: rewording it regrades nothing.
 import { fields, items, lateness, listed, show, type CheckText } from '../packages/core/explain.ts';
-import { expected as M } from './message-queue/expected.ts';
+import { M } from './message-queue/expected.ts';
 
 // A refill on these terms: no order, else the first order term that differs.
 const terms = (spec: { drug: string; daily_mg: number; supply_days: number; refills: number }) => `${spec.drug} ${spec.daily_mg} mg a day for ${spec.supply_days} days with ${spec.refills} ${spec.refills === 1 ? 'refill' : 'refills'}`;

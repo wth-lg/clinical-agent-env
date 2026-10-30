@@ -6,6 +6,7 @@ import { nodeTaskSource } from '../../cli/adapters/tasks-node.ts';
 import { matrixEnv } from '../../cli/matrix.ts';
 import { clock } from '../../packages/env/clock.ts';
 import { loadStore } from '../../packages/env/fixture-source.ts';
+import { synthea } from '../../packages/env/synthea-ids.ts';
 import { lintWorld } from '../../packages/env/lint/index.ts';
 import { READ_TOOLS, type ReadContext } from '../../packages/env/tools/read/index.ts';
 import { callTool } from '../../packages/env/tools/registry.ts';
@@ -55,8 +56,8 @@ describe('crc-care-gap', () => {
       return r?.clinicalStatus?.coding?.[0]?.code ?? r?.status;
     };
     // Full-time employment on frail E7 and E8, a 1998 anemia on E3, a 2024 alteplase dose on E12.
-    expect(['cond-00231', 'cond-00452', 'cond-00425'].map((id) => status('Condition', id))).toEqual(['resolved', 'resolved', 'resolved']);
-    expect(status('MedicationRequest', 'mr-00269')).toBe('completed');
+    expect(['cond-00231', 'cond-00452', 'cond-00425'].map((id) => status('Condition', synthea(id)))).toEqual(['resolved', 'resolved', 'resolved']);
+    expect(status('MedicationRequest', synthea('mr-00269'))).toBe('completed');
   });
 
   it('dates the scanned operative note by its scan, with the surgery as its period', () => {
