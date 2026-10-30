@@ -26,7 +26,7 @@
 // planted resource by key through tasks/<id>/ids.ts and a base one through
 // packages/env/synthea-ids.ts.
 import type { Resource } from '@medplum/fhirtypes';
-import { dataBytes, dataText, textType } from './attachment.ts';
+import { dataBytes, dataText, textDefect } from './attachment.ts';
 import type { LintSource, LintSpec } from './lint/index.ts';
 import { NAME_SHAPED, numberedPrefix, worldIds } from './renumber.ts';
 import { Store } from './store.ts';
@@ -94,22 +94,32 @@ function mapStrings<T>(value: T, f: (s: string) => string): T {
 
 // The first registry key in any string of value, an attachment's data decoded when it is base64 text,
 // whatever its content type, and base64 text inside that too (verifier P17i W0 M1: a key hidden in
-// base64 note text reached the world past the string check; W0-1b F3 and r2 F5). Text data that is
-// not UTF-8 (a text/* type, or none) is read byte for byte as well (W0-1b r3 F3).
+// base64 note text reached the world past the string check; W0-1b F3 and r2 F5). Data is also read
+// byte for byte (Latin-1, W0-1b r3 F3) and with its NUL bytes dropped (UTF-16, W0-1c V4), at every
+// depth and under any content type.
+const bytesKey = (bytes: string | null) => (bytes === null ? null : (KEY_IN_TEXT.exec(bytes)?.[1] ?? KEY_IN_TEXT.exec(bytes.replace(/\0/g, ''))?.[1] ?? null));
 function firstKey(value: unknown): string | null {
   if (typeof value === 'string') return KEY_IN_TEXT.exec(value)?.[1] ?? null;
   if (Array.isArray(value)) for (const v of value) { const k = firstKey(v); if (k !== null) return k; }
   else if (value !== null && typeof value === 'object') {
-    const { data, contentType } = value as { data?: unknown; contentType?: unknown };
-    for (let text = dataText(data), depth = 0; text !== null && depth < 4; text = dataText(text.trim()), depth++) {
-      const k = firstKey(text);
+    const { data } = value as { data?: unknown };
+    for (let text: string | null = typeof data === 'string' ? data : null, depth = 0; text !== null && depth < 5; text = dataText(text.trim()), depth++) {
+      const k = (depth ? firstKey(text) : null) ?? bytesKey(dataBytes(text.trim())) ?? bytesKey(dataBytes(text.replace(/\s+/g, '')));
       if (k !== null) return k;
-    }
-    if (contentType === undefined || contentType === null || textType(contentType)) {
-      const k = firstKey(dataBytes(data) ?? '');
-      if (k !== null) return k;
+      // Base64 inside the text, on a line or after a label of its own.
+      for (const m of text.match(/[A-Za-z0-9+/_-]{16,}={0,2}/g) ?? []) { const kk = bytesKey(dataBytes(m)); if (kk !== null) return kk; }
     }
     for (const [k, v] of Object.entries(value)) { const f = firstKey(k) ?? firstKey(v); if (f !== null) return f; }
+  }
+  return null;
+}
+// The first attachment in value whose data cannot be filed as text (attachment.ts textDefect).
+function firstTextDefect(value: unknown, at = ''): string | null {
+  if (Array.isArray(value)) for (const v of value) { const d = firstTextDefect(v, at); if (d !== null) return d; }
+  else if (value !== null && typeof value === 'object') {
+    const why = textDefect(value as { contentType?: unknown; data?: unknown });
+    if (why !== null) return `the ${String((value as { contentType?: unknown }).contentType ?? 'untyped')} attachment at ${at || '(root)'} ${why}`;
+    for (const [k, v] of Object.entries(value)) { const d = firstTextDefect(v, at ? `${at}.${k}` : k); if (d !== null) return d; }
   }
   return null;
 }
@@ -240,6 +250,9 @@ export function applyOverlays(base: readonly Resource[], setting: readonly Resou
       const left = firstKey(out);
       if (left !== null) throw new Error(`overlay ${added.get(k) ?? 'task'}: ${k}: '${left}' is a registry key; what the agent can read takes a world id, so name the resource by its reference, not its key`);
     }
+    // Text the read tools could not show (verifier P17i W0-1c V4), in any resource.
+    const defect = firstTextDefect(out);
+    if (defect !== null) throw new Error(`${written.has(k) ? `overlay ${added.get(k) ?? 'task'}: ` : ''}${k}: ${defect}; write a text attachment as base64 of UTF-8 text`);
     resources.push(out);
   }
   lint[0] = { source: 'world', spec: mapStrings(settingLint, rename) };

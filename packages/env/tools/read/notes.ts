@@ -26,8 +26,9 @@ function attachments(resource: Readonly<Resource>): readonly Attachment[] {
 // says (verifier P17i W0-1b r2 F5), or when its content type is text/*: such data is never shown to
 // the agent as raw base64.
 const isText = (a: Attachment) => a.data !== undefined && (textType(a.contentType) || dataText(a.data) !== null);
-// Text/* data that is not base64 of UTF-8 is a fixture defect (W0-1b r3 F3): it throws, and the
-// read tool's caller records INTERNAL.
+// Text/* data that is not base64 of UTF-8, or holds a NUL (UTF-16 text, W0-1c V4), is a fixture
+// defect (W0-1b r3 F3): it throws, and the read tool's caller records INTERNAL. fixtures:build
+// refuses such data, so the world holds none.
 function decoded(a: Attachment): string {
   const text = dataText(a.data);
   if (text === null) throw new Error(`a ${a.contentType ?? 'text'} attachment whose data is not UTF-8 text in base64`);

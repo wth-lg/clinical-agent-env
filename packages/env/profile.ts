@@ -1,6 +1,6 @@
 // One record shape and one set of value forms for the whole world (builder-196, builder-203,
-// builder-205, builder-206; verifier P17i W0 S2, W0-1b F1, F4, F5, W0-1b r2 F1-F3, F6 and r3 F2, F6). The overlays write
-// resources in the write tools' EHR shape and on the clinic's clock (docStatus, dosage route and
+// builder-205, builder-206, builder-207; verifier P17i W0 S2, W0-1b F1, F4, F5, W0-1b r2 F1-F3, F6,
+// r3 F2, F6 and W0-1c V2, V3, V5). The overlays write resources in the write tools' EHR shape and on the clinic's clock (docStatus, dosage route and
 // timing code, doses in mg, lab reference ranges and flags, times at 10:00 or 14:35), and the
 // Synthea cohort writes neither, so before these passes a reader could tell a planted record by its
 // fields, the form of a value, or its time against the chart's own clock. fixtures:build runs five
@@ -11,14 +11,16 @@
 //                  Synthea's form (seconds, and milliseconds on the fields Synthea stamps with them).
 //   profileBase    on the base cohort, before the overlays, keyed by base id. In every chart: a
 //                  hospital visit (emergency, admission, urgent care) and an endoscopy are the
-//                  hospital's, and now and then a weight was taken in pounds (never the latest).
+//                  hospital's, now and then a weight was taken in pounds (never the latest), and a
+//                  hospital procedure Synthea timed at night is done in the day (nightProcedures).
 //                  For patients no task owns only, the resources and statuses a task patient's chart
 //                  must not gain: a signed addendum, an NKDA entry, a radiology report, a lab panel
 //                  filed with its values as components, an entry marked entered in error, a critical
 //                  point-of-care glucose, a stopped or held order.
 //   profileWorld   on every resource after the overlays: the fields an EHR records on every record of
 //                  a type, derived from the record itself (coding displays, docStatus, the IHE format
-//                  code, a Synthea visit note typed and written as the clinic files it, displays and
+//                  code, a Synthea visit note typed and written as the clinic files it, from the
+//                  chart's orders (last, so their sigs are final), displays and
 //                  texts without Synthea's semantic tags, drug names as RxNorm writes them, a
 //                  colonoscopy's finding, the note's period, encounter roles and discharge disposition, problem-list
 //                  category, recorder and performer, lab reference ranges and flags, report category,
@@ -42,6 +44,7 @@
 //   plantedClock   last, on every planted resource in a task chart: its times on the chart's Synthea
 //                  clock, in the same hour (a visit's end where its length needs), every order kept
 //                  (see the pass).
+// fixtures:build then lists every key of every resource in FHIR element order (canonical.ts).
 // Selection is a hash of the base id, so the same resources are chosen on every build.
 import type { Resource } from './store.ts';
 import { eastern, NOW_MS } from './clock.ts';
@@ -69,7 +72,7 @@ const HOSPITAL = OUTSIDE_HOSPITAL;
 const HOSPITAL_CLASSES = new Set(['EMER', 'IMP']);
 const HOSPITAL_VISITS = /^(Urgent care clinic|Hospital admission|Emergency room admission)\b/i;
 // Colonoscopy, polypectomy, echocardiography, cholecystectomy, thrombectomy, fetal and abdominal ultrasound.
-const HOSPITAL_PROCEDURES = new Set(['73761001', '274031008', '40701008', '433236007', '45595009', '433112001', '169230002', '426701000119108']);
+export const HOSPITAL_PROCEDURES: ReadonlySet<string> = new Set(['73761001', '274031008', '40701008', '433236007', '45595009', '433112001', '169230002', '426701000119108']);
 const CLASS_DISPLAY: Readonly<Record<string, string>> = { AMB: 'ambulatory', IMP: 'inpatient encounter', EMER: 'emergency', VR: 'virtual', HH: 'home health' };
 const STATUS_DISPLAY: Readonly<Record<string, string>> = {
   active: 'Active', inactive: 'Inactive', resolved: 'Resolved', confirmed: 'Confirmed', unconfirmed: 'Unconfirmed', refuted: 'Refuted', 'entered-in-error': 'Entered in Error',
@@ -319,6 +322,8 @@ export function profileBase(base: readonly Resource[], taskPatients: ReadonlySet
     }
   }
 
+  nightProcedures(out);
+
   for (const r of [...out]) {
     if (!free(r)) continue;
     const id = r.id as string;
@@ -489,6 +494,51 @@ export function profileBase(base: readonly Resource[], taskPatients: ReadonlySet
   return [...out, ...added] as unknown as Resource[];
 }
 
+// A hospital procedure Synthea timed at night (verifier P17i W0-1c V5: five of eight colonoscopies,
+// and echoes and ultrasounds, between 20:00 and 06:00) was done in the day. Outside an emergency
+// visit or an inpatient stay, it moves into 08:00-17:59 on the same date, 8 + hour mod 10 as the
+// hygiene pass moves visits, with what Synthea recorded around it that night: every record of the
+// patient with no visit whose first time chains to it within 90 minutes (its labs, reports and other
+// procedures). Every time of theirs within the day after moves by the same delta (a result's issue
+// time with it), when no other time of the patient lies between the old time and the new, and none
+// passes NOW. In every chart, task charts too: no task reads the hour of a generated procedure.
+const night = (s: number) => { const h = Number(eastern(s * 1000).slice(11, 13)); return h < 7 || h >= 18; };
+function nightProcedures(out: Json[]): void {
+  const byPatient = new Map<string, Json[]>();
+  for (const r of out) if (patientOf(r)?.startsWith('Patient/')) byPatient.set(patientOf(r)!, [...(byPatient.get(patientOf(r)!) ?? []), r]);
+  for (const proc of out) {
+    if (proc.resourceType !== 'Procedure' || !HOSPITAL_PROCEDURES.has(codeOf(proc) ?? '') || !FULL.test(performed(proc))) continue;
+    const t = sec(performed(proc));
+    const mine = byPatient.get(patientOf(proc) ?? '') ?? [];
+    const visit = mine.find((r) => key(r) === (proc.encounter as Ref | undefined)?.reference);
+    const stay = mine.some((e) => {
+      const p = e.period as { start?: string; end?: string } | undefined;
+      return e.resourceType === 'Encounter' && HOSPITAL_CLASSES.has((e.class as { code?: string }).code ?? '') && p?.start !== undefined && sec(p.start) <= t && t <= sec(p.end ?? p.start) + 21_600;
+    });
+    if (!night(t) || stay || (visit && HOSPITAL_CLASSES.has((visit.class as { code?: string }).code ?? ''))) continue;
+    // The night's records: no visit, first time chained to the procedure's within 90 minutes, same date.
+    const first = (r: Json) => Math.min(...stamps(r).map((x) => sec(x.v)));
+    const loose = mine.filter((r) => r.resourceType !== 'Encounter' && r.encounter === undefined && stamps(r).length && day(eastern(first(r) * 1000)) === day(performed(proc)));
+    const cluster = new Set([proc]);
+    for (let grew = true; grew; ) {
+      grew = false;
+      for (const r of loose) if (!cluster.has(r) && [...cluster].some((c) => Math.abs(first(c) - first(r)) <= 5_400)) { cluster.add(r); grew = true; }
+    }
+    const t0 = Math.min(...[...cluster].map(first));
+    const hour = Number(eastern(t0 * 1000).slice(11, 13));
+    const d = (8 + (hour % 10) - hour) * 3600;
+    // A time of another record at the same instant as one of theirs (a polyp's abatement at the
+    // colonoscopy's end) was recorded with them, and moves with them.
+    const own = new Set(mine.flatMap((r) => (cluster.has(r) ? stamps(r).filter((x) => sec(x.v) >= t0 && sec(x.v) < t0 + 86_400).map((x) => sec(x.v)) : [])));
+    const moves = (r: Json, x: { v: string; path: string }) => (cluster.has(r) ? sec(x.v) >= t0 && sec(x.v) < t0 + 86_400 : own.has(sec(x.v)) && END.test(x.path));
+    const moving = mine.flatMap((r) => stamps(r).filter((x) => moves(r, x)));
+    const others = mine.flatMap((r) => stamps(r).filter((x) => !moves(r, x))).map((x) => sec(x.v));
+    const between = (a: number, b: number) => others.some((x) => x >= Math.min(a, b) && x <= Math.max(a, b));
+    if (day(eastern((t0 + d) * 1000)) !== day(eastern(t0 * 1000)) || moving.some((x) => sec(x.v) + d > NOW_S || between(sec(x.v), sec(x.v) + d))) continue;
+    for (const x of moving) x.holder[x.k] = at(x.v, sec(x.v) + d);
+  }
+}
+
 // What a clinic files a Synthea visit note as, by the visit's type (verifier P17i W0-1b r2 F2): the
 // type's LOINC code and display, and the note's heading. Synthea types every note History and
 // physical; the clinic writes that only for a physical or an admission.
@@ -518,41 +568,139 @@ const section = (text: string, title: string): string[] => {
 // clinic's EHR shows the preferred term, without it (verifier P17i W0-1b r3 F2).
 const SEMANTIC_TAG = / \((disorder|finding|procedure|situation|qualifier value|regime\/therapy|observable entity|morphologic abnormality|substance|environment|organism|record artifact|person|physical object|product|body structure|event|specimen|occupation|social concept|assessment scale|life style|attribute|cell)\)/g;
 const plain = (s: string) => s.replace(SEMANTIC_TAG, '');
-// A Synthea list line ('- Shortness of Breath') as words in a sentence ('Shortness of breath').
-const listed = (lines: readonly string[]) => lines.map((l, i) => { const w = l.replace(/^- /, ''); return i ? w.toLowerCase() : w.charAt(0) + w.slice(1).toLowerCase(); }).join(', ');
+const TAGGED = new RegExp(SEMANTIC_TAG.source);
 // Synthea's history list ('a (disorder), b, unspecified (disorder), c (finding)') as its items.
 const items = (list: string) => list.split(', ').reduce<string[]>((out, x) => (/^(unspecified|NOS)\b/.test(x) && out.length ? [...out.slice(0, -1), `${out.at(-1)!}, ${x}`] : [...out, x]), []);
 // Synthea's social history sentences ('Patient is single. Patient quit smoking at age 17.') as a
 // clinician writes them ('Single. Quit smoking at age 17.').
 const socially = (line: string) => line.replace(/Patient (is |has )?/g, '').replace(/(^|\. )([a-z])/g, (_, a: string, b: string) => a + b.toUpperCase()).trim();
 const decode = (data: string) => new TextDecoder().decode(Uint8Array.from(atob(data), (x) => x.charCodeAt(0)));
-// A Synthea visit note (its text in markdown) as the clinic writes it: the heading and place, the
-// patient, the complaint and plan and the signer, and for a physical or an admission sometimes the
-// history and social history, all from what Synthea's note says. No note adds a fact.
-function clinicText(text: string, id: string, heading: string, physical: boolean, visit: Json | undefined, author: Ref | undefined, byId: ReadonlyMap<string, Json>): string {
+// A drug as a clinician writes it in a note (verifier P17i W0-1c V2): the ingredient and strength,
+// without the RxNorm form, brand or pack ('{28 (norethindrone 0.35 mg oral tablet) } pack [errin 28
+// day]' is norethindrone 0.35 mg), a combination as 'amoxicillin-clavulanate 250-125 mg', a strength
+// per mL or per hour left to the sig, a device by what it is ('levonorgestrel IUD').
+const SALTS = /\b(hydrochloride|hydrobromide|bitartrate|phosphate|acetate|propionate|potassium|valerate|sulfate|bromide|succinate|calcium)\b/g;
+const UNITS: Readonly<Record<string, string>> = { mg: 'mg', mcg: 'mcg', unt: 'units', meq: 'mEq' };
+function drugName(raw: string): { name: string; strength: string } {
+  let s = plain(raw).toLowerCase().replace(/\s*\[[^\]]*\]/g, '').trim();
+  const pack = /^\{\d+ \(([^)]*)\)/.exec(s);
+  if (pack) s = pack[1]!;
+  s = s.replace(/^(abuse-deterrent )?((\d+(\.\d+)? )?(ml|hr|day|actuat) )+/, '');
+  if (/insulin isophane/.test(s) && /insulin, regular/.test(s)) return { name: 'insulin NPH/regular 70/30', strength: '' };
+  const parts = s.split(' / ').map((x) => /^(.*?)\s+(\d+(?:\.\d+)?)\s*(mg|mcg|unt|meq)(\/\w+)?\b/.exec(x)).filter((m): m is RegExpExecArray => m !== null && !/inert/.test(m[1]!));
+  if (!parts.length) return { name: s.replace(/\s+(oral|chewable|sublingual|tablet|capsule|solution|suspension|injection|injectable).*$/, ''), strength: '' };
+  const name = parts.map((m) => m[1]!.replace(/,.*$/, '').replace(SALTS, '').replace(/\s+/g, ' ').trim()).join('-');
+  const device = /drug implant/.test(s) ? ' implant' : /intrauterine system/.test(s) ? ' IUD' : /vaginal system/.test(s) ? ' vaginal ring' : '';
+  const units = new Set(parts.map((m) => m[3]!));
+  const strength = device || parts.some((m) => m[4]) || units.size > 1 ? '' : `${parts.map((m) => m[2]).join('-')} ${UNITS[parts[0]![3]!]}`;
+  return { name: `${name}${device}`, strength };
+}
+// A drug given in the hospital or at a procedure (an anaesthetic, an infusion, a loading dose, eye
+// drops for the examination), which a clinic note's medication list leaves out.
+const HOSPITAL_DRUG = /\b(injection|injectable solution|prefilled syringe|inhalation solution|ophthalmic)\b|isoflurane|clopidogrel 300 mg/;
+const KEPT_INJECTION = /insulin|medroxyprogesterone|vitamin b12|epinephrine|albuterol/;
+const CONTRACEPTIVE = /\bpack\b|etonogestrel|levonorgestrel|norethindrone|medroxyprogesterone|nuvaring/;
+// A visit's procedures that are not a medical plan: dental work and the screens and questionnaires
+// given at every visit.
+const NOT_PLAN = /tooth|teeth|dental|intraoral|bitewing|panoramic|oral evaluation|sealant|periodon|gingiv|fluoride|prophylaxis|denture|scaling|root planing|radiograph.*(bitewing|panoramic|intraoral)|questionnaire|screening|assessment|\bscale\b|reconciliation|evaluation of|education|counsel|referral/i;
+const LABS: ReadonlyArray<readonly [RegExp, string]> = [[/comprehensive metabolic/, 'CMP'], [/basic metabolic/, 'BMP'], [/lipid panel/, 'lipid panel'], [/a1c/, 'A1c'], [/complete blood count|cbc/, 'CBC'], [/urinalysis/, 'urinalysis'], [/thyrotropin|tsh/, 'TSH']];
+const VACCINES: ReadonlyArray<readonly [RegExp, string]> = [[/influenza/, 'influenza'], [/zoster/, 'shingles'], [/tdap/, 'Tdap'], [/\btd\b/, 'Td'], [/pneumococcal/, 'pneumococcal'], [/hep b|hepatitis b/, 'hepatitis B'], [/hep a|hepatitis a/, 'hepatitis A'], [/hpv/, 'HPV'], [/sars-cov-2|covid/, 'COVID-19'], [/meningococcal/, 'meningococcal'], [/mmr|measles/, 'MMR'], [/varicella/, 'varicella'], [/polio|ipv/, 'polio'], [/dtap/, 'DTaP'], [/hib\b/, 'Hib'], [/rotavirus/, 'rotavirus']];
+// Diagnoses and reasons that are a visit's reason: not Synthea's findings and situations about work
+// or stress, and not a dental diagnosis.
+const NOT_REASON = /employment|labor force|stress|social|isolation|violence|abuse|alcohol|housing|education|criminal|transportation|caries|gingiv|periodont|dental|tooth|teeth|pulp|abscess of tooth/i;
+const sentence = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+const lower = (s: string) => (/^[A-Z][a-z]/.test(s) ? s.charAt(0).toLowerCase() + s.slice(1) : s);
+const joinAnd = (xs: readonly string[]) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs.at(-1)!}`);
+
+// A Synthea visit note (its text in markdown) as the clinic writes it (verifier P17i W0-1b r3 F2 and
+// W0-1c V2): the heading and place, the patient, for a physical or an admission sometimes the history
+// and social history, the allergies, the outpatient drugs the patient takes, as the chart's orders give
+// them, why the patient came (the complaint, else the diagnosis, else the visit's reason, else a
+// routine visit, in words that vary), the plan and the signer, all from what Synthea's note and the
+// chart say. No note adds a fact.
+// A patient's orders and the codes of their problems, which a visit note is written from.
+type Chart = { orders: readonly Json[]; problems: ReadonlySet<string> };
+function clinicText(text: string, id: string, heading: string, physical: boolean, visit: Json | undefined, author: Ref | undefined, byId: ReadonlyMap<string, Json>, chart: Chart): string {
   const date = /^\s*(\d{4}-\d{2}-\d{2})/.exec(text)?.[1];
   const hpi = section(text, 'History of Present Illness');
   const who = /^(\S+) is an? (?:(\d+) (year|month)-old )?.*?\b(male|female)\./.exec(hpi[0] ?? '');
-  const plan = section(text, 'Plan');
-  const done = plan.filter((l) => l.startsWith('- ')).map((l) => plain(l.slice(2)));
-  const given = plan.find((l) => l.startsWith('Patient was given'))?.replace(/^Patient was given the following immunizations: /, '').replace(/\.\s*$/, '');
-  const planned = [...(given ? [`immunization: ${given}`] : []), ...done].slice(0, 3);
   // Where: the hospital's visits at the hospital, every other at the clinic. A nursing home or a
   // laboratory is not named, since Synthea's note never named it (no note adds a fact).
   const place = (visit?.serviceProvider as Ref | undefined)?.reference === `Organization/${HOSPITAL}` ? (byId.get(`Organization/${HOSPITAL}`)?.name as string) : (byId.get(`Organization/${CLINIC}`)?.name as string | undefined) ?? 'Riverbend Family Medicine';
   const name = byId.get(author?.reference ?? '')?.name as Array<{ given?: string[]; family?: string; suffix?: string[] }> | undefined;
   const signer = name?.[0] ? `${name[0].given?.join(' ') ?? ''} ${name[0].family ?? ''}${name[0].suffix?.length ? `, ${name[0].suffix.join(' ')}` : ''}`.trim() : undefined;
-  // Some notes also give the allergy and medication lists, and the complaint and plan apart.
   const allergies = section(text, 'Allergies').join(' ');
-  const meds = section(text, 'Medications').join(' ');
-  const complaint = listed(section(text, 'Chief Complaint')).replace(/([^.])$/, '$1.') || 'No complaints.';
-  const planLine = planned.length ? `Plan: ${planned.join('; ')}.` : 'Plan: follow up as needed.';
-  // A physical's history: the diagnoses Synthea's history lists (its findings and situations, such
-  // as employment or stress, are not a medical history), and the first line of the social history.
-  // A physical gives each part on its own line; another note now and then.
+  const medsRaw = section(text, 'Medications').join(' ');
+  const on = date ?? '9999';
+  // The drugs Synthea lists as the patient's at the visit, outpatient ones only, each with the sig of
+  // its latest order by then (else its strength), one contraceptive (the latest ordered).
+  const listed = medsRaw.split('; ').map((x) => x.trim()).filter((x) => x && !/^no active medications/i.test(x));
+  const drugs = listed.flatMap((raw) => {
+    const r = raw.toLowerCase();
+    if (HOSPITAL_DRUG.test(r) && !KEPT_INJECTION.test(r)) return [];
+    const order = chart.orders.filter((o) => textOf(o.medicationCodeableConcept).toLowerCase() === r && ((o.authoredOn as string | undefined) ?? '').slice(0, 10) <= on).sort((a, b) => ((a.authoredOn as string) < (b.authoredOn as string) ? 1 : -1))[0];
+    const sig = (((order?.dosageInstruction as Array<{ text?: string }> | undefined)?.[0]?.text) ?? '').split(';')[0]!.replace(/\.$/, '').trim();
+    if (/hospital stay|eye examination/i.test(sig)) return [];
+    const { name: n, strength } = drugName(raw);
+    const words = /^\d/.test(sig) ? `${n} ${sig}` : /^(Take|Use) as directed/.test(sig) || !sig || /office/i.test(sig) ? `${n}${strength ? ` ${strength}` : ''}${/as directed/.test(sig) ? ' as directed' : ''}` : `${n}${strength ? ` ${strength}` : ''} ${lower(sig.replace(/^(Take|Use) /, ''))}`;
+    return [{ n, words, contraceptive: CONTRACEPTIVE.test(r), at: (order?.authoredOn as string | undefined) ?? '' }];
+  });
+  const lastPill = drugs.filter((d) => d.contraceptive).sort((a, b) => (a.at < b.at ? 1 : -1))[0];
+  const seen = new Set<string>();
+  const meds = drugs.filter((d) => (!d.contraceptive || d === lastPill) && !seen.has(d.n) && seen.add(d.n)).map((d, i) => (i ? d.words : sentence(d.words)));
+  // Why the patient came: the complaint, the diagnosis Synthea's assessment gives, the visit's reason.
+  const complaint = section(text, 'Chief Complaint').filter((l) => l.startsWith('- ')).map((l) => l.slice(2).toLowerCase());
+  const assessed = (section(text, 'Assessment and Plan')[0] ?? '').replace(/^Patient is presenting with /, '').replace(/\.\s*$/, '');
+  // A diagnosis is a disorder (Synthea's findings, situations and procedures are not).
+  const disorder = (x: string) => Boolean(x) && (/\(disorder\)$/.test(x) || !TAGGED.test(x)) && !NOT_REASON.test(x);
+  // The assessment lists tagged terms, so it splits after a tag (a display can hold a comma).
+  const diagnoses = assessed.split(/(?<=\)), /).filter(disorder).map((x) => plain(x).toLowerCase());
+  const review = /medication review due/.test(assessed);
+  // The visit's reason where it is one of the chart's diagnoses (Synthea also books a visit for a procedure).
+  const reasons = ((visit?.reasonCode as Array<{ coding?: Array<{ code?: string }> }> | undefined) ?? []).filter((c) => c.coding?.some((x) => x.code && chart.problems.has(x.code))).map(textOf).filter(disorder).map((x) => plain(x).toLowerCase());
+  const why = diagnoses.length ? joinAnd(diagnoses) : reasons.length ? joinAnd(reasons) : '';
+  const vary = (salt: string, of: readonly string[]) => one(id, salt, of);
+  const opening = complaint.length
+    ? vary('note-complaint', [`${sentence(joinAnd(complaint))}.`, `Presents with ${joinAnd(complaint)}.`, `Here for ${joinAnd(complaint)}.`, `Seen for ${joinAnd(complaint)}.`, `Reports ${joinAnd(complaint)}.`, `Complains of ${joinAnd(complaint)}.`, `Comes in with ${joinAnd(complaint)}.`])
+    : why
+      ? vary('note-reason', [`Seen for ${why}.`, `Here for ${why}.`, `${sentence(why)}, seen today.`, `Visit for ${why}.`, `Reason for visit: ${why}.`, `Evaluated for ${why}.`, `Comes in for ${why}.`])
+      : review
+        ? vary('note-review', ['Medication review.', 'Here for a medication review.', 'Seen to review medications.', 'Routine visit; medications reviewed.'])
+        : physical
+          ? vary('note-routine', ['Here for an annual physical.', 'Annual exam.', 'Feels well; here for a yearly exam.', 'Routine physical.', 'Doing well, here for a checkup.', 'Well visit.'])
+          : vary('note-routine', ['Routine visit.', 'Seen for routine care.', 'Feels well today.', 'No new concerns.', 'Doing well.', 'Routine follow-up.', 'Checkup today.']);
+  // A complaint's diagnosis follows it.
+  const assessment = complaint.length && why ? vary('note-assessment', [`${sentence(why)}.`, `Assessment: ${why}.`, `Impression: ${why}.`, `Consistent with ${why}.`]) : '';
+  // The plan: vaccines given, a medical procedure, the labs drawn, the drugs prescribed.
+  const planSection = section(text, 'Plan');
+  const given = planSection.find((l) => l.startsWith('Patient was given'))?.toLowerCase() ?? '';
+  const vaccines = VACCINES.filter(([re]) => re.test(given)).map(([, v]) => v);
+  // A list under one of the plan's headers ('The following procedures were conducted:').
+  const block = (header: string) => {
+    const out: string[] = [];
+    for (const l of planSection.slice(planSection.findIndex((x) => x.startsWith(header)) + 1 || planSection.length)) {
+      if (!l.startsWith('- ')) break;
+      out.push(plain(l.slice(2)));
+    }
+    return out;
+  };
+  const procedures = [...new Set(block('The following procedures').filter((x) => !NOT_PLAN.test(x)))];
+  const labs = [...new Set(block('The following lab reports').flatMap((x) => LABS.filter(([re]) => re.test(x.toLowerCase())).map(([, l]) => l)))];
+  const prescribed = [...new Set(block('The patient was prescribed').filter((x) => !HOSPITAL_DRUG.test(x.toLowerCase()) || KEPT_INJECTION.test(x.toLowerCase())).map((x) => drugName(x).name))];
+  const planned = [
+    ...(vaccines.length ? [`${joinAnd(vaccines)} vaccine${vaccines.length > 1 ? 's' : ''} given`] : []),
+    ...procedures.slice(0, 2),
+    ...(labs.length ? [vary('note-labs', [`${joinAnd(labs)} drawn`, `labs: ${labs.join(', ')}`, `${joinAnd(labs)} ordered`])] : []),
+    ...(prescribed.length ? [`${vary('note-rx', ['prescribed', 'started', 'prescription for'])} ${joinAnd(prescribed.slice(0, 2))}`] : []),
+  ].slice(0, 3);
+  const planLine = `Plan: ${planned.length ? planned.join('; ') : physical ? vary('note-plan', ['return in 1 year', 'follow up in a year', 'routine follow-up in 1 year']) : vary('note-plan', ['follow up as needed', 'return as needed', 'return if not improving'])}.`;
   const history = items(/Patient has a history of (.*)\.$/.exec(hpi.join(' '))?.[1] ?? '').filter((x) => x && !/\((finding|situation)\)$/.test(x)).map(plain).join('; ');
   const social = socially(section(text, 'Social History')[0] ?? '');
-  const often = (salt: string, every: number) => physical || pick(id, salt, every);
+  // A physical gives most parts on lines of their own, labelled; another note seldom does, and is
+  // more often a few sentences, as a clinician's own note is.
+  const often = (salt: string, every: number) => (physical ? pick(id, salt, 3, 2) : pick(id, salt, every));
+  const reason = [opening, assessment].filter((x) => x).join(' ');
+  const planWords = planLine.replace(/^Plan: /, '');
   const lines = [
     // The heading as clinicians' templates write it: the kind and the place, now and then the place
     // first, or the kind alone.
@@ -560,9 +708,9 @@ function clinicText(text: string, id: string, heading: string, physical: boolean
     ...(who && often('note-who', 2) ? [`${who[1]}${who[2] ? `, ${who[2]}${who[3] === 'year' ? ' y/o' : ' mo'}` : ''} ${who[4] === 'male' ? 'M' : 'F'}.`] : []),
     ...(physical && history && pick(id, 'note-history', 4, 3) ? [`Past medical history: ${history}.`] : []),
     ...(physical && social && pick(id, 'note-social', 3, 2) ? [`Social history: ${social}`] : []),
-    ...(allergies && often('note-allergies', 3) ? [`Allergies: ${/no known allergies/i.test(allergies) ? 'NKDA.' : allergies}`] : []),
-    ...(meds && often('note-meds', 3) ? [`Medications: ${meds.replace(/; /g, ', ')}.`.replace(/\.\.$/, '.')] : []),
-    ...(often('note-apart', 2) ? [complaint, planLine] : [`${complaint} ${planLine}`]),
+    ...(allergies && often('note-allergies', 4) ? [`Allergies: ${/no known allergies/i.test(allergies) ? 'NKDA.' : allergies}`] : []),
+    ...(medsRaw && often('note-meds', 4) ? [`Medications: ${meds.length ? meds.join(', ') : 'none'}.`] : []),
+    ...(often('note-apart', 3) ? [reason, planLine] : [`${reason} ${pick(id, 'note-plan-label', 2) ? planLine : sentence(planWords)}`]),
     ...(signer ? ['', signer] : []),
   ];
   return lines.join('\n');
@@ -570,7 +718,7 @@ function clinicText(text: string, id: string, heading: string, physical: boolean
 // A Synthea visit note (type History and physical + Evaluation and plan) filed as the clinic files
 // it: retyped by its visit, and written in the clinic's form (clinicText). A note whose text is not
 // Synthea's (a signed addendum) keeps it.
-function clinicNote(r: Json, byId: ReadonlyMap<string, Json>): void {
+function clinicNote(r: Json, byId: ReadonlyMap<string, Json>, chart: Chart): void {
   const type = r.type as { coding?: Array<{ code?: string }>; text?: string };
   if (!type.coding?.some((c) => c.code === '51847-2')) return;
   const visit = byId.get((r.context as { encounter?: Ref[] } | undefined)?.encounter?.[0]?.reference ?? '');
@@ -580,16 +728,16 @@ function clinicNote(r: Json, byId: ReadonlyMap<string, Json>): void {
   if (visit?.serviceProvider && r.custodian) r.custodian = structuredClone(visit.serviceProvider);
   for (const c of r.content as Array<{ attachment: { data?: string } }>) {
     const text = decode(c.attachment.data ?? '');
-    if (text.includes('# Chief Complaint')) c.attachment.data = b64(clinicText(text, r.id as string, heading, code === '34117-2', visit, (r.author as Ref[] | undefined)?.[0], byId));
+    if (text.includes('# Chief Complaint')) c.attachment.data = b64(clinicText(text, r.id as string, heading, code === '34117-2', visit, (r.author as Ref[] | undefined)?.[0], byId, chart));
   }
 }
 // The same note as Synthea also files it, as a report's printed form.
-function clinicReport(r: Json, byId: ReadonlyMap<string, Json>): void {
+function clinicReport(r: Json, byId: ReadonlyMap<string, Json>, chart: Chart): void {
   const visit = byId.get((r.encounter as Ref | undefined)?.reference ?? '');
   const [, code, , heading] = kindOf(visit);
   for (const f of (r.presentedForm as Array<{ data?: string }> | undefined) ?? []) {
     const text = decode(f.data ?? '');
-    if (text.includes('# Chief Complaint')) f.data = b64(clinicText(text, r.id as string, heading, code === '34117-2', visit, (r.performer as Ref[] | undefined)?.[0], byId));
+    if (text.includes('# Chief Complaint')) f.data = b64(clinicText(text, r.id as string, heading, code === '34117-2', visit, (r.performer as Ref[] | undefined)?.[0], byId, chart));
   }
 }
 // Every display and text without its semantic tag, and the same in a text attachment.
@@ -597,7 +745,8 @@ function plainText(v: unknown, k = ''): unknown {
   if (typeof v === 'string') {
     if (k === 'data') {
       const text = decode(v);
-      return plain(text) === text ? v : b64(plain(text));
+      // A Synthea visit note keeps its tags until it is written in the clinic's form, which reads them.
+      return plain(text) === text || text.includes('# Chief Complaint') ? v : b64(plain(text));
     }
     return /^(display|text|description)$/.test(k) ? plain(v) : v;
   }
@@ -652,7 +801,6 @@ export function profileWorld(resources: readonly Resource[]): Resource[] {
   for (const r of out) {
     switch (r.resourceType) {
       case 'DocumentReference': {
-        clinicNote(r, byId);
         // Synthea marks a patient's earlier notes superseded, though no note replaces them.
         if (r.status === 'superseded' && !(r.relatesTo as unknown[] | undefined)?.length) r.status = 'current';
         r.docStatus ??= 'final';
@@ -724,7 +872,6 @@ export function profileWorld(resources: readonly Resource[]): Resource[] {
         break;
       }
       case 'DiagnosticReport': {
-        clinicReport(r, byId);
         // A questionnaire's report is filed under Other, by the clinician who gave it.
         r.category ??= [{ coding: [{ system: V2_0074, code: 'OTH', display: 'Other' }] }];
         if (r.performer === undefined) {
@@ -788,8 +935,10 @@ export function profileWorld(resources: readonly Resource[]): Resource[] {
           const rep = timing?.repeat;
           if (timing && timing.code === undefined && rep?.period === 1 && rep.periodUnit === 'd') {
             const code = rep.when?.includes('HS') ? 'BED' : ({ 1: 'QD', 2: 'BID', 3: 'TID', 4: 'QID' } as Record<number, string>)[rep.frequency ?? 0];
-            const words = ({ BED: 'at bedtime', QD: 'once daily', BID: 'twice daily', TID: 'three times daily', QID: 'four times daily' } as Record<string, string>)[code ?? ''];
+            // Once a day is written 'daily' as often as 'once daily', as the clinic's own orders are.
+            const words = code === 'QD' && pick(r.id as string, 'qd-words', 2) ? 'daily' : ({ BED: 'at bedtime', QD: 'once daily', BID: 'twice daily', TID: 'three times daily', QID: 'four times daily' } as Record<string, string>)[code ?? ''];
             if (code && words) timing.code = { coding: [{ system: GTS, code }], text: words };
+            if (words === 'daily' && typeof d.text === 'string') d.text = d.text.replace(/\bonce daily\b/, 'daily');
           }
           if (d.asNeededBoolean === true && timing && d.doseAndRate === undefined && form) d.doseAndRate = [{ doseQuantity: { value: 1 } }];
           for (const dr of (d.doseAndRate as Array<{ type?: unknown; doseQuantity?: { value?: number; unit?: string } }> | undefined) ?? []) {
@@ -801,10 +950,14 @@ export function profileWorld(resources: readonly Resource[]): Resource[] {
               else if (/inhal/i.test(drug)) Object.assign(dr.doseQuantity, { unit: 'actuation', system: UCUM, code: '{actuat}' });
             }
           }
+          // A sig gives the dose first where the order gives it in mg (verifier P17i W0-1c V3): the
+          // clinic's '1 tablet by mouth once daily' for a 20 mg tablet is sent as '20 mg by mouth once daily'.
+          const dose = (d.doseAndRate as Array<{ doseQuantity?: { value?: number; unit?: string } }> | undefined)?.[0]?.doseQuantity;
+          if (typeof d.text === 'string' && dose?.unit === 'mg') d.text = d.text.replace(/^\d+(?:\.\d+)? (?:tablet|capsule)s?\b/, `${dose.value} mg`);
           // The sig as text: dose, route, schedule.
           if (d.text === undefined) {
             const q = (d.doseAndRate as Array<{ doseQuantity?: { value?: number; unit?: string } }> | undefined)?.[0]?.doseQuantity;
-            const every = rep && rep.periodUnit === 'h' ? `every ${rep.period} hours` : rep?.periodUnit === 'mo' ? (rep.period === 1 ? 'once a month' : `every ${rep.period} months`) : undefined;
+            const every = rep && rep.periodUnit === 'h' ? (rep.period === 1 ? 'every hour' : `every ${rep.period} hours`) : rep?.periodUnit === 'mo' ? (rep.period === 1 ? 'once a month' : `every ${rep.period} months`) : undefined;
             d.text = [q?.value !== undefined ? `${q.value} ${q.unit ?? 'dose'}` : route?.[2] === 'Respiratory tract route' ? 'Use' : 'Take', route?.[3], textOf(timing?.code) || every, d.asNeededBoolean === true ? 'as needed' : undefined].filter((x) => x).join(' ').replace(/^(Take|Use)$/, 'Take as directed.');
           }
         }
@@ -841,6 +994,17 @@ export function profileWorld(resources: readonly Resource[]): Resource[] {
         break;
       }
     }
+    plainText(r);
+  }
+  // Synthea's visit notes last, written from the chart's orders as this pass left them (their sigs).
+  const charts = new Map<string, { orders: Json[]; problems: Set<string> }>();
+  const chartOf = (r: Json) => charts.get(patientOf(r) ?? '') ?? charts.set(patientOf(r) ?? '', { orders: [], problems: new Set() }).get(patientOf(r) ?? '')!;
+  for (const o of out) if (o.resourceType === 'MedicationRequest') chartOf(o).orders.push(o);
+  for (const c of out) if (c.resourceType === 'Condition' && codeOf(c)) chartOf(c).problems.add(codeOf(c)!);
+  for (const r of out) {
+    if (r.resourceType === 'DocumentReference') clinicNote(r, byId, chartOf(r));
+    else if (r.resourceType === 'DiagnosticReport') clinicReport(r, byId, chartOf(r));
+    else continue;
     plainText(r);
   }
   return out as unknown as Resource[];
@@ -970,7 +1134,7 @@ const OCCASIONAL: readonly Occasional[] = [
       const [, code, words] = WHEN.find(([d]) => d.test(textOf(r.medicationCodeableConcept)))!;
       const d = (r.dosageInstruction as Array<{ text?: string; timing: { repeat: Repeat; code?: { text?: string } } }>)[0]!;
       d.timing.repeat.when = [code];
-      if (code === 'MORN' && d.text) d.text = d.text.replace('once daily', words);
+      if (code === 'MORN' && d.text) d.text = d.text.replace(/\b(once )?daily\b/, words);
       else if (d.text && !d.text.includes(words)) d.text = `${d.text} ${words}`;
     },
   },
