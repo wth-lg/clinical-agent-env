@@ -6,16 +6,21 @@
 //   cache_read ~ T x C0 + g x T x (T - 1) / 2; cache_write ~ C0 + g x (T - 1); output ~ o x T
 //   cost = 0.2e-6 x cache_read + 5e-6 x cache_write + 20e-6 x output (packages/core/cost.ts prices)
 //   T ~ 2 + k x n for a list of n items at k requests per item; peak context ~ C0 + g x (T - 1)
-// From each settled record and its trajectory it prints per trial T and the peak per-request
+// From each settled, valid record (summary.ts currentGrade, so outcomes.ts isValid: an ENV_* or
+// INFRA_* trial is left out) and its trajectory it prints per trial T and the peak per-request
 // context (input + cache_read + cache_creation), and per task the medians of T, C0, g, o and
-// working time per request over its trials, k = (T - 2) / the items the run's tasks held
-// (packages/env/overlay.ts slots, or --observed-items), and the model's median cost against the
-// observed median loop cost (record cost_usd). A fit more than 10% under or 40% over the observed
-// median is a broken line: a projection from it is not trusted.
-// --project --items projects each task at n items: T, median cost, p90 = P90_OVER_MEDIAN x median,
-// peak context and working time, and checks the budget lines: p90 at most PER_TRIAL_BUDGET_USD,
-// peak under 0.6 x CONTEXT_WINDOW_TOKENS, T under 0.5 x the task's max_turns, working time under
-// 0.5 x MAX_WALL_MS, and, over two or more tasks, a mean p90 at most MEAN_P90_BUDGET_USD. It also
+// working time per request over its trials, k = (median T - 2) / the items the run's tasks held,
+// and the median of each trial's modelled cost (its own T, C0, g and o) against the observed
+// median loop cost (record cost_usd). The items are the task's packages/env/overlay.ts slots
+// when every trial ran at the checkout's env_version; otherwise the slots may have changed since,
+// so --observed-items is required. A fit more than 10% under or 40% over the observed median is
+// a broken line: a projection from it is not trusted. A trial with T < 2 is warned about.
+// --project --items projects each trial at n items with its own k = (T - 2) / items, C0, g and o,
+// and takes the medians of T, cost, peak context and working time; p90 = P90_OVER_MEDIAN x median.
+// It checks the budget lines: p90 at most PER_TRIAL_BUDGET_USD, peak under 0.6 x
+// CONTEXT_WINDOW_TOKENS, T under 0.5 x the task's max_turns, working time under 0.5 x MAX_WALL_MS,
+// and, over two or more tasks, a mean p90 at most MEAN_P90_BUDGET_USD; with fewer than
+// PLANNED_TASKS projected it says which tasks the mean line covered. It also
 // prints the projection correction for `spend --check --projected`: `run --dry-run` and the final
 // reserve price a new task_version at the p90 of its latest earlier version, which is far too low
 // for a longer list. The correction is, per projected task, its remaining final trials (20 before
@@ -26,14 +31,16 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { CONTEXT_WINDOW_TOKENS, finalReserve, money, PER_TRIAL_BUDGET_USD, PRICE_USD_PER_MTOK, RERUN_FACTOR } from '../packages/core/cost.ts';
+import { CONTEXT_WINDOW_TOKENS, finalReserve, money, PER_TRIAL_BUDGET_USD, PLANNED_TASKS, PRICE_USD_PER_MTOK, RERUN_FACTOR } from '../packages/core/cost.ts';
 import { installEgressGuard } from '../packages/core/egress.ts';
 import { MAX_WALL_MS } from '../packages/core/run.ts';
+import { currentGrade } from '../packages/core/summary.ts';
 import type { TaskSource } from '../packages/core/tasks.ts';
 import { TASKS } from '../packages/env/overlay.ts';
 import { loadFinalTrials, loadTrialObservations } from './adapters/ledger-node.ts';
 import { settledRecords, trajectoryOf } from './adapters/result-sink-node.ts';
 import { nodeTaskSource } from './adapters/tasks-node.ts';
+import { checkoutVersions } from './replay.ts';
 
 // The plan sizes on p90 ~ 1.25 x median: pilot-2's max/median trial cost was 1.12-1.46 per task.
 export const P90_OVER_MEDIAN = 1.25;
@@ -47,6 +54,8 @@ export interface Deps {
   err: (line: string) => void;
   // Resolves --task all and each task's max_turns; default this checkout's tasks.
   tasks?: TaskSource;
+  // The checkout's env_version of a task, null when it has none; default from tasks.
+  checkoutEnv?: (id: string) => Promise<string | null>;
 }
 
 const defaults: Deps = { out: (l) => process.stdout.write(`${l}\n`), err: (l) => process.stderr.write(`${l}\n`) };
@@ -57,6 +66,7 @@ const SLOT_ITEMS: Record<string, number> = Object.fromEntries(Object.values(TASK
 
 export interface TrialUsage {
   index: number | null;
+  env_version: string | null;
   T: number;
   C0: number;
   g: number;
@@ -79,6 +89,7 @@ export interface Fit {
   observed_median_usd: number;
   fitted_median_usd: number;
   peak_median: number;
+  skipped_invalid: number;
 }
 
 export interface Projection {
@@ -130,6 +141,7 @@ function trialUsage(dir: string, r: Record<string, unknown>): TrialUsage | null 
   const working = ended - started - (typeof r.retry_wait_ms === 'number' ? r.retry_wait_ms : 0);
   return {
     index: typeof r.index === 'number' ? r.index : null,
+    env_version: typeof r.env_version === 'string' ? r.env_version : null,
     T,
     C0: ctx[0] as number,
     g: ((ctx[T - 1] as number) - (ctx[0] as number)) / Math.max(1, T - 1),
@@ -141,8 +153,10 @@ function trialUsage(dir: string, r: Record<string, unknown>): TrialUsage | null 
   };
 }
 
-// Medians over the trials, each parameter on its own, as evidence/planner-19/costfit.py fits.
-export function fitTask(trials: readonly TrialUsage[], items: number): Fit {
+// Medians over the trials: of each parameter on its own, for the printed fit and k, and of each
+// trial's modelled cost for the fitted median. A median of parameters taken from different
+// trials can cost less than the median trial (pilot-1 crc-care-gap: -7%).
+export function fitTask(trials: readonly TrialUsage[], items: number, skipped_invalid = 0): Fit {
   const m = (f: (t: TrialUsage) => number) => median(trials.map(f));
   const T = m((t) => t.T);
   const C0 = m((t) => t.C0);
@@ -154,17 +168,21 @@ export function fitTask(trials: readonly TrialUsage[], items: number): Fit {
     ms_per_request: timed.length > 0 ? median(timed) : null,
     judge_median_usd: m((t) => t.judge_cost_usd),
     observed_median_usd: m((t) => t.cost_usd),
-    fitted_median_usd: modelCost({ T, C0, g, o }),
+    fitted_median_usd: m(modelCost),
     peak_median: m((t) => t.peak_context),
+    skipped_invalid,
   };
 }
 
-export function project(task_id: string, fit: Fit, items: number, max_turns: number | null): Projection {
-  const T = 2 + fit.k * items;
-  const median_usd = modelCost({ T, C0: fit.C0, g: fit.g, o: fit.o });
+// Each trial at n items, with its own k = (T - 2) / the observed items, C0, g, o and working time
+// per request; the medians over the trials.
+export function project(task_id: string, trials: readonly TrialUsage[], observedItems: number, items: number, max_turns: number | null): Projection {
+  const at = trials.map((t) => ({ t, T: 2 + ((t.T - 2) / observedItems) * items }));
+  const median_usd = median(at.map((x) => modelCost({ ...x.t, T: x.T })));
+  const timed = at.flatMap((x) => (x.t.ms_per_request === null ? [] : [x.t.ms_per_request * x.T]));
   return {
-    task_id, items, T, median_usd, p90_usd: P90_OVER_MEDIAN * median_usd, peak_context: fit.C0 + fit.g * (T - 1),
-    working_ms: fit.ms_per_request === null ? null : fit.ms_per_request * T, max_turns,
+    task_id, items, T: median(at.map((x) => x.T)), median_usd, p90_usd: P90_OVER_MEDIAN * median_usd,
+    peak_context: median(at.map((x) => x.t.C0 + x.t.g * (x.T - 1))), working_ms: timed.length > 0 ? median(timed) : null, max_turns,
   };
 }
 
@@ -228,13 +246,19 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
   const say = json ? deps.err : deps.out;
   const runs = (positional[0] as string).split(',').filter((s) => s !== '');
 
-  // Trials by task, over every run given.
+  // Valid trials by task, over every run given, and how many invalid ones each task had.
   const byTask = new Map<string, TrialUsage[]>();
+  const invalid = new Map<string, number>();
   try {
     for (const dir of runs) {
       if (!existsSync(join(dir, 'trials'))) throw new Error(`${dir}: no trials/ directory`);
       for (const { record } of settledRecords(dir)) {
         const r = record as unknown as Record<string, unknown>;
+        const grade = currentGrade({ outcome: typeof r.outcome === 'string' ? r.outcome : '', ...(Array.isArray(r.regrades) ? { regrades: r.regrades as never } : {}) });
+        if (!grade.valid) {
+          if (typeof r.task_id === 'string') invalid.set(r.task_id, (invalid.get(r.task_id) ?? 0) + 1);
+          continue;
+        }
         const u = trialUsage(dir, r);
         if (u === null || typeof r.task_id !== 'string') continue;
         byTask.set(r.task_id, [...(byTask.get(r.task_id) ?? []), u]);
@@ -246,14 +270,14 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
   }
 
   const want = opts.get('--task') ?? 'all';
-  const ids = want === 'all' ? [...byTask.keys()].sort() : want.split(',').filter((s) => s !== '');
+  const ids = want === 'all' ? [...byTask.keys()].sort() : [...new Set(want.split(',').filter((s) => s !== ''))];
   if (ids.length === 0) {
-    deps.err(`context-budget: no trials with requests in ${runs.join(', ')}`);
+    deps.err(`context-budget: no valid trials with requests in ${runs.join(', ')}`);
     return 1;
   }
   const missing = ids.filter((id) => !byTask.has(id));
   if (missing.length > 0) {
-    deps.err(`context-budget: no trials of ${missing.join(', ')} in ${runs.join(', ')}`);
+    deps.err(`context-budget: no valid trials of ${missing.join(', ')} in ${runs.join(', ')}`);
     return 1;
   }
   const observed = opts.has('--observed-items') ? parseCounts(opts.get('--observed-items') as string, ids) : {};
@@ -264,17 +288,29 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
   if (stray.length > 0) return usage(`--items names ${stray.join(', ')}, not among the tasks measured`);
 
   const tasks = deps.tasks ?? nodeTaskSource();
+  let versions: ReturnType<typeof checkoutVersions> | undefined;
+  const checkoutEnv = deps.checkoutEnv ?? ((id: string) => (versions ??= checkoutVersions(tasks))(id).then((v) => v.env_version, () => null));
   const result: Record<string, { trials: TrialUsage[]; fit: Fit; projection?: Projection }> = {};
   const breaks: string[] = [];
   const projections: Projection[] = [];
   for (const id of ids) {
-    const items = observed[id] ?? SLOT_ITEMS[id];
-    if (items === undefined) return usage(`${id}: no item count; give --observed-items ${id}=n`);
     const trials = byTask.get(id) as TrialUsage[];
-    const fit = fitTask(trials, items);
+    let items = observed[id];
+    if (items === undefined) {
+      const slots = SLOT_ITEMS[id];
+      if (slots === undefined) return usage(`${id}: no item count; give --observed-items ${id}=n`);
+      const now = await checkoutEnv(id);
+      const ran = [...new Set(trials.map((t) => t.env_version))].filter((v) => v !== now);
+      if (ran.length > 0) return usage(`${id}: the run's env_version ${ran.map((v) => v ?? '(none)').join(', ')} is not the checkout's ${now ?? '(none)'}, so the ${slots} overlay slots may not be the items it held; give --observed-items ${id}=n`);
+      items = slots;
+    }
+    const skipped = invalid.get(id) ?? 0;
+    const fit = fitTask(trials, items, skipped);
     result[id] = { trials, fit };
     say(`${id}: ${trials.length} trials, ${items} items: T ${fit.T.toFixed(1)}, C0 ${kTok(fit.C0)}, g ${kTok(fit.g)}/req, o ${Math.round(fit.o)}/req, k ${fit.k.toFixed(2)} req/item`);
+    if (skipped > 0) say(`  ${skipped} invalid trial${skipped === 1 ? '' : 's'} left out (ENV_*, INFRA_* and other outcomes isValid rejects)`);
     for (const t of trials) say(`  #${t.index ?? '?'} T ${t.T} peak ${kTok(t.peak_context)}`);
+    for (const t of trials.filter((x) => x.T < 2)) say(`  warning: #${t.index ?? '?'} made ${t.T} request (T < 2): its k is negative, and its projection means nothing`);
     const ratio = fit.fitted_median_usd / fit.observed_median_usd;
     const pct = `${ratio >= 1 ? '+' : ''}${Math.round((ratio - 1) * 100)}%`;
     say(`  median cost observed ${money(fit.observed_median_usd)}, fitted ${money(fit.fitted_median_usd)} (${pct}); median peak ${kTok(fit.peak_median)}${fit.ms_per_request === null ? '' : `, ${(fit.ms_per_request / 1000).toFixed(1)} s working time per request`}`);
@@ -287,12 +323,18 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
     } catch {
       say(`  ${id} is not a task in this checkout: the max_turns line is not checked`);
     }
-    const p = project(id, fit, n, maxTurns);
+    const p = project(id, trials, items, n, maxTurns);
     result[id].projection = p;
     projections.push(p);
     say(`  at ${n} items: T ${p.T.toFixed(1)}, median ${money(p.median_usd)}, p90 ${money(p.p90_usd)}, peak ${kTok(p.peak_context)} (${(p.peak_context / CONTEXT_WINDOW_TOKENS).toFixed(2)} of the window)${p.working_ms === null ? '' : `, working ${minutes(p.working_ms)}`}`);
   }
   breaks.push(...budgetBreaks(projections));
+  if (project_ && projections.length < PLANNED_TASKS) {
+    const which = projections.map((p) => p.task_id).join(', ');
+    say(projections.length >= 2
+      ? `mean p90 line checked over ${projections.length} of ${PLANNED_TASKS} tasks (${which}), not the full set`
+      : `mean p90 line not checked: ${projections.length} task projected (${which}), it needs two or more of ${PLANNED_TASKS}`);
+  }
 
   let correction: number | undefined;
   if (project_) {

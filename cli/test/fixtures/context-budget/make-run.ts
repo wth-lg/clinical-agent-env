@@ -2,8 +2,11 @@
 // has T requests whose per-request context is exactly C0 + g x i (i = 0..T-1) and o output tokens,
 // so its peak is C0 + g x (T - 1), and its record's cost_usd is the quadratic model's cost, so
 // the fitted median equals the observed one; costScale multiplies the recorded cost, to make a fit
-// miss. Working time is msPerRequest x T.
+// miss. Working time is msPerRequest x T. A trial with an outcome is recorded with it and its
+// isValid flag (packages/core/outcomes.ts); the default is a valid PASS. Every record's env_version
+// is ev-<task>.
 import { mkdirSync, writeFileSync } from 'node:fs';
+import { isValid } from '../../../../packages/core/outcomes.ts';
 import { dirname, join } from 'node:path';
 
 export interface QuadTrial {
@@ -11,6 +14,7 @@ export interface QuadTrial {
   C0: number;
   g: number;
   o: number;
+  outcome?: string;
 }
 
 // The plan's cost model (plan-amendment-worklist.md "Cost model and sizing"), written out here
@@ -42,7 +46,7 @@ export function writeQuadRun(dir: string, tasks: Record<string, QuadTrial[]>, ms
       const record = {
         trial_id: `run:fixture:${task}/${index}`, task_id: task, task_version: `tv-${task}`, env_version: `ev-${task}`, index, turns: t.T,
         started: new Date(START).toISOString(), ended: new Date(START + msPerRequest * t.T).toISOString(), retry_wait_ms: 0,
-        cost_usd: quadCost(t) * costScale, judge_cost_usd: 0, status: 'COMPLETED', outcome: 'PASS', valid: true, settled: true, trajectory,
+        cost_usd: quadCost(t) * costScale, judge_cost_usd: 0, status: 'COMPLETED', outcome: t.outcome ?? 'PASS', valid: isValid(t.outcome ?? 'PASS'), settled: true, trajectory,
       };
       put(join(dir, 'trials', task, `${index}.json`), JSON.stringify(record, null, 2) + '\n');
     });
