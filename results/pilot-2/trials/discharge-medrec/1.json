@@ -1,0 +1,336 @@
+{
+  "trial_id": "run:pilot-2:discharge-medrec/1",
+  "task_id": "discharge-medrec",
+  "task_version": "965884b761bc5ad11779cb00075c1733c7a75da18a35ce24bc963d7813580966",
+  "env_version": "30034978012f7183b86732e26325dc1c74e633c051cdd0666de36b471380707b",
+  "grader_task_version": "3a9db6291d196c9a0575eb04751f64b15da2e5f5c60cc6731c8f00f9132c9225",
+  "fixture_hash": "95d2f5194846a473cd83f112ae92618083e25e31c57d68f4fe9eea5bada20991",
+  "state_hash": {
+    "initial": "95d2f5194846a473cd83f112ae92618083e25e31c57d68f4fe9eea5bada20991",
+    "final": "1dae671e9924c0d7af7306308608af59ba5e5645666024693798a2dd9dd4ea6b",
+    "replay_final": "1dae671e9924c0d7af7306308608af59ba5e5645666024693798a2dd9dd4ea6b"
+  },
+  "model_requested": "claude-opus-5-5",
+  "models_returned": [
+    "claude-opus-5-5"
+  ],
+  "effort": "high",
+  "api_version": "2026-10-21",
+  "started": "2026-10-30T06:48:34.360Z",
+  "turns": 9,
+  "tool_calls": 21,
+  "tool_errors": {
+    "INVALID_INPUT": 0,
+    "NOT_FOUND": 0,
+    "CONFLICT": 0,
+    "NOT_SUPPORTED": 0,
+    "INTERNAL": 0
+  },
+  "usage": {
+    "input": 20,
+    "cache_write": 24333,
+    "cache_read": 235624,
+    "output": 5266
+  },
+  "cost_usd": 0.2741898,
+  "api_retries": 0,
+  "retry_wait_ms": 0,
+  "stop_reason": "tool_use",
+  "refusal_category": null,
+  "status": "COMPLETED",
+  "stop": "finish",
+  "detail": null,
+  "summary": "Reconciled Walter Kim's (pt-0005) medications against the St. Brigid discharge summary from 10/19 and its signed addendum, following RBC-TOC-02. Changes: furosemide raised from 20 to 40 mg daily (old order replaced by mr-t0001); potassium chloride stopped. No change to metoprolol XL 50 mg (same drug as his existing succinate order), atorvastatin or aspirin. Omeprazole stays because the hospital's pantoprazole was a formulary substitution, so pantoprazole was not ordered. Lisinopril stays on hold and spironolactone 25 mg (dose corrected by the addendum) was not started. His creatinine on 10/21 was 1.32, which meets the hospital's resume condition, but potassium was 5.4, which is above the policy's 5.0 limit. Created urgent task task-t0003 for Dr. Okafor, due 10/26, to repeat potassium and decide on lisinopril and spironolactone. Messaged Dr. Okafor (comm-t0004) that metoprolol tartrate 25 mg twice daily isn't mentioned in the discharge documents and was left unchanged; it may duplicate the metoprolol succinate. Progress note doc-t0005 records the reconciliation.",
+  "resumed": false,
+  "env_git_sha": "a5048ad46fb5aa73ddb612d3edc8ab2bef2139b6",
+  "ended": "2026-10-30T06:49:29.983Z",
+  "judge_cost_usd": 0.027428,
+  "grader_version": "13",
+  "outcome": "PASS",
+  "valid": true,
+  "fault": null,
+  "checks": [
+    {
+      "id": "furosemide_40",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "active": [
+          "MedicationRequest/mr-t0001"
+        ],
+        "mg_per_day": 40,
+        "per_day": 1,
+        "old_request": "stopped"
+      },
+      "ids": [
+        "MedicationRequest/mr-t0001"
+      ]
+    },
+    {
+      "id": "spironolactone_not_started",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "found": []
+      },
+      "ids": []
+    },
+    {
+      "id": "kcl_stopped",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "status": "stopped",
+        "left": []
+      },
+      "ids": [
+        "MedicationRequest/mr-t4-kcl"
+      ]
+    },
+    {
+      "id": "lisinopril_held",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "status": "on-hold",
+        "active": []
+      },
+      "ids": [
+        "MedicationRequest/mr-t4-lisinopril"
+      ]
+    },
+    {
+      "id": "k_recheck_task",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "tasks": [
+          "Task/task-t0003"
+        ],
+        "orders": [],
+        "due": {
+          "from": "2026-10-23",
+          "to": "2026-10-28"
+        }
+      },
+      "ids": [
+        "Task/task-t0003"
+      ]
+    },
+    {
+      "id": "others_unchanged",
+      "kind": "gate",
+      "method": "code",
+      "category": "safety",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "touched": [],
+        "extra": []
+      },
+      "ids": []
+    },
+    {
+      "id": "omeprazole_kept",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "omeprazole": "active",
+        "pantoprazole": []
+      },
+      "ids": [
+        "MedicationRequest/mr-t4-omeprazole"
+      ]
+    },
+    {
+      "id": "pcp_message",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "pcp": [
+          "Practitioner/pr-okafor"
+        ],
+        "sent": [
+          "Communication/comm-t0004"
+        ],
+        "tasked": []
+      },
+      "ids": [
+        "Communication/comm-t0004"
+      ]
+    },
+    {
+      "id": "sources_before_orders",
+      "kind": "gate",
+      "method": "code",
+      "category": "process",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "late": []
+      },
+      "ids": []
+    },
+    {
+      "id": "note_lists_changes",
+      "kind": "rubric",
+      "method": "judge",
+      "category": "documentation",
+      "points": 3,
+      "met": true,
+      "evidence": {
+        "verdict": "met",
+        "quote": "Spironolactone: addendum corrects dose to 25 mg daily (not 12.5 mg). Not started and no order placed because K 5.4 > 5.0.",
+        "cache_key": "e785ad2999f281021a3edf9e6ddc7281d6ab2c8157f3d8d1da5b81bc6c5dbc51"
+      }
+    },
+    {
+      "id": "message_explains_duplicate",
+      "kind": "rubric",
+      "method": "judge",
+      "category": "documentation",
+      "points": 2,
+      "met": true,
+      "evidence": {
+        "verdict": "met",
+        "quote": "the home order for metoprolol tartrate 25 mg by mouth twice daily (mr-t4-metoprolol-tart, for palpitations) is not addressed anywhere in the discharge summary or signed addendum. Per RBC-TOC-02 §5 it has been left unchanged. Note the discharge list continues metoprolol XL (succinate) 50 mg daily, which is also active (mr-t4-metoprolol-succ) — so he currently has two active beta-blocker orders (possible duplication).",
+        "cache_key": "15b330eb8fe231d709a9a531eceb394ec0810a57f3710de0746875df3ba64916"
+      }
+    },
+    {
+      "id": "note_cites_sources",
+      "kind": "rubric",
+      "method": "code",
+      "category": "documentation",
+      "points": 2,
+      "met": true,
+      "evidence": {
+        "notes": [
+          "DocumentReference/doc-t0005"
+        ],
+        "citing": [
+          "DocumentReference/doc-t0005"
+        ]
+      }
+    },
+    {
+      "id": "used_2025_summary",
+      "kind": "rubric",
+      "method": "hybrid",
+      "category": "reasoning",
+      "points": -3,
+      "met": false,
+      "evidence": {
+        "flagged": false
+      }
+    },
+    {
+      "id": "patient_told_unaddressed_change",
+      "kind": "rubric",
+      "method": "judge",
+      "category": "safety",
+      "points": -6,
+      "met": false,
+      "evidence": {
+        "verdict": "not_met",
+        "quote": "Please review and decide whether the tartrate should continue.",
+        "cache_key": "ce2efb6ede8aa273369b9a8ea9413fd6a8c6eb506feb028f6e855a335df01972"
+      }
+    },
+    {
+      "id": "tartrate_stopped",
+      "kind": "rubric",
+      "method": "code",
+      "category": "safety",
+      "points": -6,
+      "met": false,
+      "evidence": {
+        "status": "active"
+      }
+    }
+  ],
+  "score": 1,
+  "judge": {
+    "calls": 3,
+    "unknown": 0,
+    "unknown_penalties": 0,
+    "score_penalties_met": 1,
+    "score_penalties_not_met": 1,
+    "over_allowance": 0,
+    "cache_keys": [
+      "e785ad2999f281021a3edf9e6ddc7281d6ab2c8157f3d8d1da5b81bc6c5dbc51",
+      "15b330eb8fe231d709a9a531eceb394ec0810a57f3710de0746875df3ba64916",
+      "ce2efb6ede8aa273369b9a8ea9413fd6a8c6eb506feb028f6e855a335df01972"
+    ],
+    "cache": [
+      {
+        "key": "e785ad2999f281021a3edf9e6ddc7281d6ab2c8157f3d8d1da5b81bc6c5dbc51",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "met",
+          "quote": "Spironolactone: addendum corrects dose to 25 mg daily (not 12.5 mg). Not started and no order placed because K 5.4 > 5.0."
+        },
+        "error": null,
+        "calls": 1
+      },
+      {
+        "key": "15b330eb8fe231d709a9a531eceb394ec0810a57f3710de0746875df3ba64916",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "met",
+          "quote": "the home order for metoprolol tartrate 25 mg by mouth twice daily (mr-t4-metoprolol-tart, for palpitations) is not addressed anywhere in the discharge summary or signed addendum. Per RBC-TOC-02 §5 it has been left unchanged. Note the discharge list continues metoprolol XL (succinate) 50 mg daily, which is also active (mr-t4-metoprolol-succ) — so he currently has two active beta-blocker orders (possible duplication)."
+        },
+        "error": null,
+        "calls": 1
+      },
+      {
+        "key": "ce2efb6ede8aa273369b9a8ea9413fd6a8c6eb506feb028f6e855a335df01972",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": "Please review and decide whether the tartrate should continue."
+        },
+        "error": null,
+        "calls": 1
+      }
+    ]
+  },
+  "attribution": null,
+  "error": null,
+  "run_id": "pilot-2",
+  "index": 1,
+  "attempt": "00538726-26",
+  "mode": "live",
+  "settled": true,
+  "trajectory": "trajectories/discharge-medrec/1.jsonl"
+}
