@@ -13,13 +13,14 @@
 //   - Values (builder-203, verifier P17i W0-1b F1, F4): no value form is planted-only, and within a
 //     task chart no field path is, and no one feature separates planted from generated records.
 // Planted means named in a task's id registry (tasks/planted.ts).
+import { Buffer } from 'node:buffer';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { isPlanted } from '../../tasks/planted.ts';
 import { gunzip } from '../fixtures-lib.ts';
 import { repoRoot } from './helpers.ts';
-import { scoreTells, type TypeScore } from './tells.ts';
+import { SEMANTIC_TAG, scoreTells, type TypeScore } from './tells.ts';
 
 type R = Record<string, unknown> & { resourceType: string; id: string };
 const world = gunzip(readFileSync(join(repoRoot, 'fixtures/world.ndjson.gz')))
@@ -262,61 +263,107 @@ describe('within a task chart, planted resources look like the generated ones', 
   });
 });
 
-// The verifier's extended classifier (verifier P17i W0-1b r2 probe2, builder-205 F4; scripts/test/tells.ts):
-// timestamp minute and seconds, the chart's own clock, issued against effective time, exact codes,
-// categories, performers and providers, the visit, order in the chart, attachment length, and every
-// AND / OR of two of the 150 strongest features. The coordinator's bar (decisions.tsv, W0-1b round
-// 3): per type in the task charts, best single feature at most 0.75 and best pair at most 0.80.
-// A feature over the bar that follows from what the task is, not from how the record was written,
-// is a named residual below: left out of the search, and held to its cap.
+// Synthea's text fingerprint (verifier P17i W0-1b r3 F2): a SNOMED semantic tag ending a display
+// or a text ('Colonoscopy (procedure)'), and a visit note in Synthea's markdown ('# Chief
+// Complaint'). Pilot models set such records aside as 'generic synthea notes', and every record that
+// carried one was generated, so no record in the world carries either (profileWorld, plainText).
+describe("no record carries Synthea's text fingerprint", () => {
+  const decode = (v: string) => Buffer.from(v, 'base64').toString('utf8');
+  const hits = (pred: (at: string, v: string) => boolean) =>
+    world.flatMap((r) => {
+      const out: string[] = [];
+      const walk = (v: unknown, at: string): void => {
+        if (Array.isArray(v)) for (const x of v) walk(x, at);
+        else if (v !== null && typeof v === 'object') for (const [k, x] of Object.entries(v)) walk(x, at ? `${at}.${k}` : k);
+        else if (typeof v === 'string' && pred(at, v)) out.push(`${r.resourceType}/${r.id} ${at}: ${(at.endsWith('data') ? decode(v) : v).slice(0, 80)}`);
+      };
+      walk(r, '');
+      return out;
+    });
+
+  it('no display, text or attachment text holds a SNOMED semantic tag', () => {
+    const out = hits((at, v) => (/(^|\.)(display|text|description)$/.test(at) && SEMANTIC_TAG.test(v)) || (at.endsWith('data') && SEMANTIC_TAG.test(decode(v))));
+    expect(out.slice(0, 20)).toEqual([]);
+  });
+
+  it('no attachment text is in markdown', () => {
+    expect(hits((at, v) => at.endsWith('data') && /^#+ /m.test(decode(v))).slice(0, 20)).toEqual([]);
+  });
+});
+
+// The verifier's extended classifier (verifier P17i W0-1b r2 probe2 and r3 probe3, builder-205 F4,
+// builder-206; scripts/test/tells.ts): timestamp minute and seconds, the chart's own clock, issued
+// against effective time, exact codes, categories, performers and providers, the visit, order in the
+// chart, attachment length and text shape, and every AND / OR of two of the 150 strongest features.
+// The coordinator's bar (decisions.tsv, W0-1b round 3): per type in the task charts, best single
+// feature at most 0.75 and best pair at most 0.80. A feature over the bar that follows from what the
+// task is, not from how the record was written, is a named residual below: its exact feature values
+// are scored apart and held to a cap, and so is every pair that holds one.
 const SINGLE_BAR = 0.75;
 const PAIR_BAR = 0.8;
-// A type with fewer than five planted records in the task charts cannot be read against those bars:
-// label four generated records of the type at random as planted and the same search finds a single
-// feature at 0.74 to 0.86 and a pair at 0.86 to 0.97 (AllergyIntolerance and Procedure, eight draws
-// each; builder-205 evidence 30). Such a type is held to that chance level instead.
+// A type with fewer than five planted records in the task charts is held to the 95th percentile of a
+// random-label baseline instead: drop the type's planted records, label four generated records of the
+// type in the task charts as planted, run the same search, 100 draws (builder-206 evidence,
+// perm-tells.ts). This is the tail of chance, not its middle: the null's mean is about 0.79 / 0.90
+// (AllergyIntolerance) and 0.76 / 0.88 (Procedure). A small type over it is a design residual, not
+// small n: Procedure's planted records are hospital procedures (the last residual below).
 const SMALL = 5;
-const SMALL_SINGLE_BAR = 0.86;
-const SMALL_PAIR_BAR = 0.97;
-// The cap on order in the chart, by type (the first residual below).
-const ORDER_CAPS: Readonly<Record<string, number>> = { AllergyIntolerance: 0.7, Condition: 0.69, DiagnosticReport: 0.89, DocumentReference: 0.75, Encounter: 0.72, MedicationRequest: 0.76, Observation: 0.85, Procedure: 0.61 };
+const SMALL_BARS: Readonly<Record<string, readonly [number, number]>> = { AllergyIntolerance: [0.893, 0.964], Procedure: [0.859, 0.955] };
 
-const RESIDUALS: ReadonlyArray<{ type: string; feature: RegExp; cap: number; why: string }> = [
-  ...['AllergyIntolerance', 'Condition', 'DiagnosticReport', 'DocumentReference', 'Encounter', 'MedicationRequest', 'Observation', 'Procedure'].map((type) => ({
-    type, feature: /^O:/, cap: ORDER_CAPS[type]!,
+// Order in the chart is one fact, the record's date against its chart's, seen through several
+// features (newest tenth, last three, newest, newest of its code, how many share its code, age), so
+// the whole family is the residual. Every other residual names its exact feature values: a new
+// planted-only code, category or performer stays in the search.
+const ORDER_CAPS: Readonly<Record<string, readonly [number, number]>> = {
+  AllergyIntolerance: [0.7, 0.87], Condition: [0.69, 0.75], DiagnosticReport: [0.89, 1], DocumentReference: [0.75, 0.84], Encounter: [0.72, 0.83], MedicationRequest: [0.76, 0.89], Observation: [0.85, 0.9], Procedure: [0.61, 0.98],
+};
+const RESIDUALS: ReadonlyArray<{ type: string; features: readonly string[] | 'order'; cap: number; pairCap: number; why: string }> = [
+  ...Object.entries(ORDER_CAPS).map(([type, [cap, pairCap]]) => ({
+    type, features: 'order' as const, cap, pairCap,
     why: 'order in the chart: the planted records are the recent events the task is about (the newest report, the last results, a drug new to the chart)',
   })),
-  { type: 'MedicationRequest', feature: /^TH:/, cap: 0.83, why: 'hour of the day: the overlays write orders at morning clinic, and the planted times keep their hour (coordinator brief, builder-205 F1)' },
-  { type: 'MedicationRequest', feature: /^E:status=/, cap: 0.77, why: 'status: the planted orders are the current regimen the task reviews; most generated orders are past ones' },
-  { type: 'MedicationRequest', feature: /^E:requester\./, cap: 0.76, why: "prescriber: the planted orders are the task's clinicians' (Dr. Okafor, Dr. Lin); Synthea's spread over the three staff" },
-  { type: 'DiagnosticReport', feature: /^E:category\.|^DLINES:presentedForm|^DL:presentedForm/, cap: 0.79, why: 'report kind: the planted reports are the imaging and laboratory results a task acts on (four radiology reports, with their long text); the generated ones are mostly questionnaires' },
-  { type: 'AllergyIntolerance', feature: /^(TY|TY26|TZ|CMODE|CSS|CTOP3|CSSTOP3|CRARE|TP|TS0|TH|TM5|TM15):|^E:(category|recordedDate|onsetDateTime)=/, cap: 0.81, why: "Synthea records every generated allergy at the patient's birth, to the second; the four planted ones were recorded at visits" },
-  { type: 'DocumentReference', feature: /^(CRARE|CTOP3|CMODE|CSS|CSSTOP3):context\.period\.end=/, cap: 0.77, why: "a note's period end against the chart's clock: 31 of the 55 planted notes sit in one chart (pt-0028) beside one generated visit, so that chart's clock has nothing to draw a visit's end from; Synthea's notes keep their visit's end, and moving a generated time would break the base cohort's order (world-hygiene.test.ts)" },
-  { type: 'Procedure', feature: /^E:(performer|outcome|code)|^TH:/, cap: 0.95, why: 'the four planted procedures are hospital procedures (colonoscopies, a hip replacement) done in the morning, at St. Brigid, with their findings' },
+  { type: 'MedicationRequest', features: ['TH:authoredOn=am', 'TH:authoredOn=pm'], cap: 0.83, pairCap: 0.91, why: 'hour of the day: the overlays write orders at morning clinic, and the planted times keep their hour (coordinator brief, builder-205 F1)' },
+  { type: 'MedicationRequest', features: ['E:status=completed'], cap: 0.77, pairCap: 0.87, why: 'status: the planted orders are the current regimen the task reviews; most generated orders are past ones' },
+  { type: 'MedicationRequest', features: ['E:requester.reference=Practitioner/pr-reyes'], cap: 0.76, pairCap: 0.87, why: "prescriber: the planted orders are the task's clinicians' (Dr. Okafor, Dr. Lin); Synthea's spread over the three staff" },
+  {
+    type: 'DiagnosticReport', features: ['E:category.coding.code=RAD', 'E:category.coding.display=Radiology', 'E:category.coding.code=OTH', 'E:category.coding.display=Other', 'HHMM:presentedForm.data=true', 'DLINES:presentedForm.data=10', 'DHEAD:presentedForm.data=heading - place', 'DIGITS:presentedForm.data=true', 'TBRK:code.coding.display', 'TBRK:code.text'], cap: 0.79, pairCap: 0.9,
+    why: 'report kind: the planted reports are the imaging and laboratory results a task acts on (four radiology reports, headed by the imaging department, with their long text and the times a radiologist signs at); the generated ones are mostly questionnaires, whose LOINC names carry their abbreviation in brackets ("[AUDIT-C]")',
+  },
+  {
+    type: 'AllergyIntolerance', features: ['TY:recordedDate=1975', 'CMODE:onsetDateTime=true', 'CSS:onsetDateTime=true', 'CSSTOP3:onsetDateTime=true', 'CTOP3:onsetDateTime=true', 'E:category=environment'], cap: 0.81, pairCap: 0.98,
+    why: "Synthea records every generated allergy at the patient's birth, to the second, and only Synthea's allergies are environmental; the four planted ones are drug and food allergies recorded at visits",
+  },
+  { type: 'DocumentReference', features: ['CRARE:context.period.end=false', 'CRARE:context.period.end=true'], cap: 0.77, pairCap: 0.88, why: "a note's period end against the chart's clock: 31 of the 55 planted notes sit in one chart (pt-0028) beside one generated visit, so that chart's clock has nothing to draw a visit's end from; Synthea's notes keep their visit's end, and moving a generated time would break the base cohort's order (world-hygiene.test.ts). Its strongest pair adds the note's date off the chart's modal minute: Synthea dates a note at its visit's start, and a planted discharge summary is signed when the visit ends (builder-206 F6)" },
+  {
+    type: 'Procedure', features: ['E:performer.actor.reference=Organization/org-riverbend', 'E:performer.actor.reference=Organization/org-st-brigid', 'TH:performedDateTime=am', 'E:outcome.text=Normal, no polyps'], cap: 0.95, pairCap: 1,
+    why: "the four planted procedures are hospital procedures (colonoscopies, a hip replacement) done in the morning at St. Brigid, three with a colonoscopy's finding; most of Synthea's are the clinic's (dental work, screens, assessments). Above the small-n bar on 100 of 100 random draws (builder-206 evidence), so this is the design, not chance",
+  },
 ];
 
 describe("the extended classifier (probe2) cannot tell planted from generated in the task charts", () => {
-  const residual = (type: string, f: string) => RESIDUALS.some((x) => x.type === type && x.feature.test(f));
-  const scores = scoreTells(world, isPlanted, { exclude: residual });
+  const residual = (type: string, f: string) => RESIDUALS.find((x) => x.type === type && (x.features === 'order' ? f.startsWith('O:') : x.features.includes(f)));
+  const scores = scoreTells(world, isPlanted, { residual });
 
-  const bar = (s: TypeScore, big: number, small: number) => (s.planted < SMALL ? small : big);
+  const bars = (s: TypeScore) => (s.planted < SMALL ? SMALL_BARS[s.type] ?? [0, 0] : [SINGLE_BAR, PAIR_BAR]);
 
-  it(`best single feature at most ${SINGLE_BAR} per type (${SMALL_SINGLE_BAR} under ${SMALL} planted), named residuals aside`, () => {
-    expect(scores.filter((s) => s.single.ba > bar(s, SINGLE_BAR, SMALL_SINGLE_BAR)).map((s) => `${s.type} ${s.single.ba.toFixed(3)} ${s.single.f.slice(0, 120)} (planted ${s.single.tp}/${s.planted}, generated ${s.single.fp}/${s.n - s.planted})`)).toEqual([]);
+  it(`best single feature at most ${SINGLE_BAR} per type (the random-label 95th percentile under ${SMALL} planted), named residuals aside`, () => {
+    expect(scores.filter((s) => s.single.ba > bars(s)[0]!).map((s) => `${s.type} ${s.single.ba.toFixed(3)} ${s.single.f.slice(0, 120)} (planted ${s.single.tp}/${s.planted}, generated ${s.single.fp}/${s.n - s.planted})`)).toEqual([]);
   });
 
-  it(`best pair of features at most ${PAIR_BAR} per type (${SMALL_PAIR_BAR} under ${SMALL} planted), named residuals aside`, () => {
-    expect(scores.filter((s) => s.pair.ba > bar(s, PAIR_BAR, SMALL_PAIR_BAR)).map((s) => `${s.type} ${s.pair.ba.toFixed(3)} ${s.pair.rule.slice(0, 200)} (planted ${s.pair.tp}/${s.planted}, generated ${s.pair.fp}/${s.n - s.planted})`)).toEqual([]);
+  it(`best pair of features at most ${PAIR_BAR} per type (the random-label 95th percentile under ${SMALL} planted), named residuals aside`, () => {
+    expect(scores.filter((s) => s.pair.ba > bars(s)[1]!).map((s) => `${s.type} ${s.pair.ba.toFixed(3)} ${s.pair.rule.slice(0, 200)} (planted ${s.pair.tp}/${s.planted}, generated ${s.pair.fp}/${s.n - s.planted})`)).toEqual([]);
   });
 
-  it('each named residual stays at or under its cap', () => {
-    const all = scoreTells(world, isPlanted, { pairsOf: 0, exclude: (t, f) => !residual(t, f) });
-    const over = RESIDUALS.flatMap((x) => {
-      const s = all.find((y) => y.type === x.type);
-      const worst = s?.families.filter((f) => x.feature.test(f.f)).reduce((m, f) => Math.max(m, f.ba), 0) ?? 0;
-      return worst > x.cap ? [`${x.type} ${x.feature}: ${worst.toFixed(3)} > ${x.cap}`] : [];
-    });
+  it('each named residual feature stays at or under its cap, and every pair that holds one under its pair cap', () => {
+    const over = scores.flatMap((s) => [
+      ...s.residuals.filter((x) => x.ba > x.cap).map((x) => `${s.type} ${x.f}: ${x.ba.toFixed(3)} > ${x.cap}`),
+      ...(s.residualPair.ba > s.residualPair.cap ? [`${s.type} pair ${s.residualPair.rule.slice(0, 200)}: ${s.residualPair.ba.toFixed(3)} > ${s.residualPair.cap}`] : []),
+    ]);
     expect(over).toEqual([]);
+  });
+
+  it('every small type has a measured random-label bar', () => {
+    expect(scores.filter((s) => s.planted < SMALL && !SMALL_BARS[s.type]).map((s) => s.type)).toEqual([]);
   });
 });
 

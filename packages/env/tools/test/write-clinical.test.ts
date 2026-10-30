@@ -226,7 +226,7 @@ describe('1. record_allergy: an update keeps what the call leaves out', () => {
     expect(get<AllergyIntolerance>(c, r.allergy_intolerance as string)).toMatchObject({
       type: 'allergy',
       category: ['food'],
-      code: { coding: [{ system: SNOMED, code: '762952008', display: 'Peanut (substance)' }] },
+      code: { coding: [{ system: SNOMED, code: '762952008', display: 'Peanut' }] },
       reaction: [{ manifestation: [{ coding: [{ system: SNOMED, code: '39579001' }] }] }],
     });
   });

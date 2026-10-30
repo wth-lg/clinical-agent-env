@@ -20,6 +20,16 @@ describe('note attachments by their data, not their content type', () => {
     });
   }
 
+  // verifier P17i W0-1b r3 F3: text/* data that is not UTF-8 is a fixture defect. noteText throws, so
+  // the read tool's caller records INTERNAL, and no read shows the raw base64.
+  it('throws on text/* data that is not UTF-8, and never shows it raw', () => {
+    for (const contentType of ['text/plain', ' Text/Plain; charset=iso-8859-1', 'text/html']) {
+      const r = doc({ contentType, data: btoa(String.fromCharCode(...new TextEncoder().encode('see '), 0xe9, 0x20, 0x31)) });
+      expect(() => noteText(r), contentType).toThrow(/not UTF-8/);
+      expect((withoutNoteData(r, true) as DocumentReference).content[0]!.attachment, contentType).not.toHaveProperty('data');
+    }
+  });
+
   it('leaves data that is not UTF-8 text as stored', () => {
     const r = doc({ contentType: 'application/pdf', data: btoa(String.fromCharCode(0xff, 0xfe, 0x00, 0x81)) });
     expect(noteText(r)).toBeUndefined();

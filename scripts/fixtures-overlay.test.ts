@@ -149,4 +149,18 @@ describe('overlays', () => {
     // Bytes that are not UTF-8 are not text.
     expect(put({ contentType: 'application/pdf', data: Buffer.from([0xff, 0xfe, 0x00, 0x81]).toString('base64') })).not.toThrow();
   });
+
+  // verifier P17i W0-1b r3 F3: text/* data that is not UTF-8 (Latin-1, say) is read byte for byte, so
+  // a key in it is still found; the read tools refuse such data (note-attachments.test.ts).
+  it('finds a key in text/* data that is not UTF-8', () => {
+    const doc = (attachment: Record<string, unknown>): Resource => ({ resourceType: 'DocumentReference', id: 'doc-t1-note', status: 'current', subject: { reference: T1 }, content: [{ attachment }] }) as Resource;
+    const put = (attachment: Record<string, unknown>) => () => one({ build: () => ({ put: [doc(attachment), obs('obs-t1-scr')] }) });
+    const latin1 = (s: string) => Buffer.from(s, 'latin1').toString('base64');
+    for (const contentType of ['text/plain', 'Text/Plain; charset=iso-8859-1', ' text/html', undefined]) {
+      expect(put({ ...(contentType === undefined ? {} : { contentType }), data: latin1('Patient vu \u00e9 see obs-t1-scr') }), String(contentType)).toThrow(/'obs-t1-scr' is a registry key/);
+      expect(put({ ...(contentType === undefined ? {} : { contentType }), data: latin1('Patient vu \u00e9, cr\u00e9atinine 1.9') }), String(contentType)).not.toThrow();
+    }
+    // Base64url (- and _ for + and /), as some interfaces send it.
+    expect(put({ contentType: 'text/plain', data: Buffer.from('\u00ff\u00fe see obs-t1-scr \u00ff', 'latin1').toString('base64url') })).toThrow(/'obs-t1-scr' is a registry key/);
+  });
 });

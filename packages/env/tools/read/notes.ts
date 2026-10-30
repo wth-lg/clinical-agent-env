@@ -6,7 +6,7 @@
 // snippet ('…' where text was left out) is an excerpt and the note stays referenced (the exposure
 // rule, registry.ts). A '…' in the note's own text is just text.
 import type { Attachment, DiagnosticReport, DocumentReference, Resource } from '@medplum/fhirtypes';
-import { dataText } from '../../attachment.ts';
+import { dataBytes, dataText, textType } from '../../attachment.ts';
 import { ToolError } from '../errors.ts';
 import type { Tool } from '../registry.ts';
 import type { ReadContext } from './context.ts';
@@ -23,12 +23,20 @@ function attachments(resource: Readonly<Resource>): readonly Attachment[] {
 }
 
 // An inline attachment is text when its data is base64 of UTF-8 text, whatever its content type
-// says (verifier P17i W0-1b r2 F5): such data is never shown to the agent as raw base64.
-const isText = (a: Attachment) => dataText(a.data) !== null;
+// says (verifier P17i W0-1b r2 F5), or when its content type is text/*: such data is never shown to
+// the agent as raw base64.
+const isText = (a: Attachment) => a.data !== undefined && (textType(a.contentType) || dataText(a.data) !== null);
+// Text/* data that is not base64 of UTF-8 is a fixture defect (W0-1b r3 F3): it throws, and the
+// read tool's caller records INTERNAL.
+function decoded(a: Attachment): string {
+  const text = dataText(a.data);
+  if (text === null) throw new Error(`a ${a.contentType ?? 'text'} attachment whose data is not UTF-8 text in base64`);
+  return text;
+}
 
 // The decoded text of a note or report's inline text attachments, or undefined if it has none.
 export function noteText(resource: Readonly<Resource>): string | undefined {
-  const texts = attachments(resource).filter(isText).map((a) => dataText(a.data)!);
+  const texts = attachments(resource).filter(isText).map(decoded);
   return texts.length === 0 ? undefined : texts.join('\n\n');
 }
 
@@ -42,7 +50,7 @@ export function withoutNoteData(resource: Readonly<Resource>, readWith: boolean)
   const strip = (a: Attachment): Attachment => {
     if (!isText(a)) return a;
     const { data, ...rest } = a;
-    return { ...rest, size: atob(data!).length, ...(readWith ? { read_with: 'fhir_read' } : {}) };
+    return { ...rest, size: dataBytes(data)?.length ?? 0, ...(readWith ? { read_with: 'fhir_read' } : {}) };
   };
   if (resource.resourceType === 'DocumentReference') {
     const doc = resource as DocumentReference;
