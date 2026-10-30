@@ -17,7 +17,7 @@ import { harmItems, safePass } from '../data/harm.ts';
 import { auditFilterOf, failedCheckOf, isFalsePass, runBlock, shownFault, shownLabel } from '../data/failures.ts';
 import { notCounted, notCountedText } from '../data/marks.ts';
 import { RunBlocked } from '../findings/why.tsx';
-import { Card, FaultLabel, GlossaryLink, HarmChip, Notice, OutcomeChip, Page, PlainRules } from '../data/ui.tsx';
+import { Card, FaultLabel, GlossaryLink, HarmChip, Notice, OutcomeChip, Page, PlainRules, SELECT, CARD, CHIP } from '../data/ui.tsx';
 import { navigate, useParams } from '../data/url.ts';
 import { takeReturn } from '../trial/back.ts';
 import { TrialPage } from '../trial/TrialPage.tsx';
@@ -26,7 +26,6 @@ import { TrialPage } from '../trial/TrialPage.tsx';
 // A false PASS (GR5) has a fault, so it files under its label, not under pass.
 // A valid failure the audit labels environment or grader files under that label, as its row shows it.
 const labelOf = (t: Trial) => (t.explanation.outcome === 'PASS' && t.explanation.fault === null ? 'pass' : t.explanation.fault === 'infra' ? 'infra' : (shownLabel(t.explanation) ?? 'none'));
-const select = 'h-8 max-w-full rounded-sm border border-line-strong bg-surface px-2 text-ink';
 
 export function Runs({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | undefined }) {
   const results = useResults();
@@ -75,14 +74,14 @@ export function Runs({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | un
       <div className="flex flex-wrap items-end gap-3">
         <label className="flex min-w-0 flex-col gap-1 text-xs text-ink-muted">
           Task
-          <select aria-label="Task" className={select} value={task} onChange={(e) => navigate({ task: e.target.value, trial: null })}>
+          <select aria-label="Task" className={SELECT} value={task} onChange={(e) => navigate({ task: e.target.value, trial: null })}>
             <option value="">All tasks</option>
             {tasks.map((id) => <option key={id} value={id}>{id}</option>)}
           </select>
         </label>
         <label className="flex min-w-0 flex-col gap-1 text-xs text-ink-muted">
           Label
-          <select aria-label="Label" className={select} value={label} onChange={(e) => navigate({ label: e.target.value, trial: null })}>
+          <select aria-label="Label" className={SELECT} value={label} onChange={(e) => navigate({ label: e.target.value, trial: null })}>
             <option value="">All labels</option>
             {AUDIT_LABELS.map((l) => <option key={l} value={l}>{l}</option>)}
             <option value="infra">infra (rerun, not counted)</option>
@@ -94,8 +93,8 @@ export function Runs({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | un
       </div>
       {(check !== '' || audit !== '') && (
         <p data-testid="extra-filter" className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-muted">
-          {check !== '' && <span>Failed trials decided by the gate check <code className="text-ink">{check}</code> <button type="button" aria-label="Remove the check filter" className="text-ink underline decoration-line-strong underline-offset-2" onClick={() => navigate({ check: null, trial: null })}>Remove</button></span>}
-          {audit !== '' && <span>Failed trials the human audit labels <span className="text-ink">{audit === 'unlabelled' ? 'nothing yet (not audited)' : audit}</span> <button type="button" aria-label="Remove the audit label filter" className="text-ink underline decoration-line-strong underline-offset-2" onClick={() => navigate({ audit: null, trial: null })}>Remove</button></span>}
+          {check !== '' && <span>Failed trials decided by the gate check <code className="text-ink">{check}</code> <button type="button" aria-label="Remove the check filter" className="text-ink underline decoration-line-strong underline-offset-2 pointer-coarse:px-1 pointer-coarse:py-2" onClick={() => navigate({ check: null, trial: null })}>Remove</button></span>}
+          {audit !== '' && <span>Failed trials the human audit labels <span className="text-ink">{audit === 'unlabelled' ? 'nothing yet (not audited)' : audit}</span> <button type="button" aria-label="Remove the audit label filter" className="text-ink underline decoration-line-strong underline-offset-2 pointer-coarse:px-1 pointer-coarse:py-2" onClick={() => navigate({ audit: null, trial: null })}>Remove</button></span>}
         </p>
       )}
       {official && <RunList run={official} matches={matches} />}
@@ -128,7 +127,7 @@ function RunList({ run, matches, heading = false }: { run: RunData; matches: (t:
       {heading && <h3 className="text-ink-muted"><span className="font-medium text-ink">{run.runId}</span>: {run.trials.length + run.bad.length} trial records</h3>}
       {graded !== null && <p className="text-xs text-ink-muted" data-testid="grading-line">{graded}</p>}
       {run.warnings.length > 0 && <Notice testId="data-warning">{run.warnings.join(' ')}</Notice>}
-      <ul ref={list} className="divide-y divide-line rounded-sm border border-line bg-surface" data-testid="trial-list">
+      <ul ref={list} className={`divide-y divide-line ${CARD}`} data-testid="trial-list">
         {run.bad.map((b) => <BadRow key={b.file} b={b} />)}
         {shown.map((t) => <TrialRow key={t.name} t={t} run={run} />)}
         {shown.length === 0 && run.bad.length === 0 && <li className="p-4 text-ink-muted">No trial matches these filters.</li>}
@@ -161,7 +160,7 @@ function TrialRow({ t, run }: { t: Trial; run: RunData }) {
         <OutcomeChip outcome={e.outcome} fault={shownFault(e)} />
         <HarmChip items={harmItems(t.record)} />
         {faulted && <FaultLabel e={e} official={run.official} />}
-        {e.decisive_check && <code data-testid="decisive" className="break-all rounded-sm bg-canvas px-1 text-xs text-ink">{e.decisive_check.id}</code>}
+        {e.decisive_check && <code data-testid="decisive" className={`${CHIP} break-all border-line bg-canvas font-mono font-normal text-ink dark:bg-line`}>{e.decisive_check.id}</code>}
         <span className="ml-auto text-xs text-ink-muted" title="Agent and judge cost">${cost.toFixed(2)}</span>
       </div>
       {faulted && <p data-testid="reason" className="mt-1 break-words pl-5 text-ink-muted">{e.reason}</p>}

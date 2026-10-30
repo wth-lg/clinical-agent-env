@@ -98,3 +98,87 @@ test('a key that does not start with sk-ant- is refused in the page with no netw
   await page.waitForTimeout(500);
   expect(requests).toEqual([]);
 });
+
+// UI polish PR 1 (reports/ui-polish-spec.md 1.1, 1.5, 1.6): one primary action per task row, the
+// no-key reason read out with each Run button, the phone nav strip under the top bar with a skip
+// link, and touch-sized icon buttons on a coarse pointer.
+test('a closed task row has exactly one primary button, and with no key it is Run reference solution', async ({ page }) => {
+  await browse(page, './?view=tasks');
+  const rows = page.getByTestId('task-card');
+  await expect(rows).toHaveCount(6);
+  for (let i = 0; i < 6; i++) {
+    const primary = rows.nth(i).getByTestId('validation').locator('button.bg-primary');
+    await expect(primary).toHaveCount(1);
+    await expect(primary).toHaveText('Run reference solution');
+  }
+});
+
+test('with no key, each Run button is described by its cost and the no-key reason, and Add key is the primary', async ({ page }) => {
+  await browse(page, './?view=live&task=_toy');
+  const reason = page.getByTestId('launcher-reason');
+  await expect(reason).toBeVisible();
+  const id = await reason.locator('[id]').first().getAttribute('id');
+  expect(id).toBeTruthy();
+  const run = page.getByTestId('run-x1');
+  await expect(run).toHaveText('Run ×1');
+  expect((await run.getAttribute('aria-describedby'))!.split(' ')).toContain(id);
+  // One primary on the launcher: with no key it is Add key, since every Run button is disabled.
+  await expect(page.getByTestId('launcher').locator('button.bg-primary')).toHaveCount(0);
+  await expect(reason.locator('button.bg-primary')).toHaveText('Add key');
+});
+
+test.describe('phone shell at 390', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('the first Tab focuses Skip to content, which moves focus to main', async ({ page }) => {
+    await browse(page, './?view=overview');
+    // Leaving the gate focuses the view's heading; a reload in the same tab skips the gate and
+    // starts at the top of the document, as any later load does.
+    await page.reload();
+    await expect(page.getByRole('navigation', { name: 'Views' })).toBeVisible();
+    await page.keyboard.press('Tab');
+    const skip = page.getByRole('link', { name: 'Skip to content' });
+    await expect(skip).toBeFocused();
+    await expect(skip).toBeInViewport();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('main#main')).toBeFocused();
+  });
+
+  test('the views are a strip under the top bar: 44px links, main starts at x 0', async ({ page }) => {
+    await browse(page, './?view=overview');
+    const nav = page.getByRole('navigation', { name: 'Views' });
+    const header = (await page.getByRole('banner').boundingBox())!;
+    const strip = (await nav.boundingBox())!;
+    expect(strip.y).toBeGreaterThanOrEqual(header.y + header.height - 1);
+    expect(strip.width).toBeGreaterThanOrEqual(389);
+    for (const link of await nav.getByRole('link').all()) expect((await link.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    expect((await page.locator('main').boundingBox())!.x).toBe(0);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+  });
+
+  test('the Hosted chip shows its icon only, and keeps its name and title', async ({ page }) => {
+    await browse(page, './?view=overview');
+    const chip = page.getByRole('banner').getByTestId('surface-chip');
+    await expect(chip).toHaveText('Hosted');
+    const outer = chip.locator('..');
+    await expect(outer).toHaveAttribute('title', /^Hosted\./);
+    expect((await outer.boundingBox())!.width).toBeLessThanOrEqual(32);
+  });
+});
+
+test('a rail navigation moves focus to the new view\'s heading', async ({ page }) => {
+  await browse(page, './?view=overview');
+  await page.getByRole('navigation', { name: 'Views' }).getByRole('link', { name: 'Environment' }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Environment' })).toBeFocused();
+});
+
+test.describe('coarse pointer at 390', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+
+  test('the hash copy button is at least 44px', async ({ page }) => {
+    await browse(page, './?view=environment');
+    const copy = page.getByTestId('manifest-hash').getByRole('button', { name: 'Copy the full hash' });
+    const box = (await copy.boundingBox())!;
+    expect(Math.min(box.width, box.height)).toBeGreaterThanOrEqual(44);
+  });
+});

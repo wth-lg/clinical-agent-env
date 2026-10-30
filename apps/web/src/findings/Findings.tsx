@@ -12,7 +12,7 @@ import { OUTCOMES } from '../../../../packages/core/outcomes.ts';
 import { runBlock, shownFault } from '../data/failures.ts';
 import { notCounted, notCountedText } from '../data/marks.ts';
 import { checkTextOf, dataUrl, gradingLine, pilotRates, useResults, type RunData } from '../data/results.ts';
-import { Card, formatInterval, GlossaryLink, IntervalRow, markLabel, MarkLegend, markOf, NO_RESULTS, Notice, Page, Swatch } from '../data/ui.tsx';
+import { Card, CARD, formatInterval, GlossaryLink, IntervalRow, markLabel, MarkLegend, markOf, NO_RESULTS, Notice, Page, Swatch } from '../data/ui.tsx';
 import { FaultBox, KindBar, RunBlocked, TopChecks } from './why.tsx';
 import { ModelLine, PassK, PassKLink } from './passk.tsx';
 import { hrefWith, onNav } from '../data/url.ts';
@@ -107,7 +107,7 @@ const md = new Marked({
 
 function Markdown({ text }: { text: string }) {
   const html = useMemo(() => md.parse(text, { async: false }), [text]);
-  return <article data-testid="findings-md" className="min-w-0 space-y-3 break-words rounded-sm border border-line bg-surface p-4 [&_code]:rounded-sm [&_code]:bg-canvas [&_code]:px-1 [&_h1]:text-base [&_h1]:font-semibold [&_h2]:pt-2 [&_h2]:font-medium [&_li]:ml-5 [&_li]:list-disc [&_table]:block [&_table]:w-full [&_table]:overflow-x-auto [&_td]:border-t [&_td]:border-line [&_td]:py-1 [&_td]:pr-3 [&_th]:py-1 [&_th]:pr-3 [&_th]:text-left [&_th]:text-xs [&_th]:font-medium [&_th]:text-ink-muted" dangerouslySetInnerHTML={{ __html: html }} />;
+  return <article data-testid="findings-md" className={`min-w-0 space-y-3 break-words ${CARD} p-4 [&_code]:rounded-sm [&_code]:bg-canvas [&_code]:px-1 [&_h1]:text-base [&_h1]:font-semibold [&_h2]:pt-2 [&_h2]:font-medium [&_li]:ml-5 [&_li]:list-disc [&_table]:block [&_table]:w-full [&_table]:overflow-x-auto [&_td]:border-t [&_td]:border-line [&_td]:py-1 [&_td]:pr-3 [&_th]:py-1 [&_th]:pr-3 [&_th]:text-left [&_th]:text-xs [&_th]:font-medium [&_th]:text-ink-muted`} dangerouslySetInnerHTML={{ __html: html }} />;
 }
 
 // An example trial opens in its own run on the default tab, whatever run or tab the address

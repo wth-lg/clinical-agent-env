@@ -6,7 +6,7 @@ import { useState, type Ref } from 'react';
 import { loadStore } from '../../../../packages/env/fixture-source.ts';
 import { stateHash } from '../../../../packages/env/hash.ts';
 import { toolCatalog, tryReadTool, type TryResult } from '../../../../packages/core/try-tool.ts';
-import { Card, Hash, Page } from '../data/ui.tsx';
+import { BUTTON_PRIMARY, Card, FIELD, Hash, Page, SELECT } from '../data/ui.tsx';
 import { MANIFEST, worldSource } from '../data/world.ts';
 import { firstSentence, formatClock } from '../data/text.ts';
 
@@ -17,7 +17,6 @@ const EXAMPLES: Record<string, unknown> = {
   fhir_search: { resource_type: 'Patient', count: 5 },
   get_context: {},
 };
-const button = 'inline-flex h-8 items-center rounded-sm border border-line-strong bg-surface px-3 text-ink hover:bg-canvas disabled:cursor-not-allowed disabled:text-ink-muted';
 
 export function Environment({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | undefined }) {
   const w = MANIFEST.world;
@@ -69,7 +68,7 @@ function VerifyReset() {
   };
   return (
     <div className="mt-4 flex flex-wrap items-center gap-3">
-      <button type="button" className={button} disabled={state.kind === 'running'} onClick={() => void run()}>Verify reset</button>
+      <button type="button" className={BUTTON_PRIMARY} disabled={state.kind === 'running'} onClick={() => void run()}>Verify reset</button>
       {state.kind === 'running' && <span className="text-ink-muted" role="status">Building a fresh store in this tab…</span>}
       {state.kind === 'error' && <span role="alert">Verify reset did not finish: {state.message}</span>}
       {state.kind === 'done' && (
@@ -100,16 +99,16 @@ function TryPanel() {
       <div className="mt-3 flex flex-col gap-3 sm:flex-row">
         <label className="flex flex-col gap-1 text-xs text-ink-muted">
           Tool
-          <select aria-label="Tool" className="h-8 rounded-sm border border-line-strong bg-surface px-2 text-ink" value={name} onChange={(e) => { setName(e.target.value); setArgs(JSON.stringify(EXAMPLES[e.target.value] ?? {}, null, 2)); }}>
+          <select aria-label="Tool" className={SELECT} value={name} onChange={(e) => { setName(e.target.value); setArgs(JSON.stringify(EXAMPLES[e.target.value] ?? {}, null, 2)); }}>
             {READ.map((t) => <option key={t.name} value={t.name}>{t.name}</option>)}
           </select>
         </label>
         <label className="flex flex-1 flex-col gap-1 text-xs text-ink-muted">
           Input (JSON)
-          <textarea aria-label="Input (JSON)" value={args} onChange={(e) => setArgs(e.target.value)} rows={4} className="rounded-sm border border-line-strong bg-surface p-2 font-mono text-xs text-ink" />
+          <textarea aria-label="Input (JSON)" value={args} onChange={(e) => setArgs(e.target.value)} rows={4} className={`${FIELD} h-auto p-2 font-mono text-xs`} />
         </label>
       </div>
-      <button type="button" className={`${button} mt-3`} disabled={state.kind === 'running'} onClick={() => void run()}>Try</button>
+      <button type="button" className={`${BUTTON_PRIMARY} mt-3`} disabled={state.kind === 'running'} onClick={() => void run()}>Try</button>
       {state.kind === 'running' && <p className="mt-2 text-ink-muted" role="status">Building a scratch store…</p>}
       {state.kind === 'error' && <p className="mt-2" role="alert">{state.message}</p>}
       {state.kind === 'done' && (

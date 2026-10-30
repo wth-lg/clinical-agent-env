@@ -60,7 +60,7 @@ export function LocalCommand() {
           ))}
         </tbody>
       </table>
-      <div className="mt-2 flex items-start gap-2 rounded-sm border border-line bg-surface p-2">
+      <div className="mt-2 flex items-start gap-2 rounded-md border border-line bg-surface p-2">
         <code data-testid="local-command" className="min-w-0 flex-1 font-mono text-xs leading-5 text-ink">
           {PIECES.map((parts, w) => (
             <Fragment key={w}>
@@ -81,7 +81,7 @@ export function LocalCommand() {
           onClick={copy}
           aria-label="Copy command"
           title="Copy command"
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-sm text-ink-muted hover:bg-canvas hover:text-ink"
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-ink-muted hover:bg-canvas hover:text-ink pointer-coarse:h-11 pointer-coarse:w-11"
         >
           {copied ? <Check aria-hidden className="h-3.5 w-3.5 text-accent" strokeWidth={2} /> : <Copy aria-hidden className="h-3.5 w-3.5" strokeWidth={1.75} />}
         </button>

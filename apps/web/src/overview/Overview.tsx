@@ -14,7 +14,7 @@ import { toolCatalog } from '../../../../packages/core/try-tool.ts';
 import { pilotRates, useResults, type RunData } from '../data/results.ts';
 import { useTaskList } from '../data/tasks.ts';
 import { policyLine, taskTitle } from '../tasks/title.ts';
-import { Card, formatInterval, GlossaryLink, Hash, IntervalRow, markLabel, MarkLegend, markOf, Notice, Page, Swatch } from '../data/ui.tsx';
+import { BUTTON, BUTTON_PRIMARY, Card, CARD, formatInterval, GlossaryLink, Hash, IntervalRow, markLabel, MarkLegend, markOf, Notice, Page, Swatch } from '../data/ui.tsx';
 import { hrefWith, onNav } from '../data/url.ts';
 import { freshView } from '../shell/views.ts';
 import { safePass } from '../data/harm.ts';
@@ -73,7 +73,7 @@ function OfficialOverview({ run, headingRef }: { run: RunData; headingRef?: Ref<
           {run.warnings.join(' ')}
         </Notice>
       )}
-      <ul className="divide-y divide-line rounded-sm border border-line bg-surface" data-testid="overview-table">
+      <ul className={`divide-y divide-line ${CARD}`} data-testid="overview-table">
         <li aria-hidden className="hidden gap-x-3 px-4 py-2 text-xs text-ink-muted md:grid md:grid-cols-[minmax(9rem,1fr)_6.5rem_minmax(10rem,16rem)_minmax(7rem,14rem)_minmax(6rem,9rem)_4rem_4rem]">
           <span>Task</span><span>Pass</span><span>95% interval (Wilson)</span><span>Trials</span><span>Most common failure</span><span className="text-right">Mean score</span><span className="text-right">Mean cost</span>
         </li>
@@ -122,8 +122,6 @@ function MostCommon({ fc }: { fc: Parameters<typeof mostCommon>[0] }) {
   );
 }
 
-const action = 'inline-flex h-8 items-center rounded-sm border border-line-strong bg-surface px-3 text-ink hover:bg-canvas';
-
 // What this is, in plain words (ASD-STE 100, each sentence 25 words or fewer), and two ways to run
 // a trial: in this tab (the key gate when there is no key, else Live trial) and on your computer
 // (the local-run panel; the shell shows that panel on the hosted site, and the button reads the same
@@ -140,9 +138,9 @@ function IntroCard() {
       </p>
       <div className="mt-3 flex flex-wrap gap-2">
         {key.kind === 'none'
-          ? <button type="button" className={action} onClick={requestKey}>Add a key and run in this tab</button>
-          : <a className={action} href={hrefWith(freshView('live'))} onClick={onNav(freshView('live'))}>Run a trial in this tab</a>}
-        {hosted && <button type="button" className={action} onClick={() => document.getElementById(LOCAL_RUN_PANEL_ID)?.focus()}>Run on your computer</button>}
+          ? <button type="button" className={BUTTON_PRIMARY} onClick={requestKey}>Add a key and run in this tab</button>
+          : <a className={BUTTON_PRIMARY} href={hrefWith(freshView('live'))} onClick={onNav(freshView('live'))}>Run a trial in this tab</a>}
+        {hosted && <button type="button" className={BUTTON} onClick={() => document.getElementById(LOCAL_RUN_PANEL_ID)?.focus()}>Run on your computer</button>}
       </div>
     </Card>
   );
