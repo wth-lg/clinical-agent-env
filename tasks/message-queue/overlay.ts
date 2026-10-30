@@ -33,7 +33,9 @@ const CLINIC = { reference: 'Organization/org-riverbend' };
 const HOSPITAL = { reference: 'Organization/org-st-brigid' };
 const CARDIOLOGIST = { reference: 'Practitioner/pr-t6-osei' };
 const UC_DOCTOR = { reference: 'Practitioner/pr-t6-marsh' };
-const SURGEON = { reference: 'Practitioner/pr-t6-whitfield' };
+// The St. Brigid department that drew and reported the pre-operative BMP (researcher-16 T6: author
+// and custodian of the report).
+const PAT = { reference: 'Organization/org-t6-pat' };
 
 const LOINC = 'http://loinc.org';
 const SNOMED = 'http://snomed.info/sct';
@@ -62,6 +64,7 @@ const REMOVE: Array<{ resourceType: string; id: string }> = [
   { resourceType: 'Observation', id: 'obs-01952' },
 ];
 
+const PRE_ADMISSION_TESTING: Resource = { resourceType: 'Organization', id: 'org-t6-pat', active: true, name: 'St. Brigid Regional Pre-Admission Testing', partOf: HOSPITAL };
 const PRACTITIONERS: Resource[] = [
   { resourceType: 'Practitioner', id: 'pr-t6-osei', active: true, name: [{ use: 'official', given: ['Kwame'], family: 'Osei', suffix: ['MD'] }] },
   { resourceType: 'Practitioner', id: 'pr-t6-marsh', active: true, name: [{ use: 'official', given: ['Helen'], family: 'Marsh', suffix: ['PA-C'] }] },
@@ -341,6 +344,7 @@ const overlay: Overlay = {
     const put: Resource[] = [
       ...patients,
       ...PRACTITIONERS,
+      PRE_ADMISSION_TESTING,
       ...ITEMS.flatMap((i) => [message(i), inboxItem(i)]),
 
       // M1: hypertension on lisinopril; the last BMP is from 2025-09-08, the last visit 2026-03-17.
@@ -359,7 +363,7 @@ const overlay: Overlay = {
       }),
       medication('mr-t6-lisinopril', 'hayes', ['314077', 'lisinopril 20 MG Oral Tablet'], 20, 'QD', '2025-10-20T09:15:00-04:00', 'Essential hypertension', { days: 90, refills: 3, tablets: 90 }),
       note('doc-t6-hayes-0317', 'hayes', '2026-03-17T14:20:00-04:00', 'progress', OKAFOR, CLINIC, HAYES_VISIT, 'enc-t6-hayes-0317'),
-      note('doc-t6-hayes-0708', 'hayes', '2026-07-08T13:15:00-04:00', 'lab', SURGEON, HOSPITAL, HAYES_PREOP_LAB),
+      note('doc-t6-hayes-0708', 'hayes', '2026-07-08T13:15:00-04:00', 'lab', PAT, PAT, HAYES_PREOP_LAB),
 
       // M2: atorvastatin still active here; cardiology stopped it on 2026-08-11.
       condition('cond-t6-odum-hld', 'odum', '55822004', 'Hyperlipidemia (disorder)', '2019-02-11T10:00:00-05:00'),

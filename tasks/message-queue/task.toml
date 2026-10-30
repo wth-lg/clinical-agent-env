@@ -27,7 +27,7 @@ id = "RBC-RX-05"
 title = "Refill protocol"
 version = "2"
 effective = "2025-01-01"
-source = "Environment-local refill protocol (design section 4, T6). The §1 potassium threshold of 5.5 mmol/L is the hyperkalemia action threshold of the KDIGO 2024 CKD guideline (Figure 32, read 2026-10-29)."
+source = "Environment-local refill protocol (design section 4, T6). The §1 potassium line of 5.5 mmol/L or higher is derived from the hyperkalemia action threshold of the KDIGO 2024 CKD guideline (Figure 32, potassium >5.5 mmol/l, read 2026-10-29), a CKD figure used here as the clinic's line for any adult on an ACE inhibitor."
 file = "rbc-rx-05.md"
 
 [[policy]]
