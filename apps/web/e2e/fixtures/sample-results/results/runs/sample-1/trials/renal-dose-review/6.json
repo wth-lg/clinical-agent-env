@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:renal-dose-review:6",
   "task_id": "renal-dose-review",
-  "task_version": "00ea5421ff7a128ba76c97ba419df309c1bf61f97a14fef91c9bc691f9b70961",
-  "env_version": "e9b89da8d88894a64a1339991e1a410e665d7fae8765fc0c0ce4bbaa5beafcd1",
+  "task_version": "b37cbd1d0dbf4edbeaca2cba902a7cd53be06b7e357f855734e077f364284ec4",
+  "env_version": "41b42029434225cddac2b10786944a67a9f444bd74969b9a3283101bc0ada0d2",
   "grader_task_version": "79a7ae7867b642821691e4adc16f98edd6d951ac71789638bb3644de81433ffa",
-  "fixture_hash": "2f7e5edd1a7b81c9ecba4b42887aa8a60884720f89f2974400d1806d0deb87ab",
+  "fixture_hash": "93fd780c27516a6d47ef9fd1f43a298844fddc64ab1ca951bafb38dc4626da50",
   "state_hash": {
-    "initial": "2f7e5edd1a7b81c9ecba4b42887aa8a60884720f89f2974400d1806d0deb87ab",
-    "final": "3ef3f583a99e783ef409b6874553fcff5f8095ec18a33c8c82d7dd50cb3b0aae",
-    "replay_final": "3ef3f583a99e783ef409b6874553fcff5f8095ec18a33c8c82d7dd50cb3b0aae"
+    "initial": "93fd780c27516a6d47ef9fd1f43a298844fddc64ab1ca951bafb38dc4626da50",
+    "final": "ac3a56382ea8ace6c3b63964d93fbb2aff0edd993ca166e45086795af8158173",
+    "replay_final": "ac3a56382ea8ace6c3b63964d93fbb2aff0edd993ca166e45086795af8158173"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
