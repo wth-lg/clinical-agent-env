@@ -1174,8 +1174,19 @@ export function plantedClock(resources: readonly Resource[], planted: ReadonlySe
   const out = resources.map((r) => structuredClone(r) as unknown as Json);
   const byId = new Map(out.map((r) => [key(r), r]));
   const charts = [...new Set(out.filter((r) => planted.has(key(r)) && GENERATED.has(r.resourceType as string)).map(patientOf).filter((p): p is string => p !== undefined))].sort();
+  // A record's patient at any depth (an appointment names its patient as a participant).
+  const deepPatient = (v: unknown): string | undefined => {
+    if (Array.isArray(v)) for (const x of v) { const q = deepPatient(x); if (q) return q; }
+    else if (v !== null && typeof v === 'object') {
+      const ref = (v as Ref).reference;
+      if (typeof ref === 'string' && ref.startsWith('Patient/')) return ref;
+      for (const x of Object.values(v)) { const q = deepPatient(x); if (q) return q; }
+    }
+    return undefined;
+  };
+  const owner = new Map(out.map((r) => [r, patientOf(r) ?? deepPatient(r)]));
   for (const p of charts) {
-    const mine = out.filter((r) => patientOf(r) === p);
+    const mine = out.filter((r) => owner.get(r) === p);
     const plantedRs = mine.filter((r) => planted.has(key(r)) && GENERATED.has(r.resourceType as string));
     const isMoving = (r: Json) => planted.has(key(r)) && GENERATED.has(r.resourceType as string);
     // The chart's clock: how often each mm:ss stands on its generated records' times, by field
