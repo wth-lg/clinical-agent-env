@@ -206,11 +206,14 @@ export function gradingLine(g: Grading): string | null {
 
 // A pilot run's pass rate per task over its valid trials, with the Wilson 95% interval, as
 // summary.ts computes it for an official run; never counted in the results.
-export function pilotRates(run: RunData): Array<{ task: string; passes: number; valid: number; rate: number | null; interval: Interval | null }> {
+export function pilotRates(run: RunData): Array<{ task: string; passes: number; valid: number; rate: number | null; interval: Interval | null; outcomes: Record<string, number> }> {
   return [...new Set(run.trials.map((t) => t.task))].sort().map((task) => {
-    const valid = run.trials.filter((t) => t.task === task && t.explanation.valid);
+    const mine = run.trials.filter((t) => t.task === task);
+    const valid = mine.filter((t) => t.explanation.valid);
     const passes = valid.filter((t) => t.explanation.outcome === 'PASS').length;
-    return { task, passes, valid: valid.length, rate: valid.length === 0 ? null : passes / valid.length, interval: wilson(passes, valid.length) };
+    const outcomes: Record<string, number> = {};
+    for (const t of mine) outcomes[t.explanation.outcome] = (outcomes[t.explanation.outcome] ?? 0) + 1;
+    return { task, passes, valid: valid.length, rate: valid.length === 0 ? null : passes / valid.length, interval: wilson(passes, valid.length), outcomes };
   });
 }
 

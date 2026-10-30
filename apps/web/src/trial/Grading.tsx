@@ -49,7 +49,6 @@ function Metric({ title, value, testId, note }: { title: string; value: string |
   );
 }
 
-// An evidence id: a link to its step when a step wrote or exposed it.
 // What happens to a trial the grader did not check: run again only when RERUN_OUTCOMES says so,
 // else not run again, with NOT_RERUN_REASON's reason (plan-amendment-worklist W0-A).
 const notGradedThen = (outcome: string): string => {
@@ -58,6 +57,7 @@ const notGradedThen = (outcome: string): string => {
   return reason === undefined ? '' : ` and not run again: ${reason}`;
 };
 
+// An evidence id: a link to its step when a step wrote or exposed it.
 export function EvidenceId({ id, steps, onStep }: { id: string; steps: readonly Step[] | null; onStep: (n: number) => void }) {
   const n = steps === null ? null : stepOfId(steps, id);
   if (n === null) return <code data-testid="evidence-id" data-id={id} className="break-all rounded-sm bg-canvas px-1 text-xs text-ink" title={steps === null ? 'The trajectory is not loaded.' : 'No step wrote or read this resource.'}>{id}</code>;

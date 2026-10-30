@@ -2,7 +2,7 @@
 // each mark, and the words beside a fault label: the note on a trial that is not counted, and the
 // plain "Not counted" rule. No JSX here, so apps/web/test can import it.
 import type { Explanation } from '../../../../packages/core/explain.ts';
-import { FAULT, isValid, NEVER_RERUN, NOT_RERUN_REASON, RERUN_OUTCOMES, type Fault, type Outcome } from '../../../../packages/core/outcomes.ts';
+import { FAULT, isValid, NEVER_RERUN, NOT_RERUN_REASON, OUTCOMES, RERUN_OUTCOMES, type Fault, type Outcome } from '../../../../packages/core/outcomes.ts';
 import { blocksTheRun, isFalsePass } from './failures.ts';
 
 export type Mark = 'pass' | 'model' | 'limit' | 'refusal' | 'environment' | 'grader' | 'infra';
@@ -61,3 +61,22 @@ export function faultNote(e: Explanation, official: boolean, notCountedShown: bo
 // from outcomes.ts: the outcomes run again, then each one not run again with its reason.
 const and = (xs: readonly string[]) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')}, and ${xs.at(-1)}`);
 export const NOT_COUNTED_LINE = `${and([`${RERUN_OUTCOMES.join(', ')} (run again)`, ...NEVER_RERUN.map((o) => `${o} (not run again: ${NOT_RERUN_REASON[o]})`)])}.`;
+
+// The trials of a task that k/n leaves out (verifier-phase-P17i-W0-A-1 F4), from its outcome
+// counts (summary.json TaskSummary, or a pilot's trials): each excluded outcome with its count and
+// what happens to it, in NOT_COUNTED_LINE's words. ENV_LIMIT takes env_limit when given, which
+// counts every ENV_LIMIT attempt, settled or not (packages/core/summary.ts).
+export interface NotCounted {
+  outcome: Outcome;
+  n: number;
+  why: string;
+}
+export function notCounted(t: { outcomes: Readonly<Record<string, number>>; env_limit?: number }): NotCounted[] {
+  const count = (o: Outcome) => (o === 'ENV_LIMIT' && t.env_limit !== undefined ? t.env_limit : (t.outcomes[o] ?? 0));
+  return OUTCOMES.filter((o) => !isValid(o) && count(o) > 0)
+    .map((o) => ({ outcome: o, n: count(o), why: NOT_RERUN_REASON[o] === undefined ? 'run again' : `not run again: ${NOT_RERUN_REASON[o]}` }));
+}
+// One line beside k/n, or null when every trial counts.
+export function notCountedText(parts: readonly NotCounted[]): string | null {
+  return parts.length === 0 ? null : `Not counted: ${parts.map((p) => `${p.n} ${p.outcome} (${p.why})`).join(', ')}.`;
+}

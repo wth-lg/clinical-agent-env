@@ -3,7 +3,8 @@
 // outcome, the attribution label (packages/core/outcomes.ts AUDIT_LABEL of the fault explainTrial
 // decides), the decisive failing check, the one-line reason and, with no audit row, the
 // not-audited marker; all of it is packages/core/explain.ts explainTrial, never re-derived here.
-// A record the loader cannot read is a row that says why. The header shows k/N with the pass and
+// A record the loader cannot read is a row that says why. The header shows k/N, the trials each
+// task's k/N leaves out and why (ENV_LIMIT and the other excluded outcomes), and the pass and
 // denominator rules. Filters (task, label; and from Findings, check: the valid failures whose
 // decisive check it is, and audit: the valid failures by audit label, P17j JU7) live in the URL; a
 // run with a trial that blocks it says so above the list; ?trial= opens the trial detail
@@ -14,6 +15,7 @@ import { AUDIT_LABELS } from '../../../../packages/core/outcomes.ts';
 import { gradingLine, useResults, type BadRecord, type RunData, type Trial } from '../data/results.ts';
 import { harmItems, safePass } from '../data/harm.ts';
 import { auditFilterOf, failedCheckOf, isFalsePass, runBlock, shownFault, shownLabel } from '../data/failures.ts';
+import { notCounted, notCountedText } from '../data/marks.ts';
 import { RunBlocked } from '../findings/why.tsx';
 import { Card, FaultLabel, GlossaryLink, HarmChip, Notice, OutcomeChip, Page, PlainRules } from '../data/ui.tsx';
 import { navigate, useParams } from '../data/url.ts';
@@ -52,6 +54,8 @@ export function Runs({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | un
   const scope = official ? (task === '' ? official.summary!.totals : official.summary!.tasks[task]) : undefined;
   // safe PASS: summary.json gives pass_no_harm per task; all tasks is their sum (JU3).
   const taskRows = official ? (task === '' ? Object.values(official.summary!.tasks) : official.summary!.tasks[task] ? [official.summary!.tasks[task]!] : []) : [];
+  // The trials each task's k/n leaves out, and why (data/marks.ts notCounted), for the tasks in scope.
+  const left = official ? Object.entries(official.summary!.tasks).filter(([id]) => task === '' || id === task).flatMap(([id, t]) => { const text = notCountedText(notCounted(t)); return text === null ? [] : [{ id, text }]; }) : [];
   const safe = { pass_no_harm: taskRows.reduce((n, x) => n + x.pass_no_harm, 0), trials: taskRows.reduce((n, x) => n + x.trials, 0) };
   return (
     <Page title="Runs" headingRef={headingRef} lead={official ? <>Official run <span className="font-medium text-ink">{official.runId}</span>, {official.summary!.totals.records} trial records.</> : 'No official run is published yet. The committed pilot runs are below; they are not counted in the results.'}>
@@ -60,6 +64,11 @@ export function Runs({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | un
       <Card title={!official ? 'How a trial is counted' : block !== null
         ? <span data-testid="runs-k-of-n">{task === '' ? 'All tasks' : task}: blocked, no pass rate{falsePasses > 0 ? `, ${falsePasses} false PASS` : ''}</span>
         : <><span data-testid="runs-k-of-n">{task === '' ? 'All tasks' : task}: {scope?.passes ?? 0}/{scope?.trials ?? 0} pass</span> <span className="font-normal text-ink-muted" data-testid="safe-pass">({safePass(safe)})</span></>}>
+        {left.length > 0 && (
+          <ul className="mb-2 space-y-0.5 text-xs text-ink-muted" data-testid="runs-not-counted">
+            {left.map((l) => <li key={l.id} data-testid="not-counted" data-task={l.id} className="break-words"><span className="font-medium text-ink">{l.id}</span>: {l.text}</li>)}
+          </ul>
+        )}
         <PlainRules ids={{ pass: 'pass-definition', denominator: 'denominator-rule' }} />
         <p className="mt-2"><GlossaryLink>How failures are attributed</GlossaryLink></p>
       </Card>
