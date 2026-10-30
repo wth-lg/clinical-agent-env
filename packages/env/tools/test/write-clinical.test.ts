@@ -300,7 +300,7 @@ describe('2. change_medication modify: product, strength and route', () => {
     const er = call(c, 'change_medication', { medication_request: 'mr-w-metop', action: 'modify', reason: 'HR 52', medication_code: '866436', new_dose: { value: 50, unit: 'mg', frequency: 'QD' } });
     expect(get<MedicationRequest>(c, er.new_medication_request as string).medicationCodeableConcept?.coding?.[0]?.code).toBe('866436');
     const hctz = call(c, 'change_medication', { medication_request: 'mr-00046', action: 'modify', reason: 'hyponatremia', new_dose: { value: 12.5, unit: 'mg', frequency: 'QAM' } });
-    expect(dosage(get<MedicationRequest>(c, hctz.new_medication_request as string)).text).toBe('12.5 mg (0.5 tablet) every morning');
+    expect(dosage(get<MedicationRequest>(c, hctz.new_medication_request as string)).text).toBe('12.5 mg (0.5 tablet) by mouth every morning');
     const gaba = call(c, 'order_medication', { patient: 'pt-0011', rxnorm_code: '310431', dose_value: 300, dose_unit: 'mg', route: 'oral', frequency: 'TID', reason: 'postherpetic neuralgia' });
     const cap = await rejected(c, 'change_medication', { medication_request: gaba.medication_request, action: 'modify', reason: 'renal', new_dose: { value: 150, unit: 'mg', frequency: 'TID' } });
     expect(cap).toMatchObject({ code: 'INVALID_INPUT', field: 'medication_code' });

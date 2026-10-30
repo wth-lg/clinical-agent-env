@@ -59,7 +59,7 @@ describe('message-queue', () => {
   it("Dr. Okafor's messages queue holds exactly the six T6 items", () => {
     type T = { resourceType: string; id?: string; status?: string; owner?: { reference?: string }; code?: { coding?: Array<{ system?: string; code?: string }> } };
     const queue = (all as T[]).filter((r) => r.resourceType === 'Task' && r.status === 'requested' && r.owner?.reference === 'Practitioner/pr-okafor' && (r.code?.coding ?? []).some((c) => c.system === 'urn:riverbend:inbox-queue' && c.code === 'messages'));
-    expect(queue.map((r) => r.id).sort()).toEqual([id('task-t6-m1'), id('task-t6-m2'), id('task-t6-m3'), id('task-t6-m4'), id('task-t6-m5'), id('task-t6-m6')]);
+    expect(queue.map((r) => r.id).sort()).toEqual([id('task-t6-m1'), id('task-t6-m2'), id('task-t6-m3'), id('task-t6-m4'), id('task-t6-m5'), id('task-t6-m6')].sort());
   });
 
   // RBC-RX-05 §3 routes to "the patient's PCP": the chart names one for every T6 patient.

@@ -18,7 +18,7 @@
 //
 // Selection is a hash of the base id, so the same resources are chosen on every build.
 import type { Resource } from './store.ts';
-import { NOW_MS } from './clock.ts';
+import { eastern, NOW_MS } from './clock.ts';
 import { CLINIC } from './world.ts';
 
 type Json = Record<string, unknown>;
@@ -192,8 +192,8 @@ export function profileBase(base: readonly Resource[], taskPatients: ReadonlySet
             r.description = type;
           }
         }
-        const when = new Date(Date.parse(r.date as string) + 3_600_000).toISOString();
-        if (pick(id, 'addendum', 25) && (r.author as Ref[] | undefined)?.length && Date.parse(when) < NOW_MS) {
+        const when = Date.parse(r.date as string) + 3_600_000;
+        if (pick(id, 'addendum', 25) && (r.author as Ref[] | undefined)?.length && when < NOW_MS) {
           const text = `\n${day(r.date as string)}\n\nAddendum: the plan above was reviewed with the patient by phone; no change to the plan.\n`;
           added.push({
             resourceType: 'DocumentReference',
@@ -202,7 +202,7 @@ export function profileBase(base: readonly Resource[], taskPatients: ReadonlySet
             type: r.type,
             category: r.category,
             subject: r.subject,
-            date: `${when.slice(0, 19)}Z`,
+            date: eastern(when),
             author: r.author,
             authenticator: (r.author as Ref[])[0],
             custodian: r.custodian,

@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:discharge-medrec:3",
   "task_id": "discharge-medrec",
-  "task_version": "9f6519d4432266558c5f635be28935bea186162138df119fd6a8d20ed3b12379",
-  "env_version": "de53962ba6f3a2c01081274e8ff5c565ee04740cffd2acc9202ff7779afee607",
+  "task_version": "8fe54e703e24d296b2645823f0b325b1798877fab0cd66f42b1119f536c86739",
+  "env_version": "ff99f9716b4470d859b4dfd03cc35b5d5bb5135234108d2b9cfb21904fd7ed77",
   "grader_task_version": "2d56f46a48259a4031a48eb5ae737372cd2732063154fe86f3082c29c522e97a",
-  "fixture_hash": "c53587ceac9994bb794dbb22ce89cd159d80a4802ab002fe473d18fa8d2c292d",
+  "fixture_hash": "95430f4fabc3895a01c3b3d55790890f1cad4fce71c5abf22d4a952b94222fd0",
   "state_hash": {
-    "initial": "c53587ceac9994bb794dbb22ce89cd159d80a4802ab002fe473d18fa8d2c292d",
-    "final": "07efe57bb154e54ebbf2c3064e3db5c80b79e95fbd17aaab21e9aa845c3d4d0a",
-    "replay_final": "07efe57bb154e54ebbf2c3064e3db5c80b79e95fbd17aaab21e9aa845c3d4d0a"
+    "initial": "95430f4fabc3895a01c3b3d55790890f1cad4fce71c5abf22d4a952b94222fd0",
+    "final": "92ee3e05a474a64652b1546d9973b7e382b182884dae4bde478d7ac8ad54b04a",
+    "replay_final": "92ee3e05a474a64652b1546d9973b7e382b182884dae4bde478d7ac8ad54b04a"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [

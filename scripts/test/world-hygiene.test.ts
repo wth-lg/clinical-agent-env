@@ -22,6 +22,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { SYNTHEA_IDS } from '../../fixtures/synthea-ids.ts';
 import { NOW_MS } from '../../packages/env/clock.ts';
 import type { Resource } from '../../packages/env/store.ts';
 import { acuteClass, activeOrderAuthored, easternParts, gunzip, hygiene, ingredientsOf, MONTHS_12_MS, patientOf, timeOf } from '../fixtures-lib.ts';
@@ -32,7 +33,17 @@ const read = (file: string): R[] => gunzip(readFileSync(join(repoRoot, file))).t
 const world = read('fixtures/world.ndjson.gz');
 const cohort = read('fixtures/synthea/base.ndjson.gz');
 const baseIds = new Set(cohort.map((r) => `${r.resourceType}/${r.id}`));
-const base = world.filter((r) => baseIds.has(`${r.resourceType}/${r.id}`));
+// The world's base resources under their base cohort ids: fixtures:build numbers the world after
+// the overlays (packages/env/renumber.ts), so each id and reference is mapped back through the base
+// map (fixtures/synthea-ids.ts) before it is compared with the cohort.
+const toBase = new Map(Object.entries(SYNTHEA_IDS).map(([b, w]) => [w, b]));
+const backId = (s: string): string => {
+  const slash = s.indexOf('/');
+  return toBase.get(s) ?? (slash > 0 && toBase.has(s.slice(slash + 1)) ? `${s.slice(0, slash)}/${toBase.get(s.slice(slash + 1))!}` : s);
+};
+const back = (v: unknown): unknown =>
+  typeof v === 'string' ? backId(v) : Array.isArray(v) ? v.map(back) : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, back(x)])) : v;
+const base = world.filter((r) => baseIds.has(`${r.resourceType}/${r.resourceType === 'Patient' ? r.id : (toBase.get(r.id) ?? '')}`)).map((r) => back(r) as R);
 const refOf = (v: unknown) => (v as { reference?: string } | undefined)?.reference ?? null;
 // Every date-time string in a resource, with its path.
 const dateTimes = (v: unknown, path = ''): Array<[string, string]> =>
