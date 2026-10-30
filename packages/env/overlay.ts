@@ -26,6 +26,7 @@
 // planted resource by key through tasks/<id>/ids.ts and a base one through
 // packages/env/synthea-ids.ts.
 import type { Resource } from '@medplum/fhirtypes';
+import { dataText } from './attachment.ts';
 import type { LintSource, LintSpec } from './lint/index.ts';
 import { NAME_SHAPED, numberedPrefix, worldIds } from './renumber.ts';
 import { Store } from './store.ts';
@@ -91,27 +92,14 @@ function mapStrings<T>(value: T, f: (s: string) => string): T {
   return value;
 }
 
-// An attachment's data as text, when it may be text: a content type of any case that starts with
-// text/ (as noteText reads it, packages/env/tools/read/notes.ts) or none at all (verifier P17i
-// W0-1b F3). Data that is not base64 is not text.
-function attachmentText(contentType: unknown, data: string): string | null {
-  if (contentType !== undefined && !(typeof contentType === 'string' && contentType.toLowerCase().startsWith('text/'))) return null;
-  try {
-    return new TextDecoder().decode(Uint8Array.from(atob(data), (c) => c.charCodeAt(0)));
-  } catch {
-    return null;
-  }
-}
-
-// The first registry key in any string of value, a text attachment's data decoded (verifier P17i
-// W0 M1: a key hidden in base64 note text reached the world past the string check).
+// The first registry key in any string of value, an attachment's data decoded when it is base64 text,
+// whatever its content type, and base64 text inside that too (verifier P17i W0 M1: a key hidden in
+// base64 note text reached the world past the string check; W0-1b F3 and r2 F5).
 function firstKey(value: unknown): string | null {
   if (typeof value === 'string') return KEY_IN_TEXT.exec(value)?.[1] ?? null;
   if (Array.isArray(value)) for (const v of value) { const k = firstKey(v); if (k !== null) return k; }
   else if (value !== null && typeof value === 'object') {
-    const { contentType, data } = value as { contentType?: unknown; data?: unknown };
-    const text = typeof data === 'string' ? attachmentText(contentType, data) : null;
-    if (text !== null) {
+    for (let text = dataText((value as { data?: unknown }).data), depth = 0; text !== null && depth < 4; text = dataText(text.trim()), depth++) {
       const k = firstKey(text);
       if (k !== null) return k;
     }

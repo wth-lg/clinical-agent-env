@@ -132,4 +132,21 @@ describe('overlays', () => {
     // Data that is not base64 text is left to the string check.
     expect(() => one({ build: () => ({ put: [{ ...doc(''), content: [{ attachment: { data: '%%not base64%%' } }] } as Resource, obs('obs-t1-scr')] }) })).not.toThrow();
   });
+
+  // verifier P17i W0-1b r2 F5: the check decodes any attachment whose data is base64 of UTF-8 text,
+  // whatever its content type says (null, empty, padded, application/*), as the read tools show it.
+  it('decodes attachment data that is base64 text whatever the content type, and base64 inside it', () => {
+    const doc = (attachment: Record<string, unknown>): Resource => ({ resourceType: 'DocumentReference', id: 'doc-t1-note', status: 'current', subject: { reference: T1 }, content: [{ attachment }] }) as Resource;
+    const put = (attachment: Record<string, unknown>) => () => one({ build: () => ({ put: [doc(attachment), obs('obs-t1-scr')] }) });
+    const b64 = (s: string) => Buffer.from(s).toString('base64');
+    for (const contentType of [null, '', ' text/plain', 'application/pdf', 'application/xhtml+xml', 'application/octet-stream']) {
+      expect(put({ contentType, data: b64('see obs-t1-scr') }), String(contentType)).toThrow(/'obs-t1-scr' is a registry key/);
+      expect(put({ contentType, data: b64('Creatinine 1.9, repeat in a week.') }), String(contentType)).not.toThrow();
+    }
+    expect(put({ contentType: 'text/plain', data: b64('see obs-t1-scr').replace(/(.{4})/g, '$1\n') })).toThrow(/'obs-t1-scr' is a registry key/);
+    expect(put({ contentType: 'text/plain', data: b64(b64('see obs-t1-scr')) })).toThrow(/'obs-t1-scr' is a registry key/);
+    expect(() => one({ build: () => ({ put: [{ resourceType: 'DiagnosticReport', id: 'dr-t1-x', status: 'final', code: { text: 'x' }, subject: { reference: T1 }, presentedForm: [{ contentType: 'application/pdf', data: b64('see obs-t1-scr') }] } as Resource, obs('obs-t1-scr')] }) })).toThrow(/'obs-t1-scr' is a registry key/);
+    // Bytes that are not UTF-8 are not text.
+    expect(put({ contentType: 'application/pdf', data: Buffer.from([0xff, 0xfe, 0x00, 0x81]).toString('base64') })).not.toThrow();
+  });
 });
