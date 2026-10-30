@@ -38,7 +38,7 @@ const DECIDING: Record<string, readonly string[]> = {
   'Patient/pt-0024': [ref('ServiceRequest/sr-t3-6648')],
   'Patient/pt-0025': [ref('Procedure/proc-t3-5032')],
   'Patient/pt-0034': [ref('Observation/obs-t3-2465')],
-  ...Object.fromEntries(expected.members.filter((x) => x.decisive.length).map((x) => [x.patient, x.decisive])),
+  ...Object.fromEntries(expected.items.filter((x) => x.decisive.length).map((x) => [x.patient, x.decisive])),
 };
 
 describe('crc-care-gap rubric', () => {
@@ -56,7 +56,7 @@ describe('crc-care-gap rubric', () => {
     const oracle = cases(task).find((x) => x.id === 'oracle')!;
     const steps = stepsOf((await trial(env, task, oracle)).events);
     const exposed = new Set(steps.flatMap((s) => s.exposed_ids));
-    expect(Object.keys(DECIDING).sort()).toEqual(expected.members.map((x) => x.patient).sort());
+    expect(Object.keys(DECIDING).sort()).toEqual(expected.items.map((x) => x.patient).sort());
     expect(Object.values(DECIDING).flat().filter((id) => !exposed.has(id))).toEqual([]);
   });
 
@@ -84,7 +84,7 @@ describe('crc-care-gap rubric', () => {
     ['| Rickey Sipes | Excluded |', 'Patient/pt-0034'],
     ['Mr. Wolff', 'Patient/pt-0035'],
   ])('finds the row of %j', (text, patient) => {
-    const hit = expected.members.filter((x) => named(x, text)).map((x) => x.patient);
+    const hit = expected.items.filter((x) => named(x, text)).map((x) => x.patient);
     expect(hit).toEqual(patient ? [patient] : []);
   });
 

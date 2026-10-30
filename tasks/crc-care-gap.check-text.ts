@@ -7,12 +7,12 @@ import { expected, ORDERED } from './crc-care-gap/expected.ts';
 
 // A panel member as a reader knows them: 'Patient/pt-0019 (Harrison O'Keefe)'.
 const who = (p: unknown) => {
-  const m = expected.members.find((x) => x.patient === p);
+  const m = expected.items.find((x) => x.patient === p);
   return m === undefined ? show(p) : `${m.patient} (${m.name})`;
 };
 // Why a member needs no order: 'excluded: total colectomy'.
 const whyNot = (p: unknown) => {
-  const m = expected.members.find((x) => x.patient === p);
+  const m = expected.items.find((x) => x.patient === p);
   return m === undefined ? 'who is not on the panel' : `who is ${m.status.replace(/_/g, ' ')}: ${m.reason.replace(/_/g, ' ')}`;
 };
 
