@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:crc-care-gap:3",
   "task_id": "crc-care-gap",
-  "task_version": "c70194913211f6b22e89b311ec5a2197ec5796ec911c856889486f58a9397005",
+  "task_version": "c97eef3ca7e530130a2d19ab1fd0868287ade114b696a067b1501082f34f2a18",
   "env_version": "32ac8fdee3161813a106003809507bf5bfede947f1fd6c8478fe1c59c018741c",
-  "grader_task_version": "30035b1567ac739775fbed4671df51e1abac6cf36f403594991e306299b3ae8f",
+  "grader_task_version": "e2e451ee55aae654b14b684afa9e400b90dbc3092383364d1e20866875a69ffd",
   "fixture_hash": "95c66c67f2a775cb0e24f6d8040c5a1a38c4897e5f3cf018e649de32a8d6a90a",
   "state_hash": {
     "initial": "95c66c67f2a775cb0e24f6d8040c5a1a38c4897e5f3cf018e649de32a8d6a90a",
@@ -45,7 +45,7 @@
   "env_git_sha": null,
   "ended": "2026-10-23T12:41:46.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "14",
+  "grader_version": "15",
   "outcome": "PASS",
   "valid": true,
   "fault": null,
@@ -98,6 +98,110 @@
         "ServiceRequest/sr-t0007",
         "ServiceRequest/sr-t0009",
         "ServiceRequest/sr-t0011"
+      ],
+      "items": [
+        {
+          "item": "Patient/pt-0009",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0011",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0014",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0017",
+          "met": true,
+          "decisive_ids": [
+            "Procedure/proc-00489"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0018",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-01486"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0019",
+          "met": true,
+          "decisive_ids": [
+            "Condition/cond-00453"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0020",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0021",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0022",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-01725"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0023",
+          "met": true,
+          "decisive_ids": [
+            "Patient/pt-0023"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0024",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0025",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0034",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0035",
+          "met": true,
+          "decisive_ids": [
+            "Patient/pt-0035"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "outside",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        }
       ]
     },
     {
@@ -130,6 +234,104 @@
         "Communication/comm-t0010",
         "Communication/comm-t0012",
         "Communication/comm-t0013"
+      ],
+      "items": [
+        {
+          "item": "Patient/pt-0009",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0011",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0014",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0017",
+          "met": true,
+          "decisive_ids": [
+            "Procedure/proc-00489"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0018",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-01486"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0019",
+          "met": true,
+          "decisive_ids": [
+            "Condition/cond-00453"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0020",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0021",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0022",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-01725"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0023",
+          "met": true,
+          "decisive_ids": [
+            "Patient/pt-0023"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0024",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0025",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0034",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0035",
+          "met": true,
+          "decisive_ids": [
+            "Patient/pt-0035"
+          ],
+          "evidence": {}
+        }
       ]
     },
     {
@@ -142,7 +344,104 @@
       "evidence": {
         "extra": []
       },
-      "ids": []
+      "ids": [],
+      "items": [
+        {
+          "item": "Patient/pt-0009",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0011",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0014",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0017",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0018",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0019",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0020",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0021",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0022",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0023",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0024",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0025",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0034",
+          "met": true,
+          "decisive_ids": [
+            "Patient/pt-0034",
+            "Observation/obs-02385",
+            "Encounter/enc-00223",
+            "Encounter/enc-00222"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0035",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "outside",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        }
+      ]
     },
     {
       "id": "gap_seen_before_order",
@@ -216,7 +515,105 @@
         ],
         "late": []
       },
-      "ids": []
+      "ids": [],
+      "items": [
+        {
+          "item": "Patient/pt-0009",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0011",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0014",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0017",
+          "met": true,
+          "decisive_ids": [
+            "Procedure/proc-00489"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0018",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-01486"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0019",
+          "met": true,
+          "decisive_ids": [
+            "Condition/cond-00453"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0020",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0021",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0022",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-01725"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0023",
+          "met": true,
+          "decisive_ids": [
+            "Patient/pt-0023"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0024",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0025",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0034",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0035",
+          "met": true,
+          "decisive_ids": [
+            "Patient/pt-0035"
+          ],
+          "evidence": {}
+        }
+      ]
     },
     {
       "id": "table_pt_0009",
