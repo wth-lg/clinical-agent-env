@@ -17,6 +17,7 @@ import type { GateOf } from '../../../packages/grader/gate-view.ts';
 import { clinicDate, dailyDose, dosesPerDay, isActive, isDrug } from '../../../packages/grader/normalize.ts';
 import { expected } from '../expected.ts';
 import { rubric } from './rubric.ts';
+import { ref } from '../ids.ts';
 
 const PT = expected.patient;
 // The drugs the discharge documents change; a write to any other medication fails G5.
@@ -154,7 +155,7 @@ const gates: Check[] = [
     fn: (ctx) => {
       // The keep-list: every unchanged home order but omeprazole (§3 lets it be re-signed),
       // including the home aspirin 81 mg (RxNorm 243670).
-      const keep = expected.unchanged.filter((k) => !k.endsWith('omeprazole'));
+      const keep = expected.unchanged.filter((k) => k !== ref('MedicationRequest/mr-t4-omeprazole'));
       const touched = keep.filter((k) => ctx.writes().includes(k) || ctx.final.status(...split(k)) !== 'active');
       const extra = ctx.writes().filter((k) => {
         if (!k.startsWith('MedicationRequest/')) return false;
@@ -170,7 +171,7 @@ const gates: Check[] = [
     traces_to: 'RBC-TOC-02 §3',
     decisive_ids: [expected.sources.summary],
     fn: (ctx) => {
-      const ome = expected.unchanged.find((k) => k.endsWith('omeprazole'))!;
+      const ome = expected.unchanged.find((k) => k === ref('MedicationRequest/mr-t4-omeprazole'))!;
       const status = ctx.final.status(...split(ome));
       const panto = active(ctx, 'pantoprazole').map(keyOf);
       return { met: status === 'active' && !ctx.writes().includes(ome) && panto.length === 0, evidence: { omeprazole: status, pantoprazole: panto }, ids: [ome, ...panto] };

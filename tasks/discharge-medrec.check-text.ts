@@ -4,6 +4,7 @@
 // covers it: rewording it regrades nothing.
 import { fields, items, listed, show, type CheckText } from '../packages/core/explain.ts';
 import { expected } from './discharge-medrec/expected.ts';
+import { ref } from './discharge-medrec/ids.ts';
 
 const TIMES: Record<number, string> = { 1: 'once a day', 2: 'twice a day', 3: 'three times a day' };
 const perDay = (n: unknown) => (typeof n === 'number' && n in TIMES ? TIMES[n]! : `${show(n)} times a day`);
@@ -23,7 +24,7 @@ const K_DUE = '2026-10-23 to 2026-10-28';
 const L = expected.lisinopril;
 const K = expected.potassium_chloride;
 const S = expected.sources;
-const OMEPRAZOLE = expected.unchanged.find((k) => k.endsWith('omeprazole'))!;
+const OMEPRAZOLE = expected.unchanged.find((k) => k === ref('MedicationRequest/mr-t4-omeprazole'))!;
 const KEPT = expected.unchanged.filter((k) => k !== OMEPRAZOLE);
 
 export const checkText: CheckText = {
