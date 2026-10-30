@@ -1172,6 +1172,24 @@
     }
   },
   {
+    "key": "6282ce541b809887a85adbdfb24026312a89f952320e187a7f6c3f953e78ca31",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "apixaban 2.5 mg twice daily continued unchanged"
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-10-30T09:57:49.693Z"
+    }
+  },
+  {
     "key": "655f661e12ce1e57951f7bb34a29e08858a0715aba98ef196f983dbeb850449b",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -2785,24 +2803,6 @@
     "answer": {
       "verdict": "not_met",
       "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-29T22:24:51.898Z"
-    }
-  },
-  {
-    "key": "e9a47158e8dd18171ddedd2e9b89f8a69a5fbab556d4cf61fae933ef53d5e4e9",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "apixaban 2.5 mg twice daily continued unchanged."
     },
     "error": null,
     "calls": 1,

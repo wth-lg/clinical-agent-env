@@ -15,7 +15,8 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { NOW, NOW_MS } from '../packages/env/clock.ts';
 import { parseNdjson } from '../packages/env/fixture-source.ts';
 import { stateHash } from '../packages/env/hash.ts';
-import { applyOverlays, type Overlay } from '../packages/env/overlay.ts';
+import { applyOverlays, TASKS, type Overlay } from '../packages/env/overlay.ts';
+import { profileBase, profileWorld } from '../packages/env/profile.ts';
 import { Store } from '../packages/env/store.ts';
 import { RESOURCE_TYPES, SETTING, SETTING_LINT } from '../packages/env/world.ts';
 import { gunzip, gzip, hygiene, sha256, toNdjson, type HygieneReport } from './fixtures-lib.ts';
@@ -30,6 +31,7 @@ const OVERLAY_SOURCES = [
   'fixtures/synthea/generate.sh',
   'packages/env/clock.ts',
   'packages/env/overlay.ts',
+  'packages/env/profile.ts',
   'packages/env/renumber.ts',
   'packages/env/world.ts',
   'scripts/fixtures-synthea.ts',
@@ -143,13 +145,17 @@ export async function build(outDir: string): Promise<{ stateHash: string; resour
   if (baseSha !== baseMeta.ndjson_sha256) throw new Error(`${BASE} decompresses to ${baseSha}, but ${BASE_META} says ${baseMeta.ndjson_sha256}; rerun fixtures/synthea/generate.sh`);
   // World hygiene (plan P17j JT2) on the base cohort, before the overlays.
   const literalDates = taskLiteralDates();
-  const { resources: base, report } = hygiene(await parseNdjson(baseBytes), { now: NOW_MS, literalDates: literalDates.byPatient, anyLiteralDates: literalDates.all });
+  const { resources: cleaned, report } = hygiene(await parseNdjson(baseBytes), { now: NOW_MS, literalDates: literalDates.byPatient, anyLiteralDates: literalDates.all });
+  // One record shape (packages/env/profile.ts): the occasional fields on patients no task owns...
+  const base = profileBase(cleaned, new Set(Object.values(TASKS).flatMap((t) => t.slots)));
 
   const overlayFiles = taskOverlays();
   const overlays = await loadOverlays(overlayFiles);
   const world = applyOverlays(base, SETTING, SETTING_LINT, overlays);
   // After the overlays, a clinic patient with no PCP gets the clinic's (JT2).
   world.resources = world.resources.map((r) => (r.resourceType === 'Patient' && !(r.generalPractitioner?.length) ? { ...r, generalPractitioner: [{ reference: `Practitioner/${CLINIC_PCP}` }] } : r));
+  // ...and the fields every record of a type carries, on every resource.
+  world.resources = profileWorld(world.resources);
 
   // The Store admits only resources the hash and search can handle.
   const store = new Store(world.resources);
