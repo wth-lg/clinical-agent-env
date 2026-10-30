@@ -12,6 +12,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 
 import { createRequire, findPackageJSON } from 'node:module';
 import { join, relative, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fhirOrder } from '../packages/env/canonical.ts';
 import { NOW, NOW_MS } from '../packages/env/clock.ts';
 import { parseNdjson } from '../packages/env/fixture-source.ts';
 import { stateHash } from '../packages/env/hash.ts';
@@ -29,6 +30,7 @@ const BASE_META = 'fixtures/synthea/base.json';
 // fixtures:verify.
 const OVERLAY_SOURCES = [
   'fixtures/synthea/generate.sh',
+  'packages/env/canonical.ts',
   'packages/env/clock.ts',
   'packages/env/overlay.ts',
   'packages/env/profile.ts',
@@ -173,6 +175,9 @@ export async function assembleWorld(): Promise<{ world: World; overlays: Overlay
   world.resources = profileWorld(profileRecords(world.resources, planted, stable));
   // ...and last, the planted times on their chart's clock.
   world.resources = plantedClock(world.resources, planted);
+  // One key order for every resource, at every depth: FHIR element order (packages/env/canonical.ts).
+  const order = fhirOrder((await prunedDefinitions([...RESOURCE_TYPES])) as Parameters<typeof fhirOrder>[0]);
+  world.resources = world.resources.map((r) => order(r));
   return { world, overlays, overlayFiles, baseMeta, report };
 }
 

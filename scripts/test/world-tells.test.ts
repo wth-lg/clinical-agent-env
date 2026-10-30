@@ -17,6 +17,12 @@ import { Buffer } from 'node:buffer';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { fhirOrder } from '../../packages/env/canonical.ts';
+import { clock } from '../../packages/env/clock.ts';
+import { HOSPITAL_PROCEDURES } from '../../packages/env/profile.ts';
+import { Store, type Resource } from '../../packages/env/store.ts';
+import { READ_TOOLS, type ReadContext } from '../../packages/env/tools/read/index.ts';
+import { callTool } from '../../packages/env/tools/registry.ts';
 import { isPlanted } from '../../tasks/planted.ts';
 import { gunzip } from '../fixtures-lib.ts';
 import { repoRoot } from './helpers.ts';
@@ -326,8 +332,8 @@ const RESIDUALS: ReadonlyArray<{ type: string; features: readonly string[] | 'or
   { type: 'MedicationRequest', features: ['E:status=completed'], cap: 0.77, pairCap: 0.87, why: 'status: the planted orders are the current regimen the task reviews; most generated orders are past ones' },
   { type: 'MedicationRequest', features: ['E:requester.reference=Practitioner/pr-reyes'], cap: 0.76, pairCap: 0.87, why: "prescriber: the planted orders are the task's clinicians' (Dr. Okafor, Dr. Lin); Synthea's spread over the three staff" },
   {
-    type: 'DiagnosticReport', features: ['E:category.coding.code=RAD', 'E:category.coding.display=Radiology', 'E:category.coding.code=OTH', 'E:category.coding.display=Other', 'HHMM:presentedForm.data=true', 'DLINES:presentedForm.data=10', 'DHEAD:presentedForm.data=heading - place', 'DIGITS:presentedForm.data=true', 'TBRK:code.coding.display', 'TBRK:code.text'], cap: 0.79, pairCap: 0.9,
-    why: 'report kind: the planted reports are the imaging and laboratory results a task acts on (four radiology reports, headed by the imaging department, with their long text and the times a radiologist signs at); the generated ones are mostly questionnaires, whose LOINC names carry their abbreviation in brackets ("[AUDIT-C]")',
+    type: 'DiagnosticReport', features: ['E:category.coding.code=RAD', 'E:category.coding.display=Radiology', 'E:category.coding.code=OTH', 'E:category.coding.display=Other', 'HHMM:presentedForm.data=true', 'DLINES:presentedForm.data=10', 'DHEAD:presentedForm.data=heading - place', 'DIGITS:presentedForm.data=true', 'TBRK:code.coding.display', 'TBRK:code.text', 'BRACE:presentedForm.data=true', 'BRACE:presentedForm.data=false'], cap: 0.79, pairCap: 0.9,
+    why: 'report kind: the planted reports are the imaging and laboratory results a task acts on (four radiology reports, headed by the imaging department, with their long text and the times a radiologist signs at); the generated ones are mostly questionnaires, whose LOINC names carry their abbreviation in brackets ("[AUDIT-C]"), in the code and on the printed form',
   },
   {
     type: 'AllergyIntolerance', features: ['TY:recordedDate=1975', 'CMODE:onsetDateTime=true', 'CSS:onsetDateTime=true', 'CSSTOP3:onsetDateTime=true', 'CTOP3:onsetDateTime=true', 'E:category=environment'], cap: 0.81, pairCap: 0.98,
@@ -375,3 +381,110 @@ const EMPTY_CELLS = [
   'pt-0027 DocumentReference', 'pt-0027 MedicationRequest', 'pt-0028 AllergyIntolerance', 'pt-0028 DocumentReference', 'pt-0029 DocumentReference',
   'pt-0029 MedicationRequest', 'pt-0030 DocumentReference', 'pt-0030 MedicationRequest', 'pt-0033 DocumentReference', 'pt-0053 DocumentReference',
 ];
+
+// Key order (verifier P17i W0-1c V1): the overlays wrote each resource in their literal key order
+// and Synthea in its own, and the read tools hand the agent the stored order, so a dosage that lists
+// route before timing named every planted order. fixtures:build lists every key of every resource, at
+// every depth, in FHIR element order (packages/env/canonical.ts), and fhir_read and fhir_search keep it.
+describe('every resource lists its keys in one order, and the read tools keep it', () => {
+  const order = fhirOrder(JSON.parse(readFileSync(join(repoRoot, 'fixtures/definitions-pruned.json'), 'utf8')));
+  // The key sequence at every path, a read tool's attachment fields (size, read_with for data) aside.
+  const sequence = (v: unknown, at = ''): string[] =>
+    Array.isArray(v) ? v.flatMap((x) => sequence(x, at))
+      : v !== null && typeof v === 'object' ? [`${at}=${Object.keys(v).filter((k) => !['data', 'size', 'read_with'].includes(k)).join(',')}`, ...Object.entries(v).flatMap(([k, x]) => sequence(x, at ? `${at}.${k}` : k))] : [];
+
+  it('every key in FHIR element order at every depth', () => {
+    expect(world.filter((r) => JSON.stringify(order(r)) !== JSON.stringify(r)).map((r) => `${r.resourceType}/${r.id}`).slice(0, 20)).toEqual([]);
+  });
+
+  it('fhir_read and fhir_search return each resource in its stored order', () => {
+    const ctx = { world: new Store(world as unknown as Resource[]), clock, policies: [], catalog: [] } as unknown as ReadContext;
+    const out: string[] = [];
+    for (const p of taskCharts) {
+      for (const t of comparable) {
+        const rs = inChart(t, p);
+        if (!rs.length) continue;
+        const found = callTool(READ_TOOLS, 'fhir_search', { resource_type: t, patient: p, count: 50 }, ctx) as { content: { entries?: Array<{ id: string }> } };
+        for (const e of found.content.entries ?? []) {
+          const stored = rs.find((r) => r.id === e.id);
+          if (stored && sequence(e).join('|') !== sequence(stored).join('|')) out.push(`fhir_search ${t}/${e.id}`);
+        }
+        for (const r of [rs.find((x) => isPlanted(x.id)), rs.find((x) => !isPlanted(x.id))].filter((x): x is R => x !== undefined)) {
+          const read = callTool(READ_TOOLS, 'fhir_read', { resource_type: t, id: r.id }, ctx) as { content: { resource: unknown } };
+          if (sequence(read.content.resource).join('|') !== sequence(r).join('|')) out.push(`fhir_read ${t}/${r.id}`);
+        }
+      }
+    }
+    expect(out.slice(0, 20)).toEqual([]);
+  });
+});
+
+// The generated visit note in clinic form (verifier P17i W0-1c V2): Synthea's note listed every drug
+// it had ever ordered as raw RxNorm strings (contraceptive packs in braces, a check-up's propofol
+// and rocuronium), its Plan line named dental and questionnaire procedures, and it wrote 'No
+// complaints.' where a clinician writes why the patient came. A planted note is a clinician's own.
+describe('generated visit notes are written as the clinic writes them', () => {
+  const decode = (d: string) => Buffer.from(d, 'base64').toString('utf8');
+  const notes = world.filter((r) => !isPlanted(r.id) && (r.resourceType === 'DocumentReference' || r.resourceType === 'DiagnosticReport')).flatMap((r) => {
+    const forms = r.resourceType === 'DocumentReference' ? (r.content as Array<{ attachment: { data?: string } }>).map((c) => c.attachment) : ((r.presentedForm as Array<{ data?: string }> | undefined) ?? []);
+    return forms.filter((a) => a.data).map((a) => ({ id: `${r.resourceType}/${r.id}`, chart: patientOf(r) ?? '', text: decode(a.data!) }));
+  });
+  const visitNotes = notes.filter((n) => /^(Allergies|Medications|Plan):/m.test(n.text) || /\nPlan: /.test(n.text));
+  const lines = (label: string) => visitNotes.flatMap((n) => n.text.split('\n').filter((l) => l.startsWith(`${label}: `)).map((l) => `${n.id}: ${l}`));
+
+  it('lists only outpatient drugs, by name, strength and sig, never as RxNorm strings', () => {
+    const raw = (l: string) => /[{}[\]]|\d mg\/ml\b|\d MG\b/.test(l) || /\b(oral (tablet|capsule|solution|suspension)|injectable|ophthalmic solution|extended release|pack)\b/i.test(l);
+    const inpatient = /propofol|rocuronium|isoflurane|sevoflurane|sufentanil|fentanyl|alfentanil|remifentanil|midazolam|piperacillin|tazobactam|alteplase|heparin|sodium chloride|vecuronium|succinylcholine|desflurane|ketamine|tropicamide|proparacaine|atropine/i;
+    expect(lines('Medications').filter((l) => raw(l) || inpatient.test(l)).slice(0, 20)).toEqual([]);
+  });
+
+  it('names no dental or questionnaire procedure in a Plan line', () => {
+    const notMedical = /tooth|teeth|dental|oral evaluation|sealant|periodon|gingiv|fluoride|prophylaxis|denture|questionnaire|screening|assessment|\bscale\b|reconciliation|evaluation of/i;
+    expect(lines('Plan').filter((l) => notMedical.test(l)).slice(0, 20)).toEqual([]);
+  });
+
+  it("says why the patient came, never 'No complaints.', and opens no more than a fifth of notes alike", () => {
+    expect(visitNotes.filter((n) => /No complaints/.test(n.text)).map((n) => n.id).slice(0, 20)).toEqual([]);
+    const body = (t: string) => t.trim().split('\n').slice(1).map((l) => l.trim()).find((l) => l && !/^[A-Z][A-Za-z ]{1,25}:/.test(l) && !/^[A-Z][a-z]+(?: [A-Z][a-z]+)*(?:, \d+ (?:y\/o|mo))? [MF]\.$/.test(l)) ?? '';
+    const opening = new Map<string, number>();
+    for (const n of visitNotes) { const w = body(n.text).toLowerCase().split(/\s+/).slice(0, 2).join(' '); opening.set(w, (opening.get(w) ?? 0) + 1); }
+    expect([...opening].filter(([, c]) => c > visitNotes.length / 5).map(([w, c]) => `'${w}' opens ${c} of ${visitNotes.length}`)).toEqual([]);
+  });
+});
+
+// A sig starts with the dose when the order gives one (verifier P17i W0-1c V3): planted sigs read
+// '81 mg by mouth daily', Synthea's '1 tablet by mouth once daily'.
+describe('generated sigs give the dose first', () => {
+  it('every sig of a dose in mg starts with that dose', () => {
+    const out = world.filter((r) => r.resourceType === 'MedicationRequest' && !isPlanted(r.id)).flatMap((r) =>
+      ((r.dosageInstruction as Array<{ text?: string; doseAndRate?: Array<{ doseQuantity?: { value?: number; unit?: string } }> }> | undefined) ?? []).flatMap((d) => {
+        const q = d.doseAndRate?.[0]?.doseQuantity;
+        return q?.unit === 'mg' && !d.text?.startsWith(`${q.value} mg `) ? [`${r.id}: ${q.value} mg, sig '${d.text}'`] : [];
+      }),
+    );
+    expect(out.slice(0, 20)).toEqual([]);
+  });
+});
+
+// Hospital procedures in the day (verifier P17i W0-1c V5): five of the eight generated colonoscopies
+// were stamped between 21:56 and 03:18. A scheduled hospital procedure (an endoscopy, an echo, an
+// ultrasound), and the visit it was done at, falls in 07:00-17:59 local time; what an emergency or an
+// inpatient stay needed is done when it was needed.
+describe('generated hospital procedures are done in the day', () => {
+  it('every scheduled hospital procedure and its visit start between 07:00 and 17:59', () => {
+    const byKey = new Map(world.map((r) => [`${r.resourceType}/${r.id}`, r]));
+    const out = world.filter((r) => r.resourceType === 'Procedure' && !isPlanted(r.id) && HOSPITAL_PROCEDURES.has((r.code as { coding?: Array<{ code?: string }> }).coding?.[0]?.code ?? '')).flatMap((r) => {
+      const visit = byKey.get((r.encounter as { reference?: string } | undefined)?.reference ?? '') as { class?: { code?: string }; period?: { start?: string } } | undefined;
+      const when = (r.performedDateTime as string | undefined) ?? (r.performedPeriod as { start?: string } | undefined)?.start;
+      // Done in an emergency visit or an inpatient stay (or within six hours of its end).
+      const stay = world.some((e) => {
+        const p = e.period as { start?: string; end?: string } | undefined;
+        return e.resourceType === 'Encounter' && patientOf(e) === patientOf(r) && ['EMER', 'IMP'].includes((e.class as { code?: string }).code ?? '') && p?.start !== undefined && when !== undefined && Date.parse(p.start) <= Date.parse(when) && Date.parse(when) <= Date.parse(p.end ?? p.start) + 21_600_000;
+      });
+      if (stay || (visit && ['EMER', 'IMP'].includes(visit.class?.code ?? ''))) return [];
+      const times = [when, visit?.period?.start].filter((t): t is string => t !== undefined);
+      return times.filter((t) => Number(t.slice(11, 13)) < 7 || Number(t.slice(11, 13)) >= 18).map((t) => `${r.id} ${t}`);
+    });
+    expect(out).toEqual([]);
+  });
+});

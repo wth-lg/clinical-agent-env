@@ -129,8 +129,8 @@ describe('overlays', () => {
     expect(put('see obs-t1-scr')).toThrow(/'obs-t1-scr' is a registry key/);
     expect(put('Creatinine 1.9, repeat in a week.', 'Text/Plain')).not.toThrow();
     expect(put('Creatinine 1.9, repeat in a week.')).not.toThrow();
-    // Data that is not base64 text is left to the string check.
-    expect(() => one({ build: () => ({ put: [{ ...doc(''), content: [{ attachment: { data: '%%not base64%%' } }] } as Resource, obs('obs-t1-scr')] }) })).not.toThrow();
+    // Untyped data that is not base64 cannot be text the read tools show (W0-1c V4): refused.
+    expect(() => one({ build: () => ({ put: [{ ...doc(''), content: [{ attachment: { data: '%%not base64%%' } }] } as Resource, obs('obs-t1-scr')] }) })).toThrow(/is not base64/);
   });
 
   // verifier P17i W0-1b r2 F5: the check decodes any attachment whose data is base64 of UTF-8 text,
@@ -158,9 +158,42 @@ describe('overlays', () => {
     const latin1 = (s: string) => Buffer.from(s, 'latin1').toString('base64');
     for (const contentType of ['text/plain', 'Text/Plain; charset=iso-8859-1', ' text/html', undefined]) {
       expect(put({ ...(contentType === undefined ? {} : { contentType }), data: latin1('Patient vu \u00e9 see obs-t1-scr') }), String(contentType)).toThrow(/'obs-t1-scr' is a registry key/);
-      expect(put({ ...(contentType === undefined ? {} : { contentType }), data: latin1('Patient vu \u00e9, cr\u00e9atinine 1.9') }), String(contentType)).not.toThrow();
     }
     // Base64url (- and _ for + and /), as some interfaces send it.
     expect(put({ contentType: 'text/plain', data: Buffer.from('\u00ff\u00fe see obs-t1-scr \u00ff', 'latin1').toString('base64url') })).toThrow(/'obs-t1-scr' is a registry key/);
+  });
+
+  // verifier P17i W0-1c V4: a key in UTF-16 text reached the agent with NUL between its letters, and
+  // Latin-1 text with no key passed the build only to fail every read. The build refuses text/* (or
+  // untyped) data that is not UTF-8 or holds a NUL, and the key check reads a key spelled in UTF-16
+  // or in Latin-1 base64 nested in the text, under any content type.
+  it('refuses text/* or untyped data that is not UTF-8 or holds a NUL, key or no key', () => {
+    const doc = (attachment: Record<string, unknown>): Resource => ({ resourceType: 'DocumentReference', id: 'doc-t1-note', status: 'current', subject: { reference: T1 }, content: [{ attachment }] }) as Resource;
+    const put = (attachment: Record<string, unknown>) => () => one({ build: () => ({ put: [doc(attachment), obs('obs-t1-scr')] }) });
+    const typed = (contentType: string | undefined, data: string) => ({ ...(contentType === undefined ? {} : { contentType }), data });
+    for (const contentType of ['text/plain', 'text/plain; charset=utf-16le', ' Text/HTML', undefined]) {
+      expect(put(typed(contentType, Buffer.from('Creatinine 1.9, repeat in a week.', 'utf16le').toString('base64'))), `utf-16le ${contentType}`).toThrow(/not UTF-8 text|NUL/);
+      expect(put(typed(contentType, Buffer.from([0xfe, 0xff, ...[...'Creatinine 1.9'].flatMap((c) => [0, c.charCodeAt(0)])]).toString('base64'))), `utf-16be ${contentType}`).toThrow(/not UTF-8 text|NUL/);
+      expect(put(typed(contentType, Buffer.from('Patient vu \u00e9, cr\u00e9atinine 1.9', 'latin1').toString('base64'))), `latin-1 ${contentType}`).toThrow(/not UTF-8 text/);
+      expect(put(typed(contentType, Buffer.from('Creatinine 1.9\u0000 repeat in a week.').toString('base64'))), `nul ${contentType}`).toThrow(/NUL/);
+      expect(put(typed(contentType, Buffer.from('Creatinine 1.9, repeat in a week. \u00e9').toString('base64'))), `utf-8 ${contentType}`).not.toThrow();
+    }
+    // A key in UTF-16 text is still named as a key, the refusal that says why.
+    expect(put(typed('text/plain', Buffer.from('see obs-t1-scr', 'utf16le').toString('base64')))).toThrow(/'obs-t1-scr' is a registry key/);
+  });
+
+  it('finds a key spelled in UTF-16 or in Latin-1 base64 nested in the text, under any content type', () => {
+    const doc = (attachment: Record<string, unknown>): Resource => ({ resourceType: 'DocumentReference', id: 'doc-t1-note', status: 'current', subject: { reference: T1 }, content: [{ attachment }] }) as Resource;
+    const put = (attachment: Record<string, unknown>) => () => one({ build: () => ({ put: [doc(attachment), obs('obs-t1-scr')] }) });
+    const latin1 = (s: string) => Buffer.from(s, 'latin1').toString('base64');
+    // Nested: UTF-8 text that is itself base64 of Latin-1 text with the key.
+    expect(put({ contentType: 'text/plain', data: Buffer.from(latin1('caf\u00e9 obs-t1-scr')).toString('base64') })).toThrow(/'obs-t1-scr' is a registry key/);
+    expect(put({ contentType: 'text/plain', data: Buffer.from(`Scanned letter:\n${latin1('caf\u00e9 obs-t1-scr')}`).toString('base64') })).toThrow(/'obs-t1-scr' is a registry key/);
+    for (const contentType of ['application/octet-stream', 'application/rtf', 'application/pdf']) {
+      expect(put({ contentType, data: latin1('caf\u00e9 see obs-t1-scr') }), contentType).toThrow(/'obs-t1-scr' is a registry key/);
+      expect(put({ contentType, data: Buffer.from('see obs-t1-scr', 'utf16le').toString('base64') }), contentType).toThrow(/'obs-t1-scr' is a registry key/);
+      expect(put({ contentType, data: Buffer.from([0xfe, 0xff, ...[...'see obs-t1-scr'].flatMap((c) => [0, c.charCodeAt(0)])]).toString('base64') }), contentType).toThrow(/'obs-t1-scr' is a registry key/);
+      expect(put({ contentType, data: latin1('caf\u00e9 cr\u00e9atinine 1.9') }), contentType).not.toThrow();
+    }
   });
 });

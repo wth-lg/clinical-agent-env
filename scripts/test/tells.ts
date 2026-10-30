@@ -27,6 +27,14 @@
 //   SIGNED HHMM DIGITS  an attachment that ends with a signer, gives a clock time, has many digits
 //   TXT NCODING  a code's text against its first coding's display, and how many codings it has
 //   WKEND NOTE OUTCOME  a primary time on a weekend; a note; an outcome as text or coded
+//   key order and note form (verifier P17i W0-1c probe4 and V1-V3, builder-207), what a reader sees in
+//   the JSON and in a note's sentences:
+//   KORD NKORD  the top-level keys in the order the record lists them, and the same at each nested
+//            path ('dosageInstruction=text,timing,route,...')
+//   LEAD LEAD2  a note's first word and first two words after its heading, patient and labelled lines
+//   NOCOMP BRACE MGML MGCAP RXFORM  a note's 'No complaints', a brace or bracket, a strength in mg/ml
+//            or MG, a drug form as RxNorm names it ('oral tablet')
+//   SIG      a sig's first word (a dose, 'Take' or 'Use', other) and whether it gives a dose in units
 import { Buffer } from 'node:buffer';
 
 export type R = Record<string, unknown> & { resourceType: string; id: string };
@@ -55,6 +63,10 @@ function walk(v: unknown, at: string, f: (at: string, v: unknown) => void): void
   if (Array.isArray(v)) for (const x of v) walk(x, at, f);
   else if (v !== null && typeof v === 'object') for (const [k, x] of Object.entries(v)) walk(x, at ? `${at}.${k}` : k, f);
   else f(at, v);
+}
+function objects(v: unknown, at: string, f: (at: string, o: Record<string, unknown>) => void): void {
+  if (Array.isArray(v)) for (const x of v) objects(x, at, f);
+  else if (v !== null && typeof v === 'object') { f(at, v as Record<string, unknown>); for (const [k, x] of Object.entries(v)) objects(x, at ? `${at}.${k}` : k, f); }
 }
 function allPaths(v: unknown, at: string, f: (at: string) => void): void {
   if (Array.isArray(v)) for (const x of v) allPaths(x, at, f);
@@ -91,6 +103,9 @@ export type Residual = (type: string, f: string) => { cap: number; pairCap: numb
 
 // A SNOMED CT semantic tag, the hierarchy Synthea's displays end with.
 export const SEMANTIC_TAG = / \((disorder|finding|procedure|situation|qualifier value|regime\/therapy|observable entity|morphologic abnormality|substance|environment|organism|record artifact|person|physical object|product|body structure|event|specimen|occupation|social concept|assessment scale|life style|attribute|cell)\)/;
+// A note's labelled line ('Allergies: NKDA.') and its patient line ('Lena, 45 y/o F.').
+const LABELLED = /^[A-Z][A-Za-z ]{1,25}:/;
+const WHO = /^[A-Z][a-z]+(?: [A-Z][a-z]+)*(?:, \d+ (?:y\/o|mo))? [MF]\.$/;
 const SIGNER = /\n\n[A-Z][a-z]+(?: [A-Z][a-z.-]+)+, (MD|NP|PA-C|DO|RN|PharmD)\s*$/;
 
 const ba = (tp: number, fp: number, p: number, n: number) => Math.max((tp / p + 1 - fp / n) / 2, (1 - tp / p + fp / n) / 2);
@@ -129,6 +144,8 @@ export function scoreTells(world: readonly R[], isPlanted: (id: string) => boole
     let tagged = false;
     allPaths(r, '', (at) => f.add(`P:${at}`));
     f.add(`K:${Object.keys(r).sort().join(',')}`);
+    f.add(`KORD:${Object.keys(r).join(',')}`);
+    objects(r, '', (at, o) => { const ks = Object.keys(o); if (at && ks.length > 1) f.add(`NKORD:${at}=${ks.join(',')}`); });
     walk(r, '', (at, v) => {
       if (typeof v === 'string' && !/(\.|^)(data|div|id)$/.test(at) && v.length < 80 && !v.startsWith('Patient/')) f.add(`E:${at}=${v}`);
       if (typeof v === 'string' && /reference$/.test(at) && !v.startsWith('Patient/')) { f.add(`RT:${at}=${v.split('/')[0]}`); f.add(`RX:${at}=${byKey.has(v) ? 'resolves' : 'dangling'}`); }
@@ -156,11 +173,17 @@ export function scoreTells(world: readonly R[], isPlanted: (id: string) => boole
         const head = t.trim().split('\n')[0] ?? '';
         f.add(`DHEAD:${at}=${/^\d{4}-\d{2}-\d{2}$/.test(head) ? 'date' : / - /.test(head) ? 'heading - place' : 'other'}`); f.add(`DLEAD:${at}=${/^\s*\n/.test(t)}`);
         f.add(`SIGNED:${at}=${SIGNER.test(t)}`); f.add(`HHMM:${at}=${/\b\d{1,2}:\d{2}\b/.test(t)}`); f.add(`DIGITS:${at}=${(t.match(/\d/g) ?? []).length > 40}`);
+        const body = t.trim().split('\n').slice(1).map((l) => l.trim()).find((l) => l && !LABELLED.test(l) && !WHO.test(l)) ?? '';
+        const words = body.toLowerCase().split(/\s+/).filter((w) => w);
+        f.add(`LEAD:${at}=${words[0] ?? ''}`); f.add(`LEAD2:${at}=${words.slice(0, 2).join(' ')}`);
+        f.add(`NOCOMP:${at}=${/No complaints/.test(t)}`); f.add(`BRACE:${at}=${/[{}[\]]/.test(t)}`); f.add(`MGML:${at}=${/\d mg\/ml\b/.test(t)}`); f.add(`MGCAP:${at}=${/\d MG\b/.test(t)}`);
+        f.add(`RXFORM:${at}=${/\b(oral (tablet|capsule|solution|suspension)|injectable (solution|suspension)|ophthalmic solution|extended release)\b/i.test(t)}`);
       }
       if (typeof v === 'string' && /(^|\.)(display|text)$/.test(at) && !/\.div$/.test(at)) {
         if (SEMANTIC_TAG.test(v)) { f.add(`SEM:${at}`); tagged = true; }
         f.add(`TCASE:${at}=${/^[a-z]/.test(v) ? 'lower' : /^[A-Z]/.test(v) ? 'upper' : 'other'}`);
         if (/\[[^\]]*\]/.test(v)) f.add(`TBRK:${at}`);
+        if (/dosageInstruction/.test(at) && at.endsWith('text')) f.add(`SIG:${/^\d/.test(v) ? 'digit' : /^(Take|Use)\b/.test(v) ? 'take' : 'other'}:${/ (mg|mcg|units?|mL) /.test(v) ? 'dose' : 'nodose'}`);
       }
     });
     f.add(`SEMT:${tagged}`);

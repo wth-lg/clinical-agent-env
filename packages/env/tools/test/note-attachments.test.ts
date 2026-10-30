@@ -30,6 +30,20 @@ describe('note attachments by their data, not their content type', () => {
     }
   });
 
+  // verifier P17i W0-1c V4: UTF-16 text decodes as UTF-8 with a NUL between the letters, so a NUL
+  // makes data not text: under a text/* type it throws, as other non-UTF-8 text does, and it is
+  // never shown raw or as text with NULs in it.
+  it('treats data holding a NUL as not text', () => {
+    for (const contentType of ['text/plain', 'text/plain; charset=utf-16le', 'Text/HTML']) {
+      const r = doc({ contentType, data: Buffer.from('see the creatinine', 'utf16le').toString('base64') });
+      expect(() => noteText(r), contentType).toThrow(/not UTF-8/);
+      expect((withoutNoteData(r, true) as DocumentReference).content[0]!.attachment, contentType).not.toHaveProperty('data');
+    }
+    const untyped = doc({ data: Buffer.from('see the creatinine', 'utf16le').toString('base64') });
+    expect(noteText(untyped)).toBeUndefined();
+    expect(() => noteText(doc({ contentType: 'text/plain', data: b64('a\u0000b') }))).toThrow(/not UTF-8/);
+  });
+
   it('leaves data that is not UTF-8 text as stored', () => {
     const r = doc({ contentType: 'application/pdf', data: btoa(String.fromCharCode(0xff, 0xfe, 0x00, 0x81)) });
     expect(noteText(r)).toBeUndefined();
