@@ -399,8 +399,8 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
   {
     id: 'aki_missed',
     trap: 'outside_aki',
-    why: 'The pilot-1 path (trials 0 and 1): finds the notes by the reaction words only, never lists the documents, the encounters or the kidney notes, so it never sees the ED summary. It decides metformin from the 09/24 creatinine and leaves it active.',
-    fails: ['metformin_held', 'evidence_before_orders'],
+    why: 'The pilot-1 path (trials 0 and 1): finds the notes by the reaction words only, never lists the documents, the encounters or the kidney notes, so it never sees the ED summary. It decides metformin from the 09/24 creatinine and leaves it active. With no metformin write, evidence_before_orders asks nothing of the ED summary (ruling 2026-10-30T01:12Z T5 D1), so only metformin_held fails.',
+    fails: ['metformin_held'],
     loses: [],
     attribution: 'retrieval',
     script: [

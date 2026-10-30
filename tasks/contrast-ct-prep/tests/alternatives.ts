@@ -6,7 +6,7 @@
 // alternative that gives up a rubric point declares it in loses; these all score 1.0.
 import type { Agent } from '../../../packages/grader/matrix/types.ts';
 import {
-  activeMeds, ALLERGY, allergies, APPT, appointments, AT, changeMetformin, CODE, creatinines, ct, creatinineOrder, diphenhydramine, DONE, encounters, findPatient, finish, HOLD, holdMetformin, medication, message, note, oldOrders, ORACLE_MESSAGE,
+  activeMeds, ALLERGY, allergies, APPT, appointments, AT, changeMetformin, CODE, creatinines, ct, creatinineOrder, diphenhydramine, DONE, encounters, findPatient, finish, HOLD, holdMetformin, kidneyNotes, medication, message, note, oldOrders, ORACLE_MESSAGE,
   policy, PT, prednisone, read, readEd, readReaction, READS, REACTION_NOTE, RX, searchReaction,
   timesCalc,
 } from '../solution/steps.ts';
@@ -22,6 +22,26 @@ export const alternatives: Array<Agent & { loses: readonly string[] }> = [
       { calls: [ct(), creatinineOrder()] },
       { calls: [prednisone, diphenhydramine] },
       { calls: [message('Your CT with contrast is Monday 10/26 at 9:00. Take prednisone 50 mg at 6:00 AM, 7:00 AM and 8:00 AM on Monday, with diphenhydramine 50 mg at 8:00 AM. You can drive yourself. Please get a creatinine test before the scan.')] },
+      { calls: [note()] },
+      { calls: [finish(DONE)] },
+    ],
+  },
+  {
+    id: 'orders_first_then_holds_metformin',
+    why: 'Places the CT, the creatinine and the premedication first, then reviews the medication list and outside notes, finds the 10/17 AKI and holds metformin before messaging: the ED summary changes none of the earlier orders (§4 needs the creatinine anyway and the scan goes as booked), so it is due before the metformin decision only, and the end state is the oracle\'s (verifier-phase-P19-T5-1 V3, ruling 2026-10-30T01:12Z T5 D1).',
+    loses: [],
+    script: [
+      { calls: [findPatient] },
+      { calls: [appointments, allergies, searchReaction] },
+      { calls: [readReaction] },
+      { calls: [creatinines, policy] },
+      { calls: [timesCalc] },
+      { calls: [ct(), creatinineOrder()] },
+      { calls: [prednisone, diphenhydramine] },
+      { calls: [activeMeds, kidneyNotes] },
+      { calls: [readEd] },
+      { calls: [holdMetformin] },
+      { calls: [message()] },
       { calls: [note()] },
       { calls: [finish(DONE)] },
     ],

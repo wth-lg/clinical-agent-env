@@ -406,7 +406,7 @@ The expected end state (`expected.ts`):
 - The CT order must link to the appointment (`linkage`, `ct_occurrence`).
 - The oral regimen applies, not the IV regimen (`iv_regimen`).
 - The policy fixes the prednisone and antihistamine doses and times (`prednisone_dose`, `antihistamine_timing`, `antihistamine_dose`).
-- The agent must see the evidence before its first order of any kind (`evidence_before_orders`): the contrast allergy, the 2019 reaction report (read whole, or a search snippet that shows the reaction's severity), the last creatinine, the 10/17 ED summary (read whole, or a snippet that shows the AKI) and the appointment.
+- The agent must see the evidence before its first order of any kind (`evidence_before_orders`): the contrast allergy, the 2019 reaction report (read whole, or a search snippet that shows the reaction's severity), the last creatinine and the appointment. The 10/17 ED summary (read whole, or a snippet that shows the AKI) must be seen before the metformin decision, a hold, stop or change of the metformin order or a new metformin order, not before every order: it changes no other order (ruling 2026-10-30T01:12Z T5 D1). So the CT, creatinine and premedication may come first (alternative `orders_first_then_holds_metformin`).
 - The agent must give the patient instructions (`patient_instruction`).
 - The agent must also do each action that the note states (`stated_not_done`).
 
