@@ -2,8 +2,8 @@
   "now": "2026-10-23T08:00:00-04:00",
   "world": {
     "file": "fixtures/world.ndjson.gz",
-    "state_hash": "2266fa587f4379fce743be6cc49ae221a54bcffc45f14cf3dafa7e7a59853601",
-    "ndjson_sha256": "66348eeb85e99e676a31712ebb1989350a8b98cc4f3b627fd1cab6de22030419",
+    "state_hash": "37d1be7fb4e366795976053851e95aebd1360c987d660d9ce683ccdadb5a3d04",
+    "ndjson_sha256": "ed23121681768f60a79a6ff9a4d60395ea84f9bd1a0e91f7c92dfcd502721ad8",
     "resources": 7468,
     "by_type": {
       "AllergyIntolerance": 51,
@@ -72,15 +72,15 @@
   "inputs": {
     "fixtures/synthea/generate.sh": "9c20f04e81cd71443b418aaa2c2782b47d3f20fffccdce06959da03b40c33fed",
     "packages/env/clock.ts": "000372240039629abbb215aff20f18cf85e6adf832dad872dc6b1df96b06ff71",
-    "packages/env/overlay.ts": "75071a224b39e43a20cc4fd01724aad781800c227367cf380405df7e9c886b12",
-    "packages/env/profile.ts": "ab7d1c06e3f3c628cb6c0e21a085620ef2b71f8b601e98bb5de101b2081d803a",
+    "packages/env/overlay.ts": "d7cb7c607dfecbb72d4b50dd4da4d7239a11e57cd28591f38e8ea17c47249bff",
+    "packages/env/profile.ts": "4a7dca57a82542fd2b9f74d5ce7979e5943af7c184a4d6ed34f21fba76296350",
     "packages/env/renumber.ts": "a18c690c41aa7e22e503b11035c773b76e165fed5b83dbb517a726ed77d2a558",
     "packages/env/world.ts": "c16dbb19c56e749662a602139253743353add3fabdaa103aeedd0fc554eb3906",
     "scripts/fixtures-synthea.ts": "44162b65dc576e507b526132164eda54cb14000936331d48b575f46d9c49d752",
     "tasks/contrast-ct-prep/overlay.ts": "d5e7eceff231de60df24a2a64dbe2a681fb9592f33b625e0f9f14ec39b1ea562",
     "tasks/crc-care-gap/overlay.ts": "037feb1807666573b50b796c06aa98979d08af4ca9038c61573d923f8ec77ae6",
     "tasks/discharge-medrec/overlay.ts": "be49abc1cb4dbec2ef404137c6fdc321d9bda10efcfab754b1109fdd99064d1b",
-    "tasks/message-queue/overlay.ts": "e6d326720faecacd9a2ad6cb790c5e8846b6e849da3bc6620c85af340b12581f",
+    "tasks/message-queue/overlay.ts": "8147fcbaa0244299caf69d43d912e4ea22e0c176789f96e1e0f94b0218a83276",
     "tasks/renal-dose-review/overlay.ts": "9c80c15ab235258c853928633c01f0832ad70869a12da6122220c338f62514be",
     "tasks/results-inbox/overlay.ts": "a670831ef99b54642b16ec9574f9f74051a97056ecfc484458d2d347dbf77cc2"
   },
