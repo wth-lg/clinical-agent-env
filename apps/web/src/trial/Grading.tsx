@@ -6,6 +6,7 @@
 import { Check, X } from 'lucide-react';
 import type { ReactNode } from 'react';
 import type { Step } from '../../../../packages/grader/check.ts';
+import { NOT_RERUN_REASON, RERUN_OUTCOMES, type Outcome } from '../../../../packages/core/outcomes.ts';
 import { currentGrade } from '../../../../packages/core/summary.ts';
 import { shownFault } from '../data/failures.ts';
 import { checkTextOf, type Trial } from '../data/results.ts';
@@ -49,6 +50,14 @@ function Metric({ title, value, testId, note }: { title: string; value: string |
 }
 
 // An evidence id: a link to its step when a step wrote or exposed it.
+// What happens to a trial the grader did not check: run again only when RERUN_OUTCOMES says so,
+// else not run again, with NOT_RERUN_REASON's reason (plan-amendment-worklist W0-A).
+const notGradedThen = (outcome: string): string => {
+  if ((RERUN_OUTCOMES as readonly string[]).includes(outcome)) return ' and run again';
+  const reason = NOT_RERUN_REASON[outcome as Outcome];
+  return reason === undefined ? '' : ` and not run again: ${reason}`;
+};
+
 export function EvidenceId({ id, steps, onStep }: { id: string; steps: readonly Step[] | null; onStep: (n: number) => void }) {
   const n = steps === null ? null : stepOfId(steps, id);
   if (n === null) return <code data-testid="evidence-id" data-id={id} className="break-all rounded-sm bg-canvas px-1 text-xs text-ink" title={steps === null ? 'The trajectory is not loaded.' : 'No step wrote or read this resource.'}>{id}</code>;
@@ -105,7 +114,7 @@ export function Grading({ t, steps, onStep, decisive = null }: { t: Trial; steps
       )}
       {!graded && (
         <p data-testid="grading-empty" className="rounded-sm border border-dashed border-line-strong p-4 text-ink-muted">
-          Not graded. The trial ended {g.outcome}, so it is excluded from the results and run again; the grader did not check it.
+          Not graded. The trial ended {g.outcome}, so it is excluded from the results{notGradedThen(g.outcome)}; the grader did not check it.
         </p>
       )}
       {gates.length > 0 && (

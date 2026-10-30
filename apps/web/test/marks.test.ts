@@ -5,7 +5,8 @@
 import { describe, expect, it } from 'vitest';
 import { explainTrial, type AuditRow, type ExplainContext, type ExplainRecord } from '../../../packages/core/explain.ts';
 import { blocksTheRun, shownFault } from '../src/data/failures.ts';
-import { BLOCKING_MARKS, markOf } from '../src/data/marks.ts';
+import { BLOCKING_MARKS, faultNote, markOf, NOT_COUNTED_LINE } from '../src/data/marks.ts';
+import { NOT_RERUN_REASON } from '../../../packages/core/outcomes.ts';
 
 const ctx: ExplainContext = { events: [], world_state_hash: 'h', matrix: null };
 const pass: ExplainRecord = {
@@ -52,6 +53,24 @@ describe('markOf', () => {
       expect(markOf(e.outcome, shownFault(e))).toBe(mark);
       expect(blocksTheRun(e)).toBe(true);
     }
+  });
+
+  // W0-A: ENV_LIMIT is the environment's, excluded and never run again; the note beside its label,
+  // on the trial page and in Runs, says why, in NOT_RERUN_REASON's words, and never "run again".
+  it('an ENV_LIMIT takes the environment mark, and its note says it is not run again and why', () => {
+    expect(markOf('ENV_LIMIT')).toBe('environment');
+    const limit: ExplainRecord = { ...pass, outcome: 'ENV_LIMIT', valid: false, status: 'LIMIT', detail: 'context_window', checks: [] };
+    const e = explainTrial(limit, null, ctx);
+    expect(markOf(e.outcome, shownFault(e))).toBe('environment');
+    expect(faultNote(e, true, false)).toBe(`Not counted; it is not run again: ${NOT_RERUN_REASON.ENV_LIMIT}.`);
+    expect(faultNote(e, true, true)).toBe(`It is not run again: ${NOT_RERUN_REASON.ENV_LIMIT}.`);
+    // An ENV_ERROR is still run again.
+    const env = explainTrial({ ...pass, outcome: 'ENV_ERROR', valid: false, status: 'ENV_ERROR', detail: 'INTERNAL', tool_errors: { INTERNAL: 1 }, checks: [] }, null, ctx);
+    expect(faultNote(env, true, false)).toBe('Not counted; it is run again.');
+  });
+
+  it('the plain "Not counted" line lists ENV_LIMIT and GRADER_ERROR under "not run again", each with its reason', () => {
+    expect(NOT_COUNTED_LINE).toBe(`INVALID, INFRA_HARNESS, INFRA_API, CANCELLED, ENV_ERROR (run again), GRADER_ERROR (not run again: ${NOT_RERUN_REASON.GRADER_ERROR}), and ENV_LIMIT (not run again: ${NOT_RERUN_REASON.ENV_LIMIT}).`);
   });
 
   it('failures keep their marks', () => {

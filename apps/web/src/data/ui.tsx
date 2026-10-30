@@ -8,12 +8,12 @@
 import { Check, CircleHelp, Copy } from 'lucide-react';
 import { useState, type CSSProperties, type ReactNode, type Ref } from 'react';
 import { NOT_AUDITED_MARKER, type Explanation } from '../../../../packages/core/explain.ts';
-import { blocksTheRun, isFalsePass, shownLabel } from './failures.ts';
-import { DENOMINATOR_RULE, isValid, OUTCOMES, PASS_DEFINITION, RERUN_OUTCOMES, VALID_OUTCOMES, type Fault } from '../../../../packages/core/outcomes.ts';
+import { blocksTheRun, shownLabel } from './failures.ts';
+import { DENOMINATOR_RULE, isValid, PASS_DEFINITION, VALID_OUTCOMES, type Fault } from '../../../../packages/core/outcomes.ts';
 import type { Interval } from '../../../../packages/core/summary.ts';
 import { hrefWith, onNav } from './url.ts';
 import type { HarmItem } from './harm.ts';
-import { BLOCKING_MARKS, MARKS, markOf, type Mark } from './marks.ts';
+import { BLOCKING_MARKS, faultNote, MARKS, markOf, NOT_COUNTED_LINE, type Mark } from './marks.ts';
 
 export function Page({ title, headingRef, lead, children }: { title: string; headingRef?: Ref<HTMLHeadingElement> | undefined; lead?: ReactNode; children: ReactNode }) {
   return (
@@ -113,23 +113,6 @@ export function HarmChip({ items }: { items: readonly HarmItem[] }) {
 }
 
 const TO_GLOSSARY = { view: 'glossary', task: null, label: null, trial: null };
-// The note beside the label (data/failures.ts blocksTheRun decides whether the trial blocks the
-// run). notCountedShown: the surrounding view already says "Not counted" (the trial header's plain
-// reason for an excluded trial), so the note gives only the rest and the header has one "Not
-// counted" sentence (F3). Only an official run is blocked; a counted trial that blocks it (a valid
-// failure labelled environment or grader, a run block such as B1) is not "not counted"; a pilot's
-// GRADER_ERROR is a grader bug fixed before the final run; an excluded environment error is run
-// again and blocks nothing (decisions.tsv 2026-10-29T17:30 and 19:10).
-const GRADER_BUG_NOTE = 'A grader bug; it is fixed and regraded before the final run.';
-function faultNote(e: Explanation, official: boolean, notCountedShown: boolean): string | null {
-  const notCounted = (rest: string) => (notCountedShown ? rest : `Not counted. ${rest}`);
-  if (blocksTheRun(e) && official) return !e.valid || isFalsePass(e) ? notCounted('The run is blocked until this is fixed.') : 'The run is blocked until this is fixed.';
-  if (!e.valid && e.outcome === 'GRADER_ERROR') return notCounted(GRADER_BUG_NOTE);
-  // A pilot trial the official run would be blocked by: a pilot is not counted (decisions.tsv 21:00).
-  if (blocksTheRun(e) && !official) return 'A pilot is not counted in the final pass rate.';
-  if (!e.valid && e.fault === 'env') return notCountedShown ? 'It is run again.' : 'Not counted; it is run again.';
-  return null;
-}
 // The glossary, at a section (fault-<fault>, fault-labels, criterion-<id>, taxonomy, confirmation) when given.
 export const glossaryHref = (anchor?: string) => `${hrefWith(TO_GLOSSARY).replace(/#.*$/, '')}${anchor ? `#${anchor}` : ''}`;
 
@@ -240,8 +223,6 @@ export function IntervalRow({ rate, interval, band, label }: { rate: number | nu
   );
 }
 
-const NOT_RERUN = OUTCOMES.filter((o) => !isValid(o) && !RERUN_OUTCOMES.includes(o));
-
 // The pass and denominator rules in plain words, the outcome lists read from outcomes.ts, then the
 // exact rule (PASS_DEFINITION and DENOMINATOR_RULE, with their code names) behind "Exact rule".
 export function PlainRules({ ids }: { ids: { pass: string; denominator: string } }) {
@@ -249,7 +230,7 @@ export function PlainRules({ ids }: { ids: { pass: string; denominator: string }
     <div className="space-y-1.5 text-ink-muted" data-testid="plain-rules">
       <p><span className="font-medium text-ink">Pass: </span>a trial passes only when it meets every gate check.</p>
       <p><span className="font-medium text-ink">Counted: </span>{VALID_OUTCOMES.join(', ')}. A refusal counts as a model failure.</p>
-      <p><span className="font-medium text-ink">Not counted: </span>{RERUN_OUTCOMES.join(', ')} (run again){NOT_RERUN.length > 0 ? `, and ${NOT_RERUN.join(', ')} (not run again: the grader must be fixed first)` : ''}.</p>
+      <p data-testid="not-counted-rule"><span className="font-medium text-ink">Not counted: </span>{NOT_COUNTED_LINE}</p>
       <details className="text-xs">
         <summary className="cursor-pointer">Exact rule, with the names the code uses</summary>
         <p className="mt-1 break-words" data-testid={ids.pass}>{PASS_DEFINITION}</p>
