@@ -142,7 +142,7 @@ describe('pnpm cli context-budget <run> (fit)', () => {
     const other: Partial<Deps> = { checkoutEnv: async (id) => (id === 'crc-care-gap' ? 'ev-new' : `ev-${id}`) };
     const bare = await run([fixture('env'), '--json'], other);
     expect(bare.code).toBe(2);
-    expect(bare.lines).toContainEqual(expect.stringMatching(/^context-budget: crc-care-gap: the run's env_version ev-crc-care-gap is not the checkout's ev-new, so the 14 overlay slots may not be the items it held; give --observed-items crc-care-gap=n$/));
+    expect(bare.lines).toContainEqual(expect.stringMatching(/^context-budget: crc-care-gap: the run's env_version ev-crc-care-gap is not the checkout's ev-new, so the 17 overlay slots may not be the items it held; give --observed-items crc-care-gap=n$/));
     const given = await run([fixture('env2'), '--observed-items', 'crc-care-gap=12', '--json'], other);
     expect(given.code).toBe(0);
     expect(given.json!.tasks['crc-care-gap']!.fit.items).toBe(12);

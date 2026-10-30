@@ -16,9 +16,10 @@ import { fhirOrder } from '../packages/env/canonical.ts';
 import { NOW, NOW_MS } from '../packages/env/clock.ts';
 import { parseNdjson } from '../packages/env/fixture-source.ts';
 import { stateHash } from '../packages/env/hash.ts';
-import { applyOverlays, TASKS, type Overlay, type World } from '../packages/env/overlay.ts';
+import { assignMrns, checkMrns } from '../packages/env/mrn.ts';
+import { applyOverlays, patientRefs, type Overlay, type World } from '../packages/env/overlay.ts';
 import { plantedClock, profileBase, profileRecords, profileWorld, syntheaForms } from '../packages/env/profile.ts';
-import { Store } from '../packages/env/store.ts';
+import { Store, type Resource } from '../packages/env/store.ts';
 import { RESOURCE_TYPES, SETTING, SETTING_LINT } from '../packages/env/world.ts';
 import { gunzip, gzip, hygiene, sha256, toNdjson, type HygieneReport } from './fixtures-lib.ts';
 
@@ -32,6 +33,7 @@ const OVERLAY_SOURCES = [
   'fixtures/synthea/generate.sh',
   'packages/env/canonical.ts',
   'packages/env/clock.ts',
+  'packages/env/mrn.ts',
   'packages/env/overlay.ts',
   'packages/env/profile.ts',
   'packages/env/renumber.ts',
@@ -137,6 +139,27 @@ ${entries(ids, '  ')}};
 `;
 }
 
+// The charts the overlays write on: each Patient one adds or replaces, each patient a resource it
+// adds or replaces references, and each patient of a base resource it removes. profileBase leaves
+// these alone. A slot no overlay writes on yet (W1-0 reserves slots for the item-class probes) is
+// profiled like any other chart, so the occasional records keep enough generated charts to sit on.
+export function writtenCharts(overlays: readonly Overlay[], base: readonly Resource[]): Set<string> {
+  const reader = new Store([...base, ...SETTING]);
+  const out = new Set<string>();
+  for (const o of overlays) {
+    const edits = o.build(reader);
+    for (const r of edits.put ?? []) {
+      if (r.resourceType === 'Patient') out.add(r.id!);
+      for (const p of patientRefs(r)) out.add(p);
+    }
+    for (const { resourceType, id } of edits.remove ?? []) {
+      const was = reader.get(resourceType, id);
+      if (was) for (const p of patientRefs(was)) out.add(p);
+    }
+  }
+  return out;
+}
+
 // The clinic PCP every clinic patient without one gets (packages/env/world.ts STAFF: the user).
 const CLINIC_PCP = 'pr-okafor';
 
@@ -150,9 +173,6 @@ export async function assembleWorld(): Promise<{ world: World; overlays: Overlay
   // World hygiene (plan P17j JT2) on the base cohort, before the overlays.
   const literalDates = taskLiteralDates();
   const { resources: cleaned, report } = hygiene(await parseNdjson(baseBytes), { now: NOW_MS, literalDates: literalDates.byPatient, anyLiteralDates: literalDates.all });
-  // One record shape (packages/env/profile.ts): the occasional fields on patients no task owns...
-  const base = profileBase(cleaned, new Set(Object.values(TASKS).flatMap((t) => t.slots)));
-
   const overlayFiles = taskOverlays();
   // Every resource an overlay writes takes Synthea's time forms (packages/env/profile.ts syntheaForms).
   const overlays = (await loadOverlays(overlayFiles)).map((o): Overlay => ({
@@ -162,7 +182,11 @@ export async function assembleWorld(): Promise<{ world: World; overlays: Overlay
       return edits.put ? { ...edits, put: edits.put.map(syntheaForms) } : edits;
     },
   }));
+  // One record shape (packages/env/profile.ts): the occasional fields on the charts no overlay
+  // writes on, every Patient's MRN by one rule so an overlay quotes the world's (packages/env/mrn.ts)...
+  const base = assignMrns(profileBase(cleaned, writtenCharts(overlays, assignMrns(cleaned))));
   const world = applyOverlays(base, SETTING, SETTING_LINT, overlays);
+  world.resources = checkMrns(world.resources);
   // After the overlays, a clinic patient with no PCP gets the clinic's (JT2).
   world.resources = world.resources.map((r) => (r.resourceType === 'Patient' && !(r.generalPractitioner?.length) ? { ...r, generalPractitioner: [{ reference: `Practitioner/${CLINIC_PCP}` }] } : r));
   // ...the fields every record of a type carries, on every resource; the occasional fields, at one

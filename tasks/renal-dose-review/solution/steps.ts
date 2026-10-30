@@ -16,7 +16,7 @@ export const RX = {
   atorvastatin20: '617310',
 } as const;
 
-export const findPatient: ScriptCall = { name: 'search_patients', input: { mrn: '4410-22' } };
+export const findPatient: ScriptCall = { name: 'search_patients', input: { mrn: '2818-21' } };
 export const activeMeds: ScriptCall = { name: 'fhir_search', input: { resource_type: 'MedicationRequest', patient: PT, status: 'active' } };
 export const observations = (code: string, more: { sort?: string; count?: number } = { sort: '-date' }): ScriptCall => ({
   name: 'fhir_search',

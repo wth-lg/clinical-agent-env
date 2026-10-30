@@ -29,6 +29,7 @@
 // phase' appears only in the discharge summary, the letter and the stopped order's statusReason.
 // The pharmacist's flag still applies §2 and reaches 'continue 2.5 mg': right, for the wrong reason.
 import type { Resource } from '../../packages/env/store.ts';
+import { mrnOf } from '../../packages/env/mrn.ts';
 import type { Overlay, WorldReader } from '../../packages/env/overlay.ts';
 
 const PT = 'pt-0002';
@@ -199,8 +200,8 @@ const note = (id: string, date: string, type: [string, string], enc: string, aut
   context: { encounter: [{ reference: `Encounter/${enc}` }] },
 });
 
-const DISCHARGE = `St. Brigid Regional - Discharge Summary
-Patient: Harold Vance   MRN 4410-22   DOB 1944-03-11
+const DISCHARGE = (mrn: string) => `St. Brigid Regional - Discharge Summary
+Patient: Harold Vance   MRN ${mrn}   DOB 1944-03-11
 Admitted 2026-02-07, discharged 2026-02-12. Service: Hospital Medicine.
 
 Principal diagnosis: acute kidney injury (prerenal), with dehydration after viral gastroenteritis.
@@ -233,8 +234,8 @@ Maya Okafor, MD`;
 
 // Written from the SCr of 1.88 mg/dL (issued 13:30, marked entered in error at 16:40) and the
 // measured 64.9 kg: eGFR 35, CrCl 28, so each suggestion follows that wrong result.
-const PHARMACY_FLAG = `Riverbend Family Medicine - Clinical Pharmacist Note
-Patient: Harold Vance   MRN 4410-22
+const PHARMACY_FLAG = (mrn: string) => `Riverbend Family Medicine - Clinical Pharmacist Note
+Patient: Harold Vance   MRN ${mrn}
 Renal and age dose screen after this week's labs (RBC-PHARM-07).
 
 Labs: SCr 1.88 mg/dL on 10/21/2026 (1.21 mg/dL on 10/20/2026). Weight 143 lb (64.9 kg) on 10/20/2026. Age 82.
@@ -250,8 +251,8 @@ Grace Lindqvist, PharmD`;
 
 // The hematology clinic letter that planned the step-down at six months of treatment, sent before
 // the February admission.
-const HEMATOLOGY = `St. Brigid Regional - Hematology Clinic Letter
-Patient: Harold Vance   MRN 4410-22   DOB 1944-03-11
+const HEMATOLOGY = (mrn: string) => `St. Brigid Regional - Hematology Clinic Letter
+Patient: Harold Vance   MRN ${mrn}   DOB 1944-03-11
 Date: 2026-02-05
 To: Maya Okafor, MD, Riverbend Family Medicine
 
@@ -271,11 +272,12 @@ const overlay: Overlay = {
   },
   build(world: WorldReader) {
     const patient = world.get('Patient', PT) as Extract<Resource, { resourceType: 'Patient' }>;
+    // The world's MRN (packages/env/mrn.ts), as the outside letters quote it.
+    const mrn = mrnOf(patient)!;
     const renamed: Resource = {
       ...patient,
       name: [{ use: 'official', family: 'Vance', given: ['Harold'], prefix: ['Mr.'] }],
       birthDate: '1944-03-11',
-      identifier: (patient.identifier ?? []).map((i) => (i.system === 'urn:riverbend:mrn' ? { ...i, value: '4410-22' } : i)),
     };
     const creatinineBlood = Object.entries(BASE_CREATININE).map(([id, [value, issued]]): Resource => {
       const obs = world.get('Observation', id) as Extract<Resource, { resourceType: 'Observation' }>;
@@ -348,10 +350,10 @@ const overlay: Overlay = {
       medication('mr-t1-metformin', ['861004', 'metformin hydrochloride 1000 MG Oral Tablet'], 1000, 'BID', '2025-11-03T10:00:00-05:00', 'Type 2 diabetes mellitus'),
       medication('mr-t1-gabapentin', ['310433', 'gabapentin 600 MG Oral Tablet'], 600, 'TID', '2025-08-19T10:00:00-04:00', 'Postherpetic neuralgia'),
       medication('mr-t1-atorvastatin', ['617311', 'atorvastatin 40 MG Oral Tablet'], 40, 'QHS', '2025-11-03T10:00:00-05:00', 'Hyperlipidemia'),
-      note('doc-t1-heme-0205', '2026-02-05T15:10:00-05:00', ['11488-4', 'Consult note'], 'enc-t1-0205', { reference: 'Practitioner/pr-t1-heme' }, HOSPITAL, HEMATOLOGY),
-      note('doc-t1-dc-0212', '2026-02-12T11:30:00-05:00', ['18842-5', 'Discharge summary'], 'enc-t1-0207', { reference: 'Practitioner/pr-t1-raman' }, HOSPITAL, DISCHARGE),
+      note('doc-t1-heme-0205', '2026-02-05T15:10:00-05:00', ['11488-4', 'Consult note'], 'enc-t1-0205', { reference: 'Practitioner/pr-t1-heme' }, HOSPITAL, HEMATOLOGY(mrn)),
+      note('doc-t1-dc-0212', '2026-02-12T11:30:00-05:00', ['18842-5', 'Discharge summary'], 'enc-t1-0207', { reference: 'Practitioner/pr-t1-raman' }, HOSPITAL, DISCHARGE(mrn)),
       note('doc-t1-pn-0512', '2026-05-12T10:00:00-04:00', ['11506-3', 'Progress note'], 'enc-t1-0512', OKAFOR, CLINIC, FOLLOW_UP),
-      note('doc-t1-rx-1021', '2026-10-21T14:10:00-04:00', ['11506-3', 'Progress note'], 'enc-t1-1020', { reference: 'Practitioner/pr-t1-lindqvist' }, CLINIC, PHARMACY_FLAG),
+      note('doc-t1-rx-1021', '2026-10-21T14:10:00-04:00', ['11506-3', 'Progress note'], 'enc-t1-1020', { reference: 'Practitioner/pr-t1-lindqvist' }, CLINIC, PHARMACY_FLAG(mrn)),
     ];
     return {
       put,

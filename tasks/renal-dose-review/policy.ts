@@ -7,7 +7,7 @@ import type { Json } from '../../packages/grader/check.ts';
 import type { WorldView } from '../../packages/grader/matrix/types.ts';
 import { dailyDose, dosesPerDay, isActive, isDrug, quantity, type MedicationRequest } from '../../packages/grader/normalize.ts';
 
-const MRN = '4410-22';
+const MRN = '2818-21';
 const LOINC = 'http://loinc.org';
 const SCR = '2160-0';
 const WEIGHT = '29463-7';
