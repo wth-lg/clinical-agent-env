@@ -40,7 +40,7 @@ import { currentGrade, firstFailed, type RegradeGrade } from './summary.ts';
 import { validateInput } from '../env/tools/registry.ts';
 import { TOOLS } from '../env/tools/write/index.ts';
 import { firstFailedGate, TAXONOMY, type Taxonomy } from '../grader/attribution.ts';
-import { progress } from '../grader/progress.ts';
+import { progress, type Progress } from '../grader/progress.ts';
 
 export const REASON_WORDS = 40;
 export const REFUSAL_WORDS = 12;
@@ -90,6 +90,8 @@ export interface ExplainRecord {
   attribution?: { auto: string; first_failed: string | null; decisive_step: number | null; exposure: ReadonlyArray<{ id: string; first_exposed_step: number | null }> } | null;
   error?: { check: string | null; message: string; stops_batch?: boolean } | null;
   regrades?: ReadonlyArray<RegradeGrade>;
+  // Rule P-L's facts the grader recorded on a cap stop (grade.ts Grade.progress).
+  progress?: Progress | null;
 }
 
 // One line of <run>/audit.jsonl (design section 5, "Human audit"). label and label_subtype are
@@ -533,8 +535,10 @@ export function explainTrial(record: ExplainRecord, audit: AuditRow | null | und
     state_hash: record.state_hash,
     env_error: (ctx.events.findLast((e) => e.type === 'error' && e.status === 'ENV_ERROR') as { message?: string } | undefined)?.message ?? null,
     limit: limitOf(ctx.events),
-    // Rule P-L reads the trajectory up to the stop; a trial with none has no P-L facts.
-    progress: ctx.events.length === 0 ? null : progress(ctx.events),
+    // Rule P-L's facts the grader recorded, so the outcome and its reason read the same facts on
+    // the Runs list (no trajectory) and the trial page; a record graded before they were recorded
+    // reads them from the trajectory, when the caller has it.
+    progress: record.progress ?? (ctx.events.length === 0 ? null : progress(ctx.events)),
     manifest_hash: ctx.world_state_hash ?? null,
     grader_task_version: grade.grader_task_version,
     decisive: failed === null ? null : {

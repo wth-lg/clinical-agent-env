@@ -18,6 +18,8 @@ const record = (outcome: 'LIMIT' | 'REFUSAL', failed: boolean): ExplainRecord =>
   stop_reason: outcome === 'REFUSAL' ? 'refusal' : null, model_requested: 'claude-opus-5-5', models_returned: ['claude-opus-5-5'], turns: 80,
   tool_errors: { INTERNAL: 0 }, state_hash: { initial: 'h', final: 'f', replay_final: 'f' },
   checks: failed ? [G1] : [],
+  // A LIMIT at a cap is the model's only while it looped (rule P-L); the grader records the facts.
+  ...(outcome === 'LIMIT' ? { progress: { tail: 20, repeats: 19, repeat_share: 0.95, looping: true } } : {}),
   attribution: failed ? { auto: outcome === 'LIMIT' ? 'did_not_finish' : 'reasoning', first_failed: 'G1', decisive_step: 9, exposure: [{ id: 'Observation/obs-wt-1', first_exposed_step: 6 }] } : null,
 });
 const events = {

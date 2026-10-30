@@ -63,6 +63,12 @@
   },
   "attribution": null,
   "error": null,
+  "progress": {
+    "tail": 20,
+    "repeats": 0,
+    "repeat_share": 0,
+    "looping": false
+  },
   "index": 12,
   "trajectory": "trajectories/results-inbox/12.jsonl"
 }

@@ -42,7 +42,8 @@ import { diff, keyOf } from './diff.ts';
 import { firstExposed, lastWrite, stepsOf } from './exposure.ts';
 import { gateResource, type GateResource } from './gate-view.ts';
 import { Judge, JudgeCacheMiss, JudgeClientError, judgeCallBudget, type JudgeCacheEntry, type JudgeClient, type JudgeEffort } from './judge.ts';
-import { FAULT, isValid, trialOutcome, type Fault, type Outcome, type TrialFacts } from './outcome.ts';
+import { capProgress, FAULT, isValid, trialOutcome, type Fault, type Outcome, type TrialFacts } from './outcome.ts';
+import type { Progress } from './progress.ts';
 
 // Bump on any change that can change what a grade is. It is part of every task's
 // grader_task_version (packages/core/tasks.ts), with the task's grader-side files; regrades
@@ -58,11 +59,11 @@ import { FAULT, isValid, trialOutcome, type Fault, type Outcome, type TrialFacts
 // gate's action_form mark (P17j JG8b, pre-audit M3). 13: a source counts as seen before a write
 // only when its result came back in an earlier turn (Step.turn, exposure.ts seenBefore), so a
 // read in the same answer as the write is not (verifier-phase-P17i-P17-T5-1 F2). 14: a LIMIT at the
-// context window, or at a turn, cost or working-time cap while the model still made progress (rule
-// P-L, progress.ts), is ENV_LIMIT, the environment's (outcome.ts; plan-amendment-worklist W0-A);
-// rule P-L compares calls on their target and needs new ids from a quarter of the tail, and a
-// judge prompt too long is GRADER_ERROR (verifier-phase-P17i-W0-A-1 F2, F3; still 14, as 14 was
-// never on main).
+// context window, or at a turn, cost or working-time cap that rule P-L (progress.ts) does not
+// find looping, is ENV_LIMIT, the environment's (outcome.ts; plan-amendment-worklist W0-A); the
+// rule fails safe: looping only when half or more of the last 20 calls repeat an earlier call's
+// target. A judge prompt too long is GRADER_ERROR (verifier-phase-P17i-W0-A-1 F2). Still 14 through
+// the W0-A fix rounds: 14 was never on main and no record was graded under an earlier P-L rule.
 export const GRADER_VERSION = '14';
 
 export interface CheckResult {
@@ -99,6 +100,10 @@ export interface Grade {
   judge: JudgeRecord;
   attribution: Attribution | null;
   error: GradeError | null;
+  // Rule P-L's facts (progress.ts) on a trial that stopped at a turn, cost or working-time cap,
+  // absent on any other trial, so a reader without the trajectory (the Runs list) gives the
+  // same reason as the trial page.
+  progress?: Progress;
 }
 
 export interface JudgeRecord {
@@ -231,6 +236,12 @@ function judgeOf(judge: Judge, results: readonly CheckResult[], scored: boolean)
 
 // Grades with `judge`, whose cost and cache entries the caller can read afterwards.
 export async function gradeWith(input: GradeInput, judge: Judge): Promise<Grade> {
+  const graded = await gradeChecks(input, judge);
+  const p = capProgress(input.trial, input.events);
+  return p === null ? graded : { ...graded, progress: p };
+}
+
+async function gradeChecks(input: GradeInput, judge: Judge): Promise<Grade> {
   const early = trialOutcome(input.trial, input.events);
   if (early !== null && !isValid(early)) return ungraded(early);
   if (input.final === null) {
