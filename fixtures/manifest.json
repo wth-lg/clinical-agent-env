@@ -2,21 +2,21 @@
   "now": "2026-10-23T08:00:00-04:00",
   "world": {
     "file": "fixtures/world.ndjson.gz",
-    "state_hash": "95430f4fabc3895a01c3b3d55790890f1cad4fce71c5abf22d4a952b94222fd0",
-    "ndjson_sha256": "606de43190ae1a88f28f6531ffcadd61c8283f4ae5b805e1a39210c428ce4b4c",
-    "resources": 7442,
+    "state_hash": "2266fa587f4379fce743be6cc49ae221a54bcffc45f14cf3dafa7e7a59853601",
+    "ndjson_sha256": "66348eeb85e99e676a31712ebb1989350a8b98cc4f3b627fd1cab6de22030419",
+    "resources": 7468,
     "by_type": {
       "AllergyIntolerance": 51,
       "Appointment": 1,
       "Communication": 6,
       "Condition": 973,
-      "DiagnosticReport": 477,
+      "DiagnosticReport": 479,
       "DocumentReference": 273,
       "Encounter": 381,
       "EpisodeOfCare": 1,
       "Group": 4,
       "MedicationRequest": 398,
-      "Observation": 3463,
+      "Observation": 3487,
       "Organization": 8,
       "Patient": 60,
       "Practitioner": 17,
@@ -72,8 +72,8 @@
   "inputs": {
     "fixtures/synthea/generate.sh": "9c20f04e81cd71443b418aaa2c2782b47d3f20fffccdce06959da03b40c33fed",
     "packages/env/clock.ts": "000372240039629abbb215aff20f18cf85e6adf832dad872dc6b1df96b06ff71",
-    "packages/env/overlay.ts": "d7bc719f499bfe6d00046e3c963cd37aed590a41650aa42c567b16f98db56f27",
-    "packages/env/profile.ts": "8e70566ee86095c8897da0b6f374be164376201c3fab2cfdfa173193dc963ab8",
+    "packages/env/overlay.ts": "75071a224b39e43a20cc4fd01724aad781800c227367cf380405df7e9c886b12",
+    "packages/env/profile.ts": "ab7d1c06e3f3c628cb6c0e21a085620ef2b71f8b601e98bb5de101b2081d803a",
     "packages/env/renumber.ts": "a18c690c41aa7e22e503b11035c773b76e165fed5b83dbb517a726ed77d2a558",
     "packages/env/world.ts": "c16dbb19c56e749662a602139253743353add3fabdaa103aeedd0fc554eb3906",
     "scripts/fixtures-synthea.ts": "44162b65dc576e507b526132164eda54cb14000936331d48b575f46d9c49d752",
@@ -111,8 +111,8 @@
   },
   "ids": {
     "file": "fixtures/ids.ts",
-    "sha256": "751c88c2972e261ccf513725a63bd9186cf3ed18dbc57499e85344428cdaaa38",
+    "sha256": "4d9863a40a7198606241bc73e5b06f33c87b1488f551984c37f9589db6944f30",
     "synthea_file": "fixtures/synthea-ids.ts",
-    "synthea_sha256": "243d3b4fd8ad439146e305d3886598ea8f83548eef664d02639936f7bc4f2d1d"
+    "synthea_sha256": "1672b6e5b3afeec3a71002e4797aec0034ea84589ac6b39f5a503b7fc4de8322"
   }
 }
