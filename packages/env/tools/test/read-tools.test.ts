@@ -451,18 +451,18 @@ describe('search_notes', () => {
 });
 
 describe('read_policy', () => {
-  it('lists policies by id without their text', () => {
+  it('lists policies by id without their text or source', () => {
     const r = call('read_policy', {});
     expect(ok(r).entries).toEqual([
-      { policy: 'Policy/RBC-TEST-01', title: 'First test policy', version: '1', effective: '2026-01-01', source: 'environment-local' },
-      { policy: 'Policy/RBC-TEST-02', title: 'Second test policy', version: '2', effective: '2026-02-01', source: 'environment-local' },
+      { policy: 'Policy/RBC-TEST-01', title: 'First test policy', version: '1', effective: '2026-01-01' },
+      { policy: 'Policy/RBC-TEST-02', title: 'Second test policy', version: '2', effective: '2026-02-01' },
     ]);
     expect(r.exposed_ids).toEqual([]);
     expectTagsMatch(r);
   });
-  it('returns one policy with its text and exposes it', () => {
+  it('returns one policy with its text, not its source, and exposes it', () => {
     const r = call('read_policy', { policy_id: 'RBC-TEST-01' });
-    expect(ok(r)).toEqual({ resourceType: 'Policy', id: 'RBC-TEST-01', title: 'First test policy', version: '1', effective: '2026-01-01', source: 'environment-local', text: 'First policy text.' });
+    expect(ok(r)).toEqual({ resourceType: 'Policy', id: 'RBC-TEST-01', title: 'First test policy', version: '1', effective: '2026-01-01', text: 'First policy text.' });
     expect(r.exposed_ids).toEqual(['Policy/RBC-TEST-01']);
     expect(r.shown).toEqual({ 'Policy/RBC-TEST-01': 'First policy text.' });
   });

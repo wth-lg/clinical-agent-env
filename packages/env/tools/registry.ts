@@ -60,7 +60,9 @@ import { ToolError, type ErrorBody } from './errors.ts';
 // and search_patients' example.
 // 6 (P17j JT1: S10): list_inbox rows carry owner; it lists the signed-in user's items by default,
 // and owner (Type/id or a bare id, as update_inbox_item's new_owner) lists another owner's.
-export const TOOLS_VERSION = '6';
+// 7 (builder-189 leak cleanup): read_policy no longer returns a policy's source, on a single read
+// or in the list.
+export const TOOLS_VERSION = '7';
 
 export type PropertySchema =
   | { type: 'string'; description: string; enum?: readonly string[]; minLength?: number; maxLength?: number; pattern?: string }
