@@ -71,3 +71,19 @@ describe('loadResults with one pilot audit.jsonl unreadable and another pilot sl
     expect(r).toMatchObject({ status: 'fulfilled', value: { kind: 'error' } });
   });
 });
+
+// verifier-phase-P17i-F1-preload-1 F-A: only a 404 from index.json means no results are committed
+// (vite dev, see vite.config.ts); any other HTTP error is an error state, not an empty Runs view.
+describe('loadResults when data/index.json answers an HTTP error', () => {
+  const serveIndex = (status: number) => vi.stubGlobal('fetch', async () => new Response('', { status }));
+
+  it('a 404 is a ready load with no runs', async () => {
+    serveIndex(404);
+    expect(await (await freshLoad())()).toEqual({ kind: 'ready', official: null, officialError: null, pilots: [], findings: null, files: new Set() });
+  });
+
+  it('a 500 is an error that names the status', async () => {
+    serveIndex(500);
+    expect(await (await freshLoad())()).toEqual({ kind: 'error', message: 'data/index.json: HTTP 500' });
+  });
+});

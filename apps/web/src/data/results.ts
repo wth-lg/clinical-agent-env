@@ -238,8 +238,10 @@ const PILOT_DIR = /^(results\/(?:runs\/)?pilot-[A-Za-z0-9._-]+)\/trials\//;
 
 async function load(): Promise<Results> {
   const res = await fetch(dataUrl('index.json'));
-  // A build always writes data/index.json; without it (vite dev) there are no results.
-  if (!res.ok) return { kind: 'ready', official: null, officialError: null, pilots: [], findings: null, files: new Set() };
+  // A build always writes data/index.json. Only its absence, a 404 (vite dev answers one for every
+  // data/ path, vite.config.ts), means no results; any other HTTP error is a failed load.
+  if (res.status === 404) return { kind: 'ready', official: null, officialError: null, pilots: [], findings: null, files: new Set() };
+  if (!res.ok) throw new Error(`data/index.json: HTTP ${res.status}`);
   const { files } = (await res.json()) as { files: string[] };
   const has = new Set(files);
   const findings = has.has('docs/findings.md') ? await fetchText('docs/findings.md') : null;
