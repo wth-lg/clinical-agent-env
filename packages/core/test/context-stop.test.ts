@@ -169,6 +169,18 @@ describe('(b) a 400 prompt is too long', () => {
     expect(classifyFailure(new ApiError('HTTP 400 invalid_request_error: messages: bad', { status: 400, type: 'invalid_request_error', retryable: false, stopsBatch: true }))).toMatchObject({ status: 'INFRA_HARNESS', stopsBatch: true });
   });
 
+  // verifier-phase-P17i-W0-A-1 F5: the ApiError the client throws for the 400 says it does not
+  // stop the batch (errorStatus), as classifyFailure does; any other 400 still says it does.
+  it('the client throws an ApiError with stopsBatch false for it, true for another 400', async () => {
+    const other = () => new Response(JSON.stringify({ type: 'error', error: { type: 'invalid_request_error', message: 'messages: roles must alternate' } }), { status: 400, headers: { 'content-type': 'application/json' } });
+    for (const [res, stops] of [[tooLong, false], [other, true]] as const) {
+      const { client: c } = await client(async () => res());
+      const e = await c.send([{ role: 'user', content: 'x' }], { max_tokens: 100 }).then(() => null, (err: unknown) => err);
+      expect(e).toBeInstanceOf(ApiError);
+      expect(e).toMatchObject({ status: 400, errorType: 'invalid_request_error', stopsBatch: stops, retryable: false });
+    }
+  });
+
   it('ends the trial LIMIT context_window prompt_too_long, grades ENV_LIMIT, and leaves the grant open', async () => {
     const t = await toyTrial([tooLong]);
     expect(t.record).toMatchObject({ status: 'LIMIT', detail: 'context_window', outcome: 'ENV_LIMIT', fault: 'env' });

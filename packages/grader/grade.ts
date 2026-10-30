@@ -16,15 +16,21 @@
 // `error` names the first check that threw (the others that threw are in its message). A judge
 // call the client failed ends the trial at once as classifyFailure says, as a model call would
 // (INFRA_API for a 401, 403, 404, billing error or retries exhausted), invalid, with stops_batch
-// as the client says; it outranks an earlier GRADER_ERROR, since the trial is re-queued. A
-// trial whose facts say it reached a final state that is not here is GRADER_ERROR too. Only a
+// as the client says; it outranks an earlier GRADER_ERROR. Those outcomes are re-queued
+// (outcomes.ts RERUN_OUTCOMES). The one exception is a judge prompt too long for the judge's
+// context window (classifyFailure code prompt_too_long): the grader built that input, so it is a
+// grader bug like a check that threw, GRADER_ERROR with grading going on, never ENV_LIMIT
+// (verifier-phase-P17i-W0-A-1 F2). A trial whose facts say it reached a final state that is not
+// here is GRADER_ERROR too. Only a
 // judge cache miss on a regrade throws (JudgeCacheMiss): a regrade never calls the judge.
 //
 // The GRADER_ERROR policy (plan phase P12): a GRADER_ERROR is a grader bug, settled and never
 // re-queued as a model trial. The fix is the grader change (bump GRADER_VERSION, or the task's
 // grader-side files, which changes its grader_task_version, packages/core/tasks.ts), then a full
 // offline regrade of the run (cli/regrade.ts) from each record's trajectory and judge cache,
-// which needs no judge call because grading went on past the throw. summary reads each record's
+// which needs no judge call because grading went on past the throw; a judge prompt too long is
+// the exception, since its fix changes that judge input, so the record's cache has no answer for
+// it (a regrade throws JudgeCacheMiss) until the judge is asked again. summary reads each record's
 // current grade, so `--require grader_error=0` holds after the regrade, and prints the records
 // that were GRADER_ERROR in an earlier grade as grader_error_history, for disclosure. replay
 // compares env_version only, so `--require replay=all` still holds after a grader fix.
@@ -53,7 +59,10 @@ import { FAULT, isValid, trialOutcome, type Fault, type Outcome, type TrialFacts
 // only when its result came back in an earlier turn (Step.turn, exposure.ts seenBefore), so a
 // read in the same answer as the write is not (verifier-phase-P17i-P17-T5-1 F2). 14: a LIMIT at the
 // context window, or at a turn, cost or working-time cap while the model still made progress (rule
-// P-L, progress.ts), is ENV_LIMIT, the environment's (outcome.ts; plan-amendment-worklist W0-A).
+// P-L, progress.ts), is ENV_LIMIT, the environment's (outcome.ts; plan-amendment-worklist W0-A);
+// rule P-L compares calls on their target and needs new ids from a quarter of the tail, and a
+// judge prompt too long is GRADER_ERROR (verifier-phase-P17i-W0-A-1 F2, F3; still 14, as 14 was
+// never on main).
 export const GRADER_VERSION = '14';
 
 export interface CheckResult {
@@ -261,7 +270,7 @@ export async function gradeWith(input: GradeInput, judge: Judge): Promise<Grade>
       byCheck.set(c, result(c, c.kind === 'gate' ? c.fn(gateCtx) : await c.fn(ctxFor(c))));
     } catch (e) {
       if (e instanceof JudgeCacheMiss) throw e;
-      if (e instanceof JudgeClientError) {
+      if (e instanceof JudgeClientError && e.failure.code !== 'prompt_too_long') {
         byCheck.set(c, result(c, { met: 'unknown', evidence: { judge_error: e.message } }));
         const outcome: Outcome = e.failure.status;
         const checks = ordered();
@@ -270,8 +279,9 @@ export async function gradeWith(input: GradeInput, judge: Judge): Promise<Grade>
           error: { check: c.id, message: e.message, stops_batch: e.failure.stopsBatch },
         };
       }
-      // A grader bug: recorded on its check, and grading goes on (see the header).
-      const message = errorText(e);
+      // A grader bug: recorded on its check, and grading goes on (see the header). A judge prompt
+      // too long for the judge's context window is one: the grader built the judge's input.
+      const message = e instanceof JudgeClientError ? `judge prompt is too long for the judge model's context window (the grader's input): ${e.message}` : errorText(e);
       byCheck.set(c, result(c, { met: 'unknown', evidence: { grader_error: message } }));
       threw.push({ check: c.id, message });
     }

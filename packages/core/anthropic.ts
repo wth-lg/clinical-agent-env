@@ -510,8 +510,9 @@ async function sendOnce(f: Transport, endpoint: string, apiKey: string, body: st
 //   INFRA_API      401, 403, 404, a billing error, retries exhausted, a network error
 //   ENV_LIMIT      a 400 prompt is too long, code prompt_too_long: the trial's context outgrew
 //                  the model's window. The trial loop ends the trial LIMIT context_window
-//                  (loop.ts), which the grader grades ENV_LIMIT; a judge call ends it ENV_LIMIT.
-//                  Never rerun (outcomes.ts NOT_RERUN_REASON), and it does not stop the batch
+//                  (loop.ts), which the grader grades ENV_LIMIT. Never rerun (outcomes.ts
+//                  NOT_RERUN_REASON), and it does not stop the batch. A judge call's prompt is
+//                  the grader's input, so the grader grades that GRADER_ERROR (grade.ts)
 // stopsBatch: true for every INFRA_HARNESS (design section 5), for a 401, 403, 404 or billing
 // error, and for a substituted model (coordinator decision, P8 fix round 3, 2026-10-23: an
 // API-side fault a rerun does not cure). Retries exhausted and a network error do not stop the

@@ -57,8 +57,8 @@ describe('an excluded trial has no model taxonomy, decisive check or decisive st
     ['turns', 'E8', /^turns limit; last 20 calls: 0 repeats \(share 0\.00\), 20 new ids; progressing$/],
   ] as const)('ENV_LIMIT at %s: decided by %s, no taxonomy, check or step, and "not run again" with its reason', (detail, id, evidence) => {
     const calls = Array.from({ length: 24 }, (_, i) => [
-      { v: 2, seq: 2 * i, ts: 't', turn: i + 1, type: 'tool_call', tool_use_id: `u${i}`, name: 'fhir_read', input: { id: `o-${i}` } },
-      { v: 2, seq: 2 * i + 1, ts: 't', turn: i + 1, type: 'tool_result', tool_use_id: `u${i}`, name: 'fhir_read', executed: true, is_error: false, error_code: null, content: {}, exposed_ids: [`Observation/o-${i}`], referenced_ids: [] },
+      { v: 2, seq: 2 * i, ts: 't', turn: i + 1, type: 'tool_call', tool_use_id: `u${i}`, name: 'fhir_search', input: { resource_type: 'Observation', patient: 'pt-1', code: `c-${i}` } },
+      { v: 2, seq: 2 * i + 1, ts: 't', turn: i + 1, type: 'tool_result', tool_use_id: `u${i}`, name: 'fhir_search', executed: true, is_error: false, error_code: null, content: {}, exposed_ids: [`Observation/o-${i}`], referenced_ids: [] },
     ]).flat() as unknown as ExplainContext['events'];
     const stop = detail === 'context_window'
       ? { v: 2, seq: 99, ts: 't', turn: 24, type: 'limit', limit: 'context_window', cap: 191_500, value: 191_500, code: 'stop_reason' }

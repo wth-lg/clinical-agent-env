@@ -5,6 +5,8 @@
 import type { Resource } from '../../env/store.ts';
 import { describe, expect, it } from 'vitest';
 import { ApiError } from '../../core/anthropic.ts';
+import { explainTrial } from '../../core/explain.ts';
+import { NOT_RERUN_REASON } from '../../core/outcomes.ts';
 import { gate, hybrid, judged, rubric, type Check, type GateCtx } from '../check.ts';
 import { grade, type GradeInput } from '../grade.ts';
 import { JudgeCacheMiss } from '../judge.ts';
@@ -403,6 +405,30 @@ describe('judge failures are infrastructure', () => {
     expect(g.judge.cache).toEqual([]);
     expect(g.judge.cache_keys).toEqual([]);
     expect(calls).toBe(1);
+  });
+
+  // verifier-phase-P17i-W0-A-1 F2 (probe j): a judge prompt too long for the judge's context
+  // window is the grader's input, not the task's list: GRADER_ERROR, fault grader, settled and
+  // never rerun until the grader is fixed. Grading goes on, as for a check that threw, so the
+  // record's judge cache holds every other answer; the batch goes on.
+  it('a judge prompt too long is GRADER_ERROR, fault grader, never ENV_LIMIT; grading and the batch go on', async () => {
+    const tooLong = new ApiError('HTTP 400 invalid_request_error: prompt is too long: 215013 tokens > 200000 maximum', { status: 400, type: 'invalid_request_error', retryable: false, stopsBatch: false });
+    const rest = scriptedJudge([NOT_MET]);
+    let calls = 0;
+    const client = { send: (...a: Parameters<typeof rest.client.send>) => (++calls === 1 ? Promise.reject(tooLong) : rest.client.send(...a)) };
+    const trial = facts({});
+    const g = await grade(input([...READS, ...WRITES], GOOD_FINAL, { trial }), { judge: client });
+    expect(g).toMatchObject({ outcome: 'GRADER_ERROR', valid: false, fault: 'grader', score: null, attribution: null, error: { check: 'R2', stops_batch: false } });
+    expect(g.error!.message).toMatch(/^judge prompt is too long for the judge model's context window \(the grader's input\): ApiError: HTTP 400 .*prompt is too long/);
+    expect(g.checks.find((c) => c.id === 'R2')).toMatchObject({ met: 'unknown', evidence: { grader_error: g.error!.message } });
+    expect(g.checks.find((c) => c.id === 'R4')).toMatchObject({ met: false });
+    expect(calls).toBe(2);
+    expect(g.judge.cache).toHaveLength(1);
+    const x = explainTrial({ ...trial, ...g, task_id: 't', task_version: 'v', turns: 6, cost_usd: 1 }, null, { events: [], world_state_hash: 'h', matrix: null });
+    expect(x).toMatchObject({ outcome: 'GRADER_ERROR', fault: 'grader', label: 'grader', deciding: { id: 'GR1' } });
+    expect(x.reason).toMatch(/^GRADER_ERROR: check R2 threw judge prompt is too long .*; the grader's fault, which blocks the run$/);
+    expect(x.reason).not.toMatch(/ENV_LIMIT|infrastructure|environment|rerun/);
+    expect(NOT_RERUN_REASON.GRADER_ERROR).toBe('the grader must be fixed first');
   });
 
   it('a parsed answer without a usable quote is a cached unknown, not an infrastructure error', async () => {
