@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:contrast-ct-prep:3",
   "task_id": "contrast-ct-prep",
-  "task_version": "831ca53d26aefeb60156a2de6c0caf43def4935351c57b2a396e595f61acf19d",
-  "env_version": "10a3b1f6362ace0a3507b32fef27d97ea05897b3df53fe85e3ba4e4e104141c4",
+  "task_version": "b7cc509a804ea559effaaae44584c54ed31822ccf844df479577870257c59afa",
+  "env_version": "f07dd9cacd1888d95fbb04e5a07c5406fe62339a98885c4f9ae3e075704d1d04",
   "grader_task_version": "93be0526647797899fdc52063681d23beb37831dd21445cb6a64905c40364596",
-  "fixture_hash": "1352050bce54c07f2515e0e0f3ddfae5d2176b9a47c3797edc2f40472295070a",
+  "fixture_hash": "95c66c67f2a775cb0e24f6d8040c5a1a38c4897e5f3cf018e649de32a8d6a90a",
   "state_hash": {
-    "initial": "1352050bce54c07f2515e0e0f3ddfae5d2176b9a47c3797edc2f40472295070a",
-    "final": "2fd7c8fb902a827684a23817ba7cec702bb5902e41f6e57dc64f3aaeaed5dc33",
-    "replay_final": "2fd7c8fb902a827684a23817ba7cec702bb5902e41f6e57dc64f3aaeaed5dc33"
+    "initial": "95c66c67f2a775cb0e24f6d8040c5a1a38c4897e5f3cf018e649de32a8d6a90a",
+    "final": "d713869a4987ef9cd42bd77bbee1e5d4d363964f39158f64a14efd8d33e2a78b",
+    "replay_final": "d713869a4987ef9cd42bd77bbee1e5d4d363964f39158f64a14efd8d33e2a78b"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -209,19 +209,19 @@
         "metformin_order": null,
         "seen": [
           {
-            "id": "AllergyIntolerance/alg-00009",
+            "id": "AllergyIntolerance/alg-00011",
             "step": 3
           },
           {
-            "id": "DocumentReference/doc-00048",
+            "id": "DocumentReference/doc-00049",
             "step": 5
           },
           {
-            "id": "Observation/obs-01305",
+            "id": "Observation/obs-01317",
             "step": 6
           },
           {
-            "id": "DocumentReference/doc-00052",
+            "id": "DocumentReference/doc-00053",
             "step": 8
           },
           {
@@ -355,8 +355,8 @@
         "orders": [],
         "citing": [],
         "want": [
-          "AllergyIntolerance/alg-00009",
-          "DocumentReference/doc-00048"
+          "AllergyIntolerance/alg-00011",
+          "DocumentReference/doc-00049"
         ]
       }
     },

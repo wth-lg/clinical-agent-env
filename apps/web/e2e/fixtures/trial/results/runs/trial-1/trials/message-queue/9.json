@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:message-queue:9",
   "task_id": "message-queue",
-  "task_version": "5d276ebb0b28f97235a7b35deccd75b6c5057eca5bfb889a38ddf0faa3b884e1",
-  "env_version": "9d3fe8fcf79a4fed067fbc8f2c2a6f21a997fc101872a270788278031472e31d",
+  "task_version": "067b3ab2a213364ada7ffa9cf80e754bee5ef42f09a226bf51ed040cde73fb32",
+  "env_version": "57560c99ae8fa0c75df3712be6d5df60a3b0d5e9a1de04d9f7eaa031da621874",
   "grader_task_version": "adcaa3336aff27a371ad3541f3feca79ff0c140af804fa43efce464ae085290a",
-  "fixture_hash": "1352050bce54c07f2515e0e0f3ddfae5d2176b9a47c3797edc2f40472295070a",
+  "fixture_hash": "95c66c67f2a775cb0e24f6d8040c5a1a38c4897e5f3cf018e649de32a8d6a90a",
   "state_hash": {
-    "initial": "1352050bce54c07f2515e0e0f3ddfae5d2176b9a47c3797edc2f40472295070a",
-    "final": "70633514f27af86a548554121d6fcf811eaf13ef0ac41b162aa544fe4e739071",
-    "replay_final": "70633514f27af86a548554121d6fcf811eaf13ef0ac41b162aa544fe4e739071"
+    "initial": "95c66c67f2a775cb0e24f6d8040c5a1a38c4897e5f3cf018e649de32a8d6a90a",
+    "final": "4f88feee26917ce4f944798aa25a35cb82124056994098ebcc9a8d06e4e5824f",
+    "replay_final": "4f88feee26917ce4f944798aa25a35cb82124056994098ebcc9a8d06e4e5824f"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -116,7 +116,7 @@
       "evidence": {
         "new_orders": [],
         "allergies_written": [
-          "AllergyIntolerance/alg-00023",
+          "AllergyIntolerance/alg-00025",
           "AllergyIntolerance/alg-t0008"
         ],
         "allergy_recorded": [
@@ -127,7 +127,7 @@
         ]
       },
       "ids": [
-        "AllergyIntolerance/alg-00023",
+        "AllergyIntolerance/alg-00025",
         "AllergyIntolerance/alg-t0008",
         "Communication/comm-t0010"
       ]
@@ -237,22 +237,22 @@
       "evidence": {
         "checks": [
           {
-            "evidence": "DocumentReference/doc-00101",
+            "evidence": "DocumentReference/doc-00102",
             "write": 35,
             "exposed": 24
           },
           {
-            "evidence": "DocumentReference/doc-00079",
+            "evidence": "DocumentReference/doc-00080",
             "write": 10,
             "exposed": null
           }
         ],
         "late": [
-          "DocumentReference/doc-00079"
+          "DocumentReference/doc-00080"
         ]
       },
       "ids": [
-        "DocumentReference/doc-00079"
+        "DocumentReference/doc-00080"
       ]
     },
     {
@@ -782,7 +782,7 @@
     "decisive_step": 10,
     "exposure": [
       {
-        "id": "DocumentReference/doc-00079",
+        "id": "DocumentReference/doc-00080",
         "first_exposed_step": null,
         "first_shown_step": null
       }
@@ -869,7 +869,7 @@
           "evidence": {
             "new_orders": [],
             "allergies_written": [
-              "AllergyIntolerance/alg-00023",
+              "AllergyIntolerance/alg-00025",
               "AllergyIntolerance/alg-t0008"
             ],
             "allergy_recorded": [
@@ -880,7 +880,7 @@
             ]
           },
           "ids": [
-            "AllergyIntolerance/alg-00023",
+            "AllergyIntolerance/alg-00025",
             "AllergyIntolerance/alg-t0008",
             "Communication/comm-t0010"
           ]
@@ -990,22 +990,22 @@
           "evidence": {
             "checks": [
               {
-                "evidence": "DocumentReference/doc-00101",
+                "evidence": "DocumentReference/doc-00102",
                 "write": 35,
                 "exposed": 24
               },
               {
-                "evidence": "DocumentReference/doc-00079",
+                "evidence": "DocumentReference/doc-00080",
                 "write": 10,
                 "exposed": null
               }
             ],
             "late": [
-              "DocumentReference/doc-00079"
+              "DocumentReference/doc-00080"
             ]
           },
           "ids": [
-            "DocumentReference/doc-00079"
+            "DocumentReference/doc-00080"
           ]
         },
         {
