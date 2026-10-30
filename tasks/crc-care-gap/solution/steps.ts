@@ -2,6 +2,7 @@
 // mutants and agents (tests/). Each case varies only what its clinician would vary, so they
 // share these calls and the final table's wording.
 import type { ScriptCall, ScriptTurn } from '../../../packages/grader/matrix/types.ts';
+import { id } from '../ids.ts';
 
 // The panel by design label (design section 4, "T3" panel table).
 export const PT = {
@@ -19,7 +20,7 @@ export const STOOL_CODES = '2335-8,29771-3,57905-2,58453-2,77354-9,77353-1';
 
 export const policy: ScriptCall = { name: 'read_policy', input: { policy_id: 'RBC-QM-02' } };
 export const groups: ScriptCall = { name: 'fhir_search', input: { resource_type: 'Group' } };
-export const group: ScriptCall = { name: 'fhir_read', input: { resource_type: 'Group', id: 'grp-t3-okafor-crc' } };
+export const group: ScriptCall = { name: 'fhir_read', input: { resource_type: 'Group', id: id('grp-t3-okafor-crc') } };
 export const read = (resource_type: string, id: string): ScriptCall => ({ name: 'fhir_read', input: { resource_type, id } });
 export const search = (resource_type: string, patient: string, more: { [k: string]: string | number } = {}): ScriptCall => ({ name: 'fhir_search', input: { resource_type, patient, ...more } });
 export const notes = (query: string, patient?: string): ScriptCall => ({ name: 'search_notes', input: { query, ...(patient ? { patient } : {}) } });
@@ -28,7 +29,7 @@ export const notes = (query: string, patient?: string): ScriptCall => ({ name: '
 // searches the words a note would use. The operative note's row ('…Service: Colorectal
 // Surgery…') only references it; reading it shows the total proctocolectomy.
 export const NOTE_SEARCH = notes('colectomy colon colorectal');
-export const OPNOTE = read('DocumentReference', 'doc-t3-1856');
+export const OPNOTE = read('DocumentReference', id('doc-t3-1856'));
 
 // RBC-QM-02 §4's nursing home clause applies at 66 or older at the end of 2026: the members of the
 // population that old (E5 is 76, outside it). Their social history holds the housing status
@@ -99,7 +100,7 @@ export const actions = (
 // share these calls. The finish is the oracle's table, which keeps the judge cache warm: the runs
 // copied their tables from expected.ts, the answer-key weakness the triage of 2026-10-28T13:40Z
 // records rather than fixes (C1).
-export const keyReads: ScriptTurn = { calls: [read('Procedure', 'proc-t3-2591'), read('Observation', 'obs-t3-7342'), read('Condition', 'cond-t3-5463'), read('Observation', 'obs-t3-3906'), read('Patient', PT.E4), read('Patient', PT.E16)] };
+export const keyReads: ScriptTurn = { calls: [read('Procedure', id('proc-t3-2591')), read('Observation', id('obs-t3-7342')), read('Condition', id('cond-t3-5463')), read('Observation', id('obs-t3-3906')), read('Patient', PT.E4), read('Patient', PT.E16)] };
 export const ORDER_SEQ: Label[] = ['E2', 'E3', 'E8', 'E10', 'E4', 'E16'];
 export const bareOrders: ScriptTurn = { calls: ORDER_SEQ.map((l) => ({ name: 'order_service', input: { patient: PT[l], code: FIT, priority: 'routine', occurrence_start: '2026-10-23', reason: 'CRC screening gap' } })) };
 export const bare = (l: Label, subject: string, body: string, about: string[] = []): ScriptCall => ({ name: 'send_message', input: { recipient: `Patient/${PT[l]}`, priority: 'routine', subject, body, about } });

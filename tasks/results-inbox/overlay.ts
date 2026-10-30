@@ -35,6 +35,7 @@
 // Linda Marsh's tubal ligation dated 2020, which her new birth date puts at 55.
 import type { Resource } from '../../packages/env/store.ts';
 import type { Overlay, WorldReader } from '../../packages/env/overlay.ts';
+import { IDS } from './ids.ts';
 
 const OKAFOR = { reference: 'Practitioner/pr-okafor' };
 const LIN = { reference: 'Practitioner/pr-lin' };
@@ -168,7 +169,6 @@ const report = (
 const note = (id: string, pt: string, date: string, type: [string, string], enc: string, author: { reference: string }, custodian: { reference: string }, body: string): Resource => ({
   resourceType: 'DocumentReference',
   id,
-  meta: { tag: [{ system: 'urn:riverbend:provenance', code: 'synthetic', display: 'Hand-written synthetic note' }] },
   status: 'current',
   docStatus: 'final',
   type: { coding: [{ system: LOINC, code: type[0], display: type[1] }], text: type[1] },
@@ -350,6 +350,7 @@ Jordan Reyes, NP`;
 
 const overlay: Overlay = {
   task: 'T2',
+  ids: IDS,
   build(world: WorldReader) {
     const renamed = RENAME.map(([id, given, family, birthDate, gender, mrn]): Resource => {
       const p = world.get('Patient', id) as R<'Patient'>;

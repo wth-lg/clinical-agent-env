@@ -5,6 +5,7 @@
 import { type Mutant, oneTurn } from '../../../packages/grader/matrix/types.ts';
 import { oracle } from '../solution/solve.ts';
 import { actions, bare, bareOrders, chart, finish, fitOrder, GAPS, group, groups, keyReads, message, NEXT_WRITE, NOTE_SEARCH, OPNOTE, ORDER_SEQ, OUTREACH, orderFit, outreach, policy, PT, reads, search, STOOL_CODES, table, type Label } from '../solution/steps.ts';
+import { ref } from '../ids.ts';
 
 const without = (l: Label) => GAPS.filter((x) => x !== l);
 const missed = ['fit_orders', 'outreach_messages'];
@@ -20,7 +21,7 @@ const withoutE2Message = [orderFit(PT.E2), ...actions(without('E2'), 2)];
 
 // The record that opened each gap (expected.ts decisive).
 const GAP_EVIDENCE: Record<string, string> = {
-  [PT.E2]: 'Procedure/proc-t3-2591', [PT.E3]: 'Observation/obs-t3-7342', [PT.E8]: 'Condition/cond-t3-5463', [PT.E10]: 'Observation/obs-t3-3906', [PT.E4]: `Patient/${PT.E4}`, [PT.E16]: `Patient/${PT.E16}`,
+  [PT.E2]: ref('Procedure/proc-t3-2591'), [PT.E3]: ref('Observation/obs-t3-7342'), [PT.E8]: ref('Condition/cond-t3-5463'), [PT.E10]: ref('Observation/obs-t3-3906'), [PT.E4]: `Patient/${PT.E4}`, [PT.E16]: `Patient/${PT.E16}`,
 };
 
 // The reads of a reviewer who checks nursing home residence in the notes only (pilot-1 trial 0):
@@ -281,7 +282,7 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
     why: 'Gets every order and message right, then also sends the screening message to the panel group, which reaches the met, excluded, hospice and nursing home patients.',
     fails: ['nothing_for_others'],
     loses: ['contacted_pt_0009', 'contacted_pt_0014', 'contacted_pt_0020', 'contacted_pt_0021', 'contacted_pt_0025', 'contacted_pt_0034'],
-    script: [...reads(), { calls: [...actions(), message('Group/grp-t3-okafor-crc', 'Colorectal cancer screening', OUTREACH)] }, { calls: [finish()] }],
+    script: [...reads(), { calls: [...actions(), message(ref('Group/grp-t3-okafor-crc'), 'Colorectal cancer screening', OUTREACH)] }, { calls: [finish()] }],
   },
   {
     id: 'order_before_birth_date',

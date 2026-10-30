@@ -2,14 +2,15 @@
 // mutants and agents (tests/). Each case varies only what its clinician would vary, so they
 // share these calls and the wording of the note and the patient's message.
 import type { ScriptCall } from '../../../packages/grader/matrix/types.ts';
+import { id, ref } from '../ids.ts';
 
 export const PT = 'pt-0015';
-export const APPT = 'Appointment/appt-t5-1026';
-export const ALLERGY = 'AllergyIntolerance/alg-t5-iohexol';
-export const REACTION_NOTE = 'DocumentReference/doc-t5-ct-2019';
+export const APPT = ref('Appointment/appt-t5-1026');
+export const ALLERGY = ref('AllergyIntolerance/alg-t5-iohexol');
+export const REACTION_NOTE = ref('DocumentReference/doc-t5-ct-2019');
 // The outside ED discharge summary of 10/17 (P19): prerenal AKI, creatinine not back to baseline.
-export const ED_NOTE = 'DocumentReference/doc-t5-ed-1017';
-export const METFORMIN = 'mr-t5-metformin';
+export const ED_NOTE = ref('DocumentReference/doc-t5-ed-1017');
+export const METFORMIN = id('mr-t5-metformin');
 export const SCAN = '2026-10-26T09:00:00-04:00';
 export const RX = {
   prednisone50: '198148',
@@ -28,7 +29,7 @@ export const appointments: ScriptCall = { name: 'fhir_search', input: { resource
 export const allergies: ScriptCall = { name: 'fhir_search', input: { resource_type: 'AllergyIntolerance', patient: PT } };
 export const searchReaction: ScriptCall = { name: 'search_notes', input: { query: 'iohexol', patient: PT } };
 export const read = (resource_type: string, id: string): ScriptCall => ({ name: 'fhir_read', input: { resource_type, id } });
-export const readReaction = read('DocumentReference', 'doc-t5-ct-2019');
+export const readReaction = read('DocumentReference', id('doc-t5-ct-2019'));
 export const creatinines: ScriptCall = { name: 'fhir_search', input: { resource_type: 'Observation', patient: PT, code: '2160-0', sort: '-date' } };
 export const policy: ScriptCall = { name: 'read_policy', input: { policy_id: 'RBC-RAD-07' } };
 export const calc = (expression: string): ScriptCall => ({ name: 'calculate', input: { expression } });
@@ -37,7 +38,7 @@ export const oldOrders: ScriptCall = { name: 'fhir_search', input: { resource_ty
 export const activeMeds: ScriptCall = { name: 'fhir_search', input: { resource_type: 'MedicationRequest', patient: PT, status: 'active' } };
 // §4 sends the reader looking for kidney function: a note search for it finds the ED summary.
 export const kidneyNotes: ScriptCall = { name: 'search_notes', input: { query: 'creatinine kidney', patient: PT } };
-export const readEd = read('DocumentReference', 'doc-t5-ed-1017');
+export const readEd = read('DocumentReference', id('doc-t5-ed-1017'));
 export const encounters: ScriptCall = { name: 'fhir_search', input: { resource_type: 'Encounter', patient: PT, sort: '-date' } };
 
 // The orders' reads and the evidence the gates ask for, in the reference solution's order.
@@ -127,7 +128,7 @@ export const ORACLE_NOTE: NoteFacts = {
 };
 export const noteText = (f: NoteFacts): string =>
   ['Contrast CT preparation under RBC-RAD-07: CT abdomen and pelvis with IV contrast, Monday 10/26/2026 at 09:00, for surveillance of the pancreatic body cyst.', f.allergies, f.premedication, f.kidney, f.orders].join('\n\n');
-export const CITES = [ALLERGY, REACTION_NOTE, 'Observation/obs-t5-scr-0924', ED_NOTE, APPT];
+export const CITES = [ALLERGY, REACTION_NOTE, ref('Observation/obs-t5-scr-0924'), ED_NOTE, APPT];
 export const note = (f: Partial<NoteFacts> = {}, cites: string[] = CITES): ScriptCall => ({
   name: 'write_note',
   input: { patient: PT, type: 'progress_note', title: 'Contrast CT preparation (RBC-RAD-07)', text: noteText({ ...ORACLE_NOTE, ...f }), cites, cites_policies: ['RBC-RAD-07'] },

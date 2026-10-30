@@ -30,6 +30,7 @@
 // The pharmacist's flag still applies §2 and reaches 'continue 2.5 mg': right, for the wrong reason.
 import type { Resource } from '../../packages/env/store.ts';
 import type { Overlay, WorldReader } from '../../packages/env/overlay.ts';
+import { IDS } from './ids.ts';
 
 const PT = 'pt-0002';
 const SUBJECT = { reference: `Patient/${PT}` };
@@ -187,7 +188,6 @@ function base64(s: string): string {
 const note = (id: string, date: string, type: [string, string], enc: string, author: { reference: string } | null, custodian: { reference: string }, text: string): Resource => ({
   resourceType: 'DocumentReference',
   id,
-  meta: { tag: [{ system: 'urn:riverbend:provenance', code: 'synthetic', display: 'Hand-written synthetic note' }] },
   status: 'current',
   docStatus: 'final',
   type: { coding: [{ system: LOINC, code: type[0], display: type[1] }], text: type[1] },
@@ -265,6 +265,7 @@ Hematology`;
 
 const overlay: Overlay = {
   task: 'T1',
+  ids: IDS,
   build(world: WorldReader) {
     const patient = world.get('Patient', PT) as Extract<Resource, { resourceType: 'Patient' }>;
     const renamed: Resource = {

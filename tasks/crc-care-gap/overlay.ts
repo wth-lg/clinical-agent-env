@@ -29,6 +29,7 @@
 // no id sequence maps the traps (pilot-1 trials navigated by 'e1 through e12').
 import type { Resource } from '../../packages/env/store.ts';
 import type { Overlay, WorldReader } from '../../packages/env/overlay.ts';
+import { IDS } from './ids.ts';
 
 const SLOTS = ['pt-0009', 'pt-0011', 'pt-0014', 'pt-0017', 'pt-0018', 'pt-0019', 'pt-0020', 'pt-0021', 'pt-0022', 'pt-0023', 'pt-0024', 'pt-0025', 'pt-0034', 'pt-0035'];
 const E = { E1: 'pt-0014', E2: 'pt-0017', E3: 'pt-0018', E4: 'pt-0023', E5: 'pt-0011', E6: 'pt-0021', E7: 'pt-0009', E8: 'pt-0019', E9: 'pt-0020', E10: 'pt-0022', E11: 'pt-0024', E12: 'pt-0025', E15: 'pt-0034', E16: 'pt-0035' } as const;
@@ -310,7 +311,6 @@ const e15Chart = (world: WorldReader): Resource[] => {
   return [
     strokeStay,
     { ...condition('cond-t3-3904', E.E15, ['230690007', 'Cerebrovascular accident (disorder)'], '2025-12-04T07:40:00-05:00', 'encounter-diagnosis'), encounter: { reference: 'Encounter/enc-t3-2087' } } as Resource,
-    condition('cond-t3-6618', E.E15, ['50582007', 'Hemiplegia (disorder)'], '2025-12-04T07:40:00-05:00'),
     condition('cond-t3-9251', E.E15, ['59621000', 'Essential hypertension (disorder)'], '2016-04-11T10:00:00-04:00'),
     e15Medication('mr-t3-4436', ['309362', 'clopidogrel 75 MG Oral Tablet'], 75, 'Cerebrovascular accident, secondary prevention'),
     e15Medication('mr-t3-7725', ['617311', 'atorvastatin 40 MG Oral Tablet'], 40, 'Cerebrovascular accident, secondary prevention'),
@@ -464,6 +464,7 @@ const dischargeSummary: Resource = {
 
 const overlay: Overlay = {
   task: 'T3',
+  ids: IDS,
   build(world: WorldReader) {
     const ofSlots = (type: string) => SLOTS.flatMap((pt) => world.search(type, { patient: pt }).resources);
     const edited = (d: Doc): Doc => (d.id === E15_VISIT_NOTE ? e15VisitNote(d) : {

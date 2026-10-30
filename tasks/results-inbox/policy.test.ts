@@ -10,6 +10,7 @@ import { lintWorld } from '../../packages/env/lint/index.ts';
 import type { WorldView } from '../../packages/grader/matrix/types.ts';
 import { expected } from './expected.ts';
 import { derive } from './policy.ts';
+import { id, ref } from './ids.ts';
 
 const store = await loadStore(matrixEnv().world);
 const all = [...store.resources()];
@@ -26,7 +27,7 @@ describe('results-inbox', () => {
     // minus 1 month, closed in mid-October, before NOW (2026-10-23), so the study is due within
     // 14 days of today.
     expect(d.items.nodule).toMatchObject({ screening_index: '2025-09-15', lung_rads: 2, overdue: true, window: { start: '2026-10-23', end: '2026-11-06' } });
-    expect(d.items.nodule.sources).toEqual(['DiagnosticReport/dr-t2-ct-0604', 'DiagnosticReport/dr-t2-ldct-0915']);
+    expect(d.items.nodule.sources).toEqual([ref('DiagnosticReport/dr-t2-ct-0604'), ref('DiagnosticReport/dr-t2-ldct-0915')]);
   });
 
   it('sends the hemolyzed potassium to a repeat by Monday and the true one to on-call today', () => {
@@ -39,8 +40,8 @@ describe('results-inbox', () => {
 
   // RBC-RAD-05 §2 in general (clinical F6, review M2): the world with Linda Marsh's H&P smoking
   // line, or the CT's nodule size, rewritten.
-  const HP = 'doc-t2-hp-lm58';
-  const LDCT = 'dr-t2-ldct-0915';
+  const HP = id('doc-t2-hp-lm58');
+  const LDCT = id('dr-t2-ldct-0915');
   const b64 = (t: string) => btoa(String.fromCharCode(...new TextEncoder().encode(t)));
   const unb64 = (d: string) => new TextDecoder().decode(Uint8Array.from(atob(d), (c) => c.charCodeAt(0)));
   const swap = (id: string, edit: (text: string) => string, extra: Resource[] = [], drop?: string[]): WorldView => {
@@ -90,7 +91,7 @@ describe('results-inbox', () => {
   });
 
   it('applies RBC-RAD-05 §2 only to a nodule under 6 mm', () => {
-    expect(() => derive(swap('dr-t2-ct-0604', (t) => t.replaceAll('5 mm solid nodule', '7 mm solid nodule')))).toThrow(/7 mm nodule is outside RBC-RAD-05 §2/);
+    expect(() => derive(swap(id('dr-t2-ct-0604'), (t) => t.replaceAll('5 mm solid nodule', '7 mm solid nodule')))).toThrow(/7 mm nodule is outside RBC-RAD-05 §2/);
   });
 
   // The lab calls a critical value to the after-hours answering service, which tries the covering
@@ -98,7 +99,7 @@ describe('results-inbox', () => {
   // that a closed office let the lab file the value to the inbox.
   it('says the answering service could not reach the covering clinician on the critical potassium items', () => {
     for (const [n, at] of [[4, '18:50'], [5, '18:55']] as const) {
-      const task = store.get('Task', `task-t2-inbox-${n}`) as { note?: Array<{ text: string }> };
+      const task = store.get('Task', id(`task-t2-inbox-${n}`)) as { note?: Array<{ text: string }> };
       const text = (task.note ?? []).map((x) => x.text).join(' ');
       expect(text).toBe(`Lab: critical value called to the after-hours answering service at ${at}; the service could not reach the covering clinician.`);
       expect(text).not.toMatch(/office was closed|Filed to the inbox/);

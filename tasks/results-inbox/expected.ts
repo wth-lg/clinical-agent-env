@@ -1,3 +1,4 @@
+import { ref } from './ids.ts';
 // T2's expected end state, written by hand from design section 4 ("Inbox" and "Gate"): each
 // inbox item, its decisive source, and what the policies make of it. policy.ts computes the same
 // from the initial world, and the matrix fails when the two differ. The grader reads its
@@ -22,9 +23,9 @@ export const expected = {
   queue: 'results',
   items: {
     nodule: {
-      task: 'Task/task-t2-inbox-1',
+      task: ref('Task/task-t2-inbox-1'),
       patient: 'Patient/pt-0013',
-      sources: ['DiagnosticReport/dr-t2-ct-0604', 'DiagnosticReport/dr-t2-ldct-0915'],
+      sources: [ref('DiagnosticReport/dr-t2-ct-0604'), ref('DiagnosticReport/dr-t2-ldct-0915')],
       nodule_mm: 5,
       index_date: '2026-06-04',
       screening_index: '2025-09-15',
@@ -33,29 +34,29 @@ export const expected = {
       window: { start: '2026-10-23', end: '2026-11-06' },
       action: 'order',
     },
-    cyst: { task: 'Task/task-t2-inbox-2', patient: 'Patient/pt-0007', sources: ['DiagnosticReport/dr-t2-us-1020'], action: 'close' },
-    fit: { task: 'Task/task-t2-inbox-3', patient: 'Patient/pt-0006', sources: ['Observation/obs-t2-fit-1019'], existing: ['ServiceRequest/sr-t2-gi-1020'], action: 'link' },
+    cyst: { task: ref('Task/task-t2-inbox-2'), patient: 'Patient/pt-0007', sources: [ref('DiagnosticReport/dr-t2-us-1020')], action: 'close' },
+    fit: { task: ref('Task/task-t2-inbox-3'), patient: 'Patient/pt-0006', sources: [ref('Observation/obs-t2-fit-1019')], existing: [ref('ServiceRequest/sr-t2-gi-1020')], action: 'link' },
     hemolyzed_k: {
-      task: 'Task/task-t2-inbox-4',
+      task: ref('Task/task-t2-inbox-4'),
       patient: 'Patient/pt-0008',
-      sources: ['Observation/obs-t2-c-k'],
+      sources: [ref('Observation/obs-t2-c-k')],
       k: 6.4,
       hemolyzed: true,
       by: '2026-10-26',
       action: 'order',
     },
     critical_k: {
-      task: 'Task/task-t2-inbox-5',
+      task: ref('Task/task-t2-inbox-5'),
       patient: 'Patient/pt-0010',
-      sources: ['Observation/obs-t2-d-k'],
+      sources: [ref('Observation/obs-t2-d-k')],
       k: 6.2,
       hemolyzed: false,
       by: '2026-10-23',
       action: 'order',
     },
-    bone: { task: 'Task/task-t2-inbox-6', patient: 'Patient/pt-0053', sources: ['DiagnosticReport/dr-t2-xr-1022'], report_date: '2026-10-22', by: '2026-11-05', action: 'order' },
-    tsh: { task: 'Task/task-t2-inbox-7', patient: 'Patient/pt-0016', sources: ['Observation/obs-t2-tsh-1020'], action: 'close' },
-    lipid: { task: 'Task/task-t2-inbox-8', patient: 'Patient/pt-0016', sources: ['DiagnosticReport/dr-t2-lipid-1020'], action: 'close' },
+    bone: { task: ref('Task/task-t2-inbox-6'), patient: 'Patient/pt-0053', sources: [ref('DiagnosticReport/dr-t2-xr-1022')], report_date: '2026-10-22', by: '2026-11-05', action: 'order' },
+    tsh: { task: ref('Task/task-t2-inbox-7'), patient: 'Patient/pt-0016', sources: [ref('Observation/obs-t2-tsh-1020')], action: 'close' },
+    lipid: { task: ref('Task/task-t2-inbox-8'), patient: 'Patient/pt-0016', sources: [ref('DiagnosticReport/dr-t2-lipid-1020')], action: 'close' },
   },
   // Patients who share a name with an item's patient: no write may touch them.
   namesakes: ['Patient/pt-0033'],

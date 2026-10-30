@@ -1,3 +1,4 @@
+import { ref } from './ids.ts';
 // T5's expected end state, written by hand from design section 4 ("T5"): the scan, the allergy
 // that decides the prep, the dose times RBC-RAD-07 §2 gives counted back from the scan, and the
 // creatinine §4 asks for. policy.ts computes the same from the initial world, and the matrix
@@ -25,15 +26,15 @@ export const expected = {
   patient_name: 'Daniel Ferreira',
   age: 64,
   diabetes: true,
-  appointment: { id: 'Appointment/appt-t5-1026', start: '2026-10-26T09:00:00-04:00' },
-  contrast_allergy: { id: 'AllergyIntolerance/alg-t5-iohexol', substance: 'iohexol', severity: 'moderate' },
-  reaction_note: 'DocumentReference/doc-t5-ct-2019',
-  other_allergies: ['AllergyIntolerance/alg-00005', 'AllergyIntolerance/alg-00007', 'AllergyIntolerance/alg-t5-pvp', 'AllergyIntolerance/alg-t5-shellfish'],
+  appointment: { id: ref('Appointment/appt-t5-1026'), start: '2026-10-26T09:00:00-04:00' },
+  contrast_allergy: { id: ref('AllergyIntolerance/alg-t5-iohexol'), substance: 'iohexol', severity: 'moderate' },
+  reaction_note: ref('DocumentReference/doc-t5-ct-2019'),
+  other_allergies: ['AllergyIntolerance/alg-00005', 'AllergyIntolerance/alg-00007', ref('AllergyIntolerance/alg-t5-shellfish'), ref('AllergyIntolerance/alg-t5-pvp')],
   regimen: 'premedicate',
   prednisone: { mg: 50, at: ['2026-10-25T20:00:00-04:00', '2026-10-26T02:00:00-04:00', '2026-10-26T08:00:00-04:00'] },
   diphenhydramine: { mg: 50, at: ['2026-10-26T08:00:00-04:00'] },
-  creatinine: { latest: 'Observation/obs-t5-scr-0924', date: '2026-09-24', required: true, current: false, before: '2026-10-26T09:00:00-04:00' },
-  ct_supporting: ['AllergyIntolerance/alg-t5-iohexol', 'DocumentReference/doc-t5-ct-2019'],
-  aki: { note: 'DocumentReference/doc-t5-ed-1017', date: '2026-10-17', discharge_mg_dl: 1.46, baseline_mg_dl: 1, resolved: false },
-  metformin: { id: 'MedicationRequest/mr-t5-metformin', hold: true },
+  creatinine: { latest: ref('Observation/obs-t5-scr-0924'), date: '2026-09-24', required: true, current: false, before: '2026-10-26T09:00:00-04:00' },
+  ct_supporting: [ref('AllergyIntolerance/alg-t5-iohexol'), ref('DocumentReference/doc-t5-ct-2019')],
+  aki: { note: ref('DocumentReference/doc-t5-ed-1017'), date: '2026-10-17', discharge_mg_dl: 1.46, baseline_mg_dl: 1, resolved: false },
+  metformin: { id: ref('MedicationRequest/mr-t5-metformin'), hold: true },
 };

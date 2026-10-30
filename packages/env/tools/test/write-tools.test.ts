@@ -15,6 +15,7 @@ import { indexDefinitions } from '../../validate.ts';
 import { INBOX_QUEUE_SYSTEM, READ_TOOLS, type CatalogEntry, type Policy } from '../read/index.ts';
 import { callTool, definitions, type PropertySchema, type ToolResult } from '../registry.ts';
 import { commit, newSession, TOOLS, WRITE_TOOLS, type WriteContext as Context } from '../write/index.ts';
+import { isPlanted } from '../../../../tasks/planted.ts';
 
 // The trial's store is a whole Store; the tools see only get, search and put.
 type WriteContext = Context & { world: Store };
@@ -258,7 +259,7 @@ function inbox(c: WriteContext, input: Record<string, unknown>): Array<{ task: s
     rows.push(...(p.entries as Array<{ task: string }>));
     offset = p.next_offset as number | undefined;
   }
-  return rows.filter((x) => !/^Task\/[a-z]+-t\d+-/.test(x.task));
+  return rows.filter((x) => !isPlanted(x.task));
 }
 
 describe('create_task', () => {

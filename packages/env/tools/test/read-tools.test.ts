@@ -9,6 +9,7 @@ import { Store } from '../../store.ts';
 import { INBOX_QUEUE_SYSTEM, READ_TOOLS, type CatalogEntry, type Policy, type ReadContext } from '../read/index.ts';
 import { approxTokens, callTool, collapseWhitespace, definitions, exposure, RESULT_TOKEN_CAP, type ToolResult } from '../registry.ts';
 import { ruleViolations } from './exposure-rule.ts';
+import { isPlanted } from '../../../../tasks/planted.ts';
 
 const root = new URL('../../../../', import.meta.url);
 const base = await parseNdjson(readFileSync(new URL('fixtures/world.ndjson.gz', root)));
@@ -511,10 +512,10 @@ describe('lookup_catalog', () => {
 });
 
 describe('list_inbox', () => {
-  // Task overlays add their own inbox items to the shared world, with ids tagged '<prefix>-t<N>-'
-  // (as write-gate.test.ts filters them). Each assertion pages through the whole queue, drops
-  // those rows and compares the rest exactly, so a row list_inbox makes up still fails.
-  const overlay = (row: { task?: unknown }) => /^Task\/[a-z]+-t\d+-/.test(String(row.task));
+  // Task overlays add their own inbox items to the shared world, listed in their id registries
+  // (tasks/planted.ts, as write-gate.test.ts filters them). Each assertion pages through the whole
+  // queue, drops those rows and compares the rest exactly, so a row list_inbox makes up still fails.
+  const overlay = (row: { task?: unknown }) => isPlanted(String(row.task));
   const inbox = (input: Record<string, unknown>) => {
     const rows: Array<Record<string, unknown>> = [];
     for (let offset: number | undefined = 0; offset !== undefined; ) {

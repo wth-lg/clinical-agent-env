@@ -1,19 +1,14 @@
 // The read-only Chart tab's data (pre-audit S12, P17j JU10): a task's patients and a patient's chart,
 // read from the FHIR R4 store the tools act on (the in-browser world), never from the grader's files.
-// A task's overlay marks the resources it adds with its task number in their id (obs-t1-scr-1020,
-// task-t2-inbox-4, grp-t3-okafor-crc), so a task's patients are the patients of its marked
-// resources and the members of its marked Groups (the panel task T3 names its patients by a Group).
+// A task's planted resources are the ones its overlay adds, listed by world id in its id registry
+// (tasks/<id>/ids.ts, packages/env/overlay.ts "Planted ids"; all six in tasks/planted.ts), so a task's patients are the patients
+// of its planted resources and the members of its planted Groups (the panel task T3 names its
+// patients by a Group). The world ids are neutral (obs-03462), so only the registry can say which
+// task planted what.
+import { PLANTED } from '../../../../tasks/planted.ts';
 
-// The overlay marker of each task (tasks/<id>/overlay.ts and its task.toml header name the T number);
-// test/chart.test.ts checks every task has one.
-export const TASK_MARKER: Readonly<Record<string, string>> = {
-  'renal-dose-review': 't1',
-  'results-inbox': 't2',
-  'crc-care-gap': 't3',
-  'discharge-medrec': 't4',
-  'contrast-ct-prep': 't5',
-  'message-queue': 't6',
-};
+// The world ids each task planted (tasks/planted.ts); test/chart.test.ts checks every task has some.
+export const TASK_PLANTED: Readonly<Record<string, ReadonlySet<string>>> = PLANTED;
 
 export type FhirResource = { resourceType: string; id: string; [field: string]: unknown };
 
@@ -36,14 +31,13 @@ export function patientOf(r: FhirResource): string | null {
   return null;
 }
 
-// The patients of a task, as Patient/<id>, sorted; none for a task with no marker.
+// The patients of a task, as Patient/<id>, sorted; none for a task with no registry.
 export function taskPatients(resources: Iterable<FhirResource>, task: string): string[] {
-  const marker = TASK_MARKER[task];
-  if (marker === undefined) return [];
-  const marked = new RegExp(`(?:^|-)${marker}(?:-|$)`);
+  const planted = TASK_PLANTED[task];
+  if (planted === undefined) return [];
   const out = new Set<string>();
   for (const r of resources) {
-    if (!marked.test(r.id)) continue;
+    if (!planted.has(r.id)) continue;
     const p = patientOf(r);
     if (p !== null) out.add(p);
     if (r.resourceType === 'Group') {

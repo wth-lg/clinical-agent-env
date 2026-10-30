@@ -82,8 +82,10 @@ export function derive(world: WorldView): Json {
   };
 
   const out: Record<string, Json> = { items: items.map(key) };
-  for (const item of items) {
-    const n = `m${item.id!.split('-m')[1]}`;
+  // The items in id order are M1 to M6 (ids.ts numbers them so); the label is only the key
+  // expected.ts files each item's answer under.
+  for (const [i, item] of items.entries()) {
+    const n = `m${i + 1}`;
     const patient = item.for!.reference!;
     const text = (world.get('Communication', item.focus!.reference!.split('/')[1]!) as Comm).payload?.map((p) => p.contentString ?? '').join('\n') ?? '';
     const base = { item: key(item), patient };

@@ -12,6 +12,8 @@ import { callTool } from '../../packages/env/tools/registry.ts';
 import type { WorldView } from '../../packages/grader/matrix/types.ts';
 import { expected } from './expected.ts';
 import { derive } from './policy.ts';
+import { id, ref } from './ids.ts';
+import { PLANTED } from '../planted.ts';
 
 const store = await loadStore(matrixEnv().world);
 const all = [...store.resources()];
@@ -34,10 +36,10 @@ describe('crc-care-gap', () => {
   const onSlots = all.filter((r) => SLOTS.some((p) => JSON.stringify(r).includes(`"${p}"`)));
   const text = (r: (typeof all)[number]) =>
     JSON.stringify(r) + (r.resourceType === 'DocumentReference' ? r.content.map((c) => (c.attachment.data ? new TextDecoder().decode(Uint8Array.from(atob(c.attachment.data), (ch) => ch.charCodeAt(0))) : '')).join('\n') : '');
-  const notesOf = (p: string) => onSlots.filter((r) => r.resourceType === 'DocumentReference' && r.subject?.reference === p && r.id !== 'doc-t3-1856');
+  const notesOf = (p: string) => onSlots.filter((r) => r.resourceType === 'DocumentReference' && r.subject?.reference === p && r.id !== id('doc-t3-1856'));
 
   it('has no slot resource outside the overlay that mentions colon screening', () => {
-    const mentions = onSlots.filter((r) => !r.id!.includes('-t3-') && /colon|colorectal|275978004|occult|fecal|sigmoid|\bFIT\b/i.test(text(r))).map((r) => `${r.resourceType}/${r.id}`);
+    const mentions = onSlots.filter((r) => !PLANTED['crc-care-gap']!.has(r.id!) && /colon|colorectal|275978004|occult|fecal|sigmoid|\bFIT\b/i.test(text(r))).map((r) => `${r.resourceType}/${r.id}`);
     expect(mentions).toEqual([]);
   });
 
@@ -58,7 +60,7 @@ describe('crc-care-gap', () => {
   });
 
   it('dates the scanned operative note by its scan, with the surgery as its period', () => {
-    const doc = store.get('DocumentReference', 'doc-t3-1856') as { date?: string; context?: { period?: { start?: string } } };
+    const doc = store.get('DocumentReference', id('doc-t3-1856')) as { date?: string; context?: { period?: { start?: string } } };
     expect(doc.date?.slice(0, 10)).toBe('2015-07-14');
     expect(doc.context?.period?.start?.slice(0, 10)).toBe('2015-06-03');
   });
@@ -73,7 +75,7 @@ describe('crc-care-gap', () => {
   describe('the nursing home pair', () => {
     const ctx: ReadContext = { world: store, clock, policies: [], catalog: [] };
     const tool = (name: string, input: unknown) => callTool(READ_TOOLS, name, input, ctx);
-    const HOUSING = 'Observation/obs-t3-2465';
+    const HOUSING = ref('Observation/obs-t3-2465');
 
     // The fault rule (task.toml): E15 not excluded is a model fault when any of these ran.
     it.each([
@@ -86,7 +88,7 @@ describe('crc-care-gap', () => {
     });
 
     it('an Encounter search for E15 shows the nursing facility visit, and his Patient read the facility address', () => {
-      expect(tool('fhir_search', { resource_type: 'Encounter', patient: 'pt-0034' }).exposed_ids).toContain('Encounter/enc-t3-7781');
+      expect(tool('fhir_search', { resource_type: 'Encounter', patient: 'pt-0034' }).exposed_ids).toContain(ref('Encounter/enc-t3-7781'));
       expect(JSON.stringify(tool('fhir_read', { resource_type: 'Patient', id: 'pt-0034' }).content)).toContain('Maple Grove Care Center');
     });
 
@@ -95,7 +97,7 @@ describe('crc-care-gap', () => {
       expect(e15.length).toBeGreaterThan(0);
       expect(e15.filter((r) => /nursing|care cent|maple grove|facility/i.test(text(r))).map((r) => r.id)).toEqual([]);
       const hits = tool('search_notes', { query: 'nursing home' }).referenced_ids;
-      expect(hits).toContain('DocumentReference/doc-t3-6193');
+      expect(hits).toContain(ref('DocumentReference/doc-t3-6193'));
       expect(hits).not.toContain('Patient/pt-0034');
     });
 
@@ -105,7 +107,7 @@ describe('crc-care-gap', () => {
         .map((r) => r as typeof r & { effectiveDateTime: string; valueCodeableConcept: { coding: Array<{ code: string }> } })
         .sort((a, b) => b.effectiveDateTime.localeCompare(a.effectiveDateTime));
       expect(housing[0]?.valueCodeableConcept.coding[0]?.code).toBe('LA18839-3');
-      const stay = store.get('Encounter', 'enc-t3-4609') as { period?: { end?: string } };
+      const stay = store.get('Encounter', id('enc-t3-4609')) as { period?: { end?: string } };
       expect(housing[0]!.effectiveDateTime > stay.period!.end!).toBe(true);
     });
   });

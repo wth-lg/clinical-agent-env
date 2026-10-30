@@ -28,6 +28,7 @@ import { indexDefinitions } from '../../validate.ts';
 import { INBOX_QUEUE_SYSTEM, type CatalogEntry, type Policy } from '../read/index.ts';
 import { callTool, type ObjectSchema, type PropertySchema, type ToolResult } from '../registry.ts';
 import { newSession, TOOLS, WRITE_TOOLS, type WriteContext as Context } from '../write/index.ts';
+import { isPlanted } from '../../../../tasks/planted.ts';
 
 // The trial's store is a whole Store; the tools see only get, search and put.
 type WriteContext = Context & { world: Store };
@@ -128,10 +129,10 @@ const PRN = (f: unknown) => typeof f === 'string' && f.endsWith('_PRN');
 const AS_NEEDED = ['pain', 'nausea', 'wheeze', 'insomnia', 'anxiety — acute'];
 
 const patientOf = (r: Readonly<Resource>): string | undefined => (r.resourceType === 'Patient' ? r.id : [...patientRefs(r)][0]);
-// Task overlays add resources with ids tagged '<prefix>-t<N>-' to the shared world. The pools
-// below leave them out, so an overlay cannot change what a seeded run draws; this run's own writes
-// ('mr-t0001') stay in.
-const overlay = (id: string | undefined) => /^[a-z]+-t\d+-/.test(id ?? '');
+// Task overlays add resources to the shared world, listed in their id registries
+// (tasks/planted.ts). The pools below leave them out, so an overlay cannot change what a seeded
+// run draws; this run's own writes ('mr-t0001') stay in.
+const overlay = (id: string | undefined) => isPlanted(id);
 const all = <T extends Resource>(c: WriteContext, type: string) => c.world.search<T>(type, {}).resources.filter((r) => !overlay(r.id));
 const REF_TYPES = ['Observation', 'Condition', 'DocumentReference', 'DiagnosticReport', 'MedicationRequest', 'Procedure', 'Encounter'];
 function refsOf(c: WriteContext, patient: string, types = REF_TYPES): string[] {

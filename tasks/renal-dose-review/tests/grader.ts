@@ -12,6 +12,7 @@ import { conceptIs, doseOf, dosesPerDay, isActive, isDrug } from '../../../packa
 import { expected } from '../expected.ts';
 import { mgPerDay, mgPerTime, perDayOf, productName, releaseOf, scheduled } from './regimen.ts';
 import { rubric } from './rubric.ts';
+import { ref } from '../ids.ts';
 
 const PT = expected.patient;
 const SNOMED = 'http://snomed.info/sct';
@@ -22,7 +23,7 @@ const COVERED = ['apixaban', 'metformin', 'gabapentin'] as const;
 const INPUTS = expected.cites;
 const COVERED_REQUESTS = [expected.apixaban.request, expected.metformin.request, expected.gabapentin.request];
 // The one note that prints his birth date ('DOB 1944-03-11').
-const DISCHARGE = 'DocumentReference/doc-t1-dc-0212';
+const DISCHARGE = ref('DocumentReference/doc-t1-dc-0212');
 
 type MR = GateOf<'MedicationRequest'>;
 const keyOf = (r: { resourceType: string; id: string }) => `${r.resourceType}/${r.id}`;

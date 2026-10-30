@@ -5,6 +5,7 @@
 // script makes them. Calls run in order, so a script must take its writes from one Writer in
 // that same order.
 import type { ScriptCall, ScriptTurn } from '../../../packages/grader/matrix/types.ts';
+import { ref } from '../ids.ts';
 
 export const PT = {
   marsh: 'pt-0013',
@@ -17,22 +18,22 @@ export const PT = {
   ondricka: 'pt-0016',
 } as const;
 
-export const ITEM = (n: number) => `Task/task-t2-inbox-${n}`;
+export const ITEM = (n: number) => ref(`Task/task-t2-inbox-${n}` as `Task/task-t2-inbox-${1 | 2 | 3 | 4 | 5 | 6 | 7 | 8}`);
 export const SRC = {
-  ct: 'DiagnosticReport/dr-t2-ct-0604',
-  ldct: 'DiagnosticReport/dr-t2-ldct-0915',
-  hp: 'DocumentReference/doc-t2-hp-lm58',
-  us: 'DiagnosticReport/dr-t2-us-1020',
-  fit: 'Observation/obs-t2-fit-1019',
-  giReferral: 'ServiceRequest/sr-t2-gi-1020',
-  bmpC: 'DiagnosticReport/dr-t2-bmp-c-1022',
-  kC: 'Observation/obs-t2-c-k',
-  bmpD: 'DiagnosticReport/dr-t2-bmp-d-1022',
-  kD: 'Observation/obs-t2-d-k',
-  xr: 'DiagnosticReport/dr-t2-xr-1022',
-  tsh: 'Observation/obs-t2-tsh-1020',
-  lipid: 'DiagnosticReport/dr-t2-lipid-1020',
-  ldl: 'Observation/obs-t2-eo-ldl',
+  ct: ref('DiagnosticReport/dr-t2-ct-0604'),
+  ldct: ref('DiagnosticReport/dr-t2-ldct-0915'),
+  hp: ref('DocumentReference/doc-t2-hp-lm58'),
+  us: ref('DiagnosticReport/dr-t2-us-1020'),
+  fit: ref('Observation/obs-t2-fit-1019'),
+  giReferral: ref('ServiceRequest/sr-t2-gi-1020'),
+  bmpC: ref('DiagnosticReport/dr-t2-bmp-c-1022'),
+  kC: ref('Observation/obs-t2-c-k'),
+  bmpD: ref('DiagnosticReport/dr-t2-bmp-d-1022'),
+  kD: ref('Observation/obs-t2-d-k'),
+  xr: ref('DiagnosticReport/dr-t2-xr-1022'),
+  tsh: ref('Observation/obs-t2-tsh-1020'),
+  lipid: ref('DiagnosticReport/dr-t2-lipid-1020'),
+  ldl: ref('Observation/obs-t2-eo-ldl'),
 } as const;
 
 const split = (ref: string) => ref.split('/') as [string, string];

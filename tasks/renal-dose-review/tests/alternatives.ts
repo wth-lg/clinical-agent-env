@@ -7,6 +7,7 @@ import type { Alternative } from '../../../packages/grader/matrix/types.ts';
 import {
   activeMeds, allObservations, apixabanNotes, crclCalc, DONE, egfrCalc, findPatient, finish, gabapentinBid, gabapentinEvents, hemeLetter, modify, note, order, ORACLE_NOTE, policy, PT, read, RX, scrResults, stop, weights,
 } from '../solution/steps.ts';
+import { id, ref } from '../ids.ts';
 
 const reads = [{ calls: [findPatient] }, { calls: [activeMeds] }, { calls: [scrResults, weights] }, { calls: [policy] }, { calls: [egfrCalc, crclCalc] }];
 const KEEP = 'Extended-phase apixaban after pulmonary embolism: RBC-PHARM-07 §2 covers only non-valvular atrial fibrillation; continued at 2.5 mg twice daily';
@@ -20,7 +21,7 @@ export const alternatives: Alternative[] = [
     why: 'Stops the apixaban order and places a new one at the same 2.5 mg twice daily: the stop-and-replace form of §5, here with no change of dose.',
     script: [
       ...reads,
-      { calls: [stop('mr-t1-apixaban', `${KEEP}; re-ordered`), order(RX.apixaban2_5, 2.5, 'BID', KEEP), gabapentinBid] },
+      { calls: [stop(id('mr-t1-apixaban'), `${KEEP}; re-ordered`), order(RX.apixaban2_5, 2.5, 'BID', KEEP), gabapentinBid] },
       { calls: [note({ apixaban: resigned('stopped and re-ordered on the same 2.5 mg tablet') })] },
       { calls: [finish(DONE)] },
     ],
@@ -30,7 +31,7 @@ export const alternatives: Alternative[] = [
     why: 'Re-signs apixaban at the same 2.5 mg twice daily on the same product (a no-op modify), after checking the indication.',
     script: [
       ...reads,
-      { calls: [modify('mr-t1-apixaban', { value: 2.5, unit: 'mg', frequency: 'BID' }, KEEP), gabapentinBid] },
+      { calls: [modify(id('mr-t1-apixaban'), { value: 2.5, unit: 'mg', frequency: 'BID' }, KEEP), gabapentinBid] },
       { calls: [note({ apixaban: resigned('re-signed') })] },
       { calls: [finish(DONE)] },
     ],
@@ -40,14 +41,14 @@ export const alternatives: Alternative[] = [
     why: 'Reads the discharge summary and the entered-in-error result too, re-orders apixaban 2.5 mg with replaces, re-signs metformin at the same dose and picks gabapentin 400 mg twice daily.',
     script: [
       { calls: [findPatient] },
-      { calls: [activeMeds, read('DocumentReference', 'doc-t1-dc-0212')] },
-      { calls: [scrResults, read('Observation', 'obs-t1-scr-1021'), weights, policy] },
+      { calls: [activeMeds, read('DocumentReference', id('doc-t1-dc-0212'))] },
+      { calls: [scrResults, read('Observation', id('obs-t1-scr-1021')), weights, policy] },
       { calls: [egfrCalc, crclCalc] },
       {
         calls: [
-          order(RX.apixaban2_5, 2.5, 'BID', KEEP, 'mr-t1-apixaban'),
-          modify('mr-t1-metformin', { value: 1000, unit: 'mg', frequency: 'BID' }, 'eGFR 60: no change; re-signed'),
-          modify('mr-t1-gabapentin', { value: 400, unit: 'mg', frequency: 'BID' }, 'CrCl 43 mL/min: 400-1400 mg/day twice daily', RX.gabapentin400),
+          order(RX.apixaban2_5, 2.5, 'BID', KEEP, id('mr-t1-apixaban')),
+          modify(id('mr-t1-metformin'), { value: 1000, unit: 'mg', frequency: 'BID' }, 'eGFR 60: no change; re-signed'),
+          modify(id('mr-t1-gabapentin'), { value: 400, unit: 'mg', frequency: 'BID' }, 'CrCl 43 mL/min: 400-1400 mg/day twice daily', RX.gabapentin400),
         ],
       },
       { calls: [note({ metformin: 'Metformin (§3): eGFR 59.8 mL/min/1.73 m2 by CKD-EPI 2021, 45 or higher: no change in dose; the order was re-signed at the same 1000 mg twice daily.', gabapentin: 'Gabapentin (§4): CrCl 43.2 mL/min by Cockcroft-Gault with actual weight, 30 to 59 band: reduced to 400 mg twice daily (800 mg/day).' })] },
@@ -59,7 +60,7 @@ export const alternatives: Alternative[] = [
     why: 'Switches apixaban to the 5 mg tablet at half a tablet twice daily: still 2.5 mg by mouth twice daily, the same immediate-release dose on another strength, so the dose is unchanged.',
     script: [
       ...reads,
-      { calls: [modify('mr-t1-apixaban', { value: 0.5, unit: '{tablet}', frequency: 'BID' }, `${KEEP}; as half a 5 mg tablet`, RX.apixaban5), gabapentinBid] },
+      { calls: [modify(id('mr-t1-apixaban'), { value: 0.5, unit: '{tablet}', frequency: 'BID' }, `${KEEP}; as half a 5 mg tablet`, RX.apixaban5), gabapentinBid] },
       { calls: [note({ apixaban: resigned('as half a 5 mg tablet') })] },
       { calls: [finish(DONE)] },
     ],
@@ -69,7 +70,7 @@ export const alternatives: Alternative[] = [
     why: 'Re-signs apixaban with the dose written as a count, 1 tablet of the 2.5 mg product twice daily (2.5 mg twice daily).',
     script: [
       ...reads,
-      { calls: [modify('mr-t1-apixaban', { value: 1, unit: '{tablet}', frequency: 'BID' }, `${KEEP}; one 2.5 mg tablet`), gabapentinBid] },
+      { calls: [modify(id('mr-t1-apixaban'), { value: 1, unit: '{tablet}', frequency: 'BID' }, `${KEEP}; one 2.5 mg tablet`), gabapentinBid] },
       { calls: [note({ apixaban: resigned('one 2.5 mg tablet twice daily') })] },
       { calls: [finish(DONE)] },
     ],
@@ -81,9 +82,9 @@ export const alternatives: Alternative[] = [
       ...reads,
       {
         calls: [
-          modify('mr-t1-apixaban', { value: 1, unit: '{tablet}', frequency: 'BID' }, KEEP),
-          modify('mr-t1-metformin', { value: 1, unit: '{tablet}', frequency: 'BID' }, 'eGFR 60: no change; re-signed'),
-          modify('mr-t1-gabapentin', { value: 2, unit: '{capsule}', frequency: 'BID' }, 'CrCl 43 mL/min: 400-1400 mg/day twice daily', RX.gabapentin300),
+          modify(id('mr-t1-apixaban'), { value: 1, unit: '{tablet}', frequency: 'BID' }, KEEP),
+          modify(id('mr-t1-metformin'), { value: 1, unit: '{tablet}', frequency: 'BID' }, 'eGFR 60: no change; re-signed'),
+          modify(id('mr-t1-gabapentin'), { value: 2, unit: '{capsule}', frequency: 'BID' }, 'CrCl 43 mL/min: 400-1400 mg/day twice daily', RX.gabapentin300),
         ],
       },
       { calls: [note({ gabapentin: 'Gabapentin (§4): CrCl 43.2 mL/min by Cockcroft-Gault with actual weight, in the 30 to 59 band: 400 to 1400 mg per day, twice daily. Reduced from 600 mg three times daily to two 300 mg capsules twice daily (1200 mg/day).' })] },
@@ -120,8 +121,8 @@ export const alternatives: Alternative[] = [
       ...reads,
       {
         calls: [
-          modify('mr-t1-apixaban', { value: 2.5, unit: 'mg', frequency: 'Q12H' }, `${KEEP}; every 12 hours`),
-          modify('mr-t1-gabapentin', { value: 600, unit: 'mg', frequency: 'Q12H' }, 'RBC-PHARM-07 §4: CrCl 43 mL/min, 400-1400 mg/day in two doses'),
+          modify(id('mr-t1-apixaban'), { value: 2.5, unit: 'mg', frequency: 'Q12H' }, `${KEEP}; every 12 hours`),
+          modify(id('mr-t1-gabapentin'), { value: 600, unit: 'mg', frequency: 'Q12H' }, 'RBC-PHARM-07 §4: CrCl 43 mL/min, 400-1400 mg/day in two doses'),
         ],
       },
       {
@@ -185,7 +186,7 @@ export const alternatives: Alternative[] = [
     why: 'Reads the three covered orders one by one (apixaban, metformin, gabapentin) instead of searching the medication list: each is seen before the first change, which is what inputs_before_orders asks of the list.',
     script: [
       { calls: [findPatient] },
-      { calls: [read('MedicationRequest', 'mr-t1-apixaban'), read('MedicationRequest', 'mr-t1-metformin'), read('MedicationRequest', 'mr-t1-gabapentin')] },
+      { calls: [read('MedicationRequest', id('mr-t1-apixaban')), read('MedicationRequest', id('mr-t1-metformin')), read('MedicationRequest', id('mr-t1-gabapentin'))] },
       { calls: [scrResults, weights] },
       { calls: [policy] },
       { calls: [egfrCalc, crclCalc] },
@@ -219,7 +220,7 @@ export const alternatives: Alternative[] = [
     why: 'Re-signs metformin on the immediate-release 500 mg tablet, two tablets twice daily: the same 1000 mg twice daily of the same immediate-release therapy, so no change under RBC-PHARM-07 §3 (only a switch of dose form, to extended release, is one; builder-163 D4).',
     script: [
       ...reads,
-      { calls: [gabapentinBid, modify('mr-t1-metformin', { value: 2, unit: '{tablet}', frequency: 'BID' }, 'eGFR 60: no change; re-signed on the 500 mg tablet', RX.metformin500)] },
+      { calls: [gabapentinBid, modify(id('mr-t1-metformin'), { value: 2, unit: '{tablet}', frequency: 'BID' }, 'eGFR 60: no change; re-signed on the 500 mg tablet', RX.metformin500)] },
       { calls: [note()] },
       { calls: [finish(DONE)] },
     ],
@@ -242,7 +243,7 @@ export const alternatives: Alternative[] = [
               route: 'oral',
               timing_events: ['2026-10-29', '2026-10-30', '2026-10-31'].flatMap((d) => [`${d}T08:00:00-04:00`, `${d}T08:00:00-04:00`, `${d}T20:00:00-04:00`, `${d}T20:00:00-04:00`]),
               reason: 'eGFR 60: no change; re-signed as 2 x 500 mg tablets twice daily',
-              replaces: 'mr-t1-metformin',
+              replaces: id('mr-t1-metformin'),
             },
           },
         ],
@@ -255,7 +256,7 @@ export const alternatives: Alternative[] = [
     id: 'age_from_discharge_summary',
     why: "Takes his age from the February discharge summary ('DOB 1944-03-11'), read whole, instead of the patient search: a note that shows the birth date counts as seeing his age.",
     script: [
-      { calls: [activeMeds, read('DocumentReference', 'doc-t1-dc-0212')] },
+      { calls: [activeMeds, read('DocumentReference', id('doc-t1-dc-0212'))] },
       { calls: [scrResults, weights] },
       { calls: [policy] },
       { calls: [egfrCalc, crclCalc] },
@@ -270,7 +271,7 @@ export const alternatives: Alternative[] = [
     script: [
       { calls: [findPatient] },
       { calls: [activeMeds, allObservations, apixabanNotes] },
-      { calls: [read('DocumentReference', 'doc-t1-rx-1021'), policy] },
+      { calls: [read('DocumentReference', id('doc-t1-rx-1021')), policy] },
       { calls: [egfrCalc, crclCalc] },
       { calls: [gabapentinBid] },
       {
@@ -297,7 +298,7 @@ export const alternatives: Alternative[] = [
           {
             name: 'send_message',
             input: {
-              recipient: 'Practitioner/pr-t1-lindqvist',
+              recipient: ref('Practitioner/pr-t1-lindqvist'),
               priority: 'routine',
               subject: 'Harold Vance: renal and age dose review done',
               body: 'Thank you for the flag. The SCr of 1.88 mg/dL on 10/21 was entered in error (mislabelled specimen); his current SCr is 1.21 mg/dL. His apixaban is the extended-phase dose after pulmonary embolism, so the §2 atrial fibrillation criteria do not apply and 2.5 mg twice daily continues unchanged; metformin is unchanged and gabapentin is now 600 mg twice daily.',
@@ -322,7 +323,7 @@ export const alternatives: Alternative[] = [
           {
             name: 'send_message',
             input: {
-              recipient: 'Practitioner/pr-t1-heme',
+              recipient: ref('Practitioner/pr-t1-heme'),
               priority: 'routine',
               subject: 'Harold Vance: extended-phase apixaban',
               body: 'Renal and age dose review today: SCr 1.21 mg/dL, CrCl 43 mL/min. I have left apixaban at 2.5 mg twice daily as your letter of 2/5/2026 asked. Please let me know if you want a different dose.',
@@ -346,7 +347,7 @@ export const alternatives: Alternative[] = [
           {
             name: 'send_message',
             input: {
-              recipient: 'Practitioner/pr-t1-lindqvist',
+              recipient: ref('Practitioner/pr-t1-lindqvist'),
               priority: 'routine',
               subject: 'Harold Vance: apixaban indication',
               body: 'Your screen of 10/21 applied the RBC-PHARM-07 §2 atrial fibrillation criteria to his apixaban. It is the extended-phase dose after his pulmonary embolism, which §2 does not cover, so 2.5 mg twice daily stays as it is.',

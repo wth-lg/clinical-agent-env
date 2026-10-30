@@ -1,3 +1,4 @@
+import { ref } from './ids.ts';
 // T3's expected end state, written by hand from design section 4 ("T3" panel table): each
 // member of the panel group, their age at the end of the 2026 measurement period, the status
 // and reason RBC-QM-02 gives them, whether they get a new FIT order and an outreach message, and
@@ -50,18 +51,18 @@ const m = (patient: string, name: string, family: string, age: number, status: S
 };
 
 export const expected = {
-  group: 'Group/grp-t3-okafor-crc',
+  group: ref('Group/grp-t3-okafor-crc'),
   period: { start: '2026-01-01', end: '2026-12-31' },
   members: [
     m('pt-0009', 'Elly Shyla Trantow', 'Trantow', 72, 'excluded', 'frailty_dementia_medication'),
     m('pt-0011', 'Marilu Blanca Gaona', 'Gaona', 76, 'not_in_population', 'age_over_75', [], { order: null, message: null }),
     m('pt-0014', 'Santo Rodrick Pagac', 'Pagac', 55, 'met', 'colonoscopy'),
-    m('pt-0017', 'Stephan Herman', 'Herman', 54, 'gap', 'colonoscopy_expired', ['Procedure/proc-t3-2591']),
-    m('pt-0018', 'Lance Amado Muller', 'Muller', 53, 'gap', 'sdna_fit_expired', ['Observation/obs-t3-7342']),
-    m('pt-0019', "Harrison O'Keefe", "O'Keefe", 69, 'gap', 'no_screening', ['Condition/cond-t3-5463']),
+    m('pt-0017', 'Stephan Herman', 'Herman', 54, 'gap', 'colonoscopy_expired', [ref('Procedure/proc-t3-2591')]),
+    m('pt-0018', 'Lance Amado Muller', 'Muller', 53, 'gap', 'sdna_fit_expired', [ref('Observation/obs-t3-7342')]),
+    m('pt-0019', "Harrison O'Keefe", "O'Keefe", 69, 'gap', 'no_screening', [ref('Condition/cond-t3-5463')]),
     m('pt-0020', 'Kelsie Wanetta Rohan', 'Rohan', 52, 'excluded', 'hospice'),
     m('pt-0021', 'Ángela Andrea Vigil', 'Vigil', 52, 'excluded', 'total_colectomy'),
-    m('pt-0022', 'Tiny Darline Koss', 'Koss', 52, 'gap', 'fobt_expired', ['Observation/obs-t3-3906']),
+    m('pt-0022', 'Tiny Darline Koss', 'Koss', 52, 'gap', 'fobt_expired', [ref('Observation/obs-t3-3906')]),
     m('pt-0023', 'Burma Donna Leuschke', 'Leuschke', 46, 'gap', 'no_screening', ['Patient/pt-0023']),
     m('pt-0024', 'Delaine Evelyn MacGyver', 'MacGyver', 51, 'gap', 'active_fit_order', [], { order: false, message: null }),
     m('pt-0025', 'Danika Daryl Ullrich', 'Ullrich', 51, 'met', 'ct_colonography'),

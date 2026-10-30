@@ -6,6 +6,7 @@
 // focus, one Task or two, a potassium order instead, an extra message about the potassium).
 import type { Alternative } from '../../../packages/grader/matrix/types.ts';
 import { addendum, allMeds, bmpRecheck, change, findPatient, finish, furosemideUp, kclStop, kTask, labReport, message, MESSAGE, modify, MR, note, order, policy, PT, reads, RX, scr, scrResults, summaries, summary, writes } from '../solution/steps.ts';
+import { id, ref } from '../ids.ts';
 
 // A Task to Dr. Okafor whose focus is the tartrate order.
 const okaforTask = (description: string) => ({ name: 'create_task', input: { patient: PT, owner: 'Practitioner/pr-okafor', due: '2026-10-26', priority: 'routine', description, focus: `MedicationRequest/${MR.tart}` } });
@@ -61,7 +62,7 @@ export const alternatives: Alternative[] = [
     script: [
       ...reads,
       { calls: writes },
-      { calls: [message(), { name: 'send_message', input: { recipient: 'Practitioner/pr-okafor', priority: 'routine', subject: 'Walter Kim: potassium 5.4 after discharge', body: 'The Northgate BMP of 10/21 shows potassium 5.4 mmol/L. Per RBC-TOC-02 §7 I did not start spironolactone and left lisinopril on hold; a Task is due 10/26 to recheck.', about: ['DocumentReference/doc-t4-lab-1021'] } }] },
+      { calls: [message(), { name: 'send_message', input: { recipient: 'Practitioner/pr-okafor', priority: 'routine', subject: 'Walter Kim: potassium 5.4 after discharge', body: 'The Northgate BMP of 10/21 shows potassium 5.4 mmol/L. Per RBC-TOC-02 §7 I did not start spironolactone and left lisinopril on hold; a Task is due 10/26 to recheck.', about: [ref('DocumentReference/doc-t4-lab-1021')] } }] },
       { calls: [note()] },
       { calls: [finish()] },
     ],
@@ -76,7 +77,7 @@ export const alternatives: Alternative[] = [
       { calls: [summary, labReport] },
       { calls: writes },
       { calls: [message()] },
-      { calls: [note({ sources: 'Sources: St. Brigid Regional discharge summary of 10/19/2026; Northgate outside lab report of 10/21/2026: potassium 5.4 mmol/L, creatinine 1.32 mg/dL.', changes: "Changes: furosemide increased from 20 mg to 40 mg daily (discharge summary). Potassium chloride stopped (discharge summary). Spironolactone 12.5 mg daily not started, and lisinopril 10 mg daily kept on hold although SCr 1.32 is below the summary's 1.5: potassium was 5.4 mmol/L on 10/21, above 5.0 (RBC-TOC-02 §7; lab 10/21)." }, ['DocumentReference/doc-t4-dc-1019', 'DocumentReference/doc-t4-lab-1021'])] },
+      { calls: [note({ sources: 'Sources: St. Brigid Regional discharge summary of 10/19/2026; Northgate outside lab report of 10/21/2026: potassium 5.4 mmol/L, creatinine 1.32 mg/dL.', changes: "Changes: furosemide increased from 20 mg to 40 mg daily (discharge summary). Potassium chloride stopped (discharge summary). Spironolactone 12.5 mg daily not started, and lisinopril 10 mg daily kept on hold although SCr 1.32 is below the summary's 1.5: potassium was 5.4 mmol/L on 10/21, above 5.0 (RBC-TOC-02 §7; lab 10/21)." }, [ref('DocumentReference/doc-t4-dc-1019'), ref('DocumentReference/doc-t4-lab-1021')])] },
       { calls: [finish()] },
     ],
   },
@@ -198,7 +199,7 @@ export const alternatives: Alternative[] = [
     script: [
       { calls: reads[0]!.calls },
       { calls: reads[1]!.calls },
-      { calls: [...reads[2]!.calls, { name: 'fhir_read', input: { resource_type: 'DocumentReference', id: 'doc-t4-dc-2025' } }] },
+      { calls: [...reads[2]!.calls, { name: 'fhir_read', input: { resource_type: 'DocumentReference', id: id('doc-t4-dc-2025') } }] },
       { calls: writes },
       { calls: [message()] },
       { calls: [note({ sources: 'Sources: St. Brigid Regional discharge summary of 10/19/2026 and its signed addendum of 10/19/2026 (RBC-TOC-02 §1); Northgate outside lab report of 10/21/2026: potassium 5.4 mmol/L, creatinine 1.32 mg/dL. The March 2025 discharge summary is from an earlier stay and was not used.' })] },
@@ -277,7 +278,7 @@ export const alternatives: Alternative[] = [
               priority: 'routine',
               subject: 'Walter Kim: other points for the post-discharge visit',
               body: 'His creatinine is 1.32 on 10/21, still above his baseline of about 0.94, and his potassium 5.4 with spironolactone and lisinopril both held. He is also on no SGLT2 inhibitor for heart failure with reduced ejection fraction; worth discussing at the visit.',
-              about: ['DocumentReference/doc-t4-lab-1021'],
+              about: [ref('DocumentReference/doc-t4-lab-1021')],
             },
           },
         ],

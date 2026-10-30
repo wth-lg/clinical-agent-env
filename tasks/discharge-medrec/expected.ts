@@ -1,3 +1,4 @@
+import { ref } from './ids.ts';
 // T4's expected end state, written by hand from design section 4 ("T4" gate): what each line of
 // the 2026-10-19 discharge documents does to the outpatient list under RBC-TOC-02, and the home
 // medication no document addresses. policy.ts computes the same from the initial world, and the
@@ -27,21 +28,21 @@
 // the rule cut before 'Lisinopril:' (alternative natural_snippet_queries, P17 builder-153).
 export const expected = {
   patient: 'Patient/pt-0005',
-  sources: { summary: 'DocumentReference/doc-t4-dc-1019', addendum: 'DocumentReference/doc-t4-dc-1019-add', correction: 'spironolactone 25 mg daily',
+  sources: { summary: ref('DocumentReference/doc-t4-dc-1019'), addendum: ref('DocumentReference/doc-t4-dc-1019-add'), correction: 'spironolactone 25 mg daily',
     lines: {
       furosemide: 'Furosemide 40 mg by mouth daily (increased from 20 mg).',
       potassium_chloride: 'Potassium chloride: stop.',
       lisinopril: 'Resume home 10 mg daily when SCr < 1.5',
     },
-    ignored: ['DocumentReference/doc-t4-dc-2025'] },
-  scr: { id: 'DocumentReference/doc-t4-lab-1021', mg_dl: 1.32, threshold: 1.5, line: 'Creatinine 1.32 mg/dL' },
-  k: { id: 'DocumentReference/doc-t4-lab-1021', mmol_l: 5.4, threshold: 5.0, line: 'Potassium 5.4 mmol/L' },
-  furosemide: { request: 'MedicationRequest/mr-t4-furosemide', action: 'modify', daily_mg: 40, per_day: 1 },
+    ignored: [ref('DocumentReference/doc-t4-dc-2025')] },
+  scr: { id: ref('DocumentReference/doc-t4-lab-1021'), mg_dl: 1.32, threshold: 1.5, line: 'Creatinine 1.32 mg/dL' },
+  k: { id: ref('DocumentReference/doc-t4-lab-1021'), mmol_l: 5.4, threshold: 5.0, line: 'Potassium 5.4 mmol/L' },
+  furosemide: { request: ref('MedicationRequest/mr-t4-furosemide'), action: 'modify', daily_mg: 40, per_day: 1 },
   spironolactone: { request: null, action: 'task', daily_mg: 25, per_day: 1 },
-  potassium_chloride: { request: 'MedicationRequest/mr-t4-kcl', action: 'stop' },
-  lisinopril: { request: 'MedicationRequest/mr-t4-lisinopril', action: 'task', daily_mg: 10, per_day: 1 },
-  unchanged: ['MedicationRequest/mr-t4-aspirin', 'MedicationRequest/mr-t4-atorvastatin', 'MedicationRequest/mr-t4-metoprolol-succ', 'MedicationRequest/mr-t4-metoprolol-tart', 'MedicationRequest/mr-t4-omeprazole'],
+  potassium_chloride: { request: ref('MedicationRequest/mr-t4-kcl'), action: 'stop' },
+  lisinopril: { request: ref('MedicationRequest/mr-t4-lisinopril'), action: 'task', daily_mg: 10, per_day: 1 },
+  unchanged: [ref('MedicationRequest/mr-t4-aspirin'), ref('MedicationRequest/mr-t4-atorvastatin'), ref('MedicationRequest/mr-t4-metoprolol-succ'), ref('MedicationRequest/mr-t4-metoprolol-tart'), ref('MedicationRequest/mr-t4-omeprazole')],
   not_ordered: ['pantoprazole'],
-  message_about: ['MedicationRequest/mr-t4-metoprolol-tart'],
-  cites: ['DocumentReference/doc-t4-dc-1019-add', 'DocumentReference/doc-t4-lab-1021'],
+  message_about: [ref('MedicationRequest/mr-t4-metoprolol-tart')],
+  cites: [ref('DocumentReference/doc-t4-dc-1019-add'), ref('DocumentReference/doc-t4-lab-1021')],
 };

@@ -8,6 +8,7 @@
 import type { Agent, Script, ScriptCall } from '../../../packages/grader/matrix/types.ts';
 import { ORACLE, solve } from '../solution/solve.ts';
 import { activeServiceRequests, inbox, marshReports, policies, PT, read, searchNotes, SRC, writer } from '../solution/steps.ts';
+import { id } from '../ids.ts';
 
 // The oracle with a copy of item 3's patient message sent to Linda Marsh after the last write
 // (before finish), so the ids the closures link do not move.
@@ -43,7 +44,7 @@ export const alternatives = [
     id: 'lisinopril_dose_increase',
     why: "Does what the oracle does and then raises Denise Holloway's lisinopril to 20 mg daily at a K of 6.2: escalating the likely cause of the true hyperkalaemia earns no ace_inhibitor_addressed credit, whatever the page says (P17j JG9 r2, verifier-phase-P17i-JG9-1 F2). The gates pass, so it is declared here with the loss.",
     loses: ['ace_inhibitor_addressed', 'ace_inhibitor_escalated'],
-    script: before(solve(), [{ name: 'change_medication', input: { medication_request: 'mr-t2-lisinopril', action: 'modify', new_dose: { value: 20, unit: 'mg', frequency: 'QD' }, reason: 'BP above goal: increase lisinopril' } }]),
+    script: before(solve(), [{ name: 'change_medication', input: { medication_request: id('mr-t2-lisinopril'), action: 'modify', new_dose: { value: 20, unit: 'mg', frequency: 'QD' }, reason: 'BP above goal: increase lisinopril' } }]),
   },
   {
     id: 'increase_lisinopril_notice',

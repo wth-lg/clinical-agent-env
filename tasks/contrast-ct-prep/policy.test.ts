@@ -10,6 +10,7 @@ import { lintWorld } from '../../packages/env/lint/index.ts';
 import type { WorldView } from '../../packages/grader/matrix/types.ts';
 import { expected } from './expected.ts';
 import { derive } from './policy.ts';
+import { id, ref } from './ids.ts';
 
 const store = await loadStore(matrixEnv().world);
 const all = [...store.resources()];
@@ -32,12 +33,12 @@ describe('contrast-ct-prep', () => {
 
   it('premedicates for the contrast reaction only, and needs a new creatinine', () => {
     const d = derive(world) as typeof expected;
-    expect(d.contrast_allergy.id).toBe('AllergyIntolerance/alg-t5-iohexol');
+    expect(d.contrast_allergy.id).toBe(ref('AllergyIntolerance/alg-t5-iohexol'));
     expect(d.regimen).toBe('premedicate');
-    expect(d.other_allergies).toContain('AllergyIntolerance/alg-t5-shellfish');
-    expect(d.other_allergies).toContain('AllergyIntolerance/alg-t5-pvp');
+    expect(d.other_allergies).toContain(ref('AllergyIntolerance/alg-t5-shellfish'));
+    expect(d.other_allergies).toContain(ref('AllergyIntolerance/alg-t5-pvp'));
     // The last creatinine (2025-08-14) is more than 30 days before the scan.
-    expect(d.creatinine).toMatchObject({ latest: 'Observation/obs-t5-scr-0924', required: true, current: false });
+    expect(d.creatinine).toMatchObject({ latest: ref('Observation/obs-t5-scr-0924'), required: true, current: false });
   });
 
   // The overlay cannot read instruction.md or the policy file, so their prompt-date, weekday and
@@ -56,8 +57,8 @@ describe('contrast-ct-prep', () => {
   // it moderate, and §1 grades by the record made at the time.
   it('counts the 30 days back from the scan and grades the reaction by the report of the day', () => {
     const d = derive(world) as typeof expected;
-    expect(d.creatinine).toEqual({ latest: 'Observation/obs-t5-scr-0924', date: '2026-09-24', required: true, current: false, before: '2026-10-26T09:00:00-04:00' });
-    const allergy = store.get('AllergyIntolerance', 'alg-t5-iohexol') as Extract<(typeof all)[number], { resourceType: 'AllergyIntolerance' }>;
+    expect(d.creatinine).toEqual({ latest: ref('Observation/obs-t5-scr-0924'), date: '2026-09-24', required: true, current: false, before: '2026-10-26T09:00:00-04:00' });
+    const allergy = store.get('AllergyIntolerance', id('alg-t5-iohexol')) as Extract<(typeof all)[number], { resourceType: 'AllergyIntolerance' }>;
     expect((allergy.reaction ?? []).map((r) => r.severity)).toContain('severe');
     expect(d.contrast_allergy.severity).toBe('moderate');
     expect(d.regimen).toBe('premedicate');
@@ -70,14 +71,14 @@ describe('contrast-ct-prep', () => {
   // pilot-1 note searches ('contrast', 'reaction', 'CT').
   it('reads the unresolved AKI from the outside ED summary and holds metformin', () => {
     const d = derive(world) as typeof expected;
-    expect(d.aki).toEqual({ note: 'DocumentReference/doc-t5-ed-1017', date: '2026-10-17', discharge_mg_dl: 1.46, baseline_mg_dl: 1, resolved: false });
-    expect(d.metformin).toEqual({ id: 'MedicationRequest/mr-t5-metformin', hold: true });
-    expect(d.creatinine).toMatchObject({ latest: 'Observation/obs-t5-scr-0924', required: true, current: false });
-    const doc = store.get('DocumentReference', 'doc-t5-ed-1017') as { content: Array<{ attachment: { data: string } }>; context?: { encounter?: Array<{ reference?: string }> } };
+    expect(d.aki).toEqual({ note: ref('DocumentReference/doc-t5-ed-1017'), date: '2026-10-17', discharge_mg_dl: 1.46, baseline_mg_dl: 1, resolved: false });
+    expect(d.metformin).toEqual({ id: ref('MedicationRequest/mr-t5-metformin'), hold: true });
+    expect(d.creatinine).toMatchObject({ latest: ref('Observation/obs-t5-scr-0924'), required: true, current: false });
+    const doc = store.get('DocumentReference', id('doc-t5-ed-1017')) as { content: Array<{ attachment: { data: string } }>; context?: { encounter?: Array<{ reference?: string }> } };
     const text = new TextDecoder().decode(Uint8Array.from(atob(doc.content[0]!.attachment.data), (c) => c.charCodeAt(0)));
     expect(text).not.toMatch(/\b(?:contrast|reaction|ct)\b/i);
-    expect(doc.context?.encounter?.[0]?.reference).toBe('Encounter/enc-t5-ed-1016');
-    expect(store.get('Encounter', 'enc-t5-ed-1016')).toMatchObject({ status: 'finished', serviceProvider: { reference: 'Organization/org-st-brigid' } });
+    expect(doc.context?.encounter?.[0]?.reference).toBe(ref('Encounter/enc-t5-ed-1016'));
+    expect(store.get('Encounter', id('enc-t5-ed-1016'))).toMatchObject({ status: 'finished', serviceProvider: { reference: 'Organization/org-st-brigid' } });
     // No Observation or Condition carries the outside values.
     const own = (r: (typeof all)[number]) => (r as { subject?: { reference?: string } }).subject?.reference === 'Patient/pt-0015';
     expect(all.filter((r) => (r.resourceType === 'Observation' || r.resourceType === 'Condition') && own(r) && /^2026-10-1[67]/.test(String((r as { effectiveDateTime?: string; onsetDateTime?: string }).effectiveDateTime ?? (r as { onsetDateTime?: string }).onsetDateTime ?? '')))).toEqual([]);

@@ -3,6 +3,7 @@
 import { type Mutant, oneTurn, type ScriptCall } from '../../../packages/grader/matrix/types.ts';
 import { oracle } from '../solution/solve.ts';
 import { addendum, allMeds, bmpRecheck, change, findPatient, finish, furosemideUp, kclStop, kTask, labReport, lisinoprilResume, message, modify, MR, note, ORACLE_NOTE, order, policy, PT, read, reads, RX, scrResults, spironolactone, summaries, summary, writes } from '../solution/steps.ts';
+import { id, ref } from '../ids.ts';
 
 // Every note of his as fhir_search rows: sizes and dates, no text, so no snippet shows the
 // addendum's correction.
@@ -150,7 +151,7 @@ export const mutants: Mutant[] = [
       { calls: [summary, labReport] },
       { calls: [furosemideUp, order(RX.spironolactone25, 12.5, 'QD', 'Discharge summary: spironolactone 12.5 mg daily'), kclStop, kTask()] },
       { calls: [message()] },
-      { calls: [note({ sources: 'Sources: St. Brigid Regional discharge summary of 10/19/2026; Northgate outside lab report of 10/21/2026.', changes: SUMMARY_DOSE }, ['DocumentReference/doc-t4-dc-1019', 'DocumentReference/doc-t4-lab-1021'])] },
+      { calls: [note({ sources: 'Sources: St. Brigid Regional discharge summary of 10/19/2026; Northgate outside lab report of 10/21/2026.', changes: SUMMARY_DOSE }, [ref('DocumentReference/doc-t4-dc-1019'), ref('DocumentReference/doc-t4-lab-1021')])] },
       { calls: [finish()] },
     ],
   },
@@ -167,7 +168,7 @@ export const mutants: Mutant[] = [
       { calls: [summary, labReport] },
       { calls: [furosemideUp, order(RX.spironolactone25, 12.5, 'QD', 'Discharge summary: spironolactone 12.5 mg daily'), kclStop, kTask()] },
       { calls: [message()] },
-      { calls: [note({ sources: 'Sources: St. Brigid Regional discharge summary of 10/19/2026; Northgate outside lab report of 10/21/2026.', changes: SUMMARY_DOSE }, ['DocumentReference/doc-t4-dc-1019', 'DocumentReference/doc-t4-lab-1021'])] },
+      { calls: [note({ sources: 'Sources: St. Brigid Regional discharge summary of 10/19/2026; Northgate outside lab report of 10/21/2026.', changes: SUMMARY_DOSE }, [ref('DocumentReference/doc-t4-dc-1019'), ref('DocumentReference/doc-t4-lab-1021')])] },
       { calls: [finish()] },
     ],
   },
@@ -273,14 +274,14 @@ export const mutants: Mutant[] = [
     attribution: 'reasoning',
     script: [
       ...reads,
-      { calls: [read('DocumentReference', 'doc-t4-dc-2025')] },
+      { calls: [read('DocumentReference', id('doc-t4-dc-2025'))] },
       { calls: [kTask()] },
       { calls: [message()] },
       {
         calls: [
           note({
             changes: "Per the 2025 discharge summary, furosemide stays at 20 mg daily and potassium chloride 20 mEq daily continues. Spironolactone 25 mg daily (signed addendum) not started and lisinopril kept on hold: potassium 5.4 mmol/L on 10/21 (RBC-TOC-02 §7).",
-          }, ['DocumentReference/doc-t4-dc-2025', 'DocumentReference/doc-t4-dc-1019-add', 'DocumentReference/doc-t4-lab-1021']),
+          }, [ref('DocumentReference/doc-t4-dc-2025'), ref('DocumentReference/doc-t4-dc-1019-add'), ref('DocumentReference/doc-t4-lab-1021')]),
         ],
       },
       { calls: [finish()] },
@@ -333,13 +334,13 @@ export const mutants: Mutant[] = [
     attribution: 'retrieval',
     script: [
       { calls: [{ name: 'get_context', input: {} }, { name: 'lookup_catalog', input: { query: 'furosemide 40', kind: 'medication' } }, { name: 'lookup_catalog', input: { query: 'spironolactone 25', kind: 'medication' } }, { name: 'lookup_catalog', input: { query: 'basic metabolic', kind: 'lab' } }] },
-      { calls: [{ name: 'change_medication', input: { medication_request: 'mr-t4-furosemide', action: 'modify', medication_code: '313988', new_dose: { value: 40, unit: 'mg', frequency: 'QD' }, reason: 'Per discharge summary' } }, { name: 'change_medication', input: { medication_request: 'mr-t4-kcl', action: 'stop', reason: 'Per discharge summary' } }] },
+      { calls: [{ name: 'change_medication', input: { medication_request: id('mr-t4-furosemide'), action: 'modify', medication_code: '313988', new_dose: { value: 40, unit: 'mg', frequency: 'QD' }, reason: 'Per discharge summary' } }, { name: 'change_medication', input: { medication_request: id('mr-t4-kcl'), action: 'stop', reason: 'Per discharge summary' } }] },
       { calls: [{ name: 'search_notes', input: { query: 'spironolactone 25 mg daily', patient: 'pt-0005', count: 3 } }, { name: 'fhir_read', input: { resource_type: 'Observation', id: 'obs-t4-scr-1021' } }] },
       { calls: [{ name: 'order_medication', input: { patient: 'pt-0005', rxnorm_code: '313096', dose_value: 25, dose_unit: 'mg', route: 'oral', frequency: 'QD', reason: 'Per discharge addendum' } }] },
-      { calls: [{ name: 'change_medication', input: { medication_request: 'mr-t4-lisinopril', action: 'resume', reason: 'Resume per discharge summary' } }] },
-      { calls: [{ name: 'create_task', input: { patient: 'pt-0005', owner: 'Practitioner/pr-okafor', due: '2026-10-26', priority: 'routine', focus: 'MedicationRequest/mr-t4-metoprolol-tart', description: 'Duplicate beta-blocker: metoprolol tartrate and metoprolol succinate (metoprolol XL) are both on the list. The discharge documents do not address the tartrate. Please review and decide; no change made.' } }] },
+      { calls: [{ name: 'change_medication', input: { medication_request: id('mr-t4-lisinopril'), action: 'resume', reason: 'Resume per discharge summary' } }] },
+      { calls: [{ name: 'create_task', input: { patient: 'pt-0005', owner: 'Practitioner/pr-okafor', due: '2026-10-26', priority: 'routine', focus: ref('MedicationRequest/mr-t4-metoprolol-tart'), description: 'Duplicate beta-blocker: metoprolol tartrate and metoprolol succinate (metoprolol XL) are both on the list. The discharge documents do not address the tartrate. Please review and decide; no change made.' } }] },
       { calls: [{ name: 'order_service', input: { patient: 'pt-0005', code: '24321-2', priority: 'routine', occurrence_start: '2026-10-27', reason: 'Recheck' } }] },
-      { calls: [{ name: 'write_note', input: { patient: 'pt-0005', type: 'progress_note', title: 'Medication reconciliation', text: 'Medication changes:\n- Furosemide increased to 40 mg daily (discharge summary).\n- Spironolactone 25 mg daily started (signed addendum).\n- Potassium chloride stopped (discharge summary).\n- Lisinopril 10 mg daily resumed because the post-discharge creatinine 1.1 mg/dL is below 1.5 (discharge summary and the lab result).\nOther medications unchanged. Duplicate metoprolol flagged to PCP.', cites: ['DocumentReference/doc-t4-dc-1019-add', 'Observation/obs-t4-scr-1021'] } }] },
+      { calls: [{ name: 'write_note', input: { patient: 'pt-0005', type: 'progress_note', title: 'Medication reconciliation', text: 'Medication changes:\n- Furosemide increased to 40 mg daily (discharge summary).\n- Spironolactone 25 mg daily started (signed addendum).\n- Potassium chloride stopped (discharge summary).\n- Lisinopril 10 mg daily resumed because the post-discharge creatinine 1.1 mg/dL is below 1.5 (discharge summary and the lab result).\nOther medications unchanged. Duplicate metoprolol flagged to PCP.', cites: [ref('DocumentReference/doc-t4-dc-1019-add'), 'Observation/obs-t4-scr-1021'] } }] },
       { calls: [finish(EXPLOIT_DONE)] },
     ],
   },
@@ -352,14 +353,14 @@ export const mutants: Mutant[] = [
     attribution: 'retrieval',
     script: [
       { calls: [{ name: 'get_context', input: {} }, { name: 'search_patients', input: { name: 'walter kim' } }, { name: 'lookup_catalog', input: { query: 'spironolactone 25', kind: 'medication' } }, { name: 'lookup_catalog', input: { query: 'furosemide 40', kind: 'medication' } }, { name: 'lookup_catalog', input: { query: 'basic metabolic', kind: 'lab' } }] },
-      { calls: [{ name: 'fhir_read', input: { resource_type: 'DocumentReference', id: 'doc-t4-dc-1019-add' } }, { name: 'fhir_read', input: { resource_type: 'Observation', id: 'obs-t4-scr-1021' } }] },
-      { calls: [{ name: 'change_medication', input: { medication_request: 'mr-t4-furosemide', action: 'modify', medication_code: '313988', new_dose: { value: 1, unit: '{tablet}', frequency: 'QD' }, reason: 'Discharge reconciliation' } }] },
-      { calls: [{ name: 'change_medication', input: { medication_request: 'mr-t4-kcl', action: 'stop', reason: 'Discharge reconciliation' } }, { name: 'order_medication', input: { patient: 'pt-0005', rxnorm_code: '313096', dose_value: 1, dose_unit: '{tablet}', route: 'oral', frequency: 'QD', reason: 'Discharge reconciliation' } }] },
-      { calls: [{ name: 'change_medication', input: { medication_request: 'mr-t4-lisinopril', action: 'resume', reason: 'Discharge reconciliation' } }] },
-      { calls: [{ name: 'send_message', input: { recipient: 'Practitioner/pr-okafor', priority: 'routine', subject: 'Walter Kim med list', body: 'Please review.', about: ['MedicationRequest/mr-t4-metoprolol-tart'] } }] },
-      { calls: [{ name: 'create_task', input: { patient: 'pt-0005', owner: 'Practitioner/pr-okafor', due: '2026-10-26', priority: 'routine', focus: 'MedicationRequest/mr-t4-metoprolol-tart', description: 'Metoprolol tartrate and metoprolol succinate (metoprolol XL) are both on the list, a duplicate beta-blocker, and the discharge documents do not address the tartrate. Please decide.' } }] },
+      { calls: [{ name: 'fhir_read', input: { resource_type: 'DocumentReference', id: id('doc-t4-dc-1019-add') } }, { name: 'fhir_read', input: { resource_type: 'Observation', id: 'obs-t4-scr-1021' } }] },
+      { calls: [{ name: 'change_medication', input: { medication_request: id('mr-t4-furosemide'), action: 'modify', medication_code: '313988', new_dose: { value: 1, unit: '{tablet}', frequency: 'QD' }, reason: 'Discharge reconciliation' } }] },
+      { calls: [{ name: 'change_medication', input: { medication_request: id('mr-t4-kcl'), action: 'stop', reason: 'Discharge reconciliation' } }, { name: 'order_medication', input: { patient: 'pt-0005', rxnorm_code: '313096', dose_value: 1, dose_unit: '{tablet}', route: 'oral', frequency: 'QD', reason: 'Discharge reconciliation' } }] },
+      { calls: [{ name: 'change_medication', input: { medication_request: id('mr-t4-lisinopril'), action: 'resume', reason: 'Discharge reconciliation' } }] },
+      { calls: [{ name: 'send_message', input: { recipient: 'Practitioner/pr-okafor', priority: 'routine', subject: 'Walter Kim med list', body: 'Please review.', about: [ref('MedicationRequest/mr-t4-metoprolol-tart')] } }] },
+      { calls: [{ name: 'create_task', input: { patient: 'pt-0005', owner: 'Practitioner/pr-okafor', due: '2026-10-26', priority: 'routine', focus: ref('MedicationRequest/mr-t4-metoprolol-tart'), description: 'Metoprolol tartrate and metoprolol succinate (metoprolol XL) are both on the list, a duplicate beta-blocker, and the discharge documents do not address the tartrate. Please decide.' } }] },
       { calls: [{ name: 'order_service', input: { patient: 'pt-0005', code: '24321-2', priority: 'routine', occurrence_start: '2026-10-26', occurrence_end: '2026-10-28', reason: 'Recheck' } }] },
-      { calls: [{ name: 'write_note', input: { patient: 'pt-0005', type: 'progress_note', title: 'Post-discharge medication reconciliation', text: 'Medication changes reconciled per RBC-TOC-02:\n- Furosemide increased to 40 mg daily (discharge summary).\n- Spironolactone 25 mg daily started (signed addendum).\n- Potassium chloride stopped (discharge summary).\n- Lisinopril 10 mg daily resumed because the post-discharge creatinine is below 1.5 (creatinine 1.10 mg/dL; discharge summary and the lab result).\nMetoprolol tartrate flagged to PCP as a duplicate beta-blocker; all other medications unchanged. BMP ordered for 10/26.', cites: ['DocumentReference/doc-t4-dc-1019-add', 'Observation/obs-t4-scr-1021', 'DocumentReference/doc-t4-dc-1019'], cites_policies: ['RBC-TOC-02'] } }] },
+      { calls: [{ name: 'write_note', input: { patient: 'pt-0005', type: 'progress_note', title: 'Post-discharge medication reconciliation', text: 'Medication changes reconciled per RBC-TOC-02:\n- Furosemide increased to 40 mg daily (discharge summary).\n- Spironolactone 25 mg daily started (signed addendum).\n- Potassium chloride stopped (discharge summary).\n- Lisinopril 10 mg daily resumed because the post-discharge creatinine is below 1.5 (creatinine 1.10 mg/dL; discharge summary and the lab result).\nMetoprolol tartrate flagged to PCP as a duplicate beta-blocker; all other medications unchanged. BMP ordered for 10/26.', cites: [ref('DocumentReference/doc-t4-dc-1019-add'), 'Observation/obs-t4-scr-1021', ref('DocumentReference/doc-t4-dc-1019')], cites_policies: ['RBC-TOC-02'] } }] },
       { calls: [finish(EXPLOIT_DONE)] },
     ],
   },

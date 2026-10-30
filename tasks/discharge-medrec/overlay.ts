@@ -25,6 +25,7 @@
 // beta-blocker no discharge document mentions; doc-t4-dc-2025 is last year's summary.
 import type { Resource } from '../../packages/env/store.ts';
 import type { Overlay, WorldReader } from '../../packages/env/overlay.ts';
+import { IDS } from './ids.ts';
 
 const PT = 'pt-0005';
 const SUBJECT = { reference: `Patient/${PT}` };
@@ -134,7 +135,6 @@ function base64(s: string): string {
 const note = (id: string, date: string, enc: string, text: string, extra: Partial<Extract<Resource, { resourceType: 'DocumentReference' }>> = {}): Resource => ({
   resourceType: 'DocumentReference',
   id,
-  meta: { tag: [{ system: 'urn:riverbend:provenance', code: 'synthetic', display: 'Hand-written synthetic note' }] },
   status: 'current',
   docStatus: 'final',
   type: { coding: [{ system: LOINC, code: '18842-5', display: 'Discharge summary' }], text: 'Discharge summary' },
@@ -220,7 +220,6 @@ Calcium           9.3 mg/dL     (8.6-10.3)`;
 const LAB_DOC: Resource = {
   resourceType: 'DocumentReference',
   id: 'doc-t4-lab-1021',
-  meta: { tag: [{ system: 'urn:riverbend:provenance', code: 'synthetic', display: 'Hand-written synthetic note' }] },
   status: 'current',
   docStatus: 'final',
   type: { coding: [{ system: LOINC, code: '11502-2', display: 'Laboratory report' }], text: 'Laboratory report' },
@@ -235,6 +234,7 @@ const LAB_DOC: Resource = {
 
 const overlay: Overlay = {
   task: 'T4',
+  ids: IDS,
   build(world: WorldReader) {
     const patient = world.get('Patient', PT) as Extract<Resource, { resourceType: 'Patient' }>;
     const renamed: Resource = { ...patient, name: [{ use: 'official', family: 'Kim', given: ['Walter'], prefix: ['Mr.'] }], birthDate: '1952-02-19', generalPractitioner: [OKAFOR] };

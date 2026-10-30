@@ -28,6 +28,7 @@ const OVERLAY_SOURCES = [
   'fixtures/synthea/generate.sh',
   'packages/env/clock.ts',
   'packages/env/overlay.ts',
+  'packages/env/planted.ts',
   'packages/env/world.ts',
   'scripts/fixtures-synthea.ts',
 ];
@@ -138,7 +139,9 @@ export async function build(outDir: string): Promise<{ stateHash: string; resour
   const defTypes = [...RESOURCE_TYPES].sort();
   const definitions = `${JSON.stringify(await prunedDefinitions(defTypes))}\n`;
 
-  const inputs = Object.fromEntries([...OVERLAY_SOURCES, ...overlayFiles].sort().map((f) => [f, sha256(readFileSync(join(repo, f)))]));
+  // Each overlay's id registry (tasks/<id>/ids.ts) names its planted resources' world ids.
+  const registries = overlayFiles.map((f) => f.replace(/overlay\.ts$/, 'ids.ts')).filter((f) => existsSync(join(repo, f)));
+  const inputs = Object.fromEntries([...OVERLAY_SOURCES, ...overlayFiles, ...registries].sort().map((f) => [f, sha256(readFileSync(join(repo, f)))]));
   const manifest = {
     now: NOW,
     world: {

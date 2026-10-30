@@ -10,6 +10,7 @@ import {
   policy, PT, prednisone, read, readEd, readReaction, READS, REACTION_NOTE, RX, searchReaction,
   timesCalc,
 } from '../solution/steps.ts';
+import { id, ref } from '../ids.ts';
 
 // `loses` is checked by the matrix (pnpm cli matrix): each alternative loses exactly what it declares.
 export const alternatives: Array<Agent & { loses: readonly string[] }> = [
@@ -65,7 +66,7 @@ export const alternatives: Array<Agent & { loses: readonly string[] }> = [
     loses: [],
     script: [
       ...READS, ...HOLD,
-      { calls: [read('DocumentReference', 'doc-t5-ct-2023'), oldOrders, read('DocumentReference', 'doc-t5-tel-0922'), read('DocumentReference', 'doc-t5-tel-1009')] },
+      { calls: [read('DocumentReference', id('doc-t5-ct-2023')), oldOrders, read('DocumentReference', id('doc-t5-tel-0922')), read('DocumentReference', id('doc-t5-tel-1009'))] },
       { calls: [ct([APPT, ALLERGY, REACTION_NOTE], '2026-10-26'), creatinineOrder('2026-10-23', null, CODE.cmp)] },
       { calls: [medication(RX.prednisone10, 5, [AT.p13, AT.p7, AT.p1], '{tablet}'), diphenhydramine] },
       {
@@ -264,7 +265,7 @@ export const alternatives: Array<Agent & { loses: readonly string[] }> = [
           {
             name: 'send_message',
             input: {
-              recipient: 'Practitioner/pr-t5-adeyemi',
+              recipient: ref('Practitioner/pr-t5-adeyemi'),
               priority: 'routine',
               subject: 'Daniel Ferreira: contrast CT Monday 10/26 09:00, allergy list vs your 2019 report',
               body: "His allergy list was updated in 2021 to 'Anaphylaxis (patient report)' for iohexol. Your report of 05/14/2019 grades the reaction moderate (diffuse hives, mild eyelid swelling, diphenhydramine only). Under RBC-RAD-07 he is premedicated with prednisone and diphenhydramine; the order asks for a different iodinated agent. Please let us know if you see it differently.",

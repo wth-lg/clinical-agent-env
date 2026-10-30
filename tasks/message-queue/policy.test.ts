@@ -9,6 +9,7 @@ import { lintWorld } from '../../packages/env/lint/index.ts';
 import type { WorldView } from '../../packages/grader/matrix/types.ts';
 import { expected } from './expected.ts';
 import { derive } from './policy.ts';
+import { id, ref } from './ids.ts';
 
 const store = await loadStore(matrixEnv().world);
 const all = [...store.resources()];
@@ -24,12 +25,12 @@ describe('message-queue', () => {
     expect(d.items).toHaveLength(6);
     // M1: our BMP is 45 days past 12 months, but the most recent BMP from any source is the St.
     // Brigid pre-admission report with potassium 5.8: no refill, a Task to the PCP (P19).
-    expect(d.m1).toMatchObject({ action: 'task_pcp', bmp: 'DocumentReference/doc-t6-hayes-0708', bmp_date: '2026-07-08', potassium: 5.8, pcp: 'Practitioner/pr-okafor' });
+    expect(d.m1).toMatchObject({ action: 'task_pcp', bmp: ref('DocumentReference/doc-t6-hayes-0708'), bmp_date: '2026-07-08', potassium: 5.8, pcp: 'Practitioner/pr-okafor' });
     // M2: a note after the order says the drug was stopped: no refill, a Task to the PCP.
-    expect(d.m2).toMatchObject({ action: 'task_pcp', conflict_note: 'DocumentReference/doc-t6-odum-0811' });
+    expect(d.m2).toMatchObject({ action: 'task_pcp', conflict_note: ref('DocumentReference/doc-t6-odum-0811') });
     expect(d.m3.action).toBe('triage');
     // M4: 12 notes in the 3-year window; the reaction is in the scanned urgent-care note only.
-    expect(d.m4).toMatchObject({ action: 'hold', notes_in_window: 12, reaction_note: 'DocumentReference/doc-t6-park-240309' });
+    expect(d.m4).toMatchObject({ action: 'hold', notes_in_window: 12, reaction_note: ref('DocumentReference/doc-t6-park-240309') });
     expect(d.m5).toMatchObject({ action: 'renew', supply_days: 90, refills: 1 });
     expect(d.m6.action).toBe('route');
   });
@@ -56,7 +57,7 @@ describe('message-queue', () => {
   it("Dr. Okafor's messages queue holds exactly the six T6 items", () => {
     type T = { resourceType: string; id?: string; status?: string; owner?: { reference?: string }; code?: { coding?: Array<{ system?: string; code?: string }> } };
     const queue = (all as T[]).filter((r) => r.resourceType === 'Task' && r.status === 'requested' && r.owner?.reference === 'Practitioner/pr-okafor' && (r.code?.coding ?? []).some((c) => c.system === 'urn:riverbend:inbox-queue' && c.code === 'messages'));
-    expect(queue.map((r) => r.id).sort()).toEqual(['task-t6-m1', 'task-t6-m2', 'task-t6-m3', 'task-t6-m4', 'task-t6-m5', 'task-t6-m6']);
+    expect(queue.map((r) => r.id).sort()).toEqual([id('task-t6-m1'), id('task-t6-m2'), id('task-t6-m3'), id('task-t6-m4'), id('task-t6-m5'), id('task-t6-m6')]);
   });
 
   // RBC-RX-05 §3 routes to "the patient's PCP": the chart names one for every T6 patient.
@@ -71,7 +72,7 @@ describe('message-queue', () => {
   it('states no date the clock gives and no answer in the prompt or policy text', async () => {
     const task = await nodeTaskSource({ testMode: false }).get('message-queue');
     const texts = [task.instruction, ...task.policies.map((p) => p.text)];
-    const answers = ['doc-t6-park-240309', 'Augmentin', '2024-03-09', 'mr-t6-atorvastatin', 'doc-t6-hayes-0708', '5.8', 'pre-admission'];
+    const answers = [id('doc-t6-park-240309'), 'Augmentin', '2024-03-09', id('mr-t6-atorvastatin'), id('doc-t6-hayes-0708'), '5.8', 'pre-admission'];
     const findings = lintWorld(all, [{ source: 'message-queue', spec: { prompts: texts, leakage: { answers, texts: texts.map((text, i) => ({ source: i === 0 ? 'instruction.md' : task.policies[i - 1]!.id, text })) } } }]);
     expect(findings).toEqual([]);
   });
@@ -82,7 +83,7 @@ describe('message-queue', () => {
   // the hemolysed value of results-inbox.
   it("keeps Gloria Hayes's pre-admission BMP out of every search but her documents", () => {
     type D = { resourceType: string; id?: string; subject?: { reference?: string }; date?: string; effectiveDateTime?: string; content?: Array<{ attachment?: { data?: string } }> };
-    const doc = store.get('DocumentReference', 'doc-t6-hayes-0708') as D;
+    const doc = store.get('DocumentReference', id('doc-t6-hayes-0708')) as D;
     const text = new TextDecoder().decode(Uint8Array.from(atob(doc.content![0]!.attachment!.data!), (c) => c.charCodeAt(0)));
     expect(text).toMatch(/Potassium 5\.8 mmol\/L/);
     expect(text).toMatch(/not hemolyzed/);

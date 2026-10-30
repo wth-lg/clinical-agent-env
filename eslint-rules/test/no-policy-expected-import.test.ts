@@ -29,6 +29,7 @@ describe('no-policy-expected-import', () => {
     "export const derive = async () => (await import('./expected.ts')).expected;",
     "import { PATIENT } from './overlay.ts'; export const derive = () => PATIENT;",
     "import { OVERLAY } from '../../packages/env/overlay.ts'; export const derive = () => OVERLAY;",
+    "import { id } from './ids.ts'; export const derive = () => id('obs-t1-scr-1020');",
     "import { expected } from './expected.ts#h'; export const derive = () => expected;",
     "const name = 'expected'; export const derive = async () => (await import(`./${name}.ts`)).expected;",
   ])('flags %s', async (code) => {
@@ -82,6 +83,7 @@ describe('policy.ts module graph (builder-33 item 3)', () => {
     ['a template dynamic import', { 'policy.ts': "const name = 'expected'; export const derive = async () => (await import(`./${name}.ts`)).expected;" }, /dynamic import with a non-constant specifier/],
     ['a dynamic import in an imported module', { 'policy.ts': "import { load } from './loader.ts'; export const derive = () => load('expected');", 'loader.ts': 'export const load = (n: string) => import(n);' }, /loader\.ts: dynamic import with a non-constant specifier/],
     ['an overlay subdirectory', { 'policy.ts': "import { PT } from './overlay/constants.ts'; export const derive = () => PT;", 'overlay/constants.ts': "export const PT = 'pt-0002';" }, /overlay\/constants\.ts/],
+    ['the id registry', { 'policy.ts': "import { IDS } from './ids.ts'; export const derive = () => IDS;", 'ids.ts': 'export const IDS = {};' }, /ids\.ts/],
     ["the env's overlay module", { 'policy.ts': `import * as O from ${JSON.stringify(join(root, 'packages/env/overlay.ts'))}; export const derive = () => Object.keys(O);` }, /packages\/env\/overlay\.ts/],
     ['an import that does not resolve', { 'policy.ts': "import { x } from './nowhere.ts'; export const derive = () => x;" }, /cannot resolve '\.\/nowhere\.ts'/],
   ])('fails on %s', (_name, files, problem) => {

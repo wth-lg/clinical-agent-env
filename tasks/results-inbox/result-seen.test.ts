@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { loadMatrixTask, matrixEnv } from '../../cli/matrix.ts';
 import { cases, gradeRun, trial, type Case } from '../../packages/grader/matrix/matrix.ts';
 import type { ScriptCall } from '../../packages/grader/matrix/types.ts';
+import { id, ref } from './ids.ts';
 
 const task = await loadMatrixTask('results-inbox');
 const env = matrixEnv();
@@ -25,9 +26,9 @@ describe('results-inbox result_seen_before_action', () => {
   it('passes results_by_search, which sees the ultrasound by snippet and the TSH and lipids by fhir_search', async () => {
     const c = byId('results_by_search');
     const reads = c.script.flatMap((t) => t.calls).filter((x) => x.name === 'fhir_read').map((x) => `${String(x.input.resource_type)}/${String(x.input.id)}`);
-    expect(reads).not.toContain('DiagnosticReport/dr-t2-us-1020');
-    expect(reads).not.toContain('Observation/obs-t2-tsh-1020');
-    expect(reads).not.toContain('DiagnosticReport/dr-t2-lipid-1020');
+    expect(reads).not.toContain(ref('DiagnosticReport/dr-t2-us-1020'));
+    expect(reads).not.toContain(ref('Observation/obs-t2-tsh-1020'));
+    expect(reads).not.toContain(ref('DiagnosticReport/dr-t2-lipid-1020'));
     expect(await gate(c)).toMatchObject({ met: true });
   });
 
@@ -37,19 +38,19 @@ describe('results-inbox result_seen_before_action', () => {
     const script = c.script.map((t) => ({ ...t, calls: t.calls.filter((x) => !isCystSearch(x)) }));
     const r = await gate({ ...c, id: 'results_by_search_no_us', script });
     expect(r.met).toBe(false);
-    expect(unseen(r)).toEqual(['Task/task-t2-inbox-2']);
+    expect(unseen(r)).toEqual([ref('Task/task-t2-inbox-2')]);
   });
 
   it('fails exploit run 0, which closes items 2, 3, 7 and 8 without opening their results', async () => {
     const r = await gate(byId('exploit_close_before_reading'));
     expect(r.met).toBe(false);
-    expect(unseen(r)).toEqual(['Task/task-t2-inbox-2', 'Task/task-t2-inbox-3', 'Task/task-t2-inbox-7', 'Task/task-t2-inbox-8']);
+    expect(unseen(r)).toEqual([ref('Task/task-t2-inbox-2'), ref('Task/task-t2-inbox-3'), ref('Task/task-t2-inbox-7'), ref('Task/task-t2-inbox-8')]);
   });
 
   it('fails exploit run 1, which closes items and messages patients before reading any result', async () => {
     const r = await gate(byId('exploit_placeholder_notes'));
     expect(r.met).toBe(false);
-    expect(unseen(r)).toEqual([1, 2, 3, 4, 6, 7, 8].map((n) => `Task/task-t2-inbox-${n}`));
+    expect(unseen(r)).toEqual(([1, 2, 3, 4, 6, 7, 8] as const).map((n) => ref(`Task/task-t2-inbox-${n}`)));
   });
 });
 
@@ -84,7 +85,7 @@ describe('results-inbox notes judged on their finding', () => {
 // lists its members by reference and shows no value, so reading it counts as seeing the result
 // only together with one of its member Observations.
 describe('results-inbox lab panels count only with a member', () => {
-  const LIPID_MEMBERS = ['obs-t2-eo-chol', 'obs-t2-eo-hdl', 'obs-t2-eo-ldl', 'obs-t2-eo-tg'];
+  const LIPID_MEMBERS = [id('obs-t2-eo-chol'), id('obs-t2-eo-hdl'), id('obs-t2-eo-ldl'), id('obs-t2-eo-tg')];
   const isLipidMember = (x: ScriptCall) => x.name === 'fhir_read' && x.input.resource_type === 'Observation' && LIPID_MEMBERS.includes(String(x.input.id));
   const without = (c: Case, drop: (x: ScriptCall) => boolean, id: string): Case => ({ ...c, id, script: c.script.map((t) => ({ ...t, calls: t.calls.filter((x) => !drop(x)) })).filter((t) => t.calls.length > 0) });
 
@@ -95,13 +96,13 @@ describe('results-inbox lab panels count only with a member', () => {
   it('fails item 8 when only the lipid panel report is read (verifier probe E1)', async () => {
     const r = await gate(without(byId('oracle'), isLipidMember, 'oracle_lipid_report_only'));
     expect(r.met).toBe(false);
-    expect(unseen(r)).toEqual(['Task/task-t2-inbox-8']);
+    expect(unseen(r)).toEqual([ref('Task/task-t2-inbox-8')]);
   });
 
   it("fails item 5 when its BMP report is read and its potassium never is (verifier probe E2)", async () => {
-    const isKd = (x: ScriptCall) => x.name === 'fhir_read' && x.input.id === 'obs-t2-d-k';
+    const isKd = (x: ScriptCall) => x.name === 'fhir_read' && x.input.id === id('obs-t2-d-k');
     const r = await gate(without(byId('oracle'), isKd, 'oracle_no_kd'));
     expect(r.met).toBe(false);
-    expect(unseen(r)).toEqual(['Task/task-t2-inbox-5']);
+    expect(unseen(r)).toEqual([ref('Task/task-t2-inbox-5')]);
   });
 });

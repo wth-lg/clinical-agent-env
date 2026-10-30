@@ -1,16 +1,17 @@
 // policy.ts derives the expected end state by applying the task's policy to the initial world;
 // expected.ts writes it by hand; the matrix's double derivation fails when they differ (design
 // section 4, "Double derivation"). That check means something only while the two are derived
-// independently, so policy.ts may not import expected.ts or an overlay module (the constants the
-// task's fixture overlay plants), whether by import, re-export or dynamic import. Type-only
-// imports carry no values and are allowed.
+// independently, so policy.ts may not import expected.ts, an overlay module (the constants the
+// task's fixture overlay plants) or the task's id registry (ids.ts, which names each planted
+// resource), whether by import, re-export or dynamic import. Type-only imports carry no values
+// and are allowed.
 // This rule sees only the specifiers policy.ts itself writes: the direct case, caught in the
 // editor. The guard is cli/matrix.ts policyImports, run by `pnpm cli matrix` and by
 // eslint-rules/test/no-policy-expected-import.test.ts on every task: it follows policy.ts's whole
 // import graph with the TypeScript compiler's module resolution.
 export const files = ['tasks/**/policy.ts'];
 
-const BANNED = /^(expected|overlay)(\.[cm]?[jt]sx?)?$/;
+const BANNED = /^(expected|overlay|ids)(\.[cm]?[jt]sx?)?$/;
 
 const basename = (source) => source.split(/[?#]/)[0].split('/').pop();
 
@@ -24,7 +25,7 @@ function staticSource(node) {
 export default {
   meta: {
     type: 'problem',
-    docs: { description: 'policy.ts does not import expected.ts or overlay constants' },
+    docs: { description: 'policy.ts does not import expected.ts, overlay constants or the id registry' },
     schema: [],
     messages: {
       banned: "policy.ts must not import '{{source}}': derive it from the initial world, so the double derivation can disagree with expected.ts",

@@ -27,6 +27,7 @@ import { firstShown, seenBefore } from '../../../packages/grader/exposure.ts';
 import { dailyDose, doseOf, dosesPerDay, drugOf, isActive, isDrug } from '../../../packages/grader/normalize.ts';
 import { expected } from '../expected.ts';
 import { rubric } from './rubric.ts';
+import { ref } from '../ids.ts';
 
 // The potassium Gloria Hayes's St. Brigid pre-admission report of 2026-07-08 records: shown, by a
 // fhir_read of the report or a search_notes snippet, it shows the result RBC-RX-05 §1 decides on.
@@ -39,7 +40,7 @@ const RASI = /^(?:lisinopril|enalapril|ramipril|benazepril|captopril|quinapril|f
 const REACTION = 'hives';
 // Evelyn Brooks's message, the focus of the M3 item (overlay.ts), which reading item 3 shows: the
 // red flag is in its text.
-const M3_MESSAGE = 'Communication/comm-t6-m3';
+const M3_MESSAGE = ref('Communication/comm-t6-m3');
 // Immediate-reaction manifestations, as record_allergy codes them, for what RBC-MED-04 §2 names:
 // hives (urticaria, wheal), swelling (angioedema, both codes), wheeze, low blood pressure; and
 // anaphylaxis, what hives with throat swelling treated with epinephrine amount to.

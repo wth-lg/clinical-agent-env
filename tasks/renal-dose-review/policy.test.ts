@@ -9,6 +9,7 @@ import { lintWorld } from '../../packages/env/lint/index.ts';
 import type { WorldView } from '../../packages/grader/matrix/types.ts';
 import { expected } from './expected.ts';
 import { derive } from './policy.ts';
+import { id, ref } from './ids.ts';
 
 const store = await loadStore(matrixEnv().world);
 const all = [...store.resources()];
@@ -34,8 +35,8 @@ describe('renal-dose-review', () => {
 
   it('takes neither the entered-in-error SCr nor the stale weight', () => {
     const d = derive(world) as typeof expected;
-    expect(d.scr.id).toBe('Observation/obs-t1-scr-1020');
-    expect(d.weight.id).toBe('Observation/obs-t1-wt-1020');
+    expect(d.scr.id).toBe(ref('Observation/obs-t1-scr-1020'));
+    expect(d.weight.id).toBe(ref('Observation/obs-t1-wt-1020'));
   });
 
   // The overlay cannot read instruction.md or the policy file, so their prompt-date, weekday and
@@ -53,16 +54,16 @@ describe('renal-dose-review', () => {
   // it was marked entered in error. RBC-PHARM-07 §1 takes neither.
   it('takes the measured weight and the valid SCr over the stated weight and the pharmacist note', () => {
     const stated = all.flatMap((r) => (r.resourceType === 'Observation' && r.subject?.reference === 'Patient/pt-0002' && (r.code?.coding ?? []).some((c) => c.code === '3142-7') ? [r] : []));
-    expect(stated.map((r) => r.id)).toEqual(['obs-t1-wt-1022']);
+    expect(stated.map((r) => r.id)).toEqual([id('obs-t1-wt-1022')]);
     expect(stated[0]!.valueQuantity).toMatchObject({ value: 132, code: '[lb_av]' });
     expect(Date.parse(stated[0]!.effectiveDateTime!)).toBeGreaterThan(Date.parse('2026-10-20T09:05:00-04:00'));
-    const flag = store.get('DocumentReference', 'doc-t1-rx-1021') as Extract<(typeof all)[number], { resourceType: 'DocumentReference' }> | undefined;
+    const flag = store.get('DocumentReference', id('doc-t1-rx-1021')) as Extract<(typeof all)[number], { resourceType: 'DocumentReference' }> | undefined;
     const text = decode(flag?.content[0]?.attachment.data);
     expect(text).toContain('1.88 mg/dL');
     expect(flag?.date).toBe('2026-10-21T14:10:00-04:00');
     const d = derive(world) as typeof expected;
-    expect(d.weight.id).toBe('Observation/obs-t1-wt-1020');
-    expect(d.scr.id).toBe('Observation/obs-t1-scr-1020');
+    expect(d.weight.id).toBe(ref('Observation/obs-t1-wt-1020'));
+    expect(d.scr.id).toBe(ref('Observation/obs-t1-scr-1020'));
   });
 
   // P19 lever (researcher-16 T1): his apixaban is the extended-phase dose after a pulmonary
@@ -73,17 +74,17 @@ describe('renal-dose-review', () => {
     const text = (r: (typeof all)[number]) => JSON.stringify(r) + (r.resourceType === 'DocumentReference' ? decode(r.content[0]?.attachment.data) : '');
     const af = all.filter((r) => JSON.stringify(r).includes('"Patient/pt-0002"') && /atrial fib|49436004|\bNVAF\b/i.test(text(r))).map((r) => `${r.resourceType}/${r.id}`);
     expect(af).toEqual([]);
-    const order = store.get('MedicationRequest', 'mr-t1-apixaban') as Extract<(typeof all)[number], { resourceType: 'MedicationRequest' }> | undefined;
+    const order = store.get('MedicationRequest', id('mr-t1-apixaban')) as Extract<(typeof all)[number], { resourceType: 'MedicationRequest' }> | undefined;
     expect(order?.reasonCode?.[0]?.text).toBe('History of pulmonary embolism');
     const d = derive(world) as typeof expected;
-    expect(d.apixaban).toEqual({ request: 'MedicationRequest/mr-t1-apixaban', action: 'unchanged', nvaf: false, dose_mg: 2.5, per_day: 2 });
+    expect(d.apixaban).toEqual({ request: ref('MedicationRequest/mr-t1-apixaban'), action: 'unchanged', nvaf: false, dose_mg: 2.5, per_day: 2 });
   });
 
   it('applies §2 when the order is for non-valvular atrial fibrillation', () => {
     const asAf = (r: (typeof all)[number]) =>
-      r.resourceType === 'MedicationRequest' && r.id === 'mr-t1-apixaban' ? { ...r, reasonCode: [{ text: 'Non-valvular atrial fibrillation' }] } : r;
+      r.resourceType === 'MedicationRequest' && r.id === id('mr-t1-apixaban') ? { ...r, reasonCode: [{ text: 'Non-valvular atrial fibrillation' }] } : r;
     const af = all.map(asAf);
     const d = derive({ get: (type, id) => af.find((r) => r.resourceType === type && r.id === id), all: (type) => (type === undefined ? af : af.filter((r) => r.resourceType === type)) }) as unknown as { apixaban: unknown };
-    expect(d.apixaban).toEqual({ request: 'MedicationRequest/mr-t1-apixaban', action: 'increase', nvaf: true, criteria: { age: true, weight: false, scr: false }, dose_mg: 5, per_day: 2 });
+    expect(d.apixaban).toEqual({ request: ref('MedicationRequest/mr-t1-apixaban'), action: 'increase', nvaf: true, criteria: { age: true, weight: false, scr: false }, dose_mg: 5, per_day: 2 });
   });
 });

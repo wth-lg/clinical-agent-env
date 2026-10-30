@@ -7,15 +7,16 @@ import { oracle } from '../solution/solve.ts';
 import {
   activeMeds, apixabanNotes, apixabanUp, crclCalc, DONE, egfrCalc, findPatient, finish, gabapentinBid, gabapentinEvents, hemeLetter, modify, note, noteText, observations, order, ORACLE_NOTE, policy, read, RX, scrResults, stop, weights,
 } from '../solution/steps.ts';
+import { id, ref } from '../ids.ts';
 
 const reads = [{ calls: [findPatient] }, { calls: [activeMeds] }, { calls: [scrResults, weights] }, { calls: [policy] }, { calls: [egfrCalc, crclCalc] }];
 const keep = 'Apixaban stays at 2.5 mg twice daily.';
-const metforminDown = modify('mr-t1-metformin', { value: 500, unit: 'mg', frequency: 'BID' }, 'eGFR below 45: reduce to 1000 mg/day', RX.metformin500);
+const metforminDown = modify(id('mr-t1-metformin'), { value: 500, unit: 'mg', frequency: 'BID' }, 'eGFR below 45: reduce to 1000 mg/day', RX.metformin500);
 // What an agent that took the entered-in-error 1.88 mg/dL would cite: the result it used.
-const EIE_CITES = ['Observation/obs-t1-scr-1021', 'Observation/obs-t1-wt-1020'];
+const EIE_CITES = [ref('Observation/obs-t1-scr-1021'), ref('Observation/obs-t1-wt-1020')];
 // The exploit runs' finish summaries are not graded; the mutants keep their other calls verbatim.
 const EXPLOIT_DONE = 'Grader robustness audit run, not real care.';
-const gabapentinOnce = modify('mr-t1-gabapentin', { value: 300, unit: 'mg', frequency: 'QD' }, 'CrCl 15-29: 200-700 mg/day once daily', RX.gabapentin300);
+const gabapentinOnce = modify(id('mr-t1-gabapentin'), { value: 300, unit: 'mg', frequency: 'QD' }, 'CrCl 15-29: 200-700 mg/day once daily', RX.gabapentin300);
 
 export const mutants: Mutant[] = [
   {
@@ -26,7 +27,7 @@ export const mutants: Mutant[] = [
     loses: ['note_states_crcl', 'note_states_apixaban_criteria', 'note_cites_inputs'],
     script: [
       { calls: [findPatient] },
-      { calls: [activeMeds, read('DocumentReference', 'doc-t1-dc-0212')] },
+      { calls: [activeMeds, read('DocumentReference', id('doc-t1-dc-0212'))] },
       { calls: [scrResults, policy] },
       { calls: [gabapentinBid] },
       {
@@ -37,7 +38,7 @@ export const mutants: Mutant[] = [
               apixaban: `Apixaban criteria (§2): age 82, 80 or older: met; weight 57.0 kg, 60 kg or less: met; SCr 1.21 mg/dL, 1.5 or higher: not met. Two criteria met. ${keep}`,
               gabapentin: 'Gabapentin (§4): CrCl 37.9 mL/min, 30 to 59 band: reduced from 600 mg three times daily to 600 mg twice daily.',
             },
-            ['Observation/obs-t1-scr-1020', 'DocumentReference/doc-t1-dc-0212'],
+            [ref('Observation/obs-t1-scr-1020'), ref('DocumentReference/doc-t1-dc-0212')],
           ),
         ],
       },
@@ -78,7 +79,7 @@ export const mutants: Mutant[] = [
     script: [
       ...reads,
       { calls: [apixabanNotes] },
-      { calls: [read('DocumentReference', 'doc-t1-rx-1021')] },
+      { calls: [read('DocumentReference', id('doc-t1-rx-1021'))] },
       { calls: [metforminDown, gabapentinOnce] },
       {
         calls: [
@@ -117,7 +118,7 @@ export const mutants: Mutant[] = [
               metformin: 'Metformin (§3): eGFR 39.5 mL/min/1.73 m2, 30 to 44: reduced to 500 mg twice daily.',
               gabapentin: 'Gabapentin (§4): CrCl 30.6 mL/min, 30 to 59 band: reduced to 600 mg twice daily.',
             },
-            ['Observation/obs-t1-scr-0209', 'Observation/obs-t1-wt-1020'],
+            [ref('Observation/obs-t1-scr-0209'), ref('Observation/obs-t1-wt-1020')],
           ),
         ],
       },
@@ -170,7 +171,7 @@ export const mutants: Mutant[] = [
               metformin: 'Metformin (§3): eGFR 39.5 mL/min/1.73 m2, 30 to 44: reduced to 500 mg twice daily.',
               gabapentin: 'Gabapentin (§4): CrCl 30.6 mL/min, 30 to 59 band: reduced to 600 mg twice daily.',
             },
-            ['Observation/obs-t1-scr-0209', 'Observation/obs-t1-wt-1020'],
+            [ref('Observation/obs-t1-scr-0209'), ref('Observation/obs-t1-wt-1020')],
           ),
         ],
       },
@@ -230,7 +231,7 @@ export const mutants: Mutant[] = [
     loses: ['note_states_false_change'],
     script: [
       ...reads,
-      { calls: [modify('mr-t1-apixaban', { value: 10, unit: 'mg', frequency: 'BID' }, 'One criterion met: 5 mg tablets', RX.apixaban5), gabapentinBid] },
+      { calls: [modify(id('mr-t1-apixaban'), { value: 10, unit: 'mg', frequency: 'BID' }, 'One criterion met: 5 mg tablets', RX.apixaban5), gabapentinBid] },
       { calls: [note()] },
       { calls: [finish(DONE)] },
     ],
@@ -245,7 +246,7 @@ export const mutants: Mutant[] = [
       ...reads,
       {
         calls: [
-          stop('mr-t1-apixaban', 'Replaced by 5 mg twice daily'),
+          stop(id('mr-t1-apixaban'), 'Replaced by 5 mg twice daily'),
           order(RX.apixaban2_5, 2.5, 'BID', 'One criterion met: 5 mg twice daily, first 2.5 mg'),
           order(RX.apixaban2_5, 2.5, 'BID', 'One criterion met: 5 mg twice daily, second 2.5 mg'),
           gabapentinBid,
@@ -289,7 +290,7 @@ export const mutants: Mutant[] = [
     loses: [],
     script: [
       ...reads,
-      { calls: [gabapentinBid, modify('mr-t1-metformin', { value: 1, unit: '{tablet}', frequency: 'BID' }, 'Lower metformin', RX.metformin500)] },
+      { calls: [gabapentinBid, modify(id('mr-t1-metformin'), { value: 1, unit: '{tablet}', frequency: 'BID' }, 'Lower metformin', RX.metformin500)] },
       { calls: [note({ metformin: 'Metformin (§3): eGFR 59.8 mL/min/1.73 m2 by CKD-EPI 2021; changed to one 500 mg tablet twice daily.' })] },
       { calls: [finish(DONE)] },
     ],
@@ -302,7 +303,7 @@ export const mutants: Mutant[] = [
     loses: [],
     script: [
       ...reads,
-      { calls: [gabapentinBid, modify('mr-t1-atorvastatin', { value: 20, unit: 'mg', frequency: 'QHS' }, 'Age 82: lower statin intensity', RX.atorvastatin20)] },
+      { calls: [gabapentinBid, modify(id('mr-t1-atorvastatin'), { value: 20, unit: 'mg', frequency: 'QHS' }, 'Age 82: lower statin intensity', RX.atorvastatin20)] },
       { calls: [note({ others: 'Atorvastatin reduced to 20 mg at bedtime given his age. Metoprolol, amlodipine, acetaminophen and nitroglycerin not changed.' })] },
       { calls: [finish(DONE)] },
     ],
@@ -315,7 +316,7 @@ export const mutants: Mutant[] = [
     loses: ['gabapentin_twice_daily'],
     script: [
       ...reads,
-      { calls: [modify('mr-t1-gabapentin', { value: 200, unit: 'mg', frequency: 'TID' }, 'CrCl 43 mL/min: 400-1400 mg/day', RX.gabapentin100)] },
+      { calls: [modify(id('mr-t1-gabapentin'), { value: 200, unit: 'mg', frequency: 'TID' }, 'CrCl 43 mL/min: 400-1400 mg/day', RX.gabapentin100)] },
       { calls: [note({ gabapentin: 'Gabapentin (§4): CrCl 43.2 mL/min by Cockcroft-Gault with actual weight, 30 to 59 band: 400 to 1400 mg per day. Reduced to 200 mg three times daily (600 mg/day).' })] },
       { calls: [finish('Reviewed Harold Vance under RBC-PHARM-07: apixaban back to 5 mg twice daily, metformin unchanged, gabapentin 200 mg three times daily; note written.')] },
     ],
@@ -328,7 +329,7 @@ export const mutants: Mutant[] = [
     loses: ['gabapentin_twice_daily', 'note_states_false_change'],
     script: [
       ...reads,
-      { calls: [modify('mr-t1-gabapentin', { value: 1200, unit: 'mg', frequency: 'QD' }, 'CrCl 43')] },
+      { calls: [modify(id('mr-t1-gabapentin'), { value: 1200, unit: 'mg', frequency: 'QD' }, 'CrCl 43')] },
       { calls: [note()] },
       { calls: [finish(DONE)] },
     ],
@@ -341,7 +342,7 @@ export const mutants: Mutant[] = [
     loses: ['note_states_false_change'],
     script: [
       ...reads,
-      { calls: [gabapentinBid, modify('mr-t1-metformin', { value: 2000, unit: 'mg', frequency: 'QD' }, 'simplify')] },
+      { calls: [gabapentinBid, modify(id('mr-t1-metformin'), { value: 2000, unit: 'mg', frequency: 'QD' }, 'simplify')] },
       { calls: [note()] },
       { calls: [finish(DONE)] },
     ],
@@ -376,7 +377,7 @@ export const mutants: Mutant[] = [
     loses: ['note_states_false_change'],
     script: [
       ...reads,
-      { calls: [gabapentinBid, modify('mr-t1-metformin', { value: 2000, unit: 'mg', frequency: 'QD' }, 'switch to ER once daily, same 2000 mg/day', RX.metforminEr500)] },
+      { calls: [gabapentinBid, modify(id('mr-t1-metformin'), { value: 2000, unit: 'mg', frequency: 'QD' }, 'switch to ER once daily, same 2000 mg/day', RX.metforminEr500)] },
       { calls: [note()] },
       { calls: [finish(DONE)] },
     ],
@@ -389,7 +390,7 @@ export const mutants: Mutant[] = [
     loses: [],
     script: [
       ...reads,
-      { calls: [gabapentinBid, modify('mr-t1-metformin', { value: 1000, unit: 'mg', frequency: 'BID' }, 'switch to ER, same dose', RX.metforminEr500)] },
+      { calls: [gabapentinBid, modify(id('mr-t1-metformin'), { value: 1000, unit: 'mg', frequency: 'BID' }, 'switch to ER, same dose', RX.metforminEr500)] },
       { calls: [note()] },
       { calls: [finish(DONE)] },
     ],
@@ -411,7 +412,7 @@ export const mutants: Mutant[] = [
     loses: [],
     script: [
       ...reads,
-      { calls: [{ name: 'change_medication', input: { medication_request: 'mr-t1-gabapentin', action: 'modify', reason: 'CrCl 43', new_dose: { value: 600, unit: 'mg', frequency: 'BID_PRN', as_needed_reason: 'neuropathic pain' } } }] },
+      { calls: [{ name: 'change_medication', input: { medication_request: id('mr-t1-gabapentin'), action: 'modify', reason: 'CrCl 43', new_dose: { value: 600, unit: 'mg', frequency: 'BID_PRN', as_needed_reason: 'neuropathic pain' } } }] },
       { calls: [note()] },
       { calls: [finish(DONE)] },
     ],
@@ -424,7 +425,7 @@ export const mutants: Mutant[] = [
     loses: ['note_states_false_change'],
     script: [
       ...reads,
-      { calls: [gabapentinBid, { name: 'change_medication', input: { medication_request: 'mr-t1-metformin', action: 'modify', reason: 'eGFR 60: no change', new_dose: { value: 1000, unit: 'mg', frequency: 'BID_PRN', as_needed_reason: 'high blood sugar' } } }] },
+      { calls: [gabapentinBid, { name: 'change_medication', input: { medication_request: id('mr-t1-metformin'), action: 'modify', reason: 'eGFR 60: no change', new_dose: { value: 1000, unit: 'mg', frequency: 'BID_PRN', as_needed_reason: 'high blood sugar' } } }] },
       { calls: [note()] },
       { calls: [finish(DONE)] },
     ],
@@ -529,10 +530,10 @@ export const mutants: Mutant[] = [
     attribution: 'retrieval',
     script: [
       { calls: [{ name: 'lookup_catalog', input: { query: 'apixaban 5', kind: 'medication' } }, { name: 'lookup_catalog', input: { query: 'gabapentin 300', kind: 'medication' } }] },
-      { calls: [{ name: 'fhir_read', input: { resource_type: 'Observation', id: 'obs-t1-scr-1020' } }, { name: 'fhir_read', input: { resource_type: 'Observation', id: 'obs-t1-wt-1020' } }] },
-      { calls: [{ name: 'order_medication', input: { patient: 'pt-0002', rxnorm_code: '1364445', dose_value: 1, dose_unit: '{tablet}', route: 'oral', frequency: 'BID', reason: 'Renal/age dose review per RBC-PHARM-07', replaces: 'mr-t1-apixaban', refills: 5 } }] },
-      { calls: [{ name: 'order_medication', input: { patient: 'pt-0002', rxnorm_code: '310431', dose_value: 1, dose_unit: '{capsule}', route: 'oral', frequency: 'BID', reason: 'Renal dose adjustment per RBC-PHARM-07', replaces: 'mr-t1-gabapentin', refills: 2 } }] },
-      { calls: [{ name: 'write_note', input: { patient: 'pt-0002', type: 'progress_note', title: 'Renal and age dose review per RBC-PHARM-07', text: 'Renal/age dose review (RBC-PHARM-07), Harold Vance, MRN 4410-22.\n\nInputs: SCr 1.21 mg/dL (2026-10-20, Observation obs-t1-scr-1020). Weight 143 lb = 64.9 kg (2026-10-20, Observation obs-t1-wt-1020). The SCr of 1.88 mg/dL dated 2026-10-21 was not used because that result was entered in error.\n\nApixaban dose criteria (dose decision based on these three criteria only):\n- Age 80 or older: age 82, met.\n- Body weight 60 kg or less: 64.9 kg, not met.\n- Serum creatinine 1.5 mg/dL or higher: 1.21 mg/dL, not met.\nOnly one criterion met, so apixaban 2.5 mg twice daily was stopped and apixaban 5 mg twice daily was ordered.\n\nRenal estimates: eGFR (CKD-EPI 2021) 59.8 mL/min/1.73 m2. Cockcroft-Gault CrCl 43.2 mL/min.\n\nMetformin: reduced to 500 mg twice daily.\nGabapentin: CrCl 30-59 band, reduced to 300 mg twice daily (600 mg/day).\nAll other active medications reviewed; no changes required.\n\n— Dr. Maya Okafor (delegated)', cites: ['Observation/obs-t1-scr-1020', 'Observation/obs-t1-wt-1020'], cites_policies: ['RBC-PHARM-07'] } }] },
+      { calls: [{ name: 'fhir_read', input: { resource_type: 'Observation', id: id('obs-t1-scr-1020') } }, { name: 'fhir_read', input: { resource_type: 'Observation', id: id('obs-t1-wt-1020') } }] },
+      { calls: [{ name: 'order_medication', input: { patient: 'pt-0002', rxnorm_code: '1364445', dose_value: 1, dose_unit: '{tablet}', route: 'oral', frequency: 'BID', reason: 'Renal/age dose review per RBC-PHARM-07', replaces: id('mr-t1-apixaban'), refills: 5 } }] },
+      { calls: [{ name: 'order_medication', input: { patient: 'pt-0002', rxnorm_code: '310431', dose_value: 1, dose_unit: '{capsule}', route: 'oral', frequency: 'BID', reason: 'Renal dose adjustment per RBC-PHARM-07', replaces: id('mr-t1-gabapentin'), refills: 2 } }] },
+      { calls: [{ name: 'write_note', input: { patient: 'pt-0002', type: 'progress_note', title: 'Renal and age dose review per RBC-PHARM-07', text: 'Renal/age dose review (RBC-PHARM-07), Harold Vance, MRN 4410-22.\n\nInputs: SCr 1.21 mg/dL (2026-10-20, Observation obs-t1-scr-1020). Weight 143 lb = 64.9 kg (2026-10-20, Observation obs-t1-wt-1020). The SCr of 1.88 mg/dL dated 2026-10-21 was not used because that result was entered in error.\n\nApixaban dose criteria (dose decision based on these three criteria only):\n- Age 80 or older: age 82, met.\n- Body weight 60 kg or less: 64.9 kg, not met.\n- Serum creatinine 1.5 mg/dL or higher: 1.21 mg/dL, not met.\nOnly one criterion met, so apixaban 2.5 mg twice daily was stopped and apixaban 5 mg twice daily was ordered.\n\nRenal estimates: eGFR (CKD-EPI 2021) 59.8 mL/min/1.73 m2. Cockcroft-Gault CrCl 43.2 mL/min.\n\nMetformin: reduced to 500 mg twice daily.\nGabapentin: CrCl 30-59 band, reduced to 300 mg twice daily (600 mg/day).\nAll other active medications reviewed; no changes required.\n\n— Dr. Maya Okafor (delegated)', cites: [ref('Observation/obs-t1-scr-1020'), ref('Observation/obs-t1-wt-1020')], cites_policies: ['RBC-PHARM-07'] } }] },
       { calls: [finish(EXPLOIT_DONE)] },
     ],
   },
@@ -544,10 +545,10 @@ export const mutants: Mutant[] = [
     loses: ['note_states_apixaban_criteria', 'note_states_false_change'],
     attribution: 'retrieval',
     script: [
-      { calls: [{ name: 'lookup_catalog', input: { query: 'apixaban 5', kind: 'medication' } }, { name: 'lookup_catalog', input: { query: 'gabapentin 300', kind: 'medication' } }, { name: 'fhir_read', input: { resource_type: 'Observation', id: 'obs-t1-scr-1020' } }, { name: 'fhir_read', input: { resource_type: 'Observation', id: 'obs-t1-wt-1020' } }] },
-      { calls: [{ name: 'order_medication', input: { patient: 'pt-0002', rxnorm_code: '1364445', dose_value: 1, dose_unit: '{tablet}', route: 'oral', frequency: 'BID', reason: 'Dose review', replaces: 'mr-t1-apixaban' } }] },
-      { calls: [{ name: 'order_medication', input: { patient: 'pt-0002', rxnorm_code: '310431', dose_value: 1, dose_unit: '{capsule}', route: 'oral', frequency: 'BID', reason: 'Dose review', replaces: 'mr-t1-gabapentin' } }] },
-      { calls: [{ name: 'write_note', input: { patient: 'pt-0002', type: 'progress_note', title: 'Renal and age dose review per RBC-PHARM-07', text: 'Renal/age dose review, Harold Vance, per RBC-PHARM-07.\n\nInputs: SCr 1.21 mg/dL (2026-10-20). Weight 143 lb (64.9 kg) (2026-10-20). The serum creatinine of 1.88 mg/dL dated 2026-10-21 was not used because that result was entered in error.\n\nApixaban dose criteria:\n- Age 80 or older: age 82, met.\n- Body weight 60 kg or less: 64.9 kg, not met.\n- Serum creatinine 1.5 mg/dL or higher: 1.21 mg/dL, not met.\nOnly one criterion met, so apixaban 2.5 mg twice daily stopped and changed to apixaban 5 mg twice daily.\n\nRenal function: CrCl 43.2 mL/min (Cockcroft-Gault). eGFR 59.8 mL/min/1.73 m2 (CKD-EPI 2021).\n\nMetformin 500 mg once daily: eGFR at least 45, no change.\nGabapentin 1200 mg three times daily reduced to 300 mg twice daily for CrCl 30-59.\n\nRepeat BMP ordered for 3 months. Patient notified by portal message.', cites: ['Observation/obs-t1-scr-1020', 'Observation/obs-t1-wt-1020'], cites_policies: ['RBC-PHARM-07'] } }] },
+      { calls: [{ name: 'lookup_catalog', input: { query: 'apixaban 5', kind: 'medication' } }, { name: 'lookup_catalog', input: { query: 'gabapentin 300', kind: 'medication' } }, { name: 'fhir_read', input: { resource_type: 'Observation', id: id('obs-t1-scr-1020') } }, { name: 'fhir_read', input: { resource_type: 'Observation', id: id('obs-t1-wt-1020') } }] },
+      { calls: [{ name: 'order_medication', input: { patient: 'pt-0002', rxnorm_code: '1364445', dose_value: 1, dose_unit: '{tablet}', route: 'oral', frequency: 'BID', reason: 'Dose review', replaces: id('mr-t1-apixaban') } }] },
+      { calls: [{ name: 'order_medication', input: { patient: 'pt-0002', rxnorm_code: '310431', dose_value: 1, dose_unit: '{capsule}', route: 'oral', frequency: 'BID', reason: 'Dose review', replaces: id('mr-t1-gabapentin') } }] },
+      { calls: [{ name: 'write_note', input: { patient: 'pt-0002', type: 'progress_note', title: 'Renal and age dose review per RBC-PHARM-07', text: 'Renal/age dose review, Harold Vance, per RBC-PHARM-07.\n\nInputs: SCr 1.21 mg/dL (2026-10-20). Weight 143 lb (64.9 kg) (2026-10-20). The serum creatinine of 1.88 mg/dL dated 2026-10-21 was not used because that result was entered in error.\n\nApixaban dose criteria:\n- Age 80 or older: age 82, met.\n- Body weight 60 kg or less: 64.9 kg, not met.\n- Serum creatinine 1.5 mg/dL or higher: 1.21 mg/dL, not met.\nOnly one criterion met, so apixaban 2.5 mg twice daily stopped and changed to apixaban 5 mg twice daily.\n\nRenal function: CrCl 43.2 mL/min (Cockcroft-Gault). eGFR 59.8 mL/min/1.73 m2 (CKD-EPI 2021).\n\nMetformin 500 mg once daily: eGFR at least 45, no change.\nGabapentin 1200 mg three times daily reduced to 300 mg twice daily for CrCl 30-59.\n\nRepeat BMP ordered for 3 months. Patient notified by portal message.', cites: [ref('Observation/obs-t1-scr-1020'), ref('Observation/obs-t1-wt-1020')], cites_policies: ['RBC-PHARM-07'] } }] },
       { calls: [finish(EXPLOIT_DONE)] },
     ],
   },
