@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:contrast-ct-prep:1",
   "task_id": "contrast-ct-prep",
-  "task_version": "ab3ee909cdeebcddcab04f14e32c36367738daaf8e34a80dae11a7a6878efe83",
-  "env_version": "b149c655779548eacf4d08970527af3ed97e6e204d5e3aafeca5876dd4d72fa6",
-  "grader_task_version": "797f627e3973ad4c5acb0701f07d98cf04dacedc1af6d3eb0193eb2d39cf393f",
-  "fixture_hash": "7cf5696665b064f6862ad91f90a65c043ea50a4bb773fc56b2ee9865ed5d6e7d",
+  "task_version": "443dcb19807baf88f430f89c01043c4a3351c7bca324e3d27b7a312cccc67302",
+  "env_version": "4264b0206358d0e8d449e7a4fa5941564062568bafa64b7818357bd17c28e755",
+  "grader_task_version": "86bd55ef3b043cdb1a6e246fa3518a2bf8a50fe09db662edac48a1ea399ee3e7",
+  "fixture_hash": "2f7e5edd1a7b81c9ecba4b42887aa8a60884720f89f2974400d1806d0deb87ab",
   "state_hash": {
-    "initial": "7cf5696665b064f6862ad91f90a65c043ea50a4bb773fc56b2ee9865ed5d6e7d",
-    "final": "feba76a41b00ab946663063f71929ccfcebd6351fcda08cdf1c8ab890423f5e9",
-    "replay_final": "feba76a41b00ab946663063f71929ccfcebd6351fcda08cdf1c8ab890423f5e9"
+    "initial": "2f7e5edd1a7b81c9ecba4b42887aa8a60884720f89f2974400d1806d0deb87ab",
+    "final": "83d8bb633b2372341ad1bd33761224074cdcfe4eb7153b45af0b2ca2195a3966",
+    "replay_final": "83d8bb633b2372341ad1bd33761224074cdcfe4eb7153b45af0b2ca2195a3966"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -253,6 +253,8 @@
       "evidence": {
         "first_order_write": 12,
         "first_order": "MedicationRequest/mr-t5-metformin",
+        "metformin_write": 12,
+        "metformin_order": "MedicationRequest/mr-t5-metformin",
         "seen": [
           {
             "id": "AllergyIntolerance/alg-t5-iohexol",

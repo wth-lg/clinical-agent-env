@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:message-queue:2",
   "task_id": "message-queue",
-  "task_version": "8f3a1a43eb1362fd3868bf14f9e78fb74d907577684a535cf01772567bb14f85",
-  "env_version": "03062b15a47048888c8580028b8c8cc2ae6fa6222a3b81917d928fd155229620",
-  "grader_task_version": "512837bf5eb2cd2cbe95347dda282d803215fd44c0b8c98cf8f9ed46b83af740",
-  "fixture_hash": "7cf5696665b064f6862ad91f90a65c043ea50a4bb773fc56b2ee9865ed5d6e7d",
+  "task_version": "c2fd490f028859be61b5eb85d97fc1cf81ce859735bf09db46c340565e1d820d",
+  "env_version": "52f6c4994fdc557b2e7d8b52a84c563b40dfceb2b24b9039ad15aafbc4e0d4ee",
+  "grader_task_version": "c9ab6786f21134edce421c63825a4d2c92d4cd82d6068b41d33ff4c821abbe4b",
+  "fixture_hash": "2f7e5edd1a7b81c9ecba4b42887aa8a60884720f89f2974400d1806d0deb87ab",
   "state_hash": {
-    "initial": "7cf5696665b064f6862ad91f90a65c043ea50a4bb773fc56b2ee9865ed5d6e7d",
-    "final": "7fc29556b58928ed3c23aa0b969d8b9f85e082453ba772e48bdf125a76f7092e",
-    "replay_final": "7fc29556b58928ed3c23aa0b969d8b9f85e082453ba772e48bdf125a76f7092e"
+    "initial": "2f7e5edd1a7b81c9ecba4b42887aa8a60884720f89f2974400d1806d0deb87ab",
+    "final": "1b21d179fef1acb03e4b5eb2180471571b9bd155222474145ecfc2359ada5904",
+    "replay_final": "1b21d179fef1acb03e4b5eb2180471571b9bd155222474145ecfc2359ada5904"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T13:44:59.000Z",
+  "started": "2026-10-23T13:44:55.000Z",
   "turns": 18,
   "tool_calls": 52,
   "tool_errors": {
@@ -43,7 +43,7 @@
   "summary": "Cleared the six messages: Evelyn Brooks sent to the ED with a stat triage task; Gloria Hayes lisinopril not refilled (outside BMP shows potassium 5.8), task to Dr. Okafor; Frank Odum not refilled (atorvastatin stopped by cardiology), task to Dr. Okafor; Lena Park amoxicillin-clavulanate held for a documented reaction, allergy recorded, NP Reyes told; Samuel Price metformin renewed; Marcus Webb routed to scheduling.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T13:48:19.000Z",
+  "ended": "2026-10-23T13:48:15.000Z",
   "judge_cost_usd": 0,
   "grader_version": "13",
   "outcome": "PASS",

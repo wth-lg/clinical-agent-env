@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:contrast-ct-prep:2",
   "task_id": "contrast-ct-prep",
-  "task_version": "ab3ee909cdeebcddcab04f14e32c36367738daaf8e34a80dae11a7a6878efe83",
-  "env_version": "b149c655779548eacf4d08970527af3ed97e6e204d5e3aafeca5876dd4d72fa6",
-  "grader_task_version": "797f627e3973ad4c5acb0701f07d98cf04dacedc1af6d3eb0193eb2d39cf393f",
-  "fixture_hash": "7cf5696665b064f6862ad91f90a65c043ea50a4bb773fc56b2ee9865ed5d6e7d",
+  "task_version": "443dcb19807baf88f430f89c01043c4a3351c7bca324e3d27b7a312cccc67302",
+  "env_version": "4264b0206358d0e8d449e7a4fa5941564062568bafa64b7818357bd17c28e755",
+  "grader_task_version": "86bd55ef3b043cdb1a6e246fa3518a2bf8a50fe09db662edac48a1ea399ee3e7",
+  "fixture_hash": "2f7e5edd1a7b81c9ecba4b42887aa8a60884720f89f2974400d1806d0deb87ab",
   "state_hash": {
-    "initial": "7cf5696665b064f6862ad91f90a65c043ea50a4bb773fc56b2ee9865ed5d6e7d",
-    "final": "ce27b881ab17c074bc38bcdfa4dbc3c92bd5bfe24df18ec6240253e132486016",
-    "replay_final": "ce27b881ab17c074bc38bcdfa4dbc3c92bd5bfe24df18ec6240253e132486016"
+    "initial": "2f7e5edd1a7b81c9ecba4b42887aa8a60884720f89f2974400d1806d0deb87ab",
+    "final": "b8ee0c9f42e3b7a0a5b7f540b9f265e96bf5b47ef559da92d156ec0e636d15e6",
+    "replay_final": "b8ee0c9f42e3b7a0a5b7f540b9f265e96bf5b47ef559da92d156ec0e636d15e6"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -18,7 +18,7 @@
   "api_version": "2026-10-21",
   "started": "2026-10-23T12:03:20.000Z",
   "turns": 13,
-  "tool_calls": 21,
+  "tool_calls": 19,
   "tool_errors": {
     "INVALID_INPUT": 0,
     "NOT_FOUND": 0,
@@ -43,7 +43,7 @@
   "summary": "Placed the CT abdomen and pelvis with IV contrast for Daniel Ferreira on Monday 10/26 at 09:00, linked to the appointment; prednisone 50 mg at 20:00 Sunday, 02:00 and 08:00 Monday and diphenhydramine 50 mg at 08:00 Monday for his 2019 iohexol reaction; creatinine before the scan; metformin held for the unresolved AKI of 10/16-10/17; instructions sent; note written.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T12:05:08.000Z",
+  "ended": "2026-10-23T12:05:02.000Z",
   "judge_cost_usd": 0,
   "grader_version": "13",
   "outcome": "PASS",
@@ -59,19 +59,18 @@
       "met": true,
       "evidence": {
         "active": [
-          "ServiceRequest/sr-t0002"
+          "ServiceRequest/sr-t0001"
         ],
         "linked_to_appointment": [
-          "ServiceRequest/sr-t0002"
+          "ServiceRequest/sr-t0001"
         ],
         "occurrence": {
-          "start": "2026-10-26T09:00:00-04:00",
-          "end": "2026-10-26T09:30:00-04:00"
+          "start": "2026-10-26T09:00:00-04:00"
         },
         "slot": "2026-10-26T09:00:00-04:00"
       },
       "ids": [
-        "ServiceRequest/sr-t0002"
+        "ServiceRequest/sr-t0001"
       ]
     },
     {
@@ -84,19 +83,19 @@
       "evidence": {
         "given": [
           {
-            "request": "MedicationRequest/mr-t0004",
+            "request": "MedicationRequest/mr-t0003",
             "at": "2026-10-25T20:00:00-04:00",
             "mg": 50,
             "oral": true
           },
           {
-            "request": "MedicationRequest/mr-t0005",
+            "request": "MedicationRequest/mr-t0003",
             "at": "2026-10-26T02:00:00-04:00",
             "mg": 50,
             "oral": true
           },
           {
-            "request": "MedicationRequest/mr-t0006",
+            "request": "MedicationRequest/mr-t0003",
             "at": "2026-10-26T08:00:00-04:00",
             "mg": 50,
             "oral": true
@@ -107,21 +106,21 @@
             "at": "2026-10-25T20:00:00-04:00",
             "mg": 50,
             "requests": [
-              "MedicationRequest/mr-t0004"
+              "MedicationRequest/mr-t0003"
             ]
           },
           {
             "at": "2026-10-26T02:00:00-04:00",
             "mg": 50,
             "requests": [
-              "MedicationRequest/mr-t0005"
+              "MedicationRequest/mr-t0003"
             ]
           },
           {
             "at": "2026-10-26T08:00:00-04:00",
             "mg": 50,
             "requests": [
-              "MedicationRequest/mr-t0006"
+              "MedicationRequest/mr-t0003"
             ]
           }
         ],
@@ -137,9 +136,7 @@
         }
       },
       "ids": [
-        "MedicationRequest/mr-t0004",
-        "MedicationRequest/mr-t0005",
-        "MedicationRequest/mr-t0006"
+        "MedicationRequest/mr-t0003"
       ]
     },
     {
@@ -152,7 +149,7 @@
       "evidence": {
         "given": [
           {
-            "request": "MedicationRequest/mr-t0007",
+            "request": "MedicationRequest/mr-t0004",
             "at": "2026-10-26T08:00:00-04:00",
             "mg": 50,
             "oral": true
@@ -163,7 +160,7 @@
             "at": "2026-10-26T08:00:00-04:00",
             "mg": 50,
             "requests": [
-              "MedicationRequest/mr-t0007"
+              "MedicationRequest/mr-t0004"
             ]
           }
         ],
@@ -177,7 +174,7 @@
         }
       },
       "ids": [
-        "MedicationRequest/mr-t0007"
+        "MedicationRequest/mr-t0004"
       ]
     },
     {
@@ -190,14 +187,15 @@
       "evidence": {
         "orders": [
           {
-            "id": "ServiceRequest/sr-t0003",
-            "start": "2026-10-24T09:00:00-04:00"
+            "id": "ServiceRequest/sr-t0002",
+            "start": "2026-10-23",
+            "end": "2026-10-24"
           }
         ],
         "before": "2026-10-26T09:00:00-04:00"
       },
       "ids": [
-        "ServiceRequest/sr-t0003"
+        "ServiceRequest/sr-t0002"
       ]
     },
     {
@@ -238,11 +236,11 @@
       "met": true,
       "evidence": {
         "to_patient": [
-          "Communication/comm-t0008"
+          "Communication/comm-t0006"
         ]
       },
       "ids": [
-        "Communication/comm-t0008"
+        "Communication/comm-t0006"
       ]
     },
     {
@@ -253,8 +251,10 @@
       "points": null,
       "met": true,
       "evidence": {
-        "first_order_write": 12,
-        "first_order": "MedicationRequest/mr-t5-metformin",
+        "first_order_write": 9,
+        "first_order": "ServiceRequest/sr-t0001",
+        "metformin_write": 16,
+        "metformin_order": "MedicationRequest/mr-t5-metformin",
         "seen": [
           {
             "id": "AllergyIntolerance/alg-t5-iohexol",
@@ -270,7 +270,7 @@
           },
           {
             "id": "DocumentReference/doc-t5-ed-1017",
-            "step": 8
+            "step": 14
           },
           {
             "id": "Appointment/appt-t5-1026",
@@ -381,7 +381,7 @@
       "evidence": {
         "verdict": "met",
         "quote": "That is the risk factor. The allergy list also carries \"Anaphylaxis (patient report)\", added in 2021 from his own account with no record reviewed; the report of the day grades the reaction moderate, and §1 grades it by that record, so §2 applies, not §3. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan.",
-        "cache_key": "ddcdf458f9cf6c46a0271b6af0747655d6b1eb6c4f15cdef745d38eb36c71f31"
+        "cache_key": "8ee2070c0d3d8e1466105b8cd5aee30953e8910906b5efa390efef7f17b0cc57"
       }
     },
     {
@@ -394,7 +394,7 @@
       "evidence": {
         "verdict": "not_met",
         "quote": "",
-        "cache_key": "55a1a4a3aa9ddbedcd10f929f4d03bb4f696fea5ad727bf8fb79ba4c9f8a0506"
+        "cache_key": "5f18f1f4645c82e20889fd60c46f112a04bc5429e7ca9e82bff2ed7d0e9fccdb"
       }
     },
     {
@@ -406,10 +406,10 @@
       "met": true,
       "evidence": {
         "orders": [
-          "ServiceRequest/sr-t0002"
+          "ServiceRequest/sr-t0001"
         ],
         "citing": [
-          "ServiceRequest/sr-t0002"
+          "ServiceRequest/sr-t0001"
         ],
         "want": [
           "AllergyIntolerance/alg-t5-iohexol",
@@ -443,7 +443,7 @@
         ],
         "verdict": "not_met",
         "quote": "The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan.",
-        "cache_key": "b386f95c2519ee8b8208388a967700443383e91f5bb43c75c417c6891aae57dd"
+        "cache_key": "bfedde29ae28012590f748f5dbc67ba677ee9956a57029506f7067e05801855b"
       }
     }
   ],
@@ -459,9 +459,9 @@
       "b1da335d13db9d2ec31eb5f5570247cf39ef7fe8b5e242fab21ee8e471d2ca8d",
       "e7051b3e200d003e8b4dd02533b1f5b239c58fe04c67803c1768f29bdd888940",
       "445ab3be0f78793bbae2ff26ab12a180b0b4442b4f9916bd4fa81c3d89ab328e",
-      "ddcdf458f9cf6c46a0271b6af0747655d6b1eb6c4f15cdef745d38eb36c71f31",
-      "55a1a4a3aa9ddbedcd10f929f4d03bb4f696fea5ad727bf8fb79ba4c9f8a0506",
-      "b386f95c2519ee8b8208388a967700443383e91f5bb43c75c417c6891aae57dd"
+      "8ee2070c0d3d8e1466105b8cd5aee30953e8910906b5efa390efef7f17b0cc57",
+      "5f18f1f4645c82e20889fd60c46f112a04bc5429e7ca9e82bff2ed7d0e9fccdb",
+      "bfedde29ae28012590f748f5dbc67ba677ee9956a57029506f7067e05801855b"
     ],
     "cache": [
       {
@@ -519,7 +519,7 @@
         }
       },
       {
-        "key": "ddcdf458f9cf6c46a0271b6af0747655d6b1eb6c4f15cdef745d38eb36c71f31",
+        "key": "8ee2070c0d3d8e1466105b8cd5aee30953e8910906b5efa390efef7f17b0cc57",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -537,7 +537,7 @@
         }
       },
       {
-        "key": "55a1a4a3aa9ddbedcd10f929f4d03bb4f696fea5ad727bf8fb79ba4c9f8a0506",
+        "key": "5f18f1f4645c82e20889fd60c46f112a04bc5429e7ca9e82bff2ed7d0e9fccdb",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -555,7 +555,7 @@
         }
       },
       {
-        "key": "b386f95c2519ee8b8208388a967700443383e91f5bb43c75c417c6891aae57dd",
+        "key": "bfedde29ae28012590f748f5dbc67ba677ee9956a57029506f7067e05801855b",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",

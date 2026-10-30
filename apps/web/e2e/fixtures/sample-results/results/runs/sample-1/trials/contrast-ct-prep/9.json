@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:contrast-ct-prep:9",
   "task_id": "contrast-ct-prep",
-  "task_version": "ab3ee909cdeebcddcab04f14e32c36367738daaf8e34a80dae11a7a6878efe83",
-  "env_version": "b149c655779548eacf4d08970527af3ed97e6e204d5e3aafeca5876dd4d72fa6",
-  "grader_task_version": "797f627e3973ad4c5acb0701f07d98cf04dacedc1af6d3eb0193eb2d39cf393f",
-  "fixture_hash": "7cf5696665b064f6862ad91f90a65c043ea50a4bb773fc56b2ee9865ed5d6e7d",
+  "task_version": "443dcb19807baf88f430f89c01043c4a3351c7bca324e3d27b7a312cccc67302",
+  "env_version": "4264b0206358d0e8d449e7a4fa5941564062568bafa64b7818357bd17c28e755",
+  "grader_task_version": "86bd55ef3b043cdb1a6e246fa3518a2bf8a50fe09db662edac48a1ea399ee3e7",
+  "fixture_hash": "2f7e5edd1a7b81c9ecba4b42887aa8a60884720f89f2974400d1806d0deb87ab",
   "state_hash": {
-    "initial": "7cf5696665b064f6862ad91f90a65c043ea50a4bb773fc56b2ee9865ed5d6e7d",
-    "final": "e9f9ac77307286662972a4c73e90c46eb3e9190fd6e19f273e3bf3243b218b50",
-    "replay_final": "e9f9ac77307286662972a4c73e90c46eb3e9190fd6e19f273e3bf3243b218b50"
+    "initial": "2f7e5edd1a7b81c9ecba4b42887aa8a60884720f89f2974400d1806d0deb87ab",
+    "final": "ad7c893732a58925c9d643834b749938f85f6fd992bfda4bc2a3e402ca3c7037",
+    "replay_final": "ad7c893732a58925c9d643834b749938f85f6fd992bfda4bc2a3e402ca3c7037"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T12:14:39.000Z",
+  "started": "2026-10-23T12:14:33.000Z",
   "turns": 13,
   "tool_calls": 19,
   "tool_errors": {
@@ -43,7 +43,7 @@
   "summary": "Placed the CT abdomen and pelvis with IV contrast for Daniel Ferreira on Monday 10/26 at 09:00, linked to the appointment; prednisone 50 mg at 20:00 Sunday, 02:00 and 08:00 Monday and diphenhydramine 50 mg at 08:00 Monday for his 2019 iohexol reaction; creatinine before the scan; metformin held for the unresolved AKI of 10/16-10/17; instructions sent; note written.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T12:16:21.000Z",
+  "ended": "2026-10-23T12:16:15.000Z",
   "judge_cost_usd": 0,
   "grader_version": "13",
   "outcome": "FAIL",
@@ -252,6 +252,8 @@
       "evidence": {
         "first_order_write": 12,
         "first_order": "MedicationRequest/mr-t5-metformin",
+        "metformin_write": 12,
+        "metformin_order": "MedicationRequest/mr-t5-metformin",
         "seen": [
           {
             "id": "AllergyIntolerance/alg-t5-iohexol",

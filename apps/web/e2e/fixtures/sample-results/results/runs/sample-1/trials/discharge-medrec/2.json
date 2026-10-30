@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:discharge-medrec:2",
   "task_id": "discharge-medrec",
-  "task_version": "7d0b2810245376ff1a40b3f1f38c5eb85484b9430b2b2b6018f6bedbd4a9aeda",
-  "env_version": "7c7ad7a38c2a14041d10cb4d6255f24eaf73af1610db3d4dd851e667fa73b005",
-  "grader_task_version": "77174be79a3fd16ffe5d55174e7bcbf42bef3b1d8eb604f765c05c7846679af4",
-  "fixture_hash": "7cf5696665b064f6862ad91f90a65c043ea50a4bb773fc56b2ee9865ed5d6e7d",
+  "task_version": "cba9238710fce297d8a5a9a091889c48654fe2c4b1d35b01238cb90daded06d3",
+  "env_version": "6d2cbc10b7a3b370e0c195bd61c169f7ba988fc2908081769ec6ef1f1b02184d",
+  "grader_task_version": "3a9db6291d196c9a0575eb04751f64b15da2e5f5c60cc6731c8f00f9132c9225",
+  "fixture_hash": "2f7e5edd1a7b81c9ecba4b42887aa8a60884720f89f2974400d1806d0deb87ab",
   "state_hash": {
-    "initial": "7cf5696665b064f6862ad91f90a65c043ea50a4bb773fc56b2ee9865ed5d6e7d",
-    "final": "56091f32c814993edcdb7768e951126ff4f36527974912c5eab958ad931186e1",
-    "replay_final": "56091f32c814993edcdb7768e951126ff4f36527974912c5eab958ad931186e1"
+    "initial": "2f7e5edd1a7b81c9ecba4b42887aa8a60884720f89f2974400d1806d0deb87ab",
+    "final": "7e769d569eccd4a3db8915df91a1e2725114c91985a89331b7db97f60d9cbd5d",
+    "replay_final": "7e769d569eccd4a3db8915df91a1e2725114c91985a89331b7db97f60d9cbd5d"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T13:25:50.000Z",
+  "started": "2026-10-23T13:25:44.000Z",
   "turns": 7,
   "tool_calls": 14,
   "tool_errors": {
@@ -43,7 +43,7 @@
   "summary": "Reconciled Walter Kim after discharge: furosemide 40 mg, KCl stopped; spironolactone not started and lisinopril kept on hold for potassium 5.4, with a recheck Task for Dr. Okafor; duplicate metoprolol tartrate flagged to Dr. Okafor; note written.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T13:26:57.000Z",
+  "ended": "2026-10-23T13:26:51.000Z",
   "judge_cost_usd": 0,
   "grader_version": "13",
   "outcome": "PASS",

@@ -7,8 +7,8 @@
 {"trial":"contrast-ct-prep/10","outcome":"FAIL","taxonomy":"output_gap","model_fault":"yes","decisive_step":17,"evidence_ids":["AllergyIntolerance/alg-t5-iohexol","Appointment/appt-t5-1026"],"llm_auditor_agrees":true}
 {"trial":"crc-care-gap/6","outcome":"FAIL","taxonomy":"reasoning","model_fault":"yes","decisive_step":116,"evidence_ids":["Procedure/proc-t3-2591","Observation/obs-t3-7342"],"llm_auditor_agrees":true}
 {"trial":"crc-care-gap/7","outcome":"FAIL","taxonomy":"reasoning","model_fault":"yes","decisive_step":116,"evidence_ids":["Procedure/proc-t3-2591","Observation/obs-t3-7342"],"llm_auditor_agrees":true}
-{"trial":"crc-care-gap/8","outcome":"FAIL","taxonomy":"over_action","model_fault":"yes","decisive_step":119,"evidence_ids":["Procedure/proc-t3-2591","Observation/obs-t3-7342"],"llm_auditor_agrees":true}
-{"trial":"crc-care-gap/9","outcome":"FAIL","taxonomy":"over_action","model_fault":"yes","decisive_step":121,"evidence_ids":["Procedure/proc-t3-2591","Observation/obs-t3-7342"],"llm_auditor_agrees":true}
+{"trial":"crc-care-gap/8","outcome":"FAIL","taxonomy":"over_action","model_fault":"yes","decisive_step":119,"evidence_ids":["Patient/pt-0034","Observation/obs-t3-2465"],"llm_auditor_agrees":true}
+{"trial":"crc-care-gap/9","outcome":"FAIL","taxonomy":"over_action","model_fault":"yes","decisive_step":121,"evidence_ids":["Patient/pt-0034","Observation/obs-t3-2465"],"llm_auditor_agrees":true}
 {"trial":"crc-care-gap/10","outcome":"FAIL","taxonomy":"reasoning","model_fault":"yes","decisive_step":116,"evidence_ids":["Procedure/proc-t3-2591","Observation/obs-t3-7342"],"llm_auditor_agrees":true}
 {"trial":"discharge-medrec/7","outcome":"FAIL","taxonomy":"reasoning","model_fault":"yes","decisive_step":10,"evidence_ids":["DocumentReference/doc-t4-lab-1021"],"llm_auditor_agrees":true}
 {"trial":"discharge-medrec/8","outcome":"FAIL","taxonomy":"reasoning","model_fault":"yes","decisive_step":10,"evidence_ids":["DocumentReference/doc-t4-lab-1021"],"llm_auditor_agrees":true}

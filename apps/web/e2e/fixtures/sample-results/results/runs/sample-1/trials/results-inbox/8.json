@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:results-inbox:8",
   "task_id": "results-inbox",
-  "task_version": "62a2d8fd40a1b3b0f735f22a9eb226a3ab0ed40f3f4aee0a56f3203702a7909d",
-  "env_version": "eba880de4cd01777160c9093b0c3ba191a0936d8227c1408b964f7101000a40a",
-  "grader_task_version": "795a1fce8f8570c04453db3dac42ba08ed79c1d594f16f572b287efb7976774e",
-  "fixture_hash": "7cf5696665b064f6862ad91f90a65c043ea50a4bb773fc56b2ee9865ed5d6e7d",
+  "task_version": "a66b2a305d71bfa9c4a7abeab3b1d50e66dff8f85c1b2a883c6d3412b6316927",
+  "env_version": "2182d5d239fd63b238c936cca761625136c332e28625b83ea40f6a91fe8c07a8",
+  "grader_task_version": "6be86c5cf6a1c401188250b0d2c86a30a1070b8fafec85194ab778d520c98d32",
+  "fixture_hash": "2f7e5edd1a7b81c9ecba4b42887aa8a60884720f89f2974400d1806d0deb87ab",
   "state_hash": {
-    "initial": "7cf5696665b064f6862ad91f90a65c043ea50a4bb773fc56b2ee9865ed5d6e7d",
-    "final": "4dfbe6bcfc9129d0163a4b3459180e2e7dd96df448e19891a6f47789ded7412c",
-    "replay_final": "4dfbe6bcfc9129d0163a4b3459180e2e7dd96df448e19891a6f47789ded7412c"
+    "initial": "2f7e5edd1a7b81c9ecba4b42887aa8a60884720f89f2974400d1806d0deb87ab",
+    "final": "f7d024cb531b2ba8128febd465e32c39e1d9ae80dffa10f3615eb6a8c815c27c",
+    "replay_final": "f7d024cb531b2ba8128febd465e32c39e1d9ae80dffa10f3615eb6a8c815c27c"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T15:00:56.000Z",
+  "started": "2026-10-23T15:00:52.000Z",
   "turns": 13,
   "tool_calls": 41,
   "tool_errors": {
@@ -43,7 +43,7 @@
   "summary": "Results inbox cleared: all 8 items completed with their follow-up orders, tasks, messages and notes linked.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T15:03:37.000Z",
+  "ended": "2026-10-23T15:03:33.000Z",
   "judge_cost_usd": 0,
   "grader_version": "13",
   "outcome": "FAIL",
@@ -880,7 +880,8 @@
       {
         "id": "DiagnosticReport/dr-t2-ldct-0915",
         "first_exposed_step": null,
-        "first_shown_step": null
+        "first_shown_step": null,
+        "first_seen_step": null
       }
     ]
   },
