@@ -2,7 +2,8 @@
 // e2e/fixtures/trial (built with RESULTS_ROOT pointed there), after "Browse without a key":
 // the trajectory pane and the five tabs (Grading, Attribution, State diff, Environment, Raw)
 // render on every fixture trial; Grading lists every rubric item with the points, met and judge
-// quote of the record, and every gate check with its evidence ids, each a link that scrolls the
+// quote of the record, and every gate check with its evidence ids and, for a gate over a worklist,
+// each failed item with why (W1-1), each evidence id a link that scrolls the
 // trajectory to its step; the header shows, with no click, the outcome, label, decisive check and
 // reason explainTrial gives (cli/audit-check.ts context), the not-audited marker on a trial with
 // no audit row, and a decisive-step link that scrolls to that step; the Attribution criteria
@@ -19,6 +20,7 @@ import { trialName } from '../../../packages/core/summary.ts';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { explain, hasTrajectory, record, records, RUN_DIR, RUN_ID, runOf, summary, trialBase, TRIALS } from './fixtures/trial/trial.ts';
+import { failedItems, itemsMetText, type ItemRow } from '../src/trial/items.ts';
 import { rubricMetText } from '../src/trial/rubric.ts';
 
 const TABS = [
@@ -93,6 +95,13 @@ test('Grading lists every rubric item with the record\'s points, met and judge q
       const ids = c.ids ?? [];
       const shown = await row.getByTestId('evidence-id').evaluateAll((els) => els.map((e) => e.getAttribute('data-id')));
       expect(shown, `${name} ${c.id}`).toEqual(ids);
+      // A gate over a worklist names each failed item and why (W1-1).
+      const items = (c as { items?: ItemRow[] }).items;
+      if (items === undefined) continue;
+      await expect(row.getByTestId('gate-items')).toContainText(itemsMetText(items));
+      const failed = failedItems(c.id, items, null);
+      await expect(row.getByTestId('gate-item')).toHaveCount(failed.length);
+      for (const i of failed) await expect(row.locator(`[data-testid="gate-item"][data-item="${i.item}"]`)).toContainText(`${i.name}: ${i.why}`);
     }
     if (typeof r.score === 'number') await expect(p.getByTestId('score-card')).toHaveText(`Rubric score (does not decide pass) ${r.score.toFixed(2)}`);
   }
