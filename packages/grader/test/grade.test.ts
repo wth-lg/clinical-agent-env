@@ -5,6 +5,8 @@
 import type { Resource } from '../../env/store.ts';
 import { describe, expect, it } from 'vitest';
 import { ApiError } from '../../core/anthropic.ts';
+import { explainTrial } from '../../core/explain.ts';
+import { NOT_RERUN_REASON } from '../../core/outcomes.ts';
 import { gate, hybrid, judged, rubric, type Check, type GateCtx } from '../check.ts';
 import { grade, type GradeInput } from '../grade.ts';
 import { JudgeCacheMiss } from '../judge.ts';
@@ -241,6 +243,34 @@ describe('outcomes', () => {
     expect(limit.checks.length).toBe(CHECKS.length);
   });
 
+  // Rule P-L (progress.ts) fails safe: a cap stop is the model's (LIMIT) only while it looped, and
+  // the grade records the facts, so the Runs list, which has no trajectory, gives the trial page's
+  // reason (verifier-phase-P17i-W0-A-r2-1 F1).
+  it('a cap stop records the P-L facts; LIMIT only while looping, else ENV_LIMIT, a trial with no trajectory included', async () => {
+    const loop = Array.from({ length: 20 }, (): Call => ({ name: 'search_notes', input: { patient: 'pt-1', query: 'k' } }));
+    const looping = await grade(input(loop, GOOD_FINAL, { trial: facts({ status: 'LIMIT', detail: 'turns' }) }), { judge: scriptedJudge([MET, NOT_MET]).client });
+    expect(looping).toMatchObject({ outcome: 'LIMIT', valid: true, progress: { tail: 20, repeats: 19, new_writes: 0, looping: true } });
+    const reads = await grade(input([...READS, ...WRITES], GOOD_FINAL, { trial: facts({ status: 'LIMIT', detail: 'cost' }) }), { judge: scriptedJudge([]).client });
+    expect(reads).toMatchObject({ outcome: 'ENV_LIMIT', valid: false, fault: 'env', progress: { looping: false } });
+    const none = await grade(input([], GOOD_FINAL, { trial: facts({ status: 'LIMIT', detail: 'wall_clock' }) }), { judge: scriptedJudge([]).client });
+    expect(none).toMatchObject({ outcome: 'ENV_LIMIT', progress: { tail: 0, repeats: 0, new_writes: 0, looping: false } });
+    // Not a cap stop: no P-L facts.
+    expect(await run({ status: 'LIMIT', detail: 'max_tokens' })).not.toHaveProperty('progress');
+    expect(await run({})).not.toHaveProperty('progress');
+  });
+
+  it('the Runs list (no trajectory) and the trial page give an ENV_LIMIT the same reason from the recorded facts', async () => {
+    const events = trajectory(Array.from({ length: 24 }, (_, i) => ({ name: 'fhir_search', input: { resource_type: 'Observation', patient: 'pt-1', code: `c-${i}` } })));
+    const trial = facts({ status: 'LIMIT', detail: 'turns' });
+    const g = await grade(input([], GOOD_FINAL, { trial, events }), { judge: scriptedJudge([]).client });
+    const rec = { ...trial, ...g, task_id: 't', task_version: 'v', turns: 24 };
+    const page = explainTrial(rec, null, { events, world_state_hash: null, matrix: null });
+    const list = explainTrial(rec, null, { events: [], world_state_hash: null, matrix: null });
+    expect(list.reason).toBe(page.reason);
+    expect(list.reason).toBe(`ENV_LIMIT: turns limit; last 20 calls: 0 repeats, 0 writes to a new target; no loop; the environment's fault, excluded, not run again: ${NOT_RERUN_REASON.ENV_LIMIT}`);
+    expect(list.reason).not.toMatch(/no trajectory/);
+  });
+
   it('a missing write puts the decisive step at the last step', async () => {
     const g = await grade(input([...READS, { name: 'finish' }], INITIAL), { judge: scriptedJudge([NOT_MET]).client });
     expect(g.attribution).toMatchObject({ first_failed: 'G1', decisive_step: 4 });
@@ -403,6 +433,30 @@ describe('judge failures are infrastructure', () => {
     expect(g.judge.cache).toEqual([]);
     expect(g.judge.cache_keys).toEqual([]);
     expect(calls).toBe(1);
+  });
+
+  // verifier-phase-P17i-W0-A-1 F2 (probe j): a judge prompt too long for the judge's context
+  // window is the grader's input, not the task's list: GRADER_ERROR, fault grader, settled and
+  // never rerun until the grader is fixed. Grading goes on, as for a check that threw, so the
+  // record's judge cache holds every other answer; the batch goes on.
+  it('a judge prompt too long is GRADER_ERROR, fault grader, never ENV_LIMIT; grading and the batch go on', async () => {
+    const tooLong = new ApiError('HTTP 400 invalid_request_error: prompt is too long: 215013 tokens > 200000 maximum', { status: 400, type: 'invalid_request_error', retryable: false, stopsBatch: false });
+    const rest = scriptedJudge([NOT_MET]);
+    let calls = 0;
+    const client = { send: (...a: Parameters<typeof rest.client.send>) => (++calls === 1 ? Promise.reject(tooLong) : rest.client.send(...a)) };
+    const trial = facts({});
+    const g = await grade(input([...READS, ...WRITES], GOOD_FINAL, { trial }), { judge: client });
+    expect(g).toMatchObject({ outcome: 'GRADER_ERROR', valid: false, fault: 'grader', score: null, attribution: null, error: { check: 'R2', stops_batch: false } });
+    expect(g.error!.message).toMatch(/^judge prompt is too long for the judge model's context window \(the grader's input\): ApiError: HTTP 400 .*prompt is too long/);
+    expect(g.checks.find((c) => c.id === 'R2')).toMatchObject({ met: 'unknown', evidence: { grader_error: g.error!.message } });
+    expect(g.checks.find((c) => c.id === 'R4')).toMatchObject({ met: false });
+    expect(calls).toBe(2);
+    expect(g.judge.cache).toHaveLength(1);
+    const x = explainTrial({ ...trial, ...g, task_id: 't', task_version: 'v', turns: 6, cost_usd: 1 }, null, { events: [], world_state_hash: 'h', matrix: null });
+    expect(x).toMatchObject({ outcome: 'GRADER_ERROR', fault: 'grader', label: 'grader', deciding: { id: 'GR1' } });
+    expect(x.reason).toMatch(/^GRADER_ERROR: check R2 threw judge prompt is too long .*; the grader's fault, which blocks the run$/);
+    expect(x.reason).not.toMatch(/ENV_LIMIT|infrastructure|environment|rerun/);
+    expect(NOT_RERUN_REASON.GRADER_ERROR).toBe('the grader must be fixed first');
   });
 
   it('a parsed answer without a usable quote is a cached unknown, not an infrastructure error', async () => {

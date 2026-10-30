@@ -4,7 +4,7 @@
 // node_modules linked in; DONEWHEN_CLI is the real `node cli/index.ts`. The clauses must flip
 // PASS/FAIL exactly with the exit codes those commands give on the same fixture.
 import { spawnSync } from 'node:child_process';
-import { symlinkSync } from 'node:fs';
+import { mkdirSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { writeFixtureRun, type Fixture } from '../../cli/test/run-fixtures.ts';
@@ -33,7 +33,7 @@ function exit(root: string, args: string[]): number | null {
   return spawnSync(process.execPath, [join(repoRoot, 'cli/index.ts'), ...args], { cwd: root, env, encoding: 'utf8' }).status;
 }
 
-const SUMMARY = ['summary', 'results/runs/final-1', '--require', 'trials=10,pass-min=2,pass-max=7,model=claude-opus-5-5', '--json'];
+const SUMMARY = ['summary', 'results/runs/final-1', '--require', 'trials=10,pass-min=2,pass-max=7,model=claude-opus-5-5,env_limit=0', '--json'];
 const AUDIT = ['audit-check', 'results/runs/final-1', '--json'];
 
 describe('done-when clauses (5) and (6) with the real summary and audit-check', () => {
@@ -68,6 +68,18 @@ describe('done-when clauses (5) and (6) with the real summary and audit-check', 
     const c = clauses(root);
     expect(c.five).toMatch(/^PASS \(5\)/);
     expect(c.six).toMatch(/^FAIL \(6\).*audit-check: exit 1; labelled 9\/10 failures/);
+  });
+
+  // An ENV_LIMIT is never rerun, so the batch leaves it as an unsettled attempt; the final run
+  // requires env_limit=0, so a human reviews it before done-when can pass (verifier-phase-P17i-W0-A-r3-1 M4).
+  it('clause (5) FAILs on a run with one ENV_LIMIT attempt, where summary exits 1', () => {
+    const root = rootWith('clean');
+    const run = join(root, 'results/runs/final-1');
+    const r = JSON.parse(readFileSync(join(run, 'trials/t-alpha/5.json'), 'utf8')) as Record<string, unknown>;
+    mkdirSync(join(run, 'requeued/t-alpha'), { recursive: true });
+    writeFileSync(join(run, 'requeued/t-alpha/5.a-0.json'), JSON.stringify({ ...r, outcome: 'ENV_LIMIT', valid: false, fault: 'env', status: 'LIMIT', detail: 'turns', score: null, checks: [], attribution: null, attempt: 'a-0', settled: false, requeue_reason: 'ENV_LIMIT' }));
+    expect(exit(root, SUMMARY)).toBe(1);
+    expect(clauses(root).five).toMatch(/^FAIL \(5\).*summary: exit 1; t-alpha 5\/10, t-beta 5\/10/);
   });
 
   it('clause (6) FAILs on an environment label', () => {

@@ -1,5 +1,6 @@
 // Findings: docs/findings.md, rendered, and the charts it rests on, all from the official run's
-// summary.json: pass rate with its Wilson 95% interval per task, why each task fails (P17j JU7:
+// summary.json: pass rate with its Wilson 95% interval per task and the trials its k/n leaves out
+// (ENV_LIMIT and the other excluded outcomes, with why), why each task fails (P17j JU7:
 // its valid failures by kind as a bar, its top failed checks and its fault box, findings/why.tsx),
 // and mean cost per trial; a run that is blocked says so first; then links to
 // an example trial of each non-pass outcome, the glossary and the full write-up (a link only when
@@ -9,6 +10,7 @@ import { useMemo, type Ref } from 'react';
 import { FINAL_PASS_BAND, FINAL_TRIALS_PER_TASK } from '../../../../packages/core/cost.ts';
 import { OUTCOMES } from '../../../../packages/core/outcomes.ts';
 import { runBlock, shownFault } from '../data/failures.ts';
+import { notCounted, notCountedText } from '../data/marks.ts';
 import { checkTextOf, dataUrl, gradingLine, pilotRates, useResults, type RunData } from '../data/results.ts';
 import { Card, formatInterval, GlossaryLink, IntervalRow, markLabel, MarkLegend, markOf, NO_RESULTS, Notice, Page, Swatch } from '../data/ui.tsx';
 import { FaultBox, KindBar, RunBlocked, TopChecks } from './why.tsx';
@@ -51,6 +53,11 @@ export function Findings({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> 
 
 const link = 'text-ink underline decoration-line-strong underline-offset-2 hover:decoration-ink';
 
+// The trials of a task that its k/n leaves out, and why (data/marks.ts notCounted), under its row.
+function NotCountedLine({ task, text }: { task: string; text: string | null }) {
+  return text === null ? null : <span data-testid="not-counted" data-task={task} className="break-words text-xs text-ink-muted sm:col-span-3">{text}</span>;
+}
+
 function PilotFindings({ run }: { run: RunData }) {
   const graded = gradingLine(run.grading);
   return (
@@ -62,6 +69,7 @@ function PilotFindings({ run }: { run: RunData }) {
               <span className="break-words font-medium">{r.task} <span className="font-normal text-ink-muted">{r.passes}/{r.valid}</span></span>
               <IntervalRow rate={r.rate} interval={r.interval} band={FINAL_PASS_BAND} label={`${r.task} (pilot)`} />
               <span className="text-xs text-ink-muted">Wilson 95% {formatInterval(r.interval)}</span>
+              <NotCountedLine task={r.task} text={notCountedText(notCounted({ outcomes: r.outcomes }))} />
             </li>
           ))}
         </ul>
@@ -129,6 +137,7 @@ function Charts({ run, blocked }: { run: RunData; blocked: boolean }) {
               <span className="break-words font-medium">{id} <span className="font-normal text-ink-muted">{t.passes}/{t.trials}</span></span>
               <IntervalRow rate={t.pass_rate} interval={t.wilson95} band={FINAL_PASS_BAND} label={id} />
               <span className="text-xs text-ink-muted">{formatInterval(t.wilson95)}<PassK task={id} k={t.pass_k} /></span>
+              <NotCountedLine task={id} text={notCountedText(notCounted(t))} />
             </li>
           ))}
         </ul>

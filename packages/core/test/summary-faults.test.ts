@@ -35,7 +35,6 @@ describe('fault_counts, top_failed_checks, model and effort', () => {
 
   it('equal the hand counts', () => {
     expect(s.schema_version).toBe(SUMMARY_SCHEMA_VERSION);
-    expect(s.schema_version).toBe(8);
     expect(s).toMatchObject({ model: MODEL, effort: 'high' });
     expect(s.tasks.t!.fault_counts).toEqual({
       failures: 6,

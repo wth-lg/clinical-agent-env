@@ -21,7 +21,7 @@ describe('outcomes', () => {
   it('every outcome has one fault: model, refusal, env, grader or infra (PASS none)', () => {
     expect(FAULT).toEqual({
       INVALID: 'infra', INFRA_HARNESS: 'infra', INFRA_API: 'infra', CANCELLED: 'infra',
-      ENV_ERROR: 'env', GRADER_ERROR: 'grader', REFUSAL: 'refusal', LIMIT: 'model', FAIL: 'model', PASS: null,
+      ENV_ERROR: 'env', ENV_LIMIT: 'env', GRADER_ERROR: 'grader', REFUSAL: 'refusal', LIMIT: 'model', FAIL: 'model', PASS: null,
     });
   });
 

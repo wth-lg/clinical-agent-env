@@ -3,10 +3,14 @@
 // pattern, so the meaning does not rest on colour); the pilot's grader error says it is a grader bug
 // fixed before the final run, and an environment error "Not counted; it is run again." (decisions.tsv
 // 2026-10-29T17:30 and 19:10); a model fault stays neutral; the FAIL mark stays readable in dark
-// mode (at least 3:1 against its card).
+// mode (at least 3:1 against its card). An ENV_LIMIT (plan-amendment-worklist W0-A) is the
+// environment's too, but it is not run again: its note gives NOT_RERUN_REASON's reason, on the
+// trial page and in Runs, never "it is run again", and the plain rules list it under "not run
+// again" with that reason.
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { NOT_RERUN_REASON } from '../../../packages/core/outcomes.ts';
 import { browse } from './browse.ts';
-import { runOf, trialBase, TRIALS } from './fixtures/trial/trial.ts';
+import { explain, RUN_ID, runOf, trialBase, TRIALS } from './fixtures/trial/trial.ts';
 
 async function openTrial(page: Page, name: string) {
   await browse(page, new URL(`./?view=runs&run=${runOf(name)}&trial=${encodeURIComponent(name)}`, await trialBase(test.info().project.use.baseURL!)).href);
@@ -38,7 +42,7 @@ function contrast(a: [number, number, number], b: [number, number, number]): num
 }
 
 for (const scheme of ['light', 'dark'] as const) {
-  for (const [what, name] of [['environment', TRIALS.envError], ['grader', TRIALS.graderError]] as const) {
+  for (const [what, name] of [['environment', TRIALS.envError], ['environment limit', TRIALS.envLimit], ['grader', TRIALS.graderError]] as const) {
     test(`${scheme}: an ${what} fault's chip and label take the danger colour, with the note`, async ({ page }) => {
       await page.emulateMedia({ colorScheme: scheme });
       await openTrial(page, name);
@@ -51,13 +55,39 @@ for (const scheme of ['light', 'dark'] as const) {
       // One "Not counted" sentence on the header: the note says only the rest when the reason says it (F3).
       // The GRADER_ERROR exemplar is in a pilot run, which nothing blocks: its note says it is a grader
       // bug fixed before the final run; an ENV_ERROR is run again (decisions.tsv 2026-10-29T17:30, 19:10).
-      await expect(header.getByTestId('fault-note')).toHaveText(what === 'grader' ? /^(Not counted\. )?A grader bug; it is fixed and regraded before the final run\.$/ : /^(Not counted; i|I)t is run again\.$/);
+      const note = header.getByTestId('fault-note');
+      if (what === 'grader') await expect(note).toHaveText(/^(Not counted\. )?A grader bug; it is fixed and regraded before the final run\.$/);
+      else if (what === 'environment') await expect(note).toHaveText(/^(Not counted; i|I)t is run again\.$/);
+      else {
+        // The header's plain reason says "Not counted", so the note gives only the rest (F3).
+        await expect(note).toHaveText(`It is not run again: ${NOT_RERUN_REASON.ENV_LIMIT}.`);
+        await expect(header).not.toContainText('it is run again');
+        await expect(header).not.toContainText('It is run again');
+      }
       await expect(header.getByTestId('fault-note')).not.toContainText('run is blocked');
       expect((await header.innerText()).match(/Not counted/g)?.length ?? 0).toBeLessThanOrEqual(1);
       // The header's left accent is the danger colour only for a trial that blocks the official run.
       expect(await rgb(page, await header.evaluate((el) => getComputedStyle(el).borderLeftColor))).not.toEqual(want);
     });
   }
+
+  test(`${scheme}: an ENV_LIMIT says why it counts against the environment: E8 and the P-L facts on the trial page, the reason in Runs`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme: scheme });
+    const e = await explain(TRIALS.envLimit);
+    expect(e).toMatchObject({ outcome: 'ENV_LIMIT', fault: 'env', deciding: { id: 'E8' } });
+    await openTrial(page, TRIALS.envLimit);
+    const header = page.getByTestId('trial-header');
+    await expect(header.getByTestId('plain-reason')).toHaveText('Not counted: the trial stopped at a turn, cost or working-time limit and rule P-L found no loop (fewer than 20 calls ran, fewer than 10 of the last 20 repeat an earlier call on the same target, or one of them writes to a target not written before), so a human reviews the stop before the run goes on. The environment is at fault, not the model.');
+    await expect(header.getByTestId('detail-fault')).toContainText(e.deciding!.evidence);
+    await expect(header.getByTestId('detail-fault')).toContainText(/last \d+ calls?: \d+ repeats?, \d+ writes? to a new target; no loop/);
+    // In Runs, the row gives the same label, note and reason.
+    await browse(page, new URL(`./?view=runs&run=${RUN_ID}`, await trialBase(test.info().project.use.baseURL!)).href);
+    const row = page.locator(`[data-testid="trial-row"][data-trial="${TRIALS.envLimit}"]`);
+    await expect(row.getByTestId('label')).toHaveText('environment');
+    await expect(row.getByTestId('fault-note')).toHaveText(`Not counted; it is not run again: ${NOT_RERUN_REASON.ENV_LIMIT}.`);
+    await expect(row.getByTestId('reason')).toHaveText(e.reason);
+    await expect(row).not.toContainText('it is run again');
+  });
 
   test(`${scheme}: a model fault stays neutral and has no note`, async ({ page }) => {
     await page.emulateMedia({ colorScheme: scheme });
@@ -71,6 +101,14 @@ for (const scheme of ['light', 'dark'] as const) {
     expect(await rgb(page, await header.evaluate((el) => getComputedStyle(el).borderLeftColor))).not.toEqual(want);
   });
 }
+
+test('the plain rules list ENV_LIMIT and GRADER_ERROR under "not run again", each with its reason', async ({ page }) => {
+  await browse(page, new URL('./?view=glossary', await trialBase(test.info().project.use.baseURL!)).href);
+  const line = page.getByTestId('not-counted-rule').first();
+  await expect(line).toContainText(`ENV_LIMIT (not run again: ${NOT_RERUN_REASON.ENV_LIMIT})`);
+  await expect(line).toContainText(`GRADER_ERROR (not run again: ${NOT_RERUN_REASON.GRADER_ERROR})`);
+  await expect(line).toContainText('ENV_ERROR (run again)');
+});
 
 test('dark: the FAIL mark is at least 3:1 against its card', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'dark' });

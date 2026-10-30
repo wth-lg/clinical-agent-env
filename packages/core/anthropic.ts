@@ -24,7 +24,9 @@
 // classifyFailure says how a failed call ends a trial, for the trial loop and the judge alike,
 // and whether it stops the batch: a 400, 401, 403, 404 (the model: /v1/messages is the only
 // endpoint), a billing error, a substituted model, an egress refusal, a spend refusal and any
-// local error do (design section 1, "Failure modes"; section 5, "Outcomes"). A call that
+// local error do (design section 1, "Failure modes"; section 5, "Outcomes"). A 400 whose prompt
+// is too long for the model's context window does not: the task's list did not fit, which ends
+// only that trial, as ENV_LIMIT (plan-amendment-worklist W0-A). A call that
 // stops the batch closes the grant, which stops every client of the batch, and the grant
 // closes on nothing else; any other 4xx fails the call only, and so does an abort. Headers
 // are never logged, and the key is redacted from every log
@@ -319,6 +321,9 @@ const retryableStatus = (s: number) => s === 408 || s === 409 || s === 429 || s 
 const stopsBatchStatus = (s: number, type: string | null) => s === 400 || s === 401 || s === 403 || s === 404 || type === 'billing_error';
 // A billing failure: a billing_error, or a 400 about the credit balance or billing.
 const isBilling = (e: ApiError) => e.errorType === 'billing_error' || (e.status === 400 && /credit balance|billing/i.test(e.message));
+// A 400 invalid_request_error whose prompt does not fit the model's context window.
+const PROMPT_TOO_LONG = /prompt is too long/i;
+const isPromptTooLong = (status: number | null, type: string | null, message: string) => status === 400 && type === 'invalid_request_error' && PROMPT_TOO_LONG.test(message);
 const broken = (message: string, type: string | null = null, retryable = true) =>
   new ApiError(message, { status: 200, type, retryable, stopsBatch: false, partial: true });
 const retryableStreamError = (type: string | null) => type === 'overloaded_error' || type === 'api_error' || type === 'rate_limit_error';
@@ -336,16 +341,19 @@ async function errorStatus(res: Response): Promise<ApiError> {
   const retryable = retryableStatus(res.status);
   const after = Number(res.headers.get('retry-after') ?? NaN);
   return new ApiError(`HTTP ${res.status}${type ? ` ${type}` : ''}${detail ? `: ${detail}` : ''}`, {
-    status: res.status, type, retryable, stopsBatch: stopsBatchStatus(res.status, type), retryAfter: Number.isFinite(after) && after >= 0 ? after : null,
+    status: res.status, type, retryable, stopsBatch: stopsBatchStatus(res.status, type) && !isPromptTooLong(res.status, type, detail), retryAfter: Number.isFinite(after) && after >= 0 ? after : null,
   });
 }
 
 // Folds SSE events into the final message. Throws ApiError(partial) on an error event, a
 // malformed frame or a stream that ends before message_stop. A tool_use whose input JSON is
-// cut off is dropped from the content when the message stops at max_tokens, so the caller
-// gets a max_tokens stop and never a tool call with half its arguments; under any other stop
-// reason it is an error.
+// cut off is dropped from the content when the message stops at max_tokens or at the model's
+// context window (model_context_window_exceeded), so the caller gets that stop and never a
+// tool call with half its arguments; under any other stop reason it is an error.
 // onBytes runs on every chunk; once `idle` aborts, a pending read ends as a dropped stream.
+// The stop reasons that may cut a tool_use off mid-input (readStream).
+const CUT_OFF_STOPS = ['max_tokens', 'model_context_window_exceeded'];
+
 async function readStream(body: ReadableStream<Uint8Array>, onBytes: () => void, idle: AbortSignal): Promise<Message> {
   const reader = body.getReader();
   const decoder = new TextDecoder();
@@ -395,7 +403,7 @@ async function readStream(body: ReadableStream<Uint8Array>, onBytes: () => void,
         return false;
       case 'message_stop':
         if (truncated.size > 0 && st.message) {
-          if (st.message.stop_reason !== 'max_tokens') throw broken('tool_use input is not valid JSON', 'invalid_tool_input', false);
+          if (!CUT_OFF_STOPS.includes(st.message.stop_reason ?? '')) throw broken('tool_use input is not valid JSON', 'invalid_tool_input', false);
           st.message.content = st.message.content.filter((_, i) => !truncated.has(i));
         }
         return true;
@@ -496,16 +504,21 @@ async function sendOnce(f: Transport, endpoint: string, apiKey: string, body: st
 // How a failed call ends a trial (design section 1, "Failure modes"; section 5, "Outcomes"),
 // whichever call failed: a model call in the trial loop or a judge call in the grader.
 //   INVALID        a response from another model
-//   INFRA_HARNESS  a request we built wrong (a 400 that is not billing), the egress guard, a
+//   INFRA_HARNESS  a request we built wrong (a 400 that is not billing or a prompt too long), the egress guard, a
 //                  spend refusal, or any other local error (a request the client refused to
 //                  build, a ledger fault)
 //   INFRA_API      401, 403, 404, a billing error, retries exhausted, a network error
+//   ENV_LIMIT      a 400 prompt is too long, code prompt_too_long: the trial's context outgrew
+//                  the model's window. The trial loop ends the trial LIMIT context_window
+//                  (loop.ts), which the grader grades ENV_LIMIT. Never rerun (outcomes.ts
+//                  NOT_RERUN_REASON), and it does not stop the batch. A judge call's prompt is
+//                  the grader's input, so the grader grades that GRADER_ERROR (grade.ts)
 // stopsBatch: true for every INFRA_HARNESS (design section 5), for a 401, 403, 404 or billing
 // error, and for a substituted model (coordinator decision, P8 fix round 3, 2026-10-23: an
 // API-side fault a rerun does not cure). Retries exhausted and a network error do not stop the
 // batch: the trial is rerun. MessagesClient.send closes the grant exactly when this says so.
 export interface ClientFailure {
-  status: 'INVALID' | 'INFRA_HARNESS' | 'INFRA_API';
+  status: 'INVALID' | 'INFRA_HARNESS' | 'INFRA_API' | 'ENV_LIMIT';
   code: string;
   stopsBatch: boolean;
   message: string;
@@ -517,6 +530,7 @@ export function classifyFailure(e: unknown): ClientFailure {
     const message = e.message;
     if (e.errorType === 'model_mismatch') return { status: 'INVALID', code: 'model_mismatch', stopsBatch: true, message };
     if (isBilling(e)) return { status: 'INFRA_API', code: 'billing_error', stopsBatch: true, message };
+    if (isPromptTooLong(e.status, e.errorType, message)) return { status: 'ENV_LIMIT', code: 'prompt_too_long', stopsBatch: false, message };
     const code = e.errorType ?? (e.status === null ? 'network' : `http_${e.status}`);
     if (e.status === 400 || e.errorType === 'egress_refused') return { status: 'INFRA_HARNESS', code, stopsBatch: true, message };
     return { status: 'INFRA_API', code, stopsBatch: e.stopsBatch, message };
