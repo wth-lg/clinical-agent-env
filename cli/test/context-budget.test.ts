@@ -149,6 +149,34 @@ describe('pnpm cli context-budget <run> (fit)', () => {
     // A task this checkout does not have has no env_version to match.
     expect((await run([fixture('env3'), '--json'], { checkoutEnv: async () => null })).code).toBe(2);
   });
+
+  it('names the error when the checkout\'s env_version cannot be read, thrown or rejected', async () => {
+    for (const checkoutEnv of [() => { throw new Error('ENOENT fixtures/world.ndjson.gz'); }, async () => { throw new Error('task.toml: parse error'); }] as Array<NonNullable<Deps['checkoutEnv']>>) {
+      const { code, lines } = await run([fixture('env-err')], { checkoutEnv });
+      expect(code).toBe(2);
+      expect(lines).toContainEqual(expect.stringMatching(/^context-budget: crc-care-gap: cannot read the checkout's env_version \((ENOENT fixtures\/world\.ndjson\.gz|task\.toml: parse error)\); give --observed-items crc-care-gap=n$/));
+    }
+  });
+
+  it('a record with no env_version never matches the checkout', async () => {
+    const dir = tempDir('context-budget-no-env');
+    writeQuadRun(dir, { 'crc-care-gap': CRC });
+    const { readdirSync, readFileSync, writeFileSync } = await import('node:fs');
+    for (const f of readdirSync(`${dir}/trials/crc-care-gap`)) {
+      const path = `${dir}/trials/crc-care-gap/${f}`;
+      const { env_version: _, ...rest } = JSON.parse(readFileSync(path, 'utf8')) as Record<string, unknown>;
+      writeFileSync(path, JSON.stringify(rest));
+    }
+    expect((await run([dir], { checkoutEnv: async () => null })).code).toBe(2);
+  });
+
+  it('--task all reports a task whose trials are all invalid, and exits 1', async () => {
+    const dir = tempDir('context-budget-all-invalid-all');
+    writeQuadRun(dir, { 'crc-care-gap': CRC.map((t) => ({ ...t, outcome: 'ENV_ERROR' })), 'results-inbox': INBOX });
+    const { code, lines } = await run([dir]);
+    expect(code).toBe(1);
+    expect(lines).toContainEqual(expect.stringMatching(/no valid trials of crc-care-gap/));
+  });
 });
 
 describe('pnpm cli context-budget <run> --project --items <n>', () => {

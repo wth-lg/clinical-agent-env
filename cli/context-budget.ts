@@ -54,7 +54,8 @@ export interface Deps {
   err: (line: string) => void;
   // Resolves --task all and each task's max_turns; default this checkout's tasks.
   tasks?: TaskSource;
-  // The checkout's env_version of a task, null when it has none; default from tasks.
+  // The checkout's env_version of a task, null when it has none; default from tasks. A throw or
+  // rejection (no such task, a broken task or world file) is reported as the reason.
   checkoutEnv?: (id: string) => Promise<string | null>;
 }
 
@@ -270,7 +271,7 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
   }
 
   const want = opts.get('--task') ?? 'all';
-  const ids = want === 'all' ? [...byTask.keys()].sort() : [...new Set(want.split(',').filter((s) => s !== ''))];
+  const ids = want === 'all' ? [...new Set([...byTask.keys(), ...invalid.keys()])].sort() : [...new Set(want.split(',').filter((s) => s !== ''))];
   if (ids.length === 0) {
     deps.err(`context-budget: no valid trials with requests in ${runs.join(', ')}`);
     return 1;
@@ -289,7 +290,7 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
 
   const tasks = deps.tasks ?? nodeTaskSource();
   let versions: ReturnType<typeof checkoutVersions> | undefined;
-  const checkoutEnv = deps.checkoutEnv ?? ((id: string) => (versions ??= checkoutVersions(tasks))(id).then((v) => v.env_version, () => null));
+  const checkoutEnv = deps.checkoutEnv ?? (async (id: string) => (await (versions ??= checkoutVersions(tasks))(id)).env_version);
   const result: Record<string, { trials: TrialUsage[]; fit: Fit; projection?: Projection }> = {};
   const breaks: string[] = [];
   const projections: Projection[] = [];
@@ -299,8 +300,14 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
     if (items === undefined) {
       const slots = SLOT_ITEMS[id];
       if (slots === undefined) return usage(`${id}: no item count; give --observed-items ${id}=n`);
-      const now = await checkoutEnv(id);
-      const ran = [...new Set(trials.map((t) => t.env_version))].filter((v) => v !== now);
+      let now: string | null;
+      try {
+        now = await checkoutEnv(id);
+      } catch (e) {
+        return usage(`${id}: cannot read the checkout's env_version (${(e as Error).message}); give --observed-items ${id}=n`);
+      }
+      // A record from before env_version has none, and never matches.
+      const ran = [...new Set(trials.map((t) => t.env_version))].filter((v) => v === null || v !== now);
       if (ran.length > 0) return usage(`${id}: the run's env_version ${ran.map((v) => v ?? '(none)').join(', ')} is not the checkout's ${now ?? '(none)'}, so the ${slots} overlay slots may not be the items it held; give --observed-items ${id}=n`);
       items = slots;
     }
