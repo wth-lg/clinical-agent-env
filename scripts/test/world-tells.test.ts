@@ -19,6 +19,7 @@ import { describe, expect, it } from 'vitest';
 import { isPlanted } from '../../tasks/planted.ts';
 import { gunzip } from '../fixtures-lib.ts';
 import { repoRoot } from './helpers.ts';
+import { scoreTells, type TypeScore } from './tells.ts';
 
 type R = Record<string, unknown> & { resourceType: string; id: string };
 const world = gunzip(readFileSync(join(repoRoot, 'fixtures/world.ndjson.gz')))
@@ -258,6 +259,64 @@ describe('within a task chart, planted resources look like the generated ones', 
       });
     });
     expect(out).toEqual([]);
+  });
+});
+
+// The verifier's extended classifier (verifier P17i W0-1b r2 probe2, builder-205 F4; scripts/test/tells.ts):
+// timestamp minute and seconds, the chart's own clock, issued against effective time, exact codes,
+// categories, performers and providers, the visit, order in the chart, attachment length, and every
+// AND / OR of two of the 150 strongest features. The coordinator's bar (decisions.tsv, W0-1b round
+// 3): per type in the task charts, best single feature at most 0.75 and best pair at most 0.80.
+// A feature over the bar that follows from what the task is, not from how the record was written,
+// is a named residual below: left out of the search, and held to its cap.
+const SINGLE_BAR = 0.75;
+const PAIR_BAR = 0.8;
+// A type with fewer than five planted records in the task charts cannot be read against those bars:
+// label four generated records of the type at random as planted and the same search finds a single
+// feature at 0.74 to 0.86 and a pair at 0.86 to 0.97 (AllergyIntolerance and Procedure, eight draws
+// each; builder-205 evidence 30). Such a type is held to that chance level instead.
+const SMALL = 5;
+const SMALL_SINGLE_BAR = 0.86;
+const SMALL_PAIR_BAR = 0.97;
+// The cap on order in the chart, by type (the first residual below).
+const ORDER_CAPS: Readonly<Record<string, number>> = { AllergyIntolerance: 0.7, Condition: 0.69, DiagnosticReport: 0.89, DocumentReference: 0.75, Encounter: 0.72, MedicationRequest: 0.76, Observation: 0.85, Procedure: 0.61 };
+
+const RESIDUALS: ReadonlyArray<{ type: string; feature: RegExp; cap: number; why: string }> = [
+  ...['AllergyIntolerance', 'Condition', 'DiagnosticReport', 'DocumentReference', 'Encounter', 'MedicationRequest', 'Observation', 'Procedure'].map((type) => ({
+    type, feature: /^O:/, cap: ORDER_CAPS[type]!,
+    why: 'order in the chart: the planted records are the recent events the task is about (the newest report, the last results, a drug new to the chart)',
+  })),
+  { type: 'MedicationRequest', feature: /^TH:/, cap: 0.83, why: 'hour of the day: the overlays write orders at morning clinic, and the planted times keep their hour (coordinator brief, builder-205 F1)' },
+  { type: 'MedicationRequest', feature: /^E:status=/, cap: 0.77, why: 'status: the planted orders are the current regimen the task reviews; most generated orders are past ones' },
+  { type: 'MedicationRequest', feature: /^E:requester\./, cap: 0.76, why: "prescriber: the planted orders are the task's clinicians' (Dr. Okafor, Dr. Lin); Synthea's spread over the three staff" },
+  { type: 'DiagnosticReport', feature: /^E:category\.|^DLINES:presentedForm|^DL:presentedForm/, cap: 0.79, why: 'report kind: the planted reports are the imaging and laboratory results a task acts on (four radiology reports, with their long text); the generated ones are mostly questionnaires' },
+  { type: 'AllergyIntolerance', feature: /^(TY|TY26|TZ|CMODE|CSS|CTOP3|CSSTOP3|CRARE|TP|TS0|TH|TM5|TM15):|^E:(category|recordedDate|onsetDateTime)=/, cap: 0.81, why: "Synthea records every generated allergy at the patient's birth, to the second; the four planted ones were recorded at visits" },
+  { type: 'DocumentReference', feature: /^(CRARE|CTOP3|CMODE|CSS|CSSTOP3):context\.period\.end=/, cap: 0.77, why: "a note's period end against the chart's clock: 31 of the 55 planted notes sit in one chart (pt-0028) beside one generated visit, so that chart's clock has nothing to draw a visit's end from; Synthea's notes keep their visit's end, and moving a generated time would break the base cohort's order (world-hygiene.test.ts)" },
+  { type: 'Procedure', feature: /^E:(performer|outcome|code)|^TH:/, cap: 0.95, why: 'the four planted procedures are hospital procedures (colonoscopies, a hip replacement) done in the morning, at St. Brigid, with their findings' },
+];
+
+describe("the extended classifier (probe2) cannot tell planted from generated in the task charts", () => {
+  const residual = (type: string, f: string) => RESIDUALS.some((x) => x.type === type && x.feature.test(f));
+  const scores = scoreTells(world, isPlanted, { exclude: residual });
+
+  const bar = (s: TypeScore, big: number, small: number) => (s.planted < SMALL ? small : big);
+
+  it(`best single feature at most ${SINGLE_BAR} per type (${SMALL_SINGLE_BAR} under ${SMALL} planted), named residuals aside`, () => {
+    expect(scores.filter((s) => s.single.ba > bar(s, SINGLE_BAR, SMALL_SINGLE_BAR)).map((s) => `${s.type} ${s.single.ba.toFixed(3)} ${s.single.f.slice(0, 120)} (planted ${s.single.tp}/${s.planted}, generated ${s.single.fp}/${s.n - s.planted})`)).toEqual([]);
+  });
+
+  it(`best pair of features at most ${PAIR_BAR} per type (${SMALL_PAIR_BAR} under ${SMALL} planted), named residuals aside`, () => {
+    expect(scores.filter((s) => s.pair.ba > bar(s, PAIR_BAR, SMALL_PAIR_BAR)).map((s) => `${s.type} ${s.pair.ba.toFixed(3)} ${s.pair.rule.slice(0, 200)} (planted ${s.pair.tp}/${s.planted}, generated ${s.pair.fp}/${s.n - s.planted})`)).toEqual([]);
+  });
+
+  it('each named residual stays at or under its cap', () => {
+    const all = scoreTells(world, isPlanted, { pairsOf: 0, exclude: (t, f) => !residual(t, f) });
+    const over = RESIDUALS.flatMap((x) => {
+      const s = all.find((y) => y.type === x.type);
+      const worst = s?.families.filter((f) => x.feature.test(f.f)).reduce((m, f) => Math.max(m, f.ba), 0) ?? 0;
+      return worst > x.cap ? [`${x.type} ${x.feature}: ${worst.toFixed(3)} > ${x.cap}`] : [];
+    });
+    expect(over).toEqual([]);
   });
 });
 
