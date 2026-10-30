@@ -182,6 +182,7 @@ export const mutants: Mutant[] = [
     trap: 'indication_not_checked',
     why: "P19 lever (researcher-16 T1; pilot-1 trials 0-2 and pilot-0 trial 0 all decided this way before reading a note): applies §2's three criteria to apixaban without checking the indication, one met (age), and raises it to 5 mg twice daily. The order's reason is a history of pulmonary embolism, the extended-phase dose; §2 applies only to non-valvular atrial fibrillation and §5 says not to change what the policy does not cover.",
     fails: ['apixaban_dose', 'apixaban_unchanged'],
+    attribution: 'reasoning',
     loses: ['note_states_apixaban_criteria'],
     script: [
       ...reads,
@@ -203,6 +204,7 @@ export const mutants: Mutant[] = [
     trap: 'indication_not_checked',
     why: "Searches the notes and reads the hematology letter (extended-phase apixaban 2.5 mg twice daily after pulmonary embolism, not a renally adjusted dose), then still applies §2's criteria and raises apixaban to 5 mg, as if the policy overrode the letter: §2 covers only non-valvular atrial fibrillation.",
     fails: ['apixaban_dose', 'apixaban_unchanged'],
+    attribution: 'reasoning',
     loses: ['note_states_apixaban_criteria'],
     script: [
       ...reads,

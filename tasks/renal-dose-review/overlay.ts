@@ -74,15 +74,18 @@ const ATTENDING: Resource = { resourceType: 'Practitioner', id: 'pr-t1-raman', a
 const PHARMACIST: Resource = { resourceType: 'Practitioner', id: 'pr-t1-lindqvist', active: true, name: [{ use: 'official', given: ['Grace'], family: 'Lindqvist', suffix: ['PharmD'] }] };
 // The St. Brigid hematologist who managed the pulmonary embolism and set the extended-phase dose.
 const HEMATOLOGIST: Resource = { resourceType: 'Practitioner', id: 'pr-t1-heme', active: true, name: [{ use: 'official', given: ['Daniel'], family: 'Okonkwo-Reyes', suffix: ['MD'] }] };
+const HEME = { reference: 'Practitioner/pr-t1-heme' };
 
-const encounter = (id: string, cls: 'AMB' | 'IMP', type: [string, string], start: string, end: string, provider: { reference: string }): Resource => ({
+// An ambulatory visit is attended by Dr. Okafor unless another clinician is named (the St. Brigid
+// hematology visits are the hematologist's).
+const encounter = (id: string, cls: 'AMB' | 'IMP', type: [string, string], start: string, end: string, provider: { reference: string }, attended = OKAFOR): Resource => ({
   resourceType: 'Encounter',
   id,
   status: 'finished',
   class: { system: 'http://terminology.hl7.org/CodeSystem/v3-ActCode', code: cls },
   type: [{ coding: [{ system: SNOMED, code: type[0], display: type[1] }], text: type[1] }],
   subject: SUBJECT,
-  ...(cls === 'AMB' ? { participant: [{ individual: OKAFOR }] } : {}),
+  ...(cls === 'AMB' ? { participant: [{ individual: attended }] } : {}),
   period: { start, end },
   serviceProvider: provider,
 });
@@ -251,9 +254,9 @@ Patient: Harold Vance   MRN 4410-22   DOB 1944-03-11
 Date: 2026-02-05
 To: Maya Okafor, MD, Riverbend Family Medicine
 
-Seen today, six months after a pulmonary embolism in August 2025 (unprovoked; CT pulmonary angiogram 8/4/2025). On apixaban 5 mg twice daily since 8/11/2025 after the 10 mg loading week. No bleeding. Breathing back to baseline.
+Seen today, six months after a pulmonary embolism in August 2025 (unprovoked; CT pulmonary angiogram 8/4/2025). Apixaban started 8/4/2025 at 10 mg twice daily for the loading week, then 5 mg twice daily since 8/11/2025. No bleeding. Breathing back to baseline.
 
-Plan: he completes 6 months of treatment on 2/11/2026. From then, continue extended-phase apixaban 2.5 mg twice daily indefinitely to lower the risk of recurrence; not a renally adjusted dose. Please stop the 5 mg order at that point. Review here in one year.
+Plan: he has completed 6 months of treatment from 8/4/2025. When his current 5 mg supply ends on 2/11/2026, continue extended-phase apixaban 2.5 mg twice daily indefinitely to lower the risk of recurrence; not a renally adjusted dose. Please stop the 5 mg order at that point. Review here in one year.
 
 Daniel Okonkwo-Reyes, MD
 Hematology`;
@@ -292,13 +295,15 @@ const overlay: Overlay = {
       PHARMACIST,
       HEMATOLOGIST,
       encounter('enc-t1-0804', 'IMP', ['32485007', 'Hospital admission (procedure)'], '2025-08-04T16:40:00-04:00', '2025-08-08T12:00:00-04:00', HOSPITAL),
-      encounter('enc-t1-0205', 'AMB', ['185347001', 'Encounter for problem (procedure)'], '2026-02-05T14:00:00-05:00', '2026-02-05T14:30:00-05:00', HOSPITAL),
+      encounter('enc-t1-0811', 'AMB', ['185347001', 'Encounter for problem (procedure)'], '2025-08-11T09:30:00-04:00', '2025-08-11T10:00:00-04:00', HOSPITAL, HEME),
+      encounter('enc-t1-0205', 'AMB', ['185347001', 'Encounter for problem (procedure)'], '2026-02-05T14:00:00-05:00', '2026-02-05T14:30:00-05:00', HOSPITAL, HEME),
       encounter('enc-t1-0207', 'IMP', ['32485007', 'Hospital admission (procedure)'], '2026-02-07T14:20:00-05:00', '2026-02-12T11:30:00-05:00', HOSPITAL),
       encounter('enc-t1-0512', 'AMB', ['185347001', 'Encounter for problem (procedure)'], '2026-05-12T09:30:00-04:00', '2026-05-12T10:00:00-04:00', CLINIC),
       encounter('enc-t1-1020', 'AMB', ['185349003', 'Encounter for check up (procedure)'], '2026-10-20T09:00:00-04:00', '2026-10-20T09:20:00-04:00', CLINIC),
       encounter('enc-t1-1022', 'AMB', ['185317003', 'Telephone encounter (procedure)'], '2026-10-22T10:15:00-04:00', '2026-10-22T10:25:00-04:00', CLINIC),
-      condition('cond-t1-pe', '59282003', 'Pulmonary embolism (disorder)', '2025-08-04T16:40:00-04:00', '2025-08-15T10:00:00-04:00'),
-      condition('cond-t1-pe-hx', null, 'History of pulmonary embolism', '2025-08-15T10:00:00-04:00'),
+      // Resolved when the six months of treatment end; the history entry is the extended phase's reason.
+      condition('cond-t1-pe', '59282003', 'Pulmonary embolism (disorder)', '2025-08-04T16:40:00-04:00', '2026-02-11T10:00:00-05:00'),
+      condition('cond-t1-pe-hx', null, 'History of pulmonary embolism', '2026-02-11T10:00:00-05:00'),
       condition('cond-t1-t2dm', '44054006', 'Diabetes mellitus type 2 (disorder)', '2015-09-02T10:00:00-04:00'),
       condition('cond-t1-phn', '2177002', 'Postherpetic neuralgia (disorder)', '2023-03-21T10:00:00-04:00'),
       condition('cond-t1-hld', '55822004', 'Hyperlipidemia (disorder)', '2015-09-02T10:00:00-04:00'),
@@ -315,9 +320,17 @@ const overlay: Overlay = {
       weight('obs-t1-wt-1022', '2026-10-22T10:20:00-04:00', '2026-10-22T10:22:00-04:00', 132, '[lb_av]', 'enc-t1-1022', ['3142-7', 'Body weight Stated'], {
         note: [{ time: '2026-10-22T10:22:00-04:00', text: 'Patient estimate by phone, not weighed.' }],
       }),
+      // The loading week, started on the August admission (two 5 mg tablets twice daily for 7 days).
+      medication('mr-t1-apixaban-10', ['1364445', 'apixaban 5 MG Oral Tablet'], 10, 'BID', '2025-08-04T18:00:00-04:00', 'Pulmonary embolism, treatment', {
+        status: 'completed',
+        requester: HEME,
+        encounter: { reference: 'Encounter/enc-t1-0804' },
+        dispenseRequest: { expectedSupplyDuration: { value: 7, unit: 'days', system: UCUM, code: 'd' } },
+      }),
       medication('mr-t1-apixaban-5', ['1364445', 'apixaban 5 MG Oral Tablet'], 5, 'BID', '2025-08-11T10:00:00-04:00', 'Pulmonary embolism, treatment', {
         status: 'stopped',
-        requester: { reference: 'Practitioner/pr-t1-heme' },
+        requester: HEME,
+        encounter: { reference: 'Encounter/enc-t1-0811' },
         statusReason: { text: '6 months of treatment complete; extended-phase dose' },
       }),
       // Ordered at the February discharge, when the 5 mg order stopped.
