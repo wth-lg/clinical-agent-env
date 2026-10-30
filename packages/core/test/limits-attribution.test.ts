@@ -8,7 +8,10 @@
 //     the cap reads only priced usage, so it cannot end the trial LIMIT cost
 //   - a usage the cost model cannot price ends INFRA_HARNESS
 //   - an attempt whose stream goes idle fails after the idle-stream timeout and is retried
-//   - a real turns, cost or working-time limit is still LIMIT, a model fault
+//   - a real turns, cost or working-time limit still ends the loop LIMIT
+//   - who the cap stop counts against is rule P-L's (W0-A): the environment while the model made
+//     progress (ENV_LIMIT, E8), the model while it looped (LIMIT, MF2); this reverses R14-13 and
+//     R14-14 for caps reached during progress, by the source's model-versus-environment rule
 // The cases are the lane A limit probe of verifier-phase-P17r-1 (evidence/verifier-P17r-1-laneA/
 // limit.ts) turned into tests: on 6d9d66f the storm ended LIMIT wall_clock and the dropped
 // attempt LIMIT cost, both labelled model.
@@ -17,13 +20,17 @@ import { describe, expect, it } from 'vitest';
 import { okResponse, sse, turnEvents, type MockTurn } from '../../../apps/web/src/harness/scenarios.ts';
 import { MessagesClient, type ClientOptions, type MessageParams, type Transport } from '../anthropic.ts';
 import { PER_TRIAL_CAP_USD, worstCaseUsd } from '../cost.ts';
-import type { EventBody } from '../events.ts';
+import { createEmitter, type EventBody, type TrialEvent } from '../events.ts';
+import { explainTrial } from '../explain.ts';
 import { admitStore, createLedger, type LedgerRow, type LedgerStore } from '../ledger.ts';
 import { runLoop, type Caps } from '../loop.ts';
-import { FAULT } from '../outcomes.ts';
+import { FAULT, NOT_RERUN_REASON } from '../outcomes.ts';
 import { run } from '../run.ts';
 import { nodeTaskSource } from '../../../cli/adapters/tasks-node.ts';
+import type { Tool } from '../../env/tools/registry.ts';
 import type { WriteContext } from '../../env/tools/write/index.ts';
+import { grade } from '../../grader/grade.ts';
+import type { TrialFacts } from '../../grader/outcome.ts';
 
 class MemoryStore implements LedgerStore {
   rows: LedgerRow[] = [];
@@ -210,7 +217,95 @@ describe('infrastructure never ends a trial LIMIT', () => {
   }, 5000);
 });
 
-describe('a real limit is still LIMIT, a model fault', () => {
+// The loop ends a cap LIMIT; the grader decides whose fault it is by rule P-L
+// (packages/grader/progress.ts, plan-amendment-worklist W0-A): a turn, cost or working-time cap
+// reached while the model still made progress is ENV_LIMIT, the environment's (E8): the harness
+// set the cap too small for the task. Reached while the model was looping, it stays LIMIT, the
+// model's (MF2), and so does a second max_tokens stop in a row.
+describe('rule P-L: who a cap stop counts against, through the loop, the grader and explainTrial', () => {
+  // A read tool that exposes Observation/<id>.
+  const READ: Tool<WriteContext> = {
+    name: 'read', description: 'Read one observation.',
+    inputSchema: { type: 'object', properties: { id: { type: 'string', description: 'id' }, why: { type: 'string', description: 'why' } }, required: ['id'], additionalProperties: false },
+    run: (i) => ({ resourceType: 'Observation', id: i.id }),
+  };
+  const ask = (n: number, id: string, why?: string): MockTurn => ({ tools: [{ id: `toolu_${n}`, name: 'read', input: why === undefined ? { id } : { id, why } }] });
+  // How each kind of trajectory picks the n-th call: a new id; the same call word for word; or,
+  // after five new ids, only ids already seen, each call with an input of its own.
+  const kinds = {
+    progressing: (n: number) => respond(ask(n, `o-${n}`), n),
+    repeating: (n: number) => respond(ask(n, 'o-1'), n),
+    rereading: (n: number) => respond(ask(n, `o-${n <= 5 ? n : 1 + (n % 5)}`, `call ${n}`), n),
+  };
+  // 25 calls under each cap: 25 turns; $0.33 of priced usage (about $0.011 rising $0.0002 a
+  // turn); 25 s of working time at 1 s an answer.
+  const caps = { turns: { maxTurns: 25 }, cost: { maxCostUsd: 0.33 }, wall_clock: { maxWallMs: 25_000 } } as const;
+
+  async function graded(kind: keyof typeof kinds, cap: keyof typeof caps) {
+    const time = fakeTime();
+    let n = 0;
+    const { client } = await clientOver(async () => {
+      time.advance(1000);
+      return kinds[kind](++n);
+    }, time);
+    const { emit, events } = createEmitter(time.now);
+    const out = await runLoop({
+      client, params: PARAMS, history: [{ role: 'user', content: 'x' }], tools: [READ], ctx: {} as WriteContext,
+      caps: { maxTurns: 80, maxCostUsd: 5, maxWallMs: 50_000, maxElapsedMs: 100_000, ...caps[cap] },
+      now: time.now, timeout: time.timeout, emit, stateHash: async () => 'h',
+    });
+    return gradeOut(out, events);
+  }
+
+  async function gradeOut(out: Awaited<ReturnType<typeof runLoop>>, events: readonly TrialEvent[]) {
+    const t = out.terminal;
+    const trial: TrialFacts = {
+      status: out.status, detail: t?.type === 'limit' ? t.limit : null, models_returned: out.models_returned, tool_errors: out.tool_errors,
+      state_hash: { initial: 'h', final: 'h', replay_final: 'h' }, summary: null,
+    };
+    const g = await grade({ checks: [], initial: [], final: [], events, trial });
+    const x = explainTrial({ ...trial, ...g, task_version: 'v', turns: out.turns, cost_usd: out.cost_usd }, null, { events, world_state_hash: 'h', matrix: null });
+    return { out, g, x, criterion: (id: string) => [...x.fault_criteria.env, ...x.fault_criteria.model].find((c) => c.id === id)! };
+  }
+
+  it.each(Object.keys(caps) as Array<keyof typeof caps>)('(c) %s cap on a progressing trajectory: ENV_LIMIT, fault env, label environment, E8 met with the P-L facts', async (cap) => {
+    const { out, g, x, criterion } = await graded('progressing', cap);
+    expect(out).toMatchObject({ status: 'LIMIT', terminal: { type: 'limit', limit: cap } });
+    expect(out.tool_calls).toBeGreaterThanOrEqual(20);
+    expect(g).toMatchObject({ outcome: 'ENV_LIMIT', valid: false, fault: 'env' });
+    expect(x).toMatchObject({ outcome: 'ENV_LIMIT', fault: 'env', label: 'environment', deciding: { id: 'E8' }, taxonomy: null });
+    expect(criterion('E8')).toMatchObject({ met: true, evidence: expect.stringMatching(/^[a-z_]+ limit; last 20 calls: 0 repeats \(share 0\.00\), \d+ new ids; progressing$/) });
+    expect(criterion('MF2').met).toBe(false);
+    expect(x.reason).toContain(NOT_RERUN_REASON.ENV_LIMIT);
+  });
+
+  it.each((['repeating', 'rereading'] as const).flatMap((k) => (Object.keys(caps) as Array<keyof typeof caps>).map((c) => [k, c] as const)))('(d) %s, %s cap: LIMIT, fault model, MF2 met with the P-L facts', async (kind, cap) => {
+    const { out, g, x, criterion } = await graded(kind, cap);
+    expect(out).toMatchObject({ status: 'LIMIT', terminal: { type: 'limit', limit: cap } });
+    expect(g).toMatchObject({ outcome: 'LIMIT', valid: true, fault: 'model' });
+    expect(x).toMatchObject({ outcome: 'LIMIT', fault: 'model', label: 'model', deciding: { id: 'MF2' } });
+    expect(criterion('MF2')).toMatchObject({ met: true, evidence: expect.stringMatching(kind === 'repeating' ? /share (0\.9\d|1\.00)\).*; looping/ : /, 0 new ids; looping/) });
+    expect(criterion('E8').met).toBe(false);
+  });
+
+  it('(e) two max_tokens stops in a row stay LIMIT, the model\'s, even after progress', async () => {
+    let n = 0;
+    const fetch: Transport = async () => (++n <= 5 ? respond(ask(n, `o-${n}`), n) : respond({ text: 'cut', stop: 'max_tokens' }, n));
+    const time = fakeTime();
+    const { client } = await clientOver(fetch, time);
+    const { emit, events } = createEmitter(time.now);
+    const out = await runLoop({
+      client, params: PARAMS, history: [{ role: 'user', content: 'x' }], tools: [READ], ctx: {} as WriteContext,
+      caps: { maxTurns: 80, maxCostUsd: 5, maxWallMs: 50_000, maxElapsedMs: 100_000 }, now: time.now, timeout: time.timeout, emit, stateHash: async () => 'h',
+    });
+    expect(out.terminal).toMatchObject({ type: 'limit', limit: 'max_tokens' });
+    const { g, x } = await gradeOut(out, events);
+    expect(g).toMatchObject({ outcome: 'LIMIT', fault: 'model' });
+    expect(x).toMatchObject({ fault: 'model', deciding: { id: 'MF2' } });
+  });
+});
+
+describe('the loop still ends a cap LIMIT; the grader decides whose (rule P-L)', () => {
   it('turns', async () => {
     let n = 0;
     const { out } = await loop(async () => respond(toolUse(++n), n), { maxTurns: 2 });

@@ -8,6 +8,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { explainTrial, type ExplainContext, type ExplainRecord } from '../explain.ts';
+import { NOT_RERUN_REASON } from '../outcomes.ts';
 import { repoRoot } from '../../../scripts/test/helpers.ts';
 
 const MANIFEST = 'h-manifest';
@@ -47,6 +48,28 @@ describe('an excluded trial has no model taxonomy, decisive check or decisive st
     expect(x.decisive_check).toBeNull();
     expect(x.decisive_step).toBeNull();
     expect(x.reason).not.toMatch(/found|Kind: reasoning/);
+  });
+
+  // W0-A: an ENV_LIMIT is the environment's (E7 or E8), excluded and never run again; its reason
+  // says why it is not run again and never says it is.
+  it.each([
+    ['context_window', 'E7', /^context_window limit: stop_reason model_context_window_exceeded with 191500 tokens in context$/],
+    ['turns', 'E8', /^turns limit; last 20 calls: 0 repeats \(share 0\.00\), 20 new ids; progressing$/],
+  ] as const)('ENV_LIMIT at %s: decided by %s, no taxonomy, check or step, and "not run again" with its reason', (detail, id, evidence) => {
+    const calls = Array.from({ length: 24 }, (_, i) => [
+      { v: 2, seq: 2 * i, ts: 't', turn: i + 1, type: 'tool_call', tool_use_id: `u${i}`, name: 'fhir_read', input: { id: `o-${i}` } },
+      { v: 2, seq: 2 * i + 1, ts: 't', turn: i + 1, type: 'tool_result', tool_use_id: `u${i}`, name: 'fhir_read', executed: true, is_error: false, error_code: null, content: {}, exposed_ids: [`Observation/o-${i}`], referenced_ids: [] },
+    ]).flat() as unknown as ExplainContext['events'];
+    const stop = detail === 'context_window'
+      ? { v: 2, seq: 99, ts: 't', turn: 24, type: 'limit', limit: 'context_window', cap: 191_500, value: 191_500, code: 'stop_reason' }
+      : { v: 2, seq: 99, ts: 't', turn: 24, type: 'limit', limit: 'turns', cap: 24, value: 24 };
+    const rec = record('ENV_LIMIT', { status: 'LIMIT', detail, stop_reason: detail === 'context_window' ? 'model_context_window_exceeded' : 'tool_use', checks: [], attribution: null });
+    const x = explainTrial(rec, undefined, { ...ctx, events: [...calls, stop] as ExplainContext['events'] });
+    expect(x).toMatchObject({ outcome: 'ENV_LIMIT', valid: false, fault: 'env', label: 'environment', deciding: { id }, taxonomy: null, decisive_check: null, decisive_step: null, confirmation: 'confirmed' });
+    expect(x.deciding!.evidence).toMatch(evidence);
+    expect(x.reason).toContain(`not run again: ${NOT_RERUN_REASON.ENV_LIMIT}`);
+    expect(x.reason).not.toMatch(/excluded and rerun|run again;|is run again/);
+    expect(x.fault_criteria.model.find((c) => c.id === 'MF2')!.met).toBe(false);
   });
 
   // The exemplar lives in the sample's pilot run since the official run's GRADER_ERROR was regraded

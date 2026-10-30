@@ -5,7 +5,7 @@
 // Order: the outcome the trial already has (outcome.ts); an invalid trial is not graded (no
 // checks run, no judge call). Otherwise every gate check, then every rubric item, each group in
 // declared order (results keep the declared order). PASS when every gate is met (unless the
-// trial ended REFUSAL or LIMIT). Score = Σ points of met items (negatives included) ÷ Σ positive
+// trial ended REFUSAL or LIMIT; ENV_LIMIT is invalid and not graded). Score = Σ points of met items (negatives included) ÷ Σ positive
 // points, clipped to [0, 1], over the rubric items that are not unknown (HealthBench style);
 // null when no positive item is known.
 //
@@ -51,8 +51,10 @@ import { FAULT, isValid, trialOutcome, type Fault, type Outcome, type TrialFacts
 // decisiveGate, decisions.tsv 2026-10-28T06:50). 12: TAXONOMY gains action_form, from a failed
 // gate's action_form mark (P17j JG8b, pre-audit M3). 13: a source counts as seen before a write
 // only when its result came back in an earlier turn (Step.turn, exposure.ts seenBefore), so a
-// read in the same answer as the write is not (verifier-phase-P17i-P17-T5-1 F2).
-export const GRADER_VERSION = '13';
+// read in the same answer as the write is not (verifier-phase-P17i-P17-T5-1 F2). 14: a LIMIT at the
+// context window, or at a turn, cost or working-time cap while the model still made progress (rule
+// P-L, progress.ts), is ENV_LIMIT, the environment's (outcome.ts; plan-amendment-worklist W0-A).
+export const GRADER_VERSION = '14';
 
 export interface CheckResult {
   id: string;
@@ -220,7 +222,7 @@ function judgeOf(judge: Judge, results: readonly CheckResult[], scored: boolean)
 
 // Grades with `judge`, whose cost and cache entries the caller can read afterwards.
 export async function gradeWith(input: GradeInput, judge: Judge): Promise<Grade> {
-  const early = trialOutcome(input.trial);
+  const early = trialOutcome(input.trial, input.events);
   if (early !== null && !isValid(early)) return ungraded(early);
   if (input.final === null) {
     return ungraded('GRADER_ERROR', { check: null, message: `the record says the trial reached a final state (status ${input.trial.status}), and the grader has none`, stops_batch: false });

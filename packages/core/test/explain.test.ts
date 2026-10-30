@@ -74,6 +74,7 @@ describe('explainTrial: one fixture per outcome', () => {
     { outcome: 'INFRA_API', rec: record('INFRA_API', { detail: 'overloaded' }), fault: 'infra', label: null, valid: false, check: null, reason: /^INFRA_API\b.*overloaded/ },
     { outcome: 'CANCELLED', rec: record('CANCELLED'), fault: 'infra', label: null, valid: false, check: null, reason: /^CANCELLED\b/ },
     { outcome: 'ENV_ERROR', rec: record('ENV_ERROR', { detail: 'INTERNAL', tool_errors: { INTERNAL: 1 }, state_hash: { initial: MANIFEST, final: null, replay_final: null } }), fault: 'env', label: 'environment', valid: false, check: null, reason: /^ENV_ERROR\b.*INTERNAL/ },
+    { outcome: 'ENV_LIMIT', rec: record('ENV_LIMIT', { status: 'LIMIT', detail: 'context_window', valid: false }), c: { ...ctx, events: limitEvent('context_window', 200_000, 200_000) }, fault: 'env', label: 'environment', valid: false, check: null, reason: /^ENV_LIMIT: context_window limit: .*; the environment's fault, excluded, not run again: the task must be resized/ },
     { outcome: 'GRADER_ERROR', rec: record('GRADER_ERROR', { valid: false, error: { check: 'G1', message: 'TypeError: cannot read mg', stops_batch: false } }), fault: 'grader', label: 'grader', valid: false, check: null, reason: /^GRADER_ERROR\b.*G1 threw/ },
     { outcome: 'REFUSAL', rec: record('REFUSAL', { refusal_category: 'cyber' }), c: { ...ctx, events: refusalEvents }, fault: 'refusal', label: 'model', subtype: 'refusal', valid: true, check: null, reason: /^refused: I cannot help with changing these medication orders because they need a$/ },
     { outcome: 'LIMIT', rec: record('LIMIT', { detail: 'turns', turns: 80 }), c: { ...ctx, events: limitEvent('turns', 80, 80) }, fault: 'model', label: 'model', valid: true, check: null, reason: /^turn limit reached: 80 turns$/ },
@@ -81,7 +82,7 @@ describe('explainTrial: one fixture per outcome', () => {
     { outcome: 'PASS', rec: record('PASS'), fault: null, label: null, valid: true, check: null, reason: /^PASS\b/ },
   ];
 
-  it('covers all ten outcomes', () => expect(cases.map((c) => c.outcome).sort()).toEqual([...OUTCOMES].sort()));
+  it('covers all eleven outcomes', () => expect(cases.map((c) => c.outcome).sort()).toEqual([...OUTCOMES].sort()));
 
   it.each(cases)('$outcome gives fault $fault, label $label and its reason', ({ outcome, rec, c, fault, label, subtype, valid, check, reason }) => {
     const x = explainTrial(rec, undefined, c ?? ctx);

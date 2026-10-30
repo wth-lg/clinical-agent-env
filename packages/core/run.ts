@@ -372,7 +372,7 @@ export async function gradeTrajectory(taskId: string, opts: GradeTrajectoryOptio
   const input = { checks: opts.checks, initial, events: opts.events, trial: opts.record };
   const gradeOpts = { cache: opts.record.judge?.cache ?? [], effort: task.judgeEffort };
   const graded = (x: GradeInput) => (opts.judge ? gradeWith(x, opts.judge) : grade(x, gradeOpts));
-  const early = trialOutcome(opts.record);
+  const early = trialOutcome(opts.record, opts.events);
   // An invalid trial is not graded: no state to compare.
   if (early !== null && !isValid(early)) return graded({ ...input, final: null });
   const h = opts.record.state_hash;

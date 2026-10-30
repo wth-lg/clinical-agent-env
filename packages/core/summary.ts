@@ -1,5 +1,7 @@
 // A run's summary (plan phase P12, design section 6 "summary <run>"): per task pass k/n over its
 // valid trials with a Wilson 95% interval, the raw ENV_ERROR count (re-queued attempts included),
+// the ENV_LIMIT count (attempts at the current grade, settled or not: a batch never re-queues one,
+// so it is left as an unsettled attempt; plan-amendment-worklist W0-A),
 // the models seen, the initial state hashes and the replay check, plus the --require
 // requirements. summary.json is a Summary; validateSummary is its schema, which P14 validates
 // its sample against. Pure: cli/summary.ts reads the run directory and writes the file.
@@ -47,8 +49,8 @@
 //                      key 'unknown' those whose record names no kind
 //   requeued_outcomes  the re-queued attempts by outcome
 //   infra_counted_*    passes over the valid trials plus every INFRA (INVALID, INFRA_HARNESS,
-//                      INFRA_API) and ENV_ERROR attempt, settled or re-queued; CANCELLED and
-//                      GRADER_ERROR are left out
+//                      INFRA_API), ENV_ERROR and ENV_LIMIT attempt, settled or re-queued;
+//                      CANCELLED and GRADER_ERROR are left out
 //   pass_k             pass^k for k in PASS_K (P17j JG6): the chance that k trials drawn without
 //                      replacement from the n valid trials all pass, C(c,k) / C(n,k) for c
 //                      passes; null when n < k
@@ -87,7 +89,7 @@
 // summary.json carries the flags without final; cli/audit-check.ts recomputes them with its
 // --final and exits 1 on a flagged task until audit.jsonl holds that task's task-validity review.
 import { LIMITS } from './events.ts';
-import { FAULT, isValid, OUTCOMES, type Outcome } from './outcomes.ts';
+import { FAULT, isValid, NOT_RERUN_REASON, OUTCOMES, type Outcome } from './outcomes.ts';
 import { decisiveGate, TAXONOMY } from '../grader/attribution.ts';
 
 // 2: recorded_outcomes and regraded added, and every figure reads the current grade.
@@ -98,7 +100,8 @@ import { decisiveGate, TAXONOMY } from '../grader/attribution.ts';
 // 6: pass_k added per task.
 // 7: model and effort added; fault_counts and top_failed_checks added per task.
 // 8: fault_counts.taxonomy gains action_form (TAXONOMY, P17j JG8b).
-export const SUMMARY_SCHEMA_VERSION = 8;
+// 9: env_limit added per task and in the totals; limits gains context_window (W0-A).
+export const SUMMARY_SCHEMA_VERSION = 9;
 // A met or unknown rubric item worth this many points or fewer is a harm: such a PASS is not
 // pass_no_harm.
 export const HARM_POINTS = -5;
@@ -275,6 +278,8 @@ export interface TaskSummary {
   recorded_outcomes: Record<string, number>;
   regraded: number;
   env_error_raw: number;
+  // Attempts whose current grade is ENV_LIMIT, settled or not.
+  env_limit: number;
   grader_error: number; // records whose current grade is GRADER_ERROR
   grader_error_history: number; // records that were GRADER_ERROR in an earlier grade
   requeued: number;
@@ -316,6 +321,7 @@ export interface Requirements {
   valid?: number;
   band?: [number, number];
   env_error_raw?: number;
+  env_limit?: number;
   grader_error?: number;
   model?: string;
   replay?: 'all';
@@ -331,7 +337,7 @@ export interface Summary {
   model: string | null;
   effort: string | null;
   tasks: Record<string, TaskSummary>;
-  totals: { records: number; trials: number; passes: number; env_error_raw: number; grader_error: number; grader_error_history: number; regraded: number; requeued: number; internal_errors: number; cost_usd: number };
+  totals: { records: number; trials: number; passes: number; env_error_raw: number; env_limit: number; grader_error: number; grader_error_history: number; regraded: number; requeued: number; internal_errors: number; cost_usd: number };
   mode: string | null;
   expected_tasks: { tasks: string[]; from: string } | null;
   models: string[];
@@ -375,7 +381,7 @@ const gateFraction = (checks: ReadonlyArray<SummaryCheck>): number | null => {
 // decisions.tsv 2026-10-28, a named exception for lane U).
 export const isHarmItem = (c: SummaryCheck): boolean => c.kind === 'rubric' && (c.met === true || c.met === 'unknown') && typeof c.points === 'number' && c.points <= HARM_POINTS;
 const harmed = (checks: ReadonlyArray<SummaryCheck>): boolean => checks.some(isHarmItem);
-// INVALID, INFRA_HARNESS, INFRA_API and ENV_ERROR: the attempts the infra-counted rate fails.
+// INVALID, INFRA_HARNESS, INFRA_API, ENV_ERROR and ENV_LIMIT: the attempts the infra-counted rate fails.
 const infraCounted = (o: string): boolean => o !== 'CANCELLED' && (FAULT[o as Outcome] === 'infra' || FAULT[o as Outcome] === 'env');
 
 // The first failed check of a grade, as explain.ts firstFailedCheck reads it: the decisive gate
@@ -503,6 +509,7 @@ export function summarize(input: SummaryInput): Summary {
       recorded_outcomes: histogram(mine.map((t) => t.outcome)),
       regraded: grades.filter((g) => g.regraded).length,
       env_error_raw: [...mine, ...requeued].filter((t) => t.outcome === 'ENV_ERROR').length,
+      env_limit: [...mine, ...requeued].filter((t) => currentGrade(t).outcome === 'ENV_LIMIT').length,
       grader_error: [...mine, ...requeued].filter((t) => currentGrade(t).outcome === 'GRADER_ERROR').length,
       grader_error_history: [...mine, ...requeued].filter((t) => earlierOutcomes(t).includes('GRADER_ERROR')).length,
       requeued: requeued.length,
@@ -537,6 +544,7 @@ export function summarize(input: SummaryInput): Summary {
       trials: s.reduce((a, t) => a + t.trials, 0),
       passes: s.reduce((a, t) => a + t.passes, 0),
       env_error_raw: s.reduce((a, t) => a + t.env_error_raw, 0),
+      env_limit: s.reduce((a, t) => a + t.env_limit, 0),
       grader_error: s.reduce((a, t) => a + t.grader_error, 0),
       grader_error_history: s.reduce((a, t) => a + t.grader_error_history, 0),
       regraded: s.reduce((a, t) => a + t.regraded, 0),
@@ -564,7 +572,7 @@ export function summarize(input: SummaryInput): Summary {
 
 const ALIASES: Record<string, string> = { trials: 'valid' };
 
-// --require valid=N,band=a-b,env_error_raw=N,grader_error=N,model=M,replay=all,mode=M. donewhen's
+// --require valid=N,band=a-b,env_error_raw=N,env_limit=N,grader_error=N,model=M,replay=all,mode=M. donewhen's
 // form is accepted too: trials=N for valid=N, pass-min=a and pass-max=b for band=a-b. Throws on
 // anything else.
 export function parseRequire(spec: string): Requirements {
@@ -583,6 +591,7 @@ export function parseRequire(spec: string): Requirements {
     const v = part.slice(eq + 1);
     if (k === 'valid') req.valid = count(raw, v);
     else if (k === 'env_error_raw') req.env_error_raw = count(raw, v);
+    else if (k === 'env_limit') req.env_limit = count(raw, v);
     else if (k === 'grader_error') req.grader_error = count(raw, v);
     else if (k === 'mode') {
       if (v === '') throw new Error('--require mode= needs a mode, e.g. mode=live');
@@ -600,7 +609,7 @@ export function parseRequire(spec: string): Requirements {
     } else if (k === 'replay') {
       if (v !== 'all') throw new Error(`--require replay=${v}: only replay=all is defined`);
       req.replay = 'all';
-    } else throw new Error(`--require ${raw}: unknown requirement; known: valid (trials), band (pass-min, pass-max), env_error_raw, grader_error, model, replay, mode`);
+    } else throw new Error(`--require ${raw}: unknown requirement; known: valid (trials), band (pass-min, pass-max), env_error_raw, env_limit, grader_error, model, replay, mode`);
   }
   if (min !== undefined || max !== undefined) {
     if (req.band) throw new Error('--require: give band or pass-min/pass-max, not both');
@@ -626,6 +635,9 @@ export function checkRequirements(s: Summary, req: Requirements): string[] {
   }
   if (req.env_error_raw !== undefined && s.totals.env_error_raw > req.env_error_raw) {
     out.push(`ENV_ERROR raw count ${s.totals.env_error_raw} (re-queued attempts included), required at most ${req.env_error_raw}`);
+  }
+  if (req.env_limit !== undefined && s.totals.env_limit > req.env_limit) {
+    out.push(`ENV_LIMIT in ${s.totals.env_limit} attempt${s.totals.env_limit === 1 ? '' : 's'} (never rerun: ${NOT_RERUN_REASON.ENV_LIMIT}), required at most ${req.env_limit}`);
   }
   if (req.grader_error !== undefined && s.totals.grader_error > req.grader_error) {
     const n = s.totals.grader_error;
@@ -670,7 +682,7 @@ export function validateSummary(x: unknown): string[] {
     expected_tasks: (v) => v === null || (isObj(v) && strings(v.tasks) && typeof v.from === 'string'),
   });
   if (isObj(x.totals)) {
-    check('totals.', x.totals, { records: count, trials: count, passes: count, env_error_raw: count, grader_error: count, grader_error_history: count, regraded: count, requeued: count, internal_errors: count, cost_usd: num });
+    check('totals.', x.totals, { records: count, trials: count, passes: count, env_error_raw: count, env_limit: count, grader_error: count, grader_error_history: count, regraded: count, requeued: count, internal_errors: count, cost_usd: num });
   }
   if (isObj(x.replay)) check('replay.', x.replay, { ran: (v) => typeof v === 'boolean', matched: count, mismatched: strings, missing: strings });
   if (isObj(x.tasks)) {
@@ -682,7 +694,7 @@ export function validateSummary(x: unknown): string[] {
       const histogram = (v: unknown) => isObj(v) && Object.entries(v).every(([o, n]) => (OUTCOMES as readonly string[]).includes(o) && count(n));
       check(`tasks.${id}.`, t, {
         task_versions: strings, env_versions: strings, grader_task_versions: strings, records: count, trials: count, passes: count, pass_rate: rate, wilson95: interval, refusals: count,
-        refusal_excluded_rate: rate, env_error_raw: count, grader_error: count, grader_error_history: count, regraded: count, requeued: count, mean_score: (v) => v === null || num(v), mean_cost_usd: (v) => v === null || num(v),
+        refusal_excluded_rate: rate, env_error_raw: count, env_limit: count, grader_error: count, grader_error_history: count, regraded: count, requeued: count, mean_score: (v) => v === null || num(v), mean_cost_usd: (v) => v === null || num(v),
         outcomes: histogram, recorded_outcomes: histogram,
         raw_mean_score: (v) => v === null || num(v), gate_fraction: rate, pass_no_harm: count, pass_no_harm_rate: rate,
         limits: (v) => isObj(v) && LIMITS.every((k) => Object.hasOwn(v, k)) && Object.values(v).every(count), requeued_outcomes: histogram,

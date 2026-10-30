@@ -17,6 +17,9 @@
 //                                                          '; Kind: <kind> (<why>)' when it fits
 //   turn limit reached: <n> turns (and the cost, time and output limit forms)
 //   refused: <the first REFUSAL_WORDS words of the refusal>
+// An excluded trial's reason names its outcome and the criterion that decided its fault, then
+// what happens to it: rerun (RERUN_OUTCOMES), or not run again and why (NOT_RERUN_REASON: a
+// GRADER_ERROR blocks the run instead; an ENV_LIMIT waits for the task to be resized).
 // A LIMIT or REFUSAL comes from the record status, so its limit or refusal sentence comes first;
 // when the grader failed a gate check too, '; <check id> failed: ...' follows, then the kind of
 // fault when it is not the model's and it fits.
@@ -30,13 +33,14 @@ import type { TrialEvent } from './events.ts';
 import { MODEL } from './anthropic.ts';
 import { PER_TRIAL_CAP_USD } from './cost.ts';
 import {
-  AUDIT_LABEL, AUDIT_LABELS, CONFIRMATION_CRITERIA, FAULT_DEFINITIONS, FAULT_PRECEDENCE, PASS_CONFIRMED, passConfirmationBreaks, RUN_BLOCKS, type Adjudication, type AttributionFacts, type AuditAnswer, type AuditLabelName, type Confirmation, type CriterionMet, type Fault,
+  AUDIT_LABEL, AUDIT_LABELS, CONFIRMATION_CRITERIA, FAULT_DEFINITIONS, FAULT_PRECEDENCE, NOT_RERUN_REASON, PASS_CONFIRMED, passConfirmationBreaks, RERUN_OUTCOMES, RUN_BLOCKS, type Adjudication, type AttributionFacts, type AuditAnswer, type AuditLabelName, type Confirmation, type CriterionMet, type Fault,
   type MatrixResult,
 } from './outcomes.ts';
 import { currentGrade, firstFailed, type RegradeGrade } from './summary.ts';
 import { validateInput } from '../env/tools/registry.ts';
 import { TOOLS } from '../env/tools/write/index.ts';
 import { firstFailedGate, TAXONOMY, type Taxonomy } from '../grader/attribution.ts';
+import { progress } from '../grader/progress.ts';
 
 export const REASON_WORDS = 40;
 export const REFUSAL_WORDS = 12;
@@ -410,7 +414,7 @@ export const TAXONOMY_TEXT: Readonly<Record<Taxonomy, string>> = {
   over_action: 'The model wrote more changes than the task permits.',
   process: 'The model wrote changes before it read the records that the policy tells it to read first.',
   action_form: 'The model made the right decision, but in a channel or form that the policy does not name.',
-  did_not_finish: 'The trial stopped at a limit (turns, cost, time or output) before the model finished.',
+  did_not_finish: 'The trial stopped at its output limit, or at a turn, cost or time limit while the model was looping (rule P-L), before it finished.',
 };
 
 // Why a model failure is of its kind, for the reason's '; Kind: <kind> (<why>)'. did_not_finish has
@@ -440,7 +444,14 @@ function limitSentence(r: ExplainRecord, events: readonly TrialEvent[] | undefin
     return `time limit reached: ${Number.isFinite(elapsed) ? Math.floor(elapsed / 1000) : '?'} s of ${limit ? Math.round(limit.cap / 1000) : '?'} s`;
   }
   if (kind === 'max_tokens') return `output limit reached: ${limit ? limit.value + limit.cap : 2} cut-off responses in a row`;
+  if (kind === 'context_window') return limit?.code === 'prompt_too_long' ? 'context window reached: the prompt was too long' : `context window reached${limit ? `: ${limit.value} tokens in context` : ''}`;
   return `turn limit reached: ${limit?.value ?? r.turns ?? '?'} turns`;
+}
+
+// The trial's last limit event, as AttributionFacts.limit reads it; null when it has none.
+function limitOf(events: readonly TrialEvent[]): NonNullable<AttributionFacts['limit']> | null {
+  const e = events.findLast((x) => x.type === 'limit');
+  return e?.type === 'limit' ? { limit: e.limit, cap: e.cap, value: e.value, code: e.code ?? null } : null;
 }
 
 // The bounds that end a trial as INFRA (packages/core/loop.ts), by the record's detail.
@@ -521,6 +532,9 @@ export function explainTrial(record: ExplainRecord, audit: AuditRow | null | und
     internal_errors: record.tool_errors?.INTERNAL ?? 0,
     state_hash: record.state_hash,
     env_error: (ctx.events.findLast((e) => e.type === 'error' && e.status === 'ENV_ERROR') as { message?: string } | undefined)?.message ?? null,
+    limit: limitOf(ctx.events),
+    // Rule P-L reads the trajectory up to the stop; a trial with none has no P-L facts.
+    progress: ctx.events.length === 0 ? null : progress(ctx.events),
     manifest_hash: ctx.world_state_hash ?? null,
     grader_task_version: grade.grader_task_version,
     decisive: failed === null ? null : {
@@ -613,7 +627,10 @@ export function explainTrial(record: ExplainRecord, audit: AuditRow | null | und
       const why = deciding!.id === 'GR1' ? threw() : deciding!.id === 'GR3' ? 'an audit found a grader bug' : deciding!.id === 'GR4' ? deciding!.evidence : 'a regrade could not grade the record';
       reason = `${outcome}: ${why}${tail}`;
     } else if (fault === 'env') {
-      reason = `${outcome}${detail}: ${deciding!.evidence}; the environment's fault, excluded and rerun`;
+      // An ENV_LIMIT's evidence names its limit already, so its detail is not repeated (REASON_WORDS).
+      const rerun = (RERUN_OUTCOMES as readonly string[]).includes(outcome);
+      const after = rerun ? 'excluded and rerun' : `excluded, not run again: ${NOT_RERUN_REASON[outcome as keyof typeof NOT_RERUN_REASON] ?? 'it would stop the same way'}`;
+      reason = `${outcome}${rerun ? detail : ''}: ${deciding!.evidence}; the environment's fault, ${after}`;
     } else if (outcome === 'CANCELLED') {
       reason = 'CANCELLED: stopped from outside; says nothing about the model, excluded and rerun';
     } else {

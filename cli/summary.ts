@@ -1,13 +1,17 @@
 // pnpm cli summary <run> [--require <spec>] [--task all|<id,...>] [--allow-mock] [--json] [--write]
 // Summarizes a run (packages/core/summary.ts): per task pass k/n over its valid trials with a
 // Wilson 95% interval, every figure at each record's current grade (its last cli regrade, else
-// its recorded outcome; a task with regraded records also prints its recorded k/n, as disclosure), ENV_ERROR counted raw over settled and re-queued attempts, the models seen,
+// its recorded outcome; a task with regraded records also prints its recorded k/n, as disclosure), ENV_ERROR counted raw over settled and re-queued attempts, ENV_LIMIT over the same, the models seen,
 // the initial state hashes and replay.json's verdicts. With --write it writes <run>/summary.json,
 // validated against the schema first; without it, it only prints, so a summary of a committed run
 // leaves its file alone (verifier-phase-P17i-JG8a-1 P-1). --require checks the run:
 //   valid=N          every task has exactly N valid trials (donewhen: trials=N)
 //   band=a-b         every task passes a to b of them (donewhen: pass-min=a,pass-max=b)
 //   env_error_raw=N  at most N ENV_ERROR attempts in the run, re-queued ones included
+//   env_limit=N      at most N attempts whose current grade is ENV_LIMIT (a stop at the context
+//                    window, or at a turn, cost or time cap while the model made progress: the
+//                    environment's, never re-queued, so the batch leaves it unsettled); every
+//                    pilot and the final run require env_limit=0 (plan-amendment-worklist W0-A)
 //   model=M          every record requested M and every response came from M
 //   replay=all       replay.json exists and every trial reproduced; every record's replay_final
 //                    equals its final hash
@@ -25,7 +29,7 @@
 // Under each task line, the metrics beside k/n (packages/core/summary.ts header), each with its
 // denominator: mean score, raw (unclipped) mean, mean fraction of gates met, pass_no_harm,
 // pass^1, pass^3 and pass^5, LIMIT counts by kind, re-queued attempts by outcome and the
-// infra-counted rate (passes over the valid trials plus the INFRA and ENV_ERROR attempts). A
+// infra-counted rate (passes over the valid trials plus the INFRA, ENV_ERROR and ENV_LIMIT attempts). A
 // task the consistency flag marks (packages/core/summary.ts header: most valid failures fail
 // the same check first, or 0 passes in 10 or more valid trials) gets a third line naming it;
 // audit-check requires a task-validity review for it. A run line gives the model and effort its
@@ -54,7 +58,7 @@ export interface Deps {
 }
 
 const defaults: Deps = { out: (l) => process.stdout.write(`${l}\n`), err: (l) => process.stderr.write(`${l}\n`) };
-const USAGE = 'usage: pnpm cli summary <run> [--require valid=N,band=a-b,env_error_raw=N,grader_error=N,model=M,replay=all,mode=live] [--task all|<id,...>] [--allow-mock] [--json] [--write]';
+const USAGE = 'usage: pnpm cli summary <run> [--require valid=N,band=a-b,env_error_raw=N,env_limit=N,grader_error=N,model=M,replay=all,mode=live] [--task all|<id,...>] [--allow-mock] [--json] [--write]';
 
 // A record as cli regrade leaves it: its regrades[] entries appended.
 // A run-one record has no index: summary names it by its trajectory, as replay does (trialName).
@@ -156,7 +160,7 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
     const recorded = Object.entries(t.recorded_outcomes).filter(([o]) => isValid(o));
     const disclosed = t.regraded === 0 ? '' : `  regraded ${t.regraded} (recorded ${t.recorded_outcomes.PASS ?? 0}/${recorded.reduce((a, [, n]) => a + n, 0)})`;
     const short = (vs: string[]) => (vs.length === 0 ? '(none)' : vs.map((v) => v.slice(0, 12)).join(','));
-    say(`${id.padEnd(width)}  ${t.passes}/${t.trials}  Wilson 95% ${w}  ENV_ERROR raw ${t.env_error_raw}  re-queued ${t.requeued}${disclosed}  env ${short(t.env_versions)}  grader ${short(t.grader_task_versions)}`);
+    say(`${id.padEnd(width)}  ${t.passes}/${t.trials}  Wilson 95% ${w}  ENV_ERROR raw ${t.env_error_raw}  ENV_LIMIT ${t.env_limit}  re-queued ${t.requeued}${disclosed}  env ${short(t.env_versions)}  grader ${short(t.grader_task_versions)}`);
     const m = t.metric_trials;
     say(
       `${' '.repeat(width)}  mean score ${fixed(t.mean_score)} (${m.mean_score} valid)  raw mean ${fixed(t.raw_mean_score)} (${m.raw_mean_score})  gates met ${fixed(t.gate_fraction)} (${m.gate_fraction})  pass_no_harm ${t.pass_no_harm}/${t.trials}  ${PASS_K.map((k) => `pass^${k} ${fixed(t.pass_k[k])}`).join(' ')}  ` +
