@@ -13,6 +13,7 @@ import { parseTrajectory } from '../trajectory.ts';
 import { decisiveGate, firstFailedGate } from '../../grader/attribution.ts';
 import type { Check } from '../../grader/check.ts';
 import { repoRoot } from '../../../scripts/test/helpers.ts';
+import { ref } from '../../../tasks/renal-dose-review/ids.ts';
 
 const TASKS = join(repoRoot, 'tasks');
 const ids = readdirSync(TASKS, { withFileTypes: true }).filter((d) => d.isDirectory() && !d.name.startsWith('_') && existsSync(join(TASKS, d.name, 'task.toml'))).map((d) => d.name).sort();
@@ -165,12 +166,12 @@ describe('message-queue all_cleared found', async () => {
 // late though its step is lower, and the text says so instead of "after".
 describe('a read late only by its turn', async () => {
   const found = (await textOf('renal-dose-review')).inputs_before_orders!.found;
-  const seen = [{ input: 'scr', id: 'Observation/obs-t1-scr-1020', step: 3 }];
+  const seen = [{ input: 'scr', id: ref('Observation/obs-t1-scr-1020'), step: 3 }];
   it('says "in the same answer as" when the read stands before the order', () => {
-    expect(found({ first_medication_write: 6, seen, late: ['Observation/obs-t1-scr-1020'] })).toBe('the creatinine (Observation/obs-t1-scr-1020) was seen at step 3, in the same answer as the first medication order at step 6');
+    expect(found({ first_medication_write: 6, seen, late: [ref('Observation/obs-t1-scr-1020')] })).toBe(`the creatinine (${ref('Observation/obs-t1-scr-1020')}) was seen at step 3, in the same answer as the first medication order at step 6`);
   });
   it('says "after" when the read came after the order', () => {
-    expect(found({ first_medication_write: 2, seen, late: ['Observation/obs-t1-scr-1020'] })).toBe('the creatinine (Observation/obs-t1-scr-1020) was seen at step 3, after the first medication order at step 2');
+    expect(found({ first_medication_write: 2, seen, late: [ref('Observation/obs-t1-scr-1020')] })).toBe(`the creatinine (${ref('Observation/obs-t1-scr-1020')}) was seen at step 3, after the first medication order at step 2`);
   });
 });
 
