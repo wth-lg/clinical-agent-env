@@ -28,7 +28,7 @@ export const FAULT_WORD: Readonly<Record<Fault, string>> = { model: 'model', ref
 export const FAULT_NOUN: Readonly<Record<Fault, string>> = { model: 'the model', refusal: 'a refusal', env: 'the environment', grader: 'the grader', infra: 'the infrastructure' };
 export const LINK = 'text-ink underline decoration-line-strong underline-offset-2 hover:decoration-ink';
 
-type Exposure = { id: string; first_exposed_step: number | null; first_shown_step?: number | null };
+type Exposure = { id: string; first_exposed_step: number | null; first_shown_step?: number | null; first_seen_step?: number | null };
 
 export function StepLink({ n, onStep, testId, children }: { n: number; onStep: (n: number) => void; testId?: string; children?: React.ReactNode }) {
   return <button type="button" data-testid={testId} data-step={n} onClick={() => onStep(n)} className={`${LINK} rounded-sm`}>{children ?? `step ${n}`}</button>;
@@ -115,6 +115,7 @@ export function Attribution({ t, e, steps, onStep }: { t: Trial; e: Explanation;
                   <td className="py-1.5">
                     {x.first_exposed_step === null ? <span className="text-ink-muted">never</span> : <StepLink n={x.first_exposed_step} onStep={onStep} />}
                     {x.first_shown_step !== undefined && <span className="block text-xs text-ink-muted">decisive text shown: {x.first_shown_step === null ? 'never' : `step ${x.first_shown_step}`}</span>}
+                    {x.first_seen_step !== undefined && <span className="block text-xs text-ink-muted">seen by the check's rule: {x.first_seen_step === null ? 'never' : `step ${x.first_seen_step}`}</span>}
                   </td>
                 </tr>
               ))}

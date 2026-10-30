@@ -260,9 +260,9 @@ export const alternatives = [
     }),
   },
   {
-    id: 'nodule_pulm_referral',
-    why: 'Refers her to pulmonology on Monday 2026-10-26 to take her back into lung cancer screening instead of ordering the LDCT itself, with a task to track it by 2026-11-06 (P19).',
+    id: 'ldct_plus_pulm_referral',
+    why: 'Orders the overdue screening LDCT within 14 days and also refers her to pulmonology on Monday 2026-10-26: the referral adds to the LDCT order, which §2 asks for (builder-186, coordinator option a).',
     loses: [],
-    script: solve({ nodule: { order: null, extra: [{ code: 'REF-PULM', priority: 'routine', start: '2026-10-26', end: '2026-11-06' }], due: '2026-11-06', message: true } }),
+    script: solve({ nodule: { ...ORACLE.nodule, extra: [{ code: 'REF-PULM', priority: 'routine', start: '2026-10-26', end: '2026-11-06' }] } }),
   },
 ] satisfies Array<Agent & { loses: readonly string[] }>;

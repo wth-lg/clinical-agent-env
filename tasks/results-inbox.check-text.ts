@@ -24,7 +24,7 @@ const extraOrders = (ev: Record<string, unknown>, key: string) => {
 
 export const checkText: CheckText = {
   nodule_screening_ldct: {
-    requires: `the overdue screening LDCT (or a CT chest without contrast, or a pulmonology referral) for ${I.nodule.patient} set between ${I.nodule.window.start} and ${I.nodule.window.end}`,
+    requires: `the overdue screening LDCT (or a CT chest without contrast; a referral does not replace it) for ${I.nodule.patient} set between ${I.nodule.window.start} and ${I.nodule.window.end}`,
     found: (ev) => {
       const first = fields(items(ev.orders)[0]);
       return first.id === undefined ? 'no chest CT or pulmonology order' : `${show(first.id)} is set for ${show(first.start)}`;
