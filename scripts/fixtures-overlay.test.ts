@@ -117,4 +117,19 @@ describe('overlays', () => {
     expect(put('see obs-t1-scr', 'text/html; charset=utf-8')).toThrow(/'obs-t1-scr' is a registry key/);
     expect(put('Creatinine 1.9, repeat in a week.')).not.toThrow();
   });
+
+  // verifier P17i W0-1b F3: noteText (packages/env/tools/read/notes.ts) lowercases the content type
+  // before it decodes, so the check must too, and an attachment with no content type is decoded.
+  it('decodes a text attachment whatever the content type case, or with no content type', () => {
+    const doc = (text: string, contentType?: string): Resource =>
+      ({ resourceType: 'DocumentReference', id: 'doc-t1-note', status: 'current', subject: { reference: T1 }, content: [{ attachment: { ...(contentType === undefined ? {} : { contentType }), data: Buffer.from(text).toString('base64') } }] }) as Resource;
+    const put = (text: string, contentType?: string) => () => one({ build: () => ({ put: [doc(text, contentType), obs('obs-t1-scr')] }) });
+    expect(put('see obs-t1-scr', 'Text/Plain')).toThrow(/'obs-t1-scr' is a registry key/);
+    expect(put('see obs-t1-scr', 'TEXT/HTML; charset=utf-8')).toThrow(/'obs-t1-scr' is a registry key/);
+    expect(put('see obs-t1-scr')).toThrow(/'obs-t1-scr' is a registry key/);
+    expect(put('Creatinine 1.9, repeat in a week.', 'Text/Plain')).not.toThrow();
+    expect(put('Creatinine 1.9, repeat in a week.')).not.toThrow();
+    // Data that is not base64 text is left to the string check.
+    expect(() => one({ build: () => ({ put: [{ ...doc(''), content: [{ attachment: { data: '%%not base64%%' } }] } as Resource, obs('obs-t1-scr')] }) })).not.toThrow();
+  });
 });
