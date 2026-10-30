@@ -84,7 +84,7 @@ export interface RunData {
   summary: Summary | null;
   trials: Trial[];
   bad: BadRecord[];
-  // Problems that do not stop the views: unreadable audit lines, records that disagree with summary.json.
+  // Problems that do not stop the views: an unreadable audit.jsonl or audit line, records that disagree with summary.json.
   warnings: string[];
 }
 
@@ -117,7 +117,8 @@ async function loadRun(files: readonly string[], has: ReadonlySet<string>, runDi
   const warnings: string[] = [];
   const audits: AuditRow[] = [];
   if (has.has(`${runDir}/audit.jsonl`)) {
-    const read = readAudit(await fetchText(`${runDir}/audit.jsonl`));
+    // An unreadable audit.jsonl leaves the trials unaudited, as a bad line does; it never stops the load.
+    const read = await fetchText(`${runDir}/audit.jsonl`).then(readAudit, (e: unknown) => ({ rows: [], warnings: [`audit.jsonl cannot be read: ${message(e)}`] }));
     audits.push(...read.rows);
     warnings.push(...read.warnings);
   }
@@ -256,7 +257,12 @@ async function load(): Promise<Results> {
     }
   }
   const pilotDirs = [...new Set(files.flatMap((f) => PILOT_DIR.exec(f)?.[1] ?? []))].filter((d) => d !== officialDir).sort();
-  const pilots = await Promise.all(pilotDirs.map((d) => loadRun(files, has, d, null)));
+  // Every pilot settles before the first failure is reported, so nothing is still fetching when
+  // the load settles (ViewBody's data-preload signal relies on it).
+  const settled = await Promise.allSettled(pilotDirs.map((d) => loadRun(files, has, d, null)));
+  const failed = settled.find((s) => s.status === 'rejected');
+  if (failed) throw failed.reason;
+  const pilots = settled.map((s) => (s as PromiseFulfilledResult<RunData>).value);
   return { kind: 'ready', official, officialError, pilots, findings, files: has };
 }
 
