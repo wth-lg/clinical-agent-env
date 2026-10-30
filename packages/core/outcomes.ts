@@ -312,7 +312,7 @@ export const FAULT_DEFINITIONS: Readonly<Record<Fault, FaultDefinition>> = {
       },
       {
         id: 'MF2',
-        text: 'The trial stopped at its output limit, or at its turn, cost or working-time limit while it was looping (rule P-L: half or more of its last 20 calls repeat an earlier call on the same target).',
+        text: 'The trial stopped at its output limit, or at its turn, cost or working-time limit while it was looping (rule P-L: at least 10 of its last 20 calls repeat an earlier call on the same target, and none of them writes to a target not written before).',
         reads: MF2_READS,
         check: (f) => {
           if (f.status !== 'LIMIT' && f.outcome !== 'LIMIT') return result(false, `current outcome ${f.outcome}`);
@@ -402,7 +402,7 @@ export const FAULT_DEFINITIONS: Readonly<Record<Fault, FaultDefinition>> = {
       {
         id: 'E8',
         record_fact: true,
-        text: 'The trial stopped at a turn, cost or working-time limit and rule P-L found no loop (under half of its last 20 calls repeat an earlier call on the same target), so a human reviews the stop before the run goes on.',
+        text: 'The trial stopped at a turn, cost or working-time limit and rule P-L found no loop (fewer than 20 calls ran, fewer than 10 of the last 20 repeat an earlier call on the same target, or one of them writes to a target not written before), so a human reviews the stop before the run goes on.',
         reads: MF2_READS,
         check: (f) => (capStop(f) ? result(noLoop(f), capEvidence(f)) : result(false, `status ${f.status}${f.detail ? `, detail ${f.detail}` : ''}`)),
       },

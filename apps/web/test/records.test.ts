@@ -27,7 +27,7 @@ describe('validateRecord', () => {
   it('reads rule P-L facts an ENV_LIMIT records, and names malformed ones', () => {
     const rec = read(join(SAMPLE, 'trials/results-inbox/12.json'));
     expect(rec).toMatchObject({ outcome: 'ENV_LIMIT', progress: { tail: 20, looping: false } });
-    expect(validateRecord({ ...rec, progress: { tail: 20, repeats: 0, repeat_share: 0 } })).toEqual(['progress is not rule P-L facts (tail, repeats, repeat_share, looping)']);
+    expect(validateRecord({ ...rec, progress: { tail: 20, repeats: 0, repeat_share: 0, looping: false } })).toEqual(['progress is not rule P-L facts (tail, repeats, new_writes, looping)']);
   });
 });
 

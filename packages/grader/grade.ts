@@ -61,9 +61,10 @@ import type { Progress } from './progress.ts';
 // read in the same answer as the write is not (verifier-phase-P17i-P17-T5-1 F2). 14: a LIMIT at the
 // context window, or at a turn, cost or working-time cap that rule P-L (progress.ts) does not
 // find looping, is ENV_LIMIT, the environment's (outcome.ts; plan-amendment-worklist W0-A); the
-// rule fails safe: looping only when half or more of the last 20 calls repeat an earlier call's
-// target. A judge prompt too long is GRADER_ERROR (verifier-phase-P17i-W0-A-1 F2). Still 14 through
-// the W0-A fix rounds: 14 was never on main and no record was graded under an earlier P-L rule.
+// rule fails safe: looping only when at least 10 of the last 20 calls repeat an earlier call's
+// target and none of them writes a target not written before. A judge prompt too long is
+// GRADER_ERROR (verifier-phase-P17i-W0-A-1 F2). Still 14 through the W0-A fix rounds: 14 was never
+// on main and no record was graded under an earlier P-L rule.
 export const GRADER_VERSION = '14';
 
 export interface CheckResult {

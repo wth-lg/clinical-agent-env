@@ -65,7 +65,7 @@ const refusalEvents = [
     content: [{ type: 'text', text: 'I cannot help with changing these medication orders because they need a licensed prescriber to sign off first.' }], usage: {}, attempts: 1, cost_usd: 0.01 },
 ] as unknown as NonNullable<ExplainContext['events']>;
 // Rule P-L's facts as the grader records them on a cap stop it found looping (a LIMIT, MF2).
-const LOOPING = { tail: 20, repeats: 19, repeat_share: 0.95, looping: true };
+const LOOPING = { tail: 20, repeats: 19, new_writes: 0, looping: true };
 const limitEvent = (limit: string, cap: number, value: number) =>
   [{ v: 2, seq: 1, ts: '2026-10-24T00:00:00.000Z', turn: 1, type: 'limit', limit, cap, value }] as unknown as NonNullable<ExplainContext['events']>;
 

@@ -77,9 +77,9 @@ for (const scheme of ['light', 'dark'] as const) {
     expect(e).toMatchObject({ outcome: 'ENV_LIMIT', fault: 'env', deciding: { id: 'E8' } });
     await openTrial(page, TRIALS.envLimit);
     const header = page.getByTestId('trial-header');
-    await expect(header.getByTestId('plain-reason')).toHaveText('Not counted: the trial stopped at a turn, cost or working-time limit and rule P-L found no loop (under half of its last 20 calls repeat an earlier call on the same target), so a human reviews the stop before the run goes on. The environment is at fault, not the model.');
+    await expect(header.getByTestId('plain-reason')).toHaveText('Not counted: the trial stopped at a turn, cost or working-time limit and rule P-L found no loop (fewer than 20 calls ran, fewer than 10 of the last 20 repeat an earlier call on the same target, or one of them writes to a target not written before), so a human reviews the stop before the run goes on. The environment is at fault, not the model.');
     await expect(header.getByTestId('detail-fault')).toContainText(e.deciding!.evidence);
-    await expect(header.getByTestId('detail-fault')).toContainText(/last \d+ calls?: \d+ repeats? \(share \d\.\d\d\); no loop/);
+    await expect(header.getByTestId('detail-fault')).toContainText(/last \d+ calls?: \d+ repeats?, \d+ writes? to a new target; no loop/);
     // In Runs, the row gives the same label, note and reason.
     await browse(page, new URL(`./?view=runs&run=${RUN_ID}`, await trialBase(test.info().project.use.baseURL!)).href);
     const row = page.locator(`[data-testid="trial-row"][data-trial="${TRIALS.envLimit}"]`);

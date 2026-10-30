@@ -126,7 +126,7 @@ describe('PASS_DEFINITION and DENOMINATOR_RULE', () => {
   // only while it looped and that a human reviews every ENV_LIMIT, since every run gates on 0.
   it('E8, MF2, the reader rule and the operator note state rule P-L and the human review of every ENV_LIMIT', () => {
     const text = (id: string) => [...FAULT_DEFINITIONS.env.criteria, ...FAULT_DEFINITIONS.model.criteria].find((c) => c.id === id)!.text;
-    expect(text('MF2')).toMatch(/while it was looping \(rule P-L: half or more of its last 20 calls repeat an earlier call on the same target\)/);
+    expect(text('MF2')).toMatch(/while it was looping \(rule P-L: at least 10 of its last 20 calls repeat an earlier call on the same target, and none of them writes to a target not written before\)/);
     expect(text('E8')).toMatch(/rule P-L found no loop[^.]*a human reviews the stop/);
     expect(FAULT_DEFINITIONS.env.sentence).toMatch(/without strong evidence that the model was looping/);
     expect(DENOMINATOR_RULE).toContain(`ENV_LIMIT: ${NOT_RERUN_REASON.ENV_LIMIT}`);

@@ -249,11 +249,11 @@ describe('outcomes', () => {
   it('a cap stop records the P-L facts; LIMIT only while looping, else ENV_LIMIT, a trial with no trajectory included', async () => {
     const loop = Array.from({ length: 20 }, (): Call => ({ name: 'search_notes', input: { patient: 'pt-1', query: 'k' } }));
     const looping = await grade(input(loop, GOOD_FINAL, { trial: facts({ status: 'LIMIT', detail: 'turns' }) }), { judge: scriptedJudge([MET, NOT_MET]).client });
-    expect(looping).toMatchObject({ outcome: 'LIMIT', valid: true, progress: { tail: 20, repeats: 19, repeat_share: 0.95, looping: true } });
+    expect(looping).toMatchObject({ outcome: 'LIMIT', valid: true, progress: { tail: 20, repeats: 19, new_writes: 0, looping: true } });
     const reads = await grade(input([...READS, ...WRITES], GOOD_FINAL, { trial: facts({ status: 'LIMIT', detail: 'cost' }) }), { judge: scriptedJudge([]).client });
     expect(reads).toMatchObject({ outcome: 'ENV_LIMIT', valid: false, fault: 'env', progress: { looping: false } });
     const none = await grade(input([], GOOD_FINAL, { trial: facts({ status: 'LIMIT', detail: 'wall_clock' }) }), { judge: scriptedJudge([]).client });
-    expect(none).toMatchObject({ outcome: 'ENV_LIMIT', progress: { tail: 0, repeats: 0, repeat_share: 0, looping: false } });
+    expect(none).toMatchObject({ outcome: 'ENV_LIMIT', progress: { tail: 0, repeats: 0, new_writes: 0, looping: false } });
     // Not a cap stop: no P-L facts.
     expect(await run({ status: 'LIMIT', detail: 'max_tokens' })).not.toHaveProperty('progress');
     expect(await run({})).not.toHaveProperty('progress');
@@ -267,7 +267,7 @@ describe('outcomes', () => {
     const page = explainTrial(rec, null, { events, world_state_hash: null, matrix: null });
     const list = explainTrial(rec, null, { events: [], world_state_hash: null, matrix: null });
     expect(list.reason).toBe(page.reason);
-    expect(list.reason).toBe(`ENV_LIMIT: turns limit; last 20 calls: 0 repeats (share 0.00); no loop; the environment's fault, excluded, not run again: ${NOT_RERUN_REASON.ENV_LIMIT}`);
+    expect(list.reason).toBe(`ENV_LIMIT: turns limit; last 20 calls: 0 repeats, 0 writes to a new target; no loop; the environment's fault, excluded, not run again: ${NOT_RERUN_REASON.ENV_LIMIT}`);
     expect(list.reason).not.toMatch(/no trajectory/);
   });
 

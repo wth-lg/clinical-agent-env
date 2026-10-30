@@ -219,8 +219,8 @@ describe('infrastructure never ends a trial LIMIT', () => {
 
 // The loop ends a cap LIMIT; the grader decides whose fault it is by rule P-L
 // (packages/grader/progress.ts, plan-amendment-worklist W0-A): a turn, cost or working-time cap
-// reached while the model was looping (half or more of the last 20 calls repeat an earlier call's
-// target) stays LIMIT, the model's (MF2), and so does a second max_tokens stop in a row. Any other
+// reached while the model was looping (at least 10 of the last 20 calls repeat an earlier call's
+// target and none writes a target not written before) stays LIMIT, the model's (MF2), and so does a second max_tokens stop in a row. Any other
 // cap stop is ENV_LIMIT, the environment's (E8): the rule fails safe, so padding with new calls
 // (guessing, paging) ends there too and halts the run for a human review (env_limit=0).
 describe('rule P-L: who a cap stop counts against, through the loop, the grader and explainTrial', () => {
@@ -285,7 +285,7 @@ describe('rule P-L: who a cap stop counts against, through the loop, the grader 
     expect(out.tool_calls).toBeGreaterThanOrEqual(20);
     expect(g).toMatchObject({ outcome: 'ENV_LIMIT', valid: false, fault: 'env' });
     expect(x).toMatchObject({ outcome: 'ENV_LIMIT', fault: 'env', label: 'environment', deciding: { id: 'E8' }, taxonomy: null });
-    expect(criterion('E8')).toMatchObject({ met: true, evidence: expect.stringMatching(/^[a-z_]+ limit; last 20 calls: 0 repeats \(share 0\.00\); no loop$/) });
+    expect(criterion('E8')).toMatchObject({ met: true, evidence: expect.stringMatching(/^[a-z_]+ limit; last 20 calls: 0 repeats, 0 writes to a new target; no loop$/) });
     expect(criterion('MF2').met).toBe(false);
     expect(x.reason).toContain(NOT_RERUN_REASON.ENV_LIMIT);
   });
@@ -295,7 +295,7 @@ describe('rule P-L: who a cap stop counts against, through the loop, the grader 
     expect(out).toMatchObject({ status: 'LIMIT', terminal: { type: 'limit', limit: cap } });
     expect(g).toMatchObject({ outcome: 'LIMIT', valid: true, fault: 'model' });
     expect(x).toMatchObject({ outcome: 'LIMIT', fault: 'model', label: 'model', deciding: { id: 'MF2' } });
-    expect(criterion('MF2')).toMatchObject({ met: true, evidence: expect.stringMatching(/^[a-z_]+ limit; last 20 calls: (19|20) repeats \(share (0\.95|1\.00)\); looping$/) });
+    expect(criterion('MF2')).toMatchObject({ met: true, evidence: expect.stringMatching(/^[a-z_]+ limit; last 20 calls: (19|20) repeats, 0 writes to a new target; looping$/) });
     expect(criterion('E8').met).toBe(false);
   });
 

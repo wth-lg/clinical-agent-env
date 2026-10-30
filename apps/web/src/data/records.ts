@@ -11,7 +11,7 @@ const orNull = (ok: (v: unknown) => boolean) => (v: unknown) => v === null || ok
 const hashes = (v: unknown) => isObj(v) && orNull(str)(v.initial) && orNull(str)(v.final) && (v.replay_final === undefined || orNull(str)(v.replay_final));
 const checks = (v: unknown) => Array.isArray(v) && v.every((c) => isObj(c) && str(c.id));
 // Rule P-L's facts on a cap stop (packages/grader/progress.ts Progress).
-const progress = (v: unknown) => isObj(v) && num(v.tail) && num(v.repeats) && num(v.repeat_share) && typeof v.looping === 'boolean';
+const progress = (v: unknown) => isObj(v) && num(v.tail) && num(v.repeats) && num(v.new_writes) && typeof v.looping === 'boolean';
 
 // Each problem as "<field> is missing" or "<field> is not <what>"; empty when the record is good.
 export function validateRecord(x: unknown): string[] {
@@ -35,7 +35,7 @@ export function validateRecord(x: unknown): string[] {
   may('trajectory', str, 'a path');
   may('env_version', orNull(str), 'a string or null');
   may('checks', orNull(checks), 'a list of checks with ids');
-  may('progress', orNull(progress), 'rule P-L facts (tail, repeats, repeat_share, looping)');
+  may('progress', orNull(progress), 'rule P-L facts (tail, repeats, new_writes, looping)');
   may('regrades', (v) => Array.isArray(v) && v.every((g) => isObj(g) && (OUTCOMES as readonly unknown[]).includes(g.outcome) && (g.checks === undefined || checks(g.checks))), 'a list of regrades');
   return errors;
 }
