@@ -16,7 +16,7 @@ import { NOW, NOW_MS } from '../packages/env/clock.ts';
 import { parseNdjson } from '../packages/env/fixture-source.ts';
 import { stateHash } from '../packages/env/hash.ts';
 import { applyOverlays, TASKS, type Overlay, type World } from '../packages/env/overlay.ts';
-import { profileBase, profileRecords, profileWorld, syntheaForms } from '../packages/env/profile.ts';
+import { plantedClock, profileBase, profileRecords, profileWorld, syntheaForms } from '../packages/env/profile.ts';
 import { Store } from '../packages/env/store.ts';
 import { RESOURCE_TYPES, SETTING, SETTING_LINT } from '../packages/env/world.ts';
 import { gunzip, gzip, hygiene, sha256, toNdjson, type HygieneReport } from './fixtures-lib.ts';
@@ -171,6 +171,8 @@ export async function assembleWorld(): Promise<{ world: World; overlays: Overlay
   const planted = new Set(world.resources.filter((r) => plantedIds.has(r.id!)).map((r) => `${r.resourceType}/${r.id}`));
   const stable = new Map(world.resources.flatMap((r) => (baseIdOf.has(r.id!) ? [[`${r.resourceType}/${r.id}`, baseIdOf.get(r.id!)!] as const] : [])));
   world.resources = profileWorld(profileRecords(world.resources, planted, stable));
+  // ...and last, the planted times on their chart's clock.
+  world.resources = plantedClock(world.resources, planted);
   return { world, overlays, overlayFiles, baseMeta, report };
 }
 

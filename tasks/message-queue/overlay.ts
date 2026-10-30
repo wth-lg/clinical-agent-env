@@ -158,7 +158,7 @@ function base64(s: string): string {
   for (const b of bytes) binary += String.fromCharCode(b);
   return btoa(binary);
 }
-const NOTE_TYPES = { progress: ['11506-3', 'Progress note'], phone: ['34748-4', 'Telephone encounter Note'], consult: ['11488-4', 'Consult note'], lab: ['11502-2', 'Laboratory report'] } as const;
+const NOTE_TYPES = { progress: ['11506-3', 'Progress note'], physical: ['34117-2', 'History and physical note'], phone: ['34748-4', 'Telephone encounter Note'], consult: ['11488-4', 'Consult note'], lab: ['11502-2', 'Laboratory report'] } as const;
 const note = (id: string, who: Who, date: string, type: keyof typeof NOTE_TYPES, author: { reference: string }, custodian: { reference: string }, text: string, enc?: string): Resource => ({
   resourceType: 'DocumentReference',
   id,
@@ -247,24 +247,24 @@ const inboxItem = (i: Item): Resource => ({
 const PARK_PHYSICAL = (year: number, extra: string) =>
   `Annual physical - Riverbend Family Medicine\nLena Park, ${year - 1978} y/o F.\nAllergies: NKDA.\nMedications: none.\n${extra}\nPlan: routine screening up to date; return in 1 year.\n\nMaya Okafor, MD`;
 const PARK_NOTES: Array<[date: string, type: keyof typeof NOTE_TYPES, author: { reference: string }, text: string]> = [
-  ['2014-05-12T09:30:00-04:00', 'progress', OKAFOR, PARK_PHYSICAL(2014, 'New patient. Healthy. Works as an accountant.')],
+  ['2014-05-12T09:30:00-04:00', 'physical', OKAFOR, PARK_PHYSICAL(2014, 'New patient. Healthy. Works as an accountant.')],
   ['2015-02-03T10:10:00-05:00', 'progress', LIN, 'Acute visit - Riverbend Family Medicine\nCough and congestion for 4 days, no fever. Viral upper respiratory infection. Supportive care.\n\nDaniel Lin, MD'],
-  ['2015-05-18T09:30:00-04:00', 'progress', OKAFOR, PARK_PHYSICAL(2015, 'No concerns.')],
-  ['2016-05-23T09:30:00-04:00', 'progress', OKAFOR, PARK_PHYSICAL(2016, 'Occasional low back pain after long days at a desk; stretching advised.')],
+  ['2015-05-18T09:30:00-04:00', 'physical', OKAFOR, PARK_PHYSICAL(2015, 'No concerns.')],
+  ['2016-05-23T09:30:00-04:00', 'physical', OKAFOR, PARK_PHYSICAL(2016, 'Occasional low back pain after long days at a desk; stretching advised.')],
   ['2016-11-08T14:00:00-05:00', 'phone', REYES, 'Telephone note\nAsked about the flu vaccine; scheduled at the nurse clinic.\n\nJordan Reyes, NP'],
-  ['2017-05-22T09:30:00-04:00', 'progress', OKAFOR, PARK_PHYSICAL(2017, 'No concerns. BP 118/74.')],
+  ['2017-05-22T09:30:00-04:00', 'physical', OKAFOR, PARK_PHYSICAL(2017, 'No concerns. BP 118/74.')],
   ['2018-01-15T11:00:00-05:00', 'progress', REYES, 'Acute visit\nSore throat for 2 days, no fever, no exudate, Centor score 0. Viral pharyngitis; no antibiotic.\n\nJordan Reyes, NP'],
-  ['2018-05-21T09:30:00-04:00', 'progress', OKAFOR, PARK_PHYSICAL(2018, 'No concerns.')],
-  ['2019-03-04T10:00:00-05:00', 'progress', OKAFOR, PARK_PHYSICAL(2019, 'Allergy list reviewed with the patient: no known drug allergies recorded.')],
+  ['2018-05-21T09:30:00-04:00', 'physical', OKAFOR, PARK_PHYSICAL(2018, 'No concerns.')],
+  ['2019-03-04T10:00:00-05:00', 'physical', OKAFOR, PARK_PHYSICAL(2019, 'Allergy list reviewed with the patient: no known drug allergies recorded.')],
   ['2019-09-16T15:20:00-04:00', 'progress', LIN, 'Acute visit\nRight ankle sprain stepping off a curb. Ottawa rules negative. Rest, ice, compression; ibuprofen as needed.\n\nDaniel Lin, MD'],
   ['2020-06-08T09:30:00-04:00', 'phone', OKAFOR, 'Telephone visit\nAnnual review by phone. Feeling well. Labs ordered.\n\nMaya Okafor, MD'],
   ['2020-12-14T11:30:00-05:00', 'progress', REYES, 'Acute visit\nNasal congestion and facial pressure for 5 days, improving. Viral rhinosinusitis. Saline rinses.\n\nJordan Reyes, NP'],
-  ['2021-05-24T09:30:00-04:00', 'progress', OKAFOR, PARK_PHYSICAL(2021, 'No concerns.')],
+  ['2021-05-24T09:30:00-04:00', 'physical', OKAFOR, PARK_PHYSICAL(2021, 'No concerns.')],
   ['2021-10-11T13:00:00-04:00', 'phone', REYES, 'Telephone note\nCOVID-19 booster given at the pharmacy; record updated.\n\nJordan Reyes, NP'],
   ['2022-03-21T10:40:00-04:00', 'progress', LIN, 'Acute visit\nLow back strain after moving furniture. No red flags. Heat, stretching, acetaminophen.\n\nDaniel Lin, MD'],
-  ['2022-05-23T09:30:00-04:00', 'progress', OKAFOR, PARK_PHYSICAL(2022, 'No concerns.')],
+  ['2022-05-23T09:30:00-04:00', 'physical', OKAFOR, PARK_PHYSICAL(2022, 'No concerns.')],
   ['2022-11-07T16:10:00-05:00', 'phone', REYES, 'Telephone note\nAsked for a copy of her immunization record; sent through the portal.\n\nJordan Reyes, NP'],
-  ['2023-05-22T09:30:00-04:00', 'progress', OKAFOR, PARK_PHYSICAL(2023, 'No concerns. Screening mammogram ordered.')],
+  ['2023-05-22T09:30:00-04:00', 'physical', OKAFOR, PARK_PHYSICAL(2023, 'No concerns. Screening mammogram ordered.')],
   ['2023-08-14T10:15:00-04:00', 'phone', REYES, 'Telephone note\nMammogram normal (BI-RADS 1); patient informed.\n\nJordan Reyes, NP'],
   // the 3-year window starts 2023-10-23
   ['2023-11-20T10:30:00-05:00', 'progress', REYES, 'Acute visit\nCough for 10 days after a cold, no fever, lungs clear. Post-viral cough. Honey, fluids.\n\nJordan Reyes, NP'],
@@ -278,14 +278,14 @@ const PARK_NOTES: Array<[date: string, type: keyof typeof NOTE_TYPES, author: { 
       'Treatment: epinephrine 0.3 mg IM to the thigh at 14:15; cetirizine 10 mg by mouth. Swelling and hives resolved over 2 hours; observed 4 hours.\n' +
       'Plan: stop Augmentin; dentist to choose another antibiotic. Return or call 911 for any recurrence.\n\nHelen Marsh, PA-C',
   ],
-  ['2024-05-20T09:30:00-04:00', 'progress', OKAFOR, PARK_PHYSICAL(2024, 'No concerns. Dental work completed this spring.')],
+  ['2024-05-20T09:30:00-04:00', 'physical', OKAFOR, PARK_PHYSICAL(2024, 'No concerns. Dental work completed this spring.')],
   ['2024-09-30T11:00:00-04:00', 'phone', REYES, 'Telephone note\nFlu vaccine given at the nurse clinic.\n\nJordan Reyes, NP'],
   ['2025-01-27T10:20:00-05:00', 'progress', LIN, 'Acute visit\nLeft knee pain after a hike. No effusion, ligaments stable. Patellofemoral pain; physical therapy referral.\n\nDaniel Lin, MD'],
-  ['2025-05-19T09:30:00-04:00', 'progress', OKAFOR, PARK_PHYSICAL(2025, 'Family history updated: mother - penicillin rash; father - hypertension, type 2 diabetes.')],
+  ['2025-05-19T09:30:00-04:00', 'physical', OKAFOR, PARK_PHYSICAL(2025, 'Family history updated: mother - penicillin rash; father - hypertension, type 2 diabetes.')],
   ['2025-08-04T14:30:00-04:00', 'phone', REYES, 'Telephone note\nKnee better after 6 weeks of physical therapy; discharged from PT.\n\nJordan Reyes, NP'],
   ['2025-11-17T10:45:00-05:00', 'progress', REYES, 'Acute visit\nSneezing and runny nose for 3 days. Viral upper respiratory infection. Supportive care.\n\nJordan Reyes, NP'],
   ['2026-02-09T15:00:00-05:00', 'phone', REYES, 'Telephone note\nAsked about a shingles vaccine; eligible at 50, to discuss at her physical.\n\nJordan Reyes, NP'],
-  ['2026-05-18T09:30:00-04:00', 'progress', OKAFOR, PARK_PHYSICAL(2026, 'No concerns.')],
+  ['2026-05-18T09:30:00-04:00', 'physical', OKAFOR, PARK_PHYSICAL(2026, 'No concerns.')],
   ['2026-07-27T11:30:00-04:00', 'phone', REYES, 'Telephone note\nPortal question about travel vaccines for a trip to Mexico; hepatitis A advised.\n\nJordan Reyes, NP'],
   [
     '2026-10-22T16:40:00-04:00',

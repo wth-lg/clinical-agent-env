@@ -1,21 +1,25 @@
-// One record shape and one set of value forms for the whole world (builder-196, builder-203;
-// verifier P17i W0 S2 and W0-1b F1, F4, F5). The overlays write resources in the write tools' EHR
-// shape and on the clinic's clock (docStatus, dosage route and timing code, doses in mg, lab
-// reference ranges and flags, times to the minute), and the Synthea cohort writes neither, so
-// before these passes a reader could tell a planted record by its fields or the form of a value.
-// fixtures:build runs four passes so that no field path and no value form appears only on planted
-// resources, in the world or within one task chart (scripts/test/world-tells.test.ts):
+// One record shape and one set of value forms for the whole world (builder-196, builder-203,
+// builder-205; verifier P17i W0 S2, W0-1b F1, F4, F5 and W0-1b r2 F1-F3, F6). The overlays write
+// resources in the write tools' EHR shape and on the clinic's clock (docStatus, dosage route and
+// timing code, doses in mg, lab reference ranges and flags, times at 10:00 or 14:35), and the
+// Synthea cohort writes neither, so before these passes a reader could tell a planted record by its
+// fields, the form of a value, or its time against the chart's own clock. fixtures:build runs five
+// passes so that no field path, value form or time pattern tells planted from generated, in the
+// world or within one task chart (scripts/test/world-tells.test.ts, scripts/test/tells.ts):
 //
 //   syntheaForms   on every resource an overlay writes, before the world is numbered: times in
 //                  Synthea's form (seconds, and milliseconds on the fields Synthea stamps with them).
-//   profileBase    on the base cohort, before the overlays, keyed by base id, patients no task owns
-//                  only. The resources and statuses a chart has now and then that a task patient's
-//                  chart must not gain: a signed addendum, an NKDA entry, a radiology report, a lab
-//                  panel filed with its values as components, an entry marked entered in error, a
-//                  critical point-of-care glucose, a weight in pounds, a stopped or held order.
+//   profileBase    on the base cohort, before the overlays, keyed by base id. In every chart: a
+//                  hospital visit (emergency, admission, urgent care) and an endoscopy are the
+//                  hospital's, and now and then a weight was taken in pounds (never the latest).
+//                  For patients no task owns only, the resources and statuses a task patient's chart
+//                  must not gain: a signed addendum, an NKDA entry, a radiology report, a lab panel
+//                  filed with its values as components, an entry marked entered in error, a critical
+//                  point-of-care glucose, a stopped or held order.
 //   profileWorld   on every resource after the overlays: the fields an EHR records on every record of
 //                  a type, derived from the record itself (coding displays, docStatus, the IHE format
-//                  code, the note's period, encounter roles and discharge disposition, problem-list
+//                  code, a Synthea visit note typed and written as the clinic files it, the note's
+//                  period, encounter roles and discharge disposition, problem-list
 //                  category, recorder and performer, lab reference ranges and flags, report category,
 //                  a dosage on every order with route, timing, dose (in mg where the tablet's strength
 //                  says so), sig text and coded indication, a dispense request on active orders,
@@ -30,11 +34,16 @@
 //                  references, and then gives the chart's generated records any such field a planted
 //                  record of their type carries and none of them does yet (a top-up). Each field is
 //                  clinically neutral: none states a fact a task decides on, and none adds a resource.
-//
+//                  It also puts generated times where an EHR would: a visit ends after what was
+//                  recorded at it, a result is issued when the laboratory reports it, and what was
+//                  entered without a visit was entered in office hours (same date; no time passes a
+//                  planted one or another of the patient's records).
+//   plantedClock   last, on every planted resource in a task chart: its times on the chart's Synthea
+//                  clock, in the same hour, every order kept (see the pass).
 // Selection is a hash of the base id, so the same resources are chosen on every build.
 import type { Resource } from './store.ts';
 import { eastern, NOW_MS } from './clock.ts';
-import { CLINIC } from './world.ts';
+import { CLINIC, OUTSIDE_HOSPITAL } from './world.ts';
 
 type Json = Record<string, unknown>;
 type Ref = { reference?: string };
@@ -50,6 +59,12 @@ const IHE_FORMAT = { system: 'http://ihe.net/fhir/ihe.formatcode.fhir/CodeSystem
 const HOME = { coding: [{ system: 'http://www.nubc.org/patient-discharge', code: '01', display: 'Discharged to home care or self care (routine discharge)' }], text: 'Discharged to home care or self care (routine discharge)' };
 const PPRF = [{ coding: [{ system: 'http://terminology.hl7.org/CodeSystem/v3-ParticipationType', code: 'PPRF', display: 'primary performer' }], text: 'primary performer' }];
 const ORDERED = { coding: [{ system: 'http://terminology.hl7.org/CodeSystem/dose-rate-type', code: 'ordered', display: 'Ordered' }] };
+// The hospital, and what is the hospital's: visits by class or type, procedures by SNOMED code.
+const HOSPITAL = OUTSIDE_HOSPITAL;
+const HOSPITAL_CLASSES = new Set(['EMER', 'IMP']);
+const HOSPITAL_VISITS = /^(Urgent care clinic|Hospital admission|Emergency room admission)\b/i;
+// Colonoscopy, polypectomy, echocardiography, cholecystectomy, thrombectomy, fetal and abdominal ultrasound.
+const HOSPITAL_PROCEDURES = new Set(['73761001', '274031008', '40701008', '433236007', '45595009', '433112001', '169230002', '426701000119108']);
 const CLASS_DISPLAY: Readonly<Record<string, string>> = { AMB: 'ambulatory', IMP: 'inpatient encounter', EMER: 'emergency', VR: 'virtual', HH: 'home health' };
 const STATUS_DISPLAY: Readonly<Record<string, string>> = {
   active: 'Active', inactive: 'Inactive', resolved: 'Resolved', confirmed: 'Confirmed', unconfirmed: 'Unconfirmed', refuted: 'Refuted', 'entered-in-error': 'Entered in Error',
@@ -167,6 +182,13 @@ const BP_COMMENTS = ['Repeated after 5 minutes seated.', 'Left arm, seated.', 'R
 const REPORT_REVIEWED = ['Reviewed with the patient at the visit.', 'Discussed with the patient.', 'Reviewed; copy to the patient portal.'];
 const WITHIN_RANGE = ['All reported values within the reference range.', 'No result outside the reference range.', 'Results within normal limits.'];
 const OUTCOMES = ['Successful', 'Completed without complication', 'Completed as planned'];
+// A procedure that takes no instrument to the patient (an image, a screen, an assessment, advice)
+// has no complication to speak of (verifier P17i W0-1b r2 F6).
+const NONINVASIVE = /radiograph|x-ray|imaging|tomograph|ultrason|screening|assessment|questionnaire|evaluation|examination|counsel|education|review|referral|fundoscopy|gonioscopy|electrocardiograph|echocardiograph|test\b|measurement/i;
+const QUIET_OUTCOMES = ['Completed', 'Completed as planned'];
+// Comments about the specimen belong to results measured on one, not to a value read off an image
+// or calculated from other results (verifier P17i W0-1b r2 F6).
+const UNSAMPLED = /ejection fraction|glomerular filtration|calculated|\bscore\b|index|ratio|percentile/i;
 const ADDENDA = [
   'Addendum: the plan above was reviewed with the patient by phone; no change.',
   'Addendum: patient called with a question about the plan; questions answered, plan unchanged.',
@@ -269,6 +291,27 @@ export function profileBase(base: readonly Resource[], taskPatients: ReadonlySet
   const diabetic = new Set(out.filter((c) => c.resourceType === 'Condition' && free(c) && /diabetes/i.test(textOf(c.code))).map((c) => patientOf(c)));
   const glucosePatients = new Set<string>();
 
+  // In every chart, task charts too (verifier P17i W0-1b r2 F3): a hospital visit is the hospital's
+  // (an emergency, an admission, the urgent care centre), and so is what is done at it; an endoscopy
+  // is done in the hospital's suite; and now and then a weight was taken at home in pounds, never
+  // the patient's latest, so no current weight changes unit.
+  const latestWeight = new Map<string, string>();
+  for (const r of out) {
+    if (r.resourceType !== 'Observation' || codeOf(r) !== '29463-7') continue;
+    const was = byId.get(latestWeight.get(patientOf(r) ?? '') ?? '');
+    if (!was || (r.effectiveDateTime as string) > (was.effectiveDateTime as string)) latestWeight.set(patientOf(r) ?? '', key(r));
+  }
+  for (const r of out) {
+    if (!patientOf(r)?.startsWith('Patient/')) continue;
+    const id = r.id as string;
+    if (r.resourceType === 'Encounter' && (HOSPITAL_CLASSES.has((r.class as { code?: string }).code ?? '') || HOSPITAL_VISITS.test(textOf((r.type as unknown[] | undefined)?.[0])))) r.serviceProvider = { reference: `Organization/${HOSPITAL}` };
+    if (r.resourceType === 'Procedure' && HOSPITAL_PROCEDURES.has(codeOf(r) ?? '') && r.performer === undefined) r.performer = [{ actor: { reference: `Organization/${HOSPITAL}` } }];
+    const value = (r.valueQuantity as { value?: number; unit?: string } | undefined);
+    if (r.resourceType === 'Observation' && codeOf(r) === '29463-7' && value?.value !== undefined && value.unit === 'kg' && latestWeight.get(patientOf(r)!) !== key(r) && pick(id, 'pounds', 12)) {
+      r.valueQuantity = { value: Number((value.value * 2.20462).toFixed(1)), unit: 'lb', system: UCUM, code: '[lb_av]' };
+    }
+  }
+
   for (const r of [...out]) {
     if (!free(r)) continue;
     const id = r.id as string;
@@ -276,10 +319,6 @@ export function profileBase(base: readonly Resource[], taskPatients: ReadonlySet
       case 'Observation': {
         const cat = categoryOf(r);
         const value = (r.valueQuantity as { value?: number } | undefined)?.value;
-        // A home weight in pounds.
-        if (codeOf(r) === '29463-7' && value !== undefined && (r.valueQuantity as { unit?: string }).unit === 'kg' && pick(id, 'pounds', 12)) {
-          r.valueQuantity = { value: Number((value * 2.20462).toFixed(1)), unit: 'lb', system: UCUM, code: '[lb_av]' };
-        }
         // A result entered in error: filed to the wrong chart and replaced, or entered twice.
         if (cat === 'laboratory' && value !== undefined && pick(id, 'error', 60)) {
           const twice = pick(id, 'twice', 2);
@@ -443,6 +482,75 @@ export function profileBase(base: readonly Resource[], taskPatients: ReadonlySet
   return [...out, ...added] as unknown as Resource[];
 }
 
+// What a clinic files a Synthea visit note as, by the visit's type (verifier P17i W0-1b r2 F2): the
+// type's LOINC code and display, and the note's heading, or no heading where Synthea's full history
+// and physical stays as it is. Synthea types every note History and physical; the clinic writes
+// that only for a physical or an admission.
+const NOTE_KINDS: ReadonlyArray<readonly [RegExp, string, string, string | null]> = [
+  [/^(General examination|Well child|Prenatal initial|Hospital admission|Admission to ward)/i, '34117-2', 'History and physical note', null],
+  [/^(Emergency room|Obstetric emergency)/i, '34111-5', 'Emergency department note', 'Emergency department visit'],
+  [/^Telephone/i, '34748-4', 'Telephone encounter Note', 'Telephone encounter'],
+  [/^Consultation/i, '11488-4', 'Consult note', 'Consultation'],
+  [/^(Encounter for symptom|Encounter for problem|Urgent care)/i, '11506-3', 'Progress note', 'Acute visit'],
+  [/^Follow-up/i, '11506-3', 'Progress note', 'Follow-up visit'],
+  [/^Encounter for check up/i, '11506-3', 'Progress note', 'Check-up'],
+  [/^Ophthalmic/i, '11506-3', 'Progress note', 'Eye examination'],
+  [/^Administration of vaccine/i, '11506-3', 'Progress note', 'Immunization visit'],
+  [/^Prenatal/i, '11506-3', 'Progress note', 'Prenatal visit'],
+  [/^Postnatal/i, '11506-3', 'Progress note', 'Postnatal visit'],
+  [/./, '11506-3', 'Progress note', 'Office visit'],
+];
+// A Synthea markdown section's lines, empty ones dropped.
+const section = (text: string, title: string): string[] => {
+  const m = new RegExp(`^#+ ${title}\\n([\\s\\S]*?)(?=^#+ |(?![\\s\\S]))`, 'm').exec(text);
+  return (m?.[1] ?? '').split('\n').map((l) => l.trim()).filter((l) => l);
+};
+const plain = (s: string) => s.replace(/ \((procedure|finding|disorder|situation|regime\/therapy)\)/g, '');
+// A Synthea visit note (type History and physical + Evaluation and plan, its text in markdown)
+// filed as the clinic files it: retyped by its visit, and, other than a physical or an admission,
+// written short in the clinic's form (heading and place, patient, complaint and plan, signer),
+// from what Synthea's note says. A note whose text is not Synthea's (a signed addendum) keeps it.
+function clinicNote(r: Json, byId: ReadonlyMap<string, Json>): void {
+  const type = r.type as { coding?: Array<{ code?: string }>; text?: string };
+  if (!type.coding?.some((c) => c.code === '51847-2')) return;
+  const visit = byId.get((r.context as { encounter?: Ref[] } | undefined)?.encounter?.[0]?.reference ?? '');
+  const [, code, display, heading] = NOTE_KINDS.find(([re]) => re.test(textOf((visit?.type as unknown[] | undefined)?.[0])))!;
+  r.type = { coding: [{ system: LOINC, code, display }], text: display };
+  // The note is kept by whoever kept the visit: the hospital's visits by the hospital.
+  if (visit?.serviceProvider && r.custodian) r.custodian = structuredClone(visit.serviceProvider);
+  if (heading === null) return;
+  for (const c of r.content as Array<{ attachment: { data?: string } }>) {
+    const text = new TextDecoder().decode(Uint8Array.from(atob(c.attachment.data ?? ''), (x) => x.charCodeAt(0)));
+    if (!text.includes('# Chief Complaint')) continue;
+    const date = /^\s*(\d{4}-\d{2}-\d{2})/.exec(text)?.[1];
+    const who = /^(\S+) is an? (\d+) (year|month)-old .*?\b(male|female)\./.exec(section(text, 'History of Present Illness')[0] ?? '');
+    const plan = section(text, 'Plan');
+    const done = plan.filter((l) => l.startsWith('- ')).map((l) => plain(l.slice(2)));
+    const given = plan.find((l) => l.startsWith('Patient was given'))?.replace(/^Patient was given the following immunizations: /, '').replace(/\.\s*$/, '');
+    const items = [...(given ? [`immunization: ${given}`] : []), ...done].slice(0, 3);
+    // Where: the hospital's visits at the hospital, every other at the clinic. A nursing home or a
+    // laboratory is not named, since Synthea's note never named it (no note adds a fact).
+    const place = (visit?.serviceProvider as Ref | undefined)?.reference === `Organization/${HOSPITAL}` ? (byId.get(`Organization/${HOSPITAL}`)?.name as string) : (byId.get(`Organization/${CLINIC}`)?.name as string | undefined) ?? 'Riverbend Family Medicine';
+    const author = byId.get((r.author as Ref[] | undefined)?.[0]?.reference ?? '')?.name as Array<{ given?: string[]; family?: string; suffix?: string[] }> | undefined;
+    const signer = author?.[0] ? `${author[0].given?.join(' ') ?? ''} ${author[0].family ?? ''}${author[0].suffix?.length ? `, ${author[0].suffix.join(' ')}` : ''}`.trim() : undefined;
+    // Some notes also give the allergy and medication lists, and the complaint and plan apart.
+    const id = r.id as string;
+    const allergies = section(text, 'Allergies').join(' ');
+    const meds = section(text, 'Medications').join(' ');
+    const complaint = section(text, 'Chief Complaint').join(' ') || 'No complaints.';
+    const planLine = items.length ? `Plan: ${items.join('; ')}.` : 'Plan: follow up as needed.';
+    const lines = [
+      `${heading} - ${place}${date && pick(id, 'note-dated', 2) ? `, ${date}` : ''}`,
+      ...(who && pick(id, 'note-who', 2) ? [`${who[1]}, ${who[2]}${who[3] === 'year' ? ' y/o' : ' mo'} ${who[4] === 'male' ? 'M' : 'F'}.`] : []),
+      ...(allergies && pick(id, 'note-allergies', 3) ? [`Allergies: ${/no known allergies/i.test(allergies) ? 'NKDA.' : allergies}`] : []),
+      ...(meds && pick(id, 'note-meds', 3) ? [`Medications: ${meds.replace(/; /g, ', ')}.`.replace(/\.\.$/, '.')] : []),
+      ...(pick(id, 'note-apart', 2) ? [complaint, planLine] : [`${complaint} ${planLine}`]),
+      ...(signer ? ['', signer] : []),
+    ];
+    c.attachment.data = b64(lines.join('\n'));
+  }
+}
+
 // Pass 2: the fields every record of a type carries, derived from the record, on every resource.
 export function profileWorld(resources: readonly Resource[]): Resource[] {
   const out = resources.map((r) => structuredClone(r) as unknown as Json);
@@ -476,15 +584,20 @@ export function profileWorld(resources: readonly Resource[]): Resource[] {
   for (const r of out) {
     switch (r.resourceType) {
       case 'DocumentReference': {
+        clinicNote(r, byId);
+        // Synthea marks a patient's earlier notes superseded, though no note replaces them.
+        if (r.status === 'superseded' && !(r.relatesTo as unknown[] | undefined)?.length) r.status = 'current';
         r.docStatus ??= 'final';
         const type = r.type as { text?: string; coding?: Array<{ display?: string }> };
         if (type.text === undefined && type.coding?.[0]?.display) type.text = type.coding[0].display;
         for (const c of r.content as Array<{ format?: unknown }>) c.format ??= { ...IHE_FORMAT };
         // The note's period: its visit's when it has one, else the time it was written.
-        const ctx = (r.context ??= {}) as { encounter?: Ref; period?: { start?: string | undefined; end?: string | undefined } };
-        const visit = (byId.get(ctx.encounter?.reference ?? '')?.period as { start?: string; end?: string } | undefined) ?? {};
-        ctx.period ??= { start: visit.start ?? (r.date as string).replace(/\.\d+/, '') };
-        ctx.period.end ??= visit.end ?? ctx.period.start;
+        const ctx = (r.context ??= {}) as { encounter?: Ref[]; period?: { start?: string | undefined; end?: string | undefined } };
+        const visit = (byId.get(ctx.encounter?.[0]?.reference ?? '')?.period as { start?: string; end?: string } | undefined) ?? {};
+        // Without a visit, the time it was written, for as long as a visit would take.
+        const written = (r.date as string).replace(/\.\d+/, '');
+        ctx.period ??= { start: visit.start ?? written };
+        ctx.period.end ??= visit.end ?? (Date.parse(written) + 900_000 <= NOW_MS ? eastern(Date.parse(written) + 900_000) : ctx.period.start);
         break;
       }
       case 'Encounter': {
@@ -654,6 +767,9 @@ interface Occasional {
   every: number;
   of?: number;
   adds: readonly string[];
+  // A field the rule takes away: never from the last generated record of its type in a task chart
+  // that carries it while a planted record there does.
+  removes?: string;
   can(r: Json, ctx: Context): boolean;
   apply(r: Json, ctx: Context, id: string): void;
 }
@@ -674,7 +790,7 @@ function reactionFor(r: Json): readonly [string, string, string] | undefined {
 
 const isLab = (r: Json) => categoryOf(r) === 'laboratory' && r.valueQuantity !== undefined;
 const OCCASIONAL: readonly Occasional[] = [
-  { type: 'Observation', salt: 'note', every: 15, adds: ['note'], can: (r) => isLab(r) && r.note === undefined && r.status === 'final', apply: (r, _, id) => (r.note = [{ time: r.issued, text: one(id, 'lab-comment', LAB_COMMENTS) }]) },
+  { type: 'Observation', salt: 'note', every: 15, adds: ['note'], can: (r) => isLab(r) && r.note === undefined && r.status === 'final' && !UNSAMPLED.test(textOf(r.code)), apply: (r, _, id) => (r.note = [{ time: r.issued, text: one(id, 'lab-comment', LAB_COMMENTS) }]) },
   {
     type: 'Observation', salt: 'note', every: 25, adds: ['note'],
     can: (r) => categoryOf(r) === 'vital-signs' && MEASURED.has(codeOf(r) ?? '') && r.note === undefined,
@@ -818,18 +934,22 @@ const OCCASIONAL: readonly Occasional[] = [
       delete r.performedPeriod;
     },
   },
-  { type: 'Procedure', salt: 'outcome', every: 4, of: 3, adds: ['outcome', 'outcome.text'], can: (r) => r.outcome === undefined && r.status === 'completed', apply: (r, _, id) => (r.outcome = { text: one(id, 'outcome-text', OUTCOMES) }) },
+  { type: 'Procedure', salt: 'outcome', every: 4, of: 3, adds: ['outcome', 'outcome.text'], can: (r) => r.outcome === undefined && r.status === 'completed', apply: (r, _, id) => (r.outcome = { text: one(id, 'outcome-text', NONINVASIVE.test(textOf(r.code)) ? QUIET_OUTCOMES : OUTCOMES) }) },
   // A procedure entered in the history from the patient's account or an outside record, not at a visit.
   { type: 'Procedure', salt: 'history', every: 2, adds: [], can: (r) => r.encounter !== undefined, apply: (r) => delete r.encounter },
   { type: 'Procedure', salt: 'uncoded', every: 40, adds: [], can: (r) => Boolean((r.code as { coding?: unknown[] } | undefined)?.coding), apply: (r) => (r.code = { text: textOf(r.code) }) },
   { type: 'Condition', salt: 'uncoded', every: 40, adds: [], can: (r) => Boolean((r.code as { coding?: unknown[] } | undefined)?.coding), apply: (r) => (r.code = { text: textOf(r.code) }) },
   {
-    // An emergency visit filed from the hospital's feed names no clinic clinician.
-    type: 'Encounter', salt: 'unattended', every: 20, adds: [], can: (r) => r.participant !== undefined && (r.class as { code?: string }).code !== 'EMER',
+    // A clinic visit whose clinician the old system did not record.
+    type: 'Encounter', salt: 'unattended', every: 20, adds: [], can: (r) => r.participant !== undefined && (r.class as { code?: string }).code !== 'EMER' && (r.serviceProvider as Ref | undefined)?.reference !== `Organization/${HOSPITAL}`,
     apply: (r) => delete r.participant,
   },
-  { type: 'Encounter', salt: 'unattended', every: 2, adds: [], can: (r) => r.participant !== undefined && (r.class as { code?: string }).code === 'EMER', apply: (r) => delete r.participant },
+  // A hospital visit filed from the hospital's feed, no clinic clinician named (the hospital's own
+  // staff are not in the clinic's directory).
+  { type: 'Encounter', salt: 'unattended', every: 2, adds: [], can: (r) => r.participant !== undefined && ((r.class as { code?: string }).code === 'EMER' || (r.serviceProvider as Ref | undefined)?.reference === `Organization/${HOSPITAL}`), apply: (r) => delete r.participant },
   { type: 'Encounter', salt: 'reasonless', every: 3, adds: [], can: (r) => r.reasonCode !== undefined && (r.class as { code?: string }).code === 'EMER', apply: (r) => delete r.reasonCode },
+  // A clinic visit booked without a coded reason (the scheduler's free text is not kept).
+  { type: 'Encounter', salt: 'unbooked', every: 3, adds: [], removes: 'reasonCode', can: (r) => r.reasonCode !== undefined && (r.class as { code?: string }).code === 'AMB', apply: (r) => delete r.reasonCode },
 ];
 
 // Every key path of a resource (arrays flattened): 'code', 'code.coding', 'code.coding.system', ...
@@ -882,6 +1002,69 @@ export function profileRecords(resources: readonly Resource[], planted: Readonly
   const generated = out.filter((r) => !planted.has(key(r)) && patientOf(r)?.startsWith('Patient/') && !near(r));
   const idOf = (r: Json) => stable.get(key(r)) ?? (r.id as string);
 
+  // A visit ends after the last thing recorded at it (Synthea ends it 15 minutes in, before results
+  // it stamps later in the visit). Generated visits only; no end passes a planted time in its chart,
+  // nor NOW (verifier P17i W0-1b r2 F1).
+  const plantedTimes = new Map<string, number[]>();
+  for (const r of plantedRs) for (const t of stamps(r)) plantedTimes.set(patientOf(r) ?? '', [...(plantedTimes.get(patientOf(r) ?? '') ?? []), Date.parse(t.v)]);
+  const crosses = (r: Json, from: number, to: number) => (plantedTimes.get(patientOf(r) ?? '') ?? []).some((t) => t > from && t <= to);
+  const recorded = new Map<string, number>();
+  for (const r of out) {
+    const f = PRIMARY[r.resourceType as string];
+    const enc = (r.encounter as Ref | undefined)?.reference;
+    if (planted.has(key(r)) || !f || !enc || typeof r[f] !== 'string') continue;
+    recorded.set(enc, Math.max(recorded.get(enc) ?? 0, Date.parse(r[f] as string)));
+  }
+  for (const e of out) {
+    const period = e.period as { start?: string; end?: string } | undefined;
+    const last = recorded.get(key(e));
+    if (e.resourceType !== 'Encounter' || planted.has(key(e)) || !period?.start || !period.end || last === undefined) continue;
+    const end = Date.parse(period.end);
+    if (last <= end || last - Date.parse(period.start) > 21_600_000 || last > NOW_MS || crosses(e, end, last)) continue;
+    const was = period.end;
+    const next = eastern(last + (1 + (fnv(`ends:${idOf(e)}`) % 20)) * 60_000);
+    if (Date.parse(next) > NOW_MS) continue;
+    period.end = next;
+    for (const x of (e.participant as Array<{ period?: { end?: string } }> | undefined) ?? []) if (x.period?.end === was) x.period.end = next;
+    for (const d of out) {
+      const ctx = d.context as { encounter?: Ref[]; period?: { end?: string } } | undefined;
+      if (d.resourceType === 'DocumentReference' && !planted.has(key(d)) && ctx?.encounter?.[0]?.reference === key(e) && ctx.period?.end === was) ctx.period.end = next;
+    }
+  }
+  // An order, problem, allergy or procedure entered without a visit was entered in office hours
+  // (Synthea stamps it at any hour of the night): the hour moves into 08:00-17:59 on the same date,
+  // 8 + hour mod 10 as the hygiene pass moves visits, minute and second kept, when no other time
+  // of the patient lies between the old time and the new.
+  const times = new Map<string, number[]>();
+  for (const r of out) for (const t of stamps(r)) times.set(patientOf(r) ?? '', [...(times.get(patientOf(r) ?? '') ?? []), sec(t.v)]);
+  // Records entered together (the allergies Synthea records at one instant) move together.
+  const together = new Map<string, Json[]>();
+  for (const r of out) {
+    const f = PRIMARY[r.resourceType as string] ?? (r.resourceType === 'AllergyIntolerance' ? 'recordedDate' : undefined);
+    if (planted.has(key(r)) || !f || r.encounter !== undefined || typeof r[f] !== 'string' || !FULL.test(r[f] as string) || !patientOf(r)?.startsWith('Patient/')) continue;
+    const hour = Number((r[f] as string).slice(11, 13));
+    if (hour >= 8 && hour < 18) continue;
+    const g = `${patientOf(r)}|${sec(r[f] as string)}`;
+    together.set(g, [...(together.get(g) ?? []), r]);
+  }
+  for (const [g, rs] of together) {
+    const s0 = Number(g.slice(g.indexOf('|') + 1));
+    const v = rs[0]![PRIMARY[rs[0]!.resourceType as string] ?? 'recordedDate'] as string;
+    const hour = Number(v.slice(11, 13));
+    const s1 = s0 + (8 + (hour % 10) - hour) * 3600;
+    const next = at(v, s1);
+    if (next.slice(0, 10) !== v.slice(0, 10) || next.slice(11, 13) !== String(8 + (hour % 10)).padStart(2, '0') || s1 > NOW_S) continue;
+    // Another record at the same instant, or between, would change order with them; so would a
+    // time of their own in between.
+    const mine = rs.flatMap((r) => stamps(r));
+    const others = (times.get(patientOf(rs[0]!)!) ?? []).slice();
+    for (const t of mine) others.splice(others.indexOf(sec(t.v)), 1);
+    const inside = (x: number) => x >= Math.min(s0, s1) && x <= Math.max(s0, s1);
+    if (others.some(inside) || mine.some((t) => sec(t.v) !== s0 && inside(sec(t.v)))) continue;
+    for (const t of mine) if (sec(t.v) === s0) t.holder[t.k] = at(t.v, s1);
+  }
+
+
   // Renewal chains: a later order of the same drug for the same patient names the one it renews, a
   // completed earlier one says why it ended, and some renewals were sent without a visit.
   const chains = new Map<string, Json[]>();
@@ -897,7 +1080,40 @@ export function profileRecords(resources: readonly Resource[], planted: Readonly
     }
   }
 
-  for (const rule of OCCASIONAL) for (const r of generated) if (r.resourceType === rule.type && rule.can(r, ctx) && pick(idOf(r), rule.salt, rule.every, rule.of)) rule.apply(r, ctx, idOf(r));
+  const lastOne = (rule: Occasional, r: Json) => {
+    const p = patientOf(r);
+    const f = rule.removes!;
+    return plantedRs.some((x) => x.resourceType === rule.type && patientOf(x) === p && x[f] !== undefined) && generated.filter((x) => x.resourceType === rule.type && patientOf(x) === p && x[f] !== undefined).length <= 1;
+  };
+  for (const rule of OCCASIONAL) for (const r of generated) if (r.resourceType === rule.type && rule.can(r, ctx) && pick(idOf(r), rule.salt, rule.every, rule.of) && !(rule.removes && lastOne(rule, r))) rule.apply(r, ctx, idOf(r));
+
+  // A laboratory result is issued when the laboratory reports it, not when it was drawn: a report and
+  // the results it files share one issued time, from under an hour to a send-out's three days later
+  // (verifier P17i W0-1b r2 F1: Synthea issues every result within a second, the overlays as a
+  // laboratory does). A point-of-care test reads at once and keeps its time.
+  const issue = (r: Json, at: string) => {
+    for (const n of (r.note as Array<{ time?: string }> | undefined) ?? []) if (n.time === r.issued) n.time = at;
+    r.issued = at;
+  };
+  const reported = new Set<Json>();
+  // A questionnaire's report is issued when the clinician signs it, later in the day.
+  const lab = (r: Json) => (categoryOf(r) === 'laboratory' || categoryOf(r) === 'LAB' || categoryOf(r) === 'OTH') && typeof r.issued === 'string' && typeof r.effectiveDateTime === 'string' && (r.method as { text?: string } | undefined)?.text !== 'Point-of-care';
+  for (const r of [...out.filter((x) => x.resourceType === 'DiagnosticReport'), ...out.filter((x) => x.resourceType === 'Observation')]) {
+    if (planted.has(key(r)) || reported.has(r) || !lab(r)) continue;
+    const u = fnv(`issued:${idOf(r)}`);
+    const minutes = categoryOf(r) === 'OTH' ? 20 + (u % 340) : u % 100 < 12 ? 25 + (u % 35) : u % 100 < 90 ? 60 + (u % 420) : 1440 + (u % 2880);
+    const at = Date.parse(r.effectiveDateTime as string) + minutes * 60_000 + (fnv(`issued-s:${idOf(r)}`) % 60) * 1000;
+    if (at > NOW_MS) continue;
+    const stamp = syntheaTime(eastern(at).replace(/:00(?=[+-]\d\d:\d\d$)/, ':01'), true);
+    issue(r, stamp);
+    for (const ref of (r.result as Ref[] | undefined) ?? []) {
+      const o = byId.get(ref.reference ?? '');
+      if (o && !planted.has(key(o)) && lab(o) && categoryOf(r) !== 'OTH' && o.effectiveDateTime === r.effectiveDateTime) {
+        issue(o, stamp);
+        reported.add(o);
+      }
+    }
+  }
 
   // The top-up: in each task chart, a field a planted record carries that no generated record of
   // its type there carries goes on the first generated record (by id) the field's rule fits.
@@ -912,6 +1128,216 @@ export function profileRecords(resources: readonly Resource[], planted: Readonly
         const target = mine.find((r) => rule.can(r, ctx));
         if (target) rule.apply(target, ctx, idOf(target));
       }
+    }
+  }
+  return out as unknown as Resource[];
+}
+
+// Pass 4: planted times on their chart's Synthea clock (verifier P17i W0-1b r2 F1). Synthea stamps
+// a patient's visits, and what is recorded at them, at a few minute-and-second values of the
+// patient's own; an overlay writes clinic times (10:00, 14:35). In each task chart this pass:
+//   - files a planted result, problem, order or procedure at its visit's start when it was
+//     recorded within the hour after, and nothing else in the chart falls in between, as Synthea
+//     files what is recorded at a visit;
+//   - issues a planted vital sign or questionnaire answer when it was taken, as Synthea does;
+//   - gives each planted time a minute and second from the chart's own clock (its generated
+//     records' times, by how often each appears), on the same date and in the same hour, so every
+//     planted time keeps its order against every other time in the chart: two planted times that
+//     were equal stay equal, and none passes another time, generated or planted, or NOW;
+//   - rewrites an HH:MM a planted record's own text gives for one of its own times.
+// Times of the types only overlays write (tasks, messages, appointments, ...) stay where they are.
+const FULL = /^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2}):(\d{2})(\.\d+)?(Z|[+-]\d{2}:\d{2})$/;
+const sec = (v: string) => Math.floor(Date.parse(v) / 1000);
+const NOW_S = Math.floor(NOW_MS / 1000);
+// Every full timestamp in a resource, with its path and the object and key that hold it.
+function stamps(r: Json): Array<{ path: string; holder: Record<string, unknown>; k: string; v: string }> {
+  const out: Array<{ path: string; holder: Record<string, unknown>; k: string; v: string }> = [];
+  const walk = (v: unknown, at: string) => {
+    if (Array.isArray(v)) v.forEach((x, i) => { if (typeof x === 'string' && FULL.test(x)) out.push({ path: at, holder: v as unknown as Record<string, unknown>, k: String(i), v: x }); else walk(x, at); });
+    else if (v !== null && typeof v === 'object') for (const [k, x] of Object.entries(v)) { const p = at ? `${at}.${k}` : k; if (typeof x === 'string' && FULL.test(x)) out.push({ path: p, holder: v as Record<string, unknown>, k, v: x }); else walk(x, p); }
+  };
+  walk(r, '');
+  return out;
+}
+// The time a type records first, as Synthea stamps it at the visit.
+const PRIMARY: Readonly<Record<string, string>> = { Observation: 'effectiveDateTime', Condition: 'onsetDateTime', MedicationRequest: 'authoredOn', Procedure: 'performedDateTime', DiagnosticReport: 'effectiveDateTime' };
+const UNTIMED = /(^|\.)(issued|time)$/;
+const START = /(^|\.)(start|effectiveDateTime|onsetDateTime|authoredOn|performedDateTime|recordedDate|date)$/;
+const END = /(^|\.)(end|abatementDateTime)$/;
+// v at instant s (seconds), on the clinic's clock, its fraction of a second kept.
+const at = (v: string, s: number) => {
+  const iso = eastern(s * 1000);
+  return `${iso.slice(0, 19)}${FULL.exec(v)?.[5] ?? ''}${iso.slice(19)}`;
+};
+
+export function plantedClock(resources: readonly Resource[], planted: ReadonlySet<string>): Resource[] {
+  const out = resources.map((r) => structuredClone(r) as unknown as Json);
+  const byId = new Map(out.map((r) => [key(r), r]));
+  const charts = [...new Set(out.filter((r) => planted.has(key(r)) && GENERATED.has(r.resourceType as string)).map(patientOf).filter((p): p is string => p !== undefined))].sort();
+  for (const p of charts) {
+    const mine = out.filter((r) => patientOf(r) === p);
+    const plantedRs = mine.filter((r) => planted.has(key(r)) && GENERATED.has(r.resourceType as string));
+    const isMoving = (r: Json) => planted.has(key(r)) && GENERATED.has(r.resourceType as string);
+    // The chart's clock: how often each mm:ss stands on its generated records' times, by field
+    // path, so a planted visit's end takes a minute and second the chart's visits end on. The fixed
+    // times: those (issue times aside), and the times of what only overlays write.
+    const clock = new Map<string, Map<string, number>>();
+    const fixed = new Set<number>();
+    for (const r of mine.filter((x) => !isMoving(x))) {
+      for (const t of stamps(r)) {
+        if (!planted.has(key(r))) {
+          for (const at of [t.path, `${r.resourceType as string}:${t.path}`]) {
+            const c = clock.get(at) ?? new Map<string, number>();
+            c.set(t.v.slice(14, 19), (c.get(t.v.slice(14, 19)) ?? 0) + 1);
+            clock.set(at, c);
+          }
+          if (UNTIMED.test(t.path)) continue;
+        }
+        fixed.add(sec(t.v));
+      }
+    }
+    const everyTime = () => mine.flatMap((r) => stamps(r).filter((t) => !( !planted.has(key(r)) && UNTIMED.test(t.path))).map((t) => ({ r, ...t, s: sec(t.v) })));
+
+    // At the visit's start: the planted records of a visit recorded within its first hour, as far
+    // as nothing else in the chart (another record, a later time of theirs) falls in between.
+    const all = everyTime();
+    const atVisit = new Map<string, Json[]>();
+    for (const r of plantedRs) {
+      // A laboratory report Synthea files at the visit's start; an imaging report after it.
+      const f = r.resourceType === 'DiagnosticReport' && categoryOf(r) !== 'LAB' ? undefined : PRIMARY[r.resourceType as string];
+      const enc = byId.get((r.encounter as Ref | undefined)?.reference ?? '');
+      const start = (enc?.period as { start?: string } | undefined)?.start;
+      if (!f || typeof r[f] !== 'string' || !start || !FULL.test(start)) continue;
+      const d = sec(r[f] as string) - sec(start);
+      if (d > 0 && d <= 3600) atVisit.set(key(enc!), [...(atVisit.get(key(enc!)) ?? []), r]);
+    }
+    for (const [encKey, rs] of atVisit) {
+      const start = (byId.get(encKey)!.period as { start: string }).start;
+      const s0 = sec(start);
+      const t = (r: Json) => sec(r[PRIMARY[r.resourceType as string]!] as string);
+      rs.sort((a, b) => t(a) - t(b));
+      let k = 0;
+      for (let i = 1; i <= rs.length; i++) {
+        if (i < rs.length && t(rs[i]!) === t(rs[i - 1]!)) continue;
+        const group = rs.slice(0, i);
+        const tk = t(rs[i - 1]!);
+        const own = (x: { r: Json; s: number; path: string }) => group.includes(x.r) && (x.s === t(x.r) || UNTIMED.test(x.path));
+        if (all.some((x) => x.s > s0 && x.s <= tk && !own(x))) break;
+        k = i;
+      }
+      for (const r of rs.slice(0, k)) for (const x of stamps(r)) if (sec(x.v) === t(r)) x.holder[x.k] = start;
+    }
+
+    // A visit note written within three hours of the visit's end is signed as the visit ends, as
+    // Synthea dates a visit's note inside the visit, when nothing in the chart falls in between.
+    const afterVisit = everyTime();
+    for (const r of plantedRs) {
+      const visit = byId.get((r.context as { encounter?: Ref[] } | undefined)?.encounter?.[0]?.reference ?? '');
+      const end = (visit?.period as { end?: string } | undefined)?.end;
+      if (r.resourceType !== 'DocumentReference' || typeof r.date !== 'string' || !end || !FULL.test(end)) continue;
+      // Its milliseconds would put it after the visit's last second: it is signed the second before.
+      const [e, d] = [sec(end), sec(r.date as string)];
+      if (d < e || d - e > 10_800 || afterVisit.some((x) => x.s >= e && x.s <= d && x.r !== r && x.r !== visit && !(x.s === e && x.path.endsWith('end')))) continue;
+      const date = at(r.date as string, e - 1);
+      for (const x of stamps(r)) if (sec(x.v) === d) x.holder[x.k] = x.k === 'date' ? date : x.path.endsWith('end') ? end : at(x.v, e - 1);
+    }
+
+    // A vital sign or an answer is issued when it was taken.
+    const now = everyTime();
+    for (const r of plantedRs) {
+      if (r.resourceType !== 'Observation' || categoryOf(r) === 'laboratory' || typeof r.issued !== 'string' || typeof r.effectiveDateTime !== 'string') continue;
+      const [e, i] = [sec(r.effectiveDateTime as string), sec(r.issued as string)];
+      if (i <= e || now.some((x) => x.s > e && x.s < i && !(x.r === r && x.path === 'issued'))) continue;
+      const issued = at(r.issued as string, e);
+      for (const n of (r.note as Array<{ time?: string }> | undefined) ?? []) if (n.time === r.issued) n.time = issued;
+      r.issued = issued;
+    }
+
+    // The chart's clock on every planted time, in its hour, in order.
+    const moving = plantedRs.flatMap((r) => stamps(r).map((t) => ({ r, ...t, s: sec(t.v) }))).filter((t) => t.s <= NOW_S);
+    const fixedSorted = [...fixed].sort((a, b) => a - b);
+    const unique = [...new Set(moving.map((t) => t.s))].filter((s) => !fixed.has(s)).sort((a, b) => a - b);
+    const hourOf = (s: number) => { const iso = eastern(s * 1000); return s - Number(iso.slice(14, 16)) * 60 - Number(iso.slice(17, 19)); };
+    const below = (s: number) => fixedSorted.filter((f) => f < s).length;
+    const bands = new Map<string, number[]>();
+    for (const s of unique) bands.set(`${hourOf(s)}|${below(s)}`, [...(bands.get(`${hourOf(s)}|${below(s)}`) ?? []), s]);
+    const to = new Map<number, number>();
+    const pathsAt = new Map<number, Set<string>>();
+    for (const t of moving) pathsAt.set(t.s, (pathsAt.get(t.s) ?? new Set()).add(`${t.r.resourceType as string}:${t.path}`));
+    for (const [band, ss] of bands) {
+      const [hour, n] = [Number(band.split('|')[0]), Number(band.split('|')[1])];
+      const lo = Math.max(hour - 1, fixedSorted[n - 1] ?? -Infinity);
+      const hi = Math.min(hour + 3600, fixedSorted[n] ?? Infinity, NOW_S + 1);
+      if (hi - lo - 1 < ss.length) continue;
+      // In order: a draw, weighted, from the chart's times at the same paths in what room is left
+      // (each later time keeps a share), else a second in that room off the clinic's grid.
+      let prev = lo;
+      const chosen: number[] = [];
+      ss.forEach((s0, i) => {
+        const left = ss.length - i - 1;
+        const top = hi - left;
+        const counts = new Map<string, number>();
+        for (const typed of pathsAt.get(s0) ?? []) {
+          // The same type's times at the path; where the chart's generated records of the type seldom
+          // carry it, any type's; and failing those, the chart's starts, or its ends.
+          const path = typed.slice(typed.indexOf(':') + 1);
+          const kind = START.test(path) ? START : END.test(path) ? END : undefined;
+          const enough = (x: Array<[string, number]>) => x.reduce((m, [, c]) => m + c, 0) >= 3;
+          const own = [...(clock.get(typed) ?? [])];
+          const any = [...(clock.get(path) ?? [])];
+          const from = enough(own) ? own : enough(any) || !kind ? any : [...clock].filter(([x]) => !x.includes(':') && kind.test(x)).flatMap(([, c]) => [...c]);
+          for (const [mmss, c] of from) counts.set(mmss, (counts.get(mmss) ?? 0) + c);
+        }
+        const pool = [...counts].map(([mmss, c]) => ({ s: hour + Number(mmss.slice(0, 2)) * 60 + Number(mmss.slice(3, 5)), c })).filter((x) => x.s > prev && x.s < top).sort((a, b) => a.s - b.s);
+        let pickS: number | undefined;
+        if (pool.length) {
+          let u = fnv(`clock:${p}:${s0}`) % pool.reduce((m, x) => m + x.c, 0);
+          pickS = pool.find((x) => (u -= x.c) < 0)!.s;
+        }
+        for (let j = 0; pickS === undefined && j < 400; j++) {
+          const s = prev + 1 + (fnv(`clock-fill:${p}:${s0}:${j}`) % Math.max(1, top - prev - 1));
+          const iso = eastern(s * 1000);
+          if (s < top && (j > 200 || (Number(iso.slice(14, 16)) % 5 !== 0 && iso.slice(17, 19) !== '00'))) pickS = s;
+        }
+        pickS ??= prev + 1;
+        chosen.push(pickS);
+        prev = pickS;
+      });
+      if (chosen.at(-1)! >= hi) continue;
+      ss.forEach((s, i) => to.set(s, chosen[i]!));
+    }
+    for (const r of plantedRs) {
+      const moved = new Map<string, string>();
+      for (const t of stamps(r)) {
+        const s = to.get(sec(t.v));
+        if (s === undefined) continue;
+        const v = at(t.v, s);
+        moved.set(t.v.slice(11, 16), moved.has(t.v.slice(11, 16)) && moved.get(t.v.slice(11, 16)) !== v.slice(11, 16) ? '' : v.slice(11, 16));
+        t.holder[t.k] = v;
+      }
+      // The record's own text, where it gives one of its times as HH:MM.
+      const swap = (text: string) => {
+        let outText = text;
+        for (const [from, toHm] of moved) if (toHm && from !== toHm) outText = outText.replace(new RegExp(`(?<![\\d:])${from}(?![\\d:])`, 'g'), toHm);
+        return outText;
+      };
+      const walk = (v: unknown, k: string): unknown => {
+        if (typeof v === 'string') return FULL.test(v) || /(^|\.)(id|reference|system|code)$/.test(k) ? v : swap(v);
+        if (Array.isArray(v)) return v.map((x) => walk(x, k));
+        if (v !== null && typeof v === 'object') {
+          const o = v as Record<string, unknown>;
+          for (const [kk, x] of Object.entries(o)) {
+            if (kk === 'data' && typeof x === 'string') {
+              const text = new TextDecoder().decode(Uint8Array.from(atob(x), (c) => c.charCodeAt(0)));
+              const next = swap(text);
+              if (next !== text) o[kk] = b64(next);
+            } else o[kk] = walk(x, kk);
+          }
+          return o;
+        }
+        return v;
+      };
+      if ([...moved.values()].some((x) => x)) walk(r, '');
     }
   }
   return out as unknown as Resource[];
