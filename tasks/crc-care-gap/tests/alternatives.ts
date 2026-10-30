@@ -336,6 +336,11 @@ export const alternatives: Alternative[] = [
       { calls: [finish()] },
     ],
   },
+  {
+    id: 'e15_residence_by_visits',
+    why: "Also lists Rickey Sipes's visits newest first before acting: his July and February visits are nursing facility visits at Maple Grove, the visit records that back the housing status (E15's residence ids, nothing_for_others; verifier-phase-P19-T3-1 D2, builder-186).",
+    script: [...reads(), { calls: [search('Encounter', PT.E15, { sort: '-date' })] }, { calls: actions() }, { calls: [finish()] }],
+  },
   // The verifier's probes of verifier-phase-P17i-P17-T3-1 (S1, S3, M1), kept under their probe ids.
   {
     // S1: R14-24's 'outreach before order' path is rejected (decisions 2026-10-28T19:59Z); an
