@@ -14,6 +14,7 @@ import { finish, message, outreach, PT } from './solution/steps.ts';
 import { alternatives } from './tests/alternatives.ts';
 import { mutants } from './tests/mutants.ts';
 import { named } from './tests/rubric.ts';
+import { ref } from './ids.ts';
 
 const task = await loadMatrixTask('crc-care-gap');
 const env = matrixEnv();
@@ -29,14 +30,14 @@ const LOSES: Record<string, readonly string[]> = {
 // The resources each member's status rests on, which the oracle must read in full (exposed, not
 // only referenced by a search row) before it finishes: the table must rest on what it saw.
 const DECIDING: Record<string, readonly string[]> = {
-  'Patient/pt-0009': ['Condition/cond-t3-6027', 'MedicationRequest/mr-t3-3318'],
+  'Patient/pt-0009': [ref('Condition/cond-t3-6027'), ref('MedicationRequest/mr-t3-3318')],
   'Patient/pt-0011': ['Patient/pt-0011'],
-  'Patient/pt-0014': ['Procedure/proc-t3-4170'],
-  'Patient/pt-0020': ['EpisodeOfCare/eoc-t3-8215'],
-  'Patient/pt-0021': ['DocumentReference/doc-t3-1856'],
-  'Patient/pt-0024': ['ServiceRequest/sr-t3-6648'],
-  'Patient/pt-0025': ['Procedure/proc-t3-5032'],
-  'Patient/pt-0034': ['Observation/obs-t3-2465'],
+  'Patient/pt-0014': [ref('Procedure/proc-t3-4170')],
+  'Patient/pt-0020': [ref('EpisodeOfCare/eoc-t3-8215')],
+  'Patient/pt-0021': [ref('DocumentReference/doc-t3-1856')],
+  'Patient/pt-0024': [ref('ServiceRequest/sr-t3-6648')],
+  'Patient/pt-0025': [ref('Procedure/proc-t3-5032')],
+  'Patient/pt-0034': [ref('Observation/obs-t3-2465')],
   ...Object.fromEntries(expected.members.filter((x) => x.decisive.length).map((x) => [x.patient, x.decisive])),
 };
 

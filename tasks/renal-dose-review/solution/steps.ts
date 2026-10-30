@@ -2,6 +2,7 @@
 // mutants and agents (tests/). Each case varies only what its clinician would vary, so they
 // share these calls and the note's wording.
 import type { ScriptCall } from '../../../packages/grader/matrix/types.ts';
+import { id, ref } from '../ids.ts';
 
 export const PT = 'pt-0002';
 export const RX = {
@@ -48,16 +49,16 @@ export const order = (rxnorm_code: string, dose_value: number, frequency: string
 // The pilot path (P19 lever, researcher-16 T1): §2's three criteria applied without the
 // indication, one met (age), so apixaban raised to 5 mg. A mutant now: the order is the
 // extended-phase dose after pulmonary embolism, which §2 does not cover.
-export const apixabanUp = modify('mr-t1-apixaban', { value: 5, unit: 'mg', frequency: 'BID' }, 'RBC-PHARM-07 §2: one dose criterion met (age); back to 5 mg twice daily', RX.apixaban5);
+export const apixabanUp = modify(id('mr-t1-apixaban'), { value: 5, unit: 'mg', frequency: 'BID' }, 'RBC-PHARM-07 §2: one dose criterion met (age); back to 5 mg twice daily', RX.apixaban5);
 // The extended-phase hematology letter of 2/5/2026 (doc-t1-heme-0205), found as the pilot
 // trials searched the notes.
-export const hemeLetter = read('DocumentReference', 'doc-t1-heme-0205');
-export const gabapentinBid = modify('mr-t1-gabapentin', { value: 600, unit: 'mg', frequency: 'BID' }, 'RBC-PHARM-07 §4: CrCl 43 mL/min, 400-1400 mg/day twice daily');
+export const hemeLetter = read('DocumentReference', id('doc-t1-heme-0205'));
+export const gabapentinBid = modify(id('mr-t1-gabapentin'), { value: 600, unit: 'mg', frequency: 'BID' }, 'RBC-PHARM-07 §4: CrCl 43 mL/min, 400-1400 mg/day twice daily');
 // Gabapentin on the 300 mg capsule (600 mg a dose unless given) at explicit administration times,
 // replacing the TID order.
 export const gabapentinEvents = (timing_events: string[], dose_value = 600): ScriptCall => ({
   name: 'order_medication',
-  input: { patient: PT, rxnorm_code: RX.gabapentin300, dose_value, dose_unit: 'mg', route: 'oral', timing_events, reason: 'RBC-PHARM-07 §4: CrCl 43 mL/min, 400-1400 mg/day twice daily', replaces: 'mr-t1-gabapentin' },
+  input: { patient: PT, rxnorm_code: RX.gabapentin300, dose_value, dose_unit: 'mg', route: 'oral', timing_events, reason: 'RBC-PHARM-07 §4: CrCl 43 mL/min, 400-1400 mg/day twice daily', replaces: id('mr-t1-gabapentin') },
 });
 
 // The note's paragraphs; a case overrides the ones its clinician writes differently.
@@ -86,7 +87,7 @@ export const ORACLE_NOTE: NoteFacts = {
 export const noteText = (f: NoteFacts): string =>
   ['Renal and age dose review under RBC-PHARM-07, after the pharmacy flag on this week\'s labs.', f.inputs, f.apixaban, f.metformin, f.gabapentin, f.others].join('\n\n');
 
-export const CITES = ['Observation/obs-t1-scr-1020', 'Observation/obs-t1-wt-1020'];
+export const CITES = [ref('Observation/obs-t1-scr-1020'), ref('Observation/obs-t1-wt-1020')];
 
 export const note = (f: Partial<NoteFacts> = {}, cites: string[] = CITES, patient = PT): ScriptCall => ({
   name: 'write_note',

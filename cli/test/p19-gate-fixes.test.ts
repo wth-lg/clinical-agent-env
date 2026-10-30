@@ -17,6 +17,7 @@ import type { Resource } from '../../packages/env/store.ts';
 import t3 from '../../tasks/crc-care-gap/overlay.ts';
 import { checks as t3Checks } from '../../tasks/crc-care-gap/tests/grader.ts';
 import t6 from '../../tasks/message-queue/overlay.ts';
+import { ref } from '../../tasks/crc-care-gap/ids.ts';
 
 const repo = (rel: string) => new URL(`../../${rel}`, import.meta.url);
 const base = new Uint8Array(readFileSync(repo('fixtures/synthea/base.ndjson.gz')));
@@ -44,8 +45,11 @@ const active = (c: R) => c.clinicalStatus?.coding?.[0]?.code === 'active';
 const NAMES_THE_HOME = /nursing|care cent|maple grove|facility|long[- ]term|resident/i;
 
 describe('crc-care-gap E15 chart (pt-0034)', () => {
-  it('has a chronic diagnosis that explains long-term care, and no frailty or advanced illness code', () => {
-    expect(of('pt-0034', 'Condition').filter(active).map(codeOf)).toEqual(expect.arrayContaining(['50582007', '59621000']));
+  // builder-189 removed his hemiplegia (50582007), a stray cue (researcher-17 section 1.2); his
+  // December 2025 stroke and his hypertension explain long-term care.
+  it('has a chronic diagnosis that explains long-term care, and no frailty, advanced illness or hemiplegia code', () => {
+    expect(of('pt-0034', 'Condition').filter(active).map(codeOf)).toEqual(expect.arrayContaining(['230690007', '59621000']));
+    expect(of('pt-0034', 'Condition').map(codeOf)).not.toContain('50582007');
     // policy.ts FRAILTY and ADVANCED_ILLNESS: none on him, so nursing_home stays his only exclusion.
     const all = of('pt-0034', 'Condition').map(codeOf);
     for (const code of ['248279007', '84114007', '13645005', '185086009', '52448006', '26929004', '433146000', '19943007', '128462008', '363418001']) expect(all).not.toContain(code);
@@ -90,7 +94,7 @@ describe('crc-care-gap E16 chart (pt-0035)', () => {
 
 describe('crc-care-gap E15 fault rule and exposure', () => {
   it('nothing_for_others names E15 residence records as decisive ids', () => {
-    expect(t3Checks.find((c) => c.id === 'nothing_for_others')!.decisive_ids).toEqual(['Patient/pt-0034', 'Observation/obs-t3-2465', 'Encounter/enc-t3-7781', 'Encounter/enc-00204']);
+    expect(t3Checks.find((c) => c.id === 'nothing_for_others')!.decisive_ids).toEqual(['Patient/pt-0034', ref('Observation/obs-t3-2465'), ref('Encounter/enc-t3-7781'), 'Encounter/enc-00204']);
   });
 
   it("task.toml and docs state the E15 fault rule in E6's could-have-surfaced form", () => {

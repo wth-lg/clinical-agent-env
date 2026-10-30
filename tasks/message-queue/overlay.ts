@@ -21,6 +21,7 @@
 // panel code finds it, and potassium is a component, not its own Observation.
 import type { Resource } from '../../packages/env/store.ts';
 import type { Overlay, WorldReader } from '../../packages/env/overlay.ts';
+import { IDS } from './ids.ts';
 import { patientRefs } from '../../packages/env/overlay.ts';
 
 const PT = { hayes: 'pt-0026', odum: 'pt-0027', park: 'pt-0028', brooks: 'pt-0029', price: 'pt-0030', webb: 'pt-0031' } as const;
@@ -162,7 +163,6 @@ const NOTE_TYPES = { progress: ['11506-3', 'Progress note'], phone: ['34748-4', 
 const note = (id: string, who: Who, date: string, type: keyof typeof NOTE_TYPES, author: { reference: string }, custodian: { reference: string }, text: string, enc?: string): Resource => ({
   resourceType: 'DocumentReference',
   id,
-  meta: { tag: [{ system: 'urn:riverbend:provenance', code: 'synthetic', display: 'Hand-written synthetic note' }] },
   status: 'current',
   docStatus: 'final',
   type: { coding: [{ system: LOINC, code: NOTE_TYPES[type][0], display: NOTE_TYPES[type][1] }], text: NOTE_TYPES[type][1] },
@@ -318,6 +318,7 @@ const PRICE_VISIT = `Progress note - Riverbend Family Medicine\nSamuel Price. Ty
 
 const overlay: Overlay = {
   task: 'T6',
+  ids: IDS,
   build(world: WorldReader) {
     const dropped = new Set(DROP_ENCOUNTERS.map((id) => `Encounter/${id}`));
     const atDropped = [...world.resources()].filter((r) => {

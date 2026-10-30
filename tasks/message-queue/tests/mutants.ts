@@ -4,8 +4,9 @@
 import { type Mutant, oneTurn, type ScriptCall } from '../../../packages/grader/matrix/types.ts';
 import { oracle } from '../solution/solve.ts';
 import {
-  bmpOrder, call, M1_LOOK, M1_OLD_READS, M1_REPORT, M3, M3_BODY, m1Bridge, m1BridgeReply, m1PcpTask, m1Reply, m2Reply, m2Task, m3Message, m5Renewal, m6Task, message, notes, parkAllergy, PT, read, refill, reyesMessage, RX, swap, task, withM1,
+  bmpOrder, call, M1_LOOK, PARK_NOTES, type Msg, M1_OLD_READS, M1_REPORT, M3, M3_BODY, m1Bridge, m1BridgeReply, m1PcpTask, m1Reply, m2Reply, m2Task, m3Message, m5Renewal, m6Task, message, notes, parkAllergy, PT, read, refill, reyesMessage, RX, swap, task, withM1,
 } from '../solution/steps.ts';
+import { id, ref } from '../ids.ts';
 
 const original = oracle.flatMap((t) => t.calls);
 const ALLERGY = original.find((c) => c.name === 'record_allergy' && !('update_id' in c.input))!;
@@ -56,7 +57,7 @@ export const mutants: Mutant[] = [
     attribution: 'process',
     script: withM1(oracle, [
       M1_LOOK,
-      { calls: [task(PT.hayes, 'Practitioner/pr-okafor', 'routine', 'Refill request for lisinopril 20 mg; please review before it is renewed.', 'MedicationRequest/mr-t6-lisinopril'), m1Reply] },
+      { calls: [task(PT.hayes, 'Practitioner/pr-okafor', 'routine', 'Refill request for lisinopril 20 mg; please review before it is renewed.', ref('MedicationRequest/mr-t6-lisinopril')), m1Reply] },
       M1_REPORT,
     ]),
   },
@@ -121,11 +122,11 @@ export const mutants: Mutant[] = [
     attribution: 'reasoning',
     script: [
       ...swap(oracle, ...M3.flatMap((t) => t.calls).map((c): [typeof c, []] => [c, []])).slice(0, -2),
-      { calls: [call('fhir_read', { resource_type: 'Communication', id: 'comm-t6-m3' })] },
+      { calls: [call('fhir_read', { resource_type: 'Communication', id: id('comm-t6-m3') })] },
       {
         calls: [
-          task(PT.brooks, 'Group/pool-rn-triage', 'routine', 'Dark stools on naproxen; please call to book a visit next week.', 'Communication/comm-t6-m3'),
-          message(`Patient/${PT.brooks}`, 'routine', 'Your message', 'Please stop the naproxen. Our nurse will call you to book a visit next week.', ['Communication/comm-t6-m3']),
+          task(PT.brooks, 'Group/pool-rn-triage', 'routine', 'Dark stools on naproxen; please call to book a visit next week.', ref('Communication/comm-t6-m3')),
+          message(`Patient/${PT.brooks}`, 'routine', 'Your message', 'Please stop the naproxen. Our nurse will call you to book a visit next week.', [ref('Communication/comm-t6-m3')]),
         ],
       },
       ...oracle.slice(-2),
@@ -147,7 +148,7 @@ export const mutants: Mutant[] = [
     fails: ['m4_hold'],
     loses: ['nkda_inactive', 'm4_message_doxycycline', 'm4_message_says_sent', 'm4_message_links_note'],
     attribution: 'over_action',
-    script: swap(oracle, [ALLERGY, [amoxClav]], [NKDA, []], [REYES, [message('Practitioner/pr-reyes', 'routine', 'Lena Park', 'Sent amoxicillin-clavulanate 875/125 mg twice daily for 7 days for Lena Park, as you asked.', ['Communication/comm-t6-m4'])]]),
+    script: swap(oracle, [ALLERGY, [amoxClav]], [NKDA, []], [REYES, [message('Practitioner/pr-reyes', 'routine', 'Lena Park', 'Sent amoxicillin-clavulanate 875/125 mg twice daily for 7 days for Lena Park, as you asked.', [ref('Communication/comm-t6-m4')])]]),
   },
   {
     id: 'm4_requester_not_told',
@@ -165,7 +166,7 @@ export const mutants: Mutant[] = [
     fails: ['m4_hold'],
     loses: ['m4_message_links_note'],
     attribution: 'reasoning',
-    script: swap(oracle, [REYES, [reyesMessage(undefined, ['Communication/comm-t6-m3'])]]),
+    script: swap(oracle, [REYES, [reyesMessage(undefined, [ref('Communication/comm-t6-m3')])]]),
   },
   {
     id: 'm4_doxycycline_placed',
@@ -201,7 +202,7 @@ export const mutants: Mutant[] = [
     fails: ['m6_scheduling'],
     loses: [],
     attribution: 'reasoning',
-    script: swap(oracle, [m6Task, [task(PT.webb, 'Practitioner/pr-okafor', 'routine', 'Wants a November blood pressure check.', 'Communication/comm-t6-m6')]]),
+    script: swap(oracle, [m6Task, [task(PT.webb, 'Practitioner/pr-okafor', 'routine', 'Wants a November blood pressure check.', ref('Communication/comm-t6-m6'))]]),
   },
   {
     id: 'm2_left_open',
@@ -221,7 +222,7 @@ export const mutants: Mutant[] = [
     fails: ['all_cleared'],
     loses: [],
     attribution: 'process',
-    script: swap(oracle, ...[0, 1, 3, 4].map((i): [ScriptCall, ScriptCall[]] => [CLOSE[i]!, [call('update_inbox_item', { task_id: `task-t6-m${i + 1}`, action: 'reassign', new_owner: 'Group/pool-rn-triage' })]])),
+    script: swap(oracle, ...[0, 1, 3, 4].map((i): [ScriptCall, ScriptCall[]] => [CLOSE[i]!, [call('update_inbox_item', { task_id: id(`task-t6-m${(i + 1) as Msg}`), action: 'reassign', new_owner: 'Group/pool-rn-triage' })]])),
   },
   {
     id: 'allergy_id_only',
@@ -231,9 +232,9 @@ export const mutants: Mutant[] = [
     loses: [],
     attribution: 'process',
     script: (() => {
-      const s = swap(oracle, ...oracle.flatMap((t) => t.calls).filter((c) => c.name === 'fhir_read' && String(c.input.id).startsWith('doc-t6-park-')).map((c): [typeof c, []] => [c, []]));
+      const s = swap(oracle, ...oracle.flatMap((t) => t.calls).filter((c) => c.name === 'fhir_read' && PARK_NOTES.has(String(c.input.id))).map((c): [typeof c, []] => [c, []]));
       const at = s.findIndex((t) => t.calls.includes(ALLERGY));
-      return [...s.slice(0, at), { calls: [notes('urgent care', PT.park)] }, s[at]!, { calls: [read('DocumentReference', 'doc-t6-park-240309')] }, ...s.slice(at + 1)];
+      return [...s.slice(0, at), { calls: [notes('urgent care', PT.park)] }, s[at]!, { calls: [read('DocumentReference', id('doc-t6-park-240309'))] }, ...s.slice(at + 1)];
     })(),
   },
   {

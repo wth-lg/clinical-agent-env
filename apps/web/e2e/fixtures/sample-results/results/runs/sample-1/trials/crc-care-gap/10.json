@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:crc-care-gap:10",
   "task_id": "crc-care-gap",
-  "task_version": "775cb719b9e25f38427299210cb18f6700399c51dcc1fcfbe23e9392878ecfb5",
-  "env_version": "7c53bb9b864d5b9b53002e033a718338895b6b5faf5ce36689648a9c0c2164f0",
-  "grader_task_version": "8adf89dd5a6d083b4f2dfa4c240b433f58cb95dc469af91a8b9ae3bbdd8352f9",
-  "fixture_hash": "95d2f5194846a473cd83f112ae92618083e25e31c57d68f4fe9eea5bada20991",
+  "task_version": "1a27e2505647a28bd2614aa4a7ed88c2bd1c9c822f7962e3f271f18bb83d4400",
+  "env_version": "aaa4a66aae83ca896f8cac3927043cdbdb35860ccdc52b6eac54c621cabd8514",
+  "grader_task_version": "acfa348674d0ea6116acda87b1b2ce03e64806a737c01eda9f2a0a5dc4c4292e",
+  "fixture_hash": "72a5695ffadc2af6d65de536961a330023163910f7efc2e177c8537403a2cbd9",
   "state_hash": {
-    "initial": "95d2f5194846a473cd83f112ae92618083e25e31c57d68f4fe9eea5bada20991",
-    "final": "8b3f5120dc3baa2ed4a8d70eba1e2638dc5c778596cce8607c3804bbc2beff9b",
-    "replay_final": "8b3f5120dc3baa2ed4a8d70eba1e2638dc5c778596cce8607c3804bbc2beff9b"
+    "initial": "72a5695ffadc2af6d65de536961a330023163910f7efc2e177c8537403a2cbd9",
+    "final": "6e2762cadc6d175f8ecb748741b2c40743d59a15a8c487739905adb5399ae6f8",
+    "replay_final": "6e2762cadc6d175f8ecb748741b2c40743d59a15a8c487739905adb5399ae6f8"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -154,7 +154,7 @@
             "first_order": 108,
             "exposed": [
               {
-                "id": "Procedure/proc-t3-2591",
+                "id": "Procedure/proc-01338",
                 "step": 19
               }
             ]
@@ -164,7 +164,7 @@
             "first_order": 110,
             "exposed": [
               {
-                "id": "Observation/obs-t3-7342",
+                "id": "Observation/obs-03493",
                 "step": 34
               }
             ]
@@ -174,7 +174,7 @@
             "first_order": null,
             "exposed": [
               {
-                "id": "Condition/cond-t3-5463",
+                "id": "Condition/cond-00993",
                 "step": 53
               }
             ]
@@ -184,7 +184,7 @@
             "first_order": 114,
             "exposed": [
               {
-                "id": "Observation/obs-t3-3906",
+                "id": "Observation/obs-03494",
                 "step": 41
               }
             ]
@@ -958,19 +958,19 @@
     "decisive_step": 116,
     "exposure": [
       {
-        "id": "Procedure/proc-t3-2591",
+        "id": "Procedure/proc-01338",
         "first_exposed_step": 19
       },
       {
-        "id": "Observation/obs-t3-7342",
+        "id": "Observation/obs-03493",
         "first_exposed_step": 34
       },
       {
-        "id": "Condition/cond-t3-5463",
+        "id": "Condition/cond-00993",
         "first_exposed_step": 53
       },
       {
-        "id": "Observation/obs-t3-3906",
+        "id": "Observation/obs-03494",
         "first_exposed_step": 41
       },
       {

@@ -8,6 +8,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { browse } from './browse.ts';
 import { sampleBase } from './fixtures/sample-results/sample.ts';
 import { trialBase, TRIALS, RUN_ID } from './fixtures/trial/trial.ts';
+import { ref } from '../../../tasks/renal-dose-review/ids.ts';
 
 const GONE = [/\bRun oracle\b/, /\bRun matrix\b/, /Browser-direct/, /\bWorker\b/, /\bLabels\b/];
 
@@ -62,7 +63,7 @@ test('a PASS that a human audit says did not pass shows Contradicted, in the dan
   // The fixture PASS gets an audit row whose outcome is FAIL: M5 on a PASS is not met.
   await page.route(`**/data/results/runs/${RUN_ID}/audit.jsonl`, async (route) => {
     const res = await route.fetch();
-    const row = { trial: TRIALS.pass, outcome: 'FAIL', taxonomy: 'reasoning', model_fault: 'yes', decisive_step: 1, evidence_ids: ['Observation/obs-t1-scr-1020'], llm_auditor_agrees: true };
+    const row = { trial: TRIALS.pass, outcome: 'FAIL', taxonomy: 'reasoning', model_fault: 'yes', decisive_step: 1, evidence_ids: [ref('Observation/obs-t1-scr-1020')], llm_auditor_agrees: true };
     await route.fulfill({ response: res, body: `${await res.text()}${JSON.stringify(row)}\n` });
   });
   const base = await trialBase(test.info().project.use.baseURL!);

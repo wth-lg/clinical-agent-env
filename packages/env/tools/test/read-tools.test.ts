@@ -9,6 +9,7 @@ import { Store } from '../../store.ts';
 import { INBOX_QUEUE_SYSTEM, READ_TOOLS, type CatalogEntry, type Policy, type ReadContext } from '../read/index.ts';
 import { approxTokens, callTool, collapseWhitespace, definitions, exposure, RESULT_TOKEN_CAP, type ToolResult } from '../registry.ts';
 import { ruleViolations } from './exposure-rule.ts';
+import { isPlanted } from '../../../../tasks/planted.ts';
 
 const root = new URL('../../../../', import.meta.url);
 const base = await parseNdjson(readFileSync(new URL('fixtures/world.ndjson.gz', root)));
@@ -451,18 +452,18 @@ describe('search_notes', () => {
 });
 
 describe('read_policy', () => {
-  it('lists policies by id without their text', () => {
+  it('lists policies by id without their text or source', () => {
     const r = call('read_policy', {});
     expect(ok(r).entries).toEqual([
-      { policy: 'Policy/RBC-TEST-01', title: 'First test policy', version: '1', effective: '2026-01-01', source: 'environment-local' },
-      { policy: 'Policy/RBC-TEST-02', title: 'Second test policy', version: '2', effective: '2026-02-01', source: 'environment-local' },
+      { policy: 'Policy/RBC-TEST-01', title: 'First test policy', version: '1', effective: '2026-01-01' },
+      { policy: 'Policy/RBC-TEST-02', title: 'Second test policy', version: '2', effective: '2026-02-01' },
     ]);
     expect(r.exposed_ids).toEqual([]);
     expectTagsMatch(r);
   });
-  it('returns one policy with its text and exposes it', () => {
+  it('returns one policy with its text, not its source, and exposes it', () => {
     const r = call('read_policy', { policy_id: 'RBC-TEST-01' });
-    expect(ok(r)).toEqual({ resourceType: 'Policy', id: 'RBC-TEST-01', title: 'First test policy', version: '1', effective: '2026-01-01', source: 'environment-local', text: 'First policy text.' });
+    expect(ok(r)).toEqual({ resourceType: 'Policy', id: 'RBC-TEST-01', title: 'First test policy', version: '1', effective: '2026-01-01', text: 'First policy text.' });
     expect(r.exposed_ids).toEqual(['Policy/RBC-TEST-01']);
     expect(r.shown).toEqual({ 'Policy/RBC-TEST-01': 'First policy text.' });
   });
@@ -511,10 +512,10 @@ describe('lookup_catalog', () => {
 });
 
 describe('list_inbox', () => {
-  // Task overlays add their own inbox items to the shared world, with ids tagged '<prefix>-t<N>-'
-  // (as write-gate.test.ts filters them). Each assertion pages through the whole queue, drops
-  // those rows and compares the rest exactly, so a row list_inbox makes up still fails.
-  const overlay = (row: { task?: unknown }) => /^Task\/[a-z]+-t\d+-/.test(String(row.task));
+  // Task overlays add their own inbox items to the shared world, listed in their id registries
+  // (tasks/planted.ts, as write-gate.test.ts filters them). Each assertion pages through the whole
+  // queue, drops those rows and compares the rest exactly, so a row list_inbox makes up still fails.
+  const overlay = (row: { task?: unknown }) => isPlanted(String(row.task));
   const inbox = (input: Record<string, unknown>) => {
     const rows: Array<Record<string, unknown>> = [];
     for (let offset: number | undefined = 0; offset !== undefined; ) {

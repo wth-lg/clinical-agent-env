@@ -10,6 +10,7 @@ import { browse } from './browse.ts';
 import { CHART_TYPES, taskPatients } from '../src/tasks/chart.ts';
 import { chartIds, world } from './fixtures/chart-oracle.ts';
 import { sampleBase } from './fixtures/sample-results/sample.ts';
+import { id } from '../../../tasks/message-queue/ids.ts';
 
 async function openChart(page: Page, task: string) {
   await browse(page, new URL(`./?view=tasks&task=${task}&tab=chart`, await sampleBase(test.info().project.use.baseURL!)).href);
@@ -70,7 +71,7 @@ test('message-queue: a patient message shows its text (verifier-phase-P17j-retro
   await openChart(page, 'message-queue');
   await page.getByRole('combobox', { name: 'Patient' }).selectOption('Patient/pt-0026');
   await expectRowsEqualStore(page, 'Patient/pt-0026');
-  const msg = page.locator('[data-testid="chart-row"][data-type="Communication"][data-id="comm-t6-m1"]');
+  const msg = page.locator(`[data-testid="chart-row"][data-type="Communication"][data-id="${id('comm-t6-m1')}"]`);
   await expect(msg).toContainText('Refill request');
   await expect(msg.getByTestId('chart-note')).toContainText('refill my lisinopril 20 mg');
 });

@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:crc-care-gap:2",
   "task_id": "crc-care-gap",
-  "task_version": "775cb719b9e25f38427299210cb18f6700399c51dcc1fcfbe23e9392878ecfb5",
-  "env_version": "7c53bb9b864d5b9b53002e033a718338895b6b5faf5ce36689648a9c0c2164f0",
-  "grader_task_version": "8adf89dd5a6d083b4f2dfa4c240b433f58cb95dc469af91a8b9ae3bbdd8352f9",
-  "fixture_hash": "95d2f5194846a473cd83f112ae92618083e25e31c57d68f4fe9eea5bada20991",
+  "task_version": "1a27e2505647a28bd2614aa4a7ed88c2bd1c9c822f7962e3f271f18bb83d4400",
+  "env_version": "aaa4a66aae83ca896f8cac3927043cdbdb35860ccdc52b6eac54c621cabd8514",
+  "grader_task_version": "acfa348674d0ea6116acda87b1b2ce03e64806a737c01eda9f2a0a5dc4c4292e",
+  "fixture_hash": "72a5695ffadc2af6d65de536961a330023163910f7efc2e177c8537403a2cbd9",
   "state_hash": {
-    "initial": "95d2f5194846a473cd83f112ae92618083e25e31c57d68f4fe9eea5bada20991",
-    "final": "f93f8e53ebd99e306a84c8570908e6aa7e0cc2639137d8b3fea4ccb55d471528",
-    "replay_final": "f93f8e53ebd99e306a84c8570908e6aa7e0cc2639137d8b3fea4ccb55d471528"
+    "initial": "72a5695ffadc2af6d65de536961a330023163910f7efc2e177c8537403a2cbd9",
+    "final": "8146551b1cf3f528bde112be732348e94ffcdb9284e2fbe356c01de0b5f4c5bb",
+    "replay_final": "8146551b1cf3f528bde112be732348e94ffcdb9284e2fbe356c01de0b5f4c5bb"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -156,7 +156,7 @@
             "first_order": 20,
             "exposed": [
               {
-                "id": "Procedure/proc-t3-2591",
+                "id": "Procedure/proc-01338",
                 "step": 13
               }
             ]
@@ -166,7 +166,7 @@
             "first_order": 30,
             "exposed": [
               {
-                "id": "Observation/obs-t3-7342",
+                "id": "Observation/obs-03493",
                 "step": 24
               }
             ]
@@ -176,7 +176,7 @@
             "first_order": 77,
             "exposed": [
               {
-                "id": "Condition/cond-t3-5463",
+                "id": "Condition/cond-00993",
                 "step": 71
               }
             ]
@@ -186,7 +186,7 @@
             "first_order": 95,
             "exposed": [
               {
-                "id": "Observation/obs-t3-3906",
+                "id": "Observation/obs-03494",
                 "step": 89
               }
             ]

@@ -7,6 +7,7 @@ import { loadMatrixTask, matrixEnv } from '../../cli/matrix.ts';
 import { cases, gradeRun, trial } from '../../packages/grader/matrix/matrix.ts';
 import type { RubricCheck, RubricCtx, StateView } from '../../packages/grader/check.ts';
 import { rubric } from './tests/rubric.ts';
+import { id } from './ids.ts';
 
 const task = await loadMatrixTask('results-inbox');
 const env = matrixEnv();
@@ -63,7 +64,7 @@ describe('results-inbox ace_inhibitor_escalated', () => {
     get: (t, id) => rs.find((r) => r.resourceType === t && r.id === id) as never,
     all: (t?: string) => rs.filter((r) => t === undefined || r.resourceType === t) as never,
   });
-  const LISINOPRIL = mr('mr-t2-lisinopril', 'lisinopril 10 MG Oral Tablet', 10);
+  const LISINOPRIL = mr(id('mr-t2-lisinopril'), 'lisinopril 10 MG Oral Tablet', 10);
   const grade = async (made: Array<ReturnType<typeof mr>>, stopped = false) => {
     const initial = [LISINOPRIL];
     const final = [stopped ? { ...LISINOPRIL, status: 'stopped' } : LISINOPRIL, ...made];

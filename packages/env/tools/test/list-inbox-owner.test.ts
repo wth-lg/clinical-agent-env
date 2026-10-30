@@ -14,6 +14,7 @@ import { READ_TOOLS } from '../read/index.ts';
 import { callTool, definitions, type ToolResult } from '../registry.ts';
 import { USER as WRITE_USER } from '../write/context.ts';
 import { newSession, TOOLS, type WriteContext } from '../write/index.ts';
+import { id, IDS, ref } from '../../../../tasks/results-inbox/ids.ts';
 
 const root = new URL('../../../../', import.meta.url);
 const base = await parseNdjson(readFileSync(new URL('fixtures/world.ndjson.gz', root)));
@@ -26,21 +27,22 @@ const ok = (r: ToolResult): Record<string, unknown> => {
 };
 type Row = Record<string, unknown>;
 // T2's results items only: other task overlays may add their own.
+const T2_ITEMS = new Set(Object.entries(IDS).filter(([k]) => k.startsWith('task-t2-inbox-')).map(([, v]) => `Task/${v}`));
 const t2 = (c: WriteContext, input: Record<string, unknown>): Row[] =>
   (ok(callTool(READ_TOOLS, 'list_inbox', { queue: 'results', count: 50, ...input }, c)).entries as Row[]).filter((r) =>
-    String(r.task).startsWith('Task/task-t2-inbox-'),
+    T2_ITEMS.has(String(r.task)),
   );
 
 describe('list_inbox owner', () => {
   it('drops an item reassigned to the on-call pool from the default list and lists it under its new owner', () => {
     const c = fresh();
-    ok(callTool(TOOLS, 'update_inbox_item', { task_id: 'task-t2-inbox-4', action: 'reassign', new_owner: 'Group/pool-oncall' }, c));
+    ok(callTool(TOOLS, 'update_inbox_item', { task_id: id('task-t2-inbox-4'), action: 'reassign', new_owner: 'Group/pool-oncall' }, c));
     const mine = t2(c, { status: 'requested' });
     expect(mine).toHaveLength(7);
-    expect(mine.map((r) => r.task)).not.toContain('Task/task-t2-inbox-4');
+    expect(mine.map((r) => r.task)).not.toContain(ref('Task/task-t2-inbox-4'));
     for (const r of mine) expect(r.owner).toBe('Practitioner/pr-okafor');
     const oncall = t2(c, { status: 'requested', owner: 'Group/pool-oncall' });
-    expect(oncall.map((r) => [r.task, r.owner])).toEqual([['Task/task-t2-inbox-4', 'Group/pool-oncall']]);
+    expect(oncall.map((r) => [r.task, r.owner])).toEqual([[ref('Task/task-t2-inbox-4'), 'Group/pool-oncall']]);
   });
 
   it("lists the signed-in user's items when owner names them, and nothing for an owner with no items", () => {
@@ -52,8 +54,8 @@ describe('list_inbox owner', () => {
 
   it('takes a bare id as update_inbox_item new_owner does (verifier-phase-P17i-JT1-1 F2)', () => {
     const c = fresh();
-    ok(callTool(TOOLS, 'update_inbox_item', { task_id: 'task-t2-inbox-4', action: 'reassign', new_owner: 'pool-oncall' }, c));
-    expect(t2(c, { owner: 'pool-oncall' }).map((r) => [r.task, r.owner])).toEqual([['Task/task-t2-inbox-4', 'Group/pool-oncall']]);
+    ok(callTool(TOOLS, 'update_inbox_item', { task_id: id('task-t2-inbox-4'), action: 'reassign', new_owner: 'pool-oncall' }, c));
+    expect(t2(c, { owner: 'pool-oncall' }).map((r) => [r.task, r.owner])).toEqual([[ref('Task/task-t2-inbox-4'), 'Group/pool-oncall']]);
     expect(t2(c, { owner: 'pr-okafor' })).toEqual(t2(c, {}));
   });
 

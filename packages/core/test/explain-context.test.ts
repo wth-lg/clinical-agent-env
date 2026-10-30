@@ -14,6 +14,7 @@ import { parseTrajectory } from '../trajectory.ts';
 import { repoRoot } from '../../../scripts/test/helpers.ts';
 import { checks as contrastChecks } from '../../../tasks/contrast-ct-prep/tests/grader.ts';
 import { checks as renalChecks } from '../../../tasks/renal-dose-review/tests/grader.ts';
+import { ref } from '../../../tasks/renal-dose-review/ids.ts';
 
 const SAMPLE = join(repoRoot, 'apps/web/e2e/fixtures/sample-results/results/runs/sample-1');
 const sample = (trial: string) => {
@@ -48,7 +49,7 @@ describe('explainContext', () => {
       expect(m('M1', record, ctx).met).toBe(true);
       const none = m('M1', record, explainContext({ ...input, manifest: null }));
       expect(none.met).toBe(noManifest);
-      if (noManifest === 'pending') expect(none.evidence).toMatch(/obs-t1-wt-1020 never exposed; exposability not checked \(the run has no manifest world_hash\)/);
+      if (noManifest === 'pending') expect(none.evidence).toContain(`${ref('Observation/obs-t1-wt-1020')} never exposed; exposability not checked (the run has no manifest world_hash)`);
       // Without the task's checks there is nothing to recompute, so M1 cannot say.
       expect(m('M1', record, explainContext({ record, events, manifest: null })).met).toBe('pending');
     });

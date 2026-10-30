@@ -17,6 +17,7 @@ import { expected } from './expected.ts';
 import { checkText } from '../discharge-medrec.check-text.ts';
 import { addendum, PT, summaries, summary } from './solution/steps.ts';
 import { checks } from './tests/grader.ts';
+import { id } from './ids.ts';
 
 const g8 = checks.find((c) => c.id === 'sources_before_orders')!;
 const met = async (ctx: GateCtx) => (g8.kind === 'gate' ? (await g8.fn(ctx)).met : null);
@@ -35,7 +36,7 @@ describe('the addendum correction as the read tools show it', async () => {
     expect(g8.decisive_phrases).toEqual({ [ADD]: PHRASE, [expected.k.id]: 'Potassium 5.4 mmol/L' });
   });
   it('a fhir_read of the outside lab report shows the potassium and creatinine lines; the creatinine snippet does not show the potassium (P19)', () => {
-    const read = stepsFor({ name: 'fhir_read', input: { resource_type: 'DocumentReference', id: 'doc-t4-lab-1021' } });
+    const read = stepsFor({ name: 'fhir_read', input: { resource_type: 'DocumentReference', id: id('doc-t4-lab-1021') } });
     expect(shows(read, expected.k.id, 2, expected.k.line)).toBe(true);
     expect(shows(read, expected.scr.id, 2, expected.scr.line)).toBe(true);
     const snippet = stepsFor({ name: 'search_notes', input: { query: 'creatinine', patient: PT } });

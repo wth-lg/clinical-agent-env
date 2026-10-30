@@ -11,6 +11,7 @@ import { expected } from './expected.ts';
 import { derive } from './policy.ts';
 import { OLD_SUMMARY } from './tests/rubric.ts';
 import { noteText, ORACLE_NOTE } from './solution/steps.ts';
+import { id, ref } from './ids.ts';
 
 const store = await loadStore(matrixEnv().world);
 const all = [...store.resources()];
@@ -26,19 +27,19 @@ describe('discharge-medrec', () => {
   // the lisinopril resume, although SCr 1.32 meets the resume line's own condition.
   it('holds spironolactone and lisinopril on the potassium of 5.4 (§7) and takes the addendum over the summary', () => {
     const d = derive(world) as unknown as typeof expected;
-    expect(d.scr).toEqual({ id: 'DocumentReference/doc-t4-lab-1021', mg_dl: 1.32, threshold: 1.5, line: 'Creatinine 1.32 mg/dL' });
-    expect(d.k).toEqual({ id: 'DocumentReference/doc-t4-lab-1021', mmol_l: 5.4, threshold: 5.0, line: 'Potassium 5.4 mmol/L' });
-    expect(d.lisinopril).toEqual({ request: 'MedicationRequest/mr-t4-lisinopril', action: 'task', daily_mg: 10, per_day: 1 });
+    expect(d.scr).toEqual({ id: ref('DocumentReference/doc-t4-lab-1021'), mg_dl: 1.32, threshold: 1.5, line: 'Creatinine 1.32 mg/dL' });
+    expect(d.k).toEqual({ id: ref('DocumentReference/doc-t4-lab-1021'), mmol_l: 5.4, threshold: 5.0, line: 'Potassium 5.4 mmol/L' });
+    expect(d.lisinopril).toEqual({ request: ref('MedicationRequest/mr-t4-lisinopril'), action: 'task', daily_mg: 10, per_day: 1 });
     expect(d.spironolactone).toEqual({ request: null, action: 'task', daily_mg: 25, per_day: 1 });
     expect(d.potassium_chloride.action).toBe('stop');
-    expect(d.message_about).toEqual(['MedicationRequest/mr-t4-metoprolol-tart']);
+    expect(d.message_about).toEqual([ref('MedicationRequest/mr-t4-metoprolol-tart')]);
   });
 
   // §7 is a rule over the latest potassium, not a text shape: at 4.4 (the pilot-1 world) the
   // discharge lines stand; at exactly 5.0 nothing is above 5.0, so they stand too.
   it.each([['4.4', 'resume', 'start'], ['5.0', 'resume', 'start'], ['5.1', 'task', 'task']])('at potassium %s the lisinopril line gives %s and the spironolactone line %s', (k, lisinopril, spironolactone) => {
     const changed = all.map((r) => {
-      if (r.resourceType !== 'DocumentReference' || r.id !== 'doc-t4-lab-1021') return r;
+      if (r.resourceType !== 'DocumentReference' || r.id !== id('doc-t4-lab-1021')) return r;
       const text = decode(r.content[0]!.attachment.data).replace(/^Potassium(\s+)5\.4 mmol\/L/m, `Potassium$1${k} mmol/L`);
       return { ...r, content: [{ ...r.content[0]!, attachment: { ...r.content[0]!.attachment, data: btoa(String.fromCharCode(...new TextEncoder().encode(text))) } }] };
     });
@@ -61,8 +62,8 @@ describe('discharge-medrec', () => {
   // discharge line reads as the chart's drug (§4) through normalize.ts.
   it('derives the same from an amended lab report and a brand name for metoprolol succinate', () => {
     const swap = (r: (typeof all)[number]) => {
-      if (r.resourceType === 'DocumentReference' && r.id === 'doc-t4-lab-1021') return { ...r, docStatus: 'amended' as const };
-      if (r.resourceType === 'DocumentReference' && r.id === 'doc-t4-dc-1019') {
+      if (r.resourceType === 'DocumentReference' && r.id === id('doc-t4-lab-1021')) return { ...r, docStatus: 'amended' as const };
+      if (r.resourceType === 'DocumentReference' && r.id === id('doc-t4-dc-1019')) {
         const text = new TextDecoder().decode(Uint8Array.from(atob(r.content[0]!.attachment.data!), (c) => c.charCodeAt(0))).replace('Metoprolol XL 50 mg', 'Toprol XL 50 mg');
         const data = btoa(String.fromCharCode(...new TextEncoder().encode(text)));
         return { ...r, content: [{ ...r.content[0]!, attachment: { ...r.content[0]!.attachment, data } }] };
@@ -77,15 +78,15 @@ describe('discharge-medrec', () => {
   it('names a PCP, leaves the AKI unresolved and drops the Synthea leftovers the story contradicts', () => {
     const pt = store.get('Patient', 'pt-0005');
     expect(pt?.resourceType === 'Patient' && pt.generalPractitioner).toEqual([{ reference: 'Practitioner/pr-okafor' }]);
-    const aki = store.get('Condition', 'cond-t4-aki');
+    const aki = store.get('Condition', id('cond-t4-aki'));
     expect(aki?.resourceType === 'Condition' && [aki.clinicalStatus?.coding?.[0]?.code, aki.abatementDateTime]).toEqual(['active', undefined]);
     for (const id of ['cond-00139', 'cond-00141', 'cond-00151']) expect(store.get('Condition', id)).toBeUndefined();
   });
 
   it('dates and justifies the orders consistently with the 2025 summary', () => {
-    const succ = store.get('MedicationRequest', 'mr-t4-metoprolol-succ');
+    const succ = store.get('MedicationRequest', id('mr-t4-metoprolol-succ'));
     expect(succ?.resourceType === 'MedicationRequest' && (succ.authoredOn ?? '') < '2025-03-02').toBe(true);
-    const lis = store.get('MedicationRequest', 'mr-t4-lisinopril');
+    const lis = store.get('MedicationRequest', id('mr-t4-lisinopril'));
     expect(lis?.resourceType === 'MedicationRequest' && JSON.stringify(lis.reasonCode)).not.toMatch(/hypertension/i);
     // Both 2024 orders predate the 2025 heart-failure diagnosis, so they give his long-standing ischemic heart disease.
     const ihd = store.get('Condition', 'cond-00142');
@@ -94,7 +95,7 @@ describe('discharge-medrec', () => {
   });
 
   it('flags a note that uses the March 2025 summary by any name, and not the oracle note', () => {
-    for (const t of ['Per the March 2025 summary furosemide stays at 20 mg.', 'Per the 3/6 discharge summary.', "Per last year's discharge summary, KCl continues.", 'See doc-t4-dc-2025.', 'Echocardiogram in 3 months.', 'Potassium chloride 20 mEq daily: start.', 'Per the older St. Brigid summary.']) expect(OLD_SUMMARY.test(t), t).toBe(true);
+    for (const t of ['Per the March 2025 summary furosemide stays at 20 mg.', 'Per the 3/6 discharge summary.', "Per last year's discharge summary, KCl continues.", `See ${id('doc-t4-dc-2025')}.`, 'Echocardiogram in 3 months.', 'Potassium chloride 20 mEq daily: start.', 'Per the older St. Brigid summary.']) expect(OLD_SUMMARY.test(t), t).toBe(true);
     expect(OLD_SUMMARY.test(noteText(ORACLE_NOTE))).toBe(false);
   });
 
@@ -105,9 +106,9 @@ describe('discharge-medrec', () => {
     const after = all.filter((r) => r.resourceType === 'Observation' && r.subject?.reference === 'Patient/pt-0005' && (r.code?.coding ?? []).some((c) => c.code === '2160-0') && Date.parse(r.effectiveDateTime ?? '') > Date.parse('2026-10-19T11:02:00-04:00'));
     expect(after.map((r) => r.id)).toEqual([]);
     const d = derive(world) as unknown as typeof expected;
-    expect(d.scr).toEqual({ id: 'DocumentReference/doc-t4-lab-1021', mg_dl: 1.32, threshold: 1.5, line: 'Creatinine 1.32 mg/dL' });
+    expect(d.scr).toEqual({ id: ref('DocumentReference/doc-t4-lab-1021'), mg_dl: 1.32, threshold: 1.5, line: 'Creatinine 1.32 mg/dL' });
     expect(d.lisinopril.action).toBe('task');
-    const summary = store.get('DocumentReference', 'doc-t4-dc-1019') as Extract<(typeof all)[number], { resourceType: 'DocumentReference' }>;
+    const summary = store.get('DocumentReference', id('doc-t4-dc-1019')) as Extract<(typeof all)[number], { resourceType: 'DocumentReference' }>;
     const lines = decode(summary.content[0]!.attachment.data).split('\n');
     const panto = lines.filter((l) => /pantoprazole/i.test(l));
     expect(panto.find((l) => l.startsWith('- '))).toBe('- Pantoprazole 40 mg by mouth daily.');

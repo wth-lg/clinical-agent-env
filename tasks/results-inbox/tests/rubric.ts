@@ -9,6 +9,7 @@ import { rubric as item, type Check, type RubricCtx, type StateView } from '../.
 import { clinicDate, dailyDose, isDrug } from '../../../packages/grader/normalize.ts';
 import { expected } from '../expected.ts';
 import { oncall, patientOf, type NotifyCtx, type Res as Made } from './notify.ts';
+import { id, ref } from '../ids.ts';
 
 const I = expected.items;
 const split = (ref: string) => ref.split('/') as [string, string];
@@ -308,7 +309,7 @@ const ACE_CRITERION =
 const ENDED_OR_HELD = ['on-hold', 'stopped', 'cancelled', 'completed', 'entered-in-error'];
 const LIVE = ['active', 'draft'];
 // Her lisinopril order before the trial (overlay.ts), 10 mg once daily.
-const LISINOPRIL_ORDER = 'mr-t2-lisinopril';
+const LISINOPRIL_ORDER = id('mr-t2-lisinopril');
 // ACE inhibitors and ARBs by ingredient, matched on a product's text or display.
 const ACE_OR_ARB = /\b(?:benazepril|captopril|enalapril|fosinopril|lisinopril|moexipril|perindopril|quinapril|ramipril|trandolapril|azilsartan|candesartan|eprosartan|irbesartan|losartan|olmesartan|telmisartan|valsartan)\b/i;
 type Med = Res & { medicationCodeableConcept?: Parameters<typeof isDrug>[0] & { text?: string; coding?: Array<{ display?: string }> } };
@@ -369,10 +370,10 @@ export const rubric: Check[] = [
   messageItem('hemolyzed_k_patient_message', I.hemolyzed_k, 'RBC-LAB-03 §2'),
   messageItem('bone_patient_message', I.bone, 'RBC-INBOX-01 §4', true),
   messageItem('fit_patient_message', I.fit, 'RBC-INBOX-01 §4', true),
-  noteItem('nodule_note', I.nodule, FINDINGS.nodule, ['DocumentReference/doc-t2-hp-lm58']),
+  noteItem('nodule_note', I.nodule, FINDINGS.nodule, [ref('DocumentReference/doc-t2-hp-lm58')]),
   noteItem('fit_note', I.fit, FINDINGS.fit, [...I.fit.existing]),
-  noteItem('hemolyzed_k_note', I.hemolyzed_k, FINDINGS.hemolyzed_k, ['DiagnosticReport/dr-t2-bmp-c-1022']),
-  noteItem('critical_k_note', I.critical_k, FINDINGS.critical_k, ['DiagnosticReport/dr-t2-bmp-d-1022']),
+  noteItem('hemolyzed_k_note', I.hemolyzed_k, FINDINGS.hemolyzed_k, [ref('DiagnosticReport/dr-t2-bmp-c-1022')]),
+  noteItem('critical_k_note', I.critical_k, FINDINGS.critical_k, [ref('DiagnosticReport/dr-t2-bmp-d-1022')]),
   noteItem('bone_note', I.bone, FINDINGS.bone),
   item({
     id: 'cyst_closed_no_follow_up',

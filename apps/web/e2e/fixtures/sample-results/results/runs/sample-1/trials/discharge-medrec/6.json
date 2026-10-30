@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:discharge-medrec:6",
   "task_id": "discharge-medrec",
-  "task_version": "965884b761bc5ad11779cb00075c1733c7a75da18a35ce24bc963d7813580966",
-  "env_version": "30034978012f7183b86732e26325dc1c74e633c051cdd0666de36b471380707b",
-  "grader_task_version": "3a9db6291d196c9a0575eb04751f64b15da2e5f5c60cc6731c8f00f9132c9225",
-  "fixture_hash": "95d2f5194846a473cd83f112ae92618083e25e31c57d68f4fe9eea5bada20991",
+  "task_version": "44d1f2086670ed7f1981a96bc4b2d5a2dc81c009e5f11ccd62326aeff53eb83b",
+  "env_version": "d72a49a3db045ece5cd405f4ff30fabedf6a3744ff6c05fa607756fb9d591e77",
+  "grader_task_version": "ce4c17a4cca74c50db4d860096a39740cf9d5ebd70c7ba55ae46cb55b88daac0",
+  "fixture_hash": "72a5695ffadc2af6d65de536961a330023163910f7efc2e177c8537403a2cbd9",
   "state_hash": {
-    "initial": "95d2f5194846a473cd83f112ae92618083e25e31c57d68f4fe9eea5bada20991",
-    "final": "4fbdc7c0ab676d5fe16b9ff18c13cf39c206bf629833c7e92f4ec64560a653eb",
-    "replay_final": "4fbdc7c0ab676d5fe16b9ff18c13cf39c206bf629833c7e92f4ec64560a653eb"
+    "initial": "72a5695ffadc2af6d65de536961a330023163910f7efc2e177c8537403a2cbd9",
+    "final": "7e2a34c84bf164a373202b081d078b12a043a3fa0285bcf26d8d3fd55021a284",
+    "replay_final": "7e2a34c84bf164a373202b081d078b12a043a3fa0285bcf26d8d3fd55021a284"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -93,7 +93,7 @@
         "left": []
       },
       "ids": [
-        "MedicationRequest/mr-t4-kcl"
+        "MedicationRequest/mr-00398"
       ]
     },
     {
@@ -108,7 +108,7 @@
         "active": []
       },
       "ids": [
-        "MedicationRequest/mr-t4-lisinopril"
+        "MedicationRequest/mr-00399"
       ]
     },
     {
@@ -157,7 +157,7 @@
         "pantoprazole": []
       },
       "ids": [
-        "MedicationRequest/mr-t4-omeprazole"
+        "MedicationRequest/mr-00402"
       ]
     },
     {

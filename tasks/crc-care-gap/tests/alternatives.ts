@@ -6,6 +6,7 @@ import type { Agent } from '../../../packages/grader/matrix/types.ts';
 import {
   actions, bare, bareOrders, chart, finish, fitOrder, GAPS, group, groups, housing, keyReads, MEMBERS, message, NEXT_WRITE, NOTE_SEARCH, notes, OPNOTE, ORDER_SEQ, orderFit, outreach, OVER_65, policy, PROCEDURE_CODES, PT, read, reads, ROWS, search, STOOL_CODES, table, type Label,
 } from '../solution/steps.ts';
+import { ref } from '../ids.ts';
 
 const ALL = 'CRC outreach done for Okafor CRC 2026: six FIT kits ordered, six patients messaged.';
 
@@ -98,7 +99,7 @@ export const alternatives: Alternative[] = [
     why: 'Also asks RN triage, about E6\'s scanned operative note, to code the colectomy in her surgical history: a staff message about an excluded patient.',
     script: [
       ...reads(),
-      { calls: [...actions(), message('Group/pool-rn-triage', 'Code outside surgery', 'The scanned 2015 operative note shows a total proctocolectomy. Please add it to the surgical history.', ['DocumentReference/doc-t3-1856'])] },
+      { calls: [...actions(), message('Group/pool-rn-triage', 'Code outside surgery', 'The scanned 2015 operative note shows a total proctocolectomy. Please add it to the surgical history.', [ref('DocumentReference/doc-t3-1856')])] },
       { calls: [finish()] },
     ],
   },

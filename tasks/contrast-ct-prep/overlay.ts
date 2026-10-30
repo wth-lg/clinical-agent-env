@@ -40,6 +40,7 @@
 // put RBC-RAD-07 §2 against current guidance (review-clinical-T5-1 S1).
 import type { Resource } from '../../packages/env/store.ts';
 import type { Overlay, WorldReader } from '../../packages/env/overlay.ts';
+import { IDS } from './ids.ts';
 
 const PT = 'pt-0015';
 const SUBJECT = { reference: `Patient/${PT}` };
@@ -195,7 +196,6 @@ function base64(s: string): string {
 const note = (id: string, date: string, type: [string, string], enc: string | null, author: { reference: string }, custodian: { reference: string }, text: string): Resource => ({
   resourceType: 'DocumentReference',
   id,
-  meta: { tag: [{ system: 'urn:riverbend:provenance', code: 'synthetic', display: 'Hand-written synthetic note' }] },
   status: 'current',
   docStatus: 'final',
   type: { coding: [{ system: LOINC, code: type[0], display: type[1] }], text: type[1] },
@@ -289,6 +289,7 @@ ED physician: Owen Castellano, MD`;
 
 const overlay: Overlay = {
   task: 'T5',
+  ids: IDS,
   build(world: WorldReader) {
     const patient = world.get('Patient', PT) as Extract<Resource, { resourceType: 'Patient' }>;
     const renamed: Resource = {

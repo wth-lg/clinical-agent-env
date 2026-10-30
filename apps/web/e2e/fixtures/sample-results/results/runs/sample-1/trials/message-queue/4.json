@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:message-queue:4",
   "task_id": "message-queue",
-  "task_version": "e9ac99672e2f59085f6f24852b84e16b9268149c7334f45a43ff51a5bfd40c19",
-  "env_version": "646f5bd8e061fc6af328d24da59219acfacc1d5c73a888cfcd9f77b533515220",
-  "grader_task_version": "9c515d57299fd05d0038f8b239e2cb02095cd0d61c2d3abb8b9cb030600b7fba",
-  "fixture_hash": "95d2f5194846a473cd83f112ae92618083e25e31c57d68f4fe9eea5bada20991",
+  "task_version": "630d5641ff3eae6f42e5b1255c732e1f3de755bce1927f31d37fa69fe9be89c5",
+  "env_version": "ce3a5f7db967bd87dd7bc22835e452f482a65b18eb8e3c66ee18beedc9321929",
+  "grader_task_version": "9fe90168518dc869eed2ee6fe64f52f442f40e971bd7c4dc0d6bae07374b7403",
+  "fixture_hash": "72a5695ffadc2af6d65de536961a330023163910f7efc2e177c8537403a2cbd9",
   "state_hash": {
-    "initial": "95d2f5194846a473cd83f112ae92618083e25e31c57d68f4fe9eea5bada20991",
-    "final": "52c46b7325b33fb3968cd280b8e69dd64ee3d9b131e53884af0bd2ebae2d02cf",
-    "replay_final": "52c46b7325b33fb3968cd280b8e69dd64ee3d9b131e53884af0bd2ebae2d02cf"
+    "initial": "72a5695ffadc2af6d65de536961a330023163910f7efc2e177c8537403a2cbd9",
+    "final": "cfdc44ca60d148201e7be2ec48faa4884d711d5e1b19babc272765f4012e08f4",
+    "replay_final": "cfdc44ca60d148201e7be2ec48faa4884d711d5e1b19babc272765f4012e08f4"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -116,7 +116,7 @@
       "evidence": {
         "new_orders": [],
         "allergies_written": [
-          "AllergyIntolerance/alg-t6-park-nkda",
+          "AllergyIntolerance/alg-00044",
           "AllergyIntolerance/alg-t0007"
         ],
         "allergy_recorded": [
@@ -127,7 +127,7 @@
         ]
       },
       "ids": [
-        "AllergyIntolerance/alg-t6-park-nkda",
+        "AllergyIntolerance/alg-00044",
         "AllergyIntolerance/alg-t0007",
         "Communication/comm-t0009"
       ]
@@ -187,37 +187,37 @@
       "evidence": {
         "items": [
           {
-            "item": "Task/task-t6-m1",
+            "item": "Task/task-00008",
             "status": "completed",
             "owner": "Practitioner/pr-okafor",
             "routed_to": null
           },
           {
-            "item": "Task/task-t6-m2",
+            "item": "Task/task-00009",
             "status": "completed",
             "owner": "Practitioner/pr-okafor",
             "routed_to": null
           },
           {
-            "item": "Task/task-t6-m3",
+            "item": "Task/task-00010",
             "status": "completed",
             "owner": "Practitioner/pr-okafor",
             "routed_to": "Group/pool-rn-triage"
           },
           {
-            "item": "Task/task-t6-m4",
+            "item": "Task/task-00011",
             "status": "completed",
             "owner": "Practitioner/pr-okafor",
             "routed_to": null
           },
           {
-            "item": "Task/task-t6-m5",
+            "item": "Task/task-00012",
             "status": "completed",
             "owner": "Practitioner/pr-okafor",
             "routed_to": null
           },
           {
-            "item": "Task/task-t6-m6",
+            "item": "Task/task-00013",
             "status": "completed",
             "owner": "Practitioner/pr-okafor",
             "routed_to": "Group/pool-scheduling"
@@ -237,12 +237,12 @@
       "evidence": {
         "checks": [
           {
-            "evidence": "DocumentReference/doc-t6-park-240309",
+            "evidence": "DocumentReference/doc-00398",
             "write": 35,
             "exposed": 24
           },
           {
-            "evidence": "DocumentReference/doc-t6-hayes-0708",
+            "evidence": "DocumentReference/doc-00376",
             "write": 11,
             "exposed": 10
           }

@@ -33,8 +33,9 @@
 //                   --fresh-grade`, the run on stdin), which imports tests/grader.ts afresh;
 //                   the matrix compares every in-process grade with it
 //   policy imports  policyImports follows policy.ts's whole import graph with the TypeScript
-//                   compiler's module resolution and fails on any expected.ts or overlay module
-//                   it reaches, and on any dynamic import whose specifier is not a constant
+//                   compiler's module resolution and fails on any expected.ts, overlay module
+//                   or id registry (ids.ts) it reaches, and on any dynamic import whose
+//                   specifier is not a constant
 import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -366,7 +367,7 @@ const COMPILER = (() => {
   const { config } = ts.readConfigFile(file, ts.sys.readFile);
   return ts.parseJsonConfigFileContent(config, ts.sys, REPO, undefined, file).options;
 })();
-const BANNED_BASE = /^(expected|overlay)\.[cm]?[jt]sx?$/i;
+const BANNED_BASE = /^(expected|overlay|ids)\.[cm]?[jt]sx?$/i;
 const isBanned = (file: string) => BANNED_BASE.test(basename(file)) || file.split(sep).slice(0, -1).some((d) => d.toLowerCase() === 'overlay');
 
 // The module specifiers a file imports for values, and each dynamic import whose specifier is
@@ -395,8 +396,8 @@ function importsOf(file: string): { specs: string[]; dynamic: number } {
   return { specs, dynamic };
 }
 
-// Follows the whole import graph of <taskDir>/policy.ts and reports each expected.ts or overlay
-// module it reaches (by name, path segment 'overlay' included, compared on the real path so a
+// Follows the whole import graph of <taskDir>/policy.ts and reports each expected.ts, overlay
+// module or id registry (ids.ts) it reaches (by name, path segment 'overlay' included, compared on the real path so a
 // case variant cannot hide one), each import that does not resolve, and each dynamic import with
 // a non-constant specifier. Packages under node_modules are not followed. No policy.ts: nothing.
 export function policyImports(taskDir: string): { modules: number; problems: string[] } {

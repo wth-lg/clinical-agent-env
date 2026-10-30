@@ -11,6 +11,7 @@ import { checkText } from '../results-inbox.check-text.ts';
 import type { Agent, MatrixTask } from '../../packages/grader/matrix/types.ts';
 import { ORACLE, solve } from './solution/solve.ts';
 import { PT, SRC, writer } from './solution/steps.ts';
+import { ref } from './ids.ts';
 
 const task = await loadMatrixTask('results-inbox');
 const ONE = { trials: 1, regrades: 1, isolation: false } as const satisfies MatrixOptions;
@@ -141,15 +142,15 @@ describe('an inbox item reassigned to pool-oncall', () => {
 
   it('is an on-call page about the hemolyzed potassium', async () => {
     const { grade, reason } = await reasonOf('hemolyzed_reassigned_to_oncall');
-    expect(grade.checks.find((c) => c.id === 'hemolyzed_k_no_oncall')).toMatchObject({ met: false, evidence: { oncall: [{ id: 'Task/task-t2-inbox-4', priority: 'routine', reassigned: true }] } });
-    expect(reason).toMatch(/^hemolyzed_k_no_oncall failed: .*Task\/task-t2-inbox-4 forwarded to on-call/);
+    expect(grade.checks.find((c) => c.id === 'hemolyzed_k_no_oncall')).toMatchObject({ met: false, evidence: { oncall: [{ id: ref('Task/task-t2-inbox-4'), priority: 'routine', reassigned: true }] } });
+    expect(reason).toMatch(new RegExp(`^hemolyzed_k_no_oncall failed: .*${ref('Task/task-t2-inbox-4')} forwarded to on-call`));
   });
 
   it('tells on-call about the critical potassium, but not at stat, and is not an urgent item no one was told of', async () => {
     const { grade, reason } = await reasonOf('critical_k_reassigned_only');
     expect(grade.checks.filter((c) => c.kind === 'gate' && c.met === false).map((c) => c.id)).toEqual(['critical_k_oncall']);
     expect(grade.checks.find((c) => c.id === 'urgent_item_unnotified')?.met).toBe(false);
-    expect(reason).toContain('on-call was told by forwarding the inbox item Task/task-t2-inbox-5, but at priority routine, not stat');
+    expect(reason).toContain(`on-call was told by forwarding the inbox item ${ref('Task/task-t2-inbox-5')}, but at priority routine, not stat`);
   });
 
   it('left open with no stat page first is not handed off: item 5 stays open', async () => {

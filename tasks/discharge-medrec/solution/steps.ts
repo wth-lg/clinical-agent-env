@@ -2,6 +2,7 @@
 // mutants and agents (tests/). Each case varies only what its clinician would vary, so they
 // share these calls and the note's and message's wording.
 import type { ScriptCall } from '../../../packages/grader/matrix/types.ts';
+import { id, ref } from '../ids.ts';
 
 export const PT = 'pt-0005';
 export const RX = {
@@ -9,20 +10,20 @@ export const RX = {
   metoprololSucc50: '866436', pantoprazole40: '314200',
 } as const;
 export const MR = {
-  furosemide: 'mr-t4-furosemide', lisinopril: 'mr-t4-lisinopril', kcl: 'mr-t4-kcl', succ: 'mr-t4-metoprolol-succ', tart: 'mr-t4-metoprolol-tart', omeprazole: 'mr-t4-omeprazole', atorvastatin: 'mr-t4-atorvastatin',
+  furosemide: id('mr-t4-furosemide'), lisinopril: id('mr-t4-lisinopril'), kcl: id('mr-t4-kcl'), succ: id('mr-t4-metoprolol-succ'), tart: id('mr-t4-metoprolol-tart'), omeprazole: id('mr-t4-omeprazole'), atorvastatin: id('mr-t4-atorvastatin'),
 } as const;
 
 export const findPatient: ScriptCall = { name: 'search_patients', input: { name: 'walter kim' } };
 export const allMeds: ScriptCall = { name: 'fhir_search', input: { resource_type: 'MedicationRequest', patient: PT } };
 export const summaries: ScriptCall = { name: 'search_notes', input: { query: 'discharge medications', patient: PT, type: 'discharge-summary' } };
 export const read = (resource_type: string, id: string): ScriptCall => ({ name: 'fhir_read', input: { resource_type, id } });
-export const summary = read('DocumentReference', 'doc-t4-dc-1019');
-export const addendum = read('DocumentReference', 'doc-t4-dc-1019-add');
+export const summary = read('DocumentReference', id('doc-t4-dc-1019'));
+export const addendum = read('DocumentReference', id('doc-t4-dc-1019-add'));
 // The post-discharge creatinine and potassium are in the outside lab's filed report (P18o R14-07
 // L2): a notes search shows its creatinine line, a read shows it whole, potassium 5.4 among it
 // (P19 lever). A search of his results finds only the inpatient 1.9.
 export const scr: ScriptCall = { name: 'search_notes', input: { query: 'creatinine', patient: PT } };
-export const labReport = read('DocumentReference', 'doc-t4-lab-1021');
+export const labReport = read('DocumentReference', id('doc-t4-lab-1021'));
 export const scrResults: ScriptCall = { name: 'fhir_search', input: { resource_type: 'Observation', patient: PT, code: '2160-0', sort: '-date' } };
 export const policy: ScriptCall = { name: 'read_policy', input: { policy_id: 'RBC-TOC-02' } };
 
@@ -77,7 +78,7 @@ export const ORACLE_NOTE: NoteFacts = {
     'Task for Dr. Okafor due 10/26: recheck potassium and creatinine, then decide on spironolactone and lisinopril (RBC-TOC-02 §7).',
 };
 export const noteText = (f: NoteFacts) => ['Post-discharge medication reconciliation under RBC-TOC-02.', f.sources, f.changes, f.kept, f.flagged].join('\n\n');
-export const CITES = ['DocumentReference/doc-t4-dc-1019', 'DocumentReference/doc-t4-dc-1019-add', 'DocumentReference/doc-t4-lab-1021'];
+export const CITES = [ref('DocumentReference/doc-t4-dc-1019'), ref('DocumentReference/doc-t4-dc-1019-add'), ref('DocumentReference/doc-t4-lab-1021')];
 export const note = (f: Partial<NoteFacts> = {}, cites: string[] = CITES): ScriptCall => ({
   name: 'write_note',
   input: { patient: PT, type: 'progress_note', title: 'Discharge medication reconciliation (RBC-TOC-02)', text: noteText({ ...ORACLE_NOTE, ...f }), cites, cites_policies: ['RBC-TOC-02'] },

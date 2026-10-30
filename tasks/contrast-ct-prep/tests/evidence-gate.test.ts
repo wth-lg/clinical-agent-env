@@ -14,6 +14,7 @@ import type { Script } from '../../../packages/grader/matrix/types.ts';
 import { checkText } from '../../contrast-ct-prep.check-text.ts';
 import { activeMeds, allergies, appointments, creatinineOrder, creatinines, ct, diphenhydramine, DONE, findPatient, finish, holdMetformin, kidneyNotes, message, note, policy, PT, prednisone, readEd, READS, readReaction, searchReaction, timesCalc } from '../solution/steps.ts';
 import { mutants } from './mutants.ts';
+import { ref } from '../ids.ts';
 
 const task = await loadMatrixTask('contrast-ct-prep');
 const env = matrixEnv();
@@ -33,21 +34,21 @@ describe('contrast-ct-prep evidence_before_orders', () => {
     const script = mutants.find((m) => m.id === 'exploit_orders_before_reading_0')!.script;
     const { met, late, found } = await probe('exploit_0', script);
     expect(met).toBe(false);
-    expect(late).toEqual(['AllergyIntolerance/alg-t5-iohexol', 'DocumentReference/doc-t5-ct-2019', 'Observation/obs-t5-scr-0924', 'Appointment/appt-t5-1026']);
-    expect(found).toBe('DocumentReference/doc-t5-ct-2019 and Observation/obs-t5-scr-0924 were not seen before the first order (ServiceRequest/sr-t0001) at step 5; AllergyIntolerance/alg-t5-iohexol and Appointment/appt-t5-1026 were seen only after it');
+    expect(late).toEqual([ref('AllergyIntolerance/alg-t5-iohexol'), ref('DocumentReference/doc-t5-ct-2019'), ref('Observation/obs-t5-scr-0924'), ref('Appointment/appt-t5-1026')]);
+    expect(found).toBe(`${ref('DocumentReference/doc-t5-ct-2019')} and ${ref('Observation/obs-t5-scr-0924')} were not seen before the first order (ServiceRequest/sr-t0001) at step 5; ${ref('AllergyIntolerance/alg-t5-iohexol')} and ${ref('Appointment/appt-t5-1026')} were seen only after it`);
   });
 
   it('fails a CT order placed before the reads even when the premedication comes after them', async () => {
     const { met, found } = await probe('ct_first', [{ calls: [findPatient] }, { calls: [ct()] }, ...READS.slice(1), ...ORDERS.slice(1)]);
     expect(met).toBe(false);
-    expect(found).toMatch(/^AllergyIntolerance\/alg-t5-iohexol was seen at step \d+, after the first order \(ServiceRequest\/sr-t0001\) at step 2$/);
+    expect(found).toMatch(new RegExp(`^${ref('AllergyIntolerance/alg-t5-iohexol')} was seen at step \\d+, after the first order \\(ServiceRequest/sr-t0001\\) at step 2$`));
   });
 
   it('names the one source read late', async () => {
     const { met, late, found } = await probe('creatinine_late', [{ calls: [findPatient] }, { calls: [appointments, allergies, snippet('hives'), readEd] }, ...ORDERS.slice(0, 1), { calls: [creatinines] }, ...ORDERS.slice(1)]);
     expect(met).toBe(false);
-    expect(late).toEqual(['Observation/obs-t5-scr-0924']);
-    expect(found).toBe('Observation/obs-t5-scr-0924 was seen at step 8, after the first order (ServiceRequest/sr-t0001) at step 6');
+    expect(late).toEqual([ref('Observation/obs-t5-scr-0924')]);
+    expect(found).toBe(`${ref('Observation/obs-t5-scr-0924')} was seen at step 8, after the first order (ServiceRequest/sr-t0001) at step 6`);
   });
 
   it.each([
@@ -70,20 +71,20 @@ describe('contrast-ct-prep evidence_before_orders', () => {
     const script: Script = [{ calls: [findPatient] }, { calls: [appointments, allergies, snippet('hives')] }, { calls: [creatinines, policy, snippet(query)] }, { calls: [timesCalc] }, ...ORDERS];
     const { met, late } = await probe(`ed_snippet_${query}`, script);
     expect(met).toBe(want);
-    if (!want) expect(late).toEqual(['DocumentReference/doc-t5-ed-1017']);
+    if (!want) expect(late).toEqual([ref('DocumentReference/doc-t5-ed-1017')]);
   });
 
   it('fails a metformin hold when the ED summary is never seen', async () => {
     const { met, found } = await probe('no_ed', [{ calls: [findPatient] }, { calls: [appointments, allergies, snippet('hives')] }, { calls: [creatinines, policy] }, { calls: [timesCalc] }, ...ORDERS]);
     expect(met).toBe(false);
-    expect(found).toBe('DocumentReference/doc-t5-ed-1017 was not seen before the metformin decision (MedicationRequest/mr-t5-metformin) at step 13');
+    expect(found).toBe(`${ref('DocumentReference/doc-t5-ed-1017')} was not seen before the metformin decision (${ref('MedicationRequest/mr-t5-metformin')}) at step 13`);
   });
 
   it('fails a metformin hold placed before the ED summary is read', async () => {
     const { met, late, found } = await probe('hold_before_ed', [{ calls: [findPatient] }, { calls: [appointments, allergies, snippet('hives')] }, { calls: [creatinines, policy] }, { calls: [timesCalc] }, { calls: [activeMeds] }, { calls: [holdMetformin] }, { calls: [readEd] }, ...ORDERS.slice(0, 2), ...ORDERS.slice(4)]);
     expect(met).toBe(false);
-    expect(late).toEqual(['DocumentReference/doc-t5-ed-1017']);
-    expect(found).toBe('DocumentReference/doc-t5-ed-1017 was seen at step 10, after the metformin decision (MedicationRequest/mr-t5-metformin) at step 9');
+    expect(late).toEqual([ref('DocumentReference/doc-t5-ed-1017')]);
+    expect(found).toBe(`${ref('DocumentReference/doc-t5-ed-1017')} was seen at step 10, after the metformin decision (${ref('MedicationRequest/mr-t5-metformin')}) at step 9`);
   });
 
   // verifier-phase-P19-T5-1 V3: the summary changes none of the CT, creatinine or premedication

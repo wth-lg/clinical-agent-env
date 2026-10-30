@@ -2,6 +2,7 @@
 // T1 declares no status-only case: it has no inbox items to close.
 import type { Agents, Script } from '../../../packages/grader/matrix/types.ts';
 import { activeMeds, apixabanUp, crclCalc, DONE, egfrCalc, findPatient, finish, gabapentinBid, modify, note, policy, RX, scrResults, weights } from '../solution/steps.ts';
+import { id } from '../ids.ts';
 
 const reads = [{ calls: [findPatient] }, { calls: [activeMeds] }, { calls: [scrResults, weights] }, { calls: [policy] }, { calls: [egfrCalc, crclCalc] }];
 
@@ -13,8 +14,8 @@ export const spray: Script = [
     calls: [
       apixabanUp,
       gabapentinBid,
-      modify('mr-t1-metformin', { value: 500, unit: 'mg', frequency: 'BID' }, 'Renal review: reduce', RX.metformin500),
-      modify('mr-t1-atorvastatin', { value: 20, unit: 'mg', frequency: 'QHS' }, 'Renal review: reduce', RX.atorvastatin20),
+      modify(id('mr-t1-metformin'), { value: 500, unit: 'mg', frequency: 'BID' }, 'Renal review: reduce', RX.metformin500),
+      modify(id('mr-t1-atorvastatin'), { value: 20, unit: 'mg', frequency: 'QHS' }, 'Renal review: reduce', RX.atorvastatin20),
       modify('mr-00047', { value: 5, unit: 'mg', frequency: 'QD' }, 'Renal review: reduce lisinopril'),
     ],
   },

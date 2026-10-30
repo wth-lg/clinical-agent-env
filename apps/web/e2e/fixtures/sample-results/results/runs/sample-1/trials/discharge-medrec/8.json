@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:discharge-medrec:8",
   "task_id": "discharge-medrec",
-  "task_version": "965884b761bc5ad11779cb00075c1733c7a75da18a35ce24bc963d7813580966",
-  "env_version": "30034978012f7183b86732e26325dc1c74e633c051cdd0666de36b471380707b",
-  "grader_task_version": "3a9db6291d196c9a0575eb04751f64b15da2e5f5c60cc6731c8f00f9132c9225",
-  "fixture_hash": "95d2f5194846a473cd83f112ae92618083e25e31c57d68f4fe9eea5bada20991",
+  "task_version": "44d1f2086670ed7f1981a96bc4b2d5a2dc81c009e5f11ccd62326aeff53eb83b",
+  "env_version": "d72a49a3db045ece5cd405f4ff30fabedf6a3744ff6c05fa607756fb9d591e77",
+  "grader_task_version": "ce4c17a4cca74c50db4d860096a39740cf9d5ebd70c7ba55ae46cb55b88daac0",
+  "fixture_hash": "72a5695ffadc2af6d65de536961a330023163910f7efc2e177c8537403a2cbd9",
   "state_hash": {
-    "initial": "95d2f5194846a473cd83f112ae92618083e25e31c57d68f4fe9eea5bada20991",
-    "final": "68a0ae63ce70516919798a5de89dc53ffd76713f463ad3bd402e6899f1b15760",
-    "replay_final": "68a0ae63ce70516919798a5de89dc53ffd76713f463ad3bd402e6899f1b15760"
+    "initial": "72a5695ffadc2af6d65de536961a330023163910f7efc2e177c8537403a2cbd9",
+    "final": "aa0838f61a75c4aa439e8c289af61aa18bfbf22da0d30950d71fde3e9918d6c6",
+    "replay_final": "aa0838f61a75c4aa439e8c289af61aa18bfbf22da0d30950d71fde3e9918d6c6"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -93,7 +93,7 @@
         "left": []
       },
       "ids": [
-        "MedicationRequest/mr-t4-kcl"
+        "MedicationRequest/mr-00398"
       ]
     },
     {
@@ -110,7 +110,7 @@
         ]
       },
       "ids": [
-        "MedicationRequest/mr-t4-lisinopril",
+        "MedicationRequest/mr-00399",
         "MedicationRequest/mr-t0003"
       ]
     },
@@ -160,7 +160,7 @@
         "pantoprazole": []
       },
       "ids": [
-        "MedicationRequest/mr-t4-omeprazole"
+        "MedicationRequest/mr-00402"
       ]
     },
     {
@@ -349,7 +349,7 @@
     "decisive_step": 10,
     "exposure": [
       {
-        "id": "DocumentReference/doc-t4-lab-1021",
+        "id": "DocumentReference/doc-00366",
         "first_exposed_step": 7,
         "first_shown_step": 7
       }

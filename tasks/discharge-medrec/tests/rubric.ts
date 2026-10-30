@@ -5,6 +5,7 @@
 // note uses it as a source.
 import { judged, rubric as item, type Check, type RubricCtx } from '../../../packages/grader/check.ts';
 import { expected } from '../expected.ts';
+import { id } from '../ids.ts';
 
 const PT = expected.patient;
 const noteText = (ctx: RubricCtx) => ctx.notes.filter((n) => n.patient === PT).map((n) => n.text).join('\n\n');
@@ -68,7 +69,7 @@ export const OLD_SUMMARY = new RegExp(
     String.raw`\b2025\b`,
     String.raw`\bmar(?:ch|\.)?\s+(?:0?[2-6]\b|of\b|admission|stay|discharge|summary)`,
     String.raw`\b0?3[/-]0?[2-6](?:[/-](?:20)?25)?\b`,
-    String.raw`doc-t4-dc-2025`,
+    id('doc-t4-dc-2025'),
     String.raw`new diagnosis`,
     String.raw`echocardiogram`,
     String.raw`(?:furosemide 20 mg|potassium chloride 20 meq)[^.\n]*\bstart`,
