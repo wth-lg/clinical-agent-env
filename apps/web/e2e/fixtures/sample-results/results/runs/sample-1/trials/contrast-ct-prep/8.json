@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:contrast-ct-prep:8",
   "task_id": "contrast-ct-prep",
-  "task_version": "e2e7ae7edf8459653b264c0c55f0518cfa249e6046bb24e01b9cb6e2efec7e7e",
-  "env_version": "cf60c2d3942b2cfd052e717fffcac4a027b5f3e7fbea7eda52b69938824e711e",
-  "grader_task_version": "9d8185ac8cd8374c2a57fc92bbed16113f934b9421aad33928d3cbc46b19c9cf",
-  "fixture_hash": "72a5695ffadc2af6d65de536961a330023163910f7efc2e177c8537403a2cbd9",
+  "task_version": "05d3c2379a8b8ea5f52576f208ddb9c677e312c2b8af79680ac5cc83e21092d6",
+  "env_version": "db64758140c0a65de44186502bc469d34ad1b73d79497bac0220d206edb5ba46",
+  "grader_task_version": "d6c7a7f7cbc3e8cd6b63314f434cda635e952f236fea0aacdb4c4971d34bb3bb",
+  "fixture_hash": "c53587ceac9994bb794dbb22ce89cd159d80a4802ab002fe473d18fa8d2c292d",
   "state_hash": {
-    "initial": "72a5695ffadc2af6d65de536961a330023163910f7efc2e177c8537403a2cbd9",
-    "final": "250784d0dde3283db17c9df25e373e3e8025b883817d211ddab93a8e91151428",
-    "replay_final": "250784d0dde3283db17c9df25e373e3e8025b883817d211ddab93a8e91151428"
+    "initial": "c53587ceac9994bb794dbb22ce89cd159d80a4802ab002fe473d18fa8d2c292d",
+    "final": "456abe6803743f082d3bc0b6ce3d2014633cd4be6cd4d89d957685fe7b29e39a",
+    "replay_final": "456abe6803743f082d3bc0b6ce3d2014633cd4be6cd4d89d957685fe7b29e39a"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -225,10 +225,10 @@
       "met": true,
       "evidence": {
         "active": [],
-        "MedicationRequest/mr-00407": "on-hold"
+        "MedicationRequest/mr-00189": "on-hold"
       },
       "ids": [
-        "MedicationRequest/mr-00407"
+        "MedicationRequest/mr-00189"
       ]
     },
     {
@@ -270,24 +270,24 @@
       "met": true,
       "evidence": {
         "first_order_write": 12,
-        "first_order": "MedicationRequest/mr-00407",
+        "first_order": "MedicationRequest/mr-00189",
         "metformin_write": 12,
-        "metformin_order": "MedicationRequest/mr-00407",
+        "metformin_order": "MedicationRequest/mr-00189",
         "seen": [
           {
-            "id": "AllergyIntolerance/alg-00043",
+            "id": "AllergyIntolerance/alg-00009",
             "step": 3
           },
           {
-            "id": "DocumentReference/doc-00369",
+            "id": "DocumentReference/doc-00048",
             "step": 5
           },
           {
-            "id": "Observation/obs-03487",
+            "id": "Observation/obs-01303",
             "step": 6
           },
           {
-            "id": "DocumentReference/doc-00373",
+            "id": "DocumentReference/doc-00052",
             "step": 8
           },
           {
@@ -432,8 +432,8 @@
           "ServiceRequest/sr-t0002"
         ],
         "want": [
-          "AllergyIntolerance/alg-00043",
-          "DocumentReference/doc-00369"
+          "AllergyIntolerance/alg-00009",
+          "DocumentReference/doc-00048"
         ]
       }
     },
@@ -600,7 +600,7 @@
     "decisive_step": 15,
     "exposure": [
       {
-        "id": "AllergyIntolerance/alg-00043",
+        "id": "AllergyIntolerance/alg-00009",
         "first_exposed_step": 3
       },
       {

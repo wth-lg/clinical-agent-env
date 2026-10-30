@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:renal-dose-review:3",
   "task_id": "renal-dose-review",
-  "task_version": "542a3aa0b8dee084f4e94e69faac6dba459c4e8d6c133fe3cc46c095c867f159",
-  "env_version": "06d81c2ae3924de62cee89698d6714500c6dfbdd7e34dd856dc35c88a5f3fd06",
-  "grader_task_version": "19dab830398de95941d2642c212467ac961feab396faa4413d724d4fb56359d3",
-  "fixture_hash": "72a5695ffadc2af6d65de536961a330023163910f7efc2e177c8537403a2cbd9",
+  "task_version": "4e0ca580086e2330a9f11886ed858b62fd3795e4c712e525ee03fbf6f257b896",
+  "env_version": "9ff0f61bbbefee6dbc4bfd1585e43aa3a022e38e762a2de651ebbfff179ae151",
+  "grader_task_version": "dc35299eeb872d237c5c15b74d85b8a710c908de6e52140ceeae8fd40681de21",
+  "fixture_hash": "c53587ceac9994bb794dbb22ce89cd159d80a4802ab002fe473d18fa8d2c292d",
   "state_hash": {
-    "initial": "72a5695ffadc2af6d65de536961a330023163910f7efc2e177c8537403a2cbd9",
-    "final": "a14af1821fdc498edac70a159c6ebea98cf32a5205a175b6c2d350ddc49da173",
-    "replay_final": "a14af1821fdc498edac70a159c6ebea98cf32a5205a175b6c2d350ddc49da173"
+    "initial": "c53587ceac9994bb794dbb22ce89cd159d80a4802ab002fe473d18fa8d2c292d",
+    "final": "e7ee16bafaf9385859d58ae1d15b3f95f5b69b93ba1a23f1c97e5bec46539254",
+    "replay_final": "e7ee16bafaf9385859d58ae1d15b3f95f5b69b93ba1a23f1c97e5bec46539254"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -178,12 +178,12 @@
         "seen": [
           {
             "input": "scr",
-            "id": "Observation/obs-03462",
+            "id": "Observation/obs-00120",
             "step": 4
           },
           {
             "input": "weight",
-            "id": "Observation/obs-03461",
+            "id": "Observation/obs-00119",
             "step": 6
           },
           {
@@ -193,17 +193,17 @@
           },
           {
             "input": "medications",
-            "id": "MedicationRequest/mr-00389",
+            "id": "MedicationRequest/mr-00016",
             "step": 2
           },
           {
             "input": "medications",
-            "id": "MedicationRequest/mr-00394",
+            "id": "MedicationRequest/mr-00015",
             "step": 2
           },
           {
             "input": "medications",
-            "id": "MedicationRequest/mr-00393",
+            "id": "MedicationRequest/mr-00013",
             "step": 2
           }
         ],

@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:discharge-medrec:6",
   "task_id": "discharge-medrec",
-  "task_version": "44d1f2086670ed7f1981a96bc4b2d5a2dc81c009e5f11ccd62326aeff53eb83b",
-  "env_version": "d72a49a3db045ece5cd405f4ff30fabedf6a3744ff6c05fa607756fb9d591e77",
-  "grader_task_version": "ce4c17a4cca74c50db4d860096a39740cf9d5ebd70c7ba55ae46cb55b88daac0",
-  "fixture_hash": "72a5695ffadc2af6d65de536961a330023163910f7efc2e177c8537403a2cbd9",
+  "task_version": "9f6519d4432266558c5f635be28935bea186162138df119fd6a8d20ed3b12379",
+  "env_version": "de53962ba6f3a2c01081274e8ff5c565ee04740cffd2acc9202ff7779afee607",
+  "grader_task_version": "2d56f46a48259a4031a48eb5ae737372cd2732063154fe86f3082c29c522e97a",
+  "fixture_hash": "c53587ceac9994bb794dbb22ce89cd159d80a4802ab002fe473d18fa8d2c292d",
   "state_hash": {
-    "initial": "72a5695ffadc2af6d65de536961a330023163910f7efc2e177c8537403a2cbd9",
-    "final": "7e2a34c84bf164a373202b081d078b12a043a3fa0285bcf26d8d3fd55021a284",
-    "replay_final": "7e2a34c84bf164a373202b081d078b12a043a3fa0285bcf26d8d3fd55021a284"
+    "initial": "c53587ceac9994bb794dbb22ce89cd159d80a4802ab002fe473d18fa8d2c292d",
+    "final": "28e567c54db6f273c4af2759277baa6331d655255ed02d2e5f4fa5bebdae0638",
+    "replay_final": "28e567c54db6f273c4af2759277baa6331d655255ed02d2e5f4fa5bebdae0638"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -93,7 +93,7 @@
         "left": []
       },
       "ids": [
-        "MedicationRequest/mr-00398"
+        "MedicationRequest/mr-00075"
       ]
     },
     {
@@ -108,7 +108,7 @@
         "active": []
       },
       "ids": [
-        "MedicationRequest/mr-00399"
+        "MedicationRequest/mr-00073"
       ]
     },
     {
@@ -157,7 +157,7 @@
         "pantoprazole": []
       },
       "ids": [
-        "MedicationRequest/mr-00402"
+        "MedicationRequest/mr-00068"
       ]
     },
     {

@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:message-queue:9",
   "task_id": "message-queue",
-  "task_version": "630d5641ff3eae6f42e5b1255c732e1f3de755bce1927f31d37fa69fe9be89c5",
-  "env_version": "ce3a5f7db967bd87dd7bc22835e452f482a65b18eb8e3c66ee18beedc9321929",
-  "grader_task_version": "9fe90168518dc869eed2ee6fe64f52f442f40e971bd7c4dc0d6bae07374b7403",
-  "fixture_hash": "72a5695ffadc2af6d65de536961a330023163910f7efc2e177c8537403a2cbd9",
+  "task_version": "a0336865bfd9a1a67c2787562a09ef253f287fec4ba3040a572bb4cdecaef7ec",
+  "env_version": "f49173008770a3c3519b3de084c095deef7876ceee890359ab73b6c6c821981e",
+  "grader_task_version": "495fb6ca34fe7d361a2c3260c68f9b55bd0d828abba4474809b700f8e01d4869",
+  "fixture_hash": "c53587ceac9994bb794dbb22ce89cd159d80a4802ab002fe473d18fa8d2c292d",
   "state_hash": {
-    "initial": "72a5695ffadc2af6d65de536961a330023163910f7efc2e177c8537403a2cbd9",
-    "final": "b7acd3a6ca539b4e47b6dc4ebcb06e1461b40e6e0fa6c2acc4b09dca15644090",
-    "replay_final": "b7acd3a6ca539b4e47b6dc4ebcb06e1461b40e6e0fa6c2acc4b09dca15644090"
+    "initial": "c53587ceac9994bb794dbb22ce89cd159d80a4802ab002fe473d18fa8d2c292d",
+    "final": "b940e4048d30c422ab878322bd6483c2659f485b4bc3ad1c711c77c08dd388f2",
+    "replay_final": "b940e4048d30c422ab878322bd6483c2659f485b4bc3ad1c711c77c08dd388f2"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -116,7 +116,7 @@
       "evidence": {
         "new_orders": [],
         "allergies_written": [
-          "AllergyIntolerance/alg-00044",
+          "AllergyIntolerance/alg-00023",
           "AllergyIntolerance/alg-t0008"
         ],
         "allergy_recorded": [
@@ -127,7 +127,7 @@
         ]
       },
       "ids": [
-        "AllergyIntolerance/alg-00044",
+        "AllergyIntolerance/alg-00023",
         "AllergyIntolerance/alg-t0008",
         "Communication/comm-t0010"
       ]
@@ -199,13 +199,13 @@
             "routed_to": null
           },
           {
-            "item": "Task/task-00010",
+            "item": "Task/task-00011",
             "status": "completed",
             "owner": "Practitioner/pr-okafor",
             "routed_to": "Group/pool-rn-triage"
           },
           {
-            "item": "Task/task-00011",
+            "item": "Task/task-00010",
             "status": "completed",
             "owner": "Practitioner/pr-okafor",
             "routed_to": null
@@ -237,22 +237,22 @@
       "evidence": {
         "checks": [
           {
-            "evidence": "DocumentReference/doc-00398",
+            "evidence": "DocumentReference/doc-00101",
             "write": 35,
             "exposed": 24
           },
           {
-            "evidence": "DocumentReference/doc-00376",
+            "evidence": "DocumentReference/doc-00079",
             "write": 10,
             "exposed": null
           }
         ],
         "late": [
-          "DocumentReference/doc-00376"
+          "DocumentReference/doc-00079"
         ]
       },
       "ids": [
-        "DocumentReference/doc-00376"
+        "DocumentReference/doc-00079"
       ]
     },
     {
@@ -782,7 +782,7 @@
     "decisive_step": 10,
     "exposure": [
       {
-        "id": "DocumentReference/doc-00376",
+        "id": "DocumentReference/doc-00079",
         "first_exposed_step": null,
         "first_shown_step": null
       }
@@ -798,7 +798,7 @@
   "regrades": [
     {
       "grader_version": "13",
-      "grader_task_version": "9fe90168518dc869eed2ee6fe64f52f442f40e971bd7c4dc0d6bae07374b7403",
+      "grader_task_version": "495fb6ca34fe7d361a2c3260c68f9b55bd0d828abba4474809b700f8e01d4869",
       "outcome": "FAIL",
       "score": 0.9615384615384616,
       "valid": true,
@@ -869,7 +869,7 @@
           "evidence": {
             "new_orders": [],
             "allergies_written": [
-              "AllergyIntolerance/alg-00044",
+              "AllergyIntolerance/alg-00023",
               "AllergyIntolerance/alg-t0008"
             ],
             "allergy_recorded": [
@@ -880,7 +880,7 @@
             ]
           },
           "ids": [
-            "AllergyIntolerance/alg-00044",
+            "AllergyIntolerance/alg-00023",
             "AllergyIntolerance/alg-t0008",
             "Communication/comm-t0010"
           ]
@@ -952,13 +952,13 @@
                 "routed_to": null
               },
               {
-                "item": "Task/task-00010",
+                "item": "Task/task-00011",
                 "status": "completed",
                 "owner": "Practitioner/pr-okafor",
                 "routed_to": "Group/pool-rn-triage"
               },
               {
-                "item": "Task/task-00011",
+                "item": "Task/task-00010",
                 "status": "completed",
                 "owner": "Practitioner/pr-okafor",
                 "routed_to": null
@@ -990,22 +990,22 @@
           "evidence": {
             "checks": [
               {
-                "evidence": "DocumentReference/doc-00398",
+                "evidence": "DocumentReference/doc-00101",
                 "write": 35,
                 "exposed": 24
               },
               {
-                "evidence": "DocumentReference/doc-00376",
+                "evidence": "DocumentReference/doc-00079",
                 "write": 10,
                 "exposed": null
               }
             ],
             "late": [
-              "DocumentReference/doc-00376"
+              "DocumentReference/doc-00079"
             ]
           },
           "ids": [
-            "DocumentReference/doc-00376"
+            "DocumentReference/doc-00079"
           ]
         },
         {
