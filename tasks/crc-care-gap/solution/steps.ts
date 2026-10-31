@@ -4,18 +4,19 @@
 import type { ScriptCall, ScriptTurn } from '../../../packages/grader/matrix/types.ts';
 import { id } from '../ids.ts';
 
-// The panel by design label (design section 4, "T3" panel table).
+// The panel by class and instance (expected.ts CLASSES; overlay.ts E).
 export const PT = {
-  E1: 'pt-0014', E2: 'pt-0017', E3: 'pt-0018', E4: 'pt-0023', E5: 'pt-0011', E6: 'pt-0021',
-  E7: 'pt-0009', E8: 'pt-0019', E9: 'pt-0020', E10: 'pt-0022', E11: 'pt-0024', E12: 'pt-0025',
-  E15: 'pt-0034', E16: 'pt-0035',
+  A1: 'pt-0024', A2: 'pt-0014', B1: 'pt-0021', B2: 'pt-0036', C1: 'pt-0011', C2: 'pt-0020', D1: 'pt-0022', D2: 'pt-0018',
+  G1: 'pt-0009', G2: 'pt-0019', H1: 'pt-0034', H2: 'pt-0035', FILLER: 'pt-0037',
 } as const;
 export type Label = keyof typeof PT;
 export const MEMBERS = Object.values(PT);
-export const GAPS: Label[] = ['E2', 'E3', 'E4', 'E8', 'E10', 'E16'];
+// The open gaps, in the order the oracle orders and messages them.
+export const GAPS: Label[] = ['A1', 'A2', 'B2', 'C1', 'D1', 'D2', 'G2', 'H2'];
+// The members who need neither an order nor a message.
+export const NO_CONTACT: Label[] = ['B1', 'C2', 'G1', 'H1', 'FILLER'];
 
-// The screening procedures and stool tests RBC-QM-02 §3 counts, and total colectomy.
-export const PROCEDURE_CODES = '73761001,44441009,418714002,26390003';
+// The stool tests RBC-QM-02 §3 counts.
 export const STOOL_CODES = '2335-8,29771-3,57905-2,58453-2,77354-9,77353-1';
 
 export const policy: ScriptCall = { name: 'read_policy', input: { policy_id: 'RBC-QM-02' } };
@@ -25,37 +26,38 @@ export const read = (resource_type: string, id: string): ScriptCall => ({ name: 
 export const search = (resource_type: string, patient: string, more: { [k: string]: string | number } = {}): ScriptCall => ({ name: 'fhir_search', input: { resource_type, patient, ...more } });
 export const notes = (query: string, patient?: string): ScriptCall => ({ name: 'search_notes', input: { query, ...(patient ? { patient } : {}) } });
 
-// The notes step: search_notes matches literal words, so a reviewer looking for colon surgery
-// searches the words a note would use. The operative note's row ('…Service: Colorectal
-// Surgery…') only references it; reading it shows the total proctocolectomy.
-export const NOTE_SEARCH = notes('colectomy colon colorectal');
+// B1's scanned outside operative note: her document list shows it as a scanned outside record,
+// and reading it shows the total proctocolectomy (RBC-QM-02 §7: exclusions may be only in notes).
 export const OPNOTE = read('DocumentReference', id('doc-t3-1856'));
 
-// RBC-QM-02 §4's nursing home clause applies at 66 or older at the end of 2026: the members of the
-// population that old (E5 is 76, outside it). Their social history holds the housing status
-// assessment (LOINC 71802-3) that records long-term nursing home residence (E15) or a home (E16).
-export const OVER_65: Label[] = ['E7', 'E8', 'E15', 'E16'];
+// RBC-QM-02 §4's nursing home and frailty clauses apply at 66 or older at the end of 2026. Their
+// social history holds the housing status assessment (LOINC 71802-3).
+export const OVER_65: Label[] = ['G1', 'G2', 'H1', 'H2'];
 export const housing = (p: string): ScriptCall => search('Observation', p, { category: 'social-history' });
 
-// One patient's chart review: the Patient and everything §3 and §4 read.
+// One member's chart review: the Patient and everything §3, §4 and §7 read. Procedures, orders,
+// medications and documents unfiltered: a partial colectomy is coded by its words, a colonoscopy
+// order is not a colonoscopy, a stopped medication is not active, and a scanned note is a document.
 export const chart = (p: string): ScriptCall[] => [
   read('Patient', p),
-  search('Procedure', p, { code: PROCEDURE_CODES }),
+  search('Procedure', p, { count: 50 }),
   search('Observation', p, { code: STOOL_CODES }),
   search('Condition', p, { count: 50 }),
-  search('MedicationRequest', p, { status: 'active' }),
+  search('MedicationRequest', p, { count: 50 }),
   search('EpisodeOfCare', p),
-  search('ServiceRequest', p, { status: 'active' }),
+  search('ServiceRequest', p, { count: 50 }),
+  search('Appointment', p),
+  search('DocumentReference', p, { count: 50 }),
 ];
+export const CHART_STEPS = chart('pt-0000').length;
 
 // The reads, one turn per kind across the panel, as a careful reviewer batches them, then the
-// housing status of the members 66 or older.
+// housing status of the members 66 or older, then the scanned outside record.
 export const reads = (patients: readonly string[] = MEMBERS): ScriptTurn[] => [
   { calls: [policy, groups] },
   { calls: [group] },
-  ...[0, 1, 2, 3, 4, 5, 6].map((i) => ({ calls: patients.map((p) => chart(p)[i]!) })),
+  ...Array.from({ length: CHART_STEPS }, (_, i) => ({ calls: patients.map((p) => chart(p)[i]!) })),
   { calls: OVER_65.map((l) => PT[l]).filter((p) => patients.includes(p)).map(housing) },
-  { calls: [NOTE_SEARCH] },
   { calls: [OPNOTE] },
 ];
 
@@ -93,37 +95,34 @@ export const actions = (
   send: (p: string, order: string) => ScriptCall = (p, ref) => outreach(p, ref),
 ): ScriptCall[] => labels.flatMap((l, i) => [order(PT[l]), send(PT[l], fitOrder(start + 2 * i))]);
 
-// The two live exploit runs of crc-care-gap (evidence/builder-141/live-exploit-crc-care-gap.txt;
-// results/exploit/crc-care-gap/{0,1}.jsonl): fhir_read of the decisive ids from expected.ts (five
-// then; E16's birth date since P19, which the same method would read), a FIT order for each gap, then a bare message to each with nothing in about. Their mutants
-// (tests/mutants.ts) and the verifier's reruns of them with about filled in (tests/alternatives.ts)
-// share these calls. The finish is the oracle's table, which keeps the judge cache warm: the runs
-// copied their tables from expected.ts, the answer-key weakness the triage of 2026-10-28T13:40Z
-// records rather than fixes (C1).
-export const keyReads: ScriptTurn = { calls: [read('Procedure', id('proc-t3-2591')), read('Observation', id('obs-t3-7342')), read('Condition', id('cond-t3-5463')), read('Observation', id('obs-t3-3906')), read('Patient', PT.E4), read('Patient', PT.E16)] };
-export const ORDER_SEQ: Label[] = ['E2', 'E3', 'E8', 'E10', 'E4', 'E16'];
-export const bareOrders: ScriptTurn = { calls: ORDER_SEQ.map((l) => ({ name: 'order_service', input: { patient: PT[l], code: FIT, priority: 'routine', occurrence_start: '2026-10-23', reason: 'CRC screening gap' } })) };
+// The two live exploit runs of crc-care-gap on the 14-member panel (evidence/builder-141): fhir_read
+// of the decisive ids, a FIT order for each gap, then a bare message to each with nothing in about.
+// On the probe panel the same method reads every gap member's decisive ids (expected.ts). Their
+// mutant and the alternative with about filled in share these calls.
+export const keyReads = (decisive: (p: string) => readonly string[]): ScriptTurn => ({
+  calls: GAPS.flatMap((l) => decisive(PT[l]).map((d) => read(d.slice(0, d.indexOf('/')), d.slice(d.indexOf('/') + 1)))),
+});
+export const bareOrders: ScriptTurn = { calls: GAPS.map((l) => ({ name: 'order_service', input: { patient: PT[l], code: FIT, priority: 'routine', occurrence_start: '2026-10-23', reason: 'CRC screening gap' } })) };
 export const bare = (l: Label, subject: string, body: string, about: string[] = []): ScriptCall => ({ name: 'send_message', input: { recipient: `Patient/${PT[l]}`, priority: 'routine', subject, body, about } });
 
 // The final table's rows; a case overrides the ones its clinician writes differently.
 export const ROWS: Record<Label, string> = {
-  E1: '| Santo Pagac | Screening up to date | Colonoscopy 2018-05-21, within the measurement period or the 9 years before it (2017-2026) |',
-  E2: '| Stephan Herman | Open gap: FIT kit ordered, outreach sent | Last colonoscopy 2016-11-15, before the 2017-2026 window |',
-  E3: '| Lance Muller | Open gap: FIT kit ordered, outreach sent | sDNA-FIT 2023-11-20, before the 2024-2026 window |',
-  E4: '| Burma Leuschke | Open gap: FIT kit ordered, outreach sent | Born 1980-12-15: 46 at the end of 2026, in the population; no screening on record |',
-  E5: '| Marilu Gaona | Not in the population | Born 1950-11-20: 76 at the end of 2026, over 75 |',
-  E6: '| Ángela Vigil | Excluded | Total proctocolectomy (outside operative note, 2015) |',
-  E7: '| Elly Trantow | Excluded | Age 72 with frailty and a dementia medication (donepezil): advanced illness |',
-  E8: "| Harrison O'Keefe | Open gap: FIT kit ordered, outreach sent | Age 69 with frailty but no advanced illness or dementia medication, so not excluded; no screening on record |",
-  E9: '| Kelsie Rohan | Excluded | In hospice care since 2026-08-20 |',
-  E10: '| Tiny Koss | Open gap: FIT kit ordered, outreach sent | FIT 2025-12-03 was in 2025; a FIT counts only in the measurement period |',
-  E11: '| Delaine MacGyver | Open gap, no new order | FIT order already active since 2026-09-30; FOBT 2024-06-11 does not count |',
-  E12: '| Danika Ullrich | Screening up to date | CT colonography 2022-03-08, within the measurement period or the 4 years before it (2022-2026) |',
-  E15: '| Rickey Sipes | Excluded | Age 72, living long term in a nursing home (housing status 2026-02-10: lives in nursing home, Maple Grove Care Center) |',
-  E16: '| Elvin Wolff | Open gap: FIT kit ordered, outreach sent | Age 68; his May 2026 skilled nursing stay was short-term rehab ending in discharge home, not long-term nursing home residence; no screening on record |',
+  A1: '| Delaine MacGyver | Open gap: FIT kit ordered, outreach sent | Colonoscopy ordered 2025-03-12 but never done (order still open, window passed); an order is not screening; FOBT 2024-06-11 is before the measurement period |',
+  A2: '| Santo Pagac | Open gap: FIT kit ordered, outreach sent | Colonoscopy ordered 2026-02 and booked for 2026-04-14, but he did not attend (no-show); not done, so not screening |',
+  B1: '| Ángela Vigil | Excluded | Total proctocolectomy in 2015 (scanned outside operative note): total colectomy |',
+  B2: '| Nick Bartoletti | Open gap: FIT kit ordered, outreach sent | Sigmoid colectomy 2021 is a partial colectomy, which does not exclude; no screening on record |',
+  C1: '| Marilu Gaona | Open gap: FIT kit ordered, outreach sent | Hospice 2025-06-09 to 2025-10-20, revoked before the measurement period, so not excluded; no screening on record |',
+  C2: '| Kelsie Rohan | Excluded | Hospice care 2026-06-16 to 2026-08-21, during part of the measurement period (later revoked) |',
+  D1: '| Tiny Koss | Open gap: FIT kit ordered, outreach sent | FIT collected 2025-12-29 (resulted 2026-01-05): collected before the measurement period, so it does not count |',
+  D2: '| Lance Muller | Open gap: FIT kit ordered, outreach sent | sDNA-FIT collected 2023-12-27 (resulted 2024-01-08): collected before the 2024-2026 window |',
+  G1: '| Elly Trantow | Excluded | Age 72 with frailty and a dementia medication (donepezil) taken now: advanced illness |',
+  G2: "| Harrison O'Keefe | Open gap: FIT kit ordered, outreach sent | Age 69 with frailty, but donepezil was stopped in March 2023, before 2025, and no advanced illness diagnosis, so not excluded; no screening on record |",
+  H1: '| Rickey Sipes | Excluded | Age 72, living long term in a nursing home (housing status 2026-02-10: lives in nursing home, Maple Grove Care Center) |',
+  H2: '| Elvin Wolff | Open gap: FIT kit ordered, outreach sent | Age 68; his May 2026 skilled nursing stay was short-term rehab ending in discharge home (housing status: own home), not long-term nursing home residence; no screening on record |',
+  FILLER: '| Fumiko Pouros | Not in the population | Age 35 at the end of 2026, under 46 |',
 };
 export const table = (rows: Partial<Record<Label, string>> = {}): string =>
-  ['CRC outreach for Okafor CRC 2026 under RBC-QM-02: 6 FIT kits ordered and 6 outreach messages sent.', '', '| Patient | Status | Reason |', '|---|---|---|',
+  ['CRC outreach for Okafor CRC 2026 under RBC-QM-02: 8 FIT kits ordered and 8 outreach messages sent.', '', '| Patient | Status | Reason |', '|---|---|---|',
     ...(Object.keys(ROWS) as Label[]).map((l) => rows[l] ?? ROWS[l])].join('\n');
 
 export const finish = (summary: string = table()): ScriptCall => ({ name: 'finish', input: { summary } });
