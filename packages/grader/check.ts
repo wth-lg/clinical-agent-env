@@ -118,7 +118,8 @@ export interface Step {
   // exposes nothing, so no other field of the step says what was searched. whole is true when the
   // page held every match (offset 0 or none, no next_offset). offset (from the call) and
   // next_offset (from the result) let a gate join a run of pages that together held every match
-  // (ruling R27); category lets it refuse a filter that would hide the absent kind.
+  // (ruling R27); category lets it refuse a filter that would hide the absent kind; sort ('date'
+  // or '-date', absent for the default order) lets it require one order across a run of pages.
   search?: StepSearch;
 }
 
@@ -130,6 +131,7 @@ export interface StepSearch {
   date_ge?: string;
   date_le?: string;
   status?: string;
+  sort?: string;
   offset?: number;
   next_offset?: number;
   whole: boolean;

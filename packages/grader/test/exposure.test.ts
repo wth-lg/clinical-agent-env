@@ -160,7 +160,7 @@ describe('exposure from the read tools', () => {
         read('search_notes', { query: 'weight' }),
       ]),
     );
-    expect(steps[0]!.search).toEqual({ type: 'Observation', patient: 'Patient/pt-1', code: 'http://loinc.org|29463-7', category: 'vital-signs', date_ge: '2026-01-01', date_le: '2026-12-31', status: 'final', offset: 0, whole: true });
+    expect(steps[0]!.search).toEqual({ type: 'Observation', patient: 'Patient/pt-1', code: 'http://loinc.org|29463-7', category: 'vital-signs', date_ge: '2026-01-01', date_le: '2026-12-31', status: 'final', sort: '-date', offset: 0, whole: true });
     expect(steps[1]!.search).toEqual({ type: 'EpisodeOfCare', patient: 'Patient/pt-1', date_ge: '2026-01-01', whole: true });
     expect(steps[1]!.exposed_ids).toEqual([]);
     for (const s of steps.slice(2)) expect('search' in s).toBe(false);
