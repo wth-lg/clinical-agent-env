@@ -1,88 +1,43 @@
 // discharge-medrec's gate checks in words (packages/core/explain.ts CheckText): what each one
 // requires, and the first difference its evidence (tests/grader.ts) shows. The Tasks view and the
 // failure reasons read it. It sits beside the task directory, not in it, so neither task version
-// covers it: rewording it regrades nothing.
-import { fields, items, listed, show, type CheckText } from '../packages/core/explain.ts';
+// covers it: rewording it regrades nothing. Each failed item of an item gate also carries its own
+// why (packages/grader/items.ts), which the trial page lists.
+import { fields, items, show, type CheckText } from '../packages/core/explain.ts';
 import { expected } from './discharge-medrec/expected.ts';
-import { ref } from './discharge-medrec/ids.ts';
 
-const TIMES: Record<number, string> = { 1: 'once a day', 2: 'twice a day', 3: 'three times a day' };
-const perDay = (n: unknown) => (typeof n === 'number' && n in TIMES ? TIMES[n]! : `${show(n)} times a day`);
-
-// One active order of the drug at its daily dose and frequency: the first thing that differs.
-const oneAt = (drug: string, spec: { daily_mg: number; per_day: number }) => (ev: Record<string, unknown>): string => {
-  const active = items(ev.active);
-  if (active.length === 0) return `no active ${drug} order`;
-  if (active.length > 1) return `${active.length} active ${drug} orders (${listed(active)})`;
-  if (ev.mg_per_day !== spec.daily_mg) return ev.mg_per_day === null ? `the ${drug} dose per day cannot be read` : `${drug} is ${show(ev.mg_per_day)} mg a day`;
-  return ev.per_day !== spec.per_day ? `${drug} is given ${perDay(ev.per_day)}` : '';
-};
-const dose = (drug: string, spec: { daily_mg: number; per_day: number }) => `${drug} ${spec.daily_mg} mg ${perDay(spec.per_day)} on one active order`;
-
-const F = expected.furosemide;
-const K_DUE = '2026-10-23 to 2026-10-28';
-const L = expected.lisinopril;
-const K = expected.potassium_chloride;
-const S = expected.sources;
-const OMEPRAZOLE = expected.unchanged.find((k) => k === ref('MedicationRequest/mr-t4-omeprazole'))!;
-const KEPT = expected.unchanged.filter((k) => k !== OMEPRAZOLE);
+const N = expected.items.length;
 
 export const checkText: CheckText = {
-  furosemide_40: {
-    requires: `${dose('furosemide', F)}, replacing ${F.request}`,
-    found: (ev) => oneAt('furosemide', F)(ev) || `the old order ${F.request} is still ${show(ev.old_request)}`,
-  },
-  spironolactone_not_started: {
-    requires: `no spironolactone order: the potassium of ${expected.k.mmol_l} mmol/L in ${expected.k.id} is above ${expected.k.threshold} (RBC-TOC-02 §7)`,
-    found: (ev) => `a spironolactone order (${listed(items(ev.found))})`,
-  },
-  kcl_stopped: {
-    requires: `potassium chloride stopped (${K.request}), with no other active or held order of it`,
+  med_actions: {
+    requires: `each of the ${N} worklist items ends where RBC-TOC-02 puts it: dose changes on the existing order at the addendum's or the discharge line's dose, stops, home drugs kept over inpatient substitutes, a held ACE inhibitor held (with a PCP Task) or resumed by the most recent potassium, and each flag the policy asks for sent to the PCP with the order or the fill history in about (a fill-history flag naming its drug); an item with no medication write passes only once its deciding records were seen`,
     found: (ev) => {
-      const left = items(ev.left);
-      return ev.status !== 'stopped' && ev.status !== 'completed' ? `${K.request} is ${show(ev.status)}` : `${listed(left)} is still ${left.length > 1 ? 'open' : 'active or on hold'}`;
+      const failed = items(ev.failed_items);
+      const why = items(ev.why);
+      return `${show(why[0] ?? failed[0])}${failed.length > 1 ? ` (and ${failed.length - 1} more item${failed.length > 2 ? 's' : ''})` : ''}`;
     },
   },
-  lisinopril_held: {
-    requires: `${L.request} still on hold and no active lisinopril order: the potassium of ${expected.k.mmol_l} mmol/L is above ${expected.k.threshold} (RBC-TOC-02 §7)`,
+  decisive_seen: {
+    requires: "each item's deciding records seen at some step of the trial: the record read whole, or one search snippet showing the facts of the line that decides the item (the discharge summary's line for the item, the signed addendum's correction, the fill history's fill line, the outside lab report's potassium line); a resume also needs a creatinine after discharge that meets its condition, from any record that shows one",
     found: (ev) => {
-      const active = items(ev.active);
-      if (active.length > 0) return `an active lisinopril order (${listed(active)})`;
-      return `${L.request} is ${show(ev.status)}`;
+      const unseen = items(ev.unseen);
+      const first = fields(unseen[0]);
+      return `${show(items(first.sources)[0])}, which decides ${show(first.item)}, was never seen${unseen.length > 1 ? ` (and ${unseen.length - 1} more item${unseen.length > 2 ? 's' : ''})` : ''}`;
     },
   },
-  k_recheck_task: {
-    requires: `a Task for the patient's PCP due ${K_DUE}, 2 to 7 days after the potassium result, or an order that measures potassium starting then (RBC-TOC-02 §7)`,
-    found: () => `no Task for the PCP due ${K_DUE} and no potassium order then`,
-  },
-  others_unchanged: {
-    requires: `${listed(KEPT)} left active and unchanged, and no other new medication order`,
+  nothing_else: {
+    requires: 'no medication write RBC-TOC-02 forbids: no held potassium-raising drug made active and no new order of a stopped one while potassium is above 5.0 (§7), no inpatient substitute ordered and no kept home drug ended (§3), no second order of a drug (§4), no change to an order whose fills fall short (§5b), no order of a filled drug the clinic never ordered (§5a), no change to or new order of a drug no item of that patient decides, and no medication write for a patient off the list',
     found: (ev) => {
-      const touched = items(ev.touched);
-      if (touched.length > 0) return `${show(touched[0])} was changed`;
-      return `a new medication order ${show(items(ev.extra)[0])}`;
+      const extra = items(ev.extra);
+      const failed = items(ev.failed_items);
+      return `${show(extra[0])} was written${failed[0] !== undefined ? ` (item ${show(failed[0])})` : ''}${extra.length > 1 ? ` (and ${extra.length - 1} more)` : ''}`;
     },
   },
-  omeprazole_kept: {
-    requires: `omeprazole (${OMEPRAZOLE}) left active and unchanged, and no pantoprazole order`,
+  seen_before_change: {
+    requires: "each item's first medication write, and the recheck Task or flag that satisfies it, after the deciding records the trial saw were shown: the discharge summary's line for the item, the signed addendum's correction, the fill history, and the outside lab report's potassium line and a creatinine after discharge where the item rests on them",
     found: (ev) => {
-      const panto = items(ev.pantoprazole);
-      if (panto.length > 0) return `a pantoprazole order (${listed(panto)})`;
-      return ev.omeprazole === 'active' ? 'the omeprazole order was rewritten' : `omeprazole is ${show(ev.omeprazole)}`;
-    },
-  },
-  pcp_message: {
-    requires: `a message to the patient's PCP about ${listed(expected.message_about)}, or a Task for the PCP whose focus is it`,
-    found: (ev) => `no message or Task to the PCP (${listed(items(ev.pcp))}) about it`,
-  },
-  sources_before_orders: {
-    requires:
-      `each medication order write after its source was shown (RBC-TOC-02 §1): the discharge summary's line (${S.summary}) for the furosemide and potassium chloride changes and its resume rule for lisinopril, ` +
-      `the addendum's correction (${S.addendum}) for spironolactone, the creatinine (${expected.scr.id}) for lisinopril (§2), the potassium (${expected.k.id}) for either (§7), and the summary read before an order of any other drug`,
-    found: (ev) => {
-      const l = fields(items(ev.late)[0]);
-      const source = typeof l.line === 'string' ? `"${l.line}" in ${show(l.id)}` : show(l.id);
-      return `the ${show(l.change)} order at step ${show(l.step)} came before ${source} was shown (${show(l.policy)})`;
+      const late = fields(items(ev.late)[0]);
+      return `the ${show(late.item)} write came before ${show(items(late.sources)[0])} was shown`;
     },
   },
 };
