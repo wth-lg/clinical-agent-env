@@ -1,7 +1,7 @@
-// T6's expected end state, computed from the initial world by the four protocols (design section
-// 4, "Double derivation"): each open item in Dr. Okafor's messages queue is read and sorted by
-// what its message asks, then RBC-TRI-02, RBC-RX-05 and RBC-MED-04 decide it from the chart. It
-// never imports expected.ts or overlay constants (lint: no-policy-expected-import).
+// T6's expected end state, computed from the initial world by RBC-RX-05 (design section 4, "Double
+// derivation"): each open item in Dr. Okafor's messages queue is a refill request for one of the
+// patient's active orders, decided on the chart's valid results by §1-§5. It never imports
+// expected.ts or overlay constants (lint: no-policy-expected-import).
 import { NOW_DATE } from '../../packages/env/clock.ts';
 import type { Json } from '../../packages/grader/check.ts';
 import type { WorldView } from '../../packages/grader/matrix/types.ts';
@@ -10,163 +10,152 @@ import { clinicDate, dailyDose, drugOf, isActive, type MedicationRequest } from 
 const INBOX = 'urn:riverbend:inbox-queue';
 const OWNER = 'Practitioner/pr-okafor';
 const LOINC = 'http://loinc.org';
-// RBC-TRI-02 §1, in the words a patient writes.
-const RED_FLAG = /\b(?:black|bloody|tarry) (?:stools?|poop|bowel movements?)|\bstools? (?:have been |are |were )?(?:black|bloody|tarry)|\bvomit\w* blood|\bfaint\w*|\blight-?headed|\bchest pain|\bshort(?:ness)? of breath|\bstroke\b/i;
-const SCHEDULING = /\b(?:schedul\w*|book\w*|appointment)\b/i;
-const REFILL = /\brefill\b/i;
-// RBC-CP-11's drugs, and the words that name them.
-const ANTIMICROBIAL: Array<[RegExp, string]> = [[/amoxicillin-clavulanate|amoxicillin \/ clavulanate|augmentin/i, 'amoxicillin / clavulanate'], [/doxycycline/i, 'doxycycline']];
-// RBC-MED-04 §2: an immediate reaction, and the beta-lactam it followed.
-const IMMEDIATE = /\b(?:hives|urticaria\w*|swelling|angioedema|wheez\w*|epinephrine)\b/i;
-const BETA_LACTAM = /\b(?:augmentin|amoxicillin|penicillin|amoxil|cephalexin)\b/i;
 const ACE_INHIBITORS = ['lisinopril', 'enalapril', 'ramipril', 'benazepril'];
-const BMP = ['24321-2', '51990-0', '24323-8'];
-const POTASSIUM = '2823-3';
-// A scanned laboratory report, and the words a report uses for a BMP and its potassium.
+// §1: a BMP panel under either of its codes, or a comprehensive panel, which contains one.
+const BMP_PANELS = ['51990-0', '24321-2', '24323-8'];
+const POTASSIUM = ['2823-3', '6298-4'];
+const CREATININE = ['2160-0', '38483-4'];
+const EGFR = ['33914-3', '98979-8', '62238-1'];
+const A1C = ['4548-4'];
 const LAB_REPORT = '11502-2';
-const BMP_WORDS = /\bbasic metabolic panel\b|\bBMP\b/i;
-const POTASSIUM_VALUE = /\bpotassium\s+(\d+(?:\.\d+)?)\s*mmol\/L/i;
-const A1C = '4548-4';
-const EGFR = ['98979-8', '62238-1', '33914-3'];
+// §1: a hemolyzed specimen, in a result's note or a report's comment.
+const HEMOLYZED = /\bhemoly[sz]ed\b|\bhaemoly[sz]ed\b/i;
 
 type Ref = { reference?: string };
-type Coding = { system?: string; code?: string; display?: string };
+type Coding = { system?: string; code?: string };
 type R = Readonly<Record<string, unknown>> & { resourceType: string; id?: string };
-type Task = R & { status?: string; code?: { coding?: Coding[] }; owner?: Ref; focus?: Ref; for?: Ref; requester?: Ref };
-type Comm = R & { payload?: Array<{ contentString?: string }> };
-type Obs = R & {
-  status?: string; subject?: Ref; code?: { coding?: Coding[] }; effectiveDateTime?: string; valueQuantity?: { value?: number };
-  component?: Array<{ code?: { coding?: Coding[] }; valueQuantity?: { value?: number } }>;
-};
-type Doc = R & { subject?: Ref; date?: string; type?: { coding?: Coding[] }; content?: Array<{ attachment?: { data?: string } }> };
+type Task = R & { status?: string; code?: { coding?: Coding[] }; owner?: Ref; focus?: Ref; for?: Ref };
+type Comm = R & { sent?: string; payload?: Array<{ contentString?: string }> };
+type Obs = R & { status?: string; subject?: Ref; code?: { coding?: Coding[] }; effectiveDateTime?: string; valueQuantity?: { value?: number }; note?: Array<{ text?: string }> };
+type DR = R & { subject?: Ref; code?: { coding?: Coding[] }; effectiveDateTime?: string; result?: Ref[] };
+type Doc = R & { subject?: Ref; type?: { coding?: Coding[] }; content?: Array<{ attachment?: { data?: string } }> };
 type Enc = R & { status?: string; subject?: Ref; period?: { start?: string } };
-type Patient = R & { generalPractitioner?: Ref[] };
-type MR = R & MedicationRequest & { subject?: Ref; authoredOn?: string };
+type MR = R & MedicationRequest & { subject?: Ref; authoredOn?: string; status?: string };
+
+// One result, from the clinic or an outside report: its collection instant and value.
+interface Result { at: number; day: string; value: number; hemolyzed: boolean }
 
 const key = (r: R) => `${r.resourceType}/${r.id}`;
 const decode = (data: string | undefined) => (data === undefined ? '' : new TextDecoder().decode(Uint8Array.from(atob(data), (c) => c.charCodeAt(0))));
 const coded = (o: { code?: { coding?: Coding[] } } | undefined, codes: readonly string[]) => (o?.code?.coding ?? []).some((c) => c.system === LOINC && codes.includes(c.code ?? ''));
-const day = (instant: string) => clinicDate(instant);
 
-// NOW's date moved back by whole months or years, as a calendar date.
+// NOW's date moved back by whole months, as a calendar date.
 function back(months: number): string {
   const [y, m, d] = NOW_DATE.split('-').map(Number) as [number, number, number];
-  const t = new Date(Date.UTC(y, m - 1 - months, d));
-  return t.toISOString().slice(0, 10);
+  return new Date(Date.UTC(y, m - 1 - months, d)).toISOString().slice(0, 10);
 }
+// A scanned report's collection time: "Collected: MM/DD/YYYY HH:MM" (clinic time, EDT/EST as the
+// date falls; only the date and order matter here).
+function collected(text: string): { at: number; day: string } | null {
+  const m = /Collected:\s*(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2})/.exec(text);
+  if (!m) return null;
+  const day = `${m[3]}-${m[1]}-${m[2]}`;
+  return { at: Date.parse(`${day}T${m[4]}:${m[5]}:00-04:00`), day };
+}
+const row = (text: string, re: RegExp) => {
+  const m = re.exec(text);
+  return m ? Number(m[1]) : null;
+};
 
 export function derive(world: WorldView): Json {
   const all = <T extends R>(type: string) => world.all(type) as readonly T[];
   const items = all<Task>('Task')
     .filter((t) => t.status === 'requested' && t.owner?.reference === OWNER && (t.code?.coding ?? []).some((c) => c.system === INBOX && c.code === 'messages'))
     .sort((a, b) => (a.id! < b.id! ? -1 : 1));
-  const results = (patient: string, codes: readonly string[]) =>
+  const messageOf = (t: Task) => world.get('Communication', t.focus!.reference!.split('/')[1]!) as Comm;
+  const textOf = (c: Comm) => (c.payload ?? []).map((p) => p.contentString ?? '').join('\n');
+
+  // §1: the patient's results of a kind, newest first, from Observations (an entered-in-error one is
+  // not a result; an amended one carries its corrected value) and from scanned laboratory reports.
+  const reports = (patient: string) =>
+    all<Doc>('DocumentReference')
+      .filter((d) => d.subject?.reference === patient && (d.type?.coding ?? []).some((c) => c.system === LOINC && c.code === LAB_REPORT))
+      .flatMap((d) => {
+        const text = decode(d.content?.[0]?.attachment?.data);
+        const when = collected(text);
+        return when ? [{ ...when, text }] : [];
+      });
+  const observed = (patient: string, codes: readonly string[]): Result[] =>
     all<Obs>('Observation')
-      .filter((o) => o.subject?.reference === patient && o.status !== 'entered-in-error' && coded(o, codes) && o.effectiveDateTime)
-      .sort((a, b) => Date.parse(b.effectiveDateTime!) - Date.parse(a.effectiveDateTime!));
-  const notes = (patient: string) => all<Doc>('DocumentReference').filter((d) => d.subject?.reference === patient && d.date);
-  const meds = (patient: string) => all<MR>('MedicationRequest').filter((m) => m.subject?.reference === patient && isActive(m));
-  // "the patient's PCP": the one the chart names.
-  const pcpOf = (patient: string) => (world.get('Patient', patient.split('/')[1]!) as Patient | undefined)?.generalPractitioner?.[0]?.reference ?? null;
-  // RBC-RX-05's preamble: the most recent BMP from any source, a panel Observation or a scanned
-  // laboratory report whose text reports a BMP and its potassium.
-  const latestBmp = (patient: string) => {
-    const panels = results(patient, BMP).map((o) => ({ ref: key(o), at: o.effectiveDateTime!, potassium: o.component?.find((c) => coded(c, [POTASSIUM]))?.valueQuantity?.value }));
-    const reports = notes(patient).flatMap((d) => {
-      if (!(d.type?.coding ?? []).some((c) => c.system === LOINC && c.code === LAB_REPORT)) return [];
-      const text = decode(d.content?.[0]?.attachment?.data);
-      const k = POTASSIUM_VALUE.exec(text);
-      return BMP_WORDS.test(text) && k ? [{ ref: key(d), at: d.date!, potassium: Number(k[1]) }] : [];
+      .filter((o) => o.subject?.reference === patient && o.status !== 'entered-in-error' && coded(o, codes) && o.effectiveDateTime && o.valueQuantity?.value !== undefined)
+      .map((o) => ({ at: Date.parse(o.effectiveDateTime!), day: clinicDate(o.effectiveDateTime!), value: o.valueQuantity!.value!, hemolyzed: (o.note ?? []).some((n) => HEMOLYZED.test(n.text ?? '')) }));
+  const fromReports = (patient: string, re: RegExp, hemolysisCounts: boolean): Result[] =>
+    reports(patient).flatMap((r) => {
+      const value = row(r.text, re);
+      return value === null ? [] : [{ at: r.at, day: r.day, value, hemolyzed: hemolysisCounts && HEMOLYZED.test(r.text) }];
     });
-    return [...panels, ...reports].sort((a, b) => Date.parse(b.at) - Date.parse(a.at))[0];
+  const newest = (rs: Result[]) => [...rs].sort((a, b) => b.at - a.at);
+  const potassium = (p: string) => newest([...observed(p, POTASSIUM), ...fromReports(p, /^Potassium\s+(\d+(?:\.\d+)?)/m, true)]);
+  const creatinine = (p: string) => newest([...observed(p, CREATININE), ...fromReports(p, /^Creatinine\s+(\d+(?:\.\d+)?)/m, false)]);
+  const egfr = (p: string) => newest([...observed(p, EGFR), ...fromReports(p, /^eGFR(?: \([^)]*\))?\s+(\d+(?:\.\d+)?)/m, false)]);
+  const a1c = (p: string) => newest([...observed(p, A1C), ...fromReports(p, /\(HbA1c\)\s+(\d+(?:\.\d+)?)/, false)]);
+  // A BMP is a panel report in the clinic or a scanned report of one; valid when its potassium is.
+  const bmps = (p: string): Result[] => {
+    const panels = all<DR>('DiagnosticReport')
+      .filter((d) => d.subject?.reference === p && coded(d, BMP_PANELS) && d.effectiveDateTime)
+      .flatMap((d) => {
+        const k = (d.result ?? []).map((x) => world.get('Observation', x.reference!.split('/')[1]!) as Obs | undefined).find((o) => o && o.status !== 'entered-in-error' && coded(o, POTASSIUM));
+        return k ? [{ at: Date.parse(d.effectiveDateTime!), day: clinicDate(d.effectiveDateTime!), value: k.valueQuantity!.value!, hemolyzed: (k.note ?? []).some((n) => HEMOLYZED.test(n.text ?? '')) }] : [];
+      });
+    const scanned = reports(p).filter((r) => /\bBasic metabolic panel\b/i.test(r.text)).flatMap((r) => {
+      const k = row(r.text, /^Potassium\s+(\d+(?:\.\d+)?)/m);
+      return k === null ? [] : [{ at: r.at, day: r.day, value: k, hemolyzed: HEMOLYZED.test(r.text) }];
+    });
+    return newest([...panels, ...scanned]);
   };
+  const lastVisit = (p: string) =>
+    all<Enc>('Encounter').filter((e) => e.subject?.reference === p && e.status === 'finished' && e.period?.start).map((e) => clinicDate(e.period!.start!)).sort().at(-1) ?? null;
 
-  const out: Record<string, Json> = { items: items.map(key) };
-  // The items in id order are labelled m1 to m6; the label is only the key expected.ts files each
-  // item's answer under (its expected export labels the designers' M1..M6 the same way).
-  for (const [i, item] of items.entries()) {
-    const n = `m${i + 1}`;
-    const patient = item.for!.reference!;
-    const text = (world.get('Communication', item.focus!.reference!.split('/')[1]!) as Comm).payload?.map((p) => p.contentString ?? '').join('\n') ?? '';
-    const base = { item: key(item), patient };
+  // The item each message asks about: the patient's active order whose ingredient it names.
+  const asked = items.map((t) => {
+    const patient = t.for!.reference!;
+    const c = messageOf(t);
+    const text = textOf(c).toLowerCase();
+    const named = all<MR>('MedicationRequest').filter((m) => m.subject?.reference === patient && isActive(m) && text.includes(drugOf(m.medicationCodeableConcept)?.ingredient ?? '\u0000'));
+    if (named.length !== 1) throw new Error(`${key(t)}: the message names ${named.length} active orders`);
+    return { t, patient, sent: Date.parse(c.sent!), request: named[0]! };
+  });
 
-    if (RED_FLAG.test(text)) {
-      // RBC-TRI-02 §1.
-      const apixaban = meds(patient).find((m) => drugOf(m.medicationCodeableConcept)?.ingredient === 'apixaban');
-      out[n] = { ...base, action: 'triage', pool: 'Group/pool-rn-triage', apixaban: apixaban ? key(apixaban) : null };
-    } else if (item.requester?.reference?.startsWith('Practitioner/') && ANTIMICROBIAL.some(([re]) => re.test(text))) {
-      // RBC-CP-11 §3 -> RBC-MED-04: the notes of the last 3 years, and the one that records an
-      // immediate reaction to a beta-lactam.
-      const since = back(36);
-      const recent = notes(patient).filter((d) => day(d.date!) >= since);
-      const reactions = recent.filter((d) => {
-        const t = decode(d.content?.[0]?.attachment?.data);
-        return IMMEDIATE.test(t) && BETA_LACTAM.test(t);
-      });
-      if (reactions.length !== 1) throw new Error(`${patient}: ${reactions.length} notes record an immediate beta-lactam reaction`);
-      const nkda = all<R & { patient?: Ref; code?: { coding?: Coding[] } }>('AllergyIntolerance').find((a) => a.patient?.reference === patient && (a.code?.coding ?? []).some((c) => c.code === '409137002'));
-      out[n] = {
-        ...base,
-        action: 'hold',
-        requester: item.requester.reference,
-        drug: ANTIMICROBIAL.find(([re]) => re.test(text))![1],
-        notes_in_window: recent.length,
-        reaction_note: key(reactions[0]!),
-        nkda: nkda ? key(nkda) : null,
-        alternative: 'doxycycline',
-      };
-    } else if (REFILL.test(text)) {
-      // RBC-RX-05: the active request the message names.
-      const named = meds(patient).filter((m) => {
-        const ingredient = drugOf(m.medicationCodeableConcept)?.ingredient;
-        return ingredient !== undefined && text.toLowerCase().includes(ingredient);
-      });
-      if (named.length !== 1) throw new Error(`${patient}: the refill names ${named.length} active requests`);
-      const request = named[0]!;
-      const drug = drugOf(request.medicationCodeableConcept)!.ingredient;
-      // §3: a later note that stops it.
-      const stops = new RegExp(`\\b${drug}\\b[^.]*\\b(?:stopped|discontinued)\\b|\\b(?:stopped|discontinued)\\b[^.]*\\b${drug}\\b`, 'i');
-      const conflict = notes(patient).find((d) => Date.parse(d.date!) > Date.parse(request.authoredOn!) && stops.test(decode(d.content?.[0]?.attachment?.data)));
-      const common = { ...base, request: key(request), drug };
-      if (conflict) {
-        out[n] = { ...base, action: 'task_pcp', request: key(request), drug, conflict_note: key(conflict), pcp: pcpOf(patient) };
-      } else if (ACE_INHIBITORS.includes(drug)) {
-        // §1, on the most recent BMP.
-        const bmp = latestBmp(patient);
-        const current = bmp !== undefined && day(bmp.at) >= back(12) && bmp.potassium !== undefined;
-        if (current && bmp.potassium! >= 5.5) {
-          out[n] = { ...base, action: 'task_pcp', request: common.request, drug, bmp: bmp.ref, bmp_date: day(bmp.at), potassium: bmp.potassium!, pcp: pcpOf(patient) };
-          continue;
-        }
-        const visits = all<Enc>('Encounter').filter((e) => e.subject?.reference === patient && e.status === 'finished' && e.period?.start).sort((a, b) => Date.parse(a.period!.start!) - Date.parse(b.period!.start!));
-        const lastVisit = day(visits.at(-1)!.period!.start!);
-        const visitCurrent = lastVisit >= back(15);
-        const terms = current ? { action: 'renew', supply_days: 90, refills: 1, order_bmp: false } : visitCurrent ? { action: 'bridge', supply_days: 30, refills: 0, order_bmp: true } : { action: 'none', supply_days: 0, refills: 0, order_bmp: true };
-        out[n] = {
-          ...base,
-          action: terms.action,
-          request: common.request,
-          drug,
-          daily_mg: dailyDose(request)!.value,
-          bmp: bmp ? bmp.ref : null,
-          bmp_date: bmp ? day(bmp.at) : null,
-          last_visit: lastVisit,
-          visit: key(visits.at(-1)!),
-          supply_days: terms.supply_days,
-          refills: terms.refills,
-          order_bmp: terms.order_bmp,
-        };
-      } else if (drug === 'metformin') {
-        // §2.
-        const a1c = results(patient, [A1C])[0];
-        const egfr = results(patient, EGFR)[0]?.valueQuantity?.value;
-        const ok = a1c !== undefined && day(a1c.effectiveDateTime!) >= back(6) && egfr !== undefined && egfr >= 45;
-        out[n] = { ...base, action: ok ? 'renew' : 'none', request: common.request, drug, daily_mg: dailyDose(request)!.value, a1c_date: a1c ? day(a1c.effectiveDateTime!) : null, egfr: egfr ?? null, supply_days: ok ? 90 : 0, refills: ok ? 1 : 0 };
-      } else throw new Error(`${patient}: no refill rule for ${drug}`);
-    } else if (SCHEDULING.test(text)) {
-      // RBC-TRI-02 §2.
-      out[n] = { ...base, action: 'route', pool: 'Group/pool-scheduling' };
-    } else throw new Error(`${key(item)}: no protocol covers the message`);
-  }
-  return out;
+  const out = asked.map(({ t, patient, sent, request }) => {
+    const drug = drugOf(request.medicationCodeableConcept)!.ingredient;
+    const base = { item: key(t), patient, drug, request: key(request) };
+    const none = { daily_mg: null, supply_days: null, refills: null, lab: null, duplicate_of: null };
+    // §5: an earlier message for the same request.
+    const first = asked.filter((a) => a.patient === patient && key(a.request) === key(request) && a.sent < sent).sort((a, b) => a.sent - b.sent)[0];
+    if (first) return { ...base, action: 'duplicate', ...none, duplicate_of: key(first.t) };
+    const mg = dailyDose(request)!.value;
+    const renew = (lab: string | null = null) => ({ ...base, action: 'renew', daily_mg: mg, supply_days: 90, refills: 1, lab, duplicate_of: null });
+    const bridge = (lab: string) => ({ ...base, action: 'bridge', daily_mg: mg, supply_days: 30, refills: 0, lab, duplicate_of: null });
+    const hold = { ...base, action: 'hold', ...none };
+    const visitCurrent = (lastVisit(patient) ?? '') >= back(15);
+
+    if (ACE_INHIBITORS.includes(drug)) {
+      // §2 on the valid BMPs of the last 12 months, by collection date.
+      const k = potassium(patient);
+      const validK = k.find((r) => !r.hemolyzed);
+      const current = bmps(patient).some((b) => !b.hemolyzed && b.day >= back(12));
+      // A start or dose increase: this order, after an earlier one of the drug at a lower daily dose.
+      const authored = Date.parse(request.authoredOn!);
+      const raised = all<MR>('MedicationRequest').some((m) => m.subject?.reference === patient && m !== request && drugOf(m.medicationCodeableConcept)?.ingredient === drug && Date.parse(m.authoredOn!) < authored && (dailyDose(m)?.value ?? Infinity) < mg);
+      const cr = creatinine(patient);
+      const before = cr.find((r) => r.at <= authored);
+      const after = cr.filter((r) => r.at > authored && r.at - authored <= 28 * 86_400_000)[0];
+      const rise = raised && before !== undefined && after !== undefined && after.value > before.value * 1.3;
+      if (rise || (current && validK !== undefined && validK.value >= 5.5)) return hold;
+      if (current) return renew(k[0]?.hemolyzed ? 'bmp' : null);
+      if (visitCurrent) return bridge('bmp');
+      throw new Error(`${key(t)}: no BMP in 12 months and no visit in 15`);
+    }
+    if (drug === 'metformin') {
+      // §3.
+      const e = egfr(patient)[0];
+      if (e === undefined) throw new Error(`${key(t)}: no eGFR`);
+      if (e.value < 45) return hold;
+      return a1c(patient).some((r) => r.day >= back(6)) ? renew() : bridge('hba1c');
+    }
+    // §4.
+    if (visitCurrent) return renew();
+    throw new Error(`${key(t)}: no visit in 15 months`);
+  });
+  return { items: out };
 }
