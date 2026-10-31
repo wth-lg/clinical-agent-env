@@ -33,13 +33,14 @@ import type { TrialEvent } from '../core/events.ts';
 import { collapseWhitespace, shownText } from '../env/tools/registry.ts';
 import type { Step, StepSearch } from './check.ts';
 
-const SEARCH_KEYS = ['code', 'date_ge', 'date_le', 'status'] as const;
+const SEARCH_KEYS = ['code', 'category', 'date_ge', 'date_le', 'status'] as const;
 
-// The filters of a successful fhir_search call, from its tool_call input (ruling R20): the
+// The filters of a successful fhir_search call, from its tool_call input (rulings R20, R27): the
 // type, the patient as 'Patient/<id>', and the enumerated filter keys, each only when it is a
-// string. Anything else in the input (sort, count, category) is left out. whole says whether the
-// page held every match: the call asked from the first match (offset 0 or none) and the result
-// has no next_offset (read/page.ts: present whenever entries remain).
+// string. offset comes from the input and next_offset from the result's paging field, each only
+// when it is a number. Anything else in the input (sort, count) is left out. whole says whether
+// the page held every match: the call asked from the first match (offset 0 or none) and the
+// result has no next_offset (read/page.ts: present whenever entries remain).
 function searchOf(input: unknown, content: unknown): StepSearch | undefined {
   if (input === null || typeof input !== 'object') return undefined;
   const i = input as Record<string, unknown>;
@@ -48,6 +49,8 @@ function searchOf(input: unknown, content: unknown): StepSearch | undefined {
   if (typeof i.patient === 'string') out.patient = i.patient.startsWith('Patient/') ? i.patient : `Patient/${i.patient}`;
   for (const k of SEARCH_KEYS) if (typeof i[k] === 'string') out[k] = i[k];
   const paging = content !== null && typeof content === 'object' ? (content as Record<string, unknown>) : {};
+  if (typeof i.offset === 'number') out.offset = i.offset;
+  if (typeof paging.next_offset === 'number') out.next_offset = paging.next_offset;
   out.whole = (i.offset === undefined || i.offset === 0) && Array.isArray(paging.entries) && paging.next_offset === undefined;
   return out;
 }

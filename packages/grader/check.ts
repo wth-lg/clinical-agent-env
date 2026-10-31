@@ -116,7 +116,9 @@ export interface Step {
   // so a gate can count a search that found nothing in the window as a review. Enumerated keys
   // from the call's input, never free text; patient is always 'Patient/<id>'. An empty page
   // exposes nothing, so no other field of the step says what was searched. whole is true when the
-  // page held every match (offset 0 or none, no next_offset): the only search that shows absence.
+  // page held every match (offset 0 or none, no next_offset). offset (from the call) and
+  // next_offset (from the result) let a gate join a run of pages that together held every match
+  // (ruling R27); category lets it refuse a filter that would hide the absent kind.
   search?: StepSearch;
 }
 
@@ -124,9 +126,12 @@ export interface StepSearch {
   type: string;
   patient?: string;
   code?: string;
+  category?: string;
   date_ge?: string;
   date_le?: string;
   status?: string;
+  offset?: number;
+  next_offset?: number;
   whole: boolean;
 }
 

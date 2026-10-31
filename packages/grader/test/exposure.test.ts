@@ -160,7 +160,7 @@ describe('exposure from the read tools', () => {
         read('search_notes', { query: 'weight' }),
       ]),
     );
-    expect(steps[0]!.search).toEqual({ type: 'Observation', patient: 'Patient/pt-1', code: 'http://loinc.org|29463-7', date_ge: '2026-01-01', date_le: '2026-12-31', status: 'final', whole: true });
+    expect(steps[0]!.search).toEqual({ type: 'Observation', patient: 'Patient/pt-1', code: 'http://loinc.org|29463-7', category: 'vital-signs', date_ge: '2026-01-01', date_le: '2026-12-31', status: 'final', offset: 0, whole: true });
     expect(steps[1]!.search).toEqual({ type: 'EpisodeOfCare', patient: 'Patient/pt-1', date_ge: '2026-01-01', whole: true });
     expect(steps[1]!.exposed_ids).toEqual([]);
     for (const s of steps.slice(2)) expect('search' in s).toBe(false);
@@ -181,6 +181,25 @@ describe('exposure from the read tools', () => {
     expect((steps[1]!.search as { whole?: boolean }).whole).toBe(false);
     expect((steps[2]!.search as { whole?: boolean }).whole).toBe(false);
     expect([steps[0], steps[3]].map((s) => (s!.search as { whole?: boolean }).whole)).toEqual([true, true]);
+  });
+  it('Step.search keeps the paging fields: offset from the call, next_offset from the result', () => {
+    // Ruling R27: a run of pages, each at the previous next_offset and the last with none, shows
+    // every match, so a gate needs both fields to tell that run from a gap or a restart.
+    const steps = stepsOf(
+      trajectory([
+        read('fhir_search', { resource_type: 'Observation', patient: 'pt-1', count: 1 }),
+        read('fhir_search', { resource_type: 'Observation', patient: 'pt-1', count: 50, offset: 1 }),
+        read('fhir_search', { resource_type: 'Observation', patient: 'pt-1', count: 1, offset: 0 }),
+      ]),
+    );
+    const paging = steps.map((s) => ({ offset: s.search?.offset, next_offset: s.search?.next_offset, whole: s.search?.whole }));
+    expect(paging).toEqual([
+      { offset: undefined, next_offset: 1, whole: false },
+      { offset: 1, next_offset: undefined, whole: false },
+      { offset: 0, next_offset: 1, whole: false },
+    ]);
+    expect('next_offset' in steps[1]!.search!).toBe(false);
+    expect('offset' in steps[0]!.search!).toBe(false);
   });
   it('a step without a matching tool_call keeps no search', () => {
     const events = trajectory([read('fhir_search', { resource_type: 'Observation', patient: 'pt-1' })]).filter((e) => e.type !== 'tool_call');
