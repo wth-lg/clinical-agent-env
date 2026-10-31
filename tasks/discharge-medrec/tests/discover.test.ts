@@ -28,6 +28,13 @@
 // Clinic-wide 'stop', 'held' and 'correction' searches show the addenda's corrections and Kim's
 // substitution clause on page 1; that is the hazard word finding its hazard. The test below checks
 // that no BROAD search names one.
+// A search by a lab panel or test name is a targeted results route (coordinator ruling R30): the
+// reviewer is looking for results, and finding them is the retrieval skill working. It is exempt
+// from the page-1 rule like a rule term. LAB_QUERIES lists the ones known to reach a decisive line:
+//   basic metabolic panel   clinic-wide, page 1 shows Kim's "Potassium 5.4" and Roberts' "Potassium
+//                           4.6" (verifier-W1-probe-T4-6 N1)
+//   metabolic panel         the same two lines
+// The test below checks that no BROAD search names one.
 import { describe, expect, it } from 'vitest';
 import { loadMatrixTask, matrixEnv } from '../../../cli/matrix.ts';
 import { clock } from '../../../packages/env/clock.ts';
@@ -129,6 +136,13 @@ describe('T4 worklist discoverability', async () => {
   const HAZARD_WORDS = ['correction', 'addendum', 'stop', 'held', 'substitution'];
   it('no broad search names a hazard word (R25)', () => {
     const named = BROAD.filter((c) => typeof c.input.query === 'string' && HAZARD_WORDS.some((w) => new RegExp(`\\b${w}`, 'i').test(c.input.query as string)));
+    expect(named).toEqual([]);
+  });
+
+  // R30: lab panel and test names whose searches are exempt routes (see the header).
+  const LAB_QUERIES = ['basic metabolic panel', 'metabolic panel'];
+  it('no broad search names a lab panel or test (R30)', () => {
+    const named = BROAD.filter((c) => typeof c.input.query === 'string' && LAB_QUERIES.some((q) => (c.input.query as string).toLowerCase().includes(q)));
     expect(named).toEqual([]);
   });
 

@@ -5,7 +5,7 @@
 // wrong (reasoning). A source read is skipped only where no other item rests on it.
 import { oneTurn, type Mutant } from '../../../packages/grader/matrix/types.ts';
 import { oracle } from '../solution/solve.ts';
-import { change, DOC, finish, message, modify, MR, notes, order, readDoc, reads, RX, script, searchNotes, task, W, withWrites } from '../solution/steps.ts';
+import { change, DOC, finish, message, modify, MR, notes, order, readDoc, reads, results, RX, script, searchNotes, task, W, withWrites } from '../solution/steps.ts';
 
 const ACTION = ['med_actions'];
 // A deciding record never seen (R18): the item's action is wrong and its record unseen.
@@ -169,6 +169,19 @@ export const mutants: Mutant[] = [
     attribution: 'retrieval',
     items: { 'roberts-lisinopril': 'retrieval' },
     script: script({ skip: ['robertsLab'], noResults: ['roberts'], also: [searchNotes('roberts', 'potassium')] }),
+  },
+  // R18 (verifier-W1-probe-T4-clinical-6 M2): the same route, but Earnest Roberts' results are
+  // searched after the resume. The creatinine after discharge that decides it was seen, but only
+  // after the decision was written: seen late is process, never reasoning.
+  {
+    id: 'creatinine_seen_after_resume',
+    trap: 'roberts-lisinopril',
+    why: "Never opens the 10/22 report; a 'potassium' search shows its 'Potassium 4.6' cut before its creatinine line, lisinopril is resumed, and only then are Earnest Roberts' results searched, showing the 10/20 creatinine of 1.24 (R18: a late read is process).",
+    fails: ['seen_before_change'],
+    loses: [],
+    attribution: 'process',
+    items: { 'roberts-lisinopril': 'process' },
+    script: [...reads(['robertsLab'], [searchNotes('roberts', 'potassium')], ['roberts']), { calls: withWrites() }, { calls: [results('roberts')] }, { calls: notes() }, { calls: [finish()] }],
   },
   {
     id: 'substitute_ordered_atorvastatin',
