@@ -5,8 +5,9 @@
 // kind of failure (P17j JU7), with the run's fault box under the
 // table; a run with a trial that blocks it (DENOMINATOR_RULE) says so in place of the headline
 // pass rate, and names its false PASSes beside k/n. With none yet: the six tasks, the environment every trial starts from, and the
-// committed pilot runs, which are not counted in the results. Never an empty page. Both open with
-// the intro card: what this is in plain words, and how to run a trial.
+// committed pilot runs, which are not counted in the results: the latest with its rates by task,
+// the older ones as one line each (ui-polish 2.1). Never an empty page. Both open with the intro
+// card: what this is in plain words, where to start, and how to run a trial.
 import { CircleAlert, Info } from 'lucide-react';
 import type { Ref } from 'react';
 import { MODEL } from '../adapters/ledger-browser.ts';
@@ -15,13 +16,14 @@ import { toolCatalog } from '../../../../packages/core/try-tool.ts';
 import { pilotRates, useResults, type RunData } from '../data/results.ts';
 import { useTaskList } from '../data/tasks.ts';
 import { policyLine, taskTitle } from '../tasks/title.ts';
-import { BUTTON, BUTTON_PRIMARY, Card, CARD, formatInterval, GlossaryLink, Hash, IntervalRow, markLabel, MarkLegend, markOf, Notice, Page, Swatch } from '../data/ui.tsx';
+import { BUTTON, BUTTON_PRIMARY, Card, CARD, formatInterval, GlossaryLink, Hash, IntervalRow, markLabel, MarkLegend, markOf, Notice, Page, SECTION_LABEL, Swatch } from '../data/ui.tsx';
 import { hrefWith, onNav } from '../data/url.ts';
 import { freshView } from '../shell/views.ts';
 import { safePass } from '../data/harm.ts';
 import { isFalsePass, kindWords, mostCommon, runBlock, shownFault } from '../data/failures.ts';
 import { FaultBox, RunBlocked } from '../findings/why.tsx';
 import { ModelLine, PassK, PassKLink } from '../findings/passk.tsx';
+import { PilotRateRows } from '../findings/pilot.tsx';
 import { formatClock } from '../data/text.ts';
 import { MANIFEST } from '../data/world.ts';
 import { requestKey, useKeyStatus } from '../keygate/key.ts';
@@ -33,24 +35,21 @@ const toRuns = (task: string | null) => ({ view: 'runs', task, label: null, tria
 const money = (x: number | null) => (x === null ? 'n/a' : `$${x.toFixed(2)}`);
 const link = 'text-ink underline decoration-line-strong underline-offset-2 hover:decoration-ink';
 const TOOL_COUNT = toolCatalog().length;
+// The task the intro's Start here list opens.
+const START_TASK = 'renal-dose-review';
 
 export function Overview({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | undefined }) {
   const results = useResults();
   if (results === null) return <Page title="Overview" headingRef={headingRef}><Notice>Loading the published results…</Notice></Page>;
   if (results.kind === 'ready' && results.official !== null) return <OfficialOverview run={results.official} headingRef={headingRef} />;
-  const why = results.kind === 'error' ? `The published results cannot be read: ${results.message}` : results.officialError ?? 'No official run is published yet. Its pass rates show here when the final run is committed.';
+  const error = results.kind === 'error' ? `The published results cannot be read: ${results.message}` : results.officialError;
+  const pilots = results.kind === 'ready' && results.pilots.length > 0;
   return (
     <Page title="Overview" headingRef={headingRef} lead="The tasks, the environment and the committed runs. You can read all of it, and run the grader checks, with no key.">
       <IntroCard />
-      {results.kind === 'error' || results.officialError
-        ? <Notice testId="error-state" icon={CircleAlert}>{why}</Notice>
-        : (
-          <Notice testId="no-official" tone="info" icon={Info}>
-            {why}
-            {results.pilots.length > 0 && <a href={hrefWith(freshView('runs'))} onClick={onNav(freshView('runs'))} className={`mt-2 block w-fit text-xs ${link}`}>See the pilot runs</a>}
-          </Notice>
-        )}
+      {error !== null && <Notice testId="error-state" icon={CircleAlert}>{error}</Notice>}
       <TaskSummary />
+      {error === null && <Notice testId="no-official" tone="info" icon={Info}>The final run is not published yet.{pilots && ' Pilot runs are below.'}</Notice>}
       <EnvironmentSummary />
       {results.kind === 'ready' && results.pilots.length > 0 && <PilotSummary pilots={results.pilots} />}
     </Page>
@@ -130,20 +129,33 @@ function MostCommon({ fc }: { fc: Parameters<typeof mostCommon>[0] }) {
   );
 }
 
-// What this is, in plain words (ASD-STE 100, each sentence 25 words or fewer), and two ways to run
-// a trial: in this tab (the key gate when there is no key, else Live trial) and on your computer
+// What this is, in plain words (ASD-STE 100, three sentences of 25 words or fewer), a numbered
+// Start here list (a task's prompt, a failed trial, the grader checks; ui-polish 2.1), and two ways
+// to run a trial: in this tab (the key gate when there is no key, else Live trial) and on your computer
 // (the local-run panel; the shell shows that panel on the hosted site, and the button reads the same
 // fact; on the local runner the page already runs on this computer).
 function IntroCard() {
   const key = useKeyStatus();
   const hosted = useHosted();
+  const results = useResults();
+  // A failed trial: the first non-pass of the official run, else of the latest pilot.
+  const run = results?.kind === 'ready' ? (results.official ?? results.pilots.at(-1) ?? null) : null;
+  const start = [
+    { label: 'Read a task', to: { view: 'tasks', task: START_TASK, tab: 'prompt' } },
+    ...(run === null ? [] : [{ label: 'See a failed trial', to: { view: 'runs', run: run.runId, trial: 'first-nonpass', task: null, label: null, tab: null, check: null, audit: null } }]),
+    { label: 'Check the grader, no key needed', to: { view: 'tasks', task: START_TASK, tab: 'grader-validation' } },
+  ];
   return (
     <Card title="What this is" testId="intro-card">
       <p data-testid="intro-text" className="text-ink">
-        The model {MODEL} does clinical work in a mock health record: it reads the chart and writes orders, notes and messages through tools. Each
-        trial starts from the same synthetic patient records, in the FHIR R4 health-record format, and gives the model one task. The grader then checks
-        what the model changed. A trial passes when every <GlossaryLink anchor="pass">gate check</GlossaryLink> of the task is met.
+        The model {MODEL} does clinical tasks in a mock health record: it reads the chart and writes orders, notes and messages. Each trial starts
+        from the same synthetic patient records, in the FHIR R4 health-record format. The grader checks what the model changed, and a trial passes
+        when it meets every <GlossaryLink anchor="pass">gate check</GlossaryLink>.
       </p>
+      <p className={`mt-3 ${SECTION_LABEL}`} id="start-here">Start here</p>
+      <ol data-testid="start-here" aria-labelledby="start-here" className="mt-1 list-decimal space-y-0.5 pl-5 marker:text-ink-muted">
+        {start.map((x) => <li key={x.label}><a href={hrefWith(x.to)} onClick={onNav(x.to)} className={link}>{x.label}</a></li>)}
+      </ol>
       <div className="mt-3 flex flex-wrap gap-2">
         {key.kind === 'none'
           ? <button type="button" className={BUTTON_PRIMARY} onClick={requestKey}>Add a key and run in this tab</button>
@@ -196,19 +208,36 @@ function EnvironmentSummary() {
   );
 }
 
+// "pilot-3: 47 of 48 pass. 1 fail on crc-care-gap.": a pilot's valid trials, and its failures by task.
+function pilotLine(p: RunData): string {
+  const rates = pilotRates(p);
+  const passes = rates.reduce((n, r) => n + r.passes, 0);
+  const valid = rates.reduce((n, r) => n + r.valid, 0);
+  if (valid === 0) return `${p.runId}: no valid trials.`;
+  const fails = rates.filter((r) => r.passes < r.valid).map((r) => ({ task: r.task, n: r.valid - r.passes }));
+  const total = fails.reduce((n, f) => n + f.n, 0);
+  const where = fails.length === 1 ? `${total} fail on ${fails[0]!.task}.` : `${total} fail: ${fails.map((f) => `${f.n} on ${f.task}`).join(', ')}.`;
+  return `${p.runId}: ${passes} of ${valid} pass.${total === 0 ? '' : ` ${where}`}`;
+}
+
+// The latest pilot first, with its rates by task; each older one's rates in a closed <details>.
 function PilotSummary({ pilots }: { pilots: RunData[] }) {
   return (
     <Card title="Pilot runs (not counted in the results)">
-      <ul className="space-y-1" data-testid="overview-pilots">
-        {pilots.map((p) => {
-          const rates = pilotRates(p).map((r) => `${r.passes} of ${r.valid} PASS on ${r.task}, Wilson 95% ${formatInterval(r.interval)}`);
-          return (
-            <li key={p.runId} data-testid="overview-pilot" data-run={p.runId}>
-              <a href={hrefWith(toRuns(null))} onClick={onNav(toRuns(null))} className={`font-medium ${link}`}>{p.runId}</a>
-              <span className="ml-2 text-ink-muted">{p.trials.length + p.bad.length} trial records: {rates.join('; ') || 'no valid trials'}; not counted</span>
-            </li>
-          );
-        })}
+      <ul className="space-y-3" data-testid="overview-pilots">
+        {[...pilots].reverse().map((p, i) => (
+          <li key={p.runId} data-testid="overview-pilot" data-run={p.runId} className="space-y-2">
+            <p data-testid="pilot-line"><a href={hrefWith(toRuns(null))} onClick={onNav(toRuns(null))} className={`font-medium ${link}`}>{p.runId}</a><span className="text-ink-muted">{pilotLine(p).slice(p.runId.length)}</span></p>
+            {i === 0
+              ? <PilotRateRows run={p} />
+              : (
+                <details>
+                  <summary className="cursor-pointer text-xs text-ink-muted">Rates by task</summary>
+                  <div className="mt-2"><PilotRateRows run={p} /></div>
+                </details>
+              )}
+          </li>
+        ))}
       </ul>
     </Card>
   );

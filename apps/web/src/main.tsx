@@ -4,6 +4,7 @@ import { installEgressGuard } from '../../../packages/core/egress.ts';
 import { dropRemembered, heldByRunner, restoreRemembered } from './keygate/key.ts';
 import { runnerToken } from './keygate/runner.ts';
 import { App } from './shell/App.tsx';
+import { installLeaveFade } from './shell/fade.ts';
 import { refreshSpent } from './spend/session.ts';
 import { detect } from './surface/detect.ts';
 import { hostedGuard } from './surface/relay.ts';
@@ -24,6 +25,8 @@ if (surface.kind === 'local-runner') {
 } else if (surface.kind === 'browser-direct') {
   restoreRemembered();
 }
+
+installLeaveFade();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>{surface.kind === 'runner-down' ? <RunnerDown /> : <App surface={surface} />}</StrictMode>,
