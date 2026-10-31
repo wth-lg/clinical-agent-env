@@ -39,7 +39,8 @@ describe('plantedClock text times (builder-230 item 1)', () => {
   });
 
   it('still rewrites a text time equal to the note\'s own start', () => {
-    const r = run('Called at 09:45; booked for CT at 10:00 AM.') as unknown as { date: string };
-    expect(text(r)).toBe(`Called at ${r.date.slice(11, 16)}; booked for CT at 10:00 AM.`);
+    const r = run('Called at 09:45; booked for CT at 10:00 AM.');
+    const date = (r as unknown as { date: string }).date;
+    expect(text(r)).toBe(`Called at ${date.slice(11, 16)}; booked for CT at 10:00 AM.`);
   });
 });
