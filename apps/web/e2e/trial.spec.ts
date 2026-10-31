@@ -95,13 +95,18 @@ test('Grading lists every rubric item with the record\'s points, met and judge q
       const ids = c.ids ?? [];
       const shown = await row.getByTestId('evidence-id').evaluateAll((els) => els.map((e) => e.getAttribute('data-id')));
       expect(shown, `${name} ${c.id}`).toEqual(ids);
-      // A gate over a worklist names each failed item and why (W1-1).
+      // A gate over a worklist names each failed item, why and, on the gate attribution took it
+      // from, the record's label for it (W1-1; verifier-phase-P17i-W1-1-1 M2).
       const items = (c as { items?: ItemRow[] }).items;
       if (items === undefined) continue;
       await expect(row.getByTestId('gate-items')).toContainText(itemsMetText(items));
-      const failed = failedItems(c.id, items, null);
+      const failed = failedItems(c.id, items, r.attribution?.items ?? null);
       await expect(row.getByTestId('gate-item')).toHaveCount(failed.length);
-      for (const i of failed) await expect(row.locator(`[data-testid="gate-item"][data-item="${i.item}"]`)).toContainText(`${i.name}: ${i.why}`);
+      for (const i of failed) {
+        const li = row.locator(`[data-testid="gate-item"][data-item="${i.item}"]`);
+        await expect(li).toContainText(`${i.name}: ${i.why}`);
+        await expect(li).toHaveAttribute('data-label', i.label ?? '');
+      }
     }
     if (typeof r.score === 'number') await expect(p.getByTestId('score-card')).toHaveText(`Rubric score (does not decide pass) ${r.score.toFixed(2)}`);
   }
