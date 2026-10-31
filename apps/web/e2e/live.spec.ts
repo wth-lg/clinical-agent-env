@@ -38,7 +38,8 @@ async function mockToy(page: Page, opts: { hold?: number; trialStatus?: { status
     if (opts.trialStatus) {
       return route.fulfill({ status: opts.trialStatus.status, contentType: 'application/json', headers: CORS, body: JSON.stringify({ type: 'error', error: { type: 'authentication_error', message: opts.trialStatus.message } }) });
     }
-    if (body.tools === undefined) return sse(okResponse(TOY[3 + judge]!, 4 + judge++));
+    // Two judge answers a trial, so a second trial in the same page is graded too.
+    if (body.tools === undefined) return sse(okResponse(TOY[3 + (judge % 2)]!, 4 + judge++));
     const turn = body.messages.filter((m) => m.role === 'assistant').length + 1;
     if (turn === opts.hold && held.length === 0) return void held.push(route);
     return sse(okResponse(TOY[turn - 1]!, turn));
@@ -129,6 +130,8 @@ test('a trial streams in a Worker, is graded in the browser and makes no request
   await expect(trial(page).getByTestId('trial-id')).toHaveText(id);
   await expect(trial(page).getByTestId('trajectory')).not.toHaveAttribute('aria-live');
   await expect(trial(page).getByRole('status')).toHaveText('Finished: PASS');
+  // Once finished, the line has no turn part.
+  await expect(trial(page).getByTestId('status-turn')).toHaveCount(0);
   uninterrupted = await trial(page).getByTestId('final-hash').textContent();
   expect(uninterrupted).toMatch(/^[0-9a-f]{64}$/);
   expect(api.trialCalls()).toHaveLength(5);
@@ -191,8 +194,62 @@ test('at phone width the in-progress trial fits: written ids truncate and the tr
   await expect(code).toHaveText(id);
   await expect(code).toHaveCSS('overflow-wrap', 'break-word');
   await expect(code.locator('wbr')).toHaveCount(id.split('.').length - 1);
-  // While the trial runs, its status line gives the turn.
+  // While the trial runs, its status line gives the turn to screen readers; on screen the Turn
+  // meter beside it already shows the number, so the line does not repeat it (#185 m3).
   await expect(trial(page).getByRole('status')).toHaveText(/^Turn \d, running$/);
+  const turn = (await trial(page).getByTestId('status-turn').boundingBox())!;
+  expect(turn.width).toBeLessThanOrEqual(1);
+  // What shows on screen: the parts of the line wider than a screen-reader-only 1 px box.
+  const shown = await trial(page).getByRole('status').evaluate((el) => [...el.querySelectorAll('span')].filter((x) => x.getBoundingClientRect().width > 1).map((x) => x.textContent).join(''));
+  expect(shown).toBe('running');
+  // The running line has its spinner (ui-polish 3.5).
+  await expect(trial(page).getByTestId('running-line').locator('svg')).toHaveCount(1);
+});
+
+test('the status line says Starting until the first model turn, never "Turn 0" (#185 m2)', async ({ page }) => {
+  await mockToy(page);
+  await page.goto('./?view=live&task=_toy');
+  await enterKey(page, sentinelKey());
+  // Every value the status line takes, in order, from before the trial starts to its end.
+  await page.evaluate(() => {
+    const seen: string[] = [];
+    (window as unknown as { statuses: string[] }).statuses = seen;
+    new MutationObserver(() => {
+      const s = document.querySelector('[data-testid="live-trial"] [role="status"]')?.textContent ?? null;
+      if (s !== null && s !== seen.at(-1)) seen.push(s);
+    }).observe(document.body, { subtree: true, childList: true, characterData: true });
+  });
+  await run(page, 1);
+  await expect(trial(page)).toHaveAttribute('data-state', 'graded', { timeout: 60_000 });
+  const statuses = await page.evaluate(() => (window as unknown as { statuses: string[] }).statuses);
+  expect(statuses[0]).toBe('Starting');
+  expect(statuses.filter((x) => /Turn 0/.test(x))).toEqual([]);
+  expect(statuses.at(-1)).toBe('Finished: PASS');
+});
+
+// Two runs of the same task started in the same minute (the page clock is pinned) read alike, so
+// the later one's heading gets " (2)" and every row button's name is unique.
+test('with two runs started in the same minute, each trial row button is named with its own run heading (#185 m1)', async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-10-31T11:42:10'));
+  await mockToy(page);
+  await page.goto('./?view=live&task=_toy');
+  await enterKey(page, sentinelKey());
+  await run(page, 1);
+  await expect(trial(page)).toHaveAttribute('data-state', 'graded', { timeout: 60_000 });
+  await run(page, 1);
+  await expect(page.getByTestId('live-run')).toHaveCount(2);
+  await expect(trial(page)).toHaveAttribute('data-state', 'graded', { timeout: 60_000 });
+  const headings = await page.getByTestId('run-name').allTextContents();
+  expect(headings.map((h) => h.replace(/ \(2\)$/, ''))).toEqual([headings[1]!, headings[1]!]);
+  expect(headings[0]).toBe(`${headings[1]} (2)`);
+  const names: string[] = [];
+  for (const r of await page.getByTestId('live-run').all()) {
+    const heading = (await r.getByTestId('run-name').textContent())!;
+    const button = r.getByTestId('live-row').getByRole('button');
+    await expect(button).toHaveAccessibleName(`${heading}, trial 1`);
+    names.push(heading);
+  }
+  expect(new Set(names).size).toBe(2);
 });
 
 test('without a key the Task select is shown disabled', async ({ page }) => {
@@ -320,6 +377,8 @@ test('a 401 with another message shows the API error without the local command',
   await expect(alert).toContainText('invalid x-api-key', { timeout: 30_000 });
   await expect(alert).not.toContainText(LOCAL_START_COMMAND);
   await expect(alert.getByRole('button', { name: 'Show the steps' })).toHaveCount(0);
+  // The status line gives the chip's words, not a raw outcome code (#185 m2).
+  await expect(trial(page).getByRole('status')).toHaveText('Finished: API problem, not counted');
 });
 
 test('each Run size shows its projected cost, and a size over the session cap is disabled with the reason', async ({ page }) => {
