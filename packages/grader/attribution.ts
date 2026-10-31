@@ -32,7 +32,8 @@
 // ids of its failed items: a record of an item the trial got right, unseen, does not make a wrong
 // item a retrieval failure (W1-1). Each failed item also gets a label of its own (items): among the
 // failed gates it fails in, the one decisiveGate picks by the item's own marks, labelled by the rules
-// above over the item's decisive ids.
+// above over the item's decisive ids. In a LIMIT trial every failed item is did_not_finish, the
+// trial's label: the trial stopped before it decided them (verifier-phase-P17i-W1-1-1 S1).
 import type { CheckResult } from './grade.ts';
 import type { GateCheck, Step } from './check.ts';
 import type { ItemResult } from './items.ts';
@@ -94,7 +95,8 @@ export function attribute(outcome: Outcome, gates: readonly GateCheck[], results
   const last = steps.at(-1)?.n ?? null;
   const exposure = exposureGates(failed, first, byId).map(({ id, gate }) => exposureOf(steps, gate, id));
   const decisive_step = failed === undefined ? last : (lastWrite(steps, byId.get(failed.id)!.ids ?? []) ?? last);
-  const items = itemLabels(gates, byId, steps);
+  // A LIMIT trial never reached its failed items' decisions: each carries the trial's label.
+  const items = itemLabels(gates, byId, steps).map((i) => (outcome === 'LIMIT' ? { ...i, auto: 'did_not_finish' as const } : i));
   const base = { first_failed: failed?.id ?? null, decisive_step, exposure, ...(items.length > 0 ? { items } : {}) };
   if (outcome === 'LIMIT') return { auto: 'did_not_finish', ...base };
   // A FAIL always has a failed gate.

@@ -97,6 +97,10 @@ describe('itemGate', () => {
     expect(() => G({ items: [ROWS[0]!, ROWS[0]!] })).toThrow(/two items with key a/);
     expect(() => G({ items: [{ id: OUTSIDE, want: true, decisive: [] }] })).toThrow(/reserved/);
   });
+
+  it('refuses an empty list: a gate over no items would be met vacuously', () => {
+    expect(() => G({ items: [] })).toThrow(/itemGate tasks_made: no items/);
+  });
 });
 
 describe('item results in the grade record', () => {
@@ -148,6 +152,16 @@ describe('item results in the grade record', () => {
     const g = await run([read(['Observation/obs-a', 'Observation/obs-b']), write('a')], [G({ check: (r, _s, ctx) => (r.id === 'b' ? { met: false, why: 'phoned, not messaged', action_form: true } : { met: wrote(ctx, r.id) === r.want }) })]);
     expect(g.attribution!.items!.map((i) => [i.item, i.auto])).toEqual([['b', 'action_form']]);
     expect(g.attribution!.auto).toBe('action_form');
+  });
+
+  // The shape of e2e trial-1/crc-care-gap/5: a LIMIT trial (max_tokens) whose one failed item fails
+  // in two action gates, its record seen. The trial never reached that item's decision, so the item
+  // carries the trial's label, not reasoning (verifier-phase-P17i-W1-1-1 S1).
+  it('a LIMIT trial\'s failed items carry the trial\'s label, did_not_finish, with their exposure', async () => {
+    const g = await grade({ checks: [G({ id: 'fit_orders' }), G({ id: 'outreach_messages' })], initial: INITIAL, final: INITIAL, events: trajectory([read(['Observation/obs-b']), write('a')]), trial: facts({ status: 'LIMIT', detail: 'max_tokens' }) });
+    expect(g.outcome).toBe('LIMIT');
+    expect(g.attribution!.auto).toBe('did_not_finish');
+    expect(g.attribution!.items).toEqual([{ item: 'b', gate: 'fit_orders', auto: 'did_not_finish', exposure: [{ id: 'Observation/obs-b', first_exposed_step: 1 }] }]);
   });
 
   it('a gate without items keeps the gate-wide exposure, and the attribution has no items', () => {

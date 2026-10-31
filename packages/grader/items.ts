@@ -66,6 +66,8 @@ const result = (item: string, decisive: readonly string[], v: ItemVerdict): Item
 
 export function itemGate<I, S = undefined>(spec: ItemGateSpec<I, S>): GateCheck {
   const { items, key, decisive = () => [], prepare, check, outside, verdict, ...common } = spec;
+  // A gate over no items would be met vacuously (verifier-phase-P17i-W1-1-1 M1).
+  if (items.length === 0) throw new Error(`itemGate ${spec.id}: no items; a gate over an empty list is met whatever the trial did`);
   const keys = items.map(key);
   for (const [i, k] of keys.entries()) {
     if (k === OUTSIDE) throw new Error(`itemGate ${spec.id}: item key ${OUTSIDE} is reserved for the part of the gate no item owns`);
