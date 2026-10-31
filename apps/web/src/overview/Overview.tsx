@@ -20,7 +20,7 @@ import { BUTTON, BUTTON_PRIMARY, Card, CARD, formatInterval, GlossaryLink, Hash,
 import { hrefWith, onNav } from '../data/url.ts';
 import { freshView } from '../shell/views.ts';
 import { safePass } from '../data/harm.ts';
-import { isFalsePass, kindWords, mostCommon, runBlock, shownFault } from '../data/failures.ts';
+import { isFalsePass, kindWords, mostCommon, noPassCount, runBlock, shownFault } from '../data/failures.ts';
 import { FaultBox, RunBlocked } from '../findings/why.tsx';
 import { ModelLine, PassK, PassKLink } from '../findings/passk.tsx';
 import { PilotRateRows } from '../findings/pilot.tsx';
@@ -208,8 +208,11 @@ function EnvironmentSummary() {
   );
 }
 
-// "pilot-3: 47 of 48 pass. 1 fail on crc-care-gap.": a pilot's valid trials, and its failures by task.
+// "pilot-3: 47 of 48 pass. 1 fail on crc-care-gap.": a pilot's valid trials, and its failures by
+// task; for a pilot a trial blocks, why it gives no pass count (data/failures.ts noPassCount).
 function pilotLine(p: RunData): string {
+  const held = noPassCount(p.trials);
+  if (held !== null) return `${p.runId}: ${held}.`;
   const rates = pilotRates(p);
   const passes = rates.reduce((n, r) => n + r.passes, 0);
   const valid = rates.reduce((n, r) => n + r.valid, 0);
@@ -221,6 +224,7 @@ function pilotLine(p: RunData): string {
 }
 
 // The latest pilot first, with its rates by task; each older one's rates in a closed <details>.
+// A pilot a trial blocks has no rates: its line says why in their place.
 function PilotSummary({ pilots }: { pilots: RunData[] }) {
   return (
     <Card title="Pilot runs (not counted in the results)">
@@ -228,7 +232,7 @@ function PilotSummary({ pilots }: { pilots: RunData[] }) {
         {[...pilots].reverse().map((p, i) => (
           <li key={p.runId} data-testid="overview-pilot" data-run={p.runId} className="space-y-2">
             <p data-testid="pilot-line"><a href={hrefWith(toRuns(null))} onClick={onNav(toRuns(null))} className={`font-medium ${link}`}>{p.runId}</a><span className="text-ink-muted">{pilotLine(p).slice(p.runId.length)}</span></p>
-            {i === 0
+            {noPassCount(p.trials) !== null ? null : i === 0
               ? <PilotRateRows run={p} />
               : (
                 <details>

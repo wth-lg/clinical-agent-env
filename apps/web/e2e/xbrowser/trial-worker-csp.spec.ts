@@ -85,7 +85,7 @@ test('the real trial Worker runs from blob: under the page CSP: other origins ar
     });
     const api = await mockToy(context);
     await page.goto('./?view=live&task=_toy');
-    await page.getByLabel('API key', { exact: true }).fill(sentinelKey());
+    await page.getByLabel('Add an API key', { exact: true }).fill(sentinelKey());
     await page.getByRole('button', { name: 'Validate' }).click();
     await expect(page.getByTestId('key-chip')).toBeVisible();
     await page.getByRole('button', { name: 'Run ×1', exact: true }).click();
