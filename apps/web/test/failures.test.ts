@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Explanation } from '../../../packages/core/explain.ts';
 import { FAILURE_KINDS, type FaultCounts } from '../../../packages/core/summary.ts';
-import { auditFilterOf, blocksTheRun, kindWords, m1m4, mostCommon, relabelledFrom, runBlock, shownFault, shownLabel } from '../src/data/failures.ts';
+import { auditFilterOf, blocksTheRun, kindWords, m1m4, mostCommon, relabelledFrom, runBlock, shownFault, shownKind, shownLabel } from '../src/data/failures.ts';
 
 const fc = (counts: Partial<Record<(typeof FAILURE_KINDS)[number], number>>): FaultCounts => {
   const taxonomy = Object.fromEntries(FAILURE_KINDS.map((k) => [k, counts[k] ?? 0])) as FaultCounts['taxonomy'];
@@ -76,5 +76,15 @@ describe('failures helpers', () => {
     expect(relabelledFrom(e({ fault: 'grader', label: 'grader', audit_label: 'grader' }))).toBeNull();
     expect(relabelledFrom(e({ outcome: 'ENV_ERROR', valid: false, fault: 'env', label: 'environment', audit_label: 'model' }))).toBeNull();
     expect(relabelledFrom(e({ outcome: 'PASS', fault: null, label: null, audit_label: 'environment' }))).toBeNull();
+  });
+  // verifier-phase-P17i-UI-3-1 F4: the headline and the Whose-fault row name the kind only for a
+  // model or refusal fault the audit did not relabel.
+  it('shownKind is the kind in words for an unrelabelled model or refusal fault, else null', () => {
+    expect(shownKind(e({ taxonomy: 'over_action', label: 'model', audit_label: null } as never))).toBe('over action');
+    expect(shownKind(e({ outcome: 'REFUSAL', fault: 'refusal', taxonomy: 'refusal', label: 'model', audit_label: 'model' } as never))).toBe('refusal');
+    expect(shownKind(e({ taxonomy: 'over_action', label: 'model', audit_label: 'environment' } as never))).toBeNull();
+    expect(shownKind(e({ taxonomy: 'over_action', label: 'model', audit_label: 'grader' } as never))).toBeNull();
+    expect(shownKind(e({ fault: 'env', taxonomy: null, label: 'environment' } as never))).toBeNull();
+    expect(shownKind(e({ taxonomy: null, label: 'model' } as never))).toBeNull();
   });
 });

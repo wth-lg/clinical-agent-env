@@ -72,6 +72,12 @@ export function relabelledFrom(e: Explanation): Fault | null {
   return e.fault !== null && shownFault(e) !== e.fault ? e.fault : null;
 }
 
+// The kind of failure the trial header shows, in words: only for a model or refusal fault the audit
+// did not relabel, so the headline and the Whose-fault row agree (verifier-phase-P17i-UI-3-1 F4).
+export function shownKind(e: Explanation): string | null {
+  return relabelledFrom(e) === null && (e.fault === 'model' || e.fault === 'refusal') && e.taxonomy !== null ? e.taxonomy.replace(/_/g, ' ') : null;
+}
+
 // The run block (it then shows no pass count, dot or Wilson interval, decisions.tsv
 // 2026-10-29T16:00): the trials that block it, by name, and how many are false PASSes.
 export interface RunBlock {

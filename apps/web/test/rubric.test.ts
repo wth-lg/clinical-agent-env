@@ -4,7 +4,7 @@
 // out of the possible points, and says when the score is clipped to 0.
 import { describe, expect, it } from 'vitest';
 import { score, type CheckResult } from '../../../packages/grader/grade.ts';
-import { rubricScore, rubricTotal, scoreNote, totalText } from '../src/trial/rubric.ts';
+import { rubricMark, rubricScore, rubricTotal, scoreNote, totalText } from '../src/trial/rubric.ts';
 
 const item = (id: string, points: number, met: boolean | 'unknown', method = 'judge') => ({ id, kind: 'rubric' as const, method, points, met });
 const gate = (id: string, met: boolean) => ({ id, kind: 'gate' as const, method: 'code', points: null, met });
@@ -55,5 +55,16 @@ describe('rubricTotal and totalText', () => {
   });
   it('says the score is clipped when the penalties outweigh the met items', () => {
     expect(totalText(rubricTotal(CASES[4]!))).toBe('-5 of 3 points (score clipped to 0)');
+  });
+});
+
+// verifier-phase-P17i-UI-3-1 F3: a penalty that fired has its own mark, never the check of a met item.
+describe('rubricMark', () => {
+  it('marks met, not met, a penalty not triggered, a fired penalty and judge unsure apart', () => {
+    expect(rubricMark(item('a', 2, true))).toBe('met');
+    expect(rubricMark(item('a', 2, false))).toBe('not-met');
+    expect(rubricMark(item('p', -5, false))).toBe('not-triggered');
+    expect(rubricMark(item('p', -5, true))).toBe('fired');
+    expect(rubricMark(item('p', -5, 'unknown'))).toBe('unsure');
   });
 });

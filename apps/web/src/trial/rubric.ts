@@ -14,6 +14,15 @@ export const rubricMetText = (c: RubricRow): string => ((c.points ?? 0) < 0 && c
 // Whether a rubric row's result is good for the trial: a positive item met, a penalty not triggered.
 // null when the judge was unsure.
 export const rubricGood = (c: RubricRow): boolean | null => (c.met === 'unknown' ? null : (c.points ?? 0) < 0 ? c.met !== true : c.met === true);
+// A rubric row's met mark. A penalty that fired (met, negative points) is "fired", so its icon is an
+// alert and never the check of a met item (verifier-phase-P17i-UI-3-1 F3).
+export type RubricMark = 'met' | 'not-met' | 'not-triggered' | 'fired' | 'unsure';
+export const rubricMark = (c: RubricRow): RubricMark => {
+  if (c.met === 'unknown') return 'unsure';
+  const penalty = (c.points ?? 0) < 0;
+  if (c.met === true) return penalty ? 'fired' : 'met';
+  return penalty ? 'not-triggered' : 'not-met';
+};
 
 // packages/grader/grade.ts score(): met points over the positive points, unknown items left out,
 // clipped to 0..1 (test/rubric.test.ts checks the two agree). `penalties`: what an unknown penalty

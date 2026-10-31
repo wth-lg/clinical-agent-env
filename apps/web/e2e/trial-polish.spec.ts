@@ -65,7 +65,7 @@ test('3.2: the first rubric row is named by the question its item asks, as the T
   const long = panel(page, 'grading').getByTestId('rubric-row').filter({ has: page.getByRole('button', { name: 'Show the full question' }) }).first();
   const id = (await long.getAttribute('data-id'))!;
   const pinned = panel(page, 'grading').locator(`[data-testid="rubric-row"][data-id="${id}"]`);
-  const toggle = pinned.getByRole('button', { name: /^Show (the full question|less)$/ });
+  const toggle = pinned.getByRole('button', { name: new RegExp(`^Show (the full question|less) for ${id}$`) });
   await expect(toggle).toHaveAttribute('aria-expanded', 'false');
   const name = pinned.getByTestId('rubric-name');
   const clamped = (await name.boundingBox())!.height;
@@ -84,6 +84,54 @@ test('3.2: an unknown judge item reads "judge unsure"', async ({ page }) => {
   });
   await openTrial(page, TRIALS.pass);
   await expect(panel(page, 'grading').locator('[data-testid="rubric-row"][data-id="note_states_crcl"] [data-testid="rubric-met"]')).toHaveText('judge unsure');
+});
+
+// verifier-phase-P17i-UI-3-1 F1: from sm up the rubric keeps its column balance. No column head
+// wraps, and neither the Item nor the Judge quote column is squeezed: on crc-care-gap (ids, no
+// question text) and on renal-dose-review (long questions). An id breaks only between words.
+for (const name of [TRIALS.limit, TRIALS.pass]) {
+  test(`F1: at 1440 the ${name} rubric has one-line column heads and Item and quote columns at least 160 px wide`, async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await openTrial(page, name);
+    const table = panel(page, 'grading').locator('table', { has: page.getByTestId('rubric-row') });
+    await expect(table.getByTestId('rubric-row').first()).toBeVisible();
+    for (const th of await table.locator('thead th').all()) {
+      const lines = await th.evaluate((x) => x.getBoundingClientRect().height / parseFloat(getComputedStyle(x).lineHeight));
+      expect(lines, (await th.textContent())!).toBeLessThan(2);
+    }
+    const row = table.getByTestId('rubric-row').first();
+    expect((await row.locator('td').first().boundingBox())!.width).toBeGreaterThanOrEqual(160);
+    expect((await row.getByTestId('rubric-quote').boundingBox())!.width).toBeGreaterThanOrEqual(160);
+    expect(await row.locator('td').first().locator('code').evaluate((c) => getComputedStyle(c).overflowWrap)).toBe('break-word');
+  });
+}
+
+// F2: each "Show the full question" toggle names its item, so no two buttons read alike.
+test('F2: each long-question toggle has a unique accessible name with its item id', async ({ page }) => {
+  await openTrial(page, TRIALS.pass);
+  const rows = panel(page, 'grading').getByTestId('rubric-row').filter({ has: page.getByRole('button', { name: /^Show the full question/ }) });
+  expect(await rows.count()).toBeGreaterThan(1);
+  for (const row of await rows.all()) {
+    const id = (await row.getAttribute('data-id'))!;
+    await expect(row.getByRole('button')).toHaveAccessibleName(`Show the full question for ${id}`);
+  }
+});
+
+// F3: a penalty that fired (met, negative points) shows an alert mark, not a check.
+test('F3: a met penalty item shows an alert icon, not a check', async ({ page }) => {
+  await page.route(`**/data/results/runs/${RUN_ID}/trials/${TRIALS.pass}.json`, async (route) => {
+    const res = await route.fetch();
+    const rec = JSON.parse(await res.text()) as { checks: { id: string; met: unknown }[] };
+    rec.checks = rec.checks.map((c) => (c.id === 'note_uses_wrong_scr' ? { ...c, met: true } : c));
+    await route.fulfill({ response: res, body: JSON.stringify(rec) });
+  });
+  await openTrial(page, TRIALS.pass);
+  const met = panel(page, 'grading').locator('[data-testid="rubric-row"][data-id="note_uses_wrong_scr"] [data-testid="rubric-met"]');
+  await expect(met).toHaveText('met');
+  await expect(met.locator('svg')).toHaveAttribute('data-mark', 'fired');
+  await expect(met.locator('svg.lucide-check')).toHaveCount(0);
+  // A positive item met keeps its check.
+  await expect(panel(page, 'grading').locator('[data-testid="rubric-row"][data-id="note_states_crcl"] [data-testid="rubric-met"] svg')).toHaveAttribute('data-mark', 'met');
 });
 
 test('3.3: the header leads with a headline, then Why it failed, Whose fault with the kind pill, and the codes behind "n of 5 confirmed"', async ({ page }) => {

@@ -204,6 +204,12 @@ test('a valid failure the audit labels environment blocks the run, and its own r
   // The Fault row shows the audit's fault and names the one the criteria found (UIRETRO-1 M1).
   await expect(header.getByTestId('detail-fault')).toContainText(/^environment/);
   await expect(header.getByTestId('fault-relabelled')).toContainText("The audit relabelled it; the trial's criteria found the model at fault, decided by");
+  // Neither the Fault row nor the headline names the model's kind of failure (builder-234 F4).
+  const kind = explain(first).taxonomy;
+  expect(kind).not.toBeNull();
+  await expect(header.getByTestId('kind-pill')).toHaveCount(0);
+  await expect(header.getByTestId('trial-headline')).toBeVisible();
+  await expect(header.getByTestId('trial-headline')).not.toContainText(`(${kind!.replace(/_/g, ' ')})`);
   // Its Findings example swatch takes the label's mark too (UIRETRO-1 M3).
   await page.getByRole('link', { name: 'Findings', exact: true }).first().click();
   const example = page.getByTestId('exemplars').getByRole('listitem').filter({ has: page.getByRole('link', { name: row.trial, exact: true }) });

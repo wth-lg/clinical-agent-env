@@ -5,7 +5,7 @@
 // worklist also says how many items it found right and lists each failed item with why, its ids and
 // its kind of failure (items.ts). An excluded trial was not graded; a check that threw is the
 // grader's error, in the danger style.
-import { Check, CircleHelp, Minus, X } from 'lucide-react';
+import { Check, CircleAlert, CircleHelp, Minus, X, type LucideIcon } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import type { Step } from '../../../../packages/grader/check.ts';
 import { NOT_RERUN_REASON, RERUN_OUTCOMES, type Outcome } from '../../../../packages/core/outcomes.ts';
@@ -15,7 +15,7 @@ import { checkTextOf, type Trial } from '../data/results.ts';
 import { LINK, OutcomeChip, SECTION_LABEL } from '../data/ui.tsx';
 import { failedItems, itemsMetText, type ItemLabel, type ItemRow } from './items.ts';
 import { useRubricQuestions } from './questions.ts';
-import { metText, rubricGood, rubricMetText, rubricTotal, scoreNote, totalText } from './rubric.ts';
+import { metText, rubricGood, rubricMark, rubricMetText, rubricTotal, scoreNote, totalText, type RubricMark } from './rubric.ts';
 import { stepOfId } from './steps.ts';
 
 export interface CheckRow {
@@ -43,27 +43,31 @@ export const CELL_LABEL = 'max-sm:before:mr-1.5 max-sm:before:text-xs max-sm:bef
 
 // A rubric row's name: the question its item asks. A long judge criterion (some run to several
 // hundred characters) shows two lines with a toggle for the rest, so the rubric stays scannable,
-// on a phone above all; the whole text is in the DOM either way.
+// on a phone above all; the whole text is in the DOM either way. The toggle's name carries the item
+// id, so no two toggles read alike (verifier-phase-P17i-UI-3-1 F2).
 const LONG_QUESTION = 160;
-function QuestionName({ text }: { text: string }) {
+function QuestionName({ text, id }: { text: string; id: string }) {
   const [open, setOpen] = useState(false);
   const long = text.length > LONG_QUESTION;
   return (
     <>
       <span data-testid="rubric-name" className={`break-words text-ink ${long && !open ? 'line-clamp-2' : 'block'}`}>{text}</span>
-      {long && <button type="button" aria-expanded={open} onClick={() => setOpen(!open)} className={`${LINK} rounded-sm text-xs text-ink-muted pointer-coarse:py-2`}>{open ? 'Show less' : 'Show the full question'}</button>}
+      {long && <button type="button" aria-expanded={open} aria-label={`${open ? 'Show less' : 'Show the full question'} for ${id}`} onClick={() => setOpen(!open)} className={`${LINK} rounded-sm text-xs text-ink-muted pointer-coarse:py-2`}>{open ? 'Show less' : 'Show the full question'}</button>}
     </>
   );
 }
 
-// The met column's mark: a check, a cross, a dash for a penalty that did not fire, a question mark
-// when the judge was unsure; in the danger colour when the row costs the trial points.
+// The met column's mark: a check, a cross, a dash for a penalty that did not fire, an alert for one
+// that fired, a question mark when the judge was unsure; in the danger colour when the row costs the
+// trial points.
+const MARK_ICON: Readonly<Record<RubricMark, LucideIcon>> = { met: Check, 'not-met': X, 'not-triggered': Minus, fired: CircleAlert, unsure: CircleHelp };
 function MetCell({ c }: { c: CheckRow }) {
   const good = rubricGood(c);
-  const Icon = c.met === 'unknown' ? CircleHelp : c.met === true ? Check : (c.points ?? 0) < 0 ? Minus : X;
+  const mark = rubricMark(c);
+  const Icon = MARK_ICON[mark];
   return (
     <span className="inline-flex items-center gap-1 whitespace-nowrap">
-      <Icon aria-hidden className={`h-3.5 w-3.5 shrink-0 ${good === false ? 'text-danger' : 'text-ink-muted'}`} strokeWidth={good === false ? 2.25 : 1.75} />
+      <Icon aria-hidden data-mark={mark} className={`h-3.5 w-3.5 shrink-0 ${good === false ? 'text-danger' : 'text-ink-muted'}`} strokeWidth={good === false ? 2.25 : 1.75} />
       {rubricMetText(c)}
     </span>
   );
@@ -213,12 +217,12 @@ export function Grading({ t, steps, onStep, decisive = null }: { t: Trial; steps
       )}
       {rubric.length > 0 && (
         <Section title="Rubric" lead="Rubric items add to the score; they never decide a pass.">
-          <table className={CARD_TABLE}>
+          <table className={`${CARD_TABLE} sm:table-fixed sm:break-words`}>
             <thead className="text-xs text-ink-muted">
               <tr>
-                <th scope="col" className="pb-1 pr-3 font-normal">Item</th>
-                <th scope="col" className="pb-1 pr-3 font-normal">Points</th>
-                <th scope="col" className="pb-1 pr-3 font-normal">Met</th>
+                <th scope="col" className="pb-1 pr-3 font-normal sm:w-[40%]">Item</th>
+                <th scope="col" className="whitespace-nowrap pb-1 pr-3 font-normal sm:w-[4.5rem]">Points</th>
+                <th scope="col" className="whitespace-nowrap pb-1 pr-3 font-normal sm:w-[8.5rem]">Met</th>
                 <th scope="col" className="pb-1 font-normal">Judge quote</th>
               </tr>
             </thead>
@@ -229,9 +233,9 @@ export function Grading({ t, steps, onStep, decisive = null }: { t: Trial; steps
                 return (
                   <tr key={c.id} data-testid="rubric-row" data-id={c.id} data-points={String(c.points)} data-met={String(c.met)} className="border-t border-line align-top max-sm:grid-cols-[minmax(0,1fr)_auto_auto]">
                     <td data-label="Item" className="py-1.5 pr-3">
-                      {question !== undefined && <QuestionName text={question} />}
+                      {question !== undefined && <QuestionName text={question} id={c.id} />}
                       <span className="flex flex-wrap items-baseline gap-x-1.5 text-xs text-ink-muted">
-                        <code className={question === undefined ? 'font-medium text-ink' : ''}>{c.id}</code>
+                        <code className={`break-words ${question === undefined ? 'font-medium text-ink' : ''}`}>{c.id}</code>
                         <span>{[c.category, c.method].filter(Boolean).join(', ')}</span>
                       </span>
                     </td>

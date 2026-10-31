@@ -22,7 +22,7 @@ import { fetchEvents, fullExplanation, useResults, type RunData, type Trial } fr
 import { harmItems, safePass, type HarmItem } from '../data/harm.ts';
 import type { Fault } from '../../../../packages/core/outcomes.ts';
 import { BUTTON, CARD, CHIP, FaultLabel, GlossaryLink, HarmChip, HashText, markOf, markProps, Notice, OutcomeChip } from '../data/ui.tsx';
-import { blocksTheRun, relabelledFrom, runBlock, shownFault } from '../data/failures.ts';
+import { blocksTheRun, relabelledFrom, runBlock, shownFault, shownKind } from '../data/failures.ts';
 import { tabTarget } from '../data/tabs.ts';
 import { useTaskList } from '../data/tasks.ts';
 import { MODEL } from '../adapters/ledger-browser.ts';
@@ -233,7 +233,7 @@ const FAULT_GLOSS: Readonly<Record<Fault, string>> = {
 function headline(e: Explanation): ReactNode {
   if (!e.valid) return null;
   if (e.outcome === 'PASS') return e.fault === 'grader' ? 'Passed, but the grader was wrong: an audit found a false PASS.' : 'Passed every gate check.';
-  const kind = e.taxonomy === null ? null : e.taxonomy.replace(/_/g, ' ');
+  const kind = shownKind(e);
   if (e.decisive_check) return <>Failed the check <code className="break-all font-mono text-[0.95em]">{e.decisive_check.id}</code>{kind !== null && <span className="font-normal text-ink-muted"> ({kind})</span>}</>;
   if (e.outcome === 'REFUSAL') return 'The model refused the task.';
   if (e.outcome === 'LIMIT') return 'The model did not finish: the trial stopped at a limit.';
@@ -259,7 +259,7 @@ function Header({ t, e, rows, onStep, official }: { t: Trial; e: Explanation; ro
       <span className="block"><HashText text={e.deciding.evidence} /></span>
     </span>
   );
-  const kind = from === null && (e.fault === 'model' || e.fault === 'refusal') && e.taxonomy !== null ? e.taxonomy.replace(/_/g, ' ') : null;
+  const kind = shownKind(e);
   const blocking = fault === 'env' || fault === 'grader';
   const lead = headline(e);
   const confirmed = e.criteria.filter((c) => c.met === true || c.met === 'n/a');
