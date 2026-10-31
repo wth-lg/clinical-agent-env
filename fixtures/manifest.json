@@ -74,7 +74,7 @@
     "packages/env/canonical.ts": "2189f1d04b2e80df6b919fe23165924869cab63f1c7b9408c0b1c8d10e2d6284",
     "packages/env/clock.ts": "000372240039629abbb215aff20f18cf85e6adf832dad872dc6b1df96b06ff71",
     "packages/env/mrn.ts": "4278f853e9f2d50dc83e1f15ae9ae35fb3e5f39dfdb1b6fea3a4ab2996cb232b",
-    "packages/env/overlay.ts": "e4887c2c58157ce395b129d95828d67413a23828de8772e1c2d79ae10ab77f91",
+    "packages/env/overlay.ts": "096883403f89b58267c4e2f9089181be500371e309db5fce776fc1b36fbdf660",
     "packages/env/profile.ts": "ae9901473568b04d98cd0935e8da7883e55b771d0088605c10f9f9071fbaed85",
     "packages/env/renumber.ts": "a18c690c41aa7e22e503b11035c773b76e165fed5b83dbb517a726ed77d2a558",
     "packages/env/world.ts": "c16dbb19c56e749662a602139253743353add3fabdaa103aeedd0fc554eb3906",

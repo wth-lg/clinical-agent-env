@@ -45,6 +45,15 @@ describe('the probe slot map', () => {
     for (const t of tasks) expect(TASKS[t].slots, t).toEqual(expect.arrayContaining([...CURRENT[t]]));
   });
 
+  it('every Patient of the committed world beyond the base cohort is one an overlay adds, in its task\'s registry', async () => {
+    const { TASK_IDS } = await import('../../../fixtures/ids.ts');
+    const base = patients('fixtures/synthea/base.ndjson.gz');
+    const added = new Set(Object.values(TASK_IDS as Record<string, Record<string, string>>).flatMap((ids) => Object.entries(ids).filter(([k]) => k.startsWith('pt-')).map(([, v]) => v)));
+    const world = patients('fixtures/world.ndjson.gz');
+    expect([...world].filter((id) => !base.has(id)).sort()).toEqual([...added].sort());
+    for (const id of added) expect(base.has(id), id).toBe(false);
+  });
+
   it('puts every slot inside the base cohort and the committed world', () => {
     const base = patients('fixtures/synthea/base.ndjson.gz');
     const world = patients('fixtures/world.ndjson.gz');

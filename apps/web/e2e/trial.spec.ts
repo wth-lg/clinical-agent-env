@@ -2,7 +2,8 @@
 // e2e/fixtures/trial (built with RESULTS_ROOT pointed there), after "Browse without a key":
 // the trajectory pane and the five tabs (Grading, Attribution, State diff, Environment, Raw)
 // render on every fixture trial; Grading lists every rubric item with the points, met and judge
-// quote of the record, and every gate check with its evidence ids, each a link that scrolls the
+// quote of the record, and every gate check with its evidence ids and, for a gate over a worklist,
+// each failed item with why (W1-1), each evidence id a link that scrolls the
 // trajectory to its step; the header shows, with no click, the outcome, label, decisive check and
 // reason explainTrial gives (cli/audit-check.ts context), the not-audited marker on a trial with
 // no audit row, and a decisive-step link that scrolls to that step; the Attribution criteria
@@ -19,6 +20,7 @@ import { trialName } from '../../../packages/core/summary.ts';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { explain, hasTrajectory, record, records, RUN_DIR, RUN_ID, runOf, summary, trialBase, TRIALS } from './fixtures/trial/trial.ts';
+import { failedItems, itemsMetText, type ItemRow } from '../src/trial/items.ts';
 import { rubricMetText } from '../src/trial/rubric.ts';
 
 const TABS = [
@@ -93,6 +95,18 @@ test('Grading lists every rubric item with the record\'s points, met and judge q
       const ids = c.ids ?? [];
       const shown = await row.getByTestId('evidence-id').evaluateAll((els) => els.map((e) => e.getAttribute('data-id')));
       expect(shown, `${name} ${c.id}`).toEqual(ids);
+      // A gate over a worklist names each failed item, why and, on the gate attribution took it
+      // from, the record's label for it (W1-1; verifier-phase-P17i-W1-1-1 M2).
+      const items = (c as { items?: ItemRow[] }).items;
+      if (items === undefined) continue;
+      await expect(row.getByTestId('gate-items')).toContainText(itemsMetText(items));
+      const failed = failedItems(c.id, items, r.attribution?.items ?? null);
+      await expect(row.getByTestId('gate-item')).toHaveCount(failed.length);
+      for (const i of failed) {
+        const li = row.locator(`[data-testid="gate-item"][data-item="${i.item}"]`);
+        await expect(li).toContainText(`${i.name}: ${i.why}`);
+        await expect(li).toHaveAttribute('data-label', i.label ?? '');
+      }
     }
     if (typeof r.score === 'number') await expect(p.getByTestId('score-card')).toHaveText(`Rubric score (does not decide pass) ${r.score.toFixed(2)}`);
   }
@@ -268,7 +282,8 @@ test('axe finds no serious or critical violation on any tab, light and dark', as
   test.setTimeout(120_000);
   for (const scheme of ['light', 'dark'] as const) {
     await page.emulateMedia({ colorScheme: scheme });
-    for (const name of [TRIALS.failAudited, TRIALS.envError]) {
+    // TRIALS.limit is the trial whose gates list failed items (W1-1; verifier-phase-P17i-W1-1-2 S1).
+    for (const name of [TRIALS.failAudited, TRIALS.envError, TRIALS.limit]) {
       await openTrial(page, name);
       for (const t of TABS) {
         await page.getByRole('tab', { name: t.name, exact: true }).click();
@@ -289,6 +304,38 @@ test('at 390 px the panes stack and nothing scrolls sideways', async ({ page }) 
       await expect(panel(page, t.id)).toBeVisible();
       const sizes = await page.evaluate(() => [document.querySelector('main')!, document.documentElement].map((e) => ({ sw: e.scrollWidth, cw: e.clientWidth })));
       for (const { sw, cw } of sizes) expect(sw, `${name} ${t.id}`).toBeLessThanOrEqual(cw);
+    }
+  }
+});
+
+// The per-item list of a gate over a worklist, at desktop and phone width, light and dark: each
+// failed item shows with the record's label, nothing scrolls sideways, and axe is clean
+// (W1-1; verifier-phase-P17i-W1-1-2 S1).
+test('at 1440 and 390 px, light and dark, the per-item list shows each label, fits, and passes axe', async ({ page }) => {
+  test.setTimeout(120_000);
+  const r = record(TRIALS.limit);
+  const gates = (r.checks ?? []).filter((c) => c.kind === 'gate').map((c) => ({ id: c.id, items: (c as { items?: ItemRow[] }).items }));
+  const want = gates.flatMap((c) => (c.items === undefined ? [] : failedItems(c.id, c.items, r.attribution?.items ?? null).map((i) => ({ gate: c.id, ...i }))));
+  expect(want.length, 'TRIALS.limit has failed items').toBeGreaterThan(0);
+  expect(want.some((i) => i.label !== null), 'TRIALS.limit has a labelled item').toBe(true);
+  for (const size of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
+    await page.setViewportSize(size);
+    for (const scheme of ['light', 'dark'] as const) {
+      await page.emulateMedia({ colorScheme: scheme });
+      const at = `${size.width} ${scheme}`;
+      await openTrial(page, TRIALS.limit);
+      const p = panel(page, 'grading');
+      await expect(p).toBeVisible();
+      for (const i of want) {
+        const li = p.locator(`[data-testid="gate-check"][data-id="${i.gate}"] [data-testid="gate-item"][data-item="${i.item}"]`);
+        await expect(li, `${at} ${i.gate} ${i.item}`).toBeVisible();
+        await expect(li).toHaveAttribute('data-label', i.label ?? '');
+      }
+      const sizes = await page.evaluate(() => [document.querySelector('main')!, document.documentElement].map((e) => ({ sw: e.scrollWidth, cw: e.clientWidth })));
+      for (const { sw, cw } of sizes) expect(sw, at).toBeLessThanOrEqual(cw);
+      const results = await new AxeBuilder({ page }).analyze();
+      const bad = results.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).slice(0, 3).join(', ')}`);
+      expect(bad, at).toEqual([]);
     }
   }
 });

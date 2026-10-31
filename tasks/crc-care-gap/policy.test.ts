@@ -27,13 +27,13 @@ describe('crc-care-gap', () => {
 
   it('orders for exactly the design six: E2, E3, E4, E8, E10 and E16', () => {
     const d = derive(world) as unknown as typeof expected;
-    expect(d.members.filter((x) => x.order).map((x) => x.patient)).toEqual(['Patient/pt-0017', 'Patient/pt-0018', 'Patient/pt-0019', 'Patient/pt-0022', 'Patient/pt-0023', 'Patient/pt-0035']);
+    expect(d.items.filter((x) => x.order).map((x) => x.patient)).toEqual(['Patient/pt-0017', 'Patient/pt-0018', 'Patient/pt-0019', 'Patient/pt-0022', 'Patient/pt-0023', 'Patient/pt-0035']);
   });
 
   // The overlay's own resources carry the screening history; a Synthea leftover that mentions
   // colon screening (a check-up coded 'Screening for malignant neoplasm of colon', a note listing
   // a colonoscopy) would contradict a member's answer.
-  const SLOTS = expected.members.map((x) => x.patient);
+  const SLOTS = expected.items.map((x) => x.patient);
   const onSlots = all.filter((r) => SLOTS.some((p) => JSON.stringify(r).includes(`"${p}"`)));
   const text = (r: (typeof all)[number]) =>
     JSON.stringify(r) + (r.resourceType === 'DocumentReference' ? r.content.map((c) => (c.attachment.data ? new TextDecoder().decode(Uint8Array.from(atob(c.attachment.data), (ch) => ch.charCodeAt(0))) : '')).join('\n') : '');
@@ -118,7 +118,7 @@ describe('crc-care-gap', () => {
   it('states no date the clock gives and no answer in the prompt or policy text', async () => {
     const task = await nodeTaskSource({ testMode: false }).get('crc-care-gap');
     const texts = [task.instruction, ...task.policies.map((p) => p.text)];
-    const answers = expected.members.map((x) => x.family);
+    const answers = expected.items.map((x) => x.family);
     const findings = lintWorld(all, [{ source: 'crc-care-gap', spec: { prompts: texts, leakage: { answers, texts: texts.map((text, i) => ({ source: i === 0 ? 'instruction.md' : 'RBC-QM-02', text })) } } }]);
     expect(findings).toEqual([]);
   });

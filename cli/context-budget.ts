@@ -11,9 +11,11 @@
 // context (input + cache_read + cache_creation), and per task the medians of T, C0, g, o and
 // working time per request over its trials, k = (median T - 2) / the items the run's tasks held,
 // and the median of each trial's modelled cost (its own T, C0, g and o) against the observed
-// median loop cost (record cost_usd). The items are the task's packages/env/overlay.ts slots
-// when every trial ran at the checkout's env_version; otherwise the slots may have changed since,
-// so --observed-items is required. A fit more than 10% under or 40% over the observed median is
+// median loop cost (record cost_usd). The items are the entries of the task's expected.items (a
+// list, or an object keyed by item) when every trial ran at the checkout's env_version; otherwise
+// the list may have changed since, and a task whose expected.ts has no items list has no count, so
+// --observed-items is required. The overlay slots are never the count: a probe's slots outnumber
+// its items (verifier-phase-P17i-W1-0-1 F1). A fit more than 10% under or 40% over the observed median is
 // a broken line: a projection from it is not trusted. A trial with T < 2 is warned about.
 // --project --items projects each trial at n items with its own k = (T - 2) / items, C0, g and o,
 // and takes the medians of T, cost, peak context and working time; p90 = P90_OVER_MEDIAN x median.
@@ -36,10 +38,9 @@ import { installEgressGuard } from '../packages/core/egress.ts';
 import { MAX_WALL_MS } from '../packages/core/run.ts';
 import { currentGrade } from '../packages/core/summary.ts';
 import type { TaskSource } from '../packages/core/tasks.ts';
-import { TASKS } from '../packages/env/overlay.ts';
 import { loadFinalTrials, loadTrialObservations } from './adapters/ledger-node.ts';
 import { settledRecords, trajectoryOf } from './adapters/result-sink-node.ts';
-import { nodeTaskSource } from './adapters/tasks-node.ts';
+import { nodeTaskSource, TASKS_DIR } from './adapters/tasks-node.ts';
 import { checkoutVersions } from './replay.ts';
 
 // The plan sizes on p90 ~ 1.25 x median: pilot-2's max/median trial cost was 1.12-1.46 per task.
@@ -57,13 +58,23 @@ export interface Deps {
   // The checkout's env_version of a task, null when it has none; default from tasks. A throw or
   // rejection (no such task, a broken task or world file) is reported as the reason.
   checkoutEnv?: (id: string) => Promise<string | null>;
+  // The number of items in the checkout's tasks/<id>/expected.ts expected.items, null when it has
+  // no items list; default expectedItems. A throw or rejection is reported as the reason.
+  taskItems?: (id: string) => Promise<number | null>;
 }
 
 const defaults: Deps = { out: (l) => process.stdout.write(`${l}\n`), err: (l) => process.stderr.write(`${l}\n`) };
 const USAGE = 'usage: pnpm cli context-budget <run>[,<run>...] [--task all|<id,...>] [--observed-items <id=n,...>] [--project --items <n|id=n,...>] [--cost-from <run,...>] [--json]';
 
-// The items each task's list held in the world the pilot runs used: its overlay slots.
-const SLOT_ITEMS: Record<string, number> = Object.fromEntries(Object.values(TASKS).map((t) => [t.slug, t.slots.length]));
+// The entries of tasks/<id>/expected.ts expected.items in this checkout: a list's length, an object's
+// keys; null when the file or the list is missing.
+export async function expectedItems(id: string, root: string = TASKS_DIR): Promise<number | null> {
+  const file = join(root, id, 'expected.ts');
+  if (!existsSync(file)) return null;
+  const items = ((await import(pathToFileURL(file).href)) as { expected?: { items?: unknown } }).expected?.items;
+  if (Array.isArray(items)) return items.length;
+  return items !== null && typeof items === 'object' ? Object.keys(items).length : null;
+}
 
 export interface TrialUsage {
   index: number | null;
@@ -298,8 +309,13 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
     const trials = byTask.get(id) as TrialUsage[];
     let items = observed[id];
     if (items === undefined) {
-      const slots = SLOT_ITEMS[id];
-      if (slots === undefined) return usage(`${id}: no item count; give --observed-items ${id}=n`);
+      let listed: number | null;
+      try {
+        listed = await (deps.taskItems ?? expectedItems)(id);
+      } catch (e) {
+        return usage(`${id}: cannot read tasks/${id}/expected.ts (${(e as Error).message}); give --observed-items ${id}=n`);
+      }
+      if (listed === null) return usage(`${id}: tasks/${id}/expected.ts has no items list; give --observed-items ${id}=n`);
       let now: string | null;
       try {
         now = await checkoutEnv(id);
@@ -308,8 +324,8 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
       }
       // A record from before env_version has none, and never matches.
       const ran = [...new Set(trials.map((t) => t.env_version))].filter((v) => v === null || v !== now);
-      if (ran.length > 0) return usage(`${id}: the run's env_version ${ran.map((v) => v ?? '(none)').join(', ')} is not the checkout's ${now ?? '(none)'}, so the ${slots} overlay slots may not be the items it held; give --observed-items ${id}=n`);
-      items = slots;
+      if (ran.length > 0) return usage(`${id}: the run's env_version ${ran.map((v) => v ?? '(none)').join(', ')} is not the checkout's ${now ?? '(none)'}, so the ${listed} items of its expected.items may not be the items it held; give --observed-items ${id}=n`);
+      items = listed;
     }
     const skipped = invalid.get(id) ?? 0;
     const fit = fitTask(trials, items, skipped);

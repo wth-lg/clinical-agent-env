@@ -53,7 +53,7 @@ const m = (patient: string, name: string, family: string, age: number, status: S
 export const expected = {
   group: ref('Group/grp-t3-okafor-crc'),
   period: { start: '2026-01-01', end: '2026-12-31' },
-  members: [
+  items: [
     m('pt-0009', 'Elly Shyla Trantow', 'Trantow', 72, 'excluded', 'frailty_dementia_medication'),
     m('pt-0011', 'Marilu Blanca Gaona', 'Gaona', 76, 'not_in_population', 'age_over_75', [], { order: null, message: null }),
     m('pt-0014', 'Santo Rodrick Pagac', 'Pagac', 55, 'met', 'colonoscopy'),
@@ -71,4 +71,4 @@ export const expected = {
   ],
 };
 
-export const ORDERED = expected.members.filter((x) => x.order === true).map((x) => x.patient);
+export const ORDERED = expected.items.filter((x) => x.order === true).map((x) => x.patient);

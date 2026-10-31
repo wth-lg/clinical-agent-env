@@ -22,6 +22,7 @@
 import type { Resource } from '../env/store.ts';
 import type { Diff } from './diff.ts';
 import type { GateOf, GateResource } from './gate-view.ts';
+import type { ItemResult } from './items.ts';
 import type { Extraction, ExtractQuestion, JudgeQuestion } from './judge.ts';
 import { within } from './normalize.ts';
 
@@ -44,6 +45,8 @@ export interface Verdict<M extends Met = Met> {
   // protocol does not name (a phone Task for a portal message, an order not linked to its
   // appointment): attribution labels the trial action_form (P17j JG8b, pre-audit M3).
   action_form?: true;
+  // A gate over a worklist (items.ts itemGate): each item's result, in list order.
+  items?: readonly ItemResult[];
 }
 
 interface Common {
