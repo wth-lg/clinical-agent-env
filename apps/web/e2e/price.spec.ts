@@ -30,7 +30,8 @@ test('with no pilot trial of the task, no typical cost shows', async ({ page }) 
 test('with no key, "Add key" on the launcher is a button that opens the key gate', async ({ page }) => {
   await browse(page, './?view=live');
   await page.getByTestId('launcher-reason').getByRole('button', { name: 'Add key' }).click();
-  await expect(page.getByRole('heading', { level: 1, name: 'Add an API key' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'See an AI model do clinical tasks' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 2, name: 'Add an API key' })).toBeVisible();
 });
 
 test('Live trial with no key: axe finds no serious or critical violation and nothing scrolls sideways, light and dark, 1440 and 390 (verifier JU6-1 F1)', async ({ page }) => {

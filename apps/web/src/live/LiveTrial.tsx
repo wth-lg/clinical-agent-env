@@ -7,7 +7,7 @@
 // state diff, Stop) and the runs this surface started. It reads trials only through the
 // surface's TrialTransport and shows them only from TrialEvents, so the local runner and the
 // browser look the same. Without a key the launcher is disabled and says why.
-import { ChevronDown, ChevronRight, CircleAlert, Dot, Square } from 'lucide-react';
+import { ChevronDown, ChevronRight, CircleAlert, Dot, Play, Square } from 'lucide-react';
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type Ref } from 'react';
 import type { TrialEvent } from '../../../../packages/core/events.ts';
 import { explainTrial, type ExplainRecord, NOT_AUDITED_MARKER } from '../../../../packages/core/explain.ts';
@@ -17,7 +17,10 @@ import { shownFault } from '../data/failures.ts';
 import { useResults } from '../data/results.ts';
 import { MODEL } from '../adapters/ledger-browser.ts';
 import { useTaskList } from '../data/tasks.ts';
-import { BUTTON, BUTTON_PRIMARY, Card, CARD, FaultLabel, OutcomeChip, Page, SELECT } from '../data/ui.tsx';
+import { BUTTON, BUTTON_PRIMARY, Card, CARD, FaultLabel, LINK, Notice, OutcomeChip, Page, SELECT } from '../data/ui.tsx';
+import { hrefWith, onNav } from '../data/url.ts';
+import { freshView } from '../shell/views.ts';
+import { liveTaskTitle } from '../tasks/title.ts';
 import { relayLine, RELAY_TRIAL_TEXT, trialRelayReason } from '../keygate/failure.ts';
 import { requestKey, useKeyStatus } from '../keygate/key.ts';
 import { amountText, typicalCost } from './typical.ts';
@@ -137,45 +140,50 @@ export function LiveTrial({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
   }
 
   return (
-    <Page title="Live trial" headingRef={headingRef} lead={t.kind === 'local-runner' ? 'Trials run in the local runner on this computer and stream here.' : 'Trials run and are graded in this tab.'}>
+    <Page title="Live trial" headingRef={headingRef} lead={`Pick a task and run it. You see each step the model takes, then the grade.${t.kind === 'local-runner' ? ' Trials run in the local runner on this computer.' : ''}`}>
       <Card title="Run a task">
-        <div className="flex flex-wrap items-end gap-3" data-testid="launcher">
-          <label className="flex min-w-0 flex-col gap-1 text-xs text-ink-muted">
-            Task
-            <select aria-label="Task" className={SELECT} value={chosen} onChange={(e) => setTask(e.target.value)} disabled={noKey}>
-              {ids.map((id) => <option key={id} value={id}>{id}</option>)}
-            </select>
-          </label>
-          <span className="flex flex-col gap-1 text-xs text-ink-muted" data-testid="launcher-model">
-            Model
-            <span className="flex h-8 items-center text-sm text-ink">{MODEL} at effort high</span>
-          </span>
-          {/* The amount sits beside its button, not in it, so the button's name is its visible
-              text (axe label-content-name-mismatch); aria-describedby still reads it out, and the
-              reason a size is disabled after it. Run ×1 is the primary action once there is a key;
-              before that, Add key is. */}
-          {RUN_SIZES.map((n) => (
-            <span key={n} className="inline-flex items-center gap-1.5">
-              <button
-                type="button"
-                data-testid={`run-x${n}`}
-                aria-describedby={[`${costId}-${n}`, ...(noKey ? [`${costId}-nokey`] : over.includes(n) ? [`${costId}-over`] : [])].join(' ')}
-                className={n === RUN_SIZES[0] && !noKey ? BUTTON_PRIMARY : BUTTON} disabled={noKey || busy || chosen === '' || over.includes(n)} onClick={() => void launch(n)}>
-                Run ×{n}
-              </button>
-              <span id={`${costId}-${n}`} data-testid={`run-cost-${n}`} className="text-xs tabular-nums text-ink-muted">{costs[n] === undefined ? '…' : amountText(costs[n], bound)}</span>
+        {/* With no key, the one thing to do comes first (ui-polish 5.2): Add key, the launcher's primary. */}
+        {noKey && (
+          <p data-testid="launcher-reason" className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-ink">
+            <span id={`${costId}-nokey`}>Add an API key to run trials.</span>
+            <button type="button" className={BUTTON_PRIMARY} onClick={requestKey}>Add key</button>
+          </p>
+        )}
+        <div className="space-y-3" data-testid="launcher">
+          <div className="flex flex-wrap items-end gap-x-6 gap-y-3">
+            <label className="flex min-w-0 max-w-full flex-col gap-1 text-xs text-ink-muted">
+              Task
+              <select aria-label="Task" className={SELECT} value={chosen} onChange={(e) => setTask(e.target.value)} disabled={noKey}>
+                {ids.map((id) => <option key={id} value={id}>{liveTaskTitle(id, tasks)}</option>)}
+              </select>
+            </label>
+            <span className="flex flex-col gap-1 text-xs text-ink-muted" data-testid="launcher-model">
+              Model
+              <span className="flex h-8 items-center text-sm text-ink">{MODEL} at effort high</span>
             </span>
-          ))}
+          </div>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            {/* The amount sits beside its button, not in it, so the button's name is its visible
+                text (axe label-content-name-mismatch); aria-describedby still reads it out, and the
+                reason a size is disabled after it. Run ×1 is the primary action once there is a key;
+                before that, Add key is. */}
+            {RUN_SIZES.map((n) => (
+              <span key={n} className="inline-flex items-center gap-1.5">
+                <button
+                  type="button"
+                  data-testid={`run-x${n}`}
+                  aria-describedby={[`${costId}-${n}`, ...(noKey ? [`${costId}-nokey`] : over.includes(n) ? [`${costId}-over`] : [])].join(' ')}
+                  className={n === RUN_SIZES[0] && !noKey ? BUTTON_PRIMARY : BUTTON} disabled={noKey || busy || chosen === '' || over.includes(n)} onClick={() => void launch(n)}>
+                  Run ×{n}
+                </button>
+                <span id={`${costId}-${n}`} data-testid={`run-cost-${n}`} className="text-xs tabular-nums text-ink-muted">{costs[n] === undefined ? '…' : amountText(costs[n], bound)}</span>
+              </span>
+            ))}
+          </div>
         </div>
         {typical !== null && (
           <p data-testid="typical-cost" className="mt-2 text-ink-muted">
             Typical cost: {usd(typical.usd)} a trial (median of {typical.n} trial{typical.n === 1 ? '' : 's'} of this task in {typical.run}).
-          </p>
-        )}
-        {noKey && (
-          <p data-testid="launcher-reason" className="mt-2 flex flex-wrap items-center gap-2 text-ink-muted">
-            <span id={`${costId}-nokey`}>Add an API key to run trials.</span>
-            <button type="button" className={BUTTON_PRIMARY} onClick={requestKey}>Add key</button>
           </p>
         )}
         {!noKey && over.length > 0 && <p id={`${costId}-over`} data-testid="size-reason" className="mt-2 text-ink-muted">{overCap(over, costs, committed, cap)}</p>}
@@ -186,12 +194,21 @@ export function LiveTrial({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
           </ErrorNote>
         )}
       </Card>
-      {current !== null && <Trial key={current} t={t} id={current} onEnd={refresh} />}
+      {current !== null && <Trial key={current} t={t} id={current} name={trialName(current, runs, tasks)} onEnd={refresh} />}
       <Card title="Your runs">
-        {runsError !== null && <ErrorNote testId="runs-error" lead="The runs cannot be listed." detail={runsError} />}
-        {runs !== null && runs.length === 0 && <p className="text-ink-muted" data-testid="no-live-runs">No runs yet. Start one above.</p>}
+        {runsError !== null && (
+          <Notice nested tone="danger" role="alert" testId="runs-error" icon={CircleAlert} detail={runsError} action={<button type="button" className={BUTTON_PRIMARY} onClick={refresh}>Retry</button>}>
+            <p className="font-medium text-ink">Your runs did not load. The other pages still work.</p>
+          </Notice>
+        )}
+        {runs !== null && runs.length === 0 && (
+          <Notice nested tone="info" testId="no-live-runs" icon={Play}>
+            <p>No runs yet. Press Run ×{RUN_SIZES[0]} to start one trial. A trial takes about 1 to 4 minutes, and you see each step as it runs.</p>
+            <a href={hrefWith(freshView('runs'))} onClick={onNav(freshView('runs'))} className={`mt-2 inline-block text-xs ${LINK}`}>See finished pilot trials in Runs</a>
+          </Notice>
+        )}
         <div className="space-y-3">
-          {[...(runs ?? [])].reverse().map((r) => <RunRows key={r.runId} run={r} current={current} onOpen={open} />)}
+          {[...(runs ?? [])].reverse().map((r) => <RunRows key={r.runId} run={r} name={runName(r, tasks)} current={current} onOpen={open} />)}
         </div>
       </Card>
     </Page>
@@ -222,10 +239,16 @@ function CapControl({ local }: { local: boolean }) {
         <button type="submit" className={BUTTON} disabled={parsed === null || parsed === cap}>Set cap</button>
       </div>
       {parsed === null && <p data-testid="cap-invalid" className="mt-1 text-xs text-danger">Enter a cap from $0.01 to ${MAX_SESSION_CAP_USD}.</p>}
-      <p data-testid="cap-where" className="mt-2 text-xs text-ink-muted">
-        Each batch is checked against this cap before any call; the amounts beside Run are each batch's reserve, and this cap is the hard limit on spend. You can also set it in the key gate. The cap is kept for this tab only, so another tab has its own
-        {local ? '; the runner counts the spend of every tab.' : ', with its own spend.'}
-      </p>
+      <div data-testid="cap-where" className="mt-2 text-xs text-ink-muted">
+        <p>Each batch is checked against this cap before any call, so spend never goes over it. The amount beside each Run button is what that batch reserves.</p>
+        <details className="mt-1">
+          <summary className="cursor-pointer">More about the cap</summary>
+          <p className="mt-1">
+            You can also set it in the key gate. The cap is kept for this tab only, so another tab has its own
+            {local ? '; the runner counts the spend of every tab.' : ', with its own spend.'}
+          </p>
+        </details>
+      </div>
     </form>
   );
 }
@@ -240,7 +263,7 @@ function ErrorNote({ lead, detail, testId, children }: { lead: string; detail: s
   );
 }
 
-function Trial({ t, id, onEnd }: { t: TrialTransport; id: string; onEnd: () => void }) {
+function Trial({ t, id, name, onEnd }: { t: TrialTransport; id: string; name: string; onEnd: () => void }) {
   const [events, setEvents] = useState<TrialEvent[]>([]);
   const [end, setEnd] = useState<TrialEnd | null>(null);
   const [stopping, setStopping] = useState(false);
@@ -280,6 +303,11 @@ function Trial({ t, id, onEnd }: { t: TrialTransport; id: string; onEnd: () => v
   // A line that carries the relay's words says whose words they are.
   const errorLine = failed === null ? null : hosted ? relayLine(failed.message) : failed.message;
   const panelId = useId();
+  // One status line for screen readers, in place of a live trajectory (ui-polish 5.3): it changes
+  // only when the turn or the final state does.
+  const status = running
+    ? events.length === 0 ? 'Starting' : `Turn ${f.turn}, running`
+    : end.state === 'graded' && explanation ? `Finished: ${explanation.outcome}` : end.state === 'cancelled' ? 'Stopped' : 'Stopped with an error';
 
   async function stop() {
     setStopping(true);
@@ -289,7 +317,13 @@ function Trial({ t, id, onEnd }: { t: TrialTransport; id: string; onEnd: () => v
   return (
     <section data-testid="live-trial" data-trial={id} data-state={running ? 'running' : end.state} className={CARD}>
       <header className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-t-lg border-b border-line bg-canvas/60 px-4 py-3 dark:bg-canvas/40">
-        <h2 className="min-w-0 break-words text-sm font-semibold text-ink">{breakable(id)}</h2>
+        <div className="min-w-0 basis-full sm:basis-auto sm:flex-1">
+          <h2 title={id} className="break-words text-sm font-semibold text-ink">{name}</h2>
+          <p className="mt-0.5 flex flex-wrap items-baseline gap-x-2 text-xs text-ink-muted">
+            <code data-testid="trial-id" className="min-w-0 break-words font-mono">{breakable(id)}</code>
+            <span role="status" className="font-medium text-ink">{status}</span>
+          </p>
+        </div>
         <Meter label="Turn" value={String(f.turn)} testId="meter-turn" />
         <Meter label="Tokens" value={`${f.tokens.input + f.tokens.cache_read + f.tokens.cache_write} in, ${f.tokens.output} out`} testId="meter-tokens" />
         <Meter label="Cost" value={usd(f.cost)} testId="meter-cost" />
@@ -300,7 +334,7 @@ function Trial({ t, id, onEnd }: { t: TrialTransport; id: string; onEnd: () => v
         </button>
       </header>
       <div className="grid min-w-0 gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_280px]">
-        <ol className="min-w-0 space-y-1.5" data-testid="trajectory" aria-live="polite">
+        <ol className="min-w-0 space-y-1.5" data-testid="trajectory">
           {f.items.map((item) => <ItemRow key={item.key} item={item} />)}
           {running && <li className="text-xs text-ink-muted">{events.length === 0 ? 'Starting…' : 'Running…'}</li>}
           {!running && f.items.length === 0 && <li className="text-xs text-ink-muted">No reply came from the model.</li>}
@@ -344,6 +378,33 @@ function Trial({ t, id, onEnd }: { t: TrialTransport; id: string; onEnd: () => v
   );
 }
 
+// The viewer's clock time of an ISO instant ("22:56"), or null for a value it cannot read.
+function clockTime(iso: string): string | null {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? null : `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
+type Titled = Parameters<typeof liveTaskTitle>[1];
+
+// A run or a trial in words (ui-polish 5.1): "<task title> · trial 1 of 3 · started 22:56". The raw
+// id stays in the heading's title and in a small code. Before the runs list holds the trial, the
+// task comes from its id (run.task.index).
+function trialName(id: string, runs: readonly LiveRun[] | null, tasks: Titled): string {
+  const run = runs?.find((r) => r.rows.some((x) => x.trialId === id));
+  const row = run?.rows.find((x) => x.trialId === id);
+  const at = run ? clockTime(run.started) : null;
+  return [
+    liveTaskTitle(row?.taskId ?? id.split('.').slice(1, -1).join('.'), tasks),
+    ...(run && row ? [`trial ${row.index + 1} of ${run.rows.length}`] : []),
+    ...(at ? [`started ${at}`] : []),
+  ].join(' · ');
+}
+
+function runName(run: LiveRun, tasks: Titled): string {
+  const at = clockTime(run.started);
+  return [run.tasks.map((x) => liveTaskTitle(x, tasks)).join(', '), `${run.rows.length} trial${run.rows.length === 1 ? '' : 's'}`, ...(at ? [`started ${at}`] : [])].join(' · ');
+}
+
 // A trial id (run.task.index) with a line-break opportunity after each dot, so a narrow screen
 // breaks it between its parts rather than inside one.
 const breakable = (id: string) => id.split('.').flatMap((part, i, parts) => (i === parts.length - 1 ? [part] : [`${part}.`, <wbr key={i} />]));
@@ -370,9 +431,9 @@ function ItemRow({ item }: { item: Item }) {
         <span className="min-w-0 truncate text-xs text-ink-muted">{item.target}</span>
         {item.error !== null && <CircleAlert aria-label={`error ${item.error}`} className="h-3.5 w-3.5 shrink-0 text-danger" strokeWidth={1.75} />}
         {item.written.length > 0 && (
-          <span className="inline-flex min-w-0 items-center text-xs text-accent">
-            <Dot aria-hidden className="h-4 w-4 shrink-0" />
-            <span data-testid="written" className="truncate">{item.written.join(', ')}</span>
+          <span className="inline-flex min-w-0 items-center text-xs">
+            <Dot aria-hidden className="h-4 w-4 shrink-0 text-accent" />
+            <span data-testid="written" title={item.written.join(', ')} className="truncate text-ink underline decoration-accent underline-offset-2">{item.written.join(', ')}</span>
           </span>
         )}
         {!item.executed && <span className="text-xs text-ink-muted">(not run)</span>}
@@ -386,12 +447,13 @@ function ItemRow({ item }: { item: Item }) {
   );
 }
 
-function RunRows({ run, current, onOpen }: { run: LiveRun; current: string | null; onOpen: (id: string) => void }) {
+function RunRows({ run, name, current, onOpen }: { run: LiveRun; name: string; current: string | null; onOpen: (id: string) => void }) {
   return (
     <div data-testid="live-run" data-run={run.runId} data-trials={run.rows.length}>
       <p className="text-ink-muted">
-        <span className="font-medium text-ink">{run.runId}</span>: {run.tasks.join(', ')}, {run.rows.length} trial{run.rows.length === 1 ? '' : 's'}
+        <span title={run.runId} className="font-medium text-ink">{name}</span>
         {run.done ? '' : ', running'}{run.stopped ? `, stopped: ${run.stopped}` : ''}
+        <code className="ml-2 break-all font-mono text-xs">{run.runId}</code>
       </p>
       <ul className="mt-1 divide-y divide-line rounded-sm border border-line">
         {run.rows.map((row) => <LiveRow key={row.trialId} row={row} current={current === row.trialId} onOpen={onOpen} />)}
@@ -413,8 +475,8 @@ function LiveRow({ row, current, onOpen }: { row: LiveRun['rows'][number]; curre
   return (
     <li data-testid="live-row" data-trial={row.trialId} data-state={row.state} data-outcome={e?.outcome ?? ''} className="px-3 py-2">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <button type="button" onClick={() => onOpen(row.trialId)} aria-current={current} className="min-w-0 break-all text-left font-medium text-ink hover:underline">
-          {row.trialId}
+        <button type="button" onClick={() => onOpen(row.trialId)} aria-current={current} title={row.trialId} className="min-w-0 break-all text-left font-medium text-ink hover:underline">
+          Trial {row.index + 1}
         </button>
         {e ? <OutcomeChip outcome={e.outcome} fault={shownFault(e)} /> : <span className="text-xs text-ink-muted">{row.state}</span>}
         {e && e.outcome !== 'PASS' && <FaultLabel e={e} />}

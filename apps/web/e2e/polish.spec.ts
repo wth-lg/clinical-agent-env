@@ -182,3 +182,44 @@ test.describe('coarse pointer at 390', () => {
     expect(Math.min(box.width, box.height)).toBeGreaterThanOrEqual(44);
   });
 });
+
+// UI polish PR 5 (reports/ui-polish-spec.md 5.1, 5.2, 5.4): readable task names in the launcher, the
+// Add key prompt before the controls, the friendlier empty state, and a key gate that welcomes first
+// and keeps one filled primary with a hint while the key field is empty.
+test('the launcher\'s Task select shows task titles, with the id as each option\'s value', async ({ page }) => {
+  await browse(page, './?view=live&task=_toy');
+  const select = page.getByRole('combobox', { name: 'Task' });
+  await expect(select).toHaveValue('_toy');
+  await expect(select.locator('option[value="_toy"]')).toHaveText('Practice task (write one note)');
+  await expect(select.locator('option[value="renal-dose-review"]')).toHaveText('Renal and age dose review of Harold Vance');
+});
+
+test('with no key, the Add key prompt comes before the Run buttons, and the empty runs list says what to do', async ({ page }) => {
+  await browse(page, './?view=live&task=_toy');
+  const add = page.getByTestId('launcher-reason').getByRole('button', { name: 'Add key' });
+  const run = page.getByTestId('run-x1');
+  await expect(add).toBeVisible();
+  // DOCUMENT_POSITION_FOLLOWING (4): run-x1 comes after Add key in the DOM.
+  expect(await add.evaluate((a, r) => a.compareDocumentPosition(r!) & 4, await run.elementHandle())).toBe(4);
+  await expect(page.getByTestId('no-live-runs')).toContainText('No runs yet. Press Run ×1 to start one trial. A trial takes about 1 to 4 minutes, and you see each step as it runs.');
+  await expect(page.locator('main').getByText('Pick a task and run it. You see each step the model takes, then the grade.')).toBeVisible();
+});
+
+test('the key gate welcomes first, keeps Validate as its one filled primary and asks for a key while the field is empty', async ({ page }) => {
+  await openApp(page, './');
+  await expect(page.getByRole('heading', { level: 1, name: 'See an AI model do clinical tasks' })).toBeVisible();
+  await expect(page.getByText('You can look at everything with no key. Add a key only to run new trials.')).toBeVisible();
+  const validate = page.getByRole('button', { name: 'Validate' });
+  await expect(validate).toHaveClass(/\bbg-primary\b/);
+  await expect(validate).toBeEnabled();
+  await expect(page.locator('main button.bg-primary')).toHaveCount(1);
+  const hint = page.getByText('Paste a key to continue');
+  await expect(hint).toBeVisible();
+  expect((await validate.getAttribute('aria-describedby')) ?? '').toContain((await hint.getAttribute('id'))!);
+  // Browse without a key is a full button beside Validate: a solid outline, not the quiet style.
+  const gate = page.getByRole('button', { name: GATE });
+  expect(await gate.evaluate((el) => getComputedStyle(el).borderTopStyle)).toBe('solid');
+  expect(await gate.evaluate((el) => getComputedStyle(el).borderTopColor)).not.toBe('rgba(0, 0, 0, 0)');
+  await page.getByLabel('API key', { exact: true }).fill('sk-ant-x');
+  await expect(hint).toHaveCount(0);
+});

@@ -14,3 +14,15 @@ export const taskTitle = (t: { title: string; policies: ReadonlyArray<{ id: stri
 
 // The Overview meta line's policies: the count, then the codes the title no longer carries.
 export const policyLine = (codes: readonly string[]): string => `${codes.length} ${codes.length === 1 ? 'policy' : 'policies'}${codes.length > 0 ? `: ${codes.join(', ')}` : ''}`;
+
+// A plain name for each task the task list leaves out (ids that start with _), so the live launcher
+// never shows a bare id (ui-polish 5.1). The name lives here, not in the task's task.toml, so no
+// task file and no task version changes.
+const UNLISTED_TITLES: Readonly<Record<string, string>> = { _toy: 'Practice task (write one note)' };
+
+// The title the live launcher and its headings show for a task id: from the task list, else the
+// unlisted name, else the id itself.
+export function liveTaskTitle(id: string, tasks: ReadonlyArray<{ id: string; title: string; policies: ReadonlyArray<{ id: string }> }> | null): string {
+  const t = tasks?.find((x) => x.id === id);
+  return t ? taskTitle(t) : (UNLISTED_TITLES[id] ?? id);
+}
