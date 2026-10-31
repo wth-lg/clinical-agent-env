@@ -4,10 +4,11 @@
 // decides), the decisive failing check, the one-line reason and, with no audit row, the
 // not-audited marker; all of it is packages/core/explain.ts explainTrial, never re-derived here.
 // A record the loader cannot read is a row that says why. The header shows k/N as a stat with its
-// Wilson interval and the outcome counts; the trials each task's k/N leaves out and why (ENV_LIMIT
-// and the other excluded outcomes) and the pass and denominator rules are in "How a trial is
-// counted" (ui-polish 2.2). In each run the rows to look at (not PASS, a fault or a harm) come
-// first; the PASS rows are behind "<n> PASS trials", open while a filter is set. Filters (task,
+// Wilson interval and the outcome counts, then the trials each task's k/N leaves out and why
+// (ENV_LIMIT and the other excluded outcomes), always in view; the pass and denominator rules are in
+// "How a trial is counted" (ui-polish 2.2, verifier-phase-P17i-UI-2-1 S1). In each run the rows to
+// look at (not PASS, a fault or a harm) come first; the PASS rows are behind "<n> PASS trials"
+// ("Other trials (<n>)" while the run is blocked), open while a filter is set. Filters (task,
 // label; and from Findings, check: the valid failures whose decisive check it is, and audit: the
 // valid failures by audit label, P17j JU7) live in the URL; a run with a trial that blocks it says
 // so above the list; ?trial= opens the trial detail
@@ -77,18 +78,18 @@ export function Runs({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | un
           </span>
         )}>
         {byOutcome.length > 0 && (
-          <p className="mb-3 flex flex-wrap gap-1.5" data-testid="outcome-counts">
+          <div role="group" aria-label="Trials by outcome" className="mb-3 flex flex-wrap gap-1.5" data-testid="outcome-counts">
             {byOutcome.map((x) => <OutcomeChip key={x.o} outcome={x.o} count={x.n} />)}
-          </p>
+          </div>
+        )}
+        {left.length > 0 && (
+          <ul className="mb-2 space-y-0.5 text-xs text-ink-muted" data-testid="runs-not-counted">
+            {left.map((l) => <li key={l.id} data-testid="not-counted" data-task={l.id} className="break-words"><span className="font-medium text-ink">{l.id}</span>: {l.text}</li>)}
+          </ul>
         )}
         <details>
           <summary className="cursor-pointer font-medium text-ink">How a trial is counted</summary>
           <div className="mt-2">
-            {left.length > 0 && (
-              <ul className="mb-2 space-y-0.5 text-xs text-ink-muted" data-testid="runs-not-counted">
-                {left.map((l) => <li key={l.id} data-testid="not-counted" data-task={l.id} className="break-words"><span className="font-medium text-ink">{l.id}</span>: {l.text}</li>)}
-              </ul>
-            )}
             <PlainRules ids={{ pass: 'pass-definition', denominator: 'denominator-rule' }} />
           </div>
         </details>
@@ -149,6 +150,8 @@ function RunList({ run, matches, filtered, heading = false }: { run: RunData; ma
   const shown = run.trials.filter(matches);
   const look = shown.filter((t) => !plainPass(t));
   const passes = shown.filter(plainPass);
+  // A blocked run has no pass count, so its group is not named by one (verifier-phase-P17i-UI-2-1 B1).
+  const blocked = runBlock(run.trials) !== null;
   const graded = gradingLine(run.grading);
   const box = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(filtered);
@@ -178,7 +181,7 @@ function RunList({ run, matches, filtered, heading = false }: { run: RunData; ma
       )}
       {passes.length > 0 && (
         <details data-testid="pass-group" open={open} onToggle={(e) => setOpen(e.currentTarget.open)}>
-          <summary className="cursor-pointer px-1 py-1 font-medium text-ink">{plural(passes.length, 'PASS trial')}</summary>
+          <summary className="cursor-pointer px-1 py-1 font-medium text-ink">{blocked ? `Other trials (${passes.length})` : plural(passes.length, 'PASS trial')}</summary>
           <ul className={`mt-1 divide-y divide-line ${CARD}`} data-testid="pass-list">
             {passes.map((t) => <TrialRow key={t.name} t={t} run={run} />)}
           </ul>
@@ -200,13 +203,17 @@ function BadRow({ b }: { b: BadRecord }) {
 // Row: the name, outcome, fault chip and decisive check on one line with the cost on the right;
 // under it the fault note, the not-audited marker and any harm, then the reason. A click anywhere
 // on the row that is not on a link or button (or ends a text selection) opens the trial, as its
-// button does.
+// button does. It waits DOUBLE_CLICK_MS first: a second click in that time is a double-click that
+// selects a word, so it cancels the open (verifier-phase-P17i-UI-2-1 M2).
+const DOUBLE_CLICK_MS = 300;
 function TrialRow({ t, run }: { t: Trial; run: RunData }) {
   const e = t.explanation;
   // A non-pass, or a false PASS (GR5), shows its label and reason.
   const faulted = e.outcome !== 'PASS' || e.fault !== null;
   const cost = t.record.cost_usd + (t.record.judge_cost_usd ?? 0);
   const open = () => navigate({ trial: t.name, run: run.runId, tab: null });
+  const pending = useRef<number | undefined>(undefined);
+  useEffect(() => () => clearTimeout(pending.current), []);
   return (
     <li
       data-testid="trial-row"
@@ -214,8 +221,9 @@ function TrialRow({ t, run }: { t: Trial; run: RunData }) {
       data-outcome={e.outcome}
       className="cursor-pointer px-4 py-2.5 hover:bg-canvas/60"
       onClick={(ev) => {
-        if ((ev.target as Element).closest('a, button') || (getSelection()?.toString() ?? '') !== '') return;
-        open();
+        clearTimeout(pending.current);
+        if (ev.detail > 1 || (ev.target as Element).closest('a, button') || (getSelection()?.toString() ?? '') !== '') return;
+        pending.current = window.setTimeout(open, DOUBLE_CLICK_MS);
       }}
     >
       <div className="grid grid-cols-[1fr_auto] items-start gap-x-3">

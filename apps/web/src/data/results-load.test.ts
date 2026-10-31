@@ -13,13 +13,13 @@ const FILES = ['results/pilot-a/audit.jsonl', 'results/pilot-a/trials/t/0.json',
 
 // Serves FILES under data/: pilot-a's audit.jsonl answers 500, pilot-b's records after 200 ms.
 // Counts the fetches that have started and not yet settled.
-function stubFetch(): { pending: () => number } {
+function stubFetch(files = FILES): { pending: () => number } {
   let pending = 0;
   vi.stubGlobal('fetch', async (url: string) => {
     const rel = String(url).replace(/^.*\/data\//, '');
     pending++;
     try {
-      if (rel === 'index.json') return new Response(JSON.stringify({ files: FILES }));
+      if (rel === 'index.json') return new Response(JSON.stringify({ files }));
       if (rel === 'results/pilot-a/audit.jsonl') return new Response('', { status: 500 });
       if (rel.startsWith('results/pilot-b/')) await new Promise((r) => setTimeout(r, 200));
       return new Response(RECORD);
@@ -69,6 +69,18 @@ describe('loadResults with one pilot audit.jsonl unreadable and another pilot sl
     const [r] = await Promise.allSettled([loadResults()]);
     expect(pending()).toBe(0);
     expect(r).toMatchObject({ status: 'fulfilled', value: { kind: 'error' } });
+  });
+});
+
+// The last pilot is the latest (Overview's pilot rows, the Start here failed-trial link), so the
+// pilots sort by number: pilot-9 before pilot-10 (verifier-phase-P17i-UI-2-1, latent).
+describe('loadResults with pilot-9 and pilot-10', () => {
+  it('orders the pilots by number, so pilot-10 is the last', async () => {
+    stubFetch(['results/pilot-10/trials/t/0.json', 'results/pilot-9/trials/t/0.json', 'results/runs/pilot-4/trials/t/0.json', 'results/pilot-2/trials/t/0.json']);
+    const r = await (await freshLoad())();
+    expect(r.kind).toBe('ready');
+    if (r.kind !== 'ready') return;
+    expect(r.pilots.map((p) => p.dir)).toEqual(['results/pilot-2', 'results/runs/pilot-4', 'results/pilot-9', 'results/pilot-10']);
   });
 });
 

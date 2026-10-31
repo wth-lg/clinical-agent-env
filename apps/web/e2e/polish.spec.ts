@@ -204,9 +204,46 @@ test('Runs: the header shows k/N as a stat with its Wilson interval and the outc
   await expect(head.getByTestId('runs-stat')).toHaveCSS('font-size', '24px');
   await expect(head.getByTestId('runs-wilson')).toHaveText(/^Wilson 95% \d/);
   await expect(head.getByTestId('outcome-count').first()).toBeVisible();
+  // Each count reads as "FAIL: 4 trials", and the chip row has a name (verifier-phase-P17i-UI-2-1 M4).
+  const counts = head.getByRole('group', { name: 'Trials by outcome' }).getByTestId('outcome-count');
+  await expect(counts.first()).toBeVisible();
+  for (const text of await counts.allTextContents()) expect(text).toMatch(/^[A-Z_]+: \d+ trials?$/);
   const rules = head.locator('details', { has: page.getByTestId('plain-rules') }).first();
   await expect(rules.locator('> summary')).toHaveText('How a trial is counted');
   await expect(rules).not.toHaveAttribute('open', '');
+  // Only the rules are closed: the trials each task's k/N leaves out, and why, stay in view (UI-2-1 S1).
+  await expect(head.getByTestId('runs-not-counted')).toBeVisible();
+  await expect(head.getByTestId('runs-not-counted')).toContainText('ENV_LIMIT');
+  await expect(rules.getByTestId('runs-not-counted')).toHaveCount(0);
+});
+
+test('the rate dot is about 9.5 px across and round at every width, inside the 16 px row (verifier-phase-P17i-UI-2-1 S2)', async ({ page }) => {
+  for (const width of [390, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await browse(page, './?view=findings');
+    await expect(page.getByTestId('interval').first()).toBeVisible();
+    const rows = await page.getByTestId('interval').evaluateAll((svgs) => svgs.filter((s) => s.getClientRects().length > 0).map((s) => {
+      const dot = s.querySelector('circle')!.getBoundingClientRect();
+      return { row: s.getBoundingClientRect().height, w: dot.width, h: dot.height };
+    }));
+    expect(rows.length).toBeGreaterThan(0);
+    for (const r of rows) {
+      expect(r.row, `${width}`).toBe(16);
+      expect(r.w, `${width}`).toBeGreaterThanOrEqual(9);
+      expect(r.w, `${width}`).toBeLessThanOrEqual(10);
+      expect(Math.abs(r.w - r.h), `${width}`).toBeLessThan(0.5);
+    }
+  }
+});
+
+test('a double-click on a word in a row\'s reason selects the word and does not open the trial (verifier-phase-P17i-UI-2-1 M2)', async ({ page }) => {
+  await browse(page, './?view=runs');
+  const reason = page.locator('[data-testid="trial-row"][data-outcome="FAIL"]').first().getByTestId('reason');
+  await reason.dblclick({ position: { x: 20, y: 8 } });
+  // Longer than a single click waits before it opens the trial.
+  await page.waitForTimeout(800);
+  await expect(page.getByTestId('trial-detail')).toHaveCount(0);
+  expect(await page.evaluate(() => getSelection()?.toString().trim() ?? '')).not.toBe('');
 });
 
 test('Runs: at 1440 no row\'s chip line wraps, and a click on a row\'s reason opens its trial (ui-polish 2.2)', async ({ page }) => {

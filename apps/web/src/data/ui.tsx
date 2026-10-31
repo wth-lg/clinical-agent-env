@@ -147,7 +147,8 @@ export function OutcomeChip({ outcome, fault, count }: { outcome: string; fault?
     <span data-testid={count === undefined ? 'outcome' : 'outcome-count'} data-outcome={count === undefined ? undefined : outcome} data-mark={mark} className={`${CHIP} whitespace-nowrap text-ink ${BLOCKING_MARKS.includes(mark) ? 'border-danger' : 'border-line'}`}>
       <span aria-hidden {...markProps(mark, 'inline-block h-2.5 w-2.5 rounded-[2px]')} />
       {outcome}
-      {count !== undefined && <span className="text-ink-muted">{count}</span>}
+      {/* With a count, it reads "FAIL: 4 trials" and shows "FAIL 4" (verifier-phase-P17i-UI-2-1 M4). */}
+      {count !== undefined && <><span className="sr-only">:</span> <span className="text-ink-muted">{count}</span><span className="sr-only">{count === 1 ? ' trial' : ' trials'}</span></>}
     </span>
   );
 }
@@ -304,7 +305,8 @@ export function IntervalRow({ rate, interval, band, label }: { rate: number | nu
           <line x1={x(interval.hi)} x2={x(interval.hi)} y1={4} y2={12} className="stroke-ink" strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
         </>
       )}
-      {rate !== null && <circle cx={x(rate)} cy={8} r={3.5} className="fill-accent stroke-surface" strokeWidth={1} vectorEffect="non-scaling-stroke" />}
+      {/* The dot that marks the rate is the row's largest mark: 9.5 px across (verifier-phase-P17i-UI-2-1 S2). */}
+      {rate !== null && <circle cx={x(rate)} cy={8} r={4.75} className="fill-accent stroke-surface" strokeWidth={1} vectorEffect="non-scaling-stroke" />}
     </svg>
   );
 }
