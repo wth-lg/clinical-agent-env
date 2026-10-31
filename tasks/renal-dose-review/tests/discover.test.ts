@@ -5,10 +5,14 @@
 // that makes an item a trap or holds its hidden comparison value: an outside creatinine (LOINC
 // 14682-9, umol/L), the outside clinic's letter that names the inhibitor, and the inhibitor's
 // order. A lure is listed apart (rulings R19): a record that tempts the wrong action but cannot
-// decide the item, such as a reported weight (LOINC 3142-7, which §1 excludes). A lure may show on
-// page 1 of a broad search; it makes the trap harder, not easier. The newest-first vital-sign and
-// all-Observation searches (verifier-W1-probe-T1-2 N1) show the reported weight on page 1, and
-// that item stays reasoning (bauer_stated_weight): (4) records it.
+// decide the item: a reported weight (LOINC 3142-7, which §1 excludes), the pharmacist note that
+// computes CrCl on ideal body weight (§3 says actual), and pt-0002's superseded discharge summary
+// and its weight (§1 says the most recent) (verifier-W1-probe-T1-clinical-3 N2; the overlay
+// declares the same four as distractors). A lure may show on page 1 of a broad search; it makes
+// the trap harder, not easier, and the items it tempts stay reasoning (bauer_stated_weight,
+// moravec_ideal_weight, vance_discharge_values): (4) records where each shows. Notes that point
+// at a fact but hold no value (pt-0045's 'HIV: followed at St. Brigid', pt-0002's May note) are
+// not lures.
 // The plain inputs of list patients (a clinic creatinine 2160-0, a measured weight 29463-7) may
 // show on page 1: the clinic-wide newest-first searches on those two codes are natural first moves
 // (§1 asks for the most recent SCr and measured weight), and they break no trap
@@ -45,8 +49,10 @@ const listObs = (code: string) => ([...world.resources()] as ReadonlyArray<Obs>)
 // The trap-deciding records: every outside creatinine on a list patient's chart, the letter and
 // the inhibitor order.
 const TRAP_DECIDING = new Set([...listObs('14682-9'), ref('DocumentReference/doc-t1-1901'), ref('MedicationRequest/mr-t1-1703')]);
-// The lures (rulings R19): every reported weight on a list patient's chart. None is decisive.
-const LURES = new Set(listObs('3142-7'));
+// The lures (rulings R19): every reported weight on a list patient's chart, and the records that
+// hold a superseded or non-§1 value. None is decisive.
+const LURE_RECORDS = [ref('DocumentReference/doc-t1-1401'), ref('DocumentReference/doc-t1-dc-0212'), ref('Observation/obs-t1-wt-0210')];
+const LURES = new Set([...listObs('3142-7'), ...LURE_RECORDS]);
 const page1 = (name: string, input: object) => {
   const r = callTool(READ_TOOLS, name, input, ctx);
   return [...r.exposed_ids, ...r.referenced_ids];
@@ -77,8 +83,8 @@ describe('T1 worklist probe: discoverability', () => {
     expect([...TRAP_DECIDING].sort()).toEqual([ref('Observation/obs-t1-1604'), ref('Observation/obs-t1-1302'), ref('DocumentReference/doc-t1-1901'), ref('MedicationRequest/mr-t1-1703')].sort());
   });
 
-  it('knows the lures apart, and no lure decides an item (rulings R19): the reported weight', () => {
-    expect([...LURES]).toEqual([ref('Observation/obs-t1-1505')]);
+  it('knows the lures apart, and no lure decides an item (rulings R19): the reported weight, the ideal-weight note, the superseded discharge values', () => {
+    expect([...LURES].sort()).toEqual([ref('Observation/obs-t1-1505'), ...LURE_RECORDS].sort());
     expect(expected.items.flatMap((x) => x.decisive).filter((k) => LURES.has(k))).toEqual([]);
   });
 
@@ -101,10 +107,15 @@ describe('T1 worklist probe: discoverability', () => {
   });
 
   // On the six-probe world (W1 train, builder-249) the other worklists' newer results fill page 1
-  // of the all-Observation sort, so the lure shows only on the vital-sign one.
-  it('records the lure on page 1 of the newest-first vital-sign search, and not of the all-Observation one (rulings R19: allowed, the item is reasoning)', () => {
-    expect(page1('fhir_search', { resource_type: 'Observation', category: 'vital-signs', sort: '-date' })).toContain(ref('Observation/obs-t1-1505'));
-    expect(page1('fhir_search', { resource_type: 'Observation', sort: '-date' })).not.toContain(ref('Observation/obs-t1-1505'));
+  // of the all-Observation sort, so the reported weight shows only on the vital-sign one.
+  it('records each lure on page 1 of the broad searches that show it (rulings R19: allowed, the items they tempt are reasoning)', () => {
+    const shownOn = Object.fromEntries([...LURES].map((k) => [k, FIRST_BROAD_SEARCHES.filter(([name, input]) => page1(name, input).includes(k)).map(([name, input]) => `${name} ${JSON.stringify(input)}`)]));
+    expect(shownOn).toEqual({
+      [ref('Observation/obs-t1-1505')]: ['fhir_search {"resource_type":"Observation","category":"vital-signs","sort":"-date"}'],
+      [ref('DocumentReference/doc-t1-1401')]: ['search_notes {"query":"rivaroxaban"}', 'search_notes {"query":"creatinine clearance renal dose"}', 'search_notes {"query":"weight"}'],
+      [ref('DocumentReference/doc-t1-dc-0212')]: ['search_notes {"query":"apixaban"}', 'search_notes {"query":"anticoagulation atrial fibrillation"}', 'search_notes {"query":"creatinine clearance renal dose"}', 'search_notes {"query":"weight"}', 'search_notes {"query":"creatinine"}'],
+      [ref('Observation/obs-t1-wt-0210')]: [],
+    });
   });
 
   it('records the targeted searches that reach the class-deciding records on page 1 (the routes the policy implies)', () => {
