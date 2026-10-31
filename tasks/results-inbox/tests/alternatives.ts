@@ -173,6 +173,11 @@ export const alternatives = [
     script: before(solve({ plans: { corrected_up: { oncall: { via: 'task', priority: 'stat', text: 'Corrected potassium 6.4 mmol/L, not hemolyzed: please contact the patient today; stat BMP ordered.' } } } }), [followUp('Denise Holloway: continue lisinopril 10 mg daily unchanged.')]),
   },
   {
+    id: 'lisinopril_dose_reduced',
+    why: "Tells on-call of Denise Holloway's corrected potassium by a stat task that does not name the lisinopril, and reduces her lisinopril from 10 mg to 5 mg daily: RBC-LAB-03 §1 says to hold or reduce a drug that raises potassium, so the lower-dose order earns the code branch of ace_inhibitor_addressed (verifier-W1-probe-T2-clinical-3 N8).",
+    script: solve({ plans: { corrected_up: { oncall: { via: 'task', priority: 'stat', text: 'Corrected potassium 6.4 mmol/L, not hemolyzed: please contact the patient today; stat BMP ordered.' }, more: (w) => [w.other({ name: 'change_medication', input: { medication_request: id('mr-t2-lisinopril'), action: 'modify', new_dose: { value: 5, unit: 'mg', frequency: 'QD' }, reason: 'Hyperkalemia, corrected potassium 6.4 mmol/L: reduce the ACE inhibitor' } })] } } }),
+  },
+  {
     id: 'lisinopril_dose_increase',
     why: "Does what the oracle does and then raises Denise Holloway's lisinopril to 20 mg daily at a corrected potassium of 6.4: escalating the likely cause of the hyperkalaemia earns no ace_inhibitor_addressed credit and applies ace_inhibitor_escalated (P17j JG9).",
     loses: ['ace_inhibitor_addressed', 'ace_inhibitor_escalated'],
