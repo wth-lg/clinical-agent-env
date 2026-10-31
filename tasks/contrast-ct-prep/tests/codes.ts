@@ -1,6 +1,3 @@
-// The order codes T5's gates and rubric both read.
+// The order codes T5's gates and rubric read: the clinic's CT orderables (task.toml catalog).
 export const ORDERS = 'urn:riverbend:orders';
-export const CT_CONTRAST = 'IMG-CT-AP-WC';
-export const CT_PLAIN = 'IMG-CT-AP-WO';
-// The IV corticosteroids of the accelerated regimen.
-export const IV_STEROIDS = ['hydrocortisone', 'methylprednisolone', 'dexamethasone'];
+export const CT_CODES = ['IMG-CT-AP-WC', 'IMG-CT-ABD-WC', 'IMG-CT-AP-WO', 'IMG-CT-CHEST-WO', 'IMG-CT-SINUS-WO'];

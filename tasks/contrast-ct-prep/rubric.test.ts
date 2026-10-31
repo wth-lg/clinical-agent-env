@@ -1,22 +1,28 @@
-// Two things the matrix does not show for T5. Every scripted case runs without a rejected tool
-// call, so a mutant fails on the trap it names and not on a write the tools refused (a mistyped
-// creatinine window once did exactly that). And message_dose_times takes a dose time from the
-// pattern only with its day after it; a message the pattern cannot read goes to the judge.
-// The diphenhydramine time counts only in diphenhydramine's own clause.
+// What the matrix does not show for T5's worklist. Every scripted case runs without a rejected tool
+// call, except forbidden_writes_rejected, whose rejected calls are its point; so a mutant fails on
+// the trap it names and not on a write the tools refused. message_dose_times takes a dose time from
+// the pattern only with its day after it, and the diphenhydramine time only in its own clause. And
+// each gate's check text names the first failed study and its why.
 import { describe, expect, it } from 'vitest';
 import { loadMatrixTask, matrixEnv } from '../../cli/matrix.ts';
-import { cases, gradeRun, trial, type Miss } from '../../packages/grader/matrix/matrix.ts';
-import { ORACLE_MESSAGE } from './solution/steps.ts';
-import { antihistamineTimed, clockTimes, statedMg } from './tests/rubric.ts';
+import { cases, gradeRun, trial } from '../../packages/grader/matrix/matrix.ts';
+import { checkText } from '../contrast-ct-prep.check-text.ts';
+import { expected } from './expected.ts';
+import { MESSAGES, MODERATE } from './solution/steps.ts';
+import { antihistamineTimed, clockTimes } from './tests/rubric.ts';
+import { mutants } from './tests/mutants.ts';
 
 const task = await loadMatrixTask('contrast-ct-prep');
 const env = matrixEnv();
 
 describe('contrast-ct-prep scripts', () => {
-  it.each(cases(task).map((c) => [c.id, c] as const))('%s: no tool call is rejected', async (_id, c) => {
+  it.each(cases(task).map((c) => [c.id, c] as const))('%s: no tool call is rejected, unless rejection is the case', async (id, c) => {
     const { events } = await trial(env, task, c);
     const errors = events.flatMap((e) => (e.type === 'tool_result' && e.is_error ? [{ name: e.name, content: e.content }] : []));
-    expect(errors).toEqual([]);
+    if (id === 'forbidden_writes_rejected') {
+      expect(errors).toHaveLength(9);
+      expect(errors.every((e) => JSON.stringify(e.content).includes('past'))).toBe(true);
+    } else expect(errors).toEqual([]);
   });
 });
 
@@ -26,90 +32,27 @@ describe('message_dose_times', () => {
     ['8:00 p.m. on Sunday', 20 * 60],
     ['2am Monday', 2 * 60],
     ['at 02:00 on 10/26', 2 * 60],
-    ['20:00 Sunday 10/25', 20 * 60],
-    ['12:30 AM', 30],
-  ])('reads %j as %i minutes', (s, minutes) => {
-    expect(clockTimes(s).map((t) => t.minutes)).toContain(minutes);
+    ['20:00 Sun 10/25', 20 * 60],
+  ])('reads %s', (text, minutes) => {
+    expect(clockTimes(text).map((t) => t.minutes)).toContain(minutes);
   });
 
-  it.each([
-    ['the oracle message', ORACLE_MESSAGE, true],
-    ['diphenhydramine on its own line', 'Diphenhydramine 50 mg at 8:00 a.m. on Monday 10/26.', true],
-    ['the time before the drug', 'At 8:00 AM on Monday 10/26, take diphenhydramine (Benadryl) 50 mg.', true],
-    // verifier-task-T5-2 s2-residual: one sentence gives prednisone 08:00 Monday and Benadryl at
-    // bedtime; the 08:00 is prednisone's, so the pattern must not credit diphenhydramine.
-    [
-      'Benadryl at bedtime beside prednisone at 08:00',
-      'Take prednisone 50 mg at 8:00 PM Sunday 10/25 and 2:00 AM Monday 10/26, then prednisone 50 mg at 8:00 AM Monday 10/26 and Benadryl 50 mg at bedtime.',
-      false,
-    ],
-    ['Benadryl at bedtime first', 'Take Benadryl 50 mg at bedtime and prednisone 50 mg at 8:00 AM Monday 10/26.', false],
-  ])('diphenhydramine timed in %s: %s', (_name, text, want) => {
-    expect(antihistamineTimed(text)).toBe(want);
-  });
-
-  // Case id -> how the item is decided and whether it is met.
-  const WANT: Record<string, { source: 'regex' | 'judge'; met: boolean }> = {
-    oracle: { source: 'regex', met: true },
-    tablet_counts_and_more_reads: { source: 'regex', met: true },
-    times_in_words: { source: 'judge', met: true },
-    overnight_date_slip: { source: 'judge', met: false },
-    copied_2023_times: { source: 'judge', met: false },
-    // pr-review-T5-1 S2: the prednisone times are all there, but diphenhydramine is at bedtime.
-    antihistamine_at_bedtime: { source: 'judge', met: false },
-    split_doses: { source: 'regex', met: true },
-  };
-  it.each(Object.entries(WANT))('%s: %o', async (id, want) => {
-    const c = cases(task).find((x) => x.id === id);
-    expect(c, `case ${id}`).toBeDefined();
-    const misses: Miss[] = [];
-    const grade = await gradeRun(env, task, task.checks, await trial(env, task, c!), misses);
-    expect(misses).toEqual([]);
-    const r = grade.checks.find((x) => x.id === 'message_dose_times');
-    expect({ source: (r?.evidence as { source?: string }).source, met: r?.met }).toEqual(want);
+  it('the oracle message gives every dose time with its day, diphenhydramine in its own clause', () => {
+    expect(antihistamineTimed(MESSAGES[MODERATE.patient]!)).toBe(true);
+    expect(antihistamineTimed('Take prednisone 50 mg and Benadryl 50 mg. Prednisone again at 8:00 AM Monday.')).toBe(false);
   });
 });
 
-// verifier-phase-P17i-A2-1 S1, verifier-phase-P17i-A2r2-1 M2: the premedication gates' stated_by
-// items read the doses the message gives each drug, and are met only when it gives at least one and
-// every one is right, so a message with no dose or with the chart's wrong dose does not make the
-// failure an output gap.
-describe('message_states_*', () => {
-  const PRED = /^prednisone$/i;
-  const DIPH = /^(?:diphenhydramine|benadryl)$/i;
-  it.each([
-    ['the oracle message', ORACLE_MESSAGE, PRED, [50, 50, 50]],
-    ['the oracle message', ORACLE_MESSAGE, DIPH, [50]],
-    ['the 20 mg message', ORACLE_MESSAGE.replace(/Prednisone 50 mg/g, 'Prednisone 20 mg'), PRED, [20, 20, 20]],
-    ['the 20 mg message', ORACLE_MESSAGE.replace(/Prednisone 50 mg/g, 'Prednisone 20 mg'), DIPH, [50]],
-    ['tablets beside the total', 'Prednisone 50 mg (5 tablets of 10 mg) by mouth at 20:00 Sunday 10/25.', PRED, [50]],
-    ['tablet strengths before the word', 'Prednisone 50 mg (two 20 mg tablets and one 10 mg tablet) at 8 PM Sunday.', PRED, [50]],
-    ['a hyphenated dose before the name', 'Take one 50-mg prednisone tablet at 8 PM Sunday.', PRED, [50]],
-    // verifier-phase-P17i-A2r2-1 PB: a dose written just before a name is that drug's.
-    ['doses before the names', '- 50 mg of prednisone and 25 mg of diphenhydramine (Benadryl) by mouth at 8:00 AM on Monday 10/26.', PRED, [50]],
-    ['doses before the names', '- 50 mg of prednisone and 25 mg of diphenhydramine (Benadryl) by mouth at 8:00 AM on Monday 10/26.', DIPH, [25]],
-    ['a lab value', 'Prednisone at 8 PM Sunday. Your creatinine was 0.98 mg/dL.', PRED, []],
-    ['no dose', 'Take prednisone at 8 PM Sunday.', PRED, []],
-  ])('%s, %s: %j', (_name, text, drug, want) => {
-    expect(statedMg(text, drug)).toEqual(want);
-  });
-
-  it.each([
-    ['oracle', true, true],
-    ['prednisone_20_mg', true, true],
-    ['probe_message_and_order_both_20mg', false, true],
-    ['probe_no_dose_order_20mg', false, true],
-    ['probe_diph25_dose_before_name', true, false],
-    ['probe_mixed_20_20_50', false, true],
-    ['message_times_no_order', true, true],
-    ['copied_2023_times', false, false],
-  ])('%s: prednisone %s, diphenhydramine %s', async (id, prednisone, diphenhydramine) => {
-    const c = cases(task).find((x) => x.id === id);
-    expect(c, `case ${id}`).toBeDefined();
-    const misses: Miss[] = [];
-    const grade = await gradeRun(env, task, task.checks, await trial(env, task, c!), misses);
-    expect(misses).toEqual([]);
-    const met = (k: string) => grade.checks.find((x) => x.id === k)?.met;
-    expect([met('message_states_prednisone'), met('message_states_diphenhydramine')]).toEqual([prednisone, diphenhydramine]);
+describe('check text', () => {
+  it.each(mutants.filter((m) => m.items !== undefined).map((m) => [m.id, m] as const))('%s: the first failed gate names the failed study', async (_id, m) => {
+    const grade = await gradeRun(env, task, task.checks, await trial(env, task, { kind: 'mutant', id: m.id, script: m.script }));
+    const failed = grade.checks.filter((c) => c.kind === 'gate' && c.met === false);
+    expect(failed.length).toBeGreaterThan(0);
+    for (const c of failed) {
+      const text = checkText[c.id]!.found(c.evidence as Record<string, unknown>);
+      const key = Object.keys(m.items!)[0]!;
+      const x = expected.items.find((s) => s.patient === key);
+      expect(text, c.id).toContain(x === undefined ? 'a patient not on the list' : x.name);
+    }
   });
 });

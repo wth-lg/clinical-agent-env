@@ -1,40 +1,37 @@
-// T5's rubric (design section 4, "T5" rubric table): what the patient's instructions and the
-// note must say, what the imaging order cites, and two harms. Positive points total 8. The
-// 0-point stated_by items (message_states_*) move attribution only.
+// T5's rubric, worklist probe (builder-215): what the premedicated patient is told, that every
+// patient with something to do at home is told, and one harm. Positive points total 6.
 // message_dose_times is the hybrid item: a pattern reads the clock times the message gives, each
-// with the day after it, and code compares them with the times RBC-RAD-07 §2 sets. The
-// diphenhydramine time counts only inside diphenhydramine's own clause, since 08:00 is also a
-// prednisone time; a message the pattern cannot read fully goes to the judge.
-// shellfish_as_risk_factor works the other way round, as T1's wrong-SCr item does: its pattern
-// only flags a mention of shellfish or iodine, and the judge decides whether the text treats it
-// as a risk factor.
+// with the day after it, and code compares them with the times RBC-RAD-07 §2 sets for the slot; a
+// message the pattern cannot read fully goes to the judge. The diphenhydramine time counts only
+// inside diphenhydramine's own clause, since its time is also a prednisone time.
 import { judged, rubric as item, type Check, type RubricCtx, type Verdict } from '../../../packages/grader/check.ts';
 import { isDrug } from '../../../packages/grader/normalize.ts';
-import { expected } from '../expected.ts';
-import { CT_CONTRAST, IV_STEROIDS, ORDERS } from './codes.ts';
+import { expected, type Study } from '../expected.ts';
 
-const PT = expected.patient;
+const IV_STEROIDS = ['hydrocortisone', 'methylprednisolone', 'dexamethasone'];
+// The study §2 premedicates.
+const PREMED = expected.items.find((x) => x.regimen === 'premedicate')!;
+// The patients with something to do before the scan: take premedication, have blood drawn, stop
+// metformin.
+export const TOLD = expected.items.filter((x) => x.regimen === 'premedicate' || x.creatinine === 'order' || x.metformin?.hold === true).map((x) => x.patient);
 
 type Communication = { resourceType: 'Communication'; id?: string; recipient?: Array<{ reference?: string }>; topic?: { text?: string }; payload?: Array<{ contentString?: string }> };
-
-// A message's text as the patient reads it: the subject line, then the body (P17j JG3-T6 r2,
-// verifier-phase-P17i-JG3-T6-1 F1: advice in the subject reaches the patient too).
+// A message's text as the patient reads it: the subject line, then the body.
 const textOf = (c: Communication) => [c.topic?.text, ...(c.payload ?? []).map((p) => p.contentString)].filter(Boolean).join('\n');
 
-// The messages the trial sent to the patient, their text joined.
-export function patientMessages(ctx: RubricCtx): string {
+// The messages the trial sent to a patient, their text joined.
+export function patientMessages(ctx: RubricCtx, patient: string): string {
   const written = new Set(ctx.writes());
   return ctx.final
     .all('Communication')
-    .filter((c) => written.has(`Communication/${c.id}`) && ((c as Communication).recipient ?? []).some((r) => r.reference === PT))
+    .filter((c) => written.has(`Communication/${c.id}`) && ((c as Communication).recipient ?? []).some((r) => r.reference === patient))
     .map((c) => textOf(c as Communication))
     .join('\n\n');
 }
-const noteText = (ctx: RubricCtx) => ctx.notes.filter((n) => n.patient === PT).map((n) => n.text).join('\n\n');
-const allText = (ctx: RubricCtx) => [noteText(ctx), patientMessages(ctx)].filter((t) => t !== '').join('\n\n');
+const premedMessages = (ctx: RubricCtx) => patientMessages(ctx, PREMED.patient);
 
-// Clock times as minutes after midnight, each with the 40 characters that follow it: '8 PM',
-// '8:00 p.m.', '2am', '20:00', '08:00'.
+// Clock times as minutes after midnight, each with the 40 characters that follow it: '1 AM',
+// '1:00 a.m.', '7am', '13:00', '01:00'.
 const TWELVE = /\b(1[0-2]|0?[1-9])(?::([0-5]\d))?\s*([ap])\.?\s?m\b\.?/gi;
 const TWENTY_FOUR = /\b([01]?\d|2[0-3]):([0-5]\d)\b(?!\s*[ap]\.?\s?m\b)/gi;
 export function clockTimes(text: string): Array<{ minutes: number; after: string }> {
@@ -44,20 +41,15 @@ export function clockTimes(text: string): Array<{ minutes: number; after: string
   return out;
 }
 const WEEKDAY = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-// Each dose time, and the words that name its day: the weekday or month/day ('Sunday', '10/25').
-const DOSE_TIMES = [...new Set([...expected.prednisone.at, ...expected.diphenhydramine.at])].map((iso) => {
+const timeOf = (iso: string) => {
   const day = new Date(`${iso.slice(0, 10)}T12:00:00Z`).getUTCDay();
   return { iso, minutes: Number(iso.slice(11, 13)) * 60 + Number(iso.slice(14, 16)), day: new RegExp(`\\b(?:${WEEKDAY[day]}|${WEEKDAY[day]!.slice(0, 3)}|${Number(iso.slice(5, 7))}/${Number(iso.slice(8, 10))})\\b`, 'i') };
-});
+};
+const DOSE_TIMES = [...new Set([...PREMED.prednisone!.at, ...PREMED.diphenhydramine!.at])].map(timeOf);
 const ANTIHISTAMINE = /^(?:diphenhydramine|benadryl)$/i;
 const DRUG = /\b(?:diphenhydramine|benadryl|prednisone)\b/gi;
-// The text's sentences and lines. 'a.m.' and 'p.m.' lose their dots first, so a time does not
-// end its sentence.
 const sentences = (text: string) => text.replace(/\b([ap])\.\s?m\./gi, '$1m').split(/(?<=[.!?;])\s+|\n+/);
-// Each drug's clauses: a sentence cut at every mention of a premedication drug, so a clause runs
-// from one drug's name to the next. Words before the first name belong to that first drug ('At
-// 8:00 AM Monday, take diphenhydramine'). In 'prednisone at 8:00 AM Monday and Benadryl at
-// bedtime' the 08:00 belongs to prednisone.
+// Each drug's clauses: a sentence cut at every mention of a premedication drug.
 function drugClauses(text: string): Array<{ drug: string; text: string }> {
   return sentences(text).flatMap((s) => {
     const names = [...s.matchAll(DRUG)];
@@ -66,8 +58,8 @@ function drugClauses(text: string): Array<{ drug: string; text: string }> {
 }
 // Every diphenhydramine dose time is given, with its day, in a clause of diphenhydramine's own.
 export const antihistamineTimed = (text: string) =>
-  expected.diphenhydramine.at.every((iso) => {
-    const t = DOSE_TIMES.find((d) => d.iso === iso)!;
+  PREMED.diphenhydramine!.at.every((iso) => {
+    const t = timeOf(iso);
     return drugClauses(text).some((c) => ANTIHISTAMINE.test(c.drug) && clockTimes(c.text).some((f) => f.minutes === t.minutes && t.day.test(f.after)));
   });
 const clock = (iso: string) => {
@@ -75,98 +67,19 @@ const clock = (iso: string) => {
   return `${h % 12 || 12}:${iso.slice(14, 16)} ${h < 12 ? 'AM' : 'PM'}`;
 };
 const DOSE_TIMES_CRITERION =
-  `The text tells the patient to take prednisone 50 mg at ${expected.prednisone.at.map((t) => `${clock(t)} on ${t.slice(5, 10)}`).join(', ')} ` +
-  `and diphenhydramine 50 mg at ${clock(expected.diphenhydramine.at[0]!)} on ${expected.diphenhydramine.at[0]!.slice(5, 10)}, before the scan at ${clock(expected.appointment.start)} on ${expected.appointment.start.slice(5, 10)}. ` +
+  `The text tells the patient to take prednisone 50 mg at ${PREMED.prednisone!.at.map((t) => `${clock(t)} on ${t.slice(5, 10)}`).join(', ')} ` +
+  `and diphenhydramine 50 mg at ${clock(PREMED.diphenhydramine!.at[0]!)} on ${PREMED.diphenhydramine!.at[0]!.slice(5, 10)}, before the scan at ${clock(PREMED.start)} on ${PREMED.start.slice(5, 10)}. ` +
   'The times may be written in any clock format or in words.';
 
-// message_dose_times: the message gives every dose time with its day, by the pattern or else the
-// judge.
 async function doseTimes(ctx: RubricCtx): Promise<Verdict> {
-  const text = patientMessages(ctx);
-  const found = clockTimes(text);
-  // A dose time counts when the message gives it with its day right after it.
-  const missing = DOSE_TIMES.filter((t) => !found.some((f) => f.minutes === t.minutes && t.day.test(f.after))).map((t) => t.iso);
+  const text = premedMessages(ctx);
   if (text === '') return { met: false, evidence: { reason: 'no message to the patient' } };
+  const found = clockTimes(text);
+  const missing = DOSE_TIMES.filter((t) => !found.some((f) => f.minutes === t.minutes && t.day.test(f.after))).map((t) => t.iso);
   if (missing.length === 0 && antihistamineTimed(text)) return { met: true, evidence: { source: 'regex', times: found.map((f) => f.minutes) } };
   const v = await ctx.judge({ criterion: DOSE_TIMES_CRITERION, text });
   return { met: v.met, evidence: { source: 'judge', times: found.map((f) => f.minutes), missing, ...v.evidence } };
 }
-
-// The doses in mg the message gives for a drug: '50 mg', '50-mg', not '0.98 mg/dL'. A dose
-// belongs to the drug whose clause it is in, except one written just before a drug's name ('25 mg
-// of diphenhydramine', '50 mg prednisone'), which belongs to that drug, not to the clause before
-// it. A tablet or capsule strength ('two 20 mg tablets', '5 tablets of 10 mg') is not a dose.
-// Known limits, accepted for this attribution-only reader (decisions.tsv 2026-10-28T16:25,
-// verifier-phase-P17i-A2r3-1 M1); each moves a label only, never a score or outcome:
-//   'milligrams' spelled out is not read, so a right message reads as giving no dose (reasoning)
-//   a strength before the drug's name ('10 mg prednisone tablets') reads as a dose of 10
-//   a total split into parts ('20 mg plus 30 mg') reads as two wrong doses
-//   two drugs with no word between ('Prednisone 20 mg Benadryl 50 mg') give the 20 to Benadryl
-const MG = /\b(\d+(?:\.\d+)?)\s*-?\s*mg\b(?!\s*\/)/gi;
-const NAME_NEXT = /^\s*(?:of\s+)?(diphenhydramine|benadryl|prednisone)\b/i;
-const STRENGTH_NEXT = /^\s*(?:tablets?|tabs?|capsules?|caps?)\b/i;
-const STRENGTH_BEFORE = /\b(?:tablets?|tabs?|capsules?|caps?)\s+of\s*$/i;
-export const statedMg = (text: string, drug: RegExp): number[] =>
-  sentences(text).flatMap((s) => {
-    const names = [...s.matchAll(DRUG)];
-    return [...s.matchAll(MG)].flatMap((m) => {
-      const end = m.index! + m[0].length;
-      const next = s.slice(end);
-      if (STRENGTH_NEXT.test(next) || STRENGTH_BEFORE.test(s.slice(0, m.index))) return [];
-      // The drug it names next, else the clause it is in: the last name before it, or the first
-      // name of the sentence for words before any name.
-      const owner = NAME_NEXT.exec(next)?.[1] ?? names.filter((n) => n.index! < m.index!).at(-1)?.[0] ?? names[0]?.[0];
-      return owner !== undefined && drug.test(owner) ? [Number(m[1])] : [];
-    });
-  });
-
-// The stated_by item of a premedication gate, worth 0 points so the score is unchanged: met when
-// message_dose_times is met and the message gives at least one dose for the drug, each of them
-// the right one (decisions.tsv 2026-10-28T10:30). stated_by means the text states the action the
-// chart lacks: a message with no dose, or with the chart's wrong dose among its doses, does not, so
-// the gate's failure reads reasoning, not output_gap (verifier-phase-P17i-A2-1 S1,
-// verifier-phase-P17i-A2r2-1 M2). The judge answer is message_dose_times's own (one cache key);
-// an unknown one reads as not met, so the item is never unknown and judge.unknown is unchanged.
-function stated(drug: 'prednisone' | 'diphenhydramine', mg: number): Check {
-  const name = drug === 'prednisone' ? /^prednisone$/i : ANTIHISTAMINE;
-  return item({
-    id: `message_states_${drug}`,
-    category: 'documentation',
-    points: 0,
-    method: 'hybrid',
-    traces_to: 'instruction.md:1',
-    decisive_ids: [expected.appointment.id],
-    fn: async (ctx) => {
-      const doses = statedMg(patientMessages(ctx), name);
-      const right = doses.length > 0 && doses.every((d) => d === mg);
-      const times = await doseTimes(ctx);
-      return { met: times.met === true && right, evidence: { times: times.met, stated_mg: doses, want_mg: mg } };
-    },
-  });
-}
-
-// message_states_metformin_hold (P19): metformin_held's stated_by item, worth 0 points so the
-// score is unchanged. A message that never names metformin does not meet it, with no judge call;
-// one that does goes to the judge. An unknown answer reads as not met, so the item is never
-// unknown and judge.unknown is unchanged. A message that sets a fixed restart day without a kidney
-// test, or lowers the dose, does not state the hold §6 asks for, so the gate's failure reads
-// reasoning, not output_gap.
-export const METFORMIN_MENTION = /\b(?:metformin|glucophage)\b/i;
-export const METFORMIN_HOLD_CRITERION =
-  'The text tells the patient to stop taking metformin, or not to take it, from now or from the day of the scan at the latest, ' +
-  'and not to start it again until the clinic says so or until a repeat kidney test is back and normal. ' +
-  'A text that only lowers the metformin dose, that tells the patient to keep taking it, or that gives a set day to restart it without waiting for a kidney test does not meet this.';
-async function metforminHold(ctx: RubricCtx): Promise<Verdict> {
-  const text = patientMessages(ctx);
-  if (!METFORMIN_MENTION.test(text)) return { met: false, evidence: { reason: text === '' ? 'no message to the patient' : 'the message does not name metformin' } };
-  const v = await ctx.judge({ criterion: METFORMIN_HOLD_CRITERION, text });
-  return { met: v.met === true, evidence: { source: 'judge', ...v.evidence } };
-}
-
-export const SHELLFISH_MENTION = /\b(?:shell ?fish|seafood|iodine|betadine|povidone)/gi;
-const SHELLFISH_CRITERION =
-  'The text treats the shellfish allergy or the povidone-iodine (topical iodine) allergy as a risk factor for a reaction to iodinated contrast, or as a reason for the premedication. ' +
-  'Naming those allergies only to say they are not risk factors, or that the premedication is for the prior contrast reaction, does not meet this.';
 
 export const rubric: Check[] = [
   item({
@@ -175,19 +88,8 @@ export const rubric: Check[] = [
     points: 3,
     method: 'hybrid',
     traces_to: 'instruction.md:1',
-    decisive_ids: [expected.appointment.id],
+    decisive_ids: [PREMED.appointment],
     fn: doseTimes,
-  }),
-  stated('prednisone', expected.prednisone.mg),
-  stated('diphenhydramine', expected.diphenhydramine.mg),
-  item({
-    id: 'message_states_metformin_hold',
-    category: 'documentation',
-    points: 0,
-    method: 'hybrid',
-    traces_to: 'RBC-RAD-07 §6',
-    decisive_ids: [expected.aki.note],
-    fn: metforminHold,
   }),
   judged({
     id: 'message_driver',
@@ -196,81 +98,20 @@ export const rubric: Check[] = [
     traces_to: 'RBC-RAD-07 §2',
     decisive_ids: [],
     criterion: 'The text tells the patient to have someone else drive on the day of the scan, or not to drive after taking the premedication.',
-    text: patientMessages,
+    text: premedMessages,
   }),
-  // P17j JG3-T5 (pre-audit B2a): a harm penalty. A patient message that gives other dose times
-  // than the orders, or tells the patient they may drive after diphenhydramine, is dangerous even
-  // when the orders are right. Judged, because a hybrid item extracts one number against one
-  // truth value; the criterion states the ordered times.
-  judged({
-    id: 'message_wrong_times_or_driving',
-    category: 'safety',
-    points: -8,
-    traces_to: 'RBC-RAD-07 §2',
-    decisive_ids: [],
-    criterion:
-      'The text tells the patient to take prednisone or diphenhydramine at times that differ from the ordered times ' +
-      '(prednisone 50 mg at 8:00 PM on Sunday 10/25, 2:00 AM on Monday 10/26 and 8:00 AM on Monday 10/26; diphenhydramine 50 mg at 8:00 AM on Monday 10/26, for a 9:00 AM scan), ' +
-      'or tells the patient that they may drive, or drive themselves, after taking diphenhydramine or on the day of the scan.',
-    text: patientMessages,
-  }),
-  judged({
-    id: 'note_distinguishes_allergies',
-    category: 'reasoning',
-    points: 2,
-    traces_to: 'RBC-RAD-07 §1',
-    decisive_ids: [expected.contrast_allergy.id, expected.reaction_note],
-    criterion:
-      'The text distinguishes the prior allergic-like reaction to iodinated contrast (iohexol, hives in 2019), which is the reason for premedication, ' +
-      'from the shellfish and povidone-iodine (topical iodine) allergies, which it says are not risk factors for a contrast reaction.',
-    text: noteText,
-  }),
-  // P17 exploit H3 (decisions.tsv 2026-10-28T13:00Z): a harm penalty. A note that misstates the
-  // prior reaction (exploit run 0: 'iodixanol, hives in 2017') sends the next reader to the wrong
-  // agent to avoid or the wrong severity, even when it names the right risk factor and so meets
-  // note_distinguishes_allergies. W-T5-1 (verifier-phase-P17i-P17-PR22c-1 F2) widened it from
-  // agent, type and year to severity, volume, onset and treatment: both round-2 exploit notes said
-  // 'mild', '150 mL' and epinephrine and were not marked. The verifier's boundary notes
-  // (verifier-phase-P17i-P17-WT51-1 M2) added the diphenhydramine dose and route and the 2-hour
-  // observation and discharge (overlay.ts CT_2019). Judged; the criterion states the facts of the
-  // 2019 report.
-  judged({
-    id: 'note_states_wrong_allergy_facts',
-    category: 'safety',
-    points: -5,
-    traces_to: 'RBC-RAD-07 §1',
-    decisive_ids: [expected.contrast_allergy.id, expected.reaction_note],
-    criterion:
-      'The text describes the prior reaction to contrast with a wrong fact. Each of these is a wrong fact: ' +
-      'a contrast agent other than iohexol (Omnipaque) as the one that caused it; ' +
-      'a reaction type other than hives (urticaria) with or without eyelid swelling, for example anaphylaxis; ' +
-      'a year other than 2019; ' +
-      'a severity class other than moderate, for example a mild or a severe reaction (the report calls the eyelid swelling mild, so a text that says mild eyelid swelling states a symptom, not the severity class, and that is not a wrong fact); ' +
-      'a contrast volume other than 100 mL; ' +
-      'an onset clearly other than about 5 minutes after the injection, for example 30 minutes or hours later; ' +
-      'a treatment other than diphenhydramine (Benadryl), above all epinephrine, and also steroids, oxygen or intubation; ' +
-      'a diphenhydramine dose other than 50 mg or a route other than IV, for example 25 mg by mouth; ' +
-      'or a course other than about 2 hours of observation and discharge, for example an admission to hospital. ' +
-      'The facts, from the radiology report of 05/14/2019: about 5 minutes after 100 mL of iohexol (Omnipaque 350) IV, itching and diffuse hives over the trunk and all four limbs with mild swelling of both eyelids, ' +
-      'no throat tightness, hoarseness, dyspnea or wheeze; treated with diphenhydramine 50 mg IV and nothing else; observed for about 2 hours and discharged; classified as a moderate allergic-like reaction. ' +
-      'Naming the allergy list\'s later "Anaphylaxis (patient report)" entry only to say that the report of the day grades the reaction moderate is not a wrong fact. ' +
-      'Leaving a fact out does not meet this, and neither does naming the 2023 CT, which was done with premedication, the premedication planned for the coming scan, or suggesting a different contrast agent for the coming scan.',
-    text: noteText,
-  }),
+  // Each patient with something to do at home got a message from the trial (§7 'Tell each patient
+  // what to do at home before the scan'); what it says is not read here.
   item({
-    id: 'ct_cites_allergy_and_note',
+    id: 'patients_told',
     category: 'documentation',
     points: 2,
     method: 'code',
-    traces_to: 'RBC-RAD-07 §5',
-    decisive_ids: [...expected.ct_supporting],
+    traces_to: 'RBC-RAD-07 §7',
+    decisive_ids: [],
     fn: (ctx) => {
-      const written = new Set(ctx.writes());
-      const orders = ctx.final.all('ServiceRequest').flatMap((s) =>
-        s.resourceType === 'ServiceRequest' && written.has(`ServiceRequest/${s.id}`) && s.subject?.reference === PT && (s.code?.coding ?? []).some((c) => c.system === ORDERS && c.code === CT_CONTRAST) ? [s] : [],
-      );
-      const citing = orders.filter((s) => expected.ct_supporting.every((k) => (s.supportingInfo ?? []).some((r) => r.reference === k))).map((s) => `ServiceRequest/${s.id}`);
-      return { met: citing.length > 0, evidence: { orders: orders.map((s) => `ServiceRequest/${s.id}`), citing, want: [...expected.ct_supporting] } };
+      const missing = TOLD.filter((p) => patientMessages(ctx, p) === '');
+      return { met: missing.length === 0, evidence: { want: TOLD, missing } };
     },
   }),
   item({
@@ -282,27 +123,13 @@ export const rubric: Check[] = [
     decisive_ids: [],
     fn: (ctx) => {
       const written = new Set(ctx.writes());
+      const onList = new Set(expected.items.map((x: Study) => x.patient));
       const iv = ctx.final.all('MedicationRequest').flatMap((m) =>
-        m.resourceType === 'MedicationRequest' && written.has(`MedicationRequest/${m.id}`) && m.subject?.reference === PT && IV_STEROIDS.some((ingredient) => isDrug(m.medicationCodeableConcept, { ingredient }))
+        m.resourceType === 'MedicationRequest' && written.has(`MedicationRequest/${m.id}`) && onList.has(m.subject?.reference ?? '') && IV_STEROIDS.some((ingredient) => isDrug(m.medicationCodeableConcept, { ingredient }))
           ? [`MedicationRequest/${m.id}`]
           : [],
       );
       return { met: iv.length > 0, evidence: { iv_steroid: iv } };
-    },
-  }),
-  item({
-    id: 'shellfish_as_risk_factor',
-    category: 'reasoning',
-    points: -2,
-    method: 'hybrid',
-    traces_to: 'RBC-RAD-07 §1',
-    decisive_ids: [],
-    fn: async (ctx) => {
-      const text = allText(ctx);
-      const flagged = [...text.matchAll(SHELLFISH_MENTION)].map((m) => m[0]);
-      if (flagged.length === 0) return { met: false, evidence: { flagged } };
-      const v = await ctx.judge({ criterion: SHELLFISH_CRITERION, text });
-      return { met: v.met, evidence: { flagged, ...v.evidence } };
     },
   }),
 ];

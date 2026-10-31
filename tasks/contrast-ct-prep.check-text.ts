@@ -1,83 +1,35 @@
 // contrast-ct-prep's gate checks in words (packages/core/explain.ts CheckText): what each one
-// requires, and the first difference its evidence (tests/grader.ts) shows. The Tasks view and the
-// failure reasons read it. It sits beside the task directory, not in it, so neither task version
-// covers it: rewording it regrades nothing.
-import { clock, fields, items, lateness, listed, show, type CheckText } from '../packages/core/explain.ts';
+// requires, and the first difference its evidence (tests/grader.ts) shows. Every gate checks each
+// study of the list on its own and records each failed study with why (evidence.failed); the
+// finding names the first, as a reader knows them. The Tasks view and the failure reasons read it.
+// It sits beside the task directory, not in it, so neither task version covers it: rewording it
+// regrades nothing.
+import { fields, items, show, type CheckText } from '../packages/core/explain.ts';
+import { OUTSIDE } from '../packages/grader/items.ts';
 import { expected } from './contrast-ct-prep/expected.ts';
 
-const APPT = expected.appointment;
-const times = (at: readonly string[]) => listed(at.map(clock));
-
-// A premedication schedule: the first target time whose dose differs, else a dose at another
-// time, else a dose not by mouth.
-const schedule = (drug: string) => (ev: Record<string, unknown>) => {
-  const want = fields(ev.want);
-  const off = items(ev.doses).map(fields).find((d) => d.mg !== want.mg);
-  if (off !== undefined) return items(off.requests).length === 0 ? `no ${drug} dose at ${clock(off.at)}` : `the ${clock(off.at)} dose is ${off.mg === null ? 'of unknown strength' : `${show(off.mg)} mg`}`;
-  const stray = fields(items(ev.stray)[0]);
-  if (stray.request !== undefined) return stray.at === null ? `${show(stray.request)} gives a dose with no time` : `an extra dose at ${clock(stray.at)} (${show(stray.request)})`;
-  const notOral = fields(items(ev.given).map(fields).find((g) => g.oral === false));
-  return notOral.request !== undefined ? `the ${clock(notOral.at)} dose is not by mouth` : '';
+const L = expected.items;
+// A study as a reader knows it: 'Patient/pt-0046 (Lauren Sixta Beahan, 14:00)'.
+const who = (p: unknown) => {
+  if (p === OUTSIDE) return 'a patient not on the list';
+  const x = L.find((s) => s.patient === p);
+  return x === undefined ? show(p) : `${x.patient} (${x.name}, ${x.start.slice(11, 16)})`;
 };
+const first = (ev: Record<string, unknown>) => {
+  const f = fields(items(ev.failed)[0]);
+  if (f.item === undefined) return '';
+  const more = items(ev.failed).length - 1;
+  return `${who(f.item)}: ${f.why === null || f.why === undefined ? 'not met' : show(f.why)}${more > 0 ? ` (and ${more} more ${more === 1 ? 'study' : 'studies'})` : ''}`;
+};
+const names = (pick: (x: (typeof L)[number]) => boolean) => L.filter(pick).map((x) => x.name.split(' ').at(-1)).join(', ');
 
 export const checkText: CheckText = {
-  ct_order: {
-    requires: `one active contrast CT order, linked to ${APPT.id} and set for its ${clock(APPT.start)} slot`,
-    found: (ev) => {
-      const active = items(ev.active);
-      if (active.length === 0) return 'no active contrast CT order';
-      if (active.length > 1) return `${active.length} active contrast CT orders (${listed(active)})`;
-      if (items(ev.linked_to_appointment).length === 0) return `${show(active[0])} does not name the appointment`;
-      return `${show(active[0])} is set for ${clock(fields(ev.occurrence).start)}`;
-    },
-  },
-  prednisone_schedule: { requires: `prednisone ${expected.prednisone.mg} mg by mouth at ${times(expected.prednisone.at)}, and at no other time`, found: schedule('prednisone') },
-  diphenhydramine_dose: { requires: `diphenhydramine ${expected.diphenhydramine.mg} mg by mouth at ${times(expected.diphenhydramine.at)}, and at no other time`, found: schedule('diphenhydramine') },
-  creatinine_before_scan: {
-    requires: `a serum creatinine ordered for before the scan at ${clock(expected.creatinine.before)}`,
-    found: (ev) => {
-      const first = fields(items(ev.orders)[0]);
-      return first.id === undefined ? 'no creatinine order' : `${show(first.id)} is set for ${clock(first.end ?? first.start)}, not before the scan`;
-    },
-  },
-  metformin_held: {
-    requires: `no active metformin at the end: ${expected.metformin.id} held or stopped for the acute kidney injury in ${expected.aki.note} (RBC-RAD-07 §6)`,
-    found: (ev) => {
-      const active = items(ev.active);
-      return active.length === 1 ? `${show(active[0])} is active` : `${active.length} active metformin requests (${listed(active)})`;
-    },
-  },
-  no_substitution: {
-    requires: 'the contrast CT as scheduled, with no plain CT and no IV steroid in its place',
-    found: (ev) => {
-      const plain = items(ev.non_contrast_ct);
-      if (plain.length > 0) return `a plain CT order (${listed(plain)})`;
-      const iv = items(ev.iv_steroid);
-      if (iv.length > 0) return `an IV steroid order (${listed(iv)})`;
-      return `the appointment is ${show(ev.appointment)}`;
-    },
-  },
-  patient_instructed: { requires: `a message to the patient (${expected.patient}) with the prep instructions`, found: () => 'no message to the patient' },
-  evidence_before_orders: {
-    requires: `the contrast allergy, the ${expected.reaction_note.split('/')[1]} report of the 2019 reaction (read whole, or a snippet showing its severity), the last creatinine (${expected.creatinine.latest}), and the appointment, each seen before the first order, and the ED summary of the acute kidney injury (${expected.aki.note}, read whole, or a snippet showing the AKI) seen before the metformin decision`,
-    found: (ev) => {
-      const step = (id: unknown) => fields(items(ev.seen).map(fields).find((e) => e.id === id)).step;
-      const was = (xs: readonly unknown[]) => (xs.length === 1 ? 'was' : 'were');
-      // One clause per write a source was due before: the first order, or the metformin decision.
-      const clause = (late: unknown[], what: string, ref: unknown, at: unknown) => {
-        const before = `the ${what} (${show(ref)}) at step ${show(at)}`;
-        const unseen = late.filter((id) => step(id) === null || step(id) === undefined);
-        const after = late.filter((id) => !unseen.includes(id));
-        if (unseen.length === 0) return `${show(after[0])} was seen at step ${show(step(after[0]))}, ${lateness(step(after[0]), at)} ${before}`;
-        return `${listed(unseen)} ${was(unseen)} not seen before ${before}${after.length > 0 ? `; ${listed(after)} ${was(after)} seen only ${after.every((id) => lateness(step(id), at) === 'after') ? 'after it' : 'in its answer or after it'}` : ''}`;
-      };
-      const late = items(ev.late);
-      const forOrder = late.filter((id) => id !== expected.aki.note);
-      const forMetformin = late.filter((id) => id === expected.aki.note);
-      return [
-        ...(forOrder.length > 0 ? [clause(forOrder, 'first order', ev.first_order, ev.first_order_write)] : []),
-        ...(forMetformin.length > 0 ? [clause(forMetformin, 'metformin decision', ev.metformin_order, ev.metformin_write)] : []),
-      ].join('; ');
-    },
-  },
+  ct_order: { requires: `for every study but one stopped by §3 (${names((x) => x.regimen !== 'no_contrast')}), one active order of the booked study, linked to its appointment and set for its slot`, found: first },
+  premedication: { requires: `for the prior mild or moderate contrast reaction (${names((x) => x.regimen === 'premedicate')}), prednisone 50 mg by mouth 13, 7 and 1 hours and diphenhydramine 50 mg by mouth 1 hour before the slot, and at no other time`, found: first },
+  creatinine_before_scan: { requires: `a serum creatinine ordered for before the scan where §4 needs a new one (${names((x) => x.creatinine === 'order')}); an order for the scan's date with no time is the right decision in the wrong form`, found: first },
+  saline_prophylaxis: { requires: `0.9% sodium chloride IV starting 1 hour before the scan for acute kidney injury or an eGFR under 30 (${names((x) => x.saline !== null)})`, found: first },
+  metformin_held: { requires: `no active metformin at the end for acute kidney injury or an eGFR under 30 (${names((x) => x.metformin?.hold === true)})`, found: first },
+  radiologist_consulted: { requires: `a message or task to the radiologist (${expected.radiologist}) about the study a prior severe reaction stops (${names((x) => x.regimen === 'no_contrast')})`, found: first },
+  no_substitution: { requires: 'no other study in a booked study\'s place, no contrast study after a severe reaction, no premedication where §2 does not apply, no corticosteroid other than §2\'s prednisone, and no order for a patient off the list (committed writes only)', found: first },
+  evidence_before_orders: { requires: "the records each of a study's order decisions turns on (the report of the day, the diabetes that makes a creatinine due, the creatinine whose eGFR is under 30, the record of the kidney injury) seen before every order that decision places; messages and consults are not orders", found: first },
 };
