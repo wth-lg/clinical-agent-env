@@ -182,3 +182,86 @@ test.describe('coarse pointer at 390', () => {
     expect(Math.min(box.width, box.height)).toBeGreaterThanOrEqual(44);
   });
 });
+
+// UI polish PR 2 (reports/ui-polish-spec.md 2.1, 2.2) on the sample build, and the PR 1 gate's F1,
+// F2 and F5 (verifier-phase-P17i-UI-1-1).
+test('Overview: the intro card has a numbered Start here list of three links (ui-polish 2.1)', async ({ page }) => {
+  await browse(page, './?view=overview');
+  const start = page.getByTestId('intro-card').getByTestId('start-here');
+  await expect(start).toHaveJSProperty('tagName', 'OL');
+  await expect(start.getByRole('link')).toHaveText(['Read a task', 'See a failed trial', 'Check the grader, no key needed']);
+  await expect(start.getByRole('link', { name: 'Read a task' })).toHaveAttribute('href', /[?&]tab=prompt(&|$)/);
+  await expect(start.getByRole('link', { name: 'Check the grader, no key needed' })).toHaveAttribute('href', /[?&]tab=grader-validation(&|$)/);
+  await start.getByRole('link', { name: 'See a failed trial' }).click();
+  await expect(page.getByTestId('trial-detail')).toBeVisible();
+  await expect(page.getByTestId('trial-detail')).not.toHaveAttribute('data-trial', /^$/);
+  await expect(page.getByTestId('trial-header').getByTestId('outcome')).not.toHaveText('PASS');
+});
+
+test('Runs: the header shows k/N as a stat with its Wilson interval and the outcome counts; the rules are in a closed details (ui-polish 2.2)', async ({ page }) => {
+  await browse(page, './?view=runs');
+  const head = page.getByTestId('runs-summary');
+  await expect(head.getByTestId('runs-stat')).toHaveCSS('font-size', '24px');
+  await expect(head.getByTestId('runs-wilson')).toHaveText(/^Wilson 95% \d/);
+  await expect(head.getByTestId('outcome-count').first()).toBeVisible();
+  const rules = head.locator('details', { has: page.getByTestId('plain-rules') }).first();
+  await expect(rules.locator('> summary')).toHaveText('How a trial is counted');
+  await expect(rules).not.toHaveAttribute('open', '');
+});
+
+test('Runs: at 1440 no row\'s chip line wraps, and a click on a row\'s reason opens its trial (ui-polish 2.2)', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await browse(page, './?view=runs');
+  const lines = await page.locator('[data-testid="trial-row"] [data-testid="chip-line"]').evaluateAll((els) => els.filter((e) => e.getClientRects().length > 0).map((e) => {
+    const boxes = [...e.children].map((c) => c.getBoundingClientRect());
+    return { trial: e.closest('[data-trial]')!.getAttribute('data-trial'), top: Math.max(...boxes.map((b) => b.top)), bottom: Math.min(...boxes.map((b) => b.bottom)) };
+  }));
+  expect(lines.length).toBeGreaterThan(10);
+  for (const l of lines) expect(l.top, l.trial!).toBeLessThan(l.bottom);
+  const row = page.locator('[data-testid="trial-row"][data-outcome="FAIL"]').first();
+  const name = await row.getAttribute('data-trial');
+  await row.getByTestId('reason').click();
+  await expect(page.getByTestId('trial-detail')).toHaveAttribute('data-trial', name!);
+});
+
+test('F1: on the phone strip a focused link\'s ring has room above and below it', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await browse(page, './?view=overview');
+  const link = page.getByRole('navigation', { name: 'Views' }).getByRole('link', { name: 'Tasks' });
+  await link.focus();
+  const room = await link.evaluate((a) => {
+    const box = a.getBoundingClientRect();
+    const clip = a.parentElement!.getBoundingClientRect();
+    const s = getComputedStyle(a);
+    const ring = parseFloat(s.outlineWidth) + parseFloat(s.outlineOffset);
+    return { above: box.top - clip.top, below: clip.bottom - box.bottom, ring };
+  });
+  expect(room.ring).toBeGreaterThan(0);
+  expect(room.above).toBeGreaterThanOrEqual(room.ring);
+  expect(room.below).toBeGreaterThanOrEqual(room.ring);
+});
+
+test('F2: each rail label fits inside its item at every width from 640px', async ({ page }) => {
+  for (const width of [640, 768, 1024, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await browse(page, './?view=environment');
+    const fits = await page.getByRole('navigation', { name: 'Views' }).getByRole('link').evaluateAll((links) => links.map((a) => {
+      const label = a.querySelector('span')!.getBoundingClientRect();
+      const item = a.getBoundingClientRect();
+      const nav = a.closest('nav')!.getBoundingClientRect();
+      return { name: a.textContent, inItem: label.left >= item.left + 1 && label.right <= item.right - 1, inNav: item.left >= nav.left && item.right <= nav.right - 1 };
+    }));
+    for (const f of fits) expect(f, `${width} ${f.name}`).toEqual({ name: f.name, inItem: true, inNav: true });
+  }
+});
+
+test('F5: the hover fade runs when the pointer leaves too, and an untouched control has none', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await browse(page, './?view=overview');
+  const nav = page.getByRole('navigation', { name: 'Views' });
+  const tasks = nav.getByRole('link', { name: 'Tasks' });
+  await tasks.hover();
+  await page.mouse.move(800, 600);
+  expect(await tasks.evaluate((a) => getComputedStyle(a).transitionDuration)).toBe('0.12s');
+  expect(await nav.getByRole('link', { name: 'Findings' }).evaluate((a) => getComputedStyle(a).transitionDuration)).toBe('0s');
+});

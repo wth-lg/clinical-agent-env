@@ -135,7 +135,7 @@ test('Runs: every non-pass row shows outcome, label, decisive check and reason w
     await expect(row.getByTestId('reason')).toHaveText(e.reason);
     if (e.decisive_check) await expect(row.getByTestId('decisive')).toHaveText(e.decisive_check.id);
     if (e.fault === 'infra') {
-      await expect(row.getByTestId('label')).toHaveText('infra: rerun, not counted');
+      await expect(row.getByTestId('label')).toHaveText('API problem: not counted, run again');
       await expect(row.getByTestId('label')).toHaveAttribute('data-label', 'infra');
       await expect(row.getByTestId('not-audited')).toHaveCount(0);
       continue;
@@ -201,6 +201,8 @@ test('every trial detail shows the criteria audit-check gives; M3 is met because
   for (const r of records) {
     const name = trialName(r);
     const row = page.locator(`[data-testid="trial-row"][data-trial="${name}"]`);
+    // A plain PASS row is in the run's closed "<n> PASS trials" group (ui-polish 2.2): open it first.
+    if (!(await row.isVisible())) await page.locator('[data-testid="pass-group"]', { has: row }).locator('> summary').click();
     await row.getByRole('button', { name, exact: true }).click();
     const detail = page.getByTestId('trial-detail');
     await expect(detail).toHaveAttribute('data-trial', name);

@@ -3,21 +3,25 @@
 // outcome, the attribution label (packages/core/outcomes.ts AUDIT_LABEL of the fault explainTrial
 // decides), the decisive failing check, the one-line reason and, with no audit row, the
 // not-audited marker; all of it is packages/core/explain.ts explainTrial, never re-derived here.
-// A record the loader cannot read is a row that says why. The header shows k/N, the trials each
-// task's k/N leaves out and why (ENV_LIMIT and the other excluded outcomes), and the pass and
-// denominator rules. Filters (task, label; and from Findings, check: the valid failures whose
-// decisive check it is, and audit: the valid failures by audit label, P17j JU7) live in the URL; a
-// run with a trial that blocks it says so above the list; ?trial= opens the trial detail
+// A record the loader cannot read is a row that says why. The header shows k/N as a stat with its
+// Wilson interval and the outcome counts; the trials each task's k/N leaves out and why (ENV_LIMIT
+// and the other excluded outcomes) and the pass and denominator rules are in "How a trial is
+// counted" (ui-polish 2.2). In each run the rows to look at (not PASS, a fault or a harm) come
+// first; the PASS rows are behind "<n> PASS trials", open while a filter is set. Filters (task,
+// label; and from Findings, check: the valid failures whose decisive check it is, and audit: the
+// valid failures by audit label, P17j JU7) live in the URL; a run with a trial that blocks it says
+// so above the list; ?trial= opens the trial detail
 // (apps/web/src/trial/TrialPage.tsx) in place of the list, and Back to Runs returns to it.
 import { ChevronRight, CircleAlert } from 'lucide-react';
-import { useEffect, useRef, type Ref } from 'react';
-import { AUDIT_LABELS } from '../../../../packages/core/outcomes.ts';
+import { useEffect, useRef, useState, type Ref } from 'react';
+import { AUDIT_LABELS, OUTCOMES } from '../../../../packages/core/outcomes.ts';
+import { wilson } from '../../../../packages/core/summary.ts';
 import { gradingLine, useResults, type BadRecord, type RunData, type Trial } from '../data/results.ts';
 import { harmItems, safePass } from '../data/harm.ts';
 import { auditFilterOf, failedCheckOf, isFalsePass, runBlock, shownFault, shownLabel } from '../data/failures.ts';
 import { notCounted, notCountedText } from '../data/marks.ts';
 import { RunBlocked } from '../findings/why.tsx';
-import { Card, FaultLabel, GlossaryLink, HarmChip, Notice, OutcomeChip, Page, PlainRules, SELECT, CARD, CHIP } from '../data/ui.tsx';
+import { Card, FaultChip, FaultMeta, formatInterval, GlossaryLink, HarmChip, Notice, OutcomeChip, Page, PlainRules, SELECT, CARD, CHIP } from '../data/ui.tsx';
 import { navigate, useParams } from '../data/url.ts';
 import { takeReturn } from '../trial/back.ts';
 import { TrialPage } from '../trial/TrialPage.tsx';
@@ -56,19 +60,38 @@ export function Runs({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | un
   // The trials each task's k/n leaves out, and why (data/marks.ts notCounted), for the tasks in scope.
   const left = official ? Object.entries(official.summary!.tasks).filter(([id]) => task === '' || id === task).flatMap(([id, t]) => { const text = notCountedText(notCounted(t)); return text === null ? [] : [{ id, text }]; }) : [];
   const safe = { pass_no_harm: taskRows.reduce((n, x) => n + x.pass_no_harm, 0), trials: taskRows.reduce((n, x) => n + x.trials, 0) };
+  // The outcome counts of the trials in scope, in OUTCOMES order; none while the run is blocked,
+  // since a PASS count is a pass count (decisions.tsv 2026-10-29T16:00).
+  const inScope = official && block === null ? official.trials.filter((t) => task === '' || t.task === task) : [];
+  const byOutcome = OUTCOMES.map((o) => ({ o, n: inScope.filter((t) => t.explanation.outcome === o).length })).filter((x) => x.n > 0);
   return (
     <Page title="Runs" headingRef={headingRef} lead={official ? <>Official run <span className="font-medium text-ink">{official.runId}</span>, {official.summary!.totals.records} trial records.</> : 'No official run is published yet. The committed pilot runs are below; they are not counted in the results.'}>
       {officialError !== null && <Notice testId="error-state">{officialError}</Notice>}
       {block !== null && official && <RunBlocked block={block} runId={official.runId} />}
-      <Card title={!official ? 'How a trial is counted' : block !== null
+      <Card testId="runs-summary" title={!official ? undefined : block !== null
         ? <span data-testid="runs-k-of-n">{task === '' ? 'All tasks' : task}: blocked, no pass rate{falsePasses > 0 ? `, ${falsePasses} false PASS` : ''}</span>
-        : <><span data-testid="runs-k-of-n">{task === '' ? 'All tasks' : task}: {scope?.passes ?? 0}/{scope?.trials ?? 0} pass</span> <span className="font-normal text-ink-muted" data-testid="safe-pass">({safePass(safe)})</span></>}>
-        {left.length > 0 && (
-          <ul className="mb-2 space-y-0.5 text-xs text-ink-muted" data-testid="runs-not-counted">
-            {left.map((l) => <li key={l.id} data-testid="not-counted" data-task={l.id} className="break-words"><span className="font-medium text-ink">{l.id}</span>: {l.text}</li>)}
-          </ul>
+        : (
+          <span className="flex flex-wrap items-baseline gap-x-2">
+            <span data-testid="runs-k-of-n">{task === '' ? 'All tasks' : task}: <span data-testid="runs-stat" className="text-2xl font-semibold tracking-tight">{scope?.passes ?? 0}/{scope?.trials ?? 0}</span> pass</span>
+            <span className="font-normal text-ink-muted">· <span data-testid="runs-wilson">Wilson 95% {formatInterval(wilson(scope?.passes ?? 0, scope?.trials ?? 0))}</span> <span data-testid="safe-pass">({safePass(safe)})</span></span>
+          </span>
+        )}>
+        {byOutcome.length > 0 && (
+          <p className="mb-3 flex flex-wrap gap-1.5" data-testid="outcome-counts">
+            {byOutcome.map((x) => <OutcomeChip key={x.o} outcome={x.o} count={x.n} />)}
+          </p>
         )}
-        <PlainRules ids={{ pass: 'pass-definition', denominator: 'denominator-rule' }} />
+        <details>
+          <summary className="cursor-pointer font-medium text-ink">How a trial is counted</summary>
+          <div className="mt-2">
+            {left.length > 0 && (
+              <ul className="mb-2 space-y-0.5 text-xs text-ink-muted" data-testid="runs-not-counted">
+                {left.map((l) => <li key={l.id} data-testid="not-counted" data-task={l.id} className="break-words"><span className="font-medium text-ink">{l.id}</span>: {l.text}</li>)}
+              </ul>
+            )}
+            <PlainRules ids={{ pass: 'pass-definition', denominator: 'denominator-rule' }} />
+          </div>
+        </details>
         <p className="mt-2"><GlossaryLink>How failures are attributed</GlossaryLink></p>
       </Card>
       <div className="flex flex-wrap items-end gap-3">
@@ -97,12 +120,12 @@ export function Runs({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | un
           {audit !== '' && <span>Failed trials the human audit labels <span className="text-ink">{audit === 'unlabelled' ? 'nothing yet (not audited)' : audit}</span> <button type="button" aria-label="Remove the audit label filter" className="text-ink underline decoration-line-strong underline-offset-2 pointer-coarse:px-1 pointer-coarse:py-2" onClick={() => navigate({ audit: null, trial: null })}>Remove</button></span>}
         </p>
       )}
-      {official && <RunList run={official} matches={matches} />}
+      {official && <RunList run={official} matches={matches} filtered={filtered} />}
       {/* The check and audit filters come from the official run, so the pilots hide while one is set (JU7r2 n1). */}
       {pilots.length > 0 && check === '' && audit === '' && (
         <section className="space-y-3" data-testid="pilot-runs">
           <h2 className="pt-2 font-medium text-ink">Pilot runs (not counted in the results)</h2>
-          {pilots.map((p) => <RunList key={p.runId} run={p} matches={pilotMatches} heading />)}
+          {pilots.map((p) => <RunList key={p.runId} run={p} matches={pilotMatches} filtered={filtered} heading />)}
         </section>
       )}
       {runs.length === 0 && officialError === null && <Notice testId="empty-state">No runs are committed in this build. Tasks and Environment work with no key.</Notice>}
@@ -110,28 +133,57 @@ export function Runs({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | un
   );
 }
 
-function RunList({ run, matches, heading = false }: { run: RunData; matches: (t: Trial) => boolean; heading?: boolean }) {
+// A PASS with no fault and no harm: it goes behind the run's "<n> PASS trials".
+const plainPass = (t: Trial) => t.explanation.outcome === 'PASS' && t.explanation.fault === null && harmItems(t.record).length === 0;
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+
+// "pilot-3: 47/48 pass · 1 failure": the run's valid trials, and how many it leaves out.
+function runLine(run: RunData): string {
+  const valid = run.trials.filter((t) => t.explanation.valid);
+  const passes = valid.filter((t) => t.explanation.outcome === 'PASS').length;
+  const out = run.trials.length - valid.length;
+  return `${run.runId}: ${passes}/${valid.length} pass · ${plural(valid.length - passes, 'failure')}${out > 0 ? ` · ${out} not counted` : ''}${run.bad.length > 0 ? ` · ${run.bad.length} unreadable` : ''}`;
+}
+
+function RunList({ run, matches, filtered, heading = false }: { run: RunData; matches: (t: Trial) => boolean; filtered: boolean; heading?: boolean }) {
   const shown = run.trials.filter(matches);
+  const look = shown.filter((t) => !plainPass(t));
+  const passes = shown.filter(plainPass);
   const graded = gradingLine(run.grading);
-  const list = useRef<HTMLUListElement>(null);
-  // Back to Runs from a trial of this run: its row in view, its button focused.
+  const box = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState(filtered);
+  useEffect(() => setOpen(filtered), [filtered]);
+  // Back to Runs from a trial of this run: its row in view (its PASS group opened), its button focused.
   useEffect(() => {
     const trial = takeReturn(run.runId);
     if (trial === null) return;
-    const button = list.current?.querySelector<HTMLButtonElement>(`[data-testid="trial-row"][data-trial="${CSS.escape(trial)}"] button`);
+    const button = box.current?.querySelector<HTMLButtonElement>(`[data-testid="trial-row"][data-trial="${CSS.escape(trial)}"] button`);
+    const group = button?.closest('details');
+    if (group && !group.open) group.open = true;
     button?.scrollIntoView({ block: 'center' });
     button?.focus({ preventScroll: true });
   }, [run.runId]);
   return (
-    <div className="space-y-2" data-testid="run" data-run={run.runId} data-official={String(run.official)}>
-      {heading && <h3 className="text-ink-muted"><span className="font-medium text-ink">{run.runId}</span>: {run.trials.length + run.bad.length} trial records</h3>}
+    <div ref={box} className="space-y-2" data-testid="run" data-run={run.runId} data-official={String(run.official)}>
+      {heading && <h3 data-testid="run-header" className="sticky top-0 z-10 -mx-1 bg-canvas px-1 py-1 font-medium text-ink">{runLine(run)}</h3>}
       {graded !== null && <p className="text-xs text-ink-muted" data-testid="grading-line">{graded}</p>}
       {run.warnings.length > 0 && <Notice testId="data-warning">{run.warnings.join(' ')}</Notice>}
-      <ul ref={list} className={`divide-y divide-line ${CARD}`} data-testid="trial-list">
-        {run.bad.map((b) => <BadRow key={b.file} b={b} />)}
-        {shown.map((t) => <TrialRow key={t.name} t={t} run={run} />)}
-        {shown.length === 0 && run.bad.length === 0 && <li className="p-4 text-ink-muted">No trial matches these filters.</li>}
-      </ul>
+      {/* With only plain PASS rows, the header's "0 failures" says it, so no empty list. */}
+      {(look.length > 0 || passes.length === 0 || run.bad.length > 0) && (
+        <ul className={`divide-y divide-line ${CARD}`} data-testid="trial-list">
+          {run.bad.map((b) => <BadRow key={b.file} b={b} />)}
+          {look.map((t) => <TrialRow key={t.name} t={t} run={run} />)}
+          {shown.length === 0 && run.bad.length === 0 && <li className="p-4 text-ink-muted">No trial matches these filters.</li>}
+        </ul>
+      )}
+      {passes.length > 0 && (
+        <details data-testid="pass-group" open={open} onToggle={(e) => setOpen(e.currentTarget.open)}>
+          <summary className="cursor-pointer px-1 py-1 font-medium text-ink">{plural(passes.length, 'PASS trial')}</summary>
+          <ul className={`mt-1 divide-y divide-line ${CARD}`} data-testid="pass-list">
+            {passes.map((t) => <TrialRow key={t.name} t={t} run={run} />)}
+          </ul>
+        </details>
+      )}
     </div>
   );
 }
@@ -145,24 +197,43 @@ function BadRow({ b }: { b: BadRecord }) {
   );
 }
 
+// Row: the name, outcome, fault chip and decisive check on one line with the cost on the right;
+// under it the fault note, the not-audited marker and any harm, then the reason. A click anywhere
+// on the row that is not on a link or button (or ends a text selection) opens the trial, as its
+// button does.
 function TrialRow({ t, run }: { t: Trial; run: RunData }) {
   const e = t.explanation;
   // A non-pass, or a false PASS (GR5), shows its label and reason.
   const faulted = e.outcome !== 'PASS' || e.fault !== null;
   const cost = t.record.cost_usd + (t.record.judge_cost_usd ?? 0);
+  const open = () => navigate({ trial: t.name, run: run.runId, tab: null });
   return (
-    <li data-testid="trial-row" data-trial={t.name} data-outcome={e.outcome} className="px-4 py-2.5">
-      <div className="flex flex-wrap items-start gap-x-3 gap-y-1">
-        <button type="button" onClick={() => navigate({ trial: t.name, run: run.runId, tab: null })} className="inline-flex min-h-6 min-w-0 items-center gap-1 break-all rounded-sm text-left font-medium text-ink hover:underline">
-          <ChevronRight aria-hidden className="h-3.5 w-3.5 shrink-0 text-ink-muted" strokeWidth={1.75} />
-          {t.name}
-        </button>
-        <OutcomeChip outcome={e.outcome} fault={shownFault(e)} />
-        <HarmChip items={harmItems(t.record)} />
-        {faulted && <FaultLabel e={e} official={run.official} />}
-        {e.decisive_check && <code data-testid="decisive" className={`${CHIP} break-all border-line bg-canvas font-mono font-normal text-ink dark:bg-line`}>{e.decisive_check.id}</code>}
-        <span className="ml-auto text-xs text-ink-muted" title="Agent and judge cost">${cost.toFixed(2)}</span>
+    <li
+      data-testid="trial-row"
+      data-trial={t.name}
+      data-outcome={e.outcome}
+      className="cursor-pointer px-4 py-2.5 hover:bg-canvas/60"
+      onClick={(ev) => {
+        if ((ev.target as Element).closest('a, button') || (getSelection()?.toString() ?? '') !== '') return;
+        open();
+      }}
+    >
+      <div className="grid grid-cols-[1fr_auto] items-start gap-x-3">
+        <div data-testid="chip-line" className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+          <button type="button" onClick={open} className="inline-flex min-h-6 min-w-0 items-center gap-1 break-all rounded-sm text-left font-medium text-ink hover:underline">
+            <ChevronRight aria-hidden className="h-3.5 w-3.5 shrink-0 text-ink-muted" strokeWidth={1.75} />
+            {t.name}
+          </button>
+          <OutcomeChip outcome={e.outcome} fault={shownFault(e)} />
+          {faulted && <FaultChip e={e} />}
+          {e.decisive_check && <span className="inline-flex min-w-0 items-center gap-1 text-xs text-ink-muted">check <code data-testid="decisive" className={`${CHIP} break-all border-line bg-canvas font-mono font-normal text-ink dark:bg-line`}>{e.decisive_check.id}</code></span>}
+        </div>
+        <span className="whitespace-nowrap pt-1 text-xs text-ink-muted" title="Agent and judge cost">${cost.toFixed(2)}</span>
       </div>
+      <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 pl-5 empty:hidden">
+        {faulted && <FaultMeta e={e} official={run.official} />}
+        <HarmChip items={harmItems(t.record)} />
+      </p>
       {faulted && <p data-testid="reason" className="mt-1 break-words pl-5 text-ink-muted">{e.reason}</p>}
       {faulted && e.secondary_reason !== null && <p data-testid="secondary-reason" className="break-words pl-5 text-xs text-ink-muted">{e.secondary_reason}</p>}
     </li>
