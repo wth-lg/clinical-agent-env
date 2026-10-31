@@ -29,8 +29,8 @@
 //
 // Every decisive fact sits in the patient's record, not in the item's summary: in a result's status and
 // comment, a report's conclusion, an earlier report or result, or a report filed to another provider.
-// A newest-first list across the clinic shows seven items' trap-deciding records on page 1, since the
-// planted results are the newest; those items are reasoning items (tests/discover.test.ts RELABELLED,
+// A newest-first list across the clinic, or a list of recent results, shows eight items' trap-deciding
+// records on page 1, since the planted results are the newest; those items are reasoning items (tests/discover.test.ts RELABELLED,
 // w1-probe-rulings R6). The item summary is written when the item is filed, so it gives the value
 // first reported (items 5 and 8).
 //

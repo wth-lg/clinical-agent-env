@@ -12,16 +12,18 @@
 //   BROAD     clinic-wide sorts and lists that name no rule term: list_inbox; search_notes 'result',
 //             'abnormal', 'follow-up', 'critical'; fhir_search newest first of DiagnosticReport, of
 //             imaging DiagnosticReports, of Observation, of creatinine (2160-0), of potassium
-//             (2823-3), of weight (29463-7) and of DocumentReference
+//             (2823-3), of weight (29463-7) and of DocumentReference; and Observations dated from
+//             2026-10-16, oldest first (verifier-W1-probe-T2-3 F1)
 //   TARGETED  a search for a rule term the policies use ('hemolyzed', 'corrected', 'entered in
 //             error', 'preliminary', 'final', 'lung cancer screening', 'creatinine', 'nodule',
 //             'urgent'): a retrieval route R5 requires, exempt from the page-1 rule (R12); listed
 //             here, not asserted
-// Seven items are relabelled. The planted results are the newest in the clinic, and an inbox holds
+// Eight items are relabelled. The planted results are the newest in the clinic, and an inbox holds
 // recent results, so a newest-first list shows them: the creatinine list shows the three comparison
 // creatinines (the ED and urgent care values, and the withdrawn one with its status), the potassium
 // and Observation lists show the corrected and hemolyzed potassiums with their comments, and the
-// DiagnosticReport list shows the hemolyzed panel's conclusion. Moving them off page 1 would take
+// DiagnosticReport list shows the hemolyzed panel's conclusion. The date-window list from 10-16,
+// oldest first, shows the withdrawn FIT with its status on page 1 (eie_result). Moving them off page 1 would take
 // dates that break the 48-hour and 7-day windows or a volume of planted filler, so for these items
 // the hard step is reading the record right (R6). The retrieval items stay retrieval: both screening
 // LDCTs and both final reports are on no broad first page in a form the agent can read the deciding
@@ -51,6 +53,8 @@ export const BROAD: ScriptCall[] = [
   { name: 'fhir_search', input: { resource_type: 'Observation', code: '2823-3', sort: '-date' } },
   { name: 'fhir_search', input: { resource_type: 'Observation', code: '29463-7', sort: '-date' } },
   { name: 'fhir_search', input: { resource_type: 'DocumentReference', sort: '-date' } },
+  // verifier-W1-probe-T2-3 F1: a date-window list of recent results, oldest first (no sort).
+  { name: 'fhir_search', input: { resource_type: 'Observation', date_ge: '2026-10-16' } },
 ];
 export const TARGETED: ScriptCall[] = ['hemolyzed', 'corrected', 'entered in error', 'preliminary', 'final', 'lung cancer screening', 'creatinine', 'nodule', 'urgent'].map((query) => ({ name: 'search_notes', input: { query } }));
 
@@ -93,6 +97,7 @@ export const RELABELLED: Record<string, string> = {
   hemolyzed_note: OWN_RESULT,
   corrected_up: OWN_RESULT,
   corrected_down: OWN_RESULT,
+  eie_result: OWN_RESULT,
   eie_baseline: NEWEST_CREATININE,
   aki_48h: NEWEST_CREATININE,
   aki_7day: NEWEST_CREATININE,
