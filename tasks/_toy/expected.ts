@@ -3,7 +3,7 @@
 // initial world, and the matrix fails when the two differ. The grader reads its targets from here.
 export const expected = {
   patient: 'Patient/pt-0001',
-  patient_name: 'Peter Prosacco',
+  patient_name: 'Walter Kowalczyk',
   user: 'Practitioner/pr-okafor',
   user_name: 'Maya Okafor',
   notes: [{ patient: 'Patient/pt-0001', cites: ['Patient/pt-0001'] }],

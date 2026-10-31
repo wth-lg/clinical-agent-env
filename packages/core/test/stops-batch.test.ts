@@ -70,7 +70,7 @@ async function trial(t: { trial?: Transport; judge?: () => Response; failReserve
     const body = JSON.parse(await request.clone().text()) as { tools?: unknown };
     if (body.tools !== undefined) return trialSends++, (t.trial ?? toy)(request);
     judgeSends++;
-    return (t.judge ?? (() => okResponse({ text: '{"verdict":"met","quote":"Peter Prosacco"}' }, 100)))();
+    return (t.judge ?? (() => okResponse({ text: '{"verdict":"met","quote":"Walter Kowalczyk"}' }, 100)))();
   };
   let clock = Date.UTC(2026, 9, 23, 12);
   const client = new MessagesClient({ grant, ledger, apiKey: 'test-key-not-real', fetch: (q) => ((clock += 4000), transport(q)), sleep: async () => {} });
@@ -195,7 +195,7 @@ describe('every INFRA_HARNESS stops the batch', () => {
 // Coordinator decision (P8 fix round 3, 2026-10-23): a substituted model is an API-side fault a
 // rerun does not cure, so it stops the batch. The trial stays INVALID (never counted).
 describe('a substituted model stops the batch', () => {
-  const substituted = () => okResponse({ text: '{"verdict":"met","quote":"Peter Prosacco"}', model: 'claude-sonnet-5-5' }, 1);
+  const substituted = () => okResponse({ text: '{"verdict":"met","quote":"Walter Kowalczyk"}', model: 'claude-sonnet-5-5' }, 1);
 
   it('on a model call: INVALID, the grant closed, the next call sends nothing', async () => {
     const r = await trial({ trial: async () => substituted() });

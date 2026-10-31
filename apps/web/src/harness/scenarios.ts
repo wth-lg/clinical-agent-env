@@ -68,7 +68,7 @@ export const okResponse = (turn: MockTurn, n: number): Response =>
 const getContext = (id: string): MockTool => ({ id, name: 'get_context', input: {} });
 const readPatient = (id: string, patient: string): MockTool => ({ id, name: 'fhir_read', input: { resource_type: 'Patient', id: patient } });
 
-const TOY_SUMMARY = 'Signed in as Maya Okafor, MD, I wrote a progress note on the chart of Peter Prosacco.';
+const TOY_SUMMARY = 'Signed in as Maya Okafor, MD, I wrote a progress note on the chart of Walter Kowalczyk.';
 
 // A scenario answers the n-th request (1-based); a fixed script ends after its last turn.
 export type Script = readonly MockTurn[] | ((n: number) => MockTurn);

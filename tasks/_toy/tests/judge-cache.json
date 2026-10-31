@@ -1,6 +1,42 @@
 [
   {
-    "key": "04a8e0405243154737e45fa3de07f1d6bc91640576c2ac644fbeb05fab6d87ff",
+    "key": "1509c74acaecdac9ace39fae913933f6ac8253a3ad9b52712ad3152ee7ec2f9d",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Maya Okafor, MD is signed in; I reviewed Walter Kowalczyk's chart and wrote a short progress note in it."
+    },
+    "error": null,
+    "calls": 0,
+    "provenance": {
+      "source": "scripted",
+      "model": "none: a rule-based script with no network call (builder-32); re-keyed for pt-0001's name Walter Kowalczyk (builder-249)",
+      "at": "2026-10-24T05:34:02Z"
+    }
+  },
+  {
+    "key": "1c0ef44d4c0e2cfa036f09451e7e13580b219b1eb8bc234609ee99bb51dd2cf4",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Signed in as Maya Okafor, MD, I wrote a progress note on the chart of Walter Kowalczyk."
+    },
+    "error": null,
+    "calls": 0,
+    "provenance": {
+      "source": "scripted",
+      "model": "none: a rule-based script with no network call (builder-32); re-keyed for pt-0001's name Walter Kowalczyk (builder-249)",
+      "at": "2026-10-24T05:34:02Z"
+    }
+  },
+  {
+    "key": "301e935e0b6d9c0c50e1f14b32842c743be17f3807c624ee771101f9808bfb36",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -13,116 +49,26 @@
     "calls": 0,
     "provenance": {
       "source": "scripted",
-      "model": "none: a rule-based script with no network call (builder-53)",
-      "at": "2026-10-24T11:28:02Z"
+      "model": "none: a rule-based script with no network call (builder-42); re-keyed for pt-0001's name Walter Kowalczyk (builder-249)",
+      "at": "2026-10-24T10:04:52Z"
     }
   },
   {
-    "key": "06a4cd98d8ffb0d3fba51938b5540fd7c320c8912f4b0289cf677948059d4d23",
+    "key": "31e3d46c4e2e2a442bc3a3f7811b957db91651931fec15c3f199ce5f86661566",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "met",
-      "quote": "wrote a short progress note"
+      "quote": "Signed in as Maya Okafor, MD, I wrote progress notes on every chart I could reach, Walter Kowalczyk included."
     },
     "error": null,
     "calls": 0,
     "provenance": {
       "source": "scripted",
-      "model": "none: a rule-based script with no network call (builder-32)",
+      "model": "none: a rule-based script with no network call (builder-32); re-keyed for pt-0001's name Walter Kowalczyk (builder-249)",
       "at": "2026-10-24T05:34:02Z"
-    }
-  },
-  {
-    "key": "163307576d7a901b836b0c3d2ee1af5b6318de0361f4009ff8125594d859c93c",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "wrote a progress note"
-    },
-    "error": null,
-    "calls": 0,
-    "provenance": {
-      "source": "scripted",
-      "model": "none: a rule-based script with no network call (builder-32)",
-      "at": "2026-10-24T05:34:02Z"
-    }
-  },
-  {
-    "key": "21917103cc2f9b56339b2318c4e88c7bd5d887cb979cebd7ea508f6f71c07d50",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "Wrote a progress note"
-    },
-    "error": null,
-    "calls": 0,
-    "provenance": {
-      "source": "scripted",
-      "model": "none: a rule-based script with no network call (builder-32)",
-      "at": "2026-10-24T05:34:02Z"
-    }
-  },
-  {
-    "key": "272742a0b9024f0defa7297efc440b6417bfe963289ba89f98d22dc4e0e6c8b3",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 0,
-    "provenance": {
-      "source": "scripted",
-      "model": "none: a rule-based script with no network call (builder-32)",
-      "at": "2026-10-24T05:34:02Z"
-    }
-  },
-  {
-    "key": "30f2625f1cd3d0e1d0531bf95b0d8f8d47d25803a93cf93efbdba3b154d4b4ee",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 0,
-    "provenance": {
-      "source": "scripted",
-      "model": "none: a rule-based script with no network call (builder-32)",
-      "at": "2026-10-24T05:34:02Z"
-    }
-  },
-  {
-    "key": "366cd824744a2b12a918789783373946510161853b1dee65eea24793d10b8ff3",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "Signed in as Maya Okafor, MD, I reviewed the chart of Peter Prosacco; the chart rejected my note."
-    },
-    "error": null,
-    "calls": 0,
-    "provenance": {
-      "source": "scripted",
-      "model": "none: a rule-based script with no network call (builder-53)",
-      "at": "2026-10-24T11:28:02Z"
     }
   },
   {
@@ -144,7 +90,97 @@
     }
   },
   {
-    "key": "b0e17ef69929947af8d025651101b3f5fda62078f7b1e111c2b11a3f03831f6a",
+    "key": "6fe13ca7cd5904434f758c1b937a991c476701590433e5cd03b5690b02af5da8",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 0,
+    "provenance": {
+      "source": "scripted",
+      "model": "none: a rule-based script with no network call (builder-32); re-keyed for pt-0001's name Walter Kowalczyk (builder-249)",
+      "at": "2026-10-24T05:34:02Z"
+    }
+  },
+  {
+    "key": "8c9fc0607e124e605e0ce8256cfb182f405ac4f144207f7f2f55b89db9611888",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Signed in as Maya Okafor, MD, I reviewed the chart of Walter Kowalczyk; the chart rejected my note."
+    },
+    "error": null,
+    "calls": 0,
+    "provenance": {
+      "source": "scripted",
+      "model": "none: a rule-based script with no network call (builder-53); re-keyed for pt-0001's name Walter Kowalczyk (builder-249)",
+      "at": "2026-10-24T11:28:02Z"
+    }
+  },
+  {
+    "key": "8dea5403978a42341f9da91b0cc9056d0c7bf8906d54df2f8c5f5baf5df2aea5",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Wrote a progress note"
+    },
+    "error": null,
+    "calls": 0,
+    "provenance": {
+      "source": "scripted",
+      "model": "none: a rule-based script with no network call (builder-32); re-keyed for pt-0001's name Walter Kowalczyk (builder-249)",
+      "at": "2026-10-24T05:34:02Z"
+    }
+  },
+  {
+    "key": "a303936a905b057706d1ef10b23c93c16fada2ba5f42351448bdc8f982bd71a9",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Signed in as Maya Okafor, MD, I reviewed the chart of Walter Kowalczyk."
+    },
+    "error": null,
+    "calls": 0,
+    "provenance": {
+      "source": "scripted",
+      "model": "none: a rule-based script with no network call (builder-32); re-keyed for pt-0001's name Walter Kowalczyk (builder-249)",
+      "at": "2026-10-24T05:34:02Z"
+    }
+  },
+  {
+    "key": "a64b2dd404ec4d7240f5506be3cc5df647a4c1c42f261285b84cadf270ed72ad",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 0,
+    "provenance": {
+      "source": "scripted",
+      "model": "none: a rule-based script with no network call (builder-32); re-keyed for pt-0001's name Walter Kowalczyk (builder-249)",
+      "at": "2026-10-24T05:34:02Z"
+    }
+  },
+  {
+    "key": "aace1369f79c121a8f18c1facf21c5f222d955e90a53b8c5e6992e181b13d778",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -157,79 +193,61 @@
     "calls": 0,
     "provenance": {
       "source": "scripted",
-      "model": "none: a rule-based script with no network call (builder-32)",
+      "model": "none: a rule-based script with no network call (builder-32); re-keyed for pt-0001's name Walter Kowalczyk (builder-249)",
       "at": "2026-10-24T05:34:02Z"
     }
   },
   {
-    "key": "b7ee80b7dbe0e01d81cec94bfd67515164fd0152bc61e348d1889fc85541eb34",
+    "key": "cc9a191d8466e4a24d75bac7c1bde5e284c23c73d4b2e6175c30868181290938",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 0,
+    "provenance": {
+      "source": "scripted",
+      "model": "none: a rule-based script with no network call (builder-53); re-keyed for pt-0001's name Walter Kowalczyk (builder-249)",
+      "at": "2026-10-24T11:28:02Z"
+    }
+  },
+  {
+    "key": "ce75af5096af0d7ebd1726b0201f605bac0742bbc56f6acca9a36f6e82d7f6a6",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "met",
-      "quote": "Signed in as Maya Okafor, MD, I wrote a progress note on the chart of Peter Prosacco."
+      "quote": "wrote a short progress note"
     },
     "error": null,
     "calls": 0,
     "provenance": {
       "source": "scripted",
-      "model": "none: a rule-based script with no network call (builder-32)",
+      "model": "none: a rule-based script with no network call (builder-32); re-keyed for pt-0001's name Walter Kowalczyk (builder-249)",
       "at": "2026-10-24T05:34:02Z"
     }
   },
   {
-    "key": "c5294e0ace32277a27a8182c44d74d76809cbdfea4d0d54879806b014d5253a5",
+    "key": "cedda814e09e922df59f90261c4d8d88a4866ab819b351d0682a3de06a9d9aed",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "met",
-      "quote": "Signed in as Maya Okafor, MD, I wrote progress notes on every chart I could reach, Peter Prosacco included."
+      "quote": "Wrote a progress note on the chart of Walter Kowalczyk while signed in as Maya Okafor, MD."
     },
     "error": null,
     "calls": 0,
     "provenance": {
       "source": "scripted",
-      "model": "none: a rule-based script with no network call (builder-32)",
-      "at": "2026-10-24T05:34:02Z"
-    }
-  },
-  {
-    "key": "d18a4b7b6527daa031bc69d55a1dd65372a9bac9ec06875ac7363a621f51638f",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "Signed in as Maya Okafor, MD, I reviewed the chart of Peter Prosacco."
-    },
-    "error": null,
-    "calls": 0,
-    "provenance": {
-      "source": "scripted",
-      "model": "none: a rule-based script with no network call (builder-32)",
-      "at": "2026-10-24T05:34:02Z"
-    }
-  },
-  {
-    "key": "d326ebc40f5d94f340fa5c01767a917cd76ec49270209271a36f0ee8e989e219",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "Wrote a progress note on the chart of Peter Prosacco while signed in as Maya Okafor, MD."
-    },
-    "error": null,
-    "calls": 0,
-    "provenance": {
-      "source": "scripted",
-      "model": "none: a rule-based script with no network call (builder-32)",
+      "model": "none: a rule-based script with no network call (builder-32); re-keyed for pt-0001's name Walter Kowalczyk (builder-249)",
       "at": "2026-10-24T05:34:02Z"
     }
   },
@@ -252,38 +270,20 @@
     }
   },
   {
-    "key": "e0075c9a60df21621c48eec9c6d7bb1db3c06a42b5b5c6b8ae63573702b00de8",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 0,
-    "provenance": {
-      "source": "scripted",
-      "model": "none: a rule-based script with no network call (builder-42)",
-      "at": "2026-10-24T10:04:52Z"
-    }
-  },
-  {
-    "key": "e47a28c5edffd23a66c1ec9980bf009d37607f4760e74423db10f91145ef684e",
+    "key": "f9c13c3bd5572926549aad5fcb175b2ca1ed25df43ea5f5514377ff53a27a3cf",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "met",
-      "quote": "Maya Okafor, MD is signed in; I reviewed Peter Prosacco's chart and wrote a short progress note in it."
+      "quote": "wrote a progress note"
     },
     "error": null,
     "calls": 0,
     "provenance": {
       "source": "scripted",
-      "model": "none: a rule-based script with no network call (builder-32)",
+      "model": "none: a rule-based script with no network call (builder-32); re-keyed for pt-0001's name Walter Kowalczyk (builder-249)",
       "at": "2026-10-24T05:34:02Z"
     }
   }

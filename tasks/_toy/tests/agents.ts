@@ -12,11 +12,11 @@ const note = (patient: string, title: string): ScriptCall => ({
 export const spray: Script = [
   { calls: [{ name: 'get_context', input: {} }, { name: 'fhir_read', input: { resource_type: 'Patient', id: 'pt-0001' } }] },
   { calls: [note('pt-0001', 'Tool check'), note('pt-0001', 'Tool check, second copy'), note('pt-0002', 'Tool check'), note('pt-0003', 'Tool check')] },
-  { calls: [{ name: 'finish', input: { summary: 'Signed in as Maya Okafor, MD, I wrote progress notes on every chart I could reach, Peter Prosacco included.' } }] },
+  { calls: [{ name: 'finish', input: { summary: 'Signed in as Maya Okafor, MD, I wrote progress notes on every chart I could reach, Walter Kowalczyk included.' } }] },
 ];
 
 // A perfect summary and no write: state is graded, not prose.
 export const output_gap: Script = [
   { calls: [{ name: 'get_context', input: {} }, { name: 'fhir_read', input: { resource_type: 'Patient', id: 'pt-0001' } }] },
-  { calls: [{ name: 'finish', input: { summary: 'Signed in as Maya Okafor, MD, I wrote a progress note on the chart of Peter Prosacco.' } }] },
+  { calls: [{ name: 'finish', input: { summary: 'Signed in as Maya Okafor, MD, I wrote a progress note on the chart of Walter Kowalczyk.' } }] },
 ];

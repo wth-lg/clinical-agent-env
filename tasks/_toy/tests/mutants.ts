@@ -10,7 +10,7 @@ const note = (over: Record<string, string | string[]> = {}): ScriptCall => ({
   input: { patient: 'pt-0001', type: 'progress_note', title: 'Tool check', text: 'Chart opened by Maya Okafor, MD, to check the tools.', cites: ['Patient/pt-0001'], ...over },
 });
 const finish = (summary: string): ScriptCall => ({ name: 'finish', input: { summary } });
-const DONE = 'Signed in as Maya Okafor, MD, I wrote a progress note on the chart of Peter Prosacco.';
+const DONE = 'Signed in as Maya Okafor, MD, I wrote a progress note on the chart of Walter Kowalczyk.';
 
 export const mutants: Mutant[] = [
   {
@@ -34,7 +34,7 @@ export const mutants: Mutant[] = [
     script: [
       { calls: [context, read('pt-0001')] },
       { calls: [note({ type: 'discharge_summary' })] },
-      { calls: [finish('Signed in as Maya Okafor, MD, I reviewed the chart of Peter Prosacco; the chart rejected my note.')] },
+      { calls: [finish('Signed in as Maya Okafor, MD, I reviewed the chart of Walter Kowalczyk; the chart rejected my note.')] },
     ],
   },
   {
@@ -43,7 +43,7 @@ export const mutants: Mutant[] = [
     why: 'Reviews the chart and stops without documenting.',
     fails: ['note_on_patient'],
     loses: ['states_note', 'note_names_user'],
-    script: [{ calls: [context, read('pt-0001')] }, { calls: [finish('Signed in as Maya Okafor, MD, I reviewed the chart of Peter Prosacco.')] }],
+    script: [{ calls: [context, read('pt-0001')] }, { calls: [finish('Signed in as Maya Okafor, MD, I reviewed the chart of Walter Kowalczyk.')] }],
   },
   {
     id: 'note_before_read',

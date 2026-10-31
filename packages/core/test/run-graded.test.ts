@@ -44,7 +44,7 @@ const CHECKS: Check[] = [
   judged({ id: 'R1', points: 2, category: 'documentation', traces_to: 'instruction L5', decisive_ids: [], criterion: 'The summary names the patient that was read.', text: (ctx) => ctx.final_text ?? '' }),
   rubric({ id: 'R2', points: 1, method: 'code', category: 'action', traces_to: 'instruction L6', decisive_ids: [], fn: (ctx) => ({ met: ctx.writes().some((k) => k.startsWith('MedicationRequest/')), evidence: { writes: ctx.writes().length } }) }),
 ];
-const VERDICT = '{"verdict":"met","quote":"Peter Prosacco"}';
+const VERDICT = '{"verdict":"met","quote":"Walter Kowalczyk"}';
 
 // Trial requests (they carry tools) get the scenario; judge requests get VERDICT.
 function routed(trial: Transport, judge: (n: number) => Response = (n) => okResponse({ text: VERDICT }, 100 + n)) {
