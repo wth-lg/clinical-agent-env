@@ -25,7 +25,7 @@ import { describe, expect, it } from 'vitest';
 import { SYNTHEA_IDS } from '../../fixtures/synthea-ids.ts';
 import { NOW_MS } from '../../packages/env/clock.ts';
 import type { Resource } from '../../packages/env/store.ts';
-import { acuteClass, activeOrderAuthored, easternParts, gunzip, hygiene, ingredientsOf, MONTHS_12_MS, patientOf, timeOf } from '../fixtures-lib.ts';
+import { acuteClass, activeOrderAuthored, easternParts, gunzip, hygiene, ingredientsOf, literalDatesByTask, MONTHS_12_MS, patientOf, timeOf } from '../fixtures-lib.ts';
 import { repoRoot } from './helpers.ts';
 
 type R = Record<string, unknown> & { resourceType: string; id: string };
@@ -56,16 +56,20 @@ const attachments = (v: unknown): string[] =>
     : v && typeof v === 'object' ? [...(typeof (v as { data?: unknown }).data === 'string' && /^text\//.test(String((v as { contentType?: unknown }).contentType)) ? [(v as { data: string }).data] : []), ...Object.values(v).flatMap(attachments)] : [];
 
 // The encounters the pass leaves where they are, listed with the reason in the CHANGELOG fragment
-// (decisions.tsv 2026-10-27T15:25Z F4 and 17:20Z: exactly these are exempt):
-//   - a task file about the patient writes the encounter's date: enc-00010, -00011, -00060, -00106,
-//     -00198;
-//   - a time of it on a date a task file writes would move: enc-00023, -00024, -00258, -00346;
-//   - a time of it would move to another month: enc-00007, -00076, -00236;
+// (decisions.tsv 2026-10-27T15:25Z F4 and 17:20Z: exactly these are exempt; re-listed by the W1
+// train, builder-249, after the six worklist probes and with a date pinning only its own task's
+// patients):
+//   - a file of a task that names the patient writes the encounter's date: enc-00001, -00003
+//     (pt-0001), -00020, -00021, -00024 (pt-0004), -00060 (pt-0010), -00152 (pt-0026), -00172,
+//     -00174 (pt-0029), -00181, -00185 (pt-0031), -00194, -00198 (pt-0033), -00227 (pt-0038),
+//     -00244, -00245 (pt-0041), -00283 (pt-0048), -00298 (pt-0050);
+//   - a time of it on a date such a task writes would move: enc-00023;
+//   - a time of it would move to another month: enc-00007, -00076;
 //   - the move would change the patient's order of dated resources: enc-00004 (its Friday is the
 //     patient's visit enc-00003) and enc-00259 (cond-00835 references it but begins at enc-00260's
 //     start, so moving it would put the condition's abatement before its onset).
-// The pass also leaves enc-00012 and enc-00154, which task overlays then remove.
-const LEFT_OUT = ['enc-00004', 'enc-00007', 'enc-00010', 'enc-00011', 'enc-00023', 'enc-00024', 'enc-00060', 'enc-00076', 'enc-00106', 'enc-00198', 'enc-00236', 'enc-00258', 'enc-00259', 'enc-00346'];
+// The pass also lists enc-00155, -00186 and -00236, which start in clinic hours already.
+const LEFT_OUT = ['enc-00001', 'enc-00003', 'enc-00004', 'enc-00007', 'enc-00020', 'enc-00021', 'enc-00023', 'enc-00024', 'enc-00060', 'enc-00076', 'enc-00152', 'enc-00172', 'enc-00174', 'enc-00181', 'enc-00185', 'enc-00194', 'enc-00198', 'enc-00227', 'enc-00244', 'enc-00245', 'enc-00259', 'enc-00283', 'enc-00298'];
 
 describe('world hygiene (JT2)', () => {
   it('no base ambulatory encounter starts outside Monday to Friday 08:00-18:00, but the listed ones', () => {
@@ -195,7 +199,7 @@ describe('world hygiene (JT2)', () => {
 // The pass on small hand-made cohorts (verifier-phase-P17i-JT2-1 F1, F3, P3, P4).
 describe('hygiene()', () => {
   const NOW = Date.parse('2026-10-23T08:00:00-04:00');
-  const none = { now: NOW, literalDates: new Map<string, Set<string>>(), anyLiteralDates: new Set<string>() };
+  const none = { now: NOW, literalDates: new Map<string, Set<string>>() };
   const pt = { resourceType: 'Patient', id: 'p1' };
   const enc = (id: string, start: string, end?: string) => ({ resourceType: 'Encounter', id, class: { code: 'AMB' }, subject: { reference: 'Patient/p1' }, period: end === undefined ? { start } : { start, end } });
   const obs = (id: string, at: string, encounter?: string) => ({ resourceType: 'Observation', id, subject: { reference: 'Patient/p1' }, effectiveDateTime: at, issued: at, ...(encounter ? { encounter: { reference: `Encounter/${encounter}` } } : {}) });
@@ -313,6 +317,35 @@ describe('hygiene()', () => {
     expect(ingredientsOf('120 ACTUAT fluticasone propionate 0.044 MG/ACTUAT Metered Dose Inhaler')).toEqual(['fluticasone propionate']);
     expect(ingredientsOf('Acetaminophen 325 MG / Oxycodone Hydrochloride 5 MG Oral Tablet')).toEqual(['acetaminophen', 'oxycodone hydrochloride']);
     expect(acuteClass('Acetaminophen 325 MG / Oxycodone Hydrochloride 5 MG Oral Tablet')).toBe('acute opioid');
+  });
+
+  // builder-230 item 2: a date one task's files write pinned another task's patient's encounter
+  // (a T5 date of 2026-10-03 left a pt-0033 visit out of hours). A date pins only the encounters of
+  // the patients the task that writes it names.
+  it('moves an encounter on a date that only another patient\'s task writes', () => {
+    const literalDates = new Map([['Patient/p2', new Set(['2026-04-17', '2026-04-18'])]]);
+    const { resources, report } = hygiene([pt, enc('e1', '2026-04-18T10:00:00-04:00', '2026-04-18T10:30:00-04:00')] as unknown as Resource[], { now: NOW, literalDates });
+    expect(report.skipped.e1).toBeUndefined();
+    expect((get(resources, 'e1').period as { start: string }).start).toBe('2026-04-17T10:00:00-04:00');
+  });
+
+  it('leaves an encounter whose move would take a time off a date its patient\'s task writes', () => {
+    // Friday 23:30 with an observation at 00:10 on Saturday 2026-04-18, a date p1's task writes.
+    const literalDates = new Map([['Patient/p1', new Set(['2026-04-18'])]]);
+    const { resources, report } = hygiene([pt, enc('e1', '2026-04-17T23:30:00-04:00', '2026-04-17T23:50:00-04:00'), obs('o1', '2026-04-18T00:10:00-04:00', 'e1')] as unknown as Resource[], { now: NOW, literalDates });
+    expect(report.skipped.e1).toBe('a time of it on 2026-04-18, a date a task file writes, would move');
+    expect((get(resources, 'e1').period as { start: string }).start).toBe('2026-04-17T23:30:00-04:00');
+  });
+
+  it('gives a date any file of a task writes to every patient any file of that task names', () => {
+    const byPatient = literalDatesByTask([
+      { task: 'a', text: "slots: ['pt-0001', 'pt-0002']" },
+      { task: 'a', text: '// seen 2026-04-18 and 10/3/2026' },
+      { task: 'b', text: "pt-0003 on 2026-05-01" },
+    ]);
+    expect(byPatient.get('Patient/pt-0001')).toEqual(new Set(['2026-04-18', '2026-10-03']));
+    expect(byPatient.get('Patient/pt-0002')).toEqual(new Set(['2026-04-18', '2026-10-03']));
+    expect(byPatient.get('Patient/pt-0003')).toEqual(new Set(['2026-05-01']));
   });
 
   it('skips and lists an order whose authoredOn cannot be read', () => {

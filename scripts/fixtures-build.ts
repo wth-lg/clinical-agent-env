@@ -21,7 +21,7 @@ import { applyOverlays, patientRefs, type Overlay, type World } from '../package
 import { plantedClock, profileBase, profileRecords, profileWorld, syntheaForms } from '../packages/env/profile.ts';
 import { Store, type Resource } from '../packages/env/store.ts';
 import { RESOURCE_TYPES, SETTING, SETTING_LINT } from '../packages/env/world.ts';
-import { gunzip, gzip, hygiene, sha256, toNdjson, type HygieneReport } from './fixtures-lib.ts';
+import { gunzip, gzip, hygiene, literalDatesByTask, sha256, toNdjson, type HygieneReport } from './fixtures-lib.ts';
 
 export const repo = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const BASE = 'fixtures/synthea/base.ndjson.gz';
@@ -87,34 +87,19 @@ async function prunedDefinitions(types: readonly string[]): Promise<unknown> {
   return { resourceType: 'Bundle', type: 'collection', entry };
 }
 
-// The dates the task files write (YYYY-MM-DD and M/D/YYYY, as YYYY-MM-DD): all of them, and by the
-// patients each file names (Patient/pt-NNNN). The hygiene pass leaves a base encounter of such a
-// patient on such a date where it is, and moves no encounter off any of them (plan P17j JT2).
-export function taskLiteralDates(): { byPatient: Map<string, Set<string>>; all: Set<string> } {
-  const out = new Map<string, Set<string>>();
-  const all = new Set<string>();
-  const walk = (dir: string) => {
+// The task files, each with the task it belongs to (tasks/<id>/** and tasks/<id>.check-text.ts are
+// task <id>), for the hygiene pass's dates (fixtures-lib.ts literalDatesByTask).
+export function taskLiteralDates(): Map<string, Set<string>> {
+  const files: Array<{ task: string; text: string }> = [];
+  const walk = (dir: string, task: string | null) => {
     for (const e of readdirSync(join(repo, dir), { withFileTypes: true })) {
       const rel = `${dir}/${e.name}`;
-      if (e.isDirectory()) walk(rel);
-      else if (/\.(ts|md|toml|json|txt)$/.test(e.name)) {
-        const text = readFileSync(join(repo, rel), 'utf8');
-        const dates = [
-          // Digit lookarounds, not \b: a date-time's date is followed by T, a word character.
-          ...[...text.matchAll(/(?<!\d)(\d{4})-(\d\d)-(\d\d)(?!\d)/g)].map((m) => `${m[1]}-${m[2]}-${m[3]}`),
-          ...[...text.matchAll(/(?<!\d)(\d{1,2})\/(\d{1,2})\/(\d{4})(?!\d)/g)].map((m) => `${m[3]}-${m[1]!.padStart(2, '0')}-${m[2]!.padStart(2, '0')}`),
-        ];
-        for (const d of dates) all.add(d);
-        for (const pt of new Set(text.match(/\bpt-\d{4}\b/g) ?? [])) {
-          const set = out.get(`Patient/${pt}`) ?? new Set<string>();
-          for (const d of dates) set.add(d);
-          out.set(`Patient/${pt}`, set);
-        }
-      }
+      if (e.isDirectory()) walk(rel, task ?? e.name);
+      else if (/\.(ts|md|toml|json|txt)$/.test(e.name)) files.push({ task: task ?? e.name.replace(/\.check-text\.ts$/, ''), text: readFileSync(join(repo, rel), 'utf8') });
     }
   };
-  walk('tasks');
-  return { byPatient: out, all };
+  walk('tasks', null);
+  return literalDatesByTask(files);
 }
 
 const entries = (m: Record<string, string>, indent: string) => Object.entries(m).map(([k, v]) => `${indent}'${k}': '${v}',\n`).join('');
@@ -172,7 +157,7 @@ export async function assembleWorld(): Promise<{ world: World; overlays: Overlay
   if (baseSha !== baseMeta.ndjson_sha256) throw new Error(`${BASE} decompresses to ${baseSha}, but ${BASE_META} says ${baseMeta.ndjson_sha256}; rerun fixtures/synthea/generate.sh`);
   // World hygiene (plan P17j JT2) on the base cohort, before the overlays.
   const literalDates = taskLiteralDates();
-  const { resources: cleaned, report } = hygiene(await parseNdjson(baseBytes), { now: NOW_MS, literalDates: literalDates.byPatient, anyLiteralDates: literalDates.all });
+  const { resources: cleaned, report } = hygiene(await parseNdjson(baseBytes), { now: NOW_MS, literalDates });
   const overlayFiles = taskOverlays();
   // Every resource an overlay writes takes Synthea's time forms (packages/env/profile.ts syntheaForms).
   const overlays = (await loadOverlays(overlayFiles)).map((o): Overlay => ({
