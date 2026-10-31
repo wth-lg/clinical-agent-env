@@ -81,7 +81,9 @@ describe('oracle', () => {
 
   // --misses-only: refill only the keys the cache lacks (P17j: a PR that adds judge items asks
   // only its new questions live); every cached answer is reused and keeps its provenance.
-  const DROP = '163307576d7a901b836b0c3d2ee1af5b6318de0361f4009ff8125594d859c93c';
+  // The toy's states_note answer on the oracle's summary (re-keyed for pt-0001's name, builder-249;
+  // was 163307576d7a…).
+  const DROP = 'f9c13c3bd5572926549aad5fcb175b2ca1ed25df43ea5f5514377ff53a27a3cf';
   const missingOne: MatrixTask = { ...SMALL, cache: SMALL.cache.filter((e) => e.key !== DROP) };
 
   it('--live-judge --misses-only --dry-run counts only the questions the cache lacks', async () => {
