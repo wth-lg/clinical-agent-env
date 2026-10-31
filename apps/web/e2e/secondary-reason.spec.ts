@@ -23,6 +23,8 @@ test('crc-care-gap/8 shows its secondary reason on the Runs row and in the trial
   await expect(page.locator(`[data-testid="trial-row"][data-trial="${name}"]`).getByTestId('secondary-reason')).toHaveText(secondary!);
   await browse(page, `./?view=runs&trial=${encodeURIComponent(name)}`);
   await expect(page.getByTestId('trial-header').getByTestId('secondary-reason')).toHaveText(secondary!);
+  // In the header it is the "Also failed" line, muted (ui-polish 3.3).
+  await expect(page.getByTestId('trial-header').getByTestId('secondary-reason').locator('xpath=preceding-sibling::dt[1]')).toHaveText('Also failed');
 });
 
 test('crc-care-gap/9: the secondary reason is cut at a clause boundary, not mid-clause', async ({ page }) => {

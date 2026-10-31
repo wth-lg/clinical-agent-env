@@ -5,7 +5,7 @@
 // worklist also says how many items it found right and lists each failed item with why, its ids and
 // its kind of failure (items.ts). An excluded trial was not graded; a check that threw is the
 // grader's error, in the danger style.
-import { Check, X } from 'lucide-react';
+import { Check, CircleHelp, Minus, X } from 'lucide-react';
 import type { ReactNode } from 'react';
 import type { Step } from '../../../../packages/grader/check.ts';
 import { NOT_RERUN_REASON, RERUN_OUTCOMES, type Outcome } from '../../../../packages/core/outcomes.ts';
@@ -14,7 +14,8 @@ import { shownFault } from '../data/failures.ts';
 import { checkTextOf, type Trial } from '../data/results.ts';
 import { OutcomeChip, SECTION_LABEL } from '../data/ui.tsx';
 import { failedItems, itemsMetText, type ItemLabel, type ItemRow } from './items.ts';
-import { metText, rubricMetText, rubricTotal, scoreNote, totalText } from './rubric.ts';
+import { useRubricQuestions } from './questions.ts';
+import { metText, rubricGood, rubricMetText, rubricTotal, scoreNote, totalText } from './rubric.ts';
 import { stepOfId } from './steps.ts';
 
 export interface CheckRow {
@@ -33,6 +34,25 @@ type Usage = { input: number; cache_write: number; cache_read: number; output: n
 const num = (n: number) => n.toLocaleString('en-US');
 const usd = (n: number) => `$${n.toFixed(2)}`;
 const SCORE_TITLE = 'Rubric score (does not decide pass)';
+
+// A table that becomes one card per row below sm, on the same DOM, so the test ids and the reading
+// order stay (ui-polish 3.1): the column heads are for screen readers only there, and a cell can
+// show its column's name from data-label (CELL_LABEL).
+export const CARD_TABLE = 'w-full text-left [overflow-wrap:anywhere] max-sm:block max-sm:[&_tbody]:block max-sm:[&_tfoot]:block max-sm:[&_thead]:sr-only max-sm:[&_tr]:grid max-sm:[&_tr]:gap-x-3 max-sm:[&_tr]:gap-y-1.5 max-sm:[&_tr]:py-2.5 max-sm:[&_td]:p-0';
+export const CELL_LABEL = 'max-sm:before:mr-1.5 max-sm:before:text-xs max-sm:before:font-normal max-sm:before:text-ink-muted max-sm:before:content-[attr(data-label)]';
+
+// The met column's mark: a check, a cross, a dash for a penalty that did not fire, a question mark
+// when the judge was unsure; in the danger colour when the row costs the trial points.
+function MetCell({ c }: { c: CheckRow }) {
+  const good = rubricGood(c);
+  const Icon = c.met === 'unknown' ? CircleHelp : c.met === true ? Check : (c.points ?? 0) < 0 ? Minus : X;
+  return (
+    <span className="inline-flex items-center gap-1 whitespace-nowrap">
+      <Icon aria-hidden className={`h-3.5 w-3.5 shrink-0 ${good === false ? 'text-danger' : 'text-ink-muted'}`} strokeWidth={good === false ? 2.25 : 1.75} />
+      {rubricMetText(c)}
+    </span>
+  );
+}
 
 function duration(started: string | undefined, ended: string | undefined): string | null {
   if (!started || !ended) return null;
@@ -100,6 +120,7 @@ export function Grading({ t, steps, onStep, decisive = null }: { t: Trial; steps
   const unfinished = r.error != null && !g.regraded;
   const score = graded && typeof g.score === 'number' ? g.score.toFixed(2) : null;
   const total = rubricTotal(rubric);
+  const questions = useRubricQuestions(t.task, rubric.length > 0);
   return (
     <div className="space-y-4">
       <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -177,32 +198,39 @@ export function Grading({ t, steps, onStep, decisive = null }: { t: Trial; steps
       )}
       {rubric.length > 0 && (
         <Section title="Rubric" lead="Rubric items add to the score; they never decide a pass.">
-          <table className="w-full table-fixed text-left [overflow-wrap:anywhere]">
+          <table className={CARD_TABLE}>
             <thead className="text-xs text-ink-muted">
               <tr>
-                <th scope="col" className="w-[36%] pb-1 font-normal">Item</th>
-                <th scope="col" className="w-[13%] pb-1 font-normal">Points</th>
-                <th scope="col" className="w-[15%] pb-1 font-normal">Met</th>
+                <th scope="col" className="pb-1 pr-3 font-normal">Item</th>
+                <th scope="col" className="pb-1 pr-3 font-normal">Points</th>
+                <th scope="col" className="pb-1 pr-3 font-normal">Met</th>
                 <th scope="col" className="pb-1 font-normal">Judge quote</th>
               </tr>
             </thead>
             <tbody>
               {rubric.map((c) => {
                 const quote = typeof c.evidence?.quote === 'string' && c.evidence.quote !== '' ? c.evidence.quote : null;
+                const question = questions[c.id];
                 return (
-                  <tr key={c.id} data-testid="rubric-row" data-id={c.id} data-points={String(c.points)} data-met={String(c.met)} className="border-t border-line align-top">
-                    <td className="py-1.5 pr-2"><code className="text-xs text-ink">{c.id}</code><span className="block text-xs text-ink-muted">{[c.category, c.method].filter(Boolean).join(', ')}</span></td>
-                    <td data-testid="rubric-points" className="py-1.5 pr-2 tabular-nums">{`${(c.points ?? 0) > 0 ? '+' : ''}${c.points}`}</td>
-                    <td data-testid="rubric-met" className="py-1.5 pr-2">{rubricMetText(c)}</td>
-                    <td data-testid="rubric-quote" className={`whitespace-pre-line py-1.5 text-xs ${quote === null ? 'text-ink-muted' : 'text-ink'}`}>{quote ?? '—'}</td>
+                  <tr key={c.id} data-testid="rubric-row" data-id={c.id} data-points={String(c.points)} data-met={String(c.met)} className="border-t border-line align-top max-sm:grid-cols-[minmax(0,1fr)_auto_auto]">
+                    <td data-label="Item" className="py-1.5 pr-3">
+                      {question !== undefined && <span data-testid="rubric-name" className="block break-words text-ink">{question}</span>}
+                      <span className="flex flex-wrap items-baseline gap-x-1.5 text-xs text-ink-muted">
+                        <code className={question === undefined ? 'font-medium text-ink' : ''}>{c.id}</code>
+                        <span>{[c.category, c.method].filter(Boolean).join(', ')}</span>
+                      </span>
+                    </td>
+                    <td data-testid="rubric-points" data-label="Points" className={`whitespace-nowrap py-1.5 pr-3 tabular-nums ${CELL_LABEL}`}>{`${(c.points ?? 0) > 0 ? '+' : ''}${c.points}`}</td>
+                    <td data-testid="rubric-met" data-label="Met" className="whitespace-nowrap py-1.5 pr-3"><MetCell c={c} /></td>
+                    <td data-testid="rubric-quote" data-label="Judge quote" className={`whitespace-pre-line py-1.5 text-xs max-sm:col-span-3 ${quote === null ? 'text-ink-muted max-sm:hidden' : 'text-ink max-sm:border-l-2 max-sm:border-line max-sm:pl-2 max-sm:before:mb-0.5 max-sm:before:block max-sm:before:text-ink-muted max-sm:before:content-[attr(data-label)]'}`}>{quote ?? '—'}</td>
                   </tr>
                 );
               })}
             </tbody>
             <tfoot>
-              <tr data-testid="rubric-total" data-earned={total.earned} data-possible={total.possible} className="border-t border-line-strong">
-                <td className="py-1.5 pr-2 font-medium">Total</td>
-                <td colSpan={3} className="py-1.5 tabular-nums">{totalText(total)}</td>
+              <tr data-testid="rubric-total" data-earned={total.earned} data-possible={total.possible} className="border-t border-line-strong max-sm:grid-cols-[auto_minmax(0,1fr)]">
+                <td data-label="Total" className="py-1.5 pr-3 font-medium">Total</td>
+                <td data-label="Points" colSpan={3} className="py-1.5 tabular-nums">{totalText(total)}</td>
               </tr>
             </tfoot>
           </table>

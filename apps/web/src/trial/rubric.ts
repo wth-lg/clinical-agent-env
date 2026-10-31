@@ -9,8 +9,11 @@ export interface RubricRow {
 
 export const metText = (met: unknown): string => (met === true ? 'met' : met === false ? 'not met' : String(met));
 // A rubric row's met column: a penalty (negative points) that did not fire is "not triggered", so
-// "not met" never reads as a loss.
-export const rubricMetText = (c: RubricRow): string => ((c.points ?? 0) < 0 && c.met === false ? 'not triggered' : metText(c.met));
+// "not met" never reads as a loss; an item the judge could not answer is "judge unsure" (ui-polish 3.2).
+export const rubricMetText = (c: RubricRow): string => ((c.points ?? 0) < 0 && c.met === false ? 'not triggered' : c.met === 'unknown' ? 'judge unsure' : metText(c.met));
+// Whether a rubric row's result is good for the trial: a positive item met, a penalty not triggered.
+// null when the judge was unsure.
+export const rubricGood = (c: RubricRow): boolean | null => (c.met === 'unknown' ? null : (c.points ?? 0) < 0 ? c.met !== true : c.met === true);
 
 // packages/grader/grade.ts score(): met points over the positive points, unknown items left out,
 // clipped to 0..1 (test/rubric.test.ts checks the two agree). `penalties`: what an unknown penalty

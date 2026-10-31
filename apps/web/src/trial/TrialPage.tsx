@@ -15,12 +15,13 @@
 // uses. Every tab panel stays mounted (the inactive ones hidden), so a replay or an open row
 // survives a tab change.
 import { ArrowLeft } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type Ref } from 'react';
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode, type Ref } from 'react';
 import { MET_TEXT, type Explanation } from '../../../../packages/core/explain.ts';
 import type { TrialEvent } from '../../../../packages/core/events.ts';
 import { fetchEvents, fullExplanation, useResults, type RunData, type Trial } from '../data/results.ts';
 import { harmItems, safePass, type HarmItem } from '../data/harm.ts';
-import { CARD, CHIP, FaultLabel, GlossaryLink, HarmChip, HashText, Notice, OutcomeChip } from '../data/ui.tsx';
+import type { Fault } from '../../../../packages/core/outcomes.ts';
+import { CARD, CHIP, FaultLabel, GlossaryLink, HarmChip, HashText, markOf, markProps, Notice, OutcomeChip } from '../data/ui.tsx';
 import { blocksTheRun, relabelledFrom, runBlock, shownFault } from '../data/failures.ts';
 import { tabTarget } from '../data/tabs.ts';
 import { useTaskList } from '../data/tasks.ts';
@@ -31,6 +32,7 @@ import { useHosted } from '../surface/hosted.ts';
 import { Attribution, criterionPhrase, criterionText, FAULT_NOUN, FAULT_WORD, LINK, StepLink } from './Attribution.tsx';
 import { EnvironmentTab, Raw } from './Details.tsx';
 import { Grading } from './Grading.tsx';
+import { useRubricQuestions } from './questions.ts';
 import { returnTo } from './back.ts';
 import { FIRST_NONPASS, resolveTrial } from './resolve.ts';
 import { taskTitle } from '../tasks/title.ts';
@@ -162,7 +164,9 @@ function Detail({ t, run, files, tab, headingRef }: { t: Trial; run: RunData; fi
             }}
           </Tabs>
           {/* After the tabs in the DOM, so focus order follows the stacked screen; on the left at lg. */}
-          <div className="min-w-0 lg:sticky lg:top-4 lg:order-1 lg:max-h-[calc(100vh-6rem)] lg:overflow-auto">
+          {/* The scroll pane fades at its foot, so a cut-off row reads as more to scroll (ui-polish 3.5); the
+              padding under the card keeps the last row clear of the fade at the end. */}
+          <div data-testid="trajectory-pane" className="min-w-0 lg:sticky lg:top-4 lg:order-1 lg:max-h-[calc(100vh-6rem)] lg:overflow-auto lg:pb-8 lg:[mask-image:linear-gradient(to_bottom,#000_calc(100%-2rem),transparent)]">
             <Trajectory data={folded} current={current} />
           </div>
         </div>
@@ -186,6 +190,27 @@ function SessionNotice() {
   );
 }
 
+// One sentence under "Whose fault" for each fault (ui-polish 3.3); the glossary has the definition.
+const FAULT_GLOSS: Readonly<Record<Fault, string>> = {
+  model: 'The model made the mistake, so the trial counts against it.',
+  refusal: 'The model declined the task, which counts as a model failure.',
+  env: 'The environment, not the model, caused this result.',
+  grader: 'The grader, not the model, caused this result.',
+  infra: 'The API or the harness ended the trial, so it says nothing about the model.',
+};
+
+// The plain headline above the verdict (ui-polish 3.3), from the decisive check and the kind of
+// failure. An excluded trial has none: its plain "Not counted" line leads instead.
+function headline(e: Explanation): ReactNode {
+  if (!e.valid) return null;
+  if (e.outcome === 'PASS') return e.fault === 'grader' ? 'Passed, but the grader was wrong: an audit found a false PASS.' : 'Passed every gate check.';
+  const kind = e.taxonomy === null ? null : e.taxonomy.replace(/_/g, ' ');
+  if (e.decisive_check) return <>Failed the check <code className="break-all font-mono text-[0.95em]">{e.decisive_check.id}</code>{kind !== null && <span className="font-normal text-ink-muted"> ({kind})</span>}</>;
+  if (e.outcome === 'REFUSAL') return 'The model refused the task.';
+  if (e.outcome === 'LIMIT') return 'The model did not finish: the trial stopped at a limit.';
+  return `The trial ended ${e.outcome}.`;
+}
+
 // Why the trial ended as it did, before any click (see the header comment). rows: the trajectory,
 // once it loads; an ENV_ERROR's Where is the tool call that failed with an internal error.
 // official: the trial is of the official run; only it can be blocked, so only it takes the danger rule.
@@ -198,36 +223,62 @@ function Header({ t, e, rows, onStep, official }: { t: Trial; e: Explanation; ro
   const fault = shownFault(e);
   const from = relabelledFrom(e);
   const decided = e.deciding && <>, decided by {criterionPhrase(e.deciding.id)} (<GlossaryLink anchor={`criterion-${e.deciding.id}`} className={LINK}>{e.deciding.id}</GlossaryLink>)<span className="block text-xs text-ink-muted"><HashText text={e.deciding.evidence} /></span></>;
+  // The rule that decided the fault, small and after the gloss, its code a link to its definition.
+  const rule = e.deciding && (
+    <span className="mt-1 block text-xs text-ink-muted">
+      Rule: decided by {criterionPhrase(e.deciding.id)} (<GlossaryLink anchor={`criterion-${e.deciding.id}`} className={LINK}>{e.deciding.id}</GlossaryLink>)
+      <span className="block"><HashText text={e.deciding.evidence} /></span>
+    </span>
+  );
+  const kind = from === null && (e.fault === 'model' || e.fault === 'refusal') && e.taxonomy !== null ? e.taxonomy.replace(/_/g, ' ') : null;
+  const blocking = fault === 'env' || fault === 'grader';
+  const lead = headline(e);
+  const confirmed = e.criteria.filter((c) => c.met === true || c.met === 'n/a');
+  const open = e.criteria.filter((c) => !confirmed.includes(c));
   return (
     <section aria-label="Why this trial ended as it did" data-testid="trial-header" className={`min-w-0 ${CARD} p-4 ${nonPass ? `border-l-2 ${official && blocksTheRun(e) ? 'border-l-danger' : 'border-l-line-strong'}` : ''}`}>
+      {lead !== null && <p data-testid="trial-headline" className="mb-2 break-words text-base font-semibold text-ink">{lead}</p>}
+      {!e.valid && e.deciding && (
+        <p data-testid="plain-reason" className="mb-2 break-words text-base font-semibold text-ink">
+          Not counted: {criterionPhrase(e.deciding.id)}. The {e.fault === 'infra' ? 'infrastructure' : FAULT_WORD[e.deciding.fault]} is at fault, not the model.
+        </p>
+      )}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <OutcomeChip outcome={e.outcome} fault={shownFault(e)} />
         <HarmChip items={useHarmTexts(t.task, harmItems(t.record))} />
         {nonPass && <FaultLabel e={e} notCountedShown={!e.valid && e.deciding !== null} official={official} />}
         <span className="ml-auto text-xs text-ink-muted" title="Agent and judge cost">${(t.record.cost_usd + (t.record.judge_cost_usd ?? 0)).toFixed(2)}</span>
       </div>
-      {!e.valid && e.deciding && (
-        <p data-testid="plain-reason" className="mt-2 break-words font-medium text-ink">
-          Not counted: {criterionPhrase(e.deciding.id)}. The {e.fault === 'infra' ? 'infrastructure' : FAULT_WORD[e.deciding.fault]} is at fault, not the model.
-        </p>
-      )}
       <Reason reason={e.reason} muted={!e.valid} />
-      {e.secondary_reason !== null && <p data-testid="secondary-reason" className="mt-1 break-words text-sm text-ink-muted">{e.secondary_reason}</p>}
-      <dl className="mt-3 grid grid-cols-1 gap-x-4 gap-y-1.5 sm:grid-cols-[max-content_minmax(0,1fr)] [&_dd]:min-w-0 [&_dd]:break-words [&_dt]:text-ink-muted">
-        <dt>Fault</dt>
-        <dd data-testid="detail-fault">
-          {fault === null ? 'none: the trial passed' : <GlossaryLink anchor={`fault-${fault}`} className={LINK}>{FAULT_WORD[fault]}</GlossaryLink>}
-          {from === null ? decided : <span data-testid="fault-relabelled" className="block text-sm text-ink-muted">The audit relabelled it; the trial's criteria found {FAULT_NOUN[from]} at fault{e.deciding ? decided : '.'}</span>}
-        </dd>
+      <dl className="mt-3 grid grid-cols-1 gap-x-4 gap-y-2 border-t border-line pt-3 sm:grid-cols-[max-content_minmax(0,1fr)] [&_dd]:min-w-0 [&_dd]:break-words [&_dt]:text-ink-muted max-sm:[&_dd+dt]:mt-1.5">
         {e.decisive_check && (
           <>
-            <dt>Decisive check</dt>
+            <dt>Why it failed</dt>
             <dd data-testid="decisive-check" data-id={e.decisive_check.id}>
               <code data-testid="decisive" className={`${CHIP} break-all border-line bg-canvas font-mono font-normal text-ink dark:bg-line`}>{e.decisive_check.id}</code>
               {e.decisive_check.traces_to && <span className="text-ink-muted"> (enforces {e.decisive_check.traces_to})</span>}
-              <span className="block">requires {e.decisive_check.expected}</span>
-              <span className="block">found {e.decisive_check.found}</span>
+              <span className="mt-1 block"><span className="text-ink-muted">requires</span> {e.decisive_check.expected}</span>
+              <span className="block"><span className="text-ink-muted">found</span> <span className="text-danger">{e.decisive_check.found}</span></span>
             </dd>
+          </>
+        )}
+        <dt>Whose fault</dt>
+        <dd data-testid="detail-fault">
+          {fault === null ? 'none: the trial passed' : (
+            <>
+              <span className="flex flex-wrap items-center gap-1.5">
+                <GlossaryLink anchor={`fault-${fault}`} className={`${CHIP} ${blocking ? 'border-danger text-danger' : 'border-line-strong text-ink'} hover:bg-canvas`}><span aria-hidden {...markProps(markOf(e.outcome, fault), 'inline-block h-2.5 w-2.5 shrink-0 rounded-[2px]')} />{FAULT_WORD[fault]}</GlossaryLink>
+                {kind !== null && <span data-testid="kind-pill" className={`${CHIP} border-line bg-canvas font-normal text-ink dark:bg-line`}>Kind: {kind}</span>}
+              </span>
+              <span className="mt-1 block text-ink">{FAULT_GLOSS[fault]}</span>
+              {from === null ? rule : <span data-testid="fault-relabelled" className="mt-1 block text-sm text-ink-muted">The audit relabelled it; the trial's criteria found {FAULT_NOUN[from]} at fault{e.deciding ? decided : '.'}</span>}
+            </>
+          )}
+        </dd>
+        {e.secondary_reason !== null && (
+          <>
+            <dt>Also failed</dt>
+            <dd data-testid="secondary-reason" className="text-ink-muted">{e.secondary_reason}</dd>
           </>
         )}
         {e.decisive_step !== null && (
@@ -245,14 +296,20 @@ function Header({ t, e, rows, onStep, official }: { t: Trial; e: Explanation; ro
         <dt>{nonPass ? 'Criteria' : 'Checks'}</dt>
         <dd>
           {!nonPass ? <Confirmation e={e} /> : (
-          <ul data-testid="header-criteria" className="flex flex-wrap gap-x-3 gap-y-0.5">
-            {e.criteria.map((c) => (
-              <li key={c.id} data-id={c.id} data-met={String(c.met)} title={criterionText(c.id)}>
-                <GlossaryLink anchor={`criterion-${c.id}`} className={LINK}>{c.id}</GlossaryLink>
-                <span className={c.met === true ? 'text-ink-muted' : 'text-ink'}>: {MET_TEXT[String(c.met)]}</span>
-              </li>
-            ))}
-          </ul>
+            <details>
+              <summary data-testid="header-criteria-summary" className="cursor-pointer">
+                {confirmed.length} of {e.criteria.length} confirmed
+                {open.length > 0 && <span className="text-ink-muted"> ({open.map((c) => `${c.id} ${MET_TEXT[String(c.met)]}`).join(', ')})</span>}
+              </summary>
+              <ul data-testid="header-criteria" className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5">
+                {e.criteria.map((c) => (
+                  <li key={c.id} data-id={c.id} data-met={String(c.met)} title={criterionText(c.id)}>
+                    <GlossaryLink anchor={`criterion-${c.id}`} className={LINK}>{c.id}</GlossaryLink>
+                    <span className={c.met === true ? 'text-ink-muted' : 'text-ink'}>: {MET_TEXT[String(c.met)]}</span>
+                  </li>
+                ))}
+              </ul>
+            </details>
           )}
         </dd>
       </dl>
@@ -263,24 +320,7 @@ function Header({ t, e, rows, onStep, official }: { t: Trial; e: Explanation; ro
 // The harm items with their rubric questions, once the task's checks load (verifier JU3-1 F5);
 // the ids alone until then, and for a code item, which has no question.
 function useHarmTexts(task: string, items: HarmItem[]): HarmItem[] {
-  const [texts, setTexts] = useState<Record<string, string>>({});
-  const ids = items.map((x) => x.id).join(',');
-  useEffect(() => {
-    if (ids === '') return;
-    let live = true;
-    void Promise.all([import('../tasks/matrix-task.ts'), import('../tasks/check-text.ts')]).then(async ([{ taskChecks }, { rubricQuestion }]) => {
-      const checks = await taskChecks(task).catch(() => []);
-      const found: Record<string, string> = {};
-      for (const c of checks) if (ids.split(',').includes(c.id)) {
-        const q = await rubricQuestion(c);
-        if (q) found[c.id] = q;
-      }
-      if (live) setTexts(found);
-    });
-    return () => {
-      live = false;
-    };
-  }, [task, ids]);
+  const texts = useRubricQuestions(task, items.length > 0);
   return items.map((x) => (texts[x.id] ? { ...x, text: texts[x.id]! } : x));
 }
 
@@ -348,7 +388,7 @@ function Reason({ reason, muted }: { reason: string; muted: boolean }) {
   const at = reason.indexOf('; Kind: ');
   return (
     <p data-testid="reason" className={`mt-2 break-words ${muted ? 'font-mono text-xs text-ink-muted' : 'font-medium text-ink'}`}>
-      {at < 0 ? reason : <>{reason.slice(0, at)}<span className="sr-only">; </span><span data-testid="reason-kind" className="block font-normal">{reason.slice(at + 2)}</span></>}
+      {at < 0 ? reason : <>{reason.slice(0, at)}<span className="sr-only">; </span><span data-testid="reason-kind" className="block font-normal text-ink-muted">{reason.slice(at + 2)}</span></>}
     </p>
   );
 }

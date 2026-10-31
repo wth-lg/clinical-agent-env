@@ -2,10 +2,28 @@
 // and one row per tool call, each call that ran numbered as the grader numbers steps
 // (steps.ts). A link elsewhere on the page (an evidence id, the decisive step, an exposure row)
 // sets `current`; that row is scrolled into view, focused and marked aria-current="step".
+// Thinking reads as a captioned aside in plain type, and each tool name sits in a pill (ui-polish
+// 3.5); THINKING and TOOL_NAME are shared with the live trial.
 import { ChevronDown, ChevronRight, CircleAlert, Dot } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { CARD, Notice } from '../data/ui.tsx';
 import { stepAnchor, type Row, type Trajectory as Folded } from './steps.ts';
+
+// A thinking row: muted plain type behind a rule, under a small "Thinking" caption.
+export const THINKING = 'border-l-2 border-line pl-3 text-ink-muted';
+// The caption runs in before the text, so it adds no line to a long trajectory.
+export const THINKING_CAPTION = 'mr-1.5 text-[11px] font-semibold uppercase tracking-wide text-ink-muted';
+export const TOOL_NAME = 'shrink-0 rounded bg-canvas px-1.5 font-mono text-xs text-ink dark:bg-line';
+
+export function TextRow({ kind, text, testId = kind }: { kind: 'text' | 'thinking'; text: string; testId?: string }) {
+  if (kind === 'text') return <li data-testid={testId} className="whitespace-pre-wrap break-words text-ink">{text}</li>;
+  return (
+    <li data-testid={testId} className={`whitespace-pre-wrap break-words ${THINKING}`}>
+      <span className={THINKING_CAPTION}>Thinking</span>
+      {text}
+    </li>
+  );
+}
 
 export type Loaded<T> = { state: 'loading' } | { state: 'error'; message: string } | { state: 'ready'; value: T };
 
@@ -59,7 +77,7 @@ function RowItem({ row, current }: { row: Row; current: number | null }) {
     ref.current?.focus({ preventScroll: true });
   }, [current]);
   if (row.kind !== 'tool') {
-    return <li data-testid={row.kind} className={`whitespace-pre-wrap break-words ${row.kind === 'thinking' ? 'italic text-ink-muted' : 'text-ink'}`}>{row.text}</li>;
+    return <TextRow kind={row.kind} text={row.text} />;
   }
   const Chevron = open ? ChevronDown : ChevronRight;
   const here = current !== null;
@@ -77,7 +95,7 @@ function RowItem({ row, current }: { row: Row; current: number | null }) {
       <button type="button" aria-expanded={open} onClick={() => setOpen(!open)} className="flex w-full min-w-0 items-center gap-1.5 rounded-md px-1 py-0.5 text-left pointer-coarse:py-2.5 hover:bg-canvas">
         <Chevron aria-hidden className="h-3.5 w-3.5 shrink-0 text-ink-muted" strokeWidth={1.75} />
         <span className="w-14 shrink-0 text-xs tabular-nums text-ink-muted">{row.step === null ? 'not run' : `Step ${row.step}`}</span>
-        <code className="shrink-0 font-mono text-xs text-ink">{row.name}</code>
+        <code data-testid="tool-name" className={TOOL_NAME}>{row.name}</code>
         <span className="min-w-0 truncate text-xs text-ink-muted">{row.target}</span>
         {row.error !== null && <CircleAlert role="img" aria-label={`error ${row.error}`} className="h-3.5 w-3.5 shrink-0 text-danger" strokeWidth={1.75} />}
         {row.written.length > 0 && (
