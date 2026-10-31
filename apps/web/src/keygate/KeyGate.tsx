@@ -95,8 +95,9 @@ export function KeyGate({ surface, onDone, onBrowse, notice }: { surface: Surfac
 
         {/* The requirements name this heading (docs/requirements/ui-contract.md, trace U3 and U23).
             It is the key field's visible label too, so no second label repeats it under it
-            (verifier-phase-P17i-UI-5-1 m4). */}
-        <h2 id={ids.heading} className="mt-5 text-sm font-semibold text-ink">Add an API key</h2>
+            (verifier-phase-P17i-UI-5-1 m4); its text is a <label> for the field, so a click on it
+            focuses the field, while the field's name still comes from the h2 (UI-FU-1 m2). */}
+        <h2 id={ids.heading} className="mt-5 text-sm font-semibold text-ink"><label htmlFor={ids.key} className="block">Add an API key</label></h2>
         <div className="relative mt-2">
           <input
             id={ids.key}

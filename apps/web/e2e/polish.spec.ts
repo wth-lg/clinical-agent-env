@@ -383,6 +383,19 @@ test('the key gate\'s "Add an API key" heading is the key field\'s visible label
   await expect(page.locator('main label', { hasText: /^\s*API key\s*$/ })).toHaveCount(0);
 });
 
+test('a click on the key gate\'s "Add an API key" heading focuses the key field, and the name stays one (verifier-phase-P17i-UI-FU-1 m2)', async ({ page }) => {
+  await openApp(page, './');
+  const heading = page.getByRole('heading', { level: 2, name: 'Add an API key' });
+  const field = page.locator('main input[type="password"]');
+  await expect(field).toBeFocused();
+  await field.blur();
+  await expect(field).not.toBeFocused();
+  await heading.click();
+  await expect(field).toBeFocused();
+  await expect(field).toHaveAccessibleName('Add an API key');
+  expect(await field.getAttribute('aria-labelledby')).toBe(await heading.getAttribute('id'));
+});
+
 // UI polish PR 4 (reports/ui-polish-spec.md 4.1 to 4.4): on a closed task row the grader validation
 // buttons are quiet, with icons, beside the one primary; each button in the Grader validation tab
 // says in one line what it does; the reference solution's result reads in plain words; the task

@@ -13,7 +13,7 @@ import { FINAL_PASS_BAND, FINAL_TRIALS_PER_TASK } from '../../../../packages/cor
 import { OUTCOMES } from '../../../../packages/core/outcomes.ts';
 import { noPassCount, runBlock, shownFault } from '../data/failures.ts';
 import { notCounted, notCountedText } from '../data/marks.ts';
-import { checkTextOf, dataUrl, gradingLine, useResults, type RunData } from '../data/results.ts';
+import { checkTextOf, dataUrl, gradingLine, pilotRates, useResults, type RunData } from '../data/results.ts';
 import { Card, CARD, formatInterval, GlossaryLink, IntervalRow, LINK, markLabel, MarkLegend, markOf, NO_RESULTS, Notice, Page, Swatch } from '../data/ui.tsx';
 import { CHART_KEY, PilotRateRows, RateAxis } from './pilot.tsx';
 import { FaultBox, KindBar, RunBlocked, TopChecks } from './why.tsx';
@@ -65,7 +65,8 @@ function NotCountedLine({ task, text }: { task: string; text: string | null }) {
   return text === null ? null : <span data-testid="not-counted" data-task={task} className="col-span-full break-words text-xs text-ink-muted">{text}</span>;
 }
 
-// A pilot a trial blocks shows, in place of its rate rows and the chart key, why it has none.
+// A pilot a trial blocks shows, in place of its rate rows and the chart key, why it has none, and
+// under that each task's not-counted line.
 function PilotFindings({ run }: { run: RunData }) {
   const graded = gradingLine(run.grading);
   const held = noPassCount(run.trials);
@@ -73,7 +74,15 @@ function PilotFindings({ run }: { run: RunData }) {
     <Card title={`${run.runId} (not counted)`}>
       <div data-testid="pilot-findings" data-run={run.runId} className="space-y-3">
         {held !== null
-          ? <p data-testid="pilot-blocked" className="text-ink">{held.charAt(0).toUpperCase()}{held.slice(1)}.</p>
+          ? (
+            <>
+              <p data-testid="pilot-blocked" className="text-ink">{held.charAt(0).toUpperCase()}{held.slice(1)}.</p>
+              {/* Which trials are not counted, and why, stay in view, with no k/N (verifier-phase-P17i-UI-FU-1 S1). */}
+              {pilotRates(run).map((r) => ({ task: r.task, text: notCountedText(notCounted({ outcomes: r.outcomes })) })).filter((l) => l.text !== null).map((l) => (
+                <p key={l.task} className="break-words text-xs text-ink-muted"><span className="font-medium text-ink">{l.task}</span>: <NotCountedLine task={l.task} text={l.text} /></p>
+              ))}
+            </>
+          )
           : (
             <>
               <PilotRateRows run={run} axis below={(r) => <NotCountedLine task={r.task} text={notCountedText(notCounted({ outcomes: r.outcomes }))} />} />

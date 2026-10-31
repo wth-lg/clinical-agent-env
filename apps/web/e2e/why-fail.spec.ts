@@ -254,6 +254,56 @@ test('a blocked pilot gives no pass count: its Runs header, its Overview line an
   await expect(card.getByTestId('pilot-axis')).toHaveCount(0);
   await noRates(page);
   await expect(card).not.toContainText(/blocked/i);
+  // Its not-counted lines stay, one per task, with no k/N (verifier-phase-P17i-UI-FU-1 S1).
+  const left = card.getByTestId('not-counted');
+  await expect(left).toHaveCount(1);
+  await expect(left).toHaveAttribute('data-task', 'message-queue');
+  await expect(left).toHaveText(/^Not counted: 1 GRADER_ERROR \(.+\)\.$/);
+  await expect(card).not.toContainText(/\d+\/\d+/);
+});
+
+// Under label=pass the Runs count line is a pass count, so it hides while a run in the list is
+// blocked (the official run, or a pilot shown under it); other labels keep their counts, and a
+// list with no blocked run keeps it under pass too (verifier-phase-P17i-UI-FU-1 B1).
+const passCount = /\d+ of \d+ trials/;
+async function noPassFilterCount(page: Page, query: string, trials: number) {
+  for (const q of [`label=pass`, `label=pass&task=renal-dose-review`]) {
+    await browse(page, `./?view=runs&${q}${query}`);
+    await expect(page.getByTestId('trial-row').first()).toBeAttached();
+    await expect(page.getByTestId('shown-count-held')).toHaveText(`Count hidden while ${trials} ${trials === 1 ? 'trial needs' : 'trials need'} a fix`);
+    await expect(page.getByTestId('shown-count')).toHaveCount(0);
+    await expect(page.locator('main')).not.toContainText(passCount);
+  }
+  await browse(page, `./?view=runs&label=infra${query}`);
+  await expect(page.getByTestId('shown-count')).toHaveText(/^\d+ of \d+ trials$/);
+}
+
+test('label=pass on Runs gives no count while the official run is blocked', async ({ page }) => {
+  const pass = records.find((r) => r.outcome === 'PASS' && r.task_id === 'renal-dose-review')!;
+  await withRow(page, { trial: trialName(pass), outcome: 'PASS', taxonomy: null, model_fault: 'no', decisive_step: 2, evidence_ids: ['Patient/pt-0001'], llm_auditor_agrees: true, label: 'grader', note: 'the grader passed a dose the policy forbids' });
+  // The official run's block (1 trial) and the sample's own blocked pilot (1 GRADER_ERROR).
+  await noPassFilterCount(page, '', 2);
+});
+
+test('label=pass on Runs gives no count while a shown pilot is blocked', async ({ page }) => {
+  await blockedPilot(page);
+  await noPassFilterCount(page, '', 1);
+});
+
+test('label=pass on Runs keeps its count when no run in the list is blocked', async ({ page }) => {
+  // The sample without its blocked pilot: only the official run, which nothing blocks.
+  await page.route('**/data/index.json', async (route) => {
+    const res = await route.fetch();
+    const { files, ...rest } = (await res.json()) as { files: string[] };
+    await route.fulfill({ response: res, json: { ...rest, files: files.filter((f) => !f.startsWith(`results/${BLOCKED_PILOT}/`)) } });
+  });
+  for (const q of ['label=pass', 'label=pass&task=renal-dose-review']) {
+    await browse(page, `./?view=runs&${q}`);
+    await expect(page.getByTestId('trial-row').first()).toBeAttached();
+    await expect(page.getByTestId('run-blocked')).toHaveCount(0);
+    await expect(page.getByTestId('shown-count')).toHaveText(/^[1-9]\d* of \d+ trials$/);
+    await expect(page.getByTestId('shown-count-held')).toHaveCount(0);
+  }
 });
 
 test('the check and audit filters do not follow a rail link or an Overview task link', async ({ page }) => {

@@ -11,7 +11,7 @@
 // ("Other trials", with no number, while the run is blocked), open while a filter is set. Filters (task,
 // label; and from Findings, check: the valid failures whose decisive check it is, and audit: the
 // valid failures by audit label, P17j JU7) live in the URL; a run with a trial that blocks it says
-// so above the list; ?trial= opens the trial detail
+// so above the list; under label=pass the shown-count line hides while a listed run is blocked; ?trial= opens the trial detail
 // (apps/web/src/trial/TrialPage.tsx) in place of the list, and Back to Runs returns to it.
 import { ChevronRight, CircleAlert } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState, type Ref } from 'react';
@@ -53,6 +53,11 @@ export function Runs({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | un
   const matches = (t: Trial) => pilotMatches(t) && (check === '' || failedCheckOf(t.explanation) === check) && (audit === '' || auditFilterOf(t.explanation) === audit);
   const filtered = task !== '' || label !== '' || check !== '' || audit !== '';
   const block = official ? runBlock(official.trials) : null;
+  // Under label=pass the count line counts PASS rows, so it is a pass count: while a run in the
+  // list is blocked (the official run, or a pilot shown under it) it says why in its place; other
+  // labels keep their counts (verifier-phase-P17i-UI-FU-1 B1).
+  const listed = [...(official ? [official] : []), ...(check === '' && audit === '' ? pilots : [])];
+  const holding = label === 'pass' ? listed.reduce((n, r) => n + (runBlock(r.trials)?.trials ?? 0), 0) : 0;
   const falsePasses = official ? official.trials.filter((t) => (task === '' || t.task === task) && isFalsePass(t.explanation)).length : 0;
   const total = runs.reduce((n, r) => n + r.trials.length + r.bad.length, 0);
   const shown = runs.reduce((n, r) => n + (r.official ? r.trials.filter(matches).length : check === '' && audit === '' ? r.trials.filter(pilotMatches).length : 0), 0);
@@ -113,7 +118,9 @@ export function Runs({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | un
             <option value="pass">pass</option>
           </select>
         </label>
-        <span className="pb-1.5 text-xs text-ink-muted" data-testid="shown-count">{shown} of {total} trials</span>
+        {holding > 0
+          ? <span className="pb-1.5 text-xs text-ink-muted" data-testid="shown-count-held">Count hidden while {holding} {holding === 1 ? 'trial needs' : 'trials need'} a fix</span>
+          : <span className="pb-1.5 text-xs text-ink-muted" data-testid="shown-count">{shown} of {total} trials</span>}
         {filtered && <button type="button" data-testid="clear-filters" onClick={() => navigate({ task: null, label: null, check: null, audit: null, trial: null })} className="pb-1.5 text-xs text-ink underline decoration-line-strong underline-offset-2">Clear filters</button>}
       </div>
       {(check !== '' || audit !== '') && (
