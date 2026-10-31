@@ -138,3 +138,42 @@ test('3.5: thinking is a captioned quote in plain type, and a tool name sits in 
   const name = traj.getByTestId('tool-name').first();
   expect(await name.evaluate((x) => getComputedStyle(x).backgroundColor)).not.toBe('rgba(0, 0, 0, 0)');
 });
+
+// The 3.1 phone target (under 9,000 px for pilot-3 crc-care-gap/7): below sm the trajectory is
+// folded under "Show all n steps", after the verdict, the reasons and the rubric; it opens by
+// keyboard and by a step link, and from sm up it is always open with no summary.
+test('3.1: at 390 px the trajectory folds under "Show all n steps", the page is under 9,000 px, and the steps open by keyboard', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await browseDefault(page, './?view=runs&run=pilot-3&trial=crc-care-gap%2F7');
+  await expect(page.getByTestId('trial-detail')).toHaveAttribute('data-full', 'true', { timeout: 60_000 });
+  const fold = page.getByTestId('trajectory-fold');
+  await expect(fold).not.toHaveAttribute('open');
+  const summary = fold.locator('> summary');
+  await expect(summary).toHaveText(/^Show all \d+ steps$/);
+  await expect(page.getByTestId('trajectory').getByTestId('step').first()).toBeHidden();
+  // The header and the rubric come before the fold.
+  expect(await page.getByTestId('rubric-row').first().evaluate((r) => Boolean(r.compareDocumentPosition(document.querySelector('[data-testid="trajectory-fold"]')!) & Node.DOCUMENT_POSITION_FOLLOWING))).toBe(true);
+  const height = await page.evaluate(() => document.querySelector('main')!.scrollHeight);
+  expect(height).toBeLessThan(9000);
+  await summary.focus();
+  await page.keyboard.press('Enter');
+  await expect(fold).toHaveAttribute('open', '');
+  await expect(page.getByTestId('trajectory').getByTestId('step').first()).toBeVisible();
+  await expect(summary).toHaveText('Hide the steps');
+});
+
+test('3.1: at 390 px a step link opens the folded trajectory at that step; at 1440 the trajectory is open with no summary', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const e = await explain(TRIALS.failAudited);
+  await openTrial(page, TRIALS.failAudited);
+  await expect(page.getByTestId('trajectory-fold')).not.toHaveAttribute('open');
+  await page.getByTestId('trial-header').getByTestId('decisive-step-link').click();
+  const target = page.locator(`#step-${e.decisive_step}`);
+  await expect(target).toBeInViewport();
+  await expect(target).toHaveAttribute('aria-current', 'step');
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openTrial(page, TRIALS.pass);
+  await expect(page.getByTestId('trajectory-fold')).toHaveAttribute('open', '');
+  await expect(page.getByTestId('trajectory-fold').locator('> summary')).toBeHidden();
+  await expect(page.getByTestId('trajectory').getByTestId('step').first()).toBeVisible();
+});

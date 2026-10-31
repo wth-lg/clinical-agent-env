@@ -21,7 +21,7 @@ import type { TrialEvent } from '../../../../packages/core/events.ts';
 import { fetchEvents, fullExplanation, useResults, type RunData, type Trial } from '../data/results.ts';
 import { harmItems, safePass, type HarmItem } from '../data/harm.ts';
 import type { Fault } from '../../../../packages/core/outcomes.ts';
-import { CARD, CHIP, FaultLabel, GlossaryLink, HarmChip, HashText, markOf, markProps, Notice, OutcomeChip } from '../data/ui.tsx';
+import { BUTTON, CARD, CHIP, FaultLabel, GlossaryLink, HarmChip, HashText, markOf, markProps, Notice, OutcomeChip } from '../data/ui.tsx';
 import { blocksTheRun, relabelledFrom, runBlock, shownFault } from '../data/failures.ts';
 import { tabTarget } from '../data/tabs.ts';
 import { useTaskList } from '../data/tasks.ts';
@@ -50,6 +50,19 @@ export const TABS = [
 ] as const;
 type TabId = (typeof TABS)[number]['id'];
 const tabOf = (v: string | null): TabId => TABS.find((t) => t.id === v)?.id ?? 'grading';
+
+// Whether the screen is sm (40rem) or wider: there the trajectory pane is always open.
+const WIDE = '(min-width: 40rem)';
+function useWide(): boolean {
+  const [wide, setWide] = useState(() => matchMedia(WIDE).matches);
+  useEffect(() => {
+    const m = matchMedia(WIDE);
+    const on = () => setWide(m.matches);
+    m.addEventListener('change', on);
+    return () => m.removeEventListener('change', on);
+  }, []);
+  return wide;
+}
 
 // Back to the list: the run's filters stay, the trial and its tab go.
 const BACK = { trial: null, tab: null };
@@ -131,7 +144,14 @@ function Detail({ t, run, files, tab, headingRef }: { t: Trial; run: RunData; fi
   }, [t, run, files]);
   const folded = useMemo<Loaded<ReturnType<typeof trajectoryOf>> | null>(() => (events === null || events.state !== 'ready' ? events : { state: 'ready', value: trajectoryOf(events.value) }), [events]);
   const traj = folded?.state === 'ready' ? folded.value : null;
-  const onStep = (n: number) => setCurrent((c) => ({ step: n, seq: (c?.seq ?? 0) + 1 }));
+  // A step link opens the folded trajectory first (phone), in the same render, so the row is
+  // on screen when it scrolls to it.
+  const [stepsOpen, setStepsOpen] = useState(false);
+  const wide = useWide();
+  const onStep = (n: number) => {
+    setStepsOpen(true);
+    setCurrent((c) => ({ step: n, seq: (c?.seq ?? 0) + 1 }));
+  };
   const e = full ?? t.explanation;
   // The resources the decisive check names (its evidence ids), marked in State diff.
   const decisiveIds = ((t.record.checks ?? []) as ReadonlyArray<{ id: string; ids?: readonly string[] }>).find((c) => c.id === e.decisive_check?.id)?.ids ?? [];
@@ -165,9 +185,18 @@ function Detail({ t, run, files, tab, headingRef }: { t: Trial; run: RunData; fi
           </Tabs>
           {/* After the tabs in the DOM, so focus order follows the stacked screen; on the left at lg. */}
           {/* The scroll pane fades at its foot, so a cut-off row reads as more to scroll (ui-polish 3.5); the
-              padding under the card keeps the last row clear of the fade at the end. */}
+              padding under the card keeps the last row clear of the fade at the end. Below sm the
+              trajectory is folded under "Show all n steps", so the verdict, the reasons and the
+              rubric come first on a phone; from sm up it is always open, with no summary. */}
           <div data-testid="trajectory-pane" className="min-w-0 lg:sticky lg:top-4 lg:order-1 lg:max-h-[calc(100vh-6rem)] lg:overflow-auto lg:pb-8 lg:[mask-image:linear-gradient(to_bottom,#000_calc(100%-2rem),transparent)]">
-            <Trajectory data={folded} current={current} />
+            <details data-testid="trajectory-fold" open={wide || stepsOpen} onToggle={(ev) => !wide && setStepsOpen(ev.currentTarget.open)}>
+              <summary className={`${BUTTON} w-full cursor-pointer list-none sm:hidden [&::-webkit-details-marker]:hidden`}>
+                {stepsOpen ? 'Hide the steps' : traj === null ? 'Show the trajectory' : `Show all ${traj.steps.length} steps`}
+              </summary>
+              <div className="max-sm:mt-3">
+                <Trajectory data={folded} current={current} />
+              </div>
+            </details>
           </div>
         </div>
       </div>

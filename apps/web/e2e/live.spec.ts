@@ -227,7 +227,10 @@ test('the status line says Starting until the first model turn, never "Turn 0" (
   expect(statuses.at(-1)).toBe('Finished: PASS');
 });
 
-test('with two runs, each trial row button is named with its run heading (#185 m1)', async ({ page }) => {
+// Two runs of the same task started in the same minute (the page clock is pinned) read alike, so
+// the later one's heading gets " (2)" and every row button's name is unique.
+test('with two runs started in the same minute, each trial row button is named with its own run heading (#185 m1)', async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-10-31T11:42:10'));
   await mockToy(page);
   await page.goto('./?view=live&task=_toy');
   await enterKey(page, sentinelKey());
@@ -236,11 +239,17 @@ test('with two runs, each trial row button is named with its run heading (#185 m
   await run(page, 1);
   await expect(page.getByTestId('live-run')).toHaveCount(2);
   await expect(trial(page)).toHaveAttribute('data-state', 'graded', { timeout: 60_000 });
+  const headings = await page.getByTestId('run-name').allTextContents();
+  expect(headings.map((h) => h.replace(/ \(2\)$/, ''))).toEqual([headings[1]!, headings[1]!]);
+  expect(headings[0]).toBe(`${headings[1]} (2)`);
+  const names: string[] = [];
   for (const r of await page.getByTestId('live-run').all()) {
     const heading = (await r.getByTestId('run-name').textContent())!;
     const button = r.getByTestId('live-row').getByRole('button');
     await expect(button).toHaveAccessibleName(`${heading}, trial 1`);
+    names.push(heading);
   }
+  expect(new Set(names).size).toBe(2);
 });
 
 test('without a key the Task select is shown disabled', async ({ page }) => {

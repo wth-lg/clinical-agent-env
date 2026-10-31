@@ -123,6 +123,8 @@ export function LiveTrial({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
     return () => clearTimeout(timer);
   }, [runs, refresh]);
 
+  const names = useMemo(() => runNames(runs ?? [], tasks), [runs, tasks]);
+
   const open = (id: string) => {
     setCurrentTrial(id);
     setCurrent(id);
@@ -211,7 +213,7 @@ export function LiveTrial({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
           </Notice>
         )}
         <div className="space-y-3">
-          {[...(runs ?? [])].reverse().map((r) => <RunRows key={r.runId} run={r} name={runName(r, tasks)} current={current} onOpen={open} />)}
+          {[...(runs ?? [])].reverse().map((r) => <RunRows key={r.runId} run={r} name={names.get(r.runId)!} current={current} onOpen={open} />)}
         </div>
       </Card>
     </Page>
@@ -423,6 +425,19 @@ function trialName(id: string, runs: readonly LiveRun[] | null, tasks: Titled): 
 function runName(run: LiveRun, tasks: Titled): string {
   const at = clockTime(run.started);
   return [run.tasks.map((x) => liveTaskTitle(x, tasks)).join(', '), `${run.rows.length} trial${run.rows.length === 1 ? '' : 's'}`, ...(at ? [`started ${at}`] : [])].join(' · ');
+}
+
+// Each run's heading, unique on the page: two runs of the same task started in the same minute
+// read alike, so the later ones get " (2)", " (3)" in the order the runs list holds them, and each
+// row button's name ("<run heading>, trial n") is unique too (#185 m1).
+function runNames(runs: readonly LiveRun[], tasks: Titled): Map<string, string> {
+  const seen = new Map<string, number>();
+  return new Map(runs.map((r) => {
+    const name = runName(r, tasks);
+    const n = (seen.get(name) ?? 0) + 1;
+    seen.set(name, n);
+    return [r.runId, n === 1 ? name : `${name} (${n})`];
+  }));
 }
 
 // A trial id (run.task.index) with a line-break opportunity after each dot, so a narrow screen
