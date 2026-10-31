@@ -1,10 +1,10 @@
 // Tasks: the six tasks, each with its prompt, tools, policies, its checks with what each requires
 // (check-text.ts), the reference solution's tool calls, and its grader validation, run in this tab
 // with no key: the oracle (reference solution) graded once, the whole grader validation matrix,
-// and a replay of the official run's trials of the task. Run trial needs a key and is shown
-// disabled with the reason. ?task= opens one task on the tab ?tab= names (TASK_TABS, prompt by
+// and a replay of the official run's trials of the task. Run trial opens Live trial; with no key
+// it says it needs one. ?task= opens one task on the tab ?tab= names (TASK_TABS, prompt by
 // default; WAI-ARIA tabs, so arrow keys, Home and End move between them).
-import { CheckCircle2, ChevronDown, ChevronRight, CircleAlert, Loader2 } from 'lucide-react';
+import { CheckCircle2, ChevronDown, ChevronRight, CircleAlert, Loader2, Play, RotateCcw, ShieldCheck } from 'lucide-react';
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode, type Ref } from 'react';
 import type { Task } from '../../../../packages/core/tasks.ts';
 import type { Check } from '../../../../packages/grader/check.ts';
@@ -16,7 +16,7 @@ import { useKeyStatus } from '../keygate/key.ts';
 import type { Script } from '../../../../packages/grader/matrix/types.ts';
 import { checkTextOf, loadResults } from '../data/results.ts';
 import { loadTaskList } from '../data/tasks.ts';
-import { BUTTON, BUTTON_PRIMARY, CARD, Notice, Page, SECTION_LABEL, SELECT } from '../data/ui.tsx';
+import { BUTTON, BUTTON_PRIMARY, BUTTON_QUIET, CARD, Notice, Page, SECTION_LABEL, SELECT } from '../data/ui.tsx';
 import { tabTarget } from '../data/tabs.ts';
 import { navigate, useParams } from '../data/url.ts';
 import { freshView } from '../shell/views.ts';
@@ -237,14 +237,19 @@ function TaskCard({ t, tab }: { t: Loaded; tab: TaskTab | null }) {
   const runs = useValidationRuns();
   return (
     <li data-testid="task-card" data-task={task.id} className={CARD}>
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3">
-        <button type="button" aria-expanded={open} onClick={() => navigate({ task: open ? null : task.id, tab: null })} className="inline-flex items-center gap-1.5 text-left font-medium text-ink hover:underline">
-          <Chevron aria-hidden className="h-4 w-4 text-ink-muted" strokeWidth={1.75} />
+      {/* The title on its own line and the id, policy codes and counts on a muted line under it, so
+          every closed row has the same height (ui-polish 4.1). The toggle's hit area covers the
+          whole header (after:inset-0), so the row answers a hover anywhere on it. */}
+      <div className="group relative rounded-t-lg px-4 py-3 hover:bg-canvas/60 dark:hover:bg-canvas/40">
+        <button type="button" aria-expanded={open} onClick={() => navigate({ task: open ? null : task.id, tab: null })} className="inline-flex items-start gap-1.5 text-left font-medium text-ink after:absolute after:inset-0 after:rounded-t-lg group-hover:underline">
+          <Chevron aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-ink-muted" strokeWidth={1.75} />
           <span data-testid="task-title">{shown.title}</span>
         </button>
-        <code className="break-all text-xs text-ink-muted">{task.id}</code>
-        {shown.codes.length > 0 && <span data-testid="task-codes" className="text-xs text-ink-muted">{shown.codes.join(', ')}</span>}
-        <span className="ml-auto text-xs text-ink-muted">{gates.length} gate checks, {rubric.length} rubric items, {(task.tools ?? []).length || 'all'} tools</span>
+        <p className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 pl-5.5 text-xs text-ink-muted">
+          <code className="break-all">{task.id}</code>
+          {shown.codes.length > 0 && <span data-testid="task-codes">{shown.codes.join(', ')}</span>}
+          <span>{gates.length} gate checks, {rubric.length} rubric items, {(task.tools ?? []).length || 'all'} tools</span>
+        </p>
       </div>
       {!open && <Validation id={task.id} runs={runs} closed />}
       {open && (
@@ -310,16 +315,6 @@ function TaskTabs({ task, tab, children }: { task: string; tab: TaskTab; childre
     navigate({ tab: id });
     if (focus) refs.current[id]?.focus();
   };
-  // The strip scrolls inside itself on a narrow screen: keep the selected tab in its view. Only
-  // the strip's scrollLeft moves, so a ?tab= link does not also scroll the page.
-  useEffect(() => {
-    const el = refs.current[tab];
-    const strip = el?.parentElement;
-    if (!el || !strip) return;
-    const [t, s] = [el.getBoundingClientRect(), strip.getBoundingClientRect()];
-    if (t.left < s.left) strip.scrollLeft -= s.left - t.left;
-    else if (t.right > s.right) strip.scrollLeft += t.right - s.right;
-  }, [tab]);
   const onKey = (ev: KeyboardEvent<HTMLDivElement>) => {
     const to = tabTarget(ev.key, TASK_TABS.findIndex((x) => x.id === tab), TASK_TABS.length);
     if (to === null) return;
@@ -328,11 +323,11 @@ function TaskTabs({ task, tab, children }: { task: string; tab: TaskTab; childre
   };
   return (
     <div className="border-t border-line">
-      {/* One row that scrolls inside itself on a narrow screen; the line under it is on the wrapper,
-          because the scroll box would clip a tab's -mb-px overlap, and a tab's focus ring sits
-          inside the tab for the same reason. */}
+      {/* The tabs wrap onto a second row on a narrow screen, so none hides past the edge
+          (ui-polish 4.3); the line under them is on the wrapper, and a tab's focus ring sits
+          inside the tab. */}
       <div className="border-b border-line">
-        <div role="tablist" aria-label="Task" onKeyDown={onKey} className="flex gap-x-1 overflow-x-auto px-2">
+        <div role="tablist" aria-label="Task" onKeyDown={onKey} className="flex flex-wrap gap-x-1 px-2">
           {TASK_TABS.map((x) => (
             <button
               key={x.id}
@@ -386,9 +381,22 @@ function useValidationRuns() {
   return { oracle, runOracle, matrix, runMatrix, matrixProgress, replay, runReplay };
 }
 
+// What each validation button does, in one line under it in the Grader validation panel and read
+// out with it (ui-polish 4.1).
+const VALIDATION_HELP = {
+  oracle: 'Runs a known-good answer; it must pass.',
+  matrix: 'Tries planted wrong answers; each must fail.',
+  replay: 'Grades saved trials again; grades must match.',
+} as const;
+// The matrix's right answers (the oracle and its alternatives) must pass; every other probe is a
+// wrong answer and must fail.
+const RIGHT_ANSWERS: readonly string[] = ['oracle', 'alternative'];
+
 // The oracle, matrix and replay buttons and their results. On a closed card the row is labelled
-// and carries Run trial; in the Grader validation panel the tab names it. One primary action per
-// row: Run trial when there is a key; with none, Run reference solution, which needs no key.
+// and carries Run trial; in the Grader validation panel the tab names it and each button has its
+// line. One primary action per row: Run trial when there is a key; with none, Run reference
+// solution, which needs no key. The other validation buttons on a closed row are quiet, so the
+// list reads as one primary per row (verifier-phase-P17i-UI-1-1 F6).
 function Validation({ id, runs, closed = false }: { id: string; runs: ReturnType<typeof useValidationRuns>; closed?: boolean }) {
   const { oracle, runOracle, matrix, runMatrix, matrixProgress, replay, runReplay } = runs;
   const keyed = useKeyStatus().kind !== 'none';
@@ -398,24 +406,43 @@ function Validation({ id, runs, closed = false }: { id: string; runs: ReturnType
     if (r.kind !== 'ready' || r.official === null) return [];
     return validate({ op: 'replay', task: id, trials: r.official.trials.filter((t) => t.task === id).map((t) => ({ name: t.name, record: t.record, trajectoryUrl: t.trajectoryUrl })) });
   };
+  const buttons = [
+    { id: 'oracle', label: 'Run reference solution', Icon: Play, run: () => runOracle(() => validate({ op: 'oracle', task: id })) },
+    { id: 'matrix', label: 'Check the grader', Icon: ShieldCheck, run: () => runMatrix(id) },
+    { id: 'replay', label: 'Replay published trials', Icon: RotateCcw, run: () => runReplay(replayTrials) },
+  ] as const;
   return (
     <div className={closed ? 'border-t border-line px-4 py-3' : ''} data-testid="validation" data-task={id}>
-      <div className="flex flex-wrap items-center gap-2">
-        {closed && <span className="mr-1 text-xs font-medium text-ink-muted">Grader validation</span>}
-        <button type="button" className={closed && keyed ? BUTTON : BUTTON_PRIMARY} disabled={busy} onClick={() => runOracle(() => validate({ op: 'oracle', task: id }))}>Run reference solution</button>
-        <button type="button" className={BUTTON} disabled={busy} onClick={() => runMatrix(id)}>Check the grader</button>
-        <button type="button" className={BUTTON} disabled={busy} onClick={() => runReplay(replayTrials)}>Replay published trials</button>
-        {closed && <RunTrial id={id} />}
-      </div>
+      {closed ? (
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+          <span className="mr-1 text-xs font-medium text-ink-muted">Grader validation</span>
+          {buttons.map((b) => <button key={b.id} type="button" className={`${b.id === 'oracle' && !keyed ? BUTTON_PRIMARY : BUTTON_QUIET} max-sm:w-full`} disabled={busy} onClick={b.run}><b.Icon aria-hidden className="h-3.5 w-3.5" strokeWidth={1.75} />{b.label}</button>)}
+          <RunTrial id={id} />
+        </div>
+      ) : (
+        <ul className="grid gap-3 sm:grid-cols-3">
+          {buttons.map((b) => (
+            <li key={b.id} className="flex flex-col items-start gap-1">
+              <button type="button" className={`${b.id === 'oracle' ? BUTTON_PRIMARY : BUTTON} max-sm:w-full`} disabled={busy} aria-describedby={`validation-help-${id}-${b.id}`} onClick={b.run}><b.Icon aria-hidden className="h-3.5 w-3.5" strokeWidth={1.75} />{b.label}</button>
+              <p id={`validation-help-${id}-${b.id}`} className="text-xs text-ink-muted">{VALIDATION_HELP[b.id]}</p>
+            </li>
+          ))}
+        </ul>
+      )}
       <Result r={oracle} what="reference solution" render={(o) => (
+        // The plain sentence, then the label the CLI prints (oracle PASS 1.0); the judge counts only
+        // when they are not zero (ui-polish 4.2).
         <p data-testid="oracle-result" data-outcome={o.outcome ?? 'none'} data-score={o.score ?? ''}>
-          Reference solution: <span className="font-medium">oracle {o.outcome ?? 'none'} {o.score === null ? 'n/a' : o.score.toFixed(1)}</span>, {o.unknown} judge items unknown{o.misses.length ? `, judge cache misses ${o.misses.join(', ')}` : ''}
+          Reference solution: <span className="font-medium">{o.outcome ?? 'none'}</span>, score {o.score === null ? 'n/a' : o.score.toFixed(1)}.
+          {o.unknown > 0 && ` Judge unsure on ${o.unknown} item${o.unknown === 1 ? '' : 's'}.`}
+          {o.misses.length > 0 && ` Judge cache misses: ${o.misses.join(', ')}.`}
+          {' '}<code className="whitespace-nowrap text-xs text-ink-muted">oracle {o.outcome ?? 'none'} {o.score === null ? 'n/a' : o.score.toFixed(1)}</code>
           {o.problems.length > 0 && <span className="block text-ink-muted">{o.problems.join('; ')}</span>}
         </p>
       )} />
       <Result r={matrix} what="grader check" progress={matrixProgress === null ? null : `case ${matrixProgress.done} of ${matrixProgress.total}`} render={(m) => (
         <div data-testid="matrix-result" data-pass={String(m.pass)}>
-          <p>Grader validation <span className="font-medium">{m.pass ? 'PASS' : 'FAIL'}</span>, matrix: {m.probes.filter((p) => p.as_expected).length}/{m.probes.length} probe verdicts as expected. Fresh-process isolation and policy imports need Node and run in CI.</p>
+          <MatrixSummary m={m} />
           <div className="mt-1 overflow-x-auto"><table className="w-full text-left text-xs">
             <thead className="text-ink-muted"><tr><th scope="col" className="py-1 pr-3 font-medium">Probe</th><th scope="col" className="py-1 pr-3 font-medium">Outcome</th><th scope="col" className="py-1 pr-3 font-medium">Verdict</th><th scope="col" className="py-1 font-medium">Failed checks</th></tr></thead>
             <tbody>
@@ -453,14 +480,34 @@ function Validation({ id, runs, closed = false }: { id: string; runs: ReturnType
 }
 
 // Run trial opens the Live trial view with this task selected, on a closed card's grader
-// validation row and on the prompt tab; with no key it says that Live trial asks for one.
+// validation row and on the prompt tab; with no key it says it needs one. It stays enabled with no
+// key, since Live trial is where a key is added (intro.spec).
 function RunTrial({ id }: { id: string }) {
   const key = useKeyStatus();
   return (
-    <span className="ml-auto inline-flex items-center gap-2">
-      <button type="button" className={key.kind === 'none' ? BUTTON : BUTTON_PRIMARY} aria-describedby={key.kind === 'none' ? `run-why-${id}` : undefined} onClick={() => navigate(freshView('live', { task: id }))}>Run trial</button>
-      {key.kind === 'none' && <span id={`run-why-${id}`} className="text-xs text-ink-muted">Live trial asks for an API key.</span>}
+    <span className="inline-flex flex-wrap items-center gap-2 sm:ml-auto">
+      <button type="button" className={`${key.kind === 'none' ? BUTTON : BUTTON_PRIMARY} max-sm:w-full`} aria-describedby={key.kind === 'none' ? `run-why-${id}` : undefined} onClick={() => navigate(freshView('live', { task: id }))}>Run trial</button>
+      {key.kind === 'none' && <span id={`run-why-${id}`} className="text-xs text-ink-muted">Needs an API key</span>}
     </span>
+  );
+}
+
+// The grader check's result in plain words: the wrong answers that failed and the right answers
+// that passed, then the count line docs/requirements/ui-contract.md names, and the CI note.
+function MatrixSummary({ m }: { m: MatrixRun }) {
+  const right = m.probes.filter((p) => RIGHT_ANSWERS.includes(p.kind));
+  const wrong = m.probes.filter((p) => !RIGHT_ANSWERS.includes(p.kind));
+  const ok = (ps: typeof m.probes) => ps.filter((p) => p.as_expected).length;
+  const allOk = ok(m.probes) === m.probes.length;
+  return (
+    <>
+      <p>
+        {m.pass && allOk ? <><span className="font-medium">The grader works:</span> all {wrong.length} wrong answers failed and all {right.length} right answers passed, as expected.</>
+          : allOk ? <><span className="font-medium text-danger">Grader problem:</span> every answer was graded as expected, but the check found another problem; see the Matrix report.</>
+            : <><span className="font-medium text-danger">Grader problem:</span> {ok(wrong)} of {wrong.length} wrong answers failed and {ok(right)} of {right.length} right answers passed, as expected.</>}
+      </p>
+      <p className="mt-0.5 text-xs text-ink-muted">matrix: {ok(m.probes)}/{m.probes.length} probe verdicts as expected. Fresh-process isolation and policy imports need Node and run in CI.</p>
+    </>
   );
 }
 

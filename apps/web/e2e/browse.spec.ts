@@ -4,7 +4,7 @@
 // probe verdicts equal to what `pnpm cli matrix` wrote; Overview shows k/N, the Wilson interval
 // and one swatch per trial; Runs shows each non-pass trial's outcome, label, decisive check and
 // reason as explainTrial gives them, with PASS_DEFINITION and DENOMINATOR_RULE in its header;
-// the help icon opens the glossary; Environment verifies the reset hash and runs a read tool. At
+// the help icon opens the glossary; Environment checks a fresh copy's hash and runs a read tool. At
 // 390 px no view scrolls sideways, and a record the loader cannot read is an error row, not a
 // blank app.
 import { expect, test } from '@playwright/test';
@@ -35,10 +35,10 @@ test.describe('grader validation in the tab, no key', () => {
     await cards.first().getByRole('button').first().click();
     await expect(page.getByTestId('task-prompt')).toBeVisible();
     await expect(page.getByTestId('task-tools')).toBeVisible();
-    // Run trial is on the prompt tab; with no key it says that Live trial asks for one (JU5).
+    // Run trial is on the prompt tab; with no key it says it needs an API key (JU5, ui-polish 4.1).
     const prompt = cards.first().getByTestId('task-panel-prompt');
     await expect(prompt.getByRole('button', { name: 'Run trial' })).toBeEnabled();
-    await expect(prompt).toContainText('Live trial asks for an API key.');
+    await expect(prompt).toContainText('Needs an API key');
     await cards.first().getByRole('tab', { name: 'Rubric' }).click();
     await expect(page.getByTestId('task-check').first()).toBeVisible();
     await page.getByTestId('task-check').first().locator('summary').click();
@@ -48,7 +48,7 @@ test.describe('grader validation in the tab, no key', () => {
     // A closed card keeps its grader validation row, Run trial included.
     const closed = cards.nth(1).getByTestId('validation');
     await expect(closed.getByRole('button', { name: 'Run trial' })).toBeEnabled();
-    await expect(closed).toContainText('Live trial asks for an API key.');
+    await expect(closed).toContainText('Needs an API key');
   });
 
   for (const id of TASK_IDS) {
@@ -271,16 +271,16 @@ test('URL state round-trips: task, label and open trial survive a reload and his
   await check();
 });
 
-test('Environment: Verify reset equals the manifest hash; Try on fhir_search returns rows, exposed_ids and an unchanged hash', async ({ page }) => {
+test('Environment: Check a fresh copy matches equals the manifest hash; Run tool on fhir_search returns rows, exposed_ids and an unchanged hash', async ({ page }) => {
   await browse(page, './?view=environment');
   await expect(page.getByTestId('manifest-hash')).toHaveAttribute('data-hash', MANIFEST_HASH);
   await expect(page.getByTestId('manifest-hash')).toContainText(`${MANIFEST_HASH.slice(0, 8)}…${MANIFEST_HASH.slice(-4)}`);
   await expect(page.getByTestId('tool')).not.toHaveCount(0);
-  await page.getByRole('button', { name: 'Verify reset' }).click();
+  await page.getByRole('button', { name: 'Check a fresh copy matches' }).click();
   await expect(page.getByTestId('reset-result')).toHaveAttribute('data-hash', MANIFEST_HASH, { timeout: 60_000 });
   await expect(page.getByTestId('reset-result')).toHaveAttribute('data-equal', 'true');
   await page.getByRole('combobox', { name: 'Tool' }).selectOption('fhir_search');
-  await page.getByRole('button', { name: 'Try', exact: true }).click();
+  await page.getByRole('button', { name: 'Run tool', exact: true }).click();
   const r = page.getByTestId('try-result');
   await expect(r).toHaveAttribute('data-error', 'false', { timeout: 60_000 });
   await expect(r).toHaveAttribute('data-hash-before', MANIFEST_HASH);

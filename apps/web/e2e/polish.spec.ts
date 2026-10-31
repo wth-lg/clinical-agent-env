@@ -182,3 +182,79 @@ test.describe('coarse pointer at 390', () => {
     expect(Math.min(box.width, box.height)).toBeGreaterThanOrEqual(44);
   });
 });
+
+// UI polish PR 4 (reports/ui-polish-spec.md 4.1 to 4.4): on a closed task row the grader validation
+// buttons are quiet, with icons, beside the one primary; each button in the Grader validation tab
+// says in one line what it does; the reference solution's result reads in plain words; the task
+// tabs wrap on a phone; and the Environment Try panel fills in a working example for each tool.
+test.describe('task rows at 1440', () => {
+  test.use({ viewport: { width: 1440, height: 900 } });
+
+  test('the validation buttons on a closed row are quiet, with icons; Run trial says it needs a key; every row is the same height', async ({ page }) => {
+    await browse(page, './?view=tasks');
+    const rows = page.getByTestId('task-card');
+    await expect(rows).toHaveCount(6);
+    for (let i = 0; i < 6; i++) {
+      const v = rows.nth(i).getByTestId('validation');
+      for (const name of ['Check the grader', 'Replay published trials']) {
+        const b = v.getByRole('button', { name });
+        await expect(b).not.toHaveClass(/\bbg-primary\b/);
+        expect(await b.evaluate((el) => getComputedStyle(el).borderTopColor), name).toBe('rgba(0, 0, 0, 0)');
+      }
+      for (const name of ['Run reference solution', 'Check the grader', 'Replay published trials']) await expect(v.getByRole('button', { name }).locator('svg')).toHaveCount(1);
+      await expect(v.getByRole('button', { name: 'Run trial' })).toHaveAccessibleDescription('Needs an API key');
+    }
+    const heights = await rows.evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().height)));
+    expect(new Set(heights).size, heights.join(' ')).toBe(1);
+  });
+});
+
+test('the Grader validation tab says in one line what each button does', async ({ page }) => {
+  await browse(page, './?view=tasks&task=renal-dose-review&tab=grader-validation');
+  const panel = page.getByTestId('task-panel-grader-validation');
+  const lines: Record<string, string> = {
+    'Run reference solution': 'Runs a known-good answer; it must pass.',
+    'Check the grader': 'Tries planted wrong answers; each must fail.',
+    'Replay published trials': 'Grades saved trials again; grades must match.',
+  };
+  for (const [name, line] of Object.entries(lines)) {
+    await expect(panel.getByText(line, { exact: true })).toBeVisible();
+    await expect(panel.getByRole('button', { name })).toHaveAccessibleDescription(line);
+  }
+});
+
+test('the reference solution\'s result reads in plain words, beside the oracle label', async ({ page }) => {
+  test.setTimeout(180_000);
+  await browse(page, './?view=tasks');
+  const v = page.locator('[data-testid="validation"][data-task="renal-dose-review"]');
+  await v.getByRole('button', { name: 'Run reference solution' }).click();
+  const oracle = v.getByTestId('oracle-result');
+  await expect(oracle).toHaveAttribute('data-outcome', 'PASS', { timeout: 150_000 });
+  await expect(oracle).toContainText('Reference solution: PASS, score 1.0');
+  await expect(oracle).toContainText('oracle PASS 1.0');
+  // A count that is zero is left out.
+  await expect(oracle).not.toContainText('judge items unknown');
+  await expect(oracle).not.toContainText('cache misses');
+});
+
+test('at 390 px the task tabs wrap, so Grader validation is in view on the prompt tab', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await browse(page, './?view=tasks&task=renal-dose-review&tab=prompt');
+  const tabs = page.getByRole('tablist', { name: 'Task' });
+  // The open card is far down the page; bring the strip into view, then no tab may sit past its edge.
+  await tabs.scrollIntoViewIfNeeded();
+  await expect(tabs.getByRole('tab', { name: 'Grader validation' })).toBeInViewport({ ratio: 1 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+});
+
+test('Environment: choosing a tool fills in an example input that runs', async ({ page }) => {
+  await browse(page, './?view=environment');
+  await expect(page.getByRole('button', { name: 'Check a fresh copy matches' })).toBeVisible();
+  await page.getByRole('combobox', { name: 'Tool' }).selectOption('search_patients');
+  const input = page.getByRole('textbox', { name: 'Input (JSON)' });
+  expect(JSON.parse(await input.inputValue())).toEqual({ name: 'Harold Vance' });
+  await page.getByRole('button', { name: 'Run tool', exact: true }).click();
+  const r = page.getByTestId('try-result');
+  await expect(r).toHaveAttribute('data-error', 'false', { timeout: 60_000 });
+  await expect(r.getByTestId('try-content')).toContainText('Harold Vance');
+});

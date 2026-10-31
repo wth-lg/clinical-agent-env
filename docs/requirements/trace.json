@@ -699,7 +699,7 @@
       "ui_required": true,
       "ui": {
         "route": "/?view=environment",
-        "action": "Open Environment and press Verify reset: the tab builds a fresh store and shows its hash next to the manifest hash, and says it matches the manifest.",
+        "action": "Open Environment and press Check a fresh copy matches: the tab builds a fresh store and shows its hash next to the manifest hash, and says it matches the manifest.",
         "surface": "any"
       },
       "evidence": [
