@@ -4,7 +4,7 @@
 // ArrowRight and ArrowLeft move with wrap, Home and End go to the ends, and each move writes the
 // tab into the URL, so a shared link opens the same tab; a click on the selected tab adds no
 // history entry. Axe finds nothing serious or critical on any tab, light and dark. At 390 px the
-// strip stays on one row and scrolls inside itself. A grader validation result started on a
+// strip wraps, so every tab stays in view (ui-polish 4.3). A grader validation result started on a
 // closed card is still there when the card opens.
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
@@ -112,17 +112,18 @@ test('a click on the selected tab, or Home on the first, adds no history entry',
   expect(await page.evaluate(() => history.length)).toBe(before);
 });
 
-test('at 390 px the tab strip is one row and does not scroll the page sideways', async ({ page }) => {
+test('at 390 px the tab strip wraps: every tab is in the strip\'s view and the page does not scroll sideways', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   for (const tab of TABS) {
     await open(page, `&tab=${tab}`);
     await expectSelected(page, tab);
-    const tops = await tablist(page).getByRole('tab').evaluateAll((els) => els.map((e) => e.getBoundingClientRect().top));
-    expect(new Set(tops).size, tab).toBe(1);
-    // The selected tab is in the strip's view, not scrolled out of it.
-    const [t, strip] = await Promise.all([tablist(page).getByRole('tab', { selected: true }).boundingBox(), tablist(page).boundingBox()]);
-    expect(t!.x, tab).toBeGreaterThanOrEqual(strip!.x - 1);
-    expect(t!.x + t!.width, tab).toBeLessThanOrEqual(strip!.x + strip!.width + 1);
+    // Every tab, the selected one included, is inside the strip, none hidden past its edge (ui-polish 4.3).
+    const strip = (await tablist(page).boundingBox())!;
+    for (const t of await tablist(page).getByRole('tab').all()) {
+      const b = (await t.boundingBox())!;
+      expect(b.x, tab).toBeGreaterThanOrEqual(strip.x - 1);
+      expect(b.x + b.width, tab).toBeLessThanOrEqual(strip.x + strip.width + 1);
+    }
     const sizes = await page.evaluate(() => [document.querySelector('main')!, document.documentElement].map((e) => ({ sw: e.scrollWidth, cw: e.clientWidth })));
     for (const { sw, cw } of sizes) expect(sw, tab).toBeLessThanOrEqual(cw);
   }

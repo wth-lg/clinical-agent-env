@@ -1,7 +1,8 @@
 // Environment: the world every trial starts from (pinned clock, state hash, resources by type, from
-// fixtures/manifest.json), Verify reset (a fresh store built in this tab, its state hash shown next
-// to the manifest's), and the tool catalogue with a keyless Try panel that runs one read tool on a
-// scratch store. The catalogue and Try go only through packages/core/try-tool.ts.
+// fixtures/manifest.json), Check a fresh copy matches (a fresh store built in this tab, its state
+// hash shown next to the manifest's), and the tool catalogue with a keyless Try panel that runs one
+// read tool on a scratch store, prefilled with a working example (examples.ts). The catalogue and
+// Try go only through packages/core/try-tool.ts.
 import { CircleAlert } from 'lucide-react';
 import { useState, type Ref } from 'react';
 import { loadStore } from '../../../../packages/env/fixture-source.ts';
@@ -10,14 +11,11 @@ import { toolCatalog, tryReadTool, type TryResult } from '../../../../packages/c
 import { BUTTON, BUTTON_PRIMARY, Card, FIELD, Hash, Notice, Page, SELECT } from '../data/ui.tsx';
 import { MANIFEST, worldSource } from '../data/world.ts';
 import { firstSentence, formatClock } from '../data/text.ts';
+import { TRY_EXAMPLES } from './examples.ts';
 
 const TOOLS = toolCatalog();
 const READ = TOOLS.filter((t) => t.kind === 'read');
-// A first input for each read tool's Try; any other is typed by hand.
-const EXAMPLES: Record<string, unknown> = {
-  fhir_search: { resource_type: 'Patient', count: 5 },
-  get_context: {},
-};
+const example = (name: string) => JSON.stringify(TRY_EXAMPLES[name] ?? {}, null, 2);
 
 export function Environment({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | undefined }) {
   const w = MANIFEST.world;
@@ -29,8 +27,8 @@ export function Environment({ headingRef }: { headingRef?: Ref<HTMLHeadingElemen
           <dt className="text-ink-muted">State hash (manifest)</dt><dd><Hash testId="manifest-hash" value={w.state_hash} /></dd>
           <dt className="text-ink-muted">Resources</dt><dd data-testid="resource-total">{w.resources}</dd>
         </dl>
-        <ul className="mt-3 grid grid-cols-1 gap-x-4 gap-y-0.5 text-xs sm:grid-cols-3" data-testid="resource-counts">
-          {Object.entries(w.by_type).map(([type, n]) => <li key={type} className="flex min-w-0 justify-between gap-2 border-b border-line py-0.5"><span className="min-w-0 truncate" title={type}>{type}</span><span className="tabular-nums">{n}</span></li>)}
+        <ul className="mt-3 grid grid-cols-1 gap-x-8 gap-y-0.5 text-xs sm:grid-cols-3" data-testid="resource-counts">
+          {Object.entries(w.by_type).map(([type, n]) => <li key={type} className="flex min-w-0 justify-between gap-2 border-b border-line py-0.5"><span className="min-w-0 truncate" title={type}>{type}</span><span className="text-right tabular-nums">{n}</span></li>)}
         </ul>
         <VerifyReset />
       </Card>
@@ -69,11 +67,12 @@ function VerifyReset() {
   };
   return (
     <div className="mt-4 flex flex-wrap items-center gap-3">
-      <button type="button" className={BUTTON_PRIMARY} disabled={state.kind === 'running'} onClick={() => void run()}>Verify reset</button>
+      <button type="button" className={BUTTON_PRIMARY} disabled={state.kind === 'running'} aria-describedby="reset-help" onClick={() => void run()}>Check a fresh copy matches</button>
+      <p id="reset-help" className="order-last basis-full text-xs text-ink-muted">Builds a fresh copy of the world in this tab and compares its state hash with the manifest's.</p>
       {state.kind === 'running' && <span className="text-ink-muted" role="status">Building a fresh store in this tab…</span>}
       {state.kind === 'error' && (
         <div className="basis-full">
-          {/* Verify reset above stays the card's primary, so Retry here is a plain button. */}
+          {/* Check a fresh copy matches above stays the card's primary, so Retry here is a plain button. */}
           <Notice nested tone="danger" role="alert" icon={CircleAlert} detail={state.message} action={<button type="button" className={BUTTON} onClick={() => void run()}>Retry</button>}>
             <p className="font-medium text-ink">The fresh store could not be built, so the check did not finish. The other pages still work.</p>
           </Notice>
@@ -90,7 +89,7 @@ function VerifyReset() {
 
 function TryPanel() {
   const [name, setName] = useState(READ[0]?.name ?? '');
-  const [args, setArgs] = useState(() => JSON.stringify(EXAMPLES[READ[0]?.name ?? ''] ?? {}, null, 2));
+  const [args, setArgs] = useState(() => example(READ[0]?.name ?? ''));
   const [state, setState] = useState<{ kind: 'idle' | 'running' } | { kind: 'done'; r: TryResult } | { kind: 'error'; message: string }>({ kind: 'idle' });
   const run = async () => {
     setState({ kind: 'running' });
@@ -107,7 +106,7 @@ function TryPanel() {
       <div className="mt-3 flex flex-col gap-3 sm:flex-row">
         <label className="flex flex-col gap-1 text-xs text-ink-muted">
           Tool
-          <select aria-label="Tool" className={SELECT} value={name} onChange={(e) => { setName(e.target.value); setArgs(JSON.stringify(EXAMPLES[e.target.value] ?? {}, null, 2)); }}>
+          <select aria-label="Tool" className={SELECT} value={name} onChange={(e) => { setName(e.target.value); setArgs(example(e.target.value)); }}>
             {READ.map((t) => <option key={t.name} value={t.name}>{t.name}</option>)}
           </select>
         </label>
@@ -116,7 +115,7 @@ function TryPanel() {
           <textarea aria-label="Input (JSON)" value={args} onChange={(e) => setArgs(e.target.value)} rows={4} className={`${FIELD} h-auto p-2 font-mono text-xs`} />
         </label>
       </div>
-      <button type="button" className={`${BUTTON_PRIMARY} mt-3`} disabled={state.kind === 'running'} onClick={() => void run()}>Try</button>
+      <button type="button" className={`${BUTTON_PRIMARY} mt-3`} disabled={state.kind === 'running'} onClick={() => void run()}>Run tool</button>
       {state.kind === 'running' && <p className="mt-2 text-ink-muted" role="status">Building a scratch store…</p>}
       {state.kind === 'error' && <p className="mt-2" role="alert">{state.message}</p>}
       {state.kind === 'done' && (

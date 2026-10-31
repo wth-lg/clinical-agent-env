@@ -1,6 +1,7 @@
 // Tasks polish (pre-audit U10, P17j JU12 part 2): a task card's title drops its policy codes, which
 // sit on the meta line; the Overview task list and the trial heading drop them too, and the Overview
-// meta line names them; "Check the grader" shows "case k of N" while the grader validation matrix runs.
+// meta line names them; "Check the grader" shows "case k of N" while the grader validation matrix runs,
+// then says in plain words that the grader works.
 import { expect, test } from '@playwright/test';
 import { browseFrom } from './browse.ts';
 import { sampleBase } from './fixtures/sample-results/sample.ts';
@@ -46,4 +47,7 @@ test('Check the grader shows "case k of N" while the matrix runs', async ({ page
   await v.getByRole('button', { name: 'Check the grader' }).click();
   await expect(v.getByTestId('run-progress')).toHaveText(/Running the grader check in this tab… case \d+ of \d+$/, { timeout: 120_000 });
   await expect(v.getByTestId('matrix-result')).toBeVisible({ timeout: 540_000 });
+  // The result in plain words (ui-polish 4.2), and the count line docs/requirements/ui-contract.md names.
+  await expect(v.getByTestId('matrix-result')).toContainText(/The grader works: all \d+ wrong answers failed and all \d+ right answers passed, as expected\./);
+  await expect(v.getByTestId('matrix-result')).toContainText(/\bmatrix: (\d+)\/\1 probe verdicts as expected\b/);
 });
