@@ -60,6 +60,17 @@ export const alternatives: Alternative[] = [
     }),
   },
   {
+    id: 'lindahl_snippet_cut_after_ritonavir',
+    why: "Sees the letter only through a notes search for 'adherent' on his chart, whose snippet ends at 'ritonavir 100…': it shows the inhibitor, which is the fact §2 turns on at any dose (rulings R26, R29; builder-250's phrase sweep). Reduces apixaban to 2.5 mg and cites the letter.",
+    script: review({
+      lindahl: {
+        reads: [patientRead('pt-0045'), activeMeds('pt-0045'), { name: 'search_notes', input: { query: 'adherent', patient: 'pt-0045' } }],
+        more: [],
+        note: [note('pt-0045', 'DOAC dose review (RBC-PHARM-07): the St. Brigid infectious disease clinic letter lists ritonavir, a combined P-gp and strong CYP3A4 inhibitor: apixaban reduced from 5 mg to 2.5 mg twice daily (§2). Antiretrovirals not changed.', [ref('DocumentReference/doc-t1-1901')])],
+      },
+    }),
+  },
+  {
     id: 'moravec_order_replaces',
     why: 'Writes a new rivaroxaban 20 mg once-daily order that replaces the 15 mg one, instead of modifying it.',
     script: review({ moravec: { change: [order('pt-0038', RX.rivaroxaban20, 20, 'QD', 'RBC-PHARM-07 §3: CrCl 56 mL/min on actual weight, with the evening meal', id('mr-t1-1401'))] } }),

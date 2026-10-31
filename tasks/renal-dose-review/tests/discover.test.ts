@@ -27,11 +27,12 @@ import { clock } from '../../../packages/env/clock.ts';
 import { loadStore } from '../../../packages/env/fixture-source.ts';
 import { READ_TOOLS, type ReadContext } from '../../../packages/env/tools/read/index.ts';
 import { callTool } from '../../../packages/env/tools/registry.ts';
-import { firstShown, seenBefore, stepsOf } from '../../../packages/grader/exposure.ts';
+import { seenBefore, stepsOf } from '../../../packages/grader/exposure.ts';
 import { trial } from '../../../packages/grader/matrix/matrix.ts';
-import { DECISIVE_PHRASES, expected } from '../expected.ts';
+import { expected } from '../expected.ts';
 import { oracle } from '../solution/solve.ts';
 import { ref } from '../ids.ts';
+import { firstSeenBy } from './grader.ts';
 
 const world = await loadStore(matrixEnv().world);
 const ctx: ReadContext = { world, clock, policies: [], catalog: [] };
@@ -94,10 +95,7 @@ describe('T1 worklist probe: discoverability', () => {
       const write = steps.find((s) => s.written_ids.includes(x.request))?.n ?? (x.action === 'unchanged' ? finish : null);
       expect(write, x.patient).not.toBeNull();
       for (const id of x.decisive) {
-        const exposed = steps.find((s) => s.exposed_ids.includes(id))?.n ?? null;
-        const phrase = DECISIVE_PHRASES[id];
-        const seen = phrase === undefined ? exposed : (firstShown(steps, id, phrase) ?? exposed);
-        expect(seenBefore(steps, seen, write!), `${x.patient} ${id}`).toBe(true);
+        expect(seenBefore(steps, firstSeenBy(steps, id), write!), `${x.patient} ${id}`).toBe(true);
       }
     }
   });

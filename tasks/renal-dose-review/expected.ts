@@ -58,6 +58,11 @@ export const expected = {
   ] as Item[],
 };
 
-// The line of the outside clinic letter that shows the inhibitor (attribution: a snippet that shows
-// it counts as seen).
-export const DECISIVE_PHRASES: Record<string, string> = { [ref('DocumentReference/doc-t1-1901')]: 'ritonavir 100 mg' };
+// R29: the atoms of each snippet-visible decisive record, the minimal facts of its deciding line
+// that decide the item; a read or one snippet that shows them all counts as seen (tests/grader.ts
+// firstSeenBy, for the gates and attribution alike). The letter decides pt-0045's dose by the
+// inhibitor it lists; §2 counts ritonavir at any dose ('including ritonavir given as a booster'),
+// so its dose is not an atom (R26: the old phrase 'ritonavir 100 mg' missed a snippet cut after
+// '100'). The item's own drug (apixaban) is never an atom. tests/phrases.test.ts sweeps every
+// snippet.
+export const DECISIVE_ATOMS: Record<string, readonly string[]> = { [ref('DocumentReference/doc-t1-1901')]: ['ritonavir'] };
