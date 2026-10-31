@@ -540,6 +540,22 @@ describe('generated sigs give the dose first', () => {
     );
     expect(out.slice(0, 20)).toEqual([]);
   });
+
+  // Base-chart artefacts (R8; builder-228, builder-213): the profile pass gave a statin Synthea
+  // ordered 'as needed' a q6h as-needed schedule ('simvastatin 20 mg by mouth every 6 hours as
+  // needed'), and kept Synthea's hourly aspirin ('1300 mg by mouth every hour').
+  it('no statin is taken as needed, and no tablet or capsule is taken more often than every 4 hours', () => {
+    const out = world.filter((r) => r.resourceType === 'MedicationRequest').flatMap((r) => {
+      const drug = (r.medicationCodeableConcept as { text?: string } | undefined)?.text ?? '';
+      return ((r.dosageInstruction as Array<{ text?: string; asNeededBoolean?: boolean; timing?: { repeat?: { period?: number; periodUnit?: string } } }> | undefined) ?? []).flatMap((d) => {
+        const rep = d.timing?.repeat;
+        const statinPrn = /statin\b/i.test(drug) && d.asNeededBoolean === true;
+        const hourly = /tablet|capsule/i.test(drug) && rep?.periodUnit === 'h' && (rep.period ?? 0) < 4;
+        return statinPrn || hourly ? [`${r.id} ${drug}: '${d.text}'`] : [];
+      });
+    });
+    expect(out).toEqual([]);
+  });
 });
 
 // Hospital procedures in the day (verifier P17i W0-1c V5): five of the eight generated colonoscopies

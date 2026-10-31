@@ -916,6 +916,19 @@ export function profileWorld(resources: readonly Resource[]): Resource[] {
           // Synthea's canned instruction ('Take as needed.', 'Every four to six hours') is not a sig:
           // the order is sent with the clinic's, from its dose, route and schedule (below).
           if (typeof d.text === 'string' && SYNTHEA_SIG.test(d.text)) delete d.text;
+          // A drug the clinic takes on a schedule is not taken as needed, and no tablet is taken
+          // more often than every 4 hours: Synthea's 'as needed' statin and hourly aspirin take the
+          // clinic's sig (R8; builder-228, builder-213).
+          {
+            const sig = SIGS.find((x) => x.drug.test(drug));
+            const rep0 = (d.timing as { repeat?: Repeat } | undefined)?.repeat;
+            if (d.asNeededBoolean === true && d.timing === undefined && sig?.repeat && !sig.prn) d.asNeededBoolean = false;
+            if (form && rep0?.periodUnit === 'h' && rep0.period < 4) {
+              d.timing = { repeat: { frequency: 1, period: 6, periodUnit: 'h' } };
+              d.asNeededBoolean = true;
+              d.doseAndRate = [{ doseQuantity: { value: 1 } }];
+              delete d.text;
+            }
           }
           // A schedule Synthea gave only as an instruction, or the clinic's sig for the drug.
           if (d.timing === undefined && d.asNeededBoolean !== true) {
