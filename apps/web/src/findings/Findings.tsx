@@ -11,7 +11,7 @@ import { Marked } from 'marked';
 import { useMemo, type Ref } from 'react';
 import { FINAL_PASS_BAND, FINAL_TRIALS_PER_TASK } from '../../../../packages/core/cost.ts';
 import { OUTCOMES } from '../../../../packages/core/outcomes.ts';
-import { runBlock, shownFault } from '../data/failures.ts';
+import { noPassCount, runBlock, shownFault } from '../data/failures.ts';
 import { notCounted, notCountedText } from '../data/marks.ts';
 import { checkTextOf, dataUrl, gradingLine, useResults, type RunData } from '../data/results.ts';
 import { Card, CARD, formatInterval, GlossaryLink, IntervalRow, LINK, markLabel, MarkLegend, markOf, NO_RESULTS, Notice, Page, Swatch } from '../data/ui.tsx';
@@ -65,13 +65,21 @@ function NotCountedLine({ task, text }: { task: string; text: string | null }) {
   return text === null ? null : <span data-testid="not-counted" data-task={task} className="col-span-full break-words text-xs text-ink-muted">{text}</span>;
 }
 
+// A pilot a trial blocks shows, in place of its rate rows and the chart key, why it has none.
 function PilotFindings({ run }: { run: RunData }) {
   const graded = gradingLine(run.grading);
+  const held = noPassCount(run.trials);
   return (
     <Card title={`${run.runId} (not counted)`}>
       <div data-testid="pilot-findings" data-run={run.runId} className="space-y-3">
-        <PilotRateRows run={run} axis below={(r) => <NotCountedLine task={r.task} text={notCountedText(notCounted({ outcomes: r.outcomes }))} />} />
-        <p className="text-xs text-ink-muted">{CHART_KEY}</p>
+        {held !== null
+          ? <p data-testid="pilot-blocked" className="text-ink">{held.charAt(0).toUpperCase()}{held.slice(1)}.</p>
+          : (
+            <>
+              <PilotRateRows run={run} axis below={(r) => <NotCountedLine task={r.task} text={notCountedText(notCounted({ outcomes: r.outcomes }))} />} />
+              <p className="text-xs text-ink-muted">{CHART_KEY}</p>
+            </>
+          )}
         {graded !== null && <p className="text-xs text-ink-muted">{graded}</p>}
         <MarkLegend marks={[...new Set(run.trials.map((t) => markOf(t.explanation.outcome, shownFault(t.explanation))))]} />
         <p className="text-xs text-ink-muted">A pilot sizes the final run and tests the pipeline; its numbers never enter the results. <a href={hrefWith({ view: 'runs', task: null, label: null, trial: null })} onClick={onNav({ view: 'runs', task: null, label: null, trial: null })} className={link}>Open its trials in Runs</a>.</p>

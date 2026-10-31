@@ -130,7 +130,7 @@ async function mockApi(page: Page, reply: { status: 200; inputTokens?: number; h
   return calls;
 }
 
-const keyField = (page: Page) => page.getByLabel('API key', { exact: true });
+const keyField = (page: Page) => page.getByLabel('Add an API key', { exact: true });
 const chip = (page: Page) => page.getByTestId('surface-chip');
 const capField = (page: Page) => page.getByLabel('Session spend cap (USD)');
 const validate = (page: Page) => page.getByRole('button', { name: 'Validate' }).click();

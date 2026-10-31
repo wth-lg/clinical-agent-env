@@ -8,18 +8,18 @@
 // (ENV_LIMIT and the other excluded outcomes), always in view; the pass and denominator rules are in
 // "How a trial is counted" (ui-polish 2.2, verifier-phase-P17i-UI-2-1 S1). In each run the rows to
 // look at (not PASS, a fault or a harm) come first; the PASS rows are behind "<n> PASS trials"
-// ("Other trials (<n>)" while the run is blocked), open while a filter is set. Filters (task,
+// ("Other trials", with no number, while the run is blocked), open while a filter is set. Filters (task,
 // label; and from Findings, check: the valid failures whose decisive check it is, and audit: the
 // valid failures by audit label, P17j JU7) live in the URL; a run with a trial that blocks it says
 // so above the list; ?trial= opens the trial detail
 // (apps/web/src/trial/TrialPage.tsx) in place of the list, and Back to Runs returns to it.
 import { ChevronRight, CircleAlert } from 'lucide-react';
-import { useEffect, useRef, useState, type Ref } from 'react';
+import { useCallback, useEffect, useRef, useState, type Ref } from 'react';
 import { AUDIT_LABELS, OUTCOMES } from '../../../../packages/core/outcomes.ts';
 import { wilson } from '../../../../packages/core/summary.ts';
 import { gradingLine, useResults, type BadRecord, type RunData, type Trial } from '../data/results.ts';
 import { harmItems, safePass } from '../data/harm.ts';
-import { auditFilterOf, failedCheckOf, isFalsePass, runBlock, shownFault, shownLabel } from '../data/failures.ts';
+import { auditFilterOf, failedCheckOf, isFalsePass, noPassCount, runBlock, shownFault, shownLabel } from '../data/failures.ts';
 import { notCounted, notCountedText } from '../data/marks.ts';
 import { RunBlocked } from '../findings/why.tsx';
 import { Card, FaultChip, FaultMeta, formatInterval, GlossaryLink, HarmChip, Notice, OutcomeChip, Page, PlainRules, SELECT, CARD, CHIP } from '../data/ui.tsx';
@@ -35,6 +35,7 @@ const labelOf = (t: Trial) => (t.explanation.outcome === 'PASS' && t.explanation
 export function Runs({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | undefined }) {
   const results = useResults();
   const params = useParams();
+  const later = usePendingOpen();
   if (params.get('trial')) return <TrialPage headingRef={headingRef} />;
   if (results === null) return <Page title="Runs" headingRef={headingRef}><Notice>Loading the published results…</Notice></Page>;
   if (results.kind === 'error') return <Page title="Runs" headingRef={headingRef}><Notice testId="error-state">The published results cannot be read: {results.message}</Notice></Page>;
@@ -121,12 +122,12 @@ export function Runs({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | un
           {audit !== '' && <span>Failed trials the human audit labels <span className="text-ink">{audit === 'unlabelled' ? 'nothing yet (not audited)' : audit}</span> <button type="button" aria-label="Remove the audit label filter" className="text-ink underline decoration-line-strong underline-offset-2 pointer-coarse:px-1 pointer-coarse:py-2" onClick={() => navigate({ audit: null, trial: null })}>Remove</button></span>}
         </p>
       )}
-      {official && <RunList run={official} matches={matches} filtered={filtered} />}
+      {official && <RunList run={official} matches={matches} filtered={filtered} later={later} />}
       {/* The check and audit filters come from the official run, so the pilots hide while one is set (JU7r2 n1). */}
       {pilots.length > 0 && check === '' && audit === '' && (
         <section className="space-y-3" data-testid="pilot-runs">
           <h2 className="pt-2 font-medium text-ink">Pilot runs (not counted in the results)</h2>
-          {pilots.map((p) => <RunList key={p.runId} run={p} matches={pilotMatches} filtered={filtered} heading />)}
+          {pilots.map((p) => <RunList key={p.runId} run={p} matches={pilotMatches} filtered={filtered} later={later} heading />)}
         </section>
       )}
       {runs.length === 0 && officialError === null && <Notice testId="empty-state">No runs are committed in this build. Tasks and Environment work with no key.</Notice>}
@@ -138,19 +139,23 @@ export function Runs({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | un
 const plainPass = (t: Trial) => t.explanation.outcome === 'PASS' && t.explanation.fault === null && harmItems(t.record).length === 0;
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
-// "pilot-3: 47/48 pass · 1 failure": the run's valid trials, and how many it leaves out.
+// "pilot-3: 47/48 pass · 1 failure": the run's valid trials, and how many it leaves out. A pilot
+// a trial blocks gives no pass count, and no failure count, which with the total gives one
+// (data/failures.ts noPassCount).
 function runLine(run: RunData): string {
   const valid = run.trials.filter((t) => t.explanation.valid);
   const passes = valid.filter((t) => t.explanation.outcome === 'PASS').length;
   const out = run.trials.length - valid.length;
-  return `${run.runId}: ${passes}/${valid.length} pass · ${plural(valid.length - passes, 'failure')}${out > 0 ? ` · ${out} not counted` : ''}${run.bad.length > 0 ? ` · ${run.bad.length} unreadable` : ''}`;
+  const held = noPassCount(run.trials);
+  return `${run.runId}: ${held ?? `${passes}/${valid.length} pass · ${plural(valid.length - passes, 'failure')}`}${out > 0 ? ` · ${out} not counted` : ''}${run.bad.length > 0 ? ` · ${run.bad.length} unreadable` : ''}`;
 }
 
-function RunList({ run, matches, filtered, heading = false }: { run: RunData; matches: (t: Trial) => boolean; filtered: boolean; heading?: boolean }) {
+function RunList({ run, matches, filtered, later, heading = false }: { run: RunData; matches: (t: Trial) => boolean; filtered: boolean; later: Later; heading?: boolean }) {
   const shown = run.trials.filter(matches);
   const look = shown.filter((t) => !plainPass(t));
   const passes = shown.filter(plainPass);
-  // A blocked run has no pass count, so its group is not named by one (verifier-phase-P17i-UI-2-1 B1).
+  // A blocked run has no pass count, so its group is not named by one, nor by its size: every row
+  // in it is a PASS (verifier-phase-P17i-UI-2-1 B1, UI-2-2 N1).
   const blocked = runBlock(run.trials) !== null;
   const graded = gradingLine(run.grading);
   const box = useRef<HTMLDivElement>(null);
@@ -175,15 +180,15 @@ function RunList({ run, matches, filtered, heading = false }: { run: RunData; ma
       {(look.length > 0 || passes.length === 0 || run.bad.length > 0) && (
         <ul className={`divide-y divide-line ${CARD}`} data-testid="trial-list">
           {run.bad.map((b) => <BadRow key={b.file} b={b} />)}
-          {look.map((t) => <TrialRow key={t.name} t={t} run={run} />)}
+          {look.map((t) => <TrialRow key={t.name} t={t} run={run} later={later} />)}
           {shown.length === 0 && run.bad.length === 0 && <li className="p-4 text-ink-muted">No trial matches these filters.</li>}
         </ul>
       )}
       {passes.length > 0 && (
         <details data-testid="pass-group" open={open} onToggle={(e) => setOpen(e.currentTarget.open)}>
-          <summary className="cursor-pointer px-1 py-1 font-medium text-ink">{blocked ? `Other trials (${passes.length})` : plural(passes.length, 'PASS trial')}</summary>
+          <summary className="cursor-pointer px-1 py-1 font-medium text-ink">{blocked ? 'Other trials' : plural(passes.length, 'PASS trial')}</summary>
           <ul className={`mt-1 divide-y divide-line ${CARD}`} data-testid="pass-list">
-            {passes.map((t) => <TrialRow key={t.name} t={t} run={run} />)}
+            {passes.map((t) => <TrialRow key={t.name} t={t} run={run} later={later} />)}
           </ul>
         </details>
       )}
@@ -200,20 +205,32 @@ function BadRow({ b }: { b: BadRecord }) {
   );
 }
 
+// A row click opens its trial DOUBLE_CLICK_MS later: a second click in that time is a
+// double-click that selects a word, so it cancels the open (verifier-phase-P17i-UI-2-1 M2). The
+// page holds one pending open for every row of every run, so a click on another row in that time
+// cancels it too, and never lets the first row open in place of the second (UI-2-2 N2). later(open)
+// starts it, later(null) only cancels; leaving Runs cancels it.
+const DOUBLE_CLICK_MS = 300;
+type Later = (open: (() => void) | null) => void;
+function usePendingOpen(): Later {
+  const pending = useRef<number | undefined>(undefined);
+  useEffect(() => () => clearTimeout(pending.current), []);
+  return useCallback((open) => {
+    clearTimeout(pending.current);
+    pending.current = open === null ? undefined : window.setTimeout(open, DOUBLE_CLICK_MS);
+  }, []);
+}
+
 // Row: the name, outcome, fault chip and decisive check on one line with the cost on the right;
 // under it the fault note, the not-audited marker and any harm, then the reason. A click anywhere
 // on the row that is not on a link or button (or ends a text selection) opens the trial, as its
-// button does. It waits DOUBLE_CLICK_MS first: a second click in that time is a double-click that
-// selects a word, so it cancels the open (verifier-phase-P17i-UI-2-1 M2).
-const DOUBLE_CLICK_MS = 300;
-function TrialRow({ t, run }: { t: Trial; run: RunData }) {
+// button does, after the wait above.
+function TrialRow({ t, run, later }: { t: Trial; run: RunData; later: Later }) {
   const e = t.explanation;
   // A non-pass, or a false PASS (GR5), shows its label and reason.
   const faulted = e.outcome !== 'PASS' || e.fault !== null;
   const cost = t.record.cost_usd + (t.record.judge_cost_usd ?? 0);
   const open = () => navigate({ trial: t.name, run: run.runId, tab: null });
-  const pending = useRef<number | undefined>(undefined);
-  useEffect(() => () => clearTimeout(pending.current), []);
   return (
     <li
       data-testid="trial-row"
@@ -221,9 +238,8 @@ function TrialRow({ t, run }: { t: Trial; run: RunData }) {
       data-outcome={e.outcome}
       className="cursor-pointer px-4 py-2.5 hover:bg-canvas/60"
       onClick={(ev) => {
-        clearTimeout(pending.current);
-        if (ev.detail > 1 || (ev.target as Element).closest('a, button') || (getSelection()?.toString() ?? '') !== '') return;
-        pending.current = window.setTimeout(open, DOUBLE_CLICK_MS);
+        const skip = ev.detail > 1 || (ev.target as Element).closest('a, button') !== null || (getSelection()?.toString() ?? '') !== '';
+        later(skip ? null : open);
       }}
     >
       <div className="grid grid-cols-[1fr_auto] items-start gap-x-3">

@@ -71,7 +71,7 @@ async function browserDirect(page: Page) {
 }
 
 async function enterKey(page: Page, key: string, cap?: string) {
-  await page.getByLabel('API key', { exact: true }).fill(key);
+  await page.getByLabel('Add an API key', { exact: true }).fill(key);
   if (cap !== undefined) await page.getByLabel('Session spend cap (USD)').fill(cap);
   await page.getByRole('button', { name: 'Validate' }).click();
 }
@@ -242,7 +242,7 @@ for (const reply of REFUSED) {
     for (const reveal of [false, true]) {
       if (reveal) await page.getByRole('button', { name: 'Show key' }).click();
       expect(await page.evaluate(() => document.documentElement.outerHTML)).not.toContain(key);
-      await expect(page.getByLabel('API key', { exact: true })).toHaveValue(key);
+      await expect(page.getByLabel('Add an API key', { exact: true })).toHaveValue(key);
     }
     await page.getByRole('button', { name: 'Validate' }).click();
     await expect.poll(() => relay.posts.length).toBe(2);

@@ -113,12 +113,12 @@ async function noRates(page: Page) {
   await expect(page.getByRole('link', { name: 'What pass^k means' })).toHaveCount(0);
 }
 
-// On Runs, the blocked run's group of plain PASS rows gives no PASS count either: it is a pass
-// count (verifier-phase-P17i-UI-2-1 B1; decisions.tsv 2026-10-29T16:00).
-async function noPassGroupCount(page: Page) {
-  const summary = page.locator('[data-testid="run"][data-official="true"] [data-testid="pass-group"] > summary');
-  await expect(summary).toHaveText(/^Other trials \(\d+\)$/);
-  await expect(summary).not.toHaveText(/\d+ PASS/);
+// On Runs, the blocked run's group of plain PASS rows gives no count at all: every row in it is a
+// PASS, so its size is a pass count (verifier-phase-P17i-UI-2-1 B1, UI-2-2 N1; decisions.tsv
+// 2026-10-29T16:00).
+async function noPassGroupCount(page: Page, run = '[data-official="true"]') {
+  const summary = page.locator(`[data-testid="run"]${run} [data-testid="pass-group"] > summary`);
+  await expect(summary).toHaveText(/^Other trials$/);
 }
 
 test('a run with a false PASS is blocked: the blocking trials and the false PASS count, no pass count, dot or interval', async ({ page }) => {
@@ -208,6 +208,52 @@ test('a valid failure the audit labels environment blocks the run, and its own r
   await page.getByRole('link', { name: 'Findings', exact: true }).first().click();
   const example = page.getByTestId('exemplars').getByRole('listitem').filter({ has: page.getByRole('link', { name: row.trial, exact: true }) });
   await expect(example.getByRole('img')).toHaveAttribute('data-mark', 'environment');
+});
+
+// The sample with no official run, and its pilot pilot-grader-error given two of the official run's
+// renal-dose-review PASS records. The pilot's GRADER_ERROR blocks it (data/failures.ts runBlock), so
+// it gets the official run's rule: no pass count, rate dot or Wilson interval anywhere, a line
+// that says why in their place, and no "blocked" words, which belong to the official run
+// (decisions.tsv 2026-10-29T16:00 and 19:10; builder-222 residual 2).
+const BLOCKED_PILOT = 'pilot-grader-error';
+async function blockedPilot(page: Page) {
+  const passes = records.filter((r) => r.outcome === 'PASS' && r.task_id === 'renal-dose-review').slice(0, 2);
+  expect(passes).toHaveLength(2);
+  await page.route('**/data/index.json', async (route) => {
+    const res = await route.fetch();
+    const { files, ...rest } = (await res.json()) as { files: string[] };
+    await route.fulfill({ response: res, json: { ...rest, files: [...files.filter((f) => f !== 'results/official.json'), ...passes.map((r) => `results/${BLOCKED_PILOT}/trials/${trialName(r)}.json`)] } });
+  });
+  for (const r of passes) {
+    await page.route(`**/data/results/${BLOCKED_PILOT}/trials/${trialName(r)}.json`, async (route) => {
+      const res = await route.fetch({ url: route.request().url().replace(`/${BLOCKED_PILOT}/`, `/runs/${summary.run_id}/`) });
+      await route.fulfill({ response: res });
+    });
+  }
+}
+
+test('a blocked pilot gives no pass count: its Runs header, its Overview line and its rate rows on Overview and Findings', async ({ page }) => {
+  await blockedPilot(page);
+  const why = 'no pass count while 1 trial needs a fix';
+  await browse(page, './?view=overview');
+  const pilot = page.locator(`[data-testid="overview-pilot"][data-run="${BLOCKED_PILOT}"]`);
+  await expect(pilot.getByTestId('pilot-line')).toHaveText(`${BLOCKED_PILOT}: ${why}.`);
+  await expect(pilot.getByTestId('pilot-rate')).toHaveCount(0);
+  await expect(pilot).not.toContainText(/blocked/i);
+  await noRates(page);
+  await page.getByRole('link', { name: 'Runs', exact: true }).first().click();
+  const run = page.locator(`[data-testid="run"][data-run="${BLOCKED_PILOT}"]`);
+  await expect(run.getByTestId('trial-row').first()).toBeAttached();
+  await expect(run.getByTestId('run-header')).toHaveText(`${BLOCKED_PILOT}: ${why} · 1 not counted`);
+  await noPassGroupCount(page, `[data-run="${BLOCKED_PILOT}"]`);
+  await expect(run.getByTestId('run-header')).not.toContainText(/blocked/i);
+  await page.getByRole('link', { name: 'Findings', exact: true }).first().click();
+  const card = page.locator(`[data-testid="pilot-findings"][data-run="${BLOCKED_PILOT}"]`);
+  await expect(card.getByTestId('pilot-blocked')).toHaveText(`No pass count while 1 trial needs a fix.`);
+  await expect(card.getByTestId('pilot-rate')).toHaveCount(0);
+  await expect(card.getByTestId('pilot-axis')).toHaveCount(0);
+  await noRates(page);
+  await expect(card).not.toContainText(/blocked/i);
 });
 
 test('the check and audit filters do not follow a rail link or an Overview task link', async ({ page }) => {

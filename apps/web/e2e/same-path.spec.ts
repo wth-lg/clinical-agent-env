@@ -83,7 +83,7 @@ async function workerTrial(page: Page): Promise<TrialEvent[]> {
     return route.fulfill({ status: 200, contentType: 'text/event-stream', body: await res.text(), headers: CORS });
   });
   await page.goto('./?view=live&task=_toy');
-  await page.getByLabel('API key', { exact: true }).fill(['sk', 'ant', 'api03', 'samepath', 'e2e'].join('-'));
+  await page.getByLabel('Add an API key', { exact: true }).fill(['sk', 'ant', 'api03', 'samepath', 'e2e'].join('-'));
   await page.getByRole('button', { name: 'Validate' }).click();
   await page.getByRole('button', { name: 'Run ×1', exact: true }).click();
   const trial = page.getByTestId('live-trial');

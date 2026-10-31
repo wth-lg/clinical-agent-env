@@ -81,7 +81,7 @@ test('each tool row shows the first sentence of its description without opening 
 
 test('a key that does not start with sk-ant- is refused in the page with no network request', async ({ page }) => {
   await openApp(page, './');
-  await page.getByLabel('API key', { exact: true }).fill('not-a-key');
+  await page.getByLabel('Add an API key', { exact: true }).fill('not-a-key');
   // Every request after Validate counts, same origin too (verifier JU12a-1 F2), except the page's own
   // static GETs of data/ and assets/: the results loader is still fetching trajectories in the
   // background when Validate is pressed, and those carry no key. Any other request (a POST, the API,
@@ -246,9 +246,38 @@ test('a double-click on a word in a row\'s reason selects the word and does not 
   expect(await page.evaluate(() => getSelection()?.toString().trim() ?? '')).not.toBe('');
 });
 
+// The page holds one pending row-click timer, not one per row: a click on row B inside row A's
+// double-click window cancels A's open. B opens when the browser counts its click as a single
+// click, and nothing opens when it counts it as the second click of a double-click, which Chromium
+// does for a quick click on another row (verifier-phase-P17i-UI-2-2 N2).
+test('a click on a second row inside the double-click window opens that row or nothing, never the first row (verifier-phase-P17i-UI-2-2 N2)', async ({ page }) => {
+  const rows = page.locator('[data-testid="run"][data-official="true"] [data-testid="trial-row"][data-outcome="FAIL"]');
+  const spot = async (i: number) => {
+    const box = (await rows.nth(i).getByTestId('reason').boundingBox())!;
+    return { x: box.x + 30, y: box.y + box.height / 2 };
+  };
+  for (const second of [1, 2]) {
+    await browse(page, './?view=runs');
+    await rows.nth(1).scrollIntoViewIfNeeded();
+    const [a, b] = [await spot(0), await spot(1)];
+    const [nameA, nameB] = [await rows.nth(0).getAttribute('data-trial'), await rows.nth(1).getAttribute('data-trial')];
+    expect(nameA).not.toBe(nameB);
+    await page.mouse.click(a.x, a.y);
+    await page.mouse.move(b.x, b.y);
+    await page.mouse.down({ clickCount: second });
+    await page.mouse.up({ clickCount: second });
+    // Longer than the 300 ms a row click waits before it opens the trial.
+    await page.waitForTimeout(800);
+    if (second === 1) await expect(page.getByTestId('trial-detail')).toHaveAttribute('data-trial', nameB!);
+    else await expect(page.getByTestId('trial-detail')).toHaveCount(0);
+  }
+});
+
 test('Runs: at 1440 no row\'s chip line wraps, and a click on a row\'s reason opens its trial (ui-polish 2.2)', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await browse(page, './?view=runs');
+  // evaluateAll does not wait, and the rows mount only once data/ has loaded (verifier-phase-P17i-UI-4-2).
+  await expect(page.getByTestId('trial-row').first()).toBeVisible();
   const lines = await page.locator('[data-testid="trial-row"] [data-testid="chip-line"]').evaluateAll((els) => els.filter((e) => e.getClientRects().length > 0).map((e) => {
     const boxes = [...e.children].map((c) => c.getBoundingClientRect());
     return { trial: e.closest('[data-trial]')!.getAttribute('data-trial'), top: Math.max(...boxes.map((b) => b.top)), bottom: Math.min(...boxes.map((b) => b.bottom)) };
@@ -340,8 +369,18 @@ test('the key gate welcomes first, keeps Validate as its one filled primary and 
   const gate = page.getByRole('button', { name: GATE });
   expect(await gate.evaluate((el) => getComputedStyle(el).borderTopStyle)).toBe('solid');
   expect(await gate.evaluate((el) => getComputedStyle(el).borderTopColor)).not.toBe('rgba(0, 0, 0, 0)');
-  await page.getByLabel('API key', { exact: true }).fill('sk-ant-x');
+  await page.getByLabel('Add an API key', { exact: true }).fill('sk-ant-x');
   await expect(hint).toHaveCount(0);
+});
+
+test('the key gate\'s "Add an API key" heading is the key field\'s visible label, with no second label under it (verifier-phase-P17i-UI-5-1 m4)', async ({ page }) => {
+  await openApp(page, './');
+  const heading = page.getByRole('heading', { level: 2, name: 'Add an API key' });
+  await expect(heading).toBeVisible();
+  const field = page.locator('main input[type="password"]');
+  await expect(field).toHaveAccessibleName('Add an API key');
+  expect(await field.getAttribute('aria-labelledby')).toBe(await heading.getAttribute('id'));
+  await expect(page.locator('main label', { hasText: /^\s*API key\s*$/ })).toHaveCount(0);
 });
 
 // UI polish PR 4 (reports/ui-polish-spec.md 4.1 to 4.4): on a closed task row the grader validation
