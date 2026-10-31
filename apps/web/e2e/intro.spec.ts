@@ -36,7 +36,8 @@ test('Overview opens with a plain intro card: 3-4 sentences of 25 words or fewer
 test('the intro card action "Add a key and run in this tab" opens the key gate', async ({ page }) => {
   await browse(page, './?view=overview');
   await page.getByTestId('intro-card').getByRole('button', { name: 'Add a key and run in this tab' }).click();
-  await expect(page.getByRole('heading', { level: 1, name: 'Add an API key' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'See an AI model do clinical tasks' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 2, name: 'Add an API key' })).toBeVisible();
 });
 
 test('the intro card action "Run on your computer" moves focus to the local-run panel', async ({ page }) => {

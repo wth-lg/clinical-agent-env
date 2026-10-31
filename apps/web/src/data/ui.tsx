@@ -5,10 +5,10 @@
 // filled ink, a LIMIT filled muted, a REFUSAL an ink outline, an environment fault hatched, a
 // grader fault dotted, infrastructure a dashed outline. Every mark carries its name as text, and
 // the legend is drawn from the same marks, so it reads right in light and dark.
-import { Check, CircleHelp, Copy } from 'lucide-react';
+import { Check, CircleHelp, Copy, type LucideIcon } from 'lucide-react';
 import { useState, type CSSProperties, type ReactNode, type Ref } from 'react';
 import { NOT_AUDITED_MARKER, type Explanation } from '../../../../packages/core/explain.ts';
-import { blocksTheRun, shownLabel } from './failures.ts';
+import { blocksTheRun, shownFault, shownLabel } from './failures.ts';
 import { DENOMINATOR_RULE, isValid, PASS_DEFINITION, VALID_OUTCOMES, type Fault } from '../../../../packages/core/outcomes.ts';
 import type { Interval } from '../../../../packages/core/summary.ts';
 import { hrefWith, onNav } from './url.ts';
@@ -62,11 +62,43 @@ export function Card({ title, children, actions, id, testId }: { title?: ReactNo
   );
 }
 
-// An error (testId error-state) gets the danger border, as the key gate's errors do.
-export function Notice({ children, testId }: { children: ReactNode; testId?: string }) {
-  const tone = testId === 'error-state' ? 'border-danger' : 'border-line';
-  return <p data-testid={testId} className={`break-words rounded-lg border ${tone} bg-surface p-4 text-ink-muted`}>{children}</p>;
+// A notice (ui-polish 5.5). tone danger (also any testId error-state) gets the danger border, as
+// the key gate's errors do; tone info, for an empty state, a dashed outline. An optional icon sits
+// in a 28px circle. An error reads lead first (children), then its action (Reload or Retry), then
+// the raw message behind "Show details". nested: inside a card, so rounded-md.
+const NOTICE_TONE = { plain: 'border-line', info: 'border-dashed border-line-strong/50', danger: 'border-danger' };
+export function Notice({ children, testId, tone, icon: Icon, action, detail, role, nested = false }: {
+  children: ReactNode;
+  testId?: string;
+  tone?: 'info' | 'danger';
+  icon?: LucideIcon;
+  action?: ReactNode;
+  detail?: string | null;
+  role?: 'alert' | 'status';
+  nested?: boolean;
+}) {
+  const t = tone ?? (testId === 'error-state' ? 'danger' : 'plain');
+  return (
+    <div data-testid={testId} role={role} className={`flex items-start gap-3 break-words border ${NOTICE_TONE[t]} ${nested ? 'rounded-md' : 'rounded-lg'} bg-surface p-4 text-ink-muted`}>
+      {Icon && (
+        <span aria-hidden className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-canvas dark:bg-line ${t === 'danger' ? 'text-danger' : 'text-ink-muted'}`}>
+          <Icon className="h-4 w-4" strokeWidth={1.75} />
+        </span>
+      )}
+      <div className={`min-w-0 flex-1 ${Icon ? 'pt-0.5' : ''}`}>
+        {children}
+        {action !== undefined && <div className="mt-3 flex flex-wrap items-center gap-2">{action}</div>}
+        {detail != null && (
+          <details className="mt-3 text-xs">
+            <summary className="cursor-pointer">Show details</summary>
+            <p data-testid="error-detail" className="mt-1 break-words font-mono">{detail}</p>
+          </details>
+        )}
+      </div>
+    </div>
+  );
 }
+
 
 export const NO_RESULTS = 'No results are published yet.';
 
@@ -107,13 +139,16 @@ export function MarkLegend({ marks = MARKS.map((x) => x.mark) }: { marks?: reado
   );
 }
 
-// The outcome chip; an environment or grader fault takes the danger border (JU2).
-export function OutcomeChip({ outcome, fault }: { outcome: string; fault?: Fault | null }) {
+// The outcome chip; an environment or grader fault takes the danger border (JU2). With a count, it
+// is one of a run's outcome totals ("FAIL 6"), under its own test id.
+export function OutcomeChip({ outcome, fault, count }: { outcome: string; fault?: Fault | null; count?: number }) {
   const mark = markOf(outcome, fault);
   return (
-    <span data-testid="outcome" data-mark={mark} className={`${CHIP} whitespace-nowrap text-ink ${BLOCKING_MARKS.includes(mark) ? 'border-danger' : 'border-line'}`}>
+    <span data-testid={count === undefined ? 'outcome' : 'outcome-count'} data-outcome={count === undefined ? undefined : outcome} data-mark={mark} className={`${CHIP} whitespace-nowrap text-ink ${BLOCKING_MARKS.includes(mark) ? 'border-danger' : 'border-line'}`}>
       <span aria-hidden {...markProps(mark, 'inline-block h-2.5 w-2.5 rounded-[2px]')} />
       {outcome}
+      {/* With a count, it reads "FAIL: 4 trials" and shows "FAIL 4" (verifier-phase-P17i-UI-2-1 M4). */}
+      {count !== undefined && <><span className="sr-only">:</span> <span className="text-ink-muted">{count}</span><span className="sr-only">{count === 1 ? ' trial' : ' trials'}</span></>}
     </span>
   );
 }
@@ -150,7 +185,7 @@ function toGlossary(anchor: string | undefined) {
   };
 }
 
-const LINK = 'text-ink underline decoration-line-strong underline-offset-2 hover:decoration-ink';
+export const LINK = 'text-ink underline decoration-line-strong underline-offset-2 hover:decoration-ink';
 
 export function GlossaryLink({ children, className, anchor }: { children: ReactNode; className?: string; anchor?: string }) {
   return (
@@ -188,35 +223,63 @@ export function HashText({ text }: { text: string }) {
 // The label and its help icon never wrap apart (verifier-phase-P16-2: at 390 px the infra icon
 // sat on a line of its own).
 // official: the trial is of the official run, the only run a trial can block (decisions.tsv 19:10).
-export function FaultLabel({ e, notCountedShown = false, official = false }: { e: Explanation; notCountedShown?: boolean; official?: boolean }) {
+// FaultChip is the label as a chip ("Fault: model", with the trial's mark) and its help icon;
+// FaultMeta is the note and the not-audited marker. A Runs row shows them on two lines (ui-polish
+// 2.2); FaultLabel shows them together.
+const hasFault = (e: Explanation) => e.fault !== null && (e.fault === 'infra' || shownLabel(e) !== null);
+export function FaultChip({ e }: { e: Explanation }) {
   const label = shownLabel(e);
-  if (e.fault === null || (e.fault !== 'infra' && label === null)) return null;
+  if (!hasFault(e)) return null;
   const name = e.fault === 'infra' ? 'infra' : label!;
   // The audit's environment or grader label on a model fault links to that label's definition.
   const anchor = label === 'environment' ? 'env' : label === 'grader' ? 'grader' : e.fault;
+  const mark = markOf(e.outcome, shownFault(e));
+  const swatch = <span aria-hidden {...markProps(mark, 'inline-block h-2.5 w-2.5 shrink-0 rounded-[2px]')} />;
   const help = (
     <a href={glossaryHref(`fault-${anchor}`)} onClick={toGlossary(`fault-${anchor}`)} aria-label={`How the ${name} label is given`} title="How failures are attributed" className={ICON_BUTTON}>
       <CircleHelp aria-hidden className="h-3.5 w-3.5" strokeWidth={1.75} />
     </a>
   );
   if (e.fault === 'infra') {
-    return <span className="inline-flex items-center gap-x-1"><span data-testid="label" data-label="infra" className="text-ink-muted">infra: rerun, not counted</span>{help}</span>;
+    return <span className="inline-flex items-center gap-x-1"><span className={`${CHIP} whitespace-nowrap border-dashed border-line-strong font-normal text-ink-muted`}>{swatch}<span data-testid="label" data-label="infra">API problem: not counted, run again</span></span>{help}</span>;
   }
-  // An environment or grader label takes the danger tone and says what it means for the run (JU2);
-  // a model label stays neutral.
+  // An environment or grader label takes the danger tone (JU2); a model label stays neutral.
   const danger = label === 'environment' || label === 'grader';
+  return (
+    <span className="inline-flex items-center gap-x-1">
+      <span className={`${CHIP} whitespace-nowrap font-normal text-ink-muted ${danger ? 'border-danger' : 'border-line'}`}>
+        {swatch}
+        <span>
+          Fault:{' '}
+          <span data-testid="label" data-label={label} className={`font-medium ${danger ? 'text-danger' : 'text-ink'}`}>
+            {label}
+            {label === e.label && e.label_subtype ? ` (${e.label_subtype})` : ''}
+          </span>
+        </span>
+      </span>
+      {help}
+    </span>
+  );
+}
+
+// What the label means for the run (JU2), and the not-audited marker; nothing for an infra fault.
+export function FaultMeta({ e, notCountedShown = false, official = false }: { e: Explanation; notCountedShown?: boolean; official?: boolean }) {
+  if (!hasFault(e) || e.fault === 'infra') return null;
   const note = faultNote(e, official, notCountedShown);
   return (
-    <span className="inline-flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
-      <span className="inline-flex items-center gap-x-1">
-        <span data-testid="label" data-label={label} className={`font-medium ${danger ? 'text-danger' : 'text-ink'}`}>
-          {label}
-          {label === e.label && e.label_subtype ? ` (${e.label_subtype})` : ''}
-        </span>
-        {help}
-      </span>
+    <>
       {note !== null && <span data-testid="fault-note" className={`text-xs ${(blocksTheRun(e) && official) || e.outcome === 'GRADER_ERROR' ? 'text-danger' : 'text-ink-muted'}`}>{note}</span>}
-      {!e.audited && <span data-testid="not-audited" className={`${CHIP} border-dashed border-line-strong font-normal text-ink-muted`}>{NOT_AUDITED_MARKER}</span>}
+      {!e.audited && <span data-testid="not-audited" title="Not reviewed by a person yet" className={`${CHIP} border-dashed border-line-strong font-normal text-ink-muted`}>{NOT_AUDITED_MARKER}</span>}
+    </>
+  );
+}
+
+export function FaultLabel({ e, notCountedShown = false, official = false }: { e: Explanation; notCountedShown?: boolean; official?: boolean }) {
+  if (!hasFault(e)) return null;
+  return (
+    <span className="inline-flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+      <FaultChip e={e} />
+      <FaultMeta e={e} notCountedShown={notCountedShown} official={official} />
     </span>
   );
 }
@@ -227,12 +290,13 @@ const pct = (x: number) => `${Math.round(x * 1000) / 10}%`;
 export const formatInterval = (w: Interval | null) => (w === null ? 'no valid trials' : `${pct(w.lo)} to ${pct(w.hi)}`);
 
 // One task's pass rate on a 0-100% axis: the band (shaded), the Wilson 95% interval (whisker)
-// and the rate (dot).
+// and the rate (dot). 16px tall at any width (x in percent, so the dot stays round); the axis
+// runs from 2% to 98% of the width, as the 0/50/100% labels under a chart do.
 export function IntervalRow({ rate, interval, band, label }: { rate: number | null; interval: Interval | null; band: readonly [number, number]; label: string }) {
-  const x = (v: number) => 4 + v * 192;
+  const x = (v: number) => `${2 + v * 96}%`;
   return (
-    <svg data-testid="interval" viewBox="0 0 200 16" className="block h-auto w-full min-w-24 max-w-72" role="img" aria-label={`${label}: ${rate === null ? 'no rate' : pct(rate)}, 95% interval ${formatInterval(interval)}`}>
-      <rect data-testid="band" x={x(band[0])} y={1} width={x(band[1]) - x(band[0])} height={14} className="fill-line-strong" fillOpacity={0.22} />
+    <svg data-testid="interval" className="block h-4 w-full min-w-24" role="img" aria-label={`${label}: ${rate === null ? 'no rate' : pct(rate)}, 95% interval ${formatInterval(interval)}`}>
+      <rect data-testid="band" x={x(band[0])} y={1} width={`${(band[1] - band[0]) * 96}%`} height={14} className="fill-line-strong dark:[fill-opacity:0.35]" fillOpacity={0.22} />
       <line x1={x(0)} x2={x(1)} y1={8} y2={8} className="stroke-line-strong" strokeWidth={0.5} vectorEffect="non-scaling-stroke" />
       {interval !== null && (
         <>
@@ -241,7 +305,8 @@ export function IntervalRow({ rate, interval, band, label }: { rate: number | nu
           <line x1={x(interval.hi)} x2={x(interval.hi)} y1={4} y2={12} className="stroke-ink" strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
         </>
       )}
-      {rate !== null && <circle cx={x(rate)} cy={8} r={3.5} className="fill-accent stroke-surface" strokeWidth={1} vectorEffect="non-scaling-stroke" />}
+      {/* The dot that marks the rate is the row's largest mark: 9.5 px across (verifier-phase-P17i-UI-2-1 S2). */}
+      {rate !== null && <circle cx={x(rate)} cy={8} r={4.75} className="fill-accent stroke-surface" strokeWidth={1} vectorEffect="non-scaling-stroke" />}
     </svg>
   );
 }

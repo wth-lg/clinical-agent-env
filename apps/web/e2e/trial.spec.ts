@@ -122,7 +122,7 @@ test('the header shows outcome, label, decisive check and reason of each non-pas
     const h = page.getByTestId('trial-header');
     await expect(h.getByTestId('outcome')).toHaveText(e.outcome);
     await expect(h.getByTestId('reason')).toHaveText(e.reason);
-    if (e.fault === 'infra') await expect(h.getByTestId('label')).toHaveText('infra: rerun, not counted');
+    if (e.fault === 'infra') await expect(h.getByTestId('label')).toHaveText('API problem: not counted, run again');
     else await expect(h.getByTestId('label')).toHaveText(`${e.label}${e.label_subtype ? ` (${e.label_subtype})` : ''}`);
     await expect(h.getByTestId('not-audited')).toHaveCount(e.audited || e.fault === 'infra' ? 0 : 1);
     if (e.decisive_check) {

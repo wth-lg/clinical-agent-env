@@ -37,7 +37,7 @@ test('Findings renders the markdown, one interval per task and a kind-of-failure
     if (w !== null) await expect(page.getByTestId('findings-md')).not.toContainText(formatInterval(w));
   }
   await expect(page.getByTestId('findings-md')).not.toHaveText(/\d+(\.\d+)?%\s*(to|–|-|,)\s*\d+(\.\d+)?%/);
-  await expect(page.getByText('These results are read-only. Running new trials needs an API key.')).toBeVisible();
+  await expect(page.getByText('How well the model did on each task, and why it failed.')).toBeVisible();
   await expect(page.getByTestId('interval-chart').getByTestId('interval')).toHaveCount(TASK_IDS.length);
   await expect(page.getByTestId('interval-chart').getByTestId('whisker')).toHaveCount(TASK_IDS.length);
   await expect(page.getByTestId('kind-bar')).toHaveCount(TASK_IDS.length);
@@ -85,7 +85,8 @@ test.describe('the real results build: pilot runs, no official run', () => {
     for (const [view, testId] of Object.entries(data)) {
       await rail.getByRole('link', { name: view }).click();
       await expect(page.getByRole('heading', { level: 1 })).toHaveText(view);
-      await expect(page.getByTestId(testId).first()).toBeVisible();
+      // Runs keeps a run's PASS rows in a closed group (ui-polish 2.2), so the first row shown.
+      await expect(page.getByTestId(testId).filter({ visible: true }).first()).toBeVisible();
       await expect(page.getByTestId('empty-state')).toHaveCount(0);
       await expect(page.getByTestId('error-state')).toHaveCount(0);
     }
@@ -105,7 +106,7 @@ test.describe('the real results build: pilot runs, no official run', () => {
   test('Findings shows the pilot summary, marked not counted, the legend and what the page will show (review-ui-P14-2 F1)', async ({ page }) => {
     await browseAt(page, `${base}?view=findings`);
     await expect(page.getByTestId('pilot-findings')).toHaveCount(PILOTS.length);
-    await expect(page.getByText('Pilot, not counted in the results').first()).toBeVisible();
+    await expect(page.getByRole('heading', { level: 2, name: /^pilot-\d+ \(not counted\)$/ }).first()).toBeVisible();
     await expect(page.getByTestId('pilot-rate').first()).toContainText(/Wilson 95% \d/);
     await expect(page.getByTestId('pilot-findings').first().getByTestId('legend')).toBeVisible();
     await expect(page.getByTestId('will-show').getByRole('link')).toHaveCount(3);
@@ -135,6 +136,81 @@ test.describe('the real results build: pilot runs, no official run', () => {
     await expect(page.getByRole('combobox', { name: 'Task' })).toHaveValue('contrast-ct-prep');
     await page.getByTestId('clear-filters').click();
     await expect(page.getByTestId('trial-row')).toHaveCount(pilotRecords.length);
+  });
+
+  // ui-polish 2.1: the intro has a numbered Start here list; the no-official notice comes after
+  // the Tasks card; each pilot has a one-line summary; the latest pilot's rates show as rows (task,
+  // k/N, interval, Wilson) with a failed task's k/N linking to its trials, the older ones' rates sit
+  // in a closed <details>.
+  test('Overview: Start here, the notice after Tasks, the latest pilot\'s rates as rows with failures linked (ui-polish 2.1)', async ({ page }) => {
+    await browseAt(page, `${base}?view=overview`);
+    const start = page.getByTestId('intro-card').getByTestId('start-here');
+    await expect(start.locator('li')).toHaveCount(3);
+    await expect(start.getByRole('link')).toHaveText(['Read a task', 'See a failed trial', 'Check the grader, no key needed']);
+    await expect(page.getByTestId('no-official')).toHaveText('The final run is not published yet. Pilot runs are below.');
+    const after = await page.getByTestId('no-official').evaluate((n) => {
+      const tasks = document.querySelector('[data-testid="overview-tasks"]')!;
+      return Boolean(tasks.compareDocumentPosition(n) & Node.DOCUMENT_POSITION_FOLLOWING);
+    });
+    expect(after).toBe(true);
+    const latest = page.locator('[data-testid="overview-pilot"][data-run="pilot-3"]');
+    await expect(latest.getByTestId('pilot-line')).toHaveText('pilot-3: 47 of 48 pass. 1 fail on crc-care-gap.');
+    const crc = latest.locator('[data-testid="pilot-rate"][data-task="crc-care-gap"]');
+    await expect(crc).toBeVisible();
+    const k = crc.getByRole('link', { name: '7/8' });
+    await expect(k).toHaveAttribute('href', /[?&]task=crc-care-gap(&|$)/);
+    await expect(k).toHaveAttribute('href', /[?&]run=pilot-3(&|$)/);
+    await expect(crc.getByTestId('wilson')).toHaveText(/^Wilson 95% \d/);
+    // A task with every valid trial passing has no link.
+    await expect(latest.locator('[data-testid="pilot-rate"][data-task="renal-dose-review"]').getByRole('link')).toHaveCount(0);
+    for (const p of PILOTS.filter((x) => x !== 'pilot-3')) {
+      const older = page.locator(`[data-testid="overview-pilot"][data-run="${p}"]`);
+      await expect(older.getByTestId('pilot-line')).toBeVisible();
+      await expect(older.getByTestId('pilot-rate').first()).toBeHidden();
+    }
+    await expect(page.getByTestId('overview-pilots')).not.toContainText('; not counted');
+  });
+
+  // ui-polish 2.2: in each run the rows to look at come first; the PASS rows sit behind a closed
+  // "<n> PASS trials", open when a task filter is set.
+  test('Runs: the FAIL row of pilot-3 comes first, its PASS rows are in a closed details (ui-polish 2.2)', async ({ page }) => {
+    await browseAt(page, `${base}?view=runs`);
+    const run = page.locator('[data-testid="run"][data-run="pilot-3"]');
+    await expect(run.getByTestId('run-header')).toHaveText('pilot-3: 47/48 pass · 1 failure');
+    const first = run.getByTestId('trial-row').first();
+    await expect(first).toHaveAttribute('data-outcome', 'FAIL');
+    await expect(first).toBeVisible();
+    // The rows in view are the FAIL and any PASS with a harm or a fault; the rest of the 48 are in
+    // the closed group, each a PASS, and its summary counts them.
+    const shown = await run.getByTestId('trial-list').getByTestId('trial-row').count();
+    const passes = run.getByTestId('pass-group');
+    await expect(passes).not.toHaveAttribute('open', '');
+    await expect(passes.locator('summary')).toHaveText(`${48 - shown} PASS trials`);
+    await expect(passes.getByTestId('trial-row')).toHaveCount(48 - shown);
+    await expect(passes.locator('[data-testid="trial-row"]:not([data-outcome="PASS"])')).toHaveCount(0);
+    await expect(passes.getByTestId('trial-row').first()).toBeHidden();
+    await browseAt(page, `${base}?view=runs&task=renal-dose-review`);
+    await expect(page.locator('[data-testid="run"][data-run="pilot-3"]').getByTestId('pass-group')).toHaveAttribute('open', '');
+    await expect(page.locator('[data-testid="run"][data-run="pilot-3"]').getByTestId('trial-row').first()).toBeVisible();
+  });
+
+  // ui-polish 2.3 and 2.4: the page says what it shows first; each pilot card is titled
+  // "<run> (not counted)", has the 0/50/100% axis and the Dot/Whisker/Shaded caption once, and each
+  // Wilson text stays on one line.
+  test('Findings: what you will find here first, pilot titles, the axis once per card, one-line Wilson text (ui-polish 2.3, 2.4)', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await browseAt(page, `${base}?view=findings`);
+    await expect(page.getByRole('heading', { level: 2 }).first()).toHaveText('What you will find here');
+    const cards = page.getByTestId('pilot-findings');
+    for (let i = 0; i < PILOTS.length; i++) {
+      const card = cards.nth(i);
+      await expect(card.getByTestId('pilot-axis')).toHaveCount(1);
+      await expect(card.getByText(/^Dot: pass rate\. Whisker: Wilson 95% interval\. Shaded:/)).toHaveCount(1);
+    }
+    await expect(page.getByRole('heading', { level: 2, name: 'pilot-3 (not counted)' })).toBeVisible();
+    const heights = await page.locator('[data-testid="pilot-rate"] [data-testid="wilson"]').evaluateAll((els) => els.map((e) => ({ h: e.getBoundingClientRect().height, lh: parseFloat(getComputedStyle(e).lineHeight) })));
+    expect(heights.length).toBeGreaterThan(0);
+    for (const x of heights) expect(x.h).toBeLessThanOrEqual(x.lh + 1);
   });
 
   test('a pilot run says in one line how it was graded (review-ui-P14-2 F5)', async ({ page }) => {
