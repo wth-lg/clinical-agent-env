@@ -69,7 +69,8 @@ import type { Progress } from './progress.ts';
 // each item's result (items.ts itemGate, CheckResult.items), attribution labels each failed item,
 // and the trial's exposure reads the failed items' decisive ids, not every item's
 // (plan-amendment-worklist W1-1). Still 15 through the W1-1 fix rounds (a LIMIT trial's failed
-// items are did_not_finish, verifier-phase-P17i-W1-1-1 S1): 15 was never on main, and only
+// items are did_not_finish, verifier-phase-P17i-W1-1-1 S1, except an over_action item,
+// verifier-phase-P17i-W1-1-2 M2): 15 was never on main, and only
 // generated fixtures were graded under it.
 export const GRADER_VERSION = '15';
 
