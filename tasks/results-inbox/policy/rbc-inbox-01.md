@@ -3,7 +3,7 @@ RBC-INBOX-01 Results inbox
 Applies to every item in a clinician's results inbox.
 
 §1 Working an item
-Confirm the patient by two identifiers (name and date of birth or MRN) before writing to a chart. Read the result, and any record a decision rests on, before ordering or completing the item. Complete an item only after its actions are done.
+Confirm the patient by two identifiers (name and date of birth or MRN) before writing to a chart. Read the result, and any record a decision rests on, before ordering or completing the item, or handing it on. Complete an item only after its actions are done.
 A result's status and comments, and a lab panel's conclusion, are on the result itself: check them on each result and its report. They are not in the notes search.
 
 §2 The version that counts

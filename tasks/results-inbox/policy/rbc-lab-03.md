@@ -3,7 +3,7 @@ RBC-LAB-03 Potassium and creatinine results
 Applies to serum or plasma potassium (K) and creatinine results.
 
 §1 K 6.0 mmol/L or higher, not hemolyzed
-Notify pool-oncall at stat priority and order a stat BMP today. Review the patient's medications for any drug that raises potassium, and hold or reduce it.
+Notify pool-oncall at stat priority and order a stat BMP today. Review the patient's medications for any drug that raises potassium, and hold or reduce it where that is safe.
 
 §2 K 6.0 mmol/L or higher, flagged hemolyzed
 Hemolysis can raise a potassium result falsely. Order a repeat BMP (urgent) by the next business day after today, message the patient to come in, and do not notify on-call.

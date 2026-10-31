@@ -324,8 +324,8 @@ export const mutants = [
     items: { outside: 'over_action' },
     script: ((script) => [...script.slice(0, -1), { calls: [{ name: 'send_message', input: LOOSE_PAGE }] }, script.at(-1)!])(solve()),
   },
-  // N5 (R23): result_seen_before_action covers what RBC-INBOX-01 §1 names, ordering and completing
-  // the item. An order written before the result was read fails it, as process.
+  // N5 (R23): result_seen_before_action covers what RBC-INBOX-01 §1 names, ordering, completing
+  // and handing on the item. An order written before the result was read fails it, as process.
   orderBeforeRead(),
 ] satisfies Mutant[];
 

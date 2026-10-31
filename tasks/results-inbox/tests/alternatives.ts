@@ -223,7 +223,7 @@ export const alternatives = [
     script: solve({ plans: { prelim_positive: { orders: [{ code: 'REF-ORTHO-ONC', priority: 'urgent', start: '2026-10-23' }] } } }),
   },
   // N5 (R23): RBC-INBOX-01 §1 asks for the result to be read before ordering or completing the item,
-  // not before messaging the patient; a message that the result is in, sent before the read, passes.
+  // or handing it on, not before messaging the patient; a message that the result is in, sent before the read, passes.
   {
     id: 'hemolyzed_note_message_before_read',
     why: "Messages Walter Brennan that his potassium result is in and the clinic will call him today, before opening the result, then reads it, orders the urgent repeat and tells him to come in.",
