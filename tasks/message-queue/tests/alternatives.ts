@@ -76,11 +76,12 @@ export const alternatives: Alternative[] = [
   { id: 'm12_window_search', why: "Searches Marcus Webb's potassium (both codes) and eGFR from 10/23/2025 on: no potassium in 12 months, so 30 days and a BMP.", script: swap(oracle, [WEBB_K, [inWindow('2823-3,6298-4')]], [WEBB_EGFR, [inWindow('33914-3')]]) },
 
   // R27: a complete clinic-wide search over the window counts for every patient it would show. The
-  // page is cut at 25 entries by the tool's size cap, so the run takes two pages with one sort.
+  // page is cut by the tool's size cap, so the run takes two pages with one sort, the second at
+  // page 1's next_offset: 26 on the six-probe world (W1 train, builder-249; 48 panels).
   {
     id: 'm12_clinic_panels',
     why: 'Pages through every BMP panel report in the clinic from 10/23/2025 on, finds none for Marcus Webb, and gives 30 days and a BMP.',
-    script: swap(oracle, [WEBB_K, [CLINIC_PANELS, { ...CLINIC_PANELS, input: { ...CLINIC_PANELS.input, offset: 25 } }]], [WEBB_EGFR, [inWindow('33914-3')]]),
+    script: swap(oracle, [WEBB_K, [CLINIC_PANELS, { ...CLINIC_PANELS, input: { ...CLINIC_PANELS.input, offset: 26 } }]], [WEBB_EGFR, [inWindow('33914-3')]]),
   },
   { id: 'm12_cmp', why: 'Orders a comprehensive panel instead of a BMP with the 30-day lisinopril supply.', script: swap(oracle, [webbBmp, [lab(PT.webb, '24323-8', 'Panel for lisinopril, none in 12 months')]]) },
   // Clinical gate 2 F1 route B: an eGFR search filtered to valid statuses never shows the result entered in error.
