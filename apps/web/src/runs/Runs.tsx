@@ -11,7 +11,7 @@
 // ("Other trials", with no number, while the run is blocked), open while a filter is set. Filters (task,
 // label; and from Findings, check: the valid failures whose decisive check it is, and audit: the
 // valid failures by audit label, P17j JU7) live in the URL; a run with a trial that blocks it says
-// so above the list; under label=pass the shown-count line hides while a listed run is blocked; ?trial= opens the trial detail
+// so above the list; the shown-count line hides while a listed run is blocked; ?trial= opens the trial detail
 // (apps/web/src/trial/TrialPage.tsx) in place of the list, and Back to Runs returns to it.
 import { ChevronRight, CircleAlert } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState, type Ref } from 'react';
@@ -53,11 +53,11 @@ export function Runs({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> | un
   const matches = (t: Trial) => pilotMatches(t) && (check === '' || failedCheckOf(t.explanation) === check) && (audit === '' || auditFilterOf(t.explanation) === audit);
   const filtered = task !== '' || label !== '' || check !== '' || audit !== '';
   const block = official ? runBlock(official.trials) : null;
-  // Under label=pass the count line counts PASS rows, so it is a pass count: while a run in the
-  // list is blocked (the official run, or a pilot shown under it) it says why in its place; other
-  // labels keep their counts (verifier-phase-P17i-UI-FU-1 B1).
+  // While a run in the list is blocked (the official run, or a pilot shown under it) the count
+  // line says why in place of its number, under every label: under pass it is a pass count, and
+  // under the others the pass count is the total less their sum (verifier-phase-P17i-UI-FU-1 B1).
   const listed = [...(official ? [official] : []), ...(check === '' && audit === '' ? pilots : [])];
-  const holding = label === 'pass' ? listed.reduce((n, r) => n + (runBlock(r.trials)?.trials ?? 0), 0) : 0;
+  const holding = listed.reduce((n, r) => n + (runBlock(r.trials)?.trials ?? 0), 0);
   const falsePasses = official ? official.trials.filter((t) => (task === '' || t.task === task) && isFalsePass(t.explanation)).length : 0;
   const total = runs.reduce((n, r) => n + r.trials.length + r.bad.length, 0);
   const shown = runs.reduce((n, r) => n + (r.official ? r.trials.filter(matches).length : check === '' && audit === '' ? r.trials.filter(pilotMatches).length : 0), 0);
