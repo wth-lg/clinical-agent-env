@@ -1367,7 +1367,7 @@
       {
         "item": "Patient/pt-0017",
         "gate": "fit_orders",
-        "auto": "reasoning",
+        "auto": "did_not_finish",
         "exposure": [
           {
             "id": "Procedure/proc-00489",
