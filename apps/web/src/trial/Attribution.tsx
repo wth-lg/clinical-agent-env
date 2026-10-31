@@ -4,13 +4,16 @@
 // other faults that hold (notes), and the criteria table: M1-M5, then every criterion of every
 // fault in FAULT_PRECEDENCE order, each met or not with its evidence and a link to its definition,
 // the one that decided the fault marked. This is how a model fault is told apart from an
-// environment or grader fault for this trial.
+// environment or grader fault for this trial. It opens with the verdict (the fault and the
+// criterion that decided it, with its evidence); every criterion checked is one click away, under
+// "Show all criteria checked (N)" (ui-polish 3.4).
 import { CONFIRMATION_DEFINITIONS, CONFIRMATION_CRITERIA, FAULT_DEFINITIONS, FAULT_PRECEDENCE, RUN_BLOCKS, type Fault } from '../../../../packages/core/outcomes.ts';
 import { MET_TEXT, TAXONOMY_TEXT, type AuditRow, type CriterionRow, type Explanation, type Holding } from '../../../../packages/core/explain.ts';
 import type { Step } from '../../../../packages/grader/check.ts';
 import type { Trial } from '../data/results.ts';
+import { shownFault } from '../data/failures.ts';
 import { GlossaryLink, HashText } from '../data/ui.tsx';
-import { EvidenceId, Section } from './Grading.tsx';
+import { CARD_TABLE, CELL_LABEL, EvidenceId, Section } from './Grading.tsx';
 
 const CRITERIA = [...Object.values(FAULT_DEFINITIONS).flatMap((d) => d.criteria), ...RUN_BLOCKS, ...CONFIRMATION_CRITERIA];
 // A criterion's sentence from outcomes.ts.
@@ -69,6 +72,29 @@ function CriteriaSummary({ e }: { e: Explanation }) {
 
 const yesNo = (v: boolean | null) => (v === null ? 'not asked' : v ? 'yes' : 'no');
 
+// The verdict, first: "Fault: environment, decided by E8" and the evidence of that criterion (the
+// criterion's sentence is in the Criteria summary below). When
+// the audit relabelled the trial, the fault shown is the audit's, and the line names the fault the
+// criteria found.
+function Verdict({ e }: { e: Explanation }) {
+  const shown = shownFault(e);
+  const code = e.deciding && <GlossaryLink anchor={`criterion-${e.deciding.id}`} className={LINK}>{e.deciding.id}</GlossaryLink>;
+  return (
+    <div data-testid="attribution-verdict" className={`rounded-md border bg-canvas/60 px-3 py-2.5 dark:bg-canvas/40 ${shown === 'env' || shown === 'grader' ? 'border-danger' : 'border-line'}`}>
+      {shown === null || e.deciding === null ? (
+        <p className="font-medium text-ink">No fault: the trial passed.</p>
+      ) : (
+        <>
+          <p className="font-medium text-ink">
+            Fault: {FAULT_WORD[shown]}{shown === e.fault ? <>, decided by {code}</> : <> (the audit's label); the criteria found {FAULT_NOUN[e.fault!]} at fault, decided by {code}</>}
+          </p>
+          {e.deciding.evidence !== '' && <p className="mt-0.5 break-words text-ink-muted"><HashText text={e.deciding.evidence} /></p>}
+        </>
+      )}
+    </div>
+  );
+}
+
 export function Attribution({ t, e, steps, onStep }: { t: Trial; e: Explanation; steps: readonly Step[] | null; onStep: (n: number) => void }) {
   const auto = (t.record as { attribution?: { auto: string; exposure: Exposure[] } | null }).attribution ?? null;
   const audit: AuditRow | null = t.audit;
@@ -78,6 +104,7 @@ export function Attribution({ t, e, steps, onStep }: { t: Trial; e: Explanation;
   const modelFault = e.fault === 'model' || e.fault === 'refusal';
   return (
     <div className="space-y-5">
+      <Verdict e={e} />
       <dl className="grid grid-cols-1 gap-x-4 gap-y-1.5 sm:grid-cols-[max-content_minmax(0,1fr)] [&_dd]:min-w-0 [&_dd]:break-words [&_dt]:text-ink-muted">
         <dt>Kind of failure</dt>
         <dd data-testid="taxonomy">
@@ -89,7 +116,7 @@ export function Attribution({ t, e, steps, onStep }: { t: Trial; e: Explanation;
           )}
         </dd>
         <dt>Confirmation</dt>
-        <dd>{e.confirmation === null ? 'does not apply' : <><GlossaryLink anchor="confirmation" className={LINK}>{e.confirmation}</GlossaryLink>: <span className="text-ink-muted">{CONFIRMATION_DEFINITIONS[e.confirmation]}</span></>}</dd>
+        <dd data-testid="confirmation">{e.confirmation === null ? 'does not apply' : <><GlossaryLink anchor="confirmation" className={LINK}>{e.confirmation} (M1–M5)</GlossaryLink>: <span className="text-ink-muted">{CONFIRMATION_DEFINITIONS[e.confirmation]}</span></>}</dd>
         <dt>Decisive step</dt>
         <dd>{e.decisive_step === null ? 'none' : <StepLink n={e.decisive_step} onStep={onStep}>Step {e.decisive_step}</StepLink>}</dd>
         <dt>Human audit</dt>
@@ -106,13 +133,13 @@ export function Attribution({ t, e, steps, onStep }: { t: Trial; e: Explanation;
 
       {modelFault && auto && auto.exposure.length > 0 && (
         <Section title="Exposure of the decisive ids" lead="The step at which each record the failed check needs was first returned to the model.">
-          <table className="w-full table-fixed text-left [overflow-wrap:anywhere]">
-            <thead className="text-xs text-ink-muted"><tr><th scope="col" className="w-1/2 pb-1 font-normal">Record</th><th scope="col" className="pb-1 font-normal">First returned</th></tr></thead>
+          <table className={CARD_TABLE}>
+            <thead className="text-xs text-ink-muted"><tr><th scope="col" className="pb-1 pr-3 font-normal sm:w-1/2">Record</th><th scope="col" className="pb-1 font-normal">First returned</th></tr></thead>
             <tbody>
               {auto.exposure.map((x) => (
-                <tr key={x.id} data-testid="exposure-row" data-id={x.id} className="border-t border-line align-top">
-                  <td className="py-1.5 pr-2"><code className="text-xs">{x.id}</code></td>
-                  <td className="py-1.5">
+                <tr key={x.id} data-testid="exposure-row" data-id={x.id} className="border-t border-line align-top max-sm:grid-cols-1">
+                  <td data-label="Record" className="py-1.5 pr-3"><code className="text-xs">{x.id}</code></td>
+                  <td data-label="First returned" className={`py-1.5 ${CELL_LABEL}`}>
                     {x.first_exposed_step === null ? <span className="text-ink-muted">never</span> : <StepLink n={x.first_exposed_step} onStep={onStep} />}
                     {x.first_shown_step !== undefined && <span className="block text-xs text-ink-muted">decisive text shown: {x.first_shown_step === null ? 'never' : `step ${x.first_shown_step}`}</span>}
                     {x.first_seen_step !== undefined && <span className="block text-xs text-ink-muted">seen by the check's rule: {x.first_seen_step === null ? 'never' : `step ${x.first_seen_step}`}</span>}
@@ -131,30 +158,35 @@ export function Attribution({ t, e, steps, onStep }: { t: Trial; e: Explanation;
       )}
 
       <Section title="Criteria" lead={<>Each criterion is checked against this trial. The fault is the first fault, in the order of the <GlossaryLink className={LINK}>definitions</GlossaryLink>, with a criterion that holds.</>} testId="criteria-table">
-        <div className="space-y-4">
+        <div className="space-y-3">
           <CriteriaSummary e={e} />
-          <div>
-            <h4 className="text-xs font-medium text-ink">Confirmation (M1-M5) <GlossaryLink anchor="confirmation" className={`${LINK} font-normal text-ink-muted`}>definition</GlossaryLink></h4>
-            <ul data-testid="detail-criteria" className="divide-y divide-line">
-              {e.criteria.map((c) => <CriterionItem key={c.id} c={c} group="confirmation" deciding={false} />)}
-            </ul>
-          </div>
-          {/* The deciding fault's group and any group with a criterion that holds are open; the
-              faults ruled out are closed, one line each. */}
-          {FAULT_PRECEDENCE.map((f) => {
-            const met = e.fault_criteria[f].filter((c) => c.met === true).length;
-            return (
-              <details key={f} data-testid="fault-criteria" data-fault={f} open={f === e.fault || met > 0} className="group">
-                <summary className="cursor-pointer text-xs font-medium text-ink">
-                  Fault: {FAULT_WORD[f]}{f === 'refusal' ? ' (refusal)' : ''} <span className="font-normal text-ink-muted">{met === 0 ? `ruled out, ${range(e.fault_criteria[f])} not met` : `${met} of ${e.fault_criteria[f].length} met`}</span>
-                </summary>
-                <p className="mt-1 text-xs text-ink-muted">{FAULT_DEFINITIONS[f].sentence} <GlossaryLink anchor={`fault-${f}`} className={LINK}>Definition</GlossaryLink></p>
-                <ul className="divide-y divide-line">
-                  {e.fault_criteria[f].map((c) => <CriterionItem key={c.id} c={c} group={f} deciding={c.id === deciding} />)}
+          <details data-testid="all-criteria">
+            <summary className="cursor-pointer text-ink">{`Show all criteria checked (${e.criteria.length + FAULT_PRECEDENCE.reduce((n, f) => n + e.fault_criteria[f].length, 0)})`}</summary>
+            <div className="mt-3 space-y-4">
+              <div>
+                <h4 className="text-xs font-medium text-ink">Confirmation (M1-M5) <GlossaryLink anchor="confirmation" className={`${LINK} font-normal text-ink-muted`}>definition</GlossaryLink></h4>
+                <ul data-testid="detail-criteria" className="divide-y divide-line">
+                  {e.criteria.map((c) => <CriterionItem key={c.id} c={c} group="confirmation" deciding={false} />)}
                 </ul>
-              </details>
-            );
-          })}
+              </div>
+              {/* The deciding fault's group and any group with a criterion that holds are open; the
+                  faults ruled out are closed, one line each. */}
+              {FAULT_PRECEDENCE.map((f) => {
+                const met = e.fault_criteria[f].filter((c) => c.met === true).length;
+                return (
+                  <details key={f} data-testid="fault-criteria" data-fault={f} open={f === e.fault || met > 0} className="group">
+                    <summary className="cursor-pointer text-xs font-medium text-ink">
+                      Fault: {FAULT_WORD[f]}{f === 'refusal' ? ' (refusal)' : ''} <span className="font-normal text-ink-muted">{met === 0 ? `ruled out, ${range(e.fault_criteria[f])} not met` : `${met} of ${e.fault_criteria[f].length} met`}</span>
+                    </summary>
+                    <p className="mt-1 text-xs text-ink-muted">{FAULT_DEFINITIONS[f].sentence} <GlossaryLink anchor={`fault-${f}`} className={LINK}>Definition</GlossaryLink></p>
+                    <ul className="divide-y divide-line">
+                      {e.fault_criteria[f].map((c) => <CriterionItem key={c.id} c={c} group={f} deciding={c.id === deciding} />)}
+                    </ul>
+                  </details>
+                );
+              })}
+            </div>
+          </details>
         </div>
       </Section>
     </div>

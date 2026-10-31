@@ -7,13 +7,16 @@
 // state diff, Stop) and the runs this surface started. It reads trials only through the
 // surface's TrialTransport and shows them only from TrialEvents, so the local runner and the
 // browser look the same. Without a key the launcher is disabled and says why.
-import { ChevronDown, ChevronRight, CircleAlert, Dot, Play, Square } from 'lucide-react';
+import { ChevronDown, ChevronRight, CircleAlert, Dot, Loader2, Play, Square } from 'lucide-react';
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type Ref } from 'react';
 import type { TrialEvent } from '../../../../packages/core/events.ts';
 import { explainTrial, type ExplainRecord, NOT_AUDITED_MARKER } from '../../../../packages/core/explain.ts';
 import { capSum } from '../../../../packages/core/ledger.ts';
 import { REFUSAL_TEXT } from '../../../../packages/core/runner-api.ts';
-import { shownFault } from '../data/failures.ts';
+import { shownFault, shownLabel } from '../data/failures.ts';
+import { isValid } from '../../../../packages/core/outcomes.ts';
+import { markLabel, markOf } from '../data/marks.ts';
+import { TextRow, TOOL_NAME } from '../trial/Trajectory.tsx';
 import { useResults } from '../data/results.ts';
 import { MODEL } from '../adapters/ledger-browser.ts';
 import { useTaskList } from '../data/tasks.ts';
@@ -120,6 +123,8 @@ export function LiveTrial({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
     return () => clearTimeout(timer);
   }, [runs, refresh]);
 
+  const names = useMemo(() => runNames(runs ?? [], tasks), [runs, tasks]);
+
   const open = (id: string) => {
     setCurrentTrial(id);
     setCurrent(id);
@@ -208,7 +213,7 @@ export function LiveTrial({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
           </Notice>
         )}
         <div className="space-y-3">
-          {[...(runs ?? [])].reverse().map((r) => <RunRows key={r.runId} run={r} name={runName(r, tasks)} current={current} onOpen={open} />)}
+          {[...(runs ?? [])].reverse().map((r) => <RunRows key={r.runId} run={r} name={names.get(r.runId)!} current={current} onOpen={open} />)}
         </div>
       </Card>
     </Page>
@@ -304,10 +309,12 @@ function Trial({ t, id, name, onEnd }: { t: TrialTransport; id: string; name: st
   const errorLine = failed === null ? null : hosted ? relayLine(failed.message) : failed.message;
   const panelId = useId();
   // One status line for screen readers, in place of a live trajectory (ui-polish 5.3): it changes
-  // only when the turn or the final state does.
+  // only when the turn or the final state does. "Starting" until the first model turn, and the
+  // final state in the outcome chip's words, never a raw code (#185 m2). At phone width the Turn
+  // meter sits right under it, so the turn number is for screen readers only there (m3).
   const status = running
-    ? events.length === 0 ? 'Starting' : `Turn ${f.turn}, running`
-    : end.state === 'graded' && explanation ? `Finished: ${explanation.outcome}` : end.state === 'cancelled' ? 'Stopped' : 'Stopped with an error';
+    ? f.turn === 0 ? 'Starting' : <><span data-testid="status-turn" className="max-sm:sr-only">Turn {f.turn}, </span><span className="max-sm:capitalize">running</span></>
+    : end.state === 'graded' && explanation ? `Finished: ${finalWords(explanation)}` : end.state === 'cancelled' ? 'Stopped' : 'Stopped with an error';
 
   async function stop() {
     setStopping(true);
@@ -336,7 +343,12 @@ function Trial({ t, id, name, onEnd }: { t: TrialTransport; id: string; name: st
       <div className="grid min-w-0 gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_280px]">
         <ol className="min-w-0 space-y-1.5" data-testid="trajectory">
           {f.items.map((item) => <ItemRow key={item.key} item={item} />)}
-          {running && <li className="text-xs text-ink-muted">{events.length === 0 ? 'Starting…' : 'Running…'}</li>}
+          {running && (
+            <li data-testid="running-line" className="flex items-center gap-1.5 text-xs text-ink-muted">
+              <Loader2 aria-hidden className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" strokeWidth={1.75} />
+              {events.length === 0 ? 'Starting…' : 'Running…'}
+            </li>
+          )}
           {!running && f.items.length === 0 && <li className="text-xs text-ink-muted">No reply came from the model.</li>}
         </ol>
         <aside className="min-w-0 space-y-2 text-xs" data-testid="state-diff">
@@ -378,6 +390,16 @@ function Trial({ t, id, name, onEnd }: { t: TrialTransport; id: string; name: st
   );
 }
 
+// A finished trial's state in the words its chips use: the outcome of a counted trial with the
+// label shown beside it ("FAIL, fault: model"), else the trial's mark in words ("API problem, not
+// counted"), so the status line never reads a raw code such as INFRA_API (#185 m2).
+function finalWords(e: ReturnType<typeof explainTrial>): string {
+  const label = shownLabel(e);
+  if (isValid(e.outcome)) return e.outcome === 'PASS' && label === null ? 'PASS' : `${e.outcome}${label === null ? '' : `, fault: ${label}`}`;
+  if (shownFault(e) === 'infra') return 'API problem, not counted';
+  return `${markLabel(markOf(e.outcome, shownFault(e)))}, not counted`;
+}
+
 // The viewer's clock time of an ISO instant ("22:56"), or null for a value it cannot read.
 function clockTime(iso: string): string | null {
   const d = new Date(iso);
@@ -405,6 +427,19 @@ function runName(run: LiveRun, tasks: Titled): string {
   return [run.tasks.map((x) => liveTaskTitle(x, tasks)).join(', '), `${run.rows.length} trial${run.rows.length === 1 ? '' : 's'}`, ...(at ? [`started ${at}`] : [])].join(' · ');
 }
 
+// Each run's heading, unique on the page: two runs of the same task started in the same minute
+// read alike, so the later ones get " (2)", " (3)" in the order the runs list holds them, and each
+// row button's name ("<run heading>, trial n") is unique too (#185 m1).
+function runNames(runs: readonly LiveRun[], tasks: Titled): Map<string, string> {
+  const seen = new Map<string, number>();
+  return new Map(runs.map((r) => {
+    const name = runName(r, tasks);
+    const n = (seen.get(name) ?? 0) + 1;
+    seen.set(name, n);
+    return [r.runId, n === 1 ? name : `${name} (${n})`];
+  }));
+}
+
 // A trial id (run.task.index) with a line-break opportunity after each dot, so a narrow screen
 // breaks it between its parts rather than inside one.
 const breakable = (id: string) => id.split('.').flatMap((part, i, parts) => (i === parts.length - 1 ? [part] : [`${part}.`, <wbr key={i} />]));
@@ -420,14 +455,14 @@ function Meter({ label, value, testId }: { label: string; value: string; testId:
 function ItemRow({ item }: { item: Item }) {
   const [open, setOpen] = useState(false);
   if (item.kind !== 'tool') {
-    return <li data-testid={item.kind} className={`whitespace-pre-wrap break-words ${item.kind === 'thinking' ? 'text-ink-muted italic' : 'text-ink'}`}>{item.text}</li>;
+    return <TextRow kind={item.kind} text={item.text} />;
   }
   const Chevron = open ? ChevronDown : ChevronRight;
   return (
     <li data-testid="tool-row" data-tool={item.name} data-error={String(item.error !== null)}>
       <button type="button" aria-expanded={open} onClick={() => setOpen(!open)} className="flex w-full min-w-0 items-center gap-1.5 rounded-sm text-left hover:bg-canvas">
         <Chevron aria-hidden className="h-3.5 w-3.5 shrink-0 text-ink-muted" strokeWidth={1.75} />
-        <code className="shrink-0 font-mono text-xs text-ink">{item.name}</code>
+        <code data-testid="tool-name" className={TOOL_NAME}>{item.name}</code>
         <span className="min-w-0 truncate text-xs text-ink-muted">{item.target}</span>
         {item.error !== null && <CircleAlert aria-label={`error ${item.error}`} className="h-3.5 w-3.5 shrink-0 text-danger" strokeWidth={1.75} />}
         {item.written.length > 0 && (
@@ -451,12 +486,12 @@ function RunRows({ run, name, current, onOpen }: { run: LiveRun; name: string; c
   return (
     <div data-testid="live-run" data-run={run.runId} data-trials={run.rows.length}>
       <p className="text-ink-muted">
-        <span title={run.runId} className="font-medium text-ink">{name}</span>
+        <span data-testid="run-name" title={run.runId} className="font-medium text-ink">{name}</span>
         {run.done ? '' : ', running'}{run.stopped ? `, stopped: ${run.stopped}` : ''}
         <code className="ml-2 break-all font-mono text-xs">{run.runId}</code>
       </p>
       <ul className="mt-1 divide-y divide-line rounded-sm border border-line">
-        {run.rows.map((row) => <LiveRow key={row.trialId} row={row} current={current === row.trialId} onOpen={onOpen} />)}
+        {run.rows.map((row) => <LiveRow key={row.trialId} row={row} runName={name} current={current === row.trialId} onOpen={onOpen} />)}
       </ul>
     </div>
   );
@@ -466,7 +501,9 @@ function RunRows({ run, name, current, onOpen }: { run: LiveRun; name: string; c
 // marker only where it has none.
 const labelled = (e: ReturnType<typeof explainTrial>) => e.outcome !== 'PASS' && e.fault !== 'infra' && e.label !== null;
 
-function LiveRow({ row, current, onOpen }: { row: LiveRun['rows'][number]; current: boolean; onOpen: (id: string) => void }) {
+// runName: the run's heading; each row button's name carries it, so two runs' "Trial 1" rows are
+// told apart by a screen reader (#185 m1).
+function LiveRow({ row, runName, current, onOpen }: { row: LiveRun['rows'][number]; runName: string; current: boolean; onOpen: (id: string) => void }) {
   const [events, setEvents] = useState<TrialEvent[]>([]);
   useEffect(() => {
     if (row.record !== null) void readEvents(row.trialId).then(setEvents, () => undefined);
@@ -475,7 +512,7 @@ function LiveRow({ row, current, onOpen }: { row: LiveRun['rows'][number]; curre
   return (
     <li data-testid="live-row" data-trial={row.trialId} data-state={row.state} data-outcome={e?.outcome ?? ''} className="px-3 py-2">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <button type="button" onClick={() => onOpen(row.trialId)} aria-current={current} title={row.trialId} className="min-w-0 break-all text-left font-medium text-ink hover:underline">
+        <button type="button" onClick={() => onOpen(row.trialId)} aria-current={current} aria-label={`${runName}, trial ${row.index + 1}`} title={row.trialId} className="min-w-0 break-all text-left font-medium text-ink hover:underline">
           Trial {row.index + 1}
         </button>
         {e ? <OutcomeChip outcome={e.outcome} fault={shownFault(e)} /> : <span className="text-xs text-ink-muted">{row.state}</span>}
