@@ -916,6 +916,7 @@ export function profileWorld(resources: readonly Resource[]): Resource[] {
           // Synthea's canned instruction ('Take as needed.', 'Every four to six hours') is not a sig:
           // the order is sent with the clinic's, from its dose, route and schedule (below).
           if (typeof d.text === 'string' && SYNTHEA_SIG.test(d.text)) delete d.text;
+          }
           // A schedule Synthea gave only as an instruction, or the clinic's sig for the drug.
           if (d.timing === undefined && d.asNeededBoolean !== true) {
             const sig = SIGS.find((x) => x.drug.test(drug));
@@ -1592,8 +1593,11 @@ export function plantedClock(resources: readonly Resource[], planted: ReadonlySe
         const s = to.get(sec(t.v));
         if (s === undefined) continue;
         const v = at(t.v, s);
-        moved.set(t.v.slice(11, 16), moved.has(t.v.slice(11, 16)) && moved.get(t.v.slice(11, 16)) !== v.slice(11, 16) ? '' : v.slice(11, 16));
         t.holder[t.k] = v;
+        // Text gives a record's own start, never an end (builder-230: a note's derived 15-minute
+        // period ended on its "10:00 AM" booked slot, and the slot moved with it).
+        if (END.test(t.path)) continue;
+        moved.set(t.v.slice(11, 16), moved.has(t.v.slice(11, 16)) && moved.get(t.v.slice(11, 16)) !== v.slice(11, 16) ? '' : v.slice(11, 16));
       }
       // The record's own text, where it gives one of its times as HH:MM.
       const swap = (text: string) => {
