@@ -61,6 +61,18 @@ test('3.2: the first rubric row is named by the question its item asks, as the T
   await expect(row).toHaveAttribute('data-id', first.id);
   await expect(row.getByTestId('rubric-name')).toHaveText(text);
   await expect(row.locator('code')).toHaveText(first.id);
+  // A long question shows two lines and a toggle for the rest.
+  const long = panel(page, 'grading').getByTestId('rubric-row').filter({ has: page.getByRole('button', { name: 'Show the full question' }) }).first();
+  const id = (await long.getAttribute('data-id'))!;
+  const pinned = panel(page, 'grading').locator(`[data-testid="rubric-row"][data-id="${id}"]`);
+  const toggle = pinned.getByRole('button', { name: /^Show (the full question|less)$/ });
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  const name = pinned.getByTestId('rubric-name');
+  const clamped = (await name.boundingBox())!.height;
+  await toggle.click();
+  await expect(toggle).toHaveText('Show less');
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  expect((await name.boundingBox())!.height).toBeGreaterThan(clamped);
 });
 
 test('3.2: an unknown judge item reads "judge unsure"', async ({ page }) => {

@@ -6,13 +6,13 @@
 // its kind of failure (items.ts). An excluded trial was not graded; a check that threw is the
 // grader's error, in the danger style.
 import { Check, CircleHelp, Minus, X } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import type { Step } from '../../../../packages/grader/check.ts';
 import { NOT_RERUN_REASON, RERUN_OUTCOMES, type Outcome } from '../../../../packages/core/outcomes.ts';
 import { currentGrade } from '../../../../packages/core/summary.ts';
 import { shownFault } from '../data/failures.ts';
 import { checkTextOf, type Trial } from '../data/results.ts';
-import { OutcomeChip, SECTION_LABEL } from '../data/ui.tsx';
+import { LINK, OutcomeChip, SECTION_LABEL } from '../data/ui.tsx';
 import { failedItems, itemsMetText, type ItemLabel, type ItemRow } from './items.ts';
 import { useRubricQuestions } from './questions.ts';
 import { metText, rubricGood, rubricMetText, rubricTotal, scoreNote, totalText } from './rubric.ts';
@@ -40,6 +40,21 @@ const SCORE_TITLE = 'Rubric score (does not decide pass)';
 // show its column's name from data-label (CELL_LABEL).
 export const CARD_TABLE = 'w-full text-left [overflow-wrap:anywhere] max-sm:block max-sm:[&_tbody]:block max-sm:[&_tfoot]:block max-sm:[&_thead]:sr-only max-sm:[&_tr]:grid max-sm:[&_tr]:gap-x-3 max-sm:[&_tr]:gap-y-1.5 max-sm:[&_tr]:py-2.5 max-sm:[&_td]:p-0';
 export const CELL_LABEL = 'max-sm:before:mr-1.5 max-sm:before:text-xs max-sm:before:font-normal max-sm:before:text-ink-muted max-sm:before:content-[attr(data-label)]';
+
+// A rubric row's name: the question its item asks. A long judge criterion (some run to several
+// hundred characters) shows two lines with a toggle for the rest, so the rubric stays scannable,
+// on a phone above all; the whole text is in the DOM either way.
+const LONG_QUESTION = 160;
+function QuestionName({ text }: { text: string }) {
+  const [open, setOpen] = useState(false);
+  const long = text.length > LONG_QUESTION;
+  return (
+    <>
+      <span data-testid="rubric-name" className={`break-words text-ink ${long && !open ? 'line-clamp-2' : 'block'}`}>{text}</span>
+      {long && <button type="button" aria-expanded={open} onClick={() => setOpen(!open)} className={`${LINK} rounded-sm text-xs text-ink-muted pointer-coarse:py-2`}>{open ? 'Show less' : 'Show the full question'}</button>}
+    </>
+  );
+}
 
 // The met column's mark: a check, a cross, a dash for a penalty that did not fire, a question mark
 // when the judge was unsure; in the danger colour when the row costs the trial points.
@@ -214,7 +229,7 @@ export function Grading({ t, steps, onStep, decisive = null }: { t: Trial; steps
                 return (
                   <tr key={c.id} data-testid="rubric-row" data-id={c.id} data-points={String(c.points)} data-met={String(c.met)} className="border-t border-line align-top max-sm:grid-cols-[minmax(0,1fr)_auto_auto]">
                     <td data-label="Item" className="py-1.5 pr-3">
-                      {question !== undefined && <span data-testid="rubric-name" className="block break-words text-ink">{question}</span>}
+                      {question !== undefined && <QuestionName text={question} />}
                       <span className="flex flex-wrap items-baseline gap-x-1.5 text-xs text-ink-muted">
                         <code className={question === undefined ? 'font-medium text-ink' : ''}>{c.id}</code>
                         <span>{[c.category, c.method].filter(Boolean).join(', ')}</span>
