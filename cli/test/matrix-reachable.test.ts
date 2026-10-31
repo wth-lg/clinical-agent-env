@@ -38,8 +38,10 @@ async function explained(task: string, id: string, check: string) {
 
 describe('a decisive id a tool result only referenced is reachable (review F1)', () => {
   // The real matrix case, graded, then explained on the run's world with the committed matrix.json.
-  it("results-inbox closed_without_links: items_closed_with_links's decisive ids were referenced by list_inbox, so M1 is met, E5 is not, and the fault is the model's", async () => {
-    const { record, run, x } = await explained('results-inbox', 'closed_without_links', 'items_closed_with_links');
+  // W1 T2 probe (builder-249): closed_without_links became the per-item aki_48h_closed_without_link,
+  // and items_closed_with_links became items_closed.
+  it("results-inbox aki_48h_closed_without_link: items_closed's decisive ids were referenced by list_inbox, so M1 is met, E5 is not, and the fault is the model's", async () => {
+    const { record, run, x } = await explained('results-inbox', 'aki_48h_closed_without_link', 'items_closed');
     // The scenario: a decisive id never exposed, but referenced by a list_inbox step.
     const never = record.attribution!.exposure.filter((e) => e.first_exposed_step === null).map((e) => e.id);
     expect(never.length).toBeGreaterThan(0);
@@ -49,10 +51,10 @@ describe('a decisive id a tool result only referenced is reachable (review F1)',
     expect(x.fault).toBe('model');
   });
 
-  // Since A2 r4 (#111) m3_red_flag's decisive id is the red-flag message, Communication/comm-t6-m3,
-  // which the model read, so this case no longer turns on a referenced id; it stays the model's.
-  it("message-queue m3_handled_as_routine: m3_red_flag's decisive id was shown to the model, so M1 is met, E5 is not, and the fault is the model's", async () => {
-    const { record, x } = await explained('message-queue', 'm3_handled_as_routine', 'm3_red_flag');
+  // W1 T6 probe: the hemolyzed potassium and the valid one before it were both shown to the model,
+  // so the wrong hold is the model's.
+  it("message-queue m1_hemolyzed_k_trusted: refill_decision's decisive ids were shown to the model, so M1 is met, E5 is not, and the fault is the model's", async () => {
+    const { record, x } = await explained('message-queue', 'm1_hemolyzed_k_trusted', 'refill_decision');
     expect(record.attribution!.exposure.length).toBeGreaterThan(0);
     expect(record.attribution!.exposure.every((e) => e.first_exposed_step !== null)).toBe(true);
     expect(x.criteria.find((c) => c.id === 'M1')!.met).toBe(true);

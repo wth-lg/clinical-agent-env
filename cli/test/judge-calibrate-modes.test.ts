@@ -264,7 +264,8 @@ describe('judge-calibrate reference and protocol', () => {
 
 describe('judge-calibrate --probes', () => {
   const existing = p11cFile();
-  const NOTE_ITEMS = ['nodule_note', 'fit_note', 'hemolyzed_k_note', 'critical_k_note', 'bone_note'];
+  // Since the W1 train (builder-249) results-inbox keeps one probe set: note_contradicts_result about
+  // Walter Brennan (pt-0008), the only judged question the worklist still asks word for word.
 
   it('asks each paraphrase of every probe set once, live, and keeps the results under probes, one entry per set', { timeout: SLOW }, async () => {
     // Met when the text says no follow-up or no further imaging is needed; otherwise not met.
@@ -279,9 +280,9 @@ describe('judge-calibrate --probes', () => {
     const { probes, ...rest } = c;
     expect(rest).toEqual(existing);
     expect(Array.isArray(probes)).toBe(true);
-    const cyst = probes!.find((p) => p.check === 'cyst_closed_no_follow_up')!;
-    expect(cyst).toMatchObject({ model: MODEL, effort: INBOX.judgeEffort, prompt_version: JUDGE_PROMPT_VERSION });
-    expect(cyst.criterion).toContain('no follow-up');
+    const set = probes!.find((p) => p.check === 'note_contradicts_result')!;
+    expect(set).toMatchObject({ about: 'Patient/pt-0008', model: MODEL, effort: INBOX.judgeEffort, prompt_version: JUDGE_PROMPT_VERSION });
+    expect(set.criterion).toContain('contradicts');
     expect(judge.calls).toBe(probes!.reduce((s, p) => s + p.items.length, 0));
     expect(judge.calls).toBe(probes!.reduce((s, p) => s + p.calls, 0));
     for (const p of probes!) {
@@ -293,40 +294,22 @@ describe('judge-calibrate --probes', () => {
     expect(h.text()).toMatch(new RegExp(`^judge-calibrate results-inbox probes: ${all.filter((it) => it.agree).length} of ${all.length} agree with the expected verdict, ${judge.calls} calls`, 'm'));
   });
 
-  it('probes each note item with at least 3 correct paraphrases and 1 wrong note, and note_contradicts_result with the same notes the other way, once per patient', { timeout: SLOW }, async () => {
-    // verifier-phase-P17i-P17-T2-1 S1: a correct note meets its item and escapes the penalty; a wrong one does the opposite.
+  it('probes note_contradicts_result with correct notes expected not met and wrong notes met', { timeout: SLOW }, async () => {
+    // verifier-phase-P17i-P17-T2-1 S1: a correct note escapes the penalty; a wrong one meets it.
     const judge = judgeBy(INBOX.judgeEffort, () => ({ verdict: 'not_met', quote: '' }));
     const h = harness({ fetch: judge, existing });
     await main(['--task', 'results-inbox', '--probes'], h.deps);
     const probes = h.written[0]!.probes!;
-    const penalty = probes.filter((p) => p.check === 'note_contradicts_result');
-    expect(penalty).toHaveLength(NOTE_ITEMS.length);
-    expect(new Set(penalty.map((p) => p.criterion)).size).toBe(NOTE_ITEMS.length);
-    for (const id of NOTE_ITEMS) {
-      const sets = probes.filter((p) => p.check === id);
-      expect(sets, id).toHaveLength(1);
-      const items = sets[0]!.items;
-      expect(items.filter((it) => it.expected === 'met').length, id).toBeGreaterThanOrEqual(3);
-      expect(items.filter((it) => it.expected === 'not_met').length, id).toBeGreaterThanOrEqual(1);
-      expect(sets[0]!.criterion, id).toContain('states that finding correctly');
-      // The penalty set of the same patient asks the same texts, each expected the other way, except
-      // a partial note (a true finding that misses the one the item turns on: the nodule's pilot-1
-      // plan, P19), which meets neither; at least one wrong note meets the penalty.
-      const mirror = penalty.filter((p) => p.items.map((it) => it.text).join('\n') === items.map((it) => it.text).join('\n'));
-      expect(mirror, id).toHaveLength(1);
-      const pairs = items.map((it, i) => [it.expected, mirror[0]!.items[i]!.expected]);
-      expect(pairs.filter(([note, pen]) => note === 'met' && pen !== 'not_met'), id).toEqual([]);
-      expect(pairs.filter(([note, pen]) => note === 'not_met' && pen === 'met').length, id).toBeGreaterThanOrEqual(1);
-      expect(pairs.filter(([note, pen]) => note === 'not_met' && pen === 'not_met').length, id).toBe(id === 'nodule_note' ? 2 : 0);
-      expect(mirror[0]!.criterion).toContain('contradicts');
-    }
+    expect(probes.map((p) => [p.check, p.about])).toEqual([['note_contradicts_result', 'Patient/pt-0008']]);
+    const items = probes[0]!.items;
+    expect(items.filter((it) => it.expected === 'not_met').length).toBeGreaterThanOrEqual(3);
+    expect(items.filter((it) => it.expected === 'met').length).toBeGreaterThanOrEqual(1);
   });
 
   it('--probes --dry-run prints the projection of every set and makes 0 calls; a task with no probes is a usage error', { timeout: SLOW }, async () => {
     const h = harness({ existing });
     expect(await main(['--task', 'results-inbox', '--probes', '--dry-run'], h.deps)).toBe(0);
-    expect(h.text()).toMatch(/^judge-calibrate dry run: results-inbox: [34] probes of cyst_closed_no_follow_up x 2 calls, worst case \$/m);
-    for (const id of [...NOTE_ITEMS, 'note_contradicts_result']) expect(h.text()).toMatch(new RegExp(`^judge-calibrate dry run: results-inbox: \\d+ probes of ${id}( \\(Patient/pt-\\d+\\))? x 2 calls, worst case \\$`, 'm'));
+    expect(h.text()).toMatch(/^judge-calibrate dry run: results-inbox: \d+ probes of note_contradicts_result \(Patient\/pt-0008\) x 2 calls, worst case \$/m);
     expect(projectionOf(h.text())).toBeGreaterThan(0);
     expect(h.fetch).not.toHaveBeenCalled();
     expect(h.written).toHaveLength(0);

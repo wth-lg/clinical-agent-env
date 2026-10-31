@@ -1,7 +1,7 @@
 // What each check of a task requires, as the Tasks view shows it, read from the task itself:
-// the text its traces_to names (a policy section 'RBC-PHARM-07 §2', or a prompt line
-// 'instruction.md:3'), and, for a judged or hybrid rubric item, the criterion or field it puts to
-// the judge. Those live in the item's closure (packages/grader/check.ts judged, hybrid), so the
+// the text its traces_to names (a policy section 'RBC-PHARM-07 §2', a policy's preamble
+// 'RBC-RAD-07', or a prompt line 'instruction.md:3'), and, for a judged or hybrid rubric item,
+// the criterion or field it puts to the judge. Those live in the item's closure (packages/grader/check.ts judged, hybrid), so the
 // item runs once on an empty context whose judge and extract record the question and answer
 // nothing; no model is asked. And the reference solution: the oracle's tool calls, in order.
 import type { Task } from '../../../../packages/core/tasks.ts';
@@ -12,6 +12,13 @@ import type { Script } from '../../../../packages/grader/matrix/types.ts';
 export function sourceText(task: Task, tracesTo: string): string | null {
   const line = /^instruction\.md:(\d+)$/.exec(tracesTo);
   if (line) return task.instruction.split('\n')[Number(line[1]) - 1]?.trim() || null;
+  // A bare policy id names the policy's preamble, before §1 (T5's review rule, W1 probe).
+  const whole = /^(\S+)$/.exec(tracesTo) && task.policies.find((p) => p.id === tracesTo);
+  if (whole) {
+    const lines = whole.text.split('\n');
+    const first = lines.findIndex((l) => /^§\d+/.test(l));
+    return lines.slice(0, first < 0 ? undefined : first).join('\n').trim() || null;
+  }
   const sec = /^(\S+)\s+§(\d+)$/.exec(tracesTo);
   const policy = sec && task.policies.find((p) => p.id === sec[1]);
   if (!sec || !policy) return null;

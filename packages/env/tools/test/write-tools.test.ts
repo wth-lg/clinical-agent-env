@@ -34,6 +34,12 @@ const CATALOG: CatalogEntry[] = [
 ];
 const POLICIES: Policy[] = [{ id: 'RBC-TEST-01', title: 'Test', version: '1', effective: '2026-01-01', source: 'environment-local', text: 'Text.' }];
 
+// An active generated order by patient and drug, as the world now holds it (builder-249: the W1
+// probes stopped or completed the orders these tests named by id, mr-00005 and mr-00046).
+const activeOrder = (patient: string, drug: RegExp): string =>
+  (base.find((r) => r.resourceType === 'MedicationRequest' && (r as MedicationRequest).status === 'active' && (r as MedicationRequest).subject?.reference === `Patient/${patient}` && drug.test((r as MedicationRequest).medicationCodeableConcept?.text ?? '')) as MedicationRequest).id!;
+const MR_1 = activeOrder('pt-0001', /simvastatin/);
+
 // Inbox items in the queue convention list_inbox reads (read/context.ts).
 const inboxTask = (id: string, queue: string, patient: string, status: Task['status'] = 'requested'): Task => ({
   resourceType: 'Task',
@@ -50,7 +56,7 @@ const inboxTask = (id: string, queue: string, patient: string, status: Task['sta
 });
 const INBOX = [inboxTask('task-w-1', 'results', 'pt-0001'), inboxTask('task-w-2', 'messages', 'pt-0001'), inboxTask('task-w-3', 'results', 'pt-0001', 'completed')];
 // A test-only on-hold request and an entered-in-error allergy, so every transition has a subject.
-const ON_HOLD: MedicationRequest = { ...(base.find((r) => r.id === 'mr-00005') as MedicationRequest), id: 'mr-w-hold', status: 'on-hold' };
+const ON_HOLD: MedicationRequest = { ...(base.find((r) => r.id === MR_1) as MedicationRequest), id: 'mr-w-hold', status: 'on-hold' };
 // pt-0009's first allergy, by patient: world ids move when the world is rebuilt.
 const { clinicalStatus: _active, ...ALG_1 } = base.find((r) => r.resourceType === 'AllergyIntolerance' && r.patient.reference === 'Patient/pt-0009') as AllergyIntolerance;
 const ALG_ID = ALG_1.id!;
@@ -172,7 +178,7 @@ describe('order_medication', () => {
     // Step 4: Medplum rejects the control character in the reason text, mapped back to the input.
     expect(await rejected(c, 'order_medication', { ...metformin, reason: 'bad \u0001 char' })).toMatchObject({ code: 'INVALID_INPUT', field: 'reason' });
     // replaces: another patient's request, then a completed one.
-    expect(await rejected(c, 'order_medication', { ...metformin, replaces: 'mr-00005', patient: 'pt-0002' })).toMatchObject({ code: 'INVALID_INPUT', field: 'replaces' });
+    expect(await rejected(c, 'order_medication', { ...metformin, replaces: MR_1, patient: 'pt-0002' })).toMatchObject({ code: 'INVALID_INPUT', field: 'replaces' });
     const completed = base.find((r) => r.resourceType === 'MedicationRequest' && (r as MedicationRequest).status === 'completed') as MedicationRequest;
     expect(await rejected(c, 'order_medication', { ...metformin, patient: completed.subject!.reference, replaces: completed.id }))
       .toMatchObject({ code: 'CONFLICT', field: 'replaces' });
@@ -180,24 +186,24 @@ describe('order_medication', () => {
 
   it('replaces: stops the old request and links the new one, one Provenance for both', () => {
     const c = fresh();
-    const r = callTool(TOOLS, 'order_medication', { ...metformin, replaces: 'MedicationRequest/mr-00005' }, c);
-    expect(r.written_ids).toEqual(['MedicationRequest/mr-00005', 'MedicationRequest/mr-t0001', 'Provenance/prov-t0001']);
-    expect(get<MedicationRequest>(c, 'MedicationRequest/mr-00005').status).toBe('stopped');
-    expect(get<MedicationRequest>(c, 'MedicationRequest/mr-t0001').priorPrescription).toEqual({ reference: 'MedicationRequest/mr-00005' });
+    const r = callTool(TOOLS, 'order_medication', { ...metformin, replaces: `MedicationRequest/${MR_1}` }, c);
+    expect(r.written_ids).toEqual([`MedicationRequest/${MR_1}`, 'MedicationRequest/mr-t0001', 'Provenance/prov-t0001']);
+    expect(get<MedicationRequest>(c, `MedicationRequest/${MR_1}`).status).toBe('stopped');
+    expect(get<MedicationRequest>(c, 'MedicationRequest/mr-t0001').priorPrescription).toEqual({ reference: `MedicationRequest/${MR_1}` });
     const targets = get<Provenance>(c, 'Provenance/prov-t0001').target.map((t) => [t.reference, t.extension?.[0]?.valueCodeableConcept?.coding?.[0]?.code]);
-    expect(targets).toEqual([['MedicationRequest/mr-00005', 'UPDATE'], ['MedicationRequest/mr-t0001', 'CREATE']]);
+    expect(targets).toEqual([[`MedicationRequest/${MR_1}`, 'UPDATE'], ['MedicationRequest/mr-t0001', 'CREATE']]);
   });
 });
 
 describe('change_medication', () => {
   it('runs stop, hold and resume transitions and refuses illegal ones with CONFLICT', async () => {
     const c = fresh();
-    expect(ok(callTool(TOOLS, 'change_medication', { medication_request: 'mr-00005', action: 'hold', reason: 'procedure' }, c))).toEqual({ medication_request: 'MedicationRequest/mr-00005', status: 'on-hold' });
-    expect(await rejected(c, 'change_medication', { medication_request: 'mr-00005', action: 'hold', reason: 'again' })).toMatchObject({ code: 'CONFLICT', field: 'action' });
-    expect(ok(callTool(TOOLS, 'change_medication', { medication_request: 'mr-00005', action: 'resume', reason: 'done' }, c)).status).toBe('active');
-    expect(ok(callTool(TOOLS, 'change_medication', { medication_request: 'mr-00005', action: 'stop', reason: 'no longer needed' }, c)).status).toBe('stopped');
-    expect(get<MedicationRequest>(c, 'MedicationRequest/mr-00005').statusReason).toEqual({ text: 'no longer needed' });
-    expect(await rejected(c, 'change_medication', { medication_request: 'mr-00005', action: 'resume', reason: 'x' })).toMatchObject({ code: 'CONFLICT', field: 'action' });
+    expect(ok(callTool(TOOLS, 'change_medication', { medication_request: MR_1, action: 'hold', reason: 'procedure' }, c))).toEqual({ medication_request: `MedicationRequest/${MR_1}`, status: 'on-hold' });
+    expect(await rejected(c, 'change_medication', { medication_request: MR_1, action: 'hold', reason: 'again' })).toMatchObject({ code: 'CONFLICT', field: 'action' });
+    expect(ok(callTool(TOOLS, 'change_medication', { medication_request: MR_1, action: 'resume', reason: 'done' }, c)).status).toBe('active');
+    expect(ok(callTool(TOOLS, 'change_medication', { medication_request: MR_1, action: 'stop', reason: 'no longer needed' }, c)).status).toBe('stopped');
+    expect(get<MedicationRequest>(c, `MedicationRequest/${MR_1}`).statusReason).toEqual({ text: 'no longer needed' });
+    expect(await rejected(c, 'change_medication', { medication_request: MR_1, action: 'resume', reason: 'x' })).toMatchObject({ code: 'CONFLICT', field: 'action' });
     expect(await rejected(c, 'change_medication', { medication_request: 'mr-nope', action: 'stop', reason: 'x' })).toMatchObject({ code: 'NOT_FOUND', field: 'medication_request' });
     expect(await rejected(c, 'change_medication', { medication_request: 'mr-w-hold', action: 'modify', reason: 'x' })).toMatchObject({ code: 'INVALID_INPUT', field: 'new_dose' });
     expect(await rejected(c, 'change_medication', { medication_request: 'mr-w-hold', action: 'stop', reason: 'x', new_dose: { value: 1, unit: 'mg', frequency: 'QD' } }))
@@ -224,7 +230,7 @@ describe('order_service', () => {
   const ct = { patient: 'pt-0001', code: 'IMG-CT-CHEST-WO', priority: 'routine', occurrence_start: '2027-06-04', occurrence_end: '2027-07-04', reason: 'nodule follow-up' };
   it('creates sr-t0001 with the occurrence window, supporting and based_on references', () => {
     const c = fresh();
-    const r = callTool(TOOLS, 'order_service', { ...ct, supporting: ['DocumentReference/doc-00001'], based_on: ['MedicationRequest/mr-00005'] }, c);
+    const r = callTool(TOOLS, 'order_service', { ...ct, supporting: ['DocumentReference/doc-00001'], based_on: [`MedicationRequest/${MR_1}`] }, c);
     expect(ok(r)).toEqual({ service_request: 'ServiceRequest/sr-t0001' });
     expect(get<ServiceRequest>(c, 'ServiceRequest/sr-t0001')).toMatchObject({
       status: 'active',
@@ -235,7 +241,7 @@ describe('order_service', () => {
       authoredOn: stamp(1),
       code: { coding: [{ system: 'urn:riverbend:orders', code: 'IMG-CT-CHEST-WO' }] },
       supportingInfo: [{ reference: 'DocumentReference/doc-00001' }],
-      basedOn: [{ reference: 'MedicationRequest/mr-00005' }],
+      basedOn: [{ reference: `MedicationRequest/${MR_1}` }],
     });
   });
   it('rejects bad windows, codes and references, naming the field', async () => {
@@ -280,7 +286,7 @@ describe('create_task', () => {
     expect(await rejected(c, 'create_task', { ...task, owner: 'Patient/pt-0001' })).toMatchObject({ code: 'INVALID_INPUT', field: 'owner' });
     expect(await rejected(c, 'create_task', { ...task, owner: 'pr-nobody' })).toMatchObject({ code: 'NOT_FOUND', field: 'owner' });
     expect(await rejected(c, 'create_task', { ...task, due: '2026-10-23T07:59:59-04:00' })).toMatchObject({ code: 'INVALID_INPUT', field: 'due' });
-    expect(await rejected(c, 'create_task', { ...task, focus: 'MedicationRequest/mr-00005', patient: 'pt-0002' })).toMatchObject({ code: 'INVALID_INPUT', field: 'focus' });
+    expect(await rejected(c, 'create_task', { ...task, focus: `MedicationRequest/${MR_1}`, patient: 'pt-0002' })).toMatchObject({ code: 'INVALID_INPUT', field: 'focus' });
   });
 });
 
@@ -304,7 +310,7 @@ describe('send_message', () => {
   });
   it('rejects mixed patients and an unknown or wrong-type recipient', async () => {
     const c = fresh();
-    const msg = { recipient: 'Patient/pt-0002', priority: 'routine', subject: 's', body: 'b', about: ['MedicationRequest/mr-00005'] };
+    const msg = { recipient: 'Patient/pt-0002', priority: 'routine', subject: 's', body: 'b', about: [`MedicationRequest/${MR_1}`] };
     expect(await rejected(c, 'send_message', msg)).toMatchObject({ code: 'INVALID_INPUT', field: 'about[0]' });
     expect(await rejected(c, 'send_message', { ...msg, recipient: 'Organization/org-riverbend', about: [] })).toMatchObject({ code: 'INVALID_INPUT', field: 'recipient' });
     expect(await rejected(c, 'send_message', { ...msg, recipient: 'Practitioner/pr-nobody', about: [] })).toMatchObject({ code: 'NOT_FOUND', field: 'recipient' });

@@ -102,9 +102,11 @@ describe('T1 worklist probe: discoverability', () => {
     }
   });
 
-  it('records the lure on page 1 of the newest-first vital-sign and all-Observation searches (rulings R19: allowed, the item is reasoning)', () => {
+  // On the six-probe world (W1 train, builder-249) the other worklists' newer results fill page 1
+  // of the all-Observation sort, so the lure shows only on the vital-sign one.
+  it('records the lure on page 1 of the newest-first vital-sign search, and not of the all-Observation one (rulings R19: allowed, the item is reasoning)', () => {
     expect(page1('fhir_search', { resource_type: 'Observation', category: 'vital-signs', sort: '-date' })).toContain(ref('Observation/obs-t1-1505'));
-    expect(page1('fhir_search', { resource_type: 'Observation', sort: '-date' })).toContain(ref('Observation/obs-t1-1505'));
+    expect(page1('fhir_search', { resource_type: 'Observation', sort: '-date' })).not.toContain(ref('Observation/obs-t1-1505'));
   });
 
   it('records the targeted searches that reach the class-deciding records on page 1 (the routes the policy implies)', () => {
