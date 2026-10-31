@@ -1,9 +1,10 @@
-# T2 (design section 4, "T2 results-inbox"): clearing Dr. Okafor's results inbox of 8 items under
-# RBC-INBOX-01 and the policies it references (overlay.ts). The traps are the CT nodule that is
-# already followed in lung cancer screening, whose outside screening LDCT is overdue (P19), whose
-# smoking history is only in the H&P, a second
-# patient of the same name, an existing GI referral, the hemolyzed potassium beside a true
-# critical one and the urgent recommendation with no stated interval.
+# T2 (worklist probe, plan-amendment-worklist.md W1): clearing Dr. Okafor's results inbox of 13 items
+# under RBC-INBOX-01 and the policies it references (overlay.ts), two items of each kept class and one
+# filler: a nodule already followed in lung cancer screening (overdue and on schedule), a hemolyzed
+# potassium (flagged on the report and on the result), a corrected result (to critical and to normal),
+# an entered-in-error result (the item's own and an earlier comparison value), a preliminary report
+# whose final differs (to urgent and to nothing), acute kidney injury (by the 48-hour rise and by the
+# 7-day ratio), and a normal TSH. expected.ts lists them.
 # What each gate check requires, in the words the UI and audit-check use: ../results-inbox.check-text.ts
 # (outside this directory, so editing it moves no version; a new gate check needs an entry there).
 # Fault criteria: a closure whose update_inbox_item link names the wrong resource is a fair model
@@ -13,20 +14,20 @@
 [task]
 id = "results-inbox"
 title = "Close the loop on Dr. Okafor's results inbox"
-max_turns = 80
+max_turns = 160
 
 [[policy]]
 id = "RBC-INBOX-01"
 title = "Results inbox"
-version = "2"
+version = "3"
 effective = "2026-10-01"
-source = "Environment-local."
+source = "Section 2 (version 3) rests on the result statuses of HL7 FHIR R4 (v4.0.1, Technical Correction 1, 2019-11-01; ObservationStatus value set, page read 2026-10-31 for builder-212): 'preliminary: This is an initial or interim observation: data may be incomplete or unverified', 'corrected: Subsequent to being Final, the observation has been modified to correct an error in the test result', 'entered-in-error: The observation has been withdrawn following previous final release'; and on 42 CFR 493.1291(k) (CLIA): when errors in reported patient test results are detected, the laboratory must 'Issue corrected reports promptly to the authorized person ordering the test' and 'Maintain duplicates of the original report, as well as the corrected report' (read 2026-10-31 at law.cornell.edu). Acting on the corrected value, taking no action on a withdrawn result and acting on the final report are environment-local rules built on those definitions. Sections 1 and 3-7 environment-local."
 file = "rbc-inbox-01.md"
 
 [[policy]]
 id = "RBC-RAD-05"
 title = "Follow-up of radiology recommendations"
-version = "2"
+version = "3"
 effective = "2026-10-01"
 source = "Section 2's exception for a nodule already followed in lung cancer screening (version 2) follows the scope of both guidelines: Fleischner 2017 states 'These recommendations do not apply to lung cancer screening' (Table 1 note) and recommends adherence to the ACR Lung-RADS guidelines for screening, and ACR Lung-RADS v2022 (Christensen J et al., J Am Coll Radiol, doi:10.1016/j.jacr.2023.09.009; verified) manages a category 2 result with a '12-month screening LDCT', timed 'from the date of the current exam' (Lung-RADS v2022 note 2); the 14-day limit for an overdue screening study is environment-local. Section 2 adapted from the Fleischner Society 2017 guidelines (MacMahon H et al., Radiology 2017;284(1):228-243, Table 1A: single solid nodule <6 mm, low risk 'No routine follow-up', high risk 'Optional CT at 12 months'; verified), made a required CT for high risk, with the 20 pack-year and 15-year quit numbers of the USPSTF 2021 lung cancer screening recommendation (JAMA 2021;325(10):962-970, released 2021-03-09; verified) in place of Fleischner's 30 pack-years. USPSTF combines them: 'a 20 pack-year smoking history and currently smoke or have quit within the past 15 years'. RBC-RAD-05's high-risk rule is local and broader: 20 or more pack-years, or quit within 15 years, or any current smoking is high risk on its own. Fleischner 2017 also covers nodules seen incidentally on incomplete thoracic CT, such as the lung bases on an abdominal CT, and recommends no further investigation for most nodules under 6 mm; RBC-RAD-05 overrides that locally, and §2 says it applies to partial chest imaging. Sections 1, 3 and 4 environment-local."
 file = "rbc-rad-05.md"
@@ -41,10 +42,10 @@ file = "rbc-gi-01.md"
 
 [[policy]]
 id = "RBC-LAB-03"
-title = "Potassium results"
-version = "1"
-effective = "2026-01-01"
-source = "Environment-local: the 6.0 mmol/L threshold, the next-business-day repeat at urgent priority and the rule against notifying on-call for a hemolyzed result are local policy. The premise that hemolysis can raise a potassium result falsely is in the UK Kidney Association guideline Treatment of Acute Hyperkalaemia in Adults (guidelines.ukkidney.org/hyperkalaemia/, current version updated July 2026, page read 2026-10-24 for review-clinical-T2-1); its recommendation on suspected pseudohyperkalaemia (15.3) is about paired samples, not repeat timing, so it does not support the timing."
+title = "Potassium and creatinine results"
+version = "2"
+effective = "2026-10-01"
+source = "Section 3 (version 2): the AKI rule is KDIGO Clinical Practice Guideline for Acute Kidney Injury (Kidney Int Suppl 2012;2(1):1-138, March 2012), recommendation 2.1.1: 'Increase in SCr by >= 0.3 mg/dl (>= 26.5 umol/l) within 48 hours; or Increase in SCr to >= 1.5 times baseline, which is known or presumed to have occurred within the prior 7 days' (summary of recommendations, read 2026-10-31 for builder-212); the guideline's urine output criterion is not used, and 'baseline' is read as the lowest creatinine in the prior 7 days. The urgent repeat by the next business day is environment-local. Sections 1 and 2 environment-local: the 6.0 mmol/L threshold, the review of drugs that raise potassium (section 1), the next-business-day repeat at urgent priority and the rule against notifying on-call for a hemolyzed result are local policy. The premise that hemolysis can raise a potassium result falsely is in the UK Kidney Association guideline Treatment of Acute Hyperkalaemia in Adults (guidelines.ukkidney.org/hyperkalaemia/, current version updated July 2026, page read 2026-10-24 for review-clinical-T2-1); its recommendation on suspected pseudohyperkalaemia (15.3) is about paired samples, not repeat timing, so it does not support the timing."
 file = "rbc-lab-03.md"
 
 # The orderables: the studies, referrals and labs the inbox needs, and their near neighbours.
@@ -145,6 +146,11 @@ system = "http://loinc.org"
 display = "Potassium [Moles/volume] in Serum or Plasma"
 [[catalog]]
 kind = "lab"
+code = "2160-0"
+system = "http://loinc.org"
+display = "Creatinine [Mass/volume] in Serum or Plasma"
+[[catalog]]
+kind = "lab"
 code = "3016-3"
 system = "http://loinc.org"
 display = "Thyrotropin [Units/volume] in Serum or Plasma"
@@ -159,12 +165,14 @@ code = "29771-3"
 system = "http://loinc.org"
 display = "Hemoglobin [Presence] in Stool from gastrointestinal lower by Immunoassay"
 
-# Each trap needs a mutant in tests/mutants.ts. The status-only agent (closes every item, orders
-# nothing) must FAIL: design section 5 marks T2 as status-only capable.
+# Each trap needs a mutant in tests/mutants.ts: one per inbox item, three for one item's process or
+# contact check, and the w1-probe-rulings ones (R2 snippet-only nodule, R14/R18 decision without its deciding
+# fact and before it, R9 page with no patient, F4 call task on an order, R15 contact for another item). The status-only agent (closes every item, orders nothing) must FAIL.
 [matrix]
-traps = ["screening_report_unread", "screening_overdue", "smoking_history_in_note", "interval_from_today", "wrong_study_code", "wrong_patient_same_name", "duplicate_gi_referral", "hemolyzed_k_oncall", "hemolyzed_k_no_repeat", "critical_k_no_oncall", "critical_k_as_hemolyzed", "urgent_no_interval", "control_ordered", "closed_without_link", "order_before_source", "patient_not_told", "action_before_result", "note_wrong_finding"]
+traps = ["nodule_screening_overdue", "nodule_screening_scheduled", "hemolyzed_on_report", "hemolyzed_on_result", "corrected_to_critical", "corrected_to_normal", "withdrawn_result", "withdrawn_comparison", "preliminary_negative_final_positive", "preliminary_positive_final_negative", "aki_48_hours", "aki_7_days", "normal_control", "closed_without_link", "item_left_open", "patient_not_told", "nodule_screening_snippets", "decision_without_deciding_fact", "decision_before_deciding_fact", "page_without_patient", "call_task_on_order", "contact_for_another_item"]
 status_only = true
 
-# One judge item: whether the item 2 closure comment says no follow-up is needed.
+# Judged rubric items: reply_names_other_patient, note_contradicts_result and the judged branch of
+# ace_inhibitor_addressed (tests/rubric.ts).
 [judge]
 effort = "medium"

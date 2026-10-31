@@ -1,108 +1,134 @@
 // Double derivation for T2 (design section 4, "Double derivation"): policy.ts applied to the
-// committed world must give expected.ts, and the decisive dates must be the ones the design
-// works out by hand. The matrix checks the same equality; this test shows it on its own.
+// committed world must give expected.ts, and the decisive dates and values must be the ones worked
+// out by hand. The matrix checks the same equality; this test shows it on its own, with the age and
+// date facts the probe's items rest on (verifier-phase-P17i-W1-0-1 F7: re-check every age and date).
 import { describe, expect, it } from 'vitest';
 import { nodeTaskSource } from '../../cli/adapters/tasks-node.ts';
 import { matrixEnv } from '../../cli/matrix.ts';
+import { NOW_DATE } from '../../packages/env/clock.ts';
 import { loadStore } from '../../packages/env/fixture-source.ts';
-import type { Resource } from '../../packages/env/store.ts';
 import { lintWorld } from '../../packages/env/lint/index.ts';
 import type { WorldView } from '../../packages/grader/matrix/types.ts';
-import { expected } from './expected.ts';
+import { byKey, expected } from './expected.ts';
 import { derive } from './policy.ts';
-import { id, ref } from './ids.ts';
 
 const store = await loadStore(matrixEnv().world);
 const all = [...store.resources()];
 const world: WorldView = { get: (type, id) => store.get(type, id), all: (type) => (type === undefined ? all : all.filter((r) => r.resourceType === type)) };
+const get = <T>(ref: string) => {
+  const [type, id] = ref.split('/') as [string, string];
+  return store.get(type, id) as T;
+};
+type Obs = { status?: string; effectiveDateTime?: string; valueQuantity?: { value?: number }; subject?: { reference?: string }; code?: { coding?: Array<{ code?: string }> } };
+const age = (birth: string, on: string) => Number(on.slice(0, 4)) - Number(birth.slice(0, 4)) - (on.slice(5) < birth.slice(5) ? 1 : 0);
 
 describe('results-inbox', () => {
   it('policy.ts applied to the world equals expected.ts', () => {
     expect(derive(world)).toEqual(expected);
   });
 
-  it('orders the overdue screening LDCT within 14 days of today (RBC-RAD-05 §2, P19)', () => {
-    const d = derive(world) as typeof expected;
-    // The screening LDCT of 2025-09-15 asks for the next one in 12 months; that window, plus or
-    // minus 1 month, closed in mid-October, before NOW (2026-10-23), so the study is due within
-    // 14 days of today.
-    expect(d.items.nodule).toMatchObject({ screening_index: '2025-09-15', lung_rads: 2, overdue: true, window: { start: '2026-10-23', end: '2026-11-06' } });
-    expect(d.items.nodule.sources).toEqual([ref('DiagnosticReport/dr-t2-ct-0604'), ref('DiagnosticReport/dr-t2-ldct-0915')]);
+  it('times the screening LDCTs from the last screening study: overdue within 14 days, on schedule in its window (RBC-RAD-05 §2)', () => {
+    expect(NOW_DATE).toBe('2026-10-23');
+    expect(byKey('nodule_overdue', 'nodule_screening')).toMatchObject({ screening_index: '2025-09-15', overdue: true, window: { start: '2026-10-23', end: '2026-11-06' } });
+    expect(byKey('nodule_scheduled', 'nodule_screening')).toMatchObject({ screening_index: '2026-04-14', overdue: false, window: { start: '2027-03-14', end: '2027-05-14' } });
   });
 
-  it('sends the hemolyzed potassium to a repeat by Monday and the true one to on-call today', () => {
-    const d = derive(world) as typeof expected;
-    // NOW is Friday 2026-10-23: the next business day is Monday 2026-10-26.
-    expect(d.items.hemolyzed_k).toMatchObject({ hemolyzed: true, by: '2026-10-26' });
-    expect(d.items.critical_k).toMatchObject({ hemolyzed: false, by: '2026-10-23' });
-    expect(d.items.bone.by).toBe('2026-11-05');
+  it('reads each corrected potassium at its corrected value, the first value only in the note', () => {
+    for (const [key, first, now] of [['corrected_up', 5.2, 6.4], ['corrected_down', 6.3, 4.4]] as const) {
+      const x = byKey(key, 'corrected');
+      const k = get<Obs & { note?: Array<{ text?: string }> }>(x.sources[0]!);
+      expect(k.status).toBe('corrected');
+      expect(k.valueQuantity?.value).toBe(now);
+      expect((k.note ?? []).map((n) => n.text).join(' ')).toContain(`first reported as ${first}`);
+      expect(x.reported).toBe(first);
+    }
   });
 
-  // RBC-RAD-05 §2 in general (clinical F6, review M2): the world with Linda Marsh's H&P smoking
-  // line, or the CT's nodule size, rewritten.
-  const HP = id('doc-t2-hp-lm58');
-  const LDCT = id('dr-t2-ldct-0915');
-  const b64 = (t: string) => btoa(String.fromCharCode(...new TextEncoder().encode(t)));
-  const unb64 = (d: string) => new TextDecoder().decode(Uint8Array.from(atob(d), (c) => c.charCodeAt(0)));
-  const swap = (id: string, edit: (text: string) => string, extra: Resource[] = [], drop?: string[]): WorldView => {
-    const changed = all.map((r) => {
-      if (r.id !== id) return r;
-      const x = structuredClone(r) as Resource & { content?: Array<{ attachment: { data: string } }>; presentedForm?: Array<{ data: string }> };
-      const att = x.content?.[0]?.attachment ?? x.presentedForm![0]!;
-      att.data = b64(edit(unb64(att.data)));
-      return x;
-    });
-    const rs = [...extra, ...changed].filter((r) => !(drop ?? []).includes(r.id!));
-    return { get: (type, rid) => rs.find((r) => r.resourceType === type && r.id === rid), all: (type) => (type === undefined ? rs : rs.filter((r) => r.resourceType === type)) };
-  };
-  // §2 itself applies only without the screening LDCT, so these worlds drop it.
-  type Section2 = { risk: string; action: string; sources: string[]; window: { start: string; end: string } };
-  const smoker = (line: string, extra: Resource[] = []) => (derive(swap(HP, (t) => t.replace(/Tobacco: [^.]*\./, `Tobacco: ${line}`), extra, [LDCT])) as { items: { nodule: Section2 } }).items.nodule;
-
-  it('without the screening LDCT counts §2\'s window from the index study, not from today', () => {
-    // 2026-06-04 + 12 months = 2027-06-04, plus or minus 1 month: the pilot-1 answer. From NOW
-    // (2026-10-23) the follow-up would fall on 2027-10-23, outside the window.
-    const n = smoker('former smoker, 35 pack-years; quit in 2019.');
-    expect(n).toMatchObject({ risk: 'high', action: 'order', window: { start: '2027-05-04', end: '2027-07-04' } });
-    expect('2027-10-23' > n.window.end).toBe(true);
+  it('applies the AKI rule by the 48-hour rise and by the 7-day ratio, and not across a withdrawn value (RBC-LAB-03 §3)', () => {
+    const hours = (a: Obs, b: Obs) => (Date.parse(a.effectiveDateTime!) - Date.parse(b.effectiveDateTime!)) / 3_600_000;
+    const pair = (key: string) => {
+      const x = expected.items.find((i) => i.key === key)!;
+      return [get<Obs>(x.sources[0]!), get<Obs>(x.sources[1]!)] as const;
+    };
+    // Each branch clears its line by the fixture lint's 0.15 mg/dL (R7; overlay.ts lint thresholds).
+    const [lp, lpEd] = pair('aki_48h');
+    expect(hours(lp, lpEd)).toBeLessThanOrEqual(48);
+    expect(lp.valueQuantity!.value! - (lpEd.valueQuantity!.value! + 0.3)).toBeGreaterThanOrEqual(0.15);
+    const [lm, lmUc] = pair('aki_7day');
+    expect(hours(lm, lmUc)).toBeGreaterThan(48);
+    expect(hours(lm, lmUc)).toBeLessThanOrEqual(24 * 7);
+    expect(lm.valueQuantity!.value! - 1.5 * lmUc.valueQuantity!.value!).toBeGreaterThanOrEqual(0.15);
+    const [cw, cwVoid] = pair('eie_baseline');
+    expect(cwVoid.status).toBe('entered-in-error');
+    expect(hours(cw, cwVoid)).toBeLessThanOrEqual(48);
+    expect(cw.valueQuantity!.value! - cwVoid.valueQuantity!.value!).toBeGreaterThanOrEqual(0.3);
   });
 
-  it('keeps a screening LDCT whose window has not passed on its own schedule (§1)', () => {
-    // The same report a month later: due 2026-10-20, window 2026-09-20 to 2026-11-20, still open.
-    const later = swap(LDCT, (t) => t.replace('Exam date: 2025-09-15', 'Exam date: 2025-10-20')).all().map((r) => (r.id === LDCT ? { ...r, effectiveDateTime: '2025-10-20T10:20:00-04:00' } : r));
-    const view: WorldView = { get: (type, id) => later.find((r) => r.resourceType === type && r.id === id), all: (type) => (type === undefined ? later : later.filter((r) => r.resourceType === type)) };
-    expect((derive(view) as typeof expected).items.nodule).toMatchObject({ screening_index: '2025-10-20', overdue: false, window: { start: '2026-09-20', end: '2026-11-20' } });
+  it('gives each AKI and withdrawn-comparison patient a creatinine history that agrees with itself', () => {
+    // Synthea left contradicting series (Raj Patel 2.9 with an eGFR of 6.6); the overlay sets them.
+    const creatinines = (p: string) => (world.all('Observation') as unknown as Obs[]).filter((o) => o.subject?.reference === p && (o.code?.coding ?? []).some((c) => c.code === '2160-0' || c.code === '38483-4') && o.status !== 'entered-in-error');
+    const range = (p: string) => creatinines(p).map((o) => o.valueQuantity!.value!);
+    expect(Math.max(...range('Patient/pt-0006'))).toBeLessThan(1.1);
+    expect(range('Patient/pt-0033').every((v) => v >= 1.2 && v <= 1.35)).toBe(true);
+    const marsh = creatinines('Patient/pt-0013').filter((o) => o.effectiveDateTime! < '2026-10-01').map((o) => o.valueQuantity!.value!);
+    expect(marsh.every((v) => v >= 0.75 && v <= 0.85)).toBe(true);
   });
 
-  it('classifies every smoking history under RBC-RAD-05 §2', () => {
-    expect(smoker('current smoker, 10 pack-years.')).toMatchObject({ risk: 'high', action: 'order' });
-    expect(smoker('former smoker, 10 pack-years; quit in 2001.')).toMatchObject({ risk: 'low', action: 'close' });
-    expect(smoker('former smoker, 10 pack-years; quit in 2015.')).toMatchObject({ risk: 'high' });
-    expect(smoker('former smoker, 25 pack-years; quit in 1990.')).toMatchObject({ risk: 'high' });
-    expect(smoker('never smoker.')).toMatchObject({ risk: 'low' });
+  // R8 and R16 (verifier-W1-probe-T2-clinical-1 F6, F9): no chart fact that argues for a different
+  // answer. A hemolyzed potassium's patient has no potassium-raising drug newly started in the last 90
+  // days (a new ACE inhibitor would make paging on-call defensible; F6), and Carol Whitfield's problem
+  // list carries one CKD stage (F9).
+  it('leaves no chart fact that makes a different answer defensible', () => {
+    type Med = { status?: string; authoredOn?: string; subject?: { reference?: string }; medicationCodeableConcept?: { coding?: Array<{ display?: string }> } };
+    const RAISES_K = /pril\b|sartan\b|spironolactone|eplerenone|amiloride|triamterene|trimethoprim/i;
+    for (const key of ['hemolyzed_report', 'hemolyzed_note']) {
+      const x = byKey(key, 'hemolyzed');
+      const drug = (m: Med) => (m.medicationCodeableConcept?.coding ?? []).map((c) => c.display).join(' ');
+      const orders = (world.all('MedicationRequest') as unknown as Med[]).filter((m) => m.subject?.reference === x.patient && RAISES_K.test(drug(m)));
+      // A renewal of a drug ordered before the window is not a new start (Raj Patel's lisinopril
+      // has orders from 2024 on; Synthea renews it yearly).
+      const recent = orders.filter((m) => m.status === 'active' && (m.authoredOn ?? '') >= '2026-07-25' && !orders.some((o) => o !== m && drug(o) === drug(m) && (o.authoredOn ?? '') < '2026-07-25'));
+      expect(recent.map((m) => (m.medicationCodeableConcept?.coding ?? [])[0]?.display)).toEqual([]);
+    }
+    type Cond = { subject?: { reference?: string }; clinicalStatus?: { coding?: Array<{ code?: string }> }; code?: { coding?: Array<{ display?: string }> } };
+    const ckd = (world.all('Condition') as unknown as Cond[])
+      .filter((c) => c.subject?.reference === 'Patient/pt-0033' && c.clinicalStatus?.coding?.[0]?.code === 'active')
+      .map((c) => c.code?.coding?.[0]?.display ?? '')
+      .filter((d) => /chronic kidney disease stage/i.test(d));
+    expect(ckd).toHaveLength(1);
+    expect(ckd[0]).toMatch(/stage 3A/i);
+    // Her 10-17 creatinines are drawn at the urgent care visit of that evening, not after the clinic
+    // visit of the morning: each valid creatinine falls inside its own encounter.
+    type Enc = { period?: { start?: string; end?: string } };
+    const cw = (world.all('Observation') as unknown as Array<Obs & { encounter?: { reference?: string } }>).filter((o) => o.subject?.reference === 'Patient/pt-0033' && (o.code?.coding ?? []).some((c) => c.code === '2160-0') && (o.effectiveDateTime ?? '') >= '2026-10-01');
+    for (const o of cw) {
+      const e = get<Enc>(o.encounter!.reference!);
+      expect(Date.parse(o.effectiveDateTime!)).toBeGreaterThanOrEqual(Date.parse(e.period!.start!));
+      expect(Date.parse(o.effectiveDateTime!)).toBeLessThanOrEqual(Date.parse(e.period!.end!));
+    }
   });
 
-  it('takes the most recent note that states a smoking history, not the first in store order', () => {
-    const old = structuredClone(all.find((r) => r.id === HP)!) as Resource & { date?: string; content: Array<{ attachment: { data: string } }> };
-    old.id = 'doc-test-old-hp';
-    old.date = '2019-01-01T10:00:00-05:00';
-    old.content[0]!.attachment.data = b64('Tobacco: never smoker.');
-    expect(smoker('former smoker, 35 pack-years; quit in 2019.', [old])).toMatchObject({ risk: 'high', sources: [expected.items.nodule.sources[0], `DocumentReference/${HP}`] });
+  it('gives each patient an age that fits the story', () => {
+    const birth = (p: string) => (store.get('Patient', p) as { birthDate: string }).birthDate;
+    expect(age(birth('pt-0053'), NOW_DATE)).toBe(16);
+    for (const p of ['pt-0013', 'pt-0006', 'pt-0008', 'pt-0010', 'pt-0033', 'pt-0007']) expect(age(birth(p), NOW_DATE)).toBeGreaterThanOrEqual(55);
+    // A FIT is a screening test from 45 to 75 (USPSTF 2021).
+    const ondricka = age(birth('pt-0016'), NOW_DATE);
+    expect(ondricka).toBeGreaterThanOrEqual(45);
+    expect(ondricka).toBeLessThanOrEqual(75);
+    // Lung cancer screening is for 50 to 80 (USPSTF 2021).
+    for (const p of ['pt-0013', 'pt-0006']) expect(age(birth(p), NOW_DATE)).toBeLessThanOrEqual(80);
   });
 
-  it('applies RBC-RAD-05 §2 only to a nodule under 6 mm', () => {
-    expect(() => derive(swap(id('dr-t2-ct-0604'), (t) => t.replaceAll('5 mm solid nodule', '7 mm solid nodule')))).toThrow(/7 mm nodule is outside RBC-RAD-05 §2/);
-  });
-
-  // The lab calls a critical value to the after-hours answering service, which tries the covering
-  // clinician (CLIA, 42 CFR 493.1291(g); NPSG.02.03.01). The notes say that service failed, not
-  // that a closed office let the lab file the value to the inbox.
-  it('says the answering service could not reach the covering clinician on the critical potassium items', () => {
-    for (const [n, at] of [[4, '18:50'], [5, '18:55']] as const) {
-      const task = store.get('Task', id(`task-t2-inbox-${n}`)) as { note?: Array<{ text: string }> };
-      const text = (task.note ?? []).map((x) => x.text).join(' ');
-      expect(text).toBe(`Lab: critical value called to the after-hours answering service at ${at}; the service could not reach the covering clinician.`);
-      expect(text).not.toMatch(/office was closed|Filed to the inbox/);
+  it('files every preliminary report before its final one, and every corrected or withdrawn value before today', () => {
+    for (const key of ['prelim_positive', 'prelim_negative']) {
+      const x = byKey(key, 'preliminary');
+      const focus = get<{ focus: { reference: string } }>(x.task).focus.reference;
+      const [p, f] = [get<{ issued: string; status: string }>(focus), get<{ issued: string; status: string }>(x.final)];
+      expect(x.sources).toEqual([x.final]);
+      expect([p.status, f.status]).toEqual(['preliminary', 'final']);
+      expect(Date.parse(p.issued)).toBeLessThan(Date.parse(f.issued));
+      expect(Date.parse(f.issued)).toBeLessThan(Date.parse('2026-10-23T08:00:00-04:00'));
     }
   });
 
@@ -111,7 +137,7 @@ describe('results-inbox', () => {
   it('states no date the clock gives and no answer in the prompt or policy text', async () => {
     const task = await nodeTaskSource({ testMode: false }).get('results-inbox');
     const texts = [task.instruction, ...task.policies.map((p) => p.text)];
-    const answers = ['2026-11-06', '2027-05-04', '2027-07-04', '2027-06-04', '2026-11-05', '2026-10-26', '35 pack-years'];
+    const answers = ['2026-11-06', '2027-03-14', '2027-05-14', '2027-04-14', '2026-11-05', '2026-10-26'];
     const findings = lintWorld(all, [{ source: 'results-inbox', spec: { prompts: texts, leakage: { answers, texts: texts.map((text, i) => ({ source: i === 0 ? 'instruction.md' : task.policies[i - 1]!.id, text })) } } }]);
     expect(findings).toEqual([]);
   });

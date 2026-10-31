@@ -3,37 +3,51 @@
 // number (packages/env/tools/write/commit.ts: sr-t0003 is the third committed write), so a
 // script names what it created through a Writer, which numbers the writes in the order the
 // script makes them. Calls run in order, so a script must take its writes from one Writer in
-// that same order.
+// that same order. A rejected write takes no number.
 import type { ScriptCall, ScriptTurn } from '../../../packages/grader/matrix/types.ts';
 import { ref } from '../ids.ts';
 
 export const PT = {
   marsh: 'pt-0013',
-  otherMarsh: 'pt-0033',
-  parisian: 'pt-0007',
+  whitfield: 'pt-0033',
   patel: 'pt-0006',
+  parisian: 'pt-0007',
   brennan: 'pt-0008',
   holloway: 'pt-0010',
   ruiz: 'pt-0053',
   ondricka: 'pt-0016',
 } as const;
 
-export const ITEM = (n: number) => ref(`Task/task-t2-inbox-${n}` as `Task/task-t2-inbox-${1 | 2 | 3 | 4 | 5 | 6 | 7 | 8}`);
+export const ITEM = (n: number) => ref(`Task/task-t2-inbox-${n}` as `Task/task-t2-inbox-${1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13}`);
 export const SRC = {
   ct: ref('DiagnosticReport/dr-t2-ct-0604'),
   ldct: ref('DiagnosticReport/dr-t2-ldct-0915'),
   hp: ref('DocumentReference/doc-t2-hp-lm58'),
-  us: ref('DiagnosticReport/dr-t2-us-1020'),
-  fit: ref('Observation/obs-t2-fit-1019'),
-  giReferral: ref('ServiceRequest/sr-t2-gi-1020'),
+  ctRp: ref('DiagnosticReport/dr-t2-ct-rp-1019'),
+  ldctRp: ref('DiagnosticReport/dr-t2-ldct-rp-0414'),
+  hpRp: ref('DocumentReference/doc-t2-hp-rp57'),
+  bmpRp: ref('DiagnosticReport/dr-t2-bmp-rp'),
+  kRp: ref('Observation/obs-t2-rp-k'),
   bmpC: ref('DiagnosticReport/dr-t2-bmp-c-1022'),
   kC: ref('Observation/obs-t2-c-k'),
   bmpD: ref('DiagnosticReport/dr-t2-bmp-d-1022'),
   kD: ref('Observation/obs-t2-d-k'),
+  xrPrelim: ref('DiagnosticReport/dr-t2-xr-prelim-1021'),
   xr: ref('DiagnosticReport/dr-t2-xr-1022'),
   tsh: ref('Observation/obs-t2-tsh-1020'),
-  lipid: ref('DiagnosticReport/dr-t2-lipid-1020'),
-  ldl: ref('Observation/obs-t2-eo-ldl'),
+  kEo: ref('Observation/obs-t2-eo-k-1020'),
+  fit: ref('Observation/obs-t2-eo-fit-1019'),
+  bmpCw: ref('DiagnosticReport/dr-t2-bmp-cw'),
+  crCw: ref('Observation/obs-t2-cw-cr'),
+  crCwVoid: ref('Observation/obs-t2-cw-cr-1021'),
+  ctaPrelim: ref('DiagnosticReport/dr-t2-cta-prelim-1020'),
+  cta: ref('DiagnosticReport/dr-t2-cta-1021'),
+  bmpLp: ref('DiagnosticReport/dr-t2-bmp-lp'),
+  crLp: ref('Observation/obs-t2-lp-cr'),
+  crLpEd: ref('Observation/obs-t2-lped-cr'),
+  bmpLm: ref('DiagnosticReport/dr-t2-bmp-lm'),
+  crLm: ref('Observation/obs-t2-lm-cr'),
+  crLmUc: ref('Observation/obs-t2-lmuc-cr'),
 } as const;
 
 const split = (ref: string) => ref.split('/') as [string, string];
@@ -47,28 +61,43 @@ export const read = (ref: string): ScriptCall => {
 export const policy = (policy_id: string): ScriptCall => ({ name: 'read_policy', input: { policy_id } });
 export const policies = ['RBC-INBOX-01', 'RBC-RAD-05', 'RBC-GI-01', 'RBC-LAB-03'].map(policy);
 export const searchNotes = (query: string, patient?: string): ScriptCall => ({ name: 'search_notes', input: { query, ...(patient ? { patient } : {}) } });
-export const activeServiceRequests = (patient: string): ScriptCall => ({ name: 'fhir_search', input: { resource_type: 'ServiceRequest', patient, status: 'active' } });
 export const finish = (summary: string): ScriptCall => ({ name: 'finish', input: { summary } });
 
-// Linda Marsh's reports, newest first: how the reference solution finds her screening LDCT (P19).
-export const marshReports: ScriptCall = { name: 'fhir_search', input: { resource_type: 'DiagnosticReport', patient: PT.marsh, sort: '-date' } };
+// A patient's reports, newest first: how the oracle finds a screening LDCT and a final report.
+export const reportsOf = (patient: string): ScriptCall => ({ name: 'fhir_search', input: { resource_type: 'DiagnosticReport', patient, sort: '-date' } });
+// A patient's creatinines, newest first: how the oracle finds the values RBC-LAB-03 §3 compares.
+export const creatininesOf = (patient: string): ScriptCall => ({ name: 'fhir_search', input: { resource_type: 'Observation', patient, code: '2160-0,38483-4', sort: '-date' } });
 
-// Every item's source, read the way the reference solution reads them (design step 2). The lipid
-// panel's report shows only references to its members, so a member (the LDL) is read too. For the
-// nodule it also looks for earlier chest imaging and reads the screening LDCT it finds.
-export const READ_ALL: ScriptTurn[] = [
-  { calls: [inbox] },
-  { calls: [read(SRC.ct), read(SRC.us), read(SRC.fit), read(SRC.bmpC), read(SRC.kC), read(SRC.bmpD), read(SRC.kD), read(SRC.xr), read(SRC.tsh), read(SRC.lipid), read(SRC.ldl)] },
-  { calls: [searchNotes('pack', PT.marsh), read(SRC.hp), marshReports] },
-  { calls: [read(SRC.ldct)] },
-  { calls: [activeServiceRequests(PT.patel)] },
-  { calls: policies },
-];
+// The reads behind each item, in inbox order. A lab panel's report shows only references to its
+// members, so the member the item turns on is read too.
+export const ITEM_READS: Record<string, ScriptCall[]> = {
+  nodule_overdue: [read(SRC.ct), reportsOf(PT.marsh), read(SRC.ldct)],
+  nodule_scheduled: [read(SRC.ctRp), reportsOf(PT.patel), read(SRC.ldctRp)],
+  hemolyzed_report: [read(SRC.bmpRp), read(SRC.kRp)],
+  hemolyzed_note: [read(SRC.bmpC), read(SRC.kC)],
+  corrected_up: [read(SRC.bmpD), read(SRC.kD)],
+  prelim_positive: [read(SRC.xrPrelim), reportsOf(PT.ruiz), read(SRC.xr)],
+  normal_tsh: [read(SRC.tsh)],
+  corrected_down: [read(SRC.kEo)],
+  eie_result: [read(SRC.fit)],
+  eie_baseline: [read(SRC.bmpCw), read(SRC.crCw), creatininesOf(PT.whitfield)],
+  prelim_negative: [read(SRC.ctaPrelim), reportsOf(PT.parisian), read(SRC.cta)],
+  aki_48h: [read(SRC.bmpLp), read(SRC.crLp), creatininesOf(PT.parisian)],
+  aki_7day: [read(SRC.bmpLm), read(SRC.crLm), creatininesOf(PT.marsh)],
+};
 
-type Priority = 'routine' | 'urgent' | 'asap' | 'stat';
+// The oracle's reads: the inbox, the policies, then each item's records in one answer per item.
+export function readsWithout(drop: readonly ScriptCall[] = []): ScriptTurn[] {
+  const gone = new Set(drop.map((c) => JSON.stringify(c)));
+  const keep = (calls: ScriptCall[]) => calls.filter((c) => !gone.has(JSON.stringify(c)));
+  return [{ calls: [inbox] }, { calls: policies }, ...Object.values(ITEM_READS).map((calls) => ({ calls: keep(calls) })).filter((t) => t.calls.length > 0)];
+}
+export const READ_ALL: ScriptTurn[] = readsWithout();
+
+export type Priority = 'routine' | 'urgent' | 'asap' | 'stat';
 export interface Write {
   call: ScriptCall;
-  // The resource the write created, as <Type>/<id>; '' for an update.
+  // The resource the write created, as <Type>/<id>; '' for an update or a rejected write.
   ref: string;
 }
 
@@ -96,37 +125,19 @@ export function writer() {
       ref: next('DocumentReference', 'doc'),
       call: { name: 'write_note', input: { patient, type: 'progress_note', title, text, cites, cites_policies } },
     }),
-    // Any other committed write that creates nothing a script links (a medication change).
+    // Any other committed write that creates nothing a script links (a medication change, a reassign).
     other: (call: ScriptCall): Write => {
       seq++;
       return { ref: '', call };
     },
+    // A write the tool refuses: it commits nothing and takes no number.
+    rejected: (call: ScriptCall): Write => ({ ref: '', call }),
     complete: (item: number, linked: string[], comment?: string): Write => {
       seq++;
       return { ref: '', call: { name: 'update_inbox_item', input: { task_id: ITEM(item), action: 'complete', ...(linked.length ? { linked } : {}), ...(comment ? { comment } : {}) } } };
     },
   };
 }
-export const calls = (...ws: Write[]): ScriptCall[] => ws.map((w) => w.call);
+export type Writer = ReturnType<typeof writer>;
 
-// The item 2 closure comment, and the normal results'.
-export const CYST_COMMENT = 'Simple right renal cyst. The report recommends no follow-up imaging, so no follow-up is needed under RBC-RAD-05 and RBC-INBOX-01 §3.';
-export const NORMAL_COMMENT = 'Normal result, reviewed and acknowledged.';
-
-export const NOTES = {
-  nodule:
-    'Incidental 5 mm solid right lower lobe nodule on the CT abdomen and pelvis of 2026-06-04 (St. Brigid ED). ' +
-    'The same nodule is followed in lung cancer screening: Lakeshore screening LDCT of 2025-09-15, Lung-RADS 2, annual LDCT recommended. ' +
-    'Under RBC-RAD-05 §2 the next screening LDCT runs from that study (§1): due in September 2026, its window closed in mid-October, so it is overdue; ' +
-    'screening LDCT ordered within 14 days, by 2026-11-06, with a tracking task, and the patient is informed.',
-  fit: 'Positive FIT (collected 2026-10-16). Dr. Lin placed a GI referral for colonoscopy on 2026-10-20, which is active; linked to the result, no new referral (RBC-GI-01 §2).',
-  hemolyzed:
-    'Potassium 6.4 mmol/L on 2026-10-22, specimen hemolyzed and possibly falsely elevated. Under RBC-LAB-03 §2: repeat BMP ordered urgent for Monday 2026-10-26, patient asked to come in; on-call not notified.',
-  critical:
-    'Potassium 6.2 mmol/L on 2026-10-22, not hemolyzed, CKD stage 3b on lisinopril. Under RBC-LAB-03 §1: on-call clinician notified at stat priority and a stat BMP ordered today.',
-  bone:
-    'Right knee X-ray of 2026-10-22: aggressive lytic lesion of the distal femur, concerning for a primary bone tumour; the radiologist recommends urgent orthopaedic oncology referral and MRI with no interval. ' +
-    'Under RBC-RAD-05 §3 both are ordered urgent within 14 days (by 2026-11-05), with a tracking task; the patient and his mother are informed.',
-};
-
-export const DONE = 'Results inbox cleared: all 8 items completed with their follow-up orders, tasks, messages and notes linked.';
+export const DONE = 'Results inbox cleared: all 13 items completed with their follow-up orders, tasks, messages and notes linked.';

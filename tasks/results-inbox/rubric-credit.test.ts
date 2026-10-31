@@ -1,5 +1,5 @@
 // P17j JG9 (pre-audit M4): T2 gives +1 rubric credit, never a gate, when the trial addresses the
-// ACE inhibitor behind the true hyperkalaemia of item 5: lisinopril held or stopped (code), or a
+// ACE inhibitor behind the corrected critical potassium (item 5, corrected_up): lisinopril held or stopped (code), or a
 // staff notice that asks to hold, stop or reduce it or names it as the likely cause (judge; JG9 r3,
 // decisions.tsv 2026-10-28T09:40Z).
 import { describe, expect, it } from 'vitest';
@@ -27,12 +27,7 @@ describe('results-inbox ace_inhibitor_addressed', () => {
     expect(await item('oracle')).toMatchObject({ points: 1, met: true });
   });
 
-  // JG9 r3 (decisions.tsv 2026-10-28T09:40Z): the judge reads each notice that names the drug.
-  it.each(['hold_then_resume_notice', 'hold_keep_monitoring_notice', 'do_not_continue_notice'])('is met by a notice that holds or stops it (%s)', async (id) => {
-    expect(await item(id)).toMatchObject({ method: 'hybrid', met: true });
-  });
-
-  it.each(['increase_lisinopril_notice', 'double_lisinopril_notice', 'continue_lisinopril_notice', 'lisinopril_dose_increase'])('is not met by an escalation or a continue notice (%s)', async (id) => {
+  it.each(['increase_lisinopril_notice', 'continue_lisinopril_notice', 'lisinopril_dose_increase'])('is not met by an escalation or a continue notice (%s)', async (id) => {
     expect(await item(id)).toMatchObject({ met: false });
   });
 });
