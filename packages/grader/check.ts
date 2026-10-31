@@ -112,6 +112,22 @@ export interface Step {
   // text: a cut snippet leaves its note in referenced_ids, a snippet of a whole note exposes it. Derived from the recorded content (env registry shownText); query it
   // with exposure.ts shows().
   shown: Readonly<Record<string, string>>;
+  // Present only on a successful fhir_search: the structured filters of its call (ruling R20),
+  // so a gate can count a search that found nothing in the window as a review. Enumerated keys
+  // from the call's input, never free text; patient is always 'Patient/<id>'. An empty page
+  // exposes nothing, so no other field of the step says what was searched. whole is true when the
+  // page held every match (offset 0 or none, no next_offset): the only search that shows absence.
+  search?: StepSearch;
+}
+
+export interface StepSearch {
+  type: string;
+  patient?: string;
+  code?: string;
+  date_ge?: string;
+  date_le?: string;
+  status?: string;
+  whole: boolean;
 }
 
 // Null-safe reads: a resource that is not in the state is absent, never an exception.

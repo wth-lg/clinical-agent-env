@@ -147,6 +147,45 @@ describe('exposure from the read tools', () => {
     expect(shows(whole, 'doc-ws', 3, 'stop   APIXABAN')).toBe(true);
     expect(shows(whole, 'doc-ws', 3, 'Plan: stop apixaban')).toBe(true);
   });
+  it('a successful fhir_search step records its structured filters as Step.search, and nothing else does', () => {
+    // Ruling R20: an absence item counts as reviewed by a search whose filters cover the window,
+    // and an empty page shows no ids, so the step keeps the enumerated filters of its call.
+    const input = { resource_type: 'Observation', patient: 'Patient/pt-1', code: 'http://loinc.org|29463-7', date_ge: '2026-01-01', date_le: '2026-12-31', status: 'final', category: 'vital-signs', sort: '-date', count: 5, offset: 0 };
+    const steps = stepsOf(
+      trajectory([
+        read('fhir_search', input),
+        read('fhir_search', { resource_type: 'EpisodeOfCare', patient: 'pt-1', date_ge: '2026-01-01' }),
+        { name: 'fhir_search', input: { resource_type: 'Observation', patient: 'pt-1' }, is_error: true, error_code: 'NOT_SUPPORTED' },
+        read('fhir_read', { resource_type: 'Observation', id: 'obs-wt-1020' }),
+        read('search_notes', { query: 'weight' }),
+      ]),
+    );
+    expect(steps[0]!.search).toEqual({ type: 'Observation', patient: 'Patient/pt-1', code: 'http://loinc.org|29463-7', date_ge: '2026-01-01', date_le: '2026-12-31', status: 'final', whole: true });
+    expect(steps[1]!.search).toEqual({ type: 'EpisodeOfCare', patient: 'Patient/pt-1', date_ge: '2026-01-01', whole: true });
+    expect(steps[1]!.exposed_ids).toEqual([]);
+    for (const s of steps.slice(2)) expect('search' in s).toBe(false);
+  });
+  it('Step.search.whole is true only for a page that held every match: offset 0 and no next_offset', () => {
+    // Ruling R20 (sdna_unseen): a first page with more after it did not show every match.
+    const all = read('fhir_search', { resource_type: 'Observation', patient: 'pt-1' });
+    const total = (all.content as { total: number }).total;
+    expect(total).toBeGreaterThan(1);
+    const steps = stepsOf(
+      trajectory([
+        all,
+        read('fhir_search', { resource_type: 'Observation', patient: 'pt-1', count: 1 }),
+        read('fhir_search', { resource_type: 'Observation', patient: 'pt-1', count: 50, offset: total - 1 }),
+        read('fhir_search', { resource_type: 'Observation', patient: 'pt-1', offset: 0 }),
+      ]),
+    );
+    expect((steps[1]!.search as { whole?: boolean }).whole).toBe(false);
+    expect((steps[2]!.search as { whole?: boolean }).whole).toBe(false);
+    expect([steps[0], steps[3]].map((s) => (s!.search as { whole?: boolean }).whole)).toEqual([true, true]);
+  });
+  it('a step without a matching tool_call keeps no search', () => {
+    const events = trajectory([read('fhir_search', { resource_type: 'Observation', patient: 'pt-1' })]).filter((e) => e.type !== 'tool_call');
+    expect('search' in stepsOf(events)[0]!).toBe(false);
+  });
   it('an inbox row naming the patient does not expose it', () => {
     const steps = stepsOf(trajectory([read('list_inbox', { queue: 'results' }), read('fhir_read', { resource_type: 'Patient', id: 'pt-1' })]));
     expect(steps[0]!.referenced_ids).toEqual(['Observation/obs-scr-1020', 'Patient/pt-1', 'Practitioner/pr-okafor', 'Task/task-1']);
