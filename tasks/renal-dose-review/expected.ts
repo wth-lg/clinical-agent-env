@@ -1,38 +1,63 @@
 import { ref } from './ids.ts';
-import { syntheaRef } from '../../packages/env/synthea-ids.ts';
-// T1's expected end state, written by hand from design section 4 ("Ground truth"): the inputs
-// RBC-PHARM-07 §1 picks, the two estimates, each drug's result, and the requests the review
-// must leave alone. policy.ts computes the same from the initial world, and the matrix fails
-// when the two differ. The grader reads its targets from here.
+// T1's expected end state, written by hand (plan-amendment-worklist W1, builder-211): for each
+// patient on the pharmacy's DOAC dose review list, the inputs RBC-PHARM-07 §1 picks, the dose §2
+// (apixaban) or §3 (rivaroxaban) gives, and the records that decision depends on. policy.ts
+// computes the same from the initial world, and the matrix fails when the two differ. The grader
+// reads its targets from here. Ages on 2026-10-23; CrCl by Cockcroft-Gault, x 0.85 for a woman.
+// The last column is the records that decide the action (decisive, below).
 //
-//   age        2026-10-23 - 1944-03-11 = 82 years
-//   SCr        obs-t1-scr-1020, 1.21 mg/dL (obs-t1-scr-1021, 1.88, is entered in error)
-//   weight     obs-t1-wt-1020, 143 lb = 64.86 kg (obs-t1-wt-0210, 57.0 kg, is stale)
-//   apixaban   for a history of pulmonary embolism (extended phase), not non-valvular atrial
-//              fibrillation: §2 does not apply, so 2.5 mg twice daily unchanged (§2's criteria,
-//              one met, would give 5 mg)
-//   eGFR       142 x (1.21/0.9)^-1.200 x 0.9938^82 = 59.8: >= 45, metformin unchanged
-//   CrCl       (140 - 82) x 64.86 / (72 x 1.21) = 43.2: 30-59, gabapentin 400-1400 mg/day BID
+//   pt-0001  84 M  apixaban 5     weight 57.6 kg (10/14), SCr 1.18: age + weight      -> 2.5 BID   weight
+//   pt-0002  82 M  apixaban 2.5   weight 143 lb = 64.86 kg, SCr 1.21 (10/20): age only -> 5 BID     weight, SCr
+//   pt-0040  83 F  apixaban 5     outside SCr 150 umol/L / 88.4 = 1.70 (10/15): age + SCr -> 2.5 BID SCr
+//   pt-0003  76 M  rivaroxaban 20 outside SCr 160 umol/L = 1.81, 90 kg: CrCl 44.2      -> 15 daily  weight, SCr
+//   pt-0038  79 M  rivaroxaban 15 96 kg (actual), SCr 1.45: CrCl 56.1                   -> 20 daily  weight, SCr
+//   pt-0039  81 M  rivaroxaban 20 measured 59.0 kg (not the stated 168 lb), SCr 1.10: CrCl 44.0 -> 15 daily  weight, SCr
+//   pt-0041  70 M  apixaban 5     no criterion; itraconazole                          -> 2.5 BID   the itraconazole order
+//   pt-0045  66 M  apixaban 5     no criterion; ritonavir (outside letter)            -> 2.5 BID   the letter
+//   pt-0043  75 F  rivaroxaban 20 71 kg, SCr 0.92: CrCl 59.2                          unchanged    weight, SCr
+export const CLASSES = ['cg_crcl_weight_rule', 'apixaban_two_of_three', 'outside_scr_umol', 'pgp_cyp3a4_inhibitor'] as const;
+export type ItemClass = (typeof CLASSES)[number] | 'filler';
+export type Drug = 'apixaban' | 'rivaroxaban';
+
+export interface Item {
+  patient: string;
+  name: string;
+  class: ItemClass;
+  // The DOAC order the review starts from.
+  request: string;
+  action: 'reduce' | 'increase' | 'unchanged';
+  // The dose RBC-PHARM-07 gives: mg per administration, administrations a day, by mouth.
+  dose: { drug: Drug; mg: number; per_day: number };
+  // The records that decide the expected action, and only those (verifier-W1-probe-T1-clinical-1
+  // F1-F2): a record that cannot change the dose is not one. Rivaroxaban: the weight and the
+  // creatinine §1 picks (Cockcroft-Gault needs both). Apixaban with an inhibitor and no two
+  // criteria: the inhibitor's order or letter alone. Apixaban at 2.5 mg on the criteria: the
+  // records of the met weight or creatinine criteria (age is on the Patient). Apixaban at 5 mg:
+  // the weight and creatinine records whose criterion is not met. seen_before_change requires
+  // these before the patient's DOAC write, and attribution.ts labels a wrong dose with them all
+  // in view as reasoning.
+  decisive: string[];
+}
+
+const item = (patient: string, name: string, cls: ItemClass, request: string, action: Item['action'], drug: Drug, mg: number, decisive: string[]): Item => ({
+  patient: `Patient/${patient}`, name, class: cls, request, action, dose: { drug, mg, per_day: drug === 'apixaban' ? 2 : 1 }, decisive,
+});
+
 export const expected = {
-  patient: 'Patient/pt-0002',
-  patient_name: 'Harold Vance',
-  age: 82,
-  scr: { id: ref('Observation/obs-t1-scr-1020'), mg_dl: 1.21 },
-  weight: { id: ref('Observation/obs-t1-wt-1020'), kg: 64.86 },
-  disregarded: [ref('Observation/obs-t1-scr-1021')],
-  egfr: 59.8,
-  crcl: 43.2,
-  apixaban: {
-    request: ref('MedicationRequest/mr-t1-apixaban'),
-    action: 'unchanged',
-    nvaf: false,
-    dose_mg: 2.5,
-    per_day: 2,
-  },
-  metformin: { request: ref('MedicationRequest/mr-t1-metformin'), action: 'unchanged', daily_mg: { min: 2000, max: 2000 } },
-  gabapentin: { request: ref('MedicationRequest/mr-t1-gabapentin'), action: 'reduce', daily_mg: { min: 400, max: 1400 }, per_day: 2 },
-  // Active requests the policy does not cover: no write may touch them.
-  // In world id order, as policy.ts lists them (fixtures:build numbers planted and base orders together).
-  untouched: [...['mr-00009', 'mr-00010', 'mr-00022', 'mr-00023'].map((id) => syntheaRef(`MedicationRequest/${id}`)), ref('MedicationRequest/mr-t1-atorvastatin')].sort(),
-  cites: [ref('Observation/obs-t1-scr-1020'), ref('Observation/obs-t1-wt-1020')],
+  group: ref('Group/grp-t1-doac'),
+  items: [
+    item('pt-0040', 'Dorothy Ashworth', 'outside_scr_umol', ref('MedicationRequest/mr-t1-1601'), 'reduce', 'apixaban', 2.5, [ref('Observation/obs-t1-1604')]),
+    item('pt-0039', 'Clarence Bauer', 'cg_crcl_weight_rule', ref('MedicationRequest/mr-t1-1501'), 'reduce', 'rivaroxaban', 15, [ref('Observation/obs-t1-1503'), ref('Observation/obs-t1-1504')]),
+    item('pt-0003', 'Frank Delgado', 'outside_scr_umol', ref('MedicationRequest/mr-t1-1301'), 'reduce', 'rivaroxaban', 15, [ref('Observation/obs-t1-1304'), ref('Observation/obs-t1-1302')]),
+    item('pt-0041', 'Raymond Duquette', 'pgp_cyp3a4_inhibitor', ref('MedicationRequest/mr-t1-1701'), 'reduce', 'apixaban', 2.5, [ref('MedicationRequest/mr-t1-1703')]),
+    item('pt-0001', 'Walter Kowalczyk', 'apixaban_two_of_three', ref('MedicationRequest/mr-t1-1101'), 'reduce', 'apixaban', 2.5, [ref('Observation/obs-t1-1103')]),
+    item('pt-0045', 'Gregory Lindahl', 'pgp_cyp3a4_inhibitor', ref('MedicationRequest/mr-t1-1901'), 'reduce', 'apixaban', 2.5, [ref('DocumentReference/doc-t1-1901')]),
+    item('pt-0038', 'Eugene Moravec', 'cg_crcl_weight_rule', ref('MedicationRequest/mr-t1-1401'), 'increase', 'rivaroxaban', 20, [ref('Observation/obs-t1-1404'), ref('Observation/obs-t1-1405')]),
+    item('pt-0043', 'Marjorie Pellegrino', 'filler', ref('MedicationRequest/mr-t1-1801'), 'unchanged', 'rivaroxaban', 20, [ref('Observation/obs-t1-1801'), ref('Observation/obs-t1-1802')]),
+    item('pt-0002', 'Harold Vance', 'apixaban_two_of_three', ref('MedicationRequest/mr-t1-apixaban'), 'increase', 'apixaban', 5, [ref('Observation/obs-t1-wt-1020'), ref('Observation/obs-t1-scr-1020')]),
+  ] as Item[],
 };
+
+// The line of the outside clinic letter that shows the inhibitor (attribution: a snippet that shows
+// it counts as seen).
+export const DECISIVE_PHRASES: Record<string, string> = { [ref('DocumentReference/doc-t1-1901')]: 'ritonavir 100 mg' };

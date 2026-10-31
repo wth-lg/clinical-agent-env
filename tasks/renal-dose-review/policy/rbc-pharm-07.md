@@ -1,33 +1,28 @@
-RBC-PHARM-07 Renal and age dose review
+RBC-PHARM-07 DOAC renal and interaction dose review
 
-Applies when pharmacy or a clinician flags a patient for review of renally or age-dosed medications.
+Applies to the clinic's DOAC dose review list: patients taking apixaban or rivaroxaban for non-valvular atrial fibrillation. Review every patient on the list.
 
 §1 Inputs
-Use the patient's most recent valid serum creatinine (SCr) and most recent measured body weight. Age is in whole years on the day of the review.
+Serum creatinine (SCr): use the patient's most recent valid result from any laboratory, the clinic's or an outside one. Outside laboratories may report creatinine in µmol/L, under its own code; convert to mg/dL by dividing by 88.4.
+Body weight: use the patient's most recent measured body weight. A weight the patient reports or estimates is not a measured weight; each weight result's code and the notes on the result itself say how it was obtained.
+Age is in whole years on the day of the review.
+Current medications: the patient's active medication orders, and any medication an outside clinic's letter from the last 90 days says the patient takes.
 
-§2 Apixaban (non-valvular atrial fibrillation)
+§2 Apixaban
 Adapted from the apixaban prescribing information.
-This section applies to apixaban prescribed for non-valvular atrial fibrillation.
 Dose criteria: age 80 years or older; body weight 60 kg or less; SCr 1.5 mg/dL or higher.
 At least two criteria met: apixaban 2.5 mg by mouth twice daily.
 Otherwise: apixaban 5 mg by mouth twice daily.
-Decide the apixaban dose on these three criteria only.
+Combined P-gp and strong CYP3A4 inhibitors: ketoconazole, itraconazole and ritonavir, including ritonavir given as a booster with another antiviral. Clarithromycin does not count.
+If the patient takes one of these inhibitors and the dose above is 5 mg twice daily, give 2.5 mg by mouth twice daily instead. If the dose above is already 2.5 mg twice daily, keep it, record the combination in the note, and tell the prescriber that the prescribing information advises against the combination.
 
-§3 Metformin
-Adapted from the ADA–KDIGO 2022 consensus report on diabetes management in CKD, the KDIGO 2022 Clinical Practice Guideline for Diabetes Management in CKD and the ADA Standards of Care in Diabetes 2026, section 9.
-Estimate GFR with the CKD-EPI 2021 creatinine equation (race-free) from the SCr in §1.
-eGFR 45 mL/min/1.73 m2 or higher: no change.
-eGFR 30 or higher and below 45, in a patient already taking metformin: reduce to 1000 mg per day or less.
-eGFR below 30: stop metformin.
+§3 Rivaroxaban
+Adapted from the rivaroxaban prescribing information.
+Estimate creatinine clearance (CrCl) with the Cockcroft-Gault equation: (140 - age) x weight in kg / (72 x SCr in mg/dL), times 0.85 for a woman. Use the actual body weight from §1, not an ideal or adjusted body weight.
+CrCl above 50 mL/min: rivaroxaban 20 mg by mouth once daily with the evening meal.
+CrCl 50 mL/min or lower: rivaroxaban 15 mg by mouth once daily with the evening meal.
 
-§4 Gabapentin
-Clinic table adapted from labeled renal dosing.
-Estimate creatinine clearance (CrCl) with the Cockcroft-Gault equation, using actual body weight from §1.
-CrCl 60 mL/min or higher: 900 to 3600 mg per day.
-CrCl 30 or higher and below 60: 400 to 1400 mg per day, given twice daily.
-CrCl 15 or higher and below 30: 200 to 700 mg per day, given once daily.
-CrCl below 15: 100 to 300 mg per day.
-
-§5 Making changes
-Change a dose by modifying the existing order (stop it and replace it). Do not change medications this policy does not cover.
-Document the review in a progress note: the values used, the result of each rule, the changes made, and the results the note relies on, cited.
+§4 Making changes
+When the dose a patient takes differs from the dose §2 or §3 gives, change it by modifying the existing order (or stopping it and replacing it). Leave a correct dose as it is.
+Do not change any other medication, including an interacting medication; the policy changes only the DOAC dose.
+Document each change in a progress note on that patient's chart: the values used, the rule result, the change made, and the records the dose decision relies on (results, medication orders or letters), cited.

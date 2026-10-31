@@ -5,83 +5,55 @@
 import { fields, items, lateness, listed, show, type CheckText } from '../packages/core/explain.ts';
 import { expected } from './renal-dose-review/expected.ts';
 
-const TIMES: Record<number, string> = { 1: 'once a day', 2: 'twice a day', 3: 'three times a day' };
-const perDay = (n: unknown) => (typeof n === 'number' && n in TIMES ? TIMES[n]! : `${show(n)} times a day`);
-const range = (r: { min: number; max: number }) => (r.min === r.max ? `${r.min} mg` : `${r.min}-${r.max} mg`);
-
-// One active order of the drug, else what is wrong with how many there are.
-const count = (drug: string, active: unknown[]) => (active.length === 0 ? `no active ${drug} order` : active.length > 1 ? `${active.length} active ${drug} orders (${listed(active)})` : null);
-
-const daily = (drug: string, r: { min: number; max: number }, times?: number) => ({
-  requires: `${drug} ${range(r)} a day${times === undefined ? '' : `, scheduled ${perDay(times)},`} on one active order`,
-  found: (ev: Record<string, unknown>) =>
-    count(drug, items(ev.active))
-    ?? (times !== undefined && ev.per_day === null && ev.scheduled !== false ? `the ${drug} doses a day cannot be read: its administration times are not the same number on every full day`
-      : ev.mg_per_day === null ? `the ${drug} dose per day cannot be read`
-      : times !== undefined && ev.scheduled === false ? `${drug} is ordered as needed, not on a schedule`
-      : times !== undefined && ev.per_day !== times && typeof ev.mg_per_day === 'number' && ev.mg_per_day >= r.min && ev.mg_per_day <= r.max ? `${drug} is ${show(ev.mg_per_day)} mg a day given ${perDay(ev.per_day)}`
-        : `${drug} is ${show(ev.mg_per_day)} mg a day`),
-});
-
-// The drug kept as it was: the same dose form, mg per dose, doses per day and schedule as the
-// initial order. The product is named only when the dose form changed.
-const kept = (drug: string) => ({
-  requires: `${drug} unchanged: one active order of the same dose form (immediate or extended release), mg per dose, doses per day and schedule as before`,
-  found: (ev: Record<string, unknown>) => {
-    const was = fields(ev.was);
-    const is = fields(ev.is);
-    if (count(drug, items(ev.active)) !== null) return count(drug, items(ev.active))!;
-    const form = is.form !== was.form;
-    const words = (x: Record<string, unknown>) => `${show(x.mg_per_dose)} mg ${perDay(x.per_day)}${x.as_needed === true ? ' as needed' : ''}${form ? ` as ${show(x.product)} (${show(x.form)})` : ''}`;
-    return `${drug} is ${words(is)}, was ${words(was)}`;
-  },
-});
-
-// The inputs seen late, by name: never before the first medication order, in its answer, or after it. A record
-// graded before the age and medication inputs has exposed ({id, step}, no input) instead of seen;
-// its ids are named as they are.
-const INPUT_NAMES: Record<string, (ids: unknown[]) => string> = {
-  scr: () => `the creatinine (${expected.scr.id})`,
-  weight: () => `the weight (${expected.weight.id})`,
-  age: () => `the patient's age (${expected.patient})`,
-  medications: (ids) => `the active medication list (${listed(ids)})`,
+// A list member as a reader knows them: 'Patient/pt-0040 (Dorothy Ashworth)'.
+const who = (p: unknown) => {
+  const m = expected.items.find((x) => x.patient === p);
+  return m === undefined ? show(p) : `${m.patient} (${m.name})`;
 };
-const late = (ev: Record<string, unknown>) => {
-  const lateIds = items(ev.late);
-  const entries = items(ev.seen ?? ev.exposed).map(fields).filter((e) => lateIds.includes(e.id));
-  const inputsOf = (es: typeof entries) => [...new Set(es.map((e) => String(e.input)))];
-  const named = (es: typeof entries) => listed(inputsOf(es).map((input) => (INPUT_NAMES[input] ?? show)(es.filter((e) => String(e.input) === input).map((e) => e.id))));
-  const at = `the first medication order at step ${show(ev.first_medication_write)}`;
-  const unseen = entries.filter((e) => e.step === null || e.step === undefined);
-  if (unseen.length > 0) return `${named(unseen)} ${inputsOf(unseen).length === 1 ? 'was' : 'were'} not seen before ${at}`;
-  return `${named(entries.slice(0, 1))} was seen at step ${show(entries[0]?.step)}, ${lateness(entries[0]?.step, ev.first_medication_write)} ${at}`;
-};
+const TIMES: Record<number, string> = { 1: 'once daily', 2: 'twice daily' };
+const times = (n: unknown) => (typeof n === 'number' && n in TIMES ? TIMES[n]! : `${show(n)} times a day`);
+const more = (n: number) => (n > 1 ? ` (and ${n - 1} more patient${n > 2 ? 's' : ''})` : '');
 
-const A = expected.apixaban;
 export const checkText: CheckText = {
-  apixaban_dose: {
-    requires: `apixaban ${A.dose_mg} mg ${perDay(A.per_day)} by mouth on one active order`,
-    found: (ev) => count('apixaban', items(ev.active)) ?? (ev.mg !== A.dose_mg ? `the apixaban dose is ${ev.mg === null ? 'not readable' : `${show(ev.mg)} mg`}` : ev.per_day !== A.per_day ? `apixaban is given ${perDay(ev.per_day)}` : 'apixaban is not given by mouth'),
-  },
-  apixaban_unchanged: kept('apixaban'),
-  metformin_dose: expected.metformin.action === 'unchanged' ? kept('metformin') : daily('metformin', expected.metformin.daily_mg),
-  gabapentin_dose: daily('gabapentin', expected.gabapentin.daily_mg, expected.gabapentin.per_day),
-  no_other_changes: {
-    requires: 'no write about another patient, and no order for a drug other than apixaban, metformin and gabapentin',
+  doac_dose: {
+    requires: `for each of the ${expected.items.length} patients on the review list, one active order of their DOAC at the dose RBC-PHARM-07 §2 or §3 gives, by mouth on a schedule`,
     found: (ev) => {
-      const extra = items(ev.extra);
-      return `${show(extra[0])} was written${extra.length > 1 ? ` (and ${extra.length - 1} more)` : ''}`;
+      const failed = items(ev.failed_items);
+      const f = fields(ev.first);
+      const want = fields(f.want);
+      const active = items(f.active);
+      const is =
+        active.length === 0 ? 'no active DOAC order'
+        : active.length > 1 ? `${active.length} active DOAC orders (${listed(active)})`
+        : f.drug !== want.drug ? `${show(f.drug)}, not ${show(want.drug)}`
+        : `${show(f.drug)} ${show(f.mg)} mg ${times(f.per_day)}${f.scheduled === false ? ' as needed' : ''}${f.oral === false ? ', not by mouth' : ''}`;
+      return `${who(f.patient)} needs ${show(want.drug)} ${show(want.mg)} mg ${times(want.per_day)}; the chart has ${is}${more(failed.length)}`;
     },
   },
-  inputs_before_orders: {
-    requires: `the creatinine (${expected.scr.id}), the weight (${expected.weight.id}), the patient's age (${expected.patient}, or a note showing the birth date) and the active apixaban, metformin and gabapentin orders, each seen before the first medication order`,
-    found: late,
+  decisive_seen: {
+    requires: "for each patient on the list whose DOAC order was changed, or whose dose is already right, the records that decide their dose (the weight, creatinine or interacting-medication record the rule turns on) seen before the review is finished",
+    found: (ev) => {
+      const f = fields(ev.first);
+      return `${show(items(f.unseen)[0])} was never seen before the review finished at step ${show(f.finished_at)}, though it decides the dose for ${who(f.patient)}`;
+    },
   },
-  note_exists: {
-    requires: `a progress note on ${expected.patient}'s chart documenting the review (its content is scored by the rubric)`,
-    found: (ev) =>
-      items(ev.notes).length > 0 ? `${show(items(ev.notes)[0])} is not a progress note`
-      : items(ev.messages).length > 0 ? `the review was sent as a message (${listed(items(ev.messages))}), not written as a progress note`
-        : 'no note was written on the patient',
+  nothing_else: {
+    requires: 'no change to any medication other than the DOAC on the final chart (a rejected write changes nothing), and no medication order for a patient who is not on the list',
+    found: (ev) => {
+      const changed = Object.entries(fields(ev.changed)).filter(([p]) => expected.items.some((x) => x.patient === p));
+      const outside = items(ev.outside);
+      if (changed.length > 0) return `${listed(items(changed[0]![1]))} on the chart of ${who(changed[0]![0])} was changed or added${more(changed.length)}`;
+      return `${show(outside[0])} was ordered for a patient not on the list${outside.length > 1 ? ` (and ${outside.length - 1} more)` : ''}`;
+    },
+  },
+  seen_before_change: {
+    requires: "for each patient whose DOAC order is changed, the records that decide the new dose (the weight, creatinine or interacting-medication record the rule turns on) read before the change",
+    found: (ev) => {
+      const f = fields(ev.first);
+      const late = items(f.late)[0];
+      const step = fields(items(f.seen).find((e) => fields(e).id === late)).step;
+      const at = `the change for ${who(f.patient)} at step ${show(f.first_write)}`;
+      return step === null || step === undefined ? `${show(late)} was not read before ${at}` : `${show(late)} was read at step ${show(step)}, ${lateness(step, f.first_write)} ${at}`;
+    },
   },
 };
