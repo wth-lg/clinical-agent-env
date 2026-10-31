@@ -12,8 +12,10 @@
 //                     exactly its declared `loses` rubric items lost ([] when absent)
 //   mutants           at least MIN_MUTANTS, each FAIL with exactly its declared failed gates
 //                     and exactly its declared `loses` rubric items lost ([] for none), and,
-//                     when it declares one, its declared attribution label; every
-//                     trap task.toml declares has one, and every mutant's trap is declared
+//                     when it declares one, its declared attribution label and, on a task
+//                     whose gates check items, its declared failed items and their labels
+//                     (Mutant.items); every trap task.toml declares has one, and every
+//                     mutant's trap is declared
 //   loses             checked before any case runs, and nothing runs when it fails: every
 //                     mutant declares it, and each id is a nonzero rubric item of the task,
 //                     named once
@@ -312,6 +314,7 @@ function verdict(c: Case, run: CaseRun, grade: Grade, misses: Miss[]): Pick<Case
   if (c.kind === 'alternative' && unknown > 0) problems.push(`judge.unknown ${unknown}, want 0`);
   if (c.mutant && !sameSet(failed_gates, c.mutant.fails)) problems.push(`failed [${failed_gates.join(', ')}], declared [${c.mutant.fails.join(', ')}]`);
   if (c.attribution !== undefined && grade.attribution?.auto !== c.attribution) problems.push(`attribution ${grade.attribution?.auto ?? 'none'}, declared ${c.attribution}`);
+  if (c.mutant?.items !== undefined && !sameItems(grade, c.mutant.items)) problems.push(`items ${itemsText(itemLabels(grade))}, declared ${itemsText(c.mutant.items)}`);
   if (c.loses && grade.valid) {
     for (const id of c.loses) if (!lost_items.includes(id)) problems.push(`declares it loses rubric item ${kept(grade, id, misses)}`);
     for (const id of lost_items) if (!c.loses.includes(id)) problems.push(`loses rubric item ${id} (${pointsOf(grade, id)}${pointsOf(grade, id).startsWith('-') ? ', a penalty that applied' : ''}), not declared`);
@@ -324,6 +327,15 @@ function verdict(c: Case, run: CaseRun, grade: Grade, misses: Miss[]): Pick<Case
   }
   for (const m of misses) problems.push(`judge cache miss: ${m.check} (cache key ${m.key})`);
   return { unknown, failed_gates, lost_items, problems };
+}
+
+// Each failed item's label in a grade (attribution.ts items), by item.
+const itemLabels = (grade: Grade): Record<string, string> => Object.fromEntries((grade.attribution?.items ?? []).map((i) => [i.item, i.auto]));
+const itemsText = (items: Readonly<Record<string, string>>) => `{${Object.entries(items).map(([k, v]) => `${k} ${v}`).join(', ')}}`;
+// Whether the grade's failed items are exactly the declared ones, each with its declared label.
+function sameItems(grade: Grade, declared: Readonly<Record<string, string>>): boolean {
+  const got = itemLabels(grade);
+  return sameSet(Object.keys(got), Object.keys(declared)) && Object.entries(declared).every(([k, v]) => got[k] === v);
 }
 
 const pointsOf = (grade: Grade, id: string) => {
@@ -542,9 +554,12 @@ export async function runMatrix(env: MatrixEnv, task: MatrixTask, opts: MatrixOp
     const m = r.case.mutant!;
     const label = r.grade.attribution?.auto ?? 'none';
     const labelOk = m.attribution === undefined || m.attribution === label;
-    const verdict = r.grade.outcome !== 'FAIL' ? 'not FAIL' : sameSet(r.failed_gates, m.fails) && r.case.loses !== undefined && sameSet(r.lost_items, r.case.loses) && labelOk ? 'ok' : 'MISMATCH';
+    const itemsOk = m.items === undefined || sameItems(r.grade, m.items);
+    const verdict = r.grade.outcome !== 'FAIL' ? 'not FAIL' : sameSet(r.failed_gates, m.fails) && r.case.loses !== undefined && sameSet(r.lost_items, r.case.loses) && labelOk && itemsOk ? 'ok' : 'MISMATCH';
     const attribution = `attribution ${label}${m.attribution === undefined ? '' : ` declared ${m.attribution}`}`;
-    lines.push(`  mutant ${m.id} [trap ${m.trap}]: ${r.grade.outcome} failed [${r.failed_gates.join(', ')}] declared [${m.fails.join(', ')}], ${attribution}, ${lostLine(r)} ${verdict}`);
+    // A mutant that declares its items shows them; one that does not is reported as before.
+    const items = m.items === undefined ? '' : `, items ${itemsText(itemLabels(r.grade))} declared ${itemsText(m.items)}`;
+    lines.push(`  mutant ${m.id} [trap ${m.trap}]: ${r.grade.outcome} failed [${r.failed_gates.join(', ')}] declared [${m.fails.join(', ')}], ${attribution}, ${lostLine(r)}${items} ${verdict}`);
     noteProblems(r);
   }
 

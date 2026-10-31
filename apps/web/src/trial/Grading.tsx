@@ -1,8 +1,10 @@
 // The Grading tab: the outcome, four metric cards (Score, Cost, Tokens, Duration), each gate
 // check with what it requires, what the trial left and its evidence ids (a link to the step that
 // wrote, else first exposed, each one), and the rubric table with the points, met and judge
-// quote of each item, all from the record's current grade (summary.ts currentGrade). An excluded
-// trial was not graded; a check that threw is the grader's error, in the danger style.
+// quote of each item, all from the record's current grade (summary.ts currentGrade). A gate over a
+// worklist also says how many items it found right and lists each failed item with why, its ids and
+// its kind of failure (items.ts). An excluded trial was not graded; a check that threw is the
+// grader's error, in the danger style.
 import { Check, X } from 'lucide-react';
 import type { ReactNode } from 'react';
 import type { Step } from '../../../../packages/grader/check.ts';
@@ -11,6 +13,7 @@ import { currentGrade } from '../../../../packages/core/summary.ts';
 import { shownFault } from '../data/failures.ts';
 import { checkTextOf, type Trial } from '../data/results.ts';
 import { OutcomeChip, SECTION_LABEL } from '../data/ui.tsx';
+import { failedItems, itemsMetText, type ItemLabel, type ItemRow } from './items.ts';
 import { metText, rubricMetText, rubricTotal, scoreNote, totalText } from './rubric.ts';
 import { stepOfId } from './steps.ts';
 
@@ -23,6 +26,7 @@ export interface CheckRow {
   met: unknown;
   evidence?: Record<string, unknown>;
   ids?: readonly string[];
+  items?: readonly ItemRow[];
 }
 
 type Usage = { input: number; cache_write: number; cache_read: number; output: number };
@@ -58,11 +62,11 @@ const notGradedThen = (outcome: string): string => {
 };
 
 // An evidence id: a link to its step when a step wrote or exposed it.
-export function EvidenceId({ id, steps, onStep }: { id: string; steps: readonly Step[] | null; onStep: (n: number) => void }) {
+export function EvidenceId({ id, steps, onStep, testId = 'evidence-id' }: { id: string; steps: readonly Step[] | null; onStep: (n: number) => void; testId?: string }) {
   const n = steps === null ? null : stepOfId(steps, id);
-  if (n === null) return <code data-testid="evidence-id" data-id={id} className="break-all rounded-sm bg-canvas px-1 text-xs text-ink" title={steps === null ? 'The trajectory is not loaded.' : 'No step wrote or read this resource.'}>{id}</code>;
+  if (n === null) return <code data-testid={testId} data-id={id} className="break-all rounded-sm bg-canvas px-1 text-xs text-ink" title={steps === null ? 'The trajectory is not loaded.' : 'No step wrote or read this resource.'}>{id}</code>;
   return (
-    <button type="button" data-testid="evidence-id" data-id={id} data-step={n} onClick={() => onStep(n)} className="inline-flex min-w-0 items-baseline gap-1 rounded-md text-left text-xs text-ink underline decoration-line-strong underline-offset-2 hover:decoration-ink pointer-coarse:px-1 pointer-coarse:py-2">
+    <button type="button" data-testid={testId} data-id={id} data-step={n} onClick={() => onStep(n)} className="inline-flex min-w-0 items-baseline gap-1 rounded-md text-left text-xs text-ink underline decoration-line-strong underline-offset-2 hover:decoration-ink pointer-coarse:px-1 pointer-coarse:py-2">
       <code className="break-all">{id}</code>
       <span className="shrink-0 text-ink-muted">step {n}</span>
     </button>
@@ -91,6 +95,8 @@ export function Grading({ t, steps, onStep, decisive = null }: { t: Trial; steps
   // A check threw: the grade did not finish, so the recorded checks decide nothing
   // (verifier-phase-P16-2 minor: it read "Graded with grader 8" and "8 of 9 met").
   const threwCheck = r.error && !g.regraded ? r.error.check : null;
+  // Each failed item's kind of failure, from the record's attribution; a regrade's grade carries none.
+  const itemLabels = g.regraded ? null : ((r as { attribution?: { items?: ItemLabel[] } | null }).attribution?.items ?? null);
   const unfinished = r.error != null && !g.regraded;
   const score = graded && typeof g.score === 'number' ? g.score.toFixed(2) : null;
   const total = rubricTotal(rubric);
@@ -143,6 +149,25 @@ export function Grading({ t, steps, onStep, decisive = null }: { t: Trial; steps
                       <span className="text-xs text-ink-muted">Evidence:</span>
                       {c.ids!.map((id) => <EvidenceId key={id} id={id} steps={steps} onStep={onStep} />)}
                     </p>
+                  )}
+                  {c.items !== undefined && c.items.length > 0 && (
+                    <div data-testid="gate-items" className="pl-5">
+                      <p className="text-xs text-ink-muted">{itemsMetText(c.items)}</p>
+                      <ul className="mt-0.5 space-y-0.5">
+                        {failedItems(c.id, c.items, itemLabels).map((i) => (
+                          <li key={i.item} data-testid="gate-item" data-item={i.item} data-label={i.label ?? ''} className="break-words">
+                            <code className="text-xs text-ink">{i.name}</code>
+                            <span className="text-danger">: {i.why}</span>
+                            {i.label !== null && <span className="ml-2 rounded-sm border border-line-strong px-1 text-xs text-ink">{i.label.replace(/_/g, ' ')}</span>}
+                            {i.ids.length > 0 && (
+                              <span className="ml-2 inline-flex flex-wrap items-baseline gap-x-2">
+                                {i.ids.map((id) => <EvidenceId key={id} id={id} steps={steps} onStep={onStep} testId="item-evidence-id" />)}
+                              </span>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   )}
                 </li>
               );

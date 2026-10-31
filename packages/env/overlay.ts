@@ -19,7 +19,10 @@
 // world by the Synthea cohort's own rule (per type, (patient, date, code) order), so a planted
 // resource's id sits among its patient's generated ones. A Practitioner, Organization or Group
 // takes the name the overlay gives its key in `names` (pr-raman, org-lakeshore), like the
-// setting's. Every id, reference and lint entry is rewritten to its world id, and a key left
+// setting's. A Patient an overlay adds (pt-t3-<rest>, only where no free slot fits a probe's class)
+// is numbered after the cohort's last Patient, pt-0061 on, in key order across every overlay, so the
+// numbers do not depend on the order overlays run in; its task owns it as it owns a slot. Every id,
+// reference and lint entry is rewritten to its world id, and a key left
 // anywhere in what an overlay writes (text attachments decoded) fails the build, so the world
 // carries no key. The registries (key -> world id) and the base map (base id -> world id) are
 // build outputs, fixtures/ids.ts and fixtures/synthea-ids.ts; graders, solutions and tests name a
@@ -215,6 +218,8 @@ export function applyOverlays(base: readonly Resource[], setting: readonly Resou
     const keyShape = new RegExp(`^[a-z]+-${idTag(task)}-[a-z0-9][a-z0-9-]*$`);
 
     const edits = overlay.build(reader);
+    // A Patient the overlay adds is the task's, like a slot, before any of its resources is checked.
+    for (const r of edits.put ?? []) if (r.resourceType === 'Patient' && !start.has(key(r)) && keyShape.test(r.id ?? '')) owner.set(r.id!, task);
     for (const r of edits.remove ?? []) {
       const existing = start.get(key(r));
       if (!existing) throw new Error(`${at(r)} removes a resource that is not in base or setting`);
@@ -229,7 +234,7 @@ export function applyOverlays(base: readonly Resource[], setting: readonly Resou
         throw new Error(`${at(r)} is not a registry key of ${task}: an added resource's id is <type prefix>-${idTag(task)}-<rest>`);
       } else if (NAME_SHAPED.has(r.resourceType) !== Object.hasOwn(names, r.id!)) {
         throw new Error(NAME_SHAPED.has(r.resourceType) ? `${at(r)}: a ${r.resourceType} takes a name; give its key one in the overlay's names` : `${at(r)}: a ${r.resourceType} is numbered by fixtures:build; it takes no name`);
-      } else if (r.resourceType === 'Patient' || (!NAME_SHAPED.has(r.resourceType) && numberedPrefix(r) === null)) {
+      } else if (r.resourceType !== 'Patient' && !NAME_SHAPED.has(r.resourceType) && numberedPrefix(r) === null) {
         throw new Error(`${at(r)}: fixtures:build cannot number a ${r.resourceType}`);
       } else {
         added.set(key(r), task);
@@ -242,9 +247,15 @@ export function applyOverlays(base: readonly Resource[], setting: readonly Resou
     if (edits.lint) lintByTask.push({ task, spec: edits.lint });
   }
 
-  // World ids: names for the name-shaped, Synthea's numbering for the rest.
-  const numbered = worldIds([...world.values()]);
-  const bare = new Map<string, string>();
+  // World ids: names for the name-shaped, the next Patient numbers for the added Patients, Synthea's
+  // numbering for the rest. The added Patients' references take their world ids before the
+  // numbering, which sorts each resource by its patient.
+  const last = Math.max(0, ...[...start.values()].flatMap((r) => (r.resourceType === 'Patient' ? [Number(/^pt-(\d{4})$/.exec(r.id!)?.[1] ?? 0)] : [])));
+  const addedPatients = [...added.keys()].filter((k) => k.startsWith('Patient/')).map((k) => k.slice('Patient/'.length)).sort();
+  const patientIds = new Map(addedPatients.map((k, i) => [k, `pt-${String(last + i + 1).padStart(4, '0')}`]));
+  const renamePatients = renamer(patientIds);
+  const numbered = worldIds([...world].map(([k, r]) => (written.has(k) && patientIds.size > 0 ? mapStrings(r, renamePatients) : r)));
+  const bare = new Map<string, string>(patientIds);
   for (const { names = {} } of sorted) for (const [k, v] of Object.entries(names)) bare.set(k, v);
   for (const [ref, id] of numbered) bare.set(ref.slice(ref.indexOf('/') + 1), id);
   const rename = renamer(bare);

@@ -57,7 +57,7 @@ export function derive(world: WorldView): Json {
   return {
     group: `Group/${group.id}`,
     period: { start: `${YEAR}-01-01`, end: `${YEAR}-12-31` },
-    members: members.map((ref) => {
+    items: members.map((ref) => {
       const p = world.get('Patient', ref.slice(8)) as (R & { birthDate?: string; name?: Array<{ use?: string; given?: string[]; family?: string }> }) | undefined;
       if (!p?.birthDate) throw new Error(`${ref}: no birth date`);
       const name = p.name?.find((n) => n.use === 'official') ?? p.name?.[0];

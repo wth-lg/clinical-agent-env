@@ -7,13 +7,11 @@
 import { describe, expect, it } from 'vitest';
 import { CONTEXT_WINDOW_TOKENS, PER_TRIAL_BUDGET_USD, RERUN_FACTOR } from '../../packages/core/cost.ts';
 import { MAX_WALL_MS } from '../../packages/core/run.ts';
-import { TASKS } from '../../packages/env/overlay.ts';
+import { expected as crcExpected } from '../../tasks/crc-care-gap/expected.ts';
 import { tempDir } from '../../scripts/test/helpers.ts';
 import { budgetBreaks, type Deps, main, type Projection } from '../context-budget.ts';
 import { quadCost, writeQuadRun, type QuadTrial } from './fixtures/context-budget/make-run.ts';
 
-// crc-care-gap's overlay slots: the item count context-budget takes for a run at this checkout's env_version.
-const CRC_SLOTS = TASKS.T3.slots.length;
 const CRC: QuadTrial[] = [26, 28, 30].map((T) => ({ T, C0: 10_000, g: 5_000, o: 500 }));
 const INBOX: QuadTrial[] = [10, 12, 14, 16].map((T) => ({ T, C0: 8_000, g: 2_000, o: 400 }));
 
@@ -33,8 +31,11 @@ interface Out {
   correction_usd?: number;
 }
 
-// Fixture records carry env_version ev-<task>; by default the fake checkout is at that version too.
-const sameEnv: Partial<Deps> = { checkoutEnv: async (id) => `ev-${id}` };
+// Fixture records carry env_version ev-<task>; by default the fake checkout is at that version too,
+// and its expected.items hold 14 crc-care-gap items and 8 results-inbox items (pilot-2's lists).
+const ITEMS: Record<string, number> = { 'crc-care-gap': 14, 'results-inbox': 8 };
+const taskItems: Deps['taskItems'] = async (id) => ITEMS[id] ?? null;
+const sameEnv: Partial<Deps> = { checkoutEnv: async (id) => `ev-${id}`, taskItems };
 
 async function run(args: string[], deps: Partial<Deps> = sameEnv): Promise<{ code: number; json: Out | null; lines: string[] }> {
   const lines: string[] = [];
@@ -56,15 +57,15 @@ describe('pnpm cli context-budget <run> (fit)', () => {
     expect(code).toBe(0);
     const crc = json!.tasks['crc-care-gap']!;
     expect(crc.trials.map((t) => [t.T, t.peak_context])).toEqual(CRC.map((t) => [t.T, t.C0 + t.g * (t.T - 1)]));
-    expect(crc.fit).toMatchObject({ items: CRC_SLOTS, T: 28, C0: 10_000, g: 5_000, o: 500 });
-    expect(crc.fit.k).toBeCloseTo(26 / CRC_SLOTS, 12);
+    expect(crc.fit).toMatchObject({ items: 14, T: 28, C0: 10_000, g: 5_000, o: 500 });
+    expect(crc.fit.k).toBeCloseTo(26 / 14, 12);
     expect(crc.fit.fitted_median_usd).toBeCloseTo(quadCost({ T: 28, C0: 10_000, g: 5_000, o: 500 }), 12);
     expect(crc.fit.observed_median_usd).toBeCloseTo(crc.fit.fitted_median_usd, 12);
     // Even trial count: the median of T is the mean of the middle two (12 and 14).
     const inbox = json!.tasks['results-inbox']!;
     expect(inbox.fit).toMatchObject({ items: 8, T: 13 });
     expect(inbox.fit.k).toBeCloseTo(11 / 8, 12);
-    expect(lines).toContainEqual(expect.stringMatching(new RegExp(`^crc-care-gap: 3 trials, ${CRC_SLOTS} items: T 28\\.0, C0 10\\.0k, g 5\\.0k/req, o 500/req, k ${(26 / CRC_SLOTS).toFixed(2).replace('.', '\\.')} req/item$`)));
+    expect(lines).toContainEqual(expect.stringMatching(/^crc-care-gap: 3 trials, 14 items: T 28\.0, C0 10\.0k, g 5\.0k\/req, o 500\/req, k 1\.86 req\/item$/));
     expect(lines).toContainEqual(expect.stringMatching(/^ {2}#2 T 30 peak 155\.0k$/));
   });
 
@@ -142,20 +143,39 @@ describe('pnpm cli context-budget <run> (fit)', () => {
   });
 
   it('requires --observed-items when the run\'s env_version is not the checkout\'s', async () => {
-    const other: Partial<Deps> = { checkoutEnv: async (id) => (id === 'crc-care-gap' ? 'ev-new' : `ev-${id}`) };
+    const other: Partial<Deps> = { checkoutEnv: async (id) => (id === 'crc-care-gap' ? 'ev-new' : `ev-${id}`), taskItems };
     const bare = await run([fixture('env'), '--json'], other);
     expect(bare.code).toBe(2);
-    expect(bare.lines).toContainEqual(expect.stringMatching(new RegExp(`^context-budget: crc-care-gap: the run's env_version ev-crc-care-gap is not the checkout's ev-new, so the ${CRC_SLOTS} overlay slots may not be the items it held; give --observed-items crc-care-gap=n$`)));
+    expect(bare.lines).toContainEqual(expect.stringMatching(/^context-budget: crc-care-gap: the run's env_version ev-crc-care-gap is not the checkout's ev-new, so the 14 items of its expected\.items may not be the items it held; give --observed-items crc-care-gap=n$/));
     const given = await run([fixture('env2'), '--observed-items', 'crc-care-gap=12', '--json'], other);
     expect(given.code).toBe(0);
     expect(given.json!.tasks['crc-care-gap']!.fit.items).toBe(12);
     // A task this checkout does not have has no env_version to match.
-    expect((await run([fixture('env3'), '--json'], { checkoutEnv: async () => null })).code).toBe(2);
+    expect((await run([fixture('env3'), '--json'], { checkoutEnv: async () => null, taskItems })).code).toBe(2);
+  });
+
+  it('by default takes the item count from the task\'s expected.items, and asks for --observed-items when the task has none', async () => {
+    const atCheckout: Partial<Deps> = { checkoutEnv: async (id) => `ev-${id}` };
+    const { code, json } = await run([fixture('items'), '--task', 'crc-care-gap', '--json'], atCheckout);
+    expect(code).toBe(0);
+    expect(json!.tasks['crc-care-gap']!.fit.items).toBe(crcExpected.items.length);
+    // renal-dose-review's expected.ts has no items list.
+    const dir = tempDir('context-budget-no-items');
+    writeQuadRun(dir, { 'renal-dose-review': CRC });
+    const none = await run([dir], atCheckout);
+    expect(none.code).toBe(2);
+    expect(none.lines).toContainEqual('context-budget: renal-dose-review: tasks/renal-dose-review/expected.ts has no items list; give --observed-items renal-dose-review=n');
+    expect((await run([dir, '--observed-items', 'renal-dose-review=2', '--json'], atCheckout)).json!.tasks['renal-dose-review']!.fit.items).toBe(2);
+  });
+
+  it('never takes the item count from the overlay slots', async () => {
+    const { json } = await run([fixture('not-slots'), '--task', 'crc-care-gap', '--json'], { checkoutEnv: async (id) => `ev-${id}`, taskItems: async () => 5 });
+    expect(json!.tasks['crc-care-gap']!.fit.items).toBe(5);
   });
 
   it('names the error when the checkout\'s env_version cannot be read, thrown or rejected', async () => {
     for (const checkoutEnv of [() => { throw new Error('ENOENT fixtures/world.ndjson.gz'); }, async () => { throw new Error('task.toml: parse error'); }] as Array<NonNullable<Deps['checkoutEnv']>>) {
-      const { code, lines } = await run([fixture('env-err')], { checkoutEnv });
+      const { code, lines } = await run([fixture('env-err')], { checkoutEnv, taskItems });
       expect(code).toBe(2);
       expect(lines).toContainEqual(expect.stringMatching(/^context-budget: crc-care-gap: cannot read the checkout's env_version \((ENOENT fixtures\/world\.ndjson\.gz|task\.toml: parse error)\); give --observed-items crc-care-gap=n$/));
     }
@@ -170,7 +190,7 @@ describe('pnpm cli context-budget <run> (fit)', () => {
       const { env_version: _, ...rest } = JSON.parse(readFileSync(path, 'utf8')) as Record<string, unknown>;
       writeFileSync(path, JSON.stringify(rest));
     }
-    expect((await run([dir], { checkoutEnv: async () => null })).code).toBe(2);
+    expect((await run([dir], { checkoutEnv: async () => null, taskItems })).code).toBe(2);
   });
 
   it('--task all reports a task whose trials are all invalid, and exits 1', async () => {
@@ -183,7 +203,7 @@ describe('pnpm cli context-budget <run> (fit)', () => {
 });
 
 describe('pnpm cli context-budget <run> --project --items <n>', () => {
-  const T36 = 2 + (26 / CRC_SLOTS) * 36;
+  const T36 = 2 + (26 / 14) * 36;
 
   it('projects median and p90 cost, peak, T and working time from the model, and exits 1 over the $3.00 line', async () => {
     const { code, json, lines } = await run([fixture('over'), '--task', 'crc-care-gap', '--project', '--items', '36', '--json']);
@@ -196,7 +216,7 @@ describe('pnpm cli context-budget <run> --project --items <n>', () => {
     expect(p.p90_usd).toBeCloseTo(1.25 * median, 9);
     expect(p.peak_context).toBeCloseTo(10_000 + 5_000 * (T36 - 1), 6);
     expect(p.working_ms).toBeCloseTo(10_000 * T36, 3);
-    expect(json!.breaks).toEqual([expect.stringMatching(/^crc-care-gap: projected p90 \$\d+\.\d\d > \$3\.00 per trial$/)]);
+    expect(json!.breaks).toEqual([expect.stringMatching(/^crc-care-gap: projected p90 \$6\.\d\d > \$3\.00 per trial$/)]);
     expect(lines).toContainEqual(expect.stringMatching(/^over: 1 budget line broken$/));
   });
 
@@ -213,7 +233,7 @@ describe('pnpm cli context-budget <run> --project --items <n>', () => {
     const { json } = await run([dir, '--project', '--items', '36', '--json']);
     const p = json!.tasks['crc-care-gap']!.projection!;
     const mid = (xs: number[]) => [...xs].sort((a, b) => a - b)[1]!;
-    const at36 = SPREAD.map((t) => ({ ...t, T: 2 + ((t.T - 2) / CRC_SLOTS) * 36 }));
+    const at36 = SPREAD.map((t) => ({ ...t, T: 2 + ((t.T - 2) / 14) * 36 }));
     expect(p.T).toBeCloseTo(mid(at36.map((t) => t.T)), 9);
     expect(p.median_usd).toBeCloseTo(mid(at36.map(quadCost)), 9);
     expect(p.p90_usd).toBeCloseTo(1.25 * mid(at36.map(quadCost)), 9);

@@ -21,7 +21,7 @@ const REPO = fileURLToPath(new URL('../../../../../', import.meta.url));
 
 export type TrialFixture = Omit<SampleRecord, 'checks' | 'attribution'> & {
   checks: Array<{ id: string; kind: string; method: string; points: number | null; met: unknown; evidence: Record<string, unknown>; ids?: string[] }> | null;
-  attribution?: { auto: string; first_failed: string | null; decisive_step: number | null; exposure: Array<{ id: string; first_exposed_step: number | null }> } | null;
+  attribution?: { auto: string; first_failed: string | null; decisive_step: number | null; exposure: Array<{ id: string; first_exposed_step: number | null }>; items?: Array<{ item: string; gate: string; auto: string }> } | null;
 };
 
 export const summary = JSON.parse(readFileSync(join(RUN_DIR, 'summary.json'), 'utf8')) as Summary;

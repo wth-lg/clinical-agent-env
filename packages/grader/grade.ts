@@ -41,6 +41,7 @@ import type { Check, GateCheck, GateCtx, GateStateView, Json, Met, Note, RubricC
 import { diff, keyOf } from './diff.ts';
 import { firstExposed, lastWrite, stepsOf } from './exposure.ts';
 import { gateResource, type GateResource } from './gate-view.ts';
+import type { ItemResult } from './items.ts';
 import { Judge, JudgeCacheMiss, JudgeClientError, judgeCallBudget, type JudgeCacheEntry, type JudgeClient, type JudgeEffort } from './judge.ts';
 import { capProgress, FAULT, isValid, trialOutcome, type Fault, type Outcome, type TrialFacts } from './outcome.ts';
 import type { Progress } from './progress.ts';
@@ -64,8 +65,14 @@ import type { Progress } from './progress.ts';
 // rule fails safe: looping only when at least 10 of the last 20 calls repeat an earlier call's
 // target and none of them writes a target not written before. A judge prompt too long is
 // GRADER_ERROR (verifier-phase-P17i-W0-A-1 F2). Still 14 through the W0-A fix rounds: 14 was never
-// on main and no record was graded under an earlier P-L rule.
-export const GRADER_VERSION = '14';
+// on main and no record was graded under an earlier P-L rule. 15: a gate over a worklist records
+// each item's result (items.ts itemGate, CheckResult.items), attribution labels each failed item,
+// and the trial's exposure reads the failed items' decisive ids, not every item's
+// (plan-amendment-worklist W1-1). Still 15 through the W1-1 fix rounds (a LIMIT trial's failed
+// items are did_not_finish, verifier-phase-P17i-W1-1-1 S1, except an over_action item,
+// verifier-phase-P17i-W1-1-2 M2): 15 was never on main, and only
+// generated fixtures were graded under it.
+export const GRADER_VERSION = '15';
 
 export interface CheckResult {
   id: string;
@@ -81,6 +88,8 @@ export interface CheckResult {
   omission?: true;
   // A failed gate's decision was right in a channel or form the protocol does not name (check.ts Verdict).
   action_form?: true;
+  // A gate over a worklist: each item's result (items.ts).
+  items?: ItemResult[];
 }
 
 // Why a trial could not be graded: the check that threw or whose judge call failed (null when
@@ -270,10 +279,11 @@ async function gradeChecks(input: GradeInput, judge: Judge): Promise<Grade> {
   const gates = input.checks.filter((c): c is GateCheck => c.kind === 'gate');
   const rubrics = input.checks.filter((c): c is RubricCheck => c.kind === 'rubric');
   const byCheck = new Map<Check, CheckResult>();
-  const result = (c: Check, v: { met: Met; evidence: { [k: string]: Json }; ids?: readonly string[]; omission?: true; action_form?: true }): CheckResult => ({
+  const result = (c: Check, v: { met: Met; evidence: { [k: string]: Json }; ids?: readonly string[]; omission?: true; action_form?: true; items?: readonly ItemResult[] }): CheckResult => ({
     id: c.id, kind: c.kind, method: c.method, category: c.category, points: c.kind === 'rubric' ? c.points : null, met: v.met, evidence: v.evidence, ...(v.ids ? { ids: [...v.ids] } : {}),
     ...(c.kind === 'gate' && v.met === false && v.omission === true ? { omission: true as const } : {}),
     ...(c.kind === 'gate' && v.met === false && v.action_form === true ? { action_form: true as const } : {}),
+    ...(c.kind === 'gate' && v.items ? { items: [...v.items] } : {}),
   });
   const ordered = () => input.checks.flatMap((c) => byCheck.get(c) ?? []);
   const threw: Array<{ check: string; message: string }> = [];
