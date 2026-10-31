@@ -173,7 +173,7 @@
       "ui_required": false,
       "ui": {
         "route": "/?view=environment",
-        "action": "Open Environment, pick search_notes in the tool catalogue, type a query and press Try: matching clinical notes come back as snippets; each note is referenced, with its snippet recorded as shown text, and a note whose snippet is its whole text is exposed.",
+        "action": "Open Environment, pick search_notes in the tool catalogue, type a query and press Run tool: matching clinical notes come back as snippets; each note is referenced, with its snippet recorded as shown text, and a note whose snippet is its whole text is exposed.",
         "surface": "any"
       },
       "evidence": [
@@ -249,7 +249,7 @@
       "ui_required": true,
       "ui": {
         "route": "/?view=environment",
-        "action": "Open Environment, pick fhir_search in the tool catalogue, fill the arguments and press Try: the rows, their exposed_ids and an unchanged state hash show, with no key.",
+        "action": "Open Environment, pick fhir_search in the tool catalogue, fill the arguments and press Run tool: the rows, their exposed_ids and an unchanged state hash show, with no key.",
         "surface": "any"
       },
       "evidence": [
@@ -699,7 +699,7 @@
       "ui_required": true,
       "ui": {
         "route": "/?view=environment",
-        "action": "Open Environment and press Verify reset: the tab builds a fresh store and shows its hash next to the manifest hash, and says it matches the manifest.",
+        "action": "Open Environment and press Check a fresh copy matches: the tab builds a fresh store and shows its hash next to the manifest hash, and says it matches the manifest.",
         "surface": "any"
       },
       "evidence": [
