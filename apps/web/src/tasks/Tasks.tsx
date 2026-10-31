@@ -385,7 +385,7 @@ function useValidationRuns() {
 // out with it (ui-polish 4.1).
 const VALIDATION_HELP = {
   oracle: 'Runs a known-good answer; it must pass.',
-  matrix: 'Tries planted wrong answers; each must fail.',
+  matrix: 'Tries planted wrong answers and other right answers; each must grade as expected.',
   replay: 'Grades saved trials again; grades must match.',
 } as const;
 // The matrix's right answers (the oracle and its alternatives) must pass; every other probe is a

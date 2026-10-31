@@ -375,7 +375,7 @@ test('the Grader validation tab says in one line what each button does', async (
   const panel = page.getByTestId('task-panel-grader-validation');
   const lines: Record<string, string> = {
     'Run reference solution': 'Runs a known-good answer; it must pass.',
-    'Check the grader': 'Tries planted wrong answers; each must fail.',
+    'Check the grader': 'Tries planted wrong answers and other right answers; each must grade as expected.',
     'Replay published trials': 'Grades saved trials again; grades must match.',
   };
   for (const [name, line] of Object.entries(lines)) {
