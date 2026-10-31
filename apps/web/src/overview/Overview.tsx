@@ -8,6 +8,7 @@
 // committed pilot runs, which are not counted in the results: the latest with its rates by task,
 // the older ones as one line each (ui-polish 2.1). Never an empty page. Both open with the intro
 // card: what this is in plain words, where to start, and how to run a trial.
+import { CircleAlert, Info } from 'lucide-react';
 import type { Ref } from 'react';
 import { MODEL } from '../adapters/ledger-browser.ts';
 import { FINAL_PASS_BAND } from '../../../../packages/core/cost.ts';
@@ -46,9 +47,9 @@ export function Overview({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> 
   return (
     <Page title="Overview" headingRef={headingRef} lead="The tasks, the environment and the committed runs. You can read all of it, and run the grader checks, with no key.">
       <IntroCard />
-      {error !== null && <Notice testId="error-state">{error}</Notice>}
+      {error !== null && <Notice testId="error-state" icon={CircleAlert}>{error}</Notice>}
       <TaskSummary />
-      {error === null && <Notice testId="no-official">The final run is not published yet.{pilots && ' Pilot runs are below.'}</Notice>}
+      {error === null && <Notice testId="no-official" tone="info" icon={Info}>The final run is not published yet.{pilots && ' Pilot runs are below.'}</Notice>}
       <EnvironmentSummary />
       {results.kind === 'ready' && results.pilots.length > 0 && <PilotSummary pilots={results.pilots} />}
     </Page>
@@ -169,7 +170,11 @@ function TaskSummary() {
   const { tasks, error } = useTaskList();
   return (
     <Card title={`Tasks${tasks ? ` (${tasks.length})` : ''}`} actions={<a href={hrefWith({ view: 'tasks', task: null })} onClick={onNav({ view: 'tasks', task: null })} className={`text-xs ${link}`}>Open Tasks</a>}>
-      {error !== null && <p role="alert">The tasks cannot be read: {error}</p>}
+      {error !== null && (
+        <Notice nested tone="danger" role="alert" icon={CircleAlert} detail={error} action={<button type="button" className={BUTTON_PRIMARY} onClick={() => location.reload()}>Reload</button>}>
+          <p className="font-medium text-ink">The tasks did not load. The other pages still work.</p>
+        </Notice>
+      )}
       {tasks === null && error === null && <p className="text-ink-muted">Loading tasks…</p>}
       {tasks !== null && <p className="text-xs text-ink-muted">Open a task to read its prompt, its checks and its reference solution, and to run its grader checks with no key.</p>}
       {tasks !== null && (

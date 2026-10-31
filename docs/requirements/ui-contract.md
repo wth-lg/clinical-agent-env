@@ -88,7 +88,8 @@ accessible name or text node, so they share one line of the snapshot.
 - `Overview`, `Tasks`, `Runs`, `Live trial`, `Findings`, `Environment`, `Attribution`: the rail
   labels, in this order (apps/web/src/shell/views.ts). All seven show on every screen of the
   shell.
-- `Add an API key`: the key gate heading, shown when no key is set and again after Forget key.
+- `Add an API key`: the key gate's heading over the key field (an h2 under the welcome h1 "See an AI
+  model do clinical tasks"), shown when no key is set and again after Forget key.
 - `Local runner` and `Hosted`: the surface chip on the local runner and on the hosted
   site.
 - `through a relay that forwards it and keeps no copy`: the key gate's line on the hosted site

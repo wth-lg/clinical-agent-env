@@ -5,7 +5,7 @@
 // filled ink, a LIMIT filled muted, a REFUSAL an ink outline, an environment fault hatched, a
 // grader fault dotted, infrastructure a dashed outline. Every mark carries its name as text, and
 // the legend is drawn from the same marks, so it reads right in light and dark.
-import { Check, CircleHelp, Copy } from 'lucide-react';
+import { Check, CircleHelp, Copy, type LucideIcon } from 'lucide-react';
 import { useState, type CSSProperties, type ReactNode, type Ref } from 'react';
 import { NOT_AUDITED_MARKER, type Explanation } from '../../../../packages/core/explain.ts';
 import { blocksTheRun, shownFault, shownLabel } from './failures.ts';
@@ -62,11 +62,43 @@ export function Card({ title, children, actions, id, testId }: { title?: ReactNo
   );
 }
 
-// An error (testId error-state) gets the danger border, as the key gate's errors do.
-export function Notice({ children, testId }: { children: ReactNode; testId?: string }) {
-  const tone = testId === 'error-state' ? 'border-danger' : 'border-line';
-  return <p data-testid={testId} className={`break-words rounded-lg border ${tone} bg-surface p-4 text-ink-muted`}>{children}</p>;
+// A notice (ui-polish 5.5). tone danger (also any testId error-state) gets the danger border, as
+// the key gate's errors do; tone info, for an empty state, a dashed outline. An optional icon sits
+// in a 28px circle. An error reads lead first (children), then its action (Reload or Retry), then
+// the raw message behind "Show details". nested: inside a card, so rounded-md.
+const NOTICE_TONE = { plain: 'border-line', info: 'border-dashed border-line-strong/50', danger: 'border-danger' };
+export function Notice({ children, testId, tone, icon: Icon, action, detail, role, nested = false }: {
+  children: ReactNode;
+  testId?: string;
+  tone?: 'info' | 'danger';
+  icon?: LucideIcon;
+  action?: ReactNode;
+  detail?: string | null;
+  role?: 'alert' | 'status';
+  nested?: boolean;
+}) {
+  const t = tone ?? (testId === 'error-state' ? 'danger' : 'plain');
+  return (
+    <div data-testid={testId} role={role} className={`flex items-start gap-3 break-words border ${NOTICE_TONE[t]} ${nested ? 'rounded-md' : 'rounded-lg'} bg-surface p-4 text-ink-muted`}>
+      {Icon && (
+        <span aria-hidden className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-canvas dark:bg-line ${t === 'danger' ? 'text-danger' : 'text-ink-muted'}`}>
+          <Icon className="h-4 w-4" strokeWidth={1.75} />
+        </span>
+      )}
+      <div className={`min-w-0 flex-1 ${Icon ? 'pt-0.5' : ''}`}>
+        {children}
+        {action !== undefined && <div className="mt-3 flex flex-wrap items-center gap-2">{action}</div>}
+        {detail != null && (
+          <details className="mt-3 text-xs">
+            <summary className="cursor-pointer">Show details</summary>
+            <p data-testid="error-detail" className="mt-1 break-words font-mono">{detail}</p>
+          </details>
+        )}
+      </div>
+    </div>
+  );
 }
+
 
 export const NO_RESULTS = 'No results are published yet.';
 
@@ -152,7 +184,7 @@ function toGlossary(anchor: string | undefined) {
   };
 }
 
-const LINK = 'text-ink underline decoration-line-strong underline-offset-2 hover:decoration-ink';
+export const LINK = 'text-ink underline decoration-line-strong underline-offset-2 hover:decoration-ink';
 
 export function GlossaryLink({ children, className, anchor }: { children: ReactNode; className?: string; anchor?: string }) {
   return (

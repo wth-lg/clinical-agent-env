@@ -6,6 +6,7 @@
 // an example trial of each non-pass outcome, the glossary and the full write-up (a link only when
 // the build holds data/writeup.html, which the final run publishes). With no official run, it says
 // first what it will show, then each pilot's rates (ui-polish 2.3).
+import { Info } from 'lucide-react';
 import { Marked } from 'marked';
 import { useMemo, type Ref } from 'react';
 import { FINAL_PASS_BAND, FINAL_TRIALS_PER_TASK } from '../../../../packages/core/cost.ts';
@@ -13,11 +14,12 @@ import { OUTCOMES } from '../../../../packages/core/outcomes.ts';
 import { runBlock, shownFault } from '../data/failures.ts';
 import { notCounted, notCountedText } from '../data/marks.ts';
 import { checkTextOf, dataUrl, gradingLine, useResults, type RunData } from '../data/results.ts';
-import { Card, CARD, formatInterval, GlossaryLink, IntervalRow, markLabel, MarkLegend, markOf, NO_RESULTS, Notice, Page, Swatch } from '../data/ui.tsx';
+import { Card, CARD, formatInterval, GlossaryLink, IntervalRow, LINK, markLabel, MarkLegend, markOf, NO_RESULTS, Notice, Page, Swatch } from '../data/ui.tsx';
 import { CHART_KEY, PilotRateRows, RateAxis } from './pilot.tsx';
 import { FaultBox, KindBar, RunBlocked, TopChecks } from './why.tsx';
 import { ModelLine, PassK, PassKLink } from './passk.tsx';
 import { hrefWith, onNav } from '../data/url.ts';
+import { freshView } from '../shell/views.ts';
 
 const LEAD = 'How well the model did on each task, and why it failed.';
 
@@ -36,7 +38,10 @@ export function Findings({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> 
     return (
       <Page title="Findings" headingRef={headingRef} lead={LEAD}>
         <WillShow />
-        <p data-testid="empty-state" className="text-ink-muted">{NO_RESULTS} The findings show here when the final run is committed.</p>
+        <Notice testId="empty-state" tone="info" icon={Info}>
+          {NO_RESULTS} The findings show here when the final run is committed.
+          {results.pilots.length > 0 && <a href={hrefWith(freshView('runs'))} onClick={onNav(freshView('runs'))} className={`mt-2 block w-fit text-xs ${LINK}`}>See the pilot runs</a>}
+        </Notice>
         {results.pilots.map((p) => <PilotFindings key={p.runId} run={p} />)}
         {links}
       </Page>

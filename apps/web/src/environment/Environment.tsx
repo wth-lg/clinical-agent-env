@@ -2,11 +2,12 @@
 // fixtures/manifest.json), Verify reset (a fresh store built in this tab, its state hash shown next
 // to the manifest's), and the tool catalogue with a keyless Try panel that runs one read tool on a
 // scratch store. The catalogue and Try go only through packages/core/try-tool.ts.
+import { CircleAlert } from 'lucide-react';
 import { useState, type Ref } from 'react';
 import { loadStore } from '../../../../packages/env/fixture-source.ts';
 import { stateHash } from '../../../../packages/env/hash.ts';
 import { toolCatalog, tryReadTool, type TryResult } from '../../../../packages/core/try-tool.ts';
-import { BUTTON_PRIMARY, Card, FIELD, Hash, Page, SELECT } from '../data/ui.tsx';
+import { BUTTON, BUTTON_PRIMARY, Card, FIELD, Hash, Notice, Page, SELECT } from '../data/ui.tsx';
 import { MANIFEST, worldSource } from '../data/world.ts';
 import { firstSentence, formatClock } from '../data/text.ts';
 
@@ -70,7 +71,14 @@ function VerifyReset() {
     <div className="mt-4 flex flex-wrap items-center gap-3">
       <button type="button" className={BUTTON_PRIMARY} disabled={state.kind === 'running'} onClick={() => void run()}>Verify reset</button>
       {state.kind === 'running' && <span className="text-ink-muted" role="status">Building a fresh store in this tab…</span>}
-      {state.kind === 'error' && <span role="alert">Verify reset did not finish: {state.message}</span>}
+      {state.kind === 'error' && (
+        <div className="basis-full">
+          {/* Verify reset above stays the card's primary, so Retry here is a plain button. */}
+          <Notice nested tone="danger" role="alert" icon={CircleAlert} detail={state.message} action={<button type="button" className={BUTTON} onClick={() => void run()}>Retry</button>}>
+            <p className="font-medium text-ink">The fresh store could not be built, so the check did not finish. The other pages still work.</p>
+          </Notice>
+        </div>
+      )}
       {state.kind === 'done' && (
         <span className="min-w-0 break-words" data-testid="reset-result" data-hash={state.hash} data-equal={String(state.hash === MANIFEST.world.state_hash)}>
           Fresh store hash <Hash value={state.hash} /> {state.hash === MANIFEST.world.state_hash ? 'matches the manifest' : 'does NOT match the manifest'} ({Math.round(state.ms)} ms).
