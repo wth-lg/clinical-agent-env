@@ -1,5 +1,6 @@
 import { RotateCw } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { BUTTON_PRIMARY } from '../data/ui.tsx';
 import { detectSurface } from './detect.ts';
 import { LocalCommand } from './LocalCommand.tsx';
 
@@ -49,7 +50,7 @@ export function RunnerDown() {
           type="button"
           onClick={check}
           disabled={checking}
-          className="mt-4 inline-flex h-9 items-center gap-2 rounded-sm border border-line-strong px-3 text-ink hover:bg-canvas disabled:opacity-50"
+          className={`${BUTTON_PRIMARY} mt-4 h-9`}
         >
           <RotateCw aria-hidden className="h-4 w-4" strokeWidth={1.75} />
           {checking ? 'Checking…' : 'Retry now'}

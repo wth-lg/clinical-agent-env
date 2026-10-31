@@ -9,13 +9,12 @@ import { useState } from 'react';
 import type { TrialEvent } from '../../../../packages/core/events.ts';
 import type { Step } from '../../../../packages/grader/check.ts';
 import type { Trial } from '../data/results.ts';
-import { Hash } from '../data/ui.tsx';
+import { BUTTON, Hash } from '../data/ui.tsx';
 import { MANIFEST } from '../data/world.ts';
 import { EvidenceId, Section } from './Grading.tsx';
 import { validate, type StateRun } from '../tasks/validate-protocol.ts';
 import type { Loaded } from './Trajectory.tsx';
 
-const button = 'inline-flex h-8 items-center gap-1.5 rounded-sm border border-line-strong px-3 text-ink hover:bg-canvas disabled:cursor-not-allowed disabled:opacity-50';
 const show = (v: unknown) => (v === undefined ? '(absent)' : JSON.stringify(v, null, 1));
 
 type Run = { state: 'idle' } | { state: 'running' } | { state: 'error'; message: string } | { state: 'done'; value: StateRun };
@@ -85,8 +84,8 @@ export function StateDiff({ t, events, steps, written, onStep, decisiveIds = [],
       </Section>
       {!(otherWorld && !official) && (
       <div className="space-y-2" data-testid="replay-block">
-        <button type="button" className={button} disabled={!canReplay || run.state === 'running'} onClick={() => void replay()}>
-          {run.state === 'running' ? <Loader2 aria-hidden className="h-3.5 w-3.5 animate-spin" strokeWidth={1.75} /> : <RotateCcw aria-hidden className="h-3.5 w-3.5" strokeWidth={1.75} />}
+        <button type="button" className={BUTTON} disabled={!canReplay || run.state === 'running'} onClick={() => void replay()}>
+          {run.state === 'running' ? <Loader2 aria-hidden className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" strokeWidth={1.75} /> : <RotateCcw aria-hidden className="h-3.5 w-3.5" strokeWidth={1.75} />}
           Replay
         </button>
         <p data-testid="replay-note" className="text-xs text-ink-muted">
@@ -120,7 +119,7 @@ function Result({ r, recorded, decisiveIds, otherWorld }: { r: StateRun; recorde
       <p className="flex flex-wrap items-center gap-x-1 text-ink-muted">Replayed final <Hash value={r.final} testId="hash-replayed" /></p>
       <Section title={`Created (${r.diff.created.length}), changed (${r.diff.updated.length})`}>
         {r.changes.length === 0 ? <p className="text-ink-muted">The trial left the world as it found it.</p> : (
-          <ul className="divide-y divide-line rounded-sm border border-line">
+          <ul className="divide-y divide-line rounded-md border border-line">
             {r.changes.map((c) => (
               <li key={c.id} data-testid="diff-row" data-id={c.id} data-kind={c.kind} data-decisive={String(decisiveIds.includes(c.id))} className="min-w-0 px-3 py-2">
                 <details>

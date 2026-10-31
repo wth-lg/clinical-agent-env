@@ -261,7 +261,10 @@ async function load(): Promise<Results> {
       else official = await loadRun(files, has, officialDir, summary as Summary);
     }
   }
-  const pilotDirs = [...new Set(files.flatMap((f) => PILOT_DIR.exec(f)?.[1] ?? []))].filter((d) => d !== officialDir).sort();
+  // By the pilot's number, so the last pilot is the latest: pilot-9 before pilot-10, under results/
+  // or results/runs/ (verifier-phase-P17i-UI-2-1).
+  const pilotName = (d: string) => d.slice(d.lastIndexOf('/') + 1);
+  const pilotDirs = [...new Set(files.flatMap((f) => PILOT_DIR.exec(f)?.[1] ?? []))].filter((d) => d !== officialDir).sort((a, b) => pilotName(a).localeCompare(pilotName(b), 'en', { numeric: true }) || a.localeCompare(b));
   // Every pilot settles before the first failure is reported, so nothing is still fetching when
   // the load settles (ViewBody's data-preload signal relies on it).
   const settled = await Promise.allSettled(pilotDirs.map((d) => loadRun(files, has, d, null)));

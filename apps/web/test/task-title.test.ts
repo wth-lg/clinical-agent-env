@@ -2,7 +2,7 @@
 // moves the code to the card's meta line; a title whose "under ..." names no policy of the task
 // keeps its words.
 import { describe, expect, it } from 'vitest';
-import { policyLine, taskTitle, titleParts } from '../src/tasks/title.ts';
+import { liveTaskTitle, policyLine, taskTitle, titleParts } from '../src/tasks/title.ts';
 
 describe('titleParts', () => {
   it('moves a trailing "under <policy id>" of the task to the codes', () => {
@@ -26,5 +26,17 @@ describe('taskTitle and policyLine', () => {
     expect(policyLine(['RBC-PHARM-07'])).toBe('1 policy: RBC-PHARM-07');
     expect(policyLine(['RBC-RAD-07', 'RBC-LAB-03'])).toBe('2 policies: RBC-RAD-07, RBC-LAB-03');
     expect(policyLine([])).toBe('0 policies');
+  });
+});
+
+// The live launcher and its headings name a task by its title, never its id (ui-polish 5.1). The
+// practice task is not in the task list, so it has a title of its own.
+describe('liveTaskTitle', () => {
+  const tasks = [{ id: 'renal-dose-review', title: 'Renal and age dose review of Harold Vance under RBC-PHARM-07', policies: [{ id: 'RBC-PHARM-07' }] }];
+  it('is the task\'s title, the practice task\'s plain name, or the id for a task it does not know', () => {
+    expect(liveTaskTitle('renal-dose-review', tasks)).toBe('Renal and age dose review of Harold Vance');
+    expect(liveTaskTitle('_toy', tasks)).toBe('Practice task (write one note)');
+    expect(liveTaskTitle('_toy', null)).toBe('Practice task (write one note)');
+    expect(liveTaskTitle('unknown-task', tasks)).toBe('unknown-task');
   });
 });

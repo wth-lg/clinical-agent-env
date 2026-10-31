@@ -113,6 +113,14 @@ async function noRates(page: Page) {
   await expect(page.getByRole('link', { name: 'What pass^k means' })).toHaveCount(0);
 }
 
+// On Runs, the blocked run's group of plain PASS rows gives no PASS count either: it is a pass
+// count (verifier-phase-P17i-UI-2-1 B1; decisions.tsv 2026-10-29T16:00).
+async function noPassGroupCount(page: Page) {
+  const summary = page.locator('[data-testid="run"][data-official="true"] [data-testid="pass-group"] > summary');
+  await expect(summary).toHaveText(/^Other trials \(\d+\)$/);
+  await expect(summary).not.toHaveText(/\d+ PASS/);
+}
+
 test('a run with a false PASS is blocked: the blocking trials and the false PASS count, no pass count, dot or interval', async ({ page }) => {
   const pass = records.find((r) => r.outcome === 'PASS' && r.task_id === 'renal-dose-review')!;
   await withRow(page, { trial: trialName(pass), outcome: 'PASS', taxonomy: null, model_fault: 'no', decisive_step: 2, evidence_ids: ['Patient/pt-0001'], llm_auditor_agrees: true, label: 'grader', note: 'the grader passed a dose the policy forbids' });
@@ -128,6 +136,7 @@ test('a run with a false PASS is blocked: the blocking trials and the false PASS
   await expect(page.getByTestId('runs-k-of-n')).not.toContainText(/\d+\/\d+/);
   await expect(page.getByTestId('runs-k-of-n')).toContainText('1 false PASS');
   await noRates(page);
+  await noPassGroupCount(page);
   await page.getByRole('link', { name: 'Findings', exact: true }).first().click();
   await expect(page.getByTestId('run-blocked')).toBeVisible();
   await noRates(page);
@@ -170,6 +179,7 @@ test('a valid failure the audit labels environment blocks the run, and its own r
   await expect(page.locator(`[data-testid="overview-row"][data-task="${first.task_id}"] [data-testid="swatches"] [title^="${row.trial}:"]`)).toHaveAttribute('data-mark', 'environment');
   // Its row and its trial header show the audit's label in the blocked tone (decisions.tsv 17:30 (c)).
   await page.getByRole('link', { name: 'Runs', exact: true }).first().click();
+  await noPassGroupCount(page);
   const r = page.locator(`[data-testid="run"][data-official="true"] [data-testid="trial-row"][data-trial="${row.trial}"]`);
   const danger = await page.evaluate(() => {
     const x = document.createElement('span');

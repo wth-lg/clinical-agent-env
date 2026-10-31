@@ -49,6 +49,12 @@ export function App({ surface }: { surface: Surface }) {
   useEffect(() => {
     if (arrived && !gate) heading.current?.focus();
   }, [arrived, gate]);
+  // After a rail navigation, focus moves to the new view's heading, so a keyboard or screen reader
+  // user starts at the top of the view they chose.
+  const [navigated, setNavigated] = useState(0);
+  useEffect(() => {
+    if (navigated > 0) heading.current?.focus();
+  }, [navigated]);
 
   useEffect(() => {
     const onAdd = () => setGate(true);
@@ -106,8 +112,19 @@ export function App({ surface }: { surface: Surface }) {
   return (
     <HostedContext value={hosted}>
       <div className="flex h-screen flex-col bg-canvas">
+        {/* The first stop for Tab: past the top bar and the views, to the view itself. */}
+        <a
+          href="#main"
+          onClick={(e) => {
+            e.preventDefault();
+            document.getElementById('main')?.focus();
+          }}
+          className="sr-only rounded-md bg-primary px-3 py-2 font-medium text-on-primary focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50"
+        >
+          Skip to content
+        </a>
         <TopBar surface={surface} status={status} onForget={onForget} onAdd={() => setGate(true)} busy={busy} />
-        <div className="flex min-h-0 flex-1">
+        <div className="flex min-h-0 flex-1 flex-col sm:flex-row">
           <Rail
             active={view}
             onNavigate={(id) => {
@@ -116,9 +133,10 @@ export function App({ surface }: { surface: Surface }) {
               // stays the same (verifier-phase-P16-1 N2).
               history.pushState(null, '', viewHref(location.href, id));
               dispatchEvent(new PopStateEvent('popstate'));
+              setNavigated((n) => n + 1);
             }}
           />
-          <main className="min-w-0 flex-1 overflow-auto">
+          <main id="main" tabIndex={-1} className="min-w-0 flex-1 overflow-auto focus-visible:outline-none">
             <ErrorBoundary key={view.id}>
               <ViewBody id={view.id} headingRef={heading} />
             </ErrorBoundary>

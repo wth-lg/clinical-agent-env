@@ -6,11 +6,42 @@
   html {
     color-scheme: light dark;
   }
+  /* 14px on a phone, 13px from sm up (ui-polish 1.3). */
   body {
-    @apply bg-canvas font-sans text-[13px] leading-5 text-ink antialiased;
+    @apply bg-canvas font-sans text-[14px] leading-6 text-ink antialiased sm:text-[13px] sm:leading-5;
     font-variant-numeric: tabular-nums;
   }
+  /* The outline follows the element's own corner radius in current browsers. */
   :focus-visible {
     @apply outline-2 outline-offset-2 outline-accent;
+  }
+  /* Short colour and background fades on the things a visitor presses (ui-polish 1.4); none when
+     the visitor asks for reduced motion. Only while hovered or focused, and for a moment after
+     (data-fading, shell/fade.ts), so leaving fades too while a light/dark switch repaints the
+     page at once instead of fading through mixed colours. */
+  @media (prefers-reduced-motion: no-preference) {
+    a:hover,
+    button:hover,
+    summary:hover,
+    a:focus-visible,
+    button:focus-visible,
+    summary:focus-visible,
+    [data-fading] {
+      transition-property: color, background-color, border-color, text-decoration-color, opacity;
+      transition-duration: 120ms;
+      transition-timing-function: ease-out;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }

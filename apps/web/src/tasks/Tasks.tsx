@@ -16,7 +16,7 @@ import { useKeyStatus } from '../keygate/key.ts';
 import type { Script } from '../../../../packages/grader/matrix/types.ts';
 import { checkTextOf, loadResults } from '../data/results.ts';
 import { loadTaskList } from '../data/tasks.ts';
-import { Notice, Page } from '../data/ui.tsx';
+import { BUTTON, BUTTON_PRIMARY, CARD, Notice, Page, SECTION_LABEL, SELECT } from '../data/ui.tsx';
 import { tabTarget } from '../data/tabs.ts';
 import { navigate, useParams } from '../data/url.ts';
 import { freshView } from '../shell/views.ts';
@@ -117,7 +117,7 @@ function ChartTab({ task, active }: { task: string; active: boolean }) {
       {error !== null && (
         <p role="alert" className="flex flex-wrap items-center gap-2">
           The FHIR store did not load: {error}
-          <button type="button" className={button} onClick={() => setAttempt((n) => n + 1)}>Retry</button>
+          <button type="button" className={BUTTON} onClick={() => setAttempt((n) => n + 1)}>Retry</button>
         </p>
       )}
       {world === null && error === null && <p className="text-ink-muted" role="status">Loading the FHIR store in this tab…</p>}
@@ -125,7 +125,7 @@ function ChartTab({ task, active }: { task: string; active: boolean }) {
       {world !== null && patients.length > 1 && (
         <label className="flex flex-wrap items-center gap-2 text-xs text-ink-muted">
           Patient
-          <select aria-label="Patient" data-testid="chart-patient" className="h-8 max-w-full rounded-sm border border-line-strong bg-surface px-2 text-sm text-ink" value={patient ?? ''} onChange={(e) => setChosen(e.target.value)}>
+          <select aria-label="Patient" data-testid="chart-patient" className={SELECT} value={patient ?? ''} onChange={(e) => setChosen(e.target.value)}>
             {patients.map((p) => <option key={p} value={p}>{nameOf(p)} ({p.slice('Patient/'.length)})</option>)}
           </select>
           <span>{patients.length} patients in this task</span>
@@ -140,10 +140,10 @@ function ChartTab({ task, active }: { task: string; active: boolean }) {
             const rows = chart.rows.filter((r) => r.type === type);
             return (
               <div key={type} data-testid="chart-section" data-type={type}>
-                <h4 className="text-xs font-medium text-ink-muted">{SECTION_TITLE[type]} ({rows.length})</h4>
+                <h4 className={SECTION_LABEL}>{SECTION_TITLE[type]} ({rows.length})</h4>
                 {rows.length === 0 ? <p className="text-xs text-ink-muted">None recorded.</p> : (
                   // A scroll box a keyboard can reach and a screen reader names (axe scrollable-region-focusable).
-                  <div role="region" aria-label={`${SECTION_TITLE[type]} of ${chart.patient?.name || patient}`} tabIndex={0} className="mt-1 max-h-72 overflow-auto rounded-sm border border-line focus-visible:outline-2 focus-visible:outline-accent">
+                  <div role="region" aria-label={`${SECTION_TITLE[type]} of ${chart.patient?.name || patient}`} tabIndex={0} className="mt-1 max-h-72 overflow-auto rounded-md border border-line focus-visible:outline-2 focus-visible:outline-accent">
                     <ul className="divide-y divide-line text-xs">
                       {rows.map((r) => (
                         <li key={r.id} data-testid="chart-row" data-type={r.type} data-id={r.id} className="px-2 py-1">
@@ -188,7 +188,7 @@ function ReferenceSolution({ id, runs, active }: { id: string; runs: ReturnType<
   }, [id]);
   return (
     <section>
-      <h3 className="font-medium">Reference solution</h3>
+      <h3 className={SECTION_LABEL}>Reference solution</h3>
       <p className="mt-1 text-xs text-ink-muted">The tool calls of the oracle, tasks/{id}/solution/solve.ts, in order. This tab grades it with no key; it must PASS with score 1.0.</p>
       <p className="mt-1" data-testid="oracle-badge" data-state={run.state}>
         {run.state === 'done' ? <span className="font-medium">oracle {run.value.outcome ?? 'none'} {run.value.score === null ? 'n/a' : run.value.score.toFixed(1)}</span>
@@ -236,7 +236,7 @@ function TaskCard({ t, tab }: { t: Loaded; tab: TaskTab | null }) {
   // running, shows in the Grader validation panel once the card opens (verifier JU9-1 F5).
   const runs = useValidationRuns();
   return (
-    <li data-testid="task-card" data-task={task.id} className="rounded-sm border border-line bg-surface">
+    <li data-testid="task-card" data-task={task.id} className={CARD}>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3">
         <button type="button" aria-expanded={open} onClick={() => navigate({ task: open ? null : task.id, tab: null })} className="inline-flex items-center gap-1.5 text-left font-medium text-ink hover:underline">
           <Chevron aria-hidden className="h-4 w-4 text-ink-muted" strokeWidth={1.75} />
@@ -253,11 +253,11 @@ function TaskCard({ t, tab }: { t: Loaded; tab: TaskTab | null }) {
             prompt: (
               <div className="space-y-4">
                 <section>
-                  <h3 className="font-medium">Prompt</h3>
+                  <h3 className={SECTION_LABEL}>Prompt</h3>
                   <pre data-testid="task-prompt" className="mt-1 max-h-80 overflow-auto whitespace-pre-wrap break-words rounded-sm bg-canvas p-3 font-sans text-ink">{task.instruction}</pre>
                 </section>
                 <section>
-                  <h3 className="font-medium">Tools</h3>
+                  <h3 className={SECTION_LABEL}>Tools</h3>
                   {task.tools == null ? <p className="mt-1 text-ink-muted" data-testid="task-tools">Every tool of the environment (see Environment).</p> : <p className="mt-1 flex flex-wrap gap-1.5" data-testid="task-tools">{task.tools.map((n) => <code key={n} className="rounded-sm border border-line px-1 text-xs">{n}</code>)}</p>}
                 </section>
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -268,7 +268,7 @@ function TaskCard({ t, tab }: { t: Loaded; tab: TaskTab | null }) {
             ),
             policy: task.policies.length === 0 ? <p className="text-ink-muted" data-testid="task-policy">This task names no policy.</p> : (
               <section>
-                <h3 className="font-medium">Policies</h3>
+                <h3 className={SECTION_LABEL}>Policies</h3>
                 <ul className="mt-1 space-y-1">
                   {task.policies.map((p) => (
                     <li key={p.id} data-testid="task-policy">
@@ -284,9 +284,9 @@ function TaskCard({ t, tab }: { t: Loaded; tab: TaskTab | null }) {
             chart: <ChartTab task={task.id} active={tab === 'chart'} />,
             rubric: (
               <section>
-                <h3 className="font-medium">Checks: what each one requires</h3>
+                <h3 className={SECTION_LABEL}>Checks: what each one requires</h3>
                 <p className="mt-1 text-xs text-ink-muted">A trial passes when every gate check is met. Rubric items add or take away points for the score. Each check names the policy section or prompt line it enforces.</p>
-                <ul className="mt-2 divide-y divide-line rounded-sm border border-line" data-testid="task-checks">
+                <ul className="mt-2 divide-y divide-line rounded-md border border-line" data-testid="task-checks">
                   {checks.map((c) => <CheckRow key={c.id} task={task} check={c} />)}
                 </ul>
               </section>
@@ -373,8 +373,6 @@ function useRun<T>(): [Run<T>, (f: () => Promise<T>) => void] {
   }];
 }
 
-const button = 'inline-flex h-8 items-center gap-1.5 rounded-sm border border-line-strong bg-surface px-3 text-ink hover:bg-canvas disabled:cursor-not-allowed disabled:border-dashed disabled:border-line disabled:bg-canvas disabled:text-ink-muted';
-
 function useValidationRuns() {
   const [oracle, runOracle] = useRun<OracleResult>();
   const [matrix, runMatrixRaw] = useRun<MatrixRun>();
@@ -389,9 +387,11 @@ function useValidationRuns() {
 }
 
 // The oracle, matrix and replay buttons and their results. On a closed card the row is labelled
-// and carries Run trial; in the Grader validation panel the tab names it.
+// and carries Run trial; in the Grader validation panel the tab names it. One primary action per
+// row: Run trial when there is a key; with none, Run reference solution, which needs no key.
 function Validation({ id, runs, closed = false }: { id: string; runs: ReturnType<typeof useValidationRuns>; closed?: boolean }) {
   const { oracle, runOracle, matrix, runMatrix, matrixProgress, replay, runReplay } = runs;
+  const keyed = useKeyStatus().kind !== 'none';
   const busy = [oracle, matrix, replay].some((r) => r.state === 'running');
   const replayTrials = async () => {
     const r = await loadResults();
@@ -402,9 +402,9 @@ function Validation({ id, runs, closed = false }: { id: string; runs: ReturnType
     <div className={closed ? 'border-t border-line px-4 py-3' : ''} data-testid="validation" data-task={id}>
       <div className="flex flex-wrap items-center gap-2">
         {closed && <span className="mr-1 text-xs font-medium text-ink-muted">Grader validation</span>}
-        <button type="button" className={button} disabled={busy} onClick={() => runOracle(() => validate({ op: 'oracle', task: id }))}>Run reference solution</button>
-        <button type="button" className={button} disabled={busy} onClick={() => runMatrix(id)}>Check the grader</button>
-        <button type="button" className={button} disabled={busy} onClick={() => runReplay(replayTrials)}>Replay published trials</button>
+        <button type="button" className={closed && keyed ? BUTTON : BUTTON_PRIMARY} disabled={busy} onClick={() => runOracle(() => validate({ op: 'oracle', task: id }))}>Run reference solution</button>
+        <button type="button" className={BUTTON} disabled={busy} onClick={() => runMatrix(id)}>Check the grader</button>
+        <button type="button" className={BUTTON} disabled={busy} onClick={() => runReplay(replayTrials)}>Replay published trials</button>
         {closed && <RunTrial id={id} />}
       </div>
       <Result r={oracle} what="reference solution" render={(o) => (
@@ -458,7 +458,7 @@ function RunTrial({ id }: { id: string }) {
   const key = useKeyStatus();
   return (
     <span className="ml-auto inline-flex items-center gap-2">
-      <button type="button" className={button} aria-describedby={key.kind === 'none' ? `run-why-${id}` : undefined} onClick={() => navigate(freshView('live', { task: id }))}>Run trial</button>
+      <button type="button" className={key.kind === 'none' ? BUTTON : BUTTON_PRIMARY} aria-describedby={key.kind === 'none' ? `run-why-${id}` : undefined} onClick={() => navigate(freshView('live', { task: id }))}>Run trial</button>
       {key.kind === 'none' && <span id={`run-why-${id}`} className="text-xs text-ink-muted">Live trial asks for an API key.</span>}
     </span>
   );
@@ -466,7 +466,7 @@ function RunTrial({ id }: { id: string }) {
 
 function Result<T>({ r, what, render, progress = null }: { r: Run<T>; what: string; render: (v: T) => ReactNode; progress?: string | null }) {
   if (r.state === 'idle') return null;
-  if (r.state === 'running') return <p className="mt-2 inline-flex items-center gap-1.5 text-ink-muted" role="status" data-testid={progress === null ? undefined : 'run-progress'}><Loader2 aria-hidden className="h-3.5 w-3.5 animate-spin" />Running the {what} in this tab…{progress === null ? '' : ` ${progress}`}</p>;
+  if (r.state === 'running') return <p className="mt-2 inline-flex items-center gap-1.5 text-ink-muted" role="status" data-testid={progress === null ? undefined : 'run-progress'}><Loader2 aria-hidden className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" />Running the {what} in this tab…{progress === null ? '' : ` ${progress}`}</p>;
   if (r.state === 'error') return <p className="mt-2 inline-flex items-center gap-1.5" role="alert"><CircleAlert aria-hidden className="h-3.5 w-3.5" />The {what} did not finish: {r.message}</p>;
   return <div className="mt-2 flex gap-1.5"><CheckCircle2 aria-hidden className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent" />{render(r.value)}</div>;
 }

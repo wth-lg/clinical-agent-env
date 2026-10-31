@@ -3,7 +3,7 @@
 import { Download } from 'lucide-react';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { Trial } from '../data/results.ts';
-import { Hash } from '../data/ui.tsx';
+import { BUTTON, Hash } from '../data/ui.tsx';
 import { MANIFEST } from '../data/world.ts';
 import { LINK } from './Attribution.tsx';
 
@@ -64,7 +64,7 @@ export function Raw({ t }: { t: Trial }) {
     <div className="space-y-3">
       <p className="flex flex-wrap items-center gap-x-4 gap-y-1">
         {url !== null && (
-          <a data-testid="raw-download" href={url} download={file} className="inline-flex h-8 items-center gap-1.5 rounded-sm border border-line-strong px-3 text-ink hover:bg-canvas">
+          <a data-testid="raw-download" href={url} download={file} className={BUTTON}>
             <Download aria-hidden className="h-3.5 w-3.5" strokeWidth={1.75} />Download the record (JSON)
           </a>
         )}

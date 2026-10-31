@@ -121,6 +121,14 @@ test('a trial streams in a Worker, is graded in the browser and makes no request
   await expect(trial(page).getByTestId('tool-row')).toHaveCount(4);
   await expect(trial(page).getByTestId('thinking').first()).toContainText('I should check who I am');
   await expect(trial(page).getByTestId('meter-turn')).toHaveText('3');
+  // The heading names the task and the trial in words; the raw id is its title and a small code
+  // (ui-polish 5.1). Screen readers hear one status line, not every step (5.3).
+  const id = (await trial(page).getAttribute('data-trial'))!;
+  await expect(trial(page).locator('h2')).toHaveAttribute('title', id);
+  await expect(trial(page).locator('h2')).toContainText(/^Practice task \(write one note\) · trial 1 of 1 · started \d\d:\d\d/);
+  await expect(trial(page).getByTestId('trial-id')).toHaveText(id);
+  await expect(trial(page).getByTestId('trajectory')).not.toHaveAttribute('aria-live');
+  await expect(trial(page).getByRole('status')).toHaveText('Finished: PASS');
   uninterrupted = await trial(page).getByTestId('final-hash').textContent();
   expect(uninterrupted).toMatch(/^[0-9a-f]{64}$/);
   expect(api.trialCalls()).toHaveLength(5);
@@ -178,17 +186,21 @@ test('at phone width the in-progress trial fits: written ids truncate and the tr
   expect(box.x + box.width).toBeLessThanOrEqual(row.x + row.width + 0.5);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
   const id = (await trial(page).getAttribute('data-trial'))!;
-  // The heading may break after each dot, never inside the run id or the task id.
-  await expect(trial(page).locator('h2')).toHaveText(id);
-  await expect(trial(page).locator('h2')).toHaveCSS('overflow-wrap', 'break-word');
-  await expect(trial(page).locator('h2 wbr')).toHaveCount(id.split('.').length - 1);
+  // The trial id under the heading may break after each dot, never inside the run id or the task id.
+  const code = trial(page).getByTestId('trial-id');
+  await expect(code).toHaveText(id);
+  await expect(code).toHaveCSS('overflow-wrap', 'break-word');
+  await expect(code.locator('wbr')).toHaveCount(id.split('.').length - 1);
+  // While the trial runs, its status line gives the turn.
+  await expect(trial(page).getByRole('status')).toHaveText(/^Turn \d, running$/);
 });
 
 test('without a key the Task select is shown disabled', async ({ page }) => {
   await browse(page, './?view=live&task=_toy');
   const select = page.getByLabel('Task');
   await expect(select).toBeDisabled();
-  expect(Number(await select.evaluate((el) => getComputedStyle(el).opacity))).toBeLessThan(1);
+  // Disabled reads as a dashed outline, not opacity, so its text keeps its contrast (ui-polish 1.1).
+  expect(await select.evaluate((el) => getComputedStyle(el).borderTopStyle)).toBe('dashed');
 });
 
 test('the trial Worker\'s guard refuses fetch and WebSocket to any origin but its own and the API, and XHR and EventSource to any', async ({ page }) => {

@@ -4,7 +4,7 @@
 // sets `current`; that row is scrolled into view, focused and marked aria-current="step".
 import { ChevronDown, ChevronRight, CircleAlert, Dot } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { Notice } from '../data/ui.tsx';
+import { CARD, Notice } from '../data/ui.tsx';
 import { stepAnchor, type Row, type Trajectory as Folded } from './steps.ts';
 
 export type Loaded<T> = { state: 'loading' } | { state: 'error'; message: string } | { state: 'ready'; value: T };
@@ -13,7 +13,7 @@ export type Loaded<T> = { state: 'loading' } | { state: 'error'; message: string
 // scrolls again.
 export function Trajectory({ data, current }: { data: Loaded<Folded> | null; current: { step: number; seq: number } | null }) {
   return (
-    <section aria-label="Trajectory" data-testid="trajectory" className="min-w-0 rounded-sm border border-line bg-surface">
+    <section aria-label="Trajectory" data-testid="trajectory" className={`min-w-0 ${CARD}`}>
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-b border-line px-4 py-2.5">
         <h2 className="font-medium text-ink">Trajectory</h2>
         {data?.state === 'ready' && <span className="text-xs text-ink-muted">{data.value.steps.length} tool calls ran</span>}
@@ -74,7 +74,7 @@ function RowItem({ row, current }: { row: Row; current: number | null }) {
       aria-current={here ? 'step' : undefined}
       className={`scroll-m-4 rounded-sm outline-none ${here ? 'bg-canvas ring-2 ring-accent' : ''}`}
     >
-      <button type="button" aria-expanded={open} onClick={() => setOpen(!open)} className="flex w-full min-w-0 items-center gap-1.5 rounded-sm px-1 py-0.5 text-left hover:bg-canvas">
+      <button type="button" aria-expanded={open} onClick={() => setOpen(!open)} className="flex w-full min-w-0 items-center gap-1.5 rounded-md px-1 py-0.5 text-left pointer-coarse:py-2.5 hover:bg-canvas">
         <Chevron aria-hidden className="h-3.5 w-3.5 shrink-0 text-ink-muted" strokeWidth={1.75} />
         <span className="w-14 shrink-0 text-xs tabular-nums text-ink-muted">{row.step === null ? 'not run' : `Step ${row.step}`}</span>
         <code className="shrink-0 font-mono text-xs text-ink">{row.name}</code>
