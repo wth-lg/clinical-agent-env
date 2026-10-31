@@ -60,6 +60,8 @@ const NEWEST_SCR = search({ resource_type: 'Observation', code: '2160-0', sort: 
 const ALL_SCR = search({ resource_type: 'Observation', code: '2160-0' });
 // This month's creatinines, oldest first (the default order): verifier-W1-probe-T5-3 M1.
 const MONTH_SCR = search({ resource_type: 'Observation', code: '2160-0', date_ge: '2026-10-01' });
+// The creatinines of the 30 days before the scan, newest first: verifier-W1-probe-T5-4 M2.
+const WINDOW_SCR = search({ resource_type: 'Observation', code: '2160-0', date_ge: '2026-09-26', sort: '-date' });
 const ALL_NOTES = search({ resource_type: 'DocumentReference' });
 // The notes of this month and of the 30 days before the scan, oldest first (the default order):
 // verifier-W1-probe-T5-2 N1.
@@ -74,6 +76,7 @@ export const BROAD: ScriptCall[] = [
   NEWEST_SCR,
   ALL_SCR,
   MONTH_SCR,
+  WINDOW_SCR,
   search({ resource_type: 'DocumentReference', date_ge: '2026-09-01', sort: '-date' }),
   search({ resource_type: 'DocumentReference', sort: '-date' }),
   ALL_NOTES,
@@ -97,6 +100,7 @@ const ED_ROW = row('the row shows an emergency department discharge summary of 1
 const ALLOWED = new Map<ScriptCall, Record<string, Allowance>>([
   [NEWEST_SCR, { [ref('Observation/obs-t5-brakus-1019')]: BRAKUS_PAIR }],
   [MONTH_SCR, { [ref('Observation/obs-t5-brakus-1019')]: BRAKUS_PAIR }],
+  [WINDOW_SCR, { [ref('Observation/obs-t5-brakus-1019')]: BRAKUS_PAIR }],
   [ALL_NOTES, { [ref('DocumentReference/doc-t5-ct-2019')]: row('the id-ordered row shows a 2019 imaging study, not its grade') }],
   [MONTH_NOTES, { [ref('DocumentReference/doc-t5-schuster-ed')]: ED_ROW }],
   [WINDOW_NOTES, { [ref('DocumentReference/doc-t5-schuster-ed')]: ED_ROW }],
