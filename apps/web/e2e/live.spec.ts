@@ -55,7 +55,7 @@ async function mockToy(page: Page, opts: { hold?: number; trialStatus?: { status
 }
 
 async function enterKey(page: Page, key: string, cap?: string) {
-  await page.getByLabel('API key', { exact: true }).fill(key);
+  await page.getByLabel('Add an API key', { exact: true }).fill(key);
   if (cap !== undefined) await page.getByLabel('Session spend cap (USD)').fill(cap);
   await page.getByRole('button', { name: 'Validate' }).click();
   await expect(page.getByTestId('key-chip')).toBeVisible();

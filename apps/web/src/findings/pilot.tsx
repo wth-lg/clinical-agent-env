@@ -3,9 +3,11 @@
 // trial links its k/N to that task's trials in Runs. The rows are subgrids of one grid, so the
 // charts line up and the Wilson column is as wide as its widest text, which never wraps. Below sm
 // the chart hides and the text stays, with "Wilson" left to screen readers, so a row is one line
-// on a phone.
+// on a phone. A pilot a trial blocks has no rate rows (data/failures.ts noPassCount); each card
+// says why in their place.
 import type { ReactNode } from 'react';
 import { FINAL_PASS_BAND } from '../../../../packages/core/cost.ts';
+import { noPassCount } from '../data/failures.ts';
 import { pilotRates, type RunData } from '../data/results.ts';
 import { formatInterval, IntervalRow } from '../data/ui.tsx';
 import { hrefWith, onNav } from '../data/url.ts';
@@ -27,6 +29,7 @@ export function RateAxis({ col }: { col: string }) {
 
 // below: a line under a task's row (Findings: the trials its k/N leaves out); axis: the axis row.
 export function PilotRateRows({ run, below, axis = false }: { run: RunData; below?: (r: ReturnType<typeof pilotRates>[number]) => ReactNode; axis?: boolean }) {
+  if (noPassCount(run.trials) !== null) return null;
   return (
     <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-x-3 gap-y-1 sm:grid-cols-[minmax(0,12rem)_auto_1fr_auto]">
       <ul className="col-span-full grid grid-cols-subgrid gap-y-2" data-testid="pilot-interval-chart">

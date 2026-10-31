@@ -44,7 +44,7 @@ export function KeyGate({ surface, onDone, onBrowse, notice }: { surface: Surfac
   const [capText, setCapText] = useState(String(sessionCap()));
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<Failure | null>(notice ? { kind: 'notice', message: notice } : null);
-  const ids = { key: useId(), hint: useId(), cap: useId(), error: useId(), panel: useId(), empty: useId() };
+  const ids = { key: useId(), heading: useId(), hint: useId(), cap: useId(), error: useId(), panel: useId(), empty: useId() };
   const cap = parseCap(capText);
   const rounded = cap !== null && cap !== Number(capText.trim());
   const direct = isHosted(surface);
@@ -93,14 +93,15 @@ export function KeyGate({ surface, onDone, onBrowse, notice }: { surface: Surfac
         <h1 className="mt-3 text-xl font-semibold tracking-tight text-ink">See an AI model do clinical tasks</h1>
         <p className="mt-1 text-ink-muted">You can look at everything with no key. Add a key only to run new trials.</p>
 
-        {/* The requirements name this heading (docs/requirements/ui-contract.md, trace U3 and U23). */}
-        <h2 className="mt-5 text-sm font-semibold text-ink">Add an API key</h2>
-        <label htmlFor={ids.key} className="mt-2 block font-medium text-ink">
-          API key
-        </label>
-        <div className="relative mt-1.5">
+        {/* The requirements name this heading (docs/requirements/ui-contract.md, trace U3 and U23).
+            It is the key field's visible label too, so no second label repeats it under it
+            (verifier-phase-P17i-UI-5-1 m4); its text is a <label> for the field, so a click on it
+            focuses the field, while the field's name still comes from the h2 (UI-FU-1 m2). */}
+        <h2 id={ids.heading} className="mt-5 text-sm font-semibold text-ink"><label htmlFor={ids.key} className="block">Add an API key</label></h2>
+        <div className="relative mt-2">
           <input
             id={ids.key}
+            aria-labelledby={ids.heading}
             type={reveal ? 'text' : 'password'}
             ref={keyRef}
             onChange={(e) => setFilled(e.target.value.trim() !== '')}

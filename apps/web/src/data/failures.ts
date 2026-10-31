@@ -84,4 +84,13 @@ export function runBlock(ts: ReadonlyArray<{ name: string; explanation: Explanat
   return blocking.length === 0 ? null : { trials: blocking.length, falsePasses: blocking.filter((t) => isFalsePass(t.explanation)).length, names: blocking.map((t) => t.name) };
 }
 
+// Why a pilot run gives no pass count, rate dot or Wilson interval: a trial blocks it (runBlock),
+// so the official run's rule holds (decisions.tsv 2026-10-29T16:00), worded without the official
+// run's "blocked" (decisions.tsv 19:10). Its Runs header, its Overview line and its rate rows on
+// Overview and Findings show it in their place. Null when nothing blocks the run.
+export function noPassCount(ts: ReadonlyArray<{ name: string; explanation: Explanation }>): string | null {
+  const b = runBlock(ts);
+  return b === null ? null : `no pass count while ${b.trials} ${b.trials === 1 ? 'trial needs' : 'trials need'} a fix`;
+}
+
 export const isFalsePass = (e: Explanation): boolean => e.outcome === 'PASS' && e.deciding?.id === 'GR5';
