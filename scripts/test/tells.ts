@@ -133,6 +133,14 @@ export function addedPatientTells(patients: readonly R[], added: ReadonlySet<str
   ]);
 }
 
+// The types of `types` that, in patient `p`'s chart, have a planted record and no generated one, in
+// the order of `types`: nothing in the chart to compare them against. An added Patient's chart is
+// all planted, so every planted type in it is listed (world-tells.test.ts names it beside the id).
+export function plantedOnlyTypes(world: readonly R[], isPlanted: (id: string) => boolean, p: string, types: readonly string[]): string[] {
+  const chart = world.filter((r) => patientOf(r) === p);
+  return types.filter((t) => chart.some((r) => r.resourceType === t && isPlanted(r.id)) && !chart.some((r) => r.resourceType === t && !isPlanted(r.id)));
+}
+
 const ba = (tp: number, fp: number, p: number, n: number) => Math.max((tp / p + 1 - fp / n) / 2, (1 - tp / p + fp / n) / 2);
 
 // Score every type that has planted and generated records in the task charts.

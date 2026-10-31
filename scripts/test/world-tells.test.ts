@@ -28,7 +28,7 @@ import { isPlanted } from '../../tasks/planted.ts';
 import { gunzip } from '../fixtures-lib.ts';
 import { repoRoot } from './helpers.ts';
 import { TASK_IDS } from '../../fixtures/ids.ts';
-import { addedPatientTells, idForm, SEMANTIC_TAG, scoreTells, type TypeScore } from './tells.ts';
+import { addedPatientTells, idForm, plantedOnlyTypes, SEMANTIC_TAG, scoreTells, type TypeScore } from './tells.ts';
 
 type R = Record<string, unknown> & { resourceType: string; id: string };
 const world = gunzip(readFileSync(join(repoRoot, 'fixtures/world.ndjson.gz')))
@@ -231,8 +231,9 @@ describe('within a task chart, planted resources look like the generated ones', 
   it('lists the charts that hold no generated resource of a planted type', () => {
     // Nothing to compare against there: every record of the type in the chart is planted. The
     // global tests above cover them. A cell leaves this list when its chart gains a generated record.
-    const empty = taskCharts.flatMap((p) => comparable.filter((t) => inChart(t, p).some((r) => isPlanted(r.id)) && !inChart(t, p).some((r) => !isPlanted(r.id))).map((t) => `${p} ${t}`));
-    expect(empty).toEqual(EMPTY_CELLS);
+    const empty = taskCharts.flatMap((p) => plantedOnlyTypes(world, isPlanted, p, comparable).map((t) => `${p} ${t}`));
+    // An added Patient's chart is all planted; ADDED_PATIENT_RESIDUALS names it beside the Patient's id.
+    expect(empty.filter((c) => !ADDED_PATIENTS.has(c.split(' ')[0]!))).toEqual(EMPTY_CELLS);
   });
 
   it('no field path on a planted resource is absent from every generated resource of its type in the chart', () => {
@@ -331,9 +332,13 @@ describe('every MRN has one form, and none marks a task patient', () => {
 // A Patient an overlay adds (builder-210; plan W1-0 'overlays may add their own Patients'): a probe
 // uses a free slot first and adds a Patient only when none fits its class. An added Patient takes
 // the shape and identifier forms of the generated ones (addedPatientTells), and its id, numbered
-// after the cohort's last, is the one tell left: in the 60-patient world any id above pt-0060 is an
-// added Patient until W2-0 grows the cohort past it (D8). Each one is named here, with its class.
-const ADDED_PATIENT_RESIDUALS: Readonly<Record<string, string>> = {};
+// after the cohort's last, is one tell left: in the 60-patient world any id above pt-0060 is an
+// added Patient until W2-0 grows the cohort past it (D8). The other is its chart: every record in it
+// is planted, so each planted type there has no generated record to compare against
+// (verifier-phase-P17i-W1-1-1 M3). Each one is named here, with its class and the planted types of
+// its chart (plantedOnlyTypes, in the order of the within-chart tests' types); the within-chart list
+// of such charts (EMPTY_CELLS) leaves added Patients to this table.
+const ADDED_PATIENT_RESIDUALS: Readonly<Record<string, { class: string; planted_only: readonly string[] }>> = {};
 describe('a Patient an overlay adds reads like a generated one, apart from its named id', () => {
   const pts = world.filter((r) => r.resourceType === 'Patient');
 
@@ -343,6 +348,18 @@ describe('a Patient an overlay adds reads like a generated one, apart from its n
 
   it('is named as the id-range residual', () => {
     expect([...ADDED_PATIENTS].sort()).toEqual(Object.keys(ADDED_PATIENT_RESIDUALS).sort());
+  });
+
+  it('its planted-only chart is named beside its id', () => {
+    for (const p of ADDED_PATIENTS) expect(plantedOnlyTypes(world, isPlanted, p, comparable), p).toEqual(ADDED_PATIENT_RESIDUALS[p]!.planted_only);
+  });
+
+  it('the check finds an added Patient\'s chart that holds only planted records', () => {
+    const base = world.find((r) => r.resourceType === 'Observation' && !isPlanted(r.id) && patientOf(r) === 'pt-0051')!;
+    const probe = [...world, { ...base, id: 'obs-t3-probe', subject: { reference: 'Patient/pt-0061' } } as R];
+    const planted = (id: string) => isPlanted(id) || id === 'obs-t3-probe';
+    expect(plantedOnlyTypes(probe, planted, 'pt-0061', comparable)).toEqual(['Observation']);
+    expect(plantedOnlyTypes(world, isPlanted, 'pt-0051', comparable)).toEqual([]);
   });
 
   it('the check finds an overlay-written Patient that lacks the generated fields, or carries an identifier form no other Patient has', () => {
