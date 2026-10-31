@@ -69,6 +69,10 @@ const subject = (pt: string) => ({ reference: `Patient/${pt}` });
 const RADIOLOGIST_RESOURCE: Resource = { resourceType: 'Practitioner', id: 'pr-t5-adeyemi', active: true, name: [{ use: 'official', given: ['Tunde'], family: 'Adeyemi', suffix: ['MD'] }] };
 const ED_PHYSICIAN = { reference: 'Practitioner/pr-t5-castellano' };
 const ED_PHYSICIAN_RESOURCE: Resource = { resourceType: 'Practitioner', id: 'pr-t5-castellano', active: true, name: [{ use: 'official', given: ['Owen'], family: 'Castellano', suffix: ['MD'] }] };
+// The clinic PA who saw Leo Brakus on 10/21. Before the W1 train T6's overlay wrote her (as
+// pr-marsh); the T6 probe no longer does, so T5 writes its own (W1-T, a dangling reference).
+const PA = { reference: 'Practitioner/pr-t5-marsh' };
+const PA_RESOURCE: Resource = { resourceType: 'Practitioner', id: 'pr-t5-marsh', active: true, name: [{ use: 'official', given: ['Helen'], family: 'Marsh', suffix: ['PA-C'] }] };
 const OUTSIDE_LAB: Resource = { resourceType: 'Organization', id: 'org-t5-harbor', active: true, name: 'Harbor Diagnostic Laboratory' };
 
 const encounter = (id: string, pt: string, cls: 'AMB' | 'EMER', type: [string, string], start: string, end: string, provider: { reference: string }, who: { reference: string }, reason?: string): Resource => ({
@@ -363,6 +367,7 @@ const overlay: Overlay = {
     'org-t5-harbor': 'org-harbor',
     'pr-t5-adeyemi': 'pr-tunde-adeyemi',
     'pr-t5-castellano': 'pr-castellano',
+    'pr-t5-marsh': 'pr-marsh',
   },
   build(world: WorldReader) {
     const patient = world.get('Patient', FERREIRA) as Extract<Resource, { resourceType: 'Patient' }>;
@@ -422,6 +427,7 @@ const overlay: Overlay = {
       ...panels,
       RADIOLOGIST_RESOURCE,
       ED_PHYSICIAN_RESOURCE,
+      PA_RESOURCE,
       OUTSIDE_LAB,
 
       // Mohr, 08:00; diabetic, latest creatinine 09-24 at an outside lab.
@@ -483,9 +489,9 @@ const overlay: Overlay = {
       encounter('enc-t5-brakus-1019', BRAKUS, 'AMB', ['185349003', 'Encounter for check up (procedure)'], '2026-10-19T14:00:00-04:00', '2026-10-19T14:30:00-04:00', CLINIC, OKAFOR),
       creatinine('obs-t5-brakus-1019', BRAKUS, '2026-10-19T14:20:00-04:00', '2026-10-19T18:45:00-04:00', 0.98, { encounter: { reference: 'Encounter/enc-t5-brakus-1019' } }),
       note('doc-t5-brakus-1019', BRAKUS, '2026-10-19T14:40:00-04:00', PROGRESS, 'enc-t5-brakus-1019', OKAFOR, CLINIC, VISIT_1019),
-      encounter('enc-t5-brakus-1021', BRAKUS, 'AMB', ['185345009', 'Encounter for symptom (procedure)'], '2026-10-21T10:10:00-04:00', '2026-10-21T10:40:00-04:00', CLINIC, { reference: 'Practitioner/pr-marsh' }),
+      encounter('enc-t5-brakus-1021', BRAKUS, 'AMB', ['185345009', 'Encounter for symptom (procedure)'], '2026-10-21T10:10:00-04:00', '2026-10-21T10:40:00-04:00', CLINIC, PA),
       creatinine('obs-t5-brakus-1021', BRAKUS, '2026-10-21T10:30:00-04:00', '2026-10-21T16:10:00-04:00', 1.64, { encounter: { reference: 'Encounter/enc-t5-brakus-1021' } }),
-      note('doc-t5-brakus-1021', BRAKUS, '2026-10-21T10:50:00-04:00', PROGRESS, 'enc-t5-brakus-1021', { reference: 'Practitioner/pr-marsh' }, CLINIC, URGENT_1021),
+      note('doc-t5-brakus-1021', BRAKUS, '2026-10-21T10:50:00-04:00', PROGRESS, 'enc-t5-brakus-1021', PA, CLINIC, URGENT_1021),
       appointment('appt-t5-brakus', BRAKUS, '15:00', 'CT abdomen with IV contrast (adrenal protocol: 1.8 cm left adrenal nodule follow-up)', '2026-10-02T14:00:00-04:00', 'Condition/cond-t5-brakus-adrenal'),
       note('doc-t5-brakus-1002', BRAKUS, '2026-10-02T14:05:00-04:00', PHONE, null, REYES, CLINIC, booked('CT abdomen with IV contrast, adrenal protocol', '15:00', 'follow-up of the 1.8 cm left adrenal nodule seen in February', '', { reaction: 'no', kidney: 'no', diabetes: 'yes, metformin' })),
     ];
