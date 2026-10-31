@@ -48,7 +48,9 @@
 // pregnancy episode (a CT in pregnancy is another question than the task asks).
 // Edited in the slot charts (R8, verifier-W1-probe-T5-clinical-1 F3): Stracke's kept notes no
 // longer name metformin (six said he was started on it); Schmitt's notes after his 2023 reaction
-// list the allergy-list entry instead of 'NKDA'. Schmitt's booking note is written at 09:20, so
+// list the allergy-list entry instead of 'NKDA'; Schuster's and Brakus's kept notes written after
+// their planted diabetes name it in the history, and metformin among the medicines once it was
+// ordered (verifier-W1-probe-T5-clinical-4 C4-1). Schmitt's booking note is written at 09:20, so
 // the profile pass's 15-minute note period does not end on the slot's 10:00 and rewrite the slot
 // time in the text (it had turned '10:00 AM' into '10:09 AM'; a shared pass bug, listed for W1-T).
 import type { Resource } from '../../packages/env/store.ts';
@@ -350,6 +352,29 @@ const metforminOrder = (id: string, pt: string, status: 'active' | 'completed', 
   ],
 });
 
+// When a planted diabetes began, and each metformin order by the day it was written (R8,
+// verifier-W1-probe-T5-clinical-4 C4-1). The overlay's Condition and MedicationRequest entries
+// below use the same days and drug texts.
+type Since = { diabetes: string; metformin: ReadonlyArray<readonly [from: string, drug: string]> };
+const METFORMIN_500 = 'metformin hydrochloride 500 MG Oral Tablet';
+const METFORMIN_1000 = 'metformin hydrochloride 1000 MG Oral Tablet';
+const SCHUSTER_SINCE: Since = { diabetes: '2024-06-18', metformin: [['2024-06-18', METFORMIN_500]] };
+const BRAKUS_SINCE: Since = { diabetes: '2025-04-14', metformin: [['2025-04-14', METFORMIN_500], ['2026-05-28', METFORMIN_1000]] };
+// A Synthea visit note of that day in its raw form (its first line is the day): the history gains
+// the diabetes, and the medicines the metformin ordered by then, in Synthea's own words.
+const withDiabetes = (since: Since) => (t: string): string => {
+  const day = /^\s*(\d{4}-\d{2}-\d{2})/.exec(t)?.[1];
+  if (day === undefined) return t;
+  let out = day >= since.diabetes ? t.replace(/Patient has a history of (?!type 2 diabetes)/, 'Patient has a history of type 2 diabetes (disorder), ') : t;
+  const drug = since.metformin.filter(([from]) => from <= day).at(-1)?.[1];
+  if (drug !== undefined) {
+    out = out.replace(/(# Medications\n)([^\n]*)/, (whole, head: string, list: string) =>
+      /metformin/i.test(list) ? whole : `${head}${list.trim() === '' || /^no active medications/i.test(list.trim()) ? drug : `${list}; ${drug}`}`,
+    );
+  }
+  return out;
+};
+
 // Every base resource of a patient that a predicate picks, as a removal.
 function pick(world: WorldReader, pt: string, keep: (r: Resource) => boolean): Array<{ resourceType: string; id: string }> {
   const out: Array<{ resourceType: string; id: string }> = [];
@@ -419,11 +444,19 @@ const overlay: Overlay = {
     const schmittNotes = pick(world, SCHMITT, (r) => later(r) && texts(r).some((t) => /# Allergies\nNo Known Allergies\./.test(t))).map((k) =>
       editText(world.get(k.resourceType, k.id) as Resource, (t) => t.replace(/# Allergies\nNo Known Allergies\./, '# Allergies\niohexol (CT contrast), hives.')),
     );
+    // Schuster's and Brakus's visit notes written after their planted diabetes carry it in the
+    // history, and those written while metformin was ordered carry it among the medicines, as the
+    // order of that day names it (the profile pass then writes the order's sig).
+    const diabetesNotes = (pt: string, since: Since) => edits(pt, withDiabetes(since), new Set());
+    const schusterNotes = diabetesNotes(SCHUSTER, SCHUSTER_SINCE);
+    const brakusNotes = diabetesNotes(BRAKUS, BRAKUS_SINCE);
 
     const put: Resource[] = [
       ferreira,
       ...strackeNotes,
       ...schmittNotes,
+      ...schusterNotes,
+      ...brakusNotes,
       ...panels,
       RADIOLOGIST_RESOURCE,
       ED_PHYSICIAN_RESOURCE,
@@ -471,8 +504,8 @@ const overlay: Overlay = {
 
       // Schuster, 13:00; metformin, and AKI in the faxed ED summary of 10/05.
       condition('cond-t5-schuster-t2dm', SCHUSTER, '44054006', 'Diabetes mellitus type 2 (disorder)', '2024-06-18T09:00:00-04:00'),
-      metforminOrder('mr-t5-schuster-metformin-start', SCHUSTER, 'completed', ['861007', 'metformin hydrochloride 500 MG Oral Tablet'], 500, 1, '2024-06-18T09:30:00-04:00', REYES, 'cond-t5-schuster-t2dm'),
-      metforminOrder('mr-t5-schuster-metformin', SCHUSTER, 'active', ['861007', 'metformin hydrochloride 500 MG Oral Tablet'], 500, 2, '2024-09-17T10:10:00-04:00', REYES, 'cond-t5-schuster-t2dm'),
+      metforminOrder('mr-t5-schuster-metformin-start', SCHUSTER, 'completed', ['861007', METFORMIN_500], 500, 1, '2024-06-18T09:30:00-04:00', REYES, 'cond-t5-schuster-t2dm'),
+      metforminOrder('mr-t5-schuster-metformin', SCHUSTER, 'active', ['861007', METFORMIN_500], 500, 2, '2024-09-17T10:10:00-04:00', REYES, 'cond-t5-schuster-t2dm'),
       encounter('enc-t5-schuster-ed', SCHUSTER, 'EMER', ['50849002', 'Emergency room admission (procedure)'], '2026-10-04T21:05:00-04:00', '2026-10-05T07:20:00-04:00', HOSPITAL, ED_PHYSICIAN, 'Vomiting and diarrhea for 2 days'),
       note('doc-t5-schuster-ed', SCHUSTER, '2026-10-05T08:00:00-04:00', ED_SUMMARY, 'enc-t5-schuster-ed', ED_PHYSICIAN, HOSPITAL, ED_1017),
       appointment('appt-t5-schuster', SCHUSTER, '13:00', 'CT abdomen and pelvis with IV contrast (chronic left lower quadrant pain)', '2026-09-29T10:00:00-04:00'),
@@ -484,8 +517,8 @@ const overlay: Overlay = {
       // Brakus, 15:00; metformin, and a creatinine rise of 0.66 within 44 hours.
       condition('cond-t5-brakus-t2dm', BRAKUS, '44054006', 'Diabetes mellitus type 2 (disorder)', '2025-04-14T10:00:00-04:00'),
       condition('cond-t5-brakus-adrenal', BRAKUS, '237783006', 'Adrenal mass (disorder)', '2026-02-23T17:25:00-05:00'),
-      metforminOrder('mr-t5-brakus-metformin-start', BRAKUS, 'completed', ['861007', 'metformin hydrochloride 500 MG Oral Tablet'], 500, 2, '2025-04-14T10:30:00-04:00', OKAFOR, 'cond-t5-brakus-t2dm'),
-      metforminOrder('mr-t5-brakus-metformin', BRAKUS, 'active', ['861004', 'metformin hydrochloride 1000 MG Oral Tablet'], 1000, 2, '2026-05-28T11:40:00-04:00', OKAFOR, 'cond-t5-brakus-t2dm'),
+      metforminOrder('mr-t5-brakus-metformin-start', BRAKUS, 'completed', ['861007', METFORMIN_500], 500, 2, '2025-04-14T10:30:00-04:00', OKAFOR, 'cond-t5-brakus-t2dm'),
+      metforminOrder('mr-t5-brakus-metformin', BRAKUS, 'active', ['861004', METFORMIN_1000], 1000, 2, '2026-05-28T11:40:00-04:00', OKAFOR, 'cond-t5-brakus-t2dm'),
       encounter('enc-t5-brakus-1019', BRAKUS, 'AMB', ['185349003', 'Encounter for check up (procedure)'], '2026-10-19T14:00:00-04:00', '2026-10-19T14:30:00-04:00', CLINIC, OKAFOR),
       creatinine('obs-t5-brakus-1019', BRAKUS, '2026-10-19T14:20:00-04:00', '2026-10-19T18:45:00-04:00', 0.98, { encounter: { reference: 'Encounter/enc-t5-brakus-1019' } }),
       note('doc-t5-brakus-1019', BRAKUS, '2026-10-19T14:40:00-04:00', PROGRESS, 'enc-t5-brakus-1019', OKAFOR, CLINIC, VISIT_1019),

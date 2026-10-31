@@ -53,6 +53,29 @@ describe('T5 world: chart consistency (R8)', () => {
     expect(hits).toEqual([]);
   });
 
+  // verifier-W1-probe-T5-clinical-4 C4-1: Schuster's and Brakus's older visit notes listed their
+  // history and medicines without the planted diabetes and metformin.
+  it('every note of a list patient that lists the history or the medicines names the diabetes and the metformin the chart had by then', () => {
+    type Cond = Rec & { onsetDateTime?: string; code?: { coding?: Array<{ code?: string }> }; clinicalStatus?: { coding?: Array<{ code?: string }> } };
+    const at = (d: Rec) => Date.parse(d.date ?? d.effectiveDateTime ?? '');
+    const hits = expected.items.flatMap((x) => {
+      const diabetes = (all as Cond[]).filter((c) => c.resourceType === 'Condition' && c.subject?.reference === x.patient && c.clinicalStatus?.coding?.[0]?.code === 'active' && (c.code?.coding ?? []).some((k) => ['44054006', '46635009', '73211009'].includes(k.code ?? '')));
+      const since = Math.min(...diabetes.map((c) => Date.parse(c.onsetDateTime!)));
+      const metformin = all.filter((r) => r.resourceType === 'MedicationRequest' && r.subject?.reference === x.patient && /metformin/i.test(r.medicationCodeableConcept?.text ?? '')) as Array<Rec & { authoredOn?: string }>;
+      const started = Math.min(...metformin.map((m) => Date.parse(m.authoredOn!)));
+      return notesOf(x.patient).flatMap((d) => {
+        const lines = textOf(d).split('\n');
+        const history = lines.filter((l) => /^Past medical history:/.test(l));
+        const meds = lines.filter((l) => /^Medications:/.test(l));
+        return [
+          ...(at(d) > since && history.some((l) => !/diabetes/i.test(l)) ? [`${x.name}: ${d.resourceType}/${d.id} history has no diabetes`] : []),
+          ...(at(d) > started && meds.some((l) => !/metformin/i.test(l)) ? [`${x.name}: ${d.resourceType}/${d.id} medicines have no metformin`] : []),
+        ];
+      });
+    });
+    expect(hits).toEqual([]);
+  });
+
   it('no note written after a recorded contrast reaction says the patient has no known drug allergies', () => {
     const hits = expected.items
       .filter((x) => x.class === 'allergy_grade')
