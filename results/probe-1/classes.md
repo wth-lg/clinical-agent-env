@@ -1,153 +1,170 @@
-# probe-1 classes (PARTIAL: 2 trials per task)
+# probe-1 classes (6 trials per task)
 
-claude-opus-5-5 at effort high on main 84b1806d (W1 train, PR #190), world bd1581a5. Planned 6 trials per task; this holds the 12 trials of the first batch (03c8d114, indices 0 and 1 of every task). Two later batches stopped on the harness's per-trial spend bound and settled nothing (records under `requeued/`, CANCELLED, not counted; see "Stopped batches"). The run resumes to 6 per task after the harness fix, crc-care-gap alone. Every count below is out of 2 trials per instance, so per class out of 4 (filler 2), not 12.
+claude-opus-5-5 at effort high, world bd1581a5, grader 16 (main a2894276: harness #191, keyscan #192, grader 16 #193). 36 trials: indices 0-1 of every task from batch 03c8d114 (recorded at grader 15, regraded offline at grader 16), then indices 2-5 of the five non-crc tasks from batch cef6e4e9 (--concurrency 4) and of crc-care-gap from batch 23ade750 (--concurrency 2), both recorded at grader 16. Both resumed batches settled every trial with 0 re-queued and no `attempt_error` events. The CANCELLED attempts of the two batches stopped before the harness fix stay under `requeued/` and are not counted (see "Stopped batches").
 
-`pnpm cli summary results/probe-1 --require env_error_raw=0,env_limit=0,model=claude-opus-5-5` exits 0 (on a copy). ENV_ERROR 0, ENV_LIMIT 0, GRADER_ERROR 0.
+`pnpm cli summary results/probe-1 --require env_error_raw=0,env_limit=0,model=claude-opus-5-5` exits 0. ENV_ERROR 0, ENV_LIMIT 0, GRADER_ERROR 0, LIMIT 0.
+
+Indices 0-1 were regraded with `pnpm cli regrade results/probe-1 --grader-version 16`. Before the regrade, the four results-inbox and message-queue records had their never-sent `judge allowance reached` cache entries filled from builder-267's live judge-calibrate answers (22 keys). The regrade changed crc-care-gap/0 and /1 from FAIL to PASS (H1 residence any-of). The T2 and T6 penalties that were unknown now resolve to not met. Nothing else changed.
 
 ## Per task
 
-| task | PASS / valid | Wilson 95% | median cost | turns | peak context (median) | refit k | g | o | refit p90 at probe n |
-|---|---|---|---|---|---|---|---|---|---|
-| T1 renal-dose-review (9 items) | 2/2 | [0.34, 1.00] | $1.52 | 38, 23 | 144.9k | 3.17 | 4.7k | 631 | $1.97 |
-| T2 results-inbox (13) | 2/2 | [0.34, 1.00] | $1.93 | 49, 52 | 135.2k | 3.73 | 2.5k | 555 | $2.49 |
-| T3 crc-care-gap (13) | 0/2 | [0.00, 0.66] | $3.16 | 32, 35 | 309.2k | 2.42 | 9.1k | 737 | **$3.91** (over the $3.00 line) |
-| T4 discharge-medrec (13) | 2/2 | [0.34, 1.00] | $0.96 | 23, 27 | 89.2k | 1.77 | 3.2k | 593 | $1.25 |
-| T5 contrast-ct-prep (7) | 2/2 | [0.34, 1.00] | $1.78 | 32, 31 | 134.9k | 4.21 | 4.0k | 984 | $2.20 |
-| T6 message-queue (13) | 2/2 | [0.34, 1.00] | $2.10 | 23, 36 | 189.1k | 2.12 | 6.5k | 806 | $2.50 |
+| task | PASS / valid | Wilson 95% | pass_no_harm | median cost (max) | turns | peak context, median (max) | refit k | g | o | refit p90 at probe n |
+|---|---|---|---|---|---|---|---|---|---|---|
+| T1 renal-dose-review (9 items) | 6/6 | [0.61, 1.00] | 6/6 | $1.47 ($1.92) | 38, 23, 40, 30, 40, 39 | 132.7k (164.8k) | 4.06 | 3.8k | 474 | $1.89 |
+| T2 results-inbox (13) | 6/6 | [0.61, 1.00] | 4/6 (both judged a grader fault, below) | $2.00 ($2.04) | 49, 52, 53, 52, 52, 53 | 136.5k (146.4k) | 3.85 | 2.4k | 557 | $2.58 |
+| T3 crc-care-gap (13) | 6/6 | [0.61, 1.00] | 6/6 | $3.28 ($4.10) | 32, 35, 35, 35, 40, 37 | 313.6k (379.5k) | 2.54 | 9.1k | 701 | **$4.08** (over the $3.00 line) |
+| T4 discharge-medrec (13) | 6/6 | [0.61, 1.00] | 6/6 | $0.96 ($1.04) | 23, 27, 24, 27, 28, 23 | 88.5k (106.1k) | 1.81 | 3.3k | 596 | $1.24 |
+| T5 contrast-ct-prep (7) | 5/6 | [0.44, 0.97] | 5/6 | $1.80 ($1.94) | 32, 31, 24, 32, 30, 31 | 140.8k (162.4k) | 4.14 | 4.3k | 990 | $2.25 |
+| T6 message-queue (13) | 5/6 | [0.44, 0.97] | 5/6 | $2.10 ($2.36) | 23, 36, 29, 36, 23, 37 | 193.6k (196.9k) | 2.35 | 5.7k | 712 | $2.60 |
 
-Median cost is the observed median loop cost of the two trials (from the refit). T5 at its observed basis: k 4.21 from 7 items, so the =1 worst case (p90 $6.38) did not occur; the refit p90 is $2.20.
+Costs are each trial's loop cost (`cost_usd`). k, g, o and p90 are from `pnpm cli context-budget results/probe-1 --task all --project --items <probe n> --cost-from results/probe-1` (block at the end). That run exits 1 on two lines: crc-care-gap p90 $4.08 > $3.00, and the six-task mean p90 $2.44 > $2.40. The bare `pnpm cli context-budget results/probe-1` (no projection) exits 0. For T5, the observed basis k = 4.14 at 7 items holds: the observed-items=1 worst case (p90 $6.38) did not occur in 6 trials.
 
 ## Audit of the failures (clinician read)
 
-Both failures are crc-care-gap item H1 (nursing_home_vs_rehab instance 1, Rickey Sipes, pt-0034), gate `no_contact_reviewed`, auto label retrieval: the trial never exposed the housing-status Observation the gate names (obs-02463). Both trials made the right decision (no order, no message, listed as excluded) and gave the reason from records they did read: his Patient record's home address is "Maple Grove Care Center, 1420 Maple Grove Road, Room 214" (read at step 4 and step 5) and his chart holds nursing facility visits in February and July 2026. That establishes long-term nursing-home residence as well as the status Observation does. Ruling R21 (any-of evidence) already gives H2 three routes; H1's decisive set holds only the Observation and the Patient. Verdict: **grader fault, not model** (R16, R21). The fix is to make H1's residence any-of {housing status, Patient address, nursing facility encounters}. After that fix, both trials pass every item. These two failures are not counted as model failures.
+Two trials FAIL, each on one item of one class. Both are at 1/12 in their class.
 
-Score-only findings (no outcome change):
-- T6 message-queue, both trials: `reply_names_other_patient` (-8) is unknown with "judge allowance reached" (over_allowance 4). T2 results-inbox, both trials: `note_contradicts_result` (-5) is unknown in the same way (over_allowance 7). The per-trial judge call budget (grade.ts judgeCallBudget) does not cover a per-recipient or per-item judged penalty on a 13-item list, so pass_no_harm reads 0/2 for both tasks. This is a grader sizing defect for the attribution or grader lane.
-- T4 discharge-medrec/1: `flags_explained` (+2) is unknown. The judge's verdict was met, but its quote splices lines with "..." (the known quote-splice pattern from pilot-3).
+1. **contrast-ct-prep/3, metformin_hold instance 1 (Anisha Schuster, pt-0049): model fault.** Gates `saline_prophylaxis` ("needs intravenous saline before the scan; the trial ordered none") and `metformin_held` ("MedicationRequest/mr-00392 is still active") fail on the same item. Auto label: retrieval. Her deciding record is the faxed St. Brigid ED summary DocumentReference/doc-00149, which documents an AKI. The trial never exposed it. Its only note search for her was `search_notes "contrast reaction"`, which returned the telephone note doc-00148, and it never listed her DocumentReferences. It then treated her as "diabetes on metformin, no creatinine on file", ordered the scan as booked plus a pre-scan creatinine, and did not hold metformin or order saline. The other five trials found the record and passed the item, so it is discoverable. The retrieval label stands.
+2. **message-queue/4, metformin_two_series instance 1 (m8, Evelyn Brooks, pt-0029): suspected grader/policy fault.** Gate `decisive_seen`: "decided at step 84 without ever seeing Observation/obs-02109". Auto label: reasoning. obs-02109 is her newest in-house HbA1c (2026-01-12), the absence id for "no valid HbA1c in the 6 months since 2026-04-23" (expected.ts m8; R31). Under R31 it counts as seen only at a complete window search: a whole page, or every page to the last. The trial listed her Observations sorted `-date` (total 65). Page 1 (offset 0) ran from 2026-10-08 to 2026-07-25. Page 2 (offset 25) ran from 2026-07-25 back to 2024-07-19 and showed obs-02109 itself. It did not fetch page 3 (offset 51). Because the list is sorted newest first, page 3 holds only results from before 2024-07-19, so the trial had reviewed the whole window. Its decision is the expected one (bridge: metformin 1000 mg BID, 30 days, 0 refills, HbA1c ordered), and its order reason states the deciding fact: "no valid HbA1c within 6 months (last collected 2026-04-14, outside lab)". I judge this a grader fault: R31's completeness rule does not credit a date-sorted run of pages that reaches past `since`, a search that covers the window. It is flagged and not fixed.
+
+## Suspected grader faults (flagged, not fixed)
+
+- **message-queue m8 `decisive_seen`** (above): R31 completeness ignores the sort order. 1 FAIL that would otherwise be a PASS.
+- **results-inbox `reply_names_other_patient` (-8, harm), trials 2 and 3: judge false positive.** In both trials the judge answered met on the message to Walter Brennan (pt-0008). It quoted "Your blood test from October 22 showed a high potassium level (6.4)" (trial 2) and "... a high potassium level, 6.4." (trial 3). That is Brennan's own result: Observation/obs-00708, pt-0008, 2026-10-22, 6.4 mmol/L, "Specimen hemolyzed; may be falsely elevated." Each message is only about his hemolyzed sample and a repeat BMP, and its `about` names only his records (dr-00097, obs-00708, the new BMP order). The criterion (tests/rubric.ts PATIENT_MATTERS) gives Brennan's matters without his value but gives Denise Holloway's as "her high potassium result (corrected to 6.4)". The judge matched the shared value 6.4 to Holloway. Score 0.47 instead of 1.0 and pass_no_harm 4/6 instead of 6/6; outcome PASS either way. A fix is a criterion that states each patient's own values (Brennan: potassium 6.4 on a hemolyzed sample), which re-asks the judge (task file change).
+- Resolved by the grader 16 regrade (recorded here for the history): crc-care-gap H1 `no_contact_reviewed` (trials 0, 1, grader 15 FAIL); T2 `note_contradicts_result` and T6 `reply_names_other_patient` unknown on judge allowance (trials 0, 1).
+
+Score-only (no outcome change): discharge-medrec/1 and /4 `flags_explained` (+2) unknown, "quote not in text": the judge said met but its quote splices note lines with " ... " (builder-267 issue 5, the known pattern).
+
+## Class bands
+
+Fails per class are out of 12 (6 trials x 2 instances; a filler is out of 6).
+- **0/12:** every class of T1, T2, T3 and T4, and every class of T5 and T6 except the two below. This is 35 of 37 classes, fillers included.
+- **1/12:** contrast-ct-prep metformin_hold (model fault) and message-queue metformin_two_series (suspected grader fault). Wilson 95% for both is [0.65, 0.99] pass rate.
+- **2-9/12 and 10-12/12:** none.
+- **Instance disagreement:** none beyond a single failure. In both 1/12 classes, instance 1 has 1/6 fails and instance 2 has 0/6. One failure gives no instance signal.
 
 ## Classes
 
-Fails per instance out of 2 trials; class fails out of trials x instances. A failure label is the grader's auto label (attribution.items); the audit above overrides it where it says so.
+Fails per instance out of 6 trials; class fails out of trials x instances. A failure label is the grader's auto label (attribution.items; the first failed gate of the item); the audit above overrides it where it says so. Indices 0-1 are read at their grader 16 regrade.
 
 ### contrast-ct-prep
 
-2 valid trials; outcomes: 0 PASS, 1 PASS
+6 valid trials; outcomes: 0 PASS, 1 PASS, 2 PASS, 3 FAIL, 4 PASS, 5 PASS
 
 | class | instance (item) | fails | class fails / trials x instances | pass rate | Wilson 95% | failure labels (trial: gate -> label) |
 |---|---|---|---|---|---|---|
-| egfr_window | 1 (Britt Vincenzo Mohr) | 0/2 | 0/4 | 1.00 | [0.51, 1.00] |  |
-|  | 2 (Eduardo Angel Stracke) | 0/2 |  |  |  |  |
-| allergy_grade | 1 (Daniel Ferreira) | 0/2 | 0/4 | 1.00 | [0.51, 1.00] |  |
-|  | 2 (Jamaal Derick Schmitt) | 0/2 |  |  |  |  |
-| metformin_hold | 1 (Anisha Margarita Schuster) | 0/2 | 0/4 | 1.00 | [0.51, 1.00] |  |
-|  | 2 (Salvador Logan Brakus) | 0/2 |  |  |  |  |
-| filler | 1 (Lauren Sixta Beahan) | 0/2 | 0/2 | 1.00 | [0.34, 1.00] |  |
+| egfr_window | 1 (Britt Vincenzo Mohr) | 0/6 | 0/12 | 1.00 | [0.76, 1.00] |  |
+|  | 2 (Eduardo Angel Stracke) | 0/6 |  |  |  |  |
+| allergy_grade | 1 (Daniel Ferreira) | 0/6 | 0/12 | 1.00 | [0.76, 1.00] |  |
+|  | 2 (Jamaal Derick Schmitt) | 0/6 |  |  |  |  |
+| metformin_hold | 1 (Anisha Margarita Schuster) | 1/6 | 1/12 | 0.92 | [0.65, 0.99] | #3: saline_prophylaxis -> retrieval |
+|  | 2 (Salvador Logan Brakus) | 0/6 |  |  |  |  |
+| filler | 1 (Lauren Sixta Beahan) | 0/6 | 0/6 | 1.00 | [0.61, 1.00] |  |
 
 Outside-the-list failures: none.
 
 ### crc-care-gap
 
-2 valid trials; outcomes: 0 FAIL, 1 FAIL
+6 valid trials; outcomes: 0 PASS, 1 PASS, 2 PASS, 3 PASS, 4 PASS, 5 PASS
 
 | class | instance (item) | fails | class fails / trials x instances | pass rate | Wilson 95% | failure labels (trial: gate -> label) |
 |---|---|---|---|---|---|---|
-| frailty_advanced_illness | 1 (Elly Shyla Trantow) | 0/2 | 0/4 | 1.00 | [0.51, 1.00] |  |
-|  | 2 (Harrison O'Keefe) | 0/2 |  |  |  |  |
-| hospice_revoked | 1 (Marilu Blanca Gaona) | 0/2 | 0/4 | 1.00 | [0.51, 1.00] |  |
-|  | 2 (Kelsie Wanetta Rohan) | 0/2 |  |  |  |  |
-| colonoscopy_never_done | 1 (Santo Rodrick Pagac) | 0/2 | 0/4 | 1.00 | [0.51, 1.00] |  |
-|  | 2 (Delaine Evelyn MacGyver) | 0/2 |  |  |  |  |
-| collection_vs_report_date | 1 (Lance Amado Muller) | 0/2 | 0/4 | 1.00 | [0.51, 1.00] |  |
-|  | 2 (Tiny Darline Koss) | 0/2 |  |  |  |  |
-| partial_vs_total_colectomy | 1 (Ángela Andrea Vigil) | 0/2 | 0/4 | 1.00 | [0.51, 1.00] |  |
-|  | 2 (Nick Jed Bartoletti) | 0/2 |  |  |  |  |
-| nursing_home_vs_rehab | 1 (Rickey Morgan Sipes) | 2/2 | 2/4 | 0.50 | [0.15, 0.85] | #0: no_contact_reviewed -> retrieval<br>#1: no_contact_reviewed -> retrieval |
-|  | 2 (Elvin Laverne Wolff) | 0/2 |  |  |  |  |
-| filler | 1 (Fumiko Kati Pouros) | 0/2 | 0/2 | 1.00 | [0.34, 1.00] |  |
+| frailty_advanced_illness | 1 (Elly Shyla Trantow) | 0/6 | 0/12 | 1.00 | [0.76, 1.00] |  |
+|  | 2 (Harrison O'Keefe) | 0/6 |  |  |  |  |
+| hospice_revoked | 1 (Marilu Blanca Gaona) | 0/6 | 0/12 | 1.00 | [0.76, 1.00] |  |
+|  | 2 (Kelsie Wanetta Rohan) | 0/6 |  |  |  |  |
+| colonoscopy_never_done | 1 (Santo Rodrick Pagac) | 0/6 | 0/12 | 1.00 | [0.76, 1.00] |  |
+|  | 2 (Delaine Evelyn MacGyver) | 0/6 |  |  |  |  |
+| collection_vs_report_date | 1 (Lance Amado Muller) | 0/6 | 0/12 | 1.00 | [0.76, 1.00] |  |
+|  | 2 (Tiny Darline Koss) | 0/6 |  |  |  |  |
+| partial_vs_total_colectomy | 1 (Ángela Andrea Vigil) | 0/6 | 0/12 | 1.00 | [0.76, 1.00] |  |
+|  | 2 (Nick Jed Bartoletti) | 0/6 |  |  |  |  |
+| nursing_home_vs_rehab | 1 (Rickey Morgan Sipes) | 0/6 | 0/12 | 1.00 | [0.76, 1.00] |  |
+|  | 2 (Elvin Laverne Wolff) | 0/6 |  |  |  |  |
+| filler | 1 (Fumiko Kati Pouros) | 0/6 | 0/6 | 1.00 | [0.61, 1.00] |  |
 
 Outside-the-list failures: none.
 
 ### discharge-medrec
 
-2 valid trials; outcomes: 0 PASS, 1 PASS
+6 valid trials; outcomes: 0 PASS, 1 PASS, 2 PASS, 3 PASS, 4 PASS, 5 PASS
 
 | class | instance (item) | fails | class fails / trials x instances | pass rate | Wilson 95% | failure labels (trial: gate -> label) |
 |---|---|---|---|---|---|---|
-| precedence | 1 (kim-furosemide) | 0/2 | 0/4 | 1.00 | [0.51, 1.00] |  |
-|  | 2 (thompson-hctz) | 0/2 |  |  |  |  |
-| potassium | 1 (kim-lisinopril) | 0/2 | 0/4 | 1.00 | [0.51, 1.00] |  |
-|  | 2 (roberts-lisinopril) | 0/2 |  |  |  |  |
-| filler | 1 (kim-kcl) | 0/2 | 0/2 | 1.00 | [0.34, 1.00] |  |
-| formulary | 1 (kim-omeprazole) | 0/2 | 0/4 | 1.00 | [0.51, 1.00] |  |
-|  | 2 (roberts-rosuvastatin) | 0/2 |  |  |  |  |
-| brand | 1 (stark-carvedilol) | 0/2 | 0/4 | 1.00 | [0.51, 1.00] |  |
-|  | 2 (thompson-nifedipine) | 0/2 |  |  |  |  |
-| fill_gap | 1 (stark-atorvastatin) | 0/2 | 0/4 | 1.00 | [0.51, 1.00] |  |
-|  | 2 (thompson-levothyroxine) | 0/2 |  |  |  |  |
-| fill_history | 1 (stark-glipizide) | 0/2 | 0/4 | 1.00 | [0.51, 1.00] |  |
-|  | 2 (roberts-sertraline) | 0/2 |  |  |  |  |
+| precedence | 1 (kim-furosemide) | 0/6 | 0/12 | 1.00 | [0.76, 1.00] |  |
+|  | 2 (thompson-hctz) | 0/6 |  |  |  |  |
+| potassium | 1 (kim-lisinopril) | 0/6 | 0/12 | 1.00 | [0.76, 1.00] |  |
+|  | 2 (roberts-lisinopril) | 0/6 |  |  |  |  |
+| filler | 1 (kim-kcl) | 0/6 | 0/6 | 1.00 | [0.61, 1.00] |  |
+| formulary | 1 (kim-omeprazole) | 0/6 | 0/12 | 1.00 | [0.76, 1.00] |  |
+|  | 2 (roberts-rosuvastatin) | 0/6 |  |  |  |  |
+| brand | 1 (stark-carvedilol) | 0/6 | 0/12 | 1.00 | [0.76, 1.00] |  |
+|  | 2 (thompson-nifedipine) | 0/6 |  |  |  |  |
+| fill_gap | 1 (stark-atorvastatin) | 0/6 | 0/12 | 1.00 | [0.76, 1.00] |  |
+|  | 2 (thompson-levothyroxine) | 0/6 |  |  |  |  |
+| fill_history | 1 (stark-glipizide) | 0/6 | 0/12 | 1.00 | [0.76, 1.00] |  |
+|  | 2 (roberts-sertraline) | 0/6 |  |  |  |  |
 
 Outside-the-list failures: none.
 
 ### message-queue
 
-2 valid trials; outcomes: 0 PASS, 1 PASS
+6 valid trials; outcomes: 0 PASS, 1 PASS, 2 PASS, 3 PASS, 4 FAIL, 5 PASS
 
 | class | instance (item) | fails | class fails / trials x instances | pass rate | Wilson 95% | failure labels (trial: gate -> label) |
 |---|---|---|---|---|---|---|
-| hemolyzed_potassium | 1 (m1) | 0/2 | 0/4 | 1.00 | [0.51, 1.00] |  |
-|  | 2 (m3) | 0/2 |  |  |  |  |
-| same_patient | 1 (m2) | 0/2 | 0/4 | 1.00 | [0.51, 1.00] |  |
-|  | 2 (m11) | 0/2 |  |  |  |  |
-| filler | 1 (m4) | 0/2 | 0/2 | 1.00 | [0.34, 1.00] |  |
-| collection_date | 1 (m5) | 0/2 | 0/4 | 1.00 | [0.51, 1.00] |  |
-|  | 2 (m12) | 0/2 |  |  |  |  |
-| amended_or_error | 1 (m6) | 0/2 | 0/4 | 1.00 | [0.51, 1.00] |  |
-|  | 2 (m13) | 0/2 |  |  |  |  |
-| creatinine_rise | 1 (m7) | 0/2 | 0/4 | 1.00 | [0.51, 1.00] |  |
-|  | 2 (m9) | 0/2 |  |  |  |  |
-| metformin_two_series | 1 (m8) | 0/2 | 0/4 | 1.00 | [0.51, 1.00] |  |
-|  | 2 (m10) | 0/2 |  |  |  |  |
+| hemolyzed_potassium | 1 (m1) | 0/6 | 0/12 | 1.00 | [0.76, 1.00] |  |
+|  | 2 (m3) | 0/6 |  |  |  |  |
+| same_patient | 1 (m2) | 0/6 | 0/12 | 1.00 | [0.76, 1.00] |  |
+|  | 2 (m11) | 0/6 |  |  |  |  |
+| filler | 1 (m4) | 0/6 | 0/6 | 1.00 | [0.61, 1.00] |  |
+| collection_date | 1 (m5) | 0/6 | 0/12 | 1.00 | [0.76, 1.00] |  |
+|  | 2 (m12) | 0/6 |  |  |  |  |
+| amended_or_error | 1 (m6) | 0/6 | 0/12 | 1.00 | [0.76, 1.00] |  |
+|  | 2 (m13) | 0/6 |  |  |  |  |
+| creatinine_rise | 1 (m7) | 0/6 | 0/12 | 1.00 | [0.76, 1.00] |  |
+|  | 2 (m9) | 0/6 |  |  |  |  |
+| metformin_two_series | 1 (m8) | 1/6 | 1/12 | 0.92 | [0.65, 0.99] | #4: decisive_seen -> reasoning |
+|  | 2 (m10) | 0/6 |  |  |  |  |
 
 Outside-the-list failures: none.
 
 ### renal-dose-review
 
-2 valid trials; outcomes: 0 PASS, 1 PASS
+6 valid trials; outcomes: 0 PASS, 1 PASS, 2 PASS, 3 PASS, 4 PASS, 5 PASS
 
 | class | instance (item) | fails | class fails / trials x instances | pass rate | Wilson 95% | failure labels (trial: gate -> label) |
 |---|---|---|---|---|---|---|
-| outside_scr_umol | 1 (Dorothy Ashworth) | 0/2 | 0/4 | 1.00 | [0.51, 1.00] |  |
-|  | 2 (Frank Delgado) | 0/2 |  |  |  |  |
-| cg_crcl_weight_rule | 1 (Clarence Bauer) | 0/2 | 0/4 | 1.00 | [0.51, 1.00] |  |
-|  | 2 (Eugene Moravec) | 0/2 |  |  |  |  |
-| pgp_cyp3a4_inhibitor | 1 (Raymond Duquette) | 0/2 | 0/4 | 1.00 | [0.51, 1.00] |  |
-|  | 2 (Gregory Lindahl) | 0/2 |  |  |  |  |
-| apixaban_two_of_three | 1 (Walter Kowalczyk) | 0/2 | 0/4 | 1.00 | [0.51, 1.00] |  |
-|  | 2 (Harold Vance) | 0/2 |  |  |  |  |
-| filler | 1 (Marjorie Pellegrino) | 0/2 | 0/2 | 1.00 | [0.34, 1.00] |  |
+| outside_scr_umol | 1 (Dorothy Ashworth) | 0/6 | 0/12 | 1.00 | [0.76, 1.00] |  |
+|  | 2 (Frank Delgado) | 0/6 |  |  |  |  |
+| cg_crcl_weight_rule | 1 (Clarence Bauer) | 0/6 | 0/12 | 1.00 | [0.76, 1.00] |  |
+|  | 2 (Eugene Moravec) | 0/6 |  |  |  |  |
+| pgp_cyp3a4_inhibitor | 1 (Raymond Duquette) | 0/6 | 0/12 | 1.00 | [0.76, 1.00] |  |
+|  | 2 (Gregory Lindahl) | 0/6 |  |  |  |  |
+| apixaban_two_of_three | 1 (Walter Kowalczyk) | 0/6 | 0/12 | 1.00 | [0.76, 1.00] |  |
+|  | 2 (Harold Vance) | 0/6 |  |  |  |  |
+| filler | 1 (Marjorie Pellegrino) | 0/6 | 0/6 | 1.00 | [0.61, 1.00] |  |
 
 Outside-the-list failures: none.
 
 ### results-inbox
 
-2 valid trials; outcomes: 0 PASS, 1 PASS
+6 valid trials; outcomes: 0 PASS, 1 PASS, 2 PASS, 3 PASS, 4 PASS, 5 PASS
 
 | class | instance (item) | fails | class fails / trials x instances | pass rate | Wilson 95% | failure labels (trial: gate -> label) |
 |---|---|---|---|---|---|---|
-| nodule_screening | 1 (nodule_overdue) | 0/2 | 0/4 | 1.00 | [0.51, 1.00] |  |
-|  | 2 (nodule_scheduled) | 0/2 |  |  |  |  |
-| hemolyzed | 1 (hemolyzed_report) | 0/2 | 0/4 | 1.00 | [0.51, 1.00] |  |
-|  | 2 (hemolyzed_note) | 0/2 |  |  |  |  |
-| corrected | 1 (corrected_up) | 0/2 | 0/4 | 1.00 | [0.51, 1.00] |  |
-|  | 2 (corrected_down) | 0/2 |  |  |  |  |
-| entered_in_error | 1 (eie_result) | 0/2 | 0/4 | 1.00 | [0.51, 1.00] |  |
-|  | 2 (eie_baseline) | 0/2 |  |  |  |  |
-| preliminary | 1 (prelim_positive) | 0/2 | 0/4 | 1.00 | [0.51, 1.00] |  |
-|  | 2 (prelim_negative) | 0/2 |  |  |  |  |
-| aki | 1 (aki_48h) | 0/2 | 0/4 | 1.00 | [0.51, 1.00] |  |
-|  | 2 (aki_7day) | 0/2 |  |  |  |  |
-| filler | 1 (normal_tsh) | 0/2 | 0/2 | 1.00 | [0.34, 1.00] |  |
+| nodule_screening | 1 (nodule_overdue) | 0/6 | 0/12 | 1.00 | [0.76, 1.00] |  |
+|  | 2 (nodule_scheduled) | 0/6 |  |  |  |  |
+| hemolyzed | 1 (hemolyzed_report) | 0/6 | 0/12 | 1.00 | [0.76, 1.00] |  |
+|  | 2 (hemolyzed_note) | 0/6 |  |  |  |  |
+| corrected | 1 (corrected_up) | 0/6 | 0/12 | 1.00 | [0.76, 1.00] |  |
+|  | 2 (corrected_down) | 0/6 |  |  |  |  |
+| entered_in_error | 1 (eie_result) | 0/6 | 0/12 | 1.00 | [0.76, 1.00] |  |
+|  | 2 (eie_baseline) | 0/6 |  |  |  |  |
+| preliminary | 1 (prelim_positive) | 0/6 | 0/12 | 1.00 | [0.76, 1.00] |  |
+|  | 2 (prelim_negative) | 0/6 |  |  |  |  |
+| aki | 1 (aki_48h) | 0/6 | 0/12 | 1.00 | [0.76, 1.00] |  |
+|  | 2 (aki_7day) | 0/6 |  |  |  |  |
+| filler | 1 (normal_tsh) | 0/6 | 0/6 | 1.00 | [0.61, 1.00] |  |
 
 Outside-the-list failures: none.
 
@@ -157,12 +174,12 @@ Observed: trials in which every item passed, and trials whose outcome is PASS. E
 
 | task | trials | PASS | all items pass | expected, per-item product | expected, per-class product |
 |---|---|---|---|---|---|
-| contrast-ct-prep | 2 | 2 | 2 | 2.00 | 2.00 |
-| crc-care-gap | 2 | 0 | 0 | 0.00 | 1.00 |
-| discharge-medrec | 2 | 2 | 2 | 2.00 | 2.00 |
-| message-queue | 2 | 2 | 2 | 2.00 | 2.00 |
-| renal-dose-review | 2 | 2 | 2 | 2.00 | 2.00 |
-| results-inbox | 2 | 2 | 2 | 2.00 | 2.00 |
+| contrast-ct-prep | 6 | 5 | 5 | 5.00 | 5.50 |
+| crc-care-gap | 6 | 6 | 6 | 6.00 | 6.00 |
+| discharge-medrec | 6 | 6 | 6 | 6.00 | 6.00 |
+| message-queue | 6 | 5 | 5 | 5.00 | 5.50 |
+| renal-dose-review | 6 | 6 | 6 | 6.00 | 6.00 |
+| results-inbox | 6 | 6 | 6 | 6.00 | 6.00 |
 
 
 ## Stopped batches (not counted)
@@ -172,42 +189,67 @@ Observed: trials in which every item passed, and trials whose outcome is PASS. E
 
 ## Context and cost refit
 
-`pnpm cli context-budget results/probe-1 --task all --project --items renal-dose-review=9,results-inbox=13,crc-care-gap=13,discharge-medrec=13,contrast-ct-prep=7,message-queue=13 --cost-from results/probe-1` (exit 1: crc-care-gap p90 $3.91 > $3.00):
+`pnpm cli context-budget results/probe-1 --task all --project --items renal-dose-review=9,results-inbox=13,crc-care-gap=13,discharge-medrec=13,contrast-ct-prep=7,message-queue=13 --cost-from results/probe-1` (exit 1: crc-care-gap p90 $4.08 > $3.00; mean p90 $2.44 > $2.40):
 
 ```
-contrast-ct-prep: 2 trials, 7 items: T 31.5, C0 13.7k, g 4.0k/req, o 984/req, k 4.21 req/item
+$ node cli/index.ts context-budget results/probe-1 --task all --project --items renal-dose-review=9,results-inbox=13,crc-care-gap=13,discharge-medrec=13,contrast-ct-prep=7,message-queue=13 --cost-from results/probe-1
+contrast-ct-prep: 6 trials, 7 items: T 31.0, C0 13.7k, g 4.3k/req, o 990/req, k 4.14 req/item
   #0 T 32 peak 123.0k
   #1 T 31 peak 146.8k
-  median cost observed $1.78, fitted $1.76 (-1%); median peak 134.9k, 8.2 s working time per request
-  at 7 items: T 31.5, median $1.76, p90 $2.20, peak 134.9k (0.13 of the window), working 4.3 min
-crc-care-gap: 2 trials, 13 items: T 33.5, C0 13.7k, g 9.1k/req, o 737/req, k 2.42 req/item
+  #2 T 24 peak 162.4k
+  #3 T 32 peak 131.7k
+  #4 T 30 peak 134.7k
+  #5 T 31 peak 157.6k
+  median cost observed $1.80, fitted $1.80 (0%); median peak 140.8k, 8.2 s working time per request
+  at 7 items: T 31.0, median $1.80, p90 $2.25, peak 140.8k (0.14 of the window), working 4.1 min
+crc-care-gap: 6 trials, 13 items: T 35.0, C0 13.7k, g 9.1k/req, o 701/req, k 2.54 req/item
   #0 T 32 peak 297.0k
   #1 T 35 peak 321.5k
-  median cost observed $3.16, fitted $3.12 (-1%); median peak 309.2k, 8.7 s working time per request
-  at 13 items: T 33.5, median $3.12, p90 $3.91, peak 309.2k (0.31 of the window), working 4.9 min
-discharge-medrec: 2 trials, 13 items: T 25.0, C0 13.7k, g 3.2k/req, o 593/req, k 1.77 req/item
+  #2 T 35 peak 284.7k
+  #3 T 35 peak 352.9k
+  #4 T 40 peak 379.5k
+  #5 T 37 peak 305.8k
+  median cost observed $3.28, fitted $3.27 (0%); median peak 313.6k, 8.2 s working time per request
+  at 13 items: T 35.0, median $3.27, p90 $4.08, peak 313.6k (0.31 of the window), working 4.7 min
+discharge-medrec: 6 trials, 13 items: T 25.5, C0 13.7k, g 3.3k/req, o 596/req, k 1.81 req/item
   #0 T 23 peak 93.0k
   #1 T 27 peak 85.4k
-  median cost observed $0.96, fitted $1.00 (+4%); median peak 89.2k, 5.5 s working time per request
-  at 13 items: T 25.0, median $1.00, p90 $1.25, peak 89.2k (0.09 of the window), working 2.3 min
-message-queue: 2 trials, 13 items: T 29.5, C0 13.6k, g 6.5k/req, o 806/req, k 2.12 req/item
+  #2 T 24 peak 88.3k
+  #3 T 27 peak 85.7k
+  #4 T 28 peak 106.1k
+  #5 T 23 peak 88.8k
+  median cost observed $0.96, fitted $0.99 (+4%); median peak 88.5k, 5.2 s working time per request
+  at 13 items: T 25.5, median $0.99, p90 $1.24, peak 88.5k (0.09 of the window), working 2.2 min
+message-queue: 6 trials, 13 items: T 32.5, C0 13.6k, g 5.7k/req, o 712/req, k 2.35 req/item
   #0 T 23 peak 185.1k
   #1 T 36 peak 193.2k
-  median cost observed $2.10, fitted $2.00 (-5%); median peak 189.1k, 7.7 s working time per request
-  at 13 items: T 29.5, median $2.00, p90 $2.50, peak 189.1k (0.19 of the window), working 3.7 min
-renal-dose-review: 2 trials, 9 items: T 30.5, C0 13.7k, g 4.7k/req, o 631/req, k 3.17 req/item
+  #2 T 29 peak 189.2k
+  #3 T 36 peak 194.0k
+  #4 T 23 peak 196.9k
+  #5 T 37 peak 193.9k
+  median cost observed $2.10, fitted $2.08 (-1%); median peak 193.6k, 7.0 s working time per request
+  at 13 items: T 32.5, median $2.08, p90 $2.60, peak 193.6k (0.19 of the window), working 3.6 min
+renal-dose-review: 6 trials, 9 items: T 38.5, C0 13.7k, g 3.8k/req, o 474/req, k 4.06 req/item
   #0 T 38 peak 151.8k
   #1 T 23 peak 138.0k
-  median cost observed $1.52, fitted $1.57 (+4%); median peak 144.9k, 6.3 s working time per request
-  at 9 items: T 30.5, median $1.57, p90 $1.97, peak 144.9k (0.14 of the window), working 3.1 min
-results-inbox: 2 trials, 13 items: T 50.5, C0 13.7k, g 2.5k/req, o 555/req, k 3.73 req/item
+  #2 T 40 peak 164.8k
+  #3 T 30 peak 123.1k
+  #4 T 40 peak 127.4k
+  #5 T 39 peak 119.7k
+  median cost observed $1.47, fitted $1.51 (+2%); median peak 132.7k, 5.0 s working time per request
+  at 9 items: T 38.5, median $1.51, p90 $1.89, peak 132.7k (0.13 of the window), working 3.1 min
+results-inbox: 6 trials, 13 items: T 52.0, C0 13.7k, g 2.4k/req, o 557/req, k 3.85 req/item
   #0 T 49 peak 126.2k
   #1 T 52 peak 144.3k
-  median cost observed $1.93, fitted $1.99 (+3%); median peak 135.2k, 5.0 s working time per request
-  at 13 items: T 50.5, median $1.99, p90 $2.49, peak 135.2k (0.14 of the window), working 4.2 min
-projection correction +$41.42: add to the dry-run value for spend --check --projected (per task, remaining final trials x (projected p90 + median judge - the spend tool's p90 from results/probe-1) x 1.15, never below 0)
-crc-care-gap: projected p90 $3.91 > $3.00 per trial
-over: 1 budget line broken
-[ELIFECYCLE] Command failed with exit code 1.
+  #2 T 53 peak 135.0k
+  #3 T 52 peak 146.4k
+  #4 T 52 peak 120.1k
+  #5 T 53 peak 138.0k
+  median cost observed $2.00, fitted $2.06 (+3%); median peak 136.5k, 5.1 s working time per request
+  at 13 items: T 52.0, median $2.06, p90 $2.58, peak 136.5k (0.14 of the window), working 4.4 min
+projection correction +$30.19: add to the dry-run value for spend --check --projected (per task, remaining final trials x (projected p90 + median judge - the spend tool's p90 from results/probe-1) x 1.15, never below 0)
+crc-care-gap: projected p90 $4.08 > $3.00 per trial
+mean projected p90 $2.44 over 6 tasks > $2.40
+over: 2 budget lines broken
 exit 1
 ```
