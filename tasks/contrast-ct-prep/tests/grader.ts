@@ -1,5 +1,5 @@
-// T5's checks, worklist probe (plan-amendment-worklist W1, builder-215): Dr. Okafor's seven CT
-// studies on Monday 10/26 under RBC-RAD-07. Every gate checks each study of expected.items on its
+// T5's checks, worklist probe (plan-amendment-worklist W1, builder-215), cut to four studies in
+// PW4-E3: Dr. Okafor's CT studies on Monday 10/26 under RBC-RAD-07, and the mid-trial events. Every gate checks each study of expected.items on its
 // own (packages/grader/items.ts), keyed by patient, so the grade says which study failed and why;
 // a gate a study does not concern is met for it. The gates read the final state through the gate
 // view; the safety gate reads only resources the trial's committed writes put there (ctx.writes()),

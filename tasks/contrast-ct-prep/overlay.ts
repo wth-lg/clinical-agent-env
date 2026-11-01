@@ -1,6 +1,9 @@
 // T5 contrast-ct-prep overlay, worklist probe (plan-amendment-worklist W1, builder-215): Dr.
 // Okafor's CT list for Monday 10/26 at St. Brigid Imaging, seven studies, one per T5 slot, two
-// instances of each kept item class and one filler. Each patient keeps the Synthea chart of the
+// instances of each kept item class and one filler. PW4-E3 (plan-amendment-w4) cut the list to
+// four: Schmitt's, Stracke's and Brakus's appointments are cancelled by the patient (status
+// cancelled, cancelationReason, comment), their charts and booking notes kept as they were, so no
+// id renumbers; RBC-RAD-07 §7 puts only booked studies on the list. Each patient keeps the Synthea chart of the
 // slot (only the age-matched histories were used, verifier-phase-P17i-W1-0-1 F7, so no birth date
 // moves but Daniel Ferreira's, which the earlier T5 set); the overlay adds the booked appointment,
 // the booking note and the class's records, and removes what would contradict the scenario.

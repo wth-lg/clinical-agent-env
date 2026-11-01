@@ -6,7 +6,6 @@
 import { describe, expect, it } from 'vitest';
 import type { GateCheck, GateCtx } from '../../packages/grader/check.ts';
 import { activeSpecs } from '../../packages/env/events.ts';
-import { EVENT_GATE_IDS } from '../../packages/grader/events.ts';
 import { OUTSIDE } from '../../packages/grader/items.ts';
 import * as events from './events.ts';
 import { TASKS } from '../../packages/env/overlay.ts';
@@ -30,9 +29,12 @@ describe('T5 worklist', () => {
   });
 
   it('every gate records one result per study, keyed by patient; the safety gate also records writes outside the list', () => {
-    // The event gates (packages/grader/events.ts) record the studies the active events bear on.
-    const eventItems = [...new Set(activeSpecs(events).map((s) => s.item))];
-    for (const g of gates) expect(g.fn(NOTHING).items?.map((i) => i.item), g.id).toEqual(g.id === 'no_substitution' ? [...KEYS, OUTSIDE] : EVENT_GATE_IDS.includes(g.id as never) ? eventItems.filter((k) => g.id !== 'kept' || activeSpecs(events).some((s) => s.item === k && s.class === 'D')).filter((k) => !['amended'].includes(g.id) || activeSpecs(events).some((s) => s.item === k && s.class !== 'D')) : KEYS);
+    // The event gates (packages/grader/events.ts) record the studies the active events bear on:
+    // every event's for the first three, the amend events' for amended, the lures' for kept.
+    const specs = activeSpecs(events);
+    const of = (pick: (c: string) => boolean) => [...new Set(specs.filter((s) => pick(s.class)).map((s) => s.item))];
+    const eventItems: Record<string, string[]> = { event_delivered: of(() => true), had_turn: of(() => true), event_seen: of(() => true), amended: of((c) => c !== 'D'), kept: of((c) => c === 'D') };
+    for (const g of gates) expect(g.fn(NOTHING).items?.map((i) => i.item), g.id).toEqual(g.id === 'no_substitution' ? [...KEYS, OUTSIDE] : (eventItems[g.id] ?? KEYS));
   });
 
   it('a trial that does nothing, on an empty state, fails ct_order on every study that gets an order, and the prep gates on exactly the studies that need that prep', () => {

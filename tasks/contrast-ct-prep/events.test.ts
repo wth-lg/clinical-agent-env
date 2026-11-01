@@ -94,6 +94,29 @@ describe('T5 event specs', () => {
     expect(derived.items.filter((x) => x.patient !== spec.item)).toEqual(expected.items.filter((x) => x.patient !== spec.item));
   });
 
+  // discover.test and every search run on the world before the trigger: no arrival is there yet.
+  // A new arrival's id is in no world range; only the class B correction names a world record,
+  // and it keeps that record but for the corrected value, its status and note, and the stamp.
+  it('arrivals are absent from the world before their trigger; the correction changes only what a lab correction does', () => {
+    for (const s of events.SPECS) {
+      for (const r of s.resources) {
+        const there = store.get(r.resourceType, r.id!) as unknown as Record<string, unknown> | undefined;
+        if (s.class !== 'B') expect(there, `${s.id} ${r.resourceType}/${r.id}`).toBeUndefined();
+        else {
+          expect(there, `${s.id} replaces a world record`).toBeDefined();
+          const { status, valueQuantity, note, issued, ...rest } = there!;
+          const mine = r as unknown as Record<string, unknown>;
+          expect(status).toBe('final');
+          expect((valueQuantity as { value: number }).value).toBe(0.98);
+          expect([note, mine.issued]).toEqual([undefined, undefined]);
+          expect(Object.fromEntries(Object.entries(mine).filter(([k]) => !['status', 'valueQuantity', 'note'].includes(k)))).toEqual(rest);
+          expect(issued).toBeDefined();
+          expect([mine.status, (mine.valueQuantity as { value: number }).value]).toEqual(['corrected', 2.8]);
+        }
+      }
+    }
+  });
+
   it('an amend event changes its study; a lure leaves it as it was', () => {
     for (const s of events.SPECS) {
       const before = expected.items.find((x) => x.patient === s.item)!;

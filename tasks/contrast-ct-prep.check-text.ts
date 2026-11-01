@@ -42,7 +42,6 @@ export const checkText: CheckText = {
   had_turn: { requires: 'a model turn after every arrival', found: firstItem },
   event_seen: { requires: "each result or report that arrived during the trial opened, or its deciding line shown, before finishing (the preamble: review anything that arrived after you started)", found: firstItem },
   amended: { requires: 'each decision an arrival changes corrected on the chart as delivered (saline after a kidney injury or a corrected eGFR under 30, premedication after an outside report of a moderate reaction), written after the arrival was read', found: firstItem },
-  amend_form: { requires: 'the correction in the form the policy names', found: firstItem },
   kept: { requires: 'a decision left in place when an arrival does not change it (an outside reaction report for a CT without contrast, a patient\'s own account of a graded reaction)', found: firstItem },
   evidence_before_orders: { requires: "the records each of a study's order decisions turns on (the report of the day, the diabetes that makes a creatinine due, the creatinine whose eGFR is under 30, the record of the kidney injury) seen before every order that decision places; messages and consults are not orders", found: first },
 };

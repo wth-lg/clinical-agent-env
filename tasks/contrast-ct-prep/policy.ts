@@ -3,7 +3,10 @@
 // day, in slot order, and for each the decision the policy gives. It never imports expected.ts or
 // overlay constants (lint: no-policy-expected-import).
 //   §1 the active allergies to iodinated contrast, graded by the record made the day of the
-//      reaction (a note of that date that names the agent), not by a later list label
+//      reaction (a note of that date that names the agent), not by a later list label; for a contrast
+//      study with none on the list, an outside report of a reaction ('Contrast reaction severity:
+//      <grade>', a mid-trial arrival, events.ts) is the record of the day; the item's class stays
+//      the list's
 //   §2/§3 mild or moderate: premedicate, the doses counted back from the slot; severe: no contrast
 //   §4 age 60 or older or diabetes: a creatinine within the 30 days before the scan, not drawn
 //      during acute kidney injury, else a new one; AKI is a recorded diagnosis in a note before the
