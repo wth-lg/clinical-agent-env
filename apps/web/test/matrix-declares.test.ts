@@ -1,4 +1,4 @@
-// The browser's reader of task.toml's [matrix] table (apps/web/src/tasks/matrix-task.ts
+// The browser's reader of task.toml's [matrix] table (apps/web/src/tasks/matrix-declares.ts
 // matrixDeclares) against the Node one (cli/matrix.ts: smol-toml, then declaresOf). The web bundle
 // has no TOML parser, so the browser reads only the forms the tasks use; on every committed task
 // the two must agree, or the Tasks view's in-tab oracle and matrix read a task wrong (or throw).
@@ -8,7 +8,7 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { declaresOf } from '../../../packages/grader/matrix/matrix.ts';
-import { matrixDeclares } from '../src/tasks/matrix-task.ts';
+import { matrixDeclares } from '../src/tasks/matrix-declares.ts';
 
 const REPO = join(import.meta.dirname, '../../..');
 const toml = (await import(pathToFileURL(createRequire(join(REPO, 'packages/core/package.json')).resolve('smol-toml')).href)) as { parse(text: string): Record<string, unknown> };
