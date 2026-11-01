@@ -11,16 +11,30 @@
 //   refused by the egress guard before the Request left
 //                            settled at $0, not retried
 //   complete stream          settled at its usage
-//   dropped or errored stream, malformed frame, network error after send
-//                            settled at the worst case: usage is unknown, and the partial
-//                            answer is discarded, never appended to the conversation
+//   dropped, idle or errored stream, malformed frame, or an abort, after message_start
+//                            settled at the usage the stream reported: message_start's input
+//                            and cache counts, and message_delta's output count, or max_tokens
+//                            when no message_delta came (the output is unknown, and max_tokens
+//                            caps it). The claude-api reference bills a stream stopped
+//                            mid-output for its input and the output already streamed
+//                            (shared/model-migration.md, refusal section: "input and
+//                            already-streamed output are billed at normal rates"); it does not
+//                            say what a client disconnect bills, so the output is counted at
+//                            its cap. The partial answer is discarded, never appended
+//   the same before message_start, or a network error after send
+//                            settled at the worst case: usage is unknown
+// The worst case an attempt reserves prices input from a token estimate when the client saw the
+// previous request of the same conversation answered: that request's prompt tokens (usage input
+// + cache write + cache read) plus each byte added since as one token, plus
+// INPUT_OVERHEAD_TOKENS (promptEstimate). Otherwise every body byte counts as one token.
 // Retried: 408, 409, 429, 5xx (529 included), an error event mid-stream, a dropped stream, a
 // network error, an attempt idle for IDLE_STREAM_MS (no response headers, or no stream bytes,
 // for that long: it is cut off and settled at the worst case); up to maxAttempts (8), waiting retry-after (at most 60 s) or an exponential
 // backoff with jitter from 2 s to 60 s (design section 1, "Failure modes"). An abort is
 // never retried: send takes a per-request signal, combined with the grant's, and once either
 // has aborted the call throws the abort reason. Aborted before the reserve, nothing is
-// reserved or sent; aborted in flight, the attempt is settled at the worst case.
+// reserved or sent; aborted in flight, the attempt settles what its stream reported, else its
+// worst case. Every failed or aborted attempt is reported to onAttemptError and logged.
 // classifyFailure says how a failed call ends a trial, for the trial loop and the judge alike,
 // and whether it stops the batch: a 400, 401, 403, 404 (the model: /v1/messages is the only
 // endpoint), a billing error, a substituted model, an egress refusal, a spend refusal and any
@@ -60,8 +74,9 @@
 //     one (in Node the guarded dispatcher refuses that hop)
 //   - Node's http, https, http2, net and tls modules with a host built at runtime (lint flags a
 //     literal API host passed to them)
-import { usageCostUsd, worstCaseUsd, type Usage } from './cost.ts';
+import { INPUT_OVERHEAD_TOKENS, usageCostUsd, worstCaseUsd, type Usage } from './cost.ts';
 import { assertClientGrant, SpendRefused, type BatchGrant, type Ledger, type Reservation, type ReserveRequest } from './ledger.ts';
+import type { AttemptSettle } from './events.ts';
 import { redactText } from './redact.ts';
 
 const MESSAGES_URL = 'https://api.anthropic.com/v1/messages';
@@ -324,7 +339,7 @@ const isBilling = (e: ApiError) => e.errorType === 'billing_error' || (e.status 
 // A 400 invalid_request_error whose prompt does not fit the model's context window.
 const PROMPT_TOO_LONG = /prompt is too long/i;
 const isPromptTooLong = (status: number | null, type: string | null, message: string) => status === 400 && type === 'invalid_request_error' && PROMPT_TOO_LONG.test(message);
-const broken = (message: string, type: string | null = null, retryable = true) =>
+const broken = (message: string, type: string | null = 'stream_dropped', retryable = true) =>
   new ApiError(message, { status: 200, type, retryable, stopsBatch: false, partial: true });
 const retryableStreamError = (type: string | null) => type === 'overloaded_error' || type === 'api_error' || type === 'rate_limit_error';
 
@@ -354,7 +369,14 @@ async function errorStatus(res: Response): Promise<ApiError> {
 // The stop reasons that may cut a tool_use off mid-input (readStream).
 const CUT_OFF_STOPS = ['max_tokens', 'model_context_window_exceeded'];
 
-async function readStream(body: ReadableStream<Uint8Array>, onBytes: () => void, idle: AbortSignal): Promise<Message> {
+// What a stream reported about its usage before it ended or failed: message_start's usage, and
+// whether a message_delta reported the output count.
+interface StreamUsage {
+  usage: Usage | null;
+  output: boolean;
+}
+
+async function readStream(body: ReadableStream<Uint8Array>, onBytes: () => void, idle: AbortSignal, seen: StreamUsage): Promise<Message> {
   const reader = body.getReader();
   const decoder = new TextDecoder();
   let buf = '';
@@ -365,6 +387,7 @@ async function readStream(body: ReadableStream<Uint8Array>, onBytes: () => void,
     switch (e.type) {
       case 'message_start':
         st.message = { ...(e.message as Message), content: [] };
+        seen.usage = { ...st.message.usage };
         return false;
       case 'content_block_start':
         if (st.message) st.message.content[e.index as number] = { ...(e.content_block as ContentBlock) };
@@ -399,6 +422,8 @@ async function readStream(body: ReadableStream<Uint8Array>, onBytes: () => void,
           m.stop_reason = d.stop_reason ?? m.stop_reason;
           if (d.stop_details !== undefined) m.stop_details = d.stop_details;
           m.usage = { ...m.usage, ...(e.usage as Partial<Usage>) };
+          seen.usage = { ...m.usage };
+          if (typeof (e.usage as Partial<Usage> | undefined)?.output_tokens === 'number') seen.output = true;
         }
         return false;
       case 'message_stop':
@@ -465,7 +490,7 @@ const unlessAborted = <T>(p: Promise<T>, signal: AbortSignal): Promise<T> =>
 // idleMs, the fetch error as thrown for a network failure. MessagesClient.send is its only
 // caller. The transport gets the registered Request and nothing else, and the registration ends
 // when it returns.
-async function sendOnce(f: Transport, endpoint: string, apiKey: string, body: string, signal: AbortSignal | undefined, idleMs: number): Promise<{ status: number; message: Message }> {
+async function sendOnce(f: Transport, endpoint: string, apiKey: string, body: string, signal: AbortSignal | undefined, idleMs: number, seen: StreamUsage): Promise<{ status: number; message: Message }> {
   const idle = new AbortController();
   let timer: ReturnType<typeof setTimeout> | undefined;
   const quiet = () => {
@@ -491,7 +516,7 @@ async function sendOnce(f: Transport, endpoint: string, apiKey: string, body: st
     quiet();
     if (res.status !== 200) throw await errorStatus(res);
     if (!res.body) throw broken('HTTP 200 without a body');
-    return { status: res.status, message: await readStream(res.body, quiet, idle.signal) };
+    return { status: res.status, message: await readStream(res.body, quiet, idle.signal, seen) };
   } catch (e) {
     // Cut off for idling, not aborted by the caller: the request may have reached the API.
     if (idle.signal.aborted && !signal?.aborted) throw new ApiError(`no data for ${idleMs} ms`, { status: null, type: 'stream_idle', retryable: true, stopsBatch: false, partial: true });
@@ -507,7 +532,11 @@ async function sendOnce(f: Transport, endpoint: string, apiKey: string, body: st
 //   INFRA_HARNESS  a request we built wrong (a 400 that is not billing or a prompt too long), the egress guard, a
 //                  spend refusal, or any other local error (a request the client refused to
 //                  build, a ledger fault)
-//   INFRA_API      401, 403, 404, a billing error, retries exhausted, a network error
+//   INFRA_API      401, 403, 404, a billing error, retries exhausted, a network error, and a
+//                  SpendBoundRefused, code spend_bound: the trial loop's per-trial bound
+//                  (loop.ts MAX_SETTLED_USD) refused the next attempt. It ends that trial only
+//                  (re-queued) and never stops the batch: whoever the error reaches, the batch
+//                  wrapper included, reads the same answer
 //   ENV_LIMIT      a 400 prompt is too long, code prompt_too_long: the trial's context outgrew
 //                  the model's window. The trial loop ends the trial LIMIT context_window
 //                  (loop.ts), which the grader grades ENV_LIMIT. Never rerun (outcomes.ts
@@ -524,7 +553,14 @@ export interface ClientFailure {
   message: string;
 }
 
+// The trial loop's refusal of an attempt whose worst case would take the trial's settled cost
+// past its bound: the reason it aborts the call with (loop.ts).
+export class SpendBoundRefused extends Error {
+  override readonly name = 'SpendBoundRefused';
+}
+
 export function classifyFailure(e: unknown): ClientFailure {
+  if (e instanceof SpendBoundRefused) return { status: 'INFRA_API', code: 'spend_bound', stopsBatch: false, message: e.message };
   if (e instanceof SpendRefused) return { status: 'INFRA_HARNESS', code: `spend_refused_${e.cap}`, stopsBatch: true, message: e.message };
   if (e instanceof ApiError) {
     const message = e.message;
@@ -577,7 +613,54 @@ export interface SendOptions {
   // Called when an attempt failed and will be retried after a wait of waitMs: the trial loop
   // leaves failed attempts and these waits out of its working time.
   onRetry?: (attempt: number, waitMs: number) => void;
+  // Called for every attempt that failed or was aborted, before onRetry, with what failed and how
+  // it settled; the trial loop records it in the trajectory (event attempt_error). Never the
+  // key (redacted) or the request body.
+  onAttemptError?: (failure: AttemptFailure) => void;
 }
+
+// A failed or aborted attempt, as onAttemptError reports it; settle says how it settled
+// (events.ts ATTEMPT_SETTLES).
+export interface AttemptFailure {
+  attempt: number;
+  // The class of the error: ApiError, SpendBoundRefused, an abort's DOMException name.
+  error: string;
+  // classifyFailure's code, or aborted for an abort the caller made for another reason.
+  code: string;
+  // The HTTP status, when there was one.
+  status: number | null;
+  message: string;
+  settle: AttemptSettle;
+  settled_usd: number;
+  // Whether the client tries again.
+  retry: boolean;
+}
+
+// The input tokens a request holds at most, from what the client last saw of the same
+// conversation: when this body extends the body of a request that was answered (same model,
+// params and earlier messages, with messages appended), that request's prompt tokens plus each
+// byte added since as one token, plus INPUT_OVERHEAD_TOKENS for the template of the new messages;
+// else undefined, and worstCaseUsd counts every byte. A token covers at least one byte of the
+// UTF-8 body, so the growth is never under-counted (the bound worstCaseUsd already rests on).
+// The 246 recorded pilot-3 crc-care-gap requests: a token is 2.25 to 2.62 body bytes, so the
+// byte count overstated the 253k-token request 2.56x. This estimate is 1.025x to 1.16x of the real
+// prompt at 200k tokens and up, at most 1.43x at 100k and up, and up to 2x on small early requests
+// whose tool results are large for their size (packages/core/test/spend-bound.test.ts (c)).
+interface AnsweredPrompt {
+  head: string;
+  bytes: number;
+  tokens: number;
+}
+const MESSAGES_TAIL = '],"stream":true}';
+function promptEstimate(prev: AnsweredPrompt | undefined, body: string, bytes: number): number | undefined {
+  if (prev === undefined || !body.startsWith(prev.head) || body[prev.head.length] !== ',' || bytes <= prev.bytes) return undefined;
+  return prev.tokens + (bytes - prev.bytes) + INPUT_OVERHEAD_TOKENS;
+}
+const answeredPrompt = (body: string, bytes: number, usage: Usage): AnsweredPrompt | undefined => {
+  const tokens = usage.input_tokens + (usage.cache_creation_input_tokens ?? 0) + (usage.cache_read_input_tokens ?? 0);
+  if (!body.endsWith(MESSAGES_TAIL) || !Number.isSafeInteger(tokens) || tokens < 0) return undefined;
+  return { head: body.slice(0, -MESSAGES_TAIL.length), bytes, tokens };
+};
 
 // What an aborted call throws: the signal's reason when it is an Error (a SpendRefused from the
 // grant, an AbortError DOMException from AbortController.abort()), else an AbortError.
@@ -585,6 +668,10 @@ function abortReason(signal: AbortSignal): Error {
   const r: unknown = signal.reason;
   return r instanceof Error ? r : new DOMException(r === undefined ? 'This operation was aborted' : String(r), 'AbortError');
 }
+
+// The code an aborted attempt is recorded with: the spend bound's, or aborted for any other
+// reason the caller or the grant aborted (a cap, a cancel, a batch stop).
+const abortCode = (reason: Error): string => (reason instanceof SpendBoundRefused ? 'spend_bound' : reason instanceof SpendRefused ? `spend_refused_${reason.cap}` : 'aborted');
 
 const sleepUnlessAborted = (sleep: (ms: number) => Promise<void>, ms: number, signal: AbortSignal): Promise<void> =>
   new Promise((resolve, reject) => {
@@ -618,6 +705,8 @@ export class MessagesClient {
   readonly #maxAttempts: number;
   readonly #random: () => number;
   readonly #idleMs: number;
+  // The last answered request of each conversation this client sent (promptEstimate).
+  readonly #prompts = new WeakMap<readonly MessageParam[], AnsweredPrompt>();
 
   constructor(opts: ClientOptions) {
     assertClientGrant(opts.grant, opts.ledger);
@@ -654,39 +743,79 @@ export class MessagesClient {
 
   async #send(history: MessageParam[], params: MessageParams, opts: SendOptions, signal: AbortSignal): Promise<CallResult> {
     const body = requestBody(history, params);
-    const req = reserveFor(body, checkRequest(params, body), this.#trial);
+    const bodyBytes = new TextEncoder().encode(body).length;
+    const inputTokens = promptEstimate(this.#prompts.get(history), body, bodyBytes);
+    const req: ReserveRequest = { bodyBytes, maxTokens: checkRequest(params, body), ...(inputTokens !== undefined ? { inputTokens } : {}), ...(this.#trial ? { trial: this.#trial } : {}) };
     const worst = worstCaseUsd(req);
-    const settle = async (res: Reservation, usage: Usage | null) => {
+    const settle = async (res: Reservation, usage: Usage | null): Promise<number> => {
       await this.#grant.settle(res, usage);
-      opts.onSettle?.((usage === null ? null : usageCostUsd(usage)) ?? res.worst_usd);
+      const usd = (usage === null ? null : usageCostUsd(usage)) ?? res.worst_usd;
+      opts.onSettle?.(usd);
+      return usd;
+    };
+    const failed = (f: Omit<AttemptFailure, 'message'> & { message: string }) => {
+      const message = redactText(f.message, [this.#apiKey]);
+      this.#log(`attempt ${f.attempt}: ${f.error} ${f.code}: ${message} (settled $${f.settled_usd.toFixed(4)}, ${f.settle}${f.retry ? ', retrying' : ''})`);
+      opts.onAttemptError?.({ ...f, message });
+    };
+    // An abort before the reserve: nothing reserved, sent or settled.
+    const abortedBefore = (attempt: number): Error => {
+      const reason = abortReason(signal);
+      failed({ attempt, error: reason.name, code: abortCode(reason), status: null, message: reason.message, settle: 'none', settled_usd: 0, retry: false });
+      return reason;
     };
     for (let attempt = 1; ; attempt++) {
-      if (signal.aborted) throw abortReason(signal);
+      if (signal.aborted) throw abortedBefore(attempt);
       opts.onAttempt?.(attempt, worst);
-      if (signal.aborted) throw abortReason(signal);
-      const res = await this.#grant.reserve(req);
+      if (signal.aborted) throw abortedBefore(attempt);
+      let res: Reservation;
+      try {
+        res = await this.#grant.reserve(req);
+      } catch (e) {
+        const f = classifyFailure(e);
+        failed({ attempt, error: e instanceof Error ? e.name : typeof e, code: f.code, status: null, message: e instanceof Error ? e.message : String(e), settle: 'none', settled_usd: 0, retry: false });
+        throw e;
+      }
+      const seen: StreamUsage = { usage: null, output: false };
+      // What the stream reported, the output at max_tokens when no message_delta counted it; null
+      // when nothing was reported (the worst case).
+      const reported = (): Usage | null => (seen.usage === null ? null : { ...seen.usage, output_tokens: seen.output ? seen.usage.output_tokens : req.maxTokens });
       let out: { status: number; message: Message };
       try {
-        out = await sendOnce(this.#fetch, this.#endpoint, this.#apiKey, body, signal, this.#idleMs);
+        out = await sendOnce(this.#fetch, this.#endpoint, this.#apiKey, body, signal, this.#idleMs, seen);
       } catch (e) {
-        // Aborted in flight: the request may have reached the API, so the worst case, and no retry.
+        // Aborted in flight: the request may have reached the API, so what the stream reported,
+        // else the worst case, and no retry.
         if (signal.aborted) {
-          await settle(res, null);
-          this.#log(`attempt ${attempt}: aborted`);
-          throw abortReason(signal);
+          const usage = reported();
+          const usd = await settle(res, usage);
+          const reason = abortReason(signal);
+          failed({ attempt, error: reason.name, code: abortCode(reason), status: null, message: reason.message, settle: usage === null ? 'worst_case' : 'partial_usage', settled_usd: usd, retry: false });
+          throw reason;
         }
         const known = e instanceof ApiError;
-        // An HTTP error status is not billed; a broken stream or lost connection may be.
-        await settle(res, known && !e.partial ? { input_tokens: 0, output_tokens: 0 } : null);
+        // An HTTP error status is not billed; a broken stream or lost connection may be: what the
+        // stream reported, else the worst case.
+        const usage = known && !e.partial ? { input_tokens: 0, output_tokens: 0 } : reported();
+        const usd = await settle(res, usage);
         const err = known ? e : new ApiError(`network error: ${(e as Error).message}`, { status: null, type: null, retryable: true, stopsBatch: false, partial: true });
         err.message = redactText(err.message, [this.#apiKey]);
         if (err.stack) err.stack = redactText(err.stack, [this.#apiKey]);
-        this.#log(`attempt ${attempt}: ${err.message}`);
-        if (err.stopsBatch || !err.retryable || attempt >= this.#maxAttempts) throw err;
+        const retry = !(err.stopsBatch || !err.retryable || attempt >= this.#maxAttempts);
+        failed({
+          attempt, error: err.name, code: classifyFailure(err).code, status: err.status, message: err.message, settled_usd: usd, retry,
+          settle: known && !e.partial ? 'not_billed' : usage === null ? 'worst_case' : 'partial_usage',
+        });
+        if (!retry) throw err;
         const wait = err.retryAfter !== null ? Math.min(err.retryAfter * 1000, RETRY_AFTER_MAX_MS) : backoffMs(attempt, this.#random());
         opts.onRetry?.(attempt, wait);
         await sleepUnlessAborted(this.#sleep, wait, signal);
         continue;
+      }
+      const priced = usageCostUsd(out.message.usage);
+      if (priced !== null) {
+        const next = answeredPrompt(body, bodyBytes, out.message.usage);
+        if (next) this.#prompts.set(history, next);
       }
       await settle(res, out.message.usage);
       const { message } = out;

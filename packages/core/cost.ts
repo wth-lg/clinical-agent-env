@@ -83,16 +83,23 @@ function assertTokenCount(name: string, v: unknown): void {
   if (!Number.isSafeInteger(v) || (v as number) < 0) throw new TypeError(`${name} must be a whole number >= 0, got ${String(v)}`);
 }
 
-// An upper bound on a call's cost before it is sent. Input: every request body byte counted
-// as one token (a token covers at least one byte of text), plus INPUT_OVERHEAD_TOKENS, all at
-// the 1-hour cache-write price, the highest input rate a call can incur. Output: max_tokens,
-// which also caps thinking tokens. Fast mode doubles it. Throws on a bodyBytes or maxTokens
-// that is not a whole number >= 0, so no NaN or negative reservation reaches the cap check.
-export function worstCaseUsd(req: { bodyBytes: number; maxTokens: number; fast?: boolean }): number {
+// An upper bound on a call's cost before it is sent. Input: inputTokens when the caller gives
+// an upper bound on the request's input tokens (MessagesClient: the last answered prompt of the
+// same conversation plus the bytes added since, anthropic.ts promptEstimate), else every request
+// body byte counted as one token (a token covers at least one byte of text) plus
+// INPUT_OVERHEAD_TOKENS; the smaller of the two when both are given, since each is an upper
+// bound. Input is priced at the 1-hour cache-write price, the highest input rate a call can
+// incur. Output: max_tokens, which also caps thinking tokens. Fast mode doubles it. Throws on
+// a bodyBytes, inputTokens or maxTokens that is not a whole number >= 0, so no NaN or negative
+// reservation reaches the cap check.
+export function worstCaseUsd(req: { bodyBytes: number; maxTokens: number; inputTokens?: number; fast?: boolean }): number {
   assertTokenCount('bodyBytes', req.bodyBytes);
   assertTokenCount('maxTokens', req.maxTokens);
+  if (req.inputTokens !== undefined) assertTokenCount('inputTokens', req.inputTokens);
   const p = PRICE_USD_PER_MTOK;
-  const usd = ((req.bodyBytes + INPUT_OVERHEAD_TOKENS) * p.cache_write_1h + req.maxTokens * p.output) / 1e6;
+  const bytes = req.bodyBytes + INPUT_OVERHEAD_TOKENS;
+  const input = req.inputTokens === undefined ? bytes : Math.min(req.inputTokens, bytes);
+  const usd = (input * p.cache_write_1h + req.maxTokens * p.output) / 1e6;
   return req.fast === true ? usd * FAST_MODE_MULTIPLIER : usd;
 }
 

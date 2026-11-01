@@ -84,7 +84,9 @@ const PARAMS: MessageParams = { max_tokens: 1000 };
 const respond = (turn: MockTurn, n = 1) => okResponse(turn, n);
 const tooMany = () => new Response('{"error":{"type":"rate_limit_error","message":"slow down"}}', { status: 429, headers: { 'retry-after': '30' } });
 // A stream that ends after message_start: dropped, usage unknown, settled at the worst case.
-const dropped = () => new Response(sse(turnEvents({ text: 'cut' }, 1).slice(0, 1)), { status: 200, headers: { 'content-type': 'text/event-stream' } });
+// A stream that drops before message_start: the usage is unknown, so the attempt settles at its
+// worst case (one that drops after message_start settles what it reported: spend-bound.test.ts).
+const dropped = () => new Response(sse([]), { status: 200, headers: { 'content-type': 'text/event-stream' } });
 const toolUse = (n: number): MockTurn => ({ tools: [{ id: `toolu_${n}`, name: 'nope', input: {} }] });
 
 async function clientOver(fetch: Transport, time: ReturnType<typeof fakeTime>, over: Partial<ClientOptions> = {}) {
@@ -212,7 +214,9 @@ describe('infrastructure never ends a trial LIMIT', () => {
     const { out, settles } = await loop(stall, {}, { client: { idleStreamMs: 20, log: (l) => lines.push(l) } });
     expect(out.status).toBe('COMPLETED');
     expect(out.api_retries).toBe(1);
-    expect(settles.map((r) => r.usage === null)).toEqual([true, false]);
+    // Idle before the response: usage unknown, the worst case. Idle after message_start: the usage
+    // it reported (builder-266 (4)).
+    expect(settles.map((r) => r.usage === null)).toEqual([when === 'before-response', false]);
     expect(lines[0]).toMatch(/attempt 1: .*no data for 20 ms/);
   }, 5000);
 });
