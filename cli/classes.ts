@@ -392,6 +392,19 @@ export function markdown(json: ClassesJson): string {
 
 // ---- The command.
 
+// A record's current grade's grader_version (the last regrade's, else the record's), as a string;
+// null when none is recorded. ClassesJson.grader_versions is the set of these over the settled records.
+export function currentGraderVersion(r: { grader_version?: unknown; regrades?: unknown }): string | null {
+  const last: unknown = Array.isArray(r.regrades) ? r.regrades.at(-1) : undefined;
+  const gv = (last as { grader_version?: unknown } | undefined)?.grader_version ?? r.grader_version;
+  return typeof gv === 'string' || typeof gv === 'number' ? String(gv) : null;
+}
+
+// Grader versions in ClassesJson.grader_versions order: numeric, then by text.
+export function sortGraderVersions(vs: Iterable<string>): string[] {
+  return [...vs].sort((a, b) => Number(a) - Number(b) || (a < b ? -1 : a > b ? 1 : 0));
+}
+
 export async function classesOf(runs: readonly string[], deps: Pick<Deps, 'itemClasses' | 'events'> = {}): Promise<ClassesJson> {
   const byTask = new Map<string, Trial[]>();
   const graders = new Set<string>();
@@ -400,9 +413,8 @@ export async function classesOf(runs: readonly string[], deps: Pick<Deps, 'itemC
     for (const { record } of settledRecords(dir)) {
       const r = record as unknown as RawRecord;
       if (typeof r.task_id !== 'string') continue;
-      const last = Array.isArray(r.regrades) ? r.regrades.at(-1) : undefined;
-      const gv = last?.grader_version ?? r.grader_version;
-      if (typeof gv === 'string' || typeof gv === 'number') graders.add(String(gv));
+      const gv = currentGraderVersion(r);
+      if (gv !== null) graders.add(gv);
       byTask.set(r.task_id, [...(byTask.get(r.task_id) ?? []), readTrial(dir, r)]);
     }
   }
@@ -423,7 +435,7 @@ export async function classesOf(runs: readonly string[], deps: Pick<Deps, 'itemC
     }
     tasks[id] = tabulate(trials, items, await (deps.events ?? taskEventsOf)(id));
   }
-  return { schema_version: 1, run_dirs: [...runs], grader_versions: [...graders].sort((a, b) => Number(a) - Number(b) || (a < b ? -1 : a > b ? 1 : 0)), tasks };
+  return { schema_version: 1, run_dirs: [...runs], grader_versions: sortGraderVersions(graders), tasks };
 }
 
 export async function main(args: string[], deps: Deps = defaults): Promise<number> {

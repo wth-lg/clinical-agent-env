@@ -36,12 +36,13 @@ function writeRun(dir: string, run: string, tasks: Record<string, { n: number; p
   put(dir, 'manifest.json', { run_id: run, model: MODEL, effort: 'high', mode: 'live', trials: 20, world_hash: 'h-initial', task_versions: Object.fromEntries(Object.keys(tasks).map((t) => [t, `v-${t}`])), batches: [] });
 }
 
-// A `cli classes --json` output (reports/w4-classes-json-contract.txt) for t-in.
+// A `cli classes --json` output (reports/w4-classes-json-contract.txt) for t-in, at the run's current
+// grade: t-in/12 was regraded FAIL -> PASS by grader 17, so pass 11 and graders 16 and 17.
 const CLASSES = {
-  schema_version: 1, run_dirs: ['final'], grader_versions: ['16'],
+  schema_version: 1, run_dirs: ['final'], grader_versions: ['16', '17'],
   tasks: {
     't-in': {
-      trials_valid: 20, pass: 10, wilson: { lo: 0.3, hi: 0.7 }, split: { model: 9, environment: 0, grader: 1, infra: 0 }, guard_fires: 2, q: { trials: 20, seen_all: 18, rate: 0.9 },
+      trials_valid: 20, pass: 11, wilson: { lo: 0.3, hi: 0.7 }, split: { model: 9, environment: 0, grader: 1, infra: 0 }, guard_fires: 2, q: { trials: 20, seen_all: 18, rate: 0.9 },
       classes: [
         { class: 'threshold', fails: 3, observations: 40, pass_rate: 0.925, wilson: { lo: 0.8, hi: 0.97 }, labels: [{ trial: 3, gate: 'amended', label: 'reasoning' }, { trial: 5, gate: 'amended', label: 'reasoning' }, { trial: 9, gate: 'event_seen', label: 'retrieval' }],
           instances: [{ instance: 1, item: 'm1', label: 'm1', fails: 2, observations: 20 }, { instance: 2, item: 'm3', label: 'm3', fails: 1, observations: 20 }] },
@@ -185,6 +186,47 @@ describe('cli result-card', () => {
     const x = await cli([final, '--classes', join(root, 'extra.json')]);
     expect(x.code).toBe(1);
     expect(x.err).toMatch(/is not for this run: t-gone: not a task of this run$/);
+  });
+
+  // builder-279 N1 (verifier-phase-P17i-W4F-196-r2-1 P-D): a classes JSON from the same run at an
+  // earlier grade has the right run_dirs and trials_valid but another pass count and grader set.
+  it('refuses a classes JSON from the same run at an earlier grade', async () => {
+    // Before t-in/12's regrade: pass 10 at grader 16 only.
+    put(root, 'pre-regrade.json', { ...CLASSES, grader_versions: ['16'], tasks: { 't-in': { ...CLASSES.tasks['t-in'], pass: 10 } } });
+    const pre = await cli([final, '--classes', join(root, 'pre-regrade.json')]);
+    expect(pre.code).toBe(1);
+    expect(pre.out).toBe('');
+    expect(pre.err).toMatch(/is not for this run: grader_versions \(16\) are not the graders of the run's current grades \(16, 17\); t-in: pass 10, but the run's summary has 11 passes$/);
+    // The pass counts alone, and the grader set alone, are each refused.
+    put(root, 'pass-only.json', { ...CLASSES, tasks: { 't-in': { ...CLASSES.tasks['t-in'], pass: 10 } } });
+    const p = await cli([final, '--classes', join(root, 'pass-only.json')]);
+    expect(p.code).toBe(1);
+    expect(p.err).toMatch(/is not for this run: t-in: pass 10, but the run's summary has 11 passes$/);
+    put(root, 'graders-only.json', { ...CLASSES, grader_versions: ['17'] });
+    const g = await cli([final, '--classes', join(root, 'graders-only.json')]);
+    expect(g.code).toBe(1);
+    expect(g.err).toMatch(/is not for this run: grader_versions \(17\) are not the graders of the run's current grades \(16, 17\)$/);
+  });
+
+  it('refuses the verifier\'s stale probe-1 classes and a real pre-regrade probe-1 classes JSON', async () => {
+    const probe1 = join(import.meta.dirname, '../../results/probe-1');
+    // The verifier's P-D input: probe-1's classes with message-queue and results-inbox pass edited
+    // and grader_versions ["15"].
+    const d = await cli([probe1, '--classes', join(import.meta.dirname, 'fixtures/result-card/probe-1-classes-stale-probeD.json')]);
+    expect(d.code).toBe(1);
+    expect(d.out).toBe('');
+    expect(d.err).toMatch(/probe-1-classes-stale-probeD\.json is not for this run: grader_versions \(15\) are not the graders of the run's current grades \(\d+(, \d+)*\)/);
+    expect(d.err).toMatch(/results-inbox: pass 4, but the run's summary has \d+ passes/);
+    // `pnpm cli classes probe-1 --json` on a copy of results/probe-1 with every record's regrades
+    // removed: the classes JSON saved before the grader-16 regrade.
+    const pre = await cli([probe1, '--classes', join(import.meta.dirname, 'fixtures/result-card/probe-1-classes-pre-regrade.json')]);
+    expect(pre.code).toBe(1);
+    expect(pre.out).toBe('');
+    expect(pre.err).toMatch(/probe-1-classes-pre-regrade\.json is not for this run: grader_versions \(15, 16\) are not the graders of the run's current grades \(\d+(, \d+)*\)/);
+    expect(pre.err).toMatch(/crc-care-gap: pass 4, but the run's summary has \d+ passes/);
+    // The classes JSON at the current grade is accepted.
+    const ok = await cli([probe1, '--classes', join(import.meta.dirname, 'fixtures/result-card/probe-1-classes.json')]);
+    expect(ok.code, ok.err).toBe(0);
   });
 
   // builder-278 F2: cli classes' infra split beside summary's re-queued infra attempts, and a note

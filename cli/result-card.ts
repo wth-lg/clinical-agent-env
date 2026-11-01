@@ -15,9 +15,11 @@
 //   found and fixed    regraded to another outcome (cli regrade), with both graders
 //   Per class and      from --classes, a saved `pnpm cli classes <run dirs> --json` (PW4-H0b; the
 //   per event          JSON is cli/classes.ts ClassesJson, checked by its classesJsonProblems, and
-//                      refused (exit 1) when its run_dirs do not name this run or any task's
-//                      trials_valid differs from the summary's trials: a card from another run's
-//                      classes would contradict itself):
+//                      refused (exit 1) when its run_dirs do not name this run, its grader_versions
+//                      are not the graders of the run's current grades (regrades[-1] where present),
+//                      or any task's trials_valid or pass differs from the summary's trials or
+//                      passes: a card from another run's classes, or from this run at an earlier
+//                      grade, would contradict itself):
 //                      q, guard fires, each class's fails
 //                      by instance and over its observations with the pass rate's Wilson 95%
 //                      (computed here from the counts with summary.ts wilson) and failure labels,
@@ -31,7 +33,7 @@
 // Each run's summary is <run>/summary.json when the run holds one (validated), else computed from
 // its records exactly as `pnpm cli summary <run> --json` computes it; the card says which.
 // Exit 0 when the card is written; 1 on a missing run, an unreadable summary or classes file, or a
-// classes file for another run;
+// classes file for another run or another grade of this run;
 // 2 on a usage error.
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
@@ -40,7 +42,7 @@ import { installEgressGuard } from '../packages/core/egress.ts';
 import { FINAL_PASS_BAND } from '../packages/core/cost.ts';
 import { assertSummary, currentGrade, trialName, wilson, type Interval, type RegradeGrade, type Summary } from '../packages/core/summary.ts';
 import { settledRecords } from './adapters/result-sink-node.ts';
-import { classesJsonProblems, type ClassesJson, type Label } from './classes.ts';
+import { classesJsonProblems, currentGraderVersion, sortGraderVersions, type ClassesJson, type Label } from './classes.ts';
 import { main as summaryMain } from './summary.ts';
 
 export interface Deps {
@@ -61,17 +63,31 @@ export function readClasses(x: unknown): ClassesJson {
   return x as ClassesJson;
 }
 
-// Why a classes JSON is not for the run at dir with summary s (header); [] when it is. A run_dirs
-// entry names the run when it is the same directory, or one with the same last path part (cli classes
-// records run_dirs as typed, relative to where it ran).
-export function classesMismatch(classes: ClassesJson, dir: string, s: Summary): string[] {
+// The grader versions of the current grades of the run's settled records, as cli classes collects
+// its grader_versions (classes.ts currentGraderVersion: regrades[-1] where present).
+export function runGraderVersions(dir: string): string[] {
+  return sortGraderVersions(new Set(settledRecords(dir).flatMap(({ record }) => currentGraderVersion(record as { grader_version?: unknown; regrades?: unknown }) ?? [])));
+}
+
+// Why a classes JSON is not for the run at dir with summary s and current-grade grader versions
+// graders (header); [] when it is. A run_dirs entry names the run when it is the same directory, or
+// one with the same last path part (cli classes records run_dirs as typed, relative to where it ran).
+// A classes JSON saved before a regrade of the same run has the right run_dirs and trials_valid, so
+// the grader set and each task's pass count are checked too.
+export function classesMismatch(classes: ClassesJson, dir: string, s: Summary, graders: readonly string[]): string[] {
   const out: string[] = [];
   const here = resolve(dir);
   if (!classes.run_dirs.some((d) => resolve(d) === here || basename(resolve(d)) === basename(here))) out.push(`run_dirs (${classes.run_dirs.join(', ')}) do not name this run (${dir})`);
+  const [theirs, ours] = [sortGraderVersions(classes.grader_versions), sortGraderVersions(graders)];
+  if (theirs.join('\n') !== ours.join('\n')) out.push(`grader_versions (${theirs.join(', ')}) are not the graders of the run's current grades (${ours.join(', ') || 'none recorded'})`);
   for (const [id, c] of Object.entries(classes.tasks)) {
     const t = s.tasks[id];
-    if (t === undefined) out.push(`${id}: not a task of this run`);
-    else if (c.trials_valid !== t.trials) out.push(`${id}: trials_valid ${c.trials_valid}, but the run's summary has ${t.trials} valid trials`);
+    if (t === undefined) {
+      out.push(`${id}: not a task of this run`);
+      continue;
+    }
+    if (c.trials_valid !== t.trials) out.push(`${id}: trials_valid ${c.trials_valid}, but the run's summary has ${t.trials} valid trials`);
+    if (c.pass !== t.passes) out.push(`${id}: pass ${c.pass}, but the run's summary has ${t.passes} passes`);
   }
   return out;
 }
@@ -251,7 +267,7 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
   try {
     const classes = classesFile === null ? null : readClasses(JSON.parse(readFileSync(classesFile, 'utf8')));
     const { summary, source } = await summaryOf(dir);
-    const mismatch = classes === null ? [] : classesMismatch(classes, dir, summary);
+    const mismatch = classes === null ? [] : classesMismatch(classes, dir, summary, runGraderVersions(dir));
     if (mismatch.length > 0) throw new Error(`classes: ${classesFile} is not for this run: ${mismatch.join('; ')}`);
     const past = await Promise.all(history.map(summaryOf));
     const text = card({ dir, summary, source, classes, classesFile, history: past });
