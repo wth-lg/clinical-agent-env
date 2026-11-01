@@ -10,6 +10,7 @@ import { FINAL_PASS_BAND } from '../../../../packages/core/cost.ts';
 import { noPassCount } from '../data/failures.ts';
 import { pilotRates, type RunData } from '../data/results.ts';
 import { formatInterval, IntervalRow } from '../data/ui.tsx';
+import { Verdict } from './verdict.tsx';
 import { hrefWith, onNav } from '../data/url.ts';
 
 const link = 'text-ink underline decoration-line-strong underline-offset-2 hover:decoration-ink';
@@ -40,7 +41,7 @@ export function PilotRateRows({ run, below, axis = false }: { run: RunData; belo
               ? <a href={hrefWith(toTask(run.runId, r.task))} onClick={onNav(toTask(run.runId, r.task))} className={`whitespace-nowrap text-right ${link}`}>{r.passes}/{r.valid}</a>
               : <span className="whitespace-nowrap text-right text-ink-muted">{r.passes}/{r.valid}</span>}
             <span className="hidden sm:block"><IntervalRow rate={r.rate} interval={r.interval} band={FINAL_PASS_BAND} label={`${r.task} (pilot)`} /></span>
-            <span data-testid="wilson" className="whitespace-nowrap text-xs text-ink-muted"><span className="max-sm:sr-only">Wilson </span>95% {formatInterval(r.interval)}</span>
+            <span className="text-right sm:text-left"><span data-testid="wilson" className="block whitespace-nowrap text-xs text-ink-muted"><span className="max-sm:sr-only">Wilson </span>95% {formatInterval(r.interval)}</span><Verdict task={r.task} passes={r.passes} trials={r.valid} className="block" /></span>
             {below?.(r)}
           </li>
         ))}

@@ -24,6 +24,7 @@ import { isFalsePass, kindWords, mostCommon, noPassCount, runBlock, shownFault }
 import { FaultBox, RunBlocked } from '../findings/why.tsx';
 import { ModelLine, PassK, PassKLink } from '../findings/passk.tsx';
 import { PilotRateRows } from '../findings/pilot.tsx';
+import { Verdict, VerdictLink } from '../findings/verdict.tsx';
 import { formatClock } from '../data/text.ts';
 import { MANIFEST } from '../data/world.ts';
 import { requestKey, useKeyStatus } from '../keygate/key.ts';
@@ -94,7 +95,7 @@ function OfficialOverview({ run, headingRef }: { run: RunData; headingRef?: Ref<
             <span className="col-span-2 md:col-span-1">
               {block === null ? <>
                 <IntervalRow rate={s.pass_rate} interval={s.wilson95} band={FINAL_PASS_BAND} label={id} />
-                <span className="text-xs text-ink-muted" data-testid="wilson">{formatInterval(s.wilson95)}</span>
+                <span className="text-xs text-ink-muted" data-testid="wilson">{formatInterval(s.wilson95)}</span>{' '}<Verdict task={id} passes={s.passes} trials={s.trials} />
               </> : <span className="text-xs text-ink-muted">no pass rate while the run is blocked</span>}
             </span>
             <span className="col-span-2 flex flex-wrap gap-1 md:col-span-1" data-testid="swatches">
@@ -110,7 +111,7 @@ function OfficialOverview({ run, headingRef }: { run: RunData; headingRef?: Ref<
         ))}
       </ul>
       <MarkLegend />
-      <p className="text-xs text-ink-muted">Each task links to its trials in Runs.{block === null && <> <PassKLink /></>}</p>
+      <p className="text-xs text-ink-muted">Each task links to its trials in Runs.{block === null && <> <PassKLink /> <VerdictLink /></>}</p>
       <Card title="Who is at fault, all tasks">
         <FaultBox task="all" fcs={Object.values(summary!.tasks).map((x) => x.fault_counts)} explanations={trials.map((x) => x.explanation)} />
         <p className="mt-1 text-xs text-ink-muted">Findings shows this for each task, with the checks that failed.</p>

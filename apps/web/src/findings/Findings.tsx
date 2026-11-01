@@ -18,6 +18,7 @@ import { Card, CARD, formatInterval, GlossaryLink, IntervalRow, LINK, markLabel,
 import { CHART_KEY, PilotRateRows, RateAxis } from './pilot.tsx';
 import { FaultBox, KindBar, RunBlocked, TopChecks } from './why.tsx';
 import { ModelLine, PassK, PassKLink } from './passk.tsx';
+import { DifficultyHistory, NoFailures, Verdict, VerdictLink } from './verdict.tsx';
 import { hrefWith, onNav } from '../data/url.ts';
 import { freshView } from '../shell/views.ts';
 
@@ -43,6 +44,7 @@ export function Findings({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> 
           {results.pilots.length > 0 && <a href={hrefWith(freshView('runs'))} onClick={onNav(freshView('runs'))} className={`mt-2 block w-fit text-xs ${LINK}`}>See the pilot runs</a>}
         </Notice>
         {results.pilots.map((p) => <PilotFindings key={p.runId} run={p} />)}
+        <DifficultyHistory runs={results.pilots} />
         {links}
       </Page>
     );
@@ -54,6 +56,8 @@ export function Findings({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> 
       {links}
       {results.findings !== null && (block === null ? <Markdown text={results.findings} /> : <p data-testid="findings-held" className="text-ink-muted">The write-up gives the run's pass rates, so it shows again when the run is no longer blocked.</p>)}
       <Charts run={results.official} blocked={block !== null} />
+      {block === null && <NoFailures run={results.official} />}
+      <DifficultyHistory runs={[...results.pilots, results.official]} />
     </Page>
   );
 }
@@ -154,14 +158,14 @@ function Charts({ run, blocked }: { run: RunData; blocked: boolean }) {
               <li key={id} className="col-span-full grid grid-cols-subgrid items-center">
                 <span className="break-words font-medium">{id} <span className="font-normal text-ink-muted">{t.passes}/{t.trials}</span></span>
                 <IntervalRow rate={t.pass_rate} interval={t.wilson95} band={FINAL_PASS_BAND} label={id} />
-                <span className="text-xs text-ink-muted"><span data-testid="wilson" className="whitespace-nowrap">{formatInterval(t.wilson95)}</span><PassK task={id} k={t.pass_k} /></span>
+                <span className="text-xs text-ink-muted"><span data-testid="wilson" className="whitespace-nowrap">{formatInterval(t.wilson95)}</span><Verdict task={id} passes={t.passes} trials={t.trials} className="block" /><PassK task={id} k={t.pass_k} /></span>
                 <NotCountedLine task={id} text={notCountedText(notCounted(t))} />
               </li>
             ))}
           </ul>
           <RateAxis col="col-start-2" />
         </div>
-        <p className="mt-2 text-xs text-ink-muted">{CHART_KEY} <PassKLink /></p>
+        <p className="mt-2 text-xs text-ink-muted">{CHART_KEY} <PassKLink /> <VerdictLink /></p>
       </Card>}
       <Card title="Why tasks fail">
         <p className="text-xs text-ink-muted">For each task: its failed trials by <GlossaryLink anchor="taxonomy">kind of failure</GlossaryLink>, the gate checks that decided them, and whose fault each is by the human audit. Each link opens those trials in Runs.</p>
