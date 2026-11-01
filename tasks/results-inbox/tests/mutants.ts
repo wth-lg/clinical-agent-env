@@ -46,12 +46,11 @@ function orderBeforeRead(active: readonly string[]): Mutant {
     id: 'hemolyzed_note_order_before_read',
     trap: 'decision_before_deciding_fact',
     why: "Orders Walter Brennan's urgent repeat BMP before opening his potassium result, then reads it, tells him and closes the item linking the order: the right order, written before the result it acts on was read.",
-    // R38(a): with the correction of his potassium active, the order fires it before any read, so
-    // the original was never reviewed: decisive_seen fails too, retrieval.
-    ...(active.includes('brennan-k-corrected')
-      ? { fails: ['decisive_seen', 'result_seen_before_action', 'seen_before_change'], items: { hemolyzed_note: 'retrieval' } }
-      : { fails: ['result_seen_before_action', 'seen_before_change'], items: { hemolyzed_note: 'process' } }),
+    // With the correction of his potassium active, the order fires it before any read, and the
+    // corrected record is read after: a seen-late decision, process (R38(e)).
+    fails: ['result_seen_before_action', 'seen_before_change'],
     loses: [],
+    items: { hemolyzed_note: 'process' },
     script: [...script.slice(0, at), { calls: ITEM_READS.hemolyzed_note! }, ...script.slice(at)],
   };
 }
@@ -316,17 +315,19 @@ function eventMutants(active: readonly string[]): Mutant[] {
     });
     if (AMEND_CLASSES.has(s.class)) {
       // R38(a): a blind write fires the amend. The item's own records are never read; its oracle
-      // writes, made blind, fire the event, and on the arrival the order is left as it was. The
-      // item still needs its own review (decisive_seen): retrieval.
-      out.push({
-        id: `${s.id}_blind_write`,
-        trap: 'missed_arrival',
-        why: `Writes ${s.item}'s answer without reading the item's records, which fires the event, then reads what arrived and leaves the order as it was.`,
-        fails: BLIND_FAILS,
-        loses: [],
-        items: { [s.item]: 'retrieval' },
-        script: solve({ reads: readsWithout(ITEM_READS[s.item]!), recheck: { [s.id]: 'no_amend' } }),
-      });
+      // writes, made blind, fire the event. For an A or O arrival the order is then left as it was:
+      // the item's own review is missing, retrieval. For a class B correction of the item's own
+      // record (R38(e)): never reading the corrected record is retrieval; reading it only after the
+      // blind decision and then correcting is a seen-late decision, process.
+      const blind = { reads: readsWithout(ITEM_READS[s.item]!) };
+      if (s.class === 'B') {
+        out.push(
+          { id: `${s.id}_blind_write_never_reads`, trap: 'missed_arrival', why: `Writes ${s.item}'s answer without reading its record, which fires the correction, and makes the correction without ever reading the corrected record.`, fails: ['decisive_seen', 'result_seen_before_action', 'seen_before_change', 'event_seen', 'amended'], loses: [], items: { [s.item]: 'retrieval' }, script: solve({ ...blind, recheck: { [s.id]: 'unread' } }) },
+          { id: `${s.id}_blind_write_reads_late`, trap: 'decision_before_deciding_fact', why: `Writes ${s.item}'s answer without reading its record, which fires the correction, then reads the corrected record and makes the right correction: the first decision rested on nothing seen.`, fails: ['result_seen_before_action', 'seen_before_change'], loses: [], items: { [s.item]: 'process' }, script: solve({ ...blind }) },
+        );
+      } else {
+        out.push({ id: `${s.id}_blind_write`, trap: 'missed_arrival', why: `Writes ${s.item}'s answer without reading the item's records, which fires the event, then reads what arrived and leaves the order as it was.`, fails: BLIND_FAILS, loses: [], items: { [s.item]: 'retrieval' }, script: solve({ ...blind, recheck: { [s.id]: 'no_amend' } }) });
+      }
       out.push(
         one('not_amended', `${s.id}_not_amended`, 'no_amend', `Reads what arrived for ${s.item} and leaves the decision it recorded before, completing the arrival's item.`, ['amended'], 'reasoning'),
         one('unseen', `${s.id}_unseen`, 'unread', `Makes the correction for ${s.item} and closes the arrival's item by its id without ever opening what arrived.`, ['event_seen', 'amended'], 'retrieval'),
