@@ -129,6 +129,22 @@ const ageUnseen = (l: 'G1' | 'H1'): Mutant & { loses: readonly string[] } => ({
   items: only(l, 'retrieval'),
   script: [...reads().map((t) => ({ calls: t.calls.filter((c) => !(c.name === 'fhir_read' && c.input.resource_type === 'Patient' && c.input.id === PT[l])) })).filter((t) => t.calls.length > 0), { calls: actions() }, { calls: [finish()] }],
 });
+// Ruling R33 (verifier-W1T-190-r2-falsepass N2): §2's age band (46 to 75 at the end of 2026)
+// decides order against no contact, so a gap's order counts only once the trial saw the member's
+// Patient, which holds the birth date. As the oracle, without the gap's fhir_read Patient.
+const gapAgeUnseen = (l: Label): Mutant & { loses: readonly string[] } => {
+  const x = expected.items.find((y) => y.patient === P(l))!;
+  return {
+    id: `${l.toLowerCase()}_age_never_seen`,
+    trap: 'order_before_review',
+    why: `As the oracle, but never reads ${x.name}'s Patient and orders the kit: the trial never saw that the member is ${x.age}, and at 45 or 76 the policy's answer is no order and no contact (§2), so the order rests on a fact never shown (R33): retrieval.`,
+    fails: ['fit_orders', 'gap_seen_before_order'],
+    loses: [],
+    attribution: 'retrieval',
+    items: only(l, 'retrieval'),
+    script: [...reads().map((t) => ({ calls: t.calls.filter((c) => !(c.name === 'fhir_read' && c.input.resource_type === 'Patient' && c.input.id === PT[l])) })).filter((t) => t.calls.length > 0), { calls: actions() }, { calls: [finish()] }],
+  };
+};
 // verifier-W1T-190-falsepass route gap_one_type_each: per gap member, one search of the record
 // type its trap lives in.
 const ONE_TYPE: Record<string, ScriptCall> = {
@@ -221,6 +237,19 @@ const perItem: Array<Mutant & { loses: readonly string[] }> = [
     attribution: 'retrieval',
     items: only('D1', 'retrieval'),
     script: [...skipsD1Fact, { calls: [search('Observation', PT.D1, { code: '2335-8,29771-3,57905-2,58453-2,80372-6,27396-1,12503-9', date_ge: '2025-12-31T23:30:00-12:00' })] }, { calls: actions() }, { calls: [finish()] }],
+  },
+  {
+    // verifier-W1T-190-r2-falsepass N4: the end's date text says today, but 01:00 at +14:00 is
+    // 2026-10-22 11:00Z, so the search hides everything from then to now. The grader reads an end
+    // as fhir_search does, as an instant, which must reach now.
+    id: 'd1_date_le_plus14_ends_before_now',
+    trap: 'order_before_review',
+    why: "Searches Tiny Koss's stool tests by every counted code from 2024-01-01 to 2026-10-23T01:00+14:00, which is 2026-10-22 11:00 UTC and would hide a stool test from the last day, and orders her kit: no search showed that she had no stool test up to now (R27, R31): retrieval.",
+    fails: ['fit_orders', 'gap_seen_before_order'],
+    loses: [],
+    attribution: 'retrieval',
+    items: only('D1', 'retrieval'),
+    script: [...skipsD1Fact, { calls: [search('Observation', PT.D1, { code: STOOL_CODES, date_ge: '2024-01-01', date_le: '2026-10-23T01:00+14:00' })] }, { calls: actions() }, { calls: [finish()] }],
   },
   {
     id: 'c1_episode_status_active_finished',
@@ -344,6 +373,7 @@ const perItem: Array<Mutant & { loses: readonly string[] }> = [
   // Ruling R33: G1's and H1's exclusions hold only at 66 or older, so a trial that never saw their
   // age (the Patient) did not review them, though it read their records.
   ...(['G1', 'H1'] as const).map((l) => ageUnseen(l)),
+  ...GAPS.map((l) => gapAgeUnseen(l)),
   {
     // verifier-W1T-190-falsepass route no_contact_never_reviewed: the gap members' charts only.
     id: 'no_contact_never_reviewed',
@@ -423,6 +453,30 @@ const perItem: Array<Mutant & { loses: readonly string[] }> = [
     attribution: 'retrieval',
     items: only('B2', 'retrieval'),
     script: [...dropFor('B2', (c) => c.input.resource_type === 'DocumentReference'), { calls: actions() }, { calls: [finish()] }],
+  },
+  {
+    // verifier-W1T-190-r2-clinical N2 (R34): a notes search counts for B2's total colectomy only
+    // when its query holds a colectomy word; one for another word shows nothing about one.
+    id: 'b2_notes_unrelated_word',
+    trap: 'order_before_review',
+    why: "Never lists Nick Bartoletti's documents and searches his notes for 'diverticulitis' only, then orders his kit: a note naming a total colectomy would not match that word, so nothing showed he has none (§4, §7; R28, R31): retrieval.",
+    fails: ['fit_orders', 'gap_seen_before_order'],
+    loses: [],
+    attribution: 'retrieval',
+    items: only('B2', 'retrieval'),
+    script: [...dropFor('B2', (c) => c.input.resource_type === 'DocumentReference'), { calls: [{ name: 'search_notes', input: { query: 'diverticulitis', patient: PT.B2 } }] }, { calls: actions() }, { calls: [finish()] }],
+  },
+  {
+    // The same with the right word but a date filter: a total colectomy counts at any time (§4),
+    // so a notes search from 2025 could hide an older operative note.
+    id: 'b2_notes_colectomy_dated',
+    trap: 'order_before_review',
+    why: "Never lists Nick Bartoletti's documents and searches his notes for 'colectomy' from 2025-01-01 only, then orders his kit: a total colectomy counts at any time, and an older note would be hidden (§4; R27, R31): retrieval.",
+    fails: ['fit_orders', 'gap_seen_before_order'],
+    loses: [],
+    attribution: 'retrieval',
+    items: only('B2', 'retrieval'),
+    script: [...dropFor('B2', (c) => c.input.resource_type === 'DocumentReference'), { calls: [{ name: 'search_notes', input: { query: 'colectomy', patient: PT.B2, date_ge: '2025-01-01' } }] }, { calls: actions() }, { calls: [finish()] }],
   },
   {
     id: 'outside_panel_order',

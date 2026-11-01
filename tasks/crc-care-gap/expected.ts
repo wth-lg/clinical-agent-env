@@ -36,10 +36,16 @@ import { ref } from './ids.ts';
 // residence may be read from any one of his housing status, discharge summary or rehab encounter
 // (evidence 'any'). A member who needs no contact is reviewed by seeing their decisive records
 // (R32). Ruling R33: G1's and H1's exclusions hold only at 66 or older (§4), so the Patient, which
-// holds the birth date, decides them with their records; the filler's Patient decides her age. The
-// gaps' ages only place them in the population (46 to 75, §2), with margins of 3 years or more
-// (A1 51, G1 and H1 72), and the 66-or-older clauses leave G2 (69) and H2 (68) open gaps at any
-// age, so no gap's Patient decides its action.
+// holds the birth date, decides them with their records; the filler's Patient decides her age. A
+// gap's age places it in the population (46 to 75, §2), and at 45 or 76 its action would be no order
+// and no contact, so every gap's Patient decides its order too (R33, verifier-W1T-190-r2-falsepass
+// N2): a fhir_read or a search_patients row, either of which shows the birth date. It is all-of,
+// beside the absences; H2's any-of is among his residence records only.
+//
+// Ruling R34 sets what a gap's review does not cover: the §4 exclusions its class does not turn on
+// (cancer, hospice outside C1, a total colectomy outside B2, the nursing home and frailty clauses
+// outside their class) are not required (verifier-W1T-190-r2-falsepass N1). docs/tasks.md records
+// it as a limit of what the class measures.
 //
 // Every status other than an open gap gets neither an order nor a message (RBC-QM-02 §5: order and
 // message only for open gaps).
@@ -86,6 +92,9 @@ export interface Member {
   // the previous next_offset, the last with none. The gap counts as reviewed once every entry is
   // shown (R31); its trap record outside the window is a lure (R19) and reading it alone reviews
   // nothing. H2's residence is also needed, from any one of his records (evidence 'any', R21).
+  // A kind with `words` (B2's notes) may instead be shown by a whole search_notes of the member or
+  // of every patient whose query holds one of them, with no type filter and no date filter that
+  // could hide one (tests/grader.ts notesCover; verifier-W1T-190-r2-clinical N2, R34).
   // Empty for every other member.
   absences: Absence[];
 }
@@ -97,6 +106,9 @@ export interface Absence {
   codes: string[];
   categories: string[];
   statuses: string[];
+  // For a note kind, the words a notes search may name to show it absent (§7: search for the
+  // words a note would use), lowercase, as search_notes tokenizes them.
+  words?: string[];
 }
 
 const m = (patient: string, name: string, family: string, age: number, status: Status, reason: string, decisive: string[], more: { evidence?: 'any'; absences?: Absence[]; atoms?: Record<string, string[]> } = {}): Member => {
@@ -129,7 +141,7 @@ const SDNA_IN_WINDOW: Absence = { type: 'Observation', from: '2024-01-01', codes
 const SCREENING = [COLONOSCOPY_DONE, SIGMOIDOSCOPY_OR_CTC_DONE, FOBT_IN_PERIOD, SDNA_IN_WINDOW];
 const HOSPICE_IN_PERIOD: Absence = { type: 'EpisodeOfCare', from: '2026-01-01', codes: [], categories: [], statuses: ['planned', 'active', 'onhold', 'finished'] };
 const TOTAL_COLECTOMY_CODED: Absence = { type: 'Procedure', from: null, codes: sct(['26390003']), categories: [], statuses: ['completed'] };
-const TOTAL_COLECTOMY_NOTE: Absence = { type: 'DocumentReference', from: null, codes: [], categories: [], statuses: ['current', 'superseded'] };
+const TOTAL_COLECTOMY_NOTE: Absence = { type: 'DocumentReference', from: null, codes: [], categories: [], statuses: ['current', 'superseded'], words: ['colectomy', 'proctocolectomy'] };
 const ADVANCED_ILLNESS_DX: Absence = { type: 'Condition', from: null, codes: sct(['84114007', '13645005', '185086009', '52448006', '26929004', '433146000', '19943007', '128462008', '363418001']), categories: [], statuses: [] };
 const DEMENTIA_MEDICATION: Absence = { type: 'MedicationRequest', from: null, codes: [], categories: [], statuses: ['active', 'on-hold', 'cancelled', 'completed', 'entered-in-error', 'stopped', 'draft', 'unknown'] };
 
@@ -138,17 +150,17 @@ export const expected = {
   period: { start: '2026-01-01', end: '2026-12-31' },
   items: [
     m('pt-0009', 'Elly Shyla Trantow', 'Trantow', 72, 'excluded', 'frailty_dementia_medication', [ref('Condition/cond-t3-6027'), ref('MedicationRequest/mr-t3-3318'), 'Patient/pt-0009']),
-    m('pt-0011', 'Marilu Blanca Gaona', 'Gaona', 62, 'gap', 'hospice_before_period', [ref('EpisodeOfCare/eoc-t3-3051')], { absences: [...SCREENING, HOSPICE_IN_PERIOD] }),
-    m('pt-0014', 'Santo Rodrick Pagac', 'Pagac', 55, 'gap', 'colonoscopy_not_done', [ref('Appointment/appt-t3-5813')], { absences: SCREENING }),
-    m('pt-0018', 'Lance Amado Muller', 'Muller', 53, 'gap', 'sdna_fit_expired', [ref('Observation/obs-t3-7342')], { absences: SCREENING }),
-    m('pt-0019', "Harrison O'Keefe", "O'Keefe", 69, 'gap', 'frailty_without_advanced_illness', [ref('MedicationRequest/mr-t3-6604')], { absences: [...SCREENING, ADVANCED_ILLNESS_DX, DEMENTIA_MEDICATION] }),
+    m('pt-0011', 'Marilu Blanca Gaona', 'Gaona', 62, 'gap', 'hospice_before_period', [ref('EpisodeOfCare/eoc-t3-3051'), 'Patient/pt-0011'], { absences: [...SCREENING, HOSPICE_IN_PERIOD] }),
+    m('pt-0014', 'Santo Rodrick Pagac', 'Pagac', 55, 'gap', 'colonoscopy_not_done', [ref('Appointment/appt-t3-5813'), 'Patient/pt-0014'], { absences: SCREENING }),
+    m('pt-0018', 'Lance Amado Muller', 'Muller', 53, 'gap', 'sdna_fit_expired', [ref('Observation/obs-t3-7342'), 'Patient/pt-0018'], { absences: SCREENING }),
+    m('pt-0019', "Harrison O'Keefe", "O'Keefe", 69, 'gap', 'frailty_without_advanced_illness', [ref('MedicationRequest/mr-t3-6604'), 'Patient/pt-0019'], { absences: [...SCREENING, ADVANCED_ILLNESS_DX, DEMENTIA_MEDICATION] }),
     m('pt-0020', 'Kelsie Wanetta Rohan', 'Rohan', 52, 'excluded', 'hospice', [ref('EpisodeOfCare/eoc-t3-8215')]),
     m('pt-0021', 'Ángela Andrea Vigil', 'Vigil', 52, 'excluded', 'total_colectomy', [ref('DocumentReference/doc-t3-1856')], { atoms: { [ref('DocumentReference/doc-t3-1856')]: ['total proctocolectomy'] } }),
-    m('pt-0022', 'Tiny Darline Koss', 'Koss', 52, 'gap', 'fobt_expired', [ref('Observation/obs-t3-3906')], { absences: SCREENING }),
-    m('pt-0024', 'Delaine Evelyn MacGyver', 'MacGyver', 51, 'gap', 'colonoscopy_not_done', [ref('ServiceRequest/sr-t3-4417')], { absences: SCREENING }),
+    m('pt-0022', 'Tiny Darline Koss', 'Koss', 52, 'gap', 'fobt_expired', [ref('Observation/obs-t3-3906'), 'Patient/pt-0022'], { absences: SCREENING }),
+    m('pt-0024', 'Delaine Evelyn MacGyver', 'MacGyver', 51, 'gap', 'colonoscopy_not_done', [ref('ServiceRequest/sr-t3-4417'), 'Patient/pt-0024'], { absences: SCREENING }),
     m('pt-0034', 'Rickey Morgan Sipes', 'Sipes', 72, 'excluded', 'nursing_home', [ref('Observation/obs-t3-2465'), 'Patient/pt-0034']),
-    m('pt-0035', 'Elvin Laverne Wolff', 'Wolff', 68, 'gap', 'not_nursing_home', [ref('Observation/obs-t3-8852'), ref('DocumentReference/doc-t3-6193'), ref('Encounter/enc-t3-4609')], { evidence: 'any', absences: SCREENING, atoms: { [ref('DocumentReference/doc-t3-6193')]: ['discharged home'] } }),
-    m('pt-0036', 'Nick Jed Bartoletti', 'Bartoletti', 53, 'gap', 'partial_colectomy', [ref('Procedure/proc-t3-6271')], { absences: [...SCREENING, TOTAL_COLECTOMY_CODED, TOTAL_COLECTOMY_NOTE] }),
+    m('pt-0035', 'Elvin Laverne Wolff', 'Wolff', 68, 'gap', 'not_nursing_home', [ref('Observation/obs-t3-8852'), ref('DocumentReference/doc-t3-6193'), ref('Encounter/enc-t3-4609'), 'Patient/pt-0035'], { evidence: 'any', absences: SCREENING, atoms: { [ref('DocumentReference/doc-t3-6193')]: ['discharged home'] } }),
+    m('pt-0036', 'Nick Jed Bartoletti', 'Bartoletti', 53, 'gap', 'partial_colectomy', [ref('Procedure/proc-t3-6271'), 'Patient/pt-0036'], { absences: [...SCREENING, TOTAL_COLECTOMY_CODED, TOTAL_COLECTOMY_NOTE] }),
     m('pt-0037', 'Fumiko Kati Pouros', 'Pouros', 35, 'not_in_population', 'age_under_46', ['Patient/pt-0037']),
   ].sort((a, b) => a.patient.localeCompare(b.patient)),
 };
