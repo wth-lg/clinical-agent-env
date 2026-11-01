@@ -8,7 +8,7 @@
 // that patient, so the arrivals come where the oracle's do.
 import type { Mutant, Script } from '../../../packages/grader/matrix/types.ts';
 import { ACTIVE } from '../events.ts';
-import { change, DOC, finish, firstWrites, FIRST, message, modify, MR, notesFor, order, readDoc, reads, recheck, results, route, RX, script, searchNotes, W, decisions } from '../solution/steps.ts';
+import { AMEND, change, DOC, finish, note, firstWrites, FIRST, message, modify, MR, notesFor, order, readDoc, reads, recheck, results, route, RX, script, searchNotes, W, decisions } from '../solution/steps.ts';
 import { eventMutants } from './event-cases.ts';
 
 const ACTION = ['med_actions'];
@@ -234,6 +234,36 @@ export const mutants: Mutant[] = [
       { calls: notesFor().slice(0, 2) },
       { calls: [finish()] },
     ],
+  },
+  // R38(a): a fired amend never excuses the base review. A blind write on the patient's chart fires
+  // the arrival; the trial reads it and leaves the order as it was, which the delivered chart allows,
+  // yet it never saw the item's own records, so the item fails decisive_seen on retrieval.
+  {
+    id: 'blind_write_fires_amend_roberts',
+    trap: 'roberts-lisinopril',
+    why: "Never opens Earnest Roberts' chart; a blind note on his chart fires the 10/23 potassium, which it reads, and it leaves lisinopril held with a recheck Task. The hold is right on the chart as delivered, but the summary's resume line, the 10/22 report and a creatinine after discharge were never seen.",
+    fails: ['decisive_seen'],
+    loses: [],
+    attribution: 'retrieval',
+    items: { 'roberts-lisinopril': 'retrieval' },
+    script: [
+      ...reads([], [], [], ['kim', 'stark']),
+      { calls: [...FIRST.filter((k) => k !== 'robertsLisinopril').flatMap((k) => firstWrites()[k]), note('roberts', 'Post-discharge medication reconciliation under RBC-TOC-02: started.', [])] },
+      { calls: recheck() },
+      { calls: [...decisions().kimFurosemide, ...decisions().kimLisinopril, ...decisions().starkCarvedilol, AMEND.robertsR1[1]!] },
+      { calls: notesFor() },
+      { calls: [finish()] },
+    ],
+  },
+  {
+    id: 'blind_write_fires_amend_stark',
+    trap: 'stark-carvedilol',
+    why: "Never opens Terence Stark's discharge summary; its first write (the fill-gap flag) fires the signed addendum, which it reads, and it leaves carvedilol at 6.25 mg twice daily. That is right on the chart as delivered, but the summary's 'Coreg 12.5 mg twice daily' line the item rests on was never seen.",
+    fails: ['decisive_seen'],
+    loses: [],
+    attribution: 'retrieval',
+    items: { 'stark-carvedilol': 'retrieval' },
+    script: script({ skip: ['starkSummary'] }),
   },
   {
     id: 'one_turn',

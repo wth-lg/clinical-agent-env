@@ -13,19 +13,22 @@
 //      alternative, run with all 9 specs active, fire all 9.
 //   6. The null agent passes no item (R32), and a reviewer who skips a patient fires none of that
 //      patient's events (patient_skipped_roberts).
+//   7. R38(b): RBC-TOC-02 states no inbox rule, so an arrival's inbox status is ungraded: completing
+//      every arrival's item, or cancelling one blind, changes no gate; a cancelled item whose arrival
+//      is then never read still fails event_seen.
 import { describe, expect, it } from 'vitest';
 import { nodeTaskSource } from '../../../cli/adapters/tasks-node.ts';
 import { loadMatrixTask, matrixEnv } from '../../../cli/matrix.ts';
 import { activeSpecs, ARRIVAL_SUMMARY, type EventSpec } from '../../../packages/env/events.ts';
 import { loadStore } from '../../../packages/env/fixture-source.ts';
 import type { TaskSource } from '../../../packages/core/tasks.ts';
-import { type MatrixEnv, runMatrix, trial } from '../../../packages/grader/matrix/matrix.ts';
+import { gradeRun, type MatrixEnv, runMatrix, trial } from '../../../packages/grader/matrix/matrix.ts';
 import type { MatrixTask, WorldView } from '../../../packages/grader/matrix/types.ts';
 import * as events from '../events.ts';
 import { ACTIVE, SPECS } from '../events.ts';
 import { expected, type Item } from '../expected.ts';
 import { derive } from '../policy.ts';
-import { route } from '../solution/steps.ts';
+import { arrivalRead, inbox, route, W } from '../solution/steps.ts';
 import { alternatives } from './alternatives.ts';
 import { eventAlternatives, eventMutants } from './event-cases.ts';
 import { checksFor } from './grader.ts';
@@ -136,6 +139,30 @@ describe('discharge-medrec events', () => {
       const fired = run.events.flatMap((e) => (e.type === 'env_event' ? [(e as unknown as { spec: string }).spec] : []));
       expect(new Set(fired), c.id).toEqual(new Set(SPECS.map((x) => x.id)));
     }
+  });
+
+  describe('R38(b): inbox status is ungraded (no inbox rule in RBC-TOC-02)', () => {
+    // The arrivals' inbox Tasks in firing order: Walter Kim's (kim-k1, kim-d2), then Terence Stark's
+    // (stark-s1), then Earnest Roberts' (roberts-r1).
+    const item = (n: number) => `inbox-a${String(n).padStart(4, '0')}`;
+    const close = (n: number, action: 'complete' | 'cancel') => ({ name: 'update_inbox_item', input: { task_id: item(n), action, ...(action === 'cancel' ? { reason: 'Reviewed' } : {}) } });
+    const grade = async (script: ReturnType<typeof route>) => {
+      const env = matrixEnv();
+      const task = await loadMatrixTask(ID);
+      const run = await trial(env, task, { kind: 'alternative', id: 'inbox-status', script });
+      return gradeRun(env, task, task.checks, run);
+    };
+    it('completing each arrival\'s item after reading it, or cancelling one blind, fails no gate', { timeout: 600_000 }, async () => {
+      for (const script of [route({ extra: [1, 2, 3, 4].map((n) => close(n, 'complete')) }), route({ over: { kimKcl: [W.kimKcl, close(1, 'cancel')] } })]) {
+        const g = await grade(script);
+        expect(g.checks.filter((c) => c.kind === 'gate' && c.met === false).map((c) => c.id)).toEqual([]);
+        expect(g.outcome).toBe('PASS');
+      }
+    });
+    it('a blind cancel that hides an arrival still fails event_seen on its item', { timeout: 600_000 }, async () => {
+      const g = await grade(route({ over: { kimKcl: [W.kimKcl, close(1, 'cancel')] }, recheck: [inbox, ...['kim-d2', 'stark-s1', 'roberts-r1'].map(arrivalRead)] }));
+      expect(g.checks.find((c) => c.id === 'event_seen')?.items?.filter((i) => !i.met).map((i) => i.item)).toEqual(['kim-lisinopril']);
+    });
   });
 
   it('the null agent passes no item (R32); skipping a patient fires none of their events', { timeout: 600_000 }, async () => {
