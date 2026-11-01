@@ -92,6 +92,13 @@ export const alternatives: Alternative[] = [
     why: "Searches Marcus Webb's potassium from 10/23/2025 on, naming LOINC and the laboratory category with their systems: none in 12 months, so 30 days and a BMP.",
     script: swap(oracle, [WEBB_K, [search('Observation', PT.webb, { code: 'http://loinc.org|2823-3,http://loinc.org|6298-4', category: 'http://terminology.hl7.org/CodeSystem/observation-category|laboratory', date_ge: '2025-10-23', sort: '-date' })]]),
   },
+  // R34, verifier-W1T-190-r2-falsepass N4: bounds are instants. The window opens at the clinic's
+  // midnight and closes now, so bounds written in clinic time at exactly those instants cover it.
+  {
+    id: 'm12_window_clinic_time',
+    why: "Searches Marcus Webb's potassium (both codes) from midnight 10/23/2025 to 8:00 today, clinic time with its offset: none in 12 months, so 30 days and a BMP.",
+    script: swap(oracle, [WEBB_K, [search('Observation', PT.webb, { code: '2823-3,6298-4', date_ge: '2025-10-23T00:00-04:00', date_le: '2026-10-23T08:00-04:00', sort: '-date' })]]),
+  },
   // R20, clinical gate 2 F1 route A: potassium and eGFR searches filtered to the 12-month window; the
   // potassium search finds nothing, so no BMP within 12 months, and no 2025-10-20 result is ever shown.
   // R27: the potassium filter lists both codes the policy counts.

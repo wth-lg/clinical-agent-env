@@ -197,6 +197,10 @@ export const mutants: Mutant[] = [
   // R27 (verifier-W1T-190-falsepass F2): a code that names a system no result carries matches nothing,
   // so its empty page shows nothing of the patient's potassium history.
   ...skipped('m12_wrong_system_absence', 'collection_date', 'm12', "Searches Marcus Webb's potassium over 12 months under a code system no result carries, gets an empty page, and gives 30 days and a BMP.", swap(oracle, [WEBB_READS.calls[0]!, [search('Observation', PT.webb, { code: 'http://example.org/none|2823-3,http://example.org/none|6298-4', category: 'laboratory', date_ge: '2025-10-01' })]])),
+  // R20 (verifier-W1T-190-r2-falsepass N4): a bound is the instant fhir_search reads. 2025-10-22T23:00-14:00
+  // sorts before the window's first day as a string but is 2025-10-23T13:00Z, after the clinic's midnight,
+  // so the search hides that day's first 9 hours.
+  ...skipped('m12_date_ge_offset_hole', 'collection_date', 'm12', "Searches Marcus Webb's potassium from 10/22/2025 23:00 at UTC-14, which starts 9 hours into the 12-month window, and gives 30 days and a BMP.", swap(oracle, [WEBB_READS.calls[0]!, [search('Observation', PT.webb, { code: '2823-3,6298-4', date_ge: '2025-10-22T23:00-14:00' })]])),
   // R31 (verifier-W1T-190-falsepass F3): the outside report is a lure for the absence; without a
   // complete search of the clinic's own results in the window, 'none in the window' was never checked.
   ...skipped('m5_outside_report_only', 'collection_date', 'm5', "Reads Lena Park's outside BMP and her visit but never searches the clinic's own BMPs or potassium, and gives 30 days and a BMP.", swap(oracle, [PARK_LOOK.calls[0]!, []])),

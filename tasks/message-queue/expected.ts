@@ -76,8 +76,8 @@ export interface Item extends Answer {
   // of the kind, alone is a lure, not a review). The search is one of `searches` (its type; no code
   // filter or one listing every one of its codes, the codes the policy counts; no category filter or
   // one naming its category, the one its records carry), date_ge on or before `since` (the window's
-  // first day), no date_le before today, and no status filter or one listing every one of
-  // `statuses`. Codes and categories carry their system, and a filter token matches them as
+  // first day, read as instants: at or before the clinic's midnight that day), date_le at or after now,
+  // and no status filter or one listing every one of `statuses`. Codes and categories carry their system, and a filter token matches them as
   // fhir_search does (F2: 'system|code' only in that system). Complete is one whole page, or a run
   // of pages with the same filters and sort from offset 0, each at the previous page's next_offset,
   // the last with none (tests/grader.ts coveredAt). An outside report of the kind stays decisive on
