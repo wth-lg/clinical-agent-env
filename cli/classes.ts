@@ -18,19 +18,25 @@
 //   env_event line in the trajectory names its spec), and of those the fails, the trials that saw
 //   it (no event_seen or event_delivered failure) and, for an amend event (A, B, C, O), the amend
 //   fails among the seen; a fired spec the checkout does not hold is listed with class null;
-// - q: of the valid trials in which any event fired, those that saw every arrival;
+// - q: of every valid trial (rule S: q = trials that saw every arrival, over trials), those that
+//   saw every arrival, that is had no event_seen or event_delivered failure; a trial no event
+//   fired in saw every arrival there was; null when no event fired in any valid trial;
 // - guard fires: finish answers CONFLICT for a same-turn arrival, counted over every settled trial.
-// An event gate failure is the event's when the check item names it ({event: <spec id>}); without a
-// name, `kept` is the item's lure (class D) and every other event gate the item's other events,
-// among the specs that fired in that trial.
+// An event gate failure is the event's when the check item names it ({event: <spec id>}), or else
+// when its check (the gate) names it. Without a name, among the specs that fired on the item in
+// that trial: event_seen and event_delivered are the event's only when exactly one fired there (an
+// item may hold an amend event and a lure; a missed arrival is never assumed to be the amend's),
+// `kept` is the item's lure (class D) and every other event gate the item's other events. A failed
+// event gate no spec takes is listed under unattributed_event_failures; it still counts against q.
+// A run directory given twice (by its resolved path) is read once, with a warning on stderr.
 // The item list and its classes come from the checkout's tasks/<id>/expected.ts: its ITEM_CLASSES
 // export ([{key, class, label}] in list order) when it has one, otherwise the shape each of the six
 // tasks has today. A valid trial whose graded items are not exactly that list (the checkout's list
 // changed since the run) exits 1: counts against a different list would be wrong.
 // Markdown on stdout by default, in classes.md's table form; --json prints ClassesJson.
 // Exit 0 on success, 1 when a run or task cannot be read, 2 on a usage error.
-import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, readFileSync, realpathSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { installEgressGuard } from '../packages/core/egress.ts';
 import { AUDIT_LABEL, FAULT, type Outcome } from '../packages/core/outcomes.ts';
@@ -81,6 +87,8 @@ export interface TaskClasses {
   outside_failures: Array<{ trial: number; run: string; gates: string[] }>;
   independence: { all_items_pass: number; expected_per_item: number; expected_per_class: number };
   outcomes: Array<{ trial: number; run: string; outcome: string }>;
+  // Failed event gates no spec takes (see the header); absent when there are none.
+  unattributed_event_failures?: Array<{ trial: number; run: string; item: string; gate: string }>;
 }
 export interface ClassesJson {
   schema_version: 1;
@@ -120,6 +128,9 @@ export function classesJsonProblems(v: unknown): string[] {
       outside_failures: arr((o) => obj(o) && num(o.trial) && arr((g) => typeof g === 'string')(o.gates)),
       independence: (x) => obj(x) && num(x.all_items_pass) && num(x.expected_per_item) && num(x.expected_per_class),
     });
+    if ('unattributed_event_failures' in t && !arr((u) => obj(u) && num(u.trial) && typeof u.item === 'string' && typeof u.gate === 'string')(t.unattributed_event_failures)) {
+      out.push(`${p}.unattributed_event_failures: wrong type`);
+    }
   }
   return out;
 }
@@ -205,6 +216,19 @@ interface Trial {
 
 interface CheckItem { item?: unknown; met?: unknown; event?: unknown }
 
+// The run directories without repeats (the same directory by its resolved path), in first-seen
+// order and spelling; warn gets one line per repeat.
+export function uniqueRuns(runs: readonly string[], warn: (line: string) => void): string[] {
+  const first = new Map<string, string>();
+  for (const dir of runs) {
+    const key = existsSync(dir) ? realpathSync(dir) : resolve(dir);
+    const seen = first.get(key);
+    if (seen === undefined) first.set(key, dir);
+    else warn(`warning: ${dir} repeats ${seen}; read once`);
+  }
+  return [...first.values()];
+}
+
 function readTrajectory(file: string): { fired: string[]; guard: number } {
   if (!existsSync(file)) return { fired: [], guard: 0 };
   const fired: string[] = [];
@@ -238,12 +262,14 @@ function readTrial(dir: string, r: RawRecord): Trial {
   const named = new Map<string, string>();
   const items = new Set<string>();
   for (const c of grade.checks ?? []) {
+    const gateEvent = (c as { event?: unknown }).event;
     for (const it of ((c as { items?: CheckItem[] }).items ?? [])) {
       if (typeof it.item !== 'string') continue;
       items.add(it.item);
       if (it.met === false) {
         failed.set(it.item, [...(failed.get(it.item) ?? []), c.id]);
-        if (typeof it.event === 'string') named.set(`${it.item}\u0000${c.id}`, it.event);
+        const ev = typeof it.event === 'string' ? it.event : typeof gateEvent === 'string' ? gateEvent : undefined;
+        if (ev !== undefined) named.set(`${it.item}\u0000${c.id}`, ev);
       }
     }
   }
@@ -301,6 +327,7 @@ export function tabulate(trials: readonly Trial[], items: readonly ItemClass[], 
     const name = t.named.get(`${spec.item}\u0000${g}`);
     if (name !== undefined) return name === spec.id;
     const siblings = t.fired.map((id) => specs.get(id)).filter((s): s is EventSpecLike => !!s && s.item === spec.item);
+    if (SEEN_GATES.has(g)) return siblings.length === 1 && siblings[0]!.id === spec.id;
     const lure = g === 'kept';
     return siblings.filter((s) => (s.class === 'D') === lure).some((s) => s.id === spec.id);
   });
@@ -318,10 +345,11 @@ export function tabulate(trials: readonly Trial[], items: readonly ItemClass[], 
     };
   });
   const withArrival = valid.filter((t) => t.fired.length > 0);
-  const sawAll = withArrival.filter((t) => t.fired.every((id) => {
-    const spec = specs.get(id);
-    return !spec || !gatesOf(t, spec).some((g) => SEEN_GATES.has(g));
-  }));
+  const sawAll = valid.filter((t) => ![...t.failed.values()].some((gates) => gates.some((g) => SEEN_GATES.has(g))));
+  const known = [...specs.values()].filter((s): s is EventSpecLike => s !== null);
+  const unattributed = valid.flatMap((t) => [...t.failed].flatMap(([item, gates]) => gates
+    .filter((g) => EVENT_GATE_SET.has(g) && !known.some((s) => s.item === item && t.fired.includes(s.id) && gatesOf(t, s).includes(g)))
+    .map((gate) => ({ trial: t.index, run: t.run, item, gate }))));
 
   const keys = new Set(items.map((i) => i.key));
   const all_items_pass = valid.filter((t) => ![...t.failed.keys()].some((k) => keys.has(k))).length;
@@ -332,12 +360,14 @@ export function tabulate(trials: readonly Trial[], items: readonly ItemClass[], 
     wilson: wilson(valid.filter((t) => t.outcome === 'PASS').length, n),
     split,
     guard_fires: trials.reduce((s, t) => s + t.guard, 0),
-    q: withArrival.length === 0 ? null : { trials: withArrival.length, seen_all: sawAll.length, rate: sawAll.length / withArrival.length },
+    q: withArrival.length === 0 ? null : { trials: n, seen_all: sawAll.length, rate: sawAll.length / n },
     classes,
     events: eventRows,
     outside_failures: valid.filter((t) => t.failed.has(OUTSIDE)).map((t) => ({ trial: t.index, run: t.run, gates: t.failed.get(OUTSIDE) as string[] })),
     independence: { all_items_pass, expected_per_item: n * product(perItem), expected_per_class: n * product(classes.map((c) => c.pass_rate ?? NaN)) },
     outcomes: trials.map((t) => ({ trial: t.index, run: t.run, outcome: t.outcome })),
+    // Left out when empty, so a run without such failures prints what it printed before.
+    ...(unattributed.length > 0 ? { unattributed_event_failures: unattributed } : {}),
   };
 }
 
@@ -382,6 +412,8 @@ export function markdown(json: ClassesJson): string {
       }
       L.push('');
     }
+    const un = t.unattributed_event_failures ?? [];
+    if (un.length > 0) L.push(`Unattributed event failures: ${un.map((u) => `${trialRef(u, many)}: ${u.item} ${u.gate}`).join(', ')}.`, '');
   }
   L.push('## Independence (descriptive, gates nothing)', '', '| task | trials | PASS | all items pass | expected, per-item product | expected, per-class product |', '|---|---|---|---|---|---|');
   for (const [id, t] of Object.entries(json.tasks)) {
@@ -435,7 +467,7 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
     else if (a.startsWith('--')) return usage(`unknown option ${a}`);
     else positional.push(a);
   }
-  const runs = positional.flatMap((p) => p.split(',')).filter((s) => s !== '');
+  const runs = uniqueRuns(positional.flatMap((p) => p.split(',')).filter((s) => s !== ''), (l) => deps.err(`classes: ${l}`));
   if (runs.length === 0) return usage('give one run directory or more');
   let result: ClassesJson;
   try {

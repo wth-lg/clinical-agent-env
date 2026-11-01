@@ -102,7 +102,7 @@ describe('classesJsonProblems', () => {
 const ITEMS = [{ key: 'a', class: 'x', label: 'A' }, { key: 'b', class: 'x', label: 'B' }, { key: 'c', class: 'y', label: 'C' }];
 const EVENTS: TaskEvents = { SPECS: [{ id: 'e1', item: 'a', class: 'A' }, { id: 'e2', item: 'a', class: 'D' }, { id: 'e3', item: 'c', class: 'O' }, { id: 'e4', item: 'b', class: 'B' }], ACTIVE: ['e1', 'e2', 'e3'] };
 
-interface Fake { outcome: string; fails?: Array<[string, string, string?]>; labels?: Array<[string, string, string]>; fired?: string[]; guard?: number; items?: string[] }
+interface Fake { outcome: string; fails?: Array<[string, string, string?]>; labels?: Array<[string, string, string]>; fired?: string[]; guard?: number; items?: string[]; checkEvent?: Record<string, string> }
 
 function put(path: string, text: string): void {
   mkdirSync(dirname(path), { recursive: true });
@@ -114,7 +114,7 @@ function writeRun(dir: string, trials: Fake[]): void {
     const keys = t.items ?? ['a', 'b', 'c', 'outside'];
     const gates = [...new Set(['g', ...(t.fails ?? []).map(([, gate]) => gate)])];
     const checks = gates.map((id) => ({
-      id, kind: 'gate', met: true,
+      id, kind: 'gate', met: true, ...(t.checkEvent?.[id] ? { event: t.checkEvent[id] } : {}),
       items: keys.map((item) => {
         const f = (t.fails ?? []).find(([i, g]) => i === item && g === id);
         return { item, met: f === undefined, ...(f?.[2] ? { event: f[2] } : {}) };
@@ -175,7 +175,10 @@ describe('pnpm cli classes on synthetic runs', () => {
     expect(ev.e2!.labels).toEqual([{ trial: 2, run: expect.any(String), item: 'a', gate: 'kept', label: 'over_action' }]);
     expect([ev.e3!.fails, ev.e3!.observations, ev.e3!.seen, ev.e3!.amend_fails_seen]).toEqual([1, 3, 2, 0]);
     expect([ev.e4!.active, ev.e4!.fired, ev.e4!.observations, ev.e4!.wilson]).toEqual([false, 0, 0, null]);
-    expect(t.q).toEqual({ trials: 4, seen_all: 3, rate: 0.75 });
+    // q over every valid trial, as rule S writes it (PW4-H0b2 F3): the trial with no arrival saw every
+    // arrival (there were none); the one that missed e3's arrival did not.
+    expect(t.q).toEqual({ trials: 5, seen_all: 4, rate: 0.8 });
+    expect(t.unattributed_event_failures).toBeUndefined();
     expect(t.guard_fires).toBe(3);
     // Event gates fail the item too; base_fails leaves them out (the base list rate b_t).
     const x = t.classes.find((c) => c.class === 'x')!;
@@ -207,6 +210,40 @@ describe('pnpm cli classes on synthetic runs', () => {
     const t = (JSON.parse(r.out.join('\n')) as ClassesJson).tasks.tk!;
     expect(t.trials_valid).toBe(3);
     expect(t.classes[0]!.labels.map((l) => [l.run, l.trial])).toEqual([[a, 0], [b, 1]]);
+  });
+
+  it('PW4-H0b2 F2: a repeated run directory is read once, with a warning on stderr', async () => {
+    const a = tempDir('classes-repeat');
+    writeRun(a, [{ outcome: 'PASS' }, { outcome: 'FAIL', fails: [['b', 'g']] }]);
+    const r = await run([`${a},${a}/`, '--json'], deps);
+    expect(r.code).toBe(0);
+    const json = JSON.parse(r.out.join('\n')) as ClassesJson;
+    expect(json.run_dirs).toEqual([a]);
+    expect(json.tasks.tk!.trials_valid).toBe(2);
+    expect(r.err).toEqual([`classes: warning: ${a}/ repeats ${a}; read once`]);
+  });
+
+  it('PW4-H0b2 F3: an unnamed event_seen failure on an item where two events fired is unattributed, not the amend event\'s', async () => {
+    const { json } = await synth('unattributed', [
+      { outcome: 'FAIL', fired: ['e1', 'e2'], fails: [['a', 'event_seen']] },
+      { outcome: 'PASS', fired: ['e1', 'e2'] },
+    ]);
+    const t = json!.tasks.tk!;
+    const ev = Object.fromEntries(t.events.map((e) => [e.id, e]));
+    expect([ev.e1!.fails, ev.e1!.seen, ev.e1!.amend_fails_seen]).toEqual([0, 2, 0]);
+    expect([ev.e2!.fails, ev.e2!.seen]).toEqual([0, 2]);
+    expect(t.unattributed_event_failures).toEqual([{ trial: 0, run: expect.any(String), item: 'a', gate: 'event_seen' }]);
+    // the trial missed an arrival, whichever it was
+    expect(t.q).toEqual({ trials: 2, seen_all: 1, rate: 0.5 });
+    expect(classesJsonProblems(json)).toEqual([]);
+  });
+
+  it('PW4-H0b2 F3: an event_seen failure goes to the event its gate names', async () => {
+    const { json } = await synth('gate-named', [{ outcome: 'FAIL', fired: ['e1', 'e2'], fails: [['a', 'event_seen']], checkEvent: { event_seen: 'e2' } }]);
+    const t = json!.tasks.tk!;
+    const ev = Object.fromEntries(t.events.map((e) => [e.id, e]));
+    expect([ev.e1!.fails, ev.e2!.fails, ev.e2!.seen]).toEqual([0, 1, 0]);
+    expect(t.unattributed_event_failures).toBeUndefined();
   });
 
   it('refuses no run directory and an unknown option', async () => {
