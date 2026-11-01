@@ -23,6 +23,17 @@
 // --events <id=e,...> --req-per-event <r> adds mid-trial events (plan-amendment-w4 "Sizing"): each
 // event adds r requests, so a trial is projected at T = 2 + k x n + r x e with its own k. A task
 // --events leaves out is projected at 0 events; r may be fractional (a measured oracle mean).
+// A cost source whose trajectories hold event arrivals (env_event lines, PW4-E1) already carries
+// r requests per arrival inside each T, so each trial's k is fitted net of them: k = (T - 2 - r x
+// its arrivals) / items (PW4-H0b2; verifier-phase-P17i-W4H0B-195-1 F1). r is then refit from
+// those trials (rule S-2 "refit r", resolveReqPerEvent): T = a_task + r x arrivals by least squares
+// within each task, pooled over the tasks, from at least MIN_OFF_MODE trials whose arrivals
+// differ from their task's most common count; r and its standard error are printed.
+// --req-per-event overrides the fit (both printed); with --events the projection needs one or the
+// other. Without either, a --project run on such a source exits 2 with the reason; a run without
+// --project prints the reason and its k includes the event requests. A source with no arrivals is
+// read as before.
+// A run directory given twice (by its resolved path) is read once, with a warning on stderr.
 // It checks the budget lines: p90 at most PER_TRIAL_BUDGET_USD, peak under 0.6 x
 // CONTEXT_WINDOW_TOKENS, T under 0.5 x the task's max_turns, working time under 0.5 x MAX_WALL_MS,
 // and, over two or more tasks, a mean p90 at most MEAN_P90_BUDGET_USD; with fewer than
@@ -45,6 +56,7 @@ import type { TaskSource } from '../packages/core/tasks.ts';
 import { loadFinalTrials, loadTrialObservations } from './adapters/ledger-node.ts';
 import { settledRecords, trajectoryOf } from './adapters/result-sink-node.ts';
 import { nodeTaskSource, TASKS_DIR } from './adapters/tasks-node.ts';
+import { uniqueRuns } from './classes.ts';
 import { checkoutVersions } from './replay.ts';
 
 // The plan sizes on p90 ~ 1.25 x median: pilot-2's max/median trial cost was 1.12-1.46 per task.
@@ -53,6 +65,9 @@ export const P90_OVER_MEDIAN = 1.25;
 export const MEAN_P90_BUDGET_USD = 2.4;
 // The fit band: the model's median may be at most 10% under and 40% over the observed median.
 export const FIT_BAND = [0.9, 1.4] as const;
+// The fewest trials off their task's most common arrival count that r is refit from (coordinator
+// ruling for builder-277: a fit from one or two missed triggers is noise).
+export const MIN_OFF_MODE = 5;
 
 export interface Deps {
   out: (line: string) => void;
@@ -91,6 +106,8 @@ export interface TrialUsage {
   cost_usd: number;
   judge_cost_usd: number;
   ms_per_request: number | null;
+  // Event arrivals (env_event lines) in the trajectory; set only when there are any.
+  events?: number;
 }
 
 export interface Fit {
@@ -145,8 +162,9 @@ interface Usage {
 
 // One trial's request usage from its trajectory, or null when it made no request.
 function trialUsage(dir: string, r: Record<string, unknown>): TrialUsage | null {
-  const responses = readFileSync(trajectoryOf(dir, r as never), 'utf8')
-    .split('\n')
+  const lines = readFileSync(trajectoryOf(dir, r as never), 'utf8').split('\n');
+  const arrivals = lines.filter((l) => l.includes('"env_event"') && (JSON.parse(l) as { type?: unknown }).type === 'env_event').length;
+  const responses = lines
     .filter((l) => l.includes('"type":"response"'))
     .map((l) => JSON.parse(l) as { type: string; usage?: Usage })
     .filter((e) => e.type === 'response' && e.usage);
@@ -169,21 +187,86 @@ function trialUsage(dir: string, r: Record<string, unknown>): TrialUsage | null 
     cost_usd: typeof r.cost_usd === 'number' ? r.cost_usd : 0,
     judge_cost_usd: typeof r.judge_cost_usd === 'number' ? r.judge_cost_usd : 0,
     ms_per_request: Number.isFinite(working) ? working / T : null,
+    ...(arrivals > 0 ? { events: arrivals } : {}),
   };
+}
+
+// off_mode: trials whose arrivals differ from their task's most common count (one missed trigger
+// is one such trial), the evidence the fit stands on.
+export type EventRateFit = { r: number; se: number | null; off_mode: number } | { reason: string };
+export interface EventRate {
+  // The r to net and project with: the given one, else the fit; undefined when no trial has an
+  // arrival and none was given.
+  r: number | undefined;
+  lines: string[];
+}
+
+const offMode = (n: number): string => `${n} trial${n === 1 ? ' off its' : 's off their'} task's most common event count`;
+
+// r by least squares within each task, T = a_task + r x arrivals, pooled over the tasks (one group
+// per task), and its standard error from the residuals; the reason when it cannot be fitted.
+export function fitReqPerEvent(groups: ReadonlyArray<readonly TrialUsage[]>): EventRateFit {
+  let sxx = 0, sxy = 0, n = 0, off = 0;
+  const used = groups.filter((g) => g.length > 0);
+  for (const g of used) {
+    const eBar = g.reduce((s, t) => s + (t.events ?? 0), 0) / g.length;
+    const tBar = g.reduce((s, t) => s + t.T, 0) / g.length;
+    for (const t of g) {
+      const de = (t.events ?? 0) - eBar;
+      sxx += de * de;
+      sxy += de * (t.T - tBar);
+    }
+    const freq = new Map<number, number>();
+    for (const t of g) freq.set(t.events ?? 0, (freq.get(t.events ?? 0) ?? 0) + 1);
+    off += g.length - Math.max(...freq.values());
+    n += g.length;
+  }
+  if (sxx <= 1e-12) return { reason: 'every trial of a task had the same number of events, so r and k cannot be separated' };
+  const r = sxy / sxx;
+  let ssr = 0;
+  for (const g of used) {
+    const eBar = g.reduce((s, t) => s + (t.events ?? 0), 0) / g.length;
+    const tBar = g.reduce((s, t) => s + t.T, 0) / g.length;
+    for (const t of g) ssr += (t.T - tBar - r * ((t.events ?? 0) - eBar)) ** 2;
+  }
+  const dof = n - used.length - 1;
+  return { r, se: dof > 0 ? Math.sqrt(ssr / dof / sxx) : null, off_mode: off };
+}
+
+// The r a cost source is netted and projected with (PW4-H0b2 F1): with no arrival in any trial,
+// the given r (or none) and no lines; otherwise the given r with the fit beside it, or the fit when
+// it is usable (finite, r >= 0, at least MIN_OFF_MODE trials off their task's most common
+// count), else an error.
+export function resolveReqPerEvent(groups: ReadonlyArray<readonly TrialUsage[]>, given: number | undefined): EventRate | { error: string } {
+  const withEvents = groups.reduce((s, g) => s + g.filter((t) => (t.events ?? 0) > 0).length, 0);
+  if (withEvents === 0) return { r: given, lines: [] };
+  const fit = fitReqPerEvent(groups);
+  const se = (x: number | null) => (x === null ? 'n/a' : x.toFixed(2));
+  const fitted = 'reason' in fit ? null : `${fit.r.toFixed(2)} (SE ${se(fit.se)}) from ${offMode(fit.off_mode)}, ${withEvents} trials with events`;
+  const problem = 'reason' in fit ? fit.reason
+    : !Number.isFinite(fit.r) ? `fitted r ${fit.r} is not finite`
+    : fit.r < 0 ? `fitted r ${fit.r.toFixed(2)} is below 0`
+    : fit.off_mode < MIN_OFF_MODE ? `only ${offMode(fit.off_mode)} (${MIN_OFF_MODE} needed)`
+    : null;
+  if (given !== undefined) return { r: given, lines: [`r given ${given}, not fitted; ${fitted === null ? `r not fittable: ${problem}` : `fitted r ${fitted}`}`] };
+  if (problem !== null || 'reason' in fit) return { error: `the cost source has event arrivals in ${withEvents} trials but r cannot be fitted: ${problem}; give --req-per-event <r>` };
+  return { r: fit.r, lines: [`r fitted ${fitted}`] };
 }
 
 // Medians over the trials: of each parameter on its own, for the printed fit and k, and of each
 // trial's modelled cost for the fitted median. A median of parameters taken from different
 // trials can cost less than the median trial (pilot-1 crc-care-gap: -7%).
-export function fitTask(trials: readonly TrialUsage[], items: number, skipped_invalid = 0): Fit {
+// With r, k is net of each trial's own arrivals (r x events); T stays the observed median.
+export function fitTask(trials: readonly TrialUsage[], items: number, skipped_invalid = 0, r = 0): Fit {
   const m = (f: (t: TrialUsage) => number) => median(trials.map(f));
   const T = m((t) => t.T);
+  const net = trials.some((t) => (t.events ?? 0) > 0) ? m((t) => t.T - r * (t.events ?? 0)) : T;
   const C0 = m((t) => t.C0);
   const g = m((t) => t.g);
   const o = m((t) => t.o);
   const timed = trials.flatMap((t) => (t.ms_per_request === null ? [] : [t.ms_per_request]));
   return {
-    items, T, C0, g, o, k: (T - 2) / items,
+    items, T, C0, g, o, k: (net - 2) / items,
     ms_per_request: timed.length > 0 ? median(timed) : null,
     judge_median_usd: m((t) => t.judge_cost_usd),
     observed_median_usd: m((t) => t.cost_usd),
@@ -193,11 +276,13 @@ export function fitTask(trials: readonly TrialUsage[], items: number, skipped_in
   };
 }
 
-// Each trial at n items and e events, with its own k = (T - 2) / the observed items, C0, g, o and
-// working time per request, and r requests per event; the medians over the trials.
-export function project(task_id: string, trials: readonly TrialUsage[], observedItems: number, items: number, max_turns: number | null, events?: { events: number; req_per_event: number }): Projection {
+// Each trial at n items and e events, with its own k = (T - 2 - r x its arrivals) / the observed
+// items, C0, g, o and working time per request, and r requests per event; the medians over the
+// trials. netR is the r a trial's own arrivals are netted by (default the projection's r, else 0).
+export function project(task_id: string, trials: readonly TrialUsage[], observedItems: number, items: number, max_turns: number | null, events?: { events: number; req_per_event: number }, netR: number = events?.req_per_event ?? 0): Projection {
   const extra = events === undefined ? 0 : events.events * events.req_per_event;
-  const at = trials.map((t) => ({ t, T: 2 + ((t.T - 2) / observedItems) * items + extra }));
+  const own = (t: TrialUsage) => ((t.events ?? 0) > 0 ? t.T - 2 - netR * (t.events as number) : t.T - 2);
+  const at = trials.map((t) => ({ t, T: 2 + (own(t) / observedItems) * items + extra }));
   const median_usd = median(at.map((x) => modelCost({ ...x.t, T: x.T })));
   const timed = at.flatMap((x) => (x.t.ms_per_request === null ? [] : [x.t.ms_per_request * x.T]));
   return {
@@ -274,13 +359,13 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
   const project_ = opts.has('--project');
   if (project_ !== opts.has('--items')) return usage('--project and --items go together');
   if (opts.has('--cost-from') && !project_) return usage('--cost-from goes with --project');
-  if (opts.has('--events') !== opts.has('--req-per-event')) return usage('--events and --req-per-event go together');
+  if (opts.has('--req-per-event') && !opts.has('--events')) return usage('--req-per-event goes with --events');
   if (opts.has('--events') && !project_) return usage('--events goes with --project');
   const reqPerEvent = opts.has('--req-per-event') ? Number(opts.get('--req-per-event')) : undefined;
   if (reqPerEvent !== undefined && !(/^[0-9]+(\.[0-9]+)?$/.test(opts.get('--req-per-event') as string) && Number.isFinite(reqPerEvent))) return usage('--req-per-event takes a number >= 0');
   const json = opts.has('--json');
   const say = json ? deps.err : deps.out;
-  const runs = (positional[0] as string).split(',').filter((s) => s !== '');
+  const runs = uniqueRuns((positional[0] as string).split(',').filter((s) => s !== ''), (l) => deps.err(`context-budget: ${l}`));
 
   // Valid trials by task, over every run given, and how many invalid ones each task had.
   const byTask = new Map<string, TrialUsage[]>();
@@ -326,6 +411,12 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
   if (eventCounts === null) return usage('--events takes id=e,... (e a whole number, 0 allowed)');
   const strayEvents = Object.keys(eventCounts).filter((id) => !ids.includes(id));
   if (strayEvents.length > 0) return usage(`--events names ${strayEvents.join(', ')}, not among the tasks measured`);
+  // r: given, or refit when the trials hold event arrivals (they then carry r x arrivals in T).
+  const rate = resolveReqPerEvent(ids.map((id) => byTask.get(id) as TrialUsage[]), reqPerEvent);
+  if ('error' in rate && project_) return usage(rate.error);
+  const r = 'error' in rate ? undefined : rate.r;
+  if (opts.has('--events') && r === undefined) return usage('--events needs --req-per-event <r>: the cost source has no event arrivals to fit r from');
+  for (const l of 'error' in rate ? [`${rate.error.replace(/; give --req-per-event <r>$/, '')}: k below includes the event requests`] : rate.lines) say(l);
 
   const tasks = deps.tasks ?? nodeTaskSource();
   let versions: ReturnType<typeof checkoutVersions> | undefined;
@@ -356,7 +447,7 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
       items = listed;
     }
     const skipped = invalid.get(id) ?? 0;
-    const fit = fitTask(trials, items, skipped);
+    const fit = fitTask(trials, items, skipped, r ?? 0);
     result[id] = { trials, fit };
     say(`${id}: ${trials.length} trials, ${items} items: T ${fit.T.toFixed(1)}, C0 ${kTok(fit.C0)}, g ${kTok(fit.g)}/req, o ${Math.round(fit.o)}/req, k ${fit.k.toFixed(2)} req/item`);
     if (skipped > 0) say(`  ${skipped} invalid trial${skipped === 1 ? '' : 's'} left out (ENV_*, INFRA_* and other outcomes isValid rejects)`);
@@ -374,11 +465,11 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
     } catch {
       say(`  ${id} is not a task in this checkout: the max_turns line is not checked`);
     }
-    const ev = reqPerEvent === undefined ? undefined : { events: eventCounts[id] ?? 0, req_per_event: reqPerEvent };
-    const p = project(id, trials, items, n, maxTurns, ev);
+    const ev = opts.has('--events') && r !== undefined ? { events: eventCounts[id] ?? 0, req_per_event: r } : undefined;
+    const p = project(id, trials, items, n, maxTurns, ev, r ?? 0);
     result[id].projection = p;
     projections.push(p);
-    say(`  at ${n} items${ev === undefined ? '' : ` and ${ev.events} events (r ${ev.req_per_event})`}: T ${p.T.toFixed(1)}, median ${money(p.median_usd)}, p90 ${money(p.p90_usd)}, peak ${kTok(p.peak_context)} (${(p.peak_context / CONTEXT_WINDOW_TOKENS).toFixed(2)} of the window)${p.working_ms === null ? '' : `, working ${minutes(p.working_ms)}`}`);
+    say(`  at ${n} items${ev === undefined ? '' : ` and ${ev.events} events (r ${reqPerEvent === undefined ? ev.req_per_event.toFixed(2) : ev.req_per_event})`}: T ${p.T.toFixed(1)}, median ${money(p.median_usd)}, p90 ${money(p.p90_usd)}, peak ${kTok(p.peak_context)} (${(p.peak_context / CONTEXT_WINDOW_TOKENS).toFixed(2)} of the window)${p.working_ms === null ? '' : `, working ${minutes(p.working_ms)}`}`);
   }
   breaks.push(...budgetBreaks(projections));
   if (project_ && projections.length < PLANNED_TASKS) {
@@ -390,7 +481,7 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
 
   let correction: number | undefined;
   if (project_) {
-    const costFrom = opts.has('--cost-from') ? (opts.get('--cost-from') as string).split(',').filter((s) => s !== '') : runs;
+    const costFrom = opts.has('--cost-from') ? uniqueRuns((opts.get('--cost-from') as string).split(',').filter((s) => s !== ''), (l) => deps.err(`context-budget: ${l}`)) : runs;
     const finalRun = join(process.env.RESULTS_ROOT || process.cwd(), 'results', 'runs', 'final-1');
     let reserve;
     try {

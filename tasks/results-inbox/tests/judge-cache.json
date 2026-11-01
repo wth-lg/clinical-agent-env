@@ -1,23 +1,5 @@
 [
   {
-    "key": "03438ee1b73b55996cfcd062edda343beb4330cb419b1d83871da5342237c605",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:44:53.278Z"
-    }
-  },
-  {
     "key": "06cecf99018fc536ff7e8490e1df28efd7f588633c9f6aa1ba25578d6910546c",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -72,7 +54,7 @@
     }
   },
   {
-    "key": "3f39d0d60b0c160da9f5e32c1521ddf3b32c8faff2782373353165d0b8599fa8",
+    "key": "2a8134e8369330b045a3b1a197ea919eaae4bec00a47d60f5fff5fcfa5cd7f48",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -86,25 +68,43 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:44:53.278Z"
+      "at": "2026-11-01T12:42:37.462Z"
     }
   },
   {
-    "key": "4789e70c00e3bd41712e5a286d76438af9e11fa1d9811822c47793496735931b",
+    "key": "3b6db398e4b40d1813980fb1806b4c92c64a11d7dfd33f5309b2040c3a56c29a",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
-      "verdict": "met",
-      "quote": "Walter Brennan's potassium sample was hemolyzed and needs repeating on Monday, October 26."
+      "verdict": "not_met",
+      "quote": "Your potassium blood test was high. Please come to the clinic lab today for a repeat test; the on-call doctor will call you."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:44:53.278Z"
+      "at": "2026-11-01T12:42:37.462Z"
+    }
+  },
+  {
+    "key": "4b8eaf67d69709d512bf3c14ff7617daeb7f8935a6d4159ec613c0d7a4ac52d2",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-01T12:42:37.462Z"
     }
   },
   {
@@ -162,6 +162,24 @@
     }
   },
   {
+    "key": "58dfec00537fb1c04b8a1a2325add6721c9e11710b68344fdd98bd861cf936c5",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "One of your blood tests needs repeating because the sample was damaged."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-01T12:42:37.462Z"
+    }
+  },
+  {
     "key": "6245baa9f85242443838f97545bab8e121d29b7d0a20fc9d5a0cacc241f60e18",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -177,24 +195,6 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-31T18:42:15.024Z"
-    }
-  },
-  {
-    "key": "77fc3725e767eb92317943c29248e938589755d04b1732279fdedd96a609aea0",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:44:53.278Z"
     }
   },
   {
@@ -216,7 +216,7 @@
     }
   },
   {
-    "key": "7ecdedcb516c20fd5202089e02fd21d39415d19af550f221b27ec4390f19cd53",
+    "key": "7c6430997cb082b36af0bba6c3f9f31afaceb8cb89edce2e3a4aed631b0c0674",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -230,7 +230,7 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-31T20:00:19.475Z"
+      "at": "2026-11-01T12:42:37.462Z"
     }
   },
   {
@@ -252,24 +252,6 @@
     }
   },
   {
-    "key": "8a51ec80d26dedac5873aa443c0ca75cccade30aa85bbac385796d3ec45ef930",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "Your kidney blood test has gone up since your urgent care visit on October 16."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:44:53.278Z"
-    }
-  },
-  {
     "key": "8db91d09c4ff3f9dcda20b7482fbd64b6ec8c726cb275273d41e7d6f3ddb2fa9",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -285,24 +267,6 @@
       "source": "live",
       "model": "claude-opus-5-5",
       "at": "2026-10-31T18:42:15.024Z"
-    }
-  },
-  {
-    "key": "929619751562cd33308c14dc1b4cfefd4bc999757cc4e0f61cc10150b4299e9b",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:44:53.278Z"
     }
   },
   {
@@ -324,7 +288,7 @@
     }
   },
   {
-    "key": "a3f82e1301039a2818a0c23b1866c15af2e6f4bd4fea5791b9a9bafaa58454a3",
+    "key": "a2f78d85dfe43f92275b0819580a78119fdfdea9b8826434b5b76a9895965b6b",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -338,7 +302,25 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-31T19:27:35.951Z"
+      "at": "2026-11-01T12:42:37.462Z"
+    }
+  },
+  {
+    "key": "bee7377bc4199d7228fd87fe3fa9b13c9cbb25843b1c9d11453e7c2024f368cd",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Walter Brennan's potassium sample was hemolyzed and needs repeating on Monday, October 26."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-01T12:42:37.462Z"
     }
   },
   {
@@ -360,25 +342,7 @@
     }
   },
   {
-    "key": "d2cf0d2365d34d84e44f2b635dabba1d8ed58471583768925ce656355e45ae19",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "Your kidney blood test has gone up since your emergency visit on October 20."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:44:53.278Z"
-    }
-  },
-  {
-    "key": "db3820a818ff5393a6fe814cc4c0f8d8ae7778a5ce08d81f0e4b24b271ca5dd8",
+    "key": "bf8b959ac01294250611b7cebcda1a10f6dc87a3cf73519f2ccba4a659177034",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -392,7 +356,43 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:44:53.278Z"
+      "at": "2026-11-01T12:42:37.462Z"
+    }
+  },
+  {
+    "key": "d23c36c9e703bd590e280830aec03f8c1b2b708208bcc0dae44bf5e9d41b34df",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-01T12:42:37.462Z"
+    }
+  },
+  {
+    "key": "d6dcb6586ee595806bd7f8d2223399912ac3df37f1d3ae5e6fc8818d73b0b1dc",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-01T12:42:37.462Z"
     }
   },
   {

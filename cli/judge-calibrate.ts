@@ -1,5 +1,5 @@
 // pnpm cli judge-calibrate --task <id|all> [--dry-run]
-//                         [--from-trials <run dir>[,<run dir>...] | --probes | --annotate]
+//                         [--from-trials <run dir>[,<run dir>...] [--misses-only --out <file>] | --probes | --annotate]
 // Live judge calibration (plan phase P11c): asks every key of tasks/<id>/tests/judge-cache.json
 // live, once, compares each live answer with the scripted one and writes
 // results/judge-calibration/<id>.json. It never writes the cache; a disagreement is fixed in
@@ -32,6 +32,12 @@
 //               read; a trial this checkout
 //               cannot regrade (its replay does not reach the record's state) is listed under
 //               trials.excluded. With --dry-run it prints the projection of those questions.
+//               --misses-only (with --out) asks only the questions no trial recorded an answer
+//               for (no entry, or only one with an error such as 'judge allowance reached': a call
+//               never sent), as after a grader change rewords one judge question (builder-273).
+//               It is a fill, not a calibration: nothing is compared, the result (its answers in
+//               live_entries) goes to --out and never to results/judge-calibration, and it exits
+//               0 when every question asked got an answer.
 //   --probes    asks each paraphrase of each probe set in PROBES (a set: one judge item's
 //               question with other texts) live, once, and writes the results under `probes` in
 //               the task's existing calibration file, one entry per set, every other field
@@ -46,7 +52,7 @@
 // for that task); 2 on a usage error. The live mode and --from-trials keep the `probes` of the
 // task's existing calibration file.
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { MessagesClient, MODEL, type Transport } from '../packages/core/anthropic.ts';
 import { money } from '../packages/core/cost.ts';
@@ -69,7 +75,7 @@ import { loadMatrixTask, matrixEnv, TASK_ID } from './matrix.ts';
 import { recordingClient } from './oracle.ts';
 import { repoWorld, taskChecks } from './run.ts';
 
-const USAGE = 'usage: pnpm cli judge-calibrate --task <id|all> [--dry-run] [--from-trials <run dir>[,<run dir>...] | --probes | --annotate]';
+const USAGE = 'usage: pnpm cli judge-calibrate --task <id|all> [--dry-run] [--from-trials <run dir>[,<run dir>...] [--misses-only --out <file>] | --probes | --annotate]';
 const RESULTS_DIR = fileURLToPath(new URL('../results/judge-calibration/', import.meta.url));
 
 export interface Deps {
@@ -98,7 +104,7 @@ export interface Disagreement {
   recorded?: Answer[];
   live: Answer;
   live_error: string | null;
-  reason: 'answers differ' | 'no matrix case asks this key' | 'no trial recorded an answer for this key' | 'trials recorded different answers';
+  reason: 'answers differ' | 'no matrix case asks this key' | 'no trial recorded an answer for this key' | 'trials recorded different answers' | 'no live answer';
 }
 
 export type Reference = 'scripted' | 'live' | 'mixed';
@@ -465,10 +471,12 @@ interface TrialPlan {
   // agrees() compares them), in the order the trials were read.
   recorded: Map<string, JudgeCacheEntry[]>;
   trials: TrialsUsed;
+  // Every question the trials raise; asked is all of them unless --misses-only.
+  judged: number;
 }
 
 // Grades the task's live, valid trials in dirs again with a RecordingJudge, sending nothing.
-async function trialPlan(task: MatrixTask, dirs: string[], tasks: TaskSource): Promise<TrialPlan> {
+async function trialPlan(task: MatrixTask, dirs: string[], tasks: TaskSource, missesOnly = false): Promise<TrialPlan> {
   const { world, definitions } = repoWorld();
   const checks = await taskChecks(task.id);
   const judge = new RecordingJudge(task.judgeEffort);
@@ -511,7 +519,9 @@ async function trialPlan(task: MatrixTask, dirs: string[], tasks: TaskSource): P
       }
     }
   }
-  return { task, ...judge.asked(), recorded, trials };
+  // --misses-only: a key counts as answered when some trial recorded it with no error.
+  const answered = (key: string) => (recorded.get(key) ?? []).some((e) => e.error === null);
+  return { task, ...judge.asked(missesOnly ? (key) => !answered(key) : undefined), recorded, trials, judged: judge.asked().asked.length };
 }
 
 // The probe questions of a task: its item's real question, from the first matrix case that asks
@@ -586,19 +596,26 @@ export async function main(args: string[], deps: Deps): Promise<number> {
   let fromTrials: string[] | undefined;
   let probes = false;
   let annotate = false;
+  let missesOnly = false;
+  let out: string | undefined;
   for (let i = 0; i < args.length; i++) {
     const a = args[i]!;
     if (a === '--dry-run') dry = true;
+    else if (a === '--misses-only') missesOnly = true;
+    else if (a === '--out' && args[i + 1] !== undefined) out = args[++i];
     else if (a === '--probes') probes = true;
     else if (a === '--annotate') annotate = true;
     else if (a === '--task' && args[i + 1] !== undefined) id = args[++i];
     else if (a === '--from-trials' && args[i + 1] !== undefined) fromTrials = args[++i]!.split(',').map((d) => d.trim()).filter((d) => d !== '');
-    else return usage(deps, a === '--task' || a === '--from-trials' ? `${a} needs a value` : `unknown argument ${a}`);
+    else return usage(deps, a === '--task' || a === '--from-trials' || a === '--out' ? `${a} needs a value` : `unknown argument ${a}`);
   }
   if (id === undefined) return usage(deps, '--task is required');
   if (id !== 'all' && !TASK_ID.test(id)) return usage(deps, `--task ${JSON.stringify(id)} is not a task id (letters, digits, _ and - only)`);
   if ([fromTrials !== undefined, probes, annotate].filter(Boolean).length > 1) return usage(deps, '--from-trials, --probes and --annotate do not combine');
   if (annotate && dry) return usage(deps, '--annotate makes no call; --dry-run does not apply');
+  if (missesOnly && fromTrials === undefined) return usage(deps, '--misses-only needs --from-trials');
+  if (missesOnly !== (out !== undefined)) return usage(deps, '--misses-only and --out go together');
+  if (missesOnly && id === 'all') return usage(deps, '--misses-only fills one task: name it with --task');
   if (fromTrials !== undefined) {
     if (fromTrials.length === 0) return usage(deps, '--from-trials needs at least one run dir');
     const missing = fromTrials.find((d) => !existsSync(join(d, 'trials')));
@@ -643,6 +660,7 @@ export async function main(args: string[], deps: Deps): Promise<number> {
     return ok ? 0 : 1;
   }
 
+  if (fromTrials !== undefined && out !== undefined) return fillMain(tasks[0]!, fromTrials, out, dry, key, deps);
   if (fromTrials !== undefined) return fromTrialsMain(tasks, fromTrials, dry, key, deps, read, write);
   if (probes) return probesMain(tasks, dry, key, deps, read, write);
 
@@ -764,6 +782,66 @@ async function fromTrialsMain(tasks: MatrixTask[], dirs: string[], dry: boolean,
     return 1;
   }
   return ok ? 0 : 1;
+}
+
+// --from-trials --misses-only: asks live only the questions of the trials that no trial recorded
+// an answer for and writes them, as a calibration-shaped file whose live_entries hold the answers,
+// to `out`. Nothing is compared; exit 0 when every question asked got an answer.
+async function fillMain(task: MatrixTask, dirs: string[], out: string, dry: boolean, key: string, deps: Deps): Promise<number> {
+  const source = deps.tasks ?? nodeTaskSource({ testMode: isTestMode(deps.env) });
+  const p = await trialPlan(task, dirs, source, true);
+  for (const x of p.trials.excluded) deps.out(`judge-calibrate ${task.id}: excluded ${x.trial}: ${x.reason}`);
+  if (p.trials.used === 0) {
+    deps.out(`judge-calibrate ${task.id}: no live valid trial in ${dirs.join(',')} (${p.trials.not_live} not live, ${p.trials.invalid} not valid)`);
+    return 1;
+  }
+  const { asked, usd, judged, trials } = p;
+  if (dry) {
+    deps.out(`judge-calibrate dry run: ${task.id}: ${asked.length} missing of ${judged} judged messages in ${trials.used} trials of ${dirs.join(',')} x ${JUDGE_CALLS_PER_ITEM} calls, worst case ${money(usd)}`);
+    return projection(deps, [p]);
+  }
+  try {
+    const { ledger, store, mode, path } = openNodeLedger({ transport: 'live', env: deps.env });
+    deps.out(`ledger ${mode} ${path}`);
+    const b = await liveBatch({ ledger, store, key, deps }, `judge-calibrate:${task.id}`, usd, JUDGE_CALLS_PER_ITEM * asked.length, task.judgeEffort, async (judge) => {
+      for (const a of asked) {
+        if (a.kind === 'judge') await judge.judge(a.q);
+        else await judge.extract(a.q);
+      }
+    });
+    const disagreements: Disagreement[] = asked.flatMap((a) => {
+      const l = b.entries.get(a.key);
+      return l !== undefined && l.answer !== null ? [] : [{ key: a.key, kind: a.kind, reference: null, live: l?.answer ?? null, live_error: l?.error ?? null, reason: 'no live answer' }];
+    });
+    const c: Calibration = {
+      task: task.id,
+      model: MODEL,
+      effort: task.judgeEffort,
+      prompt_version: JUDGE_PROMPT_VERSION,
+      at: b.at,
+      ...provenance([], `live agent messages of the trials in ${dirs.join(', ')}`, TRIALS_EXCLUDED, 'live'),
+      questions: asked.length,
+      same_keys: 0,
+      agree: 0,
+      calls: b.judge.calls,
+      ledger_settles: b.settles,
+      cost_usd: round6(b.judge.costUsd),
+      usd_per_call: b.judge.calls === 0 ? 0 : round6(b.judge.costUsd / b.judge.calls),
+      oracle: null,
+      disagreements,
+      note: `Live judge answers (pnpm cli judge-calibrate --from-trials --misses-only) to the questions of those trials' agent messages that no trial recorded an answer for; a fill, nothing compared. Ledger batch ${b.batch}.`,
+      live_entries: [...b.entries.values()].sort((x, y) => (x.key < y.key ? -1 : 1)),
+      trials,
+    };
+    mkdirSync(dirname(out), { recursive: true });
+    writeFileSync(out, `${JSON.stringify(c, null, 2)}\n`);
+    deps.out(`judge-calibrate ${task.id}: ${asked.length} missing of ${judged} judged messages asked, ${c.calls} calls, ${money(c.cost_usd)}; ${trials.used} trials read, ${trials.excluded.length} excluded; wrote ${out}`);
+    printDisagreements(deps, disagreements);
+    return disagreements.length === 0 && trials.excluded.length === 0 ? 0 : 1;
+  } catch (e) {
+    deps.out(`judge-calibrate: ${redactText((e as Error).message, [key])}`);
+    return 1;
+  }
 }
 
 // A probe set's name in output: its check, and which of its questions.

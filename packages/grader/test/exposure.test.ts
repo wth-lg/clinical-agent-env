@@ -44,6 +44,22 @@ describe('exposure from the read tools', () => {
     expect(steps[0]!.shown).toEqual({});
     expect(firstExposed(steps, 'DocumentReference/doc-nurse-1')).toBeNull();
   });
+  // builder-273 (R27): a sorted page keeps the span of the instants its rows sort by, so a gate can
+  // tell a sorted run of pages has passed a window's edge; an unsorted page keeps none.
+  it('a sorted fhir_search page keeps its rows\' date span; an unsorted one does not', () => {
+    // Rows as fhir_search returns them: an instant, a Period (sorted by its start) and an undated row.
+    const entries = [
+      { resourceType: 'Observation', id: 'o1', effectiveDateTime: '2026-07-25T20:55:04-04:00' },
+      { resourceType: 'Observation', id: 'o2', effectivePeriod: { start: '2024-07-19T10:00:00-04:00', end: '2024-07-20' } },
+      { resourceType: 'Observation', id: 'o3' },
+    ];
+    const page = (input: object, rows: object[]) => stepsOf(trajectory([{ name: 'fhir_search', input: { resource_type: 'Observation', ...input }, content: { total: 65, entries: rows, next_offset: 51 } }]))[0]!.search!;
+    expect(page({ sort: '-date', offset: 25 }, entries).span).toEqual([Date.parse('2024-07-19T10:00:00-04:00'), Date.parse('2026-07-25T20:55:04-04:00')]);
+    expect(page({ sort: 'date' }, entries).span).toEqual([Date.parse('2024-07-19T10:00:00-04:00'), Date.parse('2026-07-25T20:55:04-04:00')]);
+    expect(page({}, entries).span).toBeUndefined();
+    expect(page({ sort: '-date' }, [entries[2]!]).span).toBeUndefined();
+    expect(page({ sort: '-date' }, []).span).toBeUndefined();
+  });
   it('a search_notes step whose snippet is the whole note exposes it and records the text', () => {
     // The note is one short line, so the snippet is its whole text (no cut mark), as fhir_read shows it.
     const steps = stepsOf(trajectory([read('search_notes', { query: 'weight' })]));

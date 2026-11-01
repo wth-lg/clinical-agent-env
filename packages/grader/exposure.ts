@@ -30,6 +30,7 @@
 // a gate comparing the two on such a record compares two rules. Before TOOLS_VERSION 3 no
 // snippet exposed its note, even one showing the whole note; from 3 on an uncut snippet does.
 import type { TrialEvent } from '../core/events.ts';
+import { sortStart } from '../env/search.ts';
 import { collapseWhitespace, shownText } from '../env/tools/registry.ts';
 import type { Step, StepNotes, StepSearch } from './check.ts';
 
@@ -41,7 +42,10 @@ const SEARCH_KEYS = ['code', 'category', 'date_ge', 'date_le', 'status', 'sort']
 // when it is a number. sort is kept so a run of pages can be held to one order (ruling R27).
 // Anything else in the input (count) is left out. whole says whether the page held every match:
 // the call asked from the first match (offset 0 or none) and the result has no next_offset
-// (read/page.ts: present whenever entries remain).
+// (read/page.ts: present whenever entries remain). On a sorted call, span is the earliest and
+// latest instant the page's rows sort by (env search.ts sortStart, the key fhir_search orders by),
+// over the rows that have one, so a gate can tell that a sorted run of pages has passed a window's
+// edge (ruling R27, builder-273); absent without a sort or a dated row.
 function searchOf(input: unknown, content: unknown): StepSearch | undefined {
   if (input === null || typeof input !== 'object') return undefined;
   const i = input as Record<string, unknown>;
@@ -53,7 +57,20 @@ function searchOf(input: unknown, content: unknown): StepSearch | undefined {
   if (typeof i.offset === 'number') out.offset = i.offset;
   if (typeof paging.next_offset === 'number') out.next_offset = paging.next_offset;
   out.whole = (i.offset === undefined || i.offset === 0) && Array.isArray(paging.entries) && paging.next_offset === undefined;
+  if (out.sort !== undefined && Array.isArray(paging.entries)) {
+    const keys = paging.entries.map(rowStart).filter((k): k is number => k !== undefined);
+    if (keys.length > 0) out.span = [Math.min(...keys), Math.max(...keys)];
+  }
   return out;
+}
+// The instant a result row sorts by, or undefined when it has none or is not a resource.
+function rowStart(row: unknown): number | undefined {
+  if (row === null || typeof row !== 'object' || typeof (row as { resourceType?: unknown }).resourceType !== 'string') return undefined;
+  try {
+    return sortStart(row as Parameters<typeof sortStart>[0]);
+  } catch {
+    return undefined;
+  }
 }
 
 const NOTES_KEYS = ['date_ge', 'date_le', 'type'] as const;

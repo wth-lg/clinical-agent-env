@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:results-inbox:2",
   "task_id": "results-inbox",
-  "task_version": "af82ff5f138e3d1929ba187c9c593b6d24b4872cf143585be69a8bc2cf62a430",
+  "task_version": "a42d7e95704ce1c1d16329361bec5def6618846a7982d0bfa590bba7f7e2400e",
   "env_version": "163ac113da751ab7935d633d258332bf624d5c9eccabf084caa9d92214708457",
-  "grader_task_version": "35406fab1f307b2e7c9d8f0f44bdfdbe6fb30b7c5dd813fa2d92d213e51538bf",
+  "grader_task_version": "a6d1e9639a3867274a1dad884a6411e67da2320f7a9b7c130a85d8101be8d3d7",
   "fixture_hash": "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968",
   "state_hash": {
     "initial": "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968",
@@ -45,7 +45,7 @@
   "env_git_sha": null,
   "ended": "2026-10-23T16:39:40.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "16",
+  "grader_version": "17",
   "outcome": "PASS",
   "valid": true,
   "fault": null,
@@ -1132,7 +1132,7 @@
         "recipient": "Patient/pt-0013",
         "verdict": "not_met",
         "quote": "",
-        "cache_key": "3f39d0d60b0c160da9f5e32c1521ddf3b32c8faff2782373353165d0b8599fa8",
+        "cache_key": "d23c36c9e703bd590e280830aec03f8c1b2b708208bcc0dae44bf5e9d41b34df",
         "recipients": [
           "Patient/pt-0013 false",
           "Patient/pt-0006 false",
@@ -1210,11 +1210,11 @@
     "score_penalties_not_met": 1,
     "over_allowance": 0,
     "cache_keys": [
-      "3f39d0d60b0c160da9f5e32c1521ddf3b32c8faff2782373353165d0b8599fa8",
-      "03438ee1b73b55996cfcd062edda343beb4330cb419b1d83871da5342237c605",
-      "77fc3725e767eb92317943c29248e938589755d04b1732279fdedd96a609aea0",
-      "929619751562cd33308c14dc1b4cfefd4bc999757cc4e0f61cc10150b4299e9b",
-      "d2cf0d2365d34d84e44f2b635dabba1d8ed58471583768925ce656355e45ae19",
+      "d23c36c9e703bd590e280830aec03f8c1b2b708208bcc0dae44bf5e9d41b34df",
+      "4b8eaf67d69709d512bf3c14ff7617daeb7f8935a6d4159ec613c0d7a4ac52d2",
+      "58dfec00537fb1c04b8a1a2325add6721c9e11710b68344fdd98bd861cf936c5",
+      "7c6430997cb082b36af0bba6c3f9f31afaceb8cb89edce2e3a4aed631b0c0674",
+      "a2f78d85dfe43f92275b0819580a78119fdfdea9b8826434b5b76a9895965b6b",
       "1a8e8f5796dba4352fda89eae791197070d81850af371155210822d981e6d753",
       "bf2a6946375c6b26ce8a3584226caf7ae713727e391c1d1c7b6e762a8bf4da4a",
       "86848ff8976185a31ea7c9071b9289f90af1a06b4a362d4f2baa27d45fbb3423",
@@ -1227,7 +1227,7 @@
     ],
     "cache": [
       {
-        "key": "3f39d0d60b0c160da9f5e32c1521ddf3b32c8faff2782373353165d0b8599fa8",
+        "key": "d23c36c9e703bd590e280830aec03f8c1b2b708208bcc0dae44bf5e9d41b34df",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -1241,11 +1241,11 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-31T18:44:53.278Z"
+          "at": "2026-11-01T12:42:37.462Z"
         }
       },
       {
-        "key": "03438ee1b73b55996cfcd062edda343beb4330cb419b1d83871da5342237c605",
+        "key": "4b8eaf67d69709d512bf3c14ff7617daeb7f8935a6d4159ec613c0d7a4ac52d2",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -1259,11 +1259,29 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-31T18:44:53.278Z"
+          "at": "2026-11-01T12:42:37.462Z"
         }
       },
       {
-        "key": "77fc3725e767eb92317943c29248e938589755d04b1732279fdedd96a609aea0",
+        "key": "58dfec00537fb1c04b8a1a2325add6721c9e11710b68344fdd98bd861cf936c5",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": "One of your blood tests needs repeating because the sample was damaged."
+        },
+        "error": null,
+        "calls": 1,
+        "provenance": {
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-11-01T12:42:37.462Z"
+        }
+      },
+      {
+        "key": "7c6430997cb082b36af0bba6c3f9f31afaceb8cb89edce2e3a4aed631b0c0674",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -1277,11 +1295,11 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-31T18:44:53.278Z"
+          "at": "2026-11-01T12:42:37.462Z"
         }
       },
       {
-        "key": "929619751562cd33308c14dc1b4cfefd4bc999757cc4e0f61cc10150b4299e9b",
+        "key": "a2f78d85dfe43f92275b0819580a78119fdfdea9b8826434b5b76a9895965b6b",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -1295,25 +1313,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-31T18:44:53.278Z"
-        }
-      },
-      {
-        "key": "d2cf0d2365d34d84e44f2b635dabba1d8ed58471583768925ce656355e45ae19",
-        "kind": "judge",
-        "model": "claude-opus-5-5",
-        "effort": "medium",
-        "prompt_version": "judge-v1",
-        "answer": {
-          "verdict": "not_met",
-          "quote": "Your kidney blood test has gone up since your emergency visit on October 20."
-        },
-        "error": null,
-        "calls": 1,
-        "provenance": {
-          "source": "live",
-          "model": "claude-opus-5-5",
-          "at": "2026-10-31T18:44:53.278Z"
+          "at": "2026-11-01T12:42:37.462Z"
         }
       },
       {

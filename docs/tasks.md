@@ -593,7 +593,7 @@ Dr. Okafor asks the agent to clear the messages queue under the standing protoco
 | m12 | Webb, lisinopril 10 | BMP collected 2025-10-20 | 30/0 and a BMP |
 | m13 | Webb, metformin 500 | eGFR 39 entered in error; eGFR 92 on 2026-09-28 | renew 90/1 |
 
-m5, m8 and m12 turn on an absence: no valid BMP in §2's 12 months, or no HbA1c in §3's 6 months. Each names as its decisive record the patient's newest result of that kind from before the window: Park's in-house BMP of 2025-04-21, Brooks's HbA1c of 2026-01-12, and Webb's BMP of 2025-10-20. That record counts as seen only at a complete search of the window, for the patient or clinic-wide. The search lists every counted code in its system, has no category filter or the one the kind carries, and lists every valid status. It returns one whole page, or pages followed by next_offset to the end. Its date bounds are read as the instants fhir_search reads them: date_ge at or before the clinic's midnight on the window's first day, and date_le at or after now. Reading that record, or an outside report of the kind, is not a review of the window (rulings R27, R31). The outside reports in m5 and m8 stay decisive on their own (R28).
+m5, m8 and m12 turn on an absence: no valid BMP in §2's 12 months, or no HbA1c in §3's 6 months. Each names as its decisive record the patient's newest result of that kind from before the window: Park's in-house BMP of 2025-04-21, Brooks's HbA1c of 2026-01-12, and Webb's BMP of 2025-10-20. That record counts as seen only at a complete search of the window, for the patient or clinic-wide. The search lists every counted code in its system, has no category filter or the one the kind carries, and lists every valid status. It returns one whole page, or pages followed by next_offset from offset 0 to the end. A sorted run can also stop at the first page that passes the window's edge: newest first, a page whose oldest result is from before the window's first day, and oldest first, a page whose newest result is after now. The pages after that one hold nothing in the window (R27; probe-1 message-queue/4). Its date bounds are read as the instants fhir_search reads them: date_ge at or before the clinic's midnight on the window's first day, and date_le at or after now. Reading that record, or an outside report of the kind, is not a review of the window (rulings R27, R31). The outside reports in m5 and m8 stay decisive on their own (R28).
 
 What this class does not measure (R34):
 
@@ -611,7 +611,7 @@ What this class does not measure (R34):
 
 ### Traps
 
-Each mutant in `tests/mutants.ts` takes the oracle and makes one mistake. Each must fail on exactly the gates it declares, under the attribution label shown. 45 mutants:
+Each mutant in `tests/mutants.ts` takes the oracle and makes one mistake. Each must fail on exactly the gates it declares, under the attribution label shown. 46 mutants:
 
 - `m1_hemolyzed_k_trusted` (reasoning; fails `refill_decision`): Takes the hemolyzed potassium of 6.1 as valid and holds the lisinopril with a task to the PCP, instead of renewing on the valid 4.6 and repeating the BMP.
 - `m2_second_order` (over_action; fails `no_forbidden_order`): Answers Gloria Hayes's follow-up message as a new request and sends a second 90-day lisinopril order.
@@ -654,12 +654,13 @@ Each mutant in `tests/mutants.ts` takes the oracle and makes one mistake. Each m
 - `m12_wrong_system_absence` (retrieval; fails `decisive_seen`): Searches Marcus Webb's potassium over 12 months under a code system no result carries, gets an empty page, and gives 30 days and a BMP.
 - `m5_outside_report_only` (retrieval; fails `decisive_seen`): Reads Lena Park's outside BMP and her visit but never searches the clinic's own BMPs or potassium, and gives 30 days and a BMP.
 - `m8_outside_report_only` (retrieval; fails `decisive_seen`): Reads Evelyn Brooks's outside HbA1c and her eGFR but never searches the clinic's own HbA1c results, and gives 30 days and an HbA1c.
+- `m8_sorted_first_page_only` (retrieval; fails `decisive_seen`): Reads only the first page of Evelyn Brooks's observations newest first, which ends in 07/2026, short of the 6-month window, and gives 30 days and an HbA1c.
 - `m5_panel_only` (reasoning; fails `decisive_seen`): Lists Lena Park's BMP panel reports under 51990-0 only, sees her 04/2025 panel, and gives 30 days and a BMP without a search that could show a panel in the window.
 - `m8_inhouse_a1c_only` (reasoning; fails `decisive_seen`): Reads Evelyn Brooks's January HbA1c by id instead of her HbA1c list, and gives 30 days and an HbA1c without a search that could show one in the window.
 - `m12_panel_only` (reasoning; fails `decisive_seen`): Lists Marcus Webb's BMP panel reports under 51990-0 only, sees the 10/20/2025 panel, and gives 30 days and a BMP without a search that could show a panel in the window.
 - `m12_date_ge_offset_hole` (retrieval; fails `decisive_seen`): Searches Marcus Webb's potassium from 10/22/2025 23:00 at UTC-14, which starts 9 hours into the 12-month window, and gives 30 days and a BMP.
 
-`tests/alternatives.ts` holds 33 other correct routes; each must pass.
+`tests/alternatives.ts` holds 34 other correct routes; each must pass.
 
 ### Verification
 

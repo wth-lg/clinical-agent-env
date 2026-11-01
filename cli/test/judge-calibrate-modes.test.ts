@@ -217,6 +217,58 @@ describe('judge-calibrate --from-trials', () => {
   });
 });
 
+// builder-273: a grader change that rewords one judge question leaves recorded trials missing only
+// that question's keys; --misses-only asks just those (a question no trial recorded an answer for,
+// or recorded only as a call never sent) and writes the live answers to --out, never to the
+// committed calibration file.
+describe('judge-calibrate --from-trials --misses-only', () => {
+  // The trial's first judged message, set in beforeAll.
+  const target = () => TRIAL_CACHE[0]!;
+  const missing = (label: string, how: 'removed' | 'never sent') =>
+    copyRun(label, (r) => {
+      const j = r.judge as { cache: JudgeCacheEntry[] };
+      j.cache = how === 'removed' ? j.cache.filter((e) => e.key !== target().key) : j.cache.map((e) => (e.key === target().key ? { ...e, answer: null, error: 'judge allowance reached' } : e));
+    });
+
+  it('asks only the keys no trial recorded an answer for, writes them to --out and leaves the calibration file alone', { timeout: SLOW }, async () => {
+    for (const how of ['removed', 'never sent'] as const) {
+      const run = missing(`pilot-miss-${how.replace(' ', '-')}`, how);
+      const out = join(tempDir('calibrate-out'), 'fill.json');
+      const judge = judgeBy(TOY.judgeEffort, () => ({ verdict: 'not_met', quote: '' }));
+      const h = harness({ fetch: judge });
+      expect(await main(['--task', '_toy', '--from-trials', run, '--misses-only', '--out', out], h.deps), h.text()).toBe(0);
+      expect([...judge.asked.keys()]).toEqual([target().key]);
+      expect(judge.calls).toBe(1);
+      expect(h.written).toHaveLength(0);
+      const c = JSON.parse(readFileSync(out, 'utf8')) as Calibration;
+      expect(c).toMatchObject({ task: '_toy', questions: 1, calls: 1, disagreements: [] });
+      expect(c.live_entries.map((e) => e.key)).toEqual([target().key]);
+      expect(c.live_entries[0]!.answer).toEqual({ verdict: 'not_met', quote: '' });
+      expect(h.text()).toContain(`judge-calibrate _toy: 1 missing of ${TRIAL_CACHE.length} judged messages asked, 1 calls`);
+    }
+  });
+
+  it('--dry-run projects only the missing keys; a run with none asks nothing', { timeout: SLOW }, async () => {
+    const run = missing('pilot-miss-dry', 'removed');
+    const h = harness();
+    expect(await main(['--task', '_toy', '--from-trials', run, '--misses-only', '--out', join(tempDir('calibrate-out'), 'f.json'), '--dry-run'], h.deps)).toBe(0);
+    expect(h.text()).toMatch(/^judge-calibrate dry run: _toy: 1 missing of \d+ judged messages in 1 trials of .* x 2 calls, worst case \$/m);
+    const none = harness();
+    expect(await main(['--task', '_toy', '--from-trials', RUN, '--misses-only', '--out', join(tempDir('calibrate-out'), 'g.json'), '--dry-run'], none.deps)).toBe(0);
+    expect(none.text()).toMatch(/^judge-calibrate dry run: _toy: 0 missing of \d+ judged messages/m);
+    expect(projectionOf(none.text())).toBe(0);
+  });
+
+  it('needs --from-trials and --out', async () => {
+    const h = harness({ key: false });
+    expect(await main(['--task', '_toy', '--misses-only', '--out', '/tmp/x.json'], h.deps)).toBe(2);
+    expect(await main(['--task', '_toy', '--from-trials', RUN, '--misses-only'], h.deps)).toBe(2);
+    expect(await main(['--task', '_toy', '--from-trials', RUN, '--out', '/tmp/x.json'], h.deps)).toBe(2);
+    expect(await main(['--task', 'all', '--from-trials', RUN, '--misses-only', '--out', '/tmp/x.json'], h.deps)).toBe(2);
+    expect(h.written).toHaveLength(0);
+  });
+});
+
 describe('judge-calibrate reference and protocol', () => {
   it('a live calibration against the scripted cache writes reference scripted and its protocol', { timeout: SLOW }, async () => {
     const byKey = new Map(TOY.cache.map((e) => [e.key, e.answer]));
