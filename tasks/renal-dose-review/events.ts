@@ -34,6 +34,11 @@
 // are the only record of either drug (R5, R28). An arrival id is new to the world, except the class
 // B correction, which replaces the record it corrects with every other field kept
 // (tests/events.test.ts checks both).
+//
+// Inbox status is not graded (rulings R38(b)). RBC-PHARM-07 states no rule for the inbox, so
+// completing, cancelling or leaving an arrival's inbox item open is neither required nor failed
+// (R3, R4). What a careless close would hide still fails: an arrival never read fails event_seen,
+// and an amend not made fails amended (tests/mutants.ts arrivals_closed_blind).
 import type { EventSpec } from '../../packages/env/events.ts';
 import { mrn } from '../../packages/env/mrn.ts';
 import { ref } from './ids.ts';

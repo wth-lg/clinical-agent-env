@@ -16,7 +16,7 @@ import { ACTIVE, SPECS } from '../events.ts';
 import { EVENT_EXPECT, expected } from '../expected.ts';
 import { id, ref } from '../ids.ts';
 import { oracleFor } from '../solution/solve.ts';
-import { activeMeds, calc, CASES, clinicScr, DONE, labelOf, labs, modify, note, order, patientRead, recentNotes, review, RX, stop, weights, type Label, type RecheckVary, type Vary } from '../solution/steps.ts';
+import { activeMeds, calc, CASES, clinicScr, DONE, labelOf, labs, modify, note, order, patientRead, QUEUES, recentNotes, review, RX, stop, weights, type Label, type RecheckVary, type Vary } from '../solution/steps.ts';
 
 const P = (pt: string) => `Patient/${pt}`;
 const dose = ['doac_dose'];
@@ -219,6 +219,54 @@ export function mutantsFor(active: readonly string[]): M[] {
     },
   ];
 
+  // R38(a): a fired event never excuses the base review. A blind note on the patient fires the
+  // amend (after_write); the re-check reads the arrival and leaves the order as it was, which is
+  // the dose on the chart as delivered, but the records that decide it were never seen.
+  const blindNote = (pt: string): Vary => ({ reads: [], more: [], calcs: [], change: [], note: [note(pt, 'DOAC dose review: reviewed, no change.', [])] });
+  const blindWrites: M[] = [
+    ...(on('delgado-scr-amended')
+      ? [{
+          id: 'delgado_blind_note_fires_amend',
+          trap: 'decision_without_fact',
+          why: 'Writes a note on Delgado without reading his chart, which brings in the amended creatinine; reads it and leaves rivaroxaban at 20 mg, the right dose on the chart as delivered, but never sees his weight or his age, which CrCl needs (verifier P1b).',
+          fails: ['decisive_seen'],
+          loses: [],
+          items: { [P('pt-0003')]: 'retrieval' as const },
+          attribution: 'retrieval' as const,
+          script: r({ delgado: blindNote('pt-0003') }, { 'delgado-scr-amended': 'no_amend' }).filter((t) => t.calls.length > 0),
+        }]
+      : []),
+    ...(on('vance-itraconazole')
+      ? [{
+          id: 'vance_blind_note_fires_amend',
+          trap: 'decision_without_fact',
+          why: 'Writes a note on Vance without reading his chart, which brings in the dermatology letter; reads it and leaves apixaban at 2.5 mg, never seeing his weight or creatinine (verifier P2).',
+          fails: ['decisive_seen'],
+          loses: [],
+          items: { [P('pt-0002')]: 'retrieval' as const },
+          attribution: 'retrieval' as const,
+          script: r({ vance: blindNote('pt-0002') }, { 'vance-itraconazole': 'no_amend' }).filter((t) => t.calls.length > 0),
+        }]
+      : []),
+  ];
+  // Addendum 5 and R38(b): every arrival's inbox item completed blind, right after the listing,
+  // no arrival read; the corrections are made. T1's policy states no inbox rule, so the close is
+  // ungraded, and each item fails on the arrival it never saw (verifier P5).
+  const arrivals = SPECS.filter((s) => on(s.id)).length;
+  const closeBlind: M[] = arrivals === 0 ? [] : [{
+    id: 'arrivals_closed_blind',
+    trap: 'missed_arrival',
+    why: 'Lists the queues and completes every new item without opening any; makes the corrections anyway. Each item with an arrival fails on the arrival it never saw.',
+    fails: SPECS.some((s) => on(s.id) && s.class !== 'D') ? ['event_seen', 'amended'] : ['event_seen'],
+    loses: [],
+    items: Object.fromEntries(SPECS.filter((s) => on(s.id)).map((s) => [s.item, 'retrieval' as const])),
+    attribution: 'retrieval',
+    script: review({}, DONE, active, {
+      recheck: Object.fromEntries(SPECS.filter((s) => on(s.id)).map((s) => [s.id, 'unread' as const])),
+      queues: [...QUEUES, ...Array.from({ length: arrivals }, (_, k) => ({ name: 'update_inbox_item', input: { task_id: `inbox-a${String(k + 1).padStart(4, '0')}`, action: 'complete' } }))],
+    }),
+  }];
+
   const events: M[] = SPECS.filter((s) => on(s.id)).flatMap((s): M[] => {
     const item = s.item;
     if (s.class === 'D') {
@@ -288,7 +336,7 @@ export function mutantsFor(active: readonly string[]): M[] {
       },
     ];
   });
-  return [...base, ...events];
+  return [...base, ...blindWrites, ...closeBlind, ...events];
 }
 
 export const mutants: M[] = mutantsFor(ACTIVE);

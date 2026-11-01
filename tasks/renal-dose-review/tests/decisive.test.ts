@@ -104,6 +104,19 @@ describe('T1 decisive ids are the records that decide each item', () => {
   });
 });
 
+describe('R38(a): a fired amend never excuses the base review', () => {
+  it.each([
+    ['delgado_blind_note_fires_amend', 'Patient/pt-0003'],
+    ['vance_blind_note_fires_amend', 'Patient/pt-0002'],
+  ])('%s: the blind note fires the amend, the dose is the delivered one, and the item fails decisive_seen as retrieval', async (id, patient) => {
+    const { grade, items, steps } = await graded('mutant', id);
+    expect(steps.some((s) => (s.arrivals ?? []).length > 0)).toBe(true);
+    expect(grade.outcome).toBe('FAIL');
+    expect(grade.checks.filter((c) => c.kind === 'gate' && !c.met).map((c) => c.id)).toEqual(['decisive_seen']);
+    expect(items).toEqual({ [patient]: 'retrieval' });
+  });
+});
+
 describe('T1 rubric enforces only what §4 states (rulings R4)', () => {
   it('a re-sign at the same dose is no change, so it needs no note (pellegrino_resigned_no_note)', async () => {
     const { grade } = await graded('alternative', 'pellegrino_resigned_no_note');
