@@ -25,6 +25,12 @@ function notesOn(ctx: GateCtx, patient: string) {
   });
 }
 
+// Whether `key` arrived with an event and every call that wrote it ran after the call that fired it.
+function handlesArrival(ctx: GateCtx, key: string): boolean {
+  const at = ctx.steps.find((s) => (s.arrivals ?? []).some((a) => a.keys.includes(key)))?.n;
+  return at !== undefined && ctx.steps.every((s) => !s.written_ids.includes(key) || s.n > at);
+}
+
 const gates: Check[] = [
   gate({
     id: 'note_on_patient',
@@ -67,7 +73,9 @@ const gates: Check[] = [
     fn: (ctx) => {
       const [first] = notesOn(ctx, PATIENT);
       // A committed write records its Provenance alongside; anything else but the one note is extra.
-      const extra = ctx.writes().filter((k) => !k.startsWith('Provenance/') && k !== first?.key);
+      // A write to what an event brought (closing its inbox item) handles the arrival, so it is not
+      // extra, when every write to it came after it arrived.
+      const extra = ctx.writes().filter((k) => !k.startsWith('Provenance/') && k !== first?.key && !handlesArrival(ctx, k));
       return { met: extra.length === 0, evidence: { extra }, ids: extra };
     },
   }),
