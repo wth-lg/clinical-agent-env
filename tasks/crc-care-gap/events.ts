@@ -98,7 +98,7 @@ const frailtyMessage: Resource = {
     contentString:
       'Maya, while reviewing problem lists for the frailty registry I found that the Frailty entry on Mrs. Trantow\'s chart, dated 09/16/2025, ' +
       'was meant for another patient seen that morning and was put on her chart in error. I have marked it entered in error. ' +
-      'She walks without an aid and manages her own care and medicines; no frailty assessment was ever done for her. Daniel Lin, MD',
+      'She walks without an aid and does her own daily care; no frailty assessment was ever done for her. Daniel Lin, MD',
   }],
 };
 

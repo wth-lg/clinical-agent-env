@@ -105,6 +105,28 @@ export const alternatives: Alternative[] = [
     script: [...reads(), recheck, arrivals(), { calls: actions(undefined, 1, (p) => orderFit(p, undefined, '2026-12-31')) }, { calls: [finish()] }],
   },
   {
+    // The FIT start on the clinic's clock (tests/grader.ts clinicDate, lateOf): 04:30Z on 1 January
+    // 2027 is 23:30 on 31 December 2026 at the clinic, inside the period (verifier-phase-P17i-W4E3-T3-201-1 M1, P6a).
+    id: 'fit_order_utc_written',
+    why: "Writes Tiny Koss's FIT start in UTC, 2027-01-01T04:30:00Z: 23:30 on 31 December at the clinic, still in the measurement period.",
+    script: [...reads(), recheck, arrivals(), { calls: actions(undefined, 1, (p) => orderFit(p, undefined, p === PT.D1 ? '2027-01-01T04:30:00Z' : '2026-10-26')) }, { calls: [finish()] }],
+  },
+  {
+    // R27: a complete clinic-wide search shows the absence for every member it would have shown.
+    // Tiny Koss's procedures and stool tests are reviewed only clinic-wide, each one whole page with
+    // every counted code (her FIT, crc-b2's trigger, is on the stool page, so the event still fires).
+    id: 'clinic_wide_absence',
+    why: "Reviews Tiny Koss's screening only through clinic-wide searches: every colonoscopy, sigmoidoscopy or CT colonography, and every stool test since 2024, each one whole page.",
+    script: [
+      ...reads().map((t) => ({ calls: t.calls.filter((c) => !(c.input.patient === PT.D1 && (c.input.resource_type === 'Procedure' || c.input.code === STOOL_CODES))) })),
+      { calls: [{ name: 'fhir_search', input: { resource_type: 'Procedure', code: '73761001,44441009,418714002', count: 50 } }, { name: 'fhir_search', input: { resource_type: 'Observation', code: STOOL_CODES, date_ge: '2024-01-01', count: 50 } }] },
+      recheck,
+      arrivals(),
+      { calls: actions() },
+      { calls: [finish()] },
+    ],
+  },
+  {
     id: 'ages_from_search_patients',
     why: "Reads every member's birth date from a search_patients row instead of opening the Patient (R33).",
     script: [...reads().map((t) => ({ calls: t.calls.map(byRow) })), recheck, arrivals(), { calls: actions() }, { calls: [finish()] }],

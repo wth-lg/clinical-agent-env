@@ -185,6 +185,18 @@ export const mutants: Mutant[] = [
     script: [...reads(), recheck, arrivals(), { calls: actions(undefined, 1, (p) => orderFit(p, undefined, p === PT.D1 ? '2027-01-04' : '2026-10-26')) }, { calls: [finish()] }],
   },
   {
+    // The clinic's clock (verifier-phase-P17i-W4E3-T3-201-1 M1, P6b): 22:00 at -10:00 on 31 December
+    // is 03:00 on 1 January 2027 at the clinic, after the period, though the date as written is 2026-12-31.
+    id: 'fit_order_offset_after_period',
+    trap: 'fit_after_period',
+    why: "Orders Tiny Koss's FIT kit for 2026-12-31T22:00:00-10:00, written with a Hawaii offset: that is 03:00 clinic time on 2027-01-01, after the measurement period ends.",
+    fails: ['amended'],
+    loses: [],
+    attribution: 'reasoning',
+    items: only('D1', 'reasoning'),
+    script: [...reads(), recheck, arrivals(), { calls: actions(undefined, 1, (p) => orderFit(p, undefined, p === PT.D1 ? '2026-12-31T22:00:00-10:00' : '2026-10-26')) }, { calls: [finish()] }],
+  },
+  {
     id: 'outreach_by_phone_task',
     trap: 'outreach_channel',
     why: 'Orders every kit and reaches Tiny Koss by a Task asking scheduling to phone her about the FIT kit instead of a message: the right outreach in a channel §5 does not name, so action_form.',
