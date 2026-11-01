@@ -114,6 +114,22 @@ describe('T1 event specs', () => {
     }
   });
 
+  // R7: a creatinine that arrives decides by Cockcroft-Gault on the patient's measured weight and
+  // age (expected.ts), and clears the CrCl threshold of 50 by the lint margin (5 mL/min).
+  it('each arriving creatinine gives the dose EVENT_EXPECT names, its CrCl 5 or more from 50 (R7)', () => {
+    const people: Record<string, { age: number; kg: number; female: boolean }> = { 'Patient/pt-0043': { age: 75, kg: 71.0, female: true }, 'Patient/pt-0003': { age: 76, kg: 90.0, female: false }, 'Patient/pt-0038': { age: 79, kg: 96.0, female: false } };
+    const scrs = SPECS.filter((s) => s.class !== 'D' && s.resources[0]!.resourceType === 'Observation');
+    expect(scrs.map((s) => s.id).sort()).toEqual(['delgado-scr-amended', 'moravec-scr-new', 'pellegrino-scr-new']);
+    for (const s of scrs) {
+      const o = s.resources[0] as { valueQuantity: { value: number; code: string } };
+      const mgdl = o.valueQuantity.code === 'umol/L' ? o.valueQuantity.value / 88.4 : o.valueQuantity.value;
+      const p = people[s.item]!;
+      const crcl = (((140 - p.age) * p.kg) / (72 * mgdl)) * (p.female ? 0.85 : 1);
+      expect(Math.abs(crcl - 50), s.id).toBeGreaterThanOrEqual(5);
+      expect(EVENT_EXPECT[s.id]!.dose, s.id).toEqual({ drug: 'rivaroxaban', mg: crcl > 50 ? 20 : 15, per_day: 1 });
+    }
+  });
+
   it('arrivals are dated before they arrive and within the review window', () => {
     for (const s of SPECS) {
       const r = s.resources[0] as { effectiveDateTime?: string; sent?: string; date?: string };

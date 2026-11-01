@@ -1,7 +1,9 @@
-// T1 renal-dose-review overlay, worklist probe (plan-amendment-worklist W1, builder-211): the
-// clinic pharmacy's DOAC dose review list, nine patients on T1's slots, each taking apixaban or
-// rivaroxaban for non-valvular atrial fibrillation. RBC-PHARM-07 gives each patient's dose from
-// the inputs §1 picks. Two patients per kept item class, and one filler already on the right dose:
+// T1 renal-dose-review overlay, worklist probe (plan-amendment-worklist W1, builder-211): nine
+// curated charts on T1's slots, each patient taking apixaban or rivaroxaban for non-valvular atrial
+// fibrillation. RBC-PHARM-07 gives each patient's dose from the inputs §1 picks. The pharmacy's
+// review list (LIST) holds five of them, one per kept item class and the filler (plan-amendment-w4
+// PW4-E3, builder-281): pt-0003, pt-0041, pt-0038, pt-0043, pt-0002. The other four keep their charts
+// off the list. Two patients per kept item class, and one filler already on the right dose:
 //
 //   class                  slot     drug           what decides it                               dose now -> right dose
 //   apixaban_two_of_three  pt-0001  apixaban       latest measured weight 57.6 kg (older 62.4)    5 -> 2.5 BID
