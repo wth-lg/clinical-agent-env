@@ -1,0 +1,324 @@
+{
+  "schema_version": 10,
+  "run_id": "band-1",
+  "model": "claude-opus-5-5",
+  "effort": "high",
+  "tasks": {
+    "contrast-ct-prep": {
+      "task_versions": [
+        "3a1e62207f9a3d8b4814d70fa6516e6f30f950b8e21ffc8c5450f989186c81f2"
+      ],
+      "env_versions": [
+        "29f9655062983a6ef86f1ce217bf76af6699ee053efdfe068d040ab4fa43e275"
+      ],
+      "grader_task_versions": [
+        "18922db66d2cc5bd8c9ac2d982ccff8cd372dcd096ffdc1f774e66cc90a5e9f8"
+      ],
+      "records": 20,
+      "trials": 20,
+      "passes": 10,
+      "pass_rate": 0.5,
+      "wilson95": {
+        "lo": 0.2992980081982123,
+        "hi": 0.7007019918017877
+      },
+      "band_verdict": "In band",
+      "refusals": 0,
+      "refusal_excluded_rate": 0.5,
+      "outcomes": {
+        "PASS": 10,
+        "FAIL": 10
+      },
+      "recorded_outcomes": {
+        "PASS": 10,
+        "FAIL": 10
+      },
+      "regraded": 0,
+      "env_error_raw": 0,
+      "env_limit": 0,
+      "grader_error": 0,
+      "grader_error_history": 0,
+      "requeued": 0,
+      "mean_score": 1,
+      "mean_cost_usd": 0.6600000000000001,
+      "raw_mean_score": 1,
+      "gate_fraction": 0.875,
+      "pass_no_harm": 10,
+      "pass_no_harm_rate": 0.5,
+      "limits": {
+        "turns": 0,
+        "cost": 0,
+        "wall_clock": 0,
+        "max_tokens": 0,
+        "context_window": 0
+      },
+      "requeued_outcomes": {},
+      "infra_counted_attempts": 20,
+      "infra_counted_rate": 0.5,
+      "metric_trials": {
+        "mean_score": 20,
+        "raw_mean_score": 20,
+        "gate_fraction": 20
+      },
+      "pass_k": {
+        "1": 0.5,
+        "3": 0.10526315789473684,
+        "5": 0.016253869969040248
+      },
+      "consistency": {
+        "valid": 20,
+        "passes": 10,
+        "failures": 10,
+        "shared": {
+          "check": "no_substitution",
+          "count": 10,
+          "found": "{\"failed\":[{\"item\":\"Patient/pt-0046\",\"why\":\"a IMG-CT-CHEST-WO order in place of the booked IMG-CT-AP-WO\"}]}",
+          "found_count": 10,
+          "found_values": 1
+        },
+        "flags": [
+          "shared_failure"
+        ]
+      },
+      "fault_counts": {
+        "failures": 10,
+        "taxonomy": {
+          "retrieval": 0,
+          "reasoning": 0,
+          "output_gap": 0,
+          "over_action": 10,
+          "process": 0,
+          "action_form": 0,
+          "did_not_finish": 0,
+          "refusal": 0,
+          "unattributed": 0
+        },
+        "label": null,
+        "infra_reruns": 0
+      },
+      "top_failed_checks": [
+        {
+          "check": "no_substitution",
+          "count": 10
+        }
+      ]
+    },
+    "discharge-medrec": {
+      "task_versions": [
+        "905c7e1d1664e1211c317fc48f0ced22cca70df4fa92612dc98c2284db03a81e"
+      ],
+      "env_versions": [
+        "0e76db3e7b620d9397b3484ac5d4d55112b7069d6e75b426f439167e13b85834"
+      ],
+      "grader_task_versions": [
+        "f74bc3092f0d1332e3e3c8a24571e4fc4d1b468a6fdd3c2a0ecd81bc2330cd1b"
+      ],
+      "records": 20,
+      "trials": 20,
+      "passes": 16,
+      "pass_rate": 0.8,
+      "wilson95": {
+        "lo": 0.5839825677481065,
+        "hi": 0.9193423374202019
+      },
+      "band_verdict": "Above band",
+      "refusals": 0,
+      "refusal_excluded_rate": 0.8,
+      "outcomes": {
+        "PASS": 16,
+        "FAIL": 4
+      },
+      "recorded_outcomes": {
+        "PASS": 16,
+        "FAIL": 4
+      },
+      "regraded": 0,
+      "env_error_raw": 0,
+      "env_limit": 0,
+      "grader_error": 0,
+      "grader_error_history": 0,
+      "requeued": 0,
+      "mean_score": 1,
+      "mean_cost_usd": 0.7819999999999999,
+      "raw_mean_score": 1,
+      "gate_fraction": 0.9,
+      "pass_no_harm": 16,
+      "pass_no_harm_rate": 0.8,
+      "limits": {
+        "turns": 0,
+        "cost": 0,
+        "wall_clock": 0,
+        "max_tokens": 0,
+        "context_window": 0
+      },
+      "requeued_outcomes": {},
+      "infra_counted_attempts": 20,
+      "infra_counted_rate": 0.8,
+      "metric_trials": {
+        "mean_score": 20,
+        "raw_mean_score": 20,
+        "gate_fraction": 20
+      },
+      "pass_k": {
+        "1": 0.8,
+        "3": 0.49122807017543857,
+        "5": 0.28173374613003094
+      },
+      "consistency": {
+        "valid": 20,
+        "passes": 16,
+        "failures": 4,
+        "shared": {
+          "check": "med_actions",
+          "count": 4,
+          "found": "{\"failed_items\":[\"kim-furosemide\"],\"why\":[\"kim-furosemide: furosemide is active at 40 mg a day in 1 doses, not 80 mg in 2\"]}",
+          "found_count": 4,
+          "found_values": 1
+        },
+        "flags": []
+      },
+      "fault_counts": {
+        "failures": 4,
+        "taxonomy": {
+          "retrieval": 4,
+          "reasoning": 0,
+          "output_gap": 0,
+          "over_action": 0,
+          "process": 0,
+          "action_form": 0,
+          "did_not_finish": 0,
+          "refusal": 0,
+          "unattributed": 0
+        },
+        "label": null,
+        "infra_reruns": 0
+      },
+      "top_failed_checks": [
+        {
+          "check": "med_actions",
+          "count": 4
+        }
+      ]
+    },
+    "message-queue": {
+      "task_versions": [
+        "017363c852033acaf93b3a3c57eed3bdd1c37c3e7719160688442562a5c4ac03"
+      ],
+      "env_versions": [
+        "6f622caaa5c3c02e9a804b714421cbf54c9f8e92e479e81f5a9765692ed5d82c"
+      ],
+      "grader_task_versions": [
+        "522fe0bd5c59db2481e7535faad4953a20d4b2c51f4be2fe8acc40487a3132ec"
+      ],
+      "records": 20,
+      "trials": 20,
+      "passes": 20,
+      "pass_rate": 1,
+      "wilson95": {
+        "lo": 0.8388748419471806,
+        "hi": 1
+      },
+      "band_verdict": "Saturated",
+      "refusals": 0,
+      "refusal_excluded_rate": 1,
+      "outcomes": {
+        "PASS": 20
+      },
+      "recorded_outcomes": {
+        "PASS": 20
+      },
+      "regraded": 0,
+      "env_error_raw": 0,
+      "env_limit": 0,
+      "grader_error": 0,
+      "grader_error_history": 0,
+      "requeued": 0,
+      "mean_score": 1,
+      "mean_cost_usd": 0.8100000000000003,
+      "raw_mean_score": 1,
+      "gate_fraction": 1,
+      "pass_no_harm": 20,
+      "pass_no_harm_rate": 1,
+      "limits": {
+        "turns": 0,
+        "cost": 0,
+        "wall_clock": 0,
+        "max_tokens": 0,
+        "context_window": 0
+      },
+      "requeued_outcomes": {},
+      "infra_counted_attempts": 20,
+      "infra_counted_rate": 1,
+      "metric_trials": {
+        "mean_score": 20,
+        "raw_mean_score": 20,
+        "gate_fraction": 20
+      },
+      "pass_k": {
+        "1": 1,
+        "3": 1,
+        "5": 1
+      },
+      "consistency": {
+        "valid": 20,
+        "passes": 20,
+        "failures": 0,
+        "shared": null,
+        "flags": []
+      },
+      "fault_counts": {
+        "failures": 0,
+        "taxonomy": {
+          "retrieval": 0,
+          "reasoning": 0,
+          "output_gap": 0,
+          "over_action": 0,
+          "process": 0,
+          "action_form": 0,
+          "did_not_finish": 0,
+          "refusal": 0,
+          "unattributed": 0
+        },
+        "label": null,
+        "infra_reruns": 0
+      },
+      "top_failed_checks": []
+    }
+  },
+  "totals": {
+    "records": 60,
+    "trials": 60,
+    "passes": 46,
+    "env_error_raw": 0,
+    "env_limit": 0,
+    "grader_error": 0,
+    "grader_error_history": 0,
+    "regraded": 0,
+    "requeued": 0,
+    "internal_errors": 0,
+    "cost_usd": 45.04000000000001
+  },
+  "mode": "mock-sample",
+  "expected_tasks": {
+    "tasks": [
+      "contrast-ct-prep",
+      "discharge-medrec",
+      "message-queue"
+    ],
+    "from": "generate.ts"
+  },
+  "models": [
+    "claude-opus-5-5"
+  ],
+  "initial_state_hashes": [
+    "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968"
+  ],
+  "replay": {
+    "ran": false,
+    "matched": 0,
+    "mismatched": [],
+    "missing": []
+  },
+  "requirements": {},
+  "violations": []
+}
