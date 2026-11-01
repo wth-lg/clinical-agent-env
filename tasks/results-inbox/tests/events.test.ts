@@ -23,7 +23,7 @@ import { stepsOf } from '../../../packages/grader/exposure.ts';
 import { gradeRun, NULL_AGENT, trial, type MatrixEnv } from '../../../packages/grader/matrix/matrix.ts';
 import { EVENT_MUTANTS, type MatrixTask, type Script } from '../../../packages/grader/matrix/types.ts';
 import { EVENTS, expected } from '../expected.ts';
-import { ACTIVE, SPECS } from '../events.ts';
+import { ACTIVE, EXCLUSIVE, SPECS } from '../events.ts';
 import { checksFor } from './grader.ts';
 import { alternativesFor } from './alternatives.ts';
 import { mutantsFor } from './mutants.ts';
@@ -76,6 +76,15 @@ describe('T2 event specs', () => {
     expect(new Set(amends).size).toBe(amends.length);
     const lures = SPECS.filter((s) => s.class === 'D').map((s) => s.item);
     expect(new Set(lures).size).toBe(lures.length);
+  });
+
+  it('ACTIVE holds no mutually exclusive pair; each pair is an amend and a lure on one item', () => {
+    for (const [a, b] of EXCLUSIVE) {
+      expect([a, b].every((id) => ACTIVE.includes(id)), `${a} with ${b}`).toBe(false);
+      const [sa, sb] = [SPECS.find((s) => s.id === a)!, SPECS.find((s) => s.id === b)!];
+      expect(sa.item).toBe(sb.item);
+      expect([AMEND_CLASSES.has(sa.class), sb.class]).toEqual([true, 'D']);
+    }
   });
 
   it("Addendum 2: every trigger is after_write on the item's own patient, whose inbox items every passing route completes", () => {

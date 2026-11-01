@@ -233,3 +233,14 @@ export const SPECS: readonly EventSpec[] = [
 
 // pilot-4a's four: three amend events (O, B, A) and one lure (D) (plan-amendment-w4, Sizing).
 export const ACTIVE: readonly string[] = ['patel-ldct-addendum', 'brennan-k-corrected', 'whitfield-cr-new', 'parisian-cxr-prelim'];
+
+// Specs that must not be active together (coordinator, at the builder-282 handshake): in each pair
+// the first, when it fires, decides the item so that the second has nothing left to test (a
+// correction that makes paging on-call right moots a hemolyzed lure; a new creatinine that makes a
+// repeat required moots an outside-window lure; a corrected report that asks for a chest CT moots
+// the preliminary read's lure). The events solver (PW4-S) counts each pair as one choice.
+export const EXCLUSIVE: ReadonlyArray<readonly [string, string]> = [
+  ['brennan-k-corrected', 'brennan-k-hemolyzed'],
+  ['whitfield-cr-new', 'whitfield-cr-outside'],
+  ['parisian-cta-corrected', 'parisian-cxr-prelim'],
+];
