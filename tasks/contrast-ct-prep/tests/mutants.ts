@@ -20,6 +20,8 @@ const WRITES = [...ORDERS, ...HOLDS, consult()];
 const tellWith = (x: typeof STALE, body: string) => swap(TELL, message(x), [message(x, body)]);
 // The oracle's chart review without some of its calls: a route that never sees a deciding record.
 const reviewWithout = (drop: readonly ScriptCall[]): ScriptTurn[] => REVIEW.map((t) => ({ ...t, calls: without(t.calls, drop) }));
+// A search of one patient's notes, as the R29 sweep runs it (tests/phrases.test.ts).
+const notesOf = (x: { patient: string }, query: string): ScriptCall => ({ name: 'search_notes', input: { query, patient: x.patient.slice('Patient/'.length), count: 20 } });
 // A non-contrast CT in the booked study's slot.
 const plain = (x: typeof STALE, why: string) => ct(x, { code: CODE.apWithout, reason: why });
 
@@ -264,6 +266,26 @@ export const mutants: Mutant[] = [
     loses: [],
     items: { [AKIRISE.patient]: 'retrieval' },
     script: run(WRITES, TELL, reviewWithout([creatinines(AKIRISE)])),
+  },
+  // R29 sweep (tests/phrases.test.ts): a snippet cut inside a deciding line, before its last atom,
+  // shows no decision; the action written on it is an action written without seeing the record.
+  {
+    id: 'grade_snippet_cut',
+    trap: 'grade_snippet_cut',
+    why: "Premedicates Ferreira after a 'room' search of his notes whose snippet ends 'Classification: moderate all…', cut before the kind of reaction; the 2019 report is never read.",
+    fails: ['ct_order', 'premedication', 'evidence_before_orders'],
+    loses: [],
+    items: { [MODERATE.patient]: 'retrieval' },
+    script: run(WRITES, TELL, REVIEW.map((t) => ({ ...t, calls: t.calls.flatMap((c) => (same(c, read(MODERATE.decisive[0]!)) ? [notesOf(MODERATE, 'room')] : same(c, reactionSearch(MODERATE)) ? [] : [c])) }))),
+  },
+  {
+    id: 'aki_snippet_cut',
+    trap: 'aki_snippet_cut',
+    why: "Holds Schuster's metformin and gives saline after a 'nitrite' search of her notes whose snippet ends 'prerenal acute kidney i…', cut inside the diagnosis; the ED summary is never read. The creatinine it orders for her diabetes passes (§4, R21).",
+    fails: ['saline_prophylaxis', 'metformin_held', 'evidence_before_orders'],
+    loses: [],
+    items: { [AKINOTE.patient]: 'retrieval' },
+    script: run(WRITES, TELL, REVIEW.map((t) => ({ ...t, calls: t.calls.flatMap((c) => (same(c, read(AKI_RECORD)) ? [notesOf(AKINOTE, 'nitrite')] : [c])) }))),
   },
   // R24: the right decision in an under-specified form. A creatinine ordered for the scan's date
   // with no time does not say it is drawn before the 15:00 scan (§4), so creatinine_before_scan
