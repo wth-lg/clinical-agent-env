@@ -204,6 +204,25 @@ describe('T6 probe rulings', () => {
     expect(covers(ITEMS.find((i) => i.name === 'm5')!, base)).toBe(false);
   });
 
+  it('falsepass N4 (verifier-W1T-190-r2): date bounds compare as the instants fhir_search reads, not as strings', () => {
+    const m12 = ITEMS.find((i) => i.name === 'm12')!;
+    const base = { type: 'Observation', patient: 'Patient/pt-0031', code: '2823-3,6298-4', date_ge: '2025-10-23', whole: true };
+    // The window opens at the clinic's midnight on 2025-10-23 (EDT, 04:00Z): a bound at or before it covers.
+    for (const ge of ['2025-10-23', '2025-10-23T00:00-04:00', '2025-10-23T04:00Z', '2025-10-23T04:00:00Z', '2025-10-22T20:00-08:00', '2025-10-23T13:59+10:00'])
+      expect(covers(m12, { ...base, date_ge: ge }), ge).toBe(true);
+    // A bound after it hides that day's earlier records, whatever its string sorts as.
+    for (const ge of ['2025-10-22T23:00-14:00', '2025-10-23T04:01Z', '2025-10-23T00:00:01-04:00', '2025-10-23T01:00-04:00'])
+      expect(covers(m12, { ...base, date_ge: ge }), ge).toBe(false);
+    // date_le must reach now (10/23/2026 08:00 EDT): no counted record is collected after it.
+    for (const le of ['2026-10-23', '2026-10-23T08:00-04:00', '2026-10-23T12:00Z', '2026-10-24T02:00+14:00', '2026-12-31'])
+      expect(covers(m12, { ...base, date_le: le }), le).toBe(true);
+    for (const le of ['2026-10-23T07:00-04:00', '2026-10-23T07:59:59-04:00', '2026-10-24T00:00+14:00', '2026-10-22'])
+      expect(covers(m12, { ...base, date_le: le }), le).toBe(false);
+    // A value fhir_search rejects never ran, so it covers nothing.
+    for (const bad of ['2025-10-2', '2025-10-23T00:00', 'eq2025-10-23'])
+      expect(covers(m12, { ...base, date_ge: bad }), bad).toBe(false);
+  });
+
   it('R27: a run of pages counts when it starts at offset 0, each page at the previous next_offset, with one sort and the same filters', () => {
     const m12 = ITEMS.find((i) => i.name === 'm12')!;
     const q = { type: 'DiagnosticReport', code: '51990-0,24321-2,24323-8', date_ge: '2025-10-23', sort: '-date', whole: false };
