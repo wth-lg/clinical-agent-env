@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:crc-care-gap:5",
   "task_id": "crc-care-gap",
-  "task_version": "ab9f2980008c716c36543a87659790fc356364eae9311bcede66d8cb644cc3a8",
-  "env_version": "93eb4735b3fb7b09edd11021709f095f3d9b88e9c85490910f52d3b576b190eb",
-  "grader_task_version": "d482ae8cd8926bf75890f9a96378d87454d12a9dda060e244eb6f6b49461c100",
-  "fixture_hash": "8c60d82800eeed033417c012b42c1cc46ddcd45d10094166e6b2d111a10b3796",
+  "task_version": "3e6f2378af5a4f4e29c59a822724d7dab37ada883a9e99d73889e4ac848c7d80",
+  "env_version": "800d20e80a0098d9abc6997dfd519c706043dfdb982b56683ea61559c3297770",
+  "grader_task_version": "eaee81c305492bef3257e1d5a0ad2bb5537d3d0d5127a9d805cf8926c20c1d06",
+  "fixture_hash": "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968",
   "state_hash": {
-    "initial": "8c60d82800eeed033417c012b42c1cc46ddcd45d10094166e6b2d111a10b3796",
-    "final": "bac49f5bb5eb5f89526ab96a87cc017b662a464d3453ddb9765339794f6c002b",
-    "replay_final": "bac49f5bb5eb5f89526ab96a87cc017b662a464d3453ddb9765339794f6c002b"
+    "initial": "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968",
+    "final": "dafc3afd3a26b2b3968855e3fb8cf5028433beff38306ae23db13218500ee1c5",
+    "replay_final": "dafc3afd3a26b2b3968855e3fb8cf5028433beff38306ae23db13218500ee1c5"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -113,7 +113,8 @@
           "met": true,
           "decisive_ids": [
             "Condition/cond-00189",
-            "MedicationRequest/mr-00118"
+            "MedicationRequest/mr-00118",
+            "Patient/pt-0009"
           ],
           "evidence": {}
         },
@@ -187,7 +188,8 @@
           "item": "Patient/pt-0034",
           "met": true,
           "decisive_ids": [
-            "Observation/obs-02454"
+            "Observation/obs-02463",
+            "Patient/pt-0034"
           ],
           "evidence": {}
         },
@@ -195,7 +197,7 @@
           "item": "Patient/pt-0035",
           "met": true,
           "decisive_ids": [
-            "Observation/obs-02493",
+            "Observation/obs-02502",
             "DocumentReference/doc-00112",
             "Encounter/enc-00246"
           ],
@@ -264,7 +266,8 @@
           "met": true,
           "decisive_ids": [
             "Condition/cond-00189",
-            "MedicationRequest/mr-00118"
+            "MedicationRequest/mr-00118",
+            "Patient/pt-0009"
           ],
           "evidence": {}
         },
@@ -338,7 +341,8 @@
           "item": "Patient/pt-0034",
           "met": true,
           "decisive_ids": [
-            "Observation/obs-02454"
+            "Observation/obs-02463",
+            "Patient/pt-0034"
           ],
           "evidence": {}
         },
@@ -346,7 +350,7 @@
           "item": "Patient/pt-0035",
           "met": true,
           "decisive_ids": [
-            "Observation/obs-02493",
+            "Observation/obs-02502",
             "DocumentReference/doc-00112",
             "Encounter/enc-00246"
           ],
@@ -387,7 +391,8 @@
           "met": true,
           "decisive_ids": [
             "Condition/cond-00189",
-            "MedicationRequest/mr-00118"
+            "MedicationRequest/mr-00118",
+            "Patient/pt-0009"
           ],
           "evidence": {}
         },
@@ -447,7 +452,8 @@
           "item": "Patient/pt-0034",
           "met": true,
           "decisive_ids": [
-            "Observation/obs-02454"
+            "Observation/obs-02463",
+            "Patient/pt-0034"
           ],
           "evidence": {}
         },
@@ -504,7 +510,7 @@
             "exposed": [
               {
                 "id": "Appointment/appt-00002",
-                "step": 18
+                "step": 31
               }
             ]
           },
@@ -544,7 +550,7 @@
             "exposed": [
               {
                 "id": "ServiceRequest/sr-00003",
-                "step": 17
+                "step": 30
               }
             ]
           },
@@ -553,7 +559,7 @@
             "first_order": 138,
             "exposed": [
               {
-                "id": "Observation/obs-02493",
+                "id": "Observation/obs-02502",
                 "step": 124
               },
               {
@@ -572,7 +578,7 @@
             "exposed": [
               {
                 "id": "Procedure/proc-00786",
-                "step": 20
+                "step": 111
               }
             ]
           }
@@ -586,7 +592,8 @@
           "met": true,
           "decisive_ids": [
             "Condition/cond-00189",
-            "MedicationRequest/mr-00118"
+            "MedicationRequest/mr-00118",
+            "Patient/pt-0009"
           ],
           "evidence": {}
         },
@@ -658,7 +665,8 @@
           "item": "Patient/pt-0034",
           "met": true,
           "decisive_ids": [
-            "Observation/obs-02454"
+            "Observation/obs-02463",
+            "Patient/pt-0034"
           ],
           "evidence": {}
         },
@@ -666,7 +674,7 @@
           "item": "Patient/pt-0035",
           "met": true,
           "decisive_ids": [
-            "Observation/obs-02493",
+            "Observation/obs-02502",
             "DocumentReference/doc-00112",
             "Encounter/enc-00246"
           ],
@@ -678,6 +686,111 @@
           "decisive_ids": [
             "Procedure/proc-00786"
           ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0037",
+          "met": true,
+          "decisive_ids": [
+            "Patient/pt-0037"
+          ],
+          "evidence": {}
+        }
+      ]
+    },
+    {
+      "id": "no_contact_reviewed",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "unreviewed": []
+      },
+      "ids": [],
+      "items": [
+        {
+          "item": "Patient/pt-0009",
+          "met": true,
+          "decisive_ids": [
+            "Condition/cond-00189",
+            "MedicationRequest/mr-00118",
+            "Patient/pt-0009"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0011",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0014",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0018",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0019",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0020",
+          "met": true,
+          "decisive_ids": [
+            "EpisodeOfCare/eoc-00002"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0021",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00059"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0022",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0024",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0034",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-02463",
+            "Patient/pt-0034"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0035",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0036",
+          "met": true,
+          "decisive_ids": [],
           "evidence": {}
         },
         {
@@ -1430,7 +1543,8 @@
       {
         "id": "ServiceRequest/sr-00003",
         "first_exposed_step": 82,
-        "first_seen_step": 17
+        "first_shown_step": null,
+        "first_seen_step": 30
       }
     ],
     "items": [
@@ -1442,7 +1556,8 @@
           {
             "id": "ServiceRequest/sr-00003",
             "first_exposed_step": 82,
-            "first_seen_step": 17
+            "first_shown_step": null,
+            "first_seen_step": 30
           }
         ]
       }

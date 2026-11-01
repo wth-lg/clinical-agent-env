@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:message-queue:5",
   "task_id": "message-queue",
-  "task_version": "af4fd62db252d4bb9c4837f78f5bb8ed9ed85c012daad18095f214273917364c",
-  "env_version": "4c7cb483466b24ed8bfccb111f26298e24b42240952609f13ad01168a589ff6c",
-  "grader_task_version": "44a2b354841cf977d2d19c4327b461de9e73b7a82c710d0fa5c31c2d2efecc7d",
-  "fixture_hash": "8c60d82800eeed033417c012b42c1cc46ddcd45d10094166e6b2d111a10b3796",
+  "task_version": "665f9bd6b3da401025f2e78b0b01e4fba7e98dba252262372f536c4719471bdc",
+  "env_version": "6f622caaa5c3c02e9a804b714421cbf54c9f8e92e479e81f5a9765692ed5d82c",
+  "grader_task_version": "9149e400b2d3a6152e7fff50e9fb5030cbeb1efe32c0a4e6a0663ef61f0e8d81",
+  "fixture_hash": "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968",
   "state_hash": {
-    "initial": "8c60d82800eeed033417c012b42c1cc46ddcd45d10094166e6b2d111a10b3796",
-    "final": "c0b3468aa9b2bfeb3c6df2c18382220af48eb2dbc42046302c6f3aaf127ba1a4",
-    "replay_final": "c0b3468aa9b2bfeb3c6df2c18382220af48eb2dbc42046302c6f3aaf127ba1a4"
+    "initial": "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968",
+    "final": "4638825adc3da1be0d3152f73b52a2ebd8f79e09430a917d30a76d1453942dde",
+    "replay_final": "4638825adc3da1be0d3152f73b52a2ebd8f79e09430a917d30a76d1453942dde"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T14:45:11.000Z",
+  "started": "2026-10-23T14:45:39.000Z",
   "turns": 19,
   "tool_calls": 83,
   "tool_errors": {
@@ -43,7 +43,7 @@
   "summary": "Cleared the 13 messages: Hayes and Odum lisinopril renewed with a repeat BMP (hemolyzed potassium), Odum amlodipine renewed; Park and Webb lisinopril 30 days with a BMP; Park metformin held (amended eGFR 39) and Brooks lisinopril held (creatinine up 38% after the dose increase), each with a task to Dr. Okafor; Brooks metformin 30 days with an HbA1c; Price lisinopril and metformin renewed; Webb metformin renewed; the two repeat requests answered with their first.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T14:49:53.000Z",
+  "ended": "2026-10-23T14:50:21.000Z",
   "judge_cost_usd": 0,
   "grader_version": "15",
   "outcome": "PASS",
@@ -135,7 +135,8 @@
           "met": true,
           "decisive_ids": [
             "DocumentReference/doc-00094",
-            "Encounter/enc-00194"
+            "Encounter/enc-00194",
+            "DiagnosticReport/dr-00279"
           ],
           "evidence": {
             "orders": [
@@ -154,7 +155,7 @@
           "item": "Task/task-00017",
           "met": true,
           "decisive_ids": [
-            "Observation/obs-02068"
+            "Observation/obs-02077"
           ],
           "evidence": {}
         },
@@ -162,8 +163,8 @@
           "item": "Task/task-00018",
           "met": true,
           "decisive_ids": [
-            "Observation/obs-02129",
-            "Observation/obs-02120"
+            "Observation/obs-02138",
+            "Observation/obs-02129"
           ],
           "evidence": {}
         },
@@ -172,7 +173,8 @@
           "met": true,
           "decisive_ids": [
             "DocumentReference/doc-00096",
-            "Observation/obs-02134"
+            "Observation/obs-02143",
+            "Observation/obs-02109"
           ],
           "evidence": {
             "orders": [
@@ -191,9 +193,9 @@
           "item": "Task/task-00020",
           "met": true,
           "decisive_ids": [
+            "Observation/obs-02219",
             "Observation/obs-02210",
-            "Observation/obs-02201",
-            "Observation/obs-02212"
+            "Observation/obs-02221"
           ],
           "evidence": {
             "orders": [
@@ -213,7 +215,7 @@
           "met": true,
           "decisive_ids": [
             "DocumentReference/doc-00098",
-            "Observation/obs-02215"
+            "Observation/obs-02224"
           ],
           "evidence": {
             "orders": [
@@ -240,7 +242,7 @@
           "item": "Task/task-00023",
           "met": true,
           "decisive_ids": [
-            "DiagnosticReport/dr-00301",
+            "DiagnosticReport/dr-00302",
             "Encounter/enc-00215"
           ],
           "evidence": {
@@ -260,8 +262,8 @@
           "item": "Task/task-00024",
           "met": true,
           "decisive_ids": [
-            "Observation/obs-02260",
-            "Observation/obs-02261"
+            "Observation/obs-02269",
+            "Observation/obs-02270"
           ],
           "evidence": {
             "orders": [
@@ -330,7 +332,8 @@
           "met": true,
           "decisive_ids": [
             "DocumentReference/doc-00094",
-            "Encounter/enc-00194"
+            "Encounter/enc-00194",
+            "DiagnosticReport/dr-00279"
           ],
           "evidence": {}
         },
@@ -338,7 +341,7 @@
           "item": "Task/task-00017",
           "met": true,
           "decisive_ids": [
-            "Observation/obs-02068"
+            "Observation/obs-02077"
           ],
           "evidence": {}
         },
@@ -346,8 +349,8 @@
           "item": "Task/task-00018",
           "met": true,
           "decisive_ids": [
-            "Observation/obs-02129",
-            "Observation/obs-02120"
+            "Observation/obs-02138",
+            "Observation/obs-02129"
           ],
           "evidence": {}
         },
@@ -356,7 +359,8 @@
           "met": true,
           "decisive_ids": [
             "DocumentReference/doc-00096",
-            "Observation/obs-02134"
+            "Observation/obs-02143",
+            "Observation/obs-02109"
           ],
           "evidence": {}
         },
@@ -364,9 +368,9 @@
           "item": "Task/task-00020",
           "met": true,
           "decisive_ids": [
+            "Observation/obs-02219",
             "Observation/obs-02210",
-            "Observation/obs-02201",
-            "Observation/obs-02212"
+            "Observation/obs-02221"
           ],
           "evidence": {}
         },
@@ -375,7 +379,7 @@
           "met": true,
           "decisive_ids": [
             "DocumentReference/doc-00098",
-            "Observation/obs-02215"
+            "Observation/obs-02224"
           ],
           "evidence": {}
         },
@@ -391,7 +395,7 @@
           "item": "Task/task-00023",
           "met": true,
           "decisive_ids": [
-            "DiagnosticReport/dr-00301",
+            "DiagnosticReport/dr-00302",
             "Encounter/enc-00215"
           ],
           "evidence": {}
@@ -400,8 +404,8 @@
           "item": "Task/task-00024",
           "met": true,
           "decisive_ids": [
-            "Observation/obs-02260",
-            "Observation/obs-02261"
+            "Observation/obs-02269",
+            "Observation/obs-02270"
           ],
           "evidence": {}
         }
@@ -459,7 +463,8 @@
           "met": true,
           "decisive_ids": [
             "DocumentReference/doc-00094",
-            "Encounter/enc-00194"
+            "Encounter/enc-00194",
+            "DiagnosticReport/dr-00279"
           ],
           "evidence": {}
         },
@@ -467,7 +472,7 @@
           "item": "Task/task-00017",
           "met": true,
           "decisive_ids": [
-            "Observation/obs-02068"
+            "Observation/obs-02077"
           ],
           "evidence": {}
         },
@@ -475,8 +480,8 @@
           "item": "Task/task-00018",
           "met": true,
           "decisive_ids": [
-            "Observation/obs-02129",
-            "Observation/obs-02120"
+            "Observation/obs-02138",
+            "Observation/obs-02129"
           ],
           "evidence": {}
         },
@@ -485,7 +490,8 @@
           "met": true,
           "decisive_ids": [
             "DocumentReference/doc-00096",
-            "Observation/obs-02134"
+            "Observation/obs-02143",
+            "Observation/obs-02109"
           ],
           "evidence": {}
         },
@@ -493,9 +499,9 @@
           "item": "Task/task-00020",
           "met": true,
           "decisive_ids": [
+            "Observation/obs-02219",
             "Observation/obs-02210",
-            "Observation/obs-02201",
-            "Observation/obs-02212"
+            "Observation/obs-02221"
           ],
           "evidence": {}
         },
@@ -504,7 +510,7 @@
           "met": true,
           "decisive_ids": [
             "DocumentReference/doc-00098",
-            "Observation/obs-02215"
+            "Observation/obs-02224"
           ],
           "evidence": {}
         },
@@ -520,7 +526,7 @@
           "item": "Task/task-00023",
           "met": true,
           "decisive_ids": [
-            "DiagnosticReport/dr-00301",
+            "DiagnosticReport/dr-00302",
             "Encounter/enc-00215"
           ],
           "evidence": {}
@@ -529,8 +535,8 @@
           "item": "Task/task-00024",
           "met": true,
           "decisive_ids": [
-            "Observation/obs-02260",
-            "Observation/obs-02261"
+            "Observation/obs-02269",
+            "Observation/obs-02270"
           ],
           "evidence": {}
         }
@@ -588,7 +594,8 @@
           "met": true,
           "decisive_ids": [
             "DocumentReference/doc-00094",
-            "Encounter/enc-00194"
+            "Encounter/enc-00194",
+            "DiagnosticReport/dr-00279"
           ],
           "evidence": {}
         },
@@ -596,7 +603,7 @@
           "item": "Task/task-00017",
           "met": true,
           "decisive_ids": [
-            "Observation/obs-02068"
+            "Observation/obs-02077"
           ],
           "evidence": {}
         },
@@ -604,8 +611,8 @@
           "item": "Task/task-00018",
           "met": true,
           "decisive_ids": [
-            "Observation/obs-02129",
-            "Observation/obs-02120"
+            "Observation/obs-02138",
+            "Observation/obs-02129"
           ],
           "evidence": {}
         },
@@ -614,7 +621,8 @@
           "met": true,
           "decisive_ids": [
             "DocumentReference/doc-00096",
-            "Observation/obs-02134"
+            "Observation/obs-02143",
+            "Observation/obs-02109"
           ],
           "evidence": {}
         },
@@ -622,9 +630,9 @@
           "item": "Task/task-00020",
           "met": true,
           "decisive_ids": [
+            "Observation/obs-02219",
             "Observation/obs-02210",
-            "Observation/obs-02201",
-            "Observation/obs-02212"
+            "Observation/obs-02221"
           ],
           "evidence": {}
         },
@@ -633,7 +641,7 @@
           "met": true,
           "decisive_ids": [
             "DocumentReference/doc-00098",
-            "Observation/obs-02215"
+            "Observation/obs-02224"
           ],
           "evidence": {}
         },
@@ -649,7 +657,7 @@
           "item": "Task/task-00023",
           "met": true,
           "decisive_ids": [
-            "DiagnosticReport/dr-00301",
+            "DiagnosticReport/dr-00302",
             "Encounter/enc-00215"
           ],
           "evidence": {}
@@ -658,8 +666,8 @@
           "item": "Task/task-00024",
           "met": true,
           "decisive_ids": [
-            "Observation/obs-02260",
-            "Observation/obs-02261"
+            "Observation/obs-02269",
+            "Observation/obs-02270"
           ],
           "evidence": {}
         },

@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:contrast-ct-prep:10",
   "task_id": "contrast-ct-prep",
-  "task_version": "b5aefcda65e6cb45ac414588855d61881f7424fb9fc24aa77572b9a193be1aa6",
-  "env_version": "19298dafc42b57392e48044844b153423fd48f35b2d9fd073c3f9bf6765b56e6",
-  "grader_task_version": "37a55a5c3026e20639928773e73567a1f159c78d0349d82ab34875d656925119",
-  "fixture_hash": "8c60d82800eeed033417c012b42c1cc46ddcd45d10094166e6b2d111a10b3796",
+  "task_version": "8c57facb488bd5dfff1409e4f051e1be46657d4c477fd563776dc2935d954948",
+  "env_version": "29f9655062983a6ef86f1ce217bf76af6699ee053efdfe068d040ab4fa43e275",
+  "grader_task_version": "bd6be0d0600147b92ebf7cba75486e45d877816f9125be617ded463a81f73e6b",
+  "fixture_hash": "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968",
   "state_hash": {
-    "initial": "8c60d82800eeed033417c012b42c1cc46ddcd45d10094166e6b2d111a10b3796",
-    "final": "6f1c3f1f025579bae01098b5a2747e2c550d2d06c6ccaa2c50b929c6db4558fe",
-    "replay_final": "6f1c3f1f025579bae01098b5a2747e2c550d2d06c6ccaa2c50b929c6db4558fe"
+    "initial": "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968",
+    "final": "ba312ded494c87a02fbfb0e0322482ece73eee9158ccc56f042099c4f16f72cc",
+    "replay_final": "ba312ded494c87a02fbfb0e0322482ece73eee9158ccc56f042099c4f16f72cc"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -254,8 +254,8 @@
           "item": "Patient/pt-0050",
           "met": true,
           "decisive_ids": [
-            "Observation/obs-03186",
-            "Observation/obs-03187"
+            "Observation/obs-03195",
+            "Observation/obs-03196"
           ],
           "evidence": {},
           "ids": [
@@ -330,8 +330,8 @@
           "item": "Patient/pt-0050",
           "met": true,
           "decisive_ids": [
-            "Observation/obs-03186",
-            "Observation/obs-03187"
+            "Observation/obs-03195",
+            "Observation/obs-03196"
           ],
           "evidence": {},
           "ids": [
@@ -405,8 +405,8 @@
           "item": "Patient/pt-0050",
           "met": true,
           "decisive_ids": [
-            "Observation/obs-03186",
-            "Observation/obs-03187"
+            "Observation/obs-03195",
+            "Observation/obs-03196"
           ],
           "evidence": {},
           "ids": [
@@ -605,8 +605,8 @@
           "item": "Patient/pt-0050",
           "met": true,
           "decisive_ids": [
-            "Observation/obs-03186",
-            "Observation/obs-03187"
+            "Observation/obs-03195",
+            "Observation/obs-03196"
           ],
           "evidence": {}
         }

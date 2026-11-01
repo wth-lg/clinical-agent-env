@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:discharge-medrec:1",
   "task_id": "discharge-medrec",
-  "task_version": "25b415d135126c1572b6e580af66b4ec9677a0cd40edeb71212e20fdf1baf0ca",
-  "env_version": "ea76324dca7a2f48c2319fbb5e1cc80aa97cbe3ad99526334ebcdb90fa45da6d",
+  "task_version": "657b5d12cb096e8c0bbf43a35a0d1b45a9ad689a389dd8736e03ce0f665ecae8",
+  "env_version": "0e76db3e7b620d9397b3484ac5d4d55112b7069d6e75b426f439167e13b85834",
   "grader_task_version": "7aadc29678a787d70d9a773f440fcde377d5d8e8a8505e7398d9f383ebc9e32b",
-  "fixture_hash": "8c60d82800eeed033417c012b42c1cc46ddcd45d10094166e6b2d111a10b3796",
+  "fixture_hash": "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968",
   "state_hash": {
-    "initial": "8c60d82800eeed033417c012b42c1cc46ddcd45d10094166e6b2d111a10b3796",
-    "final": "85536939e8a9951c68cd96bd6f0e5189b181ab646ca10df605bcb88b8e60a438",
-    "replay_final": "85536939e8a9951c68cd96bd6f0e5189b181ab646ca10df605bcb88b8e60a438"
+    "initial": "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968",
+    "final": "84190a50243f0e9c2bc10adb8836815d8a6355f6826b9131a828bfef419b10db",
+    "replay_final": "84190a50243f0e9c2bc10adb8836815d8a6355f6826b9131a828bfef419b10db"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T13:53:23.000Z",
+  "started": "2026-10-23T13:53:51.000Z",
   "turns": 6,
   "tool_calls": 47,
   "tool_errors": {
@@ -43,7 +43,7 @@
   "summary": "Reconciled the four post-discharge patients under RBC-TOC-02; changes made, flags sent to Dr. Okafor, and a note for each.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T13:55:41.000Z",
+  "ended": "2026-10-23T13:56:09.000Z",
   "judge_cost_usd": 0,
   "grader_version": "15",
   "outcome": "PASS",
@@ -149,7 +149,7 @@
           "decisive_ids": [
             "DocumentReference/doc-00122",
             "DocumentReference/doc-00125",
-            "Observation/obs-02986"
+            "Observation/obs-02995"
           ],
           "evidence": {}
         },
@@ -269,7 +269,7 @@
           "decisive_ids": [
             "DocumentReference/doc-00122",
             "DocumentReference/doc-00125",
-            "Observation/obs-02986"
+            "Observation/obs-02995"
           ],
           "evidence": {}
         },
@@ -488,7 +488,7 @@
           "decisive_ids": [
             "DocumentReference/doc-00122",
             "DocumentReference/doc-00125",
-            "Observation/obs-02986"
+            "Observation/obs-02995"
           ],
           "evidence": {}
         },

@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:crc-care-gap:7",
   "task_id": "crc-care-gap",
-  "task_version": "ab9f2980008c716c36543a87659790fc356364eae9311bcede66d8cb644cc3a8",
-  "env_version": "93eb4735b3fb7b09edd11021709f095f3d9b88e9c85490910f52d3b576b190eb",
-  "grader_task_version": "d482ae8cd8926bf75890f9a96378d87454d12a9dda060e244eb6f6b49461c100",
-  "fixture_hash": "8c60d82800eeed033417c012b42c1cc46ddcd45d10094166e6b2d111a10b3796",
+  "task_version": "3e6f2378af5a4f4e29c59a822724d7dab37ada883a9e99d73889e4ac848c7d80",
+  "env_version": "800d20e80a0098d9abc6997dfd519c706043dfdb982b56683ea61559c3297770",
+  "grader_task_version": "eaee81c305492bef3257e1d5a0ad2bb5537d3d0d5127a9d805cf8926c20c1d06",
+  "fixture_hash": "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968",
   "state_hash": {
-    "initial": "8c60d82800eeed033417c012b42c1cc46ddcd45d10094166e6b2d111a10b3796",
-    "final": "dece52f5cc66048396dc8053d240991ff4455b4f131985e412411bf43cf0d0f1",
-    "replay_final": "dece52f5cc66048396dc8053d240991ff4455b4f131985e412411bf43cf0d0f1"
+    "initial": "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968",
+    "final": "74f84f0caabb312a661e53bec92ca6afe44298e92e078b3e09694b4f3ea0209f",
+    "replay_final": "74f84f0caabb312a661e53bec92ca6afe44298e92e078b3e09694b4f3ea0209f"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -17,8 +17,8 @@
   "effort": "high",
   "api_version": "2026-10-21",
   "started": "2026-10-23T13:21:10.000Z",
-  "turns": 13,
-  "tool_calls": 130,
+  "turns": 14,
+  "tool_calls": 142,
   "tool_errors": {
     "INVALID_INPUT": 0,
     "NOT_FOUND": 0,
@@ -43,7 +43,7 @@
   "summary": "CRC outreach for Okafor CRC 2026 under RBC-QM-02: 8 FIT kits ordered and 8 outreach messages sent.\n\n| Patient | Status | Reason |\n|---|---|---|\n| Delaine MacGyver | Open gap: FIT kit ordered, outreach sent | Colonoscopy ordered 2025-03-12 but never done (order still open, window passed); an order is not screening; FOBT 2024-06-11 is before the measurement period |\n| Santo Pagac | Open gap: FIT kit ordered, outreach sent | Colonoscopy ordered 2026-02 and booked for 2026-04-14, but he did not attend (no-show); not done, so not screening |\n| Ángela Vigil | Excluded | Total proctocolectomy in 2015 (scanned outside operative note): total colectomy |\n| Nick Bartoletti | Open gap: FIT kit ordered, outreach sent | Sigmoid colectomy 2021 is a partial colectomy, which does not exclude; no screening on record |\n| Marilu Gaona | Open gap: FIT kit ordered, outreach sent | Hospice 2025-06-09 to 2025-10-20, revoked before the measurement period, so not excluded; no screening on record |\n| Kelsie Rohan | Excluded | Hospice care 2026-06-16 to 2026-08-21, during part of the measurement period (later revoked) |\n| Tiny Koss | Open gap: FIT kit ordered, outreach sent | FIT collected 2025-12-29 (resulted 2026-01-05): collected before the measurement period, so it does not count |\n| Lance Muller | Open gap: FIT kit ordered, outreach sent | sDNA-FIT collected 2023-12-27 (resulted 2024-01-08): collected before the 2024-2026 window |\n| Elly Trantow | Excluded | Age 72 with frailty and a dementia medication (donepezil) taken now: advanced illness |\n| Harrison O'Keefe | Open gap: FIT kit ordered, outreach sent | Age 69 with frailty, but donepezil was stopped in March 2023, before 2025, and no advanced illness diagnosis, so not excluded; no screening on record |\n| Rickey Sipes | Excluded | Age 72, living long term in a nursing home (housing status 2026-02-10: lives in nursing home, Maple Grove Care Center) |\n| Elvin Wolff | Open gap: FIT kit ordered, outreach sent | Age 68; his May 2026 skilled nursing stay was short-term rehab ending in discharge home (housing status: own home), not long-term nursing home residence; no screening on record |\n| Fumiko Pouros | Not in the population | Age 35 at the end of 2026, under 46 |",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T13:26:45.000Z",
+  "ended": "2026-10-23T13:27:13.000Z",
   "judge_cost_usd": 0,
   "grader_version": "15",
   "outcome": "FAIL",
@@ -121,7 +121,8 @@
           "met": true,
           "decisive_ids": [
             "Condition/cond-00189",
-            "MedicationRequest/mr-00118"
+            "MedicationRequest/mr-00118",
+            "Patient/pt-0009"
           ],
           "evidence": {}
         },
@@ -197,7 +198,8 @@
           "item": "Patient/pt-0034",
           "met": true,
           "decisive_ids": [
-            "Observation/obs-02454"
+            "Observation/obs-02463",
+            "Patient/pt-0034"
           ],
           "evidence": {}
         },
@@ -205,7 +207,7 @@
           "item": "Patient/pt-0035",
           "met": true,
           "decisive_ids": [
-            "Observation/obs-02493",
+            "Observation/obs-02502",
             "DocumentReference/doc-00112",
             "Encounter/enc-00246"
           ],
@@ -276,7 +278,8 @@
           "met": true,
           "decisive_ids": [
             "Condition/cond-00189",
-            "MedicationRequest/mr-00118"
+            "MedicationRequest/mr-00118",
+            "Patient/pt-0009"
           ],
           "evidence": {}
         },
@@ -348,7 +351,8 @@
           "item": "Patient/pt-0034",
           "met": true,
           "decisive_ids": [
-            "Observation/obs-02454"
+            "Observation/obs-02463",
+            "Patient/pt-0034"
           ],
           "evidence": {}
         },
@@ -356,7 +360,7 @@
           "item": "Patient/pt-0035",
           "met": true,
           "decisive_ids": [
-            "Observation/obs-02493",
+            "Observation/obs-02502",
             "DocumentReference/doc-00112",
             "Encounter/enc-00246"
           ],
@@ -403,7 +407,8 @@
           "met": true,
           "decisive_ids": [
             "Condition/cond-00189",
-            "MedicationRequest/mr-00118"
+            "MedicationRequest/mr-00118",
+            "Patient/pt-0009"
           ],
           "evidence": {}
         },
@@ -468,7 +473,8 @@
           "item": "Patient/pt-0034",
           "met": true,
           "decisive_ids": [
-            "Observation/obs-02454"
+            "Observation/obs-02463",
+            "Patient/pt-0034"
           ],
           "evidence": {}
         },
@@ -511,7 +517,7 @@
         "seen": [
           {
             "patient": "Patient/pt-0011",
-            "first_order": 118,
+            "first_order": 130,
             "exposed": [
               {
                 "id": "EpisodeOfCare/eoc-00001",
@@ -521,17 +527,17 @@
           },
           {
             "patient": "Patient/pt-0014",
-            "first_order": 114,
+            "first_order": 126,
             "exposed": [
               {
                 "id": "Appointment/appt-00002",
-                "step": 18
+                "step": 31
               }
             ]
           },
           {
             "patient": "Patient/pt-0018",
-            "first_order": 122,
+            "first_order": 134,
             "exposed": [
               {
                 "id": "Observation/obs-01493",
@@ -541,7 +547,7 @@
           },
           {
             "patient": "Patient/pt-0019",
-            "first_order": 124,
+            "first_order": 136,
             "exposed": [
               {
                 "id": "MedicationRequest/mr-00215",
@@ -551,7 +557,7 @@
           },
           {
             "patient": "Patient/pt-0022",
-            "first_order": 120,
+            "first_order": 132,
             "exposed": [
               {
                 "id": "Observation/obs-01732",
@@ -561,39 +567,39 @@
           },
           {
             "patient": "Patient/pt-0024",
-            "first_order": 112,
+            "first_order": 124,
             "exposed": [
               {
                 "id": "ServiceRequest/sr-00003",
-                "step": 17
+                "step": 30
               }
             ]
           },
           {
             "patient": "Patient/pt-0035",
-            "first_order": 126,
+            "first_order": 138,
             "exposed": [
               {
-                "id": "Observation/obs-02493",
-                "step": 111
+                "id": "Observation/obs-02502",
+                "step": 123
               },
               {
                 "id": "DocumentReference/doc-00112",
-                "step": 111
+                "step": 123
               },
               {
                 "id": "Encounter/enc-00246",
-                "step": 111
+                "step": 123
               }
             ]
           },
           {
             "patient": "Patient/pt-0036",
-            "first_order": 116,
+            "first_order": 128,
             "exposed": [
               {
                 "id": "Procedure/proc-00786",
-                "step": 20
+                "step": 110
               }
             ]
           }
@@ -607,7 +613,8 @@
           "met": true,
           "decisive_ids": [
             "Condition/cond-00189",
-            "MedicationRequest/mr-00118"
+            "MedicationRequest/mr-00118",
+            "Patient/pt-0009"
           ],
           "evidence": {}
         },
@@ -679,7 +686,8 @@
           "item": "Patient/pt-0034",
           "met": true,
           "decisive_ids": [
-            "Observation/obs-02454"
+            "Observation/obs-02463",
+            "Patient/pt-0034"
           ],
           "evidence": {}
         },
@@ -687,7 +695,7 @@
           "item": "Patient/pt-0035",
           "met": true,
           "decisive_ids": [
-            "Observation/obs-02493",
+            "Observation/obs-02502",
             "DocumentReference/doc-00112",
             "Encounter/enc-00246"
           ],
@@ -699,6 +707,119 @@
           "decisive_ids": [
             "Procedure/proc-00786"
           ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0037",
+          "met": true,
+          "decisive_ids": [
+            "Patient/pt-0037"
+          ],
+          "evidence": {}
+        }
+      ]
+    },
+    {
+      "id": "no_contact_reviewed",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": false,
+      "evidence": {
+        "unreviewed": [
+          "Patient/pt-0021"
+        ]
+      },
+      "ids": [
+        "DocumentReference/doc-00059"
+      ],
+      "items": [
+        {
+          "item": "Patient/pt-0009",
+          "met": true,
+          "decisive_ids": [
+            "Condition/cond-00189",
+            "MedicationRequest/mr-00118",
+            "Patient/pt-0009"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0011",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0014",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0018",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0019",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0020",
+          "met": true,
+          "decisive_ids": [
+            "EpisodeOfCare/eoc-00002"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0021",
+          "met": false,
+          "why": "needs no order or message (excluded: total colectomy), but the trial never saw DocumentReference/doc-00059, what decides that",
+          "decisive_ids": [
+            "DocumentReference/doc-00059"
+          ],
+          "evidence": {},
+          "ids": [
+            "DocumentReference/doc-00059"
+          ]
+        },
+        {
+          "item": "Patient/pt-0022",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0024",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0034",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-02463",
+            "Patient/pt-0034"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0035",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0036",
+          "met": true,
+          "decisive_ids": [],
           "evidence": {}
         },
         {
@@ -1467,7 +1588,7 @@
   "attribution": {
     "auto": "over_action",
     "first_failed": "nothing_for_others",
-    "decisive_step": 129,
+    "decisive_step": 141,
     "exposure": [
       {
         "id": "DocumentReference/doc-00059",
