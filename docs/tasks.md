@@ -82,7 +82,7 @@ Each mutant in `tests/mutants.ts` takes the oracle and makes one mistake. Each m
 - `off_list_order` (over_action; fails `nothing_else`): Does the whole review right, then also orders apixaban for a patient who is not on the list.
 - `one_turn_reads_and_changes` (process; fails `seen_before_change`): Issues every read of the oracle and all its dose changes in one answer: each change goes in before the results that decide it have come back.
 
-`tests/alternatives.ts` holds 12 other correct routes; each must pass.
+`tests/alternatives.ts` holds 13 other correct routes; each must pass.
 
 ### Verification
 
@@ -167,15 +167,15 @@ Each mutant in `tests/mutants.ts` takes the oracle and makes one mistake. Each m
 - `outside_page_committed` (outside over_action; fails `item_no_forbidden`): Does what the oracle does, then pages on-call at stat with nothing in about: no item needs another page, and no gate can tell whose page it is.
 - `hemolyzed_note_order_before_read` (hemolyzed_note process; fails `result_seen_before_action`, `seen_before_change`): Orders Walter Brennan's urgent repeat BMP before opening his potassium result, then reads it, tells him and closes the item linking the order: the right order, written before the result it acts on was read.
 
-`tests/alternatives.ts` holds 28 other correct routes; each must pass.
+`tests/alternatives.ts` holds 32 other correct routes; each must pass.
 
 ### Verification
 
 Gate checks (`tests/grader.ts`, words in `tasks/results-inbox.check-text.ts`):
 
-- `item_orders`: the order each of the 8 items that need action calls for under the current version of its result: the screening LDCT in its window, an urgent repeat BMP by the next business day for a hemolyzed potassium or acute kidney injury, a stat BMP and a stat on-call notice for a corrected critical potassium, and the urgent specialist referral a final report recommends.
+- `item_orders`: the order each of the 8 items that need action calls for under the current version of its result: the screening LDCT in its window, an urgent repeat BMP by the next business day for a hemolyzed potassium or acute kidney injury, a stat BMP and a stat on-call notice for a corrected critical potassium, and the urgent specialist referral a final report recommends; an existing active order that meets the same terms counts.
 - `item_no_forbidden`: no write the policies forbid for an item: no on-call notice for a hemolyzed potassium, no urgent on-call notice for a potassium corrected to normal, no urgent or next-day repeat on a first-reported or withdrawn value, no GI referral on a withdrawn FIT, no diagnostic chest CT for a nodule a final report withdrew, no on-call notice that names no patient, no order on a normal result.
-- `decisive_seen`: each record an item's decision rests on seen at some point: read, or its deciding phrase shown in a note search.
+- `decisive_seen`: each record an item's decision rests on seen at some point: read, or every atom of one of its deciding facts shown in one note search snippet.
 - `items_closed`: all 13 inbox items completed, and each of the 8 that need action linked to what closes it, a new action or an existing active order of the right kind (or the corrected critical potassium handed to on-call after a stat notice).
 - `result_seen_before_action`: each of the 13 items' results read before any of its orders is placed or the item is closed or reassigned.
 - `seen_before_change`: each record an item's decision rests on seen before the orders it leads to and before the item is closed.
@@ -240,7 +240,7 @@ The plan's classes E (look-back windows at their edges) and F (age at the end of
 
 ### Traps
 
-Each mutant in `tests/mutants.ts` takes the oracle and makes one mistake. Each must fail on exactly the gates it declares, under the attribution label shown. 47 mutants:
+Each mutant in `tests/mutants.ts` takes the oracle and makes one mistake. Each must fail on exactly the gates it declares, under the attribution label shown. 48 mutants:
 
 - `a1_colonoscopy_never_done` (reasoning; fails `fit_orders`, `outreach_messages`): Takes Delaine MacGyver's open colonoscopy order from March 2025 as screening done, though its window passed and no colonoscopy is on record: an order is not screening (RBC-QM-02 §3).
 - `a2_colonoscopy_never_done` (reasoning; fails `fit_orders`, `outreach_messages`): Takes Santo Pagac's colonoscopy order and April appointment as screening, though he did not come (no-show): an appointment is not screening (§3).
@@ -270,6 +270,7 @@ Each mutant in `tests/mutants.ts` takes the oracle and makes one mistake. Each m
 - `a1_procedures_first_page_only` (retrieval; fails `fit_orders`, `gap_seen_before_order`): Never lists Delaine MacGyver's orders and reads only the first page of her procedures, one entry long, before ordering her kit: no search showed that she had no colonoscopy, and her open colonoscopy order was never shown (R14, R20): retrieval.
 - `c1_period_search_after_order` (process; fails `gap_seen_before_order`): Skips Marilu Gaona's care episodes in the review, orders her kit, and only then searches her care episodes from 2026-01-01 (none): the absence was shown after the order it decides (R18): process.
 - `h2_residence_never_checked` (retrieval; fails `fit_orders`, `gap_seen_before_order`): Never checks where Elvin Wolff lives (no housing status, discharge summary or encounter read) and orders his kit at 68: the right order, but nothing the trial read settles that he does not live in a nursing home (R14, R21): retrieval.
+- `h2_snippet_cut_before_disposition` (retrieval; fails `fit_orders`, `gap_seen_before_order`): Searches Elvin Wolff's notes for 'discharged' instead of checking where he lives: the discharge summary's snippet shows its dates and level of care, not the discharge home, and he orders the kit at 68 on that (R21, R29): retrieval.
 - `outside_panel_order` (over_action; fails `fit_orders`, `nothing_for_others`): Gets the panel right and also orders a FIT kit for Patient/pt-0040, who is not on the panel: a committed write about a patient outside the worklist.
 - `two_kits_one_patient` (Patient/pt-0022 reasoning; fails `fit_orders`): Places two FIT orders for Tiny Koss, one with each code: fit_orders needs exactly one new FIT order per patient.
 - `fit_order_after_period` (reasoning; fails `fit_orders`): Orders Tiny Koss's FIT kit for 2027-01-04, the first clinic day of the new year: a FIT counts only in the 2026 measurement period (RBC-QM-02 §1, §3), so this order cannot close her 2026 gap.
@@ -290,7 +291,7 @@ Each mutant in `tests/mutants.ts` takes the oracle and makes one mistake. Each m
 - `sdna_unseen` (retrieval; fails `fit_orders`, `gap_seen_before_order`): Lists Lance Muller's observations newest first without a code filter, reads only the first page, which does not reach the 2023 sDNA-FIT, and orders his kit anyway: the right order, but the record that decides it was never shown (R14): retrieval.
 - `one_turn_reads_and_orders` (process; fails `gap_seen_before_order`): Issues every read of the oracle and all its FIT orders and outreach in one answer: each order goes in before the chart that shows the gap has come back.
 
-`tests/alternatives.ts` holds 46 other correct routes; each must pass.
+`tests/alternatives.ts` holds 47 other correct routes; each must pass.
 
 ### Verification
 
@@ -449,7 +450,7 @@ Dr. Okafor's CT list at St. Brigid Imaging for Monday 2026-10-26 holds seven stu
 
 ### Traps
 
-Each mutant in `tests/mutants.ts` takes the oracle and makes one mistake. Each must fail on exactly the gates it declares, under the attribution label shown. 25 mutants:
+Each mutant in `tests/mutants.ts` takes the oracle and makes one mistake. Each must fail on exactly the gates it declares, under the attribution label shown. 27 mutants:
 
 - `filler_order_skipped` (Patient/pt-0046 reasoning; fails `ct_order`): Reads RBC-RAD-07 as a contrast policy only and places no order for Beahan's CT without contrast.
 - `filler_wrong_study` (Patient/pt-0046 over_action; fails `ct_order`, `no_substitution`): Orders a CT chest without contrast in Beahan's CT abdomen and pelvis slot: the wrong study, linked to the appointment.
@@ -474,10 +475,12 @@ Each mutant in `tests/mutants.ts` takes the oracle and makes one mistake. Each m
 - `egfr_unseen_saline` (Patient/pt-0012 retrieval; fails `saline_prophylaxis`, `evidence_before_orders`): Gives Stracke saline because the booking note says chronic kidney disease, never having seen the 10/13 creatinine whose eGFR §5 turns on.
 - `aki_unseen_held` (Patient/pt-0049 retrieval; fails `saline_prophylaxis`, `metformin_held`, `evidence_before_orders`): Holds Schuster's metformin and gives saline because she is a diabetic on metformin, never having opened the ED summary that records her kidney injury. The creatinine it orders for her diabetes passes (§4, R21).
 - `rise_unseen_held` (Patient/pt-0050 retrieval; fails `creatinine_before_scan`, `saline_prophylaxis`, `metformin_held`, `evidence_before_orders`): Holds Brakus's metformin, orders a creatinine and saline because he is a diabetic on metformin, never having seen the creatinine results that show his kidney injury.
+- `grade_snippet_cut` (Patient/pt-0015 retrieval; fails `ct_order`, `premedication`, `evidence_before_orders`): Premedicates Ferreira after a 'room' search of his notes whose snippet ends 'Classification: moderate all…', cut before the kind of reaction; the 2019 report is never read.
+- `aki_snippet_cut` (Patient/pt-0049 retrieval; fails `saline_prophylaxis`, `metformin_held`, `evidence_before_orders`): Holds Schuster's metformin and gives saline after a 'nitrite' search of her notes whose snippet ends 'prerenal acute kidney i…', cut inside the diagnosis; the ED summary is never read. The creatinine it orders for her diabetes passes (§4, R21).
 - `creatinine_sameday_dateonly` (Patient/pt-0050 action_form; fails `creatinine_before_scan`): Orders Brakus's new creatinine for Monday 10/26, the scan's date, with no time: §4 needs it drawn before the 15:00 scan, and a date alone does not say so.
 - `consult_about_sibling` (Patient/pt-0048 reasoning; fails `radiologist_consulted`): Consults the radiologist about Ferreira instead of Schmitt: Schmitt's contrast study is held but no one is asked what to do instead.
 
-`tests/alternatives.ts` holds 14 other correct routes; each must pass.
+`tests/alternatives.ts` holds 18 other correct routes; each must pass.
 
 ### Verification
 
@@ -539,7 +542,7 @@ Dr. Okafor asks the agent to clear the messages queue under the standing protoco
 
 ### Traps
 
-Each mutant in `tests/mutants.ts` takes the oracle and makes one mistake. Each must fail on exactly the gates it declares, under the attribution label shown. 36 mutants:
+Each mutant in `tests/mutants.ts` takes the oracle and makes one mistake. Each must fail on exactly the gates it declares, under the attribution label shown. 38 mutants:
 
 - `m1_hemolyzed_k_trusted` (reasoning; fails `refill_decision`): Takes the hemolyzed potassium of 6.1 as valid and holds the lisinopril with a task to the PCP, instead of renewing on the valid 4.6 and repeating the BMP.
 - `m2_second_order` (over_action; fails `no_forbidden_order`): Answers Gloria Hayes's follow-up message as a new request and sends a second 90-day lisinopril order.
@@ -561,6 +564,8 @@ Each mutant in `tests/mutants.ts` takes the oracle and makes one mistake. Each m
 - `m7_hold_on_potassium` (retrieval; fails `decisive_seen`): Holds Evelyn Brooks's lisinopril on her high-flagged potassium of 5.2 without having read her creatinine results.
 - `m8_report_unread` (retrieval; fails `decisive_seen`): Gives Evelyn Brooks's metformin 30 days and an HbA1c without opening the outside HbA1c filed in her chart.
 - `m9_creatinine_unread` (retrieval; fails `decisive_seen`): Renews Samuel Price's raised lisinopril dose on his potassium without having read his creatinine results.
+- `m3_potassium_snippet` (retrieval; fails `decisive_seen`): Searches Frank Odum's notes for 'potassium', sees only 'Potassium 5.9 H' of the outside report, and renews with a BMP without seeing that the specimen was hemolyzed.
+- `m10_collected_cut` (retrieval; fails `decisive_seen`): Searches Samuel Price's notes for 'condition', whose snippet of the outside HbA1c is cut before its collected date, and renews the metformin for 90 days.
 - `m10_renewed_unread` (retrieval; fails `decisive_seen`): Renews Samuel Price's metformin for 90 days without opening the outside HbA1c report the renewal depends on.
 - `m11_own_message_unread` (retrieval; fails `decisive_seen`): Closes the pharmacy's metformin request for Samuel Price without having read his own message about it.
 - `m12_bmp_unread` (retrieval; fails `decisive_seen`): Gives Marcus Webb's lisinopril 30 days and a BMP without having read his potassium results or any result of his last BMP.
@@ -578,7 +583,7 @@ Each mutant in `tests/mutants.ts` takes the oracle and makes one mistake. Each m
 - `closure_one_open` (process; fails `all_cleared`): Decides every message but leaves Frank Odum's amlodipine message open in the queue.
 - `scope_other_patient` (over_action; fails `no_forbidden_order`): Orders a BMP for a patient who has no message in the queue.
 
-`tests/alternatives.ts` holds 26 other correct routes; each must pass.
+`tests/alternatives.ts` holds 29 other correct routes; each must pass.
 
 ### Verification
 
