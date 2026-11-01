@@ -20,7 +20,7 @@ describe('contrast-ct-prep scripts', () => {
     const { events } = await trial(env, task, c);
     const errors = events.flatMap((e) => (e.type === 'tool_result' && e.is_error ? [{ name: e.name, content: e.content }] : []));
     if (id === 'forbidden_writes_rejected') {
-      expect(errors).toHaveLength(9);
+      expect(errors).toHaveLength(8);
       expect(errors.every((e) => JSON.stringify(e.content).includes('past'))).toBe(true);
     } else expect(errors).toEqual([]);
   });

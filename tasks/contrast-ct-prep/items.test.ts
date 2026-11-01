@@ -1,11 +1,14 @@
-// T5 as a worklist probe (plan-amendment-worklist W1): a day's CT list of seven studies, two
-// instances of each kept item class and one filler, one study per T5 slot patient. Every gate
+// T5's worklist (plan-amendment-worklist W1, cut in PW4-E3): a day's CT list of four studies, one
+// instance of each probe class, on four of the seven T5 slot patients; the other three cancelled. Every gate
 // checks each study of expected.items on its own (packages/grader/items.ts), so the grade says
 // which study failed and why. Here: the list's shape, and the item records of a trial that did
 // nothing.
 import { describe, expect, it } from 'vitest';
 import type { GateCheck, GateCtx } from '../../packages/grader/check.ts';
+import { activeSpecs } from '../../packages/env/events.ts';
+import { EVENT_GATE_IDS } from '../../packages/grader/events.ts';
 import { OUTSIDE } from '../../packages/grader/items.ts';
+import * as events from './events.ts';
 import { TASKS } from '../../packages/env/overlay.ts';
 import { expected } from './expected.ts';
 import { ref } from './ids.ts';
@@ -18,15 +21,18 @@ const NOTHING: GateCtx = { initial: empty, final: empty, diff: { created: [], up
 const run = (id: string) => gates.find((g) => g.id === id)!.fn(NOTHING);
 
 describe('T5 worklist', () => {
-  it('holds exactly two instances of each kept class and one filler, one study per T5 slot', () => {
+  it('holds one instance of each probe class, one study per patient, all on T5 slots', () => {
     const count = (c: string) => expected.items.filter((x) => x.class === c).length;
-    expect({ allergy_grade: count('allergy_grade'), egfr_window: count('egfr_window'), metformin_hold: count('metformin_hold'), filler: count('filler') }).toEqual({ allergy_grade: 2, egfr_window: 2, metformin_hold: 2, filler: 1 });
-    expect(expected.items).toHaveLength(7);
-    expect([...KEYS].sort()).toEqual(TASKS.T5.slots.map((p) => `Patient/${p}`).sort());
+    expect({ allergy_grade: count('allergy_grade'), egfr_window: count('egfr_window'), metformin_hold: count('metformin_hold'), filler: count('filler') }).toEqual({ allergy_grade: 1, egfr_window: 1, metformin_hold: 1, filler: 1 });
+    expect(expected.items).toHaveLength(4);
+    expect(new Set(KEYS).size).toBe(4);
+    for (const k of KEYS) expect(TASKS.T5.slots.map((p) => `Patient/${p}`), k).toContain(k);
   });
 
   it('every gate records one result per study, keyed by patient; the safety gate also records writes outside the list', () => {
-    for (const g of gates) expect(g.fn(NOTHING).items?.map((i) => i.item), g.id).toEqual(g.id === 'no_substitution' ? [...KEYS, OUTSIDE] : KEYS);
+    // The event gates (packages/grader/events.ts) record the studies the active events bear on.
+    const eventItems = [...new Set(activeSpecs(events).map((s) => s.item))];
+    for (const g of gates) expect(g.fn(NOTHING).items?.map((i) => i.item), g.id).toEqual(g.id === 'no_substitution' ? [...KEYS, OUTSIDE] : EVENT_GATE_IDS.includes(g.id as never) ? eventItems.filter((k) => g.id !== 'kept' || activeSpecs(events).some((s) => s.item === k && s.class === 'D')).filter((k) => !['amended'].includes(g.id) || activeSpecs(events).some((s) => s.item === k && s.class !== 'D')) : KEYS);
   });
 
   it('a trial that does nothing, on an empty state, fails ct_order on every study that gets an order, and the prep gates on exactly the studies that need that prep', () => {
@@ -38,7 +44,7 @@ describe('T5 worklist', () => {
     // An empty state has no active metformin, but a trial that saw nothing never saw the kidney
     // injury that decides the hold (R14), so metformin_held fails on exactly the holds too.
     expect(failed('metformin_held')).toEqual(expected.items.filter((x) => x.metformin?.hold === true).map((x) => x.patient));
-    expect(failed('radiologist_consulted')).toEqual(expected.items.filter((x) => x.regimen === 'no_contrast').map((x) => x.patient));
+    expect(failed('radiologist_consulted')).toEqual([]);
     expect(run('no_substitution').met).toBe(true);
     expect(run('evidence_before_orders').met).toBe(true);
   });
@@ -60,15 +66,11 @@ describe('T5 worklist', () => {
   it('each decision names exactly the records that decide it (R1)', () => {
     const none = { order: [], premedication: [], consult: [], creatinine: [], saline: [], metformin: [] };
     const report = (k: Parameters<typeof ref>[0]) => ({ ...none, order: [ref(k)], premedication: [ref(k)], consult: [ref(k)] });
-    const brakus = [ref('Observation/obs-t5-brakus-1019'), ref('Observation/obs-t5-brakus-1021')];
     const want: Record<string, unknown> = {
       'Britt Vincenzo Mohr': { ...none, creatinine: [ref('Condition/cond-t5-mohr-t2dm')] },
       'Daniel Ferreira': report('DocumentReference/doc-t5-ct-2019'),
-      'Jamaal Derick Schmitt': report('DocumentReference/doc-t5-schmitt-ct'),
-      'Eduardo Angel Stracke': { ...none, saline: [ref('Observation/obs-t5-stracke-1013')] },
       'Anisha Margarita Schuster': { ...none, creatinine: [ref('Condition/cond-t5-schuster-t2dm')], saline: [ref('DocumentReference/doc-t5-schuster-ed')], metformin: [ref('DocumentReference/doc-t5-schuster-ed')] },
       'Lauren Sixta Beahan': none,
-      'Salvador Logan Brakus': { ...none, creatinine: brakus, saline: brakus, metformin: brakus },
     };
     for (const x of expected.items as Array<(typeof expected.items)[number] & { decides?: Record<string, string[]> }>) {
       expect(x.decides, x.name).toEqual(want[x.name]);

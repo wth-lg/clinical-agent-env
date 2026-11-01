@@ -43,6 +43,7 @@ const SCREEN = /Contrast screening \([^)]*\):[^\n]*/g;
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
 const SEVERITY = ['mild', 'moderate', 'severe'];
+const OUTSIDE_GRADE = /^Contrast reaction severity: (mild|moderate|severe)\.?$/im;
 
 type Coding = { system?: string; code?: string; display?: string };
 type R = Readonly<Record<string, unknown>> & { resourceType: string; id?: string };
@@ -108,6 +109,17 @@ export function derive(world: WorldView): Json {
     if (contrastAllergies.length > 1) throw new Error(`${ref}: ${contrastAllergies.length} contrast allergies`);
     let record: string | null = null;
     let severity: string | null = null;
+    // An outside report of a prior reaction that the allergy list does not carry (a faxed report
+    // that arrives during the trial, events.ts): the record made when it happened, graded in its
+    // own words ('Contrast reaction severity: <grade>'). Only a contrast study asks (§7).
+    const outside = study.contrast && contrastAllergies.length === 0
+      ? notes.filter(({ d, text }) => of(ref)(d) && IODINATED.some((agent) => text.toLowerCase().includes(agent)) && OUTSIDE_GRADE.test(text))
+      : [];
+    if (outside.length > 1) throw new Error(`${ref}: ${outside.length} outside reports of a contrast reaction`);
+    if (outside[0]) {
+      record = key(outside[0].d);
+      severity = OUTSIDE_GRADE.exec(outside[0].text)![1]!.toLowerCase();
+    }
     if (contrastAllergies[0]) {
       const a = contrastAllergies[0];
       const agent = (a.code?.coding?.[0]?.display ?? a.code?.text ?? '').toLowerCase();
@@ -161,7 +173,7 @@ export function derive(world: WorldView): Json {
     if (metformins.length > 1) throw new Error(`${ref}: ${metformins.length} active metformin requests`);
     const hold = contrastGiven && (aki || low);
 
-    const cls = !study.contrast ? 'filler' : record !== null ? 'allergy_grade' : metformins.length > 0 && hold ? 'metformin_hold' : 'egfr_window';
+    const cls = !study.contrast ? 'filler' : contrastAllergies.length > 0 ? 'allergy_grade' : metformins.length > 0 && hold ? 'metformin_hold' : 'egfr_window';
     const saline = contrastGiven && (aki || low);
 
     // The records each decision turns on (R1). Under 60 only diabetes makes §4 apply. A creatinine
@@ -186,7 +198,7 @@ export function derive(world: WorldView): Json {
     // named outside the booking screen's question).
     const mine = notes.filter(({ d }) => of(ref)(d));
     const shown = [
-      ...(record ? [{ id: record, note: record, phrase: `${severity} allergic-like` }] : []),
+      ...(record ? [{ id: record, note: record, phrase: outside[0] ? `Contrast reaction severity: ${severity}` : `${severity} allergic-like` }] : []),
       ...(diabetic && decisive.includes(key(diabetic))
         ? mine.flatMap(({ d, text }) => [
           ...(/diabetes or metformin: yes/i.test(text) ? [{ id: key(diabetic), note: key(d), phrase: 'Diabetes or metformin: yes' }] : []),

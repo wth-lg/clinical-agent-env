@@ -22,6 +22,12 @@ const first = (ev: Record<string, unknown>) => {
   return `${who(f.item)}: ${f.why === null || f.why === undefined ? 'not met' : show(f.why)}${more > 0 ? ` (and ${more} more ${more === 1 ? 'study' : 'studies'})` : ''}`;
 };
 const names = (pick: (x: (typeof L)[number]) => boolean) => L.filter(pick).map((x) => x.name.split(' ').at(-1)).join(', ');
+// The event gates (packages/grader/events.ts) record only the failed studies, by patient.
+const firstItem = (ev: Record<string, unknown>) => {
+  const failed = items(ev.failed_items);
+  if (failed.length === 0) return '';
+  return `${who(failed[0])}${failed.length > 1 ? ` (and ${failed.length - 1} more ${failed.length === 2 ? 'study' : 'studies'})` : ''}`;
+};
 
 export const checkText: CheckText = {
   ct_order: { requires: `for every study but one stopped by §3 (${names((x) => x.regimen !== 'no_contrast')}), one active order of the booked study, linked to its appointment and set for its slot`, found: first },
@@ -31,5 +37,12 @@ export const checkText: CheckText = {
   metformin_held: { requires: `no active metformin at the end for acute kidney injury or an eGFR under 30 (${names((x) => x.metformin?.hold === true)})`, found: first },
   radiologist_consulted: { requires: `a message or task to the radiologist (${expected.radiologist}) about the study a prior severe reaction stops (${names((x) => x.regimen === 'no_contrast')})`, found: first },
   no_substitution: { requires: 'no other study in a booked study\'s place, no contrast study after a severe reaction, no premedication where §2 does not apply, no corticosteroid other than §2\'s prednisone, and no order for a patient off the list (committed writes only)', found: first },
+  // The mid-trial events (contrast-ct-prep/events.ts) and RBC-RAD-07's preamble sentence on them.
+  event_delivered: { requires: "every active event whose trigger held arrived in the chart and the inbox (the environment's part: a miss is an environment error)", found: firstItem },
+  had_turn: { requires: 'a model turn after every arrival', found: firstItem },
+  event_seen: { requires: "each result or report that arrived during the trial opened, or its deciding line shown, before finishing (the preamble: review anything that arrived after you started)", found: firstItem },
+  amended: { requires: 'each decision an arrival changes corrected on the chart as delivered (saline after a kidney injury or a corrected eGFR under 30, premedication after an outside report of a moderate reaction), written after the arrival was read', found: firstItem },
+  amend_form: { requires: 'the correction in the form the policy names', found: firstItem },
+  kept: { requires: 'a decision left in place when an arrival does not change it (an outside reaction report for a CT without contrast, a patient\'s own account of a graded reaction)', found: firstItem },
   evidence_before_orders: { requires: "the records each of a study's order decisions turns on (the report of the day, the diabetes that makes a creatinine due, the creatinine whose eGFR is under 30, the record of the kidney injury) seen before every order that decision places; messages and consults are not orders", found: first },
 };
