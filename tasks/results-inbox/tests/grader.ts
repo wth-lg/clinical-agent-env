@@ -471,6 +471,24 @@ const report = (_s: unknown, results: ReadonlyArray<{ item: string; met: boolean
 const firedAmends = (specs: readonly EventSpec[], x: Item, steps: readonly Step[]) => specs.filter((s) => s.item === x.key && AMEND_CLASSES.has(s.class) && arrivalOf(steps, s.id) !== null);
 const takenOver = (specs: readonly EventSpec[], x: Item, ctx: GateCtx, gate: 'item_orders' | 'item_no_forbidden') => firedAmends(specs, x, ctx.steps).some((s) => EVENTS[s.id]!.takes.includes(gate));
 
+// R38(a): a fired event never excuses the base review. A class B correction replaces one of the
+// item's own records, so reading the corrected copy after the arrival would count as reviewing it.
+// When the write that fired the correction was the item's decision (one of its orders, or its
+// closure; after_write fires on the patient's first write), the review had to come before it, so
+// only a sighting of the record before the arrival counts: a blind write that fires the correction
+// fails decisive_seen, retrieval. An item that decides after the arrival (its first write on the
+// patient a note or a message) reviews the record as delivered, and a sighting after it counts.
+// One rule for the gate and for attribution (the gate's seen_at), read from the steps alone.
+const DECISION_TYPES = ['ServiceRequest/', 'MedicationRequest/'];
+const baseSeenStep = (specs: readonly EventSpec[], x: Item, id: string) => (steps: readonly Step[]): number | null => {
+  const replaced = specs.find((s) => s.item === x.key && s.class === 'B' && sameId(focusOf(s), id) && arrivalOf(steps, s.id) !== null);
+  if (replaced === undefined) return seenStep(id)(steps);
+  const at = arrivalOf(steps, replaced.id)!.step;
+  const firing = steps.find((st) => st.n === at)?.written_ids ?? [];
+  const decided = firing.some((k) => k === x.task || DECISION_TYPES.some((t) => k.startsWith(t)));
+  return seenStep(id)(decided ? steps.filter((st) => st.n <= at) : steps);
+};
+
 function baseGates(specs: readonly EventSpec[]): Check[] {
   return [
   itemGate<Item, Res[]>({
@@ -512,9 +530,23 @@ function baseGates(specs: readonly EventSpec[]): Check[] {
     category: 'action',
     traces_to: 'RBC-INBOX-01 §1',
     ...items,
+    // Attribution reads this rule alone (seen_at_only): a source a class B arrival replaced is seen
+    // by baseSeenStep; any other as attribution has always read it, the first step that exposed it,
+    // showed it, or met its seen rule (a window baseline shown but never searched whole stays
+    // reasoning, R31).
+    seen_at_only: true,
+    seen_at: Object.fromEntries(Object.keys(SEEN_AT).map((id) => {
+      const x = I.find((i) => i.sources.includes(id))!;
+      const strict = baseSeenStep(specs, x, id);
+      return [id, (steps: readonly Step[]) => {
+        if (specs.some((sp) => sp.item === x.key && sp.class === 'B' && sameId(focusOf(sp), id) && arrivalOf(steps, sp.id) !== null)) return strict(steps);
+        const at = [firstExposed(steps, id), steps.find((st) => Object.keys(st.shown).some((k) => sameId(k, id)))?.n ?? null, seenStep(id)(steps)].filter((n): n is number => n !== null);
+        return at.length === 0 ? null : Math.min(...at);
+      }];
+    })),
     verdict: report,
     check: (x, _s, ctx) => {
-      const never = x.sources.filter((id) => seenStep(id)(ctx.steps) === null);
+      const never = x.sources.filter((id) => baseSeenStep(specs, x, id)(ctx.steps) === null);
       if (never.length === 0) return ok;
       // A window's baseline is seen only by a complete search of the window (R31), so the reason names it.
       const why = never.map((id) => { const w = BASELINES.get(id); return w ? `${id} (the 7-day window from ${w.from} to ${w.to}, never searched completely)` : id; });
@@ -612,10 +644,13 @@ const PRIORITY_AT_LEAST: Record<string, readonly string[]> = { routine: ['routin
 // The arrival's own inbox item (Task/inbox-a<k>), once it has fired.
 const arrivalTask = (spec: EventSpec, steps: readonly Step[]) => arrivalOf(steps, spec.id)?.keys.find((k) => k.startsWith('Task/'));
 const CLOSED = ['completed', 'cancelled', 'rejected', 'entered-in-error'];
-// Coordinator Addendum 5: the arrival's inbox item id is predictable, so a write to it counts only
-// after the arrival's content was seen. An amend that writes to its arrival's item lists that write
-// among its writes (the amended gate fails it as process when it came first), and a cancel or
-// reject of a result that needs action fails.
+// Coordinator Addendum 5 with R38(b): inbox status is graded only where the policy states an inbox
+// rule, and RBC-INBOX-01 does. §1 'Read the result ... before ordering or completing the item': an
+// amend that writes to its arrival's item lists that write among its writes, so a close before the
+// arrival was seen fails as process (the id is predictable). §3 'An actionable item's closure must
+// link the order, task or message that closes the loop': a cancel or reject of a result that needs
+// action fails. §2(c) 'If no final version has been issued, leave the item open': keptRule fails a
+// close of the preliminary read's item. A lure whose item the policy lets close is not graded on it.
 function amendedRule(spec: EventSpec) {
   const e = EVENTS[spec.id]!;
   const x = I.find((i) => i.key === spec.item)!;

@@ -13,6 +13,10 @@ import { BMP, solve as solveWith, type Options, type RecheckVary } from '../solu
 import { creatininesOf, ITEM_READS, read, readsWithout, reportsOf, searchNotes, PT, SRC } from '../solution/steps.ts';
 import { LOOSE_PAGE, REPEAT } from './alternatives.ts';
 
+// The gates a blind write fails (R38(a)): the item's own review (retrieval), its writes before its
+// result was read (process), and the correction never made.
+const BLIND_FAILS = ['decisive_seen', 'result_seen_before_action', 'seen_before_change', 'amended'];
+
 // The reads without the calls of an item's reads that `drop` lists.
 const without = (...drop: ScriptCall[]) => readsWithout(drop);
 // The oracle's reads with one call replaced by others in its place.
@@ -23,7 +27,7 @@ const CW_48H_SEARCH: ScriptCall = { name: 'fhir_search', input: { resource_type:
 // Walter Brennan's urgent repeat ordered during the item before his (nodule_scheduled's answer, so
 // every id keeps its number), before his result is read; his reads move to just before his own
 // answer, which links the order, messages him and closes the item.
-function orderBeforeRead(active: readonly string[]): Mutant & Required<Pick<Mutant, 'items'>> {
+function orderBeforeRead(active: readonly string[]): Mutant {
   const reads = readsWithout(ITEM_READS.hemolyzed_note!);
   let early = '';
   const script = solveWith({
@@ -42,9 +46,12 @@ function orderBeforeRead(active: readonly string[]): Mutant & Required<Pick<Muta
     id: 'hemolyzed_note_order_before_read',
     trap: 'decision_before_deciding_fact',
     why: "Orders Walter Brennan's urgent repeat BMP before opening his potassium result, then reads it, tells him and closes the item linking the order: the right order, written before the result it acts on was read.",
-    fails: ['result_seen_before_action', 'seen_before_change'],
+    // R38(a): with the correction of his potassium active, the order fires it before any read, so
+    // the original was never reviewed: decisive_seen fails too, retrieval.
+    ...(active.includes('brennan-k-corrected')
+      ? { fails: ['decisive_seen', 'result_seen_before_action', 'seen_before_change'], items: { hemolyzed_note: 'retrieval' } }
+      : { fails: ['result_seen_before_action', 'seen_before_change'], items: { hemolyzed_note: 'process' } }),
     loses: [],
-    items: { hemolyzed_note: 'process' },
     script: [...script.slice(0, at), { calls: ITEM_READS.hemolyzed_note! }, ...script.slice(at)],
   };
 }
@@ -308,6 +315,18 @@ function eventMutants(active: readonly string[]): Mutant[] {
       id, trap: { not_amended: 'arrival_not_acted_on', unseen: 'missed_arrival', before_seen: 'amend_before_seen', lure_acted_on: 'lure_acted_on' }[kind], why, fails, loses: [], items: { [s.item]: label }, event: { spec: s.id, kind }, script: solve({ recheck: { [s.id]: vary } }),
     });
     if (AMEND_CLASSES.has(s.class)) {
+      // R38(a): a blind write fires the amend. The item's own records are never read; its oracle
+      // writes, made blind, fire the event, and on the arrival the order is left as it was. The
+      // item still needs its own review (decisive_seen): retrieval.
+      out.push({
+        id: `${s.id}_blind_write`,
+        trap: 'missed_arrival',
+        why: `Writes ${s.item}'s answer without reading the item's records, which fires the event, then reads what arrived and leaves the order as it was.`,
+        fails: BLIND_FAILS,
+        loses: [],
+        items: { [s.item]: 'retrieval' },
+        script: solve({ reads: readsWithout(ITEM_READS[s.item]!), recheck: { [s.id]: 'no_amend' } }),
+      });
       out.push(
         one('not_amended', `${s.id}_not_amended`, 'no_amend', `Reads what arrived for ${s.item} and leaves the decision it recorded before, completing the arrival's item.`, ['amended'], 'reasoning'),
         one('unseen', `${s.id}_unseen`, 'unread', `Makes the correction for ${s.item} and closes the arrival's item by its id without ever opening what arrived.`, ['event_seen', 'amended'], 'retrieval'),
