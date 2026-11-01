@@ -44,8 +44,8 @@ const CLASSES = {
       trials_valid: 20, pass: 10, wilson: { lo: 0.3, hi: 0.7 }, split: { model: 9, environment: 0, grader: 1, infra: 0 }, guard_fires: 2, q: { trials: 20, seen_all: 18, rate: 0.9 },
       classes: [
         { class: 'threshold', fails: 3, observations: 40, pass_rate: 0.925, wilson: { lo: 0.8, hi: 0.97 }, labels: [{ trial: 3, gate: 'amended', label: 'reasoning' }, { trial: 5, gate: 'amended', label: 'reasoning' }, { trial: 9, gate: 'event_seen', label: 'retrieval' }],
-          instances: [{ instance: 1, item: 'm1', label: '1 (m1)', fails: 2, observations: 20 }, { instance: 2, item: 'm3', label: '2 (m3)', fails: 1, observations: 20 }] },
-        { class: 'filler', fails: 0, observations: 20, pass_rate: 1, wilson: { lo: 0.84, hi: 1 }, labels: [], instances: [{ instance: 1, item: 'm4', label: '1 (m4)', fails: 0, observations: 20 }] },
+          instances: [{ instance: 1, item: 'm1', label: 'm1', fails: 2, observations: 20 }, { instance: 2, item: 'm3', label: 'm3', fails: 1, observations: 20 }] },
+        { class: 'filler', fails: 0, observations: 20, pass_rate: 1, wilson: { lo: 0.84, hi: 1 }, labels: [], instances: [{ instance: 1, item: 'm4', label: 'm4', fails: 0, observations: 20 }] },
       ],
       events: [{ id: 'ev-a1', item: 'm1', class: 'A', active: true, fired: 20, fails: 4, observations: 18, wilson: { lo: 0.56, hi: 0.91 }, labels: [{ trial: 2, gate: 'not_amended', label: 'reasoning' }] }],
       outside_failures: [], independence: { all_items_pass: 10, expected_per_item: 9.5, expected_per_class: 9.8 },
@@ -156,26 +156,26 @@ describe('cli result-card', () => {
     put(root, 'bad.json', { schema_version: 2, tasks: {} });
     const bad = await cli([final, '--classes', join(root, 'bad.json')]);
     expect(bad.code).toBe(1);
-    expect(bad.err).toMatch(/schema_version 2/);
+    expect(bad.err).toMatch(/schema_version: expected 1/);
     expect((await cli([join(root, 'missing')])).code).toBe(1);
     expect((await cli([])).code).toBe(2);
   });
 
-  it('readClasses names the first field that breaks the contract', () => {
-    expect(() => readClasses({ ...CLASSES, tasks: { 't-in': { ...CLASSES.tasks['t-in'], classes: [{ class: 'x', fails: 1, observations: 'twelve' }] } } })).toThrow(/tasks\.t-in\.classes\[0\]\.observations/);
+  it('readClasses rejects what cli/classes.ts classesJsonProblems rejects', () => {
+    expect(() => readClasses({ ...CLASSES, tasks: { 't-in': { ...CLASSES.tasks['t-in'], classes: [{ class: 'x', fails: 1, observations: 'twelve' }] } } })).toThrow(/tasks\.t-in\.classes: missing or wrong type/);
     expect(readClasses(CLASSES).tasks['t-in']!.classes[0]!.instances[1]!.item).toBe('m3');
   });
 
-  // reports/w4-classes-json-contract.txt shape, built from results/probe-1/classes.md at 631695f5
-  // (evidence/builder-276/probe1/classes-md-to-json.py); the card's class rows are classes.md's.
+  // `pnpm cli classes results/probe-1 --json` (cli/classes.ts, schema_version 1); the card's class
+  // rows are results/probe-1/classes.md's.
   it('reads the probe-1 classes fixture and prints classes.md\'s rows', async () => {
-    const fixture = JSON.parse(readFileSync(join(import.meta.dirname, 'fixtures/result-card/probe-1-classes.json'), 'utf8')) as typeof CLASSES;
+    const fixture = JSON.parse(readFileSync(join(import.meta.dirname, 'fixtures/result-card/probe-1-classes.json'), 'utf8')) as unknown;
     const c = readClasses(fixture);
     const all = Object.values(c.tasks).flatMap((t) => t.classes);
     expect(all).toHaveLength(37);
     expect(all.filter((k) => k.fails > 0).map((k) => `${k.class} ${k.fails}/${k.observations}`)).toEqual(['metformin_hold 1/12', 'metformin_two_series 1/12']);
     const probe = join(root, 'probe-1');
-    writeRun(probe, 'probe-1', Object.fromEntries(Object.entries(c.tasks).map(([id, t]) => [id, { n: 6, passes: t.split.model + t.split.grader === 0 ? 6 : 5 }])));
+    writeRun(probe, 'probe-1', Object.fromEntries(Object.entries(c.tasks).map(([id, t]) => [id, { n: t.trials_valid, passes: t.pass }])));
     const r = await cli([probe, '--classes', join(import.meta.dirname, 'fixtures/result-card/probe-1-classes.json')]);
     expect(r.out).toContain('| metformin_hold | 1 (Anisha Margarita Schuster) | 1/6 | 1/12 | 0.92 | [0.65, 0.99] | #3: saline_prophylaxis -> retrieval |');
     expect(r.out).toContain('| metformin_two_series | 1 (m8) | 1/6 | 1/12 | 0.92 | [0.65, 0.99] | #4: decisive_seen -> reasoning |');

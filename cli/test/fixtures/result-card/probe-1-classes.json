@@ -1,1130 +1,1363 @@
 {
-  "schema_version": 1,
-  "run_dirs": [
-    "results/probe-1"
-  ],
-  "grader_versions": [
-    "16"
-  ],
-  "tasks": {
-    "contrast-ct-prep": {
-      "trials_valid": 6,
-      "pass": 5,
-      "wilson": {
-        "lo": 0.43649717781352987,
-        "hi": 0.9699466302516935
+ "schema_version": 1,
+ "run_dirs": [
+  "results/probe-1"
+ ],
+ "grader_versions": [
+  "16"
+ ],
+ "tasks": {
+  "contrast-ct-prep": {
+   "trials_valid": 6,
+   "pass": 5,
+   "wilson": {
+    "lo": 0.43649717781352987,
+    "hi": 0.9699466302516935
+   },
+   "split": {
+    "model": 1,
+    "environment": 0,
+    "grader": 0,
+    "infra": 0
+   },
+   "guard_fires": 0,
+   "q": null,
+   "classes": [
+    {
+     "class": "egfr_window",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 12,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.7575059933447592,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Patient/pt-0047",
+       "label": "Britt Vincenzo Mohr",
+       "fails": 0,
+       "observations": 6
       },
-      "split": {
-        "model": 1,
-        "environment": 0,
-        "grader": 0,
-        "infra": 0
-      },
-      "guard_fires": 0,
-      "q": null,
-      "classes": [
-        {
-          "class": "egfr_window",
-          "fails": 0,
-          "observations": 12,
-          "pass_rate": 1.0,
-          "wilson": {
-            "lo": 0.7575059933447592,
-            "hi": 1
-          },
-          "labels": [],
-          "instances": [
-            {
-              "instance": 1,
-              "item": "Britt Vincenzo Mohr",
-              "label": "1 (Britt Vincenzo Mohr)",
-              "fails": 0,
-              "observations": 6
-            },
-            {
-              "instance": 2,
-              "item": "Eduardo Angel Stracke",
-              "label": "2 (Eduardo Angel Stracke)",
-              "fails": 0,
-              "observations": 6
-            }
-          ]
-        },
-        {
-          "class": "allergy_grade",
-          "fails": 0,
-          "observations": 12,
-          "pass_rate": 1.0,
-          "wilson": {
-            "lo": 0.7575059933447592,
-            "hi": 1
-          },
-          "labels": [],
-          "instances": [
-            {
-              "instance": 1,
-              "item": "Daniel Ferreira",
-              "label": "1 (Daniel Ferreira)",
-              "fails": 0,
-              "observations": 6
-            },
-            {
-              "instance": 2,
-              "item": "Jamaal Derick Schmitt",
-              "label": "2 (Jamaal Derick Schmitt)",
-              "fails": 0,
-              "observations": 6
-            }
-          ]
-        },
-        {
-          "class": "metformin_hold",
-          "fails": 1,
-          "observations": 12,
-          "pass_rate": 0.9166666666666666,
-          "wilson": {
-            "lo": 0.646120088858883,
-            "hi": 0.9851349055950829
-          },
-          "labels": [
-            {
-              "trial": 3,
-              "gate": "saline_prophylaxis",
-              "label": "retrieval"
-            }
-          ],
-          "instances": [
-            {
-              "instance": 1,
-              "item": "Anisha Margarita Schuster",
-              "label": "1 (Anisha Margarita Schuster)",
-              "fails": 1,
-              "observations": 6
-            },
-            {
-              "instance": 2,
-              "item": "Salvador Logan Brakus",
-              "label": "2 (Salvador Logan Brakus)",
-              "fails": 0,
-              "observations": 6
-            }
-          ]
-        },
-        {
-          "class": "filler",
-          "fails": 0,
-          "observations": 6,
-          "pass_rate": 1.0,
-          "wilson": {
-            "lo": 0.6096657120978346,
-            "hi": 1
-          },
-          "labels": [],
-          "instances": [
-            {
-              "instance": 1,
-              "item": "Lauren Sixta Beahan",
-              "label": "1 (Lauren Sixta Beahan)",
-              "fails": 0,
-              "observations": 6
-            }
-          ]
-        }
-      ],
-      "events": [],
-      "outside_failures": [],
-      "independence": {
-        "all_items_pass": 5,
-        "expected_per_item": 5.0,
-        "expected_per_class": 5.5
+      {
+       "instance": 2,
+       "item": "Patient/pt-0012",
+       "label": "Eduardo Angel Stracke",
+       "fails": 0,
+       "observations": 6
       }
+     ]
     },
-    "crc-care-gap": {
-      "trials_valid": 6,
-      "pass": 6,
-      "wilson": {
-        "lo": 0.6096657120978346,
-        "hi": 1
+    {
+     "class": "allergy_grade",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 12,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.7575059933447592,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Patient/pt-0015",
+       "label": "Daniel Ferreira",
+       "fails": 0,
+       "observations": 6
       },
-      "split": {
-        "model": 0,
-        "environment": 0,
-        "grader": 0,
-        "infra": 0
-      },
-      "guard_fires": 0,
-      "q": null,
-      "classes": [
-        {
-          "class": "frailty_advanced_illness",
-          "fails": 0,
-          "observations": 12,
-          "pass_rate": 1.0,
-          "wilson": {
-            "lo": 0.7575059933447592,
-            "hi": 1
-          },
-          "labels": [],
-          "instances": [
-            {
-              "instance": 1,
-              "item": "Elly Shyla Trantow",
-              "label": "1 (Elly Shyla Trantow)",
-              "fails": 0,
-              "observations": 6
-            },
-            {
-              "instance": 2,
-              "item": "Harrison O'Keefe",
-              "label": "2 (Harrison O'Keefe)",
-              "fails": 0,
-              "observations": 6
-            }
-          ]
-        },
-        {
-          "class": "hospice_revoked",
-          "fails": 0,
-          "observations": 12,
-          "pass_rate": 1.0,
-          "wilson": {
-            "lo": 0.7575059933447592,
-            "hi": 1
-          },
-          "labels": [],
-          "instances": [
-            {
-              "instance": 1,
-              "item": "Marilu Blanca Gaona",
-              "label": "1 (Marilu Blanca Gaona)",
-              "fails": 0,
-              "observations": 6
-            },
-            {
-              "instance": 2,
-              "item": "Kelsie Wanetta Rohan",
-              "label": "2 (Kelsie Wanetta Rohan)",
-              "fails": 0,
-              "observations": 6
-            }
-          ]
-        },
-        {
-          "class": "colonoscopy_never_done",
-          "fails": 0,
-          "observations": 12,
-          "pass_rate": 1.0,
-          "wilson": {
-            "lo": 0.7575059933447592,
-            "hi": 1
-          },
-          "labels": [],
-          "instances": [
-            {
-              "instance": 1,
-              "item": "Santo Rodrick Pagac",
-              "label": "1 (Santo Rodrick Pagac)",
-              "fails": 0,
-              "observations": 6
-            },
-            {
-              "instance": 2,
-              "item": "Delaine Evelyn MacGyver",
-              "label": "2 (Delaine Evelyn MacGyver)",
-              "fails": 0,
-              "observations": 6
-            }
-          ]
-        },
-        {
-          "class": "collection_vs_report_date",
-          "fails": 0,
-          "observations": 12,
-          "pass_rate": 1.0,
-          "wilson": {
-            "lo": 0.7575059933447592,
-            "hi": 1
-          },
-          "labels": [],
-          "instances": [
-            {
-              "instance": 1,
-              "item": "Lance Amado Muller",
-              "label": "1 (Lance Amado Muller)",
-              "fails": 0,
-              "observations": 6
-            },
-            {
-              "instance": 2,
-              "item": "Tiny Darline Koss",
-              "label": "2 (Tiny Darline Koss)",
-              "fails": 0,
-              "observations": 6
-            }
-          ]
-        },
-        {
-          "class": "partial_vs_total_colectomy",
-          "fails": 0,
-          "observations": 12,
-          "pass_rate": 1.0,
-          "wilson": {
-            "lo": 0.7575059933447592,
-            "hi": 1
-          },
-          "labels": [],
-          "instances": [
-            {
-              "instance": 1,
-              "item": "\u00c1ngela Andrea Vigil",
-              "label": "1 (\u00c1ngela Andrea Vigil)",
-              "fails": 0,
-              "observations": 6
-            },
-            {
-              "instance": 2,
-              "item": "Nick Jed Bartoletti",
-              "label": "2 (Nick Jed Bartoletti)",
-              "fails": 0,
-              "observations": 6
-            }
-          ]
-        },
-        {
-          "class": "nursing_home_vs_rehab",
-          "fails": 0,
-          "observations": 12,
-          "pass_rate": 1.0,
-          "wilson": {
-            "lo": 0.7575059933447592,
-            "hi": 1
-          },
-          "labels": [],
-          "instances": [
-            {
-              "instance": 1,
-              "item": "Rickey Morgan Sipes",
-              "label": "1 (Rickey Morgan Sipes)",
-              "fails": 0,
-              "observations": 6
-            },
-            {
-              "instance": 2,
-              "item": "Elvin Laverne Wolff",
-              "label": "2 (Elvin Laverne Wolff)",
-              "fails": 0,
-              "observations": 6
-            }
-          ]
-        },
-        {
-          "class": "filler",
-          "fails": 0,
-          "observations": 6,
-          "pass_rate": 1.0,
-          "wilson": {
-            "lo": 0.6096657120978346,
-            "hi": 1
-          },
-          "labels": [],
-          "instances": [
-            {
-              "instance": 1,
-              "item": "Fumiko Kati Pouros",
-              "label": "1 (Fumiko Kati Pouros)",
-              "fails": 0,
-              "observations": 6
-            }
-          ]
-        }
-      ],
-      "events": [],
-      "outside_failures": [],
-      "independence": {
-        "all_items_pass": 6,
-        "expected_per_item": 6.0,
-        "expected_per_class": 6.0
+      {
+       "instance": 2,
+       "item": "Patient/pt-0048",
+       "label": "Jamaal Derick Schmitt",
+       "fails": 0,
+       "observations": 6
       }
+     ]
     },
-    "discharge-medrec": {
-      "trials_valid": 6,
-      "pass": 6,
-      "wilson": {
-        "lo": 0.6096657120978346,
-        "hi": 1
-      },
-      "split": {
-        "model": 0,
-        "environment": 0,
-        "grader": 0,
-        "infra": 0
-      },
-      "guard_fires": 0,
-      "q": null,
-      "classes": [
-        {
-          "class": "precedence",
-          "fails": 0,
-          "observations": 12,
-          "pass_rate": 1.0,
-          "wilson": {
-            "lo": 0.7575059933447592,
-            "hi": 1
-          },
-          "labels": [],
-          "instances": [
-            {
-              "instance": 1,
-              "item": "kim-furosemide",
-              "label": "1 (kim-furosemide)",
-              "fails": 0,
-              "observations": 6
-            },
-            {
-              "instance": 2,
-              "item": "thompson-hctz",
-              "label": "2 (thompson-hctz)",
-              "fails": 0,
-              "observations": 6
-            }
-          ]
-        },
-        {
-          "class": "potassium",
-          "fails": 0,
-          "observations": 12,
-          "pass_rate": 1.0,
-          "wilson": {
-            "lo": 0.7575059933447592,
-            "hi": 1
-          },
-          "labels": [],
-          "instances": [
-            {
-              "instance": 1,
-              "item": "kim-lisinopril",
-              "label": "1 (kim-lisinopril)",
-              "fails": 0,
-              "observations": 6
-            },
-            {
-              "instance": 2,
-              "item": "roberts-lisinopril",
-              "label": "2 (roberts-lisinopril)",
-              "fails": 0,
-              "observations": 6
-            }
-          ]
-        },
-        {
-          "class": "filler",
-          "fails": 0,
-          "observations": 6,
-          "pass_rate": 1.0,
-          "wilson": {
-            "lo": 0.6096657120978346,
-            "hi": 1
-          },
-          "labels": [],
-          "instances": [
-            {
-              "instance": 1,
-              "item": "kim-kcl",
-              "label": "1 (kim-kcl)",
-              "fails": 0,
-              "observations": 6
-            }
-          ]
-        },
-        {
-          "class": "formulary",
-          "fails": 0,
-          "observations": 12,
-          "pass_rate": 1.0,
-          "wilson": {
-            "lo": 0.7575059933447592,
-            "hi": 1
-          },
-          "labels": [],
-          "instances": [
-            {
-              "instance": 1,
-              "item": "kim-omeprazole",
-              "label": "1 (kim-omeprazole)",
-              "fails": 0,
-              "observations": 6
-            },
-            {
-              "instance": 2,
-              "item": "roberts-rosuvastatin",
-              "label": "2 (roberts-rosuvastatin)",
-              "fails": 0,
-              "observations": 6
-            }
-          ]
-        },
-        {
-          "class": "brand",
-          "fails": 0,
-          "observations": 12,
-          "pass_rate": 1.0,
-          "wilson": {
-            "lo": 0.7575059933447592,
-            "hi": 1
-          },
-          "labels": [],
-          "instances": [
-            {
-              "instance": 1,
-              "item": "stark-carvedilol",
-              "label": "1 (stark-carvedilol)",
-              "fails": 0,
-              "observations": 6
-            },
-            {
-              "instance": 2,
-              "item": "thompson-nifedipine",
-              "label": "2 (thompson-nifedipine)",
-              "fails": 0,
-              "observations": 6
-            }
-          ]
-        },
-        {
-          "class": "fill_gap",
-          "fails": 0,
-          "observations": 12,
-          "pass_rate": 1.0,
-          "wilson": {
-            "lo": 0.7575059933447592,
-            "hi": 1
-          },
-          "labels": [],
-          "instances": [
-            {
-              "instance": 1,
-              "item": "stark-atorvastatin",
-              "label": "1 (stark-atorvastatin)",
-              "fails": 0,
-              "observations": 6
-            },
-            {
-              "instance": 2,
-              "item": "thompson-levothyroxine",
-              "label": "2 (thompson-levothyroxine)",
-              "fails": 0,
-              "observations": 6
-            }
-          ]
-        },
-        {
-          "class": "fill_history",
-          "fails": 0,
-          "observations": 12,
-          "pass_rate": 1.0,
-          "wilson": {
-            "lo": 0.7575059933447592,
-            "hi": 1
-          },
-          "labels": [],
-          "instances": [
-            {
-              "instance": 1,
-              "item": "stark-glipizide",
-              "label": "1 (stark-glipizide)",
-              "fails": 0,
-              "observations": 6
-            },
-            {
-              "instance": 2,
-              "item": "roberts-sertraline",
-              "label": "2 (roberts-sertraline)",
-              "fails": 0,
-              "observations": 6
-            }
-          ]
-        }
-      ],
-      "events": [],
-      "outside_failures": [],
-      "independence": {
-        "all_items_pass": 6,
-        "expected_per_item": 6.0,
-        "expected_per_class": 6.0
+    {
+     "class": "metformin_hold",
+     "fails": 1,
+     "base_fails": 1,
+     "observations": 12,
+     "pass_rate": 0.9166666666666666,
+     "wilson": {
+      "lo": 0.646120088858883,
+      "hi": 0.9851349055950829
+     },
+     "labels": [
+      {
+       "trial": 3,
+       "run": "results/probe-1",
+       "item": "Patient/pt-0049",
+       "gate": "saline_prophylaxis",
+       "label": "retrieval"
       }
+     ],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Patient/pt-0049",
+       "label": "Anisha Margarita Schuster",
+       "fails": 1,
+       "observations": 6
+      },
+      {
+       "instance": 2,
+       "item": "Patient/pt-0050",
+       "label": "Salvador Logan Brakus",
+       "fails": 0,
+       "observations": 6
+      }
+     ]
     },
-    "message-queue": {
-      "trials_valid": 6,
-      "pass": 5,
-      "wilson": {
-        "lo": 0.43649717781352987,
-        "hi": 0.9699466302516935
-      },
-      "split": {
-        "model": 0,
-        "environment": 0,
-        "grader": 1,
-        "infra": 0
-      },
-      "guard_fires": 0,
-      "q": null,
-      "classes": [
-        {
-          "class": "hemolyzed_potassium",
-          "fails": 0,
-          "observations": 12,
-          "pass_rate": 1.0,
-          "wilson": {
-            "lo": 0.7575059933447592,
-            "hi": 1
-          },
-          "labels": [],
-          "instances": [
-            {
-              "instance": 1,
-              "item": "m1",
-              "label": "1 (m1)",
-              "fails": 0,
-              "observations": 6
-            },
-            {
-              "instance": 2,
-              "item": "m3",
-              "label": "2 (m3)",
-              "fails": 0,
-              "observations": 6
-            }
-          ]
-        },
-        {
-          "class": "same_patient",
-          "fails": 0,
-          "observations": 12,
-          "pass_rate": 1.0,
-          "wilson": {
-            "lo": 0.7575059933447592,
-            "hi": 1
-          },
-          "labels": [],
-          "instances": [
-            {
-              "instance": 1,
-              "item": "m2",
-              "label": "1 (m2)",
-              "fails": 0,
-              "observations": 6
-            },
-            {
-              "instance": 2,
-              "item": "m11",
-              "label": "2 (m11)",
-              "fails": 0,
-              "observations": 6
-            }
-          ]
-        },
-        {
-          "class": "filler",
-          "fails": 0,
-          "observations": 6,
-          "pass_rate": 1.0,
-          "wilson": {
-            "lo": 0.6096657120978346,
-            "hi": 1
-          },
-          "labels": [],
-          "instances": [
-            {
-              "instance": 1,
-              "item": "m4",
-              "label": "1 (m4)",
-              "fails": 0,
-              "observations": 6
-            }
-          ]
-        },
-        {
-          "class": "collection_date",
-          "fails": 0,
-          "observations": 12,
-          "pass_rate": 1.0,
-          "wilson": {
-            "lo": 0.7575059933447592,
-            "hi": 1
-          },
-          "labels": [],
-          "instances": [
-            {
-              "instance": 1,
-              "item": "m5",
-              "label": "1 (m5)",
-              "fails": 0,
-              "observations": 6
-            },
-            {
-              "instance": 2,
-              "item": "m12",
-              "label": "2 (m12)",
-              "fails": 0,
-              "observations": 6
-            }
-          ]
-        },
-        {
-          "class": "amended_or_error",
-          "fails": 0,
-          "observations": 12,
-          "pass_rate": 1.0,
-          "wilson": {
-            "lo": 0.7575059933447592,
-            "hi": 1
-          },
-          "labels": [],
-          "instances": [
-            {
-              "instance": 1,
-              "item": "m6",
-              "label": "1 (m6)",
-              "fails": 0,
-              "observations": 6
-            },
-            {
-              "instance": 2,
-              "item": "m13",
-              "label": "2 (m13)",
-              "fails": 0,
-              "observations": 6
-            }
-          ]
-        },
-        {
-          "class": "creatinine_rise",
-          "fails": 0,
-          "observations": 12,
-          "pass_rate": 1.0,
-          "wilson": {
-            "lo": 0.7575059933447592,
-            "hi": 1
-          },
-          "labels": [],
-          "instances": [
-            {
-              "instance": 1,
-              "item": "m7",
-              "label": "1 (m7)",
-              "fails": 0,
-              "observations": 6
-            },
-            {
-              "instance": 2,
-              "item": "m9",
-              "label": "2 (m9)",
-              "fails": 0,
-              "observations": 6
-            }
-          ]
-        },
-        {
-          "class": "metformin_two_series",
-          "fails": 1,
-          "observations": 12,
-          "pass_rate": 0.9166666666666666,
-          "wilson": {
-            "lo": 0.646120088858883,
-            "hi": 0.9851349055950829
-          },
-          "labels": [
-            {
-              "trial": 4,
-              "gate": "decisive_seen",
-              "label": "reasoning"
-            }
-          ],
-          "instances": [
-            {
-              "instance": 1,
-              "item": "m8",
-              "label": "1 (m8)",
-              "fails": 1,
-              "observations": 6
-            },
-            {
-              "instance": 2,
-              "item": "m10",
-              "label": "2 (m10)",
-              "fails": 0,
-              "observations": 6
-            }
-          ]
-        }
-      ],
-      "events": [],
-      "outside_failures": [],
-      "independence": {
-        "all_items_pass": 5,
-        "expected_per_item": 5.0,
-        "expected_per_class": 5.5
+    {
+     "class": "filler",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 6,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.6096657120978346,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Patient/pt-0046",
+       "label": "Lauren Sixta Beahan",
+       "fails": 0,
+       "observations": 6
       }
-    },
-    "renal-dose-review": {
-      "trials_valid": 6,
-      "pass": 6,
-      "wilson": {
-        "lo": 0.6096657120978346,
-        "hi": 1
-      },
-      "split": {
-        "model": 0,
-        "environment": 0,
-        "grader": 0,
-        "infra": 0
-      },
-      "guard_fires": 0,
-      "q": null,
-      "classes": [
-        {
-          "class": "outside_scr_umol",
-          "fails": 0,
-          "observations": 12,
-          "pass_rate": 1.0,
-          "wilson": {
-            "lo": 0.7575059933447592,
-            "hi": 1
-          },
-          "labels": [],
-          "instances": [
-            {
-              "instance": 1,
-              "item": "Dorothy Ashworth",
-              "label": "1 (Dorothy Ashworth)",
-              "fails": 0,
-              "observations": 6
-            },
-            {
-              "instance": 2,
-              "item": "Frank Delgado",
-              "label": "2 (Frank Delgado)",
-              "fails": 0,
-              "observations": 6
-            }
-          ]
-        },
-        {
-          "class": "cg_crcl_weight_rule",
-          "fails": 0,
-          "observations": 12,
-          "pass_rate": 1.0,
-          "wilson": {
-            "lo": 0.7575059933447592,
-            "hi": 1
-          },
-          "labels": [],
-          "instances": [
-            {
-              "instance": 1,
-              "item": "Clarence Bauer",
-              "label": "1 (Clarence Bauer)",
-              "fails": 0,
-              "observations": 6
-            },
-            {
-              "instance": 2,
-              "item": "Eugene Moravec",
-              "label": "2 (Eugene Moravec)",
-              "fails": 0,
-              "observations": 6
-            }
-          ]
-        },
-        {
-          "class": "pgp_cyp3a4_inhibitor",
-          "fails": 0,
-          "observations": 12,
-          "pass_rate": 1.0,
-          "wilson": {
-            "lo": 0.7575059933447592,
-            "hi": 1
-          },
-          "labels": [],
-          "instances": [
-            {
-              "instance": 1,
-              "item": "Raymond Duquette",
-              "label": "1 (Raymond Duquette)",
-              "fails": 0,
-              "observations": 6
-            },
-            {
-              "instance": 2,
-              "item": "Gregory Lindahl",
-              "label": "2 (Gregory Lindahl)",
-              "fails": 0,
-              "observations": 6
-            }
-          ]
-        },
-        {
-          "class": "apixaban_two_of_three",
-          "fails": 0,
-          "observations": 12,
-          "pass_rate": 1.0,
-          "wilson": {
-            "lo": 0.7575059933447592,
-            "hi": 1
-          },
-          "labels": [],
-          "instances": [
-            {
-              "instance": 1,
-              "item": "Walter Kowalczyk",
-              "label": "1 (Walter Kowalczyk)",
-              "fails": 0,
-              "observations": 6
-            },
-            {
-              "instance": 2,
-              "item": "Harold Vance",
-              "label": "2 (Harold Vance)",
-              "fails": 0,
-              "observations": 6
-            }
-          ]
-        },
-        {
-          "class": "filler",
-          "fails": 0,
-          "observations": 6,
-          "pass_rate": 1.0,
-          "wilson": {
-            "lo": 0.6096657120978346,
-            "hi": 1
-          },
-          "labels": [],
-          "instances": [
-            {
-              "instance": 1,
-              "item": "Marjorie Pellegrino",
-              "label": "1 (Marjorie Pellegrino)",
-              "fails": 0,
-              "observations": 6
-            }
-          ]
-        }
-      ],
-      "events": [],
-      "outside_failures": [],
-      "independence": {
-        "all_items_pass": 6,
-        "expected_per_item": 6.0,
-        "expected_per_class": 6.0
-      }
-    },
-    "results-inbox": {
-      "trials_valid": 6,
-      "pass": 6,
-      "wilson": {
-        "lo": 0.6096657120978346,
-        "hi": 1
-      },
-      "split": {
-        "model": 0,
-        "environment": 0,
-        "grader": 0,
-        "infra": 0
-      },
-      "guard_fires": 0,
-      "q": null,
-      "classes": [
-        {
-          "class": "nodule_screening",
-          "fails": 0,
-          "observations": 12,
-          "pass_rate": 1.0,
-          "wilson": {
-            "lo": 0.7575059933447592,
-            "hi": 1
-          },
-          "labels": [],
-          "instances": [
-            {
-              "instance": 1,
-              "item": "nodule_overdue",
-              "label": "1 (nodule_overdue)",
-              "fails": 0,
-              "observations": 6
-            },
-            {
-              "instance": 2,
-              "item": "nodule_scheduled",
-              "label": "2 (nodule_scheduled)",
-              "fails": 0,
-              "observations": 6
-            }
-          ]
-        },
-        {
-          "class": "hemolyzed",
-          "fails": 0,
-          "observations": 12,
-          "pass_rate": 1.0,
-          "wilson": {
-            "lo": 0.7575059933447592,
-            "hi": 1
-          },
-          "labels": [],
-          "instances": [
-            {
-              "instance": 1,
-              "item": "hemolyzed_report",
-              "label": "1 (hemolyzed_report)",
-              "fails": 0,
-              "observations": 6
-            },
-            {
-              "instance": 2,
-              "item": "hemolyzed_note",
-              "label": "2 (hemolyzed_note)",
-              "fails": 0,
-              "observations": 6
-            }
-          ]
-        },
-        {
-          "class": "corrected",
-          "fails": 0,
-          "observations": 12,
-          "pass_rate": 1.0,
-          "wilson": {
-            "lo": 0.7575059933447592,
-            "hi": 1
-          },
-          "labels": [],
-          "instances": [
-            {
-              "instance": 1,
-              "item": "corrected_up",
-              "label": "1 (corrected_up)",
-              "fails": 0,
-              "observations": 6
-            },
-            {
-              "instance": 2,
-              "item": "corrected_down",
-              "label": "2 (corrected_down)",
-              "fails": 0,
-              "observations": 6
-            }
-          ]
-        },
-        {
-          "class": "entered_in_error",
-          "fails": 0,
-          "observations": 12,
-          "pass_rate": 1.0,
-          "wilson": {
-            "lo": 0.7575059933447592,
-            "hi": 1
-          },
-          "labels": [],
-          "instances": [
-            {
-              "instance": 1,
-              "item": "eie_result",
-              "label": "1 (eie_result)",
-              "fails": 0,
-              "observations": 6
-            },
-            {
-              "instance": 2,
-              "item": "eie_baseline",
-              "label": "2 (eie_baseline)",
-              "fails": 0,
-              "observations": 6
-            }
-          ]
-        },
-        {
-          "class": "preliminary",
-          "fails": 0,
-          "observations": 12,
-          "pass_rate": 1.0,
-          "wilson": {
-            "lo": 0.7575059933447592,
-            "hi": 1
-          },
-          "labels": [],
-          "instances": [
-            {
-              "instance": 1,
-              "item": "prelim_positive",
-              "label": "1 (prelim_positive)",
-              "fails": 0,
-              "observations": 6
-            },
-            {
-              "instance": 2,
-              "item": "prelim_negative",
-              "label": "2 (prelim_negative)",
-              "fails": 0,
-              "observations": 6
-            }
-          ]
-        },
-        {
-          "class": "aki",
-          "fails": 0,
-          "observations": 12,
-          "pass_rate": 1.0,
-          "wilson": {
-            "lo": 0.7575059933447592,
-            "hi": 1
-          },
-          "labels": [],
-          "instances": [
-            {
-              "instance": 1,
-              "item": "aki_48h",
-              "label": "1 (aki_48h)",
-              "fails": 0,
-              "observations": 6
-            },
-            {
-              "instance": 2,
-              "item": "aki_7day",
-              "label": "2 (aki_7day)",
-              "fails": 0,
-              "observations": 6
-            }
-          ]
-        },
-        {
-          "class": "filler",
-          "fails": 0,
-          "observations": 6,
-          "pass_rate": 1.0,
-          "wilson": {
-            "lo": 0.6096657120978346,
-            "hi": 1
-          },
-          "labels": [],
-          "instances": [
-            {
-              "instance": 1,
-              "item": "normal_tsh",
-              "label": "1 (normal_tsh)",
-              "fails": 0,
-              "observations": 6
-            }
-          ]
-        }
-      ],
-      "events": [],
-      "outside_failures": [],
-      "independence": {
-        "all_items_pass": 6,
-        "expected_per_item": 6.0,
-        "expected_per_class": 6.0
-      }
+     ]
     }
+   ],
+   "events": [],
+   "outside_failures": [],
+   "independence": {
+    "all_items_pass": 5,
+    "expected_per_item": 5,
+    "expected_per_class": 5.5
+   },
+   "outcomes": [
+    {
+     "trial": 0,
+     "run": "results/probe-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 1,
+     "run": "results/probe-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 2,
+     "run": "results/probe-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 3,
+     "run": "results/probe-1",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 4,
+     "run": "results/probe-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 5,
+     "run": "results/probe-1",
+     "outcome": "PASS"
+    }
+   ]
+  },
+  "crc-care-gap": {
+   "trials_valid": 6,
+   "pass": 6,
+   "wilson": {
+    "lo": 0.6096657120978346,
+    "hi": 1
+   },
+   "split": {
+    "model": 0,
+    "environment": 0,
+    "grader": 0,
+    "infra": 0
+   },
+   "guard_fires": 0,
+   "q": null,
+   "classes": [
+    {
+     "class": "frailty_advanced_illness",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 12,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.7575059933447592,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Patient/pt-0009",
+       "label": "Elly Shyla Trantow",
+       "fails": 0,
+       "observations": 6
+      },
+      {
+       "instance": 2,
+       "item": "Patient/pt-0019",
+       "label": "Harrison O'Keefe",
+       "fails": 0,
+       "observations": 6
+      }
+     ]
+    },
+    {
+     "class": "hospice_revoked",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 12,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.7575059933447592,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Patient/pt-0011",
+       "label": "Marilu Blanca Gaona",
+       "fails": 0,
+       "observations": 6
+      },
+      {
+       "instance": 2,
+       "item": "Patient/pt-0020",
+       "label": "Kelsie Wanetta Rohan",
+       "fails": 0,
+       "observations": 6
+      }
+     ]
+    },
+    {
+     "class": "colonoscopy_never_done",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 12,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.7575059933447592,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Patient/pt-0014",
+       "label": "Santo Rodrick Pagac",
+       "fails": 0,
+       "observations": 6
+      },
+      {
+       "instance": 2,
+       "item": "Patient/pt-0024",
+       "label": "Delaine Evelyn MacGyver",
+       "fails": 0,
+       "observations": 6
+      }
+     ]
+    },
+    {
+     "class": "collection_vs_report_date",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 12,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.7575059933447592,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Patient/pt-0018",
+       "label": "Lance Amado Muller",
+       "fails": 0,
+       "observations": 6
+      },
+      {
+       "instance": 2,
+       "item": "Patient/pt-0022",
+       "label": "Tiny Darline Koss",
+       "fails": 0,
+       "observations": 6
+      }
+     ]
+    },
+    {
+     "class": "partial_vs_total_colectomy",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 12,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.7575059933447592,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Patient/pt-0021",
+       "label": "Ángela Andrea Vigil",
+       "fails": 0,
+       "observations": 6
+      },
+      {
+       "instance": 2,
+       "item": "Patient/pt-0036",
+       "label": "Nick Jed Bartoletti",
+       "fails": 0,
+       "observations": 6
+      }
+     ]
+    },
+    {
+     "class": "nursing_home_vs_rehab",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 12,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.7575059933447592,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Patient/pt-0034",
+       "label": "Rickey Morgan Sipes",
+       "fails": 0,
+       "observations": 6
+      },
+      {
+       "instance": 2,
+       "item": "Patient/pt-0035",
+       "label": "Elvin Laverne Wolff",
+       "fails": 0,
+       "observations": 6
+      }
+     ]
+    },
+    {
+     "class": "filler",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 6,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.6096657120978346,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Patient/pt-0037",
+       "label": "Fumiko Kati Pouros",
+       "fails": 0,
+       "observations": 6
+      }
+     ]
+    }
+   ],
+   "events": [],
+   "outside_failures": [],
+   "independence": {
+    "all_items_pass": 6,
+    "expected_per_item": 6,
+    "expected_per_class": 6
+   },
+   "outcomes": [
+    {
+     "trial": 0,
+     "run": "results/probe-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 1,
+     "run": "results/probe-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 2,
+     "run": "results/probe-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 3,
+     "run": "results/probe-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 4,
+     "run": "results/probe-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 5,
+     "run": "results/probe-1",
+     "outcome": "PASS"
+    }
+   ]
+  },
+  "discharge-medrec": {
+   "trials_valid": 6,
+   "pass": 6,
+   "wilson": {
+    "lo": 0.6096657120978346,
+    "hi": 1
+   },
+   "split": {
+    "model": 0,
+    "environment": 0,
+    "grader": 0,
+    "infra": 0
+   },
+   "guard_fires": 0,
+   "q": null,
+   "classes": [
+    {
+     "class": "precedence",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 12,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.7575059933447592,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "kim-furosemide",
+       "label": "kim-furosemide",
+       "fails": 0,
+       "observations": 6
+      },
+      {
+       "instance": 2,
+       "item": "thompson-hctz",
+       "label": "thompson-hctz",
+       "fails": 0,
+       "observations": 6
+      }
+     ]
+    },
+    {
+     "class": "potassium",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 12,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.7575059933447592,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "kim-lisinopril",
+       "label": "kim-lisinopril",
+       "fails": 0,
+       "observations": 6
+      },
+      {
+       "instance": 2,
+       "item": "roberts-lisinopril",
+       "label": "roberts-lisinopril",
+       "fails": 0,
+       "observations": 6
+      }
+     ]
+    },
+    {
+     "class": "filler",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 6,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.6096657120978346,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "kim-kcl",
+       "label": "kim-kcl",
+       "fails": 0,
+       "observations": 6
+      }
+     ]
+    },
+    {
+     "class": "formulary",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 12,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.7575059933447592,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "kim-omeprazole",
+       "label": "kim-omeprazole",
+       "fails": 0,
+       "observations": 6
+      },
+      {
+       "instance": 2,
+       "item": "roberts-rosuvastatin",
+       "label": "roberts-rosuvastatin",
+       "fails": 0,
+       "observations": 6
+      }
+     ]
+    },
+    {
+     "class": "brand",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 12,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.7575059933447592,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "stark-carvedilol",
+       "label": "stark-carvedilol",
+       "fails": 0,
+       "observations": 6
+      },
+      {
+       "instance": 2,
+       "item": "thompson-nifedipine",
+       "label": "thompson-nifedipine",
+       "fails": 0,
+       "observations": 6
+      }
+     ]
+    },
+    {
+     "class": "fill_gap",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 12,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.7575059933447592,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "stark-atorvastatin",
+       "label": "stark-atorvastatin",
+       "fails": 0,
+       "observations": 6
+      },
+      {
+       "instance": 2,
+       "item": "thompson-levothyroxine",
+       "label": "thompson-levothyroxine",
+       "fails": 0,
+       "observations": 6
+      }
+     ]
+    },
+    {
+     "class": "fill_history",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 12,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.7575059933447592,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "stark-glipizide",
+       "label": "stark-glipizide",
+       "fails": 0,
+       "observations": 6
+      },
+      {
+       "instance": 2,
+       "item": "roberts-sertraline",
+       "label": "roberts-sertraline",
+       "fails": 0,
+       "observations": 6
+      }
+     ]
+    }
+   ],
+   "events": [],
+   "outside_failures": [],
+   "independence": {
+    "all_items_pass": 6,
+    "expected_per_item": 6,
+    "expected_per_class": 6
+   },
+   "outcomes": [
+    {
+     "trial": 0,
+     "run": "results/probe-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 1,
+     "run": "results/probe-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 2,
+     "run": "results/probe-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 3,
+     "run": "results/probe-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 4,
+     "run": "results/probe-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 5,
+     "run": "results/probe-1",
+     "outcome": "PASS"
+    }
+   ]
+  },
+  "message-queue": {
+   "trials_valid": 6,
+   "pass": 5,
+   "wilson": {
+    "lo": 0.43649717781352987,
+    "hi": 0.9699466302516935
+   },
+   "split": {
+    "model": 1,
+    "environment": 0,
+    "grader": 0,
+    "infra": 0
+   },
+   "guard_fires": 0,
+   "q": null,
+   "classes": [
+    {
+     "class": "hemolyzed_potassium",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 12,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.7575059933447592,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Task/task-00012",
+       "label": "m1",
+       "fails": 0,
+       "observations": 6
+      },
+      {
+       "instance": 2,
+       "item": "Task/task-00014",
+       "label": "m3",
+       "fails": 0,
+       "observations": 6
+      }
+     ]
+    },
+    {
+     "class": "same_patient",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 12,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.7575059933447592,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Task/task-00013",
+       "label": "m2",
+       "fails": 0,
+       "observations": 6
+      },
+      {
+       "instance": 2,
+       "item": "Task/task-00022",
+       "label": "m11",
+       "fails": 0,
+       "observations": 6
+      }
+     ]
+    },
+    {
+     "class": "filler",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 6,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.6096657120978346,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Task/task-00015",
+       "label": "m4",
+       "fails": 0,
+       "observations": 6
+      }
+     ]
+    },
+    {
+     "class": "collection_date",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 12,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.7575059933447592,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Task/task-00016",
+       "label": "m5",
+       "fails": 0,
+       "observations": 6
+      },
+      {
+       "instance": 2,
+       "item": "Task/task-00023",
+       "label": "m12",
+       "fails": 0,
+       "observations": 6
+      }
+     ]
+    },
+    {
+     "class": "amended_or_error",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 12,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.7575059933447592,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Task/task-00017",
+       "label": "m6",
+       "fails": 0,
+       "observations": 6
+      },
+      {
+       "instance": 2,
+       "item": "Task/task-00024",
+       "label": "m13",
+       "fails": 0,
+       "observations": 6
+      }
+     ]
+    },
+    {
+     "class": "creatinine_rise",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 12,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.7575059933447592,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Task/task-00018",
+       "label": "m7",
+       "fails": 0,
+       "observations": 6
+      },
+      {
+       "instance": 2,
+       "item": "Task/task-00020",
+       "label": "m9",
+       "fails": 0,
+       "observations": 6
+      }
+     ]
+    },
+    {
+     "class": "metformin_two_series",
+     "fails": 1,
+     "base_fails": 1,
+     "observations": 12,
+     "pass_rate": 0.9166666666666666,
+     "wilson": {
+      "lo": 0.646120088858883,
+      "hi": 0.9851349055950829
+     },
+     "labels": [
+      {
+       "trial": 4,
+       "run": "results/probe-1",
+       "item": "Task/task-00019",
+       "gate": "decisive_seen",
+       "label": "reasoning"
+      }
+     ],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Task/task-00019",
+       "label": "m8",
+       "fails": 1,
+       "observations": 6
+      },
+      {
+       "instance": 2,
+       "item": "Task/task-00021",
+       "label": "m10",
+       "fails": 0,
+       "observations": 6
+      }
+     ]
+    }
+   ],
+   "events": [],
+   "outside_failures": [],
+   "independence": {
+    "all_items_pass": 5,
+    "expected_per_item": 5,
+    "expected_per_class": 5.5
+   },
+   "outcomes": [
+    {
+     "trial": 0,
+     "run": "results/probe-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 1,
+     "run": "results/probe-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 2,
+     "run": "results/probe-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 3,
+     "run": "results/probe-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 4,
+     "run": "results/probe-1",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 5,
+     "run": "results/probe-1",
+     "outcome": "PASS"
+    }
+   ]
+  },
+  "renal-dose-review": {
+   "trials_valid": 6,
+   "pass": 6,
+   "wilson": {
+    "lo": 0.6096657120978346,
+    "hi": 1
+   },
+   "split": {
+    "model": 0,
+    "environment": 0,
+    "grader": 0,
+    "infra": 0
+   },
+   "guard_fires": 0,
+   "q": null,
+   "classes": [
+    {
+     "class": "outside_scr_umol",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 12,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.7575059933447592,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Patient/pt-0040",
+       "label": "Dorothy Ashworth",
+       "fails": 0,
+       "observations": 6
+      },
+      {
+       "instance": 2,
+       "item": "Patient/pt-0003",
+       "label": "Frank Delgado",
+       "fails": 0,
+       "observations": 6
+      }
+     ]
+    },
+    {
+     "class": "cg_crcl_weight_rule",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 12,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.7575059933447592,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Patient/pt-0039",
+       "label": "Clarence Bauer",
+       "fails": 0,
+       "observations": 6
+      },
+      {
+       "instance": 2,
+       "item": "Patient/pt-0038",
+       "label": "Eugene Moravec",
+       "fails": 0,
+       "observations": 6
+      }
+     ]
+    },
+    {
+     "class": "pgp_cyp3a4_inhibitor",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 12,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.7575059933447592,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Patient/pt-0041",
+       "label": "Raymond Duquette",
+       "fails": 0,
+       "observations": 6
+      },
+      {
+       "instance": 2,
+       "item": "Patient/pt-0045",
+       "label": "Gregory Lindahl",
+       "fails": 0,
+       "observations": 6
+      }
+     ]
+    },
+    {
+     "class": "apixaban_two_of_three",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 12,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.7575059933447592,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Patient/pt-0001",
+       "label": "Walter Kowalczyk",
+       "fails": 0,
+       "observations": 6
+      },
+      {
+       "instance": 2,
+       "item": "Patient/pt-0002",
+       "label": "Harold Vance",
+       "fails": 0,
+       "observations": 6
+      }
+     ]
+    },
+    {
+     "class": "filler",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 6,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.6096657120978346,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Patient/pt-0043",
+       "label": "Marjorie Pellegrino",
+       "fails": 0,
+       "observations": 6
+      }
+     ]
+    }
+   ],
+   "events": [],
+   "outside_failures": [],
+   "independence": {
+    "all_items_pass": 6,
+    "expected_per_item": 6,
+    "expected_per_class": 6
+   },
+   "outcomes": [
+    {
+     "trial": 0,
+     "run": "results/probe-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 1,
+     "run": "results/probe-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 2,
+     "run": "results/probe-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 3,
+     "run": "results/probe-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 4,
+     "run": "results/probe-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 5,
+     "run": "results/probe-1",
+     "outcome": "PASS"
+    }
+   ]
+  },
+  "results-inbox": {
+   "trials_valid": 6,
+   "pass": 6,
+   "wilson": {
+    "lo": 0.6096657120978346,
+    "hi": 1
+   },
+   "split": {
+    "model": 0,
+    "environment": 0,
+    "grader": 0,
+    "infra": 0
+   },
+   "guard_fires": 0,
+   "q": null,
+   "classes": [
+    {
+     "class": "nodule_screening",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 12,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.7575059933447592,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "nodule_overdue",
+       "label": "nodule_overdue",
+       "fails": 0,
+       "observations": 6
+      },
+      {
+       "instance": 2,
+       "item": "nodule_scheduled",
+       "label": "nodule_scheduled",
+       "fails": 0,
+       "observations": 6
+      }
+     ]
+    },
+    {
+     "class": "hemolyzed",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 12,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.7575059933447592,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "hemolyzed_report",
+       "label": "hemolyzed_report",
+       "fails": 0,
+       "observations": 6
+      },
+      {
+       "instance": 2,
+       "item": "hemolyzed_note",
+       "label": "hemolyzed_note",
+       "fails": 0,
+       "observations": 6
+      }
+     ]
+    },
+    {
+     "class": "corrected",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 12,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.7575059933447592,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "corrected_up",
+       "label": "corrected_up",
+       "fails": 0,
+       "observations": 6
+      },
+      {
+       "instance": 2,
+       "item": "corrected_down",
+       "label": "corrected_down",
+       "fails": 0,
+       "observations": 6
+      }
+     ]
+    },
+    {
+     "class": "entered_in_error",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 12,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.7575059933447592,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "eie_result",
+       "label": "eie_result",
+       "fails": 0,
+       "observations": 6
+      },
+      {
+       "instance": 2,
+       "item": "eie_baseline",
+       "label": "eie_baseline",
+       "fails": 0,
+       "observations": 6
+      }
+     ]
+    },
+    {
+     "class": "preliminary",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 12,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.7575059933447592,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "prelim_positive",
+       "label": "prelim_positive",
+       "fails": 0,
+       "observations": 6
+      },
+      {
+       "instance": 2,
+       "item": "prelim_negative",
+       "label": "prelim_negative",
+       "fails": 0,
+       "observations": 6
+      }
+     ]
+    },
+    {
+     "class": "aki",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 12,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.7575059933447592,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "aki_48h",
+       "label": "aki_48h",
+       "fails": 0,
+       "observations": 6
+      },
+      {
+       "instance": 2,
+       "item": "aki_7day",
+       "label": "aki_7day",
+       "fails": 0,
+       "observations": 6
+      }
+     ]
+    },
+    {
+     "class": "filler",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 6,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.6096657120978346,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "normal_tsh",
+       "label": "normal_tsh",
+       "fails": 0,
+       "observations": 6
+      }
+     ]
+    }
+   ],
+   "events": [],
+   "outside_failures": [],
+   "independence": {
+    "all_items_pass": 6,
+    "expected_per_item": 6,
+    "expected_per_class": 6
+   },
+   "outcomes": [
+    {
+     "trial": 0,
+     "run": "results/probe-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 1,
+     "run": "results/probe-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 2,
+     "run": "results/probe-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 3,
+     "run": "results/probe-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 4,
+     "run": "results/probe-1",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 5,
+     "run": "results/probe-1",
+     "outcome": "PASS"
+    }
+   ]
   }
+ }
 }

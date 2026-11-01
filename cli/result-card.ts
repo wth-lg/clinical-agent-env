@@ -10,8 +10,8 @@
 //   Grader faults      GRADER_ERROR now and in an earlier grade, and every record a later grader
 //   found and fixed    regraded to another outcome (cli regrade), with both graders
 //   Per class and      from --classes, a saved `pnpm cli classes <run dirs> --json` (PW4-H0b; the
-//   per event          fields read are ClassesJson below, a subset of
-//                      reports/w4-classes-json-contract.txt): q, guard fires, each class's fails
+//   per event          JSON is cli/classes.ts ClassesJson, checked by its classesJsonProblems):
+//                      q, guard fires, each class's fails
 //                      by instance and over its observations with the pass rate's Wilson 95%
 //                      (computed here from the counts with summary.ts wilson) and failure labels,
 //                      and each event's. Without --classes it says "Not given".
@@ -31,6 +31,7 @@ import { installEgressGuard } from '../packages/core/egress.ts';
 import { FINAL_PASS_BAND } from '../packages/core/cost.ts';
 import { assertSummary, currentGrade, trialName, wilson, type Interval, type RegradeGrade, type Summary } from '../packages/core/summary.ts';
 import { settledRecords } from './adapters/result-sink-node.ts';
+import { classesJsonProblems, type ClassesJson, type Label } from './classes.ts';
 import { main as summaryMain } from './summary.ts';
 
 export interface Deps {
@@ -41,78 +42,14 @@ export interface Deps {
 const defaults: Deps = { out: (l) => process.stdout.write(`${l}\n`), err: (l) => process.stderr.write(`${l}\n`) };
 const USAGE = 'usage: pnpm cli result-card <run> [--classes <cli classes --json output>] [--history <run>[,<run>...]] [--out <file>]';
 
-// What the card reads of `cli classes --json` (reports/w4-classes-json-contract.txt, schema_version
-// 1): a subset of its fields, by its names. The rest (run_dirs, wilson, pass_rate, outside_failures,
-// independence, ...) is not read.
-export interface ClassesLabel {
-  trial: number | string;
-  gate: string;
-  label: string;
-}
-export interface ClassesJson {
-  schema_version: 1;
-  tasks: Record<string, {
-    trials_valid: number;
-    split: { model: number; environment: number; grader: number; infra: number };
-    guard_fires: number;
-    q: { trials: number; seen_all: number } | null;
-    classes: Array<{ class: string; fails: number; observations: number; labels: ClassesLabel[]; instances: Array<{ instance: number | string; item: string; fails: number; observations: number }> }>;
-    events: Array<{ id: string; item: string; class: string; active: boolean; fired: number; fails: number; observations: number; labels: ClassesLabel[] }>;
-  }>;
-}
-export const CLASSES_SCHEMA_VERSION = 1;
-
-// Checks x against ClassesJson and returns it; throws naming the first field that does not fit.
+// The classes JSON is cli/classes.ts's ClassesJson (schema_version 1), checked with its
+// classesJsonProblems; the card reads trials_valid, split, guard_fires, q, classes (class, fails,
+// observations, labels, instances: instance and its display label) and events (id, item, class, active, fired, fails, observations,
+// labels), and computes each Wilson interval from the counts.
 export function readClasses(x: unknown): ClassesJson {
-  const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
-  const fail = (path: string, v: unknown): never => {
-    throw new TypeError(`${path}: bad value ${JSON.stringify(v)}`);
-  };
-  const count = (path: string, v: unknown) => (Number.isSafeInteger(v) && (v as number) >= 0 ? (v as number) : fail(path, v));
-  const str = (path: string, v: unknown) => (typeof v === 'string' ? v : fail(path, v));
-  const obj = (path: string, v: unknown) => (isObj(v) ? v : fail(path, v));
-  const arr = (path: string, v: unknown) => (Array.isArray(v) ? (v as unknown[]) : fail(path, v));
-  const labels = (path: string, v: unknown): ClassesLabel[] => arr(path, v).map((l, i) => {
-    const o = obj(`${path}[${i}]`, l);
-    const trial = typeof o.trial === 'string' ? o.trial : count(`${path}[${i}].trial`, o.trial);
-    return { trial, gate: str(`${path}[${i}].gate`, o.gate), label: str(`${path}[${i}].label`, o.label) };
-  });
-  const root = obj('classes', x);
-  if (root.schema_version !== CLASSES_SCHEMA_VERSION) throw new TypeError(`classes: schema_version ${JSON.stringify(root.schema_version)}; this reader reads version ${CLASSES_SCHEMA_VERSION}`);
-  const tasks: ClassesJson['tasks'] = {};
-  for (const [id, t] of Object.entries(obj('tasks', root.tasks))) {
-    const p = `tasks.${id}`;
-    const o = obj(p, t);
-    const split = obj(`${p}.split`, o.split);
-    const q = o.q === null ? null : obj(`${p}.q`, o.q);
-    tasks[id] = {
-      trials_valid: count(`${p}.trials_valid`, o.trials_valid),
-      split: { model: count(`${p}.split.model`, split.model), environment: count(`${p}.split.environment`, split.environment), grader: count(`${p}.split.grader`, split.grader), infra: count(`${p}.split.infra`, split.infra) },
-      guard_fires: count(`${p}.guard_fires`, o.guard_fires),
-      q: q === null ? null : { trials: count(`${p}.q.trials`, q.trials), seen_all: count(`${p}.q.seen_all`, q.seen_all) },
-      classes: arr(`${p}.classes`, o.classes).map((c, i) => {
-        const cp = `${p}.classes[${i}]`;
-        const co = obj(cp, c);
-        return {
-          class: str(`${cp}.class`, co.class), fails: count(`${cp}.fails`, co.fails), observations: count(`${cp}.observations`, co.observations), labels: labels(`${cp}.labels`, co.labels),
-          instances: arr(`${cp}.instances`, co.instances).map((n, j) => {
-            const np = `${cp}.instances[${j}]`;
-            const no = obj(np, n);
-            return { instance: typeof no.instance === 'string' ? no.instance : count(`${np}.instance`, no.instance), item: str(`${np}.item`, no.item), fails: count(`${np}.fails`, no.fails), observations: count(`${np}.observations`, no.observations) };
-          }),
-        };
-      }),
-      events: arr(`${p}.events`, o.events).map((e, i) => {
-        const ep = `${p}.events[${i}]`;
-        const eo = obj(ep, e);
-        return {
-          id: str(`${ep}.id`, eo.id), item: str(`${ep}.item`, eo.item), class: str(`${ep}.class`, eo.class), active: typeof eo.active === 'boolean' ? eo.active : fail(`${ep}.active`, eo.active),
-          fired: count(`${ep}.fired`, eo.fired), fails: count(`${ep}.fails`, eo.fails), observations: count(`${ep}.observations`, eo.observations), labels: labels(`${ep}.labels`, eo.labels),
-        };
-      }),
-    };
-  }
-  return { schema_version: CLASSES_SCHEMA_VERSION, tasks };
+  const problems = classesJsonProblems(x);
+  if (problems.length > 0) throw new TypeError(`classes: ${problems.join('; ')}`);
+  return x as ClassesJson;
 }
 
 // A run's summary and where it came from (header).
@@ -137,7 +74,7 @@ const two = (x: number) => x.toFixed(2);
 const chance = (x: number | null) => (x === null ? 'n/a' : x > 0 && x < 0.005 ? '<0.01' : two(x));
 const interval = (w: Interval | null) => (w === null ? 'n/a' : `[${two(w.lo)}, ${two(w.hi)}]`);
 const table = (head: string[], rows: string[][]) => [`| ${head.join(' | ')} |`, `|${head.map(() => '---').join('|')}|`, ...rows.map((r) => `| ${r.join(' | ')} |`)];
-const labelText = (ls: readonly ClassesLabel[]) => ls.map((l) => `#${l.trial}: ${l.gate} -> ${l.label}`).join('; ');
+const labelText = (ls: readonly Label[]) => ls.map((l) => `#${l.trial}: ${l.gate} -> ${l.label}`).join('; ');
 // The pass rate and its Wilson 95% interval of fails out of observations.
 const passOf = (fails: number, observations: number) => ({ rate: observations === 0 ? 'n/a' : two((observations - fails) / observations), w: interval(wilson(observations - fails, observations)) });
 
@@ -219,8 +156,8 @@ export function card(input: { dir: string; summary: Summary; source: string; cla
       for (const k of c.classes) {
         const p = passOf(k.fails, k.observations);
         k.instances.forEach((n, i) => rows.push(i === 0
-          ? [k.class, `${n.instance} (${n.item})`, `${n.fails}/${n.observations}`, `${k.fails}/${k.observations}`, p.rate, p.w, labelText(k.labels)]
-          : ['', `${n.instance} (${n.item})`, `${n.fails}/${n.observations}`, '', '', '', '']));
+          ? [k.class, `${n.instance} (${n.label})`, `${n.fails}/${n.observations}`, `${k.fails}/${k.observations}`, p.rate, p.w, labelText(k.labels)]
+          : ['', `${n.instance} (${n.label})`, `${n.fails}/${n.observations}`, '', '', '', '']));
         if (k.instances.length === 0) rows.push([k.class, '', '', `${k.fails}/${k.observations}`, p.rate, p.w, labelText(k.labels)]);
       }
       lines.push(...table(['class', 'instance (item)', 'fails', 'class fails / observations', 'pass rate', 'Wilson 95%', 'failure labels (trial: gate -> label)'], rows), '');
@@ -228,7 +165,7 @@ export function card(input: { dir: string; summary: Summary; source: string; cla
       else {
         lines.push(...table(['event', 'item', 'class', 'active', 'fired', 'fails / observations', 'pass rate', 'Wilson 95%', 'failure labels'], c.events.map((e) => {
           const p = passOf(e.fails, e.observations);
-          return [e.id, e.item, e.class, e.active ? 'yes' : 'no', String(e.fired), `${e.fails}/${e.observations}`, p.rate, p.w, labelText(e.labels)];
+          return [e.id, e.item ?? '', e.class ?? '', e.active ? 'yes' : 'no', String(e.fired), `${e.fails}/${e.observations}`, p.rate, p.w, labelText(e.labels)];
         })), '');
       }
     }
