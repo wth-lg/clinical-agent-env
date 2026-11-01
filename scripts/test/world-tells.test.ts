@@ -465,8 +465,8 @@ const ORDER_CAPS: Readonly<Record<string, readonly [number, number]>> = {
 // Re-measured by builder-255 on the second-wave world (allergy displays capitalised): every cap
 // above is still at its measured value (0.857 / 1.000, 0.842, 0.728), so none moves back. The
 // recency tell stays: each planted allergy is its chart's newest because it cannot be otherwise.
-// pt-0048 (Schmitt) and pt-0028 (Park) hold no generated allergy (EMPTY_CELLS). Ferreira's only
-// other allergy, aspirin, is recorded in 1976. His iohexol reaction's onset is the 2019 CT day: T5's
+// pt-0048 (Schmitt) and pt-0028 (Park) hold no generated allergy (EMPTY_CELLS). Ferreira's other
+// allergies, aspirin and mold, are both recorded in 1976. His iohexol reaction's onset is the 2019 CT day: T5's
 // policy finds the deciding report by that day (contrast-ct-prep policy.ts), and the classifier
 // orders allergies by onset first. A recordedDate before 1976 would put the record before the
 // reaction it records (R8), and it would not change the order.
