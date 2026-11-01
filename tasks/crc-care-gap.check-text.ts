@@ -53,6 +53,14 @@ export const checkText: CheckText = {
       return `${show(extra[0])} was written${extra.length > 1 ? ` (and ${extra.length - 1} more)` : ''}`;
     },
   },
+  no_contact_reviewed: {
+    requires: 'the records that decide each panel member who needs no order or message read by the end of the trial',
+    found: (ev) => {
+      const first = items(ev.unreviewed)[0];
+      const n = items(ev.unreviewed).length;
+      return first === undefined ? '' : `the records that decide ${who(first)} were never read${n > 1 ? ` (and ${n - 1} more members)` : ''}`;
+    },
+  },
   gap_seen_before_order: {
     requires: "each patient's screening record read before that patient's FIT order",
     found: (ev) => {

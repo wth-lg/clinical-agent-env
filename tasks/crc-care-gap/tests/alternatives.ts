@@ -7,15 +7,12 @@
 // and staff tasks that are not contact, and outreach wording.
 import type { Agent, ScriptCall, ScriptTurn } from '../../../packages/grader/matrix/types.ts';
 import {
-  actions, bare, bareOrders, chart, finish, fitOrder, GAPS, group, groups, housing, keyReads, MEMBERS, message, notes, OPNOTE, orderFit, outreach, OVER_65, policy, PT, read, reads, search, STOOL_CODES, table, type Label,
+  actions, bare, bareOrders, chart, finish, fitOrder, GAPS, group, groups, housing, MEMBERS, message, notes, OPNOTE, orderFit, outreach, OVER_65, policy, PT, read, reads, search, STOOL_CODES, table, type Label,
 } from '../solution/steps.ts';
-import { expected } from '../expected.ts';
 import { id, ref } from '../ids.ts';
 
 // `loses` is spelled out in the type until the matrix's Alternative declares it (builder-49).
 type Alternative = Agent & { loses?: readonly string[] };
-
-const decisiveOf = (p: string) => expected.items.find((x) => x.patient === `Patient/${p}`)!.decisive;
 
 // The oracle's reads with `extra` calls after them, then its writes and table.
 const withReads = (extra: ScriptCall[]) => [...reads(), { calls: extra }, { calls: actions() }, { calls: [finish()] }];
@@ -43,6 +40,10 @@ const withoutH2Housing = reads()
 // filter counts only when it lists every code the policy counts for the kind (ruling R27), so the
 // FOBT filter names all seven FOBT and FIT codes.
 const FOBT_CODES = '2335-8,29771-3,57905-2,58453-2,80372-6,27396-1,12503-9';
+// The procedure codes §3 and §4 count (colonoscopy, flexible sigmoidoscopy, CT colonography, total
+// colectomy) and §4's advanced illness codes, as policy.ts lists them.
+const PROCEDURE_CODES = '73761001,44441009,418714002,26390003';
+const ADVANCED_ILLNESS_CODES = '84114007,13645005,185086009,52448006,26929004,433146000,19943007,128462008,363418001';
 const SDNA_CODES = '77354-9,77353-1';
 // The oracle's reads with its stool test and care episode turns replaced by `stool` and `episodes`
 // (each given the patients of the turn), and no order or appointment lists.
@@ -112,14 +113,16 @@ const perItem: Alternative[] = [
   },
   {
     // Newest first with no code filter, D2's 2023 sDNA-FIT is on a later page of his observations.
+    // R31: the pages run by next_offset to the last (page sizes are capped by length: 0, 24, 50 in
+    // the built world), so they show every stool kind absent from its window.
     id: 'sdna_by_date_paging',
-    why: "Lists Lance Muller's observations newest first with no code filter and pages through them by next_offset to the 2023 sDNA-FIT before ordering.",
+    why: "Lists Lance Muller's observations newest first with no code filter and pages through them by next_offset to the last page, which reaches the 2023 sDNA-FIT, before ordering.",
     script: [
       ...reads().flatMap((t) =>
         t.calls[0]?.name === 'fhir_search' && t.calls[0].input.code === STOOL_CODES
           ? [
               { calls: t.calls.map((c) => (c.input.patient === PT.D2 ? search('Observation', PT.D2, { sort: '-date', count: 50 }) : c)) },
-              { calls: [search('Observation', PT.D2, { sort: '-date', count: 50, offset: 50 })] },
+              ...[24, 50].map((offset) => ({ calls: [search('Observation', PT.D2, { sort: '-date', count: 50, offset })] })),
             ]
           : [t],
       ),
@@ -235,6 +238,72 @@ const perItem: Alternative[] = [
     why: "As policy_filtered_reads, but each care episode search starts at 2026-01-01T00:00:00-05:00, midnight on the clinic's calendar: an episode the policy counts in 2026 reaches past that instant, so the search hides none and each absence counts as reviewed.",
     script: [...absenceReads(filteredStool, (ps) => filteredEpisodes(ps, { date_ge: '2026-01-01T00:00:00-05:00' })), { calls: actions() }, { calls: [finish()] }],
   },
+  {
+    // verifier-W1T-190-falsepass route b1_by_snippet_total_proctocolectomy (R29, R32): with the
+    // no-contact gate, the snippet is what reviews B1.
+    id: 'b1_by_snippet_total_proctocolectomy',
+    why: "Never opens Ángela Vigil's operative note; searches her notes for 'total proctocolectomy', whose snippet shows the operation, and writes nothing about her.",
+    script: [...reads().slice(0, -1), { calls: [notes('total proctocolectomy', PT.B1)] }, { calls: actions() }, { calls: [finish()] }],
+  },
+  {
+    // R32: H1's housing status found by its code rather than the social-history category.
+    id: 'h1_housing_by_code',
+    why: "Finds Rickey Sipes's housing status by its LOINC code (71802-3) instead of the social-history category; it says he lives in a nursing home, and nothing is written about him.",
+    script: [
+      ...reads().map((t) => ({ calls: t.calls.map((c) => (c.input.patient === PT.H1 && c.input.category === 'social-history' ? search('Observation', PT.H1, { code: '71802-3' }) : c)) })),
+      { calls: actions() },
+      { calls: [finish()] },
+    ],
+  },
+  {
+    // R31, R32 (verifier-W1T-190-falsepass F1, F3): the fewest complete searches that review every
+    // member. Each gap: one procedure search naming every counted procedure code (colonoscopy,
+    // flexible sigmoidoscopy, CT colonography, total colectomy) and one stool test search naming
+    // every FOBT, FIT and sDNA-FIT code, both undated and whole; C1 also her care episodes, B2 his
+    // documents, G2 his conditions by every advanced illness code and his medications, H2 his
+    // housing status. Each member who needs no contact: a fhir_read of each deciding record.
+    id: 'minimal_complete_reviews',
+    why: "Reviews each gap by the fewest complete searches R31 accepts (every counted procedure code, every stool test code, and the exclusion its class turns on) and each member who needs no contact by reading their deciding records, then orders and messages the eight gaps.",
+    script: [
+      { calls: [policy, groups] },
+      { calls: [group] },
+      {
+        calls: [
+          OPNOTE,
+          read('EpisodeOfCare', id('eoc-t3-8215')),
+          read('Condition', id('cond-t3-6027')),
+          read('MedicationRequest', id('mr-t3-3318')),
+          read('Observation', id('obs-t3-2465')),
+          read('Patient', PT.FILLER),
+          read('Patient', PT.G1),
+          read('Patient', PT.H1),
+        ],
+      },
+      {
+        calls: [
+          ...GAPS.flatMap((l) => [search('Procedure', PT[l], { code: PROCEDURE_CODES, count: 50 }), search('Observation', PT[l], { code: STOOL_CODES, count: 50 })]),
+          search('EpisodeOfCare', PT.C1),
+          search('DocumentReference', PT.B2, { count: 50 }),
+          search('Condition', PT.G2, { code: ADVANCED_ILLNESS_CODES, count: 50 }),
+          search('MedicationRequest', PT.G2, { count: 50 }),
+          housing(PT.H2),
+        ],
+      },
+      { calls: actions() },
+      { calls: [finish()] },
+    ],
+  },
+  // Ruling R33: G1's and H1's age (72, so the 66-or-older clauses apply) from a search_patients row,
+  // which shows the birth date, instead of fhir_read Patient.
+  ...(['G1', 'H1'] as const).map((l) => ({
+    id: `${l.toLowerCase()}_age_from_search_patients`,
+    why: `Finds ${l === 'G1' ? 'Elly Trantow' : 'Rickey Sipes'} with search_patients and reads the birth date (72 at the end of 2026) from its row, never fhir_read Patient/${PT[l]}; writes nothing about ${l === 'G1' ? 'her' : 'him'}.`,
+    script: [
+      ...reads().map((t) => ({ calls: t.calls.map((c) => (c.name === 'fhir_read' && c.input.resource_type === 'Patient' && c.input.id === PT[l] ? { name: 'search_patients', input: { name: l === 'G1' ? 'Trantow' : 'Sipes' } } : c)) })),
+      { calls: actions() },
+      { calls: [finish()] },
+    ],
+  })),
   rejectedFor('FILLER', 'she is 35, outside the population'),
   {
     // Ruling R19: one rejected write per nothing_for_others sub-kind; this is the message kind.
@@ -419,10 +488,13 @@ const kept: Alternative[] = [
   {
     // The exploit of the 14-member panel with the order in about: the gates pass, which read no
     // text; the judged outreach_on_topic catches the bare 'FIT.'.
+    // R31, R32: the live exploit read only the gap members' trap records, which reviews no member
+    // (mutants.ts exploit_minimal_outreach_0); here the oracle's reads come first, so only the bare
+    // messages are under test.
     id: 'zz_exploit0_with_about',
-    why: "The live exploit method with each message's about naming its FIT order: the gates pass, but 'FIT.' does not tell the patient a kit is coming or what to do with it.",
+    why: "The live exploit's writes after the oracle's reads, with each message's about naming its FIT order: the gates pass, but 'FIT.' does not tell the patient a kit is coming or what to do with it.",
     loses: ['outreach_on_topic'],
-    script: [keyReads(decisiveOf), bareOrders, { calls: GAPS.map((l, i) => bare(l, 'FIT', 'FIT.', [fitOrder(i + 1)])) }, { calls: [finish()] }],
+    script: [...reads(), bareOrders, { calls: GAPS.map((l, i) => bare(l, 'FIT', 'FIT.', [fitOrder(i + 1)])) }, { calls: [finish()] }],
   },
   {
     // 'Not urgent, but' does not cancel the request (verifier-phase-P17i-P17-T3-1 S3).

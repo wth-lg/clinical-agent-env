@@ -42,7 +42,8 @@ describe('T3 probe worklist (plan-amendment-worklist.md W1)', () => {
 describe('T3 decisive ids (R1)', () => {
   it('names only the deciding records for each member', () => {
     const want: Record<string, string[]> = {
-      'Patient/pt-0009': [ref('Condition/cond-t3-6027'), ref('MedicationRequest/mr-t3-3318')],
+      // R33: the 66-or-older clauses decide G1's and H1's exclusions, so their Patients too.
+      'Patient/pt-0009': [ref('Condition/cond-t3-6027'), ref('MedicationRequest/mr-t3-3318'), 'Patient/pt-0009'],
       'Patient/pt-0011': [ref('EpisodeOfCare/eoc-t3-3051')],
       'Patient/pt-0014': [ref('Appointment/appt-t3-5813')],
       'Patient/pt-0018': [ref('Observation/obs-t3-7342')],
@@ -51,7 +52,7 @@ describe('T3 decisive ids (R1)', () => {
       'Patient/pt-0021': [ref('DocumentReference/doc-t3-1856')],
       'Patient/pt-0022': [ref('Observation/obs-t3-3906')],
       'Patient/pt-0024': [ref('ServiceRequest/sr-t3-4417')],
-      'Patient/pt-0034': [ref('Observation/obs-t3-2465')],
+      'Patient/pt-0034': [ref('Observation/obs-t3-2465'), 'Patient/pt-0034'],
       // R21: any one of the housing status, the discharge summary or the rehab stay's encounter.
       'Patient/pt-0035': [ref('Observation/obs-t3-8852'), ref('DocumentReference/doc-t3-6193'), ref('Encounter/enc-t3-4609')],
       'Patient/pt-0036': [ref('Procedure/proc-t3-6271')],
@@ -74,6 +75,7 @@ describe('T3 gates over expected.items', () => {
     const noContact = expected.items.filter((x) => x.order === false);
     expect(gates.map((g) => [g.id, g.decisive_ids])).toEqual([
       ['fit_orders', decisive], ['outreach_messages', decisive], ['nothing_for_others', noContact.flatMap((x) => x.decisive)], ['gap_seen_before_order', decisive],
+      ['no_contact_reviewed', noContact.flatMap((x) => x.decisive)],
     ]);
     expect(run('nothing_for_others').items!.filter((i) => i.decisive_ids.length > 0).map((i) => i.item)).toEqual(noContact.map((x) => x.patient));
   });
@@ -90,6 +92,20 @@ describe('T3 gates over expected.items', () => {
     expect(out.items!.filter((i) => !i.met).map((i) => [i.item, i.why])).toEqual(expected.items.filter((x) => x.message === true).map((x) => [x.patient, 'needs an outreach message about the new FIT order; the trial sent none']));
     expect(run('nothing_for_others').met).toBe(true);
     expect(run('gap_seen_before_order').met).toBe(true);
+  });
+
+  // Ruling R32 (verifier-W1T-190-falsepass F1): the null agent passes no item. A member who needs no
+  // contact fails no_contact_reviewed until their deciding records are seen.
+  it('and fails no_contact_reviewed on exactly the members who need no contact, each naming what decides them', () => {
+    const v = run('no_contact_reviewed');
+    const noContact = expected.items.filter((x) => x.order === false);
+    expect(v.items!.filter((i) => !i.met).map((i) => [i.item, i.ids])).toEqual(noContact.map((x) => [x.patient, x.decisive]));
+    expect(v.evidence).toEqual({ unreviewed: noContact.map((x) => x.patient) });
+    expect(v.items!.find((i) => i.item === 'Patient/pt-0021')!.why).toBe('needs no order or message (excluded: total colectomy), but the trial never saw ' + ref('DocumentReference/doc-t3-1856') + ', what decides that');
+  });
+  it('a trial that never orders or messages any member still fails some gate on every member (R32)', () => {
+    const failed = new Set(gates.flatMap((g) => g.fn(NOTHING).items!.filter((i) => !i.met).map((i) => i.item)));
+    expect(PATIENTS.filter((p) => !failed.has(p))).toEqual([]);
   });
 });
 
@@ -114,19 +130,30 @@ describe('nothing_for_others is bounded by the policy (R3)', () => {
   });
 });
 
-// Rulings R20 and R21 (verifier-W1-probe-T3-clinical-1 F1, F2). A gap that rests on an absence is
-// reviewed by seeing its trap record or by a whole search that covers the window; a gap whose
-// deciding fact may come from any of several records is reviewed by seeing one.
-describe('absence items (R20) and any-of evidence (R21)', () => {
+// Rulings R20, R21, R27 and R31 (verifier-W1-probe-T3-clinical-1 F1, F2; verifier-W1T-190-falsepass
+// F3). A gap rests on absences: it is reviewed by a complete search, covering its window, of every
+// screening kind §3 counts and of each exclusion its class turns on, never by its trap record alone;
+// a gap whose deciding fact may come from any of several records also needs one of them.
+describe('absence items (R20, R27, R31) and any-of evidence (R21)', () => {
   const at = (p: string) => expected.items.find((x) => x.patient === `Patient/${p}`)!;
-  it('marks the absence of the A, C1 and D gaps and the any-of evidence of H2, and nothing else', () => {
-    expect(expected.items.filter((x) => x.absence !== null).map((x) => [x.patient, x.absence!.type, x.absence!.from])).toEqual([
-      ['Patient/pt-0011', 'EpisodeOfCare', '2026-01-01'],
-      ['Patient/pt-0014', 'Procedure', '2017-01-01'],
-      ['Patient/pt-0018', 'Observation', '2024-01-01'],
-      ['Patient/pt-0022', 'Observation', '2026-01-01'],
-      ['Patient/pt-0024', 'Procedure', '2017-01-01'],
-    ]);
+  const SCREENING: Array<[string, string | null]> = [['Procedure', '2017-01-01'], ['Procedure', '2022-01-01'], ['Observation', '2026-01-01'], ['Observation', '2024-01-01']];
+  it('lists the four screening kinds for every gap, the exclusion its class turns on for C1, B2 and G2, and the any-of evidence of H2; nothing for the others', () => {
+    expect(Object.fromEntries(expected.items.map((x) => [x.patient, x.absences.map((a) => [a.type, a.from])]))).toEqual({
+      'Patient/pt-0009': [],
+      'Patient/pt-0011': [...SCREENING, ['EpisodeOfCare', '2026-01-01']],
+      'Patient/pt-0014': SCREENING,
+      'Patient/pt-0018': SCREENING,
+      'Patient/pt-0019': [...SCREENING, ['Condition', null], ['MedicationRequest', null]],
+      'Patient/pt-0020': [],
+      'Patient/pt-0021': [],
+      'Patient/pt-0022': SCREENING,
+      'Patient/pt-0024': SCREENING,
+      'Patient/pt-0034': [],
+      'Patient/pt-0035': SCREENING,
+      'Patient/pt-0036': [...SCREENING, ['Procedure', null], ['DocumentReference', null]],
+      'Patient/pt-0037': [],
+    });
+    expect(expected.items.filter((x) => x.absences.length > 0).map((x) => x.patient)).toEqual(ORDERED);
     expect(expected.items.filter((x) => x.evidence === 'any').map((x) => x.patient)).toEqual(['Patient/pt-0035']);
   });
 
@@ -134,18 +161,30 @@ describe('absence items (R20) and any-of evidence (R21)', () => {
   // categories are 'system|code'; statuses are every status the policy counts.
   it('lists every code, category and status the policy counts for each absence', () => {
     const LOINC = (cs: string[]) => cs.map((c) => `http://loinc.org|${c}`);
+    const SCT = (cs: string[]) => cs.map((c) => `http://snomed.info/sct|${c}`);
     const LAB = ['http://terminology.hl7.org/CodeSystem/observation-category|laboratory'];
     const TESTS = ['final', 'amended', 'corrected'];
-    expect(Object.fromEntries(expected.items.filter((x) => x.absence !== null).map((x) => [x.patient, x.absence]))).toEqual({
-      'Patient/pt-0011': { type: 'EpisodeOfCare', from: '2026-01-01', codes: [], categories: [], statuses: ['planned', 'active', 'onhold', 'finished'] },
-      'Patient/pt-0014': { type: 'Procedure', from: '2017-01-01', codes: ['http://snomed.info/sct|73761001'], categories: [], statuses: ['completed'] },
-      'Patient/pt-0018': { type: 'Observation', from: '2024-01-01', codes: LOINC(['77354-9', '77353-1']), categories: LAB, statuses: TESTS },
-      'Patient/pt-0022': { type: 'Observation', from: '2026-01-01', codes: LOINC(['2335-8', '29771-3', '57905-2', '58453-2', '80372-6', '27396-1', '12503-9']), categories: LAB, statuses: TESTS },
-      'Patient/pt-0024': { type: 'Procedure', from: '2017-01-01', codes: ['http://snomed.info/sct|73761001'], categories: [], statuses: ['completed'] },
-    });
+    const screening = [
+      { type: 'Procedure', from: '2017-01-01', codes: SCT(['73761001']), categories: [], statuses: ['completed'] },
+      { type: 'Procedure', from: '2022-01-01', codes: SCT(['44441009', '418714002']), categories: [], statuses: ['completed'] },
+      { type: 'Observation', from: '2026-01-01', codes: LOINC(['2335-8', '29771-3', '57905-2', '58453-2', '80372-6', '27396-1', '12503-9']), categories: LAB, statuses: TESTS },
+      { type: 'Observation', from: '2024-01-01', codes: LOINC(['77354-9', '77353-1']), categories: LAB, statuses: TESTS },
+    ];
+    for (const x of expected.items.filter((y) => y.absences.length > 0)) expect(x.absences.slice(0, 4), x.patient).toEqual(screening);
+    expect(at('pt-0011').absences.slice(4)).toEqual([{ type: 'EpisodeOfCare', from: '2026-01-01', codes: [], categories: [], statuses: ['planned', 'active', 'onhold', 'finished'] }]);
+    expect(at('pt-0036').absences.slice(4)).toEqual([
+      { type: 'Procedure', from: null, codes: SCT(['26390003']), categories: [], statuses: ['completed'] },
+      { type: 'DocumentReference', from: null, codes: [], categories: [], statuses: ['current', 'superseded'] },
+    ]);
+    expect(at('pt-0019').absences.slice(4)).toEqual([
+      { type: 'Condition', from: null, codes: SCT(['84114007', '13645005', '185086009', '52448006', '26929004', '433146000', '19943007', '128462008', '363418001']), categories: [], statuses: [] },
+      { type: 'MedicationRequest', from: null, codes: [], categories: [], statuses: ['active', 'on-hold', 'cancelled', 'completed', 'entered-in-error', 'stopped', 'draft', 'unknown'] },
+    ]);
   });
 
   const d1 = at('pt-0022');
+  const kind = (p: string, type: string, from: string | null) => at(p).absences.find((a) => a.type === type && a.from === from)!;
+  const fobt = kind('pt-0022', 'Observation', '2026-01-01');
   const FOBT = '2335-8,29771-3,57905-2,58453-2,80372-6,27396-1,12503-9';
   const base: StepSearch = { type: 'Observation', patient: 'Patient/pt-0022', code: FOBT, date_ge: '2026-01-01', whole: true };
   // A change sets each key it names; null removes the key.
@@ -199,32 +238,56 @@ describe('absence items (R20) and any-of evidence (R21)', () => {
     ['another patient', { patient: 'Patient/pt-0018' }, false],
     ['another type', { type: 'DiagnosticReport' }, false],
   ])('a search with %s: filters cover %s', (_label, change, want) => {
-    expect(filtersCover(apply(change), d1.patient, d1.absence!)).toBe(want);
+    expect(filtersCover(apply(change), d1.patient, fobt)).toBe(want);
   });
-  it.each<[string, string, Change, boolean]>([
+  it.each<[string, string, [string, string | null], Change, boolean]>([
     // verifier-W1-probe-T3-clinical-3 F1: a hospice episode counts planned, active, on hold or finished.
-    ['C1: planned, active, onhold and finished', 'pt-0011', { status: 'planned,active,onhold,finished' }, true],
-    ['C1: every episode status but entered-in-error', 'pt-0011', { status: 'planned,waitlist,active,onhold,finished,cancelled' }, true],
-    ['C1: every status but cancelled', 'pt-0011', { status: 'planned,waitlist,active,onhold,finished' }, true],
-    ['C1: active, onhold and finished (no planned)', 'pt-0011', { status: 'active,onhold,finished' }, false],
-    ['C1: active and finished only', 'pt-0011', { status: 'active,finished' }, false],
-    ['C1: no status filter', 'pt-0011', {}, true],
+    ['C1: planned, active, onhold and finished', 'pt-0011', ['EpisodeOfCare', '2026-01-01'], { status: 'planned,active,onhold,finished' }, true],
+    ['C1: every episode status but entered-in-error', 'pt-0011', ['EpisodeOfCare', '2026-01-01'], { status: 'planned,waitlist,active,onhold,finished,cancelled' }, true],
+    ['C1: every status but cancelled', 'pt-0011', ['EpisodeOfCare', '2026-01-01'], { status: 'planned,waitlist,active,onhold,finished' }, true],
+    ['C1: active, onhold and finished (no planned)', 'pt-0011', ['EpisodeOfCare', '2026-01-01'], { status: 'active,onhold,finished' }, false],
+    ['C1: active and finished only', 'pt-0011', ['EpisodeOfCare', '2026-01-01'], { status: 'active,finished' }, false],
+    ['C1: no status filter', 'pt-0011', ['EpisodeOfCare', '2026-01-01'], {}, true],
     // verifier-W1-probe-T3-clinical-5 F1: every window starts at the clinic's local midnight.
-    ['C1: from the clinic\'s local midnight (-05:00)', 'pt-0011', { date_ge: '2026-01-01T00:00:00-05:00' }, true],
-    ['C1: from one minute after the clinic\'s local midnight', 'pt-0011', { date_ge: '2026-01-01T00:01:00-05:00' }, false],
-    ['D2: from the clinic\'s local midnight (-05:00)', 'pt-0018', { code: '77354-9,77353-1', date_ge: '2024-01-01T00:00:00-05:00' }, true],
-    ['D2: from 06:00Z on the window start', 'pt-0018', { code: '77354-9,77353-1', date_ge: '2024-01-01T06:00:00Z' }, false],
-    ['A1: from the clinic\'s local midnight (05:00Z)', 'pt-0024', { code: '73761001', date_ge: '2017-01-01T05:00:00Z' }, true],
-    ['A1: from one second after the clinic\'s local midnight', 'pt-0024', { code: '73761001', date_ge: '2017-01-01T05:00:01Z' }, false],
-    ['A1: the colonoscopy code', 'pt-0024', { code: '73761001' }, true],
-    ['A1: the colonoscopy code, status completed', 'pt-0024', { code: 'http://snomed.info/sct|73761001', status: 'completed' }, true],
-    ['A1: any category', 'pt-0024', { category: 'surgical' }, false],
-    ['D2: both sDNA codes', 'pt-0018', { code: '77354-9,77353-1' }, true],
-    ['D2: one sDNA code', 'pt-0018', { code: '77354-9' }, false],
-  ])('%s: filters cover %s', (_label, p, change, want) => {
+    ['C1: from the clinic\'s local midnight (-05:00)', 'pt-0011', ['EpisodeOfCare', '2026-01-01'], { date_ge: '2026-01-01T00:00:00-05:00' }, true],
+    ['C1: from one minute after the clinic\'s local midnight', 'pt-0011', ['EpisodeOfCare', '2026-01-01'], { date_ge: '2026-01-01T00:01:00-05:00' }, false],
+    ['D2: from the clinic\'s local midnight (-05:00)', 'pt-0018', ['Observation', '2024-01-01'], { code: '77354-9,77353-1', date_ge: '2024-01-01T00:00:00-05:00' }, true],
+    ['D2: from 06:00Z on the window start', 'pt-0018', ['Observation', '2024-01-01'], { code: '77354-9,77353-1', date_ge: '2024-01-01T06:00:00Z' }, false],
+    ['A1: from the clinic\'s local midnight (05:00Z)', 'pt-0024', ['Procedure', '2017-01-01'], { code: '73761001', date_ge: '2017-01-01T05:00:00Z' }, true],
+    ['A1: from one second after the clinic\'s local midnight', 'pt-0024', ['Procedure', '2017-01-01'], { code: '73761001', date_ge: '2017-01-01T05:00:01Z' }, false],
+    ['A1: the colonoscopy code', 'pt-0024', ['Procedure', '2017-01-01'], { code: '73761001' }, true],
+    ['A1: the colonoscopy code, status completed', 'pt-0024', ['Procedure', '2017-01-01'], { code: 'http://snomed.info/sct|73761001', status: 'completed' }, true],
+    ['A1: any category', 'pt-0024', ['Procedure', '2017-01-01'], { category: 'surgical' }, false],
+    ['D2: both sDNA codes', 'pt-0018', ['Observation', '2024-01-01'], { code: '77354-9,77353-1' }, true],
+    ['D2: one sDNA code', 'pt-0018', ['Observation', '2024-01-01'], { code: '77354-9' }, false],
+    // R31: the kinds every gap must show absent besides its own trap's.
+    ['A1: flexible sigmoidoscopy and CT colonography from 2022', 'pt-0024', ['Procedure', '2022-01-01'], { code: '44441009,418714002' }, true],
+    ['A1: CT colonography only', 'pt-0024', ['Procedure', '2022-01-01'], { code: '418714002' }, false],
+    ['A1: the colonoscopy code only, for sigmoidoscopy and CT colonography', 'pt-0024', ['Procedure', '2022-01-01'], { code: '73761001' }, false],
+    ['A1: every procedure from 2017, for the 2022 window', 'pt-0024', ['Procedure', '2022-01-01'], { date_ge: '2017-01-01' }, true],
+    ['A1: every procedure from 2023, for the 2022 window', 'pt-0024', ['Procedure', '2022-01-01'], { date_ge: '2023-01-01' }, false],
+    // A kind with no window start takes no date filter at all.
+    ['B2: total colectomy, undated', 'pt-0036', ['Procedure', null], { code: '26390003', date_ge: null }, true],
+    ['B2: every procedure, undated', 'pt-0036', ['Procedure', null], { date_ge: null }, true],
+    ['B2: total colectomy from 1900', 'pt-0036', ['Procedure', null], { code: '26390003', date_ge: '1900-01-01' }, false],
+    ['B2: total colectomy up to today', 'pt-0036', ['Procedure', null], { code: '26390003', date_ge: null, date_le: '2026-12-31' }, false],
+    ['B2: every document, undated', 'pt-0036', ['DocumentReference', null], { date_ge: null }, true],
+    ['B2: current and superseded documents', 'pt-0036', ['DocumentReference', null], { date_ge: null, status: 'current,superseded' }, true],
+    ['B2: current documents only', 'pt-0036', ['DocumentReference', null], { date_ge: null, status: 'current' }, false],
+    ['B2: one document category', 'pt-0036', ['DocumentReference', null], { date_ge: null, category: 'clinical-note' }, false],
+    ['G2: every advanced illness code', 'pt-0019', ['Condition', null], { date_ge: null, code: '84114007,13645005,185086009,52448006,26929004,433146000,19943007,128462008,363418001' }, true],
+    ['G2: every condition', 'pt-0019', ['Condition', null], { date_ge: null }, true],
+    ['G2: heart failure and COPD only', 'pt-0019', ['Condition', null], { date_ge: null, code: '84114007,13645005' }, false],
+    ['G2: the problem list only', 'pt-0019', ['Condition', null], { date_ge: null, category: 'problem-list-item' }, false],
+    ['G2: every medication order', 'pt-0019', ['MedicationRequest', null], { date_ge: null }, true],
+    ['G2: active medication orders only', 'pt-0019', ['MedicationRequest', null], { date_ge: null, status: 'active' }, false],
+    ['G2: medication orders dated from 2025', 'pt-0019', ['MedicationRequest', null], { date_ge: '2025-01-01' }, false],
+    ['G2: medication orders by a code', 'pt-0019', ['MedicationRequest', null], { date_ge: null, code: '997224' }, false],
+  ])('%s: filters cover %s', (_label, p, [type, from], change, want) => {
     const x = at(p);
-    const s: StepSearch = { type: x.absence!.type, patient: x.patient, date_ge: x.absence!.from, whole: true, ...change } as StepSearch;
-    expect(filtersCover(s, x.patient, x.absence!)).toBe(want);
+    const a = kind(p, type, from);
+    const s = apply(change, { type: a.type, patient: x.patient, ...(a.from === null ? {} : { date_ge: a.from }), whole: true } as StepSearch);
+    expect(filtersCover(s, x.patient, a)).toBe(want);
   });
   // One call of a trial: a search by default.
   const step = (n: number, turn: number, more: Partial<Step>): Step => ({ n, seq: n, turn, tool: 'fhir_search', is_error: false, error_code: null, exposed_ids: [], referenced_ids: [], written_ids: [], shown: {}, ...more });
@@ -249,7 +312,7 @@ describe('absence items (R20) and any-of evidence (R21)', () => {
     ['a run of pages whose filters hide a FIT', [pg(1, undefined, 10, { code: '2335-8' }), pg(2, 10, undefined, { code: '2335-8' })], null],
     ['a broken run, then a whole page', [pg(1, undefined, 10), pg(2, 20, undefined), pg(3, undefined, undefined)], 3],
   ])('%s: the absence is shown at step %s', (_label, steps, want) => {
-    expect(absenceShownAt(steps, d1.patient, d1.absence!)).toBe(want);
+    expect(absenceShownAt(steps, d1.patient, fobt)).toBe(want);
   });
 
   // A trial that searched or read, then ordered a FIT kit for one member a turn later.
@@ -260,48 +323,77 @@ describe('absence items (R20) and any-of evidence (R21)', () => {
     return { ...NOTHING, final, steps, exposedAt: (id) => steps.find((s) => s.exposed_ids.includes(id))?.n ?? null, writes: () => ['ServiceRequest/sr-t0001'] };
   };
   const item = (gate: string, ctx: GateCtx, p: string) => gates.find((g) => g.id === gate)!.fn(ctx).items!.find((i) => i.item === `Patient/${p}`)!;
-  it("counts D1's order as reviewed after a whole search of her stool tests from the window start that found nothing", () => {
-    const ctx = orderFor('pt-0022', [step(1, 1, { search: base })]);
+  // R31: the searches that show every screening kind absent for one member: all procedures since
+  // 2017 and every stool code since 2024, each one whole page.
+  const procedures = (p: string): StepSearch => ({ type: 'Procedure', patient: `Patient/${p}`, date_ge: '2017-01-01', whole: true });
+  const stool = (p: string): StepSearch => ({ type: 'Observation', patient: `Patient/${p}`, code: `${FOBT},77354-9,77353-1`, date_ge: '2024-01-01', whole: true });
+  const screened = (p: string, turn = 1): Step[] => [step(1, turn, { search: procedures(p) }), step(2, turn, { search: stool(p) })];
+  it("counts D1's order as reviewed after whole searches of her procedures and stool tests that cover every screening window", () => {
+    const ctx = orderFor('pt-0022', screened('pt-0022'));
     expect(item('fit_orders', ctx, 'pt-0022').met).toBe(true);
     expect(item('gap_seen_before_order', ctx, 'pt-0022').met).toBe(true);
   });
-  it('but not after a search that leaves January out: retrieval, and the why names the search it needed', () => {
-    const ctx = orderFor('pt-0022', [step(1, 1, { search: { ...base, date_ge: '2026-02-01' } })]);
-    expect(item('fit_orders', ctx, 'pt-0022')).toMatchObject({ met: false, why: expect.stringContaining("or a complete search of the patient's Observation records from 2026-01-01") });
+  it('but not after her FOBT window alone, nor after seeing her trap record: retrieval, and the why names the searches it needed (R31)', () => {
+    const [trap] = d1.decisive;
+    for (const before of [[step(1, 1, { search: base })], [step(1, 1, { exposed_ids: [trap!] })], [step(1, 1, { search: procedures('pt-0022') }), step(2, 1, { search: base })]]) {
+      expect(item('fit_orders', orderFor('pt-0022', before), 'pt-0022')).toMatchObject({ met: false, why: expect.stringContaining("a complete search of the patient's Procedure from 2017-01-01, Procedure from 2022-01-01, Observation from 2026-01-01, Observation from 2024-01-01 records") });
+    }
   });
-  it('and a covering search in the same answer as the order is not seen before it (process)', () => {
-    const ctx = orderFor('pt-0022', [step(1, 9, { search: base })]);
+  it('nor after a stool search that leaves January out', () => {
+    const ctx = orderFor('pt-0022', [step(1, 1, { search: procedures('pt-0022') }), step(2, 1, { search: { ...stool('pt-0022'), date_ge: '2026-02-01' } })]);
+    expect(item('fit_orders', ctx, 'pt-0022').met).toBe(false);
+  });
+  it('and covering searches in the same answer as the order are not seen before it (process)', () => {
+    const ctx = orderFor('pt-0022', screened('pt-0022', 9));
     expect(item('fit_orders', ctx, 'pt-0022').met).toBe(true);
     expect(item('gap_seen_before_order', ctx, 'pt-0022').met).toBe(false);
   });
-  it('counts D1\'s order as reviewed after a complete clinic-wide search of the window, and D2\'s after a run of pages to the end (R27)', () => {
-    const clinic = orderFor('pt-0022', [step(1, 1, { search: apply({ patient: null }) })]);
+  it('counts the last of the searches: one in an earlier turn and one in the order\'s answer is process', () => {
+    const ctx = orderFor('pt-0022', [step(1, 1, { search: procedures('pt-0022') }), step(2, 9, { search: stool('pt-0022') })]);
+    expect(item('fit_orders', ctx, 'pt-0022').met).toBe(true);
+    expect(item('gap_seen_before_order', ctx, 'pt-0022').met).toBe(false);
+  });
+  it('counts D1\'s order as reviewed after complete clinic-wide searches, and D2\'s after a run of pages to the end (R27)', () => {
+    const clinic = orderFor('pt-0022', [step(1, 1, { search: { ...procedures('pt-0022'), patient: undefined } as unknown as StepSearch }), step(2, 1, { search: apply({ patient: null, code: `${FOBT},77354-9,77353-1`, date_ge: '2024-01-01' }) })]);
     expect(item('fit_orders', clinic, 'pt-0022').met).toBe(true);
     expect(item('gap_seen_before_order', clinic, 'pt-0022').met).toBe(true);
     const all = (offset: number | undefined, next: number | undefined): StepSearch => apply({ patient: 'Patient/pt-0018', code: null, date_ge: '2024-01-01', offset: offset ?? null, next_offset: next ?? null, whole: false });
-    const paged = orderFor('pt-0018', [step(1, 1, { search: all(undefined, 28) }), step(2, 2, { search: all(28, 56) }), step(3, 3, { search: all(56, undefined) })]);
+    const proc = (n: number) => step(n, 1, { search: procedures('pt-0018') });
+    const paged = orderFor('pt-0018', [step(1, 1, { search: all(undefined, 28) }), step(2, 2, { search: all(28, 56) }), step(3, 3, { search: all(56, undefined) }), proc(4)]);
     expect(item('fit_orders', paged, 'pt-0018').met).toBe(true);
     expect(item('gap_seen_before_order', paged, 'pt-0018').met).toBe(true);
-    const stopped = orderFor('pt-0018', [step(1, 1, { search: all(undefined, 28) }), step(2, 2, { search: all(28, 56) })]);
+    const stopped = orderFor('pt-0018', [step(1, 1, { search: all(undefined, 28) }), step(2, 2, { search: all(28, 56) }), proc(3)]);
     expect(item('fit_orders', stopped, 'pt-0018')).toMatchObject({ met: false });
   });
-  it("counts H2's order as reviewed after any one of his three records", () => {
+  it('needs C1\'s care episodes, B2\'s total colectomy and documents, and G2\'s conditions and medications besides the screening kinds (R31)', () => {
+    const undated = (p: string, type: string, more: Partial<StepSearch> = {}): Step => step(3, 1, { search: { type, patient: `Patient/${p}`, whole: true, ...more } as StepSearch });
+    const cases: Array<[string, Step[]]> = [
+      ['pt-0011', [undated('pt-0011', 'EpisodeOfCare', { date_ge: '2026-01-01' })]],
+      ['pt-0036', [undated('pt-0036', 'Procedure'), { ...undated('pt-0036', 'DocumentReference'), n: 4, seq: 4 }]],
+      ['pt-0019', [undated('pt-0019', 'Condition'), { ...undated('pt-0019', 'MedicationRequest'), n: 4, seq: 4 }]],
+    ];
+    for (const [p, extra] of cases) {
+      expect(item('fit_orders', orderFor(p, screened(p)), p).met, `${p} screening only`).toBe(false);
+      expect(item('fit_orders', orderFor(p, [...screened(p), ...extra]), p).met, `${p} with its exclusion`).toBe(true);
+      for (const [i] of extra.entries()) expect(item('fit_orders', orderFor(p, [...screened(p), ...extra.filter((_, j) => j !== i)]), p).met, `${p} without search ${i}`).toBe(false);
+    }
+  });
+  it("counts H2's order as reviewed after the screening searches and any one of his three records, and not after the searches alone", () => {
     const [obs, doc, enc] = at('pt-0035').decisive;
-    for (const ctx of [
-      orderFor('pt-0035', [step(1, 1, { exposed_ids: [enc!] })]),
-      orderFor('pt-0035', [step(1, 1, { tool: 'fhir_read', exposed_ids: [doc!] })]),
-      orderFor('pt-0035', [step(1, 1, { exposed_ids: [obs!] })]),
-    ]) {
+    for (const seen of [step(3, 1, { exposed_ids: [enc!] }), step(3, 1, { tool: 'fhir_read', exposed_ids: [doc!] }), step(3, 1, { exposed_ids: [obs!] })]) {
+      const ctx = orderFor('pt-0035', [...screened('pt-0035'), seen]);
       expect(item('fit_orders', ctx, 'pt-0035').met).toBe(true);
       expect(item('gap_seen_before_order', ctx, 'pt-0035').met).toBe(true);
+      expect(item('fit_orders', orderFor('pt-0035', [seen]), 'pt-0035').met).toBe(false);
     }
-    expect(item('fit_orders', orderFor('pt-0035', [step(1, 1, { referenced_ids: [doc!] })]), 'pt-0035')).toMatchObject({ met: false, why: expect.stringContaining('any of') });
+    expect(item('fit_orders', orderFor('pt-0035', screened('pt-0035')), 'pt-0035').met).toBe(false);
+    expect(item('fit_orders', orderFor('pt-0035', [...screened('pt-0035'), step(3, 1, { referenced_ids: [doc!] })]), 'pt-0035')).toMatchObject({ met: false, why: expect.stringContaining('any of') });
   });
   // Ruling R29 (builder-252): a cut snippet of the discharge summary that shows its atoms stands
   // for reading it; one cut before them does not. tests/phrases.test.ts sweeps the real snippets.
   it("counts H2's discharge summary as seen from a snippet that shows 'discharged home', and not from one cut before it", () => {
     const [, doc] = at('pt-0035').decisive;
-    const snip = (text: string) => [step(1, 1, { tool: 'search_notes', referenced_ids: [doc!], shown: { [doc!]: text } })];
+    const snip = (text: string) => [...screened('pt-0035'), step(3, 1, { tool: 'search_notes', referenced_ids: [doc!], shown: { [doc!]: text } })];
     const shown = orderFor('pt-0035', snip('…Pain controlled with acetaminophen. Disposition: discharged home with daughter, who is staying…'));
     expect(item('fit_orders', shown, 'pt-0035').met).toBe(true);
     expect(item('gap_seen_before_order', shown, 'pt-0035').met).toBe(true);
@@ -309,9 +401,26 @@ describe('absence items (R20) and any-of evidence (R21)', () => {
       expect(item('fit_orders', orderFor('pt-0035', snip(text)), 'pt-0035'), text).toMatchObject({ met: false, why: expect.stringContaining('any of') });
     }
   });
+  // R32: a member who needs no contact is reviewed by seeing their decisive records, by the same
+  // rules (B1's operative note by a read or a snippet showing its atoms); a gap member's item here
+  // is always met.
+  it("no_contact_reviewed: met for B1 after her operative note's snippet shows 'total proctocolectomy', not after one that misses it", () => {
+    const [note] = at('pt-0021').decisive;
+    const ctxOf = (text: string): GateCtx => ({ ...NOTHING, steps: [step(1, 1, { tool: 'search_notes', referenced_ids: [note!], shown: { [note!]: text } })] });
+    expect(item('no_contact_reviewed', ctxOf('…Procedure: total proctocolectomy with end ileostomy…'), 'pt-0021').met).toBe(true);
+    expect(item('no_contact_reviewed', ctxOf('…Operative report, scanned outside record…'), 'pt-0021').met).toBe(false);
+    for (const p of ORDERED) expect(item('no_contact_reviewed', NOTHING, p.slice(8)).met, p).toBe(true);
+  });
+  // R31: attribution counts a gap's decisive id as seen only by the gate's rule, not by exposure, so
+  // a gap whose trap record was exposed and whose absences never shown is labelled retrieval.
+  it('declares an empty decisive phrase for every gap decisive id on the gates that gate gaps, and none on the others', () => {
+    const gapIds = expected.items.filter((x) => x.absences.length > 0).flatMap((x) => x.decisive);
+    for (const g of ['fit_orders', 'outreach_messages', 'gap_seen_before_order']) expect(gates.find((x) => x.id === g)!.decisive_phrases, g).toEqual(Object.fromEntries(gapIds.map((d) => [d, ''])));
+    for (const g of ['nothing_for_others', 'no_contact_reviewed']) expect(gates.find((x) => x.id === g)!.decisive_phrases, g).toBeUndefined();
+  });
   it('declares the same rules to attribution (seen_at) on every gate over panel members, for every decisive id of a member with an absence, any-of evidence or atoms', () => {
-    const ids = expected.items.filter((x) => x.absence !== null || x.evidence === 'any' || Object.keys(x.atoms).length > 0).flatMap((x) => x.decisive);
-    for (const g of ['fit_orders', 'outreach_messages', 'gap_seen_before_order', 'nothing_for_others']) expect(Object.keys(gates.find((x) => x.id === g)!.seen_at ?? {}).sort(), g).toEqual([...ids].sort());
+    const ids = expected.items.filter((x) => x.absences.length > 0 || x.evidence === 'any' || Object.keys(x.atoms).length > 0).flatMap((x) => x.decisive);
+    for (const g of ['fit_orders', 'outreach_messages', 'gap_seen_before_order', 'nothing_for_others', 'no_contact_reviewed']) expect(Object.keys(gates.find((x) => x.id === g)!.seen_at ?? {}).sort(), g).toEqual([...ids].sort());
     expect(Object.keys(expected.items.find((x) => x.patient === 'Patient/pt-0021')!.atoms)).toEqual(expected.items.find((x) => x.patient === 'Patient/pt-0021')!.decisive);
   });
 });

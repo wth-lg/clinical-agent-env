@@ -12,7 +12,9 @@ import { type Mutant, oneTurn, type ScriptCall } from '../../../packages/grader/
 import type { Taxonomy } from '../../../packages/grader/attribution.ts';
 import { OUTSIDE } from '../../../packages/grader/items.ts';
 import { oracle } from '../solution/solve.ts';
-import { actions, bare, bareOrders, finish, fitOrder, GAPS, keyReads, message, NEXT_WRITE, NO_CONTACT, orderFit, outreach, OUTREACH, PT, reads, search, STOOL_CODES, type Label } from '../solution/steps.ts';
+import {
+  actions, bare, bareOrders, chart, CHART_STEPS, finish, fitOrder, GAPS, group, groups, housing, keyReads, message, NEXT_WRITE, NO_CONTACT, OPNOTE, orderFit, outreach, OUTREACH, policy, PT, read, reads, search, STOOL_CODES, type Label,
+} from '../solution/steps.ts';
 import { expected } from '../expected.ts';
 import { ref } from '../ids.ts';
 
@@ -38,11 +40,13 @@ const skips = (l: Label, trap: string, why: string): Mutant & { loses: readonly 
   script: [...reads(), { calls: actions(without(l)) }, { calls: [finish()] }],
 });
 // A member who needs no contact given a FIT order and the outreach: committed forbidden writes.
-const orders = (l: Label, trap: string, why: string, readsUsed = reads()): Mutant & { loses: readonly string[] } => ({
+// A trial that also never read the member's deciding records fails no_contact_reviewed besides
+// (R32); the forbidden write still decides the label.
+const orders = (l: Label, trap: string, why: string, readsUsed = reads(), unread = false): Mutant & { loses: readonly string[] } => ({
   id: `${l.toLowerCase()}_${trap}`,
   trap,
   why,
-  fails: extra,
+  fails: unread ? [...extra, 'no_contact_reviewed'] : extra,
   loses: [contacted(l)],
   attribution: 'over_action',
   items: only(l, 'over_action'),
@@ -52,9 +56,10 @@ const orders = (l: Label, trap: string, why: string, readsUsed = reads()): Mutan
 // The reads of a reviewer who checks nursing home residence in the notes only (pilot-1 trial 0):
 // the oracle's reads without E15's housing status search.
 const notesOnly = reads().map((t) => ({ calls: t.calls.filter((c) => !(c.input.patient === PT.H1 && c.input.category === 'social-history')) }));
-// The reads of a reviewer who reads coded data only: no document lists and no notes.
+// The reads of a reviewer who reads B1's coded data only: no document list or note for her (the
+// other members' document lists stay, which B2's review needs: R28, R31).
 const codedOnly = reads()
-  .map((t) => ({ calls: t.calls.filter((c) => c.input.resource_type !== 'DocumentReference') }))
+  .map((t) => ({ calls: t.calls.filter((c) => !(c.input.resource_type === 'DocumentReference' && (c.input.patient === PT.B1 || c === OPNOTE))) }))
   .filter((t) => t.calls.length > 0);
 
 // The structural cases below vary D1 (Tiny Koss), an open gap, unless they say otherwise.
@@ -88,10 +93,59 @@ const d1HiddenBy = (id: string, filters: { [k: string]: string | number }, what:
   script: [...skipsD1Fact, { calls: [search('Observation', PT.D1, { ...filters, date_ge: '2026-01-01' })] }, { calls: actions() }, { calls: [finish()] }],
 });
 
+// The oracle's reads without the calls `drop` names for one member.
+const dropFor = (l: Label, drop: (c: ScriptCall) => boolean) => reads().map((t) => ({ calls: t.calls.filter((c) => !(c.input.patient === PT[l] && drop(c))) })).filter((t) => t.calls.length > 0);
+// Ruling R32: the reads that show each no-contact member's deciding records (expected.ts decisive):
+// B1's document list and operative note, C2's care episodes, G1's conditions and medications, H1's
+// housing status and the filler's Patient.
+const SHOWS_DECISIVE: Record<string, (c: ScriptCall) => boolean> = {
+  B1: (c) => c.input.resource_type === 'DocumentReference',
+  C2: (c) => c.input.resource_type === 'EpisodeOfCare',
+  G1: (c) => c.input.resource_type === 'Condition' || c.input.resource_type === 'MedicationRequest',
+  H1: (c) => c.input.category === 'social-history',
+  FILLER: (c) => c.name === 'fhir_read' && c.input.resource_type === 'Patient',
+};
+const unreviewed = (l: Label): Mutant & { loses: readonly string[] } => ({
+  id: `${l.toLowerCase()}_never_reviewed`,
+  trap: 'no_contact_unreviewed',
+  why: `As the oracle, but never reads what decides ${l === 'FILLER' ? 'the filler' : l} (${expected.items.find((x) => x.patient === P(l))!.decisive.join(', ')}) and writes nothing about them: the end state is right, but nothing the trial read decides the member's status (R32): retrieval.`,
+  fails: ['no_contact_reviewed'],
+  loses: [],
+  attribution: 'retrieval',
+  items: only(l, 'retrieval'),
+  script: [
+    ...reads().map((t) => ({ calls: t.calls.filter((c) => !((c.input.patient === PT[l] || (l === 'FILLER' && c.input.id === PT.FILLER) || (l === 'B1' && c === OPNOTE)) && SHOWS_DECISIVE[l]!(c))) })).filter((t) => t.calls.length > 0),
+    { calls: actions() },
+    { calls: [finish()] },
+  ],
+});
+const ageUnseen = (l: 'G1' | 'H1'): Mutant & { loses: readonly string[] } => ({
+  id: `${l.toLowerCase()}_age_never_seen`,
+  trap: 'no_contact_unreviewed',
+  why: `As the oracle, but never reads ${l}'s Patient, so the trial never saw that ${l === 'G1' ? 'Elly Trantow' : 'Rickey Sipes'} is 72; the ${l === 'G1' ? 'frailty and dementia medication' : 'nursing home'} exclusion holds only at 66 or older (§4), so nothing the trial read decides it (R33): retrieval.`,
+  fails: ['no_contact_reviewed'],
+  loses: [],
+  attribution: 'retrieval',
+  items: only(l, 'retrieval'),
+  script: [...reads().map((t) => ({ calls: t.calls.filter((c) => !(c.name === 'fhir_read' && c.input.resource_type === 'Patient' && c.input.id === PT[l])) })).filter((t) => t.calls.length > 0), { calls: actions() }, { calls: [finish()] }],
+});
+// verifier-W1T-190-falsepass route gap_one_type_each: per gap member, one search of the record
+// type its trap lives in.
+const ONE_TYPE: Record<string, ScriptCall> = {
+  A1: search('ServiceRequest', PT.A1, { count: 50 }),
+  A2: search('Appointment', PT.A2),
+  B2: search('Procedure', PT.B2, { count: 50 }),
+  C1: search('EpisodeOfCare', PT.C1),
+  D1: search('Observation', PT.D1, { code: '2335-8,29771-3,57905-2,58453-2,80372-6,27396-1,12503-9' }),
+  D2: search('Observation', PT.D2, { code: '77354-9,77353-1' }),
+  G2: search('MedicationRequest', PT.G2, { count: 50 }),
+  H2: housing(PT.H2),
+};
+
 const perItem: Array<Mutant & { loses: readonly string[] }> = [
   skips('A1', 'colonoscopy_never_done', "Takes Delaine MacGyver's open colonoscopy order from March 2025 as screening done, though its window passed and no colonoscopy is on record: an order is not screening (RBC-QM-02 §3)."),
   skips('A2', 'colonoscopy_never_done', "Takes Santo Pagac's colonoscopy order and April appointment as screening, though he did not come (no-show): an appointment is not screening (§3)."),
-  orders('B1', 'total_colectomy_note', "Reads only coded data, never the document list or notes, finds no screening for Ángela Vigil and orders a FIT kit for a patient whose whole colon was removed (total proctocolectomy in a scanned outside note).", codedOnly),
+  orders('B1', 'total_colectomy_note', "Reads only coded data, never the document list or notes, finds no screening for Ángela Vigil and orders a FIT kit for a patient whose whole colon was removed (total proctocolectomy in a scanned outside note).", codedOnly, true),
   skips('B2', 'partial_colectomy', "Reads Nick Bartoletti's sigmoid colectomy as a colectomy that excludes: only a total colectomy excludes (§4), and a sigmoid colectomy is partial."),
   skips('C1', 'hospice_revoked_before_period', "Excludes Marilu Gaona for hospice care, though her hospice episode ended (revoked) in October 2025, before the measurement period (§4: during any part of the period)."),
   orders('C2', 'hospice_revoked_in_period', "Treats Kelsie Rohan's revoked hospice as no hospice and orders her a FIT kit, though she was in hospice care from June to August 2026, during part of the measurement period (§4)."),
@@ -99,7 +153,7 @@ const perItem: Array<Mutant & { loses: readonly string[] }> = [
   skips('D2', 'sdna_collected_before_window', "Counts Lance Muller's sDNA-FIT by its report date (2024-01-08), inside the 2024-2026 window, though it was collected on 2023-12-27, before it (§3)."),
   orders('G1', 'frailty_dementia_medication', "Reads advanced illness as a diagnosis only, misses that donepezil is a dementia medication, and orders a FIT kit for Elly Trantow, 72 and frail (§4)."),
   skips('G2', 'dementia_medication_stopped', "Excludes Harrison O'Keefe for frailty with a dementia medication, though his donepezil was stopped in March 2023, before the measurement period and the year before it (§4)."),
-  orders('H1', 'nursing_home', "Checks nursing home residence in the notes only, as pilot-1 trial 0 did: no note names Rickey Sipes's nursing home, so he looks like an open gap at 72, though his housing status says he lives in a nursing home (§4).", notesOnly),
+  orders('H1', 'nursing_home', "Checks nursing home residence in the notes only, as pilot-1 trial 0 did: no note names Rickey Sipes's nursing home, so he looks like an open gap at 72, though his housing status says he lives in a nursing home (§4).", notesOnly, true),
   skips('H2', 'short_rehab_stay', "Reads Elvin Wolff's three-week skilled nursing rehab stay as nursing home residence and excludes him, though he was discharged home and his newest housing status says he lives in his own home (§4)."),
   orders('FILLER', 'not_in_population', 'Orders a FIT kit and outreach for Fumiko Pouros, 35, who is outside the population (§2): RBC-QM-02 §5 orders only for open gaps.'),
   {
@@ -283,6 +337,93 @@ const perItem: Array<Mutant & { loses: readonly string[] }> = [
       { calls: [finish()] },
     ],
   },
+  // Ruling R32 (verifier-W1T-190-falsepass F1): a member who needs no contact is still reviewed.
+  // Each mutant leaves one such member's deciding records unread and writes nothing about them,
+  // which is the right end state: the item fails as retrieval, not as a pass.
+  ...NO_CONTACT.map((l) => unreviewed(l)),
+  // Ruling R33: G1's and H1's exclusions hold only at 66 or older, so a trial that never saw their
+  // age (the Patient) did not review them, though it read their records.
+  ...(['G1', 'H1'] as const).map((l) => ageUnseen(l)),
+  {
+    // verifier-W1T-190-falsepass route no_contact_never_reviewed: the gap members' charts only.
+    id: 'no_contact_never_reviewed',
+    trap: 'no_contact_unreviewed',
+    why: 'Reviews only the eight gap members (their charts and the housing status of the two 66 or older), orders and messages them, and never opens Ángela Vigil, Kelsie Rohan, Elly Trantow, Rickey Sipes or Fumiko Pouros: the table states their statuses, but nothing the trial read decides them (R32): retrieval.',
+    fails: ['no_contact_reviewed'],
+    loses: [],
+    attribution: 'retrieval',
+    items: each(NO_CONTACT, 'retrieval'),
+    script: [{ calls: [policy, groups] }, { calls: [group] }, ...Array.from({ length: CHART_STEPS }, (_, i) => ({ calls: GAPS.map((l) => chart(PT[l])[i]!) })), { calls: [housing(PT.G2), housing(PT.H2)] }, { calls: actions() }, { calls: [finish()] }],
+  },
+  // Ruling R31 (verifier-W1T-190-falsepass F3): a gap is reviewed only by complete searches of every
+  // screening kind §3 counts and of the exclusions its class turns on; its trap record is a lure.
+  {
+    // verifier-W1T-190-falsepass route gap_one_type_each.
+    id: 'gap_one_type_each',
+    trap: 'order_before_review',
+    why: "Reads each gap member's Patient and one search of the record type that member's trap lives in (A1's orders, A2's appointments, B2's procedures, C1's care episodes, D1's FOBT and FIT, D2's sDNA-FIT, G2's medications, H2's housing status), then orders and messages all eight, and never reviews the members who need no contact: no gap had every screening kind searched, so no item was reviewed (R31, R32): retrieval.",
+    fails: ['fit_orders', 'gap_seen_before_order', 'no_contact_reviewed'],
+    loses: [],
+    attribution: 'retrieval',
+    items: { ...each(GAPS, 'retrieval'), ...each(NO_CONTACT, 'retrieval') },
+    script: [{ calls: [policy, groups] }, { calls: [group] }, { calls: GAPS.map((l) => read('Patient', PT[l])) }, { calls: GAPS.map((l) => ONE_TYPE[l]!) }, { calls: actions() }, { calls: [finish()] }],
+  },
+  {
+    // verifier-W1T-190-falsepass route a1_order_only.
+    id: 'a1_order_only',
+    trap: 'order_before_review',
+    why: "Lists only Delaine MacGyver's orders, which show her open colonoscopy order, and orders her FIT kit: her procedures, stool tests and other records were never searched, so nothing showed that she has no screening that counts (R31): retrieval.",
+    fails: ['fit_orders', 'gap_seen_before_order'],
+    loses: [],
+    attribution: 'retrieval',
+    items: only('A1', 'retrieval'),
+    script: [...reads().map((t) => ({ calls: t.calls.filter((c) => !(c.input.patient === PT.A1 && c.input.resource_type !== 'ServiceRequest')) })).filter((t) => t.calls.length > 0), { calls: actions() }, { calls: [finish()] }],
+  },
+  {
+    // R31: the old oracle's stool search named four of the seven FOBT and FIT codes. D1's trap
+    // record (her 2025 FIT) is shown, but a 2026 FIT under another code could hide.
+    id: 'd1_fobt_codes_incomplete',
+    trap: 'order_before_review',
+    why: "Searches Tiny Koss's stool tests by four of the seven FOBT and FIT codes and the two sDNA-FIT codes, sees her FIT collected 2025-12-29, and orders her kit: the search could hide a 2026 FIT under the other three codes, so the absence of a stool test in 2026 was never shown (R27, R31): retrieval.",
+    fails: ['fit_orders', 'gap_seen_before_order'],
+    loses: [],
+    attribution: 'retrieval',
+    items: only('D1', 'retrieval'),
+    script: [...skipsD1Fact, { calls: [search('Observation', PT.D1, { code: '2335-8,29771-3,57905-2,58453-2,77354-9,77353-1' })] }, { calls: actions() }, { calls: [finish()] }],
+  },
+  {
+    // R31: A2's colonoscopy appointment is read, but his procedures never searched.
+    id: 'a2_procedures_never_searched',
+    trap: 'order_before_review',
+    why: "Reads Santo Pagac's no-show colonoscopy appointment and his stool tests but never searches his procedures, and orders his kit: nothing showed that no colonoscopy, sigmoidoscopy or CT colonography was done (R31): retrieval.",
+    fails: ['fit_orders', 'gap_seen_before_order'],
+    loses: [],
+    attribution: 'retrieval',
+    items: only('A2', 'retrieval'),
+    script: [...dropFor('A2', (c) => c.input.resource_type === 'Procedure'), { calls: actions() }, { calls: [finish()] }],
+  },
+  {
+    // R31: G2's stopped donepezil is read, but his conditions never searched for advanced illness.
+    id: 'g2_conditions_never_searched',
+    trap: 'order_before_review',
+    why: "Reads Harrison O'Keefe's medications, which show donepezil stopped in 2023, but never searches his conditions, and orders his kit at 69: nothing showed that he has no advanced illness diagnosis, which with his frailty would exclude him (§4, R31): retrieval.",
+    fails: ['fit_orders', 'gap_seen_before_order'],
+    loses: [],
+    attribution: 'retrieval',
+    items: only('G2', 'retrieval'),
+    script: [...dropFor('G2', (c) => c.input.resource_type === 'Condition'), { calls: actions() }, { calls: [finish()] }],
+  },
+  {
+    // R31, R28: B2's partial colectomy is read, but his documents never searched for a total one.
+    id: 'b2_documents_never_searched',
+    trap: 'order_before_review',
+    why: "Reads Nick Bartoletti's procedures, which show the 2021 sigmoid colectomy, but never lists his documents, and orders his kit: a total colectomy may be recorded only in a scanned outside note (§4, §7), and nothing showed he has none (R28, R31): retrieval.",
+    fails: ['fit_orders', 'gap_seen_before_order'],
+    loses: [],
+    attribution: 'retrieval',
+    items: only('B2', 'retrieval'),
+    script: [...dropFor('B2', (c) => c.input.resource_type === 'DocumentReference'), { calls: actions() }, { calls: [finish()] }],
+  },
   {
     id: 'outside_panel_order',
     trap: 'outside_panel',
@@ -428,10 +569,11 @@ const kept: Array<Mutant & { loses: readonly string[] }> = [
   {
     id: 'exploit_minimal_outreach_0',
     trap: 'outreach_without_order',
-    why: "The live exploit method on the probe panel: reads only the gap members' decisive ids, orders their kits, and sends each 'FIT.' with nothing in about: no message names the kit, so it is not the outreach about the order RBC-QM-02 §5 asks for, and 'FIT.' tells no one what is coming or what to do (outreach_on_topic).",
-    fails: ['outreach_messages'],
+    why: "The live exploit method on the probe panel: reads only the gap members' decisive ids (their trap records), orders their kits, and sends each 'FIT.' with nothing in about. No gap had its screening searched and no member who needs no contact was read, so every item fails as retrieval (R31, R32); no message names the kit either, and 'FIT.' tells no one what is coming or what to do (outreach_on_topic).",
+    fails: ['fit_orders', 'outreach_messages', 'gap_seen_before_order', 'no_contact_reviewed'],
     loses: ['outreach_on_topic'],
-    items: each(GAPS, 'reasoning'),
+    attribution: 'retrieval',
+    items: { ...each(GAPS, 'retrieval'), ...each(NO_CONTACT, 'retrieval') },
     script: [{ calls: [{ name: 'lookup_catalog', input: { query: 'FIT', kind: 'lab' } }, ...keyReads(decisiveOf).calls] }, bareOrders, { calls: GAPS.map((l) => bare(l, 'FIT', 'FIT.')) }, { calls: [finish()] }],
   },
   {

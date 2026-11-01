@@ -26,9 +26,10 @@
 // row-only hit of a decisive id on a broad page 1 is listed in ROW_ONLY with that reason, and the
 // test fails when the list drifts.
 //
-// Rulings R20, R21 and R27: an absence gap (A, C1, D) is reviewed by its trap record or by a
-// complete search covering its window whose filters hide no qualifying record, and H2 by any one of his housing status, discharge summary or rehab
-// encounter, so the oracle check below asks for one of H2's records, not all three.
+// Rulings R20, R21, R27 and R31: a gap is reviewed by complete searches covering each window whose
+// filters hide no qualifying record (its trap record is a lure, R19), and H2 also by any one of his
+// housing status, discharge summary or rehab encounter, so the oracle check below asks for one of
+// H2's records, not all three.
 //
 // Targeted policy-word searches (POLICY_WORD: a notes search for a rule term RBC-QM-02 uses) are the
 // retrieval routes R5 requires, not broad first searches; they are exempt from the page-1 rule
@@ -94,12 +95,18 @@ const DECISIVE = expected.items.flatMap((x) => x.decisive.map((d) => ({ patient:
 // FIT are older stool tests that change no answer; A1's colonoscopy order is decisive, not a lure.
 export const LURES: readonly string[] = [ref('Observation/obs-t3-1279'), ref('Observation/obs-t3-4590')];
 // Ruling R22: decisive ids a broad page 1 names in a row that does not show the deciding content,
-// by search: the panel Group lists its members by reference only, so the filler's row shows no birth
-// date (her deciding fact).
+// by search: the panel Group lists its members by reference only, so the filler's, G1's and H1's
+// rows show no birth date (their age, R33); an Encounter row names H1 as its subject only.
+const AGE_DECIDES = ['Patient/pt-0009', 'Patient/pt-0034', 'Patient/pt-0037'];
 export const ROW_ONLY: Readonly<Record<string, readonly string[]>> = {
-  'fhir_search {"resource_type":"Group"}': ['Patient/pt-0037'],
-  [`fhir_read {"resource_type":"Group","id":"${id('grp-t3-okafor-crc')}"}`]: ['Patient/pt-0037'],
+  'fhir_search {"resource_type":"Group"}': AGE_DECIDES,
+  [`fhir_read {"resource_type":"Group","id":"${id('grp-t3-okafor-crc')}"}`]: AGE_DECIDES,
+  'fhir_search {"resource_type":"Encounter"}': ['Patient/pt-0034'],
 };
+// Ruling R6: an item's own plain input may show on page 1; the page-1 rule holds for the record
+// that makes the item a trap. H1's trap is his housing status (retrieval); his age, 72, which puts
+// him under §4's 66-or-older clause (R33), is on every patient list.
+export const PLAIN_INPUTS: readonly string[] = ['Patient/pt-0034'];
 const hitsOf = (r: { exposed_ids: readonly string[]; referenced_ids: readonly string[] }) => ({
   hits: DECISIVE.filter((d) => r.exposed_ids.includes(d.id)),
   rowOnly: DECISIVE.filter((d) => r.referenced_ids.includes(d.id)).map((d) => d.id),
@@ -115,7 +122,7 @@ describe('crc-care-gap discoverability', () => {
     const r = tool(name, input);
     expect(r.is_error ?? false).toBe(false);
     const { hits, rowOnly } = hitsOf(r);
-    expect(hits.filter((d) => HARD_STEP[d.patient]!.step !== 'reasoning')).toEqual([]);
+    expect(hits.filter((d) => HARD_STEP[d.patient]!.step !== 'reasoning' && !PLAIN_INPUTS.includes(d.id))).toEqual([]);
     expect([...new Set(rowOnly)].sort(), 'ROW_ONLY (R22)').toEqual([...(ROW_ONLY[label] ?? [])].sort());
   });
 
