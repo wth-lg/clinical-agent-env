@@ -14,7 +14,7 @@ export const spray: Script = [
     calls: [
       ...ORDER.map((l) => {
         const c = CASES[l]!;
-        const rivaroxaban = ['bauer', 'delgado', 'moravec', 'pellegrino'].includes(l);
+        const rivaroxaban = ['delgado', 'moravec', 'pellegrino'].includes(l);
         const request = (c.change?.input.medication_request as string | undefined) ?? id('mr-t1-1801');
         return rivaroxaban
           ? modify(request, { value: 15, unit: 'mg', frequency: 'QD' }, 'Renal review: reduce', RX.rivaroxaban15)

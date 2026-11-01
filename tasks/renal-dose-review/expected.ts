@@ -1,21 +1,21 @@
 import { ref } from './ids.ts';
-// T1's expected end state, written by hand (plan-amendment-worklist W1, builder-211): for each
-// patient on the pharmacy's DOAC dose review list, the inputs RBC-PHARM-07 §1 picks, the dose §2
-// (apixaban) or §3 (rivaroxaban) gives, and the records that decision depends on. policy.ts
-// computes the same from the initial world, and the matrix fails when the two differ. The grader
-// reads its targets from here. Ages on 2026-10-23; CrCl by Cockcroft-Gault, x 0.85 for a woman.
-// The last column is the records that decide the action (decisive, below); 'Patient' is the
-// Patient resource, which holds the age and sex (rulings R33).
+// T1's expected end state, written by hand (plan-amendment-worklist W1, builder-211; cut to five by
+// plan-amendment-w4 PW4-E3, builder-281): for each patient on the pharmacy's DOAC dose review list,
+// the inputs RBC-PHARM-07 §1 picks, the dose §2 (apixaban) or §3 (rivaroxaban) gives, and the
+// records that decision depends on. policy.ts computes the same from the initial world, and the
+// matrix fails when the two differ. The grader reads its targets from here. Ages on 2026-10-23;
+// CrCl by Cockcroft-Gault, x 0.85 for a woman. The last column is the records that decide the
+// action (decisive, below); 'Patient' is the Patient resource, which holds the age and sex (R33).
+// One patient per probe class and the filler; the other four W1 patients keep their charts, off
+// the list.
 //
-//   pt-0001  84 M  apixaban 5     weight 57.6 kg (10/14), SCr 1.18: age + weight      -> 2.5 BID   weight, Patient
-//   pt-0002  82 M  apixaban 2.5   weight 143 lb = 64.86 kg, SCr 1.21 (10/20): age only -> 5 BID     weight, SCr
-//   pt-0040  83 F  apixaban 5     outside SCr 150 umol/L / 88.4 = 1.70 (10/15): age + SCr -> 2.5 BID SCr, Patient
 //   pt-0003  76 M  rivaroxaban 20 outside SCr 160 umol/L = 1.81, 90 kg: CrCl 44.2      -> 15 daily  weight, SCr, Patient
-//   pt-0038  79 M  rivaroxaban 15 96 kg (actual), SCr 1.45: CrCl 56.1                   -> 20 daily  weight, SCr, Patient
-//   pt-0039  81 M  rivaroxaban 20 measured 59.0 kg (not the stated 168 lb), SCr 1.10: CrCl 44.0 -> 15 daily  weight, SCr, Patient
 //   pt-0041  70 M  apixaban 5     no criterion; itraconazole                          -> 2.5 BID   the itraconazole order
-//   pt-0045  66 M  apixaban 5     no criterion; ritonavir (outside letter)            -> 2.5 BID   the letter
+//   pt-0038  79 M  rivaroxaban 15 96 kg (actual), SCr 1.45: CrCl 56.1                   -> 20 daily  weight, SCr, Patient
 //   pt-0043  75 F  rivaroxaban 20 71 kg, SCr 0.92: CrCl 59.2                          unchanged    weight, SCr, Patient
+//   pt-0002  82 M  apixaban 2.5   weight 143 lb = 64.86 kg, SCr 1.21 (10/20): age only -> 5 BID     weight, SCr
+//
+// The mid-trial events (events.ts) change some of these on the chart as delivered: EVENT_EXPECT.
 export const CLASSES = ['cg_crcl_weight_rule', 'apixaban_two_of_three', 'outside_scr_umol', 'pgp_cyp3a4_inhibitor'] as const;
 export type ItemClass = (typeof CLASSES)[number] | 'filler';
 export type Drug = 'apixaban' | 'rivaroxaban';
@@ -51,12 +51,8 @@ const item = (patient: string, name: string, cls: ItemClass, request: string, ac
 export const expected = {
   group: ref('Group/grp-t1-doac'),
   items: [
-    item('pt-0040', 'Dorothy Ashworth', 'outside_scr_umol', ref('MedicationRequest/mr-t1-1601'), 'reduce', 'apixaban', 2.5, [ref('Observation/obs-t1-1604'), 'Patient/pt-0040']),
-    item('pt-0039', 'Clarence Bauer', 'cg_crcl_weight_rule', ref('MedicationRequest/mr-t1-1501'), 'reduce', 'rivaroxaban', 15, [ref('Observation/obs-t1-1503'), ref('Observation/obs-t1-1504'), 'Patient/pt-0039']),
     item('pt-0003', 'Frank Delgado', 'outside_scr_umol', ref('MedicationRequest/mr-t1-1301'), 'reduce', 'rivaroxaban', 15, [ref('Observation/obs-t1-1304'), ref('Observation/obs-t1-1302'), 'Patient/pt-0003']),
     item('pt-0041', 'Raymond Duquette', 'pgp_cyp3a4_inhibitor', ref('MedicationRequest/mr-t1-1701'), 'reduce', 'apixaban', 2.5, [ref('MedicationRequest/mr-t1-1703')]),
-    item('pt-0001', 'Walter Kowalczyk', 'apixaban_two_of_three', ref('MedicationRequest/mr-t1-1101'), 'reduce', 'apixaban', 2.5, [ref('Observation/obs-t1-1103'), 'Patient/pt-0001']),
-    item('pt-0045', 'Gregory Lindahl', 'pgp_cyp3a4_inhibitor', ref('MedicationRequest/mr-t1-1901'), 'reduce', 'apixaban', 2.5, [ref('DocumentReference/doc-t1-1901')]),
     item('pt-0038', 'Eugene Moravec', 'cg_crcl_weight_rule', ref('MedicationRequest/mr-t1-1401'), 'increase', 'rivaroxaban', 20, [ref('Observation/obs-t1-1404'), ref('Observation/obs-t1-1405'), 'Patient/pt-0038']),
     item('pt-0043', 'Marjorie Pellegrino', 'filler', ref('MedicationRequest/mr-t1-1801'), 'unchanged', 'rivaroxaban', 20, [ref('Observation/obs-t1-1801'), ref('Observation/obs-t1-1802'), 'Patient/pt-0043']),
     item('pt-0002', 'Harold Vance', 'apixaban_two_of_three', ref('MedicationRequest/mr-t1-apixaban'), 'increase', 'apixaban', 5, [ref('Observation/obs-t1-wt-1020'), ref('Observation/obs-t1-scr-1020')]),
@@ -65,9 +61,34 @@ export const expected = {
 
 // R29: the atoms of each snippet-visible decisive record, the minimal facts of its deciding line
 // that decide the item; a read or one snippet that shows them all counts as seen (tests/grader.ts
-// firstSeenBy, for the gates and attribution alike). The letter decides pt-0045's dose by the
-// inhibitor it lists; §2 counts ritonavir at any dose ('including ritonavir given as a booster'),
-// so its dose is not an atom (R26: the old phrase 'ritonavir 100 mg' missed a snippet cut after
-// '100'). The item's own drug (apixaban) is never an atom. tests/phrases.test.ts sweeps every
-// snippet.
-export const DECISIVE_ATOMS: Record<string, readonly string[]> = { [ref('DocumentReference/doc-t1-1901')]: ['ritonavir'] };
+// firstSeenBy). No base item of the five-patient list turns on a note (the inhibitor of pt-0041 is
+// an order); the outside letters that arrive mid-trial have theirs in EVENT_EXPECT.
+export const DECISIVE_ATOMS: Record<string, readonly string[]> = {};
+
+// Each mid-trial event (events.ts SPECS) as the grader reads it: its item, and for an amend (A, B,
+// O) the dose RBC-PHARM-07 gives on the chart as delivered. A lure (D) leaves the item's dose as it
+// is. `atoms`: an arrival a search_notes snippet can show counts as seen when one snippet shows
+// them (R29); otherwise only by a read or a search row that exposes it.
+//   pellegrino-scr-new       SCr 1.25: CrCl (140 - 75) x 71.0 / (72 x 1.25) x 0.85 = 43.6     -> rivaroxaban 15
+//   delgado-scr-amended      SCr 118 umol/L / 88.4 = 1.33: CrCl 64 x 90.0 / (72 x 1.33) = 59.9 -> rivaroxaban 20
+//   vance-itraconazole       itraconazole (outside letter), 5 mg by §2                       -> apixaban 2.5
+//   moravec-scr-new          SCr 1.85: CrCl 61 x 96.0 / (72 x 1.85) = 44.0                     -> rivaroxaban 15
+//   moravec-weight-reported  a reported weight does not count (§1)                          dose stays
+//   vance-clarithromycin     clarithromycin does not count (§2)                             dose stays
+// `cites`, for an amend: the records the new dose relies on that §4 asks a note to cite (results,
+// orders or letters; not the Patient), for the rubric's notes_cite_inputs.
+export interface EventExpect {
+  item: string;
+  dose?: Item['dose'];
+  cites?: readonly string[];
+  atoms?: readonly string[];
+}
+const riva = (mg: number): Item['dose'] => ({ drug: 'rivaroxaban', mg, per_day: 1 });
+export const EVENT_EXPECT: Record<string, EventExpect> = {
+  'pellegrino-scr-new': { item: 'Patient/pt-0043', dose: riva(15), cites: [ref('Observation/obs-t1-1801'), 'Observation/obs-04001'] },
+  'delgado-scr-amended': { item: 'Patient/pt-0003', dose: riva(20), cites: [ref('Observation/obs-t1-1304'), ref('Observation/obs-t1-1302')] },
+  'vance-itraconazole': { item: 'Patient/pt-0002', dose: { drug: 'apixaban', mg: 2.5, per_day: 2 }, cites: ['DocumentReference/doc-00301'], atoms: ['itraconazole'] },
+  'moravec-scr-new': { item: 'Patient/pt-0038', dose: riva(15), cites: [ref('Observation/obs-t1-1404'), 'Observation/obs-04002'] },
+  'moravec-weight-reported': { item: 'Patient/pt-0038' },
+  'vance-clarithromycin': { item: 'Patient/pt-0002', atoms: ['clarithromycin'] },
+};

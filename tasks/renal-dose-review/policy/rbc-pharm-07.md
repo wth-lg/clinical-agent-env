@@ -26,3 +26,6 @@ CrCl 50 mL/min or lower: rivaroxaban 15 mg by mouth once daily with the evening 
 When the dose a patient takes differs from the dose §2 or §3 gives, change it by modifying the existing order (or stopping it and replacing it). Leave a correct dose as it is.
 Do not change any other medication, including an interacting medication; the policy changes only the DOAC dose.
 Document each change in a progress note on that patient's chart: the values used, the rule result, the change made, and the records the dose decision relies on (results, medication orders or letters), cited.
+
+§5 Arrivals during the review
+Results, corrections and messages can arrive in your queues while you work. Before you finish, review anything that arrived after you started. If it changes a decision you already recorded under this protocol, correct that decision (change, hold or stop the order, or send a corrected message) and record why. If it does not change the decision under this protocol, leave the decision in place.

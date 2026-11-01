@@ -335,8 +335,12 @@ const LINDQVIST = { reference: 'Practitioner/pr-t1-lindqvist' };
 const SORENSEN = { reference: 'Practitioner/pr-t1-derm' };
 const VARGA = { reference: 'Practitioner/pr-t1-id' };
 
-// The review list, in the order pharmacy built it (alphabetical by family name).
+// The nine patients whose charts the overlay curates (the W1 probe list).
 export const PANEL = ['pt-0040', 'pt-0039', 'pt-0003', 'pt-0041', 'pt-0001', 'pt-0045', 'pt-0038', 'pt-0043', 'pt-0002'] as const;
+// The review list, in the order pharmacy built it (alphabetical by family name): one patient per
+// probe class and the filler (plan-amendment-w4 PW4-E3, n = 5). The other four keep their charts
+// and are off this week's list, so no id renumbers.
+export const LIST = ['pt-0003', 'pt-0041', 'pt-0038', 'pt-0043', 'pt-0002'] as const;
 
 const PEOPLE: Record<string, { given: string[]; family: string; birthDate?: string; prefix: string }> = {
   'pt-0001': { given: ['Walter'], family: 'Kowalczyk', birthDate: '1942-02-14', prefix: 'Mr.' },
@@ -359,8 +363,8 @@ const GROUP: Resource = {
   code: { text: 'Pharmacy worklist: DOAC dose review' },
   name: 'DOAC dose review - week of 10/19/2026',
   managingEntity: LINDQVIST,
-  quantity: PANEL.length,
-  member: PANEL.map((pt) => ({ entity: subject(pt), period: { start: '2026-10-19' } })),
+  quantity: LIST.length,
+  member: LIST.map((pt) => ({ entity: subject(pt), period: { start: '2026-10-19' } })),
 };
 
 // ---- Per-patient charts -----------------------------------------------------------------------

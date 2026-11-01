@@ -13,10 +13,15 @@ const who = (p: unknown) => {
 const TIMES: Record<number, string> = { 1: 'once daily', 2: 'twice daily' };
 const times = (n: unknown) => (typeof n === 'number' && n in TIMES ? TIMES[n]! : `${show(n)} times a day`);
 const more = (n: number) => (n > 1 ? ` (and ${n - 1} more patient${n > 2 ? 's' : ''})` : '');
+// The patients an event gate failed, as its evidence lists them (packages/grader/items.ts).
+const failedOn = (ev: Parameters<CheckText[string]['found']>[0], what: string) => {
+  const failed = items(ev.failed_items);
+  return `${who(failed[0])} ${what}${more(failed.length)}`;
+};
 
 export const checkText: CheckText = {
   doac_dose: {
-    requires: `for each of the ${expected.items.length} patients on the review list, one active order of their DOAC at the dose RBC-PHARM-07 §2 or §3 gives, by mouth on a schedule`,
+    requires: `for each of the ${expected.items.length} patients on the review list, one active order of their DOAC at the dose RBC-PHARM-07 §2 or §3 gives, by mouth on a schedule (once a result or letter that changes the dose has arrived for the patient, the amended check grades the dose instead)`,
     found: (ev) => {
       const failed = items(ev.failed_items);
       const f = fields(ev.first);
@@ -55,5 +60,25 @@ export const checkText: CheckText = {
       const at = `the change for ${who(f.patient)} at step ${show(f.first_write)}`;
       return step === null || step === undefined ? `${show(late)} was not read before ${at}` : `${show(late)} was read at step ${show(step)}, ${lateness(step, f.first_write)} ${at}`;
     },
+  },
+  event_delivered: {
+    requires: 'each result, correction or message the review is set to receive arrives in the chart and the queue once its trigger holds (the environment, not the agent)',
+    found: (ev) => failedOn(ev, 'had an arrival due that is not in the final chart'),
+  },
+  had_turn: {
+    requires: 'a turn of the agent after each arrival, before the trial ends (the environment, not the agent)',
+    found: (ev) => failedOn(ev, 'had an arrival in the last turn of the trial'),
+  },
+  event_seen: {
+    requires: 'each result, correction or message that arrived during the review opened, or shown in a search row or notes snippet, before the review is finished (RBC-PHARM-07 §5)',
+    found: (ev) => failedOn(ev, 'had an arrival that was never opened before the review finished'),
+  },
+  amended: {
+    requires: 'once a result, correction or letter that changes a patient\'s dose has arrived, one active order of their DOAC at the dose RBC-PHARM-07 gives on the chart as it then stands, written after the arrival was read (§5)',
+    found: (ev) => failedOn(ev, 'does not have the dose the arrival calls for, or it was written before the arrival was read'),
+  },
+  kept: {
+    requires: 'no change to a patient\'s DOAC dose on account of an arrival RBC-PHARM-07 does not count (a reported weight, clarithromycin); a repeat test or a note is no change',
+    found: (ev) => failedOn(ev, 'had the DOAC dose changed after an arrival the policy does not count'),
   },
 };

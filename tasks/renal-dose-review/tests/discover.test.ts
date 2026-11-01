@@ -3,16 +3,17 @@
 // (1) The first broad searches a reviewer of this list would run, listed below, show no
 // trap-deciding record on page 1, neither exposed nor referenced. A trap-deciding record is one
 // that makes an item a trap or holds its hidden comparison value: an outside creatinine (LOINC
-// 14682-9, umol/L), the outside clinic's letter that names the inhibitor, and the inhibitor's
-// order. A lure is listed apart (rulings R19): a record that tempts the wrong action but cannot
-// decide the item: a reported weight (LOINC 3142-7, which §1 excludes), the pharmacist note that
-// computes CrCl on ideal body weight (§3 says actual), and pt-0002's superseded discharge summary
-// and its weight (§1 says the most recent) (verifier-W1-probe-T1-clinical-3 N2; the overlay
-// declares the same four as distractors). A lure may show on page 1 of a broad search; it makes
-// the trap harder, not easier, and the items it tempts stay reasoning (bauer_stated_weight,
-// moravec_ideal_weight, vance_discharge_values): (4) records where each shows. Notes that point
-// at a fact but hold no value (pt-0045's 'HIV: followed at St. Brigid', pt-0002's May note) are
-// not lures.
+// 14682-9, umol/L) and the inhibitor's order. A lure is listed apart (rulings R19): a record that
+// tempts the wrong action but cannot decide the item: the pharmacist note that computes CrCl on
+// ideal body weight (§3 says actual), and pt-0002's superseded discharge summary and its weight
+// (§1 says the most recent) (verifier-W1-probe-T1-clinical-3 N2). A lure may show on page 1 of a
+// broad search; it makes the trap harder, not easier, and the items it tempts stay reasoning
+// (moravec_ideal_weight, vance_discharge_values): (4) records where each shows. pt-0002's May note,
+// which points at a fact but holds no value, is not a lure. The five-patient list (builder-281)
+// keeps one patient per class; the dropped patients' records are off the list.
+// (5) The mid-trial arrivals (events.ts) are absent from the world the broad searches run on, and
+// from every result of the oracle's trial before the step that delivers them; none is a
+// trap-deciding or lure record of the base list.
 // The plain inputs of list patients (a clinic creatinine 2160-0, a measured weight 29463-7) may
 // show on page 1: the clinic-wide newest-first searches on those two codes are natural first moves
 // (§1 asks for the most recent SCr and measured weight), and they break no trap
@@ -33,6 +34,8 @@ import { READ_TOOLS, type ReadContext } from '../../../packages/env/tools/read/i
 import { callTool } from '../../../packages/env/tools/registry.ts';
 import { seenBefore, stepsOf } from '../../../packages/grader/exposure.ts';
 import { trial } from '../../../packages/grader/matrix/matrix.ts';
+import { activeSpecs } from '../../../packages/env/events.ts';
+import { ACTIVE, SPECS } from '../events.ts';
 import { expected } from '../expected.ts';
 import { oracle } from '../solution/solve.ts';
 import { ref } from '../ids.ts';
@@ -46,11 +49,11 @@ type Obs = { resourceType: string; id: string; subject?: { reference?: string };
 const listObs = (code: string) => ([...world.resources()] as ReadonlyArray<Obs>)
   .filter((o) => o.resourceType === 'Observation' && PANEL.has(o.subject?.reference ?? '') && coded(o, code))
   .map((o) => `Observation/${o.id}`);
-// The trap-deciding records: every outside creatinine on a list patient's chart, the letter and
-// the inhibitor order.
-const TRAP_DECIDING = new Set([...listObs('14682-9'), ref('DocumentReference/doc-t1-1901'), ref('MedicationRequest/mr-t1-1703')]);
-// The lures (rulings R19): every reported weight on a list patient's chart, and the records that
-// hold a superseded or non-§1 value. None is decisive.
+// The trap-deciding records: every outside creatinine on a list patient's chart and the inhibitor
+// order.
+const TRAP_DECIDING = new Set([...listObs('14682-9'), ref('MedicationRequest/mr-t1-1703')]);
+// The lures (rulings R19): every reported weight on a list patient's chart (none on the five), and
+// the records that hold a superseded or non-§1 value. None is decisive.
 const LURE_RECORDS = [ref('DocumentReference/doc-t1-1401'), ref('DocumentReference/doc-t1-dc-0212'), ref('Observation/obs-t1-wt-0210')];
 const LURES = new Set([...listObs('3142-7'), ...LURE_RECORDS]);
 const page1 = (name: string, input: object) => {
@@ -79,12 +82,12 @@ export const FIRST_BROAD_SEARCHES: ReadonlyArray<[string, object]> = [
 ];
 
 describe('T1 worklist probe: discoverability', () => {
-  it('knows the trap-deciding records: both outside creatinines, the letter and the inhibitor order', () => {
-    expect([...TRAP_DECIDING].sort()).toEqual([ref('Observation/obs-t1-1604'), ref('Observation/obs-t1-1302'), ref('DocumentReference/doc-t1-1901'), ref('MedicationRequest/mr-t1-1703')].sort());
+  it('knows the trap-deciding records: the outside creatinine and the inhibitor order', () => {
+    expect([...TRAP_DECIDING].sort()).toEqual([ref('Observation/obs-t1-1302'), ref('MedicationRequest/mr-t1-1703')].sort());
   });
 
-  it('knows the lures apart, and no lure decides an item (rulings R19): the reported weight, the ideal-weight note, the superseded discharge values', () => {
-    expect([...LURES].sort()).toEqual([ref('Observation/obs-t1-1505'), ...LURE_RECORDS].sort());
+  it('knows the lures apart, and no lure decides an item (rulings R19): the ideal-weight note, the superseded discharge values', () => {
+    expect([...LURES].sort()).toEqual([...LURE_RECORDS].sort());
     expect(expected.items.flatMap((x) => x.decisive).filter((k) => LURES.has(k))).toEqual([]);
   });
 
@@ -111,7 +114,6 @@ describe('T1 worklist probe: discoverability', () => {
   it('records each lure on page 1 of the broad searches that show it (rulings R19: allowed, the items they tempt are reasoning)', () => {
     const shownOn = Object.fromEntries([...LURES].map((k) => [k, FIRST_BROAD_SEARCHES.filter(([name, input]) => page1(name, input).includes(k)).map(([name, input]) => `${name} ${JSON.stringify(input)}`)]));
     expect(shownOn).toEqual({
-      [ref('Observation/obs-t1-1505')]: ['fhir_search {"resource_type":"Observation","category":"vital-signs","sort":"-date"}'],
       [ref('DocumentReference/doc-t1-1401')]: ['search_notes {"query":"rivaroxaban"}', 'search_notes {"query":"creatinine clearance renal dose"}', 'search_notes {"query":"weight"}'],
       [ref('DocumentReference/doc-t1-dc-0212')]: ['search_notes {"query":"apixaban"}', 'search_notes {"query":"anticoagulation atrial fibrillation"}', 'search_notes {"query":"creatinine clearance renal dose"}', 'search_notes {"query":"weight"}', 'search_notes {"query":"creatinine"}'],
       [ref('Observation/obs-t1-wt-0210')]: [],
@@ -119,16 +121,24 @@ describe('T1 worklist probe: discoverability', () => {
   });
 
   it('records the targeted searches that reach the class-deciding records on page 1 (the routes the policy implies)', () => {
-    expect(page1('fhir_search', { resource_type: 'Observation', code: '14682-9', sort: '-date' })).toEqual(expect.arrayContaining([ref('Observation/obs-t1-1604'), ref('Observation/obs-t1-1302')]));
-    expect(page1('search_notes', { query: 'ritonavir' })).toContain(ref('DocumentReference/doc-t1-1901'));
+    expect(page1('fhir_search', { resource_type: 'Observation', code: '14682-9', sort: '-date' })).toEqual(expect.arrayContaining([ref('Observation/obs-t1-1302')]));
     expect(page1('fhir_search', { resource_type: 'MedicationRequest', patient: 'pt-0041', status: 'active' })).toContain(ref('MedicationRequest/mr-t1-1703'));
   });
 
-  it("the route §1 names for a weight's kind returns the fact: a search row shows the reported weight's code and the note on the result itself (rulings R5; search_notes does not index Observation.note)", () => {
-    const r = callTool(READ_TOOLS, 'fhir_search', { resource_type: 'Observation', patient: 'pt-0039', category: 'vital-signs', date_ge: '2026-10-01', sort: '-date' }, ctx);
-    expect(r.exposed_ids).toContain(ref('Observation/obs-t1-1505'));
-    const row = (r.content as { entries: Array<{ id: string; code?: { text?: string }; note?: Array<{ text?: string }> }> }).entries.find((e) => `Observation/${e.id}` === ref('Observation/obs-t1-1505'))!;
-    expect(row.code?.text).toBe('Body weight Stated');
-    expect(row.note?.map((n) => n.text)).toEqual(['Patient report by phone, not weighed.']);
+  it('(5) no arrival is in the world, and none shows in any step of the oracle before the step that delivers it', async () => {
+    const keys = SPECS.flatMap((sp) => (sp.class === 'B' ? [] : sp.resources).map((r) => `${r.resourceType}/${r.id}`));
+    for (const k of keys) expect(world.get(k.split('/')[0]!, k.split('/')[1]!), k).toBeUndefined();
+    const task = await loadMatrixTask('renal-dose-review');
+    const { events } = await trial(matrixEnv(), task, { kind: 'oracle', id: 'oracle', script: oracle });
+    const steps = stepsOf(events);
+    for (const sp of activeSpecs({ SPECS, ACTIVE })) {
+      const at = steps.find((st) => (st.arrivals ?? []).some((a) => a.spec === sp.id))?.n;
+      expect(at, sp.id).toBeDefined();
+      const focus = `${sp.resources[0]!.resourceType}/${sp.resources[0]!.id}`;
+      // A class B correction keeps its record's id: before it arrives, the record shown is the original.
+      if (sp.class === 'B') continue;
+      expect(steps.filter((st) => st.n <= at! && [...st.exposed_ids, ...st.referenced_ids].includes(focus)).map((st) => st.n), sp.id).toEqual([]);
+    }
+    for (const k of keys) expect(TRAP_DECIDING.has(k) || LURES.has(k), k).toBe(false);
   });
 });
