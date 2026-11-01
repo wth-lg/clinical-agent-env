@@ -6,26 +6,35 @@
 //                      band_verdict), pass@1 and pass^3, pass^5 beside it (summary.ts passK)
 //   Failures by fault  the valid failures split model / environment / grader: from the audit labels
 //                      (<run>/audit.jsonl, summary.ts faultCounts) when the run has them, else from
-//                      the classes JSON's split, else "not given"; infra re-runs beside them
+//                      the classes JSON's split, else "not given"; then cli classes' infra split
+//                      (trials ended by the infrastructure) and summary's infra_reruns (the re-queued
+//                      attempts the run ran again), two different counts in two columns. 'failures'
+//                      counts valid trials only; when the classes split counts invalid trials
+//                      (environment: ENV_*, grader: GRADER_ERROR), a line under the table says how many
 //   Grader faults      GRADER_ERROR now and in an earlier grade, and every record a later grader
 //   found and fixed    regraded to another outcome (cli regrade), with both graders
 //   Per class and      from --classes, a saved `pnpm cli classes <run dirs> --json` (PW4-H0b; the
-//   per event          JSON is cli/classes.ts ClassesJson, checked by its classesJsonProblems):
+//   per event          JSON is cli/classes.ts ClassesJson, checked by its classesJsonProblems, and
+//                      refused (exit 1) when its run_dirs do not name this run or any task's
+//                      trials_valid differs from the summary's trials: a card from another run's
+//                      classes would contradict itself):
 //                      q, guard fires, each class's fails
 //                      by instance and over its observations with the pass rate's Wilson 95%
 //                      (computed here from the counts with summary.ts wilson) and failure labels,
 //                      and each event's. Without --classes it says "Not given".
 //   Difficulty history k/n and verdict per task over the --history runs, oldest first, then this run
 //   No failures        for each task with valid trials and no failure, "No failures in N trials"
+//                      (a task with 0 valid trials is named on its own line, outside the claim)
 //                      and the strictness evidence: <run>/matrix.json's entry at the task's
 //                      grader_task_version (the oracle passes, each mutant fails as declared, each
 //                      alternative passes, the null agent fails), else the command that shows it
 // Each run's summary is <run>/summary.json when the run holds one (validated), else computed from
 // its records exactly as `pnpm cli summary <run> --json` computes it; the card says which.
-// Exit 0 when the card is written; 1 on a missing run or an unreadable summary or classes file;
+// Exit 0 when the card is written; 1 on a missing run, an unreadable summary or classes file, or a
+// classes file for another run;
 // 2 on a usage error.
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { basename, dirname, join } from 'node:path';
+import { basename, dirname, join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { installEgressGuard } from '../packages/core/egress.ts';
 import { FINAL_PASS_BAND } from '../packages/core/cost.ts';
@@ -50,6 +59,21 @@ export function readClasses(x: unknown): ClassesJson {
   const problems = classesJsonProblems(x);
   if (problems.length > 0) throw new TypeError(`classes: ${problems.join('; ')}`);
   return x as ClassesJson;
+}
+
+// Why a classes JSON is not for the run at dir with summary s (header); [] when it is. A run_dirs
+// entry names the run when it is the same directory, or one with the same last path part (cli classes
+// records run_dirs as typed, relative to where it ran).
+export function classesMismatch(classes: ClassesJson, dir: string, s: Summary): string[] {
+  const out: string[] = [];
+  const here = resolve(dir);
+  if (!classes.run_dirs.some((d) => resolve(d) === here || basename(resolve(d)) === basename(here))) out.push(`run_dirs (${classes.run_dirs.join(', ')}) do not name this run (${dir})`);
+  for (const [id, c] of Object.entries(classes.tasks)) {
+    const t = s.tasks[id];
+    if (t === undefined) out.push(`${id}: not a task of this run`);
+    else if (c.trials_valid !== t.trials) out.push(`${id}: trials_valid ${c.trials_valid}, but the run's summary has ${t.trials} valid trials`);
+  }
+  return out;
 }
 
 // A run's summary and where it came from (header).
@@ -125,13 +149,22 @@ export function card(input: { dir: string; summary: Summary; source: string; cla
   ])), '');
 
   lines.push('## Failures by fault', '');
-  lines.push(...table(['task', 'failures', 'model', 'environment', 'grader', 'infra re-runs', 'source'], tasks.map(([id, t]) => {
+  lines.push(...table(['task', 'failures', 'model', 'environment', 'grader', 'infra (cli classes)', 're-queued infra attempts (summary infra_reruns)', 'source'], tasks.map(([id, t]) => {
     const f = t.fault_counts;
     const c = classes?.tasks[id];
-    if (f.label !== null) return [id, String(f.failures), String(f.label.model), String(f.label.environment), String(f.label.grader), String(f.infra_reruns), `audit.jsonl${f.label.unlabelled > 0 ? ` (${f.label.unlabelled} unlabelled)` : ''}`];
-    if (c !== undefined) return [id, String(f.failures), String(c.split.model), String(c.split.environment), String(c.split.grader), String(f.infra_reruns), 'cli classes'];
-    return [id, String(f.failures), 'not given', 'not given', 'not given', String(f.infra_reruns), `no audit.jsonl, no classes entry`];
+    const infra = c === undefined ? 'not given' : String(c.split.infra);
+    if (f.label !== null) return [id, String(f.failures), String(f.label.model), String(f.label.environment), String(f.label.grader), infra, String(f.infra_reruns), `audit.jsonl${f.label.unlabelled > 0 ? ` (${f.label.unlabelled} unlabelled)` : ''}`];
+    if (c !== undefined) return [id, String(f.failures), String(c.split.model), String(c.split.environment), String(c.split.grader), infra, String(f.infra_reruns), 'cli classes'];
+    return [id, String(f.failures), 'not given', 'not given', 'not given', infra, String(f.infra_reruns), `no audit.jsonl, no classes entry`];
   })), '');
+  // The classes split's environment (ENV_*) and grader (GRADER_ERROR) trials are invalid, so
+  // 'failures' (valid trials only) does not hold them.
+  const invalid = tasks.flatMap(([id, t]) => {
+    const c = classes?.tasks[id];
+    const n = c === undefined || t.fault_counts.label !== null ? 0 : c.split.environment + c.split.grader;
+    return n === 0 ? [] : [`- ${id}: cli classes' split counts ${n} invalid trial${n === 1 ? '' : 's'} (ENV_*/GRADER_ERROR: environment ${c!.split.environment}, grader ${c!.split.grader}) that 'failures' (valid trials only) leaves out.`];
+  });
+  if (invalid.length > 0) lines.push(...invalid, '');
 
   lines.push('## Grader faults found and fixed', '');
   const fixes = graderFixes(dir);
@@ -181,8 +214,10 @@ export function card(input: { dir: string; summary: Summary; source: string; cla
 
   lines.push('## No failures', '');
   const clean = tasks.filter(([, t]) => t.trials > 0 && t.passes === t.trials);
-  if (clean.length === 0) lines.push('Every task has at least one failure.');
+  const empty = tasks.filter(([, t]) => t.trials === 0).map(([id]) => id);
+  if (clean.length === 0) lines.push('No task with valid trials passed every trial.');
   for (const [id, t] of clean) lines.push(`- ${id}: No failures in ${t.trials} trials. ${strictness(dir, id, t.grader_task_versions)}`);
+  if (empty.length > 0) lines.push('', `Tasks with 0 valid trials (not counted here): ${empty.join(', ')}.`);
   lines.push('');
   return lines.join('\n');
 }
@@ -216,6 +251,8 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
   try {
     const classes = classesFile === null ? null : readClasses(JSON.parse(readFileSync(classesFile, 'utf8')));
     const { summary, source } = await summaryOf(dir);
+    const mismatch = classes === null ? [] : classesMismatch(classes, dir, summary);
+    if (mismatch.length > 0) throw new Error(`classes: ${classesFile} is not for this run: ${mismatch.join('; ')}`);
     const past = await Promise.all(history.map(summaryOf));
     const text = card({ dir, summary, source, classes, classesFile, history: past });
     if (out === null) deps.out(text);

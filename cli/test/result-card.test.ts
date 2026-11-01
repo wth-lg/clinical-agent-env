@@ -105,8 +105,8 @@ describe('cli result-card', () => {
   it('splits the failures and lists the grader faults found and fixed', async () => {
     const r = await cli([final, '--classes', classes]);
     const faults = r.out.split('## Failures by fault')[1]!.split('\n## ')[0]!;
-    expect(faults).toMatch(/\| t-in \| 9 \| 9 \| 0 \| 1 \| 0 \| cli classes \|/);
-    expect(faults).toMatch(/\| t-low \| 16 \| not given \| not given \| not given \| 0 \| no audit\.jsonl, no classes entry \|/);
+    expect(faults).toMatch(/\| t-in \| 9 \| 9 \| 0 \| 1 \| 0 \| 0 \| cli classes \|/);
+    expect(faults).toMatch(/\| t-low \| 16 \| not given \| not given \| not given \| not given \| 0 \| no audit\.jsonl, no classes entry \|/);
     expect(r.out).toMatch(/t-in\/12: FAIL at grader 16, PASS at grader 17/);
   });
 
@@ -159,6 +159,65 @@ describe('cli result-card', () => {
     expect(bad.err).toMatch(/schema_version: expected 1/);
     expect((await cli([join(root, 'missing')])).code).toBe(1);
     expect((await cli([])).code).toBe(2);
+  });
+
+  // builder-278 F1 (verifier-phase-P17i-W4F-196-1 P4): a classes JSON for another run is refused.
+  it('refuses a classes JSON whose run_dirs do not name the run', async () => {
+    // The verifier's probe: band-1 with probe-1's classes JSON.
+    const band1 = join(import.meta.dirname, '../../apps/web/e2e/fixtures/band-verdict/results/runs/band-1');
+    const probe = await cli([band1, '--classes', join(import.meta.dirname, 'fixtures/result-card/probe-1-classes.json')]);
+    expect(probe.code).toBe(1);
+    expect(probe.out).toBe('');
+    expect(probe.err).toMatch(/classes: .*probe-1-classes\.json is not for this run: run_dirs \(results\/probe-1\) do not name this run \(.*band-1\); contrast-ct-prep: trials_valid 6, but the run's summary has 20 valid trials/);
+    put(root, 'other-run.json', { ...CLASSES, run_dirs: ['results/probe-1'] });
+    const other = await cli([final, '--classes', join(root, 'other-run.json')]);
+    expect(other.code).toBe(1);
+    expect(other.err).toMatch(/run_dirs \(results\/probe-1\) do not name this run/);
+  });
+
+  it('refuses a classes JSON whose trials_valid differ from the summary\'s trials', async () => {
+    put(root, 'short.json', { ...CLASSES, tasks: { 't-in': { ...CLASSES.tasks['t-in'], trials_valid: 6 } } });
+    const r = await cli([final, '--classes', join(root, 'short.json')]);
+    expect(r.code).toBe(1);
+    expect(r.err).toMatch(/classes: .*short\.json is not for this run: t-in: trials_valid 6, but the run's summary has 20 valid trials$/);
+    // A task the run does not hold.
+    put(root, 'extra.json', { ...CLASSES, tasks: { ...CLASSES.tasks, 't-gone': CLASSES.tasks['t-in'] } });
+    const x = await cli([final, '--classes', join(root, 'extra.json')]);
+    expect(x.code).toBe(1);
+    expect(x.err).toMatch(/is not for this run: t-gone: not a task of this run$/);
+  });
+
+  // builder-278 F2: cli classes' infra split beside summary's re-queued infra attempts, and a note
+  // when the classes split counts invalid trials that 'failures' leaves out.
+  it('shows cli classes\' infra split beside the re-queued infra attempts and notes invalid trials', async () => {
+    const r = await cli([final, '--classes', classes]);
+    const faults = r.out.split('## Failures by fault')[1]!.split('\n## ')[0]!;
+    expect(faults).toMatch(/\| task \| failures \| model \| environment \| grader \| infra \(cli classes\) \| re-queued infra attempts \(summary infra_reruns\) \| source \|/);
+    // t-in's classes split: model 9, environment 0, grader 1 (a GRADER_ERROR trial), infra 0.
+    expect(faults).toMatch(/\| t-in \| 9 \| 9 \| 0 \| 1 \| 0 \| 0 \| cli classes \|/);
+    expect(faults).toMatch(/\| t-low \| 16 \| not given \| not given \| not given \| not given \| 0 \| no audit\.jsonl, no classes entry \|/);
+    expect(faults).toMatch(/- t-in: cli classes' split counts 1 invalid trial \(ENV_\*\/GRADER_ERROR: environment 0, grader 1\) that 'failures' \(valid trials only\) leaves out\./);
+    // No note when the split counts only valid failures.
+    put(root, 'valid-only.json', { ...CLASSES, tasks: { 't-in': { ...CLASSES.tasks['t-in'], split: { model: 9, environment: 0, grader: 0, infra: 2 } } } });
+    const v = await cli([final, '--classes', join(root, 'valid-only.json')]);
+    const vf = v.out.split('## Failures by fault')[1]!.split('\n## ')[0]!;
+    expect(vf).toMatch(/\| t-in \| 9 \| 9 \| 0 \| 0 \| 2 \| 0 \| cli classes \|/);
+    expect(vf).not.toContain('invalid trial');
+  });
+
+  // builder-278 F3 (verifier P5): tasks with 0 valid trials are out of the no-failures claim.
+  it('leaves tasks with 0 valid trials out of the no-failures claim and names them', async () => {
+    const r = await cli([join(import.meta.dirname, '../../apps/web/e2e/fixtures/trial/results/runs/trial-1')]);
+    expect(r.code, r.err).toBe(0);
+    const sec = r.out.split('## No failures')[1]!;
+    expect(sec).not.toContain('Every task has at least one failure');
+    expect(sec).toContain('No task with valid trials passed every trial.');
+    expect(sec).toMatch(/Tasks with 0 valid trials \(not counted here\): discharge-medrec, results-inbox\./);
+    // A clean task still gets its line, and no 0-trial line when every task has valid trials.
+    const f = await cli([final]);
+    const fs = f.out.split('## No failures')[1]!;
+    expect(fs).toContain('t-sat: No failures in 20 trials.');
+    expect(fs).not.toContain('0 valid trials');
   });
 
   it('readClasses rejects what cli/classes.ts classesJsonProblems rejects', () => {
