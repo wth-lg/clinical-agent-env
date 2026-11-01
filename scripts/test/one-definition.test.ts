@@ -5,7 +5,9 @@
 // git tracks or would track (untracked files that .gitignore does not hide count, so a copy
 // planted before it is committed fails too). A surface imports the constant instead. The only
 // copies allowed are outcomes.ts itself and the blocks docs-gen (P24) writes between
-// GENERATED_BEGIN and GENERATED_END.
+// GENERATED_BEGIN and GENERATED_END. The band verdict rule (plan-amendment-w4 PW4-F,
+// BAND_VERDICT_RULE, whole and each sentence) has its home in packages/core/summary.ts beside
+// bandVerdict, and is searched for the same way.
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
@@ -13,9 +15,13 @@ import { describe, expect, it } from 'vitest';
 import {
   CONFIRMATION_CRITERIA, CONFIRMATION_DEFINITIONS, DENOMINATOR_OPERATOR_NOTE, DENOMINATOR_RULE, FAULT_DEFINITIONS, FAULT_PRECEDENCE_RULE, PASS_DEFINITION, RUN_BLOCKS,
 } from '../../packages/core/outcomes.ts';
+import { BAND_VERDICT_RULE } from '../../packages/core/summary.ts';
 import { repoRoot } from './helpers.ts';
 
 const HOME = 'packages/core/outcomes.ts';
+// A definition kept somewhere other than HOME, by its name.
+const HOMES: Readonly<Record<string, string>> = { BAND_VERDICT_RULE: 'packages/core/summary.ts' };
+const homeOf = (name: string) => HOMES[name.replace(/ sentence$/, '')] ?? HOME;
 // docs-gen (P24) wraps each block it renders from outcomes.ts in these two lines.
 const GENERATED_BEGIN = '<!-- docs-gen:begin outcomes -->';
 const GENERATED_END = '<!-- docs-gen:end outcomes -->';
@@ -33,7 +39,7 @@ function definitions(): Array<{ name: string; text: string }> {
   for (const c of CONFIRMATION_CRITERIA) out.push({ name: `CONFIRMATION_CRITERIA ${c.id}`, text: c.text });
   for (const c of RUN_BLOCKS) out.push({ name: `RUN_BLOCKS ${c.id}`, text: c.text });
   for (const [k, text] of Object.entries(CONFIRMATION_DEFINITIONS)) out.push({ name: `CONFIRMATION_DEFINITIONS.${k}`, text });
-  const rules = [['FAULT_PRECEDENCE_RULE', FAULT_PRECEDENCE_RULE], ['PASS_DEFINITION', PASS_DEFINITION], ['DENOMINATOR_RULE', DENOMINATOR_RULE], ['DENOMINATOR_OPERATOR_NOTE', DENOMINATOR_OPERATOR_NOTE]] as const;
+  const rules = [['FAULT_PRECEDENCE_RULE', FAULT_PRECEDENCE_RULE], ['PASS_DEFINITION', PASS_DEFINITION], ['DENOMINATOR_RULE', DENOMINATOR_RULE], ['DENOMINATOR_OPERATOR_NOTE', DENOMINATOR_OPERATOR_NOTE], ['BAND_VERDICT_RULE', BAND_VERDICT_RULE]] as const;
   for (const [name, text] of rules) {
     out.push({ name, text });
     for (const s of sentences(text)) if (s !== text) out.push({ name: `${name} sentence`, text: s });
@@ -47,9 +53,8 @@ const stripGenerated = (text: string) => text.split(GENERATED_BEGIN).map((part, 
 function restatements(files: ReadonlyArray<{ path: string; text: string }>): string[] {
   const defs = definitions();
   return files.flatMap(({ path, text }) => {
-    if (path === HOME) return [];
     const body = stripGenerated(text);
-    return defs.filter((d) => body.includes(d.text)).map((d) => `${path}: ${d.name}`);
+    return defs.filter((d) => path !== homeOf(d.name) && body.includes(d.text)).map((d) => `${path}: ${d.name}`);
   });
 }
 
@@ -87,6 +92,11 @@ describe('one definition', () => {
     expect(planted(DENOMINATOR_OPERATOR_NOTE)).toContain('apps/web/src/planted.ts: DENOMINATOR_OPERATOR_NOTE');
     expect(planted(PASS_DEFINITION)).toContain('apps/web/src/planted.ts: PASS_DEFINITION');
     expect(planted(DENOMINATOR_RULE)).toContain('apps/web/src/planted.ts: DENOMINATOR_RULE');
+    expect(planted(BAND_VERDICT_RULE)).toContain('apps/web/src/planted.ts: BAND_VERDICT_RULE');
+    expect(planted(`Note: ${sentences(BAND_VERDICT_RULE)[1]}`)).toEqual(['apps/web/src/planted.ts: BAND_VERDICT_RULE sentence']);
+    // Its home is summary.ts, not outcomes.ts: a copy in outcomes.ts is a restatement too.
+    expect(restatements([{ path: 'packages/core/summary.ts', text: BAND_VERDICT_RULE }])).toEqual([]);
+    expect(restatements([{ path: HOME, text: BAND_VERDICT_RULE }])).toContain(`${HOME}: BAND_VERDICT_RULE`);
     // One sentence of the rule is enough.
     expect(planted(`Note: ${sentences(DENOMINATOR_RULE).at(-1)}`)).toEqual(['apps/web/src/planted.ts: DENOMINATOR_RULE sentence']);
   });
