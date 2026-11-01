@@ -123,6 +123,8 @@ for (const [name, open] of [[TRIALS.limit, openTrial], [ASKS, openSample]] as co
 test('F2: each long-question toggle has a unique accessible name with its item id', async ({ page }) => {
   await openSample(page, ASKS);
   const rows = panel(page, 'grading').getByTestId('rubric-row').filter({ has: page.getByRole('button', { name: /^Show the full question/ }) });
+  // count() does not wait, so wait for the first toggle row to render before counting.
+  await expect(rows.first()).toBeVisible();
   expect(await rows.count()).toBeGreaterThan(0);
   for (const row of await rows.all()) {
     const id = (await row.getAttribute('data-id'))!;
