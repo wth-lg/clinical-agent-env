@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:crc-care-gap:11",
   "task_id": "crc-care-gap",
-  "task_version": "d651de13d5a43f57cfb9be4e20cca13aed85874e1f2edebfe17c383b2ff2ba26",
+  "task_version": "7debd35be966f83cb6a56918e2094ded8afa0e250cfb13b0dd36434972f244cb",
   "env_version": "800d20e80a0098d9abc6997dfd519c706043dfdb982b56683ea61559c3297770",
-  "grader_task_version": "d9961fee94acecda8a0b4b45df4e05b8e2b5273fba10f6589f92d83962edb99a",
+  "grader_task_version": "764a9e7863b581efd9ac89483edc53ca03540156d3b6d85051864af0e2ea1e5a",
   "fixture_hash": "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968",
   "state_hash": {
     "initial": "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968",
@@ -45,7 +45,7 @@
   "env_git_sha": null,
   "ended": "2026-10-23T13:51:21.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "15",
+  "grader_version": "16",
   "outcome": "FAIL",
   "valid": true,
   "fault": "model",
@@ -195,6 +195,8 @@
           "met": true,
           "decisive_ids": [
             "Observation/obs-02463",
+            "Encounter/enc-00237",
+            "Encounter/enc-00238",
             "Patient/pt-0034"
           ],
           "evidence": {}
@@ -356,6 +358,8 @@
           "met": true,
           "decisive_ids": [
             "Observation/obs-02463",
+            "Encounter/enc-00237",
+            "Encounter/enc-00238",
             "Patient/pt-0034"
           ],
           "evidence": {}
@@ -469,6 +473,8 @@
           "met": true,
           "decisive_ids": [
             "Observation/obs-02463",
+            "Encounter/enc-00237",
+            "Encounter/enc-00238",
             "Patient/pt-0034"
           ],
           "evidence": {}
@@ -720,6 +726,8 @@
           "met": true,
           "decisive_ids": [
             "Observation/obs-02463",
+            "Encounter/enc-00237",
+            "Encounter/enc-00238",
             "Patient/pt-0034"
           ],
           "evidence": {}
@@ -833,6 +841,8 @@
           "met": true,
           "decisive_ids": [
             "Observation/obs-02463",
+            "Encounter/enc-00237",
+            "Encounter/enc-00238",
             "Patient/pt-0034"
           ],
           "evidence": {}
