@@ -1,9 +1,9 @@
 {
   "trial_id": "run:band-1:discharge-medrec/9",
   "task_id": "discharge-medrec",
-  "task_version": "aff72b174ca81f54562cf13f04c3334c51195d5ce16bb82f2920099d31475680",
+  "task_version": "905c7e1d1664e1211c317fc48f0ced22cca70df4fa92612dc98c2284db03a81e",
   "env_version": "0e76db3e7b620d9397b3484ac5d4d55112b7069d6e75b426f439167e13b85834",
-  "grader_task_version": "2898a9c02c3a6717a8825849f10caa5aca33f49ee75f0a399aa1c7816bb6ccf2",
+  "grader_task_version": "f74bc3092f0d1332e3e3c8a24571e4fc4d1b468a6fdd3c2a0ecd81bc2330cd1b",
   "fixture_hash": "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968",
   "state_hash": {
     "initial": "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968",
@@ -45,7 +45,7 @@
   "env_git_sha": null,
   "ended": "2026-10-23T13:53:41.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "16",
+  "grader_version": "17",
   "outcome": "PASS",
   "valid": true,
   "fault": null,

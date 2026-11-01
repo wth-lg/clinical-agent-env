@@ -12,9 +12,9 @@ import { tempDir } from '../../scripts/test/helpers.ts';
 
 type Outcome = 'PASS' | 'FAIL';
 
-function record(run: string, task: string, index: number, outcome: Outcome, regradedTo?: Outcome): Record<string, unknown> {
+function record(run: string, task: string, index: number, outcome: Outcome, regradedTo?: Outcome, grader = '16'): Record<string, unknown> {
   return {
-    trial_id: `run:fx:${task}/${index}`, run_id: run, task_id: task, task_version: `v-${task}`, env_version: `e-${task}`, grader_task_version: `g-${task}`, grader_version: '16', index, attempt: 'a-1', mode: 'live',
+    trial_id: `run:fx:${task}/${index}`, run_id: run, task_id: task, task_version: `v-${task}`, env_version: `e-${task}`, grader_task_version: `g-${task}`, grader_version: grader, index, attempt: 'a-1', mode: 'live',
     model_requested: MODEL, models_returned: [MODEL], effort: 'high', status: 'COMPLETED', detail: null, outcome, valid: true, score: outcome === 'PASS' ? 1 : 0, cost_usd: 0.4, judge_cost_usd: 0,
     turns: 2, tool_calls: 2, tool_errors: { INTERNAL: 0 }, state_hash: { initial: 'h-initial', final: 'h-final', replay_final: 'h-final' }, settled: true, trajectory: `trajectories/${task}/${index}.jsonl`,
     ...(regradedTo ? { regrades: [{ grader_version: '17', grader_task_version: `g2-${task}`, outcome: regradedTo, score: regradedTo === 'PASS' ? 1 : 0, valid: true, checks: [], error: null, changed: true, at: '2026-11-01T00:00:00Z' }] } : {}) };
@@ -25,12 +25,13 @@ const put = (dir: string, rel: string, x: unknown) => {
   writeFileSync(join(dir, rel), typeof x === 'string' ? x : `${JSON.stringify(x, null, 2)}\n`);
 };
 
-// passes of n per task; regraded: indices whose recorded FAIL a later grader regraded to PASS.
-function writeRun(dir: string, run: string, tasks: Record<string, { n: number; passes: number; regraded?: number[] }>): void {
+// passes of n per task; regraded: indices whose recorded FAIL a later grader regraded to PASS;
+// grader: every record's grader_version.
+function writeRun(dir: string, run: string, tasks: Record<string, { n: number; passes: number; regraded?: number[] }>, grader = '16'): void {
   for (const [task, { n, passes, regraded = [] }] of Object.entries(tasks)) {
     for (let i = 0; i < n; i++) {
       const fixed = regraded.includes(i);
-      put(dir, `trials/${task}/${i}.json`, record(run, task, i, i < passes && !fixed ? 'PASS' : 'FAIL', fixed ? 'PASS' : undefined));
+      put(dir, `trials/${task}/${i}.json`, record(run, task, i, i < passes && !fixed ? 'PASS' : 'FAIL', fixed ? 'PASS' : undefined, grader));
     }
   }
   put(dir, 'manifest.json', { run_id: run, model: MODEL, effort: 'high', mode: 'live', trials: 20, world_hash: 'h-initial', task_versions: Object.fromEntries(Object.keys(tasks).map((t) => [t, `v-${t}`])), batches: [] });
@@ -274,14 +275,16 @@ describe('cli result-card', () => {
     const c = readClasses(fixture);
     const all = Object.values(c.tasks).flatMap((t) => t.classes);
     expect(all).toHaveLength(37);
-    expect(all.filter((k) => k.fails > 0).map((k) => `${k.class} ${k.fails}/${k.observations}`)).toEqual(['metformin_hold 1/12', 'metformin_two_series 1/12']);
+    // At grader 17 (#198 regrade) one class fails.
+    expect(c.grader_versions).toEqual(['17']);
+    expect(all.filter((k) => k.fails > 0).map((k) => `${k.class} ${k.fails}/${k.observations}`)).toEqual(['metformin_hold 1/12']);
     const probe = join(root, 'probe-1');
-    writeRun(probe, 'probe-1', Object.fromEntries(Object.entries(c.tasks).map(([id, t]) => [id, { n: t.trials_valid, passes: t.pass }])));
+    writeRun(probe, 'probe-1', Object.fromEntries(Object.entries(c.tasks).map(([id, t]) => [id, { n: t.trials_valid, passes: t.pass }])), '17');
     const r = await cli([probe, '--classes', join(import.meta.dirname, 'fixtures/result-card/probe-1-classes.json')]);
     expect(r.out).toContain('| metformin_hold | 1 (Anisha Margarita Schuster) | 1/6 | 1/12 | 0.92 | [0.65, 0.99] | #3: saline_prophylaxis -> retrieval |');
-    expect(r.out).toContain('| metformin_two_series | 1 (m8) | 1/6 | 1/12 | 0.92 | [0.65, 0.99] | #4: decisive_seen -> reasoning |');
+    expect(r.out).toContain('| metformin_two_series | 1 (m8) | 0/6 | 0/12 | 1.00 | [0.76, 1.00] |  |');
     expect(r.out).toContain('| egfr_window | 1 (Britt Vincenzo Mohr) | 0/6 | 0/12 | 1.00 | [0.76, 1.00] |  |');
     expect(r.out).toContain('| filler | 1 (Lauren Sixta Beahan) | 0/6 | 0/6 | 1.00 | [0.61, 1.00] |  |');
-    expect(row(r.out, 'message-queue')).toMatch(/\| 5\/6 \| \[0\.44, 0\.97\] \| Above band \|/);
+    expect(row(r.out, 'message-queue')).toMatch(/\| 6\/6 \| \[0\.61, 1\.00\] \| Above band \|/);
   });
 });

@@ -4,7 +4,7 @@
   "results/probe-1"
  ],
  "grader_versions": [
-  "16"
+  "17"
  ],
  "tasks": {
   "contrast-ct-prep": {
@@ -671,13 +671,13 @@
   },
   "message-queue": {
    "trials_valid": 6,
-   "pass": 5,
+   "pass": 6,
    "wilson": {
-    "lo": 0.43649717781352987,
-    "hi": 0.9699466302516935
+    "lo": 0.6096657120978346,
+    "hi": 1
    },
    "split": {
-    "model": 1,
+    "model": 0,
     "environment": 0,
     "grader": 0,
     "infra": 0
@@ -848,29 +848,21 @@
     },
     {
      "class": "metformin_two_series",
-     "fails": 1,
-     "base_fails": 1,
+     "fails": 0,
+     "base_fails": 0,
      "observations": 12,
-     "pass_rate": 0.9166666666666666,
+     "pass_rate": 1,
      "wilson": {
-      "lo": 0.646120088858883,
-      "hi": 0.9851349055950829
+      "lo": 0.7575059933447592,
+      "hi": 1
      },
-     "labels": [
-      {
-       "trial": 4,
-       "run": "results/probe-1",
-       "item": "Task/task-00019",
-       "gate": "decisive_seen",
-       "label": "reasoning"
-      }
-     ],
+     "labels": [],
      "instances": [
       {
        "instance": 1,
        "item": "Task/task-00019",
        "label": "m8",
-       "fails": 1,
+       "fails": 0,
        "observations": 6
       },
       {
@@ -886,9 +878,9 @@
    "events": [],
    "outside_failures": [],
    "independence": {
-    "all_items_pass": 5,
-    "expected_per_item": 5,
-    "expected_per_class": 5.5
+    "all_items_pass": 6,
+    "expected_per_item": 6,
+    "expected_per_class": 6
    },
    "outcomes": [
     {
@@ -914,7 +906,7 @@
     {
      "trial": 4,
      "run": "results/probe-1",
-     "outcome": "FAIL"
+     "outcome": "PASS"
     },
     {
      "trial": 5,
