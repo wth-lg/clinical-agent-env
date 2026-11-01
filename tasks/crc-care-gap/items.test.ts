@@ -297,8 +297,21 @@ describe('absence items (R20) and any-of evidence (R21)', () => {
     }
     expect(item('fit_orders', orderFor('pt-0035', [step(1, 1, { referenced_ids: [doc!] })]), 'pt-0035')).toMatchObject({ met: false, why: expect.stringContaining('any of') });
   });
-  it('declares the same rules to attribution (seen_at) on every gate over gap members, for every decisive id of those members', () => {
-    const ids = expected.items.filter((x) => x.absence !== null || x.evidence === 'any').flatMap((x) => x.decisive);
-    for (const g of ['fit_orders', 'outreach_messages', 'gap_seen_before_order']) expect(Object.keys(gates.find((x) => x.id === g)!.seen_at ?? {}).sort(), g).toEqual([...ids].sort());
+  // Ruling R29 (builder-252): a cut snippet of the discharge summary that shows its atoms stands
+  // for reading it; one cut before them does not. tests/phrases.test.ts sweeps the real snippets.
+  it("counts H2's discharge summary as seen from a snippet that shows 'discharged home', and not from one cut before it", () => {
+    const [, doc] = at('pt-0035').decisive;
+    const snip = (text: string) => [step(1, 1, { tool: 'search_notes', referenced_ids: [doc!], shown: { [doc!]: text } })];
+    const shown = orderFor('pt-0035', snip('…Pain controlled with acetaminophen. Disposition: discharged home with daughter, who is staying…'));
+    expect(item('fit_orders', shown, 'pt-0035').met).toBe(true);
+    expect(item('gap_seen_before_order', shown, 'pt-0035').met).toBe(true);
+    for (const text of ['…Admitted: 05/03/2026, from St. Brigid Regional Discharged: 05/24/2026 Level of care: skilled nursing facility…', '…patient discharged homebound…', '…Disposition: discharged…']) {
+      expect(item('fit_orders', orderFor('pt-0035', snip(text)), 'pt-0035'), text).toMatchObject({ met: false, why: expect.stringContaining('any of') });
+    }
+  });
+  it('declares the same rules to attribution (seen_at) on every gate over panel members, for every decisive id of a member with an absence, any-of evidence or atoms', () => {
+    const ids = expected.items.filter((x) => x.absence !== null || x.evidence === 'any' || Object.keys(x.atoms).length > 0).flatMap((x) => x.decisive);
+    for (const g of ['fit_orders', 'outreach_messages', 'gap_seen_before_order', 'nothing_for_others']) expect(Object.keys(gates.find((x) => x.id === g)!.seen_at ?? {}).sort(), g).toEqual([...ids].sort());
+    expect(Object.keys(expected.items.find((x) => x.patient === 'Patient/pt-0021')!.atoms)).toEqual(expected.items.find((x) => x.patient === 'Patient/pt-0021')!.decisive);
   });
 });

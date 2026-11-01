@@ -41,6 +41,10 @@ const FIT_ORDER = [['urn:riverbend:orders', 'LAB-FIT-KIT'], ...FOBT.map((c) => [
 const SNF_STAY = ['25675004'];
 const NUBC = 'http://www.nubc.org/patient-discharge';
 const DISCHARGED_HOME = ['01', '06'];
+// The words a note uses for a total colectomy (§4), and a discharge summary for a stay that ended
+// at home (§7, R21); policy reads the first, and both are a decisive note's atoms (R29).
+const TOTAL_COLECTOMY = /\btotal\s+(?:procto)?colectomy\b/i;
+const DISCHARGED_HOME_TEXT = /\bdischarged\s+(?:to\s+)?home\b/i;
 // The search that shows a gap's absence (rulings R20, R27; expected.ts Absence), by the reason the
 // gap is open: the kind of record whose absence in its §3 or §4 window opens it, with every code
 // ('system|code'), category and status this derivation counts for that kind, so a search whose
@@ -136,7 +140,7 @@ export function derive(world: WorldView): Json {
       const inPeriodOrYearBefore = (c: { onsetDateTime?: string; abatementDateTime?: string }) => yearOf(c.onsetDateTime) <= YEAR && !(yearOf(c.abatementDateTime) < YEAR - 1);
       const confirmed = conditions.filter((c) => !coded(c.verificationStatus, 'http://terminology.hl7.org/CodeSystem/condition-ver-status', ['entered-in-error', 'refuted']));
       const colectomy =
-        procedures.some((r) => coded(r.code, SNOMED, COLECTOMY)) || notes.some((n) => /\btotal\s+(?:procto)?colectomy\b/i.test(decodeNote(n)));
+        procedures.some((r) => coded(r.code, SNOMED, COLECTOMY)) || notes.some((n) => TOTAL_COLECTOMY.test(decodeNote(n)));
       const cancer = confirmed.some((c) => coded(c.code, SNOMED, COLORECTAL_CANCER));
       const hospice = episodes.some(
         (e) => careGiven(e) && yearOf(e.period?.start) <= YEAR && !(yearOf(e.period?.end) < YEAR),
@@ -182,7 +186,7 @@ export function derive(world: WorldView): Json {
       else if (exclusion) {
         [status, reason] = ['excluded', exclusion];
         decisive =
-          exclusion === 'total_colectomy' ? [...procedures.filter((r) => coded(r.code, SNOMED, COLECTOMY)), ...notes.filter((n) => /\btotal\s+(?:procto)?colectomy\b/i.test(decodeNote(n)))].map(id)
+          exclusion === 'total_colectomy' ? [...procedures.filter((r) => coded(r.code, SNOMED, COLECTOMY)), ...notes.filter((n) => TOTAL_COLECTOMY.test(decodeNote(n)))].map(id)
           : exclusion === 'hospice' ? episodes.filter((e) => careGiven(e) && !(yearOf(e.period?.end) < YEAR)).map(id)
           : exclusion === 'nursing_home' ? [id(housing!)]
           : exclusion.startsWith('frailty') ? [id(frailty!), ...meds.filter((m) => DEMENTIA_MEDICATIONS.some((ingredient) => isDrug(m.medicationCodeableConcept, { ingredient })) && (isActive(m) || yearOf(m.authoredOn) >= YEAR - 1)).map(id)]
@@ -208,6 +212,15 @@ export function derive(world: WorldView): Json {
           : age >= 66 && housing ? ['not_nursing_home', [id(housing), ...homeNotes.map(id), ...homeStays.map(id)]]
           : ['no_screening', [ref]];
       }
+      // The atoms of each decisive note's deciding line (ruling R29): the words that settle the
+      // member, as the note writes them. A total colectomy note names the operation; a stay's
+      // discharge summary names the discharge home. A decisive record without atoms is seen by
+      // exposure.
+      const atoms: Record<string, string[]> = {};
+      for (const n of notes.filter((x) => decisive.includes(id(x)))) {
+        const line = reason === 'total_colectomy' ? TOTAL_COLECTOMY.exec(decodeNote(n)) : reason === 'not_nursing_home' ? DISCHARGED_HOME_TEXT.exec(decodeNote(n)) : null;
+        if (line) atoms[id(n)] = [line[0].replace(/\s+/g, ' ')];
+      }
       // An order and a message for each open gap without an active FIT order, and for no one else.
       const required = status === 'gap' && !activeFit;
       const order = required;
@@ -222,6 +235,7 @@ export function derive(world: WorldView): Json {
         order,
         message,
         decisive,
+        atoms,
         evidence: status === 'gap' && reason === 'not_nursing_home' ? 'any' : 'all',
         absence: status === 'gap' ? (ABSENCE[reason] ?? null) : null,
       };

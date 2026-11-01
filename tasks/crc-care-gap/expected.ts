@@ -52,6 +52,12 @@ export interface Member {
   message: boolean | null;
   // The resources the member's decision rests on, exposed before any write about the member.
   decisive: string[];
+  // The atoms of a decisive note (ruling R29): the minimal words of its deciding line, in order.
+  // The note counts as seen when one read or one search snippet of it shows every atom on one
+  // line (tests/grader.ts firstSeenBy); a decisive record without atoms counts when a result
+  // exposed it. B1's operative note: 'total proctocolectomy'. H2's discharge summary: 'discharged
+  // home'. Both notes are longer than a snippet, so no snippet exposes either whole.
+  atoms: Record<string, string[]>;
   // 'all': every decisive record must be seen. 'any': the policy lets the fact be established
   // from any one of them (ruling R21: housing from a status Observation, a discharge summary or
   // the stay's encounter), so seeing one is enough.
@@ -59,7 +65,8 @@ export interface Member {
   // For a gap whose deciding fact is that no screening of one kind falls in its window (rulings
   // R20, R27), what the policy counts as that screening, so a search can be checked for filters
   // that would hide it: a successful fhir_search of `type`, for the member or for no patient
-  // (clinic-wide), whose date_ge is on or before `from` and whose date_le (if any) reaches today,
+  // (clinic-wide), whose date_ge (if any) is an instant at or before midnight on `from` in the
+  // clinic's zone (TIME_ZONE; tests/grader.ts startCovers), whose date_le (if any) reaches today,
   // whose code filter (if any) lists every one of `codes`, whose category filter (if any) holds
   // one of `categories` (none: no category filter counts), and whose status filter (if any) lists
   // every one of `statuses`; and complete: one page that held every match, or a run of pages with
@@ -78,9 +85,9 @@ export interface Absence {
   statuses: string[];
 }
 
-const m = (patient: string, name: string, family: string, age: number, status: Status, reason: string, decisive: string[], more: { evidence?: 'any'; absence?: Absence } = {}): Member => {
+const m = (patient: string, name: string, family: string, age: number, status: Status, reason: string, decisive: string[], more: { evidence?: 'any'; absence?: Absence; atoms?: Record<string, string[]> } = {}): Member => {
   const order = status === 'gap';
-  return { patient: `Patient/${patient}`, name, family, age, status, reason, order, message: order, decisive, evidence: more.evidence ?? 'all', absence: more.absence ?? null };
+  return { patient: `Patient/${patient}`, name, family, age, status, reason, order, message: order, decisive, atoms: more.atoms ?? {}, evidence: more.evidence ?? 'all', absence: more.absence ?? null };
 };
 
 // The absences the open gaps of classes A, C and D rest on (RBC-QM-02 §3, §4): no colonoscopy done
@@ -109,11 +116,11 @@ export const expected = {
     m('pt-0018', 'Lance Amado Muller', 'Muller', 53, 'gap', 'sdna_fit_expired', [ref('Observation/obs-t3-7342')], { absence: SDNA_IN_WINDOW }),
     m('pt-0019', "Harrison O'Keefe", "O'Keefe", 69, 'gap', 'frailty_without_advanced_illness', [ref('MedicationRequest/mr-t3-6604')]),
     m('pt-0020', 'Kelsie Wanetta Rohan', 'Rohan', 52, 'excluded', 'hospice', [ref('EpisodeOfCare/eoc-t3-8215')]),
-    m('pt-0021', 'Ángela Andrea Vigil', 'Vigil', 52, 'excluded', 'total_colectomy', [ref('DocumentReference/doc-t3-1856')]),
+    m('pt-0021', 'Ángela Andrea Vigil', 'Vigil', 52, 'excluded', 'total_colectomy', [ref('DocumentReference/doc-t3-1856')], { atoms: { [ref('DocumentReference/doc-t3-1856')]: ['total proctocolectomy'] } }),
     m('pt-0022', 'Tiny Darline Koss', 'Koss', 52, 'gap', 'fobt_expired', [ref('Observation/obs-t3-3906')], { absence: FOBT_IN_PERIOD }),
     m('pt-0024', 'Delaine Evelyn MacGyver', 'MacGyver', 51, 'gap', 'colonoscopy_not_done', [ref('ServiceRequest/sr-t3-4417')], { absence: COLONOSCOPY_DONE }),
     m('pt-0034', 'Rickey Morgan Sipes', 'Sipes', 72, 'excluded', 'nursing_home', [ref('Observation/obs-t3-2465')]),
-    m('pt-0035', 'Elvin Laverne Wolff', 'Wolff', 68, 'gap', 'not_nursing_home', [ref('Observation/obs-t3-8852'), ref('DocumentReference/doc-t3-6193'), ref('Encounter/enc-t3-4609')], { evidence: 'any' }),
+    m('pt-0035', 'Elvin Laverne Wolff', 'Wolff', 68, 'gap', 'not_nursing_home', [ref('Observation/obs-t3-8852'), ref('DocumentReference/doc-t3-6193'), ref('Encounter/enc-t3-4609')], { evidence: 'any', atoms: { [ref('DocumentReference/doc-t3-6193')]: ['discharged home'] } }),
     m('pt-0036', 'Nick Jed Bartoletti', 'Bartoletti', 53, 'gap', 'partial_colectomy', [ref('Procedure/proc-t3-6271')]),
     m('pt-0037', 'Fumiko Kati Pouros', 'Pouros', 35, 'not_in_population', 'age_under_46', ['Patient/pt-0037']),
   ].sort((a, b) => a.patient.localeCompare(b.patient)),
