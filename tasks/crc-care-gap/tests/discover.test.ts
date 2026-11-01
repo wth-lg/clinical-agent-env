@@ -95,12 +95,18 @@ const DECISIVE = expected.items.flatMap((x) => x.decisive.map((d) => ({ patient:
 // FIT are older stool tests that change no answer; A1's colonoscopy order is decisive, not a lure.
 export const LURES: readonly string[] = [ref('Observation/obs-t3-1279'), ref('Observation/obs-t3-4590')];
 // Ruling R22: decisive ids a broad page 1 names in a row that does not show the deciding content,
-// by search: the panel Group lists its members by reference only, so the filler's row shows no birth
-// date (her deciding fact).
+// by search: the panel Group lists its members by reference only, so the filler's, G1's and H1's
+// rows show no birth date (their age, R33); an Encounter row names H1 as its subject only.
+const AGE_DECIDES = ['Patient/pt-0009', 'Patient/pt-0034', 'Patient/pt-0037'];
 export const ROW_ONLY: Readonly<Record<string, readonly string[]>> = {
-  'fhir_search {"resource_type":"Group"}': ['Patient/pt-0037'],
-  [`fhir_read {"resource_type":"Group","id":"${id('grp-t3-okafor-crc')}"}`]: ['Patient/pt-0037'],
+  'fhir_search {"resource_type":"Group"}': AGE_DECIDES,
+  [`fhir_read {"resource_type":"Group","id":"${id('grp-t3-okafor-crc')}"}`]: AGE_DECIDES,
+  'fhir_search {"resource_type":"Encounter"}': ['Patient/pt-0034'],
 };
+// Ruling R6: an item's own plain input may show on page 1; the page-1 rule holds for the record
+// that makes the item a trap. H1's trap is his housing status (retrieval); his age, 72, which puts
+// him under §4's 66-or-older clause (R33), is on every patient list.
+export const PLAIN_INPUTS: readonly string[] = ['Patient/pt-0034'];
 const hitsOf = (r: { exposed_ids: readonly string[]; referenced_ids: readonly string[] }) => ({
   hits: DECISIVE.filter((d) => r.exposed_ids.includes(d.id)),
   rowOnly: DECISIVE.filter((d) => r.referenced_ids.includes(d.id)).map((d) => d.id),
@@ -116,7 +122,7 @@ describe('crc-care-gap discoverability', () => {
     const r = tool(name, input);
     expect(r.is_error ?? false).toBe(false);
     const { hits, rowOnly } = hitsOf(r);
-    expect(hits.filter((d) => HARD_STEP[d.patient]!.step !== 'reasoning')).toEqual([]);
+    expect(hits.filter((d) => HARD_STEP[d.patient]!.step !== 'reasoning' && !PLAIN_INPUTS.includes(d.id))).toEqual([]);
     expect([...new Set(rowOnly)].sort(), 'ROW_ONLY (R22)').toEqual([...(ROW_ONLY[label] ?? [])].sort());
   });
 

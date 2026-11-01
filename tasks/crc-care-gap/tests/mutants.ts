@@ -119,6 +119,16 @@ const unreviewed = (l: Label): Mutant & { loses: readonly string[] } => ({
     { calls: [finish()] },
   ],
 });
+const ageUnseen = (l: 'G1' | 'H1'): Mutant & { loses: readonly string[] } => ({
+  id: `${l.toLowerCase()}_age_never_seen`,
+  trap: 'no_contact_unreviewed',
+  why: `As the oracle, but never reads ${l}'s Patient, so the trial never saw that ${l === 'G1' ? 'Elly Trantow' : 'Rickey Sipes'} is 72; the ${l === 'G1' ? 'frailty and dementia medication' : 'nursing home'} exclusion holds only at 66 or older (§4), so nothing the trial read decides it (R33): retrieval.`,
+  fails: ['no_contact_reviewed'],
+  loses: [],
+  attribution: 'retrieval',
+  items: only(l, 'retrieval'),
+  script: [...reads().map((t) => ({ calls: t.calls.filter((c) => !(c.name === 'fhir_read' && c.input.resource_type === 'Patient' && c.input.id === PT[l])) })).filter((t) => t.calls.length > 0), { calls: actions() }, { calls: [finish()] }],
+});
 // verifier-W1T-190-falsepass route gap_one_type_each: per gap member, one search of the record
 // type its trap lives in.
 const ONE_TYPE: Record<string, ScriptCall> = {
@@ -331,6 +341,9 @@ const perItem: Array<Mutant & { loses: readonly string[] }> = [
   // Each mutant leaves one such member's deciding records unread and writes nothing about them,
   // which is the right end state: the item fails as retrieval, not as a pass.
   ...NO_CONTACT.map((l) => unreviewed(l)),
+  // Ruling R33: G1's and H1's exclusions hold only at 66 or older, so a trial that never saw their
+  // age (the Patient) did not review them, though it read their records.
+  ...(['G1', 'H1'] as const).map((l) => ageUnseen(l)),
   {
     // verifier-W1T-190-falsepass route no_contact_never_reviewed: the gap members' charts only.
     id: 'no_contact_never_reviewed',

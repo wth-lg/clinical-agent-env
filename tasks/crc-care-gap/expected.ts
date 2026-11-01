@@ -35,7 +35,11 @@ import { ref } from './ids.ts';
 // that could hide a qualifying record (R27), and not by its trap record alone (absences); H2's
 // residence may be read from any one of his housing status, discharge summary or rehab encounter
 // (evidence 'any'). A member who needs no contact is reviewed by seeing their decisive records
-// (R32).
+// (R32). Ruling R33: G1's and H1's exclusions hold only at 66 or older (§4), so the Patient, which
+// holds the birth date, decides them with their records; the filler's Patient decides her age. The
+// gaps' ages only place them in the population (46 to 75, §2), with margins of 3 years or more
+// (A1 51, G1 and H1 72), and the 66-or-older clauses leave G2 (69) and H2 (68) open gaps at any
+// age, so no gap's Patient decides its action.
 //
 // Every status other than an open gap gets neither an order nor a message (RBC-QM-02 §5: order and
 // message only for open gaps).
@@ -133,7 +137,7 @@ export const expected = {
   group: ref('Group/grp-t3-okafor-crc'),
   period: { start: '2026-01-01', end: '2026-12-31' },
   items: [
-    m('pt-0009', 'Elly Shyla Trantow', 'Trantow', 72, 'excluded', 'frailty_dementia_medication', [ref('Condition/cond-t3-6027'), ref('MedicationRequest/mr-t3-3318')]),
+    m('pt-0009', 'Elly Shyla Trantow', 'Trantow', 72, 'excluded', 'frailty_dementia_medication', [ref('Condition/cond-t3-6027'), ref('MedicationRequest/mr-t3-3318'), 'Patient/pt-0009']),
     m('pt-0011', 'Marilu Blanca Gaona', 'Gaona', 62, 'gap', 'hospice_before_period', [ref('EpisodeOfCare/eoc-t3-3051')], { absences: [...SCREENING, HOSPICE_IN_PERIOD] }),
     m('pt-0014', 'Santo Rodrick Pagac', 'Pagac', 55, 'gap', 'colonoscopy_not_done', [ref('Appointment/appt-t3-5813')], { absences: SCREENING }),
     m('pt-0018', 'Lance Amado Muller', 'Muller', 53, 'gap', 'sdna_fit_expired', [ref('Observation/obs-t3-7342')], { absences: SCREENING }),
@@ -142,7 +146,7 @@ export const expected = {
     m('pt-0021', 'Ángela Andrea Vigil', 'Vigil', 52, 'excluded', 'total_colectomy', [ref('DocumentReference/doc-t3-1856')], { atoms: { [ref('DocumentReference/doc-t3-1856')]: ['total proctocolectomy'] } }),
     m('pt-0022', 'Tiny Darline Koss', 'Koss', 52, 'gap', 'fobt_expired', [ref('Observation/obs-t3-3906')], { absences: SCREENING }),
     m('pt-0024', 'Delaine Evelyn MacGyver', 'MacGyver', 51, 'gap', 'colonoscopy_not_done', [ref('ServiceRequest/sr-t3-4417')], { absences: SCREENING }),
-    m('pt-0034', 'Rickey Morgan Sipes', 'Sipes', 72, 'excluded', 'nursing_home', [ref('Observation/obs-t3-2465')]),
+    m('pt-0034', 'Rickey Morgan Sipes', 'Sipes', 72, 'excluded', 'nursing_home', [ref('Observation/obs-t3-2465'), 'Patient/pt-0034']),
     m('pt-0035', 'Elvin Laverne Wolff', 'Wolff', 68, 'gap', 'not_nursing_home', [ref('Observation/obs-t3-8852'), ref('DocumentReference/doc-t3-6193'), ref('Encounter/enc-t3-4609')], { evidence: 'any', absences: SCREENING, atoms: { [ref('DocumentReference/doc-t3-6193')]: ['discharged home'] } }),
     m('pt-0036', 'Nick Jed Bartoletti', 'Bartoletti', 53, 'gap', 'partial_colectomy', [ref('Procedure/proc-t3-6271')], { absences: [...SCREENING, TOTAL_COLECTOMY_CODED, TOTAL_COLECTOMY_NOTE] }),
     m('pt-0037', 'Fumiko Kati Pouros', 'Pouros', 35, 'not_in_population', 'age_under_46', ['Patient/pt-0037']),

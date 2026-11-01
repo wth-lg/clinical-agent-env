@@ -42,7 +42,8 @@ describe('T3 probe worklist (plan-amendment-worklist.md W1)', () => {
 describe('T3 decisive ids (R1)', () => {
   it('names only the deciding records for each member', () => {
     const want: Record<string, string[]> = {
-      'Patient/pt-0009': [ref('Condition/cond-t3-6027'), ref('MedicationRequest/mr-t3-3318')],
+      // R33: the 66-or-older clauses decide G1's and H1's exclusions, so their Patients too.
+      'Patient/pt-0009': [ref('Condition/cond-t3-6027'), ref('MedicationRequest/mr-t3-3318'), 'Patient/pt-0009'],
       'Patient/pt-0011': [ref('EpisodeOfCare/eoc-t3-3051')],
       'Patient/pt-0014': [ref('Appointment/appt-t3-5813')],
       'Patient/pt-0018': [ref('Observation/obs-t3-7342')],
@@ -51,7 +52,7 @@ describe('T3 decisive ids (R1)', () => {
       'Patient/pt-0021': [ref('DocumentReference/doc-t3-1856')],
       'Patient/pt-0022': [ref('Observation/obs-t3-3906')],
       'Patient/pt-0024': [ref('ServiceRequest/sr-t3-4417')],
-      'Patient/pt-0034': [ref('Observation/obs-t3-2465')],
+      'Patient/pt-0034': [ref('Observation/obs-t3-2465'), 'Patient/pt-0034'],
       // R21: any one of the housing status, the discharge summary or the rehab stay's encounter.
       'Patient/pt-0035': [ref('Observation/obs-t3-8852'), ref('DocumentReference/doc-t3-6193'), ref('Encounter/enc-t3-4609')],
       'Patient/pt-0036': [ref('Procedure/proc-t3-6271')],

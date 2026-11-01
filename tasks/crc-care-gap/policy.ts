@@ -200,8 +200,10 @@ export function derive(world: WorldView): Json {
         decisive =
           exclusion === 'total_colectomy' ? [...procedures.filter((r) => coded(r.code, SNOMED, COLECTOMY)), ...notes.filter((n) => TOTAL_COLECTOMY.test(decodeNote(n)))].map(id)
           : exclusion === 'hospice' ? episodes.filter((e) => careGiven(e) && !(yearOf(e.period?.end) < YEAR)).map(id)
-          : exclusion === 'nursing_home' ? [id(housing!)]
-          : exclusion.startsWith('frailty') ? [id(frailty!), ...meds.filter((m) => DEMENTIA_MEDICATIONS.some((ingredient) => isDrug(m.medicationCodeableConcept, { ingredient })) && (isActive(m) || yearOf(m.authoredOn) >= YEAR - 1)).map(id)]
+          // §4's nursing home and frailty clauses apply only at 66 or older, so the Patient's birth
+          // date decides these exclusions with the records (ruling R33).
+          : exclusion === 'nursing_home' ? [id(housing!), ref]
+          : exclusion.startsWith('frailty') ? [id(frailty!), ...meds.filter((m) => DEMENTIA_MEDICATIONS.some((ingredient) => isDrug(m.medicationCodeableConcept, { ingredient })) && (isActive(m) || yearOf(m.authoredOn) >= YEAR - 1)).map(id), ref]
           : [];
       } else if (screening) {
         [status, reason] = ['met', screening];

@@ -275,6 +275,8 @@ const perItem: Alternative[] = [
           read('MedicationRequest', id('mr-t3-3318')),
           read('Observation', id('obs-t3-2465')),
           read('Patient', PT.FILLER),
+          read('Patient', PT.G1),
+          read('Patient', PT.H1),
         ],
       },
       {
@@ -291,6 +293,17 @@ const perItem: Alternative[] = [
       { calls: [finish()] },
     ],
   },
+  // Ruling R33: G1's and H1's age (72, so the 66-or-older clauses apply) from a search_patients row,
+  // which shows the birth date, instead of fhir_read Patient.
+  ...(['G1', 'H1'] as const).map((l) => ({
+    id: `${l.toLowerCase()}_age_from_search_patients`,
+    why: `Finds ${l === 'G1' ? 'Elly Trantow' : 'Rickey Sipes'} with search_patients and reads the birth date (72 at the end of 2026) from its row, never fhir_read Patient/${PT[l]}; writes nothing about ${l === 'G1' ? 'her' : 'him'}.`,
+    script: [
+      ...reads().map((t) => ({ calls: t.calls.map((c) => (c.name === 'fhir_read' && c.input.resource_type === 'Patient' && c.input.id === PT[l] ? { name: 'search_patients', input: { name: l === 'G1' ? 'Trantow' : 'Sipes' } } : c)) })),
+      { calls: actions() },
+      { calls: [finish()] },
+    ],
+  })),
   rejectedFor('FILLER', 'she is 35, outside the population'),
   {
     // Ruling R19: one rejected write per nothing_for_others sub-kind; this is the message kind.
