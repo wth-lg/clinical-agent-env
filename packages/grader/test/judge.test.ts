@@ -232,6 +232,89 @@ describe('judge', () => {
     expect(tight.worst).toBeLessThanOrEqual(2 * 0.53);
   });
 
+  // verifier-phase-P17i-GRADER16-193-1 G1: a question the dollar bound blocked is cached 'judge
+  // allowance reached' with calls to spare. A regrade from the record's cache under the same
+  // allowance counts the worst case of each entry it uses, cached ones included, so it finds the
+  // same dollars spent and reads the question as recorded; it threw JudgeCacheMiss.
+  it('a question the dollar bound blocked regrades byte-identically from its cache under the same allowance', async () => {
+    const pad = (n: number) => 'The patient was told the result. '.repeat(Math.ceil(n / 33)).slice(0, n);
+    const texts = [pad(58_000), pad(58_000)];
+    const opts = { maxCalls: 4, maxUsd: 4 * JUDGE_CALL_PRICE_USD };
+    const ask = async (j: Judge) => {
+      const vs = [];
+      for (const [i, text] of texts.entries()) vs.push(await j.judge({ criterion: `criterion q${i}`, text, penalty: true }));
+      return vs;
+    };
+    const s = scriptedJudge(['{"verdict":"not_met","quote":""}']);
+    const live = new Judge({ client: s.client, ...opts });
+    const vs = await ask(live);
+    expect(vs.map((v) => v.met)).toEqual([false, 'unknown']);
+    expect(s.requests).toHaveLength(1);
+    expect(live.entries().map((e) => [e.calls, e.error])).toEqual([[1, null], [0, ALLOWANCE_REACHED]]);
+    const re = new Judge({ cache: live.entries(), ...opts });
+    expect(JSON.stringify(await ask(re))).toBe(JSON.stringify(vs));
+    expect(JSON.stringify(re.entries())).toBe(JSON.stringify(live.entries()));
+    expect(re.calls).toBe(live.calls);
+    // Under a larger allowance in dollars the question has room: a regrade misses it (builder-267).
+    await expect(ask(new Judge({ cache: live.entries(), maxCalls: 4, maxUsd: 8 * JUDGE_CALL_PRICE_USD }))).rejects.toThrow(JudgeCacheMiss);
+  });
+
+  // The dollars a grading has spent are the worst cases of the entries it used, each times its
+  // calls, a cached answer's as well as a live one's, so a live grading that reads part of its
+  // answers from a cache is bounded as its regrade is.
+  it("counts a cached answer's worst case toward the dollar bound, as a regrade does", async () => {
+    const pad = (n: number) => 'The patient was told the result. '.repeat(Math.ceil(n / 33)).slice(0, n);
+    const text = pad(58_000);
+    const opts = { maxCalls: 4, maxUsd: 4 * JUDGE_CALL_PRICE_USD };
+    const seed = new Judge({ client: scriptedJudge(['{"verdict":"not_met","quote":""}']).client, ...opts });
+    await seed.judge({ criterion: 'criterion q0', text, penalty: true });
+    const s = scriptedJudge(['{"verdict":"not_met","quote":""}']);
+    const j = new Judge({ client: s.client, cache: seed.entries(), ...opts });
+    await j.judge({ criterion: 'criterion q0', text, penalty: true });
+    expect((await j.judge({ criterion: 'criterion q1', text, penalty: true })).met).toBe('unknown');
+    expect(s.requests).toHaveLength(0);
+    expect(j.overAllowance).toBe(1);
+  });
+
+  // The verifier's 400-grading fuzz (probe-budget.ts P3) as a property: texts of 0 to 64 KB, 1 to 8
+  // questions, 40% invalid first answers. Every live grading keeps both bounds, and its regrade
+  // from its own cache under the same allowance is byte-identical, with no JudgeCacheMiss.
+  it('property: every live grading under the dollar bound regrades byte-identically from its cache', async () => {
+    const pad = (n: number) => 'The patient was told the result. '.repeat(Math.ceil(n / 33)).slice(0, n);
+    let seed = 193;
+    const rnd = () => (seed = (seed * 1103515245 + 12345) % 2 ** 31) / 2 ** 31;
+    const worstOf = (r: { history: Parameters<typeof reserveRequest>[0]; params: Parameters<typeof reserveRequest>[1] }) => worstCaseUsd(reserveRequest(r.history, r.params));
+    let blocked = 0;
+    for (let t = 0; t < 400; t++) {
+      const texts = Array.from({ length: 1 + Math.floor(rnd() * 8) }, () => pad(Math.floor(rnd() * 64_000)));
+      const checks = texts.map((x, i) => judged({ id: `f${i}`, points: -2, category: 'safety', traces_to: 'p', decisive_ids: [], criterion: `criterion f${i}`, text: () => x }));
+      const opts = { maxCalls: judgeCallBudget(checks), maxUsd: judgeAllowanceUsd(checks) };
+      const requests: Array<{ history: Parameters<typeof reserveRequest>[0]; params: Parameters<typeof reserveRequest>[1] }> = [];
+      const client = {
+        async send(history: Parameters<typeof reserveRequest>[0], params: Parameters<typeof reserveRequest>[1]) {
+          requests.push({ history, params });
+          const text = rnd() < 0.4 ? 'not json' : '{"verdict":"not_met","quote":""}';
+          return { status: 200, message: { id: `m${requests.length}`, model: 'claude-opus-5-5', role: 'assistant', content: [{ type: 'text', text }], stop_reason: 'end_turn', usage: { input_tokens: 100, output_tokens: 20 } }, refusal: null, attempts: 1 } as never;
+        },
+      };
+      const ask = async (j: Judge) => {
+        const vs = [];
+        for (const [i, x] of texts.entries()) vs.push(await j.judge({ criterion: `criterion f${i}`, text: x, penalty: true }));
+        return JSON.stringify(vs);
+      };
+      const live = new Judge({ client, ...opts });
+      const vs = await ask(live);
+      expect(requests.reduce((n, r) => n + worstOf(r), 0), `grading ${t}`).toBeLessThanOrEqual(opts.maxUsd + 1e-9);
+      expect(requests.length, `grading ${t}`).toBeLessThanOrEqual(opts.maxCalls);
+      if (live.entries().some((e) => e.error === ALLOWANCE_REACHED) && live.calls < opts.maxCalls) blocked++;
+      const re = new Judge({ cache: live.entries(), ...opts });
+      expect(await ask(re), `grading ${t}`).toBe(vs);
+      expect(JSON.stringify(re.entries()), `grading ${t}`).toBe(JSON.stringify(live.entries()));
+    }
+    // The fuzz reaches the case: gradings with a question the dollar bound, not the call bound, blocked.
+    expect(blocked).toBeGreaterThan(50);
+  });
+
   it('the projection allowance counts each judge and hybrid item, twice for the schema retry', () => {
     const t = () => 'x';
     const checks = [

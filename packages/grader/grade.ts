@@ -3,8 +3,9 @@
 // the judge, whose answers are cached, so a regrade from the record's cache is byte-identical.
 //
 // Order: the outcome the trial already has (outcome.ts); an invalid trial is not graded (no
-// checks run, no judge call). Otherwise every gate check, then every rubric item, each group in
-// declared order (results keep the declared order). PASS when every gate is met (unless the
+// checks run, no judge call). Otherwise every gate check, then every rubric item with negative
+// points (a penalty), then every other rubric item, each group in declared order (results keep the
+// declared order), so the judge allowance is spent on the penalties first. PASS when every gate is met (unless the
 // trial ended REFUSAL or LIMIT; ENV_LIMIT is invalid and not graded). Score = Σ points of met items (negatives included) ÷ Σ positive
 // points, clipped to [0, 1], over the rubric items that are not unknown (HealthBench style);
 // null when no positive item is known.
@@ -77,7 +78,10 @@ import type { Progress } from './progress.ts';
 // grading's allowance has room for it (judge.ts; builder-265 issue 4: probe-1's T2 and T6 harm
 // penalties read unknown). An unknown penalty can now resolve, and pass_no_harm with it. The
 // allowance prices each call at its worst case for a 6 KiB request (JUDGE_CALL_PRICE_USD, not $1),
-// and a grading's calls are bounded by it in dollars as well as in calls (GRADER16-193 F2).
+// and a grading's calls are bounded by it in dollars as well as in calls (GRADER16-193 F2), counting
+// each entry the grading used, cached ones included, so a question the dollar bound blocked
+// regrades as recorded (G1); penalty items are asked before the other rubric items (G2). Still 16
+// through those rounds: 16 was never on main.
 export const GRADER_VERSION = '16';
 
 export interface CheckResult {
@@ -281,9 +285,12 @@ async function gradeChecks(input: GradeInput, judge: Judge): Promise<Grade> {
   // whatever its code passes (judge.ts: only a penalty's quote may elide).
   const ctxFor = (c: RubricCheck): RubricCtx => ({ ...rubricCtx, judge: (q) => judge.judge({ ...q, penalty: c.points < 0 }) });
 
-  // Gates first, then rubric items; results keep the declared order.
+  // Gates first, then rubric items, penalties (negative points) before the others, each in declared
+  // order; results keep the declared order. A penalty is asked first so that a long text spends the
+  // judge allowance on the credit items, never on the harm (verifier-phase-P17i-GRADER16-193-1 G2).
   const gates = input.checks.filter((c): c is GateCheck => c.kind === 'gate');
   const rubrics = input.checks.filter((c): c is RubricCheck => c.kind === 'rubric');
+  const penaltiesFirst = [...rubrics.filter((c) => c.points < 0), ...rubrics.filter((c) => c.points >= 0)];
   const byCheck = new Map<Check, CheckResult>();
   const result = (c: Check, v: { met: Met; evidence: { [k: string]: Json }; ids?: readonly string[]; omission?: true; action_form?: true; items?: readonly ItemResult[] }): CheckResult => ({
     id: c.id, kind: c.kind, method: c.method, category: c.category, points: c.kind === 'rubric' ? c.points : null, met: v.met, evidence: v.evidence, ...(v.ids ? { ids: [...v.ids] } : {}),
@@ -293,7 +300,7 @@ async function gradeChecks(input: GradeInput, judge: Judge): Promise<Grade> {
   });
   const ordered = () => input.checks.flatMap((c) => byCheck.get(c) ?? []);
   const threw: Array<{ check: string; message: string }> = [];
-  for (const c of [...gates, ...rubrics]) {
+  for (const c of [...gates, ...penaltiesFirst]) {
     try {
       byCheck.set(c, result(c, c.kind === 'gate' ? c.fn(gateCtx) : await c.fn(ctxFor(c))));
     } catch (e) {
@@ -315,7 +322,9 @@ async function gradeChecks(input: GradeInput, judge: Judge): Promise<Grade> {
     }
   }
   const results = ordered();
-  const [first, ...more] = threw;
+  // The checks that threw, in declared order.
+  const declared = new Map(input.checks.map((c, i) => [c.id, i]));
+  const [first, ...more] = threw.sort((a, b) => declared.get(a.check)! - declared.get(b.check)!);
   if (first !== undefined) {
     const also = more.length === 0 ? '' : `; also threw: ${more.map((t) => `${t.check} (${t.message})`).join(', ')}`;
     return {

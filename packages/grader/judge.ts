@@ -46,8 +46,11 @@
 // each answer came from: provenance {source: live | scripted, model, at}. With a cache and no client (regrade, replay), a miss is an
 // error: JudgeCacheMiss. With neither, judge and hybrid-fallback items are unknown. A cached
 // 'judge allowance reached' entry is a question that grading never sent: a grading whose own
-// allowance still has room asks it (a regrade misses it), and one whose allowance is spent too
-// reads it as recorded, so a regrade under the same allowance is still byte-identical.
+// allowance still has room for it, in calls and in dollars, asks it (a regrade misses it), and one
+// whose allowance is spent too reads it as recorded. A grading's spend counts every entry it used,
+// a cached one's calls as well as its live calls, each at its request's worst case, so a regrade
+// under the same allowance finds the room the grading found and is byte-identical
+// (verifier-phase-P17i-GRADER16-193-1 G1).
 import { classifyFailure, MODEL, reserveRequest, type CallResult, type ClientFailure, type MessageParam, type MessageParams, type SendOptions } from '../core/anthropic.ts';
 import { worstCaseUsd } from '../core/cost.ts';
 import type { BatchGrant, Ledger } from '../core/ledger.ts';
@@ -279,6 +282,14 @@ export interface JudgeOptions {
   effort?: JudgeEffort;
 }
 
+// A judge call's request, its worst case in dollars (usd) and in micro-dollars (worst).
+interface JudgeRequest {
+  history: MessageParam[];
+  params: MessageParams;
+  usd: number;
+  worst: number;
+}
+
 export class Judge {
   readonly #client: JudgeClient | null;
   readonly #cache: Map<string, JudgeCacheEntry>;
@@ -291,7 +302,8 @@ export class Judge {
   readonly #effort: JudgeEffort;
   #cost = 0;
   #live = 0;
-  // The worst cases of the live calls sent, in micro-dollars.
+  // The worst cases of the calls behind the entries this grading used, in micro-dollars: each
+  // live call sent, and each call a cached entry took, at its request's worst case.
   #worst = 0;
 
   constructor(opts: JudgeOptions = {}) {
@@ -362,30 +374,43 @@ export class Judge {
   // the allowance. A client error is thrown as JudgeClientError and nothing is cached.
   async #ask(kind: JudgeCacheEntry['kind'], prompt: string, text: string, valid: (a: { [k: string]: Json }) => boolean): Promise<{ entry: JudgeCacheEntry } | null> {
     const key = await sha256Hex(JSON.stringify([MODEL, this.#effort, JUDGE_PROMPT_VERSION, prompt, text]));
-    const found = this.#used.get(key) ?? this.#cache.get(key);
+    const request = this.#request(prompt);
+    const reused = this.#used.get(key);
+    const found = reused ?? this.#cache.get(key);
     // A question the grading that cached it never sent (its allowance was reached) has no answer:
-    // when this grading's allowance has room for it, it is asked (live) or missed (a regrade), not
-    // read as unknown again (builder-267: a regrade under a larger allowance). The calls this grading
-    // has spent are those of the entries it used, in the order it asked them: a live answer's entry
-    // holds its live calls, a cached one the calls it took then; each counts once (GRADER16-193 F3).
-    const cached = found?.error === ALLOWANCE_REACHED && this.calls < this.#maxCalls ? undefined : found;
+    // when this grading's allowance has room for it, in calls and in dollars, it is asked (live)
+    // or missed (a regrade), not read as unknown again (builder-267: a regrade under a larger
+    // allowance). What this grading has spent is that of the entries it used, in the order it asked
+    // them: a live answer's entry holds its live calls, a cached one the calls it took then; each
+    // counts once (GRADER16-193 F3), and each call at its request's worst case, so a regrade under
+    // the same allowance finds the same room the grading found and reads the entry as recorded
+    // (verifier-phase-P17i-GRADER16-193-1 G1).
+    const room = this.calls < this.#maxCalls && this.#worst + request.worst <= this.#maxWorst;
+    const cached = found?.error === ALLOWANCE_REACHED && room ? undefined : found;
     if (cached === undefined && this.#regrade) throw new JudgeCacheMiss(key);
     if (cached === undefined && this.#client === null) return null;
-    const entry = cached ?? (await this.#send(key, kind, prompt, valid));
+    if (cached !== undefined && reused === undefined) this.#worst += request.worst * cached.calls;
+    const entry = cached ?? (await this.#send(key, kind, request, valid));
     this.#used.set(key, entry);
     return { entry };
   }
 
-  async #send(key: string, kind: JudgeCacheEntry['kind'], prompt: string, valid: (a: { [k: string]: Json }) => boolean): Promise<JudgeCacheEntry> {
-    const base = { key, kind, model: MODEL, effort: this.#effort, prompt_version: JUDGE_PROMPT_VERSION };
+  // A judge call's request for `prompt`, and its worst case in micro-dollars.
+  #request(prompt: string): JudgeRequest {
     const history: MessageParam[] = [{ role: 'user', content: prompt }];
     const params = paramsFor(this.#effort);
-    const worst = worstCaseUsd(reserveRequest(history, params));
+    const usd = worstCaseUsd(reserveRequest(history, params));
+    return { history, params, usd, worst: µ(usd) };
+  }
+
+  async #send(key: string, kind: JudgeCacheEntry['kind'], request: JudgeRequest, valid: (a: { [k: string]: Json }) => boolean): Promise<JudgeCacheEntry> {
+    const base = { key, kind, model: MODEL, effort: this.#effort, prompt_version: JUDGE_PROMPT_VERSION };
+    const { history, params, usd: worst } = request;
     if (worst > JUDGE_MAX_CALL_USD) return { ...base, answer: null, error: `${OVER_BUDGET}: worst case $${worst.toFixed(6)} > $${JUDGE_MAX_CALL_USD.toFixed(2)} per call`, calls: 0 };
     let calls = 0;
-    while (calls < JUDGE_CALLS_PER_ITEM && this.#live < this.#maxCalls && this.#worst + µ(worst) <= this.#maxWorst) {
+    while (calls < JUDGE_CALLS_PER_ITEM && this.#live < this.#maxCalls && this.#worst + request.worst <= this.#maxWorst) {
       this.#live++;
-      this.#worst += µ(worst);
+      this.#worst += request.worst;
       calls++;
       let result: CallResult;
       try {
