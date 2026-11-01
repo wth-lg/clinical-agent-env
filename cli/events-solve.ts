@@ -40,6 +40,9 @@ import { main as contextBudget, MEAN_P90_BUDGET_USD, project, resolveReqPerEvent
 export const TARGET = 0.45;
 export const FREEZE_ABOVE = 0.7;
 export const DEFAULT_REQ_PER_EVENT = 3;
+// How this command reads rule S where the plan text leaves a choice (coordinator rulings for
+// builder-277), printed with every solve.
+export const RULE_S_TEXT = 'rule S as computed: q over every valid trial; an unnamed event_seen or event_delivered failure is the event\'s only when it is the one event fired on its item, otherwise unattributed (it counts against q and as an event failure); r, when refit, needs at least 5 trials off their task\'s modal (most common) event count';
 const AMEND = new Set(['A', 'B', 'C', 'O']);
 
 export interface Pooled {
@@ -260,6 +263,7 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
   const mean = ids.reduce((s, id) => s + (tasks[id] as TaskSolve).p90_usd, 0) / ids.length;
 
   say(`pooled over ${ids.length} tasks: f ${p.f.toFixed(3)} (${p.amend_fails_seen} amend fails among ${p.seen} seen), q ${p.q.toFixed(3)} (${p.q_seen_all}/${p.q_trials} trials saw every arrival), p_D ${p.p_d.toFixed(3)} (${p.lure_fails}/${p.lure_observations} lure fails); r ${r}`);
+  say(RULE_S_TEXT);
   for (const l of rate.lines) say(l);
   const un = p.unattributed_event_fails ?? 0;
   if (un > 0) say(`${un} event gate failure${un === 1 ? '' : 's'} no spec takes (classes: unattributed_event_failures) counted as event failures`);

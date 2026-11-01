@@ -9,7 +9,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { tempDir } from '../../scripts/test/helpers.ts';
 import type { ClassesJson, EventRow, TaskClasses } from '../classes.ts';
-import { type Deps, main, pooled, solve, type SolveJson } from '../events-solve.ts';
+import { type Deps, main, pooled, RULE_S_TEXT, solve, type SolveJson } from '../events-solve.ts';
 import { type QuadTrial, writeQuadRun } from './fixtures/context-budget/make-run.ts';
 
 const N = { 'renal-dose-review': 5, 'results-inbox': 7, 'crc-care-gap': 4, 'discharge-medrec': 8, 'contrast-ct-prep': 4, 'message-queue': 6 };
@@ -159,6 +159,9 @@ describe('PW4-H0b2 F1: events-solve on an event-bearing cost source', () => {
     expect(code).toBe(0);
     expect(json!.req_per_event).toBeCloseTo(2, 9);
     expect(lines.join('\n')).toMatch(/r fitted 2\.00 \(SE 0\.00\)/);
+    expect(lines).toContain(RULE_S_TEXT);
+    expect(RULE_S_TEXT).toMatch(/modal \(most common\) event count/);
+    expect(RULE_S_TEXT).toMatch(/one event fired on its item, otherwise unattributed/);
   });
 
   it('does not count the event requests twice: p90 at every e equals the event-free twin\'s', async () => {
