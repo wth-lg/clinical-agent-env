@@ -12,8 +12,9 @@
 // the note's text, finds the note's row on any page, and asserts both directions for every row:
 //   the snippet shows the deciding line from its first atom to its last  <=>  the gate counts it seen.
 // The left side is this test's own reading of the chart text (the stretch of the line, as the note
-// writes it, inside the snippet); the right side is the gate's rule, read through seenAt on the one
-// search step alone.
+// writes it, inside the snippet); the right side is the gate's rule for the note itself, read
+// through recordSeenAt on the one search step alone (H2's gap also needs its screening searches,
+// ruling R31, which seenAt adds on top of this rule).
 import { describe, expect, it } from 'vitest';
 import { matrixEnv } from '../../../cli/matrix.ts';
 import { clock } from '../../../packages/env/clock.ts';
@@ -24,7 +25,7 @@ import { stepsOf } from '../../../packages/grader/exposure.ts';
 import { trajectory } from '../../../packages/grader/test/helpers.ts';
 import { expected } from '../expected.ts';
 import { ref } from '../ids.ts';
-import { seenAt } from './grader.ts';
+import { recordSeenAt } from './grader.ts';
 
 const comparable = (s: string) => s.replace(/\s+/g, ' ').trim().toLowerCase();
 const WORD = /[\p{L}\p{N}]+/gu;
@@ -84,7 +85,7 @@ describe('T3 decisive atoms: a snippet is seen exactly when it shows every atom 
       if (hit === null) continue;
       const snip = comparable(hit.row.snippet.replace(/…/g, ' '));
       const shown = lines.some((l) => shows(l, e.atoms, snip));
-      rows.push({ query: q, snippet: hit.row.snippet, whole: hit.row.whole === true, shown, seen: seenAt([hit.step], e.doc) !== null });
+      rows.push({ query: q, snippet: hit.row.snippet, whole: hit.row.whole === true, shown, seen: recordSeenAt([hit.step], e.doc) !== null });
     }
     return { ...e, lines: lines.length, words: words.length, rows };
   });

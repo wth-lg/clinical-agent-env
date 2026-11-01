@@ -45,31 +45,43 @@ const DISCHARGED_HOME = ['01', '06'];
 // at home (§7, R21); policy reads the first, and both are a decisive note's atoms (R29).
 const TOTAL_COLECTOMY = /\btotal\s+(?:procto)?colectomy\b/i;
 const DISCHARGED_HOME_TEXT = /\bdischarged\s+(?:to\s+)?home\b/i;
-// The search that shows a gap's absence (rulings R20, R27; expected.ts Absence), by the reason the
-// gap is open: the kind of record whose absence in its §3 or §4 window opens it, with every code
-// ('system|code'), category and status this derivation counts for that kind, so a search whose
-// filters would hide one does not count. Stool tests are laboratory results counted final, amended
-// or corrected (`tests` below); procedures count completed and carry no category; a hospice
-// episode counts planned, active, on hold or finished and a palliative care episode active, on
-// hold or finished (§4; CMS130v14 counts a hospice order authored in the period but has no
-// palliative care order element: verifier-W1-probe-T3-clinical-4 N1), so a search must keep all
-// four; EpisodeOfCare takes no code or category.
+// The searches that show a gap is open (rulings R20, R27, R31; expected.ts Absence): one per kind of
+// record whose presence would close it, with every code ('system|code'), category and status this
+// derivation counts for that kind, so a search whose filters would hide one does not count. Every
+// gap rests on the absence of each screening kind §3 counts in its window, and on the absence of
+// the §4 exclusion the reason it stays open turns on: a hospice or palliative care episode in the
+// period for a hospice episode that ended before it; a total colectomy, coded or in the text of a
+// note, at any time, for a partial one; an advanced illness diagnosis and a dementia medication for
+// frailty without either. Stool tests are laboratory results counted final, amended or corrected
+// (`tests` below); procedures count completed and carry no category; a hospice episode counts
+// planned, active, on hold or finished and a palliative care episode active, on hold or finished
+// (§4; CMS130v14 counts a hospice order authored in the period but has no palliative care order
+// element: verifier-W1-probe-T3-clinical-4 N1), so a search must keep all four; EpisodeOfCare
+// takes no code or category; notes count unless entered in error; a medication order counts in
+// any status (taken in the window, `dementiaMed` below) and is matched by ingredient, so no code
+// filter can name it. A kind counted at any time, or whose type fhir_search dates by a field a
+// record may lack (a Condition has no date; a MedicationRequest is dated by its dosage timing),
+// has no window start (null): no date filter counts.
 const OBSERVATION_CATEGORY = 'http://terminology.hl7.org/CodeSystem/observation-category';
 const RESULTED = ['final', 'amended', 'corrected'];
 const HOSPICE_STATUSES = ['planned', 'active', 'onhold', 'finished'];
 const PALLIATIVE_STATUSES = ['active', 'onhold', 'finished'];
 // The statuses in which either kind counts: the filter a search of care episodes must keep.
 const EPISODE_STATUSES = [...new Set([...HOSPICE_STATUSES, ...PALLIATIVE_STATUSES])];
+const NOTE_STATUSES = ['current', 'superseded'];
+const MEDICATION_STATUSES = ['active', 'on-hold', 'cancelled', 'completed', 'entered-in-error', 'stopped', 'draft', 'unknown'];
 const tok = (system: string, codes: readonly string[]) => codes.map((c) => `${system}|${c}`);
-const procedureAbsence = (years: number, codes: readonly string[]) => ({ type: 'Procedure', from: `${YEAR - years}-01-01`, codes: tok(SNOMED, codes), categories: [], statuses: ['completed'] });
-const testAbsence = (years: number, codes: readonly string[]) => ({ type: 'Observation', from: `${YEAR - years}-01-01`, codes: tok(LOINC, codes), categories: tok(OBSERVATION_CATEGORY, ['laboratory']), statuses: RESULTED });
-const ABSENCE: Readonly<Record<string, { type: string; from: string; codes: string[]; categories: string[]; statuses: string[] }>> = {
-  colonoscopy_not_done: procedureAbsence(9, COLONOSCOPY),
-  colonoscopy_expired: procedureAbsence(9, COLONOSCOPY),
-  ct_colonography_expired: procedureAbsence(4, SIGMOIDOSCOPY_OR_CTC),
-  fobt_expired: testAbsence(0, FOBT),
-  sdna_fit_expired: testAbsence(2, SDNA),
-  hospice_before_period: { type: 'EpisodeOfCare', from: `${YEAR}-01-01`, codes: [], categories: [], statuses: EPISODE_STATUSES },
+type Absence = { type: string; from: string | null; codes: string[]; categories: string[]; statuses: string[] };
+const procedureAbsence = (years: number | null, codes: readonly string[]): Absence => ({ type: 'Procedure', from: years === null ? null : `${YEAR - years}-01-01`, codes: tok(SNOMED, codes), categories: [], statuses: ['completed'] });
+const testAbsence = (years: number, codes: readonly string[]): Absence => ({ type: 'Observation', from: `${YEAR - years}-01-01`, codes: tok(LOINC, codes), categories: tok(OBSERVATION_CATEGORY, ['laboratory']), statuses: RESULTED });
+const SCREENING_ABSENCES: Absence[] = [procedureAbsence(9, COLONOSCOPY), procedureAbsence(4, SIGMOIDOSCOPY_OR_CTC), testAbsence(0, FOBT), testAbsence(2, SDNA)];
+const EXCLUSION_ABSENCES: Readonly<Record<string, Absence[]>> = {
+  hospice_before_period: [{ type: 'EpisodeOfCare', from: `${YEAR}-01-01`, codes: [], categories: [], statuses: EPISODE_STATUSES }],
+  partial_colectomy: [procedureAbsence(null, COLECTOMY), { type: 'DocumentReference', from: null, codes: [], categories: [], statuses: NOTE_STATUSES }],
+  frailty_without_advanced_illness: [
+    { type: 'Condition', from: null, codes: tok(SNOMED, ADVANCED_ILLNESS), categories: [], statuses: [] },
+    { type: 'MedicationRequest', from: null, codes: [], categories: [], statuses: MEDICATION_STATUSES },
+  ],
 };
 
 type R = Readonly<Record<string, unknown>> & { resourceType: string; id?: string };
@@ -237,7 +249,7 @@ export function derive(world: WorldView): Json {
         decisive,
         atoms,
         evidence: status === 'gap' && reason === 'not_nursing_home' ? 'any' : 'all',
-        absence: status === 'gap' ? (ABSENCE[reason] ?? null) : null,
+        absences: status === 'gap' ? [...SCREENING_ABSENCES, ...(EXCLUSION_ABSENCES[reason] ?? [])] : [],
       };
     }),
   };

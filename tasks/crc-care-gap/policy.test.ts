@@ -277,6 +277,31 @@ describe('crc-care-gap', () => {
       expect(r.is_error).toBe(false);
       expect(r.content).toEqual({ total: 0, entries: [] });
     });
+    // Ruling R31 (verifier-W1T-190-falsepass F3): every gap's other absences, by the searches of the
+    // alternative minimal_complete_reviews, each one whole page: no procedure §3 or §4 counts, no
+    // stool test, no advanced illness diagnosis for G2; B2's documents and G2's medications listed
+    // whole, so nothing in them is hidden.
+    const GAP_PATIENTS = ['pt-0024', 'pt-0014', 'pt-0036', 'pt-0011', 'pt-0022', 'pt-0018', 'pt-0019', 'pt-0035'];
+    it.each([
+      ...GAP_PATIENTS.map((p) => [`${p} no counted procedure`, { resource_type: 'Procedure', patient: p, code: '73761001,44441009,418714002,26390003', count: 50 }, 0] as const),
+      ['G2 no advanced illness diagnosis', { resource_type: 'Condition', patient: 'pt-0019', code: '84114007,13645005,185086009,52448006,26929004,433146000,19943007,128462008,363418001', count: 50 }, 0],
+      ['B2 every document', { resource_type: 'DocumentReference', patient: 'pt-0036', count: 50 }, null],
+      ['G2 every medication order', { resource_type: 'MedicationRequest', patient: 'pt-0019', count: 50 }, null],
+    ] as const)('%s: one whole page', (_label, input, total) => {
+      const r = tool('fhir_search', input);
+      expect(r.is_error).toBe(false);
+      const page = r.content as { total: number; next_offset?: number };
+      expect(page.next_offset).toBeUndefined();
+      if (total !== null) expect(page.total).toBe(total);
+    });
+    it('every gap: the stool tests by every counted code, undated, are one whole page with none collected in its window', () => {
+      for (const p of GAP_PATIENTS) {
+        const page = tool('fhir_search', { resource_type: 'Observation', patient: p, code: '2335-8,29771-3,57905-2,58453-2,80372-6,27396-1,12503-9,77354-9,77353-1', count: 50 }).content as { entries: Array<{ code?: { coding?: Array<{ code?: string }> }; effectiveDateTime?: string }>; next_offset?: number };
+        expect(page.next_offset, p).toBeUndefined();
+        const late = page.entries.filter((e) => (e.code?.coding ?? []).some((c) => ['77354-9', '77353-1'].includes(c.code ?? '')) ? (e.effectiveDateTime ?? '') >= '2024' : (e.effectiveDateTime ?? '') >= '2026');
+        expect(late, p).toEqual([]);
+      }
+    });
     // Ruling R27 (verifier-W1-probe-T3-clinical-2 N1, N2): the two other complete routes. A
     // clinic-wide window search is one whole page that names none of the absence gaps; D2's
     // Observations since 2024, paged ten at a time by next_offset, end and hold no sDNA-FIT.

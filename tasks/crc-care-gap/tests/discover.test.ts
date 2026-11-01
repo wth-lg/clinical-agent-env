@@ -26,9 +26,10 @@
 // row-only hit of a decisive id on a broad page 1 is listed in ROW_ONLY with that reason, and the
 // test fails when the list drifts.
 //
-// Rulings R20, R21 and R27: an absence gap (A, C1, D) is reviewed by its trap record or by a
-// complete search covering its window whose filters hide no qualifying record, and H2 by any one of his housing status, discharge summary or rehab
-// encounter, so the oracle check below asks for one of H2's records, not all three.
+// Rulings R20, R21, R27 and R31: a gap is reviewed by complete searches covering each window whose
+// filters hide no qualifying record (its trap record is a lure, R19), and H2 also by any one of his
+// housing status, discharge summary or rehab encounter, so the oracle check below asks for one of
+// H2's records, not all three.
 //
 // Targeted policy-word searches (POLICY_WORD: a notes search for a rule term RBC-QM-02 uses) are the
 // retrieval routes R5 requires, not broad first searches; they are exempt from the page-1 rule

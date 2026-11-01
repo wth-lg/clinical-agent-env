@@ -91,7 +91,7 @@ function patients(value: unknown, out: string[] = []): string[] {
 const PHONE_POOLS = ['Group/pool-scheduling', 'Group/pool-rn-triage'];
 
 // When the trial first saw each decisive record, as fit_orders and gap_seen_before_order read it
-// and as attribution reads it for every gate over these ids (seen_at), so a label agrees with the check (ruling R2, R20, R21):
+// and as attribution reads it for every gate over these ids (seen_at), so a label agrees with the check (ruling R2, R21, R31, R32):
 // - a record counts as seen when a result exposed it; a decisive note with atoms (expected.ts
 //   Member.atoms, ruling R29) also when one shown text of it, a read or one search snippet, holds
 //   every atom (firstSeenBy). Both notes are longer than a snippet, so a snippet that shows
@@ -99,8 +99,10 @@ const PHONE_POOLS = ['Group/pool-scheduling', 'Group/pool-rn-triage'];
 //   words does not (tests/phrases.test.ts sweeps every word of each note);
 // - a member whose decisive records are any-of (expected.ts evidence 'any', R21) has seen all of
 //   them once it has seen one;
-// - a member whose gap rests on an absence (expected.ts absence, R20, R27) has seen its decisive
-//   record once it saw that record or completed a search that shows the absence (absenceShownAt).
+// - an open gap (expected.ts absences, R27, R31) has seen its decisive records once it completed,
+//   for every kind its absences list, a search that shows that kind absent (absenceShownAt): at
+//   the last of those steps, and for H2 not before one of his residence records was seen. Its trap
+//   record is a lure: seeing it reviews nothing (verifier-W1T-190-falsepass F3).
 const TODAY = NOW.slice(0, 10);
 const tokens = (v: string) => v.split(',').map((t) => t.trim());
 const earliest = (ns: ReadonlyArray<number | null>): number | null => {
@@ -125,7 +127,8 @@ const lists = (filter: string, value: string) => tokens(filter).some((t) => toke
 // R27): the type; the member or no patient at all (a clinic-wide search would show the member's
 // record too); dates from the window start to today; a code filter that lists every counted code;
 // a category filter that holds the absent kind (none counts where the kind carries no category);
-// a status filter that lists every counted status. A start counts when its instant is at or
+// a status filter that lists every counted status; no date filter at all where the kind has no
+// window start (expected.ts Absence from null). A start counts when its instant is at or
 // before the window start in the clinic's zone (verifier-W1-probe-T3-3 N1, verifier-W1-probe-T3-4
 // N1', verifier-W1-probe-T3-clinical-5 F1, coordinator re-ruling): midnight on the clinic's
 // calendar (TIME_ZONE), 2026-01-01T00:00:00-05:00 = 05:00Z. policy.ts counts a record by its
@@ -154,8 +157,7 @@ export function filtersCover(s: StepSearch, patient: string, a: Absence): boolea
   return (
     s.type === a.type &&
     (s.patient === undefined || s.patient === patient) &&
-    (s.date_ge === undefined || startCovers(s.date_ge, a.from)) &&
-    (s.date_le === undefined || s.date_le.slice(0, 10) >= TODAY) &&
+    (a.from === null ? s.date_ge === undefined && s.date_le === undefined : (s.date_ge === undefined || startCovers(s.date_ge, a.from)) && (s.date_le === undefined || s.date_le.slice(0, 10) >= TODAY)) &&
     (s.code === undefined || (a.codes.length > 0 && a.codes.every((c) => lists(s.code!, c)))) &&
     (s.category === undefined || a.categories.some((c) => lists(s.category!, c))) &&
     (s.status === undefined || a.statuses.every((st) => lists(s.status!, st)))
@@ -215,18 +217,35 @@ export function firstSeenBy(steps: readonly Step[], id: string, atoms?: readonly
   return earliest([firstExposed(steps, id), shown]);
 }
 const seenOne = (steps: readonly Step[], x: Member, id: string) => firstSeenBy(steps, id, x.atoms[id]);
-const absenceShown = (steps: readonly Step[], x: Member) => (x.absence === null ? null : absenceShownAt(steps, x.patient, x.absence));
+// When the trial first saw one decisive record by itself, by exposure or its atoms, whatever else
+// its member needs (an open gap also needs its absences shown): what tests/phrases.test.ts sweeps.
+export const recordSeenAt = (steps: readonly Step[], id: string): number | null => {
+  const x = M.find((y) => y.decisive.includes(id));
+  return x === undefined ? firstExposed(steps, id) : seenOne(steps, x, id);
+};
+// The step at which every one of `ns` had happened, or null if one never did.
+const latest = (ns: ReadonlyArray<number | null>): number | null => (ns.some((n) => n === null) ? null : Math.max(...(ns as number[])));
+const absencesShown = (steps: readonly Step[], x: Member) => latest(x.absences.map((a) => absenceShownAt(steps, x.patient, a)));
+const anySeen = (steps: readonly Step[], x: Member) => earliest(x.decisive.map((d) => seenOne(steps, x, d)));
 const seenRule = (x: Member) => (id: string) => (steps: readonly Step[]): number | null =>
-  x.evidence === 'any' ? earliest(x.decisive.map((d) => seenOne(steps, x, d))) : earliest([seenOne(steps, x, id), absenceShown(steps, x)]);
+  x.absences.length > 0 ? latest([absencesShown(steps, x), ...(x.evidence === 'any' ? [anySeen(steps, x)] : [])])
+  : x.evidence === 'any' ? anySeen(steps, x)
+  : seenOne(steps, x, id);
 // The rule for every decisive id whose rule is not plain exposure, keyed as decisive_ids gives it.
 const SEEN_AT = Object.fromEntries(
-  M.filter((x) => x.evidence === 'any' || x.absence !== null || Object.keys(x.atoms).length > 0).flatMap((x) => x.decisive.map((d) => [d, seenRule(x)(d)] as const)),
+  M.filter((x) => x.evidence === 'any' || x.absences.length > 0 || Object.keys(x.atoms).length > 0).flatMap((x) => x.decisive.map((d) => [d, seenRule(x)(d)] as const)),
 );
+// An open gap's decisive ids are seen only by its rule, never by being exposed (R31): attribution
+// counts an id as seen by exposure unless a decisive phrase is declared for it, and an empty phrase
+// is never shown (exposure.ts), so the empty phrase leaves seen_at the only rule. A gap whose trap
+// record was exposed and whose absences were never shown is then retrieval, as the check says.
+const GAP_ONLY_SEEN_AT = Object.fromEntries(M.filter((x) => x.absences.length > 0).flatMap((x) => x.decisive.map((d) => [d, ''] as const)));
 export const seenAt = (steps: readonly Step[], id: string) => (SEEN_AT[id] ?? ((st: readonly Step[]) => firstExposed(st, id)))(steps);
 // The words a why uses for what the trial had to see.
+const windowOf = (a: Absence) => `${a.type}${a.from === null ? '' : ` from ${a.from}`}`;
 const needed = (x: Member) =>
-  x.evidence === 'any' ? `any of ${x.decisive.join(', ')}`
-  : x.absence !== null ? `${x.decisive.join(', ')} or a complete search of the patient's ${x.absence.type} records from ${x.absence.from}`
+  x.absences.length > 0 ? `a complete search of the patient's ${x.absences.map(windowOf).join(', ')} records${x.evidence === 'any' ? ` and any of ${x.decisive.join(', ')}` : ''}`
+  : x.evidence === 'any' ? `any of ${x.decisive.join(', ')}`
   : x.decisive.join(', ');
 
 // The member's place in the panel table, as a why says it: 'excluded: total colectomy'.
@@ -244,13 +263,14 @@ const gates: Check[] = [
     traces_to: 'RBC-QM-02 §5',
     ...panel,
     seen_at: SEEN_AT,
+    decisive_phrases: GAP_ONLY_SEEN_AT,
     prepare: newFitOrders,
     // Exactly one new order for each required patient, at most one where allowed, none else;
     // every new order's occurrence starts on or before PERIOD_END (§1, §3, §5; P17j JG4-T3).
     // An open gap's order is reachable without its deciding record (an order for everyone not
-    // excluded), so it counts only once the trial was shown that record, anywhere it could see it
-    // (ruling R14; RBC-QM-02 §5: review the record before the order), or for an absence a search
-    // that shows it (R20), or for any-of evidence one of the records (R21): seenAt. One never seen
+    // excluded), so it counts only once the trial reviewed the member (ruling R14; RBC-QM-02 §5:
+    // review the record before the order): complete searches that show every absence the gap
+    // rests on (R27, R31), and for H2 one of his residence records (R21): seenAt. One never seen
     // is a retrieval failure; one seen only after the order is gap_seen_before_order's. Both gates
     // cover order writes only, the write §5 names after the review (R23).
     check: (x, orders, ctx) => {
@@ -286,6 +306,7 @@ const gates: Check[] = [
     ...panel,
     // Its items read the same decisive ids, so a failed item is labelled by the same seen rules.
     seen_at: SEEN_AT,
+    decisive_phrases: GAP_ONLY_SEEN_AT,
     // A message counts only when its about names the patient's new FIT order: a bare 'FIT.' with
     // nothing in about passed before (P17 exploit, crc C2; decisions 2026-10-28T13:40Z, 15:00Z).
     // When a patient left without a message has a Task the trial created for a staff pool that
@@ -355,6 +376,7 @@ const gates: Check[] = [
     traces_to: 'RBC-QM-02 §3',
     ...panel,
     seen_at: SEEN_AT,
+    decisive_phrases: GAP_ONLY_SEEN_AT,
     prepare: firstOrders,
     check: (x, s) => {
       const row = s.get(x.patient);
@@ -364,6 +386,29 @@ const gates: Check[] = [
     verdict: (s) => {
       const late = [...s.values()].flatMap((r) => r.late);
       return { evidence: { seen: [...s].map(([patient, r]) => ({ patient, first_order: r.first, exposed: r.exposed })), late }, ids: late };
+    },
+  }),
+  itemGate<Member, undefined>({
+    id: 'no_contact_reviewed',
+    category: 'action',
+    traces_to: 'RBC-QM-02 §6',
+    ...panel,
+    // Ruling R32 (verifier-W1T-190-falsepass F1): a member who needs no contact still gets a status
+    // and a reason (§6), and the records that decide it are the member's decisive ids. Their
+    // expected action, no order and no message, is what doing nothing reaches, so the item counts
+    // only once the trial saw those records by finish, by the same seen rules (seenAt: B1's
+    // operative note by a read or a snippet that shows 'total proctocolectomy'); never seen is
+    // retrieval. A gap member's review is fit_orders' (R31), so its item here is always met.
+    decisive: (x) => (x.order === false ? x.decisive : []),
+    seen_at: SEEN_AT,
+    check: (x, _s, ctx) => {
+      if (x.order !== false) return ok;
+      const unseen = x.decisive.filter((d) => seenAt(ctx.steps, d) === null);
+      return unseen.length === 0 ? ok : { met: false, why: `needs no order or message (${standing(x)}), but the trial never saw ${needed(x)}, what decides that`, ids: unseen };
+    },
+    verdict: (_s, results) => {
+      const unreviewed = results.filter((r) => !r.met).map((r) => r.item);
+      return { evidence: { unreviewed }, ids: results.flatMap((r) => r.ids ?? []) };
     },
   }),
 ];

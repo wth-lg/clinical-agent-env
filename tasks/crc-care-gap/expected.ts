@@ -29,11 +29,13 @@ import { ref } from './ids.ts';
 // the end of the period (class F), the two with 0 failures in every pilot (the old E2, E3 and E4
 // traps). Their four slots (pt-0017, pt-0023, pt-0025, pt-0032) stay T3's, off the panel.
 //
-// Gate round 1 (rulings R20, R21): the A, C1 and D gaps rest on an absence (no colonoscopy done, no
-// hospice care in 2026, no stool test collected in its window), so a complete search covering the
-// window, with no filter that could hide a qualifying record (R27), reviews them as well as the
-// trap record does (absence); H2's residence may be read from
-// any one of his housing status, discharge summary or rehab encounter (evidence 'any').
+// Gate round 1 (rulings R20, R21) and the W1-T gate (R31, verifier-W1T-190-falsepass F3): every gap
+// rests on absences (no screening of any kind §3 counts in its window, and none of the exclusions
+// its class turns on), so it is reviewed by complete searches covering each window, with no filter
+// that could hide a qualifying record (R27), and not by its trap record alone (absences); H2's
+// residence may be read from any one of his housing status, discharge summary or rehab encounter
+// (evidence 'any'). A member who needs no contact is reviewed by seeing their decisive records
+// (R32).
 //
 // Every status other than an open gap gets neither an order nor a message (RBC-QM-02 §5: order and
 // message only for open gaps).
@@ -62,66 +64,87 @@ export interface Member {
   // from any one of them (ruling R21: housing from a status Observation, a discharge summary or
   // the stay's encounter), so seeing one is enough.
   evidence: 'all' | 'any';
-  // For a gap whose deciding fact is that no screening of one kind falls in its window (rulings
-  // R20, R27), what the policy counts as that screening, so a search can be checked for filters
-  // that would hide it: a successful fhir_search of `type`, for the member or for no patient
-  // (clinic-wide), whose date_ge (if any) is an instant at or before midnight on `from` in the
-  // clinic's zone (TIME_ZONE; tests/grader.ts startCovers), whose date_le (if any) reaches today,
-  // whose code filter (if any) lists every one of `codes`, whose category filter (if any) holds
-  // one of `categories` (none: no category filter counts), and whose status filter (if any) lists
-  // every one of `statuses`; and complete: one page that held every match, or a run of pages with
-  // the same filters from offset 0, each at the previous next_offset, the last with none. Such a
-  // search counts as reviewing the item, as seeing its decisive record does; the decisive record
-  // outside the window is then a lure (R19). Null for every other member.
-  absence: Absence | null;
+  // For an open gap, what shows that nothing closes it (rulings R20, R27, R31): one entry per
+  // record kind the policy counts against the gap, each to be shown absent by a complete search.
+  // Every gap lists the screening kinds §3 counts (a colonoscopy; a flexible sigmoidoscopy or CT
+  // colonography; an FOBT or FIT; an sDNA-FIT), and the §4 exclusions its class turns on: C1 a
+  // hospice or palliative care episode in 2026; B2 a total colectomy, coded or in a note (R28: a
+  // scanned outside note can hold one, so his documents too); G2 an advanced illness diagnosis and
+  // a dementia medication. Each entry says what a search must keep to count: a successful
+  // fhir_search of `type`, for the member or for no patient (clinic-wide), whose date_ge (if any)
+  // is an instant at or before midnight on `from` in the clinic's zone (TIME_ZONE; tests/grader.ts
+  // startCovers) and whose date_le (if any) reaches today, or with no date filter at all where
+  // `from` is null (the kind counts at any time, or its type dates records by a field a filter
+  // would hide them by); whose code filter (if any) lists every one of `codes` (none: no code
+  // filter counts); whose category filter (if any) holds one of `categories` (none: no category
+  // filter counts); and whose status filter (if any) lists every one of `statuses`; and complete:
+  // one page that held every match, or a run of pages with the same filters from offset 0, each at
+  // the previous next_offset, the last with none. The gap counts as reviewed once every entry is
+  // shown (R31); its trap record outside the window is a lure (R19) and reading it alone reviews
+  // nothing. H2's residence is also needed, from any one of his records (evidence 'any', R21).
+  // Empty for every other member.
+  absences: Absence[];
 }
 
 // Codes and categories are 'system|code'; statuses are bare.
 export interface Absence {
   type: string;
-  from: string;
+  from: string | null;
   codes: string[];
   categories: string[];
   statuses: string[];
 }
 
-const m = (patient: string, name: string, family: string, age: number, status: Status, reason: string, decisive: string[], more: { evidence?: 'any'; absence?: Absence; atoms?: Record<string, string[]> } = {}): Member => {
+const m = (patient: string, name: string, family: string, age: number, status: Status, reason: string, decisive: string[], more: { evidence?: 'any'; absences?: Absence[]; atoms?: Record<string, string[]> } = {}): Member => {
   const order = status === 'gap';
-  return { patient: `Patient/${patient}`, name, family, age, status, reason, order, message: order, decisive, atoms: more.atoms ?? {}, evidence: more.evidence ?? 'all', absence: more.absence ?? null };
+  return { patient: `Patient/${patient}`, name, family, age, status, reason, order, message: order, decisive, atoms: more.atoms ?? {}, evidence: more.evidence ?? 'all', absences: more.absences ?? [] };
 };
 
-// The absences the open gaps of classes A, C and D rest on (RBC-QM-02 §3, §4): no colonoscopy done
-// in 2017-2026 (A: the order or appointment is not one), no hospice episode overlapping 2026 (C1),
-// no FOBT or FIT collected in 2026 (D1), no sDNA-FIT collected in 2024-2026 (D2). Each lists what
-// policy.ts counts (R27): every code of the kind; the category stool tests carry (a laboratory
-// result; colonoscopies carry none, and EpisodeOfCare has no code or category filter); a stool
-// test final, amended or corrected, a colonoscopy completed, a care episode planned, active, on
-// hold or finished (§4: a hospice episode in any of the four, a palliative care episode in all but
-// planned; verifier-W1-probe-T3-clinical-3 F1, clinical-4 N1).
+// What each open gap rests on being absent (RBC-QM-02 §3, §4; rulings R27, R31). Every gap: no
+// colonoscopy done in 2017-2026, no flexible sigmoidoscopy or CT colonography done in 2022-2026, no
+// FOBT or FIT collected in 2026, no sDNA-FIT collected in 2024-2026. C1 also no hospice or
+// palliative care episode overlapping 2026; B2 no total colectomy, coded or in a note, at any time;
+// G2 no advanced illness diagnosis and no dementia medication (fhir_search has no date on a
+// Condition, and dates a MedicationRequest by its dosage timing, which a stopped order may lack, so
+// neither may be date-filtered). Each lists what policy.ts counts (R27): every code of the kind
+// where a code filter can name it (a dementia medication is matched by ingredient, so none); the
+// category stool tests carry (a laboratory result; procedures, conditions, documents and episodes
+// none); a stool test final, amended or corrected, a procedure completed, a care episode planned,
+// active, on hold or finished (§4: a hospice episode in any of the four, a palliative care episode
+// in all but planned; verifier-W1-probe-T3-clinical-3 F1, clinical-4 N1), a document current or
+// superseded, a medication order in any status (§4: taken in the period or the year before, so a
+// stopped or completed order counts too); a Condition search takes no status.
 const loinc = (cs: string[]) => cs.map((c) => `http://loinc.org|${c}`);
+const sct = (cs: string[]) => cs.map((c) => `http://snomed.info/sct|${c}`);
 const LAB = ['http://terminology.hl7.org/CodeSystem/observation-category|laboratory'];
 const RESULTED = ['final', 'amended', 'corrected'];
-const COLONOSCOPY_DONE: Absence = { type: 'Procedure', from: '2017-01-01', codes: ['http://snomed.info/sct|73761001'], categories: [], statuses: ['completed'] };
-const HOSPICE_IN_PERIOD: Absence = { type: 'EpisodeOfCare', from: '2026-01-01', codes: [], categories: [], statuses: ['planned', 'active', 'onhold', 'finished'] };
+const COLONOSCOPY_DONE: Absence = { type: 'Procedure', from: '2017-01-01', codes: sct(['73761001']), categories: [], statuses: ['completed'] };
+const SIGMOIDOSCOPY_OR_CTC_DONE: Absence = { type: 'Procedure', from: '2022-01-01', codes: sct(['44441009', '418714002']), categories: [], statuses: ['completed'] };
 const FOBT_IN_PERIOD: Absence = { type: 'Observation', from: '2026-01-01', codes: loinc(['2335-8', '29771-3', '57905-2', '58453-2', '80372-6', '27396-1', '12503-9']), categories: LAB, statuses: RESULTED };
 const SDNA_IN_WINDOW: Absence = { type: 'Observation', from: '2024-01-01', codes: loinc(['77354-9', '77353-1']), categories: LAB, statuses: RESULTED };
+const SCREENING = [COLONOSCOPY_DONE, SIGMOIDOSCOPY_OR_CTC_DONE, FOBT_IN_PERIOD, SDNA_IN_WINDOW];
+const HOSPICE_IN_PERIOD: Absence = { type: 'EpisodeOfCare', from: '2026-01-01', codes: [], categories: [], statuses: ['planned', 'active', 'onhold', 'finished'] };
+const TOTAL_COLECTOMY_CODED: Absence = { type: 'Procedure', from: null, codes: sct(['26390003']), categories: [], statuses: ['completed'] };
+const TOTAL_COLECTOMY_NOTE: Absence = { type: 'DocumentReference', from: null, codes: [], categories: [], statuses: ['current', 'superseded'] };
+const ADVANCED_ILLNESS_DX: Absence = { type: 'Condition', from: null, codes: sct(['84114007', '13645005', '185086009', '52448006', '26929004', '433146000', '19943007', '128462008', '363418001']), categories: [], statuses: [] };
+const DEMENTIA_MEDICATION: Absence = { type: 'MedicationRequest', from: null, codes: [], categories: [], statuses: ['active', 'on-hold', 'cancelled', 'completed', 'entered-in-error', 'stopped', 'draft', 'unknown'] };
 
 export const expected = {
   group: ref('Group/grp-t3-okafor-crc'),
   period: { start: '2026-01-01', end: '2026-12-31' },
   items: [
     m('pt-0009', 'Elly Shyla Trantow', 'Trantow', 72, 'excluded', 'frailty_dementia_medication', [ref('Condition/cond-t3-6027'), ref('MedicationRequest/mr-t3-3318')]),
-    m('pt-0011', 'Marilu Blanca Gaona', 'Gaona', 62, 'gap', 'hospice_before_period', [ref('EpisodeOfCare/eoc-t3-3051')], { absence: HOSPICE_IN_PERIOD }),
-    m('pt-0014', 'Santo Rodrick Pagac', 'Pagac', 55, 'gap', 'colonoscopy_not_done', [ref('Appointment/appt-t3-5813')], { absence: COLONOSCOPY_DONE }),
-    m('pt-0018', 'Lance Amado Muller', 'Muller', 53, 'gap', 'sdna_fit_expired', [ref('Observation/obs-t3-7342')], { absence: SDNA_IN_WINDOW }),
-    m('pt-0019', "Harrison O'Keefe", "O'Keefe", 69, 'gap', 'frailty_without_advanced_illness', [ref('MedicationRequest/mr-t3-6604')]),
+    m('pt-0011', 'Marilu Blanca Gaona', 'Gaona', 62, 'gap', 'hospice_before_period', [ref('EpisodeOfCare/eoc-t3-3051')], { absences: [...SCREENING, HOSPICE_IN_PERIOD] }),
+    m('pt-0014', 'Santo Rodrick Pagac', 'Pagac', 55, 'gap', 'colonoscopy_not_done', [ref('Appointment/appt-t3-5813')], { absences: SCREENING }),
+    m('pt-0018', 'Lance Amado Muller', 'Muller', 53, 'gap', 'sdna_fit_expired', [ref('Observation/obs-t3-7342')], { absences: SCREENING }),
+    m('pt-0019', "Harrison O'Keefe", "O'Keefe", 69, 'gap', 'frailty_without_advanced_illness', [ref('MedicationRequest/mr-t3-6604')], { absences: [...SCREENING, ADVANCED_ILLNESS_DX, DEMENTIA_MEDICATION] }),
     m('pt-0020', 'Kelsie Wanetta Rohan', 'Rohan', 52, 'excluded', 'hospice', [ref('EpisodeOfCare/eoc-t3-8215')]),
     m('pt-0021', 'Ángela Andrea Vigil', 'Vigil', 52, 'excluded', 'total_colectomy', [ref('DocumentReference/doc-t3-1856')], { atoms: { [ref('DocumentReference/doc-t3-1856')]: ['total proctocolectomy'] } }),
-    m('pt-0022', 'Tiny Darline Koss', 'Koss', 52, 'gap', 'fobt_expired', [ref('Observation/obs-t3-3906')], { absence: FOBT_IN_PERIOD }),
-    m('pt-0024', 'Delaine Evelyn MacGyver', 'MacGyver', 51, 'gap', 'colonoscopy_not_done', [ref('ServiceRequest/sr-t3-4417')], { absence: COLONOSCOPY_DONE }),
+    m('pt-0022', 'Tiny Darline Koss', 'Koss', 52, 'gap', 'fobt_expired', [ref('Observation/obs-t3-3906')], { absences: SCREENING }),
+    m('pt-0024', 'Delaine Evelyn MacGyver', 'MacGyver', 51, 'gap', 'colonoscopy_not_done', [ref('ServiceRequest/sr-t3-4417')], { absences: SCREENING }),
     m('pt-0034', 'Rickey Morgan Sipes', 'Sipes', 72, 'excluded', 'nursing_home', [ref('Observation/obs-t3-2465')]),
-    m('pt-0035', 'Elvin Laverne Wolff', 'Wolff', 68, 'gap', 'not_nursing_home', [ref('Observation/obs-t3-8852'), ref('DocumentReference/doc-t3-6193'), ref('Encounter/enc-t3-4609')], { evidence: 'any', atoms: { [ref('DocumentReference/doc-t3-6193')]: ['discharged home'] } }),
-    m('pt-0036', 'Nick Jed Bartoletti', 'Bartoletti', 53, 'gap', 'partial_colectomy', [ref('Procedure/proc-t3-6271')]),
+    m('pt-0035', 'Elvin Laverne Wolff', 'Wolff', 68, 'gap', 'not_nursing_home', [ref('Observation/obs-t3-8852'), ref('DocumentReference/doc-t3-6193'), ref('Encounter/enc-t3-4609')], { evidence: 'any', absences: SCREENING, atoms: { [ref('DocumentReference/doc-t3-6193')]: ['discharged home'] } }),
+    m('pt-0036', 'Nick Jed Bartoletti', 'Bartoletti', 53, 'gap', 'partial_colectomy', [ref('Procedure/proc-t3-6271')], { absences: [...SCREENING, TOTAL_COLECTOMY_CODED, TOTAL_COLECTOMY_NOTE] }),
     m('pt-0037', 'Fumiko Kati Pouros', 'Pouros', 35, 'not_in_population', 'age_under_46', ['Patient/pt-0037']),
   ].sort((a, b) => a.patient.localeCompare(b.patient)),
 };

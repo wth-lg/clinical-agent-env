@@ -12,12 +12,15 @@
 # on (expected.ts decisive; the oracle reads each by the route RBC-QM-02 implies: the member's chart
 # by resource type, unfiltered procedures, orders, medications, appointments and documents, the
 # housing status at 66 or older, and the scanned outside record its document list shows) and
-# decided against the stated rule (reasoning), or never asked for them (retrieval). A gap that rests
-# on an absence is read by its trap record or by a complete search of that type covering the
-# window, for the member or clinic-wide, whose filters could not hide a qualifying record: every
-# counted code, a category that holds the kind, every counted status; one page, or pages followed
-# by next_offset to the end (expected.ts absence, rulings R20, R27); the short-rehab member by any
-# one of his housing status, discharge summary or rehab encounter (R21). Note for the W1-P
+# decided against the stated rule (reasoning), or never asked for them (retrieval). A gap is read by
+# complete searches, for the member or clinic-wide, covering the window of every screening kind §3
+# counts and of the exclusion its class turns on (C1 care episodes, B2 total colectomy and his
+# documents, G2 advanced illness and dementia medications), whose filters could not hide a
+# qualifying record: every counted code, a category that holds the kind, every counted status; one
+# page, or pages followed by next_offset to the end (expected.ts absences, rulings R27, R31). Its
+# trap record is a lure, not a review. The short-rehab member also by any one of his housing
+# status, discharge summary or rehab encounter (R21). A member who needs no order or message is
+# read by their decisive records, or fails no_contact_reviewed as retrieval (R32). Note for the W1-P
 # auditors (verifier-W1-probe-T3-2 N2): the absence search reads coded records only. §7 says
 # screening may be recorded only in notes, yet a coded-only review passes the A, C1 and D items.
 # policy.ts derives screening from coded records only (a note counts only for a total colectomy),
@@ -66,6 +69,7 @@ traps = [
   "fit_collected_prior_year", "sdna_collected_before_window",
   "frailty_dementia_medication", "dementia_medication_stopped", "nursing_home", "short_rehab_stay", "not_in_population", "outside_panel",
   "duplicate_fit_order", "fit_after_period", "outreach_channel", "outreach_without_order", "contact_not_needed", "order_before_review",
+  "no_contact_unreviewed",
 ]
 
 # Each judge item reads one row of the final table against a stated status and reason.

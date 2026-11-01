@@ -16,8 +16,9 @@ export const GAPS: Label[] = ['A1', 'A2', 'B2', 'C1', 'D1', 'D2', 'G2', 'H2'];
 // The members who need neither an order nor a message.
 export const NO_CONTACT: Label[] = ['B1', 'C2', 'G1', 'H1', 'FILLER'];
 
-// The stool tests RBC-QM-02 §3 counts.
-export const STOOL_CODES = '2335-8,29771-3,57905-2,58453-2,77354-9,77353-1';
+// The stool tests RBC-QM-02 §3 counts: every FOBT and FIT code and both sDNA-FIT codes, so the
+// search hides none and shows each stool kind absent (ruling R27, R31).
+export const STOOL_CODES = '2335-8,29771-3,57905-2,58453-2,80372-6,27396-1,12503-9,77354-9,77353-1';
 
 export const policy: ScriptCall = { name: 'read_policy', input: { policy_id: 'RBC-QM-02' } };
 export const groups: ScriptCall = { name: 'fhir_search', input: { resource_type: 'Group' } };
