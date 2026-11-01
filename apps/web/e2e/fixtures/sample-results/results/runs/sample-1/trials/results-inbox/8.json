@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:results-inbox:8",
   "task_id": "results-inbox",
-  "task_version": "ced74096de7659b32d7db941e17ac9dd849dfa296ca3434229b672849f49b92a",
-  "env_version": "ef74a21bfd2ec0281c0986c8cec1fbc0d1c43ea9b9f54fc7267862aa9100e1ed",
-  "grader_task_version": "0ace211b4e2b58c0da768e7c2f8e9254f553fe8ff88dd7184ff4f32b398dc7af",
-  "fixture_hash": "9bf6c9f260570995fe34c97c067fe21f4f01c1047698c7ae5eb2d8967c7934da",
+  "task_version": "52bc348171516f69c301be629347c7eec4eaac6f56da6b658a427e3918548778",
+  "env_version": "3036caece7bfd5f761adf96186fe736aaf69d82f61ed8b8fe2493e7f381b29f3",
+  "grader_task_version": "d79d8fdf1ad885333c9c6bfa9b84f7e57e2c9a280222efa6648dc8115dd83ac9",
+  "fixture_hash": "8c60d82800eeed033417c012b42c1cc46ddcd45d10094166e6b2d111a10b3796",
   "state_hash": {
-    "initial": "9bf6c9f260570995fe34c97c067fe21f4f01c1047698c7ae5eb2d8967c7934da",
-    "final": "4dc83aacf5f5c248e4c5fa970ef8f20c5797f030591bdfcc67c9a9791ac84fee",
-    "replay_final": "4dc83aacf5f5c248e4c5fa970ef8f20c5797f030591bdfcc67c9a9791ac84fee"
+    "initial": "8c60d82800eeed033417c012b42c1cc46ddcd45d10094166e6b2d111a10b3796",
+    "final": "cf1e4e990aaddb5604b5ae6864521b94857af6135ca78149cebfda98e9d2172e",
+    "replay_final": "cf1e4e990aaddb5604b5ae6864521b94857af6135ca78149cebfda98e9d2172e"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T17:06:01.000Z",
+  "started": "2026-10-23T17:05:56.000Z",
   "turns": 29,
   "tool_calls": 75,
   "tool_errors": {
@@ -43,7 +43,7 @@
   "summary": "Results inbox cleared: all 13 items completed with their follow-up orders, tasks, messages and notes linked.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T17:11:13.000Z",
+  "ended": "2026-10-23T17:11:08.000Z",
   "judge_cost_usd": 0,
   "grader_version": "15",
   "outcome": "FAIL",
@@ -1236,6 +1236,7 @@
       "met": true,
       "evidence": {
         "held": [],
+        "reduced": [],
         "live_ace_or_arb": [
           "MedicationRequest/mr-00143"
         ],
@@ -1548,13 +1549,11 @@
       {
         "id": "DiagnosticReport/dr-00153",
         "first_exposed_step": 6,
-        "first_shown_step": 6,
         "first_seen_step": 6
       },
       {
         "id": "DiagnosticReport/dr-00148",
         "first_exposed_step": null,
-        "first_shown_step": null,
         "first_seen_step": null
       }
     ],
@@ -1567,13 +1566,11 @@
           {
             "id": "DiagnosticReport/dr-00153",
             "first_exposed_step": 6,
-            "first_shown_step": 6,
             "first_seen_step": 6
           },
           {
             "id": "DiagnosticReport/dr-00148",
             "first_exposed_step": null,
-            "first_shown_step": null,
             "first_seen_step": null
           }
         ]

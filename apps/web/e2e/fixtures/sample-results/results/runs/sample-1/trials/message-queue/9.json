@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:message-queue:9",
   "task_id": "message-queue",
-  "task_version": "09831a2b74503227d33a19fb5e698b276fec4b33d7ae628bb0ee3fef741d631e",
-  "env_version": "555d97cba3d56bcc5dc9705fdc5f2845a1bc0f0f7cb16264e8c870c14669d0de",
-  "grader_task_version": "2a84393129e229a119d1b424e025a4a9973bf0adbe6cf1a3f986b525097aeece",
-  "fixture_hash": "9bf6c9f260570995fe34c97c067fe21f4f01c1047698c7ae5eb2d8967c7934da",
+  "task_version": "af4fd62db252d4bb9c4837f78f5bb8ed9ed85c012daad18095f214273917364c",
+  "env_version": "4c7cb483466b24ed8bfccb111f26298e24b42240952609f13ad01168a589ff6c",
+  "grader_task_version": "44a2b354841cf977d2d19c4327b461de9e73b7a82c710d0fa5c31c2d2efecc7d",
+  "fixture_hash": "8c60d82800eeed033417c012b42c1cc46ddcd45d10094166e6b2d111a10b3796",
   "state_hash": {
-    "initial": "9bf6c9f260570995fe34c97c067fe21f4f01c1047698c7ae5eb2d8967c7934da",
-    "final": "8d678361445cd6114a343ec3577a1a7d06fe58a5cd8794220655a64408dcbba7",
-    "replay_final": "8d678361445cd6114a343ec3577a1a7d06fe58a5cd8794220655a64408dcbba7"
+    "initial": "8c60d82800eeed033417c012b42c1cc46ddcd45d10094166e6b2d111a10b3796",
+    "final": "bd89a68cb3e11d17245a0c6e59fb19aaa50272c99b0382748f88c31c211dcc00",
+    "replay_final": "bd89a68cb3e11d17245a0c6e59fb19aaa50272c99b0382748f88c31c211dcc00"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T15:04:12.000Z",
+  "started": "2026-10-23T15:04:07.000Z",
   "turns": 19,
   "tool_calls": 82,
   "tool_errors": {
@@ -43,7 +43,7 @@
   "summary": "Cleared the 13 messages: Hayes and Odum lisinopril renewed with a repeat BMP (hemolyzed potassium), Odum amlodipine renewed; Park and Webb lisinopril 30 days with a BMP; Park metformin held (amended eGFR 39) and Brooks lisinopril held (creatinine up 38% after the dose increase), each with a task to Dr. Okafor; Brooks metformin 30 days with an HbA1c; Price lisinopril and metformin renewed; Webb metformin renewed; the two repeat requests answered with their first.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T15:08:51.000Z",
+  "ended": "2026-10-23T15:08:46.000Z",
   "judge_cost_usd": 0,
   "grader_version": "15",
   "outcome": "GRADER_ERROR",
@@ -964,7 +964,7 @@
   "regrades": [
     {
       "grader_version": "15",
-      "grader_task_version": "2a84393129e229a119d1b424e025a4a9973bf0adbe6cf1a3f986b525097aeece",
+      "grader_task_version": "44a2b354841cf977d2d19c4327b461de9e73b7a82c710d0fa5c31c2d2efecc7d",
       "outcome": "FAIL",
       "score": 1,
       "valid": true,

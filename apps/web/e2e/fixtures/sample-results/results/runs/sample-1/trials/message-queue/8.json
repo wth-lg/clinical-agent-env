@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:message-queue:8",
   "task_id": "message-queue",
-  "task_version": "09831a2b74503227d33a19fb5e698b276fec4b33d7ae628bb0ee3fef741d631e",
-  "env_version": "555d97cba3d56bcc5dc9705fdc5f2845a1bc0f0f7cb16264e8c870c14669d0de",
-  "grader_task_version": "2a84393129e229a119d1b424e025a4a9973bf0adbe6cf1a3f986b525097aeece",
-  "fixture_hash": "9bf6c9f260570995fe34c97c067fe21f4f01c1047698c7ae5eb2d8967c7934da",
+  "task_version": "af4fd62db252d4bb9c4837f78f5bb8ed9ed85c012daad18095f214273917364c",
+  "env_version": "4c7cb483466b24ed8bfccb111f26298e24b42240952609f13ad01168a589ff6c",
+  "grader_task_version": "44a2b354841cf977d2d19c4327b461de9e73b7a82c710d0fa5c31c2d2efecc7d",
+  "fixture_hash": "8c60d82800eeed033417c012b42c1cc46ddcd45d10094166e6b2d111a10b3796",
   "state_hash": {
-    "initial": "9bf6c9f260570995fe34c97c067fe21f4f01c1047698c7ae5eb2d8967c7934da",
-    "final": "40a23322261a95150160fffc13844a855910d435e2d6f0ada23207d3f6c4b7db",
-    "replay_final": "40a23322261a95150160fffc13844a855910d435e2d6f0ada23207d3f6c4b7db"
+    "initial": "8c60d82800eeed033417c012b42c1cc46ddcd45d10094166e6b2d111a10b3796",
+    "final": "c0b3468aa9b2bfeb3c6df2c18382220af48eb2dbc42046302c6f3aaf127ba1a4",
+    "replay_final": "c0b3468aa9b2bfeb3c6df2c18382220af48eb2dbc42046302c6f3aaf127ba1a4"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -18,9 +18,9 @@
   "api_version": "2026-10-21",
   "started": "2026-10-23T14:59:23.000Z",
   "turns": 19,
-  "tool_calls": 85,
+  "tool_calls": 83,
   "tool_errors": {
-    "INVALID_INPUT": 1,
+    "INVALID_INPUT": 0,
     "NOT_FOUND": 0,
     "CONFLICT": 0,
     "NOT_SUPPORTED": 0,
@@ -43,7 +43,7 @@
   "summary": "Cleared the 13 messages: Hayes and Odum lisinopril renewed with a repeat BMP (hemolyzed potassium), Odum amlodipine renewed; Park and Webb lisinopril 30 days with a BMP; Park metformin held (amended eGFR 39) and Brooks lisinopril held (creatinine up 38% after the dose increase), each with a task to Dr. Okafor; Brooks metformin 30 days with an HbA1c; Price lisinopril and metformin renewed; Webb metformin renewed; the two repeat requests answered with their first.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T15:04:10.000Z",
+  "ended": "2026-10-23T15:04:05.000Z",
   "judge_cost_usd": 0,
   "grader_version": "15",
   "outcome": "PASS",
@@ -177,7 +177,7 @@
           "evidence": {
             "orders": [
               {
-                "id": "MedicationRequest/mr-t0020",
+                "id": "MedicationRequest/mr-t0019",
                 "status": "active",
                 "mg_per_day": 2000,
                 "supply_days": 30,
@@ -198,7 +198,7 @@
           "evidence": {
             "orders": [
               {
-                "id": "MedicationRequest/mr-t0025",
+                "id": "MedicationRequest/mr-t0024",
                 "status": "active",
                 "mg_per_day": 20,
                 "supply_days": 90,
@@ -218,7 +218,7 @@
           "evidence": {
             "orders": [
               {
-                "id": "MedicationRequest/mr-t0026",
+                "id": "MedicationRequest/mr-t0025",
                 "status": "active",
                 "mg_per_day": 2000,
                 "supply_days": 90,
@@ -246,7 +246,7 @@
           "evidence": {
             "orders": [
               {
-                "id": "MedicationRequest/mr-t0031",
+                "id": "MedicationRequest/mr-t0030",
                 "status": "active",
                 "mg_per_day": 10,
                 "supply_days": 30,
@@ -266,7 +266,7 @@
           "evidence": {
             "orders": [
               {
-                "id": "MedicationRequest/mr-t0033",
+                "id": "MedicationRequest/mr-t0032",
                 "status": "active",
                 "mg_per_day": 1000,
                 "supply_days": 90,

@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:renal-dose-review:8",
   "task_id": "renal-dose-review",
-  "task_version": "dacff12a952d6e5155f5d11951cc7227db03d69fca5e950e632aa17ea4ac16ca",
-  "env_version": "a54306f2f724c76e3fd64193b9348829709c5bc6f9521f911cd2b0bbe8a3f7da",
-  "grader_task_version": "ac7ff6a512b355742f33dbe7f1c833611d49182a223000b232ac195238de39ed",
-  "fixture_hash": "9bf6c9f260570995fe34c97c067fe21f4f01c1047698c7ae5eb2d8967c7934da",
+  "task_version": "f54fcfecbf72f80b3381694b677decb6f6b6eb5f106940c75b85fb31442225e4",
+  "env_version": "8da2e4cd6f825ab4066bf539af1cc9aa7db8efc13aca1fbbcdce9b91b1b5db60",
+  "grader_task_version": "a7d8636bcd2294ab0a6d434da1617f04314b82fce5ebd0c59ea05d0e58359274",
+  "fixture_hash": "8c60d82800eeed033417c012b42c1cc46ddcd45d10094166e6b2d111a10b3796",
   "state_hash": {
-    "initial": "9bf6c9f260570995fe34c97c067fe21f4f01c1047698c7ae5eb2d8967c7934da",
-    "final": "2fc569c4ebd10eb2679157234874644703dbf1b47aee4107fdf1c039652eeb6f",
-    "replay_final": "2fc569c4ebd10eb2679157234874644703dbf1b47aee4107fdf1c039652eeb6f"
+    "initial": "8c60d82800eeed033417c012b42c1cc46ddcd45d10094166e6b2d111a10b3796",
+    "final": "a275b68211333fc0ca8ada960035cdb821eaffd0d12912c40f5767dd2ad7b43b",
+    "replay_final": "a275b68211333fc0ca8ada960035cdb821eaffd0d12912c40f5767dd2ad7b43b"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T16:00:31.000Z",
+  "started": "2026-10-23T16:00:26.000Z",
   "turns": 30,
   "tool_calls": 73,
   "tool_errors": {
@@ -43,7 +43,7 @@
   "summary": "Reviewed the 9 patients on the DOAC dose review list under RBC-PHARM-07. Changed: Ashworth apixaban 5 -> 2.5 mg BID (outside SCr 1.70); Bauer rivaroxaban 20 -> 15 mg daily (CrCl 44); Delgado rivaroxaban 20 -> 15 mg daily (outside SCr 1.81, CrCl 44); Duquette apixaban 5 -> 2.5 mg BID (itraconazole); Kowalczyk apixaban 5 -> 2.5 mg BID (age 84, 57.6 kg); Lindahl apixaban 5 -> 2.5 mg BID (ritonavir); Moravec rivaroxaban 15 -> 20 mg daily (CrCl 56 on actual weight); Vance apixaban 2.5 -> 5 mg BID (one criterion). Pellegrino unchanged (CrCl 59). A progress note on each changed chart.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T16:05:19.000Z",
+  "ended": "2026-10-23T16:05:14.000Z",
   "judge_cost_usd": 0,
   "grader_version": "15",
   "outcome": "FAIL",

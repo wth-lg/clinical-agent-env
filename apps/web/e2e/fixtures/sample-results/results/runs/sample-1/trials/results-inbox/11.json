@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:results-inbox:11",
   "task_id": "results-inbox",
-  "task_version": "ced74096de7659b32d7db941e17ac9dd849dfa296ca3434229b672849f49b92a",
-  "env_version": "ef74a21bfd2ec0281c0986c8cec1fbc0d1c43ea9b9f54fc7267862aa9100e1ed",
-  "grader_task_version": "0ace211b4e2b58c0da768e7c2f8e9254f553fe8ff88dd7184ff4f32b398dc7af",
-  "fixture_hash": "9bf6c9f260570995fe34c97c067fe21f4f01c1047698c7ae5eb2d8967c7934da",
+  "task_version": "52bc348171516f69c301be629347c7eec4eaac6f56da6b658a427e3918548778",
+  "env_version": "3036caece7bfd5f761adf96186fe736aaf69d82f61ed8b8fe2493e7f381b29f3",
+  "grader_task_version": "d79d8fdf1ad885333c9c6bfa9b84f7e57e2c9a280222efa6648dc8115dd83ac9",
+  "fixture_hash": "8c60d82800eeed033417c012b42c1cc46ddcd45d10094166e6b2d111a10b3796",
   "state_hash": {
-    "initial": "9bf6c9f260570995fe34c97c067fe21f4f01c1047698c7ae5eb2d8967c7934da",
-    "final": "a0ab0b9f3d843ce74f6ef6ee17bec29690be2896a8dfb96dec35d507773ea17e",
-    "replay_final": "a0ab0b9f3d843ce74f6ef6ee17bec29690be2896a8dfb96dec35d507773ea17e"
+    "initial": "8c60d82800eeed033417c012b42c1cc46ddcd45d10094166e6b2d111a10b3796",
+    "final": "5c812dc4f02742bff6a227ba736ba068451f4e0a24852df60532d11132d1bebf",
+    "replay_final": "5c812dc4f02742bff6a227ba736ba068451f4e0a24852df60532d11132d1bebf"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T17:21:54.000Z",
+  "started": "2026-10-23T17:21:49.000Z",
   "turns": 29,
   "tool_calls": 78,
   "tool_errors": {
@@ -43,7 +43,7 @@
   "summary": "Results inbox cleared: all 13 items completed with their follow-up orders, tasks, messages and notes linked.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T17:27:13.000Z",
+  "ended": "2026-10-23T17:27:08.000Z",
   "judge_cost_usd": 0,
   "grader_version": "15",
   "outcome": "FAIL",
@@ -1184,6 +1184,7 @@
       "met": true,
       "evidence": {
         "held": [],
+        "reduced": [],
         "live_ace_or_arb": [
           "MedicationRequest/mr-00143"
         ],
