@@ -94,12 +94,18 @@ function notesOf(input: unknown, content: unknown): StepNotes | undefined {
   return out;
 }
 
-// The calls that ran, in order, numbered from 1.
+// The calls that ran, in order, numbered from 1; an env_event adds to its call's arrivals.
 export function stepsOf(events: readonly TrialEvent[]): Step[] {
   const steps: Step[] = [];
   const inputs = new Map<string, unknown>();
+  const byCall = new Map<string, { arrivals?: Array<{ spec: string; keys: readonly string[] }> }>();
   for (const e of events) {
     if (e.type === 'tool_call') inputs.set(e.tool_use_id, e.input);
+    if (e.type === 'env_event') {
+      const at = byCall.get(e.tool_use_id);
+      if (at !== undefined) (at.arrivals ??= []).push({ spec: e.spec, keys: [...e.keys] });
+      continue;
+    }
     if (e.type !== 'tool_result' || !e.executed) continue;
     const search = e.name === 'fhir_search' && !e.is_error && inputs.has(e.tool_use_id) ? searchOf(inputs.get(e.tool_use_id), e.content) : undefined;
     const notes = e.name === 'search_notes' && !e.is_error && inputs.has(e.tool_use_id) ? notesOf(inputs.get(e.tool_use_id), e.content) : undefined;
@@ -117,8 +123,27 @@ export function stepsOf(events: readonly TrialEvent[]): Step[] {
       ...(search ? { search } : {}),
       ...(notes ? { notes } : {}),
     });
+    byCall.set(e.tool_use_id, steps.at(-1) as unknown as { arrivals?: Array<{ spec: string; keys: readonly string[] }> });
   }
   return steps;
+}
+
+// The turn of the trial's last response, 0 when none.
+export function lastTurn(events: readonly TrialEvent[]): number {
+  let turn = 0;
+  for (const e of events) if (e.type === 'response' && e.turn > turn) turn = e.turn;
+  return turn;
+}
+
+// Whether a sorted fhir_search page passed a window's edge (R35, R36): newest first, its earliest
+// row is before the window opens; oldest first, its latest is after it closes. Later pages of the
+// run sort further out (Step.search.span), so a run from offset 0 that reaches it reviewed the
+// window. Only for a point date sortStart reads, not a period (an EpisodeOfCare). No sort: false.
+export function passesWindow(s: StepSearch, opens: number, closes: number): boolean {
+  if (s.span === undefined) return false;
+  if (s.sort === '-date') return s.span[0] < opens;
+  if (s.sort === 'date') return s.span[1] > closes;
+  return false;
 }
 
 // Whether <Type>/<id> names `id`, given bare or typed.

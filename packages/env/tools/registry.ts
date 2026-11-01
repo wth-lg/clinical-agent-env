@@ -46,6 +46,7 @@
 // changed name, description, input schema, result payload, error code or error text, or a
 // changed validation rule in this file or under tools/ bumps TOOLS_VERSION; a refactor that
 // changes none of these does not.
+import { deliver } from '../events.ts';
 import { RESOURCE_TYPES } from '../world.ts';
 import { ToolError, type ErrorBody } from './errors.ts';
 
@@ -62,7 +63,10 @@ import { ToolError, type ErrorBody } from './errors.ts';
 // and owner (Type/id or a bare id, as update_inbox_item's new_owner) lists another owner's.
 // 7 (builder-189 leak cleanup): read_policy no longer returns a policy's source, on a single read
 // or in the list.
-export const TOOLS_VERSION = '7';
+// 8 (PW4-E1 stage 1): mid-trial events. After a successful call, an active event spec whose trigger
+// holds puts its resources and an inbox Task into the store (packages/env/events.ts), and finish
+// answers CONFLICT when an event fired in the same model turn. No definition changed.
+export const TOOLS_VERSION = '8';
 
 export type PropertySchema =
   | { type: 'string'; description: string; enum?: readonly string[]; minLength?: number; maxLength?: number; pattern?: string }
@@ -283,7 +287,7 @@ export function exposure(payload: unknown, tool?: string): Pick<ToolResult, 'exp
 const failure = (e: ToolError): ToolResult => ({ is_error: true, content: e.body() satisfies ErrorBody, exposed_ids: [], referenced_ids: [] });
 
 // Runs one tool call. A ToolError becomes an error result; any other exception propagates for
-// the caller to record as INTERNAL (see errors.ts).
+// the caller to record as INTERNAL (see errors.ts), an arrival the store refuses included.
 export function callTool<C>(tools: readonly Tool<C>[], name: string, input: unknown, ctx: C): ToolResult {
   const tool = tools.find((t) => t.name === name);
   if (!tool) return failure(new ToolError('NOT_SUPPORTED', `unknown tool '${name}'; tools: ${tools.map((t) => t.name).join(', ')}`));
@@ -305,5 +309,9 @@ export function callTool<C>(tools: readonly Tool<C>[], name: string, input: unkn
     const message = `the result is about ${approxTokens(json)} tokens, over the ${RESULT_TOKEN_CAP}-token cap; ask for less (a smaller count, narrower filters, or search_notes for passages of a long note)`;
     return failure(new ToolError('NOT_SUPPORTED', message));
   }
-  return { is_error: false, content: payload, ...exposure(payload, name), ...(written ? { written_ids: written } : {}) };
+  const result: ToolResult = { is_error: false, content: payload, ...exposure(payload, name), ...(written ? { written_ids: written } : {}) };
+  // The one post-call hook: mid-trial events (packages/env/events.ts). A no-op unless ctx is a
+  // write context with active event specs; what fires is never part of this result.
+  deliver(ctx, result);
+  return result;
 }

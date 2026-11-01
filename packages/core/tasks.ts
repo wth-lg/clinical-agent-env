@@ -19,12 +19,17 @@
 //   effort = "medium"               # the judge's effort: low | medium | high, default medium;
 //                                   # calibrated per task by the pilot
 // instruction.md is the user turn the trial starts with.
+// events.ts (optional) holds the task's mid-trial event specs, `SPECS` and the `ACTIVE` ids
+// (packages/env/events.ts). It is code, so each adapter imports it as a module (Node by its file,
+// the browser from its bundle) and hands it over with the files; parseTask checks it and keeps the
+// active specs as Task.events. run(), replay, gradeTrajectory and replayState read the specs from
+// the task and from nowhere else, so no caller can run or regrade a trial without them.
 //
 // A task's versions (taskVersions) split what the agent works in from what grades it:
 //   env_version          sha256(the env files + the world's state hash + TOOLS_VERSION): every
 //                        file that shapes what the agent sees or the state it starts from
 //                        (isEnvFile: task.toml without its GRADER_TABLES, instruction.md,
-//                        policy/**, overlay.ts and its id registry ids.ts), the world, and the
+//                        policy/**, overlay.ts and its id registry ids.ts, events.ts), the world, and the
 //                        tool code
 //                        (packages/env/tools/registry.ts TOOLS_VERSION);
 //   grader_task_version  sha256(every other file of the task + GRADER_VERSION): task.toml's
@@ -39,6 +44,7 @@
 // regrades a run instead of discarding it; cost projections read env_version
 // (packages/core/cost.ts) and the freeze reads task_version.
 import { parse } from 'smol-toml';
+import { activeSpecs, type EventSpec } from '../env/events.ts';
 import { CATALOG_KINDS, type CatalogEntry, type Policy } from '../env/tools/read/context.ts';
 import { TOOLS_VERSION } from '../env/tools/registry.ts';
 import { TOOLS } from '../env/tools/write/index.ts';
@@ -54,6 +60,14 @@ export const DEFAULT_JUDGE_EFFORT: JudgeEffort = 'medium';
 export interface TaskFiles {
   id: string;
   files: Readonly<Record<string, string>>;
+  // The events.ts module, imported by the adapter; absent when the task has no events.ts.
+  events?: EventsModule;
+}
+
+// What a task's events.ts exports.
+export interface EventsModule {
+  SPECS: readonly EventSpec[];
+  ACTIVE: readonly string[];
 }
 
 export interface Task {
@@ -72,6 +86,8 @@ export interface Task {
   // The same over the env files (isEnvFile) and over the rest, the grader-side files.
   envFilesHash: string;
   graderFilesHash: string;
+  // The active mid-trial event specs (events.ts ACTIVE, in SPECS order); [] without events.ts.
+  events: readonly EventSpec[];
 }
 
 // The task.toml tables only grading reads: the judge's effort and the matrix's declarations
@@ -87,7 +103,10 @@ function stableJson(v: unknown): string {
 
 // The files that shape what the agent sees or the state it starts from; every other file of a
 // task is grader-side. task.toml is both: its GRADER_TABLES are grader-side.
-export const isEnvFile = (path: string): boolean => path === 'task.toml' || path === 'instruction.md' || path === 'overlay.ts' || path === 'ids.ts' || path.startsWith('policy/');
+// events.ts holds the task's mid-trial event specs and its ACTIVE list (packages/env/events.ts):
+// what arrives is what the agent sees, so a change to it moves env_version.
+export const isEnvFile = (path: string): boolean =>
+  path === 'task.toml' || path === 'instruction.md' || path === 'overlay.ts' || path === 'ids.ts' || path === 'events.ts' || path.startsWith('policy/');
 
 export interface TaskVersions {
   env_version: string;
@@ -125,8 +144,21 @@ function field(where: string, table: Record<string, unknown>, key: string, kind:
 }
 
 // Parses and checks one task directory. Throws naming the directory and the field.
-export async function parseTask({ id, files }: TaskFiles): Promise<Task> {
+export async function parseTask({ id, files, events: module }: TaskFiles): Promise<Task> {
   const where = `tasks/${id}`;
+  // The module and the file's text come together, so the text the versions hash is the code that runs.
+  if ((module === undefined) !== (files['events.ts'] === undefined)) {
+    throw new Error(`${where}: ${module === undefined ? 'events.ts was read as text but not imported as a module' : 'an events module was given, and the task has no events.ts'}`);
+  }
+  let events: EventSpec[] = [];
+  if (module !== undefined) {
+    if (!Array.isArray(module.SPECS) || !Array.isArray(module.ACTIVE)) throw new Error(`${where}/events.ts: must export SPECS and ACTIVE arrays`);
+    try {
+      events = activeSpecs(module);
+    } catch (e) {
+      throw new Error(`${where}/events.ts: ${(e as Error).message}`, { cause: e });
+    }
+  }
   const raw = files['task.toml'];
   if (raw === undefined) throw new Error(`${where}: no task.toml`);
   const instruction = files['instruction.md'];
@@ -193,6 +225,7 @@ export async function parseTask({ id, files }: TaskFiles): Promise<Task> {
     filesHash,
     envFilesHash,
     graderFilesHash,
+    events,
   };
 }
 

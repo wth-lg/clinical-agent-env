@@ -10,7 +10,7 @@ import { describe, expect, it } from 'vitest';
 import { runCases, selectCases, type ReplayDiff } from '../../packages/grader/matrix/matrix.ts';
 import { tempDir } from '../../scripts/test/helpers.ts';
 import { taskSource } from '../../packages/core/tasks.ts';
-import { nodeTaskDirs, TASKS_DIR } from '../adapters/tasks-node.ts';
+import { nodeTaskDirs, nodeTaskEvents, TASKS_DIR } from '../adapters/tasks-node.ts';
 import { loadMatrixTask, matrixEnv } from '../matrix.ts';
 
 const TOY = fileURLToPath(new URL('../../tasks/_toy', import.meta.url));
@@ -42,7 +42,7 @@ describe('matrix replay determinism', () => {
 
   it('reads tasks/ once when the task and the env share a source', async () => {
     let reads = 0;
-    const tasks = taskSource(async () => (reads++, nodeTaskDirs(TASKS_DIR)), { testMode: true });
+    const tasks = taskSource(async () => (reads++, nodeTaskEvents(nodeTaskDirs(TASKS_DIR))), { testMode: true });
     const task = await loadMatrixTask('_toy', TASKS_DIR, tasks);
     const env = matrixEnv(TASKS_DIR, tasks);
     const [r] = await runCases(env, task, selectCases(task, ['oracle']), { trials: 2, regrades: 1, isolation: false });

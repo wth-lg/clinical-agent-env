@@ -1,10 +1,13 @@
 // The Node TaskSource: every tasks/*/task.toml under the repo (or `root`), read with fs. Test
 // mode, in which `all` also returns _-prefixed directories, is on under vitest unless the
-// caller says otherwise.
+// caller says otherwise. A task's events.ts is also imported as a module (nodeTaskEvents), keyed by
+// a hash of the text read, so a server that builds a TaskSource per request (apps/runner) runs the
+// events.ts it hashed, never a stale import of an earlier text.
+import { createHash } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { taskSource, type TaskFiles, type TaskSource } from '../../packages/core/tasks.ts';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { taskSource, type EventsModule, type TaskFiles, type TaskSource } from '../../packages/core/tasks.ts';
 
 export const TASKS_DIR = fileURLToPath(new URL('../../tasks/', import.meta.url));
 
@@ -27,7 +30,18 @@ export function nodeTaskDirs(root: string = TASKS_DIR): TaskFiles[] {
     });
 }
 
+// The task directories with each events.ts imported as the module the read text is.
+export async function nodeTaskEvents(dirs: readonly TaskFiles[], root: string = TASKS_DIR): Promise<TaskFiles[]> {
+  return Promise.all(dirs.map(async (d) => {
+    const text = d.files['events.ts'];
+    if (text === undefined) return d;
+    const url = `${pathToFileURL(join(root, d.id, 'events.ts')).href}?sha256=${createHash('sha256').update(text).digest('hex')}`;
+    const events = (await import(url)) as EventsModule;
+    return { ...d, events };
+  }));
+}
+
 export function nodeTaskSource(opts: { root?: string; testMode?: boolean } = {}): TaskSource {
   const root = opts.root ?? TASKS_DIR;
-  return taskSource(async () => nodeTaskDirs(root), { testMode: opts.testMode ?? isTestMode() });
+  return taskSource(async () => nodeTaskEvents(nodeTaskDirs(root), root), { testMode: opts.testMode ?? isTestMode() });
 }

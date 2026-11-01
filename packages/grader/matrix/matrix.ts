@@ -49,6 +49,17 @@
 //                     one is given (cli/matrix.ts reads it from results/tasks-v1.json, which
 //                     P21's freeze writes), and a pinned hash fails when the oracle case does not
 //                     run; without one the hash is printed, not checked
+//   events            (a task with active mid-trial event specs, MatrixTask.events) checked
+//                     before any case runs, like loses: every active spec is graded by the event
+//                     gates (packages/grader/events.ts: event_delivered, had_turn, event_seen, and
+//                     amended for an amend event or kept for a lure), and has the near misses
+//                     REQUIRED_EVENT_MUTANTS names, each mutant declaring the kind's gate in fails
+//                     and its item with the kind's label; every declared event mutant names an
+//                     active spec. A run event mutant must fail its spec (the failed item names it)
+//                     on the kind's gate. The arrived split: in every case, no arrival key is in
+//                     the written_ids of the call that fired it or of an earlier call, and the diff
+//                     of the replayed states lists each arrival in arrived, never in created, and in
+//                     updated only when a later call wrote it (diff.ts, C3)
 //   decisive reachability  every gate check's decisive ids were exposed or referenced to a
 //                     passing oracle or alternative (unreachedDecisive), checked when the oracle and
 //                     every alternative ran and passed: an id no correct solution reaches is not one
@@ -62,18 +73,20 @@
 import { MODEL, type CallResult, type ContentBlock, type MessageParam } from '../../core/anthropic.ts';
 import type { TrialEvent } from '../../core/events.ts';
 import type { TrialClient } from '../../core/loop.ts';
-import { gradeTrajectory, run, type TrialRecord } from '../../core/run.ts';
+import { gradeTrajectory, replayState, run, type TrialRecord } from '../../core/run.ts';
 import type { TaskSource } from '../../core/tasks.ts';
 import { stripTimestamps, toJsonl } from '../../core/trajectory.ts';
 import { loadStore, type FixtureSource } from '../../env/fixture-source.ts';
+import { AMEND_CLASSES } from '../../env/events.ts';
 import { canonicalJson } from '../../env/hash.ts';
 import type { indexDefinitions } from '../../env/validate.ts';
 import type { Taxonomy } from '../attribution.ts';
+import { diff } from '../diff.ts';
 import { sameId, stepsOf } from '../exposure.ts';
 import type { Check, Json, RubricCheck, RubricCtx } from '../check.ts';
 import type { Grade } from '../grade.ts';
 import { JudgeCacheMiss, type Judge } from '../judge.ts';
-import type { Alternative, Declares, MatrixTask, Mutant, Script, WorldView } from './types.ts';
+import { EVENT_MUTANTS, REQUIRED_EVENT_MUTANTS, type Alternative, type Declares, type MatrixTask, type Mutant, type Script, type WorldView } from './types.ts';
 
 export const MIN_ALTERNATIVES = 3;
 export const MIN_MUTANTS = 4;
@@ -315,6 +328,12 @@ function verdict(c: Case, run: CaseRun, grade: Grade, misses: Miss[]): Pick<Case
   if (c.mutant && !sameSet(failed_gates, c.mutant.fails)) problems.push(`failed [${failed_gates.join(', ')}], declared [${c.mutant.fails.join(', ')}]`);
   if (c.attribution !== undefined && grade.attribution?.auto !== c.attribution) problems.push(`attribution ${grade.attribution?.auto ?? 'none'}, declared ${c.attribution}`);
   if (c.mutant?.items !== undefined && !sameItems(grade, c.mutant.items)) problems.push(`items ${itemsText(itemLabels(grade))}, declared ${itemsText(c.mutant.items)}`);
+  const ev = c.mutant?.event;
+  if (ev !== undefined && grade.valid) {
+    const gate = EVENT_MUTANTS[ev.kind]?.gate;
+    const named = grade.checks.find((r) => r.id === gate)?.items?.some((i) => !i.met && i.event === ev.spec) === true;
+    if (!named) problems.push(`event mutant ${ev.kind} of ${ev.spec}: ${gate} does not fail that event`);
+  }
   if (c.loses && grade.valid) {
     for (const id of c.loses) if (!lost_items.includes(id)) problems.push(`declares it loses rubric item ${kept(grade, id, misses)}`);
     for (const id of lost_items) if (!c.loses.includes(id)) problems.push(`loses rubric item ${id} (${pointsOf(grade, id)}${pointsOf(grade, id).startsWith('-') ? ', a penalty that applied' : ''}), not declared`);
@@ -383,6 +402,62 @@ export function agentDeclarations(task: Pick<MatrixTask, 'agents'>): string[] {
       : task.agents[k as (typeof AGENT_KINDS)[number]] === undefined ? [`tests/agents.ts declares attribution for ${k}, which the task does not have`] : []);
 }
 
+// Each problem with a task's mid-trial events, which runMatrix checks before any case runs (the
+// header's `events` rule). A task with no active specs has none.
+export function eventDeclarations(task: Pick<MatrixTask, 'events' | 'checks' | 'mutants'>): string[] {
+  const specs = task.events ?? [];
+  const problems: string[] = [];
+  const graded = (gate: string, spec: string) => task.checks.some((c) => c.kind === 'gate' && c.id === gate && (c.event_specs ?? []).includes(spec));
+  for (const s of specs) {
+    const amend = AMEND_CLASSES.has(s.class);
+    for (const gate of ['event_delivered', 'had_turn', 'event_seen', amend ? 'amended' : 'kept']) if (!graded(gate, s.id)) problems.push(`active event ${s.id} is not graded by an event gate ${gate} (packages/grader/events.ts eventGates)`);
+    const have = task.mutants.filter((m) => m.event?.spec === s.id).map((m) => m.event!.kind);
+    for (const kind of REQUIRED_EVENT_MUTANTS[amend ? 'amend' : 'lure']) if (!have.includes(kind)) problems.push(`active event ${s.id} has no ${kind} mutant`);
+  }
+  for (const m of task.mutants) {
+    const ev = m.event;
+    if (ev === undefined) continue;
+    const spec = specs.find((s) => s.id === ev.spec);
+    const kind = EVENT_MUTANTS[ev.kind];
+    if (spec === undefined) { problems.push(`mutant ${m.id} is an event mutant of ${ev.spec}, which is not an active spec`); continue; }
+    if (kind === undefined) { problems.push(`mutant ${m.id}: event kind ${String(ev.kind)} is not one of ${Object.keys(EVENT_MUTANTS).join(', ')}`); continue; }
+    const amend = AMEND_CLASSES.has(spec.class);
+    if (amend ? ev.kind === 'lure_acted_on' : ev.kind === 'not_amended' || ev.kind === 'before_seen') problems.push(`mutant ${m.id}: ${ev.kind} does not apply to ${ev.spec}, a class ${spec.class} event`);
+    if (!m.fails.includes(kind.gate)) problems.push(`mutant ${m.id}: an event ${ev.kind} mutant must declare ${kind.gate} in fails`);
+    if (m.items?.[spec.item] !== kind.label) problems.push(`mutant ${m.id}: an event ${ev.kind} mutant must declare item ${spec.item} as ${kind.label}`);
+  }
+  return problems;
+}
+
+// The arrived split of one case run (diff.ts, C3): no arrival key in the written_ids of the call
+// that fired it or of any call before it; in the diff of the replayed states every arrival is in
+// arrived, never in created, and in updated exactly when a later call wrote it (the agent may
+// act on an arrival, e.g. complete its inbox Task).
+async function arrivedSplit(env: Pick<MatrixEnv, 'tasks' | 'world' | 'definitions'>, task: Pick<MatrixTask, 'id'>, run: CaseRun): Promise<string[]> {
+  const steps = stepsOf(run.events);
+  // Each arrival key with the index of the step whose call fired it.
+  const at = new Map(steps.flatMap((s, i) => (s.arrivals ?? []).flatMap((a) => a.keys.map((k) => [k, i] as const))));
+  if (at.size === 0) return [];
+  const keys = [...at.keys()];
+  const problems: string[] = [];
+  const writtenLater = new Set<string>();
+  for (const [k, i] of at) {
+    if (steps.slice(0, i + 1).some((s) => s.written_ids.includes(k))) problems.push(`arrival ${k} is in the written_ids of a call at or before its arrival`);
+    if (steps.slice(i + 1).some((s) => s.written_ids.includes(k))) writtenLater.add(k);
+  }
+  const state = await replayState(task.id, { tasks: env.tasks, world: env.world, events: run.events, ...(env.definitions ? { definitions: env.definitions } : {}) });
+  if (state.final === null) return [...problems, `the arrived split could not be checked: ${state.error}`];
+  const d = diff(state.initial, state.final, keys, state.arrived);
+  for (const k of keys) {
+    if (!d.arrived.includes(k)) problems.push(`arrival ${k} is not in diff.arrived`);
+    if (d.created.includes(k)) problems.push(`arrival ${k} is in diff.created`);
+    if (writtenLater.has(k) && !d.updated.includes(k)) problems.push(`arrival ${k} was written after it arrived and is not in diff.updated`);
+    if (!writtenLater.has(k) && d.updated.includes(k)) problems.push(`arrival ${k} is in diff.updated, and no call wrote it after it arrived`);
+  }
+  if (!keys.every((k) => state.final!.some((r) => `${r.resourceType}/${r.id}` === k))) problems.push('an arrival is not in the replayed final state');
+  return problems;
+}
+
 // The cases `ids` names, in report order; every case when absent.
 export function selectCases(task: MatrixTask, ids?: readonly string[]): Case[] {
   const all = cases(task);
@@ -428,6 +503,8 @@ export async function runCases(env: MatrixEnv, task: MatrixTask, selected: reado
     const grade = await gradeRun(env, task, task.checks, runs.get(c)!, misses);
     grades.set(c, [...(grades.get(c) ?? []), { grade, misses, after: order[i - 1] ?? null }]);
   }
+  const splits = new Map<Case, string[]>();
+  for (const c of selected) splits.set(c, await arrivedSplit(env, task, runs.get(c)!));
   const freshGrades = new Map<Case, Grade>();
   if (fresh) await Promise.all(selected.map(async (c) => freshGrades.set(c, await fresh(c, runs.get(c)!))));
 
@@ -450,6 +527,7 @@ export async function runCases(env: MatrixEnv, task: MatrixTask, selected: reado
     if (regrade_same === false) v.problems.push('a second grade from the same record differs');
     if (replay_same === false) v.problems.push('a second run gives a different trajectory or final hash');
     const reachable_ids = [...new Set(stepsOf(run.events).flatMap((s) => [...s.exposed_ids, ...s.referenced_ids]))].sort();
+    for (const p of splits.get(c) ?? []) v.problems.push(p);
     return { case: c, record: run.record, grade, misses, reachable_ids, regrade_same, replay_same, isolation, ...v };
   });
 }
@@ -506,9 +584,9 @@ export async function runMatrix(env: MatrixEnv, task: MatrixTask, opts: MatrixOp
   const selected = selectCases(task, opts.cases);
   const declared = task.mutants.filter((m) => Array.isArray(m.loses)).length;
   const losses = `rubric losses: ${declared}/${task.mutants.length} mutants declare loses`;
-  const declarations = [...lossDeclarations(task), ...agentDeclarations(task)];
+  const declarations = [...lossDeclarations(task), ...agentDeclarations(task), ...eventDeclarations(task)];
   if (declarations.length > 0) {
-    const lines = [`matrix ${task.id}`, losses, 'cases: not run (fix the loses and attribution declarations first)', `matrix ${task.id}: FAIL`, ...declarations.map((d) => `  - ${d}`)];
+    const lines = [`matrix ${task.id}`, losses, 'cases: not run (fix the loses, attribution and event declarations first)', `matrix ${task.id}: FAIL`, ...declarations.map((d) => `  - ${d}`)];
     return { pass: false, lines, results: [], world_hash: env.worldHash };
   }
   const results = await runCases(env, task, selected, opts);
@@ -620,6 +698,11 @@ export async function runMatrix(env: MatrixEnv, task: MatrixTask, opts: MatrixOp
   for (const m of task.mutants) if (!task.declares.traps.includes(m.trap)) fail(`mutant ${m.id} names trap ${m.trap}, which task.toml [matrix] traps does not declare`);
 
   lines.push(losses);
+  const active = task.events ?? [];
+  if (active.length > 0) {
+    const fired = results.filter((r) => r.grade.checks.find((x) => x.id === 'event_delivered')?.items?.some((i) => Array.isArray(i.evidence.fired) && i.evidence.fired.length > 0) === true).length;
+    lines.push(`events: ${active.length} active (${active.map((s) => `${s.id} ${s.class}`).join(', ')}), ${task.mutants.filter((m) => m.event !== undefined).length} event mutants, arrivals in ${fired}/${results.length} cases, arrived split checked`);
+  }
 
   const misses = results.flatMap((r) => r.misses.map((m) => ({ ...m, case: nameOf(r.case) })));
   const sources = new Map<string, number>();

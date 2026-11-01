@@ -74,6 +74,10 @@ describe('pnpm cli context-budget --project --items --events --req-per-event', (
   });
 });
 
+// The item counts results/probe-1 ran with. Its records predate TOOLS_VERSION 8 (PW4-E1), so their
+// env_version is not the checkout's and context-budget will not take the counts from expected.ts.
+const PROBE_1_ITEMS = 'renal-dose-review=9,results-inbox=13,crc-care-gap=13,discharge-medrec=13,contrast-ct-prep=7,message-queue=13';
+
 describe('PW4-H0b gate: results/probe-1 at the pilot-4a lists', () => {
   // The pilot-4a p90 column, r = 3, by the tool's per-trial method (each trial projected at its own
   // k, C0, g and o; the median of their costs). The plan's first draft computed its column from the
@@ -85,7 +89,7 @@ describe('PW4-H0b gate: results/probe-1 at the pilot-4a lists', () => {
       'results/probe-1', '--task', 'all', '--project',
       '--items', 'renal-dose-review=5,results-inbox=7,crc-care-gap=4,discharge-medrec=8,contrast-ct-prep=4,message-queue=6',
       '--events', 'renal-dose-review=4,results-inbox=4,crc-care-gap=4,discharge-medrec=4,contrast-ct-prep=4,message-queue=4',
-      '--req-per-event', '3', '--cost-from', 'results/probe-1', '--json',
+      '--req-per-event', '3', '--cost-from', 'results/probe-1', '--observed-items', PROBE_1_ITEMS, '--json',
     ], {});
     expect(json!.breaks).toEqual([]);
     expect(code).toBe(0);

@@ -3,8 +3,9 @@
 // (steps.ts). A link elsewhere on the page (an evidence id, the decisive step, an exposure row)
 // sets `current`; that row is scrolled into view, focused and marked aria-current="step".
 // Thinking reads as a captioned aside in plain type, and each tool name sits in a pill (ui-polish
-// 3.5); THINKING and TOOL_NAME are shared with the live trial.
-import { ChevronDown, ChevronRight, CircleAlert, Dot } from 'lucide-react';
+// 3.5); THINKING and TOOL_NAME are shared with the live trial. A mid-trial arrival (PW4-E1) is a row
+// of its own after the call that fired it, naming what came into the queues.
+import { ChevronDown, ChevronRight, CircleAlert, Dot, Inbox } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { CARD, Notice } from '../data/ui.tsx';
 import { stepAnchor, type Row, type Trajectory as Folded } from './steps.ts';
@@ -76,6 +77,7 @@ function RowItem({ row, current }: { row: Row; current: number | null }) {
     ref.current?.scrollIntoView({ block: 'center' });
     ref.current?.focus({ preventScroll: true });
   }, [current]);
+  if (row.kind === 'arrival') return <ArrivalRow row={row} />;
   if (row.kind !== 'tool') {
     return <TextRow kind={row.kind} text={row.text} />;
   }
@@ -110,6 +112,19 @@ function RowItem({ row, current }: { row: Row; current: number | null }) {
           {JSON.stringify({ input: row.input, result: row.result }, null, 2)}
         </pre>
       )}
+    </li>
+  );
+}
+
+// What a mid-trial event put in the queues, after the step whose call fired it.
+function ArrivalRow({ row }: { row: Extract<Row, { kind: 'arrival' }> }) {
+  return (
+    <li data-testid="arrival" data-spec={row.spec} className="flex min-w-0 items-start gap-1.5 rounded-sm border-l-2 border-accent px-2 py-1 text-xs text-ink">
+      <Inbox aria-hidden className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent" strokeWidth={1.75} />
+      <span className="min-w-0 break-words">
+        <span className="font-medium">Arrived in the queues</span>
+        {row.step === null ? '' : ` after step ${row.step}`} (event {row.spec}): {row.keys.join(', ')}
+      </span>
     </li>
   );
 }

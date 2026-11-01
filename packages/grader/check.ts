@@ -45,6 +45,9 @@ export interface Verdict<M extends Met = Met> {
   // protocol does not name (a phone Task for a portal message, an order not linked to its
   // appointment): attribution labels the trial action_form (P17j JG8b, pre-audit M3).
   action_form?: true;
+  // A failed gate sets it when the right decision was written before the record that decides it was
+  // seen (R14, R18, events.ts amended): attribution labels it process.
+  process?: true;
   // A gate over a worklist (items.ts itemGate): each item's result, in list order.
   items?: readonly ItemResult[];
 }
@@ -68,6 +71,9 @@ interface Common {
   // keyed as decisive_ids gives it: attribution counts the id as seen when that rule finds a step,
   // as well as by exposure or a shown phrase, so the label agrees with the check.
   seen_at?: Readonly<Record<string, (steps: readonly Step[]) => number | null>>;
+  // Attribution counts a decisive id seen only by its seen_at rule: an arrival may replace a record
+  // read before it (class B, events.ts).
+  seen_at_only?: true;
 }
 
 export interface GateCheck extends Common {
@@ -77,6 +83,8 @@ export interface GateCheck extends Common {
   // A rubric item that judges whether the note or final text states the action this gate
   // checks: when it is met and the gate failed, the failure is an action/output gap.
   stated_by?: string;
+  // An event gate (events.ts): the active spec ids it grades.
+  event_specs?: readonly string[];
 }
 
 export interface RubricCheck extends Common {
@@ -133,6 +141,8 @@ export interface Step {
   // and its paging, as Step.search keeps them, so a gate can count a notes search that found
   // nothing as a review (verifier-W1T-190-r2-clinical N2, ruling R34). Never the result's text.
   notes?: StepNotes;
+  // The mid-trial events this call fired (env_event, PW4-E1): spec and keys; absent when none.
+  arrivals?: ReadonlyArray<{ spec: string; keys: readonly string[] }>;
 }
 
 export interface StepNotes {
@@ -193,6 +203,8 @@ interface CtxBase {
   exposedAt(id: string): number | null;
   // Every resource the trial's committed writes put into the store, as <Type>/<id>, in order.
   writes(): readonly string[];
+  // The turn of the trial's last response (event gate had_turn); a hand-built test context may omit it.
+  readonly last_turn?: number;
 }
 
 export interface GateCtx extends CtxBase {

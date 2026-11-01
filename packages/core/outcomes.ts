@@ -139,6 +139,13 @@ export interface AttributionFacts {
   // The message of the trial's ENV_ERROR event when the caller has the trajectory (run.ts: for a
   // replay_mismatch, the call, its tool and what differs); absent or null when it does not.
   env_error?: string | null;
+  // The ids of the gate checks the current grade failed (record.checks, or its last regrade's), when
+  // the caller has them: E9 and E10 read the event gates among them. Absent: none known to fail.
+  failed_gates?: readonly string[];
+  // Each failed event gate with each spec it failed on (packages/grader/events.ts: a failed item's
+  // evidence.failed, else its event), from the same grade; E10 reads them. A failed event gate that
+  // names no spec is listed with spec null.
+  failed_event_gates?: ReadonlyArray<{ gate: string; spec: string | null }>;
   manifest_hash: string | null;
   // The grader_task_version of the current grade (summary.ts currentGrade): what the matrix
   // must have validated for its verdict to speak for this grade. null when the record or its
@@ -207,6 +214,9 @@ const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? o
 const list = (xs: readonly string[]) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs.at(-1)}`);
 const replayOk = (h: AttributionFacts['state_hash']) => h.final !== null && h.replay_final === h.final;
 const ENV_DETAILS = ['INTERNAL', 'initial_hash_mismatch', 'replay_mismatch'];
+const failedGate = (f: AttributionFacts, id: string) => (f.failed_gates ?? []).includes(id);
+// The event gates (packages/grader/events.ts EVENT_GATE_IDS).
+const EVENT_GATES: readonly string[] = ['event_delivered', 'had_turn', 'event_seen', 'amended', 'amend_form', 'kept'];
 const result = (met: CriterionMet, evidence: string): CriterionResult => ({ met, evidence });
 // What confirms an audit's tool_rejections_correct no for E6, or null: an adjudicated_label
 // environment, or with no adjudicated_label an agreeing LLM auditor; an adjudicated label that is
@@ -406,6 +416,39 @@ export const FAULT_DEFINITIONS: Readonly<Record<Fault, FaultDefinition>> = {
         reads: MF2_READS,
         check: (f) => (capStop(f) ? result(noLoop(f), capEvidence(f)) : result(false, `status ${f.status}${f.detail ? `, detail ${f.detail}` : ''}`)),
       },
+      {
+        // PW4-E1 (plan-amendment-w4, gate event_delivered): the grader re-derives each active event's
+        // trigger from the trajectory; one that held with nothing in the store grades ENV_ERROR.
+        id: 'E9',
+        record_fact: true,
+        text: 'Something the trial did should have made a new result, document or message arrive in the queues, and it never arrived, so the trial is run again.',
+        reads: ['record.checks (event_delivered), or the last record.regrades[].checks'],
+        check: (f) => result(failedGate(f, 'event_delivered'), failedGate(f, 'event_delivered') ? 'event_delivered failed' : 'every arrival whose trigger held was delivered'),
+      },
+      {
+        // PW4-E1 (gate had_turn): the finish guard gives the model a turn after every arrival, so only a
+        // stop right after one leaves it unanswered. A LIMIT trial keeps its LIMIT fault (a looping model
+        // is never the environment's): the arrival stays a note on its item (did_not_finish). E10 decides
+        // only a trial that did not stop at a limit and whose only failures are its event gates.
+        id: 'E10',
+        record_fact: true,
+        text: 'A new result, document or message arrived in the queues during the model\'s last turn, so the model had no turn left to see it, and nothing failed but the checks on what arrived late; a trial that stopped at a limit keeps that outcome, and the late arrival is only noted.',
+        reads: ['record.outcome', 'record.checks (had_turn and the other failed gates), or the last record.regrades[].checks'],
+        check: (f) => {
+          if (!failedGate(f, 'had_turn')) return result(false, 'every arrival had a model turn after it');
+          if (f.outcome === 'LIMIT') return result(false, 'an arrival came in the last turn of a LIMIT trial: noted on its item, and the trial keeps its LIMIT fault');
+          // Only the gates of a spec whose arrival came last are the environment's; any other failed
+          // gate, of an event or not, is the model's, and E10 does not decide.
+          const ev = f.failed_event_gates ?? [];
+          const late = new Set(ev.filter((e) => e.gate === 'had_turn' && e.spec !== null).map((e) => e.spec));
+          const other = [
+            ...(f.failed_gates ?? []).filter((g) => !EVENT_GATES.includes(g)),
+            ...ev.filter((e) => e.spec === null || !late.has(e.spec)).map((e) => `${e.gate}${e.spec === null ? '' : ` (${e.spec})`}`),
+          ];
+          const why = `had_turn failed for ${list([...late].map(String)) || 'no named event'}`;
+          return result(late.size > 0 && other.length === 0, other.length === 0 ? `${why}, and no other gate did` : `${why}, and so did ${list([...new Set(other)])}`);
+        },
+      },
     ],
   },
   grader: {
@@ -505,7 +548,7 @@ export const RUN_BLOCKS: readonly Criterion[] = [
 
 export type Confirmation = 'confirmed' | 'provisional' | 'contradicted';
 export const CONFIRMATION_DEFINITIONS: Readonly<Record<Confirmation, string>> = {
-  confirmed: 'Every criterion that can confirm the label is met: M1-M5 for a model or refusal label; for an environment or grader label, the record alone when E1-E4, E7, E8, GR1 or GR2 decided it, and a human audit with the same label when E5, E6, GR3, GR4 or GR5 decided it; and the record alone for infra.',
+  confirmed: 'Every criterion that can confirm the label is met: M1-M5 for a model or refusal label; for an environment or grader label, the record alone when E1-E4, E7-E10, GR1 or GR2 decided it, and a human audit with the same label when E5, E6, GR3, GR4 or GR5 decided it; and the record alone for infra.',
   provisional: 'Nothing contradicts the label, but a confirming criterion is still pending, such as a missing audit, manifest hash or matrix result.',
   contradicted: 'A confirming criterion is not met or a human audit gives another label, so the label must be reviewed before it is used.',
 };

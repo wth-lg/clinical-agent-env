@@ -511,6 +511,18 @@ export function decisiveExposure(record: ExplainRecord, recomputed: ExplainConte
   return failed !== null && recomputed?.check === failed.id ? recomputed.ids : null;
 }
 
+// Each failed event gate (EVENT_GATE_IDS) with each spec it failed on: a failed item's
+// evidence.failed (events.ts), else its event, else null.
+const EVENT_GATE_IDS: readonly string[] = ['event_delivered', 'had_turn', 'event_seen', 'amended', 'amend_form', 'kept'];
+function failedEventGates(checks: ReadonlyArray<{ id: string; kind?: string; met: unknown; items?: unknown }>): Array<{ gate: string; spec: string | null }> {
+  return checks.flatMap((c) => {
+    if (c.kind !== 'gate' || c.met !== false || !EVENT_GATE_IDS.includes(c.id)) return [];
+    const failedItems = (Array.isArray(c.items) ? c.items : []).filter((i): i is { met: unknown; event?: unknown; evidence?: { failed?: unknown } } => typeof i === 'object' && i !== null && (i as { met?: unknown }).met === false);
+    const specs = failedItems.flatMap((i) => (Array.isArray(i.evidence?.failed) ? i.evidence.failed.filter((x): x is string => typeof x === 'string') : typeof i.event === 'string' ? [i.event] : [null]));
+    return (specs.length === 0 ? [null] : specs).map((spec) => ({ gate: c.id, spec }));
+  });
+}
+
 export function explainTrial(record: ExplainRecord, audit: AuditRow | null | undefined, ctx: ExplainContext): Explanation {
   const grade = currentGrade(record);
   const outcome = grade.outcome;
@@ -534,6 +546,8 @@ export function explainTrial(record: ExplainRecord, audit: AuditRow | null | und
     internal_errors: record.tool_errors?.INTERNAL ?? 0,
     state_hash: record.state_hash,
     env_error: (ctx.events.findLast((e) => e.type === 'error' && e.status === 'ENV_ERROR') as { message?: string } | undefined)?.message ?? null,
+    failed_gates: (grade.checks ?? []).filter((c) => c.kind === 'gate' && c.met === false).map((c) => c.id),
+    failed_event_gates: failedEventGates(grade.checks ?? []),
     limit: limitOf(ctx.events),
     // Rule P-L's facts the grader recorded, so the outcome and its reason read the same facts on
     // the Runs list (no trajectory) and the trial page; a record graded before they were recorded

@@ -5,6 +5,7 @@
 // exposure review's (a cut snippet is shown text, not exposure, so a note found by a snippet that
 // misses the decisive fact is a retrieval failure; a snippet that is the whole note exposes it; shown text is compared the same way whatever
 // showed it: reports/pr-review-exposure-1.md S1, S2, S4).
+import type { StepSearch } from '../check.ts';
 import { describe, expect, it } from 'vitest';
 import { clock } from '../../env/clock.ts';
 import { Store, type Resource } from '../../env/store.ts';
@@ -12,7 +13,7 @@ import { INBOX_QUEUE_SYSTEM, READ_TOOLS, type ReadContext } from '../../env/tool
 import { callTool } from '../../env/tools/registry.ts';
 import { attribute } from '../attribution.ts';
 import { gate } from '../check.ts';
-import { firstExposed, lastWrite, seenBefore, shows, stepsOf } from '../exposure.ts';
+import { firstExposed, lastWrite, seenBefore, shows, stepsOf, passesWindow } from '../exposure.ts';
 import type { CheckResult } from '../grade.ts';
 import { INITIAL, note, PATIENT, trajectory } from './helpers.ts';
 
@@ -244,5 +245,21 @@ describe('exposure from the read tools', () => {
     const steps = stepsOf(trajectory([read('list_inbox', { queue: 'results' }), read('fhir_read', { resource_type: 'Patient', id: 'pt-1' })]));
     expect(steps[0]!.referenced_ids).toEqual(['Observation/obs-scr-1020', 'Patient/pt-1', 'Practitioner/pr-okafor', 'Task/task-1']);
     expect(firstExposed(steps, 'Patient/pt-1')).toBe(2);
+  });
+});
+
+// R35, R36: a sorted page passes a window's edge, newest first before it opens, oldest first after it
+// closes; an unsorted page or one with no dated row never does.
+describe('passesWindow', () => {
+  const page = (sort: string | undefined, span?: [number, number]): StepSearch => ({ type: 'Observation', whole: false, ...(sort ? { sort } : {}), ...(span ? { span } : {}) });
+  it('newest first passes once its earliest row is before the window opens; oldest first once its latest is after it closes', () => {
+    expect(passesWindow(page('-date', [9, 50]), 10, 40)).toBe(true);
+    expect(passesWindow(page('-date', [10, 50]), 10, 40)).toBe(false);
+    expect(passesWindow(page('date', [5, 41]), 10, 40)).toBe(true);
+    expect(passesWindow(page('date', [5, 40]), 10, 40)).toBe(false);
+    expect(passesWindow(page('date', [5, 9]), 10, 40)).toBe(false);
+    expect(passesWindow(page('-date', [41, 50]), 10, 40)).toBe(false);
+    expect(passesWindow(page(undefined, [0, 100]), 10, 40)).toBe(false);
+    expect(passesWindow(page('-date'), 10, 40)).toBe(false);
   });
 });

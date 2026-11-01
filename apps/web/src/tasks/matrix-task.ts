@@ -41,6 +41,7 @@ export async function loadMatrixTask(id: string): Promise<MatrixTask> {
   const agentsLoad = MODULES[path(id, 'tests/agents.ts')];
   return {
     id,
+    events: task.events,
     instruction: task.instruction,
     policies: task.policies.map((p) => ({ id: p.id, text: p.text })),
     declares: matrixDeclares(toml),

@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:results-inbox:3",
   "task_id": "results-inbox",
-  "task_version": "a42d7e95704ce1c1d16329361bec5def6618846a7982d0bfa590bba7f7e2400e",
-  "env_version": "163ac113da751ab7935d633d258332bf624d5c9eccabf084caa9d92214708457",
-  "grader_task_version": "a6d1e9639a3867274a1dad884a6411e67da2320f7a9b7c130a85d8101be8d3d7",
+  "task_version": "176b94a4d26d6ac233b54295ff42504f39feb1d657856a71dd9f802fbe955cd3",
+  "env_version": "fc0235ab4d8af1873b077bafc5372bf6e8a8a2f8deb14c5199eb6dd4194ca0b5",
+  "grader_task_version": "21e87633b58fccb0103ad9efaefd64079e57ff4f9338e6bc673384a809262d3a",
   "fixture_hash": "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968",
   "state_hash": {
     "initial": "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968",
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T16:39:42.000Z",
+  "started": "2026-10-23T16:40:16.000Z",
   "turns": 29,
   "tool_calls": 78,
   "tool_errors": {
@@ -43,9 +43,9 @@
   "summary": "Results inbox cleared: all 13 items completed with their follow-up orders, tasks, messages and notes linked.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T16:45:00.000Z",
+  "ended": "2026-10-23T16:45:34.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "17",
+  "grader_version": "18",
   "outcome": "PASS",
   "valid": true,
   "fault": null,

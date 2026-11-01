@@ -149,6 +149,7 @@ export async function loadMatrixTask(id: string, root: string = TASKS_DIR, tasks
   judgeCallBudget(checks);
   return {
     id,
+    events: task.events,
     instruction: task.instruction,
     policies: task.policies.map((p) => ({ id: p.id, text: p.text })),
     declares: declaresOf(toml.parse(readFileSync(join(dir, 'task.toml'), 'utf8'))),

@@ -37,6 +37,17 @@ export interface Clock {
   readonly nowMs: number;
   // The timestamp of a trial's n-th write (1-based): NOW + n seconds.
   stamp(writeSeq: number): string;
+  // The timestamp of a trial's k-th mid-trial arrival (1-based, packages/env/events.ts), which
+  // came after its afterWriteSeq-th write (0: before any write): NOW + afterWriteSeq seconds + k
+  // milliseconds, so it lies strictly after that write's stamp (or NOW) and strictly before the
+  // next write's, and later arrivals stamp later. Arrivals never take a write sequence number.
+  arrivalStamp(afterWriteSeq: number, k: number): string;
+}
+
+// ISO 8601 with milliseconds on the clinic's wall clock (eastern() keeps whole seconds).
+function easternMs(ms: number): string {
+  const s = eastern(ms);
+  return `${s.slice(0, 19)}.${String(((ms % 1000) + 1000) % 1000).padStart(3, '0')}${s.slice(19)}`;
 }
 
 export const clock: Clock = {
@@ -45,5 +56,10 @@ export const clock: Clock = {
   stamp(writeSeq) {
     if (!Number.isInteger(writeSeq) || writeSeq < 1) throw new Error(`clock: write sequence ${writeSeq} is not a positive integer`);
     return eastern(NOW_MS + writeSeq * 1000);
+  },
+  arrivalStamp(afterWriteSeq, k) {
+    if (!Number.isInteger(afterWriteSeq) || afterWriteSeq < 0) throw new Error(`clock: write sequence ${afterWriteSeq} is not a whole number`);
+    if (!Number.isInteger(k) || k < 1 || k > 999) throw new Error(`clock: arrival sequence ${k} is not in 1-999`);
+    return easternMs(NOW_MS + afterWriteSeq * 1000 + k);
   },
 };

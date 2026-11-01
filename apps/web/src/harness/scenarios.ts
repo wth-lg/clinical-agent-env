@@ -84,6 +84,18 @@ export const SCENARIOS = {
     { text: JSON.stringify({ verdict: 'met', quote: 'I wrote a progress note' }) },
     { text: JSON.stringify({ verdict: 'met', quote: TOY_SUMMARY }) },
   ],
+  // The toy's event route (tasks/_toy/tests/alternatives.ts event_handled): opening problem
+  // cond-00002 fires the toy's two events (tasks/_toy/events.ts); the next answer reads both
+  // arrivals, and the note cites the final potassium. The judge answers as for toy, so a graded mock
+  // trial (run-one --mock toyEvent) PASSes with two env_event lines.
+  toyEvent: [
+    { thinking: 'Who am I, the patient, and one problem.', tools: [getContext('toolu_e01'), readPatient('toolu_e02', 'pt-0001'), { id: 'toolu_e03', name: 'fhir_read', input: { resource_type: 'Condition', id: 'cond-00002' } }] },
+    { thinking: 'Two results arrived; read them.', tools: [{ id: 'toolu_e04', name: 'fhir_read', input: { resource_type: 'Observation', id: 'obs-toy-a1' } }, { id: 'toolu_e05', name: 'fhir_read', input: { resource_type: 'Observation', id: 'obs-toy-d1' } }] },
+    { thinking: 'Now the note, citing the final result.', tools: [{ id: 'toolu_e06', name: 'write_note', input: { patient: 'pt-0001', type: 'progress_note', title: 'Tool check', text: 'Chart opened by Maya Okafor, MD, to check the tools.', cites: ['Patient/pt-0001', 'Observation/obs-toy-a1'] } }] },
+    { thinking: 'I have what I need.', text: 'Done.', tools: [{ id: 'toolu_e07', name: 'finish', input: { summary: TOY_SUMMARY } }] },
+    { text: JSON.stringify({ verdict: 'met', quote: 'I wrote a progress note' }) },
+    { text: JSON.stringify({ verdict: 'met', quote: TOY_SUMMARY }) },
+  ],
   // Thinking blocks in every answer, each echoed in the next request.
   thinking: [
     { thinking: 'First thought, with "quotes", a tab\tand unicode é→✓.', tools: [getContext('toolu_t1')] },

@@ -53,7 +53,7 @@ describe('matrix --task _toy, rubric losses', () => {
     const { loses: _, ...undeclared } = m;
     const { code, text } = await matrix({ mutants: replace(undeclared as Mutant) }, { ...ONE, cases: [m.id] });
     expect(code).toBe(1);
-    expect(text).toContain('cases: not run (fix the loses and attribution declarations first)');
+    expect(text).toContain('cases: not run (fix the loses, attribution and event declarations first)');
     expect(text).not.toMatch(/mutant note_before_read \[trap/);
   });
   it('every toy mutant declares its losses', () => {
