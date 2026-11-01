@@ -32,7 +32,7 @@ Repo id `renal-dose-review`. Title: "DOAC renal and interaction dose review of t
 
 Pharmacy finished its weekly DOAC dose review list, the group 'DOAC dose review - week of 10/19/2026'. Dr. Okafor asks the agent to work through every patient on it under RBC-PHARM-07, make the dose changes the policy requires, and give a short summary at the end.
 
-The list holds nine patients: two instances of each of four kept item classes and one filler (`expected.ts`, `CLASSES`). RBC-PHARM-07 §1 picks the inputs (the latest valid creatinine and the latest measured weight), §2 gives the apixaban dose (2.5 mg twice a day at two of age 80 or older, weight 60 kg or less, SCr 1.5 mg/dL or more, or with a strong combined P-gp and CYP3A4 inhibitor), and §3 gives the rivaroxaban dose by Cockcroft-Gault CrCl on actual weight.
+The list holds nine patients: two instances of each of four kept item classes and one filler (`expected.ts`, `CLASSES`). RBC-PHARM-07 §1 picks the inputs (the latest valid creatinine and the latest measured weight), §2 gives the apixaban dose (2.5 mg twice a day at two of age 80 or older, weight 60 kg or less, SCr 1.5 mg/dL or more, or with a strong combined P-gp and CYP3A4 inhibitor), and §3 gives the rivaroxaban dose by Cockcroft-Gault CrCl on actual weight. The Patient record, which holds the age and sex, is one of the records that decide a dose where the age decides it (ruling R33): for Ashworth and Kowalczyk, where age 80 or older is a met apixaban criterion, and for the four rivaroxaban patients, whose CrCl takes the age (and Pellegrino's, the sex). A `search_patients` row that shows the birth date counts as seeing it.
 
 | Patient | Class | Start | Expected |
 |---|---|---|---|
@@ -58,7 +58,7 @@ Each item lists its decisive records: only the records that decide its dose (rul
 
 ### Traps
 
-Each mutant in `tests/mutants.ts` takes the oracle and makes one mistake. Each must fail on exactly the gates it declares, under the attribution label shown. 22 mutants:
+Each mutant in `tests/mutants.ts` takes the oracle and makes one mistake. Each must fail on exactly the gates it declares, under the attribution label shown. 28 mutants:
 
 - `ashworth_clinic_creatinine_only` (retrieval; fails `doac_dose`): Looks for creatinine under the clinic's mg/dL code only, so never sees the newer St. Brigid result in umol/L, takes 1.28 mg/dL as current and keeps apixaban 5 mg (one criterion).
 - `bauer_stated_weight` (reasoning; fails `doac_dose`): Takes the newest weight of any kind, the 168 lb he gave by phone (76.2 kg), not the measured 59.0 kg: CrCl 57, so rivaroxaban stays at 20 mg.
@@ -82,17 +82,23 @@ Each mutant in `tests/mutants.ts` takes the oracle and makes one mistake. Each m
 - `vance_raised_without_weight` (retrieval; fails `decisive_seen`, `seen_before_change`): Raises apixaban to 5 mg from his age and the October creatinine and never looks up a weight, though the February discharge weight of 57.0 kg would have made a second criterion: the right dose, decided without the record that decides it (the never-seen twin of l3_vance_weight_after_change).
 - `off_list_order` (over_action; fails `nothing_else`): Does the whole review right, then also orders apixaban for a patient who is not on the list.
 - `one_turn_reads_and_changes` (process; fails `seen_before_change`): Issues every read of the oracle and all its dose changes in one answer: each change goes in before the results that decide it have come back.
+- `ashworth_age_never_seen` (Patient/pt-0040 retrieval; fails `decisive_seen`, `seen_before_change`): Never reads her Patient record, so never sees that she is 83; sees the St. Brigid creatinine of 1.70 mg/dL (one criterion) and lowers apixaban to 2.5 mg anyway, the age criterion assumed.
+- `kowalczyk_age_never_seen` (Patient/pt-0001 retrieval; fails `decisive_seen`, `seen_before_change`): Never reads his Patient record, so never sees that he is 84; sees the 57.6 kg weight (one criterion) and lowers apixaban to 2.5 mg anyway, the age criterion assumed.
+- `delgado_age_never_seen` (Patient/pt-0003 retrieval; fails `decisive_seen`, `seen_before_change`): Never reads his Patient record, so has no age for Cockcroft-Gault, and lowers rivaroxaban to 15 mg on the St. Brigid creatinine and his weight alone.
+- `bauer_age_never_seen` (Patient/pt-0039 retrieval; fails `decisive_seen`, `seen_before_change`): Never reads his Patient record, so has no age for Cockcroft-Gault, and lowers rivaroxaban to 15 mg on his measured weight and creatinine alone.
+- `moravec_age_never_seen` (Patient/pt-0038 retrieval; fails `decisive_seen`, `seen_before_change`): Never reads his Patient record, so has no age for Cockcroft-Gault, and raises rivaroxaban to 20 mg on his actual weight and creatinine alone.
+- `pellegrino_age_never_seen` (Patient/pt-0043 retrieval; fails `decisive_seen`): Never reads her Patient record, so has no age or sex for Cockcroft-Gault, and leaves her rivaroxaban at 20 mg on her weight and creatinine alone: the right dose, decided without the record that decides it.
 
-`tests/alternatives.ts` holds 13 other correct routes; each must pass.
+`tests/alternatives.ts` holds 15 other correct routes; each must pass.
 
 ### Verification
 
 Gate checks (`tests/grader.ts`, words in `tasks/renal-dose-review.check-text.ts`):
 
 - `doac_dose`: for each of the 9 patients on the review list, one active order of their DOAC at the dose RBC-PHARM-07 §2 or §3 gives, by mouth on a schedule.
-- `decisive_seen`: for each patient on the list whose DOAC order was changed, or whose dose is already right, the records that decide their dose (the weight, creatinine or interacting-medication record the rule turns on) seen before the review is finished.
+- `decisive_seen`: for each patient on the list whose DOAC order was changed, or whose dose is already right, the records that decide their dose (the weight, creatinine or interacting-medication record the rule turns on, and the Patient record where the age decides) seen before the review is finished.
 - `nothing_else`: no change to any medication other than the DOAC on the final chart (a rejected write changes nothing), and no medication order for a patient who is not on the list.
-- `seen_before_change`: for each patient whose DOAC order is changed, the records that decide the new dose (the weight, creatinine or interacting-medication record the rule turns on) read before the change.
+- `seen_before_change`: for each patient whose DOAC order is changed, the records that decide the new dose (the weight, creatinine or interacting-medication record the rule turns on, and the Patient record where the age decides) read before the change.
 
 Rubric (`tests/rubric.ts`):
 
@@ -137,7 +143,7 @@ The duplicate-draw class of the plan's T2 list is dropped: no dated source state
 
 ### Traps
 
-Each mutant in `tests/mutants.ts` takes the oracle and makes one mistake. Each must fail on exactly the gates it declares, under the attribution label shown. 28 mutants:
+Each mutant in `tests/mutants.ts` takes the oracle and makes one mistake. Each must fail on exactly the gates it declares, under the attribution label shown. 30 mutants:
 
 - `nodule_overdue_no_screening_search` (nodule_overdue retrieval; fails `item_orders`, `decisive_seen`, `seen_before_change`): Never looks through Linda Marsh's other reports, so never finds her screening LDCT; applies §2's high-risk row to the June CT and orders a CT chest 12 months from it (2027-05-04 to 2027-07-04), the pilot-1 answer, when the overdue screening LDCT was due by 2026-11-06.
 - `nodule_scheduled_risk_table` (nodule_scheduled reasoning; fails `item_orders`): Reads Raj Patel's April screening LDCT but applies §2's high-risk row anyway (current smoker) and orders a CT chest 12 months from the October CT (2027-10-19), when his next screening LDCT runs from April: 2027-03-14 to 2027-05-14.
@@ -167,8 +173,10 @@ Each mutant in `tests/mutants.ts` takes the oracle and makes one mistake. Each m
 - `corrected_down_repeat_committed` (corrected_down over_action; fails `item_no_forbidden`): Commits the potassium corrected_down_refused_order_and_page tries for Edra Ondricka, urgent for Monday 2026-10-26: a repeat on the first-reported 6.3, which the laboratory corrected to a normal 4.4.
 - `outside_page_committed` (outside over_action; fails `item_no_forbidden`): Does what the oracle does, then pages on-call at stat with nothing in about: no item needs another page, and no gate can tell whose page it is.
 - `hemolyzed_note_order_before_read` (hemolyzed_note process; fails `result_seen_before_action`, `seen_before_change`): Orders Walter Brennan's urgent repeat BMP before opening his potassium result, then reads it, tells him and closes the item linking the order: the right order, written before the result it acts on was read.
+- `eie_baseline_48h_window_only` (eie_baseline retrieval; fails `decisive_seen`, `seen_before_change`): Reads Carol Whitfield's panel and her creatinine of 1.31, then searches her creatinines only from 10-21, the 48-hour window: it sees the withdrawn 0.84 but never the 7 days before, where her valid 1.27 of 10-17 decides the 1.5-times half of the AKI rule, and closes the item.
+- `eie_baseline_window_one_code` (eie_baseline reasoning; fails `decisive_seen`, `seen_before_change`): Reads Carol Whitfield's panel and her creatinine of 1.31, then searches her creatinines from 10-15 under code 2160-0 only, which hides any result filed under 38483-4 in the 7 days before, such as her 1.27 of 10-17, and closes the item.
 
-`tests/alternatives.ts` holds 32 other correct routes; each must pass.
+`tests/alternatives.ts` holds 34 other correct routes; each must pass.
 
 ### Verification
 
@@ -176,7 +184,7 @@ Gate checks (`tests/grader.ts`, words in `tasks/results-inbox.check-text.ts`):
 
 - `item_orders`: the order each of the 8 items that need action calls for under the current version of its result: the screening LDCT in its window, an urgent repeat BMP by the next business day for a hemolyzed potassium or acute kidney injury, a stat BMP and a stat on-call notice for a corrected critical potassium, and the urgent specialist referral a final report recommends; an existing active order that meets the same terms counts.
 - `item_no_forbidden`: no write the policies forbid for an item: no on-call notice for a hemolyzed potassium, no urgent on-call notice for a potassium corrected to normal, no urgent or next-day repeat on a first-reported or withdrawn value, no GI referral on a withdrawn FIT, no diagnostic chest CT for a nodule a final report withdrew, no on-call notice that names no patient, no order on a normal result.
-- `decisive_seen`: each record an item's decision rests on seen at some point: read, or every atom of one of its deciding facts shown in one note search snippet.
+- `decisive_seen`: each record an item's decision rests on seen at some point: read, or every atom of one of its deciding facts shown in one note search snippet; for the withdrawn comparison creatinine, a complete search of the patient's creatinines over the 7 days before the result.
 - `items_closed`: all 13 inbox items completed, and each of the 8 that need action linked to what closes it, a new action or an existing active order of the right kind (or the corrected critical potassium handed to on-call after a stat notice).
 - `result_seen_before_action`: each of the 13 items' results read before any of its orders is placed or the item is closed or reassigned.
 - `seen_before_change`: each record an item's decision rests on seen before the orders it leads to and before the item is closed.
@@ -229,7 +237,7 @@ Dr. Okafor asks the agent to work through the CRC outreach worklist for the pane
 | | pt-0035 (three-week rehab, then home) | gap, order |
 | filler | pt-0037 (age 35) | not in the population |
 
-The plan's classes E (look-back windows at their edges) and F (age at the end of the period) are cut to fit the per-trial budget line. The A, C1 and D gaps rest on an absence, so a complete search that covers the window with no filter that could hide a qualifying record reviews them as well as the trap record does (rulings R20, R27).
+The plan's classes E (look-back windows at their edges) and F (age at the end of the period) are cut to fit the per-trial budget line. A gap rests on absences, so it is reviewed only by complete searches, for the member or clinic-wide, one for each screening kind §3 counts over its window (colonoscopy from 2017; flexible sigmoidoscopy or CT colonography from 2022; FOBT or FIT from 2026; sDNA-FIT from 2024) and one for the exclusion its class turns on (C1's care episodes, B2's total colectomy and his documents, G2's advanced illness and dementia medications). Each search lists every counted code, a category that holds the kind and every counted status, on one page or on pages followed by next_offset to the end. Reading the trap record alone is not a review (rulings R27, R31). A member who needs no order or message is reviewed by reading the records that decide them, G1's and H1's Patient (their age) among them; otherwise `no_contact_reviewed` fails, as retrieval (R32, R33).
 
 ### Skills
 
@@ -241,11 +249,11 @@ The plan's classes E (look-back windows at their edges) and F (age at the end of
 
 ### Traps
 
-Each mutant in `tests/mutants.ts` takes the oracle and makes one mistake. Each must fail on exactly the gates it declares, under the attribution label shown. 48 mutants:
+Each mutant in `tests/mutants.ts` takes the oracle and makes one mistake. Each must fail on exactly the gates it declares, under the attribution label shown. 62 mutants:
 
 - `a1_colonoscopy_never_done` (reasoning; fails `fit_orders`, `outreach_messages`): Takes Delaine MacGyver's open colonoscopy order from March 2025 as screening done, though its window passed and no colonoscopy is on record: an order is not screening (RBC-QM-02 §3).
 - `a2_colonoscopy_never_done` (reasoning; fails `fit_orders`, `outreach_messages`): Takes Santo Pagac's colonoscopy order and April appointment as screening, though he did not come (no-show): an appointment is not screening (§3).
-- `b1_total_colectomy_note` (over_action; fails `fit_orders`, `nothing_for_others`): Reads only coded data, never the document list or notes, finds no screening for Ángela Vigil and orders a FIT kit for a patient whose whole colon was removed (total proctocolectomy in a scanned outside note).
+- `b1_total_colectomy_note` (Patient/pt-0021 over_action; fails `fit_orders`, `nothing_for_others`, `no_contact_reviewed`): Reads only coded data, never the document list or notes, finds no screening for Ángela Vigil and orders a FIT kit for a patient whose whole colon was removed (total proctocolectomy in a scanned outside note).
 - `b2_partial_colectomy` (reasoning; fails `fit_orders`, `outreach_messages`): Reads Nick Bartoletti's sigmoid colectomy as a colectomy that excludes: only a total colectomy excludes (§4), and a sigmoid colectomy is partial.
 - `c1_hospice_revoked_before_period` (reasoning; fails `fit_orders`, `outreach_messages`): Excludes Marilu Gaona for hospice care, though her hospice episode ended (revoked) in October 2025, before the measurement period (§4: during any part of the period).
 - `c2_hospice_revoked_in_period` (over_action; fails `fit_orders`, `nothing_for_others`): Treats Kelsie Rohan's revoked hospice as no hospice and orders her a FIT kit, though she was in hospice care from June to August 2026, during part of the measurement period (§4).
@@ -253,7 +261,7 @@ Each mutant in `tests/mutants.ts` takes the oracle and makes one mistake. Each m
 - `d2_sdna_collected_before_window` (reasoning; fails `fit_orders`, `outreach_messages`): Counts Lance Muller's sDNA-FIT by its report date (2024-01-08), inside the 2024-2026 window, though it was collected on 2023-12-27, before it (§3).
 - `g1_frailty_dementia_medication` (over_action; fails `fit_orders`, `nothing_for_others`): Reads advanced illness as a diagnosis only, misses that donepezil is a dementia medication, and orders a FIT kit for Elly Trantow, 72 and frail (§4).
 - `g2_dementia_medication_stopped` (reasoning; fails `fit_orders`, `outreach_messages`): Excludes Harrison O'Keefe for frailty with a dementia medication, though his donepezil was stopped in March 2023, before the measurement period and the year before it (§4).
-- `h1_nursing_home` (over_action; fails `fit_orders`, `nothing_for_others`): Checks nursing home residence in the notes only, as pilot-1 trial 0 did: no note names Rickey Sipes's nursing home, so he looks like an open gap at 72, though his housing status says he lives in a nursing home (§4).
+- `h1_nursing_home` (Patient/pt-0034 over_action; fails `fit_orders`, `nothing_for_others`, `no_contact_reviewed`): Checks nursing home residence in the notes only, as pilot-1 trial 0 did: no note names Rickey Sipes's nursing home, so he looks like an open gap at 72, though his housing status says he lives in a nursing home (§4).
 - `h2_short_rehab_stay` (reasoning; fails `fit_orders`, `outreach_messages`): Reads Elvin Wolff's three-week skilled nursing rehab stay as nursing home residence and excludes him, though he was discharged home and his newest housing status says he lives in his own home (§4).
 - `filler_not_in_population` (over_action; fails `fit_orders`, `nothing_for_others`): Orders a FIT kit and outreach for Fumiko Pouros, 35, who is outside the population (§2): RBC-QM-02 §5 orders only for open gaps.
 - `d1_order_without_seeing_fit` (retrieval; fails `fit_orders`, `gap_seen_before_order`): Never searches Tiny Koss's stool tests and orders her FIT kit anyway, as an order for everyone not excluded would: the right order, but the record that decides it (her FIT collected 2025-12-29) was never shown, so the decision rests on nothing it read (R14): retrieval.
@@ -286,13 +294,27 @@ Each mutant in `tests/mutants.ts` takes the oracle and makes one mistake. Each m
 - `zz_about_patient` (action_form; fails `outreach_messages`): Orders every kit and then sends each gap member the full outreach letter with about naming the patient, not the new FIT order: action_form (verifier-phase-P17i-P17-T3-1 S2).
 - `zz_about_gap_evidence` (action_form; fails `outreach_messages`): Orders every kit and then sends each gap member the full outreach letter with about naming the record the member's gap rests on (the patient, for the member whose record is a hospice episode) instead of the order: action_form.
 - `zz_cross_patient_about` (reasoning; fails `outreach_messages`): Tries to send Tiny Koss the outreach letter about another member's FIT order instead of her own. send_message refuses an about that names another patient's resource, so she is never messaged and the failure is a missing message, reasoning (verifier-phase-P17i-P17-T3-1).
-- `exploit_minimal_outreach_0` (Patient/pt-0024 reasoning, Patient/pt-0014 reasoning, Patient/pt-0036 reasoning, Patient/pt-0011 reasoning, Patient/pt-0022 reasoning, Patient/pt-0018 reasoning, Patient/pt-0019 reasoning, Patient/pt-0035 reasoning; fails `outreach_messages`): The live exploit method on the probe panel: reads only the gap members' decisive ids, orders their kits, and sends each 'FIT.' with nothing in about: no message names the kit, so it is not the outreach about the order RBC-QM-02 §5 asks for, and 'FIT.' tells no one what is coming or what to do (outreach_on_topic).
+- `exploit_minimal_outreach_0` (Patient/pt-0024 retrieval, Patient/pt-0014 retrieval, Patient/pt-0036 retrieval, Patient/pt-0011 retrieval, Patient/pt-0022 retrieval, Patient/pt-0018 retrieval, Patient/pt-0019 retrieval, Patient/pt-0035 retrieval, Patient/pt-0021 retrieval, Patient/pt-0020 retrieval, Patient/pt-0009 retrieval, Patient/pt-0034 retrieval, Patient/pt-0037 retrieval; fails `fit_orders`, `outreach_messages`, `gap_seen_before_order`, `no_contact_reviewed`): The live exploit method on the probe panel: reads only the gap members' decisive ids (their trap records), orders their kits, and sends each 'FIT.' with nothing in about. No gap had its screening searched and no member who needs no contact was read, so every item fails as retrieval (R31, R32); no message names the kit either, and 'FIT.' tells no one what is coming or what to do (outreach_on_topic).
 - `reminder_to_filler` (over_action; fails `nothing_for_others`): Gets every order right and also messages Fumiko Pouros, who is 35 and outside the population, with a screening reminder.
 - `group_blast` (over_action; fails `nothing_for_others`): Gets every order and message right, then also sends the screening message to the panel group, which reaches the excluded and out-of-population members.
 - `sdna_unseen` (retrieval; fails `fit_orders`, `gap_seen_before_order`): Lists Lance Muller's observations newest first without a code filter, reads only the first page, which does not reach the 2023 sDNA-FIT, and orders his kit anyway: the right order, but the record that decides it was never shown (R14): retrieval.
 - `one_turn_reads_and_orders` (process; fails `gap_seen_before_order`): Issues every read of the oracle and all its FIT orders and outreach in one answer: each order goes in before the chart that shows the gap has come back.
+- `b1_never_reviewed` (Patient/pt-0021 retrieval; fails `no_contact_reviewed`): As the oracle, but never reads what decides B1 (DocumentReference/doc-00059) and writes nothing about them: the end state is right, but nothing the trial read decides the member's status (R32): retrieval.
+- `c2_never_reviewed` (Patient/pt-0020 retrieval; fails `no_contact_reviewed`): As the oracle, but never reads what decides C2 (EpisodeOfCare/eoc-00002) and writes nothing about them: the end state is right, but nothing the trial read decides the member's status (R32): retrieval.
+- `g1_never_reviewed` (Patient/pt-0009 retrieval; fails `no_contact_reviewed`): As the oracle, but never reads what decides G1 (Condition/cond-00189, MedicationRequest/mr-00118, Patient/pt-0009) and writes nothing about them: the end state is right, but nothing the trial read decides the member's status (R32): retrieval.
+- `h1_never_reviewed` (Patient/pt-0034 retrieval; fails `no_contact_reviewed`): As the oracle, but never reads what decides H1 (Observation/obs-02463, Patient/pt-0034) and writes nothing about them: the end state is right, but nothing the trial read decides the member's status (R32): retrieval.
+- `filler_never_reviewed` (Patient/pt-0037 retrieval; fails `no_contact_reviewed`): As the oracle, but never reads what decides the filler (Patient/pt-0037) and writes nothing about them: the end state is right, but nothing the trial read decides the member's status (R32): retrieval.
+- `g1_age_never_seen` (Patient/pt-0009 retrieval; fails `no_contact_reviewed`): As the oracle, but never reads G1's Patient, so the trial never saw that Elly Trantow is 72; the frailty and dementia medication exclusion holds only at 66 or older (§4), so nothing the trial read decides it (R33): retrieval.
+- `h1_age_never_seen` (Patient/pt-0034 retrieval; fails `no_contact_reviewed`): As the oracle, but never reads H1's Patient, so the trial never saw that Rickey Sipes is 72; the nursing home exclusion holds only at 66 or older (§4), so nothing the trial read decides it (R33): retrieval.
+- `no_contact_never_reviewed` (Patient/pt-0021 retrieval, Patient/pt-0020 retrieval, Patient/pt-0009 retrieval, Patient/pt-0034 retrieval, Patient/pt-0037 retrieval; fails `no_contact_reviewed`): Reviews only the eight gap members (their charts and the housing status of the two 66 or older), orders and messages them, and never opens Ángela Vigil, Kelsie Rohan, Elly Trantow, Rickey Sipes or Fumiko Pouros: the table states their statuses, but nothing the trial read decides them (R32): retrieval.
+- `gap_one_type_each` (Patient/pt-0024 retrieval, Patient/pt-0014 retrieval, Patient/pt-0036 retrieval, Patient/pt-0011 retrieval, Patient/pt-0022 retrieval, Patient/pt-0018 retrieval, Patient/pt-0019 retrieval, Patient/pt-0035 retrieval, Patient/pt-0021 retrieval, Patient/pt-0020 retrieval, Patient/pt-0009 retrieval, Patient/pt-0034 retrieval, Patient/pt-0037 retrieval; fails `fit_orders`, `gap_seen_before_order`, `no_contact_reviewed`): Reads each gap member's Patient and one search of the record type that member's trap lives in (A1's orders, A2's appointments, B2's procedures, C1's care episodes, D1's FOBT and FIT, D2's sDNA-FIT, G2's medications, H2's housing status), then orders and messages all eight, and never reviews the members who need no contact: no gap had every screening kind searched, so no item was reviewed (R31, R32): retrieval.
+- `a1_order_only` (Patient/pt-0024 retrieval; fails `fit_orders`, `gap_seen_before_order`): Lists only Delaine MacGyver's orders, which show her open colonoscopy order, and orders her FIT kit: her procedures, stool tests and other records were never searched, so nothing showed that she has no screening that counts (R31): retrieval.
+- `d1_fobt_codes_incomplete` (Patient/pt-0022 retrieval; fails `fit_orders`, `gap_seen_before_order`): Searches Tiny Koss's stool tests by four of the seven FOBT and FIT codes and the two sDNA-FIT codes, sees her FIT collected 2025-12-29, and orders her kit: the search could hide a 2026 FIT under the other three codes, so the absence of a stool test in 2026 was never shown (R27, R31): retrieval.
+- `a2_procedures_never_searched` (Patient/pt-0014 retrieval; fails `fit_orders`, `gap_seen_before_order`): Reads Santo Pagac's no-show colonoscopy appointment and his stool tests but never searches his procedures, and orders his kit: nothing showed that no colonoscopy, sigmoidoscopy or CT colonography was done (R31): retrieval.
+- `g2_conditions_never_searched` (Patient/pt-0019 retrieval; fails `fit_orders`, `gap_seen_before_order`): Reads Harrison O'Keefe's medications, which show donepezil stopped in 2023, but never searches his conditions, and orders his kit at 69: nothing showed that he has no advanced illness diagnosis, which with his frailty would exclude him (§4, R31): retrieval.
+- `b2_documents_never_searched` (Patient/pt-0036 retrieval; fails `fit_orders`, `gap_seen_before_order`): Reads Nick Bartoletti's procedures, which show the 2021 sigmoid colectomy, but never lists his documents, and orders his kit: a total colectomy may be recorded only in a scanned outside note (§4, §7), and nothing showed he has none (R28, R31): retrieval.
 
-`tests/alternatives.ts` holds 47 other correct routes; each must pass.
+`tests/alternatives.ts` holds 52 other correct routes; each must pass.
 
 ### Verification
 
@@ -302,6 +324,7 @@ Gate checks (`tests/grader.ts`, words in `tasks/crc-care-gap.check-text.ts`):
 - `outreach_messages`: a message to each patient who gets a FIT order, about that order.
 - `nothing_for_others`: no order or message for a panel member who needs none, and no write about a patient outside the panel.
 - `gap_seen_before_order`: each patient's screening record read before that patient's FIT order.
+- `no_contact_reviewed`: the records that decide each panel member who needs no order or message read by the end of the trial.
 
 Rubric (`tests/rubric.ts`):
 
@@ -533,6 +556,8 @@ Dr. Okafor asks the agent to clear the messages queue under the standing protoco
 | m12 | Webb, lisinopril 10 | BMP collected 2025-10-20 | 30/0 and a BMP |
 | m13 | Webb, metformin 500 | eGFR 39 entered in error; eGFR 92 on 2026-09-28 | renew 90/1 |
 
+m5, m8 and m12 turn on an absence: no valid BMP in §2's 12 months, or no HbA1c in §3's 6 months. Each names as its decisive record the patient's newest result of that kind from before the window: Park's in-house BMP of 2025-04-21, Brooks's HbA1c of 2026-01-12, and Webb's BMP of 2025-10-20. That record counts as seen only at a complete search of the window, for the patient or clinic-wide. The search lists every counted code in its system, has no category filter or the one the kind carries, and lists every valid status. It returns one whole page, or pages followed by next_offset to the end. Reading that record, or an outside report of the kind, is not a review of the window (rulings R27, R31). The outside reports in m5 and m8 stay decisive on their own (R28).
+
 ### Skills
 
 - Judge a result by its validity: a hemolyzed potassium, an amended or withdrawn eGFR.
@@ -543,7 +568,7 @@ Dr. Okafor asks the agent to clear the messages queue under the standing protoco
 
 ### Traps
 
-Each mutant in `tests/mutants.ts` takes the oracle and makes one mistake. Each must fail on exactly the gates it declares, under the attribution label shown. 38 mutants:
+Each mutant in `tests/mutants.ts` takes the oracle and makes one mistake. Each must fail on exactly the gates it declares, under the attribution label shown. 44 mutants:
 
 - `m1_hemolyzed_k_trusted` (reasoning; fails `refill_decision`): Takes the hemolyzed potassium of 6.1 as valid and holds the lisinopril with a task to the PCP, instead of renewing on the valid 4.6 and repeating the BMP.
 - `m2_second_order` (over_action; fails `no_forbidden_order`): Answers Gloria Hayes's follow-up message as a new request and sends a second 90-day lisinopril order.
@@ -583,15 +608,21 @@ Each mutant in `tests/mutants.ts` takes the oracle and makes one mistake. Each m
 - `m6_task_on_message` (reasoning; fails `refill_decision`): Sends the PCP task for Lena Park's metformin hold about the pharmacy's refill message instead of her metformin order.
 - `closure_one_open` (process; fails `all_cleared`): Decides every message but leaves Frank Odum's amlodipine message open in the queue.
 - `scope_other_patient` (over_action; fails `no_forbidden_order`): Orders a BMP for a patient who has no message in the queue.
+- `m12_wrong_system_absence` (retrieval; fails `decisive_seen`): Searches Marcus Webb's potassium over 12 months under a code system no result carries, gets an empty page, and gives 30 days and a BMP.
+- `m5_outside_report_only` (retrieval; fails `decisive_seen`): Reads Lena Park's outside BMP and her visit but never searches the clinic's own BMPs or potassium, and gives 30 days and a BMP.
+- `m8_outside_report_only` (retrieval; fails `decisive_seen`): Reads Evelyn Brooks's outside HbA1c and her eGFR but never searches the clinic's own HbA1c results, and gives 30 days and an HbA1c.
+- `m5_panel_only` (reasoning; fails `decisive_seen`): Lists Lena Park's BMP panel reports under 51990-0 only, sees her 04/2025 panel, and gives 30 days and a BMP without a search that could show a panel in the window.
+- `m8_inhouse_a1c_only` (reasoning; fails `decisive_seen`): Reads Evelyn Brooks's January HbA1c by id instead of her HbA1c list, and gives 30 days and an HbA1c without a search that could show one in the window.
+- `m12_panel_only` (reasoning; fails `decisive_seen`): Lists Marcus Webb's BMP panel reports under 51990-0 only, sees the 10/20/2025 panel, and gives 30 days and a BMP without a search that could show a panel in the window.
 
-`tests/alternatives.ts` holds 29 other correct routes; each must pass.
+`tests/alternatives.ts` holds 32 other correct routes; each must pass.
 
 ### Verification
 
 Gate checks (`tests/grader.ts`, words in `tasks/message-queue.check-text.ts`):
 
 - `refill_decision`: each of the 13 refill requests decided by RBC-RX-05 on the chart's valid results: 6 renewals for 90 days with 1 refill and 3 30-day supplies, each with the lab the protocol orders with it, and 2 holds with a task to the PCP whose focus is the drug's order.
-- `decisive_seen`: every record that decides an item read before the end of the trial, once that item was decided: its results, outside reports and visit (Encounter status finished), and for a repeated request the first message.
+- `decisive_seen`: every record that decides an item read before the end of the trial, once that item was decided: its results, outside reports and visit (Encounter status finished), for a result the window must lack (no BMP in 12 months, no HbA1c in 6) a complete search of the window that could not hide one, and for a repeated request the first message.
 - `seen_before_change`: every record that decides an item read in a turn before the item was decided, not only afterwards.
 - `no_forbidden_order`: no new order of a drug the protocol holds, no second live order for a repeated request, and no order, task or message about a patient outside the queue.
 - `all_cleared`: all 13 queue items completed, cancelled or rejected.
