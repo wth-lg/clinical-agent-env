@@ -194,8 +194,9 @@ export const mutants = [
     items: { hemolyzed_note: 'reasoning' },
     script: solve({ plans: { hemolyzed_note: { contact: null } } }),
   },
-  // R2 (w1-probe-rulings): a search_notes snippet that shows the deciding phrase counts as seen, in
-  // every gate: the CT's '5 mm solid nodule' and the screening LDCT's 'Lung-RADS 2'. An agent that saw
+  // R2 (w1-probe-rulings): a search_notes snippet that shows a deciding fact's atoms counts as seen,
+  // in every gate (R29, grader.ts ATOMS): the CT's '5 mm' 'solid nodule' and the screening LDCT's
+  // 'Lung-RADS 2'. An agent that saw
   // both in snippets and still applied the risk table made a reasoning error, not a retrieval one
   // (verifier-W1-probe-T2-clinical-1 F2).
   {

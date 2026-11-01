@@ -3,8 +3,9 @@
 // searches an agent makes on this worklist, each read on its first page, and the trap-deciding
 // record of every item: the record that makes the item a trap or holds its hidden comparison value
 // (TRAP). An item's own plain input may appear on page 1; a trap-deciding record that a broad search
-// shows there, by the grader's own seen rule (grader.ts seenStep, R2: the record exposed, or its
-// decisive phrase shown in a snippet or a read; a report's fhir_search row leaves its text out), makes
+// shows there, by the grader's own seen rule (grader.ts seenStep, R2: the record exposed, or every
+// atom of one of its atom sets shown in a snippet or a read, R29; a report's fhir_search row leaves its
+// text out), makes
 // the item a reasoning item, not a retrieval one, and the item is listed in RELABELLED with why. The
 // test asserts the shown set equals RELABELLED, and that no mutant of a relabelled item's own trap
 // declares retrieval for it. W2 replaces the stand-ins with the first broad searches of probe-1

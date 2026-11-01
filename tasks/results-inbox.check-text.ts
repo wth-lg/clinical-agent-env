@@ -19,7 +19,7 @@ const firstFailed = (ev: Record<string, unknown>) => {
 
 export const checkText: CheckText = {
   item_orders: {
-    requires: `the order each of the ${ACTIONABLE} items that need action calls for under the current version of its result: the screening LDCT in its window, an urgent repeat BMP by the next business day for a hemolyzed potassium or acute kidney injury, a stat BMP and a stat on-call notice for a corrected critical potassium, and the urgent specialist referral a final report recommends`,
+    requires: `the order each of the ${ACTIONABLE} items that need action calls for under the current version of its result: the screening LDCT in its window, an urgent repeat BMP by the next business day for a hemolyzed potassium or acute kidney injury, a stat BMP and a stat on-call notice for a corrected critical potassium, and the urgent specialist referral a final report recommends; an existing active order that meets the same terms counts`,
     found: firstFailed,
   },
   item_no_forbidden: {
@@ -27,7 +27,7 @@ export const checkText: CheckText = {
     found: firstFailed,
   },
   decisive_seen: {
-    requires: `each record an item's decision rests on seen at some point: read, or its deciding phrase shown in a note search`,
+    requires: `each record an item's decision rests on seen at some point: read, or every atom of one of its deciding facts shown in one note search snippet`,
     found: firstFailed,
   },
   items_closed: {
