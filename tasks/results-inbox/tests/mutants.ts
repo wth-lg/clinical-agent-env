@@ -194,8 +194,9 @@ export const mutants = [
     items: { hemolyzed_note: 'reasoning' },
     script: solve({ plans: { hemolyzed_note: { contact: null } } }),
   },
-  // R2 (w1-probe-rulings): a search_notes snippet that shows the deciding phrase counts as seen, in
-  // every gate: the CT's '5 mm solid nodule' and the screening LDCT's 'Lung-RADS 2'. An agent that saw
+  // R2 (w1-probe-rulings): a search_notes snippet that shows a deciding fact's atoms counts as seen,
+  // in every gate (R29, grader.ts ATOMS): the CT's '5 mm' 'solid nodule' and the screening LDCT's
+  // 'Lung-RADS 2'. An agent that saw
   // both in snippets and still applied the risk table made a reasoning error, not a retrieval one
   // (verifier-W1-probe-T2-clinical-1 F2).
   {
@@ -324,8 +325,8 @@ export const mutants = [
     items: { outside: 'over_action' },
     script: ((script) => [...script.slice(0, -1), { calls: [{ name: 'send_message', input: LOOSE_PAGE }] }, script.at(-1)!])(solve()),
   },
-  // N5 (R23): result_seen_before_action covers what RBC-INBOX-01 §1 names, ordering and completing
-  // the item. An order written before the result was read fails it, as process.
+  // N5 (R23): result_seen_before_action covers what RBC-INBOX-01 §1 names, ordering, completing
+  // and handing on the item. An order written before the result was read fails it, as process.
   orderBeforeRead(),
 ] satisfies Mutant[];
 

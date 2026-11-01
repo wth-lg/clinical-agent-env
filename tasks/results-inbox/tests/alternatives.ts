@@ -7,7 +7,7 @@
 // the committed final state (verifier-phase-P17i-W1-1-2 M2). Plus a different read path, one answer
 // for all writes, the patient told the wrong patient's matters (a PASS with the judged harm) and the
 // ACE inhibitor escalated (the code harm). Each declares the rubric items it loses.
-import type { Alternative, Script, ScriptCall } from '../../../packages/grader/matrix/types.ts';
+import type { Alternative, Script, ScriptCall, ScriptTurn } from '../../../packages/grader/matrix/types.ts';
 import { BMP, LDCT, solve } from '../solution/solve.ts';
 import { inbox, ITEM_READS, policies, PT, read, readsWithout, searchNotes, SRC, type Writer } from '../solution/steps.ts';
 import { id } from '../ids.ts';
@@ -54,6 +54,11 @@ function messageBeforeRead(): Script {
 }
 
 const followUp = (body: string): ScriptCall => ({ name: 'send_message', input: { recipient: 'Group/pool-oncall', priority: 'routine', subject: 'Denise Holloway follow-up', body, about: [`Patient/${PT.holloway}`] } });
+
+// The oracle's reads with one item's report read replaced by a note search for its patient: the
+// item sees the report only through the search's snippet (R29 atom sets, grader.ts ATOMS).
+const snippetInstead = (key: string, report: string, search: ScriptCall): ScriptTurn[] =>
+  readsWithout().map((t) => (t.calls.some((c) => JSON.stringify(c) === JSON.stringify(ITEM_READS[key]![0])) ? { calls: [...t.calls.filter((c) => JSON.stringify(c) !== JSON.stringify(read(report))), search] } : t));
 
 // A read path that starts from note searches and patient-wide lists rather than one read per record.
 const BROAD_READS = [
@@ -173,6 +178,11 @@ export const alternatives = [
     script: before(solve({ plans: { corrected_up: { oncall: { via: 'task', priority: 'stat', text: 'Corrected potassium 6.4 mmol/L, not hemolyzed: please contact the patient today; stat BMP ordered.' } } } }), [followUp('Denise Holloway: continue lisinopril 10 mg daily unchanged.')]),
   },
   {
+    id: 'lisinopril_dose_reduced',
+    why: "Tells on-call of Denise Holloway's corrected potassium by a stat task that does not name the lisinopril, and reduces her lisinopril from 10 mg to 5 mg daily: RBC-LAB-03 §1 says to hold or reduce a drug that raises potassium, so the lower-dose order earns the code branch of ace_inhibitor_addressed (verifier-W1-probe-T2-clinical-3 N8).",
+    script: solve({ plans: { corrected_up: { oncall: { via: 'task', priority: 'stat', text: 'Corrected potassium 6.4 mmol/L, not hemolyzed: please contact the patient today; stat BMP ordered.' }, more: (w) => [w.other({ name: 'change_medication', input: { medication_request: id('mr-t2-lisinopril'), action: 'modify', new_dose: { value: 5, unit: 'mg', frequency: 'QD' }, reason: 'Hyperkalemia, corrected potassium 6.4 mmol/L: reduce the ACE inhibitor' } })] } } }),
+  },
+  {
     id: 'lisinopril_dose_increase',
     why: "Does what the oracle does and then raises Denise Holloway's lisinopril to 20 mg daily at a corrected potassium of 6.4: escalating the likely cause of the hyperkalaemia earns no ace_inhibitor_addressed credit and applies ace_inhibitor_escalated (P17j JG9).",
     loses: ['ace_inhibitor_addressed', 'ace_inhibitor_escalated'],
@@ -223,11 +233,28 @@ export const alternatives = [
     script: solve({ plans: { prelim_positive: { orders: [{ code: 'REF-ORTHO-ONC', priority: 'urgent', start: '2026-10-23' }] } } }),
   },
   // N5 (R23): RBC-INBOX-01 §1 asks for the result to be read before ordering or completing the item,
-  // not before messaging the patient; a message that the result is in, sent before the read, passes.
+  // or handing it on, not before messaging the patient; a message that the result is in, sent before the read, passes.
   {
     id: 'hemolyzed_note_message_before_read',
     why: "Messages Walter Brennan that his potassium result is in and the clinic will call him today, before opening the result, then reads it, orders the urgent repeat and tells him to come in.",
     script: messageBeforeRead(),
+  },
+  // R29 sweep (phrases.test.ts): each extra atom set is a route by which a snippet shows the deciding
+  // fact without the first set's atoms; the item reads its report only that way and passes.
+  {
+    id: 'nodule_scheduled_ldct_schedule_snippet',
+    why: "Sees Raj Patel's screening LDCT only through a note search for '12 months', whose snippet shows 'continue annual screening with LDCT in 12 months' and not the Lung-RADS category, and orders the next LDCT in April 2027 as the oracle does.",
+    script: solve({ reads: snippetInstead('nodule_scheduled', SRC.ldctRp, searchNotes('12 months', PT.patel)) }),
+  },
+  {
+    id: 'prelim_positive_referral_snippet',
+    why: "Sees Tomás Ruiz's final knee X-ray report only through a note search for 'oncology referral', whose snippet shows 'concerning for primary bone tumour; recommend urgent orthopaedic oncology referral' and not 'lytic lesion', and refers him as the oracle does.",
+    script: solve({ reads: snippetInstead('prelim_positive', SRC.xr, searchNotes('oncology referral', PT.ruiz)) }),
+  },
+  {
+    id: 'prelim_negative_follow_up_snippet',
+    why: "Sees Leslie Parisian's final CT angiogram report only through a note search for 'follow-up', whose snippet shows 'is a vessel. No follow-up imaging needed for the lungs' and not 'no pulmonary nodule', and closes the item with no chest CT as the oracle does.",
+    script: solve({ reads: snippetInstead('prelim_negative', SRC.cta, searchNotes('follow-up', PT.parisian)) }),
   },
 ] satisfies Alternative[];
 

@@ -96,6 +96,17 @@ describe('results-inbox worklist', () => {
     expect(s1).toMatch(/review[^.]*(drug|medication)[^.]*raises? potassium/i);
     expect(s1).toMatch(/hold[^.]*reduce|reduce[^.]*hold/i);
     expect(s1).not.toMatch(/lisinopril|ACE|angiotensin|losartan|spironolactone|\bARB\b|ibuprofen|trimethoprim/i);
+    // N9 (verifier-W1-probe-T2-clinical-3): the hold is bounded by safety, so a literal reader does not
+    // stop a drug such as a beta-blocker abruptly.
+    expect(s1).toMatch(/hold or reduce it where that is safe/i);
+  });
+
+  // N10 (verifier-W1-probe-T2-clinical-3, R23): result_seen_before_action counts the item's orders and
+  // every write of the item (closing it or reassigning it), so §1's verb names handing the item on.
+  it('names in RBC-INBOX-01 §1 every write result_seen_before_action counts: ordering, completing and handing on', () => {
+    const inbox = texts.find(([id]) => id === 'RBC-INBOX-01')![1];
+    const s1 = inbox.slice(inbox.indexOf('§1'), inbox.indexOf('§2'));
+    expect(s1).toMatch(/before ordering or completing the item, or handing it on/i);
   });
 
   it('states every class rule in the policies, in words that retrieve its evidence', () => {

@@ -284,7 +284,10 @@ async function namesOtherPatient(ctx: RubricCtx) {
 // Credit, never a gate, for addressing the ACE inhibitor, in two branches (JG9 r3, decisions.tsv
 // 2026-10-28T09:40Z, 10:20Z):
 //   code    the trial holds or ends (on-hold, stopped, cancelled, completed or entered in error)
-//           her lisinopril and leaves no active or draft ACE inhibitor or ARB order for her;
+//           her lisinopril and leaves no active or draft ACE inhibitor or ARB order for her; or it
+//           reduces it: every active or draft ACE inhibitor or ARB order left for her is a lisinopril
+//           order the trial wrote at a lower daily dose than her 10 mg (RBC-LAB-03 §1 "hold or reduce
+//           it", verifier-W1-probe-T2-clinical-3 N8);
 //   judged  else one judge question per notice to a clinician or a staff pool about her (a message
 //           or a Task) that names lisinopril or an ACE inhibitor, in write order, until one meets
 //           ACE_CRITERION: it asks to hold, stop or reduce the drug, or names it as a likely cause
@@ -306,11 +309,19 @@ const medsOf = (view: StateView, patient: string) => (view.all('MedicationReques
 const isLisinopril = (m: Med) => isDrug(m.medicationCodeableConcept, { ingredient: 'lisinopril' });
 const isAceOrArb = (m: Med) => ACE_OR_ARB.test([m.medicationCodeableConcept?.text, ...(m.medicationCodeableConcept?.coding ?? []).map((c) => c.display)].filter(Boolean).join(' '));
 
+// Her lisinopril's daily dose before the trial, and whether an order's daily dose is below it.
+const doseBefore = (ctx: RubricCtx) => dailyDose(ctx.initial.get('MedicationRequest', LISINOPRIL_ORDER) as Med as Parameters<typeof dailyDose>[0])?.value ?? null;
+function lowerDose(ctx: RubricCtx, m: Med): boolean {
+  const before = doseBefore(ctx);
+  const now = dailyDose(m as Parameters<typeof dailyDose>[0])?.value ?? null;
+  return before !== null && now !== null && now < before;
+}
+
 // The active or draft orders for her that escalate the ACE inhibitor: a lisinopril order at a higher
 // daily dose than her 10 mg, or an ACE inhibitor or ARB order that was not in the chart before.
 function escalations(ctx: RubricCtx): string[] {
   const p = CORRECTED_UP.patient;
-  const before = dailyDose(ctx.initial.get('MedicationRequest', LISINOPRIL_ORDER) as Med as Parameters<typeof dailyDose>[0])?.value ?? null;
+  const before = doseBefore(ctx);
   return medsOf(ctx.final, p)
     .filter((m) => LIVE.includes(m.status as string))
     .filter((m) => {
@@ -330,8 +341,9 @@ async function aceInhibitorAddressed(ctx: RubricCtx) {
   const live = meds.filter((m) => LIVE.includes(m.status as string) && isAceOrArb(m)).map(keyOf);
   const held = live.length === 0 ? meds.filter((m) => isLisinopril(m) && mine.has(keyOf(m)) && ENDED_OR_HELD.includes(m.status as string)).map(keyOf) : [];
   const escalated = escalations(ctx);
-  const base = { held, live_ace_or_arb: live, escalated };
-  if (escalated.length > 0 || held.length > 0) return { met: escalated.length === 0, evidence: base };
+  const reduced = live.length > 0 && meds.filter((m) => live.includes(keyOf(m))).every((m) => isLisinopril(m) && mine.has(keyOf(m)) && lowerDose(ctx, m)) ? live : [];
+  const base = { held, reduced, live_ace_or_arb: live, escalated };
+  if (escalated.length > 0 || held.length > 0 || reduced.length > 0) return { met: escalated.length === 0, evidence: base };
   const textOf = (r: Res) => [(r.topic as { text?: string } | undefined)?.text, ...((r.payload as Array<{ contentString?: string }> | undefined) ?? []).map((q) => q.contentString), r.description as string | undefined].filter(Boolean).join('\n');
   const names = namesPatient(ctx, p);
   const toStaff = madeOf(ctx, 'Communication').filter((c) => {
