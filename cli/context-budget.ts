@@ -1,5 +1,6 @@
 // pnpm cli context-budget <run>[,<run>...] [--task all|<id,...>] [--observed-items <id=n,...>]
-//                         [--project --items <n | id=n,...>] [--cost-from <run,...>] [--json]
+//                         [--project --items <n | id=n,...> [--events <id=e,...> --req-per-event <r>]]
+//                         [--cost-from <run,...>] [--json]
 // The context and cost meter (plan-amendment-worklist.md, W0-B). Each request re-reads the whole
 // context, so a trial's cost grows with the square of its request count T. Per trial with first-
 // request context C0, growth g tokens per request and o output tokens per request:
@@ -19,6 +20,9 @@
 // a broken line: a projection from it is not trusted. A trial with T < 2 is warned about.
 // --project --items projects each trial at n items with its own k = (T - 2) / items, C0, g and o,
 // and takes the medians of T, cost, peak context and working time; p90 = P90_OVER_MEDIAN x median.
+// --events <id=e,...> --req-per-event <r> adds mid-trial events (plan-amendment-w4 "Sizing"): each
+// event adds r requests, so a trial is projected at T = 2 + k x n + r x e with its own k. A task
+// --events leaves out is projected at 0 events; r may be fractional (a measured oracle mean).
 // It checks the budget lines: p90 at most PER_TRIAL_BUDGET_USD, peak under 0.6 x
 // CONTEXT_WINDOW_TOKENS, T under 0.5 x the task's max_turns, working time under 0.5 x MAX_WALL_MS,
 // and, over two or more tasks, a mean p90 at most MEAN_P90_BUDGET_USD; with fewer than
@@ -64,7 +68,7 @@ export interface Deps {
 }
 
 const defaults: Deps = { out: (l) => process.stdout.write(`${l}\n`), err: (l) => process.stderr.write(`${l}\n`) };
-const USAGE = 'usage: pnpm cli context-budget <run>[,<run>...] [--task all|<id,...>] [--observed-items <id=n,...>] [--project --items <n|id=n,...>] [--cost-from <run,...>] [--json]';
+const USAGE = 'usage: pnpm cli context-budget <run>[,<run>...] [--task all|<id,...>] [--observed-items <id=n,...>] [--project --items <n|id=n,...> [--events <id=e,...> --req-per-event <r>]] [--cost-from <run,...>] [--json]';
 
 // The entries of tasks/<id>/expected.ts expected.items in this checkout: a list's length, an object's
 // keys; null when the file or the list is missing.
@@ -113,6 +117,9 @@ export interface Projection {
   peak_context: number;
   working_ms: number | null;
   max_turns: number | null;
+  // Set when --events is given: the events projected and the requests each adds.
+  events?: number;
+  req_per_event?: number;
 }
 
 // The model's cost of a trial with T requests.
@@ -186,15 +193,17 @@ export function fitTask(trials: readonly TrialUsage[], items: number, skipped_in
   };
 }
 
-// Each trial at n items, with its own k = (T - 2) / the observed items, C0, g, o and working time
-// per request; the medians over the trials.
-export function project(task_id: string, trials: readonly TrialUsage[], observedItems: number, items: number, max_turns: number | null): Projection {
-  const at = trials.map((t) => ({ t, T: 2 + ((t.T - 2) / observedItems) * items }));
+// Each trial at n items and e events, with its own k = (T - 2) / the observed items, C0, g, o and
+// working time per request, and r requests per event; the medians over the trials.
+export function project(task_id: string, trials: readonly TrialUsage[], observedItems: number, items: number, max_turns: number | null, events?: { events: number; req_per_event: number }): Projection {
+  const extra = events === undefined ? 0 : events.events * events.req_per_event;
+  const at = trials.map((t) => ({ t, T: 2 + ((t.T - 2) / observedItems) * items + extra }));
   const median_usd = median(at.map((x) => modelCost({ ...x.t, T: x.T })));
   const timed = at.flatMap((x) => (x.t.ms_per_request === null ? [] : [x.t.ms_per_request * x.T]));
   return {
     task_id, items, T: median(at.map((x) => x.T)), median_usd, p90_usd: P90_OVER_MEDIAN * median_usd,
     peak_context: median(at.map((x) => x.t.C0 + x.t.g * (x.T - 1))), working_ms: timed.length > 0 ? median(timed) : null, max_turns,
+    ...(events === undefined ? {} : events),
   };
 }
 
@@ -233,7 +242,18 @@ function parseCounts(spec: string, ids: readonly string[]): Record<string, numbe
   return out;
 }
 
-const WITH_VALUE = new Set(['--task', '--items', '--observed-items', '--cost-from']);
+// "id=e,id=e" with e a whole number, 0 allowed; null when malformed.
+function parseEvents(spec: string): Record<string, number> | null {
+  const out: Record<string, number> = {};
+  for (const part of spec.split(',')) {
+    const [id, value] = part.split('=');
+    if (!id || !/^(0|[1-9][0-9]*)$/.test(value ?? '')) return null;
+    out[id] = Number(value);
+  }
+  return out;
+}
+
+const WITH_VALUE = new Set(['--task', '--items', '--observed-items', '--cost-from', '--events', '--req-per-event']);
 const FLAGS = new Set(['--project', '--json']);
 
 export async function main(args: string[], deps: Deps = defaults): Promise<number> {
@@ -254,6 +274,10 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
   const project_ = opts.has('--project');
   if (project_ !== opts.has('--items')) return usage('--project and --items go together');
   if (opts.has('--cost-from') && !project_) return usage('--cost-from goes with --project');
+  if (opts.has('--events') !== opts.has('--req-per-event')) return usage('--events and --req-per-event go together');
+  if (opts.has('--events') && !project_) return usage('--events goes with --project');
+  const reqPerEvent = opts.has('--req-per-event') ? Number(opts.get('--req-per-event')) : undefined;
+  if (reqPerEvent !== undefined && !(/^[0-9]+(\.[0-9]+)?$/.test(opts.get('--req-per-event') as string) && Number.isFinite(reqPerEvent))) return usage('--req-per-event takes a number >= 0');
   const json = opts.has('--json');
   const say = json ? deps.err : deps.out;
   const runs = (positional[0] as string).split(',').filter((s) => s !== '');
@@ -298,6 +322,10 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
   if (counts === null) return usage('--items takes a whole number, or id=n,...');
   const stray = Object.keys(counts).filter((id) => !ids.includes(id));
   if (stray.length > 0) return usage(`--items names ${stray.join(', ')}, not among the tasks measured`);
+  const eventCounts = opts.has('--events') ? parseEvents(opts.get('--events') as string) : {};
+  if (eventCounts === null) return usage('--events takes id=e,... (e a whole number, 0 allowed)');
+  const strayEvents = Object.keys(eventCounts).filter((id) => !ids.includes(id));
+  if (strayEvents.length > 0) return usage(`--events names ${strayEvents.join(', ')}, not among the tasks measured`);
 
   const tasks = deps.tasks ?? nodeTaskSource();
   let versions: ReturnType<typeof checkoutVersions> | undefined;
@@ -346,10 +374,11 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
     } catch {
       say(`  ${id} is not a task in this checkout: the max_turns line is not checked`);
     }
-    const p = project(id, trials, items, n, maxTurns);
+    const ev = reqPerEvent === undefined ? undefined : { events: eventCounts[id] ?? 0, req_per_event: reqPerEvent };
+    const p = project(id, trials, items, n, maxTurns, ev);
     result[id].projection = p;
     projections.push(p);
-    say(`  at ${n} items: T ${p.T.toFixed(1)}, median ${money(p.median_usd)}, p90 ${money(p.p90_usd)}, peak ${kTok(p.peak_context)} (${(p.peak_context / CONTEXT_WINDOW_TOKENS).toFixed(2)} of the window)${p.working_ms === null ? '' : `, working ${minutes(p.working_ms)}`}`);
+    say(`  at ${n} items${ev === undefined ? '' : ` and ${ev.events} events (r ${ev.req_per_event})`}: T ${p.T.toFixed(1)}, median ${money(p.median_usd)}, p90 ${money(p.p90_usd)}, peak ${kTok(p.peak_context)} (${(p.peak_context / CONTEXT_WINDOW_TOKENS).toFixed(2)} of the window)${p.working_ms === null ? '' : `, working ${minutes(p.working_ms)}`}`);
   }
   breaks.push(...budgetBreaks(projections));
   if (project_ && projections.length < PLANNED_TASKS) {
