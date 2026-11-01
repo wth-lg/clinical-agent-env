@@ -88,6 +88,7 @@
 //   no_passes          when it has 0 passes in >= NO_PASS_MIN valid trials
 // summary.json carries the flags without final; cli/audit-check.ts recomputes them with its
 // --final and exits 1 on a flagged task until audit.jsonl holds that task's task-validity review.
+import { FINAL_PASS_BAND } from './cost.ts';
 import { LIMITS } from './events.ts';
 import { FAULT, isValid, NOT_RERUN_REASON, OUTCOMES, type Outcome } from './outcomes.ts';
 import { decisiveGate, TAXONOMY } from '../grader/attribution.ts';
@@ -101,7 +102,8 @@ import { decisiveGate, TAXONOMY } from '../grader/attribution.ts';
 // 7: model and effort added; fault_counts and top_failed_checks added per task.
 // 8: fault_counts.taxonomy gains action_form (TAXONOMY, P17j JG8b).
 // 9: env_limit added per task and in the totals; limits gains context_window (W0-A).
-export const SUMMARY_SCHEMA_VERSION = 9;
+// 10: band_verdict added per task (plan-amendment-w4 PW4-F).
+export const SUMMARY_SCHEMA_VERSION = 10;
 // A met or unknown rubric item worth this many points or fewer is a harm: such a PASS is not
 // pass_no_harm.
 export const HARM_POINTS = -5;
@@ -241,6 +243,30 @@ export interface SummaryInput {
   audit?: Readonly<Record<string, string | null>> | null;
 }
 
+// The verdict in words (plan-amendment-w4 PW4-F): where a task's k/n sits against the final pass
+// band (cost.ts FINAL_PASS_BAND, inclusive). The one definition: summary.json's band_verdict, cli
+// summary, cli result-card and the UI all read bandVerdict, and the glossary shows
+// BAND_VERDICT_RULE (scripts/test/one-definition.test.ts fails on a copy of it elsewhere).
+export const BAND_VERDICTS = ['In band', 'Above band', 'Saturated', 'Below band'] as const;
+export type BandVerdict = (typeof BAND_VERDICTS)[number];
+const pctOf = (x: number) => `${Math.round(x * 100)}%`;
+export const BAND_VERDICT_RULE =
+  `A task is In band when its pass rate k/n is from ${pctOf(FINAL_PASS_BAND[0])} to ${pctOf(FINAL_PASS_BAND[1])}, both included. ` +
+  `It is Saturated when the lower end of its Wilson 95% interval is above ${pctOf(FINAL_PASS_BAND[1])}: more trials would not bring it into the band. ` +
+  `It is Above band when its rate is above ${pctOf(FINAL_PASS_BAND[1])} but the interval still reaches the band, and Below band when its rate is under ${pctOf(FINAL_PASS_BAND[0])}. ` +
+  'A task with no valid trials has no verdict.';
+
+// The verdict of k passes in n valid trials (BAND_VERDICT_RULE); null when n is 0. Throws when k
+// and n are not counts with k <= n.
+export function bandVerdict(k: number, n: number): BandVerdict | null {
+  if (!Number.isSafeInteger(k) || !Number.isSafeInteger(n) || k < 0 || k > n) throw new RangeError(`bandVerdict(${k}, ${n}): k and n must be whole numbers with 0 <= k <= n`);
+  if (n === 0) return null;
+  const rate = k / n;
+  if (rate < FINAL_PASS_BAND[0]) return 'Below band';
+  if (rate <= FINAL_PASS_BAND[1]) return 'In band';
+  return wilson(k, n)!.lo > FINAL_PASS_BAND[1] ? 'Saturated' : 'Above band';
+}
+
 // The k of pass^k each task reports.
 export const PASS_K = [1, 3, 5] as const;
 
@@ -270,6 +296,8 @@ export interface TaskSummary {
   passes: number;
   pass_rate: number | null;
   wilson95: Interval | null;
+  // bandVerdict(passes, trials): the verdict in words.
+  band_verdict: BandVerdict | null;
   // The rate with refusals left out of the denominator (reported both ways).
   refusals: number;
   refusal_excluded_rate: number | null;
@@ -503,6 +531,7 @@ export function summarize(input: SummaryInput): Summary {
       passes,
       pass_rate: valid.length === 0 ? null : passes / valid.length,
       wilson95: wilson(passes, valid.length),
+      band_verdict: bandVerdict(passes, valid.length),
       refusals,
       refusal_excluded_rate: valid.length - refusals === 0 ? null : passes / (valid.length - refusals),
       outcomes: histogram(grades.map((g) => g.outcome)),
@@ -693,7 +722,8 @@ export function validateSummary(x: unknown): string[] {
       }
       const histogram = (v: unknown) => isObj(v) && Object.entries(v).every(([o, n]) => (OUTCOMES as readonly string[]).includes(o) && count(n));
       check(`tasks.${id}.`, t, {
-        task_versions: strings, env_versions: strings, grader_task_versions: strings, records: count, trials: count, passes: count, pass_rate: rate, wilson95: interval, refusals: count,
+        task_versions: strings, env_versions: strings, grader_task_versions: strings, records: count, trials: count, passes: count, pass_rate: rate, wilson95: interval,
+        band_verdict: (v) => v === null || (BAND_VERDICTS as readonly unknown[]).includes(v), refusals: count,
         refusal_excluded_rate: rate, env_error_raw: count, env_limit: count, grader_error: count, grader_error_history: count, regraded: count, requeued: count, mean_score: (v) => v === null || num(v), mean_cost_usd: (v) => v === null || num(v),
         outcomes: histogram, recorded_outcomes: histogram,
         raw_mean_score: (v) => v === null || num(v), gate_fraction: rate, pass_no_harm: count, pass_no_harm_rate: rate,
@@ -718,12 +748,17 @@ export function validateSummary(x: unknown): string[] {
       }
       if (count(t.passes) && count(t.trials) && (t.passes as number) > (t.trials as number)) errors.push(`tasks.${id}.passes: more than its trials`);
       // pass_k is a function of passes and trials: a value that is not passK of them is stale or edited.
-      else if (count(t.passes) && count(t.trials) && isObj(t.pass_k)) {
-        for (const k of PASS_K) {
-          const want = passK(t.passes as number, t.trials as number, k);
-          const got = t.pass_k[String(k)];
-          if (Object.hasOwn(t.pass_k, String(k)) && got !== want) errors.push(`tasks.${id}.pass_k.${k}: ${JSON.stringify(got)}, not pass^${k} of ${t.passes as number}/${t.trials as number} = ${want}`);
+      else if (count(t.passes) && count(t.trials)) {
+        if (isObj(t.pass_k)) {
+          for (const k of PASS_K) {
+            const want = passK(t.passes as number, t.trials as number, k);
+            const got = t.pass_k[String(k)];
+            if (Object.hasOwn(t.pass_k, String(k)) && got !== want) errors.push(`tasks.${id}.pass_k.${k}: ${JSON.stringify(got)}, not pass^${k} of ${t.passes as number}/${t.trials as number} = ${want}`);
+          }
         }
+        // band_verdict is a function of passes and trials too.
+        const want = bandVerdict(t.passes as number, t.trials as number);
+        if (Object.hasOwn(t, 'band_verdict') && t.band_verdict !== want) errors.push(`tasks.${id}.band_verdict: ${JSON.stringify(t.band_verdict)}, not the verdict of ${t.passes as number}/${t.trials as number}, ${JSON.stringify(want)}`);
       }
     }
   }

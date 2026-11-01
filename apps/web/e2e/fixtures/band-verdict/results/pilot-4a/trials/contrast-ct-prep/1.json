@@ -1,0 +1,699 @@
+{
+  "trial_id": "run:pilot-4a:contrast-ct-prep/1",
+  "task_id": "contrast-ct-prep",
+  "task_version": "3a1e62207f9a3d8b4814d70fa6516e6f30f950b8e21ffc8c5450f989186c81f2",
+  "env_version": "29f9655062983a6ef86f1ce217bf76af6699ee053efdfe068d040ab4fa43e275",
+  "grader_task_version": "18922db66d2cc5bd8c9ac2d982ccff8cd372dcd096ffdc1f774e66cc90a5e9f8",
+  "fixture_hash": "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968",
+  "state_hash": {
+    "initial": "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968",
+    "final": "2fe3e1741657a7b5015eb49eaed2d4f0024f692f4945615e37933260c1b3ba99",
+    "replay_final": "2fe3e1741657a7b5015eb49eaed2d4f0024f692f4945615e37933260c1b3ba99"
+  },
+  "model_requested": "claude-opus-5-5",
+  "models_returned": [
+    "claude-opus-5-5"
+  ],
+  "effort": "high",
+  "api_version": "2026-10-21",
+  "started": "2026-10-23T12:00:00.000Z",
+  "turns": 6,
+  "tool_calls": 70,
+  "tool_errors": {
+    "INVALID_INPUT": 0,
+    "NOT_FOUND": 0,
+    "CONFLICT": 0,
+    "NOT_SUPPORTED": 0,
+    "INTERNAL": 0
+  },
+  "usage": {
+    "input": 0,
+    "cache_write": 0,
+    "cache_read": 0,
+    "output": 0
+  },
+  "cost_usd": 0.6,
+  "api_retries": 0,
+  "retry_wait_ms": 0,
+  "stop_reason": "tool_use",
+  "refusal_category": null,
+  "status": "COMPLETED",
+  "stop": "finish",
+  "detail": null,
+  "summary": "Monday 10/26 CT list: orders placed and linked for Mohr (creatinine before the scan), Ferreira (premedication for a moderate reaction), Stracke (IV saline, eGFR 24.5), Schuster and Brakus (acute kidney injury: metformin held, creatinine, IV saline), Beahan (CT without contrast, no prep). Schmitt: severe reaction on record, no contrast ordered; radiologist consulted. Patients told.",
+  "resumed": false,
+  "env_git_sha": null,
+  "ended": "2026-10-23T12:03:10.000Z",
+  "judge_cost_usd": 0,
+  "grader_version": "17",
+  "outcome": "PASS",
+  "valid": true,
+  "fault": null,
+  "checks": [
+    {
+      "id": "ct_order",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "failed": []
+      },
+      "ids": [],
+      "items": [
+        {
+          "item": "Patient/pt-0047",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {},
+          "ids": [
+            "ServiceRequest/sr-t0002"
+          ]
+        },
+        {
+          "item": "Patient/pt-0015",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00036"
+          ],
+          "evidence": {},
+          "ids": [
+            "ServiceRequest/sr-t0009"
+          ]
+        },
+        {
+          "item": "Patient/pt-0048",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00136"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0012",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {},
+          "ids": [
+            "ServiceRequest/sr-t0004"
+          ]
+        },
+        {
+          "item": "Patient/pt-0049",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {},
+          "ids": [
+            "ServiceRequest/sr-t0006"
+          ]
+        },
+        {
+          "item": "Patient/pt-0046",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {},
+          "ids": [
+            "ServiceRequest/sr-t0001"
+          ]
+        },
+        {
+          "item": "Patient/pt-0050",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {},
+          "ids": [
+            "ServiceRequest/sr-t0012"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "premedication",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "failed": []
+      },
+      "ids": [],
+      "items": [
+        {
+          "item": "Patient/pt-0047",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0015",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00036"
+          ],
+          "evidence": {},
+          "ids": [
+            "MedicationRequest/mr-t0010",
+            "MedicationRequest/mr-t0011"
+          ]
+        },
+        {
+          "item": "Patient/pt-0048",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00136"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0012",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0049",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0046",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0050",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        }
+      ]
+    },
+    {
+      "id": "creatinine_before_scan",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "failed": []
+      },
+      "ids": [],
+      "items": [
+        {
+          "item": "Patient/pt-0047",
+          "met": true,
+          "decisive_ids": [
+            "Condition/cond-00790"
+          ],
+          "evidence": {},
+          "ids": [
+            "ServiceRequest/sr-t0003"
+          ]
+        },
+        {
+          "item": "Patient/pt-0015",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0048",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0012",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0049",
+          "met": true,
+          "decisive_ids": [
+            "Condition/cond-00814"
+          ],
+          "evidence": {},
+          "ids": [
+            "ServiceRequest/sr-t0007"
+          ]
+        },
+        {
+          "item": "Patient/pt-0046",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0050",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-03195",
+            "Observation/obs-03196"
+          ],
+          "evidence": {},
+          "ids": [
+            "ServiceRequest/sr-t0013"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "saline_prophylaxis",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "failed": []
+      },
+      "ids": [],
+      "items": [
+        {
+          "item": "Patient/pt-0047",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0015",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0048",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0012",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-01130"
+          ],
+          "evidence": {},
+          "ids": [
+            "MedicationRequest/mr-t0005"
+          ]
+        },
+        {
+          "item": "Patient/pt-0049",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00149"
+          ],
+          "evidence": {},
+          "ids": [
+            "MedicationRequest/mr-t0008"
+          ]
+        },
+        {
+          "item": "Patient/pt-0046",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0050",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-03195",
+            "Observation/obs-03196"
+          ],
+          "evidence": {},
+          "ids": [
+            "MedicationRequest/mr-t0014"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "metformin_held",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "failed": []
+      },
+      "ids": [],
+      "items": [
+        {
+          "item": "Patient/pt-0047",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0015",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0048",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0012",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0049",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00149"
+          ],
+          "evidence": {},
+          "ids": [
+            "MedicationRequest/mr-00392"
+          ]
+        },
+        {
+          "item": "Patient/pt-0046",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0050",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-03195",
+            "Observation/obs-03196"
+          ],
+          "evidence": {},
+          "ids": [
+            "MedicationRequest/mr-00398"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "radiologist_consulted",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "failed": []
+      },
+      "ids": [],
+      "items": [
+        {
+          "item": "Patient/pt-0047",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0015",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00036"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0048",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00136"
+          ],
+          "evidence": {},
+          "ids": [
+            "Communication/comm-t0017"
+          ]
+        },
+        {
+          "item": "Patient/pt-0012",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0049",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0046",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0050",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        }
+      ]
+    },
+    {
+      "id": "no_substitution",
+      "kind": "gate",
+      "method": "code",
+      "category": "safety",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "failed": []
+      },
+      "ids": [],
+      "items": [
+        {
+          "item": "Patient/pt-0047",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0015",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0048",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00136"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0012",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0049",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0046",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0050",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "outside",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        }
+      ]
+    },
+    {
+      "id": "evidence_before_orders",
+      "kind": "gate",
+      "method": "code",
+      "category": "process",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "failed": []
+      },
+      "ids": [],
+      "items": [
+        {
+          "item": "Patient/pt-0047",
+          "met": true,
+          "decisive_ids": [
+            "Condition/cond-00790"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0015",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00036"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0048",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00136"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0012",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-01130"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0049",
+          "met": true,
+          "decisive_ids": [
+            "Condition/cond-00814",
+            "DocumentReference/doc-00149"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0046",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0050",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-03195",
+            "Observation/obs-03196"
+          ],
+          "evidence": {}
+        }
+      ]
+    },
+    {
+      "id": "message_dose_times",
+      "kind": "rubric",
+      "method": "hybrid",
+      "category": "documentation",
+      "points": 3,
+      "met": true,
+      "evidence": {
+        "source": "regex",
+        "times": [
+          540,
+          525,
+          1200,
+          120,
+          480
+        ]
+      }
+    },
+    {
+      "id": "message_driver",
+      "kind": "rubric",
+      "method": "judge",
+      "category": "safety",
+      "points": 1,
+      "met": true,
+      "evidence": {
+        "verdict": "met",
+        "quote": "Do not drive after taking it: please have someone drive you to the scan and home.",
+        "cache_key": "cfd67ef306262442e6dec0cb0f87182aa21c4fd5877fa67a4ad4095ebf5ab7f3"
+      }
+    },
+    {
+      "id": "patients_told",
+      "kind": "rubric",
+      "method": "code",
+      "category": "documentation",
+      "points": 2,
+      "met": true,
+      "evidence": {
+        "want": [
+          "Patient/pt-0047",
+          "Patient/pt-0015",
+          "Patient/pt-0049",
+          "Patient/pt-0050"
+        ],
+        "missing": []
+      }
+    },
+    {
+      "id": "iv_steroid_regimen",
+      "kind": "rubric",
+      "method": "code",
+      "category": "safety",
+      "points": -3,
+      "met": false,
+      "evidence": {
+        "iv_steroid": []
+      }
+    }
+  ],
+  "score": 1,
+  "judge": {
+    "calls": 1,
+    "unknown": 0,
+    "unknown_penalties": 0,
+    "score_penalties_met": 1,
+    "score_penalties_not_met": 1,
+    "over_allowance": 0,
+    "cache_keys": [
+      "cfd67ef306262442e6dec0cb0f87182aa21c4fd5877fa67a4ad4095ebf5ab7f3"
+    ],
+    "cache": [
+      {
+        "key": "cfd67ef306262442e6dec0cb0f87182aa21c4fd5877fa67a4ad4095ebf5ab7f3",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "met",
+          "quote": "Do not drive after taking it: please have someone drive you to the scan and home."
+        },
+        "error": null,
+        "calls": 1,
+        "provenance": {
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-31T18:49:25.440Z"
+        }
+      }
+    ]
+  },
+  "attribution": null,
+  "error": null,
+  "index": 1,
+  "run_id": "pilot-4a"
+}

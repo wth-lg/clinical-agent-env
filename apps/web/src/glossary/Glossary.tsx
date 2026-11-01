@@ -1,10 +1,12 @@
 // How failures are attributed: FAULT_DEFINITIONS with their criteria, the AUDIT_LABEL mapping,
 // PASS_DEFINITION and DENOMINATOR_RULE, rendered from packages/core/outcomes.ts, the one place
 // they are written (scripts/test/one-definition.test.ts fails on a copy). Linked from Findings
-// and from the help icon beside every fault label.
+// and from the help icon beside every fault label. The band verdict's rule is BAND_VERDICT_RULE,
+// rendered from packages/core/summary.ts beside bandVerdict, its one home (plan-amendment-w4 PW4-F).
 import type { Ref } from 'react';
 import { AUDIT_LABEL, CONFIRMATION_CRITERIA, CONFIRMATION_DEFINITIONS, FAULT_DEFINITIONS, FAULT_PRECEDENCE, FAULT_PRECEDENCE_RULE, RUN_BLOCKS } from '../../../../packages/core/outcomes.ts';
 import { TAXONOMY_TEXT } from '../../../../packages/core/explain.ts';
+import { BAND_VERDICT_RULE, BAND_VERDICTS } from '../../../../packages/core/summary.ts';
 import { kindWords, type FailureKind } from '../data/failures.ts';
 import { Card, Page, PlainRules } from '../data/ui.tsx';
 
@@ -52,6 +54,13 @@ export function Glossary({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> 
           reliably the model passes a task, not only how often. A task with fewer than k valid trials has no pass^k. The pass rate k/n and its Wilson 95%
           interval stay the main result.
         </p>
+      </Card>
+      <Card title="Band verdict" id="band-verdict">
+        <p className="text-ink-muted" data-testid="band-verdict-rule">{BAND_VERDICT_RULE}</p>
+        <p className="mt-2 text-ink-muted">The verdict is one of {BAND_VERDICTS.join(', ')}. Overview, Findings and the command-line result card (pnpm cli result-card) all compute it with the same function, so they always agree.</p>
+      </Card>
+      <Card title="Difficulty history and tasks with no failures" id="difficulty-history">
+        <p className="text-ink-muted">The difficulty history on Findings gives each task's pass count and verdict in every committed run, pilots first and the final run last. A task with no failed trial gets a line saying so, with a link to its grader checks: the reference solution passes and every validation probe gets the verdict it declares. This shows that the grader fails wrong answers, so a task with no failures is not a lenient grader.</p>
       </Card>
       <Card title="Kinds of model failure" id="taxonomy">
         <p className="text-ink-muted">A model failure also gets one of these kinds. The reason on a failed trial ends with it, for example "Kind: reasoning (Observation/obs-1 was read at step 6)", or "Kind: reasoning" when the why does not fit.</p>
