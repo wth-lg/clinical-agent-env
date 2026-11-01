@@ -51,7 +51,10 @@ async function run(args: string[], deps: Partial<Deps> = {}): Promise<{ code: nu
   return { code, json: raw ? (JSON.parse(raw) as SolveJson) : null, lines };
 }
 
-const sized = (f: string, extra: string[] = []) => ['--classes', f, '--cost-from', 'results/probe-1', '--items', spec(N), '--emax', spec(EMAX), '--current', spec(Object.fromEntries(TASKS.map((t) => [t, 4]))), '--req-per-event', '3', ...extra, '--json'];
+// The item counts results/probe-1 ran with: its records predate TOOLS_VERSION 8 (PW4-E1), so
+// context-budget cannot take them from the checkout's expected.ts.
+const PROBE_1_ITEMS = 'renal-dose-review=9,results-inbox=13,crc-care-gap=13,discharge-medrec=13,contrast-ct-prep=7,message-queue=13';
+const sized = (f: string, extra: string[] = []) => ['--classes', f, '--cost-from', 'results/probe-1', '--observed-items', PROBE_1_ITEMS, '--items', spec(N), '--emax', spec(EMAX), '--current', spec(Object.fromEntries(TASKS.map((t) => [t, 4]))), '--req-per-event', '3', ...extra, '--json'];
 const eStar = (j: SolveJson) => Object.fromEntries(Object.entries(j.tasks).map(([id, t]) => [id, t.e_star]));
 
 describe('PW4-H0b gate: events-solve on a synthetic classes JSON', () => {
@@ -106,7 +109,7 @@ describe('S-1 and S-2 actions', () => {
   }, 120_000);
 
   it('exits 1 when no event counts meet the cost lines', async () => {
-    const { code, lines } = await run(['--classes', file(synthetic(11), 'over'), '--cost-from', 'results/probe-1', '--items', spec({ ...N, 'crc-care-gap': 40 }), '--emax', spec(EMAX), '--current', spec(Object.fromEntries(TASKS.map((t) => [t, 4])))]);
+    const { code, lines } = await run(['--classes', file(synthetic(11), 'over'), '--cost-from', 'results/probe-1', '--observed-items', PROBE_1_ITEMS, '--items', spec({ ...N, 'crc-care-gap': 40 }), '--emax', spec(EMAX), '--current', spec(Object.fromEntries(TASKS.map((t) => [t, 4])))]);
     expect(code).toBe(1);
     expect(lines.join('\n')).toMatch(/no event counts/);
   }, 120_000);

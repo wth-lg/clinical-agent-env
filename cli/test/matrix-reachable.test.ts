@@ -77,14 +77,15 @@ describe('runMatrix: every gate decisive id is reachable by a passing oracle or 
 
   it('the toy passes and says so', async () => {
     const r = await runMatrix(matrixEnv(), TOY, SOLVERS);
-    expect(r.lines).toContain('decisive reachability: 3/3 gate decisive ids reached by a passing oracle or alternative');
+    // 3 of the toy's own gates, and 8 of its event gates (each names the arrivals it grades).
+    expect(r.lines).toContain('decisive reachability: 11/11 gate decisive ids reached by a passing oracle or alternative');
     expect(r.pass).toBe(true);
   });
 
   it('a gate decisive id no passing oracle or alternative reached fails the task, naming it', async () => {
     const task = { ...TOY, checks: TOY.checks.map((c) => (c.id === 'note_cites_chart' && c.kind === 'gate' ? { ...c, decisive_ids: [...c.decisive_ids, 'Observation/never-reached'] } : c)) };
     const r = await runMatrix(matrixEnv(), task, SOLVERS);
-    expect(r.lines).toContain('decisive reachability: 3/4 gate decisive ids reached by a passing oracle or alternative');
+    expect(r.lines).toContain('decisive reachability: 11/12 gate decisive ids reached by a passing oracle or alternative');
     expect(r.lines).toContain('  - decisive id Observation/never-reached of note_cites_chart: no passing oracle or alternative reached it');
     expect(r.pass).toBe(false);
   });

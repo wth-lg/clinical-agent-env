@@ -170,7 +170,7 @@ describe('cli result-card', () => {
     const probe = await cli([band1, '--classes', join(import.meta.dirname, 'fixtures/result-card/probe-1-classes.json')]);
     expect(probe.code).toBe(1);
     expect(probe.out).toBe('');
-    expect(probe.err).toMatch(/classes: .*probe-1-classes\.json is not for this run: run_dirs \(results\/probe-1\) do not name this run \(.*band-1\); contrast-ct-prep: trials_valid 6, but the run's summary has 20 valid trials/);
+    expect(probe.err).toMatch(/classes: .*probe-1-classes\.json is not for this run: run_dirs \(results\/probe-1\) do not name this run \(.*band-1\);( grader_versions [^;]*;)? contrast-ct-prep: trials_valid 6, but the run's summary has 20 valid trials/);
     put(root, 'other-run.json', { ...CLASSES, run_dirs: ['results/probe-1'] });
     const other = await cli([final, '--classes', join(root, 'other-run.json')]);
     expect(other.code).toBe(1);

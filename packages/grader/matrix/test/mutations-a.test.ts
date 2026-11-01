@@ -20,7 +20,8 @@ describe('matrix options', () => {
 
 describe('matrix --task _toy exits 1', () => {
   it('with fewer than 4 mutants, naming the trap left without one, without running a case', async () => {
-    const { code, text } = await matrix({ mutants: TOY.mutants.slice(0, 1) }, { ...ONE, cases: [] });
+    // A mutant that is no event's, with the toy's events off: the event rules would refuse first.
+    const { code, text } = await matrix({ mutants: TOY.mutants.filter((m) => m.event === undefined).slice(0, 1), events: [] }, { ...ONE, cases: [] });
     expect(code).toBe(1);
     expect(text).toContain('mutants: n=1 (min 4)');
     expect(text).toMatch(/trap \S+ has no mutant/);
@@ -31,12 +32,14 @@ describe('matrix --task _toy exits 1', () => {
     expect(text).toContain('2 alternatives, need 3');
   });
   it('when a mutant declares the wrong check set', async () => {
-    const [first, ...rest] = TOY.mutants;
-    const { code, text } = await matrix({ mutants: [{ ...first!, fails: ['no_such_check'] }, ...rest] }, { ...ONE, cases: [first!.id] });
+    // A mutant that is no event's: an event mutant's fails must name its gate before any case runs.
+    const first = TOY.mutants.find((m) => m.event === undefined)!;
+    const rest = TOY.mutants.filter((m) => m !== first);
+    const { code, text } = await matrix({ mutants: [{ ...first, fails: ['no_such_check'] }, ...rest] }, { ...ONE, cases: [first.id] });
     expect(code).toBe(1);
-    expect(text).toMatch(new RegExp(`mutant ${first!.id} .*MISMATCH`));
+    expect(text).toMatch(new RegExp(`mutant ${first.id} .*MISMATCH`));
   });
   it('every case kind is in the report order', () => {
-    expect(cases(TOY).map((c) => c.kind)).toEqual(['oracle', 'alternative', 'alternative', 'alternative', 'mutant', 'mutant', 'mutant', 'mutant', 'mutant', 'null', 'spray', 'output-gap']);
+    expect(cases(TOY).map((c) => c.kind)).toEqual(['oracle', ...Array(4).fill('alternative'), ...Array(10).fill('mutant'), 'null', 'spray', 'output-gap']);
   });
 });
