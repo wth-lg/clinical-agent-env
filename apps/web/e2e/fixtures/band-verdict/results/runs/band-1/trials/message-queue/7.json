@@ -1,9 +1,9 @@
 {
   "trial_id": "run:band-1:message-queue/7",
   "task_id": "message-queue",
-  "task_version": "017363c852033acaf93b3a3c57eed3bdd1c37c3e7719160688442562a5c4ac03",
-  "env_version": "6f622caaa5c3c02e9a804b714421cbf54c9f8e92e479e81f5a9765692ed5d82c",
-  "grader_task_version": "522fe0bd5c59db2481e7535faad4953a20d4b2c51f4be2fe8acc40487a3132ec",
+  "task_version": "c999c8b1ee07ef98cf3a2ecf8c3009fc814477803f7d477afd80f35d6a6f2f27",
+  "env_version": "141ea4f2159c4001c68b51aec31f341a7ddd1abf4c33f35ce51e415f6e8f051d",
+  "grader_task_version": "b87b7fca34fc43c007f593309ad075a8ad692bdec7af5a5872cf0e9b5fde3a23",
   "fixture_hash": "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968",
   "state_hash": {
     "initial": "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968",
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T14:21:49.000Z",
+  "started": "2026-10-23T14:22:23.000Z",
   "turns": 19,
   "tool_calls": 83,
   "tool_errors": {
@@ -43,9 +43,9 @@
   "summary": "Cleared the 13 messages: Hayes and Odum lisinopril renewed with a repeat BMP (hemolyzed potassium), Odum amlodipine renewed; Park and Webb lisinopril 30 days with a BMP; Park metformin held (amended eGFR 39) and Brooks lisinopril held (creatinine up 38% after the dose increase), each with a task to Dr. Okafor; Brooks metformin 30 days with an HbA1c; Price lisinopril and metformin renewed; Webb metformin renewed; the two repeat requests answered with their first.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T14:26:31.000Z",
+  "ended": "2026-10-23T14:27:05.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "17",
+  "grader_version": "18",
   "outcome": "PASS",
   "valid": true,
   "fault": null,

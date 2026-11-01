@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:crc-care-gap:1",
   "task_id": "crc-care-gap",
-  "task_version": "f702765849cc915c54994ef447436ae64ab4b7b0914d6674e7a499a50ebcb35d",
-  "env_version": "800d20e80a0098d9abc6997dfd519c706043dfdb982b56683ea61559c3297770",
-  "grader_task_version": "57e9d7a932619e3a711277745782def5f2b0fadcf01bfbfb9bcbc3471974f70c",
+  "task_version": "3e4926d230b494e6a191c341b1e2dda1aeeabfde4aef67336d44804015d7fc4a",
+  "env_version": "90dc0813ffae1c758e00c7f8be95f1824a896b9196b652f4bd95cd4e7f09f554",
+  "grader_task_version": "ff5d311311d878b5c167243e1764c25ef8f13a2393bc8bc955e77bcfc417faaf",
   "fixture_hash": "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968",
   "state_hash": {
     "initial": "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968",
-    "final": "04d8e14ed53e423fa9efd394f1ee917a84b39ac490818447365346e64b8dff62",
-    "replay_final": "04d8e14ed53e423fa9efd394f1ee917a84b39ac490818447365346e64b8dff62"
+    "final": "0a836dc1d43399bdff497b0af350100a3f6fa7000f036ea7a189719519cb2a2a",
+    "replay_final": "0a836dc1d43399bdff497b0af350100a3f6fa7000f036ea7a189719519cb2a2a"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -17,8 +17,8 @@
   "effort": "high",
   "api_version": "2026-10-21",
   "started": "2026-10-23T12:44:14.000Z",
-  "turns": 16,
-  "tool_calls": 143,
+  "turns": 22,
+  "tool_calls": 148,
   "tool_errors": {
     "INVALID_INPUT": 0,
     "NOT_FOUND": 0,
@@ -43,9 +43,9 @@
   "summary": "CRC outreach for Okafor CRC 2026 under RBC-QM-02: 8 FIT kits ordered and 8 outreach messages sent.\n\n| Patient | Status | Reason |\n|---|---|---|\n| Delaine MacGyver | Open gap: FIT kit ordered, outreach sent | Colonoscopy ordered 2025-03-12 but never done (order still open, window passed); an order is not screening; FOBT 2024-06-11 is before the measurement period |\n| Santo Pagac | Open gap: FIT kit ordered, outreach sent | Colonoscopy ordered 2026-02 and booked for 2026-04-14, but he did not attend (no-show); not done, so not screening |\n| Ángela Vigil | Excluded | Total proctocolectomy in 2015 (scanned outside operative note): total colectomy |\n| Nick Bartoletti | Open gap: FIT kit ordered, outreach sent | Sigmoid colectomy 2021 is a partial colectomy, which does not exclude; no screening on record |\n| Marilu Gaona | Open gap: FIT kit ordered, outreach sent | Hospice 2025-06-09 to 2025-10-20, revoked before the measurement period, so not excluded; no screening on record |\n| Kelsie Rohan | Excluded | Hospice care 2026-06-16 to 2026-08-21, during part of the measurement period (later revoked) |\n| Tiny Koss | Open gap: FIT kit ordered, outreach sent | FIT collected 2025-12-29 (resulted 2026-01-05): collected before the measurement period, so it does not count |\n| Lance Muller | Open gap: FIT kit ordered, outreach sent | sDNA-FIT collected 2023-12-27 (resulted 2024-01-08): collected before the 2024-2026 window |\n| Elly Trantow | Excluded | Age 72 with frailty and a dementia medication (donepezil) taken now: advanced illness |\n| Harrison O'Keefe | Open gap: FIT kit ordered, outreach sent | Age 69 with frailty, but donepezil was stopped in March 2023, before 2025, and no advanced illness diagnosis, so not excluded; no screening on record |\n| Rickey Sipes | Excluded | Age 72, living long term in a nursing home (housing status 2026-02-10: lives in nursing home, Maple Grove Care Center) |\n| Elvin Wolff | Open gap: FIT kit ordered, outreach sent | Age 68; his May 2026 skilled nursing stay was short-term rehab ending in discharge home (housing status: own home), not long-term nursing home residence; no screening on record |\n| Fumiko Pouros | Not in the population | Age 35 at the end of 2026, under 46 |",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T12:50:25.000Z",
+  "ended": "2026-10-23T12:50:59.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "17",
+  "grader_version": "18",
   "outcome": "PASS",
   "valid": true,
   "fault": null,
@@ -516,11 +516,11 @@
         "seen": [
           {
             "patient": "Patient/pt-0011",
-            "first_order": 133,
+            "first_order": 138,
             "exposed": [
               {
                 "id": "EpisodeOfCare/eoc-00001",
-                "step": 73
+                "step": 72
               },
               {
                 "id": "Patient/pt-0011",
@@ -530,7 +530,7 @@
           },
           {
             "patient": "Patient/pt-0014",
-            "first_order": 129,
+            "first_order": 134,
             "exposed": [
               {
                 "id": "Appointment/appt-00002",
@@ -544,11 +544,11 @@
           },
           {
             "patient": "Patient/pt-0018",
-            "first_order": 137,
+            "first_order": 142,
             "exposed": [
               {
                 "id": "Observation/obs-01493",
-                "step": 37
+                "step": 131
               },
               {
                 "id": "Patient/pt-0018",
@@ -558,11 +558,11 @@
           },
           {
             "patient": "Patient/pt-0019",
-            "first_order": 139,
+            "first_order": 144,
             "exposed": [
               {
                 "id": "MedicationRequest/mr-00215",
-                "step": 65
+                "step": 64
               },
               {
                 "id": "Patient/pt-0019",
@@ -572,7 +572,7 @@
           },
           {
             "patient": "Patient/pt-0022",
-            "first_order": 135,
+            "first_order": 140,
             "exposed": [
               {
                 "id": "Observation/obs-01732",
@@ -586,7 +586,7 @@
           },
           {
             "patient": "Patient/pt-0024",
-            "first_order": 127,
+            "first_order": 132,
             "exposed": [
               {
                 "id": "ServiceRequest/sr-00003",
@@ -600,19 +600,19 @@
           },
           {
             "patient": "Patient/pt-0035",
-            "first_order": 141,
+            "first_order": 146,
             "exposed": [
               {
                 "id": "Observation/obs-02502",
-                "step": 124
+                "step": 123
               },
               {
                 "id": "DocumentReference/doc-00112",
-                "step": 124
+                "step": 123
               },
               {
                 "id": "Encounter/enc-00246",
-                "step": 124
+                "step": 123
               },
               {
                 "id": "Patient/pt-0035",
@@ -622,11 +622,11 @@
           },
           {
             "patient": "Patient/pt-0036",
-            "first_order": 131,
+            "first_order": 136,
             "exposed": [
               {
                 "id": "Procedure/proc-00786",
-                "step": 111
+                "step": 110
               },
               {
                 "id": "Patient/pt-0036",

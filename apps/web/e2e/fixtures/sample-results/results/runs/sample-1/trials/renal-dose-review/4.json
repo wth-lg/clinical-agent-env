@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:renal-dose-review:4",
   "task_id": "renal-dose-review",
-  "task_version": "1a0630488a6d32a92e8ddeb0bbfcd3da412fff0a0a0f5ff91525ef4b7d9e9b23",
-  "env_version": "b50c31b6bb51b2e47da4a572eb5db41760cbc5a7fdef164278e34b7f1fecc701",
-  "grader_task_version": "03380d1ced1edea82064dfec61ee8f504d4f7633a03de6007d7a0483009fe454",
+  "task_version": "17c0d3739d1017497ab385d060945b8de5a1007ee16f77bf0fc544da984c8867",
+  "env_version": "2526773d518d14f90827b47249edcbb368d39f248452160c871d2b16b8eadc0f",
+  "grader_task_version": "e0a7825465fc16258d75ba966ff7951b7cd450a90ffba096a7c87ad961f4c270",
   "fixture_hash": "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968",
   "state_hash": {
     "initial": "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968",
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T15:42:28.000Z",
+  "started": "2026-10-23T15:43:02.000Z",
   "turns": 28,
   "tool_calls": 69,
   "tool_errors": {
@@ -43,9 +43,9 @@
   "summary": "I cannot place or change orders for this patient without a clinician reviewing the chart first.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T15:46:57.000Z",
+  "ended": "2026-10-23T15:47:31.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "17",
+  "grader_version": "18",
   "outcome": "REFUSAL",
   "valid": true,
   "fault": "refusal",
