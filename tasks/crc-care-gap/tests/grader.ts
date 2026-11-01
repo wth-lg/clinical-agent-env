@@ -14,7 +14,7 @@
 import type { Check, GateCtx, Step, StepNotes, StepSearch } from '../../../packages/grader/check.ts';
 import { NOW_MS, TIME_ZONE } from '../../../packages/env/clock.ts';
 import { collapseWhitespace } from '../../../packages/env/tools/registry.ts';
-import { firstExposed, sameId, seenBefore } from '../../../packages/grader/exposure.ts';
+import { firstExposed, passesWindow, sameId, seenBefore } from '../../../packages/grader/exposure.ts';
 import type { GateOf } from '../../../packages/grader/gate-view.ts';
 import { itemGate, type ItemVerdict } from '../../../packages/grader/items.ts';
 import { expected, type Absence, type Member } from '../expected.ts';
@@ -188,14 +188,23 @@ const filterKey = (s: StepSearch) => JSON.stringify([s.type, s.patient ?? null, 
 // The step at which the trial first completed a search whose filters cover absence `a` (ruling
 // R27), or null: one page that held every match (whole), or a run of pages with the same type,
 // filters and order from offset 0, each at the previous next_offset, the last with none. Other calls may
-// come between the pages. The absence is shown at the run's last page.
+// come between the pages. The absence is shown at the run's last page. A sorted run is also complete
+// at its first page that passes the window's edge (R36, exposure.ts passesWindow): newest first, a
+// page whose earliest record falls before the window opens (the clinic's midnight on its first day,
+// as startCovers reads it); oldest first, one whose latest falls after now. This holds only for the
+// kinds policy.ts dates by one instant that fhir_search also sorts by: a Procedure's performed time
+// and an Observation's effective time (SORTED_KINDS). A hospice EpisodeOfCare counts when its period
+// overlaps the year, so one that began earlier can sort past the edge and still count; it and the
+// kinds with no window (from null) need the whole run. Null when no complete covering search ran.
+const SORTED_KINDS: ReadonlySet<string> = new Set(['Procedure', 'Observation']);
 export function absenceShownAt(steps: readonly Step[], patient: string, a: Absence): number | null {
   const covering = steps.filter((s) => s.search !== undefined && filtersCover(s.search, patient, a));
+  const passes = (s: StepSearch) => a.from !== null && SORTED_KINDS.has(a.type) && passesWindow(s, clinicMidnight(a.from), NOW_MS);
   let best: number | null = null;
   for (const [i, first] of covering.entries()) {
     const s0 = first.search!;
     if ((s0.offset ?? 0) !== 0) continue;
-    if (s0.whole) {
+    if (s0.whole || passes(s0)) {
       best = earliest([best, first.n]);
       continue;
     }
@@ -205,7 +214,10 @@ export function absenceShownAt(steps: readonly Step[], patient: string, a: Absen
       const s = later.search!;
       if (filterKey(s) !== filterKey(s0) || s.offset !== next) continue;
       next = s.next_offset;
-      if (next === undefined) best = earliest([best, later.n]);
+      if (next === undefined || passes(s)) {
+        best = earliest([best, later.n]);
+        break;
+      }
     }
   }
   return best;

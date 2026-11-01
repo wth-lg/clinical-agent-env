@@ -1,8 +1,15 @@
 // The toy's checks (plan phase P9). Four gates, one per thing the instruction asks for, so each
 // trap fails exactly one or two of them; three rubric items in rubric.ts. traces_to names the
 // instruction line each one enforces (the matrix's traceability lint resolves it).
+// The event gates (packages/grader/events.ts) grade the toy's active mid-trial events (events.ts):
+// once the potassium of toy-a1 has arrived, the note on pt-0001 cites it, written after it was read;
+// the preliminary one of toy-d1 is a lure the note does not cite. A trial that never opens their
+// trigger record fires neither, and every event gate is met.
+import { activeSpecs } from '../../../packages/env/events.ts';
 import { gate, type Check, type GateCtx } from '../../../packages/grader/check.ts';
+import { eventGates } from '../../../packages/grader/events.ts';
 import { seenBefore } from '../../../packages/grader/exposure.ts';
+import * as events from '../events.ts';
 import { expected } from '../expected.ts';
 import { rubric } from './rubric.ts';
 
@@ -66,4 +73,22 @@ const gates: Check[] = [
   }),
 ];
 
-export const checks: Check[] = [...gates, ...rubric];
+// The notes on the toy's patient that cite `ref`.
+const citing = (ctx: GateCtx, ref: string) => notesOn(ctx, PATIENT).filter((n) => (n.doc.context?.related ?? []).some((r) => r.reference === ref)).map((n) => n.key);
+
+const EVENTS = eventGates(activeSpecs(events), {
+  'toy-a1': {
+    amended: (ctx) => {
+      const writes = citing(ctx, 'Observation/obs-toy-a1');
+      return { met: writes.length > 0, writes, why: 'no note on the patient cites the potassium that arrived' };
+    },
+  },
+  'toy-d1': {
+    kept: (ctx) => {
+      const ids = citing(ctx, 'Observation/obs-toy-d1');
+      return { met: ids.length === 0, ids, why: 'a note cites the preliminary potassium, which does not count' };
+    },
+  },
+}, 'instruction.md:5');
+
+export const checks: Check[] = [...gates, ...EVENTS, ...rubric];

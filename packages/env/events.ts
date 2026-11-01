@@ -35,6 +35,8 @@ import { RESOURCE_TYPES } from './world.ts';
 // A threshold-cross, a correction, a cross-item arrival, an outside record, a lure.
 export const EVENT_CLASSES = ['A', 'B', 'C', 'O', 'D'] as const;
 export type EventClass = (typeof EVENT_CLASSES)[number];
+// The classes whose event calls for an amend of a decision; D, a lure, calls for none.
+export const AMEND_CLASSES: ReadonlySet<string> = new Set(['A', 'B', 'C', 'O']);
 
 export type EventTrigger =
   // After a committed write whose resources (Provenance aside) are about Patient/<patient>.

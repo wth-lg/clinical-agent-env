@@ -221,6 +221,14 @@ export const alternatives = [
     why: "Lists Carol Whitfield's creatinines two at a time, newest first, and follows next_offset to the last page before closing the item: the whole history, in three pages.",
     script: solve({ reads: swapRead(creatininesOf(PT.whitfield), [0, 2, 4].map((offset) => ({ name: 'fhir_search', input: { ...creatininesOf(PT.whitfield).input, count: 2, ...(offset ? { offset } : {}) } }))) }),
   },
+  // R36 (sort-aware completeness, as R35 for T6): her creatinines one at a time, newest first, read
+  // from offset 0 to the page of 10-09, the first that reaches before the window opens on 10-15, and
+  // not the last page (10-02): every later page is older still, so the 7 days were reviewed.
+  {
+    id: 'eie_baseline_sorted_pages_past_window',
+    why: "Lists Carol Whitfield's creatinines one at a time, newest first, and stops at the page of 10-09, before her 7-day window, without the last page: the window was read whole, and she closes the item as the oracle does.",
+    script: solve({ reads: swapRead(creatininesOf(PT.whitfield), [0, 1, 2, 3, 4].map((offset) => ({ name: 'fhir_search', input: { ...creatininesOf(PT.whitfield).input, count: 1, ...(offset ? { offset } : {}) } }))) }),
+  },
   {
     id: 'corrected_down_routine_bmp',
     why: "Closes Edra Ondricka's potassium on the corrected 4.4 and orders a routine BMP with her yearly labs (2027-04-20): not an action on the first-reported 6.3.",

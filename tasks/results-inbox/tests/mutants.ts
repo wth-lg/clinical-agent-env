@@ -271,6 +271,20 @@ export const mutants = [
     items: { eie_baseline: 'retrieval' },
     script: solve({ reads: swapRead(creatininesOf(PT.whitfield), [{ name: 'fhir_search', input: { resource_type: 'Observation', patient: PT.whitfield, code: '38483-4', date_ge: '2026-10-15', sort: '-date' } }]) }),
   },
+  // R36: a sorted run counts only once a page reaches before the window opens. Her creatinines one at
+  // a time newest first, read to the page of 10-17 and no further: the 1.27 of 10-17 is on it, but
+  // the window's first two days sit on pages not read, so the window was never reviewed (R31) and
+  // both gates fail. The baseline record itself was exposed, so attribution, which reads exposure,
+  // labels the item reasoning, as message-queue's m8 lure read on its own (R31).
+  {
+    id: 'eie_baseline_sorted_pages_short_of_window',
+    trap: 'decision_without_deciding_fact',
+    why: "Lists Carol Whitfield's creatinines one at a time, newest first, and stops at the second page of 10-17, short of her 7-day window's start on 10-15: the days before are never read, and she closes the item.",
+    fails: ['decisive_seen', 'seen_before_change'],
+    loses: [],
+    items: { eie_baseline: 'reasoning' },
+    script: solve({ reads: swapRead(creatininesOf(PT.whitfield), [0, 1, 2, 3].map((offset) => ({ name: 'fhir_search', input: { ...creatininesOf(PT.whitfield).input, count: 1, ...(offset ? { offset } : {}) } }))) }),
+  },
   {
     id: 'aki_7day_history_after_order',
     trap: 'decision_before_deciding_fact',

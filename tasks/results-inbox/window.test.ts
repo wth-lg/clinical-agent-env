@@ -87,6 +87,35 @@ describe('eie_baseline window (R31)', () => {
     expect(windowSearchedAt([step(1, page(undefined, 2)), step(2, { ...page(2, undefined), sort: 'date' })], w)).toBe(null);
   });
 
+  // R36 (as R35 for T6): a sorted run from offset 0 is complete at its first page that passes the
+  // window's edge, newest first one reaching before it opens, oldest first one reaching after it
+  // closes. A run that stops short, skips a page or has no sort is still not complete.
+  it('counts a sorted run complete at the page that passes the window\'s edge', () => {
+    const [opens, closes] = [Date.parse(w.from), Date.parse(w.to)];
+    const day = 86_400_000;
+    const sorted = (sort: string, offset: number | undefined, next: number | undefined, span: [number, number]): StepSearch => ({ ...full, sort, whole: false, span, ...(offset !== undefined ? { offset } : {}), ...(next !== undefined ? { next_offset: next } : {}) });
+    const newest = (offset: number | undefined, next: number | undefined, earliest: number) => sorted('-date', offset, next, [earliest, closes]);
+    // Newest first: page 2 reaches before the window opens; page 3 is never read.
+    expect(windowSearchedAt([step(1, newest(undefined, 1, opens + day)), step(2, newest(1, 2, opens - 1))], w)).toBe(2);
+    // The first page already reaches past the edge.
+    expect(windowSearchedAt([step(1, newest(undefined, 1, opens - day))], w)).toBe(1);
+    // Stops short: the last page read ends inside the window.
+    expect(windowSearchedAt([step(1, newest(undefined, 1, opens + day)), step(2, newest(1, 2, opens + 1))], w)).toBe(null);
+    // A row exactly at the window's first instant does not pass it.
+    expect(windowSearchedAt([step(1, newest(undefined, 1, opens))], w)).toBe(null);
+    // A gap: the page past the edge is not at the previous next_offset.
+    expect(windowSearchedAt([step(1, newest(undefined, 1, opens + day)), step(2, newest(2, 3, opens - day))], w)).toBe(null);
+    // Oldest first: a page whose latest row is after the window closes.
+    expect(windowSearchedAt([step(1, sorted('date', undefined, 1, [opens - day, closes + 1]))], w)).toBe(1);
+    expect(windowSearchedAt([step(1, sorted('date', undefined, 1, [opens - day, closes]))], w)).toBe(null);
+    // Oldest first never passes at the window's start, newest first never at its end.
+    expect(windowSearchedAt([step(1, sorted('date', undefined, 1, [opens - day, opens - 1]))], w)).toBe(null);
+    expect(windowSearchedAt([step(1, sorted('-date', undefined, 1, [closes + 1, closes + day]))], w)).toBe(null);
+    // No sort, no span: the order says nothing.
+    const { sort: _s, ...unsorted } = newest(undefined, 1, opens - day);
+    expect(windowSearchedAt([step(1, unsorted)], w)).toBe(null);
+  });
+
   it('never counts the baseline as seen by being read or shown on a search that cuts the window', () => {
     expect(seenStep(w.id)([step(1, undefined, [w.id])])).toBe(null);
     expect(seenStep(w.id)([step(1, { ...full, date_ge: '2026-10-16' }, [w.id])])).toBe(null);

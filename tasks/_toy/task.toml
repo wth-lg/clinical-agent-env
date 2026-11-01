@@ -9,8 +9,9 @@ max_turns = 6
 tools = ["get_context", "fhir_read", "write_note", "finish"]
 
 # Each trap needs a mutant in tests/mutants.ts. No status-only case: the toy has no items to close.
+# The last four are the mid-trial event traps of events.ts (packages/grader/events.ts gates).
 [matrix]
-traps = ["wrong_patient", "invalid_write_schema", "read_without_acting", "acting_without_reading", "wrong_citation"]
+traps = ["wrong_patient", "invalid_write_schema", "read_without_acting", "acting_without_reading", "wrong_citation", "arrival_not_acted_on", "missed_arrival", "amend_before_seen", "lure_acted_on"]
 
 # The judge's effort for the toy's two judge items (the default; the pilot calibrates real tasks).
 [judge]

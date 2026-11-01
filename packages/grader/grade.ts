@@ -40,7 +40,7 @@ import type { Resource } from '../env/store.ts';
 import { attribute, type Attribution } from './attribution.ts';
 import type { Check, GateCheck, GateCtx, GateStateView, Json, Met, Note, RubricCheck, RubricCtx, StateView, Step } from './check.ts';
 import { diff, keyOf } from './diff.ts';
-import { firstExposed, lastWrite, stepsOf } from './exposure.ts';
+import { firstExposed, lastTurn, lastWrite, stepsOf } from './exposure.ts';
 import { gateResource, type GateResource } from './gate-view.ts';
 import type { ItemResult } from './items.ts';
 import { Judge, JudgeCacheMiss, JudgeClientError, judgeAllowanceUsd, judgeCallBudget, type JudgeCacheEntry, type JudgeClient, type JudgeEffort } from './judge.ts';
@@ -84,8 +84,10 @@ import type { Progress } from './progress.ts';
 // through those rounds: 16 was never on main. 17: T6's absence window counts a sorted run of pages
 // complete once a page passes the window's edge (Step.search.span; message-queue coveredAt, R27),
 // and T2's reply_names_other_patient criterion states each patient's own values (probe-1
-// message-queue/4 and results-inbox/2, /3; builder-273).
-export const GRADER_VERSION = '17';
+// message-queue/4 and results-inbox/2, /3; builder-273). 18: mid-trial events (PW4-E1): diff.arrived,
+// the event gates (events.ts), ENV_ERROR for an undelivered arrival (E9), the process mark and
+// seen_at_only; T2 and T3 sorted page runs (R36).
+export const GRADER_VERSION = '18';
 
 export interface CheckResult {
   id: string;
@@ -101,6 +103,8 @@ export interface CheckResult {
   omission?: true;
   // A failed gate's decision was right in a channel or form the protocol does not name (check.ts Verdict).
   action_form?: true;
+  // A failed gate's action was written before the record that decides it was seen (check.ts Verdict).
+  process?: true;
   // A gate over a worklist: each item's result (items.ts).
   items?: ItemResult[];
 }
@@ -273,9 +277,9 @@ async function gradeChecks(input: GradeInput, judge: Judge): Promise<Grade> {
   const initial = [...input.initial];
   const final = [...input.final];
   const steps = stepsOf(input.events);
-  const d = diff(initial, final);
+  const d = diff(initial, final, steps.flatMap((s) => (s.arrivals ?? []).flatMap((a) => a.keys)));
   const writes = [...new Set(steps.flatMap((s) => s.written_ids))];
-  const common = { diff: d, steps, exposedAt: (id: string) => firstExposed(steps, id), writes: () => writes };
+  const common = { diff: d, steps, exposedAt: (id: string) => firstExposed(steps, id), writes: () => writes, last_turn: lastTurn(input.events) };
   const gateCtx: GateCtx = { initial: gateView(initial), final: gateView(final), ...common };
   const full = view(final);
   const rubricCtx: Omit<RubricCtx, 'judge'> = {
@@ -295,10 +299,11 @@ async function gradeChecks(input: GradeInput, judge: Judge): Promise<Grade> {
   const rubrics = input.checks.filter((c): c is RubricCheck => c.kind === 'rubric');
   const penaltiesFirst = [...rubrics.filter((c) => c.points < 0), ...rubrics.filter((c) => c.points >= 0)];
   const byCheck = new Map<Check, CheckResult>();
-  const result = (c: Check, v: { met: Met; evidence: { [k: string]: Json }; ids?: readonly string[]; omission?: true; action_form?: true; items?: readonly ItemResult[] }): CheckResult => ({
+  const result = (c: Check, v: { met: Met; evidence: { [k: string]: Json }; ids?: readonly string[]; omission?: true; action_form?: true; process?: true; items?: readonly ItemResult[] }): CheckResult => ({
     id: c.id, kind: c.kind, method: c.method, category: c.category, points: c.kind === 'rubric' ? c.points : null, met: v.met, evidence: v.evidence, ...(v.ids ? { ids: [...v.ids] } : {}),
     ...(c.kind === 'gate' && v.met === false && v.omission === true ? { omission: true as const } : {}),
     ...(c.kind === 'gate' && v.met === false && v.action_form === true ? { action_form: true as const } : {}),
+    ...(c.kind === 'gate' && v.met === false && v.process === true ? { process: true as const } : {}),
     ...(c.kind === 'gate' && v.items ? { items: [...v.items] } : {}),
   });
   const ordered = () => input.checks.flatMap((c) => byCheck.get(c) ?? []);
@@ -333,6 +338,16 @@ async function gradeChecks(input: GradeInput, judge: Judge): Promise<Grade> {
     return {
       grader_version: GRADER_VERSION, outcome: 'GRADER_ERROR', valid: false, fault: FAULT.GRADER_ERROR, checks: results, score: null, judge: judgeOf(judge, results, false), attribution: null,
       error: { check: first.check, message: `${first.message}${also}`, stops_batch: false },
+    };
+  }
+  // An arrival whose trigger held is not in the store (events.ts event_delivered): the environment
+  // failed the trial (E9), which is re-run, whatever else the grade says.
+  const undelivered = results.find((r) => r.kind === 'gate' && r.id === 'event_delivered' && r.met === false);
+  if (undelivered !== undefined) {
+    const why = undelivered.items?.find((i) => !i.met)?.why ?? 'an event did not arrive';
+    return {
+      grader_version: GRADER_VERSION, outcome: 'ENV_ERROR', valid: false, fault: FAULT.ENV_ERROR, checks: results, score: null, judge: judgeOf(judge, results, false), attribution: null,
+      error: { check: undelivered.id, message: `undelivered event (E9): ${why}`, stops_batch: false },
     };
   }
   const passed = results.every((r) => r.kind !== 'gate' || r.met === true);

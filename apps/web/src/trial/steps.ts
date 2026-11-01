@@ -2,13 +2,17 @@
 // numbered as the grader numbers steps (packages/grader/exposure.ts stepsOf: executed tool
 // results, from 1), so a decisive step, an exposure step and an evidence id all point at the
 // same row. An evidence id's step is the last step that wrote it, else the first that exposed
-// it. Pure.
+// it. A mid-trial event (an env_event, PW4-E1) is a row of its own right after the call that fired
+// it: what arrived in the queues, with the step it followed. Pure.
 import type { TrialEvent } from '../../../../packages/core/events.ts';
 import { firstExposed, lastWrite, stepsOf } from '../../../../packages/grader/exposure.ts';
 import type { Step } from '../../../../packages/grader/check.ts';
 import { fold, type Item } from '../live/fold.ts';
 
-export type Row = Item & { step: number | null };
+// A mid-trial arrival: the event spec, the resources it put in the store, and the step whose call
+// fired it.
+export interface Arrival { kind: 'arrival'; key: string; spec: string; keys: string[]; stamp: string }
+export type Row = (Item | Arrival) & { step: number | null };
 
 export interface Trajectory {
   // The task prompt, the first user message.
@@ -31,7 +35,13 @@ export function trajectoryOf(events: readonly TrialEvent[]): Trajectory {
   const byCall = new Map<string, number>();
   for (const e of events) if (e.type === 'tool_result' && e.executed) byCall.set(e.tool_use_id, byCall.size + 1);
   const folded = fold(events);
-  const rows = folded.items.map((i): Row => ({ ...i, step: i.kind === 'tool' ? (byCall.get(i.key) ?? null) : null }));
+  const arrivals = new Map<string, Row[]>();
+  for (const e of events) {
+    if (e.type !== 'env_event') continue;
+    const row: Row = { kind: 'arrival', key: `arrival-${e.spec}`, spec: e.spec, keys: [...e.keys], stamp: e.stamp, step: byCall.get(e.tool_use_id) ?? null };
+    arrivals.set(e.tool_use_id, [...(arrivals.get(e.tool_use_id) ?? []), row]);
+  }
+  const rows = folded.items.flatMap((i): Row[] => [{ ...i, step: i.kind === 'tool' ? (byCall.get(i.key) ?? null) : null }, ...(i.kind === 'tool' ? (arrivals.get(i.key) ?? []) : [])]);
   return { prompt: promptOf(events), rows, steps, written: folded.written };
 }
 

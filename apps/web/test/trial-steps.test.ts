@@ -27,3 +27,20 @@ describe('internalErrorRow', () => {
     expect(row).toMatchObject({ kind: 'tool', step: 3, error: 'INTERNAL', name: 'search_patients' });
   });
 });
+
+// PW4-E1: an env_event is a row of its own right after the tool call that fired it, with that step.
+describe('arrival rows', () => {
+  it('follow the call that fired them, naming the event and what arrived', () => {
+    const at = (type: string, more: object) => JSON.stringify({ v: 2, seq: 0, ts: '2026-10-23T12:00:00.000Z', turn: 1, type, ...more });
+    const lines = [
+      at('tool_call', { tool_use_id: 'u1', name: 'fhir_read', input: { resource_type: 'Condition', id: 'cond-00002' } }),
+      at('tool_result', { tool_use_id: 'u1', name: 'fhir_read', executed: true, is_error: false, error_code: null, content: {}, exposed_ids: ['Condition/cond-00002'], referenced_ids: [] }),
+      at('env_event', { tool_use_id: 'u1', spec: 'toy-a1', arrival_seq: 1, stamp: '2026-10-23T08:00:00.001-04:00', keys: ['Observation/obs-toy-a1', 'Task/inbox-a0001'] }),
+      at('tool_call', { tool_use_id: 'u2', name: 'fhir_read', input: { resource_type: 'Observation', id: 'obs-toy-a1' } }),
+      at('tool_result', { tool_use_id: 'u2', name: 'fhir_read', executed: true, is_error: false, error_code: null, content: {}, exposed_ids: ['Observation/obs-toy-a1'], referenced_ids: [] }),
+    ].map((l, i) => l.replace('"seq":0', `"seq":${i}`));
+    const rows = trajectoryOf(parseTrajectory(`${lines.join('\n')}\n`)).rows;
+    expect(rows.map((r) => [r.kind, r.step])).toEqual([['tool', 1], ['arrival', 1], ['tool', 2]]);
+    expect(rows[1]).toMatchObject({ kind: 'arrival', spec: 'toy-a1', keys: ['Observation/obs-toy-a1', 'Task/inbox-a0001'] });
+  });
+});

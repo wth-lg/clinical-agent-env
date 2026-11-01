@@ -15,6 +15,7 @@
 //   task.toml [matrix]     traps = [...] (each needs a mutant); status_only = true|false
 // A script is data: the calls a scripted model makes, turn by turn, through the same tools and
 // the same run() loop as a live trial. The null agent (finish, nothing else) is built in.
+import type { EventSpec } from '../../env/events.ts';
 import type { Resource } from '../../env/store.ts';
 import type { Taxonomy } from '../attribution.ts';
 import type { Check, Json } from '../check.ts';
@@ -66,7 +67,26 @@ export interface Mutant extends Agent {
   // (items.ts OUTSIDE for the part no item owns), each with the label attribution.ts gives it, and
   // no other; not checked when absent.
   items?: Readonly<Record<string, Taxonomy>>;
+  // A mutant of a mid-trial event (packages/grader/events.ts): the active spec it is about and which
+  // of the event's required near misses it is (EVENT_MUTANTS). The matrix requires each kind for
+  // each active spec, and checks that the mutant fails that spec on the kind's gate and label.
+  event?: { spec: string; kind: EventMutantKind };
 }
+
+// The near misses every active event needs (plan-amendment-w4 "Each event needs mutants"): for an
+// amend event (A, B, C, O) no amend, an amend never seen and an amend written before it was seen;
+// for a lure (D) an amend on the lure. unseen is also allowed on a lure (a lure never read).
+export const EVENT_MUTANTS = {
+  not_amended: { gate: 'amended', label: 'reasoning' },
+  unseen: { gate: 'event_seen', label: 'retrieval' },
+  before_seen: { gate: 'amended', label: 'process' },
+  lure_acted_on: { gate: 'kept', label: 'over_action' },
+} as const satisfies Record<string, { gate: string; label: Taxonomy }>;
+export type EventMutantKind = keyof typeof EVENT_MUTANTS;
+export const REQUIRED_EVENT_MUTANTS: Readonly<Record<'amend' | 'lure', readonly EventMutantKind[]>> = {
+  amend: ['not_amended', 'unseen', 'before_seen'],
+  lure: ['lure_acted_on'],
+};
 
 export interface Agents {
   spray?: Script;
@@ -91,6 +111,8 @@ export interface WorldView {
 
 export interface MatrixTask {
   id: string;
+  // The task's active mid-trial event specs (Task.events, tasks/<id>/events.ts); [] when none.
+  events?: readonly EventSpec[];
   instruction: string;
   policies: ReadonlyArray<{ id: string; text: string }>;
   declares: Declares;

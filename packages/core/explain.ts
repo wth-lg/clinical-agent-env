@@ -534,6 +534,7 @@ export function explainTrial(record: ExplainRecord, audit: AuditRow | null | und
     internal_errors: record.tool_errors?.INTERNAL ?? 0,
     state_hash: record.state_hash,
     env_error: (ctx.events.findLast((e) => e.type === 'error' && e.status === 'ENV_ERROR') as { message?: string } | undefined)?.message ?? null,
+    failed_gates: (grade.checks ?? []).filter((c) => c.kind === 'gate' && c.met === false).map((c) => c.id),
     limit: limitOf(ctx.events),
     // Rule P-L's facts the grader recorded, so the outcome and its reason read the same facts on
     // the Runs list (no trajectory) and the trial page; a record graded before they were recorded

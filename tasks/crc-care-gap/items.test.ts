@@ -332,6 +332,30 @@ describe('absence items (R20, R27, R31) and any-of evidence (R21)', () => {
   ])('%s: the absence is shown at step %s', (_label, steps, want) => {
     expect(absenceShownAt(steps, d1.patient, fobt)).toBe(want);
   });
+  // R36: a sorted run is complete at its first page past the window's edge (2026-01-01 at the clinic's
+  // midnight, 05:00Z, for the FIT window; now for oldest first), for the kinds dated by one instant.
+  const OPENS = Date.parse('2026-01-01T05:00:00Z');
+  const NOW = Date.parse('2026-10-23T12:00:00Z');
+  const newest = (n: number, offset: number | undefined, next: number | undefined, earliest: number): Step => pg(n, offset, next, { sort: '-date', span: [earliest, NOW - 1] });
+  it.each<[string, Step[], number | null]>([
+    ['newest first, the second page reaches before the window opens', [newest(1, undefined, 10, OPENS + 1), newest(2, 10, 20, OPENS - 1)], 2],
+    ['newest first, the first page already reaches before it', [newest(1, undefined, 10, OPENS - 1)], 1],
+    ['newest first, stopping short of the window\'s start', [newest(1, undefined, 10, OPENS + 86_400_000), newest(2, 10, 20, OPENS + 1)], null],
+    ['newest first, a row exactly at the clinic\'s midnight does not pass it', [newest(1, undefined, 10, OPENS)], null],
+    ['newest first, the page past the edge skips a page', [newest(1, undefined, 10, OPENS + 1), newest(2, 20, 30, OPENS - 1)], null],
+    ['oldest first, a page reaching after now', [pg(1, undefined, 10, { sort: 'date', span: [OPENS - 1, Date.parse('2026-10-24T00:00:00Z')] })], 1],
+    ['no sort: a span says nothing', [pg(1, undefined, 10, { span: [OPENS - 1, NOW - 1] })], null],
+  ])('%s: the absence is shown at step %s', (_label, steps, want) => {
+    expect(absenceShownAt(steps, d1.patient, fobt)).toBe(want);
+  });
+  it('a hospice episode is dated by its period: a run newest first that passes the year start does not show it absent', () => {
+    const hospice = kind('pt-0011', 'EpisodeOfCare', '2026-01-01');
+    const x = at('pt-0011');
+    const ep = (n: number, offset: number | undefined, next: number | undefined, earliest: number): Step =>
+      step(n, n, { search: { type: 'EpisodeOfCare', patient: x.patient, sort: '-date', span: [earliest, NOW - 1], whole: false, ...(offset !== undefined ? { offset } : {}), ...(next !== undefined ? { next_offset: next } : {}) } });
+    expect(absenceShownAt([ep(1, undefined, 1, OPENS - 1)], x.patient, hospice)).toBe(null);
+    expect(absenceShownAt([ep(1, undefined, 1, OPENS - 1), ep(2, 1, undefined, OPENS - 2)], x.patient, hospice)).toBe(2);
+  });
 
   // A trial that searched or read, then ordered a FIT kit for one member a turn later. Unless aged
   // is false, it also read the member's Patient in turn 1 (R33: the birth date decides a gap).

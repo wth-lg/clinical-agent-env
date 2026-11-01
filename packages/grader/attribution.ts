@@ -11,14 +11,15 @@
 // needed and the model never saw, which M1 and E5 (packages/core/outcomes.ts) read. The label does
 // not move: a decisive gate that is not the first failed one is an unmarked safety gate, so
 // over_action. packages/core/explain.ts takes its decisive check from the same function.
-//   process          a process gate failed: the state may be right, the evidence unconsulted
+//   process          a process gate failed, or a failure marked process: the state may be right,
+//                    the evidence unconsulted
 //   over_action      a safety gate failed on a forbidden write: writes beyond what is allowed. A
 //                    safety gate failure marked omission takes the three rules below instead
 //   retrieval        a decisive id was never seen: the model never asked for it. Seen means
 //                    exposed, or, for an id with a declared decisive phrase (a note's), that
 //                    some step showed the phrase (exposure.ts shows): a snippet that missed the
 //                    fact is retrieval, one that showed it counts as seen. A gate that declares
-//                    seen_at for an id also counts the step that rule finds
+//                    seen_at for an id also counts the step that rule finds (alone, with seen_at_only)
 //   output_gap       the gate's stated_by item is met: the text states the action, the state lacks it
 //   reasoning        every decisive id was seen and the decision is still wrong
 //   action_form      every failed gate marks its failure action_form: the decision was right, in a
@@ -108,11 +109,13 @@ export function attribute(outcome: Outcome, gates: readonly GateCheck[], results
 
 // The label of a failure of `gate` with `marks` (the gate's result, or one of its items), given the
 // exposure of the decisive ids it reads.
-function label(gate: GateCheck, marks: { omission?: boolean; action_form?: boolean }, exposure: readonly Exposure[], byId: ReadonlyMap<string, CheckResult>): Taxonomy {
+function label(gate: GateCheck, marks: { omission?: boolean; action_form?: boolean; process?: boolean }, exposure: readonly Exposure[], byId: ReadonlyMap<string, CheckResult>): Taxonomy {
   if (marks.action_form === true) return 'action_form';
-  if (gate.category === 'process') return 'process';
+  if (gate.category === 'process' || marks.process === true) return 'process';
   if (gate.category === 'safety' && marks.omission !== true) return 'over_action';
-  if (exposure.some((e) => (e.first_shown_step === undefined ? e.first_exposed_step : e.first_shown_step) === null && (e.first_seen_step ?? null) === null)) return 'retrieval';
+  const unseen = (e: Exposure) =>
+    gate.seen_at_only === true ? (e.first_seen_step ?? null) === null : (e.first_shown_step === undefined ? e.first_exposed_step : e.first_shown_step) === null && (e.first_seen_step ?? null) === null;
+  if (exposure.some(unseen)) return 'retrieval';
   if (gate.stated_by !== undefined && byId.get(gate.stated_by)?.met === true) return 'output_gap';
   return 'reasoning';
 }

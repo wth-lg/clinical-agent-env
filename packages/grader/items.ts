@@ -10,7 +10,7 @@
 // A part of the gate that belongs to no item (a write about a patient outside the list) is the
 // `outside` check, recorded as the item OUTSIDE; it has no decisive ids. A gate marks its failure
 // action_form or omission only when every failed item carries the mark (decisiveGate's rule, one
-// level down).
+// level down), and the process mark too. An event gate's item names its spec (event).
 import { gate, type GateCheck, type GateCtx, type Json, type Verdict } from './check.ts';
 
 // The item key of the part of a gate no item owns.
@@ -25,6 +25,8 @@ export interface ItemVerdict {
   ids?: readonly string[];
   omission?: true;
   action_form?: true;
+  process?: true;
+  event?: string;
 }
 
 export interface ItemResult {
@@ -37,6 +39,8 @@ export interface ItemResult {
   ids?: string[];
   omission?: true;
   action_form?: true;
+  process?: true;
+  event?: string;
 }
 
 type Common = Omit<GateCheck, 'kind' | 'method' | 'fn' | 'decisive_ids'>;
@@ -62,6 +66,8 @@ const result = (item: string, decisive: readonly string[], v: ItemVerdict): Item
   ...(v.ids ? { ids: [...v.ids] } : {}),
   ...(!v.met && v.omission === true ? { omission: true as const } : {}),
   ...(!v.met && v.action_form === true ? { action_form: true as const } : {}),
+  ...(!v.met && v.process === true ? { process: true as const } : {}),
+  ...(!v.met && v.event !== undefined ? { event: v.event } : {}),
 });
 
 export function itemGate<I, S = undefined>(spec: ItemGateSpec<I, S>): GateCheck {
@@ -82,7 +88,7 @@ export function itemGate<I, S = undefined>(spec: ItemGateSpec<I, S>): GateCheck 
       if (outside) results.push(result(OUTSIDE, [], outside(shared, ctx)));
       const failed = results.filter((r) => !r.met);
       const own = verdict ? verdict(shared, results, ctx) : { evidence: { failed_items: failed.map((r) => r.item) }, ids: failed.flatMap((r) => r.ids ?? []) };
-      const all = (mark: 'omission' | 'action_form') => failed.length > 0 && failed.every((r) => r[mark] === true);
+      const all = (mark: 'omission' | 'action_form' | 'process') => failed.length > 0 && failed.every((r) => r[mark] === true);
       return {
         met: failed.length === 0,
         evidence: own.evidence,
@@ -90,6 +96,7 @@ export function itemGate<I, S = undefined>(spec: ItemGateSpec<I, S>): GateCheck 
         items: results,
         ...(all('omission') ? { omission: true as const } : {}),
         ...(all('action_form') ? { action_form: true as const } : {}),
+        ...(all('process') ? { process: true as const } : {}),
       };
     },
   });

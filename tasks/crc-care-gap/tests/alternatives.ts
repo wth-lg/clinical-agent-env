@@ -96,7 +96,25 @@ const clinicEpisodes = () => [{ calls: [clinicSearch('EpisodeOfCare', { date_ge:
 const fullFilterStool = (ps: string[]) => filteredStool(ps, { category: 'laboratory', status: 'final,amended,corrected' });
 const fullFilterEpisodes = (ps: string[]) => filteredEpisodes(ps, { status: 'planned,waitlist,active,onhold,finished,cancelled' });
 
+// R36 (sort-aware completeness, as R35 for T6): Lance Muller's observations newest first, ten at a
+// time, from offset 0 to the page at 60, the first whose earliest result (2023-12-27) is before the
+// sDNA window opens on 2024-01-01, without the page after it (2021): every later page is older still,
+// so both stool windows were reviewed. No code or date filter, so nothing is hidden.
+const D2_NEWEST_FIRST = (offsets: number[]): ScriptTurn[] => [
+  ...reads().map((t) => ({ calls: t.calls.filter((c) => !(c.input.patient === PT.D2 && c.input.code === STOOL_CODES)) })),
+  ...offsets.map((offset) => ({ calls: [search('Observation', PT.D2, { count: 10, sort: '-date', ...(offset ? { offset } : {}) })] })),
+  { calls: actions() },
+  { calls: [finish()] },
+];
+export const D2_SORTED_PAST_WINDOW = D2_NEWEST_FIRST([0, 10, 20, 30, 40, 50, 60]);
+export const D2_SORTED_SHORT_OF_WINDOW = D2_NEWEST_FIRST([0, 10, 20, 30, 40, 50]);
+
 const perItem: Alternative[] = [
+  {
+    id: 'd2_sorted_pages_past_window',
+    why: "Lists Lance Muller's observations newest first, ten at a time, and stops at the page that reaches back to 2023, before his sDNA window opens, without the last page: no stool test in either window, so he gets a kit.",
+    script: D2_SORTED_PAST_WINDOW,
+  },
   {
     id: 'a1_order_read_loinc_code',
     why: "Opens Delaine MacGyver's open colonoscopy order (its window passed in 2025, no colonoscopy on record) and orders her FIT by its LOINC test code (29771-3).",

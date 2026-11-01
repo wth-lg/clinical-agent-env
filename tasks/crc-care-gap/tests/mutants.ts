@@ -16,6 +16,7 @@ import {
   actions, bare, bareOrders, chart, CHART_STEPS, finish, fitOrder, GAPS, group, groups, housing, keyReads, message, NEXT_WRITE, NO_CONTACT, OPNOTE, orderFit, outreach, OUTREACH, policy, PT, read, reads, search, STOOL_CODES, type Label,
 } from '../solution/steps.ts';
 import { expected } from '../expected.ts';
+import { D2_SORTED_SHORT_OF_WINDOW } from './alternatives.ts';
 import { ref } from '../ids.ts';
 
 const without = (l: Label) => GAPS.filter((x) => x !== l);
@@ -288,6 +289,18 @@ const perItem: Array<Mutant & { loses: readonly string[] }> = [
       { calls: actions() },
       { calls: [finish()] },
     ],
+  },
+  {
+    // R36: a run newest first counts only once a page reaches before the window opens. The page at
+    // offset 50 ends in 07/2025, short of 2024-01-01, so results of 2024 may sit on the pages not read.
+    id: 'd2_sorted_pages_short_of_window',
+    trap: 'order_before_review',
+    why: "Lists Lance Muller's observations newest first, ten at a time, and stops at the page that ends in 07/2025, short of his sDNA window's start on 2024-01-01, and orders his kit: the window was never read whole (R14, R27, R36): retrieval.",
+    fails: ['fit_orders', 'gap_seen_before_order'],
+    loses: [],
+    attribution: 'retrieval',
+    items: only('D2', 'retrieval'),
+    script: D2_SORTED_SHORT_OF_WINDOW,
   },
   {
     // Ruling R27: a run of pages counts only when every page keeps one order.

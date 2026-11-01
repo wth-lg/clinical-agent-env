@@ -27,6 +27,7 @@ import { gradeTrajectory, run, type RunOptions, type TrialRecord } from '../run.
 import { currentGrade } from '../summary.ts';
 import { isEnvFile, parseTask, taskVersions } from '../tasks.ts';
 import { parseTrajectory, stripTimestamps, toJsonl } from '../trajectory.ts';
+import { withEvents } from './event-tasks.ts';
 
 const root = new URL('../../../', import.meta.url);
 const { world, worldHash, definitions } = repoWorld();
@@ -68,7 +69,7 @@ const SCRIPT: MockTurn[] = [
   { tools: [note('toolu_e5', 'Second'), finish('toolu_e6')] },
 ];
 
-async function toyTrial(over: Partial<RunOptions> = {}) {
+async function toyTrial(over: Partial<RunOptions> = {}, specs: readonly EventSpec[] = [TOY_EVENT]) {
   const store = new MemoryStore();
   admitStore(store);
   let id = 0;
@@ -78,18 +79,18 @@ async function toyTrial(over: Partial<RunOptions> = {}) {
   let now = Date.UTC(2026, 9, 23, 12);
   const client = new MessagesClient({ grant, ledger, apiKey: 'test-key-not-real', fetch: (q) => ((now += 4000), transport(q)), sleep: async () => {} });
   return run('_toy', 'claude-opus-5-5', {
-    tasks, client, world, worldHash, definitions, now: () => now, checks: [], judge: null, eventSpecs: [TOY_EVENT], ...over,
+    tasks: withEvents(tasks, '_toy', specs), client, world, worldHash, definitions, now: () => now, checks: [], judge: null, ...over,
   });
 }
 
 const regrade = (events: readonly TrialEvent[], record: TrialRecord, eventSpecs?: readonly EventSpec[]) =>
-  gradeTrajectory('_toy', { tasks, world, definitions, checks: [], events, record, ...(eventSpecs ? { eventSpecs } : {}) });
+  gradeTrajectory('_toy', { tasks: eventSpecs ? withEvents(tasks, '_toy', eventSpecs) : tasks, world, definitions, checks: [], events, record });
 
 describe('isEnvFile', () => {
   it('counts a task events.ts as an env file: it moves env_version, not grader_task_version', async () => {
     expect(isEnvFile('events.ts')).toBe(true);
     const files = { 'task.toml': '[task]\nid = "x"\ntitle = "X"\n', 'instruction.md': 'Do it.' };
-    const [a, b] = await Promise.all([parseTask({ id: 'x', files }), parseTask({ id: 'x', files: { ...files, 'events.ts': 'export const ACTIVE = [];' } })]);
+    const [a, b] = await Promise.all([parseTask({ id: 'x', files }), parseTask({ id: 'x', files: { ...files, 'events.ts': 'export const SPECS = []; export const ACTIVE = [];' }, events: { SPECS: [], ACTIVE: [] } })]);
     const [va, vb] = await Promise.all([taskVersions(a, worldHash), taskVersions(b, worldHash)]);
     expect(vb.env_version).not.toBe(va.env_version);
     expect(vb.grader_task_version).toBe(va.grader_task_version);
@@ -135,7 +136,7 @@ describe('an event in a run() trial', () => {
   });
 
   it('without the spec the same script fires nothing, and its turn-2 finish ends the trial', async () => {
-    const { record, events } = await toyTrial({ eventSpecs: [] });
+    const { record, events } = await toyTrial({}, []);
     expect(events.some((e) => e.type === 'env_event')).toBe(false);
     expect(record.turns).toBe(2);
   });
@@ -178,7 +179,7 @@ async function probeMismatches(specsFor: (events: readonly TrialEvent[]) => read
   const differ: string[] = [];
   for (const { record: r } of records) {
     const events = parseTrajectory(readFileSync(trajectoryOf(PROBE, r), 'utf8'));
-    const graded = await gradeTrajectory(r.task_id, { tasks, world, definitions, checks: await taskChecks(r.task_id), events, record: r as never, eventSpecs: specsFor(events) });
+    const graded = await gradeTrajectory(r.task_id, { tasks: withEvents(tasks, r.task_id, specsFor(events)), world, definitions, checks: await taskChecks(r.task_id), events, record: r as never });
     const cur = currentGrade(r as never);
     if (gradeKey(graded) !== gradeKey({ outcome: cur.outcome, score: cur.score, checks: cur.checks })) differ.push(`${r.task_id}/${r.index}: ${graded.outcome} ${graded.error?.message ?? ''}`);
   }

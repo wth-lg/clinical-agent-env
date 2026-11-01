@@ -14,7 +14,7 @@ import { parseEvent } from '../../../packages/core/events.ts';
 import { run } from '../../../packages/core/run.ts';
 import { taskSource } from '../../../packages/core/tasks.ts';
 import { stripTimestamps, toJsonl } from '../../../packages/core/trajectory.ts';
-import { nodeTaskDirs } from '../../../cli/adapters/tasks-node.ts';
+import { nodeTaskDirs, nodeTaskEvents } from '../../../cli/adapters/tasks-node.ts';
 import { tabLedger } from '../src/adapters/ledger-browser.ts';
 import { scenarioTransport, type ScenarioName } from '../src/harness/scenarios.ts';
 import { WRITE_TASK } from '../src/harness/write-task.ts';
@@ -29,7 +29,7 @@ async function nodeTrial(task: string, scenario: ScenarioName) {
   const world = new Uint8Array(readFileSync(new URL('fixtures/world.ndjson.gz', root)));
   try {
     return await run(task, 'claude-opus-5-5', {
-      tasks: taskSource(async () => [...nodeTaskDirs(), WRITE_TASK], { testMode: false }),
+      tasks: taskSource(async () => [...(await nodeTaskEvents(nodeTaskDirs())), WRITE_TASK], { testMode: false }),
       client,
       world: { read: async () => world },
       worldHash: manifest.world.state_hash,

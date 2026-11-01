@@ -14,7 +14,7 @@ import { taskSource, taskVersions, type TaskSource } from '../../packages/core/t
 import type { Check } from '../../packages/grader/check.ts';
 import { GRADER_VERSION } from '../../packages/grader/grade.ts';
 import { fakeKey, tempDir } from '../../scripts/test/helpers.ts';
-import { nodeTaskDirs } from '../adapters/tasks-node.ts';
+import { nodeTaskDirs, nodeTaskEvents } from '../adapters/tasks-node.ts';
 import { main as regrade } from '../regrade.ts';
 import { main as replay } from '../replay.ts';
 import { main as run, repoWorld, taskChecks } from '../run.ts';
@@ -63,7 +63,7 @@ const read = (run: string, i: number) => JSON.parse(readFileSync(join(run, 'tria
 
 // This checkout's tasks with one _toy file changed.
 const editedTasks = (path: string, edit: (text: string) => string): TaskSource =>
-  taskSource(async () => nodeTaskDirs().map((d) => (d.id === '_toy' ? { ...d, files: { ...d.files, [path]: edit(d.files[path] as string) } } : d)), { testMode: true });
+  taskSource(async () => (await nodeTaskEvents(nodeTaskDirs())).map((d) => (d.id === '_toy' ? { ...d, files: { ...d.files, [path]: edit(d.files[path] as string) } } : d)), { testMode: true });
 
 describe('fix the grader, regrade offline, disclose', () => {
   it('a gate that throws records GRADER_ERROR naming it, and every other check still runs, judge items included', () => {
@@ -80,7 +80,7 @@ describe('fix the grader, regrade offline, disclose', () => {
 
   it('records carry env_version and grader_task_version, and task_version is their combined hash', async () => {
     const r = read(dir, 0);
-    const v = await taskVersions(await taskSource(async () => nodeTaskDirs(), { testMode: true }).get('_toy'), repoWorld().worldHash);
+    const v = await taskVersions(await taskSource(async () => nodeTaskEvents(nodeTaskDirs()), { testMode: true }).get('_toy'), repoWorld().worldHash);
     expect(r).toMatchObject(v);
     expect(new Set([v.env_version, v.grader_task_version, v.task_version]).size).toBe(3);
   });
