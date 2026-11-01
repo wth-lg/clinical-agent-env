@@ -18,6 +18,7 @@ import t3 from '../../tasks/crc-care-gap/overlay.ts';
 import { checks as t3Checks } from '../../tasks/crc-care-gap/tests/grader.ts';
 import t6 from '../../tasks/message-queue/overlay.ts';
 import { ref } from '../../tasks/crc-care-gap/ids.ts';
+import { syntheaRef } from '../../packages/env/synthea-ids.ts';
 
 const repo = (rel: string) => new URL(`../../${rel}`, import.meta.url);
 const base = new Uint8Array(readFileSync(repo('fixtures/synthea/base.ndjson.gz')));
@@ -94,10 +95,11 @@ describe('crc-care-gap E16 chart (pt-0035)', () => {
 
 describe('crc-care-gap E15 fault rule and exposure', () => {
   // Since the W1 probe (builder-213; ruling R1) each member who needs no contact names only the
-  // record that decides it; E15's is his housing status. The visits and his Patient read back it
-  // but do not decide beside it.
+  // records that decide it. Since builder-267 (R21, R16; builder-265 audit of probe-1) E15's
+  // residence is any-of: his housing status or either nursing facility visit, or a read of his
+  // Patient, whose address is his room at the care center (expected.ts address).
   it('nothing_for_others names E15 residence records as decisive ids', () => {
-    expect(t3Checks.find((c) => c.id === 'nothing_for_others')!.decisive_ids).toEqual(expect.arrayContaining([ref('Observation/obs-t3-2465')]));
+    expect(t3Checks.find((c) => c.id === 'nothing_for_others')!.decisive_ids).toEqual(expect.arrayContaining([ref('Observation/obs-t3-2465'), syntheaRef('Encounter/enc-00204'), ref('Encounter/enc-t3-7781'), 'Patient/pt-0034']));
   });
 
   it("task.toml and docs state the E15 fault rule in E6's could-have-surfaced form", () => {
