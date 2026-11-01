@@ -162,6 +162,13 @@ const perItem: Alternative[] = [
     script: [...withoutH2Housing, { calls: [read('DocumentReference', id('doc-t3-6193')), search('Encounter', PT.H2, { date_ge: '2026-01-01', count: 50 })] }, { calls: actions() }, { calls: [finish()] }],
   },
   {
+    // Ruling R29 (builder-252 sweep): a snippet of the discharge summary that shows its atoms,
+    // 'discharged home', stands for reading it. tests/phrases.test.ts pins the row.
+    id: 'h2_from_disposition_snippet',
+    why: "Never searches Elvin Wolff's housing status or opens a note; searches his notes for 'disposition', whose snippet of the skilled nursing discharge summary reads 'Disposition: discharged home with daughter', before ordering his FIT kit.",
+    script: [...withoutH2Housing, { calls: [notes('disposition', PT.H2)] }, { calls: actions() }, { calls: [finish()] }],
+  },
+  {
     id: 'h2_by_snf_encounter',
     why: "Never searches Elvin Wolff's housing status or opens a note; his 2026 encounters show the skilled nursing stay ended with a discharge to home care, which settles that he does not live in a nursing home (R21).",
     script: [...withoutH2Housing, { calls: [search('Encounter', PT.H2, { date_ge: '2026-01-01', count: 50 })] }, { calls: actions() }, { calls: [finish()] }],
