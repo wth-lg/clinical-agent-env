@@ -247,6 +247,7 @@ export const mutants: Mutant[] = [
   // EVENT_MUTANTS): not_amended reasoning, unseen retrieval (the correction written without opening
   // the arrival), before_seen process (written in the answer that opens it), lure_acted_on over_action.
   ...amendMutants(),
+  ...blindMutants(),
   {
     id: 'beahan_lure_premedicated',
     event: { spec: 't5-beahan-rxn', kind: 'lure_acted_on' },
@@ -262,6 +263,32 @@ export const mutants: Mutant[] = [
     ])),
   },
 ];
+
+// R38(a), one per amend event: the study's chart never reviewed, its orders written blind (the
+// write fires the event), the arrival never opened and nothing corrected. The fired event excuses
+// no base review: the study fails on retrieval.
+function blindMutants(): Mutant[] {
+  return [
+    { spec: 't5-mohr-scr', x: STALE, who: 'Mohr', fails: ['creatinine_before_scan', 'evidence_before_orders', 'event_seen', 'amended'] },
+    { spec: 't5-ferreira-scr', x: MODERATE, who: 'Ferreira', fails: ['ct_order', 'premedication', 'evidence_before_orders', 'event_seen', 'amended'] },
+    { spec: 't5-schuster-rxn', x: AKINOTE, who: 'Schuster', fails: ['creatinine_before_scan', 'saline_prophylaxis', 'metformin_held', 'evidence_before_orders', 'event_seen', 'amended'] },
+  ].map((e): Mutant => {
+    const bare = e.x.patient.slice('Patient/'.length);
+    const mine = (c: ScriptCall) => JSON.stringify(c.input).includes(`"${bare}"`) || e.x.decisive.some((id) => JSON.stringify(c.input).includes(`"${id.split('/')[1]}"`));
+    const arrival = OPENED.filter((c) => !mine(c) && !JSON.stringify(c.input).includes(e.spec === 't5-mohr-scr' ? 'obs-0750' : e.spec === 't5-ferreira-scr' ? ARRIVED.ferreira.split('/')[1]! : ARRIVED.schuster.split('/')[1]!) && !(e.spec === 't5-ferreira-scr' && same(c, egfrCalc)));
+    const amends = { 't5-mohr-scr': [mohrSaline], 't5-ferreira-scr': [ferreiraSaline], 't5-schuster-rxn': [schusterPrednisone, schusterDiphenhydramine] }[e.spec]!;
+    return {
+      id: `${e.spec.slice(3)}_blind_write_fires_amend`,
+      trap: 'blind_write_fires_amend',
+      why: `Writes ${e.who}'s orders as for any contrast patient without opening ${e.who}'s chart; the write brings ${e.who}'s event, which is never opened, and nothing is corrected. The arrival excuses no base review (R38a).`,
+      fails: e.fails,
+      loses: [],
+      attribution: 'retrieval',
+      items: { [e.x.patient]: 'retrieval' },
+      script: run(WRITES, TELL, REVIEW.map((t) => ({ ...t, calls: t.calls.filter((c) => !mine(c)) })), DONE, handled(arrival, without(AMENDS, amends))),
+    };
+  });
+}
 
 // Three mutants per amend event: the correction left out, written without opening the arrival,
 // and written in the same answer that opens it.

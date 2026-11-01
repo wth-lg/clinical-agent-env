@@ -123,7 +123,7 @@ display = "Comprehensive metabolic 2000 panel - Serum or Plasma"
 # Each trap needs a mutant in tests/mutants.ts. No status-only case: T5 has no inbox items of its
 # own (the events' arrivals are the only ones, and they need no closing).
 [matrix]
-traps = ["filler_order_skipped", "filler_wrong_study", "scr_counted_from_today", "scan_deferred_for_creatinine", "aki_record_missed", "scan_deferred_for_aki", "moderate_graded_by_list", "iv_regimen", "overnight_timing", "order_off_list", "order_before_report", "diabetes_unseen_creatinine", "report_unseen_premedicated", "aki_unseen_held", "premed_without_reaction", "creatinine_sameday_dateonly", "grade_snippet_cut", "aki_snippet_cut", "order_for_cancelled", "arrival_not_acted_on", "missed_arrival", "amend_before_seen", "lure_acted_on"]
+traps = ["filler_order_skipped", "filler_wrong_study", "scr_counted_from_today", "scan_deferred_for_creatinine", "aki_record_missed", "scan_deferred_for_aki", "moderate_graded_by_list", "iv_regimen", "overnight_timing", "order_off_list", "order_before_report", "diabetes_unseen_creatinine", "report_unseen_premedicated", "aki_unseen_held", "premed_without_reaction", "creatinine_sameday_dateonly", "grade_snippet_cut", "aki_snippet_cut", "order_for_cancelled", "arrival_not_acted_on", "missed_arrival", "amend_before_seen", "lure_acted_on", "blind_write_fires_amend"]
 status_only = false
 
 # The judge item reads one message; medium as in T1, checked by the live judge pass.

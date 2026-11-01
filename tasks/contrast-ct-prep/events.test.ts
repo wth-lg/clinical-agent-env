@@ -117,6 +117,17 @@ describe('T5 event specs', () => {
     }
   });
 
+  // R38(a): a fired event never excuses the base review. Once an amend fires, the base gates leave
+  // only its `changes` to the amended gate; each of those decides nothing on the list's chart, so
+  // every base decisive record of the study is still required by its own gate's guard (R14).
+  it('an amend takes over only decisions no base record decides (R38a)', () => {
+    for (const s of events.SPECS.filter((x) => AMEND_CLASSES.has(x.class))) {
+      const before = expected.items.find((x) => x.patient === s.item)!;
+      for (const d of EVENTS[s.id]!.changes) expect(before.decides[d], `${s.id} ${d}`).toEqual([]);
+      expect(EVENTS[s.id]!.changes.length, s.id).toBeGreaterThan(0);
+    }
+  });
+
   it('an amend event changes its study; a lure leaves it as it was', () => {
     for (const s of events.SPECS) {
       const before = expected.items.find((x) => x.patient === s.item)!;
