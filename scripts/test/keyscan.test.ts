@@ -1,7 +1,8 @@
-import { symlinkSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { rmSync, symlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { gzipSync } from 'node:zlib';
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { commitFile, fakeKey, git, runScript, tempDir, tempRepo, write } from './helpers.ts';
 
 const keyscan = (cwd: string, args: string[] = [], env: Record<string, string | undefined> = {}) =>
@@ -196,8 +197,76 @@ describe('keyscan history', () => {
     expect(r.stdout).not.toContain(fakeKey('M'));
   });
 
-  it('exits 2 on a range git cannot resolve', () => {
+  it('exits 2 on a range git cannot resolve, as a keyscan error rather than a finding', () => {
     const repo = tempRepo();
-    expect(keyscan(repo, ['--range', 'nope..alsonope']).status).toBe(2);
+    const r = keyscan(repo, ['--range', 'nope..alsonope']);
+    expect(r.status).toBe(2);
+    expect(r.stderr).toContain('keyscan error');
+    expect(r.stderr).not.toContain('finding');
   });
+
+  it('fails closed with a keyscan error when git dies partway through the log', () => {
+    const repo = tempRepo();
+    const base = git(repo, 'rev-parse', 'HEAD');
+    commitFile(repo, 'lost.txt', 'this blob goes missing\n');
+    const blob = git(repo, 'rev-parse', 'HEAD:lost.txt');
+    commitFile(repo, 'later.txt', 'printed before git reaches the missing blob\n');
+    rmSync(join(repo, '.git', 'objects', blob.slice(0, 2), blob.slice(2)));
+    const r = keyscan(repo, ['--range', `${base}..HEAD`]);
+    expect(r.status).toBe(2);
+    expect(r.stderr).toContain('keyscan error');
+    expect(r.stderr).not.toContain('clean');
+  });
+});
+
+// `git log -p` of this history is about 600 MB, past the longest string V8 can hold (~536 MB), so
+// a scanner that reads the whole log into one string throws ERR_STRING_TOO_LONG. Each blob stays
+// under core.bigFileThreshold (512 MB) so git still prints it as text. The blobs are written with
+// `git hash-object` and committed from the index, so the working tree never holds them.
+describe('keyscan history larger than one string', () => {
+  const BLOB_BYTES = 300_000_000;
+  let repo: string;
+  let early: string;
+
+  const blobs = new Map<string, string>();
+
+  // Hashes a blob of BLOB_BYTES once per fill and commits it from the index.
+  function commitBigBlob(fill: string, message: string): void {
+    let blob = blobs.get(fill);
+    if (!blob) {
+      const line = `${fill} `.repeat(250);
+      const r = spawnSync('bash', ['-c', `yes '${line}' | head -c ${BLOB_BYTES} | git hash-object -w --stdin`], {
+        cwd: repo,
+        encoding: 'utf8',
+      });
+      if (r.status !== 0) throw new Error(`hash-object failed: ${r.stderr}`);
+      blob = r.stdout.trim();
+      blobs.set(fill, blob);
+    }
+    git(repo, 'update-index', '--add', '--cacheinfo', `100644,${blob},${fill}.txt`);
+    git(repo, 'commit', '-q', '-m', message);
+  }
+
+  beforeAll(() => {
+    repo = tempRepo();
+    // clean: init, big-one, big-two. leaky: init, a key, big-one, big-two.
+    commitBigBlob('big-one', 'first large fixture rebuild');
+    commitBigBlob('big-two', 'second large fixture rebuild');
+    git(repo, 'branch', 'clean');
+    git(repo, 'reset', '-q', '--mixed', 'HEAD~2');
+    git(repo, 'checkout', '-q', '-b', 'leaky');
+    early = commitFile(repo, 'early.txt', `one\nkey=${fakeKey('P')}\n`);
+    commitBigBlob('big-one', 'first large fixture rebuild');
+    commitBigBlob('big-two', 'second large fixture rebuild');
+  }, 300_000);
+
+  it('finds a key planted in an early commit', () => {
+    expectHit(keyscan(repo, ['--range', 'leaky']), `${early.slice(0, 12)}:early.txt:2`, fakeKey('P'));
+  }, 300_000);
+
+  it('exits 0 on a clean large history', () => {
+    const r = keyscan(repo, ['--range', 'clean']);
+    expect(r.stderr).toContain('clean, 3 commit(s) scanned');
+    expect(r.status).toBe(0);
+  }, 300_000);
 });

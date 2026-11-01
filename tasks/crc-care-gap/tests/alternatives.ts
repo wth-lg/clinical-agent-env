@@ -34,6 +34,18 @@ const OUTSIDE_PATIENT = 'pt-0040';
 const withoutH2Housing = reads()
   .map((t) => ({ calls: t.calls.filter((c) => !(c.input.patient === PT.H2 && c.input.category === 'social-history')) }))
   .filter((t) => t.calls.length > 0);
+// The oracle's reads without H1's housing status search; `patient` replaces its fhir_read of his
+// Patient (the oracle's read shows his address).
+const withoutH1Housing = (patient?: ScriptCall) =>
+  reads()
+    .map((t) => ({
+      calls: t.calls.flatMap((c) =>
+        c.input.patient === PT.H1 && c.input.category === 'social-history' ? []
+        : patient !== undefined && c.name === 'fhir_read' && c.input.resource_type === 'Patient' && c.input.id === PT.H1 ? [patient]
+        : [c],
+      ),
+    }))
+    .filter((t) => t.calls.length > 0);
 // The oracle's reads filtered as the policy words them (verifier-W1-probe-T3-clinical-1, case
 // policy_filtered_reads): FOBT and FIT from 2026-01-01 and sDNA-FIT from 2024-01-01 (§3, by
 // collection date, which fhir_search dates an Observation by), care episodes overlapping 2026
@@ -158,6 +170,25 @@ const perItem: Alternative[] = [
     script: withReads([read('MedicationRequest', id('mr-t3-6604'))]),
   },
   rejectedFor('H1', 'he lives long term in a nursing home at 72'),
+  // Ruling R21, R16 (builder-265 audit of probe-1 crc-care-gap/0 and /1): where Rickey Sipes lives
+  // is settled by any one of his housing status, his Patient address (his room at Maple Grove Care
+  // Center) or his nursing facility visits, as H2's residence is by any one of his records.
+  {
+    id: 'h1_by_patient_address',
+    why: "Never searches Rickey Sipes's housing status; reads his Patient, whose home address is his room at Maple Grove Care Center and whose birth date makes him 72, and writes nothing about him.",
+    script: [...withoutH1Housing(), { calls: actions() }, { calls: [finish()] }],
+  },
+  {
+    id: 'h1_by_facility_encounters',
+    why: "Never searches Rickey Sipes's housing status or reads his Patient; takes his age (72) from a search_patients row, which shows no address, and lists his encounters: two 2026 nursing facility visits at Maple Grove Care Center settle that he lives there. Writes nothing about him.",
+    script: [...withoutH1Housing({ name: 'search_patients', input: { name: 'Sipes' } }), { calls: [search('Encounter', PT.H1, { date_ge: '2025-06-01' })] }, { calls: actions() }, { calls: [finish()] }],
+  },
+  {
+    // The route both probe-1 trials took (turn 25): the care center, his Patient, his encounters.
+    id: 'h1_probe_route',
+    why: "Never searches Rickey Sipes's housing status; reads the Maple Grove Care Center Organization, his Patient (address: Maple Grove Care Center, Room 214) and his encounters since 2025-06-01 (nursing facility visits there), as probe-1's two trials did, and writes nothing about him.",
+    script: [...withoutH1Housing(), { calls: [read('Organization', id('org-t3-5520')), search('Encounter', PT.H1, { date_ge: '2025-06-01' })] }, { calls: actions() }, { calls: [finish()] }],
+  },
   {
     // Ruling R21 (verifier-W1-probe-T3-clinical-1 F2): any one of the housing status, the discharge
     // summary or the stay's encounter settles where he lives.

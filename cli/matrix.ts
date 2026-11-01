@@ -47,7 +47,7 @@ import { installEgressGuard } from '../packages/core/egress.ts';
 import { stripTimestamps, toJsonl } from '../packages/core/trajectory.ts';
 import type { Check, Json } from '../packages/grader/check.ts';
 import type { Grade } from '../packages/grader/grade.ts';
-import type { JudgeCacheEntry } from '../packages/grader/judge.ts';
+import { judgeCallBudget, type JudgeCacheEntry } from '../packages/grader/judge.ts';
 import { declaresOf, gradeRun, runMatrix, type CaseRun, type FreshGrade, type MatrixEnv, type MatrixOptions, type CaseKind, type MatrixResult, type ReplayDiff } from '../packages/grader/matrix/matrix.ts';
 import type { Agents, Alternative, MatrixTask, Mutant, Script, WorldView } from '../packages/grader/matrix/types.ts';
 import { nodeNow } from './adapters/clock-node.ts';
@@ -144,12 +144,15 @@ export async function loadMatrixTask(id: string, root: string = TASKS_DIR, tasks
   const dir = join(root, id);
   const cacheFile = join(dir, 'tests/judge-cache.json');
   const checksModule = join(dir, 'tests/grader.ts');
+  const checks = await exported<Check[]>(dir, 'tests/grader.ts', 'checks', []);
+  // Throws on an item whose judge_questions is not a whole number >= 0, naming it.
+  judgeCallBudget(checks);
   return {
     id,
     instruction: task.instruction,
     policies: task.policies.map((p) => ({ id: p.id, text: p.text })),
     declares: declaresOf(toml.parse(readFileSync(join(dir, 'task.toml'), 'utf8'))),
-    checks: await exported<Check[]>(dir, 'tests/grader.ts', 'checks', []),
+    checks,
     ...(existsSync(checksModule) ? { checksModule } : {}),
     oracle: await exported<Script | null>(dir, 'solution/solve.ts', 'oracle', null),
     alternatives: await exported<Alternative[]>(dir, 'tests/alternatives.ts', 'alternatives', []),

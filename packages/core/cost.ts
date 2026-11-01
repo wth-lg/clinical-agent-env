@@ -57,23 +57,33 @@ export interface Usage {
 const isCount = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v) && v >= 0;
 const optionalCount = (v: unknown): number | null => (v === undefined || v === null ? 0 : isCount(v) ? v : null);
 
+// A usage block's cache-write counts: all of them, max(cache_creation_input_tokens,
+// ephemeral_5m + ephemeral_1h), since a response can report the write in either place, and the
+// 1-hour part; null when a field is negative or not a number. usageCostUsd prices these, and
+// MessagesClient's token estimate (anthropic.ts answeredPrompt) counts the same total.
+export function cacheWrites(u: Usage): { all: number; write1h: number } | null {
+  const cc: unknown = u.cache_creation ?? {};
+  if (typeof cc !== 'object' || cc === null) return null;
+  const { ephemeral_5m_input_tokens: e5m, ephemeral_1h_input_tokens: e1h } = cc as NonNullable<Usage['cache_creation']>;
+  const creation = optionalCount(u.cache_creation_input_tokens);
+  const write5m = optionalCount(e5m);
+  const write1h = optionalCount(e1h);
+  if (creation === null || write5m === null || write1h === null) return null;
+  return { all: Math.max(creation, write5m + write1h), write1h };
+}
+
 // The cost of a call from its usage block, or null when the usage cannot be priced (a token
 // field missing, negative or not a number, or an unknown speed). The ledger settles such a
 // call at its worst case.
 export function usageCostUsd(u: Usage): number | null {
   if (typeof u !== 'object' || u === null || !isCount(u.input_tokens) || !isCount(u.output_tokens)) return null;
-  const cc: unknown = u.cache_creation ?? {};
-  if (typeof cc !== 'object' || cc === null) return null;
-  const { ephemeral_5m_input_tokens: e5m, ephemeral_1h_input_tokens: e1h } = cc as NonNullable<Usage['cache_creation']>;
-  const creation = optionalCount(u.cache_creation_input_tokens);
+  const writes = cacheWrites(u);
   const read = optionalCount(u.cache_read_input_tokens);
-  const write5m = optionalCount(e5m);
-  const write1h = optionalCount(e1h);
-  if (creation === null || read === null || write5m === null || write1h === null) return null;
+  if (writes === null || read === null) return null;
   const speed = u.speed ?? 'standard';
   if (speed !== 'standard' && speed !== 'fast') return null;
   const p = PRICE_USD_PER_MTOK;
-  const writeAll = Math.max(creation, write5m + write1h);
+  const { all: writeAll, write1h } = writes;
   const usd =
     (u.input_tokens * p.input + (writeAll - write1h) * p.cache_write_5m + write1h * p.cache_write_1h + read * p.cache_read + u.output_tokens * p.output) / 1e6;
   return speed === 'fast' ? usd * FAST_MODE_MULTIPLIER : usd;
@@ -83,16 +93,23 @@ function assertTokenCount(name: string, v: unknown): void {
   if (!Number.isSafeInteger(v) || (v as number) < 0) throw new TypeError(`${name} must be a whole number >= 0, got ${String(v)}`);
 }
 
-// An upper bound on a call's cost before it is sent. Input: every request body byte counted
-// as one token (a token covers at least one byte of text), plus INPUT_OVERHEAD_TOKENS, all at
-// the 1-hour cache-write price, the highest input rate a call can incur. Output: max_tokens,
-// which also caps thinking tokens. Fast mode doubles it. Throws on a bodyBytes or maxTokens
-// that is not a whole number >= 0, so no NaN or negative reservation reaches the cap check.
-export function worstCaseUsd(req: { bodyBytes: number; maxTokens: number; fast?: boolean }): number {
+// An upper bound on a call's cost before it is sent. Input: inputTokens when the caller gives
+// an upper bound on the request's input tokens (MessagesClient: the last answered prompt of the
+// same conversation plus the bytes added since, anthropic.ts promptEstimate), else every request
+// body byte counted as one token (a token covers at least one byte of text) plus
+// INPUT_OVERHEAD_TOKENS; the smaller of the two when both are given, since each is an upper
+// bound. Input is priced at the 1-hour cache-write price, the highest input rate a call can
+// incur. Output: max_tokens, which also caps thinking tokens. Fast mode doubles it. Throws on
+// a bodyBytes, inputTokens or maxTokens that is not a whole number >= 0, so no NaN or negative
+// reservation reaches the cap check.
+export function worstCaseUsd(req: { bodyBytes: number; maxTokens: number; inputTokens?: number; fast?: boolean }): number {
   assertTokenCount('bodyBytes', req.bodyBytes);
   assertTokenCount('maxTokens', req.maxTokens);
+  if (req.inputTokens !== undefined) assertTokenCount('inputTokens', req.inputTokens);
   const p = PRICE_USD_PER_MTOK;
-  const usd = ((req.bodyBytes + INPUT_OVERHEAD_TOKENS) * p.cache_write_1h + req.maxTokens * p.output) / 1e6;
+  const bytes = req.bodyBytes + INPUT_OVERHEAD_TOKENS;
+  const input = req.inputTokens === undefined ? bytes : Math.min(req.inputTokens, bytes);
+  const usd = (input * p.cache_write_1h + req.maxTokens * p.output) / 1e6;
   return req.fast === true ? usd * FAST_MODE_MULTIPLIER : usd;
 }
 

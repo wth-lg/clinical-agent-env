@@ -24,19 +24,33 @@
 // parsed (or failed to parse twice) is cached as an answer or an unknown.
 //
 // Allowance: a trial's judge calls are bounded by its projection, two calls (the schema retry)
-// per judge and hybrid item, counted per call, whichever item makes them (a code item that asks
-// ctx.judge included). Past the bound a question is not sent: it is unknown, marked 'judge
-// allowance reached' in the record. Each call's worst case (its real body plus JUDGE_MAX_TOKENS
-// of output) must stay within JUDGE_MAX_CALL_USD, $1, or it is not sent: unknown, marked
-// OVER_BUDGET. judgeAllowanceUsd prices each call at that ceiling, the upper bound for when the
-// graded text is not known yet (a dry run); perCallGrantClient opens each call's grant at its
-// real request's worst case.
+// per question its judge and hybrid items may ask: one per item, or the number an item declares
+// (judge_questions: one per recipient or per worklist item), counted per call, whichever item
+// makes them (a code item that asks ctx.judge included), and never more than JUDGE_MAX_CALLS.
+// Past the bound a question is not sent: it is unknown, marked 'judge allowance reached' in the
+// record. judgeAllowanceUsd prices each allowed call at JUDGE_CALL_PRICE_USD, its worst case
+// (JUDGE_MAX_TOKENS of output) for a request body of JUDGE_PRICED_BODY_BYTES, above every judge
+// request measured on real trials and matrix cases (GRADER16-193 F2). The Judge holds a grading to
+// that in dollars too: the worst cases of the calls it sends never sum past its maxUsd
+// (judgeAllowanceUsd of the checks), and a call that would cross it is not sent, marked 'judge
+// allowance reached' like a call past the count. So a long text spends the allowance sooner but is
+// still asked, and the ledger, which settles a call at most at its worst case, never charges a
+// trial's judge more than its projection. Each call's worst case (its real body plus
+// JUDGE_MAX_TOKENS of output) must also stay within JUDGE_MAX_CALL_USD, $1, or it is not sent:
+// unknown, marked OVER_BUDGET. perCallGrantClient opens each call's grant at its real request's
+// worst case.
 //
 // Cache: every answer is kept under sha256 of (model, effort, prompt version, prompt, graded
 // text), with the calls it took, and the entries go into the trial record, so a regrade from
 // them is byte-identical and free. A task's canned cache (tests/judge-cache.json) also says where
 // each answer came from: provenance {source: live | scripted, model, at}. With a cache and no client (regrade, replay), a miss is an
-// error: JudgeCacheMiss. With neither, judge and hybrid-fallback items are unknown.
+// error: JudgeCacheMiss. With neither, judge and hybrid-fallback items are unknown. A cached
+// 'judge allowance reached' entry is a question that grading never sent: a grading whose own
+// allowance still has room for it, in calls and in dollars, asks it (a regrade misses it), and one
+// whose allowance is spent too reads it as recorded. A grading's spend counts every entry it used,
+// a cached one's calls as well as its live calls, each at its request's worst case, so a regrade
+// under the same allowance finds the room the grading found and is byte-identical
+// (verifier-phase-P17i-GRADER16-193-1 G1).
 import { classifyFailure, MODEL, reserveRequest, type CallResult, type ClientFailure, type MessageParam, type MessageParams, type SendOptions } from '../core/anthropic.ts';
 import { worstCaseUsd } from '../core/cost.ts';
 import type { BatchGrant, Ledger } from '../core/ledger.ts';
@@ -52,8 +66,20 @@ export const JUDGE_MAX_TOKENS = 16_000;
 // the projection allowance below.
 export const JUDGE_MAX_CALL_USD = 1;
 export const OVER_BUDGET = 'judge call over budget';
-// Calls each judge or hybrid item may make: the first and the schema retry.
+// Calls each judge or hybrid question may make: the first and the schema retry.
 export const JUDGE_CALLS_PER_ITEM = 2;
+// The most judge calls one trial's grading may make, whatever its items declare (builder-267): with
+// JUDGE_MAX_CALL_USD it bounds a trial's judge allowance at $80.
+export const JUDGE_MAX_CALLS = 80;
+// The request body a judge call is priced at in the allowance: 6 KiB. The largest judge request
+// measured is 4,729 bytes (probe-1's crc-care-gap outreach messages) and 3,502 bytes over every
+// matrix case (evidence/builder-270/measure); the median is 1.6 to 2.7 KB. The Judge bounds the sum
+// of its calls' worst cases by the allowance, so this is what an allowed call may average, not a
+// per-call limit.
+export const JUDGE_PRICED_BODY_BYTES = 6_144;
+// One allowed judge call's price in the allowance: its worst case for that body, $0.40192
+// (JUDGE_MAX_TOKENS of output is $0.32 of it).
+export const JUDGE_CALL_PRICE_USD = worstCaseUsd({ bodyBytes: JUDGE_PRICED_BODY_BYTES, maxTokens: JUDGE_MAX_TOKENS });
 export const ALLOWANCE_REACHED = 'judge allowance reached';
 
 // The part of MessagesClient the judge uses (the loop's TrialClient).
@@ -249,8 +275,19 @@ export interface JudgeOptions {
   cache?: readonly JudgeCacheEntry[];
   // The most live calls this grading may make (judgeCallBudget); unbounded when absent.
   maxCalls?: number;
+  // The most the worst cases of this grading's live calls may sum to (judgeAllowanceUsd);
+  // unbounded when absent.
+  maxUsd?: number;
   // The task's judge effort; default DEFAULT_JUDGE_EFFORT.
   effort?: JudgeEffort;
+}
+
+// A judge call's request, its worst case in dollars (usd) and in micro-dollars (worst).
+interface JudgeRequest {
+  history: MessageParam[];
+  params: MessageParams;
+  usd: number;
+  worst: number;
 }
 
 export class Judge {
@@ -260,15 +297,21 @@ export class Judge {
   // The entries this grading used, in order of first use.
   readonly #used = new Map<string, JudgeCacheEntry>();
   readonly #maxCalls: number;
+  // In micro-dollars, as the ledger compares, so the bound is exact.
+  readonly #maxWorst: number;
   readonly #effort: JudgeEffort;
   #cost = 0;
   #live = 0;
+  // The worst cases of the calls behind the entries this grading used, in micro-dollars: each
+  // live call sent, and each call a cached entry took, at its request's worst case.
+  #worst = 0;
 
   constructor(opts: JudgeOptions = {}) {
     this.#client = opts.client ?? null;
     this.#cache = new Map((opts.cache ?? []).map((e) => [e.key, e]));
     this.#regrade = this.#client === null && opts.cache !== undefined;
     this.#maxCalls = opts.maxCalls ?? Infinity;
+    this.#maxWorst = opts.maxUsd === undefined ? Infinity : µ(opts.maxUsd);
     this.#effort = opts.effort ?? DEFAULT_JUDGE_EFFORT;
   }
 
@@ -331,23 +374,43 @@ export class Judge {
   // the allowance. A client error is thrown as JudgeClientError and nothing is cached.
   async #ask(kind: JudgeCacheEntry['kind'], prompt: string, text: string, valid: (a: { [k: string]: Json }) => boolean): Promise<{ entry: JudgeCacheEntry } | null> {
     const key = await sha256Hex(JSON.stringify([MODEL, this.#effort, JUDGE_PROMPT_VERSION, prompt, text]));
-    const cached = this.#used.get(key) ?? this.#cache.get(key);
+    const request = this.#request(prompt);
+    const reused = this.#used.get(key);
+    const found = reused ?? this.#cache.get(key);
+    // A question the grading that cached it never sent (its allowance was reached) has no answer:
+    // when this grading's allowance has room for it, in calls and in dollars, it is asked (live)
+    // or missed (a regrade), not read as unknown again (builder-267: a regrade under a larger
+    // allowance). What this grading has spent is that of the entries it used, in the order it asked
+    // them: a live answer's entry holds its live calls, a cached one the calls it took then; each
+    // counts once (GRADER16-193 F3), and each call at its request's worst case, so a regrade under
+    // the same allowance finds the same room the grading found and reads the entry as recorded
+    // (verifier-phase-P17i-GRADER16-193-1 G1).
+    const room = this.calls < this.#maxCalls && this.#worst + request.worst <= this.#maxWorst;
+    const cached = found?.error === ALLOWANCE_REACHED && room ? undefined : found;
     if (cached === undefined && this.#regrade) throw new JudgeCacheMiss(key);
     if (cached === undefined && this.#client === null) return null;
-    const entry = cached ?? (await this.#send(key, kind, prompt, valid));
+    if (cached !== undefined && reused === undefined) this.#worst += request.worst * cached.calls;
+    const entry = cached ?? (await this.#send(key, kind, request, valid));
     this.#used.set(key, entry);
     return { entry };
   }
 
-  async #send(key: string, kind: JudgeCacheEntry['kind'], prompt: string, valid: (a: { [k: string]: Json }) => boolean): Promise<JudgeCacheEntry> {
-    const base = { key, kind, model: MODEL, effort: this.#effort, prompt_version: JUDGE_PROMPT_VERSION };
+  // A judge call's request for `prompt`, and its worst case in micro-dollars.
+  #request(prompt: string): JudgeRequest {
     const history: MessageParam[] = [{ role: 'user', content: prompt }];
     const params = paramsFor(this.#effort);
-    const worst = worstCaseUsd(reserveRequest(history, params));
+    const usd = worstCaseUsd(reserveRequest(history, params));
+    return { history, params, usd, worst: µ(usd) };
+  }
+
+  async #send(key: string, kind: JudgeCacheEntry['kind'], request: JudgeRequest, valid: (a: { [k: string]: Json }) => boolean): Promise<JudgeCacheEntry> {
+    const base = { key, kind, model: MODEL, effort: this.#effort, prompt_version: JUDGE_PROMPT_VERSION };
+    const { history, params, usd: worst } = request;
     if (worst > JUDGE_MAX_CALL_USD) return { ...base, answer: null, error: `${OVER_BUDGET}: worst case $${worst.toFixed(6)} > $${JUDGE_MAX_CALL_USD.toFixed(2)} per call`, calls: 0 };
     let calls = 0;
-    while (calls < JUDGE_CALLS_PER_ITEM && this.#live < this.#maxCalls) {
+    while (calls < JUDGE_CALLS_PER_ITEM && this.#live < this.#maxCalls && this.#worst + request.worst <= this.#maxWorst) {
       this.#live++;
+      this.#worst += request.worst;
       calls++;
       let result: CallResult;
       try {
@@ -362,17 +425,36 @@ export class Judge {
   }
 }
 
-// The judge calls a trial may make: two (the schema retry) per judge and hybrid item. The
-// Judge enforces it at run time, whichever item makes the calls. A 0-point item is not counted:
-// it scores nothing, and the ones there are (T5's message_states_*, attribution only) reuse
-// another item's question, which the Judge answers once per grading (decisions.tsv
-// 2026-10-28T10:30).
-export const judgeCallBudget = (checks: readonly Check[]): number => JUDGE_CALLS_PER_ITEM * checks.filter((c) => c.kind === 'rubric' && c.method !== 'code' && c.points !== 0).length;
+const µ = (usd: number) => Math.round(usd * 1e6);
+
+// The questions one rubric item may ask in a grading: what it declares (judge_questions), else one
+// for a judge or hybrid item and none for a code item. A declaration is a whole number >= 0, or
+// this throws naming the item (GRADER16-193 F4: NaN made the budget NaN, so no judge call was
+// made; a negative count took from the other items; a fraction was accepted). cli/matrix.ts
+// loadMatrixTask checks every task's items with it when the task loads.
+function questionsOf(c: Check): number {
+  if (c.kind !== 'rubric') return 0;
+  const q = c.judge_questions;
+  if (q !== undefined && (!Number.isSafeInteger(q) || q < 0)) throw new TypeError(`${c.id}: judge_questions must be a whole number >= 0, got ${String(q)}`);
+  return c.points === 0 ? 0 : (q ?? (c.method === 'code' ? 0 : 1));
+}
+
+// The judge calls a trial may make: two (the schema retry) per question its items may ask, at most
+// JUDGE_MAX_CALLS. An item that asks one question per recipient or per worklist item declares how
+// many (judge_questions; builder-265 issue 4: T6's reply_names_other_patient asks one per patient
+// messaged, T2's note_contradicts_result one per actionable item, and at one per item the
+// allowance ran out on every probe-1 trial of both). The Judge enforces it at run time, whichever
+// item makes the calls. A 0-point item is not counted: it scores nothing, and the ones there are
+// (T5's message_states_*, attribution only) reuse another item's question, which the Judge
+// answers once per grading (decisions.tsv 2026-10-28T10:30).
+export const judgeCallBudget = (checks: readonly Check[]): number =>
+  Math.min(JUDGE_MAX_CALLS, JUDGE_CALLS_PER_ITEM * checks.reduce((n, c) => n + questionsOf(c), 0));
 
 // The projection allowance for a trial's judge calls when their requests are not known yet (a
-// dry run): each at the per-call ceiling, JUDGE_MAX_CALL_USD.
+// dry run): each allowed call at JUDGE_CALL_PRICE_USD. The Judge a grading uses (grade.ts
+// judgeFor) is bounded by it, so it is an upper bound on what the judge spends.
 export function judgeAllowanceUsd(checks: readonly Check[]): number {
-  return judgeCallBudget(checks) * JUDGE_MAX_CALL_USD;
+  return judgeCallBudget(checks) * JUDGE_CALL_PRICE_USD;
 }
 
 // A judge client whose every call runs under its own batch grant, opened at that call's worst

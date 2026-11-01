@@ -1,5 +1,6 @@
 #!/bin/sh
 # Refuses a push whose commits hold an Anthropic key (pnpm keyscan --range per pushed ref).
+# keyscan exits 1 for a key and 2 for a scan error; both refuse the push, with different messages.
 # Enabled by `pnpm install`, whose prepare script sets core.hooksPath to scripts/hooks.
 # git feeds one line per ref: <local ref> <local sha> <remote ref> <remote sha>
 set -u
@@ -12,8 +13,14 @@ while read -r local_ref local_sha _remote_ref remote_sha; do
   else
     range="$local_sha" # new branch, or remote tip unknown here: scan all history of the pushed tip
   fi
-  if ! pnpm -s keyscan --range "$range"; then
+  pnpm -s keyscan --range "$range"
+  code=$?
+  if [ "$code" -eq 1 ]; then
     echo "pre-push: refusing to push $local_ref; remove the key from history first" >&2
+    status=1
+  elif [ "$code" -ne 0 ]; then
+    # Fail closed: a scan that did not finish cannot clear the push.
+    echo "pre-push: refusing to push $local_ref; keyscan error (exit $code), see the message above" >&2
     status=1
   fi
 done

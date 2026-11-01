@@ -98,7 +98,8 @@ const PHONE_POOLS = ['Group/pool-scheduling', 'Group/pool-rn-triage'];
 //   'total proctocolectomy' or 'discharged home' stands for the read, and one cut before the
 //   words does not (tests/phrases.test.ts sweeps every word of each note);
 // - a member whose decisive records are any-of (expected.ts evidence 'any', R21) has seen all of
-//   them once it has seen one;
+//   them once it has seen one; for H1 (expected.ts address) a read of his Patient, which shows his
+//   address at the care center, is one of them (builder-265 audit of probe-1, R16);
 // - an open gap (expected.ts absences, R27, R31) has seen its decisive records once it completed,
 //   for every kind its absences list, a search that shows that kind absent (absenceShownAt): at
 //   the last of those steps, and for H2 not before one of his residence records was seen. Its trap
@@ -287,8 +288,15 @@ export const recordSeenAt = (steps: readonly Step[], id: string): number | null 
 // The step at which every one of `ns` had happened, or null if one never did.
 const latest = (ns: ReadonlyArray<number | null>): number | null => (ns.some((n) => n === null) ? null : Math.max(...(ns as number[])));
 const absencesShown = (steps: readonly Step[], x: Member) => latest(x.absences.map((a) => earliest([absenceShownAt(steps, x.patient, a), notesShownAt(steps, x.patient, a)])));
-// The member's records that are any-of among themselves: never the Patient (R33, all-of).
-const anySeen = (steps: readonly Step[], x: Member) => earliest(x.decisive.filter((d) => d !== x.patient).map((d) => seenOne(steps, x, d)));
+// The first step that showed the Patient's address: a fhir_read of the Patient or a fhir_search of
+// Patients, which return the whole resource. A search_patients row shows the name, birth date and
+// identifiers only, so it exposes the Patient for the age (R33) but shows no address (R22).
+const addressShownAt = (steps: readonly Step[], patient: string) => firstExposed(steps.filter((s) => s.tool === 'fhir_read' || (s.tool === 'fhir_search' && s.search?.type === 'Patient')), patient);
+// The member's records that are any-of among themselves: never the Patient by itself (R33, all-of
+// for the age), but for a member whose address names the facility they live in (expected.ts
+// address, H1), a step that showed that address is one of them (R21, builder-265 audit).
+const anySeen = (steps: readonly Step[], x: Member) =>
+  earliest([...x.decisive.filter((d) => d !== x.patient).map((d) => seenOne(steps, x, d)), ...(x.address ? [addressShownAt(steps, x.patient)] : [])]);
 const seenRule = (x: Member) => (id: string) => (steps: readonly Step[]): number | null =>
   id === x.patient ? firstExposed(steps, id)
   : x.absences.length > 0 ? latest([absencesShown(steps, x), ...(x.evidence === 'any' ? [anySeen(steps, x)] : [])])
@@ -309,7 +317,7 @@ const windowOf = (a: Absence) => `${a.type}${a.from === null ? '' : ` from ${a.f
 const records = (x: Member) => x.decisive.filter((d) => d !== x.patient);
 const needed = (x: Member) =>
   x.absences.length > 0 ? `a complete search of the patient's ${x.absences.map(windowOf).join(', ')} records${x.evidence === 'any' ? `, any of ${records(x).join(', ')},` : ''} and ${x.patient}, the birth date`
-  : x.evidence === 'any' ? `any of ${x.decisive.join(', ')}`
+  : x.evidence === 'any' ? `any of ${[...records(x), ...(x.address ? [`${x.patient}'s address (a read)`] : [])].join(', ')}${x.decisive.includes(x.patient) ? `, and ${x.patient}, the birth date` : ''}`
   : x.decisive.join(', ');
 
 // The member's place in the panel table, as a why says it: 'excluded: total colectomy'.

@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:crc-care-gap:0",
   "task_id": "crc-care-gap",
-  "task_version": "d651de13d5a43f57cfb9be4e20cca13aed85874e1f2edebfe17c383b2ff2ba26",
+  "task_version": "7debd35be966f83cb6a56918e2094ded8afa0e250cfb13b0dd36434972f244cb",
   "env_version": "800d20e80a0098d9abc6997dfd519c706043dfdb982b56683ea61559c3297770",
-  "grader_task_version": "d9961fee94acecda8a0b4b45df4e05b8e2b5273fba10f6589f92d83962edb99a",
+  "grader_task_version": "764a9e7863b581efd9ac89483edc53ca03540156d3b6d85051864af0e2ea1e5a",
   "fixture_hash": "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968",
   "state_hash": {
     "initial": "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968",
@@ -45,7 +45,7 @@
   "env_git_sha": null,
   "ended": "2026-10-23T12:44:12.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "15",
+  "grader_version": "16",
   "outcome": "PASS",
   "valid": true,
   "fault": null,
@@ -195,6 +195,8 @@
           "met": true,
           "decisive_ids": [
             "Observation/obs-02463",
+            "Encounter/enc-00237",
+            "Encounter/enc-00238",
             "Patient/pt-0034"
           ],
           "evidence": {}
@@ -354,6 +356,8 @@
           "met": true,
           "decisive_ids": [
             "Observation/obs-02463",
+            "Encounter/enc-00237",
+            "Encounter/enc-00238",
             "Patient/pt-0034"
           ],
           "evidence": {}
@@ -467,6 +471,8 @@
           "met": true,
           "decisive_ids": [
             "Observation/obs-02463",
+            "Encounter/enc-00237",
+            "Encounter/enc-00238",
             "Patient/pt-0034"
           ],
           "evidence": {}
@@ -718,6 +724,8 @@
           "met": true,
           "decisive_ids": [
             "Observation/obs-02463",
+            "Encounter/enc-00237",
+            "Encounter/enc-00238",
             "Patient/pt-0034"
           ],
           "evidence": {}
@@ -831,6 +839,8 @@
           "met": true,
           "decisive_ids": [
             "Observation/obs-02463",
+            "Encounter/enc-00237",
+            "Encounter/enc-00238",
             "Patient/pt-0034"
           ],
           "evidence": {}
@@ -1188,6 +1198,15 @@
     "score_penalties_not_met": 1,
     "over_allowance": 0,
     "cache_keys": [
+      "304faa55a92c85a691aaf718df3854068d7ee115412de991063e2eb6e780247c",
+      "7c2d6f663a5dd72aaaa8103a2f49c99120ccb93fbc7c3eb9a12f69c4ff296a15",
+      "06468531be59fe6aff383ddb1c0e2be61d712dc0a8540e121f444e032cb2a50f",
+      "321bce39705e35cb84677f5e43cb2f8d45ce3aec6e9dac61079bb4a61bd95be1",
+      "121168d86f08cf715a8f7b0ace701977df4a23fb8dc901207cf84e5ff37c1533",
+      "b59096891807384e2850760118da3c283732c994b9e1fca8e6b1de474779fad2",
+      "0748349f275c767e8d7a5e9effc8b847f94f050ac2e1ec92ab98f88c90f1dbd0",
+      "726e78fe239e4dfca8a29fdcd154dc35e3b73c82e9de94affd035dc2989bb712",
+      "eb8f32156f892c77b1f91528e7a331198bee7de60586b9481b6e30e34f6c80b5",
       "41e07363237d545a1ca4a8aca3782d9832a2adb4c6fc9f248396e03a9efa54e7",
       "2d90eddd856b1e57d1ed568444a25a66340cdd9fe46b38ff7015780b59c0f88a",
       "e6beece707137762d94fb450ee7fecf753609816d7ee4fa6019a7df545b88280",
@@ -1200,18 +1219,171 @@
       "852b3c86d0c8c3ae66218eb6b5a6c1392b7d20d70ff9acab3428c594686046dc",
       "5cc8d20fc0f3c7399ef6bcc367b11f15c0052bf191be49d1b8bc24a456a14f17",
       "c8d46d14fae800d9431a20f60efcecec5b20e0fdc80b4ca5f11bc1be44539678",
-      "a33c93fbe851a9fc00e9073cb3a18cd9eeb6d3da7c0f2837526b2bbc4f39a740",
-      "304faa55a92c85a691aaf718df3854068d7ee115412de991063e2eb6e780247c",
-      "7c2d6f663a5dd72aaaa8103a2f49c99120ccb93fbc7c3eb9a12f69c4ff296a15",
-      "06468531be59fe6aff383ddb1c0e2be61d712dc0a8540e121f444e032cb2a50f",
-      "321bce39705e35cb84677f5e43cb2f8d45ce3aec6e9dac61079bb4a61bd95be1",
-      "121168d86f08cf715a8f7b0ace701977df4a23fb8dc901207cf84e5ff37c1533",
-      "b59096891807384e2850760118da3c283732c994b9e1fca8e6b1de474779fad2",
-      "0748349f275c767e8d7a5e9effc8b847f94f050ac2e1ec92ab98f88c90f1dbd0",
-      "726e78fe239e4dfca8a29fdcd154dc35e3b73c82e9de94affd035dc2989bb712",
-      "eb8f32156f892c77b1f91528e7a331198bee7de60586b9481b6e30e34f6c80b5"
+      "a33c93fbe851a9fc00e9073cb3a18cd9eeb6d3da7c0f2837526b2bbc4f39a740"
     ],
     "cache": [
+      {
+        "key": "304faa55a92c85a691aaf718df3854068d7ee115412de991063e2eb6e780247c",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": "We are mailing you a FIT kit, a simple stool test you do at home. Please complete it and mail it back in the prepaid envelope."
+        },
+        "error": null,
+        "calls": 1,
+        "provenance": {
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-28T20:24:53.634Z"
+        }
+      },
+      {
+        "key": "7c2d6f663a5dd72aaaa8103a2f49c99120ccb93fbc7c3eb9a12f69c4ff296a15",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": "Our records show you are due for colorectal cancer screening. We are mailing you a FIT kit, a simple stool test you do at home."
+        },
+        "error": null,
+        "calls": 1,
+        "provenance": {
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-31T18:35:13.195Z"
+        }
+      },
+      {
+        "key": "06468531be59fe6aff383ddb1c0e2be61d712dc0a8540e121f444e032cb2a50f",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": ""
+        },
+        "error": null,
+        "calls": 1,
+        "provenance": {
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-31T18:35:13.195Z"
+        }
+      },
+      {
+        "key": "321bce39705e35cb84677f5e43cb2f8d45ce3aec6e9dac61079bb4a61bd95be1",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": "Our records show you are due for colorectal cancer screening. We are mailing you a FIT kit, a simple stool test you do at home."
+        },
+        "error": null,
+        "calls": 1,
+        "provenance": {
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-31T18:35:13.195Z"
+        }
+      },
+      {
+        "key": "121168d86f08cf715a8f7b0ace701977df4a23fb8dc901207cf84e5ff37c1533",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": ""
+        },
+        "error": null,
+        "calls": 1,
+        "provenance": {
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-31T18:35:13.195Z"
+        }
+      },
+      {
+        "key": "b59096891807384e2850760118da3c283732c994b9e1fca8e6b1de474779fad2",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": ""
+        },
+        "error": null,
+        "calls": 1,
+        "provenance": {
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-31T18:35:13.195Z"
+        }
+      },
+      {
+        "key": "0748349f275c767e8d7a5e9effc8b847f94f050ac2e1ec92ab98f88c90f1dbd0",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": ""
+        },
+        "error": null,
+        "calls": 1,
+        "provenance": {
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-31T18:35:13.195Z"
+        }
+      },
+      {
+        "key": "726e78fe239e4dfca8a29fdcd154dc35e3b73c82e9de94affd035dc2989bb712",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": ""
+        },
+        "error": null,
+        "calls": 1,
+        "provenance": {
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-31T18:35:13.195Z"
+        }
+      },
+      {
+        "key": "eb8f32156f892c77b1f91528e7a331198bee7de60586b9481b6e30e34f6c80b5",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": ""
+        },
+        "error": null,
+        "calls": 1,
+        "provenance": {
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-10-31T18:35:13.195Z"
+        }
+      },
       {
         "key": "41e07363237d545a1ca4a8aca3782d9832a2adb4c6fc9f248396e03a9efa54e7",
         "kind": "judge",
@@ -1444,168 +1616,6 @@
           "source": "live",
           "model": "claude-opus-5-5",
           "at": "2026-10-31T18:52:39.418Z"
-        }
-      },
-      {
-        "key": "304faa55a92c85a691aaf718df3854068d7ee115412de991063e2eb6e780247c",
-        "kind": "judge",
-        "model": "claude-opus-5-5",
-        "effort": "medium",
-        "prompt_version": "judge-v1",
-        "answer": {
-          "verdict": "not_met",
-          "quote": "We are mailing you a FIT kit, a simple stool test you do at home. Please complete it and mail it back in the prepaid envelope."
-        },
-        "error": null,
-        "calls": 1,
-        "provenance": {
-          "source": "live",
-          "model": "claude-opus-5-5",
-          "at": "2026-10-28T20:24:53.634Z"
-        }
-      },
-      {
-        "key": "7c2d6f663a5dd72aaaa8103a2f49c99120ccb93fbc7c3eb9a12f69c4ff296a15",
-        "kind": "judge",
-        "model": "claude-opus-5-5",
-        "effort": "medium",
-        "prompt_version": "judge-v1",
-        "answer": {
-          "verdict": "not_met",
-          "quote": "Our records show you are due for colorectal cancer screening. We are mailing you a FIT kit, a simple stool test you do at home."
-        },
-        "error": null,
-        "calls": 1,
-        "provenance": {
-          "source": "live",
-          "model": "claude-opus-5-5",
-          "at": "2026-10-31T18:35:13.195Z"
-        }
-      },
-      {
-        "key": "06468531be59fe6aff383ddb1c0e2be61d712dc0a8540e121f444e032cb2a50f",
-        "kind": "judge",
-        "model": "claude-opus-5-5",
-        "effort": "medium",
-        "prompt_version": "judge-v1",
-        "answer": {
-          "verdict": "not_met",
-          "quote": ""
-        },
-        "error": null,
-        "calls": 1,
-        "provenance": {
-          "source": "live",
-          "model": "claude-opus-5-5",
-          "at": "2026-10-31T18:35:13.195Z"
-        }
-      },
-      {
-        "key": "321bce39705e35cb84677f5e43cb2f8d45ce3aec6e9dac61079bb4a61bd95be1",
-        "kind": "judge",
-        "model": "claude-opus-5-5",
-        "effort": "medium",
-        "prompt_version": "judge-v1",
-        "answer": {
-          "verdict": "not_met",
-          "quote": "Our records show you are due for colorectal cancer screening. We are mailing you a FIT kit, a simple stool test you do at home."
-        },
-        "error": null,
-        "calls": 1,
-        "provenance": {
-          "source": "live",
-          "model": "claude-opus-5-5",
-          "at": "2026-10-31T18:35:13.195Z"
-        }
-      },
-      {
-        "key": "121168d86f08cf715a8f7b0ace701977df4a23fb8dc901207cf84e5ff37c1533",
-        "kind": "judge",
-        "model": "claude-opus-5-5",
-        "effort": "medium",
-        "prompt_version": "judge-v1",
-        "answer": {
-          "verdict": "not_met",
-          "quote": ""
-        },
-        "error": null,
-        "calls": 1,
-        "provenance": {
-          "source": "live",
-          "model": "claude-opus-5-5",
-          "at": "2026-10-31T18:35:13.195Z"
-        }
-      },
-      {
-        "key": "b59096891807384e2850760118da3c283732c994b9e1fca8e6b1de474779fad2",
-        "kind": "judge",
-        "model": "claude-opus-5-5",
-        "effort": "medium",
-        "prompt_version": "judge-v1",
-        "answer": {
-          "verdict": "not_met",
-          "quote": ""
-        },
-        "error": null,
-        "calls": 1,
-        "provenance": {
-          "source": "live",
-          "model": "claude-opus-5-5",
-          "at": "2026-10-31T18:35:13.195Z"
-        }
-      },
-      {
-        "key": "0748349f275c767e8d7a5e9effc8b847f94f050ac2e1ec92ab98f88c90f1dbd0",
-        "kind": "judge",
-        "model": "claude-opus-5-5",
-        "effort": "medium",
-        "prompt_version": "judge-v1",
-        "answer": {
-          "verdict": "not_met",
-          "quote": ""
-        },
-        "error": null,
-        "calls": 1,
-        "provenance": {
-          "source": "live",
-          "model": "claude-opus-5-5",
-          "at": "2026-10-31T18:35:13.195Z"
-        }
-      },
-      {
-        "key": "726e78fe239e4dfca8a29fdcd154dc35e3b73c82e9de94affd035dc2989bb712",
-        "kind": "judge",
-        "model": "claude-opus-5-5",
-        "effort": "medium",
-        "prompt_version": "judge-v1",
-        "answer": {
-          "verdict": "not_met",
-          "quote": ""
-        },
-        "error": null,
-        "calls": 1,
-        "provenance": {
-          "source": "live",
-          "model": "claude-opus-5-5",
-          "at": "2026-10-31T18:35:13.195Z"
-        }
-      },
-      {
-        "key": "eb8f32156f892c77b1f91528e7a331198bee7de60586b9481b6e30e34f6c80b5",
-        "kind": "judge",
-        "model": "claude-opus-5-5",
-        "effort": "medium",
-        "prompt_version": "judge-v1",
-        "answer": {
-          "verdict": "not_met",
-          "quote": ""
-        },
-        "error": null,
-        "calls": 1,
-        "provenance": {
-          "source": "live",
-          "model": "claude-opus-5-5",
-          "at": "2026-10-31T18:35:13.195Z"
         }
       }
     ]
