@@ -8,10 +8,14 @@
 //                            patient's dose (expected.items decisive, the records seen_before_change
 //                            checks): §4's 'the records the dose decision relies on (results,
 //                            medication orders or letters), cited', so the Patient, decisive for
-//                            the age it holds (rulings R33), is not among them
+//                            the age it holds (rulings R33), is not among them; once an amend
+//                            event of the patient has arrived, the records the new dose relies on
+//                            (expected.ts EVENT_EXPECT cites)
+import { AMEND_CLASSES, type EventSpec } from '../../../packages/env/events.ts';
 import { rubric as item, type Check, type RubricCtx } from '../../../packages/grader/check.ts';
+import { arrivalOf } from '../../../packages/grader/events.ts';
 import { isActive, isDrug } from '../../../packages/grader/normalize.ts';
-import { expected } from '../expected.ts';
+import { EVENT_EXPECT, expected } from '../expected.ts';
 import { mgPerTime, perDayOf } from './regimen.ts';
 
 const DOACS = ['apixaban', 'rivaroxaban'];
@@ -42,7 +46,14 @@ function changed(ctx: RubricCtx): string[] {
   return expected.items.map((x) => x.patient).filter((p) => out.has(p) && regimenOf(ctx.initial, p) !== regimenOf(ctx.final, p));
 }
 
-export const rubric: Check[] = [
+// The records a changed patient's notes must cite: the base decisive records but the Patient, or
+// those of the patient's amend event that arrived.
+function inputsOf(specs: readonly EventSpec[], ctx: RubricCtx, p: string): readonly string[] {
+  const s = specs.find((x) => x.item === p && AMEND_CLASSES.has(x.class) && arrivalOf(ctx.steps, x.id) !== null);
+  return s !== undefined ? EVENT_EXPECT[s.id]!.cites! : expected.items.find((x) => x.patient === p)!.decisive.filter((id) => !id.startsWith('Patient/'));
+}
+
+export const rubricFor = (specs: readonly EventSpec[]): Check[] => [
   item({
     id: 'changes_documented',
     category: 'documentation',
@@ -64,7 +75,7 @@ export const rubric: Check[] = [
     decisive_ids: [],
     fn: (ctx) => {
       const uncited = changed(ctx).filter((p) => {
-        const inputs = expected.items.find((x) => x.patient === p)!.decisive.filter((id) => !id.startsWith('Patient/'));
+        const inputs = inputsOf(specs, ctx, p);
         const cites = ctx.notes.filter((n) => n.patient === p).flatMap((n) => n.cites);
         return !inputs.every((id) => cites.includes(id));
       });

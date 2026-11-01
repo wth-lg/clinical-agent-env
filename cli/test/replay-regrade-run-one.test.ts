@@ -106,7 +106,7 @@ describe('replay and regrade on run-one output', () => {
     const r = await cli(regrade, [run, '--grader-version', GRADER_VERSION]);
     expect(r.code, r.text).toBe(1);
     expect(r.text).toContain(`${first}: environment changed: run at env_version v-old-world, checkout at ${read(run, names[1]!).env_version}`);
-    expect(r.text).toContain('initial state hash');
+    expect(r.text).toContain('world mismatch: run at not-this-world, checkout at ');
     expect(r.text).not.toContain('undefined');
     expect(readFileSync(file(run, first), 'utf8')).toBe(before);
     expect(read(run, names[1]!).regrades).toBeUndefined();

@@ -162,16 +162,21 @@ describe('message-queue found', async () => {
 // (inputs_before_orders, metformin_dose, gabapentin_dose, note_exists) and T2's
 // nodule_screening_ldct, which the probes removed.
 describe('renal-dose-review found text', async () => {
+  // The list's own patients and doses (R37: from the task, not a hardcoded patient).
+  const { expected: renal } = (await import(pathToFileURL(join(TASKS, 'renal-dose-review', 'expected.ts')).href)) as { expected: { items: Array<{ patient: string; name: string; dose: { drug: string; mg: number; per_day: number }; decisive: string[] }> } };
   const text = await textOf('renal-dose-review');
-  const want = { drug: 'apixaban', mg: 2.5, per_day: 2 };
+  const apix = renal.items.find((x) => x.dose.drug === 'apixaban')!;
+  const other = renal.items.find((x) => x !== apix)!;
+  const want = apix.dose;
+  const times = (n: number) => (n === 2 ? 'twice daily' : 'once daily');
   it('names the patient, the dose the policy gives and that no DOAC order is active', () => {
-    expect(text.doac_dose!.found({ failed_items: ['Patient/pt-0040'], first: { patient: 'Patient/pt-0040', want, active: [] } })).toBe('Patient/pt-0040 (Dorothy Ashworth) needs apixaban 2.5 mg twice daily; the chart has no active DOAC order');
+    expect(text.doac_dose!.found({ failed_items: [apix.patient], first: { patient: apix.patient, want, active: [] } })).toBe(`${apix.patient} (${apix.name}) needs apixaban ${want.mg} mg ${times(want.per_day)}; the chart has no active DOAC order`);
   });
   it('names a dose as needed and counts the other failed patients', () => {
-    expect(text.doac_dose!.found({ failed_items: ['Patient/pt-0040', 'Patient/pt-0001'], first: { patient: 'Patient/pt-0040', want, active: ['MedicationRequest/mr-1'], drug: 'apixaban', mg: 5, per_day: 2, scheduled: false, oral: true } })).toBe('Patient/pt-0040 (Dorothy Ashworth) needs apixaban 2.5 mg twice daily; the chart has apixaban 5 mg twice daily as needed (and 1 more patient)');
+    expect(text.doac_dose!.found({ failed_items: [apix.patient, other.patient], first: { patient: apix.patient, want, active: ['MedicationRequest/mr-1'], drug: 'apixaban', mg: 10, per_day: 2, scheduled: false, oral: true } })).toBe(`${apix.patient} (${apix.name}) needs apixaban ${want.mg} mg ${times(want.per_day)}; the chart has apixaban 10 mg twice daily as needed (and 1 more patient)`);
   });
   it('names a deciding record never seen before the review finished', () => {
-    expect(text.decisive_seen!.found({ first: { patient: 'Patient/pt-0045', unseen: ['DocumentReference/doc-1'], finished_at: 40 } })).toBe('DocumentReference/doc-1 was never seen before the review finished at step 40, though it decides the dose for Patient/pt-0045 (Gregory Lindahl)');
+    expect(text.decisive_seen!.found({ first: { patient: other.patient, unseen: ['DocumentReference/doc-1'], finished_at: 40 } })).toBe(`DocumentReference/doc-1 was never seen before the review finished at step 40, though it decides the dose for ${other.patient} (${other.name})`);
   });
 });
 
