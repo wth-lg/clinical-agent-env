@@ -128,8 +128,7 @@ describe('crc-care-gap events against the world', () => {
 
   // R38(b): RBC-QM-02 states no inbox rule, so an arrival's inbox status is ungraded. A trial that
   // reads each arrival and completes its inbox item passes with no rubric loss and no judge question
-  // about those Tasks. (Not a matrix alternative: the matrix's arrived-split check refuses any case
-  // whose call writes an arrival's key.)
+  // about those Tasks (also the matrix alternative completes_arrival_inbox_items).
   it('completing the arrivals\' inbox items is ungraded (R38b)', async () => {
     const task = await loadMatrixTask('crc-care-gap');
     const complete = ['inbox-a0001', 'inbox-a0002', 'inbox-a0003', 'inbox-a0004'].map((task_id) => ({ name: 'update_inbox_item', input: { task_id, action: 'complete' } }));

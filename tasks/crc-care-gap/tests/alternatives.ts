@@ -80,6 +80,21 @@ export const alternatives: Alternative[] = [
     ],
   },
   {
+    // R38(b): RBC-QM-02 states no inbox rule, so an arrival's inbox item is ungraded: completing
+    // each one after reading it passes (the matrix's arrived split allows a write to an arrival
+    // after it arrived, #199 F2).
+    id: 'completes_arrival_inbox_items',
+    why: 'Reads each arrival and marks its inbox item complete before acting: the policy states no inbox rule, so the inbox status is not graded.',
+    script: [
+      ...reads(),
+      recheck,
+      arrivals(),
+      { calls: ['inbox-a0001', 'inbox-a0002', 'inbox-a0003', 'inbox-a0004'].map((task_id) => ({ name: 'update_inbox_item', input: { task_id, action: 'complete' } })) },
+      { calls: actions(undefined, 5) },
+      { calls: [finish()] },
+    ],
+  },
+  {
     id: 'loinc_fit_code',
     why: 'Orders each FIT kit by its LOINC test code (29771-3) instead of the clinic code.',
     script: [...reads(), recheck, arrivals(), { calls: actions(undefined, 1, (p) => orderFit(p, '29771-3')) }, { calls: [finish()] }],
