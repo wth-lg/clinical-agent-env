@@ -24,7 +24,7 @@
 //   env_version          sha256(the env files + the world's state hash + TOOLS_VERSION): every
 //                        file that shapes what the agent sees or the state it starts from
 //                        (isEnvFile: task.toml without its GRADER_TABLES, instruction.md,
-//                        policy/**, overlay.ts and its id registry ids.ts), the world, and the
+//                        policy/**, overlay.ts and its id registry ids.ts, events.ts), the world, and the
 //                        tool code
 //                        (packages/env/tools/registry.ts TOOLS_VERSION);
 //   grader_task_version  sha256(every other file of the task + GRADER_VERSION): task.toml's
@@ -87,7 +87,10 @@ function stableJson(v: unknown): string {
 
 // The files that shape what the agent sees or the state it starts from; every other file of a
 // task is grader-side. task.toml is both: its GRADER_TABLES are grader-side.
-export const isEnvFile = (path: string): boolean => path === 'task.toml' || path === 'instruction.md' || path === 'overlay.ts' || path === 'ids.ts' || path.startsWith('policy/');
+// events.ts holds the task's mid-trial event specs and its ACTIVE list (packages/env/events.ts):
+// what arrives is what the agent sees, so a change to it moves env_version.
+export const isEnvFile = (path: string): boolean =>
+  path === 'task.toml' || path === 'instruction.md' || path === 'overlay.ts' || path === 'ids.ts' || path === 'events.ts' || path.startsWith('policy/');
 
 export interface TaskVersions {
   env_version: string;

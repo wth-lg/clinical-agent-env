@@ -28,7 +28,7 @@ import { FAULT, NOT_RERUN_REASON } from '../outcomes.ts';
 import { run } from '../run.ts';
 import { nodeTaskSource } from '../../../cli/adapters/tasks-node.ts';
 import type { Tool } from '../../env/tools/registry.ts';
-import type { WriteContext } from '../../env/tools/write/index.ts';
+import { newSession, type WriteContext } from '../../env/tools/write/index.ts';
 import { grade } from '../../grader/grade.ts';
 import type { TrialFacts } from '../../grader/outcome.ts';
 
@@ -103,7 +103,7 @@ async function loop(fetch: Transport, caps: Partial<Caps>, opts: { params?: Mess
   const { client, store } = await clientOver(fetch, time, opts.client);
   const events: EventBody[] = [];
   const out = await runLoop({
-    client, params: opts.params ?? PARAMS, history: [{ role: 'user', content: 'x' }], tools: [], ctx: {} as WriteContext,
+    client, params: opts.params ?? PARAMS, history: [{ role: 'user', content: 'x' }], tools: [], ctx: { session: newSession() } as WriteContext,
     caps: { maxTurns: 80, maxCostUsd: 5, maxWallMs: 50_000, maxElapsedMs: 100_000, ...caps },
     now: time.now, timeout: time.timeout, emit: (e) => events.push(e), stateHash: async () => 'h',
   });
@@ -264,7 +264,7 @@ describe('rule P-L: who a cap stop counts against, through the loop, the grader 
     }, time);
     const { emit, events } = createEmitter(time.now);
     const out = await runLoop({
-      client, params: PARAMS, history: [{ role: 'user', content: 'x' }], tools: [READ, SEARCH], ctx: {} as WriteContext,
+      client, params: PARAMS, history: [{ role: 'user', content: 'x' }], tools: [READ, SEARCH], ctx: { session: newSession() } as WriteContext,
       caps: { maxTurns: 80, maxCostUsd: 5, maxWallMs: 50_000, maxElapsedMs: 100_000, ...caps[cap] },
       now: time.now, timeout: time.timeout, emit, stateHash: async () => 'h',
     });
@@ -309,7 +309,7 @@ describe('rule P-L: who a cap stop counts against, through the loop, the grader 
     const { client } = await clientOver(fetch, time);
     const { emit, events } = createEmitter(time.now);
     const out = await runLoop({
-      client, params: PARAMS, history: [{ role: 'user', content: 'x' }], tools: [READ], ctx: {} as WriteContext,
+      client, params: PARAMS, history: [{ role: 'user', content: 'x' }], tools: [READ], ctx: { session: newSession() } as WriteContext,
       caps: { maxTurns: 80, maxCostUsd: 5, maxWallMs: 50_000, maxElapsedMs: 100_000 }, now: time.now, timeout: time.timeout, emit, stateHash: async () => 'h',
     });
     expect(out.terminal).toMatchObject({ type: 'limit', limit: 'max_tokens' });

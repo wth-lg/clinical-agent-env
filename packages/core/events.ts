@@ -9,7 +9,8 @@
 // event that ends a trial, limit, error or cancelled, comes after the final hashes, and graded,
 // which carries the trial's record with its grade, comes last for every outcome (plan phase
 // P8). Version 2 added graded; a version 1 trajectory (P7, no graded line) still parses and
-// reads as ungraded.
+// reads as ungraded. env_event (PW4-E1) appears only in a trial with active event specs, so a
+// trajectory without one is unchanged and the version stays 2.
 import type { AttemptFailure, ContentBlock, MessageParam, MessageParams } from './anthropic.ts';
 import type { Usage } from './cost.ts';
 import type { TrialRecord } from './run.ts';
@@ -119,6 +120,17 @@ export interface CancelledEvent extends Base {
   type: 'cancelled';
   reason: string;
 }
+// A mid-trial event fired (packages/env/events.ts): after the call tool_use_id, in its turn, before
+// that call's write hash. The fields are the session's Arrival; replay re-derives them and must
+// agree.
+export interface EnvEvent extends Base {
+  type: 'env_event';
+  tool_use_id: string;
+  spec: string;
+  arrival_seq: number;
+  stamp: string;
+  keys: string[];
+}
 // The trial's record, grade included, exactly as run() returns it.
 export interface GradedEvent extends Base {
   type: 'graded';
@@ -126,7 +138,7 @@ export interface GradedEvent extends Base {
 }
 
 export type TrialEvent =
-  | RequestEvent | ResponseEvent | AttemptErrorEvent | UsageEvent | ToolCallEvent | ToolResultEvent | StateHashEvent | LimitEvent | ErrorEvent | CancelledEvent | GradedEvent;
+  | RequestEvent | ResponseEvent | AttemptErrorEvent | UsageEvent | ToolCallEvent | ToolResultEvent | EnvEvent | StateHashEvent | LimitEvent | ErrorEvent | CancelledEvent | GradedEvent;
 
 // The event that ended the trial's episode: the last one before graded (the last event of an
 // ungraded trajectory); undefined for an empty one.
@@ -182,6 +194,7 @@ const FIELDS: Record<TrialEvent['type'], Record<string, Check>> = {
     tool_use_id: str, name: str, executed: bool, is_error: bool, error_code: nullable(str), content: any,
     exposed_ids: arrayOf(str), referenced_ids: arrayOf(str), written_ids: optional(arrayOf(str)),
   },
+  env_event: { tool_use_id: str, spec: str, arrival_seq: (v) => nat(v) && (v as number) >= 1, stamp: str, keys: arrayOf(str) },
   state_hash: { at: oneOf(HASH_POINTS), hash: sha256, tool_use_id: optional(str) },
   limit: { limit: oneOf(LIMITS), cap: num, value: num, code: optional(oneOf(LIMIT_CODES)) },
   error: { status: oneOf(ERROR_STATUSES), code: str, message: str },

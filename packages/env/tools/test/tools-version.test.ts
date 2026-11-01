@@ -19,6 +19,8 @@ const FINGERPRINTS: Record<string, string> = {
   '6': 'eb00dd9db18dc31b7dc886eea8c1cc761db98bf7b708d87cb736ef2846c135fa',
   // 7: builder-189: read_policy's description no longer lists source (nor does its output).
   '7': '57afb0e9ec3e15ca044812bd6e8489b95c82dc62cce4d0190904764c54b585c9',
+  // 8: PW4-E1 stage 1: mid-trial events and the finish guard; the definitions did not change.
+  '8': '57afb0e9ec3e15ca044812bd6e8489b95c82dc62cce4d0190904764c54b585c9',
 };
 
 async function fingerprint(): Promise<string> {

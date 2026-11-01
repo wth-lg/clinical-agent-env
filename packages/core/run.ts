@@ -39,6 +39,7 @@ import { grade, gradeWith, judgeFor, ungraded, type Grade, type GradeInput } fro
 import type { Judge } from '../grader/judge.ts';
 import { FAULT, isValid, trialOutcome, type TrialFacts } from '../grader/outcome.ts';
 import { clock, NOW_PROMPT } from '../env/clock.ts';
+import type { EventSpec } from '../env/events.ts';
 import { loadStore, type FixtureSource } from '../env/fixture-source.ts';
 import { canonicalJson, stateHash } from '../env/hash.ts';
 import type { Resource, Store } from '../env/store.ts';
@@ -104,6 +105,9 @@ export interface RunOptions {
   // The commit of the harness the trial ran on (cli run and run-one: HEAD of the checkout); null
   // where the caller cannot say (the local runner), recorded as env_git_sha (R14-39).
   envGitSha?: string | null;
+  // The task's active mid-trial event specs (packages/env/events.ts activeSpecs over
+  // tasks/<id>/events.ts); none by default. Replay and gradeTrajectory need the same list.
+  eventSpecs?: readonly EventSpec[];
 }
 
 // What a failed onEvent sink throws into the trial: the trial ends, its trajectory incomplete.
@@ -162,8 +166,8 @@ export interface TrialResult {
 
 let indexedBundle: Bundle | undefined;
 
-function context(world: Store, task: Task): WriteContext {
-  return { world, clock, policies: task.policies, catalog: task.catalog, session: newSession() };
+function context(world: Store, task: Task, events: readonly EventSpec[] = []): WriteContext {
+  return { world, clock, policies: task.policies, catalog: task.catalog, session: newSession(), events };
 }
 
 // The tools a task offers the model; the loop runs, and replay re-executes, calls against these.
@@ -230,7 +234,7 @@ export async function run(taskId: string, model: string, opts: RunOptions): Prom
     initialState = [...store.resources()];
     initial = await stateHash(initialState);
     emit({ type: 'state_hash', turn: 0, at: 'initial', hash: initial });
-    ctx = context(store, task);
+    ctx = context(store, task, opts.eventSpecs);
     if (initial !== opts.worldHash) {
       outcome = Object.assign(newOutcome(), {
         status: 'ENV_ERROR' as const,
@@ -249,14 +253,15 @@ export async function run(taskId: string, model: string, opts: RunOptions): Prom
       finalState = [...store.resources()];
       final = await stateHash(finalState);
       emit({ type: 'state_hash', turn: outcome.turns, at: 'final', hash: final });
-      const replayed = await replay(source, task, tools, events);
-      replayFinal = replayed === null || replayed.mismatch !== null ? null : await stateHash(replayed.store.resources());
+      const replayed = await replay(source, task, tools, events, opts.eventSpecs);
+      const mismatch = replayed && (replayed.mismatch ?? replayed.eventMismatch);
+      replayFinal = replayed === null || mismatch !== null ? null : await stateHash(replayed.store.resources());
       if (replayFinal !== null) emit({ type: 'state_hash', turn: outcome.turns, at: 'replay_final', hash: replayFinal });
       // An INTERNAL error recurs on replay; any other trial must reproduce every call's result
       // and its final state.
       if (outcome.status !== 'ENV_ERROR' && replayFinal !== final) {
         outcome.status = 'ENV_ERROR';
-        outcome.terminal = { type: 'error', status: 'ENV_ERROR', code: 'replay_mismatch', message: replayed?.mismatch ?? `replay_final ${replayFinal} is not final ${final}` };
+        outcome.terminal = { type: 'error', status: 'ENV_ERROR', code: 'replay_mismatch', message: mismatch ?? `replay_final ${replayFinal} is not final ${final}` };
       }
     }
   } catch (e) {
@@ -353,13 +358,17 @@ export interface GradeTrajectoryOptions {
   // Answers the judge items instead of the record's cache: judge-calibrate --from-trials passes
   // one that notes each question, to ask it again live.
   judge?: Judge;
+  // The active event specs the trial ran with (RunOptions.eventSpecs); none by default. Replay
+  // re-fires them, and an env_event it does not reproduce grades GRADER_ERROR.
+  eventSpecs?: readonly EventSpec[];
 }
 
 // Grades a recorded trial again from its trajectory: the initial state from the world, the
 // final state by replaying the tool log on it, judge answers from the record's cache. On the
 // trajectory a trial wrote, it returns the grade run() recorded. It never grades a different
-// state silently: when the world does not hash to the record's initial hash, or the replay to
-// its final hash, the grade is GRADER_ERROR with the reason.
+// state silently: when the world does not hash to the record's initial hash, the replay's
+// arrivals are not the trajectory's env_events, or the replay does not reach its final hash, the
+// grade is GRADER_ERROR with the reason.
 export async function gradeTrajectory(taskId: string, opts: GradeTrajectoryOptions): Promise<Grade> {
   const task = await opts.tasks.get(taskId);
   if (opts.definitions !== undefined && opts.definitions !== indexedBundle) {
@@ -378,7 +387,8 @@ export async function gradeTrajectory(taskId: string, opts: GradeTrajectoryOptio
   const h = opts.record.state_hash;
   const initialHash = await stateHash(initial);
   if (initialHash !== h.initial) return ungraded('GRADER_ERROR', { check: null, message: `regrade: initial state hash ${initialHash} is not the record's ${h.initial}`, stops_batch: false });
-  const replayed = await replay(source, task, taskTools(task), opts.events);
+  const replayed = await replay(source, task, taskTools(task), opts.events, opts.eventSpecs);
+  if (replayed?.eventMismatch) return ungraded('GRADER_ERROR', { check: null, message: `regrade: ${replayed.eventMismatch}`, stops_batch: false });
   if (opts.compareResults === true && replayed?.mismatch) return ungraded('GRADER_ERROR', { check: null, message: `regrade: ${replayed.mismatch}`, stops_batch: false });
   const replayHash = replayed && (await stateHash(replayed.store.resources()));
   if (replayed === null || replayHash !== h.final) return ungraded('GRADER_ERROR', { check: null, message: `regrade: replayed state hash ${replayHash} is not the record's final ${h.final}`, stops_batch: false });
@@ -387,11 +397,13 @@ export async function gradeTrajectory(taskId: string, opts: GradeTrajectoryOptio
 
 // Re-executes every call of the trajectory's tool log, refused ones included (a refusal recurs
 // and leaves the store as it was), against a fresh store and session with the tools the loop
-// offered, and returns the store. mismatch names the first call whose result (as canonical JSON)
-// or is_error differs from its recorded tool_result, null when none does: its index in the tool
-// log, its tool and id, and is_error or the first differing field with both values (explain.ts
-// E4 shows it). null when a call throws (the INTERNAL error that ended the trial, re-run so it
-// recurs).
+// offered and the trial's active event specs, each call in its recorded turn, and returns the
+// store. mismatch names the first call whose result (as canonical JSON) or is_error differs from
+// its recorded tool_result, null when none does: its index in the tool log, its tool and id, and
+// is_error or the first differing field with both values (explain.ts E4 shows it). eventMismatch
+// names the first arrival that differs from the trajectory's env_events (one fired that was not
+// recorded, one recorded that did not fire, or a field), null when they agree. null when a call
+// throws (the INTERNAL error that ended the trial, re-run so it recurs).
 const ABSENT = Symbol('absent');
 type Found = unknown | typeof ABSENT;
 
@@ -424,16 +436,45 @@ const shown = (x: Found) => {
   return s.length > 60 ? `${s.slice(0, 57).join('')}...` : s.join('');
 };
 
-async function replay(source: FixtureSource, task: Task, tools: readonly Tool<WriteContext>[], events: readonly TrialEvent[]): Promise<{ store: Store; mismatch: string | null } | null> {
+type Fired = Omit<Extract<TrialEvent, { type: 'env_event' }>, 'v' | 'seq' | 'ts' | 'type'>;
+const firedText = (f: Fired) => `${f.spec} after ${f.tool_use_id}`;
+
+// The first arrival where the replayed fires and the recorded env_events differ, or null.
+function eventDifference(recorded: readonly Fired[], replayed: readonly Fired[]): string | null {
+  for (let i = 0; i < Math.max(recorded.length, replayed.length); i++) {
+    const [r, p] = [recorded[i], replayed[i]];
+    const at = `replay: env_event ${i + 1}`;
+    if (r === undefined) return `${at}: replay fired ${firedText(p!)}, which the trajectory does not record`;
+    if (p === undefined) return `${at}: the trajectory records ${firedText(r)}, which replay did not fire`;
+    if (canonicalJson(r as never) !== canonicalJson(p as never)) {
+      const d = firstDifference(r, p);
+      return `${at} (${firedText(r)}): at ${d.path || 'the event'}, recorded ${shown(d.recorded)}, replayed ${shown(d.replayed)}`;
+    }
+  }
+  return null;
+}
+
+async function replay(
+  source: FixtureSource, task: Task, tools: readonly Tool<WriteContext>[], events: readonly TrialEvent[], eventSpecs?: readonly EventSpec[],
+): Promise<{ store: Store; mismatch: string | null; eventMismatch: string | null } | null> {
   const store = await loadStore(source);
-  const ctx = context(store, task);
+  const ctx = context(store, task, eventSpecs);
+  const recordedFires: Fired[] = events.flatMap((e) =>
+    e.type === 'env_event' ? [{ turn: e.turn, tool_use_id: e.tool_use_id, spec: e.spec, arrival_seq: e.arrival_seq, stamp: e.stamp, keys: e.keys }] : [],
+  );
+  const replayedFires: Fired[] = [];
   const recorded = new Map(events.flatMap((e) => (e.type === 'tool_result' ? [[e.tool_use_id, e] as const] : [])));
   // A result as the trajectory stores it: JSON, so a field set to undefined is absent.
   const json = (v: unknown) => canonicalJson(JSON.parse(JSON.stringify(v ?? null)));
   let mismatch: string | null = null;
   try {
     for (const [i, call] of toolLog(events).entries()) {
+      ctx.session.turn = call.turn;
+      const before = ctx.session.fired.length;
       const res = callTool(tools, call.name, call.input, ctx);
+      for (const a of ctx.session.fired.slice(before)) {
+        replayedFires.push({ turn: call.turn, tool_use_id: call.tool_use_id, spec: a.spec, arrival_seq: a.arrival_seq, stamp: a.stamp, keys: a.keys });
+      }
       const was = recorded.get(call.tool_use_id)!;
       const at = `replay: call ${i + 1} (${call.name}, ${call.tool_use_id}) gave`;
       if (mismatch !== null) continue;
@@ -446,7 +487,7 @@ async function replay(source: FixtureSource, task: Task, tools: readonly Tool<Wr
   } catch {
     return null;
   }
-  return { store, mismatch };
+  return { store, mismatch, eventMismatch: eventDifference(recordedFires, replayedFires) };
 }
 
 // The state a trial's tool log leaves, for a caller that shows it (the trial detail's State
@@ -457,7 +498,7 @@ export interface ReplayedState {
   final: Resource[] | null;
   error: string | null;
 }
-export async function replayState(taskId: string, opts: Pick<GradeTrajectoryOptions, 'tasks' | 'world' | 'events' | 'definitions'>): Promise<ReplayedState> {
+export async function replayState(taskId: string, opts: Pick<GradeTrajectoryOptions, 'tasks' | 'world' | 'events' | 'definitions' | 'eventSpecs'>): Promise<ReplayedState> {
   const task = await opts.tasks.get(taskId);
   if (opts.definitions !== undefined && opts.definitions !== indexedBundle) {
     indexDefinitions(opts.definitions);
@@ -466,6 +507,6 @@ export async function replayState(taskId: string, opts: Pick<GradeTrajectoryOpti
   const bytes = await opts.world.read();
   const source: FixtureSource = { read: async () => bytes };
   const initial = [...(await loadStore(source)).resources()];
-  const replayed = await replay(source, task, taskTools(task), opts.events);
+  const replayed = await replay(source, task, taskTools(task), opts.events, opts.eventSpecs);
   return { initial, final: replayed && [...replayed.store.resources()], error: replayed === null ? 'a tool call threw on replay (the INTERNAL error that ended the trial)' : null };
 }

@@ -50,6 +50,9 @@
 //   an exception from the environment: a tool (other than a ToolError) or the state hash
 //                          ENV_ERROR, code INTERNAL: the environment's fault, not the model's
 //   a client error         INFRA_API, INFRA_HARNESS or INVALID (a response from another model)
+// A mid-trial event that a call fires (packages/env/events.ts) is recorded as an env_event after that
+// call's tool_result; the loop sets ctx.session.turn before each call so the finish guard knows
+// the turn.
 // Every failed or aborted attempt is recorded as an attempt_error event (MessagesClient
 // onAttemptError): its error class, code, status, message, how it settled and whether the client
 // retries; never the key or the request body.
@@ -375,6 +378,9 @@ async function loop(input: LoopInput, exits: Array<() => void>): Promise<LoopOut
       }
       out.tool_calls++;
       let res: ToolResult;
+      // The turn the call belongs to (the finish guard reads it), and the arrivals before it.
+      ctx.session.turn = turn;
+      const firedBefore = ctx.session.fired.length;
       try {
         res = callTool(tools, use.name, use.input, ctx);
       } catch (e) {
@@ -389,6 +395,9 @@ async function loop(input: LoopInput, exits: Array<() => void>): Promise<LoopOut
         type: 'tool_result', turn, tool_use_id: use.id, name: use.name, executed: true, is_error: res.is_error, error_code: code, content: res.content,
         exposed_ids: res.exposed_ids, referenced_ids: res.referenced_ids, ...(res.written_ids ? { written_ids: res.written_ids } : {}),
       });
+      for (const a of ctx.session.fired.slice(firedBefore)) {
+        emit({ type: 'env_event', turn, tool_use_id: use.id, spec: a.spec, arrival_seq: a.arrival_seq, stamp: a.stamp, keys: a.keys });
+      }
       if (res.written_ids) {
         let hash: string;
         try {
