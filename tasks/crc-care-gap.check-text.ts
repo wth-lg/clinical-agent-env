@@ -62,7 +62,7 @@ export const checkText: CheckText = {
     },
   },
   gap_seen_before_order: {
-    requires: "each patient's screening record read before that patient's FIT order",
+    requires: "each patient's screening review (the searches that show the gap open) and birth date seen before that patient's FIT order",
     found: (ev) => {
       const late = items(ev.late)[0];
       const row = items(ev.seen).map(fields).find((s) => items(s.exposed).some((e) => fields(e).id === late));

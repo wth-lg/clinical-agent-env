@@ -9,6 +9,7 @@ import type { Agent, ScriptCall, ScriptTurn } from '../../../packages/grader/mat
 import {
   actions, bare, bareOrders, chart, finish, fitOrder, GAPS, group, groups, housing, MEMBERS, message, notes, OPNOTE, orderFit, outreach, OVER_65, policy, PT, read, reads, search, STOOL_CODES, table, type Label,
 } from '../solution/steps.ts';
+import { expected } from '../expected.ts';
 import { id, ref } from '../ids.ts';
 
 // `loses` is spelled out in the type until the matrix's Alternative declares it (builder-49).
@@ -233,6 +234,13 @@ const perItem: Alternative[] = [
     script: [...absenceReads(timedFobt('2026-01-01T00:00:00-05:00'), filteredEpisodes), { calls: actions() }, { calls: [finish()] }],
   },
   {
+    // verifier-W1T-190-r2-falsepass N4 (R16, R27): an end at the last second of the clinic's day,
+    // written with its offset, is after now, so the search hides nothing up to now.
+    id: 'v_d1_le_end_of_clinic_day_minus04',
+    why: "As policy_filtered_reads, but the FOBT and FIT searches end at 2026-10-23T23:59:59-04:00, the last second of the clinic's day: every record up to now is before that instant, so the search hides nothing and each absence counts as reviewed.",
+    script: [...absenceReads((ps) => filteredStool(ps).map((t, i) => (i === 0 ? { calls: t.calls.map((c) => ({ ...c, input: { ...c.input, date_le: '2026-10-23T23:59:59-04:00' } })) } : t)), filteredEpisodes), { calls: actions() }, { calls: [finish()] }],
+  },
+  {
     // verifier-W1-probe-T3-clinical-5 F1: the same clinic-local start on the care episode searches.
     id: 'v_c1_eoc_ge_local_midnight_minus05',
     why: "As policy_filtered_reads, but each care episode search starts at 2026-01-01T00:00:00-05:00, midnight on the clinic's calendar: an episode the policy counts in 2026 reaches past that instant, so the search hides none and each absence counts as reviewed.",
@@ -261,9 +269,10 @@ const perItem: Alternative[] = [
     // flexible sigmoidoscopy, CT colonography, total colectomy) and one stool test search naming
     // every FOBT, FIT and sDNA-FIT code, both undated and whole; C1 also her care episodes, B2 his
     // documents, G2 his conditions by every advanced illness code and his medications, H2 his
-    // housing status. Each member who needs no contact: a fhir_read of each deciding record.
+    // housing status, and its Patient for the birth date (R33, verifier-W1T-190-r2-falsepass N2).
+    // Each member who needs no contact: a fhir_read of each deciding record.
     id: 'minimal_complete_reviews',
-    why: "Reviews each gap by the fewest complete searches R31 accepts (every counted procedure code, every stool test code, and the exclusion its class turns on) and each member who needs no contact by reading their deciding records, then orders and messages the eight gaps.",
+    why: "Reviews each gap by the fewest complete searches R31 accepts (every counted procedure code, every stool test code, and the exclusion its class turns on) and a read of its Patient for the age, and each member who needs no contact by reading their deciding records, then orders and messages the eight gaps.",
     script: [
       { calls: [policy, groups] },
       { calls: [group] },
@@ -281,7 +290,7 @@ const perItem: Alternative[] = [
       },
       {
         calls: [
-          ...GAPS.flatMap((l) => [search('Procedure', PT[l], { code: PROCEDURE_CODES, count: 50 }), search('Observation', PT[l], { code: STOOL_CODES, count: 50 })]),
+          ...GAPS.flatMap((l) => [read('Patient', PT[l]), search('Procedure', PT[l], { code: PROCEDURE_CODES, count: 50 }), search('Observation', PT[l], { code: STOOL_CODES, count: 50 })]),
           search('EpisodeOfCare', PT.C1),
           search('DocumentReference', PT.B2, { count: 50 }),
           search('Condition', PT.G2, { code: ADVANCED_ILLNESS_CODES, count: 50 }),
@@ -304,6 +313,39 @@ const perItem: Alternative[] = [
       { calls: [finish()] },
     ],
   })),
+  {
+    // Ruling R33 (verifier-W1T-190-r2-falsepass N2): a gap's age (in the 46 to 75 band, §2) from a
+    // search_patients row, which shows the birth date and exposes the Patient, instead of fhir_read.
+    id: 'gap_ages_from_search_patients',
+    why: 'Finds each of the eight gap members with search_patients by given and family name and reads the birth date from the row, never fhir_read Patient for a gap member, then orders and messages the eight gaps.',
+    script: [
+      ...reads().map((t) => ({
+        calls: t.calls.map((c) => {
+          const l = GAPS.find((g) => PT[g] === c.input.id);
+          if (c.name !== 'fhir_read' || c.input.resource_type !== 'Patient' || l === undefined) return c;
+          const x = expected.items.find((y) => y.patient === `Patient/${PT[l]}`)!;
+          return { name: 'search_patients', input: { name: `${x.name.split(' ')[0]} ${x.family}` } };
+        }),
+      })),
+      { calls: actions() },
+      { calls: [finish()] },
+    ],
+  },
+  {
+    // verifier-W1T-190-r2-clinical N2 (R3, R16, R34): §7 tells the agent to search notes for the
+    // words a note would use, so a whole notes search of B2 for the colectomy words reviews his
+    // notes for a total colectomy as a document list does (the clinical verifier's route).
+    id: 'b2_note_search_colectomy_words',
+    why: "Checks Nick Bartoletti's notes for a total colectomy by search_notes for 'colectomy', 'proctocolectomy' and 'colon' over his notes (RBC-QM-02 §7: search for the words a note would use) instead of listing his documents; none matches, so he has an open gap.",
+    script: [...reads().map((t) => ({ calls: t.calls.flatMap((c) => (c.input.resource_type === 'DocumentReference' && c.input.patient === PT.B2 ? [notes('colectomy', PT.B2), notes('proctocolectomy', PT.B2), notes('colon', PT.B2)] : [c])) })), { calls: actions() }, { calls: [finish()] }],
+  },
+  {
+    // The same review clinic-wide: one whole notes search for both colectomy words across every
+    // patient also shows that no note of B2's names one.
+    id: 'b2_clinicwide_colectomy_note_search',
+    why: "Checks for a total colectomy in notes by one clinic-wide search_notes for 'colectomy proctocolectomy' (every match on one page) instead of listing Nick Bartoletti's documents; none of his notes is among the matches.",
+    script: [...reads().map((t) => ({ calls: t.calls.flatMap((c) => (c.input.resource_type === 'DocumentReference' && c.input.patient === PT.B2 ? [{ name: 'search_notes', input: { query: 'colectomy proctocolectomy', count: 20 } }] : [c])) })), { calls: actions() }, { calls: [finish()] }],
+  },
   rejectedFor('FILLER', 'she is 35, outside the population'),
   {
     // Ruling R19: one rejected write per nothing_for_others sub-kind; this is the message kind.

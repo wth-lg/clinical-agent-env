@@ -69,15 +69,18 @@ const PALLIATIVE_STATUSES = ['active', 'onhold', 'finished'];
 // The statuses in which either kind counts: the filter a search of care episodes must keep.
 const EPISODE_STATUSES = [...new Set([...HOSPICE_STATUSES, ...PALLIATIVE_STATUSES])];
 const NOTE_STATUSES = ['current', 'superseded'];
+// The words a notes search may name to show a total colectomy absent from the notes (§7: search
+// for the words a note would use; verifier-W1T-190-r2-clinical N2).
+const COLECTOMY_WORDS = ['colectomy', 'proctocolectomy'];
 const MEDICATION_STATUSES = ['active', 'on-hold', 'cancelled', 'completed', 'entered-in-error', 'stopped', 'draft', 'unknown'];
 const tok = (system: string, codes: readonly string[]) => codes.map((c) => `${system}|${c}`);
-type Absence = { type: string; from: string | null; codes: string[]; categories: string[]; statuses: string[] };
+type Absence = { type: string; from: string | null; codes: string[]; categories: string[]; statuses: string[]; words?: string[] };
 const procedureAbsence = (years: number | null, codes: readonly string[]): Absence => ({ type: 'Procedure', from: years === null ? null : `${YEAR - years}-01-01`, codes: tok(SNOMED, codes), categories: [], statuses: ['completed'] });
 const testAbsence = (years: number, codes: readonly string[]): Absence => ({ type: 'Observation', from: `${YEAR - years}-01-01`, codes: tok(LOINC, codes), categories: tok(OBSERVATION_CATEGORY, ['laboratory']), statuses: RESULTED });
 const SCREENING_ABSENCES: Absence[] = [procedureAbsence(9, COLONOSCOPY), procedureAbsence(4, SIGMOIDOSCOPY_OR_CTC), testAbsence(0, FOBT), testAbsence(2, SDNA)];
 const EXCLUSION_ABSENCES: Readonly<Record<string, Absence[]>> = {
   hospice_before_period: [{ type: 'EpisodeOfCare', from: `${YEAR}-01-01`, codes: [], categories: [], statuses: EPISODE_STATUSES }],
-  partial_colectomy: [procedureAbsence(null, COLECTOMY), { type: 'DocumentReference', from: null, codes: [], categories: [], statuses: NOTE_STATUSES }],
+  partial_colectomy: [procedureAbsence(null, COLECTOMY), { type: 'DocumentReference', from: null, codes: [], categories: [], statuses: NOTE_STATUSES, words: COLECTOMY_WORDS }],
   frailty_without_advanced_illness: [
     { type: 'Condition', from: null, codes: tok(SNOMED, ADVANCED_ILLNESS), categories: [], statuses: [] },
     { type: 'MedicationRequest', from: null, codes: [], categories: [], statuses: MEDICATION_STATUSES },
@@ -224,7 +227,10 @@ export function derive(world: WorldView): Json {
           : endedHospice.length ? ['hospice_before_period', endedHospice.map(id)]
           : age >= 66 && frailty ? ['frailty_without_advanced_illness', staleDementiaMeds.length ? [id(latest(staleDementiaMeds, (m) => m.authoredOn)!)] : [id(frailty)]]
           : age >= 66 && housing ? ['not_nursing_home', [id(housing), ...homeNotes.map(id), ...homeStays.map(id)]]
-          : ['no_screening', [ref]];
+          : ['no_screening', []];
+        // §2's age band decides order against no contact, so the Patient, which holds the birth
+        // date, decides every gap too (ruling R33, verifier-W1T-190-r2-falsepass N2).
+        decisive = [...decisive, ref];
       }
       // The atoms of each decisive note's deciding line (ruling R29): the words that settle the
       // member, as the note writes them. A total colectomy note names the operation; a stay's

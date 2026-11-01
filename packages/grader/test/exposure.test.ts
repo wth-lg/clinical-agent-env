@@ -165,6 +165,25 @@ describe('exposure from the read tools', () => {
     expect(steps[1]!.exposed_ids).toEqual([]);
     for (const s of steps.slice(2)) expect('search' in s).toBe(false);
   });
+  it('a successful search_notes step records its filters from the input as Step.notes, and nothing else does', () => {
+    // verifier-W1T-190-r2-clinical N2: a notes search that finds nothing shows no ids, so the step
+    // keeps the query, patient, dates, type and paging of its call, never the result's text.
+    const steps = stepsOf(
+      trajectory([
+        read('search_notes', { query: 'Weight  gain', patient: 'pt-1', date_ge: '2026-01-01', date_le: '2026-12-31', type: 'progress', count: 5, offset: 0 }),
+        read('search_notes', { query: 'zzzunmatched' }),
+        read('search_notes', { query: 'weight', count: 1 }),
+        { name: 'search_notes', input: { query: '' }, is_error: true, error_code: 'INVALID_INPUT' },
+        read('fhir_search', { resource_type: 'Observation', patient: 'pt-1' }),
+      ]),
+    );
+    expect(steps[0]!.notes).toEqual({ query: 'Weight  gain', patient: 'Patient/pt-1', date_ge: '2026-01-01', date_le: '2026-12-31', type: 'progress', offset: 0, whole: true });
+    expect(steps[1]!.notes).toEqual({ query: 'zzzunmatched', whole: true });
+    expect(steps[1]!.exposed_ids).toEqual([]);
+    expect(steps[2]!.notes?.whole).toBe(steps[2]!.notes?.next_offset === undefined);
+    for (const s of steps.slice(3)) expect('notes' in s).toBe(false);
+    expect('notes' in steps[4]!).toBe(false);
+  });
   it('Step.search.whole is true only for a page that held every match: offset 0 and no next_offset', () => {
     // Ruling R20 (sdna_unseen): a first page with more after it did not show every match.
     const all = read('fhir_search', { resource_type: 'Observation', patient: 'pt-1' });

@@ -121,6 +121,22 @@ export interface Step {
   // (ruling R27); category lets it refuse a filter that would hide the absent kind; sort ('date'
   // or '-date', absent for the default order) lets it require one order across a run of pages.
   search?: StepSearch;
+  // Present only on a successful search_notes: its filters from the call's input (the query as
+  // written, patient as 'Patient/<id>', date_ge, date_le and type, each only when it is a string)
+  // and its paging, as Step.search keeps them, so a gate can count a notes search that found
+  // nothing as a review (verifier-W1T-190-r2-clinical N2, ruling R34). Never the result's text.
+  notes?: StepNotes;
+}
+
+export interface StepNotes {
+  query: string;
+  patient?: string;
+  date_ge?: string;
+  date_le?: string;
+  type?: string;
+  offset?: number;
+  next_offset?: number;
+  whole: boolean;
 }
 
 export interface StepSearch {

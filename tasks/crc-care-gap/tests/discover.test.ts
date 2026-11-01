@@ -107,9 +107,15 @@ export const ROW_ONLY: Readonly<Record<string, readonly string[]>> = {
 // that makes the item a trap. H1's trap is his housing status (retrieval); his age, 72, which puts
 // him under §4's 66-or-older clause (R33), is on every patient list.
 export const PLAIN_INPUTS: readonly string[] = ['Patient/pt-0034'];
+// Ruling R33 (verifier-W1T-190-r2-falsepass N2): every gap's Patient is decisive too (its birth date
+// places it in §2's age band). A row whose subject is a gap member names that Patient without the
+// birth date, and every clinic-wide list has such rows, so R22's list leaves gap Patients out: their
+// deciding content is shown only by a Patient read or a search_patients row (a hit, and their hard
+// step is reasoning: the age is on every patient list).
+const GAP_PATIENTS = new Set(expected.items.filter((x) => x.status === 'gap').map((x) => x.patient));
 const hitsOf = (r: { exposed_ids: readonly string[]; referenced_ids: readonly string[] }) => ({
   hits: DECISIVE.filter((d) => r.exposed_ids.includes(d.id)),
-  rowOnly: DECISIVE.filter((d) => r.referenced_ids.includes(d.id)).map((d) => d.id),
+  rowOnly: DECISIVE.filter((d) => r.referenced_ids.includes(d.id) && !GAP_PATIENTS.has(d.id)).map((d) => d.id),
 });
 
 describe('crc-care-gap discoverability', () => {
