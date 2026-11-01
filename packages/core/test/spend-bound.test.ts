@@ -351,7 +351,7 @@ describe('(3) failed attempts are recorded', () => {
     expect((failed[0] as { message: string }).message).toMatch(/^network error: fetch failed for \[redacted/i);
     for (const e of events) expect(() => parseEvent(JSON.parse(JSON.stringify(e)))).not.toThrow();
     expect(JSON.stringify(events)).not.toContain(KEY);
-    expect(log.some((l) => /attempt 1: ApiError network: network error: fetch failed/.test(l))).toBe(true);
+    expect(log.some((l) => /^attempt 1: network error: fetch failed/.test(l))).toBe(true);
     expect(log.join('\n')).not.toContain(KEY);
   });
 

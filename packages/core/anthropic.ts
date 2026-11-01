@@ -755,7 +755,10 @@ export class MessagesClient {
     };
     const failed = (f: Omit<AttemptFailure, 'message'> & { message: string }) => {
       const message = redactText(f.message, [this.#apiKey]);
-      this.#log(`attempt ${f.attempt}: ${f.error} ${f.code}: ${message} (settled $${f.settled_usd.toFixed(4)}, ${f.settle}${f.retry ? ', retrying' : ''})`);
+      // The line is the message only, as before: the local runner's security test (apps/runner
+      // echo.test.ts, review P12b-4 G2) pins it to the status and type. The class, code and
+      // settle travel in the attempt_error event, which the batch prints.
+      this.#log(`attempt ${f.attempt}: ${message}`);
       opts.onAttemptError?.({ ...f, message });
     };
     // An abort before the reserve: nothing reserved, sent or settled.
