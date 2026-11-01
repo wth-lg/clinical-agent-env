@@ -251,6 +251,17 @@ export function mutantsFor(active: readonly string[]): M[] {
           items: { [P('pt-0002')]: 'retrieval' as const },
           attribution: 'retrieval' as const,
           script: r({ vance: blindNote('pt-0002') }, { 'vance-itraconazole': 'ignored' }).filter((t) => t.calls.length > 0),
+        },
+        {
+          // R38(f): the letter was seen before the write, so a wrong dose then is reasoning.
+          id: 'vance_blindnote_letter_raise',
+          trap: 'arrival_not_acted_on',
+          why: 'A blind note on Vance brings in the dermatology letter; reads it, then raises apixaban to 5 mg on his one criterion, though itraconazole gives 2.5 mg.',
+          fails: ['amended'],
+          loses: ['notes_cite_inputs'],
+          items: { [P('pt-0002')]: 'reasoning' as const },
+          attribution: 'reasoning' as const,
+          script: ((t) => [...t.slice(0, -1), { calls: [CASES.vance!.change!] }, t.at(-1)!])(r({ vance: blindNote('pt-0002') }, { 'vance-itraconazole': 'no_amend' }).filter((x) => x.calls.length > 0)),
         }]
       : []),
   ];

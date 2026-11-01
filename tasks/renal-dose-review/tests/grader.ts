@@ -326,6 +326,16 @@ const gates: Check[] = [
     check: (x, first, ctx) => {
       const at = first.get(x.patient);
       if (at === undefined) return ok;
+      // R38(f): once an arrival that alone decides the item has arrived (EVENT_EXPECT alone), a DOAC
+      // write after it needs only that arrival seen before it; a write before it keeps the base
+      // records (R18, R38(e)).
+      const amend = firedAmend(specs, ctx.steps, x.patient);
+      const arrival = amend !== undefined && EVENT_EXPECT[amend.id]?.alone === true ? arrivalOf(ctx.steps, amend.id) : null;
+      if (amend !== undefined && arrival !== null && at > arrival.step) {
+        const focus = focusOf(amend);
+        const step = seenAfter(focus, EVENT_EXPECT[amend.id]!.atoms)(ctx.steps, arrival.step);
+        return seenBefore(ctx.steps, step, at) ? ok : { met: false, why: `changed the DOAC at step ${at} before the trial had seen ${focus}`, evidence: { first_write: at, late: [focus], seen: [{ id: focus, step }] }, ids: [focus] };
+      }
       const seen = (id: string) => seenAt(ctx, id);
       const late = x.decisive.filter((id) => !seenBefore(ctx.steps, seen(id), at));
       return late.length === 0 ? ok : { met: false, why: `changed the DOAC at step ${at} before the trial had seen ${late.join(', ')}`, evidence: { first_write: at, late, seen: x.decisive.map((id) => ({ id, step: seen(id) })) }, ids: late };

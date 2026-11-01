@@ -119,6 +119,18 @@ export function alternativesFor(active: readonly string[]): Alternative[] {
       why: 'Writes a note on Vance without reading his chart, which brings in the dermatology letter; reads the letter and leaves apixaban at 2.5 mg. The letter alone decides that dose (§2: an inhibitor at a criteria dose of 5 mg gives 2.5 mg whatever the criteria; R38(d)).',
       script: r({ vance: { reads: [], more: [], calcs: [], change: [], note: [note('pt-0002', 'DOAC dose review: reviewed, no change.', [])] } }, { 'vance-itraconazole': 'no_amend' }).filter((t) => t.calls.length > 0),
     });
+    // R38(f): every passing form of the decision after the letter is credited the same way.
+    const blind = { vance: { reads: [], more: [], calcs: [], change: [], note: [note('pt-0002', 'DOAC dose review: reviewed, no change.', [])] } };
+    recheck.push({
+      id: 'vance_blindnote_letter_modify',
+      why: 'A blind note on Vance brings in the dermatology letter; reads the letter, then re-signs apixaban at 2.5 mg twice daily and notes why: a decision written after the record that alone decides it (R38(f)).',
+      script: r(blind).filter((t) => t.calls.length > 0),
+    });
+    recheck.push({
+      id: 'vance_blindnote_letter_stoporder',
+      why: 'The same route, deciding by a stop and a new 2.5 mg order (R21, R38(f)).',
+      script: r(blind, { 'vance-itraconazole': 'stop_and_order' }).filter((t) => t.calls.length > 0),
+    });
     recheck.push({
       id: 'vance_letter_by_notes_search',
       why: "Finds the dermatology letter with a notes search for 'itraconazole' on his chart, whose snippet shows the drug (R29), instead of opening it, then corrects the dose.",

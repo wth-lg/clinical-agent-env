@@ -131,6 +131,21 @@ describe('R38(a): a fired amend never excuses the base review', () => {
     expect(items).toEqual({ 'Patient/pt-0002': 'process' });
   });
 
+  // R38(f): after the letter (which alone decides) arrives, a DOAC write needs only the letter seen
+  // before it, in every passing form: re-sign at 2.5 mg, or stop plus a new order (R21).
+  it.each(['vance_blindnote_letter_modify', 'vance_blindnote_letter_stoporder'])('R38(f): %s passes', async (id) => {
+    const { grade } = await graded('alternative', id);
+    expect(grade.checks.filter((c) => c.kind === 'gate' && !c.met).map((c) => c.id)).toEqual([]);
+    expect(grade.outcome).toBe('PASS');
+    expect(grade.score).toBe(1);
+  });
+
+  it('R38(f): a raise to 5 mg after the letter was read fails amended alone, as reasoning (vance_blindnote_letter_raise)', async () => {
+    const { grade, items } = await graded('mutant', 'vance_blindnote_letter_raise');
+    expect(grade.checks.filter((c) => c.kind === 'gate' && !c.met).map((c) => c.id)).toEqual(['amended']);
+    expect(items).toEqual({ 'Patient/pt-0002': 'reasoning' });
+  });
+
   it('R38(d): a blind note on Vance that then reads nothing fails event_seen alone, as retrieval (vance_blind_note_reads_nothing)', async () => {
     const { grade, items } = await graded('mutant', 'vance_blind_note_reads_nothing');
     expect(grade.outcome).toBe('FAIL');
