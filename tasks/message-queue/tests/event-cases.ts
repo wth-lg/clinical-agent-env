@@ -69,6 +69,8 @@ export function eventAlternatives(spec: string, active: readonly string[]): Alte
           why: 'Marks the earlier renewal entered in error and also holds the current lisinopril order, which RBC-RX-05 §2 allows, with the hold Task.',
           script: own({ amend: { [spec]: (m) => [voided(m, odumRenew, 'entered-in-error'), change(MR.odum, 'hold', 'Potassium 5.8 on 10/20/2026, pending prescriber review (RBC-RX-05 §2)'), HOLD_TASK.odum] } }),
         },
+        // R38(d): once the newer valid potassium arrives, the older hemolyzed report no longer decides m3.
+        { id: 'odum-o1_report_superseded', why: "Never opens Frank Odum's older hemolyzed outside report; the repeat panel that arrives decides the hold, with his potassium list read (R38(d)).", script: own({ reads: [[ODUM_REPORT.calls[0]!, []]] }) },
         { id: 'odum-o1_panel_by_snippet', why: "Never opens the repeat panel: a 'potassium' search of Frank Odum's notes after the re-check shows its potassium line (R2, R29).", script: own({ recheck: shownBy(searchNotes(PT.odum, 'potassium')) }) },
       ];
     case 'price-b1':

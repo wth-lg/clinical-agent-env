@@ -18,7 +18,7 @@ import type { Mutant } from '../../../packages/grader/matrix/types.ts';
 import { ACTIVE } from '../events.ts';
 import { ref } from '../ids.ts';
 import {
-  a1cOrder, arrivalRead, call, close, closeResent, lab, labs, ODUM_REPORT, odumRenew, order, PCP, PRICE_LOOK, PRICE_REPORT, priceLisinopril, priceMetformin, PT, recheck, route, type RouteOpts, RX, search, START, task, WEBB_READS, webbBmp, webbBridge, webbMetformin,
+  a1cOrder, arrivalRead, call, close, closeResent, lab, labs, ODUM_LOOK, ODUM_REPORT, odumRenew, order, PCP, PRICE_LOOK, PRICE_REPORT, priceLisinopril, priceMetformin, PT, recheck, route, type RouteOpts, RX, search, START, task, WEBB_READS, webbBmp, webbBridge, webbMetformin,
 } from '../solution/steps.ts';
 import { BMP_CODES, byName } from '../expected.ts';
 import { blindWriteMutant, eventMutants, resentLeftOpenMutant } from './event-cases.ts';
@@ -47,19 +47,26 @@ const [WEBB_K, WEBB_EGFR] = [WEBB_READS.calls[0]!, WEBB_READS.calls[1]!];
 const webbK = (...to: ReturnType<typeof call>[]): RouteOpts => ({ reads: [[WEBB_K, to], [WEBB_EGFR, [since(PT.webb, '33914-3', '2026-01-01')]]] });
 
 export const mutants: Mutant[] = [
-  {
-    id: 'm3_outside_report_unread',
-    why: "Never opens Frank Odum's outside pre-operative report, so renews the lisinopril on the January BMP without repeating the hemolyzed potassium.",
-    trap: 'hemolyzed_potassium',
-    script: r({ reads: [[ODUM_REPORT.calls[0]!, []]], first: { odum: [odumRenew, close(3)] } }),
-    // With odum-o1 active the item is graded on the delivered chart (a hold), which the route reaches.
-    fails: on('odum-o1') ? ['decisive_seen'] : ['refill_decision', 'decisive_seen'],
-    loses: [],
-    attribution: 'retrieval',
-    items: { [item('m3')]: 'retrieval' },
-  },
-  // R29 (builder-254 sweep): the report seen only through a snippet that holds none of its atom sets.
-  skipped('m3_potassium_snippet', 'hemolyzed_potassium', 'm3', "Searches Frank Odum's notes for 'potassium' before deciding, sees only 'Potassium 5.9 H' of the outside report, and renews with a BMP without seeing that the specimen was hemolyzed.", { reads: [[ODUM_REPORT.calls[0]!, [call('search_notes', { query: 'potassium', patient: PT.odum })]]] }),
+  // With odum-o1 active the older hemolyzed report no longer decides m3 (a newer valid potassium
+  // arrives; tests/grader.ts NO_LONGER_DECIDES, R38(d)), so the two report mutants run only without it,
+  // and m3_potassium_list_unread keeps the item's base review failing either way.
+  ...(on('odum-o1')
+    ? []
+    : [
+        {
+          id: 'm3_outside_report_unread',
+          why: "Never opens Frank Odum's outside pre-operative report, so renews the lisinopril on the January BMP without repeating the hemolyzed potassium.",
+          trap: 'hemolyzed_potassium',
+          script: r({ reads: [[ODUM_REPORT.calls[0]!, []]], first: { odum: [odumRenew, close(3)] } }),
+          fails: ['refill_decision', 'decisive_seen'],
+          loses: [],
+          attribution: 'retrieval' as const,
+          items: { [item('m3')]: 'retrieval' as const },
+        },
+        // R29 (builder-254 sweep): the report seen only through a snippet that holds none of its atom sets.
+        skipped('m3_potassium_snippet', 'hemolyzed_potassium', 'm3', "Searches Frank Odum's notes for 'potassium' before deciding, sees only 'Potassium 5.9 H' of the outside report, and renews with a BMP without seeing that the specimen was hemolyzed.", { reads: [[ODUM_REPORT.calls[0]!, [call('search_notes', { query: 'potassium', patient: PT.odum })]]] }),
+      ]),
+  skipped('m3_potassium_list_unread', 'hemolyzed_potassium', 'm3', "Renews Frank Odum's lisinopril with a repeat BMP on the outside report alone, without ever listing his potassium results, so the valid in-house potassium of 01/20 is never seen.", { reads: [[ODUM_LOOK.calls[0]!, []]] }),
   ...(on('price-b1')
     ? []
     : [{
