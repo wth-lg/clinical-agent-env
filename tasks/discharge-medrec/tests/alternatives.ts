@@ -120,6 +120,39 @@ export const alternatives: Alternative[] = [
       { calls: [finish()] },
     ],
   },
+  // R38(f): once an arrival that alone decides an item has fired (R38(d)), a decision written after
+  // it needs only the arrival seen before it, in every passing form. stark-s1: Terence Stark's summary
+  // is never opened; his first write (the fill-gap flag) brings the signed addendum, which is read,
+  // and carvedilol is left, re-signed at 6.25 mg twice daily, or stopped and ordered again at it.
+  {
+    id: 'stark_s1_left_on_addendum_alone',
+    why: "Never opens Terence Stark's summary; reads the signed addendum that arrives and leaves carvedilol at his home 6.25 mg twice daily.",
+    script: script({ skip: ['starkSummary'] }),
+  },
+  {
+    id: 'stark_s1_resigned_on_addendum_alone',
+    why: "Never opens Terence Stark's summary; reads the signed addendum and re-signs carvedilol at 6.25 mg twice daily (modify at the same dose).",
+    script: script({ skip: ['starkSummary'], over: { starkCarvedilol: [modify(MR.starkCarvedilol, { value: 6.25, unit: 'mg', frequency: 'BID' }, 'Signed addendum 10/23: carvedilol 6.25 mg twice daily', RX.carvedilol6_25)] } }),
+  },
+  {
+    id: 'stark_s1_stop_plus_new_on_addendum_alone',
+    why: "Never opens Terence Stark's summary; reads the signed addendum, stops the carvedilol order and orders carvedilol 6.25 mg twice daily again (R21).",
+    script: script({ skip: ['starkSummary'], over: { starkCarvedilol: [change(MR.starkCarvedilol, 'stop', 'Signed addendum 10/23: reorder carvedilol'), order('stark', RX.carvedilol6_25, 6.25, 'BID', 'Signed addendum 10/23: carvedilol 6.25 mg twice daily')] } }),
+  },
+  // roberts-r1: the hold in its other passing form, a stop with the recheck Task, decided on the
+  // 10/23 potassium alone (no lisinopril decision before it).
+  {
+    id: 'roberts_stopped_on_new_potassium_alone',
+    why: "Opens none of Earnest Roberts' records; writes a note on his chart, reads the 10/23 potassium of 5.5 that arrives, stops the held lisinopril and adds the recheck Task.",
+    script: [
+      ...reads([], [], [], ['kim', 'stark']),
+      { calls: [...FIRST.filter((k) => k !== 'robertsLisinopril').flatMap((k) => firstWrites()[k]), note('roberts', 'Post-discharge medication reconciliation under RBC-TOC-02: started.', [])] },
+      { calls: recheck() },
+      { calls: [...decisions().kimFurosemide, ...decisions().kimLisinopril, ...decisions().starkCarvedilol, change(MR.robertsLisinopril, 'stop', 'Potassium 5.5 on 10/23 is above 5.0 (RBC-TOC-02 §7)'), AMEND.robertsR1[1]!] },
+      { calls: notesFor() },
+      { calls: [finish()] },
+    ],
+  },
   // R27: the re-check counts through any complete listing: the default page, or a contiguous run of
   // pages from offset 0.
   {
