@@ -39,6 +39,11 @@ const FIT_ORDER = [['urn:riverbend:orders', 'LAB-FIT-KIT'], ...FOBT.map((c) => [
 // or self care, 06 home health): with its discharge summary, it settles where the patient lives as
 // the housing status does (§7, ruling R21).
 const SNF_STAY = ['25675004'];
+// A nursing facility visit (SNOMED 18170008, 'Subsequent nursing facility visit'): with the
+// facility as its service provider, it shows where a member 66 or older lives, as the housing
+// status does; so does a Patient home address that names that facility (§7: where a patient lives
+// may be coded data; rulings R21, R16, builder-265 audit of probe-1 crc-care-gap/0 and /1).
+const NURSING_FACILITY_VISIT = ['18170008'];
 const NUBC = 'http://www.nubc.org/patient-discharge';
 const DISCHARGED_HOME = ['01', '06'];
 // The words a note uses for a total colectomy (§4), and a discharge summary for a stay that ended
@@ -195,6 +200,15 @@ export function derive(world: WorldView): Json {
         (e) => (e.type ?? []).some((t) => coded(t, SNOMED, SNF_STAY)) && coded(e.hospitalization?.dischargeDisposition, NUBC, DISCHARGED_HOME),
       );
       const homeNotes = notes.filter((n) => ((n.context as { encounter?: Ref[] } | undefined)?.encounter ?? []).some((e) => homeStays.some((h) => e.reference === id(h))));
+      // §7, R21: for a member whose housing status says nursing home, the nursing facility visits
+      // that facility provided in the period or before it, and whether the Patient's home address
+      // names the facility: any one of them, or the housing status, shows where the member lives.
+      const facilityName = (e: R) => (world.get('Organization', ((e.serviceProvider as Ref | undefined)?.reference ?? '').slice('Organization/'.length)) as (R & { name?: string }) | undefined)?.name;
+      const facilityVisits = (of(world, 'Encounter', ref) as ReadonlyArray<R & { type?: Concept[]; period?: { start?: string } }>).filter(
+        (e) => (e.type ?? []).some((t) => coded(t, SNOMED, NURSING_FACILITY_VISIT)) && facilityName(e) !== undefined && yearOf(e.period?.start) <= YEAR,
+      );
+      const homeLines = ((p.address as Array<{ use?: string; line?: string[] }> | undefined) ?? []).filter((a) => a.use === 'home').flatMap((a) => a.line ?? []);
+      const addressAtFacility = facilityVisits.some((e) => homeLines.includes(facilityName(e)!));
       let status: string, reason: string, decisive: string[];
       if (age < 46) [status, reason, decisive] = ['not_in_population', 'age_under_46', [ref]];
       else if (age > 75) [status, reason, decisive] = ['not_in_population', 'age_over_75', [ref]];
@@ -205,7 +219,7 @@ export function derive(world: WorldView): Json {
           : exclusion === 'hospice' ? episodes.filter((e) => careGiven(e) && !(yearOf(e.period?.end) < YEAR)).map(id)
           // §4's nursing home and frailty clauses apply only at 66 or older, so the Patient's birth
           // date decides these exclusions with the records (ruling R33).
-          : exclusion === 'nursing_home' ? [id(housing!), ref]
+          : exclusion === 'nursing_home' ? [id(housing!), ...facilityVisits.map(id), ref]
           : exclusion.startsWith('frailty') ? [id(frailty!), ...meds.filter((m) => DEMENTIA_MEDICATIONS.some((ingredient) => isDrug(m.medicationCodeableConcept, { ingredient })) && (isActive(m) || yearOf(m.authoredOn) >= YEAR - 1)).map(id), ref]
           : [];
       } else if (screening) {
@@ -256,7 +270,8 @@ export function derive(world: WorldView): Json {
         message,
         decisive,
         atoms,
-        evidence: status === 'gap' && reason === 'not_nursing_home' ? 'any' : 'all',
+        evidence: (status === 'gap' && reason === 'not_nursing_home') || reason === 'nursing_home' ? 'any' : 'all',
+        address: reason === 'nursing_home' && addressAtFacility,
         absences: status === 'gap' ? [...SCREENING_ABSENCES, ...(EXCLUSION_ABSENCES[reason] ?? [])] : [],
       };
     }),

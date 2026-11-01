@@ -137,7 +137,9 @@ const contactItems: Check[] = expected.items.filter((x) => x.message === false).
 );
 
 // The messages to each patient who needs outreach, read together: the judge items below ask one
-// question per patient messaged and apply when any patient's messages meet the criterion.
+// question per patient messaged and apply when any patient's messages meet the criterion, so each
+// declares one question per member who needs outreach (judge_questions, builder-267).
+const OUTREACH_PATIENTS = expected.items.filter((m) => m.message === true).length;
 async function perOutreachPatient(ctx: RubricCtx, criterion: (x: Member) => string): Promise<Verdict> {
   const sent = sentByTrial(ctx);
   const verdicts: Array<{ patient: string; v: Verdict }> = [];
@@ -167,6 +169,7 @@ const outreachOnTopic: Check = item({
   method: 'judge',
   traces_to: 'RBC-QM-02 §5',
   decisive_ids: [],
+  judge_questions: OUTREACH_PATIENTS,
   fn: (ctx) => perOutreachPatient(ctx, () => OUTREACH_CRITERION),
 });
 
@@ -187,6 +190,7 @@ const outreachFalse: Check = item({
   method: 'judge',
   traces_to: 'RBC-QM-02 §5',
   decisive_ids: [],
+  judge_questions: OUTREACH_PATIENTS,
   fn: (ctx) => perOutreachPatient(ctx, falseCriterion),
 });
 

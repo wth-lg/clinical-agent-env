@@ -7,7 +7,9 @@
 // F2: without one, every unexposed id was "not checked"); and each record's INTERNAL tool errors
 // are in its trajectory, an ENV_ERROR INTERNAL ending on that error (verifier-ui-copy-1 m4). A
 // schema bump or a world rebuild that leaves a fixture behind fails here, before the e2e specs
-// that build against it.
+// that build against it. Every record is graded at this checkout's GRADER_VERSION and task
+// versions, so a grader bump that regenerates the sample run but not a fixture copied from it
+// fails here too (verifier-phase-P17i-GRADER16-193-1 F1: the trial fixtures said grader 15).
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -17,6 +19,9 @@ import { summarize, validateSummary, type Summary, type SummaryTrial } from '../
 import { terminalEvent, type TrialEvent } from '../../../packages/core/events.ts';
 import { parseTrajectory } from '../../../packages/core/trajectory.ts';
 import { validateAuditRow, validateRecord } from '../src/data/records.ts';
+import { nodeTaskSource } from '../../../cli/adapters/tasks-node.ts';
+import { taskVersions, type TaskVersions } from '../../../packages/core/tasks.ts';
+import { GRADER_VERSION } from '../../../packages/grader/grade.ts';
 
 const FIXTURES = join(import.meta.dirname, '../e2e/fixtures');
 const WORLD_HASH = (JSON.parse(readFileSync(join(import.meta.dirname, '../../../fixtures/manifest.json'), 'utf8')) as { world: { state_hash: string } }).world.state_hash;
@@ -58,6 +63,17 @@ describe.each(roots)('fixture %s', (root) => {
     for (const f of records) expect(validateRecord(json(f)), at(f)).toEqual([]);
     for (const f of files(run, 'audit.jsonl')) for (const [i, row] of lines(f).entries()) expect(validateAuditRow(row), `${at(f)}:${i + 1}`).toEqual([]);
     for (const f of files(join(run, 'trajectories'), '.jsonl')) expect(() => parseTrajectory(readFileSync(f, 'utf8')), at(f)).not.toThrow();
+  });
+
+  it.each(runs.map((r) => [at(r), r]))('%s: every trial record is graded at this checkout\'s GRADER_VERSION and task versions', async (_, run) => {
+    const tasks = nodeTaskSource({ testMode: true });
+    const current = new Map<string, TaskVersions>();
+    for (const f of files(join(run, 'trials'), '.json')) {
+      const r = json(f) as { task_id: string; grader_version: string; task_version: string; env_version: string; grader_task_version: string };
+      if (!current.has(r.task_id)) current.set(r.task_id, await taskVersions(await tasks.get(r.task_id), WORLD_HASH));
+      const v = current.get(r.task_id)!;
+      expect([r.grader_version, r.task_version, r.env_version, r.grader_task_version], at(f)).toEqual([GRADER_VERSION, v.task_version, v.env_version, v.grader_task_version]);
+    }
   });
 
   it.each(runs.map((r) => [at(r), r]))('%s: every trial record starts from the manifest world', (_, run) => {

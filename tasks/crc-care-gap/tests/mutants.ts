@@ -53,9 +53,14 @@ const orders = (l: Label, trap: string, why: string, readsUsed = reads(), unread
   script: [...readsUsed, { calls: [...actions(), orderFit(PT[l]), outreach(PT[l], fitOrder(NEXT_WRITE))] }, { calls: [finish()] }],
 });
 
+// H1's age from a search_patients row in place of the oracle's fhir_read of his Patient: the row
+// shows his birth date (R33) and no address (R22), so it shows none of his residence records,
+// which since the builder-265 audit include his Patient's address at the care center (R21).
+const H1_ROW: ScriptCall = { name: 'search_patients', input: { name: 'Sipes' } };
+const h1AgeByRow = (c: ScriptCall): ScriptCall => (c.name === 'fhir_read' && c.input.resource_type === 'Patient' && c.input.id === PT.H1 ? H1_ROW : c);
 // The reads of a reviewer who checks nursing home residence in the notes only (pilot-1 trial 0):
-// the oracle's reads without E15's housing status search.
-const notesOnly = reads().map((t) => ({ calls: t.calls.filter((c) => !(c.input.patient === PT.H1 && c.input.category === 'social-history')) }));
+// the oracle's reads without E15's housing status search, his age from a search_patients row.
+const notesOnly = reads().map((t) => ({ calls: t.calls.filter((c) => !(c.input.patient === PT.H1 && c.input.category === 'social-history')).map(h1AgeByRow) }));
 // The reads of a reviewer who reads B1's coded data only: no document list or note for her (the
 // other members' document lists stay, which B2's review needs: R28, R31).
 const codedOnly = reads()
@@ -97,7 +102,8 @@ const d1HiddenBy = (id: string, filters: { [k: string]: string | number }, what:
 const dropFor = (l: Label, drop: (c: ScriptCall) => boolean) => reads().map((t) => ({ calls: t.calls.filter((c) => !(c.input.patient === PT[l] && drop(c))) })).filter((t) => t.calls.length > 0);
 // Ruling R32: the reads that show each no-contact member's deciding records (expected.ts decisive):
 // B1's document list and operative note, C2's care episodes, G1's conditions and medications, H1's
-// housing status and the filler's Patient.
+// housing status (the oracle lists no encounters, and his Patient read, which shows his address,
+// becomes a search_patients row: h1AgeByRow) and the filler's Patient.
 const SHOWS_DECISIVE: Record<string, (c: ScriptCall) => boolean> = {
   B1: (c) => c.input.resource_type === 'DocumentReference',
   C2: (c) => c.input.resource_type === 'EpisodeOfCare',
@@ -108,13 +114,14 @@ const SHOWS_DECISIVE: Record<string, (c: ScriptCall) => boolean> = {
 const unreviewed = (l: Label): Mutant & { loses: readonly string[] } => ({
   id: `${l.toLowerCase()}_never_reviewed`,
   trap: 'no_contact_unreviewed',
-  why: `As the oracle, but never reads what decides ${l === 'FILLER' ? 'the filler' : l} (${expected.items.find((x) => x.patient === P(l))!.decisive.join(', ')}) and writes nothing about them: the end state is right, but nothing the trial read decides the member's status (R32): retrieval.`,
+  why: `As the oracle, but never reads what decides ${l === 'FILLER' ? 'the filler' : l} (${expected.items.find((x) => x.patient === P(l))!.decisive.join(', ')}${l === 'H1' ? "; his age only from a search_patients row, which shows no address" : ''}) and writes nothing about them: the end state is right, but nothing the trial read decides the member's status (R32): retrieval.`,
   fails: ['no_contact_reviewed'],
   loses: [],
   attribution: 'retrieval',
   items: only(l, 'retrieval'),
   script: [
-    ...reads().map((t) => ({ calls: t.calls.filter((c) => !((c.input.patient === PT[l] || (l === 'FILLER' && c.input.id === PT.FILLER) || (l === 'B1' && c === OPNOTE)) && SHOWS_DECISIVE[l]!(c))) })).filter((t) => t.calls.length > 0),
+    // H1: his age from a search_patients row, so his address at the care center is never shown.
+    ...reads().map((t) => ({ calls: t.calls.filter((c) => !((c.input.patient === PT[l] || (l === 'FILLER' && c.input.id === PT.FILLER) || (l === 'B1' && c === OPNOTE)) && SHOWS_DECISIVE[l]!(c))).map((c) => (l === 'H1' ? h1AgeByRow(c) : c)) })).filter((t) => t.calls.length > 0),
     { calls: actions() },
     { calls: [finish()] },
   ],
@@ -169,7 +176,7 @@ const perItem: Array<Mutant & { loses: readonly string[] }> = [
   skips('D2', 'sdna_collected_before_window', "Counts Lance Muller's sDNA-FIT by its report date (2024-01-08), inside the 2024-2026 window, though it was collected on 2023-12-27, before it (§3)."),
   orders('G1', 'frailty_dementia_medication', "Reads advanced illness as a diagnosis only, misses that donepezil is a dementia medication, and orders a FIT kit for Elly Trantow, 72 and frail (§4)."),
   skips('G2', 'dementia_medication_stopped', "Excludes Harrison O'Keefe for frailty with a dementia medication, though his donepezil was stopped in March 2023, before the measurement period and the year before it (§4)."),
-  orders('H1', 'nursing_home', "Checks nursing home residence in the notes only, as pilot-1 trial 0 did: no note names Rickey Sipes's nursing home, so he looks like an open gap at 72, though his housing status says he lives in a nursing home (§4).", notesOnly, true),
+  orders('H1', 'nursing_home', "Checks nursing home residence in the notes only, as pilot-1 trial 0 did, and takes Rickey Sipes's age from a search_patients row: no note names his nursing home, so he looks like an open gap at 72, though his housing status says he lives in a nursing home (§4), as do his address and his visits at Maple Grove Care Center.", notesOnly, true),
   skips('H2', 'short_rehab_stay', "Reads Elvin Wolff's three-week skilled nursing rehab stay as nursing home residence and excludes him, though he was discharged home and his newest housing status says he lives in his own home (§4)."),
   orders('FILLER', 'not_in_population', 'Orders a FIT kit and outreach for Fumiko Pouros, 35, who is outside the population (§2): RBC-QM-02 §5 orders only for open gaps.'),
   {

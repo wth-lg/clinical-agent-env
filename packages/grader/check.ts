@@ -84,6 +84,11 @@ export interface RubricCheck extends Common {
   // -10..+10; negative for a harm the item detects.
   points: number;
   method: 'code' | 'hybrid' | 'judge';
+  // The most judge and extractor questions the item asks in one grading, for an item that asks one
+  // per recipient or per worklist item (derived from the task's expected items): the trial's judge
+  // allowance counts it (judge.ts judgeCallBudget). Default 1 for a judge or hybrid item, 0 for a
+  // code item.
+  judge_questions?: number;
   fn: (ctx: RubricCtx) => Verdict | Promise<Verdict>;
 }
 

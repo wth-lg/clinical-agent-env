@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import type { GateCheck, GateCtx, Step, StepNotes, StepSearch } from '../../packages/grader/check.ts';
 import { OUTSIDE } from '../../packages/grader/items.ts';
 import { CLASSES, classOf, expected, FILLER, ORDERED } from './expected.ts';
+import { syntheaRef } from '../../packages/env/synthea-ids.ts';
 import { ref } from './ids.ts';
 import { absenceShownAt, checks, filtersCover, notesCover, notesShownAt } from './tests/grader.ts';
 
@@ -52,7 +53,10 @@ describe('T3 decisive ids (R1)', () => {
       'Patient/pt-0021': [ref('DocumentReference/doc-t3-1856')],
       'Patient/pt-0022': [ref('Observation/obs-t3-3906'), 'Patient/pt-0022'],
       'Patient/pt-0024': [ref('ServiceRequest/sr-t3-4417'), 'Patient/pt-0024'],
-      'Patient/pt-0034': [ref('Observation/obs-t3-2465'), 'Patient/pt-0034'],
+      // R21, R16 (builder-265 audit of probe-1): H1's residence from any one of his housing status
+      // and his two nursing facility visits at Maple Grove (or his Patient's address there, by a
+      // read: expected.ts address); his Patient also decides his age, all-of (R33).
+      'Patient/pt-0034': [ref('Observation/obs-t3-2465'), syntheaRef('Encounter/enc-00204'), ref('Encounter/enc-t3-7781'), 'Patient/pt-0034'],
       // R21: any one of the housing status, the discharge summary or the rehab stay's encounter.
       // R33 (verifier-W1T-190-r2-falsepass N2): §2's age band decides order against no contact, so
       // every gap's Patient too, all of them; H2's residence records stay any-of among themselves.
@@ -139,7 +143,7 @@ describe('nothing_for_others is bounded by the policy (R3)', () => {
 describe('absence items (R20, R27, R31) and any-of evidence (R21)', () => {
   const at = (p: string) => expected.items.find((x) => x.patient === `Patient/${p}`)!;
   const SCREENING: Array<[string, string | null]> = [['Procedure', '2017-01-01'], ['Procedure', '2022-01-01'], ['Observation', '2026-01-01'], ['Observation', '2024-01-01']];
-  it('lists the four screening kinds for every gap, the exclusion its class turns on for C1, B2 and G2, and the any-of evidence of H2; nothing for the others', () => {
+  it('lists the four screening kinds for every gap, the exclusion its class turns on for C1, B2 and G2, and the any-of evidence of H1 and H2; nothing for the others', () => {
     expect(Object.fromEntries(expected.items.map((x) => [x.patient, x.absences.map((a) => [a.type, a.from])]))).toEqual({
       'Patient/pt-0009': [],
       'Patient/pt-0011': [...SCREENING, ['EpisodeOfCare', '2026-01-01']],
@@ -156,7 +160,8 @@ describe('absence items (R20, R27, R31) and any-of evidence (R21)', () => {
       'Patient/pt-0037': [],
     });
     expect(expected.items.filter((x) => x.absences.length > 0).map((x) => x.patient)).toEqual(ORDERED);
-    expect(expected.items.filter((x) => x.evidence === 'any').map((x) => x.patient)).toEqual(['Patient/pt-0035']);
+    expect(expected.items.filter((x) => x.evidence === 'any').map((x) => x.patient)).toEqual(['Patient/pt-0034', 'Patient/pt-0035']);
+    expect(expected.items.filter((x) => x.address).map((x) => x.patient)).toEqual(['Patient/pt-0034']);
   });
 
   // Ruling R27: what each absence counts, so a filter can be checked against it. Codes and
@@ -471,6 +476,24 @@ describe('absence items (R20, R27, R31) and any-of evidence (R21)', () => {
     expect(item('no_contact_reviewed', ctxOf('…Procedure: total proctocolectomy with end ileostomy…'), 'pt-0021').met).toBe(true);
     expect(item('no_contact_reviewed', ctxOf('…Operative report, scanned outside record…'), 'pt-0021').met).toBe(false);
     for (const p of ORDERED) expect(item('no_contact_reviewed', NOTHING, p.slice(8)).met, p).toBe(true);
+  });
+  // R21, R16 (builder-265 audit: probe-1 crc-care-gap/0 and /1 read H1's Patient and listed his
+  // encounters, never his housing status): any one of his residence records reviews him, beside
+  // his Patient for the age (R33). A read of his Patient shows his address at the care center; a
+  // search_patients row shows his age only (R22), so with no other record it reviews nothing.
+  it('no_contact_reviewed: H1 after any one of his housing status, a facility visit or a read of his Patient, each with his age', () => {
+    const [obs, feb, jul, pt] = at('pt-0034').decisive;
+    const row = step(9, 1, { tool: 'search_patients', exposed_ids: [pt!] });
+    const ctxOf = (...steps: Step[]): GateCtx => ({ ...NOTHING, steps });
+    for (const seen of [obs!, feb!, jul!]) expect(item('no_contact_reviewed', ctxOf(step(1, 1, { exposed_ids: [seen] }), row), 'pt-0034').met, seen).toBe(true);
+    expect(item('no_contact_reviewed', ctxOf(step(1, 1, { tool: 'fhir_read', exposed_ids: [pt!] })), 'pt-0034').met).toBe(true);
+    expect(item('no_contact_reviewed', ctxOf(step(1, 1, { search: { type: 'Patient', whole: true }, exposed_ids: [pt!] })), 'pt-0034').met).toBe(true);
+    // His age only, from a row: no residence record.
+    expect(item('no_contact_reviewed', ctxOf(row), 'pt-0034')).toMatchObject({ met: false, why: expect.stringContaining("Patient/pt-0034's address (a read)") });
+    // A residence record without his age: retrieval (R33).
+    expect(item('no_contact_reviewed', ctxOf(step(1, 1, { exposed_ids: [obs!] })), 'pt-0034').met).toBe(false);
+    // Another patient's read is not his.
+    expect(item('no_contact_reviewed', ctxOf(step(1, 1, { tool: 'fhir_read', exposed_ids: ['Patient/pt-0035'] }), row), 'pt-0034').met).toBe(false);
   });
   // R31: attribution counts a gap's decisive id as seen only by the gate's rule, not by exposure, so
   // a gap whose trap record was exposed and whose absences never shown is labelled retrieval.

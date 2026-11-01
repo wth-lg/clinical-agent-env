@@ -38,8 +38,8 @@ const ctxOf = (steps: Step[]): GateCtx => {
 };
 
 describe('GRADER_VERSION', () => {
-  it('is 15: gates record item-level results, and the trial label reads the failed items\' decisive ids', () => {
-    expect(GRADER_VERSION).toBe('15');
+  it('is 16: gates record item-level results (15), and the judge allowance counts the questions items declare (16)', () => {
+    expect(GRADER_VERSION).toBe('16');
   });
 });
 

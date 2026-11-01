@@ -1,3 +1,4 @@
+import { syntheaRef } from '../../packages/env/synthea-ids.ts';
 import { ref } from './ids.ts';
 // T3's expected end state as a W1 worklist probe (plan-amendment-worklist.md W1, T3 'Kept classes'):
 // 13 members of the panel group, two instances of each of the six kept item classes and one filler,
@@ -34,13 +35,15 @@ import { ref } from './ids.ts';
 // its class turns on), so it is reviewed by complete searches covering each window, with no filter
 // that could hide a qualifying record (R27), and not by its trap record alone (absences); H2's
 // residence may be read from any one of his housing status, discharge summary or rehab encounter
-// (evidence 'any'). A member who needs no contact is reviewed by seeing their decisive records
-// (R32). Ruling R33: G1's and H1's exclusions hold only at 66 or older (§4), so the Patient, which
+// (evidence 'any'), and H1's from any one of his housing status, his nursing facility visits or
+// his Patient's address at the facility (evidence 'any', address; R21, R16, builder-265 audit of
+// probe-1). A member who needs no contact is reviewed by seeing their decisive records (R32). Ruling R33: G1's and H1's exclusions hold only at 66 or older (§4), so the Patient, which
 // holds the birth date, decides them with their records; the filler's Patient decides her age. A
 // gap's age places it in the population (46 to 75, §2), and at 45 or 76 its action would be no order
 // and no contact, so every gap's Patient decides its order too (R33, verifier-W1T-190-r2-falsepass
 // N2): a fhir_read or a search_patients row, either of which shows the birth date. It is all-of,
-// beside the absences; H2's any-of is among his residence records only.
+// beside the absences; H2's any-of is among his residence records only, and H1's Patient is
+// all-of for his age and, by a read that shows his address, one of his residence records.
 //
 // Ruling R34 sets what a gap's review does not cover: the §4 exclusions its class does not turn on
 // (cancer, hospice outside C1, a total colectomy outside B2, the nursing home and frailty clauses
@@ -74,6 +77,10 @@ export interface Member {
   // from any one of them (ruling R21: housing from a status Observation, a discharge summary or
   // the stay's encounter), so seeing one is enough.
   evidence: 'all' | 'any';
+  // Whether the Patient's home address names the care facility the member lives in (H1's room at
+  // Maple Grove Care Center): a read that shows the address counts among the any-of records
+  // (R21, builder-265 audit). A search_patients row shows no address (R22), so it does not.
+  address: boolean;
   // For an open gap, what shows that nothing closes it (rulings R20, R27, R31): one entry per
   // record kind the policy counts against the gap, each to be shown absent by a complete search.
   // Every gap lists the screening kinds §3 counts (a colonoscopy; a flexible sigmoidoscopy or CT
@@ -111,9 +118,9 @@ export interface Absence {
   words?: string[];
 }
 
-const m = (patient: string, name: string, family: string, age: number, status: Status, reason: string, decisive: string[], more: { evidence?: 'any'; absences?: Absence[]; atoms?: Record<string, string[]> } = {}): Member => {
+const m = (patient: string, name: string, family: string, age: number, status: Status, reason: string, decisive: string[], more: { evidence?: 'any'; address?: true; absences?: Absence[]; atoms?: Record<string, string[]> } = {}): Member => {
   const order = status === 'gap';
-  return { patient: `Patient/${patient}`, name, family, age, status, reason, order, message: order, decisive, atoms: more.atoms ?? {}, evidence: more.evidence ?? 'all', absences: more.absences ?? [] };
+  return { patient: `Patient/${patient}`, name, family, age, status, reason, order, message: order, decisive, atoms: more.atoms ?? {}, evidence: more.evidence ?? 'all', address: more.address ?? false, absences: more.absences ?? [] };
 };
 
 // What each open gap rests on being absent (RBC-QM-02 §3, §4; rulings R27, R31). Every gap: no
@@ -158,7 +165,10 @@ export const expected = {
     m('pt-0021', 'Ángela Andrea Vigil', 'Vigil', 52, 'excluded', 'total_colectomy', [ref('DocumentReference/doc-t3-1856')], { atoms: { [ref('DocumentReference/doc-t3-1856')]: ['total proctocolectomy'] } }),
     m('pt-0022', 'Tiny Darline Koss', 'Koss', 52, 'gap', 'fobt_expired', [ref('Observation/obs-t3-3906'), 'Patient/pt-0022'], { absences: SCREENING }),
     m('pt-0024', 'Delaine Evelyn MacGyver', 'MacGyver', 51, 'gap', 'colonoscopy_not_done', [ref('ServiceRequest/sr-t3-4417'), 'Patient/pt-0024'], { absences: SCREENING }),
-    m('pt-0034', 'Rickey Morgan Sipes', 'Sipes', 72, 'excluded', 'nursing_home', [ref('Observation/obs-t3-2465'), 'Patient/pt-0034']),
+    // H1's residence (R21, R16; builder-265 audit): any one of his housing status, his two nursing
+    // facility visits at Maple Grove (February, the base visit overlay.ts moves there, and July) or
+    // his Patient's address there. His Patient also holds his age, which stays all-of (R33).
+    m('pt-0034', 'Rickey Morgan Sipes', 'Sipes', 72, 'excluded', 'nursing_home', [ref('Observation/obs-t3-2465'), syntheaRef('Encounter/enc-00204'), ref('Encounter/enc-t3-7781'), 'Patient/pt-0034'], { evidence: 'any', address: true }),
     m('pt-0035', 'Elvin Laverne Wolff', 'Wolff', 68, 'gap', 'not_nursing_home', [ref('Observation/obs-t3-8852'), ref('DocumentReference/doc-t3-6193'), ref('Encounter/enc-t3-4609'), 'Patient/pt-0035'], { evidence: 'any', absences: SCREENING, atoms: { [ref('DocumentReference/doc-t3-6193')]: ['discharged home'] } }),
     m('pt-0036', 'Nick Jed Bartoletti', 'Bartoletti', 53, 'gap', 'partial_colectomy', [ref('Procedure/proc-t3-6271'), 'Patient/pt-0036'], { absences: [...SCREENING, TOTAL_COLECTOMY_CODED, TOTAL_COLECTOMY_NOTE] }),
     m('pt-0037', 'Fumiko Kati Pouros', 'Pouros', 35, 'not_in_population', 'age_under_46', ['Patient/pt-0037']),

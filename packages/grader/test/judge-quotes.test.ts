@@ -20,7 +20,8 @@ const CHECKS: Check[] = [
 
 const final: Resource[] = [...INITIAL, note('doc-1', TEXT)];
 const events = trajectory([{ name: 'write_note', written: ['DocumentReference/doc-1'] }, { name: 'finish' }]);
-const gradeWith = (answers: string[]) => grade({ checks: CHECKS, initial: INITIAL, final, events, trial: facts() }, { judge: scriptedJudge(answers).client });
+// R1's answer, then R2's. The judge is asked in grading order, the penalty R2 first (grade.ts).
+const gradeWith = ([r1, r2]: [string, string]) => grade({ checks: CHECKS, initial: INITIAL, final, events, trial: facts() }, { judge: scriptedJudge([r2, r1]).client });
 
 const met = (quote: string) => JSON.stringify({ verdict: 'met', quote });
 // A credit item's question, or with `penalty` a penalty item's, the only kind a gapped quote can meet.
@@ -267,7 +268,7 @@ describe('the grader, not the caller, says what a penalty is (verifier B1-4 F1)'
     rubric({ id, points, method: 'judge', category: 'documentation', traces_to: 't', decisive_ids: [], fn: (ctx: RubricCtx) => ctx.judge({ criterion: `criterion ${id}`, text: notesText(ctx), ...extra } as Parameters<RubricCtx['judge']>[0]) });
 
   it('a -5 code item that calls ctx.judge directly reads a true gapped quote', async () => {
-    const g = await gradeText(`x. ${TRUE_TEXT}`, [judged({ id: 'R1', points: 10, category: 'documentation', traces_to: 't', decisive_ids: [], criterion: 'criterion R1', text: notesText }), direct('P1', -5)], [met('x'), met('warfarin was held ... continued at 5 mg daily')]);
+    const g = await gradeText(`x. ${TRUE_TEXT}`, [judged({ id: 'R1', points: 10, category: 'documentation', traces_to: 't', decisive_ids: [], criterion: 'criterion R1', text: notesText }), direct('P1', -5)], [met('warfarin was held ... continued at 5 mg daily'), met('x')]);
     expect(g.checks.find((c) => c.id === 'P1')).toMatchObject({ met: true });
     expect(g.score).toBe(0.5);
   });
