@@ -9,8 +9,8 @@ import { BMP_CODES } from '../expected.ts';
 import { ref } from '../ids.ts';
 import { oracle } from '../solution/solve.ts';
 import {
-  bmpOrder, brooksA1c, brooksBridge, brooksHold, call, cancel, hayesClose2, priceClose11, hayesBmp, hayesRenew, lab, ODUM_LOOK, odumAmlodipine, odumRenew, order, PARK_LOOK, parkBmp, parkHold, PRICE_REPORT, priceLisinopril, priceMetformin, PT, read,
-  readDoc, RX, search, swap, WEBB_READS, webbBmp, webbMetformin,
+  bmpOrder, BROOKS_REPORT, brooksA1c, brooksBridge, brooksHold, call, cancel, hayesClose2, priceClose11, hayesBmp, hayesRenew, lab, ODUM_LOOK, ODUM_REPORT, odumAmlodipine, odumRenew, order, PARK_LOOK, PARK_REPORT, parkBmp, parkHold, PRICE_REPORT, priceLisinopril,
+  priceMetformin, PT, read, readDoc, RX, search, swap, WEBB_READS, webbBmp, webbMetformin,
 } from '../solution/steps.ts';
 
 const tablets = (patient: string, rxnorm_code: string, n: number, frequency: string, supply_days: number, refills: number, reason: string) =>
@@ -26,6 +26,10 @@ const stop = (request: string, reason: string) => call('change_medication', { me
 // A write the tools reject: the dose matches no whole or half tablet of the product.
 const rejected = (patient: string, rxnorm_code: string, frequency: string) => order(patient, rxnorm_code, 3, frequency, 90, 1, 'refill');
 
+// R29 (builder-254 sweep): the oracle's read of an outside report replaced by a note search whose
+// snippet shows one of its atom sets (expected.ts Item.atoms) and no other line of it.
+const bySnippet = (turn: typeof ODUM_REPORT, patient: string, query: string) => swap(oracle, ...turn.calls.map((c) => [c, [call('search_notes', { query, patient })]] as [typeof c, typeof c[]]));
+
 export const REJECTING = ['m2_rejected_second_order', 'm6_rejected_order_then_hold', 'm7_rejected_order_then_hold', 'm11_rejected_duplicate', 'scope_rejected'] as const;
 
 export const alternatives: Alternative[] = [
@@ -35,10 +39,15 @@ export const alternatives: Alternative[] = [
     why: "Starts a second lisinopril order for the follow-up message, which the tools reject, then cancels that message as a repeat of the first.",
     script: swap(oracle, [hayesClose2, [rejected(PT.hayes, RX.lis20, 'QD'), cancel(2, 'Repeat of her 10/19 request, answered there')]]),
   },
+  // R29: the report's comment says the potassium may be falsely elevated by hemolysis; the snippet
+  // misses the condition line's 'hemolyzed' but shows the fact.
+  { id: 'm3_hemolysis_comment', why: "Finds Frank Odum's outside report with a note search for 'recollection', whose snippet shows the comment that the potassium may be falsely elevated by hemolysis.", script: bySnippet(ODUM_REPORT, PT.odum, 'recollection') },
   { id: 'm3_tablet_dose', why: 'Writes the lisinopril renewal as one 10 mg tablet a day.', script: swap(oracle, [odumRenew, [tablets(PT.odum, RX.lis10, 1, 'QD', 90, 1, 'RBC-RX-05 §2')]]) },
   // R21: a visit seen only through its progress note (context.encounter names the visit).
   { id: 'm4_visit_by_note', why: "Establishes Frank Odum's 01/20/2026 visit from its progress note instead of an Encounter search.", script: swap(oracle, [ODUM_VISITS, [readDoc('doc-t6-odum-0120')]]) },
   { id: 'm4_tablet_dose', why: 'Writes the amlodipine renewal as one 5 mg tablet a day.', script: swap(oracle, [odumAmlodipine, [tablets(PT.odum, RX.aml5, 1, 'QD', 90, 1, 'RBC-RX-05 §4')]]) },
+  // R29: a received and reported date before the 12-month window place the collection before it too.
+  { id: 'm5_reported_date', why: "Finds Lena Park's outside BMP with a note search whose snippet is cut after 'Collected' and shows it received and reported on 10/02/2025.", script: bySnippet(PARK_REPORT, PT.park, 'acceptable') },
   { id: 'm5_visit_by_note', why: "Establishes Lena Park's 07/20/2026 visit from its progress note instead of an Encounter search.", script: swap(oracle, [PARK_VISITS, [readDoc('doc-t6-park-0720')]]) },
   { id: 'm5_cmp', why: 'Orders a comprehensive panel instead of a BMP with the 30-day lisinopril supply.', script: swap(oracle, [parkBmp, [lab(PT.park, '24323-8', 'Panel for lisinopril, none in 12 months')]]) },
   {
@@ -51,6 +60,8 @@ export const alternatives: Alternative[] = [
     why: 'Starts a lisinopril order the tools reject, then holds the current order and sends the task to the PCP.',
     script: swap(oracle, [brooksHold, [rejected(PT.brooks, RX.lis20, 'QD'), stop(ref('MedicationRequest/mr-t6-brooks-lisinopril'), 'Creatinine rise after the dose increase, pending prescriber review'), brooksHold]]),
   },
+  // R29: a reported date before the 6-month window places the collection before it too.
+  { id: 'm8_reported_date', why: "Finds Evelyn Brooks's outside HbA1c with a note search whose snippet shows only that it was reported on 04/16/2026.", script: bySnippet(BROOKS_REPORT, PT.brooks, 'EDTA') },
   { id: 'm8_tablet_dose', why: 'Writes the 30-day metformin supply as one 1000 mg tablet twice a day, and orders the HbA1c first.', script: swap(oracle, [brooksBridge, [brooksA1c, tablets(PT.brooks, RX.met1000, 1, 'BID', 30, 0, 'RBC-RX-05 §3')]], [brooksA1c, []]) },
   // R16: a defensible extra the policy does not forbid passes.
   { id: 'm9_extra_bmp', why: "Renews Samuel Price's lisinopril for 90 days and also orders a BMP to recheck the high-flagged potassium.", script: swap(oracle, [priceLisinopril, [priceLisinopril, bmpOrder(PT.price, 'Recheck potassium 5.2 after the dose increase')]]) },

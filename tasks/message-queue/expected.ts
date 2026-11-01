@@ -47,10 +47,19 @@ export interface Item extends Answer {
   // change the action is not one): each trap record, and each plain input a rule of the decision
   // reads (the valid result, the visit, the other series). refill_decision requires each seen in a
   // turn before the item's decision is written (R14), and attribution reads their exposure
-  // (retrieval when one was never seen). A note's decisive fact is the phrase it must show
-  // (exposure.ts shows). No record decides two items (R15).
+  // (retrieval when one was never seen). No record decides two items (R15).
   decisive: string[];
-  phrases: Record<string, string>;
+  // A scanned report's deciding fact, as atoms (rulings R26, R29): the minimal facts of a line that
+  // decide the item, without the drug's name, which the patient and the report already fix. Each
+  // entry is a list of any-of atom sets: the report counts as seen at a step one of whose shown
+  // texts of it (a whole read, or one search snippet) holds every atom of one set, in order, as whole
+  // words (tests/grader.ts firstSeenBy). A hemolyzed specimen is shown by the condition line's
+  // 'hemolyzed' or by 'hemolysis' (the same line's index, or the comment that the potassium may be
+  // falsely elevated by it). A collection date outside a window is shown by the collected date or by
+  // a received or reported date that is itself outside it (a specimen is received and reported on
+  // or after it is collected); a collection date inside a window is shown by the collected date
+  // alone. tests/phrases.test.ts sweeps every snippet of each report against these sets.
+  atoms: Record<string, ReadonlyArray<readonly string[]>>;
   // Any-of evidence (rulings R2, R21): for a decisive id, the other records that show the same fact.
   // Seeing any one of them counts as seeing the id, for the gates, attribution (seen_at) and the
   // discoverability test alike (tests/grader.ts seenStep). A visit is any completed visit of the
@@ -87,51 +96,51 @@ const duplicate = (of: number) => ({ action: 'duplicate' as const, daily_mg: nul
 export const ITEMS: Item[] = [
   {
     name: 'm1', klass: 'hemolyzed_potassium', item: T(1), patient: P.hayes, drug: 'lisinopril', request: ref('MedicationRequest/mr-t6-hayes-lisinopril'), ...renew(20, 'bmp'),
-    decisive: [ref('Observation/obs-t6-hayes-1005-k'), ref('Observation/obs-t6-hayes-0414-k')], phrases: {}, also: {},
+    decisive: [ref('Observation/obs-t6-hayes-1005-k'), ref('Observation/obs-t6-hayes-0414-k')], atoms: {}, also: {},
   },
   {
     name: 'm2', klass: 'same_patient', item: T(2), patient: P.hayes, drug: 'lisinopril', request: ref('MedicationRequest/mr-t6-hayes-lisinopril'), ...duplicate(1),
-    decisive: [MSG(1)], phrases: {}, also: {},
+    decisive: [MSG(1)], atoms: {}, also: {},
   },
   {
     name: 'm3', klass: 'hemolyzed_potassium', item: T(3), patient: P.odum, drug: 'lisinopril', request: ref('MedicationRequest/mr-t6-odum-lisinopril'), ...renew(10, 'bmp'),
-    decisive: [ref('DocumentReference/doc-t6-odum-0827'), ref('Observation/obs-t6-odum-0120-k')], phrases: { [ref('DocumentReference/doc-t6-odum-0827')]: 'hemolyzed' }, also: {},
+    decisive: [ref('DocumentReference/doc-t6-odum-0827'), ref('Observation/obs-t6-odum-0120-k')], atoms: { [ref('DocumentReference/doc-t6-odum-0827')]: [['hemolyzed'], ['hemolysis']] }, also: {},
   },
   {
     name: 'm4', klass: 'filler', item: T(4), patient: P.odum, drug: 'amlodipine', request: ref('MedicationRequest/mr-t6-odum-amlodipine'), ...renew(5),
-    decisive: [ref('Encounter/enc-t6-odum-0120')], phrases: {}, also: { [ref('Encounter/enc-t6-odum-0120')]: [ref('DocumentReference/doc-t6-odum-0120')] },
+    decisive: [ref('Encounter/enc-t6-odum-0120')], atoms: {}, also: { [ref('Encounter/enc-t6-odum-0120')]: [ref('DocumentReference/doc-t6-odum-0120')] },
   },
   {
     name: 'm5', klass: 'collection_date', item: T(5), patient: P.park, drug: 'lisinopril', request: ref('MedicationRequest/mr-t6-park-lisinopril'), ...bridge(10, 'bmp'),
-    decisive: [ref('DocumentReference/doc-t6-park-1002'), ref('Encounter/enc-t6-park-0720')], phrases: { [ref('DocumentReference/doc-t6-park-1002')]: 'Collected: 10/02/2025' }, also: { [ref('Encounter/enc-t6-park-0720')]: [ref('DocumentReference/doc-t6-park-0720')] },
+    decisive: [ref('DocumentReference/doc-t6-park-1002'), ref('Encounter/enc-t6-park-0720')], atoms: { [ref('DocumentReference/doc-t6-park-1002')]: [['Collected', '10/02/2025'], ['Received', '10/02/2025'], ['Reported', '10/02/2025']] }, also: { [ref('Encounter/enc-t6-park-0720')]: [ref('DocumentReference/doc-t6-park-0720')] },
   },
   {
     name: 'm6', klass: 'amended_or_error', item: T(6), patient: P.park, drug: 'metformin', request: ref('MedicationRequest/mr-t6-park-metformin'), ...hold,
-    decisive: [ref('Observation/obs-t6-park-egfr-0720')], phrases: {}, also: {},
+    decisive: [ref('Observation/obs-t6-park-egfr-0720')], atoms: {}, also: {},
   },
   {
     name: 'm7', klass: 'creatinine_rise', item: T(7), patient: P.brooks, drug: 'lisinopril', request: ref('MedicationRequest/mr-t6-brooks-lisinopril'), ...hold,
-    decisive: [ref('Observation/obs-t6-brooks-1008-cr'), ref('Observation/obs-t6-brooks-0921-cr')], phrases: {}, also: {},
+    decisive: [ref('Observation/obs-t6-brooks-1008-cr'), ref('Observation/obs-t6-brooks-0921-cr')], atoms: {}, also: {},
   },
   {
     name: 'm8', klass: 'metformin_two_series', item: T(8), patient: P.brooks, drug: 'metformin', request: ref('MedicationRequest/mr-t6-brooks-metformin'), ...bridge(2000, 'hba1c'),
-    decisive: [ref('DocumentReference/doc-t6-brooks-0412'), ref('Observation/obs-t6-brooks-1008-egfr')], phrases: { [ref('DocumentReference/doc-t6-brooks-0412')]: 'Collected: 04/14/2026' }, also: {},
+    decisive: [ref('DocumentReference/doc-t6-brooks-0412'), ref('Observation/obs-t6-brooks-1008-egfr')], atoms: { [ref('DocumentReference/doc-t6-brooks-0412')]: [['Collected', '04/14/2026'], ['Received', '04/14/2026'], ['Reported', '04/16/2026']] }, also: {},
   },
   {
     name: 'm9', klass: 'creatinine_rise', item: T(9), patient: P.price, drug: 'lisinopril', request: ref('MedicationRequest/mr-t6-price-lisinopril'), ...renew(20),
-    decisive: [ref('Observation/obs-t6-price-1006-cr'), ref('Observation/obs-t6-price-0918-cr'), ref('Observation/obs-t6-price-1006-k')], phrases: {}, also: {},
+    decisive: [ref('Observation/obs-t6-price-1006-cr'), ref('Observation/obs-t6-price-0918-cr'), ref('Observation/obs-t6-price-1006-k')], atoms: {}, also: {},
   },
   {
     name: 'm10', klass: 'metformin_two_series', item: T(10), patient: P.price, drug: 'metformin', request: ref('MedicationRequest/mr-t6-price-metformin'), ...renew(2000),
-    decisive: [ref('DocumentReference/doc-t6-price-0819'), ref('Observation/obs-t6-price-1006-egfr')], phrases: { [ref('DocumentReference/doc-t6-price-0819')]: 'Collected: 08/19/2026' }, also: {},
+    decisive: [ref('DocumentReference/doc-t6-price-0819'), ref('Observation/obs-t6-price-1006-egfr')], atoms: { [ref('DocumentReference/doc-t6-price-0819')]: [['Collected', '08/19/2026']] }, also: {},
   },
   {
     name: 'm11', klass: 'same_patient', item: T(11), patient: P.price, drug: 'metformin', request: ref('MedicationRequest/mr-t6-price-metformin'), ...duplicate(10),
-    decisive: [MSG(10)], phrases: {}, also: {},
+    decisive: [MSG(10)], atoms: {}, also: {},
   },
   {
     name: 'm12', klass: 'collection_date', item: T(12), patient: P.webb, drug: 'lisinopril', request: ref('MedicationRequest/mr-t6-webb-lisinopril'), ...bridge(10, 'bmp'),
-    decisive: [WEBB_BMP, ref('Encounter/enc-t6-webb-0928')], phrases: {},
+    decisive: [WEBB_BMP, ref('Encounter/enc-t6-webb-0928')], atoms: {},
     also: {
       // The panel's 8 results (R14, ruling 2). Not the eGFR drawn with it: that is its own Observation,
       // read for m13, and does not show whether a potassium was drawn since (clinical-3 F1).
@@ -143,7 +152,7 @@ export const ITEMS: Item[] = [
   },
   {
     name: 'm13', klass: 'amended_or_error', item: T(13), patient: P.webb, drug: 'metformin', request: ref('MedicationRequest/mr-t6-webb-metformin'), ...renew(1000),
-    decisive: [ref('Observation/obs-t6-webb-egfr-0928'), ref('Observation/obs-t6-webb-a1c-0928')], phrases: {}, also: {},
+    decisive: [ref('Observation/obs-t6-webb-egfr-0928'), ref('Observation/obs-t6-webb-a1c-0928')], atoms: {}, also: {},
   },
 ];
 

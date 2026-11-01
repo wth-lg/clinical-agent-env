@@ -164,6 +164,11 @@ export const mutants: Mutant[] = [
   ...skipped('m7_hold_on_potassium', 'creatinine_rise', 'm7', "Holds Evelyn Brooks's lisinopril on her high-flagged potassium of 5.2 without having read her creatinine results.", swap(oracle, [BROOKS_LOOK.calls[0]!, []])),
   ...skipped('m8_report_unread', 'metformin_two_series', 'm8', "Gives Evelyn Brooks's metformin 30 days and an HbA1c without opening the outside HbA1c filed in her chart.", without(oracle, BROOKS_REPORT)),
   ...skipped('m9_creatinine_unread', 'creatinine_rise', 'm9', "Renews Samuel Price's raised lisinopril dose on his potassium without having read his creatinine results.", swap(oracle, [PRICE_LOOK.calls[0]!, []])),
+  // R29 (builder-254 sweep): the report seen only through a snippet that holds none of its atom sets
+  // (expected.ts Item.atoms) is never seen: the high potassium without the specimen's condition, or the
+  // received and reported dates without the collected date, which alone places the HbA1c inside the window.
+  ...skipped('m3_potassium_snippet', 'hemolyzed_potassium', 'm3', "Searches Frank Odum's notes for 'potassium', sees only 'Potassium 5.9 H' of the outside report, and renews with a BMP without seeing that the specimen was hemolyzed.", swap(oracle, ...ODUM_REPORT.calls.map((c) => [c, [call('search_notes', { query: 'potassium', patient: PT.odum })]] as [typeof c, typeof c[]]))),
+  ...skipped('m10_collected_cut', 'metformin_two_series', 'm10', "Searches Samuel Price's notes for 'condition', whose snippet of the outside HbA1c is cut before its collected date, and renews the metformin for 90 days.", swap(oracle, ...PRICE_REPORT.calls.map((c) => [c, [call('search_notes', { query: 'condition', patient: PT.price })]] as [typeof c, typeof c[]]))),
   ...skipped('m10_renewed_unread', 'metformin_two_series', 'm10', "Renews Samuel Price's metformin for 90 days without opening the outside HbA1c report the renewal depends on.", without(oracle, PRICE_REPORT)),
   ...skipped('m11_own_message_unread', 'same_patient', 'm11', "Closes the pharmacy's metformin request for Samuel Price without having read his own message about it.", swap(oracle, [START[1]!.calls[9]!, []])),
   // The eGFR list is cut to this year, so no result of the 2025-10-20 panel is shown either (R20).

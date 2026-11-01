@@ -130,7 +130,9 @@ export function derive(world: WorldView): Json {
     const visitCurrent = (lastVisit(patient) ?? '') >= back(15);
 
     if (ACE_INHIBITORS.includes(drug)) {
-      // §2 on the valid BMPs of the last 12 months, by collection date.
+      // §2: the most recent valid potassium decides, from a BMP or measured on its own (a standalone
+      // Observation or a scanned report's row); renewing also needs a valid BMP of the last 12 months,
+      // by collection date, which a potassium on its own is not.
       const k = potassium(patient);
       const validK = k.find((r) => !r.hemolyzed);
       const current = bmps(patient).some((b) => !b.hemolyzed && b.day >= back(12));
@@ -141,7 +143,7 @@ export function derive(world: WorldView): Json {
       const before = cr.find((r) => r.at <= authored);
       const after = cr.filter((r) => r.at > authored && r.at - authored <= 28 * 86_400_000)[0];
       const rise = raised && before !== undefined && after !== undefined && after.value > before.value * 1.3;
-      if (rise || (current && validK !== undefined && validK.value >= 5.5)) return hold;
+      if (rise || (validK !== undefined && validK.value >= 5.5)) return hold;
       if (current) return renew(k[0]?.hemolyzed ? 'bmp' : null);
       if (visitCurrent) return bridge('bmp');
       throw new Error(`${key(t)}: no BMP in 12 months and no visit in 15`);

@@ -8,13 +8,15 @@
 //   R27       a complete run of pages counts, with one sort and the same filters
 //   R20, R27  covers: only a complete search over the 12-month window whose filters cannot hide a
 //             qualifying record counts for m12, the patient's own or clinic-wide
-//   R26       each decisive phrase ends at its deciding fact; the snippet route shows it
+//   R26, R29  each scanned report decides by atom sets that end at the deciding fact; the snippet
+//             route shows one (tests/phrases.test.ts sweeps every snippet)
 //   R27 (gate 3 F1, clinical-3 F2)  m12's report search lists every BMP code the grader counts
 //             (a CMP carries a potassium, so it counts), and the policy says a CMP counts and that a
 //             narrowed search hides what it leaves out
 //   R14 (clinical-3 F1)  m12's panel is seen through the panel or one of its 8 results, not the
 //             eGFR drawn beside it
 //   clinical-3 N2  Webb's chart keeps no Synthea antihypertensive order and one visit on 2026-09-28
+//   clinical-4 N5 (R7)  the Synthea panels the overlay keeps (its header now names them) decide no item
 //   gate 2 F5 the visit rule names Encounter status finished, the word a search filters on
 //   gate 2 F4 the scope gate covers orders, tasks and messages only (R23)
 //   R16       task.toml says the metformin hold at eGFR 30-44 is stricter than KDIGO 2022
@@ -34,10 +36,10 @@ import { trial } from '../../packages/grader/matrix/matrix.ts';
 import { ITEMS } from './expected.ts';
 import { id, ref } from './ids.ts';
 import overlay from './overlay.ts';
-import { firstShown, stepsOf } from '../../packages/grader/exposure.ts';
+import { stepsOf } from '../../packages/grader/exposure.ts';
 import { checkText } from '../message-queue.check-text.ts';
 import type { Step } from '../../packages/grader/check.ts';
-import { coveredAt, covers, LAB_CODES } from './tests/grader.ts';
+import { coveredAt, covers, LAB_CODES, seenStep } from './tests/grader.ts';
 import { mutants } from './tests/mutants.ts';
 
 const store = await loadStore(matrixEnv().world);
@@ -168,16 +170,33 @@ describe('T6 probe rulings', () => {
     expect(coveredAt(m12, [step(1, { ...q, whole: true })])).toBe(1);
   });
 
-  it('R26: each decisive phrase ends at its deciding fact, and a patient search_notes snippet for its rule word shows it', async () => {
+  it('R26, R29: each scanned report decides by atoms that end at the deciding fact, and a patient search_notes snippet for its rule word shows one set', async () => {
     const t = await loadMatrixTask('message-queue');
-    const phrased = ITEMS.flatMap((x) => Object.entries(x.phrases).map(([doc, phrase]) => ({ x, doc, phrase })));
-    expect(phrased.map((p) => p.phrase)).toEqual(['hemolyzed', 'Collected: 10/02/2025', 'Collected: 04/14/2026', 'Collected: 08/19/2026']);
-    for (const { x, doc, phrase } of phrased) {
-      expect(phrase, x.name).toMatch(/^(hemolyzed|Collected: \d{2}\/\d{2}\/\d{4})$/);
-      const query = phrase === 'hemolyzed' ? 'hemolyzed' : 'collected';
+    const reports = ITEMS.flatMap((x) => Object.entries(x.atoms).map(([doc, sets]) => ({ x, doc, sets })));
+    expect(reports.map((r) => `${r.x.name} ${r.sets.map((a) => a.join(' + ')).join(' | ')}`)).toEqual([
+      'm3 hemolyzed | hemolysis',
+      'm5 Collected + 10/02/2025 | Received + 10/02/2025 | Reported + 10/02/2025',
+      'm8 Collected + 04/14/2026 | Received + 04/14/2026 | Reported + 04/16/2026',
+      'm10 Collected + 08/19/2026',
+    ]);
+    for (const { x, doc, sets } of reports) {
+      // A date atom is a bare date, no time; a hemolysis atom is one word.
+      for (const a of sets) expect(a.join(' + '), x.name).toMatch(/^(hemoly[sz]ed|hemolysis|(Collected|Received|Reported) \+ \d{2}\/\d{2}\/\d{4})$/);
+      const query = x.name === 'm3' ? 'hemolyzed' : 'collected';
       const { events } = await trial(matrixEnv(), t, { kind: 'alternative', id: 'snippet', script: [{ calls: [{ name: 'search_notes', input: { query, patient: x.patient.split('/')[1]! } }] }, { calls: [{ name: 'finish', input: { summary: 'x' } }] }] });
-      expect(firstShown(stepsOf(events), doc, phrase), `${x.name} ${query}`).toBe(1);
+      expect(seenStep(x, doc)(stepsOf(events)), `${x.name} ${query}`).toBe(1);
     }
+  });
+
+  // The header's wording is a comment, which no task test can read (task code takes no file IO); this
+  // checks the claim it now makes: the kept panels are in the built world and decide no item.
+  it('clinical-4 N5 (R7): the Synthea panels the overlay keeps are in the world and change no item', async () => {
+    const decisive = new Set(ITEMS.flatMap((x) => [...x.decisive, ...Object.values(x.also).flat()]));
+    // KEEP_PANELS names Synthea source ids; the built world numbers them its own way.
+    const { syntheaRef } = await import('../../packages/env/synthea-ids.ts');
+    const kept = (['dr-00296', 'dr-00301'] as const).map((k) => syntheaRef(`DiagnosticReport/${k}` as Parameters<typeof syntheaRef>[0]));
+    expect(kept.every((k) => store.get('DiagnosticReport', k.split('/')[1]!) !== undefined)).toBe(true);
+    expect(kept.filter((k) => decisive.has(k))).toEqual([]);
   });
 
   it("clinical gate 2 F5: the policy and check-text name the visit's Encounter status, and that search finds each visit", async () => {

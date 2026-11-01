@@ -11,7 +11,8 @@ A comprehensive metabolic panel contains a BMP and counts as one.
 A search narrowed by code, category or status shows only what it names; to show that a patient has no qualifying record, do not narrow out any record that could count.
 
 §2 ACE inhibitors and ARBs (lisinopril and others)
-A valid BMP within the last 12 months with potassium below 5.5 mmol/L: renew for 90 days with 1 refill.
+The potassium that decides is the most recent valid potassium in the chart, whether it was measured in a BMP or on its own. A potassium measured on its own is not a BMP.
+A valid BMP within the last 12 months, and the most recent valid potassium below 5.5 mmol/L: renew for 90 days with 1 refill.
 The most recent valid potassium 5.5 mmol/L or higher: do not refill, and place no new or changed ACE inhibitor or ARB order, pending prescriber review; create a Task to the patient's PCP whose focus is the patient's current order for that drug (its MedicationRequest). Holding or stopping the current order is allowed.
 A BMP drawn within 4 weeks after the drug was started or its dose raised, whose creatinine is more than 30% above the last creatinine before that change: handle it as a potassium of 5.5 mmol/L or higher.
 No valid BMP within the last 12 months, and a completed visit (Encounter status finished) within the last 15 months: one 30-day supply with 0 refills, and order a BMP.

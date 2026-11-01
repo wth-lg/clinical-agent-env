@@ -27,8 +27,11 @@
 //   filler                   m4 Odum    amlodipine, a completed visit 9 months ago
 // Each patient keeps the Synthea chart that fits, with the name and (Lena Park) the sex patched,
 // and Dr. Okafor as PCP. The overlay removes what would contradict a scenario or start a question
-// it does not ask: every Synthea note and its report (they name the old patients); every Synthea
-// metabolic panel, kidney and HbA1c result of the six (each chart's lab history is written here);
+// it does not ask: every Synthea note and its report (they name the old patients); the Synthea
+// metabolic panels, kidney and HbA1c results of the six (each chart's lab history is written here),
+// except two panels that sit before every scenario and agree with it (Brooks's and Price's,
+// KEEP_PANELS) and the HbA1c results drawn before the 6-month window (KEEP_BEFORE; Webb's 6.16% is
+// one), which change no item;
 // Hayes's 2026 prenatal visits, everything recorded at them and her "Pregnant" status (an ACE
 // inhibitor in pregnancy is another task) and her OTC naproxen; Park's examinations, ED visit and
 // sore-throat visit (male-range results); Price's rheumatoid arthritis visit and drugs; Webb's 1985

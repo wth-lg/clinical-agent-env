@@ -8,7 +8,9 @@
 //   - the charts' ages and dates fit (verifier-phase-P17i-W1-0-1 F7): no birth date is patched, and
 //     nothing planted predates its patient's birth;
 //   - the two dose increases fall inside the 4-week rule, the creatinine before each is drawn
-//     before the new order, and the queue holds exactly the 13 items.
+//     before the new order, and the queue holds exactly the 13 items;
+//   - §2's potassium (verifier-W1-probe-T6-clinical-4 N4): the most recent valid potassium decides,
+//     measured in a BMP or on its own, and a potassium on its own is not a BMP.
 import { describe, expect, it } from 'vitest';
 import { nodeTaskSource } from '../../cli/adapters/tasks-node.ts';
 import { loadMatrixTask, matrixEnv } from '../../cli/matrix.ts';
@@ -99,6 +101,35 @@ describe('message-queue', () => {
       return p && born.has(p) && when && when.slice(0, 10) < born.get(p)! ? [`${r.resourceType}/${r.id}`] : [];
     });
     expect(early).toEqual([]);
+  });
+
+  // N4: a standalone potassium (no panel) added to one patient's chart, on a copy of the world. No T6
+  // patient has one, so each case moves exactly one item, and only as §2 says.
+  it('§2: the most recent valid potassium decides, in a BMP or on its own; a potassium on its own is not a BMP (clinical-4 N4)', () => {
+    const potassium = (rid: string, patient: string, value: number, at: string, note?: string) => ({
+      resourceType: 'Observation', id: rid, status: 'final', subject: { reference: `Patient/${patient}` },
+      category: [{ coding: [{ system: 'http://terminology.hl7.org/CodeSystem/observation-category', code: 'laboratory' }] }],
+      code: { coding: [{ system: 'http://loinc.org', code: '2823-3', display: 'Potassium [Moles/volume] in Serum or Plasma' }] },
+      effectiveDateTime: at, issued: at, valueQuantity: { value, unit: 'mmol/L' }, ...(note ? { note: [{ text: note }] } : {}),
+    });
+    const withOne = (added: ReturnType<typeof potassium>) => {
+      const r = added as unknown as (typeof all)[number];
+      const more = [...all, r];
+      const view: WorldView = { get: (type, rid) => (type === r.resourceType && rid === r.id ? r : store.get(type, rid)), all: (type) => (type === undefined ? more : more.filter((x) => x.resourceType === type)) };
+      return (derive(view) as unknown as typeof expected).items;
+    };
+    const moved = (items: typeof expected.items) => items.flatMap((x, i) => (JSON.stringify(x) === JSON.stringify(expected.items[i]) ? [] : [`${ITEMS.find((y) => y.item === x.item)!.name} ${x.action}${x.lab ? ` + ${x.lab}` : ''}`]));
+    // Odum has a valid in-house BMP inside 12 months (K 4.5); a newer standalone 5.8 decides: hold.
+    expect(moved(withOne(potassium('obs-n4-odum', 'pt-0027', 5.8, '2026-10-12T09:00:00-04:00')))).toEqual(['m3 hold']);
+    // A newer standalone 4.2 is below the line: Odum's renewal stands, and no BMP goes with it, for
+    // the valid potassium drawn after the hemolyzed one already repeats it (§1).
+    expect(moved(withOne(potassium('obs-n4-odum-low', 'pt-0027', 4.2, '2026-10-12T09:00:00-04:00')))).toEqual(['m3 renew']);
+    // Webb has no BMP inside 12 months: a standalone 5.8 still decides (hold) ...
+    expect(moved(withOne(potassium('obs-n4-webb', 'pt-0031', 5.8, '2026-09-28T09:10:00-04:00')))).toEqual(['m12 hold']);
+    // ... and a standalone 4.2 is not a BMP, so the 30-day supply and its BMP stand.
+    expect(moved(withOne(potassium('obs-n4-webb-low', 'pt-0031', 4.2, '2026-09-28T09:10:00-04:00')))).toEqual([]);
+    // A hemolyzed standalone 5.8 is not a valid potassium: nothing moves.
+    expect(moved(withOne(potassium('obs-n4-webb-hem', 'pt-0031', 5.8, '2026-09-28T09:10:00-04:00', 'Specimen hemolyzed; may be falsely elevated.')))).toEqual([]);
   });
 
   it('places each dose increase inside the 4-week rule: the baseline creatinine before the new order, the next BMP within 28 days', () => {

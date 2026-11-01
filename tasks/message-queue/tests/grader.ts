@@ -12,8 +12,9 @@
 //   decisive_seen (action)      ruling R14/R18: once the trial wrote an item's decision (an order of
 //                               its drug or its lab, its hold Task, or for a repeated request its
 //                               message closed), every decisive id of the item (expected.ts) was
-//                               seen at some step: exposed, for a note its decisive phrase shown, or
-//                               any record of its any-of evidence exposed (R21; seenStep).
+//                               seen at some step: exposed, for a scanned report one of its atom
+//                               sets shown (R29), or any record of its any-of evidence exposed
+//                               (R21; seenStep).
 //                               A fallback or routine route that writes the right action without the
 //                               deciding record fails here, labelled retrieval.
 //   seen_before_change (process) ruling R18: each decisive id the trial saw was seen in a turn before
@@ -40,7 +41,8 @@ import { NOW_DATE } from '../../../packages/env/clock.ts';
 import type { Check, GateCtx, Step, StepSearch } from '../../../packages/grader/check.ts';
 import type { GateOf } from '../../../packages/grader/gate-view.ts';
 import { itemGate, type ItemResult, type ItemVerdict } from '../../../packages/grader/items.ts';
-import { firstExposed, firstShown, seenBefore } from '../../../packages/grader/exposure.ts';
+import { firstExposed, sameId, seenBefore } from '../../../packages/grader/exposure.ts';
+import { collapseWhitespace } from '../../../packages/env/tools/registry.ts';
 import { dailyDose, doseOf, dosesPerDay, drugOf, isActive, isDrug } from '../../../packages/grader/normalize.ts';
 import { BMP_CODES, ITEMS, PATIENTS, type Item } from '../expected.ts';
 import { rubric } from './rubric.ts';
@@ -109,7 +111,6 @@ const labOrders = (ctx: GateCtx, patient: string, lab: 'bmp' | 'hba1c') =>
 
 const ok: ItemVerdict = { met: true };
 const want = (x: Item) => `${x.drug} ${x.daily_mg} mg a day for ${x.supply_days} days with ${x.refills} ${x.refills === 1 ? 'refill' : 'refills'}`;
-// A note's decisive fact is seen only when a step showed its phrase (exposure.ts shows).
 // Each gate's evidence: the failed items and why each failed, in item order (check-text reads the first).
 const verdict = (_s: unknown, results: readonly ItemResult[]) => {
   const failed = results.filter((r) => !r.met);
@@ -153,22 +154,46 @@ export function coveredAt(x: Item, steps: readonly Step[]): number | null {
   }
   return null;
 }
-// When a step first saw decisive id `id` of item x (rulings R2, R21), one rule for both per-item
-// gates, attribution (seen_at) and the discoverability test: the id exposed (a fhir_read or a
-// fhir_search row), for a note its decisive phrase shown, or any record of x.also[id] exposed (the
-// visit's note or another completed visit in the window; another result of the same BMP draw).
-// For an absence item's decisive id (R20, R27), also the first complete search that covers its
-// window (coveredAt), even one whose page was empty.
+// R29: whether a shown text holds every atom, in order, each as whole words (so '10/02/2025' is not
+// read in '10/02/20251', nor 'hemolyzed' in 'nonhemolyzed'). Both sides are whitespace-collapsed and
+// compared ignoring case, as exposure.ts compares phrases.
+const comparable = (text: string) => collapseWhitespace(text).toLowerCase();
+const WORDCHAR = /[\p{L}\p{N}]/u;
+export function holdsAtoms(text: string, atoms: readonly string[]): boolean {
+  const t = comparable(text);
+  let from = 0;
+  for (const atom of atoms) {
+    const want = comparable(atom);
+    if (want === '') return false;
+    let at = t.indexOf(want, from);
+    while (at !== -1 && (WORDCHAR.test(t[at - 1] ?? '') || WORDCHAR.test(t[at + want.length] ?? ''))) at = t.indexOf(want, at + 1);
+    if (at === -1) return false;
+    from = at + want.length;
+  }
+  return atoms.length > 0;
+}
+// The first step that showed record `id` holding every atom of one of `sets`: one of its shown texts
+// of the record (a whole read, or one snippet; exposure.ts Step.shown keeps each apart, joined by a
+// newline) holds them. Null when no step did, or when there are no sets.
+export function firstSeenBy(steps: readonly Step[], id: string, sets: ReadonlyArray<readonly string[]>): number | null {
+  return steps.find((s) => Object.entries(s.shown).some(([k, t]) => sameId(k, id) && t.split('\n').some((part) => sets.some((atoms) => holdsAtoms(part, atoms)))))?.n ?? null;
+}
+// When a step first saw decisive id `id` of item x (rulings R2, R21, R29), one rule for both
+// per-item gates, attribution (seen_at) and the discoverability test: the id exposed (a fhir_read or
+// a fhir_search row), for a scanned report one of its atom sets shown (expected.ts Item.atoms), or
+// any record of x.also[id] exposed (the visit's note or another completed visit in the window;
+// another result of the same BMP draw). For an absence item's decisive id (R20, R27), also the
+// first complete search that covers its window (coveredAt), even one whose page was empty.
 export const seenStep = (x: Item, id: string) => (steps: readonly Step[]): number | null => {
-  const phrase = x.phrases[id];
+  const sets = x.atoms[id];
   const searched = x.absence?.id === id ? coveredAt(x, steps) : null;
-  const at = [firstExposed(steps, id), phrase === undefined ? null : firstShown(steps, id, phrase), ...(x.also[id] ?? []).map((a) => firstExposed(steps, a)), searched].filter((n): n is number => n !== null);
+  const at = [firstExposed(steps, id), sets === undefined ? null : firstSeenBy(steps, id, sets), ...(x.also[id] ?? []).map((a) => firstExposed(steps, a)), searched].filter((n): n is number => n !== null);
   return at.length === 0 ? null : Math.min(...at);
 };
-// Attribution counts a decisive id with any-of evidence as seen by the same rule, so a failed item's
-// label agrees with decisive_seen.
-const SEEN_AT = Object.fromEntries(ITEMS.flatMap((x) => x.decisive.filter((id) => (x.also[id] ?? []).length > 0 || x.absence?.id === id).map((id) => [id, seenStep(x, id)] as const)));
-const queue = { items: ITEMS, key: (x: Item) => x.item, decisive: (x: Item) => x.decisive, decisive_phrases: Object.assign({}, ...ITEMS.map((x) => x.phrases)) as Record<string, string>, seen_at: SEEN_AT, verdict };
+// Attribution counts a decisive id with atoms, any-of evidence or an absence search as seen by the
+// same rule, so a failed item's label agrees with decisive_seen.
+const SEEN_AT = Object.fromEntries(ITEMS.flatMap((x) => x.decisive.filter((id) => x.atoms[id] !== undefined || (x.also[id] ?? []).length > 0 || x.absence?.id === id).map((id) => [id, seenStep(x, id)] as const)));
+const queue = { items: ITEMS, key: (x: Item) => x.item, decisive: (x: Item) => x.decisive, seen_at: SEEN_AT, verdict };
 
 // The first step whose committed write touched any of `ids`, or null.
 const firstWrite = (ctx: GateCtx, ids: readonly string[]) => ctx.steps.find((s) => s.written_ids.some((k) => ids.includes(k)))?.n ?? null;
