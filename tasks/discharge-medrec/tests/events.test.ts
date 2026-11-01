@@ -41,7 +41,7 @@ const store = await loadStore(matrixEnv().world);
 const all = [...store.resources()];
 const view = (rs: readonly (typeof all)[number][]): WorldView => ({ get: (type, rid) => rs.find((r) => r.resourceType === type && r.id === rid), all: (type) => (type === undefined ? rs : rs.filter((r) => r.resourceType === type)) });
 const itemOf = (key: string) => expected.items.find((x) => x.key === key)!;
-const JUDGED = new Set(['flags_explained']);
+const JUDGED = new Set(['flag_outside_drug', 'flag_fill_gap']);
 
 describe('discharge-medrec events', () => {
   it('9 specs; ACTIVE is 3 amend events, one of class O, and 1 lure, one event per item; each trigger is a write on its patient', () => {
