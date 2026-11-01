@@ -2,21 +2,21 @@
   "now": "2026-10-23T08:00:00-04:00",
   "world": {
     "file": "fixtures/world.ndjson.gz",
-    "state_hash": "8c60d82800eeed033417c012b42c1cc46ddcd45d10094166e6b2d111a10b3796",
-    "ndjson_sha256": "42a075f21cfdbbf7150c86910ef5caec8417efa4dd9dab81f6375078296ebcee",
-    "resources": 7401,
+    "state_hash": "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968",
+    "ndjson_sha256": "a9cdfc606cb9803ff15113e6a36cc8b684fde2836cc340b15fe8f96aa3eb7529",
+    "resources": 7411,
     "by_type": {
       "AllergyIntolerance": 46,
       "Appointment": 8,
       "Communication": 13,
       "Condition": 889,
-      "DiagnosticReport": 482,
+      "DiagnosticReport": 483,
       "DocumentReference": 214,
       "Encounter": 407,
       "EpisodeOfCare": 2,
       "Group": 5,
       "MedicationRequest": 422,
-      "Observation": 3543,
+      "Observation": 3552,
       "Organization": 10,
       "Patient": 60,
       "Practitioner": 20,
@@ -82,7 +82,7 @@
     "tasks/contrast-ct-prep/overlay.ts": "08d7276de931853fe5d38530e6815ac22b0f7c8db2f118dfc6bef99fbce3cfbe",
     "tasks/crc-care-gap/overlay.ts": "de509a87d0ed883d72534c2195ebc3569aa66c7c6e7a502329d1b1d3d88fc1c5",
     "tasks/discharge-medrec/overlay.ts": "9a2f33bdfe706457aff5ff9e6c243fa579824588ba86fc2028d41afd908a73f5",
-    "tasks/message-queue/overlay.ts": "c1b5da01d5c080e8f50de2b0bba92ef5a28fd12626f076ff959af778348c3ae4",
+    "tasks/message-queue/overlay.ts": "33b332716dac0eaa8cdc05c25fc59bbe3740b6160e283a6b6cc8a98edead6623",
     "tasks/renal-dose-review/overlay.ts": "e5d51f3ab705068b2412edee71b574595bb149b104d0e41c92c094d1ab0c9f44",
     "tasks/results-inbox/overlay.ts": "414ec71422914e7b9daaa56ff98b04fc9e038a3770b0e71142c534be7b897516"
   },
@@ -113,8 +113,8 @@
   },
   "ids": {
     "file": "fixtures/ids.ts",
-    "sha256": "f70a6df94b16651725ec1fe0e5f622068fe74142cb632815b194de6c5f03fbe1",
+    "sha256": "8b00435b1f49261b6d265f7bb0183a0d485630b719025af2cc8b2775e60ceb39",
     "synthea_file": "fixtures/synthea-ids.ts",
-    "synthea_sha256": "deace941be18e3c81c2641affec3f457a8c90b969c46e179593ce3da09bbe645"
+    "synthea_sha256": "2fde908c72c0eea87cfcbd15ed7db091e49d7130689bb8d37ead5976467ee0bb"
   }
 }
