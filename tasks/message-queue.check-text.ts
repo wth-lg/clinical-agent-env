@@ -26,7 +26,7 @@ export const checkText: CheckText = {
     found: first,
   },
   decisive_seen: {
-    requires: 'every record that decides an item read before the end of the trial, once that item was decided: its results, outside reports and visit (Encounter status finished), and for a repeated request the first message',
+    requires: 'every record that decides an item read before the end of the trial, once that item was decided: its results, outside reports and visit (Encounter status finished), for a result the window must lack (no BMP in 12 months, no HbA1c in 6) a complete search of the window that could not hide one, and for a repeated request the first message',
     found: first,
   },
   seen_before_change: {

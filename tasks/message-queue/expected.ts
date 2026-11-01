@@ -9,10 +9,12 @@ import { ref } from './ids.ts';
 //   m2  Hayes   lisinopril 20  her second message for it (§5)                     no second order
 //   m3  Odum    lisinopril 10  outside K 5.9 hemolyzed; K 4.5 on 2026-01-20       renew 90/1 + BMP
 //   m4  Odum    amlodipine 5   visit 2026-01-20 (§4)                              renew 90/1
-//   m5  Park    lisinopril 10  outside BMP collected 2025-10-02, filed 11-03      30/0 + BMP
+//   m5  Park    lisinopril 10  outside BMP collected 2025-10-02, filed 11-03;     30/0 + BMP
+//                              in-house BMP 2025-04-21
 //   m6  Park    metformin 500  eGFR amended 51 -> 39 on 2026-07-24               hold, Task to PCP
 //   m7  Brooks  lisinopril 20  raised 09-21; creatinine 0.90 -> 1.24 (+38%)      hold, Task to PCP
-//   m8  Brooks  metformin 1000 outside HbA1c collected 2026-04-14, filed 05-04   30/0 + HbA1c
+//   m8  Brooks  metformin 1000 outside HbA1c collected 2026-04-14, filed 05-04;   30/0 + HbA1c
+//                              in-house HbA1c 2026-01-12
 //   m9  Price   lisinopril 20  raised 09-18; creatinine 1.10 -> 1.36 (+24%), K 5.2 renew 90/1
 //   m10 Price   metformin 1000 in-house HbA1c 2026-03-30; outside 2026-08-19     renew 90/1
 //   m11 Price   metformin 1000 the pharmacy's request for it (§5)                 no second order
@@ -63,18 +65,23 @@ export interface Item extends Answer {
   // Any-of evidence (rulings R2, R21): for a decisive id, the other records that show the same fact.
   // Seeing any one of them counts as seeing the id, for the gates, attribution (seen_at) and the
   // discoverability test alike (tests/grader.ts seenStep). A visit is any completed visit of the
-  // patient in §2/§4's 15-month window, or a note whose context.encounter names one; the newest BMP
-  // is its panel report or any result the panel lists (not the eGFR drawn beside it).
+  // patient in §2/§4's 15-month window, or a note whose context.encounter names one. An absence id
+  // has none: only its window search counts (absence, R31).
   also: Record<string, readonly string[]>;
-  // An absence item (R20, R27): its deciding fact is that no valid BMP falls in the 12-month window,
-  // so its decisive id also counts as seen at a successful, complete fhir_search, of the patient or
-  // clinic-wide, whose filters cannot hide a qualifying record and that covers the window: one of
-  // `searches` (its type; no code filter or one listing every one of its codes, the codes the policy
-  // counts; no category filter or one naming its category, the one its records carry), date_ge on or
-  // before `since` (12 months before today), no date_le before today, and no status filter or one
-  // listing every one of `statuses`. Complete is one whole page, or a run of pages with the same
-  // filters and sort from offset 0, each at the previous page's next_offset, the last with none
-  // (tests/grader.ts covers). The out-of-window result is a lure (R19).
+  // An absence item (R20, R27, R31): its deciding fact is that no valid result of a kind (a BMP in
+  // §2's 12 months, an HbA1c in §3's 6 months) falls in the window. Its decisive `id` is the clinic's
+  // newest result of that kind, collected before the window, and it counts as seen only at a
+  // successful, complete fhir_search, of the patient or clinic-wide, whose filters cannot hide a
+  // qualifying record and that covers the window (R31: exposing that result, or an outside report
+  // of the kind, alone is a lure, not a review). The search is one of `searches` (its type; no code
+  // filter or one listing every one of its codes, the codes the policy counts; no category filter or
+  // one naming its category, the one its records carry), date_ge on or before `since` (the window's
+  // first day), no date_le before today, and no status filter or one listing every one of
+  // `statuses`. Codes and categories carry their system, and a filter token matches them as
+  // fhir_search does (F2: 'system|code' only in that system). Complete is one whole page, or a run
+  // of pages with the same filters and sort from offset 0, each at the previous page's next_offset,
+  // the last with none (tests/grader.ts coveredAt). An outside report of the kind stays decisive on
+  // its own (R28), seen by its atoms.
   absence?: { id: string; since: string; statuses: string[]; searches: Array<{ type: string; codes: string[]; category: string }> };
 }
 
@@ -84,8 +91,21 @@ const MSG = (n: number) => ref(`Communication/comm-t6-m${n}` as `Communication/$
 // search alike: the BMP 51990-0, the clinic's other BMP code 24321-2, and the comprehensive panel
 // 24323-8, which carries a potassium (§1: a CMP contains a BMP and counts as one).
 export const BMP_CODES = ['24321-2', '51990-0', '24323-8'] as const;
-// Marcus Webb's newest BMP, the panel report of 2025-10-20 (m12).
+// Marcus Webb's newest BMP, the panel report of 2025-10-20 (m12), Lena Park's, the panel of
+// 2025-04-21 (m5), and Evelyn Brooks's newest in-house HbA1c, of 2026-01-12 (m8).
 const WEBB_BMP = ref('DiagnosticReport/dr-t6-webb-1020');
+const PARK_BMP = ref('DiagnosticReport/dr-t6-park-0421');
+const BROOKS_A1C = ref('Observation/obs-t6-brooks-a1c-0112');
+const LOINC = 'http://loinc.org';
+const LAB = { observation: 'http://terminology.hl7.org/CodeSystem/observation-category|laboratory', report: 'http://terminology.hl7.org/CodeSystem/v2-0074|LAB' } as const;
+// The statuses a valid result has (§1): an amended or corrected result replaces the one it corrects.
+const VALID = ['final', 'amended', 'corrected'];
+// §2's absence of a BMP: a potassium list (every BMP holds one; both potassium codes, as policy.ts
+// reads them) or the panel reports under every BMP code (BMP_CODES).
+const BMP_SEARCHES = [
+  { type: 'Observation', codes: ['2823-3', '6298-4'].map((c) => `${LOINC}|${c}`), category: LAB.observation },
+  { type: 'DiagnosticReport', codes: BMP_CODES.map((c) => `${LOINC}|${c}`), category: LAB.report },
+];
 const P = { hayes: 'Patient/pt-0026', odum: 'Patient/pt-0027', park: 'Patient/pt-0028', brooks: 'Patient/pt-0029', price: 'Patient/pt-0030', webb: 'Patient/pt-0031' } as const;
 
 const renew = (daily_mg: number, lab: Lab = null) => ({ action: 'renew' as const, daily_mg, supply_days: 90, refills: 1, lab, duplicate_of: null });
@@ -112,7 +132,8 @@ export const ITEMS: Item[] = [
   },
   {
     name: 'm5', klass: 'collection_date', item: T(5), patient: P.park, drug: 'lisinopril', request: ref('MedicationRequest/mr-t6-park-lisinopril'), ...bridge(10, 'bmp'),
-    decisive: [ref('DocumentReference/doc-t6-park-1002'), ref('Encounter/enc-t6-park-0720')], atoms: { [ref('DocumentReference/doc-t6-park-1002')]: [['Collected', '10/02/2025'], ['Received', '10/02/2025'], ['Reported', '10/02/2025']] }, also: { [ref('Encounter/enc-t6-park-0720')]: [ref('DocumentReference/doc-t6-park-0720')] },
+    decisive: [ref('DocumentReference/doc-t6-park-1002'), ref('Encounter/enc-t6-park-0720'), PARK_BMP], atoms: { [ref('DocumentReference/doc-t6-park-1002')]: [['Collected', '10/02/2025'], ['Received', '10/02/2025'], ['Reported', '10/02/2025']] }, also: { [ref('Encounter/enc-t6-park-0720')]: [ref('DocumentReference/doc-t6-park-0720')] },
+    absence: { id: PARK_BMP, since: '2025-10-23', statuses: VALID, searches: BMP_SEARCHES },
   },
   {
     name: 'm6', klass: 'amended_or_error', item: T(6), patient: P.park, drug: 'metformin', request: ref('MedicationRequest/mr-t6-park-metformin'), ...hold,
@@ -124,7 +145,8 @@ export const ITEMS: Item[] = [
   },
   {
     name: 'm8', klass: 'metformin_two_series', item: T(8), patient: P.brooks, drug: 'metformin', request: ref('MedicationRequest/mr-t6-brooks-metformin'), ...bridge(2000, 'hba1c'),
-    decisive: [ref('DocumentReference/doc-t6-brooks-0412'), ref('Observation/obs-t6-brooks-1008-egfr')], atoms: { [ref('DocumentReference/doc-t6-brooks-0412')]: [['Collected', '04/14/2026'], ['Received', '04/14/2026'], ['Reported', '04/16/2026']] }, also: {},
+    decisive: [ref('DocumentReference/doc-t6-brooks-0412'), ref('Observation/obs-t6-brooks-1008-egfr'), BROOKS_A1C], atoms: { [ref('DocumentReference/doc-t6-brooks-0412')]: [['Collected', '04/14/2026'], ['Received', '04/14/2026'], ['Reported', '04/16/2026']] }, also: {},
+    absence: { id: BROOKS_A1C, since: '2026-04-23', statuses: VALID, searches: [{ type: 'Observation', codes: [`${LOINC}|4548-4`], category: LAB.observation }] },
   },
   {
     name: 'm9', klass: 'creatinine_rise', item: T(9), patient: P.price, drug: 'lisinopril', request: ref('MedicationRequest/mr-t6-price-lisinopril'), ...renew(20),
@@ -142,13 +164,11 @@ export const ITEMS: Item[] = [
     name: 'm12', klass: 'collection_date', item: T(12), patient: P.webb, drug: 'lisinopril', request: ref('MedicationRequest/mr-t6-webb-lisinopril'), ...bridge(10, 'bmp'),
     decisive: [WEBB_BMP, ref('Encounter/enc-t6-webb-0928')], atoms: {},
     also: {
-      // The panel's 8 results (R14, ruling 2). Not the eGFR drawn with it: that is its own Observation,
-      // read for m13, and does not show whether a potassium was drawn since (clinical-3 F1).
-      [WEBB_BMP]: (['na', 'k', 'cl', 'co2', 'bun', 'cr', 'glu', 'ca'] as const).map((a) => ref(`Observation/obs-t6-webb-1020-${a}`)),
       // His progress note of 09-28, and his two other completed visits in the 15-month window (Synthea).
       [ref('Encounter/enc-t6-webb-0928')]: [ref('DocumentReference/doc-t6-webb-0928'), ...['enc-00184', 'enc-00185'].map((e) => syntheaRef(`Encounter/${e}`))],
     },
-    absence: { id: WEBB_BMP, since: '2025-10-23', statuses: ['final', 'amended', 'corrected'], searches: [{ type: 'Observation', codes: ['2823-3', '6298-4'], category: 'laboratory' }, { type: 'DiagnosticReport', codes: [...BMP_CODES], category: 'LAB' }] },
+    // R31: the panel and its 8 results are lures; only a complete window search reviews the absence.
+    absence: { id: WEBB_BMP, since: '2025-10-23', statuses: VALID, searches: BMP_SEARCHES },
   },
   {
     name: 'm13', klass: 'amended_or_error', item: T(13), patient: P.webb, drug: 'metformin', request: ref('MedicationRequest/mr-t6-webb-metformin'), ...renew(1000),

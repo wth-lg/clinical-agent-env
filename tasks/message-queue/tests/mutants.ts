@@ -5,11 +5,11 @@
 // never read, reasoning when it was read and the decision is still wrong. Then the closure and the
 // scope. Replies are left as the oracle writes them, so no mutant loses a rubric item.
 import type { Mutant } from '../../../packages/grader/matrix/types.ts';
-import { ref } from '../ids.ts';
+import { id as worldId, ref } from '../ids.ts';
 import { oracle } from '../solution/solve.ts';
 import {
   a1cOrder, BROOKS_LOOK, call, BROOKS_REPORT, brooksA1c, brooksBridge, brooksHold, brooksTask, odumClose4, hayesBmp, hayesRenew, lab, labs, ODUM_LOOK, ODUM_REPORT, odumAmlodipine, odumBmp, order, PARK_LOOK, PARK_REPORT,
-  parkBmp, parkBridge, parkHold, parkTask, PCP, PRICE_LOOK, PRICE_REPORT, priceLisinopril, priceMetformin, PT, RX, search, START, swap, task, WEBB_READS, webbBmp, webbBridge, webbMetformin, without,
+  parkBmp, parkBridge, parkHold, parkTask, PCP, PRICE_LOOK, PRICE_REPORT, priceLisinopril, priceMetformin, PT, read, RX, search, START, swap, task, WEBB_READS, webbBmp, webbBridge, webbMetformin, without,
 } from '../solution/steps.ts';
 import { BMP_CODES, ITEMS } from '../expected.ts';
 
@@ -21,6 +21,13 @@ const holdTask = (patient: string, request: string, why: string) => task(patient
 // (R14, R18): decisive_seen fails, labelled retrieval.
 const skipped = (id: string, trap: string, name: string, why: string, script: Mutant['script']): Mutant[] => [
   { id, why, trap, script, fails: ['decisive_seen'], loses: [], attribution: 'retrieval', items: { [item(name)]: 'retrieval' } },
+];
+
+// R31: a mutant that writes the oracle's action for an absence item after exposing only the lure,
+// the out-of-window result, with no complete window search: decisive_seen fails, and attribution,
+// which counts the exposed record, labels it reasoning.
+const lureOnly = (id: string, trap: string, name: string, why: string, script: Mutant['script']): Mutant[] => [
+  { id, why, trap, script, fails: ['decisive_seen'], loses: [], attribution: 'reasoning', items: { [item(name)]: 'reasoning' } },
 ];
 
 export const mutants: Mutant[] = [
@@ -187,6 +194,19 @@ export const mutants: Mutant[] = [
   ...skipped('m12_clinic_first_page', 'collection_date', 'm12', 'Reads only the first page of the clinic\'s BMP panel reports from 10/23/2025 on, and gives Marcus Webb 30 days and a BMP.', swap(oracle, [WEBB_READS.calls[0]!, [call('fhir_search', { resource_type: 'DiagnosticReport', code: BMP_CODES.join(','), date_ge: '2025-10-23', count: 50, sort: '-date' })]], [WEBB_READS.calls[1]!, [since(PT.webb, '33914-3', '2026-01-01')]])),
   // R20: a filtered search counts only when it covers the whole 12-month window.
   ...skipped('m12_window_too_short', 'collection_date', 'm12', "Searches Marcus Webb's potassium only from 01/01/2026 on, short of the 12-month window, and gives 30 days and a BMP.", swap(oracle, [WEBB_READS.calls[0]!, [since(PT.webb, '2823-3,6298-4', '2026-01-01')]], [WEBB_READS.calls[1]!, [since(PT.webb, '33914-3', '2026-01-01')]])),
+  // R27 (verifier-W1T-190-falsepass F2): a code that names a system no result carries matches nothing,
+  // so its empty page shows nothing of the patient's potassium history.
+  ...skipped('m12_wrong_system_absence', 'collection_date', 'm12', "Searches Marcus Webb's potassium over 12 months under a code system no result carries, gets an empty page, and gives 30 days and a BMP.", swap(oracle, [WEBB_READS.calls[0]!, [search('Observation', PT.webb, { code: 'http://example.org/none|2823-3,http://example.org/none|6298-4', category: 'laboratory', date_ge: '2025-10-01' })]])),
+  // R31 (verifier-W1T-190-falsepass F3): the outside report is a lure for the absence; without a
+  // complete search of the clinic's own results in the window, 'none in the window' was never checked.
+  ...skipped('m5_outside_report_only', 'collection_date', 'm5', "Reads Lena Park's outside BMP and her visit but never searches the clinic's own BMPs or potassium, and gives 30 days and a BMP.", swap(oracle, [PARK_LOOK.calls[0]!, []])),
+  ...skipped('m8_outside_report_only', 'metformin_two_series', 'm8', "Reads Evelyn Brooks's outside HbA1c and her eGFR but never searches the clinic's own HbA1c results, and gives 30 days and an HbA1c.", swap(oracle, [BROOKS_LOOK.calls[3]!, []])),
+  // R31: the clinic's newest result of the kind, collected before the window, read on its own (a
+  // narrowed list, or a read by id) is a lure: it does not show that none was collected since. The
+  // record was exposed, so attribution labels the item reasoning (attribution.ts reads exposure).
+  ...lureOnly('m5_panel_only', 'collection_date', 'm5', "Lists Lena Park's BMP panel reports under 51990-0 only, sees her 04/2025 panel, and gives 30 days and a BMP without a search that could show a panel in the window.", swap(oracle, [PARK_LOOK.calls[0]!, [search('DiagnosticReport', PT.park, { code: '51990-0', sort: '-date' })]])),
+  ...lureOnly('m8_inhouse_a1c_only', 'metformin_two_series', 'm8', "Reads Evelyn Brooks's January HbA1c by id instead of her HbA1c list, and gives 30 days and an HbA1c without a search that could show one in the window.", swap(oracle, [BROOKS_LOOK.calls[3]!, [read('Observation', worldId('obs-t6-brooks-a1c-0112'))]])),
+  ...lureOnly('m12_panel_only', 'collection_date', 'm12', "Lists Marcus Webb's BMP panel reports under 51990-0 only, sees the 10/20/2025 panel, and gives 30 days and a BMP without a search that could show a panel in the window.", swap(oracle, [WEBB_READS.calls[0]!, [search('DiagnosticReport', PT.webb, { code: '51990-0', sort: '-date' })]])),
   ...skipped('m13_egfr_unread', 'amended_or_error', 'm13', "Renews Marcus Webb's metformin for 90 days without having read his eGFR results.", swap(oracle, [WEBB_READS.calls[1]!, []])),
   // R18: the deciding record read only after the decision was written: seen_before_change, process.
   {

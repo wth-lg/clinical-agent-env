@@ -11,7 +11,7 @@
 //                                       down below 45 four days later
 //                            m13 Webb   metformin; the newest eGFR, 39 (below 45), is entered in error
 //   collection-date window   m5 Park    lisinopril; a scanned outside BMP filed inside 12 months,
-//                                       collected outside them
+//                                       collected outside them; her in-house BMP is older still
 //                            m12 Webb   lisinopril; an in-house BMP collected before the 12-month
 //                                       line and issued after it
 //   metformin, two series    m8 Brooks  metformin; eGFR current, the only HbA1c inside 6 months by
@@ -467,6 +467,9 @@ const overlay: Overlay = {
       condition('cond-t6-park-htn', 'park', HTN[0], HTN[1], '2021-05-24T10:00:00-04:00'),
       condition('cond-t6-park-t2dm', 'park', T2DM[0], T2DM[1], '2023-05-22T10:00:00-04:00'),
       ...PARK_EARLY.map(([date, author, text]) => note(parkId(date), 'park', date, text.startsWith('Annual physical') ? 'physical' : text.startsWith('Telephone') ? 'phone' : 'progress', author, CLINIC, text)),
+      // Her last in-house BMP, six months after the 2024 lisinopril renewal and before the 12-month
+      // line (R31: m5's absence is reviewed by a complete search, not by this panel alone).
+      ...bmp('park-0421', 'park', '2025-04-21T09:15:00-04:00', '2025-04-21T15:10:00-04:00', null, { na: 140, k: 4.4, cl: 103, co2: 26, bun: 15, cr: 1.05, glu: 132, ca: 9.4, egfr: 66 }),
       note('doc-t6-park-1002', 'park', '2025-11-03T14:10:00-05:00', 'lab', BRIGID_LAB, BRIGID_LAB, PARK_UC),
       encounter('enc-t6-park-0720', 'park', VISIT, '2026-07-20T09:00:00-04:00', '2026-07-20T09:30:00-04:00'),
       obs('obs-t6-park-a1c-0720', 'park', C.a1c, 7.4, '%', '2026-07-20T09:15:00-04:00', '2026-07-20T15:10:00-04:00', 'enc-t6-park-0720', { high: true }),
@@ -561,7 +564,7 @@ const overlay: Overlay = {
           {
             name: 'BMP within 12 months (collection date)',
             boundary: { months: 12 },
-            resources: ['obs-t6-hayes-0414-k', 'obs-t6-odum-0120-k', 'doc-t6-park-1002', 'obs-t6-brooks-0921-k', 'obs-t6-price-0918-k', 'obs-t6-webb-1020-k'],
+            resources: ['obs-t6-hayes-0414-k', 'obs-t6-odum-0120-k', 'doc-t6-park-1002', 'obs-t6-park-0421-k', 'obs-t6-brooks-0921-k', 'obs-t6-price-0918-k', 'obs-t6-webb-1020-k'],
             traps: { 'doc-t6-park-1002': 'filed inside the window, collected outside it', 'obs-t6-webb-1020-k': 'collected outside the window, issued inside it' },
           },
           { name: 'Visit within 15 months', boundary: { months: 15 }, resources: ['enc-t6-park-0720', 'enc-t6-webb-0928', 'enc-t6-odum-0120'] },

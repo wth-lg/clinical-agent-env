@@ -3,8 +3,11 @@
 //   R1, R15   each item's decisive ids are exactly the records that decide its expected action,
 //             and no two items share one
 //   R21       a visit is seen through any completed visit in the 15-month window or a note of one
-//   R20       m12's BMP is seen through its panel or any of its results, or a search that covers the
-//             12-month window; m13 does not need the eGFR entered in error (a lure)
+//   R20, R31  m12's BMP is seen only through a complete search that covers the 12-month window (the
+//             panel and its results are lures); m13 does not need the eGFR entered in error (a lure)
+//   R31       m5 and m8 are absence items like m12: each counts only a complete window search of the
+//             clinic's own results, and its outside report alone is a lure (verifier-W1T-190-falsepass F3)
+//   F2        a code or category filter matches in its system, as fhir_search does
 //   R27       a complete run of pages counts, with one sort and the same filters
 //   R20, R27  covers: only a complete search over the 12-month window whose filters cannot hide a
 //             qualifying record counts for m12, the patient's own or clinic-wide
@@ -61,14 +64,14 @@ const DECISIVE: Record<string, string[]> = {
   m2: ['Communication/comm-t6-m1'], // the first message for the same lisinopril (§5)
   m3: ['DocumentReference/doc-t6-odum-0827', 'Observation/obs-t6-odum-0120-k'], // hemolyzed outside K; the valid K
   m4: ['Encounter/enc-t6-odum-0120'], // the visit within 15 months (§4)
-  m5: ['DocumentReference/doc-t6-park-1002', 'Encounter/enc-t6-park-0720'], // the BMP collected outside 12 months; the visit that allows 30 days
+  m5: ['DocumentReference/doc-t6-park-1002', 'Encounter/enc-t6-park-0720', 'DiagnosticReport/dr-t6-park-0421'], // the outside BMP collected outside 12 months; the visit that allows 30 days; her newest in-house BMP (R31: seen only by a window search)
   m6: ['Observation/obs-t6-park-egfr-0720'], // the amended eGFR 39
   m7: ['Observation/obs-t6-brooks-1008-cr', 'Observation/obs-t6-brooks-0921-cr'], // the rise and its baseline (holds whatever the potassium)
-  m8: ['DocumentReference/doc-t6-brooks-0412', 'Observation/obs-t6-brooks-1008-egfr'], // the HbA1c collected outside 6 months; eGFR 54 (not a hold)
+  m8: ['DocumentReference/doc-t6-brooks-0412', 'Observation/obs-t6-brooks-1008-egfr', 'Observation/obs-t6-brooks-a1c-0112'], // the outside HbA1c collected outside 6 months; eGFR 54 (not a hold); her newest in-house HbA1c (R31: seen only by a window search)
   m9: ['Observation/obs-t6-price-1006-cr', 'Observation/obs-t6-price-0918-cr', 'Observation/obs-t6-price-1006-k'], // the rise under 30%, its baseline; potassium 5.2
   m10: ['DocumentReference/doc-t6-price-0819', 'Observation/obs-t6-price-1006-egfr'], // the HbA1c inside 6 months; eGFR 65
   m11: ['Communication/comm-t6-m10'], // his own message for the same metformin (§5)
-  m12: ['DiagnosticReport/dr-t6-webb-1020', 'Encounter/enc-t6-webb-0928'], // the newest BMP, collected outside 12 months (R20: seen by any of its results or a window search); the visit
+  m12: ['DiagnosticReport/dr-t6-webb-1020', 'Encounter/enc-t6-webb-0928'], // the newest BMP, collected outside 12 months (R31: seen only by a window search); the visit
   m13: ['Observation/obs-t6-webb-egfr-0928', 'Observation/obs-t6-webb-a1c-0928'], // the valid eGFR; the HbA1c (the eGFR in error is a lure, R1 and R19)
 };
 
@@ -94,28 +97,66 @@ describe('T6 probe rulings', () => {
     }
   });
 
-  it("R20, R1 (clinical F1): m12's BMP is seen through the panel or any of its results, or a window search; m13 no longer needs the eGFR in error", () => {
+  it("R31, R1 (clinical F1): m12's BMP is seen only by a complete window search, not by the panel or its results; m13 no longer needs the eGFR in error", () => {
     type Dr = { result?: Array<{ reference?: string }>; effectiveDateTime?: string };
     const m12 = ITEMS.find((i) => i.name === 'm12')!;
     const panel = ref('DiagnosticReport/dr-t6-webb-1020');
     const dr = store.get('DiagnosticReport', id('dr-t6-webb-1020')) as Dr;
     const members = (dr.result ?? []).map((r) => r.reference!);
     expect(members).toContain(ref('Observation/obs-t6-webb-1020-k'));
-    // R14, ruling 2: the panel or any member result. The eGFR drawn with it is its own Observation, read
-    // for m13, and shows nothing of whether the panel held a potassium (clinical-3 F1).
     expect(members).toHaveLength(8);
-    expect(members).not.toContain(ref('Observation/obs-t6-webb-1020-egfr'));
-    expect([...(m12.also[panel] ?? [])].sort()).toEqual([...members].sort());
+    // R31: the panel and its results are lures for the absence, so none is any-of evidence for it.
+    expect(m12.also[panel]).toBeUndefined();
     // The window counts back 12 months from today to the collection date (§1, §2).
-    // R27: the codes a search must list are every code the policy counts (policy.ts: potassium 2823-3 and
-    // 6298-4; a BMP is any panel the grader counts as one, LAB_CODES.bmp, a CMP included), and the
-    // statuses every status a valid result has.
-    expect(m12.absence).toEqual({ id: panel, since: '2025-10-23', statuses: ['final', 'amended', 'corrected'], searches: [{ type: 'Observation', codes: ['2823-3', '6298-4'], category: 'laboratory' }, { type: 'DiagnosticReport', codes: [...LAB_CODES.bmp], category: 'LAB' }] });
+    // R27: the codes a search must match are every code the policy counts (policy.ts: potassium 2823-3 and
+    // 6298-4; a BMP is any panel the grader counts as one, LAB_CODES.bmp, a CMP included), each in the
+    // LOINC system the results carry (F2), and the statuses every status a valid result has.
+    const LOINC = 'http://loinc.org';
+    expect(m12.absence).toEqual({ id: panel, since: '2025-10-23', statuses: ['final', 'amended', 'corrected'], searches: [{ type: 'Observation', codes: ['2823-3', '6298-4'].map((c) => `${LOINC}|${c}`), category: 'http://terminology.hl7.org/CodeSystem/observation-category|laboratory' }, { type: 'DiagnosticReport', codes: LAB_CODES.bmp.map((c) => `${LOINC}|${c}`), category: 'http://terminology.hl7.org/CodeSystem/v2-0074|LAB' }] });
     expect([...LAB_CODES.bmp].sort()).toEqual(['24321-2', '24323-8', '51990-0']);
     expect(`${Number(NOW.slice(0, 4)) - 1}${NOW.slice(4, 10)}`).toBe(m12.absence!.since);
     const m13 = ITEMS.find((i) => i.name === 'm13')!;
     expect(m13.decisive).not.toContain(ref('Observation/obs-t6-webb-egfr-1014'));
     expect(obs('obs-t6-webb-egfr-1014').status).toBe('entered-in-error');
+  });
+
+  it("R31 (verifier-W1T-190-falsepass F3): m5, m8 and m12 count their absence only at a complete window search; the newest in-house result and the outside report alone are lures", () => {
+    type Res = { resourceType: string; id: string; status?: string; subject?: { reference?: string }; code?: { coding?: Array<{ code?: string }> }; effectiveDateTime?: string };
+    const LOINC = 'http://loinc.org';
+    const of = (name: string) => ITEMS.find((i) => i.name === name)!;
+    const all = [...store.resources()] as unknown as Res[];
+    const coded = (r: Res, codes: readonly string[]) => (r.code?.coding ?? []).some((c) => codes.includes(c.code ?? ''));
+    // Each absence id is the patient's newest result of the kind, collected before the window, so the
+    // window holds none of the kind: an R27-complete search of it is empty, and the id stands for it.
+    const kinds = { m5: { type: 'DiagnosticReport', codes: LAB_CODES.bmp }, m8: { type: 'Observation', codes: LAB_CODES.hba1c }, m12: { type: 'DiagnosticReport', codes: LAB_CODES.bmp } } as const;
+    for (const [name, kind] of Object.entries(kinds)) {
+      const x = of(name);
+      const a = x.absence!;
+      expect(x.decisive, name).toContain(a.id);
+      const ofKind = all.filter((r) => r.resourceType === kind.type && r.subject?.reference === x.patient && coded(r, kind.codes)).sort((p, q) => ((p.effectiveDateTime ?? '') < (q.effectiveDateTime ?? '') ? 1 : -1));
+      expect(`${ofKind[0]!.resourceType}/${ofKind[0]!.id}`, name).toBe(a.id);
+      expect(ofKind[0]!.effectiveDateTime!.slice(0, 10) < a.since, name).toBe(true);
+      // Exposing the id (a read, a narrowed list) is not a review; the complete window search is.
+      const exposed = [{ n: 1, exposed_ids: [a.id], referenced_ids: [], written_ids: [], shown: {} }] as unknown as Step[];
+      expect(seenStep(x, a.id)(exposed), name).toBe(null);
+      const rule = a.searches[0]!;
+      const searched = [{ n: 2, exposed_ids: [], referenced_ids: [], written_ids: [], shown: {}, search: { type: rule.type, patient: x.patient, date_ge: a.since, whole: true } }] as unknown as Step[];
+      expect(seenStep(x, a.id)(searched), name).toBe(2);
+    }
+    // m5: the 12-month BMP window, by a potassium list or the panel reports, as m12.
+    expect(of('m5').absence).toEqual({ ...of('m12').absence!, id: ref('DiagnosticReport/dr-t6-park-0421') });
+    // m8: the 6-month HbA1c window (§3), counted back from today to the collection date.
+    expect(of('m8').absence).toEqual({ id: ref('Observation/obs-t6-brooks-a1c-0112'), since: sixMonthsBefore(`${NOW.slice(0, 10)}T12:00:00Z`), statuses: ['final', 'amended', 'corrected'], searches: [{ type: 'Observation', codes: [`${LOINC}|4548-4`], category: 'http://terminology.hl7.org/CodeSystem/observation-category|laboratory' }] });
+    const m8 = of('m8');
+    const base = { type: 'Observation', patient: 'Patient/pt-0029', code: '4548-4', date_ge: '2026-04-23', whole: true };
+    expect(covers(m8, base)).toBe(true);
+    expect(covers(m8, { ...base, date_ge: '2026-04-24' })).toBe(false);
+    expect(covers(m8, { ...base, code: '2823-3' })).toBe(false);
+    expect(covers(m8, { ...base, type: 'DocumentReference' })).toBe(false);
+    // The outside report is still decisive on its own, by its atoms (R28): it is the one record of the
+    // kind filed inside the window.
+    expect(of('m5').decisive).toContain(ref('DocumentReference/doc-t6-park-1002'));
+    expect(m8.decisive).toContain(ref('DocumentReference/doc-t6-brooks-0412'));
   });
 
   it('R20, R27: only a complete search whose filters cannot hide a qualifying record and that covers the 12-month window counts for m12', () => {
@@ -149,7 +190,18 @@ describe('T6 probe rulings', () => {
     expect(covers(m12, { ...base, category: 'laboratory' })).toBe(true);
     expect(covers(m12, { ...base, category: 'http://terminology.hl7.org/CodeSystem/observation-category|laboratory' })).toBe(true);
     expect(covers(m12, { ...base, category: 'vital-signs' })).toBe(false);
-    expect(covers(ITEMS.find((i) => i.name === 'm5')!, { ...base, patient: 'Patient/pt-0028' })).toBe(false);
+    // F2 (verifier-W1T-190-falsepass): a code or category with a system matches only that system, as
+    // fhir_search reads it; '|code' matches only a value with no system, and 'system|' every code of it.
+    expect(covers(m12, { ...base, code: 'http://example.org/none|2823-3,http://example.org/none|6298-4' })).toBe(false);
+    expect(covers(m12, { ...base, code: '|2823-3,|6298-4' })).toBe(false);
+    expect(covers(m12, { ...base, code: 'http://loinc.org|' })).toBe(true);
+    expect(covers(m12, { ...base, code: 'HTTP://LOINC.ORG|2823-3,6298-4' })).toBe(true);
+    expect(covers(m12, { ...base, category: 'http://example.org/none|laboratory' })).toBe(false);
+    expect(covers(m12, { ...base, status: 'x|final,amended,corrected' })).toBe(false);
+    // An item with no absence counts no search; m5's absence (R31) counts Park's own complete search.
+    expect(covers(ITEMS.find((i) => i.name === 'm1')!, { ...base, patient: 'Patient/pt-0026' })).toBe(false);
+    expect(covers(ITEMS.find((i) => i.name === 'm5')!, { ...base, patient: 'Patient/pt-0028' })).toBe(true);
+    expect(covers(ITEMS.find((i) => i.name === 'm5')!, base)).toBe(false);
   });
 
   it('R27: a run of pages counts when it starts at offset 0, each page at the previous next_offset, with one sort and the same filters', () => {
