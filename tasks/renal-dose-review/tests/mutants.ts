@@ -235,6 +235,39 @@ export const mutants: Array<Mutant & { loses: readonly string[] }> = [
     attribution: 'retrieval',
     script: review({ vance: { reads: [patientRead('pt-0002'), activeMeds('pt-0002'), labs('pt-0002')], calcs: [], change: [CASES.vance!.change!], note: [note('pt-0002', 'DOAC dose review (RBC-PHARM-07): SCr 1.21 mg/dL (10/20/2026), age 82, one criterion: apixaban increased from 2.5 mg to 5 mg twice daily.', [ref('Observation/obs-t1-scr-1020')])] } }),
   },
+  // The age on the Patient decides the dose where it is a met apixaban criterion or a
+  // Cockcroft-Gault input (rulings R33; verifier-W1T-190-falsepass F4). The review list (the
+  // Group) shows only references, so a route that never reads the Patient, nor finds them in a
+  // search_patients row, has never seen the age: each makes the oracle's change and fails as
+  // retrieval. The first three are the verifier's routes.
+  ...(
+    [
+      ['ashworth', 'pt-0040', 'Never reads her Patient record, so never sees that she is 83; sees the St. Brigid creatinine of 1.70 mg/dL (one criterion) and lowers apixaban to 2.5 mg anyway, the age criterion assumed.'],
+      ['kowalczyk', 'pt-0001', 'Never reads his Patient record, so never sees that he is 84; sees the 57.6 kg weight (one criterion) and lowers apixaban to 2.5 mg anyway, the age criterion assumed.'],
+      ['delgado', 'pt-0003', 'Never reads his Patient record, so has no age for Cockcroft-Gault, and lowers rivaroxaban to 15 mg on the St. Brigid creatinine and his weight alone.'],
+      ['bauer', 'pt-0039', 'Never reads his Patient record, so has no age for Cockcroft-Gault, and lowers rivaroxaban to 15 mg on his measured weight and creatinine alone.'],
+      ['moravec', 'pt-0038', 'Never reads his Patient record, so has no age for Cockcroft-Gault, and raises rivaroxaban to 20 mg on his actual weight and creatinine alone.'],
+    ] as const
+  ).map(([label, pt, why]) => ({
+    id: `${label}_age_never_seen`,
+    trap: 'decision_without_fact',
+    why,
+    fails: ['decisive_seen', 'seen_before_change'],
+    loses: [],
+    items: { [P(pt)]: 'retrieval' as const },
+    attribution: 'retrieval' as const,
+    script: review({ [label]: { reads: [activeMeds(pt), labs(pt), weights(pt), recentNotes(pt)] } }),
+  })),
+  {
+    id: 'pellegrino_age_never_seen',
+    trap: 'decision_without_fact',
+    why: 'Never reads her Patient record, so has no age or sex for Cockcroft-Gault, and leaves her rivaroxaban at 20 mg on her weight and creatinine alone: the right dose, decided without the record that decides it.',
+    fails: ['decisive_seen'],
+    loses: [],
+    items: { [P('pt-0043')]: 'retrieval' },
+    attribution: 'retrieval',
+    script: review({ pellegrino: { reads: [activeMeds('pt-0043'), labs('pt-0043'), weights('pt-0043'), recentNotes('pt-0043')] } }),
+  },
   {
     id: 'off_list_order',
     trap: 'off_list_write',

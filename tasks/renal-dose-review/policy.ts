@@ -79,26 +79,27 @@ export function derive(world: WorldView): Json {
     const inhibitor = [...ordered, ...letters];
 
     // The dose, and the records that decide it (and only those: a record that cannot change the
-    // dose is not decisive).
+    // dose is not decisive). The age (and sex) is on the Patient, a decisive record wherever it
+    // decides (rulings R33).
     const W = `Observation/${weightObs.id}`;
     const S = `Observation/${scrObs.id}`;
     let mg: number;
     let decisive: string[];
     if (drug === 'apixaban') {
-      const labs: Array<[string, boolean]> = [[W, kg <= 60], [S, mgdl >= 1.5]];
-      const criteria = [age >= 80, ...labs.map(([, met]) => met)].filter(Boolean).length;
-      mg = criteria >= 2 ? 2.5 : 5;
-      // 2.5 mg on the criteria: the met lab criteria (age is on the Patient). 5 mg: the lab
-      // criteria not met. An inhibitor that lowers 5 mg to 2.5 mg decides it alone.
-      decisive = labs.filter(([, met]) => met === (mg === 2.5)).map(([id]) => id);
+      const criteria: Array<[string, boolean]> = [[W, kg <= 60], [S, mgdl >= 1.5], [ref, age >= 80]];
+      mg = criteria.filter(([, met]) => met).length >= 2 ? 2.5 : 5;
+      // 2.5 mg on the criteria: the records of the met criteria. 5 mg: those of the criteria not
+      // met. An inhibitor that lowers 5 mg to 2.5 mg decides it alone.
+      decisive = criteria.filter(([, met]) => met === (mg === 2.5)).map(([id]) => id);
       if (inhibitor.length > 0 && mg === 5) {
         mg = 2.5;
         decisive = inhibitor;
       }
     } else {
+      // Cockcroft-Gault takes the age (and the sex) from the Patient, the weight and the creatinine.
       const crcl = (((140 - age) * kg) / (72 * mgdl)) * (female ? 0.85 : 1);
       mg = crcl > 50 ? 20 : 15;
-      decisive = [W, S];
+      decisive = [W, S, ref];
     }
     const action = mg < mgNow ? 'reduce' : mg > mgNow ? 'increase' : 'unchanged';
     const cls = drug === 'apixaban' && inhibitor.length > 0 ? 'pgp_cyp3a4_inhibitor'
