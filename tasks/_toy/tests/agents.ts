@@ -1,5 +1,5 @@
 // The toy's spray and output-gap agents (the null agent is built into the matrix). Each must
-// FAIL. The toy declares no status-only case: it has no inbox items to close.
+// FAIL. The toy declares no status-only case: its instruction gives it no inbox item to close.
 import type { Script, ScriptCall } from '../../../packages/grader/matrix/types.ts';
 
 const note = (patient: string, title: string): ScriptCall => ({
