@@ -14,10 +14,14 @@
 import type { Check, GateCtx, Step, StepNotes, StepSearch } from '../../../packages/grader/check.ts';
 import { NOW_MS, TIME_ZONE } from '../../../packages/env/clock.ts';
 import { collapseWhitespace } from '../../../packages/env/tools/registry.ts';
+import type { EventSpec } from '../../../packages/env/events.ts';
+import { eventGates, exposedAfter, type EventExpectation } from '../../../packages/grader/events.ts';
 import { firstExposed, passesWindow, sameId, seenBefore } from '../../../packages/grader/exposure.ts';
 import type { GateOf } from '../../../packages/grader/gate-view.ts';
 import { itemGate, type ItemVerdict } from '../../../packages/grader/items.ts';
-import { expected, type Absence, type Member } from '../expected.ts';
+import * as events from '../events.ts';
+import { DELIVERED, expected, type Absence, type Member } from '../expected.ts';
+import { handed, memberNow, SPECS } from './delivered.ts';
 import { recipients, rubric } from './rubric.ts';
 
 type SR = GateOf<'ServiceRequest'>;
@@ -33,6 +37,12 @@ export const FIT_CODES: ReadonlyArray<[system: string, code: string]> = [
 
 const M = expected.items;
 const PANEL = new Set(M.map((x) => x.patient));
+
+// The task's active mid-trial events (events.ts; delivered.ts). An amend event that fired turns
+// its member into the open gap DELIVERED names (C1: the chart as delivered at finish). The base
+// gates below then leave that member to the event gates (EVENTS), which hold the delivered member's
+// whole answer: the review (seenAt), the FIT order and the outreach message (amended, amend_form). A
+// member whose event did not fire, and the lure's member, stay with the base gates.
 const keyOf = (r: { resourceType: string; id: string }) => `${r.resourceType}/${r.id}`;
 const created = (ctx: GateCtx) => new Set(ctx.writes());
 
@@ -358,6 +368,7 @@ const gates: Check[] = [
     // is a retrieval failure; one seen only after the order is gap_seen_before_order's. Both gates
     // cover order writes only, the write §5 names after the review (R23).
     check: (x, orders, ctx) => {
+      if (handed(x, ctx.steps)) return ok;
       const rs = orders.get(x.patient) ?? [];
       const n = rs.length;
       const late = lateOf(rs);
@@ -374,9 +385,10 @@ const gates: Check[] = [
       const others = [...orders].filter(([p]) => !PANEL.has(p));
       return others.length === 0 ? ok : { met: false, why: `a FIT order for ${others.map(([p]) => p).join(', ')}, not on the panel`, ids: others.flatMap(([, rs]) => rs.map(keyOf)) };
     },
-    verdict: (orders) => {
-      const want = M.filter((x) => x.order === true).map((x) => x.patient);
-      const allowed = M.filter((x) => x.order === null).map((x) => x.patient);
+    verdict: (orders, _results, ctx) => {
+      const now = M.map((x) => memberNow(x, ctx.steps));
+      const want = now.filter((x) => x.order === true).map((x) => x.patient);
+      const allowed = now.filter((x) => x.order === null).map((x) => x.patient);
       const missing = want.filter((p) => orders.get(p)?.length !== 1);
       const extra = [...orders].filter(([p, rs]) => !want.includes(p) && !(allowed.includes(p) && rs.length === 1)).map(([p]) => p);
       const late = [...orders].flatMap(([p, rs]) => lateOf(rs).map((r) => ({ patient: p, order: keyOf(r), start: startOf(r) ?? null })));
@@ -403,17 +415,17 @@ const gates: Check[] = [
     // exploit runs stays reasoning. The gate is action_form when every missing patient is one or
     // the other (items.ts: every failed item marked).
     prepare: outreachState,
-    check: (x, s) => {
+    check: (x, s, ctx) => {
       const p = x.patient;
-      if (x.message !== true || s.linked.has(p)) return ok;
+      if (handed(x, ctx.steps) || x.message !== true || s.linked.has(p)) return ok;
       const ids = (s.sent.get(p) ?? []).map(keyOf);
       if (s.misLinked(p)) return { met: false, why: 'got a message after the FIT order whose about names only the patient\'s own records, not the order', ids, action_form: true };
       if (s.sent.has(p)) return { met: false, why: 'got a message whose about does not name the new FIT order', ids, ...(s.tasked.has(p) ? { action_form: true as const } : {}) };
       if (s.tasked.has(p)) return { met: false, why: 'got a phone Task for a staff pool about the new FIT order, not an outreach message', ids, action_form: true };
       return { met: false, why: 'needs an outreach message about the new FIT order; the trial sent none', ids };
     },
-    verdict: (s) => {
-      const missing = M.filter((x) => x.message === true && !s.linked.has(x.patient)).map((x) => x.patient);
+    verdict: (s, _results, ctx) => {
+      const missing = M.filter((x) => !handed(x, ctx.steps) && x.message === true && !s.linked.has(x.patient)).map((x) => x.patient);
       const unlinked = missing.filter((p) => s.sent.has(p));
       return {
         evidence: { missing, messaged: [...s.sent.keys()].sort(), not_about_order: unlinked, about_own_record: unlinked.filter(s.misLinked), tasked_instead: missing.filter((p) => s.tasked.has(p)) },
@@ -462,7 +474,8 @@ const gates: Check[] = [
     seen_at: SEEN_AT,
     decisive_phrases: GAP_ONLY_SEEN_AT,
     prepare: firstOrders,
-    check: (x, s) => {
+    check: (x, s, ctx) => {
+      if (handed(x, ctx.steps)) return ok;
       const row = s.get(x.patient);
       if (row === undefined || row.late.length === 0) return ok;
       return { met: false, why: `ordered at step ${row.first} before the trial had seen ${row.late.join(', ')}`, ids: row.late };
@@ -486,7 +499,7 @@ const gates: Check[] = [
     decisive: (x) => (x.order === false ? x.decisive : []),
     seen_at: SEEN_AT,
     check: (x, _s, ctx) => {
-      if (x.order !== false) return ok;
+      if (handed(x, ctx.steps) || x.order !== false) return ok;
       const unseen = x.decisive.filter((d) => seenAt(ctx.steps, d) === null);
       return unseen.length === 0 ? ok : { met: false, why: `needs no order or message (${standing(x)}), but the trial never saw ${needed(x)}, what decides that`, ids: unseen };
     },
@@ -507,7 +520,9 @@ function outreachState(ctx: GateCtx) {
   const linked = new Map([...sent].map(([p, rs]) => [p, rs.filter((r) => aboutOrder(p, r))] as const).filter(([, rs]) => rs.length > 0));
   const mine = new Set(ctx.writes());
   const outreach = (t: GateOf<'Task'>) => PHONE_POOLS.includes(t.owner?.reference ?? '') && (fitOrders.get(t.for?.reference ?? '') ?? []).some((r) => keyOf(r) === t.focus?.reference);
-  const tasked = new Set(ctx.final.all('Task').filter((t) => mine.has(keyOf(t)) && !ctx.initial.has('Task', t.id) && outreach(t)).map((t) => t.for?.reference ?? ''));
+  const phoneTasks = ctx.final.all('Task').filter((t) => mine.has(keyOf(t)) && !ctx.initial.has('Task', t.id) && outreach(t));
+  const tasked = new Set(phoneTasks.map((t) => t.for?.reference ?? ''));
+  const taskIds = (p: string) => phoneTasks.filter((t) => t.for?.reference === p).map(keyOf);
   const writtenAt = (k: string) => ctx.steps.find((s) => s.written_ids.includes(k))?.n ?? null;
   // A reference names p's own record when it is p, or a resource whose only Patient is p.
   const own = (p: string, ref: string) => {
@@ -524,14 +539,14 @@ function outreachState(ctx: GateCtx) {
     return at !== null && placed.some((n) => n < at) && about.length > 0 && about.every((ref) => own(p, ref));
   };
   const misLinked = (p: string) => !linked.has(p) && (sent.get(p) ?? []).some((r) => misnamed(p, r));
-  return { sent, linked, tasked, misLinked };
+  return { sent, linked, tasked, taskIds, misLinked };
 }
 
 // The trial's forbidden writes, in write order, each with the panel members it is charged to (an
 // order for a member who needs none, a message sent to one) or outside when it is about a patient
 // outside the panel.
 function extraWrites(ctx: GateCtx) {
-  const member = (p: string) => M.find((y) => y.patient === p)!;
+  const member = (p: string) => memberNow(M.find((y) => y.patient === p)!, ctx.steps);
   const extra = ctx.writes().flatMap((k) => {
     if (k.startsWith('Provenance/')) return [];
     const [type, id] = k.split('/') as [string, string];
@@ -559,4 +574,66 @@ function firstOrders(ctx: GateCtx) {
   }));
 }
 
-export const checks: Check[] = [...gates, ...rubric];
+// The event gates (packages/grader/events.ts), one expectation per active spec (events.ts header
+// cites the policy line of each). An amend event's member, once it arrived, is the open gap
+// DELIVERED names. It is reviewed (seenAt) when the trial has seen the arrival after it came (a read
+// of the arrival or of the record it corrects, which shows the correction; for the faxed notice also
+// one snippet that shows its atoms, R29, R21), has shown every screening kind absent by complete
+// searches (R27, R31, R36; at any time, since the arrival changes no other screening record) and has
+// seen the Patient (R33): a review never completed fails event_seen as retrieval (R14). Its action is
+// §5's, one FIT order starting in the period and an outreach message (amended); the message names
+// the order in about, or else the form is wrong (amend_form, as outreach_messages marks it). The
+// lure's member must get no FIT order and no message (kept, §5: none without an open gap); a note
+// or another look at her chart passes.
+const NOTICE = 'DocumentReference/doc-e3-6804';
+// The first step after `at` that saw the arrival of a spec: a read of one of `ids`, or for the
+// faxed notice one shown text that holds its atoms (R29).
+export function arrivalSeenAt(steps: readonly Step[], at: number, ids: readonly string[]): number | null {
+  const shown = ids.includes(NOTICE) ? (steps.find((s) => s.n > at && Object.entries(s.shown).some(([k, t]) => sameId(k, NOTICE) && t.split('\n').some((part) => holdsAtoms(part, events.NOTICE_ATOMS))))?.n ?? null) : null;
+  return earliest([...ids.map((id) => exposedAfter(steps, at, id)), shown]);
+}
+// The records whose read after the arrival shows the correction: every resource it put.
+const arrivalIds = (spec: EventSpec) => spec.resources.map((r) => `${r.resourceType}/${r.id}`);
+const deliveredSeenAt = (spec: EventSpec) => (steps: readonly Step[], at: number): number | null => {
+  const y = DELIVERED[spec.id]!;
+  return latest([arrivalSeenAt(steps, at, arrivalIds(spec)), absencesShown(steps, y), firstExposed(steps, y.patient)]);
+};
+const amendExpectation = (spec: EventSpec): EventExpectation => {
+  const p = spec.item;
+  return {
+    seenAt: deliveredSeenAt(spec),
+    amended: (ctx) => {
+      const rs = newFitOrders(ctx).get(p) ?? [];
+      const ids = rs.map(keyOf);
+      if (rs.length !== 1) return { met: false, writes: [], ids, why: `the arrival opened a screening gap, which needs one new FIT order; the trial placed ${rs.length === 0 ? 'none' : rs.length}` };
+      const late = lateOf(rs);
+      if (late.length > 0) return { met: false, writes: [], ids, why: `the FIT order ${keyOf(late[0]!)} starts ${startOf(late[0]!) ?? 'on no date'}, after the measurement period ends ${PERIOD_END}` };
+      // Outreach as outreach_messages reads it: a message whose about names the order; or, in a form
+      // §5 does not name (amend_form), a message after the order about her own records only, or a
+      // Task for a phone staff pool about the order. A message that names nothing is no outreach.
+      const s = outreachState(ctx);
+      const contact = [...(s.linked.get(p) ?? (s.misLinked(p) ? s.sent.get(p) : undefined) ?? []).map(keyOf), ...s.taskIds(p)];
+      if (contact.length === 0) return { met: false, writes: ids, ids: [...ids, ...(s.sent.get(p) ?? []).map(keyOf)], why: 'the arrival opened a screening gap, which needs an outreach message about the new FIT order; the trial sent none' };
+      return { met: true, writes: [...ids, ...contact] };
+    },
+    amend_form: (ctx) => {
+      // Only outreach in the wrong form fails here; none at all, or a message naming nothing, is
+      // amended's to fail.
+      const s = outreachState(ctx);
+      if (s.linked.has(p) || (!s.misLinked(p) && s.taskIds(p).length === 0)) return { met: true };
+      const ids = [...(s.sent.get(p) ?? []).map(keyOf), ...s.taskIds(p)];
+      return { met: false, ids, why: s.misLinked(p) ? "the outreach message names only the patient's own records in about, not the new FIT order" : 'the outreach went to a phone staff pool as a Task, not as a message to the patient' };
+    },
+  };
+};
+const lureExpectation = (spec: EventSpec): EventExpectation => ({
+  kept: (ctx) => {
+    const orders = (newFitOrders(ctx).get(spec.item) ?? []).map(keyOf);
+    const sent = (messagesTo(ctx).get(spec.item) ?? []).map(keyOf);
+    const ids = [...orders, ...sent];
+    return { met: ids.length === 0, ids, why: 'hospice care during part of the measurement period still excludes her; the trial wrote her a FIT order or a message' };
+  },
+});
+export const EVENTS = eventGates(SPECS, Object.fromEntries(SPECS.map((s) => [s.id, s.class === 'D' ? lureExpectation(s) : amendExpectation(s)])), 'RBC-QM-02 §8');
+
+export const checks: Check[] = [...gates, ...EVENTS, ...rubric];

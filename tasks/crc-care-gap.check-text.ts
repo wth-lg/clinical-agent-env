@@ -3,7 +3,7 @@
 // reasons read it. It sits beside the task directory, not in it, so neither task version covers
 // it: rewording it regrades nothing.
 import { fields, items, lateness, show, type CheckText } from '../packages/core/explain.ts';
-import { expected, ORDERED } from './crc-care-gap/expected.ts';
+import { DELIVERED, expected } from './crc-care-gap/expected.ts';
 
 // A panel member as a reader knows them: 'Patient/pt-0019 (Harrison O'Keefe)'.
 const who = (p: unknown) => {
@@ -18,7 +18,7 @@ const whyNot = (p: unknown) => {
 
 export const checkText: CheckText = {
   fit_orders: {
-    requires: `one new FIT kit order for each of the ${ORDERED.length} patients with a screening gap, starting on or before ${expected.period.end} (the end of the measurement period), and none for the others`,
+    requires: `one new FIT kit order for each patient with a screening gap, starting on or before ${expected.period.end} (the end of the measurement period), and none for the others`,
     found: (ev) => {
       const ordered = fields(ev.ordered);
       const missing = items(ev.missing)[0];
@@ -70,5 +70,34 @@ export const checkText: CheckText = {
       const order = row === undefined ? 'the order' : `the order for ${who(row.patient)} at step ${show(row.first_order)}`;
       return step === null || step === undefined ? `${show(late)} was not read before ${order}` : `${show(late)} was read at step ${show(step)}, ${lateness(step, row?.first_order)} ${order}`;
     },
+  },
+  // The mid-trial event gates (packages/grader/events.ts; tests/grader.ts EVENTS, events.ts). Each
+  // failed item names its event; the evidence lists the events that fired and those that failed.
+  event_delivered: {
+    requires: 'each event whose trigger held to arrive in the chart, and none without its trigger',
+    found: (ev) => `event ${show(items(ev.failed)[0] ?? items(ev.not_fired)[0])} did not arrive as its trigger required`,
+  },
+  had_turn: {
+    requires: 'a model turn after each arrival',
+    found: (ev) => `the arrival came in turn ${show(ev.arrival_turn)}, the last turn ${show(ev.last_turn)}`,
+  },
+  event_seen: {
+    requires: `each arrival read after it came, and for a member it turned into an open gap (${Object.values(DELIVERED).map((m) => m.name).join(', ')}) her screening shown absent by complete searches and her birth date seen`,
+    found: (ev) => `event ${show(items(ev.failed)[0])} arrived at step ${show(ev.arrived_at)} and its review was never completed before finish`,
+  },
+  amended: {
+    requires: 'for each member an arrival turned into an open gap, one new FIT kit order in the measurement period and an outreach message, written after the arrival and the review were seen',
+    found: (ev) => {
+      const early = items(ev.early);
+      return early.length > 0 ? `${show(early[0])} was written before event ${show(items(ev.failed)[0])} was seen` : `event ${show(items(ev.failed)[0])} was not acted on as the policy states`;
+    },
+  },
+  amend_form: {
+    requires: 'the outreach for each member an arrival turned into an open gap sent as a message to the patient that names the new FIT order',
+    found: (ev) => `the outreach after event ${show(items(ev.failed)[0])} was not a message naming the new FIT order`,
+  },
+  kept: {
+    requires: 'no FIT order and no message for a member whose arrival does not change her exclusion',
+    found: (ev) => `a FIT order or message was written after event ${show(items(ev.failed)[0])}, which does not change the decision`,
   },
 };
