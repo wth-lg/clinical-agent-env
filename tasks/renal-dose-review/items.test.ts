@@ -1,6 +1,6 @@
-// T1 as a worklist probe (plan-amendment-worklist W1): a DOAC renal and interaction dose review
-// over a panel of nine patients, two instances of each kept item class plus one filler already on
-// the right dose. Each gate checks every panel member of expected.items on its own
+// T1 as a worklist probe (plan-amendment-worklist W1; cut to five by plan-amendment-w4 PW4-E3): a
+// DOAC renal and interaction dose review over a list of five patients, one instance of each kept
+// item class plus one filler already on the right dose. Each gate checks every panel member of expected.items on its own
 // (packages/grader/items.ts); here, the class table and the item records of a trial that did
 // nothing. The matrix (pnpm cli matrix --task renal-dose-review) shows each item's mutant and
 // alternative.
@@ -9,20 +9,22 @@ import type { GateCheck, GateCtx } from '../../packages/grader/check.ts';
 import { OUTSIDE } from '../../packages/grader/items.ts';
 import { TASKS } from '../../packages/env/overlay.ts';
 import { CLASSES, expected } from './expected.ts';
+import { EVENT_GATE_IDS } from '../../packages/grader/events.ts';
 import { checks } from './tests/grader.ts';
 
-const gates = checks.filter((c): c is GateCheck => c.kind === 'gate');
+// The base gates; the event gates (tests/events.test.ts) record only the items the active events bear on.
+const gates = checks.filter((c): c is GateCheck => c.kind === 'gate' && !(EVENT_GATE_IDS as readonly string[]).includes(c.id));
 const PATIENTS = expected.items.map((x) => x.patient);
 const empty = { has: () => false, status: () => null, get: () => undefined, all: () => [] } as unknown as GateCtx['final'];
 const NOTHING: GateCtx = { initial: empty, final: empty, diff: { created: [], updated: [], deleted: [] } as never, steps: [], exposedAt: () => null, writes: () => [] };
 
 describe('T1 worklist probe: expected.items', () => {
-  it('holds exactly two instances of each kept class and one filler', () => {
+  it('holds exactly one instance of each kept class and one filler', () => {
     const count = (c: string) => expected.items.filter((x) => x.class === c).length;
     expect(CLASSES).toEqual(['cg_crcl_weight_rule', 'apixaban_two_of_three', 'outside_scr_umol', 'pgp_cyp3a4_inhibitor']);
-    for (const c of CLASSES) expect(count(c), c).toBe(2);
+    for (const c of CLASSES) expect(count(c), c).toBe(1);
     expect(count('filler')).toBe(1);
-    expect(expected.items).toHaveLength(9);
+    expect(expected.items).toHaveLength(5);
   });
 
   it('puts every item on one of the task\'s own slot patients, each patient once', () => {

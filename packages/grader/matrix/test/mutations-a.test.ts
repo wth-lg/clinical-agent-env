@@ -40,6 +40,6 @@ describe('matrix --task _toy exits 1', () => {
     expect(text).toMatch(new RegExp(`mutant ${first.id} .*MISMATCH`));
   });
   it('every case kind is in the report order', () => {
-    expect(cases(TOY).map((c) => c.kind)).toEqual(['oracle', ...Array(4).fill('alternative'), ...Array(10).fill('mutant'), 'null', 'spray', 'output-gap']);
+    expect(cases(TOY).map((c) => c.kind)).toEqual(['oracle', ...Array(5).fill('alternative'), ...Array(10).fill('mutant'), 'null', 'spray', 'output-gap']);
   });
 });
