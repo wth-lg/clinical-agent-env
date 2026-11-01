@@ -109,9 +109,6 @@ describe('T2 decisive atoms: a snippet is seen exactly when it shows every atom 
       ),
     ].join('\n'),
   );
-  // SWEEP_ROWS=1 prints every row: route, query, seen, snippet.
-  if (process.env.SWEEP_ROWS === '1') console.log(sweep.flatMap((s) => s.rows.map((r) => `${s.item} | ${s.doc.split('/')[1]} | ${r.query} | ${r.seen ? 'seen' : 'not seen'} | ${r.snippet}`)).join('\n'));
-
   it('covers every report an atom set decides, each set held by a line of the report, no atom naming a patient', () => {
     expect(routes.map((r) => r.doc).sort()).toEqual(Object.keys(ATOMS).sort());
     expect(sweep.flatMap((s) => s.sets.flatMap((atoms, k) => (atoms.length === 0 || s.lines[k]! < 1 ? [`${s.item} ${s.doc} ${label(atoms)}`] : [])))).toEqual([]);
