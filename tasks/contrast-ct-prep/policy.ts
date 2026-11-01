@@ -181,14 +181,16 @@ export function derive(world: WorldView): Json {
       metformin: hold && metformins.length > 0 ? why : [],
     };
     const decisive = [...new Set(Object.values(decides).flat())];
-    // Where each decisive record's fact shows in a note's text (R2).
+    // Where each decisive record's fact shows in a note's text (R2), each phrase ending at the
+    // last word that decides (R26, R29: the grade of an allergic-like reaction; diabetes of any type,
+    // named outside the booking screen's question).
     const mine = notes.filter(({ d }) => of(ref)(d));
     const shown = [
-      ...(record ? [{ id: record, note: record, phrase: `${severity} allergic-like reaction` }] : []),
+      ...(record ? [{ id: record, note: record, phrase: `${severity} allergic-like` }] : []),
       ...(diabetic && decisive.includes(key(diabetic))
         ? mine.flatMap(({ d, text }) => [
           ...(/diabetes or metformin: yes/i.test(text) ? [{ id: key(diabetic), note: key(d), phrase: 'Diabetes or metformin: yes' }] : []),
-          ...(/type 2 diabetes/i.test(text) ? [{ id: key(diabetic), note: key(d), phrase: 'type 2 diabetes' }] : []),
+          ...(/\bdiabetes\b/i.test(text.replace(SCREEN, '')) ? [{ id: key(diabetic), note: key(d), phrase: 'diabetes' }] : []),
         ])
         : []),
       ...decisive.filter((k) => k.startsWith('DocumentReference/') && k !== record).map((k) => ({ id: k, note: k, phrase: 'acute kidney injury' })),

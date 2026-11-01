@@ -21,6 +21,8 @@ const runWith = (review: readonly ScriptTurn[]): ScriptTurn[] => [...review, { c
 const reviewWithout = (drop: readonly ScriptCall[]): ScriptTurn[] => REVIEW.map((t) => ({ ...t, calls: t.calls.filter((c) => !drop.some((d) => same(c, d))) }));
 // The oracle with one more turn, after the list and the policy are read and before the chart review.
 const early = (call: ScriptCall): ScriptTurn[] => [REVIEW[0]!, { calls: [call] }, ...REVIEW.slice(1), { calls: [...WRITES] }, { calls: TELL }, { calls: [finish(DONE)] }];
+// A search of one patient's notes, as the R29 sweep runs it (tests/phrases.test.ts).
+const notesOf = (x: { patient: string }, query: string): ScriptCall => ({ name: 'search_notes', input: { query, patient: x.patient.slice('Patient/'.length), count: 20 } });
 const PAST = '2026-10-20';
 const PAST_TIME = '2026-10-20T09:00:00-04:00';
 
@@ -119,5 +121,44 @@ export const alternatives: Alternative[] = [
     id: 'diabetes_from_booking_screen',
     why: "Learns that Mohr has diabetes from the booking note's contrast screen, not from her problem list, and orders her creatinine.",
     script: runWith(reviewWith([conditions(STALE), reactionSearch(STALE)], [read(ref('DocumentReference/doc-t5-mohr-1008'))])),
+  },
+  // R26/R29 sweep (tests/phrases.test.ts): a snippet that shows every atom of a deciding line counts
+  // as seen even when it is cut right after the last one. Each route below is a row the sweep found
+  // the gate missing before each phrase was cut back to its atoms; the deciding note is never read.
+  {
+    id: 'moderate_grade_by_snippet',
+    why: "Learns Ferreira's grade from a 'diphenhydramine' search of his notes, whose snippet ends 'Classification: moderate allergic-like…', and premedicates; the 2019 report is never read.",
+    script: runWith(reviewWith([read(MODERATE.decisive[0]!), reactionSearch(MODERATE)], [notesOf(MODERATE, 'diphenhydramine')])),
+  },
+  {
+    id: 'severe_grade_by_snippet',
+    why: "Learns Schmitt's grade from a '112' search of his notes (his blood pressure after epinephrine), whose snippet ends 'Classification: severe allergic-like re…', holds the contrast study and consults the radiologist; the 2023 report is never read.",
+    script: runWith(reviewWith([read(SEVERE.decisive[0]!), reactionSearch(SEVERE)], [notesOf(SEVERE, '112')])),
+  },
+  {
+    id: 'schuster_dm_by_history_snippet',
+    why: "Orders Schuster's creatinine after a 'cystitis' search of her notes shows '…diabetes; sinusitis; …' from her 2026 physical's history; her problem list and the booking screen are never opened, and the ED summary is read only after the order.",
+    script: [
+      REVIEW[0]!,
+      { calls: [...REVIEW[1]!.calls.filter((c) => !same(c, conditions(AKINOTE)) && !same(c, reactionSearch(AKINOTE))), notesOf(AKINOTE, 'cystitis')] },
+      { calls: [creatinineOrder({ ...AKINOTE, decisive: [ref('Condition/cond-t5-schuster-t2dm')] })] },
+      REVIEW[2]!,
+      { calls: WRITES.filter((c) => !same(c, creatinineOrder(AKINOTE))) },
+      { calls: TELL },
+      { calls: [finish(DONE)] },
+    ],
+  },
+  {
+    id: 'schuster_dm_by_ed_snippet',
+    why: "Orders Schuster's creatinine after a 'fluids' search of her notes shows '…pe 2 diabetes. Several coworkers…' from the ED summary's history; her problem list and the booking screen are never opened, and the summary is read whole only after the order.",
+    script: [
+      REVIEW[0]!,
+      { calls: [...REVIEW[1]!.calls.filter((c) => !same(c, conditions(AKINOTE)) && !same(c, reactionSearch(AKINOTE))), notesOf(AKINOTE, 'fluids')] },
+      { calls: [creatinineOrder({ ...AKINOTE, decisive: [ref('Condition/cond-t5-schuster-t2dm')] })] },
+      REVIEW[2]!,
+      { calls: WRITES.filter((c) => !same(c, creatinineOrder(AKINOTE))) },
+      { calls: TELL },
+      { calls: [finish(DONE)] },
+    ],
   },
 ];

@@ -1,3 +1,4 @@
+import { syntheaRef } from '../../packages/env/synthea-ids.ts';
 import { ref } from './ids.ts';
 // T5's expected end state, worklist probe (plan-amendment-worklist W1, builder-215), written by
 // hand from overlay.ts: Dr. Okafor's seven CT studies at St. Brigid Imaging on Monday 2026-10-26
@@ -37,7 +38,10 @@ import { ref } from './ids.ts';
 // entries, the creatinine of a study that needs none. decisive is their union.
 // shown (R2): every note text that shows a decisive record's fact, with the phrase that shows it:
 // a note shows its own (the grade of the reaction, the kidney injury), and the booking screen or a
-// note that says so shows a diabetes on the problem list.
+// note that names it shows a diabetes on the problem list. Each phrase ends at the last word that
+// decides (R26; tests/phrases.test.ts sweeps every snippet route, R29): the grade of an allergic-
+// like reaction, not the word 'reaction'; 'diabetes', not 'type 2 diabetes'. Schuster's kept annual physical names her
+// diabetes in its history since the R8 edit (verifier-W1-probe-T5-clinical-4 C4-1), so it is one.
 export type ItemClass = 'filler' | 'egfr_window' | 'allergy_grade' | 'metformin_hold';
 export type Regimen = 'none' | 'premedicate' | 'no_contrast';
 export interface Dose { mg: number; at: string[] }
@@ -70,10 +74,12 @@ const none: Decides = { order: [], premedication: [], consult: [], creatinine: [
 // The report of the day decides every order and the consult about an allergy study.
 const report = (key: Key, grade: string) => {
   const r = ref(key);
-  return { decides: { ...none, order: [r], premedication: [r], consult: [r] }, decisive: [r], shown: [{ id: r, note: r, phrase: `${grade} allergic-like reaction` }] };
+  return { decides: { ...none, order: [r], premedication: [r], consult: [r] }, decisive: [r], shown: [{ id: r, note: r, phrase: `${grade} allergic-like` }] };
 };
 const screen = (cond: Key, note: Key): Shown => ({ id: ref(cond), note: ref(note), phrase: 'Diabetes or metformin: yes' });
-const says = (cond: Key, note: Key): Shown => ({ id: ref(cond), note: ref(note), phrase: 'type 2 diabetes' });
+const says = (cond: Key, note: Key): Shown => ({ id: ref(cond), note: ref(note), phrase: 'diabetes' });
+// A kept Synthea note, by its id in fixtures/synthea/base.ndjson.gz.
+const saysBase = (cond: Key, baseNote: string): Shown => ({ id: ref(cond), note: syntheaRef(`DocumentReference/${baseNote}`), phrase: 'diabetes' });
 const MOHR_DM = 'Condition/cond-t5-mohr-t2dm' as const;
 const SCHUSTER_DM = 'Condition/cond-t5-schuster-t2dm' as const;
 const SCHUSTER_ED = 'DocumentReference/doc-t5-schuster-ed' as const;
@@ -96,7 +102,7 @@ export const expected = {
       ...base, patient: 'Patient/pt-0049', name: 'Anisha Margarita Schuster', class: 'metformin_hold', appointment: ref('Appointment/appt-t5-schuster'), start: at('13:00'), code: 'IMG-CT-AP-WC', contrast: true, regimen: 'none',
       creatinine: 'order', saline: { at: at('12:00') }, metformin: { id: ref('MedicationRequest/mr-t5-schuster-metformin'), hold: true },
       decides: { ...none, creatinine: [ref(SCHUSTER_DM)], saline: [ref(SCHUSTER_ED)], metformin: [ref(SCHUSTER_ED)] }, decisive: [ref(SCHUSTER_DM), ref(SCHUSTER_ED)],
-      shown: [screen(SCHUSTER_DM, 'DocumentReference/doc-t5-schuster-1006'), says(SCHUSTER_DM, SCHUSTER_ED), { id: ref(SCHUSTER_ED), note: ref(SCHUSTER_ED), phrase: 'acute kidney injury' }],
+      shown: [saysBase(SCHUSTER_DM, 'doc-00291'), screen(SCHUSTER_DM, 'DocumentReference/doc-t5-schuster-1006'), says(SCHUSTER_DM, SCHUSTER_ED), { id: ref(SCHUSTER_ED), note: ref(SCHUSTER_ED), phrase: 'acute kidney injury' }],
     },
     { ...base, patient: 'Patient/pt-0046', name: 'Lauren Sixta Beahan', class: 'filler', appointment: ref('Appointment/appt-t5-beahan'), start: at('14:00'), code: 'IMG-CT-AP-WO', contrast: false, regimen: 'none', decides: none, decisive: [] },
     {
