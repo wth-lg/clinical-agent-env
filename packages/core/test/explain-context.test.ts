@@ -37,7 +37,8 @@ describe('explainContext', () => {
   });
 
   // Each trial with M1 when the run has no manifest: contrast-ct-prep/3's decisive ids were shown, and
-  // renal-dose-review/4's Observation/obs-t1-wt-1020 never was, so without the run's world it cannot be checked.
+  // renal-dose-review/4's first decisive id, Dorothy Ashworth's outside creatinine (obs-t1-1604, the
+  // W1 worklist; builder-249), never was, so without the run's world it cannot be checked.
   // The decisive gate: contrast-ct-prep/3 fails ct_order first and no_substitution later, and the
   // unmarked safety failure is decisive (decisions.tsv 2026-10-28T06:50).
   for (const [trial, checks, noManifest] of [['contrast-ct-prep/3', contrastChecks, true], ['renal-dose-review/4', renalChecks, 'pending']] as const) {
@@ -49,7 +50,7 @@ describe('explainContext', () => {
       expect(m('M1', record, ctx).met).toBe(true);
       const none = m('M1', record, explainContext({ ...input, manifest: null }));
       expect(none.met).toBe(noManifest);
-      if (noManifest === 'pending') expect(none.evidence).toContain(`${ref('Observation/obs-t1-wt-1020')} never exposed; exposability not checked (the run has no manifest world_hash)`);
+      if (noManifest === 'pending') expect(none.evidence).toContain(`${ref('Observation/obs-t1-1604')} never exposed; exposability not checked (the run has no manifest world_hash)`);
       // Without the task's checks there is nothing to recompute, so M1 cannot say.
       expect(m('M1', record, explainContext({ record, events, manifest: null })).met).toBe('pending');
     });

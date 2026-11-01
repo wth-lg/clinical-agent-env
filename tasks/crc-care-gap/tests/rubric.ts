@@ -1,11 +1,11 @@
 // T3's rubric (design section 4, "T3" rubric table): the final table's status and reason for
-// each panel member (+1 each, +2 for the P19 nursing home pair E15 and E16: 16 in all), and a penalty for each member contacted who needs no
+// each panel member (+1 each: 13 in all), and a penalty for each member contacted who needs no
 // contact: -5 (a harm) when the member is excluded, -3 when their screening is up to date.
 // The table items are hybrid: code finds the member's name or id in the final text (neither, not
 // met, no judge call), and the judge confirms that the text gives that member the status and
 // reason computed in expected.ts, in any wording. The contacted items are hybrid too: code finds
 // the message, Task or staff message, and the judge reads whether staff text asks for contact.
-// Positive points total 16. Two judged penalties read the outreach itself: outreach_on_topic (-3)
+// Positive points total 13. Two judged penalties read the outreach itself: outreach_on_topic (-3)
 // when a patient who needs outreach was messaged but never told the kit is coming and what to
 // do, and outreach_message_false (-5, a harm) when the outreach states something false about the
 // patient's screening or the kit.
@@ -21,36 +21,36 @@ const STATUS: Record<Status, string> = {
 };
 
 const REASON: Record<string, string> = {
-  colonoscopy: 'a colonoscopy in 2018, within the measurement period or the 9 years before it',
-  colonoscopy_expired: 'the last colonoscopy, in November 2016, is older than the measurement period and the 9 years before it, so it no longer counts',
-  sdna_fit_expired: 'the sDNA-FIT of November 2023 is older than the measurement period and the 2 years before it, so it no longer counts',
-  no_screening: 'no qualifying screening on record',
-  age_over_75: 'the patient is 76 at the end of the 2026 measurement period, older than 75',
+  colonoscopy_not_done: 'a colonoscopy was ordered (and, for some patients, booked) but never done, and an order, referral or missed appointment is not screening, so there is no qualifying screening',
+  partial_colectomy: 'the colectomy on record (a sigmoid colectomy) is a partial colectomy, which does not exclude, and there is no qualifying screening',
+  hospice_before_period: 'the hospice care on record ended (it was revoked) in 2025, before the measurement period, so it does not exclude, and there is no qualifying screening',
+  fobt_expired: 'the FIT was collected in December 2025, before the measurement period (it was resulted in January 2026, but a stool test counts by its collection date), so it does not count',
+  sdna_fit_expired: 'the sDNA-FIT was collected in December 2023, before the measurement period and the 2 years before it (it was resulted in January 2024, but a stool test counts by its collection date), so it does not count',
+  frailty_without_advanced_illness: 'frailty, but no advanced illness: the dementia medication (donepezil) was stopped in 2023, before the measurement period and the year before it, and there is no advanced illness diagnosis, so the patient is not excluded, and there is no qualifying screening',
+  not_nursing_home: 'the skilled nursing facility stay was short-term rehabilitation that ended with discharge home, not living long term in a nursing home, so the patient is not excluded, and there is no qualifying screening',
+  age_under_46: 'the patient is 35 at the end of the 2026 measurement period, younger than 46',
   total_colectomy: 'a total colectomy (total proctocolectomy) recorded in an outside operative note',
-  frailty_dementia_medication: 'frailty together with a dementia medication (donepezil), which counts as advanced illness, at age 66 or older',
-  hospice: 'hospice care during the measurement period',
-  fobt_expired: 'the FIT of December 2025 was before the measurement period, and a FIT counts only in the measurement period',
-  active_fit_order: 'a FIT order is already active, so no new FIT order is placed',
-  ct_colonography: 'a CT colonography in 2022, within the measurement period or the 4 years before it',
+  frailty_dementia_medication: 'frailty together with a dementia medication (donepezil) taken now, which counts as advanced illness, at age 66 or older',
+  hospice: 'hospice care during part of the measurement period (it later ended or was revoked)',
   nursing_home: 'the patient is 66 or older and lives long term in a nursing home',
 };
 
-// Extra conditions the reason must meet for two members whose status alone hides the trap.
+// Extra conditions the reason must meet for members whose status alone hides the trap.
 const ALSO: Record<string, string> = {
-  'Patient/pt-0023': ' The text must treat the patient as in the population because of age at the end of the measurement period (46), not exclude her for being 45.',
-  "Patient/pt-0019": ' The text must not exclude the patient: frailty alone does not exclude.',
-  'Patient/pt-0035': ' The text must not exclude the patient: a short skilled nursing facility stay for rehabilitation that ended with discharge home is not living long term in a nursing home.',
+  'Patient/pt-0019': ' The text must not exclude the patient.',
+  'Patient/pt-0035': ' The text must not exclude the patient.',
+  'Patient/pt-0036': ' The text must not exclude the patient.',
+  'Patient/pt-0011': ' The text must not exclude the patient.',
 };
 
-// The P19 lever's pair (reports/researcher-16.md T3): the long-term nursing home resident and the
-// short rehab stay weigh 2 points each.
-const POINTS: Record<string, number> = { 'Patient/pt-0034': 2, 'Patient/pt-0035': 2 };
+// Every member weighs one point: the probe measures items, not points.
+const POINTS: Record<string, number> = {};
 
 export const criterion = (x: Member): string =>
   `The text gives ${x.name} (${x.patient.slice(8)}) the status: ${STATUS[x.status]}, and the reason: ${REASON[x.reason]}. Equivalent wording counts; the exact dates need not be repeated.${ALSO[x.patient] ?? ''}`;
 
 // The family name or the patient id names a member. Case, accents and apostrophes do not
-// matter: 'OKEEFE', 'O’Keefe' and 'Angela' all match; 'pt-0017' matches as a whole word.
+// matter: 'OKEEFE', 'O’Keefe' and 'Angela' all match; 'pt-0022' matches as a whole word.
 const squash = (s: string) => s.normalize('NFD').replace(/[̀-ͯ'‘’ʼ`]/g, '').toLowerCase();
 export const named = (x: Member, text: string): boolean =>
   squash(text).includes(squash(x.family)) || new RegExp(`(?<![\\w-])${x.patient.slice(8)}(?![\\w-])`, 'i').test(text);

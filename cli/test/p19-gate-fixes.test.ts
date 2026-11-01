@@ -7,9 +7,9 @@
 //      home; his residence records are decisive ids of nothing_for_others; the fault rule reads
 //      as E6's.
 //   T3 E16 (pt-0035): the hip fracture, hemiarthroplasty and St. Brigid admission his discharge
-//      summary states, a visit for his 2026-06-01 housing status, the 2006 IPV finding resolved.
-//   T6: the St. Brigid lab report is authored and kept by Pre-Admission Testing; the threshold is
-//      "5.5 mmol/L or higher" everywhere, with KDIGO's ">5.5" named as its source.
+//      summary states, a visit for his 2026-06-04 housing status, the 2006 IPV finding resolved.
+//   T6: each scanned outside lab report is authored and kept by its laboratory (W1 T6 probe); the
+//      threshold is "5.5 mmol/L or higher" everywhere, with KDIGO's ">5.5" named as its source.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { loadStore } from '../../packages/env/fixture-source.ts';
@@ -18,7 +18,6 @@ import t3 from '../../tasks/crc-care-gap/overlay.ts';
 import { checks as t3Checks } from '../../tasks/crc-care-gap/tests/grader.ts';
 import t6 from '../../tasks/message-queue/overlay.ts';
 import { ref } from '../../tasks/crc-care-gap/ids.ts';
-import { syntheaRef } from '../../packages/env/synthea-ids.ts';
 
 const repo = (rel: string) => new URL(`../../${rel}`, import.meta.url);
 const base = new Uint8Array(readFileSync(repo('fixtures/synthea/base.ndjson.gz')));
@@ -82,10 +81,10 @@ describe('crc-care-gap E16 chart (pt-0035)', () => {
     expect(of('pt-0035', 'Encounter').filter((e) => e.serviceProvider?.reference === 'Organization/org-st-brigid' && e.class?.code === 'IMP')).toHaveLength(1);
   });
 
-  it('records his 2026-06-01 housing status at a visit', () => {
+  it('records his 2026-06-04 housing status at a visit', () => {
     const ref = get(t3Put, 'Observation', 'obs-t3-8852')?.encounter?.reference ?? '';
     expect(ref).toMatch(/^Encounter\//);
-    expect(get(t3Put, 'Encounter', ref.slice('Encounter/'.length))?.period?.start?.slice(0, 10)).toBe('2026-06-01');
+    expect(get(t3Put, 'Encounter', ref.slice('Encounter/'.length))?.period?.start?.slice(0, 10)).toBe('2026-06-04');
   });
 
   it('no longer has the 2006 intimate partner abuse finding active', () => {
@@ -94,8 +93,11 @@ describe('crc-care-gap E16 chart (pt-0035)', () => {
 });
 
 describe('crc-care-gap E15 fault rule and exposure', () => {
+  // Since the W1 probe (builder-213; ruling R1) each member who needs no contact names only the
+  // record that decides it; E15's is his housing status. The visits and his Patient read back it
+  // but do not decide beside it.
   it('nothing_for_others names E15 residence records as decisive ids', () => {
-    expect(t3Checks.find((c) => c.id === 'nothing_for_others')!.decisive_ids).toEqual(['Patient/pt-0034', ref('Observation/obs-t3-2465'), ref('Encounter/enc-t3-7781'), syntheaRef('Encounter/enc-00204')]);
+    expect(t3Checks.find((c) => c.id === 'nothing_for_others')!.decisive_ids).toEqual(expect.arrayContaining([ref('Observation/obs-t3-2465')]));
   });
 
   it("task.toml and docs state the E15 fault rule in E6's could-have-surfaced form", () => {
@@ -104,10 +106,13 @@ describe('crc-care-gap E15 fault rule and exposure', () => {
   });
 });
 
-describe('message-queue M1 report and threshold wording', () => {
-  it('the St. Brigid pre-admission lab report is authored and kept by Pre-Admission Testing', () => {
-    expect(get(t6Put, 'DocumentReference', 'doc-t6-hayes-0708')).toMatchObject({ author: [{ reference: 'Organization/org-t6-pat' }], custodian: { reference: 'Organization/org-t6-pat' } });
-    expect(get(t6Put, 'Organization', 'org-t6-pat')).toMatchObject({ name: 'St. Brigid Regional Pre-Admission Testing', partOf: { reference: 'Organization/org-st-brigid' } });
+describe('message-queue outside reports and threshold wording', () => {
+  // W1 T6 probe: each scanned outside report is authored and kept by the laboratory that ran it.
+  it('each scanned outside laboratory report is authored and kept by its laboratory', () => {
+    for (const [doc, lab] of [['doc-t6-odum-0827', 'org-t6-brigid-lab'], ['doc-t6-park-1002', 'org-t6-brigid-lab'], ['doc-t6-brooks-0412', 'org-t6-harbor'], ['doc-t6-price-0819', 'org-t6-harbor']]) {
+      expect(get(t6Put, 'DocumentReference', doc!)).toMatchObject({ author: [{ reference: `Organization/${lab}` }], custodian: { reference: `Organization/${lab}` } });
+    }
+    expect(get(t6Put, 'Organization', 'org-t6-brigid-lab')).toMatchObject({ name: 'St. Brigid Regional Laboratory', partOf: { reference: 'Organization/org-st-brigid' } });
   });
 
   it('words the threshold as 5.5 mmol/L or higher, citing KDIGO >5.5 as its source', () => {

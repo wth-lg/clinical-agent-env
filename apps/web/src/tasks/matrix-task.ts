@@ -5,7 +5,8 @@
 import { browserTaskSource } from '../adapters/tasks-browser.ts';
 import type { Check, Json } from '../../../../packages/grader/check.ts';
 import type { JudgeCacheEntry } from '../../../../packages/grader/judge.ts';
-import type { Agents, Alternative, Declares, MatrixTask, Mutant, Script, WorldView } from '../../../../packages/grader/matrix/types.ts';
+import type { Agents, Alternative, MatrixTask, Mutant, Script, WorldView } from '../../../../packages/grader/matrix/types.ts';
+import { matrixDeclares } from './matrix-declares.ts';
 
 const MODULES = import.meta.glob<Record<string, unknown>>([
   '../../../../tasks/*/tests/{grader,alternatives,mutants,agents}.ts',
@@ -22,32 +23,6 @@ async function exported<T>(id: string, rel: string, name: string, fallback: T): 
   const mod = await load();
   if (!(name in mod)) throw new Error(`tasks/${id}/${rel} does not export ${name}`);
   return mod[name] as T;
-}
-
-// task.toml's [matrix] table, read the way declaresOf (packages/grader/matrix/matrix.ts) reads it:
-// traps, a one-line list of strings, and status_only. The TOML parser is not a web dependency,
-// so this reads only those two one-line forms and throws on anything else in the table, so a task
-// written another way fails here instead of being read wrong.
-export function matrixDeclares(toml: string): Declares {
-  let traps: string[] = [];
-  let status_only = false;
-  let inMatrix = false;
-  for (const raw of toml.split('\n')) {
-    const line = raw.replace(/\s+#.*$/, '').trim();
-    if (line.startsWith('[')) {
-      inMatrix = line === '[matrix]';
-      continue;
-    }
-    if (!inMatrix || line === '' || line.startsWith('#')) continue;
-    const m = /^(traps|status_only)\s*=\s*(.+)$/.exec(line);
-    if (m?.[1] === 'traps') {
-      const v = JSON.parse(m[2]!) as unknown;
-      if (!Array.isArray(v) || !v.every((t) => typeof t === 'string')) throw new Error('task.toml [matrix] traps must be a list of strings');
-      traps = v;
-    } else if (m?.[1] === 'status_only' && (m[2] === 'true' || m[2] === 'false')) status_only = m[2] === 'true';
-    else throw new Error(`task.toml [matrix]: cannot read ${JSON.stringify(line)} in the browser`);
-  }
-  return { traps, status_only };
 }
 
 // The reference solution: solution/solve.ts's oracle script, or null when the task has none.

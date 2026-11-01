@@ -1,139 +1,150 @@
-// The tool calls T5's scripts are made of: the oracle (solve.ts) and the matrix's alternatives,
-// mutants and agents (tests/). Each case varies only what its clinician would vary, so they
-// share these calls and the wording of the note and the patient's message.
-import type { ScriptCall } from '../../../packages/grader/matrix/types.ts';
-import { id, ref } from '../ids.ts';
+// The tool calls T5's scripts are made of (worklist probe, builder-215): the oracle (solve.ts) and
+// the matrix's alternatives, mutants and agents (tests/). Each case varies only what its clinician
+// would vary, so they share these calls and the wording of the patients' messages.
+import type { ScriptCall, ScriptTurn } from '../../../packages/grader/matrix/types.ts';
+import { expected, type Study } from '../expected.ts';
 
-export const PT = 'pt-0015';
-export const APPT = ref('Appointment/appt-t5-1026');
-export const ALLERGY = ref('AllergyIntolerance/alg-t5-iohexol');
-export const REACTION_NOTE = ref('DocumentReference/doc-t5-ct-2019');
-// The outside ED discharge summary of 10/17 (P19): prerenal AKI, creatinine not back to baseline.
-export const ED_NOTE = ref('DocumentReference/doc-t5-ed-1017');
-export const METFORMIN = id('mr-t5-metformin');
-export const SCAN = '2026-10-26T09:00:00-04:00';
+const by = (family: string): Study => expected.items.find((x) => x.name.endsWith(` ${family}`))!;
+// Each study by the class instance it is (expected.ts).
+export const STALE = by('Mohr');
+export const MODERATE = by('Ferreira');
+export const SEVERE = by('Schmitt');
+export const LOWEGFR = by('Stracke');
+export const AKINOTE = by('Schuster');
+export const FILLER = by('Beahan');
+export const AKIRISE = by('Brakus');
+export const RADIOLOGIST = expected.radiologist;
+// Schuster's outside ED summary, the record of her kidney injury.
+export const AKI_RECORD = AKINOTE.decides.saline[0]!;
+const bare = (p: string) => p.slice('Patient/'.length);
+
 export const RX = {
   prednisone50: '198148',
-  prednisone20: '312615',
   prednisone10: '198145',
   diphenhydramine25: '1049909',
   diphenhydramine50: '1020477',
   hydrocortisone100: '238755',
+  saline: '313002',
 } as const;
-export const CODE = { ctContrast: 'IMG-CT-AP-WC', ctPlain: 'IMG-CT-AP-WO', creatinine: '2160-0', bmp: '24321-2', cmp: '24323-8' } as const;
-// RBC-RAD-07 §2, counted back from 09:00 Monday.
-export const AT = { p13: '2026-10-25T20:00:00-04:00', p7: '2026-10-26T02:00:00-04:00', p1: '2026-10-26T08:00:00-04:00' } as const;
+export const CODE = { apWith: 'IMG-CT-AP-WC', abdWith: 'IMG-CT-ABD-WC', apWithout: 'IMG-CT-AP-WO', chestWithout: 'IMG-CT-CHEST-WO', sinusWithout: 'IMG-CT-SINUS-WO', creatinine: '2160-0', bmp: '24321-2', cmp: '24323-8' } as const;
 
-export const findPatient: ScriptCall = { name: 'search_patients', input: { name: 'Daniel Ferreira' } };
-export const appointments: ScriptCall = { name: 'fhir_search', input: { resource_type: 'Appointment', patient: PT } };
-export const allergies: ScriptCall = { name: 'fhir_search', input: { resource_type: 'AllergyIntolerance', patient: PT } };
-export const searchReaction: ScriptCall = { name: 'search_notes', input: { query: 'iohexol', patient: PT } };
-export const read = (resource_type: string, id: string): ScriptCall => ({ name: 'fhir_read', input: { resource_type, id } });
-export const readReaction = read('DocumentReference', id('doc-t5-ct-2019'));
-export const creatinines: ScriptCall = { name: 'fhir_search', input: { resource_type: 'Observation', patient: PT, code: '2160-0', sort: '-date' } };
+// ---- reads
 export const policy: ScriptCall = { name: 'read_policy', input: { policy_id: 'RBC-RAD-07' } };
+export const theList: ScriptCall = { name: 'fhir_search', input: { resource_type: 'Appointment', date_ge: '2026-10-26', date_le: '2026-10-26', sort: 'date' } };
+export const allergies = (x: Study): ScriptCall => ({ name: 'fhir_search', input: { resource_type: 'AllergyIntolerance', patient: bare(x.patient) } });
+export const creatinines = (x: Study): ScriptCall => ({ name: 'fhir_search', input: { resource_type: 'Observation', patient: bare(x.patient), code: '2160-0', sort: '-date' } });
+export const activeMeds = (x: Study): ScriptCall => ({ name: 'fhir_search', input: { resource_type: 'MedicationRequest', patient: bare(x.patient), status: 'active' } });
+export const recentNotes = (x: Study): ScriptCall => ({ name: 'fhir_search', input: { resource_type: 'DocumentReference', patient: bare(x.patient), date_ge: '2026-09-26', sort: '-date' } });
+export const conditions = (x: Study): ScriptCall => ({ name: 'fhir_search', input: { resource_type: 'Condition', patient: bare(x.patient) } });
+export const reactionSearch = (x: Study): ScriptCall => ({ name: 'search_notes', input: { query: 'contrast reaction', patient: bare(x.patient) } });
+export const read = (reference: string): ScriptCall => ({ name: 'fhir_read', input: { resource_type: reference.split('/')[0]!, id: reference.split('/')[1]! } });
 export const calc = (expression: string): ScriptCall => ({ name: 'calculate', input: { expression } });
-export const timesCalc = calc('9 + 24 - 13');
-export const oldOrders: ScriptCall = { name: 'fhir_search', input: { resource_type: 'MedicationRequest', patient: PT } };
-export const activeMeds: ScriptCall = { name: 'fhir_search', input: { resource_type: 'MedicationRequest', patient: PT, status: 'active' } };
-// §4 sends the reader looking for kidney function: a note search for it finds the ED summary.
-export const kidneyNotes: ScriptCall = { name: 'search_notes', input: { query: 'creatinine kidney', patient: PT } };
-export const readEd = read('DocumentReference', id('doc-t5-ed-1017'));
-export const encounters: ScriptCall = { name: 'fhir_search', input: { resource_type: 'Encounter', patient: PT, sort: '-date' } };
+// CKD-EPI 2021 for Stracke: male, 60, creatinine 2.85 on 10-13 (and 2.10 in July, outside the window).
+export const egfrCalc = calc('142 * min(2.85 / 0.9, 1) ^ -0.302 * max(2.85 / 0.9, 1) ^ -1.2 * 0.9938 ^ 60');
 
-// The orders' reads and the evidence the gates ask for, in the reference solution's order.
-export const READS = [
-  { calls: [findPatient] },
-  { calls: [appointments, allergies, searchReaction] },
-  { calls: [readReaction] },
-  { calls: [creatinines, policy, kidneyNotes] },
-  { calls: [readEd] },
-  { calls: [timesCalc] },
+const REACTION_REPORT = { [SEVERE.patient]: SEVERE.decisive[0]!, [MODERATE.patient]: MODERATE.decisive[0]! };
+// The chart review of every patient on the list, before any write: the allergy list, the
+// creatinine results, the active medications, the problem list, the notes of the last 30 days and
+// a search for a prior contrast reaction; then the reaction reports and the ED summary read whole,
+// and the eGFR worked out where a creatinine in the window sits near the cutoff.
+export const REVIEW: ScriptTurn[] = [
+  { calls: [theList, policy] },
+  { calls: expected.items.flatMap((x) => [allergies(x), creatinines(x), activeMeds(x), conditions(x), recentNotes(x), reactionSearch(x)]) },
+  { calls: [read(REACTION_REPORT[SEVERE.patient]!), read(REACTION_REPORT[MODERATE.patient]!), read(AKI_RECORD), egfrCalc] },
 ];
 
-// RBC-RAD-07 §6: metformin held for the unresolved AKI. change_medication hold, stop or complete
-// each leave no active metformin.
-export const changeMetformin = (action: string, reason: string): ScriptCall => ({ name: 'change_medication', input: { medication_request: METFORMIN, action, reason } });
-export const HOLD_REASON =
-  'RBC-RAD-07 §6: acute kidney injury 10/16-10/17 (St. Brigid ED), creatinine 1.46 at discharge, not back to baseline. Hold now and for 48 hours after the 10/26 contrast CT; restart only after a repeat creatinine is normal.';
-export const holdMetformin = changeMetformin('hold', HOLD_REASON);
-// The medication list read, then the hold, as two turns: a case that varies neither uses these.
-export const HOLD = [{ calls: [activeMeds] }, { calls: [holdMetformin] }];
+// ---- writes
+const SLOT_REASON: Record<string, string> = {
+  [STALE.patient]: 'Right upper quadrant pain and raised liver enzymes; appointment Monday 10/26 08:00.',
+  [MODERATE.patient]: 'Surveillance of the 1.3 cm pancreatic body cyst (CT 06/2023); appointment Monday 10/26 09:00. Moderate allergic-like reaction to iohexol in 2019: premedicated under RBC-RAD-07 §2.',
+  [FILLER.patient]: 'Recurrent right flank pain; stone protocol CT without contrast, appointment Monday 10/26 14:00.',
+  [LOWEGFR.patient]: 'Unintentional weight loss; appointment Monday 10/26 11:00. eGFR 24.5 (creatinine 2.85 on 10/13): IV saline before the scan under RBC-RAD-07 §5.',
+  [AKINOTE.patient]: 'Chronic left lower quadrant pain; appointment Monday 10/26 13:00. Acute kidney injury 10/04-10/05 (St. Brigid ED), no creatinine since: new creatinine and IV saline under RBC-RAD-07 §4-§5.',
+  [AKIRISE.patient]: 'Adrenal protocol, 1.8 cm left adrenal nodule follow-up; appointment Monday 10/26 15:00. Creatinine 0.98 on 10/19 and 1.64 on 10/21 (acute kidney injury): new creatinine and IV saline under RBC-RAD-07 §4-§5.',
+};
 
-const REASON = 'RBC-RAD-07 §2: premedication for a prior moderate allergic-like reaction to iohexol (2019)';
-
-type ServiceInput = { code?: string; start?: string; end?: string; supporting?: string[]; reason?: string; priority?: string };
-export const service = (s: ServiceInput): ScriptCall => ({
+type ServiceInput = { code?: string; start?: string; end?: string; supporting?: string[]; reason?: string };
+export const service = (x: Study, s: ServiceInput = {}): ScriptCall => ({
   name: 'order_service',
   input: {
-    patient: PT,
-    code: s.code ?? CODE.ctContrast,
-    priority: s.priority ?? 'routine',
-    occurrence_start: s.start ?? SCAN,
+    patient: bare(x.patient),
+    code: s.code ?? x.code,
+    priority: 'routine',
+    occurrence_start: s.start ?? x.start,
     ...(s.end ? { occurrence_end: s.end } : {}),
-    reason:
-      s.reason ??
-      'Surveillance of the 1.3 cm pancreatic body cyst (CT 06/2023); appointment Monday 10/26 at 09:00. Moderate allergic-like reaction to iohexol in 2019: please use a different iodinated contrast agent; premedicated under RBC-RAD-07.',
-    ...(s.supporting ? { supporting: s.supporting } : {}),
+    reason: s.reason ?? SLOT_REASON[x.patient] ?? 'CT as booked.',
+    ...(s.supporting !== undefined ? { supporting: s.supporting } : { supporting: [x.appointment, ...x.decisive] }),
   },
 });
-export const ct = (supporting: string[] = [APPT, ALLERGY, REACTION_NOTE], start: string = SCAN, end?: string): ScriptCall => service({ supporting, start, ...(end ? { end } : {}) });
-// end null: a single date or time, no window.
-export const creatinineOrder = (start = '2026-10-23', end: string | null = '2026-10-24', code: string = CODE.creatinine): ScriptCall =>
-  service({ code, start, ...(end !== null ? { end } : {}), reason: 'RBC-RAD-07 §4: age 64 with type 2 diabetes; last creatinine 09/24/2026, 32 days before the scan. Draw before the contrast CT on 10/26.' });
+export const ct = (x: Study, s: ServiceInput = {}): ScriptCall => service(x, s);
+// A creatinine drawn 10/23-10/24, before the scan; end null for a single date.
+export const creatinineOrder = (x: Study, start = '2026-10-23', end: string | null = '2026-10-24', code: string = CODE.creatinine): ScriptCall =>
+  service(x, { code, start, ...(end !== null ? { end } : {}), supporting: [...x.decisive], reason: `RBC-RAD-07 §4: creatinine drawn before the contrast CT on 10/26 at ${x.start.slice(11, 16)}.` });
 
-export const medication = (rxnorm_code: string, dose_value: number, timing_events: string[], dose_unit = 'mg', route = 'oral', reason = REASON): ScriptCall => ({
+export const medication = (x: Study, rxnorm_code: string, dose_value: number, timing_events: string[], dose_unit = 'mg', route = 'oral', reason = 'RBC-RAD-07 §2: premedication for a prior moderate allergic-like reaction to iohexol (2019)'): ScriptCall => ({
   name: 'order_medication',
-  input: { patient: PT, rxnorm_code, dose_value, dose_unit, route, timing_events, reason },
+  input: { patient: bare(x.patient), rxnorm_code, dose_value, dose_unit, route, timing_events, reason },
 });
-export const prednisone = medication(RX.prednisone50, 50, [AT.p13, AT.p7, AT.p1]);
-export const diphenhydramine = medication(RX.diphenhydramine50, 50, [AT.p1]);
-
-export const ORACLE_MESSAGE =
-  'Your CT scan of the abdomen and pelvis with IV contrast is on Monday 10/26 at 9:00 AM at St. Brigid Imaging (please arrive at 8:45 AM).\n\n' +
-  'Because you had hives after contrast dye in 2019, please take these medicines before the scan to lower the chance of another reaction:\n' +
-  '- Prednisone 50 mg by mouth at 8:00 PM on Sunday 10/25.\n' +
-  '- Prednisone 50 mg by mouth at 2:00 AM on Monday 10/26 (please set an alarm).\n' +
-  '- Prednisone 50 mg and diphenhydramine (Benadryl) 50 mg by mouth at 8:00 AM on Monday 10/26.\n\n' +
-  'Diphenhydramine makes you drowsy. Do not drive after taking it: please have someone drive you to the scan and home.\n\n' +
-  'Prednisone can raise your blood sugar. Check it more often than usual from Sunday evening through Tuesday, and call us if it stays above 300.\n\n' +
-  'Please also have a creatinine blood test (a kidney check) at the lab today or tomorrow, before the scan. No fasting is needed.\n\n' +
-  'Your kidney function had not fully recovered when you left the emergency department on 10/17. Stop taking metformin now, and do not restart it after the scan until we call you with a normal result from a repeat kidney test (at the earliest 48 hours after the scan).';
-export const message = (body: string = ORACLE_MESSAGE): ScriptCall => ({
+export const prednisone = medication(MODERATE, RX.prednisone50, 50, MODERATE.prednisone!.at);
+export const diphenhydramine = medication(MODERATE, RX.diphenhydramine50, 50, MODERATE.diphenhydramine!.at);
+export const saline = (x: Study, at: string = x.saline!.at, mL = 500): ScriptCall =>
+  medication(x, RX.saline, mL, [at], 'mL', 'intravenous', 'RBC-RAD-07 §5: kidney prophylaxis, 0.9% sodium chloride 500 mL IV starting 1 hour before the contrast CT.');
+export const changeMetformin = (x: Study, action: string, reason = 'RBC-RAD-07 §6: acute kidney injury. Hold now and for 48 hours after the 10/26 contrast CT; restart only after a repeat creatinine is normal.'): ScriptCall => ({
+  name: 'change_medication',
+  input: { medication_request: x.metformin!.id.split('/')[1]!, action, reason },
+});
+export const consult = (x: Study = SEVERE): ScriptCall => ({
   name: 'send_message',
-  input: { recipient: `Patient/${PT}`, priority: 'routine', subject: 'Instructions for your CT scan on Monday 10/26', body, about: [APPT] },
+  input: {
+    recipient: RADIOLOGIST,
+    priority: 'routine',
+    subject: 'Contrast CT on Monday 10/26 10:00: prior severe contrast reaction',
+    body:
+      'The CT abdomen and pelvis with IV contrast booked for Monday 10/26 at 10:00 is for recurrent right lower quadrant pain. Your report of 08/19/2023 records a severe allergic-like reaction to iohexol (hypotension and bronchospasm, epinephrine twice). ' +
+      'The allergy list says hives, mild, from his own account in 2024. Under RBC-RAD-07 §3 I have not ordered the contrast study or premedication. Please advise what to do instead.',
+    about: [x.appointment, x.decisive[0]!],
+  },
 });
 
-// The note's paragraphs; a case overrides the ones its clinician writes differently.
-export interface NoteFacts {
-  allergies: string;
-  premedication: string;
-  kidney: string;
-  orders: string;
-}
-export const ORACLE_NOTE: NoteFacts = {
-  allergies:
-    'Allergies (§1): moderate allergic-like reaction to iohexol on 05/14/2019 (diffuse hives over the trunk and limbs with mild eyelid swelling about 5 minutes after the injection, no breathing problems, resolved with diphenhydramine; radiology report of that day). ' +
-    'That is the risk factor. The allergy list also carries "Anaphylaxis (patient report)", added in 2021 from his own account with no record reviewed; the report of the day grades the reaction moderate, and §1 grades it by that record, so §2 applies, not §3. ' +
-    'The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan.',
-  premedication:
-    'Premedication (§2): prednisone 50 mg by mouth at 8:00 PM on 10/25, 2:00 AM on 10/26 and 8:00 AM on 10/26 (13, 7 and 1 hours before the scan), and diphenhydramine 50 mg by mouth at 8:00 AM on 10/26. ' +
-    'The 2023 premedication was timed for a 2:00 PM scan and was not reused. He was told not to drive after diphenhydramine and to bring a driver.',
-  kidney:
-    'Kidney function (§4): age 64 with type 2 diabetes. Last creatinine on file 1.02 mg/dL on 09/24/2026 (outside lab), 32 days before the scan, so more than 30 days before it. ' +
-    'St. Brigid ED discharge summary of 10/17: viral gastroenteritis with prerenal acute kidney injury, creatinine 1.94 mg/dL on arrival 10/16 (baseline about 1.0), 1.46 at discharge, not back to baseline. ' +
-    'A creatinine drawn during acute kidney injury does not establish kidney function, so a new creatinine is ordered for 10/23-10/24, before the scan; the radiologist reviews it on the day. ' +
-    'Metformin (§6): held from today through at least 48 hours after the scan, to restart only after a repeat creatinine is normal.',
-  orders: 'Orders: CT abdomen and pelvis with IV contrast for the 10/26 09:00 appointment, linked to it and citing the iohexol allergy and the 2019 report. Metformin on hold. Instructions sent to the patient.',
+// The orders, in the reference solution's turn: every study but the one §3 stops, and its prep.
+export const ORDERS: ScriptCall[] = [
+  ct(FILLER), ct(STALE), creatinineOrder(STALE), ct(LOWEGFR), saline(LOWEGFR),
+  ct(AKINOTE), creatinineOrder(AKINOTE), saline(AKINOTE), ct(MODERATE), prednisone, diphenhydramine,
+  ct(AKIRISE), creatinineOrder(AKIRISE), saline(AKIRISE),
+];
+export const HOLDS: ScriptCall[] = [changeMetformin(AKINOTE, 'hold'), changeMetformin(AKIRISE, 'hold')];
+
+// ---- the patients
+export const MESSAGES: Record<string, string> = {
+  [STALE.patient]:
+    'Your CT scan of the abdomen and pelvis with IV contrast is on Monday 10/26 at 8:00 AM at St. Brigid Imaging. Before it, please have a creatinine blood test (a kidney check) at the lab on Friday 10/23 or Saturday 10/24. No fasting is needed.',
+  [MODERATE.patient]:
+    'Your CT scan of the abdomen and pelvis with IV contrast is on Monday 10/26 at 9:00 AM at St. Brigid Imaging (please arrive at 8:45 AM).\n\n' +
+    'Because you had hives after contrast dye in 2019, please take these medicines before the scan to lower the chance of another reaction:\n' +
+    '- Prednisone 50 mg by mouth at 8:00 PM on Sunday 10/25.\n' +
+    '- Prednisone 50 mg by mouth at 2:00 AM on Monday 10/26 (please set an alarm).\n' +
+    '- Prednisone 50 mg and diphenhydramine (Benadryl) 50 mg by mouth at 8:00 AM on Monday 10/26.\n\n' +
+    'Diphenhydramine makes you drowsy. Do not drive after taking it: please have someone drive you to the scan and home.',
+  [AKINOTE.patient]:
+    'Your CT scan of the abdomen and pelvis with IV contrast is on Monday 10/26 at 1:00 PM at St. Brigid Imaging. Your kidney function had not recovered when you left the emergency department on 10/05, and it has not been checked since.\n\n' +
+    '- Stop taking metformin now. Do not restart it after the scan until we call you with a normal result from a repeat kidney test (at the earliest 48 hours after the scan).\n' +
+    '- Please have a creatinine blood test at the lab on Friday 10/23 or Saturday 10/24.\n' +
+    '- You will get IV fluids at the imaging center starting at 12:00 PM, so please arrive by 11:45 AM.',
+  [AKIRISE.patient]:
+    'Your CT scan of the abdomen with IV contrast is on Monday 10/26 at 3:00 PM at St. Brigid Imaging. Your blood test on 10/21 showed your kidney function had dropped since 10/19.\n\n' +
+    '- Stop taking metformin now. Do not restart it after the scan until we call you with a normal result from a repeat kidney test (at the earliest 48 hours after the scan).\n' +
+    '- Please have a creatinine blood test at the lab on Friday 10/23 or Saturday 10/24, and keep drinking fluids. Keep avoiding ibuprofen.\n' +
+    '- You will get IV fluids at the imaging center starting at 2:00 PM, so please arrive by 1:45 PM.',
 };
-export const noteText = (f: NoteFacts): string =>
-  ['Contrast CT preparation under RBC-RAD-07: CT abdomen and pelvis with IV contrast, Monday 10/26/2026 at 09:00, for surveillance of the pancreatic body cyst.', f.allergies, f.premedication, f.kidney, f.orders].join('\n\n');
-export const CITES = [ALLERGY, REACTION_NOTE, ref('Observation/obs-t5-scr-0924'), ED_NOTE, APPT];
-export const note = (f: Partial<NoteFacts> = {}, cites: string[] = CITES): ScriptCall => ({
-  name: 'write_note',
-  input: { patient: PT, type: 'progress_note', title: 'Contrast CT preparation (RBC-RAD-07)', text: noteText({ ...ORACLE_NOTE, ...f }), cites, cites_policies: ['RBC-RAD-07'] },
+export const message = (x: Study, body: string = MESSAGES[x.patient]!): ScriptCall => ({
+  name: 'send_message',
+  input: { recipient: x.patient, priority: 'routine', subject: 'Instructions for your CT scan on Monday 10/26', body, about: [x.appointment] },
 });
+export const TELL: ScriptCall[] = [STALE, MODERATE, AKINOTE, AKIRISE].map((x) => message(x));
 
 export const finish = (summary: string): ScriptCall => ({ name: 'finish', input: { summary } });
 export const DONE =
-  'Placed the CT abdomen and pelvis with IV contrast for Daniel Ferreira on Monday 10/26 at 09:00, linked to the appointment; prednisone 50 mg at 20:00 Sunday, 02:00 and 08:00 Monday and diphenhydramine 50 mg at 08:00 Monday for his 2019 iohexol reaction; creatinine before the scan; metformin held for the unresolved AKI of 10/16-10/17; instructions sent; note written.';
+  'Monday 10/26 CT list: orders placed and linked for Mohr (creatinine before the scan), Ferreira (premedication for a moderate reaction), Stracke (IV saline, eGFR 24.5), Schuster and Brakus (acute kidney injury: metformin held, creatinine, IV saline), Beahan (CT without contrast, no prep). Schmitt: severe reaction on record, no contrast ordered; radiologist consulted. Patients told.';
+
+export const ORACLE: ScriptTurn[] = [...REVIEW, { calls: [...ORDERS, ...HOLDS, consult()] }, { calls: TELL }, { calls: [finish(DONE)] }];
+// Keys used by more than one case.

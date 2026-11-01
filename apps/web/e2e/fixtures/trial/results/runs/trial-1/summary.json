@@ -6,13 +6,13 @@
   "tasks": {
     "contrast-ct-prep": {
       "task_versions": [
-        "89e05b27547d7b7adc21aa9e49d24cce112bccbcc68447c1f3b65b9483ee9720"
+        "8c57facb488bd5dfff1409e4f051e1be46657d4c477fd563776dc2935d954948"
       ],
       "env_versions": [
-        "f07dd9cacd1888d95fbb04e5a07c5406fe62339a98885c4f9ae3e075704d1d04"
+        "29f9655062983a6ef86f1ce217bf76af6699ee053efdfe068d040ab4fa43e275"
       ],
       "grader_task_versions": [
-        "084c090f39ddf31f16d56f4da641b51d56b21b2e1b8850473e1374e1f820b31e"
+        "bd6be0d0600147b92ebf7cba75486e45d877816f9125be617ded463a81f73e6b"
       ],
       "records": 1,
       "trials": 1,
@@ -36,10 +36,10 @@
       "grader_error": 0,
       "grader_error_history": 0,
       "requeued": 0,
-      "mean_score": 0,
+      "mean_score": 1,
       "mean_cost_usd": 0.81,
-      "raw_mean_score": -0.625,
-      "gate_fraction": 0.5,
+      "raw_mean_score": 1,
+      "gate_fraction": 0.75,
       "pass_no_harm": 0,
       "pass_no_harm_rate": 0,
       "limits": {
@@ -67,9 +67,9 @@
         "passes": 0,
         "failures": 1,
         "shared": {
-          "check": "ct_order",
+          "check": "no_substitution",
           "count": 1,
-          "found": "{\"active\":[],\"linked_to_appointment\":[],\"occurrence\":null,\"slot\":\"2026-10-26T09:00:00-04:00\"}",
+          "found": "{\"failed\":[{\"item\":\"Patient/pt-0048\",\"why\":\"a IMG-CT-AP-WC order after a severe reaction, which §3 forbids\"}]}",
           "found_count": 1,
           "found_values": 1
         },
@@ -79,9 +79,9 @@
         "failures": 1,
         "taxonomy": {
           "retrieval": 0,
-          "reasoning": 1,
+          "reasoning": 0,
           "output_gap": 0,
-          "over_action": 0,
+          "over_action": 1,
           "process": 0,
           "action_form": 0,
           "did_not_finish": 0,
@@ -98,20 +98,20 @@
       },
       "top_failed_checks": [
         {
-          "check": "ct_order",
+          "check": "no_substitution",
           "count": 1
         }
       ]
     },
     "crc-care-gap": {
       "task_versions": [
-        "c97eef3ca7e530130a2d19ab1fd0868287ade114b696a067b1501082f34f2a18"
+        "d651de13d5a43f57cfb9be4e20cca13aed85874e1f2edebfe17c383b2ff2ba26"
       ],
       "env_versions": [
-        "32ac8fdee3161813a106003809507bf5bfede947f1fd6c8478fe1c59c018741c"
+        "800d20e80a0098d9abc6997dfd519c706043dfdb982b56683ea61559c3297770"
       ],
       "grader_task_versions": [
-        "e2e451ee55aae654b14b684afa9e400b90dbc3092383364d1e20866875a69ffd"
+        "d9961fee94acecda8a0b4b45df4e05b8e2b5273fba10f6589f92d83962edb99a"
       ],
       "records": 1,
       "trials": 1,
@@ -135,10 +135,10 @@
       "grader_error": 0,
       "grader_error_history": 0,
       "requeued": 0,
-      "mean_score": 0.9375,
+      "mean_score": 1,
       "mean_cost_usd": 0.82,
-      "raw_mean_score": 0.9375,
-      "gate_fraction": 0.5,
+      "raw_mean_score": 1,
+      "gate_fraction": 0.6,
       "pass_no_harm": 0,
       "pass_no_harm_rate": 0,
       "limits": {
@@ -168,7 +168,7 @@
         "shared": {
           "check": "fit_orders",
           "count": 1,
-          "found": "{\"extra\":[],\"late\":[],\"missing\":[\"Patient/pt-0017\"],\"ordered\":{\"Patient/pt-0018\":[\"ServiceRequest/sr-t0001\"],\"Patient/pt-0019\":[\"ServiceRequest/sr-t0005\"],\"Patient/pt-0022\":[\"ServiceRequest/sr-t0007\"],\"Patient/pt-0023\":[\"ServiceRequest/sr-t0003\"],\"Patient/pt-0035\":[\"ServiceRequest/sr-t0009\"]},\"period_end\":\"2026-12-31\",\"want\":[\"Patient/pt-0017\",\"Patient/pt-0018\",\"Patient/pt-0019\",\"Patient/pt-0022\",\"Patient/pt-0023\",\"Patient/pt-0035\"]}",
+          "found": "{\"extra\":[],\"late\":[],\"missing\":[\"Patient/pt-0024\"],\"ordered\":{\"Patient/pt-0011\":[\"ServiceRequest/sr-t0005\"],\"Patient/pt-0014\":[\"ServiceRequest/sr-t0001\"],\"Patient/pt-0018\":[\"ServiceRequest/sr-t0009\"],\"Patient/pt-0019\":[\"ServiceRequest/sr-t0011\"],\"Patient/pt-0022\":[\"ServiceRequest/sr-t0007\"],\"Patient/pt-0035\":[\"ServiceRequest/sr-t0013\"],\"Patient/pt-0036\":[\"ServiceRequest/sr-t0003\"]},\"period_end\":\"2026-12-31\",\"want\":[\"Patient/pt-0011\",\"Patient/pt-0014\",\"Patient/pt-0018\",\"Patient/pt-0019\",\"Patient/pt-0022\",\"Patient/pt-0024\",\"Patient/pt-0035\",\"Patient/pt-0036\"]}",
           "found_count": 1,
           "found_values": 1
         },
@@ -204,13 +204,13 @@
     },
     "discharge-medrec": {
       "task_versions": [
-        "768e86ec2a68bf5a3aec1c379c11b5bd6637d9f8552de80b71b5bf2a8d8356a1"
+        "657b5d12cb096e8c0bbf43a35a0d1b45a9ad689a389dd8736e03ce0f665ecae8"
       ],
       "env_versions": [
-        "d62fc2dfb92579f0323c1acd48e83da1e2ba4f7214e683397cf2c8f8d91a38d0"
+        "0e76db3e7b620d9397b3484ac5d4d55112b7069d6e75b426f439167e13b85834"
       ],
       "grader_task_versions": [
-        "ead426e526e6c157107472a59bbad1fe640ca3c0ffac958ad11ed4f0d0824643"
+        "7aadc29678a787d70d9a773f440fcde377d5d8e8a8505e7398d9f383ebc9e32b"
       ],
       "records": 1,
       "trials": 0,
@@ -289,13 +289,13 @@
     },
     "message-queue": {
       "task_versions": [
-        "703fdc9a31142bd383c4d82bd53a6a27d8df94ae8499d900a43650202ae05277"
+        "5d1ec60ec8dafdd14c334dfe9aa03dabd7bebd1c940c8e902ee03bc1c34d0463"
       ],
       "env_versions": [
-        "57560c99ae8fa0c75df3712be6d5df60a3b0d5e9a1de04d9f7eaa031da621874"
+        "6f622caaa5c3c02e9a804b714421cbf54c9f8e92e479e81f5a9765692ed5d82c"
       ],
       "grader_task_versions": [
-        "1dc83f9815a6c94669babd78853b056a4a2eb231be939db2a3887dba947a0e06"
+        "b6f66917dc70df403c37feeb382b8a214359665225334b7993122d1e49bfcbb5"
       ],
       "records": 1,
       "trials": 1,
@@ -319,10 +319,10 @@
       "grader_error": 0,
       "grader_error_history": 1,
       "requeued": 0,
-      "mean_score": 0.9615384615384616,
+      "mean_score": 1,
       "mean_cost_usd": 1.08,
-      "raw_mean_score": 0.9615384615384616,
-      "gate_fraction": 0.7777777777777778,
+      "raw_mean_score": 1,
+      "gate_fraction": 0.8,
       "pass_no_harm": 0,
       "pass_no_harm_rate": 0,
       "limits": {
@@ -350,9 +350,9 @@
         "passes": 0,
         "failures": 1,
         "shared": {
-          "check": "m1_hyperk_hold",
+          "check": "refill_decision",
           "count": 1,
-          "found": "{\"new_orders\":[\"MedicationRequest/mr-t0003\"],\"pcp\":\"Practitioner/pr-okafor\",\"tasks_to_pcp\":[]}",
+          "found": "{\"failed_items\":[\"Task/task-00012\"],\"why\":[\"needs lisinopril 20 mg a day for 90 days with 1 refill; the trial placed no new order\"]}",
           "found_count": 1,
           "found_values": 1
         },
@@ -362,9 +362,9 @@
         "failures": 1,
         "taxonomy": {
           "retrieval": 0,
-          "reasoning": 0,
+          "reasoning": 1,
           "output_gap": 0,
-          "over_action": 1,
+          "over_action": 0,
           "process": 0,
           "action_form": 0,
           "did_not_finish": 0,
@@ -381,20 +381,20 @@
       },
       "top_failed_checks": [
         {
-          "check": "m1_hyperk_hold",
+          "check": "refill_decision",
           "count": 1
         }
       ]
     },
     "renal-dose-review": {
       "task_versions": [
-        "760f028b2571253796b653d1d92dae624b65f2e8d493689abc0d163382323329"
+        "7dbe902e507ae0f7d601de89c9a00dc88273dbc1bd26256d6246b8f779ee921c"
       ],
       "env_versions": [
-        "1404c4cceda17b8aab808962981bbda3e6cfd9a6e4d65ac876ffe31abc8bb600"
+        "b50c31b6bb51b2e47da4a572eb5db41760cbc5a7fdef164278e34b7f1fecc701"
       ],
       "grader_task_versions": [
-        "98d58092702f6edf0bb65ec60c0bab962beb39b1088cb0e6e69c78083c1bf9a7"
+        "b3fff3a6a296754075e775b09e4a23ebceb56f8eed9a09d1757568dde389d911"
       ],
       "records": 5,
       "trials": 4,
@@ -424,10 +424,10 @@
       "grader_error": 0,
       "grader_error_history": 0,
       "requeued": 0,
-      "mean_score": 0.5384615384615384,
+      "mean_score": 1,
       "mean_cost_usd": 1.072,
-      "raw_mean_score": 0.4423076923076923,
-      "gate_fraction": 0.8214285714285715,
+      "raw_mean_score": 1,
+      "gate_fraction": 0.8125,
       "pass_no_harm": 1,
       "pass_no_harm_rate": 0.25,
       "limits": {
@@ -455,11 +455,11 @@
         "passes": 1,
         "failures": 3,
         "shared": {
-          "check": "apixaban_dose",
-          "count": 1,
-          "found": "{\"active\":[\"MedicationRequest/mr-t0001\"],\"mg\":5,\"oral\":true,\"per_day\":2,\"product\":\"1364445\"}",
+          "check": "doac_dose",
+          "count": 3,
+          "found": "{\"failed_items\":[\"Patient/pt-0038\"],\"first\":{\"active\":[\"MedicationRequest/mr-00333\"],\"drug\":\"rivaroxaban\",\"mg\":15,\"oral\":true,\"patient\":\"Patient/pt-0038\",\"per_day\":1,\"scheduled\":true,\"want\":{\"drug\":\"rivaroxaban\",\"mg\":20,\"per_day\":1}}}",
           "found_count": 1,
-          "found_values": 1
+          "found_values": 3
         },
         "flags": []
       },
@@ -486,28 +486,20 @@
       },
       "top_failed_checks": [
         {
-          "check": "apixaban_dose",
-          "count": 1
-        },
-        {
-          "check": "inputs_before_orders",
-          "count": 1
-        },
-        {
-          "check": "metformin_dose",
-          "count": 1
+          "check": "doac_dose",
+          "count": 3
         }
       ]
     },
     "results-inbox": {
       "task_versions": [
-        "acaddf040ff911828e8d8d8380a48a68d9f217424ca989702c85d1c3e3e26f00"
+        "bd612e953f2169d9b4746cee80499d7b0be4936c70ccd388fe7d3535543a3888"
       ],
       "env_versions": [
-        "645c7424fc746142bee3f59556959e2ed1cf0187019d5752101baad610d0cc71"
+        "163ac113da751ab7935d633d258332bf624d5c9eccabf084caa9d92214708457"
       ],
       "grader_task_versions": [
-        "9799190274a52d3e549f51f452ede906064e9e99a2b58b089f4b1708b1fe5428"
+        "bf58c0612b4844c51306defd759a89d0a5365165311df56ffde7fc323ce47fc6"
       ],
       "records": 1,
       "trials": 0,
@@ -614,7 +606,7 @@
     "claude-opus-5-5"
   ],
   "initial_state_hashes": [
-    "95c66c67f2a775cb0e24f6d8040c5a1a38c4897e5f3cf018e649de32a8d6a90a"
+    "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968"
   ],
   "replay": {
     "ran": false,

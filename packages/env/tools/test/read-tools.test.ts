@@ -154,11 +154,11 @@ describe('search_patients', () => {
     const byMrn = ok(call('search_patients', { mrn: mrn('pt-0001') }));
     expect(byMrn.entries).toEqual([
       // Every clinic patient has the clinic PCP since the world hygiene pass (plan P17j JT2).
-      { resourceType: 'Patient', id: 'pt-0001', patient: 'Patient/pt-0001', name: 'Peter Prosacco', birthDate: '1921-06-10', gender: 'male', mrn: mrn('pt-0001'), pcp: 'Practitioner/pr-okafor' },
+      { resourceType: 'Patient', id: 'pt-0001', patient: 'Patient/pt-0001', name: 'Walter Kowalczyk', birthDate: '1942-02-14', gender: 'male', mrn: mrn('pt-0001'), pcp: 'Practitioner/pr-okafor' },
     ]);
-    const byName = ok(call('search_patients', { name: 'prosacco PETER' }));
+    const byName = ok(call('search_patients', { name: 'kowalczyk WALTER' }));
     expect((byName.entries as Array<{ patient: string }>).map((e) => e.patient)).toEqual(['Patient/pt-0001']);
-    const byBirth = ok(call('search_patients', { birthdate: '1921-06-10' }));
+    const byBirth = ok(call('search_patients', { birthdate: '1942-02-14' }));
     expect((byBirth.entries as Array<{ patient: string }>).map((e) => e.patient)).toContain('Patient/pt-0001');
   });
   it('exposes the patients its rows show demographics for (name, birth date, gender, MRN)', () => {
@@ -555,7 +555,7 @@ describe('exposure rule', () => {
   const stored = (key: string) => ctx.world.get(key.slice(0, key.indexOf('/')), key.slice(key.indexOf('/') + 1));
   it.each([
     ['get_context', {}, [], []],
-    ['search_patients', { name: 'prosacco' }, ['Patient/pt-0001'], ['Patient']],
+    ['search_patients', { name: 'kowalczyk' }, ['Patient/pt-0001'], ['Patient']],
     ['fhir_search', { resource_type: 'Observation', patient: 'pt-0001', count: 5 }, null, ['Observation']],
     ['fhir_search', { resource_type: 'MedicationRequest', patient: 'pt-0001', count: 5 }, null, ['MedicationRequest']],
     ['fhir_search', { resource_type: 'DocumentReference', patient: 'pt-0001', count: 5 }, [], []],

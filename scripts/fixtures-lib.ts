@@ -176,6 +176,27 @@ function keepsOrder(before: readonly Resource[], after: readonly Resource[], mem
   });
 }
 
+// The dates a task's files write (YYYY-MM-DD and M/D/YYYY, as YYYY-MM-DD), by the patients
+// (Patient/pt-NNNN) any file of that task names: a task's dates are about its own patients, so they
+// pin those patients' encounters and no one else's (builder-230 item 2).
+export function literalDatesByTask(files: ReadonlyArray<{ task: string; text: string }>): Map<string, Set<string>> {
+  const dates = new Map<string, Set<string>>();
+  const patients = new Map<string, Set<string>>();
+  for (const { task, text } of files) {
+    const d = dates.get(task) ?? new Set<string>();
+    // Digit lookarounds, not \b: a date-time's date is followed by T, a word character.
+    for (const m of text.matchAll(/(?<!\d)(\d{4})-(\d\d)-(\d\d)(?!\d)/g)) d.add(`${m[1]}-${m[2]}-${m[3]}`);
+    for (const m of text.matchAll(/(?<!\d)(\d{1,2})\/(\d{1,2})\/(\d{4})(?!\d)/g)) d.add(`${m[3]}-${m[1]!.padStart(2, '0')}-${m[2]!.padStart(2, '0')}`);
+    dates.set(task, d);
+    const p = patients.get(task) ?? new Set<string>();
+    for (const pt of text.match(/\bpt-\d{4}\b/g) ?? []) p.add(`Patient/${pt}`);
+    patients.set(task, p);
+  }
+  const out = new Map<string, Set<string>>();
+  for (const [task, ps] of patients) for (const pt of ps) out.set(pt, new Set([...(out.get(pt) ?? []), ...dates.get(task)!]));
+  return out;
+}
+
 export interface HygieneReport {
   moved: number;
   // Weekend encounters moved to the next weekday because the earlier one is in another month.
@@ -199,13 +220,15 @@ export interface HygieneReport {
 //     with the reason, when a moved time would pass now or change month, when the patient's order
 //     of dated resources (by instant) would change, when a task file that names the patient
 //     writes its date as a literal (literalDates, by patient reference), or when a moved time
-//     would leave a date any task file writes (anyLiteralDates), so no task names a date that moved;
+//     would leave a date such a task writes, so no task names a date of its patient that moved.
+//     A date pins only the patients of the task that writes it (literalDatesByTask; builder-230:
+//     a date one task wrote had pinned another task's patient's visit out of hours);
 //   - an active antibiotic, antihistamine or immediate-release opioid authored more than 12 months
 //     before now is completed;
 //   - of two active orders of a patient with one RxNorm code or one ingredient (by full name), the
 //     older is completed;
 //   - an active order whose authoredOn cannot be read is listed and left alone.
-export function hygiene(resources: readonly Resource[], opts: { now: number; literalDates: ReadonlyMap<string, ReadonlySet<string>>; anyLiteralDates: ReadonlySet<string> }): { resources: Resource[]; report: HygieneReport } {
+export function hygiene(resources: readonly Resource[], opts: { now: number; literalDates: ReadonlyMap<string, ReadonlySet<string>> }): { resources: Resource[]; report: HygieneReport } {
   const report: HygieneReport = { moved: 0, movedLater: [], completedAcute: [], completedDuplicates: [], skipped: {}, unreadable: [] };
   let out = resources.map((r) => r);
   // The resources that reference each encounter.
@@ -285,7 +308,8 @@ export function hygiene(resources: readonly Resource[], opts: { now: number; lit
     const why = shifted.some(([x, y]) => Date.parse(x) <= opts.now && Date.parse(y) > opts.now) ? 'the move would pass now'
       : shifted.some(([x, y]) => easternParts(Date.parse(x)).date.slice(0, 7) !== easternParts(Date.parse(y)).date.slice(0, 7)) ? 'a time of it would move to another month'
       : ((): string | null => {
-        const literal = shifted.find(([x, y]) => x.slice(0, 10) !== y.slice(0, 10) && opts.anyLiteralDates.has(x.slice(0, 10)));
+        const own = patient === null ? undefined : opts.literalDates.get(patient);
+        const literal = shifted.find(([x, y]) => x.slice(0, 10) !== y.slice(0, 10) && own?.has(x.slice(0, 10)) === true);
         return literal === undefined ? null : `a time of it on ${literal[0].slice(0, 10)}, a date a task file writes, would move`;
       })();
     if (why !== null) {

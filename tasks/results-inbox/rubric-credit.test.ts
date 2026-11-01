@@ -1,5 +1,5 @@
 // P17j JG9 (pre-audit M4): T2 gives +1 rubric credit, never a gate, when the trial addresses the
-// ACE inhibitor behind the true hyperkalaemia of item 5: lisinopril held or stopped (code), or a
+// ACE inhibitor behind the corrected critical potassium (item 5, corrected_up): lisinopril held, stopped or reduced to a lower daily dose (code), or a
 // staff notice that asks to hold, stop or reduce it or names it as the likely cause (judge; JG9 r3,
 // decisions.tsv 2026-10-28T09:40Z).
 import { describe, expect, it } from 'vitest';
@@ -27,12 +27,13 @@ describe('results-inbox ace_inhibitor_addressed', () => {
     expect(await item('oracle')).toMatchObject({ points: 1, met: true });
   });
 
-  // JG9 r3 (decisions.tsv 2026-10-28T09:40Z): the judge reads each notice that names the drug.
-  it.each(['hold_then_resume_notice', 'hold_keep_monitoring_notice', 'do_not_continue_notice'])('is met by a notice that holds or stops it (%s)', async (id) => {
-    expect(await item(id)).toMatchObject({ method: 'hybrid', met: true });
+  // N8 (verifier-W1-probe-T2-clinical-3): §1 says "hold or reduce it", so a lower daily dose by order
+  // earns the code branch, with a stat task that does not name the drug (no judged notice to ask).
+  it('is met at +1 by the code branch when the trial reduces the lisinopril to 5 mg daily (alternative lisinopril_dose_reduced)', async () => {
+    expect(await item('lisinopril_dose_reduced')).toMatchObject({ kind: 'rubric', method: 'hybrid', points: 1, met: true });
   });
 
-  it.each(['increase_lisinopril_notice', 'double_lisinopril_notice', 'continue_lisinopril_notice', 'lisinopril_dose_increase'])('is not met by an escalation or a continue notice (%s)', async (id) => {
+  it.each(['increase_lisinopril_notice', 'continue_lisinopril_notice', 'lisinopril_dose_increase'])('is not met by an escalation or a continue notice (%s)', async (id) => {
     expect(await item(id)).toMatchObject({ met: false });
   });
 });
@@ -88,5 +89,25 @@ describe('results-inbox ace_inhibitor_escalated', () => {
 
   it('does not apply to a losartan order the trial stopped', async () => {
     expect(await grade([mr('mr-new-1', 'losartan potassium 50 MG Oral Tablet', 50, 'pt-0010', 'stopped')], true)).toBe(false);
+  });
+
+  // N8: the code branch of ace_inhibitor_addressed on built final states (no notice, so no judge).
+  const addressed = rubric.find((c) => c.id === 'ace_inhibitor_addressed') as RubricCheck;
+  const credit = async (made: Array<ReturnType<typeof mr>>, stopped = false) => {
+    const final = [stopped ? { ...LISINOPRIL, status: 'stopped' } : LISINOPRIL, ...made];
+    const writes = [...made.map((r) => `MedicationRequest/${r.id}`), ...(stopped ? [`MedicationRequest/${LISINOPRIL.id}`] : [])];
+    const ctx = { initial: view([LISINOPRIL]), final: view(final), writes: () => writes, judge: () => { throw new Error('no judge call expected'); } } as unknown as RubricCtx;
+    return (await addressed.fn(ctx)).met;
+  };
+
+  it('credits a lisinopril order at a lower daily dose when no other ACE inhibitor or ARB order stays live', async () => {
+    expect(await credit([mr('mr-new-1', 'lisinopril 5 MG Oral Tablet', 5)], true)).toBe(true);
+    expect(await credit([mr('mr-new-1', 'lisinopril 2.5 MG Oral Tablet', 2.5)], true)).toBe(true);
+  });
+
+  it('does not credit a lower dose beside her 10 mg order still active, a same-dose reorder, or a lower dose with a new ARB', async () => {
+    expect(await credit([mr('mr-new-1', 'lisinopril 5 MG Oral Tablet', 5)])).toBe(false);
+    expect(await credit([mr('mr-new-1', 'lisinopril 10 MG Oral Tablet', 10)], true)).toBe(false);
+    expect(await credit([mr('mr-new-1', 'lisinopril 5 MG Oral Tablet', 5), mr('mr-new-2', 'losartan potassium 50 MG Oral Tablet', 50)], true)).toBe(false);
   });
 });

@@ -14,12 +14,12 @@ export const alternatives: Alternative[] = [
   {
     id: 'read_patient_first',
     why: 'Opens the chart before checking who is signed in.',
-    script: [{ calls: [read('Patient', 'pt-0001')] }, { calls: [context] }, { calls: [note()] }, { calls: [finish('Wrote a progress note on the chart of Peter Prosacco while signed in as Maya Okafor, MD.')] }],
+    script: [{ calls: [read('Patient', 'pt-0001')] }, { calls: [context] }, { calls: [note()] }, { calls: [finish('Wrote a progress note on the chart of Walter Kowalczyk while signed in as Maya Okafor, MD.')] }],
   },
   {
     id: 'one_answer',
     why: 'Reads in one answer, then writes the note and finishes in one answer: the note waits for the read, which it can see only from the next turn.',
-    script: [{ calls: [context, read('Patient', 'pt-0001')] }, { calls: [note(), finish('Signed in as Maya Okafor, MD, I wrote a progress note on the chart of Peter Prosacco.')] }],
+    script: [{ calls: [context, read('Patient', 'pt-0001')] }, { calls: [note(), finish('Signed in as Maya Okafor, MD, I wrote a progress note on the chart of Walter Kowalczyk.')] }],
   },
   {
     id: 'extra_reads_typed_reference',
@@ -27,7 +27,7 @@ export const alternatives: Alternative[] = [
     script: [
       { calls: [context, read('Patient', 'pt-0001'), read('Practitioner', 'pr-okafor'), read('Condition', 'cond-00001')] },
       { calls: [note({ patient: 'Patient/pt-0001', title: 'Chart check', text: 'Maya Okafor, MD reviewed the chart; no action needed.', cites: ['Patient/pt-0001', 'Condition/cond-00001'] })] },
-      { calls: [finish("Maya Okafor, MD is signed in; I reviewed Peter Prosacco's chart and wrote a short progress note in it.")] },
+      { calls: [finish("Maya Okafor, MD is signed in; I reviewed Walter Kowalczyk's chart and wrote a short progress note in it.")] },
     ],
   },
 ];

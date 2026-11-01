@@ -112,6 +112,45 @@ export interface Step {
   // text: a cut snippet leaves its note in referenced_ids, a snippet of a whole note exposes it. Derived from the recorded content (env registry shownText); query it
   // with exposure.ts shows().
   shown: Readonly<Record<string, string>>;
+  // Present only on a successful fhir_search: the structured filters of its call (ruling R20),
+  // so a gate can count a search that found nothing in the window as a review. Enumerated keys
+  // from the call's input, never free text; patient is always 'Patient/<id>'. An empty page
+  // exposes nothing, so no other field of the step says what was searched. whole is true when the
+  // page held every match (offset 0 or none, no next_offset). offset (from the call) and
+  // next_offset (from the result) let a gate join a run of pages that together held every match
+  // (ruling R27); category lets it refuse a filter that would hide the absent kind; sort ('date'
+  // or '-date', absent for the default order) lets it require one order across a run of pages.
+  search?: StepSearch;
+  // Present only on a successful search_notes: its filters from the call's input (the query as
+  // written, patient as 'Patient/<id>', date_ge, date_le and type, each only when it is a string)
+  // and its paging, as Step.search keeps them, so a gate can count a notes search that found
+  // nothing as a review (verifier-W1T-190-r2-clinical N2, ruling R34). Never the result's text.
+  notes?: StepNotes;
+}
+
+export interface StepNotes {
+  query: string;
+  patient?: string;
+  date_ge?: string;
+  date_le?: string;
+  type?: string;
+  offset?: number;
+  next_offset?: number;
+  whole: boolean;
+}
+
+export interface StepSearch {
+  type: string;
+  patient?: string;
+  code?: string;
+  category?: string;
+  date_ge?: string;
+  date_le?: string;
+  status?: string;
+  sort?: string;
+  offset?: number;
+  next_offset?: number;
+  whole: boolean;
 }
 
 // Null-safe reads: a resource that is not in the state is absent, never an exception.

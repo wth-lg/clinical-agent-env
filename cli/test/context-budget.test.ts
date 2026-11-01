@@ -159,13 +159,13 @@ describe('pnpm cli context-budget <run> (fit)', () => {
     const { code, json } = await run([fixture('items'), '--task', 'crc-care-gap', '--json'], atCheckout);
     expect(code).toBe(0);
     expect(json!.tasks['crc-care-gap']!.fit.items).toBe(crcExpected.items.length);
-    // renal-dose-review's expected.ts has no items list.
+    // Since the W1 probes every task has an items list; the toy's expected.ts has none (builder-249).
     const dir = tempDir('context-budget-no-items');
-    writeQuadRun(dir, { 'renal-dose-review': CRC });
+    writeQuadRun(dir, { '_toy': CRC });
     const none = await run([dir], atCheckout);
     expect(none.code).toBe(2);
-    expect(none.lines).toContainEqual('context-budget: renal-dose-review: tasks/renal-dose-review/expected.ts has no items list; give --observed-items renal-dose-review=n');
-    expect((await run([dir, '--observed-items', 'renal-dose-review=2', '--json'], atCheckout)).json!.tasks['renal-dose-review']!.fit.items).toBe(2);
+    expect(none.lines).toContainEqual('context-budget: _toy: tasks/_toy/expected.ts has no items list; give --observed-items _toy=n');
+    expect((await run([dir, '--observed-items', '_toy=2', '--json'], atCheckout)).json!.tasks['_toy']!.fit.items).toBe(2);
   });
 
   it('never takes the item count from the overlay slots', async () => {

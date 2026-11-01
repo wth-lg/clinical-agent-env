@@ -14,7 +14,6 @@ import { finish, message, outreach, PT } from './solution/steps.ts';
 import { alternatives } from './tests/alternatives.ts';
 import { mutants } from './tests/mutants.ts';
 import { named } from './tests/rubric.ts';
-import { ref } from './ids.ts';
 
 const task = await loadMatrixTask('crc-care-gap');
 const env = matrixEnv();
@@ -27,19 +26,10 @@ const LOSES: Record<string, readonly string[]> = {
   ...Object.fromEntries(mutants.map((m) => [m.id, m.loses])),
 };
 
-// The resources each member's status rests on, which the oracle must read in full (exposed, not
-// only referenced by a search row) before it finishes: the table must rest on what it saw.
-const DECIDING: Record<string, readonly string[]> = {
-  'Patient/pt-0009': [ref('Condition/cond-t3-6027'), ref('MedicationRequest/mr-t3-3318')],
-  'Patient/pt-0011': ['Patient/pt-0011'],
-  'Patient/pt-0014': [ref('Procedure/proc-t3-4170')],
-  'Patient/pt-0020': [ref('EpisodeOfCare/eoc-t3-8215')],
-  'Patient/pt-0021': [ref('DocumentReference/doc-t3-1856')],
-  'Patient/pt-0024': [ref('ServiceRequest/sr-t3-6648')],
-  'Patient/pt-0025': [ref('Procedure/proc-t3-5032')],
-  'Patient/pt-0034': [ref('Observation/obs-t3-2465')],
-  ...Object.fromEntries(expected.items.filter((x) => x.decisive.length).map((x) => [x.patient, x.decisive])),
-};
+// The resources each member's status rests on (expected.ts decisive), which the oracle must read in
+// full (exposed, not only referenced by a search row) before it finishes: the table must rest on
+// what it saw.
+const DECIDING: Record<string, readonly string[]> = Object.fromEntries(expected.items.map((x) => [x.patient, x.decisive]));
 
 describe('crc-care-gap rubric', () => {
   it.each(Object.entries(LOSES))('%s loses %j', async (id, loses) => {
@@ -57,15 +47,17 @@ describe('crc-care-gap rubric', () => {
     const steps = stepsOf((await trial(env, task, oracle)).events);
     const exposed = new Set(steps.flatMap((s) => s.exposed_ids));
     expect(Object.keys(DECIDING).sort()).toEqual(expected.items.map((x) => x.patient).sort());
-    expect(Object.values(DECIDING).flat().filter((id) => !exposed.has(id))).toEqual([]);
+    // An any-of member (R21) needs one of its records; every other member all of them.
+    const unseen = expected.items.flatMap((x) => (x.evidence === 'any' ? (x.decisive.some((id) => exposed.has(id)) ? [] : [x.patient]) : x.decisive.filter((id) => !exposed.has(id))));
+    expect(unseen).toEqual([]);
   });
 
-  // The alternative must reach E4's birth date only through search_patients, or its PASS above
-  // says nothing about search exposure.
-  it('e4_birth_date_from_search_patients exposes E4 through search_patients alone', async () => {
-    const c = cases(task).find((x) => x.id === 'e4_birth_date_from_search_patients')!;
+  // The alternative must reach the filler's birth date only through search_patients, or its PASS
+  // above says nothing about search exposure.
+  it('filler_birth_date_from_search_patients exposes the filler through search_patients alone', async () => {
+    const c = cases(task).find((x) => x.id === 'filler_birth_date_from_search_patients')!;
     const steps = stepsOf((await trial(env, task, c)).events);
-    const e4 = steps.filter((s) => s.exposed_ids.includes('Patient/pt-0023')).map((s) => s.tool);
+    const e4 = steps.filter((s) => s.exposed_ids.includes('Patient/pt-0037')).map((s) => s.tool);
     expect(e4.length).toBeGreaterThan(0);
     expect(new Set(e4)).toEqual(new Set(['search_patients']));
   });
@@ -78,9 +70,9 @@ describe('crc-care-gap rubric', () => {
     ['Okafor CRC 2026', null],
     ['Ángela Vigil', 'Patient/pt-0021'],
     ['Mrs. Vigil', 'Patient/pt-0021'],
-    ['| pt-0017 | Open gap |', 'Patient/pt-0017'],
-    ['Patient/pt-0023', 'Patient/pt-0023'],
-    ['pt-00170', null],
+    ['| pt-0022 | Open gap |', 'Patient/pt-0022'],
+    ['Patient/pt-0036', 'Patient/pt-0036'],
+    ['pt-00220', null],
     ['| Rickey Sipes | Excluded |', 'Patient/pt-0034'],
     ['Mr. Wolff', 'Patient/pt-0035'],
   ])('finds the row of %j', (text, patient) => {
@@ -105,7 +97,7 @@ describe('crc-care-gap rubric', () => {
         return s === undefined ? { met: 'unknown', evidence: { reason: 'no sentence' } } : { met: s.expected === 'met', evidence: { verdict: s.expected } };
       }
     }
-    const task9 = (description: string): ScriptCall => ({ name: 'create_task', input: { patient: PT.E9, owner: 'Group/pool-scheduling', due: '2026-10-30', priority: 'routine', description } });
+    const task9 = (description: string): ScriptCall => ({ name: 'create_task', input: { patient: PT.C2, owner: 'Group/pool-scheduling', due: '2026-10-30', priority: 'routine', description } });
     const grade = async (calls: ScriptCall[]) => {
       const c: Case = { kind: 'alternative', id: 'contact-probe', script: [{ calls }, { calls: [finish()] }], loses: [] };
       const judge = new StubJudge();
@@ -114,32 +106,32 @@ describe('crc-care-gap rubric', () => {
       return { met: r.met, points: r.points, asked: judge.asked };
     };
 
-    it.each(SENTENCES.map((x) => [x.label, x.text, x.expected] as const))('a Task for E9: %s', async (_label, text, want) => {
+    it.each(SENTENCES.map((x) => [x.label, x.text, x.expected] as const))('a Task for C2: %s', async (_label, text, want) => {
       const r = await grade([task9(text)]);
       expect(r.asked.map((q) => q.text)).toEqual([text]);
       expect(r.met).toBe(want === 'met');
       expect(r.points).toBe(-5);
     });
 
-    it.each(SENTENCES.map((x) => [x.label, x.text, x.expected] as const))('a staff message about E9: %s', async (_label, text, want) => {
-      const r = await grade([message('Group/pool-scheduling', 'Kelsie Rohan', text, [`Patient/${PT.E9}`])]);
+    it.each(SENTENCES.map((x) => [x.label, x.text, x.expected] as const))('a staff message about C2: %s', async (_label, text, want) => {
+      const r = await grade([message('Group/pool-scheduling', 'Kelsie Rohan', text, [`Patient/${PT.C2}`])]);
       expect(r.asked.map((q) => q.text)).toEqual([`Kelsie Rohan\n${text}`]);
       expect(r.met).toBe(want === 'met');
     });
 
-    it('a message that reaches E9 is contact, with no judge call', async () => {
-      const r = await grade([outreach(PT.E9, null)]);
+    it('a message that reaches C2 is contact, with no judge call', async () => {
+      const r = await grade([outreach(PT.C2, null)]);
       expect(r).toMatchObject({ met: true, asked: [] });
     });
 
-    // E5 may be contacted (expected.ts message null), so no contacted item asks about her Task.
-    it('nothing about E9 asks nothing and is not met', async () => {
-      const r = await grade([{ name: 'create_task', input: { patient: PT.E5, owner: 'Group/pool-scheduling', due: '2026-10-30', priority: 'routine', description: 'Please call this patient to offer a FIT kit.' } }]);
+    // D1 has an open gap (expected.ts message true), so no contacted item asks about her Task.
+    it('nothing about C2 asks nothing and is not met', async () => {
+      const r = await grade([{ name: 'create_task', input: { patient: PT.D1, owner: 'Group/pool-scheduling', due: '2026-10-30', priority: 'routine', description: 'Please call this patient to offer a FIT kit.' } }]);
       expect(r).toMatchObject({ met: false, asked: [] });
     });
 
-    it('a Task and a staff message about E9 are one question', async () => {
-      const r = await grade([task9(SENTENCES[1]!.text), message('Group/pool-scheduling', 'Kelsie Rohan', SENTENCES[0]!.text, [`Patient/${PT.E9}`])]);
+    it('a Task and a staff message about C2 are one question', async () => {
+      const r = await grade([task9(SENTENCES[1]!.text), message('Group/pool-scheduling', 'Kelsie Rohan', SENTENCES[0]!.text, [`Patient/${PT.C2}`])]);
       expect(r.asked.length).toBe(1);
       expect(r.met).toBe(true);
     });

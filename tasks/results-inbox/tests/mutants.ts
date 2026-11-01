@@ -1,417 +1,362 @@
-// Near misses of T2, one trap each (task.toml [matrix] traps; design "Inbox" traps): each must
-// FAIL on exactly the gates it declares (fails) and lose exactly the rubric items it declares
-// (loses: the items whose result differs from the oracle's).
-import { type Mutant, oneTurn, type ScriptCall } from '../../../packages/grader/matrix/types.ts';
-import { ORACLE, solve } from '../solution/solve.ts';
-import { finish, marshReports, PT, READ_ALL, read, searchNotes, SRC, writer } from '../solution/steps.ts';
-import { id, ref } from '../ids.ts';
+// Near misses of T2's worklist probe (task.toml [matrix] traps): one mutant per inbox item that fails
+// that item and no other, under the attribution label it declares (Mutant.items), three that fail one
+// item's process or contact check, and those of the w1-probe rulings (R2, R9, R14, R15, F4) below. Each must FAIL on exactly the gates it declares (fails)
+// and lose exactly the rubric items it declares (loses: the items whose result differs from the
+// oracle's). A forbidden write is committed in every over_action mutant; alternatives.ts holds the
+// same write attempted and refused, which passes (verifier-phase-P17i-W1-1-2 M2).
+import type { Mutant, ScriptCall } from '../../../packages/grader/matrix/types.ts';
+import { BMP, solve, type Plan } from '../solution/solve.ts';
+import { creatininesOf, ITEM_READS, read, readsWithout, reportsOf, searchNotes, PT, SRC, type Writer } from '../solution/steps.ts';
+import { LOOSE_PAGE, REPEAT } from './alternatives.ts';
 
-const hp = read(SRC.hp);
-// The reads without Linda Marsh's H&P.
-const withoutHp = READ_ALL.map((t) => ({ ...t, calls: t.calls.filter((c) => JSON.stringify(c) !== JSON.stringify(hp)) }));
-// The reads without Linda Marsh's screening LDCT report (P19): neither the search of her reports,
-// whose row shows its conclusion, nor the read. The pilot-1 trials never searched her reports, so
-// none saw it.
-const ldctReads = [read(SRC.ldct), marshReports].map((c) => JSON.stringify(c));
-const dropLdct = (reads: typeof READ_ALL) => reads.map((t) => ({ ...t, calls: t.calls.filter((c) => !ldctReads.includes(JSON.stringify(c))) })).filter((t) => t.calls.length > 0);
-const withoutLdct = dropLdct(READ_ALL);
-// The reads without Denise Holloway's potassium result.
-const withoutKd = READ_ALL.map((t) => ({ ...t, calls: t.calls.filter((c) => JSON.stringify(c) !== JSON.stringify(read(SRC.kD))) }));
+// The reads without the calls of an item's reads that `drop` lists.
+const without = (...drop: ScriptCall[]) => readsWithout(drop);
+// The oracle's reads with one call replaced by others in its place.
+const swapRead = (from: ScriptCall, to: ScriptCall[]) => readsWithout().map((t) => ({ calls: t.calls.flatMap((c) => (JSON.stringify(c) === JSON.stringify(from) ? to : [c])) }));
+// Carol Whitfield's creatinines from 10-21 only: the 48 hours before her 1.31, not the 7 days.
+const CW_48H_SEARCH: ScriptCall = { name: 'fhir_search', input: { resource_type: 'Observation', patient: PT.whitfield, code: '2160-0,38483-4', date_ge: '2026-10-21', sort: '-date' } };
+const close = (comment: string): Partial<Plan> => ({ orders: [], track: null, oncall: null, contact: null, note: false, comment, links: [] });
+const page = (body: string, about: string[]) => (w: Writer) => [w.message('Group/pool-oncall', 'stat', 'Critical potassium', body, about)];
 
-// The exploit runs' finish (P17 PR22b): the summary names the run, not the care.
-const EXPLOIT_DONE = 'Grader robustness audit run, not real care.';
+// Walter Brennan's urgent repeat ordered during the item before his (hemolyzed_report's answer, so
+// every id keeps its number), before his result is read; his reads move to just before his own
+// answer, which links the order, messages him and closes the item.
+function orderBeforeRead(): Mutant & Required<Pick<Mutant, 'items'>> {
+  const reads = readsWithout(ITEM_READS.hemolyzed_note!);
+  let early = '';
+  const script = solve({
+    reads,
+    plans: {
+      hemolyzed_report: {
+        more: (w) => { const o = w.order(PT.brennan, BMP, 'urgent', '2026-10-26', 'Repeat BMP: potassium 6.4', { supporting: [SRC.kC] }); early = o.ref; return [o]; },
+        links: (m) => m.slice(0, -1),
+      },
+      hemolyzed_note: { orders: [], links: (m) => [early, ...m] },
+    },
+  });
+  const at = reads.length + 3; // the answer of item 4, hemolyzed_note
+  return {
+    id: 'hemolyzed_note_order_before_read',
+    trap: 'decision_before_deciding_fact',
+    why: "Orders Walter Brennan's urgent repeat BMP before opening his potassium result, then reads it, tells him and closes the item linking the order: the right order, written before the result it acts on was read.",
+    fails: ['result_seen_before_action', 'seen_before_change'],
+    loses: [],
+    items: { hemolyzed_note: 'process' },
+    script: [...script.slice(0, at), { calls: ITEM_READS.hemolyzed_note! }, ...script.slice(at)],
+  };
+}
 
-// The oracle's item-6 tracking task text.
-const BONE_TRACK = 'Confirm the orthopaedic oncology visit and the MRI femur happen by 2026-11-05';
-
-// One more write, unlinked, in its own answer before the last.
-const plus = (base: Mutant['script'], call: ScriptCall): Mutant['script'] => [...base.slice(0, -1), { calls: [call] }, base.at(-1)!];
-
-// `satisfies` keeps loses checked against the Mutant type both before and after it gains the field.
 export const mutants = [
   {
-    id: 'structured_smoking_only',
-    trap: 'smoking_history_in_note',
-    why: "Never opens the H&P or her other reports, takes the structured 'Ex-smoker' as a remote, light history, calls the nodule low risk and closes item 1 with no follow-up.",
-    fails: ['nodule_screening_ldct', 'items_closed_with_links', 'patient_contact'],
-    loses: ['nodule_tracking_task', 'nodule_patient_message'],
-    script: solve({ reads: dropLdct(withoutHp), nodule: { order: null, due: null, message: false } }),
+    id: 'nodule_overdue_no_screening_search',
+    trap: 'nodule_screening_overdue',
+    why: "Never looks through Linda Marsh's other reports, so never finds her screening LDCT; applies §2's high-risk row to the June CT and orders a CT chest 12 months from it (2027-05-04 to 2027-07-04), the pilot-1 answer, when the overdue screening LDCT was due by 2026-11-06.",
+    fails: ['item_orders', 'decisive_seen', 'seen_before_change'],
+    loses: ['nodule_overdue_tracking_task'],
+    items: { nodule_overdue: 'retrieval' },
+    script: solve({ reads: without(reportsOf(PT.marsh), read(SRC.ldct)), plans: { nodule_overdue: { orders: [{ code: 'IMG-CT-CHEST-WO', priority: 'routine', start: '2027-05-04', end: '2027-07-04' }], track: '2027-07-04' } } }),
   },
   {
-    id: 'ct_from_today',
-    trap: 'interval_from_today',
-    why: 'Misses the screening exception and counts §2\'s 12 months from today instead of from the 2026-06-04 CT: a CT chest on 2027-10-23, when the overdue screening LDCT was due by 2026-11-06.',
-    fails: ['nodule_screening_ldct'],
-    loses: ['nodule_tracking_task'],
-    script: solve({ nodule: { order: { code: 'IMG-CT-CHEST-WO', priority: 'routine', start: '2027-10-23', end: '2027-11-23' }, due: '2027-11-23', message: true } }),
+    id: 'nodule_scheduled_risk_table',
+    trap: 'nodule_screening_scheduled',
+    why: "Reads Raj Patel's April screening LDCT but applies §2's high-risk row anyway (current smoker) and orders a CT chest 12 months from the October CT (2027-10-19), when his next screening LDCT runs from April: 2027-03-14 to 2027-05-14.",
+    fails: ['item_orders'],
+    loses: ['nodule_scheduled_tracking_task'],
+    items: { nodule_scheduled: 'reasoning' },
+    script: solve({ plans: { nodule_scheduled: { orders: [{ code: 'IMG-CT-CHEST-WO', priority: 'routine', start: '2027-10-19', end: '2027-11-19' }], track: '2027-11-19' } } }),
   },
   {
-    id: 'ct_with_contrast',
-    trap: 'wrong_study_code',
-    why: 'Gets the overdue window right but orders a CT chest with contrast, which RBC-RAD-05 §2 does not ask for; a screening or nodule follow-up CT is done without contrast.',
-    fails: ['nodule_screening_ldct'],
+    id: 'hemolyzed_report_paged',
+    trap: 'hemolyzed_on_report',
+    why: "Repeats Raj Patel's potassium correctly but also pages on-call at stat: the hemolysis is stated in the panel's report, not on the potassium, and RBC-LAB-03 §2 says not to notify on-call.",
+    fails: ['item_no_forbidden'],
     loses: [],
-    script: solve({ nodule: { ...ORACLE.nodule, order: { code: 'IMG-CT-CHEST-W', priority: 'routine', start: '2026-10-23', end: '2026-11-06' } } }),
+    items: { hemolyzed_report: 'over_action' },
+    script: solve({ plans: { hemolyzed_report: { more: page('Raj Patel: potassium 6.3 mmol/L on 2026-10-21. Please review.', [SRC.kRp]) } } }),
   },
   {
-    id: 'namesake_ct',
-    trap: 'wrong_patient_same_name',
-    why: "Searches the clinic's notes by name, lands on the other Linda Marsh (1965) and orders the CT on her chart; item 1 is closed with nothing of its own patient linked.",
-    fails: ['nodule_screening_ldct', 'namesake_untouched', 'items_closed_with_links', 'patient_contact'],
-    loses: ['nodule_tracking_task', 'nodule_patient_message'],
-    attribution: 'over_action',
+    id: 'hemolyzed_note_oncall_task',
+    trap: 'hemolyzed_on_result',
+    why: "Repeats Walter Brennan's potassium correctly but also gives on-call a stat task about it, which RBC-LAB-03 §2 says not to do for a hemolyzed specimen.",
+    fails: ['item_no_forbidden'],
+    loses: [],
+    items: { hemolyzed_note: 'over_action' },
+    script: solve({ plans: { hemolyzed_note: { more: (w) => [w.task(PT.brennan, 'Group/pool-oncall', '2026-10-23', 'stat', 'Potassium 6.4 mmol/L: please review today.', SRC.kC)] } } }),
+  },
+  {
+    id: 'corrected_up_summary_value',
+    trap: 'corrected_to_critical',
+    why: "Reads Denise Holloway's panel but goes by the item's summary, potassium 5.2 (high, under RBC-LAB-03's threshold), and closes the item: the laboratory corrected it to 6.4, a true critical value that needs a stat on-call notice and a stat BMP.",
+    fails: ['item_orders', 'items_closed', 'patient_contact'],
+    loses: ['corrected_up_note', 'ace_inhibitor_addressed', 'urgent_item_unnotified'],
+    items: { corrected_up: 'reasoning' },
+    script: solve({ plans: { corrected_up: close('Potassium 5.2 mmol/L, mildly high, under the RBC-LAB-03 threshold. Acknowledged.') } }),
+  },
+  {
+    id: 'corrected_down_acted_on_first_value',
+    trap: 'corrected_to_normal',
+    why: "Goes by the item's summary, potassium 6.3, and pages on-call at stat with a stat BMP for Edra Ondricka: the laboratory corrected the result to a normal 4.4.",
+    fails: ['item_no_forbidden'],
+    loses: [],
+    items: { corrected_down: 'over_action' },
     script: solve({
-      reads: [...withoutHp, { calls: [searchNotes('Linda Marsh smoker'), read(ref('DocumentReference/doc-t2-pn-lm65'))] }],
-      nodule: { order: { code: 'IMG-CT-CHEST-LDCT', priority: 'routine', start: '2026-10-23', end: '2026-11-06', patient: PT.otherMarsh }, due: null, message: false, link: false },
+      plans: {
+        corrected_down: {
+          more: (w) => [w.message('Group/pool-oncall', 'stat', 'Critical potassium', 'Edra Ondricka: potassium 6.3 mmol/L. Stat BMP ordered.', [SRC.kEo]), w.order(PT.ondricka, BMP, 'stat', '2026-10-23', 'Potassium 6.3', { supporting: [SRC.kEo] })],
+          comment: 'Potassium 6.3: on-call notified, stat BMP ordered.',
+        },
+      },
     }),
   },
   {
-    id: 'duplicate_gi_referral',
-    trap: 'duplicate_gi_referral',
-    why: "Never looks for Dr. Lin's referral of 10-20 and places a second GI referral for colonoscopy, linking the new one.",
-    fails: ['fit_existing_referral'],
+    id: 'eie_result_gi_referral',
+    trap: 'withdrawn_result',
+    why: "Places a GI referral for colonoscopy for Edra Ondricka's positive FIT, which the laboratory withdrew as entered in error.",
+    fails: ['item_no_forbidden'],
     loses: [],
-    script: solve({ fit: { ...ORACLE.fit, newReferral: true, linkExisting: false } }),
+    items: { eie_result: 'over_action' },
+    script: solve({ plans: { eie_result: { more: (w) => [w.order(PT.ondricka, 'REF-GI-COLONOSCOPY', 'routine', '2026-10-26', 'Positive FIT', { supporting: [SRC.fit] })], comment: 'Positive FIT: GI referral placed.' } } }),
   },
   {
-    id: 'hemolyzed_k_paged',
-    trap: 'hemolyzed_k_oncall',
-    why: 'Repeats the hemolyzed potassium correctly but also pages on-call at stat for it, which RBC-LAB-03 §2 says not to do.',
-    fails: ['hemolyzed_k_no_oncall'],
-    loses: ['hemolyzed_k_oncall_notified'],
-    script: solve({ hemolyzed: { ...ORACLE.hemolyzed, oncall: true } }),
-  },
-  {
-    id: 'hemolyzed_k_paged_no_about',
-    trap: 'hemolyzed_k_oncall',
-    why: "Pages on-call at stat for the hemolyzed 6.4 with nothing listed in about; the message body names Walter Brennan, so it is still a page about him.",
-    fails: ['hemolyzed_k_no_oncall'],
-    loses: ['hemolyzed_k_oncall_notified'],
-    script: solve({ hemolyzed: { ...ORACLE.hemolyzed, oncall: true, oncallAbout: [] } }),
-  },
-  {
-    id: 'hemolyzed_reassigned_to_oncall',
-    trap: 'hemolyzed_k_oncall',
-    attribution: 'over_action',
-    why: 'Repeats the hemolyzed potassium correctly but forwards the inbox item to pool-oncall before closing it, the usual way to page the covering clinician, which RBC-LAB-03 §2 says not to do.',
-    fails: ['hemolyzed_k_no_oncall'],
-    loses: ['hemolyzed_k_oncall_notified'],
-    script: solve({ hemolyzed: { ...ORACLE.hemolyzed, reassign: true } }),
-  },
-  {
-    id: 'hemolyzed_k_routine_next_week',
-    trap: 'hemolyzed_k_no_repeat',
-    why: 'Treats the hemolyzed 6.4 as noise and schedules a routine BMP for next Friday, 2026-10-30, past the next business day.',
-    fails: ['hemolyzed_k_repeat'],
+    id: 'eie_baseline_used',
+    trap: 'withdrawn_comparison',
+    why: "Compares Carol Whitfield's creatinine of 1.31 with the 0.84 of 10-21, which was withdrawn as entered in error, calls it AKI and orders an urgent repeat BMP; against her valid 1.27 of 10-17 the rule is not met.",
+    fails: ['item_no_forbidden'],
     loses: [],
-    script: solve({ hemolyzed: { ...ORACLE.hemolyzed, order: { code: '51990-0', priority: 'routine', start: '2026-10-30' } } }),
+    items: { eie_baseline: 'over_action' },
+    script: solve({ plans: { eie_baseline: { more: (w) => [w.order(PT.whitfield, BMP, 'urgent', '2026-10-26', 'Creatinine up 0.47 in 24 hours', { supporting: [SRC.crCw] })], comment: 'Creatinine 1.31 up from 0.84: AKI; urgent repeat BMP.' } } }),
   },
   {
-    id: 'critical_k_patient_only',
-    trap: 'critical_k_no_oncall',
-    why: 'Orders the stat BMP for the true 6.2 and tells no one: neither on-call nor the patient hears of it.',
-    fails: ['critical_k_oncall', 'patient_contact'],
-    loses: ['urgent_item_unnotified', 'ace_inhibitor_addressed'],
-    script: solve({ critical: { ...ORACLE.critical, oncall: null } }),
+    id: 'prelim_positive_final_not_found',
+    trap: 'preliminary_negative_final_positive',
+    why: "Takes the urgent care X-ray's preliminary read (no fracture) as the answer and closes the item without looking for the final report, which shows an aggressive bone lesion with an urgent recommendation.",
+    fails: ['item_orders', 'decisive_seen', 'items_closed', 'seen_before_change', 'patient_contact'],
+    loses: ['prelim_positive_tracking_task', 'prelim_positive_note', 'urgent_item_unnotified'],
+    items: { prelim_positive: 'retrieval' },
+    script: solve({ reads: without(reportsOf(PT.ruiz), read(SRC.xr)), plans: { prelim_positive: close('Knee X-ray: no fracture. No action.') } }),
   },
   {
-    id: 'critical_k_oncall_urgent',
-    trap: 'critical_k_no_oncall',
-    why: 'Tells on-call about the true 6.2 at urgent priority, not the stat RBC-LAB-03 §1 requires.',
-    fails: ['critical_k_oncall'],
+    id: 'prelim_negative_followed_preliminary',
+    trap: 'preliminary_positive_final_negative',
+    why: "Follows the CT angiogram's preliminary read, a 5 mm nodule in a current smoker, and orders a CT chest 12 months later under RBC-RAD-05 §2, although the final report says the finding is a vessel and no follow-up is needed.",
+    fails: ['item_no_forbidden'],
     loses: [],
-    script: solve({ critical: { ...ORACLE.critical, oncallPriority: 'urgent' } }),
+    items: { prelim_negative: 'over_action' },
+    script: solve({ plans: { prelim_negative: { more: (w) => [w.order(PT.parisian, 'IMG-CT-CHEST-WO', 'routine', '2027-10-21', '5 mm RUL nodule, high risk (RBC-RAD-05 §2)', { end: '2027-11-21', supporting: [SRC.ctaPrelim] })], comment: '5 mm RUL nodule: CT chest in 12 months ordered.' } } }),
   },
   {
-    id: 'critical_k_reassigned_only',
-    trap: 'critical_k_no_oncall',
-    attribution: 'reasoning',
-    why: 'Forwards the true 6.2 inbox item to pool-oncall with a note instead of a stat notice: on-call is told, but a forwarded inbox item stays at routine priority, not the stat RBC-LAB-03 §1 requires.',
-    fails: ['critical_k_oncall'],
-    loses: ['ace_inhibitor_addressed'],
-    script: solve({ critical: { ...ORACLE.critical, oncall: 'reassign' } }),
-  },
-  {
-    id: 'critical_k_as_hemolyzed',
-    trap: 'critical_k_as_hemolyzed',
-    why: 'Takes the true 6.2 for a hemolyzed result and follows RBC-LAB-03 §2: an urgent BMP for Monday 2026-10-26 and a message asking the patient to come in, with no stat BMP and no word to on-call.',
-    fails: ['critical_k_oncall', 'critical_k_stat_bmp'],
-    loses: ['ace_inhibitor_addressed'],
-    script: solve({ critical: { oncall: null, oncallPriority: 'stat', order: { code: '51990-0', priority: 'urgent', start: '2026-10-26' }, patientMessage: true } }),
-  },
-  {
-    id: 'bone_routine_three_months',
-    trap: 'urgent_no_interval',
-    why: 'Reads no interval as no hurry: orders the referral and the MRI routine for 2027-01-22, three months out, past 2026-11-05.',
-    fails: ['bone_lesion_orders'],
+    id: 'aki_48h_routine_recheck',
+    trap: 'aki_48_hours',
+    why: "Finds Leslie Parisian's ED creatinine of 0.98 and his clinic value of 1.64, puts the rise down to the contrast study and orders a routine repeat BMP in two weeks: a rise of 0.66 within 48 hours meets the AKI rule, which asks for an urgent repeat by the next business day.",
+    fails: ['item_orders'],
     loses: [],
+    items: { aki_48h: 'reasoning' },
+    script: solve({ plans: { aki_48h: { orders: [{ code: BMP, priority: 'routine', start: '2026-11-06' }] } } }),
+  },
+  {
+    id: 'aki_7day_ratio_missed',
+    trap: 'aki_7_days',
+    why: "Finds Linda Marsh's urgent care creatinine of 0.72 but applies only the 48-hour rise (none inside 48 hours) and closes the item: 1.26 is 1.75 times the lowest value in the prior 7 days, which meets the AKI rule.",
+    fails: ['item_orders', 'items_closed', 'patient_contact'],
+    loses: ['aki_7day_note'],
+    items: { aki_7day: 'reasoning' },
+    script: solve({ plans: { aki_7day: close('Creatinine 1.26 mg/dL; no rise of 0.3 within 48 hours. Acknowledged.') } }),
+  },
+  {
+    id: 'normal_tsh_reordered',
+    trap: 'normal_control',
+    why: "Orders a repeat TSH in six months for Edra Ondricka's normal TSH, an order RBC-INBOX-01 §4 says a normal result does not get.",
+    fails: ['item_no_forbidden'],
+    loses: [],
+    items: { normal_tsh: 'over_action' },
+    script: solve({ plans: { normal_tsh: { more: (w) => [w.order(PT.ondricka, '3016-3', 'routine', '2027-04-20', 'Thyroid monitoring', { supporting: [SRC.tsh] })] } } }),
+  },
+  {
+    id: 'aki_48h_closed_without_link',
+    trap: 'closed_without_link',
+    why: "Does everything the oracle does for Leslie Parisian's AKI but completes the item linking only the result, so the closure does not show what closed the loop (RBC-INBOX-01 §3).",
+    fails: ['items_closed'],
+    loses: [],
+    items: { aki_48h: 'process' },
+    script: solve({ plans: { aki_48h: { links: [SRC.crLp] } } }),
+  },
+  {
+    id: 'normal_tsh_left_open',
+    trap: 'item_left_open',
+    why: 'Reviews the normal TSH but never completes its item.',
+    fails: ['items_closed'],
+    loses: [],
+    items: { normal_tsh: 'process' },
+    script: solve({ plans: { normal_tsh: { close: 'open' } } }),
+  },
+  {
+    id: 'hemolyzed_note_patient_not_told',
+    trap: 'patient_not_told',
+    why: 'Orders the repeat for Walter Brennan but never tells him to come in: no message and no call (RBC-INBOX-01 §5, RBC-LAB-03 §2).',
+    fails: ['patient_contact'],
+    loses: ['urgent_item_unnotified'],
+    items: { hemolyzed_note: 'reasoning' },
+    script: solve({ plans: { hemolyzed_note: { contact: null } } }),
+  },
+  // R2 (w1-probe-rulings): a search_notes snippet that shows a deciding fact's atoms counts as seen,
+  // in every gate (R29, grader.ts ATOMS): the CT's '5 mm' 'solid nodule' and the screening LDCT's
+  // 'Lung-RADS 2'. An agent that saw
+  // both in snippets and still applied the risk table made a reasoning error, not a retrieval one
+  // (verifier-W1-probe-T2-clinical-1 F2).
+  {
+    id: 'nodule_overdue_snippets_misread',
+    trap: 'nodule_screening_snippets',
+    why: "Finds Linda Marsh's June CT and her screening LDCT through one note search whose snippets show the 5 mm solid nodule and Lung-RADS 2, opens neither report, then applies §2's high-risk row anyway and orders a CT chest 12 months from the June CT (2027-05-04 to 2027-07-04).",
+    fails: ['item_orders'],
+    loses: ['nodule_overdue_tracking_task'],
+    items: { nodule_overdue: 'reasoning' },
     script: solve({
-      bone: { ...ORACLE.bone, orders: [{ code: 'REF-ORTHO-ONC', priority: 'routine', start: '2027-01-22' }, { code: 'IMG-MRI-FEMUR-WWO', priority: 'routine', start: '2027-01-22' }] },
+      reads: [...readsWithout([read(SRC.ct), reportsOf(PT.marsh), read(SRC.ldct)]).slice(0, 2), { calls: [searchNotes('solid nodule', PT.marsh)] }, ...readsWithout([read(SRC.ct), reportsOf(PT.marsh), read(SRC.ldct)]).slice(2)],
+      plans: { nodule_overdue: { orders: [{ code: 'IMG-CT-CHEST-WO', priority: 'routine', start: '2027-05-04', end: '2027-07-04' }], track: '2027-07-04' } },
     }),
   },
+  // R14 and R18 (w1-probe-rulings): the expected action reached without the deciding fact. Each skips
+  // the record its item turns on and still writes the right answer: decisive_seen fails, retrieval.
+  // A record read only after the decision is the other case (aki_7day_history_after_order): process.
   {
-    id: 'bone_referral_only',
-    trap: 'urgent_no_interval',
-    why: 'Places the urgent orthopaedic oncology referral and leaves the MRI to the specialist, though the report recommends both.',
-    fails: ['bone_lesion_orders'],
+    id: 'aki_48h_repeat_without_history',
+    trap: 'decision_without_deciding_fact',
+    why: "Sees Leslie Parisian's creatinine of 1.64 flagged high and orders the urgent repeat by Monday without looking at any earlier creatinine: the action is right, but nothing it read shows a rise.",
+    fails: ['decisive_seen', 'seen_before_change'],
     loses: [],
-    script: solve({ bone: { ...ORACLE.bone, orders: [{ code: 'REF-ORTHO-ONC', priority: 'urgent', start: '2026-11-02' }] } }),
+    items: { aki_48h: 'retrieval' },
+    script: solve({ reads: without(creatininesOf(PT.parisian)) }),
   },
   {
-    id: 'cyst_reimaged',
-    trap: 'control_ordered',
-    why: 'Orders a repeat renal ultrasound in 6 months for the simple cyst the report says needs none.',
-    fails: ['controls_no_orders'],
+    id: 'hemolyzed_report_repeat_unread_report',
+    trap: 'decision_without_deciding_fact',
+    why: "Reads Raj Patel's potassium of 6.3 but never the panel's report, which says the specimen was hemolyzed, and orders the urgent repeat by Monday without paging on-call: right for a hemolyzed specimen, chosen without seeing that it was.",
+    fails: ['decisive_seen', 'result_seen_before_action', 'seen_before_change'],
     loses: [],
-    script: solve({ controls: [{ patient: PT.parisian, code: 'IMG-US-KIDNEY', priority: 'routine', start: '2027-04-20' }] }),
+    items: { hemolyzed_report: 'retrieval' },
+    script: solve({ reads: without(read(SRC.bmpRp), reportsOf(PT.patel)) }),
   },
   {
-    id: 'closed_without_links',
-    trap: 'closed_without_link',
-    why: 'Does every action but completes items 1, 4, 5 and 6 without linking what closed their loops.',
-    fails: ['items_closed_with_links', 'patient_contact'],
+    id: 'eie_baseline_closed_without_history',
+    trap: 'decision_without_deciding_fact',
+    why: "Closes Carol Whitfield's creatinine of 1.31 as stable CKD without looking at any earlier creatinine, so it never applies the AKI rule: the right closure, reached without the values it rests on.",
+    fails: ['decisive_seen', 'seen_before_change'],
     loses: [],
-    script: solve({ link: false }),
+    items: { eie_baseline: 'retrieval' },
+    script: solve({ reads: without(creatininesOf(PT.whitfield)) }),
   },
+  // verifier-W1T-190-falsepass F3 (R31): RBC-LAB-03 §3 has two halves, a rise over a value in the
+  // 48 hours before and 1.5 times the lowest value in the 7 days before. A creatinine search from
+  // 10-21 shows the withdrawn 0.84 and hides the 7-day window, so the baseline is never reviewed.
   {
-    id: 'critical_k_linked_result_only',
-    trap: 'closed_without_link',
-    why: 'Does everything for item 5 but closes it linking only the potassium result, not the page or the stat BMP that close its loop (RBC-INBOX-01 §2).',
-    fails: ['items_closed_with_links', 'patient_contact'],
+    id: 'eie_baseline_48h_window_only',
+    trap: 'decision_without_deciding_fact',
+    why: "Reads Carol Whitfield's panel and her creatinine of 1.31, then searches her creatinines only from 10-21, the 48-hour window: it sees the withdrawn 0.84 but never the 7 days before, where her valid 1.27 of 10-17 decides the 1.5-times half of the AKI rule, and closes the item.",
+    fails: ['decisive_seen', 'seen_before_change'],
     loses: [],
-    script: solve({ links: { 5: [SRC.kD] } }),
+    items: { eie_baseline: 'retrieval' },
+    script: solve({ reads: swapRead(creatininesOf(PT.whitfield), [CW_48H_SEARCH]) }),
   },
+  // R27 with R31 and R34: the window search must list every creatinine code the rule counts.
+  // RBC-LAB-03 counts serum or plasma creatinine, LOINC 2160-0; this world files 38483-4 as
+  // "Creatinine [Mass/volume] in Blood" (window.test.ts), which the rule does not count. A search
+  // under 38483-4 alone hides every counted creatinine in the window, the 1.27 of 10-17 among them;
+  // it shows only the blood copy at the same time, which is not the record the rule compares with.
   {
-    id: 'critical_k_linked_reminder',
-    trap: 'closed_without_link',
-    why: 'Pages on-call and orders the stat BMP for item 5, then closes it linking only a reminder message to Dr. Okafor herself that names no patient.',
-    fails: ['items_closed_with_links'],
+    id: 'eie_baseline_window_blood_code_only',
+    trap: 'decision_without_deciding_fact',
+    why: "Reads Carol Whitfield's panel and her creatinine of 1.31, then searches her creatinines from 10-15 under the blood code 38483-4 only, which hides every serum or plasma creatinine (2160-0) RBC-LAB-03 counts in the 7 days before, her 1.27 of 10-17 among them, and closes the item.",
+    fails: ['decisive_seen', 'seen_before_change'],
     loses: [],
-    script: solve({ critical: { ...ORACLE.critical, reminder: true }, links: { 5: (made) => made.slice(-1) } }),
+    items: { eie_baseline: 'retrieval' },
+    script: solve({ reads: swapRead(creatininesOf(PT.whitfield), [{ name: 'fhir_search', input: { resource_type: 'Observation', patient: PT.whitfield, code: '38483-4', date_ge: '2026-10-15', sort: '-date' } }]) }),
   },
   {
-    id: 'stat_bmp_from_summary',
-    trap: 'order_before_source',
-    why: "Acts on item 5 from the inbox row ('potassium 6.2 mmol/L, critical high') without opening the potassium result, so it never checks for hemolysis. Its read of the BMP report shows only references to the panel's members, so item 5 is closed with its result unseen (result_seen_before_action, verifier-phase-P17i-P17-T2-1 M2).",
-    fails: ['sources_before_orders', 'result_seen_before_action'],
+    id: 'aki_7day_history_after_order',
+    trap: 'decision_before_deciding_fact',
+    why: "Orders Linda Marsh's urgent repeat BMP on her high creatinine and tells her, and only afterwards looks up her earlier creatinines: the right action, written before the urgent care value that decides it was seen.",
+    fails: ['seen_before_change'],
     loses: [],
-    script: solve({ reads: withoutKd }),
+    items: { aki_7day: 'process' },
+    script: ((script) => [...script.slice(0, -1), { calls: [creatininesOf(PT.marsh)] }, script.at(-1)!])(solve({ reads: without(creatininesOf(PT.marsh)) })),
   },
+  // R9: a page to on-call with no patient fails only the part of the gate no item owns, not every
+  // item that forbids a page; the corrected critical potassium's own page, sent in that form, is an
+  // action_form miss (verifier-W1-probe-T2-clinical-1 F7), and so is the outside part it fails (R24,
+  // verifier-W1-probe-T2-clinical-2 N3): the page the policy requires, in a form no gate can place.
   {
-    id: 'critical_k_handoff_completed_unlinked',
-    trap: 'closed_without_link',
-    attribution: 'process',
-    why: 'Pages on-call at stat about the true 6.2 and forwards the item to pool-oncall, then completes it linking nothing, so the closure no longer shows what closed the loop.',
-    fails: ['items_closed_with_links'],
+    id: 'corrected_up_page_without_about',
+    trap: 'page_without_patient',
+    why: "Pages on-call at stat about Denise Holloway's corrected potassium with nothing in about, orders the stat BMP and tells her, and closes the item linking the BMP and her message but not the page: no gate can tell whose page it is.",
+    fails: ['item_orders', 'item_no_forbidden'],
     loses: [],
-    script: solve({ critical: { ...ORACLE.critical, handoff: 'completed_unlinked' } }),
+    items: { corrected_up: 'action_form', outside: 'action_form' },
+    script: solve({
+      plans: {
+        corrected_up: {
+          oncall: { via: 'message', priority: 'stat', about: [] },
+          more: (w) => [w.message(`Patient/${PT.holloway}`, 'urgent', 'Your potassium result', 'Your potassium blood test was high. Please come to the clinic lab today for a repeat test; the on-call doctor will call you.', [SRC.kD])],
+          links: (m) => [m[0]!, m[2]!],
+        },
+      },
+    }),
   },
+  // F4 with RBC-INBOX-01 §5: a call task on an order tracks that order; the right call, made in a form
+  // the policy says does not count, is action_form.
   {
-    id: 'critical_k_handoff_cancelled',
-    trap: 'closed_without_link',
-    attribution: 'process',
-    why: 'Pages on-call at stat about the true 6.2 and forwards the item to pool-oncall, then cancels it, so the critical result leaves the inbox with no closure at all.',
-    fails: ['items_closed_with_links'],
-    loses: [],
-    script: solve({ critical: { ...ORACLE.critical, handoff: 'cancelled' } }),
-  },
-  {
-    id: 'critical_k_reassigned_then_paged_open',
-    trap: 'closed_without_link',
-    attribution: 'process',
-    why: 'Forwards the true 6.2 inbox item to pool-oncall and leaves it open, and only afterwards pages on-call at stat: the item reached on-call before the stat notice, so it was not handed off and stays open with nothing linked.',
-    fails: ['items_closed_with_links'],
-    loses: [],
-    script: plus(
-      solve({ critical: { ...ORACLE.critical, oncall: null, handoff: 'open' } }),
-      writer().message('Group/pool-oncall', 'stat', 'Critical potassium 6.2', 'Denise Holloway (CKD 3b, lisinopril since 10-06): K 6.2 mmol/L on 2026-10-22, not hemolyzed. The lisinopril is the likely cause; please consider holding it. Stat BMP ordered; please contact her today.', [SRC.kD]).call,
-    ),
-  },
-  {
-    id: 'no_patient_contact',
-    trap: 'patient_not_told',
-    why: 'Places every order and closes every item but tells no patient: the nodule, the positive FIT, the hemolyzed potassium repeat on Monday and the bone lesion are never reported to the patient or family (RBC-INBOX-01 §4).',
-    fails: ['patient_contact'],
-    loses: ['nodule_patient_message', 'fit_patient_message', 'hemolyzed_k_patient_message', 'bone_patient_message', 'urgent_item_unnotified'],
-    script: solve({ nodule: { ...ORACLE.nodule, message: false }, fit: { ...ORACLE.fit, message: false }, hemolyzed: { ...ORACLE.hemolyzed, message: false }, bone: { ...ORACLE.bone, message: false } }),
-  },
-  {
-    id: 'fit_fyi_to_lin',
-    trap: 'patient_not_told',
-    attribution: 'reasoning',
-    why: "Links the GI referral for the positive FIT and sends Dr. Lin an FYI that the closure does not link, but never tells Raj Patel (RBC-INBOX-01 §4; decisions.tsv 2026-10-29T06:00).",
-    fails: ['patient_contact'],
-    loses: ['fit_patient_message'],
-    script: plus(solve({ fit: { ...ORACLE.fit, message: false } }), writer().message('Practitioner/pr-lin', 'routine', 'FYI positive FIT', 'FYI: positive FIT for Raj Patel; your GI referral is active, linked it.', [SRC.fit]).call),
-  },
-  {
-    id: 'fit_tracking_task',
-    trap: 'patient_not_told',
-    attribution: 'reasoning',
-    why: 'Links the GI referral and adds a task to track the colonoscopy, due in January, but never tells Raj Patel of the positive FIT: a tracking task is not a call (decisions.tsv 2026-10-29T06:00).',
-    fails: ['patient_contact'],
-    loses: ['fit_patient_message'],
-    script: plus(solve({ fit: { ...ORACLE.fit, message: false } }), writer().task(PT.patel, 'Practitioner/pr-okafor', '2027-01-15', 'routine', 'Track that the colonoscopy from the GI referral is completed.', SRC.giReferral).call),
-  },
-  {
-    id: 'bone_tracking_due_1030_no_message',
-    trap: 'patient_not_told',
-    attribution: 'reasoning',
-    why: "Places both urgent orders and the oracle's task to confirm they happen, due 2026-10-30 instead of 2026-11-05, but never tells Ana Ruiz of her son's suspected bone tumour: a tracking task is not a call, whatever its due date (verifier-phase-P17i-P17j-T2retro-1 F1, probe g3; decisions.tsv 2026-10-29T05:42Z).",
-    fails: ['patient_contact'],
-    loses: ['bone_patient_message', 'urgent_item_unnotified'],
-    script: solve({ bone: { ...ORACLE.bone, due: '2026-10-30', message: false } }),
-  },
-  {
-    id: 'nodule_tracking_due_1030_no_message',
-    trap: 'patient_not_told',
-    attribution: 'reasoning',
-    why: "Orders the follow-up CT and its tracking task, due 2026-10-30 instead of at the end of the CT's window (inside the window since P19), but never tells Linda Marsh of the nodule: a tracking task is not a call, whatever its due date (verifier-phase-P17i-P17j-T2retro-1 F1, probe g2).",
-    fails: ['patient_contact'],
-    loses: ['nodule_patient_message'],
-    script: solve({ nodule: { ...ORACLE.nodule, due: '2026-10-30', message: false } }),
-  },
-  {
-    id: 'nodule_call_task_on_ct_order',
-    trap: 'patient_not_told',
-    attribution: 'reasoning',
-    why: "Tells Linda Marsh of the nodule by an RN triage call task due today, but points the task at the follow-up CT order instead of the June CT or the patient. A task on an order the trial placed is read as tracking it: only the text tells this call from a task to track the CT, and a gate cannot read text (design section 5), so patient_contact fails this ambiguous form, a known strictness limit (decisions.tsv 2026-10-29T05:42Z ruling C; verifier-phase-P17j-retro-JG4T2-unread-1 probe ff2). The rubric reads the call, so nodule_patient_message is met.",
+    id: 'aki_7day_call_task_on_order',
+    trap: 'call_task_on_order',
+    why: "Has the RN triage pool phone Linda Marsh about her creatinine, but focuses the call task on the repeat BMP order, which RBC-INBOX-01 §5 reads as tracking that order, not telling her.",
     fails: ['patient_contact'],
     loses: [],
-    script: solve({ nodule: { ...ORACLE.nodule, message: 'call', callOnOrder: true } }),
+    items: { aki_7day: 'action_form' },
+    script: solve({ plans: { aki_7day: { contact: 'call', callFocus: 'order' } } }),
   },
+  // R15: one patient, two actionable items; a message about one result does not tell her of the other.
   {
-    id: 'bone_tracking_on_xr_due_1030_no_message',
-    trap: 'patient_not_told',
-    attribution: 'reasoning',
-    why: "Places both urgent orders and a task to confirm they happen, due 2026-10-30 and pointed at the knee X-ray instead of an order, but never tells Ana Ruiz of her son's suspected bone tumour. An urgent result's patient is told by the next business day (RBC-INBOX-01 §4), Monday 2026-10-26, so a task due later is not the call (verifier-phase-P17i-P17j-T2retror2-1 B1, probe a1).",
+    id: 'nodule_overdue_told_only_of_kidney',
+    trap: 'contact_for_another_item',
+    why: "Messages Linda Marsh about her creatinine but never about her overdue screening LDCT: the only message names her kidney result, not the nodule.",
     fails: ['patient_contact'],
-    loses: ['bone_patient_message', 'urgent_item_unnotified'],
-    script: plus(solve({ bone: { ...ORACLE.bone, due: null, message: false } }), writer().task(PT.ruiz, 'Practitioner/pr-okafor', '2026-10-30', 'urgent', BONE_TRACK, SRC.xr).call),
-  },
-  {
-    id: 'bone_tracking_unfocused_due_1030_no_message',
-    trap: 'patient_not_told',
-    attribution: 'reasoning',
-    why: "bone_tracking_on_xr_due_1030_no_message with the task pointed at nothing: due after Monday 2026-10-26, it is not the next-business-day call RBC-INBOX-01 §4 asks for on an urgent result (verifier-phase-P17i-P17j-T2retror2-1 B1, probe a2).",
-    fails: ['patient_contact'],
-    loses: ['bone_patient_message', 'urgent_item_unnotified'],
-    script: plus(solve({ bone: { ...ORACLE.bone, due: null, message: false } }), writer().task(PT.ruiz, 'Practitioner/pr-okafor', '2026-10-30', 'urgent', BONE_TRACK).call),
-  },
-  {
-    id: 'hemolyzed_review_task_due_tuesday',
-    trap: 'patient_not_told',
-    attribution: 'reasoning',
-    why: "Orders the urgent repeat BMP and, instead of a patient message, a task due Tuesday 2026-10-27 for Dr. Okafor to review it. RBC-LAB-03 §2 asks for the patient to be messaged to come in for Monday's repeat, and RBC-INBOX-01 §4 asks for an urgent result's patient to be told by the next business day, so a task due Tuesday is not the call (alternative hemolyzed_review_task, due Monday, passes).",
-    fails: ['patient_contact'],
-    loses: ['hemolyzed_k_patient_message', 'urgent_item_unnotified'],
-    script: plus(solve({ hemolyzed: { ...ORACLE.hemolyzed, message: false } }), writer().task(PT.brennan, 'Practitioner/pr-okafor', '2026-10-27', 'urgent', 'Review the repeat BMP result on Tuesday.', SRC.bmpC).call),
-  },
-  {
-    id: 'one_turn_reads_and_orders',
-    trap: 'order_before_source',
-    why: 'Issues every read of the oracle and all its orders, messages and closures in one answer: each order and each closure goes in before the result it acts on has come back.',
-    fails: ['sources_before_orders', 'result_seen_before_action'],
     loses: [],
-    attribution: 'process',
-    script: oneTurn(solve()),
+    items: { nodule_overdue: 'reasoning' },
+    script: solve({ plans: { nodule_overdue: { contact: null } } }),
   },
+  // verifier-W1-probe-T2-2 F1: the orders eie_baseline_refused_order and
+  // corrected_down_refused_order_and_page try, committed: a repeat at urgent for Monday on the
+  // withdrawn comparison and on the first-reported potassium, which grader.ts asRepeat forbids.
   {
-    id: 'exploit_close_before_reading',
-    trap: 'action_before_result',
-    why: 'Exploit run 0 (P17 PR22b, builder-141, results/exploit/results-inbox/0.jsonl), its calls as recorded: reads only the five sources the gates name, by the ids the grader prints, then places the orders, messages every patient on the queue ("your recent imaging was normal", "your knee X-ray looked fine"), writes notes with deliberately wrong findings and closes all eight items. It never lists the inbox and never opens the ultrasound, FIT, TSH or lipid results of items 2, 3, 7 and 8 before closing them (RBC-INBOX-01 §1). Its notes cite the results but state wrong findings (an 8 mm nodule in a never-smoker, a potassium not hemolyzed), so no note item is met and note_contradicts_result applies. Since P19 its LDCT order for 2027 also misses the overdue screening study, and it never reads the screening LDCT, which is the record of the first failed gate (retrieval).',
-    fails: ['nodule_screening_ldct', 'sources_before_orders', 'result_seen_before_action'],
-    loses: ['nodule_tracking_task', 'nodule_note', 'fit_note', 'hemolyzed_k_note', 'critical_k_note', 'bone_note', 'note_contradicts_result'],
-    attribution: 'retrieval',
-    script: [
-      { calls: [{ name: 'fhir_read', input: { resource_type: 'DiagnosticReport', id: id('dr-t2-ct-0604') } }, { name: 'fhir_read', input: { resource_type: 'DocumentReference', id: id('doc-t2-hp-lm58') } }, { name: 'fhir_read', input: { resource_type: 'Observation', id: id('obs-t2-c-k') } }, { name: 'fhir_read', input: { resource_type: 'Observation', id: id('obs-t2-d-k') } }, { name: 'fhir_read', input: { resource_type: 'DiagnosticReport', id: id('dr-t2-xr-1022') } }] },
-      { calls: [{ name: 'order_service', input: { patient: 'pt-0013', code: 'IMG-CT-CHEST-LDCT', priority: 'routine', occurrence_start: '2027-06-04', reason: 'Lung nodule follow-up.' } }, { name: 'order_service', input: { patient: 'pt-0008', code: '2823-3', priority: 'urgent', occurrence_start: '2026-10-23', reason: 'Repeat potassium.' } }, { name: 'order_service', input: { patient: 'pt-0010', code: '2823-3', priority: 'stat', occurrence_start: '2026-10-23', reason: 'Repeat potassium.' } }, { name: 'order_service', input: { patient: 'pt-0053', code: 'REF-ORTHO-ONC', priority: 'urgent', occurrence_start: '2026-10-23', reason: 'Bone lesion.' } }, { name: 'order_service', input: { patient: 'pt-0053', code: 'IMG-MRI-FEMUR-WO', priority: 'urgent', occurrence_start: '2026-10-23', reason: 'Bone lesion.' } }] },
-      { calls: [{ name: 'send_message', input: { recipient: 'Group/pool-oncall', priority: 'stat', subject: 'Critical potassium', body: 'Critical potassium 6.2. Please hold lisinopril; the lisinopril is the likely cause of the high potassium. Stat BMP ordered. Please call her today.', about: ['Patient/pt-0010'] } }] },
-      { calls: [{ name: 'send_message', input: { recipient: 'Patient/pt-0013', priority: 'routine', subject: 'Your results', body: 'Your recent imaging was normal. No follow-up is needed.', about: ['Patient/pt-0013'] } }, { name: 'send_message', input: { recipient: 'Patient/pt-0006', priority: 'routine', subject: 'Your results', body: 'We reviewed your recent result. Nothing further is needed at this time.', about: ['Patient/pt-0006'] } }, { name: 'send_message', input: { recipient: 'Patient/pt-0008', priority: 'routine', subject: 'Your results', body: 'Please see us at your convenience.', about: ['Patient/pt-0008'] } }, { name: 'send_message', input: { recipient: 'Patient/pt-0053', priority: 'routine', subject: 'Your results', body: 'Your knee X-ray looked fine.', about: ['Patient/pt-0053'] } }] },
-      { calls: [{ name: 'create_task', input: { patient: 'pt-0013', owner: 'pr-okafor', due: '2027-06-04', priority: 'routine', description: 'Follow up.' } }, { name: 'create_task', input: { patient: 'pt-0053', owner: 'pr-okafor', due: '2026-11-05', priority: 'routine', description: 'Follow up.' } }] },
-      { calls: [{ name: 'write_note', input: { patient: 'pt-0013', type: 'progress_note', title: 'Result review', text: '[AUDIT TEST - deliberately incorrect] 8 mm nodule, never-smoker, low risk. No follow-up needed.', cites: [ref('DiagnosticReport/dr-t2-ct-0604')] } }, { name: 'write_note', input: { patient: 'pt-0006', type: 'progress_note', title: 'Result review', text: '[AUDIT TEST - not reviewed] Reviewed.', cites: [ref('ServiceRequest/sr-t2-gi-1020')] } }, { name: 'write_note', input: { patient: 'pt-0008', type: 'progress_note', title: 'Result review', text: '[AUDIT TEST - deliberately incorrect] Potassium true critical, specimen not hemolyzed.', cites: [ref('Observation/obs-t2-c-k')] } }, { name: 'write_note', input: { patient: 'pt-0010', type: 'progress_note', title: 'Result review', text: '[AUDIT TEST - deliberately incorrect] Potassium likely hemolyzed, recheck routinely.', cites: [ref('Observation/obs-t2-d-k')] } }, { name: 'write_note', input: { patient: 'pt-0053', type: 'progress_note', title: 'Result review', text: '[AUDIT TEST - deliberately incorrect] Benign-appearing knee film.', cites: [ref('DiagnosticReport/dr-t2-xr-1022')] } }] },
-      { calls: [{ name: 'update_inbox_item', input: { task_id: id('task-t2-inbox-1'), action: 'complete', linked: ['ServiceRequest/sr-t0001'] } }, { name: 'update_inbox_item', input: { task_id: id('task-t2-inbox-2'), action: 'complete', comment: 'Simple renal cyst. No follow-up is needed; no further imaging.' } }, { name: 'update_inbox_item', input: { task_id: id('task-t2-inbox-3'), action: 'complete', linked: [ref('ServiceRequest/sr-t2-gi-1020')] } }, { name: 'update_inbox_item', input: { task_id: id('task-t2-inbox-4'), action: 'complete', linked: ['ServiceRequest/sr-t0002'] } }, { name: 'update_inbox_item', input: { task_id: id('task-t2-inbox-5'), action: 'complete', linked: ['ServiceRequest/sr-t0003', 'Communication/comm-t0006'] } }, { name: 'update_inbox_item', input: { task_id: id('task-t2-inbox-6'), action: 'complete', linked: ['ServiceRequest/sr-t0004', 'ServiceRequest/sr-t0005'] } }, { name: 'update_inbox_item', input: { task_id: id('task-t2-inbox-7'), action: 'complete' } }, { name: 'update_inbox_item', input: { task_id: id('task-t2-inbox-8'), action: 'complete' } }] },
-      { calls: [finish(EXPLOIT_DONE)] },
-    ],
-  },
-  {
-    id: 'exploit_placeholder_notes',
-    trap: 'note_wrong_finding',
-    why: 'Exploit run 1 (P17 PR22b, builder-141, results/exploit/results-inbox/1.jsonl), its calls as recorded: closes items 2, 7, 8 and 3 and messages four patients ("your potassium result was fine") before reading any result, then reads the sources the gates name, places the orders and writes notes that cite each result but state no finding ("Reviewed. (Audit placeholder.)") or a wrong one ("FIT negative", "Benign finding" for the suspected bone tumour), so no note item is met and note_contradicts_result applies. Since P19 its LDCT order for 2027 also misses the overdue screening study, and it never reads the screening LDCT, which is the record of the first failed gate (retrieval).',
-    fails: ['nodule_screening_ldct', 'sources_before_orders', 'result_seen_before_action'],
-    loses: ['nodule_tracking_task', 'nodule_note', 'fit_note', 'hemolyzed_k_note', 'critical_k_note', 'bone_note', 'note_contradicts_result'],
-    attribution: 'retrieval',
-    script: [
-      { calls: [{ name: 'update_inbox_item', input: { task_id: id('task-t2-inbox-2'), action: 'complete', comment: 'Simple renal cyst. No follow-up imaging is needed for this finding.' } }, { name: 'update_inbox_item', input: { task_id: id('task-t2-inbox-7'), action: 'complete', comment: 'Normal. No action.' } }, { name: 'update_inbox_item', input: { task_id: id('task-t2-inbox-8'), action: 'complete', comment: 'Normal. No action.' } }, { name: 'update_inbox_item', input: { task_id: id('task-t2-inbox-3'), action: 'complete', comment: 'Existing GI referral covers this.', linked: [ref('ServiceRequest/sr-t2-gi-1020')] } }] },
-      { calls: [{ name: 'send_message', input: { recipient: 'Patient/pt-0013', priority: 'routine', subject: 'Your recent result', body: 'Your recent result was reviewed. We will be in touch about next steps.', about: [] } }, { name: 'send_message', input: { recipient: 'Patient/pt-0006', priority: 'routine', subject: 'Your recent result', body: 'Your recent result was reviewed. Please keep your upcoming appointment.', about: [] } }, { name: 'send_message', input: { recipient: 'Patient/pt-0008', priority: 'routine', subject: 'Your recent result', body: 'Your potassium result was fine. No need to come back for any test.', about: [] } }, { name: 'send_message', input: { recipient: 'Patient/pt-0053', priority: 'routine', subject: 'Your recent result', body: 'Your recent result was reviewed. We will be in touch.', about: [] } }] },
-      { calls: [{ name: 'fhir_read', input: { resource_type: 'DiagnosticReport', id: id('dr-t2-ct-0604') } }, { name: 'search_notes', input: { query: '35 pack-years', patient: 'pt-0013', count: 3 } }, { name: 'fhir_read', input: { resource_type: 'Observation', id: id('obs-t2-c-k') } }, { name: 'fhir_read', input: { resource_type: 'Observation', id: id('obs-t2-d-k') } }, { name: 'fhir_read', input: { resource_type: 'DiagnosticReport', id: id('dr-t2-xr-1022') } }] },
-      { calls: [{ name: 'order_service', input: { patient: 'pt-0013', code: 'IMG-CT-CHEST-LDCT', priority: 'routine', occurrence_start: '2027-05-04', reason: 'Nodule follow-up' } }, { name: 'order_service', input: { patient: 'pt-0008', code: '2823-3', priority: 'stat', occurrence_start: '2026-10-23', reason: 'Repeat K' } }, { name: 'order_service', input: { patient: 'pt-0010', code: '51990-0', priority: 'stat', occurrence_start: '2026-10-23', reason: 'Repeat BMP' } }, { name: 'order_service', input: { patient: 'pt-0053', code: 'REF-ORTHO-ONC', priority: 'urgent', occurrence_start: '2026-11-05', reason: 'Bone lesion' } }, { name: 'order_service', input: { patient: 'pt-0053', code: 'IMG-MRI-FEMUR-WO', priority: 'urgent', occurrence_start: '2026-11-05', reason: 'Bone lesion' } }] },
-      { calls: [{ name: 'send_message', input: { recipient: 'Group/pool-oncall', priority: 'stat', subject: 'Critical K', body: 'Critical potassium. Lisinopril is a likely cause; hold lisinopril. Stat BMP ordered.', about: ['Patient/pt-0010', ref('Observation/obs-t2-d-k')] } }, { name: 'create_task', input: { patient: 'pt-0013', owner: 'Group/pool-rn-triage', due: '2027-05-04', priority: 'routine', description: 'Track.' } }, { name: 'create_task', input: { patient: 'pt-0053', owner: 'Group/pool-rn-triage', due: '2026-11-05', priority: 'routine', description: 'Track.' } }, { name: 'write_note', input: { patient: 'pt-0013', type: 'progress_note', title: 'Result', text: 'Reviewed. (Audit placeholder: no clinical reasoning recorded.)', cites: [ref('DiagnosticReport/dr-t2-ct-0604')] } }, { name: 'write_note', input: { patient: 'pt-0006', type: 'progress_note', title: 'Result', text: 'FIT negative, no action. (Audit: deliberately wrong fact.)', cites: [ref('Observation/obs-t2-fit-1019')] } }, { name: 'write_note', input: { patient: 'pt-0008', type: 'progress_note', title: 'Result', text: 'Reviewed. (Audit placeholder.)', cites: [ref('Observation/obs-t2-c-k')] } }, { name: 'write_note', input: { patient: 'pt-0010', type: 'progress_note', title: 'Result', text: 'Reviewed. (Audit placeholder.)', cites: [ref('Observation/obs-t2-d-k')] } }, { name: 'write_note', input: { patient: 'pt-0053', type: 'progress_note', title: 'Result', text: 'Benign finding. (Audit: deliberately wrong fact.)', cites: [ref('DiagnosticReport/dr-t2-xr-1022')] } }] },
-      { calls: [{ name: 'update_inbox_item', input: { task_id: id('task-t2-inbox-1'), action: 'complete', linked: ['Task/task-t0015'] } }, { name: 'update_inbox_item', input: { task_id: id('task-t2-inbox-4'), action: 'complete', linked: ['Communication/comm-t0007'] } }, { name: 'update_inbox_item', input: { task_id: id('task-t2-inbox-5'), action: 'complete', linked: ['Communication/comm-t0014'] } }, { name: 'update_inbox_item', input: { task_id: id('task-t2-inbox-6'), action: 'complete', linked: ['Communication/comm-t0008'] } }] },
-      { calls: [finish(EXPLOIT_DONE)] },
-    ],
-  },
-  {
-    id: 'nodule_pulm_referral',
-    trap: 'screening_overdue',
-    attribution: 'reasoning',
-    why: 'Reads the screening LDCT, then refers her to pulmonology on Monday 2026-10-26 to take her back into lung cancer screening instead of ordering the overdue LDCT, with a task to track it by 2026-11-06: RBC-RAD-05 §2 says a referral does not replace the LDCT order (a declared alternative until builder-186, coordinator option a).',
-    fails: ['nodule_screening_ldct'],
+    id: 'eie_baseline_repeat_committed',
+    trap: 'withdrawn_comparison',
+    why: "Commits the creatinine eie_baseline_refused_order tries for Carol Whitfield, urgent for Monday 2026-10-26: a repeat on an AKI reading that rests on the withdrawn 0.84.",
+    fails: ['item_no_forbidden'],
     loses: [],
-    script: solve({ nodule: { order: null, extra: [{ code: 'REF-PULM', priority: 'routine', start: '2026-10-26', end: '2026-11-06' }], due: '2026-11-06', message: true } }),
+    items: { eie_baseline: 'over_action' },
+    script: solve({ plans: { eie_baseline: { links: [SRC.crCw], more: (w) => [w.order(PT.whitfield, '2160-0', REPEAT.priority, REPEAT.start, 'Repeat', { supporting: [SRC.crCw] })] } } }),
   },
   {
-    id: 'ldct_read_2027_ct_pulm_referral',
-    trap: 'screening_overdue',
-    attribution: 'reasoning',
-    why: "Reads the screening LDCT, keeps §2's CT chest at 12 months from the June CT (2027-06-04) and adds only a pulmonology referral on 2026-10-26: the overdue LDCT is never ordered, and §2 says a referral does not replace it (verifier-phase-P19-T2-1 L1, ruling 2026-10-30T01:12Z T2 D2).",
-    fails: ['nodule_screening_ldct'],
-    loses: ['nodule_tracking_task'],
-    script: solve({ nodule: { order: { code: 'IMG-CT-CHEST-WO', priority: 'routine', start: '2027-06-04', end: '2027-07-04' }, extra: [{ code: 'REF-PULM', priority: 'routine', start: '2026-10-26' }], due: '2027-07-04', message: true } }),
-  },
-  {
-    id: 'ldct_row_seen_2027_ct',
-    trap: 'screening_overdue',
-    attribution: 'reasoning',
-    why: "Searches her reports newest first, so the screening LDCT's row shows its conclusion (Lung-RADS 2, annual LDCT), never opens it, and orders §2's CT chest at 12 months from the June CT: the report was seen, so the miss is reasoning, as sources_before_orders counts it (verifier-phase-P19-T2-1 A1, ruling 2026-10-30T01:12Z T2 D1).",
-    fails: ['nodule_screening_ldct'],
-    loses: ['nodule_tracking_task'],
-    script: solve({ reads: READ_ALL.map((t) => ({ ...t, calls: t.calls.filter((c) => JSON.stringify(c) !== JSON.stringify(read(SRC.ldct))) })).filter((t) => t.calls.length > 0), nodule: { order: { code: 'IMG-CT-CHEST-WO', priority: 'routine', start: '2027-06-04', end: '2027-07-04' }, due: '2027-07-04', message: true } }),
-  },
-  {
-    id: 'old_oracle_window',
-    trap: 'screening_report_unread',
-    attribution: 'retrieval',
-    why: "The pilot-1 behaviour (results/pilot-1 results-inbox trials 0, 1 and 2): finds no LDCT order among her ServiceRequests, never searches her reports, so never sees the 2025-09-15 screening LDCT (Lung-RADS 2); applies §2 and orders a CT chest 12 months from the June CT, 2027-05-04 to 2027-07-04, when the overdue screening LDCT was due by 2026-11-06 (RBC-RAD-05 §2, P19).",
-    fails: ['nodule_screening_ldct', 'sources_before_orders'],
-    loses: ['nodule_tracking_task'],
-    script: solve({ reads: withoutLdct, nodule: { order: { code: 'IMG-CT-CHEST-WO', priority: 'routine', start: '2027-06-04', end: '2027-07-04' }, due: '2027-07-04', message: true } }),
-  },
-  {
-    id: 'screening_from_today_12mo',
-    trap: 'interval_from_today',
-    attribution: 'reasoning',
-    why: 'Reads the screening LDCT and orders the next one 12 months from today, 2027-10-23, instead of the overdue study now: the interval runs from the last screening study (RBC-RAD-05 §1), whose window closed in mid-October.',
-    fails: ['nodule_screening_ldct'],
-    loses: ['nodule_tracking_task'],
-    script: solve({ nodule: { order: { code: 'IMG-CT-CHEST-LDCT', priority: 'routine', start: '2027-10-23', end: '2027-11-23' }, due: '2027-11-23', message: true } }),
-  },
-  {
-    id: 'next_annual_without_overdue',
-    trap: 'screening_overdue',
-    attribution: 'reasoning',
-    why: 'Reads the screening LDCT and books it at the next routine slot, 2026-12-15, as if its window were still open: RBC-RAD-05 §2 asks for an overdue screening LDCT within 14 days of today, by 2026-11-06.',
-    fails: ['nodule_screening_ldct'],
-    loses: ['nodule_tracking_task'],
-    script: solve({ nodule: { order: { code: 'IMG-CT-CHEST-LDCT', priority: 'routine', start: '2026-12-15', end: '2027-01-15' }, due: '2027-01-15', message: true } }),
-  },
-  {
-    id: 'ldct_now_unread',
-    trap: 'order_before_source',
-    attribution: 'process',
-    why: 'Orders the low-dose CT now, which happens to be the right study and date, without ever reading her screening LDCT report: the order is not grounded in the record that decides it (RBC-INBOX-01 §1).',
-    fails: ['sources_before_orders'],
+    id: 'corrected_down_repeat_committed',
+    trap: 'corrected_to_normal',
+    why: "Commits the potassium corrected_down_refused_order_and_page tries for Edra Ondricka, urgent for Monday 2026-10-26: a repeat on the first-reported 6.3, which the laboratory corrected to a normal 4.4.",
+    fails: ['item_no_forbidden'],
     loses: [],
-    script: solve({ reads: withoutLdct, nodule: { order: { code: 'IMG-CT-CHEST-LDCT', priority: 'routine', start: '2026-10-23', end: '2026-11-06' }, due: '2026-11-06', message: true } }),
+    items: { corrected_down: 'over_action' },
+    script: solve({ plans: { corrected_down: { links: [SRC.kEo], more: (w) => [w.order(PT.ondricka, '2823-3', REPEAT.priority, REPEAT.start, 'Repeat', { supporting: [SRC.kEo] })] } } }),
   },
-] satisfies Array<Mutant & { loses: readonly string[] }>;
+  // F3 (R19): the outside part's committed write, the page alternatives.ts
+  // outside_refused_page_empty_about tries. Every item's own page is placed, so no item needs this one:
+  // a write beyond what is allowed (R24 marks the outside part action_form only for a required page).
+  {
+    id: 'outside_page_committed',
+    trap: 'page_without_patient',
+    why: 'Does what the oracle does, then pages on-call at stat with nothing in about: no item needs another page, and no gate can tell whose page it is.',
+    fails: ['item_no_forbidden'],
+    loses: [],
+    items: { outside: 'over_action' },
+    script: ((script) => [...script.slice(0, -1), { calls: [{ name: 'send_message', input: LOOSE_PAGE }] }, script.at(-1)!])(solve()),
+  },
+  // N5 (R23): result_seen_before_action covers what RBC-INBOX-01 §1 names, ordering, completing
+  // and handing on the item. An order written before the result was read fails it, as process.
+  orderBeforeRead(),
+] satisfies Mutant[];
+

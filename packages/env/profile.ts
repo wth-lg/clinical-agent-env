@@ -27,8 +27,9 @@
 //                  a dosage on every order with route, timing, dose (in mg where the tablet's strength
 //                  says so), sig text and coded indication, a dispense request on active orders,
 //                  reaction severity). A field already present is never changed, except that a
-//                  reaction of anaphylaxis or angioedema makes the allergy high criticality and a
-//                  problem still open moves to the problem list.
+//                  reaction of anaphylaxis or angioedema makes the allergy high criticality, a
+//                  problem still open moves to the problem list, and an allergy's substance starts
+//                  with a capital letter as Synthea writes it.
 //   profileRecords on every generated resource after profileWorld, in every chart alike: the
 //                  occasional fields (a lab comment, a method, a report conclusion or rendered text,
 //                  a note's signer, a renewal chain, an allergy onset, a procedure outcome, a note
@@ -833,6 +834,13 @@ export function profileWorld(resources: readonly Resource[]): Resource[] {
         displays(r.clinicalStatus, STATUS_DISPLAY);
         displays(r.verificationStatus, STATUS_DISPLAY);
         if (r.recorder === undefined && pcp(r)) r.recorder = pcp(r);
+        // The substance as the allergy list writes it, first letter capital ('Aspirin', 'Iohexol'):
+        // Synthea writes every allergy so, and an RxNorm ingredient ('iohexol') is lower case
+        // (builder-255; world-tells.test.ts letter case).
+        const substance = r.code as { text?: string; coding?: Array<{ display?: string }> } | undefined;
+        const capital = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+        if (typeof substance?.text === 'string') substance.text = capital(substance.text);
+        for (const c of substance?.coding ?? []) if (typeof c.display === 'string') c.display = capital(c.display);
         // A reaction's severity from what it was: airway or circulation severe, breathing or hives
         // moderate, the rest mild; an allergy that caused anaphylaxis or angioedema is high criticality.
         let grave = false;
@@ -916,6 +924,20 @@ export function profileWorld(resources: readonly Resource[]): Resource[] {
           // Synthea's canned instruction ('Take as needed.', 'Every four to six hours') is not a sig:
           // the order is sent with the clinic's, from its dose, route and schedule (below).
           if (typeof d.text === 'string' && SYNTHEA_SIG.test(d.text)) delete d.text;
+          // A drug the clinic takes on a schedule is not taken as needed, and no tablet is taken
+          // more often than every 4 hours: Synthea's 'as needed' statin and hourly aspirin take the
+          // clinic's sig (R8; builder-228, builder-213).
+          {
+            const sig = SIGS.find((x) => x.drug.test(drug));
+            const rep0 = (d.timing as { repeat?: Repeat } | undefined)?.repeat;
+            if (d.asNeededBoolean === true && d.timing === undefined && sig?.repeat && !sig.prn) d.asNeededBoolean = false;
+            if (form && rep0?.periodUnit === 'h' && rep0.period < 4) {
+              d.timing = { repeat: { frequency: 1, period: 6, periodUnit: 'h' } };
+              d.asNeededBoolean = true;
+              d.doseAndRate = [{ doseQuantity: { value: 1 } }];
+              delete d.text;
+            }
+          }
           // A schedule Synthea gave only as an instruction, or the clinic's sig for the drug.
           if (d.timing === undefined && d.asNeededBoolean !== true) {
             const sig = SIGS.find((x) => x.drug.test(drug));
@@ -1592,8 +1614,11 @@ export function plantedClock(resources: readonly Resource[], planted: ReadonlySe
         const s = to.get(sec(t.v));
         if (s === undefined) continue;
         const v = at(t.v, s);
-        moved.set(t.v.slice(11, 16), moved.has(t.v.slice(11, 16)) && moved.get(t.v.slice(11, 16)) !== v.slice(11, 16) ? '' : v.slice(11, 16));
         t.holder[t.k] = v;
+        // Text gives a record's own start, never an end (builder-230: a note's derived 15-minute
+        // period ended on its "10:00 AM" booked slot, and the slot moved with it).
+        if (END.test(t.path)) continue;
+        moved.set(t.v.slice(11, 16), moved.has(t.v.slice(11, 16)) && moved.get(t.v.slice(11, 16)) !== v.slice(11, 16) ? '' : v.slice(11, 16));
       }
       // The record's own text, where it gives one of its times as HH:MM.
       const swap = (text: string) => {

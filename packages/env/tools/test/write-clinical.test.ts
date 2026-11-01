@@ -25,6 +25,12 @@ const root = new URL('../../../../', import.meta.url);
 const base = await parseNdjson(readFileSync(new URL('fixtures/world.ndjson.gz', root)));
 beforeAll(() => indexDefinitions(JSON.parse(readFileSync(new URL('fixtures/definitions-pruned.json', root), 'utf8')) as Bundle));
 
+// An active generated order by patient and drug, as the world now holds it (builder-249: the W1
+// probes stopped or completed the orders these tests named by id, mr-00005 and mr-00046).
+const activeOrder = (patient: string, drug: RegExp): string =>
+  (base.find((r) => r.resourceType === 'MedicationRequest' && (r as MedicationRequest).status === 'active' && (r as MedicationRequest).subject?.reference === `Patient/${patient}` && drug.test((r as MedicationRequest).medicationCodeableConcept?.text ?? '')) as MedicationRequest).id!;
+const HCTZ_3 = activeOrder('pt-0003', /hydrochlorothiazide 25/);
+const IBU = activeOrder('pt-0017', /ibuprofen 400/);
 const RXNORM = 'http://www.nlm.nih.gov/research/umls/rxnorm';
 const SNOMED = 'http://snomed.info/sct';
 const UCUM = 'http://unitsofmeasure.org';
@@ -299,7 +305,7 @@ describe('2. change_medication modify: product, strength and route', () => {
     expect(e.message).toMatch(/extended-release/);
     const er = call(c, 'change_medication', { medication_request: 'mr-w-metop', action: 'modify', reason: 'HR 52', medication_code: '866436', new_dose: { value: 50, unit: 'mg', frequency: 'QD' } });
     expect(get<MedicationRequest>(c, er.new_medication_request as string).medicationCodeableConcept?.coding?.[0]?.code).toBe('866436');
-    const hctz = call(c, 'change_medication', { medication_request: 'mr-00046', action: 'modify', reason: 'hyponatremia', new_dose: { value: 12.5, unit: 'mg', frequency: 'QAM' } });
+    const hctz = call(c, 'change_medication', { medication_request: HCTZ_3, action: 'modify', reason: 'hyponatremia', new_dose: { value: 12.5, unit: 'mg', frequency: 'QAM' } });
     expect(dosage(get<MedicationRequest>(c, hctz.new_medication_request as string)).text).toBe('12.5 mg (0.5 tablet) by mouth every morning');
     const gaba = call(c, 'order_medication', { patient: 'pt-0011', rxnorm_code: '310431', dose_value: 300, dose_unit: 'mg', route: 'oral', frequency: 'TID', reason: 'postherpetic neuralgia' });
     const cap = await rejected(c, 'change_medication', { medication_request: gaba.medication_request, action: 'modify', reason: 'renal', new_dose: { value: 150, unit: 'mg', frequency: 'TID' } });
@@ -389,9 +395,9 @@ describe('5. frequencies, PRN reasons, units and priorities', () => {
     expect(e).toMatchObject({ code: 'INVALID_INPUT', field: 'as_needed_reason' });
     expect(e.message).toMatch(/indication/);
     expect(await rejected(c, 'order_medication', { ...order, frequency: 'BID', as_needed_reason: 'pain' })).toMatchObject({ code: 'INVALID_INPUT', field: 'as_needed_reason' });
-    expect(await rejected(c, 'change_medication', { medication_request: 'mr-00005', action: 'modify', reason: 'r', new_dose: { value: 200, unit: 'mg', frequency: 'Q6H_PRN' } }))
+    expect(await rejected(c, 'change_medication', { medication_request: IBU, action: 'modify', reason: 'r', new_dose: { value: 200, unit: 'mg', frequency: 'Q6H_PRN' } }))
       .toMatchObject({ code: 'INVALID_INPUT', field: 'new_dose.as_needed_reason' });
-    call(c, 'change_medication', { medication_request: 'mr-00005', action: 'modify', reason: 'r', new_dose: { value: 200, unit: 'mg', frequency: 'Q6H_PRN', as_needed_reason: 'knee pain' } });
+    call(c, 'change_medication', { medication_request: IBU, action: 'modify', reason: 'r', new_dose: { value: 200, unit: 'mg', frequency: 'Q6H_PRN', as_needed_reason: 'knee pain' } });
   });
   it('accepts {patch}, {spray} and {application}, and R4 priority asap', () => {
     const c = fresh();

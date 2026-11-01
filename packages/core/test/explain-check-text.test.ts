@@ -7,13 +7,13 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { ITEMS } from '../../../tasks/message-queue/expected.ts';
 import { nodeTaskDirs } from '../../../cli/adapters/tasks-node.ts';
 import { explainTrial, REASON_WORDS, type CheckText, type ExplainRecord } from '../explain.ts';
 import { parseTrajectory } from '../trajectory.ts';
 import { decisiveGate, firstFailedGate } from '../../grader/attribution.ts';
 import type { Check } from '../../grader/check.ts';
 import { repoRoot } from '../../../scripts/test/helpers.ts';
-import { ref } from '../../../tasks/renal-dose-review/ids.ts';
 
 const TASKS = join(repoRoot, 'tasks');
 const ids = readdirSync(TASKS, { withFileTypes: true }).filter((d) => d.isDirectory() && !d.name.startsWith('_') && existsSync(join(TASKS, d.name, 'task.toml'))).map((d) => d.name).sort();
@@ -112,21 +112,21 @@ describe('sample non-pass reasons', async () => {
 // nothing).
 describe('crc-care-gap outreach_messages found', async () => {
   const found = (await textOf('crc-care-gap')).outreach_messages!.found;
-  const OTHERS = ['Patient/pt-0019', 'Patient/pt-0022', 'Patient/pt-0023'];
+  const OTHERS = ['Patient/pt-0019', 'Patient/pt-0024', 'Patient/pt-0036'];
   it('names the patient who got no outreach when only some were tasked (probe n8)', () => {
-    expect(found({ missing: ['Patient/pt-0017', 'Patient/pt-0018'], messaged: OTHERS, tasked_instead: ['Patient/pt-0017'] })).toBe('no message to Patient/pt-0018 (Lance Amado Muller)');
+    expect(found({ missing: ['Patient/pt-0022', 'Patient/pt-0018'], messaged: OTHERS, tasked_instead: ['Patient/pt-0022'] })).toBe('no message to Patient/pt-0018 (Lance Amado Muller)');
   });
   it('names the phone staff pool Task when every missing patient was tasked (probe n7)', () => {
-    expect(found({ missing: ['Patient/pt-0017', 'Patient/pt-0018'], messaged: OTHERS, tasked_instead: ['Patient/pt-0017', 'Patient/pt-0018'] })).toBe('outreach assigned to a phone staff pool for the FIT order instead of a patient message, for Patient/pt-0017 (Stephan Herman)');
+    expect(found({ missing: ['Patient/pt-0022', 'Patient/pt-0018'], messaged: OTHERS, tasked_instead: ['Patient/pt-0022', 'Patient/pt-0018'] })).toBe('outreach assigned to a phone staff pool for the FIT order instead of a patient message, for Patient/pt-0022 (Tiny Darline Koss)');
   });
   it('names the first missing patient when none was tasked', () => {
-    expect(found({ missing: ['Patient/pt-0017'], messaged: ['Patient/pt-0018', ...OTHERS], tasked_instead: [] })).toBe('no message to Patient/pt-0017 (Stephan Herman)');
+    expect(found({ missing: ['Patient/pt-0022'], messaged: ['Patient/pt-0018', ...OTHERS], tasked_instead: [] })).toBe('no message to Patient/pt-0022 (Tiny Darline Koss)');
   });
   // P17 exploit fix, crc C2 (decisions.tsv 2026-10-28T13:40Z): a message whose about does not
   // name the new FIT order is not outreach, and the text names the missing link.
   it('names the missing order link when the patient was messaged without it (exploit C2)', () => {
-    const all = ['Patient/pt-0017', 'Patient/pt-0018', ...OTHERS];
-    expect(found({ missing: all, messaged: all, not_about_order: all, tasked_instead: [] })).toBe('the message to Patient/pt-0017 (Stephan Herman) does not name the new FIT order in about');
+    const all = ['Patient/pt-0022', 'Patient/pt-0018', ...OTHERS];
+    expect(found({ missing: all, messaged: all, not_about_order: all, tasked_instead: [] })).toBe('the message to Patient/pt-0022 (Tiny Darline Koss) does not name the new FIT order in about');
   });
 });
 
@@ -134,84 +134,50 @@ describe('crc-care-gap outreach_messages found', async () => {
 // and the reason names the start and the period end (mutant fit_order_after_period).
 describe('crc-care-gap fit_orders found', async () => {
   const found = (await textOf('crc-care-gap')).fit_orders!.found;
-  const ordered = { 'Patient/pt-0017': ['ServiceRequest/sr-t0001'] };
+  const ordered = { 'Patient/pt-0022': ['ServiceRequest/sr-t0001'] };
   it('names the order start and the period end for a late order', () => {
-    expect(found({ ordered, missing: [], extra: [], late: [{ patient: 'Patient/pt-0017', order: 'ServiceRequest/sr-t0001', start: '2027-01-04' }], period_end: '2026-12-31' })).toBe(
-      'the FIT order for Patient/pt-0017 (Stephan Herman) starts 2027-01-04, after the measurement period ends on 2026-12-31',
+    expect(found({ ordered, missing: [], extra: [], late: [{ patient: 'Patient/pt-0022', order: 'ServiceRequest/sr-t0001', start: '2027-01-04' }], period_end: '2026-12-31' })).toBe(
+      'the FIT order for Patient/pt-0022 (Tiny Darline Koss) starts 2027-01-04, after the measurement period ends on 2026-12-31',
     );
   });
   it('names a missing order before a late one', () => {
-    expect(found({ ordered, missing: ['Patient/pt-0018'], extra: [], late: [{ patient: 'Patient/pt-0017', order: 'ServiceRequest/sr-t0001', start: '2027-01-04' }], period_end: '2026-12-31' })).toBe('no FIT order for Patient/pt-0018 (Lance Amado Muller)');
+    expect(found({ ordered, missing: ['Patient/pt-0018'], extra: [], late: [{ patient: 'Patient/pt-0022', order: 'ServiceRequest/sr-t0001', start: '2027-01-04' }], period_end: '2026-12-31' })).toBe('no FIT order for Patient/pt-0018 (Lance Amado Muller)');
   });
 });
 
-// builder-147 (decisions.tsv 2026-10-28T15:50Z): all_cleared names the item and why it is not
-// cleared: left with Dr. Okafor, or moved to an owner its protocol does not route it to (exploit
-// run 0 reassigned M1, M2, M4 and M5 to pool-rn-triage).
-describe('message-queue all_cleared found', async () => {
-  const found = (await textOf('message-queue')).all_cleared!.found;
-  const ev = (owner: string, routed_to: string | null) => ({ items: [{ item: 'Task/task-t6-m1', status: 'requested', owner, routed_to }], still_open: ['Task/task-t6-m1'] });
-  it('names an item left with Dr. Okafor', () => {
-    expect(found(ev('Practitioner/pr-okafor', null))).toBe('Task/task-t6-m1 is still requested with Practitioner/pr-okafor');
+// W1 T6 probe: each message-queue gate names its first failed item, as the reader knows it, and why.
+describe('message-queue found', async () => {
+  const text = await textOf('message-queue');
+  it('names the first failed item, its drug and patient, and the reason the grader recorded', () => {
+    const ev = { failed_items: [ITEMS[0]!.item, ITEMS[2]!.item], why: ['needs lisinopril 20 mg a day for 90 days with 1 refill; the trial placed no new order', null] };
+    expect(text.refill_decision!.found(ev)).toBe(`${ITEMS[0]!.item} (m1, lisinopril for Patient/pt-0026) needs lisinopril 20 mg a day for 90 days with 1 refill; the trial placed no new order`);
   });
-  it('names an item moved to a pool when its protocol routes it to no one', () => {
-    expect(found(ev('Group/pool-rn-triage', null))).toBe('Task/task-t6-m1 was reassigned to Group/pool-rn-triage, which its protocol does not route it to, so it is still open');
-  });
-  it('names an item moved to another pool than the one its protocol names', () => {
-    expect(found(ev('Group/pool-rn-triage', 'Group/pool-scheduling'))).toBe('Task/task-t6-m1 was reassigned to Group/pool-rn-triage, but its protocol routes it to Group/pool-scheduling');
+  it('names a write about a patient outside the queue', () => {
+    expect(text.no_forbidden_order!.found({ failed_items: ['outside'], why: ['a write about a patient outside the queue'] })).toBe('a write about a patient outside the queue');
   });
 });
 
-// verifier-phase-P17i-P17-T5-1 F2 (GRADER_VERSION 13): a read in the same answer as the order is
-// late though its step is lower, and the text says so instead of "after".
-describe('a read late only by its turn', async () => {
-  const found = (await textOf('renal-dose-review')).inputs_before_orders!.found;
-  const seen = [{ input: 'scr', id: ref('Observation/obs-t1-scr-1020'), step: 3 }];
-  it('says "in the same answer as" when the read stands before the order', () => {
-    expect(found({ first_medication_write: 6, seen, late: [ref('Observation/obs-t1-scr-1020')] })).toBe(`the creatinine (${ref('Observation/obs-t1-scr-1020')}) was seen at step 3, in the same answer as the first medication order at step 6`);
-  });
-  it('says "after" when the read came after the order', () => {
-    expect(found({ first_medication_write: 2, seen, late: [ref('Observation/obs-t1-scr-1020')] })).toBe(`the creatinine (${ref('Observation/obs-t1-scr-1020')}) was seen at step 3, after the first medication order at step 2`);
-  });
-});
-
-// builder-163 D6 (verifier-phase-P17j-retro-JG4T1-unread-1): T1's found text for the branches the
-// JG4-T1 fix rounds added names the product by its catalog name, not a raw coding, and reads the
-// as-needed and chart-form evidence.
+// The W1 worklist gates (builder-249): T1's and T2's found text names the first failed item, as
+// the reader knows it, and what the evidence shows. They replace the single-patient T1 gate tests
+// (inputs_before_orders, metformin_dose, gabapentin_dose, note_exists) and T2's
+// nodule_screening_ldct, which the probes removed.
 describe('renal-dose-review found text', async () => {
   const text = await textOf('renal-dose-review');
-  const IR = 'metformin hydrochloride 1000 MG Oral Tablet';
-  const ER = '24 HR metformin hydrochloride 500 MG Extended Release Oral Tablet';
-  const regimen = (product: string, form: string, as_needed = false) => ({ product, form, mg_per_dose: 1000, per_day: 2, as_needed });
-  const metformin = (is: object) => text.metformin_dose!.found({ active: ['MedicationRequest/mr-1'], was: regimen(IR, 'immediate release'), is });
-  it('names a switch of dose form by the catalog names', () => {
-    expect(metformin(regimen(ER, 'extended release'))).toBe(`metformin is 1000 mg twice a day as ${ER} (extended release), was 1000 mg twice a day as ${IR} (immediate release)`);
+  const want = { drug: 'apixaban', mg: 2.5, per_day: 2 };
+  it('names the patient, the dose the policy gives and that no DOAC order is active', () => {
+    expect(text.doac_dose!.found({ failed_items: ['Patient/pt-0040'], first: { patient: 'Patient/pt-0040', want, active: [] } })).toBe('Patient/pt-0040 (Dorothy Ashworth) needs apixaban 2.5 mg twice daily; the chart has no active DOAC order');
   });
-  it('says when a scheduled metformin order became as needed', () => {
-    expect(metformin(regimen(IR, 'immediate release', true))).toBe('metformin is 1000 mg twice a day as needed, was 1000 mg twice a day');
+  it('names a dose as needed and counts the other failed patients', () => {
+    expect(text.doac_dose!.found({ failed_items: ['Patient/pt-0040', 'Patient/pt-0001'], first: { patient: 'Patient/pt-0040', want, active: ['MedicationRequest/mr-1'], drug: 'apixaban', mg: 5, per_day: 2, scheduled: false, oral: true } })).toBe('Patient/pt-0040 (Dorothy Ashworth) needs apixaban 2.5 mg twice daily; the chart has apixaban 5 mg twice daily as needed (and 1 more patient)');
   });
-  it('says when gabapentin is ordered as needed', () => {
-    expect(text.gabapentin_dose!.found({ active: ['MedicationRequest/mr-1'], mg_per_day: 1200, per_day: 2, want_per_day: 2, scheduled: false })).toBe('gabapentin is ordered as needed, not on a schedule');
-  });
-  it('says when the gabapentin events give no steady count a day', () => {
-    expect(text.gabapentin_dose!.found({ active: ['MedicationRequest/mr-1'], mg_per_day: null, per_day: null, want_per_day: 2, scheduled: true })).toBe('the gabapentin doses a day cannot be read: its administration times are not the same number on every full day');
-  });
-  it('names a note that is not a progress note', () => {
-    expect(text.note_exists!.found({ notes: ['DocumentReference/doc-1'], progress_notes: [], messages: [] })).toBe('DocumentReference/doc-1 is not a progress note');
-  });
-  it('names a review sent as a message instead of a note', () => {
-    expect(text.note_exists!.found({ notes: [], progress_notes: [], messages: ['Communication/c-1'] })).toBe('the review was sent as a message (Communication/c-1), not written as a progress note');
-  });
-  it('says when nothing documents the review', () => {
-    expect(text.note_exists!.found({ notes: [], progress_notes: [], messages: [] })).toBe('no note was written on the patient');
+  it('names a deciding record never seen before the review finished', () => {
+    expect(text.decisive_seen!.found({ first: { patient: 'Patient/pt-0045', unseen: ['DocumentReference/doc-1'], finished_at: 40 } })).toBe('DocumentReference/doc-1 was never seen before the review finished at step 40, though it decides the dose for Patient/pt-0045 (Gregory Lindahl)');
   });
 });
 
-// builder-187 (verifier-phase-P19-T2-2 m1): nodule_screening_ldct counts chest CT orders only, so
-// its found text for no order names no pulmonology order.
-describe('results-inbox nodule_screening_ldct found', async () => {
+describe('results-inbox found text', async () => {
   const text = await textOf('results-inbox');
-  it('says no chest CT was ordered and that a referral does not count', () => {
-    expect(text.nodule_screening_ldct!.found({ orders: [] })).toBe('no chest CT order (a referral does not count)');
+  it('names the first failed item, its patient and why', () => {
+    expect(text.item_orders!.found({ failed: [{ item: 'aki_48h', why: 'no urgent repeat BMP by 2026-10-26' }] })).toBe('aki_48h (Patient/pt-0007): no urgent repeat BMP by 2026-10-26');
   });
 });

@@ -38,7 +38,7 @@ describe('list_inbox owner', () => {
     const c = fresh();
     ok(callTool(TOOLS, 'update_inbox_item', { task_id: id('task-t2-inbox-4'), action: 'reassign', new_owner: 'Group/pool-oncall' }, c));
     const mine = t2(c, { status: 'requested' });
-    expect(mine).toHaveLength(7);
+    expect(mine).toHaveLength(T2_ITEMS.size - 1);
     expect(mine.map((r) => r.task)).not.toContain(ref('Task/task-t2-inbox-4'));
     for (const r of mine) expect(r.owner).toBe('Practitioner/pr-okafor');
     const oncall = t2(c, { status: 'requested', owner: 'Group/pool-oncall' });
@@ -48,7 +48,8 @@ describe('list_inbox owner', () => {
   it("lists the signed-in user's items when owner names them, and nothing for an owner with no items", () => {
     const c = fresh();
     expect(t2(c, { owner: 'Practitioner/pr-okafor' })).toEqual(t2(c, {}));
-    expect(t2(c, {})).toHaveLength(8);
+    expect(t2(c, {})).toHaveLength(T2_ITEMS.size);
+    expect(T2_ITEMS.size).toBe(13); // the W1 T2 worklist: 13 results on 8 patients
     expect(t2(c, { owner: 'Practitioner/pr-lin' })).toEqual([]);
   });
 

@@ -57,8 +57,9 @@ describe('lookup_catalog matches tokens (R14-09)', () => {
 });
 
 describe('record_allergy defaults a catalog medication to category medication (R14-10)', () => {
-  it('on message-queue: SNOMED 764146007 from the catalog commits with category medication', async () => {
-    const [r] = await results('message-queue', [{ name: 'record_allergy', input: { patient: 'pt-0026', substance_code: '764146007', criticality: 'high', verification: 'confirmed' } }]);
+  // message-queue's catalog (W1 T6 probe) holds RxNorm drugs, not the SNOMED penicillin substance.
+  it('on message-queue: RxNorm 314077 from the catalog commits with category medication', async () => {
+    const [r] = await results('message-queue', [{ name: 'record_allergy', input: { patient: 'pt-0026', substance_code: '314077', criticality: 'high', verification: 'confirmed' } }]);
     expect(JSON.stringify(r!.content)).not.toContain("'category' is required");
     expect(r).toMatchObject({ is_error: false });
     expect(r!.written_ids?.some((id) => id.startsWith('AllergyIntolerance/'))).toBe(true);

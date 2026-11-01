@@ -37,7 +37,7 @@ import type { RunManifest } from '../../../../../packages/core/batch.ts';
 import type { ToolResultEvent, TrialEvent } from '../../../../../packages/core/events.ts';
 import { auditLabelOf, type AuditRow } from '../../../../../packages/core/explain.ts';
 import type { TrialRecord } from '../../../../../packages/core/run.ts';
-import { assertSummary, summarize, type SummaryTrial } from '../../../../../packages/core/summary.ts';
+import { assertSummary, HARM_POINTS, summarize, type SummaryTrial } from '../../../../../packages/core/summary.ts';
 import { toJsonl } from '../../../../../packages/core/trajectory.ts';
 import { cases, gradeRun, trial, type Case, type CaseRun } from '../../../../../packages/grader/matrix/matrix.ts';
 
@@ -93,6 +93,12 @@ async function main(withMatrix: boolean) {
     const validSpecials: string[] = specials.filter((s) => s === 'REFUSAL' || s === 'LIMIT');
     const plan: Array<{ c: Case; as: string | null }> = [];
     for (let i = 0; i < PASSES[t]!; i++) plan.push({ c: pass[i % pass.length]!, as: null });
+    // A task with a passing route that fires a harm item (a rubric item of HARM_POINTS or fewer
+    // points) gives its last PASS to the first such route, so the run holds committed PASSes with
+    // harm and pass_no_harm differs from passes (harm.spec; verifier-phase-P17j-retro-JU3-1 D1, D2).
+    const points = new Map(task.checks.map((x) => [x.id, x.kind === 'rubric' ? x.points : 0]));
+    const harm = pass.find((x) => x.kind === 'alternative' && (x.loses ?? []).some((l) => (points.get(l) ?? 0) <= HARM_POINTS));
+    if (harm !== undefined && PASSES[t]! > 1) plan[PASSES[t]! - 1] = { c: harm, as: null };
     for (const s of validSpecials) plan.push({ c: fail[0]!, as: s });
     while (plan.length < TRIALS_PER_TASK) plan.push({ c: fail[(plan.length - PASSES[t]!) % fail.length]!, as: null });
     for (const s of specials.filter((x) => !validSpecials.includes(x))) plan.push({ c: fail[1 % fail.length]!, as: s });

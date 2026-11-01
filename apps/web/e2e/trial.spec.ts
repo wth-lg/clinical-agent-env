@@ -16,7 +16,7 @@ import { browseFrom } from './browse.ts';
 import { MET_TEXT, NOT_AUDITED_MARKER } from '../../../packages/core/explain.ts';
 import { HEALTH_PATH, SAMPLES, TOKEN_META } from '../../../packages/core/runner-api.ts';
 import { FAULT_PRECEDENCE, isValid } from '../../../packages/core/outcomes.ts';
-import { trialName } from '../../../packages/core/summary.ts';
+import { currentGrade, trialName } from '../../../packages/core/summary.ts';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { explain, hasTrajectory, record, records, RUN_DIR, RUN_ID, runOf, summary, trialBase, TRIALS } from './fixtures/trial/trial.ts';
@@ -96,11 +96,12 @@ test('Grading lists every rubric item with the record\'s points, met and judge q
       const shown = await row.getByTestId('evidence-id').evaluateAll((els) => els.map((e) => e.getAttribute('data-id')));
       expect(shown, `${name} ${c.id}`).toEqual(ids);
       // A gate over a worklist names each failed item, why and, on the gate attribution took it
-      // from, the record's label for it (W1-1; verifier-phase-P17i-W1-1-1 M2).
+      // from, the record's label for it (W1-1; verifier-phase-P17i-W1-1-1 M2). A regraded trial's
+      // labels belong to the grade it replaced, so the page shows none (Grading.tsx itemLabels).
       const items = (c as { items?: ItemRow[] }).items;
       if (items === undefined) continue;
       await expect(row.getByTestId('gate-items')).toContainText(itemsMetText(items));
-      const failed = failedItems(c.id, items, r.attribution?.items ?? null);
+      const failed = failedItems(c.id, items, currentGrade(r).regraded ? null : (r.attribution?.items ?? null));
       await expect(row.getByTestId('gate-item')).toHaveCount(failed.length);
       for (const i of failed) {
         const li = row.locator(`[data-testid="gate-item"][data-item="${i.item}"]`);

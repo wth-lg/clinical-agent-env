@@ -31,13 +31,61 @@
 // snippet exposed its note, even one showing the whole note; from 3 on an uncut snippet does.
 import type { TrialEvent } from '../core/events.ts';
 import { collapseWhitespace, shownText } from '../env/tools/registry.ts';
-import type { Step } from './check.ts';
+import type { Step, StepNotes, StepSearch } from './check.ts';
+
+const SEARCH_KEYS = ['code', 'category', 'date_ge', 'date_le', 'status', 'sort'] as const;
+
+// The filters of a successful fhir_search call, from its tool_call input (rulings R20, R27): the
+// type, the patient as 'Patient/<id>', and the enumerated filter keys, each only when it is a
+// string. offset comes from the input and next_offset from the result's paging field, each only
+// when it is a number. sort is kept so a run of pages can be held to one order (ruling R27).
+// Anything else in the input (count) is left out. whole says whether the page held every match:
+// the call asked from the first match (offset 0 or none) and the result has no next_offset
+// (read/page.ts: present whenever entries remain).
+function searchOf(input: unknown, content: unknown): StepSearch | undefined {
+  if (input === null || typeof input !== 'object') return undefined;
+  const i = input as Record<string, unknown>;
+  if (typeof i.resource_type !== 'string') return undefined;
+  const out: StepSearch = { type: i.resource_type, whole: false };
+  if (typeof i.patient === 'string') out.patient = i.patient.startsWith('Patient/') ? i.patient : `Patient/${i.patient}`;
+  for (const k of SEARCH_KEYS) if (typeof i[k] === 'string') out[k] = i[k];
+  const paging = content !== null && typeof content === 'object' ? (content as Record<string, unknown>) : {};
+  if (typeof i.offset === 'number') out.offset = i.offset;
+  if (typeof paging.next_offset === 'number') out.next_offset = paging.next_offset;
+  out.whole = (i.offset === undefined || i.offset === 0) && Array.isArray(paging.entries) && paging.next_offset === undefined;
+  return out;
+}
+
+const NOTES_KEYS = ['date_ge', 'date_le', 'type'] as const;
+
+// The filters of a successful search_notes call, from its tool_call input alone (as searchOf, from
+// verifier-W1T-190-r2-clinical N2): the query as written, the patient as 'Patient/<id>', date_ge,
+// date_le and type, each only when it is a string, and the paging: offset from the input,
+// next_offset from the result, whole when the page asked from the first match and has no
+// next_offset. Undefined when the input has no string query.
+function notesOf(input: unknown, content: unknown): StepNotes | undefined {
+  if (input === null || typeof input !== 'object') return undefined;
+  const i = input as Record<string, unknown>;
+  if (typeof i.query !== 'string') return undefined;
+  const out: StepNotes = { query: i.query, whole: false };
+  if (typeof i.patient === 'string') out.patient = i.patient.startsWith('Patient/') ? i.patient : `Patient/${i.patient}`;
+  for (const k of NOTES_KEYS) if (typeof i[k] === 'string') out[k] = i[k];
+  const paging = content !== null && typeof content === 'object' ? (content as Record<string, unknown>) : {};
+  if (typeof i.offset === 'number') out.offset = i.offset;
+  if (typeof paging.next_offset === 'number') out.next_offset = paging.next_offset;
+  out.whole = (i.offset === undefined || i.offset === 0) && Array.isArray(paging.entries) && paging.next_offset === undefined;
+  return out;
+}
 
 // The calls that ran, in order, numbered from 1.
 export function stepsOf(events: readonly TrialEvent[]): Step[] {
   const steps: Step[] = [];
+  const inputs = new Map<string, unknown>();
   for (const e of events) {
+    if (e.type === 'tool_call') inputs.set(e.tool_use_id, e.input);
     if (e.type !== 'tool_result' || !e.executed) continue;
+    const search = e.name === 'fhir_search' && !e.is_error && inputs.has(e.tool_use_id) ? searchOf(inputs.get(e.tool_use_id), e.content) : undefined;
+    const notes = e.name === 'search_notes' && !e.is_error && inputs.has(e.tool_use_id) ? notesOf(inputs.get(e.tool_use_id), e.content) : undefined;
     steps.push({
       n: steps.length + 1,
       seq: e.seq,
@@ -49,6 +97,8 @@ export function stepsOf(events: readonly TrialEvent[]): Step[] {
       referenced_ids: e.is_error ? [] : e.referenced_ids,
       written_ids: e.is_error ? [] : (e.written_ids ?? []),
       shown: e.is_error ? {} : shownText(e.content),
+      ...(search ? { search } : {}),
+      ...(notes ? { notes } : {}),
     });
   }
   return steps;

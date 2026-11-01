@@ -1,25 +1,369 @@
-// Other correct solutions of T3: each must PASS. They vary what a careful clinician might vary
-// (the FIT code, the order window, the reading order and filters, a reminder to the patient
-// whose kit is already out, a note per ordered patient, the table's wording), so the grader is
-// shown not to depend on the oracle's exact path.
-import type { Agent } from '../../../packages/grader/matrix/types.ts';
+// Other correct solutions of T3: each must PASS. First one per worklist item (expected.ts): each
+// handles that member correctly by another route or in another allowed form, so the item's check is
+// shown not to depend on the oracle's path. For a member who needs no contact, that alternative tries
+// a forbidden FIT order the tools reject: nothing_for_others reads the final state of committed
+// writes, never an attempted one (W1-1 round 3 m1). Then the T3 cases kept from before the probe,
+// moved onto the probe panel: the FIT code and order window, the reading order and page size, notes
+// and staff tasks that are not contact, and outreach wording.
+import type { Agent, ScriptCall, ScriptTurn } from '../../../packages/grader/matrix/types.ts';
 import {
-  actions, bare, bareOrders, chart, finish, fitOrder, GAPS, group, groups, housing, keyReads, MEMBERS, message, NEXT_WRITE, NOTE_SEARCH, notes, OPNOTE, ORDER_SEQ, orderFit, outreach, OVER_65, policy, PROCEDURE_CODES, PT, read, reads, ROWS, search, STOOL_CODES, table, type Label,
+  actions, bare, bareOrders, chart, finish, fitOrder, GAPS, group, groups, housing, MEMBERS, message, notes, OPNOTE, orderFit, outreach, OVER_65, policy, PT, read, reads, search, STOOL_CODES, table, type Label,
 } from '../solution/steps.ts';
-import { ref } from '../ids.ts';
-
-const ALL = 'CRC outreach done for Okafor CRC 2026: six FIT kits ordered, six patients messaged.';
+import { expected } from '../expected.ts';
+import { id, ref } from '../ids.ts';
 
 // `loses` is spelled out in the type until the matrix's Alternative declares it (builder-49).
 type Alternative = Agent & { loses?: readonly string[] };
 
-// The oracle's table keyed by patient id instead of name.
-const byId = table(Object.fromEntries((Object.keys(ROWS) as Label[]).map((l) => [l, ROWS[l].replace(/^\| [^|]+ \|/, `| ${PT[l]} |`)])));
+// The oracle's reads with `extra` calls after them, then its writes and table.
+const withReads = (extra: ScriptCall[]) => [...reads(), { calls: extra }, { calls: actions() }, { calls: [finish()] }];
+// The oracle's writes with one gap member's FIT order changed.
+const orderFor = (l: Label, change: (c: ScriptCall) => ScriptCall) => actions().map((c) => (c.name === 'order_service' && c.input.patient === PT[l] ? change(c) : c));
+// A FIT order for a member who needs none, which order_service rejects (its window ends before it
+// starts), so nothing is written.
+const rejectedOrder = (p: string): ScriptCall => ({ name: 'order_service', input: { ...orderFit(p).input, occurrence_start: '2026-10-26', occurrence_end: '2026-10-19' } });
+const rejectedFor = (l: Label, why: string): Alternative => ({
+  id: `${l.toLowerCase()}_rejected_order`,
+  why: `Starts a FIT order for ${l === 'FILLER' ? 'the filler' : l}, who needs none (${why}), with an order window that ends before it starts: order_service rejects it and nothing is written, so the final state holds no forbidden write and the item passes.`,
+  script: [...reads(), { calls: [rejectedOrder(PT[l])] }, { calls: actions() }, { calls: [finish()] }],
+});
+// A Patient outside the panel (a renal-dose-review slot).
+const OUTSIDE_PATIENT = 'pt-0040';
 
-export const alternatives: Alternative[] = [
+// The oracle's reads without H2's housing status search.
+const withoutH2Housing = reads()
+  .map((t) => ({ calls: t.calls.filter((c) => !(c.input.patient === PT.H2 && c.input.category === 'social-history')) }))
+  .filter((t) => t.calls.length > 0);
+// The oracle's reads filtered as the policy words them (verifier-W1-probe-T3-clinical-1, case
+// policy_filtered_reads): FOBT and FIT from 2026-01-01 and sDNA-FIT from 2024-01-01 (§3, by
+// collection date, which fhir_search dates an Observation by), care episodes overlapping 2026
+// (§4), and no order or appointment lists (§3). Procedures stay unfiltered, as the oracle's. A code
+// filter counts only when it lists every code the policy counts for the kind (ruling R27), so the
+// FOBT filter names all seven FOBT and FIT codes.
+const FOBT_CODES = '2335-8,29771-3,57905-2,58453-2,80372-6,27396-1,12503-9';
+// The procedure codes §3 and §4 count (colonoscopy, flexible sigmoidoscopy, CT colonography, total
+// colectomy) and §4's advanced illness codes, as policy.ts lists them.
+const PROCEDURE_CODES = '73761001,44441009,418714002,26390003';
+const ADVANCED_ILLNESS_CODES = '84114007,13645005,185086009,52448006,26929004,433146000,19943007,128462008,363418001';
+const SDNA_CODES = '77354-9,77353-1';
+// The oracle's reads with its stool test and care episode turns replaced by `stool` and `episodes`
+// (each given the patients of the turn), and no order or appointment lists.
+const absenceReads = (stool: (ps: string[]) => ScriptTurn[], episodes: (ps: string[]) => ScriptTurn[]) =>
+  reads().flatMap((t) => {
+    const c0 = t.calls[0];
+    const ps = t.calls.map((c) => c.input.patient as string);
+    if (c0?.name === 'fhir_search' && c0.input.code === STOOL_CODES) return stool(ps);
+    if (c0?.name === 'fhir_search' && c0.input.resource_type === 'EpisodeOfCare') return episodes(ps);
+    if (c0?.name === 'fhir_search' && (c0.input.resource_type === 'ServiceRequest' || c0.input.resource_type === 'Appointment')) return [];
+    return [t];
+  });
+const filteredStool = (ps: string[], more: Record<string, string> = {}) => [
+  { calls: ps.map((p) => search('Observation', p, { code: FOBT_CODES, date_ge: '2026-01-01', ...more })) },
+  { calls: ps.map((p) => search('Observation', p, { code: SDNA_CODES, date_ge: '2024-01-01', ...more })) },
+];
+const filteredEpisodes = (ps: string[], more: Record<string, string> = {}) => [{ calls: ps.map((p) => search('EpisodeOfCare', p, { date_ge: '2026-01-01', ...more })) }];
+const policyFiltered = absenceReads(filteredStool, filteredEpisodes);
+// filteredStool with the FOBT and FIT searches started at the date with a time `ge`.
+const timedFobt = (ge: string) => (ps: string[]) => [
+  { calls: ps.map((p) => search('Observation', p, { code: FOBT_CODES, date_ge: ge })) },
+  { calls: ps.map((p) => search('Observation', p, { code: SDNA_CODES, date_ge: '2024-01-01' })) },
+];
+// verifier-W1-probe-T3-clinical-2 N1 (ruling R27): every Observation since 2024-01-01, which holds
+// both stool windows, paged ten at a time from offset 0 to past the last match, each page at the
+// one before's next_offset (no member has 80 or more). No code filter, so nothing is hidden.
+const PAGES = [0, 10, 20, 30, 40, 50, 60, 70];
+const pagedStool = (ps: string[]) => PAGES.map((offset) => ({ calls: ps.map((p) => search('Observation', p, { date_ge: '2024-01-01', count: 10, offset })) }));
+// verifier-W1-probe-T3-clinical-2 N2 (ruling R27): one clinic-wide search per window, no patient
+// filter, each one whole page: a member it does not show has no such record.
+const clinicSearch = (resource_type: string, more: Record<string, string>): ScriptCall => ({ name: 'fhir_search', input: { resource_type, ...more, count: 50 } });
+const clinicStool = () => [{ calls: [clinicSearch('Observation', { code: FOBT_CODES, date_ge: '2026-01-01' }), clinicSearch('Observation', { code: SDNA_CODES, date_ge: '2024-01-01' })] }];
+const clinicEpisodes = () => [{ calls: [clinicSearch('EpisodeOfCare', { date_ge: '2026-01-01' })] }];
+// Filters that name everything the policy counts (ruling R27): the laboratory category, every
+// status a stool test counts in, and every care episode status but entered-in-error (a superset of
+// the four statuses §4 counts).
+const fullFilterStool = (ps: string[]) => filteredStool(ps, { category: 'laboratory', status: 'final,amended,corrected' });
+const fullFilterEpisodes = (ps: string[]) => filteredEpisodes(ps, { status: 'planned,waitlist,active,onhold,finished,cancelled' });
+
+const perItem: Alternative[] = [
+  {
+    id: 'a1_order_read_loinc_code',
+    why: "Opens Delaine MacGyver's open colonoscopy order (its window passed in 2025, no colonoscopy on record) and orders her FIT by its LOINC test code (29771-3).",
+    script: [...reads(), { calls: [read('ServiceRequest', id('sr-t3-4417'))] }, { calls: orderFor('A1', () => orderFit(PT.A1, '29771-3')) }, { calls: [finish()] }],
+  },
+  {
+    id: 'a2_appointment_read',
+    why: "Opens Santo Pagac's April colonoscopy appointment (a no-show) before ordering his FIT kit.",
+    script: withReads([read('Appointment', id('appt-t3-5813'))]),
+  },
+  rejectedFor('B1', 'a total proctocolectomy excludes her'),
+  {
+    id: 'b2_colectomy_read',
+    why: "Opens Nick Bartoletti's 2021 sigmoid colectomy by fhir_read, and lists his procedures newest first, before ordering his FIT kit.",
+    script: withReads([read('Procedure', id('proc-t3-6271')), search('Procedure', PT.B2, { count: 50, sort: '-date' })]),
+  },
+  {
+    id: 'c1_episode_read',
+    why: "Opens Marilu Gaona's 2025 hospice episode (ended 2025-10-20) by fhir_read before ordering her FIT kit.",
+    script: withReads([read('EpisodeOfCare', id('eoc-t3-3051'))]),
+  },
+  rejectedFor('C2', 'hospice care during part of 2026 excludes her'),
+  {
+    id: 'd1_lab_by_date',
+    why: "Lists Tiny Koss's laboratory results since 2025-12-01 by date, which shows the FIT collected 2025-12-29 and resulted 2026-01-05, before ordering her FIT kit.",
+    script: withReads([search('Observation', PT.D1, { category: 'laboratory', date_ge: '2025-12-01', sort: '-date' })]),
+  },
+  {
+    // Newest first with no code filter, D2's 2023 sDNA-FIT is on a later page of his observations.
+    // R31: the pages run by next_offset to the last (page sizes are capped by length: 0, 24, 50 in
+    // the built world), so they show every stool kind absent from its window.
+    id: 'sdna_by_date_paging',
+    why: "Lists Lance Muller's observations newest first with no code filter and pages through them by next_offset to the last page, which reaches the 2023 sDNA-FIT, before ordering.",
+    script: [
+      ...reads().flatMap((t) =>
+        t.calls[0]?.name === 'fhir_search' && t.calls[0].input.code === STOOL_CODES
+          ? [
+              { calls: t.calls.map((c) => (c.input.patient === PT.D2 ? search('Observation', PT.D2, { sort: '-date', count: 50 }) : c)) },
+              ...[24, 50].map((offset) => ({ calls: [search('Observation', PT.D2, { sort: '-date', count: 50, offset })] })),
+            ]
+          : [t],
+      ),
+      { calls: actions() },
+      { calls: [finish()] },
+    ],
+  },
+  {
+    id: 'fit_window_into_next_year',
+    why: "Gives Tiny Koss's FIT kit an order window from 2026-12-01 to 2027-01-29: the window starts in the measurement period, which is all the gate asks of an order window (P17j JG4-T3).",
+    script: [...reads(), { calls: orderFor('D1', (c) => ({ ...c, input: { ...c.input, occurrence_start: '2026-12-01', occurrence_end: '2027-01-29' } })) }, { calls: [finish()] }],
+  },
+  {
+    // A search_patients row shows the birth date, so it exposes the Patient.
+    id: 'filler_birth_date_from_search_patients',
+    why: 'Finds Fumiko Pouros with search_patients and reads her birth date from its row, never fhir_read Patient/pt-0037.',
+    script: [
+      ...reads().map((t) => ({ calls: t.calls.map((c) => (c.name === 'fhir_read' && c.input.id === PT.FILLER ? { name: 'search_patients', input: { name: 'Pouros' } } : c)) })),
+      { calls: actions() },
+      { calls: [finish()] },
+    ],
+  },
+  {
+    id: 'fit_on_last_day_of_period',
+    why: "Orders Marilu Gaona's FIT kit for 2026-12-31, the last day of the measurement period: the occurrence starts in the period (RBC-QM-02 §1, §3), so the order counts (P17j JG4-T3 boundary).",
+    script: [...reads(), { calls: orderFor('C1', () => orderFit(PT.C1, undefined, '2026-12-31')) }, { calls: [finish()] }],
+  },
+  rejectedFor('G1', 'frailty with donepezil taken now excludes her at 72'),
+  {
+    id: 'g2_stopped_medication_read',
+    why: "Opens Harrison O'Keefe's stopped donepezil order (stopped 2023-03-20) by fhir_read before ordering his FIT kit.",
+    script: withReads([read('MedicationRequest', id('mr-t3-6604'))]),
+  },
+  rejectedFor('H1', 'he lives long term in a nursing home at 72'),
+  {
+    // Ruling R21 (verifier-W1-probe-T3-clinical-1 F2): any one of the housing status, the discharge
+    // summary or the stay's encounter settles where he lives.
+    id: 'h2_by_discharge_summary',
+    why: "Never searches Elvin Wolff's housing status; reads his skilled nursing discharge summary (short-term rehab, discharged home) and lists his 2026 encounters before ordering his FIT kit.",
+    script: [...withoutH2Housing, { calls: [read('DocumentReference', id('doc-t3-6193')), search('Encounter', PT.H2, { date_ge: '2026-01-01', count: 50 })] }, { calls: actions() }, { calls: [finish()] }],
+  },
+  {
+    // Ruling R29 (builder-252 sweep): a snippet of the discharge summary that shows its atoms,
+    // 'discharged home', stands for reading it. tests/phrases.test.ts pins the row.
+    id: 'h2_from_disposition_snippet',
+    why: "Never searches Elvin Wolff's housing status or opens a note; searches his notes for 'disposition', whose snippet of the skilled nursing discharge summary reads 'Disposition: discharged home with daughter', before ordering his FIT kit.",
+    script: [...withoutH2Housing, { calls: [notes('disposition', PT.H2)] }, { calls: actions() }, { calls: [finish()] }],
+  },
+  {
+    id: 'h2_by_snf_encounter',
+    why: "Never searches Elvin Wolff's housing status or opens a note; his 2026 encounters show the skilled nursing stay ended with a discharge to home care, which settles that he does not live in a nursing home (R21).",
+    script: [...withoutH2Housing, { calls: [search('Encounter', PT.H2, { date_ge: '2026-01-01', count: 50 })] }, { calls: actions() }, { calls: [finish()] }],
+  },
+  {
+    // Ruling R20 (verifier-W1-probe-T3-clinical-1 F1): each gap that rests on an absence is reviewed
+    // by a search filtered to the policy's window, which never returns the trap record outside it.
+    id: 'policy_filtered_reads',
+    why: 'Searches stool tests by the window each counts in (FOBT and FIT from 2026-01-01, sDNA-FIT from 2024-01-01), care episodes from 2026-01-01, and never lists orders or appointments (§3: neither is screening): every decision is right, and no trap record outside its window is ever returned.',
+    script: [...policyFiltered, { calls: actions() }, { calls: [finish()] }],
+  },
+  {
+    // Ruling R27 (verifier-W1-probe-T3-clinical-2 N1): a run of pages to the end is complete.
+    id: 'paged_full_stool_review',
+    why: 'As policy_filtered_reads, but reviews stool tests by every Observation since 2024-01-01 (both stool windows), ten per page, following next_offset from offset 0 to the last page: every match was shown, so each absence counts as reviewed and every decision is right.',
+    script: [...absenceReads(pagedStool, filteredEpisodes), { calls: actions() }, { calls: [finish()] }],
+  },
+  {
+    // Ruling R27 (verifier-W1-probe-T3-clinical-2 N2): a complete clinic-wide search counts for every
+    // member it would have shown.
+    id: 'clinic_wide_absence',
+    why: 'As policy_filtered_reads, but reviews the stool windows and care episodes by one clinic-wide search each (FOBT and FIT from 2026-01-01, sDNA-FIT from 2024-01-01, episodes from 2026-01-01), each one whole page: a member missing from a result has no such record, so every decision is right.',
+    script: [...absenceReads(clinicStool, clinicEpisodes), { calls: actions() }, { calls: [finish()] }],
+  },
+  {
+    // Ruling R27: category and status filters that keep every record the policy counts.
+    id: 'absence_filters_keep_every_record',
+    why: 'As policy_filtered_reads, but each stool search also filters to the laboratory category and to final, amended and corrected results, and each care episode search to every status but entered-in-error: no filter hides a record that would count, so each absence counts as reviewed.',
+    script: [...absenceReads(fullFilterStool, fullFilterEpisodes), { calls: actions() }, { calls: [finish()] }],
+  },
+  {
+    // verifier-W1-probe-T3-clinical-3 F1 (R4, R16, R27): the care episode statuses that count as
+    // hospice care (§4: planned, active, on hold, finished) are the whole filter a review needs.
+    id: 'c1_eoc_care_given_statuses_with_planned',
+    why: 'As policy_filtered_reads, but each care episode search filters to planned, active, onhold and finished, every status in which an episode counts (RBC-QM-02 §4: a hospice episode planned, active, on hold or finished; a palliative care episode active, on hold or finished): a waitlisted or cancelled episode does not count, so the filter hides no record that would, and each absence counts as reviewed.',
+    script: [...absenceReads(filteredStool, (ps) => filteredEpisodes(ps, { status: 'planned,active,onhold,finished' })), { calls: actions() }, { calls: [finish()] }],
+  },
+  {
+    // verifier-W1-probe-T3-4 N1', verifier-W1-probe-T3-clinical-4 F1 (R16, R27): fhir_search reads
+    // a bare date as 00:00Z, so a start at that instant is the same search as the bare date.
+    id: 'v_d1_ge_midnight_Z',
+    why: 'As policy_filtered_reads, but the FOBT and FIT searches start at 2026-01-01T00:00:00Z, the same instant fhir_search reads the bare date 2026-01-01 as: the search hides nothing, so each absence counts as reviewed.',
+    script: [...absenceReads(timedFobt('2026-01-01T00:00:00Z'), filteredEpisodes), { calls: actions() }, { calls: [finish()] }],
+  },
+  {
+    // verifier-W1-probe-T3-clinical-4 F1 (R16, R27): midnight at +05:00 is 2025-12-31 19:00Z, an
+    // earlier instant than the window start, so the search shows more, never less.
+    id: 'v_d1_ge_earlier_instant_plus05',
+    why: 'As policy_filtered_reads, but the FOBT and FIT searches start at 2026-01-01T00:00:00+05:00, which is 2025-12-31 19:00 UTC, before the window start: the search hides nothing in the window, so each absence counts as reviewed.',
+    script: [...absenceReads(timedFobt('2026-01-01T00:00:00+05:00'), filteredEpisodes), { calls: actions() }, { calls: [finish()] }],
+  },
+  {
+    // verifier-W1-probe-T3-clinical-5 F1 (R4, R16, R27; coordinator re-ruling): the measurement
+    // year starts at midnight on the clinic's calendar (America/New_York, -05:00 in January), the
+    // frame policy.ts counts in; every stored time carries the clinic's offset, so nothing counted
+    // lies before it.
+    id: 'v_d1_ge_local_midnight_minus05',
+    why: "As policy_filtered_reads, but the FOBT and FIT searches start at 2026-01-01T00:00:00-05:00, midnight on the clinic's calendar: every record dated 2026 in the clinic's zone is at or after that instant, so the search hides nothing the policy counts and each absence counts as reviewed.",
+    script: [...absenceReads(timedFobt('2026-01-01T00:00:00-05:00'), filteredEpisodes), { calls: actions() }, { calls: [finish()] }],
+  },
+  {
+    // verifier-W1T-190-r2-falsepass N4 (R16, R27): an end at the last second of the clinic's day,
+    // written with its offset, is after now, so the search hides nothing up to now.
+    id: 'v_d1_le_end_of_clinic_day_minus04',
+    why: "As policy_filtered_reads, but the FOBT and FIT searches end at 2026-10-23T23:59:59-04:00, the last second of the clinic's day: every record up to now is before that instant, so the search hides nothing and each absence counts as reviewed.",
+    script: [...absenceReads((ps) => filteredStool(ps).map((t, i) => (i === 0 ? { calls: t.calls.map((c) => ({ ...c, input: { ...c.input, date_le: '2026-10-23T23:59:59-04:00' } })) } : t)), filteredEpisodes), { calls: actions() }, { calls: [finish()] }],
+  },
+  {
+    // verifier-W1-probe-T3-clinical-5 F1: the same clinic-local start on the care episode searches.
+    id: 'v_c1_eoc_ge_local_midnight_minus05',
+    why: "As policy_filtered_reads, but each care episode search starts at 2026-01-01T00:00:00-05:00, midnight on the clinic's calendar: an episode the policy counts in 2026 reaches past that instant, so the search hides none and each absence counts as reviewed.",
+    script: [...absenceReads(filteredStool, (ps) => filteredEpisodes(ps, { date_ge: '2026-01-01T00:00:00-05:00' })), { calls: actions() }, { calls: [finish()] }],
+  },
+  {
+    // verifier-W1T-190-falsepass route b1_by_snippet_total_proctocolectomy (R29, R32): with the
+    // no-contact gate, the snippet is what reviews B1.
+    id: 'b1_by_snippet_total_proctocolectomy',
+    why: "Never opens Ángela Vigil's operative note; searches her notes for 'total proctocolectomy', whose snippet shows the operation, and writes nothing about her.",
+    script: [...reads().slice(0, -1), { calls: [notes('total proctocolectomy', PT.B1)] }, { calls: actions() }, { calls: [finish()] }],
+  },
+  {
+    // R32: H1's housing status found by its code rather than the social-history category.
+    id: 'h1_housing_by_code',
+    why: "Finds Rickey Sipes's housing status by its LOINC code (71802-3) instead of the social-history category; it says he lives in a nursing home, and nothing is written about him.",
+    script: [
+      ...reads().map((t) => ({ calls: t.calls.map((c) => (c.input.patient === PT.H1 && c.input.category === 'social-history' ? search('Observation', PT.H1, { code: '71802-3' }) : c)) })),
+      { calls: actions() },
+      { calls: [finish()] },
+    ],
+  },
+  {
+    // R31, R32 (verifier-W1T-190-falsepass F1, F3): the fewest complete searches that review every
+    // member. Each gap: one procedure search naming every counted procedure code (colonoscopy,
+    // flexible sigmoidoscopy, CT colonography, total colectomy) and one stool test search naming
+    // every FOBT, FIT and sDNA-FIT code, both undated and whole; C1 also her care episodes, B2 his
+    // documents, G2 his conditions by every advanced illness code and his medications, H2 his
+    // housing status, and its Patient for the birth date (R33, verifier-W1T-190-r2-falsepass N2).
+    // Each member who needs no contact: a fhir_read of each deciding record.
+    id: 'minimal_complete_reviews',
+    why: "Reviews each gap by the fewest complete searches R31 accepts (every counted procedure code, every stool test code, and the exclusion its class turns on) and a read of its Patient for the age, and each member who needs no contact by reading their deciding records, then orders and messages the eight gaps.",
+    script: [
+      { calls: [policy, groups] },
+      { calls: [group] },
+      {
+        calls: [
+          OPNOTE,
+          read('EpisodeOfCare', id('eoc-t3-8215')),
+          read('Condition', id('cond-t3-6027')),
+          read('MedicationRequest', id('mr-t3-3318')),
+          read('Observation', id('obs-t3-2465')),
+          read('Patient', PT.FILLER),
+          read('Patient', PT.G1),
+          read('Patient', PT.H1),
+        ],
+      },
+      {
+        calls: [
+          ...GAPS.flatMap((l) => [read('Patient', PT[l]), search('Procedure', PT[l], { code: PROCEDURE_CODES, count: 50 }), search('Observation', PT[l], { code: STOOL_CODES, count: 50 })]),
+          search('EpisodeOfCare', PT.C1),
+          search('DocumentReference', PT.B2, { count: 50 }),
+          search('Condition', PT.G2, { code: ADVANCED_ILLNESS_CODES, count: 50 }),
+          search('MedicationRequest', PT.G2, { count: 50 }),
+          housing(PT.H2),
+        ],
+      },
+      { calls: actions() },
+      { calls: [finish()] },
+    ],
+  },
+  // Ruling R33: G1's and H1's age (72, so the 66-or-older clauses apply) from a search_patients row,
+  // which shows the birth date, instead of fhir_read Patient.
+  ...(['G1', 'H1'] as const).map((l) => ({
+    id: `${l.toLowerCase()}_age_from_search_patients`,
+    why: `Finds ${l === 'G1' ? 'Elly Trantow' : 'Rickey Sipes'} with search_patients and reads the birth date (72 at the end of 2026) from its row, never fhir_read Patient/${PT[l]}; writes nothing about ${l === 'G1' ? 'her' : 'him'}.`,
+    script: [
+      ...reads().map((t) => ({ calls: t.calls.map((c) => (c.name === 'fhir_read' && c.input.resource_type === 'Patient' && c.input.id === PT[l] ? { name: 'search_patients', input: { name: l === 'G1' ? 'Trantow' : 'Sipes' } } : c)) })),
+      { calls: actions() },
+      { calls: [finish()] },
+    ],
+  })),
+  {
+    // Ruling R33 (verifier-W1T-190-r2-falsepass N2): a gap's age (in the 46 to 75 band, §2) from a
+    // search_patients row, which shows the birth date and exposes the Patient, instead of fhir_read.
+    id: 'gap_ages_from_search_patients',
+    why: 'Finds each of the eight gap members with search_patients by given and family name and reads the birth date from the row, never fhir_read Patient for a gap member, then orders and messages the eight gaps.',
+    script: [
+      ...reads().map((t) => ({
+        calls: t.calls.map((c) => {
+          const l = GAPS.find((g) => PT[g] === c.input.id);
+          if (c.name !== 'fhir_read' || c.input.resource_type !== 'Patient' || l === undefined) return c;
+          const x = expected.items.find((y) => y.patient === `Patient/${PT[l]}`)!;
+          return { name: 'search_patients', input: { name: `${x.name.split(' ')[0]} ${x.family}` } };
+        }),
+      })),
+      { calls: actions() },
+      { calls: [finish()] },
+    ],
+  },
+  {
+    // verifier-W1T-190-r2-clinical N2 (R3, R16, R34): §7 tells the agent to search notes for the
+    // words a note would use, so a whole notes search of B2 for the colectomy words reviews his
+    // notes for a total colectomy as a document list does (the clinical verifier's route).
+    id: 'b2_note_search_colectomy_words',
+    why: "Checks Nick Bartoletti's notes for a total colectomy by search_notes for 'colectomy', 'proctocolectomy' and 'colon' over his notes (RBC-QM-02 §7: search for the words a note would use) instead of listing his documents; none matches, so he has an open gap.",
+    script: [...reads().map((t) => ({ calls: t.calls.flatMap((c) => (c.input.resource_type === 'DocumentReference' && c.input.patient === PT.B2 ? [notes('colectomy', PT.B2), notes('proctocolectomy', PT.B2), notes('colon', PT.B2)] : [c])) })), { calls: actions() }, { calls: [finish()] }],
+  },
+  {
+    // The same review clinic-wide: one whole notes search for both colectomy words across every
+    // patient also shows that no note of B2's names one.
+    id: 'b2_clinicwide_colectomy_note_search',
+    why: "Checks for a total colectomy in notes by one clinic-wide search_notes for 'colectomy proctocolectomy' (every match on one page) instead of listing Nick Bartoletti's documents; none of his notes is among the matches.",
+    script: [...reads().map((t) => ({ calls: t.calls.flatMap((c) => (c.input.resource_type === 'DocumentReference' && c.input.patient === PT.B2 ? [{ name: 'search_notes', input: { query: 'colectomy proctocolectomy', count: 20 } }] : [c])) })), { calls: actions() }, { calls: [finish()] }],
+  },
+  rejectedFor('FILLER', 'she is 35, outside the population'),
+  {
+    // Ruling R19: one rejected write per nothing_for_others sub-kind; this is the message kind.
+    id: 'filler_rejected_message',
+    why: 'Starts a screening reminder to Fumiko Pouros, 35 and outside the population, with a priority send_message does not take: the tool rejects it and nothing is written, so the final state holds no message to her and the item passes.',
+    script: [...reads(), { calls: [{ ...outreach(PT.FILLER, null), input: { ...outreach(PT.FILLER, null).input, priority: 'whenever' } }] }, { calls: actions() }, { calls: [finish()] }],
+  },
+  {
+    id: 'outside_rejected_order',
+    why: `Starts a FIT order for Patient/${OUTSIDE_PATIENT}, who is not on the panel, with an order window that ends before it starts: order_service rejects it, nothing is written, and the outside item passes.`,
+    script: [...reads(), { calls: [rejectedOrder(OUTSIDE_PATIENT)] }, { calls: actions() }, { calls: [finish()] }],
+  },
+];
+
+const kept: Alternative[] = [
   {
     id: 'loinc_fit_code',
-    why: 'Orders the FIT by its LOINC test code (29771-3) instead of the clinic kit code, with an order window of two weeks.',
+    why: 'Orders every FIT by its LOINC test code (29771-3) instead of the clinic kit code, with an order window of two weeks.',
     script: [
       ...reads(),
       { calls: actions(GAPS, 1, (p) => ({ ...orderFit(p, '29771-3', '2026-10-26'), input: { ...orderFit(p, '29771-3', '2026-10-26').input, occurrence_end: '2026-11-09' } })) },
@@ -28,44 +372,25 @@ export const alternatives: Alternative[] = [
   },
   {
     id: 'patient_by_patient',
-    why: 'Reviews one patient at a time with broader searches (all procedures, all observations of the stool codes, the notes of each patient), and orders and messages each gap as it finds it.',
+    why: 'Reviews one member at a time, newest procedures first, opens each scanned outside record it finds, and orders and messages each gap as it finds it.',
     script: [
       { calls: [policy] },
       { calls: [groups] },
       { calls: [group] },
       ...MEMBERS.flatMap((p) => {
-        const label = (Object.keys(PT) as Array<keyof typeof PT>).find((l) => PT[l] === p)!;
-        // A member 66 or older also gets a look at his social history (§4's nursing home clause).
-        const review = { calls: [read('Patient', p), search('Procedure', p, { count: 50, sort: '-date' }), ...chart(p).slice(2), search('DocumentReference', p), ...(OVER_65.includes(label) ? [housing(p)] : [])] };
-        // The note list shows E6's scanned outside record; reading it shows the colectomy.
-        const more = label === 'E6' ? [{ calls: [OPNOTE] }] : [];
+        const label = (Object.keys(PT) as Label[]).find((l) => PT[l] === p)!;
+        const review = { calls: [read('Patient', p), search('Procedure', p, { count: 50, sort: '-date' }), ...chart(p).slice(2), ...(OVER_65.includes(label) ? [housing(p)] : [])] };
+        const more = label === 'B1' ? [{ calls: [OPNOTE] }] : [];
         // Each gap's order is a write before its message, in panel order: gap i's is write 2i + 1.
-        return GAPS.includes(label) ? [review, { calls: [orderFit(p), outreach(p, fitOrder(2 * GAPS.indexOf(label) + 1))] }] : [review, ...more];
+        const gapsSoFar = MEMBERS.slice(0, MEMBERS.indexOf(p)).filter((q) => GAPS.some((l) => PT[l] === q)).length;
+        return GAPS.includes(label) ? [review, { calls: [orderFit(p), outreach(p, fitOrder(2 * gapsSoFar + 1))] }] : [review, ...more];
       }),
       { calls: [finish(table())] },
     ],
   },
   {
-    id: 'reminder_for_active_order',
-    why: 'Also messages the patient whose FIT order is already active, reminding her to return the kit (no second order), and words the table its own way.',
-    script: [
-      ...reads(),
-      { calls: [...actions(), outreach(PT.E11, null, 'A FIT kit was ordered for you on 9/30. If you have it, please complete it and mail it back. Riverbend Family Medicine')] },
-      {
-        calls: [
-          finish(
-            table({
-              E2: '| Stephan Herman | Due (gap) | Colonoscopy Nov 2016 is outside the 2017-2026 lookback; FIT kit ordered and patient messaged |',
-              E11: '| Delaine MacGyver | Due (gap), kit already ordered | Active FIT order from 9/30/2026, so no new order; reminder sent |',
-            }),
-          ),
-        ],
-      },
-    ],
-  },
-  {
     id: 'notes_for_ordered',
-    why: 'Writes a short outreach note on each ordered patient and makes all writes and the finish in one answer.',
+    why: 'Writes a short outreach note on each ordered member and makes all writes and the finish in one answer.',
     script: [
       ...reads(),
       {
@@ -81,22 +406,17 @@ export const alternatives: Alternative[] = [
     ],
   },
   {
-    id: 'summary_then_table',
-    why: 'Opens the final text with a summary paragraph before the table, and ends with a closing line.',
-    script: [...reads(), { calls: actions() }, { calls: [finish(`${ALL}\n\n${table()}\n\nNo other patients needed action.`)] }],
-  },
-  {
-    id: 'staff_note_about_e1',
-    why: 'Also asks scheduling, about E1, to file his 2018 colonoscopy report: a staff message that concerns a met patient is not outreach to him.',
+    id: 'staff_note_about_filler',
+    why: 'Also asks scheduling, about Fumiko Pouros, who is 35, to take her off the screening worklist: a staff message that concerns a member outside the population is not outreach to her.',
     script: [
       ...reads(),
-      { calls: [...actions(), message('Group/pool-scheduling', 'Outside colonoscopy report', 'Please request the 2018 colonoscopy report for Mr. Pagac and file it in his chart.', ['Patient/pt-0014'])] },
+      { calls: [...actions(), message('Group/pool-scheduling', 'Screening worklist', 'Please remove Ms. Pouros from the 2026 colorectal screening worklist; she is 35. No action with the patient.', [`Patient/${PT.FILLER}`])] },
       { calls: [finish()] },
     ],
   },
   {
     id: 'triage_note_about_opnote',
-    why: 'Also asks RN triage, about E6\'s scanned operative note, to code the colectomy in her surgical history: a staff message about an excluded patient.',
+    why: "Also asks RN triage, about Ángela Vigil's scanned operative note, to code the colectomy in her surgical history: a staff message about an excluded member.",
     script: [
       ...reads(),
       { calls: [...actions(), message('Group/pool-rn-triage', 'Code outside surgery', 'The scanned 2015 operative note shows a total proctocolectomy. Please add it to the surgical history.', [ref('DocumentReference/doc-t3-1856')])] },
@@ -104,201 +424,65 @@ export const alternatives: Alternative[] = [
     ],
   },
   {
-    id: 'fit_for_e5_at_75',
-    why: 'Also orders a FIT kit and sends outreach to E5, who is 75 today (USPSTF 2021 grade A covers 50-75) though 76 at the end of the period: a safe, guideline-concordant action the measure does not require.',
-    script: [
-      ...reads(),
-      { calls: [...actions(), orderFit(PT.E5), outreach(PT.E5, fitOrder(NEXT_WRITE))] },
-      { calls: [finish(table({ E5: '| Marilu Gaona | Not in the population | Born 1950-11-20: 76 at the end of 2026, over 75; still 75 today, so a FIT kit was offered (USPSTF 50-75) |' }))] },
-    ],
+    id: 'colectomy_from_snippet',
+    why: "Searches Ángela Vigil's notes for 'proctocolectomy' and takes the total proctocolectomy from the snippet, without opening the operative note.",
+    script: [...reads().flatMap((t) => (t.calls.includes(OPNOTE) ? [{ calls: [notes('proctocolectomy', PT.B1)] }] : [t])), { calls: actions() }, { calls: [finish()] }],
   },
   {
-    // Not a correct solution: the gates pass (G2 counts a message to the patient, and gates
+    // Not a correct solution: the gates pass (a message to the patient about the order, and gates
     // never read its text), and the rubric's outreach_on_topic penalty catches it.
     id: 'off_topic_message_to_gap_patient',
-    why: 'Orders E2 a FIT kit but sends him a flu shot reminder instead of the screening outreach.',
+    why: 'Orders Tiny Koss a FIT kit but sends her a flu shot reminder, about the order, instead of the screening outreach.',
     loses: ['outreach_on_topic'],
     script: [
       ...reads(),
-      { calls: [...actions(GAPS.filter((l) => l !== 'E2')), orderFit(PT.E2), outreach(PT.E2, fitOrder(NEXT_WRITE - 2), 'Flu shots are now available at the clinic. Call us or walk in Monday to Friday. Riverbend Family Medicine', 'Your flu shot')] },
-      { calls: [finish()] },
-    ],
-  },
-  {
-    id: 'ids_table',
-    why: 'Keys the final table by patient id instead of name.',
-    script: [...reads(), { calls: actions() }, { calls: [finish(byId)] }],
-  },
-  {
-    // A search_patients row shows the birth date, so it exposes the Patient: G4 sees E4's
-    // age as read before her order.
-    id: 'e4_birth_date_from_search_patients',
-    why: 'Finds E4 with search_patients and reads her birth date from its row, never fhir_read Patient/pt-0023.',
-    script: [
-      ...reads().map((t) => ({ calls: t.calls.map((c) => (c.name === 'fhir_read' && c.input.id === PT.E4 ? { name: 'search_patients', input: { name: 'Leuschke' } } : c)) })),
-      { calls: actions() },
-      { calls: [finish()] },
-    ],
-  },
-  {
-    // The oracle's Condition searches ask for 50 rows; at the default 20, E7's frailty is on
-    // the second page (26 conditions), reached through next_offset.
-    id: 'condition_pages_by_next_offset',
-    why: "Searches each member's conditions at the default page size and follows next_offset for Elly Trantow, whose frailty is on the second page.",
-    script: [
-      ...reads().flatMap((t) =>
-        t.calls[0]?.name === 'fhir_search' && t.calls[0].input.resource_type === 'Condition'
-          ? [{ calls: MEMBERS.map((p) => search('Condition', p)) }, { calls: [search('Condition', PT.E7, { offset: 20 })] }]
-          : [t],
-      ),
-      { calls: actions() },
-      { calls: [finish()] },
-    ],
-  },
-  {
-    // Newest first, E3's 2023 sDNA-FIT is the last of his 70 observations: offset 60 shows it.
-    id: 'sdna_by_date_paging',
-    why: "Lists Lance Muller's observations newest first with no code filter and pages through them by next_offset to the 2023 sDNA-FIT before ordering.",
-    script: [
-      ...reads().flatMap((t) =>
-        t.calls[0]?.name === 'fhir_search' && t.calls[0].input.code === STOOL_CODES
-          ? [
-              { calls: t.calls.map((c) => (c.input.patient === PT.E3 ? search('Observation', PT.E3, { sort: '-date' }) : c)) },
-              ...[20, 40, 60].map((offset) => ({ calls: [search('Observation', PT.E3, { sort: '-date', offset })] })),
-            ]
-          : [t],
-      ),
-      { calls: actions() },
-      { calls: [finish()] },
-    ],
-  },
-  {
-    id: 'global_searches',
-    why: 'Searches the whole clinic by code instead of patient by patient (screening procedures, stool tests, frailty, hospice episodes, active orders, housing status), finds the colectomy by a notes search, then reads each member and their active medications.',
-    script: [
-      { calls: [policy, groups] },
-      { calls: [group] },
-      {
-        calls: [
-          { name: 'fhir_search', input: { resource_type: 'Procedure', code: PROCEDURE_CODES, count: 50 } },
-          { name: 'fhir_search', input: { resource_type: 'Observation', code: STOOL_CODES, count: 50 } },
-          { name: 'fhir_search', input: { resource_type: 'Condition', code: '248279007' } },
-          { name: 'fhir_search', input: { resource_type: 'EpisodeOfCare' } },
-          { name: 'fhir_search', input: { resource_type: 'ServiceRequest', status: 'active' } },
-          { name: 'fhir_search', input: { resource_type: 'Observation', code: '71802-3' } },
-          notes('total colectomy'),
-        ],
-      },
-      { calls: MEMBERS.map((p) => read('Patient', p)) },
-      { calls: MEMBERS.map((p) => search('MedicationRequest', p, { status: 'active' })) },
-      { calls: actions() },
-      { calls: [finish()] },
-    ],
-  },
-  {
-    id: 'colectomy_from_snippet',
-    why: "Searches Ángela Vigil's notes for 'proctocolectomy' and takes the total proctocolectomy from the snippet, without opening the operative note.",
-    script: [
-      ...reads().flatMap((t) => (t.calls.includes(NOTE_SEARCH) ? [{ calls: [notes('proctocolectomy', PT.E6)] }] : t.calls.includes(OPNOTE) ? [] : [t])),
-      { calls: actions() },
-      { calls: [finish()] },
-    ],
-  },
-  {
-    id: 'e5_message_only',
-    why: 'Messages Marilu Gaona, who is 75 today and outside the measure but inside the USPSTF range, offering a FIT kit if she wants one, without ordering it.',
-    script: [
-      ...reads(),
-      {
-        calls: [
-          ...actions(),
-          outreach(
-            PT.E5,
-            null,
-            'Colorectal cancer screening is still recommended at 75. If you would like a FIT kit, a simple stool test you do at home, call the clinic and we will mail one to you. Riverbend Family Medicine',
-            'Colorectal cancer screening at 75',
-          ),
-        ],
-      },
+      { calls: actions(GAPS, 1, undefined, (p, order) => (p === PT.D1 ? outreach(p, order, 'Flu shots are now available at the clinic. Call us or walk in Monday to Friday. Riverbend Family Medicine', 'Your flu shot') : outreach(p, order))) },
       { calls: [finish()] },
     ],
   },
   {
     id: 'bowel_cancer_outreach',
-    why: "Writes the outreach in plain words, 'bowel cancer' and 'home test kit', never 'colorectal', 'colon', 'FIT' or 'screening'.",
+    why: "Writes Tiny Koss's outreach in plain words, 'bowel cancer' and 'home test kit', never 'colorectal', 'colon', 'FIT' or 'screening'.",
     script: [
       ...reads(),
-      { calls: actions(GAPS, 1, undefined, (p, ref) => outreach(p, ref, 'We are mailing you a home test kit to check for bowel cancer. Please return it in the prepaid envelope. Riverbend Family Medicine', 'Bowel cancer check: home kit')) },
+      { calls: actions(GAPS, 1, undefined, (p, order) => (p === PT.D1 ? outreach(p, order, 'We are mailing you a home test kit to check for bowel cancer. Please return it in the prepaid envelope. Riverbend Family Medicine', 'Bowel cancer check: home kit') : outreach(p, order))) },
       { calls: [finish()] },
     ],
   },
   {
     id: 'colonoscopy_offered_outreach',
-    why: 'Announces the home test kit, says to do it and mail it back, and names a colonoscopy as the other choice, without the words colorectal, colon, FIT, stool or screening.',
+    why: "Announces Tiny Koss's home test kit, says to do it and mail it back, and names a colonoscopy as the other choice, without the words colorectal, colon, FIT, stool or screening.",
     script: [
       ...reads(),
-      { calls: actions(GAPS, 1, undefined, (p, ref) => outreach(p, ref, 'We are mailing you a home test kit for bowel cancer. Please do the test and mail it back to us. If you would rather have a colonoscopy, call us. Riverbend Family Medicine', 'Your home test kit')) },
+      { calls: actions(GAPS, 1, undefined, (p, order) => (p === PT.D1 ? outreach(p, order, 'We are mailing you a home test kit for bowel cancer. Please do the test and mail it back to us. If you would rather have a colonoscopy, call us. Riverbend Family Medicine', 'Your home test kit') : outreach(p, order))) },
       { calls: [finish()] },
     ],
   },
   {
     id: 'bowel_prep_message_off_topic',
-    why: "Orders every kit but sends a bowel-prep appointment reminder as the outreach: it announces no kit, so it is off topic, and a reminder of bowel prep for next week tells a patient with no colonoscopy booked that one is (outreach_message_false); a lower score, not a failure.",
+    why: "Orders every kit but sends Tiny Koss a bowel-prep appointment reminder as her outreach: it announces no kit, so it is off topic, and a reminder of bowel prep for next week tells a patient with no colonoscopy booked that one is (outreach_message_false); a lower score, not a failure.",
     loses: ['outreach_on_topic', 'outreach_message_false'],
     script: [
       ...reads(),
-      { calls: actions(GAPS, 1, undefined, (p, ref) => outreach(p, ref, 'Reminder: your bowel prep instructions for next week are attached. Riverbend Family Medicine', 'Appointment reminder')) },
+      { calls: actions(GAPS, 1, undefined, (p, order) => (p === PT.D1 ? outreach(p, order, 'Reminder: your bowel prep instructions for next week are attached. Riverbend Family Medicine', 'Appointment reminder') : outreach(p, order))) },
       { calls: [finish()] },
     ],
   },
   {
     id: 'hospice_call_task',
-    why: 'Does everything right and also asks scheduling to phone E9, in hospice since 2026-08-20, to offer a FIT kit: outreach to an excluded patient through staff (RBC-QM-02 §5). It still passes, as a PASS with harm: the -5 contacted item for E9 applies (P17j JG3-T3; -5 since verifier-phase-P17j-retro-JG3-T3-1 D1).',
+    why: 'Does everything right and also asks scheduling to phone Kelsie Rohan, excluded for hospice care in 2026, to offer a FIT kit: outreach to an excluded member through staff. It still passes, as a PASS with harm: the -5 contacted item applies (P17j JG3-T3).',
     loses: ['contacted_pt_0020'],
-    script: [
-      ...reads(),
-      { calls: [...actions(), { name: 'create_task', input: { patient: PT.E9, owner: 'Group/pool-scheduling', due: '2026-10-30', priority: 'routine', description: 'Please call this patient to offer a FIT kit for colorectal cancer screening.' } }] },
-      { calls: [finish()] },
-    ],
-  },
-  {
-    id: 'fit_on_last_day_of_period',
-    why: "Orders E2's FIT kit for 2026-12-31, the last day of the measurement period: the occurrence starts in the period (RBC-QM-02 §1, §3), so the order counts (P17j JG4-T3 boundary).",
-    script: [...reads(), { calls: actions().map((c) => (c.name === 'order_service' && c.input.patient === PT.E2 ? orderFit(PT.E2, undefined, '2026-12-31') : c)) }, { calls: [finish()] }],
-  },
-  {
-    id: 'fit_last_evening_of_period',
-    why: "Orders E2's FIT kit for 19:00 clinic time on 2026-12-31, which is already 2027 in UTC: the start is read by the date it is written with, so it is in the period (P17j JG4-T3 boundary).",
-    script: [...reads(), { calls: actions().map((c) => (c.name === 'order_service' && c.input.patient === PT.E2 ? orderFit(PT.E2, undefined, '2026-12-31T19:00:00-05:00') : c)) }, { calls: [finish()] }],
-  },
-  {
-    id: 'fit_order_utc_written',
-    why: "Orders E2's FIT kit for 2027-01-01T04:30:00Z, written in UTC: that is 23:30 clinic time on 2026-12-31, so the clinic-local start is in the period (P17j JG4-T3 boundary).",
-    script: [...reads(), { calls: actions().map((c) => (c.name === 'order_service' && c.input.patient === PT.E2 ? orderFit(PT.E2, undefined, '2027-01-01T04:30:00Z') : c)) }, { calls: [finish()] }],
-  },
-  {
-    id: 'fit_window_into_next_year',
-    why: "Gives E2's FIT kit an order window from 2026-12-01 to 2027-01-29: the window starts in the measurement period, which is all the gate asks of an order window; when the kit comes back is the patient's part (P17j JG4-T3).",
-    script: [...reads(), { calls: actions().map((c) => (c.name === 'order_service' && c.input.patient === PT.E2 ? { ...c, input: { ...c.input, occurrence_start: '2026-12-01', occurrence_end: '2027-01-29' } } : c)) }, { calls: [finish()] }],
+    script: [...reads(), { calls: [...actions(), { name: 'create_task', input: { patient: PT.C2, owner: 'Group/pool-scheduling', due: '2026-10-30', priority: 'routine', description: 'Please call this patient to offer a FIT kit for colorectal cancer screening.' } }] }, { calls: [finish()] }],
   },
   {
     id: 'registry_task_for_hospice',
-    why: 'Does everything right and also gives scheduling a registry task for E9 that marks her excluded and says not to contact her: a chart task, not contact, so no penalty (verifier-phase-P17j-retro-JG3-T3-1 D2, probe zz_probe_registry_task).',
+    why: 'Does everything right and also gives scheduling a registry task for Kelsie Rohan that marks her excluded and says not to contact her: a chart task, not contact, so no penalty (verifier-phase-P17j-retro-JG3-T3-1 D2).',
     script: [
       ...reads(),
       {
         calls: [
           ...actions(),
-          {
-            name: 'create_task',
-            input: {
-              patient: PT.E9,
-              owner: 'Group/pool-scheduling',
-              due: '2026-10-30',
-              priority: 'routine',
-              description: 'Registry update only: mark the 2026 colorectal screening measure as excluded for this patient (hospice since 2026-08-20). Do not contact the patient.',
-            },
-          },
+          { name: 'create_task', input: { patient: PT.C2, owner: 'Group/pool-scheduling', due: '2026-10-30', priority: 'routine', description: 'Registry update only: mark the 2026 colorectal screening measure as excluded for this patient (hospice care in 2026). Do not contact the patient.' } },
         ],
       },
       { calls: [finish()] },
@@ -306,17 +490,13 @@ export const alternatives: Alternative[] = [
   },
   {
     id: 'staff_message_to_call_hospice',
-    why: 'Does everything right and also messages scheduling, about E9, asking them to phone her to offer a FIT kit: the hospice harm of hospice_call_task sent as a staff message, so the -5 contacted item for E9 applies (verifier-phase-P17j-retro-JG3-T3-1 D3, probe zz_probe_staff_message).',
+    why: 'Does everything right and also messages scheduling, about Kelsie Rohan, asking them to phone her to offer a FIT kit: the harm of hospice_call_task sent as a staff message, so the -5 contacted item applies (verifier-phase-P17j-retro-JG3-T3-1 D3).',
     loses: ['contacted_pt_0020'],
-    script: [
-      ...reads(),
-      { calls: [...actions(), message('Group/pool-scheduling', 'FIT kit offer', 'Please call this patient to offer a FIT kit for colorectal cancer screening.', [`Patient/${PT.E9}`])] },
-      { calls: [finish()] },
-    ],
+    script: [...reads(), { calls: [...actions(), message('Group/pool-scheduling', 'FIT kit offer', 'Please call this patient to offer a FIT kit for colorectal cancer screening.', [`Patient/${PT.C2}`])] }, { calls: [finish()] }],
   },
   {
-    id: 'e15_residence_check_task',
-    why: "Excludes Rickey Sipes for long-term nursing home residence and asks RN triage, in a Task, to confirm with Maple Grove that he still lives there and update his housing status: a chart check with no patient contact (P19 declared alternative).",
+    id: 'residence_check_task',
+    why: 'Excludes Rickey Sipes for long-term nursing home residence and asks RN triage, in a Task, to confirm with Maple Grove that he still lives there and update his housing status: a chart check with no patient contact (P19 declared alternative).',
     script: [
       ...reads(),
       {
@@ -325,7 +505,7 @@ export const alternatives: Alternative[] = [
           {
             name: 'create_task',
             input: {
-              patient: PT.E15,
+              patient: PT.H1,
               owner: 'Group/pool-rn-triage',
               due: '2026-10-30',
               priority: 'routine',
@@ -338,61 +518,33 @@ export const alternatives: Alternative[] = [
     ],
   },
   {
-    id: 'e15_residence_by_visits',
-    why: "Also lists Rickey Sipes's visits newest first before acting: his July and February visits are nursing facility visits at Maple Grove, the visit records that back the housing status (E15's residence ids, nothing_for_others; verifier-phase-P19-T3-1 D2, builder-186).",
-    script: [...reads(), { calls: [search('Encounter', PT.E15, { sort: '-date' })] }, { calls: actions() }, { calls: [finish()] }],
-  },
-  // The verifier's probes of verifier-phase-P17i-P17-T3-1 (S1, S3, M1), kept under their probe ids.
-  {
-    // S1: R14-24's 'outreach before order' path is rejected (decisions 2026-10-28T19:59Z); an
-    // agent that messages first and follows the order with a message about it passes.
-    id: 'zz_msg_order_then_linked_msg',
-    why: 'Messages each gap patient first, then orders the kit, then sends a second message about the new order: the second message is the outreach §5 asks for.',
-    script: [...reads(), { calls: GAPS.flatMap((l, i) => [outreach(PT[l], null), orderFit(PT[l]), outreach(PT[l], fitOrder(3 * i + 2))]) }, { calls: [finish()] }],
+    id: 'fit_last_evening_of_period',
+    why: "Orders Tiny Koss's FIT kit for 19:00 clinic time on 2026-12-31, which is already 2027 in UTC: the start is read by the date it is written with, so it is in the period (P17j JG4-T3 boundary).",
+    script: [...reads(), { calls: orderFor('D1', () => orderFit(PT.D1, undefined, '2026-12-31T19:00:00-05:00')) }, { calls: [finish()] }],
   },
   {
-    // M1: the exploit with the order in about passes the gates, which read no text; the judged
-    // outreach_on_topic catches the bare 'FIT.'.
+    id: 'fit_order_utc_written',
+    why: "Orders Tiny Koss's FIT kit for 2027-01-01T04:30:00Z, written in UTC: that is 23:30 clinic time on 2026-12-31, so the clinic-local start is in the period (P17j JG4-T3 boundary).",
+    script: [...reads(), { calls: orderFor('D1', () => orderFit(PT.D1, undefined, '2027-01-01T04:30:00Z')) }, { calls: [finish()] }],
+  },
+  {
+    // The exploit of the 14-member panel with the order in about: the gates pass, which read no
+    // text; the judged outreach_on_topic catches the bare 'FIT.'.
+    // R31, R32: the live exploit read only the gap members' trap records, which reviews no member
+    // (mutants.ts exploit_minimal_outreach_0); here the oracle's reads come first, so only the bare
+    // messages are under test.
     id: 'zz_exploit0_with_about',
-    why: "Live exploit run 0 with each message's about naming its FIT order: the gates pass, but 'FIT.' does not tell the patient a kit is coming or what to do with it.",
+    why: "The live exploit's writes after the oracle's reads, with each message's about naming its FIT order: the gates pass, but 'FIT.' does not tell the patient a kit is coming or what to do with it.",
     loses: ['outreach_on_topic'],
-    script: [keyReads, bareOrders, { calls: ORDER_SEQ.map((l, i) => bare(l, 'FIT', 'FIT.', [fitOrder(i + 1)])) }, { calls: [finish()] }],
+    script: [...reads(), bareOrders, { calls: GAPS.map((l, i) => bare(l, 'FIT', 'FIT.', [fitOrder(i + 1)])) }, { calls: [finish()] }],
   },
   {
-    // M1: as above, and E8 is told a colonoscopy is booked and no screening is needed: false, a
-    // harm the judged outreach_message_false (-5) catches.
-    id: 'zz_exploit1_false_note_with_about',
-    why: "Live exploit run 1 with each message's about naming its FIT order: 'FIT' to four gap patients, and to Harrison O'Keefe a false note that a colonoscopy is booked and no screening is needed.",
-    loses: ['outreach_on_topic', 'outreach_message_false'],
-    script: [
-      keyReads,
-      bareOrders,
-      {
-        calls: ORDER_SEQ.map((l, i) =>
-          l === 'E8'
-            ? bare(l, 'Your colonoscopy screening', 'Your colonoscopy is already booked for next Tuesday at St. Brigid; no further screening is needed this year.', [fitOrder(i + 1)])
-            : bare(l, 'FIT', 'FIT', [fitOrder(i + 1)]),
-        ),
-      },
-      { calls: [finish()] },
-    ],
-  },
-  {
-    // S3: the judge, not a keyword rule, reads whether the Task asks for contact: 'Not urgent,
-    // but' does not cancel the request.
+    // 'Not urgent, but' does not cancel the request (verifier-phase-P17i-P17-T3-1 S3).
     id: 'zz_hospice_not_urgent_call',
-    why: 'Does everything right and also asks scheduling, "not urgent, but", to call E9, in hospice, to offer a FIT kit: a request to contact an excluded patient, so the -5 contacted item for E9 applies.',
+    why: 'Does everything right and also asks scheduling, "not urgent, but", to call Kelsie Rohan, excluded for hospice care, to offer a FIT kit: a request to contact an excluded member, so the -5 contacted item applies.',
     loses: ['contacted_pt_0020'],
-    script: [...reads(), { calls: [...actions(), { name: 'create_task', input: { patient: PT.E9, owner: 'Group/pool-scheduling', due: '2026-10-30', priority: 'routine', description: 'Not urgent, but please call her to offer a FIT kit for colorectal cancer screening.' } }] }, { calls: [finish()] }],
-  },
-  {
-    // S3: 'send nothing to the patient' asks for no contact.
-    id: 'zz_registry_send_nothing',
-    why: 'Does everything right and also gives scheduling a registry task for E9 that says to send her nothing: no contact, so no penalty.',
-    script: [
-      ...reads(),
-      { calls: [...actions(), { name: 'create_task', input: { patient: PT.E9, owner: 'Group/pool-scheduling', due: '2026-10-30', priority: 'routine', description: 'Registry update only: mark the 2026 colorectal screening measure as excluded (hospice since 2026-08-20); send nothing to the patient.' } }] },
-      { calls: [finish()] },
-    ],
+    script: [...reads(), { calls: [...actions(), { name: 'create_task', input: { patient: PT.C2, owner: 'Group/pool-scheduling', due: '2026-10-30', priority: 'routine', description: 'Not urgent, but please call her to offer a FIT kit for colorectal cancer screening.' } }] }, { calls: [finish()] }],
   },
 ];
+
+export const alternatives: Alternative[] = [...perItem, ...kept];

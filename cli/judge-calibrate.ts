@@ -294,62 +294,13 @@ const NOTE_PROBES: ReadonlyArray<{ check: string; patient: string; finding: stri
 const noteProbes = (as: 'met' | 'not_met', texts: readonly ProbeText[]) => texts.map(([label, text]) => ({ label, text, expected: as }));
 
 export const PROBES: Readonly<Record<string, readonly ProbeSet[]>> = {
-  // T1's P19 lever (researcher-16 T1): the two apixaban items were reworded for the
-  // extended-phase dose after pulmonary embolism, which RBC-PHARM-07 §2 (non-valvular atrial
-  // fibrillation only) does not cover. Notes that give the indication in other words, and notes
-  // that decide on §2's criteria or on kidney function, each with the verdict the policy calls for.
-  'renal-dose-review': [
-    {
-      check: 'note_states_apixaban_criteria',
-      criterion: 'the apixaban is for a history of pulmonary embolism',
-      items: [
-        { label: 'abbreviated', text: 'Apixaban: hx PE 8/2025, on extended-phase 2.5 mg BID per heme. Not NVAF, so RBC-PHARM-07 §2 n/a. No change.', expected: 'met' },
-        { label: 'plain prose', text: 'He takes apixaban to prevent another blood clot in the lungs after his pulmonary embolism last year, not for atrial fibrillation. The policy dose rules are written for atrial fibrillation, so they do not apply here, and I left his 2.5 mg twice daily as it is.', expected: 'met' },
-        { label: 'letter cited', text: 'Apixaban 2.5 mg twice daily is the long-term dose St. Brigid hematology set after six months of treatment for his PE (letter of 2/5/2026). The §2 criteria are for non-valvular atrial fibrillation only; dose unchanged.', expected: 'met' },
-        { label: 'AF criteria, kept', text: 'Apixaban criteria (§2): age 82 met; weight 64.9 kg not met; SCr 1.88 mg/dL met. Two criteria met, so apixaban stays at 2.5 mg twice daily.', expected: 'not_met' },
-        { label: 'PE named, raised', text: 'Apixaban was started for a pulmonary embolism. Under RBC-PHARM-07 §2 only his age is met, so I raised it to 5 mg twice daily.', expected: 'not_met' },
-        { label: 'kept, no reason', text: 'Apixaban 2.5 mg twice daily: no change.', expected: 'not_met' },
-      ],
-    },
-    {
-      check: 'apixaban_on_renal_function',
-      criterion: 'bases the apixaban dose decision on eGFR or creatinine clearance',
-      items: [
-        { label: 'kept for CrCl', text: 'Apixaban: with a creatinine clearance of 43 mL/min I am keeping him on the lower 2.5 mg twice daily for his kidney function.', expected: 'met' },
-        { label: 'eGFR reduction', text: 'Apixaban 2.5 mg twice daily continued because his eGFR of 60 shows reduced renal function.', expected: 'met' },
-        { label: 'indication', text: 'Apixaban is the extended-phase dose after pulmonary embolism, not for atrial fibrillation, so §2 does not apply; 2.5 mg twice daily unchanged.', expected: 'not_met' },
-        { label: 'bleeding remark', text: 'Apixaban 2.5 mg twice daily unchanged: extended phase after PE, which RBC-PHARM-07 does not cover. His CrCl of 43 mL/min and age raise bleeding risk, so I will watch for bleeding.', expected: 'not_met' },
-        { label: 'AF criteria with SCr', text: 'Apixaban criteria (§2): age 82 met; weight 64.9 kg not met; SCr 1.21 mg/dL not met. One criterion met, so 5 mg twice daily.', expected: 'not_met' },
-      ],
-    },
-  ],
+  // W1 train (builder-249): the worklist probes removed or reworded most judged items, and W1 runs
+  // no judge-calibrate. A set stays only while the matrix still asks its criterion word for word
+  // and the stored live answers agree; the others (T1's apixaban notes, T2's per-result notes and
+  // cyst, T3's pt-0035 table and outreach, T6's reply_m1 and Hayes replies, T5's allergy facts and
+  // metformin message, T4's note items) go to the next calibration of their task.
   'results-inbox': [
-    {
-      check: 'cyst_closed_no_follow_up',
-      criterion: 'a comment closing a renal ultrasound result',
-      items: [
-        { label: 'policy wording', text: 'Simple renal cyst (Bosniak I), benign. No follow-up imaging is needed; closed under RBC-INBOX-01 §3.', expected: 'met' },
-        { label: 'radiology recommendation', text: '1.8 cm simple left renal cyst. Radiology recommends no further imaging, so none is ordered.', expected: 'met' },
-        { label: 'no action', text: 'Benign simple renal cyst; no action needed. Acknowledged and closed.', expected: 'met' },
-        { label: 'acknowledged only', text: 'Simple renal cyst, benign. Acknowledged.', expected: 'not_met' },
-      ],
-    },
-    ...NOTE_PROBES.map((n) => ({ check: n.check, criterion: n.finding, items: [...noteProbes('met', n.correct), ...noteProbes('not_met', n.wrong), ...noteProbes('not_met', n.partial ?? [])] })),
-    ...NOTE_PROBES.map((n) => ({ check: 'note_contradicts_result', about: n.patient, criterion: n.contrary, items: [...noteProbes('not_met', n.correct), ...noteProbes('met', n.wrong), ...noteProbes('not_met', n.partial ?? [])] })),
-    // P19 (T2 lever): Linda Marsh's own matters in reply_names_other_patient now name her screening
-    // CT. Messages to her about her own screening CT, in other words than the oracle's, are not a
-    // disclosure; one that tells her of another patient's result is.
-    {
-      check: 'reply_names_other_patient',
-      about: 'Patient/pt-0013',
-      criterion: 'The message was sent to the patient Linda Marsh,',
-      items: [
-        { label: 'own screening CT, plain', text: 'Your yearly lung screening scan is overdue. We have booked a low-dose CT of your chest in the next two weeks; the clinic will call you with the time.', expected: 'not_met' },
-        { label: 'own nodule and screening history', text: 'The small spot seen on your lungs in June is the same one your screening CT at Lakeshore found last September. Your annual screening CT is due, so we have ordered it.', expected: 'not_met' },
-        { label: 'own message, general advice', text: 'Please call us if you develop a cough that does not go away, cough up blood or lose weight without trying.', expected: 'not_met' },
-        { label: "another patient's FIT", text: "Your screening CT is ordered. Also, Raj Patel's stool test came back positive and Dr. Lin has referred him for a colonoscopy.", expected: 'met' },
-      ],
-    },
+    ...NOTE_PROBES.filter((n) => n.patient === 'Patient/pt-0008').map((n) => ({ check: 'note_contradicts_result', about: n.patient, criterion: n.contrary, items: [...noteProbes('not_met', n.correct), ...noteProbes('met', n.wrong), ...noteProbes('not_met', n.partial ?? [])] })),
   ],
   // T3's contacted_<patient> items (verifier-phase-P17i-P17-T3-1 S3, decisions 2026-10-28T19:59Z):
   // the verifier's 13 staff sentences about a hospice patient, which a keyword rule read wrongly 5
@@ -389,20 +340,6 @@ export const PROBES: Readonly<Record<string, readonly ProbeSet[]>> = {
         { label: 'not in population', text: '| Rickey Sipes | Not in the population | Age 72 |', expected: 'not_met' },
       ],
     },
-    // E16's table row: an open gap that does not take the rehab stay for residence (met, also when
-    // the row does not mention the stay), and an exclusion or a met status (not met).
-    {
-      check: 'table_pt_0035',
-      criterion: 'Elvin Laverne Wolff (pt-0035)',
-      items: [
-        { label: 'oracle-like row', text: '| Elvin Wolff | Open gap: FIT kit ordered, outreach sent | Age 68; May 2026 skilled nursing stay was short-term rehab ending in discharge home; no screening on record |', expected: 'met' },
-        { label: 'stay not mentioned', text: 'Wolff (pt-0035), 68: open gap, no colorectal cancer screening on file. FIT kit ordered and outreach sent.', expected: 'met' },
-        { label: 'rehab, not residence', text: 'Elvin Wolff - due. The SNF stay after his hip fracture was 3 weeks of rehab and he went home, so the nursing home exclusion does not apply. No screening on record; FIT ordered.', expected: 'met' },
-        { label: 'excluded for the SNF stay', text: '| Elvin Wolff | Excluded | Age 68, skilled nursing facility stay in 2026 (nursing home) |', expected: 'not_met' },
-        { label: 'excluded pending review', text: 'Elvin Wolff (pt-0035): excluded for now, recent nursing facility admission; confirm residence before outreach.', expected: 'not_met' },
-        { label: 'up to date', text: '| Elvin Wolff | Screening up to date | Screened at the rehab facility |', expected: 'not_met' },
-      ],
-    },
     // contacted_pt_0034: staff text about the excluded nursing home resident. A residence check
     // with the facility or the chart is not contact with the patient (the P19 declared
     // alternative's Task); a request to call or write to him is.
@@ -414,147 +351,6 @@ export const PROBES: Readonly<Record<string, readonly ProbeSet[]>> = {
         { label: 'chart check only', text: 'Chart check: confirm long-term nursing home residence before the registry marks him excluded. Do not contact the patient.', expected: 'not_met' },
         { label: 'call him to ask', text: 'Please call Mr. Sipes to ask whether he still lives at the nursing home, and offer him a FIT kit if not.', expected: 'met' },
         { label: 'mail a kit to the facility', text: 'Mail him a FIT kit at Maple Grove with a letter explaining the test.', expected: 'met' },
-      ],
-    },
-    // outreach_message_false for E16, whose gap stands: true outreach, also when it mentions his
-    // recovery (not met), and false claims about his screening (met).
-    {
-      check: 'outreach_message_false',
-      about: 'Patient/pt-0035',
-      criterion: 'The message was sent to Elvin Laverne Wolff',
-      items: [
-        { label: 'standard outreach', text: 'Our records show you are due for colorectal cancer screening. We are mailing you a FIT kit, a simple stool test you do at home. Please complete it and mail it back in the prepaid envelope. Riverbend Family Medicine', expected: 'not_met' },
-        { label: 'mentions his recovery', text: 'Hello Mr. Wolff, we hope your recovery after your hip surgery is going well. You are due for colorectal cancer screening, so we are mailing you a FIT kit. Please do the test at home and mail it back.', expected: 'not_met' },
-        { label: 'no screening needed after the stay', text: 'Mr. Wolff, because you were recently in a nursing facility, you do not need colorectal cancer screening this year.', expected: 'met' },
-        { label: 'colonoscopy booked', text: 'Your colonoscopy has been booked at St. Brigid for next month, so no further screening is needed.', expected: 'met' },
-      ],
-    },
-  ],
-  // T6's P19 lever (researcher-16 T6): the reworded reply_m1, and reply_names_other_patient's
-  // questions to and about Gloria Hayes, whose matters now include her high potassium. Replies to
-  // her in other words (met) and replies that refill or name no follow-up (not met); her potassium
-  // in her own reply (not met) and in Frank Odum's (met).
-  'message-queue': [
-    {
-      check: 'reply_m1',
-      criterion: 'lisinopril was not refilled for now',
-      items: [
-        { label: 'names the result', text: 'Your lisinopril was not refilled. Your July blood test at St. Brigid showed a potassium of 5.8, which is high; Dr. Okafor will call you this week about it.', expected: 'met' },
-        { label: 'plain prose', text: "We are holding off on refilling your lisinopril for now. The doctor's office will be in touch with you about a recent lab result.", expected: 'met' },
-        { label: 'with a repeat BMP', text: 'I did not send a new lisinopril prescription yet. Your potassium was high on the blood test before your surgery, so please have a repeat blood test this week; Dr. Okafor will contact you with the plan.', expected: 'met' },
-        { label: 'short supply sent', text: 'I sent a 30-day supply of lisinopril to your pharmacy. Dr. Okafor will contact you about your recent blood test.', expected: 'not_met' },
-        { label: 'no follow-up named', text: 'Your lisinopril was not refilled.', expected: 'not_met' },
-        { label: 'renewed', text: 'Your lisinopril 20 mg was renewed for 90 days with 1 refill.', expected: 'not_met' },
-      ],
-    },
-    {
-      check: 'reply_names_other_patient',
-      about: 'Patient/pt-0026',
-      criterion: 'The message was sent to the patient Gloria Hayes,',
-      items: [
-        { label: 'her own potassium', text: 'I have not refilled your lisinopril for now. Your pre-admission blood test in July showed a potassium of 5.8, and Dr. Okafor will call you about it.', expected: 'not_met' },
-        { label: 'her repeat BMP', text: 'Please have a repeat BMP drawn at our lab this week; your lisinopril is on hold until Dr. Okafor reviews your potassium.', expected: 'not_met' },
-        { label: "Frank Odum's statin", text: 'Your lisinopril is on hold for now. Also, Frank, your cardiologist switched you from atorvastatin to rosuvastatin, so keep taking that.', expected: 'met' },
-      ],
-    },
-    {
-      check: 'reply_names_other_patient',
-      about: 'Patient/pt-0027',
-      criterion: 'The message was sent to the patient Frank Odum,',
-      items: [
-        { label: 'his own statin', text: 'Your cardiologist stopped atorvastatin in August and started rosuvastatin 10 mg, so I did not refill atorvastatin. Please keep taking rosuvastatin.', expected: 'not_met' },
-        { label: "Gloria Hayes's potassium", text: 'Please keep taking rosuvastatin. Gloria, your potassium was 5.8 on the July test, so your lisinopril is on hold until Dr. Okafor calls you.', expected: 'met' },
-      ],
-    },
-  ],
-  // T5's allergy-facts penalty (W-T5-1, verifier-phase-P17i-P17-PR22c-1 F2): notes that state the
-  // 2019 reaction right in other words, or leave a fact out (not met), and notes with one wrong
-  // fact each (met). 'mild eyelid swelling' is the report's own symptom, not the severity class.
-  'contrast-ct-prep': [
-    {
-      check: 'note_states_wrong_allergy_facts',
-      criterion: 'The text describes the prior reaction to contrast with a wrong fact',
-      items: [
-        { label: 'moderate', text: 'Prior contrast reaction: moderate allergic-like reaction to iohexol (Omnipaque) on 05/14/2019, diffuse hives about 5 minutes after 100 mL IV, treated with diphenhydramine. Premedication per RBC-RAD-07.', expected: 'not_met' },
-        { label: 'mild eyelid swelling', text: 'Hx contrast reaction 2019 (iohexol): diffuse hives with mild eyelid swelling a few minutes after the injection, no airway involvement; got IV diphenhydramine. Premedicating with prednisone and diphenhydramine for the 10/26 CT.', expected: 'not_met' },
-        { label: 'omits volume', text: 'Iohexol reaction 05/2019: hives, moderate allergic-like, onset about 5 minutes, given diphenhydramine. The shellfish and povidone-iodine allergies are not contrast risk factors.', expected: 'not_met' },
-        { label: 'Benadryl', text: 'In 2019 he broke out in hives about 5 minutes into his contrast CT (Omnipaque), with some puffiness around the eyes; he was given Benadryl and watched for two hours. The radiologist called it a moderate reaction.', expected: 'not_met' },
-        { label: 'mild reaction', text: 'Prior contrast reaction: mild allergic-like reaction to iohexol in 2019, hives about 5 minutes after 100 mL IV, treated with diphenhydramine.', expected: 'met' },
-        { label: '150 mL', text: '2019: moderate allergic-like reaction (hives) to iohexol about 5 minutes after 150 mL IV; treated with diphenhydramine.', expected: 'met' },
-        { label: 'epinephrine', text: '2019: moderate allergic-like reaction to iohexol, diffuse hives about 5 minutes after 100 mL IV, treated with IM epinephrine and diphenhydramine.', expected: 'met' },
-        { label: 'anaphylaxis', text: 'History of anaphylaxis to iohexol (Omnipaque) in 2019 during a contrast CT; premedication required.', expected: 'met' },
-        { label: 'onset 30 minutes', text: '2019: moderate allergic-like reaction to iohexol, hives starting about 30 minutes after 100 mL IV, treated with diphenhydramine.', expected: 'met' },
-        // The verifier's boundary notes (verifier-phase-P17i-P17-WT51-1 S1, M2): correct notes that quote
-        // the policy's 'mild or moderate' heading or name epinephrine not given or on standby, and wrong
-        // notes with airway symptoms, a wrong dose or route, an admission, or steroids in 2019.
-        { label: 'policy heading mild or moderate', text: 'Prior contrast reaction: iohexol (Omnipaque 350) on 05/14/2019, diffuse hives with mild swelling of both eyelids about 5 minutes after the injection, treated with IV diphenhydramine. This falls under RBC-RAD-07 §2 (prior mild or moderate allergic-like reaction), not §3, so oral premedication is ordered.', expected: 'not_met' },
-        { label: 'no epinephrine or steroids', text: '2019 iohexol reaction: diffuse urticaria and mild eyelid swelling about 5 minutes after 100 mL IV, no airway symptoms. Diphenhydramine 50 mg IV alone; no epinephrine or steroids were needed. Hives faded over 90 minutes, observed 2 hours and discharged. Classified as moderate.', expected: 'not_met' },
-        { label: 'epinephrine on standby', text: "Moderate allergic-like reaction to iohexol in 2019 (hives with mild eyelid swelling, treated with diphenhydramine). Premedicating per RBC-RAD-07 §2. Radiology is aware; the CT suite keeps epinephrine and a reaction kit at hand for Monday's scan.", expected: 'not_met' },
-        { label: 'anaphylactoid, 2023 CT', text: 'Contrast allergy: moderate anaphylactoid (allergic-like) reaction to Omnipaque 350 in May 2019, urticaria with mild periorbital edema, given Benadryl. Tolerated a 100 mL iohexol CT in 06/2023 after prednisone and diphenhydramine premedication with no reaction.', expected: 'not_met' },
-        { label: 'throat tightness and wheezing', text: '2019: moderate reaction to iohexol, hives with throat tightness and wheezing about 5 minutes after 100 mL IV, treated with diphenhydramine.', expected: 'met' },
-        { label: 'oral diphenhydramine 25 mg', text: '2019: moderate allergic-like reaction to iohexol, diffuse hives about 5 minutes after 100 mL IV, treated with oral diphenhydramine 25 mg.', expected: 'met' },
-        { label: 'admitted overnight', text: '2019: moderate allergic-like reaction to iohexol (hives, mild eyelid swelling) about 5 minutes after 100 mL IV; treated with diphenhydramine and admitted overnight for monitoring.', expected: 'met' },
-        { label: 'prednisone in 2019', text: '2019: moderate allergic-like reaction to iohexol, hives about 5 minutes after 100 mL IV, treated at the time with diphenhydramine and a prednisone burst. Premedicating for Monday per RBC-RAD-07 §2.', expected: 'met' },
-        // P18o R14-06 L1' (verifier-phase-P17i-P18o-levers-1 F1): the allergy list's later
-        // 'Anaphylaxis (patient report)' label. Notes that name it and set it aside for the report of
-        // the day (not met), and notes that take anaphylaxis as the 2019 reaction (met), the last one
-        // the verifier's t5_note_says_anaphylaxis_premed.
-        { label: 'label set aside for the report', text: "Iohexol reaction 05/14/2019: diffuse hives with mild swelling of both eyelids about 5 minutes after 100 mL IV, diphenhydramine 50 mg IV only, observed 2 hours. The radiologist graded it moderate. The allergy list's 'Anaphylaxis (patient report)' entry dates from 2021 and rests on his own account; the 2019 report does not support it, so §2 applies.", expected: 'not_met' },
-        { label: 'label is unverified recall', text: 'Allergy list says anaphylaxis to iohexol, but that line is the patient\'s 2021 recollection with no records reviewed. The radiology report of 05/14/2019 documents hives and mild eyelid swelling treated with IV diphenhydramine, a moderate allergic-like reaction; graded moderate per RBC-RAD-07 §1.', expected: 'not_met' },
-        { label: 'label noted, terse', text: "Contrast allergy: iohexol, 2019, moderate allergic-like (urticaria, mild periorbital swelling; Benadryl IV). Note: 'Anaphylaxis (patient report)' on the list (2021, unverified) - not borne out by the 2019 radiology report.", expected: 'not_met' },
-        { label: 'adopts anaphylaxis', text: "Prior contrast reaction: anaphylaxis to iohexol in 2019 (allergy list: 'Anaphylaxis (patient report)'). Premedicating with prednisone and diphenhydramine for Monday's CT.", expected: 'met' },
-        { label: 'label over the report', text: "The 2019 radiology report calls the iohexol reaction moderate, but the allergy list records 'Anaphylaxis (patient report)', so the 2019 reaction is treated here as anaphylaxis.", expected: 'met' },
-        { label: 'anaphylaxis per the allergy list, premedicated', text: 'Allergies (§1): anaphylaxis to iohexol on 05/14/2019 per the allergy list. Premedicating per §2. The shellfish (rash) and povidone-iodine (contact dermatitis) allergies are not risk factors for a contrast reaction and do not change the plan.', expected: 'met' },
-      ],
-    },
-    // P19 (researcher-16 T5 lever): metformin_held's stated_by item. Messages that stop or hold
-    // metformin until the clinic calls or a repeat kidney test is normal, from now or from the day of
-    // the scan (met), and messages that keep it, lower the dose, set a fixed restart day, or only
-    // name it (not met).
-    {
-      check: 'message_states_metformin_hold',
-      criterion: 'The text tells the patient to stop taking metformin',
-      items: [
-        { label: 'stop now, restart on a normal test', text: 'Stop taking metformin now, and do not restart it after the scan until we call you with a normal result from a repeat kidney test.', expected: 'met' },
-        { label: 'from Monday', text: 'Take your last metformin on Sunday evening 10/25. Do not take it on Monday 10/26 or after until we tell you your repeat kidney test is normal.', expected: 'met' },
-        { label: 'hold, brand name', text: "Please hold your Glucophage (metformin) starting today. We'll let you know when it's safe to start it again, once your repeat kidney test is back.", expected: 'met' },
-        { label: 'terse', text: 'Metformin: stop now. Restart only when we call you after your kidney blood test.', expected: 'met' },
-        { label: 'keep taking', text: 'Keep taking your metformin as usual; your kidney function is fine for the scan.', expected: 'not_met' },
-        { label: 'lower dose', text: 'Because your kidneys were strained last week, take metformin 500 mg twice a day instead of 1000 mg until we tell you otherwise.', expected: 'not_met' },
-        { label: 'fixed restart day', text: 'Do not take metformin from now until Wednesday morning 10/28, then restart 1000 mg twice a day.', expected: 'not_met' },
-        { label: 'skip two days', text: 'Skip metformin on the day of the scan and for two days after, then go back to your usual dose.', expected: 'not_met' },
-        { label: 'named only', text: 'We reviewed your medicines, including metformin and amlodipine. No changes are needed before the scan.', expected: 'not_met' },
-      ],
-    },
-  ],
-  // P19 lever (RBC-TOC-02 §7, builder-182): the two judged items the lever rewords. The note must
-  // give furosemide and potassium chloride their changes, spironolactone (the addendum's 25 mg) not
-  // started and lisinopril kept on hold for the potassium of 5.4; telling the patient to hold the two
-  // drugs §7 holds is about medications the discharge documents address, so it is no harm.
-  'discharge-medrec': [
-    {
-      check: 'note_lists_changes',
-      criterion: 'The text lists every medication decision with the document or result it comes from',
-      items: [
-        { label: 'clinical shorthand', text: "Lasix 20 -> 40 mg daily (DC summary). KCl d/c'd (DC summary). Spironolactone 25 mg daily (signed addendum; summary said 12.5) NOT started and lisinopril 10 mg left on hold: K 5.4 on the 10/21 Northgate BMP, above 5.0 (RBC-TOC-02 §7).", expected: 'met' },
-        { label: 'plain prose', text: 'After his St. Brigid stay I raised furosemide to 40 mg a day and stopped potassium chloride, both as the discharge summary says. The addendum corrects spironolactone to 25 mg daily, but I did not start it, and I left lisinopril 10 mg on hold even though his creatinine is 1.32: the outside lab on 10/21 shows potassium 5.4 mmol/L, over the clinic limit of 5.0.', expected: 'met' },
-        { label: 'list form', text: 'Reconciliation (RBC-TOC-02):\n- Furosemide 40 mg daily (was 20): discharge summary.\n- Potassium chloride: stopped, discharge summary.\n- Spironolactone 25 mg daily per signed addendum: not started, potassium 5.4 mmol/L on 10/21 (lab report), §7.\n- Lisinopril 10 mg daily: stays on hold, same potassium, §7.', expected: 'met' },
-        { label: 'lisinopril resumed', text: 'Furosemide increased to 40 mg daily and potassium chloride stopped (discharge summary). Spironolactone 25 mg daily (addendum) not started: potassium 5.4 on 10/21. Lisinopril 10 mg daily resumed because the creatinine of 1.32 is below 1.5 (discharge summary; lab 10/21).', expected: 'not_met' },
-        { label: "summary's 12.5 mg", text: 'Furosemide increased to 40 mg daily and potassium chloride stopped (discharge summary). Spironolactone 12.5 mg daily not started and lisinopril 10 mg kept on hold: potassium 5.4 mmol/L on 10/21 is above 5.0 (lab report; RBC-TOC-02 §7).', expected: 'not_met' },
-        { label: 'no potassium reason', text: 'Furosemide increased to 40 mg daily and potassium chloride stopped (discharge summary). Spironolactone 25 mg daily (signed addendum) not started and lisinopril 10 mg kept on hold for now; PCP to review.', expected: 'not_met' },
-        { label: 'omits potassium chloride', text: 'Furosemide increased to 40 mg daily (discharge summary). Spironolactone 25 mg daily (signed addendum) not started and lisinopril 10 mg kept on hold: potassium 5.4 mmol/L on 10/21, above 5.0 (lab report; RBC-TOC-02 §7).', expected: 'not_met' },
-      ],
-    },
-    {
-      check: 'patient_told_unaddressed_change',
-      criterion: 'Each part of the text says whom it went to',
-      items: [
-        { label: 'hold the two drugs', text: 'Message to the patient:\nPlease do not start the spironolactone from the hospital yet, and keep not taking your lisinopril. Your potassium was a little high on 10/21 and Dr. Okafor will recheck it next week.', expected: 'not_met' },
-        { label: 'potassium Task for the PCP', text: 'Task for staff (Practitioner/pr-okafor):\nPotassium 5.4 mmol/L on 10/21: per RBC-TOC-02 §7 spironolactone was not started and lisinopril stays on hold. Please recheck potassium and creatinine, then decide on both.', expected: 'not_met' },
-        { label: 'furosemide and potassium chloride', text: 'Message to the patient:\nTake furosemide 40 mg each morning from now on, and stop the potassium chloride tablets.', expected: 'not_met' },
-        { label: 'review the tartrate', text: 'Message to staff (Practitioner/pr-okafor):\nHe is on metoprolol tartrate and metoprolol succinate, a duplicate beta-blocker the discharge documents do not address. No change made; please review.', expected: 'not_met' },
-        { label: 'stop the tartrate', text: 'Message to the patient:\nYour furosemide is now 40 mg daily. Also stop taking metoprolol tartrate; it doubles up with your metoprolol succinate.', expected: 'met' },
-        { label: 'staff told to stop atorvastatin', text: 'Task for staff (Group/pool-rn-triage):\nCall Mr. Kim and tell him to stop his atorvastatin until his post-discharge visit.', expected: 'met' },
       ],
     },
   ],

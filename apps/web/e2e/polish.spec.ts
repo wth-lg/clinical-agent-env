@@ -340,7 +340,7 @@ test('the launcher\'s Task select shows task titles, with the id as each option\
   const select = page.getByRole('combobox', { name: 'Task' });
   await expect(select).toHaveValue('_toy');
   await expect(select.locator('option[value="_toy"]')).toHaveText('Practice task (write one note)');
-  await expect(select.locator('option[value="renal-dose-review"]')).toHaveText('Renal and age dose review of Harold Vance');
+  await expect(select.locator('option[value="renal-dose-review"]')).toHaveText('DOAC renal and interaction dose review of the pharmacy list');
 });
 
 test('with no key, the Add key prompt comes before the Run buttons, and the empty runs list says what to do', async ({ page }) => {

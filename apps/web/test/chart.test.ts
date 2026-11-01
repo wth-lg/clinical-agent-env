@@ -16,10 +16,11 @@ import { id as t6 } from '../../../tasks/message-queue/ids.ts';
 const REPO = join(import.meta.dirname, '../../..');
 
 describe('taskPatients', () => {
-  it('finds the one patient of a single-patient task', () => {
-    expect(taskPatients(world, 'renal-dose-review')).toEqual(['Patient/pt-0002']);
-    expect(taskPatients(world, 'discharge-medrec')).toEqual(['Patient/pt-0005']);
-    expect(taskPatients(world, 'contrast-ct-prep')).toEqual(['Patient/pt-0015']);
+  // Since the W1 probes every task is a worklist (builder-249): the patients are the list's.
+  it('finds the patients of each worklist task', () => {
+    expect(taskPatients(world, 'renal-dose-review')).toEqual(['Patient/pt-0001', 'Patient/pt-0002', 'Patient/pt-0003', 'Patient/pt-0038', 'Patient/pt-0039', 'Patient/pt-0040', 'Patient/pt-0041', 'Patient/pt-0043', 'Patient/pt-0045']);
+    expect(taskPatients(world, 'discharge-medrec')).toEqual(['Patient/pt-0004', 'Patient/pt-0005', 'Patient/pt-0042', 'Patient/pt-0044']);
+    expect(taskPatients(world, 'contrast-ct-prep')).toEqual(['Patient/pt-0012', 'Patient/pt-0015', 'Patient/pt-0046', 'Patient/pt-0047', 'Patient/pt-0048', 'Patient/pt-0049', 'Patient/pt-0050']);
   });
   it('finds every member of the panel task\'s group, and the patients of the inbox and queue tasks', () => {
     const panel = world.find((r) => r.resourceType === 'Group' && r.id === t3('grp-t3-okafor-crc')) as unknown as { member: { entity: { reference: string } }[] };
@@ -71,11 +72,11 @@ describe('verifier JU10-1 F2-F5', () => {
   // The resources T6, T3 and T2 turn on (verifier-phase-P17j-retro-JU10-1 D1).
   it('lists a patient\'s messages with their text, episodes of care and orders', () => {
     const msg = chartOf(world, 'Patient/pt-0026').rows.find((r) => r.id === t6('comm-t6-m1'));
-    expect(msg).toMatchObject({ type: 'Communication', text: 'Refill request', date: '2026-10-21T19:12:00-04:00' });
-    expect(msg?.body).toContain('refill my lisinopril 20 mg');
-    expect(chartOf(world, 'Patient/pt-0020').rows.find((r) => r.id === t3('eoc-t3-8215'))).toMatchObject({ type: 'EpisodeOfCare', text: 'Hospice care', status: 'active', date: '2026-08-20', current: true });
-    expect(chartOf(world, 'Patient/pt-0024').rows.find((r) => r.id === t3('sr-t3-6648'))).toMatchObject({ type: 'ServiceRequest', status: 'active', current: true });
-    expect(chartOf(world, 'Patient/pt-0024').rows.find((r) => r.id === t3('sr-t3-6648'))?.text).toMatch(/^FIT kit/);
+    expect(msg).toMatchObject({ type: 'Communication', text: 'Refill request', date: '2026-10-19T18:20:00-04:00' });
+    expect(msg?.body).toContain('refill of my lisinopril 20 mg');
+    expect(chartOf(world, 'Patient/pt-0020').rows.find((r) => r.id === t3('eoc-t3-8215'))).toMatchObject({ type: 'EpisodeOfCare', text: 'Hospice care', status: 'finished', date: '2026-06-16' });
+    expect(chartOf(world, 'Patient/pt-0024').rows.find((r) => r.id === t3('sr-t3-4417'))).toMatchObject({ type: 'ServiceRequest', status: 'active' });
+    expect(chartOf(world, 'Patient/pt-0024').rows.find((r) => r.id === t3('sr-t3-4417'))?.text).toMatch(/^Colonoscopy/);
     expect(chartOf(world, 'Patient/pt-0006').rows.some((r) => r.id === t2('sr-t2-gi-1020'))).toBe(true);
   });
 });

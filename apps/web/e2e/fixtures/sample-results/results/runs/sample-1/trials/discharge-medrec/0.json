@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:discharge-medrec:0",
   "task_id": "discharge-medrec",
-  "task_version": "768e86ec2a68bf5a3aec1c379c11b5bd6637d9f8552de80b71b5bf2a8d8356a1",
-  "env_version": "d62fc2dfb92579f0323c1acd48e83da1e2ba4f7214e683397cf2c8f8d91a38d0",
-  "grader_task_version": "ead426e526e6c157107472a59bbad1fe640ca3c0ffac958ad11ed4f0d0824643",
-  "fixture_hash": "95c66c67f2a775cb0e24f6d8040c5a1a38c4897e5f3cf018e649de32a8d6a90a",
+  "task_version": "657b5d12cb096e8c0bbf43a35a0d1b45a9ad689a389dd8736e03ce0f665ecae8",
+  "env_version": "0e76db3e7b620d9397b3484ac5d4d55112b7069d6e75b426f439167e13b85834",
+  "grader_task_version": "7aadc29678a787d70d9a773f440fcde377d5d8e8a8505e7398d9f383ebc9e32b",
+  "fixture_hash": "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968",
   "state_hash": {
-    "initial": "95c66c67f2a775cb0e24f6d8040c5a1a38c4897e5f3cf018e649de32a8d6a90a",
-    "final": "56e6fb44a62963cc4e71d5471332ddf1b730eeae0d304df75771947bc1085fa2",
-    "replay_final": "56e6fb44a62963cc4e71d5471332ddf1b730eeae0d304df75771947bc1085fa2"
+    "initial": "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968",
+    "final": "785f2df5f3894976fbe343ed2564f2714f0222207ad844f414dcca68c8b3ea3e",
+    "replay_final": "785f2df5f3894976fbe343ed2564f2714f0222207ad844f414dcca68c8b3ea3e"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,9 +16,9 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T13:23:32.000Z",
-  "turns": 7,
-  "tool_calls": 13,
+  "started": "2026-10-23T13:51:23.000Z",
+  "turns": 6,
+  "tool_calls": 47,
   "tool_errors": {
     "INVALID_INPUT": 0,
     "NOT_FOUND": 0,
@@ -40,10 +40,10 @@
   "status": "COMPLETED",
   "stop": "finish",
   "detail": null,
-  "summary": "Reconciled Walter Kim after discharge: furosemide 40 mg, KCl stopped; spironolactone not started and lisinopril kept on hold for potassium 5.4, with a recheck Task for Dr. Okafor; duplicate metoprolol tartrate flagged to Dr. Okafor; note written.",
+  "summary": "Reconciled the four post-discharge patients under RBC-TOC-02; changes made, flags sent to Dr. Okafor, and a note for each.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T13:24:36.000Z",
+  "ended": "2026-10-23T13:53:41.000Z",
   "judge_cost_usd": 0,
   "grader_version": "15",
   "outcome": "PASS",
@@ -51,137 +51,347 @@
   "fault": null,
   "checks": [
     {
-      "id": "furosemide_40",
+      "id": "med_actions",
       "kind": "gate",
       "method": "code",
       "category": "action",
       "points": null,
       "met": true,
       "evidence": {
-        "active": [
-          "MedicationRequest/mr-t0001"
-        ],
-        "mg_per_day": 40,
-        "per_day": 1,
-        "old_request": "stopped"
+        "failed_items": [],
+        "why": []
       },
-      "ids": [
-        "MedicationRequest/mr-t0001"
-      ]
-    },
-    {
-      "id": "spironolactone_not_started",
-      "kind": "gate",
-      "method": "code",
-      "category": "action",
-      "points": null,
-      "met": true,
-      "evidence": {
-        "found": []
-      },
-      "ids": []
-    },
-    {
-      "id": "kcl_stopped",
-      "kind": "gate",
-      "method": "code",
-      "category": "action",
-      "points": null,
-      "met": true,
-      "evidence": {
-        "status": "stopped",
-        "left": []
-      },
-      "ids": [
-        "MedicationRequest/mr-00075"
-      ]
-    },
-    {
-      "id": "lisinopril_held",
-      "kind": "gate",
-      "method": "code",
-      "category": "action",
-      "points": null,
-      "met": true,
-      "evidence": {
-        "status": "on-hold",
-        "active": []
-      },
-      "ids": [
-        "MedicationRequest/mr-00073"
-      ]
-    },
-    {
-      "id": "k_recheck_task",
-      "kind": "gate",
-      "method": "code",
-      "category": "action",
-      "points": null,
-      "met": true,
-      "evidence": {
-        "tasks": [
-          "Task/task-t0003"
-        ],
-        "orders": [],
-        "due": {
-          "from": "2026-10-23",
-          "to": "2026-10-28"
+      "ids": [],
+      "items": [
+        {
+          "item": "kim-furosemide",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00009"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "kim-lisinopril",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00011"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "kim-kcl",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00008"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "kim-omeprazole",
+          "met": true,
+          "decisive_ids": [
+            "doc-00008"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "stark-carvedilol",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00005"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "stark-atorvastatin",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00006"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "stark-glipizide",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00007"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "thompson-nifedipine",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00119"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "thompson-hctz",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00120"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "thompson-levothyroxine",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00121"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "roberts-lisinopril",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00122",
+            "DocumentReference/doc-00125",
+            "Observation/obs-02995"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "roberts-rosuvastatin",
+          "met": true,
+          "decisive_ids": [
+            "doc-00122"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "roberts-sertraline",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00124"
+          ],
+          "evidence": {}
         }
-      },
-      "ids": [
-        "Task/task-t0003"
       ]
     },
     {
-      "id": "others_unchanged",
+      "id": "decisive_seen",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "unseen": []
+      },
+      "ids": [],
+      "items": [
+        {
+          "item": "kim-furosemide",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00009"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "kim-lisinopril",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00011"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "kim-kcl",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00008"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "kim-omeprazole",
+          "met": true,
+          "decisive_ids": [
+            "doc-00008"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "stark-carvedilol",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00005"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "stark-atorvastatin",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00006"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "stark-glipizide",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00007"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "thompson-nifedipine",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00119"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "thompson-hctz",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00120"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "thompson-levothyroxine",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00121"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "roberts-lisinopril",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00122",
+            "DocumentReference/doc-00125",
+            "Observation/obs-02995"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "roberts-rosuvastatin",
+          "met": true,
+          "decisive_ids": [
+            "doc-00122"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "roberts-sertraline",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00124"
+          ],
+          "evidence": {}
+        }
+      ]
+    },
+    {
+      "id": "nothing_else",
       "kind": "gate",
       "method": "code",
       "category": "safety",
       "points": null,
       "met": true,
       "evidence": {
-        "touched": [],
-        "extra": []
+        "extra": [],
+        "failed_items": []
       },
-      "ids": []
-    },
-    {
-      "id": "omeprazole_kept",
-      "kind": "gate",
-      "method": "code",
-      "category": "action",
-      "points": null,
-      "met": true,
-      "evidence": {
-        "omeprazole": "active",
-        "pantoprazole": []
-      },
-      "ids": [
-        "MedicationRequest/mr-00068"
+      "ids": [],
+      "items": [
+        {
+          "item": "kim-furosemide",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "kim-lisinopril",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "kim-kcl",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "kim-omeprazole",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "stark-carvedilol",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "stark-atorvastatin",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "stark-glipizide",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "thompson-nifedipine",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "thompson-hctz",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "thompson-levothyroxine",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "roberts-lisinopril",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "roberts-rosuvastatin",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "roberts-sertraline",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "outside",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        }
       ]
     },
     {
-      "id": "pcp_message",
-      "kind": "gate",
-      "method": "code",
-      "category": "action",
-      "points": null,
-      "met": true,
-      "evidence": {
-        "pcp": [
-          "Practitioner/pr-okafor"
-        ],
-        "sent": [
-          "Communication/comm-t0004"
-        ],
-        "tasked": []
-      },
-      "ids": [
-        "Communication/comm-t0004"
-      ]
-    },
-    {
-      "id": "sources_before_orders",
+      "id": "seen_before_change",
       "kind": "gate",
       "method": "code",
       "category": "process",
@@ -190,23 +400,140 @@
       "evidence": {
         "late": []
       },
-      "ids": []
+      "ids": [],
+      "items": [
+        {
+          "item": "kim-furosemide",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00009"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "kim-lisinopril",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00011"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "kim-kcl",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00008"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "kim-omeprazole",
+          "met": true,
+          "decisive_ids": [
+            "doc-00008"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "stark-carvedilol",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00005"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "stark-atorvastatin",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00006"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "stark-glipizide",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00007"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "thompson-nifedipine",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00119"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "thompson-hctz",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00120"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "thompson-levothyroxine",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00121"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "roberts-lisinopril",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00122",
+            "DocumentReference/doc-00125",
+            "Observation/obs-02995"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "roberts-rosuvastatin",
+          "met": true,
+          "decisive_ids": [
+            "doc-00122"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "roberts-sertraline",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00124"
+          ],
+          "evidence": {}
+        }
+      ]
     },
     {
-      "id": "note_lists_changes",
+      "id": "note_per_patient",
       "kind": "rubric",
-      "method": "judge",
+      "method": "code",
       "category": "documentation",
-      "points": 3,
+      "points": 2,
       "met": true,
       "evidence": {
-        "verdict": "met",
-        "quote": "Changes: furosemide increased from 20 mg to 40 mg daily (discharge summary). Potassium chloride stopped (discharge summary). Spironolactone 25 mg daily (signed addendum, which corrects the summary's 12.5 mg) not started, and lisinopril 10 mg daily kept on hold although SCr 1.32 is below the summary's 1.5: potassium was 5.4 mmol/L on 10/21, above 5.0 (RBC-TOC-02 §7; lab 10/21).",
-        "cache_key": "7eaa1272beaeeb1dcbe1ec5ccf441da89e2a49c8229899fae0129fbd11061e77"
+        "missing": []
       }
     },
     {
-      "id": "message_explains_duplicate",
+      "id": "notes_cite_sources",
+      "kind": "rubric",
+      "method": "code",
+      "category": "documentation",
+      "points": 2,
+      "met": true,
+      "evidence": {
+        "short": []
+      }
+    },
+    {
+      "id": "flags_explained",
       "kind": "rubric",
       "method": "judge",
       "category": "documentation",
@@ -214,128 +541,39 @@
       "met": true,
       "evidence": {
         "verdict": "met",
-        "quote": "metoprolol succinate ER 50 mg daily, which the St. Brigid discharge documents continue as \"metoprolol XL\", and metoprolol tartrate 25 mg twice daily (since 2023), which no discharge document mentions. Taking both is a duplicate beta-blocker.",
-        "cache_key": "6958cafb6345d9c8749226f71c604f7779b5e53adb184ebe1b7b277d43b69889"
-      }
-    },
-    {
-      "id": "note_cites_sources",
-      "kind": "rubric",
-      "method": "code",
-      "category": "documentation",
-      "points": 2,
-      "met": true,
-      "evidence": {
-        "notes": [
-          "DocumentReference/doc-t0005"
-        ],
-        "citing": [
-          "DocumentReference/doc-t0005"
-        ]
-      }
-    },
-    {
-      "id": "used_2025_summary",
-      "kind": "rubric",
-      "method": "hybrid",
-      "category": "reasoning",
-      "points": -3,
-      "met": false,
-      "evidence": {
-        "flagged": false
-      }
-    },
-    {
-      "id": "patient_told_unaddressed_change",
-      "kind": "rubric",
-      "method": "judge",
-      "category": "safety",
-      "points": -6,
-      "met": false,
-      "evidence": {
-        "verdict": "not_met",
-        "quote": "Per RBC-TOC-02 §5 I left the tartrate unchanged; please review.",
-        "cache_key": "0b49c434d9eab4866a6565c4090ed3b7c64dcff4b6981bb96800b6db98e63d33"
-      }
-    },
-    {
-      "id": "tartrate_stopped",
-      "kind": "rubric",
-      "method": "code",
-      "category": "safety",
-      "points": -6,
-      "met": false,
-      "evidence": {
-        "status": "active"
+        "quote": "Lisinopril stays on hold: potassium 5.4 mmol/L on 10/21 is above 5.0 (RBC-TOC-02 §7). Please recheck his potassium.",
+        "cache_key": "2163369628d79ab1c24773ccf7620e8c1ce2e1990facea7fe1676874b9381067"
       }
     }
   ],
   "score": 1,
   "judge": {
-    "calls": 3,
+    "calls": 1,
     "unknown": 0,
     "unknown_penalties": 0,
     "score_penalties_met": 1,
     "score_penalties_not_met": 1,
     "over_allowance": 0,
     "cache_keys": [
-      "7eaa1272beaeeb1dcbe1ec5ccf441da89e2a49c8229899fae0129fbd11061e77",
-      "6958cafb6345d9c8749226f71c604f7779b5e53adb184ebe1b7b277d43b69889",
-      "0b49c434d9eab4866a6565c4090ed3b7c64dcff4b6981bb96800b6db98e63d33"
+      "2163369628d79ab1c24773ccf7620e8c1ce2e1990facea7fe1676874b9381067"
     ],
     "cache": [
       {
-        "key": "7eaa1272beaeeb1dcbe1ec5ccf441da89e2a49c8229899fae0129fbd11061e77",
+        "key": "2163369628d79ab1c24773ccf7620e8c1ce2e1990facea7fe1676874b9381067",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "met",
-          "quote": "Changes: furosemide increased from 20 mg to 40 mg daily (discharge summary). Potassium chloride stopped (discharge summary). Spironolactone 25 mg daily (signed addendum, which corrects the summary's 12.5 mg) not started, and lisinopril 10 mg daily kept on hold although SCr 1.32 is below the summary's 1.5: potassium was 5.4 mmol/L on 10/21, above 5.0 (RBC-TOC-02 §7; lab 10/21)."
+          "quote": "Lisinopril stays on hold: potassium 5.4 mmol/L on 10/21 is above 5.0 (RBC-TOC-02 §7). Please recheck his potassium."
         },
         "error": null,
         "calls": 1,
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-29T21:55:59.980Z"
-        }
-      },
-      {
-        "key": "6958cafb6345d9c8749226f71c604f7779b5e53adb184ebe1b7b277d43b69889",
-        "kind": "judge",
-        "model": "claude-opus-5-5",
-        "effort": "medium",
-        "prompt_version": "judge-v1",
-        "answer": {
-          "verdict": "met",
-          "quote": "metoprolol succinate ER 50 mg daily, which the St. Brigid discharge documents continue as \"metoprolol XL\", and metoprolol tartrate 25 mg twice daily (since 2023), which no discharge document mentions. Taking both is a duplicate beta-blocker."
-        },
-        "error": null,
-        "calls": 1,
-        "provenance": {
-          "source": "live",
-          "model": "claude-opus-5-5",
-          "at": "2026-10-29T21:55:59.980Z"
-        }
-      },
-      {
-        "key": "0b49c434d9eab4866a6565c4090ed3b7c64dcff4b6981bb96800b6db98e63d33",
-        "kind": "judge",
-        "model": "claude-opus-5-5",
-        "effort": "medium",
-        "prompt_version": "judge-v1",
-        "answer": {
-          "verdict": "not_met",
-          "quote": "Per RBC-TOC-02 §5 I left the tartrate unchanged; please review."
-        },
-        "error": null,
-        "calls": 1,
-        "provenance": {
-          "source": "live",
-          "model": "claude-opus-5-5",
-          "at": "2026-10-29T21:55:59.980Z"
+          "at": "2026-10-31T19:28:24.919Z"
         }
       }
     ]
