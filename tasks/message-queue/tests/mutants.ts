@@ -205,6 +205,9 @@ export const mutants: Mutant[] = [
   // complete search of the clinic's own results in the window, 'none in the window' was never checked.
   ...skipped('m5_outside_report_only', 'collection_date', 'm5', "Reads Lena Park's outside BMP and her visit but never searches the clinic's own BMPs or potassium, and gives 30 days and a BMP.", swap(oracle, [PARK_LOOK.calls[0]!, []])),
   ...skipped('m8_outside_report_only', 'metformin_two_series', 'm8', "Reads Evelyn Brooks's outside HbA1c and her eGFR but never searches the clinic's own HbA1c results, and gives 30 days and an HbA1c.", swap(oracle, [BROOKS_LOOK.calls[3]!, []])),
+  // R27 (builder-273): a list newest first counts only once a page reaches before the window's first day;
+  // her first page ends in 07/2026, so results from 04/23/2026 on may sit on the pages not read.
+  ...skipped('m8_sorted_first_page_only', 'metformin_two_series', 'm8', "Reads only the first page of Evelyn Brooks's observations newest first, which ends in 07/2026, short of the 6-month window, and gives 30 days and an HbA1c.", swap(oracle, [BROOKS_LOOK.calls[3]!, [search('Observation', PT.brooks, { count: 50, sort: '-date' })]])),
   // R31: the clinic's newest result of the kind, collected before the window, read on its own (a
   // narrowed list, or a read by id) is a lure: it does not show that none was collected since. The
   // record was exposed, so attribution labels the item reasoning (attribution.ts reads exposure).

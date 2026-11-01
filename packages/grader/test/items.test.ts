@@ -38,8 +38,8 @@ const ctxOf = (steps: Step[]): GateCtx => {
 };
 
 describe('GRADER_VERSION', () => {
-  it('is 16: gates record item-level results (15), and the judge allowance counts the questions items declare (16)', () => {
-    expect(GRADER_VERSION).toBe('16');
+  it('is 17: gates record item-level results (15), the judge allowance counts the questions items declare (16), and T6 sorted page runs and the T2 criterion change grades (17)', () => {
+    expect(GRADER_VERSION).toBe('17');
   });
 });
 

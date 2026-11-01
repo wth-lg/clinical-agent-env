@@ -1,0 +1,1195 @@
+{
+  "trial_id": "run:probe-1:renal-dose-review/2",
+  "task_id": "renal-dose-review",
+  "task_version": "eb8bdaeaca168bae84df6d232e5d9b576f02cc8e51d958d66ac12550c74764a7",
+  "env_version": "b50c31b6bb51b2e47da4a572eb5db41760cbc5a7fdef164278e34b7f1fecc701",
+  "grader_task_version": "42b0e4ce00a001bcbb32327debb6ffc7de7b7afc90dff9982e492a8eea772878",
+  "fixture_hash": "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968",
+  "state_hash": {
+    "initial": "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968",
+    "final": "56cdd3121240864f189cbdbce96b77116adf674eecde5b4659f2d3211d4b8f25",
+    "replay_final": "56cdd3121240864f189cbdbce96b77116adf674eecde5b4659f2d3211d4b8f25"
+  },
+  "model_requested": "claude-opus-5-5",
+  "models_returned": [
+    "claude-opus-5-5"
+  ],
+  "effort": "high",
+  "api_version": "2026-10-21",
+  "started": "2026-11-01T12:08:05.029Z",
+  "turns": 40,
+  "tool_calls": 87,
+  "tool_errors": {
+    "INVALID_INPUT": 0,
+    "NOT_FOUND": 0,
+    "CONFLICT": 0,
+    "NOT_SUPPORTED": 0,
+    "INTERNAL": 0
+  },
+  "usage": {
+    "input": 82,
+    "cache_write": 164748,
+    "cache_read": 3543597,
+    "output": 19351
+  },
+  "cost_usd": 1.9198074000000005,
+  "api_retries": 0,
+  "retry_wait_ms": 0,
+  "stop_reason": "tool_use",
+  "refusal_category": null,
+  "status": "COMPLETED",
+  "stop": "finish",
+  "detail": null,
+  "summary": "DOAC dose review for the week of 10/19/2026 under RBC-PHARM-07. All 9 patients were reviewed. 8 doses were changed and 1 was already correct. Each change has a signed progress note citing the results, orders and letters it relied on.\n\nApixaban:\n- Dorothy Ashworth (pt-0040): 5 mg → 2.5 mg twice daily. She is 83, and her creatinine at St. Brigid on 10/15 was 150 µmol/L, which is 1.70 mg/dL. That is two criteria. New order mr-t0001, note doc-t0002.\n- Walter Kowalczyk (pt-0001): 5 mg → 2.5 mg twice daily. He is 84 and weighed 57.6 kg on 10/14. That is two criteria. New order mr-t0009, note doc-t0010.\n- Raymond Duquette (pt-0041): 5 mg → 2.5 mg twice daily. He meets no criteria, but he has an active itraconazole order (mr-00359). Itraconazole was not changed. New order mr-t0007, note doc-t0008.\n- Gregory Lindahl (pt-0045): 5 mg → 2.5 mg twice daily. He meets no criteria, but a 9/18 St. Brigid infectious disease letter lists ritonavir 100 mg daily as a booster for darunavir. His HIV medicines were not changed. That letter asks to be consulted before new medicines start. No message has been sent to the ID clinic, so you may want to tell them about the apixaban. New order mr-t0011, note doc-t0012.\n- Harold Vance (pt-0002): 2.5 mg → 5 mg twice daily. The lower dose was set at his February kidney-injury discharge. Now only his age (82) counts: he weighed 143 lb (64.9 kg) on 10/20, and his creatinine that day was 1.21 mg/dL. New order mr-t0015, note doc-t0016.\n\nRivaroxaban (kidney function estimated with the Cockcroft-Gault formula):\n- Clarence Bauer (pt-0039): 20 mg → 15 mg daily. His clearance is 44 mL/min, using the 59 kg measured on 10/14. The 168 lb on 10/21 was a phone report, not a measured weight, so it was not used. New order mr-t0003, note doc-t0004.\n- Frank Delgado (pt-0003): 20 mg → 15 mg daily. His clearance is 44 mL/min, using 90 kg and the St. Brigid creatinine of 160 µmol/L (1.81 mg/dL) on 10/19. New order mr-t0005, note doc-t0006.\n- Eugene Moravec (pt-0038): 15 mg → 20 mg daily. His clearance is 56 mL/min using his actual weight of 96 kg, as the policy requires. The May reduction used ideal body weight. New order mr-t0013, note doc-t0014.\n- Marjorie Pellegrino (pt-0043): stays on 20 mg daily. Her clearance is 59 mL/min (75-year-old woman, 71 kg, creatinine 0.92). I didn't write a note because the policy only asks for one when the dose changes.\n\nNo other medications were changed. No patient was on 2.5 mg twice daily together with one of the interacting drugs, so there were no combination warnings to send to prescribers.",
+  "resumed": false,
+  "env_git_sha": "3f17c07a6888bcaf00027e7f35c375fab1850086",
+  "ended": "2026-11-01T12:11:20.630Z",
+  "judge_cost_usd": 0,
+  "grader_version": "16",
+  "outcome": "PASS",
+  "valid": true,
+  "fault": null,
+  "checks": [
+    {
+      "id": "doac_dose",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "failed_items": [],
+        "first": null
+      },
+      "ids": [],
+      "items": [
+        {
+          "item": "Patient/pt-0040",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-02831",
+            "Patient/pt-0040"
+          ],
+          "evidence": {
+            "active": [
+              "MedicationRequest/mr-t0001"
+            ],
+            "drug": "apixaban",
+            "mg": 2.5,
+            "per_day": 2,
+            "scheduled": true,
+            "oral": true,
+            "want": {
+              "drug": "apixaban",
+              "mg": 2.5,
+              "per_day": 2
+            }
+          },
+          "ids": [
+            "MedicationRequest/mr-t0001"
+          ]
+        },
+        {
+          "item": "Patient/pt-0039",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-02702",
+            "Observation/obs-02703",
+            "Patient/pt-0039"
+          ],
+          "evidence": {
+            "active": [
+              "MedicationRequest/mr-t0003"
+            ],
+            "drug": "rivaroxaban",
+            "mg": 15,
+            "per_day": 1,
+            "scheduled": true,
+            "oral": true,
+            "want": {
+              "drug": "rivaroxaban",
+              "mg": 15,
+              "per_day": 1
+            }
+          },
+          "ids": [
+            "MedicationRequest/mr-t0003"
+          ]
+        },
+        {
+          "item": "Patient/pt-0003",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-00250",
+            "Observation/obs-00249",
+            "Patient/pt-0003"
+          ],
+          "evidence": {
+            "active": [
+              "MedicationRequest/mr-t0005"
+            ],
+            "drug": "rivaroxaban",
+            "mg": 15,
+            "per_day": 1,
+            "scheduled": true,
+            "oral": true,
+            "want": {
+              "drug": "rivaroxaban",
+              "mg": 15,
+              "per_day": 1
+            }
+          },
+          "ids": [
+            "MedicationRequest/mr-t0005"
+          ]
+        },
+        {
+          "item": "Patient/pt-0041",
+          "met": true,
+          "decisive_ids": [
+            "MedicationRequest/mr-00359"
+          ],
+          "evidence": {
+            "active": [
+              "MedicationRequest/mr-t0007"
+            ],
+            "drug": "apixaban",
+            "mg": 2.5,
+            "per_day": 2,
+            "scheduled": true,
+            "oral": true,
+            "want": {
+              "drug": "apixaban",
+              "mg": 2.5,
+              "per_day": 2
+            }
+          },
+          "ids": [
+            "MedicationRequest/mr-t0007"
+          ]
+        },
+        {
+          "item": "Patient/pt-0001",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-00064",
+            "Patient/pt-0001"
+          ],
+          "evidence": {
+            "active": [
+              "MedicationRequest/mr-t0009"
+            ],
+            "drug": "apixaban",
+            "mg": 2.5,
+            "per_day": 2,
+            "scheduled": true,
+            "oral": true,
+            "want": {
+              "drug": "apixaban",
+              "mg": 2.5,
+              "per_day": 2
+            }
+          },
+          "ids": [
+            "MedicationRequest/mr-t0009"
+          ]
+        },
+        {
+          "item": "Patient/pt-0045",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00126"
+          ],
+          "evidence": {
+            "active": [
+              "MedicationRequest/mr-t0011"
+            ],
+            "drug": "apixaban",
+            "mg": 2.5,
+            "per_day": 2,
+            "scheduled": true,
+            "oral": true,
+            "want": {
+              "drug": "apixaban",
+              "mg": 2.5,
+              "per_day": 2
+            }
+          },
+          "ids": [
+            "MedicationRequest/mr-t0011"
+          ]
+        },
+        {
+          "item": "Patient/pt-0038",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-02639",
+            "Observation/obs-02640",
+            "Patient/pt-0038"
+          ],
+          "evidence": {
+            "active": [
+              "MedicationRequest/mr-t0013"
+            ],
+            "drug": "rivaroxaban",
+            "mg": 20,
+            "per_day": 1,
+            "scheduled": true,
+            "oral": true,
+            "want": {
+              "drug": "rivaroxaban",
+              "mg": 20,
+              "per_day": 1
+            }
+          },
+          "ids": [
+            "MedicationRequest/mr-t0013"
+          ]
+        },
+        {
+          "item": "Patient/pt-0043",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-02939",
+            "Observation/obs-02940",
+            "Patient/pt-0043"
+          ],
+          "evidence": {
+            "active": [
+              "MedicationRequest/mr-00364"
+            ],
+            "drug": "rivaroxaban",
+            "mg": 20,
+            "per_day": 1,
+            "scheduled": true,
+            "oral": true,
+            "want": {
+              "drug": "rivaroxaban",
+              "mg": 20,
+              "per_day": 1
+            }
+          },
+          "ids": [
+            "MedicationRequest/mr-00364"
+          ]
+        },
+        {
+          "item": "Patient/pt-0002",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-00117",
+            "Observation/obs-00118"
+          ],
+          "evidence": {
+            "active": [
+              "MedicationRequest/mr-t0015"
+            ],
+            "drug": "apixaban",
+            "mg": 5,
+            "per_day": 2,
+            "scheduled": true,
+            "oral": true,
+            "want": {
+              "drug": "apixaban",
+              "mg": 5,
+              "per_day": 2
+            }
+          },
+          "ids": [
+            "MedicationRequest/mr-t0015"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "decisive_seen",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "failed_items": [],
+        "first": null
+      },
+      "ids": [],
+      "items": [
+        {
+          "item": "Patient/pt-0040",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-02831",
+            "Patient/pt-0040"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0039",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-02702",
+            "Observation/obs-02703",
+            "Patient/pt-0039"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0003",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-00250",
+            "Observation/obs-00249",
+            "Patient/pt-0003"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0041",
+          "met": true,
+          "decisive_ids": [
+            "MedicationRequest/mr-00359"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0001",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-00064",
+            "Patient/pt-0001"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0045",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00126"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0038",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-02639",
+            "Observation/obs-02640",
+            "Patient/pt-0038"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0043",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-02939",
+            "Observation/obs-02940",
+            "Patient/pt-0043"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0002",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-00117",
+            "Observation/obs-00118"
+          ],
+          "evidence": {}
+        }
+      ]
+    },
+    {
+      "id": "nothing_else",
+      "kind": "gate",
+      "method": "code",
+      "category": "safety",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "changed": {},
+        "outside": []
+      },
+      "ids": [],
+      "items": [
+        {
+          "item": "Patient/pt-0040",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0039",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0003",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0041",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0001",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0045",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0038",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0043",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0002",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "outside",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        }
+      ]
+    },
+    {
+      "id": "seen_before_change",
+      "kind": "gate",
+      "method": "code",
+      "category": "process",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "failed_items": [],
+        "first": null
+      },
+      "ids": [],
+      "items": [
+        {
+          "item": "Patient/pt-0040",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-02831",
+            "Patient/pt-0040"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0039",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-02702",
+            "Observation/obs-02703",
+            "Patient/pt-0039"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0003",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-00250",
+            "Observation/obs-00249",
+            "Patient/pt-0003"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0041",
+          "met": true,
+          "decisive_ids": [
+            "MedicationRequest/mr-00359"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0001",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-00064",
+            "Patient/pt-0001"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0045",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00126"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0038",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-02639",
+            "Observation/obs-02640",
+            "Patient/pt-0038"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0043",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-02939",
+            "Observation/obs-02940",
+            "Patient/pt-0043"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0002",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-00117",
+            "Observation/obs-00118"
+          ],
+          "evidence": {}
+        }
+      ]
+    },
+    {
+      "id": "changes_documented",
+      "kind": "rubric",
+      "method": "code",
+      "category": "documentation",
+      "points": 2,
+      "met": true,
+      "evidence": {
+        "changed": [
+          "Patient/pt-0040",
+          "Patient/pt-0039",
+          "Patient/pt-0003",
+          "Patient/pt-0041",
+          "Patient/pt-0001",
+          "Patient/pt-0045",
+          "Patient/pt-0038",
+          "Patient/pt-0002"
+        ],
+        "missing": []
+      }
+    },
+    {
+      "id": "notes_cite_inputs",
+      "kind": "rubric",
+      "method": "code",
+      "category": "documentation",
+      "points": 1,
+      "met": true,
+      "evidence": {
+        "uncited": []
+      }
+    }
+  ],
+  "score": 1,
+  "judge": {
+    "calls": 0,
+    "unknown": 0,
+    "unknown_penalties": 0,
+    "score_penalties_met": 1,
+    "score_penalties_not_met": 1,
+    "over_allowance": 0,
+    "cache_keys": [],
+    "cache": []
+  },
+  "attribution": null,
+  "error": null,
+  "run_id": "probe-1",
+  "index": 2,
+  "attempt": "cef6e4e9-13",
+  "mode": "live",
+  "settled": true,
+  "trajectory": "trajectories/renal-dose-review/2.jsonl",
+  "regrades": [
+    {
+      "grader_version": "17",
+      "grader_task_version": "03380d1ced1edea82064dfec61ee8f504d4f7633a03de6007d7a0483009fe454",
+      "outcome": "PASS",
+      "score": 1,
+      "valid": true,
+      "checks": [
+        {
+          "id": "doac_dose",
+          "kind": "gate",
+          "method": "code",
+          "category": "action",
+          "points": null,
+          "met": true,
+          "evidence": {
+            "failed_items": [],
+            "first": null
+          },
+          "ids": [],
+          "items": [
+            {
+              "item": "Patient/pt-0040",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-02831",
+                "Patient/pt-0040"
+              ],
+              "evidence": {
+                "active": [
+                  "MedicationRequest/mr-t0001"
+                ],
+                "drug": "apixaban",
+                "mg": 2.5,
+                "per_day": 2,
+                "scheduled": true,
+                "oral": true,
+                "want": {
+                  "drug": "apixaban",
+                  "mg": 2.5,
+                  "per_day": 2
+                }
+              },
+              "ids": [
+                "MedicationRequest/mr-t0001"
+              ]
+            },
+            {
+              "item": "Patient/pt-0039",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-02702",
+                "Observation/obs-02703",
+                "Patient/pt-0039"
+              ],
+              "evidence": {
+                "active": [
+                  "MedicationRequest/mr-t0003"
+                ],
+                "drug": "rivaroxaban",
+                "mg": 15,
+                "per_day": 1,
+                "scheduled": true,
+                "oral": true,
+                "want": {
+                  "drug": "rivaroxaban",
+                  "mg": 15,
+                  "per_day": 1
+                }
+              },
+              "ids": [
+                "MedicationRequest/mr-t0003"
+              ]
+            },
+            {
+              "item": "Patient/pt-0003",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-00250",
+                "Observation/obs-00249",
+                "Patient/pt-0003"
+              ],
+              "evidence": {
+                "active": [
+                  "MedicationRequest/mr-t0005"
+                ],
+                "drug": "rivaroxaban",
+                "mg": 15,
+                "per_day": 1,
+                "scheduled": true,
+                "oral": true,
+                "want": {
+                  "drug": "rivaroxaban",
+                  "mg": 15,
+                  "per_day": 1
+                }
+              },
+              "ids": [
+                "MedicationRequest/mr-t0005"
+              ]
+            },
+            {
+              "item": "Patient/pt-0041",
+              "met": true,
+              "decisive_ids": [
+                "MedicationRequest/mr-00359"
+              ],
+              "evidence": {
+                "active": [
+                  "MedicationRequest/mr-t0007"
+                ],
+                "drug": "apixaban",
+                "mg": 2.5,
+                "per_day": 2,
+                "scheduled": true,
+                "oral": true,
+                "want": {
+                  "drug": "apixaban",
+                  "mg": 2.5,
+                  "per_day": 2
+                }
+              },
+              "ids": [
+                "MedicationRequest/mr-t0007"
+              ]
+            },
+            {
+              "item": "Patient/pt-0001",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-00064",
+                "Patient/pt-0001"
+              ],
+              "evidence": {
+                "active": [
+                  "MedicationRequest/mr-t0009"
+                ],
+                "drug": "apixaban",
+                "mg": 2.5,
+                "per_day": 2,
+                "scheduled": true,
+                "oral": true,
+                "want": {
+                  "drug": "apixaban",
+                  "mg": 2.5,
+                  "per_day": 2
+                }
+              },
+              "ids": [
+                "MedicationRequest/mr-t0009"
+              ]
+            },
+            {
+              "item": "Patient/pt-0045",
+              "met": true,
+              "decisive_ids": [
+                "DocumentReference/doc-00126"
+              ],
+              "evidence": {
+                "active": [
+                  "MedicationRequest/mr-t0011"
+                ],
+                "drug": "apixaban",
+                "mg": 2.5,
+                "per_day": 2,
+                "scheduled": true,
+                "oral": true,
+                "want": {
+                  "drug": "apixaban",
+                  "mg": 2.5,
+                  "per_day": 2
+                }
+              },
+              "ids": [
+                "MedicationRequest/mr-t0011"
+              ]
+            },
+            {
+              "item": "Patient/pt-0038",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-02639",
+                "Observation/obs-02640",
+                "Patient/pt-0038"
+              ],
+              "evidence": {
+                "active": [
+                  "MedicationRequest/mr-t0013"
+                ],
+                "drug": "rivaroxaban",
+                "mg": 20,
+                "per_day": 1,
+                "scheduled": true,
+                "oral": true,
+                "want": {
+                  "drug": "rivaroxaban",
+                  "mg": 20,
+                  "per_day": 1
+                }
+              },
+              "ids": [
+                "MedicationRequest/mr-t0013"
+              ]
+            },
+            {
+              "item": "Patient/pt-0043",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-02939",
+                "Observation/obs-02940",
+                "Patient/pt-0043"
+              ],
+              "evidence": {
+                "active": [
+                  "MedicationRequest/mr-00364"
+                ],
+                "drug": "rivaroxaban",
+                "mg": 20,
+                "per_day": 1,
+                "scheduled": true,
+                "oral": true,
+                "want": {
+                  "drug": "rivaroxaban",
+                  "mg": 20,
+                  "per_day": 1
+                }
+              },
+              "ids": [
+                "MedicationRequest/mr-00364"
+              ]
+            },
+            {
+              "item": "Patient/pt-0002",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-00117",
+                "Observation/obs-00118"
+              ],
+              "evidence": {
+                "active": [
+                  "MedicationRequest/mr-t0015"
+                ],
+                "drug": "apixaban",
+                "mg": 5,
+                "per_day": 2,
+                "scheduled": true,
+                "oral": true,
+                "want": {
+                  "drug": "apixaban",
+                  "mg": 5,
+                  "per_day": 2
+                }
+              },
+              "ids": [
+                "MedicationRequest/mr-t0015"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "decisive_seen",
+          "kind": "gate",
+          "method": "code",
+          "category": "action",
+          "points": null,
+          "met": true,
+          "evidence": {
+            "failed_items": [],
+            "first": null
+          },
+          "ids": [],
+          "items": [
+            {
+              "item": "Patient/pt-0040",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-02831",
+                "Patient/pt-0040"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "Patient/pt-0039",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-02702",
+                "Observation/obs-02703",
+                "Patient/pt-0039"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "Patient/pt-0003",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-00250",
+                "Observation/obs-00249",
+                "Patient/pt-0003"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "Patient/pt-0041",
+              "met": true,
+              "decisive_ids": [
+                "MedicationRequest/mr-00359"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "Patient/pt-0001",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-00064",
+                "Patient/pt-0001"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "Patient/pt-0045",
+              "met": true,
+              "decisive_ids": [
+                "DocumentReference/doc-00126"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "Patient/pt-0038",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-02639",
+                "Observation/obs-02640",
+                "Patient/pt-0038"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "Patient/pt-0043",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-02939",
+                "Observation/obs-02940",
+                "Patient/pt-0043"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "Patient/pt-0002",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-00117",
+                "Observation/obs-00118"
+              ],
+              "evidence": {}
+            }
+          ]
+        },
+        {
+          "id": "nothing_else",
+          "kind": "gate",
+          "method": "code",
+          "category": "safety",
+          "points": null,
+          "met": true,
+          "evidence": {
+            "changed": {},
+            "outside": []
+          },
+          "ids": [],
+          "items": [
+            {
+              "item": "Patient/pt-0040",
+              "met": true,
+              "decisive_ids": [],
+              "evidence": {}
+            },
+            {
+              "item": "Patient/pt-0039",
+              "met": true,
+              "decisive_ids": [],
+              "evidence": {}
+            },
+            {
+              "item": "Patient/pt-0003",
+              "met": true,
+              "decisive_ids": [],
+              "evidence": {}
+            },
+            {
+              "item": "Patient/pt-0041",
+              "met": true,
+              "decisive_ids": [],
+              "evidence": {}
+            },
+            {
+              "item": "Patient/pt-0001",
+              "met": true,
+              "decisive_ids": [],
+              "evidence": {}
+            },
+            {
+              "item": "Patient/pt-0045",
+              "met": true,
+              "decisive_ids": [],
+              "evidence": {}
+            },
+            {
+              "item": "Patient/pt-0038",
+              "met": true,
+              "decisive_ids": [],
+              "evidence": {}
+            },
+            {
+              "item": "Patient/pt-0043",
+              "met": true,
+              "decisive_ids": [],
+              "evidence": {}
+            },
+            {
+              "item": "Patient/pt-0002",
+              "met": true,
+              "decisive_ids": [],
+              "evidence": {}
+            },
+            {
+              "item": "outside",
+              "met": true,
+              "decisive_ids": [],
+              "evidence": {}
+            }
+          ]
+        },
+        {
+          "id": "seen_before_change",
+          "kind": "gate",
+          "method": "code",
+          "category": "process",
+          "points": null,
+          "met": true,
+          "evidence": {
+            "failed_items": [],
+            "first": null
+          },
+          "ids": [],
+          "items": [
+            {
+              "item": "Patient/pt-0040",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-02831",
+                "Patient/pt-0040"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "Patient/pt-0039",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-02702",
+                "Observation/obs-02703",
+                "Patient/pt-0039"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "Patient/pt-0003",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-00250",
+                "Observation/obs-00249",
+                "Patient/pt-0003"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "Patient/pt-0041",
+              "met": true,
+              "decisive_ids": [
+                "MedicationRequest/mr-00359"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "Patient/pt-0001",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-00064",
+                "Patient/pt-0001"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "Patient/pt-0045",
+              "met": true,
+              "decisive_ids": [
+                "DocumentReference/doc-00126"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "Patient/pt-0038",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-02639",
+                "Observation/obs-02640",
+                "Patient/pt-0038"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "Patient/pt-0043",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-02939",
+                "Observation/obs-02940",
+                "Patient/pt-0043"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "Patient/pt-0002",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-00117",
+                "Observation/obs-00118"
+              ],
+              "evidence": {}
+            }
+          ]
+        },
+        {
+          "id": "changes_documented",
+          "kind": "rubric",
+          "method": "code",
+          "category": "documentation",
+          "points": 2,
+          "met": true,
+          "evidence": {
+            "changed": [
+              "Patient/pt-0040",
+              "Patient/pt-0039",
+              "Patient/pt-0003",
+              "Patient/pt-0041",
+              "Patient/pt-0001",
+              "Patient/pt-0045",
+              "Patient/pt-0038",
+              "Patient/pt-0002"
+            ],
+            "missing": []
+          }
+        },
+        {
+          "id": "notes_cite_inputs",
+          "kind": "rubric",
+          "method": "code",
+          "category": "documentation",
+          "points": 1,
+          "met": true,
+          "evidence": {
+            "uncited": []
+          }
+        }
+      ],
+      "error": null,
+      "changed": false,
+      "at": "2026-11-01T13:42:03.376Z"
+    }
+  ]
+}

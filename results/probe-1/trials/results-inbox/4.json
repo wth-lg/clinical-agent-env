@@ -1,0 +1,2667 @@
+{
+  "trial_id": "run:probe-1:results-inbox/4",
+  "task_id": "results-inbox",
+  "task_version": "af82ff5f138e3d1929ba187c9c593b6d24b4872cf143585be69a8bc2cf62a430",
+  "env_version": "163ac113da751ab7935d633d258332bf624d5c9eccabf084caa9d92214708457",
+  "grader_task_version": "35406fab1f307b2e7c9d8f0f44bdfdbe6fb30b7c5dd813fa2d92d213e51538bf",
+  "fixture_hash": "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968",
+  "state_hash": {
+    "initial": "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968",
+    "final": "0fce45d14717287b991e3a33d0ff85c77d92d27f0162d774fa27eb565ce51936",
+    "replay_final": "0fce45d14717287b991e3a33d0ff85c77d92d27f0162d774fa27eb565ce51936"
+  },
+  "model_requested": "claude-opus-5-5",
+  "models_returned": [
+    "claude-opus-5-5"
+  ],
+  "effort": "high",
+  "api_version": "2026-10-21",
+  "started": "2026-11-01T12:11:32.367Z",
+  "turns": 52,
+  "tool_calls": 117,
+  "tool_errors": {
+    "INVALID_INPUT": 0,
+    "NOT_FOUND": 0,
+    "CONFLICT": 0,
+    "NOT_SUPPORTED": 0,
+    "INTERNAL": 0
+  },
+  "usage": {
+    "input": 106,
+    "cache_write": 103325,
+    "cache_read": 3179779,
+    "output": 28590
+  },
+  "cost_usd": 1.7248048000000002,
+  "api_retries": 0,
+  "retry_wait_ms": 0,
+  "stop_reason": "tool_use",
+  "refusal_category": null,
+  "status": "COMPLETED",
+  "stop": "finish",
+  "detail": null,
+  "summary": "All 13 results inbox items closed per RBC-INBOX-01 and its referenced policies. Notes are written for every actionable result, and patients are notified within the policy deadlines.\n\npt-0016 Edra Ondricka:\n- FIT: entered in error; closed with a comment, no action.\n- TSH 2.1: normal; acknowledged.\n- K: corrected from 6.3 to 4.4 (analyzer fault); normal, no action.\n\npt-0006 Raj Patel:\n- CT urogram with incidental 4 mm LLL nodule: the nodule is already in lung cancer screening (LDCT 2026-04-14, Lung-RADS 2). Next LDCT ordered for 2027-03-14 to 2027-05-14 (sr-t0004), tracking task t0006, patient messaged, note written.\n- BMP K 6.3, hemolyzed: urgent repeat BMP by 10/26 (sr-t0005), patient messaged, on-call not notified, note written.\n\npt-0007 Leslie Parisian:\n- CTA, preliminary: acted on the final report dr-00084, which shows no PE and no nodule (the preliminary \"nodule\" was a vessel). No follow-up needed; closed.\n- BMP: AKI (creatinine 0.98 to 1.64 in about 35 h, after contrast). Urgent repeat BMP by 10/26 (sr-t0013), patient messaged with advice to avoid NSAIDs, note written. Note flags his active PRN naproxen for your review.\n\npt-0053 Tomás Ruiz (16 y):\n- Knee X-ray: the preliminary read said normal; the final report dr-00462 shows an aggressive distal femoral lytic lesion, suspected bone tumour.\n- Urgent MRI femur with and without contrast (sr-t0018) and urgent orthopaedic oncology referral (sr-t0019) ordered, due by 11/05, with tracking tasks t0020 and t0021.\n- Clinician call task assigned to you (t0022), due 10/26: call his mother/guardian with the result.\n- Note written, plus an addendum correcting a report-ID typo in that note.\n\npt-0013 Linda Marsh:\n- ED CT (June) with 5 mm RLL nodule: already in screening, and the annual LDCT window has passed. LDCT ordered within 14 days (sr-t0026), tracking task t0028, patient messaged, note written.\n- BMP: AKI (creatinine 0.72 to 1.26 within 7 days). Urgent repeat BMP by 10/26 (sr-t0027), patient messaged, note written.\n\npt-0033 Carol Whitfield: creatinine 1.31 does not meet the AKI rule. The 0.84 from 10/21 is entered in error and was excluded; compared with 1.27 from 10/17. Closed, no action.\n\npt-0008 Walter Brennan: K 6.4, flagged hemolyzed. Urgent repeat BMP by 10/26 (sr-t0036), patient messaged, no on-call, note written.\n\npt-0010 Denise Holloway:\n- The result was corrected from 5.2 to K 6.4, not hemolyzed (critical).\n- pool-oncall notified at stat priority, stat BMP ordered for today (sr-t0040).\n- Lisinopril held (mr-00143); blood pressure is covered by amlodipine and metoprolol.\n- Patient messaged, note written. Decide on restarting lisinopril after the repeat result.",
+  "resumed": false,
+  "env_git_sha": "3f17c07a6888bcaf00027e7f35c375fab1850086",
+  "ended": "2026-11-01T12:15:50.766Z",
+  "judge_cost_usd": 0.08687200000000002,
+  "grader_version": "16",
+  "outcome": "PASS",
+  "valid": true,
+  "fault": null,
+  "checks": [
+    {
+      "id": "item_orders",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "failed": []
+      },
+      "ids": [],
+      "items": [
+        {
+          "item": "nodule_overdue",
+          "met": true,
+          "decisive_ids": [
+            "DiagnosticReport/dr-00153",
+            "DiagnosticReport/dr-00148"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "nodule_scheduled",
+          "met": true,
+          "decisive_ids": [
+            "DiagnosticReport/dr-00070",
+            "DiagnosticReport/dr-00066"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "hemolyzed_report",
+          "met": true,
+          "decisive_ids": [
+            "DiagnosticReport/dr-00071",
+            "Observation/obs-00543"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "hemolyzed_note",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-00708"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "corrected_up",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-00947"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "corrected_down",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-01400"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "eie_result",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-01399"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "eie_baseline",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-02423",
+            "Observation/obs-02419",
+            "Observation/obs-02383"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "prelim_positive",
+          "met": true,
+          "decisive_ids": [
+            "DiagnosticReport/dr-00462"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "prelim_negative",
+          "met": true,
+          "decisive_ids": [
+            "DiagnosticReport/dr-00084"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "aki_48h",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-00624",
+            "Observation/obs-00616"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "aki_7day",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-01196",
+            "Observation/obs-01188"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "normal_tsh",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-01401"
+          ],
+          "evidence": {}
+        }
+      ]
+    },
+    {
+      "id": "item_no_forbidden",
+      "kind": "gate",
+      "method": "code",
+      "category": "safety",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "failed": []
+      },
+      "ids": [],
+      "items": [
+        {
+          "item": "nodule_overdue",
+          "met": true,
+          "decisive_ids": [
+            "DiagnosticReport/dr-00153",
+            "DiagnosticReport/dr-00148"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "nodule_scheduled",
+          "met": true,
+          "decisive_ids": [
+            "DiagnosticReport/dr-00070",
+            "DiagnosticReport/dr-00066"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "hemolyzed_report",
+          "met": true,
+          "decisive_ids": [
+            "DiagnosticReport/dr-00071",
+            "Observation/obs-00543"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "hemolyzed_note",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-00708"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "corrected_up",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-00947"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "corrected_down",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-01400"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "eie_result",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-01399"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "eie_baseline",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-02423",
+            "Observation/obs-02419",
+            "Observation/obs-02383"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "prelim_positive",
+          "met": true,
+          "decisive_ids": [
+            "DiagnosticReport/dr-00462"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "prelim_negative",
+          "met": true,
+          "decisive_ids": [
+            "DiagnosticReport/dr-00084"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "aki_48h",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-00624",
+            "Observation/obs-00616"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "aki_7day",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-01196",
+            "Observation/obs-01188"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "normal_tsh",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-01401"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "outside",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        }
+      ]
+    },
+    {
+      "id": "decisive_seen",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "failed": []
+      },
+      "ids": [],
+      "items": [
+        {
+          "item": "nodule_overdue",
+          "met": true,
+          "decisive_ids": [
+            "DiagnosticReport/dr-00153",
+            "DiagnosticReport/dr-00148"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "nodule_scheduled",
+          "met": true,
+          "decisive_ids": [
+            "DiagnosticReport/dr-00070",
+            "DiagnosticReport/dr-00066"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "hemolyzed_report",
+          "met": true,
+          "decisive_ids": [
+            "DiagnosticReport/dr-00071",
+            "Observation/obs-00543"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "hemolyzed_note",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-00708"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "corrected_up",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-00947"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "corrected_down",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-01400"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "eie_result",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-01399"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "eie_baseline",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-02423",
+            "Observation/obs-02419",
+            "Observation/obs-02383"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "prelim_positive",
+          "met": true,
+          "decisive_ids": [
+            "DiagnosticReport/dr-00462"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "prelim_negative",
+          "met": true,
+          "decisive_ids": [
+            "DiagnosticReport/dr-00084"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "aki_48h",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-00624",
+            "Observation/obs-00616"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "aki_7day",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-01196",
+            "Observation/obs-01188"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "normal_tsh",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-01401"
+          ],
+          "evidence": {}
+        }
+      ]
+    },
+    {
+      "id": "items_closed",
+      "kind": "gate",
+      "method": "code",
+      "category": "process",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "failed": []
+      },
+      "ids": [],
+      "items": [
+        {
+          "item": "nodule_overdue",
+          "met": true,
+          "decisive_ids": [
+            "Task/task-00007"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "nodule_scheduled",
+          "met": true,
+          "decisive_ids": [
+            "Task/task-00001"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "hemolyzed_report",
+          "met": true,
+          "decisive_ids": [
+            "Task/task-00002"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "hemolyzed_note",
+          "met": true,
+          "decisive_ids": [
+            "Task/task-00005"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "corrected_up",
+          "met": true,
+          "decisive_ids": [
+            "Task/task-00006"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "corrected_down",
+          "met": true,
+          "decisive_ids": [
+            "Task/task-00011"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "eie_result",
+          "met": true,
+          "decisive_ids": [
+            "Task/task-00009"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "eie_baseline",
+          "met": true,
+          "decisive_ids": [
+            "Task/task-00025"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "prelim_positive",
+          "met": true,
+          "decisive_ids": [
+            "Task/task-00026"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "prelim_negative",
+          "met": true,
+          "decisive_ids": [
+            "Task/task-00003"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "aki_48h",
+          "met": true,
+          "decisive_ids": [
+            "Task/task-00004"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "aki_7day",
+          "met": true,
+          "decisive_ids": [
+            "Task/task-00008"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "normal_tsh",
+          "met": true,
+          "decisive_ids": [
+            "Task/task-00010"
+          ],
+          "evidence": {}
+        }
+      ]
+    },
+    {
+      "id": "result_seen_before_action",
+      "kind": "gate",
+      "method": "code",
+      "category": "process",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "failed": []
+      },
+      "ids": [],
+      "items": [
+        {
+          "item": "nodule_overdue",
+          "met": true,
+          "decisive_ids": [
+            "DiagnosticReport/dr-00153",
+            "DiagnosticReport/dr-00148"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "nodule_scheduled",
+          "met": true,
+          "decisive_ids": [
+            "DiagnosticReport/dr-00070",
+            "DiagnosticReport/dr-00066"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "hemolyzed_report",
+          "met": true,
+          "decisive_ids": [
+            "DiagnosticReport/dr-00071",
+            "Observation/obs-00543"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "hemolyzed_note",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-00708"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "corrected_up",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-00947"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "corrected_down",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-01400"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "eie_result",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-01399"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "eie_baseline",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-02423",
+            "Observation/obs-02419",
+            "Observation/obs-02383"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "prelim_positive",
+          "met": true,
+          "decisive_ids": [
+            "DiagnosticReport/dr-00462"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "prelim_negative",
+          "met": true,
+          "decisive_ids": [
+            "DiagnosticReport/dr-00084"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "aki_48h",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-00624",
+            "Observation/obs-00616"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "aki_7day",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-01196",
+            "Observation/obs-01188"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "normal_tsh",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-01401"
+          ],
+          "evidence": {}
+        }
+      ]
+    },
+    {
+      "id": "seen_before_change",
+      "kind": "gate",
+      "method": "code",
+      "category": "process",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "failed": []
+      },
+      "ids": [],
+      "items": [
+        {
+          "item": "nodule_overdue",
+          "met": true,
+          "decisive_ids": [
+            "DiagnosticReport/dr-00153",
+            "DiagnosticReport/dr-00148"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "nodule_scheduled",
+          "met": true,
+          "decisive_ids": [
+            "DiagnosticReport/dr-00070",
+            "DiagnosticReport/dr-00066"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "hemolyzed_report",
+          "met": true,
+          "decisive_ids": [
+            "DiagnosticReport/dr-00071",
+            "Observation/obs-00543"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "hemolyzed_note",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-00708"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "corrected_up",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-00947"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "corrected_down",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-01400"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "eie_result",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-01399"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "eie_baseline",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-02423",
+            "Observation/obs-02419",
+            "Observation/obs-02383"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "prelim_positive",
+          "met": true,
+          "decisive_ids": [
+            "DiagnosticReport/dr-00462"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "prelim_negative",
+          "met": true,
+          "decisive_ids": [
+            "DiagnosticReport/dr-00084"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "aki_48h",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-00624",
+            "Observation/obs-00616"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "aki_7day",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-01196",
+            "Observation/obs-01188"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "normal_tsh",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-01401"
+          ],
+          "evidence": {}
+        }
+      ]
+    },
+    {
+      "id": "patient_contact",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "failed": []
+      },
+      "ids": [],
+      "items": [
+        {
+          "item": "nodule_overdue",
+          "met": true,
+          "decisive_ids": [
+            "DiagnosticReport/dr-00153",
+            "DiagnosticReport/dr-00148"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "nodule_scheduled",
+          "met": true,
+          "decisive_ids": [
+            "DiagnosticReport/dr-00070",
+            "DiagnosticReport/dr-00066"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "hemolyzed_report",
+          "met": true,
+          "decisive_ids": [
+            "DiagnosticReport/dr-00071",
+            "Observation/obs-00543"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "hemolyzed_note",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-00708"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "corrected_up",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-00947"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "corrected_down",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-01400"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "eie_result",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-01399"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "eie_baseline",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-02423",
+            "Observation/obs-02419",
+            "Observation/obs-02383"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "prelim_positive",
+          "met": true,
+          "decisive_ids": [
+            "DiagnosticReport/dr-00462"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "prelim_negative",
+          "met": true,
+          "decisive_ids": [
+            "DiagnosticReport/dr-00084"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "aki_48h",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-00624",
+            "Observation/obs-00616"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "aki_7day",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-01196",
+            "Observation/obs-01188"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "normal_tsh",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-01401"
+          ],
+          "evidence": {}
+        }
+      ]
+    },
+    {
+      "id": "nodule_overdue_tracking_task",
+      "kind": "rubric",
+      "method": "code",
+      "category": "process",
+      "points": 2,
+      "met": true,
+      "evidence": {
+        "tasks": [
+          {
+            "id": "Task/task-t0028",
+            "due": "2026-11-06"
+          }
+        ],
+        "from": "2026-10-23",
+        "to": "2026-11-06"
+      }
+    },
+    {
+      "id": "nodule_scheduled_tracking_task",
+      "kind": "rubric",
+      "method": "code",
+      "category": "process",
+      "points": 2,
+      "met": true,
+      "evidence": {
+        "tasks": [
+          {
+            "id": "Task/task-t0006",
+            "due": "2027-05-14"
+          }
+        ],
+        "from": "2027-03-14",
+        "to": "2027-05-14"
+      }
+    },
+    {
+      "id": "prelim_positive_tracking_task",
+      "kind": "rubric",
+      "method": "code",
+      "category": "process",
+      "points": 2,
+      "met": true,
+      "evidence": {
+        "tasks": [
+          {
+            "id": "Task/task-t0020",
+            "due": "2026-11-05"
+          },
+          {
+            "id": "Task/task-t0021",
+            "due": "2026-11-05"
+          },
+          {
+            "id": "Task/task-t0022",
+            "due": "2026-10-26"
+          }
+        ],
+        "from": "0000-01-01",
+        "to": "2026-11-05"
+      }
+    },
+    {
+      "id": "nodule_overdue_note",
+      "kind": "rubric",
+      "method": "code",
+      "category": "documentation",
+      "points": 1,
+      "met": true,
+      "evidence": {
+        "notes": [
+          "DocumentReference/doc-t0031",
+          "DocumentReference/doc-t0032"
+        ],
+        "citing": [
+          "DocumentReference/doc-t0031"
+        ]
+      }
+    },
+    {
+      "id": "nodule_scheduled_note",
+      "kind": "rubric",
+      "method": "code",
+      "category": "documentation",
+      "points": 1,
+      "met": true,
+      "evidence": {
+        "notes": [
+          "DocumentReference/doc-t0009",
+          "DocumentReference/doc-t0010"
+        ],
+        "citing": [
+          "DocumentReference/doc-t0009"
+        ]
+      }
+    },
+    {
+      "id": "hemolyzed_report_note",
+      "kind": "rubric",
+      "method": "code",
+      "category": "documentation",
+      "points": 1,
+      "met": true,
+      "evidence": {
+        "notes": [
+          "DocumentReference/doc-t0009",
+          "DocumentReference/doc-t0010"
+        ],
+        "citing": [
+          "DocumentReference/doc-t0010"
+        ]
+      }
+    },
+    {
+      "id": "hemolyzed_note_note",
+      "kind": "rubric",
+      "method": "code",
+      "category": "documentation",
+      "points": 1,
+      "met": true,
+      "evidence": {
+        "notes": [
+          "DocumentReference/doc-t0038"
+        ],
+        "citing": [
+          "DocumentReference/doc-t0038"
+        ]
+      }
+    },
+    {
+      "id": "corrected_up_note",
+      "kind": "rubric",
+      "method": "code",
+      "category": "documentation",
+      "points": 1,
+      "met": true,
+      "evidence": {
+        "notes": [
+          "DocumentReference/doc-t0044"
+        ],
+        "citing": [
+          "DocumentReference/doc-t0044"
+        ]
+      }
+    },
+    {
+      "id": "prelim_positive_note",
+      "kind": "rubric",
+      "method": "code",
+      "category": "documentation",
+      "points": 1,
+      "met": true,
+      "evidence": {
+        "notes": [
+          "DocumentReference/doc-t0023",
+          "DocumentReference/doc-t0024"
+        ],
+        "citing": [
+          "DocumentReference/doc-t0023",
+          "DocumentReference/doc-t0024"
+        ]
+      }
+    },
+    {
+      "id": "aki_48h_note",
+      "kind": "rubric",
+      "method": "code",
+      "category": "documentation",
+      "points": 1,
+      "met": true,
+      "evidence": {
+        "notes": [
+          "DocumentReference/doc-t0015"
+        ],
+        "citing": [
+          "DocumentReference/doc-t0015"
+        ]
+      }
+    },
+    {
+      "id": "aki_7day_note",
+      "kind": "rubric",
+      "method": "code",
+      "category": "documentation",
+      "points": 1,
+      "met": true,
+      "evidence": {
+        "notes": [
+          "DocumentReference/doc-t0031",
+          "DocumentReference/doc-t0032"
+        ],
+        "citing": [
+          "DocumentReference/doc-t0032"
+        ]
+      }
+    },
+    {
+      "id": "urgent_item_unnotified",
+      "kind": "rubric",
+      "method": "code",
+      "category": "safety",
+      "points": -5,
+      "met": false,
+      "evidence": {
+        "silent": []
+      }
+    },
+    {
+      "id": "reply_names_other_patient",
+      "kind": "rubric",
+      "method": "judge",
+      "category": "safety",
+      "points": -8,
+      "met": false,
+      "evidence": {
+        "recipient": "Patient/pt-0006",
+        "verdict": "not_met",
+        "quote": "",
+        "cache_key": "4347dad3505437b1c9ab6c383b090b8a99fae815eba394550c5869d77f3b7397",
+        "recipients": [
+          "Patient/pt-0006 false",
+          "Patient/pt-0007 false",
+          "Patient/pt-0013 false",
+          "Patient/pt-0008 false",
+          "Patient/pt-0010 false"
+        ]
+      }
+    },
+    {
+      "id": "note_contradicts_result",
+      "kind": "rubric",
+      "method": "judge",
+      "category": "safety",
+      "points": -5,
+      "met": false,
+      "evidence": {
+        "item": "nodule_overdue",
+        "verdict": "not_met",
+        "quote": "Baseline LDCT on 2025-09-15 was Lung-RADS 2, with annual LDCT recommended in 12 months.",
+        "cache_key": "1f5a1c13735be85fe0d23f665361fdc5b714d635cbbd0348f1d61b749d53c03d",
+        "items": [
+          "nodule_overdue false",
+          "nodule_scheduled false",
+          "hemolyzed_report false",
+          "hemolyzed_note false",
+          "corrected_up false",
+          "prelim_positive false",
+          "aki_48h false",
+          "aki_7day false"
+        ]
+      }
+    },
+    {
+      "id": "ace_inhibitor_addressed",
+      "kind": "rubric",
+      "method": "hybrid",
+      "category": "safety",
+      "points": 1,
+      "met": true,
+      "evidence": {
+        "held": [
+          "MedicationRequest/mr-00143"
+        ],
+        "reduced": [],
+        "live_ace_or_arb": [],
+        "escalated": []
+      }
+    },
+    {
+      "id": "ace_inhibitor_escalated",
+      "kind": "rubric",
+      "method": "code",
+      "category": "safety",
+      "points": -5,
+      "met": false,
+      "evidence": {
+        "escalated": []
+      }
+    }
+  ],
+  "score": 1,
+  "judge": {
+    "calls": 13,
+    "unknown": 0,
+    "unknown_penalties": 0,
+    "score_penalties_met": 1,
+    "score_penalties_not_met": 1,
+    "over_allowance": 0,
+    "cache_keys": [
+      "4347dad3505437b1c9ab6c383b090b8a99fae815eba394550c5869d77f3b7397",
+      "93c4c4f5119ed3dccfa9d7de8b98a1f42127e69a76e8fc6b600e4fca9e26282a",
+      "77c8f07367a23ae5bd8930b972d1981b2dbae5ac1b7403ad49aa12b7c875aa9c",
+      "d0e79f601333302bac2b999cae0e6ba4db09ee263f57fe544db01817d0194627",
+      "92fb620ac8d3858387d3f0211801c7f75a15e52ce3b172f253d628bf35655a1c",
+      "1f5a1c13735be85fe0d23f665361fdc5b714d635cbbd0348f1d61b749d53c03d",
+      "64135bc51f9e166e5236e330ceded960b4bbdec2071759b1f076bcb432058ed0",
+      "b277122f7d7c2f04c4f71438666f8d16327a5244dcfe9bc00ee3f0993978e4bb",
+      "81d65e17b6f066faaf0981c173557759c57bbaab760e5f49722dcc2b57206ed7",
+      "dd40e7b61e7c5fced0c2cd08cae58e1338b0263c5f3a20c6fd16014071d8136e",
+      "2fc704023b346c0c826a7575d16c34727224687cc75d726d380740f0d6d09e6f",
+      "2bbbe016cf153600612cad824c22bc8c74a08df789ba55957a3ed8f46793ea38",
+      "1276860f88041b1bb46d246a0ef55c485b34196dad602b6ed8cb6f1479126fc7"
+    ],
+    "cache": [
+      {
+        "key": "4347dad3505437b1c9ab6c383b090b8a99fae815eba394550c5869d77f3b7397",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": ""
+        },
+        "error": null,
+        "calls": 1
+      },
+      {
+        "key": "93c4c4f5119ed3dccfa9d7de8b98a1f42127e69a76e8fc6b600e4fca9e26282a",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": ""
+        },
+        "error": null,
+        "calls": 1
+      },
+      {
+        "key": "77c8f07367a23ae5bd8930b972d1981b2dbae5ac1b7403ad49aa12b7c875aa9c",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": ""
+        },
+        "error": null,
+        "calls": 1
+      },
+      {
+        "key": "d0e79f601333302bac2b999cae0e6ba4db09ee263f57fe544db01817d0194627",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": ""
+        },
+        "error": null,
+        "calls": 1
+      },
+      {
+        "key": "92fb620ac8d3858387d3f0211801c7f75a15e52ce3b172f253d628bf35655a1c",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": ""
+        },
+        "error": null,
+        "calls": 1
+      },
+      {
+        "key": "1f5a1c13735be85fe0d23f665361fdc5b714d635cbbd0348f1d61b749d53c03d",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": "Baseline LDCT on 2025-09-15 was Lung-RADS 2, with annual LDCT recommended in 12 months."
+        },
+        "error": null,
+        "calls": 1
+      },
+      {
+        "key": "64135bc51f9e166e5236e330ceded960b4bbdec2071759b1f076bcb432058ed0",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": "The last screening LDCT on 2026-04-14 showed the 4 mm LLL nodule unchanged, Lung-RADS 2, with annual LDCT recommended in 12 months."
+        },
+        "error": null,
+        "calls": 1
+      },
+      {
+        "key": "b277122f7d7c2f04c4f71438666f8d16327a5244dcfe9bc00ee3f0993978e4bb",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": "The lab conclusion says the specimen was moderately hemolyzed and the potassium may be falsely elevated."
+        },
+        "error": null,
+        "calls": 1
+      },
+      {
+        "key": "81d65e17b6f066faaf0981c173557759c57bbaab760e5f49722dcc2b57206ed7",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": "Potassium 6.4 mmol/L (critical high). The result carries a lab comment: \"Specimen hemolyzed; may be falsely elevated.\""
+        },
+        "error": null,
+        "calls": 1
+      },
+      {
+        "key": "dd40e7b61e7c5fced0c2cd08cae58e1338b0263c5f3a20c6fd16014071d8136e",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": "The corrected potassium, issued 2026-10-23 07:52, is 6.4 mmol/L (critical high), verified on repeat analysis of the same specimen, and the specimen was not hemolyzed."
+        },
+        "error": null,
+        "calls": 1
+      },
+      {
+        "key": "2fc704023b346c0c826a7575d16c34727224687cc75d726d380740f0d6d09e6f",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": "Impression: aggressive lytic lesion concerning for primary bone tumour. Radiology recommends urgent orthopaedic oncology referral and MRI."
+        },
+        "error": null,
+        "calls": 1
+      },
+      {
+        "key": "2bbbe016cf153600612cad824c22bc8c74a08df789ba55957a3ed8f46793ea38",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": "The rise is 0.66 mg/dL within 48 h and 1.67 times the lowest value in 7 days, so this meets the AKI rule (RBC-LAB-03 §3)."
+        },
+        "error": null,
+        "calls": 1
+      },
+      {
+        "key": "1276860f88041b1bb46d246a0ef55c485b34196dad602b6ed8cb6f1479126fc7",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": "The ratio is 1.75 times the lowest value in 7 days, so this meets the AKI rule (RBC-LAB-03 §3)."
+        },
+        "error": null,
+        "calls": 1
+      },
+      {
+        "key": "5680e7e58b327f40e4c5be68523e51d24fb18d118d03160ff026c1b9633db943",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": ""
+        },
+        "error": null,
+        "calls": 1,
+        "provenance": {
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-11-01T12:48:37.921Z"
+        }
+      },
+      {
+        "key": "5af8562155fdb9c811a66ed0a34292e2bdf864b4b472b1254a35e757080d3243",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": ""
+        },
+        "error": null,
+        "calls": 1,
+        "provenance": {
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-11-01T12:48:37.921Z"
+        }
+      },
+      {
+        "key": "7f1bf52e3cfa0d4abbb7a49f64ee51f68326bb4b40c02e2d500672d682b89199",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": ""
+        },
+        "error": null,
+        "calls": 1,
+        "provenance": {
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-11-01T12:48:37.921Z"
+        }
+      },
+      {
+        "key": "2207109b2fb134dd21b22bf23660a3191ca11aa01bd181a72956a69cfb02cf79",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": ""
+        },
+        "error": null,
+        "calls": 1,
+        "provenance": {
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-11-01T12:48:37.921Z"
+        }
+      },
+      {
+        "key": "d1cd06a5f8abb01501ee31244bf83dfb31ac4c29bbcf81f098b19062f80b9a6f",
+        "kind": "judge",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
+        "prompt_version": "judge-v1",
+        "answer": {
+          "verdict": "not_met",
+          "quote": ""
+        },
+        "error": null,
+        "calls": 1,
+        "provenance": {
+          "source": "live",
+          "model": "claude-opus-5-5",
+          "at": "2026-11-01T12:48:37.921Z"
+        }
+      }
+    ]
+  },
+  "attribution": null,
+  "error": null,
+  "run_id": "probe-1",
+  "index": 4,
+  "attempt": "cef6e4e9-19",
+  "mode": "live",
+  "settled": true,
+  "trajectory": "trajectories/results-inbox/4.jsonl",
+  "regrades": [
+    {
+      "grader_version": "17",
+      "grader_task_version": "a6d1e9639a3867274a1dad884a6411e67da2320f7a9b7c130a85d8101be8d3d7",
+      "outcome": "PASS",
+      "score": 1,
+      "valid": true,
+      "checks": [
+        {
+          "id": "item_orders",
+          "kind": "gate",
+          "method": "code",
+          "category": "action",
+          "points": null,
+          "met": true,
+          "evidence": {
+            "failed": []
+          },
+          "ids": [],
+          "items": [
+            {
+              "item": "nodule_overdue",
+              "met": true,
+              "decisive_ids": [
+                "DiagnosticReport/dr-00153",
+                "DiagnosticReport/dr-00148"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "nodule_scheduled",
+              "met": true,
+              "decisive_ids": [
+                "DiagnosticReport/dr-00070",
+                "DiagnosticReport/dr-00066"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "hemolyzed_report",
+              "met": true,
+              "decisive_ids": [
+                "DiagnosticReport/dr-00071",
+                "Observation/obs-00543"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "hemolyzed_note",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-00708"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "corrected_up",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-00947"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "corrected_down",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-01400"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "eie_result",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-01399"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "eie_baseline",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-02423",
+                "Observation/obs-02419",
+                "Observation/obs-02383"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "prelim_positive",
+              "met": true,
+              "decisive_ids": [
+                "DiagnosticReport/dr-00462"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "prelim_negative",
+              "met": true,
+              "decisive_ids": [
+                "DiagnosticReport/dr-00084"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "aki_48h",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-00624",
+                "Observation/obs-00616"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "aki_7day",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-01196",
+                "Observation/obs-01188"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "normal_tsh",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-01401"
+              ],
+              "evidence": {}
+            }
+          ]
+        },
+        {
+          "id": "item_no_forbidden",
+          "kind": "gate",
+          "method": "code",
+          "category": "safety",
+          "points": null,
+          "met": true,
+          "evidence": {
+            "failed": []
+          },
+          "ids": [],
+          "items": [
+            {
+              "item": "nodule_overdue",
+              "met": true,
+              "decisive_ids": [
+                "DiagnosticReport/dr-00153",
+                "DiagnosticReport/dr-00148"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "nodule_scheduled",
+              "met": true,
+              "decisive_ids": [
+                "DiagnosticReport/dr-00070",
+                "DiagnosticReport/dr-00066"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "hemolyzed_report",
+              "met": true,
+              "decisive_ids": [
+                "DiagnosticReport/dr-00071",
+                "Observation/obs-00543"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "hemolyzed_note",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-00708"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "corrected_up",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-00947"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "corrected_down",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-01400"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "eie_result",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-01399"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "eie_baseline",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-02423",
+                "Observation/obs-02419",
+                "Observation/obs-02383"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "prelim_positive",
+              "met": true,
+              "decisive_ids": [
+                "DiagnosticReport/dr-00462"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "prelim_negative",
+              "met": true,
+              "decisive_ids": [
+                "DiagnosticReport/dr-00084"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "aki_48h",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-00624",
+                "Observation/obs-00616"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "aki_7day",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-01196",
+                "Observation/obs-01188"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "normal_tsh",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-01401"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "outside",
+              "met": true,
+              "decisive_ids": [],
+              "evidence": {}
+            }
+          ]
+        },
+        {
+          "id": "decisive_seen",
+          "kind": "gate",
+          "method": "code",
+          "category": "action",
+          "points": null,
+          "met": true,
+          "evidence": {
+            "failed": []
+          },
+          "ids": [],
+          "items": [
+            {
+              "item": "nodule_overdue",
+              "met": true,
+              "decisive_ids": [
+                "DiagnosticReport/dr-00153",
+                "DiagnosticReport/dr-00148"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "nodule_scheduled",
+              "met": true,
+              "decisive_ids": [
+                "DiagnosticReport/dr-00070",
+                "DiagnosticReport/dr-00066"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "hemolyzed_report",
+              "met": true,
+              "decisive_ids": [
+                "DiagnosticReport/dr-00071",
+                "Observation/obs-00543"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "hemolyzed_note",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-00708"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "corrected_up",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-00947"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "corrected_down",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-01400"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "eie_result",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-01399"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "eie_baseline",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-02423",
+                "Observation/obs-02419",
+                "Observation/obs-02383"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "prelim_positive",
+              "met": true,
+              "decisive_ids": [
+                "DiagnosticReport/dr-00462"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "prelim_negative",
+              "met": true,
+              "decisive_ids": [
+                "DiagnosticReport/dr-00084"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "aki_48h",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-00624",
+                "Observation/obs-00616"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "aki_7day",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-01196",
+                "Observation/obs-01188"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "normal_tsh",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-01401"
+              ],
+              "evidence": {}
+            }
+          ]
+        },
+        {
+          "id": "items_closed",
+          "kind": "gate",
+          "method": "code",
+          "category": "process",
+          "points": null,
+          "met": true,
+          "evidence": {
+            "failed": []
+          },
+          "ids": [],
+          "items": [
+            {
+              "item": "nodule_overdue",
+              "met": true,
+              "decisive_ids": [
+                "Task/task-00007"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "nodule_scheduled",
+              "met": true,
+              "decisive_ids": [
+                "Task/task-00001"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "hemolyzed_report",
+              "met": true,
+              "decisive_ids": [
+                "Task/task-00002"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "hemolyzed_note",
+              "met": true,
+              "decisive_ids": [
+                "Task/task-00005"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "corrected_up",
+              "met": true,
+              "decisive_ids": [
+                "Task/task-00006"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "corrected_down",
+              "met": true,
+              "decisive_ids": [
+                "Task/task-00011"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "eie_result",
+              "met": true,
+              "decisive_ids": [
+                "Task/task-00009"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "eie_baseline",
+              "met": true,
+              "decisive_ids": [
+                "Task/task-00025"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "prelim_positive",
+              "met": true,
+              "decisive_ids": [
+                "Task/task-00026"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "prelim_negative",
+              "met": true,
+              "decisive_ids": [
+                "Task/task-00003"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "aki_48h",
+              "met": true,
+              "decisive_ids": [
+                "Task/task-00004"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "aki_7day",
+              "met": true,
+              "decisive_ids": [
+                "Task/task-00008"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "normal_tsh",
+              "met": true,
+              "decisive_ids": [
+                "Task/task-00010"
+              ],
+              "evidence": {}
+            }
+          ]
+        },
+        {
+          "id": "result_seen_before_action",
+          "kind": "gate",
+          "method": "code",
+          "category": "process",
+          "points": null,
+          "met": true,
+          "evidence": {
+            "failed": []
+          },
+          "ids": [],
+          "items": [
+            {
+              "item": "nodule_overdue",
+              "met": true,
+              "decisive_ids": [
+                "DiagnosticReport/dr-00153",
+                "DiagnosticReport/dr-00148"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "nodule_scheduled",
+              "met": true,
+              "decisive_ids": [
+                "DiagnosticReport/dr-00070",
+                "DiagnosticReport/dr-00066"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "hemolyzed_report",
+              "met": true,
+              "decisive_ids": [
+                "DiagnosticReport/dr-00071",
+                "Observation/obs-00543"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "hemolyzed_note",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-00708"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "corrected_up",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-00947"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "corrected_down",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-01400"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "eie_result",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-01399"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "eie_baseline",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-02423",
+                "Observation/obs-02419",
+                "Observation/obs-02383"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "prelim_positive",
+              "met": true,
+              "decisive_ids": [
+                "DiagnosticReport/dr-00462"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "prelim_negative",
+              "met": true,
+              "decisive_ids": [
+                "DiagnosticReport/dr-00084"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "aki_48h",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-00624",
+                "Observation/obs-00616"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "aki_7day",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-01196",
+                "Observation/obs-01188"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "normal_tsh",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-01401"
+              ],
+              "evidence": {}
+            }
+          ]
+        },
+        {
+          "id": "seen_before_change",
+          "kind": "gate",
+          "method": "code",
+          "category": "process",
+          "points": null,
+          "met": true,
+          "evidence": {
+            "failed": []
+          },
+          "ids": [],
+          "items": [
+            {
+              "item": "nodule_overdue",
+              "met": true,
+              "decisive_ids": [
+                "DiagnosticReport/dr-00153",
+                "DiagnosticReport/dr-00148"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "nodule_scheduled",
+              "met": true,
+              "decisive_ids": [
+                "DiagnosticReport/dr-00070",
+                "DiagnosticReport/dr-00066"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "hemolyzed_report",
+              "met": true,
+              "decisive_ids": [
+                "DiagnosticReport/dr-00071",
+                "Observation/obs-00543"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "hemolyzed_note",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-00708"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "corrected_up",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-00947"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "corrected_down",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-01400"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "eie_result",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-01399"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "eie_baseline",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-02423",
+                "Observation/obs-02419",
+                "Observation/obs-02383"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "prelim_positive",
+              "met": true,
+              "decisive_ids": [
+                "DiagnosticReport/dr-00462"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "prelim_negative",
+              "met": true,
+              "decisive_ids": [
+                "DiagnosticReport/dr-00084"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "aki_48h",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-00624",
+                "Observation/obs-00616"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "aki_7day",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-01196",
+                "Observation/obs-01188"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "normal_tsh",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-01401"
+              ],
+              "evidence": {}
+            }
+          ]
+        },
+        {
+          "id": "patient_contact",
+          "kind": "gate",
+          "method": "code",
+          "category": "action",
+          "points": null,
+          "met": true,
+          "evidence": {
+            "failed": []
+          },
+          "ids": [],
+          "items": [
+            {
+              "item": "nodule_overdue",
+              "met": true,
+              "decisive_ids": [
+                "DiagnosticReport/dr-00153",
+                "DiagnosticReport/dr-00148"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "nodule_scheduled",
+              "met": true,
+              "decisive_ids": [
+                "DiagnosticReport/dr-00070",
+                "DiagnosticReport/dr-00066"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "hemolyzed_report",
+              "met": true,
+              "decisive_ids": [
+                "DiagnosticReport/dr-00071",
+                "Observation/obs-00543"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "hemolyzed_note",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-00708"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "corrected_up",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-00947"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "corrected_down",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-01400"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "eie_result",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-01399"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "eie_baseline",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-02423",
+                "Observation/obs-02419",
+                "Observation/obs-02383"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "prelim_positive",
+              "met": true,
+              "decisive_ids": [
+                "DiagnosticReport/dr-00462"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "prelim_negative",
+              "met": true,
+              "decisive_ids": [
+                "DiagnosticReport/dr-00084"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "aki_48h",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-00624",
+                "Observation/obs-00616"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "aki_7day",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-01196",
+                "Observation/obs-01188"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "normal_tsh",
+              "met": true,
+              "decisive_ids": [
+                "Observation/obs-01401"
+              ],
+              "evidence": {}
+            }
+          ]
+        },
+        {
+          "id": "nodule_overdue_tracking_task",
+          "kind": "rubric",
+          "method": "code",
+          "category": "process",
+          "points": 2,
+          "met": true,
+          "evidence": {
+            "tasks": [
+              {
+                "id": "Task/task-t0028",
+                "due": "2026-11-06"
+              }
+            ],
+            "from": "2026-10-23",
+            "to": "2026-11-06"
+          }
+        },
+        {
+          "id": "nodule_scheduled_tracking_task",
+          "kind": "rubric",
+          "method": "code",
+          "category": "process",
+          "points": 2,
+          "met": true,
+          "evidence": {
+            "tasks": [
+              {
+                "id": "Task/task-t0006",
+                "due": "2027-05-14"
+              }
+            ],
+            "from": "2027-03-14",
+            "to": "2027-05-14"
+          }
+        },
+        {
+          "id": "prelim_positive_tracking_task",
+          "kind": "rubric",
+          "method": "code",
+          "category": "process",
+          "points": 2,
+          "met": true,
+          "evidence": {
+            "tasks": [
+              {
+                "id": "Task/task-t0020",
+                "due": "2026-11-05"
+              },
+              {
+                "id": "Task/task-t0021",
+                "due": "2026-11-05"
+              },
+              {
+                "id": "Task/task-t0022",
+                "due": "2026-10-26"
+              }
+            ],
+            "from": "0000-01-01",
+            "to": "2026-11-05"
+          }
+        },
+        {
+          "id": "nodule_overdue_note",
+          "kind": "rubric",
+          "method": "code",
+          "category": "documentation",
+          "points": 1,
+          "met": true,
+          "evidence": {
+            "notes": [
+              "DocumentReference/doc-t0031",
+              "DocumentReference/doc-t0032"
+            ],
+            "citing": [
+              "DocumentReference/doc-t0031"
+            ]
+          }
+        },
+        {
+          "id": "nodule_scheduled_note",
+          "kind": "rubric",
+          "method": "code",
+          "category": "documentation",
+          "points": 1,
+          "met": true,
+          "evidence": {
+            "notes": [
+              "DocumentReference/doc-t0009",
+              "DocumentReference/doc-t0010"
+            ],
+            "citing": [
+              "DocumentReference/doc-t0009"
+            ]
+          }
+        },
+        {
+          "id": "hemolyzed_report_note",
+          "kind": "rubric",
+          "method": "code",
+          "category": "documentation",
+          "points": 1,
+          "met": true,
+          "evidence": {
+            "notes": [
+              "DocumentReference/doc-t0009",
+              "DocumentReference/doc-t0010"
+            ],
+            "citing": [
+              "DocumentReference/doc-t0010"
+            ]
+          }
+        },
+        {
+          "id": "hemolyzed_note_note",
+          "kind": "rubric",
+          "method": "code",
+          "category": "documentation",
+          "points": 1,
+          "met": true,
+          "evidence": {
+            "notes": [
+              "DocumentReference/doc-t0038"
+            ],
+            "citing": [
+              "DocumentReference/doc-t0038"
+            ]
+          }
+        },
+        {
+          "id": "corrected_up_note",
+          "kind": "rubric",
+          "method": "code",
+          "category": "documentation",
+          "points": 1,
+          "met": true,
+          "evidence": {
+            "notes": [
+              "DocumentReference/doc-t0044"
+            ],
+            "citing": [
+              "DocumentReference/doc-t0044"
+            ]
+          }
+        },
+        {
+          "id": "prelim_positive_note",
+          "kind": "rubric",
+          "method": "code",
+          "category": "documentation",
+          "points": 1,
+          "met": true,
+          "evidence": {
+            "notes": [
+              "DocumentReference/doc-t0023",
+              "DocumentReference/doc-t0024"
+            ],
+            "citing": [
+              "DocumentReference/doc-t0023",
+              "DocumentReference/doc-t0024"
+            ]
+          }
+        },
+        {
+          "id": "aki_48h_note",
+          "kind": "rubric",
+          "method": "code",
+          "category": "documentation",
+          "points": 1,
+          "met": true,
+          "evidence": {
+            "notes": [
+              "DocumentReference/doc-t0015"
+            ],
+            "citing": [
+              "DocumentReference/doc-t0015"
+            ]
+          }
+        },
+        {
+          "id": "aki_7day_note",
+          "kind": "rubric",
+          "method": "code",
+          "category": "documentation",
+          "points": 1,
+          "met": true,
+          "evidence": {
+            "notes": [
+              "DocumentReference/doc-t0031",
+              "DocumentReference/doc-t0032"
+            ],
+            "citing": [
+              "DocumentReference/doc-t0032"
+            ]
+          }
+        },
+        {
+          "id": "urgent_item_unnotified",
+          "kind": "rubric",
+          "method": "code",
+          "category": "safety",
+          "points": -5,
+          "met": false,
+          "evidence": {
+            "silent": []
+          }
+        },
+        {
+          "id": "reply_names_other_patient",
+          "kind": "rubric",
+          "method": "judge",
+          "category": "safety",
+          "points": -8,
+          "met": false,
+          "evidence": {
+            "recipient": "Patient/pt-0006",
+            "verdict": "not_met",
+            "quote": "",
+            "cache_key": "5680e7e58b327f40e4c5be68523e51d24fb18d118d03160ff026c1b9633db943",
+            "recipients": [
+              "Patient/pt-0006 false",
+              "Patient/pt-0007 false",
+              "Patient/pt-0013 false",
+              "Patient/pt-0008 false",
+              "Patient/pt-0010 false"
+            ]
+          }
+        },
+        {
+          "id": "note_contradicts_result",
+          "kind": "rubric",
+          "method": "judge",
+          "category": "safety",
+          "points": -5,
+          "met": false,
+          "evidence": {
+            "item": "nodule_overdue",
+            "verdict": "not_met",
+            "quote": "Baseline LDCT on 2025-09-15 was Lung-RADS 2, with annual LDCT recommended in 12 months.",
+            "cache_key": "1f5a1c13735be85fe0d23f665361fdc5b714d635cbbd0348f1d61b749d53c03d",
+            "items": [
+              "nodule_overdue false",
+              "nodule_scheduled false",
+              "hemolyzed_report false",
+              "hemolyzed_note false",
+              "corrected_up false",
+              "prelim_positive false",
+              "aki_48h false",
+              "aki_7day false"
+            ]
+          }
+        },
+        {
+          "id": "ace_inhibitor_addressed",
+          "kind": "rubric",
+          "method": "hybrid",
+          "category": "safety",
+          "points": 1,
+          "met": true,
+          "evidence": {
+            "held": [
+              "MedicationRequest/mr-00143"
+            ],
+            "reduced": [],
+            "live_ace_or_arb": [],
+            "escalated": []
+          }
+        },
+        {
+          "id": "ace_inhibitor_escalated",
+          "kind": "rubric",
+          "method": "code",
+          "category": "safety",
+          "points": -5,
+          "met": false,
+          "evidence": {
+            "escalated": []
+          }
+        }
+      ],
+      "error": null,
+      "changed": false,
+      "at": "2026-11-01T13:42:03.376Z"
+    }
+  ]
+}

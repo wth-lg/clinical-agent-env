@@ -81,8 +81,11 @@ import type { Progress } from './progress.ts';
 // and a grading's calls are bounded by it in dollars as well as in calls (GRADER16-193 F2), counting
 // each entry the grading used, cached ones included, so a question the dollar bound blocked
 // regrades as recorded (G1); penalty items are asked before the other rubric items (G2). Still 16
-// through those rounds: 16 was never on main.
-export const GRADER_VERSION = '16';
+// through those rounds: 16 was never on main. 17: T6's absence window counts a sorted run of pages
+// complete once a page passes the window's edge (Step.search.span; message-queue coveredAt, R27),
+// and T2's reply_names_other_patient criterion states each patient's own values (probe-1
+// message-queue/4 and results-inbox/2, /3; builder-273).
+export const GRADER_VERSION = '17';
 
 export interface CheckResult {
   id: string;

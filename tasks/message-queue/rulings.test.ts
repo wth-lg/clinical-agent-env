@@ -241,6 +241,41 @@ describe('T6 probe rulings', () => {
     expect(coveredAt(m12, [step(1, { ...q, whole: true })])).toBe(1);
   });
 
+  it('R27 (builder-273, probe-1 message-queue/4): a sorted run from offset 0 is complete for the window once its last page passes the window edge', () => {
+    // m8's window opens at the clinic's midnight on 2026-04-23 (EDT, 04:00Z) and closes at now.
+    const m8 = ITEMS.find((i) => i.name === 'm8')!;
+    const at = (iso: string) => Date.parse(iso);
+    const q = { type: 'Observation', patient: 'Patient/pt-0029', sort: '-date', whole: false };
+    const step = (n: number, search?: Step['search']) => ({ n, search }) as unknown as Step;
+    // The probe's route: page 1 (offset 0) ran 2026-10-08 back to 2026-07-25, page 2 (offset 25) back to
+    // 2024-07-19, with page 3 unread. Newest first, page 3 holds only results from before 2024-07-19.
+    const page1 = step(1, { ...q, next_offset: 25, span: [at('2026-07-25T20:55:04-04:00'), at('2026-10-08T16:55:04-04:00')] });
+    const page2 = step(4, { ...q, offset: 25, next_offset: 51, span: [at('2024-07-19T10:00:00-04:00'), at('2026-07-25T20:55:04-04:00')] });
+    expect(coveredAt(m8, [page1, step(2), page2])).toBe(4);
+    // A run that stops before it reaches the window's first day is not complete (retrieval).
+    expect(coveredAt(m8, [page1])).toBe(null);
+    const short = step(4, { ...q, offset: 25, next_offset: 51, span: [at('2026-04-23T00:00:00-04:00'), at('2026-07-25T20:55:04-04:00')] });
+    expect(coveredAt(m8, [page1, short])).toBe(null);
+    // The edge is the clinic's midnight: one second before it is outside the window, so later pages hold nothing in it.
+    const edge = step(4, { ...q, offset: 25, next_offset: 51, span: [at('2026-04-22T23:59:59-04:00'), at('2026-07-25T20:55:04-04:00')] });
+    expect(coveredAt(m8, [page1, edge])).toBe(4);
+    // The run still has to start at offset 0, keep its filters, and keep one sort.
+    expect(coveredAt(m8, [page2])).toBe(null);
+    expect(coveredAt(m8, [page1, step(4, { ...page2.search!, sort: 'date' })])).toBe(null);
+    expect(coveredAt(m8, [page1, step(4, { ...page2.search!, offset: 26 })])).toBe(null);
+    // A first page that already passes the edge is complete on its own.
+    expect(coveredAt(m8, [step(1, { ...q, next_offset: 25, span: [at('2024-07-19T10:00:00-04:00'), at('2026-10-08T16:55:04-04:00')] })])).toBe(1);
+    // Oldest first, the run is complete once a page passes the window's end (now): nothing later is in it.
+    const asc = { ...q, sort: 'date' };
+    expect(coveredAt(m8, [step(1, { ...asc, next_offset: 25, span: [at('2024-01-02T10:00:00-05:00'), at('2026-11-02T10:00:00-05:00')] })])).toBe(1);
+    expect(coveredAt(m8, [step(1, { ...asc, next_offset: 25, span: [at('2024-01-02T10:00:00-05:00'), at('2026-10-08T16:55:04-04:00')] })])).toBe(null);
+    // Without a sort the order says nothing about the pages not read: only the last page completes the run.
+    const { sort: _s, ...unsorted } = q;
+    expect(coveredAt(m8, [step(1, { ...unsorted, next_offset: 25, span: [at('2024-07-19T10:00:00-04:00'), at('2026-10-08T16:55:04-04:00')] })])).toBe(null);
+    // A page with no dated row says nothing about the edge.
+    expect(coveredAt(m8, [step(1, { ...q, next_offset: 25 })])).toBe(null);
+  });
+
   it('R26, R29: each scanned report decides by atoms that end at the deciding fact, and a patient search_notes snippet for its rule word shows one set', async () => {
     const t = await loadMatrixTask('message-queue');
     const reports = ITEMS.flatMap((x) => Object.entries(x.atoms).map(([doc, sets]) => ({ x, doc, sets })));
