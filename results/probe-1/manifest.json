@@ -1,0 +1,97 @@
+{
+  "env_git_sha": "3f17c07a6888bcaf00027e7f35c375fab1850086",
+  "env_dirty": false,
+  "run_id": "probe-1",
+  "model": "claude-opus-5-5",
+  "effort": "high",
+  "mode": "live",
+  "world_hash": "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968",
+  "api_version": "2026-10-21",
+  "trials": 6,
+  "task_versions": {
+    "contrast-ct-prep": "c360125a175b39f5ee7f97c54060122dfd076ad846468c2039f77b230633cac8",
+    "crc-care-gap": "7debd35be966f83cb6a56918e2094ded8afa0e250cfb13b0dd36434972f244cb",
+    "discharge-medrec": "aff72b174ca81f54562cf13f04c3334c51195d5ce16bb82f2920099d31475680",
+    "message-queue": "ab39dee216148ad838c7081da45e9e7d8fc7663476bc3ae76e6704dd1242ebc3",
+    "renal-dose-review": "eb8bdaeaca168bae84df6d232e5d9b576f02cc8e51d958d66ac12550c74764a7",
+    "results-inbox": "af82ff5f138e3d1929ba187c9c593b6d24b4872cf143585be69a8bc2cf62a430"
+  },
+  "env_versions": {
+    "contrast-ct-prep": "29f9655062983a6ef86f1ce217bf76af6699ee053efdfe068d040ab4fa43e275",
+    "crc-care-gap": "800d20e80a0098d9abc6997dfd519c706043dfdb982b56683ea61559c3297770",
+    "discharge-medrec": "0e76db3e7b620d9397b3484ac5d4d55112b7069d6e75b426f439167e13b85834",
+    "message-queue": "6f622caaa5c3c02e9a804b714421cbf54c9f8e92e479e81f5a9765692ed5d82c",
+    "renal-dose-review": "b50c31b6bb51b2e47da4a572eb5db41760cbc5a7fdef164278e34b7f1fecc701",
+    "results-inbox": "163ac113da751ab7935d633d258332bf624d5c9eccabf084caa9d92214708457"
+  },
+  "grader_task_versions": {
+    "contrast-ct-prep": "3d741160fe5d66d9a0726c018cfe3f9fdada6a663e018da9d279958a711172df",
+    "crc-care-gap": "764a9e7863b581efd9ac89483edc53ca03540156d3b6d85051864af0e2ea1e5a",
+    "discharge-medrec": "2898a9c02c3a6717a8825849f10caa5aca33f49ee75f0a399aa1c7816bb6ccf2",
+    "message-queue": "5d30bef60561a018753d1e9094c0f4101ae33ffd3e7aef5cf62c96ac8229d2c3",
+    "renal-dose-review": "42b0e4ce00a001bcbb32327debb6ffc7de7b7afc90dff9982e492a8eea772878",
+    "results-inbox": "35406fab1f307b2e7c9d8f0f44bdfdbe6fb30b7c5dd813fa2d92d213e51538bf"
+  },
+  "batches": [
+    {
+      "batch_id": "03c8d114-b937-4e56-8e7d-00d817c5af1c",
+      "started": "2026-11-01T07:31:30.032Z",
+      "ended": "2026-11-01T07:45:06.235Z",
+      "projection": 16.11884392,
+      "remaining": 12,
+      "settled": 12,
+      "requeued": 0,
+      "stopped": null,
+      "cancelled": false,
+      "env_git_sha": "84b1806d028e4b509c36962a192d8272da54d3f3"
+    },
+    {
+      "batch_id": "88860582-fb5d-4675-ad7e-0b7da061b360",
+      "started": "2026-11-01T07:45:17.187Z",
+      "ended": "2026-11-01T07:48:06.644Z",
+      "projection": 16.11884392,
+      "remaining": 12,
+      "settled": 0,
+      "requeued": 4,
+      "stopped": "client_error",
+      "cancelled": false,
+      "env_git_sha": "84b1806d028e4b509c36962a192d8272da54d3f3"
+    },
+    {
+      "batch_id": "18ad5a58-a6c4-4e33-a35f-5049d256a420",
+      "started": "2026-11-01T07:50:13.998Z",
+      "ended": "2026-11-01T07:53:00.683Z",
+      "projection": 10.0300346,
+      "remaining": 10,
+      "settled": 0,
+      "requeued": 4,
+      "stopped": "client_error",
+      "cancelled": false,
+      "env_git_sha": "84b1806d028e4b509c36962a192d8272da54d3f3"
+    },
+    {
+      "batch_id": "cef6e4e9-489c-414f-a404-7e695a14b96a",
+      "started": "2026-11-01T11:58:25.957Z",
+      "ended": "2026-11-01T12:16:13.320Z",
+      "projection": 19.0600692,
+      "remaining": 20,
+      "settled": 20,
+      "requeued": 0,
+      "stopped": null,
+      "cancelled": false,
+      "env_git_sha": "3f17c07a6888bcaf00027e7f35c375fab1850086"
+    },
+    {
+      "batch_id": "23ade750-b3fa-4048-acc1-d51f123301b1",
+      "started": "2026-11-01T12:16:25.181Z",
+      "ended": "2026-11-01T12:26:11.179Z",
+      "projection": 13.177618639999999,
+      "remaining": 4,
+      "settled": 4,
+      "requeued": 0,
+      "stopped": null,
+      "cancelled": false,
+      "env_git_sha": "3f17c07a6888bcaf00027e7f35c375fab1850086"
+    }
+  ]
+}
