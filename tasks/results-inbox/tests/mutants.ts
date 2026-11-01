@@ -257,19 +257,19 @@ export const mutants = [
     items: { eie_baseline: 'retrieval' },
     script: solve({ reads: swapRead(creatininesOf(PT.whitfield), [CW_48H_SEARCH]) }),
   },
-  // R27 with R31: the window search must list every creatinine code the rule counts. One that lists
-  // only 2160-0 hides her 38483-4 result of 10-17. It fails decisive_seen, but its label is reasoning,
-  // not retrieval: the search shows the baseline 1.27 itself, and packages/grader/attribution.ts
-  // counts an exposed id as seen whatever the gate's seen_at says (the same limit as message-queue's
-  // lure-only mutants, reports/builder-258.md).
+  // R27 with R31 and R34: the window search must list every creatinine code the rule counts.
+  // RBC-LAB-03 counts serum or plasma creatinine, LOINC 2160-0; this world files 38483-4 as
+  // "Creatinine [Mass/volume] in Blood" (window.test.ts), which the rule does not count. A search
+  // under 38483-4 alone hides every counted creatinine in the window, the 1.27 of 10-17 among them;
+  // it shows only the blood copy at the same time, which is not the record the rule compares with.
   {
-    id: 'eie_baseline_window_one_code',
+    id: 'eie_baseline_window_blood_code_only',
     trap: 'decision_without_deciding_fact',
-    why: "Reads Carol Whitfield's panel and her creatinine of 1.31, then searches her creatinines from 10-15 under code 2160-0 only, which hides any result filed under 38483-4 in the 7 days before, such as her 1.27 of 10-17, and closes the item.",
+    why: "Reads Carol Whitfield's panel and her creatinine of 1.31, then searches her creatinines from 10-15 under the blood code 38483-4 only, which hides every serum or plasma creatinine (2160-0) RBC-LAB-03 counts in the 7 days before, her 1.27 of 10-17 among them, and closes the item.",
     fails: ['decisive_seen', 'seen_before_change'],
     loses: [],
-    items: { eie_baseline: 'reasoning' },
-    script: solve({ reads: swapRead(creatininesOf(PT.whitfield), [{ name: 'fhir_search', input: { resource_type: 'Observation', patient: PT.whitfield, code: '2160-0', date_ge: '2026-10-15', sort: '-date' } }]) }),
+    items: { eie_baseline: 'retrieval' },
+    script: solve({ reads: swapRead(creatininesOf(PT.whitfield), [{ name: 'fhir_search', input: { resource_type: 'Observation', patient: PT.whitfield, code: '38483-4', date_ge: '2026-10-15', sort: '-date' } }]) }),
   },
   {
     id: 'aki_7day_history_after_order',

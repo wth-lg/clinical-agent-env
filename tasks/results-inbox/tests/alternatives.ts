@@ -203,11 +203,18 @@ export const alternatives = [
     script: solve({ plans: { eie_baseline: { more: (w) => [w.order(PT.whitfield, BMP, 'routine', '2027-01-22', 'CKD 3a monitoring at the three-month review')] } } }),
   },
   // R31 (verifier-W1T-190-falsepass F3): the baseline is reviewed by any search that covers the 7
-  // days before the 1.31 under every creatinine code; the codes may carry the LOINC system.
+  // days before the 1.31 under every creatinine code the rule counts; codes may carry the LOINC system.
   {
     id: 'eie_baseline_7day_window_search',
     why: "Searches Carol Whitfield's laboratory creatinines (LOINC 2160-0 and 38483-4) from 10-15, the 7 days before her 1.31, sees the withdrawn 0.84 and the valid 1.27 of 10-17, and closes the item as the oracle does.",
     script: solve({ reads: swapRead(creatininesOf(PT.whitfield), [{ name: 'fhir_search', input: { resource_type: 'Observation', patient: PT.whitfield, code: 'http://loinc.org|2160-0,http://loinc.org|38483-4', category: 'laboratory', date_ge: '2026-10-15', sort: '-date' } }]) }),
+  },
+  // R34 (verifier-W1T-190-r2-clinical N1): RBC-LAB-03 applies to serum or plasma creatinine, so a
+  // window search under 2160-0 alone lists every code the rule counts; it must pass.
+  {
+    id: 'cw_serum_creatinine_7d',
+    why: "Searches Carol Whitfield's serum or plasma creatinines (2160-0, the code RBC-LAB-03 counts) from 10-15, the 7 days before her 1.31, sees the withdrawn 0.84 and the valid 1.27 of 10-17, and closes the item as the oracle does.",
+    script: solve({ reads: swapRead(creatininesOf(PT.whitfield), [{ name: 'fhir_search', input: { resource_type: 'Observation', patient: PT.whitfield, code: '2160-0', date_ge: '2026-10-15', sort: '-date' } }]) }),
   },
   {
     id: 'eie_baseline_paged_history',
