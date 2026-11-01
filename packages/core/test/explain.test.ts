@@ -272,6 +272,11 @@ describe('explainTrial: the UI contract strings', () => {
     const at = (detail: string, events: NonNullable<ExplainContext['events']>) => explainTrial(record('LIMIT', { detail }), undefined, { ...ctx, events }).reason;
     expect(at('turns', limitEvent('turns', 80, 80))).toBe('turn limit reached: 80 turns');
     expect(at('cost', limitEvent('cost', 6, 6.0123))).toBe('cost limit reached: $6.01 of $6.00');
+    // The settled-cost bound reached on priced usage plus the refused request's worst case
+    // (loop.ts, code worst_case): the same contract form, against the bound.
+    const worst = limitEvent('cost', 12, 12.37);
+    Object.assign(worst[0]!, { code: 'worst_case' });
+    expect(at('cost', worst)).toBe('cost limit reached: $12.37 of $12.00');
     expect(at('wall_clock', limitEvent('wall_clock', 1_800_000, 1_800_400))).toBe('time limit reached: 1800 s of 1800 s');
     expect(at('max_tokens', limitEvent('max_tokens', 1, 1))).toBe('output limit reached: 2 cut-off responses in a row');
   });

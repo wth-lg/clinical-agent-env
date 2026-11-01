@@ -233,6 +233,9 @@ export function parseRow(x: unknown): LedgerRow {
 
 export interface ReserveRequest {
   bodyBytes: number; // request body size; each byte is counted as one input token
+  // An upper bound on the request's input tokens, overhead included, when the client knows one
+  // (anthropic.ts promptEstimate); worstCaseUsd then prices it in place of the byte count.
+  inputTokens?: number;
   maxTokens: number;
   fast?: boolean; // the request sets speed "fast"
   trial?: string;

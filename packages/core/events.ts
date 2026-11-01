@@ -10,7 +10,7 @@
 // which carries the trial's record with its grade, comes last for every outcome (plan phase
 // P8). Version 2 added graded; a version 1 trajectory (P7, no graded line) still parses and
 // reads as ungraded.
-import type { ContentBlock, MessageParam, MessageParams } from './anthropic.ts';
+import type { AttemptFailure, ContentBlock, MessageParam, MessageParams } from './anthropic.ts';
 import type { Usage } from './cost.ts';
 import type { TrialRecord } from './run.ts';
 
@@ -23,10 +23,12 @@ export const ERROR_STATUSES = ['ENV_ERROR', 'INFRA_API', 'INFRA_HARNESS', 'INVAL
 export type ErrorStatus = (typeof ERROR_STATUSES)[number];
 // context_window: the model's context window stopped the trial (plan-amendment-worklist W0-A), by
 // the stop_reason model_context_window_exceeded or by a 400 prompt is too long; LIMIT_CODES says
-// which, in the limit event's code.
+// which, in the limit event's code. A cost limit with code worst_case is the settled-cost bound
+// reached on priced usage plus the refused request's worst case (loop.ts MAX_SETTLED_USD); a cost
+// limit without a code is the cost cap reached by the answers.
 export const LIMITS = ['turns', 'cost', 'wall_clock', 'max_tokens', 'context_window'] as const;
 export type Limit = (typeof LIMITS)[number];
-export const LIMIT_CODES = ['stop_reason', 'prompt_too_long'] as const;
+export const LIMIT_CODES = ['stop_reason', 'prompt_too_long', 'worst_case'] as const;
 export type LimitCode = (typeof LIMIT_CODES)[number];
 export const HASH_POINTS = ['initial', 'write', 'final', 'replay_final'] as const;
 
@@ -56,6 +58,16 @@ export interface ResponseEvent extends Base {
   attempts: number;
   // null when the usage cannot be priced.
   cost_usd: number | null;
+}
+// How a failed attempt settled: not_billed (an HTTP error status, $0), partial_usage (the usage
+// the stream reported before it failed, output at max_tokens unless message_delta counted it),
+// worst_case (nothing reported), or none (refused or aborted before its reserve).
+export const ATTEMPT_SETTLES = ['not_billed', 'partial_usage', 'worst_case', 'none'] as const;
+export type AttemptSettle = (typeof ATTEMPT_SETTLES)[number];
+// A failed or aborted attempt of the turn's request (MessagesClient onAttemptError): what failed,
+// how it settled, and whether the client retries. Never the key or the request body.
+export interface AttemptErrorEvent extends Base, AttemptFailure {
+  type: 'attempt_error';
 }
 // Totals so far, after each response.
 export interface UsageEvent extends Base {
@@ -114,7 +126,7 @@ export interface GradedEvent extends Base {
 }
 
 export type TrialEvent =
-  | RequestEvent | ResponseEvent | UsageEvent | ToolCallEvent | ToolResultEvent | StateHashEvent | LimitEvent | ErrorEvent | CancelledEvent | GradedEvent;
+  | RequestEvent | ResponseEvent | AttemptErrorEvent | UsageEvent | ToolCallEvent | ToolResultEvent | StateHashEvent | LimitEvent | ErrorEvent | CancelledEvent | GradedEvent;
 
 // The event that ended the trial's episode: the last one before graded (the last event of an
 // ungraded trajectory); undefined for an empty one.
@@ -159,6 +171,10 @@ const FIELDS: Record<TrialEvent['type'], Record<string, Check>> = {
   request: { messages_from: nat, messages: arrayOf(message), params: optional(isObj) },
   response: {
     id: str, model: str, stop_reason: nullable(str), stop_details: nullable(isObj), content: arrayOf(block), usage, attempts: (v) => nat(v) && (v as number) >= 1, cost_usd: nullable(num),
+  },
+  attempt_error: {
+    attempt: (v) => nat(v) && (v as number) >= 1, error: str, code: str, status: nullable(nat), message: str,
+    settle: oneOf(ATTEMPT_SETTLES), settled_usd: num, retry: bool,
   },
   usage: { total: totals, cost_usd: num },
   tool_call: { tool_use_id: str, name: str, input: any },

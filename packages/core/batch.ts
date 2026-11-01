@@ -37,7 +37,7 @@
 // result.cancelled is true only when the caller's signal left keys unsettled.
 import { ANTHROPIC_VERSION, classifyFailure } from './anthropic.ts';
 import { projectBatch, type Projection, type TrialObservation } from './cost.ts';
-import type { TrialEvent } from './events.ts';
+import type { AttemptErrorEvent, TrialEvent } from './events.ts';
 import type { BatchGrant, Ledger, LedgerRow, SpendCeiling } from './ledger.ts';
 import { errorText, type TrialClient } from './loop.ts';
 import { isValid } from './outcomes.ts';
@@ -238,6 +238,10 @@ async function closeStale(runId: string, deps: BatchDeps, log: (l: string) => vo
   }
 }
 
+// The run-output line for a failed or aborted attempt of a trial's model call.
+const attemptLine = (label: string, e: AttemptErrorEvent) =>
+  `${label} turn ${e.turn} attempt ${e.attempt}: ${e.error} ${e.code}${e.status === null ? '' : ` (HTTP ${e.status})`}: ${e.message}; settled $${e.settled_usd.toFixed(4)} (${e.settle})${e.retry ? ', retrying' : ''}`;
+
 export async function runBatch(spec: BatchSpec, deps: BatchDeps): Promise<BatchResult> {
   const log = spec.log ?? (() => {});
   const unlock = await deps.sink.lock(log);
@@ -299,7 +303,9 @@ async function lockedBatch(spec: BatchSpec, deps: BatchDeps, log: (line: string)
           return await inner.send(history, params, { ...opts, signal: opts?.signal ? AbortSignal.any([opts.signal, signal]) : signal });
         } catch (e) {
           capReached();
-          if (!signal.aborted) {
+          // An abort the caller made through its own signal (the trial loop's spend bound or
+          // working-time cap) is the caller's to classify: it ends that trial, never the batch.
+          if (!signal.aborted && !opts?.signal?.aborted) {
             const f = classifyFailure(e);
             if (f.stopsBatch) halt(f.code, `${label}: ${f.message}`);
           }
@@ -312,7 +318,10 @@ async function lockedBatch(spec: BatchSpec, deps: BatchDeps, log: (line: string)
     try {
       ({ record } = await (deps.run ?? run)(key.task_id, spec.model, {
         tasks: deps.tasks, client, world: deps.world, worldHash: deps.worldHash, now: deps.now, effort: spec.effort, signal, trialId: label,
-        checks: await checksFor(key.task_id), onEvent: (e) => deps.sink.event(key, id, e), envGitSha: spec.envGitSha ?? null,
+        checks: await checksFor(key.task_id), onEvent: (e) => {
+          if (e.type === 'attempt_error') log(attemptLine(label, e));
+          return deps.sink.event(key, id, e);
+        }, envGitSha: spec.envGitSha ?? null,
         ...(deps.definitions !== undefined ? { definitions: deps.definitions } : {}),
       }));
     } catch (e) {
