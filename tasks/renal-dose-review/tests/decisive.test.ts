@@ -65,8 +65,10 @@ describe('T1 decisive ids are the records that decide each item', () => {
     expect(checkText.decisive_seen!.found(gate.evidence as Evidence)).toMatch(new RegExp(`was never seen before the review finished at step \\d+, though it decides the dose for ${patient} \\(`));
   });
 
-  it('v1: a correct route that reads only the letter line passes with full score (lindahl_inhibitor_only)', async () => {
-    const { grade } = await graded('alternative', 'lindahl_inhibitor_only');
+  // v1, and the snippet the phrase sweep found (rulings R26, R29): the 'adherent' snippet ends at
+  // 'ritonavir 100…', which shows the inhibitor, the letter's one atom.
+  it.each([['v1: a correct route that reads only the letter line', 'lindahl_inhibitor_only'], ["R29: a snippet cut after the letter's atom", 'lindahl_snippet_cut_after_ritonavir']])('%s passes with full score (%s)', async (_v, id) => {
+    const { grade } = await graded('alternative', id);
     expect(grade.checks.filter((c) => c.kind === 'gate' && !c.met).map((c) => c.id)).toEqual([]);
     expect(grade.outcome).toBe('PASS');
     expect(grade.score).toBe(1);
