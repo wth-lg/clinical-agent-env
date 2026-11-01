@@ -14,7 +14,7 @@
 // or a message; and the re-check by a search snippet that shows the arrival's deciding line (R2).
 import type { Alternative, Mutant, Script, ScriptCall } from '../../../packages/grader/matrix/types.ts';
 import { SPECS } from '../events.ts';
-import { AMEND, arrivalRead, bmp, change, type DecideKey, DOC, inbox, made, message, modify, MR, order, route, type RouteOpts, RX, searchNotes, SPECS_READ, task, W } from '../solution/steps.ts';
+import { AMEND, arrivalRead, bmp, change, type DecideKey, DOC, type DocKey, inbox, made, message, modify, MR, order, route, type RouteOpts, RX, searchNotes, SPECS_READ, task, W } from '../solution/steps.ts';
 
 const itemOf = (spec: string) => SPECS.find((s) => s.id === spec)!.item;
 // The re-check of `active` without reading `spec`'s arrival.
@@ -31,6 +31,13 @@ const AMENDS: Record<string, Amend> = {
   'stark-s1': { decide: 'starkCarvedilol', stale: [W.starkCarvedilol], amend: [AMEND.starkS1(made('mr', 2))], first: { starkAtorvastatin: [W.starkCarvedilol, W.starkAtorvastatin] } },
   'stark-s2': { decide: 'starkAtorvastatinFix', stale: [], amend: [AMEND.starkS2] },
   'roberts-r1': { decide: 'robertsLisinoprilFix', stale: [], amend: AMEND.robertsR1 },
+};
+
+// R38(e): the class B events, with the read a blind decision skips, the first write that fires the
+// correction, and the corrected decision (on the order that write created).
+const BLIND_B: Record<string, { skip: DocKey[]; first: RouteOpts['over']; fix: readonly ScriptCall[] }> = {
+  'kim-k2': { skip: ['kimAddendum'], first: { kimKcl: [W.kimFurosemide, W.kimKcl] }, fix: [AMEND.kimK2(made('mr', 1))] },
+  'stark-s1': { skip: ['starkSummary'], first: { starkAtorvastatin: [W.starkCarvedilol, W.starkAtorvastatin] }, fix: [AMEND.starkS1(made('mr', 2))] },
 };
 
 // What each lure tempts: the decision or extra calls that act on it.
@@ -62,7 +69,17 @@ export function eventMutants(spec: string, active: readonly string[]): Mutant[] 
     const at = r.length - 2;
     return [...r.slice(0, at), { calls: [arrivalRead(spec), ...a.amend] }, ...r.slice(at)];
   })();
+  // R38(e)(ii): a class B correction of the item's own record, fired by a blind first decision (the
+  // original never read), read only afterwards and the decision corrected: process.
+  const blind = BLIND_B[spec];
+  const blindCase: Mutant[] = blind === undefined ? [] : [{
+    id: `${spec}_blind_then_corrected`, trap: 'amend_before_seen',
+    why: "Never reads the record the item rests on; its first decision write fires the correction, which it reads afterwards and follows, so the final action is right but the first decision rested on nothing it had seen (R18, R38(e)).",
+    fails: ['seen_before_change'], loses: [], attribution: 'process', items: { [item]: 'process' },
+    script: route({ active, skip: blind.skip, over: { ...blind.first, [a.decide]: blind.fix } }),
+  }];
   return [
+    ...blindCase,
     {
       id: `${spec}_not_amended`, event: { spec, kind: 'not_amended' }, trap: 'arrival_not_acted_on',
       why: 'Reads the arrival and still decides the item as the chart stood before it.',

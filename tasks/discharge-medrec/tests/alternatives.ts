@@ -6,10 +6,10 @@
 // queue another complete way (R27).
 import type { Alternative } from '../../../packages/grader/matrix/types.ts';
 import { ACTIVE } from '../events.ts';
-import { arrivalRead, change, DOC, message, modify, MR, order, RX, script, searchNotes, SPECS_READ, task, W } from '../solution/steps.ts';
+import { AMEND, arrivalRead, change, decisions, DOC, FIRST, finish, firstWrites, message, modify, MR, note, notesFor, order, reads, recheck, RX, script, searchNotes, SPECS_READ, task, W } from '../solution/steps.ts';
 import { eventAlternatives } from './event-cases.ts';
 
-const reads = SPECS_READ(ACTIVE).map(arrivalRead);
+const arrivalReads = SPECS_READ(ACTIVE).map(arrivalRead);
 const page = (count: number, offset: number) => ({ name: 'list_inbox', input: { queue: 'results', status: 'requested', count, offset } });
 
 export const alternatives: Alternative[] = [
@@ -105,25 +105,32 @@ export const alternatives: Alternative[] = [
     why: "Never opens Walter Kim's 10/21 outside report; it resumes lisinopril on the 10/23 repeat panel (potassium 4.7, SCr 1.21) and the summary's resume line.",
     script: script({ skip: ['kimLab'] }),
   },
-  // R38(d): roberts-r1's potassium alone decides the hold and its Task, so a reviewer who never
-  // opens Earnest Roberts' 10/22 report or searches his results still passes once it reads the 10/23
-  // result and holds.
+  // R38(d): roberts-r1's potassium alone decides the hold and its Task. A reviewer whose first write
+  // on Earnest Roberts' chart is a note, so that no lisinopril decision comes before the 10/23
+  // result, holds on that result alone with a recheck Task, never resuming.
   {
     id: 'roberts_held_on_new_potassium_alone',
-    why: "Never opens Earnest Roberts' 10/22 report or searches his Observations; it resumes on the summary's line, then holds lisinopril with a recheck Task once the 10/23 potassium of 5.5 arrives.",
-    script: script({ skip: ['robertsLab'], noResults: ['roberts'] }),
+    why: "Opens none of Earnest Roberts' records; writes a note on his chart, reads the 10/23 potassium of 5.5 that arrives, and leaves lisinopril held with a recheck Task.",
+    script: [
+      ...reads([], [], [], ['kim', 'stark']),
+      { calls: [...FIRST.filter((k) => k !== 'robertsLisinopril').flatMap((k) => firstWrites()[k]), note('roberts', 'Post-discharge medication reconciliation under RBC-TOC-02: started.', [])] },
+      { calls: recheck() },
+      { calls: [...decisions().kimFurosemide, ...decisions().kimLisinopril, ...decisions().starkCarvedilol, AMEND.robertsR1[1]!] },
+      { calls: notesFor() },
+      { calls: [finish()] },
+    ],
   },
   // R27: the re-check counts through any complete listing: the default page, or a contiguous run of
   // pages from offset 0.
   {
     id: 'recheck_by_default_page',
     why: 'Re-checks the results queue with the default page size (one page holds the standing items and the arrivals), then reads the arrivals.',
-    script: script({ recheck: [{ name: 'list_inbox', input: { queue: 'results' } }, ...reads] }),
+    script: script({ recheck: [{ name: 'list_inbox', input: { queue: 'results' } }, ...arrivalReads] }),
   },
   {
     id: 'recheck_by_paged_inbox',
     why: 'Re-checks the results queue ten rows at a time, from offset 0 to the last page, then reads the arrivals.',
-    script: script({ recheck: [page(10, 0), page(10, 10), ...reads] }),
+    script: script({ recheck: [page(10, 0), page(10, 10), ...arrivalReads] }),
   },
   // One rejected forbidden write per nothing_else sub-kind (R19): the tool refuses each, so nothing
   // is committed and the gate, which reads committed writes only, passes. The committed twin of

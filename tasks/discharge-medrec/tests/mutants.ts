@@ -8,7 +8,7 @@
 // that patient, so the arrivals come where the oracle's do.
 import type { Mutant } from '../../../packages/grader/matrix/types.ts';
 import { ACTIVE } from '../events.ts';
-import { AMEND, arrivalRead, change, DOC, finish, inbox, note, firstWrites, FIRST, message, modify, MR, notesFor, order, reads, recheck, RX, script, searchNotes, W, decisions } from '../solution/steps.ts';
+import { AMEND, arrivalRead, change, DOC, finish, inbox, note, firstWrites, FIRST, message, modify, MR, notesFor, order, reads, recheck, results, RX, script, searchNotes, W, decisions } from '../solution/steps.ts';
 import { eventMutants } from './event-cases.ts';
 
 const ACTION = ['med_actions'];
@@ -113,9 +113,34 @@ export const mutants: Mutant[] = [
     items: { 'stark-glipizide': 'over_action' },
     script: script({ over: { starkGlipizide: [order('stark', RX.glipizide5, 5, 'QD', 'Home medication per pharmacy fill history (Valley Endocrinology)')] } }),
   },
-  // The base resume mutants of Earnest Roberts (resume_without_creatinine, creatinine_seen_after_resume)
-  // left with the PW4-E3 events: with roberts-r1 active, its 10/23 potassium alone decides his item
-  // (R38(d)), so a resume made on short evidence before it arrived is no longer graded.
+  // R18, R38(e): Earnest Roberts' resume is his first decision, written before roberts-r1's potassium
+  // arrives (his first write fires it). It must rest on what decided it then: the summary's line, the
+  // 10/22 report's potassium and a creatinine after discharge (R14, R21). Written before the
+  // creatinine was shown, it is a seen-late decision, process, though the final hold is right.
+  {
+    id: 'resume_without_creatinine',
+    trap: 'roberts-lisinopril',
+    why: "Never opens the 10/22 report and runs no Observation search for Earnest Roberts: a 'potassium' search shows the report's 'Potassium 4.6' cut before its creatinine line, and lisinopril is resumed with no creatinine after discharge shown. The 10/23 potassium then arrives and the hold is right, but the resume rested on an unseen fact (R18, R38(e)).",
+    fails: ['seen_before_change'],
+    loses: [],
+    attribution: 'process',
+    items: { 'roberts-lisinopril': 'process' },
+    script: script({ skip: ['robertsLab'], noResults: ['roberts'], also: [searchNotes('roberts', 'potassium')] }),
+  },
+  {
+    id: 'creatinine_seen_after_resume',
+    trap: 'roberts-lisinopril',
+    why: "Never opens the 10/22 report; a 'potassium' search shows its 'Potassium 4.6' cut before its creatinine line, lisinopril is resumed, and only then are Earnest Roberts' results searched, showing the 10/20 creatinine of 1.24 (R18: a late read is process).",
+    fails: ['seen_before_change'],
+    loses: [],
+    attribution: 'process',
+    items: { 'roberts-lisinopril': 'process' },
+    script: (() => {
+      const r = script({ skip: ['robertsLab'], noResults: ['roberts'], also: [searchNotes('roberts', 'potassium')] });
+      // After the first writes (turn 4), before the re-check.
+      return [...r.slice(0, 4), { calls: [results('roberts')] }, ...r.slice(4)];
+    })(),
+  },
   // R14 and R18: an item does not pass without its deciding fact, even when a fallback reaches its
   // action. Never seen: decisive_seen fails, retrieval. Seen only after the write:
   // seen_before_change fails, process.
@@ -230,9 +255,9 @@ export const mutants: Mutant[] = [
     fails: ['seen_before_change'],
     loses: [],
     attribution: 'process',
-    // Earnest Roberts' resume is in the one answer too, but roberts-r1's potassium alone decides his
-    // item once it arrives (R38(d)), so it is not marked.
-    items: { 'kim-kcl': 'process', 'stark-atorvastatin': 'process', 'stark-glipizide': 'process' },
+    // Earnest Roberts' resume is in the one answer too: written before his records were shown, it is a
+    // seen-late first decision though roberts-r1 later decides his item (R18, R38(e)).
+    items: { 'kim-kcl': 'process', 'stark-atorvastatin': 'process', 'stark-glipizide': 'process', 'roberts-lisinopril': 'process' },
     script: (() => {
       const r = script();
       return [{ calls: r.slice(0, 4).flatMap((t) => t.calls) }, ...r.slice(4)];
