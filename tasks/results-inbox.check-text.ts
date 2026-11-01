@@ -27,7 +27,7 @@ export const checkText: CheckText = {
     found: firstFailed,
   },
   decisive_seen: {
-    requires: `each record an item's decision rests on seen at some point: read, or every atom of one of its deciding facts shown in one note search snippet; for the withdrawn comparison creatinine, a complete search of the patient's creatinines over the 7 days before the result`,
+    requires: `each record an item's decision rests on seen at some point: read, or every atom of one of its deciding facts shown in one note search snippet; for the withdrawn comparison creatinine, a complete search of the patient's serum or plasma creatinines (the results RBC-LAB-03 counts) over the 7 days before the result`,
     found: firstFailed,
   },
   items_closed: {

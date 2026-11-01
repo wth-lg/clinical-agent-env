@@ -145,10 +145,12 @@ const firstShownAtoms = (steps: readonly Step[], id: string, sets: ReadonlyArray
   steps.find((s) => Object.entries(s.shown).some(([k, t]) => sameId(k, id) && t.split('\n').some((part) => sets.some((atoms) => holdsAtoms(part, atoms)))))?.n ?? null;
 
 // RBC-LAB-03 §3's 7-day window (R31, expected.ts WithdrawnItem baseline): the creatinines the rule
-// counts are valid laboratory results under either code.
+// counts are valid laboratory results in serum or plasma, LOINC 2160-0 (R34: never stricter than the
+// policy, which applies to serum or plasma results; this world files 38483-4 as creatinine in blood,
+// window.test.ts).
 export const WINDOW_RULE = {
   type: 'Observation',
-  codes: [`${LOINC}|2160-0`, `${LOINC}|38483-4`],
+  codes: [`${LOINC}|2160-0`],
   category: 'http://terminology.hl7.org/CodeSystem/observation-category|laboratory',
   statuses: ['final', 'corrected', 'amended'],
 } as const;
@@ -186,9 +188,10 @@ const boundLast = (v: string): number => {
 };
 // Whether a successful fhir_search's filters (Step.search) could not hide a creatinine the rule
 // counts in window w (R27, R31): an Observation search of the patient or clinic-wide (it shows the
-// patient's results too); a code filter, if any, listing both creatinine codes; a category filter,
-// if any, holding laboratory; a status filter, if any, listing every valid status; date_ge at or
-// before the window's first instant and date_le at or after its end, the item's collection.
+// patient's results too); a code filter, if any, listing every creatinine code the rule counts; a
+// category filter, if any, holding laboratory; a status filter, if any, listing every valid status;
+// date_ge at or before the window's first instant and date_le at or after its end, the item's
+// collection.
 export function windowCovers(s: StepSearch, w: Window): boolean {
   return (
     s.type === WINDOW_RULE.type &&

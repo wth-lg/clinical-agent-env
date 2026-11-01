@@ -3,14 +3,19 @@
 // the rule counts in it (R27): tests/grader.ts windowCovers and windowSearchedAt. The baseline that
 // stands for the window is seen by nothing else, not even by being read.
 import { describe, expect, it } from 'vitest';
+import { matrixEnv } from '../../cli/matrix.ts';
+import { loadStore } from '../../packages/env/fixture-source.ts';
 import type { Step, StepSearch } from '../../packages/grader/check.ts';
 import { byKey } from './expected.ts';
 import { seenStep, windowCovers, windowSearchedAt } from './tests/grader.ts';
 
+const store = await loadStore(matrixEnv().world);
+const world = { all: (type: string) => [...store.resources()].filter((r) => r.resourceType === type) };
+
 const x = byKey('eie_baseline', 'entered_in_error');
 const w = { ...x.baseline!, patient: x.patient };
 const PT = x.patient;
-// The oracle's search, as exposure.ts records it: every creatinine code, no dates, one whole page.
+// The oracle's search, as exposure.ts records it: both creatinine codes, no dates, one whole page.
 const full: StepSearch = { type: 'Observation', patient: PT, code: '2160-0,38483-4', sort: '-date', whole: true };
 const covers = (more: Partial<StepSearch>) => windowCovers({ ...full, ...more }, w);
 // The oracle's search without one filter.
@@ -25,7 +30,7 @@ describe('eie_baseline window (R31)', () => {
     expect(x.sources).toContain(w.id);
   });
 
-  it('counts a search of the patient or clinic-wide, under every creatinine code, bare or in LOINC', () => {
+  it('counts a search of the patient or clinic-wide, under the creatinine code the rule counts, bare or in LOINC', () => {
     expect(covers({})).toBe(true);
     expect(without('patient')).toBe(true);
     expect(without('code')).toBe(true);
@@ -35,8 +40,21 @@ describe('eie_baseline window (R31)', () => {
     expect(covers({ type: 'DiagnosticReport' })).toBe(false);
   });
 
+  // R34 (verifier-W1T-190-r2-clinical N1): RBC-LAB-03 applies to serum or plasma creatinine. The
+  // world files 38483-4 as creatinine in blood, which the rule does not count, so a search under
+  // 2160-0 alone lists every counted code; one under 38483-4 alone hides them all.
+  it('counts the serum or plasma code the rule names, and does not count 38483-4, which this world files as blood', () => {
+    const blood = (world.all('Observation') as unknown as Array<{ code?: { text?: string; coding?: Array<{ system?: string; code?: string; display?: string }> } }>).filter((o) => (o.code?.coding ?? []).some((c) => c.code === '38483-4'));
+    expect(blood.length).toBeGreaterThan(0);
+    for (const o of blood) for (const c of o.code!.coding!) if (c.code === '38483-4') expect(c.display).toMatch(/in Blood$/);
+    expect(covers({ code: '2160-0' })).toBe(true);
+    expect(covers({ code: 'http://loinc.org|2160-0' })).toBe(true);
+    expect(covers({ code: '38483-4' })).toBe(false);
+    expect(covers({ code: 'http://loinc.org|38483-4' })).toBe(false);
+  });
+
   it('refuses a code, category or status filter that hides a counted creatinine', () => {
-    expect(covers({ code: '2160-0' })).toBe(false);
+    expect(covers({ code: 'http://example.org/none|2160-0' })).toBe(false);
     expect(covers({ code: 'http://example.org/none|2160-0,http://example.org/none|38483-4' })).toBe(false);
     expect(covers({ code: '|2160-0,|38483-4' })).toBe(false);
     expect(covers({ category: 'laboratory' })).toBe(true);

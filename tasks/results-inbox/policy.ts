@@ -12,7 +12,9 @@ import { clinicDate } from '../../packages/grader/normalize.ts';
 const INBOX = 'urn:riverbend:inbox-queue';
 const LOINC = 'http://loinc.org';
 const K = '2823-3';
-const CREATININE = ['2160-0', '38483-4'];
+// RBC-LAB-03 applies to serum or plasma creatinine: LOINC 2160-0. This world files 38483-4 as
+// creatinine in blood (window.test.ts), which the rule does not count.
+const CREATININE = ['2160-0'];
 const FIT = '29771-3';
 const TSH = '3016-3';
 // The statuses of a valid result: one that is not withdrawn and not preliminary.
