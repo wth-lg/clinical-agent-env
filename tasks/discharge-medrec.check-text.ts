@@ -40,4 +40,30 @@ export const checkText: CheckText = {
       return `the ${show(late.item)} write came before ${show(items(late.sources)[0])} was shown`;
     },
   },
+  // The event gates (packages/grader/events.ts) over the items an active mid-trial event bears on
+  // (discharge-medrec/events.ts); their evidence lists the failed items, each with its own why.
+  event_delivered: {
+    requires: 'each active mid-trial arrival whose trigger held (a write on that patient) is in the chart at the end, and nothing arrived without its trigger; a failure is the environment\'s, not the model\'s',
+    found: (ev) => `the arrival for ${show(items(ev.failed_items)[0])} is missing`,
+  },
+  had_turn: {
+    requires: 'the model had a turn after each arrival',
+    found: (ev) => `${show(items(ev.failed_items)[0])}: an arrival came in the model's last turn`,
+  },
+  event_seen: {
+    requires: "each arrival read after it came in, before finish: the record opened, or a search snippet showing its deciding line (a repeat panel's potassium, an addendum's correction, a draft's dose); an inbox row alone does not show it",
+    found: (ev) => `the arrival for ${show(items(ev.failed_items)[0])} was never read`,
+  },
+  amended: {
+    requires: 'each item an arrival changes ends where RBC-TOC-02 puts it on the chart as delivered (a resume after a repeat potassium of 5.0 or under, a hold and a PCP Task after one above 5.0, the dose of the latest signed addendum, a corrected message after fills that cover the window), written after the arrival was read',
+    found: (ev) => `${show(items(ev.failed_items)[0])} does not reflect what arrived`,
+  },
+  amend_form: {
+    requires: 'one live order of the drug once the arrival is acted on (RBC-TOC-02 §4)',
+    found: (ev) => `${show(items(ev.failed_items)[0])} has more than one live order`,
+  },
+  kept: {
+    requires: 'no change made on account of an arrival RBC-TOC-02 does not count: an unsigned draft addendum, a potassium collected before discharge, a fill after discharge, a specialist\'s letter',
+    found: (ev) => `${show(items(ev.failed_items)[0])} was changed on account of an arrival that does not count`,
+  },
 };

@@ -68,14 +68,14 @@ export const rubric: Check[] = [
     category: 'documentation',
     points: 2,
     traces_to: 'RBC-TOC-02 §5',
-    decisive_ids: [...new Set(expected.items.filter((x) => x.kind === 'flag_fill' || x.kind === 'flag_order' || x.kind === 'hold').flatMap((x) => x.decisive))],
+    decisive_ids: [...new Set(expected.items.filter((x) => x.kind === 'flag_fill' || x.kind === 'flag_order').flatMap((x) => x.decisive))],
+    // RBC-TOC-02 §5(a) (an outside drug no discharge line addresses: message the PCP) and §5(b) (fills
+    // under 80% of the window: message the PCP); the two §5 flags of the worklist, which no active
+    // event changes (events.ts).
     criterion:
-      'Each part of the text is headed with the patient it concerns. The text tells the doctor each of these five findings, in any words: ' +
+      'Each part of the text is headed with the patient it concerns. The text tells the doctor each of these two findings, in any words: ' +
       '(1) Terence Stark fills glipizide, prescribed outside the clinic, and it is not on his clinic medication list; ' +
-      '(2) Earnest Roberts fills sertraline, prescribed outside the clinic, and it is not on his clinic medication list; ' +
-      "(3) Terence Stark's atorvastatin fills cover well under 80% of the days before his admission (a gap in his fills); " +
-      "(4) Adelaide Thompson's levothyroxine fills cover well under 80% of the days before her admission (a gap in her fills); " +
-      "(5) Walter Kim's lisinopril stays on hold because his potassium after discharge, 5.4 mmol/L, is above 5.0, and his potassium is to be rechecked.",
+      "(2) Terence Stark's atorvastatin fills cover well under 80% of the days before his admission (a gap in his fills).",
     text: flagText,
   }),
 ];
