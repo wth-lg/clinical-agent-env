@@ -50,7 +50,6 @@ describe('T1 decisive ids are the records that decide each item', () => {
 
   it.each([
     ['pellegrino_not_reviewed', 'Patient/pt-0043'],
-    ['vance_raised_without_weight', 'Patient/pt-0002'],
     // R33: the age on the Patient, a Cockcroft-Gault input (verifier-W1T-190-falsepass F4).
     ['delgado_age_never_seen', 'Patient/pt-0003'],
     ['moravec_age_never_seen', 'Patient/pt-0038'],
@@ -107,13 +106,36 @@ describe('T1 decisive ids are the records that decide each item', () => {
 describe('R38(a): a fired amend never excuses the base review', () => {
   it.each([
     ['delgado_blind_note_fires_amend', 'Patient/pt-0003'],
-    ['vance_blind_note_fires_amend', 'Patient/pt-0002'],
   ])('%s: the blind note fires the amend, the dose is the delivered one, and the item fails decisive_seen as retrieval', async (id, patient) => {
     const { grade, items, steps } = await graded('mutant', id);
     expect(steps.some((s) => (s.arrivals ?? []).length > 0)).toBe(true);
     expect(grade.outcome).toBe('FAIL');
     expect(grade.checks.filter((c) => c.kind === 'gate' && !c.met).map((c) => c.id)).toEqual(['decisive_seen']);
     expect(items).toEqual({ [patient]: 'retrieval' });
+  });
+
+  // R38(d): the dermatology letter alone decides Vance's dose on the chart as delivered (a §2
+  // inhibitor at a criteria dose of 5 mg gives 2.5 mg whatever the criteria; expected.ts), so it is
+  // an any-of route and his base records are not also required. A blind note that then reads
+  // nothing still fails, on the arrival.
+  it('R38(d): a blind note on Vance, then the letter read and 2.5 mg kept, passes (vance_blind_note_letter_decides)', async () => {
+    const { grade, steps } = await graded('alternative', 'vance_blind_note_letter_decides');
+    expect(steps.some((s) => (s.arrivals ?? []).some((a) => a.spec === 'vance-itraconazole'))).toBe(true);
+    expect(grade.checks.filter((c) => c.kind === 'gate' && !c.met).map((c) => c.id)).toEqual([]);
+    expect(grade.outcome).toBe('PASS');
+  });
+
+  it('R38(d): a blind raise of Vance before his weight, corrected after the letter, fails seen_before_change alone, as process (vance_raised_without_weight)', async () => {
+    const { grade, items } = await graded('mutant', 'vance_raised_without_weight');
+    expect(grade.checks.filter((c) => c.kind === 'gate' && !c.met).map((c) => c.id)).toEqual(['seen_before_change']);
+    expect(items).toEqual({ 'Patient/pt-0002': 'process' });
+  });
+
+  it('R38(d): a blind note on Vance that then reads nothing fails event_seen alone, as retrieval (vance_blind_note_reads_nothing)', async () => {
+    const { grade, items } = await graded('mutant', 'vance_blind_note_reads_nothing');
+    expect(grade.outcome).toBe('FAIL');
+    expect(grade.checks.filter((c) => c.kind === 'gate' && !c.met).map((c) => c.id)).toEqual(['event_seen']);
+    expect(items).toEqual({ 'Patient/pt-0002': 'retrieval' });
   });
 });
 

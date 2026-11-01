@@ -113,6 +113,12 @@ export function alternativesFor(active: readonly string[]): Alternative[] {
     { id: 'recheck_through_chart', why: 'Re-checks each list patient\'s chart (newest results, documents and messages) instead of the inbox, opens the new letters, then corrects what changed.', script: r({}, unread, chart) },
   ];
   if (active.includes('vance-itraconazole')) {
+    // R38(d): the letter alone decides Vance's delivered dose, so his base records are not required.
+    recheck.push({
+      id: 'vance_blind_note_letter_decides',
+      why: 'Writes a note on Vance without reading his chart, which brings in the dermatology letter; reads the letter and leaves apixaban at 2.5 mg. The letter alone decides that dose (§2: an inhibitor at a criteria dose of 5 mg gives 2.5 mg whatever the criteria; R38(d)).',
+      script: r({ vance: { reads: [], more: [], calcs: [], change: [], note: [note('pt-0002', 'DOAC dose review: reviewed, no change.', [])] } }, { 'vance-itraconazole': 'no_amend' }).filter((t) => t.calls.length > 0),
+    });
     recheck.push({
       id: 'vance_letter_by_notes_search',
       why: "Finds the dermatology letter with a notes search for 'itraconazole' on his chart, whose snippet shows the drug (R29), instead of opening it, then corrects the dose.",

@@ -77,17 +77,23 @@ export const DECISIVE_ATOMS: Record<string, readonly string[]> = {};
 //   vance-clarithromycin     clarithromycin does not count (§2)                             dose stays
 // `cites`, for an amend: the records the new dose relies on that §4 asks a note to cite (results,
 // orders or letters; not the Patient), for the rubric's notes_cite_inputs.
+// `alone`, for an amend: the arrival by itself decides every element of the item's action on the
+// chart as delivered (rulings R38(d)), so it is an any-of route and the item's base records are not
+// also required (tests/grader.ts decisionSteps). Only vance-itraconazole: a §2 inhibitor at a
+// criteria dose of 5 mg gives 2.5 mg whatever the criteria, the rule that makes pt-0041's order its
+// only decisive record. Every creatinine arrival still needs the base weight and age (CrCl).
 export interface EventExpect {
   item: string;
   dose?: Item['dose'];
   cites?: readonly string[];
   atoms?: readonly string[];
+  alone?: true;
 }
 const riva = (mg: number): Item['dose'] => ({ drug: 'rivaroxaban', mg, per_day: 1 });
 export const EVENT_EXPECT: Record<string, EventExpect> = {
   'pellegrino-scr-new': { item: 'Patient/pt-0043', dose: riva(15), cites: [ref('Observation/obs-t1-1801'), 'Observation/obs-04001'] },
   'delgado-scr-amended': { item: 'Patient/pt-0003', dose: riva(20), cites: [ref('Observation/obs-t1-1304'), ref('Observation/obs-t1-1302')] },
-  'vance-itraconazole': { item: 'Patient/pt-0002', dose: { drug: 'apixaban', mg: 2.5, per_day: 2 }, cites: ['DocumentReference/doc-00301'], atoms: ['itraconazole'] },
+  'vance-itraconazole': { item: 'Patient/pt-0002', dose: { drug: 'apixaban', mg: 2.5, per_day: 2 }, cites: ['DocumentReference/doc-00301'], atoms: ['itraconazole'], alone: true },
   'moravec-scr-new': { item: 'Patient/pt-0038', dose: riva(15), cites: [ref('Observation/obs-t1-1404'), 'Observation/obs-04002'] },
   'moravec-weight-reported': { item: 'Patient/pt-0038' },
   'vance-clarithromycin': { item: 'Patient/pt-0002', atoms: ['clarithromycin'] },

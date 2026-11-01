@@ -207,8 +207,8 @@ export const RECHECK: Record<string, Recheck> = {
 // makes the oracle's correction); 'same_turn' reads it and corrects in the same answer; 'no_amend'
 // reads it and leaves the dose; 'act_on_lure' reads a lure and makes its forbidden change;
 // 'stop_and_order' corrects by a stop and a new order (R21); 'repeat_test' reads a lure and orders
-// a repeat creatinine.
-export type RecheckVary = 'unread' | 'same_turn' | 'no_amend' | 'act_on_lure' | 'stop_and_order' | 'repeat_test';
+// a repeat creatinine; 'ignored' neither reads what arrived nor acts on it.
+export type RecheckVary = 'unread' | 'same_turn' | 'no_amend' | 'act_on_lure' | 'stop_and_order' | 'repeat_test' | 'ignored';
 
 // The re-check turns for the active events that fire in this script, before finish.
 export function recheck(active: readonly string[], fires: (spec: string) => boolean, vary: Readonly<Record<string, RecheckVary>> = {}, queues: ScriptCall[] = QUEUES): ScriptTurn[] {
@@ -221,6 +221,7 @@ export function recheck(active: readonly string[], fires: (spec: string) => bool
   for (const s of specs) {
     const r = RECHECK[s.id]!;
     const v = vary[s.id];
+    if (v === 'ignored') continue;
     const p = s.item.slice('Patient/'.length);
     if (v !== 'unread') reads.push(r.read);
     if (r.amend && v !== 'no_amend') {

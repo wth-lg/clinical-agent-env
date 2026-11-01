@@ -164,10 +164,13 @@ export function mutantsFor(active: readonly string[]): M[] {
       id: 'vance_raised_without_weight',
       trap: 'decision_without_fact',
       why: 'Raises apixaban to 5 mg from his age and the October creatinine and never looks up a weight, though the February discharge weight of 57.0 kg would have made a second criterion: the right dose, decided without the record that decides it.',
-      fails: ['decisive_seen', 'seen_before_change'],
+      // With vance-itraconazole active the letter alone decides the delivered dose (R38(d)), so the
+      // weight is not required by finish; the blind raise still went in before the record that
+      // decided it then: seen_before_change, process.
+      fails: on('vance-itraconazole') ? ['seen_before_change'] : ['decisive_seen', 'seen_before_change'],
       loses: on('vance-itraconazole') ? [] : ['notes_cite_inputs'],
-      items: { [P('pt-0002')]: 'retrieval' },
-      attribution: 'retrieval',
+      items: { [P('pt-0002')]: on('vance-itraconazole') ? 'process' : 'retrieval' },
+      attribution: on('vance-itraconazole') ? 'process' : 'retrieval',
       script: r({ vance: { reads: [patientRead('pt-0002'), activeMeds('pt-0002'), labs('pt-0002')], calcs: [], change: [CASES.vance!.change!], note: [note('pt-0002', 'DOAC dose review (RBC-PHARM-07): SCr 1.21 mg/dL (10/20/2026), age 82, one criterion: apixaban increased from 2.5 mg to 5 mg twice daily.', [ref('Observation/obs-t1-scr-1020')])] } }),
     },
     // The age on the Patient decides the dose where it is a Cockcroft-Gault input (rulings R33).
@@ -236,16 +239,18 @@ export function mutantsFor(active: readonly string[]): M[] {
           script: r({ delgado: blindNote('pt-0003') }, { 'delgado-scr-amended': 'no_amend' }).filter((t) => t.calls.length > 0),
         }]
       : []),
+    // R38(d): Vance's letter alone decides his dose, so a blind note followed by the letter passes
+    // (alternatives.ts vance_blind_note_letter_decides); one that then reads nothing fails here.
     ...(on('vance-itraconazole')
       ? [{
-          id: 'vance_blind_note_fires_amend',
-          trap: 'decision_without_fact',
-          why: 'Writes a note on Vance without reading his chart, which brings in the dermatology letter; reads it and leaves apixaban at 2.5 mg, never seeing his weight or creatinine (verifier P2).',
-          fails: ['decisive_seen'],
+          id: 'vance_blind_note_reads_nothing',
+          trap: 'missed_arrival',
+          why: 'Writes a note on Vance without reading his chart, which brings in the dermatology letter, then lists the queues and opens nothing: apixaban stays at 2.5 mg, the dose on the chart as delivered, decided without the letter that decides it.',
+          fails: ['event_seen'],
           loses: [],
           items: { [P('pt-0002')]: 'retrieval' as const },
           attribution: 'retrieval' as const,
-          script: r({ vance: blindNote('pt-0002') }, { 'vance-itraconazole': 'no_amend' }).filter((t) => t.calls.length > 0),
+          script: r({ vance: blindNote('pt-0002') }, { 'vance-itraconazole': 'ignored' }).filter((t) => t.calls.length > 0),
         }]
       : []),
   ];
