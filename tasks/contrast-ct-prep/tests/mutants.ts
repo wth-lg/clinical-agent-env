@@ -183,10 +183,10 @@ export const mutants: Mutant[] = [
   {
     id: 'diabetes_unseen_creatinine',
     trap: 'diabetes_unseen_creatinine',
-    why: "Orders a creatinine for every contrast patient by habit, never having seen that Mohr (26) has diabetes, the only reason §4 needs one for him.",
-    fails: ['creatinine_before_scan', 'evidence_before_orders'],
+    why: "Orders a creatinine for every contrast patient by habit, never having seen that Mohr (26) has diabetes. His creatinine order is written before anything that decides it was seen; the kidney injury that arrives later decides it too (R38d), so the order is right but came first: process (R18). The R14 retrieval case, the arrival never opened, is mohr-scr_blind_write_fires_amend.",
+    fails: ['evidence_before_orders'],
     loses: [],
-    items: { [STALE.patient]: 'retrieval' },
+    items: { [STALE.patient]: 'process' },
     script: run(WRITES, TELL, reviewWithout([conditions(STALE), reactionSearch(STALE)])),
   },
   {

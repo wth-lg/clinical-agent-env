@@ -22,6 +22,8 @@ const runWith = (review: readonly ScriptTurn[]): ScriptTurn[] => [...review, { c
 const early = (call: ScriptCall): ScriptTurn[] => [REVIEW[0]!, { calls: [call] }, ...REVIEW.slice(1), { calls: [...WRITES] }, ...HANDLE, { calls: TELL }, { calls: [finish(DONE)] }];
 // The re-check with the arrivals opened and the corrections written edited.
 const handled = (opened: readonly ScriptCall[], amends: readonly ScriptCall[] = AMENDS, recheck: ScriptTurn = RECHECK): ScriptTurn[] => [recheck, { calls: [...opened] }, { calls: [...amends] }];
+// The oracle's chart review without some of its calls.
+const reviewWithout = (drop: readonly ScriptCall[]): ScriptTurn[] => REVIEW.map((t) => ({ ...t, calls: t.calls.filter((c) => !drop.some((d) => same(c, d))) }));
 // A search of one patient's notes, as the R29 sweep runs it (tests/phrases.test.ts).
 const notesOf = (x: { patient: string }, query: string): ScriptCall => ({ name: 'search_notes', input: { query, patient: x.patient.slice('Patient/'.length), count: 20 } });
 // Beahan's two premedication orders in beahan_lure_reverted are the trial's 15th and 16th writes
@@ -195,6 +197,22 @@ export const alternatives: Alternative[] = [
       ...REVIEW, { calls: [...WRITES] }, RECHECK, { calls: OPEN_ARRIVALS.calls }, { calls: [...AMENDS, medication(FILLER, RX.prednisone50, 50, ['2026-10-26T01:00:00-04:00', '2026-10-26T07:00:00-04:00', '2026-10-26T13:00:00-04:00']), medication(FILLER, RX.diphenhydramine50, 50, ['2026-10-26T13:00:00-04:00'])] },
       { calls: [{ name: 'fhir_search', input: { resource_type: 'MedicationRequest', patient: FILLER.patient.slice(8), status: 'active' } }] },
       { calls: [beahanCancel(0), beahanCancel(1)] },
+      { calls: TELL }, { calls: [finish(DONE)] },
+    ],
+  },
+  // R38(d): after Mohr's kidney injury arrives, the two creatinines alone decide every element of
+  // his expected action on the delivered chart (expected.ts EVENTS: the new creatinine and the
+  // saline; the CT order rests on no record), so they are an any-of route for his creatinine order.
+  // This route never sees his diabetes: it orders his CT, opens the arrival and then orders the
+  // creatinine and the saline.
+  {
+    id: 'mohr_creatinine_from_arrival',
+    why: "Never opens Mohr's problem list or booking screen: orders his CT, then, from the outside creatinines that show a kidney injury, a new creatinine (§4: one drawn during AKI does not count) and saline.",
+    script: [
+      ...reviewWithout([conditions(STALE), reactionSearch(STALE)]),
+      { calls: WRITES.filter((c) => !same(c, creatinineOrder(STALE))) },
+      RECHECK, OPEN_ARRIVALS,
+      { calls: [...AMENDS, creatinineOrder({ ...STALE, decisive: [...ARRIVED.mohr] })] },
       { calls: TELL }, { calls: [finish(DONE)] },
     ],
   },

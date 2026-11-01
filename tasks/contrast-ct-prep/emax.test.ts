@@ -46,11 +46,12 @@ describe('T5 events: the trigger holds on every passing route (Addendum 2)', () 
 describe('T5 events: no lazy pass', () => {
   // The mutants that skip the review of one study's deciding record and still write its orders.
   const SKIPS: Record<string, string> = {
-    't5-mohr-scr': 'diabetes_unseen_creatinine',
+    't5-mohr-scr': 'mohr-scr_blind_write_fires_amend',
     't5-ferreira-scr': 'report_unseen_premedicated',
     't5-schuster-rxn': 'aki_unseen_held',
   };
   it.each(Object.entries(SKIPS))('%s: %s skips the review, the event still arrives, and the study fails on retrieval', async (spec, mutantId) => {
+    // R38(a, d): the blind-write mutants never open the arrival either, so no route decides them.
     const m = task.mutants.find((x) => x.id === mutantId)!;
     const s = ACTIVE.find((x) => x.id === spec)!;
     const r = await runCase({ kind: 'mutant', id: m.id, script: m.script, mutant: m } as never);

@@ -12,6 +12,7 @@ import * as events from './events.ts';
 import { EVENTS, expected } from './expected.ts';
 import { ref } from './ids.ts';
 import { derive } from './policy.ts';
+import { arrivalDecidesAll } from './tests/grader.ts';
 
 // plan-amendment-w4, Event mechanism table, row 'Policy sentence': the same in all six policies.
 export const SHARED_SENTENCE =
@@ -126,6 +127,13 @@ describe('T5 event specs', () => {
       for (const d of EVENTS[s.id]!.changes) expect(before.decides[d], `${s.id} ${d}`).toEqual([]);
       expect(EVENTS[s.id]!.changes.length, s.id).toBeGreaterThan(0);
     }
+  });
+
+  // R38(d): only an arrival that alone decides every element of the delivered study is an any-of
+  // route; per element, the records are EVENTS[spec].study.decides.
+  it('the arrival is an any-of route only where it decides the whole delivered study (R38d)', () => {
+    expect(events.SPECS.filter(arrivalDecidesAll).map((s) => s.id)).toEqual(['t5-mohr-scr']);
+    expect(EVENTS['t5-mohr-scr']!.study.decides).toEqual({ order: [], premedication: [], consult: [], creatinine: ['Observation/obs-07501', 'Observation/obs-07502'], saline: ['Observation/obs-07501', 'Observation/obs-07502'], metformin: [] });
   });
 
   it('an amend event changes its study; a lure leaves it as it was', () => {
