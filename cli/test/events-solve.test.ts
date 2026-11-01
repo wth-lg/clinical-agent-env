@@ -4,12 +4,13 @@
 // events, r = 3, T5's base rate 11/12), costed from results/probe-1 by the per-trial projection,
 // returns the corrected e* column (coordinator ruling for builder-275: T2 7 where the plan's first
 // draft, costed by median parameters, had 6); at f = 0.15 it returns the draft's column.
-import { writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { tempDir } from '../../scripts/test/helpers.ts';
 import type { ClassesJson, EventRow, TaskClasses } from '../classes.ts';
-import { type Deps, main, pooled, type SolveJson } from '../events-solve.ts';
+import { type Deps, main, pooled, solve, type SolveJson } from '../events-solve.ts';
+import { type QuadTrial, writeQuadRun } from './fixtures/context-budget/make-run.ts';
 
 const N = { 'renal-dose-review': 5, 'results-inbox': 7, 'crc-care-gap': 4, 'discharge-medrec': 8, 'contrast-ct-prep': 4, 'message-queue': 6 };
 const EMAX = { 'renal-dose-review': 6, 'results-inbox': 8, 'crc-care-gap': 4, 'discharge-medrec': 9, 'contrast-ct-prep': 5, 'message-queue': 6 };
@@ -124,5 +125,86 @@ describe('S-1 and S-2 actions', () => {
     const { code, lines } = await run(sized(file(none, 'none')));
     expect(code).toBe(1);
     expect(lines.join('\n')).toMatch(/no event observations/);
+  });
+});
+
+// PW4-H0b2 (verifier-phase-P17i-W4H0B-195-1 F1-F3).
+const TWO = { 'crc-care-gap': 10, 'results-inbox': 8 };
+function costRun(name: string, tasks: Record<string, Array<QuadTrial & { e: number }>>): string {
+  const dir = tempDir(`events-solve-cost-${name}`);
+  writeQuadRun(dir, tasks);
+  for (const [task, trials] of Object.entries(tasks)) {
+    trials.forEach((t, i) => {
+      const f = join(dir, 'trajectories', task, `${i}.jsonl`);
+      const ev = Array.from({ length: t.e }, (_, k) => JSON.stringify({ v: 2, seq: 1000 + k, ts: 'x', turn: 2, type: 'env_event', spec: `${task}-s${k}`, arrival_seq: k + 1, keys: [] }));
+      writeFileSync(f, readFileSync(f, 'utf8') + ev.map((l) => `${l}\n`).join(''));
+    });
+  }
+  return dir;
+}
+function twoTasks(): ClassesJson {
+  const s = synthetic(11);
+  return { ...s, tasks: { 'crc-care-gap': s.tasks['crc-care-gap']!, 'results-inbox': s.tasks['results-inbox']! } };
+}
+const twoArgs = (f: string, cost: string, extra: string[] = []) => ['--classes', f, '--cost-from', cost, '--observed-items', spec(TWO), '--items', spec({ 'crc-care-gap': 4, 'results-inbox': 7 }), '--emax', spec({ 'crc-care-gap': 4, 'results-inbox': 8 }), '--current', spec({ 'crc-care-gap': 4, 'results-inbox': 4 }), ...extra, '--json'];
+
+describe('PW4-H0b2 F1: events-solve on an event-bearing cost source', () => {
+  const R2 = {
+    'crc-care-gap': [0, 1, 2, 3, 4, 4].map((e) => ({ T: 22 + 2 * e, C0: 10_000, g: 5_000, o: 500, e })),
+    'results-inbox': [2, 3, 4, 4].map((e) => ({ T: 10 + 2 * e, C0: 8_000, g: 2_000, o: 400, e })),
+  };
+
+  it('refits r (known r = 2) and prints it', async () => {
+    const { code, json, lines } = await run(twoArgs(file(twoTasks(), 'r2'), costRun('r2', R2)));
+    expect(code).toBe(0);
+    expect(json!.req_per_event).toBeCloseTo(2, 9);
+    expect(lines.join('\n')).toMatch(/r fitted 2\.00 \(SE 0\.00\)/);
+  });
+
+  it('does not count the event requests twice: p90 at every e equals the event-free twin\'s', async () => {
+    const base = { 'crc-care-gap': [24, 26, 28, 30].map((T) => ({ T, C0: 10_000, g: 5_000, o: 500 })), 'results-inbox': [12, 14, 16].map((T) => ({ T, C0: 8_000, g: 2_000, o: 400 })) };
+    const plain = costRun('plain', Object.fromEntries(Object.entries(base).map(([k, ts]) => [k, ts.map((t) => ({ ...t, e: 0 }))])));
+    const ev = costRun('ev4', Object.fromEntries(Object.entries(base).map(([k, ts]) => [k, ts.map((t) => ({ ...t, T: t.T + 12, e: 4 }))])));
+    const f = file(twoTasks(), 'twin');
+    const a = await run(twoArgs(f, plain, ['--req-per-event', '3']));
+    const b = await run(twoArgs(f, ev, ['--req-per-event', '3']));
+    expect([a.code, b.code]).toEqual([0, 0]);
+    for (const id of Object.keys(TWO)) {
+      b.json!.tasks[id]!.by_e.forEach((row, i) => expect(row.p90_usd, `${id} e=${row.e}`).toBeCloseTo(a.json!.tasks[id]!.by_e[i]!.p90_usd, 12));
+    }
+    expect(eStar(b.json!)).toEqual(eStar(a.json!));
+    expect(b.lines.join('\n')).toMatch(/r given 3, not fitted/);
+  });
+
+  it('exits 2 with the reason when the cost source has events but r cannot be fitted', async () => {
+    const flat = costRun('flat', { 'crc-care-gap': [36, 38, 40].map((T) => ({ T, C0: 10_000, g: 5_000, o: 500, e: 4 })), 'results-inbox': [24, 26].map((T) => ({ T, C0: 8_000, g: 2_000, o: 400, e: 4 })) });
+    const { code, lines } = await run(twoArgs(file(twoTasks(), 'flat'), flat));
+    expect(code).toBe(2);
+    expect(lines.join('\n')).toMatch(/event arrivals in 5 trials but r cannot be fitted: every trial of a task had the same number of events/);
+  });
+});
+
+describe('PW4-H0b2 F2: a repeated run directory', () => {
+  it('warns on stderr and reads it once', async () => {
+    const out: string[] = [];
+    const err: string[] = [];
+    await main(['results/probe-1,./results/probe-1', '--json'], { out: (l) => out.push(l), err: (l) => err.push(l) });
+    expect(err.join('\n')).toMatch(/warning: \.\/results\/probe-1 repeats results\/probe-1; read once/);
+  }, 120_000);
+});
+
+describe('PW4-H0b2 F3', () => {
+  it('ties on squares and mean go to fewer events compared as numbers (9,10 before 10,9)', () => {
+    const rows = (p90: (e: number) => number) => Array.from({ length: 10 }, (_, k) => ({ e: k + 1, pred: k + 1 === 10 ? 0.45 : k + 1 === 9 ? 0.5 : 0, p90_usd: p90(k + 1) }));
+    const t = rows((e) => (e === 10 ? 2.9 : 1.9));
+    expect(solve(['x', 'y'], 0, 2, { x: t, y: t })).toEqual({ x: 9, y: 10 });
+  });
+
+  it('an unattributed event failure counts as an event failure, so S-1 does not fire', () => {
+    const s = synthetic(0);
+    s.tasks['crc-care-gap']!.unattributed_event_failures = [{ trial: 1, run: 'synthetic', item: 'x', gate: 'event_seen' }];
+    const p = pooled(s);
+    expect(p.event_fails).toBe(1);
+    expect(p.unattributed_event_fails).toBe(1);
   });
 });
