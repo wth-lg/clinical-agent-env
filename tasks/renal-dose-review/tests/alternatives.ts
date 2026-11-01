@@ -4,7 +4,7 @@
 // the committed final state, so an attempted change that never committed fails nothing), and
 // off_list_rejected_order its case for the OUTSIDE part (a rejected write for a patient not on the list).
 import type { Alternative } from '../../../packages/grader/matrix/types.ts';
-import { activeMeds, CASES, clinicScr, modify, note, order, patientRead, recentNotes, review, RX, search, stop, weights } from '../solution/steps.ts';
+import { activeMeds, CASES, clinicScr, labs, modify, note, order, patientRead, recentNotes, review, RX, search, stop, weights } from '../solution/steps.ts';
 import { id, ref } from '../ids.ts';
 
 const allObservations = (p: string) => search('Observation', p, { sort: '-date', count: 50 });
@@ -103,6 +103,18 @@ export const alternatives: Alternative[] = [
         note: [],
       },
     }),
+  },
+  // The age from a search row (rulings R2, R33): a search_patients row shows the birth date, so it
+  // exposes the Patient as fhir_read does.
+  {
+    id: 'ashworth_age_from_search_patients',
+    why: 'Finds Dorothy Ashworth with search_patients and takes her birth date (age 83) from its row instead of reading her Patient record.',
+    script: review({ ashworth: { reads: [{ name: 'search_patients', input: { name: 'Dorothy Ashworth' } }, activeMeds('pt-0040'), labs('pt-0040'), weights('pt-0040'), recentNotes('pt-0040')] } }),
+  },
+  {
+    id: 'delgado_age_from_search_patients',
+    why: 'Finds Frank Delgado with search_patients and takes his birth date (age 76) for Cockcroft-Gault from its row instead of reading his Patient record.',
+    script: review({ delgado: { reads: [{ name: 'search_patients', input: { name: 'Frank Delgado' } }, activeMeds('pt-0003'), labs('pt-0003'), weights('pt-0003'), recentNotes('pt-0003')] } }),
   },
   {
     id: 'off_list_rejected_order',

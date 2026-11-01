@@ -6,7 +6,9 @@
 //                            order that leaves the same regimen, a re-sign, is no change: rulings R4)
 //   notes_cite_inputs  (+1)  each of those patients' notes cite the records that decide the
 //                            patient's dose (expected.items decisive, the records seen_before_change
-//                            checks): §4's 'the records the dose decision relies on ... cited'
+//                            checks): §4's 'the records the dose decision relies on (results,
+//                            medication orders or letters), cited', so the Patient, decisive for
+//                            the age it holds (rulings R33), is not among them
 import { rubric as item, type Check, type RubricCtx } from '../../../packages/grader/check.ts';
 import { isActive, isDrug } from '../../../packages/grader/normalize.ts';
 import { expected } from '../expected.ts';
@@ -62,7 +64,7 @@ export const rubric: Check[] = [
     decisive_ids: [],
     fn: (ctx) => {
       const uncited = changed(ctx).filter((p) => {
-        const inputs = expected.items.find((x) => x.patient === p)!.decisive;
+        const inputs = expected.items.find((x) => x.patient === p)!.decisive.filter((id) => !id.startsWith('Patient/'));
         const cites = ctx.notes.filter((n) => n.patient === p).flatMap((n) => n.cites);
         return !inputs.every((id) => cites.includes(id));
       });

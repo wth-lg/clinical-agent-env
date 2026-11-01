@@ -31,7 +31,7 @@ export const checkText: CheckText = {
     },
   },
   decisive_seen: {
-    requires: "for each patient on the list whose DOAC order was changed, or whose dose is already right, the records that decide their dose (the weight, creatinine or interacting-medication record the rule turns on) seen before the review is finished",
+    requires: "for each patient on the list whose DOAC order was changed, or whose dose is already right, the records that decide their dose (the weight, creatinine or interacting-medication record the rule turns on, and the Patient record where the age decides) seen before the review is finished",
     found: (ev) => {
       const f = fields(ev.first);
       return `${show(items(f.unseen)[0])} was never seen before the review finished at step ${show(f.finished_at)}, though it decides the dose for ${who(f.patient)}`;
@@ -47,7 +47,7 @@ export const checkText: CheckText = {
     },
   },
   seen_before_change: {
-    requires: "for each patient whose DOAC order is changed, the records that decide the new dose (the weight, creatinine or interacting-medication record the rule turns on) read before the change",
+    requires: "for each patient whose DOAC order is changed, the records that decide the new dose (the weight, creatinine or interacting-medication record the rule turns on, and the Patient record where the age decides) read before the change",
     found: (ev) => {
       const f = fields(ev.first);
       const late = items(f.late)[0];

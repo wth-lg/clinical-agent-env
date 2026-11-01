@@ -35,14 +35,14 @@ describe('T1 decisive ids are the records that decide each item', () => {
   it('names, per item, only the deciding records (the table in expected.ts)', () => {
     const decisive = Object.fromEntries(expected.items.map((x) => [x.patient, x.decisive]));
     expect(decisive).toEqual({
-      'Patient/pt-0040': [ref('Observation/obs-t1-1604')],
-      'Patient/pt-0039': [ref('Observation/obs-t1-1503'), ref('Observation/obs-t1-1504')],
-      'Patient/pt-0003': [ref('Observation/obs-t1-1304'), ref('Observation/obs-t1-1302')],
+      'Patient/pt-0040': [ref('Observation/obs-t1-1604'), 'Patient/pt-0040'],
+      'Patient/pt-0039': [ref('Observation/obs-t1-1503'), ref('Observation/obs-t1-1504'), 'Patient/pt-0039'],
+      'Patient/pt-0003': [ref('Observation/obs-t1-1304'), ref('Observation/obs-t1-1302'), 'Patient/pt-0003'],
       'Patient/pt-0041': [ref('MedicationRequest/mr-t1-1703')],
-      'Patient/pt-0001': [ref('Observation/obs-t1-1103')],
+      'Patient/pt-0001': [ref('Observation/obs-t1-1103'), 'Patient/pt-0001'],
       'Patient/pt-0045': [ref('DocumentReference/doc-t1-1901')],
-      'Patient/pt-0038': [ref('Observation/obs-t1-1404'), ref('Observation/obs-t1-1405')],
-      'Patient/pt-0043': [ref('Observation/obs-t1-1801'), ref('Observation/obs-t1-1802')],
+      'Patient/pt-0038': [ref('Observation/obs-t1-1404'), ref('Observation/obs-t1-1405'), 'Patient/pt-0038'],
+      'Patient/pt-0043': [ref('Observation/obs-t1-1801'), ref('Observation/obs-t1-1802'), 'Patient/pt-0043'],
       'Patient/pt-0002': [ref('Observation/obs-t1-wt-1020'), ref('Observation/obs-t1-scr-1020')],
     });
   });
@@ -56,6 +56,14 @@ describe('T1 decisive ids are the records that decide each item', () => {
     ['lindahl_reduced_without_letter', 'Patient/pt-0045'],
     ['pellegrino_not_reviewed', 'Patient/pt-0043'],
     ['vance_raised_without_weight', 'Patient/pt-0002'],
+    // R33: the age on the Patient, a met apixaban criterion or a Cockcroft-Gault input
+    // (verifier-W1T-190-falsepass F4: the first three are its routes).
+    ['ashworth_age_never_seen', 'Patient/pt-0040'],
+    ['kowalczyk_age_never_seen', 'Patient/pt-0001'],
+    ['delgado_age_never_seen', 'Patient/pt-0003'],
+    ['bauer_age_never_seen', 'Patient/pt-0039'],
+    ['moravec_age_never_seen', 'Patient/pt-0038'],
+    ['pellegrino_age_never_seen', 'Patient/pt-0043'],
   ])('R14: the expected action reached without the deciding record fails as retrieval on that item alone (%s)', async (id, patient) => {
     const { grade, items } = await graded('mutant', id);
     expect(grade.outcome).toBe('FAIL');
@@ -67,7 +75,12 @@ describe('T1 decisive ids are the records that decide each item', () => {
 
   // v1, and the snippet the phrase sweep found (rulings R26, R29): the 'adherent' snippet ends at
   // 'ritonavir 100…', which shows the inhibitor, the letter's one atom.
-  it.each([['v1: a correct route that reads only the letter line', 'lindahl_inhibitor_only'], ["R29: a snippet cut after the letter's atom", 'lindahl_snippet_cut_after_ritonavir']])('%s passes with full score (%s)', async (_v, id) => {
+  it.each([
+    ['v1: a correct route that reads only the letter line', 'lindahl_inhibitor_only'],
+    ["R29: a snippet cut after the letter's atom", 'lindahl_snippet_cut_after_ritonavir'],
+    ['R33: the age from a search_patients row (apixaban criterion)', 'ashworth_age_from_search_patients'],
+    ['R33: the age from a search_patients row (Cockcroft-Gault input)', 'delgado_age_from_search_patients'],
+  ])('%s passes with full score (%s)', async (_v, id) => {
     const { grade } = await graded('alternative', id);
     expect(grade.checks.filter((c) => c.kind === 'gate' && !c.met).map((c) => c.id)).toEqual([]);
     expect(grade.outcome).toBe('PASS');
