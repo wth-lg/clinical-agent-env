@@ -79,18 +79,30 @@ function finalOf(world: WorldView, prelim: Report): Report | undefined {
 // in the 48 hours before that is 0.3 or more lower, else the lowest in the 7 days before when the
 // result is 1.5 times it or more.
 const HOUR = 3_600_000;
-function akiRule(world: WorldView, patient: string, at: string, value: number, withdrawn: boolean): { rule: '48h' | '7d'; obs: Obs } | undefined {
+// The patient's creatinines, valid or withdrawn, collected in the `hours` before `at`, lowest first
+// (then by id).
+function priorCreatinines(world: WorldView, patient: string, at: string, withdrawn: boolean, hours: number): Obs[] {
   const t = Date.parse(at);
-  const prior = (world.all('Observation') as readonly Obs[])
+  return (world.all('Observation') as readonly Obs[])
     .filter((o) => o.subject?.reference === patient && hasCode(o.code, ...CREATININE) && o.valueQuantity?.value !== undefined && o.effectiveDateTime !== undefined)
     .filter((o) => (withdrawn ? o.status === 'entered-in-error' : VALID.includes(o.status ?? '')))
-    .filter((o) => Date.parse(o.effectiveDateTime!) < t);
-  const within = (hours: number) => prior.filter((o) => t - Date.parse(o.effectiveDateTime!) <= hours * HOUR).sort((a, b) => a.valueQuantity!.value! - b.valueQuantity!.value! || (a.id! < b.id! ? -1 : 1));
-  const rise = within(48).find((o) => Math.round((value - o.valueQuantity!.value!) * 100) >= 30);
+    .filter((o) => Date.parse(o.effectiveDateTime!) < t && t - Date.parse(o.effectiveDateTime!) <= hours * HOUR)
+    .sort((a, b) => a.valueQuantity!.value! - b.valueQuantity!.value! || (a.id! < b.id! ? -1 : 1));
+}
+function akiRule(world: WorldView, patient: string, at: string, value: number, withdrawn: boolean): { rule: '48h' | '7d'; obs: Obs } | undefined {
+  const rise = priorCreatinines(world, patient, at, withdrawn, 48).find((o) => Math.round((value - o.valueQuantity!.value!) * 100) >= 30);
   if (rise) return { rule: '48h', obs: rise };
-  const low = within(24 * 7)[0];
+  const low = priorCreatinines(world, patient, at, withdrawn, 24 * 7)[0];
   if (low && value >= 1.5 * low.valueQuantity!.value!) return { rule: '7d', obs: low };
   return undefined;
+}
+// R31: the 7-day window §3 compares a creatinine collected at `at` with, as ISO instants, and its
+// lowest valid creatinine, which stands for the window's review (expected.ts WithdrawnItem).
+function baselineOf(world: WorldView, patient: string, at: string): { id: string; from: string; to: string } {
+  const low = priorCreatinines(world, patient, at, false, 24 * 7)[0];
+  if (!low) throw new Error(`${patient}: no valid creatinine in the 7 days before ${at}`);
+  const t = Date.parse(at);
+  return { id: key(low), from: new Date(t - 24 * 7 * HOUR).toISOString(), to: new Date(t).toISOString() };
 }
 
 export function derive(world: WorldView): Json {
@@ -186,7 +198,8 @@ export function derive(world: WorldView): Json {
         // §2(b): a withdrawn value that would have met the rule.
         const void_ = akiRule(world, patient, cr.effectiveDateTime!, value, true);
         if (!void_) throw new Error(`${key(cr)}: creatinine not classified`);
-        put('eie_baseline', { class: 'entered_in_error', ...base, sources: [key(cr), key(void_.obs)], withdrawn: key(void_.obs), forbid: 'creatinine', action: 'close' });
+        const baseline = baselineOf(world, patient, cr.effectiveDateTime!);
+        put('eie_baseline', { class: 'entered_in_error', ...base, sources: [key(cr), key(void_.obs), baseline.id], withdrawn: key(void_.obs), forbid: 'creatinine', action: 'close', baseline });
       }
     } else throw new Error(`${key(t)}: panel not classified`);
   }

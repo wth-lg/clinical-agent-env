@@ -11,6 +11,10 @@ import { LOOSE_PAGE, REPEAT } from './alternatives.ts';
 
 // The reads without the calls of an item's reads that `drop` lists.
 const without = (...drop: ScriptCall[]) => readsWithout(drop);
+// The oracle's reads with one call replaced by others in its place.
+const swapRead = (from: ScriptCall, to: ScriptCall[]) => readsWithout().map((t) => ({ calls: t.calls.flatMap((c) => (JSON.stringify(c) === JSON.stringify(from) ? to : [c])) }));
+// Carol Whitfield's creatinines from 10-21 only: the 48 hours before her 1.31, not the 7 days.
+const CW_48H_SEARCH: ScriptCall = { name: 'fhir_search', input: { resource_type: 'Observation', patient: PT.whitfield, code: '2160-0,38483-4', date_ge: '2026-10-21', sort: '-date' } };
 const close = (comment: string): Partial<Plan> => ({ orders: [], track: null, oncall: null, contact: null, note: false, comment, links: [] });
 const page = (body: string, about: string[]) => (w: Writer) => [w.message('Group/pool-oncall', 'stat', 'Critical potassium', body, about)];
 
@@ -240,6 +244,32 @@ export const mutants = [
     loses: [],
     items: { eie_baseline: 'retrieval' },
     script: solve({ reads: without(creatininesOf(PT.whitfield)) }),
+  },
+  // verifier-W1T-190-falsepass F3 (R31): RBC-LAB-03 §3 has two halves, a rise over a value in the
+  // 48 hours before and 1.5 times the lowest value in the 7 days before. A creatinine search from
+  // 10-21 shows the withdrawn 0.84 and hides the 7-day window, so the baseline is never reviewed.
+  {
+    id: 'eie_baseline_48h_window_only',
+    trap: 'decision_without_deciding_fact',
+    why: "Reads Carol Whitfield's panel and her creatinine of 1.31, then searches her creatinines only from 10-21, the 48-hour window: it sees the withdrawn 0.84 but never the 7 days before, where her valid 1.27 of 10-17 decides the 1.5-times half of the AKI rule, and closes the item.",
+    fails: ['decisive_seen', 'seen_before_change'],
+    loses: [],
+    items: { eie_baseline: 'retrieval' },
+    script: solve({ reads: swapRead(creatininesOf(PT.whitfield), [CW_48H_SEARCH]) }),
+  },
+  // R27 with R31: the window search must list every creatinine code the rule counts. One that lists
+  // only 2160-0 hides her 38483-4 result of 10-17. It fails decisive_seen, but its label is reasoning,
+  // not retrieval: the search shows the baseline 1.27 itself, and packages/grader/attribution.ts
+  // counts an exposed id as seen whatever the gate's seen_at says (the same limit as message-queue's
+  // lure-only mutants, reports/builder-258.md).
+  {
+    id: 'eie_baseline_window_one_code',
+    trap: 'decision_without_deciding_fact',
+    why: "Reads Carol Whitfield's panel and her creatinine of 1.31, then searches her creatinines from 10-15 under code 2160-0 only, which hides any result filed under 38483-4 in the 7 days before, such as her 1.27 of 10-17, and closes the item.",
+    fails: ['decisive_seen', 'seen_before_change'],
+    loses: [],
+    items: { eie_baseline: 'reasoning' },
+    script: solve({ reads: swapRead(creatininesOf(PT.whitfield), [{ name: 'fhir_search', input: { resource_type: 'Observation', patient: PT.whitfield, code: '2160-0', date_ge: '2026-10-15', sort: '-date' } }]) }),
   },
   {
     id: 'aki_7day_history_after_order',

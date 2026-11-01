@@ -9,7 +9,7 @@
 // ACE inhibitor escalated (the code harm). Each declares the rubric items it loses.
 import type { Alternative, Script, ScriptCall, ScriptTurn } from '../../../packages/grader/matrix/types.ts';
 import { BMP, LDCT, solve } from '../solution/solve.ts';
-import { inbox, ITEM_READS, policies, PT, read, readsWithout, searchNotes, SRC, type Writer } from '../solution/steps.ts';
+import { creatininesOf, inbox, ITEM_READS, policies, PT, read, readsWithout, searchNotes, SRC, type Writer } from '../solution/steps.ts';
 import { id } from '../ids.ts';
 
 // A page to on-call about the item's result whose about also names another patient's result: the
@@ -32,6 +32,9 @@ const refusedRepeat = (patient: string, code: string, supporting: string) => (w:
 // A stat page to on-call with nothing in about, the write item_no_forbidden's outside part forbids
 // when no item needs it; mutants.ts commits it. Refused here: its body is empty.
 export const LOOSE_PAGE = { recipient: 'Group/pool-oncall', priority: 'stat', subject: 'Critical potassium', body: 'Potassium 6.4 mmol/L, please review today.', about: [] as string[] };
+
+// The oracle's reads with one call replaced by others in its place.
+const swapRead = (from: ScriptCall, to: ScriptCall[]): ScriptTurn[] => readsWithout().map((t) => ({ calls: t.calls.flatMap((c) => (JSON.stringify(c) === JSON.stringify(from) ? to : [c])) }));
 
 // Extra calls in their own answer before finish, so the ids the closures link do not move.
 const before = (script: Script, calls: ScriptCall[]): Script => [...script.slice(0, -1), { calls }, script.at(-1)!];
@@ -198,6 +201,18 @@ export const alternatives = [
     id: 'eie_baseline_routine_bmp',
     why: "Closes Carol Whitfield's creatinine as stable CKD 3a and orders a routine BMP for her three-month review (2027-01-22), as her visit note plans: monitoring, not a repeat on the withdrawn value.",
     script: solve({ plans: { eie_baseline: { more: (w) => [w.order(PT.whitfield, BMP, 'routine', '2027-01-22', 'CKD 3a monitoring at the three-month review')] } } }),
+  },
+  // R31 (verifier-W1T-190-falsepass F3): the baseline is reviewed by any search that covers the 7
+  // days before the 1.31 under every creatinine code; the codes may carry the LOINC system.
+  {
+    id: 'eie_baseline_7day_window_search',
+    why: "Searches Carol Whitfield's laboratory creatinines (LOINC 2160-0 and 38483-4) from 10-15, the 7 days before her 1.31, sees the withdrawn 0.84 and the valid 1.27 of 10-17, and closes the item as the oracle does.",
+    script: solve({ reads: swapRead(creatininesOf(PT.whitfield), [{ name: 'fhir_search', input: { resource_type: 'Observation', patient: PT.whitfield, code: 'http://loinc.org|2160-0,http://loinc.org|38483-4', category: 'laboratory', date_ge: '2026-10-15', sort: '-date' } }]) }),
+  },
+  {
+    id: 'eie_baseline_paged_history',
+    why: "Lists Carol Whitfield's creatinines two at a time, newest first, and follows next_offset to the last page before closing the item: the whole history, in three pages.",
+    script: solve({ reads: swapRead(creatininesOf(PT.whitfield), [0, 2, 4].map((offset) => ({ name: 'fhir_search', input: { ...creatininesOf(PT.whitfield).input, count: 2, ...(offset ? { offset } : {}) } }))) }),
   },
   {
     id: 'corrected_down_routine_bmp',
