@@ -142,6 +142,10 @@ export interface AttributionFacts {
   // The ids of the gate checks the current grade failed (record.checks, or its last regrade's), when
   // the caller has them: E9 and E10 read the event gates among them. Absent: none known to fail.
   failed_gates?: readonly string[];
+  // Each failed event gate with each spec it failed on (packages/grader/events.ts: a failed item's
+  // evidence.failed, else its event), from the same grade; E10 reads them. A failed event gate that
+  // names no spec is listed with spec null.
+  failed_event_gates?: ReadonlyArray<{ gate: string; spec: string | null }>;
   manifest_hash: string | null;
   // The grader_task_version of the current grade (summary.ts currentGrade): what the matrix
   // must have validated for its verdict to speak for this grade. null when the record or its
@@ -428,13 +432,21 @@ export const FAULT_DEFINITIONS: Readonly<Record<Fault, FaultDefinition>> = {
         // only a trial that did not stop at a limit and whose only failures are its event gates.
         id: 'E10',
         record_fact: true,
-        text: 'A new result, document or message arrived in the queues during the model\'s last turn, so the model had no turn left to see it, and nothing else in the trial failed; a trial that stopped at a limit keeps that outcome, and the late arrival is only noted.',
+        text: 'A new result, document or message arrived in the queues during the model\'s last turn, so the model had no turn left to see it, and nothing failed but the checks on what arrived late; a trial that stopped at a limit keeps that outcome, and the late arrival is only noted.',
         reads: ['record.outcome', 'record.checks (had_turn and the other failed gates), or the last record.regrades[].checks'],
         check: (f) => {
           if (!failedGate(f, 'had_turn')) return result(false, 'every arrival had a model turn after it');
           if (f.outcome === 'LIMIT') return result(false, 'an arrival came in the last turn of a LIMIT trial: noted on its item, and the trial keeps its LIMIT fault');
-          const other = (f.failed_gates ?? []).filter((g) => !EVENT_GATES.includes(g));
-          return result(other.length === 0, other.length === 0 ? 'had_turn failed, and no other gate did' : `had_turn failed, and so did ${list(other)}`);
+          // Only the gates of a spec whose arrival came last are the environment's; any other failed
+          // gate, of an event or not, is the model's, and E10 does not decide.
+          const ev = f.failed_event_gates ?? [];
+          const late = new Set(ev.filter((e) => e.gate === 'had_turn' && e.spec !== null).map((e) => e.spec));
+          const other = [
+            ...(f.failed_gates ?? []).filter((g) => !EVENT_GATES.includes(g)),
+            ...ev.filter((e) => e.spec === null || !late.has(e.spec)).map((e) => `${e.gate}${e.spec === null ? '' : ` (${e.spec})`}`),
+          ];
+          const why = `had_turn failed for ${list([...late].map(String)) || 'no named event'}`;
+          return result(late.size > 0 && other.length === 0, other.length === 0 ? `${why}, and no other gate did` : `${why}, and so did ${list([...new Set(other)])}`);
         },
       },
     ],

@@ -141,14 +141,19 @@ describe('E9 and E10 (g)', () => {
     const r = run1(TOY_CHECKS.find((c) => c.id === 'had_turn')!, ctxOf(steps, 1));
     expect(r.met).toBe(false);
     expect(r.items![0]).toMatchObject({ item: 'note', met: false, event: 'toy-a1' });
-    const e10 = (outcome: string, failed: string[]) => criterion('E10').check({ outcome, failed_gates: failed } as unknown as AttributionFacts).met;
+    // failed: [gate, spec] pairs; a gate that is no event's has spec null.
+    const e10facts = (outcome: string, failed: Array<[string, string | null]>) =>
+      ({ outcome, failed_gates: [...new Set(failed.map(([g]) => g))], failed_event_gates: failed.flatMap(([gate, spec]) => (spec === null ? [] : [{ gate, spec }])) }) as unknown as AttributionFacts;
+    const e10 = (outcome: string, failed: Array<[string, string | null]>) => criterion('E10').check(e10facts(outcome, failed)).met;
     // A trial that finished, whose only failures are the last-turn arrival's: the environment's.
-    expect(e10('FAIL', ['had_turn', 'event_seen'])).toBe(true);
+    expect(e10('FAIL', [['had_turn', 'toy-a1'], ['event_seen', 'toy-a1']])).toBe(true);
     // A LIMIT trial keeps its LIMIT fault: a looping model never reads as an environment fault.
-    expect(e10('LIMIT', ['had_turn', 'event_seen'])).toBe(false);
-    expect(criterion('E10').check({ outcome: 'LIMIT', failed_gates: ['had_turn'] } as unknown as AttributionFacts).evidence).toMatch(/LIMIT/);
+    expect(e10('LIMIT', [['had_turn', 'toy-a1'], ['event_seen', 'toy-a1']])).toBe(false);
+    expect(criterion('E10').check(e10facts('LIMIT', [['had_turn', 'toy-a1']])).evidence).toMatch(/LIMIT/);
     // Another failure besides the arrival's: the model's, by its own gates.
-    expect(e10('FAIL', ['had_turn', 'note_on_patient'])).toBe(false);
+    expect(e10('FAIL', [['had_turn', 'toy-a1'], ['note_on_patient', null]])).toBe(false);
+    // Another event's failure (toy-d1 acted on) while toy-a1 came last: the model's.
+    expect(e10('FAIL', [['had_turn', 'toy-a1'], ['kept', 'toy-d1']])).toBe(false);
     expect(run1(TOY_CHECKS.find((c) => c.id === 'had_turn')!, ctxOf(steps, 2)).met).toBe(true);
   });
 });
