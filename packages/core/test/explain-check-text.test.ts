@@ -112,20 +112,20 @@ describe('sample non-pass reasons', async () => {
 // nothing).
 describe('crc-care-gap outreach_messages found', async () => {
   const found = (await textOf('crc-care-gap')).outreach_messages!.found;
-  const OTHERS = ['Patient/pt-0019', 'Patient/pt-0024', 'Patient/pt-0036'];
+  const OTHERS = ['Patient/pt-0009', 'Patient/pt-0020'];
   it('names the patient who got no outreach when only some were tasked (probe n8)', () => {
-    expect(found({ missing: ['Patient/pt-0022', 'Patient/pt-0018'], messaged: OTHERS, tasked_instead: ['Patient/pt-0022'] })).toBe('no message to Patient/pt-0018 (Lance Amado Muller)');
+    expect(found({ missing: ['Patient/pt-0022', 'Patient/pt-0024'], messaged: OTHERS, tasked_instead: ['Patient/pt-0022'] })).toBe('no message to Patient/pt-0024 (Delaine Evelyn MacGyver)');
   });
   it('names the phone staff pool Task when every missing patient was tasked (probe n7)', () => {
-    expect(found({ missing: ['Patient/pt-0022', 'Patient/pt-0018'], messaged: OTHERS, tasked_instead: ['Patient/pt-0022', 'Patient/pt-0018'] })).toBe('outreach assigned to a phone staff pool for the FIT order instead of a patient message, for Patient/pt-0022 (Tiny Darline Koss)');
+    expect(found({ missing: ['Patient/pt-0022', 'Patient/pt-0024'], messaged: OTHERS, tasked_instead: ['Patient/pt-0022', 'Patient/pt-0024'] })).toBe('outreach assigned to a phone staff pool for the FIT order instead of a patient message, for Patient/pt-0022 (Tiny Darline Koss)');
   });
   it('names the first missing patient when none was tasked', () => {
-    expect(found({ missing: ['Patient/pt-0022'], messaged: ['Patient/pt-0018', ...OTHERS], tasked_instead: [] })).toBe('no message to Patient/pt-0022 (Tiny Darline Koss)');
+    expect(found({ missing: ['Patient/pt-0022'], messaged: ['Patient/pt-0024', ...OTHERS], tasked_instead: [] })).toBe('no message to Patient/pt-0022 (Tiny Darline Koss)');
   });
   // P17 exploit fix, crc C2 (decisions.tsv 2026-10-28T13:40Z): a message whose about does not
   // name the new FIT order is not outreach, and the text names the missing link.
   it('names the missing order link when the patient was messaged without it (exploit C2)', () => {
-    const all = ['Patient/pt-0022', 'Patient/pt-0018', ...OTHERS];
+    const all = ['Patient/pt-0022', 'Patient/pt-0024', ...OTHERS];
     expect(found({ missing: all, messaged: all, not_about_order: all, tasked_instead: [] })).toBe('the message to Patient/pt-0022 (Tiny Darline Koss) does not name the new FIT order in about');
   });
 });
@@ -141,7 +141,7 @@ describe('crc-care-gap fit_orders found', async () => {
     );
   });
   it('names a missing order before a late one', () => {
-    expect(found({ ordered, missing: ['Patient/pt-0018'], extra: [], late: [{ patient: 'Patient/pt-0022', order: 'ServiceRequest/sr-t0001', start: '2027-01-04' }], period_end: '2026-12-31' })).toBe('no FIT order for Patient/pt-0018 (Lance Amado Muller)');
+    expect(found({ ordered, missing: ['Patient/pt-0024'], extra: [], late: [{ patient: 'Patient/pt-0022', order: 'ServiceRequest/sr-t0001', start: '2027-01-04' }], period_end: '2026-12-31' })).toBe('no FIT order for Patient/pt-0024 (Delaine Evelyn MacGyver)');
   });
 });
 
