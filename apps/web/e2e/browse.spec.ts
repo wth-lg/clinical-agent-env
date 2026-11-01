@@ -304,13 +304,15 @@ test('after Browse without a key, Overview, Tasks, Runs and Environment each ren
   }
 });
 
+// contrast-ct-prep: its judged message_driver is the one item of the six tasks that asks its question
+// before a trial has written the text it judges (the others ask only of a trial's text).
 test('Tasks: each check says what it requires, and the reference solution lists its tool calls', async ({ page }) => {
-  await browse(page, './?view=tasks&task=renal-dose-review&tab=rubric');
-  const card = page.locator('[data-testid="task-card"][data-task="renal-dose-review"]');
-  await expect(card.locator('[data-testid="task-check"][data-check="note_explains_eie_scr"]').getByTestId('check-question')).toContainText('entered in error');
-  await expect(card.locator('[data-testid="task-check"][data-check="apixaban_dose"]')).toContainText('gate check: must be met to pass');
+  await browse(page, './?view=tasks&task=contrast-ct-prep&tab=rubric');
+  const card = page.locator('[data-testid="task-card"][data-task="contrast-ct-prep"]');
+  await expect(card.locator('[data-testid="task-check"][data-check="message_driver"]').getByTestId('check-question')).toContainText('someone else drive');
+  await expect(card.locator('[data-testid="task-check"][data-check="ct_order"]')).toContainText('gate check: must be met to pass');
   // Every gate check says what it requires without a click, in the words its failure reason uses.
-  for (const [id, t] of Object.entries(CHECK_TEXT['renal-dose-review']!)) await expect(card.locator(`[data-testid="task-check"][data-check="${id}"]`).getByTestId('check-requires')).toHaveText(`Requires ${t.requires}.`);
+  for (const [id, t] of Object.entries(CHECK_TEXT['contrast-ct-prep']!)) await expect(card.locator(`[data-testid="task-check"][data-check="${id}"]`).getByTestId('check-requires')).toHaveText(`Requires ${t.requires}.`);
   await card.getByRole('tab', { name: 'Reference solution' }).click();
   await expect(card.getByTestId('solution-step').first()).toBeVisible();
   await expect(card.getByTestId('solution-step').first()).toContainText('1.');

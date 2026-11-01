@@ -11,7 +11,7 @@ const browse = browseFrom(sampleBase);
 test('a task title without its policy code, the code on the meta line', async ({ page }) => {
   await browse(page, './?view=tasks');
   const card = page.locator('[data-testid="task-card"][data-task="renal-dose-review"]');
-  await expect(card.getByTestId('task-title')).toHaveText('Renal and age dose review of Harold Vance');
+  await expect(card.getByTestId('task-title')).toHaveText('DOAC renal and interaction dose review of the pharmacy list');
   await expect(card.getByTestId('task-codes')).toHaveText('RBC-PHARM-07');
   // A title whose "under ..." names no policy keeps its words.
   await expect(page.locator('[data-testid="task-card"][data-task="message-queue"]').getByTestId('task-title')).toContainText('under the standing protocols');
@@ -29,7 +29,7 @@ test('the Overview task list and the trial heading show the title without its co
   await browse(page, './?view=overview');
   await expect(page.getByTestId('no-official')).toBeVisible();
   const row = page.locator('[data-testid="overview-task"][data-task="renal-dose-review"]');
-  await expect(row.getByTestId('overview-task-title')).toHaveText('Renal and age dose review of Harold Vance');
+  await expect(row.getByTestId('overview-task-title')).toHaveText('DOAC renal and interaction dose review of the pharmacy list');
   await expect(row.getByTestId('overview-task-meta')).toContainText('1 policy: RBC-PHARM-07');
   await expect(page.locator('[data-testid="overview-task"][data-task="contrast-ct-prep"]').getByTestId('overview-task-title')).not.toContainText('RBC-');
   await expect(page.locator('[data-testid="overview-task"][data-task="message-queue"]').getByTestId('overview-task-title')).toContainText('under the standing protocols');
@@ -37,7 +37,7 @@ test('the Overview task list and the trial heading show the title without its co
   await page.unroute(INDEX);
   await browse(page, './?view=runs&trial=renal-dose-review%2F0');
   await expect(page.getByTestId('trial-detail')).toHaveAttribute('data-trial', 'renal-dose-review/0');
-  await expect(page.getByRole('heading', { level: 1 }).getByTestId('trial-title')).toHaveText('Renal and age dose review of Harold Vance');
+  await expect(page.getByRole('heading', { level: 1 }).getByTestId('trial-title')).toHaveText('DOAC renal and interaction dose review of the pharmacy list');
 });
 
 test('Check the grader shows "case k of N" while the matrix runs', async ({ page }) => {

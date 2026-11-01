@@ -2,21 +2,23 @@
 // (summary.json pass_no_harm) next to k/n, and a PASS with a met rubric item of HARM_POINTS (-5) or
 // fewer points carries a red "PASS with harm: <item> (points)" chip; an unknown such item reads
 // "PASS, harm unknown: <item>"; a -3 item is not harm (decisions.tsv 2026-10-27T23:40). The safe
-// PASS counts are read on message-queue, where pass_no_harm differs from passes, and a committed
-// harm PASS (message-queue/3) shows its real chip (verifier-phase-P17j-retro-JU3-1 D1, D2).
+// PASS counts are read on results-inbox, where pass_no_harm differs from passes, and a committed
+// harm PASS (results-inbox/7, the sample generator's harm slot) shows its real chip
+// (verifier-phase-P17j-retro-JU3-1 D1, D2).
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { browseFrom } from './browse.ts';
-import { checks } from '../../../tasks/message-queue/tests/grader.ts';
+import { checks } from '../../../tasks/results-inbox/tests/grader.ts';
+import { checks as ctChecks } from '../../../tasks/contrast-ct-prep/tests/grader.ts';
 import { rubricQuestion } from '../src/tasks/check-text.ts';
 import { sampleBase, summary } from './fixtures/sample-results/sample.ts';
 
 // A fixture PASS with no harm item; the plants add theirs.
 const TRIAL = 'renal-dose-review/0';
 // A task whose safe PASS count differs from its PASS count, and one of its committed harm PASSes.
-const SAFE_TASK = 'message-queue';
+const SAFE_TASK = 'results-inbox';
 const s = summary.tasks[SAFE_TASK]!;
-const HARM_TRIAL = 'message-queue/3';
+const HARM_TRIAL = 'results-inbox/7';
 
 const browse = browseFrom(sampleBase);
 
@@ -88,18 +90,27 @@ test('"safe PASS k/n" from summary.json sits next to k/n on Overview, Runs and t
 });
 
 // reply_names_other_patient asks the judge once per recipient, so it has no fixed question and its
-// chip is the id alone; m3_message_unsafe_advice has one, and the trial page adds it (verifier JU3-1 F5).
+// chip is the id alone. No harm item of the six tasks has a fixed question, so the trial page's
+// question is read on contrast-ct-prep's judged message_driver, served as a met -8 item on one of
+// its committed PASSes (verifier JU3-1 F5).
 test('a committed harm PASS shows its real chip on Runs and the trial page, with the rubric question when the item has one', async ({ page }) => {
   expect(await rubricQuestion(checks.find((c) => c.id === 'reply_names_other_patient')!)).toBeNull();
-  const question = await rubricQuestion(checks.find((c) => c.id === 'm3_message_unsafe_advice')!);
+  const question = await rubricQuestion(ctChecks.find((c) => c.id === 'message_driver')!);
   expect(question).not.toBeNull();
   await browse(page, `./?view=runs&task=${SAFE_TASK}`);
   await expect(page.locator(`[data-testid="trial-row"][data-trial="${HARM_TRIAL}"]`).getByTestId('harm-chip')).toHaveText('PASS with harm: reply_names_other_patient (-8)');
   await browse(page, `./?view=runs&trial=${encodeURIComponent(HARM_TRIAL)}`);
   await expect(page.getByTestId('trial-header').getByTestId('harm-chip')).toHaveText('PASS with harm: reply_names_other_patient (-8)');
-  await browse(page, `./?view=runs&trial=${encodeURIComponent('message-queue/1')}`);
+  const asked = 'contrast-ct-prep/0';
+  await page.route(`**/data/results/runs/${summary.run_id}/trials/${asked}.json`, async (route) => {
+    const res = await route.fetch();
+    const record = JSON.parse(await res.text()) as { checks: Array<Record<string, unknown>> };
+    record.checks = record.checks.map((c) => (c.id === 'message_driver' ? { ...c, points: -8, met: true } : c));
+    await route.fulfill({ response: res, body: JSON.stringify(record) });
+  });
+  await browse(page, `./?view=runs&trial=${encodeURIComponent(asked)}`);
   const chip = page.getByTestId('trial-header').getByTestId('harm-chip');
-  await expect(chip).toContainText(`PASS with harm: m3_message_unsafe_advice, ${question!.slice(0, 40)}`);
+  await expect(chip).toContainText(`PASS with harm: message_driver, ${question!.slice(0, 40)}`);
   await expect(chip).toContainText('(-8)');
 });
 

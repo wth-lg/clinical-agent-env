@@ -16,15 +16,16 @@ const browse = browseFrom(sampleBase);
 
 test('a planted tool-result difference ends the browser replay with the call that does not replay', async ({ page }) => {
   test.setTimeout(300_000);
-  // A read's recorded result changes (search_patients total 1 -> 2); the store, and so every state
-  // hash, stays the same, so only the result comparison can catch it.
+  // A read's recorded result changes (the first fhir_search total, n -> n + 1; the W1 oracle reads
+  // by fhir_search, not search_patients); the store, and so every state hash, stays the same, so only
+  // the result comparison can catch it.
   await page.route(`**/data/results/runs/${summary.run_id}/trajectories/${TRIAL}.jsonl`, async (route) => {
     const res = await route.fetch();
     let planted = false;
     const lines = (await res.text()).split('\n').map((l) => {
       if (planted || l.trim() === '') return l;
       const e = JSON.parse(l) as { type?: string; name?: string; content?: { total?: number } };
-      if (e.type !== 'tool_result' || e.name !== 'search_patients' || typeof e.content?.total !== 'number') return l;
+      if (e.type !== 'tool_result' || e.name !== 'fhir_search' || typeof e.content?.total !== 'number') return l;
       planted = true;
       return JSON.stringify({ ...e, content: { ...e.content, total: e.content.total + 1 } });
     });
@@ -36,7 +37,7 @@ test('a planted tool-result difference ends the browser replay with the call tha
   const row = v.locator(`[data-testid="replay-row"][data-trial="${TRIAL}"]`);
   await expect(row).toHaveAttribute('data-match', 'false', { timeout: 240_000 });
   await expect(row).toContainText('a different result');
-  await expect(row).toContainText('search_patients');
+  await expect(row).toContainText('fhir_search');
   // A trajectory left as published still reproduces.
   await expect(v.locator('[data-testid="replay-row"][data-trial="renal-dose-review/1"]')).toHaveAttribute('data-match', 'true');
   // The same page, mismatch row on screen: no reload, so the replay result stays. The pointer leaves

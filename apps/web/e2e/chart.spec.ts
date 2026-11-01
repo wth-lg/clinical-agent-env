@@ -25,12 +25,16 @@ async function expectRowsEqualStore(page: Page, patient: string) {
   }
 }
 
-test('renal-dose-review: the Chart tab names the store as its source and lists exactly Harold Vance\'s resources', async ({ page }) => {
+// T1 is a worklist (W1): its chart opens on the first patient of its list, Walter Kowalczyk, with a
+// picker over the nine; no task has a single patient any more.
+test('renal-dose-review: the Chart tab names the store as its source and lists exactly Walter Kowalczyk\'s resources', async ({ page }) => {
   await openChart(page, 'renal-dose-review');
   await expect(page.getByTestId('chart-source')).toContainText('Source: FHIR R4 store');
-  await expect(page.getByTestId('chart-heading')).toContainText('Harold Vance');
-  await expect(page.getByTestId('chart-patient')).toHaveCount(0);
-  await expectRowsEqualStore(page, 'Patient/pt-0002');
+  await expect(page.getByTestId('chart-heading')).toContainText('Walter Kowalczyk');
+  const patients = taskPatients(world, 'renal-dose-review');
+  expect(patients).toHaveLength(9);
+  expect(await page.getByTestId('chart-patient').locator('option').evaluateAll((os) => os.map((o) => (o as HTMLOptionElement).value))).toEqual(patients);
+  await expectRowsEqualStore(page, 'Patient/pt-0001');
 });
 
 test('crc-care-gap: a patient picker over the panel; each choice lists that patient\'s resources', async ({ page }) => {
@@ -60,11 +64,12 @@ test('axe finds no serious or critical violation on the Chart tab, light and dar
   }
 });
 
-test('discharge-medrec: a note shows its text, and the discharge summary names metoprolol (verifier JU10-1 F2)', async ({ page }) => {
+// The first patient of T4's worklist is Terence Stark, whose discharge summary lists the brand Coreg.
+test('discharge-medrec: a note shows its text, and the discharge summary names Coreg (verifier JU10-1 F2)', async ({ page }) => {
   await openChart(page, 'discharge-medrec');
   const notes = page.locator('[data-testid="chart-row"][data-type="DocumentReference"]').getByTestId('chart-note');
   expect(await notes.count()).toBeGreaterThan(0);
-  expect((await notes.allTextContents()).join(' ').toLowerCase()).toContain('metoprolol');
+  expect((await notes.allTextContents()).join(' ').toLowerCase()).toContain('coreg 12.5 mg');
 });
 
 test('message-queue: a patient message shows its text (verifier-phase-P17j-retro-JU10-1 D1)', async ({ page }) => {
@@ -73,5 +78,5 @@ test('message-queue: a patient message shows its text (verifier-phase-P17j-retro
   await expectRowsEqualStore(page, 'Patient/pt-0026');
   const msg = page.locator(`[data-testid="chart-row"][data-type="Communication"][data-id="${id('comm-t6-m1')}"]`);
   await expect(msg).toContainText('Refill request');
-  await expect(msg.getByTestId('chart-note')).toContainText('refill my lisinopril 20 mg');
+  await expect(msg.getByTestId('chart-note')).toContainText('a refill of my lisinopril 20 mg');
 });

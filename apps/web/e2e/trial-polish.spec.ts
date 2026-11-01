@@ -7,13 +7,27 @@
 // captioned quote, not italics, and tool names sit in a pill.
 import { expect, test, type Page } from '@playwright/test';
 import { browse as browseDefault, browseFrom } from './browse.ts';
-import { explain, record, RUN_ID, runOf, trialBase, TRIALS } from './fixtures/trial/trial.ts';
+import { explain, runOf, trialBase, TRIALS } from './fixtures/trial/trial.ts';
+import { sampleBase, summary as sample } from './fixtures/sample-results/sample.ts';
 
 const browse = browseFrom(trialBase);
 async function openTrial(page: Page, name: string, extra = '') {
   await browse(page, `./?view=runs&run=${runOf(name)}&trial=${encodeURIComponent(name)}${extra}`);
   await expect(page.getByTestId('trial-detail')).toHaveAttribute('data-trial', name);
 }
+// W1: the trial fixture's PASS (renal-dose-review) has a code-only rubric, with no question and no
+// penalty. The questions and penalties are read on two committed PASSes of the sample run:
+// discharge-medrec's judged flags_explained, the one long question of the six tasks, and
+// contrast-ct-prep's -3 iv_steroid_regimen beside its judged message_driver.
+const browseSample = browseFrom(sampleBase);
+const ASKS = 'discharge-medrec/0';
+const ASKED = 'flags_explained';
+const PENALTY = 'contrast-ct-prep/0';
+async function openSample(page: Page, name: string) {
+  await browseSample(page, `./?view=runs&trial=${encodeURIComponent(name)}`);
+  await expect(page.getByTestId('trial-detail')).toHaveAttribute('data-trial', name);
+}
+const sampleTrial = (name: string) => `**/data/results/runs/${sample.run_id}/trials/${name}.json`;
 const panel = (page: Page, tab: string) => page.getByTestId(`panel-${tab}`);
 const WORD: Record<string, string> = { model: 'model', refusal: 'model', env: 'environment', grader: 'grader', infra: 'infra' };
 
@@ -49,18 +63,16 @@ test('3.1: at 390 px the Attribution exposure table is one card per row too', as
   for (const td of await row.locator('td').all()) expect(await td.getAttribute('data-label')).not.toBeNull();
 });
 
-test('3.2: the first rubric row is named by the question its item asks, as the Tasks view shows it, with the id below', async ({ page }) => {
-  const [task] = TRIALS.pass.split('/') as [string];
-  const first = (record(TRIALS.pass).checks ?? []).find((c) => c.kind === 'rubric')!;
-  await browse(page, `./?view=tasks&task=${task}&tab=rubric`);
-  const question = page.locator(`[data-testid="task-check"][data-check="${first.id}"] [data-testid="check-question"]`).first();
+test('3.2: a rubric row is named by the question its item asks, as the Tasks view shows it, with the id below', async ({ page }) => {
+  const [task] = ASKS.split('/') as [string];
+  await browseSample(page, `./?view=tasks&task=${task}&tab=rubric`);
+  const question = page.locator(`[data-testid="task-check"][data-check="${ASKED}"] [data-testid="check-question"]`).first();
   await expect(question).not.toBeEmpty();
   const text = (await question.textContent())!;
-  await openTrial(page, TRIALS.pass);
-  const row = panel(page, 'grading').getByTestId('rubric-row').first();
-  await expect(row).toHaveAttribute('data-id', first.id);
+  await openSample(page, ASKS);
+  const row = panel(page, 'grading').locator(`[data-testid="rubric-row"][data-id="${ASKED}"]`);
   await expect(row.getByTestId('rubric-name')).toHaveText(text);
-  await expect(row.locator('code')).toHaveText(first.id);
+  await expect(row.locator('code')).toHaveText(ASKED);
   // A long question shows two lines and a toggle for the rest.
   const long = panel(page, 'grading').getByTestId('rubric-row').filter({ has: page.getByRole('button', { name: 'Show the full question' }) }).first();
   const id = (await long.getAttribute('data-id'))!;
@@ -76,23 +88,23 @@ test('3.2: the first rubric row is named by the question its item asks, as the T
 });
 
 test('3.2: an unknown judge item reads "judge unsure"', async ({ page }) => {
-  await page.route(`**/data/results/runs/${RUN_ID}/trials/${TRIALS.pass}.json`, async (route) => {
+  await page.route(sampleTrial(ASKS), async (route) => {
     const res = await route.fetch();
     const rec = JSON.parse(await res.text()) as { checks: { id: string; met: unknown }[] };
-    rec.checks = rec.checks.map((c) => (c.id === 'note_states_crcl' ? { ...c, met: 'unknown' } : c));
+    rec.checks = rec.checks.map((c) => (c.id === ASKED ? { ...c, met: 'unknown' } : c));
     await route.fulfill({ response: res, body: JSON.stringify(rec) });
   });
-  await openTrial(page, TRIALS.pass);
-  await expect(panel(page, 'grading').locator('[data-testid="rubric-row"][data-id="note_states_crcl"] [data-testid="rubric-met"]')).toHaveText('judge unsure');
+  await openSample(page, ASKS);
+  await expect(panel(page, 'grading').locator(`[data-testid="rubric-row"][data-id="${ASKED}"] [data-testid="rubric-met"]`)).toHaveText('judge unsure');
 });
 
 // verifier-phase-P17i-UI-3-1 F1: from sm up the rubric keeps its column balance. No column head
 // wraps, and neither the Item nor the Judge quote column is squeezed: on crc-care-gap (ids, no
-// question text) and on renal-dose-review (long questions). An id breaks only between words.
-for (const name of [TRIALS.limit, TRIALS.pass]) {
+// question text) and on discharge-medrec (a long question). An id breaks only between words.
+for (const [name, open] of [[TRIALS.limit, openTrial], [ASKS, openSample]] as const) {
   test(`F1: at 1440 the ${name} rubric has one-line column heads and Item and quote columns at least 160 px wide`, async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await openTrial(page, name);
+    await open(page, name);
     const table = panel(page, 'grading').locator('table', { has: page.getByTestId('rubric-row') });
     await expect(table.getByTestId('rubric-row').first()).toBeVisible();
     for (const th of await table.locator('thead th').all()) {
@@ -106,11 +118,12 @@ for (const name of [TRIALS.limit, TRIALS.pass]) {
   });
 }
 
-// F2: each "Show the full question" toggle names its item, so no two buttons read alike.
+// F2: each "Show the full question" toggle names its item, so no two buttons read alike. The six
+// tasks have one long question (flags_explained), so the trial shows one toggle.
 test('F2: each long-question toggle has a unique accessible name with its item id', async ({ page }) => {
-  await openTrial(page, TRIALS.pass);
+  await openSample(page, ASKS);
   const rows = panel(page, 'grading').getByTestId('rubric-row').filter({ has: page.getByRole('button', { name: /^Show the full question/ }) });
-  expect(await rows.count()).toBeGreaterThan(1);
+  expect(await rows.count()).toBeGreaterThan(0);
   for (const row of await rows.all()) {
     const id = (await row.getAttribute('data-id'))!;
     await expect(row.getByRole('button')).toHaveAccessibleName(`Show the full question for ${id}`);
@@ -119,19 +132,19 @@ test('F2: each long-question toggle has a unique accessible name with its item i
 
 // F3: a penalty that fired (met, negative points) shows an alert mark, not a check.
 test('F3: a met penalty item shows an alert icon, not a check', async ({ page }) => {
-  await page.route(`**/data/results/runs/${RUN_ID}/trials/${TRIALS.pass}.json`, async (route) => {
+  await page.route(sampleTrial(PENALTY), async (route) => {
     const res = await route.fetch();
     const rec = JSON.parse(await res.text()) as { checks: { id: string; met: unknown }[] };
-    rec.checks = rec.checks.map((c) => (c.id === 'note_uses_wrong_scr' ? { ...c, met: true } : c));
+    rec.checks = rec.checks.map((c) => (c.id === 'iv_steroid_regimen' ? { ...c, met: true } : c));
     await route.fulfill({ response: res, body: JSON.stringify(rec) });
   });
-  await openTrial(page, TRIALS.pass);
-  const met = panel(page, 'grading').locator('[data-testid="rubric-row"][data-id="note_uses_wrong_scr"] [data-testid="rubric-met"]');
+  await openSample(page, PENALTY);
+  const met = panel(page, 'grading').locator('[data-testid="rubric-row"][data-id="iv_steroid_regimen"] [data-testid="rubric-met"]');
   await expect(met).toHaveText('met');
   await expect(met.locator('svg')).toHaveAttribute('data-mark', 'fired');
   await expect(met.locator('svg.lucide-check')).toHaveCount(0);
   // A positive item met keeps its check.
-  await expect(panel(page, 'grading').locator('[data-testid="rubric-row"][data-id="note_states_crcl"] [data-testid="rubric-met"] svg')).toHaveAttribute('data-mark', 'met');
+  await expect(panel(page, 'grading').locator('[data-testid="rubric-row"][data-id="message_driver"] [data-testid="rubric-met"] svg')).toHaveAttribute('data-mark', 'met');
 });
 
 test('3.3: the header leads with a headline, then Why it failed, Whose fault with the kind pill, and the codes behind "n of 5 confirmed"', async ({ page }) => {
