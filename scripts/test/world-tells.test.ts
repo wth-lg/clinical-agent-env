@@ -330,6 +330,34 @@ describe("no record carries Synthea's text fingerprint", () => {
   });
 });
 
+// Letter case (builder-249 open tell, builder-255): T5's planted contrast allergies were displayed
+// 'iohexol', as RxNorm writes an ingredient, while Synthea capitalises every allergy's substance
+// ('Aspirin', 'Penicillin V'). In the task charts, a display or text starts in a letter case that
+// some generated record of its type writes at that path, whenever generated records write it.
+describe('a planted display or text starts in a case the generated records of its type use there', () => {
+  it('no letter case (TCASE) at a display or text path is held only by planted records', () => {
+    const charts = new Set(world.filter((r) => isPlanted(r.id)).map((r) => patientOf(r)));
+    const kase = (v: string) => (/^[a-z]/.test(v) ? 'lower' : /^[A-Z]/.test(v) ? 'upper' : 'other');
+    const seen = new Map<string, { planted: Map<string, string[]>; generated: Set<string> }>();
+    for (const r of world) {
+      if (!charts.has(patientOf(r))) continue;
+      const walk = (v: unknown, at: string): void => {
+        if (Array.isArray(v)) for (const x of v) walk(x, at);
+        else if (v !== null && typeof v === 'object') for (const [k, x] of Object.entries(v)) walk(x, at ? `${at}.${k}` : k);
+        else if (typeof v === 'string' && /(^|\.)(display|text)$/.test(at)) {
+          const cell = seen.get(`${r.resourceType} ${at}`) ?? { planted: new Map(), generated: new Set() };
+          seen.set(`${r.resourceType} ${at}`, cell);
+          if (isPlanted(r.id)) cell.planted.set(kase(v), [...(cell.planted.get(kase(v)) ?? []), `${r.id} '${v.slice(0, 40)}'`]);
+          else cell.generated.add(kase(v));
+        }
+      };
+      walk(r, '');
+    }
+    const out = [...seen].flatMap(([at, c]) => (c.generated.size ? [...c.planted].filter(([k]) => !c.generated.has(k)).map(([k, ids]) => `${at} ${k}: ${ids.join(', ')}`) : []));
+    expect(out).toEqual([]);
+  });
+});
+
 // The MRN (builder-208, pilot-3): the task overlays gave their patients an MRN of the form NNNN-NN
 // and the cohort's carried 1000NN, its id number, so the form marked seven task patients. Every
 // Patient's MRN now comes from one rule (packages/env/mrn.ts), whoever writes the patient.
@@ -434,6 +462,14 @@ const ORDER_CAPS: Readonly<Record<string, readonly [number, number]>> = {
 //     reactions), all the newest of their charts; at n=3 a pair separates them by chance (bar 0.964).
 //   DocumentReference order pair 0.84 -> 0.85: 0.842 with the note-time feature below.
 //   Procedure order 0.61 -> 0.73: two planted procedures, each its chart's newest (0.728).
+// Re-measured by builder-255 on the second-wave world (allergy displays capitalised): every cap
+// above is still at its measured value (0.857 / 1.000, 0.842, 0.728), so none moves back. The
+// recency tell stays: each planted allergy is its chart's newest because it cannot be otherwise.
+// pt-0048 (Schmitt) and pt-0028 (Park) hold no generated allergy (EMPTY_CELLS). Ferreira's only
+// other allergy, aspirin, is recorded in 1976. His iohexol reaction's onset is the 2019 CT day: T5's
+// policy finds the deciding report by that day (contrast-ct-prep policy.ts), and the classifier
+// orders allergies by onset first. A recordedDate before 1976 would put the record before the
+// reaction it records (R8), and it would not change the order.
 const RESIDUALS: ReadonlyArray<{ type: string; features: readonly string[] | 'order'; cap: number; pairCap: number; why: string }> = [
   ...Object.entries(ORDER_CAPS).map(([type, [cap, pairCap]]) => ({
     type, features: 'order' as const, cap, pairCap,
@@ -443,15 +479,15 @@ const RESIDUALS: ReadonlyArray<{ type: string; features: readonly string[] | 'or
   { type: 'MedicationRequest', features: ['E:status=completed'], cap: 0.77, pairCap: 0.87, why: 'status: the planted orders are the current regimen the task reviews; most generated orders are past ones' },
   { type: 'MedicationRequest', features: ['E:requester.reference=Practitioner/pr-reyes'], cap: 0.76, pairCap: 0.87, why: "prescriber: the planted orders are the task's clinicians' (Dr. Okafor, Dr. Lin); Synthea's spread over the three staff" },
   { type: 'DiagnosticReport', features: ['E:code.coding.code=51990-0', 'E:code.coding.display=Basic metabolic panel - Blood', 'E:code.text=Basic metabolic panel - Blood', 'TY26:effectiveDateTime=true', 'TY26:effectiveDateTime=false', 'CRARE:effectiveDateTime=true', 'CRARE:effectiveDateTime=false', 'TY26:*', 'TY:*', 'CSSTOP3:*'], cap: 0.81, pairCap: 0.97, why: "W1 train (builder-249; builder-216 0.801): the refill and inbox worklists turn on recent basic metabolic panels (16 of 24 planted reports), and Synthea gives these charts few; they are this year's (TY26, TY) and off the chart's usual draw and issue times (CRARE, CSSTOP3), 0.812-0.825 as a pair; with report kind the pair is 0.969" },
-  { type: 'Condition', features: ['E:category.coding.code=encounter-diagnosis', 'E:category.coding.code=problem-list-item', 'E:category.coding.display=Encounter Diagnosis', 'E:category.coding.display=Problem List Item'], cap: 0.75, pairCap: 0.81, why: "W1 train (builder-249): the probes plant problem-list items, the chart's current problems a review reads; Synthea records many encounter diagnoses (pair with a morning onset 0.806)" },
-  { type: 'Observation', features: ['N:valueQuantity.value=dp0', 'NI:referenceRange.low.value=frac'], cap: 0.75, pairCap: 0.83, why: "W1 train (builder-249; builder-216 0.822): the planted results are the lab panels the worklists read, printed at the laboratory's precision with its ranges; most generated observations are vitals and questionnaire scores" },
+  { type: 'Condition', features: ['E:category.coding.code=encounter-diagnosis', 'E:category.coding.code=problem-list-item', 'E:category.coding.display=Encounter Diagnosis', 'E:category.coding.display=Problem List Item'], cap: 0.71, pairCap: 0.81, why: "W1 train (builder-249): the probes plant problem-list items, the chart's current problems a review reads; Synthea records many encounter diagnoses (pair with a morning onset 0.806). builder-255: cap 0.75 -> 0.71 (0.704 alone; pair 0.806)" },
+  { type: 'Observation', features: ['N:valueQuantity.value=dp0', 'NI:referenceRange.low.value=frac'], cap: 0.68, pairCap: 0.82, why: "W1 train (builder-249; builder-216 0.822): the planted results are the lab panels the worklists read, printed at the laboratory's precision with its ranges; most generated observations are vitals and questionnaire scores. builder-255: cap 0.75 -> 0.68 (0.680), pair 0.83 -> 0.82 (0.818)" },
   {
     type: 'DiagnosticReport', features: ['E:category.coding.code=RAD', 'E:category.coding.display=Radiology', 'E:category.coding.code=OTH', 'E:category.coding.display=Other', 'HHMM:presentedForm.data=true', 'DLINES:presentedForm.data=10', 'DHEAD:presentedForm.data=heading - place', 'DIGITS:presentedForm.data=true', 'TBRK:code.coding.display', 'TBRK:code.text', 'BRACE:presentedForm.data=true', 'BRACE:presentedForm.data=false'], cap: 0.79, pairCap: 0.9,
     why: 'report kind: the planted reports are the imaging and laboratory results a task acts on (four radiology reports, headed by the imaging department, with their long text and the times a radiologist signs at); the generated ones are mostly questionnaires, whose LOINC names carry their abbreviation in brackets ("[AUDIT-C]"), in the code and on the printed form',
   },
   {
     type: 'AllergyIntolerance', features: ['*'], cap: 0.91, pairCap: 1,
-    why: "Synthea records every generated allergy at the patient's birth, to the second, and only Synthea's allergies are environmental; the planted ones are drug allergies recorded at visits (W1 train: three, T5's contrast reactions, category medication, single 0.905 at n=3 against the 0.893 bar; cap 0.81 -> 0.91, pair 0.98 -> 1). W1 train: the family '*', every feature: Synthea's allergies are recorded at birth, so their every clock feature (CSS, CSSTOP3, CMODE, CTOP3) differs from the three planted ones, and at n=3 any of them, paired, separates. Open tell for a follow-up: a planted RxNorm display is lower case ('iohexol'), Synthea's allergy displays are capitalised (TCASE)",
+    why: "Synthea records every generated allergy at the patient's birth, to the second, and only Synthea's allergies are environmental; the planted ones are drug allergies recorded at visits (W1 train: three, T5's contrast reactions, category medication, single 0.905 at n=3 against the 0.893 bar; cap 0.81 -> 0.91, pair 0.98 -> 1). W1 train: the family '*', every feature: Synthea's allergies are recorded at birth, so their every clock feature (CSS, CSSTOP3, CMODE, CTOP3) differs from the three planted ones, and at n=3 any of them, paired, separates. builder-255: the lower-case RxNorm display ('iohexol') is gone (profileWorld capitalises an allergy's substance as Synthea does; TCASE 0.833 -> under 0.667, and the letter-case test above); the caps stay, held by category (0.905) and order (0.857)",
   },
   { type: 'DocumentReference', features: ['CRARE:context.period.end=false', 'CRARE:context.period.end=true', 'CMODE:date=true', 'CMODE:date=false', 'CSS:date=true', 'CSS:date=false', 'CSSTOP3:date=true', 'CSSTOP3:date=false'], cap: 0.77, pairCap: 0.88, why: "a note's period end against the chart's clock: 31 of the 55 planted notes sit in one chart (pt-0028) beside one generated visit, so that chart's clock has nothing to draw a visit's end from; Synthea's notes keep their visit's end, and moving a generated time would break the base cohort's order (world-hygiene.test.ts). Its strongest pair adds the note's date off the chart's modal minute: Synthea dates a note at its visit's start, and a planted discharge summary is signed when the visit ends (builder-206 F6). W1 train (builder-249): the note's date on the chart's modal minute, 0.753 alone" },
   {

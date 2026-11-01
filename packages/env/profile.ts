@@ -27,8 +27,9 @@
 //                  a dosage on every order with route, timing, dose (in mg where the tablet's strength
 //                  says so), sig text and coded indication, a dispense request on active orders,
 //                  reaction severity). A field already present is never changed, except that a
-//                  reaction of anaphylaxis or angioedema makes the allergy high criticality and a
-//                  problem still open moves to the problem list.
+//                  reaction of anaphylaxis or angioedema makes the allergy high criticality, a
+//                  problem still open moves to the problem list, and an allergy's substance starts
+//                  with a capital letter as Synthea writes it.
 //   profileRecords on every generated resource after profileWorld, in every chart alike: the
 //                  occasional fields (a lab comment, a method, a report conclusion or rendered text,
 //                  a note's signer, a renewal chain, an allergy onset, a procedure outcome, a note
@@ -833,6 +834,13 @@ export function profileWorld(resources: readonly Resource[]): Resource[] {
         displays(r.clinicalStatus, STATUS_DISPLAY);
         displays(r.verificationStatus, STATUS_DISPLAY);
         if (r.recorder === undefined && pcp(r)) r.recorder = pcp(r);
+        // The substance as the allergy list writes it, first letter capital ('Aspirin', 'Iohexol'):
+        // Synthea writes every allergy so, and an RxNorm ingredient ('iohexol') is lower case
+        // (builder-255; world-tells.test.ts letter case).
+        const substance = r.code as { text?: string; coding?: Array<{ display?: string }> } | undefined;
+        const capital = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+        if (typeof substance?.text === 'string') substance.text = capital(substance.text);
+        for (const c of substance?.coding ?? []) if (typeof c.display === 'string') c.display = capital(c.display);
         // A reaction's severity from what it was: airway or circulation severe, breathing or hives
         // moderate, the rest mild; an allergy that caused anaphylaxis or angioedema is high criticality.
         let grave = false;
