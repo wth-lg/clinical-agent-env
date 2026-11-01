@@ -119,7 +119,7 @@ export const alternatives: Alternative[] = [
   },
   {
     id: 'diabetes_from_booking_screen',
-    why: "Learns that Mohr has diabetes from the booking note's contrast screen, not from her problem list, and orders her creatinine.",
+    why: "Learns that Mohr has diabetes from the booking note's contrast screen, not from his problem list, and orders his creatinine.",
     script: runWith(reviewWith([conditions(STALE), reactionSearch(STALE)], [read(ref('DocumentReference/doc-t5-mohr-1008'))])),
   },
   // R26/R29 sweep (tests/phrases.test.ts): a snippet that shows every atom of a deciding line counts

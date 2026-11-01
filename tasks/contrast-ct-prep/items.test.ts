@@ -49,7 +49,7 @@ describe('T5 worklist', () => {
 
   // W1 probe rulings R1: an item's decisive ids are only the records that decide its expected
   // action, by the decision each one decides; the item's decisive list is their union. A record
-  // that cannot change the action (Mohr's 09-24 creatinine: out of the window or absent, she needs
+  // that cannot change the action (Mohr's 09-24 creatinine: out of the window or absent, he needs
   // a new one either way) is not decisive. A study with a creatinine on file in the window and a
   // kidney injury (Brakus) needs a new creatinine for the injury alone (§4: a creatinine drawn
   // during acute kidney injury does not establish kidney function), so its creatinine order rests

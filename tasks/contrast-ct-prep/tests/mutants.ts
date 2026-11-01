@@ -216,7 +216,7 @@ export const mutants: Mutant[] = [
   {
     id: 'diabetes_unseen_creatinine',
     trap: 'diabetes_unseen_creatinine',
-    why: "Orders a creatinine for every contrast patient by habit, never having seen that Mohr (26) has diabetes, the only reason §4 needs one for her.",
+    why: "Orders a creatinine for every contrast patient by habit, never having seen that Mohr (26) has diabetes, the only reason §4 needs one for him.",
     fails: ['creatinine_before_scan', 'evidence_before_orders'],
     loses: [],
     items: { [STALE.patient]: 'retrieval' },
