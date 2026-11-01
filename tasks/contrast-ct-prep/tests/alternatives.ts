@@ -5,7 +5,7 @@
 import type { Alternative, ScriptCall, ScriptTurn } from '../../../packages/grader/matrix/types.ts';
 import {
   MODERATE, CODE, ct, DONE, STALE, finish, HOLDS, medication, FILLER, ORDERS, REVIEW, RADIOLOGIST, RX, AKINOTE, service, TELL, changeMetformin, creatinineOrder, prednisone, diphenhydramine, saline,
-  conditions, creatinines, read, reactionSearch, HANDLE, RECHECK, OPEN_ARRIVALS, AMENDS, ARRIVED, SCHUSTER_AT, schusterPrednisone, schusterDiphenhydramine,
+  conditions, creatinines, read, reactionSearch, HANDLE, RECHECK, OPEN_ARRIVALS, AMENDS, ARRIVED, SCHUSTER_AT, schusterPrednisone, schusterDiphenhydramine, mohrSaline, ferreiraSaline,
 } from '../solution/steps.ts';
 import { ref } from '../ids.ts';
 
@@ -213,6 +213,37 @@ export const alternatives: Alternative[] = [
       { calls: WRITES.filter((c) => !same(c, creatinineOrder(STALE))) },
       RECHECK, OPEN_ARRIVALS,
       { calls: [...AMENDS, creatinineOrder({ ...STALE, decisive: [...ARRIVED.mohr] })] },
+      { calls: TELL }, { calls: [finish(DONE)] },
+    ],
+  },
+  // R38(f): on the arrival-only route every passing form of a decision written after the arrival is
+  // credited by the arrival alone, on every seen gate (the R14 guard and evidence_before_orders).
+  // Mohr's new creatinine as a basic metabolic panel; his saline first at the wrong time, then stopped
+  // and ordered again at 07:00 (stop plus new, R21). change_medication modify takes a frequency, not
+  // a timed dose, so a one-dose order has no modify form; 'leave' is the oracle's creatinine order,
+  // placed before the arrival with the diabetes seen.
+  {
+    id: 'mohr_arrival_only_bmp',
+    why: "As mohr_creatinine_from_arrival, the new creatinine ordered as a basic metabolic panel.",
+    script: [
+      ...reviewWithout([conditions(STALE), reactionSearch(STALE)]),
+      { calls: WRITES.filter((c) => !same(c, creatinineOrder(STALE))) },
+      RECHECK, OPEN_ARRIVALS,
+      { calls: [...AMENDS, creatinineOrder({ ...STALE, decisive: [...ARRIVED.mohr] }, '2026-10-23', '2026-10-24', CODE.bmp)] },
+      { calls: TELL }, { calls: [finish(DONE)] },
+    ],
+  },
+  {
+    // The arrival-only route's writes: 9 before the arrivals (the oracle's 10 less Mohr's
+    // creatinine), so the first saline after them is the 10th write, mr-t0010.
+    id: 'mohr_arrival_only_saline_stop_new',
+    why: "As mohr_creatinine_from_arrival, but orders Mohr's saline for 06:00, then stops it and orders it again for 07:00, 1 hour before the scan.",
+    script: [
+      ...reviewWithout([conditions(STALE), reactionSearch(STALE)]),
+      { calls: WRITES.filter((c) => !same(c, creatinineOrder(STALE))) },
+      RECHECK, OPEN_ARRIVALS,
+      { calls: [saline(STALE, '2026-10-26T06:00:00-04:00'), ferreiraSaline, schusterPrednisone, schusterDiphenhydramine, creatinineOrder({ ...STALE, decisive: [...ARRIVED.mohr] })] },
+      { calls: [{ name: 'change_medication', input: { medication_request: 'mr-t0010', action: 'stop', reason: 'RBC-RAD-07 §5: the saline starts 1 hour before the 08:00 scan, not 2; reordered for 07:00.' } }, mohrSaline] },
       { calls: TELL }, { calls: [finish(DONE)] },
     ],
   },
