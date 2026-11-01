@@ -71,8 +71,12 @@ import type { Progress } from './progress.ts';
 // (plan-amendment-worklist W1-1). Still 15 through the W1-1 fix rounds (a LIMIT trial's failed
 // items are did_not_finish, verifier-phase-P17i-W1-1-1 S1, except an over_action item,
 // verifier-phase-P17i-W1-1-2 M2): 15 was never on main, and only
-// generated fixtures were graded under it.
-export const GRADER_VERSION = '15';
+// generated fixtures were graded under it. 16: a trial's judge allowance counts the questions an
+// item declares (judge_questions: one per recipient or per worklist item), at most JUDGE_MAX_CALLS,
+// and a cached 'judge allowance reached' entry is asked again (a regrade misses it) when the
+// grading's allowance has room for it (judge.ts; builder-265 issue 4: probe-1's T2 and T6 harm
+// penalties read unknown). An unknown penalty can now resolve, and pass_no_harm with it.
+export const GRADER_VERSION = '16';
 
 export interface CheckResult {
   id: string;

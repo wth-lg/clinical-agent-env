@@ -6,7 +6,7 @@
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { MODEL } from '../../core/anthropic.ts';
-import { DEFAULT_JUDGE_EFFORT, JUDGE_MAX_CALL_USD, JUDGE_MAX_TOKENS, JUDGE_PROMPT_VERSION, Judge, JudgeClientError, OVER_BUDGET, judgeAllowanceUsd, judgeCallBudget } from '../judge.ts';
+import { DEFAULT_JUDGE_EFFORT, JUDGE_MAX_CALL_USD, JUDGE_MAX_CALLS, JUDGE_MAX_TOKENS, JUDGE_PROMPT_VERSION, Judge, JudgeCacheMiss, JudgeClientError, OVER_BUDGET, judgeAllowanceUsd, judgeCallBudget } from '../judge.ts';
 import { judged, hybrid } from '../check.ts';
 import { scriptedJudge } from './helpers.ts';
 
@@ -100,6 +100,63 @@ describe('judge', () => {
     const item = (id: string, points: number) => judged({ id, points, category: 'documentation', traces_to: 'p', decisive_ids: [], criterion: 'c', text: t });
     expect(judgeCallBudget([item('J', 3), item('Z', 0)])).toBe(2);
     expect(judgeAllowanceUsd([item('J', 3), item('Z', 0)])).toBe(2 * JUDGE_MAX_CALL_USD);
+  });
+
+  // builder-267 (builder-265 issue 4): an item that asks one question per recipient or per worklist
+  // item declares how many; the budget counts them, and a code item that asks the judge counts what
+  // it declares. JUDGE_MAX_CALLS caps the total.
+  it('the call budget counts the questions an item declares, under JUDGE_MAX_CALLS', () => {
+    const t = () => 'x';
+    const item = (id: string, judge_questions?: number) => ({ ...judged({ id, points: -8, category: 'safety', traces_to: 'p', decisive_ids: [], criterion: 'c', text: t }), ...(judge_questions === undefined ? {} : { judge_questions }) });
+    expect(judgeCallBudget([item('per_patient', 6)])).toBe(12);
+    expect(judgeCallBudget([item('per_patient', 8), item('per_item', 8), item('one')])).toBe(34);
+    expect(judgeAllowanceUsd([item('per_patient', 6)])).toBe(12 * JUDGE_MAX_CALL_USD);
+    const code = { ...item('code_asks', 3), method: 'code' as const };
+    expect(judgeCallBudget([code])).toBe(6);
+    expect(judgeCallBudget([{ ...code, judge_questions: undefined }])).toBe(0);
+    expect(judgeCallBudget([item('runaway', 1000)])).toBe(JUDGE_MAX_CALLS);
+    expect(judgeAllowanceUsd([item('runaway', 1000)])).toBe(JUDGE_MAX_CALLS * JUDGE_MAX_CALL_USD);
+  });
+
+  it('a Judge under that budget answers six per-patient questions; under one item\'s budget it stops after two', async () => {
+    const answers = Array.from({ length: 6 }, () => '{"verdict":"not_met","quote":""}');
+    const ask = async (maxCalls: number) => {
+      const j = new Judge({ client: scriptedJudge([...answers]).client, maxCalls });
+      const vs = [];
+      for (let i = 0; i < 6; i++) vs.push(await j.judge({ criterion: `patient ${i}`, text: 'Your refill is ready.', penalty: true }));
+      return { met: vs.map((v) => v.met), over: j.overAllowance };
+    };
+    expect(await ask(12)).toEqual({ met: Array(6).fill(false), over: 0 });
+    expect(await ask(2)).toEqual({ met: [false, false, 'unknown', 'unknown', 'unknown', 'unknown'], over: 4 });
+  });
+
+  // builder-267: a record graded under a smaller allowance holds 'judge allowance reached' entries
+  // for the questions it never sent. A regrade under a larger allowance misses them (cli regrade
+  // names each key), a live grading asks them, and a regrade under the same allowance reads them
+  // as recorded.
+  it('a cached allowance-reached question is asked again only when this grading has room for it', async () => {
+    const text = 'Your refill is ready.';
+    const first = scriptedJudge(['{"verdict":"not_met","quote":""}']);
+    const old = new Judge({ client: first.client, maxCalls: 2 });
+    for (let i = 0; i < 3; i++) await old.judge({ criterion: `patient ${i}`, text, penalty: true });
+    expect(old.overAllowance).toBe(1);
+    const cache = old.entries();
+    expect(cache.map((e) => [e.calls, e.error])).toEqual([[1, null], [1, null], [0, 'judge allowance reached']]);
+    const regrade = async (maxCalls: number) => {
+      const j = new Judge({ cache, maxCalls });
+      const vs = [];
+      for (let i = 0; i < 3; i++) vs.push(await j.judge({ criterion: `patient ${i}`, text, penalty: true }));
+      return vs.map((v) => v.met);
+    };
+    expect(await regrade(2)).toEqual([false, false, 'unknown']);
+    await expect(regrade(6)).rejects.toThrow(JudgeCacheMiss);
+    const live = scriptedJudge(['{"verdict":"met","quote":"Your refill is ready."}']);
+    const j = new Judge({ client: live.client, cache, maxCalls: 6 });
+    const vs = [];
+    for (let i = 0; i < 3; i++) vs.push(await j.judge({ criterion: `patient ${i}`, text, penalty: true }));
+    expect(vs.map((v) => v.met)).toEqual([false, false, true]);
+    expect(live.requests).toHaveLength(1);
+    expect(j.overAllowance).toBe(0);
   });
 
   it('the projection allowance counts each judge and hybrid item, twice for the schema retry', () => {
