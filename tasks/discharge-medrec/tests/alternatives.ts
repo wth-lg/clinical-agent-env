@@ -98,6 +98,21 @@ export const alternatives: Alternative[] = [
       },
     }),
   },
+  // R38(d): once the repeat panel is in, it alone gives the most recent potassium and a creatinine
+  // under 1.5, so the 10/21 report is not also required.
+  {
+    id: 'kim_resumed_without_older_report',
+    why: "Never opens Walter Kim's 10/21 outside report; it resumes lisinopril on the 10/23 repeat panel (potassium 4.7, SCr 1.21) and the summary's resume line.",
+    script: script({ skip: ['kimLab'] }),
+  },
+  // R38(d): roberts-r1's potassium alone decides the hold and its Task, so a reviewer who never
+  // opens Earnest Roberts' 10/22 report or searches his results still passes once it reads the 10/23
+  // result and holds.
+  {
+    id: 'roberts_held_on_new_potassium_alone',
+    why: "Never opens Earnest Roberts' 10/22 report or searches his Observations; it resumes on the summary's line, then holds lisinopril with a recheck Task once the 10/23 potassium of 5.5 arrives.",
+    script: script({ skip: ['robertsLab'], noResults: ['roberts'] }),
+  },
   // R27: the re-check counts through any complete listing: the default page, or a contiguous run of
   // pages from offset 0.
   {

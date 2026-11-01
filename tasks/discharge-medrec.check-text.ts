@@ -40,6 +40,10 @@ export const checkText: CheckText = {
       return `the ${show(late.item)} write came before ${show(items(late.sources)[0])} was shown`;
     },
   },
+  delivered_seen: {
+    requires: "for an item a mid-trial arrival changed, the earlier records its new action still rests on, seen before its first medication write (R38(d)): for a resume after a repeat potassium panel, the discharge summary's resume line",
+    found: (ev) => `${show(items(ev.failed_items)[0])}: a record its decision still rests on was not seen in time`,
+  },
   // The event gates (packages/grader/events.ts) over the items an active mid-trial event bears on
   // (discharge-medrec/events.ts); their evidence lists the failed items, each with its own why.
   event_delivered: {
