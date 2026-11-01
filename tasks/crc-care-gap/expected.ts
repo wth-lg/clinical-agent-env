@@ -59,7 +59,8 @@ export interface Member {
   // For a gap whose deciding fact is that no screening of one kind falls in its window (rulings
   // R20, R27), what the policy counts as that screening, so a search can be checked for filters
   // that would hide it: a successful fhir_search of `type`, for the member or for no patient
-  // (clinic-wide), whose date_ge is on or before `from` and whose date_le (if any) reaches today,
+  // (clinic-wide), whose date_ge (if any) is an instant at or before midnight on `from` in the
+  // clinic's zone (TIME_ZONE; tests/grader.ts startCovers), whose date_le (if any) reaches today,
   // whose code filter (if any) lists every one of `codes`, whose category filter (if any) holds
   // one of `categories` (none: no category filter counts), and whose status filter (if any) lists
   // every one of `statuses`; and complete: one page that held every match, or a run of pages with
