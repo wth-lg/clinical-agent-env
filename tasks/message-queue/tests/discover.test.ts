@@ -87,18 +87,20 @@ export const TRAP: Record<string, { ids: string[]; hard: 'retrieval' | 'reasonin
   m9: { ids: [ref('Observation/obs-t6-price-0918-cr')], hard: 'reasoning', why: 'a creatinine list shows the values but not the dose increase; the hard step is tying the baseline to the order date' },
   m10: { ids: [ref('DocumentReference/doc-t6-price-0819')], hard: 'retrieval' },
   m11: { ids: [ref('Communication/comm-t6-m10')], hard: 'reasoning', why: 'the first message is in the queue the task hands over' },
-  m12: { ids: [], hard: 'reasoning', why: 'an absence item (R20): no BMP was collected in the 12-month window; the out-of-window panel and its potassium are lures, and the hard step is reading the collection date, not the issued date' },
+  m12: { ids: [], hard: 'reasoning', why: 'an absence item (R20, R31): no BMP was collected in the 12-month window; the out-of-window panel and its potassium are lures, and the hard step is reading the collection date, not the issued date' },
   m13: { ids: [], hard: 'reasoning', why: 'the eGFR entered in error cannot decide the item (R1), so it is a lure; the hard step is not trusting it' },
 };
 
 // R19: lures, each with the wrong action it tempts. None decides its item, so none is decisive.
+// R31: an absence item's newest in-house result of the kind (expected.ts absence: Webb's 10/20/2025
+// panel, Park's 04/21/2025 panel, Brooks's 01/12/2026 HbA1c) is a lure when only it is seen, but it is
+// the decisive id that stands for the window search, which alone counts it as seen; so it is not listed
+// here (rulings.test checks that exposing it counts for nothing).
 export const LURES: Record<string, { id: string; tempts: string }> = {
   park_visit_note: { id: ref('DocumentReference/doc-t6-park-0720'), tempts: "m6: the visit note's eGFR 51, written before the amendment, tempts a metformin renewal" },
   brooks_potassium: { id: ref('Observation/obs-t6-brooks-1008-k'), tempts: 'm7: the high-flagged potassium 5.2, under the 5.5 line, tempts a renewal (or a hold for the wrong reason)' },
-  brooks_inhouse_a1c: { id: ref('Observation/obs-t6-brooks-a1c-0112'), tempts: "m8: the in-house HbA1c of January, outside 6 months, says nothing of the outside report's dates" },
   price_inhouse_a1c: { id: ref('Observation/obs-t6-price-a1c-0330'), tempts: 'm10: the in-house HbA1c of March, outside 6 months, tempts a 30-day supply' },
-  // R19, R20 (clinical gate 2 F1): seeing it still shows the panel's collection date, so it is one of
-  // m12's any-of records (expected.ts also), but it is never decisive.
+  // R19, R31: it shows the panel's collection date but not whether a BMP was drawn since; never decisive.
   webb_bmp_potassium: { id: ref('Observation/obs-t6-webb-1020-k'), tempts: 'm12: the potassium 4.3 issued 10/27/2025, inside 12 months by its issued date, tempts a 90-day renewal' },
   webb_error_egfr: { id: ref('Observation/obs-t6-webb-egfr-1014'), tempts: 'm13: the eGFR 39 entered in error, the newest by date, tempts a metformin hold' },
 };

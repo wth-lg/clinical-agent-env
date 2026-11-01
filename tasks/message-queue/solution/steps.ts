@@ -58,7 +58,9 @@ export const odumClose4 = close(4);
 export const ODUM: ScriptTurn[] = [ODUM_LOOK, ODUM_REPORT, { calls: [odumRenew, odumBmp, odumAmlodipine, odumReply, close(3), odumClose4] }];
 
 // ---- Lena Park: m5, m6 ----
-export const PARK_LOOK: ScriptTurn = { calls: [search('DiagnosticReport', PT.park, { code: '51990-0', sort: '-date' }), docs(PT.park), labs(PT.park, '33914-3'), visits(PT.park), meds(PT.park)] };
+// R27, R31: the absence of a BMP in 12 months is reviewed by a complete search under every code that
+// counts as one (expected.ts BMP_CODES); her in-house panel of 04/2025 alone would be a lure.
+export const PARK_LOOK: ScriptTurn = { calls: [search('DiagnosticReport', PT.park, { code: '51990-0,24321-2,24323-8', sort: '-date' }), docs(PT.park), labs(PT.park, '33914-3'), visits(PT.park), meds(PT.park)] };
 export const PARK_REPORT: ScriptTurn = { calls: [readDoc('doc-t6-park-1002')] };
 export const parkBridge = order(PT.park, RX.lis10, 10, 'QD', 30, 0, 'RBC-RX-05 §2: no BMP collected in the last 12 months (outside BMP collected 10/02/2025); visit 07/20/2026');
 export const parkBmp = bmpOrder(PT.park, 'RBC-RX-05 §2: BMP for lisinopril, none in 12 months');
@@ -89,7 +91,8 @@ export const priceClose11 = close(11, 'Same request as his message of 10/20; ans
 export const PRICE: ScriptTurn[] = [PRICE_LOOK, PRICE_REPORT, { calls: [priceLisinopril, priceMetformin, priceReply, close(9), close(10), priceClose11] }];
 
 // ---- Marcus Webb: m12, m13 ----
-export const WEBB_READS: ScriptTurn = { calls: [labs(PT.webb, '2823-3'), labs(PT.webb, '33914-3'), labs(PT.webb, '4548-4'), visits(PT.webb), meds(PT.webb)] };
+// R27, R31: his potassium under both its codes, a complete list, reviews the absence of a BMP.
+export const WEBB_READS: ScriptTurn = { calls: [labs(PT.webb, '2823-3,6298-4'), labs(PT.webb, '33914-3'), labs(PT.webb, '4548-4'), visits(PT.webb), meds(PT.webb)] };
 export const webbBridge = order(PT.webb, RX.lis10, 10, 'QD', 30, 0, 'RBC-RX-05 §2: last BMP collected 10/20/2025, over 12 months; visit 09/28/2026');
 export const webbBmp = bmpOrder(PT.webb, 'RBC-RX-05 §2: BMP for lisinopril, none in 12 months');
 export const webbMetformin = order(PT.webb, RX.met500, 500, 'BID', 90, 1, 'RBC-RX-05 §3: eGFR 92 and HbA1c 6.9% on 09/28/2026; the 10/14 eGFR is entered in error');

@@ -9,7 +9,7 @@ import { BMP_CODES } from '../expected.ts';
 import { ref } from '../ids.ts';
 import { oracle } from '../solution/solve.ts';
 import {
-  bmpOrder, BROOKS_REPORT, brooksA1c, brooksBridge, brooksHold, call, cancel, hayesClose2, priceClose11, hayesBmp, hayesRenew, lab, ODUM_LOOK, ODUM_REPORT, odumAmlodipine, odumRenew, order, PARK_LOOK, PARK_REPORT, parkBmp, parkHold, PRICE_REPORT, priceLisinopril,
+  bmpOrder, BROOKS_LOOK, BROOKS_REPORT, brooksA1c, brooksBridge, brooksHold, call, cancel, hayesClose2, priceClose11, hayesBmp, hayesRenew, lab, ODUM_LOOK, ODUM_REPORT, odumAmlodipine, odumRenew, order, PARK_LOOK, PARK_REPORT, parkBmp, parkHold, PRICE_REPORT, priceLisinopril,
   priceMetformin, PT, read, readDoc, RX, search, swap, WEBB_READS, webbBmp, webbMetformin,
 } from '../solution/steps.ts';
 
@@ -49,6 +49,8 @@ export const alternatives: Alternative[] = [
   // R29: a received and reported date before the 12-month window place the collection before it too.
   { id: 'm5_reported_date', why: "Finds Lena Park's outside BMP with a note search whose snippet is cut after 'Collected' and shows it received and reported on 10/02/2025.", script: bySnippet(PARK_REPORT, PT.park, 'acceptable') },
   { id: 'm5_visit_by_note', why: "Establishes Lena Park's 07/20/2026 visit from its progress note instead of an Encounter search.", script: swap(oracle, [PARK_VISITS, [readDoc('doc-t6-park-0720')]]) },
+  // R31: the absence reviewed by a potassium search over the 12-month window under both codes (empty).
+  { id: 'm5_window_search', why: "Searches Lena Park's potassium (both codes) from 10/23/2025 on instead of her BMP reports: none in 12 months, so 30 days and a BMP.", script: swap(oracle, [PARK_LOOK.calls[0]!, [search('Observation', PT.park, { code: '2823-3,6298-4', date_ge: '2025-10-23', sort: '-date' })]]) },
   { id: 'm5_cmp', why: 'Orders a comprehensive panel instead of a BMP with the 30-day lisinopril supply.', script: swap(oracle, [parkBmp, [lab(PT.park, '24323-8', 'Panel for lisinopril, none in 12 months')]]) },
   {
     id: 'm6_rejected_order_then_hold',
@@ -62,6 +64,8 @@ export const alternatives: Alternative[] = [
   },
   // R29: a reported date before the 6-month window places the collection before it too.
   { id: 'm8_reported_date', why: "Finds Evelyn Brooks's outside HbA1c with a note search whose snippet shows only that it was reported on 04/16/2026.", script: bySnippet(BROOKS_REPORT, PT.brooks, 'EDTA') },
+  // R31: the absence reviewed by an HbA1c search over the 6-month window (empty), not her whole list.
+  { id: 'm8_window_search', why: "Searches Evelyn Brooks's HbA1c from 04/23/2026 on instead of her whole list: none in 6 months, so 30 days and an HbA1c.", script: swap(oracle, [BROOKS_LOOK.calls[3]!, [search('Observation', PT.brooks, { code: '4548-4', date_ge: '2026-04-23', sort: '-date' })]]) },
   { id: 'm8_tablet_dose', why: 'Writes the 30-day metformin supply as one 1000 mg tablet twice a day, and orders the HbA1c first.', script: swap(oracle, [brooksBridge, [brooksA1c, tablets(PT.brooks, RX.met1000, 1, 'BID', 30, 0, 'RBC-RX-05 §3')]], [brooksA1c, []]) },
   // R16: a defensible extra the policy does not forbid passes.
   { id: 'm9_extra_bmp', why: "Renews Samuel Price's lisinopril for 90 days and also orders a BMP to recheck the high-flagged potassium.", script: swap(oracle, [priceLisinopril, [priceLisinopril, bmpOrder(PT.price, 'Recheck potassium 5.2 after the dose increase')]]) },
@@ -79,8 +83,15 @@ export const alternatives: Alternative[] = [
   { id: 'm12_visit_by_note', why: "Establishes Marcus Webb's 09/28/2026 visit from its progress note instead of an Encounter search.", script: swap(oracle, [WEBB_VISITS, [readDoc('doc-t6-webb-0928')]]) },
   // R21: any completed visit in the 15-month window allows the 30-day supply, not only the planted one.
   { id: 'm12_other_visit', why: "Establishes a completed visit from Marcus Webb's 10/06/2025 check-up, read by id, instead of an Encounter search.", script: swap(oracle, [WEBB_VISITS, [read('Encounter', synthea('enc-00185'))]]) },
-  // Clinical gate 2 F1 route C: the BMP panel report shows the collection date of the panel.
-  { id: 'm12_panel_report', why: "Reads Marcus Webb's BMP panel reports instead of his potassium list, and sees the newest was collected 10/20/2025.", script: swap(oracle, [WEBB_K, [search('DiagnosticReport', PT.webb, { code: '51990-0', sort: '-date' })]]) },
+  // Clinical gate 2 F1 route C: the BMP panel report shows the collection date of the panel. R31: the
+  // list is complete under every BMP code (BMP_CODES), so it also shows no panel in the window.
+  { id: 'm12_panel_report', why: "Reads Marcus Webb's BMP panel reports under every BMP code instead of his potassium list, and sees the newest was collected 10/20/2025.", script: swap(oracle, [WEBB_K, [search('DiagnosticReport', PT.webb, { code: BMP_CODES.join(','), sort: '-date' })]]) },
+  // F2 (verifier-W1T-190-falsepass): codes and category named in the systems the results carry match.
+  {
+    id: 'm12_window_search_systems',
+    why: "Searches Marcus Webb's potassium from 10/23/2025 on, naming LOINC and the laboratory category with their systems: none in 12 months, so 30 days and a BMP.",
+    script: swap(oracle, [WEBB_K, [search('Observation', PT.webb, { code: 'http://loinc.org|2823-3,http://loinc.org|6298-4', category: 'http://terminology.hl7.org/CodeSystem/observation-category|laboratory', date_ge: '2025-10-23', sort: '-date' })]]),
+  },
   // R20, clinical gate 2 F1 route A: potassium and eGFR searches filtered to the 12-month window; the
   // potassium search finds nothing, so no BMP within 12 months, and no 2025-10-20 result is ever shown.
   // R27: the potassium filter lists both codes the policy counts.
