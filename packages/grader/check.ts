@@ -124,7 +124,9 @@ export interface Step {
   // page held every match (offset 0 or none, no next_offset). offset (from the call) and
   // next_offset (from the result) let a gate join a run of pages that together held every match
   // (ruling R27); category lets it refuse a filter that would hide the absent kind; sort ('date'
-  // or '-date', absent for the default order) lets it require one order across a run of pages.
+  // or '-date', absent for the default order) lets it require one order across a run of pages, and
+  // with span (a sorted page's earliest and latest row instant) tell that a run has passed a
+  // window's edge, so the pages after it hold nothing in the window (R27, builder-273).
   search?: StepSearch;
   // Present only on a successful search_notes: its filters from the call's input (the query as
   // written, patient as 'Patient/<id>', date_ge, date_le and type, each only when it is a string)
@@ -155,6 +157,8 @@ export interface StepSearch {
   sort?: string;
   offset?: number;
   next_offset?: number;
+  // Epoch ms: the earliest and latest instant the page's rows sort by, on a sorted call only.
+  span?: readonly [number, number];
   whole: boolean;
 }
 

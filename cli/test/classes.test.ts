@@ -65,7 +65,8 @@ describe('PW4-H0b fixture gate: pnpm cli classes results/probe-1 reproduces clas
     expect(classesJsonProblems(json)).toEqual([]);
     expect(json.schema_version).toBe(1);
     expect(json.run_dirs).toEqual(['results/probe-1']);
-    expect(json.grader_versions).toEqual(['16']);
+    // Every trial is read at its grader 17 regrade (builder-273).
+    expect(json.grader_versions).toEqual(['17']);
     const t5 = json.tasks['contrast-ct-prep']!;
     expect([t5.trials_valid, t5.pass]).toEqual([6, 5]);
     expect(t5.split).toEqual({ model: 1, environment: 0, grader: 0, infra: 0 });
@@ -76,14 +77,15 @@ describe('PW4-H0b fixture gate: pnpm cli classes results/probe-1 reproduces clas
     expect(mh.wilson!.lo).toBeCloseTo(0.6461, 3);
     const all = Object.values(json.tasks).flatMap((t) => t.classes);
     expect(all).toHaveLength(37);
-    expect(all.filter((c) => c.fails === 0)).toHaveLength(35);
+    // 36 at grader 17: message-queue metformin_two_series was 1/12 at grader 16 (a grader fault, R27).
+    expect(all.filter((c) => c.fails === 0)).toHaveLength(36);
     for (const t of Object.values(json.tasks)) {
       expect(t.events).toEqual([]);
       expect(t.q).toBeNull();
       expect(t.guard_fires).toBe(0);
       expect(t.outside_failures).toEqual([]);
     }
-    expect(json.tasks['message-queue']!.independence).toEqual({ all_items_pass: 5, expected_per_item: 5, expected_per_class: 5.5 });
+    expect(json.tasks['message-queue']!.independence).toEqual({ all_items_pass: 6, expected_per_item: 6, expected_per_class: 6 });
   }, 120_000);
 });
 

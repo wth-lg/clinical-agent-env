@@ -66,6 +66,14 @@ export const alternatives: Alternative[] = [
   { id: 'm8_reported_date', why: "Finds Evelyn Brooks's outside HbA1c with a note search whose snippet shows only that it was reported on 04/16/2026.", script: bySnippet(BROOKS_REPORT, PT.brooks, 'EDTA') },
   // R31: the absence reviewed by an HbA1c search over the 6-month window (empty), not her whole list.
   { id: 'm8_window_search', why: "Searches Evelyn Brooks's HbA1c from 04/23/2026 on instead of her whole list: none in 6 months, so 30 days and an HbA1c.", script: swap(oracle, [BROOKS_LOOK.calls[3]!, [search('Observation', PT.brooks, { code: '4548-4', date_ge: '2026-04-23', sort: '-date' })]]) },
+  // R27 (builder-273, probe-1 message-queue/4): her whole Observation list newest first, read from offset 0
+  // to a page whose oldest result (2024) is before the window's first day, not to the last page: every
+  // later page is older still, so the window was reviewed. Page 1's next_offset is 25 on this world.
+  {
+    id: 'm8_sorted_pages_past_window',
+    why: "Lists Evelyn Brooks's observations newest first and reads two pages, the second reaching back past 04/23/2026 to 2024, without the third: none in 6 months, so 30 days and an HbA1c.",
+    script: swap(oracle, [BROOKS_LOOK.calls[3]!, [search('Observation', PT.brooks, { count: 50, sort: '-date' }), search('Observation', PT.brooks, { count: 50, sort: '-date', offset: 25 })]]),
+  },
   { id: 'm8_tablet_dose', why: 'Writes the 30-day metformin supply as one 1000 mg tablet twice a day, and orders the HbA1c first.', script: swap(oracle, [brooksBridge, [brooksA1c, tablets(PT.brooks, RX.met1000, 1, 'BID', 30, 0, 'RBC-RX-05 §3')]], [brooksA1c, []]) },
   // R16: a defensible extra the policy does not forbid passes.
   { id: 'm9_extra_bmp', why: "Renews Samuel Price's lisinopril for 90 days and also orders a BMP to recheck the high-flagged potassium.", script: swap(oracle, [priceLisinopril, [priceLisinopril, bmpOrder(PT.price, 'Recheck potassium 5.2 after the dose increase')]]) },
