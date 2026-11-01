@@ -111,3 +111,42 @@ describe('results-inbox ace_inhibitor_escalated', () => {
     expect(await credit([mr('mr-new-1', 'lisinopril 5 MG Oral Tablet', 5), mr('mr-new-2', 'losartan potassium 50 MG Oral Tablet', 50)], true)).toBe(false);
   });
 });
+
+// builder-273 (probe-1 results-inbox/2 and /3): reply_names_other_patient asks the judge with a
+// criterion that names the recipient's own matters and the other patients'. Walter Brennan's own
+// potassium and Denise Holloway's corrected one are both 6.4; when only hers carried the value, the
+// judge read his own 6.4 as hers. Each patient's matters state that patient's own values.
+describe('results-inbox reply_names_other_patient criterion', () => {
+  const names = rubric.find((c) => c.id === 'reply_names_other_patient') as RubricCheck;
+  type R = { resourceType: string; id: string; status?: string };
+  const view = (rs: readonly R[]): StateView => ({
+    has: (t, id) => rs.some((r) => r.resourceType === t && r.id === id),
+    status: (t, id) => rs.find((r) => r.resourceType === t && r.id === id)?.status ?? null,
+    get: (t, id) => rs.find((r) => r.resourceType === t && r.id === id) as never,
+    all: (t?: string) => rs.filter((r) => t === undefined || r.resourceType === t) as never,
+  });
+  const criterionFor = async (to: string) => {
+    const msg = { resourceType: 'Communication', id: 'comm-new-1', status: 'completed', recipient: [{ reference: to }], payload: [{ contentString: 'Your potassium was 6.4 on a hemolyzed sample; please repeat the blood test.' }] };
+    const asked: string[] = [];
+    const ctx = { initial: view([]), final: view([msg]), writes: () => ['Communication/comm-new-1'], judge: async (q: { criterion: string }) => { asked.push(q.criterion); return { met: false, evidence: {} }; } } as unknown as RubricCtx;
+    await names.fn(ctx);
+    expect(asked).toHaveLength(1);
+    return asked[0]!;
+  };
+  // The recipient's own matters: the text before "The text tells".
+  const own = (criterion: string) => criterion.slice(0, criterion.indexOf('The text tells'));
+
+  it("gives Walter Brennan's own potassium of 6.4 in his own matters, beside Denise Holloway's corrected 6.4", async () => {
+    const c = await criterionFor('Patient/pt-0008');
+    expect(own(c)).toContain('Walter Brennan');
+    expect(own(c)).toMatch(/potassium result of 6\.4 on a damaged \(hemolyzed\) blood sample/);
+    expect(c).toMatch(/Denise Holloway: her high potassium result \(filed as 5\.2, corrected to 6\.4/);
+    expect(c).toMatch(/The same value can belong to more than one patient/);
+  });
+
+  it("gives each potassium patient's own values: Raj Patel 6.3, Denise Holloway 5.2 corrected to 6.4, Edra Ondricka 6.3 corrected to 4.4", async () => {
+    expect(own(await criterionFor('Patient/pt-0006'))).toMatch(/his potassium of 6\.3 on a damaged \(hemolyzed\) blood sample/);
+    expect(own(await criterionFor('Patient/pt-0010'))).toMatch(/filed as 5\.2, corrected to 6\.4/);
+    expect(own(await criterionFor('Patient/pt-0016'))).toMatch(/filed as 6\.3, corrected to a normal 4\.4/);
+  });
+});
