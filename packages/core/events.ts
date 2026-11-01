@@ -23,10 +23,12 @@ export const ERROR_STATUSES = ['ENV_ERROR', 'INFRA_API', 'INFRA_HARNESS', 'INVAL
 export type ErrorStatus = (typeof ERROR_STATUSES)[number];
 // context_window: the model's context window stopped the trial (plan-amendment-worklist W0-A), by
 // the stop_reason model_context_window_exceeded or by a 400 prompt is too long; LIMIT_CODES says
-// which, in the limit event's code.
+// which, in the limit event's code. A cost limit with code worst_case is the settled-cost bound
+// reached on priced usage plus the refused request's worst case (loop.ts MAX_SETTLED_USD); a cost
+// limit without a code is the cost cap reached by the answers.
 export const LIMITS = ['turns', 'cost', 'wall_clock', 'max_tokens', 'context_window'] as const;
 export type Limit = (typeof LIMITS)[number];
-export const LIMIT_CODES = ['stop_reason', 'prompt_too_long'] as const;
+export const LIMIT_CODES = ['stop_reason', 'prompt_too_long', 'worst_case'] as const;
 export type LimitCode = (typeof LIMIT_CODES)[number];
 export const HASH_POINTS = ['initial', 'write', 'final', 'replay_final'] as const;
 

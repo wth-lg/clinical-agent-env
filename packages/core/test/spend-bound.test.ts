@@ -454,3 +454,109 @@ describe('(5) transient stream errors after retries end one trial INFRA_API and 
     }, 30_000);
   }
 });
+
+// builder-269 F1 (verifier probe MF-1): a model that grows its context fast under the $6 cost
+// cap. Each answer adds `perTurnBytes` of text to the history and reports honest usage, so the
+// next request's own worst case (the estimate counts every added byte as a token) is what passes
+// MAX_SETTLED_USD; no attempt failed. That is the model's spend, not the infrastructure's: the
+// trial ends LIMIT cost, which rule P-L splits into LIMIT and ENV_LIMIT, and is not re-queued.
+function growingTransport(perTurnBytes: number): Transport {
+  let n = 0;
+  let prompt = 3000;
+  return async () => {
+    n++;
+    const usage: Usage = { input_tokens: 500, cache_read_input_tokens: prompt - 500, cache_creation_input_tokens: 0, output_tokens: 30_000 };
+    prompt += Math.round(perTurnBytes / 2.3);
+    return answer([{ type: 'text', text: 'z'.repeat(perTurnBytes) }, { type: 'tool_use', id: `toolu_${n}`, name: 'get_context', input: {} }], 'tool_use', usage, `msg_mf${n}`);
+  };
+}
+
+describe('(F1) a request whose own worst case passes the bound on priced usage ends LIMIT cost, not INFRA_API', () => {
+  it('MF-1 grow 380 kB/turn: LIMIT cost (P-L), the limit event names the worst case, no spend_bound error; the grant stays open', async () => {
+    const store = new MemoryStore();
+    const ledger = newLedger(store);
+    const grant = await ledger.batchStart(50);
+    const client = new MessagesClient({ grant, ledger, apiKey: KEY, fetch: growingTransport(380_000), sleep: async () => {} });
+    const { record, events } = await run('_toy', MODEL, { tasks: nodeTaskSource({ testMode: true }), client, world: { read: async () => WORLD }, worldHash: WORLD_HASH, definitions: DEFINITIONS, now: () => 0 });
+    expect(record).toMatchObject({ status: 'LIMIT', detail: 'cost' });
+    // Rule P-L (packages/grader/outcome.ts) decides LIMIT or ENV_LIMIT; never INFRA_*.
+    expect(['LIMIT', 'ENV_LIMIT']).toContain(record.outcome);
+    const limit = events.findLast((e) => e.type === 'limit');
+    expect(limit).toMatchObject({ type: 'limit', limit: 'cost', cap: MAX_SETTLED_USD, code: 'worst_case' });
+    expect((limit as { value: number }).value).toBeGreaterThan(MAX_SETTLED_USD);
+    expect(events.some((e) => e.type === 'error')).toBe(false);
+    // The refused attempt is recorded under the cost limit's code, never as spend_bound.
+    expect(events.filter((e) => e.type === 'attempt_error').map((e) => (e as { code: string }).code)).toEqual(['cost_limit']);
+    // Priced usage stayed under the $6 cost cap: the bound, not the cap check, ended it.
+    expect(record.cost_usd).toBeLessThan(6);
+    expect(grant.signal.aborted).toBe(false);
+    expect(store.rows.filter((r) => r.kind === 'close')).toEqual([]);
+  });
+
+  it('MF-1 grow 150 kB/turn: unchanged, LIMIT turns', async () => {
+    const store = new MemoryStore();
+    const ledger = newLedger(store);
+    const grant = await ledger.batchStart(50);
+    const client = new MessagesClient({ grant, ledger, apiKey: KEY, fetch: growingTransport(150_000), sleep: async () => {} });
+    const { record } = await run('_toy', MODEL, { tasks: nodeTaskSource({ testMode: true }), client, world: { read: async () => WORLD }, worldHash: WORLD_HASH, definitions: DEFINITIONS, now: () => 0 });
+    expect(record).toMatchObject({ status: 'LIMIT', detail: 'turns' });
+  });
+
+  it('MF-1 in a batch: trial 0 ends LIMIT cost once, never rerun as INFRA_API; the other trials PASS; the batch does not stop; one close at the end', async () => {
+    const { result, sink, store } = await batchWith(() => growingTransport(380_000), { maxReruns: 1 });
+    expect(result.stopped).toBeNull();
+    // One record for trial 0: a LIMIT is never rerun. Rule P-L grades it; an ENV_LIMIT is held
+    // unsettled for a human (outcomes.ts NOT_RERUN_REASON), a LIMIT is settled.
+    const zero = [...(await sink.requeued()), ...(await sink.settled())].filter((r) => r.index === 0);
+    expect(zero).toHaveLength(1);
+    expect(zero[0]).toMatchObject({ status: 'LIMIT', detail: 'cost' });
+    expect(['LIMIT', 'ENV_LIMIT']).toContain(zero[0]!.outcome);
+    if (zero[0]!.outcome === 'ENV_LIMIT') expect(zero[0]).toMatchObject({ settled: false, requeue_reason: 'ENV_LIMIT' });
+    expect((await sink.settled()).filter((r) => r.index !== 0).map((r) => r.outcome)).toEqual(['PASS', 'PASS']);
+    const closes = store.rows.flatMap((r, i) => (r.kind === 'close' ? [i] : []));
+    expect(closes).toHaveLength(1);
+    expect(closes[0]!).toBeGreaterThan(store.rows.findLastIndex((r) => r.kind === 'settle'));
+  });
+
+  it('a mix: failed-attempt settles alone push the next attempt past the bound -> INFRA_API spend_bound (boundTransport, priced usage + worst case under the bound)', async () => {
+    const store = new MemoryStore();
+    const ledger = newLedger(store);
+    const grant = await ledger.batchStart(50);
+    const client = new MessagesClient({ grant, ledger, apiKey: KEY, fetch: boundTransport(), sleep: async () => {} });
+    const { record, events } = await run('_toy', MODEL, { tasks: nodeTaskSource({ testMode: true }), client, world: { read: async () => WORLD }, worldHash: WORLD_HASH, definitions: DEFINITIONS, now: () => 0 });
+    expect(record).toMatchObject({ status: 'INFRA_API', detail: 'spend_bound' });
+    expect(events.some((e) => e.type === 'limit')).toBe(false);
+  });
+});
+
+// builder-269 F2 (verifier probe EDGE-1): an answer that reports its cache write only in
+// usage.cache_creation{} (no cache_creation_input_tokens). The estimate counts the write as
+// usageCostUsd prices it, max(cache_creation_input_tokens, ephemeral_5m + ephemeral_1h).
+describe('(F2) the token estimate counts a cache write reported only in cache_creation{}', () => {
+  it('EDGE-1: the next reserve is at least the worst case at the real ~120k-token prompt', async () => {
+    const store = new MemoryStore();
+    const ledger = newLedger(store);
+    const grant = await ledger.batchStart(100);
+    const usage = { input_tokens: 10, output_tokens: 5, cache_creation: { ephemeral_5m_input_tokens: 0, ephemeral_1h_input_tokens: 120_000 } } as Usage;
+    const client = new MessagesClient({ grant, ledger, apiKey: KEY, sleep: async () => {}, fetch: async () => answer([{ type: 'text', text: 'ok' }], 'end_turn', usage) });
+    const history: MessageParam[] = [{ role: 'user', content: 'q'.repeat(300_000) }];
+    await client.send(history, { max_tokens: 1000 });
+    history.push({ role: 'user', content: 'next' });
+    await client.send(history, { max_tokens: 1000 });
+    const reserve = store.rows.filter((r) => r.kind === 'reserve').at(-1)!.cost_usd;
+    expect(reserve).toBeGreaterThanOrEqual(worstAt(120_010, 1000));
+  });
+
+  it('a breakdown below cache_creation_input_tokens: the larger count, as usageCostUsd', async () => {
+    const store = new MemoryStore();
+    const ledger = newLedger(store);
+    const grant = await ledger.batchStart(100);
+    const usage = { input_tokens: 10, output_tokens: 5, cache_creation_input_tokens: 90_000, cache_creation: { ephemeral_5m_input_tokens: 1_000, ephemeral_1h_input_tokens: 0 } } as Usage;
+    const client = new MessagesClient({ grant, ledger, apiKey: KEY, sleep: async () => {}, fetch: async () => answer([{ type: 'text', text: 'ok' }], 'end_turn', usage) });
+    const history: MessageParam[] = [{ role: 'user', content: 'q'.repeat(300_000) }];
+    await client.send(history, { max_tokens: 1000 });
+    history.push({ role: 'user', content: 'next' });
+    await client.send(history, { max_tokens: 1000 });
+    expect(store.rows.filter((r) => r.kind === 'reserve').at(-1)!.cost_usd).toBeGreaterThanOrEqual(worstAt(90_010, 1000));
+  });
+});

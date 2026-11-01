@@ -83,7 +83,6 @@ const fault = (status: string) => FAULT[status as keyof typeof FAULT];
 const PARAMS: MessageParams = { max_tokens: 1000 };
 const respond = (turn: MockTurn, n = 1) => okResponse(turn, n);
 const tooMany = () => new Response('{"error":{"type":"rate_limit_error","message":"slow down"}}', { status: 429, headers: { 'retry-after': '30' } });
-// A stream that ends after message_start: dropped, usage unknown, settled at the worst case.
 // A stream that drops before message_start: the usage is unknown, so the attempt settles at its
 // worst case (one that drops after message_start settles what it reported: spend-bound.test.ts).
 const dropped = () => new Response(sse([]), { status: 200, headers: { 'content-type': 'text/event-stream' } });

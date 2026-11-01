@@ -74,7 +74,7 @@
 //     one (in Node the guarded dispatcher refuses that hop)
 //   - Node's http, https, http2, net and tls modules with a host built at runtime (lint flags a
 //     literal API host passed to them)
-import { INPUT_OVERHEAD_TOKENS, usageCostUsd, worstCaseUsd, type Usage } from './cost.ts';
+import { cacheWrites, INPUT_OVERHEAD_TOKENS, usageCostUsd, worstCaseUsd, type Usage } from './cost.ts';
 import { assertClientGrant, SpendRefused, type BatchGrant, type Ledger, type Reservation, type ReserveRequest } from './ledger.ts';
 import type { AttemptSettle } from './events.ts';
 import { redactText } from './redact.ts';
@@ -534,9 +534,12 @@ async function sendOnce(f: Transport, endpoint: string, apiKey: string, body: st
 //                  build, a ledger fault)
 //   INFRA_API      401, 403, 404, a billing error, retries exhausted, a network error, and a
 //                  SpendBoundRefused, code spend_bound: the trial loop's per-trial bound
-//                  (loop.ts MAX_SETTLED_USD) refused the next attempt. It ends that trial only
+//                  (loop.ts MAX_SETTLED_USD) refused the next attempt because worst-case
+//                  settles of failed attempts made up the difference. It ends that trial only
 //                  (re-queued) and never stops the batch: whoever the error reaches, the batch
-//                  wrapper included, reads the same answer
+//                  wrapper included, reads the same answer. A CostLimitRefused, code cost_limit,
+//                  is the same bound reached on priced usage alone: the loop ends that trial
+//                  LIMIT cost itself; this answer only tells another layer it is no batch stop
 //   ENV_LIMIT      a 400 prompt is too long, code prompt_too_long: the trial's context outgrew
 //                  the model's window. The trial loop ends the trial LIMIT context_window
 //                  (loop.ts), which the grader grades ENV_LIMIT. Never rerun (outcomes.ts
@@ -554,13 +557,24 @@ export interface ClientFailure {
 }
 
 // The trial loop's refusal of an attempt whose worst case would take the trial's settled cost
-// past its bound: the reason it aborts the call with (loop.ts).
+// past its bound because of worst-case settles of failed attempts: the reason it aborts the call
+// with (loop.ts).
 export class SpendBoundRefused extends Error {
   override readonly name = 'SpendBoundRefused';
 }
 
+// The trial loop's refusal of an attempt whose own worst case would take the trial's priced
+// usage (its answered requests) past the same bound: the model's spend, which the loop ends LIMIT
+// cost (loop.ts). It is never a batch stop. A layer that sees only this error, without the
+// loop's terminal, reads INFRA_API cost_limit, stopsBatch false: ClientFailure has no LIMIT, and
+// the trial's outcome comes from the loop, which ends the trial before any such layer decides it.
+export class CostLimitRefused extends Error {
+  override readonly name = 'CostLimitRefused';
+}
+
 export function classifyFailure(e: unknown): ClientFailure {
   if (e instanceof SpendBoundRefused) return { status: 'INFRA_API', code: 'spend_bound', stopsBatch: false, message: e.message };
+  if (e instanceof CostLimitRefused) return { status: 'INFRA_API', code: 'cost_limit', stopsBatch: false, message: e.message };
   if (e instanceof SpendRefused) return { status: 'INFRA_HARNESS', code: `spend_refused_${e.cap}`, stopsBatch: true, message: e.message };
   if (e instanceof ApiError) {
     const message = e.message;
@@ -623,7 +637,7 @@ export interface SendOptions {
 // (events.ts ATTEMPT_SETTLES).
 export interface AttemptFailure {
   attempt: number;
-  // The class of the error: ApiError, SpendBoundRefused, an abort's DOMException name.
+  // The class of the error: ApiError, SpendBoundRefused, CostLimitRefused, an abort's DOMException name.
   error: string;
   // classifyFailure's code, or aborted for an abort the caller made for another reason.
   code: string;
@@ -656,8 +670,13 @@ function promptEstimate(prev: AnsweredPrompt | undefined, body: string, bytes: n
   if (prev === undefined || !body.startsWith(prev.head) || body[prev.head.length] !== ',' || bytes <= prev.bytes) return undefined;
   return prev.tokens + (bytes - prev.bytes) + INPUT_OVERHEAD_TOKENS;
 }
+// The prompt tokens an answer reports: input, cache reads and cache writes, the writes counted as
+// usageCostUsd prices them (cost.ts cacheWrites), so a write reported only in cache_creation{}
+// is not left out.
 const answeredPrompt = (body: string, bytes: number, usage: Usage): AnsweredPrompt | undefined => {
-  const tokens = usage.input_tokens + (usage.cache_creation_input_tokens ?? 0) + (usage.cache_read_input_tokens ?? 0);
+  const writes = cacheWrites(usage);
+  if (writes === null) return undefined;
+  const tokens = usage.input_tokens + writes.all + (usage.cache_read_input_tokens ?? 0);
   if (!body.endsWith(MESSAGES_TAIL) || !Number.isSafeInteger(tokens) || tokens < 0) return undefined;
   return { head: body.slice(0, -MESSAGES_TAIL.length), bytes, tokens };
 };
@@ -669,9 +688,11 @@ function abortReason(signal: AbortSignal): Error {
   return r instanceof Error ? r : new DOMException(r === undefined ? 'This operation was aborted' : String(r), 'AbortError');
 }
 
-// The code an aborted attempt is recorded with: the spend bound's, or aborted for any other
-// reason the caller or the grant aborted (a cap, a cancel, a batch stop).
-const abortCode = (reason: Error): string => (reason instanceof SpendBoundRefused ? 'spend_bound' : reason instanceof SpendRefused ? `spend_refused_${reason.cap}` : 'aborted');
+// The code an aborted attempt is recorded with: the spend bound's or the cost limit's (the trial
+// loop's two refusals), the grant's spend refusal, or aborted for any other reason the caller or
+// the grant aborted (a cap, a cancel, a batch stop).
+const abortCode = (reason: Error): string =>
+  reason instanceof SpendBoundRefused ? 'spend_bound' : reason instanceof CostLimitRefused ? 'cost_limit' : reason instanceof SpendRefused ? `spend_refused_${reason.cap}` : 'aborted';
 
 const sleepUnlessAborted = (sleep: (ms: number) => Promise<void>, ms: number, signal: AbortSignal): Promise<void> =>
   new Promise((resolve, reject) => {
