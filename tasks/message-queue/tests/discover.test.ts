@@ -18,8 +18,8 @@
 // trap or holds its hidden comparison value. An item's plain input may appear. A trap-deciding
 // record a listed search shows on page 1 is allowed only for an item labelled reasoning in TRAP, with
 // the reason: its trap fact sits on the result itself (a status, a note, a collection date), so any
-// view of the result shows it, and the hard step is not trusting it. The four items whose hard step
-// is retrieval (an outside report: m3, m5, m8, m10) keep their reports off page 1 of every list.
+// view of the result shows it, and the hard step is not trusting it. The two items whose hard step
+// is retrieval (an outside report: m3, m10) keep their reports off page 1 of every list.
 // Lures (R19) are listed apart (LURES): a record that tempts the wrong action but cannot decide the
 // item may show on page 1 of a broad search; it makes the trap harder, not easier. They are never
 // decisive.
@@ -35,8 +35,8 @@
 // each shows. Since the R29 atoms (builder-254), the 'eGFR' search shows Frank Odum's outside report
 // by its comment that the potassium may be falsely elevated by hemolysis: the report's eGFR line sits
 // just before it. The clinic-wide fhir_search lists by lab code stay in BROAD, under the stricter rule.
-// Reading a queued message is not a search, so it is not in the stand-in: the two repeat-request
-// items (m2, m11) are decided by the first message, which list_inbox only references.
+// Reading a queued message is not a search, so it is not in the stand-in: the repeat-request
+// item (m11) is decided by the first message, which list_inbox only references.
 import { describe, expect, it } from 'vitest';
 import { loadMatrixTask, matrixEnv } from '../../../cli/matrix.ts';
 import { firstExposed, seenBefore, stepsOf } from '../../../packages/grader/exposure.ts';
@@ -47,6 +47,7 @@ import { ITEMS, type Item } from '../expected.ts';
 import { firstSeenBy, seenStep } from './grader.ts';
 import { ref } from '../ids.ts';
 import { oracle } from '../solution/solve.ts';
+import { SPECS } from '../events.ts';
 
 const call = (name: string, input: ScriptCall['input']): ScriptCall => ({ name, input });
 const notes = (query: string) => call('search_notes', { query });
@@ -74,16 +75,8 @@ export const TEST_NAMES = ['potassium', 'BMP', 'HbA1c', 'creatinine', 'eGFR'];
 export const TESTS: ScriptCall[] = TEST_NAMES.map(notes);
 
 // R6: each item's trap-deciding records and its hard step. A reasoning item may show its trap on page 1.
-const RESULT_ITSELF = 'the trap fact is on the result itself, so any view of the result shows it; the hard step is not trusting it';
 export const TRAP: Record<string, { ids: string[]; hard: 'retrieval' | 'reasoning'; why?: string }> = {
-  m1: { ids: [ref('Observation/obs-t6-hayes-1005-k')], hard: 'reasoning', why: `${RESULT_ITSELF} (the hemolysis note)` },
-  m2: { ids: [ref('Communication/comm-t6-m1')], hard: 'reasoning', why: 'the first message is in the queue the task hands over' },
   m3: { ids: [ref('DocumentReference/doc-t6-odum-0827')], hard: 'retrieval' },
-  m4: { ids: [], hard: 'reasoning', why: 'the filler has no trap' },
-  m5: { ids: [ref('DocumentReference/doc-t6-park-1002')], hard: 'retrieval' },
-  m6: { ids: [ref('Observation/obs-t6-park-egfr-0720')], hard: 'reasoning', why: `${RESULT_ITSELF} (amended status and note; the trap value 51 is in the visit note)` },
-  m7: { ids: [ref('Observation/obs-t6-brooks-0921-cr')], hard: 'reasoning', why: 'a creatinine list shows the values but not the dose increase; the hard step is tying the baseline to the order date' },
-  m8: { ids: [ref('DocumentReference/doc-t6-brooks-0412')], hard: 'retrieval' },
   m9: { ids: [ref('Observation/obs-t6-price-0918-cr')], hard: 'reasoning', why: 'a creatinine list shows the values but not the dose increase; the hard step is tying the baseline to the order date' },
   m10: { ids: [ref('DocumentReference/doc-t6-price-0819')], hard: 'retrieval' },
   m11: { ids: [ref('Communication/comm-t6-m10')], hard: 'reasoning', why: 'the first message is in the queue the task hands over' },
@@ -93,12 +86,10 @@ export const TRAP: Record<string, { ids: string[]; hard: 'retrieval' | 'reasonin
 
 // R19: lures, each with the wrong action it tempts. None decides its item, so none is decisive.
 // R31: an absence item's newest in-house result of the kind (expected.ts absence: Webb's 10/20/2025
-// panel, Park's 04/21/2025 panel, Brooks's 01/12/2026 HbA1c) is a lure when only it is seen, but it is
+// panel) is a lure when only it is seen, but it is
 // the decisive id that stands for the window search, which alone counts it as seen; so it is not listed
 // here (rulings.test checks that exposing it counts for nothing).
 export const LURES: Record<string, { id: string; tempts: string }> = {
-  park_visit_note: { id: ref('DocumentReference/doc-t6-park-0720'), tempts: "m6: the visit note's eGFR 51, written before the amendment, tempts a metformin renewal" },
-  brooks_potassium: { id: ref('Observation/obs-t6-brooks-1008-k'), tempts: 'm7: the high-flagged potassium 5.2, under the 5.5 line, tempts a renewal (or a hold for the wrong reason)' },
   price_inhouse_a1c: { id: ref('Observation/obs-t6-price-a1c-0330'), tempts: 'm10: the in-house HbA1c of March, outside 6 months, tempts a 30-day supply' },
   // R19, R31: it shows the panel's collection date but not whether a BMP was drawn since; never decisive.
   webb_bmp_potassium: { id: ref('Observation/obs-t6-webb-1020-k'), tempts: 'm12: the potassium 4.3 issued 10/27/2025, inside 12 months by its issued date, tempts a 90-day renewal' },
@@ -112,7 +103,19 @@ const run = async (id: string, script: typeof oracle) => stepsOf((await trial(en
 // else exposed.
 const seenAt = (steps: readonly Step[], x: Item, id: string) => (x.atoms[id] !== undefined ? firstSeenBy(steps, id, x.atoms[id]!) : firstExposed(steps, id));
 
+// The arrivals (events.ts, every spec) are not in the world before their trigger, a write on their
+// patient: no broad, targeted or test-name search shows one (a class B correction's record is in the
+// world, but in its uncorrected form, which is what such a search shows).
+const ARRIVAL_KEYS = SPECS.flatMap((sp) => sp.resources.map((r) => ({ spec: sp.id, key: `${r.resourceType}/${r.id}`, text: JSON.stringify(r) })));
+
 describe('message-queue discoverability', () => {
+  it.each([...BROAD, ...TARGETED, ...TESTS].map((c) => [JSON.stringify({ [c.name]: c.input }), c] as const))('arrivals are absent before their trigger: %s shows none in its arrived form', async (_label, c) => {
+    const steps = await run('broad', [{ calls: [c] }, { calls: [call('finish', { summary: 'searched' })] }]);
+    expect(steps.flatMap((st) => st.arrivals ?? [])).toEqual([]);
+    const fresh = ARRIVAL_KEYS.filter((a) => !['price-b1', 'price-b2', 'webb-b2'].includes(a.spec));
+    expect(fresh.filter((a) => steps.some((st) => st.exposed_ids.includes(a.key) || st.referenced_ids.includes(a.key))).map((a) => a.key)).toEqual([]);
+  });
+
   it('every trap-deciding record is decisive for its item, and every retrieval item names one', () => {
     for (const x of ITEMS) {
       const t = TRAP[x.name]!;

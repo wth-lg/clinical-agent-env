@@ -1,30 +1,25 @@
-// T6 message-queue overlay (plan-amendment-worklist W1, T6 probe): Dr. Okafor's messages queue as
-// a refill worklist of 13 messages on the six T6 slots, each a portal or pharmacy message
-// (Communication) behind an inbox Task. Every message asks for a refill RBC-RX-05 decides from the
-// chart's results; the item classes (two instances each, plus one filler) are:
-//   hemolyzed potassium      m1 Hayes   lisinopril; the newest BMP's potassium is hemolyzed (a note
-//                                       on the result), the one before is valid and recent
-//                            m3 Odum    lisinopril; a scanned outside BMP whose report calls the
+// T6 message-queue overlay (plan-amendment-worklist W1, T6 probe; cut to 6 items in plan-amendment-w4
+// PW4-E3): Dr. Okafor's messages queue as a refill worklist on the six T6 slots, each message a
+// portal or pharmacy message (Communication) behind an inbox Task. Every message asks for a refill
+// RBC-RX-05 decides from the chart's results. The probe built 13 messages, two instances of each of
+// six item classes and one filler; the queue now holds the 6 below, one instance of each class:
+//   hemolyzed potassium      m3 Odum    lisinopril; a scanned outside BMP whose report calls the
 //                                       specimen hemolyzed, an in-house BMP before it
 //   amended / entered in error
-//                            m6 Park    metformin; the eGFR she was told at her visit was amended
-//                                       down below 45 four days later
 //                            m13 Webb   metformin; the newest eGFR, 39 (below 45), is entered in error
-//   collection-date window   m5 Park    lisinopril; a scanned outside BMP filed inside 12 months,
-//                                       collected outside them; her in-house BMP is older still
-//                            m12 Webb   lisinopril; an in-house BMP collected before the 12-month
+//   collection-date window   m12 Webb   lisinopril; an in-house BMP collected before the 12-month
 //                                       line and issued after it
-//   metformin, two series    m8 Brooks  metformin; eGFR current, the only HbA1c inside 6 months by
-//                                       its filing date is an outside report collected before them
-//                            m10 Price  metformin; eGFR current, the in-house HbA1c is old, an
+//   metformin, two series    m10 Price  metformin; eGFR current, the in-house HbA1c is old, an
 //                                       outside report collected inside 6 months is current
-//   same-patient messages    m2 Hayes   her second message for the same lisinopril
-//                            m11 Price  a pharmacy request for the metformin he asked for himself
-//   potassium or creatinine rise after a dose increase
-//                            m7 Brooks  lisinopril raised 3 weeks ago; creatinine 38% above the BMP
-//                                       before the change, potassium under the line
-//                            m9 Price   the same history; creatinine 24% above, potassium 5.2
-//   filler                   m4 Odum    amlodipine, a completed visit 9 months ago
+//   same-patient messages    m11 Price  a pharmacy request for the metformin he asked for himself
+//   creatinine rise after a dose increase
+//                            m9 Price   lisinopril raised 5 weeks ago; creatinine 24% above the BMP
+//                                       before the change, potassium 5.2
+// The other seven messages (m1, m2 Hayes; m4 Odum's amlodipine, the filler; m5, m6 Park; m7, m8
+// Brooks) stay in the world with their charts, unchanged, but are addressed to and owned by Dr. Lin
+// (DROPPED): list_inbox shows the signed-in user's items, so they are off Dr. Okafor's queue and no
+// planted id is removed or renumbered. The six patients' charts below keep every scenario record.
+// Mid-trial events (events.ts) add results, corrections and a resent request for Odum, Price and Webb.
 // Each patient keeps the Synthea chart that fits, with the name and (Lena Park) the sex patched,
 // and Dr. Okafor as PCP. The overlay removes what would contradict a scenario or start a question
 // it does not ask: every Synthea note and its report (they name the old patients); the Synthea
@@ -51,6 +46,10 @@ const subject = (who: Who) => ({ reference: `Patient/${PT[who]}` });
 const OKAFOR = { reference: 'Practitioner/pr-okafor' };
 const LIN = { reference: 'Practitioner/pr-lin' };
 const REYES = { reference: 'Practitioner/pr-reyes' };
+// The messages cut from Dr. Okafor's queue (plan-amendment-w4 PW4-E3, n = 6): addressed to and owned
+// by Dr. Lin, so the queue the task hands over holds the other six.
+const DROPPED = new Set([1, 2, 4, 5, 6, 7, 8]);
+const addressee = (n: number) => (DROPPED.has(n) ? LIN : OKAFOR);
 const CLINIC = { reference: 'Organization/org-riverbend' };
 const HOSPITAL = { reference: 'Organization/org-st-brigid' };
 const PHARMACY = { reference: 'Organization/org-t6-pharmacy' };
@@ -322,7 +321,7 @@ const message = (i: Item): Resource => ({
   topic: { text: i.subject },
   sent: i.sent,
   received: i.sent,
-  recipient: [OKAFOR],
+  recipient: [addressee(i.n)],
   sender: i.from,
   payload: [{ contentString: i.body }],
 });
@@ -339,7 +338,7 @@ const inboxItem = (i: Item): Resource => ({
   authoredOn: i.sent,
   lastModified: i.sent,
   requester: i.from,
-  owner: OKAFOR,
+  owner: addressee(i.n),
 });
 
 // ---- scanned outside reports ----
