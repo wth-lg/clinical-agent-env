@@ -581,5 +581,515 @@
   "attempt": "cef6e4e9-7",
   "mode": "live",
   "settled": true,
-  "trajectory": "trajectories/discharge-medrec/4.jsonl"
+  "trajectory": "trajectories/discharge-medrec/4.jsonl",
+  "regrades": [
+    {
+      "grader_version": "17",
+      "grader_task_version": "f74bc3092f0d1332e3e3c8a24571e4fc4d1b468a6fdd3c2a0ecd81bc2330cd1b",
+      "outcome": "PASS",
+      "score": 1,
+      "valid": true,
+      "checks": [
+        {
+          "id": "med_actions",
+          "kind": "gate",
+          "method": "code",
+          "category": "action",
+          "points": null,
+          "met": true,
+          "evidence": {
+            "failed_items": [],
+            "why": []
+          },
+          "ids": [],
+          "items": [
+            {
+              "item": "kim-furosemide",
+              "met": true,
+              "decisive_ids": [
+                "DocumentReference/doc-00009"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "kim-lisinopril",
+              "met": true,
+              "decisive_ids": [
+                "DocumentReference/doc-00011"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "kim-kcl",
+              "met": true,
+              "decisive_ids": [
+                "DocumentReference/doc-00008"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "kim-omeprazole",
+              "met": true,
+              "decisive_ids": [
+                "doc-00008"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "stark-carvedilol",
+              "met": true,
+              "decisive_ids": [
+                "DocumentReference/doc-00005"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "stark-atorvastatin",
+              "met": true,
+              "decisive_ids": [
+                "DocumentReference/doc-00006"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "stark-glipizide",
+              "met": true,
+              "decisive_ids": [
+                "DocumentReference/doc-00007"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "thompson-nifedipine",
+              "met": true,
+              "decisive_ids": [
+                "DocumentReference/doc-00119"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "thompson-hctz",
+              "met": true,
+              "decisive_ids": [
+                "DocumentReference/doc-00120"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "thompson-levothyroxine",
+              "met": true,
+              "decisive_ids": [
+                "DocumentReference/doc-00121"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "roberts-lisinopril",
+              "met": true,
+              "decisive_ids": [
+                "DocumentReference/doc-00122",
+                "DocumentReference/doc-00125",
+                "Observation/obs-02995"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "roberts-rosuvastatin",
+              "met": true,
+              "decisive_ids": [
+                "doc-00122"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "roberts-sertraline",
+              "met": true,
+              "decisive_ids": [
+                "DocumentReference/doc-00124"
+              ],
+              "evidence": {}
+            }
+          ]
+        },
+        {
+          "id": "decisive_seen",
+          "kind": "gate",
+          "method": "code",
+          "category": "action",
+          "points": null,
+          "met": true,
+          "evidence": {
+            "unseen": []
+          },
+          "ids": [],
+          "items": [
+            {
+              "item": "kim-furosemide",
+              "met": true,
+              "decisive_ids": [
+                "DocumentReference/doc-00009"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "kim-lisinopril",
+              "met": true,
+              "decisive_ids": [
+                "DocumentReference/doc-00011"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "kim-kcl",
+              "met": true,
+              "decisive_ids": [
+                "DocumentReference/doc-00008"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "kim-omeprazole",
+              "met": true,
+              "decisive_ids": [
+                "doc-00008"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "stark-carvedilol",
+              "met": true,
+              "decisive_ids": [
+                "DocumentReference/doc-00005"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "stark-atorvastatin",
+              "met": true,
+              "decisive_ids": [
+                "DocumentReference/doc-00006"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "stark-glipizide",
+              "met": true,
+              "decisive_ids": [
+                "DocumentReference/doc-00007"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "thompson-nifedipine",
+              "met": true,
+              "decisive_ids": [
+                "DocumentReference/doc-00119"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "thompson-hctz",
+              "met": true,
+              "decisive_ids": [
+                "DocumentReference/doc-00120"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "thompson-levothyroxine",
+              "met": true,
+              "decisive_ids": [
+                "DocumentReference/doc-00121"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "roberts-lisinopril",
+              "met": true,
+              "decisive_ids": [
+                "DocumentReference/doc-00122",
+                "DocumentReference/doc-00125",
+                "Observation/obs-02995"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "roberts-rosuvastatin",
+              "met": true,
+              "decisive_ids": [
+                "doc-00122"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "roberts-sertraline",
+              "met": true,
+              "decisive_ids": [
+                "DocumentReference/doc-00124"
+              ],
+              "evidence": {}
+            }
+          ]
+        },
+        {
+          "id": "nothing_else",
+          "kind": "gate",
+          "method": "code",
+          "category": "safety",
+          "points": null,
+          "met": true,
+          "evidence": {
+            "extra": [],
+            "failed_items": []
+          },
+          "ids": [],
+          "items": [
+            {
+              "item": "kim-furosemide",
+              "met": true,
+              "decisive_ids": [],
+              "evidence": {}
+            },
+            {
+              "item": "kim-lisinopril",
+              "met": true,
+              "decisive_ids": [],
+              "evidence": {}
+            },
+            {
+              "item": "kim-kcl",
+              "met": true,
+              "decisive_ids": [],
+              "evidence": {}
+            },
+            {
+              "item": "kim-omeprazole",
+              "met": true,
+              "decisive_ids": [],
+              "evidence": {}
+            },
+            {
+              "item": "stark-carvedilol",
+              "met": true,
+              "decisive_ids": [],
+              "evidence": {}
+            },
+            {
+              "item": "stark-atorvastatin",
+              "met": true,
+              "decisive_ids": [],
+              "evidence": {}
+            },
+            {
+              "item": "stark-glipizide",
+              "met": true,
+              "decisive_ids": [],
+              "evidence": {}
+            },
+            {
+              "item": "thompson-nifedipine",
+              "met": true,
+              "decisive_ids": [],
+              "evidence": {}
+            },
+            {
+              "item": "thompson-hctz",
+              "met": true,
+              "decisive_ids": [],
+              "evidence": {}
+            },
+            {
+              "item": "thompson-levothyroxine",
+              "met": true,
+              "decisive_ids": [],
+              "evidence": {}
+            },
+            {
+              "item": "roberts-lisinopril",
+              "met": true,
+              "decisive_ids": [],
+              "evidence": {}
+            },
+            {
+              "item": "roberts-rosuvastatin",
+              "met": true,
+              "decisive_ids": [],
+              "evidence": {}
+            },
+            {
+              "item": "roberts-sertraline",
+              "met": true,
+              "decisive_ids": [],
+              "evidence": {}
+            },
+            {
+              "item": "outside",
+              "met": true,
+              "decisive_ids": [],
+              "evidence": {}
+            }
+          ]
+        },
+        {
+          "id": "seen_before_change",
+          "kind": "gate",
+          "method": "code",
+          "category": "process",
+          "points": null,
+          "met": true,
+          "evidence": {
+            "late": []
+          },
+          "ids": [],
+          "items": [
+            {
+              "item": "kim-furosemide",
+              "met": true,
+              "decisive_ids": [
+                "DocumentReference/doc-00009"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "kim-lisinopril",
+              "met": true,
+              "decisive_ids": [
+                "DocumentReference/doc-00011"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "kim-kcl",
+              "met": true,
+              "decisive_ids": [
+                "DocumentReference/doc-00008"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "kim-omeprazole",
+              "met": true,
+              "decisive_ids": [
+                "doc-00008"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "stark-carvedilol",
+              "met": true,
+              "decisive_ids": [
+                "DocumentReference/doc-00005"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "stark-atorvastatin",
+              "met": true,
+              "decisive_ids": [
+                "DocumentReference/doc-00006"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "stark-glipizide",
+              "met": true,
+              "decisive_ids": [
+                "DocumentReference/doc-00007"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "thompson-nifedipine",
+              "met": true,
+              "decisive_ids": [
+                "DocumentReference/doc-00119"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "thompson-hctz",
+              "met": true,
+              "decisive_ids": [
+                "DocumentReference/doc-00120"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "thompson-levothyroxine",
+              "met": true,
+              "decisive_ids": [
+                "DocumentReference/doc-00121"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "roberts-lisinopril",
+              "met": true,
+              "decisive_ids": [
+                "DocumentReference/doc-00122",
+                "DocumentReference/doc-00125",
+                "Observation/obs-02995"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "roberts-rosuvastatin",
+              "met": true,
+              "decisive_ids": [
+                "doc-00122"
+              ],
+              "evidence": {}
+            },
+            {
+              "item": "roberts-sertraline",
+              "met": true,
+              "decisive_ids": [
+                "DocumentReference/doc-00124"
+              ],
+              "evidence": {}
+            }
+          ]
+        },
+        {
+          "id": "note_per_patient",
+          "kind": "rubric",
+          "method": "code",
+          "category": "documentation",
+          "points": 2,
+          "met": true,
+          "evidence": {
+            "missing": []
+          }
+        },
+        {
+          "id": "notes_cite_sources",
+          "kind": "rubric",
+          "method": "code",
+          "category": "documentation",
+          "points": 2,
+          "met": true,
+          "evidence": {
+            "short": []
+          }
+        },
+        {
+          "id": "flags_explained",
+          "kind": "rubric",
+          "method": "judge",
+          "category": "documentation",
+          "points": 2,
+          "met": "unknown",
+          "evidence": {
+            "verdict": "met",
+            "quote": "Lisinopril 10 mg daily (mr-00072) remains ON HOLD. ... potassium 5.4 mmol/L (>5.0). ... Please obtain/review repeat potassium",
+            "cache_key": "f84fc8d6ebf7351fe58d866a6584fc1608099b1300c2e589c95f53d94c2b083a",
+            "reason": "quote not in text"
+          }
+        }
+      ],
+      "error": null,
+      "changed": false,
+      "at": "2026-11-01T13:42:03.376Z"
+    }
+  ]
 }
