@@ -30,18 +30,32 @@
 //   the hard elapsed bound INFRA_API, code elapsed_bound: total elapsed time, retries included,
 //                          reached caps.maxElapsedMs (checked before each request, and aborting
 //                          a call in flight once a retry has happened); batch.ts re-queues it
-//   the settled-cost bound INFRA_API, code spend_bound: an attempt whose worst case would take
-//                          cost_usd (worst-case settles included) past MAX_SETTLED_USD is not
-//                          sent, so a trial's ledger spend never passes it; batch.ts re-queues it
+//   the settled-cost bound MAX_SETTLED_USD: an attempt whose worst case would take cost_usd
+//                          (worst-case settles included) past it is not sent, so a trial's
+//                          ledger spend never passes it. Whose spend passes it decides the end:
+//                          LIMIT cost, code worst_case: priced usage (the answers) plus this
+//                            request's own worst case passes it, with no failed attempt
+//                            counted: the model's spend, so rule P-L splits it into LIMIT and
+//                            ENV_LIMIT like the cost cap (a model whose context grows fast can
+//                            reach it under maxCostUsd). The loop aborts the call with a
+//                            CostLimitRefused; never re-queued
+//                          INFRA_API, code spend_bound: only the worst-case settles of failed or
+//                            aborted attempts make up the difference; batch.ts re-queues it.
+//                            The loop aborts the call with a SpendBoundRefused
+//                          classifyFailure reads either refusal as stopsBatch false: it ends this
+//                          trial only
 //   an unpriced usage      INFRA_HARNESS, code unpriced_usage, on the answer that has it: a
 //                          missing price is a harness defect, not the model's spend
 //   opts.signal aborted    CANCELLED, checked before each request and passed to the client
 //   an exception from the environment: a tool (other than a ToolError) or the state hash
 //                          ENV_ERROR, code INTERNAL: the environment's fault, not the model's
 //   a client error         INFRA_API, INFRA_HARNESS or INVALID (a response from another model)
+// Every failed or aborted attempt is recorded as an attempt_error event (MessagesClient
+// onAttemptError): its error class, code, status, message, how it settled and whether the client
+// retries; never the key or the request body.
 // It reads no clock and draws no randomness (eslint-rules/determinism.js): time comes from the
 // injected `now` and `timeout`, used only for the working-time cap and the elapsed bound.
-import { classifyFailure, type CallResult, type MessageParam, type MessageParams, type SendOptions } from './anthropic.ts';
+import { classifyFailure, CostLimitRefused, SpendBoundRefused, type CallResult, type MessageParam, type MessageParams, type SendOptions } from './anthropic.ts';
 import { PER_TRIAL_CAP_USD, usageCostUsd, type Usage } from './cost.ts';
 import type { ErrorStatus, EventBody, Limit, LimitCode, TrialStatus } from './events.ts';
 import { ERROR_CODES, internalError, type ErrorCode } from '../env/tools/errors.ts';
@@ -115,6 +129,9 @@ export interface LoopOutcome {
 // only, so without it attempts that keep dropping (say, a proxy that cuts long streams) would
 // settle worst cases until the turn cap.
 export const MAX_SETTLED_USD = 2 * PER_TRIAL_CAP_USD;
+
+// What onAttempt refuses an attempt with: LIMIT cost (code worst_case) or INFRA_API spend_bound.
+type Refused = Extract<Terminal, { type: 'error' | 'limit' }>;
 
 const CONTINUE = 'Your previous answer reached the output token limit. Continue from where it stopped.';
 const FINISHED = { error: { code: 'CONFLICT', message: 'episode finished' } } as const;
@@ -217,6 +234,12 @@ async function loop(input: LoopInput, exits: Array<() => void>): Promise<LoopOut
     type: 'error', status: 'INFRA_API', code: 'spend_bound',
     message: `$${out.cost_usd.toFixed(2)} settled (worst cases of failed attempts included) + this attempt's worst case $${worstUsd.toFixed(2)} would pass the bound of $${MAX_SETTLED_USD.toFixed(2)} (2 x PER_TRIAL_CAP_USD)`,
   });
+  // The bound reached on priced usage alone: the model's spend. cap is the bound and value the
+  // priced usage plus the refused request's worst case; code worst_case says the request was not
+  // sent, as against the cost cap reached by answers (no code).
+  const costBound = (worstUsd: number): Extract<Terminal, { type: 'limit' }> => ({
+    type: 'limit', limit: 'cost', cap: MAX_SETTLED_USD, value: pricedUsd + worstUsd, code: 'worst_case',
+  });
   const wallLimit = (t: number): Terminal => ({ type: 'limit', limit: 'wall_clock', cap: caps.maxWallMs, value: working(t) });
 
   for (;;) {
@@ -235,7 +258,7 @@ async function loop(input: LoopInput, exits: Array<() => void>): Promise<LoopOut
     const work = new AbortController();
     // Aborted before an attempt's reserve when its worst case would pass MAX_SETTLED_USD.
     const spend = new AbortController();
-    let refused: Terminal | null = null;
+    let refused: Refused | null = null;
     let detach = () => {};
     const startAttempt = (at: number) => {
       detach();
@@ -253,9 +276,19 @@ async function loop(input: LoopInput, exits: Array<() => void>): Promise<LoopOut
     };
     startAttempt(t);
     const onAttempt = (n: number, worstUsd: number) => {
+      // The model's spend first: priced usage and this request's own worst case pass the bound
+      // with no failed attempt counted, so the trial ends LIMIT cost (rule P-L). Only when
+      // worst-case settles of failed or aborted attempts make the difference is it INFRA_API.
+      if (pricedUsd + worstUsd > MAX_SETTLED_USD) {
+        refused = costBound(worstUsd);
+        spend.abort(new CostLimitRefused(`priced usage $${pricedUsd.toFixed(2)} + this request's worst case $${worstUsd.toFixed(2)} would pass the bound of $${MAX_SETTLED_USD.toFixed(2)}`));
+        return;
+      }
       if (out.cost_usd + worstUsd > MAX_SETTLED_USD) {
         refused = spendBound(worstUsd);
-        spend.abort(new Error(refused.message));
+        // A typed reason, so every layer it passes through (MessagesClient, the batch wrapper)
+        // classifies it as this trial's INFRA_API spend_bound, never as a batch stop.
+        spend.abort(new SpendBoundRefused(refused.message));
         return;
       }
       if (n > 1) startAttempt(now());
@@ -268,12 +301,27 @@ async function loop(input: LoopInput, exits: Array<() => void>): Promise<LoopOut
       armBound(at);
     };
     let r: CallResult;
+    let emitFailure: { error: unknown } | undefined;
     try {
-      r = await client.send(history, params, { signal: AbortSignal.any([...(signal ? [signal] : []), work.signal, bound.signal, spend.signal]), onSettle, onAttempt, onRetry });
+      r = await client.send(history, params, {
+        signal: AbortSignal.any([...(signal ? [signal] : []), work.signal, bound.signal, spend.signal]), onSettle, onAttempt, onRetry,
+        // An emit that throws here would surface from send as a client error; it is kept and
+        // rethrown after send instead, as any other emit failure of the loop.
+        onAttemptError: (f) => {
+          try {
+            emit({ type: 'attempt_error', turn, ...f });
+          } catch (e) {
+            emitFailure ??= { error: e };
+          }
+        },
+      });
     } catch (e) {
+      if (emitFailure) throw emitFailure.error;
       const at = now();
       settleWait(at);
-      if (!signal?.aborted && refused !== null) return end('INFRA_API', refused);
+      // onAttempt sets it; TypeScript does not follow a write inside a closure, so read it typed.
+      const refusal = refused as Refused | null;
+      if (!signal?.aborted && refusal !== null) return end(refusal.type === 'limit' ? 'LIMIT' : 'INFRA_API', refusal);
       if (!signal?.aborted && work.signal.aborted) return end('LIMIT', wallLimit(at));
       if (!signal?.aborted && bound.signal.aborted) return end('INFRA_API', elapsedBound(at));
       const failure = clientFailure(e, signal);
@@ -281,6 +329,7 @@ async function loop(input: LoopInput, exits: Array<() => void>): Promise<LoopOut
     } finally {
       detach();
     }
+    if (emitFailure) throw emitFailure.error;
     const m = r.message;
     const priced = usageCostUsd(m.usage);
     // The outcome first, then the event: an emit that throws leaves the outcome current.

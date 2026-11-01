@@ -49,12 +49,16 @@ function mockFetch(steps: Step[]) {
 
 const sse = (events: object[]) => events.map((e) => `event: ${(e as { type: string }).type}\ndata: ${JSON.stringify(e)}\n\n`).join('');
 
+// One chunk per read, then the end: an error() in start would discard the queued chunks, so a
+// stream that errors delivers its chunks first, as a dropped connection does.
 function body(chunks: string[], end: 'close' | 'error' = 'close'): ReadableStream<Uint8Array> {
   const enc = new TextEncoder();
+  const queue = chunks.filter((c) => c !== '');
   return new ReadableStream({
-    start(c) {
-      for (const chunk of chunks) c.enqueue(enc.encode(chunk));
-      if (end === 'error') c.error(new TypeError('terminated'));
+    pull(c) {
+      const next = queue.shift();
+      if (next !== undefined) c.enqueue(enc.encode(next));
+      else if (end === 'error') c.error(new TypeError('terminated'));
       else c.close();
     },
   });
@@ -191,22 +195,33 @@ describe('partial streams', () => {
     expect(JSON.stringify(history)).not.toContain('PARTIAL');
   });
 
-  it.each([['eof'], ['error']] as const)('a dropped stream (%s) settles a row at the worst case', async (how) => {
+  // builder-266 (4): after message_start, a failed attempt settles what the stream reported: its
+  // input (100 tokens) and, with no message_delta, output at max_tokens (1,024).
+  const REPORTED = { usage: { input_tokens: 100, output_tokens: 1024 }, cost_usd: (100 * 4 + 1024 * 20) / 1e6 };
+
+  it.each([['eof'], ['error']] as const)('a dropped stream (%s) settles a row at the usage it reported', async (how) => {
     const t = await client([partial(how), ok()]);
     await t.c.send(user(), PARAMS);
     const [reserve] = rows(t.store, 'reserve');
     const [first] = rows(t.store, 'settle');
     expect(first?.call_id).toBe(reserve?.call_id);
-    expect(first?.cost_usd).toBe(reserve?.cost_usd);
-    expect(first?.usage).toBeNull();
+    expect(first).toMatchObject(REPORTED);
+    expect(first!.cost_usd).toBeLessThan(reserve!.cost_usd);
   });
 
-  it('a 529 error event after a partial stream settles a row at the worst case and retries', async () => {
+  it('a stream dropped before message_start settles a row at the worst case', async () => {
+    const t = await client([() => new Response(body([''], 'error'), { status: 200 }), ok()]);
+    await t.c.send(user(), PARAMS);
+    const [reserve] = rows(t.store, 'reserve');
+    expect(rows(t.store, 'settle')[0]).toMatchObject({ call_id: reserve?.call_id, cost_usd: reserve?.cost_usd, usage: null });
+  });
+
+  it('a 529 error event after a partial stream settles a row at the usage it reported and retries', async () => {
     const t = await client([partial('overloaded'), ok()]);
     const r = await t.c.send(user(), PARAMS);
     expect(r.attempts).toBe(2);
     const [reserve] = rows(t.store, 'reserve');
-    expect(rows(t.store, 'settle')[0]).toMatchObject({ call_id: reserve?.call_id, cost_usd: reserve?.cost_usd, usage: null });
+    expect(rows(t.store, 'settle')[0]).toMatchObject({ call_id: reserve?.call_id, ...REPORTED });
   });
 });
 
@@ -346,7 +361,7 @@ describe('pnpm live:node refuses before any call', () => {
 // P2 fix round (findings p2-findings-1): each test below failed at 63259f5.
 describe('MessagesClient is the only way to send', () => {
   it('exports only the metered client, its error and pure helpers', () => {
-    expect(Object.keys(anthropic).sort()).toEqual(['ANTHROPIC_VERSION', 'ApiError', 'EgressRefusal', 'IDLE_STREAM_MS', 'MAX_ATTEMPTS', 'MODEL', 'MessagesClient', 'claimOutbound', 'classifyFailure', 'isApiHost', 'requestUrl', 'reserveRequest']);
+    expect(Object.keys(anthropic).sort()).toEqual(['ANTHROPIC_VERSION', 'ApiError', 'CostLimitRefused', 'EgressRefusal', 'IDLE_STREAM_MS', 'MAX_ATTEMPTS', 'MODEL', 'MessagesClient', 'SpendBoundRefused', 'claimOutbound', 'classifyFailure', 'isApiHost', 'requestUrl', 'reserveRequest']);
   });
 
   it('no exported function sends without a grant', async () => {
@@ -459,7 +474,7 @@ describe('status and local failure handling', () => {
     expect(rows(store, 'reserve')).toHaveLength(0);
   });
 
-  it('a malformed stream frame is not retried as a network error; it settles at the worst case', async () => {
+  it('a malformed stream frame is not retried as a network error; it settles the usage message_start reported', async () => {
     const bad: Step = () => new Response(body([sse([start()]), 'event: content_block_start\ndata: {not json\n\n']), { status: 200 });
     const t = await client([bad, ok()]);
     const err = await t.c.send(user(), PARAMS).catch((e: unknown) => e);
@@ -467,7 +482,7 @@ describe('status and local failure handling', () => {
     expect((err as Error).message).not.toMatch(/network error/);
     expect(t.calls).toHaveLength(1);
     const [reserve] = rows(t.store, 'reserve');
-    expect(rows(t.store, 'settle')).toMatchObject([{ call_id: reserve?.call_id, cost_usd: reserve?.cost_usd, usage: null }]);
+    expect(rows(t.store, 'settle')).toMatchObject([{ call_id: reserve?.call_id, usage: { input_tokens: 100, output_tokens: 1024 }, cost_usd: (100 * 4 + 1024 * 20) / 1e6 }]);
   });
 });
 
