@@ -1,0 +1,73 @@
+{
+  "trial_id": "run:probe-1:crc-care-gap/3",
+  "task_id": "crc-care-gap",
+  "task_version": "d651de13d5a43f57cfb9be4e20cca13aed85874e1f2edebfe17c383b2ff2ba26",
+  "env_version": "800d20e80a0098d9abc6997dfd519c706043dfdb982b56683ea61559c3297770",
+  "grader_task_version": "d9961fee94acecda8a0b4b45df4e05b8e2b5273fba10f6589f92d83962edb99a",
+  "fixture_hash": "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968",
+  "state_hash": {
+    "initial": "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968",
+    "final": "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968",
+    "replay_final": "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968"
+  },
+  "model_requested": "claude-opus-5-5",
+  "models_returned": [
+    "claude-opus-5-5"
+  ],
+  "effort": "high",
+  "api_version": "2026-10-21",
+  "started": "2026-11-01T07:45:17.213Z",
+  "turns": 32,
+  "tool_calls": 129,
+  "tool_errors": {
+    "INVALID_INPUT": 0,
+    "NOT_FOUND": 0,
+    "CONFLICT": 0,
+    "NOT_SUPPORTED": 0,
+    "INTERNAL": 0
+  },
+  "usage": {
+    "input": 64,
+    "cache_write": 292453,
+    "cache_read": 4518654,
+    "output": 16412
+  },
+  "cost_usd": 9.2954998,
+  "api_retries": 0,
+  "retry_wait_ms": 0,
+  "stop_reason": "tool_use",
+  "refusal_category": null,
+  "status": "CANCELLED",
+  "stop": null,
+  "detail": "Error: batch stopped: run:probe-1:crc-care-gap/2: Error: $3.59 settled (worst cases of failed attempts included) + this attempt's worst case $8.73 would pass the bound of $12.00 (2 x PER_TRIAL_CAP_USD)",
+  "summary": null,
+  "resumed": false,
+  "env_git_sha": "84b1806d028e4b509c36962a192d8272da54d3f3",
+  "ended": "2026-11-01T07:48:06.617Z",
+  "judge_cost_usd": 0,
+  "grader_version": "15",
+  "outcome": "CANCELLED",
+  "valid": false,
+  "fault": "infra",
+  "checks": [],
+  "score": null,
+  "judge": {
+    "calls": 0,
+    "unknown": 0,
+    "unknown_penalties": 0,
+    "score_penalties_met": null,
+    "score_penalties_not_met": null,
+    "over_allowance": 0,
+    "cache_keys": [],
+    "cache": []
+  },
+  "attribution": null,
+  "error": null,
+  "run_id": "probe-1",
+  "index": 3,
+  "attempt": "88860582-4",
+  "mode": "live",
+  "settled": false,
+  "requeue_reason": "CANCELLED",
+  "trajectory": "requeued/crc-care-gap/3.88860582-4.jsonl"
+}

@@ -1,0 +1,73 @@
+{
+  "trial_id": "run:probe-1:discharge-medrec/2",
+  "task_id": "discharge-medrec",
+  "task_version": "657b5d12cb096e8c0bbf43a35a0d1b45a9ad689a389dd8736e03ce0f665ecae8",
+  "env_version": "0e76db3e7b620d9397b3484ac5d4d55112b7069d6e75b426f439167e13b85834",
+  "grader_task_version": "7aadc29678a787d70d9a773f440fcde377d5d8e8a8505e7398d9f383ebc9e32b",
+  "fixture_hash": "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968",
+  "state_hash": {
+    "initial": "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968",
+    "final": "c5a6cc07d3454c4aeb4f8bcea951d1e642d87446dac30bd3ee5813052af0ddf9",
+    "replay_final": "c5a6cc07d3454c4aeb4f8bcea951d1e642d87446dac30bd3ee5813052af0ddf9"
+  },
+  "model_requested": "claude-opus-5-5",
+  "models_returned": [
+    "claude-opus-5-5"
+  ],
+  "effort": "high",
+  "api_version": "2026-10-21",
+  "started": "2026-11-01T07:50:14.047Z",
+  "turns": 24,
+  "tool_calls": 52,
+  "tool_errors": {
+    "INVALID_INPUT": 0,
+    "NOT_FOUND": 0,
+    "CONFLICT": 0,
+    "NOT_SUPPORTED": 0,
+    "INTERNAL": 0
+  },
+  "usage": {
+    "input": 48,
+    "cache_write": 73596,
+    "cache_read": 992182,
+    "output": 11471
+  },
+  "cost_usd": 7.5927804000000005,
+  "api_retries": 2,
+  "retry_wait_ms": 65229,
+  "stop_reason": "tool_use",
+  "refusal_category": null,
+  "status": "CANCELLED",
+  "stop": null,
+  "detail": "Error: batch stopped: run:probe-1:contrast-ct-prep/2: Error: $9.27 settled (worst cases of failed attempts included) + this attempt's worst case $4.01 would pass the bound of $12.00 (2 x PER_TRIAL_CAP_USD)",
+  "summary": null,
+  "resumed": false,
+  "env_git_sha": "84b1806d028e4b509c36962a192d8272da54d3f3",
+  "ended": "2026-11-01T07:53:00.652Z",
+  "judge_cost_usd": 0,
+  "grader_version": "15",
+  "outcome": "CANCELLED",
+  "valid": false,
+  "fault": "infra",
+  "checks": [],
+  "score": null,
+  "judge": {
+    "calls": 0,
+    "unknown": 0,
+    "unknown_penalties": 0,
+    "score_penalties_met": null,
+    "score_penalties_not_met": null,
+    "over_allowance": 0,
+    "cache_keys": [],
+    "cache": []
+  },
+  "attribution": null,
+  "error": null,
+  "run_id": "probe-1",
+  "index": 2,
+  "attempt": "18ad5a58-3",
+  "mode": "live",
+  "settled": false,
+  "requeue_reason": "CANCELLED",
+  "trajectory": "requeued/discharge-medrec/2.18ad5a58-3.jsonl"
+}
