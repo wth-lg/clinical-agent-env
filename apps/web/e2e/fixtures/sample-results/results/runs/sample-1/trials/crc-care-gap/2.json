@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:crc-care-gap:2",
   "task_id": "crc-care-gap",
-  "task_version": "3e6f2378af5a4f4e29c59a822724d7dab37ada883a9e99d73889e4ac848c7d80",
+  "task_version": "d651de13d5a43f57cfb9be4e20cca13aed85874e1f2edebfe17c383b2ff2ba26",
   "env_version": "800d20e80a0098d9abc6997dfd519c706043dfdb982b56683ea61559c3297770",
-  "grader_task_version": "eaee81c305492bef3257e1d5a0ad2bb5537d3d0d5127a9d805cf8926c20c1d06",
+  "grader_task_version": "d9961fee94acecda8a0b4b45df4e05b8e2b5273fba10f6589f92d83962edb99a",
   "fixture_hash": "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968",
   "state_hash": {
     "initial": "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968",
@@ -124,7 +124,8 @@
           "item": "Patient/pt-0011",
           "met": true,
           "decisive_ids": [
-            "EpisodeOfCare/eoc-00001"
+            "EpisodeOfCare/eoc-00001",
+            "Patient/pt-0011"
           ],
           "evidence": {}
         },
@@ -132,7 +133,8 @@
           "item": "Patient/pt-0014",
           "met": true,
           "decisive_ids": [
-            "Appointment/appt-00002"
+            "Appointment/appt-00002",
+            "Patient/pt-0014"
           ],
           "evidence": {}
         },
@@ -140,7 +142,8 @@
           "item": "Patient/pt-0018",
           "met": true,
           "decisive_ids": [
-            "Observation/obs-01493"
+            "Observation/obs-01493",
+            "Patient/pt-0018"
           ],
           "evidence": {}
         },
@@ -148,7 +151,8 @@
           "item": "Patient/pt-0019",
           "met": true,
           "decisive_ids": [
-            "MedicationRequest/mr-00215"
+            "MedicationRequest/mr-00215",
+            "Patient/pt-0019"
           ],
           "evidence": {}
         },
@@ -172,7 +176,8 @@
           "item": "Patient/pt-0022",
           "met": true,
           "decisive_ids": [
-            "Observation/obs-01732"
+            "Observation/obs-01732",
+            "Patient/pt-0022"
           ],
           "evidence": {}
         },
@@ -180,7 +185,8 @@
           "item": "Patient/pt-0024",
           "met": true,
           "decisive_ids": [
-            "ServiceRequest/sr-00003"
+            "ServiceRequest/sr-00003",
+            "Patient/pt-0024"
           ],
           "evidence": {}
         },
@@ -199,7 +205,8 @@
           "decisive_ids": [
             "Observation/obs-02502",
             "DocumentReference/doc-00112",
-            "Encounter/enc-00246"
+            "Encounter/enc-00246",
+            "Patient/pt-0035"
           ],
           "evidence": {}
         },
@@ -207,7 +214,8 @@
           "item": "Patient/pt-0036",
           "met": true,
           "decisive_ids": [
-            "Procedure/proc-00786"
+            "Procedure/proc-00786",
+            "Patient/pt-0036"
           ],
           "evidence": {}
         },
@@ -275,7 +283,8 @@
           "item": "Patient/pt-0011",
           "met": true,
           "decisive_ids": [
-            "EpisodeOfCare/eoc-00001"
+            "EpisodeOfCare/eoc-00001",
+            "Patient/pt-0011"
           ],
           "evidence": {}
         },
@@ -283,7 +292,8 @@
           "item": "Patient/pt-0014",
           "met": true,
           "decisive_ids": [
-            "Appointment/appt-00002"
+            "Appointment/appt-00002",
+            "Patient/pt-0014"
           ],
           "evidence": {}
         },
@@ -291,7 +301,8 @@
           "item": "Patient/pt-0018",
           "met": true,
           "decisive_ids": [
-            "Observation/obs-01493"
+            "Observation/obs-01493",
+            "Patient/pt-0018"
           ],
           "evidence": {}
         },
@@ -299,7 +310,8 @@
           "item": "Patient/pt-0019",
           "met": true,
           "decisive_ids": [
-            "MedicationRequest/mr-00215"
+            "MedicationRequest/mr-00215",
+            "Patient/pt-0019"
           ],
           "evidence": {}
         },
@@ -323,7 +335,8 @@
           "item": "Patient/pt-0022",
           "met": true,
           "decisive_ids": [
-            "Observation/obs-01732"
+            "Observation/obs-01732",
+            "Patient/pt-0022"
           ],
           "evidence": {}
         },
@@ -331,7 +344,8 @@
           "item": "Patient/pt-0024",
           "met": true,
           "decisive_ids": [
-            "ServiceRequest/sr-00003"
+            "ServiceRequest/sr-00003",
+            "Patient/pt-0024"
           ],
           "evidence": {}
         },
@@ -350,7 +364,8 @@
           "decisive_ids": [
             "Observation/obs-02502",
             "DocumentReference/doc-00112",
-            "Encounter/enc-00246"
+            "Encounter/enc-00246",
+            "Patient/pt-0035"
           ],
           "evidence": {}
         },
@@ -358,7 +373,8 @@
           "item": "Patient/pt-0036",
           "met": true,
           "decisive_ids": [
-            "Procedure/proc-00786"
+            "Procedure/proc-00786",
+            "Patient/pt-0036"
           ],
           "evidence": {}
         },
@@ -499,6 +515,10 @@
               {
                 "id": "EpisodeOfCare/eoc-00001",
                 "step": 73
+              },
+              {
+                "id": "Patient/pt-0011",
+                "step": 8
               }
             ]
           },
@@ -509,6 +529,10 @@
               {
                 "id": "Appointment/appt-00002",
                 "step": 31
+              },
+              {
+                "id": "Patient/pt-0014",
+                "step": 5
               }
             ]
           },
@@ -519,6 +543,10 @@
               {
                 "id": "Observation/obs-01493",
                 "step": 37
+              },
+              {
+                "id": "Patient/pt-0018",
+                "step": 11
               }
             ]
           },
@@ -529,6 +557,10 @@
               {
                 "id": "MedicationRequest/mr-00215",
                 "step": 65
+              },
+              {
+                "id": "Patient/pt-0019",
+                "step": 13
               }
             ]
           },
@@ -539,6 +571,10 @@
               {
                 "id": "Observation/obs-01732",
                 "step": 36
+              },
+              {
+                "id": "Patient/pt-0022",
+                "step": 10
               }
             ]
           },
@@ -549,6 +585,10 @@
               {
                 "id": "ServiceRequest/sr-00003",
                 "step": 30
+              },
+              {
+                "id": "Patient/pt-0024",
+                "step": 4
               }
             ]
           },
@@ -567,6 +607,10 @@
               {
                 "id": "Encounter/enc-00246",
                 "step": 124
+              },
+              {
+                "id": "Patient/pt-0035",
+                "step": 15
               }
             ]
           },
@@ -577,6 +621,10 @@
               {
                 "id": "Procedure/proc-00786",
                 "step": 111
+              },
+              {
+                "id": "Patient/pt-0036",
+                "step": 7
               }
             ]
           }
@@ -599,7 +647,8 @@
           "item": "Patient/pt-0011",
           "met": true,
           "decisive_ids": [
-            "EpisodeOfCare/eoc-00001"
+            "EpisodeOfCare/eoc-00001",
+            "Patient/pt-0011"
           ],
           "evidence": {}
         },
@@ -607,7 +656,8 @@
           "item": "Patient/pt-0014",
           "met": true,
           "decisive_ids": [
-            "Appointment/appt-00002"
+            "Appointment/appt-00002",
+            "Patient/pt-0014"
           ],
           "evidence": {}
         },
@@ -615,7 +665,8 @@
           "item": "Patient/pt-0018",
           "met": true,
           "decisive_ids": [
-            "Observation/obs-01493"
+            "Observation/obs-01493",
+            "Patient/pt-0018"
           ],
           "evidence": {}
         },
@@ -623,7 +674,8 @@
           "item": "Patient/pt-0019",
           "met": true,
           "decisive_ids": [
-            "MedicationRequest/mr-00215"
+            "MedicationRequest/mr-00215",
+            "Patient/pt-0019"
           ],
           "evidence": {}
         },
@@ -647,7 +699,8 @@
           "item": "Patient/pt-0022",
           "met": true,
           "decisive_ids": [
-            "Observation/obs-01732"
+            "Observation/obs-01732",
+            "Patient/pt-0022"
           ],
           "evidence": {}
         },
@@ -655,7 +708,8 @@
           "item": "Patient/pt-0024",
           "met": true,
           "decisive_ids": [
-            "ServiceRequest/sr-00003"
+            "ServiceRequest/sr-00003",
+            "Patient/pt-0024"
           ],
           "evidence": {}
         },
@@ -674,7 +728,8 @@
           "decisive_ids": [
             "Observation/obs-02502",
             "DocumentReference/doc-00112",
-            "Encounter/enc-00246"
+            "Encounter/enc-00246",
+            "Patient/pt-0035"
           ],
           "evidence": {}
         },
@@ -682,7 +737,8 @@
           "item": "Patient/pt-0036",
           "met": true,
           "decisive_ids": [
-            "Procedure/proc-00786"
+            "Procedure/proc-00786",
+            "Patient/pt-0036"
           ],
           "evidence": {}
         },

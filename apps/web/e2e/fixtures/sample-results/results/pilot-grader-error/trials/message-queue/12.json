@@ -1,9 +1,9 @@
 {
   "trial_id": "pilot-grader-error:message-queue:12",
   "task_id": "message-queue",
-  "task_version": "665f9bd6b3da401025f2e78b0b01e4fba7e98dba252262372f536c4719471bdc",
+  "task_version": "5d1ec60ec8dafdd14c334dfe9aa03dabd7bebd1c940c8e902ee03bc1c34d0463",
   "env_version": "6f622caaa5c3c02e9a804b714421cbf54c9f8e92e479e81f5a9765692ed5d82c",
-  "grader_task_version": "9149e400b2d3a6152e7fff50e9fb5030cbeb1efe32c0a4e6a0663ef61f0e8d81",
+  "grader_task_version": "b6f66917dc70df403c37feeb382b8a214359665225334b7993122d1e49bfcbb5",
   "fixture_hash": "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968",
   "state_hash": {
     "initial": "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968",
