@@ -12,7 +12,7 @@
 import type { Taxonomy } from '../../../packages/grader/attribution.ts';
 import { OUTSIDE } from '../../../packages/grader/items.ts';
 import type { Mutant, ScriptCall, ScriptTurn } from '../../../packages/grader/matrix/types.ts';
-import { actions, arrivalRead, arrivals, finish, fitOrder, GAPS, NEXT_WRITE, orderFit, outreach, PT, reads, recheck, STOOL_CODES, type Label } from '../solution/steps.ts';
+import { actions, arrivalRead, arrivals, finish, fitOrder, GAPS, NEXT_WRITE, orderFit, outreach, PT, reads, recheck, search, STOOL_CODES, type Label } from '../solution/steps.ts';
 import { D1_SORTED_SHORT_OF_WINDOW } from './alternatives.ts';
 
 const P = (l: Label) => `Patient/${PT[l]}`;
@@ -119,6 +119,29 @@ export const mutants: Mutant[] = [
   neverOpened('D1', 'd1_fit_never_opened', "Never lists Tiny Koss's stool tests, so her FIT is never seen and its correction never arrives; she is left without the review that decides her (R32).", searchOf('Observation', 'D1', STOOL_CODES), [table('D1')]),
   neverOpened('A1', 'a1_sdna_never_opened', "Never lists Delaine MacGyver's stool tests, so her sDNA-FIT is never seen and the laboratory's notice never arrives; she is left without the review that decides her (R32).", searchOf('Observation', 'A1', STOOL_CODES), [table('A1')]),
   neverOpened('C2', 'c2_episode_never_opened', "Never lists Kelsie Rohan's care episodes, so her hospice episode is never seen and the discharge summary never arrives; she is left excluded without the review that decides it (R32).", searchOf('EpisodeOfCare', 'C2'), []),
+  {
+    // R38(a): a fired amend never excuses the base review. The trial orders and messages Elly
+    // Trantow blind, then one problem-list search fires crc-b1; it never reads the correction, her
+    // medications, her Patient or her screening, and leaves the order as it was. A write exposes
+    // nothing, so on T3 (after_exposed triggers) the blind route needs that one read to fire.
+    id: 'g1_blind_write_fires_amend',
+    trap: 'blind_write_fires_amend',
+    why: "Orders Elly Trantow a FIT kit and messages her before reviewing anything, then lists her problems once, which brings the frailty correction; it never reads the correction or reviews her chart, and leaves the order as it was.",
+    fails: ['event_seen', 'amended'],
+    loses: [],
+    attribution: 'retrieval',
+    items: only('G1', 'retrieval'),
+    script: [
+      ...reads().slice(0, 2),
+      { calls: [orderFit(PT.G1), outreach(PT.G1, fitOrder(1))] },
+      ...reads().slice(2).map((t) => ({ calls: t.calls.filter((c) => c.input.patient !== PT.G1 && c.input.id !== PT.G1) })),
+      { calls: [search('Condition', PT.G1, { count: 50 })] },
+      recheck,
+      arrivalsBut('G1'),
+      { calls: actions(['D1', 'A1'], 3) },
+      { calls: [finish()] },
+    ],
+  },
   {
     // R36: a run newest first counts only once a page reaches before the window opens. Its one page
     // ends in April 2024, short of the sDNA-FIT window's start on 2024-01-01.

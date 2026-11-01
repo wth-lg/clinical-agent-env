@@ -379,7 +379,18 @@ describe('a delivered gap\'s review (event_seen, amended)', () => {
   });
   it('G1: the correction is seen by a read of the message or of the frailty entry now entered in error', () => {
     const G1 = 'Patient/pt-0009';
-    for (const id of ['Communication/comm-e3-5521', FRAILTY]) expect(item('event_seen', trial('crc-b1', (n) => [...screened(n, 2, 'pt-0009'), readArrival(n + 3, id)]), G1).met, id).toBe(true);
+    const MR = ref('MedicationRequest/mr-t3-3318');
+    for (const id of ['Communication/comm-e3-5521', FRAILTY]) expect(item('event_seen', trial('crc-b1', (n) => [...screened(n, 2, 'pt-0009'), step(n + 3, 2, { exposed_ids: [MR] }), readArrival(n + 4, id)]), G1).met, id).toBe(true);
+  });
+  // R38(a): a fired amend never excuses the base review. The delivered member is still reviewed by
+  // her own base decisive records (G1: the frailty entry, the donepezil order and her Patient).
+  it("R38: G1's review also needs her base decisive records: without the donepezil order, event_seen fails", () => {
+    const G1 = 'Patient/pt-0009';
+    const MR = ref('MedicationRequest/mr-t3-3318');
+    const withMed = trial('crc-b1', (n) => [...screened(n, 2, 'pt-0009'), step(n + 3, 2, { exposed_ids: [MR] }), readArrival(n + 4, 'Communication/comm-e3-5521')]);
+    const withoutMed = trial('crc-b1', (n) => [...screened(n, 2, 'pt-0009'), readArrival(n + 3, 'Communication/comm-e3-5521')]);
+    expect(item('event_seen', withMed, G1).met).toBe(true);
+    expect(item('event_seen', withoutMed, G1)).toMatchObject({ met: false, event: 'crc-b1' });
   });
   it('declares seen_at for each event focus on the event gates, and no gap rules on the base gates', () => {
     for (const g of BASE_GATES) {

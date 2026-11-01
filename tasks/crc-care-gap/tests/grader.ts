@@ -579,8 +579,9 @@ function firstOrders(ctx: GateCtx) {
 // DELIVERED names. It is reviewed (seenAt) when the trial has seen the arrival after it came (a read
 // of the arrival or of the record it corrects, which shows the correction; for the faxed notice also
 // one snippet that shows its atoms, R29, R21), has shown every screening kind absent by complete
-// searches (R27, R31, R36; at any time, since the arrival changes no other screening record) and has
-// seen the Patient (R33): a review never completed fails event_seen as retrieval (R14). Its action is
+// searches (R27, R31, R36; at any time, since the arrival changes no other screening record), has
+// seen the Patient (R33) and her own base decisive records (R38a): a review never completed fails
+// event_seen as retrieval (R14). Its action is
 // §5's, one FIT order starting in the period and an outreach message (amended); the message names
 // the order in about, or else the form is wrong (amend_form, as outreach_messages marks it). The
 // lure's member must get no FIT order and no message (kept, §5: none without an open gap); a note
@@ -594,9 +595,13 @@ export function arrivalSeenAt(steps: readonly Step[], at: number, ids: readonly 
 }
 // The records whose read after the arrival shows the correction: every resource it put.
 const arrivalIds = (spec: EventSpec) => spec.resources.map((r) => `${r.resourceType}/${r.id}`);
+// R38(a): a fired amend never excuses the base review, so the member's own base decisive records
+// (expected.items decisive: G1's frailty entry, donepezil order and Patient; D1's FIT; A1's
+// sDNA-FIT) must be seen too, at any time, by their base rule.
 const deliveredSeenAt = (spec: EventSpec) => (steps: readonly Step[], at: number): number | null => {
   const y = DELIVERED[spec.id]!;
-  return latest([arrivalSeenAt(steps, at, arrivalIds(spec)), absencesShown(steps, y), firstExposed(steps, y.patient)]);
+  const base = M.find((x) => x.patient === spec.item)!;
+  return latest([arrivalSeenAt(steps, at, arrivalIds(spec)), absencesShown(steps, y), firstExposed(steps, y.patient), ...base.decisive.map((d) => seenAt(steps, d))]);
 };
 const amendExpectation = (spec: EventSpec): EventExpectation => {
   const p = spec.item;

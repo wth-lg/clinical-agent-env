@@ -54,7 +54,7 @@ display = "Hemoglobin [Presence] in Stool from gastrointestinal lower by Immunoa
 [matrix]
 traps = [
   "arrival_not_acted_on", "missed_arrival", "amend_before_seen", "lure_acted_on",
-  "no_contact_unreviewed", "order_before_review", "outside_panel",
+  "no_contact_unreviewed", "blind_write_fires_amend", "order_before_review", "outside_panel",
   "duplicate_fit_order", "fit_after_period", "outreach_channel", "outreach_without_order",
 ]
 

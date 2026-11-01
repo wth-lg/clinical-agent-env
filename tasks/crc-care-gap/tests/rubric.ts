@@ -127,7 +127,10 @@ const contactItems: Check[] = expected.items.filter((x) => x.message === false).
       const sent = comms.filter((r) => recipients(ctx.final, r).includes(x.patient)).map((r) => `Communication/${r.id}`);
       if (sent.length > 0) return { met: true, evidence: { sent } };
       const staff = comms.filter((r) => (r as { subject?: { reference?: string } }).subject?.reference === x.patient);
-      const created = new Set(ctx.writes().filter((k) => !ctx.initial.has(...(k.split('/') as [string, string]))));
+      // An arrival's inbox Task is the event's, not the trial's, even when the trial updates it (R38b:
+      // RBC-QM-02 states no inbox rule, so its status is ungraded).
+      const arrived = new Set(ctx.steps.flatMap((st) => (st.arrivals ?? []).flatMap((a) => a.keys)));
+      const created = new Set(ctx.writes().filter((k) => !arrived.has(k) && !ctx.initial.has(...(k.split('/') as [string, string]))));
       const tasks = ctx.final.all('Task').map((r) => r as { id?: string; for?: { reference?: string }; description?: string }).filter((t) => created.has(`Task/${t.id}`) && t.for?.reference === x.patient);
       const ids = [...staff.map((r) => `Communication/${r.id}`), ...tasks.map((t) => `Task/${t.id}`)];
       if (ids.length === 0) return { met: false, evidence: { sent, staff: [], tasks: [] } };

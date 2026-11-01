@@ -13,6 +13,7 @@ import type { WorldView } from '../../../packages/grader/matrix/types.ts';
 import * as events from '../events.ts';
 import { DELIVERED, expected } from '../expected.ts';
 import { derive } from '../policy.ts';
+import { actions, arrivals, finish, reads, recheck } from '../solution/steps.ts';
 import { mutants } from './mutants.ts';
 
 // plan-amendment-w4, Event mechanism table, row "Policy sentence": the same in all six policies.
@@ -123,5 +124,21 @@ describe('crc-care-gap events against the world', () => {
     const grade = await gradeRun(env, task, task.checks, await trial(env, task, cases(task).find((c) => c.kind === 'null')!), misses);
     const failed = new Set(grade.checks.filter((c) => c.kind === 'gate').flatMap((c) => ((c as { items?: Array<{ item: string; met: boolean }> }).items ?? []).filter((i) => !i.met).map((i) => i.item)));
     expect(expected.items.map((x) => x.patient).filter((p) => !failed.has(p))).toEqual([]);
+  });
+
+  // R38(b): RBC-QM-02 states no inbox rule, so an arrival's inbox status is ungraded. A trial that
+  // reads each arrival and completes its inbox item passes with no rubric loss and no judge question
+  // about those Tasks. (Not a matrix alternative: the matrix's arrived-split check refuses any case
+  // whose call writes an arrival's key.)
+  it('completing the arrivals\' inbox items is ungraded (R38b)', async () => {
+    const task = await loadMatrixTask('crc-care-gap');
+    const complete = ['inbox-a0001', 'inbox-a0002', 'inbox-a0003', 'inbox-a0004'].map((task_id) => ({ name: 'update_inbox_item', input: { task_id, action: 'complete' } }));
+    const c = { kind: 'alternative' as const, id: 'completes_arrival_inbox_items', loses: [], script: [...reads(), recheck, arrivals(), { calls: complete }, { calls: actions(undefined, 5) }, { calls: [finish()] }] };
+    const run = await trial(env, task, c);
+    expect(stepsOf(run.events).filter((st) => st.tool === 'update_inbox_item' && !st.is_error)).toHaveLength(4);
+    const misses: Miss[] = [];
+    const grade = await gradeRun(env, task, task.checks, run, misses);
+    expect(misses).toEqual([]);
+    expect([grade.outcome, grade.score]).toEqual(['PASS', 1]);
   });
 });
