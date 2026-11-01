@@ -9,7 +9,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { tempDir } from '../../scripts/test/helpers.ts';
-import { type ClassesJson, classesJsonProblems, type Deps, main } from '../classes.ts';
+import { type ClassesJson, classesJsonProblems, type Deps, main, type TaskEvents } from '../classes.ts';
 
 async function run(args: string[], deps: Partial<Deps> = {}): Promise<{ code: number; out: string[]; err: string[] }> {
   const out: string[] = [];
@@ -73,7 +73,7 @@ describe('PW4-H0b fixture gate: pnpm cli classes results/probe-1 reproduces clas
     expect([mh.fails, mh.observations]).toEqual([1, 12]);
     expect(mh.instances.map((i) => [i.instance, i.label, i.fails, i.observations])).toEqual([[1, 'Anisha Margarita Schuster', 1, 6], [2, 'Salvador Logan Brakus', 0, 6]]);
     expect(mh.labels).toEqual([{ trial: 3, run: 'results/probe-1', item: 'Patient/pt-0049', gate: 'saline_prophylaxis', label: 'retrieval' }]);
-    expect(mh.wilson.lo).toBeCloseTo(0.6461, 3);
+    expect(mh.wilson!.lo).toBeCloseTo(0.6461, 3);
     const all = Object.values(json.tasks).flatMap((t) => t.classes);
     expect(all).toHaveLength(37);
     expect(all.filter((c) => c.fails === 0)).toHaveLength(35);
@@ -98,7 +98,7 @@ describe('classesJsonProblems', () => {
 // A synthetic run: one task with items a (class x), b (class x), c (class y); events e1 (A, on a)
 // and e2 (D, a lure on a) and e3 (O, on c).
 const ITEMS = [{ key: 'a', class: 'x', label: 'A' }, { key: 'b', class: 'x', label: 'B' }, { key: 'c', class: 'y', label: 'C' }];
-const EVENTS = { SPECS: [{ id: 'e1', item: 'a', class: 'A' }, { id: 'e2', item: 'a', class: 'D' }, { id: 'e3', item: 'c', class: 'O' }, { id: 'e4', item: 'b', class: 'B' }], ACTIVE: ['e1', 'e2', 'e3'] };
+const EVENTS: TaskEvents = { SPECS: [{ id: 'e1', item: 'a', class: 'A' }, { id: 'e2', item: 'a', class: 'D' }, { id: 'e3', item: 'c', class: 'O' }, { id: 'e4', item: 'b', class: 'B' }], ACTIVE: ['e1', 'e2', 'e3'] };
 
 interface Fake { outcome: string; fails?: Array<[string, string, string?]>; labels?: Array<[string, string, string]>; fired?: string[]; guard?: number; items?: string[] }
 

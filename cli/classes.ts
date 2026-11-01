@@ -34,7 +34,7 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { installEgressGuard } from '../packages/core/egress.ts';
 import { AUDIT_LABEL, FAULT, type Outcome } from '../packages/core/outcomes.ts';
-import { currentGrade, wilson } from '../packages/core/summary.ts';
+import { currentGrade, type RegradeGrade, type SummaryCheck, wilson } from '../packages/core/summary.ts';
 import { settledRecords, trajectoryOf } from './adapters/result-sink-node.ts';
 import { TASKS_DIR } from './adapters/tasks-node.ts';
 
@@ -153,22 +153,27 @@ export const GUARD_TEXT = 'arrived in your queues';
 const OUTSIDE = 'outside';
 
 type Row = { key: string; class: string; label: string };
+type Mod = Record<string, unknown>;
+type Rec = Record<string, unknown>;
+const listOf = (x: unknown): Rec[] => (Array.isArray(x) ? (x as Rec[]) : []);
+const itemsOf = (m: Mod): Rec[] => listOf((m.expected as { items?: unknown } | undefined)?.items);
+const row = (key: unknown, cls: unknown, label: unknown): Row => ({ key: String(key), class: String(cls), label: String(label) });
 // The shape each task's expected.ts has today, for a task without ITEM_CLASSES.
-const ADAPTERS: Record<string, (m: Record<string, any>) => Row[]> = {
-  'contrast-ct-prep': (m) => m.expected.items.map((i: any) => ({ key: i.patient, class: i.class, label: i.name })),
-  'crc-care-gap': (m) => m.expected.items.map((i: any) => ({ key: i.patient, class: m.classOf(i.patient), label: i.name })),
-  'discharge-medrec': (m) => m.expected.items.map((i: any) => ({ key: i.key, class: i.cls, label: i.key })),
+const ADAPTERS: Record<string, (m: Mod) => Row[]> = {
+  'contrast-ct-prep': (m) => itemsOf(m).map((i) => row(i.patient, i.class, i.name)),
+  'crc-care-gap': (m) => itemsOf(m).map((i) => row(i.patient, (m.classOf as (p: unknown) => string)(i.patient), i.name)),
+  'discharge-medrec': (m) => itemsOf(m).map((i) => row(i.key, i.cls, i.key)),
   // m1..m13 in number order.
-  'message-queue': (m) => [...m.ITEMS].sort((a: any, b: any) => a.name.length - b.name.length || (a.name < b.name ? -1 : 1)).map((i: any) => ({ key: i.item, class: i.klass, label: i.name })),
-  'renal-dose-review': (m) => m.expected.items.map((i: any) => ({ key: i.patient, class: i.class, label: i.name })),
-  'results-inbox': (m) => m.items.map((i: any) => ({ key: i.key, class: i.class, label: i.key })),
+  'message-queue': (m) => [...listOf(m.ITEMS)].sort((a, b) => String(a.name).length - String(b.name).length || (String(a.name) < String(b.name) ? -1 : 1)).map((i) => row(i.item, i.klass, i.name)),
+  'renal-dose-review': (m) => itemsOf(m).map((i) => row(i.patient, i.class, i.name)),
+  'results-inbox': (m) => listOf(m.items).map((i) => row(i.key, i.class, i.key)),
 };
 
 export async function itemClassesOf(task: string, root: string = TASKS_DIR): Promise<ItemClass[]> {
   const file = join(root, task, 'expected.ts');
   if (!existsSync(file)) throw new Error(`tasks/${task}/expected.ts not found`);
-  const m = (await import(pathToFileURL(file).href)) as Record<string, any>;
-  const rows: Row[] | undefined = Array.isArray(m.ITEM_CLASSES) ? m.ITEM_CLASSES : ADAPTERS[task]?.(m);
+  const m = (await import(pathToFileURL(file).href)) as Mod;
+  const rows: Row[] | undefined = Array.isArray(m.ITEM_CLASSES) ? (m.ITEM_CLASSES as Row[]) : ADAPTERS[task]?.(m);
   if (rows === undefined) throw new Error(`tasks/${task}/expected.ts exports no ITEM_CLASSES ([{key, class, label}])`);
   for (const r of rows) if (typeof r.key !== 'string' || typeof r.class !== 'string' || typeof r.label !== 'string') throw new Error(`tasks/${task}: an item row lacks key, class or label`);
   return rows.map((r) => ({ key: r.key, class: r.class, label: r.label }));
@@ -215,7 +220,19 @@ function readTrajectory(file: string): { fired: string[]; guard: number } {
   return { fired, guard };
 }
 
-function readTrial(dir: string, r: Record<string, any>): Trial {
+// What the table reads of a settled record.
+interface RawRecord {
+  task_id?: unknown;
+  index?: unknown;
+  outcome?: unknown;
+  grader_version?: unknown;
+  trajectory?: string;
+  checks?: SummaryCheck[] | null;
+  regrades?: Array<RegradeGrade & { changed?: boolean; grader_version?: unknown }>;
+  attribution?: { items?: Rec[] } | null;
+}
+
+function readTrial(dir: string, r: RawRecord): Trial {
   const grade = currentGrade({ outcome: String(r.outcome ?? ''), checks: r.checks ?? null, ...(Array.isArray(r.regrades) ? { regrades: r.regrades } : {}) });
   const failed = new Map<string, string[]>();
   const named = new Map<string, string>();
@@ -233,7 +250,7 @@ function readTrial(dir: string, r: Record<string, any>): Trial {
   const last = Array.isArray(r.regrades) ? r.regrades.at(-1) : undefined;
   const attribution = last !== undefined && last.changed ? null : r.attribution;
   const labels = new Map<string, Array<{ gate: string; label: string }>>();
-  for (const a of (attribution?.items ?? []) as Array<Record<string, unknown>>) {
+  for (const a of attribution?.items ?? []) {
     if (typeof a.item !== 'string') continue;
     labels.set(a.item, [...(labels.get(a.item) ?? []), { gate: String(a.gate ?? '?'), label: String(a.auto ?? '?') }]);
   }
@@ -381,7 +398,7 @@ export async function classesOf(runs: readonly string[], deps: Pick<Deps, 'itemC
   for (const dir of runs) {
     if (!existsSync(join(dir, 'trials'))) throw new Error(`${dir}: no trials/ directory`);
     for (const { record } of settledRecords(dir)) {
-      const r = record as unknown as Record<string, any>;
+      const r = record as unknown as RawRecord;
       if (typeof r.task_id !== 'string') continue;
       const last = Array.isArray(r.regrades) ? r.regrades.at(-1) : undefined;
       const gv = last?.grader_version ?? r.grader_version;
