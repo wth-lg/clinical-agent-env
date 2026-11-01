@@ -28,11 +28,17 @@
 // (judge_questions: one per recipient or per worklist item), counted per call, whichever item
 // makes them (a code item that asks ctx.judge included), and never more than JUDGE_MAX_CALLS.
 // Past the bound a question is not sent: it is unknown, marked 'judge allowance reached' in the
-// record. Each call's worst case (its real body plus JUDGE_MAX_TOKENS
-// of output) must stay within JUDGE_MAX_CALL_USD, $1, or it is not sent: unknown, marked
-// OVER_BUDGET. judgeAllowanceUsd prices each call at that ceiling, the upper bound for when the
-// graded text is not known yet (a dry run); perCallGrantClient opens each call's grant at its
-// real request's worst case.
+// record. judgeAllowanceUsd prices each allowed call at JUDGE_CALL_PRICE_USD, its worst case
+// (JUDGE_MAX_TOKENS of output) for a request body of JUDGE_PRICED_BODY_BYTES, above every judge
+// request measured on real trials and matrix cases (GRADER16-193 F2). The Judge holds a grading to
+// that in dollars too: the worst cases of the calls it sends never sum past its maxUsd
+// (judgeAllowanceUsd of the checks), and a call that would cross it is not sent, marked 'judge
+// allowance reached' like a call past the count. So a long text spends the allowance sooner but is
+// still asked, and the ledger, which settles a call at most at its worst case, never charges a
+// trial's judge more than its projection. Each call's worst case (its real body plus
+// JUDGE_MAX_TOKENS of output) must also stay within JUDGE_MAX_CALL_USD, $1, or it is not sent:
+// unknown, marked OVER_BUDGET. perCallGrantClient opens each call's grant at its real request's
+// worst case.
 //
 // Cache: every answer is kept under sha256 of (model, effort, prompt version, prompt, graded
 // text), with the calls it took, and the entries go into the trial record, so a regrade from
@@ -62,6 +68,15 @@ export const JUDGE_CALLS_PER_ITEM = 2;
 // The most judge calls one trial's grading may make, whatever its items declare (builder-267): with
 // JUDGE_MAX_CALL_USD it bounds a trial's judge allowance at $80.
 export const JUDGE_MAX_CALLS = 80;
+// The request body a judge call is priced at in the allowance: 6 KiB. The largest judge request
+// measured is 4,729 bytes (probe-1's crc-care-gap outreach messages) and 3,502 bytes over every
+// matrix case (evidence/builder-270/measure); the median is 1.6 to 2.7 KB. The Judge bounds the sum
+// of its calls' worst cases by the allowance, so this is what an allowed call may average, not a
+// per-call limit.
+export const JUDGE_PRICED_BODY_BYTES = 6_144;
+// One allowed judge call's price in the allowance: its worst case for that body, $0.40192
+// (JUDGE_MAX_TOKENS of output is $0.32 of it).
+export const JUDGE_CALL_PRICE_USD = worstCaseUsd({ bodyBytes: JUDGE_PRICED_BODY_BYTES, maxTokens: JUDGE_MAX_TOKENS });
 export const ALLOWANCE_REACHED = 'judge allowance reached';
 
 // The part of MessagesClient the judge uses (the loop's TrialClient).
@@ -257,6 +272,9 @@ export interface JudgeOptions {
   cache?: readonly JudgeCacheEntry[];
   // The most live calls this grading may make (judgeCallBudget); unbounded when absent.
   maxCalls?: number;
+  // The most the worst cases of this grading's live calls may sum to (judgeAllowanceUsd);
+  // unbounded when absent.
+  maxUsd?: number;
   // The task's judge effort; default DEFAULT_JUDGE_EFFORT.
   effort?: JudgeEffort;
 }
@@ -268,15 +286,20 @@ export class Judge {
   // The entries this grading used, in order of first use.
   readonly #used = new Map<string, JudgeCacheEntry>();
   readonly #maxCalls: number;
+  // In micro-dollars, as the ledger compares, so the bound is exact.
+  readonly #maxWorst: number;
   readonly #effort: JudgeEffort;
   #cost = 0;
   #live = 0;
+  // The worst cases of the live calls sent, in micro-dollars.
+  #worst = 0;
 
   constructor(opts: JudgeOptions = {}) {
     this.#client = opts.client ?? null;
     this.#cache = new Map((opts.cache ?? []).map((e) => [e.key, e]));
     this.#regrade = this.#client === null && opts.cache !== undefined;
     this.#maxCalls = opts.maxCalls ?? Infinity;
+    this.#maxWorst = opts.maxUsd === undefined ? Infinity : µ(opts.maxUsd);
     this.#effort = opts.effort ?? DEFAULT_JUDGE_EFFORT;
   }
 
@@ -343,9 +366,9 @@ export class Judge {
     // A question the grading that cached it never sent (its allowance was reached) has no answer:
     // when this grading's allowance has room for it, it is asked (live) or missed (a regrade), not
     // read as unknown again (builder-267: a regrade under a larger allowance). The calls this grading
-    // has spent are its live calls and those its cached answers took, in the order it asked them.
-    const spent = this.#live + [...this.#used.values()].reduce((n, e) => n + e.calls, 0);
-    const cached = found?.error === ALLOWANCE_REACHED && spent < this.#maxCalls ? undefined : found;
+    // has spent are those of the entries it used, in the order it asked them: a live answer's entry
+    // holds its live calls, a cached one the calls it took then; each counts once (GRADER16-193 F3).
+    const cached = found?.error === ALLOWANCE_REACHED && this.calls < this.#maxCalls ? undefined : found;
     if (cached === undefined && this.#regrade) throw new JudgeCacheMiss(key);
     if (cached === undefined && this.#client === null) return null;
     const entry = cached ?? (await this.#send(key, kind, prompt, valid));
@@ -360,8 +383,9 @@ export class Judge {
     const worst = worstCaseUsd(reserveRequest(history, params));
     if (worst > JUDGE_MAX_CALL_USD) return { ...base, answer: null, error: `${OVER_BUDGET}: worst case $${worst.toFixed(6)} > $${JUDGE_MAX_CALL_USD.toFixed(2)} per call`, calls: 0 };
     let calls = 0;
-    while (calls < JUDGE_CALLS_PER_ITEM && this.#live < this.#maxCalls) {
+    while (calls < JUDGE_CALLS_PER_ITEM && this.#live < this.#maxCalls && this.#worst + µ(worst) <= this.#maxWorst) {
       this.#live++;
+      this.#worst += µ(worst);
       calls++;
       let result: CallResult;
       try {
@@ -376,9 +400,19 @@ export class Judge {
   }
 }
 
+const µ = (usd: number) => Math.round(usd * 1e6);
+
 // The questions one rubric item may ask in a grading: what it declares (judge_questions), else one
-// for a judge or hybrid item and none for a code item.
-const questionsOf = (c: Check): number => (c.kind !== 'rubric' || c.points === 0 ? 0 : (c.judge_questions ?? (c.method === 'code' ? 0 : 1)));
+// for a judge or hybrid item and none for a code item. A declaration is a whole number >= 0, or
+// this throws naming the item (GRADER16-193 F4: NaN made the budget NaN, so no judge call was
+// made; a negative count took from the other items; a fraction was accepted). cli/matrix.ts
+// loadMatrixTask checks every task's items with it when the task loads.
+function questionsOf(c: Check): number {
+  if (c.kind !== 'rubric') return 0;
+  const q = c.judge_questions;
+  if (q !== undefined && (!Number.isSafeInteger(q) || q < 0)) throw new TypeError(`${c.id}: judge_questions must be a whole number >= 0, got ${String(q)}`);
+  return c.points === 0 ? 0 : (q ?? (c.method === 'code' ? 0 : 1));
+}
 
 // The judge calls a trial may make: two (the schema retry) per question its items may ask, at most
 // JUDGE_MAX_CALLS. An item that asks one question per recipient or per worklist item declares how
@@ -392,9 +426,10 @@ export const judgeCallBudget = (checks: readonly Check[]): number =>
   Math.min(JUDGE_MAX_CALLS, JUDGE_CALLS_PER_ITEM * checks.reduce((n, c) => n + questionsOf(c), 0));
 
 // The projection allowance for a trial's judge calls when their requests are not known yet (a
-// dry run): each at the per-call ceiling, JUDGE_MAX_CALL_USD.
+// dry run): each allowed call at JUDGE_CALL_PRICE_USD. The Judge a grading uses (grade.ts
+// judgeFor) is bounded by it, so it is an upper bound on what the judge spends.
 export function judgeAllowanceUsd(checks: readonly Check[]): number {
-  return judgeCallBudget(checks) * JUDGE_MAX_CALL_USD;
+  return judgeCallBudget(checks) * JUDGE_CALL_PRICE_USD;
 }
 
 // A judge client whose every call runs under its own batch grant, opened at that call's worst

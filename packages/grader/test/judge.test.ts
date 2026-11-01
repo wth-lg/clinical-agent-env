@@ -6,7 +6,9 @@
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { MODEL } from '../../core/anthropic.ts';
-import { DEFAULT_JUDGE_EFFORT, JUDGE_MAX_CALL_USD, JUDGE_MAX_CALLS, JUDGE_MAX_TOKENS, JUDGE_PROMPT_VERSION, Judge, JudgeCacheMiss, JudgeClientError, OVER_BUDGET, judgeAllowanceUsd, judgeCallBudget } from '../judge.ts';
+import { worstCaseUsd } from '../../core/cost.ts';
+import { reserveRequest } from '../../core/anthropic.ts';
+import { ALLOWANCE_REACHED, DEFAULT_JUDGE_EFFORT, JUDGE_CALL_PRICE_USD, JUDGE_MAX_CALL_USD, JUDGE_MAX_CALLS, JUDGE_MAX_TOKENS, JUDGE_PRICED_BODY_BYTES, JUDGE_PROMPT_VERSION, Judge, JudgeCacheMiss, JudgeClientError, OVER_BUDGET, judgeAllowanceUsd, judgeCallBudget } from '../judge.ts';
 import { judged, hybrid } from '../check.ts';
 import { scriptedJudge } from './helpers.ts';
 
@@ -99,7 +101,7 @@ describe('judge', () => {
     const t = () => 'x';
     const item = (id: string, points: number) => judged({ id, points, category: 'documentation', traces_to: 'p', decisive_ids: [], criterion: 'c', text: t });
     expect(judgeCallBudget([item('J', 3), item('Z', 0)])).toBe(2);
-    expect(judgeAllowanceUsd([item('J', 3), item('Z', 0)])).toBe(2 * JUDGE_MAX_CALL_USD);
+    expect(judgeAllowanceUsd([item('J', 3), item('Z', 0)])).toBe(2 * JUDGE_CALL_PRICE_USD);
   });
 
   // builder-267 (builder-265 issue 4): an item that asks one question per recipient or per worklist
@@ -110,11 +112,11 @@ describe('judge', () => {
     const item = (id: string, judge_questions?: number) => ({ ...judged({ id, points: -8, category: 'safety', traces_to: 'p', decisive_ids: [], criterion: 'c', text: t }), ...(judge_questions === undefined ? {} : { judge_questions }) });
     expect(judgeCallBudget([item('per_patient', 6)])).toBe(12);
     expect(judgeCallBudget([item('per_patient', 8), item('per_item', 8), item('one')])).toBe(34);
-    expect(judgeAllowanceUsd([item('per_patient', 6)])).toBe(12 * JUDGE_MAX_CALL_USD);
+    expect(judgeAllowanceUsd([item('per_patient', 6)])).toBe(12 * JUDGE_CALL_PRICE_USD);
     expect(judgeCallBudget([{ ...item('code_asks', 3), method: 'code' as const }])).toBe(6);
     expect(judgeCallBudget([{ ...item('code_silent'), method: 'code' as const }])).toBe(0);
     expect(judgeCallBudget([item('runaway', 1000)])).toBe(JUDGE_MAX_CALLS);
-    expect(judgeAllowanceUsd([item('runaway', 1000)])).toBe(JUDGE_MAX_CALLS * JUDGE_MAX_CALL_USD);
+    expect(judgeAllowanceUsd([item('runaway', 1000)])).toBe(JUDGE_MAX_CALLS * JUDGE_CALL_PRICE_USD);
   });
 
   it('a Judge under that budget answers six per-patient questions; under one item\'s budget it stops after two', async () => {
@@ -156,6 +158,78 @@ describe('judge', () => {
     expect(vs.map((v) => v.met)).toEqual([false, false, true]);
     expect(live.requests).toHaveLength(1);
     expect(j.overAllowance).toBe(0);
+  });
+
+  // verifier-phase-P17i-GRADER16-193-1 F3: the calls this grading has spent are its live calls,
+  // each already in the entry it answered, plus those its cached answers took; counting the live
+  // ones twice left a cached allowance-reached question unasked with half the allowance unused.
+  it('counts each live call once: a cached allowance-reached question is asked with 2 of 4 calls spent', async () => {
+    const text = 'Your refill is ready.';
+    const seed = new Judge({ client: scriptedJudge(['{"verdict":"not_met","quote":""}']).client, maxCalls: 0 });
+    await seed.judge({ criterion: 'patient 2', text, penalty: true });
+    expect(seed.entries().map((e) => [e.calls, e.error])).toEqual([[0, ALLOWANCE_REACHED]]);
+    const live = scriptedJudge(['{"verdict":"not_met","quote":""}']);
+    const j = new Judge({ client: live.client, cache: seed.entries(), maxCalls: 4 });
+    const vs = [];
+    for (let i = 0; i < 3; i++) vs.push(await j.judge({ criterion: `patient ${i}`, text, penalty: true }));
+    expect(vs.map((v) => v.met)).toEqual([false, false, false]);
+    expect(live.requests).toHaveLength(3);
+    expect(j.calls).toBe(3);
+    expect(j.overAllowance).toBe(0);
+  });
+
+  // verifier-phase-P17i-GRADER16-193-1 F4: a declared judge_questions is a whole number >= 0. NaN
+  // read as a budget of NaN (no judge call at all), a negative one took from the other items, and a
+  // fraction was accepted.
+  it('rejects a judge_questions that is not a whole number >= 0, naming the item', () => {
+    const t = () => 'x';
+    const item = (judge_questions: number, points = -8) => ({ ...judged({ id: 'bad_item', points, category: 'safety', traces_to: 'p', decisive_ids: [], criterion: 'c', text: t }), judge_questions });
+    for (const bad of [Number.NaN, -5, 2.5, Infinity, -0.5]) {
+      expect(() => judgeCallBudget([item(bad)]), String(bad)).toThrow(/bad_item: judge_questions must be a whole number >= 0, got /);
+      expect(() => judgeAllowanceUsd([item(bad)]), String(bad)).toThrow(TypeError);
+      expect(() => judgeCallBudget([item(bad, 0)]), `${bad} on a 0-point item`).toThrow(TypeError);
+    }
+    expect(judgeCallBudget([item(0)])).toBe(0);
+    expect(judgeCallBudget([item(6), item(0)])).toBe(12);
+  });
+
+  // GRADER16-193 F2 (coordinator ruling): a call is priced at its real worst case, max_tokens of
+  // output plus a request body of JUDGE_PRICED_BODY_BYTES, not at the $1 per-call ceiling.
+  it('prices each allowed call at its worst case for a priced request body, under the per-call ceiling', () => {
+    expect(JUDGE_CALL_PRICE_USD).toBe(worstCaseUsd({ bodyBytes: JUDGE_PRICED_BODY_BYTES, maxTokens: JUDGE_MAX_TOKENS }));
+    expect(JUDGE_CALL_PRICE_USD).toBeCloseTo(0.40192, 9);
+    expect(JUDGE_CALL_PRICE_USD).toBeLessThan(JUDGE_MAX_CALL_USD);
+    // The largest judge request measured on real trials (probe-1, 4,729 bytes) and in every matrix
+    // case (3,502 bytes) is under the priced body.
+    expect(JUDGE_PRICED_BODY_BYTES).toBeGreaterThan(4_729);
+  });
+
+  // The cost guard: the worst cases of the calls a grading sends never sum past its allowance in
+  // dollars, so the ledger, which settles each call at most at its worst case, never charges a
+  // trial's judge more than the projection priced. A question that would cross it is not sent: it
+  // reads unknown, marked 'judge allowance reached', as at the call bound.
+  it('never sends calls whose worst cases sum past maxUsd; long texts spend the allowance sooner', async () => {
+    const answers = Array.from({ length: 8 }, () => '{"verdict":"not_met","quote":""}');
+    const worstOf = (r: { history: Parameters<typeof reserveRequest>[0]; params: Parameters<typeof reserveRequest>[1] }) => worstCaseUsd(reserveRequest(r.history, r.params));
+    const ask = async (text: string, maxUsd: number) => {
+      const s = scriptedJudge([...answers]);
+      const j = new Judge({ client: s.client, maxCalls: 8, maxUsd });
+      const vs = [];
+      for (let i = 0; i < 4; i++) vs.push(await j.judge({ criterion: `patient ${i}`, text, penalty: true }));
+      return { met: vs.map((v) => v.met), sent: s.requests.length, worst: s.requests.reduce((n, r) => n + worstOf(r), 0), over: j.overAllowance };
+    };
+    const allowance = 8 * JUDGE_CALL_PRICE_USD;
+    const short = await ask('Your refill is ready.', allowance);
+    expect(short).toMatchObject({ met: [false, false, false, false], sent: 4, over: 0 });
+    // Each request ~20 KB: worst case ~$0.52, so the $3.22 allowance covers six calls, not eight;
+    // here four questions each send once.
+    const long = await ask('Your refill is ready. '.repeat(900), allowance);
+    expect(long).toMatchObject({ met: [false, false, false, false], sent: 4, over: 0 });
+    expect(long.worst).toBeLessThanOrEqual(allowance);
+    // Under an allowance of two such calls, the third and fourth questions are not sent.
+    const tight = await ask('Your refill is ready. '.repeat(900), 2 * 0.53);
+    expect(tight).toMatchObject({ met: [false, false, 'unknown', 'unknown'], sent: 2, over: 2 });
+    expect(tight.worst).toBeLessThanOrEqual(2 * 0.53);
   });
 
   it('the projection allowance counts each judge and hybrid item, twice for the schema retry', () => {

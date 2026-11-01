@@ -9,11 +9,13 @@
 // own allowance: none may reach it. Mutants, the null agent and the agents are wrong solutions;
 // their questions are bounded by the hard cap, not required to fit.
 import { describe, expect, it } from 'vitest';
+import { DEFAULT_SESSION_CAP_USD } from '../../apps/web/src/spend/cap.ts';
 import { judgeFor } from '../../packages/grader/grade.ts';
-import { JUDGE_MAX_CALLS, judgeCallBudget } from '../../packages/grader/judge.ts';
+import { JUDGE_MAX_CALLS, judgeAllowanceUsd, judgeCallBudget } from '../../packages/grader/judge.ts';
 import { cases, gradeRunWith, trial } from '../../packages/grader/matrix/matrix.ts';
 import { loadMatrixTask, matrixEnv } from '../matrix.ts';
 import { recordingClient } from '../oracle.ts';
+import { projection } from '../run-one.ts';
 
 const TASKS = ['renal-dose-review', 'results-inbox', 'crc-care-gap', 'discharge-medrec', 'contrast-ct-prep', 'message-queue'];
 const env = matrixEnv();
@@ -25,14 +27,32 @@ describe('judge allowance', () => {
     expect(budget).toBeLessThanOrEqual(JUDGE_MAX_CALLS);
     const over: string[] = [];
     let most = 0;
+    let mostUsd = 0;
     for (const c of cases(task).filter((x) => x.kind === 'oracle' || x.kind === 'alternative')) {
       const worst: number[] = [];
       const judge = judgeFor(task.checks, { judge: recordingClient(worst), effort: task.judgeEffort });
       await gradeRunWith(env, task, await trial(env, task, c), judge);
       most = Math.max(most, worst.length);
+      mostUsd = Math.max(mostUsd, worst.reduce((n, w) => n + w, 0));
       if (judge.overAllowance > 0) over.push(`${c.id}: ${worst.length} calls sent, ${judge.overAllowance} questions over the allowance of ${budget}`);
     }
     expect(over).toEqual([]);
     expect(most).toBeLessThanOrEqual(budget);
+    // The worst cases of the calls sent fit in the allowance in dollars too (GRADER16-193 F2: each
+    // call priced at max_tokens plus JUDGE_PRICED_BODY_BYTES), so the guard never binds a correct trial.
+    expect(mostUsd).toBeLessThanOrEqual(judgeAllowanceUsd(task.checks));
   }, 600_000);
+
+  // GRADER16-193 F2 (coordinator ruling): one trial of every task but crc-care-gap projects within the
+  // default session cap, so the live tab admits it, as at grader 15; crc-care-gap was over at 15 too.
+  it('one trial of each task but crc-care-gap projects within the default session cap', async () => {
+    const rows: Record<string, { projection: number; admitted: boolean }> = {};
+    for (const id of TASKS) {
+      const p = projection((await loadMatrixTask(id)).checks);
+      rows[id] = { projection: Math.round(p * 100) / 100, admitted: p <= DEFAULT_SESSION_CAP_USD };
+    }
+    expect(Object.fromEntries(Object.entries(rows).map(([id, r]) => [id, r.admitted]))).toEqual({
+      'renal-dose-review': true, 'results-inbox': true, 'crc-care-gap': false, 'discharge-medrec': true, 'contrast-ct-prep': true, 'message-queue': true,
+    });
+  });
 });

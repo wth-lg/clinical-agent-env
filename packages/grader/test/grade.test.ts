@@ -489,6 +489,23 @@ describe('judge allowance', () => {
     expect(JSON.stringify(again)).toBe(JSON.stringify(g));
   });
 
+  // GRADER16-193 F2: the grading's Judge is bounded in dollars too, at judgeAllowanceUsd of its
+  // checks. One judged item is allowed two calls priced at JUDGE_CALL_PRICE_USD each ($0.80); a
+  // ~20 KB text's call costs ~$0.52 at worst, so its schema retry would cross the allowance and is
+  // not sent.
+  it('bounds the worst cases of the calls it sends by the allowance in dollars: a long text gets no retry', async () => {
+    const item = (text: string) => [judged({ id: 'R2', points: 3, category: 'documentation', traces_to: 'p', decisive_ids: [], criterion: 'c0', text: () => text })];
+    const short = scriptedJudge(['not json', NOT_MET]);
+    const ok = await grade({ ...input([...READS, ...WRITES], GOOD_FINAL), checks: item(NOTE_TEXT) }, { judge: short.client });
+    expect(short.requests).toHaveLength(2);
+    expect(ok.judge.calls).toBe(2);
+    const j = scriptedJudge(['not json', NOT_MET]);
+    const g = await grade({ ...input([...READS, ...WRITES], GOOD_FINAL), checks: item(`${NOTE_TEXT} `.repeat(190)) }, { judge: j.client });
+    expect(j.requests).toHaveLength(1);
+    expect(g.judge.calls).toBe(1);
+    expect(g.checks.find((c) => c.id === 'R2')).toMatchObject({ met: 'unknown', evidence: { reason: 'invalid judge output' } });
+  });
+
   it('the schema retry is a call', async () => {
     const j = scriptedJudge(['not json', MET, NOT_MET]);
     const g = await grade(input([...READS, ...WRITES], GOOD_FINAL), { judge: j.client });

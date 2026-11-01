@@ -42,7 +42,7 @@ import { diff, keyOf } from './diff.ts';
 import { firstExposed, lastWrite, stepsOf } from './exposure.ts';
 import { gateResource, type GateResource } from './gate-view.ts';
 import type { ItemResult } from './items.ts';
-import { Judge, JudgeCacheMiss, JudgeClientError, judgeCallBudget, type JudgeCacheEntry, type JudgeClient, type JudgeEffort } from './judge.ts';
+import { Judge, JudgeCacheMiss, JudgeClientError, judgeAllowanceUsd, judgeCallBudget, type JudgeCacheEntry, type JudgeClient, type JudgeEffort } from './judge.ts';
 import { capProgress, FAULT, isValid, trialOutcome, type Fault, type Outcome, type TrialFacts } from './outcome.ts';
 import type { Progress } from './progress.ts';
 
@@ -75,7 +75,9 @@ import type { Progress } from './progress.ts';
 // item declares (judge_questions: one per recipient or per worklist item), at most JUDGE_MAX_CALLS,
 // and a cached 'judge allowance reached' entry is asked again (a regrade misses it) when the
 // grading's allowance has room for it (judge.ts; builder-265 issue 4: probe-1's T2 and T6 harm
-// penalties read unknown). An unknown penalty can now resolve, and pass_no_harm with it.
+// penalties read unknown). An unknown penalty can now resolve, and pass_no_harm with it. The
+// allowance prices each call at its worst case for a 6 KiB request (JUDGE_CALL_PRICE_USD, not $1),
+// and a grading's calls are bounded by it in dollars as well as in calls (GRADER16-193 F2).
 export const GRADER_VERSION = '16';
 
 export interface CheckResult {
@@ -345,8 +347,9 @@ export interface GradeOptions {
   effort?: JudgeEffort;
 }
 
-// The judge a grading of `checks` uses: its calls bounded by the checks' allowance.
+// The judge a grading of `checks` uses: its calls bounded by the checks' allowance, in calls and
+// in the dollars the projection priced them at.
 export const judgeFor = (checks: readonly Check[], opts: GradeOptions = {}): Judge =>
-  new Judge({ client: opts.judge ?? null, maxCalls: judgeCallBudget(checks), ...(opts.cache ? { cache: opts.cache } : {}), ...(opts.effort ? { effort: opts.effort } : {}) });
+  new Judge({ client: opts.judge ?? null, maxCalls: judgeCallBudget(checks), maxUsd: judgeAllowanceUsd(checks), ...(opts.cache ? { cache: opts.cache } : {}), ...(opts.effort ? { effort: opts.effort } : {}) });
 
 export const grade = (input: GradeInput, opts: GradeOptions = {}): Promise<Grade> => gradeWith(input, judgeFor(input.checks, opts));
