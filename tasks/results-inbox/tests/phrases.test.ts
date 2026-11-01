@@ -51,19 +51,15 @@ type Route = { item: string; doc: string; patient: string; sets: ReadonlyArray<r
 const label = (atoms: readonly string[]) => atoms.join(' + ');
 
 // Rows a later edit must keep as they are, each by its query: the oracle's and the gate rounds'
-// routes, and one row for each extra set.
+// routes, and one row for each extra set. PW4-E3 cut the list to one item per class: the rows of the
+// cut nodule_overdue and prelim_positive went with them, and the LDCT's rows moved to nodule_scheduled.
+// The arrivals' atom sets (grader.ts EVENT_ATOMS) are not in the world; their snippet routes are
+// alternatives run with the event active (tests/events.test.ts, '<spec>_snippet').
 // source: the index of the report in the item's sources (0 unless given).
 const PINNED: ReadonlyArray<{ item: string; source?: number; query: string; seen: boolean; by?: string; why: string }> = [
-  { item: 'nodule_overdue', query: 'nodule', seen: true, by: '5 mm + solid nodule', why: "a 'nodule' search shows the CT's Findings line" },
-  { item: 'nodule_overdue', query: 'effusion', seen: false, why: "cut inside '5 mm': the size, which decides the nodule's rule, is not shown" },
-  { item: 'nodule_overdue', source: 1, query: 'screening', seen: false, why: "a 'lung cancer screening' search shows the LDCT's header, not its schedule" },
-  { item: 'nodule_overdue', source: 1, query: 'impression', seen: true, by: 'Lung-RADS 2', why: 'the Impression line of the LDCT' },
-  { item: 'nodule_overdue', source: 1, query: 'annual', seen: true, by: 'LDCT in 12 months', why: "cut inside 'Lung-RADS 2', the recommendation shows the schedule" },
   { item: 'nodule_scheduled', query: 'nodule', seen: true, by: '4 mm + solid nodule', why: "a 'nodule' search shows the CT urogram's Findings line" },
-  { item: 'prelim_positive', query: 'final', seen: false, why: "a 'final' search shows the header and indication, cut before the finding" },
-  { item: 'prelim_positive', query: 'lytic', seen: true, by: 'lytic lesion', why: 'the Findings line' },
-  { item: 'prelim_positive', query: 'oncology', seen: true, by: 'bone tumour', why: "cut inside 'lytic lesion', the Impression shows the suspected tumour and the urgent referral" },
-  { item: 'prelim_positive', query: 'md', seen: false, why: "cut inside 'urgent': '…t orthopaedic oncology referral and MRI' shows neither the tumour nor that the referral is urgent" },
+  { item: 'nodule_scheduled', source: 1, query: 'screening', seen: false, why: "a 'lung cancer screening' search shows the LDCT's header, not its schedule" },
+  { item: 'nodule_scheduled', source: 1, query: 'recommendation', seen: true, by: 'LDCT in 12 months', why: 'the recommendation line shows the schedule' },
   { item: 'prelim_negative', query: 'final', seen: false, why: "a 'final' search shows the header, cut before the finding" },
   { item: 'prelim_negative', query: 'arteries', seen: true, by: 'is a vessel', why: "the Findings line shows the preliminary read's opacity is a vessel, cut before 'no pulmonary nodule'" },
   { item: 'prelim_negative', query: 'follow', seen: true, by: 'no follow-up imaging needed', why: "cut inside 'pulmonary', the Impression shows no follow-up is needed" },

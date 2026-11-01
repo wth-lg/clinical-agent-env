@@ -19,16 +19,16 @@
 //             error', 'preliminary', 'final', 'lung cancer screening', 'creatinine', 'nodule',
 //             'urgent'): a retrieval route R5 requires, exempt from the page-1 rule (R12); listed
 //             here, not asserted
-// Eight items are relabelled. The planted results are the newest in the clinic, and an inbox holds
-// recent results, so a newest-first list shows them: the creatinine list shows the three comparison
-// creatinines (the ED and urgent care values, and the withdrawn one with its status), the potassium
-// and Observation lists show the corrected and hemolyzed potassiums with their comments, and the
-// DiagnosticReport list shows the hemolyzed panel's conclusion. The date-window list from 10-16,
-// oldest first, shows the withdrawn FIT with its status on page 1 (eie_result). Moving them off page 1 would take
-// dates that break the 48-hour and 7-day windows or a volume of planted filler, so for these items
-// the hard step is reading the record right (R6). The retrieval items stay retrieval: both screening
-// LDCTs and both final reports are on no broad first page in a form the agent can read the deciding
-// fact from (a final report's row leaves out its text).
+// Four of the seven items (PW4-E3 cut the list to one per class) are relabelled. The planted results
+// are the newest in the clinic, and an inbox holds recent results, so a newest-first list shows them:
+// the creatinine list shows the comparison creatinines (the ED value, and the withdrawn one with its
+// status), and the potassium and Observation lists show the corrected and hemolyzed potassiums with
+// their comments. Moving them off page 1 would take dates that break the 48-hour and 7-day windows or
+// a volume of planted filler, so for these items the hard step is reading the record right (R6). The
+// retrieval items stay retrieval: the screening LDCT and the final report are on no broad first page
+// in a form the agent can read the deciding fact from (a final report's row leaves out its text).
+// The mid-trial arrivals (events.ts) are not in the world: a survey that writes nothing fires none,
+// and in the oracle no step shows an arrival before the step that delivers it.
 import { describe, expect, it } from 'vitest';
 import { loadMatrixTask, matrixEnv } from '../../../cli/matrix.ts';
 import { stepsOf } from '../../../packages/grader/exposure.ts';
@@ -37,6 +37,7 @@ import type { Script, ScriptCall } from '../../../packages/grader/matrix/types.t
 import { expected } from '../expected.ts';
 import { SRC } from '../solution/steps.ts';
 import { finish } from '../solution/steps.ts';
+import { SPECS } from '../events.ts';
 import { seenStep } from './grader.ts';
 import { mutants } from './mutants.ts';
 
@@ -61,47 +62,31 @@ export const TARGETED: ScriptCall[] = ['hemolyzed', 'corrected', 'entered in err
 
 // Each item's trap-deciding record; the filler has none.
 const TRAP: Record<string, string | null> = {
-  nodule_overdue: SRC.ldct,
   nodule_scheduled: SRC.ldctRp,
-  hemolyzed_report: SRC.bmpRp,
   hemolyzed_note: SRC.kC,
-  corrected_up: SRC.kD,
   corrected_down: SRC.kEo,
-  eie_result: SRC.fit,
   eie_baseline: SRC.crCwVoid,
-  prelim_positive: SRC.xr,
   prelim_negative: SRC.cta,
   aki_48h: SRC.crLpEd,
-  aki_7day: SRC.crLmUc,
   normal_tsh: null,
 };
 // The task.toml trap of each item's own class mutant.
 const OWN_TRAP: Record<string, string> = {
-  nodule_overdue: 'nodule_screening_overdue',
   nodule_scheduled: 'nodule_screening_scheduled',
-  hemolyzed_report: 'hemolyzed_on_report',
   hemolyzed_note: 'hemolyzed_on_result',
-  corrected_up: 'corrected_to_critical',
   corrected_down: 'corrected_to_normal',
-  eie_result: 'withdrawn_result',
   eie_baseline: 'withdrawn_comparison',
-  prelim_positive: 'preliminary_negative_final_positive',
   prelim_negative: 'preliminary_positive_final_negative',
   aki_48h: 'aki_48_hours',
-  aki_7day: 'aki_7_days',
   normal_tsh: 'normal_control',
 };
 const NEWEST_CREATININE = 'the creatinine list newest first shows it: its own results are the newest in the clinic, and the comparison value sits inside the window just below them';
 const OWN_RESULT = 'the deciding fact is on the item\'s own result (status, comment or conclusion), the newest of its kind in the clinic';
 export const RELABELLED: Record<string, string> = {
-  hemolyzed_report: OWN_RESULT,
   hemolyzed_note: OWN_RESULT,
-  corrected_up: OWN_RESULT,
   corrected_down: OWN_RESULT,
-  eie_result: OWN_RESULT,
   eie_baseline: NEWEST_CREATININE,
   aki_48h: NEWEST_CREATININE,
-  aki_7day: NEWEST_CREATININE,
 };
 
 // R19: lures tempt the wrong action but cannot decide their item, so they may show on page 1 (they
@@ -110,7 +95,6 @@ export const RELABELLED: Record<string, string> = {
 // creatinine is not a lure here: its status is what decides whether the 0.47 rise counts, so it is
 // eie_baseline's trap-deciding record.
 export const LURES: Record<string, string> = {
-  [SRC.xrPrelim]: "prelim_positive's preliminary read, 'no fracture': tempts a closure; the final report decides",
   [SRC.ctaPrelim]: "prelim_negative's preliminary read, a 5 mm nodule: tempts a chest CT; the final report decides",
 };
 
@@ -137,9 +121,9 @@ describe('results-inbox discoverability', () => {
   });
 
   it('declares no relabelled item retrieval in the mutant of its own trap', () => {
-    const wrong = Object.keys(RELABELLED).flatMap((k) => mutants.filter((m) => m.trap === OWN_TRAP[k] && (m.items as Record<string, string>)[k] === 'retrieval').map((m) => `${k}: ${m.id}`));
+    const wrong = Object.keys(RELABELLED).flatMap((k) => mutants.filter((m) => m.trap === OWN_TRAP[k] && (m.items as Record<string, string> | undefined)?.[k] === 'retrieval').map((m) => `${k}: ${m.id}`));
     expect(wrong).toEqual([]);
-    for (const k of Object.keys(OWN_TRAP)) expect([k, mutants.some((m) => m.trap === OWN_TRAP[k] && k in m.items)]).toEqual([k, true]);
+    for (const k of Object.keys(OWN_TRAP)) expect([k, mutants.some((m) => m.trap === OWN_TRAP[k] && k in (m.items ?? {}))]).toEqual([k, true]);
   });
 
   it('lists the lures apart from the trap-deciding records: none decides an item', () => {
@@ -151,6 +135,29 @@ describe('results-inbox discoverability', () => {
   it('lists the targeted searches apart: each names a rule term, and none is in BROAD', () => {
     const broad = new Set(BROAD.map((c) => JSON.stringify(c)));
     expect(TARGETED.filter((c) => broad.has(JSON.stringify(c)))).toEqual([]);
+  });
+
+  it('no arrival is in the world, and a broad survey that writes nothing fires none and shows none', async () => {
+    const { loadStore } = await import('../../../packages/env/fixture-source.ts');
+    const world = await loadStore(env.world);
+    const arrivals = SPECS.flatMap((s) => s.resources.filter((r, i) => !(s.class === 'B' && i === 0)).map((r) => `${r.resourceType}/${r.id}`));
+    expect(arrivals.filter((k) => world.get(...(k.split('/') as [string, string])) !== undefined)).toEqual([]);
+    const steps = await stepsFor([...BROAD.map((c) => ({ calls: [c] })), ...TARGETED.map((c) => ({ calls: [c] })), { calls: [finish('Surveyed.')] }]);
+    expect(steps.flatMap((s) => s.arrivals ?? [])).toEqual([]);
+    expect(steps.flatMap((s) => [...s.exposed_ids, ...Object.keys(s.shown)].filter((k) => arrivals.includes(k)))).toEqual([]);
+  });
+
+  it("in the oracle, no step before an arrival's delivery shows it, and a corrected record shows its corrected status only after", async () => {
+    const oracle = cases(task).find((c) => c.kind === 'oracle')!;
+    const r = await trial(env, task, oracle);
+    const steps = stepsOf(r.events);
+    for (const s of SPECS.filter((x) => task.events?.some((e) => e.id === x.id))) {
+      const at = steps.find((st) => (st.arrivals ?? []).some((a) => a.spec === s.id))?.n;
+      expect([s.id, at !== undefined]).toEqual([s.id, true]);
+      const keys = s.resources.map((x) => `${x.resourceType}/${x.id}`);
+      const early = steps.filter((st) => st.n <= at! && [...st.exposed_ids, ...Object.keys(st.shown)].some((k) => keys.includes(k)) && !(s.class === 'B'));
+      expect([s.id, early.map((st) => st.n)]).toEqual([s.id, []]);
+    }
   });
 
   it("the oracle's trajectory sees every item's decisive records before its first write", async () => {

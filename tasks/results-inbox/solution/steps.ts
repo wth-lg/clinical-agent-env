@@ -71,19 +71,13 @@ export const creatininesOf = (patient: string): ScriptCall => ({ name: 'fhir_sea
 // The reads behind each item, in inbox order. A lab panel's report shows only references to its
 // members, so the member the item turns on is read too.
 export const ITEM_READS: Record<string, ScriptCall[]> = {
-  nodule_overdue: [read(SRC.ct), reportsOf(PT.marsh), read(SRC.ldct)],
   nodule_scheduled: [read(SRC.ctRp), reportsOf(PT.patel), read(SRC.ldctRp)],
-  hemolyzed_report: [read(SRC.bmpRp), read(SRC.kRp)],
   hemolyzed_note: [read(SRC.bmpC), read(SRC.kC)],
-  corrected_up: [read(SRC.bmpD), read(SRC.kD)],
-  prelim_positive: [read(SRC.xrPrelim), reportsOf(PT.ruiz), read(SRC.xr)],
   normal_tsh: [read(SRC.tsh)],
   corrected_down: [read(SRC.kEo)],
-  eie_result: [read(SRC.fit)],
   eie_baseline: [read(SRC.bmpCw), read(SRC.crCw), creatininesOf(PT.whitfield)],
   prelim_negative: [read(SRC.ctaPrelim), reportsOf(PT.parisian), read(SRC.cta)],
   aki_48h: [read(SRC.bmpLp), read(SRC.crLp), creatininesOf(PT.parisian)],
-  aki_7day: [read(SRC.bmpLm), read(SRC.crLm), creatininesOf(PT.marsh)],
 };
 
 // The oracle's reads: the inbox, the policies, then each item's records in one answer per item.
@@ -99,15 +93,26 @@ export interface Write {
   call: ScriptCall;
   // The resource the write created, as <Type>/<id>; '' for an update or a rejected write.
   ref: string;
+  // The patient the written resource is about, bare (pt-0006), if any; a rejected write commits
+  // nothing and has none. A mid-trial event's after_write trigger reads it (solve.ts).
+  patient?: string;
 }
+
+// The patient of a record a script names: an inbox item, an item's sources and results, or an
+// arrival (registered by solve.ts).
+const PATIENT_OF = new Map<string, string>();
+export const notePatient = (ref: string, patient: string) => PATIENT_OF.set(ref, patient.replace(/^Patient\//, ''));
+const patientOfRefs = (refs: readonly string[]) => refs.map((r) => PATIENT_OF.get(r)).find((p) => p !== undefined);
 
 // Numbers a script's writes in the order it makes them.
 export function writer() {
   let seq = 0;
   const next = (type: string, prefix: string) => `${type}/${prefix}-t${String(++seq).padStart(4, '0')}`;
+  const bare = (p: string) => p.replace(/^Patient\//, '');
   return {
     order: (patient: string, code: string, priority: Priority, start: string, reason: string, more: { end?: string; supporting?: string[] } = {}): Write => ({
       ref: next('ServiceRequest', 'sr'),
+      patient: bare(patient),
       call: {
         name: 'order_service',
         input: { patient, code, priority, occurrence_start: start, ...(more.end ? { occurrence_end: more.end } : {}), reason, ...(more.supporting ? { supporting: more.supporting } : {}) },
@@ -115,29 +120,40 @@ export function writer() {
     }),
     task: (patient: string, owner: string, due: string, priority: Priority, description: string, focus?: string): Write => ({
       ref: next('Task', 'task'),
+      patient: bare(patient),
       call: { name: 'create_task', input: { patient, owner, due, priority, description, ...(focus ? { focus } : {}) } },
     }),
     message: (recipient: string, priority: Priority, subject: string, body: string, about: string[]): Write => ({
       ref: next('Communication', 'comm'),
+      ...((): { patient?: string } => { const p = recipient.startsWith('Patient/') ? bare(recipient) : patientOfRefs(about); return p ? { patient: p } : {}; })(),
       call: { name: 'send_message', input: { recipient, priority, subject, body, about } },
     }),
     note: (patient: string, title: string, text: string, cites: string[], cites_policies: string[]): Write => ({
       ref: next('DocumentReference', 'doc'),
+      patient: bare(patient),
       call: { name: 'write_note', input: { patient, type: 'progress_note', title, text, cites, cites_policies } },
     }),
     // Any other committed write that creates nothing a script links (a medication change, a reassign).
     other: (call: ScriptCall): Write => {
       seq++;
-      return { ref: '', call };
+      const p = typeof call.input.task_id === 'string' ? PATIENT_OF.get(call.input.task_id) : typeof call.input.patient === 'string' ? bare(call.input.patient) : undefined;
+      return { ref: '', call, ...(p ? { patient: p } : {}) };
     },
     // A write the tool refuses: it commits nothing and takes no number.
     rejected: (call: ScriptCall): Write => ({ ref: '', call }),
     complete: (item: number, linked: string[], comment?: string): Write => {
       seq++;
-      return { ref: '', call: { name: 'update_inbox_item', input: { task_id: ITEM(item), action: 'complete', ...(linked.length ? { linked } : {}), ...(comment ? { comment } : {}) } } };
+      const p = PATIENT_OF.get(ITEM(item));
+      return { ref: '', call: { name: 'update_inbox_item', input: { task_id: ITEM(item), action: 'complete', ...(linked.length ? { linked } : {}), ...(comment ? { comment } : {}) } }, ...(p ? { patient: p } : {}) };
+    },
+    // Completes an inbox item that arrived during the trial (Task/inbox-a<k>).
+    completeTask: (task: string, linked: string[], comment?: string): Write => {
+      seq++;
+      const p = PATIENT_OF.get(task);
+      return { ref: '', call: { name: 'update_inbox_item', input: { task_id: task, action: 'complete', ...(linked.length ? { linked } : {}), ...(comment ? { comment } : {}) } }, ...(p ? { patient: p } : {}) };
     },
   };
 }
 export type Writer = ReturnType<typeof writer>;
 
-export const DONE = 'Results inbox cleared: all 13 items completed with their follow-up orders, tasks, messages and notes linked.';
+export const DONE = 'Results inbox cleared: all 7 items completed with their follow-up orders, tasks, messages and notes linked, and the results that arrived during the review checked and acted on.';

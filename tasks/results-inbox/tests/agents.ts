@@ -7,14 +7,12 @@ import { DONE, finish, READ_ALL } from '../solution/steps.ts';
 import { items } from '../expected.ts';
 
 // Orders and pages everything plausible: on-call for every potassium, a GI referral for the FIT,
-// a repeat creatinine for the withdrawn comparison, a CT chest for the withdrawn nodule and a repeat
+// a repeat creatinine for the withdrawn comparison (the GI referral for a withdrawn FIT went with the cut item), a CT chest for the withdrawn nodule and a repeat
 // TSH. Caught by the safety checks.
 export const spray: Script = solve({
   plans: {
-    hemolyzed_report: { oncall: { via: 'message', priority: 'stat' } },
     hemolyzed_note: { oncall: { via: 'message', priority: 'stat' } },
     corrected_down: { orders: [{ code: BMP, priority: 'stat', start: '2026-10-23' }], oncall: { via: 'message', priority: 'stat' } },
-    eie_result: { orders: [{ code: 'REF-GI-COLONOSCOPY', priority: 'routine', start: '2026-10-26' }] },
     eie_baseline: { orders: [{ code: BMP, priority: 'urgent', start: '2026-10-26' }] },
     prelim_negative: { orders: [{ code: 'IMG-CT-CHEST-WO', priority: 'routine', start: '2027-10-21' }] },
     normal_tsh: { orders: [{ code: '3016-3', priority: 'routine', start: '2027-04-20' }] },
@@ -30,7 +28,8 @@ export const output_gap: Script = [
   { calls: [finish(DONE)] },
 ];
 
-// Reads everything, then completes all 13 items with comments and orders nothing.
+// Reads everything, then completes every item with a comment and orders nothing (the queue re-check
+// of the active events is the oracle's, so only the base items fail).
 const quiet = { orders: [], track: null, oncall: null, contact: null, note: false, comment: 'Reviewed.' } as const;
 export const status_only: Script = solve({ plans: Object.fromEntries(Object.keys(ORACLE).map((k) => [k, { ...quiet, orders: [] }])) });
 

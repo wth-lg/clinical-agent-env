@@ -27,14 +27,14 @@ describe('results-inbox', () => {
     expect(derive(world)).toEqual(expected);
   });
 
-  it('times the screening LDCTs from the last screening study: overdue within 14 days, on schedule in its window (RBC-RAD-05 §2)', () => {
+  // PW4-E3 cut the list to one item per class (expected.ts): these check the kept item of each.
+  it('times the screening LDCT from the last screening study, on schedule in its window (RBC-RAD-05 §2)', () => {
     expect(NOW_DATE).toBe('2026-10-23');
-    expect(byKey('nodule_overdue', 'nodule_screening')).toMatchObject({ screening_index: '2025-09-15', overdue: true, window: { start: '2026-10-23', end: '2026-11-06' } });
     expect(byKey('nodule_scheduled', 'nodule_screening')).toMatchObject({ screening_index: '2026-04-14', overdue: false, window: { start: '2027-03-14', end: '2027-05-14' } });
   });
 
-  it('reads each corrected potassium at its corrected value, the first value only in the note', () => {
-    for (const [key, first, now] of [['corrected_up', 5.2, 6.4], ['corrected_down', 6.3, 4.4]] as const) {
+  it('reads the corrected potassium at its corrected value, the first value only in the note', () => {
+    for (const [key, first, now] of [['corrected_down', 6.3, 4.4]] as const) {
       const x = byKey(key, 'corrected');
       const k = get<Obs & { note?: Array<{ text?: string }> }>(x.sources[0]!);
       expect(k.status).toBe('corrected');
@@ -44,7 +44,7 @@ describe('results-inbox', () => {
     }
   });
 
-  it('applies the AKI rule by the 48-hour rise and by the 7-day ratio, and not across a withdrawn value (RBC-LAB-03 §3)', () => {
+  it('applies the AKI rule by the 48-hour rise, and not across a withdrawn value (RBC-LAB-03 §3)', () => {
     const hours = (a: Obs, b: Obs) => (Date.parse(a.effectiveDateTime!) - Date.parse(b.effectiveDateTime!)) / 3_600_000;
     const pair = (key: string) => {
       const x = expected.items.find((i) => i.key === key)!;
@@ -54,10 +54,6 @@ describe('results-inbox', () => {
     const [lp, lpEd] = pair('aki_48h');
     expect(hours(lp, lpEd)).toBeLessThanOrEqual(48);
     expect(lp.valueQuantity!.value! - (lpEd.valueQuantity!.value! + 0.3)).toBeGreaterThanOrEqual(0.15);
-    const [lm, lmUc] = pair('aki_7day');
-    expect(hours(lm, lmUc)).toBeGreaterThan(48);
-    expect(hours(lm, lmUc)).toBeLessThanOrEqual(24 * 7);
-    expect(lm.valueQuantity!.value! - 1.5 * lmUc.valueQuantity!.value!).toBeGreaterThanOrEqual(0.15);
     const [cw, cwVoid] = pair('eie_baseline');
     expect(cwVoid.status).toBe('entered-in-error');
     expect(hours(cw, cwVoid)).toBeLessThanOrEqual(48);
@@ -81,7 +77,7 @@ describe('results-inbox', () => {
   it('leaves no chart fact that makes a different answer defensible', () => {
     type Med = { status?: string; authoredOn?: string; subject?: { reference?: string }; medicationCodeableConcept?: { coding?: Array<{ display?: string }> } };
     const RAISES_K = /pril\b|sartan\b|spironolactone|eplerenone|amiloride|triamterene|trimethoprim/i;
-    for (const key of ['hemolyzed_report', 'hemolyzed_note']) {
+    for (const key of ['hemolyzed_note']) {
       const x = byKey(key, 'hemolyzed');
       const drug = (m: Med) => (m.medicationCodeableConcept?.coding ?? []).map((c) => c.display).join(' ');
       const orders = (world.all('MedicationRequest') as unknown as Med[]).filter((m) => m.subject?.reference === x.patient && RAISES_K.test(drug(m)));
@@ -121,7 +117,7 @@ describe('results-inbox', () => {
   });
 
   it('files every preliminary report before its final one, and every corrected or withdrawn value before today', () => {
-    for (const key of ['prelim_positive', 'prelim_negative']) {
+    for (const key of ['prelim_negative']) {
       const x = byKey(key, 'preliminary');
       const focus = get<{ focus: { reference: string } }>(x.task).focus.reference;
       const [p, f] = [get<{ issued: string; status: string }>(focus), get<{ issued: string; status: string }>(x.final)];
