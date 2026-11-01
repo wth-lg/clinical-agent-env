@@ -1,3 +1,4 @@
+import { syntheaRef } from '../../packages/env/synthea-ids.ts';
 import { ref } from './ids.ts';
 // T2's expected end state, written by hand from the overlay (overlay.ts) and the policies: each inbox
 // item, its class, its decisive sources and what the policies make of it. policy.ts computes the same
@@ -43,7 +44,14 @@ interface Base {
 export interface NoduleItem extends Base { class: 'nodule_screening'; nodule_mm: number; index_date: string; screening_index: string; lung_rads: number; overdue: boolean; window: { start: string; end: string } }
 export interface HemolyzedItem extends Base { class: 'hemolyzed'; k: number; by: string }
 export interface CorrectedItem extends Base { class: 'corrected'; reported: number; k: number; by?: string }
-export interface WithdrawnItem extends Base { class: 'entered_in_error'; withdrawn: string; forbid: 'gi' | 'creatinine' }
+// A withdrawn comparison creatinine (forbid 'creatinine') also has RBC-LAB-03 §3's 7-day window
+// before the item's result (R31): from the instant 7 days before its collection to the collection,
+// as ISO instants. The rule's two halves (a rise over a value in the 48 hours before, 1.5 times the
+// lowest value in the 7 days before) are both ruled out only by seeing every valid creatinine in
+// that window, so its review is a search that cannot hide one (tests/grader.ts windowCovers). The
+// window's lowest valid creatinine (by value, then id) stands for that review in sources: it counts as
+// seen only once such a search completes, never by being read or shown on a narrower search.
+export interface WithdrawnItem extends Base { class: 'entered_in_error'; withdrawn: string; forbid: 'gi' | 'creatinine'; baseline?: { id: string; from: string; to: string } }
 export interface PreliminaryItem extends Base { class: 'preliminary'; final: string; report_date: string; by?: string }
 export interface AkiItem extends Base { class: 'aki'; creatinine: number; compare: string; compare_value: number; rule: '48h' | '7d'; by: string }
 export interface FillerItem extends Base { class: 'filler' }
@@ -94,9 +102,12 @@ export const items: readonly Item[] = [
   },
   {
     // Creatinine 1.31; the 0.84 of 10-21 (inside 48 hours) is withdrawn, and the valid 1.27 of 10-17
-    // gives 1.03 times: not AKI, no order.
+    // gives 1.03 times: not AKI, no order. The 1.31 was collected 2026-10-22 10:29:10 -04:00, so the
+    // 7-day window opens 2026-10-15 10:29:10 -04:00; its lowest valid value is the 1.27 of 10-17
+    // under 2160-0 (base obs-02297), seen only by a search that covers the window (R31).
     key: 'eie_baseline', class: 'entered_in_error', task: task(10), patient: 'Patient/pt-0033',
-    sources: [ref('Observation/obs-t2-cw-cr'), ref('Observation/obs-t2-cw-cr-1021')], withdrawn: ref('Observation/obs-t2-cw-cr-1021'), forbid: 'creatinine', action: 'close',
+    sources: [ref('Observation/obs-t2-cw-cr'), ref('Observation/obs-t2-cw-cr-1021'), syntheaRef('Observation/obs-02297')], withdrawn: ref('Observation/obs-t2-cw-cr-1021'), forbid: 'creatinine', action: 'close',
+    baseline: { id: syntheaRef('Observation/obs-02297'), from: '2026-10-15T14:29:10.000Z', to: '2026-10-22T14:29:10.000Z' },
   },
   {
     // The preliminary read saw no fracture; the final read (to urgent care) is an aggressive lytic
