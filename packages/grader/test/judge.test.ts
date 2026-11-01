@@ -111,9 +111,8 @@ describe('judge', () => {
     expect(judgeCallBudget([item('per_patient', 6)])).toBe(12);
     expect(judgeCallBudget([item('per_patient', 8), item('per_item', 8), item('one')])).toBe(34);
     expect(judgeAllowanceUsd([item('per_patient', 6)])).toBe(12 * JUDGE_MAX_CALL_USD);
-    const code = { ...item('code_asks', 3), method: 'code' as const };
-    expect(judgeCallBudget([code])).toBe(6);
-    expect(judgeCallBudget([{ ...code, judge_questions: undefined }])).toBe(0);
+    expect(judgeCallBudget([{ ...item('code_asks', 3), method: 'code' as const }])).toBe(6);
+    expect(judgeCallBudget([{ ...item('code_silent'), method: 'code' as const }])).toBe(0);
     expect(judgeCallBudget([item('runaway', 1000)])).toBe(JUDGE_MAX_CALLS);
     expect(judgeAllowanceUsd([item('runaway', 1000)])).toBe(JUDGE_MAX_CALLS * JUDGE_MAX_CALL_USD);
   });
