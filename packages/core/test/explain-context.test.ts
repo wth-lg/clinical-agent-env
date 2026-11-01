@@ -14,7 +14,6 @@ import { parseTrajectory } from '../trajectory.ts';
 import { repoRoot } from '../../../scripts/test/helpers.ts';
 import { checks as contrastChecks } from '../../../tasks/contrast-ct-prep/tests/grader.ts';
 import { checks as renalChecks } from '../../../tasks/renal-dose-review/tests/grader.ts';
-import { ref } from '../../../tasks/renal-dose-review/ids.ts';
 
 const SAMPLE = join(repoRoot, 'apps/web/e2e/fixtures/sample-results/results/runs/sample-1');
 const sample = (trial: string) => {
@@ -37,8 +36,8 @@ describe('explainContext', () => {
   });
 
   // Each trial with M1 when the run has no manifest: contrast-ct-prep/3's decisive ids were shown, and
-  // renal-dose-review/4's first decisive id, Dorothy Ashworth's outside creatinine (obs-t1-1604, the
-  // W1 worklist; builder-249), never was, so without the run's world it cannot be checked.
+  // renal-dose-review/4 has a decisive id the trial never exposed (taken from the recomputed
+  // exposure, R37), so without the run's world its exposability cannot be checked.
   // The decisive gate: contrast-ct-prep/3 fails ct_order first and no_substitution later, and the
   // unmarked safety failure is decisive (decisions.tsv 2026-10-28T06:50).
   for (const [trial, checks, noManifest] of [['contrast-ct-prep/3', contrastChecks, true], ['renal-dose-review/4', renalChecks, 'pending']] as const) {
@@ -50,7 +49,12 @@ describe('explainContext', () => {
       expect(m('M1', record, ctx).met).toBe(true);
       const none = m('M1', record, explainContext({ ...input, manifest: null }));
       expect(none.met).toBe(noManifest);
-      if (noManifest === 'pending') expect(none.evidence).toContain(`${ref('Observation/obs-t1-1604')} never exposed; exposability not checked (the run has no manifest world_hash)`);
+      // R37: the never-exposed decisive id comes from the record, not a hardcoded patient.
+      if (noManifest === 'pending') {
+        const unexposed = (ctx.exposure?.ids ?? []).filter((e) => e.first_exposed_step === null).map((e) => e.id);
+        expect(unexposed.length).toBeGreaterThan(0);
+        expect(none.evidence).toContain(`${unexposed[0]} never exposed; exposability not checked (the run has no manifest world_hash)`);
+      }
       // Without the task's checks there is nothing to recompute, so M1 cannot say.
       expect(m('M1', record, explainContext({ record, events, manifest: null })).met).toBe('pending');
     });
