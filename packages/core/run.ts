@@ -362,9 +362,14 @@ export interface GradeTrajectoryOptions {
 // Grades a recorded trial again from its trajectory: the initial state from the world, the
 // final state by replaying the tool log on it, judge answers from the record's cache. On the
 // trajectory a trial wrote, it returns the grade run() recorded. It never grades a different
-// state silently: when the world does not hash to the record's initial hash, the replay's
+// state silently: when the world does not hash to the record's initial hash (the named world
+// mismatch, R37), the replay's
 // arrivals are not the trajectory's env_events, or the replay does not reach its final hash, the
 // grade is GRADER_ERROR with the reason.
+// The named error for a record of another world (ruling R37).
+export const worldMismatch = (runAt: string | null, checkoutAt: string, runId?: unknown): string =>
+  `world mismatch: run at ${runAt ?? 'an unrecorded world'}, checkout at ${checkoutAt}; reproduce at the commit in results/${typeof runId === 'string' && runId !== '' ? runId : '<run>'}/README.md`;
+
 export async function gradeTrajectory(taskId: string, opts: GradeTrajectoryOptions): Promise<Grade> {
   const task = await opts.tasks.get(taskId);
   if (opts.definitions !== undefined && opts.definitions !== indexedBundle) {
@@ -382,7 +387,9 @@ export async function gradeTrajectory(taskId: string, opts: GradeTrajectoryOptio
   if (early !== null && !isValid(early)) return graded({ ...input, final: null });
   const h = opts.record.state_hash;
   const initialHash = await stateHash(initial);
-  if (initialHash !== h.initial) return ungraded('GRADER_ERROR', { check: null, message: `regrade: initial state hash ${initialHash} is not the record's ${h.initial}`, stops_batch: false });
+  // R37: a run is historical data, pinned to the world it ran on; it is reproduced at the commit
+  // its run directory's README.md names, never graded on another world.
+  if (initialHash !== h.initial) return ungraded('GRADER_ERROR', { check: null, message: worldMismatch(h.initial, initialHash, (opts.record as { run_id?: unknown }).run_id), stops_batch: false });
   const replayed = await replay(source, task, taskTools(task), opts.events);
   if (replayed?.eventMismatch) return ungraded('GRADER_ERROR', { check: null, message: `regrade: ${replayed.eventMismatch}`, stops_batch: false });
   if (opts.compareResults === true && replayed?.mismatch) return ungraded('GRADER_ERROR', { check: null, message: `regrade: ${replayed.mismatch}`, stops_batch: false });
