@@ -1,0 +1,73 @@
+{
+  "trial_id": "run:probe-1:contrast-ct-prep/3",
+  "task_id": "contrast-ct-prep",
+  "task_version": "8c57facb488bd5dfff1409e4f051e1be46657d4c477fd563776dc2935d954948",
+  "env_version": "29f9655062983a6ef86f1ce217bf76af6699ee053efdfe068d040ab4fa43e275",
+  "grader_task_version": "bd6be0d0600147b92ebf7cba75486e45d877816f9125be617ded463a81f73e6b",
+  "fixture_hash": "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968",
+  "state_hash": {
+    "initial": "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968",
+    "final": "2e175635114deaa76ace56edcf074e13057f2f9ec0cde2f4eea8bfba297e4f7a",
+    "replay_final": "2e175635114deaa76ace56edcf074e13057f2f9ec0cde2f4eea8bfba297e4f7a"
+  },
+  "model_requested": "claude-opus-5-5",
+  "models_returned": [
+    "claude-opus-5-5"
+  ],
+  "effort": "high",
+  "api_version": "2026-10-21",
+  "started": "2026-11-01T07:45:17.213Z",
+  "turns": 30,
+  "tool_calls": 84,
+  "tool_errors": {
+    "INVALID_INPUT": 3,
+    "NOT_FOUND": 0,
+    "CONFLICT": 0,
+    "NOT_SUPPORTED": 0,
+    "INTERNAL": 0
+  },
+  "usage": {
+    "input": 60,
+    "cache_write": 114919,
+    "cache_read": 1894238,
+    "output": 17207
+  },
+  "cost_usd": 4.3910786,
+  "api_retries": 0,
+  "retry_wait_ms": 0,
+  "stop_reason": "tool_use",
+  "refusal_category": null,
+  "status": "CANCELLED",
+  "stop": null,
+  "detail": "Error: batch stopped: run:probe-1:crc-care-gap/2: Error: $3.59 settled (worst cases of failed attempts included) + this attempt's worst case $8.73 would pass the bound of $12.00 (2 x PER_TRIAL_CAP_USD)",
+  "summary": null,
+  "resumed": false,
+  "env_git_sha": "84b1806d028e4b509c36962a192d8272da54d3f3",
+  "ended": "2026-11-01T07:48:06.616Z",
+  "judge_cost_usd": 0,
+  "grader_version": "15",
+  "outcome": "CANCELLED",
+  "valid": false,
+  "fault": "infra",
+  "checks": [],
+  "score": null,
+  "judge": {
+    "calls": 0,
+    "unknown": 0,
+    "unknown_penalties": 0,
+    "score_penalties_met": null,
+    "score_penalties_not_met": null,
+    "over_allowance": 0,
+    "cache_keys": [],
+    "cache": []
+  },
+  "attribution": null,
+  "error": null,
+  "run_id": "probe-1",
+  "index": 3,
+  "attempt": "88860582-2",
+  "mode": "live",
+  "settled": false,
+  "requeue_reason": "CANCELLED",
+  "trajectory": "requeued/contrast-ct-prep/3.88860582-2.jsonl"
+}
