@@ -211,6 +211,8 @@ const list = (xs: readonly string[]) => (xs.length < 2 ? xs.join('') : `${xs.sli
 const replayOk = (h: AttributionFacts['state_hash']) => h.final !== null && h.replay_final === h.final;
 const ENV_DETAILS = ['INTERNAL', 'initial_hash_mismatch', 'replay_mismatch'];
 const failedGate = (f: AttributionFacts, id: string) => (f.failed_gates ?? []).includes(id);
+// The event gates (packages/grader/events.ts EVENT_GATE_IDS).
+const EVENT_GATES: readonly string[] = ['event_delivered', 'had_turn', 'event_seen', 'amended', 'amend_form', 'kept'];
 const result = (met: CriterionMet, evidence: string): CriterionResult => ({ met, evidence });
 // What confirms an audit's tool_rejections_correct no for E6, or null: an adjudicated_label
 // environment, or with no adjudicated_label an agreeing LLM auditor; an adjudicated label that is
@@ -421,12 +423,19 @@ export const FAULT_DEFINITIONS: Readonly<Record<Fault, FaultDefinition>> = {
       },
       {
         // PW4-E1 (gate had_turn): the finish guard gives the model a turn after every arrival, so only a
-        // cap that stopped the trial right after one can leave it unanswered.
+        // stop right after one leaves it unanswered. A LIMIT trial keeps its LIMIT fault (a looping model
+        // is never the environment's): the arrival stays a note on its item (did_not_finish). E10 decides
+        // only a trial that did not stop at a limit and whose only failures are its event gates.
         id: 'E10',
         record_fact: true,
-        text: 'A new result, document or message arrived in the queues during the model\'s last turn, so the model had no turn left to see it: the trial stopped at a limit right after it arrived.',
-        reads: ['record.checks (had_turn), or the last record.regrades[].checks'],
-        check: (f) => result(failedGate(f, 'had_turn'), failedGate(f, 'had_turn') ? 'had_turn failed' : 'every arrival had a model turn after it'),
+        text: 'A new result, document or message arrived in the queues during the model\'s last turn, so the model had no turn left to see it, and nothing else in the trial failed; a trial that stopped at a limit keeps that outcome, and the late arrival is only noted.',
+        reads: ['record.outcome', 'record.checks (had_turn and the other failed gates), or the last record.regrades[].checks'],
+        check: (f) => {
+          if (!failedGate(f, 'had_turn')) return result(false, 'every arrival had a model turn after it');
+          if (f.outcome === 'LIMIT') return result(false, 'an arrival came in the last turn of a LIMIT trial: noted on its item, and the trial keeps its LIMIT fault');
+          const other = (f.failed_gates ?? []).filter((g) => !EVENT_GATES.includes(g));
+          return result(other.length === 0, other.length === 0 ? 'had_turn failed, and no other gate did' : `had_turn failed, and so did ${list(other)}`);
+        },
       },
     ],
   },

@@ -141,7 +141,14 @@ describe('E9 and E10 (g)', () => {
     const r = run1(TOY_CHECKS.find((c) => c.id === 'had_turn')!, ctxOf(steps, 1));
     expect(r.met).toBe(false);
     expect(r.items![0]).toMatchObject({ item: 'note', met: false, event: 'toy-a1' });
-    expect(criterion('E10').check(facts({ checks: [{ id: 'had_turn', kind: 'gate', met: false }] })).met).toBe(true);
+    const e10 = (outcome: string, failed: string[]) => criterion('E10').check({ outcome, failed_gates: failed } as unknown as AttributionFacts).met;
+    // A trial that finished, whose only failures are the last-turn arrival's: the environment's.
+    expect(e10('FAIL', ['had_turn', 'event_seen'])).toBe(true);
+    // A LIMIT trial keeps its LIMIT fault: a looping model never reads as an environment fault.
+    expect(e10('LIMIT', ['had_turn', 'event_seen'])).toBe(false);
+    expect(criterion('E10').check({ outcome: 'LIMIT', failed_gates: ['had_turn'] } as unknown as AttributionFacts).evidence).toMatch(/LIMIT/);
+    // Another failure besides the arrival's: the model's, by its own gates.
+    expect(e10('FAIL', ['had_turn', 'note_on_patient'])).toBe(false);
     expect(run1(TOY_CHECKS.find((c) => c.id === 'had_turn')!, ctxOf(steps, 2)).met).toBe(true);
   });
 });
