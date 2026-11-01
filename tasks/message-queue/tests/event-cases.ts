@@ -18,7 +18,7 @@
 import type { Alternative, Mutant, Script } from '../../../packages/grader/matrix/types.ts';
 import { SPECS } from '../events.ts';
 import {
-  AMEND, arrivalRead, call, change, HOLD_TASK, inboxOf, labs, MR, odumRenew, order, priceA1c, priceBridge, priceLisinopril, priceMetformin, PT, recheck, route, type RouteOpts, RX, searchNotes, voided, webbA1c, webbBridge, webbMetBridge, webbMetformin,
+  AMEND, arrivalRead, call, change, close as closeItem, ODUM_LOOK, ODUM_REPORT, HOLD_TASK, inboxOf, labs, MR, odumRenew, order, priceA1c, priceBridge, priceLisinopril, priceMetformin, PT, recheck, route, type RouteOpts, RX, searchNotes, voided, webbA1c, webbBridge, webbMetBridge, webbMetformin,
 } from '../solution/steps.ts';
 
 const itemOf = (spec: string) => SPECS.find((s) => s.id === spec)!.item;
@@ -91,7 +91,6 @@ export function eventAlternatives(spec: string, active: readonly string[]): Alte
       ];
     case 'price-d1':
       return [
-        { id: 'price-d1_left_open', why: 'Reads the resent request, places no second order, and leaves it in the queue: closing it is not what the forbid grades (R3).', script: own({ closeResent: false }) },
         {
           id: 'price-d1_cancelled_as_repeat',
           why: 'Cancels the resent request as a repeat of the request already answered, with no second order.',
@@ -100,4 +99,27 @@ export function eventAlternatives(spec: string, active: readonly string[]): Alte
       ];
   }
   return [];
+}
+
+// R38(a): a blind write fires the amend. The trial reads none of Frank Odum's records, closes his
+// message (the write that fires odum-o1), reads the arrival in the re-check and leaves his order as it
+// was. The base review is still owed: decisive_seen fails (retrieval).
+export function blindWriteMutant(active: readonly string[]): Mutant {
+  return {
+    id: 'odum-o1_blind_write_fires', trap: 'blind_write_fires_amend',
+    why: "Closes Frank Odum's message without reading his chart, which fires the outside repeat panel; reads the panel and leaves his lisinopril order as it was, with no decision.",
+    fails: ['decisive_seen', 'amended'], loses: [], attribution: 'retrieval', items: { [itemOf('odum-o1')]: 'retrieval' },
+    script: route({ active, reads: [...ODUM_LOOK.calls, ...ODUM_REPORT.calls].map((c) => [c, []] as [typeof c, typeof c[]]), first: { odum: [closeItem(3)] }, amend: { 'odum-o1': () => [] } }),
+  };
+}
+// R38(b): RBC-RX-05 states an inbox rule for the messages queue (close each message once it is
+// decided; §5 close each message), so the resent request, a message in that queue, must be closed
+// after it was read. Left open: all_cleared fails (process).
+export function resentLeftOpenMutant(active: readonly string[]): Mutant {
+  return {
+    id: 'price-d1_left_open', trap: 'closure',
+    why: "Reads the pharmacy's resent request and places no second order, but leaves it open in the messages queue.",
+    fails: ['all_cleared'], loses: [], attribution: 'process', items: { [itemOf('price-d1')]: 'process' },
+    script: route({ active, closeResent: false }),
+  };
 }

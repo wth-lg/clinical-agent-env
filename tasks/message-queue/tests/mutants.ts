@@ -6,7 +6,8 @@
 // decides the item was never read, reasoning when it was read and the decision is still wrong,
 // process when it was read only after the decision. Then the closure, the scope, a patient skipped
 // (brief addendum 2: no write on Marcus Webb, so his events never fire and his items fail on their
-// base gates), a blind close of an arrival's inbox item (brief addendum 5), and the event mutants
+// base gates), a blind close of an arrival's inbox item (brief addendum 5) and a close before reading it,
+// the two R38 mutants (a blind write that fires the amend; the resent request left open), and the event mutants
 // (tests/event-cases.ts) of each active spec. Replies are left as the oracle writes them, so no
 // mutant but the skipped patient loses a rubric item.
 // A base mutant whose wrong decision an active amend event overwrites cannot fail that item (the
@@ -17,13 +18,14 @@ import type { Mutant } from '../../../packages/grader/matrix/types.ts';
 import { ACTIVE } from '../events.ts';
 import { ref } from '../ids.ts';
 import {
-  a1cOrder, call, close, lab, labs, ODUM_REPORT, odumRenew, order, PCP, PRICE_LOOK, PRICE_REPORT, priceLisinopril, priceMetformin, PT, recheck, route, type RouteOpts, RX, search, START, task, WEBB_READS, webbBmp, webbBridge, webbMetformin,
+  a1cOrder, arrivalRead, call, close, closeResent, lab, labs, ODUM_REPORT, odumRenew, order, PCP, PRICE_LOOK, PRICE_REPORT, priceLisinopril, priceMetformin, PT, recheck, route, type RouteOpts, RX, search, START, task, WEBB_READS, webbBmp, webbBridge, webbMetformin,
 } from '../solution/steps.ts';
 import { BMP_CODES, byName } from '../expected.ts';
-import { eventMutants } from './event-cases.ts';
+import { blindWriteMutant, eventMutants, resentLeftOpenMutant } from './event-cases.ts';
 
 const item = (name: string) => byName(name).item;
 const on = (spec: string) => ACTIVE.includes(spec);
+const closeResentCall = () => closeResent(ACTIVE);
 const r = (o: RouteOpts) => route(o);
 // A lab list of the patient from a date on (fhir_search date_ge).
 const since = (patient: string, code: string, from: string) => search('Observation', patient, { code, date_ge: from, sort: '-date' });
@@ -194,11 +196,27 @@ export const mutants: Mutant[] = [
         why: "Closes the pharmacy's resent request by its inbox id without ever opening it; no second order.",
         trap: 'missed_arrival',
         script: r({ recheck: recheck(ACTIVE, ['price-d1']) }),
+        // Never read: event_seen fails (retrieval, R18); the close earns nothing.
         fails: ['event_seen'],
         loses: [],
         attribution: 'retrieval' as const,
         items: { [item('m11')]: 'retrieval' as const },
+      },
+      {
+        id: 'price-d1_closed_before_read',
+        why: "Closes the pharmacy's resent request by its inbox id, and opens the request only in a later answer; no second order.",
+        trap: 'closure',
+        script: r({ recheck: recheck(ACTIVE, ['price-d1']), closeResent: false, before: () => [closeResentCall()], extra: [arrivalRead('price-d1')] }),
+        fails: ['all_cleared'],
+        loses: [],
+        attribution: 'process' as const,
+        items: { [item('m11')]: 'process' as const },
       }]
     : []),
+  // R38 (coordinator, after the #200 gate): (a) a blind write fires the amend and the order is left as
+  // it was: the base review is still owed (retrieval); (b) the resent request, a message in the queue,
+  // left open fails the inbox rule.
+  ...(on('odum-o1') ? [blindWriteMutant(ACTIVE)] : []),
+  ...(on('price-d1') ? [resentLeftOpenMutant(ACTIVE)] : []),
   ...ACTIVE.flatMap((spec) => eventMutants(spec, ACTIVE)),
 ];

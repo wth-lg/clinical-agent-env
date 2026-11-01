@@ -37,7 +37,7 @@ export const checkText: CheckText = {
     found: first,
   },
   all_cleared: {
-    requires: `all ${ITEMS.length} queue items completed, cancelled or rejected`,
+    requires: `all ${ITEMS.length} queue items completed, cancelled or rejected, and a message that arrived in the queue for one of them (a resent request) closed too, after it was read`,
     found: first,
   },
   // The event gates (packages/grader/events.ts) over the items an active mid-trial event bears on

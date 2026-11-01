@@ -31,7 +31,7 @@ import { byName, expected, ITEMS } from '../expected.ts';
 import { derive } from '../policy.ts';
 import { route } from '../solution/steps.ts';
 import { alternatives } from './alternatives.ts';
-import { eventAlternatives, eventMutants } from './event-cases.ts';
+import { blindWriteMutant, eventAlternatives, eventMutants, resentLeftOpenMutant } from './event-cases.ts';
 import { checksFor } from './grader.ts';
 import { mutants } from './mutants.ts';
 
@@ -192,5 +192,18 @@ describe('message-queue events', () => {
     expect(delivered.evidence.fired).toEqual([]);
     expect(mutants.some((m) => m.id === 'patient_skipped_webb')).toBe(true);
     expect(ACTIVE).toContain('webb-c1');
+  });
+
+  // R38 (coordinator, after the #200 gate): (a) a blind write that fires an amend never excuses the
+  // base review; (b) the resent request is a message in the queue, so the inbox rule (close each
+  // message once it is decided) grades it, closed after it was read.
+  it('R38: a blind write that fires the amend fails decisive_seen (retrieval); the resent request left open fails all_cleared', { timeout: 600_000 }, async () => {
+    const loaded = await loadMatrixTask(ID);
+    const muts = [blindWriteMutant(ACTIVE), resentLeftOpenMutant(ACTIVE)];
+    // The matrix's standing check wants every active event's own mutants beside them.
+    const all = [...muts, ...ACTIVE.flatMap((s) => eventMutants(s, ACTIVE))];
+    const res = await runMatrix(matrixEnv(), { ...loaded, checks: checksFor(activeSpecs(events)).filter((c) => !JUDGED.has(c.id)), mutants: all, declares: { ...loaded.declares, traps: [...new Set(all.map((m) => m.trap))] } }, { cases: muts.map((m) => m.id), trials: 1, regrades: 1 });
+    expect(res.results.map((r) => r.case.id), res.lines.join('\n')).toEqual(muts.map((m) => m.id));
+    for (const r of res.results) expect(r.problems, `${r.case.id}\n${res.lines.join('\n')}`).toEqual([]);
   });
 });
