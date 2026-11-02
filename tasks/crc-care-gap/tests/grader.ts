@@ -15,7 +15,7 @@ import type { Check, GateCtx, Step, StepNotes, StepSearch } from '../../../packa
 import { NOW_MS, TIME_ZONE } from '../../../packages/env/clock.ts';
 import { collapseWhitespace } from '../../../packages/env/tools/registry.ts';
 import type { EventSpec } from '../../../packages/env/events.ts';
-import { eventGates, exposedAfter, type EventExpectation } from '../../../packages/grader/events.ts';
+import { arrivalPatients, eventGates, exposedAfter, type EventExpectation } from '../../../packages/grader/events.ts';
 import { firstExposed, passesWindow, runCompleteAt, sameId, seenBefore } from '../../../packages/grader/exposure.ts';
 import type { GateOf } from '../../../packages/grader/gate-view.ts';
 import { itemGate, type ItemVerdict } from '../../../packages/grader/items.ts';
@@ -207,7 +207,7 @@ export function filtersCover(s: StepSearch, patient: string, a: Absence): boolea
 const SORTED_KINDS: ReadonlySet<string> = new Set(['Procedure', 'Observation']);
 export function absenceShownAt(steps: readonly Step[], patient: string, a: Absence): number | null {
   const passes = (s: StepSearch) => a.from !== null && SORTED_KINDS.has(a.type) && passesWindow(s, clinicMidnight(a.from), NOW_MS);
-  return runCompleteAt(steps, (s) => filtersCover(s, patient, a), passes);
+  return runCompleteAt(steps, (s) => filtersCover(s, patient, a), passes, arrivalPatients(events.SPECS));
 }
 // verifier-W1T-190-r2-clinical N2 (R3, R16, R34): §7 tells the agent that an exclusion may be
 // recorded only in notes and to search for the words a note would use, so an absence whose kind is

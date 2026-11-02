@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:message-queue:9",
   "task_id": "message-queue",
-  "task_version": "df939c56dce8cfc1291afa044ca2e1f8c452f0fab3f8d17e952cf038c3dfcdf4",
+  "task_version": "1c02e29640ae63a4b8362baa18b4721b1628e9989bb21c0b3bd1a12530719547",
   "env_version": "fda8f33d60f490de7c235caa3d2886ab01a3fda443574f88b7ff971e42617b84",
-  "grader_task_version": "08b9017fb2c4d6ebd5467fdc4d0a16f03b546d39bac8b3a8ee08c08266a5d84a",
+  "grader_task_version": "8f6e7214146d4943578fc9801f5f161f38d4f7bac4c889ee7ecbce6a05f073d2",
   "fixture_hash": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
   "state_hash": {
     "initial": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
@@ -843,7 +843,7 @@
   "regrades": [
     {
       "grader_version": "19",
-      "grader_task_version": "08b9017fb2c4d6ebd5467fdc4d0a16f03b546d39bac8b3a8ee08c08266a5d84a",
+      "grader_task_version": "8f6e7214146d4943578fc9801f5f161f38d4f7bac4c889ee7ecbce6a05f073d2",
       "outcome": "FAIL",
       "score": 1,
       "valid": true,

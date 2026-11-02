@@ -86,6 +86,14 @@ function patientOf(r: unknown): string | undefined {
   return undefined;
 }
 
+// The Patient each arrival resource of `specs` is about, by <Type>/<id>, for the page-run rule's
+// arrival check (exposure.ts runCompleteAt, ArrivalPatient): a resource a spec puts that names no
+// Patient, or a key no spec puts, is undefined, which that check counts against every patient.
+export function arrivalPatients(specs: readonly EventSpec[]): (key: string) => string | undefined {
+  const of = new Map<string, string | undefined>(specs.flatMap((s) => s.resources.map((r) => [`${r.resourceType}/${r.id}`, patientOf(r)] as const)));
+  return (key: string) => of.get(key);
+}
+
 // The step at which the spec's trigger first held, re-derived from the steps as the hook in
 // packages/env/events.ts decides it (a successful call; exposure is cumulative), or null.
 export function triggeredAt(spec: EventSpec, ctx: Pick<GateCtx, 'steps' | 'final'>): number | null {

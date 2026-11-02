@@ -299,3 +299,32 @@ describe('runCompleteAt: page runs across nested filters (G2, M2) and arrivals b
     expect(runCompleteAt([st(1, same1), st(2, { ...q, offset: 29 })], all, never)).toBe(null);
   });
 });
+
+// Coordinator at the #208 handshake (M3 scope): the arrival check reads the searched query's patient.
+// An arrival for another patient between two pages for patient A does not change A's records, so the
+// join stands; an arrival of the searched type for A still refuses it. Clinic-wide pages count every
+// patient's arrivals, and an arrival whose patient the resolver does not know counts too.
+describe('runCompleteAt: the M3 arrival check is scoped to the searched patient', () => {
+  const st = (n: number, search?: StepSearch, more: Partial<Step> = {}): Step => ({ n, seq: n, turn: n, tool: 'fhir_search', is_error: false, error_code: null, exposed_ids: [], referenced_ids: [], written_ids: [], shown: {}, ...(search ? { search } : {}), ...more });
+  const q = { type: 'Observation', patient: 'Patient/pt-A', sort: '-date', whole: false, total: 45 } satisfies StepSearch;
+  const p1 = { ...q, date_ge: '2017-01-01', next_offset: 28 };
+  const p2 = { ...q, offset: 28 };
+  const all = () => true;
+  const never = () => false;
+  const owner: Record<string, string> = { 'Observation/obs-b': 'Patient/pt-B', 'Observation/obs-a': 'Patient/pt-A' };
+  const patientOf = (k: string) => owner[k];
+  const between = (key: string) => [st(1, p1), st(2, undefined, { tool: 'update_inbox_item', arrivals: [{ spec: 'e', keys: [key] }] }), st(3, p2)];
+  it('an arrival for another patient between A\'s pages: the run is complete', () => {
+    expect(runCompleteAt(between('Observation/obs-b'), all, never, patientOf)).toBe(3);
+  });
+  it('an arrival of the searched type for A between the pages: refused', () => {
+    expect(runCompleteAt(between('Observation/obs-a'), all, never, patientOf)).toBe(null);
+  });
+  it('an arrival whose patient is unknown, or any arrival under a clinic-wide run, still refuses', () => {
+    expect(runCompleteAt(between('Observation/obs-x'), all, never, patientOf)).toBe(null);
+    expect(runCompleteAt(between('Observation/obs-b'), all, never)).toBe(null);
+    const { patient: _p1, ...c1 } = p1;
+    const { patient: _p2, ...c2 } = p2;
+    expect(runCompleteAt([st(1, c1), st(2, undefined, { arrivals: [{ spec: 'e', keys: ['Observation/obs-b'] }] }), st(3, c2)], all, never, patientOf)).toBe(null);
+  });
+});

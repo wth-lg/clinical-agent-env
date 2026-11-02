@@ -165,22 +165,29 @@ export function passesWindow(s: StepSearch, opens: number, closes: number): bool
 // the first page's up to, not including, the later page's. It adds a record when its id of the
 // searched type was not exposed or referenced by any step up to the one that fired it; a class B
 // correction that replaces a record in place (crc-b2 on its trigger page, pilot-4a crc-care-gap/2)
-// keeps the set and its size. Filters that do not nest, and a page without a total, prove nothing. A run with the same filters keeps R27's rule as before: an arrival
+// keeps the set and its size. The check reads the searched query's patient (coordinator at the #208
+// handshake): when both pages name one patient, an arrival the caller's resolver (arrivalPatient:
+// events.ts arrivalPatients over the task's specs) puts on another patient leaves her records as
+// they were. An arrival it cannot place, or any arrival under a clinic-wide page, still counts.
+// Filters that do not nest, and a page without a total, prove nothing. A run with the same filters keeps R27's rule as before: an arrival
 // between its pages shifts offsets, which no task's events do mid-review (each list's triggers fire
 // on a write, after the reads, or on the read that exposes the record the arrival replaces).
 const RUN_FILTERS = ['patient', 'code', 'category', 'date_ge', 'date_le', 'status'] as const;
 export const runKey = (s: StepSearch): string => JSON.stringify([s.type, ...RUN_FILTERS.map((k) => s[k] ?? null), s.sort ?? 'date']);
 const holdsAll = (wide: StepSearch, narrow: StepSearch) => RUN_FILTERS.every((k) => wide[k] === undefined || wide[k] === narrow[k]);
-export function continuesRun(steps: readonly Step[], first: Step, later: Step): boolean {
+export type ArrivalPatient = (key: string) => string | undefined;
+export function continuesRun(steps: readonly Step[], first: Step, later: Step, arrivalPatient?: ArrivalPatient): boolean {
   const s0 = first.search!;
   const s = later.search!;
   if (runKey(s) === runKey(s0)) return true;
   if (s.type !== s0.type || (s.sort ?? 'date') !== (s0.sort ?? 'date') || s0.total === undefined || s.total !== s0.total) return false;
   if (!holdsAll(s, s0) && !holdsAll(s0, s)) return false;
   const known = (k: string, at: number) => steps.some((st) => st.n <= at && (st.exposed_ids.includes(k) || st.referenced_ids.includes(k)));
-  return !steps.some((st) => st.n >= first.n && st.n < later.n && (st.arrivals ?? []).some((a) => a.keys.some((k) => k.startsWith(`${s0.type}/`) && !known(k, st.n))));
+  const patient = s0.patient !== undefined && s.patient === s0.patient ? s0.patient : undefined;
+  const elsewhere = (k: string) => patient !== undefined && arrivalPatient !== undefined && (arrivalPatient(k) ?? patient) !== patient;
+  return !steps.some((st) => st.n >= first.n && st.n < later.n && (st.arrivals ?? []).some((a) => a.keys.some((k) => k.startsWith(`${s0.type}/`) && !known(k, st.n) && !elsewhere(k))));
 }
-export function runCompleteAt(steps: readonly Step[], covers: (s: StepSearch) => boolean, passes: (s: StepSearch) => boolean): number | null {
+export function runCompleteAt(steps: readonly Step[], covers: (s: StepSearch) => boolean, passes: (s: StepSearch) => boolean, arrivalPatient?: ArrivalPatient): number | null {
   const covering = steps.filter((st) => st.search !== undefined && covers(st.search));
   let best: number | null = null;
   const done = (n: number) => { best = best === null ? n : Math.min(best, n); };
@@ -192,7 +199,7 @@ export function runCompleteAt(steps: readonly Step[], covers: (s: StepSearch) =>
     for (const later of covering.slice(i + 1)) {
       if (next === undefined) break;
       const s = later.search!;
-      if (s.offset !== next || !continuesRun(steps, first, later)) continue;
+      if (s.offset !== next || !continuesRun(steps, first, later, arrivalPatient)) continue;
       next = s.next_offset;
       if (next === undefined || passes(s)) { done(later.n); break; }
     }

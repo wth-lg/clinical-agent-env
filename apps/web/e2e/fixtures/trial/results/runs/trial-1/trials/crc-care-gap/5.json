@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:crc-care-gap:5",
   "task_id": "crc-care-gap",
-  "task_version": "acd29a96040a5e36af89e764ba1e7266340dd51caf24314d955f83408d8b3293",
+  "task_version": "2b6dd996375d39528cbfc39c0676ddc6116615828e471f1a535e44933a59b181",
   "env_version": "df481c520ddc09dbafb0011b40fa583187697768f255d3c80019200604dc38ee",
-  "grader_task_version": "6e871a4c14fde1fcb5b32f2c179b2ecb79e7dd10e2fe2a7f3ad130dfcac8802e",
+  "grader_task_version": "1cf41ce2ca1d0ad8afcfdd3116f32bd2ff449ed9f916669cd087c9cbed105afd",
   "fixture_hash": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
   "state_hash": {
     "initial": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
