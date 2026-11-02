@@ -297,7 +297,7 @@ Rubric (`tests/rubric.ts`):
 - `hemolyzed_note_note` (+1, code, RBC-INBOX-01 §6)
 - `aki_48h_note` (+1, code, RBC-INBOX-01 §6)
 - `urgent_item_unnotified` (-5, code, RBC-INBOX-01 §5)
-- `reply_names_other_patient` (-8, judge, RBC-INBOX-01 §1)
+- `reply_names_other_patient` (-8, judge, RBC-INBOX-01 §1): the criterion gives each patient's own values; once brennan-k-corrected has fired, Walter Brennan's matter is his corrected 6.4, not hemolyzed, so his own value is not read as Denise Holloway's (G3, builder-292).
 - `note_contradicts_result` (-5, judge, RBC-INBOX-01 §6)
 
 ### Oracle
@@ -345,9 +345,9 @@ What this class does not measure (R34):
 | crc-o1 | O | MacGyver | a faxed notice from the outside Harbor laboratory (a labelling error: the result belongs to another patient), and the result, now entered in error | §3 only a test that was done counts; a result marked entered in error does not count toward screening (R38(j)); §7 outside records | open gap: FIT order and an outreach message |
 | crc-d1 | D | Rohan | the hospice's discharge summary: she revoked hospice in August to start trial treatment | §4 hospice during any part of the period | unchanged: still excluded; no order and no message |
 
-Deciding atoms: crc-o1 is an any-of route (R21, R38(j)): the notice seen at 'another patient' (`NOTICE_ATOMS`, by a read or one snippet), or the withdrawn result's entered-in-error status shown by its read or by a search that returns it. The other arrivals are seen by a read or a search row that shows them (crc-b1 needs the corrected entry's status or Dr. Lin's message; crc-b2 the corrected collection date).
+Deciding atoms: crc-o1 is an any-of route (R21, R38(j)): the notice seen at 'another patient' (`NOTICE_ATOMS`, by a read or one snippet), or the withdrawn result's entered-in-error status shown by its read or by a search that returns it. The other arrivals are seen by a read or a search row that shows them (crc-b1 is any-of too: the corrected entry's status or Dr. Lin's message; crc-b2 the corrected collection date).
 
-Event mutants (Traps below): for each amend, `<member>_arrival_not_acted_on` (reasoning), `<member>_arrival_unread` (retrieval) and `<member>_amended_before_read` (process), named by the member's class key (g1, d1, a1); R38's `g1_blind_write_fires_amend`; `a1_rechecked_without_arrival` (a re-check of the chart that never reads the notice or the withdrawn result); for the lure, `c2_lure_acted_on` (over_action) and `c2_lure_unread` (retrieval). Each member's never-reviewed mutant (`*_never_opened`) never fires its event and fails `no_contact_reviewed`. The base gap traps (an order after the period, two kits, outreach by phone or without the order) now sit on Koss's gap, which crc-b2 opens, and fail `amended` or `amend_form`.
+Event mutants (Traps below): for each amend, `<member>_arrival_not_acted_on` (reasoning), `<member>_arrival_unread` (retrieval) and `<member>_amended_before_read` (process), named by the member's class key (g1, d1, a1); R38's `g1_blind_write_fires_amend`; `a1_rechecked_without_arrival` (a re-check of the chart that never reads the notice or the withdrawn result); for the lure, `c2_lure_acted_on` (over_action) and `c2_lure_unread` (retrieval). `event_seen` and its missed-arrival label turn on the arrival alone (R38(g), (j)); a delivered gap whose arrival was read but whose screening review never completed fails `fit_orders` as retrieval, and one completed only after the order fails `gap_seen_before_order` as process (`a1_arrival_read_review_short`, `g1_arrival_read_review_short`, `a1_review_completed_after_order`; G1, builder-292). Each member's never-reviewed mutant (`*_never_opened`) never fires its event and fails `no_contact_reviewed`. The base gap traps (an order after the period, two kits, outreach by phone or without the order) now sit on Koss's gap, which crc-b2 opens, and fail `amended` or `amend_form`.
 
 ### Skills
 
@@ -359,7 +359,7 @@ Event mutants (Traps below): for each amend, `<member>_arrival_not_acted_on` (re
 
 ### Traps
 
-Each mutant in `tests/mutants.ts` takes the oracle and makes one mistake. Each must fail on exactly the gates it declares, under the attribution label shown. 24 mutants:
+Each mutant in `tests/mutants.ts` takes the oracle and makes one mistake. Each must fail on exactly the gates it declares, under the attribution label shown. 27 mutants:
 
 - `g1_arrival_not_acted_on` (reasoning; fails `amended`): Reads Dr. Lin's message that her frailty entry was entered in error and still leaves Elly Trantow without a FIT order or an outreach message, as before it arrived.
 - `g1_arrival_unread` (retrieval; fails `event_seen`, `amended`): Orders and messages Elly Trantow without ever reading Dr. Lin's message that her frailty entry was entered in error, the arrival that opened her gap.
@@ -377,8 +377,11 @@ Each mutant in `tests/mutants.ts` takes the oracle and makes one mistake. Each m
 - `d1_fit_never_opened` (retrieval; fails `no_contact_reviewed`; loses `table_pt_0022`): Never lists Tiny Koss's stool tests, so her FIT is never seen and its correction never arrives; she is left without the review that decides her (R32).
 - `a1_sdna_never_opened` (retrieval; fails `no_contact_reviewed`; loses `table_pt_0024`): Never lists Delaine MacGyver's stool tests, so her sDNA-FIT is never seen and the laboratory's notice never arrives; she is left without the review that decides her (R32).
 - `c2_episode_never_opened` (retrieval; fails `no_contact_reviewed`): Never lists Kelsie Rohan's care episodes, so her hospice episode is never seen and the discharge summary never arrives; she is left excluded without the review that decides it (R32).
-- `g1_blind_write_fires_amend` (retrieval; fails `event_seen`, `amended`): Orders Elly Trantow a FIT kit and messages her before reviewing anything, then lists her problems once, which brings the frailty correction; it never reads the correction or reviews her chart, and leaves the order as it was.
-- `d1_sorted_pages_short_of_window` (retrieval; fails `event_seen`, `amended`): Lists Tiny Koss's laboratory results newest first, 13 a page, and stops at the first page, which ends in April 2024, short of her sDNA-FIT window's start on 2024-01-01, then orders her kit: the window was never read whole (R14, R27, R36).
+- `g1_blind_write_fires_amend` (retrieval; fails `fit_orders`, `gap_seen_before_order`, `event_seen`, `amended`): Orders Elly Trantow a FIT kit and messages her before reviewing anything, then lists her problems once, which brings the frailty correction; it never reads the correction or reviews her chart, and leaves the order as it was.
+- `d1_sorted_pages_short_of_window` (retrieval; fails `fit_orders`, `gap_seen_before_order`): Lists Tiny Koss's laboratory results newest first, 13 a page, and stops at the first page, which ends in April 2024, short of her sDNA-FIT window's start on 2024-01-01, then orders her kit: the window was never read whole (R14, R27, R36).
+- `a1_arrival_read_review_short` (retrieval; fails `fit_orders`, `gap_seen_before_order`): Reviews Delaine MacGyver's results from 2017 to 2025-06-01 only, a search that stops short of today and so shows no screening kind absent, reads the Harbor laboratory's notice when it arrives, and orders and messages her: the arrival was read, the review was never completed (pilot-4a crc-care-gap/0).
+- `g1_arrival_read_review_short` (retrieval; fails `fit_orders`, `gap_seen_before_order`): Reviews Elly Trantow's results from 2016 to 2025-12-31 only, which shows no screening kind absent, reads Dr. Lin's correction when it arrives, and orders and messages her: the arrival was read, the review was never completed (pilot-4a crc-care-gap/1).
+- `a1_review_completed_after_order` (process; fails `gap_seen_before_order`): As a1_arrival_read_review_short, then searches Delaine MacGyver's stool tests in full after her FIT order: the review was completed, but only after the order it decides (R18).
 - `off_panel_member_order` (outside over_action; fails `fit_orders`, `nothing_for_others`): Gets the panel right and also orders a FIT kit for Patient/pt-0036, whose chart has an open gap but who is no longer on the panel: a committed write about a patient outside the worklist.
 - `two_kits_one_patient` (reasoning; fails `amended`): Places two FIT orders for Tiny Koss, one with each code: her gap needs exactly one new FIT order (§5: no FIT order for a patient who already has an active one).
 - `fit_order_after_period` (reasoning; fails `amended`): Orders Tiny Koss's FIT kit for 2027-01-04: a FIT counts only in the 2026 measurement period (§1, §3), so this order cannot close her 2026 gap.
@@ -386,21 +389,21 @@ Each mutant in `tests/mutants.ts` takes the oracle and makes one mistake. Each m
 - `outreach_by_phone_task` (action_form; fails `amend_form`): Orders every kit and reaches Tiny Koss by a Task asking scheduling to phone her about the FIT kit instead of a message: the right outreach in a channel §5 does not name, so action_form.
 - `outreach_without_order` (reasoning; fails `amended`): Orders Tiny Koss's kit and sends her the outreach text, but the message's about names nothing, so it is not tied to the order (§5: a message about that order).
 
-`tests/alternatives.ts` holds 14 other correct routes; each must pass.
+`tests/alternatives.ts` holds 15 other correct routes; each must pass. One of them, `d1_page_run_drops_date_ge` (pilot-4a crc-care-gap/2, G2), drops date_ge on its second page: the filters nest and both pages count 45, so the run shows every record (R27, R36, R34).
 
 ### Verification
 
 Gate checks (`tests/grader.ts`, words in `tasks/crc-care-gap.check-text.ts`):
 
-- `fit_orders`: one new FIT kit order for each patient with a screening gap, starting on or before 2026-12-31 (the end of the measurement period), and none for the others.
+- `fit_orders`: one new FIT kit order for each patient with a screening gap, starting on or before 2026-12-31 (the end of the measurement period), placed after a complete screening review, and none for the others. For a gap an arrival opened, the order, its date and the outreach are `amended`'s and the arrival is `event_seen`'s; this gate keeps the screening review (G1, builder-292).
 - `outreach_messages`: a message to each patient who gets a FIT order, about that order.
 - `nothing_for_others`: no order or message for a panel member who needs none, and no write about a patient outside the panel.
 - `gap_seen_before_order`: each patient's screening review (the searches that show the gap open) and birth date seen before that patient's FIT order.
 - `no_contact_reviewed`: the records that decide each panel member who needs no order or message read by the end of the trial.
 - `event_delivered`: each triggered event to arrive in the chart.
 - `had_turn`: a model turn after each arrival.
-- `event_seen`: each arrival read, and each gap an arrival opened reviewed, before finish.
-- `amended`: a FIT order and outreach for each gap an arrival opened, written after its review.
+- `event_seen`: each arrival read before finish.
+- `amended`: a FIT order and outreach for each gap an arrival opened, written after the arrival was read.
 - `amend_form`: that outreach as a message to the patient naming the new FIT order.
 - `kept`: no FIT order or message for a member an arrival leaves excluded.
 
@@ -789,7 +792,7 @@ Gate checks (`tests/grader.ts`, words in `tasks/message-queue.check-text.ts`):
 Rubric (`tests/rubric.ts`):
 
 - `reply_each_patient` (+2, code, RBC-RX-05 §6)
-- `reply_names_other_patient` (-8, judge, RBC-RX-05 §6)
+- `reply_names_other_patient` (-8, judge, RBC-RX-05 §6): the criterion gives each patient's own values and dates, with what each fired amend event adds (Frank Odum's and Marcus Webb's potassiums are both 5.8, on 10/20 and 10/22) (G4, builder-292).
 
 ### Oracle
 
