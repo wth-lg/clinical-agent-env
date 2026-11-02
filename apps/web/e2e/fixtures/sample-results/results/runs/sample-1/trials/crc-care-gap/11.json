@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:crc-care-gap:11",
   "task_id": "crc-care-gap",
-  "task_version": "37b8fda95dfe5d4fff508287ef06e59bef84fbc49c17351ddacb6c19e4a43a23",
+  "task_version": "09c08e85379f5a3c4a6c8405e5e8796f05e82023eb5a7660499c245ff6c00ca9",
   "env_version": "6d163707d92b5577816905558b08d819b0cd0716dd03f0a3cc922a1340f52cf8",
-  "grader_task_version": "719ab5b2a66ddf08908720e4f6285e44db5e4d9100a67ea93013a18a63dc8841",
+  "grader_task_version": "06ca9986c141dce2d10c6775b6e048b5db2c34637ead245951d28c6233d22bdd",
   "fixture_hash": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
   "state_hash": {
     "initial": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
@@ -853,7 +853,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-28T20:24:53.634Z"
+          "at": "2026-11-02T10:14:24.857Z"
         }
       },
       {
@@ -871,7 +871,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-11-01T18:02:29.402Z"
+          "at": "2026-11-02T10:14:24.857Z"
         }
       },
       {
@@ -889,7 +889,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-11-01T18:02:29.402Z"
+          "at": "2026-11-02T10:14:24.857Z"
         }
       },
       {
@@ -907,7 +907,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-11-01T18:02:29.402Z"
+          "at": "2026-11-02T10:14:24.857Z"
         }
       },
       {
@@ -925,7 +925,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-11-01T18:02:29.402Z"
+          "at": "2026-11-02T10:14:24.857Z"
         }
       },
       {
@@ -943,7 +943,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-11-01T18:02:29.402Z"
+          "at": "2026-11-02T10:14:24.857Z"
         }
       },
       {
@@ -961,7 +961,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-11-01T18:02:29.402Z"
+          "at": "2026-11-02T10:14:24.857Z"
         }
       }
     ]

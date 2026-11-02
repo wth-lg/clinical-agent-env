@@ -1,9 +1,9 @@
 {
   "trial_id": "pilot-grader-error:message-queue:12",
   "task_id": "message-queue",
-  "task_version": "a65ff2d1660e042898639243b149fc09f1667fc5550acac13443cea3b071576d",
+  "task_version": "939d32738f4ae3757e28010dfc1e9ab48865853ad41073f564bffd92ee368ea7",
   "env_version": "fda8f33d60f490de7c235caa3d2886ab01a3fda443574f88b7ff971e42617b84",
-  "grader_task_version": "efe0e9e28f232f0dd14b74dd5fbfea59210df61886d9cef06c76bcd3c240838d",
+  "grader_task_version": "b64f881fba23a388d6c7970da4e25daef7268920952f7107ab726fa455f244d6",
   "fixture_hash": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
   "state_hash": {
     "initial": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
@@ -787,7 +787,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-11-01T19:16:20.246Z"
+          "at": "2026-11-02T10:15:18.673Z"
         }
       },
       {
@@ -805,7 +805,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-11-01T19:16:20.246Z"
+          "at": "2026-11-02T10:15:18.673Z"
         }
       },
       {
@@ -823,7 +823,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-11-01T19:16:20.246Z"
+          "at": "2026-11-02T10:15:18.673Z"
         }
       }
     ]

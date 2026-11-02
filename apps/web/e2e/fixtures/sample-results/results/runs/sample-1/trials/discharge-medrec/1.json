@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:discharge-medrec:1",
   "task_id": "discharge-medrec",
-  "task_version": "38ab3eae9e5fd9ccbef8a3c0dcd9fd73b7e032c41de66fdcec8cf7ea682cab72",
+  "task_version": "88ae71732e13b07cfd1b88a9157f2480304354509bee18d01b2c07e59a3b1a13",
   "env_version": "7e533371bdf18e2d602882e743d97976256e92b9bf4c962695bc47b96178d751",
-  "grader_task_version": "ba2e53367675f5bca81b5f73e7c034165325c796eec4a0db4dcf797079e99a74",
+  "grader_task_version": "f6e2bc182e409093090c13b416d291d4d7fc49a8df66d726376c63a573323849",
   "fixture_hash": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
   "state_hash": {
     "initial": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
@@ -786,7 +786,7 @@
       "met": true,
       "evidence": {
         "verdict": "met",
-        "quote": "his pharmacy fill history shows the last fill on 03/04/2026 (90 days), which covers only 44 of the 180 days before his 10/16 admission (24%), so he is not taking it as prescribed",
+        "quote": "covers only 44 of the 180 days before his 10/16 admission (24%), so he is not taking it as prescribed",
         "cache_key": "4a7f52ba5c4bfd42798be7b976b792d58260fd995ee9273d14e18481c4ade804"
       }
     }
@@ -819,7 +819,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-11-01T18:18:09.724Z"
+          "at": "2026-11-02T10:15:06.641Z"
         }
       },
       {
@@ -830,14 +830,14 @@
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "met",
-          "quote": "his pharmacy fill history shows the last fill on 03/04/2026 (90 days), which covers only 44 of the 180 days before his 10/16 admission (24%), so he is not taking it as prescribed"
+          "quote": "covers only 44 of the 180 days before his 10/16 admission (24%), so he is not taking it as prescribed"
         },
         "error": null,
         "calls": 1,
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-11-01T18:18:09.724Z"
+          "at": "2026-11-02T10:15:06.641Z"
         }
       }
     ]
