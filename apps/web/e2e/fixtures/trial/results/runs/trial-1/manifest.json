@@ -7,7 +7,7 @@
   "api_version": "2026-10-21",
   "trials": 12,
   "task_versions": {
-    "contrast-ct-prep": "ce1f09d410847f33a59a614cd66e4e625a67a60ed0655122129084d3bd6a5d91",
+    "contrast-ct-prep": "73bb62818ead5868f276986d90679b5b47e2cbc73449fafb67d771059faf1e86",
     "crc-care-gap": "bb45c7f45cea3cbd028d9f7d566f77f8a1f839fada0e15868d889fb996c88b5c",
     "discharge-medrec": "f197f45607a3a39843c7cc87f977a0e18653cffe3173007815b665d843fe084a",
     "message-queue": "8f25501b1ab6c724df306f142f5ace9a01c64444d6741602b5b2e52b19567aed",
@@ -23,7 +23,7 @@
     "results-inbox": "7cf0f61e15298eae4540d3651ecd8078cec9a62b8dfec2ce917fbf2460718a7b"
   },
   "grader_task_versions": {
-    "contrast-ct-prep": "1d9c32d13b9b108dcd863ea46857ee903f94e5b3e7d17f951ca42a31227dd213",
+    "contrast-ct-prep": "b9f61bcfcf2cf89b62e3b809a1a16e80c9c41301b8cb7c5112dd5c192c913033",
     "crc-care-gap": "330b6ed0745c6d14bbb1254c63494c738d1beca41e50cdd2604dec4386e4d510",
     "discharge-medrec": "16d036ae3d696522ae2a61851bd43c987228022b0c7aff5c6075599f3c848b4a",
     "message-queue": "b87b7fca34fc43c007f593309ad075a8ad692bdec7af5a5872cf0e9b5fde3a23",

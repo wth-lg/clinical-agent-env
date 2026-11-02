@@ -6,13 +6,13 @@
   "tasks": {
     "contrast-ct-prep": {
       "task_versions": [
-        "ce1f09d410847f33a59a614cd66e4e625a67a60ed0655122129084d3bd6a5d91"
+        "73bb62818ead5868f276986d90679b5b47e2cbc73449fafb67d771059faf1e86"
       ],
       "env_versions": [
         "d4e055f42fa733a8c0a9ddaf92a391add68007efeb81c8fc5c44820d456d8f98"
       ],
       "grader_task_versions": [
-        "1d9c32d13b9b108dcd863ea46857ee903f94e5b3e7d17f951ca42a31227dd213"
+        "b9f61bcfcf2cf89b62e3b809a1a16e80c9c41301b8cb7c5112dd5c192c913033"
       ],
       "records": 1,
       "trials": 1,
