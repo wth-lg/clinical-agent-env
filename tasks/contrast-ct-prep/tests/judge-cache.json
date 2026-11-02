@@ -36,6 +36,24 @@
     }
   },
   {
+    "key": "77a181dca4abd6c03fe68c2b129f06d61ac0bacff16d47eb69ab9e64725577e6",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Do not drive after taking it: please have someone drive you to the scan and home."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-02T03:53:56.156Z"
+    }
+  },
+  {
     "key": "b97f6a708b42997ed3624945801472c182c90c8331e01daed828332019d37b41",
     "kind": "judge",
     "model": "claude-opus-5-5",

@@ -149,10 +149,16 @@ export const message = (x: Study, body: string = MESSAGES[x.patient]!): ScriptCa
   input: { recipient: x.patient, priority: 'routine', subject: 'Instructions for your CT scan on Monday 10/26', body, about: [x.appointment] },
 });
 export const TELL: ScriptCall[] = [STALE, MODERATE, AKINOTE].map((x) => message(x));
+// Ferreira's saline (t5-ferreira-scr) starts at 08:00 at the imaging center, before the 8:45 his
+// message gives. The preamble's 'send a corrected message': a second one, so the first message's
+// text, which the judged rubric items read, stays as it is.
+export const FERREIRA_CORRECTION = message(MODERATE,
+  'A correction to my earlier message about your CT scan on Monday 10/26 at 9:00 AM: the lab corrected your kidney test (creatinine) of 10/14, and your kidney function is lower than first reported. ' +
+  'You will get IV fluids at the imaging center starting at 8:00 AM, so please arrive by 7:45 AM, not 8:45 AM. Everything else in my earlier message stays the same.');
 
 export const finish = (summary: string): ScriptCall => ({ name: 'finish', input: { summary } });
 export const DONE =
   'Monday 10/26 CT list (Schmitt, Stracke and Brakus cancelled): orders placed and linked for Mohr (creatinine before the scan; IV saline 07:00 after the outside creatinines of 10/21-10/22 showed acute kidney injury), Ferreira (premedication for a moderate reaction; IV saline 08:00, his 10/14 creatinine corrected to 2.8, eGFR 24), Schuster (acute kidney injury: metformin held, creatinine, IV saline; premedication after the outside report of a moderate contrast reaction in 2022), Beahan (CT without contrast, no prep; the outside report of a mild reaction does not apply to it). Patients told.';
 
-export const ORACLE: ScriptTurn[] = [...REVIEW, { calls: [...ORDERS, ...HOLDS] }, ...HANDLE, { calls: TELL }, { calls: [finish(DONE)] }];
+export const ORACLE: ScriptTurn[] = [...REVIEW, { calls: [...ORDERS, ...HOLDS] }, ...HANDLE, { calls: [...TELL, FERREIRA_CORRECTION] }, { calls: [finish(DONE)] }];
 // Keys used by more than one case.

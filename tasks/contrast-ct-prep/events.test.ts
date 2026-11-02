@@ -7,12 +7,13 @@ import { nodeTaskSource } from '../../cli/adapters/tasks-node.ts';
 import { matrixEnv } from '../../cli/matrix.ts';
 import { activeSpecs, AMEND_CLASSES } from '../../packages/env/events.ts';
 import { loadStore } from '../../packages/env/fixture-source.ts';
+import { focusOf } from '../../packages/grader/events.ts';
 import type { WorldView } from '../../packages/grader/matrix/types.ts';
 import * as events from './events.ts';
 import { EVENTS, expected } from './expected.ts';
 import { ref } from './ids.ts';
 import { derive } from './policy.ts';
-import { arrivalDecidesAll } from './tests/grader.ts';
+import { arrivalDecidesAll, decidingArrival } from './tests/grader.ts';
 
 // plan-amendment-w4, Event mechanism table, row 'Policy sentence': the same in all six policies.
 export const SHARED_SENTENCE =
@@ -134,6 +135,26 @@ describe('T5 event specs', () => {
   it('the arrival is an any-of route only where it decides the whole delivered study (R38d)', () => {
     expect(events.SPECS.filter(arrivalDecidesAll).map((s) => s.id)).toEqual(['t5-mohr-scr']);
     expect(EVENTS['t5-mohr-scr']!.study.decides).toEqual({ order: [], premedication: [], consult: [], creatinine: ['Observation/obs-07501', 'Observation/obs-07502'], saline: ['Observation/obs-07501', 'Observation/obs-07502'], metformin: [] });
+  });
+
+  // R38(g): an arrival is seen only when the records holding its deciding atoms are, and the focus
+  // is the deciding record where it can be. Every spec of SPECS, the inactive one included: Mohr's
+  // two creatinines (the rise is between them; the 1.52 is the focus), and one record, the focus,
+  // for every other spec.
+  it('every spec\'s seen rule needs each arrival record that decides it, and the focus decides (R38g)', () => {
+    const want: Record<string, string[]> = {
+      't5-mohr-scr': ['Observation/obs-07502', 'Observation/obs-07501'],
+      't5-ferreira-scr': [ref('Observation/obs-t5-scr-1014')],
+      't5-schuster-rxn': ['DocumentReference/doc-02501'],
+      't5-beahan-rxn': ['DocumentReference/doc-02502'],
+      't5-ferreira-msg': ['Communication/comm-00501'],
+    };
+    expect(Object.fromEntries(events.SPECS.map((s) => [s.id, decidingArrival(s)]))).toEqual(want);
+    for (const s of events.SPECS) {
+      const keys = s.resources.map((r) => `${r.resourceType}/${r.id}`);
+      expect(decidingArrival(s), `${s.id}: the focus is a deciding record`).toContain(focusOf(s));
+      if (AMEND_CLASSES.has(s.class)) for (const d of EVENTS[s.id]!.changes) for (const k of EVENTS[s.id]!.study.decides[d].filter((k) => keys.includes(k))) expect(decidingArrival(s), `${s.id} ${d}`).toContain(k);
+    }
   });
 
   it('an amend event changes its study; a lure leaves it as it was', () => {
