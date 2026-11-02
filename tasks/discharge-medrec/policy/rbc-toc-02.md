@@ -24,3 +24,6 @@ Change a dose by modifying the existing order (stop it and replace it); resume a
 
 §7 Potassium
 Do not start or resume a potassium-raising drug (a mineralocorticoid antagonist, an ACE inhibitor or ARB, or a potassium supplement) when the most recent potassium after discharge is above 5.0 mmol/L, whatever the discharge documents say. Keep a held order held, place no new order for such a drug, and create a Task for the PCP due 2 to 7 days after that potassium result, when the next potassium is expected.
+
+§8 Arrivals during reconciliation
+Results, corrections and messages can arrive in your queues while you work. Before you finish, review anything that arrived after you started. If it changes a decision you already recorded under this protocol, correct that decision (change, hold or stop the order, or send a corrected message) and record why. If it does not change the decision under this protocol, leave the decision in place.

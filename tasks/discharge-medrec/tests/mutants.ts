@@ -1,11 +1,16 @@
 // Near misses of T4, one trap each (task.toml [matrix] traps): each must FAIL on exactly the gates
 // it declares, on exactly the item it names under the label attribution.ts gives it (Mutant.items),
-// and lose exactly the rubric items in `loses`. An item mutant changes the oracle in one place: it
-// skips the read of the item's own source (retrieval) or reads everything and decides that item
-// wrong (reasoning). A source read is skipped only where no other item rests on it.
-import { oneTurn, type Mutant } from '../../../packages/grader/matrix/types.ts';
-import { oracle } from '../solution/solve.ts';
-import { change, DOC, finish, message, modify, MR, notes, order, readDoc, reads, results, RX, script, searchNotes, task, W, withWrites } from '../solution/steps.ts';
+// and lose exactly the rubric items in `loses`. An item mutant changes the oracle's route
+// (solution/steps.ts route, with events.ts ACTIVE delivered and re-checked) in one place: it skips
+// the read of the item's own source (retrieval) or reads everything and decides that item wrong
+// (reasoning). A source read is skipped only where no other item rests on it. The event mutants
+// (tests/event-cases.ts) are those of each active spec. Each patient's first write stays a write on
+// that patient, so the arrivals come where the oracle's do.
+import type { Mutant } from '../../../packages/grader/matrix/types.ts';
+import { ACTIVE } from '../events.ts';
+import { AMEND, arrivalRead, change, DOC, finish, inbox, note, firstWrites, FIRST, message, modify, MR, notesFor, order, reads, recheck, results, RX, script, searchNotes, W, decisions } from '../solution/steps.ts';
+import { closeItem } from './alternatives.ts';
+import { eventMutants } from './event-cases.ts';
 
 const ACTION = ['med_actions'];
 // A deciding record never seen (R18): the item's action is wrong and its record unseen.
@@ -14,6 +19,9 @@ const UNSEEN = ['med_actions', 'decisive_seen'];
 // item in med_actions and in nothing_else, whose safety failure labels it over_action (R9).
 const FORBIDDEN = ['med_actions', 'nothing_else'];
 const body = (k: keyof typeof W) => (W[k].input as { subject: string; body: string });
+// A benign first write on Walter Kim's chart, for a mutant that drops his KCl stop: the arrivals
+// still come before the re-check.
+const kimFirst = message('Walter Kim: pantoprazole not continued', 'St. Brigid gave pantoprazole 40 mg in place of his home omeprazole 20 mg (formulary substitution). Per RBC-TOC-02 §3 I kept omeprazole and did not order pantoprazole.', [`MedicationRequest/${MR.kimOmeprazole}`]);
 
 export const mutants: Mutant[] = [
   {
@@ -29,12 +37,12 @@ export const mutants: Mutant[] = [
   {
     id: 'lisinopril_resumed_on_creatinine',
     trap: 'kim-lisinopril',
-    why: 'Reads the outside report and resumes lisinopril because SCr 1.32 meets the discharge resume line, missing that its potassium of 5.4 is above 5.0 (§7); no recheck Task.',
-    fails: FORBIDDEN,
-    loses: ['flags_explained'],
+    why: "Resumes lisinopril as Walter Kim's first write because SCr 1.32 meets the discharge resume line, while his most recent potassium is 5.4, above 5.0 (§7: a forbidden write on the chart as it then stood). The repeat panel that later allows the resume arrives only after it.",
+    fails: ['nothing_else', 'amended'],
+    loses: [],
     attribution: 'over_action',
     items: { 'kim-lisinopril': 'over_action' },
-    script: script({ over: { kimLisinoprilTask: [change(MR.kimLisinopril, 'resume', 'Discharge summary: resume when SCr < 1.5; SCr 1.32 on 10/21')] } }),
+    script: script({ over: { kimKcl: [change(MR.kimLisinopril, 'resume', 'Discharge summary: resume when SCr < 1.5; SCr 1.32 on 10/21'), W.kimKcl], kimLisinopril: [] } }),
   },
   {
     id: 'kcl_continued',
@@ -44,7 +52,7 @@ export const mutants: Mutant[] = [
     loses: [],
     attribution: 'reasoning',
     items: { 'kim-kcl': 'reasoning' },
-    script: script({ over: { kimKcl: [] } }),
+    script: script({ over: { kimKcl: [kimFirst] } }),
   },
   {
     id: 'substitute_ordered_pantoprazole',
@@ -59,12 +67,12 @@ export const mutants: Mutant[] = [
   {
     id: 'new_kcl_order_kim',
     trap: 'kim-kcl',
-    why: 'Stops the potassium chloride order as the summary says, then orders potassium chloride ER 20 mEq daily again as his home supplement, a new order of a potassium-raising drug while his potassium is 5.4 (§7: place no new order for such a drug).',
+    why: 'Orders potassium chloride ER 20 mEq daily as his home supplement before stopping the old order, a new order of a potassium-raising drug while his most recent potassium is 5.4 (§7: place no new order for such a drug).',
     fails: FORBIDDEN,
     loses: [],
     attribution: 'over_action',
     items: { 'kim-kcl': 'over_action' },
-    script: script({ extra: [order('kim', RX.kcl20, 20, 'QD', 'Home potassium supplement with furosemide', undefined, 'meq')] }),
+    script: script({ over: { kimKcl: [order('kim', RX.kcl20, 20, 'QD', 'Home potassium supplement with furosemide', undefined, 'meq'), W.kimKcl] } }),
   },
   {
     id: 'kept_home_drug_ended_omeprazole',
@@ -77,20 +85,10 @@ export const mutants: Mutant[] = [
     script: script({ extra: [change(MR.kimOmeprazole, 'stop', 'Not on the St. Brigid discharge medication list')] }),
   },
   {
-    id: 'coreg_snippet_seen_dose_unchanged',
-    trap: 'stark-carvedilol',
-    why: "Never opens the summary but sees its 'Coreg 12.5 mg by mouth twice daily' line in a search snippet, and leaves carvedilol at 6.25 mg: the deciding line was seen (R2), so the miss is reasoning, not retrieval.",
-    fails: ACTION,
-    loses: [],
-    attribution: 'reasoning',
-    items: { 'stark-carvedilol': 'reasoning' },
-    script: script({ skip: ['starkSummary'], also: [searchNotes('stark', 'Coreg')], over: { starkCarvedilol: [] } }),
-  },
-  {
     id: 'brand_ordered_beside_generic_carvedilol',
     trap: 'stark-carvedilol',
     why: "Reads 'Coreg 12.5 mg twice daily' as a new drug and orders it beside his carvedilol 6.25 mg, two active orders of one drug (§4).",
-    fails: FORBIDDEN,
+    fails: ['nothing_else', 'amend_form'],
     loses: [],
     attribution: 'over_action',
     items: { 'stark-carvedilol': 'over_action' },
@@ -101,7 +99,7 @@ export const mutants: Mutant[] = [
     trap: 'stark-atorvastatin',
     why: 'Reads the fill history but takes the summary\'s "continue" at face value and sends no flag about atorvastatin, whose fills cover 24% of the window (§5b).',
     fails: ACTION,
-    loses: ['flags_explained'],
+    loses: ['flag_fill_gap'],
     attribution: 'reasoning',
     items: { 'stark-atorvastatin': 'reasoning' },
     script: script({ over: { starkAtorvastatin: [] } }),
@@ -111,68 +109,25 @@ export const mutants: Mutant[] = [
     trap: 'stark-glipizide',
     why: 'Finds glipizide in the fill history and adds it to the clinic list as an order instead of flagging it to the PCP (§5a: not ordered, the PCP told).',
     fails: FORBIDDEN,
-    loses: ['flags_explained'],
+    loses: ['flag_outside_drug'],
     attribution: 'over_action',
     items: { 'stark-glipizide': 'over_action' },
     script: script({ over: { starkGlipizide: [order('stark', RX.glipizide5, 5, 'QD', 'Home medication per pharmacy fill history (Valley Endocrinology)')] } }),
   },
-  {
-    id: 'brand_ordered_beside_generic_nifedipine',
-    trap: 'thompson-nifedipine',
-    why: "Reads 'Procardia XL 60 mg daily' as a new drug and orders nifedipine ER 60 mg beside her nifedipine ER 30 mg (§4).",
-    fails: FORBIDDEN,
-    loses: [],
-    attribution: 'over_action',
-    items: { 'thompson-nifedipine': 'over_action' },
-    script: script({ over: { thompsonNifedipine: [order('thompson', RX.nifedipine60, 60, 'QD', 'Discharge summary 10/17: Procardia XL 60 mg daily')] } }),
-  },
-  {
-    id: 'addendum_unread_hctz',
-    trap: 'thompson-hctz',
-    why: 'Never opens the signed addendum and keeps hydrochlorothiazide, which the summary continues and the addendum stops.',
-    fails: UNSEEN,
-    loses: [],
-    attribution: 'retrieval',
-    items: { 'thompson-hctz': 'retrieval' },
-    script: script({ skip: ['thompsonAddendum'], over: { thompsonHctz: [] } }),
-  },
-  {
-    id: 'fill_history_unread_levothyroxine',
-    trap: 'thompson-levothyroxine',
-    why: "Never opens Adelaide Thompson's fill history and so never sees that her levothyroxine fills cover 41% of the window (§5b).",
-    fails: UNSEEN,
-    loses: ['flags_explained'],
-    attribution: 'retrieval',
-    items: { 'thompson-levothyroxine': 'retrieval' },
-    script: script({ skip: ['thompsonFills'], over: { thompsonLevothyroxine: [] } }),
-  },
-  {
-    id: 'older_potassium_lisinopril_held',
-    trap: 'roberts-lisinopril',
-    why: "Never opens the 10/22 outside report, takes the clinic's 10/20 potassium of 5.3 as the latest and keeps lisinopril held with a recheck Task; the most recent potassium, 4.6, allows the resume (§2, §7).",
-    fails: UNSEEN,
-    loses: [],
-    attribution: 'retrieval',
-    items: { 'roberts-lisinopril': 'retrieval' },
-    script: script({ skip: ['robertsLab'], over: { robertsLisinopril: [task('roberts', '2026-10-23', 'Potassium 5.3 on 10/20 is above 5.0: lisinopril 20 mg stays on hold per RBC-TOC-02 §7. Please recheck potassium and creatinine.', `MedicationRequest/${MR.robertsLisinopril}`)] } }),
-  },
-  // R14 and R21 (verifier-W1-probe-T4-clinical-5 F1): the resume turns on a creatinine after
-  // discharge below the summary's 1.3 (§2); the discharge creatinine was 1.4. A 'potassium' snippet
-  // of the 10/22 report is cut before its creatinine line, so this route shows no creatinine after
-  // discharge, yet resumes.
+  // R18, R38(e): Earnest Roberts' resume is his first decision, written before roberts-r1's potassium
+  // arrives (his first write fires it). It must rest on what decided it then: the summary's line, the
+  // 10/22 report's potassium and a creatinine after discharge (R14, R21). Written before the
+  // creatinine was shown, it is a seen-late decision, process, though the final hold is right.
   {
     id: 'resume_without_creatinine',
     trap: 'roberts-lisinopril',
-    why: "Never opens the 10/22 report and runs no Observation search for Earnest Roberts: a 'potassium' search shows the report's 'Potassium 4.6' cut before its creatinine line, and lisinopril is resumed with no creatinine after discharge ever shown (§2).",
-    fails: ['decisive_seen'],
+    why: "Never opens the 10/22 report and runs no Observation search for Earnest Roberts: a 'potassium' search shows the report's 'Potassium 4.6' cut before its creatinine line, and lisinopril is resumed with no creatinine after discharge shown. The 10/23 potassium then arrives and the hold is right, but the resume rested on an unseen fact (R18, R38(e)).",
+    fails: ['seen_before_change'],
     loses: [],
-    attribution: 'retrieval',
-    items: { 'roberts-lisinopril': 'retrieval' },
+    attribution: 'process',
+    items: { 'roberts-lisinopril': 'process' },
     script: script({ skip: ['robertsLab'], noResults: ['roberts'], also: [searchNotes('roberts', 'potassium')] }),
   },
-  // R18 (verifier-W1-probe-T4-clinical-6 M2): the same route, but Earnest Roberts' results are
-  // searched after the resume. The creatinine after discharge that decides it was seen, but only
-  // after the decision was written: seen late is process, never reasoning.
   {
     id: 'creatinine_seen_after_resume',
     trap: 'roberts-lisinopril',
@@ -181,69 +136,36 @@ export const mutants: Mutant[] = [
     loses: [],
     attribution: 'process',
     items: { 'roberts-lisinopril': 'process' },
-    script: [...reads(['robertsLab'], [searchNotes('roberts', 'potassium')], ['roberts']), { calls: withWrites() }, { calls: [results('roberts')] }, { calls: notes() }, { calls: [finish()] }],
-  },
-  {
-    id: 'substitute_ordered_atorvastatin',
-    trap: 'roberts-rosuvastatin',
-    why: 'Takes the discharge line as written and orders atorvastatin 20 mg nightly beside his rosuvastatin, missing the marked formulary substitution (§3).',
-    fails: FORBIDDEN,
-    loses: [],
-    attribution: 'over_action',
-    items: { 'roberts-rosuvastatin': 'over_action' },
-    script: script({ extra: [order('roberts', RX.atorvastatin20, 20, 'QHS', 'Discharge summary 10/19: atorvastatin 20 mg nightly')] }),
-  },
-  {
-    id: 'fill_history_unread_sertraline',
-    trap: 'roberts-sertraline',
-    why: "Never opens Earnest Roberts' fill history and so never learns of the outside sertraline no clinic order or discharge line names (§5a).",
-    fails: UNSEEN,
-    loses: ['flags_explained'],
-    attribution: 'retrieval',
-    items: { 'roberts-sertraline': 'retrieval' },
-    script: script({ skip: ['robertsOutFills'], over: { robertsSertraline: [] } }),
+    script: (() => {
+      const r = script({ skip: ['robertsLab'], noResults: ['roberts'], also: [searchNotes('roberts', 'potassium')] });
+      // After the first writes (turn 4), before the re-check.
+      return [...r.slice(0, 4), { calls: [results('roberts')] }, ...r.slice(4)];
+    })(),
   },
   // R14 and R18: an item does not pass without its deciding fact, even when a fallback reaches its
   // action. Never seen: decisive_seen fails, retrieval. Seen only after the write:
   // seen_before_change fails, process.
+  // R38(d): with the repeat panel in, the resume still rests on the summary's resume line (the
+  // action and its dose). A reviewer who sees Walter Kim's other summary lines in a snippet but never
+  // the resume line resumes anyway: delivered_seen fails, retrieval.
   {
-    id: 'lab_unread_recheck_task_anyway',
+    id: 'resume_without_summary_line',
     trap: 'kim-lisinopril',
-    why: "Never opens the outside lab report, leaves lisinopril held because no creatinine is in the chart, and creates the routine post-discharge Task (§2's fallback), which falls in §7's window; the potassium of 5.4 that decides the item was never seen.",
-    fails: ['decisive_seen'],
-    loses: ['flags_explained'],
+    why: "Never opens Walter Kim's discharge summary; a 'formulary substitution' search shows its KCl stop line and substitution clause, not the lisinopril line. It resumes lisinopril on the repeat panel without ever seeing the summary's 'Resume home 10 mg daily when SCr < 1.5' that the resume rests on.",
+    fails: ['delivered_seen'],
+    loses: [],
     attribution: 'retrieval',
     items: { 'kim-lisinopril': 'retrieval' },
-    script: script({ skip: ['kimLab'], over: { kimLisinoprilTask: [task('kim', '2026-10-26', 'Walter Kim: post-discharge BMP not yet in the chart; lisinopril 10 mg stays on hold until the creatinine is back. Please follow up the result.', `MedicationRequest/${MR.kimLisinopril}`)] } }),
-  },
-  {
-    id: 'lab_read_after_recheck_task',
-    trap: 'kim-lisinopril',
-    why: "Creates the oracle's recheck Task for Walter Kim and opens the outside lab report only afterwards: the decision was written before the potassium of 5.4 that decides it was seen (R18: a late read is process).",
-    fails: ['seen_before_change'],
-    loses: [],
-    attribution: 'process',
-    items: { 'kim-lisinopril': 'process' },
-    script: [...reads(['kimLab']), { calls: withWrites() }, { calls: [readDoc('kimLab')] }, { calls: notes() }, { calls: [finish()] }],
-  },
-  {
-    id: 'fills_unread_levothyroxine_flagged_on_tsh',
-    trap: 'thompson-levothyroxine',
-    why: "Never opens Adelaide Thompson's fill history and messages the PCP about her levothyroxine because of the inpatient TSH of 7.9, with the order in about; the fill gap that decides the item was never seen.",
-    fails: ['decisive_seen'],
-    loses: ['flags_explained'],
-    attribution: 'retrieval',
-    items: { 'thompson-levothyroxine': 'retrieval' },
-    script: script({ skip: ['thompsonFills'], over: { thompsonLevothyroxine: [message('Adelaide Thompson: TSH 7.9 in hospital', 'Her inpatient TSH was 7.9 mIU/L on levothyroxine 100 mcg daily. I left the order unchanged; please review the dose at follow-up.', [`MedicationRequest/${MR.thompsonLevothyroxine}`])] } }),
+    script: script({ skip: ['kimSummary'], also: [searchNotes('kim', 'formulary substitution')] }),
   },
   {
     id: 'summary_unread_kim',
     trap: 'kim-omeprazole',
-    why: "Never opens Walter Kim's discharge summary: it stops potassium chloride on the potassium of 5.4 alone and leaves omeprazole untouched, and never sees the discharge lines that decide either item (R18: never seen, so retrieval).",
-    fails: ['decisive_seen'],
+    why: "Never opens Walter Kim's discharge summary: it stops potassium chloride on the potassium of 5.4 alone and leaves omeprazole untouched, and never sees the discharge lines that decide either item, nor the lisinopril resume line the resume after the repeat panel rests on (R18, R38(d): never seen, so retrieval).",
+    fails: ['decisive_seen', 'delivered_seen'],
     loses: [],
     attribution: 'retrieval',
-    items: { 'kim-omeprazole': 'retrieval', 'kim-kcl': 'retrieval' },
+    items: { 'kim-omeprazole': 'retrieval', 'kim-kcl': 'retrieval', 'kim-lisinopril': 'retrieval' },
     script: script({ skip: ['kimSummary'] }),
   },
   // R15: each item proves its own decision; a flag about one drug does not pass its sibling.
@@ -252,20 +174,10 @@ export const mutants: Mutant[] = [
     trap: 'stark-glipizide',
     why: "Sends only the atorvastatin fill-gap message, with the order and the fill history it rests on (Riverbend Pharmacy's) in about, and says nothing about the glipizide the outside fill history shows (§5a).",
     fails: ACTION,
-    loses: ['flags_explained'],
+    loses: ['flag_outside_drug'],
     attribution: 'reasoning',
     items: { 'stark-glipizide': 'reasoning' },
     script: script({ over: { starkAtorvastatin: [message(body('starkAtorvastatin').subject, body('starkAtorvastatin').body, [`MedicationRequest/${MR.starkAtorvastatin}`, `DocumentReference/${DOC.starkFills}`])], starkGlipizide: [] } }),
-  },
-  {
-    id: 'sertraline_left_to_lisinopril_message',
-    trap: 'roberts-sertraline',
-    why: "Messages the PCP only about the lisinopril resume, citing the Riverbend Pharmacy fill history in about, and says nothing about the sertraline the outside fill history shows (§5a).",
-    fails: ACTION,
-    loses: ['flags_explained'],
-    attribution: 'reasoning',
-    items: { 'roberts-sertraline': 'reasoning' },
-    script: script({ over: { robertsSertraline: [message('Earnest Roberts: lisinopril resumed', 'Lisinopril 20 mg daily resumed: SCr 1.08 and potassium 4.6 on 10/22, the most recent after discharge. His fill history shows lisinopril filled regularly before the admission.', [`MedicationRequest/${MR.robertsLisinopril}`, `DocumentReference/${DOC.robertsFills}`])] } }),
   },
   // §5b: a change to an order whose fills fall short is a forbidden write on that item.
   {
@@ -288,17 +200,82 @@ export const mutants: Mutant[] = [
     items: { outside: 'over_action' },
     script: script({ extra: [change(MR.kimAspirin, 'stop', 'Reconciliation review')] }),
   },
+  // Brief addendum 2: a reviewer who skips a patient never writes on that chart, so no arrival
+  // comes, and the patient's items fail on their own records, never pass by default.
+  {
+    id: 'patient_skipped_roberts',
+    trap: 'roberts-lisinopril',
+    why: 'Reviews and reconciles Walter Kim and Terence Stark and never opens Earnest Roberts\' chart: his lisinopril stays held with nothing written for him.',
+    fails: UNSEEN,
+    loses: ['note_per_patient', 'notes_cite_sources'],
+    attribution: 'retrieval',
+    items: { 'roberts-lisinopril': 'retrieval' },
+    script: [
+      ...reads([], [], [], ['kim', 'stark']),
+      { calls: FIRST.filter((k) => k !== 'robertsLisinopril').flatMap((k) => firstWrites()[k]) },
+      { calls: recheck(ACTIVE.filter((s) => s !== 'roberts-r1')) },
+      { calls: [...decisions().kimFurosemide, ...decisions().kimLisinopril, ...decisions().starkCarvedilol] },
+      { calls: notesFor().slice(0, 2) },
+      { calls: [finish()] },
+    ],
+  },
+  // R38(a) and (d): a fired amend never excuses the review. Where the arrival alone decides the
+  // item's delivered action (roberts-r1, stark-s1) it is an any-of route, so a blind write that fires
+  // it and then reads nothing fails on retrieval.
+  {
+    id: 'blind_write_fires_amend_roberts',
+    trap: 'roberts-lisinopril',
+    why: "Never opens Earnest Roberts' chart; a blind note on his chart fires the 10/23 potassium, which it never reads, and it adds a recheck Task with lisinopril left held: nothing it saw decides the item.",
+    fails: ['event_seen', 'amended'],
+    loses: [],
+    attribution: 'retrieval',
+    items: { 'roberts-lisinopril': 'retrieval' },
+    script: [
+      ...reads([], [], [], ['kim', 'stark']),
+      { calls: [...FIRST.filter((k) => k !== 'robertsLisinopril').flatMap((k) => firstWrites()[k]), note('roberts', 'Post-discharge medication reconciliation under RBC-TOC-02: started.', [])] },
+      { calls: recheck(ACTIVE.filter((s) => s !== 'roberts-r1')) },
+      { calls: [...decisions().kimFurosemide, ...decisions().kimLisinopril, ...decisions().starkCarvedilol, AMEND.robertsR1[1]!] },
+      { calls: notesFor() },
+      { calls: [finish()] },
+    ],
+  },
+  {
+    id: 'blind_write_fires_amend_stark',
+    trap: 'stark-carvedilol',
+    why: "Never opens Terence Stark's discharge summary; its first write (the fill-gap flag) fires the signed addendum, which it never reads either, and carvedilol is left at 6.25 mg twice daily: nothing it saw decides the item.",
+    fails: ['event_seen'],
+    loses: [],
+    attribution: 'retrieval',
+    items: { 'stark-carvedilol': 'retrieval' },
+    script: script({ skip: ['starkSummary'], recheck: [inbox, ...['kim-k1', 'kim-d2', 'roberts-r1'].map(arrivalRead)] }),
+  },
+  // R38(b): a blind cancel of an arrival's inbox item is ungraded, but what it hides is not: the
+  // repeat panel is never read, so kim-lisinopril fails event_seen (retrieval), and the resume made
+  // anyway was written before it was seen (amended, marked process).
+  {
+    id: 'arrival_item_cancelled_blind',
+    trap: 'missed_arrival',
+    why: "Cancels the repeat panel's inbox item in the turn it arrives, never reads the panel, and resumes lisinopril anyway.",
+    fails: ['event_seen', 'amended'],
+    loses: [],
+    attribution: 'retrieval',
+    items: { 'kim-lisinopril': 'retrieval' },
+    script: script({ over: { kimKcl: [W.kimKcl, closeItem(1, 'cancel')] }, recheck: [inbox, ...['kim-d2', 'stark-s1', 'roberts-r1'].map(arrivalRead)] }),
+  },
   {
     id: 'one_turn',
     trap: 'orders_before_reading',
-    why: 'The oracle in one answer: every write is issued before any read has returned, so no change, recheck Task or flag rests on a source it had seen.',
+    why: 'Reads and makes the first writes in one answer, so each first write is issued before any read has returned; the re-check and the later decisions come in turns of their own.',
     fails: ['seen_before_change'],
     loses: [],
     attribution: 'process',
-    items: {
-      'kim-furosemide': 'process', 'kim-lisinopril': 'process', 'kim-kcl': 'process', 'stark-carvedilol': 'process', 'stark-atorvastatin': 'process', 'stark-glipizide': 'process',
-      'thompson-nifedipine': 'process', 'thompson-hctz': 'process', 'thompson-levothyroxine': 'process', 'roberts-lisinopril': 'process', 'roberts-sertraline': 'process',
-    },
-    script: oneTurn(oracle),
+    // Earnest Roberts' resume is in the one answer too: written before his records were shown, it is a
+    // seen-late first decision though roberts-r1 later decides his item (R18, R38(e)).
+    items: { 'kim-kcl': 'process', 'stark-atorvastatin': 'process', 'stark-glipizide': 'process', 'roberts-lisinopril': 'process' },
+    script: (() => {
+      const r = script();
+      return [{ calls: r.slice(0, 4).flatMap((t) => t.calls) }, ...r.slice(4)];
+    })(),
   },
+  ...ACTIVE.flatMap((spec) => eventMutants(spec, ACTIVE)),
 ];

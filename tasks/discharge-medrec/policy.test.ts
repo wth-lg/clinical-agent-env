@@ -30,14 +30,13 @@ describe('discharge-medrec worklist', () => {
     expect(derive(world)).toEqual(JSON.parse(JSON.stringify(expected)));
   });
 
-  it('holds exactly two items of each kept class and one filler, on the four slot patients', () => {
+  it('holds 8 items, at least one of each probe class, on the three listed patients (PW4-E3 cut)', () => {
     const count = (cls: string) => expected.items.filter((x) => x.cls === cls).length;
-    expect(['precedence', 'fill_history', 'formulary', 'brand', 'fill_gap', 'potassium'].map(count)).toEqual([2, 2, 2, 2, 2, 2]);
-    expect(count('filler')).toBe(1);
-    expect(expected.items).toHaveLength(13);
-    expect(new Set(expected.items.map((x) => x.patient))).toEqual(new Set(['Patient/pt-0004', 'Patient/pt-0005', 'Patient/pt-0042', 'Patient/pt-0044']));
-    // Each class's two instances sit on two different patients.
-    for (const cls of ['precedence', 'fill_history', 'formulary', 'brand', 'fill_gap', 'potassium']) expect(new Set(expected.items.filter((x) => x.cls === cls).map((x) => x.patient)).size, cls).toBe(2);
+    expect(['precedence', 'fill_history', 'formulary', 'brand', 'fill_gap', 'potassium', 'filler'].map(count)).toEqual([1, 1, 1, 1, 1, 2, 1]);
+    expect(expected.items).toHaveLength(8);
+    expect(new Set(expected.items.map((x) => x.patient))).toEqual(new Set(['Patient/pt-0004', 'Patient/pt-0005', 'Patient/pt-0044']));
+    // The potassium class keeps both instances, a hold and a resume, on two patients.
+    expect(expected.items.filter((x) => x.cls === 'potassium').map((x) => [x.patient, x.kind])).toEqual([['Patient/pt-0005', 'hold'], ['Patient/pt-0044', 'resume']]);
   });
 
   // §7 is a rule over the most recent potassium after discharge, not a text shape.
@@ -70,14 +69,19 @@ describe('discharge-medrec worklist', () => {
   it('takes each signed addendum over its summary', () => {
     const noKim = edit('doc-t4-kim-add', (t) => t.replace('Correction: furosemide 40 mg twice daily, not 40 mg daily.', 'No change to the medication list.'));
     expect(item(noKim, 'kim-furosemide')).toMatchObject({ kind: 'dose', cls: 'filler', daily_mg: 40, per_day: 1 });
-    const noThompson = edit('doc-t4-thompson-add', (t) => t.replace('Correction: hydrochlorothiazide: stop. Do not restart.', 'No change to the medication list.'));
-    expect(item(noThompson, 'thompson-hctz')).toBeUndefined();
+  });
+  // §1: a signed addendum is final, or amended or corrected after signing; an unsigned draft
+  // (preliminary) is not one (events.ts kim-k2 and kim-d2).
+  it('reads an amended addendum as signed and a preliminary draft as not', () => {
+    const status = (docStatus: string) => view(all.map((r) => (r.resourceType === 'DocumentReference' && r.id === id('doc-t4-kim-add') ? { ...r, docStatus } as typeof r : r)));
+    expect(item(status('amended'), 'kim-furosemide')).toMatchObject({ daily_mg: 80, per_day: 2 });
+    expect(item(status('preliminary'), 'kim-furosemide')).toMatchObject({ daily_mg: 40, per_day: 1 });
   });
 
-  // §5b: the 80% line over the 180 days before admission (24% and 41% here); a fill that closes the
-  // gap clears the flag.
+  // §5b: the 80% line over the 180 days before admission (24% here); a fill that closes the gap
+  // clears the flag.
   it('flags a continued order whose fills cover under 80% of the 180 days before admission', () => {
-    expect(itemsOf(world).filter((x) => x.kind === 'flag_order').map((x) => x.key)).toEqual(['stark-atorvastatin', 'thompson-levothyroxine']);
+    expect(itemsOf(world).filter((x) => x.kind === 'flag_order').map((x) => x.key)).toEqual(['stark-atorvastatin']);
     const filled = edit('doc-t4-stark-fills', (t) => t.replace(/^(03\/04\/2026 +atorvastatin.*)$/m, '$1\n06/02/2026   atorvastatin 80 mg tablet                      90    90             Maya Okafor, MD                             Riverbend Pharmacy\n08/31/2026   atorvastatin 80 mg tablet                      90    90             Maya Okafor, MD                             Riverbend Pharmacy'));
     expect(item(filled, 'stark-atorvastatin')).toBeUndefined();
   });
@@ -86,7 +90,6 @@ describe('discharge-medrec worklist', () => {
   it('flags a filled drug with no clinic order that no discharge line addresses', () => {
     expect(itemsOf(world).filter((x) => x.kind === 'flag_fill').map((x) => [x.key, x.fills])).toEqual([
       ['stark-glipizide', ref('DocumentReference/doc-t4-stark-outfills')],
-      ['roberts-sertraline', ref('DocumentReference/doc-t4-roberts-outfills')],
     ]);
   });
 
@@ -114,10 +117,8 @@ describe('discharge-medrec worklist', () => {
   // discharge documents say, so for those items the summary is not decisive.
   it('names as decisive only the records that decide each item (R1)', () => {
     const kimAdd = ref('DocumentReference/doc-t4-kim-add');
-    const thompsonAdd = ref('DocumentReference/doc-t4-thompson-add');
     const kimLab = ref('DocumentReference/doc-t4-kim-lab');
     expect(item(world, 'kim-furosemide')).toMatchObject({ decisive: [kimAdd] });
-    expect(item(world, 'thompson-hctz')).toMatchObject({ decisive: [thompsonAdd] });
     expect(item(world, 'kim-lisinopril')).toMatchObject({ decisive: [kimLab] });
     // The summary's own line cannot move these items.
     const kimLine = edit('doc-t4-kim-dc', (t) => t.replace('- Furosemide 40 mg by mouth daily (increased from 20 mg).', '- Furosemide 60 mg by mouth daily (increased from 20 mg).').replace('when SCr < 1.5', 'when SCr < 2.0'));
@@ -153,6 +154,7 @@ describe('discharge-medrec worklist', () => {
     expect(examples.filter((e) => texts.some((t) => new RegExp(`\\b${e}\\b`).test(t)))).toEqual([]);
   });
 
+  // Adelaide Thompson (pt-0042) is off the list since PW4-E3; her chart stays, with her age.
   it('gives every worklist patient Dr. Okafor as PCP and keeps each Synthea age (W1-0 F7)', () => {
     for (const p of expected.patients) {
       const pt = store.get('Patient', p.patient.split('/')[1]!);
@@ -186,9 +188,7 @@ describe('discharge-medrec worklist', () => {
       ['kim-kcl', ['stop']],
       ['kim-omeprazole', ['pantoprazole', 'in place of home']],
       ['stark-carvedilol', ['12.5 mg', 'twice daily']],
-      ['thompson-nifedipine', ['60 mg']],
       ['roberts-lisinopril', ['Resume', 'SCr < 1.3']],
-      ['roberts-rosuvastatin', ['atorvastatin', 'in place of home']],
     ]);
     for (const [k, atoms, summary] of bySummary) expect(lines(summary).filter((l) => inOrder(l, atoms!)).length, k).toBe(1);
   });
@@ -202,9 +202,7 @@ describe('discharge-medrec worklist', () => {
       ['kim-furosemide', ['40 mg', 'twice daily']],
       ['kim-lisinopril', ['Potassium 5.4']],
       ['stark-glipizide', ['glipizide']],
-      ['thompson-hctz', ['stop']],
       ['roberts-lisinopril', ['Potassium 4.6']],
-      ['roberts-sertraline', ['sertraline']],
     ]);
   });
 
@@ -215,7 +213,6 @@ describe('discharge-medrec worklist', () => {
     expect(itemsOf(world).filter((x) => x.no_new_order === true).map((x) => x.key)).toEqual(['kim-kcl']);
     const low = edit('doc-t4-kim-lab', (t) => t.replace(/^Potassium(\s+)5\.4 mmol\/L/m, 'Potassium$14.6 mmol/L'));
     expect(item(low, 'kim-kcl')?.no_new_order).toBeUndefined();
-    expect(item(world, 'thompson-hctz')?.no_new_order).toBeUndefined();
   });
 
   // verifier-W1-probe-T4-clinical-2 N2: §5b's source (CMS PDC) counts the days from the first fill,
