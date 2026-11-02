@@ -3,7 +3,7 @@
 // reasons read it. It sits beside the task directory, not in it, so neither task version covers
 // it: rewording it regrades nothing.
 import { fields, items, lateness, show, type CheckText } from '../packages/core/explain.ts';
-import { expected, ORDERED } from './crc-care-gap/expected.ts';
+import { expected } from './crc-care-gap/expected.ts';
 
 // A panel member as a reader knows them: 'Patient/pt-0019 (Harrison O'Keefe)'.
 const who = (p: unknown) => {
@@ -18,7 +18,7 @@ const whyNot = (p: unknown) => {
 
 export const checkText: CheckText = {
   fit_orders: {
-    requires: `one new FIT kit order for each of the ${ORDERED.length} patients with a screening gap, starting on or before ${expected.period.end} (the end of the measurement period), and none for the others`,
+    requires: `one new FIT kit order for each patient with a screening gap, starting on or before ${expected.period.end} (the end of the measurement period), and none for the others`,
     found: (ev) => {
       const ordered = fields(ev.ordered);
       const missing = items(ev.missing)[0];
@@ -70,5 +70,32 @@ export const checkText: CheckText = {
       const order = row === undefined ? 'the order' : `the order for ${who(row.patient)} at step ${show(row.first_order)}`;
       return step === null || step === undefined ? `${show(late)} was not read before ${order}` : `${show(late)} was read at step ${show(step)}, ${lateness(step, row?.first_order)} ${order}`;
     },
+  },
+  // The mid-trial event gates (packages/grader/events.ts; tests/grader.ts EVENTS, events.ts). Each
+  // is an item gate, so its evidence lists the failed members (failed_items); the item's own record
+  // names the event.
+  event_delivered: {
+    requires: 'each triggered event to arrive in the chart',
+    found: (ev) => `no arrival for ${who(items(ev.failed_items)[0])}`,
+  },
+  had_turn: {
+    requires: 'a model turn after each arrival',
+    found: (ev) => `the arrival for ${who(items(ev.failed_items)[0])} came in the last turn`,
+  },
+  event_seen: {
+    requires: 'each arrival read, and each gap an arrival opened reviewed, before finish',
+    found: (ev) => `the arrival for ${who(items(ev.failed_items)[0])} was not reviewed`,
+  },
+  amended: {
+    requires: 'a FIT order and outreach for each gap an arrival opened, written after its review',
+    found: (ev) => `${who(items(ev.failed_items)[0])} was not acted on as the policy states`,
+  },
+  amend_form: {
+    requires: 'that outreach as a message to the patient naming the new FIT order',
+    found: (ev) => `the outreach for ${who(items(ev.failed_items)[0])} was not a message naming the order`,
+  },
+  kept: {
+    requires: 'no FIT order or message for a member an arrival leaves excluded',
+    found: (ev) => `a FIT order or message for ${who(items(ev.failed_items)[0])}`,
   },
 };

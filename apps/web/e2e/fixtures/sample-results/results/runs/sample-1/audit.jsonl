@@ -5,11 +5,11 @@
 {"trial":"contrast-ct-prep/8","outcome":"FAIL","taxonomy":"reasoning","model_fault":"yes","decisive_step":69,"evidence_ids":["Observation/obs-01130"],"llm_auditor_agrees":true}
 {"trial":"contrast-ct-prep/9","outcome":"FAIL","taxonomy":"over_action","model_fault":"yes","decisive_step":52,"evidence_ids":[],"llm_auditor_agrees":true}
 {"trial":"contrast-ct-prep/10","outcome":"FAIL","taxonomy":"retrieval","model_fault":"yes","decisive_step":67,"evidence_ids":["DocumentReference/doc-00149"],"llm_auditor_agrees":true}
-{"trial":"crc-care-gap/6","outcome":"FAIL","taxonomy":"reasoning","model_fault":"yes","decisive_step":138,"evidence_ids":["Appointment/appt-00002","Patient/pt-0014"],"llm_auditor_agrees":true}
-{"trial":"crc-care-gap/7","outcome":"FAIL","taxonomy":"over_action","model_fault":"yes","decisive_step":141,"evidence_ids":["DocumentReference/doc-00059"],"llm_auditor_agrees":true}
-{"trial":"crc-care-gap/8","outcome":"FAIL","taxonomy":"reasoning","model_fault":"yes","decisive_step":138,"evidence_ids":["Procedure/proc-00786","Patient/pt-0036"],"llm_auditor_agrees":true}
-{"trial":"crc-care-gap/9","outcome":"FAIL","taxonomy":"reasoning","model_fault":"yes","decisive_step":138,"evidence_ids":["EpisodeOfCare/eoc-00001","Patient/pt-0011"],"llm_auditor_agrees":true}
-{"trial":"crc-care-gap/10","outcome":"FAIL","taxonomy":"over_action","model_fault":"yes","decisive_step":143,"evidence_ids":["EpisodeOfCare/eoc-00002"],"llm_auditor_agrees":true}
+{"trial":"crc-care-gap/6","outcome":"FAIL","taxonomy":"retrieval","model_fault":"yes","decisive_step":51,"evidence_ids":["Communication/comm-e3-5521"],"llm_auditor_agrees":true}
+{"trial":"crc-care-gap/7","outcome":"FAIL","taxonomy":"process","model_fault":"yes","decisive_step":47,"evidence_ids":["Communication/comm-e3-5521"],"llm_auditor_agrees":true}
+{"trial":"crc-care-gap/8","outcome":"FAIL","taxonomy":"reasoning","model_fault":"yes","decisive_step":50,"evidence_ids":["Observation/obs-01732"],"llm_auditor_agrees":true}
+{"trial":"crc-care-gap/9","outcome":"FAIL","taxonomy":"retrieval","model_fault":"yes","decisive_step":51,"evidence_ids":["Observation/obs-01732"],"llm_auditor_agrees":true}
+{"trial":"crc-care-gap/10","outcome":"FAIL","taxonomy":"process","model_fault":"yes","decisive_step":49,"evidence_ids":["Observation/obs-01732"],"llm_auditor_agrees":true}
 {"trial":"discharge-medrec/7","outcome":"FAIL","taxonomy":"retrieval","model_fault":"yes","decisive_step":31,"evidence_ids":["DocumentReference/doc-00009"],"llm_auditor_agrees":true}
 {"trial":"discharge-medrec/8","outcome":"FAIL","taxonomy":"over_action","model_fault":"yes","decisive_step":34,"evidence_ids":["DocumentReference/doc-00011"],"llm_auditor_agrees":true}
 {"trial":"discharge-medrec/9","outcome":"FAIL","taxonomy":"reasoning","model_fault":"yes","decisive_step":46,"evidence_ids":["DocumentReference/doc-00008"],"llm_auditor_agrees":true}

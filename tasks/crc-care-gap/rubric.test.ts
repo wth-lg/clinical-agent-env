@@ -52,29 +52,30 @@ describe('crc-care-gap rubric', () => {
     expect(unseen).toEqual([]);
   });
 
-  // The alternative must reach the filler's birth date only through search_patients, or its PASS
-  // above says nothing about search exposure.
-  it('filler_birth_date_from_search_patients exposes the filler through search_patients alone', async () => {
-    const c = cases(task).find((x) => x.id === 'filler_birth_date_from_search_patients')!;
+  // The alternative must reach each member's birth date only through search_patients, or its PASS
+  // above says nothing about search exposure (R33).
+  it('ages_from_search_patients exposes every member\'s Patient through search_patients alone', async () => {
+    const c = cases(task).find((x) => x.id === 'ages_from_search_patients')!;
     const steps = stepsOf((await trial(env, task, c)).events);
-    const e4 = steps.filter((s) => s.exposed_ids.includes('Patient/pt-0037')).map((s) => s.tool);
-    expect(e4.length).toBeGreaterThan(0);
-    expect(new Set(e4)).toEqual(new Set(['search_patients']));
+    for (const x of expected.items) {
+      const tools = steps.filter((s) => s.exposed_ids.includes(x.patient)).map((s) => s.tool);
+      expect(tools.length, x.patient).toBeGreaterThan(0);
+      expect(new Set(tools), x.patient).toEqual(new Set(['search_patients']));
+    }
   });
 
   it.each([
-    ["Harrison O’Keefe", 'Patient/pt-0019'],
-    ['HARRISON OKEEFE', 'Patient/pt-0019'],
-    ['Angela Vigil', 'Patient/pt-0021'],
-    ['Pagac', 'Patient/pt-0014'],
+    ['Elly Trantow', 'Patient/pt-0009'],
+    ['TRANTOW', 'Patient/pt-0009'],
+    ['Delaine MacGyver', 'Patient/pt-0024'],
+    ['Mac Gyver', null],
     ['Okafor CRC 2026', null],
-    ['Ángela Vigil', 'Patient/pt-0021'],
-    ['Mrs. Vigil', 'Patient/pt-0021'],
+    ['Mrs. Rohan', 'Patient/pt-0020'],
     ['| pt-0022 | Open gap |', 'Patient/pt-0022'],
-    ['Patient/pt-0036', 'Patient/pt-0036'],
+    ['Patient/pt-0024', 'Patient/pt-0024'],
     ['pt-00220', null],
-    ['| Rickey Sipes | Excluded |', 'Patient/pt-0034'],
-    ['Mr. Wolff', 'Patient/pt-0035'],
+    ['| Tiny Koss | Open gap |', 'Patient/pt-0022'],
+    ['Patient/pt-0036', null],
   ])('finds the row of %j', (text, patient) => {
     const hit = expected.items.filter((x) => named(x, text)).map((x) => x.patient);
     expect(hit).toEqual(patient ? [patient] : []);
@@ -124,9 +125,9 @@ describe('crc-care-gap rubric', () => {
       expect(r).toMatchObject({ met: true, asked: [] });
     });
 
-    // D1 has an open gap (expected.ts message true), so no contacted item asks about her Task.
+    // pt-0036 is off the panel since the PW4-E3 cut, so no contacted item asks about her Task.
     it('nothing about C2 asks nothing and is not met', async () => {
-      const r = await grade([{ name: 'create_task', input: { patient: PT.D1, owner: 'Group/pool-scheduling', due: '2026-10-30', priority: 'routine', description: 'Please call this patient to offer a FIT kit.' } }]);
+      const r = await grade([{ name: 'create_task', input: { patient: 'pt-0036', owner: 'Group/pool-scheduling', due: '2026-10-30', priority: 'routine', description: 'Please call this patient to offer a FIT kit.' } }]);
       expect(r).toMatchObject({ met: false, asked: [] });
     });
 

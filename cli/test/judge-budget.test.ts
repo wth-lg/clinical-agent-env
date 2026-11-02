@@ -43,16 +43,17 @@ describe('judge allowance', () => {
     expect(mostUsd).toBeLessThanOrEqual(judgeAllowanceUsd(task.checks));
   }, 600_000);
 
-  // GRADER16-193 F2 (coordinator ruling): one trial of every task but crc-care-gap projects within the
-  // default session cap, so the live tab admits it, as at grader 15; crc-care-gap was over at 15 too.
-  it('one trial of each task but crc-care-gap projects within the default session cap', async () => {
+  // GRADER16-193 F2 (coordinator ruling): one trial of every task projects within the default session
+  // cap, so the live tab admits it. crc-care-gap was over it at grader 15 and 16 with 13 table rows;
+  // since the PW4-E3 list cut (four members, builder-283) it is within too.
+  it('one trial of each task projects within the default session cap', async () => {
     const rows: Record<string, { projection: number; admitted: boolean }> = {};
     for (const id of TASKS) {
       const p = projection((await loadMatrixTask(id)).checks);
       rows[id] = { projection: Math.round(p * 100) / 100, admitted: p <= DEFAULT_SESSION_CAP_USD };
     }
     expect(Object.fromEntries(Object.entries(rows).map(([id, r]) => [id, r.admitted]))).toEqual({
-      'renal-dose-review': true, 'results-inbox': true, 'crc-care-gap': false, 'discharge-medrec': true, 'contrast-ct-prep': true, 'message-queue': true,
+      'renal-dose-review': true, 'results-inbox': true, 'crc-care-gap': true, 'discharge-medrec': true, 'contrast-ct-prep': true, 'message-queue': true,
     });
   });
 });
