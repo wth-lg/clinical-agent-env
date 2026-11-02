@@ -10,10 +10,10 @@
 {"trial":"crc-care-gap/8","outcome":"FAIL","taxonomy":"reasoning","model_fault":"yes","decisive_step":50,"evidence_ids":["Observation/obs-01732"],"llm_auditor_agrees":true}
 {"trial":"crc-care-gap/9","outcome":"FAIL","taxonomy":"retrieval","model_fault":"yes","decisive_step":51,"evidence_ids":["Observation/obs-01732"],"llm_auditor_agrees":true}
 {"trial":"crc-care-gap/10","outcome":"FAIL","taxonomy":"process","model_fault":"yes","decisive_step":49,"evidence_ids":["Observation/obs-01732"],"llm_auditor_agrees":true}
-{"trial":"discharge-medrec/7","outcome":"FAIL","taxonomy":"retrieval","model_fault":"yes","decisive_step":31,"evidence_ids":["DocumentReference/doc-00009"],"llm_auditor_agrees":true}
-{"trial":"discharge-medrec/8","outcome":"FAIL","taxonomy":"over_action","model_fault":"yes","decisive_step":34,"evidence_ids":["DocumentReference/doc-00011"],"llm_auditor_agrees":true}
-{"trial":"discharge-medrec/9","outcome":"FAIL","taxonomy":"reasoning","model_fault":"yes","decisive_step":46,"evidence_ids":["DocumentReference/doc-00008"],"llm_auditor_agrees":true}
-{"trial":"discharge-medrec/10","outcome":"FAIL","taxonomy":"over_action","model_fault":"yes","decisive_step":43,"evidence_ids":["doc-00008"],"llm_auditor_agrees":true}
+{"trial":"discharge-medrec/7","outcome":"FAIL","taxonomy":"retrieval","model_fault":"yes","decisive_step":33,"evidence_ids":["DocumentReference/doc-00009"],"llm_auditor_agrees":true}
+{"trial":"discharge-medrec/8","outcome":"FAIL","taxonomy":"over_action","model_fault":"yes","decisive_step":25,"evidence_ids":[],"llm_auditor_agrees":true}
+{"trial":"discharge-medrec/9","outcome":"FAIL","taxonomy":"reasoning","model_fault":"yes","decisive_step":41,"evidence_ids":["DocumentReference/doc-00008"],"llm_auditor_agrees":true}
+{"trial":"discharge-medrec/10","outcome":"FAIL","taxonomy":"over_action","model_fault":"yes","decisive_step":38,"evidence_ids":["doc-00008"],"llm_auditor_agrees":true}
 {"trial":"message-queue/9","outcome":"FAIL","taxonomy":"reasoning","model_fault":"yes","decisive_step":82,"evidence_ids":["Observation/obs-02018","Observation/obs-02009"],"llm_auditor_agrees":true}
 {"trial":"message-queue/10","outcome":"FAIL","taxonomy":"over_action","model_fault":"yes","decisive_step":19,"evidence_ids":["Communication/comm-00001"],"llm_auditor_agrees":true}
 {"trial":"renal-dose-review/5","outcome":"FAIL","taxonomy":"reasoning","model_fault":"yes","decisive_step":48,"evidence_ids":["Observation/obs-00250","Observation/obs-00249"],"llm_auditor_agrees":true}
