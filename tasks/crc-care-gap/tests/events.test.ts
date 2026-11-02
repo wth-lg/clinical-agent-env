@@ -44,6 +44,15 @@ describe('crc-care-gap list and events', () => {
     expect(text).toContain(POLICY_SENTENCE);
   });
 
+  // R38(j): a result's entered-in-error status decides on its own only where the policy says so. §3,
+  // on what counts, says it in one general sentence that names no member (R11), which makes the
+  // withdrawn sDNA-FIT an any-of route to crc-o1 with the Harbor notice (R21).
+  it('§3 says a result marked entered in error does not count toward screening', async () => {
+    const text = (await nodeTaskSource({ testMode: false }).get('crc-care-gap')).policies[0]!.text;
+    const s3 = text.slice(text.indexOf('§3 Screening'), text.indexOf('§4 Exclusions')).replace(/\s+/g, ' ');
+    expect(s3).toContain('A result marked entered in error does not count toward screening.');
+  });
+
   it('each trigger is after_exposed on one all-of decisive record of its item', () => {
     for (const s of specs) {
       const x = expected.items.find((m) => m.patient === s.item)!;

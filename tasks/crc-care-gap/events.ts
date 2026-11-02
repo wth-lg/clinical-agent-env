@@ -35,11 +35,14 @@
 //   crc-o1  class O  pt-0024  trigger: her sDNA-FIT result is exposed.
 //           Arrives: a faxed notice from the outside Harbor laboratory, in the laboratory's words
 //           (a labelling error; the result belongs to another patient and is withdrawn), and the
-//           result itself, now entered in error. §3: "Only a test that was done counts"; §7:
-//           "Screening ... may be recorded as coded data or only in notes, including scanned outside
-//           records" (R5, R28: the policy covers outside records). No test of hers was done; her
-//           2025 colonoscopy order was never done (§3), so she has an open gap. Before: screening up
-//           to date. After: FIT order plus outreach message. Deciding atoms: 'another patient'.
+//           result itself, now entered in error. §3: "Only a test that was done counts"; "A result
+//           marked entered in error does not count toward screening"; §7: "Screening ... may be
+//           recorded as coded data or only in notes, including scanned outside records" (R5, R28:
+//           the policy covers outside records). No test of hers was done; her 2025 colonoscopy
+//           order was never done (§3), so she has an open gap. Before: screening up to date. After:
+//           FIT order plus outreach message. Deciding fact, either of two (an any-of route, R21,
+//           R38(j)): the notice's atoms 'another patient' (NOTICE_ATOMS), or the withdrawn result's
+//           entered-in-error status (§3), shown by its read or by a search that returns it.
 //   crc-d1  class D  pt-0020  trigger: her hospice episode is exposed.
 //           Arrives: the hospice's discharge summary: she revoked hospice in August to start trial
 //           treatment. §4: "hospice care or palliative care during any part of the measurement
@@ -144,7 +147,10 @@ The report has been withdrawn from her record. We hold no other stool specimen f
 
 We apologize for the error. Please contact client services with any questions.
 Harbor Diagnostic Laboratory, Quality Assurance`;
-// The words of the notice that decide the item (R29): a read, or one snippet that shows them.
+// The words of the notice that decide the item (R29): a read, or one snippet that shows them. The
+// notice is one of crc-o1's two any-of routes (R21, R38(j)); the other is the withdrawn result
+// itself, whose entered-in-error status decides on its own under §3 ("A result marked entered in
+// error does not count toward screening"), seen when a step exposes it.
 export const NOTICE_ATOMS = ['another patient'];
 const harborNotice: Resource = {
   resourceType: 'DocumentReference',

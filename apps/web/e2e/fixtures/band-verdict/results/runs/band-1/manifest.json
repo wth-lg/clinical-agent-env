@@ -8,15 +8,15 @@
   "trials": 12,
   "task_versions": {
     "contrast-ct-prep": "0dcffc79c493d418bb3c68c59a4a2893da5055317d2e15ce8b6ea3b75b4e20ef",
-    "crc-care-gap": "cae0d3bac8ff14fa6871adfcdfa5760396962dfadda53907275ca7014999babb",
-    "discharge-medrec": "bcfb39f3980653eb10899bb9888950086db63bd197fa1af1cd7e1aa7d1648fdd",
+    "crc-care-gap": "41392483ad7af75aee283ac78ed5bd92cdad3a26245f6b05ec9eb2f10c1569ff",
+    "discharge-medrec": "318338839983e7c0bfe83f43ec5a9125d28a4f70dff47f626eb5ba6dbd1f69f6",
     "message-queue": "4f130e75e527eff06ce8e79f0bbbf38339d3df96e0f6e64e81cba5095fa9f72e",
     "renal-dose-review": "602b041e20f42a6a094a14036de69b6cb5045ae15f87bb0b07521ad7120fd55a",
     "results-inbox": "e62082e8af626c9a1f0419134fc6a7706a5199bfd5e1fdad1848fab33f607b1e"
   },
   "env_versions": {
     "contrast-ct-prep": "34c0dacf5450d22864d1782616ae0d58e55c3152d40c8a88079e2a969e326762",
-    "crc-care-gap": "2b53619948c661936686c53100e53776b9c3fd31588603134f63b8b2595f9cdf",
+    "crc-care-gap": "6e933d5c9f6a01413607c09699216f55cb07ca3c764d3e0d417db4b683a64c17",
     "discharge-medrec": "e3438ca7987c6b1035a9696b6426847cbe3cbe3debc202268a5804c8e080d20e",
     "message-queue": "3b0fda02271016c2d5edaaaa60145f18bfbfefdacbf1525468d865177d305994",
     "renal-dose-review": "b6945969bd1057f41bb052b53ab6074276c601e260cbfbcab3adfb224ba915ae",
@@ -24,8 +24,8 @@
   },
   "grader_task_versions": {
     "contrast-ct-prep": "7b92328e643346736fce5a2fabbf7284e210c5bfd49d1584e5129224ce771f3f",
-    "crc-care-gap": "330b6ed0745c6d14bbb1254c63494c738d1beca41e50cdd2604dec4386e4d510",
-    "discharge-medrec": "16d036ae3d696522ae2a61851bd43c987228022b0c7aff5c6075599f3c848b4a",
+    "crc-care-gap": "719ab5b2a66ddf08908720e4f6285e44db5e4d9100a67ea93013a18a63dc8841",
+    "discharge-medrec": "ba2e53367675f5bca81b5f73e7c034165325c796eec4a0db4dcf797079e99a74",
     "message-queue": "b87b7fca34fc43c007f593309ad075a8ad692bdec7af5a5872cf0e9b5fde3a23",
     "renal-dose-review": "af7e9d8b147695d53834c6336ab0c6af52229db11abeaba2ecdaaf578ca89eb1",
     "results-inbox": "21e87633b58fccb0103ad9efaefd64079e57ff4f9338e6bc673384a809262d3a"

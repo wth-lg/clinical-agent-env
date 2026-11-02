@@ -12,7 +12,7 @@
 import type { Taxonomy } from '../../../packages/grader/attribution.ts';
 import { OUTSIDE } from '../../../packages/grader/items.ts';
 import type { Mutant, ScriptCall, ScriptTurn } from '../../../packages/grader/matrix/types.ts';
-import { actions, arrivalRead, arrivals, finish, fitOrder, GAPS, NEXT_WRITE, orderFit, outreach, PT, reads, recheck, search, STOOL_CODES, type Label } from '../solution/steps.ts';
+import { actions, arrivalRead, arrivals, finish, fitOrder, GAPS, NEXT_WRITE, orderFit, outreach, PT, read, reads, recheck, search, STOOL_CODES, type Label } from '../solution/steps.ts';
 import { D1_SORTED_SHORT_OF_WINDOW } from './alternatives.ts';
 
 const P = (l: Label) => `Patient/${PT[l]}`;
@@ -93,6 +93,18 @@ export const mutants: Mutant[] = [
   ...amendMisses('G1'),
   ...amendMisses('D1'),
   ...amendMisses('A1'),
+  // R38(j), R21: crc-o1's any-of is the Harbor notice or the withdrawn result. A re-check of her
+  // chart after the arrival that shows neither (her Patient and procedures only) has not seen it.
+  {
+    id: 'a1_rechecked_without_arrival',
+    trap: 'missed_arrival',
+    why: "Looks at Delaine MacGyver's chart again after the arrival, her Patient and her procedures, but never reads the Harbor laboratory's notice or her sDNA-FIT result, now entered in error, and orders and messages her anyway.",
+    fails: ['event_seen', 'amended'],
+    loses: [],
+    attribution: 'retrieval',
+    items: only('A1', 'retrieval'),
+    script: [...reads(), recheck, { calls: [...arrivalsBut('A1').calls, read('Patient', PT.A1), search('Procedure', PT.A1)] }, { calls: actions() }, { calls: [finish()] }],
+  },
   {
     id: 'c2_lure_acted_on',
     event: { spec: 'crc-d1', kind: 'lure_acted_on' },
