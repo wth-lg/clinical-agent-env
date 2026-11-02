@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:message-queue:2",
   "task_id": "message-queue",
-  "task_version": "939d32738f4ae3757e28010dfc1e9ab48865853ad41073f564bffd92ee368ea7",
+  "task_version": "8cce89267fcd8c9122304defba60e19d176434d41ad4c220742035dcc32d885c",
   "env_version": "fda8f33d60f490de7c235caa3d2886ab01a3fda443574f88b7ff971e42617b84",
-  "grader_task_version": "b64f881fba23a388d6c7970da4e25daef7268920952f7107ab726fa455f244d6",
+  "grader_task_version": "b76c3981e77620b424f19783991ff948e949c0fae407344694fc519385fbdd00",
   "fixture_hash": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
   "state_hash": {
     "initial": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T13:46:21.000Z",
+  "started": "2026-10-23T13:46:31.000Z",
   "turns": 14,
   "tool_calls": 54,
   "tool_errors": {
@@ -43,9 +43,9 @@
   "summary": "Cleared the 6 messages under RBC-RX-05 and rechecked both queues for anything that arrived: lisinopril held for Odum (repeat potassium 5.8), Price (corrected creatinine, 35% rise) and Webb (potassium 5.8), each with a task to Dr. Okafor and the earlier order cancelled; Price and Webb metformin renewed; the pharmacy's repeat requests answered with Price's own.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T13:49:37.000Z",
+  "ended": "2026-10-23T13:49:47.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "18",
+  "grader_version": "19",
   "outcome": "PASS",
   "valid": true,
   "fault": null,
@@ -705,7 +705,7 @@
         "recipient": "Patient/pt-0027",
         "verdict": "not_met",
         "quote": "",
-        "cache_key": "c38be26a10960d9ab72f70ad5a278429d27a04c2549d03b454969eea2ae3801a",
+        "cache_key": "0d5ad025c2713747e8d981887c02edfe89fcd1189cad30fdf88b9696741171b8",
         "recipients": [
           "Patient/pt-0027 false",
           "Patient/pt-0030 false",
@@ -723,13 +723,13 @@
     "score_penalties_not_met": 1,
     "over_allowance": 0,
     "cache_keys": [
-      "c38be26a10960d9ab72f70ad5a278429d27a04c2549d03b454969eea2ae3801a",
-      "b44cd0a4668e7284ebe97d7a357002193dd8010eaeaba374ecbb43ca330ff1e7",
-      "3fa196bdb1c734bbe4af43ecc5cef3643364ef2ea2d2509fe92108ca152ffdf5"
+      "0d5ad025c2713747e8d981887c02edfe89fcd1189cad30fdf88b9696741171b8",
+      "c4300ad45741ee26dbbe4c4a0e0d69ef9f3ebd025a828e22aafbe138bd1f4569",
+      "fa003dfcd7f0bd6162d7d8f6e4833952c263748c0e3381ba8552ac85e6104424"
     ],
     "cache": [
       {
-        "key": "c38be26a10960d9ab72f70ad5a278429d27a04c2549d03b454969eea2ae3801a",
+        "key": "0d5ad025c2713747e8d981887c02edfe89fcd1189cad30fdf88b9696741171b8",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -743,11 +743,11 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-11-02T10:15:18.673Z"
+          "at": "2026-11-02T13:38:56.886Z"
         }
       },
       {
-        "key": "b44cd0a4668e7284ebe97d7a357002193dd8010eaeaba374ecbb43ca330ff1e7",
+        "key": "c4300ad45741ee26dbbe4c4a0e0d69ef9f3ebd025a828e22aafbe138bd1f4569",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -761,11 +761,11 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-11-02T10:15:18.673Z"
+          "at": "2026-11-02T13:38:56.886Z"
         }
       },
       {
-        "key": "3fa196bdb1c734bbe4af43ecc5cef3643364ef2ea2d2509fe92108ca152ffdf5",
+        "key": "fa003dfcd7f0bd6162d7d8f6e4833952c263748c0e3381ba8552ac85e6104424",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -779,7 +779,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-11-02T10:15:18.673Z"
+          "at": "2026-11-02T13:38:56.886Z"
         }
       }
     ]

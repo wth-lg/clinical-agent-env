@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:crc-care-gap:8",
   "task_id": "crc-care-gap",
-  "task_version": "610cb34acd9d0e0ad62bde465b8ad5d2cd8650ec311a401a17a755467bdd8c67",
-  "env_version": "d981782ad8e8df2f0cc521651b8754982cfb4250374b63d7ad147f16ab800eed",
-  "grader_task_version": "7bc950759d29262de5cec8a105d741aaeca70e39a2473f914e0f1feaf63d809d",
+  "task_version": "4f95a80e52b04081ee54b91b6317cb07ac3938e371e2685ad7886e91cd97d1a7",
+  "env_version": "df481c520ddc09dbafb0011b40fa583187697768f255d3c80019200604dc38ee",
+  "grader_task_version": "a8b41b75bcbdc0c36541d7efbc70394f82eb84827959c608e579fb16735edb19",
   "fixture_hash": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
   "state_hash": {
     "initial": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T12:58:18.000Z",
+  "started": "2026-10-23T12:58:28.000Z",
   "turns": 15,
   "tool_calls": 50,
   "tool_errors": {
@@ -43,9 +43,9 @@
   "summary": "CRC outreach for Okafor CRC 2026 under RBC-QM-02: 3 FIT kits ordered and 3 outreach messages sent.\n\n| Patient | Status | Reason |\n|---|---|---|\n| Elly Trantow | Open gap: FIT kit ordered, outreach sent | Her frailty entry was entered in error (Dr. Lin: it belonged to another patient), so the frailty and advanced illness exclusion does not apply; no screening on record |\n| Kelsie Rohan | Excluded | Hospice care June to August 2026, during part of the measurement period; the hospice discharge summary shows she revoked it in August, which does not change that |\n| Tiny Koss | Open gap: FIT kit ordered, outreach sent | The lab corrected her FIT collection date to December 31, 2025 (the lab received it in January): collected before the measurement period, so it does not count; no other screening |\n| Delaine MacGyver | Open gap: FIT kit ordered, outreach sent | Harbor laboratory withdrew her 2024 sDNA-FIT result (the specimen belonged to another patient); the colonoscopy ordered in 2025 was never done; no screening on record |",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T13:01:11.000Z",
+  "ended": "2026-10-23T13:01:21.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "18",
+  "grader_version": "19",
   "outcome": "FAIL",
   "valid": true,
   "fault": "model",
@@ -76,6 +76,7 @@
         ],
         "extra": [],
         "late": [],
+        "unreviewed": [],
         "period_end": "2026-12-31"
       },
       "ids": [
@@ -245,7 +246,46 @@
       "points": null,
       "met": true,
       "evidence": {
-        "seen": [],
+        "seen": [
+          {
+            "patient": "Patient/pt-0009",
+            "first_order": 46,
+            "exposed": [
+              {
+                "id": "Condition/cond-00189",
+                "step": 12
+              },
+              {
+                "id": "MedicationRequest/mr-00118",
+                "step": 12
+              },
+              {
+                "id": "Patient/pt-0009",
+                "step": 12
+              }
+            ]
+          },
+          {
+            "patient": "Patient/pt-0022",
+            "first_order": null,
+            "exposed": [
+              {
+                "id": "Observation/obs-01732",
+                "step": 14
+              }
+            ]
+          },
+          {
+            "patient": "Patient/pt-0024",
+            "first_order": 48,
+            "exposed": [
+              {
+                "id": "Observation/obs-01871",
+                "step": 15
+              }
+            ]
+          }
+        ],
         "late": []
       },
       "ids": [],

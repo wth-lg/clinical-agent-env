@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:results-inbox:1",
   "task_id": "results-inbox",
-  "task_version": "cf1347806b9a053cfe7d089b54587ea6ce36c28400bd9ceb0db1a9ee0b29e90d",
+  "task_version": "d1090112eabd55e888b0fd09dfea06d3aea339e25c2bb0bf65b469ef83fb3e5f",
   "env_version": "b61b8eb91bc9e94abb2e41ffd9fe0ac66a45a9ccce0b8f5327adaa3df05171d9",
-  "grader_task_version": "6c2b4f6f64b8d1eee83f330dc077de89a7674dd2a3e1f544e61b249d9eed4a0c",
+  "grader_task_version": "4c58cff4caa7f4f62e32d0928d8196cf82054a7cd724b707ab349ced008757d5",
   "fixture_hash": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
   "state_hash": {
     "initial": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T15:11:19.000Z",
+  "started": "2026-10-23T15:11:29.000Z",
   "turns": 21,
   "tool_calls": 57,
   "tool_errors": {
@@ -43,9 +43,9 @@
   "summary": "Results inbox cleared: all 7 items completed with their follow-up orders, tasks, messages and notes linked, and the results that arrived during the review checked and acted on.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T15:15:16.000Z",
+  "ended": "2026-10-23T15:15:26.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "18",
+  "grader_version": "19",
   "outcome": "PASS",
   "valid": true,
   "fault": null,
@@ -948,7 +948,7 @@
         "recipient": "Patient/pt-0006",
         "verdict": "not_met",
         "quote": "",
-        "cache_key": "df273b20776197464d301467cbe80a9a5275f7f457912d77e9f9af0fde28bb28",
+        "cache_key": "ab31156b668f4ae813fc3352f476b5f094dd5a3d75a144f1a4c2a376bda7d488",
         "recipients": [
           "Patient/pt-0006 false",
           "Patient/pt-0008 false",
@@ -986,17 +986,17 @@
     "score_penalties_not_met": 1,
     "over_allowance": 0,
     "cache_keys": [
-      "df273b20776197464d301467cbe80a9a5275f7f457912d77e9f9af0fde28bb28",
-      "58dfec00537fb1c04b8a1a2325add6721c9e11710b68344fdd98bd861cf936c5",
-      "a2f78d85dfe43f92275b0819580a78119fdfdea9b8826434b5b76a9895965b6b",
-      "d55035734a870b4df113cdf2e5317884a3dd2786025a4a65c634857c67d7ff7f",
+      "ab31156b668f4ae813fc3352f476b5f094dd5a3d75a144f1a4c2a376bda7d488",
+      "4120a9b6d6728635f0ca5b5cb01834c437cb7d304f291bc065663cba7af5db2e",
+      "d2acc7ee6d630b18be3ae1e30a83bfb18e30c6d583ed8cf6f646fe08c2605a53",
+      "1f0571c91abaf02ae7c7d30f5a9c6d1ef38d7948bc8c4bd1f06f745bdff37925",
       "2835328eb4bc85ee75f9e68198df34033c7b2db07e16a66114192f896436dadf",
       "6b22af1afd48940fc8a7ae14f7e162da30d5c5b3cc57f595b51efeccfec303eb",
       "7c3c27354f1e2af87cd8d3f28c441197b1bf396d4a573a9c737609290bf087aa"
     ],
     "cache": [
       {
-        "key": "df273b20776197464d301467cbe80a9a5275f7f457912d77e9f9af0fde28bb28",
+        "key": "ab31156b668f4ae813fc3352f476b5f094dd5a3d75a144f1a4c2a376bda7d488",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -1010,29 +1010,29 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-11-02T10:16:17.429Z"
+          "at": "2026-11-02T13:38:08.318Z"
         }
       },
       {
-        "key": "58dfec00537fb1c04b8a1a2325add6721c9e11710b68344fdd98bd861cf936c5",
+        "key": "4120a9b6d6728635f0ca5b5cb01834c437cb7d304f291bc065663cba7af5db2e",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
         "prompt_version": "judge-v1",
         "answer": {
           "verdict": "not_met",
-          "quote": ""
+          "quote": "One of your blood tests needs repeating because the sample was damaged."
         },
         "error": null,
         "calls": 1,
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-11-02T10:16:17.429Z"
+          "at": "2026-11-02T13:38:08.318Z"
         }
       },
       {
-        "key": "a2f78d85dfe43f92275b0819580a78119fdfdea9b8826434b5b76a9895965b6b",
+        "key": "d2acc7ee6d630b18be3ae1e30a83bfb18e30c6d583ed8cf6f646fe08c2605a53",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -1046,11 +1046,11 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-11-02T10:16:17.429Z"
+          "at": "2026-11-02T13:38:08.318Z"
         }
       },
       {
-        "key": "d55035734a870b4df113cdf2e5317884a3dd2786025a4a65c634857c67d7ff7f",
+        "key": "1f0571c91abaf02ae7c7d30f5a9c6d1ef38d7948bc8c4bd1f06f745bdff37925",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -1064,7 +1064,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-11-02T10:16:17.429Z"
+          "at": "2026-11-02T13:38:08.318Z"
         }
       },
       {
