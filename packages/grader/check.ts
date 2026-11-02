@@ -167,6 +167,9 @@ export interface StepSearch {
   sort?: string;
   offset?: number;
   next_offset?: number;
+  // The result's total match count (read/page.ts Page.total), so a gate can tell that two pages
+  // with nested filters list the same records (builder-292, G2).
+  total?: number;
   // Epoch ms: the earliest and latest instant the page's rows sort by, on a sorted call only.
   span?: readonly [number, number];
   whole: boolean;

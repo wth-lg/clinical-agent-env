@@ -61,7 +61,7 @@ import * as events from '../events.ts';
 import { ref } from '../ids.ts';
 import { ARRIVAL } from '../events.ts';
 import { BMP_CODES, byName, ITEMS, PATIENTS, type Item } from '../expected.ts';
-import { rubric } from './rubric.ts';
+import { rubricFor } from './rubric.ts';
 
 // By the start of the ingredient name: the ACE inhibitors and ARBs, any of which would keep a held
 // patient on a renin-angiotensin system inhibitor the PCP has not reviewed.
@@ -530,7 +530,7 @@ const EXPECT: Record<string, EventExpectation> = {
 // The checks for a set of active specs: the base gates, the event gates, the rubric.
 export function checksFor(specs: readonly EventSpec[]): Check[] {
   const expect = Object.fromEntries(specs.map((s) => [s.id, EXPECT[s.id]!]));
-  return [...gatesFor(specs), ...eventGates(specs, expect, 'RBC-RX-05 §7'), ...rubric];
+  return [...gatesFor(specs), ...eventGates(specs, expect, 'RBC-RX-05 §7'), ...rubricFor(specs)];
 }
 
 export const checks: Check[] = checksFor(activeSpecs(events));

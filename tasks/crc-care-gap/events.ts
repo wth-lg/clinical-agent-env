@@ -24,7 +24,9 @@
 //           any point during the measurement period, and advanced illness"; §7: "A record's status
 //           ... are on the record itself". Without frailty the frailty clause cannot exclude her; she
 //           has no screening (§3), so she has an open gap. Before: excluded. After: FIT order plus
-//           outreach message. Deciding fact: the entry's entered-in-error status, and the message.
+//           outreach message. Deciding fact, either of two (an any-of route, R21, R38(j)): the
+//           entry's entered-in-error status, or Dr. Lin's message; tests/grader.ts arrivalSeenAt
+//           counts a read of either.
 //   crc-b2  class B  pt-0022  trigger: her FIT result is exposed.
 //           Arrives: the laboratory's corrected result: the sample was collected on the day before
 //           the measurement period, and the date first reported was the day the lab received it.

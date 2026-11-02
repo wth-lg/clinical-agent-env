@@ -18,7 +18,7 @@ const whyNot = (p: unknown) => {
 
 export const checkText: CheckText = {
   fit_orders: {
-    requires: `one new FIT kit order for each patient with a screening gap, starting on or before ${expected.period.end} (the end of the measurement period), and none for the others`,
+    requires: `one new FIT kit order for each patient with a screening gap, starting on or before ${expected.period.end} (the end of the measurement period), placed after a complete screening review, and none for the others`,
     found: (ev) => {
       const ordered = fields(ev.ordered);
       const missing = items(ev.missing)[0];
@@ -28,6 +28,8 @@ export const checkText: CheckText = {
       }
       const extra = items(ev.extra)[0];
       if (extra !== undefined) return `a FIT order for ${who(extra)}, ${whyNot(extra)}`;
+      const unreviewed = items(ev.unreviewed)[0];
+      if (unreviewed !== undefined) return `a FIT order for ${who(unreviewed)} without a complete screening review ever made`;
       const late = fields(items(ev.late)[0]);
       return late.patient === undefined ? '' : `the FIT order for ${who(late.patient)} starts ${show(late.start)}, after the measurement period ends on ${show(ev.period_end ?? expected.period.end)}`;
     },
@@ -83,11 +85,11 @@ export const checkText: CheckText = {
     found: (ev) => `the arrival for ${who(items(ev.failed_items)[0])} came in the last turn`,
   },
   event_seen: {
-    requires: 'each arrival read, and each gap an arrival opened reviewed, before finish',
-    found: (ev) => `the arrival for ${who(items(ev.failed_items)[0])} was not reviewed`,
+    requires: 'each arrival read before finish',
+    found: (ev) => `the arrival for ${who(items(ev.failed_items)[0])} was not read`,
   },
   amended: {
-    requires: 'a FIT order and outreach for each gap an arrival opened, written after its review',
+    requires: 'a FIT order and outreach for each gap an arrival opened, written after the arrival was read',
     found: (ev) => `${who(items(ev.failed_items)[0])} was not acted on as the policy states`,
   },
   amend_form: {

@@ -40,7 +40,8 @@ const SEARCH_KEYS = ['code', 'category', 'date_ge', 'date_le', 'status', 'sort']
 // type, the patient as 'Patient/<id>', and the enumerated filter keys, each only when it is a
 // string. offset comes from the input and next_offset from the result's paging field, each only
 // when it is a number. sort is kept so a run of pages can be held to one order (ruling R27).
-// Anything else in the input (count) is left out. whole says whether the page held every match:
+// Anything else in the input (count) is left out. total is the result's match count (builder-292
+// G2: two pages whose filters nest and whose totals agree list the same records). whole says whether the page held every match:
 // the call asked from the first match (offset 0 or none) and the result has no next_offset
 // (read/page.ts: present whenever entries remain). On a sorted call, span is the earliest and
 // latest instant the page's rows sort by (env search.ts sortStart, the key fhir_search orders by),
@@ -56,6 +57,7 @@ function searchOf(input: unknown, content: unknown): StepSearch | undefined {
   const paging = content !== null && typeof content === 'object' ? (content as Record<string, unknown>) : {};
   if (typeof i.offset === 'number') out.offset = i.offset;
   if (typeof paging.next_offset === 'number') out.next_offset = paging.next_offset;
+  if (typeof paging.total === 'number') out.total = paging.total;
   out.whole = (i.offset === undefined || i.offset === 0) && Array.isArray(paging.entries) && paging.next_offset === undefined;
   if (out.sort !== undefined && Array.isArray(paging.entries)) {
     const keys = paging.entries.map(rowStart).filter((k): k is number => k !== undefined);

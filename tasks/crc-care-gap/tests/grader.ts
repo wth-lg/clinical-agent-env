@@ -21,7 +21,7 @@ import type { GateOf } from '../../../packages/grader/gate-view.ts';
 import { itemGate, type ItemVerdict } from '../../../packages/grader/items.ts';
 import * as events from '../events.ts';
 import { DELIVERED, expected, type Absence, type Member } from '../expected.ts';
-import { handed, memberNow, SPECS } from './delivered.ts';
+import { amendSpecOf, handed, memberNow, SPECS } from './delivered.ts';
 import { recipients, rubric } from './rubric.ts';
 
 type SR = GateOf<'ServiceRequest'>;
@@ -194,10 +194,25 @@ export function filtersCover(s: StepSearch, patient: string, a: Absence): boolea
 }
 // The filters and order that make two pages one search: everything but the paging fields, with
 // the default order counted as 'date' (fhir_search's default), so a run keeps one order.
-const filterKey = (s: StepSearch) => JSON.stringify([s.type, s.patient ?? null, s.code ?? null, s.category ?? null, s.date_ge ?? null, s.date_le ?? null, s.status ?? null, s.sort ?? 'date']);
+const FILTERS = ['patient', 'code', 'category', 'date_ge', 'date_le', 'status'] as const;
+const filterKey = (s: StepSearch) => JSON.stringify([s.type, ...FILTERS.map((k) => s[k] ?? null), s.sort ?? 'date']);
+// Whether every filter `narrow` sets, `wide` sets the same or leaves out: what `wide` matches holds
+// all `narrow` matches (a dropped filter can only widen the set).
+const holds = (wide: StepSearch, narrow: StepSearch) => FILTERS.every((k) => wide[k] === undefined || wide[k] === narrow[k]);
+// Whether a later page continues the run of `first` (builder-292, G2; R27, R36; R34 and R16: never
+// stricter than the policy): the same filters and order, or the same type and order with filters
+// that nest (one page's match set holds the other's) and the same total. Two nested sets of one
+// size are one set, so both pages list the same records in the same order, and offsets that join
+// show every one of them (crc-care-gap/2: date_ge dropped after page 1, total 45 both times).
+// Filters that do not nest (date_ge on one page, date_le on the other) prove nothing by their
+// totals, and neither does a page without a total.
+const continues = (first: StepSearch, later: StepSearch) =>
+  filterKey(later) === filterKey(first) ||
+  (later.type === first.type && (later.sort ?? 'date') === (first.sort ?? 'date') && first.total !== undefined && later.total === first.total && (holds(later, first) || holds(first, later)));
 // The step at which the trial first completed a search whose filters cover absence `a` (ruling
 // R27), or null: one page that held every match (whole), or a run of pages with the same type,
-// filters and order from offset 0, each at the previous next_offset, the last with none. Other calls may
+// filters and order from offset 0 (or nested filters with the same total: continues), each at the
+// previous next_offset, the last with none. Other calls may
 // come between the pages. The absence is shown at the run's last page. A sorted run is also complete
 // at its first page that passes the window's edge (R36, exposure.ts passesWindow): newest first, a
 // page whose earliest record falls before the window opens (the clinic's midnight on its first day,
@@ -222,7 +237,7 @@ export function absenceShownAt(steps: readonly Step[], patient: string, a: Absen
     for (const later of covering.slice(i + 1)) {
       if (next === undefined) break;
       const s = later.search!;
-      if (filterKey(s) !== filterKey(s0) || s.offset !== next) continue;
+      if (!continues(s0, s) || s.offset !== next) continue;
       next = s.next_offset;
       if (next === undefined || passes(s)) {
         best = earliest([best, later.n]);
@@ -324,15 +339,34 @@ const seenRule = (x: Member) => (id: string) => (steps: readonly Step[]): number
   : x.absences.length > 0 ? latest([absencesShown(steps, x), ...(x.evidence === 'any' ? [anySeen(steps, x)] : [])])
   : x.evidence === 'any' ? anySeen(steps, x)
   : seenOne(steps, x, id);
+// The base review of a member whose amend event fired (builder-292, G1; R38(a), R2, R31, R33): the
+// delivered member's (expected.ts DELIVERED) screening kinds shown absent by complete searches, and
+// each of its decisive records the arrival did not put (her Patient) exposed. The arrival itself is
+// event_seen's (arrivalSeenAt): it is not part of this review, and this review is not part of
+// event_seen. Null until both are done.
+const ownOf = (spec: EventSpec) => DELIVERED[spec.id]!.decisive.filter((d) => !arrivalIds(spec).includes(d));
+export const reviewedAt = (steps: readonly Step[], x: Member): number | null => {
+  const spec = amendSpecOf(x.patient)!;
+  return latest([absencesShown(steps, DELIVERED[spec.id]!), ...ownOf(spec).map((d) => firstExposed(steps, d))]);
+};
 // The rule for every decisive id whose rule is not plain exposure, keyed as decisive_ids gives it.
+// A member with an amend event is read as delivered: once the event fired, each of her base ids
+// is seen by her base review (reviewedAt), so a base gate that fails her on it labels the failure
+// as its check does; before, by her base rule.
+const AMENDABLE = M.filter((x) => amendSpecOf(x.patient) !== undefined);
+const baseRule = (x: Member) => (id: string) => (x.evidence === 'any' || x.absences.length > 0 || Object.keys(x.atoms).length > 0 ? seenRule(x)(id) : (steps: readonly Step[]) => firstExposed(steps, id));
 const SEEN_AT = Object.fromEntries(
-  M.filter((x) => x.evidence === 'any' || x.absences.length > 0 || Object.keys(x.atoms).length > 0).flatMap((x) => x.decisive.map((d) => [d, seenRule(x)(d)] as const)),
+  M.filter((x) => AMENDABLE.includes(x) || x.evidence === 'any' || x.absences.length > 0 || Object.keys(x.atoms).length > 0).flatMap((x) =>
+    x.decisive.map((d) => [d, AMENDABLE.includes(x) ? (steps: readonly Step[]) => (handed(x, steps) ? reviewedAt(steps, x) : baseRule(x)(d)(steps)) : seenRule(x)(d)] as const),
+  ),
 );
 // An open gap's decisive ids are seen only by its rule, never by being exposed (R31): attribution
 // counts an id as seen by exposure unless a decisive phrase is declared for it, and an empty phrase
 // is never shown (exposure.ts), so the empty phrase leaves seen_at the only rule. A gap whose trap
-// record was exposed and whose absences were never shown is then retrieval, as the check says.
-const GAP_ONLY_SEEN_AT = Object.fromEntries(M.filter((x) => x.absences.length > 0).flatMap((x) => x.decisive.map((d) => [d, ''] as const)));
+// record was exposed and whose absences were never shown is then retrieval, as the check says. So
+// with a member an amend event can turn into a gap: before it fires her rule is exposure, which
+// seen_at then gives.
+const GAP_ONLY_SEEN_AT = Object.fromEntries(M.filter((x) => x.absences.length > 0 || AMENDABLE.includes(x)).flatMap((x) => x.decisive.map((d) => [d, ''] as const)));
 export const seenAt = (steps: readonly Step[], id: string) => (SEEN_AT[id] ?? ((st: readonly Step[]) => firstExposed(st, id)))(steps);
 // The words a why uses for what the trial had to see.
 const windowOf = (a: Absence) => `${a.type}${a.from === null ? '' : ` from ${a.from}`}`;
@@ -368,7 +402,15 @@ const gates: Check[] = [
     // is a retrieval failure; one seen only after the order is gap_seen_before_order's. Both gates
     // cover order writes only, the write §5 names after the review (R23).
     check: (x, orders, ctx) => {
-      if (handed(x, ctx.steps)) return ok;
+      // A member whose amend event fired: the order, its count and date and the outreach are the
+      // event gates' (amended), and reading the arrival is event_seen's; her base review is this
+      // gate's, as for any open gap (builder-292, G1; R38(a), R14). An order placed without it ever
+      // completed is a retrieval failure here.
+      if (handed(x, ctx.steps)) {
+        const rs = orders.get(x.patient) ?? [];
+        if (rs.length === 0 || reviewedAt(ctx.steps, x) !== null) return ok;
+        return { met: false, why: `ordered after ${amendSpecOf(x.patient)!.id} arrived without the trial ever completing ${needed(memberNow(x, ctx.steps))}, what decides the order`, ids: rs.map(keyOf) };
+      }
       const rs = orders.get(x.patient) ?? [];
       const n = rs.length;
       const late = lateOf(rs);
@@ -392,7 +434,10 @@ const gates: Check[] = [
       const missing = want.filter((p) => orders.get(p)?.length !== 1);
       const extra = [...orders].filter(([p, rs]) => !want.includes(p) && !(allowed.includes(p) && rs.length === 1)).map(([p]) => p);
       const late = [...orders].flatMap(([p, rs]) => lateOf(rs).map((r) => ({ patient: p, order: keyOf(r), start: startOf(r) ?? null })));
-      return { evidence: { want, ordered: Object.fromEntries([...orders].map(([p, rs]) => [p, rs.map(keyOf)])), missing, extra, late, period_end: PERIOD_END }, ids: [...orders.values()].flat().map(keyOf) };
+      // The members ordered for without the review that decides the order ever completed (R14;
+      // builder-292 G1: a delivered gap's base review).
+      const unreviewed = M.filter((x) => (orders.get(x.patient) ?? []).length > 0 && (handed(x, ctx.steps) ? reviewedAt(ctx.steps, x) === null : x.order === true && x.decisive.some((d) => seenAt(ctx.steps, d) === null))).map((x) => x.patient);
+      return { evidence: { want, ordered: Object.fromEntries([...orders].map(([p, rs]) => [p, rs.map(keyOf)])), missing, extra, late, unreviewed, period_end: PERIOD_END }, ids: [...orders.values()].flat().map(keyOf) };
     },
   }),
   itemGate<Member, ReturnType<typeof outreachState>>({
@@ -474,8 +519,7 @@ const gates: Check[] = [
     seen_at: SEEN_AT,
     decisive_phrases: GAP_ONLY_SEEN_AT,
     prepare: firstOrders,
-    check: (x, s, ctx) => {
-      if (handed(x, ctx.steps)) return ok;
+    check: (x, s) => {
       const row = s.get(x.patient);
       if (row === undefined || row.late.length === 0) return ok;
       return { met: false, why: `ordered at step ${row.first} before the trial had seen ${row.late.join(', ')}`, ids: row.late };
@@ -562,10 +606,13 @@ function extraWrites(ctx: GateCtx) {
 }
 
 // For each patient who needs an order, the step of the first write of their new FIT order, the
-// step that exposed each record opening their gap, and the records not seen before that write.
+// step that exposed each record opening their gap, and the records not seen before that write. A
+// member whose amend event fired needs an order too; each of her ids is seen by her base review
+// (SEEN_AT: reviewedAt), so an order written before that review completed is late (builder-292, G1;
+// R18). Whether the arrival was read before it is amended's.
 function firstOrders(ctx: GateCtx) {
   const orders = newFitOrders(ctx);
-  return new Map(M.filter((x) => x.order === true).map((x) => {
+  return new Map(M.filter((x) => x.order === true || handed(x, ctx.steps)).map((x) => {
     const ids = (orders.get(x.patient) ?? []).map(keyOf);
     const first = ctx.steps.find((s) => s.written_ids.some((k) => ids.includes(k)))?.n ?? null;
     const exposed = x.decisive.map((id) => ({ id, step: seenAt(ctx.steps, id) }));
@@ -594,18 +641,17 @@ export function arrivalSeenAt(steps: readonly Step[], at: number, ids: readonly 
 }
 // The records whose read after the arrival shows the correction: every resource it put.
 const arrivalIds = (spec: EventSpec) => spec.resources.map((r) => `${r.resourceType}/${r.id}`);
-// R38(a) and (d): a fired amend never excuses the review of the records that decide the action on
-// the chart as delivered (C1): the delivered member's decisive records (expected.ts DELIVERED). Those
-// the arrival put (the message, the corrected or withdrawn result, the frailty entry now in error)
-// are one any-of route, read after the arrival (arrivalSeenAt, R21); every other one, her Patient,
-// stays required. A base record that no longer decides (G1's donepezil order, once frailty is gone)
-// is not required (R38d, R34); each base record the arrival replaces is the trigger, exposed by the
-// fire itself.
-const deliveredSeenAt = (spec: EventSpec) => (steps: readonly Step[], at: number): number | null => {
-  const y = DELIVERED[spec.id]!;
-  const own = y.decisive.filter((d) => !arrivalIds(spec).includes(d));
-  return latest([arrivalSeenAt(steps, at, arrivalIds(spec)), absencesShown(steps, y), ...own.map((d) => firstExposed(steps, d))]);
-};
+// event_seen, and the missed_arrival label, turn on the arrival alone (builder-292, G1; R38(g), (j)):
+// the records it put (the message, the corrected or withdrawn result, the frailty entry now in
+// error) are one any-of route, read after the arrival (arrivalSeenAt, R21). R38(a) and (d): a fired
+// amend never excuses the review of the rest of what decides the action on the chart as delivered
+// (C1), the delivered member's screening absences and her Patient (expected.ts DELIVERED); that is
+// her base review (reviewedAt), which her base gates grade (fit_orders: never completed is
+// retrieval; gap_seen_before_order: completed after the order is process), so an incomplete review
+// is not reported as a missed arrival. A base record that no longer decides (G1's donepezil order,
+// once frailty is gone) is not required (R38d, R34); each base record the arrival replaces is the
+// trigger, exposed by the fire itself.
+const deliveredSeenAt = (spec: EventSpec) => (steps: readonly Step[], at: number): number | null => arrivalSeenAt(steps, at, arrivalIds(spec));
 const amendExpectation = (spec: EventSpec): EventExpectation => {
   const p = spec.item;
   return {
