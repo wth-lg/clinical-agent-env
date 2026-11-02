@@ -5,7 +5,7 @@
 // exposure review's (a cut snippet is shown text, not exposure, so a note found by a snippet that
 // misses the decisive fact is a retrieval failure; a snippet that is the whole note exposes it; shown text is compared the same way whatever
 // showed it: reports/pr-review-exposure-1.md S1, S2, S4).
-import type { StepSearch } from '../check.ts';
+import type { Step, StepSearch } from '../check.ts';
 import { describe, expect, it } from 'vitest';
 import { clock } from '../../env/clock.ts';
 import { Store, type Resource } from '../../env/store.ts';
@@ -13,7 +13,7 @@ import { INBOX_QUEUE_SYSTEM, READ_TOOLS, type ReadContext } from '../../env/tool
 import { callTool } from '../../env/tools/registry.ts';
 import { attribute } from '../attribution.ts';
 import { gate } from '../check.ts';
-import { firstExposed, lastWrite, seenBefore, shows, stepsOf, passesWindow } from '../exposure.ts';
+import { firstExposed, lastWrite, seenBefore, shows, stepsOf, passesWindow, runCompleteAt } from '../exposure.ts';
 import type { CheckResult } from '../grade.ts';
 import { INITIAL, note, PATIENT, trajectory } from './helpers.ts';
 
@@ -263,5 +263,39 @@ describe('passesWindow', () => {
     expect(passesWindow(page('-date', [41, 50]), 10, 40)).toBe(false);
     expect(passesWindow(page(undefined, [0, 100]), 10, 40)).toBe(false);
     expect(passesWindow(page('-date'), 10, 40)).toBe(false);
+  });
+});
+
+// builder-292 G2, verifier-phase-P17i-S0-208-1 M2 and M3: the shared R27 page-run rule.
+describe('runCompleteAt: page runs across nested filters (G2, M2) and arrivals between pages (M3)', () => {
+  const st = (n: number, search?: StepSearch, more: Partial<Step> = {}): Step => ({ n, seq: n, turn: n, tool: 'fhir_search', is_error: false, error_code: null, exposed_ids: [], referenced_ids: [], written_ids: [], shown: {}, ...(search ? { search } : {}), ...more });
+  const q = { type: 'Observation', patient: 'Patient/pt-1', sort: '-date', whole: false, total: 45 } satisfies StepSearch;
+  const p1 = { ...q, date_ge: '2017-01-01', next_offset: 28 };
+  const p2 = { ...q, offset: 28 };
+  const all = () => true;
+  const never = () => false;
+  it('joins pages whose filters nest and whose totals agree; refuses non-nesting filters or another total', () => {
+    expect(runCompleteAt([st(1, p1), st(2, p2)], all, never)).toBe(2);
+    expect(runCompleteAt([st(1, p1), st(2, { ...p2, total: 46 })], all, never)).toBe(null);
+    expect(runCompleteAt([st(1, p1), st(2, { ...p2, date_le: '2016-12-31' })], all, never)).toBe(null);
+    expect(runCompleteAt([st(1, { ...p1, total: undefined as unknown as number }), st(2, p2)], all, never)).toBe(null);
+  });
+  it('refuses a nested join when an arrival added a record of the searched type between the pages (M3)', () => {
+    const added = st(1, p1, { arrivals: [{ spec: 'e', keys: ['Observation/obs-new', 'Task/inbox-a0001'] }] });
+    expect(runCompleteAt([added, st(2, p2)], all, never)).toBe(null);
+    // An arrival on a step between the pages counts too; one after the later page does not.
+    expect(runCompleteAt([st(1, p1), st(2, undefined, { tool: 'fhir_read', arrivals: [{ spec: 'e', keys: ['Observation/obs-new'] }] }), st(3, p2)], all, never)).toBe(null);
+    expect(runCompleteAt([st(1, p1), st(2, p2, { arrivals: [{ spec: 'e', keys: ['Observation/obs-new'] }] })], all, never)).toBe(2);
+    // Another type does not touch the set.
+    expect(runCompleteAt([st(1, p1, { arrivals: [{ spec: 'e', keys: ['DocumentReference/doc-1'] }] }), st(2, p2)], all, never)).toBe(2);
+  });
+  it('allows a correction that replaces a record already shown in place (pilot-4a crc-care-gap/2: crc-b2 on its trigger page)', () => {
+    const corrected = st(1, p1, { exposed_ids: ['Observation/obs-01732'], arrivals: [{ spec: 'crc-b2', keys: ['Observation/obs-01732', 'Task/inbox-a0003'] }] });
+    expect(runCompleteAt([corrected, st(2, p2)], all, never)).toBe(2);
+  });
+  it('a run with the same filters keeps R27\'s rule', () => {
+    const same1 = { ...q, next_offset: 28 };
+    expect(runCompleteAt([st(1, same1), st(2, { ...q, offset: 28, total: 46 })], all, never)).toBe(2);
+    expect(runCompleteAt([st(1, same1), st(2, { ...q, offset: 29 })], all, never)).toBe(null);
   });
 });

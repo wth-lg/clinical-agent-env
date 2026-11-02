@@ -54,7 +54,7 @@ import type { Check, GateCtx, Step, StepSearch } from '../../../packages/grader/
 import { arrivalOf, eventGates, exposedAfter, focusOf, type EventExpectation } from '../../../packages/grader/events.ts';
 import type { GateOf } from '../../../packages/grader/gate-view.ts';
 import { itemGate, type ItemResult, type ItemVerdict } from '../../../packages/grader/items.ts';
-import { firstExposed, sameId, seenBefore } from '../../../packages/grader/exposure.ts';
+import { firstExposed, passesWindow, runCompleteAt, sameId, seenBefore } from '../../../packages/grader/exposure.ts';
 import { collapseWhitespace } from '../../../packages/env/tools/registry.ts';
 import { dailyDose, doseOf, dosesPerDay, drugOf, isActive, isDrug } from '../../../packages/grader/normalize.ts';
 import * as events from '../events.ts';
@@ -190,32 +190,21 @@ function clinicMidnight(date: string): number {
 // A single page that held every match and passes filtersCover (R27's one whole page).
 export const covers = (x: Item, s: StepSearch | undefined): boolean => s !== undefined && s.whole && filtersCover(x, s);
 // The step at which absence item x's window was first searched completely (R27): a whole page, or
-// the last page of a run with the same type, patient, filters and sort that starts at offset 0,
-// each page at the previous page's next_offset, the last with no next_offset. Other calls may come
-// between the pages. Null when no complete covering search ran.
+// the last page of a run that starts at offset 0, each page at the previous page's next_offset, the
+// last with no next_offset, whose pages keep the first page's type, patient, filters and sort, or
+// nest with it at the same total (exposure.ts runCompleteAt, continuesRun: builder-292 G2,
+// verifier-phase-P17i-S0-208-1 M2). Other calls may come between the pages. Null when no complete
+// covering search ran.
 // A sorted run is also complete at the first page that passes the window's edge (builder-273,
-// probe-1 message-queue/4): newest first (-date), a page whose earliest row sorts before the
-// window opens, so every later page sorts before it too; oldest first (date), a page whose latest
-// row sorts after now. fhir_search orders by the instant Step.search.span reads (env search.ts
+// probe-1 message-queue/4; R36, passesWindow): newest first (-date), a page whose earliest row sorts
+// before the window opens, so every later page sorts before it too; oldest first (date), a page whose
+// latest row sorts after now. fhir_search orders by the instant Step.search.span reads (env search.ts
 // sortStart), the start of a result's effective time, and policy.ts dates a counted result by its
 // effectiveDateTime, so a result in the window sorts inside it; undated rows come last either way
 // and are never counted. Without a sort the order says nothing about the pages not read.
 export function coveredAt(x: Item, steps: readonly Step[]): number | null {
-  const open = new Map<string, number>();
   const opens = x.absence === undefined ? NaN : clinicMidnight(x.absence.since);
-  const passed = (s: StepSearch) => s.span !== undefined && ((s.sort === '-date' && s.span[0] < opens) || (s.sort === 'date' && s.span[1] > NOW_MS));
-  for (const st of steps) {
-    const s = st.search;
-    if (s === undefined || !filtersCover(x, s)) continue;
-    if (s.whole) return st.n;
-    const { whole: _w, offset, next_offset, span: _span, ...filters } = s;
-    const key = JSON.stringify(Object.entries(filters).sort(([p], [q]) => (p < q ? -1 : 1)));
-    const from = offset ?? 0;
-    if (from !== 0 && open.get(key) !== from) continue;
-    if (next_offset === undefined || passed(s)) return st.n;
-    open.set(key, next_offset);
-  }
-  return null;
+  return runCompleteAt(steps, (s) => filtersCover(x, s), (s) => passesWindow(s, opens, NOW_MS));
 }
 // R29: whether a shown text holds every atom, in order, each as whole words (so '10/02/2025' is not
 // read in '10/02/20251', nor 'hemolyzed' in 'nonhemolyzed'). Both sides are whitespace-collapsed and

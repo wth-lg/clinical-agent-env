@@ -27,6 +27,10 @@ export interface ItemVerdict {
   action_form?: true;
   process?: true;
   event?: string;
+  // The item's decisive ids for this grading, where they depend on the trial (a member an event
+  // turned into another kind of item: verifier-phase-P17i-S0-208-1 M1); by default the spec's
+  // decisive(item). Each must be in the gate's decisive_ids (spec decisive or also_decisive).
+  decisive?: readonly string[];
 }
 
 export interface ItemResult {
@@ -50,6 +54,9 @@ export interface ItemGateSpec<I, S> extends Common {
   key: (item: I) => string;
   // The source resources the item's decision depends on (bare ids or <Type>/<id>).
   decisive?: (item: I) => readonly string[];
+  // Ids an item's verdict may name as its decisive ids (ItemVerdict.decisive) besides decisive(item),
+  // so the gate's decisive_ids hold every id a result can name.
+  also_decisive?: readonly string[];
   // State every item's check shares, computed once per grading.
   prepare?: (ctx: GateCtx) => S;
   check: (item: I, shared: S, ctx: GateCtx) => ItemVerdict;
@@ -61,7 +68,7 @@ export interface ItemGateSpec<I, S> extends Common {
 const result = (item: string, decisive: readonly string[], v: ItemVerdict): ItemResult => ({
   item, met: v.met,
   ...(v.met || v.why === undefined ? {} : { why: v.why }),
-  decisive_ids: [...decisive],
+  decisive_ids: [...(v.decisive ?? decisive)],
   evidence: v.evidence ?? {},
   ...(v.ids ? { ids: [...v.ids] } : {}),
   ...(!v.met && v.omission === true ? { omission: true as const } : {}),
@@ -71,7 +78,7 @@ const result = (item: string, decisive: readonly string[], v: ItemVerdict): Item
 });
 
 export function itemGate<I, S = undefined>(spec: ItemGateSpec<I, S>): GateCheck {
-  const { items, key, decisive = () => [], prepare, check, outside, verdict, ...common } = spec;
+  const { items, key, decisive = () => [], also_decisive = [], prepare, check, outside, verdict, ...common } = spec;
   // A gate over no items would be met vacuously (verifier-phase-P17i-W1-1-1 M1).
   if (items.length === 0) throw new Error(`itemGate ${spec.id}: no items; a gate over an empty list is met whatever the trial did`);
   const keys = items.map(key);
@@ -81,7 +88,7 @@ export function itemGate<I, S = undefined>(spec: ItemGateSpec<I, S>): GateCheck 
   }
   return gate({
     ...common,
-    decisive_ids: [...new Set(items.flatMap((x) => decisive(x)))],
+    decisive_ids: [...new Set([...items.flatMap((x) => decisive(x)), ...also_decisive])],
     fn: (ctx): Verdict<boolean> => {
       const shared = (prepare ? prepare(ctx) : undefined) as S;
       const results = items.map((x, i) => result(keys[i]!, decisive(x), check(x, shared, ctx)));

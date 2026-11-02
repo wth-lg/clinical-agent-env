@@ -122,3 +122,20 @@ describe('eie_baseline window (R31)', () => {
     expect(seenStep(w.id)([step(1, undefined, [w.id]), step(2, full)])).toBe(2);
   });
 });
+
+// verifier-phase-P17i-S0-208-1 M2 (R36 consistency with T3's G2, builder-292): a run whose later page
+// drops a filter continues when the filters nest and the totals agree, so both pages list the same
+// records; the stop-short, gap and wrong-sort runs still fail, and so does a different total.
+describe('eie_baseline: a page run whose later page drops a filter (S0-208 M2)', () => {
+  const page = (more: Partial<StepSearch>): StepSearch => ({ ...full, whole: false, total: 5, ...more });
+  const p1 = page({ date_ge: '2000-01-01', next_offset: 2 });
+  it('continues across nested filters with the same total', () => {
+    expect(windowSearchedAt([step(1, p1), step(2, page({ offset: 2, next_offset: 4 })), step(3, page({ offset: 4 }))], w)).toBe(3);
+  });
+  it('still refuses a different total, a gap, a changed sort, and a run that stops short', () => {
+    expect(windowSearchedAt([step(1, p1), step(2, page({ offset: 2, next_offset: 4, total: 6 })), step(3, page({ offset: 4, total: 6 }))], w)).toBe(null);
+    expect(windowSearchedAt([step(1, p1), step(2, page({ offset: 3 }))], w)).toBe(null);
+    expect(windowSearchedAt([step(1, p1), step(2, page({ offset: 2, sort: 'date' }))], w)).toBe(null);
+    expect(windowSearchedAt([step(1, p1), step(2, page({ offset: 2, next_offset: 4 }))], w)).toBe(null);
+  });
+});

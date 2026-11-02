@@ -70,6 +70,10 @@ export const checkText: CheckText = {
       const row = items(ev.seen).map(fields).find((s) => items(s.exposed).some((e) => fields(e).id === late));
       const step = fields(items(row?.exposed).find((e) => fields(e).id === late)).step;
       const order = row === undefined ? 'the order' : `the order for ${who(row.patient)} at step ${show(row.first_order)}`;
+      // A member an arrival turned into a gap: the screening kinds not shown absent before the order
+      // (S0-208 M1), not her Patient, which she may well have read.
+      const kinds = items(row?.missing_kinds).map(String);
+      if (kinds.length > 0) return `${kinds.join(', ')} not shown absent before ${order}`;
       return step === null || step === undefined ? `${show(late)} was not read before ${order}` : `${show(late)} was read at step ${show(step)}, ${lateness(step, row?.first_order)} ${order}`;
     },
   },

@@ -8,7 +8,7 @@
 // criterion that decided it, with its evidence); every criterion checked is one click away, under
 // "Show all criteria checked (N)" (ui-polish 3.4).
 import { CONFIRMATION_DEFINITIONS, CONFIRMATION_CRITERIA, FAULT_DEFINITIONS, FAULT_PRECEDENCE, RUN_BLOCKS, type Fault } from '../../../../packages/core/outcomes.ts';
-import { MET_TEXT, TAXONOMY_TEXT, type AuditRow, type CriterionRow, type Explanation, type Holding } from '../../../../packages/core/explain.ts';
+import { fittingAttribution, MET_TEXT, TAXONOMY_TEXT, type AuditRow, type CriterionRow, type ExplainRecord, type Explanation, type Holding } from '../../../../packages/core/explain.ts';
 import type { Step } from '../../../../packages/grader/check.ts';
 import type { Trial } from '../data/results.ts';
 import { shownFault } from '../data/failures.ts';
@@ -96,7 +96,10 @@ function Verdict({ e }: { e: Explanation }) {
 }
 
 export function Attribution({ t, e, steps, onStep }: { t: Trial; e: Explanation; steps: readonly Step[] | null; onStep: (n: number) => void }) {
-  const auto = (t.record as { attribution?: { auto: string; exposure: Exposure[] } | null }).attribution ?? null;
+  // The current grade's automatic kind and exposure (a regrade's own when it stored one; S0-208 S1),
+  // only when it names the current decisive check, as explainTrial reads it: an older regrade entry
+  // falls back to the recorded attribution, which may speak for an earlier grade.
+  const auto = fittingAttribution(t.record as ExplainRecord) as { auto: string; exposure: Exposure[] } | null;
   const audit: AuditRow | null = t.audit;
   const deciding = e.deciding?.id ?? null;
   // The kind of model failure and the exposure of the decisive ids speak only for a model fault

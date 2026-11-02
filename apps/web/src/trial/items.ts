@@ -22,8 +22,19 @@ export interface FailedItem {
   why: string;
   ids: readonly string[];
   // The item's kind of failure, on the gate attribution took it from; null on any other gate, or
-  // when the record's attribution has no item labels (a regraded trial).
+  // when the current grade has no item labels (a regrade entry written before regrades stored them).
   label: string | null;
+}
+
+// The current grade's item labels, as packages/core/summary.ts currentGrade reads the current
+// grade (this file imports nothing, so it states the rule itself): the last regrade entry's stored
+// attribution (cli/regrade.ts, builder-292), else none for an older entry that stored none, else the
+// recorded attribution's. A FAIL that stays a FAIL under a grader fix shows the new grade's labels.
+type Labelled = { attribution?: { items?: readonly ItemLabel[] } | null };
+export function itemLabelsOf(record: Labelled & { regrades?: readonly object[] }): readonly ItemLabel[] | null {
+  const last = record.regrades?.at(-1) as Labelled | undefined;
+  if (last === undefined) return record.attribution?.items ?? null;
+  return last.attribution === undefined ? null : (last.attribution?.items ?? null);
 }
 
 // packages/grader/items.ts OUTSIDE.

@@ -109,3 +109,31 @@ describe('G1: the base absence review is its own gate, not event_seen (crc-care-
     expect(Object.keys(DELIVERED)).toContain('crc-o1');
   });
 });
+
+// verifier-phase-P17i-S0-208-1 M1: for a member whose amend event fired, the base gates' evidence and
+// exposure name what her review lacked: the delivered member's own records (her Patient) and the
+// screening kinds not shown absent. They no longer name the arrival she read (crc-care-gap/0: the
+// withdrawn sDNA-FIT) or a base record R38(d) dropped (crc-care-gap/1: the donepezil order).
+describe('M1: a delivered gap\'s base-gate failure names what the review lacked', () => {
+  const failedItem = (grade: Awaited<ReturnType<typeof graded>>['grade'], gate: string, p: string) =>
+    ((grade.checks.find((c) => c.id === gate) as { items?: Array<{ item: string; met: boolean; why?: string; decisive_ids: string[]; evidence: Record<string, unknown> }> }).items ?? []).find((i) => i.item === p)!;
+  it('/0 MacGyver: fit_orders and gap_seen_before_order name her Patient and the screening kinds not shown, not the withdrawn sDNA-FIT', async () => {
+    const { grade } = await graded([...withoutStool('A1')(reads()), { calls: [MACGYVER_SHORT] }, recheck, arrivals(), { calls: actions() }, { calls: [finish()] }]);
+    for (const gate of ['fit_orders', 'gap_seen_before_order']) {
+      const it0 = failedItem(grade, gate, P('A1'));
+      expect([gate, it0.met, it0.decisive_ids]).toEqual([gate, false, [P('A1')]]);
+      expect(it0.evidence.missing_kinds).toEqual(['Observation from 2026-01-01', 'Observation from 2024-01-01']);
+      expect(it0.why).toContain('Observation from 2024-01-01');
+    }
+    const exposure = grade.attribution!.items!.find((i) => i.item === P('A1'))!.exposure.map((e) => e.id);
+    expect(exposure).toEqual([P('A1')]);
+    const late = (grade.checks.find((c) => c.id === 'gap_seen_before_order') as unknown as { evidence: { late: string[] } }).evidence.late;
+    expect(late).toEqual([P('A1')]);
+  });
+  it('/1 Trantow: names her Patient, not the donepezil order that no longer decides', async () => {
+    const { grade } = await graded([...withoutStool('G1')(reads()), { calls: [TRANTOW_SHORT] }, recheck, arrivals(), { calls: actions() }, { calls: [finish()] }]);
+    const it1 = failedItem(grade, 'fit_orders', P('G1'));
+    expect(it1.decisive_ids).toEqual([P('G1')]);
+    expect(grade.attribution!.items!.find((i) => i.item === P('G1'))!.exposure.map((e) => e.id)).toEqual([P('G1')]);
+  });
+});

@@ -148,6 +148,58 @@ export function passesWindow(s: StepSearch, opens: number, closes: number): bool
   return false;
 }
 
+// R27 page runs, shared by every absence and window review (T3 absenceShownAt, T2 windowSearchedAt,
+// T6 coveredAt; builder-292 G2, verifier-phase-P17i-S0-208-1 M2, M3). A run starts at a covering page
+// at offset 0 and continues with covering pages, each at the previous page's next_offset (other
+// calls may come between them). It is complete at a page with no next_offset, or at a sorted page
+// that passes the window's edge (R36, `passes`: passesWindow with the caller's window). A whole page
+// is complete by itself. The step of the first completion, or null.
+//
+// A later page continues the run when it has the same type, filters and order as the run's first
+// page, or (G2; R34, R16: never stricter than the policy) the same type and order, filters that nest
+// (one page's match set holds the other's: every filter the narrower sets, the wider sets the same or
+// leaves out) and the same total. Two nested sets of one size are one set, so both pages list the
+// same records in the same order and joined offsets show every one. That holds only if no record of
+// the searched type entered the store between the two calls (M3): a nested join is refused when an
+// arrival added one between them. An arrival lands after the call that fires it, so the steps from
+// the first page's up to, not including, the later page's. It adds a record when its id of the
+// searched type was not exposed or referenced by any step up to the one that fired it; a class B
+// correction that replaces a record in place (crc-b2 on its trigger page, pilot-4a crc-care-gap/2)
+// keeps the set and its size. Filters that do not nest, and a page without a total, prove nothing. A run with the same filters keeps R27's rule as before: an arrival
+// between its pages shifts offsets, which no task's events do mid-review (each list's triggers fire
+// on a write, after the reads, or on the read that exposes the record the arrival replaces).
+const RUN_FILTERS = ['patient', 'code', 'category', 'date_ge', 'date_le', 'status'] as const;
+export const runKey = (s: StepSearch): string => JSON.stringify([s.type, ...RUN_FILTERS.map((k) => s[k] ?? null), s.sort ?? 'date']);
+const holdsAll = (wide: StepSearch, narrow: StepSearch) => RUN_FILTERS.every((k) => wide[k] === undefined || wide[k] === narrow[k]);
+export function continuesRun(steps: readonly Step[], first: Step, later: Step): boolean {
+  const s0 = first.search!;
+  const s = later.search!;
+  if (runKey(s) === runKey(s0)) return true;
+  if (s.type !== s0.type || (s.sort ?? 'date') !== (s0.sort ?? 'date') || s0.total === undefined || s.total !== s0.total) return false;
+  if (!holdsAll(s, s0) && !holdsAll(s0, s)) return false;
+  const known = (k: string, at: number) => steps.some((st) => st.n <= at && (st.exposed_ids.includes(k) || st.referenced_ids.includes(k)));
+  return !steps.some((st) => st.n >= first.n && st.n < later.n && (st.arrivals ?? []).some((a) => a.keys.some((k) => k.startsWith(`${s0.type}/`) && !known(k, st.n))));
+}
+export function runCompleteAt(steps: readonly Step[], covers: (s: StepSearch) => boolean, passes: (s: StepSearch) => boolean): number | null {
+  const covering = steps.filter((st) => st.search !== undefined && covers(st.search));
+  let best: number | null = null;
+  const done = (n: number) => { best = best === null ? n : Math.min(best, n); };
+  for (const [i, first] of covering.entries()) {
+    const s0 = first.search!;
+    if ((s0.offset ?? 0) !== 0) continue;
+    if (s0.whole || passes(s0)) { done(first.n); continue; }
+    let next = s0.next_offset;
+    for (const later of covering.slice(i + 1)) {
+      if (next === undefined) break;
+      const s = later.search!;
+      if (s.offset !== next || !continuesRun(steps, first, later)) continue;
+      next = s.next_offset;
+      if (next === undefined || passes(s)) { done(later.n); break; }
+    }
+  }
+  return best;
+}
+
 // Whether <Type>/<id> names `id`, given bare or typed.
 export const sameId = (key: string, id: string): boolean => (id.includes('/') ? key === id : key.slice(key.indexOf('/') + 1) === id);
 

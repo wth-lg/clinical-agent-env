@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:crc-care-gap:5",
   "task_id": "crc-care-gap",
-  "task_version": "4f95a80e52b04081ee54b91b6317cb07ac3938e371e2685ad7886e91cd97d1a7",
+  "task_version": "acd29a96040a5e36af89e764ba1e7266340dd51caf24314d955f83408d8b3293",
   "env_version": "df481c520ddc09dbafb0011b40fa583187697768f255d3c80019200604dc38ee",
-  "grader_task_version": "a8b41b75bcbdc0c36541d7efbc70394f82eb84827959c608e579fb16735edb19",
+  "grader_task_version": "6e871a4c14fde1fcb5b32f2c179b2ecb79e7dd10e2fe2a7f3ad130dfcac8802e",
   "fixture_hash": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
   "state_hash": {
     "initial": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
@@ -252,14 +252,6 @@
             "first_order": null,
             "exposed": [
               {
-                "id": "Condition/cond-00189",
-                "step": 12
-              },
-              {
-                "id": "MedicationRequest/mr-00118",
-                "step": 12
-              },
-              {
                 "id": "Patient/pt-0009",
                 "step": 12
               }
@@ -270,20 +262,22 @@
             "first_order": 46,
             "exposed": [
               {
-                "id": "Observation/obs-01732",
+                "id": "Patient/pt-0022",
                 "step": 14
               }
-            ]
+            ],
+            "missing_kinds": []
           },
           {
             "patient": "Patient/pt-0024",
             "first_order": 48,
             "exposed": [
               {
-                "id": "Observation/obs-01871",
+                "id": "Patient/pt-0024",
                 "step": 15
               }
-            ]
+            ],
+            "missing_kinds": []
           }
         ],
         "late": []

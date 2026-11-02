@@ -8,6 +8,8 @@
 import { cpSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { explainTrial, type ExplainRecord } from '../../packages/core/explain.ts';
+import { parseTrajectory } from '../../packages/core/trajectory.ts';
 import { GRADER_VERSION } from '../../packages/grader/grade.ts';
 import { tempDir } from '../../scripts/test/helpers.ts';
 import { main as classes, type ClassesJson } from '../classes.ts';
@@ -43,5 +45,12 @@ describe('regrade stores the new grade\'s attribution; classes reads it', () => 
     const after = JSON.parse((await cli(classes, [dir, '--json'])).out) as ClassesJson;
     expect(labelsOf(after)).toEqual(['fit_orders -> retrieval']);
     expect(after.tasks['crc-care-gap']!.q).toMatchObject({ trials: 1, seen_all: 1 });
+
+    // verifier-phase-P17i-S0-208-1 S1: explainTrial, which the trial page, the failures and runs
+    // views and audit-check read, gives the current grade's kind of failure too, not none.
+    const record = JSON.parse(readFileSync(join(dir, 'trials/crc-care-gap/0.json'), 'utf8')) as ExplainRecord;
+    const events = parseTrajectory(readFileSync(join(dir, 'trajectories/crc-care-gap/0.jsonl'), 'utf8'));
+    const e = explainTrial(record, null, { events });
+    expect([e.fault, e.taxonomy]).toEqual(['model', 'retrieval']);
   });
 });

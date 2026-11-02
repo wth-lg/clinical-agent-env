@@ -271,7 +271,7 @@ Each mutant in `tests/mutants.ts` takes the oracle and makes one mistake. Each m
 - `parisian-cxr-prelim_item_closed` (over_action; fails `kept`): Reads the preliminary chest X-ray and completes its item, which RBC-INBOX-01 §2(c) leaves open until a final read is issued.
 - `parisian-cxr-prelim_closed_blind` (over_action; fails `event_seen`, `kept`): Completes the preliminary chest X-ray's item by its id without opening it.
 
-`tests/alternatives.ts` holds 28 other correct routes; each must pass.
+`tests/alternatives.ts` holds 29 other correct routes; each must pass. `eie_baseline_page_run_drops_date_ge` drops the date filter after its first page: the filters nest and every page counts the same total, so the run shows every creatinine (R27, R36; S0-208 M2, the shared page-run rule in packages/grader/exposure.ts runCompleteAt).
 
 ### Verification
 
@@ -772,7 +772,7 @@ Each mutant in `tests/mutants.ts` takes the oracle and makes one mistake. Each m
 - `webb-c1_unseen` (retrieval; fails `event_seen`, `amended`): Lists both queues but never opens the arrival, and writes the arrival's decision anyway.
 - `webb-c1_before_seen` (process; fails `amended`): Opens the arrival in the same answer that writes the amend, so the amend was written before the arrival was seen.
 
-`tests/alternatives.ts` holds 33 other correct routes; each must pass.
+`tests/alternatives.ts` holds 34 other correct routes; each must pass. `m12_page_run_drops_date_ge` drops the date filter after its first page at the same total (R27, R36; S0-208 M2, packages/grader/exposure.ts runCompleteAt).
 
 ### Verification
 

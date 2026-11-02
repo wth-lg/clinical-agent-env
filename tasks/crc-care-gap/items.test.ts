@@ -56,10 +56,12 @@ describe('T3 gates over expected.items', () => {
     }
   });
 
-  it('each base gate\'s decisive ids are its members\'', () => {
+  it('each base gate\'s decisive ids are its members\'; fit_orders and gap_seen_before_order also the delivered members\' own records (S0-208 M1)', () => {
     const decisive = [...new Set(expected.items.flatMap((x) => x.decisive))];
+    const own = Object.values(DELIVERED).map((y) => y.patient);
+    const withOwn = [...new Set([...decisive, ...own])];
     expect(gates.filter((g) => BASE_GATES.includes(g.id)).map((g) => [g.id, g.decisive_ids])).toEqual([
-      ['fit_orders', decisive], ['outreach_messages', decisive], ['nothing_for_others', decisive], ['gap_seen_before_order', decisive], ['no_contact_reviewed', decisive],
+      ['fit_orders', withOwn], ['outreach_messages', decisive], ['nothing_for_others', decisive], ['gap_seen_before_order', withOwn], ['no_contact_reviewed', decisive],
     ]);
   });
 
@@ -403,7 +405,7 @@ describe('a delivered gap\'s review (event_seen, amended)', () => {
     expect(item('fit_orders', withoutPatient, G1).met).toBe(false);
   });
   it('declares seen_at for each event focus on the event gates; on the base gates, a seen rule only for the members an amend event can turn into a gap, each seen by that rule alone', () => {
-    const amendable = expected.items.filter((x) => Object.values(DELIVERED).some((y) => y.patient === x.patient)).flatMap((x) => x.decisive).sort();
+    const amendable = [...new Set([...expected.items.filter((x) => Object.values(DELIVERED).some((y) => y.patient === x.patient)).flatMap((x) => x.decisive), ...Object.values(DELIVERED).map((y) => y.patient)])].sort();
     for (const g of ['fit_orders', 'outreach_messages', 'gap_seen_before_order']) {
       expect(Object.keys(gates.find((x) => x.id === g)!.seen_at ?? {}).sort(), g).toEqual(amendable);
       expect(gates.find((x) => x.id === g)!.decisive_phrases ?? {}, g).toEqual(Object.fromEntries(amendable.map((d) => [d, ''])));
