@@ -7,22 +7,27 @@
 // as are Synthea conditions the chart contradicts. Every patient keeps their Synthea age: the stories
 // fit it (W1-0 F7), so no birth date moves except Walter Kim's (pre-probe T4).
 //
-// The 13 items (expected.ts), two instances of each kept class and one filler:
-//   source precedence     Walter furosemide: the signed addendum makes it 40 mg twice daily;
-//                         Adelaide hydrochlorothiazide: the summary continues it, the addendum stops it
-//   fill history          Terence glipizide and Earnest sertraline: filled from outside prescribers,
-//                         on no clinic order, not addressed by the discharge documents
-//   formulary sub         Walter pantoprazole for omeprazole; Earnest atorvastatin for rosuvastatin
-//   brand and generic     Terence 'Coreg 12.5 mg twice daily' (home carvedilol 6.25); Adelaide
-//                         'Procardia XL 60 mg daily' (home nifedipine ER 30)
-//   fill gaps             Terence atorvastatin (24% of the 180 days before admission covered) and
-//                         Adelaide levothyroxine (41%), both continued by their summaries
+// The worklist (PW4-E3 cut, plan-amendment-w4): 8 items (expected.ts), at least one instance of
+// each probe class. Walter Kim, Terence Stark and Earnest Roberts are on it; Adelaide Thompson's chart
+// stays in the world, off the list (her instance of each class she carried is cut, the other
+// instance kept), so no id moves. Earnest Roberts keeps one item, the lisinopril resume: his
+// discharge list continues rosuvastatin (no formulary substitution) and the outside pharmacy query
+// finds no fills, so his formulary and fill-history instances are cut and Walter Kim's and Terence
+// Stark's are kept.
+//   source precedence     Walter furosemide: the signed addendum makes it 40 mg twice daily
+//   fill history          Terence glipizide: filled from an outside prescriber, on no clinic order,
+//                         not addressed by the discharge documents
+//   formulary sub         Walter pantoprazole for omeprazole
+//   brand and generic     Terence 'Coreg 12.5 mg twice daily' (home carvedilol 6.25)
+//   fill gaps             Terence atorvastatin (24% of the 180 days before admission covered),
+//                         continued by his summary
 //   potassium rule        Walter lisinopril: resume line met by SCr 1.32, but potassium 5.4 in the
 //                         outside report holds it; Earnest lisinopril: a clinic potassium of 5.3 on
 //                         10/20, then 4.6 in the outside report of 10/22, the most recent: resume.
-//                         His chart holds nothing else that bears on the resume (R16: his outside
-//                         drug is an SSRI, not an NSAID or a potassium-raising drug)
+//                         His chart holds nothing else that bears on the resume (R16)
 //   filler                Walter potassium chloride: stop
+// Mid-trial events (events.ts) bring new records to these charts after the trial's first write on
+// each patient; none is in the world.
 // The decisive documents (addenda, lab reports, fill histories) are each longer than a search
 // snippet, so a search row only references them; a read shows them. Each patient's fill history
 // comes from two places: the clinic's own Riverbend Pharmacy dispensing record, and, where the
@@ -441,9 +446,7 @@ Discharge medications:
 - Insulin glargine 22 units subcutaneously at bedtime: continue.
 - Insulin lispro 6 units subcutaneously with meals: continue.
 - Lisinopril: held for AKI. Resume home 20 mg daily when SCr < 1.3 on post-discharge labs.
-- Atorvastatin 20 mg by mouth nightly.
-
-Inpatient formulary substitution: atorvastatin 20 mg nightly was given in place of home rosuvastatin 10 mg daily (St. Brigid formulary).
+- Rosuvastatin 10 mg by mouth daily: continue.
 
 Follow-up: Riverbend Family Medicine within 7 days; basic metabolic panel within 1 week; endocrinology as scheduled.
 
@@ -492,8 +495,7 @@ Calcium           9.6 mg/dL     (8.6-10.3)`;
 10/07/2026   insulin glargine 100 units/mL pen 15 mL        1     30             Maya Okafor, MD                             Riverbend Pharmacy
 10/07/2026   insulin lispro 100 units/mL pen 15 mL          1     30             Maya Okafor, MD                             Riverbend Pharmacy`;
   const OUTSIDE_FILLS = `${FILL_HEADER('Earnest Roberts', '1995-06-05', '10/20/2026 16:23', true)}
-09/08/2026   sertraline 100 mg tablet                       30    30             Priya Nair, MD (Lakeside Behavioral Health) Lakeview Drug
-10/06/2026   sertraline 100 mg tablet                       30    30             Priya Nair, MD (Lakeside Behavioral Health) Lakeview Drug`;
+No prescription fills found at pharmacies other than Riverbend Pharmacy for the query period.`;
   // His Synthea notes go (the two physicals list a history without his diabetes), and so do his two
   // completed base orders.
   const remove = [

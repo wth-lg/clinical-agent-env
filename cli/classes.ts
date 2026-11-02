@@ -33,6 +33,12 @@
 // export ([{key, class, label}] in list order) when it has one, otherwise the shape each of the six
 // tasks has today. A valid trial whose graded items are not exactly that list (the checkout's list
 // changed since the run) exits 1: counts against a different list would be wrong.
+// Ruling R37: a run whose records' task_version is not the checkout's is historical data. Its
+// items are the ones its records graded, with their classes, labels and event specs from the item
+// table pinned in the run directory (<run>/item-classes.json, written at the commit the run's
+// README.md names; an item the table lacks is 'unclassified'). It is tabulated, never refused, and
+// carries `historical` ({task_versions, checkout}) and the note 'historical run: items from
+// records (task_version X, checkout Y)'.
 // Markdown on stdout by default, in classes.md's table form; --json prints ClassesJson.
 // Exit 0 on success, 1 when a run or task cannot be read, 2 on a usage error.
 import { existsSync, readFileSync, realpathSync } from 'node:fs';
@@ -41,8 +47,10 @@ import { pathToFileURL } from 'node:url';
 import { installEgressGuard } from '../packages/core/egress.ts';
 import { AUDIT_LABEL, FAULT, type Outcome } from '../packages/core/outcomes.ts';
 import { currentGrade, type RegradeGrade, type SummaryCheck, wilson } from '../packages/core/summary.ts';
+import { taskVersions } from '../packages/core/tasks.ts';
 import { settledRecords, trajectoryOf } from './adapters/result-sink-node.ts';
-import { TASKS_DIR } from './adapters/tasks-node.ts';
+import { nodeTaskSource, TASKS_DIR } from './adapters/tasks-node.ts';
+import { repoWorld } from './run.ts';
 
 // ---- The JSON contract (schema_version 1). builder-276's result-card reads exactly these names.
 
@@ -89,6 +97,8 @@ export interface TaskClasses {
   outcomes: Array<{ trial: number; run: string; outcome: string }>;
   // Failed event gates no spec takes (see the header); absent when there are none.
   unattributed_event_failures?: Array<{ trial: number; run: string; item: string; gate: string }>;
+  // R37: present when the records ran at task versions other than the checkout's.
+  historical?: { task_versions: string[]; checkout: string };
 }
 export interface ClassesJson {
   schema_version: 1;
@@ -131,6 +141,9 @@ export function classesJsonProblems(v: unknown): string[] {
     if ('unattributed_event_failures' in t && !arr((u) => obj(u) && num(u.trial) && typeof u.item === 'string' && typeof u.gate === 'string')(t.unattributed_event_failures)) {
       out.push(`${p}.unattributed_event_failures: wrong type`);
     }
+    if ('historical' in t && !(obj(t.historical) && arr((x) => typeof x === 'string')(t.historical.task_versions) && typeof t.historical.checkout === 'string')) {
+      out.push(`${p}.historical: wrong type`);
+    }
   }
   return out;
 }
@@ -148,6 +161,34 @@ export interface Deps {
   itemClasses?: (task: string) => Promise<ItemClass[]>;
   // A task's event specs and ACTIVE list, null when it has no tasks/<id>/events.ts.
   events?: (task: string) => Promise<TaskEvents | null>;
+  // The checkout's task_version of a task, null when it cannot be computed (R37).
+  checkoutVersion?: (task: string) => Promise<string | null>;
+  // The item table pinned in a run directory for a task, null when it has none (R37).
+  pinnedItems?: (run: string, task: string) => PinnedItems | null;
+}
+
+// <run>/item-classes.json (R37): per task, the items with classes and labels, and the event specs,
+// as the commit the run's README.md names had them.
+export interface PinnedItems { items: ItemClass[]; events: TaskEvents | null }
+export function pinnedItemsOf(run: string, task: string): PinnedItems | null {
+  const file = join(run, 'item-classes.json');
+  if (!existsSync(file)) return null;
+  const t = (JSON.parse(readFileSync(file, 'utf8')) as { tasks?: Record<string, PinnedItems> }).tasks?.[task];
+  return t === undefined ? null : { items: t.items, events: t.events ?? null };
+}
+
+const versionCache = new Map<string, Promise<string | null>>();
+export function checkoutVersionOf(task: string): Promise<string | null> {
+  if (!versionCache.has(task)) {
+    versionCache.set(task, (async () => {
+      try {
+        return (await taskVersions(await nodeTaskSource({ testMode: true }).get(task), repoWorld().worldHash)).task_version;
+      } catch {
+        return null;
+      }
+    })());
+  }
+  return versionCache.get(task)!;
 }
 
 const defaults: Deps = { out: (l) => process.stdout.write(`${l}\n`), err: (l) => process.stderr.write(`${l}\n`) };
@@ -212,6 +253,7 @@ interface Trial {
   items: Set<string>;
   fired: string[];
   guard: number;
+  taskVersion: string | null;
 }
 
 interface CheckItem { item?: unknown; met?: unknown; event?: unknown }
@@ -250,6 +292,7 @@ interface RawRecord {
   index?: unknown;
   outcome?: unknown;
   grader_version?: unknown;
+  task_version?: unknown;
   trajectory?: string;
   checks?: SummaryCheck[] | null;
   regrades?: Array<RegradeGrade & { changed?: boolean; grader_version?: unknown }>;
@@ -281,7 +324,7 @@ function readTrial(dir: string, r: RawRecord): Trial {
     labels.set(a.item, [...(labels.get(a.item) ?? []), { gate: String(a.gate ?? '?'), label: String(a.auto ?? '?') }]);
   }
   const { fired, guard } = readTrajectory(trajectoryOf(dir, r as never));
-  return { run: dir, index: Number(r.index), outcome: grade.outcome, valid: grade.valid, failed, named, labels, items, fired, guard };
+  return { run: dir, index: Number(r.index), outcome: grade.outcome, valid: grade.valid, failed, named, labels, items, fired, guard, taskVersion: typeof r.task_version === 'string' ? r.task_version : null };
 }
 
 function labelsOf(t: Trial, item: string, gates?: readonly string[]): Label[] {
@@ -386,7 +429,9 @@ export function markdown(json: ClassesJson): string {
   }
   L.push('', '## Classes', '');
   for (const [id, t] of Object.entries(json.tasks)) {
-    L.push(`### ${id}`, '', `${t.trials_valid} valid trials; outcomes: ${t.outcomes.map((o) => `${many ? `${o.run}` : ''}${o.trial} ${o.outcome}`).join(', ')}`, '');
+    L.push(`### ${id}`, '');
+    if (t.historical) L.push(`historical run: items from records (task_version ${t.historical.task_versions.join(', ')}, checkout ${t.historical.checkout})`, '');
+    L.push(`${t.trials_valid} valid trials; outcomes: ${t.outcomes.map((o) => `${many ? `${o.run}` : ''}${o.trial} ${o.outcome}`).join(', ')}`, '');
     L.push('| class | instance (item) | fails | class fails / trials x instances | pass rate | Wilson 95% | failure labels (trial: gate -> label) |', '|---|---|---|---|---|---|---|');
     for (const c of t.classes) {
       c.instances.forEach((i, j) => {
@@ -437,7 +482,7 @@ export function sortGraderVersions(vs: Iterable<string>): string[] {
   return [...vs].sort((a, b) => Number(a) - Number(b) || (a < b ? -1 : a > b ? 1 : 0));
 }
 
-export async function classesOf(runs: readonly string[], deps: Pick<Deps, 'itemClasses' | 'events'> = {}): Promise<ClassesJson> {
+export async function classesOf(runs: readonly string[], deps: Pick<Deps, 'itemClasses' | 'events' | 'checkoutVersion' | 'pinnedItems'> = {}): Promise<ClassesJson> {
   const byTask = new Map<string, Trial[]>();
   const graders = new Set<string>();
   for (const dir of runs) {
@@ -454,6 +499,17 @@ export async function classesOf(runs: readonly string[], deps: Pick<Deps, 'itemC
   const tasks: Record<string, TaskClasses> = {};
   for (const id of [...byTask.keys()].sort()) {
     const trials = (byTask.get(id) as Trial[]).sort((a, b) => runs.indexOf(a.run) - runs.indexOf(b.run) || a.index - b.index);
+    const checkout = await (deps.checkoutVersion ?? checkoutVersionOf)(id);
+    const versions = [...new Set(trials.filter((t) => t.valid).map((t) => t.taskVersion).filter((v): v is string => v !== null))].sort();
+    if (checkout !== null && versions.some((v) => v !== checkout)) {
+      // R37: historical data. The items the records graded, classed by the run's pinned table.
+      const pinned = runs.map((r) => (deps.pinnedItems ?? pinnedItemsOf)(r, id)).find((x) => x !== null) ?? null;
+      const recorded = new Set(trials.filter((t) => t.valid).flatMap((t) => [...t.items]).filter((k) => k !== OUTSIDE));
+      const known = (pinned?.items ?? []).filter((i) => recorded.has(i.key));
+      const rest = [...recorded].filter((k) => !known.some((i) => i.key === k)).sort().map((key) => ({ key, class: 'unclassified', label: key }));
+      tasks[id] = { ...tabulate(trials, [...known, ...rest], pinned?.events ?? null), historical: { task_versions: versions, checkout } };
+      continue;
+    }
     const items = await (deps.itemClasses ?? itemClassesOf)(id);
     const keys = new Set(items.map((i) => i.key));
     for (const t of trials.filter((x) => x.valid)) {

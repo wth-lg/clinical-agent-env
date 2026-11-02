@@ -1,7 +1,9 @@
-// T1 renal-dose-review overlay, worklist probe (plan-amendment-worklist W1, builder-211): the
-// clinic pharmacy's DOAC dose review list, nine patients on T1's slots, each taking apixaban or
-// rivaroxaban for non-valvular atrial fibrillation. RBC-PHARM-07 gives each patient's dose from
-// the inputs §1 picks. Two patients per kept item class, and one filler already on the right dose:
+// T1 renal-dose-review overlay, worklist probe (plan-amendment-worklist W1, builder-211): nine
+// curated charts on T1's slots, each patient taking apixaban or rivaroxaban for non-valvular atrial
+// fibrillation. RBC-PHARM-07 gives each patient's dose from the inputs §1 picks. The pharmacy's
+// review list (LIST) holds five of them, one per kept item class and the filler (plan-amendment-w4
+// PW4-E3, builder-281): pt-0003, pt-0041, pt-0038, pt-0043, pt-0002. The other four keep their charts
+// off the list. Two patients per kept item class, and one filler already on the right dose:
 //
 //   class                  slot     drug           what decides it                               dose now -> right dose
 //   apixaban_two_of_three  pt-0001  apixaban       latest measured weight 57.6 kg (older 62.4)    5 -> 2.5 BID
@@ -335,8 +337,12 @@ const LINDQVIST = { reference: 'Practitioner/pr-t1-lindqvist' };
 const SORENSEN = { reference: 'Practitioner/pr-t1-derm' };
 const VARGA = { reference: 'Practitioner/pr-t1-id' };
 
-// The review list, in the order pharmacy built it (alphabetical by family name).
+// The nine patients whose charts the overlay curates (the W1 probe list).
 export const PANEL = ['pt-0040', 'pt-0039', 'pt-0003', 'pt-0041', 'pt-0001', 'pt-0045', 'pt-0038', 'pt-0043', 'pt-0002'] as const;
+// The review list, in the order pharmacy built it (alphabetical by family name): one patient per
+// probe class and the filler (plan-amendment-w4 PW4-E3, n = 5). The other four keep their charts
+// and are off this week's list, so no id renumbers.
+export const LIST = ['pt-0003', 'pt-0041', 'pt-0038', 'pt-0043', 'pt-0002'] as const;
 
 const PEOPLE: Record<string, { given: string[]; family: string; birthDate?: string; prefix: string }> = {
   'pt-0001': { given: ['Walter'], family: 'Kowalczyk', birthDate: '1942-02-14', prefix: 'Mr.' },
@@ -359,8 +365,8 @@ const GROUP: Resource = {
   code: { text: 'Pharmacy worklist: DOAC dose review' },
   name: 'DOAC dose review - week of 10/19/2026',
   managingEntity: LINDQVIST,
-  quantity: PANEL.length,
-  member: PANEL.map((pt) => ({ entity: subject(pt), period: { start: '2026-10-19' } })),
+  quantity: LIST.length,
+  member: LIST.map((pt) => ({ entity: subject(pt), period: { start: '2026-10-19' } })),
 };
 
 // ---- Per-patient charts -----------------------------------------------------------------------

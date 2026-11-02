@@ -22,6 +22,8 @@ export interface ReplayRecord {
   checks?: ReadonlyArray<{ id: string; met: unknown }> | null;
   grader_task_version?: string | null;
   regrades?: ReadonlyArray<RegradeGrade>;
+  // The run the record belongs to (results/<run_id>): R37's reproduce pointer names it.
+  run_id?: string | null;
 }
 
 // What regrading the trajectory gave: a grade, a judge cache miss (its message) or an error.
@@ -62,7 +64,8 @@ const base = (r: ReplayRecord) => ({ recorded_outcome: r.outcome, current_outcom
 // The verdict for a record run in another environment than the checkout's; null when it is the
 // same one and the trajectory is to be regraded.
 export function replayEnvVerdict(r: ReplayRecord, checkoutEnv: string): ReplayVerdict | null {
-  return r.env_version === checkoutEnv ? null : { match: false, outcome: null, ...base(r), error: envChanged(r, checkoutEnv) };
+  // R37: a record of another environment is historical data, reproduced at its run's commit.
+  return r.env_version === checkoutEnv ? null : { match: false, outcome: null, ...base(r), error: `${envChanged(r, checkoutEnv)}; reproduce at the commit in results/${r.run_id || '<run>'}/README.md` };
 }
 
 const metOf = (checks: ReadonlyArray<{ id: string; met: unknown }> | null | undefined) => JSON.stringify((checks ?? []).map((c) => [c.id, c.met]));

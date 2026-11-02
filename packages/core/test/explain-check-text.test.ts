@@ -112,20 +112,20 @@ describe('sample non-pass reasons', async () => {
 // nothing).
 describe('crc-care-gap outreach_messages found', async () => {
   const found = (await textOf('crc-care-gap')).outreach_messages!.found;
-  const OTHERS = ['Patient/pt-0019', 'Patient/pt-0024', 'Patient/pt-0036'];
+  const OTHERS = ['Patient/pt-0009', 'Patient/pt-0020'];
   it('names the patient who got no outreach when only some were tasked (probe n8)', () => {
-    expect(found({ missing: ['Patient/pt-0022', 'Patient/pt-0018'], messaged: OTHERS, tasked_instead: ['Patient/pt-0022'] })).toBe('no message to Patient/pt-0018 (Lance Amado Muller)');
+    expect(found({ missing: ['Patient/pt-0022', 'Patient/pt-0024'], messaged: OTHERS, tasked_instead: ['Patient/pt-0022'] })).toBe('no message to Patient/pt-0024 (Delaine Evelyn MacGyver)');
   });
   it('names the phone staff pool Task when every missing patient was tasked (probe n7)', () => {
-    expect(found({ missing: ['Patient/pt-0022', 'Patient/pt-0018'], messaged: OTHERS, tasked_instead: ['Patient/pt-0022', 'Patient/pt-0018'] })).toBe('outreach assigned to a phone staff pool for the FIT order instead of a patient message, for Patient/pt-0022 (Tiny Darline Koss)');
+    expect(found({ missing: ['Patient/pt-0022', 'Patient/pt-0024'], messaged: OTHERS, tasked_instead: ['Patient/pt-0022', 'Patient/pt-0024'] })).toBe('outreach assigned to a phone staff pool for the FIT order instead of a patient message, for Patient/pt-0022 (Tiny Darline Koss)');
   });
   it('names the first missing patient when none was tasked', () => {
-    expect(found({ missing: ['Patient/pt-0022'], messaged: ['Patient/pt-0018', ...OTHERS], tasked_instead: [] })).toBe('no message to Patient/pt-0022 (Tiny Darline Koss)');
+    expect(found({ missing: ['Patient/pt-0022'], messaged: ['Patient/pt-0024', ...OTHERS], tasked_instead: [] })).toBe('no message to Patient/pt-0022 (Tiny Darline Koss)');
   });
   // P17 exploit fix, crc C2 (decisions.tsv 2026-10-28T13:40Z): a message whose about does not
   // name the new FIT order is not outreach, and the text names the missing link.
   it('names the missing order link when the patient was messaged without it (exploit C2)', () => {
-    const all = ['Patient/pt-0022', 'Patient/pt-0018', ...OTHERS];
+    const all = ['Patient/pt-0022', 'Patient/pt-0024', ...OTHERS];
     expect(found({ missing: all, messaged: all, not_about_order: all, tasked_instead: [] })).toBe('the message to Patient/pt-0022 (Tiny Darline Koss) does not name the new FIT order in about');
   });
 });
@@ -141,7 +141,7 @@ describe('crc-care-gap fit_orders found', async () => {
     );
   });
   it('names a missing order before a late one', () => {
-    expect(found({ ordered, missing: ['Patient/pt-0018'], extra: [], late: [{ patient: 'Patient/pt-0022', order: 'ServiceRequest/sr-t0001', start: '2027-01-04' }], period_end: '2026-12-31' })).toBe('no FIT order for Patient/pt-0018 (Lance Amado Muller)');
+    expect(found({ ordered, missing: ['Patient/pt-0024'], extra: [], late: [{ patient: 'Patient/pt-0022', order: 'ServiceRequest/sr-t0001', start: '2027-01-04' }], period_end: '2026-12-31' })).toBe('no FIT order for Patient/pt-0024 (Delaine Evelyn MacGyver)');
   });
 });
 
@@ -162,16 +162,21 @@ describe('message-queue found', async () => {
 // (inputs_before_orders, metformin_dose, gabapentin_dose, note_exists) and T2's
 // nodule_screening_ldct, which the probes removed.
 describe('renal-dose-review found text', async () => {
+  // The list's own patients and doses (R37: from the task, not a hardcoded patient).
+  const { expected: renal } = (await import(pathToFileURL(join(TASKS, 'renal-dose-review', 'expected.ts')).href)) as { expected: { items: Array<{ patient: string; name: string; dose: { drug: string; mg: number; per_day: number }; decisive: string[] }> } };
   const text = await textOf('renal-dose-review');
-  const want = { drug: 'apixaban', mg: 2.5, per_day: 2 };
+  const apix = renal.items.find((x) => x.dose.drug === 'apixaban')!;
+  const other = renal.items.find((x) => x !== apix)!;
+  const want = apix.dose;
+  const times = (n: number) => (n === 2 ? 'twice daily' : 'once daily');
   it('names the patient, the dose the policy gives and that no DOAC order is active', () => {
-    expect(text.doac_dose!.found({ failed_items: ['Patient/pt-0040'], first: { patient: 'Patient/pt-0040', want, active: [] } })).toBe('Patient/pt-0040 (Dorothy Ashworth) needs apixaban 2.5 mg twice daily; the chart has no active DOAC order');
+    expect(text.doac_dose!.found({ failed_items: [apix.patient], first: { patient: apix.patient, want, active: [] } })).toBe(`${apix.patient} (${apix.name}) needs apixaban ${want.mg} mg ${times(want.per_day)}; the chart has no active DOAC order`);
   });
   it('names a dose as needed and counts the other failed patients', () => {
-    expect(text.doac_dose!.found({ failed_items: ['Patient/pt-0040', 'Patient/pt-0001'], first: { patient: 'Patient/pt-0040', want, active: ['MedicationRequest/mr-1'], drug: 'apixaban', mg: 5, per_day: 2, scheduled: false, oral: true } })).toBe('Patient/pt-0040 (Dorothy Ashworth) needs apixaban 2.5 mg twice daily; the chart has apixaban 5 mg twice daily as needed (and 1 more patient)');
+    expect(text.doac_dose!.found({ failed_items: [apix.patient, other.patient], first: { patient: apix.patient, want, active: ['MedicationRequest/mr-1'], drug: 'apixaban', mg: 10, per_day: 2, scheduled: false, oral: true } })).toBe(`${apix.patient} (${apix.name}) needs apixaban ${want.mg} mg ${times(want.per_day)}; the chart has apixaban 10 mg twice daily as needed (and 1 more patient)`);
   });
   it('names a deciding record never seen before the review finished', () => {
-    expect(text.decisive_seen!.found({ first: { patient: 'Patient/pt-0045', unseen: ['DocumentReference/doc-1'], finished_at: 40 } })).toBe('DocumentReference/doc-1 was never seen before the review finished at step 40, though it decides the dose for Patient/pt-0045 (Gregory Lindahl)');
+    expect(text.decisive_seen!.found({ first: { patient: other.patient, unseen: ['DocumentReference/doc-1'], finished_at: 40 } })).toBe(`DocumentReference/doc-1 was never seen before the review finished at step 40, though it decides the dose for ${other.patient} (${other.name})`);
   });
 });
 

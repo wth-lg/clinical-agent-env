@@ -44,6 +44,7 @@ import { callTool } from '../../../packages/env/tools/registry.ts';
 import { firstExposed, sameId, seenBefore, stepsOf } from '../../../packages/grader/exposure.ts';
 import { cases, trial } from '../../../packages/grader/matrix/matrix.ts';
 import { trajectory } from '../../../packages/grader/test/helpers.ts';
+import { SPECS } from '../events.ts';
 import { expected } from '../expected.ts';
 import { ref } from '../ids.ts';
 import { firstSeen, firstSeenBy } from './grader.ts';
@@ -156,13 +157,11 @@ describe('T4 worklist discoverability', async () => {
   // R2 (verifier-W1-probe-T4-clinical-2 N1): an item a discharge-summary line decides has that line
   // as its phrase, so a targeted snippet that shows the line counts as seen.
   // R26 and R29 (verifier-W1-probe-T4-clinical-3 N1, verifier-W1-probe-T4-5 N1): a line counts as
-  // seen when a snippet shows its atoms, so the rule-term 'potassium' snippet, a 'TSH' snippet cut
-  // inside the Procardia line's route, and 'labs' and 'atorvastatin' snippets cut inside the word
-  // 'Lisinopril' show their lines too.
+  // seen when a snippet shows its atoms, so the rule-term 'potassium' snippet and a 'labs' snippet
+  // cut inside the word 'Lisinopril' show their lines too.
   const LINE_QUERIES: ReadonlyArray<readonly [string, string]> = [
     ['kim-kcl', 'potassium chloride'], ['kim-omeprazole', 'formulary substitution'], ['kim-omeprazole', 'potassium'], ['stark-carvedilol', 'Coreg'],
-    ['thompson-nifedipine', 'Procardia'], ['thompson-nifedipine', 'TSH'], ['roberts-lisinopril', 'resume home'], ['roberts-lisinopril', 'continue'],
-    ['roberts-lisinopril', 'labs'], ['roberts-lisinopril', 'atorvastatin'], ['roberts-rosuvastatin', 'formulary substitution'],
+    ['roberts-lisinopril', 'resume home'], ['roberts-lisinopril', 'continue'], ['roberts-lisinopril', 'labs'],
   ];
   it.each(LINE_QUERIES)("a search_notes snippet for %s ('%s') shows its decisive discharge line (R2)", (key, query) => {
     const x = expected.items.find((i) => i.key === key)!;
@@ -176,6 +175,21 @@ describe('T4 worklist discoverability', async () => {
   it('no lure is a decisive record, and every plain input is one (R19, R6)', () => {
     expect(LURES.filter((l) => expected.items.some((x) => x.decisive.includes(l.id) || Object.values(x.also ?? {}).flat().some((s) => s.id === l.id)))).toEqual([]);
     expect(PLAIN_INPUT.filter((p) => !expected.items.some((x) => x.decisive.includes(p.id) || Object.values(x.also ?? {}).flat().some((s) => s.id === p.id)))).toEqual([]);
+  });
+
+  // PW4-E3: the mid-trial arrivals (events.ts) are absent before their trigger (each fires after the
+  // trial's first write on its patient), so no broad search before a write shows one; kim-k2 amends
+  // the addendum in place, and before its trigger the world holds the addendum as signed on 10/19.
+  it('no arrival is in the world before its trigger, and no broad search shows one', () => {
+    const arrivals = SPECS.filter((x) => x.id !== 'kim-k2').flatMap((x) => x.resources.map((r) => `${r.resourceType}/${r.id}`));
+    for (const k of arrivals) expect(ctx.world.get(k.split('/')[0]!, k.split('/')[1]!), k).toBeUndefined();
+    const amended = SPECS.find((x) => x.id === 'kim-k2')!.resources[0]!;
+    const before = ctx.world.get('DocumentReference', amended.id!);
+    expect(before?.resourceType === 'DocumentReference' && before.docStatus).toBe('final');
+    for (const c of BROAD) {
+      const step = run(c);
+      expect([...step.exposed_ids, ...step.referenced_ids].filter((k) => arrivals.includes(k)), JSON.stringify(c.input)).toEqual([]);
+    }
   });
 
   it('the stand-in list covers every worklist patient', () => {

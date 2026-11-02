@@ -1,0 +1,377 @@
+{
+ "schema_version": 1,
+ "commit": "1b3357eeb4d5b8f90bed7f1bf06119b21e797619",
+ "note": "Item classes and event specs of each task at the commit results/probe-1 is reproduced at (README.md), for pnpm cli classes on this historical run (ruling R37). Written by builder-281 from that commit's cli/classes.ts itemClassesOf and taskEventsOf.",
+ "tasks": {
+  "contrast-ct-prep": {
+   "items": [
+    {
+     "key": "Patient/pt-0047",
+     "class": "egfr_window",
+     "label": "Britt Vincenzo Mohr"
+    },
+    {
+     "key": "Patient/pt-0015",
+     "class": "allergy_grade",
+     "label": "Daniel Ferreira"
+    },
+    {
+     "key": "Patient/pt-0048",
+     "class": "allergy_grade",
+     "label": "Jamaal Derick Schmitt"
+    },
+    {
+     "key": "Patient/pt-0012",
+     "class": "egfr_window",
+     "label": "Eduardo Angel Stracke"
+    },
+    {
+     "key": "Patient/pt-0049",
+     "class": "metformin_hold",
+     "label": "Anisha Margarita Schuster"
+    },
+    {
+     "key": "Patient/pt-0046",
+     "class": "filler",
+     "label": "Lauren Sixta Beahan"
+    },
+    {
+     "key": "Patient/pt-0050",
+     "class": "metformin_hold",
+     "label": "Salvador Logan Brakus"
+    }
+   ],
+   "events": null
+  },
+  "crc-care-gap": {
+   "items": [
+    {
+     "key": "Patient/pt-0009",
+     "class": "frailty_advanced_illness",
+     "label": "Elly Shyla Trantow"
+    },
+    {
+     "key": "Patient/pt-0011",
+     "class": "hospice_revoked",
+     "label": "Marilu Blanca Gaona"
+    },
+    {
+     "key": "Patient/pt-0014",
+     "class": "colonoscopy_never_done",
+     "label": "Santo Rodrick Pagac"
+    },
+    {
+     "key": "Patient/pt-0018",
+     "class": "collection_vs_report_date",
+     "label": "Lance Amado Muller"
+    },
+    {
+     "key": "Patient/pt-0019",
+     "class": "frailty_advanced_illness",
+     "label": "Harrison O'Keefe"
+    },
+    {
+     "key": "Patient/pt-0020",
+     "class": "hospice_revoked",
+     "label": "Kelsie Wanetta Rohan"
+    },
+    {
+     "key": "Patient/pt-0021",
+     "class": "partial_vs_total_colectomy",
+     "label": "Ángela Andrea Vigil"
+    },
+    {
+     "key": "Patient/pt-0022",
+     "class": "collection_vs_report_date",
+     "label": "Tiny Darline Koss"
+    },
+    {
+     "key": "Patient/pt-0024",
+     "class": "colonoscopy_never_done",
+     "label": "Delaine Evelyn MacGyver"
+    },
+    {
+     "key": "Patient/pt-0034",
+     "class": "nursing_home_vs_rehab",
+     "label": "Rickey Morgan Sipes"
+    },
+    {
+     "key": "Patient/pt-0035",
+     "class": "nursing_home_vs_rehab",
+     "label": "Elvin Laverne Wolff"
+    },
+    {
+     "key": "Patient/pt-0036",
+     "class": "partial_vs_total_colectomy",
+     "label": "Nick Jed Bartoletti"
+    },
+    {
+     "key": "Patient/pt-0037",
+     "class": "filler",
+     "label": "Fumiko Kati Pouros"
+    }
+   ],
+   "events": null
+  },
+  "discharge-medrec": {
+   "items": [
+    {
+     "key": "kim-furosemide",
+     "class": "precedence",
+     "label": "kim-furosemide"
+    },
+    {
+     "key": "kim-lisinopril",
+     "class": "potassium",
+     "label": "kim-lisinopril"
+    },
+    {
+     "key": "kim-kcl",
+     "class": "filler",
+     "label": "kim-kcl"
+    },
+    {
+     "key": "kim-omeprazole",
+     "class": "formulary",
+     "label": "kim-omeprazole"
+    },
+    {
+     "key": "stark-carvedilol",
+     "class": "brand",
+     "label": "stark-carvedilol"
+    },
+    {
+     "key": "stark-atorvastatin",
+     "class": "fill_gap",
+     "label": "stark-atorvastatin"
+    },
+    {
+     "key": "stark-glipizide",
+     "class": "fill_history",
+     "label": "stark-glipizide"
+    },
+    {
+     "key": "thompson-nifedipine",
+     "class": "brand",
+     "label": "thompson-nifedipine"
+    },
+    {
+     "key": "thompson-hctz",
+     "class": "precedence",
+     "label": "thompson-hctz"
+    },
+    {
+     "key": "thompson-levothyroxine",
+     "class": "fill_gap",
+     "label": "thompson-levothyroxine"
+    },
+    {
+     "key": "roberts-lisinopril",
+     "class": "potassium",
+     "label": "roberts-lisinopril"
+    },
+    {
+     "key": "roberts-rosuvastatin",
+     "class": "formulary",
+     "label": "roberts-rosuvastatin"
+    },
+    {
+     "key": "roberts-sertraline",
+     "class": "fill_history",
+     "label": "roberts-sertraline"
+    }
+   ],
+   "events": null
+  },
+  "message-queue": {
+   "items": [
+    {
+     "key": "Task/task-00012",
+     "class": "hemolyzed_potassium",
+     "label": "m1"
+    },
+    {
+     "key": "Task/task-00013",
+     "class": "same_patient",
+     "label": "m2"
+    },
+    {
+     "key": "Task/task-00014",
+     "class": "hemolyzed_potassium",
+     "label": "m3"
+    },
+    {
+     "key": "Task/task-00015",
+     "class": "filler",
+     "label": "m4"
+    },
+    {
+     "key": "Task/task-00016",
+     "class": "collection_date",
+     "label": "m5"
+    },
+    {
+     "key": "Task/task-00017",
+     "class": "amended_or_error",
+     "label": "m6"
+    },
+    {
+     "key": "Task/task-00018",
+     "class": "creatinine_rise",
+     "label": "m7"
+    },
+    {
+     "key": "Task/task-00019",
+     "class": "metformin_two_series",
+     "label": "m8"
+    },
+    {
+     "key": "Task/task-00020",
+     "class": "creatinine_rise",
+     "label": "m9"
+    },
+    {
+     "key": "Task/task-00021",
+     "class": "metformin_two_series",
+     "label": "m10"
+    },
+    {
+     "key": "Task/task-00022",
+     "class": "same_patient",
+     "label": "m11"
+    },
+    {
+     "key": "Task/task-00023",
+     "class": "collection_date",
+     "label": "m12"
+    },
+    {
+     "key": "Task/task-00024",
+     "class": "amended_or_error",
+     "label": "m13"
+    }
+   ],
+   "events": null
+  },
+  "renal-dose-review": {
+   "items": [
+    {
+     "key": "Patient/pt-0040",
+     "class": "outside_scr_umol",
+     "label": "Dorothy Ashworth"
+    },
+    {
+     "key": "Patient/pt-0039",
+     "class": "cg_crcl_weight_rule",
+     "label": "Clarence Bauer"
+    },
+    {
+     "key": "Patient/pt-0003",
+     "class": "outside_scr_umol",
+     "label": "Frank Delgado"
+    },
+    {
+     "key": "Patient/pt-0041",
+     "class": "pgp_cyp3a4_inhibitor",
+     "label": "Raymond Duquette"
+    },
+    {
+     "key": "Patient/pt-0001",
+     "class": "apixaban_two_of_three",
+     "label": "Walter Kowalczyk"
+    },
+    {
+     "key": "Patient/pt-0045",
+     "class": "pgp_cyp3a4_inhibitor",
+     "label": "Gregory Lindahl"
+    },
+    {
+     "key": "Patient/pt-0038",
+     "class": "cg_crcl_weight_rule",
+     "label": "Eugene Moravec"
+    },
+    {
+     "key": "Patient/pt-0043",
+     "class": "filler",
+     "label": "Marjorie Pellegrino"
+    },
+    {
+     "key": "Patient/pt-0002",
+     "class": "apixaban_two_of_three",
+     "label": "Harold Vance"
+    }
+   ],
+   "events": null
+  },
+  "results-inbox": {
+   "items": [
+    {
+     "key": "nodule_overdue",
+     "class": "nodule_screening",
+     "label": "nodule_overdue"
+    },
+    {
+     "key": "nodule_scheduled",
+     "class": "nodule_screening",
+     "label": "nodule_scheduled"
+    },
+    {
+     "key": "hemolyzed_report",
+     "class": "hemolyzed",
+     "label": "hemolyzed_report"
+    },
+    {
+     "key": "hemolyzed_note",
+     "class": "hemolyzed",
+     "label": "hemolyzed_note"
+    },
+    {
+     "key": "corrected_up",
+     "class": "corrected",
+     "label": "corrected_up"
+    },
+    {
+     "key": "corrected_down",
+     "class": "corrected",
+     "label": "corrected_down"
+    },
+    {
+     "key": "eie_result",
+     "class": "entered_in_error",
+     "label": "eie_result"
+    },
+    {
+     "key": "eie_baseline",
+     "class": "entered_in_error",
+     "label": "eie_baseline"
+    },
+    {
+     "key": "prelim_positive",
+     "class": "preliminary",
+     "label": "prelim_positive"
+    },
+    {
+     "key": "prelim_negative",
+     "class": "preliminary",
+     "label": "prelim_negative"
+    },
+    {
+     "key": "aki_48h",
+     "class": "aki",
+     "label": "aki_48h"
+    },
+    {
+     "key": "aki_7day",
+     "class": "aki",
+     "label": "aki_7day"
+    },
+    {
+     "key": "normal_tsh",
+     "class": "filler",
+     "label": "normal_tsh"
+    }
+   ],
+   "events": null
+  }
+ }
+}

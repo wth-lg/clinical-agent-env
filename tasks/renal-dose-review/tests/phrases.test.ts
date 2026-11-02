@@ -1,15 +1,18 @@
 // The atom sweep for T1 (coordinator rulings R26 and R29 as revised; the model is
-// tasks/discharge-medrec/tests/phrases.test.ts). A snippet-visible decisive record has atoms: the
-// minimal facts of its deciding line that decide the item, without the item's drug (expected.ts
-// DECISIVE_ATOMS). T1 has one: the outside clinic letter that lists pt-0045's ritonavir. The gates
-// count a decisive record as seen when a step exposed it or showed its atoms (tests/grader.ts
-// firstSeenBy). This test runs the real search_notes, with the patient filter, for every word of
-// the record's text, finds the record's row on any page, and asserts both directions for every row:
+// tasks/discharge-medrec/tests/phrases.test.ts). A snippet-visible record that decides an item has
+// atoms: the minimal facts of its deciding line, without the item's drug. On the five-patient list
+// no base item turns on a note; the two outside documents that arrive mid-trial on pt-0002's chart
+// do (events.ts): the dermatology letter, atom 'itraconazole' (an amend), and the urgent care note,
+// atom 'clarithromycin' (a lure). The event gates count an arrival seen when a later step exposed it
+// or showed one of its texts holding every atom (tests/grader.ts seenAfter). This test puts the two
+// documents in the store as an arrival does, runs the real search_notes, with the patient filter, for
+// every word of each text, finds the document's row on any page, and asserts both directions for
+// every row:
 //   the snippet shows a deciding line from its first atom to its last  <=>  the gate counts it seen.
 // A deciding line is a line of the record that holds every atom in order. The left side is this
-// test's own reading of the chart text; the right side is the gate's rule. It also asserts that no
-// other note on a list patient's chart names a §2 inhibitor, so the letter is the only record that
-// shows the fact (rulings R21: no any-of route the gate would miss).
+// test's own reading of the text; the right side is the gate's rule. It also asserts that no other
+// note on pt-0002's chart names either drug, so each document is the only record that shows its
+// fact (rulings R21: no any-of route the gate would miss).
 import { describe, expect, it } from 'vitest';
 import { matrixEnv } from '../../../cli/matrix.ts';
 import { clock } from '../../../packages/env/clock.ts';
@@ -18,9 +21,9 @@ import { READ_TOOLS, type ReadContext } from '../../../packages/env/tools/read/i
 import { callTool } from '../../../packages/env/tools/registry.ts';
 import { stepsOf } from '../../../packages/grader/exposure.ts';
 import { trajectory } from '../../../packages/grader/test/helpers.ts';
-import { DECISIVE_ATOMS, expected } from '../expected.ts';
-import { ref } from '../ids.ts';
-import { firstSeenBy } from './grader.ts';
+import { EVENT_EXPECT } from '../expected.ts';
+import { SPECS } from '../events.ts';
+import { seenAfter } from './grader.ts';
 
 const comparable = (s: string) => s.replace(/\s+/g, ' ').trim().toLowerCase();
 const WORD = /[\p{L}\p{N}]+/gu;
@@ -41,18 +44,17 @@ const shows = (line: string, atoms: readonly string[], snippet: string) => stret
 type Row = { note: string; snippet: string };
 type Route = { patient: string; doc: string; atoms: readonly string[] };
 
-// The §2 inhibitors, as the policy names them.
-const INHIBITORS = ['ketoconazole', 'itraconazole', 'ritonavir'];
-
 // Rows a later edit must keep as they are, each by its query.
 const PINNED: ReadonlyArray<{ doc: string; query: string; seen: boolean; why: string }> = [
-  { doc: 'doc-t1-1901', query: 'ritonavir', seen: true, why: 'the targeted route discover.test records (rulings R12)' },
-  { doc: 'doc-t1-1901', query: 'darunavir', seen: true, why: 'the regimen line before it: the snippet runs past the ritonavir line' },
-  { doc: 'doc-t1-1901', query: 'hiv', seen: false, why: 'the snippet ends before the regimen' },
-  { doc: 'doc-t1-1901', query: 'adherent', seen: true, why: "builder-250 sweep (R26): the snippet ends at 'ritonavir 100…'; the old phrase 'ritonavir 100 mg' missed it" },
+  { doc: 'doc-00301', query: 'itraconazole', seen: true, why: 'the targeted route: a search for the drug (rulings R12)' },
+  { doc: 'doc-00302', query: 'clarithromycin', seen: true, why: 'the targeted route: a search for the drug (rulings R12)' },
 ];
 
 const world = await loadStore(matrixEnv().world);
+// The documents with atoms, put in the store as their arrival does.
+const ARRIVALS = SPECS.filter((s) => EVENT_EXPECT[s.id]!.atoms !== undefined).map((s) => ({ spec: s, doc: `DocumentReference/${s.resources[0]!.id}`, atoms: EVENT_EXPECT[s.id]!.atoms!, patient: s.item.slice('Patient/'.length) }));
+const before = new Map(ARRIVALS.map((a) => [a.doc, world.get('DocumentReference', a.spec.resources[0]!.id!)]));
+for (const a of ARRIVALS) for (const r of a.spec.resources) world.put(r);
 const ctx: ReadContext = { world, clock, policies: [], catalog: [] };
 const textOf = (doc: string) => {
   const d = world.get('DocumentReference', doc.split('/')[1]!) as { content: Array<{ attachment: { data: string } }> };
@@ -77,7 +79,7 @@ const rowOf = (doc: string, query: string, patient: string) => {
   return { row: hit.row, step: stepsOf(trajectory([{ name: 'search_notes', input: hit.input, content: hit.content, exposed: hit.exposed, referenced: hit.referenced }]))[0]! };
 };
 
-const routes: Route[] = expected.items.flatMap((x) => x.decisive.filter((d) => DECISIVE_ATOMS[d] !== undefined).map((d) => ({ patient: x.patient.split('/')[1]!, doc: d, atoms: DECISIVE_ATOMS[d]! })));
+const routes: Route[] = ARRIVALS.map((a) => ({ patient: a.patient, doc: a.doc, atoms: a.atoms }));
 const sweep = routes.map((e) => {
   const lines = textOf(e.doc).split('\n').map(comparable).filter((l) => stretches(l, e.atoms).length > 0);
   const words = [...new Set((textOf(e.doc).toLowerCase().match(WORD) ?? []) as string[])];
@@ -86,20 +88,21 @@ const sweep = routes.map((e) => {
     const hit = rowOf(e.doc, q, e.patient);
     if (hit === null) continue;
     const snip = comparable(hit.row.snippet.replace(/…/g, ' '));
-    rows.push({ query: q, snippet: hit.row.snippet, shown: lines.some((l) => shows(l, e.atoms, snip)), seen: firstSeenBy([hit.step], e.doc) !== null });
+    rows.push({ query: q, snippet: hit.row.snippet, shown: lines.some((l) => shows(l, e.atoms, snip)), seen: seenAfter(e.doc, e.atoms)([hit.step], 0) !== null });
   }
   return { ...e, lines: lines.length, words: words.length, rows };
 });
-const key = (doc: string) => (doc === ref('DocumentReference/doc-t1-1901') ? 'doc-t1-1901' : doc);
+const key = (doc: string) => doc.slice('DocumentReference/'.length);
 console.log(
   ['patient | record | atoms | words | rows | seen | not seen | mismatched', ...sweep.map((s) => `${s.patient} | ${key(s.doc)} | ${s.atoms.join(' + ')} | ${s.words} | ${s.rows.length} | ${s.rows.filter((r) => r.seen).length} | ${s.rows.filter((r) => !r.seen).length} | ${s.rows.filter((r) => r.shown !== r.seen).map((r) => `${r.query} (shown ${r.shown}, seen ${r.seen})`).join(', ') || '-'}`)].join('\n'),
 );
 
-describe('T1 decisive atoms: a snippet is seen exactly when it shows every atom (R29 sweep)', () => {
-  it('the letter is the one snippet-visible decisive record; its atoms name no DOAC, and one line of it holds them', () => {
-    expect(routes.map((r) => `${r.patient} ${key(r.doc)}`)).toEqual(['pt-0045 doc-t1-1901']);
+describe('T1 arrival atoms: a snippet is seen exactly when it shows every atom (R29 sweep)', () => {
+  it('the two outside documents are the snippet-visible arrivals, new to the world; their atoms name no DOAC, and one line of each holds them', () => {
+    expect(routes.map((r) => `${r.patient} ${key(r.doc)}`)).toEqual(['pt-0002 doc-00301', 'pt-0002 doc-00302']);
+    expect([...before.values()]).toEqual([undefined, undefined]);
     expect(routes.filter((r) => r.atoms.length === 0 || r.atoms.some((a) => /apixaban|rivaroxaban/i.test(a)))).toEqual([]);
-    expect(sweep.map((s) => s.lines)).toEqual([1]);
+    expect(sweep.map((s) => s.lines)).toEqual([1, 1]);
   });
 
   it.each(sweep.map((s) => [`${s.patient} ${key(s.doc)} ${s.atoms.join(' + ')}`, s] as const))('%s: a snippet is seen exactly when it shows every atom', (_k, s) => {
@@ -109,14 +112,14 @@ describe('T1 decisive atoms: a snippet is seen exactly when it shows every atom 
   });
 
   it.each(PINNED.map((p) => [`${p.doc} '${p.query}'`, p] as const))('%s', (_k, p) => {
-    const s = sweep.find((x) => x.doc === ref(`DocumentReference/${p.doc}` as Parameters<typeof ref>[0]))!;
+    const s = sweep.find((x) => x.doc === `DocumentReference/${p.doc}`)!;
     expect(s, p.why).toBeDefined();
     expect(s.rows.find((r) => r.query === p.query)?.seen, p.why).toBe(p.seen);
   });
 
-  it('no other note on a list patient\'s chart names a §2 inhibitor (rulings R21: the letter is the only route to the fact)', () => {
+  it("no other note on pt-0002's chart names itraconazole or clarithromycin (rulings R21: each document is the only route to its fact)", () => {
     // search_notes returns a note only when it holds the word.
-    const hits = expected.items.flatMap((x) => INHIBITORS.flatMap((w) => searchAll(w, x.patient.split('/')[1]!).map((h) => `${x.patient} ${w} ${h.row.note}`)));
-    expect(hits).toEqual([`Patient/pt-0045 ritonavir ${ref('DocumentReference/doc-t1-1901')}`]);
+    const hits = ['itraconazole', 'clarithromycin'].flatMap((w) => searchAll(w, 'pt-0002').map((h) => `${w} ${h.row.note}`));
+    expect(hits).toEqual(['itraconazole DocumentReference/doc-00301', 'clarithromycin DocumentReference/doc-00302']);
   });
 });

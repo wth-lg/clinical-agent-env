@@ -1,9 +1,11 @@
 // Mid-trial events through run(), replay and gradeTrajectory (plan-amendment-w4 PW4-E1 stage 1).
-//   (a) With no active specs, every probe-1 record grades through gradeTrajectory to its recorded
-//       outcome, score and check results byte for byte, and the same comparison fails when
-//       delivery is forced on. The records are results/probe-1 (PR #194; from the commit that
-//       holds them, or CLINENV_PROBE1_DIR pointing at a copy). The test fails, never skips, when
-//       they are missing.
+//   (a) With no active specs, a trial grades through gradeTrajectory to its own grade byte for
+//       byte, and the same comparison fails when delivery is forced on. Since ruling R37 the
+//       fixture is the toy's scripted trials on today's world, run and graded here, so it never
+//       depends on a world a later commit rebuilds. results/probe-1 is historical data pinned to
+//       the world it ran on (results/probe-1/README.md): each of its records grades byte for byte
+//       where its world is the checkout's, and otherwise fails with the named world mismatch, never
+//       a silent grade. The probe-1 test fails, never skips, when the records are missing.
 //   (b) One scripted trial with an event, run twice, gives the same trajectory (fired lists,
 //       stamps, ids, state hashes); replay agrees; the agent's -t<n> ids are gap-free.
 //   (d) finish answers CONFLICT in the turn an event fired, and the trial goes on.
@@ -26,6 +28,8 @@ import { admitStore, createLedger, type LedgerRow, type LedgerStore } from '../l
 import { gradeTrajectory, run, type RunOptions, type TrialRecord } from '../run.ts';
 import { currentGrade } from '../summary.ts';
 import { isEnvFile, parseTask, taskVersions } from '../tasks.ts';
+import { loadMatrixTask, matrixEnv } from '../../../cli/matrix.ts';
+import { trial as matrixTrial } from '../../grader/matrix/matrix.ts';
 import { parseTrajectory, stripTimestamps, toJsonl } from '../trajectory.ts';
 import { withEvents } from './event-tasks.ts';
 
@@ -173,38 +177,80 @@ const PROBE = process.env.CLINENV_PROBE1_DIR ?? fileURLToPath(new URL('results/p
 type Graded = { outcome: string; score: number | null; checks: unknown };
 const gradeKey = (g: Graded) => JSON.stringify({ outcome: g.outcome, score: g.score, checks: g.checks });
 
-// Every probe-1 record whose regrade with `specsFor` differs from its current grade, by trial.
-async function probeMismatches(specsFor: (events: readonly TrialEvent[]) => readonly EventSpec[]): Promise<{ n: number; differ: string[] }> {
-  const records = settledRecords(PROBE);
+// A spec that fires on the first id the trajectory's first successful read exposed.
+// A trial that exposed nothing gets TOY_EVENT's own trigger, a write about pt-0001.
+const forced = (events: readonly TrialEvent[]): EventSpec[] => {
+  const first = events.find((e): e is ToolResultEvent => e.type === 'tool_result' && !e.is_error && e.exposed_ids.length > 0);
+  return [{ ...TOY_EVENT, id: 'evt-forced', ...(first ? { trigger: { kind: 'after_exposed', ids: [first.exposed_ids[0]!] } } : {}) }];
+};
+
+// R37: a record of another world fails with the named mismatch; one of this world grades byte for byte.
+async function probeGrades(): Promise<{ n: number; differ: string[]; mismatched: string[] }> {
   const differ: string[] = [];
+  const mismatched: string[] = [];
+  const records = settledRecords(PROBE);
   for (const { record: r } of records) {
     const events = parseTrajectory(readFileSync(trajectoryOf(PROBE, r), 'utf8'));
-    const graded = await gradeTrajectory(r.task_id, { tasks: withEvents(tasks, r.task_id, specsFor(events)), world, definitions, checks: await taskChecks(r.task_id), events, record: r as never });
+    const graded = await gradeTrajectory(r.task_id, { tasks: withEvents(tasks, r.task_id, []), world, definitions, checks: await taskChecks(r.task_id), events, record: r as never });
+    const at = (r as { state_hash: { initial: string } }).state_hash.initial;
+    if (at !== worldHash) {
+      const want = `world mismatch: run at ${at}, checkout at ${worldHash}; reproduce at the commit in results/probe-1/README.md`;
+      if (graded.outcome !== 'GRADER_ERROR' || graded.error?.message !== want) differ.push(`${r.task_id}/${r.index}: ${graded.outcome} ${graded.error?.message ?? ''}`);
+      else mismatched.push(`${r.task_id}/${r.index}`);
+      continue;
+    }
     const cur = currentGrade(r as never);
     if (gradeKey(graded) !== gradeKey({ outcome: cur.outcome, score: cur.score, checks: cur.checks })) differ.push(`${r.task_id}/${r.index}: ${graded.outcome} ${graded.error?.message ?? ''}`);
   }
-  return { n: records.length, differ };
+  return { n: records.length, differ, mismatched };
 }
 
-// A spec that fires on the first id the trajectory's first successful read exposed.
-const forced = (events: readonly TrialEvent[]): EventSpec[] => {
-  const first = events.find((e): e is ToolResultEvent => e.type === 'tool_result' && !e.is_error && e.exposed_ids.length > 0)!;
-  return [{ ...TOY_EVENT, id: 'evt-forced', trigger: { kind: 'after_exposed', ids: [first.exposed_ids[0]!] } }];
-};
-
-describe('probe-1 with no active specs (a)', () => {
+describe('probe-1, historical data pinned to its world (R37)', () => {
   it('finds the 36 probe-1 records', () => {
     expect(existsSync(join(PROBE, 'trials')), `no probe-1 records at ${PROBE}: set CLINENV_PROBE1_DIR to a copy of results/probe-1 (631695f5)`).toBe(true);
     expect(settledRecords(PROBE)).toHaveLength(36);
   });
 
-  it('every record grades byte-identically to its current grade', async () => {
-    expect(await probeMismatches(() => [])).toEqual({ n: 36, differ: [] });
+  it('each record grades byte for byte on its own world, and fails with the named world mismatch on another', async () => {
+    const { n, differ } = await probeGrades();
+    expect({ n, differ }).toEqual({ n: 36, differ: [] });
+  }, 600_000);
+});
+
+// (a) on the toy: every scripted toy trial that opens no event's trigger, run on today's world.
+const toy = await loadMatrixTask('_toy');
+const toyCases = [
+  { id: 'oracle', script: toy.oracle! },
+  ...toy.alternatives.filter((a) => !a.id.startsWith('event_')),
+  ...toy.mutants.filter((m) => m.event === undefined),
+];
+async function toyMismatches(specsFor: (events: readonly TrialEvent[]) => readonly EventSpec[]): Promise<{ n: number; differ: string[] }> {
+  const env = matrixEnv();
+  const differ: string[] = [];
+  for (const c of toyCases) {
+    const run = await matrixTrial(env, toy, { kind: 'alternative', id: c.id, script: c.script });
+    // The toy's judge items answer from its committed cache, as the matrix grades them.
+    const ran = { ...run, record: { ...run.record, judge: { ...run.record.judge, cache: toy.cache } } as typeof run.record };
+    // The toy's own grade, with its own active specs (none of which fires on these scripts).
+    const own = await gradeTrajectory('_toy', { tasks, world, definitions, checks: toy.checks, events: ran.events, record: ran.record });
+    const graded = await gradeTrajectory('_toy', { tasks: withEvents(tasks, '_toy', specsFor(ran.events)), world, definitions, checks: toy.checks, events: ran.events, record: ran.record });
+    if (own.error !== null) differ.push(`${c.id}: own grade ${own.outcome} ${own.error.message}`);
+    else if (gradeKey(graded) !== gradeKey(own)) differ.push(`${c.id}: ${graded.outcome} ${graded.error?.message ?? ''}`);
+  }
+  return { n: toyCases.length, differ };
+}
+
+describe('toy trials with no active specs (a)', () => {
+  it('runs every toy case that opens no trigger', () => {
+    expect(toyCases.length).toBeGreaterThanOrEqual(9);
+  });
+
+  it('every trial grades with no specs byte-identically to its grade with the toy\'s specs', async () => {
+    expect(await toyMismatches(() => [])).toEqual({ n: toyCases.length, differ: [] });
   }, 600_000);
 
-  it('and the comparison fails on every record when delivery is forced on', async () => {
-    const { n, differ } = await probeMismatches(forced);
-    expect(n).toBe(36);
-    expect(differ).toHaveLength(36);
+  it('and the comparison fails on every trial when delivery is forced on', async () => {
+    const { n, differ } = await toyMismatches(forced);
+    expect(differ).toHaveLength(n);
   }, 600_000);
 });
