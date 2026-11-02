@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:crc-care-gap:8",
   "task_id": "crc-care-gap",
-  "task_version": "09c08e85379f5a3c4a6c8405e5e8796f05e82023eb5a7660499c245ff6c00ca9",
-  "env_version": "6d163707d92b5577816905558b08d819b0cd0716dd03f0a3cc922a1340f52cf8",
-  "grader_task_version": "06ca9986c141dce2d10c6775b6e048b5db2c34637ead245951d28c6233d22bdd",
+  "task_version": "610cb34acd9d0e0ad62bde465b8ad5d2cd8650ec311a401a17a755467bdd8c67",
+  "env_version": "d981782ad8e8df2f0cc521651b8754982cfb4250374b63d7ad147f16ab800eed",
+  "grader_task_version": "7bc950759d29262de5cec8a105d741aaeca70e39a2473f914e0f1feaf63d809d",
   "fixture_hash": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
   "state_hash": {
     "initial": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
-    "final": "2b60399edc6b4dc95576f628f45a96f07ce3adc760145473b56424f1f6533d7b",
-    "replay_final": "2b60399edc6b4dc95576f628f45a96f07ce3adc760145473b56424f1f6533d7b"
+    "final": "b0784dce6a58300362fda866d369f9fc6234b68f8fbe93c7efcd73f09f2fd4ce",
+    "replay_final": "b0784dce6a58300362fda866d369f9fc6234b68f8fbe93c7efcd73f09f2fd4ce"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -350,7 +350,7 @@
           "item": "Patient/pt-0009",
           "met": true,
           "decisive_ids": [
-            "Communication/comm-e3-5521"
+            "Communication/comm-00301"
           ],
           "evidence": {
             "fired": [
@@ -376,7 +376,7 @@
           "item": "Patient/pt-0024",
           "met": true,
           "decisive_ids": [
-            "DocumentReference/doc-e3-6804"
+            "DocumentReference/doc-00401"
           ],
           "evidence": {
             "fired": [
@@ -389,7 +389,7 @@
           "item": "Patient/pt-0020",
           "met": true,
           "decisive_ids": [
-            "DocumentReference/doc-e3-7390"
+            "DocumentReference/doc-00402"
           ],
           "evidence": {
             "fired": [
@@ -416,7 +416,7 @@
           "item": "Patient/pt-0009",
           "met": true,
           "decisive_ids": [
-            "Communication/comm-e3-5521"
+            "Communication/comm-00301"
           ],
           "evidence": {
             "fired": [
@@ -442,7 +442,7 @@
           "item": "Patient/pt-0024",
           "met": true,
           "decisive_ids": [
-            "DocumentReference/doc-e3-6804"
+            "DocumentReference/doc-00401"
           ],
           "evidence": {
             "fired": [
@@ -455,7 +455,7 @@
           "item": "Patient/pt-0020",
           "met": true,
           "decisive_ids": [
-            "DocumentReference/doc-e3-7390"
+            "DocumentReference/doc-00402"
           ],
           "evidence": {
             "fired": [
@@ -482,7 +482,7 @@
           "item": "Patient/pt-0009",
           "met": true,
           "decisive_ids": [
-            "Communication/comm-e3-5521"
+            "Communication/comm-00301"
           ],
           "evidence": {
             "fired": [
@@ -508,7 +508,7 @@
           "item": "Patient/pt-0024",
           "met": true,
           "decisive_ids": [
-            "DocumentReference/doc-e3-6804"
+            "DocumentReference/doc-00401"
           ],
           "evidence": {
             "fired": [
@@ -521,7 +521,7 @@
           "item": "Patient/pt-0020",
           "met": true,
           "decisive_ids": [
-            "DocumentReference/doc-e3-7390"
+            "DocumentReference/doc-00402"
           ],
           "evidence": {
             "fired": [
@@ -550,7 +550,7 @@
           "item": "Patient/pt-0009",
           "met": true,
           "decisive_ids": [
-            "Communication/comm-e3-5521"
+            "Communication/comm-00301"
           ],
           "evidence": {
             "fired": [
@@ -582,7 +582,7 @@
           "item": "Patient/pt-0024",
           "met": true,
           "decisive_ids": [
-            "DocumentReference/doc-e3-6804"
+            "DocumentReference/doc-00401"
           ],
           "evidence": {
             "fired": [
@@ -609,7 +609,7 @@
           "item": "Patient/pt-0009",
           "met": true,
           "decisive_ids": [
-            "Communication/comm-e3-5521"
+            "Communication/comm-00301"
           ],
           "evidence": {
             "fired": [
@@ -635,7 +635,7 @@
           "item": "Patient/pt-0024",
           "met": true,
           "decisive_ids": [
-            "DocumentReference/doc-e3-6804"
+            "DocumentReference/doc-00401"
           ],
           "evidence": {
             "fired": [
@@ -662,7 +662,7 @@
           "item": "Patient/pt-0020",
           "met": true,
           "decisive_ids": [
-            "DocumentReference/doc-e3-7390"
+            "DocumentReference/doc-00402"
           ],
           "evidence": {
             "fired": [
