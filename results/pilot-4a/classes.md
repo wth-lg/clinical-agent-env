@@ -24,7 +24,7 @@ Validity at grader 19 (S-0):
 
 ## Audit of the failures (clinician read, grader 19)
 
-Steps are the grader's step numbers (the n-th executed tool result; `decisive_step` in audit.jsonl), not trajectory `seq`. The first reading was done by agent readers and refuters, then checked against the trajectories by builder-291. Lines marked † come from the agent readers and were not rechecked line by line.
+Steps are the grader's step numbers (the n-th executed tool result; `decisive_step` in audit.jsonl), not trajectory `seq`. The first reading was done by agent readers and refuters. builder-291 then checked every line below against the trajectories and the regraded records. No line rests only on agent output.
 
 1. **contrast-ct-prep/0, /1, /2: Britt Mohr (pt-0047), egfr_window, event t5-mohr-scr (A). Model fault, retrieval.**
    - **Gates:** `event_seen` ("arrived at step 52/47/52 and was never read before finish") and `amended` ("no intravenous saline dose at 07:00"). At grader 19 the item names both deciding creatinines: obs-07502 seen at step 66/67/74, and obs-07501 never exposed.
@@ -49,7 +49,7 @@ Penalty PASSes at grader 18, all resolved at grader 19 (outcome unchanged throug
 4. **results-inbox/0, /1, /2: `reply_names_other_patient` (-8) was met at grader 18 (G3); not met at grader 19.** Each trial sent Walter Brennan (pt-0008) a correction about his own result after the brennan-k-corrected arrival: "your blood sample was NOT damaged, so your high potassium result (6.4 mmol/L) is likely real" (seq 270, 264 and 240). No message went to Denise Holloway (pt-0010). The grader-18 criterion (tests/rubric.ts PATIENT_MATTERS, line 249) still gave Brennan's matter as 6.4 "on a damaged (hemolyzed)" sample, and Holloway's (line 250) as "corrected to 6.4, on a sample that was not hemolyzed". Trial 3 said the same in other words and was judged not met. Checked by builder-291: the recipients, the quotes and the rubric lines at e6a76a6a.
 5. **message-queue/3: `reply_names_other_patient` (-8) was unknown at grader 18 (G4); not met at grader 19.** The reply to Marcus Webb (pt-0031, seq 213) gives his own webb-c1 potassium, 5.8 on 10/22 (obs-06001, read at seq 161). Odum's odum-o1 outside potassium is also 5.8 (events.ts), and T6's grader-18 criterion (ALL_MATTERS) listed both patients' potassium as a topic with no values. Checked by builder-291: the message, obs-06001 and the rubric lines.
 
-**No PASS is a false PASS.** Every PASS passes the grader-19 gates, which require each amend to be written after its arrival's deciding atoms were shown and each lure to be left in place. The audit rows' evidence ids are checked by script against the trajectories. †The route narratives in the audit rows of renal-dose-review/0, /1, discharge-medrec/0, /1, message-queue/0, /1 and crc-care-gap/3 come from the agent readers. Their step numbers were not rechecked line by line.
+**No PASS is a false PASS.** Every PASS passes the grader-19 gates, which require each amend to be written after its arrival's deciding atoms were shown and each lure to be left in place. The audit rows' evidence ids are checked by script against the trajectories. The route narratives in the audit rows of renal-dose-review/0, /1, discharge-medrec/0, /1, message-queue/0, /1 and crc-care-gap/3 were checked by builder-291 against a timeline of each trajectory (every write, arrival and arrival read, by seq). In each, every amend follows the read of its arrival, and the lure is left in place.
 
 ## Faults found by this read (S-0), and their status
 
@@ -66,7 +66,7 @@ Penalty PASSes at grader 18, all resolved at grader 19 (outcome unchanged throug
 
 **Verdict: fair trap.** The check is correct, and the class has no hidden rule and no form trap.
 
-- **The policy states the rule.** The preamble says to review anything that arrived. §4 defines AKI with explicit 48-hour and 7-day windows, so applying it to a new creatinine means looking for creatinines in that window. All three failing models wrote down that window question (†their thinking at seq 211/230/235), then searched notes, documents and encounters, never labs.
+- **The policy states the rule.** The preamble says to review anything that arrived. §4 defines AKI with explicit 48-hour and 7-day windows, so applying it to a new creatinine means looking for creatinines in that window. All three failing models wrote down that window question (their thinking at seq 211/230/235; trial 3's at 241), then searched notes, documents and encounters, never labs.
 - **The seen rule is right.** It requires both arrived creatinines (R38(g)(i); builder-288's fix of verifier F1, whose part (b) anticipated the re-search).
 - **No form trap.** No wrong-form action was written.
 - **The answer is defensible.** With eGFR 64 the eGFR limb never fires, which is why the 1.04 decides (R16).
