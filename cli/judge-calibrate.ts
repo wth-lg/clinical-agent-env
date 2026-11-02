@@ -229,7 +229,9 @@ type ProbeText = readonly [label: string, text: string];
 // met, wrong met). `finding` and `contrary` find those two questions. `partial` notes state a true
 // finding but miss the one the item turns on, so neither question is met: for the nodule (P19
 // lever), the pilot-1 note that plans §2's 12-month CT and never mentions the screening LDCT.
-const NOTE_PROBES: ReadonlyArray<{ check: string; patient: string; finding: string; contrary: string; correct: readonly ProbeText[]; wrong: readonly ProbeText[]; partial?: readonly ProbeText[] }> = [
+// Since PW4-E3 no set of PROBES asks these (Brennan's set is CORRECTED_K_NOTE below); they are kept
+// for T2's next calibration, as PROBES' W1 note says of the sets it dropped.
+export const NOTE_PROBES: ReadonlyArray<{ check: string; patient: string; finding: string; contrary: string; correct: readonly ProbeText[]; wrong: readonly ProbeText[]; partial?: readonly ProbeText[] }> = [
   {
     check: 'nodule_note',
     patient: 'Patient/pt-0013',
