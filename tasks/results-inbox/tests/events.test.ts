@@ -165,6 +165,15 @@ describe.each(SPECS.map((s) => [s.id, s] as const))('event %s, active alone', (i
     expect(kinds).toEqual(expect.arrayContaining(AMEND_CLASSES.has(spec.class) ? ['before_seen', 'not_amended', 'unseen'] : ['lure_acted_on']));
   });
 
+  // W4E3-T2-206-r2 N-M1: an event whose action includes telling the patient (EVENTS contact) has a
+  // near miss that makes the correction and tells no one; it fails amended on the item alone.
+  it.runIf(EVENTS[id]!.contact !== undefined)('has a no-contact mutant that fails amended', () => {
+    const m = own.find((x) => x.id === `${id}_no_contact`);
+    expect(m, `${id}_no_contact`).toBeDefined();
+    expect(m!.fails).toEqual(['amended']);
+    expect(m!.event?.kind).toBe('not_amended');
+  });
+
   it.each(own.map((m) => [m.id, m] as const))('mutant %s fails only its item, on its gate, under its label', async (mid, m) => {
     const r = await run(at, 'mutant', mid, m.script);
     const kind = EVENT_MUTANTS[m.event!.kind]!;

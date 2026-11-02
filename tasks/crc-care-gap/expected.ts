@@ -116,9 +116,9 @@ export const expected = {
 // and absences (tests/events.test.ts). The arrival's own atoms, where it is a note, are in
 // ARRIVAL_ATOMS.
 export const DELIVERED: Readonly<Record<string, Member>> = {
-  'crc-b1': m('pt-0009', 'Elly Shyla Trantow', 'Trantow', 72, 'gap', 'frailty_entered_in_error', ['Communication/comm-e3-5521', ref('Condition/cond-t3-6027'), 'Patient/pt-0009'], { absences: [...SCREENING] }),
+  'crc-b1': m('pt-0009', 'Elly Shyla Trantow', 'Trantow', 72, 'gap', 'frailty_entered_in_error', ['Communication/comm-00301', ref('Condition/cond-t3-6027'), 'Patient/pt-0009'], { absences: [...SCREENING] }),
   'crc-b2': m('pt-0022', 'Tiny Darline Koss', 'Koss', 52, 'gap', 'fit_collected_before_period', [ref('Observation/obs-t3-3906'), 'Patient/pt-0022'], { absences: [...SCREENING] }),
-  'crc-o1': m('pt-0024', 'Delaine Evelyn MacGyver', 'MacGyver', 51, 'gap', 'sdna_withdrawn', ['DocumentReference/doc-e3-6804', ref('Observation/obs-t3-1279'), 'Patient/pt-0024'], { absences: [...SCREENING] }),
+  'crc-o1': m('pt-0024', 'Delaine Evelyn MacGyver', 'MacGyver', 51, 'gap', 'sdna_withdrawn', ['DocumentReference/doc-00401', ref('Observation/obs-t3-1279'), 'Patient/pt-0024'], { absences: [...SCREENING] }),
 };
 
 // The members who need an order at base: none (every member's order comes from its event).

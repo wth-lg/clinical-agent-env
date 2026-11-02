@@ -39,7 +39,7 @@ export const alternatives: Alternative[] = [
     script: [
       ...reads(),
       { calls: [search('Condition', PT.G1, { count: 50 }), search('Observation', PT.D1, { code: STOOL_CODES }), search('DocumentReference', PT.A1, { count: 50 }), search('DocumentReference', PT.C2, { count: 50 })] },
-      { calls: [read('DocumentReference', 'doc-e3-6804'), read('DocumentReference', 'doc-e3-7390')] },
+      { calls: [read('DocumentReference', 'doc-00401'), read('DocumentReference', 'doc-00402')] },
       { calls: actions() },
       { calls: [finish()] },
     ],
@@ -64,7 +64,7 @@ export const alternatives: Alternative[] = [
       recheck,
       arrivals(),
       { calls: [read(TRIGGER.C2[0], TRIGGER.C2[1])] },
-      { calls: [...actions(), { name: 'write_note', input: { patient: PT.C2, type: 'progress_note', title: 'CRC outreach review', text: 'Hospice discharge summary received: hospice June to August 2026, revoked in August. Hospice during part of 2026 still excludes her under RBC-QM-02 section 4; no FIT kit.', cites: ['DocumentReference/doc-e3-7390', `EpisodeOfCare/${TRIGGER.C2[1]}`] } }] },
+      { calls: [...actions(), { name: 'write_note', input: { patient: PT.C2, type: 'progress_note', title: 'CRC outreach review', text: 'Hospice discharge summary received: hospice June to August 2026, revoked in August. Hospice during part of 2026 still excludes her under RBC-QM-02 section 4; no FIT kit.', cites: ['DocumentReference/doc-00402', `EpisodeOfCare/${TRIGGER.C2[1]}`] } }] },
       { calls: [finish()] },
     ],
   },

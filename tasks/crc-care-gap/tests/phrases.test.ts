@@ -39,7 +39,7 @@ function stretches(line: string, atoms: readonly string[]): string[] {
 const shows = (line: string, atoms: readonly string[], snippet: string) => stretches(line, atoms).some((s) => snippet.includes(s));
 
 type Row = { note: string; snippet: string; whole?: boolean };
-const NOTICE = 'DocumentReference/doc-e3-6804';
+const NOTICE = 'DocumentReference/doc-00401';
 const PATIENT = 'pt-0024';
 
 // Rows a later edit must keep as they are, each by its query.
@@ -79,7 +79,7 @@ describe('T3 decisive atoms: a snippet of the Harbor notice is seen exactly when
   }
   console.log([
     `notice | atoms | words | rows | whole | shown | seen | mismatched`,
-    `doc-e3-6804 | ${NOTICE_ATOMS.join(' + ')} | ${words.length} | ${rows.length} | ${rows.filter((r) => r.whole).length} | ${rows.filter((r) => r.shown).length} | ${rows.filter((r) => r.seen).length} | ${rows.filter((r) => r.shown !== r.seen).map((r) => r.query).join(', ') || '-'}`,
+    `doc-00401 | ${NOTICE_ATOMS.join(' + ')} | ${words.length} | ${rows.length} | ${rows.filter((r) => r.whole).length} | ${rows.filter((r) => r.shown).length} | ${rows.filter((r) => r.seen).length} | ${rows.filter((r) => r.shown !== r.seen).map((r) => r.query).join(', ') || '-'}`,
   ].join('\n'));
 
   it('the notice has atoms on exactly one line, is found by its words, and never fits in one snippet', () => {

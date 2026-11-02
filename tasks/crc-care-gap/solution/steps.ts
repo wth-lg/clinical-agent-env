@@ -38,10 +38,10 @@ export const TRIGGER = {
 } as const satisfies Record<Label, readonly [string, string]>;
 // What each event brings, the focus of its inbox Task first (events.ts).
 export const ARRIVAL = {
-  G1: [['Communication', 'comm-e3-5521'], ['Condition', id('cond-t3-6027')]],
+  G1: [['Communication', 'comm-00301'], ['Condition', id('cond-t3-6027')]],
   D1: [['Observation', id('obs-t3-3906')]],
-  A1: [['DocumentReference', 'doc-e3-6804'], ['Observation', id('obs-t3-1279')]],
-  C2: [['DocumentReference', 'doc-e3-7390']],
+  A1: [['DocumentReference', 'doc-00401'], ['Observation', id('obs-t3-1279')]],
+  C2: [['DocumentReference', 'doc-00402']],
 } as const satisfies Record<Label, ReadonlyArray<readonly [string, string]>>;
 // A read of each event's focus: the message, the corrected result, the two faxed documents.
 export const arrivalRead = (l: Label): ScriptCall => {

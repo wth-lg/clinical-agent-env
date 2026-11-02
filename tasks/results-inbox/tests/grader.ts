@@ -151,7 +151,8 @@ const firstShownAtoms = (steps: readonly Step[], id: string, sets: ReadonlyArray
 // RBC-LAB-03 §3's 7-day window (R31, expected.ts WithdrawnItem baseline): the creatinines the rule
 // counts are valid laboratory results in serum or plasma, LOINC 2160-0 (R34: never stricter than the
 // policy, which applies to serum or plasma results; this world files 38483-4 as creatinine in blood,
-// window.test.ts).
+// window.test.ts). 14682-9 (umol/L) is serum or plasma too, but no T2 patient has a result under it
+// (only T1's outside results), so a search under 2160-0 alone completes the window (policy.ts).
 export const WINDOW_RULE = {
   type: 'Observation',
   codes: [`${LOINC}|2160-0`],

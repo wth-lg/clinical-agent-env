@@ -28,6 +28,17 @@ describe.each(tasks.map((t) => [t.id, t] as const))('%s', (id, task) => {
   });
 });
 
+// A traces_to may name several sections of one policy (T4's delivered_seen, RBC-TOC-02 §2 and §8):
+// the text is each section in turn, and an unknown section names nothing.
+it('reads a traces_to that names several sections of one policy', () => {
+  const t4 = tasks.find((t) => t.id === 'discharge-medrec')!;
+  const two = sourceText(t4, 'RBC-TOC-02 §2 and §8')!;
+  expect(two).toBe(`${sourceText(t4, 'RBC-TOC-02 §2')!}\n\n${sourceText(t4, 'RBC-TOC-02 §8')!}`);
+  expect(sourceText(t4, 'RBC-TOC-02 §2, §8')).toBe(two);
+  expect(sourceText(t4, 'RBC-TOC-02 §2 and §99')).toBeNull();
+  expect(sourceText(t4, 'RBC-TOC-02 §2 and')).toBeNull();
+});
+
 // Since the W1 probes no task has a hybrid item and T1 none judged (builder-249): the judged item
 // is T5's driver question, and the hybrid one is built here as a task would build it.
 it("reads a judged item's criterion and a hybrid item's field", async () => {

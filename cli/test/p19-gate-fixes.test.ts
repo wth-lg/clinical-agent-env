@@ -96,17 +96,20 @@ describe('crc-care-gap no-contact fault rule and exposure', () => {
   // Since the W1 probe (builder-213; ruling R1) each member who needs no contact names only the
   // records that decide it, and the fault rule says such a member is read by them or fails as
   // retrieval (R32). E15 (pt-0034), whose residence was the P19 case, is off the panel since the
-  // PW4-E3 list cut (builder-283); his chart above stays as P19 built it, and docs/tasks.md keeps
-  // his rule until the W4 train rewrites the T3 section. The rule now covers the four members.
+  // PW4-E3 list cut (builder-283); his chart above stays as P19 built it. The W4 train (PW4-T)
+  // rewrote the T3 section of docs/tasks.md: it states the rule for the four members and no longer
+  // names E15.
   it('nothing_for_others names every no-contact member\'s decisive records as decisive ids', () => {
     const noContact = t3Expected.items.filter((x) => x.order === false);
     expect(noContact.length).toBeGreaterThan(0);
     expect(t3Checks.find((c) => c.id === 'nothing_for_others')!.decisive_ids).toEqual(expect.arrayContaining(noContact.flatMap((x) => x.decisive)));
   });
 
-  it('task.toml states the no-contact fault rule; docs keep E15\'s in the could-have-surfaced form', () => {
+  it('task.toml and docs/tasks.md state the no-contact fault rule; the docs no longer name E15', () => {
     expect(readFileSync(repo('tasks/crc-care-gap/task.toml'), 'utf8')).toMatch(/A member who needs no order or message is read by\n# their decisive records, or fails no_contact_reviewed as retrieval \(R32\)/);
-    expect(readFileSync(repo('docs/tasks.md'), 'utf8')).toMatch(/if E15 is not excluded, it is a model fault unless a call that should have surfaced his residence record returned without it/);
+    const docs = readFileSync(repo('docs/tasks.md'), 'utf8');
+    expect(docs).toMatch(/A member who needs no order or message is read by their decisive records, or fails `no_contact_reviewed` as retrieval \(R32\)/);
+    expect(docs).not.toMatch(/\bE15\b/);
   });
 });
 

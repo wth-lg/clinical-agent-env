@@ -312,8 +312,8 @@ describe('a delivered gap\'s review (event_seen, amended)', () => {
   const FIT = ref('Observation/obs-t3-3906');
   const SDNA = ref('Observation/obs-t3-1279');
   const FRAILTY = ref('Condition/cond-t3-6027');
-  const NOTICE = 'DocumentReference/doc-e3-6804';
-  const ARRIVAL = { 'crc-b2': [FIT, 'Task/inbox-a0001'], 'crc-o1': [NOTICE, SDNA, 'Task/inbox-a0001'], 'crc-b1': ['Communication/comm-e3-5521', FRAILTY, 'Task/inbox-a0001'] } as Record<string, string[]>;
+  const NOTICE = 'DocumentReference/doc-00401';
+  const ARRIVAL = { 'crc-b2': [FIT, 'Task/inbox-a0001'], 'crc-o1': [NOTICE, SDNA, 'Task/inbox-a0001'], 'crc-b1': ['Communication/comm-00301', FRAILTY, 'Task/inbox-a0001'] } as Record<string, string[]>;
   const TRIGGER = { 'crc-b2': FIT, 'crc-o1': SDNA, 'crc-b1': FRAILTY } as Record<string, string>;
   const STOOL = '2335-8,29771-3,57905-2,58453-2,80372-6,27396-1,12503-9,77354-9,77353-1';
   const procedures = (p: string): StepSearch => ({ type: 'Procedure', patient: `Patient/${p}`, date_ge: '2017-01-01', whole: true });
@@ -380,15 +380,15 @@ describe('a delivered gap\'s review (event_seen, amended)', () => {
   it('G1: the correction is seen by a read of the message or of the frailty entry now entered in error', () => {
     const G1 = 'Patient/pt-0009';
     const MR = ref('MedicationRequest/mr-t3-3318');
-    for (const id of ['Communication/comm-e3-5521', FRAILTY]) expect(item('event_seen', trial('crc-b1', (n) => [...screened(n, 2, 'pt-0009'), step(n + 3, 2, { exposed_ids: [MR] }), readArrival(n + 4, id)]), G1).met, id).toBe(true);
+    for (const id of ['Communication/comm-00301', FRAILTY]) expect(item('event_seen', trial('crc-b1', (n) => [...screened(n, 2, 'pt-0009'), step(n + 3, 2, { exposed_ids: [MR] }), readArrival(n + 4, id)]), G1).met, id).toBe(true);
   });
   // R38(a, d): a fired amend never excuses the review of what decides the delivered action: the
   // arrival, the screening absences and her Patient. G1's donepezil order decides nothing once her
   // frailty entry is in error, so it is not required (R38d); her Patient is.
   it("R38: G1's delivered review needs her Patient but not the donepezil order that no longer decides", () => {
     const G1 = 'Patient/pt-0009';
-    const withoutMed = trial('crc-b1', (n) => [...screened(n, 2, 'pt-0009'), readArrival(n + 3, 'Communication/comm-e3-5521')]);
-    const withoutPatient = trial('crc-b1', (n) => [...screened(n, 2, 'pt-0009').slice(0, 2), readArrival(n + 2, 'Communication/comm-e3-5521')]);
+    const withoutMed = trial('crc-b1', (n) => [...screened(n, 2, 'pt-0009'), readArrival(n + 3, 'Communication/comm-00301')]);
+    const withoutPatient = trial('crc-b1', (n) => [...screened(n, 2, 'pt-0009').slice(0, 2), readArrival(n + 2, 'Communication/comm-00301')]);
     expect(item('event_seen', withoutMed, G1).met).toBe(true);
     expect(item('event_seen', withoutPatient, G1)).toMatchObject({ met: false, event: 'crc-b1' });
   });
@@ -397,6 +397,6 @@ describe('a delivered gap\'s review (event_seen, amended)', () => {
       expect(gates.find((x) => x.id === g)!.decisive_phrases ?? {}, g).toEqual({});
       expect(gates.find((x) => x.id === g)!.seen_at ?? {}, g).toEqual({});
     }
-    expect(Object.keys(gates.find((x) => x.id === 'event_seen')!.seen_at ?? {}).sort()).toEqual(['Communication/comm-e3-5521', 'DocumentReference/doc-e3-6804', 'DocumentReference/doc-e3-7390', FIT].sort());
+    expect(Object.keys(gates.find((x) => x.id === 'event_seen')!.seen_at ?? {}).sort()).toEqual(['Communication/comm-00301', 'DocumentReference/doc-00401', 'DocumentReference/doc-00402', FIT].sort());
   });
 });

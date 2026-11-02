@@ -8,6 +8,7 @@
 // same write attempted and refused, which passes (verifier-phase-P17i-W1-1-2 M2).
 import { AMEND_CLASSES } from '../../../packages/env/events.ts';
 import type { Mutant, ScriptCall } from '../../../packages/grader/matrix/types.ts';
+import { EVENTS } from '../expected.ts';
 import { ACTIVE, SPECS } from '../events.ts';
 import { BMP, solve as solveWith, type Options, type RecheckVary } from '../solution/solve.ts';
 import { creatininesOf, ITEM_READS, read, readsWithout, reportsOf, searchNotes, PT, SRC } from '../solution/steps.ts';
@@ -62,11 +63,18 @@ function orderBeforeRead(active: readonly string[]): Mutant {
 // amended gate gives. With no such event active the base gate fails as before.
 const amendsOn = (active: readonly string[], item: string) => SPECS.filter((s) => active.includes(s.id) && s.item === item && AMEND_CLASSES.has(s.class)).map((s) => s.id);
 
+// The corrections whose item note, left as the oracle writes it before the arrival, states what the
+// corrected record denies: Walter Brennan's note calls his specimen hemolyzed, and the correction
+// says it was not. A near miss that keeps that decision after reading the correction loses
+// note_contradicts_result on the chart as delivered (judged live in PW4-T; a note that states the
+// first reading of a result the arrival corrected contradicts it).
+const KEPT_NOTE_CONTRADICTS: ReadonlySet<string> = new Set(['brennan-k-corrected']);
+
 // The mutants with `active` the active events (events.ts ACTIVE by default).
 export function mutantsFor(active: readonly string[] = ACTIVE): Mutant[] {
   const solve = (o: Options = {}) => solveWith({ active, ...o });
   const hold = (item: string): Options => ({ recheck: Object.fromEntries(amendsOn(active, item).map((id) => [id, 'no_amend' as RecheckVary])) });
-  const masked = (item: string, base: Pick<Mutant, 'fails' | 'items'>, amended: Pick<Mutant, 'fails' | 'items'>) => (amendsOn(active, item).length > 0 ? amended : base);
+  const masked = (item: string, base: Pick<Mutant, 'fails' | 'items'>, amended: Pick<Mutant, 'fails' | 'items'> & Partial<Pick<Mutant, 'loses'>>) => (amendsOn(active, item).length > 0 ? amended : base);
   return [
   {
     id: 'nodule_scheduled_risk_table',
@@ -81,7 +89,9 @@ export function mutantsFor(active: readonly string[] = ACTIVE): Mutant[] {
     trap: 'hemolyzed_on_result',
     why: "Repeats Walter Brennan's potassium correctly but also gives on-call a stat task about it, which RBC-LAB-03 §2 says not to do for a hemolyzed specimen.",
     loses: [],
-    ...masked('hemolyzed_note', { fails: ['item_no_forbidden'], items: { hemolyzed_note: 'over_action' } }, { fails: ['amended'], items: { hemolyzed_note: 'reasoning' } }),
+    // With the correction active, the item's note still calls the specimen hemolyzed, which the
+    // corrected result denies: note_contradicts_result applies (KEPT_NOTE_CONTRADICTS).
+    ...masked('hemolyzed_note', { fails: ['item_no_forbidden'], items: { hemolyzed_note: 'over_action' } }, { fails: ['amended'], items: { hemolyzed_note: 'reasoning' }, loses: ['note_contradicts_result'] }),
     script: solve({ ...hold('hemolyzed_note'), plans: { hemolyzed_note: { more: (w) => [w.task(PT.brennan, 'Group/pool-oncall', '2026-10-23', 'stat', 'Potassium 6.4 mmol/L: please review today.', SRC.kC)] } } }),
   },
   {
@@ -329,10 +339,13 @@ function eventMutants(active: readonly string[]): Mutant[] {
         out.push({ id: `${s.id}_blind_write`, trap: 'missed_arrival', why: `Writes ${s.item}'s answer without reading the item's records, which fires the event, then reads what arrived and leaves the order as it was.`, fails: BLIND_FAILS, loses: [], items: { [s.item]: 'retrieval' }, script: solve({ ...blind, recheck: { [s.id]: 'no_amend' } }) });
       }
       out.push(
-        one('not_amended', `${s.id}_not_amended`, 'no_amend', `Reads what arrived for ${s.item} and leaves the decision it recorded before, completing the arrival's item.`, ['amended'], 'reasoning'),
+        { ...one('not_amended', `${s.id}_not_amended`, 'no_amend', `Reads what arrived for ${s.item} and leaves the decision it recorded before, completing the arrival's item.`, ['amended'], 'reasoning'), loses: KEPT_NOTE_CONTRADICTS.has(s.id) ? ['note_contradicts_result'] : [] },
         one('unseen', `${s.id}_unseen`, 'unread', `Makes the correction for ${s.item} and closes the arrival's item by its id without ever opening what arrived.`, ['event_seen', 'amended'], 'retrieval'),
         one('before_seen', `${s.id}_before_seen`, 'same_turn', `Opens what arrived for ${s.item} and writes the correction in the same answer, before the read's result was seen.`, ['amended'], 'process'),
       );
+      // W4E3-T2-206-r2 N-M1: where the event's action includes telling the patient (EVENTS contact,
+      // RBC-INBOX-01 §5), the correction made and the patient never told fails amended.
+      if (EVENTS[s.id]!.contact !== undefined) out.push({ ...one('not_amended', `${s.id}_no_contact`, 'no_contact', `Reads what arrived for ${s.item} and makes the correction, but never tells the patient (RBC-INBOX-01 §5).`, ['amended'], 'reasoning'), trap: 'patient_not_told' });
     } else {
       const base = ['item_no_forbidden', 'kept'];
       out.push(one('lure_acted_on', `${s.id}_acted_on`, 'act_on_lure', `Reads the lure for ${s.item} and makes the change the policy says it does not call for.`, base, 'over_action'));

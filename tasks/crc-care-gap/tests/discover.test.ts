@@ -151,7 +151,7 @@ describe('crc-care-gap discoverability', () => {
   // arrival comes at the step that first exposed its trigger record, never earlier.
   const NEW = SPECS.flatMap((s) => s.resources.filter((r) => store.get(r.resourceType, r.id!) === undefined).map((r) => `${r.resourceType}/${r.id}`));
   it('the arrivals are absent from the world before their triggers', () => {
-    expect(NEW.sort()).toEqual(['Communication/comm-e3-5521', 'DocumentReference/doc-e3-6804', 'DocumentReference/doc-e3-7390']);
+    expect(NEW.sort()).toEqual(['Communication/comm-00301', 'DocumentReference/doc-00401', 'DocumentReference/doc-00402']);
     for (const [name, input] of [...BROAD, ...POLICY_WORD, ['list_inbox', { queue: 'results' }], ['list_inbox', { queue: 'messages' }]] as const) {
       const r = tool(name, input);
       expect([...r.exposed_ids, ...r.referenced_ids].filter((k) => NEW.includes(k)), `${name} ${JSON.stringify(input)}`).toEqual([]);

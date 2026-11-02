@@ -1,5 +1,5 @@
 // What each check of a task requires, as the Tasks view shows it, read from the task itself:
-// the text its traces_to names (a policy section 'RBC-PHARM-07 §2', a policy's preamble
+// the text its traces_to names (a policy section 'RBC-PHARM-07 §2', or several 'RBC-TOC-02 §2 and §8', a policy's preamble
 // 'RBC-RAD-07', or a prompt line 'instruction.md:3'), and, for a judged or hybrid rubric item,
 // the criterion or field it puts to the judge. Those live in the item's closure (packages/grader/check.ts judged, hybrid), so the
 // item runs once on an empty context whose judge and extract record the question and answer
@@ -19,14 +19,20 @@ export function sourceText(task: Task, tracesTo: string): string | null {
     const first = lines.findIndex((l) => /^§\d+/.test(l));
     return lines.slice(0, first < 0 ? undefined : first).join('\n').trim() || null;
   }
-  const sec = /^(\S+)\s+§(\d+)$/.exec(tracesTo);
+  // One section, or several of one policy ('RBC-TOC-02 §2 and §8', 'RBC-X §1, §3 and §4'): each
+  // section's text in the order named, separated by a blank line.
+  const sec = /^(\S+)\s+(§\d+(?:(?:,\s*|\s+and\s+)§\d+)*)$/.exec(tracesTo);
   const policy = sec && task.policies.find((p) => p.id === sec[1]);
   if (!sec || !policy) return null;
   const lines = policy.text.split('\n');
-  const start = lines.findIndex((l) => l.startsWith(`§${sec[2]} `) || l.trim() === `§${sec[2]}`);
-  if (start < 0) return null;
-  const end = lines.findIndex((l, i) => i > start && /^§\d+/.test(l));
-  return lines.slice(start, end < 0 ? undefined : end).join('\n').trim();
+  const parts: string[] = [];
+  for (const n of sec[2]!.match(/\d+/g)!) {
+    const start = lines.findIndex((l) => l.startsWith(`§${n} `) || l.trim() === `§${n}`);
+    if (start < 0) return null;
+    const end = lines.findIndex((l, i) => i > start && /^§\d+/.test(l));
+    parts.push(lines.slice(start, end < 0 ? undefined : end).join('\n').trim());
+  }
+  return parts.join('\n\n');
 }
 
 // An empty value for any context field the item's text function reads: lists are empty, lookups

@@ -50,6 +50,9 @@
 //           change that (R19: a lure the policy says does not count). Expected action: none, still
 //           excluded; a FIT order or a message to her fails kept. A note, or another look at her
 //           episode, passes.
+// New arrival ids take the world's own form in a range no other task's events use (comm-003xx,
+// doc-004xx), past the world's highest Communication and DocumentReference, as a record filed today
+// is numbered (packages/env/test/events-ids.test.ts); a class B correction keeps its world id.
 import type { EventSpec } from '../../packages/env/events.ts';
 import { id } from './ids.ts';
 
@@ -89,7 +92,7 @@ const frailtyInError: Resource = {
 };
 const frailtyMessage: Resource = {
   resourceType: 'Communication',
-  id: 'comm-e3-5521',
+  id: 'comm-00301',
   status: 'completed',
   priority: 'routine',
   subject: { reference: 'Patient/pt-0009' },
@@ -154,7 +157,7 @@ Harbor Diagnostic Laboratory, Quality Assurance`;
 export const NOTICE_ATOMS = ['another patient'];
 const harborNotice: Resource = {
   resourceType: 'DocumentReference',
-  id: 'doc-e3-6804',
+  id: 'doc-00401',
   status: 'current',
   docStatus: 'final',
   type: { coding: [{ system: LOINC, code: '11502-2', display: 'Laboratory report' }], text: 'Laboratory report' },
@@ -181,7 +184,7 @@ Disposition: returned to the care of her oncologist and her primary care physici
 St. Brigid Hospice and Palliative Care`;
 const hospiceSummary: Resource = {
   resourceType: 'DocumentReference',
-  id: 'doc-e3-7390',
+  id: 'doc-00402',
   status: 'current',
   docStatus: 'final',
   type: { coding: [{ system: LOINC, code: '18842-5', display: 'Discharge summary' }], text: 'Discharge summary' },
@@ -195,10 +198,10 @@ const hospiceSummary: Resource = {
 const exposed = (key: string) => ({ kind: 'after_exposed', ids: [key] }) as const;
 
 export const SPECS: readonly EventSpec[] = [
-  { id: 'crc-b1', item: 'Patient/pt-0009', class: 'B', trigger: exposed(`Condition/${FRAILTY}`), resources: [frailtyMessage, frailtyInError], stampFields: ['Communication/comm-e3-5521.sent'] },
+  { id: 'crc-b1', item: 'Patient/pt-0009', class: 'B', trigger: exposed(`Condition/${FRAILTY}`), resources: [frailtyMessage, frailtyInError], stampFields: ['Communication/comm-00301.sent'] },
   { id: 'crc-b2', item: 'Patient/pt-0022', class: 'B', trigger: exposed(`Observation/${FIT}`), resources: [fitCorrected], stampFields: [`Observation/${FIT}.issued`] },
-  { id: 'crc-o1', item: 'Patient/pt-0024', class: 'O', trigger: exposed(`Observation/${SDNA}`), resources: [harborNotice, sdnaInError], stampFields: ['DocumentReference/doc-e3-6804.date'] },
-  { id: 'crc-d1', item: 'Patient/pt-0020', class: 'D', trigger: exposed(`EpisodeOfCare/${HOSPICE}`), resources: [hospiceSummary], stampFields: ['DocumentReference/doc-e3-7390.date'] },
+  { id: 'crc-o1', item: 'Patient/pt-0024', class: 'O', trigger: exposed(`Observation/${SDNA}`), resources: [harborNotice, sdnaInError], stampFields: ['DocumentReference/doc-00401.date'] },
+  { id: 'crc-d1', item: 'Patient/pt-0020', class: 'D', trigger: exposed(`EpisodeOfCare/${HOSPICE}`), resources: [hospiceSummary], stampFields: ['DocumentReference/doc-00402.date'] },
 ];
 
 export const ACTIVE: readonly string[] = ['crc-b1', 'crc-b2', 'crc-o1', 'crc-d1'];
