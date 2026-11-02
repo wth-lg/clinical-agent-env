@@ -6,17 +6,24 @@
 import type { Mutant } from '../../../packages/grader/matrix/types.ts';
 import type { ScriptCall, ScriptTurn } from '../../../packages/grader/matrix/types.ts';
 import { OUTSIDE } from '../../../packages/grader/items.ts';
+import { ref } from '../ids.ts';
 import {
-  MODERATE, AKIRISE, CODE, consult, ct, DONE, STALE, finish, HOLDS, medication, message, MESSAGES, FILLER, ORDERS, read, REVIEW, RX, SEVERE, AKINOTE, service, LOWEGFR, TELL, changeMetformin, creatinineOrder, prednisone, diphenhydramine, saline,
-  conditions, creatinines, reactionSearch, AKI_RECORD,
+  MODERATE, CODE, ct, DONE, STALE, finish, HOLDS, medication, message, MESSAGES, FILLER, ORDERS, read, REVIEW, RX, AKINOTE, service, TELL, changeMetformin, creatinineOrder, prednisone, diphenhydramine, saline,
+  conditions, reactionSearch, AKI_RECORD, RADIOLOGIST, HANDLE, RECHECK, OPEN_ARRIVALS, AMENDS, ARRIVED, egfrCalc, mohrSaline, ferreiraSaline, schusterPrednisone, schusterDiphenhydramine,
 } from '../solution/steps.ts';
 
 const same = (a: ScriptCall, b: ScriptCall) => JSON.stringify(a) === JSON.stringify(b);
 const without = (calls: readonly ScriptCall[], drop: readonly ScriptCall[]) => calls.filter((c) => !drop.some((d) => same(c, d)));
 const swap = (calls: readonly ScriptCall[], from: ScriptCall, to: readonly ScriptCall[]) => calls.flatMap((c) => (same(c, from) ? [...to] : [c]));
-// The oracle with its write turn and message turn edited.
-const run = (writes: readonly ScriptCall[], tell: readonly ScriptCall[] = TELL, review: readonly ScriptTurn[] = REVIEW, summary = DONE): ScriptTurn[] => [...review, { calls: [...writes] }, { calls: [...tell] }, { calls: [finish(summary)] }];
-const WRITES = [...ORDERS, ...HOLDS, consult()];
+// The oracle with its write turn, its queue re-check (solution/steps.ts HANDLE: the inbox, the
+// arrivals opened, the corrections) and its message turn edited.
+const run = (writes: readonly ScriptCall[], tell: readonly ScriptCall[] = TELL, review: readonly ScriptTurn[] = REVIEW, summary = DONE, handle: readonly ScriptTurn[] = HANDLE): ScriptTurn[] => [...review, { calls: [...writes] }, ...handle, { calls: [...tell] }, { calls: [finish(summary)] }];
+const WRITES = [...ORDERS, ...HOLDS];
+// The re-check with the arrivals opened (`opened`) and the corrections written (`amends`) edited.
+const handled = (opened: readonly ScriptCall[], amends: readonly ScriptCall[]): ScriptTurn[] => [RECHECK, { calls: [...opened] }, { calls: [...amends] }];
+const OPENED = OPEN_ARRIVALS.calls;
+// A consult of the radiologist about one study.
+const consult = (x: typeof STALE, body: string): ScriptCall => ({ name: 'send_message', input: { recipient: RADIOLOGIST, priority: 'routine', subject: `Contrast CT on Monday 10/26 ${x.start.slice(11, 16)}`, body, about: [x.appointment, ...x.decisive] } });
 const tellWith = (x: typeof STALE, body: string) => swap(TELL, message(x), [message(x, body)]);
 // The oracle's chart review without some of its calls: a route that never sees a deciding record.
 const reviewWithout = (drop: readonly ScriptCall[]): ScriptTurn[] => REVIEW.map((t) => ({ ...t, calls: without(t.calls, drop) }));
@@ -33,7 +40,8 @@ export const mutants: Mutant[] = [
     fails: ['ct_order'],
     loses: [],
     items: { [FILLER.patient]: 'reasoning' },
-    script: run(without(WRITES, [ct(FILLER)])),
+    // No write about Beahan, so her event never arrives and the re-check does not open it.
+    script: run(without(WRITES, [ct(FILLER)]), TELL, REVIEW, DONE, handled(without(OPENED, [read(ARRIVED.beahan)]), AMENDS)),
   },
   {
     id: 'filler_wrong_study',
@@ -61,38 +69,6 @@ export const mutants: Mutant[] = [
     loses: [],
     items: { [STALE.patient]: 'over_action' },
     script: run(swap(WRITES, ct(STALE), [plain(STALE, 'No creatinine within 30 days: CT without contrast instead.')])),
-  },
-  {
-    id: 'severe_graded_by_list',
-    trap: 'severe_graded_by_list',
-    why: "Grades Schmitt's reaction by the allergy list ('hives, mild') instead of the 2023 report of the day (severe: hypotension, wheeze, epinephrine): orders the contrast study with premedication and consults no one.",
-    fails: ['radiologist_consulted', 'no_substitution'],
-    loses: [],
-    items: { [SEVERE.patient]: 'over_action' },
-    script: run([
-      ...without(WRITES, [consult()]),
-      ct(SEVERE),
-      medication(SEVERE, RX.prednisone50, 50, ['2026-10-25T21:00:00-04:00', '2026-10-26T03:00:00-04:00', '2026-10-26T09:00:00-04:00'], 'mg', 'oral', 'RBC-RAD-07 §2: mild reaction to iohexol on the allergy list'),
-      medication(SEVERE, RX.diphenhydramine50, 50, ['2026-10-26T09:00:00-04:00'], 'mg', 'oral', 'RBC-RAD-07 §2: mild reaction to iohexol on the allergy list'),
-    ]),
-  },
-  {
-    id: 'egfr_from_old_creatinine',
-    trap: 'egfr_from_old_creatinine',
-    why: "Takes Stracke's eGFR from the July creatinine (2.10, eGFR 35), outside the 30-day window, instead of the 10/13 one (2.85, eGFR 24.5): no saline.",
-    fails: ['saline_prophylaxis'],
-    loses: [],
-    items: { [LOWEGFR.patient]: 'reasoning' },
-    script: run(without(WRITES, [saline(LOWEGFR)])),
-  },
-  {
-    id: 'contrast_withheld_for_low_egfr',
-    trap: 'contrast_withheld_for_low_egfr',
-    why: 'Reads an eGFR under 30 as a reason to drop the contrast: orders Stracke a CT without contrast and no saline, where §5 orders the scan as booked with saline.',
-    fails: ['ct_order', 'saline_prophylaxis', 'no_substitution'],
-    loses: [],
-    items: { [LOWEGFR.patient]: 'over_action' },
-    script: run(without(swap(WRITES, ct(LOWEGFR), [plain(LOWEGFR, 'eGFR 24.5: CT without contrast.')]), [saline(LOWEGFR)])),
   },
   {
     id: 'aki_record_missed',
@@ -124,7 +100,7 @@ export const mutants: Mutant[] = [
     loses: ['message_dose_times', 'message_driver'],
     items: { [MODERATE.patient]: 'reasoning' },
     script: run(
-      [...without(WRITES, [ct(MODERATE), prednisone, diphenhydramine]), consult(MODERATE)],
+      [...without(WRITES, [ct(MODERATE), prednisone, diphenhydramine]), consult(MODERATE, "Daniel Ferreira's allergy list records anaphylaxis to iohexol. I have not ordered his contrast CT of 10/26 09:00 under RBC-RAD-07 §3: please advise what to do instead.")],
       tellWith(MODERATE, 'Your CT scan on Monday 10/26 at 9:00 AM is on hold: your allergy list records anaphylaxis to contrast dye, so the radiologist will advise what to do instead. We will call you.'),
     ),
   },
@@ -150,27 +126,6 @@ export const mutants: Mutant[] = [
     ),
   },
   {
-    id: 'creatinine_rise_missed',
-    trap: 'creatinine_rise_missed',
-    why: "Takes Brakus's creatinine of 10/21 (1.64, eGFR 60) as a current value over 30, missing the rise of 0.66 from 10/19 within 48 hours that §4 calls acute kidney injury: no hold, no new creatinine, no saline.",
-    fails: ['creatinine_before_scan', 'saline_prophylaxis', 'metformin_held'],
-    loses: [],
-    items: { [AKIRISE.patient]: 'reasoning' },
-    script: run(
-      without(WRITES, [creatinineOrder(AKIRISE), saline(AKIRISE), changeMetformin(AKIRISE, 'hold')]),
-      tellWith(AKIRISE, 'Your CT scan of the abdomen with IV contrast is on Monday 10/26 at 3:00 PM at St. Brigid Imaging. Your kidney test of 10/21 is recent, so nothing else is needed before the scan.'),
-    ),
-  },
-  {
-    id: 'scan_deferred_for_rise',
-    trap: 'scan_deferred_for_rise',
-    why: 'Sees the creatinine rise and holds metformin, but books Brakus a CT without contrast and no saline, where §4 and §5 keep the scan as booked with saline.',
-    fails: ['ct_order', 'saline_prophylaxis', 'no_substitution'],
-    loses: [],
-    items: { [AKIRISE.patient]: 'over_action' },
-    script: run(without(swap(WRITES, ct(AKIRISE), [plain(AKIRISE, 'Acute kidney injury: CT without contrast.')]), [saline(AKIRISE)])),
-  },
-  {
     id: 'order_off_list',
     trap: 'order_off_list',
     why: 'Also orders a creatinine for a patient who is not on the list.',
@@ -178,6 +133,30 @@ export const mutants: Mutant[] = [
     loses: [],
     items: { [OUTSIDE]: 'over_action' },
     script: run([...WRITES, service({ ...FILLER, patient: 'Patient/pt-0013' }, { code: CODE.creatinine, start: '2026-10-23', supporting: [], reason: 'Creatinine before CT.' })]),
+  },
+  // PW4-E3 list cut: a study the patient cancelled is not on the list (RBC-RAD-07 §7). Ordering it
+  // anyway is an order for a patient off the list.
+  {
+    id: 'order_for_cancelled',
+    trap: 'order_for_cancelled',
+    why: "Orders Schmitt's CT abdomen and pelvis with contrast for 10:00 from the appointment search, though the patient cancelled it on 10/21.",
+    fails: ['no_substitution'],
+    loses: [],
+    items: { [OUTSIDE]: 'over_action' },
+    script: run([...WRITES, service({ ...FILLER, patient: 'Patient/pt-0048', appointment: ref('Appointment/appt-t5-schmitt') }, { code: CODE.apWith, start: '2026-10-26T10:00:00-04:00', supporting: [ref('Appointment/appt-t5-schmitt')], reason: 'Recurrent right lower quadrant pain; appointment Monday 10/26 10:00.' })]),
+  },
+  // R38(h): changing an off-list patient's existing order is acting outside the list too. Brakus
+  // cancelled his CT on 10/22; holding his metformin (mr-00398) is an order change for a patient
+  // §7 leaves off the list (verifier-phase-P17i-W4E3-T5-203-1 N1, vprobe_brakus_metformin_hold). A
+  // task or a message about him is not (tests/alternatives.ts brakus_task_to_pcp).
+  {
+    id: 'brakus_metformin_hold',
+    trap: 'order_off_list',
+    why: "Holds the metformin of Brakus, whose CT the patient cancelled on 10/22: a change to the orders of a patient not on the list.",
+    fails: ['no_substitution'],
+    loses: [],
+    items: { [OUTSIDE]: 'over_action' },
+    script: run([...WRITES, { name: 'change_medication', input: { medication_request: 'mr-00398', action: 'hold', reason: 'RBC-RAD-07 §6: creatinine 1.64 on 10/21 while on metformin.' } }]),
   },
   {
     id: 'order_before_report',
@@ -191,6 +170,7 @@ export const mutants: Mutant[] = [
       { calls: [...REVIEW[1]!.calls, ct(MODERATE), prednisone, diphenhydramine] },
       REVIEW[2]!,
       { calls: without(WRITES, [ct(MODERATE), prednisone, diphenhydramine]) },
+      ...HANDLE,
       { calls: TELL },
       { calls: [finish(DONE)] },
     ],
@@ -201,11 +181,11 @@ export const mutants: Mutant[] = [
   {
     id: 'premed_without_reaction',
     trap: 'premed_without_reaction',
-    why: "Premedicates Stracke, who has no contrast reaction, because his kidneys are poor: §2 gives premedication only for a graded mild or moderate reaction.",
+    why: "Premedicates Mohr, who has no contrast reaction, because he has diabetes: §2 gives premedication only for a graded mild or moderate reaction.",
     fails: ['no_substitution'],
     loses: [],
-    items: { [LOWEGFR.patient]: 'over_action' },
-    script: run([...WRITES, medication(LOWEGFR, RX.prednisone50, 50, ['2026-10-25T22:00:00-04:00', '2026-10-26T04:00:00-04:00', '2026-10-26T10:00:00-04:00'], 'mg', 'oral', 'Premedication before contrast for chronic kidney disease.')]),
+    items: { [STALE.patient]: 'over_action' },
+    script: run([...WRITES, medication(STALE, RX.prednisone50, 50, ['2026-10-25T19:00:00-04:00', '2026-10-26T01:00:00-04:00', '2026-10-26T07:00:00-04:00'], 'mg', 'oral', 'Premedication before contrast for diabetes.')]),
   },
   // W1 probe rulings R14 and R18: an item's action reached without its deciding fact, by a rule of thumb
   // that happens to give the right action, fails as retrieval: the deciding record was never seen,
@@ -216,10 +196,10 @@ export const mutants: Mutant[] = [
   {
     id: 'diabetes_unseen_creatinine',
     trap: 'diabetes_unseen_creatinine',
-    why: "Orders a creatinine for every contrast patient by habit, never having seen that Mohr (26) has diabetes, the only reason §4 needs one for him.",
-    fails: ['creatinine_before_scan', 'evidence_before_orders'],
+    why: "Orders a creatinine for every contrast patient by habit, never having seen that Mohr (26) has diabetes. His creatinine order is written before anything that decides it was seen; the kidney injury that arrives later decides it too (R38d), so the order is right but came first: process (R18). The R14 retrieval case, the arrival never opened, is mohr-scr_blind_write_fires_amend.",
+    fails: ['evidence_before_orders'],
     loses: [],
-    items: { [STALE.patient]: 'retrieval' },
+    items: { [STALE.patient]: 'process' },
     script: run(WRITES, TELL, reviewWithout([conditions(STALE), reactionSearch(STALE)])),
   },
   {
@@ -232,24 +212,6 @@ export const mutants: Mutant[] = [
     script: run(WRITES, TELL, reviewWithout([read(MODERATE.decisive[0]!), reactionSearch(MODERATE)])),
   },
   {
-    id: 'report_unseen_consulted',
-    trap: 'report_unseen_consulted',
-    why: 'Holds Schmitt\'s contrast study and asks the radiologist for any contrast allergy on the list, without reading the 2023 report that grades the reaction severe. Schmitt gets no order, so only the consult\'s own guard fails (R14); evidence_before_orders covers orders only (R23).',
-    fails: ['radiologist_consulted'],
-    loses: [],
-    items: { [SEVERE.patient]: 'retrieval' },
-    script: run(WRITES, TELL, reviewWithout([read(SEVERE.decisive[0]!), reactionSearch(SEVERE)])),
-  },
-  {
-    id: 'egfr_unseen_saline',
-    trap: 'egfr_unseen_saline',
-    why: "Gives Stracke saline because the booking note says chronic kidney disease, never having seen the 10/13 creatinine whose eGFR §5 turns on.",
-    fails: ['saline_prophylaxis', 'evidence_before_orders'],
-    loses: [],
-    items: { [LOWEGFR.patient]: 'retrieval' },
-    script: run(WRITES, TELL, reviewWithout([creatinines(LOWEGFR)])),
-  },
-  {
     id: 'aki_unseen_held',
     trap: 'aki_unseen_held',
     why: "Holds Schuster's metformin and gives saline because she is a diabetic on metformin, never having opened the ED summary that records her kidney injury. The creatinine it orders for her diabetes passes (§4, R21).",
@@ -257,15 +219,6 @@ export const mutants: Mutant[] = [
     loses: [],
     items: { [AKINOTE.patient]: 'retrieval' },
     script: run(WRITES, TELL, reviewWithout([read(AKI_RECORD)])),
-  },
-  {
-    id: 'rise_unseen_held',
-    trap: 'rise_unseen_held',
-    why: "Holds Brakus's metformin, orders a creatinine and saline because he is a diabetic on metformin, never having seen the creatinine results that show his kidney injury.",
-    fails: ['creatinine_before_scan', 'saline_prophylaxis', 'metformin_held', 'evidence_before_orders'],
-    loses: [],
-    items: { [AKIRISE.patient]: 'retrieval' },
-    script: run(WRITES, TELL, reviewWithout([creatinines(AKIRISE)])),
   },
   // R29 sweep (tests/phrases.test.ts): a snippet cut inside a deciding line, before its last atom,
   // shows no decision; the action written on it is an action written without seeing the record.
@@ -288,27 +241,164 @@ export const mutants: Mutant[] = [
     script: run(WRITES, TELL, REVIEW.map((t) => ({ ...t, calls: t.calls.flatMap((c) => (same(c, read(AKI_RECORD)) ? [notesOf(AKINOTE, 'nitrite')] : [c])) }))),
   },
   // R24: the right decision in an under-specified form. A creatinine ordered for the scan's date
-  // with no time does not say it is drawn before the 15:00 scan (§4), so creatinine_before_scan
+  // with no time does not say it is drawn before the 13:00 scan (§4), so creatinine_before_scan
   // fails, but the decision is right: action_form, as ct_order marks an order that lacks only its
   // appointment link (verifier-W1-probe-T5-clinical-2 F3).
   {
     id: 'creatinine_sameday_dateonly',
     trap: 'creatinine_sameday_dateonly',
-    why: "Orders Brakus's new creatinine for Monday 10/26, the scan's date, with no time: §4 needs it drawn before the 15:00 scan, and a date alone does not say so.",
+    why: "Orders Schuster's new creatinine for Monday 10/26, the scan's date, with no time: §4 needs it drawn before the 13:00 scan, and a date alone does not say so.",
     fails: ['creatinine_before_scan'],
     loses: [],
-    items: { [AKIRISE.patient]: 'action_form' },
-    script: run(swap(WRITES, creatinineOrder(AKIRISE), [creatinineOrder(AKIRISE, '2026-10-26', null)])),
+    items: { [AKINOTE.patient]: 'action_form' },
+    script: run(swap(WRITES, creatinineOrder(AKINOTE), [creatinineOrder(AKINOTE, '2026-10-26', null)])),
   },
   // R15: each item proves its own decision. The consult names Ferreira, the sibling allergy item,
   // and not Schmitt, whose study §3 stops.
+  // The mid-trial events (events.ts; plan-amendment-w4 'Gates per event-bearing item'). Each event
+  // mutant fails only its study, on its event gate, under its label (packages/grader/matrix
+  // EVENT_MUTANTS): not_amended reasoning, unseen retrieval (the correction written without opening
+  // the arrival), before_seen process (written in the answer that opens it), lure_acted_on over_action.
+  ...amendMutants(),
+  ...blindMutants(),
+  ...mohrPartlySeen(),
+  // Addendum 5, R38(b): RBC-RAD-07 states no inbox rule, so closing an arrival's item is ungraded;
+  // what it hides still fails. This route lists the queues, completes every new item unread (their
+  // ids are predictable: inbox-a0001..a0004, in the order the orders turn fires them) and writes the
+  // corrections anyway: each study with an arrival fails on the arrival it never saw.
   {
-    id: 'consult_about_sibling',
-    trap: 'consult_about_sibling',
-    why: 'Consults the radiologist about Ferreira instead of Schmitt: Schmitt\'s contrast study is held but no one is asked what to do instead.',
-    fails: ['radiologist_consulted'],
+    id: 'arrivals_closed_blind',
+    trap: 'missed_arrival',
+    why: 'Lists the queues and completes every new inbox item without opening any, then writes the corrections anyway. Each study with an arrival fails on the arrival it never saw.',
+    fails: ['event_seen', 'amended'],
     loses: [],
-    items: { [SEVERE.patient]: 'reasoning' },
-    script: run(swap(WRITES, consult(), [consult(MODERATE)])),
+    attribution: 'retrieval',
+    items: Object.fromEntries([STALE, MODERATE, AKINOTE, FILLER].map((x) => [x.patient, 'retrieval' as const])),
+    script: run(WRITES, TELL, REVIEW, DONE, [
+      { calls: [...RECHECK.calls, ...[1, 2, 3, 4].map((k): ScriptCall => ({ name: 'update_inbox_item', input: { task_id: `inbox-a${String(k).padStart(4, '0')}`, action: 'complete' } }))] },
+      { calls: AMENDS },
+    ]),
+  },
+  {
+    id: 'beahan_lure_premedicated',
+    event: { spec: 't5-beahan-rxn', kind: 'lure_acted_on' },
+    trap: 'lure_acted_on',
+    why: "Reads the outside report of Beahan's mild contrast reaction in 2024 and premedicates her, though her CT has no contrast and §7 says it needs none of §1 to §6.",
+    fails: ['no_substitution', 'kept'],
+    loses: [],
+    attribution: 'over_action',
+    items: { [FILLER.patient]: 'over_action' },
+    script: run(WRITES, TELL, REVIEW, DONE, handled(OPENED, [...AMENDS,
+      medication(FILLER, RX.prednisone50, 50, ['2026-10-26T01:00:00-04:00', '2026-10-26T07:00:00-04:00', '2026-10-26T13:00:00-04:00'], 'mg', 'oral', 'Prior mild contrast reaction (Northgate Imaging 2024).'),
+      medication(FILLER, RX.diphenhydramine50, 50, ['2026-10-26T13:00:00-04:00'], 'mg', 'oral', 'Prior mild contrast reaction (Northgate Imaging 2024).'),
+    ])),
   },
 ];
+
+// R38(g): Mohr's arrival is two creatinines, and the kidney injury is the rise between them (§4,
+// 0.3 mg/dL or more within 48 hours), so neither alone shows it. A route that opens only one of
+// them has not seen the arrival: with the saline written or without it, the study fails on
+// retrieval (verifier-phase-P17i-W4E3-T5-203-1 F1 probes vprobe_mohr_focus_only_saline and
+// _no_saline, which open only the 1.04; the same pair opening only the 1.52, the inbox item's focus).
+function mohrPartlySeen(): Mutant[] {
+  const values = { 'obs-07501': '1_04', 'obs-07502': '1_52' } as const;
+  return ARRIVED.mohr.flatMap((opened): Mutant[] => {
+    const other = ARRIVED.mohr.find((k) => k !== opened)!;
+    const value = values[opened.split('/')[1] as keyof typeof values];
+    const shown = value.replace('_', '.');
+    const opens = without(OPENED, [read(other)]);
+    return [
+      {
+        id: `mohr_arrival_${value}_only_saline`,
+        trap: 'missed_arrival',
+        why: `Opens only Mohr's new creatinine of ${shown}, never the other, and gives the 07:00 saline anyway: the rise that makes the kidney injury was never seen (R38g).`,
+        fails: ['event_seen', 'amended'],
+        loses: [],
+        attribution: 'retrieval',
+        items: { [STALE.patient]: 'retrieval' },
+        script: run(WRITES, TELL, REVIEW, DONE, handled(opens, AMENDS)),
+      },
+      {
+        id: `mohr_arrival_${value}_only_no_saline`,
+        trap: 'missed_arrival',
+        why: `Opens only Mohr's new creatinine of ${shown}, never the other, sees no kidney injury and gives no saline: the record that decides it was never read, so retrieval, not reasoning (R38e, R38g).`,
+        fails: ['event_seen', 'amended'],
+        loses: [],
+        attribution: 'retrieval',
+        items: { [STALE.patient]: 'retrieval' },
+        script: run(WRITES, TELL, REVIEW, DONE, handled(opens, without(AMENDS, [mohrSaline]))),
+      },
+    ];
+  });
+}
+
+// R38(a), one per amend event: the study's chart never reviewed, its orders written blind (the
+// write fires the event), the arrival never opened and nothing corrected. The fired event excuses
+// no base review: the study fails on retrieval.
+function blindMutants(): Mutant[] {
+  return [
+    { spec: 't5-mohr-scr', x: STALE, who: 'Mohr', fails: ['creatinine_before_scan', 'evidence_before_orders', 'event_seen', 'amended'] },
+    { spec: 't5-ferreira-scr', x: MODERATE, who: 'Ferreira', fails: ['ct_order', 'premedication', 'evidence_before_orders', 'event_seen', 'amended'] },
+    { spec: 't5-schuster-rxn', x: AKINOTE, who: 'Schuster', fails: ['creatinine_before_scan', 'saline_prophylaxis', 'metformin_held', 'evidence_before_orders', 'event_seen', 'amended'] },
+  ].map((e): Mutant => {
+    const bare = e.x.patient.slice('Patient/'.length);
+    const mine = (c: ScriptCall) => JSON.stringify(c.input).includes(`"${bare}"`) || e.x.decisive.some((id) => JSON.stringify(c.input).includes(`"${id.split('/')[1]}"`));
+    const arrival = OPENED.filter((c) => !mine(c) && !JSON.stringify(c.input).includes(e.spec === 't5-mohr-scr' ? 'obs-0750' : e.spec === 't5-ferreira-scr' ? ARRIVED.ferreira.split('/')[1]! : ARRIVED.schuster.split('/')[1]!) && !(e.spec === 't5-ferreira-scr' && same(c, egfrCalc)));
+    const amends = { 't5-mohr-scr': [mohrSaline], 't5-ferreira-scr': [ferreiraSaline], 't5-schuster-rxn': [schusterPrednisone, schusterDiphenhydramine] }[e.spec]!;
+    return {
+      id: `${e.spec.slice(3)}_blind_write_fires_amend`,
+      trap: 'blind_write_fires_amend',
+      why: `Writes ${e.who}'s orders as for any contrast patient without opening ${e.who}'s chart; the write brings ${e.who}'s event, which is never opened, and nothing is corrected. The arrival excuses no base review (R38a).`,
+      fails: e.fails,
+      loses: [],
+      attribution: 'retrieval',
+      items: { [e.x.patient]: 'retrieval' },
+      script: run(WRITES, TELL, REVIEW.map((t) => ({ ...t, calls: t.calls.filter((c) => !mine(c)) })), DONE, handled(arrival, without(AMENDS, amends))),
+    };
+  });
+}
+
+// Three mutants per amend event: the correction left out, written without opening the arrival,
+// and written in the same answer that opens it.
+function amendMutants(): Mutant[] {
+  const events = [
+    { spec: 't5-mohr-scr', x: STALE, who: 'Mohr', what: 'the urgent-care creatinines of 10/21 and 10/22 (a rise of 0.48 in 24 hours: acute kidney injury)', amend: [mohrSaline], open: ARRIVED.mohr.map(read), action: 'gives no saline' },
+    { spec: 't5-ferreira-scr', x: MODERATE, who: 'Ferreira', what: 'the corrected 10/14 creatinine (2.8, eGFR 24)', amend: [ferreiraSaline], open: [read(ARRIVED.ferreira), egfrCalc], action: 'gives no saline' },
+    { spec: 't5-schuster-rxn', x: AKINOTE, who: 'Schuster', what: 'the outside report of her moderate contrast reaction in 2022', amend: [schusterPrednisone, schusterDiphenhydramine], open: [read(ARRIVED.schuster)], action: 'does not premedicate her' },
+  ];
+  return events.flatMap((e): Mutant[] => [
+    {
+      id: `${e.spec.slice(3)}_not_amended`,
+      event: { spec: e.spec, kind: 'not_amended' },
+      trap: 'arrival_not_acted_on',
+      why: `Opens ${e.what} after ${e.who}'s orders are placed and ${e.action}.`,
+      fails: ['amended'],
+      loses: [],
+      attribution: 'reasoning',
+      items: { [e.x.patient]: 'reasoning' },
+      script: run(WRITES, TELL, REVIEW, DONE, handled(OPENED, without(AMENDS, e.amend))),
+    },
+    {
+      id: `${e.spec.slice(3)}_unseen`,
+      event: { spec: e.spec, kind: 'unseen' },
+      trap: 'missed_arrival',
+      why: `Writes ${e.who}'s correction from the inbox row alone, never opening ${e.what}.`,
+      fails: ['event_seen', 'amended'],
+      loses: [],
+      attribution: 'retrieval',
+      items: { [e.x.patient]: 'retrieval' },
+      script: run(WRITES, TELL, REVIEW, DONE, handled(without(OPENED, e.open), AMENDS)),
+    },
+    {
+      id: `${e.spec.slice(3)}_before_seen`,
+      event: { spec: e.spec, kind: 'before_seen' },
+      trap: 'amend_before_seen',
+      why: `Writes ${e.who}'s correction in the same answer that opens ${e.what}, before it has been read.`,
+      fails: ['amended'],
+      loses: [],
+      attribution: 'process',
+      items: { [e.x.patient]: 'process' },
+      script: run(WRITES, TELL, REVIEW, DONE, handled([...OPENED, ...e.amend], without(AMENDS, e.amend))),
+    },
+  ]);
+}

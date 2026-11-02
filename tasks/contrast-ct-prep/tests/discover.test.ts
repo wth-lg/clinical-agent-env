@@ -7,7 +7,8 @@
 // trap-deciding records: the record that makes an item a trap or holds its hidden comparison value
 // (the two reports of the day, the outside ED summary, Brakus's baseline creatinine). An item's own
 // plain input may show (Stracke's in-window creatinine, Brakus's latest), and so may a lure (LURES,
-// R19). A listed
+// R19). Schmitt, Stracke and Brakus are off the list since PW4-E3 (their studies cancelled); their
+// records stay in TRAP and LURES, so the cut moves no record of theirs onto page 1. A listed
 // search may show a trap-deciding record on page 1 only where ALLOWED says why: the item reads as
 // reasoning when missed, because the record shows it beside the value it must be compared with.
 // A hit is a page that shows the deciding content: the record exposed (an Observation row shows
@@ -29,6 +30,7 @@ import type { TrialEvent } from '../../../packages/core/events.ts';
 import { firstShown, stepsOf, seenBefore } from '../../../packages/grader/exposure.ts';
 import { trial } from '../../../packages/grader/matrix/matrix.ts';
 import type { ScriptCall } from '../../../packages/grader/matrix/types.ts';
+import { SPECS } from '../events.ts';
 import { expected } from '../expected.ts';
 import { ref } from '../ids.ts';
 import { oracle } from '../solution/solve.ts';
@@ -140,6 +142,17 @@ describe('T5 discoverability', () => {
   };
   it.each(expected.items.flatMap((x) => x.decisive.map((id) => [`${x.name}: ${id}`, id, x.patient] as const)))('%s comes back from its policy-word route (R5, R12)', async (_n, id, patient) => {
     expect(await page1(route(id, patient))).toContain(id);
+  });
+
+  // PW4-E3: a search run before any write sees no mid-trial arrival (events.ts fires each only
+  // after a write about its patient), so the page-1 rule above is checked on the chart as it stands
+  // before the trigger.
+  it.each(BROAD.map((c) => [JSON.stringify(c.input), c] as const))('%s: no arrival before the trigger', async (_q, call) => {
+    const run = await trial(env, task, { kind: 'alternative', id: 'discover', script: [{ calls: [call] }] });
+    expect(run.events.filter((e) => e.type === 'env_event')).toEqual([]);
+    const fresh = SPECS.flatMap((s) => (s.class === 'B' ? [] : s.resources.map((r) => `${r.resourceType}/${r.id}`)));
+    const named = run.events.flatMap((e) => (e.type === 'tool_result' ? [...e.exposed_ids, ...e.referenced_ids] : []));
+    expect(named.filter((k) => fresh.includes(k))).toEqual([]);
   });
 
   it('the oracle exposes every decisive id (a decisive note: read, or its deciding phrase shown) in a turn before its first write', async () => {

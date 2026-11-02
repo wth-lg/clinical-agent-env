@@ -1,14 +1,14 @@
 {
   "trial_id": "run:band-1:message-queue/9",
   "task_id": "message-queue",
-  "task_version": "4f130e75e527eff06ce8e79f0bbbf38339d3df96e0f6e64e81cba5095fa9f72e",
-  "env_version": "3b0fda02271016c2d5edaaaa60145f18bfbfefdacbf1525468d865177d305994",
+  "task_version": "8f25501b1ab6c724df306f142f5ace9a01c64444d6741602b5b2e52b19567aed",
+  "env_version": "9b9950b44703a022f11a72954d2ccde46f4090636539f2236afa40a9b06880e9",
   "grader_task_version": "b87b7fca34fc43c007f593309ad075a8ad692bdec7af5a5872cf0e9b5fde3a23",
-  "fixture_hash": "e1e1dd0db1ff51e1bac75ba7154014156e7f978b9ee2e34d31117726eed3275d",
+  "fixture_hash": "0ff730c8b3f414a5186eda9220692b67142e03e3b185fe7c9e476f7ab5b20f80",
   "state_hash": {
-    "initial": "e1e1dd0db1ff51e1bac75ba7154014156e7f978b9ee2e34d31117726eed3275d",
-    "final": "893e32663edba6c7e57416a98cd7f6c4dccef058226f51a66ebd1b79b9a382c7",
-    "replay_final": "893e32663edba6c7e57416a98cd7f6c4dccef058226f51a66ebd1b79b9a382c7"
+    "initial": "0ff730c8b3f414a5186eda9220692b67142e03e3b185fe7c9e476f7ab5b20f80",
+    "final": "b8268396c733e11f32cc502e9b75b10251c281e7efb2e299892fae0f1110fc56",
+    "replay_final": "b8268396c733e11f32cc502e9b75b10251c281e7efb2e299892fae0f1110fc56"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T13:43:57.000Z",
+  "started": "2026-10-23T13:39:54.000Z",
   "turns": 19,
   "tool_calls": 83,
   "tool_errors": {
@@ -43,7 +43,7 @@
   "summary": "Cleared the 13 messages: Hayes and Odum lisinopril renewed with a repeat BMP (hemolyzed potassium), Odum amlodipine renewed; Park and Webb lisinopril 30 days with a BMP; Park metformin held (amended eGFR 39) and Brooks lisinopril held (creatinine up 38% after the dose increase), each with a task to Dr. Okafor; Brooks metformin 30 days with an HbA1c; Price lisinopril and metformin renewed; Webb metformin renewed; the two repeat requests answered with their first.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T13:48:39.000Z",
+  "ended": "2026-10-23T13:44:36.000Z",
   "judge_cost_usd": 0,
   "grader_version": "18",
   "outcome": "PASS",
