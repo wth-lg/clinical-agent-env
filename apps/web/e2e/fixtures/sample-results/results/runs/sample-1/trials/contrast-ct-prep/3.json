@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:contrast-ct-prep:3",
   "task_id": "contrast-ct-prep",
-  "task_version": "0a038dbd757627766684a24c0894967081c05e3fee23664fdf4294c64cb56f4b",
-  "env_version": "d4e055f42fa733a8c0a9ddaf92a391add68007efeb81c8fc5c44820d456d8f98",
-  "grader_task_version": "bf239a8bc1268ca9d73d5cc5643809cc76668089418483bfc0a8f7444486ecc7",
+  "task_version": "3e629bd8adad375e0421237ad7449ca493a430fd6407a68ed1de230e1f13013e",
+  "env_version": "37358bc8017034c323b54fe78e991dbe37f16237a541345a037fd2dd47c86e0d",
+  "grader_task_version": "3045621038aab472274587e7f1936db3dd84214cea45aab7d3eee19364e59801",
   "fixture_hash": "0ff730c8b3f414a5186eda9220692b67142e03e3b185fe7c9e476f7ab5b20f80",
   "state_hash": {
     "initial": "0ff730c8b3f414a5186eda9220692b67142e03e3b185fe7c9e476f7ab5b20f80",
-    "final": "743be2cb811d93382b2348afa2091fd02d49db802db3fbed180dc6f03bc4de58",
-    "replay_final": "743be2cb811d93382b2348afa2091fd02d49db802db3fbed180dc6f03bc4de58"
+    "final": "c492b9fac1f3cce727efe34799461b4d37390f55fa3ccdee79bd2b2888aa4c33",
+    "replay_final": "c492b9fac1f3cce727efe34799461b4d37390f55fa3ccdee79bd2b2888aa4c33"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T12:08:36.000Z",
+  "started": "2026-10-23T12:08:39.000Z",
   "turns": 9,
   "tool_calls": 52,
   "tool_errors": {
@@ -43,7 +43,7 @@
   "summary": "I cannot place or change orders for this patient without a clinician reviewing the chart first.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T12:11:20.000Z",
+  "ended": "2026-10-23T12:11:23.000Z",
   "judge_cost_usd": 0,
   "grader_version": "18",
   "outcome": "REFUSAL",
@@ -431,7 +431,7 @@
           "item": "Patient/pt-0047",
           "met": true,
           "decisive_ids": [
-            "Observation/obs-07501"
+            "Observation/obs-07502"
           ],
           "evidence": {
             "fired": [
@@ -497,7 +497,7 @@
           "item": "Patient/pt-0047",
           "met": true,
           "decisive_ids": [
-            "Observation/obs-07501"
+            "Observation/obs-07502"
           ],
           "evidence": {
             "fired": [
@@ -563,7 +563,7 @@
           "item": "Patient/pt-0047",
           "met": true,
           "decisive_ids": [
-            "Observation/obs-07501"
+            "Observation/obs-07502"
           ],
           "evidence": {
             "fired": [
@@ -629,7 +629,7 @@
           "item": "Patient/pt-0047",
           "met": true,
           "decisive_ids": [
-            "Observation/obs-07501"
+            "Observation/obs-07502"
           ],
           "evidence": {
             "fired": [

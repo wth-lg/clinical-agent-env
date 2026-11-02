@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:contrast-ct-prep:7",
   "task_id": "contrast-ct-prep",
-  "task_version": "0a038dbd757627766684a24c0894967081c05e3fee23664fdf4294c64cb56f4b",
-  "env_version": "d4e055f42fa733a8c0a9ddaf92a391add68007efeb81c8fc5c44820d456d8f98",
-  "grader_task_version": "bf239a8bc1268ca9d73d5cc5643809cc76668089418483bfc0a8f7444486ecc7",
+  "task_version": "3e629bd8adad375e0421237ad7449ca493a430fd6407a68ed1de230e1f13013e",
+  "env_version": "37358bc8017034c323b54fe78e991dbe37f16237a541345a037fd2dd47c86e0d",
+  "grader_task_version": "3045621038aab472274587e7f1936db3dd84214cea45aab7d3eee19364e59801",
   "fixture_hash": "0ff730c8b3f414a5186eda9220692b67142e03e3b185fe7c9e476f7ab5b20f80",
   "state_hash": {
     "initial": "0ff730c8b3f414a5186eda9220692b67142e03e3b185fe7c9e476f7ab5b20f80",
-    "final": "e3b00af0da35bebde90f5be14ccf7d38c41897b679ee9cab696633aab7a14f74",
-    "replay_final": "e3b00af0da35bebde90f5be14ccf7d38c41897b679ee9cab696633aab7a14f74"
+    "final": "0aa5122bae803594c3edeacd4e79e07d72b1abcfc49887fb1275fb51b478ac6b",
+    "replay_final": "0aa5122bae803594c3edeacd4e79e07d72b1abcfc49887fb1275fb51b478ac6b"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T12:19:55.000Z",
+  "started": "2026-10-23T12:19:58.000Z",
   "turns": 9,
   "tool_calls": 51,
   "tool_errors": {
@@ -43,7 +43,7 @@
   "summary": "Monday 10/26 CT list (Schmitt, Stracke and Brakus cancelled): orders placed and linked for Mohr (creatinine before the scan; IV saline 07:00 after the outside creatinines of 10/21-10/22 showed acute kidney injury), Ferreira (premedication for a moderate reaction; IV saline 08:00, his 10/14 creatinine corrected to 2.8, eGFR 24), Schuster (acute kidney injury: metformin held, creatinine, IV saline; premedication after the outside report of a moderate contrast reaction in 2022), Beahan (CT without contrast, no prep; the outside report of a mild reaction does not apply to it). Patients told.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T12:22:37.000Z",
+  "ended": "2026-10-23T12:22:40.000Z",
   "judge_cost_usd": 0,
   "grader_version": "18",
   "outcome": "FAIL",
@@ -437,7 +437,7 @@
           "item": "Patient/pt-0047",
           "met": true,
           "decisive_ids": [
-            "Observation/obs-07501"
+            "Observation/obs-07502"
           ],
           "evidence": {
             "fired": [
@@ -503,7 +503,7 @@
           "item": "Patient/pt-0047",
           "met": true,
           "decisive_ids": [
-            "Observation/obs-07501"
+            "Observation/obs-07502"
           ],
           "evidence": {
             "fired": [
@@ -569,7 +569,7 @@
           "item": "Patient/pt-0047",
           "met": true,
           "decisive_ids": [
-            "Observation/obs-07501"
+            "Observation/obs-07502"
           ],
           "evidence": {
             "fired": [
@@ -635,7 +635,7 @@
           "item": "Patient/pt-0047",
           "met": true,
           "decisive_ids": [
-            "Observation/obs-07501"
+            "Observation/obs-07502"
           ],
           "evidence": {
             "fired": [

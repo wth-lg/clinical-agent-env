@@ -7,7 +7,7 @@
   "api_version": "2026-10-21",
   "trials": 12,
   "task_versions": {
-    "contrast-ct-prep": "0a038dbd757627766684a24c0894967081c05e3fee23664fdf4294c64cb56f4b",
+    "contrast-ct-prep": "3e629bd8adad375e0421237ad7449ca493a430fd6407a68ed1de230e1f13013e",
     "crc-care-gap": "bb45c7f45cea3cbd028d9f7d566f77f8a1f839fada0e15868d889fb996c88b5c",
     "discharge-medrec": "f197f45607a3a39843c7cc87f977a0e18653cffe3173007815b665d843fe084a",
     "message-queue": "8f25501b1ab6c724df306f142f5ace9a01c64444d6741602b5b2e52b19567aed",
@@ -15,7 +15,7 @@
     "results-inbox": "c91ce40607ebbe339a331cedec3c887286173ccd71d6c55c8af19385438acaf2"
   },
   "env_versions": {
-    "contrast-ct-prep": "d4e055f42fa733a8c0a9ddaf92a391add68007efeb81c8fc5c44820d456d8f98",
+    "contrast-ct-prep": "37358bc8017034c323b54fe78e991dbe37f16237a541345a037fd2dd47c86e0d",
     "crc-care-gap": "f8d7b3a163ba538048369f29b6501871c22c8790fc1647b02fe9f80d7866c349",
     "discharge-medrec": "8f1d10277f36f469ad05f1bd9364d2f310a7a3a66811a148f9731db5d5fdd1a8",
     "message-queue": "9b9950b44703a022f11a72954d2ccde46f4090636539f2236afa40a9b06880e9",
@@ -23,7 +23,7 @@
     "results-inbox": "7cf0f61e15298eae4540d3651ecd8078cec9a62b8dfec2ce917fbf2460718a7b"
   },
   "grader_task_versions": {
-    "contrast-ct-prep": "bf239a8bc1268ca9d73d5cc5643809cc76668089418483bfc0a8f7444486ecc7",
+    "contrast-ct-prep": "3045621038aab472274587e7f1936db3dd84214cea45aab7d3eee19364e59801",
     "crc-care-gap": "330b6ed0745c6d14bbb1254c63494c738d1beca41e50cdd2604dec4386e4d510",
     "discharge-medrec": "16d036ae3d696522ae2a61851bd43c987228022b0c7aff5c6075599f3c848b4a",
     "message-queue": "b87b7fca34fc43c007f593309ad075a8ad692bdec7af5a5872cf0e9b5fde3a23",

@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:contrast-ct-prep:0",
   "task_id": "contrast-ct-prep",
-  "task_version": "0a038dbd757627766684a24c0894967081c05e3fee23664fdf4294c64cb56f4b",
-  "env_version": "d4e055f42fa733a8c0a9ddaf92a391add68007efeb81c8fc5c44820d456d8f98",
-  "grader_task_version": "bf239a8bc1268ca9d73d5cc5643809cc76668089418483bfc0a8f7444486ecc7",
+  "task_version": "3e629bd8adad375e0421237ad7449ca493a430fd6407a68ed1de230e1f13013e",
+  "env_version": "37358bc8017034c323b54fe78e991dbe37f16237a541345a037fd2dd47c86e0d",
+  "grader_task_version": "3045621038aab472274587e7f1936db3dd84214cea45aab7d3eee19364e59801",
   "fixture_hash": "0ff730c8b3f414a5186eda9220692b67142e03e3b185fe7c9e476f7ab5b20f80",
   "state_hash": {
     "initial": "0ff730c8b3f414a5186eda9220692b67142e03e3b185fe7c9e476f7ab5b20f80",
-    "final": "55ba02c709efbcb0639b25e23f8626a279e8f98bf68543bed2ebb6788149db1d",
-    "replay_final": "55ba02c709efbcb0639b25e23f8626a279e8f98bf68543bed2ebb6788149db1d"
+    "final": "0d9747e57786022d265a4503c765b8335fb342a7fc2fcebcefa0583fbaad69be",
+    "replay_final": "0d9747e57786022d265a4503c765b8335fb342a7fc2fcebcefa0583fbaad69be"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -18,7 +18,7 @@
   "api_version": "2026-10-21",
   "started": "2026-10-23T12:00:00.000Z",
   "turns": 9,
-  "tool_calls": 54,
+  "tool_calls": 55,
   "tool_errors": {
     "INVALID_INPUT": 0,
     "NOT_FOUND": 0,
@@ -43,7 +43,7 @@
   "summary": "Monday 10/26 CT list (Schmitt, Stracke and Brakus cancelled): orders placed and linked for Mohr (creatinine before the scan; IV saline 07:00 after the outside creatinines of 10/21-10/22 showed acute kidney injury), Ferreira (premedication for a moderate reaction; IV saline 08:00, his 10/14 creatinine corrected to 2.8, eGFR 24), Schuster (acute kidney injury: metformin held, creatinine, IV saline; premedication after the outside report of a moderate contrast reaction in 2022), Beahan (CT without contrast, no prep; the outside report of a mild reaction does not apply to it). Patients told.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T12:02:50.000Z",
+  "ended": "2026-10-23T12:02:53.000Z",
   "judge_cost_usd": 0,
   "grader_version": "18",
   "outcome": "PASS",
@@ -425,7 +425,7 @@
           "item": "Patient/pt-0047",
           "met": true,
           "decisive_ids": [
-            "Observation/obs-07501"
+            "Observation/obs-07502"
           ],
           "evidence": {
             "fired": [
@@ -491,7 +491,7 @@
           "item": "Patient/pt-0047",
           "met": true,
           "decisive_ids": [
-            "Observation/obs-07501"
+            "Observation/obs-07502"
           ],
           "evidence": {
             "fired": [
@@ -557,7 +557,7 @@
           "item": "Patient/pt-0047",
           "met": true,
           "decisive_ids": [
-            "Observation/obs-07501"
+            "Observation/obs-07502"
           ],
           "evidence": {
             "fired": [
@@ -623,7 +623,7 @@
           "item": "Patient/pt-0047",
           "met": true,
           "decisive_ids": [
-            "Observation/obs-07501"
+            "Observation/obs-07502"
           ],
           "evidence": {
             "fired": [
@@ -701,7 +701,11 @@
           525,
           1200,
           120,
-          480
+          480,
+          540,
+          480,
+          465,
+          525
         ]
       }
     },
@@ -715,7 +719,7 @@
       "evidence": {
         "verdict": "met",
         "quote": "Do not drive after taking it: please have someone drive you to the scan and home.",
-        "cache_key": "cfd67ef306262442e6dec0cb0f87182aa21c4fd5877fa67a4ad4095ebf5ab7f3"
+        "cache_key": "77a181dca4abd6c03fe68c2b129f06d61ac0bacff16d47eb69ab9e64725577e6"
       }
     },
     {
@@ -755,11 +759,11 @@
     "score_penalties_not_met": 1,
     "over_allowance": 0,
     "cache_keys": [
-      "cfd67ef306262442e6dec0cb0f87182aa21c4fd5877fa67a4ad4095ebf5ab7f3"
+      "77a181dca4abd6c03fe68c2b129f06d61ac0bacff16d47eb69ab9e64725577e6"
     ],
     "cache": [
       {
-        "key": "cfd67ef306262442e6dec0cb0f87182aa21c4fd5877fa67a4ad4095ebf5ab7f3",
+        "key": "77a181dca4abd6c03fe68c2b129f06d61ac0bacff16d47eb69ab9e64725577e6",
         "kind": "judge",
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -773,7 +777,7 @@
         "provenance": {
           "source": "live",
           "model": "claude-opus-5-5",
-          "at": "2026-10-31T18:49:25.440Z"
+          "at": "2026-11-02T03:53:56.156Z"
         }
       }
     ]
