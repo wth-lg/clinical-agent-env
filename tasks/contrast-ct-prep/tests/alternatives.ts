@@ -247,4 +247,16 @@ export const alternatives: Alternative[] = [
       { calls: TELL }, { calls: [finish(DONE)] },
     ],
   },
+  // R38(h): a Task or a message about a patient off the list is not an order for them; only an
+  // order, or a change to one the chart holds, is (mutants.ts brakus_metformin_hold).
+  // verifier-phase-P17i-W4E3-T5-203-1 probe vprobe_brakus_task_to_pcp.
+  {
+    id: 'brakus_task_to_pcp',
+    why: "Also asks Dr. Okafor, by a Task and a message, to review cancelled Brakus's creatinine of 1.64 on metformin; no order for him is placed or changed.",
+    script: run([
+      ...WRITES,
+      { name: 'create_task', input: { patient: 'pt-0050', owner: 'pr-okafor', due: '2026-10-26', priority: 'routine', description: 'CT cancelled by the patient; creatinine 1.64 on 10/21 while on metformin 1000 mg twice daily: please review.' } },
+      { name: 'send_message', input: { recipient: 'Practitioner/pr-okafor', priority: 'routine', subject: 'Brakus: creatinine 1.64 on metformin', body: 'Mr. Brakus cancelled his CT for 10/26. His creatinine was 1.64 on 10/21 while he takes metformin 1000 mg twice daily; I have placed no orders for him. Please review.', about: ['Patient/pt-0050'] } },
+    ]),
+  },
 ];
