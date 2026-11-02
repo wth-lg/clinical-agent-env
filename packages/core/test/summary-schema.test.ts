@@ -137,9 +137,16 @@ describe('every figure reads the current grade: the last regrade, else the recor
 
   it('currentGrade is the one reader: the last entry wins, a missing score or valid falls back to the outcome', async () => {
     const { currentGrade } = await import('../summary.ts');
-    expect(currentGrade({ outcome: 'FAIL', score: 0 })).toEqual({ outcome: 'FAIL', score: 0, valid: true, checks: null, regraded: false, grader_task_version: null });
+    expect(currentGrade({ outcome: 'FAIL', score: 0 })).toEqual({ outcome: 'FAIL', score: 0, valid: true, checks: null, regraded: false, grader_task_version: null, attribution: null, attribution_stored: true });
     expect(currentGrade({ outcome: 'FAIL', score: 0, checks: [{ id: 'G1', met: false }], regrades: [{ outcome: 'GRADER_ERROR' }, { outcome: 'PASS', score: 1, valid: true }] }))
-      .toEqual({ outcome: 'PASS', score: 1, valid: true, checks: null, regraded: true, grader_task_version: null });
+      .toEqual({ outcome: 'PASS', score: 1, valid: true, checks: null, regraded: true, grader_task_version: null, attribution: null, attribution_stored: false });
+    // builder-292: a regrade entry's own attribution is the current grade's; an older entry falls
+    // back to the recorded one, marked not stored.
+    const recorded = { auto: 'retrieval', first_failed: 'event_seen' };
+    const regraded = { auto: 'retrieval', first_failed: 'fit_orders' };
+    expect(currentGrade({ outcome: 'FAIL', attribution: recorded, regrades: [{ outcome: 'FAIL', attribution: regraded }] })).toMatchObject({ attribution: regraded, attribution_stored: true });
+    expect(currentGrade({ outcome: 'FAIL', attribution: recorded, regrades: [{ outcome: 'PASS', attribution: null }] })).toMatchObject({ attribution: null, attribution_stored: true });
+    expect(currentGrade({ outcome: 'FAIL', attribution: recorded, regrades: [{ outcome: 'FAIL' }] })).toMatchObject({ attribution: recorded, attribution_stored: false });
     expect(currentGrade({ outcome: 'PASS', score: 1, regrades: [{ outcome: 'CANCELLED' }] })).toMatchObject({ outcome: 'CANCELLED', score: null, valid: false });
   });
 });

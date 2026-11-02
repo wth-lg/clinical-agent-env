@@ -86,8 +86,13 @@ import type { Progress } from './progress.ts';
 // and T2's reply_names_other_patient criterion states each patient's own values (probe-1
 // message-queue/4 and results-inbox/2, /3; builder-273). 18: mid-trial events (PW4-E1): diff.arrived,
 // the event gates (events.ts), ENV_ERROR for an undelivered arrival (E9), the process mark and
-// seen_at_only; T2 and T3 sorted page runs (R36).
-export const GRADER_VERSION = '18';
+// seen_at_only; T2 and T3 sorted page runs (R36). 19: the pilot-4a fixes (builder-292). Event gates
+// name every resource the seen rule requires (EventExpectation.seenBy: decisive_ids, seen_at and the
+// exposure report; N1). Step.search keeps the result's total. T3: event_seen reads the arrival only,
+// and a delivered gap's base review is fit_orders' and gap_seen_before_order's (G1); a page run whose
+// later page drops or adds a filter continues when the totals agree (G2). T2 and T6:
+// reply_names_other_patient names each patient's own values on the chart as delivered (G3, G4).
+export const GRADER_VERSION = '19';
 
 export interface CheckResult {
   id: string;

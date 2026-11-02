@@ -500,14 +500,27 @@ export function outrankedCheck(record: ExplainRecord): ExplainCheck | null {
   return first === undefined || decisive === null || first.id === decisive.id ? null : first;
 }
 
-// Whether the recorded attribution speaks for the current grade: it names the same decisive check.
-export const attributionFits = (record: ExplainRecord): boolean => record.attribution != null && record.attribution.first_failed === (firstFailedCheck(record)?.id ?? null);
+// The current grade's attribution (summary.ts currentGrade): the last regrade entry's when it stored
+// one (cli/regrade.ts), else the recorded one (verifier-phase-P17i-S0-208-1 S1: a FAIL that stays a
+// FAIL under a grader fix reads the new grade's kind of failure, not none).
+export const currentAttribution = (record: ExplainRecord): ExplainRecord['attribution'] => (currentGrade(record).attribution ?? null) as ExplainRecord['attribution'];
 
-// The exposure of the decisive check's ids M1 reads: the recorded attribution's when it fits,
+// Whether the current grade's attribution speaks for it: it names the same decisive check. An
+// older regrade entry falls back to the recorded attribution, which may not.
+export const attributionFits = (record: ExplainRecord): boolean => {
+  const att = currentAttribution(record);
+  return att != null && att.first_failed === (firstFailedCheck(record)?.id ?? null);
+};
+
+// The current grade's attribution when it fits, else null: what the trial page's Attribution tab
+// shows as the grader's automatic kind and the exposure of the decisive ids.
+export const fittingAttribution = (record: ExplainRecord): ExplainRecord['attribution'] => (attributionFits(record) ? currentAttribution(record) : null);
+
+// The exposure of the decisive check's ids M1 reads: the current grade's attribution's when it fits,
 // else the caller's recomputed one (ExplainContext.exposure) when it is for that check, else none.
 export function decisiveExposure(record: ExplainRecord, recomputed: ExplainContext['exposure']): ReadonlyArray<{ id: string; first_exposed_step: number | null }> | null {
   const failed = firstFailedCheck(record);
-  if (attributionFits(record)) return record.attribution!.exposure;
+  if (attributionFits(record)) return currentAttribution(record)!.exposure;
   return failed !== null && recomputed?.check === failed.id ? recomputed.ids : null;
 }
 
@@ -528,7 +541,7 @@ export function explainTrial(record: ExplainRecord, audit: AuditRow | null | und
   const outcome = grade.outcome;
   const failed = firstFailedCheck(record);
   const outranked = outrankedCheck(record);
-  const att = record.attribution ?? null;
+  const att = currentAttribution(record) ?? null;
   const attFits = att !== null && attributionFits(record);
   const exposure = decisiveExposure(record, ctx.exposure);
   const row = audit ?? null;

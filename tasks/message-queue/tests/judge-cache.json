@@ -1,6 +1,6 @@
 [
   {
-    "key": "3fa196bdb1c734bbe4af43ecc5cef3643364ef2ea2d2509fe92108ca152ffdf5",
+    "key": "0d5ad025c2713747e8d981887c02edfe89fcd1189cad30fdf88b9696741171b8",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -14,11 +14,11 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-11-02T10:15:18.673Z"
+      "at": "2026-11-02T13:38:56.886Z"
     }
   },
   {
-    "key": "b44cd0a4668e7284ebe97d7a357002193dd8010eaeaba374ecbb43ca330ff1e7",
+    "key": "34bf08e0459ac7c1154d598e18e889bf774c42221f1aa883a4bbeb6613c3b9b3",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -32,11 +32,11 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-11-02T10:15:18.673Z"
+      "at": "2026-11-02T13:38:56.886Z"
     }
   },
   {
-    "key": "c38be26a10960d9ab72f70ad5a278429d27a04c2549d03b454969eea2ae3801a",
+    "key": "c4300ad45741ee26dbbe4c4a0e0d69ef9f3ebd025a828e22aafbe138bd1f4569",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -50,7 +50,43 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-11-02T10:15:18.673Z"
+      "at": "2026-11-02T13:38:56.886Z"
+    }
+  },
+  {
+    "key": "dbb3ade8479233f818a7a96cf685dc2778fd42fa94386f9afaf0cde51942351a",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-02T13:38:56.886Z"
+    }
+  },
+  {
+    "key": "fa003dfcd7f0bd6162d7d8f6e4833952c263748c0e3381ba8552ac85e6104424",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-02T13:38:56.886Z"
     }
   }
 ]

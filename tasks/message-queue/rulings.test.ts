@@ -36,6 +36,7 @@ import { NOW } from '../../packages/env/clock.ts';
 import { loadStore } from '../../packages/env/fixture-source.ts';
 import { MARGINS } from '../../packages/env/lint/index.ts';
 import { trial } from '../../packages/grader/matrix/matrix.ts';
+import { SPECS } from './events.ts';
 import { ITEMS } from './expected.ts';
 import { id, ref } from './ids.ts';
 import overlay from './overlay.ts';
@@ -355,5 +356,36 @@ describe('T6 probe rulings', () => {
     expect(source).toContain('Assess glycemic status at least two times a year, and more frequently (e.g., every 3 months) for individuals not meeting glycemic goals');
     expect(source).toContain('or during periods of rapid growth and development in children and adolescents');
     expect(source).toMatch(/6-month window is a local floor/);
+  });
+  // verifier-phase-P17i-S0-208-1 M2 (R36 consistency with T3's G2, builder-292): m12's run may drop a
+  // filter on a later page when the filters nest and the totals agree; a different total, a gap and a
+  // changed sort still fail.
+  it('S0-208 M2: m12 continues a run across nested filters with the same total', () => {
+    const m12 = ITEMS.find((i) => i.name === 'm12')!;
+    const at = (iso: string) => Date.parse(iso);
+    const step = (n: number, search?: Step['search']) => ({ n, search, exposed_ids: [], referenced_ids: [] }) as unknown as Step;
+    const q = { type: 'Observation', patient: 'Patient/pt-0031', sort: '-date', whole: false, total: 60 };
+    const page1 = step(1, { ...q, date_ge: '2000-01-01', next_offset: 25, span: [at('2026-07-25T20:55:04-04:00'), at('2026-10-08T16:55:04-04:00')] });
+    const page2 = step(2, { ...q, offset: 25, next_offset: 51, span: [at('2024-07-19T10:00:00-04:00'), at('2026-07-25T20:55:04-04:00')] });
+    expect(coveredAt(m12, [page1, page2])).toBe(2);
+    expect(coveredAt(m12, [page1, step(2, { ...page2.search!, total: 61 })])).toBe(null);
+    expect(coveredAt(m12, [page1, step(2, { ...page2.search!, offset: 26 })])).toBe(null);
+    expect(coveredAt(m12, [page1, step(2, { ...page2.search!, sort: 'date' })])).toBe(null);
+  });
+  // Coordinator at the #208 handshake: price-b1 (a correction of Samuel Price's records) firing
+  // between two pages of Marcus Webb's m12 run leaves Webb's records as they were, so the nested join
+  // stands; webb-c1 (his own new panel) between them refuses it.
+  it('S0-208 M3 scope: another patient\'s arrival between m12 pages does not refuse the join; his own does', () => {
+    const m12 = ITEMS.find((i) => i.name === 'm12')!;
+    const at = (iso: string) => Date.parse(iso);
+    const step = (n: number, search?: Step['search'], arrivals?: Step['arrivals']) => ({ n, search, arrivals, exposed_ids: [], referenced_ids: [] }) as unknown as Step;
+    const q = { type: 'Observation', patient: 'Patient/pt-0031', sort: '-date', whole: false, total: 60 };
+    const page1 = step(1, { ...q, date_ge: '2000-01-01', next_offset: 25, span: [at('2026-07-25T20:55:04-04:00'), at('2026-10-08T16:55:04-04:00')] });
+    const page2 = step(3, { ...q, offset: 25, next_offset: 51, span: [at('2024-07-19T10:00:00-04:00'), at('2026-07-25T20:55:04-04:00')] });
+    const price = SPECS.find((sp) => sp.id === 'price-b1')!;
+    const webb = SPECS.find((sp) => sp.id === 'webb-c1')!;
+    const keysOf = (sp: typeof price) => sp.resources.map((r) => `${r.resourceType}/${r.id}`);
+    expect(coveredAt(m12, [page1, step(2, undefined, [{ spec: price.id, keys: keysOf(price) }]), page2])).toBe(3);
+    expect(coveredAt(m12, [page1, step(2, undefined, [{ spec: webb.id, keys: keysOf(webb) }]), page2])).toBe(null);
   });
 });

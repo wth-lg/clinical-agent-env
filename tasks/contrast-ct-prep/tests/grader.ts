@@ -449,6 +449,10 @@ const seenRule = (spec: EventSpec) => (steps: readonly Step[], at: number): numb
   const each = decidingArrival(spec).map((id) => shownAfter(spec, steps, at, id));
   return each.some((n) => n === null) ? null : Math.max(...(each as number[]));
 };
+// Each deciding arrival record with its own seen step, so the event gates name every one in
+// decisive_ids and the exposure report (builder-292 N1: the pilot-4a records named only obs-07502,
+// never obs-07501, the creatinine that was not seen).
+const seenByRecord = (spec: EventSpec) => Object.fromEntries(decidingArrival(spec).map((id) => [id, (steps: readonly Step[], at: number) => shownAfter(spec, steps, at, id)] as const));
 
 // Each spec's rule (packages/grader/events.ts EventExpectation).
 function expectation(spec: EventSpec): EventExpectation {
@@ -458,6 +462,7 @@ function expectation(spec: EventSpec): EventExpectation {
     const e = EVENTS[spec.id]!;
     return {
       seenAt,
+      seenBy: seenByRecord(spec),
       amended: (ctx) => {
         const v = e.changes.map((d) => decisionMet(ctx, e.study, d));
         const failed = v.find((r) => !r.met);
@@ -471,6 +476,7 @@ function expectation(spec: EventSpec): EventExpectation {
   // entry passes (R3).
   return {
     seenAt,
+    seenBy: seenByRecord(spec),
     kept: (ctx) => {
       const mine = new Set(ctx.writes());
       const drugs = ctx.final.all('MedicationRequest').filter((m) => mine.has(keyOf(m)) && m.subject?.reference === x.patient && [...PREMED, ...IV_STEROIDS].some((ingredient) => isDrug(m.medicationCodeableConcept, { ingredient })));

@@ -56,10 +56,12 @@ describe('T3 gates over expected.items', () => {
     }
   });
 
-  it('each base gate\'s decisive ids are its members\'', () => {
+  it('each base gate\'s decisive ids are its members\'; fit_orders and gap_seen_before_order also the delivered members\' own records (S0-208 M1)', () => {
     const decisive = [...new Set(expected.items.flatMap((x) => x.decisive))];
+    const own = Object.values(DELIVERED).map((y) => y.patient);
+    const withOwn = [...new Set([...decisive, ...own])];
     expect(gates.filter((g) => BASE_GATES.includes(g.id)).map((g) => [g.id, g.decisive_ids])).toEqual([
-      ['fit_orders', decisive], ['outreach_messages', decisive], ['nothing_for_others', decisive], ['gap_seen_before_order', decisive], ['no_contact_reviewed', decisive],
+      ['fit_orders', withOwn], ['outreach_messages', decisive], ['nothing_for_others', decisive], ['gap_seen_before_order', withOwn], ['no_contact_reviewed', decisive],
     ]);
   });
 
@@ -302,11 +304,13 @@ describe('absence rules of a delivered gap (R20, R27, R31, R36)', () => {
   });
 });
 
-// The event gates' review of a delivered gap (tests/grader.ts deliveredSeenAt, amendExpectation):
-// once an amend event arrived, its member is reviewed when the trial has read the arrival after it
-// came (a read of any record it put; for the faxed notice also a snippet that shows its atoms, R29),
-// has shown every screening kind absent by complete searches, and has seen the Patient (R33). Never
-// reviewed is event_seen, retrieval; an order written before the review is amended, process.
+// A delivered gap's review (tests/grader.ts deliveredSeenAt, reviewedAt; builder-292 G1): once an
+// amend event arrived, event_seen asks only that the trial read the arrival after it came (a read of
+// any record it put; for the faxed notice also a snippet that shows its atoms, R29), and amended
+// that the order and outreach come after that read (process). The member's base review, every
+// screening kind shown absent by complete searches and her Patient seen (R31, R33, R38(a)), is her
+// base gates': fit_orders fails an order with the review never completed (retrieval), and
+// gap_seen_before_order one written before it completed (process).
 describe('a delivered gap\'s review (event_seen, amended)', () => {
   const step = (n: number, turn: number, more: Partial<Step>): Step => ({ n, seq: n, turn, tool: 'fhir_search', is_error: false, error_code: null, exposed_ids: [], referenced_ids: [], written_ids: [], shown: {}, ...more });
   const FIT = ref('Observation/obs-t3-3906');
@@ -350,15 +354,21 @@ describe('a delivered gap\'s review (event_seen, amended)', () => {
     expect(item('event_seen', searched, D1).met).toBe(true);
     expect(item('event_seen', trial('crc-b2', (n) => screened(n)), D1).met).toBe(false);
   });
-  it('not without the Patient (R33); a search_patients row counts', () => {
+  it('not without the Patient (R33): fit_orders, not event_seen; a search_patients row counts', () => {
     const noPatient = trial('crc-b2', (n) => [...screened(n).slice(0, 2), readArrival(n + 2)]);
-    expect(item('event_seen', noPatient, D1)).toMatchObject({ met: false, event: 'crc-b2' });
+    expect(item('event_seen', noPatient, D1).met).toBe(true);
+    expect(item('fit_orders', noPatient, D1).met).toBe(false);
+    expect(item('gap_seen_before_order', noPatient, D1).met).toBe(false);
     const row = trial('crc-b2', (n) => [...screened(n).slice(0, 2), step(n + 2, 2, { tool: 'search_patients', exposed_ids: [D1] }), readArrival(n + 3)]);
-    expect(item('event_seen', row, D1).met).toBe(true);
+    expect(item('fit_orders', row, D1).met).toBe(true);
   });
-  it('not after the FOBT window alone, nor after a stool search that leaves January out (R31, R27)', () => {
-    expect(item('event_seen', trial('crc-b2', (n) => [step(n, 2, { search: { ...stool('pt-0022'), code: '2335-8,29771-3,57905-2,58453-2,80372-6,27396-1,12503-9', date_ge: '2026-01-01' } }), step(n + 1, 2, { search: procedures('pt-0022') }), step(n + 2, 2, { tool: 'fhir_read', exposed_ids: [D1] }), readArrival(n + 3)]), D1).met).toBe(false);
-    expect(item('event_seen', trial('crc-b2', (n) => [step(n, 2, { search: procedures('pt-0022') }), step(n + 1, 2, { search: { ...stool('pt-0022'), date_ge: '2026-02-01' } }), step(n + 2, 2, { tool: 'fhir_read', exposed_ids: [D1] }), readArrival(n + 3)]), D1).met).toBe(false);
+  it('not after the FOBT window alone, nor after a stool search that leaves January out (R31, R27): fit_orders fails, event_seen is met', () => {
+    const fobtOnly = trial('crc-b2', (n) => [step(n, 2, { search: { ...stool('pt-0022'), code: '2335-8,29771-3,57905-2,58453-2,80372-6,27396-1,12503-9', date_ge: '2026-01-01' } }), step(n + 1, 2, { search: procedures('pt-0022') }), step(n + 2, 2, { tool: 'fhir_read', exposed_ids: [D1] }), readArrival(n + 3)]);
+    const noJanuary = trial('crc-b2', (n) => [step(n, 2, { search: procedures('pt-0022') }), step(n + 1, 2, { search: { ...stool('pt-0022'), date_ge: '2026-02-01' } }), step(n + 2, 2, { tool: 'fhir_read', exposed_ids: [D1] }), readArrival(n + 3)]);
+    for (const ctx of [fobtOnly, noJanuary]) {
+      expect(item('fit_orders', ctx, D1).met).toBe(false);
+      expect(item('event_seen', ctx, D1).met).toBe(true);
+    }
   });
   it('complete clinic-wide searches review her too', () => {
     const clinic = trial('crc-b2', (n) => [step(n, 2, { search: { ...procedures('pt-0022'), patient: undefined } as unknown as StepSearch }), step(n + 1, 2, { search: { ...stool('pt-0022'), patient: undefined } as unknown as StepSearch }), step(n + 2, 2, { tool: 'fhir_read', exposed_ids: [D1] }), readArrival(n + 3)]);
@@ -383,19 +393,22 @@ describe('a delivered gap\'s review (event_seen, amended)', () => {
     for (const id of ['Communication/comm-00301', FRAILTY]) expect(item('event_seen', trial('crc-b1', (n) => [...screened(n, 2, 'pt-0009'), step(n + 3, 2, { exposed_ids: [MR] }), readArrival(n + 4, id)]), G1).met, id).toBe(true);
   });
   // R38(a, d): a fired amend never excuses the review of what decides the delivered action: the
-  // arrival, the screening absences and her Patient. G1's donepezil order decides nothing once her
-  // frailty entry is in error, so it is not required (R38d); her Patient is.
+  // arrival (event_seen), the screening absences and her Patient (her base gates). G1's donepezil
+  // order decides nothing once her frailty entry is in error, so it is not required (R38d); her
+  // Patient is.
   it("R38: G1's delivered review needs her Patient but not the donepezil order that no longer decides", () => {
     const G1 = 'Patient/pt-0009';
     const withoutMed = trial('crc-b1', (n) => [...screened(n, 2, 'pt-0009'), readArrival(n + 3, 'Communication/comm-00301')]);
     const withoutPatient = trial('crc-b1', (n) => [...screened(n, 2, 'pt-0009').slice(0, 2), readArrival(n + 2, 'Communication/comm-00301')]);
-    expect(item('event_seen', withoutMed, G1).met).toBe(true);
-    expect(item('event_seen', withoutPatient, G1)).toMatchObject({ met: false, event: 'crc-b1' });
+    for (const id of [...BASE_GATES, 'event_seen', 'amended']) expect(item(id, withoutMed, G1).met, id).toBe(true);
+    expect(item('event_seen', withoutPatient, G1).met).toBe(true);
+    expect(item('fit_orders', withoutPatient, G1).met).toBe(false);
   });
-  it('declares seen_at for each event focus on the event gates, and no gap rules on the base gates', () => {
-    for (const g of BASE_GATES) {
-      expect(gates.find((x) => x.id === g)!.decisive_phrases ?? {}, g).toEqual({});
-      expect(gates.find((x) => x.id === g)!.seen_at ?? {}, g).toEqual({});
+  it('declares seen_at for each event focus on the event gates; on the base gates, a seen rule only for the members an amend event can turn into a gap, each seen by that rule alone', () => {
+    const amendable = [...new Set([...expected.items.filter((x) => Object.values(DELIVERED).some((y) => y.patient === x.patient)).flatMap((x) => x.decisive), ...Object.values(DELIVERED).map((y) => y.patient)])].sort();
+    for (const g of ['fit_orders', 'outreach_messages', 'gap_seen_before_order']) {
+      expect(Object.keys(gates.find((x) => x.id === g)!.seen_at ?? {}).sort(), g).toEqual(amendable);
+      expect(gates.find((x) => x.id === g)!.decisive_phrases ?? {}, g).toEqual(Object.fromEntries(amendable.map((d) => [d, ''])));
     }
     expect(Object.keys(gates.find((x) => x.id === 'event_seen')!.seen_at ?? {}).sort()).toEqual(['Communication/comm-00301', 'DocumentReference/doc-00401', 'DocumentReference/doc-00402', FIT].sort());
   });

@@ -159,6 +159,14 @@ export function alternativesFor(active: readonly string[] = ACTIVE): Alternative
   // R36 (sort-aware completeness, as R35 for T6): her creatinines one at a time, newest first, read
   // from offset 0 to the page of 10-09, the first that reaches before the window opens on 10-15, and
   // not the last page (10-02): every later page is older still, so the 7 days were reviewed.
+  // verifier-phase-P17i-S0-208-1 M2 (as T3's G2, builder-292): page 1 dates from 1900, pages 2 and 3
+  // drop the date filter. The filters nest and every page counts the same total, so the run lists the
+  // same records in one order and shows every one (R27, R36, R34).
+  {
+    id: 'eie_baseline_page_run_drops_date_ge',
+    why: "Lists Carol Whitfield's creatinines from 1900 newest first, two at a time, then asks for the next pages without the date filter: every page counts the same results in the same order, so together they show her whole history, and she closes the item as the oracle does.",
+    script: solve({ reads: swapRead(creatininesOf(PT.whitfield), [0, 2, 4].map((offset) => ({ name: 'fhir_search', input: { ...creatininesOf(PT.whitfield).input, count: 2, ...(offset ? { offset } : { date_ge: '1900-01-01' }) } }))) }),
+  },
   {
     id: 'eie_baseline_sorted_pages_past_window',
     why: "Lists Carol Whitfield's creatinines one at a time, newest first, and stops at the page of 10-09, before her 7-day window, without the last page: the window was read whole, and she closes the item as the oracle does.",

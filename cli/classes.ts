@@ -7,8 +7,9 @@
 // - the split of failed trials by fault (outcomes.ts FAULT and AUDIT_LABEL): model (FAIL, LIMIT,
 //   REFUSAL), environment (ENV_*), grader (GRADER_ERROR), infra (INFRA_*, CANCELLED, INVALID);
 // - per class, over valid trials: fails out of trials x instances, pass rate, Wilson 95%, and each
-//   failure's label (trial: gate -> the grader's auto label, attribution.items; '?' when the current
-//   grade is a regrade that changed the grade, because the labels belong to the recorded grade);
+//   failure's label (trial: gate -> the grader's auto label, attribution.items, of the current grade:
+//   a regrade stores its own; '?' only for a regrade entry written before regrades stored labels
+//   that changed the outcome);
 //   per instance, fails out of trials. An item fails a trial when any check marks it not met.
 //   base_fails leaves out the event gates (EVENT_GATES): it is the base list's own failure count;
 // - the 'outside' pseudo-item's failures apart from the classes;
@@ -46,7 +47,7 @@ import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { installEgressGuard } from '../packages/core/egress.ts';
 import { AUDIT_LABEL, FAULT, type Outcome } from '../packages/core/outcomes.ts';
-import { currentGrade, type RegradeGrade, type SummaryCheck, wilson } from '../packages/core/summary.ts';
+import { currentGrade, type GradeAttribution, type RegradeGrade, type SummaryCheck, wilson } from '../packages/core/summary.ts';
 import { taskVersions } from '../packages/core/tasks.ts';
 import { settledRecords, trajectoryOf } from './adapters/result-sink-node.ts';
 import { nodeTaskSource, TASKS_DIR } from './adapters/tasks-node.ts';
@@ -300,7 +301,7 @@ interface RawRecord {
 }
 
 function readTrial(dir: string, r: RawRecord): Trial {
-  const grade = currentGrade({ outcome: String(r.outcome ?? ''), checks: r.checks ?? null, ...(Array.isArray(r.regrades) ? { regrades: r.regrades } : {}) });
+  const grade = currentGrade({ outcome: String(r.outcome ?? ''), checks: r.checks ?? null, attribution: (r.attribution ?? null) as GradeAttribution | null, ...(Array.isArray(r.regrades) ? { regrades: r.regrades } : {}) });
   const failed = new Map<string, string[]>();
   const named = new Map<string, string>();
   const items = new Set<string>();
@@ -316,8 +317,11 @@ function readTrial(dir: string, r: RawRecord): Trial {
       }
     }
   }
+  // The current grade's labels (summary.ts currentGrade): a regrade's own, so a FAIL that stays a
+  // FAIL under a grader fix is labelled as the new grade labels it (builder-292). A regrade entry
+  // written before regrades stored labels that changed the outcome leaves no labels ('?').
   const last = Array.isArray(r.regrades) ? r.regrades.at(-1) : undefined;
-  const attribution = last !== undefined && last.changed ? null : r.attribution;
+  const attribution = (!grade.attribution_stored && last?.changed === true ? null : grade.attribution) as { items?: Rec[] } | null;
   const labels = new Map<string, Array<{ gate: string; label: string }>>();
   for (const a of attribution?.items ?? []) {
     if (typeof a.item !== 'string') continue;
