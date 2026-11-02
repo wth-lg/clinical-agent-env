@@ -2,8 +2,8 @@
   "now": "2026-10-23T08:00:00-04:00",
   "world": {
     "file": "fixtures/world.ndjson.gz",
-    "state_hash": "e1e1dd0db1ff51e1bac75ba7154014156e7f978b9ee2e34d31117726eed3275d",
-    "ndjson_sha256": "7f97e5ac062666c0083c39dfa27192188a173675dec39db81c5ebb3c72bb0e9e",
+    "state_hash": "0ff730c8b3f414a5186eda9220692b67142e03e3b185fe7c9e476f7ab5b20f80",
+    "ndjson_sha256": "b1618409266a17e42b1176fcaa371dc4c2273bd69c4032c43f9306a91cf6ef96",
     "resources": 7411,
     "by_type": {
       "AllergyIntolerance": 46,
@@ -79,7 +79,7 @@
     "packages/env/renumber.ts": "a18c690c41aa7e22e503b11035c773b76e165fed5b83dbb517a726ed77d2a558",
     "packages/env/world.ts": "c16dbb19c56e749662a602139253743353add3fabdaa103aeedd0fc554eb3906",
     "scripts/fixtures-synthea.ts": "44162b65dc576e507b526132164eda54cb14000936331d48b575f46d9c49d752",
-    "tasks/contrast-ct-prep/overlay.ts": "08d7276de931853fe5d38530e6815ac22b0f7c8db2f118dfc6bef99fbce3cfbe",
+    "tasks/contrast-ct-prep/overlay.ts": "fe51e85007f94d529c6f9dc8f9aaf652d46dfae27263456469a2658481d70c5e",
     "tasks/crc-care-gap/overlay.ts": "30e01b28a3973fe759ceb6878c0c7a73daa222c46577f262f156ec98c3efbaf1",
     "tasks/discharge-medrec/overlay.ts": "209751e1abba4360c372bbda0567f2f756fd1bccc332290e6374b77c0f6bc8d8",
     "tasks/message-queue/overlay.ts": "33b332716dac0eaa8cdc05c25fc59bbe3740b6160e283a6b6cc8a98edead6623",

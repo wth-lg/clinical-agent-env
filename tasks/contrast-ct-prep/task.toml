@@ -1,7 +1,8 @@
 # T5 (design section 4, "T5 contrast-ct-prep"), worklist probe (plan-amendment-worklist W1,
-# builder-215): Dr. Okafor's CT list at St. Brigid Imaging for Monday 10/26, seven studies on the
-# seven T5 slots under RBC-RAD-07, two instances of each kept item class and one filler
-# (expected.ts): allergy_grade (an allergy-list label against the record of the day, one each way),
+# builder-215), cut to four studies in PW4-E3 (plan-amendment-w4): Dr. Okafor's CT list at St.
+# Brigid Imaging for Monday 10/26 under RBC-RAD-07, one instance of each probe class (expected.ts),
+# the other three T5 slots' studies cancelled by the patient (off the list, §7); four mid-trial
+# events (events.ts). The probe classes, two instances each before the cut: allergy_grade (an allergy-list label against the record of the day, one each way),
 # egfr_window (a stale creatinine that needs a redraw; an eGFR under 30 inside the window with an
 # older one over it), metformin_hold (acute kidney injury from an outside ED summary; from a
 # creatinine rise of 0.3 within 48 hours), and a CT without contrast. Cut (plan W1): outside AKI
@@ -119,9 +120,10 @@ code = "24323-8"
 system = "http://loinc.org"
 display = "Comprehensive metabolic 2000 panel - Serum or Plasma"
 
-# Each trap needs a mutant in tests/mutants.ts. No status-only case: T5 has no inbox items.
+# Each trap needs a mutant in tests/mutants.ts. No status-only case: T5 has no inbox items of its
+# own (the events' arrivals are the only ones, and they need no closing).
 [matrix]
-traps = ["filler_order_skipped", "filler_wrong_study", "scr_counted_from_today", "scan_deferred_for_creatinine", "severe_graded_by_list", "egfr_from_old_creatinine", "contrast_withheld_for_low_egfr", "aki_record_missed", "scan_deferred_for_aki", "moderate_graded_by_list", "iv_regimen", "overnight_timing", "creatinine_rise_missed", "scan_deferred_for_rise", "order_off_list", "order_before_report", "diabetes_unseen_creatinine", "report_unseen_premedicated", "report_unseen_consulted", "egfr_unseen_saline", "aki_unseen_held", "rise_unseen_held", "consult_about_sibling", "premed_without_reaction", "creatinine_sameday_dateonly", "grade_snippet_cut", "aki_snippet_cut"]
+traps = ["filler_order_skipped", "filler_wrong_study", "scr_counted_from_today", "scan_deferred_for_creatinine", "aki_record_missed", "scan_deferred_for_aki", "moderate_graded_by_list", "iv_regimen", "overnight_timing", "order_off_list", "order_before_report", "diabetes_unseen_creatinine", "report_unseen_premedicated", "aki_unseen_held", "premed_without_reaction", "creatinine_sameday_dateonly", "grade_snippet_cut", "aki_snippet_cut", "order_for_cancelled", "arrival_not_acted_on", "missed_arrival", "amend_before_seen", "lure_acted_on", "blind_write_fires_amend"]
 status_only = false
 
 # The judge item reads one message; medium as in T1, checked by the live judge pass.

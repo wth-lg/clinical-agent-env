@@ -2,6 +2,7 @@ RBC-RAD-07 CT preparation
 
 Applies to every scheduled outpatient CT study the clinic orders. §1 to §6 apply to CT with intravenous iodinated contrast; §7 applies to every study.
 Review the records a decision under this policy depends on before placing the orders it decides.
+Results, corrections and messages can arrive in your queues while you work. Before you finish, review anything that arrived after you started. If it changes a decision you already recorded under this protocol, correct that decision (change, hold or stop the order, or send a corrected message) and record why. If it does not change the decision under this protocol, leave the decision in place.
 
 §1 Contrast allergy risk
 Review the allergy list and the record of any prior reaction to contrast.
@@ -34,6 +35,7 @@ Patients taking metformin who have acute kidney injury or an eGFR below 30: hold
 Otherwise continue metformin.
 
 §7 Orders and the patient
+The day's list is the CT studies booked for that day (appointment status booked); a cancelled appointment is not on the list.
 Place one order for each booked study, linked to its appointment, and no other imaging study for the patient. Place orders only for the patients on the day's list.
 A CT without contrast needs none of §1 to §6: order it as booked.
 Tell each patient what to do at home before the scan.

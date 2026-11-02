@@ -22,7 +22,9 @@ import { callTool } from '../../../packages/env/tools/registry.ts';
 import { firstShown, stepsOf } from '../../../packages/grader/exposure.ts';
 import { trajectory } from '../../../packages/grader/test/helpers.ts';
 import { syntheaRef } from '../../../packages/env/synthea-ids.ts';
+import { SPECS } from '../events.ts';
 import { expected, type Shown } from '../expected.ts';
+import { PHRASE } from './grader.ts';
 import { ref } from '../ids.ts';
 
 const comparable = (s: string) => s.replace(/\s+/g, ' ').trim().toLowerCase();
@@ -34,7 +36,11 @@ const WORD = /[\p{L}\p{N}]+/gu;
 //   the booking screen: the question and its answer ('Diabetes or metformin', 'yes')
 //   a note that names the diabetes: 'diabetes' (§4 asks for diabetes, of any type)
 //   the record of a kidney injury: 'acute kidney injury'
+//   an outside report that arrives during the trial (events.ts): its grade line, 'Contrast reaction
+//     severity' and the grade
 const ATOMS = (s: Shown): readonly string[] => {
+  const outside = /^Contrast reaction severity: (mild|moderate|severe)$/i.exec(s.phrase)?.[1];
+  if (outside !== undefined) return ['Contrast reaction severity', outside];
   const grade = /\b(mild|moderate|severe) allergic-like\b/i.exec(s.phrase)?.[1];
   if (grade !== undefined) return [grade, 'allergic-like'];
   if (/kidney injury/i.test(s.phrase)) return ['acute kidney injury'];
@@ -64,15 +70,11 @@ type Route = { item: string; id: string; note: string; patient: string; phrase: 
 // 'type 2 diabetes'); each is also an alternative (tests/alternatives.ts). The rows cut before the
 // last atom stay unseen; two are mutants (tests/mutants.ts).
 const FERREIRA = 'Daniel Ferreira';
-const SCHMITT = 'Jamaal Derick Schmitt';
 const SCHUSTER = 'Anisha Margarita Schuster';
 const PINNED: ReadonlyArray<{ item: string; note: string; atoms: string; query: string; seen: boolean; why: string }> = [
   { item: FERREIRA, note: ref('DocumentReference/doc-t5-ct-2019'), atoms: 'moderate + allergic-like', query: 'diphenhydramine', seen: true, why: "'…Classification: moderate allergic-like…', cut before 'reaction' (alternative moderate_grade_by_snippet)" },
   { item: FERREIRA, note: ref('DocumentReference/doc-t5-ct-2019'), atoms: 'moderate + allergic-like', query: 'room', seen: false, why: "'…Classification: moderate all…', cut inside the kind of reaction (mutant grade_snippet_cut)" },
   { item: FERREIRA, note: ref('DocumentReference/doc-t5-ct-2019'), atoms: 'moderate + allergic-like', query: 'on', seen: false, why: "'…Classification: moderate…', the kind of reaction cut off" },
-  { item: SCHMITT, note: ref('DocumentReference/doc-t5-schmitt-ct'), atoms: 'severe + allergic-like', query: '112', seen: true, why: "'…Classification: severe allergic-like re…' (alternative severe_grade_by_snippet)" },
-  { item: SCHMITT, note: ref('DocumentReference/doc-t5-schmitt-ct'), atoms: 'severe + allergic-like', query: '70', seen: true, why: "'…Classification: severe allergic-like reacti…'" },
-  { item: SCHMITT, note: ref('DocumentReference/doc-t5-schmitt-ct'), atoms: 'severe + allergic-like', query: '50', seen: false, why: "'…Classification: severe all…', cut inside the kind of reaction" },
   { item: SCHUSTER, note: syntheaRef('DocumentReference/doc-00291'), atoms: 'diabetes', query: 'cystitis', seen: true, why: "'…diabetes; sinusitis; …', 'type 2' cut off (alternative schuster_dm_by_history_snippet)" },
   { item: SCHUSTER, note: ref('DocumentReference/doc-t5-schuster-ed'), atoms: 'diabetes', query: 'fluids', seen: true, why: "'…pe 2 diabetes. Several coworkers…' (alternative schuster_dm_by_ed_snippet)" },
   { item: SCHUSTER, note: ref('DocumentReference/doc-t5-schuster-ed'), atoms: 'acute kidney injury', query: 'nitrite', seen: false, why: "'…prerenal acute kidney i…', cut inside the diagnosis (mutant aki_snippet_cut)" },
@@ -80,8 +82,18 @@ const PINNED: ReadonlyArray<{ item: string; note: string; atoms: string; query: 
 
 describe('T5 decisive atoms: a snippet is seen exactly when it shows every atom (R29 sweep)', async () => {
   const world = await loadStore(matrixEnv().world);
+  // The outside reports the events bring (events.ts), put as they arrive: the sweep covers their
+  // grade lines too (tests/grader.ts PHRASE: a snippet that shows one counts as reading the report).
+  const reports = SPECS.filter((sp) => sp.resources[0]!.resourceType === 'DocumentReference');
+  for (const sp of reports) world.put(sp.resources[0]!);
   const ctx: ReadContext = { world, clock, policies: [], catalog: [] };
-  const routes: Route[] = expected.items.flatMap((x) => x.shown.map((s) => ({ item: x.name, id: s.id, note: s.note, patient: x.patient.split('/')[1]!, phrase: s.phrase, atoms: ATOMS(s) })));
+  const arrived = reports.map((sp) => {
+    const x = expected.items.find((i) => i.patient === sp.item)!;
+    const doc = `DocumentReference/${sp.resources[0]!.id}`;
+    const phrase = PHRASE[sp.id]!;
+    return { item: x.name, id: doc, note: doc, patient: x.patient.split('/')[1]!, phrase, atoms: ATOMS({ id: doc, note: doc, phrase }) };
+  });
+  const routes: Route[] = [...expected.items.flatMap((x) => x.shown.map((s) => ({ item: x.name, id: s.id, note: s.note, patient: x.patient.split('/')[1]!, phrase: s.phrase, atoms: ATOMS(s) }))), ...arrived];
   const textOf = (note: string) => {
     const d = world.get('DocumentReference', note.split('/')[1]!) as { content: Array<{ attachment: { data: string } }> };
     return new TextDecoder().decode(Uint8Array.from(atob(d.content[0]!.attachment.data), (c) => c.charCodeAt(0)));

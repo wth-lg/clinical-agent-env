@@ -1,6 +1,9 @@
 // T5 contrast-ct-prep overlay, worklist probe (plan-amendment-worklist W1, builder-215): Dr.
 // Okafor's CT list for Monday 10/26 at St. Brigid Imaging, seven studies, one per T5 slot, two
-// instances of each kept item class and one filler. Each patient keeps the Synthea chart of the
+// instances of each kept item class and one filler. PW4-E3 (plan-amendment-w4) cut the list to
+// four: Schmitt's, Stracke's and Brakus's appointments are cancelled by the patient (status
+// cancelled, cancelationReason, comment), their charts and booking notes kept as they were, so no
+// id renumbers; RBC-RAD-07 §7 puts only booked studies on the list. Each patient keeps the Synthea chart of the
 // slot (only the age-matched histories were used, verifier-phase-P17i-W1-0-1 F7, so no birth date
 // moves but Daniel Ferreira's, which the earlier T5 set); the overlay adds the booked appointment,
 // the booking note and the class's records, and removes what would contradict the scenario.
@@ -172,10 +175,19 @@ const PROGRESS: [string, string] = ['11506-3', 'Progress note'];
 const ED_SUMMARY: [string, string] = ['59258-4', 'Emergency department Discharge summary'];
 
 // A booked slot at St. Brigid Imaging on Monday 10/26, the reading radiologist on it.
-const appointment = (id: string, pt: string, hhmm: string, description: string, created: string, reason?: string): Resource => ({
+// A study taken off the list (PW4-E3 list cut): the patient called to cancel, to be rebooked; the
+// chart and the booking note stay as they were (the note records the booking, made before it).
+type Cancelled = { on: string; why: string };
+const appointment = (id: string, pt: string, hhmm: string, description: string, created: string, reason?: string, cancelled?: Cancelled): Resource => ({
   resourceType: 'Appointment',
   id,
-  status: 'booked',
+  status: cancelled ? 'cancelled' : 'booked',
+  ...(cancelled
+    ? {
+      cancelationReason: { coding: [{ system: 'http://terminology.hl7.org/CodeSystem/appointment-cancellation-reason', code: 'pat', display: 'Patient' }], text: `Cancelled by the patient: ${cancelled.why}` },
+      comment: `Cancelled on ${cancelled.on} at the patient's request (${cancelled.why}); to be rebooked. Jordan Reyes, NP`,
+    }
+    : {}),
   serviceType: [{ coding: [{ system: SNOMED, code: '77477000', display: 'Computed tomography' }], text: 'CT' }],
   ...(reason ? { reasonReference: [{ reference: reason }] } : {}),
   description: `${description}, St. Brigid Imaging`,
@@ -493,13 +505,13 @@ const overlay: Overlay = {
         { manifestation: ['126485001', 'Urticaria'], severity: 'mild' },
       ]),
       note('doc-t5-schmitt-ct', SCHMITT, '2023-08-19T18:30:00-04:00', IMAGING, 'enc-t5-schmitt-0819', RADIOLOGIST, HOSPITAL, CT_2023_SCHMITT),
-      appointment('appt-t5-schmitt', SCHMITT, '10:00', 'CT abdomen and pelvis with IV contrast (recurrent right lower quadrant pain)', '2026-10-07T09:15:00-04:00'),
+      appointment('appt-t5-schmitt', SCHMITT, '10:00', 'CT abdomen and pelvis with IV contrast (recurrent right lower quadrant pain)', '2026-10-07T09:15:00-04:00', undefined, { on: '10/21', why: 'out of town for work that week' }),
       note('doc-t5-schmitt-1007', SCHMITT, '2026-10-07T09:20:00-04:00', PHONE, null, REYES, CLINIC, booked('CT abdomen and pelvis with IV contrast', '10:00', 'recurrent right lower quadrant pain since August', '', { reaction: 'yes, hives with CT dye in 2023 (on the allergy list)', kidney: 'no', diabetes: 'no' })),
 
       // Stracke, 11:00; eGFR under 30 inside the window, over 30 before it.
       creatinine('obs-t5-stracke-0720', STRACKE, '2026-07-20T09:15:00-04:00', '2026-07-20T14:40:00-04:00', 2.1),
       creatinine('obs-t5-stracke-1013', STRACKE, '2026-10-13T09:25:00-04:00', '2026-10-13T15:05:00-04:00', 2.85),
-      appointment('appt-t5-stracke', STRACKE, '11:00', 'CT abdomen and pelvis with IV contrast (unintentional weight loss)', '2026-10-14T13:20:00-04:00'),
+      appointment('appt-t5-stracke', STRACKE, '11:00', 'CT abdomen and pelvis with IV contrast (unintentional weight loss)', '2026-10-14T13:20:00-04:00', undefined, { on: '10/20', why: 'a family commitment that day' }),
       note('doc-t5-stracke-1014', STRACKE, '2026-10-14T13:25:00-04:00', PHONE, null, REYES, CLINIC, booked('CT abdomen and pelvis with IV contrast', '11:00', 'unintentional weight loss of 6 kg since July', '', { reaction: 'no', kidney: 'yes, chronic kidney disease, followed by Dr. Okafor', diabetes: 'yes, insulin' })),
 
       // Schuster, 13:00; metformin, and AKI in the faxed ED summary of 10/05.
@@ -525,7 +537,7 @@ const overlay: Overlay = {
       encounter('enc-t5-brakus-1021', BRAKUS, 'AMB', ['185345009', 'Encounter for symptom (procedure)'], '2026-10-21T10:10:00-04:00', '2026-10-21T10:40:00-04:00', CLINIC, PA),
       creatinine('obs-t5-brakus-1021', BRAKUS, '2026-10-21T10:30:00-04:00', '2026-10-21T16:10:00-04:00', 1.64, { encounter: { reference: 'Encounter/enc-t5-brakus-1021' } }),
       note('doc-t5-brakus-1021', BRAKUS, '2026-10-21T10:50:00-04:00', PROGRESS, 'enc-t5-brakus-1021', PA, CLINIC, URGENT_1021),
-      appointment('appt-t5-brakus', BRAKUS, '15:00', 'CT abdomen with IV contrast (adrenal protocol: 1.8 cm left adrenal nodule follow-up)', '2026-10-02T14:00:00-04:00', 'Condition/cond-t5-brakus-adrenal'),
+      appointment('appt-t5-brakus', BRAKUS, '15:00', 'CT abdomen with IV contrast (adrenal protocol: 1.8 cm left adrenal nodule follow-up)', '2026-10-02T14:00:00-04:00', 'Condition/cond-t5-brakus-adrenal', { on: '10/22', why: 'asked for a date in November' }),
       note('doc-t5-brakus-1002', BRAKUS, '2026-10-02T14:05:00-04:00', PHONE, null, REYES, CLINIC, booked('CT abdomen with IV contrast, adrenal protocol', '15:00', 'follow-up of the 1.8 cm left adrenal nodule seen in February', '', { reaction: 'no', kidney: 'no', diabetes: 'yes, metformin' })),
     ];
     return {
