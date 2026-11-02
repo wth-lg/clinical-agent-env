@@ -549,10 +549,12 @@ export function traceability(task: MatrixTask): Array<{ check: string; reason: s
       const text = lines[Number(line[1]) - 1];
       return text === undefined || text.trim() === '' ? [{ check: c.id, reason: `${t} is ${text === undefined ? 'past the end of' : 'a blank line in'} instruction.md` }] : [];
     }
-    const policy = /^([A-Za-z0-9-]+)(?: (§\S+))?$/.exec(t);
+    // A policy, one of its sections, or several ('RBC-TOC-02 §2 and §8', 'RBC-X §1, §3').
+    const policy = /^([A-Za-z0-9-]+)(?: (§[^\s,]+(?:(?:,\s*|\s+and\s+)§[^\s,]+)*))?$/.exec(t);
     const p = policy && task.policies.find((x) => x.id === policy[1]);
     if (!policy || !p) return [{ check: c.id, reason: `${JSON.stringify(c.traces_to)} names no line of instruction.md and no policy of the task` }];
-    if (policy[2] !== undefined && !p.text.includes(policy[2])) return [{ check: c.id, reason: `policy ${p.id} has no ${policy[2]}` }];
+    const missing = (policy[2]?.match(/§[^\s,]+/g) ?? []).find((sec) => !p.text.includes(sec));
+    if (missing !== undefined) return [{ check: c.id, reason: `policy ${p.id} has no ${missing}` }];
     return [];
   });
 }

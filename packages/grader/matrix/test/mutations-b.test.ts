@@ -2,6 +2,8 @@
 // checks that need no trial (traceability, double derivation, status-only, traps). Each test
 // runs only the cases its assertion needs.
 import { describe, expect, it } from 'vitest';
+import { traceability } from '../matrix.ts';
+import type { MatrixTask } from '../types.ts';
 import { matrix, ONE, TOY } from './harness.ts';
 
 describe('matrix --task _toy', () => {
@@ -27,6 +29,12 @@ describe('matrix --task _toy', () => {
     const { code, text } = await matrix({ checks: [{ ...first!, traces_to: 'instruction.md:99' }, ...rest] }, { ...ONE, cases: [] });
     expect(code).toBe(1);
     expect(text).toMatch(new RegExp(`traceability: .*${first!.id}`));
+  });
+  it('resolves a traces_to naming several sections of one policy, and names a missing one', () => {
+    const task = (traces_to: string) => ({ instruction: 'x', policies: [{ id: 'RBC-X-01', text: '§2 Two.\n§8 Eight.' }], checks: [{ ...TOY.checks[0]!, traces_to }] }) as unknown as MatrixTask;
+    expect(traceability(task('RBC-X-01 §2 and §8'))).toEqual([]);
+    expect(traceability(task('RBC-X-01 §2, §8'))).toEqual([]);
+    expect(traceability(task('RBC-X-01 §2 and §9'))).toEqual([{ check: TOY.checks[0]!.id, reason: 'policy RBC-X-01 has no §9' }]);
   });
   it('exits 1 when expected.ts and policy.ts disagree', async () => {
     const { code, text } = await matrix({ expected: { changed: true } }, { ...ONE, cases: [] });
