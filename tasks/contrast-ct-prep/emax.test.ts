@@ -122,7 +122,8 @@ describe('T5 e_max: every spec active (5 events)', () => {
     expect(result.lines.join('\n')).toContain('events: 5 active');
     expect(result.lines.filter((l) => /MISMATCH|want PASS|want FAIL\)?$/.test(l) && !/FAIL \(want FAIL\)/.test(l))).toEqual([]);
     expect(result.pass, result.lines.join('\n')).toBe(true);
-  });
+    // A whole matrix (about 60 cases, each run and graded): minutes on a loaded host.
+  }, 600_000);
 
   it('the chart review of the oracle names no new arrival (each arrives only after a write)', () => {
     const fresh = [...ARRIVED.mohr, ARRIVED.schuster, ARRIVED.beahan, ARRIVED.ferreiraMessage].map((k) => k.split('/')[1]!);
