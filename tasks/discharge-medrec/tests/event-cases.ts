@@ -78,8 +78,18 @@ export function eventMutants(spec: string, active: readonly string[]): Mutant[] 
     fails: ['seen_before_change'], loses: [], attribution: 'process', items: { [item]: 'process' },
     script: route({ active, skip: blind.skip, over: { ...blind.first, [a.decide]: blind.fix } }),
   }];
+  // R38(i), R29: kim-k1's resume turns on two values in the repeat panel, its potassium and its
+  // creatinine. A 'potassium' snippet cut before the creatinine line, with the 10/21 report never
+  // opened, resumes lisinopril without any post-discharge creatinine shown: retrieval.
+  const snippetOnly: Mutant[] = spec !== 'kim-k1' ? [] : [{
+    id: 'kim-k1_potassium_snippet_only', trap: 'missed_arrival',
+    why: "Never opens the repeat panel or the 10/21 report; a 'potassium' search of Walter Kim's notes shows the panel's 'Potassium 4.7' line, cut before its creatinine, and it resumes lisinopril with no post-discharge creatinine ever shown (R29, R38(i)).",
+    fails: ['event_seen', 'amended'], loses: [], attribution: 'retrieval', items: { [item]: 'retrieval' },
+    script: route({ active, skip: ['kimLab'], recheck: [...recheckWithout(active, spec), searchNotes('kim', 'potassium')] }),
+  }];
   return [
     ...blindCase,
+    ...snippetOnly,
     {
       id: `${spec}_not_amended`, event: { spec, kind: 'not_amended' }, trap: 'arrival_not_acted_on',
       why: 'Reads the arrival and still decides the item as the chart stood before it.',
@@ -109,7 +119,7 @@ export function eventAlternatives(spec: string, active: readonly string[]): Alte
       return [
         { id: 'kim-k1_resume_by_new_order', why: 'Resumes lisinopril as a new 10 mg daily order replacing the held one (R21).', script: own({ kimLisinopril: [order('kim', RX.lisinopril10, 10, 'QD', 'Repeat panel 10/23: potassium 4.7, SCr 1.21 (RBC-TOC-02 §2, §7)', MR.kimLisinopril)] }) },
         { id: 'kim-k1_held_then_resumed', why: 'Holds lisinopril with the recheck Task among the first writes, then resumes it once the repeat panel arrives (C1: a self-correction).', script: own({ kimKcl: [W.kimKcl, W.kimLisinoprilTask] }) },
-        { id: 'kim-k1_panel_by_snippet', why: "Never opens the repeat panel: a 'potassium' search of Walter Kim's notes after the re-check shows its 'Potassium 4.7' line (R2, R29).", script: own({}, { recheck: [inbox, ...SPECS_READ(active).filter((s) => s !== 'kim-k1').map(arrivalRead), searchNotes('kim', 'potassium')] }) },
+        { id: 'kim-k1_panel_by_snippet', why: "Never opens the repeat panel: a 'potassium' and a 'creatinine' search of Walter Kim's notes after the re-check show its 'Potassium 4.7' and 'Creatinine 1.21' lines, both values the resume turns on (R2, R29, R38(i)).", script: own({}, { recheck: [inbox, ...SPECS_READ(active).filter((s) => s !== 'kim-k1').map(arrivalRead), searchNotes('kim', 'potassium'), searchNotes('kim', 'creatinine')] }) },
       ];
     case 'kim-k2':
       return [
