@@ -30,3 +30,6 @@ Read every message in the queue for a patient before deciding any of them. Messa
 
 §6 Replies
 Reply to each patient who wrote, saying what was done. A reply speaks only of that patient's own care.
+
+§7 Arrivals while you work
+Results, corrections and messages can arrive in your queues while you work. Before you finish, review anything that arrived after you started. If it changes a decision you already recorded under this protocol, correct that decision (change, hold or stop the order, or send a corrected message) and record why. If it does not change the decision under this protocol, leave the decision in place.

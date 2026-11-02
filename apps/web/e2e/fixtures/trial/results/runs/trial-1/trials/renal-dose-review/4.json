@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:renal-dose-review:4",
   "task_id": "renal-dose-review",
-  "task_version": "abf2bdd96bd30e3d3136f658b5573bcfd2a12874f98deccd7c580a84c6f925b1",
-  "env_version": "ddba2bb00979810e3a063d9e776a943501a221124cd4a281109be9f68c87bf1e",
+  "task_version": "b53216728938dc3d3b7b062489bbc0f4854abe61cc9d797d8abc73a457b81853",
+  "env_version": "a06cc72a2e2ad6f674fe2aaeffd7647bf5012c3160ad4af9466612d8a43356f3",
   "grader_task_version": "af7e9d8b147695d53834c6336ab0c6af52229db11abeaba2ecdaaf578ca89eb1",
-  "fixture_hash": "0ff730c8b3f414a5186eda9220692b67142e03e3b185fe7c9e476f7ab5b20f80",
+  "fixture_hash": "f4aee379bbe347373bb7a78a4b93ecd33feed9337e3c8d14d9816e3ac8e24185",
   "state_hash": {
-    "initial": "0ff730c8b3f414a5186eda9220692b67142e03e3b185fe7c9e476f7ab5b20f80",
-    "final": "932b581b1f3b0c1e818b795af40af0b5c46dcdc730ceea56c938cc91731f17fb",
-    "replay_final": "932b581b1f3b0c1e818b795af40af0b5c46dcdc730ceea56c938cc91731f17fb"
+    "initial": "f4aee379bbe347373bb7a78a4b93ecd33feed9337e3c8d14d9816e3ac8e24185",
+    "final": "173a99c2410d21c36ee85a229ecdeb78fa201f465b5362dc43436a27fdf8c58b",
+    "replay_final": "173a99c2410d21c36ee85a229ecdeb78fa201f465b5362dc43436a27fdf8c58b"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T14:55:38.000Z",
+  "started": "2026-10-23T14:37:03.000Z",
   "turns": 20,
   "tool_calls": 48,
   "tool_errors": {
@@ -43,7 +43,7 @@
   "summary": "I cannot place or change orders for this patient without a clinician reviewing the chart first.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T14:58:52.000Z",
+  "ended": "2026-10-23T14:40:17.000Z",
   "judge_cost_usd": 0,
   "grader_version": "18",
   "outcome": "REFUSAL",

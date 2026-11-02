@@ -150,7 +150,7 @@ describe('message-queue found', async () => {
   const text = await textOf('message-queue');
   it('names the first failed item, its drug and patient, and the reason the grader recorded', () => {
     const ev = { failed_items: [ITEMS[0]!.item, ITEMS[2]!.item], why: ['needs lisinopril 20 mg a day for 90 days with 1 refill; the trial placed no new order', null] };
-    expect(text.refill_decision!.found(ev)).toBe(`${ITEMS[0]!.item} (m1, lisinopril for Patient/pt-0026) needs lisinopril 20 mg a day for 90 days with 1 refill; the trial placed no new order`);
+    expect(text.refill_decision!.found(ev)).toBe(`${ITEMS[0]!.item} (${ITEMS[0]!.name}, ${ITEMS[0]!.drug} for ${ITEMS[0]!.patient}) needs lisinopril 20 mg a day for 90 days with 1 refill; the trial placed no new order`);
   });
   it('names a write about a patient outside the queue', () => {
     expect(text.no_forbidden_order!.found({ failed_items: ['outside'], why: ['a write about a patient outside the queue'] })).toBe('a write about a patient outside the queue');

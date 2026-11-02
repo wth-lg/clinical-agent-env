@@ -4,9 +4,8 @@
 // (expected.ts Item.atoms). A report may have more than one deciding line, so its atoms are any-of
 // sets. m3: the specimen was hemolyzed, shown by 'hemolyzed' on the condition line or by
 // 'hemolysis' (that line's index, or the comment that the potassium may be falsely elevated by
-// hemolysis). m5 and m8: the specimen was collected before the window, shown by the collected date
-// or by a received or reported date before the window (each falls on or after the collection).
-// m10: the specimen was collected inside the window, shown by the collected date alone (a later
+// hemolysis). (m5 and m8, whose reports were collected before their windows, left the queue in the
+// PW4-E3 cut.) m10: the specimen was collected inside the window, shown by the collected date alone (a later
 // received or reported date does not place the collection inside it). The gates count the report as
 // seen when one read or one search snippet holds every atom of one set, in order, as whole words
 // (tests/grader.ts firstSeenBy, through seenStep). This test sweeps every snippet route: for each
@@ -51,8 +50,6 @@ type Row = { note: string; snippet: string };
 // Rows a later edit must keep as they are: the routes the gate rounds and the policy test named.
 const PINNED: ReadonlyArray<{ item: string; doc: string; query: string; seen: boolean; why: string }> = [
   { item: 'm3', doc: 'doc-t6-odum-0827', query: 'hemolyzed', seen: true, why: 'R12: the targeted rule-term search shows the hemolyzed specimen (discover.test)' },
-  { item: 'm5', doc: 'doc-t6-park-1002', query: 'collected', seen: true, why: 'R26: the rule word of §1 shows the collection date (policy.test)' },
-  { item: 'm8', doc: 'doc-t6-brooks-0412', query: 'collected', seen: true, why: 'R26: the rule word of §1 shows the collection date (policy.test)' },
   { item: 'm10', doc: 'doc-t6-price-0819', query: 'collected', seen: true, why: 'R26: the rule word of §1 shows the collection date (policy.test)' },
 ];
 
@@ -108,7 +105,7 @@ describe('T6 decisive atoms: a snippet is seen exactly when it shows every atom 
     // R29: the drug's name is not an atom; the patient and the line fix it.
     expect(routes.filter((r) => r.sets.flat().some((a) => comparable(a).includes(r.x.drug))).map((r) => r.item)).toEqual([]);
     // 'hemolysis' is on two lines (the condition's index and the comment); every other set on one.
-    expect(sweep.map((s) => `${s.item} ${s.lines.join(',')}`)).toEqual(['m3 1,2', 'm5 1,1,1', 'm8 1,1,1', 'm10 1']);
+    expect(sweep.map((s) => `${s.item} ${s.lines.join(',')}`)).toEqual(['m3 1,2', 'm10 1']);
   });
 
   it.each(sweep.map((s) => [`${s.item} ${s.doc.split('/')[1]} ${s.sets.map((a) => a.join(' + ')).join(' | ')}`, s] as const))('%s: a snippet is seen exactly when it shows every atom of one set', (_k, s) => {

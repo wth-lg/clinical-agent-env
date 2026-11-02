@@ -1,6 +1,6 @@
 [
   {
-    "key": "14a167bef2bba8a6d113f8d2d36a6268dca18fb4ff1a677c188090ffc4dd88bf",
+    "key": "3fa196bdb1c734bbe4af43ecc5cef3643364ef2ea2d2509fe92108ca152ffdf5",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -14,11 +14,11 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:30:59.736Z"
+      "at": "2026-11-01T19:16:20.246Z"
     }
   },
   {
-    "key": "1c1d0174da581e27d882e0ea0d19817fc336359303f4e8f4413d83dcacda90bd",
+    "key": "b44cd0a4668e7284ebe97d7a357002193dd8010eaeaba374ecbb43ca330ff1e7",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -32,11 +32,11 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:30:59.736Z"
+      "at": "2026-11-01T19:16:20.246Z"
     }
   },
   {
-    "key": "727d2ec9bbedfaf6ab492976b7f0a498b459b6bbf81a8d911229fb9270a06ed6",
+    "key": "c38be26a10960d9ab72f70ad5a278429d27a04c2549d03b454969eea2ae3801a",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -50,61 +50,7 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:30:59.736Z"
-    }
-  },
-  {
-    "key": "a969d5daf3ded8d2c03e770e3ddd0eb5bf1a9f273a55fe2c0bf648fb4458f42e",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:30:59.736Z"
-    }
-  },
-  {
-    "key": "bf0bd44b20aafc403ab47def6357bbf4aa5441d365b005a0f813e163e6147de2",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:30:59.736Z"
-    }
-  },
-  {
-    "key": "fcac96a3d35c2896ac3d4f8beade07334bf1e8f97a44f16794ab3c66f1d7f9a8",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:30:59.736Z"
+      "at": "2026-11-01T19:16:20.246Z"
     }
   }
 ]

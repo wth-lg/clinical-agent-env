@@ -8,7 +8,7 @@
 //   - the charts' ages and dates fit (verifier-phase-P17i-W1-0-1 F7): no birth date is patched, and
 //     nothing planted predates its patient's birth;
 //   - the two dose increases fall inside the 4-week rule, the creatinine before each is drawn
-//     before the new order, and the queue holds exactly the 13 items;
+//     before the new order, and the queue holds exactly the 6 items (the 7 cut ones are Dr. Lin's);
 //   - §2's potassium (verifier-W1-probe-T6-clinical-4 N4): the most recent valid potassium decides,
 //     measured in a BMP or on its own, and a potassium on its own is not a BMP.
 import { describe, expect, it } from 'vitest';
@@ -37,16 +37,18 @@ describe('message-queue', () => {
     expect(d).toEqual(expected);
   });
 
-  it('decides the 13 items as the worklist design does: 6 renewals, 3 thirty-day supplies, 2 holds, 2 repeat requests', () => {
+  it('decides the 6 items as the worklist design does: 4 renewals, 1 thirty-day supply, 1 repeat request', () => {
     const by = (a: string) => d.items.filter((x) => x.action === a).length;
-    expect([by('renew'), by('bridge'), by('hold'), by('duplicate')]).toEqual([6, 3, 2, 2]);
-    expect(d.items.filter((x) => x.lab === 'bmp')).toHaveLength(4);
-    expect(d.items.filter((x) => x.lab === 'hba1c')).toHaveLength(1);
+    expect([by('renew'), by('bridge'), by('hold'), by('duplicate')]).toEqual([4, 1, 0, 1]);
+    expect(d.items.filter((x) => x.lab === 'bmp')).toHaveLength(2);
+    expect(d.items.filter((x) => x.lab === 'hba1c')).toHaveLength(0);
   });
 
-  it("Dr. Okafor's messages queue holds exactly the 13 T6 items, and she is each patient's PCP", () => {
+  it("Dr. Okafor's messages queue holds exactly the 6 T6 items, the 7 cut ones are Dr. Lin's, and she is each patient's PCP", () => {
     const queue = rs.filter((r) => r.resourceType === 'Task' && r.status === 'requested' && r.owner?.reference === 'Practitioner/pr-okafor' && (r.code?.coding ?? []).some((c) => c.system === 'urn:riverbend:inbox-queue' && c.code === 'messages'));
     expect(queue.map((r) => `Task/${r.id}`).sort()).toEqual(ITEMS.map((x) => x.item).sort());
+    const lin = rs.filter((r) => r.resourceType === 'Task' && r.status === 'requested' && r.owner?.reference === 'Practitioner/pr-lin' && (r.code?.coding ?? []).some((c) => c.code === 'messages'));
+    expect(lin.map((r) => r.id).sort()).toEqual(([1, 2, 4, 5, 6, 7, 8] as const).map((n) => id(`task-t6-m${n}`)).sort());
     for (const p of SLOTS) expect((store.get('Patient', p) as { generalPractitioner?: unknown }).generalPractitioner).toEqual([{ reference: 'Practitioner/pr-okafor' }]);
   });
 
@@ -77,8 +79,6 @@ describe('message-queue', () => {
   it("every rule word the policy uses for an outside report retrieves it, with the decisive phrase, in a search of that patient's notes", async () => {
     const reports: Array<[key: Parameters<typeof id>[0], patient: string, words: string[], phrase: string]> = [
       ['doc-t6-odum-0827', 'pt-0027', ['hemolyzed', 'BMP', 'potassium'], 'hemolyzed'],
-      ['doc-t6-park-1002', 'pt-0028', ['BMP', 'collected'], 'Collected: 10/02/2025'],
-      ['doc-t6-brooks-0412', 'pt-0029', ['HbA1c', 'collected'], 'Collected: 04/14/2026'],
       ['doc-t6-price-0819', 'pt-0030', ['HbA1c', 'collected'], 'Collected: 08/19/2026'],
     ];
     const task = await loadMatrixTask('message-queue');
