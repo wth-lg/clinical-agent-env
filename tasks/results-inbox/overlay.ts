@@ -3,7 +3,8 @@
 // (plan-amendment-w4) cut Dr. Okafor's list to seven, one of each probe class: items 2, 4, 7, 8, 10,
 // 11 and 12. Items 1, 3, 5, 6, 9 and 13 stay, with their charts, filed to Jordan Reyes, NP (OFF_LIST),
 // so the signed-in user's inbox does not list them and no id moves. The mid-trial events are in
-// events.ts, outside the world. The thirteen, two of each kept class and one filler:
+// events.ts, outside the world. All thirteen planted items, two of each class and one filler
+// (the seven on the list: 2, 4, 7, 8, 10, 11, 12):
 //
 //   item  slot     patient                  class               the decisive fact and where it is
 //   1     pt-0013  Linda Marsh, 1958        nodule, screening   June CT nodule; her outside screening LDCT

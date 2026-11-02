@@ -126,7 +126,7 @@ const arrivalKey = (spec: string) => {
 // final: RBC-INBOX-01 §2(c) leaves it open). `snippet`: a note search whose snippet shows the
 // arrival's deciding atoms (R29), where one can.
 interface Recheck {
-  amend?: { made: (w: Writer, how: { call: boolean }) => Write[]; note: (w: Writer) => Write; close: (w: Writer, arrival: string, made: string[]) => Write };
+  amend?: { made: (w: Writer, how: { call: boolean; bareAbout?: boolean }) => Write[]; note: (w: Writer) => Write; close: (w: Writer, arrival: string, made: string[]) => Write };
   lure?: { act: (w: Writer) => Write[]; repeat: (w: Writer) => Write[]; close: ((w: Writer, arrival: string) => Write) | null };
   snippet?: ScriptCall;
 }
@@ -154,10 +154,10 @@ export const RECHECK: Record<string, Recheck> = {
   },
   'brennan-k-corrected': {
     amend: {
-      made: (w) => {
+      made: (w, how) => {
         const k = OBS(ARRIVAL.brennanK);
         const order = w.order(PT.brennan, BMP, 'stat', '2026-10-23', 'Stat BMP: potassium 6.4 mmol/L, corrected 2026-10-23: not hemolyzed (RBC-LAB-03 §1)', { supporting: [k] });
-        const page = w.message('Group/pool-oncall', 'stat', 'Critical potassium 6.4 (corrected: not hemolyzed)', 'Walter Brennan: the laboratory corrected his potassium of 2026-10-22 this morning: the hemolysis comment belonged to another specimen, so 6.4 mmol/L is a true critical value. Stat BMP ordered; please contact him today.', [k]);
+        const page = w.message('Group/pool-oncall', 'stat', 'Critical potassium 6.4 (corrected: not hemolyzed)', 'Walter Brennan: the laboratory corrected his potassium of 2026-10-22 this morning: the hemolysis comment belonged to another specimen, so 6.4 mmol/L is a true critical value. Stat BMP ordered; please contact him today.', how.bareAbout ? [] : [k]);
         return [order, page];
       },
       note: (w) =>
@@ -194,11 +194,12 @@ export const RECHECK: Record<string, Recheck> = {
   },
   'ondricka-k-new': {
     amend: {
-      made: (w) => {
+      made: (w, how) => {
         const k = OBS(ARRIVAL.ondrickaK);
         const order = w.order(PT.ondricka, BMP, 'stat', '2026-10-23', 'Stat BMP: potassium 6.5 mmol/L on 2026-10-23, not hemolyzed (RBC-LAB-03 §1)', { supporting: [k] });
         const page = w.message('Group/pool-oncall', 'stat', 'Critical potassium 6.5', 'Edra Ondricka: potassium 6.5 mmol/L this morning, not hemolyzed. Stat BMP ordered; please contact her today.', [k]);
-        return [order, page];
+        const told = tell(w, PT.ondricka, how.call, '2026-10-26', 'Your potassium result', 'Your blood test this morning showed a high potassium level. Please come to the clinic lab today for a repeat test; the on-call doctor will call you.', [k]);
+        return [order, page, told];
       },
       note: (w) =>
         w.note(PT.ondricka, 'Critical potassium (RBC-LAB-03)', 'Correction under RBC-INBOX-01 §8: a potassium of 6.5 mmol/L (2026-10-23 07:35, not hemolyzed) arrived after her corrected 4.4 was closed. Under RBC-LAB-03 §1: on-call notified at stat priority and a stat BMP ordered today.', [OBS(ARRIVAL.ondrickaK)], ['RBC-LAB-03']),
@@ -236,7 +237,9 @@ export const RECHECK: Record<string, Recheck> = {
 // search instead of opening it; 'close_lure' reads a lure the policy leaves open (a preliminary read
 // with no final) and completes its item anyway, and 'close_blind' completes it without reading it
 // (coordinator Addendum 5: the item's id is predictable, so a close is no sign it was reviewed).
-export type RecheckVary = 'unread' | 'same_turn' | 'no_amend' | 'act_on_lure' | 'repeat' | 'call' | 'snippet' | 'close_lure' | 'close_blind';
+// 'bare_page' sends the stat page with nothing in about, placed only by the arrival item's closure
+// linking it (R9's form, verifier-phase-P17i-W4E3-T2-206-1 P3).
+export type RecheckVary = 'unread' | 'same_turn' | 'no_amend' | 'act_on_lure' | 'repeat' | 'call' | 'snippet' | 'close_lure' | 'close_blind' | 'bare_page';
 export const QUEUES: ScriptCall[] = [{ name: 'list_inbox', input: { queue: 'results', status: 'requested' } }];
 
 export interface Options {
@@ -315,7 +318,7 @@ function recheck(w: Writer, writes: readonly Write[], over: Options): ScriptTurn
   for (const spec of fired) {
     const r = RECHECK[spec]!;
     const v = vary[spec];
-    if (r.amend && v !== 'no_amend' && v !== 'same_turn') changes.push(...(made[spec] = r.amend.made(w, { call: v === 'call' })));
+    if (r.amend && v !== 'no_amend' && v !== 'same_turn') changes.push(...(made[spec] = r.amend.made(w, { call: v === 'call', bareAbout: v === 'bare_page' })));
     if (r.lure && v === 'act_on_lure') changes.push(...r.lure.act(w));
     if (r.lure && v === 'repeat') changes.push(...r.lure.repeat(w));
   }

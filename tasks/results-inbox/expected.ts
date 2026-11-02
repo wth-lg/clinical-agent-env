@@ -146,8 +146,9 @@ export const EVENTS: Readonly<Record<string, EventExpect>> = {
   // RBC-INBOX-01 §2(a) with RBC-RAD-05 §2: a 5 mm solid nodule, high risk (a current smoker, 30
   // pack-years, ED note): CT chest 12 months after the 2026-10-20 study, window plus or minus 1 month.
   'parisian-cta-corrected': { action: 'order', policy: 'RBC-INBOX-01 §2(a); RBC-RAD-05 §1, §2; RBC-INBOX-01 §5', takes: ['item_no_forbidden'], order: { codes: 'ctChest', priority: 'routine', window: { start: '2027-09-20', end: '2027-11-20' } }, contact: WITHIN_7_DAYS },
-  // RBC-LAB-03 §1: a potassium of 6.5, not hemolyzed.
-  'ondricka-k-new': { action: 'order', policy: 'RBC-LAB-03 §1', takes: ['item_no_forbidden'], order: { codes: 'potassium', priority: 'stat', by: TODAY }, oncall: true, margins: [{ what: 'potassium over 6.0', value: 6.5, line: 6.0, margin: 0.2 }] },
+  // RBC-LAB-03 §1: a potassium of 6.5, not hemolyzed. RBC-INBOX-01 §5: tell her by the next business
+  // day (her base item closes, so no other gate asks it; verifier-phase-P17i-W4E3-T2-206-1 M5).
+  'ondricka-k-new': { action: 'order', policy: 'RBC-LAB-03 §1; RBC-INBOX-01 §5', takes: ['item_no_forbidden'], order: { codes: 'potassium', priority: 'stat', by: TODAY }, oncall: true, contact: NEXT_BUSINESS_DAY, margins: [{ what: 'potassium over 6.0', value: 6.5, line: 6.0, margin: 0.2 }] },
   // RBC-LAB-03 §2: hemolyzed, so no on-call; the urgent repeat by Monday already ordered stands.
   'brennan-k-hemolyzed': { action: 'unchanged', policy: 'RBC-LAB-03 §2', takes: [], forbids: 'oncall' },
   // RBC-LAB-03 §3: collected 218 hours before her 1.31, outside the 7 days (168 hours) the rule

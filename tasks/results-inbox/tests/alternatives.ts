@@ -226,7 +226,10 @@ function eventAlternatives(active: readonly string[]): Alternative[] {
   ];
   for (const s of specs) {
     if (s.id === 'patel-ldct-addendum' || s.id === 'parisian-cta-corrected') out.push({ id: `${s.id}_snippet`, why: `Sees what arrived for ${s.item} only through a note search whose snippet shows its deciding line (R29), and corrects as the oracle does.`, script: solve({ recheck: { [s.id]: 'snippet' } }) });
-    if (['patel-ldct-addendum', 'whitfield-cr-new', 'parisian-cta-corrected'].includes(s.id)) out.push({ id: `${s.id}_told_by_call`, why: 'Has the RN triage pool phone the patient about the arrival, a task focused on it, instead of a portal message.', script: solve({ recheck: { [s.id]: 'call' } }) });
+    if (['patel-ldct-addendum', 'whitfield-cr-new', 'parisian-cta-corrected', 'ondricka-k-new'].includes(s.id)) out.push({ id: `${s.id}_told_by_call`, why: 'Has the RN triage pool phone the patient about the arrival, a task focused on it, instead of a portal message.', script: solve({ recheck: { [s.id]: 'call' } }) });
+    // verifier-phase-P17i-W4E3-T2-206-1 S1 (P3): the stat page with nothing in about, placed by the
+    // arrival item's closure that links it, as R9 places one a list item's closure links.
+    if (s.id === 'brennan-k-corrected') out.push({ id: `${s.id}_page_linked_by_arrival`, why: "Pages on-call at stat about Walter Brennan's corrected potassium with nothing in about, and completes the arrival's item linking the stat BMP and the page: the closure places the page.", script: solve({ recheck: { [s.id]: 'bare_page' } }) });
     if (s.class === 'D') out.push({ id: `${s.id}_repeat`, why: 'Reads the lure and adds what a careful clinician may: a repeat test, or a note that the preliminary read waits for its final; the decision stands.', script: solve({ recheck: { [s.id]: 'repeat' } }) });
   }
   return out;

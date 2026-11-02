@@ -1,10 +1,9 @@
-# T2 (worklist probe, plan-amendment-worklist.md W1): clearing Dr. Okafor's results inbox of 13 items
-# under RBC-INBOX-01 and the policies it references (overlay.ts), two items of each kept class and one
-# filler: a nodule already followed in lung cancer screening (overdue and on schedule), a hemolyzed
-# potassium (flagged on the report and on the result), a corrected result (to critical and to normal),
-# an entered-in-error result (the item's own and an earlier comparison value), a preliminary report
-# whose final differs (to urgent and to nothing), acute kidney injury (by the 48-hour rise and by the
-# 7-day ratio), and a normal TSH. expected.ts lists them.
+# T2 (worklist probe, plan-amendment-worklist.md W1; cut in PW4-E3, plan-amendment-w4): clearing Dr.
+# Okafor's results inbox of 7 items under RBC-INBOX-01 and the policies it references (overlay.ts), one
+# item of each probe class: a nodule already followed in lung cancer screening (on schedule), a
+# hemolyzed potassium (flagged on the result), a corrected result (to normal), an entered-in-error
+# comparison value, a preliminary report whose final finds nothing, acute kidney injury (by the
+# 48-hour rise), and a normal TSH; and four mid-trial events (events.ts). expected.ts lists them.
 # What each gate check requires, in the words the UI and audit-check use: ../results-inbox.check-text.ts
 # (outside this directory, so editing it moves no version; a new gate check needs an entry there).
 # Fault criteria: a closure whose update_inbox_item link names the wrong resource is a fair model
