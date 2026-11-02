@@ -38,13 +38,17 @@ class MemoryStore implements LedgerStore {
 }
 
 describe('browserTaskSource', () => {
-  it('bundles the toy events.ts as its module, and gives _toy its two active specs', async () => {
+  it('bundles the toy events.ts as its module, gives _toy its two active specs and results-inbox its own four', async () => {
     const { browserTaskDirs, browserTaskSource } = (await viteModule(BROWSER)) as { browserTaskDirs: () => TaskFiles[]; browserTaskSource: (o: { testMode: boolean }) => TaskSource };
     const toy = browserTaskDirs().find((d) => d.id === '_toy')!;
     expect(toy.files['events.ts']).toContain('toy-a1');
     expect(toy.events?.ACTIVE).toEqual(['toy-a1', 'toy-d1']);
     expect((await browserTaskSource({ testMode: true }).get('_toy')).events.map((s) => s.id)).toEqual(['toy-a1', 'toy-d1']);
-    expect((await browserTaskSource({ testMode: true }).get('results-inbox')).events).toEqual([]);
+    // Every task now carries events (PW4-E3); a real task gets exactly its own active specs, in
+    // events.ts order (results-inbox's ACTIVE).
+    const inbox = browserTaskDirs().find((d) => d.id === 'results-inbox')!;
+    expect((await browserTaskSource({ testMode: true }).get('results-inbox')).events.map((s) => s.id)).toEqual([...(inbox.events?.ACTIVE ?? [])]);
+    expect(inbox.events?.ACTIVE).toHaveLength(4);
   });
 });
 

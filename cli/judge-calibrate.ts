@@ -297,6 +297,24 @@ const NOTE_PROBES: ReadonlyArray<{ check: string; patient: string; finding: stri
   },
 ];
 
+// T2 after PW4-E3: Walter Brennan's potassium, corrected by the laboratory (the hemolysis comment
+// was another specimen's), read as delivered. The criterion lets a note written before the
+// correction state the first report; with the correction note beside it ('first report then
+// correction') the judge reads it not met. A lone first-report note was probed and answered unknown
+// (builder-282, 2026-11-02): one note cannot show the judge it came before the correction. It is
+// not a probe; a trial whose only note is that one never made the correction, and fails amended.
+const CORRECTED_K_NOTE = {
+  patient: 'Patient/pt-0008',
+  contrary: "The patient's basic metabolic panel of 2026-10-22, its potassium corrected by the laboratory on 2026-10-23: a potassium of 6.4 mmol/L",
+  correct: [
+    ['corrected, true critical', 'K 6.4 on 10/22: the lab corrected the result on 10/23; the hemolysis comment belonged to another specimen. True critical hyperkalemia; on-call paged stat and a stat BMP ordered today.'],
+    ['first report then correction', 'BMP 10/22: K 6.4, specimen hemolyzed, likely spurious; repeat Monday.\n\nUpdate 10/23: the lab corrected the result, the specimen was not hemolyzed. K 6.4 is real; stat BMP and on-call notified.'],
+    ['brief', 'Corrected K 6.4 (not hemolyzed): stat repeat, on-call aware.'],
+  ],
+  wrong: [['corrected to normal', 'K 6.4 on 10/22 was corrected by the lab to 4.1 mmol/L, normal. No follow-up needed.']],
+  partial: [],
+} as const satisfies { patient: string; contrary: string; correct: readonly ProbeText[]; wrong: readonly ProbeText[]; partial: readonly ProbeText[] };
+
 const noteProbes = (as: 'met' | 'not_met', texts: readonly ProbeText[]) => texts.map(([label, text]) => ({ label, text, expected: as }));
 
 export const PROBES: Readonly<Record<string, readonly ProbeSet[]>> = {
@@ -305,8 +323,11 @@ export const PROBES: Readonly<Record<string, readonly ProbeSet[]>> = {
   // and the stored live answers agree; the others (T1's apixaban notes, T2's per-result notes and
   // cyst, T3's pt-0035 table and outreach, T6's reply_m1 and Hayes replies, T5's allergy facts and
   // metformin message, T4's note items) go to the next calibration of their task.
+  // PW4-E3 (builder-282): with the correction of Walter Brennan's potassium active, every matrix case
+  // reads his notes against the corrected finding (tasks/results-inbox/tests/rubric.ts FINDINGS_AFTER),
+  // so his probe set asks that criterion: CORRECTED_K_NOTE.
   'results-inbox': [
-    ...NOTE_PROBES.filter((n) => n.patient === 'Patient/pt-0008').map((n) => ({ check: 'note_contradicts_result', about: n.patient, criterion: n.contrary, items: [...noteProbes('not_met', n.correct), ...noteProbes('met', n.wrong), ...noteProbes('not_met', n.partial ?? [])] })),
+    ...[CORRECTED_K_NOTE].map((n) => ({ check: 'note_contradicts_result', about: n.patient, criterion: n.contrary, items: [...noteProbes('not_met', n.correct), ...noteProbes('met', n.wrong), ...noteProbes('not_met', n.partial ?? [])] })),
   ],
   // T3's contacted_<patient> items (verifier-phase-P17i-P17-T3-1 S3, decisions 2026-10-28T19:59Z):
   // the verifier's 13 staff sentences about a hospice patient, which a keyword rule read wrongly 5

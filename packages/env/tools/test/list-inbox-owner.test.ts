@@ -15,6 +15,7 @@ import { callTool, definitions, type ToolResult } from '../registry.ts';
 import { USER as WRITE_USER } from '../write/context.ts';
 import { newSession, TOOLS, type WriteContext } from '../write/index.ts';
 import { id, IDS, ref } from '../../../../tasks/results-inbox/ids.ts';
+import { expected } from '../../../../tasks/results-inbox/expected.ts';
 
 const root = new URL('../../../../', import.meta.url);
 const base = await parseNdjson(readFileSync(new URL('fixtures/world.ndjson.gz', root)));
@@ -26,8 +27,11 @@ const ok = (r: ToolResult): Record<string, unknown> => {
   return r.content as Record<string, unknown>;
 };
 type Row = Record<string, unknown>;
-// T2's results items only: other task overlays may add their own.
+// T2's results items only: other task overlays may add their own. T2's list (expected.items, cut to
+// one item per class in PW4-E3) is the signed-in user's; the other planted T2 items are filed to
+// Jordan Reyes, NP (tasks/results-inbox/overlay.ts OFF_LIST).
 const T2_ITEMS = new Set(Object.entries(IDS).filter(([k]) => k.startsWith('task-t2-inbox-')).map(([, v]) => `Task/${v}`));
+const T2_LIST = new Set(expected.items.map((x) => x.task));
 const t2 = (c: WriteContext, input: Record<string, unknown>): Row[] =>
   (ok(callTool(READ_TOOLS, 'list_inbox', { queue: 'results', count: 50, ...input }, c)).entries as Row[]).filter((r) =>
     T2_ITEMS.has(String(r.task)),
@@ -38,7 +42,7 @@ describe('list_inbox owner', () => {
     const c = fresh();
     ok(callTool(TOOLS, 'update_inbox_item', { task_id: id('task-t2-inbox-4'), action: 'reassign', new_owner: 'Group/pool-oncall' }, c));
     const mine = t2(c, { status: 'requested' });
-    expect(mine).toHaveLength(T2_ITEMS.size - 1);
+    expect(mine).toHaveLength(T2_LIST.size - 1);
     expect(mine.map((r) => r.task)).not.toContain(ref('Task/task-t2-inbox-4'));
     for (const r of mine) expect(r.owner).toBe('Practitioner/pr-okafor');
     const oncall = t2(c, { status: 'requested', owner: 'Group/pool-oncall' });
@@ -48,8 +52,10 @@ describe('list_inbox owner', () => {
   it("lists the signed-in user's items when owner names them, and nothing for an owner with no items", () => {
     const c = fresh();
     expect(t2(c, { owner: 'Practitioner/pr-okafor' })).toEqual(t2(c, {}));
-    expect(t2(c, {})).toHaveLength(T2_ITEMS.size);
-    expect(T2_ITEMS.size).toBe(13); // the W1 T2 worklist: 13 results on 8 patients
+    expect(new Set(t2(c, {}).map((r) => r.task))).toEqual(T2_LIST);
+    expect(T2_ITEMS.size).toBe(13); // the W1 T2 worklist: 13 results on 8 patients, 7 of them on the list
+    const off = t2(c, { owner: 'Practitioner/pr-reyes' }).map((r) => String(r.task));
+    expect(new Set(off)).toEqual(new Set([...T2_ITEMS].filter((t) => !T2_LIST.has(t))));
     expect(t2(c, { owner: 'Practitioner/pr-lin' })).toEqual([]);
   });
 

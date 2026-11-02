@@ -316,8 +316,8 @@ describe('judge-calibrate reference and protocol', () => {
 
 describe('judge-calibrate --probes', () => {
   const existing = p11cFile();
-  // Since the W1 train (builder-249) results-inbox keeps one probe set: note_contradicts_result about
-  // Walter Brennan (pt-0008), the only judged question the worklist still asks word for word.
+  // results-inbox keeps one probe set: note_contradicts_result about Walter Brennan (pt-0008), since
+  // PW4-E3 against his corrected finding, the criterion every matrix case asks for his notes.
 
   it('asks each paraphrase of every probe set once, live, and keeps the results under probes, one entry per set', { timeout: SLOW }, async () => {
     // Met when the text says no follow-up or no further imaging is needed; otherwise not met.
