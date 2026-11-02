@@ -16,10 +16,14 @@ describe('replayEnvVerdict', () => {
   });
 
   it('does not match a record of another environment, or one with none', () => {
-    expect(replayEnvVerdict(record({ env_version: 'old' }), ENV)).toEqual({ match: false, outcome: null, recorded_outcome: 'FAIL', current_outcome: 'FAIL', error: envChanged({ env_version: 'old', task_version: 'v1' }, ENV) });
+    expect(replayEnvVerdict(record({ env_version: 'old' }), ENV)).toEqual({ match: false, outcome: null, recorded_outcome: 'FAIL', current_outcome: 'FAIL', error: `${envChanged({ env_version: 'old', task_version: 'v1' }, ENV)}; reproduce at the commit in results/<run>/README.md` });
     expect(replayEnvVerdict(record({ env_version: null }), ENV)?.error).toMatch(/^environment changed: run at env_version \(none: recorded before env_version, task_version v1\)/);
     const { env_version: _, ...none } = record();
     expect(replayEnvVerdict(none, ENV)?.match).toBe(false);
+  });
+
+  it('R37: points at the commit the run directory\'s README.md names', () => {
+    expect(replayEnvVerdict(record({ env_version: 'old', run_id: 'probe-1' }), ENV)?.error).toMatch(/^environment changed: run at env_version old, checkout at e{64}; reproduce at the commit in results\/probe-1\/README\.md$/);
   });
 });
 

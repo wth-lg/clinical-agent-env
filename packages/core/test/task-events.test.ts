@@ -5,7 +5,7 @@
 // code env_version hashed. The Node source imports the file by the hash of the text it read, so a
 // source built after an edit runs the edited file. The worker host (packages/core/worker-host.ts,
 // which apps/web's harness Worker runs) gets the specs through its TaskSource like any caller.
-import { cpSync, readFileSync, writeFileSync } from 'node:fs';
+import { cpSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { scenarioTransport } from '../../../apps/web/src/harness/scenarios.ts';
@@ -43,7 +43,11 @@ describe('the Node TaskSource loads events.ts', () => {
   it('gives _toy its two active specs, and a task without events.ts none', async () => {
     const tasks = nodeTaskSource({ testMode: true });
     expect((await tasks.get('_toy')).events.map((s) => [s.id, s.class])).toEqual([['toy-a1', 'A'], ['toy-d1', 'D']]);
-    expect((await tasks.get('renal-dose-review')).events).toEqual([]);
+    // A task without events.ts: the toy with its events.ts taken away (R37: no real task's data).
+    const dir = tempDir('task-events-none');
+    cpSync(join(TASKS_DIR, '_toy'), join(dir, '_toy'), { recursive: true });
+    rmSync(join(dir, '_toy', 'events.ts'));
+    expect((await nodeTaskSource({ root: dir, testMode: true }).get('_toy')).events).toEqual([]);
   });
 
   it('imports the events.ts it read: a source built after an edit runs the edited ACTIVE list', async () => {

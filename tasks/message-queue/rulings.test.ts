@@ -5,8 +5,9 @@
 //   R21       a visit is seen through any completed visit in the 15-month window or a note of one
 //   R20, R31  m12's BMP is seen only through a complete search that covers the 12-month window (the
 //             panel and its results are lures); m13 does not need the eGFR entered in error (a lure)
-//   R31       m5 and m8 are absence items like m12: each counts only a complete window search of the
-//             clinic's own results, and its outside report alone is a lure (verifier-W1T-190-falsepass F3)
+//   R31       an absence item counts only a complete window search of the clinic's own results, and an
+//             outside report alone is a lure (verifier-W1T-190-falsepass F3); since the PW4-E3 cut to 6
+//             items, m12 is the one absence item (m5 and m8 are off the queue)
 //   F2        a code or category filter matches in its system, as fhir_search does
 //   R27       a complete run of pages counts, with one sort and the same filters
 //   R20, R27  covers: only a complete search over the 12-month window whose filters cannot hide a
@@ -28,7 +29,6 @@
 //   R7        every value an item turns on, a trap's included, clears its threshold by the lint margin
 //   clinical F1  a hold's Task names the drug's order (its MedicationRequest), in the policy's words
 //   clinical F2  task.toml quotes ADA 6.2 whole and calls the 6-month window a local floor
-//   clinical F3  m8's report date falls outside the HbA1c window, so its mutant counts the filing date
 import { describe, expect, it } from 'vitest';
 import { nodeTaskSource } from '../../cli/adapters/tasks-node.ts';
 import { loadMatrixTask, matrixEnv } from '../../cli/matrix.ts';
@@ -43,7 +43,6 @@ import { stepsOf } from '../../packages/grader/exposure.ts';
 import { checkText } from '../message-queue.check-text.ts';
 import type { Step } from '../../packages/grader/check.ts';
 import { coveredAt, covers, LAB_CODES, seenStep } from './tests/grader.ts';
-import { mutants } from './tests/mutants.ts';
 
 const store = await loadStore(matrixEnv().world);
 const task = await nodeTaskSource({ testMode: false }).get('message-queue');
@@ -52,22 +51,10 @@ const policy = task.policies.find((p) => p.id === 'RBC-RX-05')!.text;
 const source = task.policies.find((p) => p.id === 'RBC-RX-05')!.source;
 type Obs = { status?: string; valueQuantity?: { value?: number }; note?: Array<{ text?: string }>; effectiveDateTime?: string; issued?: string };
 const obs = (key: string) => store.get('Observation', id(key as never)) as Obs;
-const sixMonthsBefore = (iso: string) => {
-  const d = new Date(iso);
-  d.setUTCMonth(d.getUTCMonth() - 6);
-  return d.toISOString().slice(0, 10);
-};
 
 // R1: per item, the records that decide its expected action (a record that cannot change it is not one).
 const DECISIVE: Record<string, string[]> = {
-  m1: ['Observation/obs-t6-hayes-1005-k', 'Observation/obs-t6-hayes-0414-k'], // hemolyzed newest K; the valid K that decides renew
-  m2: ['Communication/comm-t6-m1'], // the first message for the same lisinopril (§5)
   m3: ['DocumentReference/doc-t6-odum-0827', 'Observation/obs-t6-odum-0120-k'], // hemolyzed outside K; the valid K
-  m4: ['Encounter/enc-t6-odum-0120'], // the visit within 15 months (§4)
-  m5: ['DocumentReference/doc-t6-park-1002', 'Encounter/enc-t6-park-0720', 'DiagnosticReport/dr-t6-park-0421'], // the outside BMP collected outside 12 months; the visit that allows 30 days; her newest in-house BMP (R31: seen only by a window search)
-  m6: ['Observation/obs-t6-park-egfr-0720'], // the amended eGFR 39
-  m7: ['Observation/obs-t6-brooks-1008-cr', 'Observation/obs-t6-brooks-0921-cr'], // the rise and its baseline (holds whatever the potassium)
-  m8: ['DocumentReference/doc-t6-brooks-0412', 'Observation/obs-t6-brooks-1008-egfr', 'Observation/obs-t6-brooks-a1c-0112'], // the outside HbA1c collected outside 6 months; eGFR 54 (not a hold); her newest in-house HbA1c (R31: seen only by a window search)
   m9: ['Observation/obs-t6-price-1006-cr', 'Observation/obs-t6-price-0918-cr', 'Observation/obs-t6-price-1006-k'], // the rise under 30%, its baseline; potassium 5.2
   m10: ['DocumentReference/doc-t6-price-0819', 'Observation/obs-t6-price-1006-egfr'], // the HbA1c inside 6 months; eGFR 65
   m11: ['Communication/comm-t6-m10'], // his own message for the same metformin (§5)
@@ -86,7 +73,7 @@ describe('T6 probe rulings', () => {
     type Enc = { id: string; status?: string; subject?: { reference?: string }; period?: { start?: string } };
     type Doc = { id: string; context?: { encounter?: Array<{ reference?: string }> } };
     const since = `${Number(NOW.slice(0, 4)) - 1}-${String(Number(NOW.slice(5, 7)) - 3).padStart(2, '0')}${NOW.slice(7, 10)}`;
-    for (const name of ['m4', 'm5', 'm12']) {
+    for (const name of ['m12']) {
       const x = ITEMS.find((i) => i.name === name)!;
       const visit = x.decisive.find((k) => k.startsWith('Encounter/'))!;
       const encs = ([...store.resources()].filter((r) => r.resourceType === 'Encounter') as unknown as Enc[]).filter((e) => e.subject?.reference === x.patient && e.status === 'finished' && (e.period?.start ?? '') >= since).map((e) => `Encounter/${e.id}`);
@@ -120,7 +107,7 @@ describe('T6 probe rulings', () => {
     expect(obs('obs-t6-webb-egfr-1014').status).toBe('entered-in-error');
   });
 
-  it("R31 (verifier-W1T-190-falsepass F3): m5, m8 and m12 count their absence only at a complete window search; the newest in-house result and the outside report alone are lures", () => {
+  it("R31 (verifier-W1T-190-falsepass F3): m12 counts its absence only at a complete window search; the newest in-house result and the outside report alone are lures", () => {
     type Res = { resourceType: string; id: string; status?: string; subject?: { reference?: string }; code?: { coding?: Array<{ code?: string }> }; effectiveDateTime?: string };
     const LOINC = 'http://loinc.org';
     const of = (name: string) => ITEMS.find((i) => i.name === name)!;
@@ -128,7 +115,7 @@ describe('T6 probe rulings', () => {
     const coded = (r: Res, codes: readonly string[]) => (r.code?.coding ?? []).some((c) => codes.includes(c.code ?? ''));
     // Each absence id is the patient's newest result of the kind, collected before the window, so the
     // window holds none of the kind: an R27-complete search of it is empty, and the id stands for it.
-    const kinds = { m5: { type: 'DiagnosticReport', codes: LAB_CODES.bmp }, m8: { type: 'Observation', codes: LAB_CODES.hba1c }, m12: { type: 'DiagnosticReport', codes: LAB_CODES.bmp } } as const;
+    const kinds = { m12: { type: 'DiagnosticReport', codes: LAB_CODES.bmp } } as const;
     for (const [name, kind] of Object.entries(kinds)) {
       const x = of(name);
       const a = x.absence!;
@@ -143,20 +130,8 @@ describe('T6 probe rulings', () => {
       const searched = [{ n: 2, exposed_ids: [], referenced_ids: [], written_ids: [], shown: {}, search: { type: rule.type, patient: x.patient, date_ge: a.since, whole: true } }] as unknown as Step[];
       expect(seenStep(x, a.id)(searched), name).toBe(2);
     }
-    // m5: the 12-month BMP window, by a potassium list or the panel reports, as m12.
-    expect(of('m5').absence).toEqual({ ...of('m12').absence!, id: ref('DiagnosticReport/dr-t6-park-0421') });
-    // m8: the 6-month HbA1c window (§3), counted back from today to the collection date.
-    expect(of('m8').absence).toEqual({ id: ref('Observation/obs-t6-brooks-a1c-0112'), since: sixMonthsBefore(`${NOW.slice(0, 10)}T12:00:00Z`), statuses: ['final', 'amended', 'corrected'], searches: [{ type: 'Observation', codes: [`${LOINC}|4548-4`], category: 'http://terminology.hl7.org/CodeSystem/observation-category|laboratory' }] });
-    const m8 = of('m8');
-    const base = { type: 'Observation', patient: 'Patient/pt-0029', code: '4548-4', date_ge: '2026-04-23', whole: true };
-    expect(covers(m8, base)).toBe(true);
-    expect(covers(m8, { ...base, date_ge: '2026-04-24' })).toBe(false);
-    expect(covers(m8, { ...base, code: '2823-3' })).toBe(false);
-    expect(covers(m8, { ...base, type: 'DocumentReference' })).toBe(false);
-    // The outside report is still decisive on its own, by its atoms (R28): it is the one record of the
-    // kind filed inside the window.
-    expect(of('m5').decisive).toContain(ref('DocumentReference/doc-t6-park-1002'));
-    expect(m8.decisive).toContain(ref('DocumentReference/doc-t6-brooks-0412'));
+    expect(ITEMS.filter((x) => x.absence !== undefined).map((x) => x.name)).toEqual(['m12']);
+    void LOINC;
   });
 
   it('R20, R27: only a complete search whose filters cannot hide a qualifying record and that covers the 12-month window counts for m12', () => {
@@ -198,10 +173,8 @@ describe('T6 probe rulings', () => {
     expect(covers(m12, { ...base, code: 'HTTP://LOINC.ORG|2823-3,6298-4' })).toBe(true);
     expect(covers(m12, { ...base, category: 'http://example.org/none|laboratory' })).toBe(false);
     expect(covers(m12, { ...base, status: 'x|final,amended,corrected' })).toBe(false);
-    // An item with no absence counts no search; m5's absence (R31) counts Park's own complete search.
-    expect(covers(ITEMS.find((i) => i.name === 'm1')!, { ...base, patient: 'Patient/pt-0026' })).toBe(false);
-    expect(covers(ITEMS.find((i) => i.name === 'm5')!, { ...base, patient: 'Patient/pt-0028' })).toBe(true);
-    expect(covers(ITEMS.find((i) => i.name === 'm5')!, base)).toBe(false);
+    // An item with no absence counts no search.
+    expect(covers(ITEMS.find((i) => i.name === 'm13')!, base)).toBe(false);
   });
 
   it('falsepass N4 (verifier-W1T-190-r2): date bounds compare as the instants fhir_search reads, not as strings', () => {
@@ -242,38 +215,39 @@ describe('T6 probe rulings', () => {
   });
 
   it('R27 (builder-273, probe-1 message-queue/4): a sorted run from offset 0 is complete for the window once its last page passes the window edge', () => {
-    // m8's window opens at the clinic's midnight on 2026-04-23 (EDT, 04:00Z) and closes at now.
-    const m8 = ITEMS.find((i) => i.name === 'm8')!;
+    // Probe-1 found this on m8 (off the queue since the PW4-E3 cut); m12's window, which opens at the
+    // clinic's midnight on 2025-10-23 (EDT, 04:00Z) and closes at now, carries the same rule.
+    const m12 = ITEMS.find((i) => i.name === 'm12')!;
     const at = (iso: string) => Date.parse(iso);
-    const q = { type: 'Observation', patient: 'Patient/pt-0029', sort: '-date', whole: false };
+    const q = { type: 'Observation', patient: 'Patient/pt-0031', sort: '-date', whole: false };
     const step = (n: number, search?: Step['search']) => ({ n, search }) as unknown as Step;
-    // The probe's route: page 1 (offset 0) ran 2026-10-08 back to 2026-07-25, page 2 (offset 25) back to
-    // 2024-07-19, with page 3 unread. Newest first, page 3 holds only results from before 2024-07-19.
+    // A route like the probe's: page 1 (offset 0) runs 2026-10-08 back to 2026-07-25, page 2 (offset 25)
+    // back to 2024-07-19, with page 3 unread. Newest first, page 3 holds only results from before then.
     const page1 = step(1, { ...q, next_offset: 25, span: [at('2026-07-25T20:55:04-04:00'), at('2026-10-08T16:55:04-04:00')] });
     const page2 = step(4, { ...q, offset: 25, next_offset: 51, span: [at('2024-07-19T10:00:00-04:00'), at('2026-07-25T20:55:04-04:00')] });
-    expect(coveredAt(m8, [page1, step(2), page2])).toBe(4);
+    expect(coveredAt(m12, [page1, step(2), page2])).toBe(4);
     // A run that stops before it reaches the window's first day is not complete (retrieval).
-    expect(coveredAt(m8, [page1])).toBe(null);
-    const short = step(4, { ...q, offset: 25, next_offset: 51, span: [at('2026-04-23T00:00:00-04:00'), at('2026-07-25T20:55:04-04:00')] });
-    expect(coveredAt(m8, [page1, short])).toBe(null);
+    expect(coveredAt(m12, [page1])).toBe(null);
+    const short = step(4, { ...q, offset: 25, next_offset: 51, span: [at('2025-10-23T00:00:00-04:00'), at('2026-07-25T20:55:04-04:00')] });
+    expect(coveredAt(m12, [page1, short])).toBe(null);
     // The edge is the clinic's midnight: one second before it is outside the window, so later pages hold nothing in it.
-    const edge = step(4, { ...q, offset: 25, next_offset: 51, span: [at('2026-04-22T23:59:59-04:00'), at('2026-07-25T20:55:04-04:00')] });
-    expect(coveredAt(m8, [page1, edge])).toBe(4);
+    const edge = step(4, { ...q, offset: 25, next_offset: 51, span: [at('2025-10-22T23:59:59-04:00'), at('2026-07-25T20:55:04-04:00')] });
+    expect(coveredAt(m12, [page1, edge])).toBe(4);
     // The run still has to start at offset 0, keep its filters, and keep one sort.
-    expect(coveredAt(m8, [page2])).toBe(null);
-    expect(coveredAt(m8, [page1, step(4, { ...page2.search!, sort: 'date' })])).toBe(null);
-    expect(coveredAt(m8, [page1, step(4, { ...page2.search!, offset: 26 })])).toBe(null);
+    expect(coveredAt(m12, [page2])).toBe(null);
+    expect(coveredAt(m12, [page1, step(4, { ...page2.search!, sort: 'date' })])).toBe(null);
+    expect(coveredAt(m12, [page1, step(4, { ...page2.search!, offset: 26 })])).toBe(null);
     // A first page that already passes the edge is complete on its own.
-    expect(coveredAt(m8, [step(1, { ...q, next_offset: 25, span: [at('2024-07-19T10:00:00-04:00'), at('2026-10-08T16:55:04-04:00')] })])).toBe(1);
+    expect(coveredAt(m12, [step(1, { ...q, next_offset: 25, span: [at('2024-07-19T10:00:00-04:00'), at('2026-10-08T16:55:04-04:00')] })])).toBe(1);
     // Oldest first, the run is complete once a page passes the window's end (now): nothing later is in it.
     const asc = { ...q, sort: 'date' };
-    expect(coveredAt(m8, [step(1, { ...asc, next_offset: 25, span: [at('2024-01-02T10:00:00-05:00'), at('2026-11-02T10:00:00-05:00')] })])).toBe(1);
-    expect(coveredAt(m8, [step(1, { ...asc, next_offset: 25, span: [at('2024-01-02T10:00:00-05:00'), at('2026-10-08T16:55:04-04:00')] })])).toBe(null);
+    expect(coveredAt(m12, [step(1, { ...asc, next_offset: 25, span: [at('2024-01-02T10:00:00-05:00'), at('2026-11-02T10:00:00-05:00')] })])).toBe(1);
+    expect(coveredAt(m12, [step(1, { ...asc, next_offset: 25, span: [at('2024-01-02T10:00:00-05:00'), at('2026-10-08T16:55:04-04:00')] })])).toBe(null);
     // Without a sort the order says nothing about the pages not read: only the last page completes the run.
     const { sort: _s, ...unsorted } = q;
-    expect(coveredAt(m8, [step(1, { ...unsorted, next_offset: 25, span: [at('2024-07-19T10:00:00-04:00'), at('2026-10-08T16:55:04-04:00')] })])).toBe(null);
+    expect(coveredAt(m12, [step(1, { ...unsorted, next_offset: 25, span: [at('2024-07-19T10:00:00-04:00'), at('2026-10-08T16:55:04-04:00')] })])).toBe(null);
     // A page with no dated row says nothing about the edge.
-    expect(coveredAt(m8, [step(1, { ...q, next_offset: 25 })])).toBe(null);
+    expect(coveredAt(m12, [step(1, { ...q, next_offset: 25 })])).toBe(null);
   });
 
   it('R26, R29: each scanned report decides by atoms that end at the deciding fact, and a patient search_notes snippet for its rule word shows one set', async () => {
@@ -281,8 +255,6 @@ describe('T6 probe rulings', () => {
     const reports = ITEMS.flatMap((x) => Object.entries(x.atoms).map(([doc, sets]) => ({ x, doc, sets })));
     expect(reports.map((r) => `${r.x.name} ${r.sets.map((a) => a.join(' + ')).join(' | ')}`)).toEqual([
       'm3 hemolyzed | hemolysis',
-      'm5 Collected + 10/02/2025 | Received + 10/02/2025 | Reported + 10/02/2025',
-      'm8 Collected + 04/14/2026 | Received + 04/14/2026 | Reported + 04/16/2026',
       'm10 Collected + 08/19/2026',
     ]);
     for (const { x, doc, sets } of reports) {
@@ -309,7 +281,7 @@ describe('T6 probe rulings', () => {
     expect(policy.match(/a completed visit \(Encounter status finished\) within the last 15 months/gi)).toHaveLength(2);
     expect(checkText.decisive_seen!.requires).toMatch(/visit \(Encounter status finished\)/);
     const t = await loadMatrixTask('message-queue');
-    for (const name of ['m4', 'm5', 'm12']) {
+    for (const name of ['m12']) {
       const x = ITEMS.find((i) => i.name === name)!;
       const visit = x.decisive.find((k) => k.startsWith('Encounter/'))!;
       const { events } = await trial(matrixEnv(), t, { kind: 'alternative', id: 'visit', script: [{ calls: [{ name: 'fhir_search', input: { resource_type: 'Encounter', patient: x.patient.split('/')[1]!, status: 'finished', sort: '-date' } }] }, { calls: [{ name: 'finish', input: { summary: 'x' } }] }] });
@@ -383,18 +355,5 @@ describe('T6 probe rulings', () => {
     expect(source).toContain('Assess glycemic status at least two times a year, and more frequently (e.g., every 3 months) for individuals not meeting glycemic goals');
     expect(source).toContain('or during periods of rapid growth and development in children and adolescents');
     expect(source).toMatch(/6-month window is a local floor/);
-  });
-
-  it("clinical F3: Brooks's outside HbA1c was reported before the 6-month line and filed after it, so m8 counts the filing date", () => {
-    const doc = store.get('DocumentReference', id('doc-t6-brooks-0412')) as { date: string; content: Array<{ attachment: { data: string } }> };
-    const text = new TextDecoder().decode(Uint8Array.from(atob(doc.content[0]!.attachment.data), (c) => c.charCodeAt(0)));
-    const [, mm, dd, yyyy] = /Reported: (\d{2})\/(\d{2})\/(\d{4})/.exec(text)!;
-    const line = sixMonthsBefore(NOW);
-    expect(`${yyyy}-${mm}-${dd}` < line).toBe(true);
-    expect(doc.date.slice(0, 10) >= line).toBe(true);
-    const m8 = mutants.find((m) => m.id.startsWith('m8_'))!;
-    expect(m8.id).toBe('m8_filing_date_counted');
-    expect(m8.why).toMatch(/filing date/);
-    expect(m8.why).not.toMatch(/report/i);
   });
 });

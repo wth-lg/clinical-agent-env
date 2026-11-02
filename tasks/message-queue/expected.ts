@@ -1,20 +1,14 @@
 import { syntheaRef } from '../../packages/env/synthea-ids.ts';
 import { ref } from './ids.ts';
 // T6's expected end state, written by hand from the worklist design (overlay.ts header): for each
-// of the 13 messages in Dr. Okafor's queue, the request RBC-RX-05 decides and the decision. policy.ts
-// computes the same from the initial world, and the matrix fails when the two differ. The grader
-// reads its targets from here; ITEMS adds each item's class and the records that decide it.
+// of the 6 messages in Dr. Okafor's queue (cut from the probe's 13 in plan-amendment-w4 PW4-E3, one
+// instance of each item class), the request RBC-RX-05 decides and the decision on the chart as it
+// stands when the trial starts. policy.ts computes the same from the initial world, and the matrix
+// fails when the two differ. The grader reads its targets from here; ITEMS adds each item's class
+// and the records that decide it. A mid-trial event (events.ts) can change an item's decision; the
+// grader grades such an item on the chart as delivered (tests/grader.ts DELIVERED).
 //
-//   m1  Hayes   lisinopril 20  newest K 6.1 hemolyzed; K 4.6 on 2026-04-14       renew 90/1 + BMP
-//   m2  Hayes   lisinopril 20  her second message for it (§5)                     no second order
 //   m3  Odum    lisinopril 10  outside K 5.9 hemolyzed; K 4.5 on 2026-01-20       renew 90/1 + BMP
-//   m4  Odum    amlodipine 5   visit 2026-01-20 (§4)                              renew 90/1
-//   m5  Park    lisinopril 10  outside BMP collected 2025-10-02, filed 11-03;     30/0 + BMP
-//                              in-house BMP 2025-04-21
-//   m6  Park    metformin 500  eGFR amended 51 -> 39 on 2026-07-24               hold, Task to PCP
-//   m7  Brooks  lisinopril 20  raised 09-21; creatinine 0.90 -> 1.24 (+38%)      hold, Task to PCP
-//   m8  Brooks  metformin 1000 outside HbA1c collected 2026-04-14, filed 05-04;   30/0 + HbA1c
-//                              in-house HbA1c 2026-01-12
 //   m9  Price   lisinopril 20  raised 09-18; creatinine 1.10 -> 1.36 (+24%), K 5.2 renew 90/1
 //   m10 Price   metformin 1000 in-house HbA1c 2026-03-30; outside 2026-08-19     renew 90/1
 //   m11 Price   metformin 1000 the pharmacy's request for it (§5)                 no second order
@@ -91,11 +85,8 @@ const MSG = (n: number) => ref(`Communication/comm-t6-m${n}` as `Communication/$
 // search alike: the BMP 51990-0, the clinic's other BMP code 24321-2, and the comprehensive panel
 // 24323-8, which carries a potassium (§1: a CMP contains a BMP and counts as one).
 export const BMP_CODES = ['24321-2', '51990-0', '24323-8'] as const;
-// Marcus Webb's newest BMP, the panel report of 2025-10-20 (m12), Lena Park's, the panel of
-// 2025-04-21 (m5), and Evelyn Brooks's newest in-house HbA1c, of 2026-01-12 (m8).
+// Marcus Webb's newest BMP, the panel report of 2025-10-20 (m12).
 const WEBB_BMP = ref('DiagnosticReport/dr-t6-webb-1020');
-const PARK_BMP = ref('DiagnosticReport/dr-t6-park-0421');
-const BROOKS_A1C = ref('Observation/obs-t6-brooks-a1c-0112');
 const LOINC = 'http://loinc.org';
 const LAB = { observation: 'http://terminology.hl7.org/CodeSystem/observation-category|laboratory', report: 'http://terminology.hl7.org/CodeSystem/v2-0074|LAB' } as const;
 // The statuses a valid result has (§1): an amended or corrected result replaces the one it corrects.
@@ -106,47 +97,16 @@ const BMP_SEARCHES = [
   { type: 'Observation', codes: ['2823-3', '6298-4'].map((c) => `${LOINC}|${c}`), category: LAB.observation },
   { type: 'DiagnosticReport', codes: BMP_CODES.map((c) => `${LOINC}|${c}`), category: LAB.report },
 ];
-const P = { hayes: 'Patient/pt-0026', odum: 'Patient/pt-0027', park: 'Patient/pt-0028', brooks: 'Patient/pt-0029', price: 'Patient/pt-0030', webb: 'Patient/pt-0031' } as const;
+const P = { odum: 'Patient/pt-0027', price: 'Patient/pt-0030', webb: 'Patient/pt-0031' } as const;
 
 const renew = (daily_mg: number, lab: Lab = null) => ({ action: 'renew' as const, daily_mg, supply_days: 90, refills: 1, lab, duplicate_of: null });
 const bridge = (daily_mg: number, lab: Lab) => ({ action: 'bridge' as const, daily_mg, supply_days: 30, refills: 0, lab, duplicate_of: null });
-const hold = { action: 'hold' as const, daily_mg: null, supply_days: null, refills: null, lab: null, duplicate_of: null };
 const duplicate = (of: number) => ({ action: 'duplicate' as const, daily_mg: null, supply_days: null, refills: null, lab: null, duplicate_of: T(of) });
 
 export const ITEMS: Item[] = [
   {
-    name: 'm1', klass: 'hemolyzed_potassium', item: T(1), patient: P.hayes, drug: 'lisinopril', request: ref('MedicationRequest/mr-t6-hayes-lisinopril'), ...renew(20, 'bmp'),
-    decisive: [ref('Observation/obs-t6-hayes-1005-k'), ref('Observation/obs-t6-hayes-0414-k')], atoms: {}, also: {},
-  },
-  {
-    name: 'm2', klass: 'same_patient', item: T(2), patient: P.hayes, drug: 'lisinopril', request: ref('MedicationRequest/mr-t6-hayes-lisinopril'), ...duplicate(1),
-    decisive: [MSG(1)], atoms: {}, also: {},
-  },
-  {
     name: 'm3', klass: 'hemolyzed_potassium', item: T(3), patient: P.odum, drug: 'lisinopril', request: ref('MedicationRequest/mr-t6-odum-lisinopril'), ...renew(10, 'bmp'),
     decisive: [ref('DocumentReference/doc-t6-odum-0827'), ref('Observation/obs-t6-odum-0120-k')], atoms: { [ref('DocumentReference/doc-t6-odum-0827')]: [['hemolyzed'], ['hemolysis']] }, also: {},
-  },
-  {
-    name: 'm4', klass: 'filler', item: T(4), patient: P.odum, drug: 'amlodipine', request: ref('MedicationRequest/mr-t6-odum-amlodipine'), ...renew(5),
-    decisive: [ref('Encounter/enc-t6-odum-0120')], atoms: {}, also: { [ref('Encounter/enc-t6-odum-0120')]: [ref('DocumentReference/doc-t6-odum-0120')] },
-  },
-  {
-    name: 'm5', klass: 'collection_date', item: T(5), patient: P.park, drug: 'lisinopril', request: ref('MedicationRequest/mr-t6-park-lisinopril'), ...bridge(10, 'bmp'),
-    decisive: [ref('DocumentReference/doc-t6-park-1002'), ref('Encounter/enc-t6-park-0720'), PARK_BMP], atoms: { [ref('DocumentReference/doc-t6-park-1002')]: [['Collected', '10/02/2025'], ['Received', '10/02/2025'], ['Reported', '10/02/2025']] }, also: { [ref('Encounter/enc-t6-park-0720')]: [ref('DocumentReference/doc-t6-park-0720')] },
-    absence: { id: PARK_BMP, since: '2025-10-23', statuses: VALID, searches: BMP_SEARCHES },
-  },
-  {
-    name: 'm6', klass: 'amended_or_error', item: T(6), patient: P.park, drug: 'metformin', request: ref('MedicationRequest/mr-t6-park-metformin'), ...hold,
-    decisive: [ref('Observation/obs-t6-park-egfr-0720')], atoms: {}, also: {},
-  },
-  {
-    name: 'm7', klass: 'creatinine_rise', item: T(7), patient: P.brooks, drug: 'lisinopril', request: ref('MedicationRequest/mr-t6-brooks-lisinopril'), ...hold,
-    decisive: [ref('Observation/obs-t6-brooks-1008-cr'), ref('Observation/obs-t6-brooks-0921-cr')], atoms: {}, also: {},
-  },
-  {
-    name: 'm8', klass: 'metformin_two_series', item: T(8), patient: P.brooks, drug: 'metformin', request: ref('MedicationRequest/mr-t6-brooks-metformin'), ...bridge(2000, 'hba1c'),
-    decisive: [ref('DocumentReference/doc-t6-brooks-0412'), ref('Observation/obs-t6-brooks-1008-egfr'), BROOKS_A1C], atoms: { [ref('DocumentReference/doc-t6-brooks-0412')]: [['Collected', '04/14/2026'], ['Received', '04/14/2026'], ['Reported', '04/16/2026']] }, also: {},
-    absence: { id: BROOKS_A1C, since: '2026-04-23', statuses: VALID, searches: [{ type: 'Observation', codes: [`${LOINC}|4548-4`], category: LAB.observation }] },
   },
   {
     name: 'm9', klass: 'creatinine_rise', item: T(9), patient: P.price, drug: 'lisinopril', request: ref('MedicationRequest/mr-t6-price-lisinopril'), ...renew(20),

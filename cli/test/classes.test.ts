@@ -4,7 +4,10 @@
 // failure labels, outcome lines and the independence table, row for row, and its --json validates
 // against ClassesJson (the field contract builder-276's result-card reads). The later blocks run
 // on synthetic run directories: the outcome split, events, q and finish-guard fires, and the
-// guard against a run whose item list is not the checkout's.
+// guard against a run whose item list is not the checkout's. Ruling R37: a run whose task_version
+// is not the checkout's is historical data; classes tabulates the items its records graded, with
+// classes and labels from the item table pinned in the run (<run>/item-classes.json), and prints
+// a note; probe-1 is such a run.
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -56,6 +59,10 @@ describe('PW4-H0b fixture gate: pnpm cli classes results/probe-1 reproduces clas
       expect(mine.tasks[task]!.outside, task).toBe(want.outside);
     }
     expect(mine.independence).toEqual(md.independence);
+    // R37: every task's block carries the historical note (probe-1 ran at other task versions).
+    for (const block of text.split('\n### ').slice(1)) {
+      expect(block.split('\n')[2], block.split('\n')[0]).toMatch(/^historical run: items from records \(task_version [0-9a-f]{64}(, [0-9a-f]{64})*, checkout [0-9a-f]{64}\)$/);
+    }
   }, 120_000);
 
   it('--json gives the same counts and validates against ClassesJson', async () => {
@@ -86,6 +93,10 @@ describe('PW4-H0b fixture gate: pnpm cli classes results/probe-1 reproduces clas
       expect(t.outside_failures).toEqual([]);
     }
     expect(json.tasks['message-queue']!.independence).toEqual({ all_items_pass: 6, expected_per_item: 6, expected_per_class: 6 });
+    // R37: the nine W1 patients of renal-dose-review come from the records, labels from the pinned table.
+    const t1 = json.tasks['renal-dose-review']!;
+    expect(t1.historical?.checkout).toMatch(/^[0-9a-f]{64}$/);
+    expect(t1.classes.flatMap((c) => c.instances.map((i) => i.item)).sort()).toHaveLength(9);
   }, 120_000);
 });
 
@@ -134,7 +145,7 @@ function writeRun(dir: string, trials: Fake[]): void {
   });
 }
 
-const deps: Partial<Deps> = { itemClasses: async () => ITEMS, events: async () => EVENTS };
+const deps: Partial<Deps> = { itemClasses: async () => ITEMS, events: async () => EVENTS, checkoutVersion: async () => 'v1' };
 
 async function synth(name: string, trials: Fake[], d: Partial<Deps> = deps): Promise<{ code: number; json: ClassesJson | null; err: string[] }> {
   const dir = tempDir(`classes-${name}`);
@@ -192,6 +203,23 @@ describe('pnpm cli classes on synthetic runs', () => {
     const extra = await synth('extra', [{ outcome: 'PASS', items: ['a', 'b', 'c', 'd'] }]);
     expect(extra.code).toBe(1);
     expect(extra.err.join('\n')).toMatch(/d/);
+  });
+
+  it('R37: tabulates a historical run (another task_version) from its records and its pinned item table, with a note, and does not refuse', async () => {
+    const dir = tempDir('classes-historical');
+    writeRun(dir, [{ outcome: 'PASS', items: ['a', 'b', 'd', 'outside'] }, { outcome: 'FAIL', items: ['a', 'b', 'd', 'outside'], fails: [['d', 'g']], labels: [['d', 'g', 'reasoning']] }]);
+    put(join(dir, 'item-classes.json'), JSON.stringify({ schema_version: 1, commit: 'abc', tasks: { tk: { items: [{ key: 'a', class: 'x', label: 'A' }, { key: 'b', class: 'x', label: 'B' }, { key: 'd', class: 'z', label: 'D' }], events: null } } }));
+    const historical = { ...deps, checkoutVersion: async () => 'v2' };
+    const { code, out, err } = await run([dir, '--json'], historical);
+    expect([code, err]).toEqual([0, []]);
+    const t = (JSON.parse(out.join('\n')) as ClassesJson).tasks.tk!;
+    expect(classesJsonProblems(JSON.parse(out.join('\n')))).toEqual([]);
+    expect(t.historical).toEqual({ task_versions: ['v1'], checkout: 'v2' });
+    expect(t.classes.map((c) => [c.class, c.instances.map((i) => [i.item, i.label, i.fails, i.observations])])).toEqual([['x', [['a', 'A', 0, 2], ['b', 'B', 0, 2]]], ['z', [['d', 'D', 1, 2]]]]);
+    // The checkout's events are not the run's: a historical run takes the table's (none here).
+    expect(t.events).toEqual([]);
+    const md = await run([dir], historical);
+    expect(md.out.join('\n')).toContain('### tk\n\nhistorical run: items from records (task_version v1, checkout v2)\n');
   });
 
   it('counts an outside-the-list failure apart from the classes', async () => {

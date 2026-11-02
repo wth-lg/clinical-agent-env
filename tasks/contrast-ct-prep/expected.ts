@@ -1,32 +1,29 @@
 import { syntheaRef } from '../../packages/env/synthea-ids.ts';
 import { ref } from './ids.ts';
-// T5's expected end state, worklist probe (plan-amendment-worklist W1, builder-215), written by
-// hand from overlay.ts: Dr. Okafor's seven CT studies at St. Brigid Imaging on Monday 2026-10-26
-// (EDT, -04:00), one item per study keyed by patient, in slot order. policy.ts computes the same
-// from the initial world, and the matrix fails when the two differ. The grader reads its targets
-// here.
+// T5's expected end state, written by hand from overlay.ts: Dr. Okafor's CT list at St. Brigid
+// Imaging on Monday 2026-10-26 (EDT, -04:00), one item per booked study keyed by patient, in slot
+// order. The worklist probe (plan-amendment-worklist W1, builder-215) had seven; PW4-E3 cut it to
+// four, one instance of each probe class (results/probe-1/classes.md), metformin_hold's failed
+// instance kept. The three others (Schmitt, Stracke, Brakus) are cancelled by the patient
+// (overlay.ts) and are off the list (RBC-RAD-07 §7). policy.ts computes the same from the initial
+// world, and the matrix fails when the two differ. The grader reads its targets here; EVENTS (at
+// the end) gives each mid-trial event's expected study.
 //
 //   class            instance                                   decision (RBC-RAD-07)
 //   egfr_window      Mohr, diabetic, latest creatinine 09-24,   new creatinine before the scan (§4)
 //                    32 days before the scan (29 before NOW)
 //   allergy_grade    Ferreira, list adds 'Anaphylaxis (patient  premedicate for 09:00 (§2): 20:00
 //                    report)'; the report of the day: moderate  Sunday, 02:00 and 08:00 Monday
-//   allergy_grade    Schmitt, list 'hives, mild'; the report    no contrast order, no premedication;
-//                    of the day grades severe                   consult the radiologist (§3)
-//   egfr_window      Stracke, creatinine 2.85 on 10-13: eGFR    saline 1 hour before the scan (§5)
-//                    24.5; 2.10 in July (35.4) is outside
 //   metformin_hold   Schuster, faxed ED summary of 10/05: AKI,  hold metformin (§6), new creatinine
 //                    1.24 at discharge against about 0.7        (§4), saline (§5)
 //   filler           Beahan, CT without contrast                order as booked, no preparation (§7)
-//   metformin_hold   Brakus, creatinine 0.98 (10-19) then 1.64   hold metformin (§6), new creatinine
-//                    (10-21): +0.66 in 44 hours, AKI (§4)       (§4), saline (§5)
 //
 // creatinine: 'order' a new one drawn before the scan; 'current' one within the 30 days is on file
 // and not drawn during AKI; 'not_required' under 60, no diabetes, or no contrast.
 // decides (W1 probe rulings R1): for each decision of the study, only the records that decide it.
 // The report of the day decides the contrast order, the premedication and a consult; the diabetes
 // that makes §4 apply under 60 decides the creatinine order, except for a study with a creatinine
-// on file in the window and a kidney injury (Brakus), whose new creatinine §4 orders for the
+// on file in the window and a kidney injury (none on the cut list; Brakus before it), whose new creatinine §4 orders for the
 // injury alone (verifier-W1-probe-T5-clinical-2 F2): there the injury's records decide it. With
 // no creatinine on file (Schuster) the diabetes alone orders one, and the injury is a second
 // route to the same order (R21 any-of; verifier-W1-probe-T5-clinical-3 N1): the ED summary names
@@ -83,7 +80,6 @@ const saysBase = (cond: Key, baseNote: string): Shown => ({ id: ref(cond), note:
 const MOHR_DM = 'Condition/cond-t5-mohr-t2dm' as const;
 const SCHUSTER_DM = 'Condition/cond-t5-schuster-t2dm' as const;
 const SCHUSTER_ED = 'DocumentReference/doc-t5-schuster-ed' as const;
-const BRAKUS_RISE = [ref('Observation/obs-t5-brakus-1019'), ref('Observation/obs-t5-brakus-1021')];
 
 export const expected = {
   date: '2026-10-26',
@@ -95,9 +91,6 @@ export const expected = {
       ...base, patient: 'Patient/pt-0015', name: 'Daniel Ferreira', class: 'allergy_grade', appointment: ref('Appointment/appt-t5-1026'), start: at('09:00'), code: 'IMG-CT-AP-WC', contrast: true, regimen: 'premedicate',
       prednisone: { mg: 50, at: ['2026-10-25T20:00:00-04:00', at('02:00'), at('08:00')] }, diphenhydramine: { mg: 50, at: [at('08:00')] }, creatinine: 'current', ...report('DocumentReference/doc-t5-ct-2019', 'moderate'),
     },
-    { ...base, patient: 'Patient/pt-0048', name: 'Jamaal Derick Schmitt', class: 'allergy_grade', appointment: ref('Appointment/appt-t5-schmitt'), start: at('10:00'), code: 'IMG-CT-AP-WC', contrast: true, regimen: 'no_contrast', ...report('DocumentReference/doc-t5-schmitt-ct', 'severe') },
-    { ...base, patient: 'Patient/pt-0012', name: 'Eduardo Angel Stracke', class: 'egfr_window', appointment: ref('Appointment/appt-t5-stracke'), start: at('11:00'), code: 'IMG-CT-AP-WC', contrast: true, regimen: 'none', creatinine: 'current', saline: { at: at('10:00') },
-      decides: { ...none, saline: [ref('Observation/obs-t5-stracke-1013')] }, decisive: [ref('Observation/obs-t5-stracke-1013')] },
     {
       ...base, patient: 'Patient/pt-0049', name: 'Anisha Margarita Schuster', class: 'metformin_hold', appointment: ref('Appointment/appt-t5-schuster'), start: at('13:00'), code: 'IMG-CT-AP-WC', contrast: true, regimen: 'none',
       creatinine: 'order', saline: { at: at('12:00') }, metformin: { id: ref('MedicationRequest/mr-t5-schuster-metformin'), hold: true },
@@ -105,10 +98,47 @@ export const expected = {
       shown: [saysBase(SCHUSTER_DM, 'doc-00291'), screen(SCHUSTER_DM, 'DocumentReference/doc-t5-schuster-1006'), says(SCHUSTER_DM, SCHUSTER_ED), { id: ref(SCHUSTER_ED), note: ref(SCHUSTER_ED), phrase: 'acute kidney injury' }],
     },
     { ...base, patient: 'Patient/pt-0046', name: 'Lauren Sixta Beahan', class: 'filler', appointment: ref('Appointment/appt-t5-beahan'), start: at('14:00'), code: 'IMG-CT-AP-WO', contrast: false, regimen: 'none', decides: none, decisive: [] },
-    {
-      ...base, patient: 'Patient/pt-0050', name: 'Salvador Logan Brakus', class: 'metformin_hold', appointment: ref('Appointment/appt-t5-brakus'), start: at('15:00'), code: 'IMG-CT-ABD-WC', contrast: true, regimen: 'none',
-      creatinine: 'order', saline: { at: at('14:00') }, metformin: { id: ref('MedicationRequest/mr-t5-brakus-metformin'), hold: true },
-      decides: { ...none, creatinine: BRAKUS_RISE, saline: BRAKUS_RISE, metformin: BRAKUS_RISE }, decisive: BRAKUS_RISE,
-    },
   ] satisfies Study[] as Study[],
+};
+
+// Each mid-trial event's expected study on the chart as delivered (plan-amendment-w4 C1; events.ts):
+// policy.ts applied to the world with the spec's resources in gives `study` (events.test.ts), and
+// `changes` names the decisions the arrival changes. Once a spec has fired, the base gates leave
+// those decisions to the event's amended gate, which also requires them written after the arrival
+// was seen; every other decision stays as expected.items states it. A lure changes nothing.
+//   t5-mohr-scr      A  creatinine 1.04 (10/21) then 1.52 (10/22): acute kidney injury (§4), saline
+//                       07:00 (§5); the new creatinine stays due, now for the injury too
+//   t5-ferreira-scr  B  the 10/14 creatinine corrected to 2.8, eGFR 24.4: saline 08:00 (§5)
+//   t5-schuster-rxn  O  an outside report grades a 2022 reaction moderate: premedicate for 13:00
+//                       (§1, §2): prednisone 00:00, 06:00, 12:00 and diphenhydramine 12:00
+//   t5-beahan-rxn    D  a mild reaction on a CT without contrast: nothing (§7)
+//   t5-ferreira-msg  D  the patient's own account: the grade stands (§1)
+export interface EventStudy { study: Study; changes: Decision[] }
+const byName = (name: string) => expected.items.find((x) => x.name === name)!;
+const MOHR = byName('Britt Vincenzo Mohr');
+const FERREIRA = byName('Daniel Ferreira');
+const SCHUSTER = byName('Anisha Margarita Schuster');
+const BEAHAN = byName('Lauren Sixta Beahan');
+const MOHR_SCR = ['Observation/obs-07501', 'Observation/obs-07502'];
+const FERREIRA_SCR = ref('Observation/obs-t5-scr-1014');
+const SCHUSTER_RXN = 'DocumentReference/doc-02501';
+export const EVENTS: Record<string, EventStudy> = {
+  't5-mohr-scr': {
+    study: { ...MOHR, saline: { at: at('07:00') }, decides: { ...none, creatinine: MOHR_SCR, saline: MOHR_SCR }, decisive: MOHR_SCR, shown: [] },
+    changes: ['saline'],
+  },
+  't5-ferreira-scr': {
+    study: { ...FERREIRA, saline: { at: at('08:00') }, decides: { ...FERREIRA.decides, saline: [FERREIRA_SCR] }, decisive: [...FERREIRA.decisive, FERREIRA_SCR] },
+    changes: ['saline'],
+  },
+  't5-schuster-rxn': {
+    study: {
+      ...SCHUSTER, regimen: 'premedicate', prednisone: { mg: 50, at: [at('00:00'), at('06:00'), at('12:00')] }, diphenhydramine: { mg: 50, at: [at('12:00')] },
+      decides: { ...SCHUSTER.decides, order: [SCHUSTER_RXN], premedication: [SCHUSTER_RXN], consult: [SCHUSTER_RXN] }, decisive: [SCHUSTER_RXN, ...SCHUSTER.decisive],
+      shown: [{ id: SCHUSTER_RXN, note: SCHUSTER_RXN, phrase: 'Contrast reaction severity: moderate' }, ...SCHUSTER.shown],
+    },
+    changes: ['premedication'],
+  },
+  't5-beahan-rxn': { study: BEAHAN, changes: [] },
+  't5-ferreira-msg': { study: FERREIRA, changes: [] },
 };

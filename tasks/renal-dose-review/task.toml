@@ -1,9 +1,10 @@
-# T1 (plan-amendment-worklist W1, builder-211): a worklist probe. The pharmacy's DOAC dose review
-# list (Group 'DOAC dose review - week of 10/19/2026', overlay.ts) holds nine patients on T1's slots,
-# each on apixaban or rivaroxaban for non-valvular atrial fibrillation: two instances of each kept
-# item class (Cockcroft-Gault CrCl with the stated weight rule; apixaban's two-of-three criteria
-# with the latest measured weight; an outside creatinine in umol/L; a combined P-gp and strong
-# CYP3A4 inhibitor) and one filler already on the right dose. Cut, as the plan says: collection
+# T1 (plan-amendment-worklist W1, builder-211; PW4-E3, builder-281): the pharmacy's DOAC dose review
+# list (Group 'DOAC dose review - week of 10/19/2026', overlay.ts) holds five patients on T1's slots,
+# each on apixaban or rivaroxaban for non-valvular atrial fibrillation: one instance of each kept
+# item class (Cockcroft-Gault CrCl on actual weight; apixaban's two-of-three criteria with the
+# latest measured weight; an outside creatinine in umol/L; a combined P-gp and strong CYP3A4
+# inhibitor) and one filler already on the right dose. Mid-trial events (events.ts) arrive in the
+# queues; RBC-PHARM-07 §5 asks for their review. Cut, as the plan says: collection
 # versus report date, VTE versus AF. The gates check each patient on its own (packages/grader/items.ts).
 # What each gate check requires, in the words the UI and audit-check use: ../renal-dose-review.check-text.ts
 # (outside this directory, so editing it moves no version; a new gate check needs an entry there).
@@ -49,9 +50,10 @@ code = "2160-0"
 system = "http://loinc.org"
 display = "Creatinine [Mass/volume] in Serum or Plasma"
 
-# Each trap needs a mutant in tests/mutants.ts. No status-only case: T1 has no inbox items.
+# Each trap needs a mutant in tests/mutants.ts. No status-only case: T1's inbox holds only the
+# mid-trial arrivals, which the review reads and need no status change.
 [matrix]
-traps = ["outside_creatinine_missed", "stated_weight_used", "inhibitor_ignored", "interacting_drug_changed", "stale_weight", "outside_letter_missed", "ideal_body_weight", "right_dose_changed", "stale_inputs", "off_list_write", "change_before_review", "outside_creatinine_discarded", "criteria_misread", "decision_without_fact"]
+traps = ["outside_creatinine_missed", "inhibitor_ignored", "interacting_drug_changed", "ideal_body_weight", "right_dose_changed", "stale_inputs", "off_list_write", "change_before_review", "outside_creatinine_discarded", "criteria_misread", "decision_without_fact", "arrival_not_acted_on", "missed_arrival", "amend_before_seen", "lure_acted_on"]
 
 # No judged item in the probe (the rubric is code); the effort only keys an empty judge cache.
 [judge]

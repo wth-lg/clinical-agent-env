@@ -28,7 +28,7 @@ type Task = R & { status?: string; code?: { coding?: Coding[] }; owner?: Ref; fo
 type Comm = R & { sent?: string; payload?: Array<{ contentString?: string }> };
 type Obs = R & { status?: string; subject?: Ref; code?: { coding?: Coding[] }; effectiveDateTime?: string; valueQuantity?: { value?: number }; note?: Array<{ text?: string }> };
 type DR = R & { subject?: Ref; code?: { coding?: Coding[] }; effectiveDateTime?: string; result?: Ref[] };
-type Doc = R & { subject?: Ref; type?: { coding?: Coding[] }; content?: Array<{ attachment?: { data?: string } }> };
+type Doc = R & { status?: string; subject?: Ref; type?: { coding?: Coding[] }; content?: Array<{ attachment?: { data?: string } }> };
 type Enc = R & { status?: string; subject?: Ref; period?: { start?: string } };
 type MR = R & MedicationRequest & { subject?: Ref; authoredOn?: string; status?: string };
 
@@ -66,10 +66,11 @@ export function derive(world: WorldView): Json {
   const textOf = (c: Comm) => (c.payload ?? []).map((p) => p.contentString ?? '').join('\n');
 
   // §1: the patient's results of a kind, newest first, from Observations (an entered-in-error one is
-  // not a result; an amended one carries its corrected value) and from scanned laboratory reports.
+  // not a result; an amended one carries its corrected value) and from scanned laboratory reports
+  // (a report marked entered in error is not one either).
   const reports = (patient: string) =>
     all<Doc>('DocumentReference')
-      .filter((d) => d.subject?.reference === patient && (d.type?.coding ?? []).some((c) => c.system === LOINC && c.code === LAB_REPORT))
+      .filter((d) => d.subject?.reference === patient && d.status !== 'entered-in-error' && (d.type?.coding ?? []).some((c) => c.system === LOINC && c.code === LAB_REPORT))
       .flatMap((d) => {
         const text = decode(d.content?.[0]?.attachment?.data);
         const when = collected(text);

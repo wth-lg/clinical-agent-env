@@ -115,21 +115,24 @@ describe('the consistency flag', () => {
     expect(consistencyOf(three.map(currentGrade), { final: true }).flags).toEqual([]);
   });
 
-  // Only the mutants declared to fail fit_orders run, to keep the test short. Those that also
-  // fail nothing_for_others (an unmarked safety gate) have it as their decisive check instead
-  // (decisions.tsv 2026-10-28T06:50), so they are not in the fit_orders group.
-  it('the crc-care-gap mutant failures whose decisive check is fit_orders group as one check', async () => {
+  // Only the mutants declared to fail the shared check run, to keep the test short. Since the PW4-E3
+  // list cut (builder-283) crc-care-gap's orders come from its mid-trial events, so the check its
+  // mutants share is the event gate amended (each names its member), where it was fit_orders. Those
+  // that also fail an earlier gate (event_seen) have it as their decisive check, so they are not in
+  // the group.
+  const SHARED = 'amended';
+  it('the crc-care-gap mutant failures whose decisive check is the shared one group as one check', async () => {
     const env = matrixEnv();
     const task = await loadMatrixTask('crc-care-gap');
     const grades: Array<{ outcome: string; valid: boolean; checks: SummaryCheck[] }> = [];
-    for (const c of cases(task).filter((x) => x.mutant?.fails.includes('fit_orders') === true)) {
+    for (const c of cases(task).filter((x) => x.mutant?.fails.includes(SHARED) === true)) {
       const g = await gradeRun(env, task, task.checks, await trial(env, task, c));
       const checks = g.checks as unknown as SummaryCheck[];
-      if (g.outcome !== 'PASS' && decisiveGate(checks)?.id === 'fit_orders') grades.push({ outcome: g.outcome, valid: true, checks });
+      if (g.outcome !== 'PASS' && decisiveGate(checks)?.id === SHARED) grades.push({ outcome: g.outcome, valid: true, checks });
     }
     expect(grades.length).toBeGreaterThanOrEqual(5);
     const c = consistencyOf(grades);
-    expect(c.shared).toMatchObject({ check: 'fit_orders', count: grades.length });
+    expect(c.shared).toMatchObject({ check: SHARED, count: grades.length });
     expect(c.shared!.found_values).toBeGreaterThan(1);
     expect(c.flags).toContain('shared_failure');
   }, 180_000);

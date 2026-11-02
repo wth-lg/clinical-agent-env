@@ -8,7 +8,8 @@
 import { expect, test, type Page } from '@playwright/test';
 import { browse as browseDefault, browseFrom } from './browse.ts';
 import { explain, runOf, trialBase, TRIALS } from './fixtures/trial/trial.ts';
-import { sampleBase, summary as sample } from './fixtures/sample-results/sample.ts';
+import { records as sampleRecords, sampleBase, summary as sample } from './fixtures/sample-results/sample.ts';
+import { eventBase, RUN_ID as EVENT_RUN, TRIAL as EVENT_TRIAL } from './fixtures/event/event.ts';
 
 const browse = browseFrom(trialBase);
 async function openTrial(page: Page, name: string, extra = '') {
@@ -17,12 +18,23 @@ async function openTrial(page: Page, name: string, extra = '') {
 }
 // W1: the trial fixture's PASS (renal-dose-review) has a code-only rubric, with no question and no
 // penalty. The questions and penalties are read on two committed PASSes of the sample run:
-// discharge-medrec's judged flags_explained, the one long question of the six tasks, and
-// contrast-ct-prep's -3 iv_steroid_regimen beside its judged message_driver.
+// discharge-medrec's first judged item (flag_outside_drug since PW4-E3 split flags_explained), and
+// contrast-ct-prep's -3 iv_steroid_regimen
+// beside its judged message_driver. The discharge-medrec trial and item come from the records, so a
+// fixture regeneration or a rubric rename re-points them.
 const browseSample = browseFrom(sampleBase);
-const ASKS = 'discharge-medrec/0';
-const ASKED = 'flags_explained';
+const asks = sampleRecords.find((r) => r.task_id === 'discharge-medrec' && r.outcome === 'PASS')!;
+const ASKS = `${asks.task_id}/${asks.index}`;
+const ASKED = (asks.checks as ReadonlyArray<{ id: string; kind?: string; method?: string }>).find((c) => c.kind === 'rubric' && c.method === 'judge')!.id;
 const PENALTY = 'contrast-ct-prep/0';
+// The long-question toggle is read on the event fixture's toy trial: the toy's UI-plumbing item
+// ui_long_question (tasks/_toy/tests/rubric.ts) asks a question past the 160-character clamp, which
+// no clinical task's rubric does since T4 split its flag item.
+const browseEvent = browseFrom(eventBase);
+async function openLong(page: Page) {
+  await browseEvent(page, `./?view=runs&run=${EVENT_RUN}&trial=${encodeURIComponent(EVENT_TRIAL)}`);
+  await expect(page.getByTestId('trial-detail')).toHaveAttribute('data-trial', EVENT_TRIAL);
+}
 async function openSample(page: Page, name: string) {
   await browseSample(page, `./?view=runs&trial=${encodeURIComponent(name)}`);
   await expect(page.getByTestId('trial-detail')).toHaveAttribute('data-trial', name);
@@ -74,6 +86,7 @@ test('3.2: a rubric row is named by the question its item asks, as the Tasks vie
   await expect(row.getByTestId('rubric-name')).toHaveText(text);
   await expect(row.locator('code')).toHaveText(ASKED);
   // A long question shows two lines and a toggle for the rest.
+  await openLong(page);
   const long = panel(page, 'grading').getByTestId('rubric-row').filter({ has: page.getByRole('button', { name: 'Show the full question' }) }).first();
   const id = (await long.getAttribute('data-id'))!;
   const pinned = panel(page, 'grading').locator(`[data-testid="rubric-row"][data-id="${id}"]`);
@@ -100,7 +113,7 @@ test('3.2: an unknown judge item reads "judge unsure"', async ({ page }) => {
 
 // verifier-phase-P17i-UI-3-1 F1: from sm up the rubric keeps its column balance. No column head
 // wraps, and neither the Item nor the Judge quote column is squeezed: on crc-care-gap (ids, no
-// question text) and on discharge-medrec (a long question). An id breaks only between words.
+// question text) and on discharge-medrec (a question near the clamp). An id breaks only between words.
 for (const [name, open] of [[TRIALS.limit, openTrial], [ASKS, openSample]] as const) {
   test(`F1: at 1440 the ${name} rubric has one-line column heads and Item and quote columns at least 160 px wide`, async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
@@ -118,10 +131,10 @@ for (const [name, open] of [[TRIALS.limit, openTrial], [ASKS, openSample]] as co
   });
 }
 
-// F2: each "Show the full question" toggle names its item, so no two buttons read alike. The six
-// tasks have one long question (flags_explained), so the trial shows one toggle.
+// F2: each "Show the full question" toggle names its item, so no two buttons read alike. The toy's
+// ui_long_question is the one long question, so the event fixture's trial shows one toggle.
 test('F2: each long-question toggle has a unique accessible name with its item id', async ({ page }) => {
-  await openSample(page, ASKS);
+  await openLong(page);
   const rows = panel(page, 'grading').getByTestId('rubric-row').filter({ has: page.getByRole('button', { name: /^Show the full question/ }) });
   // count() does not wait, so wait for the first toggle row to render before counting.
   await expect(rows.first()).toBeVisible();

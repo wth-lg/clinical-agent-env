@@ -13,7 +13,7 @@ import type { GateCheck } from '../../../packages/grader/check.ts';
 import { gradeRun, trial } from '../../../packages/grader/matrix/matrix.ts';
 import type { Script } from '../../../packages/grader/matrix/types.ts';
 import { expected } from '../expected.ts';
-import { modify, MR, readDoc, script, searchNotes } from '../solution/steps.ts';
+import { message, modify, MR, readDoc, script, searchNotes } from '../solution/steps.ts';
 import { checks, firstSeen } from './grader.ts';
 
 const gate = (id: string) => checks.find((c): c is GateCheck => c.kind === 'gate' && c.id === id)!;
@@ -30,7 +30,8 @@ describe('a discharge summary two items decide (DECISIVE_KEY stop-gap)', async (
   };
 
   it('names each shared summary two ways, both the same record, each with one item\'s own rule', async () => {
-    expect(SHARED).toEqual([summaryOf('Patient/pt-0005'), summaryOf('Patient/pt-0044')]);
+    // Since the PW4-E3 cut, Earnest Roberts' summary decides one item; Walter Kim's still decides two.
+    expect(SHARED).toEqual([summaryOf('Patient/pt-0005')]);
     for (const g of ['med_actions', 'decisive_seen', 'seen_before_change'].map(gate)) {
       for (const d of SHARED) {
         const keys = g.decisive_ids.filter((k) => sameId(k, d) || sameId(d, k));
@@ -68,12 +69,15 @@ describe('a discharge summary two items decide (DECISIVE_KEY stop-gap)', async (
   // lines (R26, R29).
   const KCL = searchNotes('kim', 'resume');
   const SUB = searchNotes('kim', 'formulary substitution');
+  // A first write on Walter Kim's chart that decides no item, so his arrivals come before the
+  // re-check as the oracle's do (events.ts).
+  const FIRST_KIM = message('Walter Kim: reconciliation under way', 'Reconciling his discharge medications under RBC-TOC-02.', [`MedicationRequest/${MR.kimAspirin}`]);
   const rewritten = modify(MR.kimOmeprazole, { value: 40, unit: 'mg', frequency: 'QD' }, 'Reconciliation review');
   it('labels the typed-spelling item reasoning when only its line was shown in a snippet', async () => {
     // Only kcl's line is shown, so a merged phrase map (the sibling's line under one spelling) would
     // read the summary as unseen for kim-kcl and label it retrieval. kim-omeprazole's own line was
     // never shown, so it fails decisive_seen as retrieval: each item reads its own line.
-    expect((await labels('kcl_line_seen_kcl_kept', script({ skip: ['kimSummary'], also: [KCL], over: { kimKcl: [] } }))).items).toEqual({ 'kim-kcl': 'reasoning', 'kim-omeprazole': 'retrieval' });
+    expect((await labels('kcl_line_seen_kcl_kept', script({ skip: ['kimSummary'], also: [KCL], over: { kimKcl: [FIRST_KIM] } }))).items).toEqual({ 'kim-kcl': 'reasoning', 'kim-omeprazole': 'retrieval' });
   });
   it('labels the bare-spelling item by its own line: reasoning when shown, retrieval when only the sibling line was', async () => {
     expect((await labels('sub_line_seen', script({ skip: ['kimSummary'], also: [KCL, SUB], extra: [rewritten] }))).items).toEqual({ 'kim-omeprazole': 'reasoning' });

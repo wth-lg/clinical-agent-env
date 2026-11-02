@@ -50,13 +50,11 @@ type Route = { item: string; doc: string; patient: string; atoms: readonly strin
 // Rows a later edit must keep as they are: the routes the gate rounds named, each by its query.
 const PINNED: ReadonlyArray<{ item: string; doc: string; atoms: string; query: string; seen: boolean; why: string }> = [
   { item: 'roberts-lisinopril', doc: 'doc-t4-roberts-dc', atoms: 'Resume', query: 'labs', seen: true, why: 'verifier-W1-probe-T4-5 N1: cut inside the drug name, every atom shown' },
-  { item: 'roberts-lisinopril', doc: 'doc-t4-roberts-dc', atoms: 'Resume', query: 'atorvastatin', seen: true, why: "coordinator answer to builder-247: the snippet shows 'Resume' and 'SCr < 1.3'" },
   { item: 'roberts-lisinopril', doc: 'doc-t4-roberts-dc', atoms: 'Resume', query: 'continue', seen: true, why: 'verifier-W1-probe-T4-4 N1' },
   { item: 'roberts-lisinopril', doc: 'doc-t4-roberts-lab', atoms: 'Potassium 4.6', query: 'potassium', seen: true, why: 'the potassium fact' },
   { item: 'roberts-lisinopril', doc: 'doc-t4-roberts-lab', atoms: 'Creatinine 1.08', query: 'potassium', seen: false, why: 'verifier-W1-probe-T4-clinical-5 F1: cut before the creatinine line' },
   { item: 'roberts-lisinopril', doc: 'doc-t4-roberts-lab', atoms: 'Creatinine 1.08', query: 'creatinine', seen: true, why: 'R21: the report route to the creatinine' },
   { item: 'kim-omeprazole', doc: 'doc-t4-kim-dc', atoms: 'pantoprazole', query: 'potassium', seen: true, why: 'verifier-W1-probe-T4-clinical-3 N1' },
-  { item: 'thompson-hctz', doc: 'doc-t4-thompson-add', atoms: 'stop', query: 'follow', seen: true, why: 'verifier-W1-probe-T4-clinical-4 M1' },
 ];
 
 describe('T4 decisive atoms: a snippet is seen exactly when it shows every atom (R29 sweep)', async () => {

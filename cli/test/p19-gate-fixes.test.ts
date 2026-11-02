@@ -17,8 +17,7 @@ import type { Resource } from '../../packages/env/store.ts';
 import t3 from '../../tasks/crc-care-gap/overlay.ts';
 import { checks as t3Checks } from '../../tasks/crc-care-gap/tests/grader.ts';
 import t6 from '../../tasks/message-queue/overlay.ts';
-import { ref } from '../../tasks/crc-care-gap/ids.ts';
-import { syntheaRef } from '../../packages/env/synthea-ids.ts';
+import { expected as t3Expected } from '../../tasks/crc-care-gap/expected.ts';
 
 const repo = (rel: string) => new URL(`../../${rel}`, import.meta.url);
 const base = new Uint8Array(readFileSync(repo('fixtures/synthea/base.ndjson.gz')));
@@ -93,17 +92,20 @@ describe('crc-care-gap E16 chart (pt-0035)', () => {
   });
 });
 
-describe('crc-care-gap E15 fault rule and exposure', () => {
+describe('crc-care-gap no-contact fault rule and exposure', () => {
   // Since the W1 probe (builder-213; ruling R1) each member who needs no contact names only the
-  // records that decide it. Since builder-267 (R21, R16; builder-265 audit of probe-1) E15's
-  // residence is any-of: his housing status or either nursing facility visit, or a read of his
-  // Patient, whose address is his room at the care center (expected.ts address).
-  it('nothing_for_others names E15 residence records as decisive ids', () => {
-    expect(t3Checks.find((c) => c.id === 'nothing_for_others')!.decisive_ids).toEqual(expect.arrayContaining([ref('Observation/obs-t3-2465'), syntheaRef('Encounter/enc-00204'), ref('Encounter/enc-t3-7781'), 'Patient/pt-0034']));
+  // records that decide it, and the fault rule says such a member is read by them or fails as
+  // retrieval (R32). E15 (pt-0034), whose residence was the P19 case, is off the panel since the
+  // PW4-E3 list cut (builder-283); his chart above stays as P19 built it, and docs/tasks.md keeps
+  // his rule until the W4 train rewrites the T3 section. The rule now covers the four members.
+  it('nothing_for_others names every no-contact member\'s decisive records as decisive ids', () => {
+    const noContact = t3Expected.items.filter((x) => x.order === false);
+    expect(noContact.length).toBeGreaterThan(0);
+    expect(t3Checks.find((c) => c.id === 'nothing_for_others')!.decisive_ids).toEqual(expect.arrayContaining(noContact.flatMap((x) => x.decisive)));
   });
 
-  it("task.toml and docs state the E15 fault rule in E6's could-have-surfaced form", () => {
-    expect(readFileSync(repo('tasks/crc-care-gap/task.toml'), 'utf8')).toMatch(/E15 \(pt-0034\) not excluded is a model fault unless a call that should have\n# surfaced his residence record returned without it/);
+  it('task.toml states the no-contact fault rule; docs keep E15\'s in the could-have-surfaced form', () => {
+    expect(readFileSync(repo('tasks/crc-care-gap/task.toml'), 'utf8')).toMatch(/A member who needs no order or message is read by\n# their decisive records, or fails no_contact_reviewed as retrieval \(R32\)/);
     expect(readFileSync(repo('docs/tasks.md'), 'utf8')).toMatch(/if E15 is not excluded, it is a model fault unless a call that should have surfaced his residence record returned without it/);
   });
 });

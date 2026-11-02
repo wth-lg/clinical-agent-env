@@ -14,7 +14,7 @@ import type { WorldView } from '../../packages/grader/matrix/types.ts';
 import { clinicDate, dailyDose, drugOf, type MedicationRequest } from '../../packages/grader/normalize.ts';
 
 // The worklist, in the instruction's order.
-const NAMES: ReadonlyArray<[given: string, family: string]> = [['Walter', 'Kim'], ['Terence', 'Stark'], ['Adelaide', 'Thompson'], ['Earnest', 'Roberts']];
+const NAMES: ReadonlyArray<[given: string, family: string]> = [['Walter', 'Kim'], ['Terence', 'Stark'], ['Earnest', 'Roberts']];
 // Brand names a discharge line may use that normalize.ts does not map (§4).
 const BRANDS: Record<string, string> = { coreg: 'carvedilol', 'procardia xl': 'nifedipine', procardia: 'nifedipine', synthroid: 'levothyroxine', protonix: 'pantoprazole', crestor: 'rosuvastatin' };
 
@@ -33,6 +33,8 @@ const RAISES_K = /^(?:spironolactone|eplerenone|finerenone|\w+pril|\w+sartan|pot
 const WINDOW_DAYS = 180;
 const COVERED = 0.8;
 const VALID = new Set(['final', 'amended', 'corrected']);
+// §1: a signed addendum: final, or amended or corrected after signing; a preliminary draft is not one.
+const SIGNED = VALID;
 const DAY = 86_400_000;
 
 type R = Readonly<Record<string, unknown>> & { resourceType: string; id?: string };
@@ -85,7 +87,7 @@ export function derive(world: WorldView): Json {
     if (!summary) throw new Error(`${given} ${family}: no discharge summary`);
     const stay = world.get('Encounter', (summary.context?.encounter?.[0]?.reference ?? '').split('/')[1] ?? '') as Enc | undefined;
     const discharged = Date.parse(stay?.period?.end ?? summary.date ?? '');
-    const addendum = docs.filter((d) => isType(d, SUMMARY) && d.docStatus === 'final' && (d.relatesTo ?? []).some((x) => x.code === 'appends' && x.target?.reference === ref(summary))).sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''))[0];
+    const addendum = docs.filter((d) => isType(d, SUMMARY) && SIGNED.has(d.docStatus ?? '') && (d.relatesTo ?? []).some((x) => x.code === 'appends' && x.target?.reference === ref(summary))).sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''))[0];
     // §5: every fill history filed for the patient (the clinic pharmacy's, and other pharmacies').
     const fillDocs = docs.filter((d) => isType(d, FILL_HISTORY)).sort((a, b) => (a.date ?? '').localeCompare(b.date ?? ''));
 

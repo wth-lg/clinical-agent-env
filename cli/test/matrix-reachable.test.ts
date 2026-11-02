@@ -51,10 +51,10 @@ describe('a decisive id a tool result only referenced is reachable (review F1)',
     expect(x.fault).toBe('model');
   });
 
-  // W1 T6 probe: the hemolyzed potassium and the valid one before it were both shown to the model,
-  // so the wrong hold is the model's.
-  it("message-queue m1_hemolyzed_k_trusted: refill_decision's decisive ids were shown to the model, so M1 is met, E5 is not, and the fault is the model's", async () => {
-    const { record, x } = await explained('message-queue', 'm1_hemolyzed_k_trusted', 'refill_decision');
+  // W1 T6 probe (m1 left the queue in the PW4-E3 cut; m13 is the same shape): the eGFR entered in
+  // error and the valid one before it were both shown to the model, so the wrong hold is the model's.
+  it("message-queue m13_error_egfr_trusted: refill_decision's decisive ids were shown to the model, so M1 is met, E5 is not, and the fault is the model's", async () => {
+    const { record, x } = await explained('message-queue', 'm13_error_egfr_trusted', 'refill_decision');
     expect(record.attribution!.exposure.length).toBeGreaterThan(0);
     expect(record.attribution!.exposure.every((e) => e.first_exposed_step !== null)).toBe(true);
     expect(x.criteria.find((c) => c.id === 'M1')!.met).toBe(true);

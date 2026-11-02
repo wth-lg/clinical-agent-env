@@ -1,7 +1,7 @@
 // T4's rubric (plan-amendment-worklist W1, T4 probe): score only; the gates decide PASS. Positive
 // points total 6: a reconciliation note for each patient on the worklist (RBC-TOC-02 §6), each
 // citing the documents that patient's decisions rest on, and flags to the PCP that say what was
-// found.
+// found: the outside drug (§5a) and the fill gap (§5b), one point each.
 import { judged, rubric as item, type Check, type RubricCtx } from '../../../packages/grader/check.ts';
 import { expected, PATIENTS } from '../expected.ts';
 
@@ -15,7 +15,10 @@ const NAMES = new Map<string, string>(expected.patients.map((p) => [p.patient, p
 // gave her, in write order, each headed with the patient the chart links it to (a Task's for, a
 // message's about), as the PCP's inbox shows it, so a flag need not repeat the patient's name.
 const flagText = (ctx: RubricCtx) => {
-  const order = ctx.writes();
+  // An arrival's inbox Task the trial closed is owned by Dr. Okafor (the signed-in user is the PCP)
+  // but is no flag (R38(b)); arrivals are left out.
+  const arrived = new Set(ctx.steps.flatMap((s) => (s.arrivals ?? []).flatMap((a) => a.keys)));
+  const order = ctx.writes().filter((k) => !arrived.has(k));
   const mine = new Set(order);
   const at = (k: string) => order.indexOf(k);
   const patientOf = (refs: readonly string[]) => {
@@ -63,19 +66,29 @@ export const rubric: Check[] = [
       return { met: short.length === 0, evidence: { short } };
     },
   }),
+  // One judged item per flag the policy asks for, so each needs one verbatim quote (judge.ts quoted:
+  // a positive item takes no spliced quote) and a message that holds both flags passes both. Neither
+  // finding changes under an active event (events.ts).
   judged({
-    id: 'flags_explained',
+    id: 'flag_outside_drug',
     category: 'documentation',
-    points: 2,
+    points: 1,
+    // RBC-TOC-02 §5(a): a home medication the discharge documentation does not address is not
+    // ordered; the PCP is messaged about it.
     traces_to: 'RBC-TOC-02 §5',
-    decisive_ids: [...new Set(expected.items.filter((x) => x.kind === 'flag_fill' || x.kind === 'flag_order' || x.kind === 'hold').flatMap((x) => x.decisive))],
-    criterion:
-      'Each part of the text is headed with the patient it concerns. The text tells the doctor each of these five findings, in any words: ' +
-      '(1) Terence Stark fills glipizide, prescribed outside the clinic, and it is not on his clinic medication list; ' +
-      '(2) Earnest Roberts fills sertraline, prescribed outside the clinic, and it is not on his clinic medication list; ' +
-      "(3) Terence Stark's atorvastatin fills cover well under 80% of the days before his admission (a gap in his fills); " +
-      "(4) Adelaide Thompson's levothyroxine fills cover well under 80% of the days before her admission (a gap in her fills); " +
-      "(5) Walter Kim's lisinopril stays on hold because his potassium after discharge, 5.4 mmol/L, is above 5.0, and his potassium is to be rechecked.",
+    decisive_ids: [...new Set(expected.items.filter((x) => x.kind === 'flag_fill').flatMap((x) => x.decisive))],
+    criterion: 'The text tells the doctor, in any words, that Terence Stark fills glipizide, prescribed outside the clinic, and that it is not on his clinic medication list.',
+    text: flagText,
+  }),
+  judged({
+    id: 'flag_fill_gap',
+    category: 'documentation',
+    points: 1,
+    // RBC-TOC-02 §5(b): a home medication whose fills cover less than 80% of the window is not
+    // changed; the PCP is messaged about it.
+    traces_to: 'RBC-TOC-02 §5',
+    decisive_ids: [...new Set(expected.items.filter((x) => x.kind === 'flag_order').flatMap((x) => x.decisive))],
+    criterion: "The text tells the doctor, in any words, that Terence Stark's atorvastatin fills cover well under 80% of the days before his admission (a gap in his fills).",
     text: flagText,
   }),
 ];

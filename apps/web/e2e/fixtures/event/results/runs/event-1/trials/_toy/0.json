@@ -1,14 +1,14 @@
 {
   "trial_id": "event-1:_toy:0",
   "task_id": "_toy",
-  "task_version": "1e6deef49704b740dfd27865816032f344038ba1bce9acb7755b75e97c90ea2a",
-  "env_version": "9448f0a2f939999cf34e78ba5deb4a9fdf3d25be28f0449ff9fef9a75eacbd9d",
-  "grader_task_version": "fe4178cfe9c242ab303a94551923c5ec54b6a8c60b831b75f6097bb26f176542",
-  "fixture_hash": "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968",
+  "task_version": "ca5831f0c18081e5dc15d83a1d8379ce849b2873881b0813e8dcfc67e7f89b72",
+  "env_version": "07e5b764cf33e590cd7cb5b65e5ee2fb81a93de6cb32e184b6e4038a0057c9b6",
+  "grader_task_version": "1fdf0816a5f29720902602306c001ab5d27e5fc6e49b5067e3e1c2e4c242a882",
+  "fixture_hash": "f4aee379bbe347373bb7a78a4b93ecd33feed9337e3c8d14d9816e3ac8e24185",
   "state_hash": {
-    "initial": "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968",
-    "final": "73a95969e18b6704699103e308644994d028fddb502ab58d38b3439077add1a8",
-    "replay_final": "73a95969e18b6704699103e308644994d028fddb502ab58d38b3439077add1a8"
+    "initial": "f4aee379bbe347373bb7a78a4b93ecd33feed9337e3c8d14d9816e3ac8e24185",
+    "final": "1411aed4261ac88d235874151c33279bc02c787cff92578e20f6a741589254e5",
+    "replay_final": "1411aed4261ac88d235874151c33279bc02c787cff92578e20f6a741589254e5"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -268,6 +268,23 @@
         "verdict": "met",
         "quote": "Signed in as Maya Okafor, MD, I wrote a progress note on the chart of Walter Kowalczyk.",
         "cache_key": "1c0ef44d4c0e2cfa036f09451e7e13580b219b1eb8bc234609ee99bb51dd2cf4"
+      }
+    },
+    {
+      "id": "ui_long_question",
+      "kind": "rubric",
+      "method": "hybrid",
+      "category": "documentation",
+      "points": 0,
+      "met": true,
+      "evidence": {
+        "truth": 1,
+        "tolerance": {
+          "abs": 0
+        },
+        "value": 1,
+        "quote": "pt-0001",
+        "source": "regex"
       }
     },
     {
