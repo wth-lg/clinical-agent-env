@@ -10,6 +10,8 @@ import { AMEND, arrivalRead, change, decisions, DOC, FIRST, finish, firstWrites,
 import { eventAlternatives } from './event-cases.ts';
 
 const arrivalReads = SPECS_READ(ACTIVE).map(arrivalRead);
+// An arrival's inbox item, closed by update_inbox_item.
+export const closeItem = (n: number, action: 'complete' | 'cancel') => ({ name: 'update_inbox_item', input: { task_id: `inbox-a${String(n).padStart(4, '0')}`, action, ...(action === 'cancel' ? { reason: 'Reviewed' } : {}) } });
 const page = (count: number, offset: number) => ({ name: 'list_inbox', input: { queue: 'results', status: 'requested', count, offset } });
 
 export const alternatives: Alternative[] = [
@@ -164,6 +166,18 @@ export const alternatives: Alternative[] = [
     id: 'recheck_by_paged_inbox',
     why: 'Re-checks the results queue ten rows at a time, from offset 0 to the last page, then reads the arrivals.',
     script: script({ recheck: [page(10, 0), page(10, 10), ...arrivalReads] }),
+  },
+  // R38(b): RBC-TOC-02 states no inbox rule, so an arrival's inbox status is ungraded. The arrivals'
+  // items, in firing order: inbox-a0001 kim-k1, a0002 kim-d2, a0003 stark-s1, a0004 roberts-r1.
+  {
+    id: 'arrival_items_completed',
+    why: 'Completes each arrival\'s inbox item after reading it and acting on it.',
+    script: script({ extra: [1, 2, 3, 4].map((n) => closeItem(n, 'complete')) }),
+  },
+  {
+    id: 'arrival_item_cancelled_blind_then_read',
+    why: "Cancels the repeat panel's inbox item in the turn it arrives, before reading it, then reads the panel in the re-check and resumes lisinopril on it: the cancel is ungraded and nothing is hidden.",
+    script: script({ over: { kimKcl: [W.kimKcl, closeItem(1, 'cancel')] } }),
   },
   // One rejected forbidden write per nothing_else sub-kind (R19): the tool refuses each, so nothing
   // is committed and the gate, which reads committed writes only, passes. The committed twin of

@@ -9,6 +9,7 @@
 import type { Mutant } from '../../../packages/grader/matrix/types.ts';
 import { ACTIVE } from '../events.ts';
 import { AMEND, arrivalRead, change, DOC, finish, inbox, note, firstWrites, FIRST, message, modify, MR, notesFor, order, reads, recheck, results, RX, script, searchNotes, W, decisions } from '../solution/steps.ts';
+import { closeItem } from './alternatives.ts';
 import { eventMutants } from './event-cases.ts';
 
 const ACTION = ['med_actions'];
@@ -247,6 +248,19 @@ export const mutants: Mutant[] = [
     attribution: 'retrieval',
     items: { 'stark-carvedilol': 'retrieval' },
     script: script({ skip: ['starkSummary'], recheck: [inbox, ...['kim-k1', 'kim-d2', 'roberts-r1'].map(arrivalRead)] }),
+  },
+  // R38(b): a blind cancel of an arrival's inbox item is ungraded, but what it hides is not: the
+  // repeat panel is never read, so kim-lisinopril fails event_seen (retrieval), and the resume made
+  // anyway was written before it was seen (amended, marked process).
+  {
+    id: 'arrival_item_cancelled_blind',
+    trap: 'missed_arrival',
+    why: "Cancels the repeat panel's inbox item in the turn it arrives, never reads the panel, and resumes lisinopril anyway.",
+    fails: ['event_seen', 'amended'],
+    loses: [],
+    attribution: 'retrieval',
+    items: { 'kim-lisinopril': 'retrieval' },
+    script: script({ over: { kimKcl: [W.kimKcl, closeItem(1, 'cancel')] }, recheck: [inbox, ...['kim-d2', 'stark-s1', 'roberts-r1'].map(arrivalRead)] }),
   },
   {
     id: 'one_turn',

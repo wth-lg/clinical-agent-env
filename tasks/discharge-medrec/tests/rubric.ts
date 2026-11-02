@@ -15,7 +15,10 @@ const NAMES = new Map<string, string>(expected.patients.map((p) => [p.patient, p
 // gave her, in write order, each headed with the patient the chart links it to (a Task's for, a
 // message's about), as the PCP's inbox shows it, so a flag need not repeat the patient's name.
 const flagText = (ctx: RubricCtx) => {
-  const order = ctx.writes();
+  // An arrival's inbox Task the trial closed is owned by Dr. Okafor (the signed-in user is the PCP)
+  // but is no flag (R38(b)); arrivals are left out.
+  const arrived = new Set(ctx.steps.flatMap((s) => (s.arrivals ?? []).flatMap((a) => a.keys)));
+  const order = ctx.writes().filter((k) => !arrived.has(k));
   const mine = new Set(order);
   const at = (k: string) => order.indexOf(k);
   const patientOf = (refs: readonly string[]) => {
