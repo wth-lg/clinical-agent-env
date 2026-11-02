@@ -532,6 +532,12 @@ const shown = (steps: readonly Step[], at: number, ref: string, atoms: readonly 
 // or one search snippet with every atom); an Observation, or a record whose whole content decides
 // (a fill history's coverage), when a later step exposes it (the default rule).
 const seenBy = (ref: string, atoms: readonly string[]) => (steps: readonly Step[], at: number) => shown(steps, at, ref, atoms);
+// R29, R38(i): an arrival whose expected action turns on values on several lines is seen once every
+// line has been shown (a whole read shows them all; snippets count line by line).
+const seenByAll = (ref: string, lines: readonly (readonly string[])[]) => (steps: readonly Step[], at: number) => {
+  const ns = lines.map((atoms) => shown(steps, at, ref, atoms));
+  return ns.some((n) => n === null) ? null : Math.max(...(ns as number[]));
+};
 const docRef = (rid: string) => `DocumentReference/${rid}`;
 
 const trialWrote = (ctx: GateCtx, keys: readonly string[]) => keys.filter((k) => ctx.writes().includes(k));
@@ -564,8 +570,9 @@ const arrivedAt = (ctx: GateCtx, spec: string) => arrivalOf(ctx.steps, spec)?.st
 const after = (ctx: GateCtx, spec: string, keys: readonly string[]) => keys.filter((k) => (lastWrite(ctx, k) ?? 0) > arrivedAt(ctx, spec));
 
 const EXPECT: Record<string, EventExpectation> = {
-  // §2, §7: the repeat panel's potassium of 4.7 is the most recent after discharge; resume.
-  'kim-k1': { ...doseRule('kim-lisinopril', 'lisinopril needs resuming at 10 mg daily: the 10/23 repeat panel shows potassium 4.7, not above 5.0, and SCr 1.21'), seenAt: seenBy(docRef(ARRIVAL.kimK1), ['Potassium 4.7']) },
+  // §2, §7: the repeat panel's potassium of 4.7 is the most recent after discharge, and its SCr of
+  // 1.21 meets the summary's resume line; resume. Both lines must be shown (R38(i)).
+  'kim-k1': { ...doseRule('kim-lisinopril', 'lisinopril needs resuming at 10 mg daily: the 10/23 repeat panel shows potassium 4.7, not above 5.0, and SCr 1.21'), seenAt: seenByAll(docRef(ARRIVAL.kimK1), [['Potassium 4.7'], ['Creatinine 1.21']]) },
   // §1: the amended addendum's correction, furosemide 40 mg once daily.
   'kim-k2': { ...doseRule('kim-furosemide', 'furosemide needs 40 mg once daily: the signed addendum, amended 10/23, corrects it so'), seenAt: seenBy(docRef(ARRIVAL.kimK2), ['Correction', '40 mg daily']) },
   // §1, §4: the signed addendum keeps carvedilol at 6.25 mg twice daily, his home dose.

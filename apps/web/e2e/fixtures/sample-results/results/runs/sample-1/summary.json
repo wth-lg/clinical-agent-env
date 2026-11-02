@@ -122,13 +122,13 @@
     },
     "crc-care-gap": {
       "task_versions": [
-        "cae0d3bac8ff14fa6871adfcdfa5760396962dfadda53907275ca7014999babb"
+        "41392483ad7af75aee283ac78ed5bd92cdad3a26245f6b05ec9eb2f10c1569ff"
       ],
       "env_versions": [
-        "2b53619948c661936686c53100e53776b9c3fd31588603134f63b8b2595f9cdf"
+        "6e933d5c9f6a01413607c09699216f55cb07ca3c764d3e0d417db4b683a64c17"
       ],
       "grader_task_versions": [
-        "330b6ed0745c6d14bbb1254c63494c738d1beca41e50cdd2604dec4386e4d510"
+        "719ab5b2a66ddf08908720e4f6285e44db5e4d9100a67ea93013a18a63dc8841"
       ],
       "records": 12,
       "trials": 12,
@@ -230,13 +230,13 @@
     },
     "discharge-medrec": {
       "task_versions": [
-        "bcfb39f3980653eb10899bb9888950086db63bd197fa1af1cd7e1aa7d1648fdd"
+        "318338839983e7c0bfe83f43ec5a9125d28a4f70dff47f626eb5ba6dbd1f69f6"
       ],
       "env_versions": [
         "e3438ca7987c6b1035a9696b6426847cbe3cbe3debc202268a5804c8e080d20e"
       ],
       "grader_task_versions": [
-        "16d036ae3d696522ae2a61851bd43c987228022b0c7aff5c6075599f3c848b4a"
+        "ba2e53367675f5bca81b5f73e7c034165325c796eec4a0db4dcf797079e99a74"
       ],
       "records": 13,
       "trials": 12,
