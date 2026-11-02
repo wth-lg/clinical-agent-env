@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:renal-dose-review:1",
   "task_id": "renal-dose-review",
-  "task_version": "abf2bdd96bd30e3d3136f658b5573bcfd2a12874f98deccd7c580a84c6f925b1",
-  "env_version": "ddba2bb00979810e3a063d9e776a943501a221124cd4a281109be9f68c87bf1e",
+  "task_version": "b53216728938dc3d3b7b062489bbc0f4854abe61cc9d797d8abc73a457b81853",
+  "env_version": "a06cc72a2e2ad6f674fe2aaeffd7647bf5012c3160ad4af9466612d8a43356f3",
   "grader_task_version": "af7e9d8b147695d53834c6336ab0c6af52229db11abeaba2ecdaaf578ca89eb1",
-  "fixture_hash": "0ff730c8b3f414a5186eda9220692b67142e03e3b185fe7c9e476f7ab5b20f80",
+  "fixture_hash": "f4aee379bbe347373bb7a78a4b93ecd33feed9337e3c8d14d9816e3ac8e24185",
   "state_hash": {
-    "initial": "0ff730c8b3f414a5186eda9220692b67142e03e3b185fe7c9e476f7ab5b20f80",
-    "final": "0984ebe0505a2a2732408a0795f042f2c67d12f60cccfc878c983e91e06c8662",
-    "replay_final": "0984ebe0505a2a2732408a0795f042f2c67d12f60cccfc878c983e91e06c8662"
+    "initial": "f4aee379bbe347373bb7a78a4b93ecd33feed9337e3c8d14d9816e3ac8e24185",
+    "final": "1e0cd757cb40506bb13d5ecfec3178ede89156022ffb5001391a17d1705c7dbe",
+    "replay_final": "1e0cd757cb40506bb13d5ecfec3178ede89156022ffb5001391a17d1705c7dbe"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T14:44:48.000Z",
+  "started": "2026-10-23T14:26:13.000Z",
   "turns": 21,
   "tool_calls": 54,
   "tool_errors": {
@@ -43,7 +43,7 @@
   "summary": "Reviewed the 5 patients on the DOAC dose review list under RBC-PHARM-07, and the results and messages that arrived during the review. Changed: Delgado rivaroxaban 20 -> 15 mg daily (outside SCr 1.81, CrCl 44); Duquette apixaban 5 -> 2.5 mg BID (itraconazole); Moravec rivaroxaban 15 -> 20 mg daily (CrCl 56 on actual weight); Vance apixaban 2.5 -> 5 mg BID (one criterion). Pellegrino unchanged (CrCl 59). Each change and correction documented in a progress note on that chart.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T14:48:24.000Z",
+  "ended": "2026-10-23T14:29:49.000Z",
   "judge_cost_usd": 0,
   "grader_version": "18",
   "outcome": "PASS",
