@@ -57,10 +57,11 @@
 //
 // Why a task fails (P17j JG7, faultCounts): per task, fault_counts holds the valid failures (valid,
 // not PASS) by
-//   taxonomy           the kind of model failure of the current grade: the recorded attribution's
-//                      TAXONOMY value when it names the current grade's decisive check, did_not_finish
-//                      for a LIMIT, refusal for a REFUSAL, else unattributed (a regrade moved the
-//                      decisive check, or the record has no attribution)
+//   taxonomy           the kind of model failure of the current grade: the current grade's
+//                      attribution's TAXONOMY value (currentGrade: a regrade's own) when it names the
+//                      current grade's decisive check, did_not_finish for a LIMIT, refusal for a
+//                      REFUSAL, else unattributed (an older regrade entry moved the decisive check,
+//                      or the grade has no attribution)
 //   label              the audit's label of each (adjudicated, else its own: explain.ts
 //                      auditLabelOf, which the caller applies), model, environment or grader, and
 //                      unlabelled; null when the caller gives no audit
@@ -149,7 +150,7 @@ export interface SummaryTrial {
   // The requested effort; absent on records that predate it.
   effort?: string | null;
   // The recorded attribution: its kind of model failure and the check it names.
-  attribution?: { auto: string; first_failed: string | null } | null;
+  attribution?: GradeAttribution | null;
   state_hash: { initial: string | null; final: string | null; replay_final: string | null };
   tool_errors: Readonly<Record<string, number>>;
   cost_usd: number;
@@ -159,10 +160,22 @@ export interface SummaryTrial {
   regrades?: ReadonlyArray<RegradeGrade>;
 }
 
+// The attribution a grade carries, as summary and classes read it (packages/grader/attribution.ts
+// Attribution): the decisive check's label and each failed item's.
+export interface GradeAttribution {
+  auto: string;
+  first_failed: string | null;
+  items?: ReadonlyArray<{ item?: unknown; gate?: unknown; auto?: unknown }>;
+}
+
 // What a cli regrade entry holds of its grade (cli/regrade.ts RegradeEntry). Entries written
-// before checks were stored have no checks.
+// before checks were stored have no checks; entries written before builder-292 have no attribution.
 export interface RegradeGrade {
   outcome: string;
+  // Whether the regrade changed the outcome of the grade before it.
+  changed?: boolean;
+  // The regraded grade's attribution (null when it has none: a PASS); absent on older entries.
+  attribution?: GradeAttribution | null;
   // The task's grader_task_version the regrade graded at; absent on older entries.
   grader_task_version?: string | null;
   score?: number | null;
@@ -204,6 +217,12 @@ export interface CurrentGrade {
   regraded: boolean;
   // The grader_task_version it was graded at; null when its record or entry predates the field.
   grader_task_version: string | null;
+  // The attribution of the current grade: the last regrade entry's; with no regrade, or on an entry
+  // written before regrades stored it, the recorded attribution (whose labels may then belong to an
+  // earlier grade: readers check it names the current decisive check, as faultCounts does, or set it
+  // aside, as cli classes does when that regrade changed the outcome). attribution_stored says which.
+  attribution: GradeAttribution | null;
+  attribution_stored: boolean;
 }
 
 // A trial's name in messages, replay.json and summary.json: <task>/<index> for a batch record; a
@@ -217,12 +236,14 @@ export const trialName = (r: { task_id: string; index?: number | undefined; traj
 
 // A record's current grade: its last regrades[] entry, else its recorded outcome, score and
 // checks. The one reader of a record's grade for summary, audit-check and replay.
-export function currentGrade(r: { outcome: string; score?: number | null; checks?: ReadonlyArray<SummaryCheck> | null; grader_task_version?: string | null; regrades?: ReadonlyArray<RegradeGrade> }): CurrentGrade {
+export function currentGrade(r: { outcome: string; score?: number | null; checks?: ReadonlyArray<SummaryCheck> | null; grader_task_version?: string | null; attribution?: GradeAttribution | null; regrades?: ReadonlyArray<RegradeGrade> }): CurrentGrade {
   const last = r.regrades?.at(-1);
-  if (last === undefined) return { outcome: r.outcome, score: r.score ?? null, valid: isValid(r.outcome), checks: r.checks ?? null, regraded: false, grader_task_version: r.grader_task_version ?? null };
+  if (last === undefined) return { outcome: r.outcome, score: r.score ?? null, valid: isValid(r.outcome), checks: r.checks ?? null, regraded: false, grader_task_version: r.grader_task_version ?? null, attribution: r.attribution ?? null, attribution_stored: true };
   return {
     outcome: last.outcome, score: last.score ?? null, valid: typeof last.valid === 'boolean' ? last.valid : isValid(last.outcome), checks: last.checks ?? null, regraded: true,
     grader_task_version: last.grader_task_version ?? null,
+    attribution: last.attribution !== undefined ? last.attribution : (r.attribution ?? null),
+    attribution_stored: last.attribution !== undefined,
   };
 }
 
@@ -478,11 +499,11 @@ export function faultCounts(trials: readonly FailureTrial[], requeued: readonly 
     const g = currentGrade(t);
     return g.valid && g.outcome !== 'PASS' ? [{ t, g, check: firstFailed(g) }] : [];
   });
-  const kindOf = ({ t, g, check }: (typeof failed)[number]): (typeof FAILURE_KINDS)[number] => {
+  const kindOf = ({ g, check }: (typeof failed)[number]): (typeof FAILURE_KINDS)[number] => {
     if (g.outcome === 'LIMIT') return 'did_not_finish';
     if (g.outcome === 'REFUSAL') return 'refusal';
-    const auto = t.attribution?.auto;
-    return check !== null && t.attribution?.first_failed === check.id && (TAXONOMY as readonly string[]).includes(auto ?? '') ? (auto as (typeof TAXONOMY)[number]) : 'unattributed';
+    const auto = g.attribution?.auto;
+    return check !== null && g.attribution?.first_failed === check.id && (TAXONOMY as readonly string[]).includes(auto ?? '') ? (auto as (typeof TAXONOMY)[number]) : 'unattributed';
   };
   const labelOf = (t: FailureTrial): (typeof FAILURE_LABELS)[number] => {
     const l = audit?.[trialName(t)] ?? null;
