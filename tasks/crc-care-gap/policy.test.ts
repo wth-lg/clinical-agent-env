@@ -235,6 +235,8 @@ describe('crc-care-gap', () => {
       // The absence searches the review gates accept (R27; verifier-W1-probe-T3-clinical-3 F1, F2).
       'A patient is in hospice or palliative care with a hospice episode that is planned, active, on hold or finished, or a palliative care episode that is active, on hold or finished; an episode that is waitlisted, cancelled or entered in error does not count.',
       'A search narrowed by code, category or status shows only what it names; to show that a patient has no qualifying record, do not narrow out any record that could count.',
+      // crc-o1's event_seen accepts the withdrawn result alone, an any-of route with the notice (R38(j)).
+      'A result marked entered in error does not count toward screening.',
     ]) expect(policy, sentence).toContain(sentence);
   });
 

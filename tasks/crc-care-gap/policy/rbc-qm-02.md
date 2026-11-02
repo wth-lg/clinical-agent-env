@@ -16,6 +16,7 @@ A patient's screening is up to date with any one of:
 - a flexible sigmoidoscopy or a CT colonography during the measurement period or the 4 years before it;
 - a colonoscopy during the measurement period or the 9 years before it.
 Only a test that was done counts. An order, a referral or an appointment for a test is not screening, whatever its status.
+A result marked entered in error does not count toward screening.
 A stool test (FOBT, FIT or sDNA-FIT) counts by the date its sample was collected, not the date it was resulted.
 
 §4 Exclusions

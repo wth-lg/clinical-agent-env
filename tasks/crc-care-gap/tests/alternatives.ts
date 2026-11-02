@@ -9,7 +9,7 @@
 // The plan's "stop plus new order as well as modify" (R21) has no T3 form: the amend action is a new
 // FIT order and a message, and no tool modifies or stops a ServiceRequest.
 import type { Alternative, ScriptCall, ScriptTurn } from '../../../packages/grader/matrix/types.ts';
-import { actions, arrivalRead, arrivals, chart, finish, fitOrder, group, groups, inbox, notes, orderFit, outreach, policy, PT, read, reads, recheck, search, STOOL_CODES, TRIGGER, type Label } from '../solution/steps.ts';
+import { actions, ARRIVAL, arrivalRead, arrivals, chart, finish, fitOrder, group, groups, inbox, notes, orderFit, outreach, policy, PT, read, reads, recheck, search, STOOL_CODES, TRIGGER, type Label } from '../solution/steps.ts';
 
 // D1's stool-test search, which exposes her FIT (crc-b2's trigger), left out of the reads.
 const withoutD1Stool = (turns: readonly ScriptTurn[]): ScriptTurn[] => turns.map((t) => ({ calls: t.calls.filter((c) => !(c.input.patient === PT.D1 && c.input.code === STOOL_CODES)) }));
@@ -48,6 +48,13 @@ export const alternatives: Alternative[] = [
     id: 'notice_by_snippet',
     why: "Lists the queues and reads three arrivals, but finds the Harbor laboratory's notice by a note search of Delaine MacGyver's chart for 'labelling error', whose snippet shows that the specimen belongs to another patient (R29), then acts.",
     script: [...reads(), recheck, { calls: (['G1', 'D1', 'C2'] as Label[]).map(arrivalRead) }, { calls: [notes('labelling error', PT.A1)] }, { calls: actions() }, { calls: [finish()] }],
+  },
+  // R38(j), R21: §3 says a result marked entered in error does not count toward screening, so the
+  // withdrawn sDNA-FIT decides crc-o1 on its own, an any-of route with the Harbor notice.
+  {
+    id: 'withdrawn_result_alone',
+    why: "Lists the queues and reads three arrivals, but for Delaine MacGyver reads only her sDNA-FIT result, now entered in error, never the Harbor laboratory's notice; §3 says a result marked entered in error does not count toward screening, so she has no screening, and it acts.",
+    script: [...reads(), recheck, { calls: [...(['G1', 'D1', 'C2'] as Label[]).map(arrivalRead), read(...ARRIVAL.A1[1])] }, { calls: actions() }, { calls: [finish()] }],
   },
   {
     id: 'lure_note_and_recheck',
