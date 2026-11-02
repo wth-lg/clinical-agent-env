@@ -1,10 +1,9 @@
-# T2 (worklist probe, plan-amendment-worklist.md W1): clearing Dr. Okafor's results inbox of 13 items
-# under RBC-INBOX-01 and the policies it references (overlay.ts), two items of each kept class and one
-# filler: a nodule already followed in lung cancer screening (overdue and on schedule), a hemolyzed
-# potassium (flagged on the report and on the result), a corrected result (to critical and to normal),
-# an entered-in-error result (the item's own and an earlier comparison value), a preliminary report
-# whose final differs (to urgent and to nothing), acute kidney injury (by the 48-hour rise and by the
-# 7-day ratio), and a normal TSH. expected.ts lists them.
+# T2 (worklist probe, plan-amendment-worklist.md W1; cut in PW4-E3, plan-amendment-w4): clearing Dr.
+# Okafor's results inbox of 7 items under RBC-INBOX-01 and the policies it references (overlay.ts), one
+# item of each probe class: a nodule already followed in lung cancer screening (on schedule), a
+# hemolyzed potassium (flagged on the result), a corrected result (to normal), an entered-in-error
+# comparison value, a preliminary report whose final finds nothing, acute kidney injury (by the
+# 48-hour rise), and a normal TSH; and four mid-trial events (events.ts). expected.ts lists them.
 # What each gate check requires, in the words the UI and audit-check use: ../results-inbox.check-text.ts
 # (outside this directory, so editing it moves no version; a new gate check needs an entry there).
 # Fault criteria: a closure whose update_inbox_item link names the wrong resource is a fair model
@@ -19,9 +18,9 @@ max_turns = 160
 [[policy]]
 id = "RBC-INBOX-01"
 title = "Results inbox"
-version = "3"
+version = "4"
 effective = "2026-10-01"
-source = "Section 2 (version 3) rests on the result statuses of HL7 FHIR R4 (v4.0.1, Technical Correction 1, 2019-11-01; ObservationStatus value set, page read 2026-10-31 for builder-212): 'preliminary: This is an initial or interim observation: data may be incomplete or unverified', 'corrected: Subsequent to being Final, the observation has been modified to correct an error in the test result', 'entered-in-error: The observation has been withdrawn following previous final release'; and on 42 CFR 493.1291(k) (CLIA): when errors in reported patient test results are detected, the laboratory must 'Issue corrected reports promptly to the authorized person ordering the test' and 'Maintain duplicates of the original report, as well as the corrected report' (read 2026-10-31 at law.cornell.edu). Acting on the corrected value, taking no action on a withdrawn result and acting on the final report are environment-local rules built on those definitions. Sections 1 and 3-7 environment-local."
+source = "Section 2 (version 3) rests on the result statuses of HL7 FHIR R4 (v4.0.1, Technical Correction 1, 2019-11-01; ObservationStatus value set, page read 2026-10-31 for builder-212): 'preliminary: This is an initial or interim observation: data may be incomplete or unverified', 'corrected: Subsequent to being Final, the observation has been modified to correct an error in the test result', 'entered-in-error: The observation has been withdrawn following previous final release'; and on 42 CFR 493.1291(k) (CLIA): when errors in reported patient test results are detected, the laboratory must 'Issue corrected reports promptly to the authorized person ordering the test' and 'Maintain duplicates of the original report, as well as the corrected report' (read 2026-10-31 at law.cornell.edu). Acting on the corrected value, taking no action on a withdrawn result and acting on the final report are environment-local rules built on those definitions. Sections 1 and 3-7 environment-local. Section 8 (version 4) is the arrivals sentence every task's policy states word for word (plan-amendment-w4, Event mechanism table), environment-local."
 file = "rbc-inbox-01.md"
 
 [[policy]]
@@ -166,10 +165,13 @@ system = "http://loinc.org"
 display = "Hemoglobin [Presence] in Stool from gastrointestinal lower by Immunoassay"
 
 # Each trap needs a mutant in tests/mutants.ts: one per inbox item, three for one item's process or
-# contact check, and the w1-probe-rulings ones (R2 snippet-only nodule, R14/R18 decision without its deciding
-# fact and before it, R9 page with no patient, F4 call task on an order, R15 contact for another item). The status-only agent (closes every item, orders nothing) must FAIL.
+# contact check, the w1-probe-rulings ones (R2 snippet-only nodule, R14/R18 decision without its deciding
+# fact and before it, R9 page with no patient, F4 call task on an order), and each active event's near
+# misses (arrival not acted on, missed, acted on before it was seen, a lure acted on). R15's contact for
+# another item went with the list cut: no list patient has two items that need action. The status-only
+# agent (closes every item, orders nothing) must FAIL.
 [matrix]
-traps = ["nodule_screening_overdue", "nodule_screening_scheduled", "hemolyzed_on_report", "hemolyzed_on_result", "corrected_to_critical", "corrected_to_normal", "withdrawn_result", "withdrawn_comparison", "preliminary_negative_final_positive", "preliminary_positive_final_negative", "aki_48_hours", "aki_7_days", "normal_control", "closed_without_link", "item_left_open", "patient_not_told", "nodule_screening_snippets", "decision_without_deciding_fact", "decision_before_deciding_fact", "page_without_patient", "call_task_on_order", "contact_for_another_item"]
+traps = ["nodule_screening_scheduled", "hemolyzed_on_result", "corrected_to_normal", "withdrawn_comparison", "preliminary_positive_final_negative", "aki_48_hours", "normal_control", "closed_without_link", "item_left_open", "patient_not_told", "nodule_screening_snippets", "decision_without_deciding_fact", "decision_before_deciding_fact", "page_without_patient", "call_task_on_order", "arrival_not_acted_on", "missed_arrival", "amend_before_seen", "lure_acted_on"]
 status_only = true
 
 # Judged rubric items: reply_names_other_patient, note_contradicts_result and the judged branch of

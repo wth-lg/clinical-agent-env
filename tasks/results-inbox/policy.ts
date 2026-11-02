@@ -1,5 +1,5 @@
 // T2's expected end state, computed from the initial world by the policies (design section 4,
-// "Double derivation"): every open item in the results queue, classified from its focus and the
+// "Double derivation"): every open item in the signed-in clinician's results queue, classified from its focus and the
 // patient's record by RBC-INBOX-01 §2, RBC-LAB-03, RBC-RAD-05 and RBC-GI-01. It never imports
 // expected.ts or overlay constants (lint: no-policy-expected-import). Items come out in ORDER, which
 // expected.ts follows.
@@ -21,12 +21,15 @@ const TSH = '3016-3';
 const VALID = ['final', 'corrected', 'amended'];
 const CORRECTED = ['corrected', 'amended'];
 
-const ORDER = ['nodule_overdue', 'nodule_scheduled', 'hemolyzed_report', 'hemolyzed_note', 'corrected_up', 'corrected_down', 'eie_result', 'eie_baseline', 'prelim_positive', 'prelim_negative', 'aki_48h', 'aki_7day', 'normal_tsh'];
+// One item of each probe class (PW4-E3, plan-amendment-w4: n = 7), class by class.
+const ORDER = ['nodule_scheduled', 'hemolyzed_note', 'corrected_down', 'eie_baseline', 'prelim_negative', 'aki_48h', 'normal_tsh'];
+// The clinician whose inbox the task works: the signed-in user (list_inbox lists the items they own).
+const USER = 'Practitioner/pr-okafor';
 
 type Ref = { reference?: string };
 type Coded = { coding?: Array<{ system?: string; code?: string; display?: string }> };
 type R = Readonly<Record<string, unknown>> & { resourceType: string; id?: string };
-type Item = R & { status?: string; code?: Coded; focus?: Ref; for?: Ref };
+type Item = R & { status?: string; code?: Coded; focus?: Ref; for?: Ref; owner?: Ref };
 type Obs = R & { status?: string; code?: Coded; subject?: Ref; effectiveDateTime?: string; valueQuantity?: { value?: number }; valueCodeableConcept?: Coded; interpretation?: Coded[]; note?: Array<{ text?: string }> };
 type Report = R & { status?: string; code?: Coded; subject?: Ref; effectiveDateTime?: string; issued?: string; result?: Ref[]; conclusion?: string };
 
@@ -108,7 +111,7 @@ function baselineOf(world: WorldView, patient: string, at: string): { id: string
 }
 
 export function derive(world: WorldView): Json {
-  const tasks = (world.all('Task') as readonly Item[]).filter((t) => t.status === 'requested' && (t.code?.coding ?? []).some((c) => c.system === INBOX && c.code === 'results'));
+  const tasks = (world.all('Task') as readonly Item[]).filter((t) => t.status === 'requested' && t.owner?.reference === USER && (t.code?.coding ?? []).some((c) => c.system === INBOX && c.code === 'results'));
   const out: Record<string, Json> = {};
   const put = (k: string, v: Record<string, Json>) => {
     if (k in out) throw new Error(`two items classified ${k}`);

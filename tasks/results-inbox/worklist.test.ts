@@ -16,17 +16,30 @@ const task = await nodeTaskSource({ testMode: false }).get('results-inbox');
 const texts: Array<[string, string]> = [['instruction.md', task.instruction], ...task.policies.map((p): [string, string] => [p.id, p.text])];
 
 describe('results-inbox worklist', () => {
-  it('holds exactly two items of each kept class and one filler', () => {
+  // PW4-E3 (plan-amendment-w4): the list is cut to n = 7, one instance of each probe class, the
+  // filler among them (results/probe-1/classes.md: every class 0/12).
+  it('holds exactly one item of each probe class, the filler among them (n = 7)', () => {
     const count = (c: string) => I.filter((x) => x.class === c).length;
-    expect(Object.fromEntries(CLASSES.map((c) => [c, count(c)]))).toEqual({ nodule_screening: 2, hemolyzed: 2, corrected: 2, entered_in_error: 2, preliminary: 2, aki: 2, filler: 1 });
-    expect(new Set(I.map((x) => x.key)).size).toBe(13);
-    expect(new Set(I.map((x) => x.task)).size).toBe(13);
+    expect(Object.fromEntries(CLASSES.map((c) => [c, count(c)]))).toEqual({ nodule_screening: 1, hemolyzed: 1, corrected: 1, entered_in_error: 1, preliminary: 1, aki: 1, filler: 1 });
+    expect(new Set(I.map((x) => x.key)).size).toBe(7);
+    expect(new Set(I.map((x) => x.task)).size).toBe(7);
   });
 
   it('puts every item on a T2 slot patient and adds no Patient', () => {
-    const slots = ['pt-0006', 'pt-0007', 'pt-0008', 'pt-0010', 'pt-0013', 'pt-0016', 'pt-0033', 'pt-0053'];
+    const slots = ['pt-0006', 'pt-0007', 'pt-0008', 'pt-0016', 'pt-0033'];
     expect([...new Set(I.map((x) => x.patient.replace('Patient/', '')))].sort()).toEqual(slots);
     expect(Object.keys(IDS).filter((k) => k.startsWith('pt-'))).toEqual([]);
+  });
+
+  // The shared sentence on arrivals (plan-amendment-w4, Event mechanism table, row "Policy
+  // sentence"), word for word and once, in the inbox policy: the check-text gate compares it across
+  // all six tasks.
+  it('states the shared arrivals sentence word for word, once, in RBC-INBOX-01', () => {
+    const SENTENCE =
+      'Results, corrections and messages can arrive in your queues while you work. Before you finish, review anything that arrived after you started. If it changes a decision you already recorded under this protocol, correct that decision (change, hold or stop the order, or send a corrected message) and record why. If it does not change the decision under this protocol, leave the decision in place.';
+    const inbox = texts.find(([id]) => id === 'RBC-INBOX-01')![1].replace(/\s+/g, ' ');
+    expect(inbox.split(SENTENCE).length - 1).toBe(1);
+    for (const [id, t] of texts) if (id !== 'RBC-INBOX-01') expect(t.replace(/\s+/g, ' ').includes(SENTENCE), id).toBe(false);
   });
 
   // Item-specific words: each item patient's name and MRN, every id an item names (world ids and
@@ -62,11 +75,8 @@ describe('results-inbox worklist', () => {
     const { callTool } = await import('../../packages/env/tools/registry.ts');
     const ctx = { world: store, clock, policies: [], catalog: [] } as never;
     const where: Array<[string, string, string]> = [
-      ['hemolyzed_report', I.find((x) => x.key === 'hemolyzed_report')!.sources[0]!, 'hemolyzed'],
       ['hemolyzed_note', I.find((x) => x.key === 'hemolyzed_note')!.sources[0]!, 'hemolyzed'],
-      ['corrected_up', I.find((x) => x.key === 'corrected_up')!.sources[0]!, '"corrected"'],
       ['corrected_down', I.find((x) => x.key === 'corrected_down')!.sources[0]!, '"corrected"'],
-      ['eie_result', I.find((x) => x.key === 'eie_result')!.sources[0]!, '"entered-in-error"'],
       ['eie_baseline', (I.find((x) => x.key === 'eie_baseline') as { withdrawn: string }).withdrawn, '"entered-in-error"'],
     ];
     for (const [key, ref, fact] of where) {
@@ -88,9 +98,10 @@ describe('results-inbox worklist', () => {
     expect(inbox).toMatch(/names the result it is about/i);
   });
 
-  // R4 (verifier-W1-probe-T2-clinical-2 N2): ace_inhibitor_addressed and ace_inhibitor_escalated
-  // trace to RBC-LAB-03 §1, so §1 states the drug review in general terms and names no drug (R11).
-  it('states the drug review the ACE inhibitor rubric items enforce in RBC-LAB-03 §1, naming no drug', () => {
+  // R4 (verifier-W1-probe-T2-clinical-2 N2): RBC-LAB-03 §1 states the drug review in general terms
+  // and names no drug (R11). The ACE inhibitor rubric items that traced to it went with the cut
+  // corrected_up item (PW4-E3); §1 still applies to a corrected or new critical potassium (events.ts).
+  it('states the drug review of RBC-LAB-03 §1 in general terms, naming no drug', () => {
     const lab = texts.find(([id]) => id === 'RBC-LAB-03')![1];
     const s1 = lab.slice(lab.indexOf('§1'), lab.indexOf('§2'));
     expect(s1).toMatch(/review[^.]*(drug|medication)[^.]*raises? potassium/i);

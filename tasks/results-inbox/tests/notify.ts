@@ -38,10 +38,22 @@ export const madeOf = (ctx: NotifyCtx, type: string) => {
 // The patient a resource is for (Communication.subject, Task.for, an order's subject), if any.
 export const patientOf = (r: Res) => r.subject?.reference ?? r.for?.reference;
 
-// Every resource the patient's inbox items link in their closures.
+// The inbox items that arrived during the trial (a mid-trial event's Task/inbox-a<k>,
+// packages/env/events.ts): inbox-queue Tasks the initial world does not hold. Each is for its
+// patient (Task.for), and its closure places what it links as a list item's closure does
+// (verifier-phase-P17i-W4E3-T2-206-1 S1: a stat page with nothing in about, linked by closing the
+// arrival of a corrected potassium, is that patient's page).
+const INBOX_QUEUE = 'urn:riverbend:inbox-queue';
+type Item = Res & { code?: { coding?: Array<{ system?: string }> } };
+export const arrivedItems = (ctx: NotifyCtx): Item[] =>
+  (ctx.final.all('Task') as Item[]).filter((t) => !ctx.initial.has('Task', t.id) && (t.code?.coding ?? []).some((c) => c.system === INBOX_QUEUE));
+const outputs = (t: Res | undefined) => (t?.output ?? []).map((o) => o.valueReference?.reference ?? '');
+
+// Every resource the patient's inbox items link in their closures: the list's items and the
+// patient's arrived ones.
 export function linkedFor(ctx: NotifyCtx, patient: string): Set<string> {
   const items = Object.values(expected.items).filter((x) => x.patient === patient);
-  return new Set(items.flatMap((x) => ((ctx.final.get(...split(x.task)) as Res | undefined)?.output ?? []).map((o) => o.valueReference?.reference ?? '')));
+  return new Set([...items.flatMap((x) => outputs(ctx.final.get(...split(x.task)) as Res | undefined)), ...arrivedItems(ctx).filter((t) => t.for?.reference === patient).flatMap(outputs)]);
 }
 
 // Whether a resource the trial made is about the patient: its patient is the patient, or it has
@@ -56,11 +68,11 @@ export function about(ctx: NotifyCtx, patient: string, names?: (r: Res) => boole
 }
 
 // The on-call notices the trial made that a gate cannot place: a message to pool-oncall or a
-// task it owns with no patient, which no inbox item's closure links. Its text may name any
+// task it owns with no patient, which no inbox item's closure links (a list item's or an arrived one's). Its text may name any
 // patient, and gates do not read text, so a gate that forbids paging about a patient fails
 // closed on it (decisions.tsv 2026-10-27T07:00).
 export function unplaced(ctx: NotifyCtx): Res[] {
-  const linked = new Set(Object.values(expected.items).flatMap((x) => ((ctx.final.get(...split(x.task)) as Res | undefined)?.output ?? []).map((o) => o.valueReference?.reference ?? '')));
+  const linked = new Set([...Object.values(expected.items).flatMap((x) => outputs(ctx.final.get(...split(x.task)) as Res | undefined)), ...arrivedItems(ctx).flatMap(outputs)]);
   const loose = (r: Res) => patientOf(r) === undefined && !linked.has(keyOf(r));
   return [
     ...madeOf(ctx, 'Communication').filter((c) => (c.recipient ?? []).some((r) => r.reference === ONCALL) && loose(c)),

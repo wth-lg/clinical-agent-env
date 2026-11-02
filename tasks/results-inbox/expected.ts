@@ -5,23 +5,25 @@ import { ref } from './ids.ts';
 // from the initial world, and the matrix fails when the two differ. The grader reads its targets from
 // here. Today is Friday 2026-10-23; the next business day is Monday 2026-10-26.
 //
-// The worklist probe (plan-amendment-worklist.md W1, T2) holds exactly two items of each kept class and
-// one filler (CLASSES; worklist.test.ts), in the order policy.ts derives them (ORDER), class by class:
+// PW4-E3 (plan-amendment-w4) cut the worklist probe's list to n = 7: one item of each probe class
+// (results/probe-1/classes.md, every class 0/12), in the order policy.ts derives them (ORDER), class
+// by class. The other six items stay on their charts, filed to another clinician (overlay.ts
+// OFF_LIST), so no id moves:
 //   nodule_screening  RBC-RAD-05 §2's screening exception: the next screening LDCT from the last
-//                     screening study, window plus or minus 1 month, or within 14 days of today once
-//                     that window has passed (item 1 overdue, item 2 on schedule)
-//   hemolyzed         RBC-LAB-03 §2: urgent repeat BMP by Monday, no on-call (item 3 flagged on the
-//                     panel's report, item 4 on the potassium result)
-//   corrected         RBC-INBOX-01 §2(a): act on the corrected value (item 5 corrected to a critical
-//                     6.4, RBC-LAB-03 §1; item 8 corrected to a normal 4.4, §4)
+//                     screening study, window plus or minus 1 month (item 2, on schedule)
+//   hemolyzed         RBC-LAB-03 §2: urgent repeat BMP by Monday, no on-call (item 4, flagged on the
+//                     potassium result)
+//   corrected         RBC-INBOX-01 §2(a): act on the corrected value (item 8, corrected to a normal 4.4,
+//                     §4)
 //   entered_in_error  RBC-INBOX-01 §2(b): no action on a withdrawn result, nor as a value to compare
-//                     with (item 9 the item's own FIT; item 10 an earlier creatinine that would make the
-//                     item's creatinine AKI)
-//   preliminary       RBC-INBOX-01 §2(c): act on the final report (item 6's final read is an urgent
-//                     bone lesion, RBC-RAD-05 §3; item 11's final read withdraws the nodule)
-//   aki               RBC-LAB-03 §3: urgent repeat BMP by Monday (item 12 by the 48-hour rise, item 13
-//                     by the 7-day ratio)
+//                     with (item 10, an earlier creatinine that would make the item's creatinine AKI)
+//   preliminary       RBC-INBOX-01 §2(c): act on the final report (item 11, the final read withdraws
+//                     the nodule)
+//   aki               RBC-LAB-03 §3: urgent repeat BMP by Monday (item 12, by the 48-hour rise)
 //   filler            a normal TSH (item 7): close, no order
+// Cut: nodule_overdue (1), hemolyzed_report (3), corrected_up (5), prelim_positive (6), eie_result
+// (9) and aki_7day (13). The mid-trial events on these items are in events.ts; EVENTS below states
+// what each one makes of its item on the chart as delivered (plan-amendment-w4 C1).
 // The duplicate-draw class of the plan's T2 list is dropped: no dated source states its rule (report).
 export const NEXT_BUSINESS_DAY = '2026-10-26';
 export const TODAY = '2026-10-23';
@@ -61,13 +63,6 @@ const task = (n: number) => ref(`Task/task-t2-inbox-${n}` as `Task/task-t2-inbox
 
 export const items: readonly Item[] = [
   {
-    // 5 mm nodule on the June CT, followed by Lakeshore's screening LDCT of 2025-09-15 (Lung-RADS 2,
-    // annual): due in September 2026, its window closed in mid-October, so within 14 days of today.
-    key: 'nodule_overdue', class: 'nodule_screening', task: task(1), patient: 'Patient/pt-0013',
-    sources: [ref('DiagnosticReport/dr-t2-ct-0604'), ref('DiagnosticReport/dr-t2-ldct-0915')],
-    nodule_mm: 5, index_date: '2026-06-04', screening_index: '2025-09-15', lung_rads: 2, overdue: true, window: { start: '2026-10-23', end: '2026-11-06' }, action: 'order',
-  },
-  {
     // 4 mm nodule on the October CT urogram, followed by the screening LDCT of 2026-04-14 (Lung-RADS
     // 2, annual): the next one is due 2027-04-14, window 2027-03-14 to 2027-05-14. Without the
     // exception, §2's high-risk row (current smoker) would ask for a CT 2027-09-19 to 2027-11-19.
@@ -76,29 +71,14 @@ export const items: readonly Item[] = [
     nodule_mm: 4, index_date: '2026-10-19', screening_index: '2026-04-14', lung_rads: 2, overdue: false, window: { start: '2027-03-14', end: '2027-05-14' }, action: 'order',
   },
   {
-    // K 6.3; the panel's report says the specimen was hemolyzed, the potassium result does not.
-    key: 'hemolyzed_report', class: 'hemolyzed', task: task(3), patient: 'Patient/pt-0006',
-    sources: [ref('DiagnosticReport/dr-t2-bmp-rp'), ref('Observation/obs-t2-rp-k')], k: 6.3, by: NEXT_BUSINESS_DAY, action: 'order',
-  },
-  {
     // K 6.4; the potassium result's comment says the specimen was hemolyzed.
     key: 'hemolyzed_note', class: 'hemolyzed', task: task(4), patient: 'Patient/pt-0008',
     sources: [ref('Observation/obs-t2-c-k')], k: 6.4, by: NEXT_BUSINESS_DAY, action: 'order',
   },
   {
-    // Filed as K 5.2; corrected to 6.4 (not hemolyzed): stat on-call notice and a stat BMP today.
-    key: 'corrected_up', class: 'corrected', task: task(5), patient: 'Patient/pt-0010',
-    sources: [ref('Observation/obs-t2-d-k')], reported: 5.2, k: 6.4, by: TODAY, action: 'order',
-  },
-  {
     // Filed as K 6.3; corrected to 4.4: a normal result, no on-call and no potassium order.
     key: 'corrected_down', class: 'corrected', task: task(8), patient: 'Patient/pt-0016',
     sources: [ref('Observation/obs-t2-eo-k-1020')], reported: 6.3, k: 4.4, action: 'close',
-  },
-  {
-    // A positive FIT marked entered in error (withdrawn): no GI referral.
-    key: 'eie_result', class: 'entered_in_error', task: task(9), patient: 'Patient/pt-0016',
-    sources: [ref('Observation/obs-t2-eo-fit-1019')], withdrawn: ref('Observation/obs-t2-eo-fit-1019'), forbid: 'gi', action: 'close',
   },
   {
     // Creatinine 1.31; the 0.84 of 10-21 (inside 48 hours) is withdrawn, and the valid 1.27 of 10-17
@@ -108,13 +88,6 @@ export const items: readonly Item[] = [
     key: 'eie_baseline', class: 'entered_in_error', task: task(10), patient: 'Patient/pt-0033',
     sources: [ref('Observation/obs-t2-cw-cr'), ref('Observation/obs-t2-cw-cr-1021'), syntheaRef('Observation/obs-02297')], withdrawn: ref('Observation/obs-t2-cw-cr-1021'), forbid: 'creatinine', action: 'close',
     baseline: { id: syntheaRef('Observation/obs-02297'), from: '2026-10-15T14:29:10.000Z', to: '2026-10-22T14:29:10.000Z' },
-  },
-  {
-    // The preliminary read saw no fracture; the final read (to urgent care) is an aggressive lytic
-    // lesion with an urgent recommendation and no interval: urgent ortho-oncology referral and MRI
-    // femur within 14 days of the final report, by 2026-11-05.
-    key: 'prelim_positive', class: 'preliminary', task: task(6), patient: 'Patient/pt-0053',
-    sources: [ref('DiagnosticReport/dr-t2-xr-1022')], final: ref('DiagnosticReport/dr-t2-xr-1022'), report_date: '2026-10-22', by: '2026-11-05', action: 'order',
   },
   {
     // The preliminary read saw a 5 mm nodule; the final read calls it a vessel, no nodule, no follow-up.
@@ -127,11 +100,6 @@ export const items: readonly Item[] = [
     key: 'aki_48h', class: 'aki', task: task(12), patient: 'Patient/pt-0007',
     sources: [ref('Observation/obs-t2-lp-cr'), ref('Observation/obs-t2-lped-cr')], creatinine: 1.64, compare: ref('Observation/obs-t2-lped-cr'), compare_value: 0.98, rule: '48h', by: NEXT_BUSINESS_DAY, action: 'order',
   },
-  {
-    // Creatinine 1.26; 0.72 at urgent care 6 days earlier: 1.75 times, with no value inside 48 hours.
-    key: 'aki_7day', class: 'aki', task: task(13), patient: 'Patient/pt-0013',
-    sources: [ref('Observation/obs-t2-lm-cr'), ref('Observation/obs-t2-lmuc-cr')], creatinine: 1.26, compare: ref('Observation/obs-t2-lmuc-cr'), compare_value: 0.72, rule: '7d', by: NEXT_BUSINESS_DAY, action: 'order',
-  },
   { key: 'normal_tsh', class: 'filler', task: task(7), patient: 'Patient/pt-0016', sources: [ref('Observation/obs-t2-tsh-1020')], action: 'close' },
 ];
 
@@ -142,3 +110,48 @@ export const byKey = <K extends Item['class']>(key: string, cls?: K): Extract<It
 };
 
 export const expected = { queue: 'results', items };
+
+// The mid-trial events (events.ts): what each one makes of its item on the chart as delivered
+// (plan-amendment-w4 C1), by hand from the policies. An amend event's item is then graded by its
+// amended gate (packages/grader/events.ts): the order (codes, priority, start by or window), a stat
+// notice to on-call where RBC-LAB-03 §1 asks for one, and the patient told where RBC-INBOX-01 §5
+// asks (a message that lists the arrival in about, or a call task focused on it, due by `contact`);
+// each written after the arrival was seen. `takes` names the base gates of the item that the fired
+// amend event takes over, the ones that graded the decision it changes. A lure's `forbids` is what
+// its kept gate fails. `margins`: each line a decision turns on, and the lint margin it clears by (R7).
+export type CodeSet = 'ctChest' | 'potassium' | 'creatinine';
+export interface EventExpect {
+  action: 'order' | 'unchanged';
+  policy: string;
+  takes: ReadonlyArray<'item_orders' | 'item_no_forbidden'>;
+  order?: { codes: CodeSet; priority: 'routine' | 'urgent' | 'stat'; by?: string; window?: { start: string; end: string } };
+  oncall?: true;
+  contact?: string;
+  forbids?: 'oncall' | 'creatinine_repeat' | 'diagnostic_ct';
+  margins?: ReadonlyArray<{ what: string; value: number; line: number; margin: number }>;
+}
+const WITHIN_7_DAYS = '2026-10-30';
+export const EVENTS: Readonly<Record<string, EventExpect>> = {
+  // RBC-RAD-05 §2 with §1: the addendum makes the last screening report's schedule an LDCT 6 months
+  // after the 2026-04-14 study, due 2026-10-14, window to 2026-11-14 (not passed). §5: tell him.
+  'patel-ldct-addendum': { action: 'order', policy: 'RBC-RAD-05 §1, §2; RBC-INBOX-01 §5', takes: ['item_orders'], order: { codes: 'ctChest', priority: 'routine', window: { start: '2026-09-14', end: '2026-11-14' } }, contact: WITHIN_7_DAYS },
+  // RBC-INBOX-01 §2(a) and RBC-LAB-03 §1: a potassium of 6.4 that is not hemolyzed.
+  'brennan-k-corrected': { action: 'order', policy: 'RBC-INBOX-01 §2(a); RBC-LAB-03 §1', takes: ['item_no_forbidden'], order: { codes: 'potassium', priority: 'stat', by: TODAY }, oncall: true, margins: [{ what: 'potassium over 6.0', value: 6.4, line: 6.0, margin: 0.2 }] },
+  // RBC-LAB-03 §3: 1.78 at 19:40 is 0.47 over the 1.31 of 10:29 the same day (the 48-hour half; the
+  // 7-day half, 1.5 times her valid 1.27, is not met and decides nothing). §3 and §5: tell her.
+  'whitfield-cr-new': { action: 'order', policy: 'RBC-LAB-03 §3; RBC-INBOX-01 §5', takes: ['item_no_forbidden'], order: { codes: 'creatinine', priority: 'urgent', by: NEXT_BUSINESS_DAY }, contact: NEXT_BUSINESS_DAY, margins: [{ what: 'rise over the 1.31 of 10-22, 0.3 line', value: 1.78, line: 1.31 + 0.3, margin: 0.15 }] },
+  // RBC-INBOX-01 §2(c): a preliminary read is not final; the CT angiogram's final report calls the
+  // finding a vessel. No chest CT; the arrival's item stays open until a final read is issued.
+  'parisian-cxr-prelim': { action: 'unchanged', policy: 'RBC-INBOX-01 §2(c)', takes: [], forbids: 'diagnostic_ct' },
+  // RBC-INBOX-01 §2(a) with RBC-RAD-05 §2: a 5 mm solid nodule, high risk (a current smoker, 30
+  // pack-years, ED note): CT chest 12 months after the 2026-10-20 study, window plus or minus 1 month.
+  'parisian-cta-corrected': { action: 'order', policy: 'RBC-INBOX-01 §2(a); RBC-RAD-05 §1, §2; RBC-INBOX-01 §5', takes: ['item_no_forbidden'], order: { codes: 'ctChest', priority: 'routine', window: { start: '2027-09-20', end: '2027-11-20' } }, contact: WITHIN_7_DAYS },
+  // RBC-LAB-03 §1: a potassium of 6.5, not hemolyzed. RBC-INBOX-01 §5: tell her by the next business
+  // day (her base item closes, so no other gate asks it; verifier-phase-P17i-W4E3-T2-206-1 M5).
+  'ondricka-k-new': { action: 'order', policy: 'RBC-LAB-03 §1; RBC-INBOX-01 §5', takes: ['item_no_forbidden'], order: { codes: 'potassium', priority: 'stat', by: TODAY }, oncall: true, contact: NEXT_BUSINESS_DAY, margins: [{ what: 'potassium over 6.0', value: 6.5, line: 6.0, margin: 0.2 }] },
+  // RBC-LAB-03 §2: hemolyzed, so no on-call; the urgent repeat by Monday already ordered stands.
+  'brennan-k-hemolyzed': { action: 'unchanged', policy: 'RBC-LAB-03 §2', takes: [], forbids: 'oncall' },
+  // RBC-LAB-03 §3: collected 218 hours before her 1.31, outside the 7 days (168 hours) the rule
+  // compares with.
+  'whitfield-cr-outside': { action: 'unchanged', policy: 'RBC-LAB-03 §3', takes: [], forbids: 'creatinine_repeat', margins: [{ what: 'hours before her 1.31, 168-hour window', value: 218.15, line: 168, margin: 24 }] },
+};

@@ -27,3 +27,6 @@ Write a note for each actionable result that cites the result.
 
 §7 Related policies
 Imaging recommendations: RBC-RAD-05. Positive stool tests: RBC-GI-01. Potassium and creatinine results: RBC-LAB-03.
+
+§8 Arrivals
+Results, corrections and messages can arrive in your queues while you work. Before you finish, review anything that arrived after you started. If it changes a decision you already recorded under this protocol, correct that decision (change, hold or stop the order, or send a corrected message) and record why. If it does not change the decision under this protocol, leave the decision in place.

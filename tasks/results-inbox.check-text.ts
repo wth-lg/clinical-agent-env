@@ -10,6 +10,13 @@ const I = expected.items;
 const ACTIONABLE = I.filter((x) => x.action === 'order').length;
 
 // The first failed item and why: 'aki_48h (Patient/pt-0007): no urgent repeat BMP by 2026-10-26'.
+// The event gates (packages/grader/events.ts) record the failed items by key.
+const firstItem = (ev: Record<string, unknown>) => {
+  const failed = items(ev.failed_items);
+  if (failed.length === 0) return '';
+  const x = I.find((i) => i.key === failed[0]);
+  return `${show(failed[0])}${x ? ` (${x.patient})` : ''}${failed.length > 1 ? ` (and ${failed.length - 1} more)` : ''}`;
+};
 const firstFailed = (ev: Record<string, unknown>) => {
   const f = fields(items(ev.failed)[0]);
   if (f.item === undefined) return '';
@@ -19,11 +26,11 @@ const firstFailed = (ev: Record<string, unknown>) => {
 
 export const checkText: CheckText = {
   item_orders: {
-    requires: `the order each of the ${ACTIONABLE} items that need action calls for under the current version of its result: the screening LDCT in its window, an urgent repeat BMP by the next business day for a hemolyzed potassium or acute kidney injury, a stat BMP and a stat on-call notice for a corrected critical potassium, and the urgent specialist referral a final report recommends; an existing active order that meets the same terms counts`,
+    requires: `the order each of the ${ACTIONABLE} items that need action calls for under the current version of its result: the screening LDCT in its window, and an urgent repeat BMP by the next business day for a hemolyzed potassium or acute kidney injury; an existing active order that meets the same terms counts (an item whose decision an arrival changed is graded by amended instead)`,
     found: firstFailed,
   },
   item_no_forbidden: {
-    requires: 'no write the policies forbid for an item: no on-call notice for a hemolyzed potassium, no urgent on-call notice for a potassium corrected to normal, no urgent or next-day repeat on a first-reported or withdrawn value, no GI referral on a withdrawn FIT, no diagnostic chest CT for a nodule a final report withdrew, no on-call notice that names no patient, no order on a normal result',
+    requires: 'no write the policies forbid for an item: no on-call notice for a hemolyzed potassium, no urgent on-call notice for a potassium corrected to normal, no urgent or next-day repeat on a first-reported or withdrawn value, no diagnostic chest CT for a nodule a final report withdrew, no on-call notice that names no patient, no order on a normal result (an item whose decision an arrival changed is graded by amended instead)',
     found: firstFailed,
   },
   decisive_seen: {
@@ -31,7 +38,7 @@ export const checkText: CheckText = {
     found: firstFailed,
   },
   items_closed: {
-    requires: `all ${I.length} inbox items completed, and each of the ${ACTIONABLE} that need action linked to what closes it, a new action or an existing active order of the right kind (or the corrected critical potassium handed to on-call after a stat notice)`,
+    requires: `all ${I.length} inbox items completed, and each of the ${ACTIONABLE} that need action linked to what closes it, a new action or an existing active order of the right kind`,
     found: firstFailed,
   },
   result_seen_before_action: {
@@ -46,4 +53,10 @@ export const checkText: CheckText = {
     requires: `each patient of the ${ACTIONABLE} items that need action told of that item's result: a message to the patient that lists the result in about, a call task focused on the result due by the next business day for an urgent result or within 7 days for any other (a task on an order tracks it), or a staff message the item's closure links`,
     found: firstFailed,
   },
+  // The mid-trial events (results-inbox/events.ts) and RBC-INBOX-01 §8, the arrivals sentence.
+  event_delivered: { requires: "every active event whose trigger held arrived in the chart and the inbox (the environment's part: a miss is an environment error)", found: firstItem },
+  had_turn: { requires: 'a model turn after every arrival', found: firstItem },
+  event_seen: { requires: 'each result or report that arrived during the trial opened, or its deciding line shown, before finishing (§8: review anything that arrived after you started)', found: firstItem },
+  amended: { requires: "each decision an arrival changes corrected on the chart as delivered (the order the arrival calls for, a stat on-call notice for a potassium that proves critical, and the patient told where the policy asks), written after the arrival was read; the arrival's item not cancelled, and written only after it was read", found: firstItem },
+  kept: { requires: "a decision left in place when an arrival does not change it (no on-call notice for a hemolyzed potassium, no repeat on a creatinine outside the 7-day window, no chest CT and no closure on a preliminary read with no final version)", found: firstItem },
 };

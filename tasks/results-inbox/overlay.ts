@@ -1,6 +1,10 @@
-// T2 results-inbox overlay, worklist probe (plan-amendment-worklist.md W1, T2): Dr. Okafor's results
-// inbox, 13 Tasks in the results queue, each focused on the report or result it files, on the eight
-// T2 slots. Two items of each kept class and one filler:
+// T2 results-inbox overlay, worklist probe (plan-amendment-worklist.md W1, T2): 13 Tasks in the
+// results queue, each focused on the report or result it files, on the eight T2 slots. PW4-E3
+// (plan-amendment-w4) cut Dr. Okafor's list to seven, one of each probe class: items 2, 4, 7, 8, 10,
+// 11 and 12. Items 1, 3, 5, 6, 9 and 13 stay, with their charts, filed to Jordan Reyes, NP (OFF_LIST),
+// so the signed-in user's inbox does not list them and no id moves. The mid-trial events are in
+// events.ts, outside the world. All thirteen planted items, two of each class and one filler
+// (the seven on the list: 2, 4, 7, 8, 10, 11, 12):
 //
 //   item  slot     patient                  class               the decisive fact and where it is
 //   1     pt-0013  Linda Marsh, 1958        nodule, screening   June CT nodule; her outside screening LDCT
@@ -199,6 +203,11 @@ const ED_NOTE_TYPE: [string, string] = ['34111-5', 'Emergency department note'];
 const HP: [string, string] = ['34117-2', 'History and physical note'];
 
 // An inbox item: a Task in the results queue, owned by Dr. Okafor (design section 3, list_inbox).
+// PW4-E3 cut the list to seven (one item of each probe class): the other six stay on the chart, filed
+// to Jordan Reyes, NP (OFF_LIST), so no id moves and no chart changes; the signed-in user's inbox
+// does not list them.
+const OFF_LIST = new Set([1, 3, 5, 6, 9, 13]);
+const REYES = { reference: 'Practitioner/pr-reyes' };
 const item = (n: number, pt: string, focus: string, received: string, from: { reference: string }, summary: string, notes: Array<{ time: string; text: string }> = []): Resource => ({
   resourceType: 'Task',
   id: `task-t2-inbox-${n}`,
@@ -212,7 +221,7 @@ const item = (n: number, pt: string, focus: string, received: string, from: { re
   authoredOn: received,
   lastModified: received,
   requester: from,
-  owner: OKAFOR,
+  owner: OFF_LIST.has(n) ? REYES : OKAFOR,
   ...(notes.length ? { note: notes } : {}),
 });
 const REROUTED = (at: string) => ({ time: at, text: 'Re-routed to Dr. Okafor (primary care). Originally filed to the ordering provider at St. Brigid.' });
