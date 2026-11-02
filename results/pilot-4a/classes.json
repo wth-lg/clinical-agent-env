@@ -4,7 +4,7 @@
   "results/pilot-4a"
  ],
  "grader_versions": [
-  "18"
+  "19"
  ],
  "tasks": {
   "contrast-ct-prep": {
@@ -262,17 +262,23 @@
      "run": "results/pilot-4a",
      "outcome": "PASS"
     }
-   ]
+   ],
+   "historical": {
+    "task_versions": [
+     "1fbab17f8c1eaf1c3fdc186a97cd082864b7fb7fb7e74e2786fced14478e99a1"
+    ],
+    "checkout": "491a6fc7be5c2965d7985abde4d72e7a0488048d9fbb394f31a052149c470282"
+   }
   },
   "crc-care-gap": {
    "trials_valid": 4,
-   "pass": 1,
+   "pass": 2,
    "wilson": {
-    "lo": 0.04558726080970055,
-    "hi": 0.6993581574175981
+    "lo": 0.15003898915214953,
+    "hi": 0.8499610108478505
    },
    "split": {
-    "model": 3,
+    "model": 2,
     "environment": 0,
     "grader": 0,
     "infra": 0
@@ -280,14 +286,14 @@
    "guard_fires": 0,
    "q": {
     "trials": 4,
-    "seen_all": 1,
-    "rate": 0.25
+    "seen_all": 4,
+    "rate": 1
    },
    "classes": [
     {
      "class": "frailty_advanced_illness",
      "fails": 1,
-     "base_fails": 0,
+     "base_fails": 1,
      "observations": 4,
      "pass_rate": 0.75,
      "wilson": {
@@ -299,7 +305,7 @@
        "trial": 1,
        "run": "results/pilot-4a",
        "item": "Patient/pt-0009",
-       "gate": "event_seen",
+       "gate": "fit_orders",
        "label": "retrieval"
       }
      ],
@@ -336,29 +342,21 @@
     },
     {
      "class": "collection_vs_report_date",
-     "fails": 1,
+     "fails": 0,
      "base_fails": 0,
      "observations": 4,
-     "pass_rate": 0.75,
+     "pass_rate": 1,
      "wilson": {
-      "lo": 0.30064184258240184,
-      "hi": 0.9544127391902995
+      "lo": 0.5101091635454027,
+      "hi": 1
      },
-     "labels": [
-      {
-       "trial": 2,
-       "run": "results/pilot-4a",
-       "item": "Patient/pt-0022",
-       "gate": "event_seen",
-       "label": "retrieval"
-      }
-     ],
+     "labels": [],
      "instances": [
       {
        "instance": 1,
        "item": "Patient/pt-0022",
        "label": "Tiny Darline Koss",
-       "fails": 1,
+       "fails": 0,
        "observations": 4
       }
      ]
@@ -366,7 +364,7 @@
     {
      "class": "colonoscopy_never_done",
      "fails": 1,
-     "base_fails": 0,
+     "base_fails": 1,
      "observations": 4,
      "pass_rate": 0.75,
      "wilson": {
@@ -378,7 +376,7 @@
        "trial": 0,
        "run": "results/pilot-4a",
        "item": "Patient/pt-0024",
-       "gate": "event_seen",
+       "gate": "fit_orders",
        "label": "retrieval"
       }
      ],
@@ -400,22 +398,14 @@
      "class": "B",
      "active": true,
      "fired": 4,
-     "fails": 1,
+     "fails": 0,
      "observations": 4,
      "wilson": {
-      "lo": 0.30064184258240184,
-      "hi": 0.9544127391902995
+      "lo": 0.5101091635454027,
+      "hi": 1
      },
-     "labels": [
-      {
-       "trial": 1,
-       "run": "results/pilot-4a",
-       "item": "Patient/pt-0009",
-       "gate": "event_seen",
-       "label": "retrieval"
-      }
-     ],
-     "seen": 3,
+     "labels": [],
+     "seen": 4,
      "amend_fails_seen": 0
     },
     {
@@ -424,22 +414,14 @@
      "class": "B",
      "active": true,
      "fired": 4,
-     "fails": 1,
+     "fails": 0,
      "observations": 4,
      "wilson": {
-      "lo": 0.30064184258240184,
-      "hi": 0.9544127391902995
+      "lo": 0.5101091635454027,
+      "hi": 1
      },
-     "labels": [
-      {
-       "trial": 2,
-       "run": "results/pilot-4a",
-       "item": "Patient/pt-0022",
-       "gate": "event_seen",
-       "label": "retrieval"
-      }
-     ],
-     "seen": 3,
+     "labels": [],
+     "seen": 4,
      "amend_fails_seen": 0
     },
     {
@@ -448,22 +430,14 @@
      "class": "O",
      "active": true,
      "fired": 4,
-     "fails": 1,
+     "fails": 0,
      "observations": 4,
      "wilson": {
-      "lo": 0.30064184258240184,
-      "hi": 0.9544127391902995
+      "lo": 0.5101091635454027,
+      "hi": 1
      },
-     "labels": [
-      {
-       "trial": 0,
-       "run": "results/pilot-4a",
-       "item": "Patient/pt-0024",
-       "gate": "event_seen",
-       "label": "retrieval"
-      }
-     ],
-     "seen": 3,
+     "labels": [],
+     "seen": 4,
      "amend_fails_seen": 0
     },
     {
@@ -485,9 +459,9 @@
    ],
    "outside_failures": [],
    "independence": {
-    "all_items_pass": 1,
-    "expected_per_item": 1.6875,
-    "expected_per_class": 1.6875
+    "all_items_pass": 2,
+    "expected_per_item": 2.25,
+    "expected_per_class": 2.25
    },
    "outcomes": [
     {
@@ -503,14 +477,20 @@
     {
      "trial": 2,
      "run": "results/pilot-4a",
-     "outcome": "FAIL"
+     "outcome": "PASS"
     },
     {
      "trial": 3,
      "run": "results/pilot-4a",
      "outcome": "PASS"
     }
-   ]
+   ],
+   "historical": {
+    "task_versions": [
+     "610cb34acd9d0e0ad62bde465b8ad5d2cd8650ec311a401a17a755467bdd8c67"
+    ],
+    "checkout": "2b6dd996375d39528cbfc39c0676ddc6116615828e471f1a535e44933a59b181"
+   }
   },
   "discharge-medrec": {
    "trials_valid": 4,
@@ -845,7 +825,13 @@
      "run": "results/pilot-4a",
      "outcome": "PASS"
     }
-   ]
+   ],
+   "historical": {
+    "task_versions": [
+     "88ae71732e13b07cfd1b88a9157f2480304354509bee18d01b2c07e59a3b1a13"
+    ],
+    "checkout": "86bdd8981a19a2ddfaa9bdb9a64a07f8cb5ee67c01715843e0589f62c1cdb779"
+   }
   },
   "message-queue": {
    "trials_valid": 4,
@@ -1113,7 +1099,13 @@
      "run": "results/pilot-4a",
      "outcome": "PASS"
     }
-   ]
+   ],
+   "historical": {
+    "task_versions": [
+     "939d32738f4ae3757e28010dfc1e9ab48865853ad41073f564bffd92ee368ea7"
+    ],
+    "checkout": "1c02e29640ae63a4b8362baa18b4721b1628e9989bb21c0b3bd1a12530719547"
+   }
   },
   "renal-dose-review": {
    "trials_valid": 4,
@@ -1360,7 +1352,13 @@
      "run": "results/pilot-4a",
      "outcome": "PASS"
     }
-   ]
+   ],
+   "historical": {
+    "task_versions": [
+     "5f5d871cae2fbcfb648064ddd1c1466e1c31800ad170220c51ad562bf65c1c98"
+    ],
+    "checkout": "d03ebb3d7fa61f5f79e7eb1aa9116b14baa8a6aa8b5bf4bb5f6396791e0cccfd"
+   }
   },
   "results-inbox": {
    "trials_valid": 4,
@@ -1675,7 +1673,13 @@
      "run": "results/pilot-4a",
      "outcome": "PASS"
     }
-   ]
+   ],
+   "historical": {
+    "task_versions": [
+     "cf1347806b9a053cfe7d089b54587ea6ce36c28400bd9ceb0db1a9ee0b29e90d"
+    ],
+    "checkout": "352e5eecdb2a84bfd2d36b92351229eb72d1e7145ac52671317873ea8d074023"
+   }
   }
  }
 }

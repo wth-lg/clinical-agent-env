@@ -1,6 +1,6 @@
 # pilot-4a: PW4-P1 event probe (historical once the world or a task changes, ruling R37)
 
-Six tasks x 4 trials on v1 (4 active mid-trial events per task: 3 amend + 1 lure), claude-opus-5-5 at effort high, batch 45e735cb, $36.92 settled. 18/24 PASS at grader 18. The audit, the suspected grader faults, the S-0 fairness audit and the events-solve output are in classes.md; the card is result-card.md (from summary.json and classes.json).
+Six tasks x 4 trials on v1 (4 active mid-trial events per task: 3 amend + 1 lure), claude-opus-5-5 at effort high, batch 45e735cb, $36.92 settled. Recorded at grader 18 (18/24 PASS). The current grades are the grader 19 regrade (#208, the S-0 fixes): 20/24 PASS. The audit, the suspected grader faults, the S-0 fairness audit and the events-solve output are in classes.md; the card is result-card.md (from summary.json and classes.json).
 
 It is pinned to:
 
@@ -21,9 +21,19 @@ pnpm install --frozen-lockfile --offline
 cp -R <this checkout>/results/pilot-4a /tmp/pilot-4a    # replay writes replay.json; keep the committed copy clean
 pnpm cli replay /tmp/pilot-4a
 pnpm cli summary /tmp/pilot-4a --require env_error_raw=0,env_limit=0,model=claude-opus-5-5
-pnpm cli audit-check /tmp/pilot-4a      # exit 1 by design: crc-care-gap/2 is audited as a grader fault (classes.md G2)
+pnpm cli audit-check /tmp/pilot-4a
 pnpm cli classes results/pilot-4a --json
 pnpm cli events-solve results/pilot-4a --req-per-event 3   # and --req-per-event 5
 ```
 
 Use a copy for `replay`, `regrade` and `summary --write`, which write into the run directory.
+
+Replay after the grader 19 regrade: #208 also moved crc-care-gap's env_version (its events.ts header, an env file). A checkout at or after #208 replays the other five tasks (20 trials). It refuses crc-care-gap with the environment-changed error above. At e6a76a6a the crc-care-gap trajectories reach their recorded states, but grader 18 disagrees with the grader 19 current grade on the 7 records the regrade changed. Before the regrade, replay at e6a76a6a reproduced 24 of 24.
+
+The current grades are reproduced on a checkout at or after #208 (grader 19):
+
+```sh
+pnpm cli regrade <copy of results/pilot-4a, regrades[] removed> --grader-version 19
+```
+
+The judge caches already hold the grader 19 answers. classes.md describes the fill.

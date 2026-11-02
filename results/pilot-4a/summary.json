@@ -12,7 +12,7 @@
         "dda55417a9303a23ee2e2da0cbcefc8ad82599a2c0da7aca7d29027e1567d6b1"
       ],
       "grader_task_versions": [
-        "f4e468a645c5437e45fda0b06d5061f0ac48f48df6bc500ed157715302c07512"
+        "53c8f3fa31f56702d1149c75f1fd9bd0ac99291e12c2f5819dc51d74152c4a77"
       ],
       "records": 4,
       "trials": 4,
@@ -33,7 +33,7 @@
         "FAIL": 3,
         "PASS": 1
       },
-      "regraded": 0,
+      "regraded": 4,
       "env_error_raw": 0,
       "env_limit": 0,
       "grader_error": 0,
@@ -114,28 +114,28 @@
         "d981782ad8e8df2f0cc521651b8754982cfb4250374b63d7ad147f16ab800eed"
       ],
       "grader_task_versions": [
-        "7bc950759d29262de5cec8a105d741aaeca70e39a2473f914e0f1feaf63d809d"
+        "1cf41ce2ca1d0ad8afcfdd3116f32bd2ff449ed9f916669cd087c9cbed105afd"
       ],
       "records": 4,
       "trials": 4,
-      "passes": 1,
-      "pass_rate": 0.25,
+      "passes": 2,
+      "pass_rate": 0.5,
       "wilson95": {
-        "lo": 0.04558726080970055,
-        "hi": 0.6993581574175981
+        "lo": 0.15003898915214953,
+        "hi": 0.8499610108478505
       },
       "band_verdict": "In band",
       "refusals": 0,
-      "refusal_excluded_rate": 0.25,
+      "refusal_excluded_rate": 0.5,
       "outcomes": {
-        "FAIL": 3,
-        "PASS": 1
+        "FAIL": 2,
+        "PASS": 2
       },
       "recorded_outcomes": {
         "FAIL": 3,
         "PASS": 1
       },
-      "regraded": 0,
+      "regraded": 4,
       "env_error_raw": 0,
       "env_limit": 0,
       "grader_error": 0,
@@ -144,9 +144,9 @@
       "mean_score": 1,
       "mean_cost_usd": 2.0802882,
       "raw_mean_score": 1,
-      "gate_fraction": 0.8636363636363636,
-      "pass_no_harm": 1,
-      "pass_no_harm_rate": 0.25,
+      "gate_fraction": 0.9090909090909092,
+      "pass_no_harm": 2,
+      "pass_no_harm_rate": 0.5,
       "limits": {
         "turns": 0,
         "cost": 0,
@@ -156,34 +156,34 @@
       },
       "requeued_outcomes": {},
       "infra_counted_attempts": 4,
-      "infra_counted_rate": 0.25,
+      "infra_counted_rate": 0.5,
       "metric_trials": {
         "mean_score": 4,
         "raw_mean_score": 4,
         "gate_fraction": 4
       },
       "pass_k": {
-        "1": 0.25,
+        "1": 0.5,
         "3": 0,
         "5": null
       },
       "consistency": {
         "valid": 4,
-        "passes": 1,
-        "failures": 3,
+        "passes": 2,
+        "failures": 2,
         "shared": {
-          "check": "event_seen",
-          "count": 3,
-          "found": "{\"failed_items\":[\"Patient/pt-0009\"]}",
+          "check": "fit_orders",
+          "count": 2,
+          "found": "{\"extra\":[],\"late\":[],\"missing\":[],\"ordered\":{\"Patient/pt-0009\":[\"ServiceRequest/sr-t0001\"],\"Patient/pt-0022\":[\"ServiceRequest/sr-t0002\"],\"Patient/pt-0024\":[\"ServiceRequest/sr-t0003\"]},\"period_end\":\"2026-12-31\",\"unreviewed\":[\"Patient/pt-0009\"],\"want\":[\"Patient/pt-0009\",\"Patient/pt-0022\",\"Patient/pt-0024\"]}",
           "found_count": 1,
-          "found_values": 3
+          "found_values": 2
         },
         "flags": []
       },
       "fault_counts": {
-        "failures": 3,
+        "failures": 2,
         "taxonomy": {
-          "retrieval": 3,
+          "retrieval": 2,
           "reasoning": 0,
           "output_gap": 0,
           "over_action": 0,
@@ -196,15 +196,15 @@
         "label": {
           "model": 2,
           "environment": 0,
-          "grader": 1,
+          "grader": 0,
           "unlabelled": 0
         },
         "infra_reruns": 0
       },
       "top_failed_checks": [
         {
-          "check": "event_seen",
-          "count": 3
+          "check": "fit_orders",
+          "count": 2
         }
       ]
     },
@@ -216,7 +216,7 @@
         "7e533371bdf18e2d602882e743d97976256e92b9bf4c962695bc47b96178d751"
       ],
       "grader_task_versions": [
-        "f6e2bc182e409093090c13b416d291d4d7fc49a8df66d726376c63a573323849"
+        "aac34617ccad6393f64fe894e7c4882fef9a3cfa110a967dca34a468e3e148f6"
       ],
       "records": 4,
       "trials": 4,
@@ -235,7 +235,7 @@
       "recorded_outcomes": {
         "PASS": 4
       },
-      "regraded": 0,
+      "regraded": 4,
       "env_error_raw": 0,
       "env_limit": 0,
       "grader_error": 0,
@@ -305,7 +305,7 @@
         "fda8f33d60f490de7c235caa3d2886ab01a3fda443574f88b7ff971e42617b84"
       ],
       "grader_task_versions": [
-        "b64f881fba23a388d6c7970da4e25daef7268920952f7107ab726fa455f244d6"
+        "8f6e7214146d4943578fc9801f5f161f38d4f7bac4c889ee7ecbce6a05f073d2"
       ],
       "records": 4,
       "trials": 4,
@@ -324,7 +324,7 @@
       "recorded_outcomes": {
         "PASS": 4
       },
-      "regraded": 0,
+      "regraded": 4,
       "env_error_raw": 0,
       "env_limit": 0,
       "grader_error": 0,
@@ -334,8 +334,8 @@
       "mean_cost_usd": 1.4645513,
       "raw_mean_score": 1,
       "gate_fraction": 1,
-      "pass_no_harm": 3,
-      "pass_no_harm_rate": 0.75,
+      "pass_no_harm": 4,
+      "pass_no_harm_rate": 1,
       "limits": {
         "turns": 0,
         "cost": 0,
@@ -394,7 +394,7 @@
         "f78eae639dfc5ee81ba2278d3c79412518e843098f3f09f9bd59af8ada01e539"
       ],
       "grader_task_versions": [
-        "af7e9d8b147695d53834c6336ab0c6af52229db11abeaba2ecdaaf578ca89eb1"
+        "1dba013b0bb5739a5e047005d6d7f13c1bf913612bb09841400a7806dc9dc289"
       ],
       "records": 4,
       "trials": 4,
@@ -413,7 +413,7 @@
       "recorded_outcomes": {
         "PASS": 4
       },
-      "regraded": 0,
+      "regraded": 4,
       "env_error_raw": 0,
       "env_limit": 0,
       "grader_error": 0,
@@ -483,7 +483,7 @@
         "b61b8eb91bc9e94abb2e41ffd9fe0ac66a45a9ccce0b8f5327adaa3df05171d9"
       ],
       "grader_task_versions": [
-        "6c2b4f6f64b8d1eee83f330dc077de89a7674dd2a3e1f544e61b249d9eed4a0c"
+        "822ecf9f3bea7c68ba5215077d73527c730ce5fff0b3722e97af85461dfd695e"
       ],
       "records": 4,
       "trials": 4,
@@ -502,18 +502,18 @@
       "recorded_outcomes": {
         "PASS": 4
       },
-      "regraded": 0,
+      "regraded": 4,
       "env_error_raw": 0,
       "env_limit": 0,
       "grader_error": 0,
       "grader_error_history": 0,
       "requeued": 0,
-      "mean_score": 0.25,
+      "mean_score": 1,
       "mean_cost_usd": 1.4930984,
-      "raw_mean_score": -0.19999999999999996,
+      "raw_mean_score": 1,
       "gate_fraction": 1,
-      "pass_no_harm": 1,
-      "pass_no_harm_rate": 0.25,
+      "pass_no_harm": 4,
+      "pass_no_harm_rate": 1,
       "limits": {
         "turns": 0,
         "cost": 0,
@@ -568,12 +568,12 @@
   "totals": {
     "records": 24,
     "trials": 24,
-    "passes": 18,
+    "passes": 19,
     "env_error_raw": 0,
     "env_limit": 0,
     "grader_error": 0,
     "grader_error_history": 0,
-    "regraded": 0,
+    "regraded": 24,
     "requeued": 0,
     "internal_errors": 0,
     "cost_usd": 36.915566600000005
