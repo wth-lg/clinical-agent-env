@@ -1,0 +1,611 @@
+{
+  "schema_version": 10,
+  "run_id": "pilot-4a",
+  "model": "claude-opus-5-5",
+  "effort": "high",
+  "tasks": {
+    "contrast-ct-prep": {
+      "task_versions": [
+        "1fbab17f8c1eaf1c3fdc186a97cd082864b7fb7fb7e74e2786fced14478e99a1"
+      ],
+      "env_versions": [
+        "dda55417a9303a23ee2e2da0cbcefc8ad82599a2c0da7aca7d29027e1567d6b1"
+      ],
+      "grader_task_versions": [
+        "53c8f3fa31f56702d1149c75f1fd9bd0ac99291e12c2f5819dc51d74152c4a77"
+      ],
+      "records": 4,
+      "trials": 4,
+      "passes": 1,
+      "pass_rate": 0.25,
+      "wilson95": {
+        "lo": 0.04558726080970055,
+        "hi": 0.6993581574175981
+      },
+      "band_verdict": "In band",
+      "refusals": 0,
+      "refusal_excluded_rate": 0.25,
+      "outcomes": {
+        "FAIL": 3,
+        "PASS": 1
+      },
+      "recorded_outcomes": {
+        "FAIL": 3,
+        "PASS": 1
+      },
+      "regraded": 4,
+      "env_error_raw": 0,
+      "env_limit": 0,
+      "grader_error": 0,
+      "grader_error_history": 0,
+      "requeued": 0,
+      "mean_score": 1,
+      "mean_cost_usd": 1.6569003500000001,
+      "raw_mean_score": 1,
+      "gate_fraction": 0.8846153846153846,
+      "pass_no_harm": 1,
+      "pass_no_harm_rate": 0.25,
+      "limits": {
+        "turns": 0,
+        "cost": 0,
+        "wall_clock": 0,
+        "max_tokens": 0,
+        "context_window": 0
+      },
+      "requeued_outcomes": {},
+      "infra_counted_attempts": 4,
+      "infra_counted_rate": 0.25,
+      "metric_trials": {
+        "mean_score": 4,
+        "raw_mean_score": 4,
+        "gate_fraction": 4
+      },
+      "pass_k": {
+        "1": 0.25,
+        "3": 0,
+        "5": null
+      },
+      "consistency": {
+        "valid": 4,
+        "passes": 1,
+        "failures": 3,
+        "shared": {
+          "check": "event_seen",
+          "count": 3,
+          "found": "{\"failed_items\":[\"Patient/pt-0047\"]}",
+          "found_count": 3,
+          "found_values": 1
+        },
+        "flags": []
+      },
+      "fault_counts": {
+        "failures": 3,
+        "taxonomy": {
+          "retrieval": 3,
+          "reasoning": 0,
+          "output_gap": 0,
+          "over_action": 0,
+          "process": 0,
+          "action_form": 0,
+          "did_not_finish": 0,
+          "refusal": 0,
+          "unattributed": 0
+        },
+        "label": {
+          "model": 3,
+          "environment": 0,
+          "grader": 0,
+          "unlabelled": 0
+        },
+        "infra_reruns": 0
+      },
+      "top_failed_checks": [
+        {
+          "check": "event_seen",
+          "count": 3
+        }
+      ]
+    },
+    "crc-care-gap": {
+      "task_versions": [
+        "610cb34acd9d0e0ad62bde465b8ad5d2cd8650ec311a401a17a755467bdd8c67"
+      ],
+      "env_versions": [
+        "d981782ad8e8df2f0cc521651b8754982cfb4250374b63d7ad147f16ab800eed"
+      ],
+      "grader_task_versions": [
+        "1cf41ce2ca1d0ad8afcfdd3116f32bd2ff449ed9f916669cd087c9cbed105afd"
+      ],
+      "records": 4,
+      "trials": 4,
+      "passes": 2,
+      "pass_rate": 0.5,
+      "wilson95": {
+        "lo": 0.15003898915214953,
+        "hi": 0.8499610108478505
+      },
+      "band_verdict": "In band",
+      "refusals": 0,
+      "refusal_excluded_rate": 0.5,
+      "outcomes": {
+        "FAIL": 2,
+        "PASS": 2
+      },
+      "recorded_outcomes": {
+        "FAIL": 3,
+        "PASS": 1
+      },
+      "regraded": 4,
+      "env_error_raw": 0,
+      "env_limit": 0,
+      "grader_error": 0,
+      "grader_error_history": 0,
+      "requeued": 0,
+      "mean_score": 1,
+      "mean_cost_usd": 2.0802882,
+      "raw_mean_score": 1,
+      "gate_fraction": 0.9090909090909092,
+      "pass_no_harm": 2,
+      "pass_no_harm_rate": 0.5,
+      "limits": {
+        "turns": 0,
+        "cost": 0,
+        "wall_clock": 0,
+        "max_tokens": 0,
+        "context_window": 0
+      },
+      "requeued_outcomes": {},
+      "infra_counted_attempts": 4,
+      "infra_counted_rate": 0.5,
+      "metric_trials": {
+        "mean_score": 4,
+        "raw_mean_score": 4,
+        "gate_fraction": 4
+      },
+      "pass_k": {
+        "1": 0.5,
+        "3": 0,
+        "5": null
+      },
+      "consistency": {
+        "valid": 4,
+        "passes": 2,
+        "failures": 2,
+        "shared": {
+          "check": "fit_orders",
+          "count": 2,
+          "found": "{\"extra\":[],\"late\":[],\"missing\":[],\"ordered\":{\"Patient/pt-0009\":[\"ServiceRequest/sr-t0001\"],\"Patient/pt-0022\":[\"ServiceRequest/sr-t0002\"],\"Patient/pt-0024\":[\"ServiceRequest/sr-t0003\"]},\"period_end\":\"2026-12-31\",\"unreviewed\":[\"Patient/pt-0009\"],\"want\":[\"Patient/pt-0009\",\"Patient/pt-0022\",\"Patient/pt-0024\"]}",
+          "found_count": 1,
+          "found_values": 2
+        },
+        "flags": []
+      },
+      "fault_counts": {
+        "failures": 2,
+        "taxonomy": {
+          "retrieval": 2,
+          "reasoning": 0,
+          "output_gap": 0,
+          "over_action": 0,
+          "process": 0,
+          "action_form": 0,
+          "did_not_finish": 0,
+          "refusal": 0,
+          "unattributed": 0
+        },
+        "label": {
+          "model": 2,
+          "environment": 0,
+          "grader": 0,
+          "unlabelled": 0
+        },
+        "infra_reruns": 0
+      },
+      "top_failed_checks": [
+        {
+          "check": "fit_orders",
+          "count": 2
+        }
+      ]
+    },
+    "discharge-medrec": {
+      "task_versions": [
+        "88ae71732e13b07cfd1b88a9157f2480304354509bee18d01b2c07e59a3b1a13"
+      ],
+      "env_versions": [
+        "7e533371bdf18e2d602882e743d97976256e92b9bf4c962695bc47b96178d751"
+      ],
+      "grader_task_versions": [
+        "aac34617ccad6393f64fe894e7c4882fef9a3cfa110a967dca34a468e3e148f6"
+      ],
+      "records": 4,
+      "trials": 4,
+      "passes": 4,
+      "pass_rate": 1,
+      "wilson95": {
+        "lo": 0.5101091635454027,
+        "hi": 1
+      },
+      "band_verdict": "Above band",
+      "refusals": 0,
+      "refusal_excluded_rate": 1,
+      "outcomes": {
+        "PASS": 4
+      },
+      "recorded_outcomes": {
+        "PASS": 4
+      },
+      "regraded": 4,
+      "env_error_raw": 0,
+      "env_limit": 0,
+      "grader_error": 0,
+      "grader_error_history": 0,
+      "requeued": 0,
+      "mean_score": 1,
+      "mean_cost_usd": 1.0848573,
+      "raw_mean_score": 1,
+      "gate_fraction": 1,
+      "pass_no_harm": 4,
+      "pass_no_harm_rate": 1,
+      "limits": {
+        "turns": 0,
+        "cost": 0,
+        "wall_clock": 0,
+        "max_tokens": 0,
+        "context_window": 0
+      },
+      "requeued_outcomes": {},
+      "infra_counted_attempts": 4,
+      "infra_counted_rate": 1,
+      "metric_trials": {
+        "mean_score": 4,
+        "raw_mean_score": 4,
+        "gate_fraction": 4
+      },
+      "pass_k": {
+        "1": 1,
+        "3": 1,
+        "5": null
+      },
+      "consistency": {
+        "valid": 4,
+        "passes": 4,
+        "failures": 0,
+        "shared": null,
+        "flags": []
+      },
+      "fault_counts": {
+        "failures": 0,
+        "taxonomy": {
+          "retrieval": 0,
+          "reasoning": 0,
+          "output_gap": 0,
+          "over_action": 0,
+          "process": 0,
+          "action_form": 0,
+          "did_not_finish": 0,
+          "refusal": 0,
+          "unattributed": 0
+        },
+        "label": {
+          "model": 0,
+          "environment": 0,
+          "grader": 0,
+          "unlabelled": 0
+        },
+        "infra_reruns": 0
+      },
+      "top_failed_checks": []
+    },
+    "message-queue": {
+      "task_versions": [
+        "939d32738f4ae3757e28010dfc1e9ab48865853ad41073f564bffd92ee368ea7"
+      ],
+      "env_versions": [
+        "fda8f33d60f490de7c235caa3d2886ab01a3fda443574f88b7ff971e42617b84"
+      ],
+      "grader_task_versions": [
+        "8f6e7214146d4943578fc9801f5f161f38d4f7bac4c889ee7ecbce6a05f073d2"
+      ],
+      "records": 4,
+      "trials": 4,
+      "passes": 4,
+      "pass_rate": 1,
+      "wilson95": {
+        "lo": 0.5101091635454027,
+        "hi": 1
+      },
+      "band_verdict": "Above band",
+      "refusals": 0,
+      "refusal_excluded_rate": 1,
+      "outcomes": {
+        "PASS": 4
+      },
+      "recorded_outcomes": {
+        "PASS": 4
+      },
+      "regraded": 4,
+      "env_error_raw": 0,
+      "env_limit": 0,
+      "grader_error": 0,
+      "grader_error_history": 0,
+      "requeued": 0,
+      "mean_score": 1,
+      "mean_cost_usd": 1.4645513,
+      "raw_mean_score": 1,
+      "gate_fraction": 1,
+      "pass_no_harm": 4,
+      "pass_no_harm_rate": 1,
+      "limits": {
+        "turns": 0,
+        "cost": 0,
+        "wall_clock": 0,
+        "max_tokens": 0,
+        "context_window": 0
+      },
+      "requeued_outcomes": {},
+      "infra_counted_attempts": 4,
+      "infra_counted_rate": 1,
+      "metric_trials": {
+        "mean_score": 4,
+        "raw_mean_score": 4,
+        "gate_fraction": 4
+      },
+      "pass_k": {
+        "1": 1,
+        "3": 1,
+        "5": null
+      },
+      "consistency": {
+        "valid": 4,
+        "passes": 4,
+        "failures": 0,
+        "shared": null,
+        "flags": []
+      },
+      "fault_counts": {
+        "failures": 0,
+        "taxonomy": {
+          "retrieval": 0,
+          "reasoning": 0,
+          "output_gap": 0,
+          "over_action": 0,
+          "process": 0,
+          "action_form": 0,
+          "did_not_finish": 0,
+          "refusal": 0,
+          "unattributed": 0
+        },
+        "label": {
+          "model": 0,
+          "environment": 0,
+          "grader": 0,
+          "unlabelled": 0
+        },
+        "infra_reruns": 0
+      },
+      "top_failed_checks": []
+    },
+    "renal-dose-review": {
+      "task_versions": [
+        "5f5d871cae2fbcfb648064ddd1c1466e1c31800ad170220c51ad562bf65c1c98"
+      ],
+      "env_versions": [
+        "f78eae639dfc5ee81ba2278d3c79412518e843098f3f09f9bd59af8ada01e539"
+      ],
+      "grader_task_versions": [
+        "1dba013b0bb5739a5e047005d6d7f13c1bf913612bb09841400a7806dc9dc289"
+      ],
+      "records": 4,
+      "trials": 4,
+      "passes": 4,
+      "pass_rate": 1,
+      "wilson95": {
+        "lo": 0.5101091635454027,
+        "hi": 1
+      },
+      "band_verdict": "Above band",
+      "refusals": 0,
+      "refusal_excluded_rate": 1,
+      "outcomes": {
+        "PASS": 4
+      },
+      "recorded_outcomes": {
+        "PASS": 4
+      },
+      "regraded": 4,
+      "env_error_raw": 0,
+      "env_limit": 0,
+      "grader_error": 0,
+      "grader_error_history": 0,
+      "requeued": 0,
+      "mean_score": 1,
+      "mean_cost_usd": 1.4491961000000002,
+      "raw_mean_score": 1,
+      "gate_fraction": 1,
+      "pass_no_harm": 4,
+      "pass_no_harm_rate": 1,
+      "limits": {
+        "turns": 0,
+        "cost": 0,
+        "wall_clock": 0,
+        "max_tokens": 0,
+        "context_window": 0
+      },
+      "requeued_outcomes": {},
+      "infra_counted_attempts": 4,
+      "infra_counted_rate": 1,
+      "metric_trials": {
+        "mean_score": 4,
+        "raw_mean_score": 4,
+        "gate_fraction": 4
+      },
+      "pass_k": {
+        "1": 1,
+        "3": 1,
+        "5": null
+      },
+      "consistency": {
+        "valid": 4,
+        "passes": 4,
+        "failures": 0,
+        "shared": null,
+        "flags": []
+      },
+      "fault_counts": {
+        "failures": 0,
+        "taxonomy": {
+          "retrieval": 0,
+          "reasoning": 0,
+          "output_gap": 0,
+          "over_action": 0,
+          "process": 0,
+          "action_form": 0,
+          "did_not_finish": 0,
+          "refusal": 0,
+          "unattributed": 0
+        },
+        "label": {
+          "model": 0,
+          "environment": 0,
+          "grader": 0,
+          "unlabelled": 0
+        },
+        "infra_reruns": 0
+      },
+      "top_failed_checks": []
+    },
+    "results-inbox": {
+      "task_versions": [
+        "cf1347806b9a053cfe7d089b54587ea6ce36c28400bd9ceb0db1a9ee0b29e90d"
+      ],
+      "env_versions": [
+        "b61b8eb91bc9e94abb2e41ffd9fe0ac66a45a9ccce0b8f5327adaa3df05171d9"
+      ],
+      "grader_task_versions": [
+        "822ecf9f3bea7c68ba5215077d73527c730ce5fff0b3722e97af85461dfd695e"
+      ],
+      "records": 4,
+      "trials": 4,
+      "passes": 4,
+      "pass_rate": 1,
+      "wilson95": {
+        "lo": 0.5101091635454027,
+        "hi": 1
+      },
+      "band_verdict": "Above band",
+      "refusals": 0,
+      "refusal_excluded_rate": 1,
+      "outcomes": {
+        "PASS": 4
+      },
+      "recorded_outcomes": {
+        "PASS": 4
+      },
+      "regraded": 4,
+      "env_error_raw": 0,
+      "env_limit": 0,
+      "grader_error": 0,
+      "grader_error_history": 0,
+      "requeued": 0,
+      "mean_score": 1,
+      "mean_cost_usd": 1.4930984,
+      "raw_mean_score": 1,
+      "gate_fraction": 1,
+      "pass_no_harm": 4,
+      "pass_no_harm_rate": 1,
+      "limits": {
+        "turns": 0,
+        "cost": 0,
+        "wall_clock": 0,
+        "max_tokens": 0,
+        "context_window": 0
+      },
+      "requeued_outcomes": {},
+      "infra_counted_attempts": 4,
+      "infra_counted_rate": 1,
+      "metric_trials": {
+        "mean_score": 4,
+        "raw_mean_score": 4,
+        "gate_fraction": 4
+      },
+      "pass_k": {
+        "1": 1,
+        "3": 1,
+        "5": null
+      },
+      "consistency": {
+        "valid": 4,
+        "passes": 4,
+        "failures": 0,
+        "shared": null,
+        "flags": []
+      },
+      "fault_counts": {
+        "failures": 0,
+        "taxonomy": {
+          "retrieval": 0,
+          "reasoning": 0,
+          "output_gap": 0,
+          "over_action": 0,
+          "process": 0,
+          "action_form": 0,
+          "did_not_finish": 0,
+          "refusal": 0,
+          "unattributed": 0
+        },
+        "label": {
+          "model": 0,
+          "environment": 0,
+          "grader": 0,
+          "unlabelled": 0
+        },
+        "infra_reruns": 0
+      },
+      "top_failed_checks": []
+    }
+  },
+  "totals": {
+    "records": 24,
+    "trials": 24,
+    "passes": 19,
+    "env_error_raw": 0,
+    "env_limit": 0,
+    "grader_error": 0,
+    "grader_error_history": 0,
+    "regraded": 24,
+    "requeued": 0,
+    "internal_errors": 0,
+    "cost_usd": 36.915566600000005
+  },
+  "mode": "live",
+  "expected_tasks": {
+    "tasks": [
+      "contrast-ct-prep",
+      "crc-care-gap",
+      "discharge-medrec",
+      "message-queue",
+      "renal-dose-review",
+      "results-inbox"
+    ],
+    "from": "the run manifest"
+  },
+  "models": [
+    "claude-opus-5-5"
+  ],
+  "initial_state_hashes": [
+    "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86"
+  ],
+  "replay": {
+    "ran": false,
+    "matched": 0,
+    "mismatched": [],
+    "missing": []
+  },
+  "requirements": {
+    "env_error_raw": 0,
+    "env_limit": 0,
+    "model": "claude-opus-5-5"
+  },
+  "violations": []
+}
