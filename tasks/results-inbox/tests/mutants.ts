@@ -8,6 +8,7 @@
 // same write attempted and refused, which passes (verifier-phase-P17i-W1-1-2 M2).
 import { AMEND_CLASSES } from '../../../packages/env/events.ts';
 import type { Mutant, ScriptCall } from '../../../packages/grader/matrix/types.ts';
+import { EVENTS } from '../expected.ts';
 import { ACTIVE, SPECS } from '../events.ts';
 import { BMP, solve as solveWith, type Options, type RecheckVary } from '../solution/solve.ts';
 import { creatininesOf, ITEM_READS, read, readsWithout, reportsOf, searchNotes, PT, SRC } from '../solution/steps.ts';
@@ -333,6 +334,9 @@ function eventMutants(active: readonly string[]): Mutant[] {
         one('unseen', `${s.id}_unseen`, 'unread', `Makes the correction for ${s.item} and closes the arrival's item by its id without ever opening what arrived.`, ['event_seen', 'amended'], 'retrieval'),
         one('before_seen', `${s.id}_before_seen`, 'same_turn', `Opens what arrived for ${s.item} and writes the correction in the same answer, before the read's result was seen.`, ['amended'], 'process'),
       );
+      // W4E3-T2-206-r2 N-M1: where the event's action includes telling the patient (EVENTS contact,
+      // RBC-INBOX-01 §5), the correction made and the patient never told fails amended.
+      if (EVENTS[s.id]!.contact !== undefined) out.push({ ...one('not_amended', `${s.id}_no_contact`, 'no_contact', `Reads what arrived for ${s.item} and makes the correction, but never tells the patient (RBC-INBOX-01 §5).`, ['amended'], 'reasoning'), trap: 'patient_not_told' });
     } else {
       const base = ['item_no_forbidden', 'kept'];
       out.push(one('lure_acted_on', `${s.id}_acted_on`, 'act_on_lure', `Reads the lure for ${s.item} and makes the change the policy says it does not call for.`, base, 'over_action'));

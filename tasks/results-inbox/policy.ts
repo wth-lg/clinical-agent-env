@@ -12,8 +12,10 @@ import { clinicDate } from '../../packages/grader/normalize.ts';
 const INBOX = 'urn:riverbend:inbox-queue';
 const LOINC = 'http://loinc.org';
 const K = '2823-3';
-// RBC-LAB-03 applies to serum or plasma creatinine: LOINC 2160-0. This world files 38483-4 as
-// creatinine in blood (window.test.ts), which the rule does not count.
+// RBC-LAB-03 applies to serum or plasma creatinine: LOINC 2160-0 (mass, mg/dL) and 14682-9 (moles,
+// umol/L) are both serum or plasma. Only T1's outside results use 14682-9; no T2 patient has one, so
+// 2160-0 alone gives every creatinine the rule counts here (a disclosed R34 limit, docs/tasks.md).
+// This world files 38483-4 as creatinine in blood (window.test.ts), which the rule does not count.
 const CREATININE = ['2160-0'];
 const FIT = '29771-3';
 const TSH = '3016-3';
