@@ -501,7 +501,7 @@ function baseGates(specs: readonly Spec[]): Check[] {
     itemGate<Item, undefined>({
       id: 'delivered_seen',
       category: 'action',
-      traces_to: 'RBC-TOC-02 §8',
+      traces_to: 'RBC-TOC-02 §2 and §8',
       items: M,
       key: (x: Item) => x.key,
       decisive: (x) => STILL.filter((r) => r.item === x.key).map((r) => r.id),
