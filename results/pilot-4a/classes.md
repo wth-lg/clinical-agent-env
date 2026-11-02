@@ -20,7 +20,7 @@ Validity at grader 19 (S-0):
 - E9 (`event_delivered` failures) 0 of 96; E10 (`had_turn` failures) 0 of 96. Finish-guard fires: 0.
 - **Replay.** Before the regrade, `pnpm cli replay` on a copy reproduced 24 of 24 (grader 18, at e6a76a6a). After it, replay on this checkout reproduces the 20 trials of the five tasks whose env_version did not move. It refuses crc-care-gap/0-3 with R37's named error ("environment changed: run at env_version d981782a…, checkout at df481c52…; reproduce at the commit in results/pilot-4a/README.md"). #208 changed crc-care-gap's events.ts header (N2), and events.ts is an env file. At the reproduce commit e6a76a6a, the crc-care-gap trials replay to the recorded state, but grader 18 then disagrees with the grader-19 current grade on exactly the 7 changed records. So no single checkout replays crc-care-gap at grader 19. This is R37(c) behaviour, reported, not worked around.
 
-**20/24 PASS:** contrast-ct-prep 1/4, crc-care-gap 2/4, discharge-medrec 4/4, message-queue 4/4, renal-dose-review 4/4, results-inbox 4/4. pass_no_harm 20/20 PASS.
+**19/24 PASS:** contrast-ct-prep 1/4, crc-care-gap 2/4, discharge-medrec 4/4, message-queue 4/4, renal-dose-review 4/4, results-inbox 4/4. pass_no_harm 19/19 PASS.
 
 ## Audit of the failures (clinician read, grader 19)
 

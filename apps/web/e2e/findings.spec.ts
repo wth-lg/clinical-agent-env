@@ -7,7 +7,7 @@
 // no official run), where Overview, Runs, Tasks and Environment each show data and no empty
 // state and only Findings says no results are published; and a build with no results/ at all.
 import { spawnSync } from 'node:child_process';
-import { cpSync, existsSync, mkdtempSync, readdirSync } from 'node:fs';
+import { cpSync, existsSync, mkdtempSync, readdirSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -15,7 +15,8 @@ import { expect, test } from '@playwright/test';
 import { browse as browseAt, browseFrom } from './browse.ts';
 import { formatInterval } from '../src/data/ui.tsx';
 import { notCounted, notCountedText } from '../src/data/marks.ts';
-import { NOT_RERUN_REASON } from '../../../packages/core/outcomes.ts';
+import { isValid, NOT_RERUN_REASON } from '../../../packages/core/outcomes.ts';
+import { currentGrade } from '../../../packages/core/summary.ts';
 import { sampleBase, serve, summary, TASK_IDS } from './fixtures/sample-results/sample.ts';
 
 const WEB = fileURLToPath(new URL('../', import.meta.url));
@@ -65,6 +66,16 @@ async function buildAndServe(root: string): Promise<string> {
 
 const PILOTS = readdirSync(join(REPO, 'results'), { withFileTypes: true }).filter((d) => d.isDirectory() && /^pilot-/.test(d.name) && existsSync(join(REPO, 'results', d.name, 'trials'))).map((d) => d.name);
 const pilotRecords = PILOTS.flatMap((p) => readdirSync(join(REPO, 'results', p, 'trials'), { recursive: true, withFileTypes: true }).filter((e) => e.isFile() && e.name.endsWith('.json')));
+// The latest pilot as the app orders them (data/results.ts: by the pilot's number, the last is the
+// latest), and its rates by task from its records at their current grades (data/results.ts
+// pilotRates), so a new pilot run needs no edit here (verifier-phase-P17i-P1-209-1 F1).
+const LATEST = [...PILOTS].sort((a, b) => a.localeCompare(b, 'en', { numeric: true })).at(-1)!;
+const LATEST_RATES = readdirSync(join(REPO, 'results', LATEST, 'trials'), { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name).sort().map((task) => {
+  const dir = join(REPO, 'results', LATEST, 'trials', task);
+  const grades = readdirSync(dir).filter((f) => f.endsWith('.json')).map((f) => currentGrade(JSON.parse(readFileSync(join(dir, f), 'utf8'))));
+  const valid = grades.filter((g) => isValid(g.outcome));
+  return { task, valid: valid.length, passes: valid.filter((g) => g.outcome === 'PASS').length };
+});
 
 test.describe('the real results build: pilot runs, no official run', () => {
   let base = '';
@@ -153,17 +164,29 @@ test.describe('the real results build: pilot runs, no official run', () => {
       return Boolean(tasks.compareDocumentPosition(n) & Node.DOCUMENT_POSITION_FOLLOWING);
     });
     expect(after).toBe(true);
-    const latest = page.locator('[data-testid="overview-pilot"][data-run="pilot-3"]');
-    await expect(latest.getByTestId('pilot-line')).toHaveText('pilot-3: 47 of 48 pass. 1 fail on crc-care-gap.');
-    const crc = latest.locator('[data-testid="pilot-rate"][data-task="crc-care-gap"]');
-    await expect(crc).toBeVisible();
-    const k = crc.getByRole('link', { name: '7/8' });
-    await expect(k).toHaveAttribute('href', /[?&]task=crc-care-gap(&|$)/);
-    await expect(k).toHaveAttribute('href', /[?&]run=pilot-3(&|$)/);
-    await expect(crc.getByTestId('wilson')).toHaveText(/^Wilson 95% \d/);
+    // The latest pilot comes first, with its summary line and its rates as rows.
+    await expect(page.getByTestId('overview-pilot').first()).toHaveAttribute('data-run', LATEST);
+    const latest = page.locator(`[data-testid="overview-pilot"][data-run="${LATEST}"]`);
+    const passes = LATEST_RATES.reduce((n, r) => n + r.passes, 0);
+    const valid = LATEST_RATES.reduce((n, r) => n + r.valid, 0);
+    const fails = LATEST_RATES.filter((r) => r.passes < r.valid).map((r) => ({ task: r.task, n: r.valid - r.passes }));
+    const total = fails.reduce((n, f) => n + f.n, 0);
+    const where = fails.length === 1 ? ` ${total} fail on ${fails[0]!.task}.` : fails.length === 0 ? '' : ` ${total} fail: ${fails.map((f) => `${f.n} on ${f.task}`).join(', ')}.`;
+    await expect(latest.getByTestId('pilot-line')).toHaveText(`${LATEST}: ${passes} of ${valid} pass.${where}`);
+    // Each failed task's k/N links to its trials in that run.
+    for (const f of LATEST_RATES.filter((r) => r.passes < r.valid)) {
+      const row = latest.locator(`[data-testid="pilot-rate"][data-task="${f.task}"]`);
+      await expect(row).toBeVisible();
+      const k = row.getByRole('link', { name: `${f.passes}/${f.valid}` });
+      await expect(k).toHaveAttribute('href', new RegExp(`[?&]task=${f.task}(&|$)`));
+      await expect(k).toHaveAttribute('href', new RegExp(`[?&]run=${LATEST}(&|$)`));
+      await expect(row.getByTestId('wilson')).toHaveText(/^Wilson 95% \d/);
+    }
     // A task with every valid trial passing has no link.
-    await expect(latest.locator('[data-testid="pilot-rate"][data-task="renal-dose-review"]').getByRole('link')).toHaveCount(0);
-    for (const p of PILOTS.filter((x) => x !== 'pilot-3')) {
+    for (const r of LATEST_RATES.filter((x) => x.valid > 0 && x.passes === x.valid)) {
+      await expect(latest.locator(`[data-testid="pilot-rate"][data-task="${r.task}"]`).getByRole('link')).toHaveCount(0);
+    }
+    for (const p of PILOTS.filter((x) => x !== LATEST)) {
       const older = page.locator(`[data-testid="overview-pilot"][data-run="${p}"]`);
       await expect(older.getByTestId('pilot-line')).toBeVisible();
       await expect(older.getByTestId('pilot-rate').first()).toBeHidden();
