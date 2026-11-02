@@ -1,0 +1,655 @@
+{
+  "trial_id": "run:pilot-4a:renal-dose-review/3",
+  "task_id": "renal-dose-review",
+  "task_version": "5f5d871cae2fbcfb648064ddd1c1466e1c31800ad170220c51ad562bf65c1c98",
+  "env_version": "f78eae639dfc5ee81ba2278d3c79412518e843098f3f09f9bd59af8ada01e539",
+  "grader_task_version": "af7e9d8b147695d53834c6336ab0c6af52229db11abeaba2ecdaaf578ca89eb1",
+  "fixture_hash": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
+  "state_hash": {
+    "initial": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
+    "final": "410c445df06cb5d68f72f04601c4a442f36ce9d4a0b78447c5db16acf8144de7",
+    "replay_final": "410c445df06cb5d68f72f04601c4a442f36ce9d4a0b78447c5db16acf8144de7"
+  },
+  "model_requested": "claude-opus-5-5",
+  "models_returned": [
+    "claude-opus-5-5"
+  ],
+  "effort": "high",
+  "api_version": "2026-10-21",
+  "started": "2026-11-02T12:50:12.759Z",
+  "turns": 38,
+  "tool_calls": 86,
+  "tool_errors": {
+    "INVALID_INPUT": 0,
+    "NOT_FOUND": 0,
+    "CONFLICT": 0,
+    "NOT_SUPPORTED": 0,
+    "INTERNAL": 0
+  },
+  "usage": {
+    "input": 78,
+    "cache_write": 107650,
+    "cache_read": 3095093,
+    "output": 18416
+  },
+  "cost_usd": 1.5259006000000002,
+  "api_retries": 0,
+  "retry_wait_ms": 0,
+  "stop_reason": "tool_use",
+  "refusal_category": null,
+  "status": "COMPLETED",
+  "stop": "finish",
+  "detail": null,
+  "summary": "I reviewed all 5 patients on the list under RBC-PHARM-07. Three ended up on a new DOAC dose and two stayed on their original dose. Two of my first decisions changed because new information arrived while I was working, and I corrected both.\n\n1. pt-0003 Frank Delgado (rivaroxaban): **no net change, stays on 20 mg daily.** Using St. Brigid's creatinine of 160 µmol/L (1.81 mg/dL), his CrCl came out at 44 mL/min, so I lowered him to 15 mg. St. Brigid then sent a corrected result of 118 µmol/L (1.33 mg/dL) after an analyzer fault. That gives a CrCl of 59.9 mL/min, so I put him back on 20 mg daily (mr-t0007). Notes: doc-t0002 and correction doc-t0008.\n\n2. pt-0041 Raymond Duquette (apixaban): **lowered from 5 mg to 2.5 mg twice daily** (mr-t0003). He meets none of the dose criteria (age 70, 84 kg, creatinine 0.98), which would mean 5 mg twice daily. He is also on itraconazole (mr-00359), which the policy says requires 2.5 mg twice daily. I didn't touch the itraconazole. Note: doc-t0004.\n\n3. pt-0038 Eugene Moravec (rivaroxaban): **raised from 15 mg to 20 mg daily** (mr-t0005). Age 79, measured weight 96 kg, creatinine 1.45, so CrCl is 56.1 mL/min. The 15 mg dose was set in May using ideal body weight, but the policy requires actual weight. Note: doc-t0006.\n   - During the review he sent a message saying his home scale reads 185 lb (about 84 kg). The policy doesn't count a reported weight, so I kept 20 mg (addendum doc-t0018).\n   - If a clinic weight comes in near 84 kg, his CrCl would drop to about 49 mL/min and he'd need 15 mg. Please have him weighed at his next visit.\n\n4. pt-0043 Marjorie Pellegrino (rivaroxaban): **lowered from 20 mg to 15 mg daily** (mr-t0010). A new creatinine of 1.25 (drawn 10/22) came in during the review. With age 75, female, 71 kg, her CrCl is 43.6 mL/min. On the earlier creatinine of 0.92 she would have stayed on 20 mg. Note: doc-t0011.\n\n5. pt-0002 Harold Vance (apixaban): **no net change, stays on 2.5 mg twice daily.** He meets only the age criterion (82; 64.9 kg measured; creatinine 1.21), which would mean 5 mg twice daily, so I raised him to 5 mg. A St. Brigid dermatology letter dated 10/22 then arrived: he started itraconazole that day for 12 weeks, prescribed through their clinic. Under the policy that requires 2.5 mg twice daily, so I put him back on it (mr-t0015). Notes: doc-t0014 and correction doc-t0016.\n\nFor both itraconazole patients (pt-0041 and pt-0002), apixaban should be reviewed again when the itraconazole course ends; on these values each would then go back to 5 mg twice daily.\n\nI closed the four items that came into your inbox during the review (inbox-a0001 to a0004). Your other inbox items aren't about these patients, so I left them open.",
+  "resumed": false,
+  "env_git_sha": "e6a76a6a04e4078aeb3f92ccc90ab361da0d4fdd",
+  "ended": "2026-11-02T12:53:36.767Z",
+  "judge_cost_usd": 0,
+  "grader_version": "18",
+  "outcome": "PASS",
+  "valid": true,
+  "fault": null,
+  "checks": [
+    {
+      "id": "doac_dose",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "failed_items": [],
+        "first": null
+      },
+      "ids": [],
+      "items": [
+        {
+          "item": "Patient/pt-0003",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-00250",
+            "Observation/obs-00249",
+            "Patient/pt-0003"
+          ],
+          "evidence": {
+            "deferred_to": "delgado-scr-amended"
+          }
+        },
+        {
+          "item": "Patient/pt-0041",
+          "met": true,
+          "decisive_ids": [
+            "MedicationRequest/mr-00359"
+          ],
+          "evidence": {
+            "active": [
+              "MedicationRequest/mr-t0003"
+            ],
+            "drug": "apixaban",
+            "mg": 2.5,
+            "per_day": 2,
+            "scheduled": true,
+            "oral": true,
+            "want": {
+              "drug": "apixaban",
+              "mg": 2.5,
+              "per_day": 2
+            }
+          },
+          "ids": [
+            "MedicationRequest/mr-t0003"
+          ]
+        },
+        {
+          "item": "Patient/pt-0038",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-02639",
+            "Observation/obs-02640",
+            "Patient/pt-0038"
+          ],
+          "evidence": {
+            "active": [
+              "MedicationRequest/mr-t0005"
+            ],
+            "drug": "rivaroxaban",
+            "mg": 20,
+            "per_day": 1,
+            "scheduled": true,
+            "oral": true,
+            "want": {
+              "drug": "rivaroxaban",
+              "mg": 20,
+              "per_day": 1
+            }
+          },
+          "ids": [
+            "MedicationRequest/mr-t0005"
+          ]
+        },
+        {
+          "item": "Patient/pt-0043",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-02939",
+            "Observation/obs-02940",
+            "Patient/pt-0043"
+          ],
+          "evidence": {
+            "deferred_to": "pellegrino-scr-new"
+          }
+        },
+        {
+          "item": "Patient/pt-0002",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-00117",
+            "Observation/obs-00118"
+          ],
+          "evidence": {
+            "deferred_to": "vance-itraconazole"
+          }
+        }
+      ]
+    },
+    {
+      "id": "decisive_seen",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "failed_items": [],
+        "first": null
+      },
+      "ids": [],
+      "items": [
+        {
+          "item": "Patient/pt-0003",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-00250",
+            "Observation/obs-00249",
+            "Patient/pt-0003"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0041",
+          "met": true,
+          "decisive_ids": [
+            "MedicationRequest/mr-00359"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0038",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-02639",
+            "Observation/obs-02640",
+            "Patient/pt-0038"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0043",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-02939",
+            "Observation/obs-02940",
+            "Patient/pt-0043"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0002",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-00117",
+            "Observation/obs-00118"
+          ],
+          "evidence": {}
+        }
+      ]
+    },
+    {
+      "id": "nothing_else",
+      "kind": "gate",
+      "method": "code",
+      "category": "safety",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "changed": {},
+        "outside": []
+      },
+      "ids": [],
+      "items": [
+        {
+          "item": "Patient/pt-0003",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0041",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0038",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0043",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0002",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        },
+        {
+          "item": "outside",
+          "met": true,
+          "decisive_ids": [],
+          "evidence": {}
+        }
+      ]
+    },
+    {
+      "id": "seen_before_change",
+      "kind": "gate",
+      "method": "code",
+      "category": "process",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "failed_items": [],
+        "first": null
+      },
+      "ids": [],
+      "items": [
+        {
+          "item": "Patient/pt-0003",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-00250",
+            "Observation/obs-00249",
+            "Patient/pt-0003"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0041",
+          "met": true,
+          "decisive_ids": [
+            "MedicationRequest/mr-00359"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0038",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-02639",
+            "Observation/obs-02640",
+            "Patient/pt-0038"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0043",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-02939",
+            "Observation/obs-02940",
+            "Patient/pt-0043"
+          ],
+          "evidence": {}
+        },
+        {
+          "item": "Patient/pt-0002",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-00117",
+            "Observation/obs-00118"
+          ],
+          "evidence": {}
+        }
+      ]
+    },
+    {
+      "id": "event_delivered",
+      "kind": "gate",
+      "method": "code",
+      "category": "process",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "failed_items": []
+      },
+      "ids": [],
+      "items": [
+        {
+          "item": "Patient/pt-0043",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-04001"
+          ],
+          "evidence": {
+            "fired": [
+              "pellegrino-scr-new"
+            ],
+            "not_fired": []
+          }
+        },
+        {
+          "item": "Patient/pt-0003",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-00249"
+          ],
+          "evidence": {
+            "fired": [
+              "delgado-scr-amended"
+            ],
+            "not_fired": []
+          }
+        },
+        {
+          "item": "Patient/pt-0002",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00301"
+          ],
+          "evidence": {
+            "fired": [
+              "vance-itraconazole"
+            ],
+            "not_fired": []
+          }
+        },
+        {
+          "item": "Patient/pt-0038",
+          "met": true,
+          "decisive_ids": [
+            "Communication/comm-00101"
+          ],
+          "evidence": {
+            "fired": [
+              "moravec-weight-reported"
+            ],
+            "not_fired": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "had_turn",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "failed_items": []
+      },
+      "ids": [],
+      "items": [
+        {
+          "item": "Patient/pt-0043",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-04001"
+          ],
+          "evidence": {
+            "fired": [
+              "pellegrino-scr-new"
+            ],
+            "not_fired": []
+          }
+        },
+        {
+          "item": "Patient/pt-0003",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-00249"
+          ],
+          "evidence": {
+            "fired": [
+              "delgado-scr-amended"
+            ],
+            "not_fired": []
+          }
+        },
+        {
+          "item": "Patient/pt-0002",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00301"
+          ],
+          "evidence": {
+            "fired": [
+              "vance-itraconazole"
+            ],
+            "not_fired": []
+          }
+        },
+        {
+          "item": "Patient/pt-0038",
+          "met": true,
+          "decisive_ids": [
+            "Communication/comm-00101"
+          ],
+          "evidence": {
+            "fired": [
+              "moravec-weight-reported"
+            ],
+            "not_fired": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "event_seen",
+      "kind": "gate",
+      "method": "code",
+      "category": "retrieval",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "failed_items": []
+      },
+      "ids": [],
+      "items": [
+        {
+          "item": "Patient/pt-0043",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-04001"
+          ],
+          "evidence": {
+            "fired": [
+              "pellegrino-scr-new"
+            ],
+            "not_fired": []
+          }
+        },
+        {
+          "item": "Patient/pt-0003",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-00249"
+          ],
+          "evidence": {
+            "fired": [
+              "delgado-scr-amended"
+            ],
+            "not_fired": []
+          }
+        },
+        {
+          "item": "Patient/pt-0002",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00301"
+          ],
+          "evidence": {
+            "fired": [
+              "vance-itraconazole"
+            ],
+            "not_fired": []
+          }
+        },
+        {
+          "item": "Patient/pt-0038",
+          "met": true,
+          "decisive_ids": [
+            "Communication/comm-00101"
+          ],
+          "evidence": {
+            "fired": [
+              "moravec-weight-reported"
+            ],
+            "not_fired": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "amended",
+      "kind": "gate",
+      "method": "code",
+      "category": "action",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "failed_items": []
+      },
+      "ids": [],
+      "items": [
+        {
+          "item": "Patient/pt-0043",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-04001"
+          ],
+          "evidence": {
+            "fired": [
+              "pellegrino-scr-new"
+            ],
+            "not_fired": []
+          }
+        },
+        {
+          "item": "Patient/pt-0003",
+          "met": true,
+          "decisive_ids": [
+            "Observation/obs-00249"
+          ],
+          "evidence": {
+            "fired": [
+              "delgado-scr-amended"
+            ],
+            "not_fired": []
+          }
+        },
+        {
+          "item": "Patient/pt-0002",
+          "met": true,
+          "decisive_ids": [
+            "DocumentReference/doc-00301"
+          ],
+          "evidence": {
+            "fired": [
+              "vance-itraconazole"
+            ],
+            "not_fired": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "kept",
+      "kind": "gate",
+      "method": "code",
+      "category": "safety",
+      "points": null,
+      "met": true,
+      "evidence": {
+        "failed_items": []
+      },
+      "ids": [],
+      "items": [
+        {
+          "item": "Patient/pt-0038",
+          "met": true,
+          "decisive_ids": [
+            "Communication/comm-00101"
+          ],
+          "evidence": {
+            "fired": [
+              "moravec-weight-reported"
+            ],
+            "not_fired": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "changes_documented",
+      "kind": "rubric",
+      "method": "code",
+      "category": "documentation",
+      "points": 2,
+      "met": true,
+      "evidence": {
+        "changed": [
+          "Patient/pt-0041",
+          "Patient/pt-0038",
+          "Patient/pt-0043"
+        ],
+        "missing": []
+      }
+    },
+    {
+      "id": "notes_cite_inputs",
+      "kind": "rubric",
+      "method": "code",
+      "category": "documentation",
+      "points": 1,
+      "met": true,
+      "evidence": {
+        "uncited": []
+      }
+    }
+  ],
+  "score": 1,
+  "judge": {
+    "calls": 0,
+    "unknown": 0,
+    "unknown_penalties": 0,
+    "score_penalties_met": 1,
+    "score_penalties_not_met": 1,
+    "over_allowance": 0,
+    "cache_keys": [],
+    "cache": []
+  },
+  "attribution": null,
+  "error": null,
+  "run_id": "pilot-4a",
+  "index": 3,
+  "attempt": "45e735cb-20",
+  "mode": "live",
+  "settled": true,
+  "trajectory": "trajectories/renal-dose-review/3.jsonl"
+}
