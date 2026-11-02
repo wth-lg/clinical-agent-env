@@ -1,9 +1,9 @@
 {
   "trial_id": "sample-1:results-inbox:12",
   "task_id": "results-inbox",
-  "task_version": "cf1347806b9a053cfe7d089b54587ea6ce36c28400bd9ceb0db1a9ee0b29e90d",
+  "task_version": "352e5eecdb2a84bfd2d36b92351229eb72d1e7145ac52671317873ea8d074023",
   "env_version": "b61b8eb91bc9e94abb2e41ffd9fe0ac66a45a9ccce0b8f5327adaa3df05171d9",
-  "grader_task_version": "6c2b4f6f64b8d1eee83f330dc077de89a7674dd2a3e1f544e61b249d9eed4a0c",
+  "grader_task_version": "822ecf9f3bea7c68ba5215077d73527c730ce5fff0b3722e97af85461dfd695e",
   "fixture_hash": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
   "state_hash": {
     "initial": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T15:55:09.000Z",
+  "started": "2026-10-23T15:55:19.000Z",
   "turns": 9,
   "tool_calls": 21,
   "tool_errors": {
@@ -43,9 +43,9 @@
   "summary": null,
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T15:56:29.000Z",
+  "ended": "2026-10-23T15:56:39.000Z",
   "judge_cost_usd": 0,
-  "grader_version": "18",
+  "grader_version": "19",
   "outcome": "ENV_LIMIT",
   "valid": false,
   "fault": "env",

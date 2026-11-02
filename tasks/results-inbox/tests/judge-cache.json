@@ -18,6 +18,42 @@
     }
   },
   {
+    "key": "1ce64fdd0ebdfb76d63ebe4ff23255d156c3f3f42923456c6ecd79a23e607167",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "One of your blood tests needs repeating because the sample was damaged."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-02T13:38:08.318Z"
+    }
+  },
+  {
+    "key": "1f0571c91abaf02ae7c7d30f5a9c6d1ef38d7948bc8c4bd1f06f745bdff37925",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-02T13:38:08.318Z"
+    }
+  },
+  {
     "key": "2835328eb4bc85ee75f9e68198df34033c7b2db07e16a66114192f896436dadf",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -36,7 +72,25 @@
     }
   },
   {
-    "key": "2a8134e8369330b045a3b1a197ea919eaae4bec00a47d60f5fff5fcfa5cd7f48",
+    "key": "4120a9b6d6728635f0ca5b5cb01834c437cb7d304f291bc065663cba7af5db2e",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "One of your blood tests needs repeating because the sample was damaged."
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-02T13:38:08.318Z"
+    }
+  },
+  {
+    "key": "6766cce318dd318d2a842c19c6584003ead62fe1f09721635a27b1dba4682a9c",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -50,43 +104,7 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-11-02T10:16:17.429Z"
-    }
-  },
-  {
-    "key": "4f489ef27b438bc738ec560ee0745b6d4d6b9881336aee7406a1454649befbed",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "Walter Brennan's potassium sample was hemolyzed and needs repeating on Monday, October 26."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-11-02T10:16:17.429Z"
-    }
-  },
-  {
-    "key": "58dfec00537fb1c04b8a1a2325add6721c9e11710b68344fdd98bd861cf936c5",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-11-02T10:16:17.429Z"
+      "at": "2026-11-02T13:38:08.318Z"
     }
   },
   {
@@ -108,6 +126,24 @@
     }
   },
   {
+    "key": "6e2a70b893ef5efd4cd3acff954743d7d140433ecc2253d45d91c2e627ead60f",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": ""
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-02T13:38:08.318Z"
+    }
+  },
+  {
     "key": "72693f98ce55807c48ea7bc3baf7ab076ef595ee158521457ad5169342513ffc",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -122,7 +158,7 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-11-02T10:16:17.429Z"
+      "at": "2026-11-02T13:38:08.318Z"
     }
   },
   {
@@ -144,25 +180,25 @@
     }
   },
   {
-    "key": "87644f2be57c645822c379b9613ab7b19089280754cd26c771f1f720ab28f37f",
+    "key": "a83286a5a814b000d3864f8acee54c243b6c0b3a3ca6f62abf47780c4c7a35ff",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
-      "verdict": "not_met",
-      "quote": ""
+      "verdict": "met",
+      "quote": "Walter Brennan's potassium sample was hemolyzed and needs repeating on Monday, October 26."
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-11-02T10:16:17.429Z"
+      "at": "2026-11-02T13:38:08.318Z"
     }
   },
   {
-    "key": "a2f78d85dfe43f92275b0819580a78119fdfdea9b8826434b5b76a9895965b6b",
+    "key": "ab31156b668f4ae813fc3352f476b5f094dd5a3d75a144f1a4c2a376bda7d488",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -176,11 +212,11 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-11-02T10:16:17.429Z"
+      "at": "2026-11-02T13:38:08.318Z"
     }
   },
   {
-    "key": "a6413feaa2da19a488b903b181ee95520effbcc508bd6a5b4333ce349240c768",
+    "key": "d2acc7ee6d630b18be3ae1e30a83bfb18e30c6d583ed8cf6f646fe08c2605a53",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -194,7 +230,7 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-11-02T10:16:17.429Z"
+      "at": "2026-11-02T13:38:08.318Z"
     }
   },
   {
@@ -206,42 +242,6 @@
     "answer": {
       "verdict": "met",
       "quote": "specimen hemolyzed and possibly falsely elevated"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-11-02T10:16:17.429Z"
-    }
-  },
-  {
-    "key": "d55035734a870b4df113cdf2e5317884a3dd2786025a4a65c634857c67d7ff7f",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-11-02T10:16:17.429Z"
-    }
-  },
-  {
-    "key": "df273b20776197464d301467cbe80a9a5275f7f457912d77e9f9af0fde28bb28",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
     },
     "error": null,
     "calls": 1,

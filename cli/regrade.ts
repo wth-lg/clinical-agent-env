@@ -1,7 +1,7 @@
 // pnpm cli regrade <run> --grader-version <v> [--json]
 // Grades every settled trial of a run again with this checkout's grader, from its trajectory and
 // its record's judge cache, with no model call and no client, and appends {grader_version,
-// grader_task_version, outcome, score, valid, checks, error, changed, at} to the record's
+// grader_task_version, outcome, score, valid, checks, error, changed, attribution, at} to the record's
 // regrades[]; the original grade is never changed (design section 6). The last entry is the
 // record's current grade, which summary, audit-check and replay read (packages/core/summary.ts
 // currentGrade); checks are its check results, so replay can compare them; changed says the
@@ -29,6 +29,7 @@ import { pathToFileURL } from 'node:url';
 import { installEgressGuard } from '../packages/core/egress.ts';
 import { currentGrade, trialName } from '../packages/core/summary.ts';
 import type { TaskSource, TaskVersions } from '../packages/core/tasks.ts';
+import type { Attribution } from '../packages/grader/attribution.ts';
 import { GRADER_VERSION, type CheckResult, type GradeError } from '../packages/grader/grade.ts';
 import { settledRecords, writeJson } from './adapters/result-sink-node.ts';
 import { nodeTaskSource } from './adapters/tasks-node.ts';
@@ -49,6 +50,10 @@ export interface RegradeEntry {
   checks: CheckResult[];
   error: GradeError | null;
   changed: boolean;
+  // The regraded grade's attribution (labels, failed items, exposure), as a grade records it, so
+  // classes, result-card and summary read the current grade's labels (summary.ts currentGrade),
+  // never the replaced grade's (builder-292).
+  attribution: Attribution | null;
   at: string;
 }
 
@@ -130,7 +135,7 @@ export async function main(args: string[], deps: Deps = defaults): Promise<numbe
     if (!('grade' in r)) continue;
     const rec = r.stored.record as typeof r.stored.record & { regrades?: RegradeEntry[] };
     const before = currentGrade(rec).outcome;
-    const entry: RegradeEntry = { grader_version: version, grader_task_version: graderAt.get(rec.task_id) as string, outcome: r.grade.outcome, score: r.grade.score, valid: r.grade.valid, checks: r.grade.checks, error: r.grade.error, changed: r.grade.outcome !== before, at };
+    const entry: RegradeEntry = { grader_version: version, grader_task_version: graderAt.get(rec.task_id) as string, outcome: r.grade.outcome, score: r.grade.score, valid: r.grade.valid, checks: r.grade.checks, error: r.grade.error, changed: r.grade.outcome !== before, attribution: r.grade.attribution, at };
     if (entry.changed) changed.push(`${trialName(rec)} ${before} -> ${entry.outcome}`);
     writeJson(r.stored.file, { ...rec, regrades: [...(rec.regrades ?? []), entry] });
   }

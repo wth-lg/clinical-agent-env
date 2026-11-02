@@ -94,6 +94,13 @@ export const alternatives: Alternative[] = [
   { id: 'm12_clinic_panels', why: 'Pages through every BMP panel report in the clinic from 10/23/2025 on, finds none for Marcus Webb, and gives 30 days and a BMP.', script: r({ reads: [[WEBB_K, [CLINIC_PANELS, { ...CLINIC_PANELS, input: { ...CLINIC_PANELS.input, offset: 26 } }]], [WEBB_EGFR, [inWindow('33914-3')]]] }) },
   // R36 (builder-273): his whole Observation list newest first, read from offset 0 to a page whose
   // oldest result is before the window's first day, not to the last page.
+  // verifier-phase-P17i-S0-208-1 M2 (as T3's G2, builder-292): page 1 dates from 1900, page 2 drops
+  // the date filter at the same total and reaches past the window's first day (R27, R36, R34).
+  {
+    id: 'm12_page_run_drops_date_ge',
+    why: "Lists Marcus Webb's observations from 1900 newest first, 4 a page, then asks for the next page without the date filter: both pages count the same results in one order, and the second reaches back past 10/23/2025 to his 10/20/2025 panel: none in 12 months, so 30 days and a BMP.",
+    script: r({ reads: [[WEBB_K, [search('Observation', PT.webb, { count: 4, sort: '-date', date_ge: '1900-01-01' }), search('Observation', PT.webb, { count: 4, sort: '-date', offset: 4 })]]] }),
+  },
   {
     id: 'm12_sorted_pages_past_window',
     why: "Lists Marcus Webb's observations newest first, 4 a page, and reads the first two pages, the second reaching back past 10/23/2025 to his 10/20/2025 panel, without the rest: none in 12 months, so 30 days and a BMP.",

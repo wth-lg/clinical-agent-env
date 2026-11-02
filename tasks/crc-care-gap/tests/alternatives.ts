@@ -29,6 +29,13 @@ const byRow = (c: ScriptCall): ScriptCall => {
 
 export const alternatives: Alternative[] = [
   {
+    // builder-292, G2 (pilot-4a crc-care-gap/2; R27, R36, R34): page 2 drops date_ge, which can only
+    // widen the match set, and both pages count 45, so they list the same records in one order.
+    id: 'd1_page_run_drops_date_ge',
+    why: "Lists Tiny Koss's results from 2017 newest first, 28 a page, then asks for the next page without the date filter: both pages count the same 45 results in the same order, so together they show every one, and her screening absences were read whole.",
+    script: [...withoutD1Stool(reads()), { calls: [search('Observation', PT.D1, { date_ge: '2017-01-01', sort: '-date', count: 28 })] }, { calls: [search('Observation', PT.D1, { sort: '-date', offset: 28, count: 28 })] }, recheck, arrivals(), { calls: actions() }, { calls: [finish()] }],
+  },
+  {
     id: 'd1_sorted_pages_past_window',
     why: "Shows Tiny Koss's stool tests absent by listing her laboratory results newest first, 13 a page: the first page reaches back before 2026 and the second before 2024, each window's start, so both windows were read whole though a page remains (R36).",
     script: [...withoutD1Stool(reads()), { calls: [D1_PAGE(0)] }, { calls: [D1_PAGE(13)] }, recheck, arrivals(), { calls: actions() }, { calls: [finish()] }],

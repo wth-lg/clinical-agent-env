@@ -13,7 +13,7 @@ import { currentGrade } from '../../../../packages/core/summary.ts';
 import { shownFault } from '../data/failures.ts';
 import { checkTextOf, type Trial } from '../data/results.ts';
 import { LINK, OutcomeChip, SECTION_LABEL } from '../data/ui.tsx';
-import { failedItems, itemsMetText, type ItemLabel, type ItemRow } from './items.ts';
+import { failedItems, itemLabelsOf, itemsMetText, type ItemRow } from './items.ts';
 import { useRubricQuestions } from './questions.ts';
 import { metText, rubricGood, rubricMark, rubricMetText, rubricTotal, scoreNote, totalText, type RubricMark } from './rubric.ts';
 import { stepOfId } from './steps.ts';
@@ -134,8 +134,9 @@ export function Grading({ t, steps, onStep, decisive = null }: { t: Trial; steps
   // A check threw: the grade did not finish, so the recorded checks decide nothing
   // (verifier-phase-P16-2 minor: it read "Graded with grader 8" and "8 of 9 met").
   const threwCheck = r.error && !g.regraded ? r.error.check : null;
-  // Each failed item's kind of failure, from the record's attribution; a regrade's grade carries none.
-  const itemLabels = g.regraded ? null : ((r as { attribution?: { items?: ItemLabel[] } | null }).attribution?.items ?? null);
+  // Each failed item's kind of failure, from the current grade's attribution (a regrade's own when it
+  // stored one; verifier-phase-P17i-S0-208-1 S1).
+  const itemLabels = itemLabelsOf(r as Parameters<typeof itemLabelsOf>[0]);
   const unfinished = r.error != null && !g.regraded;
   const score = graded && typeof g.score === 'number' ? g.score.toFixed(2) : null;
   const total = rubricTotal(rubric);

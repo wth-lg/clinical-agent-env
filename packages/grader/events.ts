@@ -24,6 +24,10 @@
 // chart the agent finished on is the one without it and the item's base gates grade it. The
 // evidence says which specs fired. Attribution counts an arrival as seen only by the seen rule
 // (seen_at_only): a class B correction replaces a record the trial may have read before it arrived.
+// Each gate's decisive ids, seen_at and so the exposure report name every resource the seen rule
+// requires (EventExpectation.seenBy; R9, R38(g); builder-292 N1): an arrival of two creatinines
+// whose rise decides names both, so a record says which one was never seen. Without seenBy, the
+// spec's focus stands for the arrival.
 import { AMEND_CLASSES, type EventSpec } from '../env/events.ts';
 import type { GateCheck, GateCtx, Json, Step } from './check.ts';
 import { sameId, seenBefore } from './exposure.ts';
@@ -43,9 +47,14 @@ export interface EventExpectation {
   // D: whether the trial made no change the policy forbids on account of the lure; `ids` names the
   // forbidden writes.
   kept?: (ctx: GateCtx) => { met: boolean; ids: readonly string[]; why?: string };
-  // The first step that saw the arrival, given the step that fired it; default: the first later
-  // step whose result exposed the spec's first resource.
+  // The first step that saw the arrival, given the step that fired it; default: the latest of
+  // seenBy's steps, or else the first later step whose result exposed the spec's first resource.
   seenAt?: (steps: readonly Step[], arrivalStep: number) => number | null;
+  // Optional: each resource (<Type>/<id>) the seen rule requires, all of them, with the step that
+  // first saw it, given the arrival step (R38(g), (i)). The gates name these as the spec's decisive
+  // ids and report each one's step; seenAt must be null exactly when one of them is (by default it
+  // is their latest).
+  seenBy?: Readonly<Record<string, (steps: readonly Step[], arrivalStep: number) => number | null>>;
 }
 
 // One firing as the steps record it: the step whose call fired it, that step's turn, its keys.
@@ -75,6 +84,14 @@ function patientOf(r: unknown): string | undefined {
     if (typeof ref === 'string' && ref.startsWith('Patient/')) return ref;
   }
   return undefined;
+}
+
+// The Patient each arrival resource of `specs` is about, by <Type>/<id>, for the page-run rule's
+// arrival check (exposure.ts runCompleteAt, ArrivalPatient): a resource a spec puts that names no
+// Patient, or a key no spec puts, is undefined, which that check counts against every patient.
+export function arrivalPatients(specs: readonly EventSpec[]): (key: string) => string | undefined {
+  const of = new Map<string, string | undefined>(specs.flatMap((s) => s.resources.map((r) => [`${r.resourceType}/${r.id}`, patientOf(r)] as const)));
+  return (key: string) => of.get(key);
 }
 
 // The step at which the spec's trigger first held, re-derived from the steps as the hook in
@@ -129,13 +146,31 @@ export function eventGates(specs: readonly EventSpec[], expect: Readonly<Record<
   for (const id of Object.keys(expect)) if (!specs.some((s) => s.id === id)) throw new Error(`eventGates: an expectation names ${id}, which is not an active spec`);
   const items = [...new Set(specs.map((s) => s.item))];
   const specsOf = (item: string) => specs.filter((s) => s.item === item);
-  const seenRule = (s: EventSpec) => expect[s.id]?.seenAt ?? ((steps: readonly Step[], at: number) => exposedAfter(steps, at, focusOf(s)));
-  // When the arrival was first seen, or null (never, or it did not fire).
+  const latestOf = (rules: ReadonlyArray<(steps: readonly Step[], at: number) => number | null>) => (steps: readonly Step[], at: number): number | null => {
+    const each = rules.map((r) => r(steps, at));
+    return each.some((n) => n === null) ? null : Math.max(...(each as number[]));
+  };
+  const seenBy = (s: EventSpec) => expect[s.id]?.seenBy;
+  const seenRule = (s: EventSpec) => expect[s.id]?.seenAt ?? (seenBy(s) ? latestOf(Object.values(seenBy(s)!)) : (steps: readonly Step[], at: number) => exposedAfter(steps, at, focusOf(s)));
+  // The resources a spec's seen rule requires: seenBy's, or else its focus.
+  const seenIds = (s: EventSpec): string[] => (seenBy(s) ? Object.keys(seenBy(s)!) : [focusOf(s)]);
+  // When the arrival, or one resource of it, was first seen, or null (never, or it did not fire).
   const seenAt = (s: EventSpec) => (steps: readonly Step[]): number | null => {
     const a = arrivalOf(steps, s.id);
     return a === null ? null : seenRule(s)(steps, a.step);
   };
-  const seen_at = Object.fromEntries(specs.map((s) => [focusOf(s), seenAt(s)]));
+  const seenOne = (s: EventSpec, id: string) => (steps: readonly Step[]): number | null => {
+    const a = arrivalOf(steps, s.id);
+    const rule = seenBy(s)?.[id];
+    return a === null ? null : rule === undefined ? seenRule(s)(steps, a.step) : rule(steps, a.step);
+  };
+  const seen_at: Record<string, (steps: readonly Step[]) => number | null> = {};
+  for (const s of specs) {
+    for (const id of seenIds(s)) {
+      if (id in seen_at) throw new Error(`eventGates: ${id} is a seen resource of two specs (${s.id} and an earlier one)`);
+      seen_at[id] = seenOne(s, id);
+    }
+  }
 
   const gateFor = (id: (typeof EVENT_GATE_IDS)[number], category: GateCheck['category'], pick: (s: EventSpec) => boolean, check: (s: EventSpec, a: Arrived | null, ctx: GateCtx) => SpecVerdict): GateCheck[] => {
     const own = specs.filter(pick);
@@ -146,7 +181,7 @@ export function eventGates(specs: readonly EventSpec[], expect: Readonly<Record<
         id, category, traces_to, seen_at, seen_at_only: true, event_specs: own.map((s) => s.id),
         items: its,
         key: (it) => it,
-        decisive: (it) => specsOf(it).filter(pick).map(focusOf),
+        decisive: (it) => specsOf(it).filter(pick).flatMap(seenIds),
         check: (it, _shared, ctx): ItemVerdict => {
           const mine = specsOf(it).filter(pick);
           const fired = mine.filter((s) => arrivalOf(ctx.steps, s.id) !== null).map((s) => s.id);

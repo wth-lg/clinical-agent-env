@@ -4,8 +4,10 @@
 // (retrieval) and an amend written before it was seen (process); for the lure, an amend on the lure
 // (over_action) and a lure never read (retrieval). Each fails only its event's item under its label.
 // Then a review that never opens an event's trigger record: the event never fires and the item fails
-// at base as retrieval (Addendum 2: no route passes the item without firing its event). Then the T3
-// cases kept from before the cut, on a delivered gap: a sorted run short of the window (R36), a
+// at base as retrieval (Addendum 2: no route passes the item without firing its event). Then a
+// delivered gap whose arrival was read but whose base review never completed, or completed after the
+// order (builder-292, G1). Then the T3 cases kept from before the cut, on a delivered gap: a sorted
+// run short of the window (R36), a
 // write outside the panel (a member the cut took off it), duplicate and late FIT orders, and
 // outreach in another channel or without the order. The final table stays the oracle's unless a case
 // says otherwise, so the rubric's table items are not what fails.
@@ -85,6 +87,14 @@ const neverOpened = (l: Label, id: string, why: string, drop: (c: ScriptCall) =>
 });
 const searchOf = (type: string, l: Label, code?: string) => (c: ScriptCall) => c.name === 'fhir_search' && c.input.resource_type === type && c.input.patient === PT[l] && (code === undefined || c.input.code === code);
 
+// The reads without member l's stool-test search, which a case replaces with its own review.
+const withoutStool = (l: Label) => (turns: readonly ScriptTurn[]): ScriptTurn[] => turns.map((t) => ({ calls: t.calls.filter((c) => !(c.input.patient === PT[l] && c.input.code === STOOL_CODES)) }));
+// pilot-4a's short reviews: MacGyver 2017 to 2025-06-01 newest first, one page (it exposes her
+// sDNA-FIT, so crc-o1 arrives); Trantow 2016 to 2025-12-31, one page. A date_le before today covers
+// no screening kind.
+const A1_SHORT = search('Observation', PT.A1, { date_ge: '2017-01-01', date_le: '2025-06-01', sort: '-date', count: 26 });
+const G1_SHORT = search('Observation', PT.G1, { date_ge: '2016-01-01', date_le: '2025-12-31', sort: '-date', count: 28 });
+
 // A Patient the cut took off the panel, whose chart still holds an open gap (B2, the partial
 // colectomy).
 const OFF_PANEL = 'pt-0036';
@@ -135,11 +145,13 @@ export const mutants: Mutant[] = [
     // R38(a): a fired amend never excuses the base review. The trial orders and messages Elly
     // Trantow blind, then one problem-list search fires crc-b1; it never reads the correction, her
     // medications, her Patient or her screening, and leaves the order as it was. A write exposes
-    // nothing, so on T3 (after_exposed triggers) the blind route needs that one read to fire.
+    // nothing, so on T3 (after_exposed triggers) the blind route needs that one read to fire. It
+    // fails the arrival (event_seen, amended) and, apart, her never completed base review
+    // (fit_orders, gap_seen_before_order; builder-292, G1).
     id: 'g1_blind_write_fires_amend',
     trap: 'blind_write_fires_amend',
     why: "Orders Elly Trantow a FIT kit and messages her before reviewing anything, then lists her problems once, which brings the frailty correction; it never reads the correction or reviews her chart, and leaves the order as it was.",
-    fails: ['event_seen', 'amended'],
+    fails: ['fit_orders', 'gap_seen_before_order', 'event_seen', 'amended'],
     loses: [],
     attribution: 'retrieval',
     items: only('G1', 'retrieval'),
@@ -156,15 +168,49 @@ export const mutants: Mutant[] = [
   },
   {
     // R36: a run newest first counts only once a page reaches before the window opens. Its one page
-    // ends in April 2024, short of the sDNA-FIT window's start on 2024-01-01.
+    // ends in April 2024, short of the sDNA-FIT window's start on 2024-01-01. The trial reads the
+    // arrival, so the incomplete review fails her base gates, not event_seen (builder-292, G1).
     id: 'd1_sorted_pages_short_of_window',
     trap: 'order_before_review',
     why: "Lists Tiny Koss's laboratory results newest first, 13 a page, and stops at the first page, which ends in April 2024, short of her sDNA-FIT window's start on 2024-01-01, then orders her kit: the window was never read whole (R14, R27, R36).",
-    fails: ['event_seen', 'amended'],
+    fails: ['fit_orders', 'gap_seen_before_order'],
     loses: [],
     attribution: 'retrieval',
     items: only('D1', 'retrieval'),
     script: D1_SORTED_SHORT_OF_WINDOW,
+  },
+  // builder-292, G1 (pilot-4a crc-care-gap/0 and /1): the trial reads the arrival before it writes,
+  // but its base absence review is incomplete. event_seen is met; the member fails her base gates as
+  // retrieval (R2, R31, R38(a)), or, with the review completed after the order, as process (R18).
+  {
+    id: 'a1_arrival_read_review_short',
+    trap: 'order_before_review',
+    why: "Reviews Delaine MacGyver's results from 2017 to 2025-06-01 only, a search that stops short of today and so shows no screening kind absent, reads the Harbor laboratory's notice when it arrives, and orders and messages her: the arrival was read, the review was never completed (pilot-4a crc-care-gap/0).",
+    fails: ['fit_orders', 'gap_seen_before_order'],
+    loses: [],
+    attribution: 'retrieval',
+    items: only('A1', 'retrieval'),
+    script: [...withoutStool('A1')(reads()), { calls: [A1_SHORT] }, recheck, arrivals(), { calls: actions() }, { calls: [finish()] }],
+  },
+  {
+    id: 'g1_arrival_read_review_short',
+    trap: 'order_before_review',
+    why: "Reviews Elly Trantow's results from 2016 to 2025-12-31 only, which shows no screening kind absent, reads Dr. Lin's correction when it arrives, and orders and messages her: the arrival was read, the review was never completed (pilot-4a crc-care-gap/1).",
+    fails: ['fit_orders', 'gap_seen_before_order'],
+    loses: [],
+    attribution: 'retrieval',
+    items: only('G1', 'retrieval'),
+    script: [...withoutStool('G1')(reads()), { calls: [G1_SHORT] }, recheck, arrivals(), { calls: actions() }, { calls: [finish()] }],
+  },
+  {
+    id: 'a1_review_completed_after_order',
+    trap: 'order_before_review',
+    why: "As a1_arrival_read_review_short, then searches Delaine MacGyver's stool tests in full after her FIT order: the review was completed, but only after the order it decides (R18).",
+    fails: ['gap_seen_before_order'],
+    loses: [],
+    attribution: 'process',
+    items: only('A1', 'process'),
+    script: [...withoutStool('A1')(reads()), { calls: [A1_SHORT] }, recheck, arrivals(), { calls: actions() }, { calls: [search('Observation', PT.A1, { code: STOOL_CODES })] }, { calls: [finish()] }],
   },
   {
     id: 'off_panel_member_order',
