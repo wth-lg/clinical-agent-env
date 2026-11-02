@@ -248,6 +248,23 @@ export const mutants: Mutant[] = [
   // the arrival), before_seen process (written in the answer that opens it), lure_acted_on over_action.
   ...amendMutants(),
   ...blindMutants(),
+  // Addendum 5, R38(b): RBC-RAD-07 states no inbox rule, so closing an arrival's item is ungraded;
+  // what it hides still fails. This route lists the queues, completes every new item unread (their
+  // ids are predictable: inbox-a0001..a0004, in the order the orders turn fires them) and writes the
+  // corrections anyway: each study with an arrival fails on the arrival it never saw.
+  {
+    id: 'arrivals_closed_blind',
+    trap: 'missed_arrival',
+    why: 'Lists the queues and completes every new inbox item without opening any, then writes the corrections anyway. Each study with an arrival fails on the arrival it never saw.',
+    fails: ['event_seen', 'amended'],
+    loses: [],
+    attribution: 'retrieval',
+    items: Object.fromEntries([STALE, MODERATE, AKINOTE, FILLER].map((x) => [x.patient, 'retrieval' as const])),
+    script: run(WRITES, TELL, REVIEW, DONE, [
+      { calls: [...RECHECK.calls, ...[1, 2, 3, 4].map((k): ScriptCall => ({ name: 'update_inbox_item', input: { task_id: `inbox-a${String(k).padStart(4, '0')}`, action: 'complete' } }))] },
+      { calls: AMENDS },
+    ]),
+  },
   {
     id: 'beahan_lure_premedicated',
     event: { spec: 't5-beahan-rxn', kind: 'lure_acted_on' },
