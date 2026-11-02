@@ -1,7 +1,8 @@
 // The same mocked trial in a Chromium Worker and in Node (plan phase P7): each scenario through
 // packages/core/worker-host.ts in the harness trial Worker, and through run() in this Node
 // process, must give the same trajectory JSONL once timestamps are stripped, and the same final
-// hash. The toy scenario runs tasks/_toy, whose note is one committed write_note; the write
+// hash. The toy scenario runs tasks/_toy, whose note is one committed write_note; toyEvent runs
+// the toy's event route, which fires both of its mid-trial events (two env_event lines); the write
 // scenario commits one create_task on the harness task _write (write-task.ts), so hash parity
 // after a write is checked for both. Both sides
 // answer from apps/web/src/harness/scenarios.ts and meter through the tab ledger (in-memory
@@ -41,7 +42,9 @@ async function nodeTrial(task: string, scenario: ScenarioName) {
   }
 }
 
-for (const [task, scenario, writes] of [['_toy', 'toy', 1], ['_write', 'write', 1]] as const) {
+// The arrivals each scenario fires: toyEvent opens the toy's trigger record (tasks/_toy/events.ts),
+// so both of the toy's events fire, in the Worker as in Node.
+for (const [task, scenario, writes, arrivals] of [['_toy', 'toy', 1, []], ['_toy', 'toyEvent', 1, ['toy-a1', 'toy-d1']], ['_write', 'write', 1, []]] as const) {
   test(`the ${scenario} scenario in a Chromium Worker gives the same trajectory and final hash as in Node`, async ({ page }) => {
     test.setTimeout(120_000);
     await page.goto('./harness.html');
@@ -66,6 +69,7 @@ for (const [task, scenario, writes] of [['_toy', 'toy', 1], ['_write', 'write', 
     expect(worker.record.status).toBe('COMPLETED');
     expect(worker.events.map((e) => e.type)).toContain('tool_result');
     expect(worker.events.filter((e) => e.type === 'state_hash' && e.at === 'write')).toHaveLength(writes);
+    expect(worker.events.flatMap((e) => (e.type === 'env_event' ? [e.spec] : []))).toEqual(arrivals);
     if (writes > 0) expect(worker.record.state_hash.final).not.toBe(worker.record.state_hash.initial);
     expect(workerJsonl).toBe(nodeJsonl);
     expect(worker.record.state_hash.final).toBe(node.record.state_hash.final);

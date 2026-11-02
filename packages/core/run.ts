@@ -225,6 +225,8 @@ export async function run(taskId: string, model: string, opts: RunOptions): Prom
   let ctx: WriteContext | undefined;
   let initialState: Resource[] = [];
   let finalState: Resource[] | null = null;
+  // Each arrival as it entered the store, from the replay (it agrees with the loop or the trial is ENV_ERROR).
+  let arrivedState: Resource[] = [];
   try {
     versions = await taskVersions(task, opts.worldHash);
     const bytes = await opts.world.read();
@@ -253,6 +255,7 @@ export async function run(taskId: string, model: string, opts: RunOptions): Prom
       final = await stateHash(finalState);
       emit({ type: 'state_hash', turn: outcome.turns, at: 'final', hash: final });
       const replayed = await replay(source, task, tools, events);
+      arrivedState = replayed?.arrived ?? [];
       const mismatch = replayed && (replayed.mismatch ?? replayed.eventMismatch);
       replayFinal = replayed === null || mismatch !== null ? null : await stateHash(replayed.store.resources());
       if (replayFinal !== null) emit({ type: 'state_hash', turn: outcome.turns, at: 'replay_final', hash: replayFinal });
@@ -305,7 +308,7 @@ export async function run(taskId: string, model: string, opts: RunOptions): Prom
   };
   const checks = opts.checks ?? [];
   const judge = judgeFor(checks, { judge: withSignal(opts.judge === undefined ? opts.client : opts.judge, opts.signal), effort: task.judgeEffort });
-  let graded = await gradeWith({ checks, initial: initialState, final: finalState, events, trial: facts }, judge);
+  let graded = await gradeWith({ checks, initial: initialState, final: finalState, events, trial: facts, arrived: arrivedState }, judge);
   // A judge call the abort cut off is a cancel from outside, not an infrastructure failure.
   if (opts.signal?.aborted && graded.error !== null && FAULT[graded.outcome] === 'infra') {
     facts.status = 'CANCELLED';
@@ -362,9 +365,14 @@ export interface GradeTrajectoryOptions {
 // Grades a recorded trial again from its trajectory: the initial state from the world, the
 // final state by replaying the tool log on it, judge answers from the record's cache. On the
 // trajectory a trial wrote, it returns the grade run() recorded. It never grades a different
-// state silently: when the world does not hash to the record's initial hash, the replay's
+// state silently: when the world does not hash to the record's initial hash (the named world
+// mismatch, R37), the replay's
 // arrivals are not the trajectory's env_events, or the replay does not reach its final hash, the
 // grade is GRADER_ERROR with the reason.
+// The named error for a record of another world (ruling R37).
+export const worldMismatch = (runAt: string | null, checkoutAt: string, runId?: unknown): string =>
+  `world mismatch: run at ${runAt ?? 'an unrecorded world'}, checkout at ${checkoutAt}; reproduce at the commit in results/${typeof runId === 'string' && runId !== '' ? runId : '<run>'}/README.md`;
+
 export async function gradeTrajectory(taskId: string, opts: GradeTrajectoryOptions): Promise<Grade> {
   const task = await opts.tasks.get(taskId);
   if (opts.definitions !== undefined && opts.definitions !== indexedBundle) {
@@ -382,13 +390,15 @@ export async function gradeTrajectory(taskId: string, opts: GradeTrajectoryOptio
   if (early !== null && !isValid(early)) return graded({ ...input, final: null });
   const h = opts.record.state_hash;
   const initialHash = await stateHash(initial);
-  if (initialHash !== h.initial) return ungraded('GRADER_ERROR', { check: null, message: `regrade: initial state hash ${initialHash} is not the record's ${h.initial}`, stops_batch: false });
+  // R37: a run is historical data, pinned to the world it ran on; it is reproduced at the commit
+  // its run directory's README.md names, never graded on another world.
+  if (initialHash !== h.initial) return ungraded('GRADER_ERROR', { check: null, message: worldMismatch(h.initial, initialHash, (opts.record as { run_id?: unknown }).run_id), stops_batch: false });
   const replayed = await replay(source, task, taskTools(task), opts.events);
   if (replayed?.eventMismatch) return ungraded('GRADER_ERROR', { check: null, message: `regrade: ${replayed.eventMismatch}`, stops_batch: false });
   if (opts.compareResults === true && replayed?.mismatch) return ungraded('GRADER_ERROR', { check: null, message: `regrade: ${replayed.mismatch}`, stops_batch: false });
   const replayHash = replayed && (await stateHash(replayed.store.resources()));
   if (replayed === null || replayHash !== h.final) return ungraded('GRADER_ERROR', { check: null, message: `regrade: replayed state hash ${replayHash} is not the record's final ${h.final}`, stops_batch: false });
-  return graded({ ...input, final: [...replayed.store.resources()] });
+  return graded({ ...input, final: [...replayed.store.resources()], arrived: replayed.arrived });
 }
 
 // Re-executes every call of the trajectory's tool log, refused ones included (a refusal recurs
@@ -450,13 +460,15 @@ function eventDifference(recorded: readonly Fired[], replayed: readonly Fired[])
   return null;
 }
 
-async function replay(source: FixtureSource, task: Task, tools: readonly Tool<WriteContext>[], events: readonly TrialEvent[]): Promise<{ store: Store; mismatch: string | null; eventMismatch: string | null } | null> {
+async function replay(source: FixtureSource, task: Task, tools: readonly Tool<WriteContext>[], events: readonly TrialEvent[]): Promise<{ store: Store; mismatch: string | null; eventMismatch: string | null; arrived: Resource[] } | null> {
   const store = await loadStore(source);
   const ctx = context(store, task);
   const recordedFires: Fired[] = events.flatMap((e) =>
     e.type === 'env_event' ? [{ turn: e.turn, tool_use_id: e.tool_use_id, spec: e.spec, arrival_seq: e.arrival_seq, stamp: e.stamp, keys: e.keys }] : [],
   );
   const replayedFires: Fired[] = [];
+  // Each arrival's resources as they entered the store, before any later write (grade.ts diff).
+  const arrived: Resource[] = [];
   const recorded = new Map(events.flatMap((e) => (e.type === 'tool_result' ? [[e.tool_use_id, e] as const] : [])));
   // A result as the trajectory stores it: JSON, so a field set to undefined is absent.
   const json = (v: unknown) => canonicalJson(JSON.parse(JSON.stringify(v ?? null)));
@@ -468,6 +480,7 @@ async function replay(source: FixtureSource, task: Task, tools: readonly Tool<Wr
       const res = callTool(tools, call.name, call.input, ctx);
       for (const a of ctx.session.fired.slice(before)) {
         replayedFires.push({ turn: call.turn, tool_use_id: call.tool_use_id, spec: a.spec, arrival_seq: a.arrival_seq, stamp: a.stamp, keys: a.keys });
+        for (const k of a.keys) arrived.push(store.get(k.slice(0, k.indexOf('/')), k.slice(k.indexOf('/') + 1)) as Resource);
       }
       const was = recorded.get(call.tool_use_id)!;
       const at = `replay: call ${i + 1} (${call.name}, ${call.tool_use_id}) gave`;
@@ -481,7 +494,7 @@ async function replay(source: FixtureSource, task: Task, tools: readonly Tool<Wr
   } catch {
     return null;
   }
-  return { store, mismatch, eventMismatch: eventDifference(recordedFires, replayedFires) };
+  return { store, mismatch, eventMismatch: eventDifference(recordedFires, replayedFires), arrived };
 }
 
 // The state a trial's tool log leaves, for a caller that shows it (the trial detail's State
@@ -490,6 +503,8 @@ async function replay(source: FixtureSource, task: Task, tools: readonly Tool<Wr
 export interface ReplayedState {
   initial: Resource[];
   final: Resource[] | null;
+  // Each arrival as it entered the store, in arrival order ([] when final is null).
+  arrived: Resource[];
   error: string | null;
 }
 export async function replayState(taskId: string, opts: Pick<GradeTrajectoryOptions, 'tasks' | 'world' | 'events' | 'definitions'>): Promise<ReplayedState> {
@@ -502,5 +517,5 @@ export async function replayState(taskId: string, opts: Pick<GradeTrajectoryOpti
   const source: FixtureSource = { read: async () => bytes };
   const initial = [...(await loadStore(source)).resources()];
   const replayed = await replay(source, task, taskTools(task), opts.events);
-  return { initial, final: replayed && [...replayed.store.resources()], error: replayed === null ? 'a tool call threw on replay (the INTERNAL error that ended the trial)' : null };
+  return { initial, final: replayed && [...replayed.store.resources()], arrived: replayed?.arrived ?? [], error: replayed === null ? 'a tool call threw on replay (the INTERNAL error that ended the trial)' : null };
 }

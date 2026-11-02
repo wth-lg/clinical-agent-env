@@ -1,0 +1,19 @@
+{
+  "run_id": "event-1",
+  "model": "claude-opus-5-5",
+  "effort": "high",
+  "mode": "mock-sample",
+  "world_hash": "db40aace1fb00dce77c55d001bc0ecc808c1de51a072ac52614681c33fc59a42",
+  "api_version": "2026-10-21",
+  "trials": 1,
+  "task_versions": {
+    "_toy": "90016e4c91262b2cb853139097df02c2108d5b787e4fe84ae0824fe8562f301f"
+  },
+  "env_versions": {
+    "_toy": "9f7eec3fbac56da15a485a2da194957e6c234cd363d6dc1c4209eaca1711149c"
+  },
+  "grader_task_versions": {
+    "_toy": "fe4178cfe9c242ab303a94551923c5ec54b6a8c60b831b75f6097bb26f176542"
+  },
+  "batches": []
+}

@@ -154,6 +154,9 @@ export interface GradeInput {
   final: Iterable<Readonly<Resource>> | null;
   events: readonly TrialEvent[];
   trial: TrialFacts;
+  // Each arrival as it entered the store, in arrival order (core/run.ts replay), so diff can list
+  // the agent's later change to one.
+  arrived?: Iterable<Readonly<Resource>>;
 }
 
 const statusOf = (r: object | undefined): string | null => {
@@ -277,7 +280,7 @@ async function gradeChecks(input: GradeInput, judge: Judge): Promise<Grade> {
   const initial = [...input.initial];
   const final = [...input.final];
   const steps = stepsOf(input.events);
-  const d = diff(initial, final, steps.flatMap((s) => (s.arrivals ?? []).flatMap((a) => a.keys)));
+  const d = diff(initial, final, steps.flatMap((s) => (s.arrivals ?? []).flatMap((a) => a.keys)), input.arrived);
   const writes = [...new Set(steps.flatMap((s) => s.written_ids))];
   const common = { diff: d, steps, exposedAt: (id: string) => firstExposed(steps, id), writes: () => writes, last_turn: lastTurn(input.events) };
   const gateCtx: GateCtx = { initial: gateView(initial), final: gateView(final), ...common };

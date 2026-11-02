@@ -1,14 +1,14 @@
 {
   "trial_id": "sample-1:results-inbox:4",
   "task_id": "results-inbox",
-  "task_version": "176b94a4d26d6ac233b54295ff42504f39feb1d657856a71dd9f802fbe955cd3",
-  "env_version": "fc0235ab4d8af1873b077bafc5372bf6e8a8a2f8deb14c5199eb6dd4194ca0b5",
+  "task_version": "57cb5e52bf048a29741e3711018be068b2171692db2c9287e5e294b38e287e1b",
+  "env_version": "bc0d0d34cd828d3538b624e27bea882537d4b4bf3f8dafb77ad3086615ac4294",
   "grader_task_version": "21e87633b58fccb0103ad9efaefd64079e57ff4f9338e6bc673384a809262d3a",
-  "fixture_hash": "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968",
+  "fixture_hash": "db40aace1fb00dce77c55d001bc0ecc808c1de51a072ac52614681c33fc59a42",
   "state_hash": {
-    "initial": "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968",
-    "final": "269a42aba60d41dc2fd317a68040c955c5bfcf783896b2cba8c8ad69958d5d18",
-    "replay_final": "269a42aba60d41dc2fd317a68040c955c5bfcf783896b2cba8c8ad69958d5d18"
+    "initial": "db40aace1fb00dce77c55d001bc0ecc808c1de51a072ac52614681c33fc59a42",
+    "final": "1100706646d708a5192e9631b883f0a6069b3a5a0c98e1215c9f4f654ba2d753",
+    "replay_final": "1100706646d708a5192e9631b883f0a6069b3a5a0c98e1215c9f4f654ba2d753"
   },
   "model_requested": "claude-opus-5-5",
   "models_returned": [
@@ -16,7 +16,7 @@
   ],
   "effort": "high",
   "api_version": "2026-10-21",
-  "started": "2026-10-23T16:45:36.000Z",
+  "started": "2026-10-23T15:52:10.000Z",
   "turns": 29,
   "tool_calls": 78,
   "tool_errors": {
@@ -43,7 +43,7 @@
   "summary": "Results inbox cleared: all 13 items completed with their follow-up orders, tasks, messages and notes linked.",
   "resumed": false,
   "env_git_sha": null,
-  "ended": "2026-10-23T16:50:54.000Z",
+  "ended": "2026-10-23T15:57:28.000Z",
   "judge_cost_usd": 0,
   "grader_version": "18",
   "outcome": "PASS",

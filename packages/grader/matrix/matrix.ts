@@ -57,8 +57,9 @@
 //                     and its item with the kind's label; every declared event mutant names an
 //                     active spec. A run event mutant must fail its spec (the failed item names it)
 //                     on the kind's gate. The arrived split: in every case, no arrival key is in
-//                     any written_ids, and the diff of the replayed states lists each arrival in
-//                     arrived and never in created or updated (diff.ts, C3)
+//                     the written_ids of the call that fired it or of an earlier call, and the diff
+//                     of the replayed states lists each arrival in arrived, never in created, and in
+//                     updated only when a later call wrote it (diff.ts, C3)
 //   decisive reachability  every gate check's decisive ids were exposed or referenced to a
 //                     passing oracle or alternative (unreachedDecisive), checked when the oracle and
 //                     every alternative ran and passed: an id no correct solution reaches is not one
@@ -428,21 +429,30 @@ export function eventDeclarations(task: Pick<MatrixTask, 'events' | 'checks' | '
   return problems;
 }
 
-// The arrived split of one case run (diff.ts, C3): no arrival key in any written_ids, and in the
-// diff of the replayed states every arrival in arrived, none in created or updated.
+// The arrived split of one case run (diff.ts, C3): no arrival key in the written_ids of the call
+// that fired it or of any call before it; in the diff of the replayed states every arrival is in
+// arrived, never in created, and in updated exactly when a later call wrote it (the agent may
+// act on an arrival, e.g. complete its inbox Task).
 async function arrivedSplit(env: Pick<MatrixEnv, 'tasks' | 'world' | 'definitions'>, task: Pick<MatrixTask, 'id'>, run: CaseRun): Promise<string[]> {
   const steps = stepsOf(run.events);
-  const keys = steps.flatMap((s) => (s.arrivals ?? []).flatMap((a) => a.keys));
-  if (keys.length === 0) return [];
+  // Each arrival key with the index of the step whose call fired it.
+  const at = new Map(steps.flatMap((s, i) => (s.arrivals ?? []).flatMap((a) => a.keys.map((k) => [k, i] as const))));
+  if (at.size === 0) return [];
+  const keys = [...at.keys()];
   const problems: string[] = [];
-  const written = new Set(steps.flatMap((s) => s.written_ids));
-  for (const k of keys) if (written.has(k)) problems.push(`arrival ${k} is in a call's written_ids`);
+  const writtenLater = new Set<string>();
+  for (const [k, i] of at) {
+    if (steps.slice(0, i + 1).some((s) => s.written_ids.includes(k))) problems.push(`arrival ${k} is in the written_ids of a call at or before its arrival`);
+    if (steps.slice(i + 1).some((s) => s.written_ids.includes(k))) writtenLater.add(k);
+  }
   const state = await replayState(task.id, { tasks: env.tasks, world: env.world, events: run.events, ...(env.definitions ? { definitions: env.definitions } : {}) });
   if (state.final === null) return [...problems, `the arrived split could not be checked: ${state.error}`];
-  const d = diff(state.initial, state.final, keys);
+  const d = diff(state.initial, state.final, keys, state.arrived);
   for (const k of keys) {
     if (!d.arrived.includes(k)) problems.push(`arrival ${k} is not in diff.arrived`);
-    if (d.created.includes(k) || d.updated.includes(k)) problems.push(`arrival ${k} is in diff.created or diff.updated`);
+    if (d.created.includes(k)) problems.push(`arrival ${k} is in diff.created`);
+    if (writtenLater.has(k) && !d.updated.includes(k)) problems.push(`arrival ${k} was written after it arrived and is not in diff.updated`);
+    if (!writtenLater.has(k) && d.updated.includes(k)) problems.push(`arrival ${k} is in diff.updated, and no call wrote it after it arrived`);
   }
   if (!keys.every((k) => state.final!.some((r) => `${r.resourceType}/${r.id}` === k))) problems.push('an arrival is not in the replayed final state');
   return problems;
