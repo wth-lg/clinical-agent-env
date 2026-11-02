@@ -77,6 +77,12 @@ describe('message-queue events', () => {
         if (corrections.has(s.id)) {
           expect(there, `${s.id}: ${r.resourceType}/${r.id}`).toBeDefined();
           expect(JSON.stringify(there)).not.toEqual(JSON.stringify(r));
+          // A correction keeps every field of the world's record but the ones it corrects (the world's
+          // jittered times, references and codes copied), so it is the same record, amended.
+          const w = there as unknown as Record<string, unknown>;
+          const a = r as unknown as Record<string, unknown>;
+          const changed = [...new Set([...Object.keys(w), ...Object.keys(a)])].filter((k) => JSON.stringify(w[k]) !== JSON.stringify(a[k]));
+          for (const k of changed) expect(['status', 'valueQuantity', 'note', 'issued', 'interpretation', 'content'], `${s.id}: ${r.resourceType}/${r.id} changes ${k}`).toContain(k);
         } else expect(there, `${s.id}: ${r.resourceType}/${r.id}`).toBeUndefined();
       }
     }

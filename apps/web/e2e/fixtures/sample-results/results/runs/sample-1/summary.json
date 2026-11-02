@@ -342,13 +342,13 @@
     },
     "message-queue": {
       "task_versions": [
-        "2e68b19be718d342c5e38f35476f91f9f7427f4e50a022a1aac61e535b99abda"
+        "1e1a9ea750771f1e050f7d3e7988cea48c2b0e09b9c9052aaaf9032b05c56dd1"
       ],
       "env_versions": [
         "cb630c32776de0af590e2a27ff471904d3e6cce61d2c696e9d7f7e98dc938793"
       ],
       "grader_task_versions": [
-        "38c045f897e06d18c3043a4b4388d6448141268da3835ef104673b32a4215ff8"
+        "efe0e9e28f232f0dd14b74dd5fbfea59210df61886d9cef06c76bcd3c240838d"
       ],
       "records": 12,
       "trials": 12,

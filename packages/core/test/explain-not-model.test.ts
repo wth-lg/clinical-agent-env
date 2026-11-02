@@ -4,7 +4,7 @@
 // value, since a check that threw or a trial that never finished has no verdict on the model. A
 // valid trial with an environment, grader or infra fault keeps its decisive check: the
 // ui-contract reason form names it, then says whose fault it is.
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { explainTrial, type ExplainContext, type ExplainRecord } from '../explain.ts';
@@ -74,10 +74,14 @@ describe('an excluded trial has no model taxonomy, decisive check or decisive st
 
   // The exemplar lives in the sample's pilot run since the official run's GRADER_ERROR was regraded
   // (decisions.tsv 2026-10-29T17:50).
-  it('the sample GRADER_ERROR trial (message-queue/12), whose record carries a model label (over_action)', () => {
-    const file = join(repoRoot, 'apps/web/e2e/fixtures/sample-results/results/pilot-grader-error/trials/message-queue/12.json');
-    const rec = JSON.parse(readFileSync(file, 'utf8')) as ExplainRecord;
-    expect(rec.attribution?.auto).toBe('over_action');
+  // The trial is found in the pilot run, not pinned by index: the generator picks it from the task's
+  // cases, which a list change renumbers (brief addendum 7). Its model label is whatever its mutant gives.
+  it('the sample GRADER_ERROR trial (message-queue), whose record carries a model label', () => {
+    const dir = join(repoRoot, 'apps/web/e2e/fixtures/sample-results/results/pilot-grader-error/trials/message-queue');
+    const files = readdirSync(dir).filter((f) => f.endsWith('.json'));
+    expect(files).toHaveLength(1);
+    const rec = JSON.parse(readFileSync(join(dir, files[0]!), 'utf8')) as ExplainRecord;
+    expect(['retrieval', 'reasoning', 'process', 'over_action', 'action_form']).toContain(rec.attribution?.auto);
     const x = explainTrial(rec, undefined, { ...ctx, world_state_hash: null, matrix: null, checks: [] });
     expect(x).toMatchObject({ outcome: 'GRADER_ERROR', fault: 'grader', taxonomy: null, decisive_check: null, decisive_step: null });
   });
