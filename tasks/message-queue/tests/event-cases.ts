@@ -16,7 +16,7 @@
 // it (R2, R29); and for the lure, the resent request left open or cancelled as a repeat (closing it
 // is not graded: the gate is no wider than the policy's forbid, R3).
 import type { Alternative, Mutant, Script } from '../../../packages/grader/matrix/types.ts';
-import { SPECS } from '../events.ts';
+import { ARRIVAL, SPECS } from '../events.ts';
 import {
   AMEND, arrivalRead, call, change, close as closeItem, ODUM_LOOK, ODUM_REPORT, HOLD_TASK, inboxOf, labs, MR, odumRenew, order, priceA1c, priceBridge, priceLisinopril, priceMetformin, PT, recheck, route, type RouteOpts, RX, searchNotes, voided, webbA1c, webbBridge, webbMetBridge, webbMetformin,
 } from '../solution/steps.ts';
@@ -123,5 +123,21 @@ export function resentLeftOpenMutant(active: readonly string[]): Mutant {
     why: "Reads the pharmacy's resent request and places no second order, but leaves it open in the messages queue.",
     fails: ['all_cleared'], loses: [], attribution: 'process', items: { [itemOf('price-d1')]: 'process' },
     script: route({ active, closeResent: false }),
+  };
+}
+
+// R38(g): an arrival counts as seen only when its deciding value is shown. price-b1 and webb-c1 each
+// carry a panel report with their deciding Observation (the corrected creatinine, the new potassium,
+// each the inbox Task's focus); the report lists its results by reference only. A trial that opens
+// the panel but never the deciding result has not seen the arrival (retrieval).
+const PANEL: Record<string, string> = { 'price-b1': ARRIVAL.priceB1.panel, 'webb-c1': ARRIVAL.webbC1.panel };
+export function panelOnlyMutant(spec: string, active: readonly string[]): Mutant | null {
+  const panel = PANEL[spec];
+  if (panel === undefined || !active.includes(spec)) return null;
+  return {
+    id: `${spec}_panel_only`, event: { spec, kind: 'unseen' }, trap: 'missed_arrival',
+    why: 'Opens the arrived panel report, whose results are references, but never the result that decides it, and writes the decision anyway.',
+    fails: ['event_seen', 'amended'], loses: [], attribution: 'retrieval', items: { [itemOf(spec)]: 'retrieval' },
+    script: route({ active, recheck: [...recheck(active, [spec]), call('fhir_read', { resource_type: 'DiagnosticReport', id: panel })] }),
   };
 }

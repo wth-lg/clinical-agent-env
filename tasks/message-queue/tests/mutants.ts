@@ -21,7 +21,7 @@ import {
   a1cOrder, arrivalRead, call, close, closeResent, lab, labs, ODUM_LOOK, ODUM_REPORT, odumRenew, order, PCP, PRICE_LOOK, PRICE_REPORT, priceLisinopril, priceMetformin, PT, recheck, route, type RouteOpts, RX, search, START, task, WEBB_READS, webbBmp, webbBridge, webbMetformin,
 } from '../solution/steps.ts';
 import { BMP_CODES, byName } from '../expected.ts';
-import { blindWriteMutant, eventMutants, resentLeftOpenMutant } from './event-cases.ts';
+import { blindWriteMutant, eventMutants, panelOnlyMutant, resentLeftOpenMutant } from './event-cases.ts';
 
 const item = (name: string) => byName(name).item;
 const on = (spec: string) => ACTIVE.includes(spec);
@@ -225,5 +225,7 @@ export const mutants: Mutant[] = [
   // left open fails the inbox rule.
   ...(on('odum-o1') ? [blindWriteMutant(ACTIVE)] : []),
   ...(on('price-d1') ? [resentLeftOpenMutant(ACTIVE)] : []),
+  // R38(g): a multi-resource arrival opened only through its panel report, its deciding result never shown.
+  ...(['price-b1', 'webb-c1'] as const).flatMap((spec) => panelOnlyMutant(spec, ACTIVE) ?? []),
   ...ACTIVE.flatMap((spec) => eventMutants(spec, ACTIVE)),
 ];

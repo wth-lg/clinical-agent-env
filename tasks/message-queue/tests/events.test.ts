@@ -31,7 +31,7 @@ import { byName, expected, ITEMS } from '../expected.ts';
 import { derive } from '../policy.ts';
 import { route } from '../solution/steps.ts';
 import { alternatives } from './alternatives.ts';
-import { blindWriteMutant, eventAlternatives, eventMutants, resentLeftOpenMutant } from './event-cases.ts';
+import { blindWriteMutant, eventAlternatives, eventMutants, panelOnlyMutant, resentLeftOpenMutant } from './event-cases.ts';
 import { checksFor } from './grader.ts';
 import { mutants } from './mutants.ts';
 
@@ -206,4 +206,19 @@ describe('message-queue events', () => {
     expect(res.results.map((r) => r.case.id), res.lines.join('\n')).toEqual(muts.map((m) => m.id));
     for (const r of res.results) expect(r.problems, `${r.case.id}\n${res.lines.join('\n')}`).toEqual([]);
   });
+
+  // R38(g) (coordinator, from the T5 gate): a multi-resource arrival is seen only when the resource
+  // holding its deciding value is shown, not the panel beside it.
+  for (const id of ['price-b1', 'webb-c1']) {
+    it(`R38(g): ${id} opened only through its panel report is not seen (retrieval)`, { timeout: 600_000 }, async () => {
+      const s = spec(id);
+      const loaded = await loadMatrixTask(ID);
+      const m = panelOnlyMutant(id, [id])!;
+      const muts = [m, ...eventMutants(id, [id])];
+      const task: MatrixTask = { ...loaded, events: [s], checks: checksFor([s]).filter((c) => !JUDGED.has(c.id)), oracle: route({ active: [id] }), alternatives: eventAlternatives(id, [id]), mutants: muts, declares: { ...loaded.declares, traps: [...new Set(muts.map((x) => x.trap))] } };
+      const res = await runMatrix(envWith([s]), task, { cases: [m.id], trials: 1, regrades: 1 });
+      expect(res.results.map((r) => r.case.id), res.lines.join('\n')).toEqual([m.id]);
+      expect(res.results[0]!.problems, res.lines.join('\n')).toEqual([]);
+    });
+  }
 });
