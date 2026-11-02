@@ -1,6 +1,6 @@
 [
   {
-    "key": "0a15446e71b6e01201fefcfcb581143aac500ba211403418cdc75cbf47c21105",
+    "key": "0a6bbc6526cd930d57866f24a6346efde6d9a91b91a86f422ebba22456cbff90",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -14,173 +14,101 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-31T19:28:24.919Z"
+      "at": "2026-11-01T18:18:09.724Z"
     }
   },
   {
-    "key": "104261e5f54ddb93ea3f2cd8a12b4f44663a99b46a97fecb15b2d8e6077f614c",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "Terence Stark: atorvastatin not being filled"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-31T19:28:24.919Z"
-    }
-  },
-  {
-    "key": "2163369628d79ab1c24773ccf7620e8c1ce2e1990facea7fe1676874b9381067",
+    "key": "0dc6a615d5db10478b2834e668771e156e72e3cf8baaeb5b73a3cc45cb585cfd",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "met",
-      "quote": "Lisinopril stays on hold: potassium 5.4 mmol/L on 10/21 is above 5.0 (RBC-TOC-02 §7). Please recheck his potassium."
+      "quote": "Terence Stark's pharmacy fill history shows glipizide 5 mg daily filled 07/30, 08/29 and 09/28/2026, prescribed by Dr. Anil Desai (Valley Endocrinology). It is not on our medication list"
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-31T19:28:24.919Z"
+      "at": "2026-11-01T18:18:09.724Z"
     }
   },
   {
-    "key": "410450af2caca7953dab6caa999f97a558d38473573f20e3daee9b8437ea6f5f",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-31T19:28:24.919Z"
-    }
-  },
-  {
-    "key": "7b14058a1f63b8842f38d97c8ff4e928ccf616e692c8fbd6ffbc3809e445068c",
+    "key": "0eaa9bee79c8d2bd41fa1e4b94b43ddb78089dac22f57dea62064708379baee8",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "met",
-      "quote": "Task (patient: Walter Kim):\nLisinopril stays on hold: potassium 5.4 mmol/L on 10/21 is above 5.0 (RBC-TOC-02 §7). Please recheck his potassium."
+      "quote": "which covers only 44 of the 180 days before his 10/16 admission (24%), so he is not taking it as prescribed"
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-31T19:28:24.919Z"
+      "at": "2026-11-01T18:18:09.724Z"
     }
   },
   {
-    "key": "7b60fa60c8bdb0dea3c1bb7a149eac036f333423d32edce80269badd493ecc08",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "Her inpatient TSH was 7.9 mIU/L on levothyroxine 100 mcg daily. I left the order unchanged; please review the dose at follow-up."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-31T19:28:24.919Z"
-    }
-  },
-  {
-    "key": "80ad190291c713b4622ee3e4915e8dc7da8c9ea6ab093e80fd22b53930b069c5",
+    "key": "0eb79b37d8ef51a132e72ed616056e92fa3a5c889ccaa102268d4fd6c16017db",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "met",
-      "quote": "Task (patient: Walter Kim):\nLisinopril stays on hold: potassium 5.4 mmol/L on 10/21 is above 5.0 (RBC-TOC-02 §7). Please recheck his potassium."
+      "quote": "his pharmacy fill history shows the last fill on 03/04/2026 (90 days), which covers only 44 of the 180 days before his 10/16 admission (24%), so he is not taking it as prescribed"
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-31T19:28:24.919Z"
+      "at": "2026-11-01T18:18:09.724Z"
     }
   },
   {
-    "key": "832b3b9b9041fa6c8336a80d724f65e398d77d95c723d34f113d757991db6dfe",
+    "key": "1432cfcb9c97ad11feff41b4605985958b8f7f92dc7d03d1036230be33e68356",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "met",
-      "quote": "Lisinopril stays on hold: potassium 5.4 mmol/L on 10/21 is above 5.0 (RBC-TOC-02 §7). Please recheck his potassium."
+      "quote": "his pharmacy fill history shows the last fill on 03/04/2026 (90 days), which covers only 44 of the 180 days before his 10/16 admission (24%), so he is not taking it as prescribed"
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-31T19:28:24.919Z"
+      "at": "2026-11-01T18:18:09.724Z"
     }
   },
   {
-    "key": "8e9db792f8374f4a9644b44787dbf1588f47bf7613536d116ff4639ae3fb9e48",
+    "key": "4a7f52ba5c4bfd42798be7b976b792d58260fd995ee9273d14e18481c4ade804",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
-      "verdict": "not_met",
-      "quote": "Earnest Roberts: lisinopril resumed\nLisinopril 20 mg daily resumed: SCr 1.08 and potassium 4.6 on 10/22, the most recent after discharge. His fill history shows lisinopril filled regularly before the admission."
+      "verdict": "met",
+      "quote": "his pharmacy fill history shows the last fill on 03/04/2026 (90 days), which covers only 44 of the 180 days before his 10/16 admission (24%), so he is not taking it as prescribed"
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-31T19:28:24.919Z"
+      "at": "2026-11-01T18:18:09.724Z"
     }
   },
   {
-    "key": "9a1a8f4484d57b31fcb0e787c17dbb1fd65aafaf17a5607a897b323d0ec7c991",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "Walter Kim: post-discharge BMP not yet in the chart; lisinopril 10 mg stays on hold until the creatinine is back. Please follow up the result."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-31T19:28:24.919Z"
-    }
-  },
-  {
-    "key": "ac0fb1a35a44968079f903fc561cd69498dec768d81ee0a963eef8d6edd4778d",
+    "key": "4e5f4314c14d439b29519dd6d8d4d4ceb106f45b00042ba2c8d4709dd988546e",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -194,97 +122,277 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-31T19:28:24.919Z"
+      "at": "2026-11-01T18:18:09.724Z"
     }
   },
   {
-    "key": "d1ed19ee61a7a68a11280e990ff056633a9beb650268adaab4be1f20c225ccf4",
+    "key": "50cabb2a37e7c554ab6bbd1a4f17ce88835a360c6ea3fabf8ff0eaa871a176d2",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "met",
-      "quote": "Lisinopril stays on hold: potassium 5.4 mmol/L on 10/21 is above 5.0 (RBC-TOC-02 §7). Please recheck his potassium."
+      "quote": "which covers only 44 of the 180 days before his 10/16 admission (24%), so he is not taking it as prescribed"
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-31T19:28:24.919Z"
+      "at": "2026-11-01T18:18:09.724Z"
     }
   },
   {
-    "key": "dc39e5fa8424497ce42e1191022f529238f9879a6c7d44099ae756b8607755b7",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "Message (patient: Terence Stark):\nTerence Stark: glipizide from an outside prescriber"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-31T19:28:24.919Z"
-    }
-  },
-  {
-    "key": "ea2cf8970f20024e7701e02a28e112194239d5014140e0e9aa4d462c25c78e98",
+    "key": "69555d3458052d84aaaa8219f814be908b451af440148af4241b45d23c1b2340",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "met",
-      "quote": "Lisinopril stays on hold: potassium 5.4 mmol/L on 10/21 is above 5.0 (RBC-TOC-02 §7). Please recheck his potassium."
+      "quote": "Terence Stark's pharmacy fill history shows glipizide 5 mg daily filled 07/30, 08/29 and 09/28/2026, prescribed by Dr. Anil Desai (Valley Endocrinology). It is not on our medication list"
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-31T19:28:24.919Z"
+      "at": "2026-11-01T18:18:09.724Z"
     }
   },
   {
-    "key": "f17bcb4ce6f85b131354da61e576d68b6606e58694da3b2ffbe36edbedb9c791",
+    "key": "72a405eeae233f7cd6c26696a20053b8d31a74c7d168273aa17f3d8bb7119c4c",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "met",
-      "quote": "Lisinopril stays on hold: potassium 5.4 mmol/L on 10/21 is above 5.0 (RBC-TOC-02 §7). Please recheck his potassium."
+      "quote": "Terence Stark's pharmacy fill history shows glipizide 5 mg daily filled 07/30, 08/29 and 09/28/2026, prescribed by Dr. Anil Desai (Valley Endocrinology). It is not on our medication list"
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-31T19:28:24.919Z"
+      "at": "2026-11-01T18:18:09.724Z"
     }
   },
   {
-    "key": "f826b2dd7b1e37b6af0de81ef99bad6d575f0e8c95a5cb2535c9cae85b6f0414",
+    "key": "72cf9ca2dcf70a5c58ad4dcc7ae272e4e12d53e14993e05fcdd7d47af5aadd24",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "met",
-      "quote": "Lisinopril stays on hold: potassium 5.4 mmol/L on 10/21 is above 5.0 (RBC-TOC-02 §7). Please recheck his potassium."
+      "quote": "Terence Stark's pharmacy fill history shows glipizide 5 mg daily filled 07/30, 08/29 and 09/28/2026, prescribed by Dr. Anil Desai (Valley Endocrinology). It is not on our medication list"
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-31T19:28:24.919Z"
+      "at": "2026-11-01T18:18:09.724Z"
+    }
+  },
+  {
+    "key": "803cc9901fc202987933093feedc9303af7a27cf21fb422b846600ac85a135ed",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "his pharmacy fill history shows the last fill on 03/04/2026 (90 days), which covers only 44 of the 180 days before his 10/16 admission (24%), so he is not taking it as prescribed"
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-01T18:18:09.724Z"
+    }
+  },
+  {
+    "key": "839b975e13e09440c857aec8295b51653c5d55177a9f952253b08b543d3706d5",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Terence Stark's pharmacy fill history shows glipizide 5 mg daily filled 07/30, 08/29 and 09/28/2026, prescribed by Dr. Anil Desai (Valley Endocrinology). It is not on our medication list"
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-01T18:18:09.724Z"
+    }
+  },
+  {
+    "key": "8eee59b3d617489043a90ce30364450d55023a2feeeba97ff4902d19b8811c94",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Terence Stark's pharmacy fill history shows glipizide 5 mg daily filled 07/30, 08/29 and 09/28/2026, prescribed by Dr. Anil Desai (Valley Endocrinology). It is not on our medication list"
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-01T18:18:09.724Z"
+    }
+  },
+  {
+    "key": "a1122b0e9585edf30a1869562328c77a2779f5f5ec5ef46839cb16302b515609",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "which covers only 44 of the 180 days before his 10/16 admission (24%), so he is not taking it as prescribed"
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-01T18:18:09.724Z"
+    }
+  },
+  {
+    "key": "c94dfc11b8b00f15df86bf58bbe973b1aacb9683b1a28cf52b568887bfc5b025",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "covers only 44 of the 180 days before his 10/16 admission (24%), so he is not taking it as prescribed"
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-01T18:18:09.724Z"
+    }
+  },
+  {
+    "key": "d3ec3b666b2b2fd18bf9a8ee3866fa36a854ee2e4ae8a1f133c53b7e4baccace",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "covers only 44 of the 180 days before his 10/16 admission (24%), so he is not taking it as prescribed"
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-01T18:18:09.724Z"
+    }
+  },
+  {
+    "key": "d8f89f0e342d6b20c5d0aaf995552cb1e1fe97e78366e1745be4335d388e861b",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Terence Stark's pharmacy fill history shows glipizide 5 mg daily filled 07/30, 08/29 and 09/28/2026, prescribed by Dr. Anil Desai (Valley Endocrinology). It is not on our medication list"
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-01T18:18:09.724Z"
+    }
+  },
+  {
+    "key": "e5b48382e0380ace1dbe5a8628744cc1d7282959fec19c046ee90b8b357d910c",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Terence Stark's pharmacy fill history shows glipizide 5 mg daily filled 07/30, 08/29 and 09/28/2026, prescribed by Dr. Anil Desai (Valley Endocrinology). It is not on our medication list"
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-01T18:18:09.724Z"
+    }
+  },
+  {
+    "key": "eb93fb0a1f7c1f80b91d04446c69a09f8186ff66fea93c0f358ac7788e284224",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "covers only 44 of the 180 days before his 10/16 admission (24%), so he is not taking it as prescribed"
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-01T18:18:09.724Z"
+    }
+  },
+  {
+    "key": "ee9a350346d619904d52c5049f820c4cda1908d90a18374f9b07d1ba296e4049",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Terence Stark's pharmacy fill history shows glipizide 5 mg daily filled 07/30, 08/29 and 09/28/2026, prescribed by Dr. Anil Desai (Valley Endocrinology). It is not on our medication list"
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-01T18:18:09.724Z"
+    }
+  },
+  {
+    "key": "ef4d4576f6f74609e3843459e554087812a5c18ec46a9240e5656931a4f50683",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "met",
+      "quote": "Terence Stark's pharmacy fill history shows glipizide 5 mg daily filled 07/30, 08/29 and 09/28/2026, prescribed by Dr. Anil Desai (Valley Endocrinology). It is not on our medication list"
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-01T18:18:09.724Z"
     }
   }
 ]

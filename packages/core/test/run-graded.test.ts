@@ -265,7 +265,7 @@ describe('regrade checks the hashes', () => {
     const regrade = (record: TrialRecord, evs: readonly TrialEvent[] = events) => gradeTrajectory('_toy', { tasks, world, checks: CHECKS, events: evs, record });
     const otherWorld = await regrade({ ...result.record, state_hash: { ...result.record.state_hash, initial: 'f'.repeat(64) } });
     expect(otherWorld).toMatchObject({ outcome: 'GRADER_ERROR', valid: false, fault: 'grader', checks: [] });
-    expect(otherWorld.error!.message).toMatch(/initial state hash .* is not the record's f{64}/);
+    expect(otherWorld.error!.message).toMatch(/^world mismatch: run at f{64}, checkout at [0-9a-f]{64}; reproduce at the commit in results\/\S+\/README\.md$/);
     const otherFinal = await regrade({ ...result.record, state_hash: { ...result.record.state_hash, final: 'e'.repeat(64), replay_final: 'e'.repeat(64) } });
     expect(otherFinal).toMatchObject({ outcome: 'GRADER_ERROR', valid: false });
     expect(otherFinal.error!.message).toMatch(/replayed state hash .* is not the record's final e{64}/);

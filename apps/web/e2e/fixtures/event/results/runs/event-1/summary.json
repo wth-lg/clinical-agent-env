@@ -1,0 +1,126 @@
+{
+  "schema_version": 10,
+  "run_id": "event-1",
+  "model": "claude-opus-5-5",
+  "effort": "high",
+  "tasks": {
+    "_toy": {
+      "task_versions": [
+        "6b5f61082975e9c34a4c608f7efa5275c703ca6039a63f068216038489dc2490"
+      ],
+      "env_versions": [
+        "5c79e63c106a8f919c3ad5c0eb5d5fddd344b532158e3fda1229a45a68119bd6"
+      ],
+      "grader_task_versions": [
+        "1fdf0816a5f29720902602306c001ab5d27e5fc6e49b5067e3e1c2e4c242a882"
+      ],
+      "records": 1,
+      "trials": 1,
+      "passes": 1,
+      "pass_rate": 1,
+      "wilson95": {
+        "lo": 0.20654931437723745,
+        "hi": 1
+      },
+      "band_verdict": "Above band",
+      "refusals": 0,
+      "refusal_excluded_rate": 1,
+      "outcomes": {
+        "PASS": 1
+      },
+      "recorded_outcomes": {
+        "PASS": 1
+      },
+      "regraded": 0,
+      "env_error_raw": 0,
+      "env_limit": 0,
+      "grader_error": 0,
+      "grader_error_history": 0,
+      "requeued": 0,
+      "mean_score": 1,
+      "mean_cost_usd": 0.5,
+      "raw_mean_score": 1,
+      "gate_fraction": 1,
+      "pass_no_harm": 1,
+      "pass_no_harm_rate": 1,
+      "limits": {
+        "turns": 0,
+        "cost": 0,
+        "wall_clock": 0,
+        "max_tokens": 0,
+        "context_window": 0
+      },
+      "requeued_outcomes": {},
+      "infra_counted_attempts": 1,
+      "infra_counted_rate": 1,
+      "metric_trials": {
+        "mean_score": 1,
+        "raw_mean_score": 1,
+        "gate_fraction": 1
+      },
+      "pass_k": {
+        "1": 1,
+        "3": null,
+        "5": null
+      },
+      "consistency": {
+        "valid": 1,
+        "passes": 1,
+        "failures": 0,
+        "shared": null,
+        "flags": []
+      },
+      "fault_counts": {
+        "failures": 0,
+        "taxonomy": {
+          "retrieval": 0,
+          "reasoning": 0,
+          "output_gap": 0,
+          "over_action": 0,
+          "process": 0,
+          "action_form": 0,
+          "did_not_finish": 0,
+          "refusal": 0,
+          "unattributed": 0
+        },
+        "label": null,
+        "infra_reruns": 0
+      },
+      "top_failed_checks": []
+    }
+  },
+  "totals": {
+    "records": 1,
+    "trials": 1,
+    "passes": 1,
+    "env_error_raw": 0,
+    "env_limit": 0,
+    "grader_error": 0,
+    "grader_error_history": 0,
+    "regraded": 0,
+    "requeued": 0,
+    "internal_errors": 0,
+    "cost_usd": 0.5
+  },
+  "mode": "mock-sample",
+  "expected_tasks": {
+    "tasks": [
+      "_toy"
+    ],
+    "from": "generate.ts"
+  },
+  "models": [
+    "claude-opus-5-5"
+  ],
+  "initial_state_hashes": [
+    "e1e1dd0db1ff51e1bac75ba7154014156e7f978b9ee2e34d31117726eed3275d"
+  ],
+  "replay": {
+    "ran": false,
+    "matched": 0,
+    "mismatched": [],
+    "missing": []
+  },
+  "requirements": {},
+  "violations": []
+}

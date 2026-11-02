@@ -6,9 +6,10 @@
 id = "_toy"
 title = "Toy: confirm the signed-in user, read one patient, write one note"
 max_turns = 6
-tools = ["get_context", "fhir_read", "write_note", "finish"]
+tools = ["get_context", "fhir_read", "write_note", "update_inbox_item", "finish"]
 
-# Each trap needs a mutant in tests/mutants.ts. No status-only case: the toy has no items to close.
+# Each trap needs a mutant in tests/mutants.ts. No status-only case: the instruction gives the toy no
+# inbox item to close (update_inbox_item is there for the items its events bring).
 # The last four are the mid-trial event traps of events.ts (packages/grader/events.ts gates).
 [matrix]
 traps = ["wrong_patient", "invalid_write_schema", "read_without_acting", "acting_without_reading", "wrong_citation", "arrival_not_acted_on", "missed_arrival", "amend_before_seen", "lure_acted_on"]

@@ -1,0 +1,306 @@
+{
+  "grader_task_versions": {
+    "1fdf0816a5f29720902602306c001ab5d27e5fc6e49b5067e3e1c2e4c242a882": {
+      "task_id": "_toy",
+      "env_version": "5c79e63c106a8f919c3ad5c0eb5d5fddd344b532158e3fda1229a45a68119bd6",
+      "task_version": "6b5f61082975e9c34a4c608f7efa5275c703ca6039a63f068216038489dc2490",
+      "world_hash": "e1e1dd0db1ff51e1bac75ba7154014156e7f978b9ee2e34d31117726eed3275d",
+      "pass": true,
+      "oracle_pass": true,
+      "alternatives_pass": true,
+      "failed_checks": [],
+      "probes": [
+        {
+          "kind": "oracle",
+          "id": "oracle",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": [],
+          "reachable_ids": [
+            "DocumentReference/doc-t0001",
+            "Organization/org-riverbend",
+            "Patient/pt-0001",
+            "Practitioner/pr-okafor"
+          ]
+        },
+        {
+          "kind": "alternative",
+          "id": "read_patient_first",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": [],
+          "reachable_ids": [
+            "DocumentReference/doc-t0001",
+            "Organization/org-riverbend",
+            "Patient/pt-0001",
+            "Practitioner/pr-okafor"
+          ]
+        },
+        {
+          "kind": "alternative",
+          "id": "one_answer",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": [],
+          "reachable_ids": [
+            "DocumentReference/doc-t0001",
+            "Organization/org-riverbend",
+            "Patient/pt-0001",
+            "Practitioner/pr-okafor"
+          ]
+        },
+        {
+          "kind": "alternative",
+          "id": "event_handled",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": [],
+          "reachable_ids": [
+            "Condition/cond-00002",
+            "DocumentReference/doc-t0001",
+            "Observation/obs-toy-a1",
+            "Observation/obs-toy-d1",
+            "Organization/org-riverbend",
+            "Patient/pt-0001",
+            "Practitioner/pr-okafor"
+          ]
+        },
+        {
+          "kind": "alternative",
+          "id": "event_handled_inbox_closed",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": [],
+          "reachable_ids": [
+            "Condition/cond-00002",
+            "DocumentReference/doc-t0001",
+            "Observation/obs-toy-a1",
+            "Observation/obs-toy-d1",
+            "Organization/org-riverbend",
+            "Patient/pt-0001",
+            "Practitioner/pr-okafor",
+            "Task/inbox-a0001"
+          ]
+        },
+        {
+          "kind": "alternative",
+          "id": "extra_reads_typed_reference",
+          "outcome": "PASS",
+          "as_expected": true,
+          "failed_checks": [],
+          "reachable_ids": [
+            "Condition/cond-00001",
+            "DocumentReference/doc-t0001",
+            "Organization/org-riverbend",
+            "Patient/pt-0001",
+            "Practitioner/pr-okafor"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "event_not_amended",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "amended"
+          ],
+          "reachable_ids": [
+            "Condition/cond-00002",
+            "DocumentReference/doc-t0001",
+            "Observation/obs-toy-a1",
+            "Observation/obs-toy-d1",
+            "Organization/org-riverbend",
+            "Patient/pt-0001",
+            "Practitioner/pr-okafor"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "event_cited_unread",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "event_seen",
+            "amended"
+          ],
+          "reachable_ids": [
+            "Condition/cond-00002",
+            "DocumentReference/doc-t0001",
+            "Observation/obs-toy-d1",
+            "Organization/org-riverbend",
+            "Patient/pt-0001",
+            "Practitioner/pr-okafor"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "event_cited_before_read",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "amended"
+          ],
+          "reachable_ids": [
+            "Condition/cond-00002",
+            "DocumentReference/doc-t0001",
+            "Observation/obs-toy-a1",
+            "Observation/obs-toy-d1",
+            "Organization/org-riverbend",
+            "Patient/pt-0001",
+            "Practitioner/pr-okafor"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "event_lure_cited",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "kept"
+          ],
+          "reachable_ids": [
+            "Condition/cond-00002",
+            "DocumentReference/doc-t0001",
+            "Observation/obs-toy-a1",
+            "Observation/obs-toy-d1",
+            "Organization/org-riverbend",
+            "Patient/pt-0001",
+            "Practitioner/pr-okafor"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "event_lure_unread",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "event_seen"
+          ],
+          "reachable_ids": [
+            "Condition/cond-00002",
+            "DocumentReference/doc-t0001",
+            "Observation/obs-toy-a1",
+            "Organization/org-riverbend",
+            "Patient/pt-0001",
+            "Practitioner/pr-okafor"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "note_on_wrong_patient",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "note_on_patient",
+            "no_other_writes"
+          ],
+          "reachable_ids": [
+            "DocumentReference/doc-t0001",
+            "Organization/org-riverbend",
+            "Patient/pt-0002",
+            "Practitioner/pr-okafor"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "note_rejected",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "note_on_patient"
+          ],
+          "reachable_ids": [
+            "Organization/org-riverbend",
+            "Patient/pt-0001",
+            "Practitioner/pr-okafor"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "read_only",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "note_on_patient"
+          ],
+          "reachable_ids": [
+            "Organization/org-riverbend",
+            "Patient/pt-0001",
+            "Practitioner/pr-okafor"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "note_before_read",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "read_before_note"
+          ],
+          "reachable_ids": [
+            "DocumentReference/doc-t0001",
+            "Organization/org-riverbend",
+            "Practitioner/pr-okafor"
+          ]
+        },
+        {
+          "kind": "mutant",
+          "id": "note_cites_wrong_source",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "note_cites_chart"
+          ],
+          "reachable_ids": [
+            "DocumentReference/doc-t0001",
+            "Organization/org-riverbend",
+            "Patient/pt-0001",
+            "Practitioner/pr-okafor"
+          ]
+        },
+        {
+          "kind": "null",
+          "id": "null",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "note_on_patient"
+          ],
+          "reachable_ids": []
+        },
+        {
+          "kind": "spray",
+          "id": "spray",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "no_other_writes"
+          ],
+          "reachable_ids": [
+            "DocumentReference/doc-t0001",
+            "DocumentReference/doc-t0002",
+            "DocumentReference/doc-t0003",
+            "DocumentReference/doc-t0004",
+            "Organization/org-riverbend",
+            "Patient/pt-0001",
+            "Practitioner/pr-okafor"
+          ]
+        },
+        {
+          "kind": "output-gap",
+          "id": "output-gap",
+          "outcome": "FAIL",
+          "as_expected": true,
+          "failed_checks": [
+            "note_on_patient"
+          ],
+          "reachable_ids": [
+            "Organization/org-riverbend",
+            "Patient/pt-0001",
+            "Practitioner/pr-okafor"
+          ]
+        }
+      ]
+    }
+  }
+}

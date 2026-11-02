@@ -2,8 +2,10 @@
 //   (c) an arrival is found where a clinician finds it: its result by fhir_read and its Task by
 //       list_inbox (the toy reads its arrivals by id; packages/env/test/events.test.ts covers
 //       search_notes and list_inbox);
-//   (e) arrivals are in diff.arrived, never in diff.created, diff.updated or any written_ids, and an
-//       arrived DocumentReference is never one of the agent's notes;
+//   (e) arrivals are in diff.arrived, never in diff.created, and never in the written_ids of the
+//       call that fired them; an arrived DocumentReference is never one of the agent's notes; the
+//       agent's later write to an arrival (completing its inbox Task) is in its call's written_ids
+//       and in diff.updated and status_changed, against the version that arrived;
 //   (f) every _toy event mutant fails only the toy's event item, on its gate and under its label,
 //       and the toy's event alternative passes; the matrix refuses a task whose active spec lacks a
 //       required mutant or an event gate;
@@ -16,8 +18,9 @@ import { describe, expect, it } from 'vitest';
 import { withEvents } from '../../core/test/event-tasks.ts';
 import { nodeTaskSource } from '../../../cli/adapters/tasks-node.ts';
 import { repoWorld } from '../../../cli/run.ts';
+import { loadStore } from '../../env/fixture-source.ts';
 import { FAULT_DEFINITIONS, type AttributionFacts } from '../../core/outcomes.ts';
-import { run } from '../../core/run.ts';
+import { gradeTrajectory, run } from '../../core/run.ts';
 import type { EventSpec } from '../../env/events.ts';
 import { attribute } from '../attribution.ts';
 import { gate, rubric, type Check, type GateCtx, type Note, type Step } from '../check.ts';
@@ -34,6 +37,7 @@ import { oracle } from '../../../tasks/_toy/solution/solve.ts';
 const { world, worldHash, definitions } = repoWorld();
 const tasks = nodeTaskSource({ testMode: true });
 const EVENT_HANDLED = alternatives.find((a) => a.id === 'event_handled')!.script;
+const INBOX_CLOSED = alternatives.find((a) => a.id === 'event_handled_inbox_closed')!.script;
 
 const trial = (script: Script, opts: { tasks?: typeof tasks; checks?: readonly Check[] } = {}) =>
   run('_toy', 'claude-opus-5-5', { tasks: opts.tasks ?? tasks, client: scriptedClient(script, 'items-events'), world, worldHash, definitions, now: () => 0, checks: opts.checks ?? TOY_CHECKS, judge: null });
@@ -43,6 +47,17 @@ describe('diff.arrived (e)', () => {
   it('lists arrivals apart: an arrived new record and an amended one are in arrived, never created or updated', () => {
     const d = diff([obs('a', 1), obs('b', 1)], [obs('a', 2), obs('b', 1), obs('c', 1), obs('n', 1)], ['Observation/a', 'Observation/c']);
     expect(d).toEqual({ created: ['Observation/n'], updated: [], status_changed: [], arrived: ['Observation/a', 'Observation/c'] });
+  });
+  it("lists the agent's later change to an arrival in updated and status_changed, against the version that arrived", () => {
+    const task = (id: string, status: string) => ({ resourceType: 'Task', id, status, intent: 'order' }) as never;
+    const arrivedAs = [obs('a', 2), task('inbox-a0001', 'requested'), obs('c', 1)];
+    const d = diff([obs('a', 1)], [obs('a', 2), task('inbox-a0001', 'completed'), obs('c', 3)], ['Observation/a', 'Task/inbox-a0001', 'Observation/c'], arrivedAs);
+    expect(d).toEqual({
+      created: [],
+      updated: ['Task/inbox-a0001', 'Observation/c'],
+      status_changed: [{ id: 'Task/inbox-a0001', from: 'requested', to: 'completed' }],
+      arrived: ['Observation/a', 'Task/inbox-a0001', 'Observation/c'],
+    });
   });
   it('is unchanged with no arrivals', () => {
     expect(diff([obs('a', 1)], [obs('a', 2)])).toEqual({ created: [], updated: ['Observation/a'], status_changed: [], arrived: [] });
@@ -72,6 +87,51 @@ describe('diff.arrived (e)', () => {
     expect(seen.notes!.map((n) => n.id)).toEqual(['DocumentReference/doc-t0001']);
     const written = events.flatMap((e) => (e.type === 'tool_result' ? (e.written_ids ?? []) : []));
     for (const k of keys) expect(written).not.toContain(k);
+  });
+
+  it("the agent's later completion of an arrival's inbox Task is in diff.updated and status_changed, live and on regrade", async () => {
+    const seen: Array<GateCtx['diff']> = [];
+    const probe = gate({ id: 'probe_diff', category: 'action', traces_to: 'instruction.md:5', decisive_ids: [], fn: (ctx) => (seen.push(ctx.diff), { met: true, evidence: {} }) });
+    // The toy's gates (its event gates and no_other_writes among them); its judged items need a judge.
+    const checks = [...TOY_CHECKS.filter((c) => c.kind === 'gate'), probe];
+    const { record, events } = await trial(INBOX_CLOSED, { checks });
+    expect(record.checks.filter((c) => !c.met)).toEqual([]);
+    const regraded = await gradeTrajectory('_toy', { tasks, world, definitions, checks, events, record: record as never });
+    expect(regraded.checks).toEqual(record.checks);
+    expect(seen).toHaveLength(2);
+    for (const d of seen) {
+      expect(d.arrived).toEqual(['Observation/obs-toy-a1', 'Task/inbox-a0001', 'Observation/obs-toy-d1', 'Task/inbox-a0002']);
+      expect(d.created).not.toContain('Task/inbox-a0001');
+      expect(d.updated).toContain('Task/inbox-a0001');
+      expect(d.status_changed).toContainEqual({ id: 'Task/inbox-a0001', from: 'requested', to: 'completed' });
+      for (const k of ['Observation/obs-toy-a1', 'Observation/obs-toy-d1', 'Task/inbox-a0002']) expect(d.updated).not.toContain(k);
+    }
+  });
+
+  it("the toy's no_other_writes excuses a write to an arrival only when it lands after the arrival", async () => {
+    // A class B spec that also replaces inbox item task-00001: the agent completes that item, then
+    // opens cond-00002, which brings the replacement. The write came before the arrival, so it is extra.
+    const item = (await loadStore(world)).get('Task', 'task-00001')!;
+    const spec: EventSpec = {
+      id: 'toy-b-redo', item: 'note', class: 'B', trigger: { kind: 'after_exposed', ids: ['Condition/cond-00002'] },
+      resources: [{ resourceType: 'Observation', id: 'obs-toy-b1', status: 'final', code: { text: 'potassium' }, subject: { reference: 'Patient/pt-0001' } } as never, structuredClone(item) as never],
+      stampFields: ['Observation/obs-toy-b1.issued'],
+    };
+    const noOtherWrites = TOY_CHECKS.filter((c) => c.id === 'no_other_writes');
+    const complete = { name: 'update_inbox_item', input: { task_id: 'task-00001', action: 'complete' } };
+    const before: Script = [
+      { calls: [{ name: 'get_context', input: {} }, { name: 'fhir_read', input: { resource_type: 'Patient', id: 'pt-0001' } }] },
+      { calls: [complete] },
+      { calls: [{ name: 'fhir_read', input: { resource_type: 'Condition', id: 'cond-00002' } }] },
+      { calls: [{ name: 'finish', input: { summary: 'done' } }] },
+    ];
+    const after: Script = [before[0]!, before[2]!, before[1]!, before[3]!];
+    const evTasks = withEvents(tasks, '_toy', [spec]);
+    const early = await trial(before, { tasks: evTasks, checks: noOtherWrites });
+    expect(early.events.some((e) => e.type === 'env_event' && e.keys.includes('Task/task-00001'))).toBe(true);
+    expect(early.record.checks[0]).toMatchObject({ id: 'no_other_writes', met: false, evidence: { extra: ['Task/task-00001'] } });
+    const late = await trial(after, { tasks: evTasks, checks: noOtherWrites });
+    expect(late.record.checks[0]).toMatchObject({ id: 'no_other_writes', met: true, evidence: { extra: [] } });
   });
 });
 

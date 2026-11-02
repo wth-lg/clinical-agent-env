@@ -13,15 +13,17 @@
 //
 // The classes (each decisive fact sits in the member's own chart, reachable by the route the
 // policy implies; none is on page 1 of a broad first search, tests/discover.test.ts):
-//   A a colonoscopy ordered and never done: a lapsed 2025 order (pt-0024); a 2026 order whose
-//     appointment was a no-show (pt-0014). Only a test done counts (§3).
+//   A a colonoscopy ordered and never done: a lapsed 2025 order (pt-0024, whose June 2024 stool
+//     test is since PW4-E3 an sDNA-FIT from the outside Harbor laboratory, so her screening is up
+//     to date); a
+//     2026 order whose appointment was a no-show (pt-0014). Only a test done counts (§3).
 //   B total against partial colectomy: a total proctocolectomy in a scanned outside operative note
 //     (pt-0021); a coded 2021 sigmoid colectomy for diverticulitis (pt-0036). Only a total colectomy
 //     excludes (§4).
 //   C hospice later revoked: enrolled June-October 2025 (pt-0011, before the period); enrolled
 //     June-August 2026 (pt-0020, during part of it, so excluded) (§4).
-//   D collection against report date: a FIT collected 2025-12-29 and resulted 2026-01-05
-//     (pt-0022); an sDNA-FIT collected 2023-12-27 and resulted 2024-01-08 (pt-0018). A stool test
+//   D collection against report date: a FIT reported as collected in the first week of 2026
+//     (pt-0022, up to date until events.ts corrects its collection date); an sDNA-FIT collected 2023-12-27 and resulted 2024-01-08 (pt-0018). A stool test
 //     counts by its collection date (§3).
 //   G frailty and advanced illness at 66 or older: frailty with donepezil taken now (pt-0009,
 //     excluded); frailty with donepezil stopped in March 2023 (pt-0019, outside the period and the
@@ -29,6 +31,8 @@
 //   H long-term nursing home against short rehab: housing status 'Lives in nursing home' (pt-0034);
 //     a three-week skilled nursing rehab stay that ended at home (pt-0035).
 //   filler: a 35-year-old on the panel (pt-0037), outside the population.
+// Since the PW4-E3 list cut the panel group holds four of them, pt-0009, pt-0020, pt-0022 and
+// pt-0024, each the item of one mid-trial event (events.ts); every chart above stays as built.
 //
 // Ids (P19 hygiene): the resources this overlay adds carry the task tag the isolation rule needs
 // (packages/env/overlay.ts) and an opaque number, never a case label or what the resource is.
@@ -41,9 +45,14 @@ const E = {
   G1: 'pt-0009', G2: 'pt-0019', H1: 'pt-0034', H2: 'pt-0035', FILLER: 'pt-0037',
 } as const;
 const SLOTS: readonly string[] = Object.values(E).sort();
+// The panel after the PW4-E3 list cut (plan-amendment-w4 "Sizing and per-task targets": n = 4):
+// the four members that host the task's mid-trial events (events.ts). The other nine keep their
+// charts as the overlay builds them; only their group membership goes.
+const PANEL: readonly string[] = [E.G1, E.C2, E.D1, E.A1].sort();
 const OKAFOR = { reference: 'Practitioner/pr-okafor' };
 const CLINIC = { reference: 'Organization/org-riverbend' };
 const HOSPITAL = { reference: 'Organization/org-st-brigid' };
+const HARBOR_LAB = { reference: 'Organization/org-harbor-lab' };
 const subject = (pt: string) => ({ reference: `Patient/${pt}` });
 
 const LOINC = 'http://loinc.org';
@@ -85,13 +94,13 @@ const group: Resource = {
   code: { text: 'Quality worklist: colorectal cancer screening, 2026' },
   name: 'Okafor CRC 2026',
   managingEntity: OKAFOR,
-  quantity: SLOTS.length,
-  member: SLOTS.map((pt) => ({ entity: subject(pt), period: { start: '2026-01-02' } })),
+  quantity: PANEL.length,
+  member: PANEL.map((pt) => ({ entity: subject(pt), period: { start: '2026-01-02' } })),
 };
 
 
 const NEGATIVE = { coding: [{ system: SNOMED, code: '260385009', display: 'Negative' }], text: 'Negative' };
-const stoolTest = (id: string, pt: string, code: [string, string], at: string, issued: string): Resource => ({
+const stoolTest = (id: string, pt: string, code: [string, string], at: string, issued: string, performer = CLINIC): Resource => ({
   resourceType: 'Observation',
   id,
   status: 'final',
@@ -100,7 +109,7 @@ const stoolTest = (id: string, pt: string, code: [string, string], at: string, i
   subject: subject(pt),
   effectiveDateTime: at,
   issued,
-  performer: [CLINIC],
+  performer: [performer],
   valueCodeableConcept: NEGATIVE,
 });
 
@@ -590,11 +599,15 @@ const overlay: Overlay = {
       condition('cond-t3-0794', E.C2, ['363418001', 'Malignant neoplasm of pancreas'], '2026-05-19T10:00:00-04:00'),
       c2Hospice,
       // D: stool tests collected before their windows and resulted inside them.
-      stoolTest('obs-t3-3906', E.D1, ['29771-3', 'Hemoglobin [Presence] in Stool from gastrointestinal lower by Immunoassay'], '2025-12-29T08:00:00-05:00', '2026-01-05T11:30:00-05:00'),
+      // PW4-E3: D1's FIT as the lab first reported it, collected in the first week of the period
+      // (screening up to date); events.ts brings the lab's corrected collection date, before it.
+      stoolTest('obs-t3-3906', E.D1, ['29771-3', 'Hemoglobin [Presence] in Stool from gastrointestinal lower by Immunoassay'], '2026-01-05T08:00:00-05:00', '2026-01-08T11:30:00-05:00'),
       stoolTest('obs-t3-7342', E.D2, ['77354-9', 'Noninvasive colorectal cancer DNA and occult blood screening [Presence] in Stool'], '2023-12-27T09:00:00-05:00', '2024-01-08T14:10:00-05:00'),
-      // Older stool tests that change no answer: A1's FOBT of 2024 (before the period; her gap
-      // rests on the colonoscopy never done) and D2's FIT of 2021 (older than his sDNA-FIT).
-      stoolTest('obs-t3-1279', E.A1, ['2335-8', 'Hemoglobin [Presence] in Stool from gastrointestinal'], '2024-06-11T08:00:00-04:00', '2024-06-13T10:45:00-04:00'),
+      // PW4-E3: A1's sDNA-FIT of June 2024 from the outside Harbor laboratory, within its 2024-2026
+      // window (screening up to date; it kept the date of the FOBT it replaces, so no id moves);
+      // events.ts brings the laboratory's notice that the result was another patient's. D2's FIT of
+      // 2021 is older than his sDNA-FIT and changes no answer.
+      stoolTest('obs-t3-1279', E.A1, ['77354-9', 'Noninvasive colorectal cancer DNA and occult blood screening [Presence] in Stool'], '2024-06-11T08:00:00-04:00', '2024-06-13T10:45:00-04:00', HARBOR_LAB),
       stoolTest('obs-t3-4590', E.D2, ['29771-3', 'Hemoglobin [Presence] in Stool from gastrointestinal lower by Immunoassay'], '2021-03-15T08:30:00-04:00', '2021-03-17T15:20:00-04:00'),
       // G: frailty with a dementia medication now, and with one stopped in 2023.
       condition('cond-t3-6027', E.G1, ['248279007', 'Frailty'], '2025-09-16T10:00:00-04:00'),
@@ -625,7 +638,9 @@ const overlay: Overlay = {
         ],
         windows: [
           { name: 'sDNA-FIT 2024-2026', boundary: '2024-01-01', resources: ['obs-t3-7342'], traps: { 'obs-t3-7342': 'sdna_collected_before_window' } },
-          { name: 'FOBT 2026', boundary: '2026-01-01', resources: ['obs-t3-3906'], traps: { 'obs-t3-3906': 'fit_collected_prior_year' } },
+          // D1's FIT sits 4 days inside the period on purpose: the lab's correction (events.ts) moves
+          // its collection to the day before the period starts.
+          { name: 'FOBT 2026', boundary: '2026-01-01', resources: ['obs-t3-3906'], traps: { 'obs-t3-3906': 'fit_collection_corrected' } },
         ],
       },
     };

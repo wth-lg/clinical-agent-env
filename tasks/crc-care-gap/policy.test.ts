@@ -26,9 +26,11 @@ describe('crc-care-gap', () => {
     expect(derive(world)).toEqual(expected);
   });
 
-  it('orders for exactly the eight open gaps of the probe panel', () => {
+  // The PW4-E3 list cut: four members, none with an open gap until its event arrives (events.ts).
+  it('orders for no member of the four-member panel at base', () => {
     const d = derive(world) as unknown as typeof expected;
-    expect(d.items.filter((x) => x.order).map((x) => x.patient)).toEqual(['pt-0011', 'pt-0014', 'pt-0018', 'pt-0019', 'pt-0022', 'pt-0024', 'pt-0035', 'pt-0036'].map((p) => `Patient/${p}`));
+    expect(d.items.map((x) => x.patient)).toEqual(['pt-0009', 'pt-0020', 'pt-0022', 'pt-0024'].map((p) => `Patient/${p}`));
+    expect(d.items.filter((x) => x.order).map((x) => x.patient)).toEqual([]);
   });
 
   // Each class's decisive fact, as the overlay plants it (expected.ts CLASSES).
@@ -40,7 +42,10 @@ describe('crc-care-gap', () => {
     expect(r<{ code: { text: string } }>('Procedure', 'proc-t3-6271').code.text).toMatch(/sigmoid colectomy/i);
     expect(r<{ period: { end: string } }>('EpisodeOfCare', 'eoc-t3-3051').period.end).toBe('2025-10-20');
     expect(r<{ period: { start: string; end: string } }>('EpisodeOfCare', 'eoc-t3-8215').period).toEqual({ start: '2026-06-16', end: '2026-08-21' });
-    expect(r<{ effectiveDateTime: string; issued: string }>('Observation', 'obs-t3-3906')).toMatchObject({ effectiveDateTime: expect.stringMatching(/^2025-12-29/), issued: expect.stringMatching(/^2026-01-05/) });
+    // PW4-E3: D1's FIT as first reported, in the period's first week (events.ts corrects it), and
+    // A1's 2024 stool test, an sDNA-FIT from the outside Harbor laboratory (events.ts withdraws it).
+    expect(r<{ effectiveDateTime: string; issued: string }>('Observation', 'obs-t3-3906')).toMatchObject({ effectiveDateTime: expect.stringMatching(/^2026-01-05/), issued: expect.stringMatching(/^2026-01-08/) });
+    expect(r<{ effectiveDateTime: string; code: { coding: Array<{ code: string }> }; performer: Array<{ reference: string }> }>('Observation', 'obs-t3-1279')).toMatchObject({ effectiveDateTime: expect.stringMatching(/^2024-06-11/), code: { coding: [{ code: '77354-9' }] }, performer: [{ reference: 'Organization/org-harbor-lab' }] });
     expect(r<{ effectiveDateTime: string; issued: string }>('Observation', 'obs-t3-7342')).toMatchObject({ effectiveDateTime: expect.stringMatching(/^2023-12-27/), issued: expect.stringMatching(/^2024-01-08/) });
     expect(r<{ status: string; statusReason: { text: string } }>('MedicationRequest', 'mr-t3-6604')).toMatchObject({ status: 'completed', statusReason: { text: expect.stringMatching(/^Stopped 2023-03-20/) } });
   });
@@ -252,7 +257,8 @@ describe('crc-care-gap', () => {
       ['B2 sigmoid colectomy', 'fhir_search', { resource_type: 'Procedure', patient: 'pt-0036', count: 50 }, 'Procedure/proc-t3-6271', /Sigmoid colectomy/],
       ['C1 hospice episode end', 'fhir_search', { resource_type: 'EpisodeOfCare', patient: 'pt-0011' }, 'EpisodeOfCare/eoc-t3-3051', /2025-10-20/],
       ['C2 hospice episode in 2026', 'fhir_search', { resource_type: 'EpisodeOfCare', patient: 'pt-0020' }, 'EpisodeOfCare/eoc-t3-8215', /2026-06-16/],
-      ['D1 FIT collection and result dates', 'fhir_search', { resource_type: 'Observation', patient: 'pt-0022', code: '29771-3' }, 'Observation/obs-t3-3906', /2025-12-29.*2026-01-05/],
+      ['D1 FIT collection and result dates', 'fhir_search', { resource_type: 'Observation', patient: 'pt-0022', code: '29771-3' }, 'Observation/obs-t3-3906', /2026-01-05.*2026-01-08/],
+      ['A1 sDNA-FIT collection date and outside laboratory', 'fhir_search', { resource_type: 'Observation', patient: 'pt-0024', code: '77354-9' }, 'Observation/obs-t3-1279', /2024-06-11.*org-harbor-lab/],
       ['D2 sDNA-FIT collection and result dates', 'fhir_search', { resource_type: 'Observation', patient: 'pt-0018', code: '77354-9' }, 'Observation/obs-t3-7342', /2023-12-27.*2024-01-08/],
       ['G2 donepezil stopped in 2023', 'fhir_search', { resource_type: 'MedicationRequest', patient: 'pt-0019', count: 50 }, 'MedicationRequest/mr-t3-6604', /Stopped 2023-03-20/],
       ['H1 housing status', 'fhir_search', { resource_type: 'Observation', patient: 'pt-0034', category: 'social-history' }, 'Observation/obs-t3-2465', /Lives in nursing home/],
@@ -270,45 +276,38 @@ describe('crc-care-gap', () => {
       ['A1 no colonoscopy done', { resource_type: 'Procedure', patient: 'pt-0024', code: '73761001', date_ge: '2017-01-01' }],
       ['A2 no colonoscopy done', { resource_type: 'Procedure', patient: 'pt-0014', code: '73761001', date_ge: '2017-01-01' }],
       ['C1 no hospice care in 2026', { resource_type: 'EpisodeOfCare', patient: 'pt-0011', date_ge: '2026-01-01' }],
-      ['D1 no FOBT or FIT collected in 2026', { resource_type: 'Observation', patient: 'pt-0022', code: '2335-8,29771-3,57905-2,58453-2,80372-6,27396-1,12503-9', date_ge: '2026-01-01' }],
+      ['G1 no FOBT or FIT collected in 2026', { resource_type: 'Observation', patient: 'pt-0009', code: '2335-8,29771-3,57905-2,58453-2,80372-6,27396-1,12503-9', date_ge: '2026-01-01' }],
+      ['G1 no sDNA-FIT collected in 2024-2026', { resource_type: 'Observation', patient: 'pt-0009', code: '77354-9,77353-1', date_ge: '2024-01-01' }],
       ['D2 no sDNA-FIT collected in 2024-2026', { resource_type: 'Observation', patient: 'pt-0018', code: '77354-9,77353-1', date_ge: '2024-01-01' }],
     ])('%s: the window search is empty', (_label, input) => {
       const r = tool('fhir_search', input);
       expect(r.is_error).toBe(false);
       expect(r.content).toEqual({ total: 0, entries: [] });
     });
-    // Ruling R31 (verifier-W1T-190-falsepass F3): every gap's other absences, by the searches of the
-    // alternative minimal_complete_reviews, each one whole page: no procedure §3 or §4 counts, no
-    // stool test, no advanced illness diagnosis for G2; B2's documents and G2's medications listed
-    // whole, so nothing in them is hidden.
-    const GAP_PATIENTS = ['pt-0024', 'pt-0014', 'pt-0036', 'pt-0011', 'pt-0022', 'pt-0018', 'pt-0019', 'pt-0035'];
-    it.each([
-      ...GAP_PATIENTS.map((p) => [`${p} no counted procedure`, { resource_type: 'Procedure', patient: p, code: '73761001,44441009,418714002,26390003', count: 50 }, 0] as const),
-      ['G2 no advanced illness diagnosis', { resource_type: 'Condition', patient: 'pt-0019', code: '84114007,13645005,185086009,52448006,26929004,433146000,19943007,128462008,363418001', count: 50 }, 0],
-      ['B2 every document', { resource_type: 'DocumentReference', patient: 'pt-0036', count: 50 }, null],
-      ['G2 every medication order', { resource_type: 'MedicationRequest', patient: 'pt-0019', count: 50 }, null],
-    ] as const)('%s: one whole page', (_label, input, total) => {
-      const r = tool('fhir_search', input);
-      expect(r.is_error).toBe(false);
-      const page = r.content as { total: number; next_offset?: number };
+    // Ruling R31: the gaps the events deliver (expected.ts DELIVERED) rest on no screening of any
+    // kind. On the committed world each has no counted procedure, and her stool tests, by every
+    // counted code, are one whole page holding at most the one record her event corrects or
+    // withdraws (D1's FIT, A1's sDNA-FIT; G1 has none).
+    const DELIVERED_GAPS: Array<[string, string[]]> = [['pt-0009', []], ['pt-0022', [ref('Observation/obs-t3-3906')]], ['pt-0024', [ref('Observation/obs-t3-1279')]]];
+    it.each(DELIVERED_GAPS.map(([p]) => [p]))('%s: no counted procedure, one whole page', (p) => {
+      const page = tool('fhir_search', { resource_type: 'Procedure', patient: p, code: '73761001,44441009,418714002,26390003', count: 50 }).content as { total: number; next_offset?: number };
+      expect(page).toMatchObject({ total: 0 });
       expect(page.next_offset).toBeUndefined();
-      if (total !== null) expect(page.total).toBe(total);
     });
-    it('every gap: the stool tests by every counted code, undated, are one whole page with none collected in its window', () => {
-      for (const p of GAP_PATIENTS) {
-        const page = tool('fhir_search', { resource_type: 'Observation', patient: p, code: '2335-8,29771-3,57905-2,58453-2,80372-6,27396-1,12503-9,77354-9,77353-1', count: 50 }).content as { entries: Array<{ code?: { coding?: Array<{ code?: string }> }; effectiveDateTime?: string }>; next_offset?: number };
-        expect(page.next_offset, p).toBeUndefined();
-        const late = page.entries.filter((e) => (e.code?.coding ?? []).some((c) => ['77354-9', '77353-1'].includes(c.code ?? '')) ? (e.effectiveDateTime ?? '') >= '2024' : (e.effectiveDateTime ?? '') >= '2026');
-        expect(late, p).toEqual([]);
+    it('each delivered gap: the stool tests by every counted code are one whole page holding only the record her event changes', () => {
+      for (const [p, want] of DELIVERED_GAPS) {
+        const r = tool('fhir_search', { resource_type: 'Observation', patient: p, code: '2335-8,29771-3,57905-2,58453-2,80372-6,27396-1,12503-9,77354-9,77353-1', count: 50 });
+        expect((r.content as { next_offset?: number }).next_offset, p).toBeUndefined();
+        expect(r.exposed_ids, p).toEqual(want);
       }
     });
     // Ruling R27 (verifier-W1-probe-T3-clinical-2 N1, N2): the two other complete routes. A
     // clinic-wide window search is one whole page that names none of the absence gaps; D2's
     // Observations since 2024, paged ten at a time by next_offset, end and hold no sDNA-FIT.
     it.each([
-      ['FOBT and FIT collected in 2026', { resource_type: 'Observation', code: '2335-8,29771-3,57905-2,58453-2,80372-6,27396-1,12503-9', date_ge: '2026-01-01', count: 50 }, ['pt-0022']],
-      ['sDNA-FIT collected in 2024-2026', { resource_type: 'Observation', code: '77354-9,77353-1', date_ge: '2024-01-01', count: 50 }, ['pt-0018']],
-      ['care episodes in 2026', { resource_type: 'EpisodeOfCare', date_ge: '2026-01-01', count: 50 }, ['pt-0011']],
+      ['FOBT and FIT collected in 2026', { resource_type: 'Observation', code: '2335-8,29771-3,57905-2,58453-2,80372-6,27396-1,12503-9', date_ge: '2026-01-01', count: 50 }, ['pt-0009', 'pt-0024']],
+      ['sDNA-FIT collected in 2024-2026', { resource_type: 'Observation', code: '77354-9,77353-1', date_ge: '2024-01-01', count: 50 }, ['pt-0009', 'pt-0022', 'pt-0018']],
+      ['care episodes in 2026', { resource_type: 'EpisodeOfCare', date_ge: '2026-01-01', count: 50 }, ['pt-0009', 'pt-0022', 'pt-0024', 'pt-0011']],
     ])('clinic-wide %s: one whole page without %s', (_label, input, gaps) => {
       const r = tool('fhir_search', input);
       expect(r.is_error).toBe(false);

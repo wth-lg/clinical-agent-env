@@ -6,10 +6,10 @@
   "tasks": {
     "contrast-ct-prep": {
       "task_versions": [
-        "28248baac3ec0cc57b12a45b8ce6eeb60dc88e48c6a478a6fb8878b36c079603"
+        "0dcffc79c493d418bb3c68c59a4a2893da5055317d2e15ce8b6ea3b75b4e20ef"
       ],
       "env_versions": [
-        "4065af1e2b21c76fe667c1fdd21fcadc04fe46dd168f06a38fc1772bf6af6af7"
+        "34c0dacf5450d22864d1782616ae0d58e55c3152d40c8a88079e2a969e326762"
       ],
       "grader_task_versions": [
         "7b92328e643346736fce5a2fabbf7284e210c5bfd49d1584e5129224ce771f3f"
@@ -106,13 +106,13 @@
     },
     "crc-care-gap": {
       "task_versions": [
-        "3e4926d230b494e6a191c341b1e2dda1aeeabfde4aef67336d44804015d7fc4a"
+        "cae0d3bac8ff14fa6871adfcdfa5760396962dfadda53907275ca7014999babb"
       ],
       "env_versions": [
-        "90dc0813ffae1c758e00c7f8be95f1824a896b9196b652f4bd95cd4e7f09f554"
+        "2b53619948c661936686c53100e53776b9c3fd31588603134f63b8b2595f9cdf"
       ],
       "grader_task_versions": [
-        "ff5d311311d878b5c167243e1764c25ef8f13a2393bc8bc955e77bcfc417faaf"
+        "330b6ed0745c6d14bbb1254c63494c738d1beca41e50cdd2604dec4386e4d510"
       ],
       "records": 1,
       "trials": 1,
@@ -140,7 +140,7 @@
       "mean_score": 1,
       "mean_cost_usd": 0.82,
       "raw_mean_score": 1,
-      "gate_fraction": 0.6,
+      "gate_fraction": 0.9090909090909091,
       "pass_no_harm": 0,
       "pass_no_harm_rate": 0,
       "limits": {
@@ -168,9 +168,9 @@
         "passes": 0,
         "failures": 1,
         "shared": {
-          "check": "fit_orders",
+          "check": "amended",
           "count": 1,
-          "found": "{\"extra\":[],\"late\":[],\"missing\":[\"Patient/pt-0024\"],\"ordered\":{\"Patient/pt-0011\":[\"ServiceRequest/sr-t0005\"],\"Patient/pt-0014\":[\"ServiceRequest/sr-t0001\"],\"Patient/pt-0018\":[\"ServiceRequest/sr-t0009\"],\"Patient/pt-0019\":[\"ServiceRequest/sr-t0011\"],\"Patient/pt-0022\":[\"ServiceRequest/sr-t0007\"],\"Patient/pt-0035\":[\"ServiceRequest/sr-t0013\"],\"Patient/pt-0036\":[\"ServiceRequest/sr-t0003\"]},\"period_end\":\"2026-12-31\",\"want\":[\"Patient/pt-0011\",\"Patient/pt-0014\",\"Patient/pt-0018\",\"Patient/pt-0019\",\"Patient/pt-0022\",\"Patient/pt-0024\",\"Patient/pt-0035\",\"Patient/pt-0036\"]}",
+          "found": "{\"failed_items\":[\"Patient/pt-0009\"]}",
           "found_count": 1,
           "found_values": 1
         },
@@ -199,20 +199,20 @@
       },
       "top_failed_checks": [
         {
-          "check": "fit_orders",
+          "check": "amended",
           "count": 1
         }
       ]
     },
     "discharge-medrec": {
       "task_versions": [
-        "dcab2e31ec1a12878841366075843485e0557af56b71a6f4b2e2d154e2a26bda"
+        "bcfb39f3980653eb10899bb9888950086db63bd197fa1af1cd7e1aa7d1648fdd"
       ],
       "env_versions": [
-        "dfc6c43826df8543139fdbc3f94d76f71bdcae02040a32356926290724e1572f"
+        "e3438ca7987c6b1035a9696b6426847cbe3cbe3debc202268a5804c8e080d20e"
       ],
       "grader_task_versions": [
-        "809ddcef87e5bf8bff89e6d59419404d19e1cbd1625851969890c8283baf5142"
+        "16d036ae3d696522ae2a61851bd43c987228022b0c7aff5c6075599f3c848b4a"
       ],
       "records": 1,
       "trials": 0,
@@ -292,10 +292,10 @@
     },
     "message-queue": {
       "task_versions": [
-        "c999c8b1ee07ef98cf3a2ecf8c3009fc814477803f7d477afd80f35d6a6f2f27"
+        "4f130e75e527eff06ce8e79f0bbbf38339d3df96e0f6e64e81cba5095fa9f72e"
       ],
       "env_versions": [
-        "141ea4f2159c4001c68b51aec31f341a7ddd1abf4c33f35ce51e415f6e8f051d"
+        "3b0fda02271016c2d5edaaaa60145f18bfbfefdacbf1525468d865177d305994"
       ],
       "grader_task_versions": [
         "b87b7fca34fc43c007f593309ad075a8ad692bdec7af5a5872cf0e9b5fde3a23"
@@ -392,13 +392,13 @@
     },
     "renal-dose-review": {
       "task_versions": [
-        "17c0d3739d1017497ab385d060945b8de5a1007ee16f77bf0fc544da984c8867"
+        "602b041e20f42a6a094a14036de69b6cb5045ae15f87bb0b07521ad7120fd55a"
       ],
       "env_versions": [
-        "2526773d518d14f90827b47249edcbb368d39f248452160c871d2b16b8eadc0f"
+        "b6945969bd1057f41bb052b53ab6074276c601e260cbfbcab3adfb224ba915ae"
       ],
       "grader_task_versions": [
-        "e0a7825465fc16258d75ba966ff7951b7cd450a90ffba096a7c87ad961f4c270"
+        "af7e9d8b147695d53834c6336ab0c6af52229db11abeaba2ecdaaf578ca89eb1"
       ],
       "records": 5,
       "trials": 4,
@@ -432,7 +432,7 @@
       "mean_score": 1,
       "mean_cost_usd": 1.072,
       "raw_mean_score": 1,
-      "gate_fraction": 0.8125,
+      "gate_fraction": 0.9166666666666666,
       "pass_no_harm": 1,
       "pass_no_harm_rate": 0.25,
       "limits": {
@@ -462,9 +462,9 @@
         "shared": {
           "check": "doac_dose",
           "count": 3,
-          "found": "{\"failed_items\":[\"Patient/pt-0038\"],\"first\":{\"active\":[\"MedicationRequest/mr-00333\"],\"drug\":\"rivaroxaban\",\"mg\":15,\"oral\":true,\"patient\":\"Patient/pt-0038\",\"per_day\":1,\"scheduled\":true,\"want\":{\"drug\":\"rivaroxaban\",\"mg\":20,\"per_day\":1}}}",
-          "found_count": 1,
-          "found_values": 3
+          "found": "{\"failed_items\":[\"Patient/pt-0003\"],\"first\":{\"active\":[\"MedicationRequest/mr-00031\"],\"drug\":\"rivaroxaban\",\"mg\":20,\"oral\":true,\"patient\":\"Patient/pt-0003\",\"per_day\":1,\"scheduled\":true,\"want\":{\"drug\":\"rivaroxaban\",\"mg\":15,\"per_day\":1}}}",
+          "found_count": 2,
+          "found_values": 2
         },
         "flags": []
       },
@@ -498,10 +498,10 @@
     },
     "results-inbox": {
       "task_versions": [
-        "176b94a4d26d6ac233b54295ff42504f39feb1d657856a71dd9f802fbe955cd3"
+        "e62082e8af626c9a1f0419134fc6a7706a5199bfd5e1fdad1848fab33f607b1e"
       ],
       "env_versions": [
-        "fc0235ab4d8af1873b077bafc5372bf6e8a8a2f8deb14c5199eb6dd4194ca0b5"
+        "90273ab68e1cd45e8c1a4191db3a9127c930c902172a303c2f3aebc938db05ca"
       ],
       "grader_task_versions": [
         "21e87633b58fccb0103ad9efaefd64079e57ff4f9338e6bc673384a809262d3a"
@@ -612,7 +612,7 @@
     "claude-opus-5-5"
   ],
   "initial_state_hashes": [
-    "bd1581a515a15fc85a46f0a8bb0c808a4705a9115be89f5288f1cc4053c79968"
+    "e1e1dd0db1ff51e1bac75ba7154014156e7f978b9ee2e34d31117726eed3275d"
   ],
   "replay": {
     "ran": false,

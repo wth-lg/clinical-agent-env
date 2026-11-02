@@ -2,11 +2,11 @@
 // An item's decisive ids are only the records that decide its expected action: a record that cannot
 // change the dose is not one. seen_before_change checks only those, so a correct route that reads
 // only the deciding record passes, and attribution.ts labels a wrong dose with the deciding record
-// in view as reasoning, not retrieval. The clinical verifier's variants: v1 (lindahl_inhibitor_only,
-// an alternative) passes; v2 (duquette_inhibitor_seen_no_labs) and v3
-// (ashworth_outside_creatinine_discarded) are reasoning on their own item alone; and
-// kowalczyk_weight_only_all_three reads only the deciding weight and decides wrong. The matrix
-// checks the same through Mutant.items; this file pins each case's grade by name.
+// in view as reasoning, not retrieval. The clinical verifier's variant v2
+// (duquette_inhibitor_seen_no_labs) and delgado_outside_creatinine_discarded are reasoning on their
+// own item alone; vance_criteria_misread reads the deciding records and decides wrong. (The other
+// variants were about patients the five-patient list dropped, builder-281.) The matrix checks the
+// same through Mutant.items; this file pins each case's grade by name, on the active events.
 import { describe, expect, it } from 'vitest';
 import { loadMatrixTask, matrixEnv } from '../../../cli/matrix.ts';
 import { OUTSIDE } from '../../../packages/grader/items.ts';
@@ -35,12 +35,8 @@ describe('T1 decisive ids are the records that decide each item', () => {
   it('names, per item, only the deciding records (the table in expected.ts)', () => {
     const decisive = Object.fromEntries(expected.items.map((x) => [x.patient, x.decisive]));
     expect(decisive).toEqual({
-      'Patient/pt-0040': [ref('Observation/obs-t1-1604'), 'Patient/pt-0040'],
-      'Patient/pt-0039': [ref('Observation/obs-t1-1503'), ref('Observation/obs-t1-1504'), 'Patient/pt-0039'],
       'Patient/pt-0003': [ref('Observation/obs-t1-1304'), ref('Observation/obs-t1-1302'), 'Patient/pt-0003'],
       'Patient/pt-0041': [ref('MedicationRequest/mr-t1-1703')],
-      'Patient/pt-0001': [ref('Observation/obs-t1-1103'), 'Patient/pt-0001'],
-      'Patient/pt-0045': [ref('DocumentReference/doc-t1-1901')],
       'Patient/pt-0038': [ref('Observation/obs-t1-1404'), ref('Observation/obs-t1-1405'), 'Patient/pt-0038'],
       'Patient/pt-0043': [ref('Observation/obs-t1-1801'), ref('Observation/obs-t1-1802'), 'Patient/pt-0043'],
       'Patient/pt-0002': [ref('Observation/obs-t1-wt-1020'), ref('Observation/obs-t1-scr-1020')],
@@ -53,15 +49,9 @@ describe('T1 decisive ids are the records that decide each item', () => {
   });
 
   it.each([
-    ['lindahl_reduced_without_letter', 'Patient/pt-0045'],
     ['pellegrino_not_reviewed', 'Patient/pt-0043'],
-    ['vance_raised_without_weight', 'Patient/pt-0002'],
-    // R33: the age on the Patient, a met apixaban criterion or a Cockcroft-Gault input
-    // (verifier-W1T-190-falsepass F4: the first three are its routes).
-    ['ashworth_age_never_seen', 'Patient/pt-0040'],
-    ['kowalczyk_age_never_seen', 'Patient/pt-0001'],
+    // R33: the age on the Patient, a Cockcroft-Gault input (verifier-W1T-190-falsepass F4).
     ['delgado_age_never_seen', 'Patient/pt-0003'],
-    ['bauer_age_never_seen', 'Patient/pt-0039'],
     ['moravec_age_never_seen', 'Patient/pt-0038'],
     ['pellegrino_age_never_seen', 'Patient/pt-0043'],
   ])('R14: the expected action reached without the deciding record fails as retrieval on that item alone (%s)', async (id, patient) => {
@@ -73,12 +63,7 @@ describe('T1 decisive ids are the records that decide each item', () => {
     expect(checkText.decisive_seen!.found(gate.evidence as Evidence)).toMatch(new RegExp(`was never seen before the review finished at step \\d+, though it decides the dose for ${patient} \\(`));
   });
 
-  // v1, and the snippet the phrase sweep found (rulings R26, R29): the 'adherent' snippet ends at
-  // 'ritonavir 100…', which shows the inhibitor, the letter's one atom.
   it.each([
-    ['v1: a correct route that reads only the letter line', 'lindahl_inhibitor_only'],
-    ["R29: a snippet cut after the letter's atom", 'lindahl_snippet_cut_after_ritonavir'],
-    ['R33: the age from a search_patients row (apixaban criterion)', 'ashworth_age_from_search_patients'],
     ['R33: the age from a search_patients row (Cockcroft-Gault input)', 'delgado_age_from_search_patients'],
   ])('%s passes with full score (%s)', async (_v, id) => {
     const { grade } = await graded('alternative', id);
@@ -89,9 +74,8 @@ describe('T1 decisive ids are the records that decide each item', () => {
 
   it.each([
     ['v2', 'duquette_inhibitor_seen_no_labs', 'Patient/pt-0041'],
-    ['v3', 'ashworth_outside_creatinine_discarded', 'Patient/pt-0040'],
-    ['reads only the deciding record', 'kowalczyk_weight_only_all_three', 'Patient/pt-0001'],
-    ['R2, seen through a notes snippet', 'lindahl_snippet_seen_ignored', 'Patient/pt-0045'],
+    ['the outside creatinine seen and set aside', 'delgado_outside_creatinine_discarded', 'Patient/pt-0003'],
+    ['reads the deciding records', 'vance_criteria_misread', 'Patient/pt-0002'],
   ])('%s: the deciding record in view and the dose wrong is reasoning on that item alone (%s)', async (_v, id, patient) => {
     const { grade, items } = await graded('mutant', id);
     expect(grade.outcome).toBe('FAIL');
@@ -99,16 +83,15 @@ describe('T1 decisive ids are the records that decide each item', () => {
     expect(grade.attribution?.auto).toBe('reasoning');
   });
 
-  it('a single patient changed in the turn of its reads fails seen_before_change on that patient alone, as process (kowalczyk_change_with_reads)', async () => {
-    const { grade, items } = await graded('mutant', 'kowalczyk_change_with_reads');
+  it('a single patient changed in the turn of its reads fails seen_before_change on that patient alone, as process (duquette_change_with_reads)', async () => {
+    const { grade, items } = await graded('mutant', 'duquette_change_with_reads');
     expect(grade.checks.filter((c) => c.kind === 'gate' && !c.met).map((c) => c.id)).toEqual(['seen_before_change']);
-    expect(items).toEqual({ 'Patient/pt-0001': 'process' });
+    expect(items).toEqual({ 'Patient/pt-0041': 'process' });
   });
 
   // Rulings R18: a deciding record seen only after the dose was written is process (the model acted
   // before checking), never reasoning; decisive_seen fails only on a record never seen before finish.
   it.each([
-    ['l1_lindahl_letter_read_after_change', 'Patient/pt-0045'],
     ['l3_vance_weight_after_change', 'Patient/pt-0002'],
   ])('R18: the right dose written before the deciding record, read later, fails seen_before_change alone, as process (%s)', async (id, patient) => {
     const { grade, items } = await graded('mutant', id);
@@ -117,6 +100,57 @@ describe('T1 decisive ids are the records that decide each item', () => {
     expect(grade.checks.find((c) => c.id === 'decisive_seen')!.met).toBe(true);
     expect(items).toEqual({ [patient]: 'process' });
     expect(grade.attribution?.auto).toBe('process');
+  });
+});
+
+describe('R38(a): a fired amend never excuses the base review', () => {
+  it.each([
+    ['delgado_blind_note_fires_amend', 'Patient/pt-0003'],
+  ])('%s: the blind note fires the amend, the dose is the delivered one, and the item fails decisive_seen as retrieval', async (id, patient) => {
+    const { grade, items, steps } = await graded('mutant', id);
+    expect(steps.some((s) => (s.arrivals ?? []).length > 0)).toBe(true);
+    expect(grade.outcome).toBe('FAIL');
+    expect(grade.checks.filter((c) => c.kind === 'gate' && !c.met).map((c) => c.id)).toEqual(['decisive_seen']);
+    expect(items).toEqual({ [patient]: 'retrieval' });
+  });
+
+  // R38(d): the dermatology letter alone decides Vance's dose on the chart as delivered (a §2
+  // inhibitor at a criteria dose of 5 mg gives 2.5 mg whatever the criteria; expected.ts), so it is
+  // an any-of route and his base records are not also required. A blind note that then reads
+  // nothing still fails, on the arrival.
+  it('R38(d): a blind note on Vance, then the letter read and 2.5 mg kept, passes (vance_blind_note_letter_decides)', async () => {
+    const { grade, steps } = await graded('alternative', 'vance_blind_note_letter_decides');
+    expect(steps.some((s) => (s.arrivals ?? []).some((a) => a.spec === 'vance-itraconazole'))).toBe(true);
+    expect(grade.checks.filter((c) => c.kind === 'gate' && !c.met).map((c) => c.id)).toEqual([]);
+    expect(grade.outcome).toBe('PASS');
+  });
+
+  it('R38(d): a blind raise of Vance before his weight, corrected after the letter, fails seen_before_change alone, as process (vance_raised_without_weight)', async () => {
+    const { grade, items } = await graded('mutant', 'vance_raised_without_weight');
+    expect(grade.checks.filter((c) => c.kind === 'gate' && !c.met).map((c) => c.id)).toEqual(['seen_before_change']);
+    expect(items).toEqual({ 'Patient/pt-0002': 'process' });
+  });
+
+  // R38(f): after the letter (which alone decides) arrives, a DOAC write needs only the letter seen
+  // before it, in every passing form: re-sign at 2.5 mg, or stop plus a new order (R21).
+  it.each(['vance_blindnote_letter_modify', 'vance_blindnote_letter_stoporder'])('R38(f): %s passes', async (id) => {
+    const { grade } = await graded('alternative', id);
+    expect(grade.checks.filter((c) => c.kind === 'gate' && !c.met).map((c) => c.id)).toEqual([]);
+    expect(grade.outcome).toBe('PASS');
+    expect(grade.score).toBe(1);
+  });
+
+  it('R38(f): a raise to 5 mg after the letter was read fails amended alone, as reasoning (vance_blindnote_letter_raise)', async () => {
+    const { grade, items } = await graded('mutant', 'vance_blindnote_letter_raise');
+    expect(grade.checks.filter((c) => c.kind === 'gate' && !c.met).map((c) => c.id)).toEqual(['amended']);
+    expect(items).toEqual({ 'Patient/pt-0002': 'reasoning' });
+  });
+
+  it('R38(d): a blind note on Vance that then reads nothing fails event_seen alone, as retrieval (vance_blind_note_reads_nothing)', async () => {
+    const { grade, items } = await graded('mutant', 'vance_blind_note_reads_nothing');
+    expect(grade.outcome).toBe('FAIL');
+    expect(grade.checks.filter((c) => c.kind === 'gate' && !c.met).map((c) => c.id)).toEqual(['event_seen']);
+    expect(items).toEqual({ 'Patient/pt-0002': 'retrieval' });
   });
 });
 

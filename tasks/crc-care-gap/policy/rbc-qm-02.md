@@ -43,3 +43,6 @@ Give every panel member one status (screening up to date, open gap, excluded, or
 Screening, exclusions and where a patient lives may be recorded as coded data or only in notes, including scanned outside records. A note search matches whole words only, so search for the words a note would use.
 A record's status, dates and notes are on the record itself: an order's or appointment's status, a test's collection and result dates, a care episode's start and end, a medication order's status and the reason it stopped.
 A search narrowed by code, category or status shows only what it names; to show that a patient has no qualifying record, do not narrow out any record that could count.
+
+§8 Arrivals
+Results, corrections and messages can arrive in your queues while you work. Before you finish, review anything that arrived after you started. If it changes a decision you already recorded under this protocol, correct that decision (change, hold or stop the order, or send a corrected message) and record why. If it does not change the decision under this protocol, leave the decision in place.

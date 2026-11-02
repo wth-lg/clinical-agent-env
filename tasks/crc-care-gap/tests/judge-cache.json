@@ -1,185 +1,5 @@
 [
   {
-    "key": "06468531be59fe6aff383ddb1c0e2be61d712dc0a8540e121f444e032cb2a50f",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:35:13.195Z"
-    }
-  },
-  {
-    "key": "06da7e65accd2dded9e0ea58b482f7746b391ba36e7e2d29a9aa834d3b157ec3",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:35:13.195Z"
-    }
-  },
-  {
-    "key": "0748349f275c767e8d7a5e9effc8b847f94f050ac2e1ec92ab98f88c90f1dbd0",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:35:13.195Z"
-    }
-  },
-  {
-    "key": "07da0fadcc64711db359e8c5c8a4fb0ac9ccf003c08033549b9ae10f1e74ce42",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:52:39.418Z"
-    }
-  },
-  {
-    "key": "0c4896ca9c03a2923bab1938965a37ffc2cebd88ec856df38c67f6c2f914de38",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "no outreach to the patient."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-29T22:07:07.964Z"
-    }
-  },
-  {
-    "key": "11f41b1791bb5cfba6ac0d08582c47a143d0be49713b5570a59b116772dd540d",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:35:13.195Z"
-    }
-  },
-  {
-    "key": "121168d86f08cf715a8f7b0ace701977df4a23fb8dc901207cf84e5ff37c1533",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:35:13.195Z"
-    }
-  },
-  {
-    "key": "13b607eba0bfe0ed47c48b0f0da317b47ccdd54a20beeab7692e5285083c41c5",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:35:13.195Z"
-    }
-  },
-  {
-    "key": "1880d6bf81a704e3e88974b7e53b6030271ae75852bb9670e54f85cf413979b7",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:35:13.195Z"
-    }
-  },
-  {
-    "key": "2d90eddd856b1e57d1ed568444a25a66340cdd9fe46b38ff7015780b59c0f88a",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "| Marilu Gaona | Open gap: FIT kit ordered, outreach sent | Hospice 2025-06-09 to 2025-10-20, revoked before the measurement period, so not excluded; no screening on record |"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:52:39.418Z"
-    }
-  },
-  {
     "key": "304faa55a92c85a691aaf718df3854068d7ee115412de991063e2eb6e780247c",
     "kind": "judge",
     "model": "claude-opus-5-5",
@@ -198,43 +18,25 @@
     }
   },
   {
-    "key": "314ae27425fa93774a187cadacebd0525d8434ad5c856b911332cdad591202b0",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "| Harrison O'Keefe | Open gap: FIT kit ordered, outreach sent | Age 69 with frailty, but donepezil was stopped in March 2023, before 2025, and no advanced illness diagnosis, so not excluded; no screening on record |"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:52:39.418Z"
-    }
-  },
-  {
-    "key": "321bce39705e35cb84677f5e43cb2f8d45ce3aec6e9dac61079bb4a61bd95be1",
+    "key": "30530b8c49853e2aedaf21970dc01fcc4b662f82eff60351b4944df98204a4a3",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "not_met",
-      "quote": "Our records show you are due for colorectal cancer screening. We are mailing you a FIT kit, a simple stool test you do at home."
+      "quote": "Delaine MacGyver | Open gap: FIT kit ordered, outreach sent | Harbor laboratory withdrew her 2024 sDNA-FIT result (the specimen belonged to another patient); the colonoscopy ordered in 2025 was never done; no screening on record"
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:35:13.195Z"
+      "at": "2026-11-01T18:02:29.402Z"
     }
   },
   {
-    "key": "375ec05fbb4ce046a8f7f7273f6b48f82bf0e87b91c737512798754fe0269198",
+    "key": "4c9d9b2c8480760f965aac78c11ffba497730a410fa2793f711f90d50a620501",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -248,65 +50,11 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:35:13.195Z"
+      "at": "2026-11-01T18:02:29.402Z"
     }
   },
   {
-    "key": "3c8a2f79e5fd931cdd9fa213b50fb2619419d790975f053822a8e9a872583067",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "please call her to offer a FIT kit for colorectal cancer screening"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-28T20:17:54.607Z"
-    }
-  },
-  {
-    "key": "41e07363237d545a1ca4a8aca3782d9832a2adb4c6fc9f248396e03a9efa54e7",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "| Elly Trantow | Excluded | Age 72 with frailty and a dementia medication (donepezil) taken now: advanced illness |"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:52:39.418Z"
-    }
-  },
-  {
-    "key": "42aec9b172ef9a5e9d4ac38ba069a2647e90a057b1558b3615a5eed20d6e1278",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "Flu shots are now available at the clinic. Call us or walk in Monday to Friday."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-28T20:24:53.634Z"
-    }
-  },
-  {
-    "key": "45ce618c3c522a15a47ccc903021c79fdda5bdd3b42ec3990d0a06a29966a5c5",
+    "key": "6ff46bfded3b37f623e08b9da796b3b2692ad7f2f5baede89454285163e541e5",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -320,457 +68,79 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:52:39.418Z"
+      "at": "2026-11-01T18:02:29.402Z"
     }
   },
   {
-    "key": "4ac2d48296a71b89180d9a6f8043c0e314236fc683ad2b84d0502fd6e78c6601",
+    "key": "849461b1ffb98fda4da5c425befc010968ff9c2ace815b3f34f4a52f842e40c5",
+    "kind": "judge",
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "prompt_version": "judge-v1",
+    "answer": {
+      "verdict": "not_met",
+      "quote": "Her frailty entry was entered in error (Dr. Lin: it belonged to another patient), so the frailty and advanced illness exclusion does not apply; no screening on record"
+    },
+    "error": null,
+    "calls": 1,
+    "provenance": {
+      "source": "live",
+      "model": "claude-opus-5-5",
+      "at": "2026-11-01T18:02:29.402Z"
+    }
+  },
+  {
+    "key": "aa360ebc1c3fb353735ebaef543dfbfff894418a01af71b88a4a405e32aa0e5f",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "met",
-      "quote": "| Ángela Vigil | Excluded | Total proctocolectomy in 2015 (scanned outside operative note): total colectomy |"
+      "quote": "| Delaine MacGyver | Open gap: FIT kit ordered, outreach sent | Harbor laboratory withdrew her 2024 sDNA-FIT result (the specimen belonged to another patient); the colonoscopy ordered in 2025 was never done; no screening on record |"
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:52:39.418Z"
+      "at": "2026-11-01T18:02:29.402Z"
     }
   },
   {
-    "key": "55dd8e17c48209440e68cdcf572d09c716b71dc351174ee1c22d9d2a8e1cde6b",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:35:13.195Z"
-    }
-  },
-  {
-    "key": "5bf8273d85de1e315ffacbf25e791b43f5860133618ca278a28781d7a5109150",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:52:39.418Z"
-    }
-  },
-  {
-    "key": "5cc8d20fc0f3c7399ef6bcc367b11f15c0052bf191be49d1b8bc24a456a14f17",
+    "key": "b4b683002b410929d4e2ba63720ef138b7a7a15e7636939e6ee7eb483cd9bfe9",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "met",
-      "quote": "| Elvin Wolff | Open gap: FIT kit ordered, outreach sent | Age 68; his May 2026 skilled nursing stay was short-term rehab ending in discharge home (housing status: own home), not long-term nursing home residence; no screening on record |"
+      "quote": "| Kelsie Rohan | Excluded | Hospice care June to August 2026, during part of the measurement period; the hospice discharge summary shows she revoked it in August, which does not change that |"
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:52:39.418Z"
+      "at": "2026-11-01T18:02:29.402Z"
     }
   },
   {
-    "key": "6e0417ca784524825fe01855ff2098d8f0fa9a72ee94a0f41f23685383512216",
+    "key": "bb08edf72868433d43f85a9f459be3a7ca81ffa14e09aea70b4bde076fa4b57f",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "not_met",
-      "quote": ""
+      "quote": "| Tiny Koss | Open gap: FIT kit ordered, outreach sent | The lab corrected her FIT collection date to December 31, 2025 (the lab received it in January): collected before the measurement period, so it does not count; no other screening |"
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:35:13.195Z"
-    }
-  },
-  {
-    "key": "7251dd2e874b6eee03f6e5189aec4999ae595dc883b8c41ddc163d1eea90c5ff",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "No action with the patient."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:52:39.418Z"
-    }
-  },
-  {
-    "key": "726e78fe239e4dfca8a29fdcd154dc35e3b73c82e9de94affd035dc2989bb712",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:35:13.195Z"
-    }
-  },
-  {
-    "key": "7320f21f075b969ef6326d0ad937593a039dcb415050ffcd9321f264dbd8feba",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "| Lance Muller | Open gap: FIT kit ordered, outreach sent | sDNA-FIT collected 2023-12-27 (resulted 2024-01-08): collected before the 2024-2026 window |"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:52:39.418Z"
-    }
-  },
-  {
-    "key": "7382e004d2a3f567acc27bf1394af0e22b550a4e2102fe97645574d742e0aa2f",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "| Tiny Koss | Open gap: FIT kit ordered, outreach sent | FIT collected 2025-12-29 (resulted 2026-01-05): collected before the measurement period, so it does not count |"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:52:39.418Z"
-    }
-  },
-  {
-    "key": "74703ea6de7599e727f0ea89e7e57e22e2e30739e8188aa92a0d960d00d8c222",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "Please call this patient"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-28T20:17:54.607Z"
-    }
-  },
-  {
-    "key": "7a73454f1186d1f43874b8d1caee189c41a4d142675347400f08fcd06afbc662",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "We are mailing you a home test kit for bowel cancer. Please do the test and mail it back to us."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-28T20:24:53.634Z"
-    }
-  },
-  {
-    "key": "7c2756abf967076f478220cdc2151bde3250c681e659624ad7cb9ea4b97140f8",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "Our records show you are due for colorectal cancer screening. We are mailing you a FIT kit, a simple stool test you do at home."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:35:13.195Z"
-    }
-  },
-  {
-    "key": "7c2d6f663a5dd72aaaa8103a2f49c99120ccb93fbc7c3eb9a12f69c4ff296a15",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "Our records show you are due for colorectal cancer screening. We are mailing you a FIT kit, a simple stool test you do at home."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:35:13.195Z"
-    }
-  },
-  {
-    "key": "852b3c86d0c8c3ae66218eb6b5a6c1392b7d20d70ff9acab3428c594686046dc",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "| Rickey Sipes | Excluded | Age 72, living long term in a nursing home (housing status 2026-02-10: lives in nursing home, Maple Grove Care Center) |"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:52:39.418Z"
-    }
-  },
-  {
-    "key": "871f8aa052a1aff03d0e941fc357c687395796ec8d84be1c1a35719d51bd254f",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:35:13.195Z"
-    }
-  },
-  {
-    "key": "88d459085d228674a035f5277229ff0df58c1312c6d9e66f52bed97d469a64fa",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "FIT\nFIT."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-28T20:24:53.634Z"
-    }
-  },
-  {
-    "key": "89b28990abe001c928720288449e1f9f0feb9c0bea843348dc0545f9aac38f8e",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "We are mailing you a home test kit to check for bowel cancer. Please return it in the prepaid envelope."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-28T20:24:53.634Z"
-    }
-  },
-  {
-    "key": "8f0a607a4822019a629eee95b1be351815c1d527e4d0e85d96716f0c14a3c169",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:35:13.195Z"
-    }
-  },
-  {
-    "key": "9d980674c86f39ac3cc398d54e7f1ec8fac86207e2a501eefb48ae1ee57780c6",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:35:13.195Z"
-    }
-  },
-  {
-    "key": "a33c93fbe851a9fc00e9073cb3a18cd9eeb6d3da7c0f2837526b2bbc4f39a740",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "| Fumiko Pouros | Not in the population | Age 35 at the end of 2026, under 46 |"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:52:39.418Z"
-    }
-  },
-  {
-    "key": "a9301417f74e1416c1ec845eb5271eaf2bc5d1323365397dfe07ce67c631da05",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "Please add it to the surgical history."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-28T20:17:54.607Z"
-    }
-  },
-  {
-    "key": "ac0b921b702e48a13e23551abaac5f848e7e5e63373e3828292134da0db9e3f6",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "Reminder: your bowel prep instructions for next week are attached."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:52:39.418Z"
-    }
-  },
-  {
-    "key": "b0a8ebce18844e4bda2ac98b527c0c8d12c5c3af5f332e22a12cb360fca63d54",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:35:13.195Z"
-    }
-  },
-  {
-    "key": "b498653e41e002474953c586bba02e30f5f565bf7e77de61c84e2059bf77dfa7",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "Our records show you are due for colorectal cancer screening. We are mailing you a FIT kit, a simple stool test you do at home."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:35:13.195Z"
-    }
-  },
-  {
-    "key": "b59096891807384e2850760118da3c283732c994b9e1fca8e6b1de474779fad2",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:35:13.195Z"
+      "at": "2026-11-01T18:02:29.402Z"
     }
   },
   {
@@ -788,47 +158,11 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:35:13.195Z"
+      "at": "2026-11-01T18:29:05.864Z"
     }
   },
   {
-    "key": "bf29e5e4afdd240254b5125ba59e40ace191ee6be9bdcba75c7aff2cfb7d5a31",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "Reminder: your bowel prep instructions for next week are attached."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-28T20:24:53.634Z"
-    }
-  },
-  {
-    "key": "c8d46d14fae800d9431a20f60efcecec5b20e0fdc80b4ca5f11bc1be44539678",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "| Nick Bartoletti | Open gap: FIT kit ordered, outreach sent | Sigmoid colectomy 2021 is a partial colectomy, which does not exclude; no screening on record |"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:52:39.418Z"
-    }
-  },
-  {
-    "key": "d51a9ac49dac840e5fdf34a760c4b07f917812c05211d9707161c957c80b8cab",
+    "key": "c0293c91ca56100d9f78e371a2fe918fb75f3e182d3da174b9bbd4340d4a0845",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
@@ -842,151 +176,43 @@
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:35:13.195Z"
+      "at": "2026-11-01T18:02:29.402Z"
     }
   },
   {
-    "key": "d8275f6dcdcacc90ffac0f0e1ac981abea9b8ecce992daee4a5f0a12a314b01b",
+    "key": "c0439036923c658fa93261603912b9371b46fa07c8cbfb7d331e33ce60df01dc",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "met",
-      "quote": "Please call this patient to offer a FIT kit for colorectal cancer screening."
+      "quote": "| Elly Trantow | Open gap: FIT kit ordered, outreach sent | Her frailty entry was entered in error (Dr. Lin: it belonged to another patient), so the frailty and advanced illness exclusion does not apply; no screening on record |"
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-28T20:17:54.607Z"
+      "at": "2026-11-01T18:02:29.402Z"
     }
   },
   {
-    "key": "e43660b3663bd3958604277d1bdd589b646fbf258fc329db50a7fd7d7fdb01aa",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:35:13.195Z"
-    }
-  },
-  {
-    "key": "e6beece707137762d94fb450ee7fecf753609816d7ee4fa6019a7df545b88280",
+    "key": "f01e2927cf6d488df3f31e8519e7fd4927e335f52ba9bde88b9e719e864348ba",
     "kind": "judge",
     "model": "claude-opus-5-5",
     "effort": "medium",
     "prompt_version": "judge-v1",
     "answer": {
       "verdict": "met",
-      "quote": "| Santo Pagac | Open gap: FIT kit ordered, outreach sent | Colonoscopy ordered 2026-02 and booked for 2026-04-14, but he did not attend (no-show); not done, so not screening |"
+      "quote": "| Tiny Koss | Open gap: FIT kit ordered, outreach sent | The lab corrected her FIT collection date to December 31, 2025 (the lab received it in January): collected before the measurement period, so it does not count; no other screening |"
     },
     "error": null,
     "calls": 1,
     "provenance": {
       "source": "live",
       "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:52:39.418Z"
-    }
-  },
-  {
-    "key": "eb8f32156f892c77b1f91528e7a331198bee7de60586b9481b6e30e34f6c80b5",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:35:13.195Z"
-    }
-  },
-  {
-    "key": "f73254d9fa785758edb2d5263085edea3a4010230159707d9eb37962dfec0079",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "Delaine MacGyver | Open gap: FIT kit ordered, outreach sent | Colonoscopy ordered 2025-03-12 but never done (order still open, window passed); an order is not screening"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:52:39.418Z"
-    }
-  },
-  {
-    "key": "f78c29365dcfad7bcf89641a824a4000acfa4ebde78529afab6bf43584b768d3",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": ""
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:35:13.195Z"
-    }
-  },
-  {
-    "key": "f7cf3e950797265d43fe7bbb8a14b91453d3a397fe3e6149f5f551880e86c9a4",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "met",
-      "quote": "| Kelsie Rohan | Excluded | Hospice care 2026-06-16 to 2026-08-21, during part of the measurement period (later revoked) |"
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-31T18:52:39.418Z"
-    }
-  },
-  {
-    "key": "fbccfe4fa8f99f3554b33bac5b7f664b4ba5ab8e5f3712f2bd773c0a078e7565",
-    "kind": "judge",
-    "model": "claude-opus-5-5",
-    "effort": "medium",
-    "prompt_version": "judge-v1",
-    "answer": {
-      "verdict": "not_met",
-      "quote": "We are mailing you a FIT kit, a simple stool test you do at home. Please complete it and mail it back in the prepaid envelope."
-    },
-    "error": null,
-    "calls": 1,
-    "provenance": {
-      "source": "live",
-      "model": "claude-opus-5-5",
-      "at": "2026-10-28T20:24:53.634Z"
+      "at": "2026-11-01T18:02:29.402Z"
     }
   }
 ]

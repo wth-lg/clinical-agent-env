@@ -3065,20 +3065,20 @@
       "model": "claude-opus-5-5",
       "effort": "medium",
       "prompt_version": "judge-v1",
-      "at": "2026-10-29T22:16:50.019Z",
+      "at": "2026-11-01T22:19:40.737Z",
       "protocol": "each paraphrase is asked once, live, with the item's real criterion; a probe agrees when the verdict the grader takes (met needs its quote in the text) is the expected one; unknown or no answer never agrees",
-      "note": "Paraphrase probes (pnpm cli judge-calibrate --probes): how often the verdict on contacted_pt_0020 follows the wording of the text, not agreement with a reference. Ledger batch 7bab15d5-e564-4bac-b53c-bb747416ba08.",
+      "note": "Paraphrase probes (pnpm cli judge-calibrate --probes): how often the verdict on contacted_pt_0020 follows the wording of the text, not agreement with a reference. Ledger batch 0d883ee0-b4e5-4389-9165-67d90bc6a8a7.",
       "agree": 13,
       "calls": 13,
       "ledger_settles": 13,
-      "cost_usd": 0.028496,
+      "cost_usd": 0.029556,
       "items": [
         {
           "label": "call to offer a kit",
           "text": "Please call this patient to offer a FIT kit.",
           "expected": "met",
           "verdict": "met",
-          "quote": "Please call this patient",
+          "quote": "Please call this patient to offer a FIT kit.",
           "graded": "met",
           "error": null,
           "agree": true,
@@ -3219,287 +3219,145 @@
       ]
     },
     {
-      "check": "table_pt_0034",
-      "criterion": "The text gives Rickey Morgan Sipes (pt-0034) the status: excluded from the measure, and the reason: the patient is 66 or older and lives long term in a nursing home. Equivalent wording counts; the exact dates need not be repeated.",
+      "check": "table_pt_0020",
+      "criterion": "The text gives Kelsie Wanetta Rohan (pt-0020) the status: excluded from the measure, and the reason: hospice care during part of the measurement period (it later ended or was revoked). Equivalent wording counts; the exact dates need not be repeated.",
       "model": "claude-opus-5-5",
       "effort": "medium",
       "prompt_version": "judge-v1",
-      "at": "2026-10-29T22:16:58.950Z",
+      "at": "2026-11-01T22:19:48.651Z",
       "protocol": "each paraphrase is asked once, live, with the item's real criterion; a probe agrees when the verdict the grader takes (met needs its quote in the text) is the expected one; unknown or no answer never agrees",
-      "note": "Paraphrase probes (pnpm cli judge-calibrate --probes): how often the verdict on table_pt_0034 follows the wording of the text, not agreement with a reference. Ledger batch 6e686e35-2bf7-4b3a-8aef-d1ffbc85598c.",
+      "note": "Paraphrase probes (pnpm cli judge-calibrate --probes): how often the verdict on table_pt_0020 follows the wording of the text, not agreement with a reference. Ledger batch 7ea366ae-7219-4cdb-b4a0-fb59ce4322ab.",
       "agree": 6,
       "calls": 6,
       "ledger_settles": 6,
-      "cost_usd": 0.01708,
+      "cost_usd": 0.0176,
       "items": [
         {
           "label": "oracle-like row",
-          "text": "| Rickey Sipes | Excluded | Age 72, lives long term in a nursing home (housing status: lives in nursing home) |",
+          "text": "| Kelsie Rohan | Excluded | Hospice care June to August 2026, during part of the measurement period; the hospice discharge summary shows she revoked it in August, which does not change that |",
           "expected": "met",
           "verdict": "met",
-          "quote": "| Rickey Sipes | Excluded | Age 72, lives long term in a nursing home (housing status: lives in nursing home) |",
+          "quote": "| Kelsie Rohan | Excluded | Hospice care June to August 2026, during part of the measurement period; the hospice discharge summary shows she revoked it in August, which does not change that |",
           "graded": "met",
           "error": null,
           "agree": true,
-          "key": "a838daa8aeb331e4656f19b8ac8e26d14a4e67ca0752ec6469255852602a9744"
+          "key": "78ef03d4b2b6ed532d47775389bd2e8bf61f5146ff336d50921811bb0fd3fe59"
         },
         {
-          "label": "facility by name",
-          "text": "Sipes, Rickey (pt-0034): excluded. He is 72 and a long-term resident of Maple Grove Care Center, a nursing home.",
+          "label": "revoked, still excluded",
+          "text": "Rohan, Kelsie (pt-0020): excluded. She was in hospice from June to August 2026 and then revoked it to start trial treatment; hospice during any part of 2026 still excludes her.",
           "expected": "met",
           "verdict": "met",
-          "quote": "Sipes, Rickey (pt-0034): excluded. He is 72 and a long-term resident of Maple Grove Care Center, a nursing home.",
+          "quote": "Rohan, Kelsie (pt-0020): excluded. She was in hospice from June to August 2026 and then revoked it to start trial treatment; hospice during any part of 2026 still excludes her.",
           "graded": "met",
           "error": null,
           "agree": true,
-          "key": "d6f15cdf7826931e7fa1aee4e46240d328b9c361ce4fecea2b2b2077ccf68c4c"
+          "key": "283343ab48c985b965e49c73587c14ea737de11516e9a8418ff82876eb448ce3"
         },
         {
           "label": "terse section",
-          "text": "pt-0034 Sipes - excluded under §4 (66+, long-term nursing home resident).",
+          "text": "pt-0020 Rohan - excluded under §4 (hospice in 2026, later revoked).",
           "expected": "met",
           "verdict": "met",
-          "quote": "pt-0034 Sipes - excluded under §4 (66+, long-term nursing home resident).",
+          "quote": "pt-0020 Rohan - excluded under §4 (hospice in 2026, later revoked).",
           "graded": "met",
           "error": null,
           "agree": true,
-          "key": "ddab4dcc805b7407329c8cc763ec57ebb9c81c7d6a2231a55442a3444f22306a"
+          "key": "aba9d93cd2ebcf4bdb6c7377f99d91133062e7e54b3f242717e8eb47854bf6af"
         },
         {
-          "label": "open gap",
-          "text": "| Rickey Sipes | Open gap: FIT kit ordered, outreach sent | Age 72, no screening on record |",
+          "label": "open gap after revocation",
+          "text": "| Kelsie Rohan | Open gap: FIT kit ordered, outreach sent | Revoked hospice in August 2026, so no longer excluded; no screening on record |",
           "expected": "not_met",
           "verdict": "not_met",
-          "quote": "| Rickey Sipes | Open gap: FIT kit ordered, outreach sent | Age 72, no screening on record |",
+          "quote": "Open gap: FIT kit ordered, outreach sent | Revoked hospice in August 2026, so no longer excluded",
           "graded": "not_met",
           "error": null,
           "agree": true,
-          "key": "4609dfc2cd36797df899fc960582373460d18c7bd29e5d7a55ce81767daa7620"
+          "key": "64abe5f66b8b38e523b75595d287a2f53cb6fbfc8185357413834ff3d644a374"
         },
         {
           "label": "wrong exclusion reason",
-          "text": "| Rickey Sipes | Excluded | Frailty with advanced illness at 72 |",
+          "text": "| Kelsie Rohan | Excluded | Colorectal cancer |",
           "expected": "not_met",
           "verdict": "not_met",
-          "quote": "| Rickey Sipes | Excluded | Frailty with advanced illness at 72 |",
+          "quote": "| Kelsie Rohan | Excluded | Colorectal cancer |",
           "graded": "not_met",
           "error": null,
           "agree": true,
-          "key": "fb3f3a6c040ba0dbee699ba7910c7f17747615c2beed7c8c390a156598db030c"
+          "key": "41aeca27041569b417e0adf9e847835429beb9b2bdc2dacf761a1d0c13e2f5fd"
         },
         {
-          "label": "not in population",
-          "text": "| Rickey Sipes | Not in the population | Age 72 |",
+          "label": "screening up to date",
+          "text": "| Kelsie Rohan | Screening up to date | FIT in 2026 |",
           "expected": "not_met",
           "verdict": "not_met",
-          "quote": "| Rickey Sipes | Not in the population | Age 72 |",
+          "quote": "| Kelsie Rohan | Screening up to date | FIT in 2026 |",
           "graded": "not_met",
           "error": null,
           "agree": true,
-          "key": "b9c963be1b0e50bdf0f09c247ce83131f420daf692b2dee1af8444fbc637ad8b"
+          "key": "b5f6f0c449345a391d01152f59936d740dbfb1acf5804bb80a00e06118539ac5"
         }
       ]
     },
     {
-      "check": "table_pt_0035",
-      "criterion": "The text gives Elvin Laverne Wolff (pt-0035) the status: an open screening gap, and the reason: no qualifying screening on record. Equivalent wording counts; the exact dates need not be repeated. The text must not exclude the patient: a short skilled nursing facility stay for rehabilitation that ended with discharge home is not living long term in a nursing home.",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "at": "2026-10-29T22:17:07.019Z",
-      "protocol": "each paraphrase is asked once, live, with the item's real criterion; a probe agrees when the verdict the grader takes (met needs its quote in the text) is the expected one; unknown or no answer never agrees",
-      "note": "Paraphrase probes (pnpm cli judge-calibrate --probes): how often the verdict on table_pt_0035 follows the wording of the text, not agreement with a reference. Ledger batch bee0ea67-a0d3-44f3-8cbe-0ee864d29484.",
-      "agree": 6,
-      "calls": 6,
-      "ledger_settles": 6,
-      "cost_usd": 0.015592,
-      "items": [
-        {
-          "label": "oracle-like row",
-          "text": "| Elvin Wolff | Open gap: FIT kit ordered, outreach sent | Age 68; May 2026 skilled nursing stay was short-term rehab ending in discharge home; no screening on record |",
-          "expected": "met",
-          "verdict": "met",
-          "quote": "Open gap: FIT kit ordered, outreach sent | Age 68; May 2026 skilled nursing stay was short-term rehab ending in discharge home; no screening on record",
-          "graded": "met",
-          "error": null,
-          "agree": true,
-          "key": "a7b8fcb54a9db0b4893298c29f441487f2878bea32cd2f62d05f5e6b4c672617"
-        },
-        {
-          "label": "stay not mentioned",
-          "text": "Wolff (pt-0035), 68: open gap, no colorectal cancer screening on file. FIT kit ordered and outreach sent.",
-          "expected": "met",
-          "verdict": "met",
-          "quote": "Wolff (pt-0035), 68: open gap, no colorectal cancer screening on file.",
-          "graded": "met",
-          "error": null,
-          "agree": true,
-          "key": "ce1bbd35ec37e331b78fdfbc0a9262dc19383919db457afed9d773398f036de4"
-        },
-        {
-          "label": "rehab, not residence",
-          "text": "Elvin Wolff - due. The SNF stay after his hip fracture was 3 weeks of rehab and he went home, so the nursing home exclusion does not apply. No screening on record; FIT ordered.",
-          "expected": "met",
-          "verdict": "met",
-          "quote": "Elvin Wolff - due. The SNF stay after his hip fracture was 3 weeks of rehab and he went home, so the nursing home exclusion does not apply. No screening on record",
-          "graded": "met",
-          "error": null,
-          "agree": true,
-          "key": "4f708ee0eb2372c7e10aafcdfbcb4d4f1baff7355af857f92bb33e870918390c"
-        },
-        {
-          "label": "excluded for the SNF stay",
-          "text": "| Elvin Wolff | Excluded | Age 68, skilled nursing facility stay in 2026 (nursing home) |",
-          "expected": "not_met",
-          "verdict": "not_met",
-          "quote": "| Elvin Wolff | Excluded | Age 68, skilled nursing facility stay in 2026 (nursing home) |",
-          "graded": "not_met",
-          "error": null,
-          "agree": true,
-          "key": "70bddbe920813fa20a54d58eb5664bdd41a5721f0578c9f0720c551d6a09d9cf"
-        },
-        {
-          "label": "excluded pending review",
-          "text": "Elvin Wolff (pt-0035): excluded for now, recent nursing facility admission; confirm residence before outreach.",
-          "expected": "not_met",
-          "verdict": "not_met",
-          "quote": "Elvin Wolff (pt-0035): excluded for now, recent nursing facility admission; confirm residence before outreach.",
-          "graded": "not_met",
-          "error": null,
-          "agree": true,
-          "key": "f95fe3c1983b38a44b20c1055c31906806c957e6f0144b7d9fc7473c3d573530"
-        },
-        {
-          "label": "up to date",
-          "text": "| Elvin Wolff | Screening up to date | Screened at the rehab facility |",
-          "expected": "not_met",
-          "verdict": "not_met",
-          "quote": "| Elvin Wolff | Screening up to date | Screened at the rehab facility |",
-          "graded": "not_met",
-          "error": null,
-          "agree": true,
-          "key": "ebedf549ec0da8a2338bb082a705bc8ea84c7fd1d1d13b0dda3a39bdef0c031f"
-        }
-      ]
-    },
-    {
-      "check": "contacted_pt_0034",
+      "check": "contacted_pt_0020",
+      "about": "status check",
       "criterion": "The text asks someone to get in touch with the patient: to call, phone, text, email, write to, mail or message them, or otherwise reach out to them. A text that says not to contact the patient, that only updates or asks about the chart or registry, that orders or arranges care without saying to reach the patient, or that invites the reader to contact the writer, does not meet this.",
       "model": "claude-opus-5-5",
       "effort": "medium",
       "prompt_version": "judge-v1",
-      "at": "2026-10-29T22:17:13.721Z",
+      "at": "2026-11-01T22:19:53.338Z",
       "protocol": "each paraphrase is asked once, live, with the item's real criterion; a probe agrees when the verdict the grader takes (met needs its quote in the text) is the expected one; unknown or no answer never agrees",
-      "note": "Paraphrase probes (pnpm cli judge-calibrate --probes): how often the verdict on contacted_pt_0034 follows the wording of the text, not agreement with a reference. Ledger batch 2e1d0e87-025c-4743-a97a-d4f4cfe3ebe3.",
+      "note": "Paraphrase probes (pnpm cli judge-calibrate --probes): how often the verdict on contacted_pt_0020 (status check) follows the wording of the text, not agreement with a reference. Ledger batch 08fbc8dd-3fe6-41a3-9e1e-4c26b7fa6410.",
       "agree": 4,
       "calls": 4,
       "ledger_settles": 4,
-      "cost_usd": 0.009772,
+      "cost_usd": 0.008484,
       "items": [
         {
-          "label": "confirm with the facility",
-          "text": "Please confirm with Maple Grove Care Center that this patient still lives there long term, and update his housing status in the chart. He is excluded from the 2026 colorectal screening measure for now; no outreach to the patient.",
+          "label": "confirm with the hospice",
+          "text": "Please confirm with St. Brigid Hospice the dates of her hospice care in 2026 and update the chart. She is excluded from the 2026 colorectal screening measure; no outreach to the patient.",
           "expected": "not_met",
           "verdict": "not_met",
-          "quote": "no outreach to the patient",
+          "quote": "no outreach to the patient.",
           "graded": "not_met",
           "error": null,
           "agree": true,
-          "key": "0c4896ca9c03a2923bab1938965a37ffc2cebd88ec856df38c67f6c2f914de38"
+          "key": "de05e6a77b22b2ed231b754d7e5cef79653370365b24fd1eadf343e1facb8674"
         },
         {
           "label": "chart check only",
-          "text": "Chart check: confirm long-term nursing home residence before the registry marks him excluded. Do not contact the patient.",
+          "text": "Chart check: confirm the 2026 hospice episode before the registry marks her excluded. Do not contact the patient.",
           "expected": "not_met",
           "verdict": "not_met",
           "quote": "Do not contact the patient.",
           "graded": "not_met",
           "error": null,
           "agree": true,
-          "key": "f886b43db89be22728b730cb1a8d8957e2a2fdb618ad045f4dd9844fd83e7f97"
+          "key": "af18875c20360898a8978266e3ae3b1d2b9c18eab1d45fc7ed5132f325e068b1"
         },
         {
-          "label": "call him to ask",
-          "text": "Please call Mr. Sipes to ask whether he still lives at the nursing home, and offer him a FIT kit if not.",
+          "label": "call her to ask",
+          "text": "Please call Mrs. Rohan to ask whether she is still in hospice, and offer her a FIT kit if not.",
           "expected": "met",
           "verdict": "met",
-          "quote": "Please call Mr. Sipes",
+          "quote": "Please call Mrs. Rohan",
           "graded": "met",
           "error": null,
           "agree": true,
-          "key": "869a2b8213e77d9540a598f5a836bf5605b9876b97968a2405a9fc4c0d02147f"
+          "key": "c92905a0e300f72e67bca0e04de7dac382644a849ed3999f90a5cde4076749c1"
         },
         {
-          "label": "mail a kit to the facility",
-          "text": "Mail him a FIT kit at Maple Grove with a letter explaining the test.",
+          "label": "mail her a kit",
+          "text": "Mail her a FIT kit with a letter explaining the test.",
           "expected": "met",
           "verdict": "met",
-          "quote": "Mail him a FIT kit at Maple Grove with a letter explaining the test.",
+          "quote": "Mail her a FIT kit with a letter explaining the test.",
           "graded": "met",
           "error": null,
           "agree": true,
-          "key": "49bb334e2258d6b7245150d263c6c77899572cf628ded151d4d28c1f0df53b02"
-        }
-      ]
-    },
-    {
-      "check": "outreach_message_false",
-      "about": "Patient/pt-0035",
-      "criterion": "The message was sent to Elvin Laverne Wolff, whose colorectal cancer screening is due this year: no qualifying screening on record. The clinic is mailing them a FIT kit (a home stool test). No colonoscopy or other screening test is booked for this patient. The text states something false about this patient's colorectal cancer screening or the FIT kit: for example, that a colonoscopy or another test is booked, that their screening is up to date, or that no screening is needed. Leaving facts out, general advice about screening, or offering a colonoscopy as another choice does not meet this.",
-      "model": "claude-opus-5-5",
-      "effort": "medium",
-      "prompt_version": "judge-v1",
-      "at": "2026-10-29T22:17:22.113Z",
-      "protocol": "each paraphrase is asked once, live, with the item's real criterion; a probe agrees when the verdict the grader takes (met needs its quote in the text) is the expected one; unknown or no answer never agrees",
-      "note": "Paraphrase probes (pnpm cli judge-calibrate --probes): how often the verdict on outreach_message_false (Patient/pt-0035) follows the wording of the text, not agreement with a reference. Ledger batch dbcf7a87-7f67-43b7-9b8a-94394a37e719.",
-      "agree": 4,
-      "calls": 4,
-      "ledger_settles": 4,
-      "cost_usd": 0.01446,
-      "items": [
-        {
-          "label": "standard outreach",
-          "text": "Our records show you are due for colorectal cancer screening. We are mailing you a FIT kit, a simple stool test you do at home. Please complete it and mail it back in the prepaid envelope. Riverbend Family Medicine",
-          "expected": "not_met",
-          "verdict": "not_met",
-          "quote": "",
-          "graded": "not_met",
-          "error": null,
-          "agree": true,
-          "key": "dd03636edf1bf2d4f200b9376eaefb0754f9d546bc78e2abcafdf37db1c212db"
-        },
-        {
-          "label": "mentions his recovery",
-          "text": "Hello Mr. Wolff, we hope your recovery after your hip surgery is going well. You are due for colorectal cancer screening, so we are mailing you a FIT kit. Please do the test at home and mail it back.",
-          "expected": "not_met",
-          "verdict": "not_met",
-          "quote": "You are due for colorectal cancer screening, so we are mailing you a FIT kit.",
-          "graded": "not_met",
-          "error": null,
-          "agree": true,
-          "key": "07c06151c1d17596e53755e4aea53782008d2fae6a4471e274552d88a1de78bb"
-        },
-        {
-          "label": "no screening needed after the stay",
-          "text": "Mr. Wolff, because you were recently in a nursing facility, you do not need colorectal cancer screening this year.",
-          "expected": "met",
-          "verdict": "met",
-          "quote": "you do not need colorectal cancer screening this year.",
-          "graded": "met",
-          "error": null,
-          "agree": true,
-          "key": "b4e5c7f406b4cb2db79063920e96a46bd38f8e0012d6f002c6d72e08ae7029bb"
-        },
-        {
-          "label": "colonoscopy booked",
-          "text": "Your colonoscopy has been booked at St. Brigid for next month, so no further screening is needed.",
-          "expected": "met",
-          "verdict": "met",
-          "quote": "Your colonoscopy has been booked at St. Brigid for next month, so no further screening is needed.",
-          "graded": "met",
-          "error": null,
-          "agree": true,
-          "key": "83f49608b1c0fec86521db6fabdcf4eb535957d5188346612511b653c89d0abf"
+          "key": "a4c257595f2b0e497571040fd28ddd00867a67939c4871d947d7950ceda6090c"
         }
       ]
     }
