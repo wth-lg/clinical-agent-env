@@ -7,25 +7,25 @@
   "api_version": "2026-10-21",
   "trials": 12,
   "task_versions": {
-    "contrast-ct-prep": "3e629bd8adad375e0421237ad7449ca493a430fd6407a68ed1de230e1f13013e",
-    "crc-care-gap": "bb45c7f45cea3cbd028d9f7d566f77f8a1f839fada0e15868d889fb996c88b5c",
-    "discharge-medrec": "f197f45607a3a39843c7cc87f977a0e18653cffe3173007815b665d843fe084a",
+    "contrast-ct-prep": "6347268bc97ff228a010d6c6b20d5360acd63bc4861e650d40206e09409f8b57",
+    "crc-care-gap": "de15ebf824600400de62b1a1727b869c1f9a0396711ea73f31da65ae37ac8168",
+    "discharge-medrec": "886f820e9c38b46d8be61d9d3ab7b755991e97f3be8ab52fd28b43c9447da0dc",
     "message-queue": "8f25501b1ab6c724df306f142f5ace9a01c64444d6741602b5b2e52b19567aed",
     "renal-dose-review": "abf2bdd96bd30e3d3136f658b5573bcfd2a12874f98deccd7c580a84c6f925b1",
     "results-inbox": "c91ce40607ebbe339a331cedec3c887286173ccd71d6c55c8af19385438acaf2"
   },
   "env_versions": {
     "contrast-ct-prep": "37358bc8017034c323b54fe78e991dbe37f16237a541345a037fd2dd47c86e0d",
-    "crc-care-gap": "f8d7b3a163ba538048369f29b6501871c22c8790fc1647b02fe9f80d7866c349",
+    "crc-care-gap": "57ffecf1665eb4a3213596f218f2c388e5a56ed0b509f3aaec54d35eaa19617e",
     "discharge-medrec": "8f1d10277f36f469ad05f1bd9364d2f310a7a3a66811a148f9731db5d5fdd1a8",
     "message-queue": "9b9950b44703a022f11a72954d2ccde46f4090636539f2236afa40a9b06880e9",
     "renal-dose-review": "ddba2bb00979810e3a063d9e776a943501a221124cd4a281109be9f68c87bf1e",
     "results-inbox": "7cf0f61e15298eae4540d3651ecd8078cec9a62b8dfec2ce917fbf2460718a7b"
   },
   "grader_task_versions": {
-    "contrast-ct-prep": "3045621038aab472274587e7f1936db3dd84214cea45aab7d3eee19364e59801",
-    "crc-care-gap": "330b6ed0745c6d14bbb1254c63494c738d1beca41e50cdd2604dec4386e4d510",
-    "discharge-medrec": "16d036ae3d696522ae2a61851bd43c987228022b0c7aff5c6075599f3c848b4a",
+    "contrast-ct-prep": "cb37b8efa963617fb4ebae98ea82bff1819d1ecaf4d7af43fa99d97767589111",
+    "crc-care-gap": "719ab5b2a66ddf08908720e4f6285e44db5e4d9100a67ea93013a18a63dc8841",
+    "discharge-medrec": "ba2e53367675f5bca81b5f73e7c034165325c796eec4a0db4dcf797079e99a74",
     "message-queue": "b87b7fca34fc43c007f593309ad075a8ad692bdec7af5a5872cf0e9b5fde3a23",
     "renal-dose-review": "af7e9d8b147695d53834c6336ab0c6af52229db11abeaba2ecdaaf578ca89eb1",
     "results-inbox": "21e87633b58fccb0103ad9efaefd64079e57ff4f9338e6bc673384a809262d3a"
