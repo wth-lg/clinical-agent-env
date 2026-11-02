@@ -1,9 +1,9 @@
 {
   "trial_id": "run:pilot-4a:contrast-ct-prep/3",
   "task_id": "contrast-ct-prep",
-  "task_version": "73bb62818ead5868f276986d90679b5b47e2cbc73449fafb67d771059faf1e86",
+  "task_version": "0a038dbd757627766684a24c0894967081c05e3fee23664fdf4294c64cb56f4b",
   "env_version": "d4e055f42fa733a8c0a9ddaf92a391add68007efeb81c8fc5c44820d456d8f98",
-  "grader_task_version": "b9f61bcfcf2cf89b62e3b809a1a16e80c9c41301b8cb7c5112dd5c192c913033",
+  "grader_task_version": "bf239a8bc1268ca9d73d5cc5643809cc76668089418483bfc0a8f7444486ecc7",
   "fixture_hash": "0ff730c8b3f414a5186eda9220692b67142e03e3b185fe7c9e476f7ab5b20f80",
   "state_hash": {
     "initial": "0ff730c8b3f414a5186eda9220692b67142e03e3b185fe7c9e476f7ab5b20f80",
