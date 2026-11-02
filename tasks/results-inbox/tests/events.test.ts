@@ -87,6 +87,15 @@ describe('T2 event specs', () => {
     }
   });
 
+  // R38(g): an arrival is seen only when its deciding atoms are. Every T2 arrival is one resource,
+  // its focus, which holds the deciding value; the seen rule (grader.ts seenRule) is exposure of it
+  // after the arrival (a fhir_search row of a note or report is only referenced, a list_inbox row
+  // only points at it) or a snippet that shows its atoms (EVENT_ATOMS). A spec with a second
+  // resource needs a rule for the resource that holds its deciding value, and this test stops it.
+  it('R38(g): every arrival is one resource, its focus, which holds the deciding value', () => {
+    for (const s of SPECS) expect([s.id, s.resources.length]).toEqual([s.id, 1]);
+  });
+
   it("Addendum 2: every trigger is after_write on the item's own patient, whose inbox items every passing route completes", () => {
     for (const s of SPECS) {
       expect(s.trigger.kind, s.id).toBe('after_write');
