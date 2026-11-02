@@ -585,7 +585,7 @@ function firstOrders(ctx: GateCtx) {
 // the order in about, or else the form is wrong (amend_form, as outreach_messages marks it). The
 // lure's member must get no FIT order and no message (kept, §5: none without an open gap); a note
 // or another look at her chart passes.
-const NOTICE = 'DocumentReference/doc-e3-6804';
+const NOTICE = 'DocumentReference/doc-00401';
 // The first step after `at` that saw the arrival of a spec: a read of one of `ids`, or for the
 // faxed notice one shown text that holds its atoms (R29).
 export function arrivalSeenAt(steps: readonly Step[], at: number, ids: readonly string[]): number | null {
