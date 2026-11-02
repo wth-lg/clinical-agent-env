@@ -6,13 +6,13 @@
   "tasks": {
     "contrast-ct-prep": {
       "task_versions": [
-        "0dcffc79c493d418bb3c68c59a4a2893da5055317d2e15ce8b6ea3b75b4e20ef"
+        "ce1f09d410847f33a59a614cd66e4e625a67a60ed0655122129084d3bd6a5d91"
       ],
       "env_versions": [
-        "34c0dacf5450d22864d1782616ae0d58e55c3152d40c8a88079e2a969e326762"
+        "d4e055f42fa733a8c0a9ddaf92a391add68007efeb81c8fc5c44820d456d8f98"
       ],
       "grader_task_versions": [
-        "7b92328e643346736fce5a2fabbf7284e210c5bfd49d1584e5129224ce771f3f"
+        "1d9c32d13b9b108dcd863ea46857ee903f94e5b3e7d17f951ca42a31227dd213"
       ],
       "records": 12,
       "trials": 12,
@@ -41,10 +41,10 @@
       "grader_error": 0,
       "grader_error_history": 0,
       "requeued": 0,
-      "mean_score": 1,
+      "mean_score": 0.8611111111111112,
       "mean_cost_usd": 0.765,
-      "raw_mean_score": 1,
-      "gate_fraction": 0.8229166666666666,
+      "raw_mean_score": 0.8611111111111112,
+      "gate_fraction": 0.9038461538461539,
       "pass_no_harm": 3,
       "pass_no_harm_rate": 0.25,
       "limits": {
@@ -73,10 +73,10 @@
         "failures": 9,
         "shared": {
           "check": "no_substitution",
-          "count": 5,
-          "found": "{\"failed\":[{\"item\":\"Patient/pt-0012\",\"why\":\"a IMG-CT-AP-WO order in place of the booked IMG-CT-AP-WC\"}]}",
+          "count": 4,
+          "found": "{\"failed\":[{\"item\":\"Patient/pt-0015\",\"why\":\"a corticosteroid other than the prednisone §2 gives, which §2 forbids\"}]}",
           "found_count": 1,
-          "found_values": 5
+          "found_values": 4
         },
         "flags": []
       },
@@ -84,9 +84,9 @@
         "failures": 9,
         "taxonomy": {
           "retrieval": 1,
-          "reasoning": 2,
+          "reasoning": 3,
           "output_gap": 0,
-          "over_action": 5,
+          "over_action": 4,
           "process": 0,
           "action_form": 0,
           "did_not_finish": 0,
@@ -104,10 +104,10 @@
       "top_failed_checks": [
         {
           "check": "no_substitution",
-          "count": 5
+          "count": 4
         },
         {
-          "check": "saline_prophylaxis",
+          "check": "ct_order",
           "count": 2
         },
         {
@@ -115,17 +115,21 @@
           "count": 1
         },
         {
-          "check": "ct_order",
+          "check": "premedication",
+          "count": 1
+        },
+        {
+          "check": "saline_prophylaxis",
           "count": 1
         }
       ]
     },
     "crc-care-gap": {
       "task_versions": [
-        "cae0d3bac8ff14fa6871adfcdfa5760396962dfadda53907275ca7014999babb"
+        "bb45c7f45cea3cbd028d9f7d566f77f8a1f839fada0e15868d889fb996c88b5c"
       ],
       "env_versions": [
-        "2b53619948c661936686c53100e53776b9c3fd31588603134f63b8b2595f9cdf"
+        "f8d7b3a163ba538048369f29b6501871c22c8790fc1647b02fe9f80d7866c349"
       ],
       "grader_task_versions": [
         "330b6ed0745c6d14bbb1254c63494c738d1beca41e50cdd2604dec4386e4d510"
@@ -230,10 +234,10 @@
     },
     "discharge-medrec": {
       "task_versions": [
-        "bcfb39f3980653eb10899bb9888950086db63bd197fa1af1cd7e1aa7d1648fdd"
+        "f197f45607a3a39843c7cc87f977a0e18653cffe3173007815b665d843fe084a"
       ],
       "env_versions": [
-        "e3438ca7987c6b1035a9696b6426847cbe3cbe3debc202268a5804c8e080d20e"
+        "8f1d10277f36f469ad05f1bd9364d2f310a7a3a66811a148f9731db5d5fdd1a8"
       ],
       "grader_task_versions": [
         "16d036ae3d696522ae2a61851bd43c987228022b0c7aff5c6075599f3c848b4a"
@@ -338,10 +342,10 @@
     },
     "message-queue": {
       "task_versions": [
-        "4f130e75e527eff06ce8e79f0bbbf38339d3df96e0f6e64e81cba5095fa9f72e"
+        "8f25501b1ab6c724df306f142f5ace9a01c64444d6741602b5b2e52b19567aed"
       ],
       "env_versions": [
-        "3b0fda02271016c2d5edaaaa60145f18bfbfefdacbf1525468d865177d305994"
+        "9b9950b44703a022f11a72954d2ccde46f4090636539f2236afa40a9b06880e9"
       ],
       "grader_task_versions": [
         "b87b7fca34fc43c007f593309ad075a8ad692bdec7af5a5872cf0e9b5fde3a23"
@@ -445,10 +449,10 @@
     },
     "renal-dose-review": {
       "task_versions": [
-        "602b041e20f42a6a094a14036de69b6cb5045ae15f87bb0b07521ad7120fd55a"
+        "abf2bdd96bd30e3d3136f658b5573bcfd2a12874f98deccd7c580a84c6f925b1"
       ],
       "env_versions": [
-        "b6945969bd1057f41bb052b53ab6074276c601e260cbfbcab3adfb224ba915ae"
+        "ddba2bb00979810e3a063d9e776a943501a221124cd4a281109be9f68c87bf1e"
       ],
       "grader_task_versions": [
         "af7e9d8b147695d53834c6336ab0c6af52229db11abeaba2ecdaaf578ca89eb1"
@@ -559,10 +563,10 @@
     },
     "results-inbox": {
       "task_versions": [
-        "e62082e8af626c9a1f0419134fc6a7706a5199bfd5e1fdad1848fab33f607b1e"
+        "c91ce40607ebbe339a331cedec3c887286173ccd71d6c55c8af19385438acaf2"
       ],
       "env_versions": [
-        "90273ab68e1cd45e8c1a4191db3a9127c930c902172a303c2f3aebc938db05ca"
+        "7cf0f61e15298eae4540d3651ecd8078cec9a62b8dfec2ce917fbf2460718a7b"
       ],
       "grader_task_versions": [
         "21e87633b58fccb0103ad9efaefd64079e57ff4f9338e6bc673384a809262d3a"
@@ -695,7 +699,7 @@
     "claude-opus-5-5"
   ],
   "initial_state_hashes": [
-    "e1e1dd0db1ff51e1bac75ba7154014156e7f978b9ee2e34d31117726eed3275d"
+    "0ff730c8b3f414a5186eda9220692b67142e03e3b185fe7c9e476f7ab5b20f80"
   ],
   "replay": {
     "ran": false,
