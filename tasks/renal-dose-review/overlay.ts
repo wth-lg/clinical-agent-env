@@ -768,7 +768,7 @@ Infectious Disease`),
     ];
   },
   // W5-E reserve (inactive unless LEVER names it): Lorraine Whitcombe, 83, 56.5 kg, SCr 0.88: two
-  // criteria, 2.5 mg, and an active itraconazole order (onychomycosis, started 9/29). §2: keep
+  // criteria, 2.5 mg, and an active itraconazole order (onychomycosis, started 10/5). §2: keep
   // 2.5 mg, record the combination in the note, tell the prescriber of the DOAC order.
   'pt-t1-whitcombe': () => {
     const P = 'pt-t1-whitcombe';
@@ -776,14 +776,14 @@ Infectious Disease`),
       ...lastYear(P, 'wh25', '2025-10-02', 0.9, 57.8, [RX.apixaban2_5, 2.5, 'BID']),
       AF(P, 'cond-t1-wh-af', '2016-08-23T10:00:00-04:00'),
       condition(P, 'cond-t1-wh-htn', '38341003', 'Hypertensive disorder, systemic arterial (disorder)', '2008-05-13T10:00:00-04:00'),
-      condition(P, 'cond-t1-wh-onych', '414941008', 'Onychomycosis due to dermatophyte (disorder)', '2026-09-29T11:00:00-04:00'),
-      encounter(P, 'enc-t1-wh-0929', 'AMB', PROBLEM, '2026-09-29T11:00:00-04:00', '2026-09-29T11:30:00-04:00', CLINIC),
-      weight(P, 'obs-t1-wh-wt', '2026-09-29T11:05:00-04:00', 56.5, 'kg', 'enc-t1-wh-0929'),
-      scr(P, 'obs-t1-wh-scr', '2026-09-29T11:15:00-04:00', '2026-09-29T15:20:00-04:00', 0.88, 'enc-t1-wh-0929'),
+      condition(P, 'cond-t1-wh-onych', '414941008', 'Onychomycosis due to dermatophyte (disorder)', '2026-10-05T11:00:00-04:00'),
+      encounter(P, 'enc-t1-wh-1005', 'AMB', PROBLEM, '2026-10-05T11:00:00-04:00', '2026-10-05T11:30:00-04:00', CLINIC),
+      weight(P, 'obs-t1-wh-wt', '2026-10-05T11:05:00-04:00', 56.5, 'kg', 'enc-t1-wh-1005'),
+      scr(P, 'obs-t1-wh-scr', '2026-10-05T11:15:00-04:00', '2026-10-05T15:20:00-04:00', 0.88, 'enc-t1-wh-1005'),
       medication(P, 'mr-t1-wh-doac', RX.apixaban2_5, 2.5, 'BID', '2016-08-23T10:00:00-04:00', NVAF, { requester: REYES }),
-      medication(P, 'mr-t1-wh-itra', RX.itraconazole, 200, 'QD', '2026-09-29T11:20:00-04:00', 'Onychomycosis of toenails, 12 weeks'),
+      medication(P, 'mr-t1-wh-itra', RX.itraconazole, 200, 'QD', '2026-10-05T11:20:00-04:00', 'Onychomycosis of toenails, 12 weeks'),
       medication(P, 'mr-t1-wh-amlodipine', RX.amlodipine, 5, 'QD', '2008-05-13T10:00:00-04:00', 'Hypertension', { requester: REYES }),
-      note(P, 'doc-t1-wh-pn-0929', '2026-09-29T11:35:00-04:00', PROGRESS, 'enc-t1-wh-0929', OKAFOR, CLINIC, `Progress note - Riverbend Family Medicine
+      note(P, 'doc-t1-wh-pn-1005', '2026-10-05T11:35:00-04:00', PROGRESS, 'enc-t1-wh-1005', OKAFOR, CLINIC, `Progress note - Riverbend Family Medicine
 Thickened, discolored toenails for a year; the clippings taken last month grew a dermatophyte. Itraconazole 200 mg daily for 12 weeks started today; liver tests in 6 weeks.
 AF: rate controlled, on apixaban. No bleeding.
 Hypertension: controlled.
