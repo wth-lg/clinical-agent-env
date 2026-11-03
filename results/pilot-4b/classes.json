@@ -4,7 +4,7 @@
   "results/pilot-4b"
  ],
  "grader_versions": [
-  "20"
+  "21"
  ],
  "tasks": {
   "crc-care-gap": {
@@ -210,7 +210,7 @@
     "task_versions": [
      "2b6dd996375d39528cbfc39c0676ddc6116615828e471f1a535e44933a59b181"
     ],
-    "checkout": "bf07043444a04944279a1f5088e5c4ea3e56e075488a370f350a232cd2775d79"
+    "checkout": "adb184d4b232bc2f4bd951af09c3300f1b8e499aef7667dee3cfc2f7fcd55535"
    }
   }
  }
