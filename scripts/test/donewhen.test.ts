@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { LOCAL_PREREQUISITES, NODE_INSTALL_URL, PNPM_INSTALL_URL } from '../../apps/web/src/surface/command.ts';
 import { FINAL_PASS_BAND, FINAL_TRIALS_PER_TASK } from '../../packages/core/cost.ts';
-import { repoRoot, runScript, tempDir, write } from './helpers.ts';
+import { git, repoRoot, runScript, tempDir, write } from './helpers.ts';
 
 const FIXTURES = join(repoRoot, 'scripts/fixtures/donewhen');
 // README-pass.md plus the prerequisites line and both install links. They are added here, not
@@ -24,7 +24,7 @@ const AUDIT_CALL = `audit-check ${FINAL_RUN} --final --json`;
 const freeze = (ids: string[], over: Record<string, Record<string, unknown>> = {}) =>
   JSON.stringify({
     schema_version: 1, trials_per_task: FINAL_TRIALS_PER_TASK, band: FINAL_PASS_BAND,
-    tasks: Object.fromEntries(ids.map((id) => [id, { task_version: `v-${id}`, grader_task_version: `g-${id}`, env_version: `e-${id}`, world_hash: WORLD, oracle_final_hash: '0'.repeat(64), frozen_at: 'a'.repeat(40), regrades: [], ...over[id] }])),
+    tasks: Object.fromEntries(ids.map((id) => [id, { task_version: `v-${id}`, grader_task_version: `g-${id}`, env_version: `e-${id}`, world_hash: WORLD, oracle_final_hash: '0'.repeat(64), frozen_at: { tag: 'freeze-test' }, frozen_from_branch: 'a'.repeat(40), regrades: [], ...over[id] }])),
   });
 
 function makeTask(root: string, id: string, omit: string[] = []) {
@@ -338,11 +338,28 @@ describe('donewhen', () => {
 
   // R40, R37: after the world is rebuilt, a frozen task's env_version moves on main; its records
   // stay valid at the frozen versions and are reproduced at the freeze commit.
-  it('clause 5 still passes when the checkout\'s env_version has moved since the freeze, and names the reproduce commit', () => {
+  it('clause 5 still passes when the checkout\'s env_version has moved since the freeze, and names the reproduce tag; a tag not on the checkout is a warning', () => {
     const line = donewhen(completeRepo(), { ...ALL_STUBS, 'task-hash': 'task-hash-moved' }).clause(5);
     expect(line).toMatch(/^PASS \(5\)/);
-    expect(line).toContain(`historical (env_version moved on this checkout since the freeze, R37): t1 reproduce at ${'a'.repeat(40)}, t2 reproduce at`);
+    expect(line).toContain('warning: freeze tag freeze-test is not on this checkout (the coordinator sets it on the merge commit)');
+    expect(line).toContain('historical (env_version moved on this checkout since the freeze, R37): t1 reproduce at tag freeze-test (not on this checkout yet), t2 reproduce at');
     expect(donewhen(completeRepo(), ALL_STUBS).clause(5)).not.toContain('historical');
+  });
+
+  it('clause 5 resolves the freeze tag to its commit when the checkout has it', () => {
+    const root = completeRepo();
+    git(root, 'init', '-q', '-b', 'main');
+    git(root, 'config', 'user.email', 'test@example.com');
+    git(root, 'config', 'user.name', 'test');
+    git(root, 'config', 'commit.gpgsign', 'false');
+    git(root, 'add', '-A');
+    git(root, 'commit', '-q', '-m', 'freeze');
+    git(root, 'tag', 'freeze-test');
+    const sha = git(root, 'rev-parse', 'HEAD');
+    const line = donewhen(root, { ...ALL_STUBS, 'task-hash': 'task-hash-moved' }).clause(5);
+    expect(line).toMatch(/^PASS \(5\)/);
+    expect(line).not.toContain('warning');
+    expect(line).toContain(`t1 reproduce at tag freeze-test (${sha.slice(0, 12)})`);
   });
 
   it('clause 6 fails on audit-check exit 1, and on a record whose current grade is GRADER_ERROR; a regraded one passes with its history printed', () => {

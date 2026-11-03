@@ -3,11 +3,13 @@
 // directory results/runs/final-1 collects each task's 20 trials as it is frozen. For each frozen
 // task the file pins task_version, grader_task_version, env_version, world_hash and
 // oracle_final_hash (cli/matrix.ts checks the last one on every matrix run at the frozen world),
-// frozen_at (the commit the hashes were read from, the freeze commit's parent; the reproduce
-// commit of the task's final-1 records, R37) and regrades: the only way the grader side moves
-// after the freeze is a grader bug fix with a full offline regrade, recorded there as
-// {grader_version, grader_task_version, task_version, at, reason}; the task's own files never
-// move. trials_per_task and band are written from packages/core/cost.ts FINAL_TRIALS_PER_TASK and
+// frozen_at {tag} (the tag the coordinator puts on the freeze's squash-merge commit on main, the
+// reproduce commit of the task's final-1 records, R37; a branch SHA would not survive the squash,
+// so until the merge the tag may not exist, which scripts/donewhen.ts reports as a warning),
+// frozen_from_branch (the branch commit the hashes were read from, for traceability) and
+// regrades: the only way the grader side moves after the freeze is a grader bug fix with a full
+// offline regrade, recorded there as {grader_version, grader_task_version, task_version, at (a
+// tag or commit), reason}; the task's own files never move. trials_per_task and band are written from packages/core/cost.ts FINAL_TRIALS_PER_TASK and
 // FINAL_PASS_BAND, so scripts/donewhen.ts and this file cannot drift apart.
 // The freeze does not pin the shared world on main (R40): a later world rebuild moves every
 // task's current env_version, frozen ones included, while their final-1 records stay valid at
@@ -27,6 +29,8 @@ import { repoRoot } from './helpers.ts';
 export const TASKS_FINAL = 'results/tasks-final.json';
 const SHA256 = /^[0-9a-f]{64}$/;
 const COMMIT = /^[0-9a-f]{40}$/;
+// A git tag name as this repo writes them.
+const TAG = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 
 export interface FrozenRegrade {
   grader_version: string;
@@ -41,7 +45,8 @@ export interface FrozenTask {
   env_version: string;
   world_hash: string;
   oracle_final_hash: string;
-  frozen_at: string;
+  frozen_at: { tag: string };
+  frozen_from_branch: string;
   regrades: FrozenRegrade[];
 }
 export interface TasksFinal {
@@ -74,13 +79,14 @@ describe('results/tasks-final.json', () => {
     for (const id of frozen) expect(ids, `${id} is frozen but not a task`).toContain(id);
     for (const [id, t] of Object.entries(d.tasks)) {
       for (const k of ['task_version', 'grader_task_version', 'env_version', 'world_hash', 'oracle_final_hash'] as const) expect(t[k], `${id}.${k}`).toMatch(SHA256);
-      expect(t.frozen_at, `${id}.frozen_at`).toMatch(COMMIT);
+      expect(t.frozen_at?.tag, `${id}.frozen_at.tag`).toMatch(TAG);
+      expect(t.frozen_from_branch, `${id}.frozen_from_branch`).toMatch(COMMIT);
       expect(Array.isArray(t.regrades), `${id}.regrades`).toBe(true);
       for (const r of t.regrades) {
         expect(r.grader_version).toMatch(/^\d+$/);
         expect(r.grader_task_version).toMatch(SHA256);
         expect(r.task_version).toMatch(SHA256);
-        expect(r.at).toMatch(COMMIT);
+        expect(r.at, `${id}: a regrade's at is a tag or a commit`).toMatch(TAG);
         expect(r.reason.length).toBeGreaterThan(0);
       }
     }

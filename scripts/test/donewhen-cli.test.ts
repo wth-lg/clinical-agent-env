@@ -20,7 +20,7 @@ const RUN = 'results/runs/final-1';
 
 const freeze = (over: Record<string, Record<string, unknown>> = {}) => JSON.stringify({
   schema_version: 1, trials_per_task: N, band: FINAL_PASS_BAND,
-  tasks: Object.fromEntries(TASKS.map((id) => [id, { task_version: `v-${id}`, grader_task_version: `g-${id}`, env_version: `e-${id}`, world_hash: 'h-initial', oracle_final_hash: '0'.repeat(64), frozen_at: 'a'.repeat(40), regrades: [], ...over[id] }])),
+  tasks: Object.fromEntries(TASKS.map((id) => [id, { task_version: `v-${id}`, grader_task_version: `g-${id}`, env_version: `e-${id}`, world_hash: 'h-initial', oracle_final_hash: '0'.repeat(64), frozen_at: { tag: 'freeze-test' }, frozen_from_branch: 'a'.repeat(40), regrades: [], ...over[id] }])),
 });
 
 function rootWith(fixture: Fixture): string {

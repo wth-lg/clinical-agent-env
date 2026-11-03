@@ -38,7 +38,9 @@
 // task_version and env_version, and every current grade at its frozen grader_task_version (the
 // last regrades entry, else the freeze's); it names the tasks not frozen yet, still summarizes
 // the frozen ones, and, when a frozen task's env_version has moved on this checkout, says the
-// records are historical and names the reproduce commit (frozen_at, R37). Clause (6) runs
+// records are historical and names the reproduce commit: the tag in frozen_at, resolved with git
+// when this checkout has it, else a warning (the coordinator tags the freeze's squash-merge
+// commit after the merge), never a failure (R37). Clause (6) runs
 // `audit-check --final` (R14-33) and `summary --require grader_error=0`, which reads each
 // record's current grade after any offline regrade and prints grader_error_history for
 // disclosure.
@@ -203,9 +205,14 @@ function clause3(): Verdict {
 }
 
 // The per-task freeze, results/tasks-final.json: each frozen task's versions. Read once per run.
-type FrozenTask = { task_version: string; grader_task_version: string; env_version: string; world_hash: string; frozen_at: string; regrades?: Array<{ grader_task_version: string }> };
+type FrozenTask = { task_version: string; grader_task_version: string; env_version: string; world_hash: string; frozen_at: { tag: string }; frozen_from_branch: string; regrades?: Array<{ grader_task_version: string }> };
 type Frozen = { tasks: Record<string, FrozenTask> };
-const STRING_FIELDS = ['task_version', 'grader_task_version', 'env_version', 'world_hash', 'frozen_at'] as const;
+const STRING_FIELDS = ['task_version', 'grader_task_version', 'env_version', 'world_hash', 'frozen_from_branch'] as const;
+// The commit a freeze tag names on this checkout, or null when the tag is not here yet.
+function resolveTag(tag: string): string | null {
+  const r = spawnSync('git', ['rev-parse', '--verify', '--quiet', `refs/tags/${tag}^{commit}`], { cwd: root, encoding: 'utf8' });
+  return r.status === 0 ? r.stdout.trim() : null;
+}
 // The grader_task_version a frozen task's current grades are held to: its last regrade's, else the freeze's.
 const heldGrader = (t: FrozenTask) => t.regrades?.at(-1)?.grader_task_version ?? t.grader_task_version;
 let frozenRead: { frozen: Frozen | null; problem: string } | undefined;
@@ -216,7 +223,10 @@ function readFrozen(): { frozen: Frozen | null; problem: string } {
   try {
     const doc = JSON.parse(readFileSync(file, 'utf8')) as Frozen;
     if (doc === null || typeof doc !== 'object' || doc.tasks === null || typeof doc.tasks !== 'object' || Array.isArray(doc.tasks)) throw new Error('tasks must be an object keyed by task id');
-    for (const [id, t] of Object.entries(doc.tasks)) for (const k of STRING_FIELDS) if (typeof t?.[k] !== 'string') throw new Error(`tasks.${id}.${k} must be a string`);
+    for (const [id, t] of Object.entries(doc.tasks)) {
+      for (const k of STRING_FIELDS) if (typeof t?.[k] !== 'string') throw new Error(`tasks.${id}.${k} must be a string`);
+      if (typeof t?.frozen_at?.tag !== 'string') throw new Error(`tasks.${id}.frozen_at.tag must be a string`);
+    }
     return (frozenRead = { frozen: doc, problem: '' });
   } catch (e) {
     return (frozenRead = { frozen: null, problem: `${TASKS_FINAL}: ${(e as Error).message}` });
@@ -294,14 +304,19 @@ function clause5(): Verdict {
   if (!w.pass) pass = false;
   parts.push(w.evidence);
   // R37, R40: a frozen task whose env_version has moved on this checkout (the world was rebuilt
-  // after its final run) keeps its records; they are reproduced at the freeze commit.
+  // after its final run) keeps its records; they are reproduced at the freeze commit, the tag
+  // in frozen_at. A tag this checkout lacks is a warning (it is set after the merge).
+  const tags = [...new Set(frozenList.map((id) => frozen.tasks[id]!.frozen_at.tag))];
+  const resolved = new Map(tags.map((tag) => [tag, resolveTag(tag)]));
+  const where = (tag: string) => `tag ${tag}${resolved.get(tag) ? ` (${resolved.get(tag)!.slice(0, 12)})` : ' (not on this checkout yet)'}`;
+  for (const tag of tags) if (resolved.get(tag) === null) parts.push(`warning: freeze tag ${tag} is not on this checkout (the coordinator sets it on the merge commit)`);
   if (frozenList.length > 0) {
     const h = cli(['task-hash', '--task', frozenList.join(','), '--json']);
     const now = new Map(((h.json as { tasks?: Array<{ id: string; env_version: string }> } | undefined)?.tasks ?? []).map((t) => [t.id, t.env_version]));
     if (h.exit !== 0 || h.json === undefined) parts.push(describeExit('task-hash', h));
     else {
       const moved = frozenList.filter((id) => now.get(id) !== frozen.tasks[id]!.env_version);
-      if (moved.length > 0) parts.push(`historical (env_version moved on this checkout since the freeze, R37): ${moved.map((id) => `${id} reproduce at ${frozen.tasks[id]!.frozen_at}`).join(', ')}`);
+      if (moved.length > 0) parts.push(`historical (env_version moved on this checkout since the freeze, R37): ${moved.map((id) => `${id} reproduce at ${where(frozen.tasks[id]!.frozen_at.tag)}`).join(', ')}`);
     }
   }
   return { pass, evidence: parts.join('; ') };

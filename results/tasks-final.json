@@ -12,7 +12,10 @@
       "env_version": "dda55417a9303a23ee2e2da0cbcefc8ad82599a2c0da7aca7d29027e1567d6b1",
       "world_hash": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
       "oracle_final_hash": "94dd33348743590b6da40a42d34b9675f09e0214ae11e4d5d2f14d67531c6921",
-      "frozen_at": "32417bfeec46618a945307384938f162b0c8fe8d",
+      "frozen_at": {
+        "tag": "freeze-t3t5"
+      },
+      "frozen_from_branch": "32417bfeec46618a945307384938f162b0c8fe8d",
       "regrades": []
     },
     "crc-care-gap": {
@@ -21,7 +24,10 @@
       "env_version": "df481c520ddc09dbafb0011b40fa583187697768f255d3c80019200604dc38ee",
       "world_hash": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
       "oracle_final_hash": "d4d1744f7d832500789b8b256720b68cc62d50d5999025fdf023bfe4f9dec80b",
-      "frozen_at": "32417bfeec46618a945307384938f162b0c8fe8d",
+      "frozen_at": {
+        "tag": "freeze-t3t5"
+      },
+      "frozen_from_branch": "32417bfeec46618a945307384938f162b0c8fe8d",
       "regrades": []
     }
   }
