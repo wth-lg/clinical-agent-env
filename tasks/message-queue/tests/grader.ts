@@ -203,13 +203,17 @@ export const covers = (x: Item, s: StepSearch | undefined): boolean => s !== und
 // sortStart), the start of a result's effective time, and policy.ts dates a counted result by its
 // effectiveDateTime, so a result in the window sorts inside it; undated rows come last either way
 // and are never counted. Without a sort the order says nothing about the pages not read.
-// R41 (builder-304): the window is also reviewed by exposure, at the first step by which every
-// record of one of the absence's search kinds (its type and category, in a valid status, never one
-// entered in error) that the patient's chart holds in the window, as delivered, had been exposed,
-// whatever the searches, pages or reads that showed them (exposure.ts windowTargets,
-// windowExposed; WINDOW_KINDS, one per search kind, any of which completes the review as any of
-// the searches does). This needs the trial's states (`world`, a GateCtx); without them the
-// search-shape route alone answers. The earlier of the routes.
+// R41 and its addendum (builder-304, builder-305): the window is also reviewed by exposure, at the
+// first step by which every record of one of the absence's search kinds (its type and category, in
+// a valid status, never one entered in error) that the patient's chart held in the window, as of
+// that step, had been exposed, whatever the searches, pages or reads that showed them (exposure.ts
+// windowTargets, windowExposed; WINDOW_KINDS, one per search kind, any of which completes the
+// review as any of the searches does). A record a class B arrival replaced (webb-b2: his 09/28
+// HbA1c withdrawn on his decision write) is judged by its initial state up to the step that fired
+// the arrival and by its final state after it, so it is still owed at that decision; one that
+// first arrives during the trial is not a target, its event gates grade it. This needs the trial's
+// states (`world`, a GateCtx); without them the search-shape route alone answers. The earlier of
+// the routes.
 export const WINDOW_KINDS = (x: Item): WindowKind[] =>
   x.absence === undefined ? [] : x.absence.searches.map((r) => ({ type: r.type, patient: x.patient, categories: [r.category], statuses: x.absence!.statuses, opens: clinicMidnight(x.absence!.since), closes: NOW_MS }));
 export function coveredAt(x: Item, steps: readonly Step[], world?: SeenWorld): number | null {

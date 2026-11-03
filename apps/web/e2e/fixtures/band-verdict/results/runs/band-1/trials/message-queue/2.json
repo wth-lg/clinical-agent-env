@@ -1,9 +1,9 @@
 {
   "trial_id": "run:band-1:message-queue/2",
   "task_id": "message-queue",
-  "task_version": "d37b10457b393d3853c34daa08df94dacdc290de5fd5a863a0f1a89eb49c1501",
+  "task_version": "6e819d88827eed6690f0cef96f3949ab6b3f13a128830f0e87eb9d2a9a38b743",
   "env_version": "fda8f33d60f490de7c235caa3d2886ab01a3fda443574f88b7ff971e42617b84",
-  "grader_task_version": "7c1dbdcec76cfae07c6f5f6aa3b50f0873b5fb3a8f887dcc08805cc2df822a70",
+  "grader_task_version": "140368517d78e7513f23ba545c74dc9f748357d53f6500e0aae784232d6dd36a",
   "fixture_hash": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",
   "state_hash": {
     "initial": "ba0b02069ab423eeb28c4671bc239c4aa1ec45c28911dbb9dd21948c77ca3a86",

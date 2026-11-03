@@ -155,7 +155,7 @@ describe('eie_baseline window by exposure (R41)', () => {
     expect(ids).toContain(w.id);
     expect(ids).not.toContain(x.withdrawn);
     expect(ids.length).toBeGreaterThan(40);
-    for (const t of targets) expect(t.arrived).toBe(null);
+    for (const t of targets) expect(t).toMatchObject({ replaced: null, before: true, after: true });
   });
   it('is reviewed at the step that exposed the last of them; one left unshown is not a review', () => {
     const half = Math.floor(ids.length / 2);

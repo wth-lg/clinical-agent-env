@@ -489,7 +489,7 @@
     "task_versions": [
      "610cb34acd9d0e0ad62bde465b8ad5d2cd8650ec311a401a17a755467bdd8c67"
     ],
-    "checkout": "86cebc4cad1c682aa575e042eb165aab49cf8fae7e533ccf1162b7144758700a"
+    "checkout": "368dc9b36ff1e7d886103fb25b036b493dd69c1e52b12c0c7ad7561b07acf38e"
    }
   },
   "discharge-medrec": {
@@ -1104,7 +1104,7 @@
     "task_versions": [
      "939d32738f4ae3757e28010dfc1e9ab48865853ad41073f564bffd92ee368ea7"
     ],
-    "checkout": "d37b10457b393d3853c34daa08df94dacdc290de5fd5a863a0f1a89eb49c1501"
+    "checkout": "6e819d88827eed6690f0cef96f3949ab6b3f13a128830f0e87eb9d2a9a38b743"
    }
   },
   "renal-dose-review": {
@@ -1678,7 +1678,7 @@
     "task_versions": [
      "cf1347806b9a053cfe7d089b54587ea6ce36c28400bd9ceb0db1a9ee0b29e90d"
     ],
-    "checkout": "b9f48b1fcc2504afc643cab07b3e37e35513cff2a1c4c6a640e9ae74f989d28b"
+    "checkout": "809b31b4fc97120625044407ba1ae3c7d35a027f11c14499d43285fd79e4c4fd"
    }
   }
  }

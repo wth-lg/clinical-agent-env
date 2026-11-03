@@ -209,11 +209,14 @@ export function windowCovers(s: StepSearch, w: Window): boolean {
   );
 }
 // The step at which the trial first reviewed window w whole (R27, R41), or null. By exposure
-// (R41, builder-304; exposure.ts windowTargets, windowExposed): the first step by which every
-// laboratory result of the patient's in a valid status inside the window, on the chart as
-// delivered, had been exposed, by any searches, pages or reads (WINDOW_KIND: the rule's type,
-// category and statuses, no code; a record entered in error is not owed). This needs the trial's
-// states (`world`, a GateCtx); without them the search-shape route alone answers. By search shape,
+// (R41 and its addendum, builder-304 and builder-305; exposure.ts windowTargets, windowExposed):
+// the first step by which every laboratory result of the patient's in a valid status inside the
+// window, on the chart as of that step, had been exposed, by any searches, pages or reads
+// (WINDOW_KIND: the rule's type, category and statuses, no code; a record entered in error is not
+// owed; one a class B arrival replaced is judged by its initial state up to the step that fired
+// the arrival and by its final state after it; one that first arrives during the trial is not a
+// target, its event gates grade it). This needs the trial's states (`world`, a GateCtx); without
+// them the search-shape route alone answers. By search shape,
 // a sufficient route: one page that held every match (whole), or a run of pages from offset 0,
 // each at the previous next_offset, the last with none, whose pages keep the first page's type,
 // filters and order, or nest with it at the same total (exposure.ts runCompleteAt, continuesRun:

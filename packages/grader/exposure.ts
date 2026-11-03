@@ -266,37 +266,44 @@ export function runCompleteAt(steps: readonly Step[], covers: (s: StepSearch) =>
   return best;
 }
 
-// Window completeness by exposure (ruling R41, builder-304; final-1 crc-care-gap G6 and G7). A
-// window review (R27, R31, R36) is complete when every record of the reviewed kind for the patient
-// inside the window was exposed before the decision, by any combination of searches, pages or
-// reads. The page-run rules above (one run, a sorted run past the edge, a narrower query) stay as
-// sufficient routes; a gate takes the earlier of the two. A stop-short, a gap or a narrowed filter
-// that leaves a target record unshown completes nothing here, because that record was never
-// exposed.
+// Window completeness by exposure (ruling R41 and its addendum, builder-304 and builder-305; final-1
+// crc-care-gap G6 and G7; verifier-phase-P17i-R41-216-1 F1, F2). A window review (R27, R31, R36) is
+// complete when every record of the reviewed kind for the patient inside the window was exposed
+// before the decision, by any combination of searches, pages or reads. The page-run rules above
+// (one run, a sorted run past the edge, a narrower query) stay as sufficient routes; a gate takes
+// the earlier of the two. A stop-short, a gap or a narrowed filter that leaves a target record
+// unshown completes nothing here, because that record was never exposed.
 //
-// The target set (windowTargets) is computed from the chart as delivered (SeenWorld.final): the
-// patient's records of the kind's type that carry one of its categories (when it names any) and
-// one of its statuses (when it names any), never one entered in error, and are dated inside the
-// window: the range the record is dated by on its type's date parameter (env search.ts
+// The target set (windowTargets) is evaluated as of the decision step: it holds the initial
+// world's records (SeenWorld.initial) of the kind's type for the patient, each judged by its state
+// when a step ran. A record qualifies when it carries one of the kind's categories (when it names
+// any) and one of its statuses (when it names any), is not entered in error, and is dated inside
+// the window: the range the record is dated by on its type's date parameter (env search.ts
 // dateRangeOf, what date_ge, date_le and _sort read) overlaps [opens, closes], so a Period that
 // began before the window and runs into it counts, as a hospice episode counts for the year; with
 // no window start (opens null) every record of the kind counts, undated ones too. The kind names
 // no codes: the review has to show every record a qualifying one could be among (every
 // laboratory result, every procedure), which is what a code-filtered covering search also lists
-// in full. Each target is present from the start when the initial world holds it, else from the
-// step whose call fired the arrival that put it (Step.arrivals); a record neither holds is not in
-// the delivered chart and is not a target (no write tool creates a record of a reviewed kind).
-// A class B correction replaces a record in place, so its id stays one target, present from the
-// start, and its final status and date are read (a withdrawn result is no longer owed).
+// in full. A record no arrival touched keeps its initial state throughout (no write tool changes a
+// record of a reviewed kind). A record a class B arrival replaced in place (Step.arrivals names its
+// key; `replaced` is the step whose call fired it, and the arrival lands after that call) is judged
+// by its initial state up to and including that step (`before`) and by its final state after it
+// (`after`): a result withdrawn by an arrival the decision write fired was still owed at the
+// decision (F1, probe P-a), and one a correction brings into the kind is owed from the next step
+// on. A record that first arrives during the trial (the initial world lacks it) is never a window
+// target: its event gates (R38 event_seen, amended) grade it, so it is not counted twice (F2,
+// probe P-b). A record neither holds is not in the delivered chart and is not a target.
 //
-// The review (windowExposed) is complete at the first step by which every target then present,
-// the initial ones and those whose arrival fired at an earlier step, had been exposed by a
-// successful call; as for a page run, an arrival after that step does not reopen it (an arrival
-// is the event gates' to see). A step exposes a target when its exposed_ids name it (R2 places; a
-// fhir_search row of an Observation or Procedure shows what a clinician acts on, a note is
-// exposed by a read or an uncut snippet). The caller compares the step with the decision write
-// by turn (seenBefore). An empty target set completes nothing: nothing shown is not a review
-// (R31), and the shape routes remain for a chart that holds no record of the kind.
+// The review (windowExposed) is complete at the first step by which every target then owed had
+// been exposed by a successful call at that step or before; as for a page run, a later arrival
+// does not reopen it (an arrival is the event gates' to see), and a record replaced after the
+// review completed does not either. Exposure is by id: a record exposed before a correction
+// replaced it counts as exposed (the correction itself is the amended gate's). A step exposes a
+// target when its exposed_ids name it (R2 places; a fhir_search row of an Observation or
+// Procedure shows what a clinician acts on, a note is exposed by a read or an uncut snippet). The
+// caller compares the step with the decision write by turn (seenBefore). A step at which no
+// target is owed completes nothing: nothing shown is not a review (R31), and the shape routes
+// remain for a chart that holds no record of the kind.
 export interface WindowKind {
   type: string;
   // 'Patient/<id>'.
@@ -312,42 +319,49 @@ export interface WindowKind {
 export interface WindowTarget {
   // '<Type>/<id>'.
   id: string;
-  // The step whose call fired the arrival that put it, or null when the initial world holds it.
-  arrived: number | null;
+  // The step whose call fired the class B arrival that replaced the record, or null when no
+  // arrival touched it (then before and after agree).
+  replaced: number | null;
+  // Whether the record is owed at the steps up to and including `replaced` (its initial state).
+  before: boolean;
+  // Whether it is owed at the steps after `replaced` (its final state).
+  after: boolean;
 }
 type Coded = { resourceType: string; id: string; status?: string; category?: Array<{ coding?: Array<{ system?: string; code?: string }> }>; subject?: { reference?: string }; patient?: { reference?: string } };
 const carries = (r: Coded, categories: readonly string[]) => (r.category ?? []).some((c) => (c.coding ?? []).some((x) => categories.includes(`${x.system ?? ''}|${x.code ?? ''}`)));
+// Whether record r, in the state given, is one of the kind inside its window.
+function qualifies(r: Coded | undefined, kind: WindowKind): boolean {
+  if (r === undefined || (r.subject?.reference ?? r.patient?.reference) !== kind.patient || r.status === 'entered-in-error') return false;
+  if (kind.statuses.length > 0 && !kind.statuses.includes(r.status ?? '')) return false;
+  if (kind.categories.length > 0 && !carries(r, kind.categories)) return false;
+  if (kind.opens === null) return true;
+  let range: readonly [number, number] | undefined;
+  try {
+    range = dateRangeOf(r as unknown as Resource);
+  } catch {
+    range = undefined;
+  }
+  return range !== undefined && range[1] >= kind.opens && range[0] <= kind.closes;
+}
 export function windowTargets(world: SeenWorld, steps: readonly Step[], kind: WindowKind): WindowTarget[] {
-  const arrivedAt = (key: string): number | null => steps.find((s) => (s.arrivals ?? []).some((a) => a.keys.includes(key)))?.n ?? null;
+  const replacedAt = (key: string): number | null => steps.find((s) => (s.arrivals ?? []).some((a) => a.keys.includes(key)))?.n ?? null;
   const out: WindowTarget[] = [];
-  for (const r of world.final.all(kind.type) as readonly Coded[]) {
-    if ((r.subject?.reference ?? r.patient?.reference) !== kind.patient || r.status === 'entered-in-error') continue;
-    if (kind.statuses.length > 0 && !kind.statuses.includes(r.status ?? '')) continue;
-    if (kind.categories.length > 0 && !carries(r, kind.categories)) continue;
-    if (kind.opens !== null) {
-      let range: readonly [number, number] | undefined;
-      try {
-        range = dateRangeOf(r as unknown as Resource);
-      } catch {
-        range = undefined;
-      }
-      if (range === undefined || range[1] < kind.opens || range[0] > kind.closes) continue;
-    }
-    const key = `${r.resourceType}/${r.id}`;
-    if (world.initial.has(r.resourceType, r.id)) out.push({ id: key, arrived: null });
-    else {
-      const at = arrivedAt(key);
-      if (at !== null) out.push({ id: key, arrived: at });
-    }
+  for (const r of world.initial.all(kind.type) as readonly Coded[]) {
+    const before = qualifies(r, kind);
+    const replaced = replacedAt(`${r.resourceType}/${r.id}`);
+    const after = replaced === null ? before : qualifies(world.final.get(kind.type, r.id) as Coded | undefined, kind);
+    if (before || after) out.push({ id: `${r.resourceType}/${r.id}`, replaced, before, after });
   }
   return out;
 }
+// Whether target t is owed at step n.
+const owedAt = (t: WindowTarget, n: number): boolean => (t.replaced === null || n <= t.replaced ? t.before : t.after);
 export function windowExposed(steps: readonly Step[], targets: readonly WindowTarget[]): number | null {
   if (targets.length === 0) return null;
   const first = new Map(targets.map((t) => [t.id, steps.find((s) => !s.is_error && s.exposed_ids.some((k) => sameId(k, t.id)))?.n ?? null]));
   for (const s of steps) {
-    const present = targets.filter((t) => t.arrived === null || t.arrived < s.n);
-    if (present.length > 0 && present.every((t) => { const n = first.get(t.id); return n !== null && n !== undefined && n <= s.n; })) return s.n;
+    const owed = targets.filter((t) => owedAt(t, s.n));
+    if (owed.length > 0 && owed.every((t) => { const n = first.get(t.id); return n !== null && n !== undefined && n <= s.n; })) return s.n;
   }
   return null;
 }

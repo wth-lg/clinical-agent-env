@@ -193,12 +193,15 @@ export function filtersCover(s: StepSearch, patient: string, a: Absence): boolea
   );
 }
 // The step at which the trial first showed absence `a` of the member (rulings R27, R41), or null.
-// By exposure (R41, builder-304; exposure.ts windowTargets, windowExposed): the first step by which
-// every record of the kind the member's chart holds inside the window, as delivered, had been
-// exposed, whatever the searches, pages or reads that showed them (the kind: the absence's type,
-// categories and statuses, never a record entered in error, dated from the clinic's midnight on
-// `from` to now; no window for a kind with from null). This needs the trial's states (`world`,
-// a GateCtx); a caller without them gets the search-shape route alone.
+// By exposure (R41 and its addendum, builder-304 and builder-305; exposure.ts windowTargets,
+// windowExposed): the first step by which every record of the kind the member's chart held inside
+// the window, as of that step, had been exposed, whatever the searches, pages or reads that showed
+// them (the kind: the absence's type, categories and statuses, never a record entered in error,
+// dated from the clinic's midnight on `from` to now; no window for a kind with from null). A record
+// a class B arrival replaced is judged by its initial state up to the step that fired the arrival
+// and by its final state after it; one that first arrives during the trial is not a target, its
+// event gates grade it. This needs the trial's states (`world`, a GateCtx); a caller without them
+// gets the search-shape route alone.
 // By search shape (R27, R36, G2, G5), a sufficient route: one page that held every match (whole),
 // or a run of pages with the same type, filters and order from offset 0 (or nested filters with the
 // same total: exposure.ts continuesRun, runCompleteAt), each at the previous next_offset, the last

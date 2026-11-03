@@ -1,6 +1,6 @@
 # pilot-4a: PW4-P1 event probe (historical once the world or a task changes, ruling R37)
 
-Six tasks x 4 trials on v1 (4 active mid-trial events per task: 3 amend + 1 lure), claude-opus-5-5 at effort high, batch 45e735cb, $36.92 settled. Recorded at grader 18 (18/24 PASS). The current grades are the grader 22 regrade (R41, builder-304; grader 20 (#210), 21 (P21, builder-297) and 22 change no pilot-4a grade): 19/24 PASS, the same as the grader 19 regrade (#208, the S-0 fixes). The audit, the suspected grader faults, the S-0 fairness audit and the events-solve output are in classes.md; the card is result-card.md (from summary.json and classes.json).
+Six tasks x 4 trials on v1 (4 active mid-trial events per task: 3 amend + 1 lure), claude-opus-5-5 at effort high, batch 45e735cb, $36.92 settled. Recorded at grader 18 (18/24 PASS). The current grades are the grader 22 regrade (R41, builder-304, and its addendum, builder-305, a second grader 22 entry at the addendum's grader_task_version; grader 20 (#210), 21 (P21, builder-297) and both 22 entries change no pilot-4a grade): 19/24 PASS, the same as the grader 19 regrade (#208, the S-0 fixes). The audit, the suspected grader faults, the S-0 fairness audit and the events-solve output are in classes.md; the card is result-card.md (from summary.json and classes.json).
 
 It is pinned to:
 
@@ -36,6 +36,6 @@ The current grades are reproduced on a checkout at or after the R41 fix (grader 
 pnpm cli regrade <copy of results/pilot-4a, regrades[] removed> --grader-version 22   # --grader-version 21 at the P21 freeze
 ```
 
-Each record's regrades[] keeps the grader 19 entry (#208) and the grader 21 entry (P21) under the grader 22 one; matrix.json carries every grader_task_version a regrade used.
+Each record's regrades[] keeps the grader 19 entry (#208) and the grader 21 entry (P21) under the grader 22 ones (two for crc-care-gap, message-queue and results-inbox, whose grader_task_version moved with the R41 addendum; one for the other tasks); matrix.json carries every grader_task_version a regrade used.
 
 The judge caches already hold the grader 19 answers. classes.md describes the fill.

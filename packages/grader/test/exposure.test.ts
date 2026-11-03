@@ -446,9 +446,9 @@ describe('runCompleteAt: N1 (same-filter runs) and N4 (failed calls)', () => {
   });
 });
 
-// builder-304, ruling R41: window completeness by exposure. The target set is the patient's records
-// of the kind inside the window on the chart as delivered; the review is complete at the first step
-// by which every target then present had been exposed.
+// builder-304, ruling R41: window completeness by exposure. The target set is the patient's initial
+// records of the kind inside the window; the review is complete at the first step by which every
+// target then owed had been exposed.
 describe('windowTargets and windowExposed (R41)', () => {
   const LAB = 'http://terminology.hl7.org/CodeSystem/observation-category|laboratory';
   const cat = (code: string) => [{ coding: [{ system: 'http://terminology.hl7.org/CodeSystem/observation-category', code }] }];
@@ -477,14 +477,14 @@ describe('windowTargets and windowExposed (R41)', () => {
   const world = { initial: gateView(initial), final: gateView([...initial, arrived]) };
   const arrival = st(3, [], { arrivals: [{ spec: 'e', keys: ['Observation/arrived', 'Task/inbox-x'] }] });
 
-  it('targets the patient\'s records of the kind inside the window on the chart as delivered, each with the step that put it', () => {
+  it('targets the initial world\'s records of the kind inside the window; a record that arrives during the trial is not one (R41 addendum)', () => {
+    const always = { replaced: null, before: true, after: true };
     expect(windowTargets(world, [st(1), st(2), arrival, st(4)], kind)).toEqual([
-      { id: 'Observation/in-1', arrived: null },
-      { id: 'Observation/in-2', arrived: null },
-      { id: 'Observation/edge', arrived: null },
-      { id: 'Observation/arrived', arrived: 3 },
+      { id: 'Observation/in-1', ...always },
+      { id: 'Observation/in-2', ...always },
+      { id: 'Observation/edge', ...always },
     ]);
-    // A record the chart holds but no arrival put and the initial world lacks is not a target.
+    // A record the chart holds and the initial world lacks is not a target, whether or not an arrival put it.
     expect(windowTargets(world, [st(1)], kind).map((t) => t.id)).toEqual(['Observation/in-1', 'Observation/in-2', 'Observation/edge']);
     // No category or status named: every category and status but entered in error; no window start: every date, undated too.
     const any: WindowKind = { ...kind, categories: [], statuses: [], opens: null };
@@ -498,16 +498,71 @@ describe('windowTargets and windowExposed (R41)', () => {
     expect(windowTargets(w, [], year).map((t) => t.id)).toEqual(['EpisodeOfCare/spans', 'EpisodeOfCare/open']);
   });
 
-  it('is complete at the first step by which every target then present was exposed; a record arriving later is owed from its arrival on', () => {
+  it('is complete at the first step by which every target was exposed; a record arriving later is not owed and does not reopen it', () => {
     const targets = windowTargets(world, [st(1), st(2), arrival, st(4)], kind);
     expect(windowExposed([st(1, ['Observation/in-1', 'Observation/edge']), st(2, ['Observation/in-2']), arrival, st(4)], targets)).toBe(2);
-    expect(windowExposed([st(1, ['Observation/in-1']), st(2, ['Observation/edge']), arrival, st(4, ['Observation/in-2']), st(5, ['Observation/arrived'])], targets)).toBe(5);
-    expect(windowExposed([st(1, ['Observation/in-1']), st(2, ['Observation/edge']), arrival, st(4, ['Observation/in-2'])], targets)).toBe(null);
+    expect(windowExposed([st(1, ['Observation/in-1']), st(2, ['Observation/edge']), arrival, st(4, ['Observation/in-2']), st(5, ['Observation/arrived'])], targets)).toBe(4);
+    expect(windowExposed([st(1, ['Observation/in-1']), st(2, ['Observation/edge']), arrival, st(4)], targets)).toBe(null);
     // Exposure in any form counts: a read, an earlier step; a later arrival does not reopen it.
     expect(windowExposed([st(1, ['Observation/in-1', 'Observation/in-2', 'Observation/edge'], { tool: 'fhir_read' }), st(2), arrival], targets)).toBe(1);
     // Nothing to show is not a review (R31): an empty target set completes nothing.
     expect(windowExposed([st(1, ['Observation/in-1'])], [])).toBe(null);
     // A failed call exposes nothing.
-    expect(windowExposed([st(1, ['Observation/in-1', 'Observation/in-2', 'Observation/edge'], { is_error: true })], targets.slice(0, 3))).toBe(null);
+    expect(windowExposed([st(1, ['Observation/in-1', 'Observation/in-2', 'Observation/edge'], { is_error: true })], targets)).toBe(null);
+  });
+});
+
+// builder-305, R41 addendum (verifier-phase-P17i-R41-216-1 F1, F2): the target set is evaluated as
+// of the decision step. A record a class B arrival replaced is judged by its initial status and date
+// up to the step whose call fired the arrival and by its final ones after it. A record that first
+// arrives before the decision is not a window target; its event gates (R38) grade it.
+describe('windowTargets as of the decision step (R41 addendum)', () => {
+  const LAB = 'http://terminology.hl7.org/CodeSystem/observation-category|laboratory';
+  const cat = (code: string) => [{ coding: [{ system: 'http://terminology.hl7.org/CodeSystem/observation-category', code }] }];
+  const obs = (id: string, date: string, more: Record<string, unknown> = {}): Resource =>
+    ({ resourceType: 'Observation', id, status: 'final', category: cat('laboratory'), code: { coding: [{ system: 'http://loinc.org', code: '2160-0' }] }, subject: { reference: 'Patient/pt-1' }, effectiveDateTime: date, ...more }) as Resource;
+  const st = (n: number, exposed: string[] = [], more: Partial<Step> = {}): Step => ({ n, seq: n, turn: n, tool: 'fhir_search', is_error: false, error_code: null, exposed_ids: exposed, referenced_ids: [], written_ids: [], shown: {}, ...more });
+  const kind: WindowKind = { type: 'Observation', patient: 'Patient/pt-1', categories: [LAB], statuses: ['final', 'amended', 'corrected'], opens: Date.parse('2024-01-01T05:00:00Z'), closes: Date.parse('2026-10-23T12:00:00Z') };
+  const initial = [obs('a', '2025-06-01T10:00:00-04:00'), obs('b', '2026-02-01T10:00:00-04:00'), obs('c', '2026-09-28T09:00:00-04:00'), obs('prelim', '2026-05-01T10:00:00-04:00', { status: 'preliminary' })];
+  const replace = (id: string, more: Record<string, unknown>) => ({ initial: gateView(initial), final: gateView(initial.map((r) => (r.id === id ? ({ ...r, ...more }) as Resource : r))) });
+  const decision = (n: number, arrivals?: Step['arrivals']) => st(n, [], { tool: 'order_medication', written_ids: ['MedicationRequest/x'], ...(arrivals ? { arrivals } : {}) });
+  const ALWAYS = { replaced: null, before: true, after: true };
+
+  it('P-a: a record withdrawn by a class B arrival fired on the decision write is owed through that step', () => {
+    // webb-b2's shape (probe P-a): c is valid and unshown at the decision (step 3); the withdrawal lands after it.
+    const world = replace('c', { status: 'entered-in-error' });
+    const b2 = decision(3, [{ spec: 'webb-b2', keys: ['Observation/c'] }]);
+    const steps = [st(1, ['Observation/a']), st(2, ['Observation/b']), b2];
+    const targets = windowTargets(world, steps, kind);
+    expect(targets).toEqual([{ id: 'Observation/a', ...ALWAYS }, { id: 'Observation/b', ...ALWAYS }, { id: 'Observation/c', replaced: 3, before: true, after: false }]);
+    expect(windowExposed(steps, targets)).toBe(null);
+    // Once the withdrawal has landed c is no longer owed: complete at the next step (the caller compares it with the decision by turn).
+    expect(windowExposed([...steps, st(4)], targets)).toBe(4);
+    // Control: without the withdrawal, c is owed at every step.
+    const same = { initial: gateView(initial), final: gateView(initial) };
+    expect(windowExposed(steps, windowTargets(same, [st(1, ['Observation/a']), st(2, ['Observation/b']), decision(3)], kind))).toBe(null);
+    // Withdrawn before the review completed: not owed from the step after the arrival on.
+    const early = [st(1, ['Observation/a'], { arrivals: [{ spec: 'webb-b2', keys: ['Observation/c'] }] }), st(2, ['Observation/b']), decision(3)];
+    expect(windowExposed(early, windowTargets(world, early, kind))).toBe(2);
+  });
+
+  it('a correction that brings a record into the kind owes it from the step after the arrival', () => {
+    const world = replace('prelim', { status: 'final' });
+    const steps = [st(1, ['Observation/a', 'Observation/b']), st(2, [], { arrivals: [{ spec: 'x-b1', keys: ['Observation/prelim'] }] }), st(3, ['Observation/c']), st(4, ['Observation/prelim']), decision(5)];
+    const targets = windowTargets(world, steps, kind);
+    expect(targets).toContainEqual({ id: 'Observation/prelim', replaced: 2, before: false, after: true });
+    expect(windowExposed(steps, targets)).toBe(4);
+    // A review complete before the correction landed is not reopened by it (as for a page run).
+    const done = [st(1, ['Observation/a', 'Observation/b', 'Observation/c']), st(2, [], { arrivals: [{ spec: 'x-b1', keys: ['Observation/prelim'] }] }), decision(3)];
+    expect(windowExposed(done, windowTargets(world, done, kind))).toBe(1);
+  });
+
+  it('P-b: a record that first arrives before the decision is not a window target; its event gates grade it', () => {
+    const fresh = obs('new', '2026-10-22T16:40:00-04:00');
+    const world = { initial: gateView(initial), final: gateView([...initial, fresh]) };
+    const steps = [st(1, ['Observation/a', 'Observation/b']), st(2), st(3, [], { arrivals: [{ spec: 'x-a1', keys: ['Observation/new'] }] }), st(4, ['Observation/c']), decision(5)];
+    const targets = windowTargets(world, steps, kind);
+    expect(targets.map((t) => t.id)).toEqual(['Observation/a', 'Observation/b', 'Observation/c']);
+    expect(windowExposed(steps, targets)).toBe(4);
   });
 });

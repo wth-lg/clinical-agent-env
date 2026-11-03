@@ -100,13 +100,17 @@ import type { Progress } from './progress.ts';
 // M1). boundHolds refuses a stopped page whose last row sorts at a non-finite instant (a date
 // Period with no start) instead of throwing; no grade on today's data moves. 22: the R41 fix
 // (builder-304; final-1 crc-care-gap G6, G7). A window review is complete by exposure: when every
-// record of the reviewed kind for the patient inside the window, on the chart as delivered, was
-// exposed before the decision (exposure.ts windowTargets, windowExposed), by any searches, pages
-// or reads; the page-run rules stay as sufficient routes. T3 absenceShownAt, T2 windowSearchedAt
-// and T6 coveredAt take the earlier of the two, and their seen rules read the trial's states
-// (check.ts SeenRule; attribute passes them). The gate view gains EpisodeOfCare. Frozen tasks are
-// regraded with disclosure (results/tasks-final.json regrades); the world and every env_version
-// stay.
+// record of the reviewed kind for the patient inside the window was exposed before the decision
+// (exposure.ts windowTargets, windowExposed), by any searches, pages or reads; the page-run rules
+// stay as sufficient routes. T3 absenceShownAt, T2 windowSearchedAt and T6 coveredAt take the
+// earlier of the two, and their seen rules read the trial's states (check.ts SeenRule; attribute
+// passes them). The gate view gains EpisodeOfCare. Frozen tasks are regraded with disclosure
+// (results/tasks-final.json regrades); the world and every env_version stay. R41 addendum
+// (builder-305, verifier-phase-P17i-R41-216-1 F1, F2), still 22: the target set is evaluated as
+// of the decision step. A record a class B arrival replaced is judged by its initial status and
+// date up to the step that fired the arrival and by its final ones after it (a result withdrawn on
+// the decision write was still owed at the decision); a record that first arrives during the trial
+// is not a window target, its event gates grade it. No grade on today's data moves.
 export const GRADER_VERSION = '22';
 
 export interface CheckResult {

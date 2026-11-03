@@ -8,11 +8,11 @@
   "trials": 12,
   "task_versions": {
     "contrast-ct-prep": "0135336ab2fb98106279818ee0cec718ca0bb1b5819a6b605a5b65d2cf6007c7",
-    "crc-care-gap": "86cebc4cad1c682aa575e042eb165aab49cf8fae7e533ccf1162b7144758700a",
+    "crc-care-gap": "368dc9b36ff1e7d886103fb25b036b493dd69c1e52b12c0c7ad7561b07acf38e",
     "discharge-medrec": "75d5b4b8a9441c19517da3ea93277c321b7cd329d3e5ab1b3c6082f0bfe6569f",
-    "message-queue": "d37b10457b393d3853c34daa08df94dacdc290de5fd5a863a0f1a89eb49c1501",
+    "message-queue": "6e819d88827eed6690f0cef96f3949ab6b3f13a128830f0e87eb9d2a9a38b743",
     "renal-dose-review": "ed1a7bd5c38b4637c82e770f9dead42990200120e83db01ce26c6ab8e9569cb3",
-    "results-inbox": "b9f48b1fcc2504afc643cab07b3e37e35513cff2a1c4c6a640e9ae74f989d28b"
+    "results-inbox": "809b31b4fc97120625044407ba1ae3c7d35a027f11c14499d43285fd79e4c4fd"
   },
   "env_versions": {
     "contrast-ct-prep": "dda55417a9303a23ee2e2da0cbcefc8ad82599a2c0da7aca7d29027e1567d6b1",
@@ -24,11 +24,11 @@
   },
   "grader_task_versions": {
     "contrast-ct-prep": "c964545f0f9e50e670036eb55dfc75d349c7d27ca51b48d1aba7d62a503d1528",
-    "crc-care-gap": "623064d5c6aa2e8867105293db5bf96b25124e996ea5a6f44be1b896a11ab7c9",
+    "crc-care-gap": "d0f6e5025c4d37d27f0b28f4ff0fcb3e0ea58978974c60bfbb147ee2c1574716",
     "discharge-medrec": "d31984bc4039b3aba57b152780835852e56f0a4f902c09212659ce40dbbdb371",
-    "message-queue": "7c1dbdcec76cfae07c6f5f6aa3b50f0873b5fb3a8f887dcc08805cc2df822a70",
+    "message-queue": "140368517d78e7513f23ba545c74dc9f748357d53f6500e0aae784232d6dd36a",
     "renal-dose-review": "1dc14fb20da324769f29fe2ddf9cf7c37513f85e639897c9092218bf77fa6bae",
-    "results-inbox": "2d4f6e7fe211ff4cc1774ec01081f5a1a8e6343c0ee0907553cdf8f319b71905"
+    "results-inbox": "84fc52d0546e97bd14d6f7701b25d495b74f21b02602dda7d87db30aa51aba88"
   },
   "batches": []
 }
