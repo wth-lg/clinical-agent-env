@@ -35,7 +35,7 @@ export const MR = {
   robertsLisinopril: id('mr-t4-roberts-lisinopril'), robertsRosuvastatin: id('mr-t4-roberts-rosuvastatin'),
   whitcombLisinopril: idOf('mr-t4-whitcomb-lisinopril'), whitcombAmlodipine: idOf('mr-t4-whitcomb-amlodipine'),
   pruittMetformin: idOf('mr-t4-pruitt-metformin'), pruittAmlodipine: idOf('mr-t4-pruitt-amlodipine'),
-  salazarAmlodipine: idOf('mr-t4-salazar-amlodipine'), salazarAtorvastatin: idOf('mr-t4-salazar-atorvastatin'),
+  salazarAmlodipine: idOf('mr-t4-salazar-amlodipine'),
 } as const;
 export const DOC = {
   kimSummary: id('doc-t4-kim-dc'), kimAddendum: id('doc-t4-kim-add'), kimFills: id('doc-t4-kim-fills'), kimLab: id('doc-t4-kim-lab'),
@@ -43,7 +43,7 @@ export const DOC = {
   robertsSummary: id('doc-t4-roberts-dc'), robertsFills: id('doc-t4-roberts-fills'), robertsOutFills: id('doc-t4-roberts-outfills'), robertsLab: id('doc-t4-roberts-lab'),
   whitcombSummary: idOf('doc-t4-whitcomb-dc'), whitcombFills: idOf('doc-t4-whitcomb-fills'),
   pruittSummary: idOf('doc-t4-pruitt-dc'), pruittFills: idOf('doc-t4-pruitt-fills'),
-  salazarSummary: idOf('doc-t4-salazar-dc'), salazarFills: idOf('doc-t4-salazar-fills'), salazarOutFills: idOf('doc-t4-salazar-outfills'),
+  salazarSummary: idOf('doc-t4-salazar-dc'), salazarOutFills: idOf('doc-t4-salazar-outfills'),
 } as const;
 export type DocKey = keyof typeof DOC;
 export const OBS = { whitcombK: idOf('obs-t4-whitcomb-k-1021'), whitcombScr: idOf('obs-t4-whitcomb-scr-1021'), pruittStayScr: idOf('obs-t4-pruitt-scr-1021') } as const;
@@ -71,7 +71,7 @@ const DOCS_OF: Record<Who, readonly DocKey[]> = {
   roberts: ['robertsSummary', 'robertsFills', 'robertsOutFills', 'robertsLab'],
   whitcomb: ['whitcombSummary', 'whitcombFills'],
   pruitt: ['pruittSummary', 'pruittFills'],
-  salazar: ['salazarSummary', 'salazarFills', 'salazarOutFills'],
+  salazar: ['salazarSummary', 'salazarOutFills'],
 };
 export const readDoc = (d: DocKey): ScriptCall => read('DocumentReference', DOC[d]);
 // A targeted search of one patient's notes; its rows show cut snippets of long notes.
@@ -197,9 +197,8 @@ export const NOTE: Record<Who, string> = {
     "Metformin 1000 mg: stays on hold. The summary's resume condition names post-discharge labs, and no result after discharge is in the chart; the 10/21 creatinine is from the morning of discharge and does not satisfy it (§2). Task to Dr. Okafor due 10/24, when the BMP is expected.\n\n" +
     'No change: amlodipine 5 mg and atorvastatin 40 mg continued. Fills cover her prescriptions.',
   salazar:
-    'Post-discharge medication reconciliation under RBC-TOC-02.\n\nSources: St. Brigid discharge summary 10/20/2026; Riverbend Pharmacy and outside pharmacy fill histories 10/21/2026.\n\n' +
-    "Amlodipine: changed to the summary's 10 mg daily (§4, §6). The outside fill history prints a 180-day coverage of 60%, but he first filled amlodipine on 07/02, inside the window, and has refilled on time since, so §5(b) counts the days from that first fill: 100%, taken as prescribed, and the dose change applies.\n\n" +
-    'No change: atorvastatin 40 mg continued; its fills cover the window.',
+    'Post-discharge medication reconciliation under RBC-TOC-02.\n\nSources: St. Brigid discharge summary 10/20/2026; outside pharmacy fill history 10/21/2026 (he fills at Valley Market Pharmacy; no Riverbend fills).\n\n' +
+    "Amlodipine: changed to the summary's 10 mg daily (§4, §6). The outside fill history prints a 180-day coverage of 60%, but he first filled amlodipine on 07/02, inside the window, and has refilled on time since, so §5(b) counts the days from that first fill: 100%, taken as prescribed, and the dose change applies.",
 };
 export const CITES: Record<Who, string[]> = {
   kim: [ref('DocumentReference/doc-t4-kim-dc'), ref('DocumentReference/doc-t4-kim-add'), ref('DocumentReference/doc-t4-kim-lab'), ref('DocumentReference/doc-t4-kim-fills')],
@@ -207,7 +206,7 @@ export const CITES: Record<Who, string[]> = {
   roberts: [ref('DocumentReference/doc-t4-roberts-dc'), ref('DocumentReference/doc-t4-roberts-lab'), ref('DocumentReference/doc-t4-roberts-fills'), ref('DocumentReference/doc-t4-roberts-outfills')],
   whitcomb: [refOf('DocumentReference/doc-t4-whitcomb-dc'), `Observation/${OBS.whitcombK}`, `Observation/${OBS.whitcombScr}`, refOf('DocumentReference/doc-t4-whitcomb-fills')],
   pruitt: [refOf('DocumentReference/doc-t4-pruitt-dc'), `Observation/${OBS.pruittStayScr}`, refOf('DocumentReference/doc-t4-pruitt-fills')],
-  salazar: [refOf('DocumentReference/doc-t4-salazar-dc'), refOf('DocumentReference/doc-t4-salazar-fills'), refOf('DocumentReference/doc-t4-salazar-outfills')],
+  salazar: [refOf('DocumentReference/doc-t4-salazar-dc'), refOf('DocumentReference/doc-t4-salazar-outfills')],
 };
 // The arrivals a note also cites, by spec, when that spec fired (§6: the documents relied on).
 const CITES_ARRIVAL: Record<string, Who> = { 'kim-k1': 'kim', 'kim-k2': 'kim', 'stark-s1': 'stark', 'stark-s2': 'stark', 'roberts-r1': 'roberts', 'whitcomb-a1': 'whitcomb', 'whitcomb-a1-twin': 'whitcomb' };

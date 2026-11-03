@@ -14,8 +14,9 @@
 //     task chart no field path is, and no one feature separates planted from generated records.
 // Planted means named in a task's id registry (tasks/planted.ts).
 import { Buffer } from 'node:buffer';
-import { readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { fhirOrder } from '../../packages/env/canonical.ts';
 import { clock } from '../../packages/env/clock.ts';
@@ -81,12 +82,15 @@ describe('planted ids are numbered as the generated ones are', () => {
     expect(gaps).toEqual([]);
   });
 
-  it('no planted id sorts above its type\'s generated range', () => {
+  // An added Patient (ADDED_PATIENT_RESIDUALS) is numbered after the cohort's last, so its chart's
+  // ids sit above every generated one of their types by the same (patient, date, code) rule: that
+  // is the id-range residual the table names, not a tell of its own.
+  it('no planted id sorts above its type\'s generated range, apart from an added Patient\'s chart', () => {
     const above = [...byType].flatMap(([, rs]) => {
       const base = rs.filter((r) => !isPlanted(r.id));
       if (!base.length) return [];
       const max = Math.max(...base.map(num));
-      return rs.filter((r) => isPlanted(r.id) && num(r) > max).map((r) => `${r.resourceType}/${r.id} > ${base.find((b) => num(b) === max)!.id}`);
+      return rs.filter((r) => isPlanted(r.id) && num(r) > max && !ADDED_PATIENTS.has(patientOf(r) ?? '')).map((r) => `${r.resourceType}/${r.id} > ${base.find((b) => num(b) === max)!.id}`);
     });
     expect(above).toEqual([]);
   });
@@ -393,10 +397,25 @@ describe('every MRN has one form, and none marks a task patient', () => {
 // after the cohort's last, is one tell left: in the 60-patient world any id above pt-0060 is an
 // added Patient until W2-0 grows the cohort past it (D8). The other is its chart: every record in it
 // is planted, so each planted type there has no generated record to compare against
-// (verifier-phase-P17i-W1-1-1 M3). Each one is named here, with its class and the planted types of
-// its chart (plantedOnlyTypes, in the order of the within-chart tests' types); the within-chart list
-// of such charts (EMPTY_CELLS) leaves added Patients to this table.
-const ADDED_PATIENT_RESIDUALS: Readonly<Record<string, { class: string; planted_only: readonly string[] }>> = {};
+// (verifier-phase-P17i-W1-1-1 M3). Each one is named here with its class, derived from the tasks'
+// lever items (W5-E: tasks/<id>/expected.ts LEVER_ITEMS names each lever host by its world id, in
+// every LEVER state; verifier-phase-P17i-W5E-T1-214-1 F2), and the planted types of its chart
+// (plantedOnlyTypes, derived from the world: an added Patient's chart is all planted). The
+// within-chart list of such charts (EMPTY_CELLS) leaves added Patients to this table. A Patient an
+// overlay adds outside a lever item would need a row of its own here.
+const LEVER_HOSTS: Record<string, string[]> = {};
+for (const dir of readdirSync(join(repoRoot, 'tasks'), { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name)) {
+  const file = join(repoRoot, 'tasks', dir, 'expected.ts');
+  if (!existsSync(file) || !readFileSync(file, 'utf8').includes('LEVER_ITEMS')) continue;
+  const mod = (await import(pathToFileURL(file).href)) as { LEVER_ITEMS?: ReadonlyArray<{ id: string; kind: string; item: string; patient?: string }> };
+  for (const x of mod.LEVER_ITEMS ?? []) {
+    const p = x.patient?.startsWith('Patient/pt-') ? x.patient.slice('Patient/'.length) : undefined;
+    if (p !== undefined && ADDED_PATIENTS.has(p)) LEVER_HOSTS[p] = [...(LEVER_HOSTS[p] ?? []), `${dir} ${x.id} (${x.kind}, ${x.item})`];
+  }
+}
+const ADDED_PATIENT_RESIDUALS: Readonly<Record<string, { class: string; planted_only: readonly string[] }>> = Object.fromEntries(
+  [...ADDED_PATIENTS].sort().map((p) => [p, { class: (LEVER_HOSTS[p] ?? []).join('; '), planted_only: plantedOnlyTypes(world, isPlanted, p, comparable) }]),
+);
 describe('a Patient an overlay adds reads like a generated one, apart from its named id', () => {
   const pts = world.filter((r) => r.resourceType === 'Patient');
 
@@ -404,30 +423,36 @@ describe('a Patient an overlay adds reads like a generated one, apart from its n
     expect(addedPatientTells(pts, ADDED_PATIENTS)).toEqual([]);
   });
 
-  it('is named as the id-range residual', () => {
+  it('is named as the id-range residual: each one a lever host some task\'s LEVER_ITEMS names', () => {
     expect([...ADDED_PATIENTS].sort()).toEqual(Object.keys(ADDED_PATIENT_RESIDUALS).sort());
+    for (const p of ADDED_PATIENTS) expect(ADDED_PATIENT_RESIDUALS[p]!.class, p).not.toBe('');
   });
 
-  it('its planted-only chart is named beside its id', () => {
-    for (const p of ADDED_PATIENTS) expect(plantedOnlyTypes(world, isPlanted, p, comparable), p).toEqual(ADDED_PATIENT_RESIDUALS[p]!.planted_only);
+  it('its chart is all planted: every type it holds is a planted-only type, named beside its id', () => {
+    for (const p of ADDED_PATIENTS) {
+      const types = [...new Set(world.filter((r) => patientOf(r) === p && r.resourceType !== 'Patient').map((r) => r.resourceType))];
+      const only = ADDED_PATIENT_RESIDUALS[p]!.planted_only;
+      expect(only.length, p).toBeGreaterThan(0);
+      expect(types.filter((t) => !only.includes(t)), `${p}: types with a generated record`).toEqual([]);
+    }
   });
 
   it('the check finds an added Patient\'s chart that holds only planted records', () => {
     const base = world.find((r) => r.resourceType === 'Observation' && !isPlanted(r.id) && patientOf(r) === 'pt-0051')!;
-    const probe = [...world, { ...base, id: 'obs-t3-probe', subject: { reference: 'Patient/pt-0061' } } as R];
+    const probe = [...world, { ...base, id: 'obs-t3-probe', subject: { reference: 'Patient/pt-0099' } } as R];
     const planted = (id: string) => isPlanted(id) || id === 'obs-t3-probe';
-    expect(plantedOnlyTypes(probe, planted, 'pt-0061', comparable)).toEqual(['Observation']);
+    expect(plantedOnlyTypes(probe, planted, 'pt-0099', comparable)).toEqual(['Observation']);
     expect(plantedOnlyTypes(world, isPlanted, 'pt-0051', comparable)).toEqual([]);
   });
 
   it('the check finds an overlay-written Patient that lacks the generated fields, or carries an identifier form no other Patient has', () => {
     const base = pts.find((r) => r.id === 'pt-0051')!;
-    const bare = { resourceType: 'Patient', id: 'pt-0061', name: [{ family: 'Ito' }], birthDate: '1961-04-02' } as R;
-    expect(addedPatientTells([...pts, bare], new Set(['pt-0061']))).toEqual(["Patient/pt-0061: its shape (fields, identifier systems, extensions) is no other Patient's"]);
-    const copied = { ...base, id: 'pt-0061' } as R;
-    expect(addedPatientTells([...pts, copied], new Set(['pt-0061']))).toEqual([]);
-    const oddMrn = { ...base, id: 'pt-0061', identifier: (base.identifier as Array<Record<string, unknown>>).map((i) => (i.system === 'urn:riverbend:mrn' ? { ...i, value: '100061' } : i)) } as R;
-    expect(addedPatientTells([...pts, oddMrn], new Set(['pt-0061']))).toEqual(['Patient/pt-0061: identifier urn:riverbend:mrn has the form 999999, which no other Patient\'s has']);
+    const bare = { resourceType: 'Patient', id: 'pt-0099', name: [{ family: 'Ito' }], birthDate: '1961-04-02' } as R;
+    expect(addedPatientTells([...pts, bare], new Set(['pt-0099']))).toEqual(["Patient/pt-0099: its shape (fields, identifier systems, extensions) is no other Patient's"]);
+    const copied = { ...base, id: 'pt-0099' } as R;
+    expect(addedPatientTells([...pts, copied], new Set(['pt-0099']))).toEqual([]);
+    const oddMrn = { ...base, id: 'pt-0099', identifier: (base.identifier as Array<Record<string, unknown>>).map((i) => (i.system === 'urn:riverbend:mrn' ? { ...i, value: '100099' } : i)) } as R;
+    expect(addedPatientTells([...pts, oddMrn], new Set(['pt-0099']))).toEqual(['Patient/pt-0099: identifier urn:riverbend:mrn has the form 999999, which no other Patient\'s has']);
   });
 });
 

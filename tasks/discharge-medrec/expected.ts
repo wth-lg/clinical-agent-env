@@ -104,7 +104,7 @@ const DOC = {
   robertsSummary: ref('DocumentReference/doc-t4-roberts-dc'), robertsLab: ref('DocumentReference/doc-t4-roberts-lab'), robertsFills: ref('DocumentReference/doc-t4-roberts-fills'), robertsOutFills: ref('DocumentReference/doc-t4-roberts-outfills'),
   whitcombSummary: refOf('DocumentReference/doc-t4-whitcomb-dc'), whitcombFills: refOf('DocumentReference/doc-t4-whitcomb-fills'),
   pruittSummary: refOf('DocumentReference/doc-t4-pruitt-dc'), pruittFills: refOf('DocumentReference/doc-t4-pruitt-fills'),
-  salazarSummary: refOf('DocumentReference/doc-t4-salazar-dc'), salazarFills: refOf('DocumentReference/doc-t4-salazar-fills'), salazarOutFills: refOf('DocumentReference/doc-t4-salazar-outfills'),
+  salazarSummary: refOf('DocumentReference/doc-t4-salazar-dc'), salazarOutFills: refOf('DocumentReference/doc-t4-salazar-outfills'),
 };
 const OBS = {
   robertsScr: ref('Observation/obs-t4-roberts-scr-1020'),
@@ -123,7 +123,7 @@ export function hostPatients(lever: readonly string[]) {
   return [
     { patient: PT.whitcomb, name: 'Gerald Whitcomb', summary: DOC.whitcombSummary, addendum: null, fills: [DOC.whitcombFills], lab: null },
     ...(lever.includes('B') ? [{ patient: PT.pruitt, name: 'Lorraine Pruitt', summary: DOC.pruittSummary, addendum: null, fills: [DOC.pruittFills], lab: null }] : []),
-    ...(lever.includes('reserve') ? [{ patient: PT.salazar, name: 'Victor Salazar', summary: DOC.salazarSummary, addendum: null, fills: [DOC.salazarFills, DOC.salazarOutFills], lab: null }] : []),
+    ...(lever.includes('reserve') ? [{ patient: PT.salazar, name: 'Victor Salazar', summary: DOC.salazarSummary, addendum: null, fills: [DOC.salazarOutFills], lab: null }] : []),
   ];
 }
 export function leverItems(lever: readonly string[]): Item[] {

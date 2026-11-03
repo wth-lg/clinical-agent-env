@@ -81,7 +81,7 @@
     "scripts/fixtures-synthea.ts": "44162b65dc576e507b526132164eda54cb14000936331d48b575f46d9c49d752",
     "tasks/contrast-ct-prep/overlay.ts": "fe51e85007f94d529c6f9dc8f9aaf652d46dfae27263456469a2658481d70c5e",
     "tasks/crc-care-gap/overlay.ts": "30e01b28a3973fe759ceb6878c0c7a73daa222c46577f262f156ec98c3efbaf1",
-    "tasks/discharge-medrec/overlay.ts": "508cffc2c17e8b0ac7e178581af6208daa3fb3fff28629971e1bac6b3933c605",
+    "tasks/discharge-medrec/overlay.ts": "9cbff6c97514bd17025c687896a0f6c57eecb7c8af7d40fdccfc0a7b7b073df0",
     "tasks/message-queue/overlay.ts": "a4ad7e9f21b051c0e44c155a43063609a018c0e31abe94d572745be3374786a1",
     "tasks/renal-dose-review/overlay.ts": "634fa927a66ea136a0a8094906eac5282f74d0b6e20c87b47df97f84b86c47e5",
     "tasks/results-inbox/overlay.ts": "8091851412792e2f1096db877410f38449941aa3fbaf3e38f815843e11682c3c"

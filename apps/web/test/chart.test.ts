@@ -12,6 +12,9 @@ import { id as t2 } from '../../../tasks/results-inbox/ids.ts';
 import { id as t3 } from '../../../tasks/crc-care-gap/ids.ts';
 import { id as t5 } from '../../../tasks/contrast-ct-prep/ids.ts';
 import { id as t6 } from '../../../tasks/message-queue/ids.ts';
+import { TASK_IDS } from '../../../fixtures/ids.ts';
+import { TASKS } from '../../../packages/env/overlay.ts';
+import { LEVER as T4_LEVER } from '../../../tasks/discharge-medrec/lever.ts';
 
 const REPO = join(import.meta.dirname, '../../..');
 
@@ -19,7 +22,11 @@ describe('taskPatients', () => {
   // Since the W1 probes every task is a worklist (builder-249): the patients are the list's.
   it('finds the patients of each worklist task', () => {
     expect(taskPatients(world, 'renal-dose-review')).toEqual(['Patient/pt-0001', 'Patient/pt-0002', 'Patient/pt-0003', 'Patient/pt-0038', 'Patient/pt-0039', 'Patient/pt-0040', 'Patient/pt-0041', 'Patient/pt-0043', 'Patient/pt-0045']);
-    expect(taskPatients(world, 'discharge-medrec')).toEqual(['Patient/pt-0004', 'Patient/pt-0005', 'Patient/pt-0042', 'Patient/pt-0044']);
+    // T4: its four slots and the Patients its overlay adds (W5-E: the A host in every LEVER state, the
+    // B and reserve hosts while their item is active), derived from the registry, not pinned.
+    const t4Added = Object.entries(TASK_IDS.T4).filter(([k]) => k.startsWith('pt-')).map(([, v]) => `Patient/${v}`);
+    expect(t4Added.length).toBe(1 + (T4_LEVER.includes('B') ? 1 : 0) + (T4_LEVER.includes('reserve') ? 1 : 0));
+    expect(taskPatients(world, 'discharge-medrec')).toEqual([...TASKS.T4.slots.map((p) => `Patient/${p}`), ...t4Added].sort());
     expect(taskPatients(world, 'contrast-ct-prep')).toEqual(['Patient/pt-0012', 'Patient/pt-0015', 'Patient/pt-0046', 'Patient/pt-0047', 'Patient/pt-0048', 'Patient/pt-0049', 'Patient/pt-0050']);
   });
   it('finds every member of the panel task\'s group, and the patients of the inbox and queue tasks', () => {
