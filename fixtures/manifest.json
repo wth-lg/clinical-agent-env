@@ -2,8 +2,8 @@
   "now": "2026-10-23T08:00:00-04:00",
   "world": {
     "file": "fixtures/world.ndjson.gz",
-    "state_hash": "e36933fe62844a310ab577a76bc5f346603cc7a0d29004ebfd955c9218b20db6",
-    "ndjson_sha256": "e84af462de2b985f98ac2e9367682a56b221862d3a050972a9bef03b92b85e41",
+    "state_hash": "22df090ebcedfbd16f21e16b0dc572eef069ed6195d8dec4158e2738bf819cad",
+    "ndjson_sha256": "4adda7db40cfe9acb227b63e18ce3c79e502461d7d99899d14e72f46936d0216",
     "resources": 7452,
     "by_type": {
       "AllergyIntolerance": 46,
@@ -82,7 +82,7 @@
     "tasks/contrast-ct-prep/overlay.ts": "fe51e85007f94d529c6f9dc8f9aaf652d46dfae27263456469a2658481d70c5e",
     "tasks/crc-care-gap/overlay.ts": "30e01b28a3973fe759ceb6878c0c7a73daa222c46577f262f156ec98c3efbaf1",
     "tasks/discharge-medrec/overlay.ts": "209751e1abba4360c372bbda0567f2f756fd1bccc332290e6374b77c0f6bc8d8",
-    "tasks/message-queue/overlay.ts": "70ccfb94379f135b2eb5574c44e9eb45e358f2f72ce4c6b44f841fe21ef0ae94",
+    "tasks/message-queue/overlay.ts": "5dda0d05aa3a7080b697727c40b98e4b9883c848b9796267e19fe7c6dad05e54",
     "tasks/renal-dose-review/overlay.ts": "634fa927a66ea136a0a8094906eac5282f74d0b6e20c87b47df97f84b86c47e5",
     "tasks/results-inbox/overlay.ts": "8091851412792e2f1096db877410f38449941aa3fbaf3e38f815843e11682c3c"
   },

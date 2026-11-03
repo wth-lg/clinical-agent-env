@@ -199,9 +199,14 @@ const egfr = (id: string, who: Who, value: number, at: string, issued: string, e
 // the panel report, its eight results (ids <key>-<analyte>) and an eGFR. A creatinine above the
 // range is flagged where `more.high` names it.
 interface Bmp { na: number; k: number; cl: number; co2: number; bun: number; cr: number; glu: number; ca: number; egfr: number }
-function bmp(key: string, who: Who, at: string, issued: string, enc: string | null, v: Bmp, notes: { k?: Note[]; cr?: Note[] } = {}, more: { performer?: { reference: string }; high?: ReadonlyArray<'cr'> } = {}): Resource[] {
+// `more.code` files the panel under the clinic's other BMP code (24321-2) or as a comprehensive
+// panel (24323-8), which §1 counts as a BMP: the W5-E hosts' panels take those, as the generated
+// charts' mostly do (scripts/test/world-tells.test.ts caps the planted share of 51990-0).
+const PANEL_CODES = { '51990-0': 'Basic metabolic panel - Blood', '24321-2': 'Basic metabolic 2000 panel - Serum or Plasma', '24323-8': 'Comprehensive metabolic 2000 panel - Serum or Plasma' } as const;
+function bmp(key: string, who: Who, at: string, issued: string, enc: string | null, v: Bmp, notes: { k?: Note[]; cr?: Note[] } = {}, more: { performer?: { reference: string }; high?: ReadonlyArray<'cr'>; code?: keyof typeof PANEL_CODES } = {}): Resource[] {
   const analytes: Array<[keyof Omit<Bmp, 'egfr'>, string]> = [['na', 'mmol/L'], ['k', 'mmol/L'], ['cl', 'mmol/L'], ['co2', 'mmol/L'], ['bun', 'mg/dL'], ['cr', 'mg/dL'], ['glu', 'mg/dL'], ['ca', 'mg/dL']];
   const performer = more.performer ?? CLINIC;
+  const panelCode = more.code ?? '51990-0';
   const results = analytes.map(([a, unit]) =>
     obs(`obs-t6-${key}-${a}`, who, C[a], v[a], unit, at, issued, enc, { ...(notes[a as 'k' | 'cr'] ? { note: notes[a as 'k' | 'cr'] } : {}), high: (a === 'k' && v.k > 5.1) || (a === 'glu' && v.glu > 99) || (a === 'cr' && (more.high ?? []).includes('cr')), performer }),
   );
@@ -211,7 +216,7 @@ function bmp(key: string, who: Who, at: string, issued: string, enc: string | nu
       id: `dr-t6-${key}`,
       status: 'final',
       category: [{ coding: [{ system: 'http://terminology.hl7.org/CodeSystem/v2-0074', code: 'LAB', display: 'Laboratory' }] }],
-      code: { coding: [{ system: LOINC, code: '51990-0', display: 'Basic metabolic panel - Blood' }], text: 'Basic metabolic panel - Blood' },
+      code: { coding: [{ system: LOINC, code: panelCode, display: PANEL_CODES[panelCode] }], text: PANEL_CODES[panelCode] },
       subject: subject(who),
       ...(enc ? { encounter: { reference: `Encounter/${enc}` } } : {}),
       effectiveDateTime: at,
@@ -492,14 +497,16 @@ function kaplan(world: WorldReader): Resource[] {
     condition('cond-t6-kaplan-htn', 'kaplan', HTN[0], HTN[1], '2019-02-11T10:00:00-05:00'),
     medication('mr-t6-kaplan-lisinopril-24', 'kaplan', RX.lis10, 10, 'QD', '2024-10-28T15:40:00-04:00', 'Essential hypertension', YEAR, 'completed', LIN),
     medication('mr-t6-kaplan-lisinopril10', 'kaplan', RX.lis10, 10, 'QD', '2025-10-27T09:15:00-04:00', 'Essential hypertension', YEAR, 'stopped'),
-    ...bmp('kaplan-0928', 'kaplan', '2026-09-28T08:40:00-04:00', '2026-09-28T12:55:00-04:00', null, { na: 139, k: 4.5, cl: 102, co2: 25, bun: 14, cr: 1.0, glu: 96, ca: 9.4, egfr: 86 }),
+    // The hosts' panels carry the generated charts' value forms (a decimal place on the analytes
+    // that are not the item's lines) and codes (scripts/test/world-tells.test.ts).
+    ...bmp('kaplan-0928', 'kaplan', '2026-09-28T08:40:00-04:00', '2026-09-28T12:55:00-04:00', null, { na: 139.4, k: 4.5, cl: 101.7, co2: 24.6, bun: 14.2, cr: 1.0, glu: 96.3, ca: 9.4, egfr: 86.2 }, {}, { code: '24321-2' }),
     encounter('enc-t6-kaplan-0928', 'kaplan', PROBLEM, '2026-09-28T14:30:00-04:00', '2026-09-28T15:00:00-04:00'),
     note('doc-t6-kaplan-0928', 'kaplan', '2026-09-28T15:05:00-04:00', 'progress', OKAFOR, CLINIC, visitNote('kaplan', 'Hypertension follow-up.\nBP 154/94 and 150/92 on lisinopril 10 mg daily; home readings 145 to 155 systolic. Pre-visit labs this morning: creatinine 1.00, potassium 4.5.\nPlan: increase lisinopril to 20 mg daily (30-day supply). BMP in 3 weeks.'), 'enc-t6-kaplan-0928'),
     medication('mr-t6-kaplan-lisinopril', 'kaplan', RX.lis20, 20, 'QD', '2026-09-28T14:55:00-04:00', 'Essential hypertension', { days: 30, refills: 0, tablets: 30 }),
     encounter('enc-t6-kaplan-uc-0928', 'kaplan', PROBLEM, '2026-09-28T17:10:00-04:00', '2026-09-28T18:40:00-04:00', BRIGID_UC),
-    ...bmp('kaplan-uc-0928', 'kaplan', '2026-09-28T17:30:00-04:00', '2026-09-28T18:25:00-04:00', 'enc-t6-kaplan-uc-0928', { na: 137, k: 4.3, cl: 100, co2: 23, bun: 19, cr: 1.24, glu: 104, ca: 9.2, egfr: 66 }, {}, { performer: HOSPITAL }),
+    ...bmp('kaplan-uc-0928', 'kaplan', '2026-09-28T17:30:00-04:00', '2026-09-28T18:25:00-04:00', 'enc-t6-kaplan-uc-0928', { na: 136.8, k: 4.3, cl: 99.6, co2: 22.9, bun: 18.7, cr: 1.24, glu: 103.5, ca: 9.2, egfr: 65.8 }, {}, { performer: HOSPITAL, code: '24323-8' }),
     note('doc-t6-kaplan-uc-0928', 'kaplan', '2026-09-28T18:40:00-04:00', 'progress', HOSPITAL, HOSPITAL, KAPLAN_UC, 'enc-t6-kaplan-uc-0928'),
-    ...bmp('kaplan-1019', 'kaplan', '2026-10-19T09:20:00-04:00', '2026-10-19T14:50:00-04:00', null, { na: 139, k: 4.8, cl: 101, co2: 24, bun: 21, cr: 1.46, glu: 98, ca: 9.3, egfr: 55 }, {}, { high: ['cr'] }),
+    ...bmp('kaplan-1019', 'kaplan', '2026-10-19T09:20:00-04:00', '2026-10-19T14:50:00-04:00', null, { na: 138.9, k: 4.8, cl: 100.8, co2: 23.7, bun: 20.6, cr: 1.46, glu: 97.9, ca: 9.3, egfr: 54.7 }, {}, { high: ['cr'], code: '24321-2' }),
   ];
 }
 
@@ -520,11 +527,11 @@ function mercer(world: WorldReader): Resource[] {
     encounter('enc-t6-mercer-0608', 'mercer', VISIT, '2026-06-08T09:00:00-04:00', '2026-06-08T09:30:00-04:00'),
     obs('obs-t6-mercer-a1c-0608', 'mercer', C.a1c, 7.3, '%', '2026-06-08T09:10:00-04:00', '2026-06-08T14:30:00-04:00', 'enc-t6-mercer-0608', { high: true }),
     note('doc-t6-mercer-0608', 'mercer', '2026-06-08T09:35:00-04:00', 'progress', OKAFOR, CLINIC, visitNote('mercer', 'Diabetes and hypertension follow-up.\nBP 138/84 on lisinopril 10 mg daily. Taking metformin 1000 mg twice daily. HbA1c 7.3% today.\nPlan: continue both. Recheck in 4 months.'), 'enc-t6-mercer-0608'),
-    ...bmp('mercer-0930', 'mercer', '2026-09-30T08:30:00-04:00', '2026-09-30T13:10:00-04:00', null, { na: 140, k: 4.6, cl: 103, co2: 25, bun: 17, cr: 1.0, glu: 131, ca: 9.4, egfr: 60 }),
+    ...bmp('mercer-0930', 'mercer', '2026-09-30T08:30:00-04:00', '2026-09-30T13:10:00-04:00', null, { na: 139.8, k: 4.6, cl: 102.6, co2: 24.9, bun: 16.8, cr: 1.0, glu: 131.4, ca: 9.4, egfr: 59.9 }, {}, { code: '24321-2' }),
     encounter('enc-t6-mercer-1001', 'mercer', PROBLEM, '2026-10-01T14:20:00-04:00', '2026-10-01T14:50:00-04:00'),
     note('doc-t6-mercer-1001', 'mercer', '2026-10-01T14:55:00-04:00', 'progress', OKAFOR, CLINIC, visitNote('mercer', 'Hypertension follow-up.\nBP 156/92 and 152/90 on lisinopril 10 mg daily. Taking metformin 1000 mg twice daily. Pre-visit labs of yesterday: creatinine 1.00, potassium 4.6, eGFR 60.\nPlan: increase lisinopril to 20 mg daily (30-day supply). BMP in 2 weeks.'), 'enc-t6-mercer-1001'),
     medication('mr-t6-mercer-lisinopril', 'mercer', RX.lis20, 20, 'QD', '2026-10-01T14:40:00-04:00', 'Essential hypertension', { days: 30, refills: 0, tablets: 30 }),
-    ...bmp('mercer-1015', 'mercer', '2026-10-15T09:05:00-04:00', '2026-10-15T14:35:00-04:00', null, { na: 139, k: 4.9, cl: 102, co2: 24, bun: 20, cr: 1.12, glu: 128, ca: 9.3, egfr: 52 }),
+    ...bmp('mercer-1015', 'mercer', '2026-10-15T09:05:00-04:00', '2026-10-15T14:35:00-04:00', null, { na: 139.2, k: 4.9, cl: 101.9, co2: 24.3, bun: 19.6, cr: 1.12, glu: 127.8, ca: 9.3, egfr: 52.3 }, {}, { code: '24321-2' }),
   ];
 }
 // The hosts of the active static lever items (overlay isolation: a Patient the overlay adds is its own).

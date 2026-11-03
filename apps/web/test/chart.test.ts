@@ -12,15 +12,24 @@ import { id as t2 } from '../../../tasks/results-inbox/ids.ts';
 import { id as t3 } from '../../../tasks/crc-care-gap/ids.ts';
 import { id as t5 } from '../../../tasks/contrast-ct-prep/ids.ts';
 import { id as t6 } from '../../../tasks/message-queue/ids.ts';
+import { TASK_IDS } from '../../../fixtures/ids.ts';
+import { TASKS } from '../../../packages/env/overlay.ts';
 
 const REPO = join(import.meta.dirname, '../../..');
+
+// A task's patients: its slots (packages/env/overlay.ts TASKS) and the Patients its overlay adds
+// (its registry's pt- keys, fixtures/ids.ts), which follow the task's lever state (W5-E), each as a
+// reference, in id order.
+const patientsOf = (task: keyof typeof TASKS): string[] =>
+  [...TASKS[task].slots, ...Object.entries(TASK_IDS[task] as Record<string, string>).filter(([k]) => k.startsWith('pt-')).map(([, v]) => v)].sort().map((p) => `Patient/${p}`);
 
 describe('taskPatients', () => {
   // Since the W1 probes every task is a worklist (builder-249): the patients are the list's.
   it('finds the patients of each worklist task', () => {
-    expect(taskPatients(world, 'renal-dose-review')).toEqual(['Patient/pt-0001', 'Patient/pt-0002', 'Patient/pt-0003', 'Patient/pt-0038', 'Patient/pt-0039', 'Patient/pt-0040', 'Patient/pt-0041', 'Patient/pt-0043', 'Patient/pt-0045']);
-    expect(taskPatients(world, 'discharge-medrec')).toEqual(['Patient/pt-0004', 'Patient/pt-0005', 'Patient/pt-0042', 'Patient/pt-0044']);
-    expect(taskPatients(world, 'contrast-ct-prep')).toEqual(['Patient/pt-0012', 'Patient/pt-0015', 'Patient/pt-0046', 'Patient/pt-0047', 'Patient/pt-0048', 'Patient/pt-0049', 'Patient/pt-0050']);
+    expect(patientsOf('T1')).toContain('Patient/pt-0001');
+    expect(taskPatients(world, 'renal-dose-review')).toEqual(patientsOf('T1'));
+    expect(taskPatients(world, 'discharge-medrec')).toEqual(patientsOf('T4'));
+    expect(taskPatients(world, 'contrast-ct-prep')).toEqual(patientsOf('T5'));
   });
   it('finds every member of the panel task\'s group, and the patients of the inbox and queue tasks', () => {
     const panel = world.find((r) => r.resourceType === 'Group' && r.id === t3('grp-t3-okafor-crc')) as unknown as { member: { entity: { reference: string } }[] };

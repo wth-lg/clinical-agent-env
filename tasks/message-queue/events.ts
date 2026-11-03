@@ -243,9 +243,12 @@ const webbObs = (rid: string, code: string, display: string, value: number, unit
 // The redrawn panel with its potassium at `k`, under the ids of `ids`: webb-c1's (5.8, high) and
 // webb-a1's (4.6, normal). The report lists its results in the clinic's panel order: sodium,
 // potassium, then the rest.
-function webbRedraw(ids: typeof ARRIVAL.webbC1 | typeof ARRIVAL.webbA1, k: number): { k: Resource; panel: Resource; rest: Resource[]; egfr: Resource } {
+// webb-a1's glucose is within range (the T1 gate's F1: a silently filed sibling sits inside its
+// laboratory's reference range, or the routing would have flagged and notified it); webb-c1 keeps
+// the W4 panel's 121 (R37).
+function webbRedraw(ids: typeof ARRIVAL.webbC1 | typeof ARRIVAL.webbA1, k: number, glucose?: number): { k: Resource; panel: Resource; rest: Resource[]; egfr: Resource } {
   const kObs = webbObs(ids.k, '2823-3', 'Potassium [Moles/volume] in Serum or Plasma', k, 'mmol/L', [3.5, 5.1], k > 5.1);
-  const rest = ANALYTES.map(([, code, display, value, unit, ref, high], i) => webbObs(ids.rest[i]!, code, display, value, unit, ref, high === true));
+  const rest = ANALYTES.map(([key, code, display, value, unit, ref, high], i) => (key === 'glu' && glucose !== undefined ? webbObs(ids.rest[i]!, code, display, glucose, unit, ref, glucose > 99) : webbObs(ids.rest[i]!, code, display, value, unit, ref, high === true)));
   const egfr = { ...(webbObs(ids.egfr, '33914-3', EGFR_CODE.text, 90, 'mL/min/1.73m2', null, false, 'mL/min/{1.73_m2}') as object), code: EGFR_CODE } as Resource;
   const panel: Resource = {
     resourceType: 'DiagnosticReport',
@@ -265,7 +268,7 @@ function webbRedraw(ids: typeof ARRIVAL.webbC1 | typeof ARRIVAL.webbA1, k: numbe
 const { k: webbK, panel: webbPanel, rest: webbRest, egfr: webbEgfr } = webbRedraw(ARRIVAL.webbC1, 5.8);
 // ---- webb-a1 (A, W5-E): the same redraw with the potassium normal; the inbox item's focus is the
 // potassium, the panel and the other analytes file silently (the header's routing) ----
-const { k: webbA1K, panel: webbA1Panel, rest: webbA1Rest, egfr: webbA1Egfr } = webbRedraw(ARRIVAL.webbA1, 4.6);
+const { k: webbA1K, panel: webbA1Panel, rest: webbA1Rest, egfr: webbA1Egfr } = webbRedraw(ARRIVAL.webbA1, 4.6, 96);
 
 // ---- mercer-b1 (B, W5-E reserve): the 10/15 creatinine corrected, and the eGFR recalculated from it ----
 // The world's records (fixtures:build places the 10/15 panel at MERCER_1015), with the corrected
