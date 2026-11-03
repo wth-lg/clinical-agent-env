@@ -30,7 +30,8 @@
 // a gate comparing the two on such a record compares two rules. Before TOOLS_VERSION 3 no
 // snippet exposed its note, even one showing the whole note; from 3 on an uncut snippet does.
 import type { TrialEvent } from '../core/events.ts';
-import { sortStart } from '../env/search.ts';
+import { search, sortStart } from '../env/search.ts';
+import type { Resource } from '../env/store.ts';
 import { collapseWhitespace, shownText } from '../env/tools/registry.ts';
 import type { Step, StepNotes, StepSearch } from './check.ts';
 
@@ -149,59 +150,114 @@ export function passesWindow(s: StepSearch, opens: number, closes: number): bool
 }
 
 // R27 page runs, shared by every absence and window review (T3 absenceShownAt, T2 windowSearchedAt,
-// T6 coveredAt; builder-292 G2, verifier-phase-P17i-S0-208-1 M2, M3). A run starts at a covering page
-// at offset 0 and continues with covering pages, each at the previous page's next_offset (other
-// calls may come between them). It is complete at a page with no next_offset, or at a sorted page
-// that passes the window's edge (R36, `passes`: passesWindow with the caller's window). A whole page
-// is complete by itself. The step of the first completion, or null.
+// T6 coveredAt; builder-292 G2, verifier-phase-P17i-S0-208-1 M2, M3; builder-294 G5). A run starts at
+// a covering page at offset 0 and continues with covering pages, each at the previous page's
+// next_offset (other calls may come between them). It is complete at a page with no next_offset, or
+// at a sorted page that passes the window's edge (R36, `passes`: passesWindow with the caller's
+// window). A whole page is complete by itself. The step of the first completion, or null.
 //
 // A later page continues the run when it has the same type, filters and order as the run's first
 // page, or (G2; R34, R16: never stricter than the policy) the same type and order, filters that nest
 // (one page's match set holds the other's: every filter the narrower sets, the wider sets the same or
 // leaves out) and the same total. Two nested sets of one size are one set, so both pages list the
-// same records in the same order and joined offsets show every one. That holds only if no record of
-// the searched type entered the store between the two calls (M3): a nested join is refused when an
-// arrival added one between them. An arrival lands after the call that fires it, so the steps from
-// the first page's up to, not including, the later page's. It adds a record when its id of the
-// searched type was not exposed or referenced by any step up to the one that fired it; a class B
-// correction that replaces a record in place (crc-b2 on its trigger page, pilot-4a crc-care-gap/2)
-// keeps the set and its size. The check reads the searched query's patient (coordinator at the #208
-// handshake): when both pages name one patient, an arrival the caller's resolver (arrivalPatient:
-// events.ts arrivalPatients over the task's specs) puts on another patient leaves her records as
-// they were. An arrival it cannot place, or any arrival under a clinic-wide page, still counts.
-// Filters that do not nest, and a page without a total, prove nothing. A run with the same filters keeps R27's rule as before: an arrival
-// between its pages shifts offsets, which no task's events do mid-review (each list's triggers fire
-// on a write, after the reads, or on the read that exposes the record the arrival replaces).
+// same records in the same order and joined offsets show every one.
+//
+// A run that stops can be finished by a narrower query (G5, pilot-4b crc-care-gap/1). The run is
+// sorted by date, explicitly; the later query has the same type, order and filters, except that it
+// bounds the date on the side the run was heading to (newest first: date_le; oldest first: date_ge),
+// and it starts at offset 0. The bound reaches the last row shown: newest first, a row dated at the
+// last page's earliest instant matches date_le, as fhir_search reads the bound (a date-only bound
+// covers its day in UTC); oldest first, a row at the last page's latest instant matches date_ge.
+// Every row the run did not show sorts at or beyond that row, so the narrower query holds it (sort
+// and date filter read the same date values: env search.ts sortStart, dateMatcher). The run's first
+// page must carry a date filter: rows without a date sort last either way, and a date bound would
+// hide them. The narrower query then runs as a run of its own, not held to `covers`, and its
+// completion completes the review; it may stop and be finished by a narrower query again. A gap
+// between the last row and the bound, another order, another non-date filter or a moved far-side
+// bound proves nothing.
+//
+// Every join holds only if no record of the searched type entered the store between the two calls
+// (M3; N1 for a run with the same filters, whose offsets an arrival would shift): it is refused when
+// an arrival added one between them. An arrival lands after the call that fires it, so the steps
+// from the earlier page's up to, not including, the later page's (for a narrower query, from the
+// last page shown). It adds a record when its id of the searched type was not exposed or referenced
+// by any step that ran (not a failed call: N4) up to the one that fired it; a class B correction
+// that replaces a record in place (crc-b2 on its trigger page, pilot-4a crc-care-gap/2) keeps the set
+// and its size. The check reads the searched query's patient (coordinator at the #208 handshake):
+// when both pages name one patient, an arrival the caller's resolver (arrivalPatient: events.ts
+// arrivalPatients over the task's specs) puts on another patient leaves her records as they were.
+// An arrival it cannot place, or any arrival under a clinic-wide page, still counts. Filters that do
+// not nest, and a nested page without a total, prove nothing.
 const RUN_FILTERS = ['patient', 'code', 'category', 'date_ge', 'date_le', 'status'] as const;
 export const runKey = (s: StepSearch): string => JSON.stringify([s.type, ...RUN_FILTERS.map((k) => s[k] ?? null), s.sort ?? 'date']);
 const holdsAll = (wide: StepSearch, narrow: StepSearch) => RUN_FILTERS.every((k) => wide[k] === undefined || wide[k] === narrow[k]);
 export type ArrivalPatient = (key: string) => string | undefined;
+// Whether an arrival on a step from `from` up to, not including, `to` added a record of the
+// searched type to the set the pages s0 and s list (M3, N1, N4).
+function addedBetween(steps: readonly Step[], from: number, to: number, s0: StepSearch, s: StepSearch, arrivalPatient?: ArrivalPatient): boolean {
+  const known = (k: string, at: number) => steps.some((st) => st.n <= at && !st.is_error && (st.exposed_ids.includes(k) || st.referenced_ids.includes(k)));
+  const patient = s0.patient !== undefined && s.patient === s0.patient ? s0.patient : undefined;
+  const elsewhere = (k: string) => patient !== undefined && arrivalPatient !== undefined && (arrivalPatient(k) ?? patient) !== patient;
+  return steps.some((st) => st.n >= from && st.n < to && (st.arrivals ?? []).some((a) => a.keys.some((k) => k.startsWith(`${s0.type}/`) && !known(k, st.n) && !elsewhere(k))));
+}
 export function continuesRun(steps: readonly Step[], first: Step, later: Step, arrivalPatient?: ArrivalPatient): boolean {
   const s0 = first.search!;
   const s = later.search!;
-  if (runKey(s) === runKey(s0)) return true;
-  if (s.type !== s0.type || (s.sort ?? 'date') !== (s0.sort ?? 'date') || s0.total === undefined || s.total !== s0.total) return false;
-  if (!holdsAll(s, s0) && !holdsAll(s0, s)) return false;
-  const known = (k: string, at: number) => steps.some((st) => st.n <= at && (st.exposed_ids.includes(k) || st.referenced_ids.includes(k)));
-  const patient = s0.patient !== undefined && s.patient === s0.patient ? s0.patient : undefined;
-  const elsewhere = (k: string) => patient !== undefined && arrivalPatient !== undefined && (arrivalPatient(k) ?? patient) !== patient;
-  return !steps.some((st) => st.n >= first.n && st.n < later.n && (st.arrivals ?? []).some((a) => a.keys.some((k) => k.startsWith(`${s0.type}/`) && !known(k, st.n) && !elsewhere(k))));
+  if (runKey(s) !== runKey(s0)) {
+    if (s.type !== s0.type || (s.sort ?? 'date') !== (s0.sort ?? 'date') || s0.total === undefined || s.total !== s0.total) return false;
+    if (!holdsAll(s, s0) && !holdsAll(s0, s)) return false;
+  }
+  return !addedBetween(steps, first.n, later.n, s0, s, arrivalPatient);
+}
+// Whether a row dated at instant t matches date_le (or date_ge) = value, read by fhir_search itself
+// on a one-row probe, so the bound's precision and offset are read as the tool reads them. A value
+// the search rejects matches nothing.
+function boundHolds(key: 'date_le' | 'date_ge', value: string, t: number): boolean {
+  const row = { resourceType: 'Observation', id: 'edge', status: 'final', code: {}, effectiveDateTime: new Date(t).toISOString() } as unknown as Resource;
+  try {
+    return search<Resource>([row], 'Observation', { date: `${key === 'date_le' ? 'le' : 'ge'}${value}` }).total === 1;
+  } catch {
+    return false;
+  }
+}
+// A run in progress: the first page of its current query, the last page it joined and the offset it
+// expects next.
+interface RunState { seg: Step; last: Step; next: number | undefined }
+// Whether `later` starts a narrower query that holds every row run r did not show (G5).
+function narrowsRest(steps: readonly Step[], r: RunState, later: Step, arrivalPatient?: ArrivalPatient): boolean {
+  const b = r.seg.search!;
+  const span = r.last.search!.span;
+  const s = later.search!;
+  const near = s.sort === '-date' ? 'date_le' : s.sort === 'date' ? 'date_ge' : undefined;
+  if (near === undefined || (s.offset ?? 0) !== 0 || s.type !== b.type || s.sort !== b.sort || span === undefined) return false;
+  if (b.date_ge === undefined && b.date_le === undefined) return false;
+  if (RUN_FILTERS.some((k) => k !== near && s[k] !== b[k])) return false;
+  const bound = s[near];
+  if (bound === undefined || !boundHolds(near, bound, near === 'date_le' ? span[0] : span[1])) return false;
+  return !addedBetween(steps, r.last.n, later.n, b, s, arrivalPatient);
 }
 export function runCompleteAt(steps: readonly Step[], covers: (s: StepSearch) => boolean, passes: (s: StepSearch) => boolean, arrivalPatient?: ArrivalPatient): number | null {
-  const covering = steps.filter((st) => st.search !== undefined && covers(st.search));
+  const searches = steps.filter((st) => st.search !== undefined);
   let best: number | null = null;
   const done = (n: number) => { best = best === null ? n : Math.min(best, n); };
-  for (const [i, first] of covering.entries()) {
+  for (const [i, first] of searches.entries()) {
     const s0 = first.search!;
-    if ((s0.offset ?? 0) !== 0) continue;
+    if (!covers(s0) || (s0.offset ?? 0) !== 0) continue;
     if (s0.whole || passes(s0)) { done(first.n); continue; }
-    let next = s0.next_offset;
-    for (const later of covering.slice(i + 1)) {
-      if (next === undefined) break;
+    // Each narrower query opens a state of its own beside the run it would finish.
+    let states: RunState[] = [{ seg: first, last: first, next: s0.next_offset }];
+    run: for (const later of searches.slice(i + 1)) {
       const s = later.search!;
-      if (s.offset !== next || !continuesRun(steps, first, later, arrivalPatient)) continue;
-      next = s.next_offset;
-      if (next === undefined || passes(s)) { done(later.n); break; }
+      const out: RunState[] = [];
+      for (const r of states) {
+        const joins = r.next !== undefined && s.offset === r.next && (r.seg !== first || covers(s)) && continuesRun(steps, r.seg, later, arrivalPatient);
+        const opens = !joins && narrowsRest(steps, r, later, arrivalPatient);
+        if ((joins || opens) && (s.next_offset === undefined || passes(s))) { done(later.n); break run; }
+        if (joins) out.push({ seg: r.seg, last: later, next: s.next_offset });
+        else out.push(r);
+        if (opens) out.push({ seg: later, last: later, next: s.next_offset });
+      }
+      states = out;
     }
   }
   return best;

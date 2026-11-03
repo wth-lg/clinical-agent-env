@@ -212,7 +212,8 @@ export function windowCovers(s: StepSearch, w: Window): boolean {
 // held every match (whole), or a run of pages from offset 0, each at the previous next_offset, the
 // last with none, whose pages keep the first page's type, filters and order, or nest with it at the
 // same total (exposure.ts runCompleteAt, continuesRun: builder-292 G2, verifier-phase-P17i-S0-208-1
-// M2); other calls may come between the pages. The window is reviewed at the run's last page, or at
+// M2), or a sorted run that stops and is finished by the same search bounded at its last row shown,
+// complete itself (builder-294 G5); other calls may come between the pages. The window is reviewed at the run's last page, or at
 // a sorted run's first page past the window's edge (R36, passesWindow; fhir_search sorts by the
 // effective time the rule dates a creatinine by). Null when no complete covering search ran.
 export function windowSearchedAt(steps: readonly Step[], w: Window): number | null {

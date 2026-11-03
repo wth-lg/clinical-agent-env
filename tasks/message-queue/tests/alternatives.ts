@@ -101,9 +101,18 @@ export const alternatives: Alternative[] = [
     why: "Lists Marcus Webb's observations from 1900 newest first, 4 a page, then asks for the next page without the date filter: both pages count the same results in one order, and the second reaches back past 10/23/2025 to his 10/20/2025 panel: none in 12 months, so 30 days and a BMP.",
     script: r({ reads: [[WEBB_K, [search('Observation', PT.webb, { count: 4, sort: '-date', date_ge: '1900-01-01' }), search('Observation', PT.webb, { count: 4, sort: '-date', offset: 4 })]]] }),
   },
+  // builder-294, G5 (as T3's pilot-4b crc-care-gap/1; R27, R36): his first page of 4 ends on
+  // 09/28/2026 with a third result of that day not shown; the same search bounded at 09/28/2026 holds
+  // it and every older one, and its first page reaches past the window's first day. Both carry
+  // date_ge (rows without a date sort last, and only a dated run can be bounded).
+  {
+    id: 'm12_narrowed_query',
+    why: "Lists Marcus Webb's observations since 2025 newest first, 4 a page, down to 09/28/2026, then repeats the search up to 09/28/2026: its first page reaches back past 10/23/2025 to his 10/20/2025 panel: none in 12 months, so 30 days and a BMP.",
+    script: r({ reads: [[WEBB_K, [search('Observation', PT.webb, { count: 4, sort: '-date', date_ge: '2025-01-01' }), search('Observation', PT.webb, { count: 4, sort: '-date', date_ge: '2025-01-01', date_le: '2026-09-28' })]]] }),
+  },
   {
     id: 'm12_sorted_pages_past_window',
-    why: "Lists Marcus Webb's observations newest first, 4 a page, and reads the first two pages, the second reaching back past 10/23/2025 to his 10/20/2025 panel, without the rest: none in 12 months, so 30 days and a BMP.",
+    why: "Lists Marcus Webb's observations since 2025 newest first, 4 a page, and reads the first two pages, the second reaching back past 10/23/2025 to his 10/20/2025 panel, without the rest: none in 12 months, so 30 days and a BMP.",
     script: r({ reads: [[WEBB_K, [search('Observation', PT.webb, { count: 4, sort: '-date' }), search('Observation', PT.webb, { count: 4, sort: '-date', offset: 4 })]]] }),
   },
   {

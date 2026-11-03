@@ -46,6 +46,10 @@ const [WEBB_K, WEBB_EGFR] = [WEBB_READS.calls[0]!, WEBB_READS.calls[1]!];
 // the 2025-10-20 panel is shown either, R20).
 const webbK = (...to: ReturnType<typeof call>[]): RouteOpts => ({ reads: [[WEBB_K, to], [WEBB_EGFR, [since(PT.webb, '33914-3', '2026-01-01')]]] });
 
+// The day before his 09/28/2026 results, built from parts: a date written out in a task file pins its
+// patients' encounters of that day in the world build (scripts/fixtures-lib.ts literalDatesByTask).
+const WEBB_DAY_BEFORE = ['2026', '09', '27'].join('-');
+
 export const mutants: Mutant[] = [
   // With odum-o1 active the older hemolyzed report no longer decides m3 (a newer valid potassium
   // arrives; tests/grader.ts NO_LONGER_DECIDES, R38(d)), so the two report mutants run only without it,
@@ -149,6 +153,12 @@ export const mutants: Mutant[] = [
   // R36 (builder-273): a list newest first counts only once a page reaches before the window's first
   // day; his first page of 4 ends in 09/2026, so a result from 10/23/2025 on may sit on the pages not read.
   skipped('m12_sorted_first_page_only', 'collection_date', 'm12', "Reads only the first page of 4 of Marcus Webb's observations newest first, which ends in 09/2026, short of the 12-month window, and gives 30 days and a BMP.", { reads: [[WEBB_K, [search('Observation', PT.webb, { count: 4, sort: '-date' })]]] }),
+  // builder-294, G5: a narrower search finishes a stopped run only when it holds every result the run
+  // did not show and is complete itself (R27, R36). His first page of 4 ends on 09/28/2026 with a
+  // third result of that day not shown: a bound of the day before leaves it out; a bounded search of 2 a
+  // page stopped at its first page (both of 09/28/2026) never reaches the window's first day.
+  skipped('m12_narrowed_query_gap', 'collection_date', 'm12', "Lists Marcus Webb's observations since 2025 newest first, 4 a page, down to 09/28/2026, then searches only up to the day before: a result of 09/28/2026 the first page did not show is never read, and he gives 30 days and a BMP.", { reads: [[WEBB_K, [search('Observation', PT.webb, { count: 4, sort: '-date', date_ge: '2025-01-01' }), search('Observation', PT.webb, { count: 4, sort: '-date', date_ge: '2025-01-01', date_le: WEBB_DAY_BEFORE })]]] }),
+  skipped('m12_narrowed_query_stops_short', 'collection_date', 'm12', "Lists Marcus Webb's observations since 2025 newest first, 4 a page, down to 09/28/2026, then the search up to 09/28/2026 two at a time, and stops at its first page, short of the 12-month window, and gives 30 days and a BMP.", { reads: [[WEBB_K, [search('Observation', PT.webb, { count: 4, sort: '-date', date_ge: '2025-01-01' }), search('Observation', PT.webb, { count: 2, sort: '-date', date_ge: '2025-01-01', date_le: '2026-09-28' })]]] }),
   // R31: the newest panel, before the window, read on its own is a lure.
   lureOnly('m12_panel_only', 'collection_date', 'm12', "Lists Marcus Webb's BMP panel reports under 51990-0 only, sees the 10/20/2025 panel, and gives 30 days and a BMP without a search that could show a panel in the window.", { reads: [[WEBB_K, [search('DiagnosticReport', PT.webb, { code: '51990-0', sort: '-date' })]]] }),
   {
