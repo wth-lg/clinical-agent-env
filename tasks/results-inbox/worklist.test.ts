@@ -37,8 +37,9 @@ describe('results-inbox worklist', () => {
     // Each host is numbered after the cohort's last Patient (packages/env/overlay.ts), so no base
     // id moved. (The bound is computed: a literal base patient id in a task file pins that
     // patient's visits in the hygiene pass, scripts/fixtures-lib.ts literalDatesByTask.)
-    const last = Math.max(...[...store.resources()].filter((r) => r.resourceType === 'Patient' && !hosts.includes(r.id!)).map((r) => Number(r.id!.slice(3))));
-    for (const h of hosts) expect(Number(h.slice(3)) > last, h).toBe(true);
+    const added: string[] = Object.values(HOSTS).map((k) => (IDS as Readonly<Record<string, string>>)[k]!);
+    const last = Math.max(...[...store.resources()].filter((r) => r.resourceType === 'Patient' && !added.includes(r.id!)).map((r) => Number(r.id!.slice(3))));
+    for (const h of added) expect(Number(h.slice(3)) > last, h).toBe(true);
   });
 
   // The shared sentence on arrivals (plan-amendment-w4, Event mechanism table, row "Policy
