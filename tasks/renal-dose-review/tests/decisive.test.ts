@@ -16,7 +16,7 @@ import type { Evidence } from '../../../packages/core/explain.ts';
 import { checkText } from '../../renal-dose-review.check-text.ts';
 import { expected, LEVER_ITEMS } from '../expected.ts';
 import { ref } from '../ids.ts';
-import { leverOn } from '../lever.ts';
+import { leverOn } from '../lever-keys.ts';
 
 const lref = (reference: string): string => ref(reference as Parameters<typeof ref>[0]);
 const leverPatient = (lever: 'A' | 'B' | 'reserve') => LEVER_ITEMS.find((i) => i.id === lever)!.item;

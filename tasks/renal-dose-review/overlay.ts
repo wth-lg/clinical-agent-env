@@ -32,8 +32,8 @@
 // cerebral palsy), and every visit about a pregnancy or still in progress, with what references it.
 //
 // W5 lever items (plan-amendment-w5 W5-E, builder-299; LEVER in lever.ts, G1): three more patients
-// the overlay adds (pt-t1-<key>, numbered after the cohort's last Patient), always built so that
-// no toggle moves a world id, each on the list only while its item is active (LIST):
+// the overlay adds (pt-t1-<key>, each at a fixed slot of T1's added-Patient range, so a toggle
+// moves no other id), built and on the list only while its item is active (A always):
 //
 //   item     key          drug       what decides it                                       dose now -> right dose
 //   A        fairweather  apixaban   82, 71.0 kg, SCr 1.18: one criterion. An outside ED      5 unchanged
@@ -49,8 +49,8 @@
 //                                    prescriber)
 import type { Resource } from '../../packages/env/store.ts';
 import { mrn, mrnOf } from '../../packages/env/mrn.ts';
-import type { Overlay, WorldReader } from '../../packages/env/overlay.ts';
-import { LEVER_KEYS, leverOn, type LeverId } from './lever.ts';
+import { TASKS, type Overlay, type WorldReader } from '../../packages/env/overlay.ts';
+import { LEVER_KEYS, leverOn, type LeverId } from './lever-keys.ts';
 
 const OKAFOR = { reference: 'Practitioner/pr-okafor' };
 const CLINIC = { reference: 'Organization/org-riverbend' };
@@ -360,16 +360,17 @@ export const PANEL = ['pt-0040', 'pt-0039', 'pt-0003', 'pt-0041', 'pt-0001', 'pt
 // The review list, in the order pharmacy built it (alphabetical by family name): one patient per
 // probe class and the filler (plan-amendment-w4 PW4-E3, n = 5). The other four keep their charts
 // and are off this week's list, so no id renumbers.
-// The lever patients' registry keys (lever.ts LEVER_KEYS). Every lever Patient and chart is built
-// whatever LEVER says, so no toggle moves a world id (verifier 214 F3: added Patients are numbered
-// in key order and their resources after the cohort's, so an absent one would shift the rest):
-// pt-0061 Castellano (B), pt-0062 Fairweather (A), pt-0063 Whitcombe (the reserve). LEVER toggles
-// list membership only: an inactive item's patient keeps their chart off the list, as the four W1
-// patients do. A toggles with no world change; B and the reserve change the Group (a rebuild).
+// The lever patients' registry keys (lever.ts LEVER_KEYS), each with a fixed slot in T1's added-
+// Patient range (packages/env/overlay.ts TASKS added, the central W5 slots: pt-0061 Castellano (B),
+// pt-0062 Fairweather (A), pt-0063 Whitcombe (the reserve)), so a toggle moves no other id. Item A's
+// patient is always built (A toggles its event only); B's and the reserve's are built and on the
+// list only while their item is on, and every key their toggles add is declared in the edits'
+// lever list (scripts/test/lever-invariant.test.ts).
 export const LEVER_PATIENT = Object.fromEntries((Object.keys(LEVER_KEYS) as LeverId[]).map((id) => [id, `pt-t1-${LEVER_KEYS[id]}`])) as Record<LeverId, string>;
-const ADDED = (Object.keys(LEVER_KEYS) as LeverId[]).map((id) => LEVER_PATIENT[id]).sort();
+const SLOT: Record<LeverId, number> = { B: 0, A: 1, reserve: 2 };
 const listed = (id: LeverId) => id === 'A' || leverOn(id);
-const ON_LIST = (Object.keys(LEVER_KEYS) as LeverId[]).filter(listed).map((id) => LEVER_PATIENT[id]);
+const ADDED = (Object.keys(LEVER_KEYS) as LeverId[]).filter(listed).map((id) => LEVER_PATIENT[id]).sort();
+const ON_LIST = ADDED;
 const LIST_BY_NAME: ReadonlyArray<[family: string, pt: string]> = [
   ['Castellano', LEVER_PATIENT.B],
   ['Delgado', 'pt-0003'],
@@ -818,6 +819,8 @@ const EXTRA_REMOVE: Record<string, string[]> = { 'pt-0003': ['MedicationRequest/
 
 const overlay: Overlay = {
   task: 'T1',
+  // The fixed slot of each lever Patient in T1's added range (TASKS added), present in a build or not.
+  added: Object.fromEntries((Object.keys(LEVER_KEYS) as LeverId[]).map((id) => [LEVER_PATIENT[id], SLOT[id]])),
   names: {
     'grp-t1-doac': 'grp-doac-review',
     'pr-t1-derm': 'pr-sorensen',
@@ -837,22 +840,27 @@ const overlay: Overlay = {
       put.push(...curated.put, ...(NO_VISIT_RESULTS.has(pt) ? chart.map(withoutVisit) : chart));
       remove.push(...curated.remove);
     }
-    // The lever patients (header): each added with its chart while its item is on. Its world id is
-    // the next Patient number after the cohort's last, in key order (addedPatient).
-    const last = Math.max(0, ...[...world.resources()].flatMap((r) => (r.resourceType === 'Patient' ? [Number(/^pt-(\d{4})$/.exec(r.id ?? '')?.[1] ?? 0)] : [])));
-    for (const key of ADDED) {
+    // The lever patients (header): each added with its chart while its item is on, at its slot's
+    // world id (TASKS added first + slot), which the MRN its letters quote is computed from.
+    const worldIdOf = (id: LeverId) => `pt-${String(TASKS.T1.added.first + SLOT[id]).padStart(4, '0')}`;
+    for (const id of (Object.keys(LEVER_KEYS) as LeverId[]).filter(listed)) {
+      const key = LEVER_PATIENT[id];
       const a = ADDED_PEOPLE.find((x) => x.key === key)!;
-      const worldId = `pt-${String(last + 1 + ADDED.indexOf(key)).padStart(4, '0')}`;
-      put.push(addedPatient(a, worldId), ...CHARTS[key]!(mrn(worldId)));
+      put.push(addedPatient(a, worldIdOf(id)), ...CHARTS[key]!(mrn(worldIdOf(id))));
     }
+    // Every key a LEVER toggle can add: each lever host and every record of their charts, present
+    // in this build or not (the chart builders are pure in the MRN, which is not a key).
+    const lever = (Object.keys(LEVER_KEYS) as LeverId[]).flatMap((id) => [LEVER_PATIENT[id], ...CHARTS[LEVER_PATIENT[id]]!('0000-00').map((r) => (r as { id: string }).id)]);
+    const on = listed;
     return {
       put,
       remove,
+      lever,
       lint: {
         thresholds: [
           { quantity: 'weight' as const, threshold: 60, observation: 'obs-t1-fw-wt' }, { quantity: 'scr' as const, threshold: 1.5, observation: 'obs-t1-fw-scr' },
-          { quantity: 'weight' as const, threshold: 60, observation: 'obs-t1-cas-wt' }, { quantity: 'scr' as const, threshold: 1.5, observation: 'obs-t1-cas-scr' },
-          { quantity: 'weight' as const, threshold: 60, observation: 'obs-t1-wh-wt' }, { quantity: 'scr' as const, threshold: 1.5, observation: 'obs-t1-wh-scr' },
+          ...(on('B') ? [{ quantity: 'weight' as const, threshold: 60, observation: 'obs-t1-cas-wt' }, { quantity: 'scr' as const, threshold: 1.5, observation: 'obs-t1-cas-scr' }] : []),
+          ...(on('reserve') ? [{ quantity: 'weight' as const, threshold: 60, observation: 'obs-t1-wh-wt' }, { quantity: 'scr' as const, threshold: 1.5, observation: 'obs-t1-wh-scr' }] : []),
           { quantity: 'weight', threshold: 60, observation: 'obs-t1-1103' },
           { quantity: 'scr', threshold: 1.5, observation: 'obs-t1-1105' },
           { quantity: 'weight', threshold: 60, observation: 'obs-t1-wt-1020' },
@@ -877,8 +885,8 @@ const overlay: Overlay = {
           ...ADDED.map((patient) => ({ patient, threshold: 80 })),
         ],
         // §1's 90-day window for outside letters: the ID letter of item B is well inside it.
-        windows: [{ name: 'outside letters of the last 90 days (RBC-PHARM-07 §1)', boundary: { days: 90 }, resources: ['doc-t1-cas-id-0910'] }],
-        leakage: { answers: ['44.2', '56.1', '43.9', '59.2', '1.70', '1.81'], distractors: ['doc-t1-dc-0212', 'doc-t1-1401', 'obs-t1-1505', 'obs-t1-wt-0210', 'doc-t1-cas-id-0910'] },
+        ...(on('B') ? { windows: [{ name: 'outside letters of the last 90 days (RBC-PHARM-07 §1)', boundary: { days: 90 }, resources: ['doc-t1-cas-id-0910'] }] } : {}),
+        leakage: { answers: ['44.2', '56.1', '43.9', '59.2', '1.70', '1.81'], distractors: ['doc-t1-dc-0212', 'doc-t1-1401', 'obs-t1-1505', 'obs-t1-wt-0210', ...(on('B') ? ['doc-t1-cas-id-0910'] : [])] },
       },
     };
   },

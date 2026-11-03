@@ -52,7 +52,7 @@ import { itemGate, type ItemResult, type ItemVerdict } from '../../../packages/g
 import { conceptIs, isActive, isDrug } from '../../../packages/grader/normalize.ts';
 import * as events from '../events.ts';
 import { DECISIVE_ATOMS, EVENT_EXPECT, expected, type Item } from '../expected.ts';
-import { leverOn } from '../lever.ts';
+import { leverOn } from '../lever-keys.ts';
 import { mgPerTime, perDayOf, scheduled } from './regimen.ts';
 import { rubricFor } from './rubric.ts';
 

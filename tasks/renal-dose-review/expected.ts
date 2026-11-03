@@ -1,5 +1,5 @@
 import { IDS, ref } from './ids.ts';
-import { LEVER_KEYS, leverOn, type LeverId } from './lever.ts';
+import { LEVER_KEYS, leverOn, type LeverId } from './lever-keys.ts';
 // T1's expected end state, written by hand (plan-amendment-worklist W1, builder-211; cut to five by
 // plan-amendment-w4 PW4-E3, builder-281): for each patient on the pharmacy's DOAC dose review list,
 // the inputs RBC-PHARM-07 §1 picks, the dose §2 (apixaban) or §3 (rivaroxaban) gives, and the
@@ -47,7 +47,7 @@ import { LEVER_KEYS, leverOn, type LeverId } from './lever.ts';
 // item key, patient, the event spec of an A item, the deciding sibling records). Item A's patient
 // is always built: A toggles its event only, without a rebuild (coordinator, W5 interface (5)).
 export { LEVER } from './lever.ts';
-export { LEVER_KEYS, leverOn, type LeverId } from './lever.ts';
+export { LEVER_KEYS, leverOn, type LeverId } from './lever-keys.ts';
 // A planted reference for a lever item: the world id when the world holds it, else '#unbuilt'.
 const lref = (reference: string): string => {
   const key = reference.slice(reference.indexOf('/') + 1);

@@ -28,7 +28,7 @@ import { type Mutant, oneTurn } from '../../../packages/grader/matrix/types.ts';
 import { ACTIVE, SPECS } from '../events.ts';
 import { EVENT_EXPECT, expected, LEVER_ITEMS } from '../expected.ts';
 import { id, ref } from '../ids.ts';
-import { leverOn } from '../lever.ts';
+import { leverOn } from '../lever-keys.ts';
 import { oracleFor } from '../solution/solve.ts';
 import { activeMeds, calc, CASES, clinicScr, DONE, labelOf, labs, modify, note, order, patientRead, QUEUES, recentNotes, review, RX, stop, weights, type Label, type RecheckVary, type Vary } from '../solution/steps.ts';
 

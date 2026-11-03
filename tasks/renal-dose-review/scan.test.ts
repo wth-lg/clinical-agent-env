@@ -10,7 +10,8 @@ import { TASKS } from '../../packages/env/overlay.ts';
 import type { WorldView } from '../../packages/grader/matrix/types.ts';
 import { expected, LEVER_ITEMS } from './expected.ts';
 import { IDS, ref } from './ids.ts';
-import { LEVER, leverOn } from './lever.ts';
+import { LEVER } from './lever.ts';
+import { leverOn } from './lever-keys.ts';
 import { derive } from './policy.ts';
 
 const store = await loadStore(matrixEnv().world);

@@ -4,7 +4,7 @@
 // covers it: rewording it regrades nothing.
 import { fields, items, lateness, listed, show, type CheckText } from '../packages/core/explain.ts';
 import { expected } from './renal-dose-review/expected.ts';
-import { leverOn } from './renal-dose-review/lever.ts';
+import { leverOn } from './renal-dose-review/lever-keys.ts';
 
 // A list member as a reader knows them: 'Patient/pt-0040 (Dorothy Ashworth)'.
 const who = (p: unknown) => {

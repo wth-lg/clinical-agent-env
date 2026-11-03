@@ -59,7 +59,7 @@
 import type { EventSpec } from '../../packages/env/events.ts';
 import { mrn } from '../../packages/env/mrn.ts';
 import { LEVER_ITEMS } from './expected.ts';
-import { leverOn } from './lever.ts';
+import { leverOn } from './lever-keys.ts';
 import { ref } from './ids.ts';
 
 type Resource = EventSpec['resources'][number];

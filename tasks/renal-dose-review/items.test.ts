@@ -9,7 +9,7 @@ import type { GateCheck, GateCtx } from '../../packages/grader/check.ts';
 import { OUTSIDE } from '../../packages/grader/items.ts';
 import { TASKS } from '../../packages/env/overlay.ts';
 import { CLASSES, expected, LEVER_ITEMS } from './expected.ts';
-import { leverOn } from './lever.ts';
+import { leverOn } from './lever-keys.ts';
 import { EVENT_GATE_IDS } from '../../packages/grader/events.ts';
 import { checks } from './tests/grader.ts';
 

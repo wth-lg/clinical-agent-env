@@ -19,7 +19,7 @@ import type { ScriptCall, ScriptTurn } from '../../../packages/grader/matrix/typ
 import { ACTIVE, ARRIVAL, SPECS } from '../events.ts';
 import { LEVER_ITEMS } from '../expected.ts';
 import { id, ref } from '../ids.ts';
-import { leverOn } from '../lever.ts';
+import { leverOn } from '../lever-keys.ts';
 
 export const RX = {
   apixaban2_5: '1364435',

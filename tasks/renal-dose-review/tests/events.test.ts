@@ -25,7 +25,7 @@ import { gradeRun, NULL_AGENT, trial, type MatrixEnv } from '../../../packages/g
 import { EVENT_MUTANTS, type MatrixTask, type Script } from '../../../packages/grader/matrix/types.ts';
 import { EVENT_EXPECT, expected, LEVER_ITEMS } from '../expected.ts';
 import { ACTIVE, SPECS } from '../events.ts';
-import { leverOn } from '../lever.ts';
+import { leverOn } from '../lever-keys.ts';
 import { checksFor } from './grader.ts';
 import { alternativesFor } from './alternatives.ts';
 import { mutantsFor } from './mutants.ts';

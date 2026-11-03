@@ -37,7 +37,7 @@ import { trial } from '../../../packages/grader/matrix/matrix.ts';
 import { activeSpecs } from '../../../packages/env/events.ts';
 import { ACTIVE, SPECS } from '../events.ts';
 import { DECISIVE_ATOMS, expected, LEVER_ITEMS } from '../expected.ts';
-import { leverOn } from '../lever.ts';
+import { leverOn } from '../lever-keys.ts';
 import { oracle } from '../solution/solve.ts';
 import { ref } from '../ids.ts';
 import { firstSeenBy, holdsAtoms } from './grader.ts';

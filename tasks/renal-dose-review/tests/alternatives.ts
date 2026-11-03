@@ -22,7 +22,7 @@
 import type { Alternative, ScriptCall } from '../../../packages/grader/matrix/types.ts';
 import { ACTIVE, SPECS } from '../events.ts';
 import { EVENT_EXPECT, LEVER_ITEMS } from '../expected.ts';
-import { leverOn } from '../lever.ts';
+import { leverOn } from '../lever-keys.ts';
 import { activeMeds, CASES, clinicScr, DONE, labs, message, modify, note, order, patientRead, recentNotes, review, RX, search, stop, weights, type RecheckVary } from '../solution/steps.ts';
 import { id, ref } from '../ids.ts';
 
