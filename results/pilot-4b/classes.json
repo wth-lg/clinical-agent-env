@@ -1,0 +1,219 @@
+{
+ "schema_version": 1,
+ "run_dirs": [
+  "results/pilot-4b"
+ ],
+ "grader_versions": [
+  "19"
+ ],
+ "tasks": {
+  "crc-care-gap": {
+   "trials_valid": 4,
+   "pass": 3,
+   "wilson": {
+    "lo": 0.30064184258240184,
+    "hi": 0.9544127391902995
+   },
+   "split": {
+    "model": 1,
+    "environment": 0,
+    "grader": 0,
+    "infra": 0
+   },
+   "guard_fires": 0,
+   "q": {
+    "trials": 4,
+    "seen_all": 4,
+    "rate": 1
+   },
+   "classes": [
+    {
+     "class": "frailty_advanced_illness",
+     "fails": 1,
+     "base_fails": 1,
+     "observations": 4,
+     "pass_rate": 0.75,
+     "wilson": {
+      "lo": 0.30064184258240184,
+      "hi": 0.9544127391902995
+     },
+     "labels": [
+      {
+       "trial": 1,
+       "run": "results/pilot-4b",
+       "item": "Patient/pt-0009",
+       "gate": "fit_orders",
+       "label": "retrieval"
+      }
+     ],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Patient/pt-0009",
+       "label": "Elly Shyla Trantow",
+       "fails": 1,
+       "observations": 4
+      }
+     ]
+    },
+    {
+     "class": "hospice_revoked",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 4,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.5101091635454027,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Patient/pt-0020",
+       "label": "Kelsie Wanetta Rohan",
+       "fails": 0,
+       "observations": 4
+      }
+     ]
+    },
+    {
+     "class": "collection_vs_report_date",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 4,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.5101091635454027,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Patient/pt-0022",
+       "label": "Tiny Darline Koss",
+       "fails": 0,
+       "observations": 4
+      }
+     ]
+    },
+    {
+     "class": "colonoscopy_never_done",
+     "fails": 0,
+     "base_fails": 0,
+     "observations": 4,
+     "pass_rate": 1,
+     "wilson": {
+      "lo": 0.5101091635454027,
+      "hi": 1
+     },
+     "labels": [],
+     "instances": [
+      {
+       "instance": 1,
+       "item": "Patient/pt-0024",
+       "label": "Delaine Evelyn MacGyver",
+       "fails": 0,
+       "observations": 4
+      }
+     ]
+    }
+   ],
+   "events": [
+    {
+     "id": "crc-b1",
+     "item": "Patient/pt-0009",
+     "class": "B",
+     "active": true,
+     "fired": 4,
+     "fails": 0,
+     "observations": 4,
+     "wilson": {
+      "lo": 0.5101091635454027,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 4,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "crc-b2",
+     "item": "Patient/pt-0022",
+     "class": "B",
+     "active": true,
+     "fired": 4,
+     "fails": 0,
+     "observations": 4,
+     "wilson": {
+      "lo": 0.5101091635454027,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 4,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "crc-o1",
+     "item": "Patient/pt-0024",
+     "class": "O",
+     "active": true,
+     "fired": 4,
+     "fails": 0,
+     "observations": 4,
+     "wilson": {
+      "lo": 0.5101091635454027,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 4,
+     "amend_fails_seen": 0
+    },
+    {
+     "id": "crc-d1",
+     "item": "Patient/pt-0020",
+     "class": "D",
+     "active": true,
+     "fired": 4,
+     "fails": 0,
+     "observations": 4,
+     "wilson": {
+      "lo": 0.5101091635454027,
+      "hi": 1
+     },
+     "labels": [],
+     "seen": 4,
+     "amend_fails_seen": 0
+    }
+   ],
+   "outside_failures": [],
+   "independence": {
+    "all_items_pass": 3,
+    "expected_per_item": 3,
+    "expected_per_class": 3
+   },
+   "outcomes": [
+    {
+     "trial": 0,
+     "run": "results/pilot-4b",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 1,
+     "run": "results/pilot-4b",
+     "outcome": "FAIL"
+    },
+    {
+     "trial": 2,
+     "run": "results/pilot-4b",
+     "outcome": "PASS"
+    },
+    {
+     "trial": 3,
+     "run": "results/pilot-4b",
+     "outcome": "PASS"
+    }
+   ]
+  }
+ }
+}
