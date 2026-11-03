@@ -291,13 +291,13 @@ function decisiveSeen(x: Item, ctx: GateCtx, fired: number | null = null, requir
   const at = decidedAt(x, ctx) ?? (fired === null ? null : (ctx.steps.at(-1)?.n ?? fired));
   if (at === null) return ok;
   const never = required.filter((id) => seenAt(ctx, x, id, at) === null);
-  return never.length === 0 ? ok : { met: false, why: `decided at step ${at} without ever seeing ${never.join(', ')}`, evidence: { decided_at: at, never }, ids: never };
+  return never.length === 0 ? ok : { met: false, why: `decided at step ${at} without ever seeing ${never.join(', ')}`, evidence: { decided_at: at, never }, ids: never, at };
 }
 function seenBeforeChange(x: Item, ctx: GateCtx, required: readonly string[] = x.decisive): ItemVerdict {
   const at = decidedAt(x, ctx);
   if (at === null) return ok;
   const late = required.filter((id) => seenAt(ctx, x, id, at) !== null && !seenBefore(ctx.steps, seenAt(ctx, x, id, at), at));
-  return late.length === 0 ? ok : { met: false, why: `decided at step ${at} before reading ${late.join(', ')}, which the trial read later`, evidence: { decided_at: at, late, seen: x.decisive.map((id) => ({ id, step: seenAt(ctx, x, id, at) })) }, ids: late };
+  return late.length === 0 ? ok : { met: false, why: `decided at step ${at} before reading ${late.join(', ')}, which the trial read later`, evidence: { decided_at: at, late, seen: x.decisive.map((id) => ({ id, step: seenAt(ctx, x, id, at) })) }, ids: late, at };
 }
 
 function decision(x: Item, ctx: GateCtx): ItemVerdict {

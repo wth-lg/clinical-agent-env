@@ -581,7 +581,7 @@ describe('windowTargets as of the decision step (R41 addendum)', () => {
 // among the owed records, and the caller compares that step with d by turn. The probes are the gate's
 // (arrival2.ts): webb-b2's shape with the withdrawal fired before the decision (P-c2, P-c2b) and a
 // correction that moves a never-shown record into the window before it (P-d, P-d2).
-describe('windowExposed judged at the decision step (R41 addendum 2)', () => {
+describe('windowExposed judged at the decision step (R41 addenda 2 and 3)', () => {
   const LAB = 'http://terminology.hl7.org/CodeSystem/observation-category|laboratory';
   const cat = (code: string) => [{ coding: [{ system: 'http://terminology.hl7.org/CodeSystem/observation-category', code }] }];
   const obs = (id: string, date: string, more: Record<string, unknown> = {}): Resource =>
@@ -640,5 +640,27 @@ describe('windowExposed judged at the decision step (R41 addendum 2)', () => {
     expect(complete([st(1, [A, B, 'Observation/c']), write(2, D), st(3, ['Observation/old']), write(4)], moved, 4)).toBe(3);
     // A correction fired on the decision write itself (r = d) is not owed at it: its event gates grade it.
     expect(complete([st(1, [A, B, 'Observation/c']), write(2, D)], moved, 2)).toBe(1);
+  });
+
+  it('Q2, Q4: an arrival fired by a sibling call of the decision\'s turn counts as after the decision (addendum 3)', () => {
+    // Q4: the withdrawal of c is fired by an earlier call of the decision's turn (a parallel batch); c
+    // was never shown. The owed set is the chart at the start of that turn, so c is owed in its
+    // initial state: never complete, as P-a.
+    const q4 = [st(1, [A, B]), write(2, B2, 2), write(3, undefined, 2)];
+    expect(complete(q4, withdrawn, 3)).toBe(null);
+    // Judged at the trial's end (no decision step) the withdrawal has landed: complete at step 1.
+    expect(complete(q4, withdrawn, Infinity)).toBe(1);
+    // Q2: a sibling call of the decision's turn fires the correction that moves old into the window;
+    // the agent had no turn to see it. Not owed at the decision: the review of a, b and c completes it.
+    const moved = replace('old', { effectiveDateTime: '2026-10-01T09:00:00-04:00', status: 'corrected' });
+    const D: Step['arrivals'] = [{ spec: 'x-b', keys: ['Observation/old'] }];
+    const q2 = [st(1, [A, B, 'Observation/c']), write(2, D, 2), write(3, undefined, 2)];
+    expect(complete(q2, moved, 3)).toBe(1);
+    expect(seenBefore(q2, complete(q2, moved, 3), 3)).toBe(true);
+    // Q2b: old read by id in turn 1, while still outside the window: the same.
+    expect(complete([st(1, [A, B, 'Observation/c', 'Observation/old']), write(2, D, 2), write(3, undefined, 2)], moved, 3)).toBe(1);
+    // Fired in an earlier turn, the correction is owed (P-d) and the withdrawal is not (P-c2), whatever the step gap.
+    expect(complete([st(1, [A, B, 'Observation/c']), write(2, D), write(3)], moved, 3)).toBe(null);
+    expect(complete([st(1, [A, B]), write(2, B2), write(3)], withdrawn, 3)).toBe(1);
   });
 });

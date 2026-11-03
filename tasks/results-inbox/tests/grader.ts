@@ -525,7 +525,7 @@ function baseGates(specs: readonly EventSpec[]): Check[] {
       if (never.length === 0) return ok;
       // A window's baseline is seen only by a complete search of the window (R31), so the reason names it.
       const why = never.map((id) => { const w = BASELINES.get(id); return w ? `${id} (the 7-day window from ${w.from} to ${w.to}, never searched completely)` : id; });
-      return { met: false, why: `${why.join(', ')} never seen`, evidence: { unseen: never }, ids: [x.task], omission: true };
+      return { met: false, why: `${why.join(', ')} never seen`, evidence: { unseen: never }, ids: [x.task], omission: true, ...(at === undefined ? {} : { at }) };
     },
   }),
   itemGate<Item, Set<string>>({
@@ -554,7 +554,7 @@ function baseGates(specs: readonly EventSpec[]): Check[] {
       const first = firstActionOn(ctx, x);
       const results = resultsOf(ctx, x);
       if (first === null || results.some((r) => seenBy(ctx, r, first.n))) return ok;
-      return { met: false, why: `${first.ref} at step ${first.n} came before any of its results (${results.join(', ')}) was read`, ids: [x.task], evidence: { action: first.ref, at: first.n, results } };
+      return { met: false, why: `${first.ref} at step ${first.n} came before any of its results (${results.join(', ')}) was read`, ids: [x.task], evidence: { action: first.ref, at: first.n, results }, at: first.n };
     },
   }),
   itemGate<Item>({
@@ -571,7 +571,7 @@ function baseGates(specs: readonly EventSpec[]): Check[] {
       ].flatMap((ref) => { const n = writtenAt(ctx, ref); return n === undefined ? [] : [{ ref, n }]; });
       const late = changes.flatMap((c) => unseenAt(ctx, x, c.n).map((source) => ({ change: c.ref, source, written: c.n })));
       if (late.length === 0) return ok;
-      return { met: false, why: `${late[0]!.change} at step ${late[0]!.written} came before ${late[0]!.source} was seen`, ids: [...new Set(late.map((l) => l.change))], evidence: { late } };
+      return { met: false, why: `${late[0]!.change} at step ${late[0]!.written} came before ${late[0]!.source} was seen`, ids: [...new Set(late.map((l) => l.change))], evidence: { late }, at: late[0]!.written };
     },
   }),
   itemGate<Item>({

@@ -117,7 +117,12 @@ import type { Progress } from './progress.ts';
 // after it in its initial state, and the review completes at the latest first exposure among the
 // owed records, so a withdrawal fired in an earlier turn no longer dates the review one step late,
 // and a correction that moves a never-shown record into the window before the decision makes it a
-// target. No grade on today's data moves.
+// target. No grade on today's data moves. R41 addendum 3 (builder-307,
+// verifier-phase-P17i-R41-216-3-1 F1, F2), still 22: "owed at the decision" means owed at the start
+// of the decision's turn, so an arrival fired by a sibling call of that turn counts as after the
+// decision, as one the decision write fired; each gate that judges a seen rule at a decision write
+// records the step on the item's result (items.ts ItemResult.at), and attribution judges the rule
+// at the same step, so an item's label never contradicts its gate. No grade on today's data moves.
 export const GRADER_VERSION = '22';
 
 export interface CheckResult {

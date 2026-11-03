@@ -266,9 +266,9 @@ export function runCompleteAt(steps: readonly Step[], covers: (s: StepSearch) =>
   return best;
 }
 
-// Window completeness by exposure (ruling R41 and its addenda, builder-304, builder-305 and
-// builder-306; final-1 crc-care-gap G6 and G7; verifier-phase-P17i-R41-216-1 F1, F2 and
-// verifier-phase-P17i-R41-216-2-1 F1, F2). A window review (R27, R31, R36) is complete when every
+// Window completeness by exposure (ruling R41 and its addenda, builder-304 to builder-307; final-1
+// crc-care-gap G6 and G7; verifier-phase-P17i-R41-216-1 F1, F2, verifier-phase-P17i-R41-216-2-1 F1,
+// F2 and verifier-phase-P17i-R41-216-3-1 F1, F2). A window review (R27, R31, R36) is complete when every
 // record of the reviewed kind for the patient inside the window was exposed before the decision, by
 // any combination of searches, pages or reads. The page-run rules above (one run, a sorted run past
 // the edge, a narrower query) stay as sufficient routes; a gate takes the earlier of the two. A
@@ -300,9 +300,16 @@ export function runCompleteAt(steps: readonly Step[], covers: (s: StepSearch) =>
 // withdrawn by a write of an earlier turn is not (P-c2, P-c2b: the review is complete at the
 // targets shown earlier, not one step after the withdrawal), and a correction that moves a
 // never-shown record into the window before the decision makes it a target, whether or not every
-// other target had been shown before the correction landed (P-d, P-d2). Without a decision step
-// the set is judged at the trial's end, every arrival landed: what a check that asks whether a
-// record was ever seen reads, and attribution (attribution.ts exposureOf).
+// other target had been shown before the correction landed (P-d, P-d2). "Owed at the decision"
+// means owed at the start of the decision's turn (addendum 3): the calls of one answer run in order
+// but their results reach the model together, so an arrival fired by any call of that turn, the
+// decision write among them, lands after the chart the agent decided on and counts as r >= d. A
+// withdrawal fired by a sibling call of the decision's turn leaves the result owed and unshown
+// (probe Q4, as P-a), and a correction fired by one is not owed at that decision (Q2): the agent had
+// no turn to see it. Without a decision step the set is judged at the trial's end, every arrival
+// landed: what a check that asks whether a record was ever seen by finish reads. Attribution
+// judges each failed item at the step its gate did (items.ts ItemResult.at), so a label never
+// contradicts its gate (attribution.ts exposureOf).
 //
 // The review (windowExposed) is complete at the latest first exposure among the records owed at d:
 // the first step by which every one of them had been exposed by a successful call. Exposure is by
@@ -330,9 +337,10 @@ export interface WindowTarget {
   // The step whose call fired the class B arrival that replaced the record, or null when no
   // arrival touched it (then before and after agree).
   replaced: number | null;
-  // Whether the record is owed in its initial state: at a decision step d <= `replaced`.
+  // Whether the record is owed in its initial state: at a decision step in the turn of `replaced`
+  // or an earlier one.
   before: boolean;
-  // Whether it is owed in its final state: at a decision step d > `replaced`.
+  // Whether it is owed in its final state: at a decision step of a later turn than `replaced`.
   after: boolean;
 }
 type Coded = { resourceType: string; id: string; status?: string; category?: Array<{ coding?: Array<{ system?: string; code?: string }> }>; subject?: { reference?: string }; patient?: { reference?: string } };
@@ -363,13 +371,14 @@ export function windowTargets(world: SeenWorld, steps: readonly Step[], kind: Wi
   return out;
 }
 // Whether target t is owed at decision step `at`: its final state once the arrival that replaced it
-// had landed before that step, else its initial one.
-const owedAt = (t: WindowTarget, at: number): boolean => (t.replaced !== null && t.replaced < at ? t.after : t.before);
+// was fired in an earlier turn than that step (it landed before the turn's chart was returned), else
+// its initial one (addendum 3: fired by a call of the decision's own turn, it counts as after it).
+const owedAt = (steps: readonly Step[], t: WindowTarget, at: number): boolean => (t.replaced !== null && turnOf(steps, t.replaced) < turnOf(steps, at) ? t.after : t.before);
 // The step at which the review of `targets`, judged at decision step `at` (the trial's end when
 // omitted), was complete: the latest first exposure among the targets owed at `at`; null when one
 // of them was never exposed, or none is owed.
 export function windowExposed(steps: readonly Step[], targets: readonly WindowTarget[], at: number = Infinity): number | null {
-  const owed = targets.filter((t) => owedAt(t, at));
+  const owed = targets.filter((t) => owedAt(steps, t, at));
   if (owed.length === 0) return null;
   let last = 0;
   for (const t of owed) {

@@ -54,5 +54,5 @@ GRADER_ERROR at the current grade: 0; in an earlier grade: 0. Records a later gr
 
 ## No failures
 
-- crc-care-gap: No failures in 4 trials. Strictness evidence, matrix.json at grader_task_version e40975b0aaeb86f3e94c88abeb6df7314f7795b4708b60a047039fa03f2c2968: the oracle passes, 33 of 33 mutants fail as declared, 20 of 20 alternatives pass, the null agent fails.
+- crc-care-gap: No failures in 4 trials. Strictness evidence, matrix.json at grader_task_version f9df3580b7b0dbcce3c78a74e8aad427c8936a13f577edd61907322fb7389740: the oracle passes, 33 of 33 mutants fail as declared, 20 of 20 alternatives pass, the null agent fails.
 

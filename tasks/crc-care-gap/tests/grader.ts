@@ -361,12 +361,12 @@ export const seenAt = (steps: readonly Step[], id: string, world?: SeenWorld, at
 // The words a why uses for what the trial had to see.
 const windowOf = (a: Absence) => `${a.type}${a.from === null ? '' : ` from ${a.from}`}`;
 // The screening kinds of a member whose event fired that the trial had not shown absent, by finish
-// (before null) or before step `before`, the review judged at it (M1: what her review lacked, in a
-// why and its evidence).
-const missingKinds = (steps: readonly Step[], x: Member, before: number | null, world?: SeenWorld): string[] =>
+// (before null) or before step `before`, the review judged at `at`, by default `before` (M1: what
+// her review lacked, in a why and its evidence).
+const missingKinds = (steps: readonly Step[], x: Member, before: number | null, world?: SeenWorld, at: number | undefined = before ?? undefined): string[] =>
   DELIVERED[amendSpecOf(x.patient)!.id]!.absences.filter((a) => {
-    const at = earliest([absenceShownAt(steps, x.patient, a, world, before ?? undefined), notesShownAt(steps, x.patient, a)]);
-    return at === null || (before !== null && !seenBefore(steps, at, before));
+    const shown = earliest([absenceShownAt(steps, x.patient, a, world, at), notesShownAt(steps, x.patient, a)]);
+    return shown === null || (before !== null && !seenBefore(steps, shown, before));
   }).map(windowOf);
 // What a member whose event fired lacked, in words: the kinds not shown absent and her own records
 // not seen.
@@ -412,23 +412,26 @@ const gates: Check[] = [
       // event gates' (amended), and reading the arrival is event_seen's; her base review is this
       // gate's, as for any open gap (builder-292, G1; R38(a), R14). An order placed without it ever
       // completed is a retrieval failure here.
-      // The item names her own records and the screening kinds not shown (M1). The review is
-      // judged at her first order write (R41 addendum 2).
+      // The item names her own records and the screening kinds not shown (M1). The review, and
+      // the kinds it lacked, are judged at her first order write (R41 addenda 2 and 3), the step
+      // the item records (`at`) for attribution.
       if (handed(x, ctx.steps)) {
         const rs = orders.get(x.patient) ?? [];
-        if (rs.length === 0 || reviewedAt(ctx.steps, x, ctx, orderedAt(ctx, rs)) !== null) return ok;
+        const d = orderedAt(ctx, rs);
+        if (rs.length === 0 || reviewedAt(ctx.steps, x, ctx, d) !== null) return ok;
         const own = ownNow(x);
-        const kinds = missingKinds(ctx.steps, x, null, ctx);
+        const kinds = missingKinds(ctx.steps, x, null, ctx, d);
         const unseen = own.filter((d) => firstExposed(ctx.steps, d) === null);
-        return { met: false, why: `ordered after ${amendSpecOf(x.patient)!.id} arrived without the trial ever making ${lacking(kinds, unseen)}, what decides the order`, ids: rs.map(keyOf), decisive: own, evidence: { missing_kinds: kinds, unseen } };
+        return { met: false, why: `ordered after ${amendSpecOf(x.patient)!.id} arrived without the trial ever making ${lacking(kinds, unseen)}, what decides the order`, ids: rs.map(keyOf), decisive: own, evidence: { missing_kinds: kinds, unseen }, ...(d === undefined ? {} : { at: d }) };
       }
       const rs = orders.get(x.patient) ?? [];
       const n = rs.length;
       const late = lateOf(rs);
       const ids = rs.map(keyOf);
       if (x.order === true && n !== 1) return { met: false, why: `needs one new FIT order; the trial placed ${n === 0 ? 'none' : n}`, ids };
-      const unseen = x.order === true ? x.decisive.filter((d) => seenAt(ctx.steps, d, ctx, orderedAt(ctx, rs)) === null) : [];
-      if (unseen.length > 0) return { met: false, why: `ordered without the trial ever seeing ${needed(x)}, what decides the order`, ids };
+      const d = orderedAt(ctx, rs);
+      const unseen = x.order === true ? x.decisive.filter((d1) => seenAt(ctx.steps, d1, ctx, d) === null) : [];
+      if (unseen.length > 0) return { met: false, why: `ordered without the trial ever seeing ${needed(x)}, what decides the order`, ids, ...(d === undefined ? {} : { at: d }) };
       if (x.order === null && n > 1) return { met: false, why: `may get one new FIT order; the trial placed ${n}`, ids };
       if (x.order === false && n > 0) return { met: false, why: `needs no new FIT order (${standing(x)}); the trial placed ${n}`, ids };
       if (late.length > 0) return { met: false, why: `the FIT order ${keyOf(late[0]!)} starts ${startOf(late[0]!) ?? 'on no date'}, after the measurement period ends ${PERIOD_END}`, ids };
@@ -534,8 +537,8 @@ const gates: Check[] = [
     check: (x, s) => {
       const row = s.get(x.patient);
       if (row === undefined || row.late.length === 0) return ok;
-      if (row.missing_kinds !== null) return { met: false, why: `ordered at step ${row.first} before the trial had made ${lacking(row.missing_kinds, row.unseen)}`, ids: row.late, decisive: row.exposed.map((e) => e.id), evidence: { missing_kinds: row.missing_kinds, unseen: row.unseen } };
-      return { met: false, why: `ordered at step ${row.first} before the trial had seen ${row.late.join(', ')}`, ids: row.late };
+      if (row.missing_kinds !== null) return { met: false, why: `ordered at step ${row.first} before the trial had made ${lacking(row.missing_kinds, row.unseen)}`, ids: row.late, decisive: row.exposed.map((e) => e.id), evidence: { missing_kinds: row.missing_kinds, unseen: row.unseen }, at: row.first! };
+      return { met: false, why: `ordered at step ${row.first} before the trial had seen ${row.late.join(', ')}`, ids: row.late, at: row.first! };
     },
     verdict: (s) => {
       const late = [...s.values()].flatMap((r) => r.late);

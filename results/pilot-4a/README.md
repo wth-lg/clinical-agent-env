@@ -1,6 +1,6 @@
 # pilot-4a: PW4-P1 event probe (historical once the world or a task changes, ruling R37)
 
-Six tasks x 4 trials on v1 (4 active mid-trial events per task: 3 amend + 1 lure), claude-opus-5-5 at effort high, batch 45e735cb, $36.92 settled. Recorded at grader 18 (18/24 PASS). The current grades are the grader 22 regrade (R41 and its addenda, builder-304, builder-305 and builder-306, one entry at the second addendum's grader_task_version; grader 20 (#210), 21 (P21, builder-297) and 22 change no pilot-4a grade): 19/24 PASS, the same as the grader 19 regrade (#208, the S-0 fixes). The audit, the suspected grader faults, the S-0 fairness audit and the events-solve output are in classes.md; the card is result-card.md (from summary.json and classes.json).
+Six tasks x 4 trials on v1 (4 active mid-trial events per task: 3 amend + 1 lure), claude-opus-5-5 at effort high, batch 45e735cb, $36.92 settled. Recorded at grader 18 (18/24 PASS). The current grades are the grader 22 regrade (R41 and its addenda, builder-304 to builder-307, one entry at the third addendum's grader_task_version; grader 20 (#210), 21 (P21, builder-297) and 22 change no pilot-4a grade): 19/24 PASS, the same as the grader 19 regrade (#208, the S-0 fixes). The audit, the suspected grader faults, the S-0 fairness audit and the events-solve output are in classes.md; the card is result-card.md (from summary.json and classes.json).
 
 It is pinned to:
 
