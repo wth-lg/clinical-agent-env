@@ -213,6 +213,9 @@ export function continuesRun(steps: readonly Step[], first: Step, later: Step, a
 // on a one-row probe, so the bound's precision and offset are read as the tool reads them. A value
 // the search rejects matches nothing.
 function boundHolds(key: 'date_le' | 'date_ge', value: string, t: number): boolean {
+  // A row whose date Period has no start sorts at -Infinity (env search.ts sortStart): no bound
+  // reaches it, and new Date(t) would throw (verifier-phase-P17i-G5-210-1 M1).
+  if (!Number.isFinite(t)) return false;
   const row = { resourceType: 'Observation', id: 'edge', status: 'final', code: {}, effectiveDateTime: new Date(t).toISOString() } as unknown as Resource;
   try {
     return search<Resource>([row], 'Observation', { date: `${key === 'date_le' ? 'le' : 'ge'}${value}` }).total === 1;

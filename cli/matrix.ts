@@ -16,13 +16,13 @@
 // the matrix ran on.
 // --list-tasks prints the ids --task all runs as one line of JSON and exits 1 when there are
 // none. CI's matrix job fans out over it and runs --task <id> once per task, in parallel.
-// When results/tasks-v1.json exists (P21's freeze writes it), each task it lists is checked
-// against its pinned oracle_final_hash: the matrix fails, naming the task, when the oracle ends
-// in another state. Its shape is {tasks: [{id, oracle_final_hash, ...}]}, the hash 64 lowercase
-// hex digits and each id once; a file that does not hold that, lists no task, or pins an id that is
-// not a task (a typo or a renamed task, which would leave a task unchecked) is a usage error
-// (exit 2). Without the file, or for a task it does not list, the oracle's final hash is printed,
-// unchecked.
+// When results/tasks-final.json exists (P21's per-task freeze writes it, scripts/test/tasks-final.test.ts
+// holds its shape), each task it lists is checked against its pinned oracle_final_hash: the matrix
+// fails, naming the task, when the oracle ends in another state. Its shape is
+// {tasks: {<id>: {oracle_final_hash, ...}}}, the hash 64 lowercase hex digits; a file that does not
+// hold that, lists no task, or pins an id that is not a task (a typo or a renamed task, which would
+// leave a task unchecked) is a usage error (exit 2). Without the file, or for a task it does not
+// list (one not frozen yet), the oracle's final hash is printed, unchecked.
 // A case whose second run differs leaves both runs under results/replay-mismatch/<task>/ (or
 // $REPLAY_MISMATCH_DIR): each trajectory, raw and stripped, each record, and the first
 // divergent line.
@@ -73,17 +73,17 @@ export interface Deps {
   options?: MatrixOptions;
   // The task ids --task all runs and --list-tasks prints; default matrixTaskIds.
   tasks?: () => string[];
-  // The pinned oracle final hashes; default results/tasks-v1.json, read only when it exists.
-  tasksV1?: string;
+  // The pinned oracle final hashes; default results/tasks-final.json, read only when it exists.
+  tasksFinal?: string;
 }
 
-const TASKS_V1 = join(REPO, 'results/tasks-v1.json');
+const TASKS_FINAL = join(REPO, 'results/tasks-final.json');
 
 // A file as the matrix names it: relative to the repo when it is inside it.
 const shown = (file: string) => (relative(REPO, file).startsWith('..') ? file : relative(REPO, file));
 
-// Each task's pinned oracle final hash from a tasks-v1.json, by task id: empty when the file does
-// not exist, a problem when it does not hold {tasks: [{id, oracle_final_hash}]}.
+// Each task's pinned oracle final hash from a tasks-final.json, by task id: empty when the file
+// does not exist, a problem when it does not hold {tasks: {<id>: {oracle_final_hash}}}.
 export function oracleFinalHashes(file: string): Map<string, string> | { problem: string } {
   if (!existsSync(file)) return new Map();
   const name = shown(file);
@@ -94,14 +94,14 @@ export function oracleFinalHashes(file: string): Map<string, string> | { problem
     return { problem: `${name}: ${(e as Error).message}` };
   }
   const tasks = (doc as { tasks?: unknown } | null)?.tasks;
-  if (!Array.isArray(tasks)) return { problem: `${name}: tasks must be a list` };
-  if (tasks.length === 0) return { problem: `${name}: tasks lists no task` };
+  if (tasks === null || typeof tasks !== 'object' || Array.isArray(tasks)) return { problem: `${name}: tasks must be an object keyed by task id` };
+  const entries = Object.entries(tasks as Record<string, unknown>);
+  if (entries.length === 0) return { problem: `${name}: tasks lists no task` };
   const hashes = new Map<string, string>();
-  for (const [i, t] of tasks.entries()) {
-    const { id, oracle_final_hash: hash } = (t ?? {}) as { id?: unknown; oracle_final_hash?: unknown };
-    if (typeof id !== 'string' || !TASK_ID.test(id)) return { problem: `${name}: tasks[${i}].id must be a task id` };
-    if (typeof hash !== 'string' || !/^[0-9a-f]{64}$/.test(hash)) return { problem: `${name}: tasks[${i}] (${id}) oracle_final_hash must be 64 lowercase hex digits` };
-    if (hashes.has(id)) return { problem: `${name}: task ${id} is listed more than once` };
+  for (const [id, t] of entries) {
+    const { oracle_final_hash: hash } = (t ?? {}) as { oracle_final_hash?: unknown };
+    if (!TASK_ID.test(id)) return { problem: `${name}: tasks.${JSON.stringify(id)} is not a task id` };
+    if (typeof hash !== 'string' || !/^[0-9a-f]{64}$/.test(hash)) return { problem: `${name}: tasks.${id} oracle_final_hash must be 64 lowercase hex digits` };
     hashes.set(id, hash);
   }
   return hashes;
@@ -177,11 +177,11 @@ export async function main(args: string[], deps: Deps): Promise<number> {
   const id = flags.get('--task');
   if (id === undefined) return usage(deps, '--task is required');
   const out = flags.get('--out');
-  const pinned = oracleFinalHashes(deps.tasksV1 ?? TASKS_V1);
+  const pinned = oracleFinalHashes(deps.tasksFinal ?? TASKS_FINAL);
   if (!(pinned instanceof Map)) return usage(deps, pinned.problem);
   const known = (deps.tasks ?? matrixTaskIds)();
   const stray = [...pinned.keys()].filter((t) => !known.includes(t));
-  if (stray.length > 0) return usage(deps, `${shown(deps.tasksV1 ?? TASKS_V1)} pins ${stray.join(', ')}, which ${stray.length === 1 ? 'is not a task' : 'are not tasks'} (tasks: ${known.join(', ')})`);
+  if (stray.length > 0) return usage(deps, `${shown(deps.tasksFinal ?? TASKS_FINAL)} pins ${stray.join(', ')}, which ${stray.length === 1 ? 'is not a task' : 'are not tasks'} (tasks: ${known.join(', ')})`);
   if (id === 'all') return all(deps, out, pinned);
   const r = await one(id, deps, out, pinned);
   return r.usage === undefined ? r.code : usage(deps, r.usage);
