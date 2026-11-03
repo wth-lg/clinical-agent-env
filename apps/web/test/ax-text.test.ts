@@ -9,6 +9,8 @@
 // (a committed result or document, such as results/runs/final-1 or docs/findings.md; trace-check
 // keeps that list true) is listed as a todo, not failed. Snapshots that are not
 // accessibility trees (.txt counts, not .ax.txt) are not UI text and are skipped.
+// Source comments (// and /* */) are stripped before the match, so a phrase a comment quotes never
+// counts as drawn (verifier UIBAND-219 F2: band.ts's header named the band line it draws).
 // Limit: this is a grep by view, not by tab, and it reads the view's data files whole, so it shows
 // that the route's code or data holds the text, not that this exact screen draws it (a data file such
 // as packages/core/anthropic.ts passes a model-name row on its own). e2e/labels.spec.ts asserts the
@@ -26,7 +28,9 @@ const VIEW_DATA: Record<string, string[]> = {
   environment: ['apps/web/src/environment', 'packages/env/tools', 'packages/core/try-tool.ts'],
   // The model constant the Tasks prompt tab and the Live launcher show (via adapters/ledger-browser.ts).
   tasks: ['apps/web/src/tasks', 'tasks', 'packages/core/anthropic.ts'],
-  live: ['apps/web/src/live', 'packages/core/anthropic.ts'],
+  // The live trial's outcome and fault text (explainTrial's words and NOT_AUDITED_MARKER, which
+  // data/ui.tsx FaultMeta draws) come from packages/core/explain.ts, as on Runs.
+  live: ['apps/web/src/live', 'packages/core/anthropic.ts', 'packages/core/explain.ts'],
   runs: ['apps/web/src/runs', 'apps/web/src/trial', 'packages/core/explain.ts', 'packages/core/outcomes.ts'],
   overview: ['apps/web/src/overview'],
   findings: ['apps/web/src/findings'],
@@ -67,6 +71,9 @@ function files(path: string): string[] {
     .map((e) => join(e.parentPath, e.name));
 }
 
+// A TypeScript source without its comments: /* */ blocks, and // to the end of its line when the
+// // starts the line or follows whitespace (so a URL's :// in a string stays). Markdown is not code.
+export const stripComments = (s: string, file: string) => (/\.tsx?$/.test(file) ? s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|\s)\/\/.*$/gm, '$1') : s);
 // A value placeholder, whitespace collapsed, and the typographic quotes of JSX text kept as is.
 const V = '\u0000';
 // JSX tags go (their text stays); outcome words are values, as numbers are.
@@ -84,6 +91,14 @@ const found = (text: string, raw: string) => {
 
 const checked = all.flatMap((r) => axTexts(r).filter((a) => a.file.endsWith('.ax.txt')).map((a) => ({ row: r, a })));
 
+describe('stripComments', () => {
+  it('drops // and /* */ comments of a .ts source and keeps strings, URLs and markdown', () => {
+    expect(stripComments('// the band line\nconst a = `tasks in band`; // note\n/* the\n band */ b', 'x.ts')).toBe('\nconst a = `tasks in band`; \n b');
+    expect(stripComments("const u = 'http://x/'; // c", 'x.tsx')).toBe("const u = 'http://x/'; ");
+    expect(stripComments('// kept in markdown', 'x.md')).toBe('// kept in markdown');
+  });
+});
+
 describe('ax_text strings are rendered on their routes', () => {
   it('the trace holds ax_text checks to test', () => {
     expect(checked.length).toBeGreaterThan(10);
@@ -98,7 +113,7 @@ describe('ax_text strings are rendered on their routes', () => {
     const ui = code.filter((p) => p.startsWith('apps/web/') || p.startsWith('docs/'));
     const paths = [...ui, ...(VIEW_DATA[viewOf(row.ui?.route) ?? ''] ?? []), ...SHELL];
     const data = LISTS_TASKS.has(viewOf(row.ui?.route) ?? 'overview') ? TASK_IDS : [];
-    const source = () => [...paths.flatMap(files).map((f) => readFileSync(f, 'utf8')), ...data].join('\n');
+    const source = () => [...paths.flatMap(files).map((f) => stripComments(readFileSync(f, 'utf8'), f)), ...data].join('\n');
     if (pending.length > 0) {
       it.todo(`${row.id}: "${a.text}" pending ${pending.join(', ')}`);
       continue;

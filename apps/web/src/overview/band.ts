@@ -1,30 +1,37 @@
 // The Overview band line (ui-contract P14, pre-audit F1): `<k> of <n> tasks in band`. k is the
 // number of tasks whose band_verdict in the official run's summary.json is In band
 // (packages/core/summary.ts bandVerdict, the one definition), n the number of tasks with a final
-// result: a verdict, so valid trials in that run. Both come from the summary, never a constant,
-// so the line reads `6 of 6 tasks in band` only when every task has a final result and all are in
-// band. The tasks the count leaves out (no record in the run, or no valid trial) are named in a
-// note, in the order of the task list, so a reader sees which results are still to come.
+// result: FINAL_TRIALS_PER_TASK valid trials in that run (packages/core/cost.ts), so a verdict
+// over the whole sample. Both come from the summary, never a constant, so the line reads
+// `6 of 6 tasks in band` only when every task has a final result and all are in band. A task part
+// way through the run (fewer valid trials, whatever its verdict so far) is in progress: it is never
+// counted in n or k, and the note names it with its count. A task with no record in the run is
+// named plainly. The note keeps the task list's order, so a reader sees which results are to come.
+import { FINAL_TRIALS_PER_TASK } from '../../../../packages/core/cost.ts';
 import type { BandVerdict } from '../../../../packages/core/summary.ts';
 
 export interface BandCount {
   inBand: number;
-  // Tasks with a final result (a verdict): the n of the line.
+  // Tasks with a final result: the n of the line.
   final: number;
-  // Tasks with no final result yet, in task-list order: the task list's ids the summary gives no
-  // verdict for, then any summary task the list does not name.
-  notFinal: string[];
+  // Tasks with no final result yet, in task-list order: trials is the task's valid trials in the
+  // run so far (in progress), or null when the run has no record of it.
+  notFinal: { id: string; trials: number | null }[];
 }
 
+// A task's summary entry: its verdict and its valid trials (summary.json tasks.<id>.trials).
+export type BandTask = { band_verdict: BandVerdict | null; trials: number };
+
 // tasks: the summary's tasks by id; all: the environment's task ids in Overview order, or null
-// while the task list loads (then only the summary's own verdict-less tasks are not final).
-export function bandCount(tasks: Readonly<Record<string, { band_verdict: BandVerdict | null }>>, all: readonly string[] | null): BandCount {
-  const final = new Set(Object.entries(tasks).filter(([, t]) => t.band_verdict !== null).map(([id]) => id));
+// while the task list loads (then only the summary's own tasks short of the sample are not final).
+export function bandCount(tasks: Readonly<Record<string, BandTask>>, all: readonly string[] | null): BandCount {
+  const isFinal = (t: BandTask | undefined) => t !== undefined && t.band_verdict !== null && t.trials >= FINAL_TRIALS_PER_TASK;
+  const final = Object.entries(tasks).filter(([, t]) => isFinal(t));
   const known = all === null ? Object.keys(tasks) : [...all, ...Object.keys(tasks).filter((id) => !all.includes(id))];
   return {
-    inBand: Object.values(tasks).filter((t) => t.band_verdict === 'In band').length,
-    final: final.size,
-    notFinal: known.filter((id) => !final.has(id)),
+    inBand: final.filter(([, t]) => t.band_verdict === 'In band').length,
+    final: final.length,
+    notFinal: known.filter((id) => !isFinal(tasks[id])).map((id) => ({ id, trials: tasks[id]?.trials ?? null })),
   };
 }
 
@@ -35,5 +42,6 @@ export const bandLine = (c: BandCount): string => `${c.inBand} of ${c.final} tas
 export function notFinalLine(c: BandCount): string | null {
   const n = c.notFinal.length;
   if (n === 0) return null;
-  return `${n} ${n === 1 ? 'task has' : 'tasks have'} no final result yet and ${n === 1 ? 'is' : 'are'} not counted: ${c.notFinal.join(', ')}.`;
+  const names = c.notFinal.map((t) => (t.trials === null ? t.id : `${t.id} (in progress, ${t.trials} of ${FINAL_TRIALS_PER_TASK} valid trials)`));
+  return `${n} ${n === 1 ? 'task has' : 'tasks have'} no final result yet and ${n === 1 ? 'is' : 'are'} not counted: ${names.join(', ')}.`;
 }

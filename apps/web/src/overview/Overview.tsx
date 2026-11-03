@@ -11,12 +11,11 @@
 import { CircleAlert, Info } from 'lucide-react';
 import type { Ref } from 'react';
 import { MODEL } from '../adapters/ledger-browser.ts';
-import type { BandVerdict } from '../../../../packages/core/summary.ts';
-import { FINAL_PASS_BAND } from '../../../../packages/core/cost.ts';
+import { FINAL_PASS_BAND, FINAL_TRIALS_PER_TASK } from '../../../../packages/core/cost.ts';
 import { toolCatalog } from '../../../../packages/core/try-tool.ts';
 import { pilotRates, useResults, type RunData } from '../data/results.ts';
 import { useTaskList } from '../data/tasks.ts';
-import { bandCount, bandLine, notFinalLine } from './band.ts';
+import { bandCount, bandLine, notFinalLine, type BandTask } from './band.ts';
 import { policyLine, taskTitle } from '../tasks/title.ts';
 import { BUTTON, BUTTON_PRIMARY, Card, CARD, formatInterval, GlossaryLink, Hash, IntervalRow, markLabel, MarkLegend, markOf, Notice, Page, SECTION_LABEL, Swatch } from '../data/ui.tsx';
 import { hrefWith, onNav } from '../data/url.ts';
@@ -123,10 +122,11 @@ function OfficialOverview({ run, headingRef }: { run: RunData; headingRef?: Ref<
   );
 }
 
-// The band line (ui-contract P14, pre-audit F1): `<k> of <n> tasks in band`, counted by band.ts
-// from the summary's band verdicts, with what k and n count, and the tasks with no final result
-// yet, named once the task list loads. The group's accessible name is the line.
-function BandLine({ tasks }: { tasks: Readonly<Record<string, { band_verdict: BandVerdict | null }>> }) {
+// The band line (ui-contract P14, pre-audit F1): the count band.ts makes from the summary's band
+// verdicts and valid-trial counts, a sentence saying what k and n count, and the tasks with no
+// final result yet (in progress, or not in the run), named once the task list loads. The group's
+// accessible name is the line.
+function BandLine({ tasks }: { tasks: Readonly<Record<string, BandTask>> }) {
   const list = useTaskList().tasks;
   const c = bandCount(tasks, list === null ? null : list.map((t) => t.id));
   const [lo, hi] = FINAL_PASS_BAND;
@@ -136,8 +136,8 @@ function BandLine({ tasks }: { tasks: Readonly<Record<string, { band_verdict: Ba
       <p id="band-line" data-testid="band-count" className="font-medium">{bandLine(c)}</p>
       <p className="text-xs text-ink-muted">
         {c.final === 0
-          ? 'No task has a final result yet.'
-          : `${c.inBand} of the ${c.final} ${c.final === 1 ? 'task' : 'tasks'} with a final result ${c.inBand === 1 ? 'has' : 'have'} a pass rate from ${Math.round(lo * 100)}% to ${Math.round(hi * 100)}%, both included.`}
+          ? `No task has a final result yet: a final result is ${FINAL_TRIALS_PER_TASK} valid trials.`
+          : `${c.inBand} of the ${c.final} ${c.final === 1 ? 'task' : 'tasks'} with a final result (${FINAL_TRIALS_PER_TASK} valid trials) ${c.inBand === 1 ? 'has' : 'have'} a pass rate from ${Math.round(lo * 100)}% to ${Math.round(hi * 100)}%, both included.`}
       </p>
       {note !== null && <p data-testid="band-not-final" className="text-xs text-ink-muted">{note}</p>}
     </div>

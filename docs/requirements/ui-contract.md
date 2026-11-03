@@ -174,13 +174,16 @@ launcher (P15) shows the Run lines.
 ### P14: browse views
 
 - `tasks in band`: the Overview band line, `<k> of <n> tasks in band`, matched by the pattern
-  `\b[0-9]+ of [0-9]+ tasks in band\b`. k is the number of tasks whose band_verdict in the
-  official run's summary.json is In band (pass rate 0.20-0.70 inclusive), n the number of tasks
-  with a final result (a verdict: valid trials in that run). Both come from the summary, never a
-  constant, so it reads `6 of 6 tasks in band` only when every task has a final result and all
-  are in band. The line is the accessible name of its group; under it, a sentence says what k and
-  n count, and a note names the tasks with no final result yet (`have no final result yet`), which
-  the count leaves out.
+  `\b[0-9]+ of [0-9]+ tasks in band\b`. n is the number of tasks with a final result: at least
+  FINAL_TRIALS_PER_TASK (20, packages/core/cost.ts) valid trials in the official run's summary.json,
+  so a verdict over the whole sample; k is the number of those whose band_verdict is In band (pass
+  rate 0.20-0.70 inclusive). Both come from the summary, never a constant, so it reads
+  `6 of 6 tasks in band` only when every task has a final result and all are in band. A task part
+  way through the run (fewer valid trials, whatever its verdict so far) is in progress and is never
+  counted in n or k. The line is the accessible name of its group; under it, a sentence says what k
+  and n count, and a note names the tasks the count leaves out (`have no final result yet`): an
+  in-progress task with its count (`in progress, <v> of 20 valid trials`), a task with no record in
+  the run by its id.
 - The pass rate is the text `<k>/<N> passed, Wilson 95% <lo>-<hi>%`, with k the passes out of N
   valid trials, N read from the run (never a constant), and lo and hi whole percentages joined
   by an ASCII hyphen. A 12-trial sample shows `/12`. It shows on each Overview task row, on the

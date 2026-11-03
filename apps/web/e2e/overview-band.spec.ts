@@ -1,15 +1,18 @@
 // The Overview band line (ui-contract P14, pre-audit F1, trace W1-W3, U21, U26): `<k> of <n> tasks
 // in band`, k and n counted from the official run's summary.json band verdicts (never a constant),
-// the line as the accessible name of its group, and a note naming the tasks with no final result
-// yet. On the band fixture (three tasks: In band, Above band, Saturated) the line reads 1 of 3 and
-// the note names the other three tasks of the environment; on the sample run (six tasks, five In
-// band) it reads 5 of 6 with no note. At 390 px and on the desktop the line is inside the viewport
-// with no sideways scroll; axe finds nothing serious or critical, light and dark. With SHOTS_DIR
-// set, the Overview is screenshotted in both themes at both widths.
+// a final result being FINAL_TRIALS_PER_TASK (20) valid trials, the line as the accessible name of
+// its group, and a note naming the tasks with no final result yet. On the band fixture (three tasks
+// of 20 trials: In band, Above band, Saturated) the line reads 1 of 3 and the note names the other
+// three tasks of the environment; on the sample run (six tasks of 12 trials, so none final) it
+// reads 0 of 0 and the note names all six as in progress with their counts. At 375 px and on the
+// desktop the line is inside the viewport with no sideways scroll; axe finds nothing serious or
+// critical, light and dark. With SHOTS_DIR set, the Overview is screenshotted in both themes at
+// both widths.
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { mkdirSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { FINAL_TRIALS_PER_TASK } from '../../../packages/core/cost.ts';
 import type { Summary } from '../../../packages/core/summary.ts';
 import { browseFrom } from './browse.ts';
 import { bandBase, summary as bandSummary } from './fixtures/band-verdict/band.ts';
@@ -17,21 +20,28 @@ import { sampleBase, summary as sampleSummary } from './fixtures/sample-results/
 
 const band = browseFrom(bandBase);
 const sample = browseFrom(sampleBase);
-const SIZES = [{ name: '390 px', width: 390, height: 844 }, { name: 'desktop', width: 1280, height: 900 }] as const;
+const SIZES = [{ name: '375 px', width: 375, height: 812 }, { name: 'desktop', width: 1280, height: 900 }] as const;
 // The environment's tasks, as the Overview lists them (apps/web/src/data/tasks.ts): the task
 // directories, _-prefixed ones left out.
 const TASKS = readdirSync(join(import.meta.dirname, '../../../tasks'), { withFileTypes: true }).filter((e) => e.isDirectory() && !e.name.startsWith('_')).map((e) => e.name);
 
-// The line and the note the summary calls for, counted here, apart from the UI's own code.
+// The line and the note the summary calls for, counted here, apart from the UI's own code: a task
+// is final at FINAL_TRIALS_PER_TASK valid trials with a verdict; the note names the rest, an
+// in-progress task with its count.
 function expected(s: Summary) {
-  const final = Object.entries(s.tasks).filter(([, t]) => t.band_verdict !== null).map(([id]) => id);
-  const k = Object.values(s.tasks).filter((t) => t.band_verdict === 'In band').length;
-  return { line: `${k} of ${final.length} tasks in band`, notFinal: TASKS.filter((id) => !final.includes(id)) };
+  const isFinal = (id: string) => s.tasks[id] !== undefined && s.tasks[id].band_verdict !== null && s.tasks[id].trials >= FINAL_TRIALS_PER_TASK;
+  const final = Object.keys(s.tasks).filter(isFinal);
+  const k = final.filter((id) => s.tasks[id]!.band_verdict === 'In band').length;
+  const notFinal = TASKS.filter((id) => !isFinal(id));
+  const named = notFinal.map((id) => (s.tasks[id] === undefined ? id : `${id} (in progress, ${s.tasks[id].trials} of ${FINAL_TRIALS_PER_TASK} valid trials)`));
+  const note = notFinal.length === 0 ? null : `${notFinal.length} tasks have no final result yet and are not counted: ${named.join(', ')}.`;
+  return { line: `${k} of ${final.length} tasks in band`, notFinal, note };
 }
 
-test('the fixtures: the band run has a task out of band and tasks with no result; the sample run has every task final', () => {
-  expect(expected(bandSummary)).toEqual({ line: '1 of 3 tasks in band', notFinal: ['crc-care-gap', 'renal-dose-review', 'results-inbox'] });
-  expect(expected(sampleSummary)).toEqual({ line: '5 of 6 tasks in band', notFinal: [] });
+test('the fixtures: the band run has a task out of band and tasks with no record; the sample run has six tasks of 12 trials, none final', () => {
+  expect(expected(bandSummary)).toMatchObject({ line: '1 of 3 tasks in band', notFinal: ['crc-care-gap', 'renal-dose-review', 'results-inbox'] });
+  expect(expected(sampleSummary)).toMatchObject({ line: '0 of 0 tasks in band', notFinal: TASKS });
+  expect(expected(sampleSummary).note).toContain('renal-dose-review (in progress, 12 of 20 valid trials)');
 });
 
 async function inViewport(page: Page) {
@@ -53,9 +63,9 @@ for (const size of SIZES) {
     await expect(group.getByTestId('band-count')).toHaveText(want.line);
     await expect(group).toHaveAttribute('data-in-band', '1');
     await expect(group).toHaveAttribute('data-final', '3');
-    await expect(group).toContainText('1 of the 3 tasks with a final result has a pass rate from 20% to 70%, both included.');
+    await expect(group).toContainText('1 of the 3 tasks with a final result (20 valid trials) has a pass rate from 20% to 70%, both included.');
     const note = group.getByTestId('band-not-final');
-    await expect(note).toHaveText(`3 tasks have no final result yet and are not counted: ${want.notFinal.join(', ')}.`);
+    await expect(note).toHaveText(want.note!);
     // The task ids the note names are the ones with no row in the table, and no table row's task is named.
     for (const id of want.notFinal) await expect(page.locator(`[data-testid="overview-row"][data-task="${id}"]`)).toHaveCount(0);
     for (const id of Object.keys(bandSummary.tasks)) {
@@ -65,19 +75,21 @@ for (const size of SIZES) {
     await inViewport(page);
   });
 
-  test(`${size.name}: with every task final, the line counts all six and there is no note`, async ({ page }) => {
+  test(`${size.name}: a run of 12 trials per task is in progress: 0 of 0, every task named with its count, none counted`, async ({ page }) => {
     await page.setViewportSize({ width: size.width, height: size.height });
     await sample(page, './?view=overview');
     const want = expected(sampleSummary);
     const group = page.getByRole('group', { name: want.line });
     await expect(group).toBeVisible();
     await expect(group.getByTestId('band-count')).toHaveText(want.line);
-    await expect(group.getByTestId('band-not-final')).toHaveCount(0);
+    await expect(group).toHaveAttribute('data-final', '0');
+    await expect(group).toContainText('No task has a final result yet: a final result is 20 valid trials.');
+    await expect(group.getByTestId('band-not-final')).toHaveText(want.note!);
     await inViewport(page);
   });
 }
 
-test('the Overview with the band line: axe finds nothing serious or critical, light and dark, at 390 px and desktop; screenshots with SHOTS_DIR', async ({ page }) => {
+test('the Overview with the band line: axe finds nothing serious or critical, light and dark, at 375 px and desktop; screenshots with SHOTS_DIR', async ({ page }) => {
   test.setTimeout(180_000);
   for (const size of SIZES) {
     await page.setViewportSize({ width: size.width, height: size.height });
