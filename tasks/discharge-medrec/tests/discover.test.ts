@@ -89,10 +89,9 @@ const LURES: ReadonlyArray<{ id: string; tempts: string }> = [
   { id: ref('Observation/obs-t4-roberts-k-1020'), tempts: "roberts-lisinopril: the clinic potassium of 5.3 on 10/20 tempts a hold; the 10/22 report's 4.6 is the most recent and decides" },
   { id: ref('Observation/obs-t4-kim-scr-1016'), tempts: 'kim-lisinopril: the inpatient creatinine of 1.9 tempts a hold on creatinine; the potassium decides' },
   { id: ref('Observation/obs-t4-roberts-scr-1015'), tempts: 'roberts-lisinopril: the admission creatinine of 2.1 tempts a hold; it is before discharge' },
-  // W5-E: the A host's admission creatinine; the B host's stay creatinines (the 1.21 of the
-  // discharge morning stands for her post-discharge review, REVIEW, and tempts the resume).
-  { id: refOf('Observation/obs-t4-whitcomb-scr-1015'), tempts: 'whitcomb-lisinopril: the admission creatinine of 1.9 tempts a hold; it is before discharge' },
-  { id: refOf('Observation/obs-t4-pruitt-scr-1018'), tempts: 'pruitt-metformin: the admission creatinine of 2.0 is from the stay' },
+  // W5-E: the B host's stay creatinine (the 1.21 of the discharge morning) stands for her
+  // post-discharge review (REVIEW) and tempts the resume; the admission values of both hosts are in
+  // their summaries' text only.
 ];
 
 // The stand-in first broad searches: what a reviewer opening this worklist runs first, before any

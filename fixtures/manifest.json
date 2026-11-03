@@ -2,9 +2,9 @@
   "now": "2026-10-23T08:00:00-04:00",
   "world": {
     "file": "fixtures/world.ndjson.gz",
-    "state_hash": "7d761edcfe9a327ef334287e61e41497decb887581ba4d61c994e05e54a4e794",
-    "ndjson_sha256": "a8363cd0c29fb4d37c7abe05903851f9057347dd700383955cebc8ea325d7633",
-    "resources": 7478,
+    "state_hash": "13dfd503fa32934a5f3fce33804dddd62203b35f781769e191df9849013a4b21",
+    "ndjson_sha256": "94fe36d486b0402096878b134dc162da9fd49a9c8ce6484d3b67d798ecd03ef7",
+    "resources": 7476,
     "by_type": {
       "AllergyIntolerance": 46,
       "Appointment": 8,
@@ -16,7 +16,7 @@
       "EpisodeOfCare": 2,
       "Group": 5,
       "MedicationRequest": 438,
-      "Observation": 3566,
+      "Observation": 3564,
       "Organization": 10,
       "Patient": 64,
       "Practitioner": 20,
@@ -81,7 +81,7 @@
     "scripts/fixtures-synthea.ts": "44162b65dc576e507b526132164eda54cb14000936331d48b575f46d9c49d752",
     "tasks/contrast-ct-prep/overlay.ts": "fe51e85007f94d529c6f9dc8f9aaf652d46dfae27263456469a2658481d70c5e",
     "tasks/crc-care-gap/overlay.ts": "30e01b28a3973fe759ceb6878c0c7a73daa222c46577f262f156ec98c3efbaf1",
-    "tasks/discharge-medrec/overlay.ts": "c5c5080e6447a4931a82a5aa1f3b3809320618fb6a5f8b8030ff934a96ed544b",
+    "tasks/discharge-medrec/overlay.ts": "a4772c34e3642384303cfc126722f726ed2ee1abda59285fc212c1b9833cfe14",
     "tasks/message-queue/overlay.ts": "a4ad7e9f21b051c0e44c155a43063609a018c0e31abe94d572745be3374786a1",
     "tasks/renal-dose-review/overlay.ts": "4c975e7110edadbc1e354f07ec149a7c5ffce4e76535d48d8133d2122c8f0e73",
     "tasks/results-inbox/overlay.ts": "8091851412792e2f1096db877410f38449941aa3fbaf3e38f815843e11682c3c"
@@ -113,7 +113,7 @@
   },
   "ids": {
     "file": "fixtures/ids.ts",
-    "sha256": "e8b83f88a0a53b9d42b8e069f03047db41778ad0fbeb45bb9a6a98bb6c62d074",
+    "sha256": "05f10386fb0931f4ea13d9e8f62210f170db17e8267355d3aa76584a9a73d12b",
     "synthea_file": "fixtures/synthea-ids.ts",
     "synthea_sha256": "2fde908c72c0eea87cfcbd15ed7db091e49d7130689bb8d37ead5976467ee0bb"
   }
