@@ -11,10 +11,12 @@
 import { CircleAlert, Info } from 'lucide-react';
 import type { Ref } from 'react';
 import { MODEL } from '../adapters/ledger-browser.ts';
+import type { BandVerdict } from '../../../../packages/core/summary.ts';
 import { FINAL_PASS_BAND } from '../../../../packages/core/cost.ts';
 import { toolCatalog } from '../../../../packages/core/try-tool.ts';
 import { pilotRates, useResults, type RunData } from '../data/results.ts';
 import { useTaskList } from '../data/tasks.ts';
+import { bandCount, bandLine, notFinalLine } from './band.ts';
 import { policyLine, taskTitle } from '../tasks/title.ts';
 import { BUTTON, BUTTON_PRIMARY, Card, CARD, formatInterval, GlossaryLink, Hash, IntervalRow, markLabel, MarkLegend, markOf, Notice, Page, SECTION_LABEL, Swatch } from '../data/ui.tsx';
 import { hrefWith, onNav } from '../data/url.ts';
@@ -75,6 +77,7 @@ function OfficialOverview({ run, headingRef }: { run: RunData; headingRef?: Ref<
       {block !== null && <RunBlocked block={block} runId={runId} />}
       <IntroCard />
       <ModelLine run={run} />
+      {block === null && <BandLine tasks={summary!.tasks} />}
       {problems > 0 && (
         <Notice testId="data-warning">
           {run.bad.length > 0 && `${run.bad.length} trial record${run.bad.length === 1 ? '' : 's'} cannot be read; Runs shows which. `}
@@ -117,6 +120,27 @@ function OfficialOverview({ run, headingRef }: { run: RunData; headingRef?: Ref<
         <p className="mt-1 text-xs text-ink-muted">Findings shows this for each task, with the checks that failed.</p>
       </Card>
     </Page>
+  );
+}
+
+// The band line (ui-contract P14, pre-audit F1): `<k> of <n> tasks in band`, counted by band.ts
+// from the summary's band verdicts, with what k and n count, and the tasks with no final result
+// yet, named once the task list loads. The group's accessible name is the line.
+function BandLine({ tasks }: { tasks: Readonly<Record<string, { band_verdict: BandVerdict | null }>> }) {
+  const list = useTaskList().tasks;
+  const c = bandCount(tasks, list === null ? null : list.map((t) => t.id));
+  const [lo, hi] = FINAL_PASS_BAND;
+  const note = notFinalLine(c);
+  return (
+    <div role="group" aria-labelledby="band-line" data-testid="band-line" data-in-band={c.inBand} data-final={c.final} className="break-words text-sm text-ink">
+      <p id="band-line" data-testid="band-count" className="font-medium">{bandLine(c)}</p>
+      <p className="text-xs text-ink-muted">
+        {c.final === 0
+          ? 'No task has a final result yet.'
+          : `${c.inBand} of the ${c.final} ${c.final === 1 ? 'task' : 'tasks'} with a final result ${c.inBand === 1 ? 'has' : 'have'} a pass rate from ${Math.round(lo * 100)}% to ${Math.round(hi * 100)}%, both included.`}
+      </p>
+      {note !== null && <p data-testid="band-not-final" className="text-xs text-ink-muted">{note}</p>}
+    </div>
   );
 }
 

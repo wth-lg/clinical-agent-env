@@ -40,11 +40,11 @@ const TASK_IDS = readdirSync(join(REPO, 'tasks'), { withFileTypes: true })
   .map((e) => e.name);
 const LISTS_TASKS = new Set(['overview', 'tasks', 'runs', 'findings', 'live']);
 const viewOf = (route: string | undefined) => (route === undefined ? null : new URL(route, 'http://x/').searchParams.get('view'));
-// Rows whose UI a named later UI PR builds; each line says which. Remove the row when it lands.
-// The Overview band line (ui-contract P14: `<k> of 6 tasks in band`, k counted from the official
-// run's summary, never a fixed text) is pre-audit finding F1, owed to the UI follow-up of #218.
-const BAND_LINE = 'the Overview band line (pre-audit F1), the UI follow-up of #218';
-const BUILT_BY: Record<string, string> = { W1: BAND_LINE, W2: BAND_LINE, W3: BAND_LINE, U21: BAND_LINE, U26: BAND_LINE };
+// Rows whose UI a named later UI PR builds; each line says which. Remove the row when it lands: a
+// listed row whose text the route's source already draws fails below, so the list cannot go stale.
+// (The Overview band line, pre-audit F1, was listed here for W1, W2, W3, U21 and U26 until
+// apps/web/src/overview/band.ts drew it.)
+const BUILT_BY: Record<string, string> = {};
 
 type AxText = { file: string; text: string };
 type Row = { id: string; code?: string[]; pending?: string[]; ui?: { route: string }; expect?: unknown };
@@ -94,17 +94,23 @@ describe('ax_text strings are rendered on their routes', () => {
     // The row's own pending list (trace-check fails a stale or done-phase one), listed as todo so
     // the test output shows what a later phase still owes.
     const pending = row.pending ?? [];
-    if (pending.length > 0 || BUILT_BY[row.id]) {
-      it.todo(`${row.id}: "${a.text}" pending ${pending.length > 0 ? pending.join(', ') : BUILT_BY[row.id]}`);
+    // Only the row's UI and document paths draw text; its other code (the loop, the CLI) does not.
+    const ui = code.filter((p) => p.startsWith('apps/web/') || p.startsWith('docs/'));
+    const paths = [...ui, ...(VIEW_DATA[viewOf(row.ui?.route) ?? ''] ?? []), ...SHELL];
+    const data = LISTS_TASKS.has(viewOf(row.ui?.route) ?? 'overview') ? TASK_IDS : [];
+    const source = () => [...paths.flatMap(files).map((f) => readFileSync(f, 'utf8')), ...data].join('\n');
+    if (pending.length > 0) {
+      it.todo(`${row.id}: "${a.text}" pending ${pending.join(', ')}`);
+      continue;
+    }
+    if (BUILT_BY[row.id]) {
+      // A listed row whose text the route already draws is stale: the list, not the UI, is wrong.
+      if (found(a.text, source())) it(`${row.id}: "${a.text}" is listed in BUILT_BY but is drawn`, () => expect.fail(`${row.id}: "${a.text}" is now drawn by ${paths.join(', ')}; remove it from BUILT_BY`));
+      else it.todo(`${row.id}: "${a.text}" pending ${BUILT_BY[row.id]}`);
       continue;
     }
     it(`${row.id}: "${a.text}" on ${row.ui?.route ?? '(no route)'}`, () => {
-      // Only the row's UI and document paths draw text; its other code (the loop, the CLI) does not.
-      const ui = code.filter((p) => p.startsWith('apps/web/') || p.startsWith('docs/'));
-      const paths = [...ui, ...(VIEW_DATA[viewOf(row.ui?.route) ?? ''] ?? []), ...SHELL];
-      const data = LISTS_TASKS.has(viewOf(row.ui?.route) ?? 'overview') ? TASK_IDS : [];
-      const source = [...paths.flatMap(files).map((f) => readFileSync(f, 'utf8')), ...data].join('\n');
-      expect(found(a.text, source), `"${a.text}" is not drawn by ${paths.join(', ')}`).toBe(true);
+      expect(found(a.text, source()), `"${a.text}" is not drawn by ${paths.join(', ')}`).toBe(true);
     });
   }
 });
